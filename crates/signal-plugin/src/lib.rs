@@ -33,9 +33,9 @@ mod sandbox_protocol;
 pub use blocks::{AudioBlock, BlockPayload, EventPacket};
 pub use event_codec::{read_event_from_slice, write_event_to_slice};
 pub use events::{
-    MidiEvent, NoteEvent, NoteEventKind, NoteExpressionEvent, NoteExpressionKind,
-    ParameterGestureEvent, ParameterGesturePhase, ParameterModulationEvent, ParameterValueEvent,
-    PluginEvent,
+    ControlChangeEvent, MidiEvent, NoteEvent, NoteEventKind, NoteExpressionEvent,
+    NoteExpressionKind, ParameterGestureEvent, ParameterGesturePhase, ParameterModulationEvent,
+    ParameterValueEvent, PluginEvent,
 };
 pub use param_changes::{PluginParamChange, PluginParamChangeQueue, PLUGIN_PARAM_CHANGE_CAPACITY};
 pub use render_context_codec::{read_render_context_from_slice, write_render_context_to_slice};

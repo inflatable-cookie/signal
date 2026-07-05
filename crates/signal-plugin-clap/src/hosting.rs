@@ -21,8 +21,9 @@ use clap_sys::{
     audio_buffer::clap_audio_buffer,
     entry::clap_plugin_entry,
     events::{
-        clap_event_header, clap_event_param_value, clap_input_events, clap_output_events,
-        CLAP_CORE_EVENT_SPACE_ID, CLAP_EVENT_PARAM_VALUE,
+        clap_event_header, clap_event_midi, clap_event_note, clap_event_param_value,
+        clap_input_events, clap_output_events, CLAP_CORE_EVENT_SPACE_ID, CLAP_EVENT_MIDI,
+        CLAP_EVENT_NOTE_OFF, CLAP_EVENT_NOTE_ON, CLAP_EVENT_PARAM_VALUE,
     },
     ext::audio_ports::{clap_plugin_audio_ports, CLAP_EXT_AUDIO_PORTS},
     ext::gui::{clap_host_gui, clap_plugin_gui, CLAP_EXT_GUI},
@@ -37,8 +38,8 @@ use clap_sys::{
 };
 use libloading::Library;
 use signal_plugin::{
-    PluginAudioBusDirection, PluginParamChange, PluginParamChangeQueue, PluginParameterDescriptor,
-    PLUGIN_PARAM_CHANGE_CAPACITY,
+    NoteEventKind, PluginAudioBusDirection, PluginEvent, PluginParamChange, PluginParamChangeQueue,
+    PluginParameterDescriptor, PLUGIN_PARAM_CHANGE_CAPACITY,
 };
 use std::sync::Arc;
 
@@ -699,15 +700,38 @@ unsafe extern "C" fn empty_in_events_get(
     ptr::null()
 }
 
-/// The session-owned param in-event list served to the plugin through
-/// `clap_input_events` (g12.023). Boxed by the session so the `ctx`
-/// pointer inside the embedded `clap_input_events` stays stable while the
-/// session moves between threads. Events are rebuilt at the top of every
-/// processed block from the shared change queue (block-boundary
-/// application, time offset 0) — alloc-free, both vecs preallocated at
-/// the queue capacity.
+/// Per-block cap on note/MIDI in-events forwarded to the plugin (matches
+/// the render plane's per-block event capacity; overflow drops, earliest
+/// wins — never an allocation on the audio thread).
+const IN_EVENT_CAPACITY: usize = 1024;
+
+/// Which backing array an in-event order entry points into.
+#[derive(Clone, Copy)]
+enum InEventSlot {
+    Param(u32),
+    Note(u32),
+    Midi(u32),
+}
+
+/// The session-owned in-event list served to the plugin through
+/// `clap_input_events` (g12.023, widened for note/CC delivery). Boxed by
+/// the session so the `ctx` pointer inside the embedded
+/// `clap_input_events` stays stable while the session moves between
+/// threads. Rebuilt at the top of every processed block — param writes
+/// from the shared change queue land at time offset 0 (block-boundary
+/// posture), note/MIDI events keep their intra-block sample offsets. All
+/// vecs are preallocated; the audio thread never allocates.
+///
+/// This is the MIDI 1.0 downconversion boundary for CLAP CC delivery:
+/// [`PluginEvent::ControlChange`] values (normalized f32) become 3-byte
+/// `clap_event_midi` messages here (`round(value * 127)`); note events use
+/// CLAP's native `clap_event_note` and keep full float velocity.
 struct ParamEventList {
-    events: Vec<clap_event_param_value>,
+    params: Vec<clap_event_param_value>,
+    notes: Vec<clap_event_note>,
+    midi: Vec<clap_event_midi>,
+    /// Delivery order (nondecreasing header time, params first at 0).
+    order: Vec<InEventSlot>,
     /// The `clap_input_events` handed to the plugin; `ctx` points back at
     /// this boxed struct.
     list: clap_input_events,
@@ -717,7 +741,7 @@ unsafe extern "C" fn param_in_events_size(list: *const clap_input_events) -> u32
     if list.is_null() || (*list).ctx.is_null() {
         return 0;
     }
-    (*(*list).ctx.cast::<ParamEventList>()).events.len() as u32
+    (*(*list).ctx.cast::<ParamEventList>()).order.len() as u32
 }
 
 unsafe extern "C" fn param_in_events_get(
@@ -727,9 +751,23 @@ unsafe extern "C" fn param_in_events_get(
     if list.is_null() || (*list).ctx.is_null() {
         return ptr::null();
     }
-    let events = &(*(*list).ctx.cast::<ParamEventList>()).events;
-    match events.get(index as usize) {
-        Some(event) => (&event.header as *const clap_event_header).cast(),
+    let events = &(*(*list).ctx.cast::<ParamEventList>());
+    match events.order.get(index as usize) {
+        Some(InEventSlot::Param(slot)) => events
+            .params
+            .get(*slot as usize)
+            .map(|event| (&event.header as *const clap_event_header).cast())
+            .unwrap_or(ptr::null()),
+        Some(InEventSlot::Note(slot)) => events
+            .notes
+            .get(*slot as usize)
+            .map(|event| (&event.header as *const clap_event_header).cast())
+            .unwrap_or(ptr::null()),
+        Some(InEventSlot::Midi(slot)) => events
+            .midi
+            .get(*slot as usize)
+            .map(|event| (&event.header as *const clap_event_header).cast())
+            .unwrap_or(ptr::null()),
         None => ptr::null(),
     }
 }
@@ -769,7 +807,10 @@ impl ClapProcessSession {
         param_out_queue: Arc<PluginParamChangeQueue>,
     ) -> Self {
         let mut param_events = Box::new(ParamEventList {
-            events: Vec::with_capacity(PLUGIN_PARAM_CHANGE_CAPACITY),
+            params: Vec::with_capacity(PLUGIN_PARAM_CHANGE_CAPACITY),
+            notes: Vec::with_capacity(IN_EVENT_CAPACITY),
+            midi: Vec::with_capacity(IN_EVENT_CAPACITY),
+            order: Vec::with_capacity(PLUGIN_PARAM_CHANGE_CAPACITY + IN_EVENT_CAPACITY),
             list: clap_input_events {
                 ctx: ptr::null_mut(),
                 size: Some(param_in_events_size),
@@ -802,35 +843,118 @@ impl ClapProcessSession {
         }
     }
 
-    /// Rebuild the block's param in-events from the shared change queue
-    /// (block-boundary application: every event lands at time offset 0).
-    /// Alloc-free; returns the `clap_input_events` to hand to the plugin
-    /// (the empty static list when nothing is pending).
-    fn prepare_param_events(&mut self) -> *const clap_input_events {
-        self.param_events.events.clear();
-        if self.param_changes.is_empty() {
+    /// Rebuild the block's in-events: param writes from the shared change
+    /// queue (block-boundary application, time offset 0) followed by the
+    /// block's note/CC events at their intra-block sample offsets (`events`
+    /// must be sorted by `offset_frames`; the render plane's delivery
+    /// contract). Alloc-free; returns the `clap_input_events` to hand to
+    /// the plugin (the empty static list when nothing is pending).
+    fn prepare_in_events(&mut self, events: &[PluginEvent]) -> *const clap_input_events {
+        let list = &mut *self.param_events;
+        list.params.clear();
+        list.notes.clear();
+        list.midi.clear();
+        list.order.clear();
+        if !self.param_changes.is_empty() {
+            self.param_changes.drain_coalesced(&mut self.param_scratch);
+            for change in &self.param_scratch {
+                list.params.push(clap_event_param_value {
+                    header: clap_event_header {
+                        size: std::mem::size_of::<clap_event_param_value>() as u32,
+                        time: 0,
+                        space_id: CLAP_CORE_EVENT_SPACE_ID,
+                        type_: CLAP_EVENT_PARAM_VALUE,
+                        flags: 0,
+                    },
+                    param_id: change.parameter_id,
+                    cookie: ptr::null_mut(),
+                    note_id: -1,
+                    port_index: -1,
+                    channel: -1,
+                    key: -1,
+                    value: change.value,
+                });
+                list.order
+                    .push(InEventSlot::Param(list.params.len() as u32 - 1));
+            }
+        }
+        for event in events {
+            match event {
+                PluginEvent::Note(note) => {
+                    if list.notes.len() == IN_EVENT_CAPACITY {
+                        continue;
+                    }
+                    list.notes.push(clap_event_note {
+                        header: clap_event_header {
+                            size: std::mem::size_of::<clap_event_note>() as u32,
+                            time: note.offset_frames,
+                            space_id: CLAP_CORE_EVENT_SPACE_ID,
+                            type_: match note.kind {
+                                NoteEventKind::NoteOn => CLAP_EVENT_NOTE_ON,
+                                NoteEventKind::NoteOff => CLAP_EVENT_NOTE_OFF,
+                            },
+                            flags: 0,
+                        },
+                        note_id: note.note_id,
+                        port_index: note.port_index as i16,
+                        channel: i16::from(note.channel),
+                        key: i16::from(note.key),
+                        velocity: f64::from(note.velocity.clamp(0.0, 1.0)),
+                    });
+                    list.order
+                        .push(InEventSlot::Note(list.notes.len() as u32 - 1));
+                }
+                PluginEvent::ControlChange(change) => {
+                    // The CLAP CC boundary: normalized f32 → 3-byte MIDI 1.0
+                    // (CLAP has no float CC event).
+                    if list.midi.len() == IN_EVENT_CAPACITY {
+                        continue;
+                    }
+                    list.midi.push(clap_event_midi {
+                        header: clap_event_header {
+                            size: std::mem::size_of::<clap_event_midi>() as u32,
+                            time: change.offset_frames,
+                            space_id: CLAP_CORE_EVENT_SPACE_ID,
+                            type_: CLAP_EVENT_MIDI,
+                            flags: 0,
+                        },
+                        port_index: change.port_index,
+                        data: [
+                            0xB0 | (change.channel & 0x0F),
+                            change.controller & 0x7F,
+                            (change.value.clamp(0.0, 1.0) * 127.0).round() as u8,
+                        ],
+                    });
+                    list.order
+                        .push(InEventSlot::Midi(list.midi.len() as u32 - 1));
+                }
+                PluginEvent::Midi(midi) => {
+                    if list.midi.len() == IN_EVENT_CAPACITY {
+                        continue;
+                    }
+                    list.midi.push(clap_event_midi {
+                        header: clap_event_header {
+                            size: std::mem::size_of::<clap_event_midi>() as u32,
+                            time: midi.offset_frames,
+                            space_id: CLAP_CORE_EVENT_SPACE_ID,
+                            type_: CLAP_EVENT_MIDI,
+                            flags: 0,
+                        },
+                        port_index: 0,
+                        data: [midi.status, midi.data1, midi.data2],
+                    });
+                    list.order
+                        .push(InEventSlot::Midi(list.midi.len() as u32 - 1));
+                }
+                // Parameter events ride the wire queue; expression/gesture
+                // events have no source yet.
+                _ => {}
+            }
+        }
+        if list.order.is_empty() {
             return &EMPTY_IN_EVENTS;
         }
-        self.param_changes.drain_coalesced(&mut self.param_scratch);
-        for change in &self.param_scratch {
-            self.param_events.events.push(clap_event_param_value {
-                header: clap_event_header {
-                    size: std::mem::size_of::<clap_event_param_value>() as u32,
-                    time: 0,
-                    space_id: CLAP_CORE_EVENT_SPACE_ID,
-                    type_: CLAP_EVENT_PARAM_VALUE,
-                    flags: 0,
-                },
-                param_id: change.parameter_id,
-                cookie: ptr::null_mut(),
-                note_id: -1,
-                port_index: -1,
-                channel: -1,
-                key: -1,
-                value: change.value,
-            });
-        }
-        &self.param_events.list
+        &list.list
     }
 
     /// `start_processing` on the audio thread; must precede `process`.
@@ -875,7 +999,7 @@ impl ClapProcessSession {
             .min(self.input_left.len())
             .min(input.len() / 2)
             .min(output.len() / 2);
-        let in_events = self.prepare_param_events();
+        let in_events = self.prepare_in_events(&[]);
         for frame in 0..frames {
             self.input_left[frame] = input[frame * 2];
             self.input_right[frame] = input[frame * 2 + 1];
@@ -937,8 +1061,21 @@ impl ClapProcessSession {
     /// success; on plugin error the buffer is left untouched (bypass
     /// semantics). Alloc-free. `true` = buffer transformed.
     pub fn process_in_place(&mut self, io: &mut [f32], frame_count: usize) -> bool {
+        self.process_in_place_with_events(io, frame_count, &[])
+    }
+
+    /// [`Self::process_in_place`] with a per-block plugin event slice
+    /// (sorted by `offset_frames`): note events map to CLAP note in-events
+    /// (float velocity preserved), CC events downconvert to 3-byte MIDI at
+    /// this boundary. Alloc-free. `true` = buffer transformed.
+    pub fn process_in_place_with_events(
+        &mut self,
+        io: &mut [f32],
+        frame_count: usize,
+        events: &[PluginEvent],
+    ) -> bool {
         let frames = frame_count.min(self.input_left.len()).min(io.len() / 2);
-        let in_events = self.prepare_param_events();
+        let in_events = self.prepare_in_events(events);
         for frame in 0..frames {
             self.input_left[frame] = io[frame * 2];
             self.input_right[frame] = io[frame * 2 + 1];

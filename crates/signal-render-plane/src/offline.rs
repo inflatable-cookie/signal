@@ -272,6 +272,7 @@ mod tests {
     fn lane(stage_id: u64, gain: f32, clips: Vec<RenderClipSpec>) -> RenderStageSpec {
         RenderStageSpec {
             processor: None,
+            events: None,
             stage_id,
             format: ChannelFormat::stereo(),
             gain,
@@ -284,6 +285,7 @@ mod tests {
     fn master(inputs: Vec<u64>) -> RenderStageSpec {
         RenderStageSpec {
             processor: None,
+            events: None,
             stage_id: MASTER_ID,
             format: ChannelFormat::stereo(),
             gain: 1.0,

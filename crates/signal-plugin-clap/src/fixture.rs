@@ -339,7 +339,29 @@ pub struct clap_output_events {{
 }}
 
 const CLAP_CORE_EVENT_SPACE_ID: u16 = 0;
+const CLAP_EVENT_NOTE_ON_TYPE: u16 = 0;
+const CLAP_EVENT_NOTE_OFF_TYPE: u16 = 1;
 const CLAP_EVENT_PARAM_VALUE_TYPE: u16 = 5;
+const CLAP_EVENT_MIDI_TYPE: u16 = 10;
+
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct clap_event_note {{
+    pub header: clap_event_header,
+    pub note_id: i32,
+    pub port_index: i16,
+    pub channel: i16,
+    pub key: i16,
+    pub velocity: f64,
+}}
+
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct clap_event_midi {{
+    pub header: clap_event_header,
+    pub port_index: u16,
+    pub data: [u8; 3],
+}}
 
 const CLAP_AUDIO_PORT_IS_MAIN: u32 = 1;
 const CLAP_PARAM_IS_STEPPED: u32 = 1 << 0;
@@ -512,35 +534,76 @@ unsafe extern "C" fn plugin_start_processing(_plugin: *const clap_plugin) -> boo
 unsafe extern "C" fn plugin_stop_processing(_plugin: *const clap_plugin) {{}}
 unsafe extern "C" fn plugin_reset(_plugin: *const clap_plugin) {{}}
 
-/// Apply pending CLAP_EVENT_PARAM_VALUE in-events for the Gain param
-/// (id 4096) before the block renders — the g12.023 live-param proof.
-unsafe fn apply_param_events(in_events: *const c_void) {{
+/// Cap on per-block gain steps gathered from note/MIDI in-events (the
+/// note/CC delivery proof; more than enough for the tests).
+const GAIN_STEP_CAPACITY: usize = 64;
+
+/// Apply pending in-events before the block renders. PARAM_VALUE events
+/// for the Gain param (id 4096) keep their block-boundary semantics
+/// (g12.023: stored immediately). Note and MIDI CC7 events become
+/// SAMPLE-OFFSET gain steps so hosts can assert both the decoded bytes and
+/// the intra-block offsets from the audio output alone:
+///   NOTE_ON  → gain = velocity from the event's time offset
+///   NOTE_OFF → gain = 0.0 from the event's time offset
+///   MIDI 0xB0 cc=7 → gain = data2 / 127 from the event's time offset
+/// Returns the gathered `(time, gain)` steps in delivery order.
+unsafe fn apply_param_events(
+    in_events: *const c_void,
+    steps: &mut [(u32, f32); GAIN_STEP_CAPACITY],
+) -> usize {{
     if in_events.is_null() {{
-        return;
+        return 0;
     }}
     let list = &*(in_events as *const clap_input_events);
     let (Some(size), Some(get)) = (list.size, list.get) else {{
-        return;
+        return 0;
     }};
+    let mut step_count = 0usize;
     let count = size(list as *const clap_input_events);
     for index in 0..count {{
         let header = get(list as *const clap_input_events, index);
         if header.is_null() {{
             continue;
         }}
-        if (*header).space_id != CLAP_CORE_EVENT_SPACE_ID
-            || (*header).type_ != CLAP_EVENT_PARAM_VALUE_TYPE
-        {{
+        if (*header).space_id != CLAP_CORE_EVENT_SPACE_ID {{
             continue;
         }}
-        let event = &*(header as *const clap_event_param_value);
-        if event.param_id == 4096 {{
-            GAIN_BITS.store(
-                (event.value as f32).to_bits(),
-                std::sync::atomic::Ordering::SeqCst,
-            );
+        match (*header).type_ {{
+            CLAP_EVENT_PARAM_VALUE_TYPE => {{
+                let event = &*(header as *const clap_event_param_value);
+                if event.param_id == 4096 {{
+                    GAIN_BITS.store(
+                        (event.value as f32).to_bits(),
+                        std::sync::atomic::Ordering::SeqCst,
+                    );
+                }}
+            }}
+            CLAP_EVENT_NOTE_ON_TYPE | CLAP_EVENT_NOTE_OFF_TYPE => {{
+                let event = &*(header as *const clap_event_note);
+                if step_count < GAIN_STEP_CAPACITY {{
+                    let gain = if (*header).type_ == CLAP_EVENT_NOTE_ON_TYPE {{
+                        event.velocity as f32
+                    }} else {{
+                        0.0
+                    }};
+                    steps[step_count] = ((*header).time, gain);
+                    step_count += 1;
+                }}
+            }}
+            CLAP_EVENT_MIDI_TYPE => {{
+                let event = &*(header as *const clap_event_midi);
+                if event.data[0] & 0xF0 == 0xB0
+                    && event.data[1] == 7
+                    && step_count < GAIN_STEP_CAPACITY
+                {{
+                    steps[step_count] = ((*header).time, f32::from(event.data[2]) / 127.0);
+                    step_count += 1;
+                }}
+            }}
+            _ => {{}}
         }}
     }}
+    step_count
 }}
 
 /// Real audio processing: output = input × the LIVE Gain param on every
@@ -554,7 +617,8 @@ unsafe extern "C" fn plugin_process(
         return 0;
     }}
     let process = &*process;
-    apply_param_events(process.in_events);
+    let mut gain_steps = [(0u32, 0f32); GAIN_STEP_CAPACITY];
+    let step_count = apply_param_events(process.in_events, &mut gain_steps);
     if PENDING_PARAM_OUT.swap(false, std::sync::atomic::Ordering::SeqCst)
         && !process.out_events.is_null()
     {{
@@ -600,16 +664,30 @@ unsafe extern "C" fn plugin_process(
     }}
     let frames = process.frames_count as usize;
     let channels = input.channel_count.min(output.channel_count) as usize;
-    let gain = f32::from_bits(GAIN_BITS.load(std::sync::atomic::Ordering::SeqCst));
     for channel in 0..channels {{
         let source = *input.data32.add(channel);
         let dest = *output.data32.add(channel);
         if source.is_null() || dest.is_null() {{
             return 0;
         }}
+        // Per-frame gain: the live Gain param until the first note/CC step,
+        // then each step's gain from its sample offset (event-offset proof).
+        let mut gain = f32::from_bits(GAIN_BITS.load(std::sync::atomic::Ordering::SeqCst));
+        let mut next_step = 0usize;
         for frame in 0..frames {{
+            while next_step < step_count && gain_steps[next_step].0 as usize <= frame {{
+                gain = gain_steps[next_step].1;
+                next_step += 1;
+            }}
             *dest.add(frame) = *source.add(frame) * gain;
         }}
+    }}
+    // The last step's gain persists into later blocks (like a param write).
+    if step_count > 0 {{
+        GAIN_BITS.store(
+            gain_steps[step_count - 1].1.to_bits(),
+            std::sync::atomic::Ordering::SeqCst,
+        );
     }}
     1
 }}

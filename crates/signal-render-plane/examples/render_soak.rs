@@ -71,6 +71,7 @@ static ALLOCATOR: CountingAllocator = CountingAllocator;
 fn tone_lane(stage_id: u64, gain: f32, frequency_hz: f32) -> RenderStageSpec {
     RenderStageSpec {
         processor: None,
+        events: None,
         stage_id,
         format: ChannelFormat::stereo(),
         gain,
@@ -103,6 +104,7 @@ fn notes_lane(stage_id: u64, gain: f32) -> RenderStageSpec {
         .collect();
     RenderStageSpec {
         processor: None,
+        events: None,
         stage_id,
         format: ChannelFormat::stereo(),
         gain,
@@ -201,6 +203,7 @@ fn main() {
             // measured callback (must stay alloc-free like every source).
             RenderStageSpec {
                 processor: None,
+                events: None,
                 stage_id: 4,
                 format: ChannelFormat::stereo(),
                 gain: 0.3,
@@ -218,6 +221,7 @@ fn main() {
             },
             RenderStageSpec {
                 processor: Some(soak_processor_handle),
+                events: None,
                 stage_id: 10,
                 format: ChannelFormat::stereo(),
                 gain: 1.0,
@@ -238,6 +242,7 @@ fn main() {
             },
             RenderStageSpec {
                 processor: None,
+                events: None,
                 stage_id: 100,
                 format: ChannelFormat::stereo(),
                 gain: 1.0,
@@ -289,6 +294,7 @@ fn main() {
                 tone_lane(3, 0.5, 220.0),
                 RenderStageSpec {
                     processor: None,
+                    events: None,
                     stage_id: 100,
                     format: ChannelFormat::stereo(),
                     gain: 1.0,

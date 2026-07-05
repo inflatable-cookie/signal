@@ -115,6 +115,24 @@ pub struct NoteExpressionEvent {
     pub value: f32,
 }
 
+/// A continuous-controller change carrying the model's 32-bit normalized
+/// value (g12.034 follow-up). Unlike [`MidiEvent`], the value is NOT
+/// quantized to 7 bits: each hosting backend downconverts (or maps to a
+/// parameter, e.g. VST3 `IMidiMapping`) at its own format boundary.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct ControlChangeEvent {
+    /// Frame offset within the current block at which the change applies.
+    pub offset_frames: u32,
+    /// Index of the MIDI/note port this event targets.
+    pub port_index: u16,
+    /// MIDI channel (0–15).
+    pub channel: u8,
+    /// MIDI controller number (0–127).
+    pub controller: u8,
+    /// Controller value in the \[0.0, 1.0\] normalized range.
+    pub value: f32,
+}
+
 /// All event types that can appear in a plugin event packet.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum PluginEvent {
@@ -130,6 +148,9 @@ pub enum PluginEvent {
     NoteExpression(NoteExpressionEvent),
     /// Raw MIDI 1.0 message.
     Midi(MidiEvent),
+    /// Continuous-controller change with a 32-bit normalized value
+    /// (downconverted per format at the hosting boundary).
+    ControlChange(ControlChangeEvent),
 }
 
 impl PluginEvent {
@@ -163,5 +184,10 @@ impl PluginEvent {
     /// Returns `true` if this event is a [`Midi`](Self::Midi) variant.
     pub fn is_midi(self) -> bool {
         matches!(self, Self::Midi(_))
+    }
+
+    /// Returns `true` if this event is a [`ControlChange`](Self::ControlChange) variant.
+    pub fn is_control_change(self) -> bool {
+        matches!(self, Self::ControlChange(_))
     }
 }

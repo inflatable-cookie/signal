@@ -30,6 +30,10 @@ pub const VST3_FIXTURE_GAIN: f32 = 0.5;
 /// Param id of the fixture's live Gain parameter (normalized == plain).
 pub const VST3_FIXTURE_GAIN_PARAM_ID: u32 = 4096;
 
+/// MIDI controller number the fixture's `IMidiMapping` assigns to the Gain
+/// parameter (bus 0, channel 0) — the CC → param delivery proof.
+pub const VST3_FIXTURE_GAIN_CC: u8 = 7;
+
 /// Initial editor content size the fixture's `IPlugView::getSize` reports.
 pub const VST3_FIXTURE_VIEW_INITIAL_SIZE: (u32, u32) = (400, 300);
 
@@ -219,6 +223,7 @@ const ICOMPONENT_IID: Tuid = tuid_from_uid(0xE831FF31, 0xF2D54301, 0x928EBBEE, 0
 const IAUDIO_PROCESSOR_IID: Tuid = tuid_from_uid(0x42043F99, 0xB7DA453C, 0xA569E79D, 0x9AAEC33D);
 const IEDIT_CONTROLLER_IID: Tuid = tuid_from_uid(0xDCD7BBE3, 0x7742448D, 0xA874AAF0, 0x0B96B23E);
 const IPLUG_VIEW_IID: Tuid = tuid_from_uid(0x5BC32507, 0xD06049EA, 0xA6151B52, 0x2B755B29);
+const IMIDI_MAPPING_IID: Tuid = tuid_from_uid(0xDF695DF2, 0x8B4B47EB, 0xAB3EF8FB, 0x2D1F6BB2);
 
 /// Component class CID; canonical hex "51F1C7A15E0C4B3D9A2F41D67B3C55E2"
 /// (kept in sync with the host crate's `VST3_FIXTURE_CLASS_ID_HEX`).
@@ -414,9 +419,55 @@ struct FixtureObject {{
     component_vtable: *const ComponentVTable,
     processor_vtable: *const AudioProcessorVTable,
     controller_vtable: *const EditControllerVTable,
+    midi_mapping_vtable: *const MidiMappingVTable,
 }}
 
 unsafe impl Sync for FixtureObject {{}}
+
+/// IMidiMapping (FUnknown + getMidiControllerAssignment).
+#[repr(C)]
+struct MidiMappingVTable {{
+    query_interface: unsafe extern "C" fn(*mut c_void, *const Tuid, *mut *mut c_void) -> Tresult,
+    add_ref: unsafe extern "C" fn(*mut c_void) -> u32,
+    release: unsafe extern "C" fn(*mut c_void) -> u32,
+    get_midi_controller_assignment:
+        unsafe extern "C" fn(*mut c_void, i32, i16, i16, *mut u32) -> Tresult,
+}}
+
+static MIDI_MAPPING_VTABLE: MidiMappingVTable = MidiMappingVTable {{
+    query_interface: midi_mapping_query_interface,
+    add_ref: no_op_add_ref,
+    release: no_op_release,
+    get_midi_controller_assignment: midi_mapping_get_assignment,
+}};
+
+unsafe extern "C" fn midi_mapping_query_interface(
+    _this: *mut c_void,
+    iid: *const Tuid,
+    out: *mut *mut c_void,
+) -> Tresult {{
+    shared_query_interface(iid, out)
+}}
+
+/// CC 7 on bus 0 / channel 0 maps to the Gain param (id 4096); everything
+/// else is unassigned.
+unsafe extern "C" fn midi_mapping_get_assignment(
+    _this: *mut c_void,
+    bus_index: i32,
+    channel: i16,
+    controller_number: i16,
+    parameter_id: *mut u32,
+) -> Tresult {{
+    if parameter_id.is_null() {{
+        return K_RESULT_FALSE;
+    }}
+    if bus_index == 0 && channel == 0 && controller_number == 7 {{
+        *parameter_id = 4096;
+        K_RESULT_OK
+    }} else {{
+        K_RESULT_FALSE
+    }}
+}}
 
 static COMPONENT_VTABLE: ComponentVTable = ComponentVTable {{
     query_interface: component_query_interface,
@@ -474,6 +525,7 @@ static FIXTURE_OBJECT: FixtureObject = FixtureObject {{
     component_vtable: &COMPONENT_VTABLE,
     processor_vtable: &PROCESSOR_VTABLE,
     controller_vtable: &CONTROLLER_VTABLE,
+    midi_mapping_vtable: &MIDI_MAPPING_VTABLE,
 }};
 
 fn object_base() -> *mut c_void {{
@@ -488,6 +540,10 @@ fn controller_facet() -> *mut c_void {{
     unsafe {{ &raw const FIXTURE_OBJECT.controller_vtable as *mut c_void }}
 }}
 
+fn midi_mapping_facet() -> *mut c_void {{
+    unsafe {{ &raw const FIXTURE_OBJECT.midi_mapping_vtable as *mut c_void }}
+}}
+
 unsafe fn facet_for(iid: *const Tuid) -> Option<*mut c_void> {{
     if iid.is_null() {{
         return None;
@@ -499,6 +555,8 @@ unsafe fn facet_for(iid: *const Tuid) -> Option<*mut c_void> {{
         Some(processor_facet())
     }} else if iid == IEDIT_CONTROLLER_IID {{
         Some(controller_facet())
+    }} else if iid == IMIDI_MAPPING_IID {{
+        Some(midi_mapping_facet())
     }} else {{
         None
     }}
@@ -697,9 +755,18 @@ struct ParameterChangesVTable {{
     add_parameter_data: unsafe extern "C" fn(*mut c_void, *const u32, *mut i32) -> *mut c_void,
 }}
 
-/// Apply the LAST point of every Gain (id 4096) queue in the block's input
-/// parameter changes — the real host contract processors follow.
-unsafe fn apply_input_parameter_changes(changes: *mut c_void) {{
+/// Per-block cap on gain steps gathered from param points and note events.
+const GAIN_STEP_CAPACITY: usize = 64;
+
+/// Gather every Gain (id 4096) point in the block's input parameter
+/// changes as `(sample_offset, gain)` steps — the real host contract:
+/// sample-offset points apply FROM their offset (wire writes arrive at
+/// offset 0, IMidiMapping-routed CC at the CC event's offset).
+unsafe fn gather_parameter_steps(
+    changes: *mut c_void,
+    steps: &mut [(i32, f32); GAIN_STEP_CAPACITY],
+    step_count: &mut usize,
+) {{
     if changes.is_null() {{
         return;
     }}
@@ -715,31 +782,112 @@ unsafe fn apply_input_parameter_changes(changes: *mut c_void) {{
             continue;
         }}
         let points = ((*queue_vtable).get_point_count)(queue);
-        if points <= 0 {{
-            continue;
-        }}
-        let mut sample_offset = 0i32;
-        let mut value = 0f64;
-        if ((*queue_vtable).get_point)(queue, points - 1, &mut sample_offset, &mut value)
-            == K_RESULT_OK
-        {{
-            GAIN_BITS.store(
-                (value as f32).to_bits(),
-                std::sync::atomic::Ordering::SeqCst,
-            );
+        for point in 0..points {{
+            let mut sample_offset = 0i32;
+            let mut value = 0f64;
+            if ((*queue_vtable).get_point)(queue, point, &mut sample_offset, &mut value)
+                == K_RESULT_OK
+                && *step_count < GAIN_STEP_CAPACITY
+            {{
+                steps[*step_count] = (sample_offset, value as f32);
+                *step_count += 1;
+            }}
         }}
     }}
 }}
 
-/// Real audio processing: output = input × the LIVE Gain param on every
-/// channel of the main bus pair (input IParameterChanges applied first,
-/// block-boundary).
+// ── Input IEventList consumption (note delivery proof) ─────────────────────
+
+#[repr(C)]
+#[derive(Clone, Copy)]
+struct NoteOnEventPayload {{
+    channel: i16,
+    pitch: i16,
+    tuning: f32,
+    velocity: f32,
+    length: i32,
+    note_id: i32,
+}}
+
+#[repr(C)]
+#[derive(Clone, Copy)]
+union EventPayload {{
+    note_on: NoteOnEventPayload,
+    _size: [u64; 3],
+}}
+
+#[repr(C)]
+#[derive(Clone, Copy)]
+struct Vst3Event {{
+    bus_index: i32,
+    sample_offset: i32,
+    ppq_position: f64,
+    flags: u16,
+    type_: u16,
+    payload: EventPayload,
+}}
+
+#[repr(C)]
+struct EventListVTable {{
+    query_interface: unsafe extern "C" fn(*mut c_void, *const Tuid, *mut *mut c_void) -> Tresult,
+    add_ref: unsafe extern "C" fn(*mut c_void) -> u32,
+    release: unsafe extern "C" fn(*mut c_void) -> u32,
+    get_event_count: unsafe extern "C" fn(*mut c_void) -> i32,
+    get_event: unsafe extern "C" fn(*mut c_void, i32, *mut Vst3Event) -> Tresult,
+    add_event: unsafe extern "C" fn(*mut c_void, *mut Vst3Event) -> Tresult,
+}}
+
+/// Gather note events as gain steps: NOTE_ON (type 0) → gain = velocity at
+/// its sample offset, NOTE_OFF (type 1) → gain = 0.0 at its sample offset —
+/// making delivered notes AND their offsets audible in the output.
+unsafe fn gather_note_steps(
+    events: *mut c_void,
+    steps: &mut [(i32, f32); GAIN_STEP_CAPACITY],
+    step_count: &mut usize,
+) {{
+    if events.is_null() {{
+        return;
+    }}
+    let list_vtable = *(events as *mut *const EventListVTable);
+    let count = ((*list_vtable).get_event_count)(events);
+    for index in 0..count {{
+        let mut event = std::mem::MaybeUninit::<Vst3Event>::zeroed();
+        if ((*list_vtable).get_event)(events, index, event.as_mut_ptr()) != K_RESULT_OK {{
+            continue;
+        }}
+        let event = event.assume_init();
+        if *step_count == GAIN_STEP_CAPACITY {{
+            break;
+        }}
+        match event.type_ {{
+            0 => {{
+                steps[*step_count] = (event.sample_offset, event.payload.note_on.velocity);
+                *step_count += 1;
+            }}
+            1 => {{
+                steps[*step_count] = (event.sample_offset, 0.0);
+                *step_count += 1;
+            }}
+            _ => {{}}
+        }}
+    }}
+}}
+
+/// Real audio processing: output = input × the LIVE Gain on every channel
+/// of the main bus pair. The gain starts at the stored value and follows
+/// the block's gathered `(offset, gain)` steps from their sample offsets
+/// (param points, IMidiMapping CC points, and note events all land here);
+/// the final step persists into later blocks.
 unsafe extern "C" fn processor_process(_this: *mut c_void, data: *mut ProcessData) -> Tresult {{
     if data.is_null() {{
         return K_RESULT_FALSE;
     }}
     let data = &*data;
-    apply_input_parameter_changes(data.input_parameter_changes);
+    let mut gain_steps = [(0i32, 0f32); GAIN_STEP_CAPACITY];
+    let mut step_count = 0usize;
+    gather_parameter_steps(data.input_parameter_changes, &mut gain_steps, &mut step_count);
+    gather_note_steps(data.input_events, &mut gain_steps, &mut step_count);
+    gain_steps[..step_count].sort_by_key(|step| step.0);
     if data.num_inputs < 1
         || data.num_outputs < 1
         || data.inputs.is_null()
@@ -754,16 +902,27 @@ unsafe extern "C" fn processor_process(_this: *mut c_void, data: *mut ProcessDat
     }}
     let frames = data.num_samples.max(0) as usize;
     let channels = input.num_channels.min(output.num_channels).max(0) as usize;
-    let gain = f32::from_bits(GAIN_BITS.load(std::sync::atomic::Ordering::SeqCst));
     for channel in 0..channels {{
         let source = *input.channel_buffers32.add(channel);
         let dest = *output.channel_buffers32.add(channel);
         if source.is_null() || dest.is_null() {{
             return K_RESULT_FALSE;
         }}
+        let mut gain = f32::from_bits(GAIN_BITS.load(std::sync::atomic::Ordering::SeqCst));
+        let mut next_step = 0usize;
         for frame in 0..frames {{
+            while next_step < step_count && gain_steps[next_step].0 as usize <= frame {{
+                gain = gain_steps[next_step].1;
+                next_step += 1;
+            }}
             *dest.add(frame) = *source.add(frame) * gain;
         }}
+    }}
+    if step_count > 0 {{
+        GAIN_BITS.store(
+            gain_steps[step_count - 1].1.to_bits(),
+            std::sync::atomic::Ordering::SeqCst,
+        );
     }}
     K_RESULT_OK
 }}

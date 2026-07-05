@@ -8,12 +8,58 @@
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Mutex;
 
-use signal_plugin::PluginParameterDescriptor;
+use signal_plugin::{
+    ControlChangeEvent, NoteEvent, NoteEventKind, PluginEvent, PluginParameterDescriptor,
+};
 use signal_plugin_au::{AuHostedInstance, AuProcessSession};
 use signal_plugin_clap::{ClapHostedInstance, ClapProcessSession};
 use signal_plugin_lv2::{Lv2HostedInstance, Lv2ProcessSession};
 use signal_plugin_vst3::{Vst3HostedInstance, Vst3ProcessSession};
-use signal_render_plane::PluginBlockProcessor;
+use signal_render_plane::{PluginBlockProcessor, RenderBlockPluginEvent, RenderPluginEventKind};
+
+/// Per-block plugin event capacity for the in-process backends' conversion
+/// scratch (mirrors the render plane's per-block cap).
+const EVENT_SCRATCH_CAPACITY: usize = 1024;
+
+/// Convert the render plane's block events into the plugin event vocabulary
+/// handed to the per-format process sessions. Values stay normalized f32
+/// here; each session downconverts (or maps) at its own format boundary.
+/// Alloc-free within the scratch's preallocated capacity (overflow drops,
+/// earliest wins).
+fn convert_block_events(events: &[RenderBlockPluginEvent], scratch: &mut Vec<PluginEvent>) {
+    scratch.clear();
+    for event in events.iter().take(EVENT_SCRATCH_CAPACITY) {
+        scratch.push(match event.kind {
+            RenderPluginEventKind::NoteOn { key, velocity } => PluginEvent::Note(NoteEvent {
+                offset_frames: event.offset_frames,
+                note_id: -1,
+                port_index: 0,
+                channel: event.channel,
+                key,
+                velocity,
+                kind: NoteEventKind::NoteOn,
+            }),
+            RenderPluginEventKind::NoteOff { key } => PluginEvent::Note(NoteEvent {
+                offset_frames: event.offset_frames,
+                note_id: -1,
+                port_index: 0,
+                channel: event.channel,
+                key,
+                velocity: 0.0,
+                kind: NoteEventKind::NoteOff,
+            }),
+            RenderPluginEventKind::ControlChange { controller, value } => {
+                PluginEvent::ControlChange(ControlChangeEvent {
+                    offset_frames: event.offset_frames,
+                    port_index: 0,
+                    channel: event.channel,
+                    controller,
+                    value,
+                })
+            }
+        });
+    }
+}
 
 /// One format-neutral plugin GUI callback drained from an in-process
 /// backend (g12.024): the union of the CLAP `clap.gui` host callbacks and
@@ -85,6 +131,9 @@ pub struct InProcessClapProcessor {
     /// instance.
     session: Mutex<ClapProcessSession>,
     instance: Mutex<ClapHostedInstance>,
+    /// Preallocated conversion scratch for per-block note/CC delivery
+    /// (taken with `try_lock` on the audio thread, like the session).
+    events_scratch: Mutex<Vec<PluginEvent>>,
     parameters: Vec<PluginParameterDescriptor>,
     max_frames: u32,
     /// Cleared at teardown so late callbacks bypass instead of racing the
@@ -124,6 +173,7 @@ impl InProcessClapProcessor {
         Ok(Self {
             session: Mutex::new(session),
             instance: Mutex::new(instance),
+            events_scratch: Mutex::new(Vec::with_capacity(EVENT_SCRATCH_CAPACITY)),
             parameters,
             max_frames,
             alive: AtomicBool::new(true),
@@ -308,6 +358,16 @@ impl Drop for InProcessClapProcessor {
 
 impl PluginBlockProcessor for InProcessClapProcessor {
     fn process(&self, scratch: &mut [f32], frame_count: usize, channels: usize) -> bool {
+        self.process_with_events(scratch, frame_count, channels, &[])
+    }
+
+    fn process_with_events(
+        &self,
+        scratch: &mut [f32],
+        frame_count: usize,
+        channels: usize,
+        events: &[RenderBlockPluginEvent],
+    ) -> bool {
         if !self.alive.load(Ordering::Relaxed)
             || channels != 2
             || frame_count > self.max_frames as usize
@@ -321,12 +381,21 @@ impl PluginBlockProcessor for InProcessClapProcessor {
             self.misses.fetch_add(1, Ordering::Relaxed);
             return false;
         };
+        let Ok(mut events_scratch) = self.events_scratch.try_lock() else {
+            self.misses.fetch_add(1, Ordering::Relaxed);
+            return false;
+        };
         if !session.is_processing() && session.start().is_err() {
             self.misses.fetch_add(1, Ordering::Relaxed);
             return false;
         }
+        convert_block_events(events, &mut events_scratch);
         let samples = frame_count * channels;
-        if session.process_in_place(&mut scratch[..samples], frame_count) {
+        if session.process_in_place_with_events(
+            &mut scratch[..samples],
+            frame_count,
+            &events_scratch,
+        ) {
             true
         } else {
             self.misses.fetch_add(1, Ordering::Relaxed);
@@ -349,6 +418,12 @@ pub struct InProcessVst3Processor {
     /// Field order matters: the session must drop before the instance.
     session: Mutex<Vst3ProcessSession>,
     instance: Mutex<Vst3HostedInstance>,
+    /// Preallocated conversion scratch for per-block note/CC delivery
+    /// (taken with `try_lock` on the audio thread, like the session).
+    events_scratch: Mutex<Vec<PluginEvent>>,
+    /// Whether the controller exposed an `IMidiMapping` at load (CC events
+    /// deliver as mapped parameter changes; without one they drop).
+    midi_cc_mapping: bool,
     parameters: Vec<PluginParameterDescriptor>,
     max_frames: u32,
     /// Cleared at teardown so late callbacks bypass instead of racing the
@@ -386,9 +461,12 @@ impl InProcessVst3Processor {
             .map_err(|error| error.token)?;
         let session = instance.process_session().map_err(|error| error.token)?;
         let parameters = instance.parameters().to_vec();
+        let midi_cc_mapping = instance.midi_cc_mapping_available();
         Ok(Self {
             session: Mutex::new(session),
             instance: Mutex::new(instance),
+            events_scratch: Mutex::new(Vec::with_capacity(EVENT_SCRATCH_CAPACITY)),
+            midi_cc_mapping,
             parameters,
             max_frames,
             alive: AtomicBool::new(true),
@@ -399,6 +477,15 @@ impl InProcessVst3Processor {
     /// Parameter inventory enumerated at load.
     pub fn parameters(&self) -> &[PluginParameterDescriptor] {
         &self.parameters
+    }
+
+    /// Whether the plugin exposed a VST3 `IMidiMapping` at load: with one,
+    /// delivered CC events reach the DSP as mapped parameter changes;
+    /// without one CC events drop (VST3 has no input CC event type) — the
+    /// honest fallback, surfaced so hosts can tell users why a CC lane is
+    /// inert on this plugin.
+    pub fn midi_cc_mapping_available(&self) -> bool {
+        self.midi_cc_mapping
     }
 
     /// Queue one normalized 0..1 parameter write (g12.023): syncs the edit
@@ -551,6 +638,16 @@ impl Drop for InProcessVst3Processor {
 
 impl PluginBlockProcessor for InProcessVst3Processor {
     fn process(&self, scratch: &mut [f32], frame_count: usize, channels: usize) -> bool {
+        self.process_with_events(scratch, frame_count, channels, &[])
+    }
+
+    fn process_with_events(
+        &self,
+        scratch: &mut [f32],
+        frame_count: usize,
+        channels: usize,
+        events: &[RenderBlockPluginEvent],
+    ) -> bool {
         if !self.alive.load(Ordering::Relaxed)
             || channels != 2
             || frame_count > self.max_frames as usize
@@ -564,12 +661,21 @@ impl PluginBlockProcessor for InProcessVst3Processor {
             self.misses.fetch_add(1, Ordering::Relaxed);
             return false;
         };
+        let Ok(mut events_scratch) = self.events_scratch.try_lock() else {
+            self.misses.fetch_add(1, Ordering::Relaxed);
+            return false;
+        };
         if !session.is_processing() && session.start().is_err() {
             self.misses.fetch_add(1, Ordering::Relaxed);
             return false;
         }
+        convert_block_events(events, &mut events_scratch);
         let samples = frame_count * channels;
-        if session.process_in_place(&mut scratch[..samples], frame_count) {
+        if session.process_in_place_with_events(
+            &mut scratch[..samples],
+            frame_count,
+            &events_scratch,
+        ) {
             true
         } else {
             self.misses.fetch_add(1, Ordering::Relaxed);
@@ -594,6 +700,9 @@ pub struct InProcessAuProcessor {
     /// session's drop uninstalls the render callback from the live unit).
     session: Mutex<AuProcessSession>,
     instance: Mutex<AuHostedInstance>,
+    /// Preallocated conversion scratch for per-block note/CC delivery
+    /// (taken with `try_lock` on the audio thread, like the session).
+    events_scratch: Mutex<Vec<PluginEvent>>,
     parameters: Vec<PluginParameterDescriptor>,
     max_frames: u32,
     /// Cleared at teardown so late callbacks bypass instead of racing the
@@ -635,6 +744,7 @@ impl InProcessAuProcessor {
         Ok(Self {
             session: Mutex::new(session),
             instance: Mutex::new(instance),
+            events_scratch: Mutex::new(Vec::with_capacity(EVENT_SCRATCH_CAPACITY)),
             parameters,
             max_frames,
             alive: AtomicBool::new(true),
@@ -790,6 +900,16 @@ impl Drop for InProcessAuProcessor {
 
 impl PluginBlockProcessor for InProcessAuProcessor {
     fn process(&self, scratch: &mut [f32], frame_count: usize, channels: usize) -> bool {
+        self.process_with_events(scratch, frame_count, channels, &[])
+    }
+
+    fn process_with_events(
+        &self,
+        scratch: &mut [f32],
+        frame_count: usize,
+        channels: usize,
+        events: &[RenderBlockPluginEvent],
+    ) -> bool {
         if !self.alive.load(Ordering::Relaxed)
             || channels != 2
             || frame_count > self.max_frames as usize
@@ -803,12 +923,21 @@ impl PluginBlockProcessor for InProcessAuProcessor {
             self.misses.fetch_add(1, Ordering::Relaxed);
             return false;
         };
+        let Ok(mut events_scratch) = self.events_scratch.try_lock() else {
+            self.misses.fetch_add(1, Ordering::Relaxed);
+            return false;
+        };
         if !session.is_processing() && session.start().is_err() {
             self.misses.fetch_add(1, Ordering::Relaxed);
             return false;
         }
+        convert_block_events(events, &mut events_scratch);
         let samples = frame_count * channels;
-        if session.process_in_place(&mut scratch[..samples], frame_count) {
+        if session.process_in_place_with_events(
+            &mut scratch[..samples],
+            frame_count,
+            &events_scratch,
+        ) {
             true
         } else {
             self.misses.fetch_add(1, Ordering::Relaxed);
@@ -973,7 +1102,9 @@ mod tests {
     use signal_plugin_vst3::fixture::{
         compile_vst3_fixture, VST3_FIXTURE_CLASS_ID_HEX, VST3_FIXTURE_GAIN,
     };
-    use signal_render_plane::RenderPluginProcessor;
+    use signal_render_plane::{
+        RenderBlockPluginEvent, RenderPluginEventKind, RenderPluginProcessor,
+    };
     use std::sync::Arc;
 
     #[test]
@@ -1105,6 +1236,209 @@ mod tests {
                 .unwrap_err(),
             "backend_dead",
         );
+
+        drop(handle);
+        drop(backend);
+        let _ = std::fs::remove_dir_all(&directory);
+    }
+
+    /// g12.034 follow-up: note + CC delivery through the CLAP in-process
+    /// backend, sample-offset accurate. The fixture turns note events and
+    /// MIDI CC7 into gain steps applied FROM the event's intra-block time,
+    /// so the output proves the decoded bytes AND the offsets.
+    #[test]
+    fn in_process_clap_note_and_cc_events_reach_the_dsp_at_their_offsets() {
+        if !rustc_available() {
+            eprintln!("skipping: rustc unavailable for the CLAP fixture");
+            return;
+        }
+        let directory = std::env::temp_dir().join(format!(
+            "signal-plugin-bridge-inproc-events-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_nanos(),
+        ));
+        let library = compile_clap_fixture(
+            &directory,
+            "com.signal.bridge-inproc-events",
+            "Signal Bridge InProc Events",
+            0,
+        )
+        .expect("fixture should compile");
+
+        let backend = Arc::new(
+            InProcessClapProcessor::load_and_activate(
+                &library,
+                "com.signal.bridge-inproc-events",
+                48_000,
+                256,
+            )
+            .expect("backend should load and activate"),
+        );
+        let handle =
+            signal_render_plane::RenderPluginProcessor::new(Arc::clone(&backend) as Arc<_>);
+
+        // Note-on velocity 0.25 at frame 64: gain steps 0.5 → 0.25 there.
+        let reference: Vec<f32> = (0..256).map(|index| index as f32 / 256.0).collect();
+        let mut scratch = reference.clone();
+        assert!(handle.process_with_events(
+            &mut scratch,
+            128,
+            2,
+            &[RenderBlockPluginEvent {
+                offset_frames: 64,
+                channel: 0,
+                kind: RenderPluginEventKind::NoteOn {
+                    key: 60,
+                    velocity: 0.25,
+                },
+            }],
+        ));
+        for frame in 0..128 {
+            let expected_gain = if frame < 64 { CLAP_FIXTURE_GAIN } else { 0.25 };
+            for channel in 0..2 {
+                let index = frame * 2 + channel;
+                assert!(
+                    (scratch[index] - reference[index] * expected_gain).abs() < 1e-6,
+                    "frame {frame}: {} vs {} * {expected_gain}",
+                    scratch[index],
+                    reference[index],
+                );
+            }
+        }
+
+        // CC7 value 96/127 at frame 32: the boundary downconversion
+        // (f32 0..1 → round(value·127)) must land byte-exact.
+        let cc_value = 96.0f32 / 127.0;
+        let mut scratch = reference.clone();
+        assert!(handle.process_with_events(
+            &mut scratch,
+            128,
+            2,
+            &[RenderBlockPluginEvent {
+                offset_frames: 32,
+                channel: 0,
+                kind: RenderPluginEventKind::ControlChange {
+                    controller: 7,
+                    value: cc_value,
+                },
+            }],
+        ));
+        for frame in 0..128 {
+            // Gain persisted from the previous block's note-on (0.25).
+            let expected_gain = if frame < 32 { 0.25 } else { 96.0 / 127.0 };
+            let index = frame * 2;
+            assert!(
+                (scratch[index] - reference[index] * expected_gain).abs() < 1e-6,
+                "frame {frame}: {} vs {} * {expected_gain}",
+                scratch[index],
+                reference[index],
+            );
+        }
+        assert_eq!(backend.miss_count(), 0);
+
+        drop(handle);
+        drop(backend);
+        let _ = std::fs::remove_dir_all(&directory);
+    }
+
+    /// g12.034 follow-up, VST3: notes ride the input IEventList; CC 7 maps
+    /// through the fixture's IMidiMapping onto the Gain param and rides
+    /// IParameterChanges with the event's sample offset — the value stays
+    /// 32-bit float end to end (no 7-bit quantization on this path).
+    #[test]
+    fn in_process_vst3_note_and_cc_events_reach_the_dsp_at_their_offsets() {
+        if !rustc_available() {
+            eprintln!("skipping: rustc unavailable for the VST3 fixture");
+            return;
+        }
+        let directory = std::env::temp_dir().join(format!(
+            "signal-plugin-bridge-inproc-vst3-events-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_nanos(),
+        ));
+        let bundle = compile_vst3_fixture(
+            &directory,
+            "plugin:vst3:bridge-inproc-events",
+            "Signal Bridge InProc VST3 Events",
+        )
+        .expect("vst3 fixture should compile");
+
+        let backend = Arc::new(
+            InProcessVst3Processor::load_and_activate(
+                &bundle,
+                VST3_FIXTURE_CLASS_ID_HEX,
+                48_000,
+                256,
+            )
+            .expect("backend should load and activate"),
+        );
+        assert!(
+            backend.midi_cc_mapping_available(),
+            "fixture exposes IMidiMapping",
+        );
+        let handle =
+            signal_render_plane::RenderPluginProcessor::new(Arc::clone(&backend) as Arc<_>);
+
+        // Note-on velocity 0.25 at frame 64 (input IEventList).
+        let reference: Vec<f32> = (0..256).map(|index| index as f32 / 256.0).collect();
+        let mut scratch = reference.clone();
+        assert!(handle.process_with_events(
+            &mut scratch,
+            128,
+            2,
+            &[RenderBlockPluginEvent {
+                offset_frames: 64,
+                channel: 0,
+                kind: RenderPluginEventKind::NoteOn {
+                    key: 60,
+                    velocity: 0.25,
+                },
+            }],
+        ));
+        for frame in 0..128 {
+            let expected_gain = if frame < 64 { VST3_FIXTURE_GAIN } else { 0.25 };
+            let index = frame * 2;
+            assert!(
+                (scratch[index] - reference[index] * expected_gain).abs() < 1e-6,
+                "frame {frame}: {} vs {} * {expected_gain}",
+                scratch[index],
+                reference[index],
+            );
+        }
+
+        // CC7 0.8 at frame 32 → IMidiMapping → Gain param point at offset
+        // 32 carrying the full float value.
+        let mut scratch = reference.clone();
+        assert!(handle.process_with_events(
+            &mut scratch,
+            128,
+            2,
+            &[RenderBlockPluginEvent {
+                offset_frames: 32,
+                channel: 0,
+                kind: RenderPluginEventKind::ControlChange {
+                    controller: signal_plugin_vst3::fixture::VST3_FIXTURE_GAIN_CC,
+                    value: 0.8,
+                },
+            }],
+        ));
+        for frame in 0..128 {
+            let expected_gain = if frame < 32 { 0.25 } else { 0.8 };
+            let index = frame * 2;
+            assert!(
+                (scratch[index] - reference[index] * expected_gain).abs() < 1e-6,
+                "frame {frame}: {} vs {} * {expected_gain}",
+                scratch[index],
+                reference[index],
+            );
+        }
+        assert_eq!(backend.miss_count(), 0);
 
         drop(handle);
         drop(backend);
@@ -1638,6 +1972,41 @@ mod tests {
             assert!(
                 (output - input).abs() <= 1e-6,
                 "sample {index}: {output} vs {input} (identity, epsilon 1e-6)",
+            );
+        }
+        assert_eq!(backend.miss_count(), 0);
+
+        // g12.034 follow-up, AU honest fallback: AUDelay is a plain effect
+        // that refuses MusicDeviceMIDIEvent per event — delivered note/CC
+        // events must not crash or disturb the audio path.
+        let mut scratch = reference.clone();
+        assert!(handle.process_with_events(
+            &mut scratch,
+            128,
+            2,
+            &[
+                RenderBlockPluginEvent {
+                    offset_frames: 0,
+                    channel: 0,
+                    kind: RenderPluginEventKind::NoteOn {
+                        key: 60,
+                        velocity: 1.0,
+                    },
+                },
+                RenderBlockPluginEvent {
+                    offset_frames: 64,
+                    channel: 0,
+                    kind: RenderPluginEventKind::ControlChange {
+                        controller: 7,
+                        value: 0.5,
+                    },
+                },
+            ],
+        ));
+        for (index, (output, input)) in scratch.iter().zip(reference.iter()).enumerate() {
+            assert!(
+                (output - input).abs() <= 1e-6,
+                "sample {index}: {output} vs {input} (identity after refused MIDI)",
             );
         }
         assert_eq!(backend.miss_count(), 0);

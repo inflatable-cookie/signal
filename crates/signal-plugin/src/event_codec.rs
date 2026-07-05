@@ -1,7 +1,7 @@
 use crate::{
-    MidiEvent, NoteEvent, NoteEventKind, NoteExpressionEvent, NoteExpressionKind,
-    ParameterGestureEvent, ParameterGesturePhase, ParameterModulationEvent, ParameterValueEvent,
-    PluginEvent,
+    ControlChangeEvent, MidiEvent, NoteEvent, NoteEventKind, NoteExpressionEvent,
+    NoteExpressionKind, ParameterGestureEvent, ParameterGesturePhase, ParameterModulationEvent,
+    ParameterValueEvent, PluginEvent,
 };
 
 const ENCODED_BYTES: usize = 24;
@@ -70,6 +70,14 @@ pub fn write_event_to_slice(event: &PluginEvent, bytes: &mut [u8]) -> Result<(),
             bytes[8] = event.status;
             bytes[9] = event.data1;
             bytes[10] = event.data2;
+        }
+        PluginEvent::ControlChange(event) => {
+            bytes[0] = 7;
+            bytes[4..8].copy_from_slice(&event.offset_frames.to_le_bytes());
+            bytes[8..10].copy_from_slice(&event.port_index.to_le_bytes());
+            bytes[10] = event.channel;
+            bytes[11] = event.controller;
+            bytes[12..16].copy_from_slice(&event.value.to_le_bytes());
         }
     }
     Ok(())
@@ -204,6 +212,46 @@ pub fn read_event_from_slice(bytes: &[u8]) -> Result<PluginEvent, &'static str> 
             data1: bytes[9],
             data2: bytes[10],
         })),
+        7 => Ok(PluginEvent::ControlChange(ControlChangeEvent {
+            offset_frames: u32::from_le_bytes(
+                bytes[4..8]
+                    .try_into()
+                    .map_err(|_| "control change offset decode")?,
+            ),
+            port_index: u16::from_le_bytes(
+                bytes[8..10]
+                    .try_into()
+                    .map_err(|_| "control change port decode")?,
+            ),
+            channel: bytes[10],
+            controller: bytes[11],
+            value: f32::from_le_bytes(
+                bytes[12..16]
+                    .try_into()
+                    .map_err(|_| "control change value decode")?,
+            ),
+        })),
         _ => Err("unknown plugin event type"),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// g12.034 follow-up: the ControlChange wire encoding round-trips with
+    /// its 32-bit value intact (the shm tier must never quantize CC).
+    #[test]
+    fn control_change_events_round_trip_through_the_wire_codec() {
+        let event = PluginEvent::ControlChange(ControlChangeEvent {
+            offset_frames: 123,
+            port_index: 2,
+            channel: 5,
+            controller: 64,
+            value: 0.734_251,
+        });
+        let mut bytes = [0u8; PluginEvent::ENCODED_BYTES];
+        write_event_to_slice(&event, &mut bytes).expect("encode fits");
+        assert_eq!(read_event_from_slice(&bytes).expect("decodes"), event);
     }
 }

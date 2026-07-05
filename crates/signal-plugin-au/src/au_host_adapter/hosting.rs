@@ -362,6 +362,13 @@ pub(crate) mod ffi {
             inBufferOffsetInFrames: u32,
         ) -> OSStatus;
         pub fn AudioUnitReset(inUnit: AudioUnit, inScope: u32, inElement: u32) -> OSStatus;
+        pub fn MusicDeviceMIDIEvent(
+            inUnit: AudioUnit,
+            inStatus: u32,
+            inData1: u32,
+            inData2: u32,
+            inOffsetSampleFrame: u32,
+        ) -> OSStatus;
     }
 
     #[link(name = "CoreFoundation", kind = "framework")]
@@ -1258,6 +1265,63 @@ impl AuProcessSession {
     /// success; on unit error the buffer is left untouched (bypass
     /// semantics). Alloc-free. `true` = buffer transformed.
     pub fn process_in_place(&mut self, io: &mut [f32], frame_count: usize) -> bool {
+        self.process_in_place_with_events(io, frame_count, &[])
+    }
+
+    /// [`Self::process_in_place`] with a per-block plugin event slice
+    /// (sorted by `offset_frames`): each note/CC event is scheduled onto
+    /// the unit through `MusicDeviceMIDIEvent` with its intra-block offset
+    /// frame BEFORE the render pull. This is the AU MIDI 1.0 downconversion
+    /// boundary (velocity/value → `round(x * 127)`). Units that do not
+    /// accept MIDI (plain effects) refuse per event; the audio path is
+    /// unaffected — the honest fallback. Alloc-free.
+    pub fn process_in_place_with_events(
+        &mut self,
+        io: &mut [f32],
+        frame_count: usize,
+        events: &[signal_plugin::PluginEvent],
+    ) -> bool {
+        #[cfg(target_os = "macos")]
+        {
+            use signal_plugin::{NoteEventKind, PluginEvent};
+            for event in events {
+                let (status, data1, data2, offset) = match event {
+                    PluginEvent::Note(note) => {
+                        let status = match note.kind {
+                            NoteEventKind::NoteOn => 0x90,
+                            NoteEventKind::NoteOff => 0x80,
+                        };
+                        (
+                            status | u32::from(note.channel & 0x0F),
+                            u32::from(note.key & 0x7F),
+                            (note.velocity.clamp(0.0, 1.0) * 127.0).round() as u32,
+                            note.offset_frames,
+                        )
+                    }
+                    PluginEvent::ControlChange(change) => (
+                        0xB0 | u32::from(change.channel & 0x0F),
+                        u32::from(change.controller & 0x7F),
+                        (change.value.clamp(0.0, 1.0) * 127.0).round() as u32,
+                        change.offset_frames,
+                    ),
+                    PluginEvent::Midi(midi) => (
+                        u32::from(midi.status),
+                        u32::from(midi.data1),
+                        u32::from(midi.data2),
+                        midi.offset_frames,
+                    ),
+                    _ => continue,
+                };
+                // Per-event refusal (e.g. an effect unit without MIDI
+                // input) is tolerated: audio must keep flowing.
+                let _ =
+                    unsafe { ffi::MusicDeviceMIDIEvent(self.unit, status, data1, data2, offset) };
+            }
+        }
+        #[cfg(not(target_os = "macos"))]
+        {
+            let _ = events;
+        }
         #[cfg(target_os = "macos")]
         {
             let frames = frame_count.min(self.input.left.len()).min(io.len() / 2);

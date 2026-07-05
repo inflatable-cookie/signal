@@ -15,8 +15,10 @@ use std::time::Duration;
 
 use signal_hardware::{FakeClockedBackend, OutputStreamBackend, OutputStreamSpec};
 use signal_render_plane::{
-    render_plane, ChannelFormat, RenderClipSpec, RenderEdgeSpec, RenderNote, RenderNoteBuffer,
-    RenderPlanSpec, RenderSampleBuffer, RenderSource, RenderStageKind, RenderStageSpec,
+    render_plane, ChannelFormat, PluginBlockProcessor, RenderBlockPluginEvent, RenderClipSpec,
+    RenderEdgeSpec, RenderNote, RenderNoteBuffer, RenderPlanSpec, RenderPluginEvent,
+    RenderPluginEventBuffer, RenderPluginEventKind, RenderPluginProcessor, RenderSampleBuffer,
+    RenderSource, RenderStageKind, RenderStageSpec,
 };
 
 const SAMPLE_RATE_HZ: u32 = 48_000;
@@ -24,9 +26,41 @@ const BLOCK_FRAMES: u32 = 256;
 const LANE_ID: u64 = 1;
 const NOTES_LANE_ID: u64 = 2;
 const WARPED_LANE_ID: u64 = 3;
+const INSERT_ID: u64 = 4;
 const MASTER_ID: u64 = 100;
 
-fn tone_plan() -> RenderPlanSpec {
+/// Identity insert backend counting delivered per-block events (g12.034
+/// follow-up): the CC-active soak lane must deliver its stream with zero
+/// misses under sustained clocked load.
+struct CountingEventProcessor {
+    events_seen: AtomicU64,
+    calls: AtomicU64,
+}
+
+impl PluginBlockProcessor for CountingEventProcessor {
+    fn process(&self, _scratch: &mut [f32], _frames: usize, _channels: usize) -> bool {
+        self.calls.fetch_add(1, Ordering::Relaxed);
+        true
+    }
+
+    fn process_with_events(
+        &self,
+        _scratch: &mut [f32],
+        _frames: usize,
+        _channels: usize,
+        events: &[RenderBlockPluginEvent],
+    ) -> bool {
+        self.calls.fetch_add(1, Ordering::Relaxed);
+        self.events_seen
+            .fetch_add(events.len() as u64, Ordering::Relaxed);
+        true
+    }
+}
+
+fn tone_plan(
+    insert: RenderPluginProcessor,
+    insert_events: RenderPluginEventBuffer,
+) -> RenderPlanSpec {
     // Notes lane (g11.011): overlapping stateless voices sound for the whole
     // soak, so the note overlap scan and per-voice synthesis run under
     // sustained clocked load alongside the tone.
@@ -56,6 +90,7 @@ fn tone_plan() -> RenderPlanSpec {
         stages: vec![
             RenderStageSpec {
                 processor: None,
+                events: None,
                 stage_id: LANE_ID,
                 format: ChannelFormat::stereo(),
                 gain: 0.5,
@@ -75,6 +110,7 @@ fn tone_plan() -> RenderPlanSpec {
             },
             RenderStageSpec {
                 processor: None,
+                events: None,
                 stage_id: NOTES_LANE_ID,
                 format: ChannelFormat::stereo(),
                 gain: 0.3,
@@ -94,6 +130,7 @@ fn tone_plan() -> RenderPlanSpec {
             },
             RenderStageSpec {
                 processor: None,
+                events: None,
                 stage_id: WARPED_LANE_ID,
                 format: ChannelFormat::stereo(),
                 gain: 0.3,
@@ -115,8 +152,27 @@ fn tone_plan() -> RenderPlanSpec {
                 },
                 inputs: Vec::new(),
             },
+            // CC-active insert (g12.034 follow-up): the notes lane flows
+            // through an identity plugin insert carrying a dense CC event
+            // stream, so per-block event slicing and delivery run under the
+            // same sustained clocked load.
+            RenderStageSpec {
+                processor: Some(insert),
+                events: Some(insert_events),
+                stage_id: INSERT_ID,
+                format: ChannelFormat::stereo(),
+                gain: 1.0,
+                gain_automation: None,
+                kind: RenderStageKind::Sum,
+                inputs: vec![RenderEdgeSpec {
+                    source_stage_id: NOTES_LANE_ID,
+                    gain: 1.0,
+                    matrix: None,
+                }],
+            },
             RenderStageSpec {
                 processor: None,
+                events: None,
                 stage_id: MASTER_ID,
                 format: ChannelFormat::stereo(),
                 gain: 1.0,
@@ -129,7 +185,7 @@ fn tone_plan() -> RenderPlanSpec {
                         matrix: None,
                     },
                     RenderEdgeSpec {
-                        source_stage_id: NOTES_LANE_ID,
+                        source_stage_id: INSERT_ID,
                         gain: 1.0,
                         matrix: None,
                     },
@@ -181,7 +237,28 @@ fn clocked_soak_advances_health_counters_and_meters() {
     controller
         .set_stream_channels(stream.channels())
         .expect("record stream channels");
-    controller.install_plan(&tone_plan()).expect("install plan");
+    // Dense CC lane: one CC event every 50 frames for the whole soak.
+    let insert_backend = Arc::new(CountingEventProcessor {
+        events_seen: AtomicU64::new(0),
+        calls: AtomicU64::new(0),
+    });
+    let cc_events: Vec<RenderPluginEvent> = (0..4_000u64)
+        .map(|index| RenderPluginEvent {
+            frame: index * 50,
+            channel: 0,
+            kind: RenderPluginEventKind::ControlChange {
+                controller: 1,
+                value: (index % 128) as f32 / 127.0,
+            },
+        })
+        .collect();
+    let plan = tone_plan(
+        RenderPluginProcessor::new(Arc::clone(&insert_backend) as Arc<_>),
+        RenderPluginEventBuffer {
+            events: cc_events.into(),
+        },
+    );
+    controller.install_plan(&plan).expect("install plan");
     controller.set_playing(true).expect("play");
 
     // ~1.5 s of simulated callbacks (256 frames ≈ 5.3 ms per block).
@@ -231,11 +308,21 @@ fn clocked_soak_advances_health_counters_and_meters() {
         "xruns must stop accruing once cadence recovers, saw +{xrun_delta}",
     );
 
+    // CC-active insert lane: every playing block delivered its event slice
+    // (identity backend, so zero misses possible) and the stream advanced —
+    // one CC per 50 frames means hundreds of events by now.
+    let delivered = insert_backend.events_seen.load(Ordering::Relaxed);
+    assert!(
+        delivered >= 100,
+        "CC-active insert should have received a dense stream, saw {delivered}",
+    );
+    assert!(insert_backend.calls.load(Ordering::Relaxed) > 0);
+
     let meters = controller.meters();
     assert_eq!(
         meters.len(),
-        4,
-        "tone lane + notes lane + warped lane + master metered"
+        5,
+        "tone lane + notes lane + warped lane + insert + master metered"
     );
     let warped = meters
         .iter()

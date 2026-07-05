@@ -37,6 +37,7 @@ fn plan_with_processor(processor: RenderPluginProcessor) -> RenderPlanSpec {
         stages: vec![
             RenderStageSpec {
                 processor: None,
+                events: None,
                 stage_id: LANE_ID,
                 format: ChannelFormat::stereo(),
                 gain: 0.5,
@@ -57,6 +58,7 @@ fn plan_with_processor(processor: RenderPluginProcessor) -> RenderPlanSpec {
             // The VST3 fixture processes every block of this Sum stage.
             RenderStageSpec {
                 processor: Some(processor),
+                events: None,
                 stage_id: INSERT_ID,
                 format: ChannelFormat::stereo(),
                 gain: 1.0,
@@ -70,6 +72,7 @@ fn plan_with_processor(processor: RenderPluginProcessor) -> RenderPlanSpec {
             },
             RenderStageSpec {
                 processor: None,
+                events: None,
                 stage_id: MASTER_ID,
                 format: ChannelFormat::stereo(),
                 gain: 1.0,

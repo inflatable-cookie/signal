@@ -177,6 +177,89 @@ impl PartialEq for RenderNoteBuffer {
     }
 }
 
+// ── Plugin event delivery (g12.034 follow-up) ───────────────────────────────
+//
+// Stages carrying a plugin processor may also carry a compiled event stream
+// (notes + MIDI CC from the consumer's model). The executor slices the
+// stream per block and hands the slice to the processor with intra-block
+// sample offsets; the processing backend converts to each plugin format's
+// native event lists AT THAT BOUNDARY (the model value stays 32-bit float
+// 0..1 here — no 7-bit MIDI quantization inside the engine).
+
+/// What one compiled plugin event does. Values stay normalized floats;
+/// downconversion to MIDI 1.0 bytes (where a format needs it) happens in
+/// the plugin backend, never here.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum RenderPluginEventKind {
+    /// Note starts sounding.
+    NoteOn {
+        /// MIDI key number (0–127).
+        key: u8,
+        /// Velocity in `0..=1`.
+        velocity: f32,
+    },
+    /// Note released.
+    NoteOff {
+        /// MIDI key number (0–127).
+        key: u8,
+    },
+    /// Continuous-controller change.
+    ControlChange {
+        /// MIDI controller number (0–127).
+        controller: u8,
+        /// Controller value in `0..=1` (32-bit; quantized only at the
+        /// plugin-format boundary).
+        value: f32,
+    },
+}
+
+/// One compiled plugin event on the ABSOLUTE stream clock (the consumer
+/// projects ticks to samples at compile; clip windows are already applied).
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct RenderPluginEvent {
+    /// Absolute stream-clock frame the event fires at.
+    pub frame: u64,
+    /// MIDI channel (0–15).
+    pub channel: u8,
+    /// What the event does.
+    pub kind: RenderPluginEventKind,
+}
+
+/// Shared immutable event stream for one processor stage, sorted by `frame`
+/// (compile validates and rejects unsorted buffers).
+///
+/// Equality is pointer-based (like [`RenderNoteBuffer`]): hosts cache one
+/// buffer per content hash so recompiled specs stay idempotent.
+#[derive(Clone, Debug)]
+pub struct RenderPluginEventBuffer {
+    /// Events sorted by `frame`.
+    pub events: Arc<[RenderPluginEvent]>,
+}
+
+impl PartialEq for RenderPluginEventBuffer {
+    fn eq(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.events, &other.events)
+    }
+}
+
+/// One plugin event scheduled within the CURRENT block: the absolute frame
+/// resolved to an offset from the block (or loop-segment) start. This is
+/// the slice element handed to [`PluginBlockProcessor::process_with_events`].
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct RenderBlockPluginEvent {
+    /// Frame offset within the current block at which the event fires.
+    pub offset_frames: u32,
+    /// MIDI channel (0–15).
+    pub channel: u8,
+    /// What the event does.
+    pub kind: RenderPluginEventKind,
+}
+
+/// Per-stage, per-block plugin event capacity. The executor's event scratch
+/// is preallocated at this size (audio thread never allocates); events past
+/// the cap in one block are dropped, earliest-first wins.
+pub const PLUGIN_EVENTS_PER_BLOCK_CAPACITY: usize = 1024;
+
 // ── Disk-streaming clip sources (chunk mailbox) ─────────────────────────────
 //
 // Long media plays through [`RenderSource::Stream`]: a control-side feeder
@@ -608,6 +691,23 @@ const LOOP_WRAP_FADE_FRAMES: usize = 64;
 pub trait PluginBlockProcessor: Send + Sync {
     /// Process one block in place; `false` = bypass, scratch untouched.
     fn process(&self, scratch: &mut [f32], frame_count: usize, channels: usize) -> bool;
+
+    /// Process one block in place, delivering `events` (sorted by
+    /// `offset_frames`, all offsets `< frame_count`) alongside the audio.
+    /// Backends convert to their plugin format's native event lists here —
+    /// this is the MIDI 1.0 downconversion boundary. The default drops the
+    /// events and processes audio only (backends without event transport —
+    /// the shared-memory tier today — stay bypass-correct for audio).
+    fn process_with_events(
+        &self,
+        scratch: &mut [f32],
+        frame_count: usize,
+        channels: usize,
+        events: &[RenderBlockPluginEvent],
+    ) -> bool {
+        let _ = events;
+        self.process(scratch, frame_count, channels)
+    }
 }
 
 /// Arc handle to a plugin processing backend, carried by
@@ -632,6 +732,21 @@ impl RenderPluginProcessor {
     #[inline]
     pub fn process(&self, scratch: &mut [f32], frame_count: usize, channels: usize) -> bool {
         self.inner.process(scratch, frame_count, channels)
+    }
+
+    /// Process one block in place with a per-block event slice; `false` =
+    /// bypass (scratch untouched). Backends without event transport ignore
+    /// the events (trait default).
+    #[inline]
+    pub fn process_with_events(
+        &self,
+        scratch: &mut [f32],
+        frame_count: usize,
+        channels: usize,
+        events: &[RenderBlockPluginEvent],
+    ) -> bool {
+        self.inner
+            .process_with_events(scratch, frame_count, channels, events)
     }
 }
 
@@ -827,6 +942,12 @@ pub struct RenderStageSpec {
     /// `false`) leaves the scratch untouched, so absent/bypassed processors
     /// keep the golden render hash unchanged.
     pub processor: Option<RenderPluginProcessor>,
+    /// Optional compiled plugin event stream (notes + CC on the absolute
+    /// stream clock, sorted by frame) delivered to `processor` per block
+    /// with intra-block sample offsets. Valid only alongside a processor —
+    /// compile rejects events without one. `None` keeps the pre-event
+    /// behavior bit-identical.
+    pub events: Option<RenderPluginEventBuffer>,
 }
 
 /// Optional soft limiter guarding the hardware boundary. Mechanism only —
@@ -879,6 +1000,7 @@ impl RenderPlanSpec {
                 || old.kind != new.kind
                 || old.inputs != new.inputs
                 || old.processor != new.processor
+                || old.events != new.events
             {
                 return None;
             }
@@ -929,6 +1051,10 @@ pub enum RenderPlanCompileError {
     },
     /// A plugin processor was attached to a non-Sum stage.
     ProcessorOnNonSumStage(u64),
+    /// A plugin event stream was attached to a stage without a processor.
+    EventsWithoutProcessor(u64),
+    /// A plugin event buffer is not sorted by `frame`.
+    UnsortedEvents(u64),
     /// A `Warped` source wraps something other than `Samples` or `Stream`.
     WarpedSourceUnsupported {
         /// Stage owning the clip.
@@ -979,6 +1105,14 @@ impl std::fmt::Display for RenderPlanCompileError {
             RenderPlanCompileError::ProcessorOnNonSumStage(stage_id) => write!(
                 formatter,
                 "stage {stage_id} attaches a plugin processor but is not a Sum stage",
+            ),
+            RenderPlanCompileError::EventsWithoutProcessor(stage_id) => write!(
+                formatter,
+                "stage {stage_id} attaches plugin events without a plugin processor",
+            ),
+            RenderPlanCompileError::UnsortedEvents(stage_id) => write!(
+                formatter,
+                "stage {stage_id} plugin events are not sorted by frame",
             ),
             RenderPlanCompileError::WarpedSourceUnsupported { stage_id, clip_id } => write!(
                 formatter,
@@ -1102,6 +1236,13 @@ struct CompiledNode {
     inputs: Vec<CompiledInput>,
     /// Plugin processor applied to the summed scratch (Sum stages only).
     processor: Option<RenderPluginProcessor>,
+    /// Compiled plugin event stream (absolute frames, sorted); empty when
+    /// the stage carries none. Shared with the spec's Arc — no copy.
+    events: Arc<[RenderPluginEvent]>,
+    /// Preallocated per-block event slice handed to the processor
+    /// ([`PLUGIN_EVENTS_PER_BLOCK_CAPACITY`]); the audio thread only ever
+    /// clears and pushes within capacity.
+    event_scratch: Vec<RenderBlockPluginEvent>,
     /// Interleaved scratch at the stage's format: `MAX_BLOCK_FRAMES × channels`.
     scratch: Vec<f32>,
 }
@@ -1172,6 +1313,20 @@ impl RenderPlan {
                 return Err(RenderPlanCompileError::ProcessorOnNonSumStage(
                     stage.stage_id,
                 ));
+            }
+            if let Some(events) = &stage.events {
+                if stage.processor.is_none() {
+                    return Err(RenderPlanCompileError::EventsWithoutProcessor(
+                        stage.stage_id,
+                    ));
+                }
+                if events
+                    .events
+                    .windows(2)
+                    .any(|pair| pair[0].frame > pair[1].frame)
+                {
+                    return Err(RenderPlanCompileError::UnsortedEvents(stage.stage_id));
+                }
             }
         }
         let position_of = |stage_id: u64| -> Option<usize> {
@@ -1435,6 +1590,16 @@ impl RenderPlan {
                 clips,
                 inputs,
                 processor: stage.processor.clone(),
+                events: stage
+                    .events
+                    .as_ref()
+                    .map(|buffer| Arc::clone(&buffer.events))
+                    .unwrap_or_else(|| Arc::from([])),
+                event_scratch: if stage.events.is_some() {
+                    Vec::with_capacity(PLUGIN_EVENTS_PER_BLOCK_CAPACITY)
+                } else {
+                    Vec::new()
+                },
                 scratch: vec![0.0f32; MAX_BLOCK_FRAMES * dest_channels],
             });
         }
@@ -2632,6 +2797,7 @@ impl RenderPlaneExecutor {
         );
         let frame_count = frame_count.min(MAX_BLOCK_FRAMES);
         let block_start_frame = self.position_frames;
+        let playing = self.playing;
 
         // Loop-region segmentation: while playing with a region set, a block
         // whose span crosses `loop_end` renders as (up to) TWO timeline
@@ -2699,6 +2865,8 @@ impl RenderPlaneExecutor {
                 clips,
                 inputs,
                 processor,
+                events,
+                event_scratch,
                 scratch,
                 ..
             } = stage;
@@ -2754,8 +2922,54 @@ impl RenderPlaneExecutor {
             // deadline miss, dead sandbox, unsupported layout) leaves the
             // scratch untouched by the backend contract, so the dry signal
             // flows on and plans without processors render bit-identically.
+            //
+            // Event delivery (g12.034 follow-up): stages carrying a compiled
+            // event stream slice it per loop segment — binary search to the
+            // segment start, then push events inside `[start, start+frames)`
+            // with buffer-relative sample offsets into the preallocated
+            // scratch (alloc-free; capacity overflow drops, earliest wins).
+            // Delivery is playback-gated: while stopped (edge ramp-out) the
+            // position does not advance, so re-firing the same events every
+            // block would double-trigger notes.
             if let Some(processor) = processor {
-                let _ = processor.process(scratch, frame_count, channels);
+                if events.is_empty() {
+                    let _ = processor.process(scratch, frame_count, channels);
+                } else {
+                    event_scratch.clear();
+                    if playing {
+                        for (segment_start, segment_offset, segment_frames) in
+                            segments.iter().take(segment_count)
+                        {
+                            if *segment_frames == 0 {
+                                continue;
+                            }
+                            let segment_end = *segment_start + *segment_frames as u64;
+                            let begin =
+                                events.partition_point(|event| event.frame < *segment_start);
+                            for event in events[begin..]
+                                .iter()
+                                .take_while(|event| event.frame < segment_end)
+                            {
+                                if event_scratch.len() == PLUGIN_EVENTS_PER_BLOCK_CAPACITY {
+                                    break;
+                                }
+                                event_scratch.push(RenderBlockPluginEvent {
+                                    offset_frames: (*segment_offset as u64
+                                        + (event.frame - segment_start))
+                                        as u32,
+                                    channel: event.channel,
+                                    kind: event.kind,
+                                });
+                            }
+                        }
+                    }
+                    let _ = processor.process_with_events(
+                        scratch,
+                        frame_count,
+                        channels,
+                        event_scratch,
+                    );
+                }
             }
         }
 
@@ -2913,6 +3127,7 @@ mod tests {
     fn lane_node(stage_id: u64, gain: f32, clips: Vec<RenderClipSpec>) -> RenderStageSpec {
         RenderStageSpec {
             processor: None,
+            events: None,
             stage_id,
             format: ChannelFormat::stereo(),
             gain,
@@ -2925,6 +3140,7 @@ mod tests {
     fn master_node(inputs: Vec<RenderEdgeSpec>) -> RenderStageSpec {
         RenderStageSpec {
             processor: None,
+            events: None,
             stage_id: MASTER_ID,
             format: ChannelFormat::stereo(),
             gain: 1.0,
@@ -3979,6 +4195,7 @@ mod tests {
                 ),
                 RenderStageSpec {
                     processor,
+                    events: None,
                     stage_id: 77,
                     format: ChannelFormat::stereo(),
                     gain: 1.0,
@@ -4092,6 +4309,289 @@ mod tests {
         // Same handle: gain-only diff logic sees no change.
         assert_eq!(with_a.differs_only_in_gains(&with_a_again), Some(vec![]));
         // Different handle (same everything else): structural.
+        assert_eq!(with_a.differs_only_in_gains(&with_b), None);
+    }
+
+    // ── Plugin event delivery (g12.034 follow-up) ───────────────────────
+
+    /// Recording backend: captures the event slice of every
+    /// `process_with_events` call. A bare `process` call records a sentinel
+    /// (`offset_frames == u32::MAX`) — stages carrying an event buffer must
+    /// never take that path.
+    struct RecordingEventProcessor {
+        calls: std::sync::Mutex<Vec<Vec<RenderBlockPluginEvent>>>,
+    }
+
+    impl RecordingEventProcessor {
+        fn new() -> Arc<Self> {
+            Arc::new(Self {
+                calls: std::sync::Mutex::new(Vec::new()),
+            })
+        }
+
+        fn calls(&self) -> Vec<Vec<RenderBlockPluginEvent>> {
+            self.calls.lock().unwrap().clone()
+        }
+    }
+
+    impl PluginBlockProcessor for RecordingEventProcessor {
+        fn process(&self, _scratch: &mut [f32], _frames: usize, _channels: usize) -> bool {
+            self.calls
+                .lock()
+                .unwrap()
+                .push(vec![RenderBlockPluginEvent {
+                    offset_frames: u32::MAX,
+                    channel: 0,
+                    kind: RenderPluginEventKind::NoteOff { key: 0 },
+                }]);
+            true
+        }
+
+        fn process_with_events(
+            &self,
+            _scratch: &mut [f32],
+            _frames: usize,
+            _channels: usize,
+            events: &[RenderBlockPluginEvent],
+        ) -> bool {
+            self.calls.lock().unwrap().push(events.to_vec());
+            true
+        }
+    }
+
+    fn event_buffer(events: Vec<RenderPluginEvent>) -> RenderPluginEventBuffer {
+        RenderPluginEventBuffer {
+            events: events.into(),
+        }
+    }
+
+    /// `processor_spec` with an event stream on the insert stage.
+    fn events_spec(
+        handle: RenderPluginProcessor,
+        events: RenderPluginEventBuffer,
+    ) -> RenderPlanSpec {
+        let mut spec = processor_spec(Some(handle));
+        spec.stages[1].events = Some(events);
+        spec
+    }
+
+    #[test]
+    fn processor_stage_delivers_events_at_intra_block_sample_offsets() {
+        let (mut controller, mut executor) = render_plane();
+        let backend = RecordingEventProcessor::new();
+        let handle = RenderPluginProcessor::new(Arc::clone(&backend) as Arc<_>);
+        let buffer = event_buffer(vec![
+            RenderPluginEvent {
+                frame: 100,
+                channel: 0,
+                kind: RenderPluginEventKind::NoteOn {
+                    key: 64,
+                    velocity: 0.75,
+                },
+            },
+            RenderPluginEvent {
+                frame: 519,
+                channel: 0,
+                kind: RenderPluginEventKind::ControlChange {
+                    controller: 74,
+                    value: 0.33,
+                },
+            },
+            RenderPluginEvent {
+                frame: 700,
+                channel: 0,
+                kind: RenderPluginEventKind::NoteOff { key: 64 },
+            },
+        ]);
+        controller
+            .install_plan(&events_spec(handle, buffer))
+            .unwrap();
+        controller.set_playing(true).unwrap();
+
+        // Two 512-frame blocks from position 0.
+        let mut frames = vec![0.0f32; 1024];
+        executor.render_block(&mut frames);
+        executor.render_block(&mut frames);
+
+        let calls = backend.calls();
+        assert_eq!(calls.len(), 2, "one delivery per rendered block");
+        assert_eq!(
+            calls[0],
+            vec![RenderBlockPluginEvent {
+                offset_frames: 100,
+                channel: 0,
+                kind: RenderPluginEventKind::NoteOn {
+                    key: 64,
+                    velocity: 0.75,
+                },
+            }],
+            "block 1 carries the note-on at its absolute frame",
+        );
+        assert_eq!(
+            calls[1],
+            vec![
+                RenderBlockPluginEvent {
+                    offset_frames: 7,
+                    channel: 0,
+                    kind: RenderPluginEventKind::ControlChange {
+                        controller: 74,
+                        value: 0.33,
+                    },
+                },
+                RenderBlockPluginEvent {
+                    offset_frames: 188,
+                    channel: 0,
+                    kind: RenderPluginEventKind::NoteOff { key: 64 },
+                },
+            ],
+            "block 2 events land at frame − block start",
+        );
+    }
+
+    #[test]
+    fn event_delivery_is_playback_gated() {
+        let (mut controller, mut executor) = render_plane();
+        let backend = RecordingEventProcessor::new();
+        let handle = RenderPluginProcessor::new(Arc::clone(&backend) as Arc<_>);
+        let buffer = event_buffer(vec![RenderPluginEvent {
+            frame: 0,
+            channel: 0,
+            kind: RenderPluginEventKind::NoteOn {
+                key: 60,
+                velocity: 1.0,
+            },
+        }]);
+        controller
+            .install_plan(&events_spec(handle, buffer))
+            .unwrap();
+        controller.set_playing(true).unwrap();
+        let mut frames = vec![0.0f32; 1024];
+        executor.render_block(&mut frames);
+        // Stop: the edge ramp keeps rendering blocks briefly, but the
+        // position no longer advances — re-delivering the same events would
+        // double-trigger notes, so delivery gates on playback.
+        controller.set_playing(false).unwrap();
+        executor.render_block(&mut frames);
+
+        let calls = backend.calls();
+        assert!(calls.len() >= 2, "ramp-out still processes audio");
+        assert_eq!(calls[0].len(), 1, "playing block delivers");
+        for call in &calls[1..] {
+            assert!(call.is_empty(), "stopped blocks must deliver no events");
+        }
+    }
+
+    #[test]
+    fn loop_wrap_delivers_both_segments_with_buffer_relative_offsets() {
+        let (mut controller, mut executor) = render_plane();
+        let backend = RecordingEventProcessor::new();
+        let handle = RenderPluginProcessor::new(Arc::clone(&backend) as Arc<_>);
+        let buffer = event_buffer(vec![
+            RenderPluginEvent {
+                frame: 100,
+                channel: 0,
+                kind: RenderPluginEventKind::NoteOn {
+                    key: 60,
+                    velocity: 0.5,
+                },
+            },
+            RenderPluginEvent {
+                frame: 550,
+                channel: 1,
+                kind: RenderPluginEventKind::ControlChange {
+                    controller: 1,
+                    value: 1.0,
+                },
+            },
+        ]);
+        controller
+            .install_plan(&events_spec(handle, buffer))
+            .unwrap();
+        controller.set_loop_region(Some((0, 600))).unwrap();
+        controller.set_playing(true).unwrap();
+
+        let mut frames = vec![0.0f32; 1024];
+        executor.render_block(&mut frames); // [0, 512): note at 100
+        executor.render_block(&mut frames); // [512, 600) + wrap [0, 424)
+
+        let calls = backend.calls();
+        assert_eq!(calls.len(), 2);
+        assert_eq!(calls[0].len(), 1);
+        assert_eq!(calls[0][0].offset_frames, 100);
+        assert_eq!(
+            calls[1],
+            vec![
+                RenderBlockPluginEvent {
+                    offset_frames: 38, // 550 − 512, first segment
+                    channel: 1,
+                    kind: RenderPluginEventKind::ControlChange {
+                        controller: 1,
+                        value: 1.0,
+                    },
+                },
+                RenderBlockPluginEvent {
+                    offset_frames: 188, // 88 wrap offset + frame 100
+                    channel: 0,
+                    kind: RenderPluginEventKind::NoteOn {
+                        key: 60,
+                        velocity: 0.5,
+                    },
+                },
+            ],
+            "wrapped block delivers both segments, buffer-relative",
+        );
+    }
+
+    #[test]
+    fn compile_rejects_events_without_processor_and_unsorted_events() {
+        let buffer = event_buffer(vec![RenderPluginEvent {
+            frame: 0,
+            channel: 0,
+            kind: RenderPluginEventKind::NoteOff { key: 0 },
+        }]);
+        let mut spec = processor_spec(None);
+        spec.stages[1].events = Some(buffer);
+        let (mut controller, _executor) = render_plane();
+        let error = controller.install_plan(&spec).unwrap_err();
+        assert!(
+            error.message.contains("without a plugin processor"),
+            "{error}"
+        );
+
+        let handle = RenderPluginProcessor::new(RecordingEventProcessor::new() as Arc<_>);
+        let unsorted = event_buffer(vec![
+            RenderPluginEvent {
+                frame: 10,
+                channel: 0,
+                kind: RenderPluginEventKind::NoteOff { key: 0 },
+            },
+            RenderPluginEvent {
+                frame: 5,
+                channel: 0,
+                kind: RenderPluginEventKind::NoteOff { key: 0 },
+            },
+        ]);
+        let spec = events_spec(handle, unsorted);
+        let (mut controller, _executor) = render_plane();
+        let error = controller.install_plan(&spec).unwrap_err();
+        assert!(error.message.contains("not sorted by frame"), "{error}");
+    }
+
+    #[test]
+    fn event_buffer_swap_is_structural_not_a_gain_fast_path() {
+        let handle = RenderPluginProcessor::new(RecordingEventProcessor::new() as Arc<_>);
+        let event = RenderPluginEvent {
+            frame: 0,
+            channel: 0,
+            kind: RenderPluginEventKind::NoteOff { key: 0 },
+        };
+        let with_a = events_spec(handle, event_buffer(vec![event]));
+        // Clone shares the Arc: gain-only diff logic sees no change.
+        let with_a_again = with_a.clone();
+        assert_eq!(with_a.differs_only_in_gains(&with_a_again), Some(vec![]));
+        // A rebuilt buffer (same content, new Arc) is structural.
+        let mut with_b = with_a.clone();
+        with_b.stages[1].events = Some(event_buffer(vec![event]));
         assert_eq!(with_a.differs_only_in_gains(&with_b), None);
     }
 
@@ -4836,6 +5336,7 @@ mod tests {
             stages: vec![
                 RenderStageSpec {
                     processor: None,
+                    events: None,
                     stage_id: 1,
                     format: ChannelFormat::stereo(),
                     gain: 1.0,
@@ -4845,6 +5346,7 @@ mod tests {
                 },
                 RenderStageSpec {
                     processor: None,
+                    events: None,
                     stage_id: 2,
                     format: ChannelFormat::stereo(),
                     gain: 1.0,
@@ -4956,6 +5458,7 @@ mod tests {
                 master_node(vec![identity_edge(20)]),
                 RenderStageSpec {
                     processor: None,
+                    events: None,
                     stage_id: 20,
                     format: ChannelFormat::stereo(),
                     gain: 0.5,
@@ -4965,6 +5468,7 @@ mod tests {
                 },
                 RenderStageSpec {
                     processor: None,
+                    events: None,
                     stage_id: 10,
                     format: ChannelFormat::stereo(),
                     gain: 0.5,
@@ -5061,6 +5565,7 @@ mod tests {
             stages: vec![
                 RenderStageSpec {
                     processor: None,
+                    events: None,
                     stage_id: LANE_ID,
                     format: ChannelFormat::mono(),
                     gain: 1.0,
@@ -5100,6 +5605,7 @@ mod tests {
         let (mut controller, mut executor) = render_plane();
         let sum_stage = |stage_id: u64| RenderStageSpec {
             processor: None,
+            events: None,
             stage_id,
             format: ChannelFormat::stereo(),
             gain: 1.0,
@@ -5155,6 +5661,7 @@ mod tests {
             stages: vec![
                 RenderStageSpec {
                     processor: None,
+                    events: None,
                     stage_id: LANE_ID,
                     format: ChannelFormat::mono(),
                     gain: 1.0,
@@ -5166,6 +5673,7 @@ mod tests {
                 },
                 RenderStageSpec {
                     processor: None,
+                    events: None,
                     stage_id: MASTER_ID,
                     format: ChannelFormat {
                         channels: 4,
@@ -5223,6 +5731,7 @@ mod tests {
             stages: vec![
                 RenderStageSpec {
                     processor: None,
+                    events: None,
                     stage_id: LANE_ID,
                     format: ChannelFormat::mono(),
                     gain: 1.0,
@@ -5234,6 +5743,7 @@ mod tests {
                 },
                 RenderStageSpec {
                     processor: None,
+                    events: None,
                     stage_id: MASTER_ID,
                     format: ChannelFormat::mono(),
                     gain: 1.0,
@@ -5343,6 +5853,7 @@ mod tests {
                 lane_node(2, 0.4, vec![tone_clip(660.0)]),
                 RenderStageSpec {
                     processor: None,
+                    events: None,
                     stage_id: 3,
                     format: ChannelFormat::mono(),
                     gain: 0.3,
@@ -5354,6 +5865,7 @@ mod tests {
                 },
                 RenderStageSpec {
                     processor: None,
+                    events: None,
                     stage_id: 10,
                     format: ChannelFormat::stereo(),
                     gain: 0.9,

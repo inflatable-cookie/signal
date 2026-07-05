@@ -37,8 +37,8 @@ use std::sync::Arc;
 
 use libloading::Library;
 use signal_plugin::{
-    PluginParamChange, PluginParamChangeQueue, PluginParameterDescriptor, PluginParameterDomain,
-    PluginParameterFlags, PLUGIN_PARAM_CHANGE_CAPACITY,
+    PluginEvent, PluginParamChange, PluginParamChangeQueue, PluginParameterDescriptor,
+    PluginParameterDomain, PluginParameterFlags, PLUGIN_PARAM_CHANGE_CAPACITY,
 };
 
 use super::gui::{Vst3GuiEvent, Vst3GuiSession, IPLUG_VIEW_IID, VIEW_TYPE_EDITOR};
@@ -175,6 +175,9 @@ const IHOST_APPLICATION_IID: Tuid = tuid_from_uid(0x58E595CC, 0xDB2D4969, 0x8B6A
 // ivstparameterchanges.h (published interface definitions).
 const IPARAMETER_CHANGES_IID: Tuid = tuid_from_uid(0xA4779663, 0x0BB64A56, 0xB44384A8, 0x466FEB9D);
 const IPARAM_VALUE_QUEUE_IID: Tuid = tuid_from_uid(0x01263A18, 0xED074F6F, 0x98C9D356, 0x4686F9BA);
+// ivstevents.h / ivstmidicontrollers.h (published interface definitions).
+const IEVENT_LIST_IID: Tuid = tuid_from_uid(0x3A2C4214, 0x346349FE, 0xB2C4F397, 0xB9695A44);
+const IMIDI_MAPPING_IID: Tuid = tuid_from_uid(0xDF695DF2, 0x8B4B47EB, 0xAB3EF8FB, 0x2D1F6BB2);
 
 // Bus/processing constants.
 const K_AUDIO: i32 = 0;
@@ -582,12 +585,19 @@ struct ParameterChangesVTable {
     add_parameter_data: unsafe extern "C" fn(*mut c_void, *const u32, *mut i32) -> *mut c_void,
 }
 
-/// One single-point value queue: `(parameter_id, value)` at offset 0.
+/// Sample-offset points one host param queue can carry per block (wire
+/// writes use one point at offset 0; MIDI-mapped CC series use one point
+/// per CC event at its intra-block offset).
+const PARAM_QUEUE_POINT_CAPACITY: usize = 128;
+
+/// One value queue: `(sample_offset, value)` points for one parameter,
+/// ascending offsets. Preallocated; rebuilt in place per block.
 #[repr(C)]
 struct HostParamValueQueue {
     vtable: *const ParamValueQueueVTable,
     parameter_id: u32,
-    value: f64,
+    points: Box<[(i32, f64)]>,
+    point_count: usize,
 }
 
 /// The block's input parameter-change list: a fixed-length queue pool plus
@@ -647,8 +657,8 @@ unsafe extern "C" fn param_queue_get_parameter_id(this: *mut c_void) -> u32 {
     (*this.cast::<HostParamValueQueue>()).parameter_id
 }
 
-unsafe extern "C" fn param_queue_get_point_count(_this: *mut c_void) -> i32 {
-    1
+unsafe extern "C" fn param_queue_get_point_count(this: *mut c_void) -> i32 {
+    (*this.cast::<HostParamValueQueue>()).point_count as i32
 }
 
 unsafe extern "C" fn param_queue_get_point(
@@ -657,11 +667,16 @@ unsafe extern "C" fn param_queue_get_point(
     sample_offset: *mut i32,
     value: *mut f64,
 ) -> Tresult {
-    if index != 0 || sample_offset.is_null() || value.is_null() {
+    if sample_offset.is_null() || value.is_null() {
         return K_NO_INTERFACE;
     }
-    *sample_offset = 0;
-    *value = (*this.cast::<HostParamValueQueue>()).value;
+    let queue = &*this.cast::<HostParamValueQueue>();
+    if index < 0 || index as usize >= queue.point_count {
+        return K_NO_INTERFACE;
+    }
+    let (offset, point_value) = queue.points[index as usize];
+    *sample_offset = offset;
+    *value = point_value;
     K_RESULT_OK
 }
 
@@ -721,7 +736,8 @@ impl HostParameterChanges {
             .map(|_| HostParamValueQueue {
                 vtable: &PARAM_VALUE_QUEUE_VTABLE,
                 parameter_id: 0,
-                value: 0.0,
+                points: vec![(0i32, 0f64); PARAM_QUEUE_POINT_CAPACITY].into_boxed_slice(),
+                point_count: 0,
             })
             .collect::<Vec<_>>()
             .into_boxed_slice();
@@ -732,15 +748,281 @@ impl HostParameterChanges {
         })
     }
 
-    /// Rebuild the list in place from the drained changes. Alloc-free.
-    fn set_changes(&mut self, changes: &[PluginParamChange]) {
-        let count = changes.len().min(self.queues.len());
-        for (queue, change) in self.queues.iter_mut().zip(changes.iter().take(count)) {
-            queue.parameter_id = change.parameter_id;
-            queue.value = change.value;
-        }
-        self.active = count;
+    /// Reset to an empty list (start of block). Alloc-free.
+    fn clear(&mut self) {
+        self.active = 0;
     }
+
+    /// Append one `(sample_offset, value)` point for `parameter_id`,
+    /// reusing the parameter's queue when one is already active this block.
+    /// Alloc-free; silently drops on pool/point capacity overflow.
+    fn push_point(&mut self, parameter_id: u32, sample_offset: i32, value: f64) {
+        let existing = self.queues[..self.active]
+            .iter_mut()
+            .find(|queue| queue.parameter_id == parameter_id);
+        let queue = match existing {
+            Some(queue) => queue,
+            None => {
+                if self.active == self.queues.len() {
+                    return;
+                }
+                let queue = &mut self.queues[self.active];
+                queue.parameter_id = parameter_id;
+                queue.point_count = 0;
+                self.active += 1;
+                queue
+            }
+        };
+        if queue.point_count == queue.points.len() {
+            return;
+        }
+        queue.points[queue.point_count] = (sample_offset, value);
+        queue.point_count += 1;
+    }
+
+    /// Rebuild the list in place from the drained wire changes (one point
+    /// per parameter at offset 0 — block-boundary posture). Alloc-free.
+    fn set_changes(&mut self, changes: &[PluginParamChange]) {
+        self.clear();
+        for change in changes {
+            self.push_point(change.parameter_id, 0, change.value);
+        }
+    }
+}
+
+// ── Host-side input IEventList + IMidiMapping (note/CC delivery) ────────────
+//
+// Note events ride VST3's native event list (float velocity preserved).
+// INPUT CC has no event type in VST3: it maps through the controller's
+// IMidiMapping to a parameter, and the mapped parameter change rides
+// `IParameterChanges` with the CC event's intra-block sample offset. That
+// mapping query IS the VST3 downconversion boundary; plugins exposing no
+// IMidiMapping simply receive no CC (honest fallback, see
+// [`Vst3HostedInstance::midi_cc_mapping_available`]).
+
+/// `Steinberg::Vst::NoteOnEvent`.
+#[repr(C)]
+#[derive(Clone, Copy)]
+struct NoteOnEventPayload {
+    channel: i16,
+    pitch: i16,
+    tuning: f32,
+    velocity: f32,
+    length: i32,
+    note_id: i32,
+}
+
+/// `Steinberg::Vst::NoteOffEvent`.
+#[repr(C)]
+#[derive(Clone, Copy)]
+struct NoteOffEventPayload {
+    channel: i16,
+    pitch: i16,
+    velocity: f32,
+    note_id: i32,
+    tuning: f32,
+}
+
+/// The `Event` union payload: sized/aligned to the widest published member
+/// (pointer-bearing members give the C union 8-byte alignment; 24 bytes
+/// covers `NoteExpressionTextEvent`).
+#[repr(C)]
+#[derive(Clone, Copy)]
+union EventPayload {
+    note_on: NoteOnEventPayload,
+    note_off: NoteOffEventPayload,
+    _size: [u64; 3],
+}
+
+/// `Steinberg::Vst::Event::EventTypes`.
+const K_NOTE_ON_EVENT: u16 = 0;
+const K_NOTE_OFF_EVENT: u16 = 1;
+
+/// `Steinberg::Vst::Event`.
+#[repr(C)]
+#[derive(Clone, Copy)]
+struct Vst3Event {
+    bus_index: i32,
+    sample_offset: i32,
+    ppq_position: f64,
+    flags: u16,
+    type_: u16,
+    payload: EventPayload,
+}
+
+impl Vst3Event {
+    fn zeroed() -> Self {
+        Self {
+            bus_index: 0,
+            sample_offset: 0,
+            ppq_position: 0.0,
+            flags: 0,
+            type_: 0,
+            payload: EventPayload { _size: [0; 3] },
+        }
+    }
+}
+
+/// `IEventList` vtable (FUnknown + list methods, declaration order).
+#[repr(C)]
+struct EventListVTable {
+    query_interface: unsafe extern "C" fn(*mut c_void, *const Tuid, *mut *mut c_void) -> Tresult,
+    add_ref: unsafe extern "C" fn(*mut c_void) -> u32,
+    release: unsafe extern "C" fn(*mut c_void) -> u32,
+    get_event_count: unsafe extern "C" fn(*mut c_void) -> i32,
+    get_event: unsafe extern "C" fn(*mut c_void, i32, *mut Vst3Event) -> Tresult,
+    add_event: unsafe extern "C" fn(*mut c_void, *mut Vst3Event) -> Tresult,
+}
+
+/// Per-block note in-event capacity (matches the render plane's cap).
+const EVENT_LIST_CAPACITY: usize = 1024;
+
+/// The block's input event list: a fixed pool plus the active count. Boxed
+/// by the session so the pointer handed to the plugin stays stable.
+#[repr(C)]
+struct HostEventList {
+    vtable: *const EventListVTable,
+    events: Box<[Vst3Event]>,
+    active: usize,
+}
+
+static EVENT_LIST_VTABLE: EventListVTable = EventListVTable {
+    query_interface: event_list_query_interface,
+    add_ref: param_com_add_ref,
+    release: param_com_release,
+    get_event_count: event_list_get_event_count,
+    get_event: event_list_get_event,
+    add_event: event_list_add_event,
+};
+
+unsafe extern "C" fn event_list_query_interface(
+    this: *mut c_void,
+    iid: *const Tuid,
+    out: *mut *mut c_void,
+) -> Tresult {
+    if out.is_null() {
+        return K_NO_INTERFACE;
+    }
+    if !iid.is_null() && (*iid == FUNKNOWN_IID || *iid == IEVENT_LIST_IID) {
+        *out = this;
+        return K_RESULT_OK;
+    }
+    *out = ptr::null_mut();
+    K_NO_INTERFACE
+}
+
+unsafe extern "C" fn event_list_get_event_count(this: *mut c_void) -> i32 {
+    (*this.cast::<HostEventList>()).active as i32
+}
+
+unsafe extern "C" fn event_list_get_event(
+    this: *mut c_void,
+    index: i32,
+    event: *mut Vst3Event,
+) -> Tresult {
+    if event.is_null() {
+        return K_NO_INTERFACE;
+    }
+    let list = &*this.cast::<HostEventList>();
+    if index < 0 || index as usize >= list.active {
+        return K_NO_INTERFACE;
+    }
+    *event = list.events[index as usize];
+    K_RESULT_OK
+}
+
+unsafe extern "C" fn event_list_add_event(_this: *mut c_void, _event: *mut Vst3Event) -> Tresult {
+    // Input list: the host writes it, the plugin only reads.
+    K_NO_INTERFACE
+}
+
+impl HostEventList {
+    fn new() -> Box<Self> {
+        Box::new(Self {
+            vtable: &EVENT_LIST_VTABLE,
+            events: vec![Vst3Event::zeroed(); EVENT_LIST_CAPACITY].into_boxed_slice(),
+            active: 0,
+        })
+    }
+
+    fn clear(&mut self) {
+        self.active = 0;
+    }
+
+    /// Append one note event; silently drops on capacity overflow.
+    fn push_note(&mut self, note: &signal_plugin::NoteEvent) {
+        if self.active == self.events.len() {
+            return;
+        }
+        let event = &mut self.events[self.active];
+        event.bus_index = 0;
+        event.sample_offset = note.offset_frames.min(i32::MAX as u32) as i32;
+        event.ppq_position = 0.0;
+        event.flags = 0;
+        match note.kind {
+            signal_plugin::NoteEventKind::NoteOn => {
+                event.type_ = K_NOTE_ON_EVENT;
+                event.payload = EventPayload {
+                    note_on: NoteOnEventPayload {
+                        channel: i16::from(note.channel),
+                        pitch: i16::from(note.key),
+                        tuning: 0.0,
+                        velocity: note.velocity.clamp(0.0, 1.0),
+                        length: 0,
+                        note_id: note.note_id,
+                    },
+                };
+            }
+            signal_plugin::NoteEventKind::NoteOff => {
+                event.type_ = K_NOTE_OFF_EVENT;
+                event.payload = EventPayload {
+                    note_off: NoteOffEventPayload {
+                        channel: i16::from(note.channel),
+                        pitch: i16::from(note.key),
+                        velocity: note.velocity.clamp(0.0, 1.0),
+                        note_id: note.note_id,
+                        tuning: 0.0,
+                    },
+                };
+            }
+        }
+        self.active += 1;
+    }
+}
+
+/// `IMidiMapping` vtable (FUnknown + the one mapping method).
+#[repr(C)]
+struct MidiMappingVTable {
+    query_interface: unsafe extern "C" fn(*mut c_void, *const Tuid, *mut *mut c_void) -> Tresult,
+    add_ref: unsafe extern "C" fn(*mut c_void) -> u32,
+    release: unsafe extern "C" fn(*mut c_void) -> u32,
+    get_midi_controller_assignment:
+        unsafe extern "C" fn(*mut c_void, i32, i16, i16, *mut u32) -> Tresult,
+}
+
+/// Query the controller's `IMidiMapping` for bus 0 / channel 0 CC → param
+/// assignments (controllers 0..=127). `None` when the controller exposes no
+/// mapping — the honest no-CC fallback. Runs at load on the lifecycle
+/// thread; the resulting table is immutable and shared into sessions.
+unsafe fn midi_cc_parameter_map(controller: *mut c_void) -> Option<Arc<[Option<u32>; 128]>> {
+    let mapping = com_query_interface(controller, &IMIDI_MAPPING_IID)?;
+    let vtable = vtable_of::<MidiMappingVTable>(mapping);
+    let mut map = [None; 128];
+    for controller_number in 0..128i16 {
+        let mut parameter_id = 0u32;
+        if ((*vtable).get_midi_controller_assignment)(
+            mapping,
+            0,
+            0,
+            controller_number,
+            &mut parameter_id,
+        ) == K_RESULT_OK
+        {
+            map[controller_number as usize] = Some(parameter_id);
+        }
+    }
+    com_release(mapping);
+    Some(Arc::new(map))
 }
 
 // ── Hosted instance ─────────────────────────────────────────────────────────
@@ -812,6 +1094,10 @@ pub struct Vst3HostedInstance {
     /// `IParameterChanges` (g12.023); shared with every process session
     /// built from this instance.
     param_changes: Arc<PluginParamChangeQueue>,
+    /// Bus 0 / channel 0 CC → parameter assignments from the controller's
+    /// `IMidiMapping`, queried once at load. `None` = no mapping exposed
+    /// (CC events are dropped for this plugin — the honest fallback).
+    midi_cc_params: Option<Arc<[Option<u32>; 128]>>,
     /// Keeps the module mapped for the instance lifetime; declared last so
     /// it drops after the COM pointers above are released in `drop`.
     _module: LoadedVst3Module,
@@ -874,6 +1160,9 @@ impl Vst3HostedInstance {
                 }
             })
             .unwrap_or(false);
+        let midi_cc_params = controller
+            .as_ref()
+            .and_then(|handle| unsafe { midi_cc_parameter_map(handle.ptr()) });
 
         Ok(Self {
             component,
@@ -886,8 +1175,16 @@ impl Vst3HostedInstance {
             gui_view_supported,
             gui_session: None,
             param_changes: Arc::new(PluginParamChangeQueue::new()),
+            midi_cc_params,
             _module: module,
         })
+    }
+
+    /// Whether the controller exposed an `IMidiMapping` at load: with one,
+    /// CC events deliver as mapped parameter changes; without one they are
+    /// dropped (VST3 has no input CC event type).
+    pub fn midi_cc_mapping_available(&self) -> bool {
+        self.midi_cc_params.is_some()
     }
 
     /// Parameter inventory enumerated at load via `IEditController`
@@ -1093,6 +1390,7 @@ impl Vst3HostedInstance {
             self.processor,
             self.activated_max_frames as usize,
             Arc::clone(&self.param_changes),
+            self.midi_cc_params.clone(),
         ))
     }
 }
@@ -1293,6 +1591,11 @@ pub struct Vst3ProcessSession {
     /// The host-side `IParameterChanges` rebuilt per block; boxed so the
     /// pointers handed to the plugin stay stable.
     input_changes: Box<HostParameterChanges>,
+    /// The host-side input `IEventList` rebuilt per block (note events).
+    input_events: Box<HostEventList>,
+    /// CC → parameter assignments (`IMidiMapping`, queried at load); `None`
+    /// drops CC events.
+    midi_cc_params: Option<Arc<[Option<u32>; 128]>>,
 }
 
 // Safety: the session is handed to exactly one audio thread;
@@ -1305,6 +1608,7 @@ impl Vst3ProcessSession {
         processor: *mut c_void,
         max_frames: usize,
         param_changes: Arc<PluginParamChangeQueue>,
+        midi_cc_params: Option<Arc<[Option<u32>; 128]>>,
     ) -> Self {
         Self {
             processor,
@@ -1316,6 +1620,8 @@ impl Vst3ProcessSession {
             param_changes,
             param_scratch: Vec::with_capacity(PLUGIN_PARAM_CHANGE_CAPACITY),
             input_changes: HostParameterChanges::new(),
+            input_events: HostEventList::new(),
+            midi_cc_params,
         }
     }
 
@@ -1356,17 +1662,45 @@ impl Vst3ProcessSession {
     ///
     /// # Safety
     /// `frames` must be within the preallocated buffer bounds (callers clamp).
-    unsafe fn process_planar(&mut self, frames: usize) -> bool {
+    unsafe fn process_planar(&mut self, frames: usize, events: &[PluginEvent]) -> bool {
         // Drain pending param writes into the block's IParameterChanges
         // (block-boundary application, offset 0). Alloc-free.
         if self.param_changes.is_empty() {
-            self.input_changes.active = 0;
+            self.input_changes.clear();
         } else {
             self.param_changes.drain_coalesced(&mut self.param_scratch);
             self.input_changes.set_changes(&self.param_scratch);
         }
+        // Note/CC delivery: notes ride the input IEventList; CC events map
+        // through the load-time IMidiMapping table onto parameter-change
+        // points carrying the event's intra-block sample offset (VST3's
+        // input-CC contract). Unmapped or mapping-less CC drops silently —
+        // there is nothing honest to send instead.
+        self.input_events.clear();
+        for event in events {
+            match event {
+                PluginEvent::Note(note) => self.input_events.push_note(note),
+                PluginEvent::ControlChange(change) => {
+                    if let Some(map) = &self.midi_cc_params {
+                        if let Some(parameter_id) = map[usize::from(change.controller & 0x7F)] {
+                            self.input_changes.push_point(
+                                parameter_id,
+                                change.offset_frames.min(i32::MAX as u32) as i32,
+                                f64::from(change.value.clamp(0.0, 1.0)),
+                            );
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
         let input_parameter_changes: *mut c_void = if self.input_changes.active > 0 {
             (&mut *self.input_changes as *mut HostParameterChanges).cast()
+        } else {
+            ptr::null_mut()
+        };
+        let input_events: *mut c_void = if self.input_events.active > 0 {
+            (&mut *self.input_events as *mut HostEventList).cast()
         } else {
             ptr::null_mut()
         };
@@ -1395,7 +1729,7 @@ impl Vst3ProcessSession {
             outputs: &mut output_bus,
             input_parameter_changes,
             output_parameter_changes: ptr::null_mut(),
-            input_events: ptr::null_mut(),
+            input_events,
             output_events: ptr::null_mut(),
             process_context: ptr::null_mut(),
         };
@@ -1420,7 +1754,7 @@ impl Vst3ProcessSession {
             self.input_left[frame] = input[frame * 2];
             self.input_right[frame] = input[frame * 2 + 1];
         }
-        if !unsafe { self.process_planar(frames) } {
+        if !unsafe { self.process_planar(frames, &[]) } {
             output[..frames * 2].copy_from_slice(&input[..frames * 2]);
             return false;
         }
@@ -1436,12 +1770,26 @@ impl Vst3ProcessSession {
     /// success; on plugin error the buffer is left untouched (bypass
     /// semantics). Alloc-free. `true` = buffer transformed.
     pub fn process_in_place(&mut self, io: &mut [f32], frame_count: usize) -> bool {
+        self.process_in_place_with_events(io, frame_count, &[])
+    }
+
+    /// [`Self::process_in_place`] with a per-block plugin event slice
+    /// (sorted by `offset_frames`): note events ride the input
+    /// `IEventList`; CC events become `IMidiMapping`-mapped parameter
+    /// changes at their sample offsets. Alloc-free. `true` = buffer
+    /// transformed.
+    pub fn process_in_place_with_events(
+        &mut self,
+        io: &mut [f32],
+        frame_count: usize,
+        events: &[PluginEvent],
+    ) -> bool {
         let frames = frame_count.min(self.input_left.len()).min(io.len() / 2);
         for frame in 0..frames {
             self.input_left[frame] = io[frame * 2];
             self.input_right[frame] = io[frame * 2 + 1];
         }
-        if !unsafe { self.process_planar(frames) } {
+        if !unsafe { self.process_planar(frames, events) } {
             return false;
         }
         for frame in 0..frames {

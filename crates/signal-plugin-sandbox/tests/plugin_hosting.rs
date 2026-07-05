@@ -800,6 +800,7 @@ fn fixture_plugin_processes_a_chain_insert_through_the_real_engine_offline_rende
         stages: vec![
             RenderStageSpec {
                 processor: None,
+                events: None,
                 stage_id: 1,
                 format: ChannelFormat::stereo(),
                 gain: 1.0,
@@ -817,6 +818,7 @@ fn fixture_plugin_processes_a_chain_insert_through_the_real_engine_offline_rende
             },
             RenderStageSpec {
                 processor,
+                events: None,
                 stage_id: 2,
                 format: ChannelFormat::stereo(),
                 gain: 1.0,
@@ -830,6 +832,7 @@ fn fixture_plugin_processes_a_chain_insert_through_the_real_engine_offline_rende
             },
             RenderStageSpec {
                 processor: None,
+                events: None,
                 stage_id: 100,
                 format: ChannelFormat::stereo(),
                 gain: 1.0,
