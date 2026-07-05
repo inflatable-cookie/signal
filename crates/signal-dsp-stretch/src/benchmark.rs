@@ -1,3 +1,5 @@
+use crate::phase_vocoder::{phase_locked_phase_vocoder, phase_vocoder};
+use rustfft::{num_complex::Complex32, FftPlanner};
 use signal_primitives::Sample;
 
 /// Corpus family required by the Signal-native stretch benchmark program.
@@ -216,6 +218,55 @@ impl StretchMetricValue {
     }
 }
 
+/// Draft-vs-prototype sustained-material coherence measurement.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct StretchCoherenceComparison {
+    /// Output/input duration ratio measured.
+    pub ratio: f64,
+    /// Draft independent-bin phase-vocoder coherence score. Lower is better.
+    pub draft_vertical_coherence_score: f64,
+    /// Identity phase-locked prototype coherence score. Lower is better.
+    pub phase_locked_vertical_coherence_score: f64,
+    /// Gap metric reported as locked score minus draft score.
+    pub metric: StretchMetricValue,
+}
+
+/// Compare sustained-material vertical coherence for the draft baseline and
+/// the identity phase-locked prototype.
+///
+/// The metric value is `phase_locked_score - draft_score`; negative values
+/// mean the locked prototype improved the measured phase-curvature score.
+/// Positive values log the measured gap without promoting the prototype.
+pub fn compare_sustained_material_coherence(ratio: f64) -> StretchCoherenceComparison {
+    if !ratio.is_finite() || ratio <= 0.0 {
+        return StretchCoherenceComparison {
+            ratio,
+            draft_vertical_coherence_score: f64::NAN,
+            phase_locked_vertical_coherence_score: f64::NAN,
+            metric: StretchMetricValue::new(StretchMetric::VerticalCoherenceDelta, f64::NAN),
+        };
+    }
+
+    const WINDOW_SIZE: usize = 2_048;
+    const ANALYSIS_HOP: usize = WINDOW_SIZE / 4;
+    let input = synthetic_sustained_material();
+    let target_len = (input.len() as f64 * ratio).round() as usize;
+    let draft = phase_vocoder(&input, target_len, ratio, WINDOW_SIZE, ANALYSIS_HOP);
+    let phase_locked =
+        phase_locked_phase_vocoder(&input, target_len, ratio, WINDOW_SIZE, ANALYSIS_HOP);
+    let draft_score = peak_neighborhood_phase_curvature(&draft, WINDOW_SIZE, ANALYSIS_HOP);
+    let phase_locked_score =
+        peak_neighborhood_phase_curvature(&phase_locked, WINDOW_SIZE, ANALYSIS_HOP);
+    let gap = phase_locked_score - draft_score;
+
+    StretchCoherenceComparison {
+        ratio,
+        draft_vertical_coherence_score: draft_score,
+        phase_locked_vertical_coherence_score: phase_locked_score,
+        metric: StretchMetricValue::new(StretchMetric::VerticalCoherenceDelta, gap),
+    }
+}
+
 /// Upper-bound limit for a stretch benchmark metric.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct StretchMetricLimit {
@@ -377,11 +428,107 @@ fn synthetic_extreme_ratio() -> StretchSyntheticAudio {
     }
 }
 
+fn synthetic_sustained_material() -> Vec<Sample> {
+    const SAMPLE_RATE: usize = 48_000;
+    const FRAMES: usize = SAMPLE_RATE * 2;
+    const FADE_FRAMES: usize = 1_024;
+    let bin_frequency = SAMPLE_RATE as f32 / 2048.0;
+    let partials = [
+        (9.0 * bin_frequency, 0.38),
+        (17.0 * bin_frequency, 0.24),
+        (29.0 * bin_frequency, 0.16),
+        (43.0 * bin_frequency, 0.10),
+    ];
+
+    (0..FRAMES)
+        .map(|frame| {
+            let time = frame as f32 / SAMPLE_RATE as f32;
+            let fade_in = (frame as f32 / FADE_FRAMES as f32).min(1.0);
+            let fade_out = ((FRAMES - 1 - frame) as f32 / FADE_FRAMES as f32).min(1.0);
+            let fade = fade_in.min(fade_out);
+            let motion = 0.78 + 0.12 * (std::f32::consts::TAU * 0.35 * time).sin();
+            partials
+                .iter()
+                .map(|(frequency, gain)| gain * (std::f32::consts::TAU * frequency * time).sin())
+                .sum::<f32>()
+                * motion
+                * fade
+        })
+        .collect()
+}
+
+fn peak_neighborhood_phase_curvature(samples: &[Sample], window_size: usize, hop: usize) -> f64 {
+    if samples.len() < window_size || hop == 0 {
+        return f64::NAN;
+    }
+
+    let bins = window_size / 2 + 1;
+    if bins < 5 {
+        return f64::NAN;
+    }
+    let window: Vec<f32> = (0..window_size)
+        .map(|index| 0.5 - 0.5 * (std::f32::consts::TAU * index as f32 / window_size as f32).cos())
+        .collect();
+    let mut planner = FftPlanner::<f32>::new();
+    let forward = planner.plan_fft_forward(window_size);
+    let mut buffer = vec![Complex32::new(0.0, 0.0); window_size];
+    let mut magnitudes = vec![0.0f32; bins];
+    let mut phases = vec![0.0f32; bins];
+    let mut weighted_curvature = 0.0f64;
+    let mut weight_sum = 0.0f64;
+
+    for start in (0..=samples.len() - window_size).step_by(hop) {
+        for (slot, (sample, weight)) in buffer.iter_mut().zip(
+            samples[start..start + window_size]
+                .iter()
+                .zip(window.iter()),
+        ) {
+            *slot = Complex32::new(sample * weight, 0.0);
+        }
+        forward.process(&mut buffer);
+
+        let mut peak_magnitude = 0.0f32;
+        for bin in 0..bins {
+            let spectrum = buffer[bin];
+            magnitudes[bin] = spectrum.norm();
+            phases[bin] = spectrum.arg();
+            peak_magnitude = peak_magnitude.max(magnitudes[bin]);
+        }
+        let threshold = peak_magnitude * 0.05;
+
+        for bin in 2..bins - 2 {
+            let magnitude = magnitudes[bin];
+            if magnitude < threshold {
+                continue;
+            }
+            if magnitude > magnitudes[bin - 1] && magnitude >= magnitudes[bin + 1] {
+                let left_offset = wrap_phase(phases[bin - 1] - phases[bin]);
+                let right_offset = wrap_phase(phases[bin + 1] - phases[bin]);
+                let curvature = wrap_phase(right_offset - left_offset).abs() as f64;
+                let weight = magnitude as f64;
+                weighted_curvature += curvature * weight;
+                weight_sum += weight;
+            }
+        }
+    }
+
+    if weight_sum > 0.0 {
+        weighted_curvature / weight_sum
+    } else {
+        f64::NAN
+    }
+}
+
 fn severity_to_stretch_status(severity: StretchAcceptanceSeverity) -> StretchAcceptanceStatus {
     match severity {
         StretchAcceptanceSeverity::Warn => StretchAcceptanceStatus::Warn,
         StretchAcceptanceSeverity::Fail => StretchAcceptanceStatus::Fail,
     }
+}
+
+fn wrap_phase(phase: f32) -> f32 {
+    let tau = std::f32::consts::TAU;
+    phase - tau * (phase / tau).round()
 }
 
 fn combine_stretch_status(

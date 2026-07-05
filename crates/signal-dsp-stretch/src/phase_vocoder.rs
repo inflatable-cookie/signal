@@ -22,7 +22,6 @@ pub(crate) fn phase_vocoder(
 }
 
 /// Run the identity phase-locked phase-vocoder prototype.
-#[allow(dead_code)]
 pub(crate) fn phase_locked_phase_vocoder(
     input: &[Sample],
     target_len: usize,

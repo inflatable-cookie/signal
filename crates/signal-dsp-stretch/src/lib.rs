@@ -37,11 +37,12 @@ mod benchmark;
 mod phase_vocoder;
 
 pub use benchmark::{
-    assess_stretch_metrics, format_stretch_acceptance_report, generate_synthetic_stretch_audio,
-    output_length_drift_samples, synthetic_stretch_corpus_cases, StretchAcceptanceReport,
-    StretchAcceptanceSeverity, StretchAcceptanceStatus, StretchCorpusCase, StretchCorpusFamily,
-    StretchCorpusSource, StretchMetric, StretchMetricAssessment, StretchMetricLimit,
-    StretchMetricValue, StretchSyntheticAudio, STRETCH_BENCHMARK_CORPUS,
+    assess_stretch_metrics, compare_sustained_material_coherence, format_stretch_acceptance_report,
+    generate_synthetic_stretch_audio, output_length_drift_samples, synthetic_stretch_corpus_cases,
+    StretchAcceptanceReport, StretchAcceptanceSeverity, StretchAcceptanceStatus,
+    StretchCoherenceComparison, StretchCorpusCase, StretchCorpusFamily, StretchCorpusSource,
+    StretchMetric, StretchMetricAssessment, StretchMetricLimit, StretchMetricValue,
+    StretchSyntheticAudio, STRETCH_BENCHMARK_CORPUS,
 };
 
 use phase_vocoder::phase_vocoder;
@@ -532,5 +533,43 @@ mod tests {
             format_stretch_acceptance_report("stretch:tempo_ramp", &report),
             "case=stretch:tempo_ramp status=Pass\nmetric=TimingDriftSamples value=0.000000 max=1.000000 status=Pass"
         );
+    }
+
+    #[test]
+    fn sustained_material_coherence_comparison_logs_measured_gap() {
+        let comparison = compare_sustained_material_coherence(1.5);
+
+        assert_eq!(comparison.ratio, 1.5);
+        assert!(comparison.draft_vertical_coherence_score.is_finite());
+        assert!(comparison.phase_locked_vertical_coherence_score.is_finite());
+        assert_eq!(
+            comparison.metric.metric,
+            StretchMetric::VerticalCoherenceDelta
+        );
+        assert!(
+            (comparison.metric.value
+                - (comparison.phase_locked_vertical_coherence_score
+                    - comparison.draft_vertical_coherence_score))
+                .abs()
+                < 1.0e-12
+        );
+    }
+
+    #[test]
+    fn sustained_material_coherence_gap_formats_as_acceptance_metric() {
+        let comparison = compare_sustained_material_coherence(1.25);
+        let report = assess_stretch_metrics(
+            &[comparison.metric],
+            &[StretchMetricLimit::max(
+                StretchMetric::VerticalCoherenceDelta,
+                f64::INFINITY,
+                StretchAcceptanceSeverity::Warn,
+            )],
+        );
+        let formatted = format_stretch_acceptance_report("stretch:pads_sustains", &report);
+
+        assert_eq!(report.status, StretchAcceptanceStatus::Pass);
+        assert!(formatted.contains("metric=VerticalCoherenceDelta"));
+        assert!(formatted.contains("status=Pass"));
     }
 }

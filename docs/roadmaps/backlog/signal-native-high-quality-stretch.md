@@ -191,7 +191,7 @@ Validation:
 
 ### Slice 2: Offline Phase-Locking Prototype
 
-Status: ready
+Status: complete
 Repos: `signal`
 
 Work:
@@ -207,7 +207,7 @@ Acceptance:
 
 - [x] fixed-ratio length contract remains exact
 - [x] tonal pitch preservation does not regress against the draft baseline
-- [ ] sustained-material coherence metrics improve or log a measured gap
+- [x] sustained-material coherence metrics improve or log a measured gap
 - [x] no new realtime render-plane path is introduced
 
 Validation:
@@ -217,7 +217,7 @@ Validation:
 
 ### Slice 3: Transient And Linked-Stereo Depth
 
-Status: blocked on Slice 2
+Status: ready
 Repos: `signal`
 
 Work:
@@ -271,5 +271,5 @@ Work:
 
 ## Next Task
 
-Finish Slice 2 by adding or logging a sustained-material coherence metric for
-the phase-locked prototype against the draft baseline.
+Start Slice 3 by adding transient detection over energy and spectral flux,
+keeping it measurement-only until the transient-preserving strategy is chosen.
