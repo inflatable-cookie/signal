@@ -226,7 +226,7 @@ Work:
 - [ ] add transient-preserving phase reset or local splice strategy
 - [ ] add linked stereo analysis/synthesis so image movement is measured
 - [x] add transient smear metrics to the corpus harness
-- [ ] add loop seam metrics to the corpus harness
+- [x] add loop seam metrics to the corpus harness
 
 ### Slice 4: Render, Cache, And Loophole Contracts
 
@@ -272,5 +272,5 @@ Work:
 
 ## Next Task
 
-Continue Slice 3 by adding loop seam metrics to the corpus harness before
-choosing the transient-preserving phase reset or splice strategy.
+Continue Slice 3 by choosing and prototyping the transient-preserving phase
+reset or local splice strategy against the new transient and loop metrics.

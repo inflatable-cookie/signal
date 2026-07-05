@@ -263,6 +263,21 @@ pub struct StretchTransientSmearMeasurement {
     pub metric: StretchMetricValue,
 }
 
+/// Loop-boundary click measurement for one rendered loop candidate.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct StretchLoopBoundaryMeasurement {
+    /// Output/input duration ratio measured.
+    pub ratio: f64,
+    /// Number of interleaved channels measured.
+    pub channels: u16,
+    /// Worst absolute boundary discontinuity.
+    pub peak_boundary_delta: f64,
+    /// Boundary discontinuity converted to dBFS.
+    pub click_dbfs: f64,
+    /// Metric reported to the acceptance harness.
+    pub metric: StretchMetricValue,
+}
+
 /// Compare sustained-material vertical coherence for the draft baseline and
 /// the identity phase-locked prototype.
 ///
@@ -424,6 +439,60 @@ pub fn measure_draft_transient_smear(ratio: f64) -> StretchTransientSmearMeasure
     let target_len = (input.len() as f64 * ratio).round() as usize;
     let output = phase_vocoder(&input, target_len, ratio, 2_048, 512);
     measure_transient_smear(&input, &output, ratio, WINDOW_SIZE, HOP_SIZE)
+}
+
+/// Measure a loop-boundary click as the final-to-first-frame discontinuity.
+pub fn measure_loop_boundary_click(
+    interleaved_samples: &[Sample],
+    channels: u16,
+    ratio: f64,
+) -> StretchLoopBoundaryMeasurement {
+    let channel_count = channels as usize;
+    if channel_count == 0 || interleaved_samples.len() < channel_count * 2 {
+        return loop_boundary_nan(ratio, channels);
+    }
+    let frames = interleaved_samples.len() / channel_count;
+    if frames < 2 {
+        return loop_boundary_nan(ratio, channels);
+    }
+
+    let first = &interleaved_samples[..channel_count];
+    let last_start = (frames - 1) * channel_count;
+    let last = &interleaved_samples[last_start..last_start + channel_count];
+    let peak_delta = first
+        .iter()
+        .zip(last.iter())
+        .map(|(left, right)| (left - right).abs() as f64)
+        .fold(0.0f64, f64::max);
+    let click_dbfs = amplitude_to_dbfs(peak_delta);
+
+    StretchLoopBoundaryMeasurement {
+        ratio,
+        channels,
+        peak_boundary_delta: peak_delta,
+        click_dbfs,
+        metric: StretchMetricValue::new(StretchMetric::LoopBoundaryClickDbfs, click_dbfs),
+    }
+}
+
+/// Measure draft phase-vocoder loop-boundary click on the synthetic loop-seam
+/// corpus case.
+pub fn measure_draft_loop_boundary_click(ratio: f64) -> StretchLoopBoundaryMeasurement {
+    if !ratio.is_finite() || ratio <= 0.0 {
+        return loop_boundary_nan(ratio, 0);
+    }
+
+    let input = synthetic_loop_seam();
+    let channel_count = input.channels as usize;
+    let frame_count = input.frame_count();
+    let target_len = (frame_count as f64 * ratio).round() as usize;
+    let mut output_channels = Vec::with_capacity(channel_count);
+    for channel in 0..channel_count {
+        let mono = deinterleave_channel(&input.samples, channel_count, channel);
+        output_channels.push(phase_vocoder(&mono, target_len, ratio, 2_048, 512));
+    }
+    let output = interleave_channels(&output_channels);
+    measure_loop_boundary_click(&output, input.channels, ratio)
 }
 
 /// Upper-bound limit for a stretch benchmark metric.
@@ -777,6 +846,45 @@ fn transient_smear_nan(ratio: f64) -> StretchTransientSmearMeasurement {
         max_smear_frames: f64::NAN,
         metric: StretchMetricValue::new(StretchMetric::TransientSmearFrames, f64::NAN),
     }
+}
+
+fn loop_boundary_nan(ratio: f64, channels: u16) -> StretchLoopBoundaryMeasurement {
+    StretchLoopBoundaryMeasurement {
+        ratio,
+        channels,
+        peak_boundary_delta: f64::NAN,
+        click_dbfs: f64::NAN,
+        metric: StretchMetricValue::new(StretchMetric::LoopBoundaryClickDbfs, f64::NAN),
+    }
+}
+
+fn amplitude_to_dbfs(amplitude: f64) -> f64 {
+    if amplitude <= 1.0e-12 {
+        -240.0
+    } else {
+        20.0 * amplitude.log10()
+    }
+}
+
+fn deinterleave_channel(samples: &[Sample], channels: usize, channel: usize) -> Vec<Sample> {
+    samples
+        .chunks_exact(channels)
+        .map(|frame| frame[channel])
+        .collect()
+}
+
+fn interleave_channels(channels: &[Vec<Sample>]) -> Vec<Sample> {
+    let Some(first) = channels.first() else {
+        return Vec::new();
+    };
+    let frames = channels.iter().map(Vec::len).min().unwrap_or(first.len());
+    let mut output = Vec::with_capacity(frames * channels.len());
+    for frame in 0..frames {
+        for channel in channels {
+            output.push(channel[frame]);
+        }
+    }
+    output
 }
 
 fn nearest_transient(
