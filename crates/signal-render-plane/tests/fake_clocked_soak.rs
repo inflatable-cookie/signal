@@ -34,7 +34,8 @@ fn tone_plan() -> RenderPlanSpec {
         .map(|index| RenderNote {
             start_frame: index * 12_000,
             duration_frames: 18_000,
-            pitch: 57 + [0u8, 4, 7, 12][index as usize % 4],
+            degree: 57 + [0i32, 4, 7, 12][index as usize % 4],
+            pitch_intent: None,
             velocity: 0.5,
         })
         .collect();

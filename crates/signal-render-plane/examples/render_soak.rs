@@ -96,7 +96,8 @@ fn notes_lane(stage_id: u64, gain: f32) -> RenderStageSpec {
         .map(|index| RenderNote {
             start_frame: index * 12_000,
             duration_frames: 18_000, // Overlapping voices: polyphony active.
-            pitch: 57 + [0u8, 4, 7, 12][index as usize % 4],
+            degree: 57 + [0i32, 4, 7, 12][index as usize % 4],
+            pitch_intent: None,
             velocity: 0.5,
         })
         .collect();

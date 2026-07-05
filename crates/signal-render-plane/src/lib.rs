@@ -108,24 +108,55 @@ const NOTE_RELEASE_SECONDS: f64 = 0.040;
 /// true simultaneity).
 pub const NOTE_POLYPHONY_LIMIT: usize = 32;
 
-/// One note event: clip-relative timing on the stream clock, MIDI pitch,
-/// normalized velocity. Velocity is the voice's sustain amplitude.
+/// Explicit per-note pitch override (loophole g12.034 rider): what
+/// frequency actually sounds, kept separate from the note's degree (row)
+/// identity. `None` on the note derives the frequency from the degree via
+/// the tuning default (12-EDO today).
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum RenderPitchIntent {
+    /// Absolute frequency in hertz.
+    FrequencyHz(f64),
+    /// Offset in cents from the degree's tuning-derived frequency.
+    CentsOffset(f64),
+}
+
+/// One note event: clip-relative timing on the stream clock, degree (row)
+/// identity + optional pitch intent, normalized velocity. Velocity is the
+/// voice's sustain amplitude.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct RenderNote {
     /// First frame of the note, relative to the owning clip's window start.
     pub start_frame: u64,
     /// Note length in frames (the release tail extends past this).
     pub duration_frames: u64,
-    /// MIDI pitch (69 = A4 = 440 Hz).
-    pub pitch: u8,
+    /// Degree (row/scale-step) identity. Under the 12-EDO default tuning a
+    /// degree IS the MIDI pitch (69 = A4 = 440 Hz).
+    pub degree: i32,
+    /// `None` = derive the frequency from `degree` via the 12-EDO default;
+    /// `Some` = explicit override.
+    pub pitch_intent: Option<RenderPitchIntent>,
     /// Normalized velocity in `0..=1`, applied as the voice amplitude.
     pub velocity: f32,
 }
 
 impl RenderNote {
-    /// Oscillator frequency in hertz: `440 · 2^((pitch − 69) / 12)`.
+    /// The 12-EDO default frequency for a degree:
+    /// `440 · 2^((degree − 69) / 12)`.
+    fn degree_default_frequency_hz(degree: i32) -> f64 {
+        440.0 * f64::powf(2.0, (f64::from(degree) - 69.0) / 12.0)
+    }
+
+    /// Oscillator frequency in hertz, derived from `(degree, pitch_intent)`:
+    /// no intent means the degree's 12-EDO default — bit-identical to the
+    /// pre-widening `440 · 2^((pitch − 69) / 12)` path.
     pub fn frequency_hz(&self) -> f64 {
-        440.0 * f64::powf(2.0, (f64::from(self.pitch) - 69.0) / 12.0)
+        match self.pitch_intent {
+            None => Self::degree_default_frequency_hz(self.degree),
+            Some(RenderPitchIntent::FrequencyHz(hz)) => hz,
+            Some(RenderPitchIntent::CentsOffset(cents)) => {
+                Self::degree_default_frequency_hz(self.degree) * f64::powf(2.0, cents / 1200.0)
+            }
+        }
     }
 }
 
@@ -4499,13 +4530,41 @@ mod tests {
 
     // ── Note sources (built-in instrument) ─────────────────────────────────
 
-    fn note(start_frame: u64, duration_frames: u64, pitch: u8, velocity: f32) -> RenderNote {
+    fn note(start_frame: u64, duration_frames: u64, degree: i32, velocity: f32) -> RenderNote {
         RenderNote {
             start_frame,
             duration_frames,
-            pitch,
+            degree,
+            pitch_intent: None,
             velocity,
         }
+    }
+
+    #[test]
+    fn degree_frequency_derivation_is_bit_identical_to_the_u8_pitch_formula() {
+        // g12.034 widening compatibility pin: a degree with no pitch intent
+        // must derive the EXACT bits the pre-widening
+        // `440 * 2^((pitch - 69) / 12)` path produced for every u8 pitch.
+        for pitch in 0u8..=127 {
+            let old = 440.0 * f64::powf(2.0, (f64::from(pitch) - 69.0) / 12.0);
+            let new = note(0, 1, i32::from(pitch), 1.0).frequency_hz();
+            assert_eq!(old.to_bits(), new.to_bits(), "diverged at pitch {pitch}");
+        }
+    }
+
+    #[test]
+    fn pitch_intent_overrides_or_offsets_the_degree_frequency() {
+        let mut absolute = note(0, 1, 69, 1.0);
+        absolute.pitch_intent = Some(RenderPitchIntent::FrequencyHz(432.0));
+        assert_eq!(absolute.frequency_hz(), 432.0);
+
+        let mut offset = note(0, 1, 69, 1.0);
+        offset.pitch_intent = Some(RenderPitchIntent::CentsOffset(1200.0));
+        assert!((offset.frequency_hz() - 880.0).abs() < 1e-9);
+
+        let mut zero_offset = note(0, 1, 69, 1.0);
+        zero_offset.pitch_intent = Some(RenderPitchIntent::CentsOffset(0.0));
+        assert_eq!(zero_offset.frequency_hz(), 440.0);
     }
 
     fn note_buffer(notes: Vec<RenderNote>) -> RenderNoteBuffer {
@@ -4628,7 +4687,7 @@ mod tests {
 
     #[test]
     fn chords_render_as_the_sum_of_their_notes() {
-        let pitches = [60u8, 64, 67];
+        let pitches = [60i32, 64, 67];
         let chord = note_buffer(pitches.iter().map(|p| note(0, 24_000, *p, 0.3)).collect());
         let chord_left = render_notes_left(&notes_spec(&chord, 0, u64::MAX), 0, 12_000);
 
@@ -4683,7 +4742,7 @@ mod tests {
         let make = |count: usize| {
             note_buffer(
                 (0..count)
-                    .map(|index| note(index as u64, 24_000, 40 + index as u8, 0.02))
+                    .map(|index| note(index as u64, 24_000, 40 + index as i32, 0.02))
                     .collect(),
             )
         };
