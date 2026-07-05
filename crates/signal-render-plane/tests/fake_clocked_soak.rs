@@ -16,13 +16,14 @@ use std::time::Duration;
 use signal_hardware::{FakeClockedBackend, OutputStreamBackend, OutputStreamSpec};
 use signal_render_plane::{
     render_plane, ChannelFormat, RenderClipSpec, RenderEdgeSpec, RenderNote, RenderNoteBuffer,
-    RenderPlanSpec, RenderSource, RenderStageKind, RenderStageSpec,
+    RenderPlanSpec, RenderSampleBuffer, RenderSource, RenderStageKind, RenderStageSpec,
 };
 
 const SAMPLE_RATE_HZ: u32 = 48_000;
 const BLOCK_FRAMES: u32 = 256;
 const LANE_ID: u64 = 1;
 const NOTES_LANE_ID: u64 = 2;
+const WARPED_LANE_ID: u64 = 3;
 const MASTER_ID: u64 = 100;
 
 fn tone_plan() -> RenderPlanSpec {
@@ -35,6 +36,16 @@ fn tone_plan() -> RenderPlanSpec {
             duration_frames: 18_000,
             pitch: 57 + [0u8, 4, 7, 12][index as usize % 4],
             velocity: 0.5,
+        })
+        .collect();
+    // Warped lane (g12.027): a looping in-memory sine buffer rate-warped to
+    // 1.5 (non-trivial sinc interpolation every block), so warp playback
+    // shares the sustained clocked load with the tone and note lanes.
+    let warped_data: Vec<f32> = (0..SAMPLE_RATE_HZ as usize)
+        .flat_map(|n| {
+            let value =
+                (std::f32::consts::TAU * 220.0 * n as f32 / SAMPLE_RATE_HZ as f32).sin() * 0.4;
+            [value, value]
         })
         .collect();
     RenderPlanSpec {
@@ -82,6 +93,29 @@ fn tone_plan() -> RenderPlanSpec {
             },
             RenderStageSpec {
                 processor: None,
+                stage_id: WARPED_LANE_ID,
+                format: ChannelFormat::stereo(),
+                gain: 0.3,
+                gain_automation: None,
+                kind: RenderStageKind::Source {
+                    clips: vec![RenderClipSpec {
+                        clip_id: 13,
+                        start_frames: 0,
+                        end_frames: u64::MAX,
+                        source: RenderSource::Warped {
+                            source: Box::new(RenderSource::Samples(RenderSampleBuffer {
+                                sample_rate_hz: SAMPLE_RATE_HZ,
+                                frames: warped_data.into(),
+                            })),
+                            rate: 1.5,
+                        },
+                        loop_source: true,
+                    }],
+                },
+                inputs: Vec::new(),
+            },
+            RenderStageSpec {
+                processor: None,
                 stage_id: MASTER_ID,
                 format: ChannelFormat::stereo(),
                 gain: 1.0,
@@ -95,6 +129,11 @@ fn tone_plan() -> RenderPlanSpec {
                     },
                     RenderEdgeSpec {
                         source_stage_id: NOTES_LANE_ID,
+                        gain: 1.0,
+                        matrix: None,
+                    },
+                    RenderEdgeSpec {
+                        source_stage_id: WARPED_LANE_ID,
                         gain: 1.0,
                         matrix: None,
                     },
@@ -192,7 +231,16 @@ fn clocked_soak_advances_health_counters_and_meters() {
     );
 
     let meters = controller.meters();
-    assert_eq!(meters.len(), 3, "tone lane + notes lane + master metered");
+    assert_eq!(
+        meters.len(),
+        4,
+        "tone lane + notes lane + warped lane + master metered"
+    );
+    let warped = meters
+        .iter()
+        .find(|(id, _, _)| *id == WARPED_LANE_ID)
+        .unwrap();
+    assert!(warped.1 > 0.01, "warped peak should move, saw {}", warped.1);
     let lane = meters.iter().find(|(id, _, _)| *id == LANE_ID).unwrap();
     let notes = meters
         .iter()

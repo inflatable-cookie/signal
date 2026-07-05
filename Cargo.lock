@@ -907,6 +907,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "signal-dsp-stretch"
+version = "0.1.0"
+dependencies = [
+ "rustfft",
+ "signal-primitives",
+]
+
+[[package]]
 name = "signal-graph"
 version = "0.1.0"
 dependencies = [

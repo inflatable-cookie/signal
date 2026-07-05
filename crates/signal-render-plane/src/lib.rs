@@ -698,6 +698,23 @@ pub enum RenderSource {
     /// [`NOTE_POLYPHONY_LIMIT`] notes render simultaneously per block
     /// (earliest-started win). `loop_source` is ignored.
     Notes(RenderNoteBuffer),
+    /// Rate-warped playback of a media source (g12.027 repitch/varispeed):
+    /// the inner source's samples are consumed at `rate` times normal speed,
+    /// so pitch shifts with the rate — like vinyl. `rate` multiplies the
+    /// source-frames-per-stream-frame step the inner source would compile to
+    /// (its own sample-rate conversion included), reusing the polyphase
+    /// windowed-sinc interpolation path; non-finite or non-positive rates
+    /// compile as 1.0. Valid over [`RenderSource::Samples`] and
+    /// [`RenderSource::Stream`] only — anything else (including nesting)
+    /// rejects at compile with
+    /// [`RenderPlanCompileError::WarpedSourceUnsupported`].
+    Warped {
+        /// The media source being rate-warped.
+        source: Box<RenderSource>,
+        /// Playback-rate multiplier: 2.0 plays double speed (octave up),
+        /// 0.5 half speed (octave down).
+        rate: f64,
+    },
 }
 
 /// One clip event in a lane stage: a half-open stream-clock window
@@ -881,6 +898,13 @@ pub enum RenderPlanCompileError {
     },
     /// A plugin processor was attached to a non-Sum stage.
     ProcessorOnNonSumStage(u64),
+    /// A `Warped` source wraps something other than `Samples` or `Stream`.
+    WarpedSourceUnsupported {
+        /// Stage owning the clip.
+        stage_id: u64,
+        /// Clip carrying the unsupported warp.
+        clip_id: u64,
+    },
     /// An explicit edge matrix has the wrong number of coefficients.
     MatrixDimensions {
         /// Stage owning the edge.
@@ -924,6 +948,10 @@ impl std::fmt::Display for RenderPlanCompileError {
             RenderPlanCompileError::ProcessorOnNonSumStage(stage_id) => write!(
                 formatter,
                 "stage {stage_id} attaches a plugin processor but is not a Sum stage",
+            ),
+            RenderPlanCompileError::WarpedSourceUnsupported { stage_id, clip_id } => write!(
+                formatter,
+                "stage {stage_id} clip {clip_id} warps a source that is not Samples or Stream",
             ),
             RenderPlanCompileError::UnsortedNotes { stage_id, clip_id } => write!(
                 formatter,
@@ -1208,14 +1236,42 @@ impl RenderPlan {
                 RenderStageKind::Source { clips } => clips
                     .iter()
                     .map(|clip| {
-                        let source = match &clip.source {
+                        // Unwrap a rate warp (g12.027): the warp multiplies
+                        // the source-frames-per-stream-frame step its inner
+                        // media source compiles to. Warping anything but
+                        // media (or nesting warps) is a spec bug — reject.
+                        let (spec_source, warp_rate) = match &clip.source {
+                            RenderSource::Warped { source, rate } => {
+                                if !matches!(
+                                    source.as_ref(),
+                                    RenderSource::Samples(_) | RenderSource::Stream(_)
+                                ) {
+                                    return Err(RenderPlanCompileError::WarpedSourceUnsupported {
+                                        stage_id: stage.stage_id,
+                                        clip_id: clip.clip_id,
+                                    });
+                                }
+                                let rate = if rate.is_finite() && *rate > 0.0 {
+                                    *rate
+                                } else {
+                                    1.0
+                                };
+                                (source.as_ref(), rate)
+                            }
+                            source => (source, 1.0),
+                        };
+                        let source = match spec_source {
+                            RenderSource::Warped { .. } => {
+                                unreachable!("nested warps rejected above")
+                            }
                             RenderSource::Silence => CompiledSource::Silence,
                             RenderSource::TestTone { frequency_hz } => CompiledSource::Tone {
                                 phase: 0.0,
                                 step: frequency_hz * tau / stream_rate as f32,
                             },
                             RenderSource::Samples(buffer) => {
-                                let step = buffer.sample_rate_hz.max(1) as f64 / stream_rate as f64;
+                                let step = buffer.sample_rate_hz.max(1) as f64 / stream_rate as f64
+                                    * warp_rate;
                                 CompiledSource::Samples {
                                     table: table_for_step(step),
                                     step,
@@ -1225,7 +1281,8 @@ impl RenderPlan {
                             }
                             RenderSource::Stream(handle) => {
                                 let step = handle.source_sample_rate_hz().max(1) as f64
-                                    / stream_rate as f64;
+                                    / stream_rate as f64
+                                    * warp_rate;
                                 CompiledSource::Stream {
                                     table: table_for_step(step),
                                     step,
@@ -3640,6 +3697,194 @@ mod tests {
         }
         let snr = 10.0 * (power / error.max(1e-30)).log10();
         assert!(snr > 60.0, "rate-converted playback SNR {snr:.1} dB");
+    }
+
+    // ── Warped (rate-multiplied) sources (g12.027) ──────────────────────
+
+    #[test]
+    fn warped_samples_clip_plays_at_the_rate_multiplied_step() {
+        // 440 Hz sine at the stream rate warped by 1.5: playback must track
+        // the analytic sine advanced at 1.5 source frames per stream frame
+        // (i.e. sound at 660 Hz), through the same sinc path as SRC.
+        let (mut controller, mut executor) = render_plane();
+        let rate = 1.5f64;
+        let frequency = 440.0f64;
+        let mut data = Vec::new();
+        for n in 0..96_000 {
+            let value = (std::f64::consts::TAU * frequency * n as f64 / 48_000.0).sin() as f32;
+            data.push(value);
+            data.push(value);
+        }
+        let spec = lane_master_spec(
+            1.0,
+            vec![RenderClipSpec {
+                clip_id: 1006,
+                start_frames: 0,
+                end_frames: u64::MAX,
+                source: RenderSource::Warped {
+                    source: Box::new(RenderSource::Samples(RenderSampleBuffer {
+                        sample_rate_hz: 48_000,
+                        frames: data.into(),
+                    })),
+                    rate,
+                },
+                loop_source: false,
+            }],
+        );
+        controller.install_plan(&spec).unwrap();
+        controller.set_playing(true).unwrap();
+        warm_up(&mut executor, 4);
+
+        let mut frames = vec![0.0f32; 2048];
+        executor.render_block(&mut frames);
+        let mut error = 0.0f64;
+        let mut power = 0.0f64;
+        for frame_index in 0..1024usize {
+            let stream_frame = 1024 + frame_index as u64;
+            let position = stream_frame as f64 * rate;
+            let expected = (std::f64::consts::TAU * frequency * position / 48_000.0).sin();
+            let actual = frames[frame_index * 2] as f64;
+            error += (actual - expected) * (actual - expected);
+            power += expected * expected;
+        }
+        let snr = 10.0 * (power / error.max(1e-30)).log10();
+        assert!(snr > 60.0, "warped playback SNR {snr:.1} dB");
+    }
+
+    #[test]
+    fn warped_source_exhausts_early_at_faster_rates() {
+        // A 1 s buffer at rate 2.0 runs out of source after 0.5 s of stream
+        // time: the second half of the clip window renders silence.
+        let (mut controller, mut executor) = render_plane();
+        let data: Vec<f32> = std::iter::repeat([0.5f32, 0.5f32])
+            .take(48_000)
+            .flatten()
+            .collect();
+        let spec = lane_master_spec(
+            1.0,
+            vec![RenderClipSpec {
+                clip_id: 1007,
+                start_frames: 0,
+                end_frames: 96_000,
+                source: RenderSource::Warped {
+                    source: Box::new(RenderSource::Samples(RenderSampleBuffer {
+                        sample_rate_hz: 48_000,
+                        frames: data.into(),
+                    })),
+                    rate: 2.0,
+                },
+                loop_source: false,
+            }],
+        );
+        controller.install_plan(&spec).unwrap();
+        controller.set_playing(true).unwrap();
+        // Render to just past the source-exhaustion point (24 000 stream
+        // frames) and confirm content, then silence.
+        let mut audible_at_20k = 0.0f32;
+        let mut audible_at_30k = 0.0f32;
+        let mut frames = vec![0.0f32; 512];
+        for block in 0..128u64 {
+            executor.render_block(&mut frames);
+            let block_start = block * 256;
+            if block_start == 19_968 {
+                audible_at_20k = frames.iter().fold(0.0f32, |a, s| a.max(s.abs()));
+            }
+            if block_start == 29_952 {
+                audible_at_30k = frames.iter().fold(0.0f32, |a, s| a.max(s.abs()));
+            }
+        }
+        assert!(
+            audible_at_20k > 0.1,
+            "expected audible content before exhaustion, peak {audible_at_20k}"
+        );
+        assert!(
+            audible_at_30k < 1.0e-3,
+            "expected silence after source exhaustion, peak {audible_at_30k}"
+        );
+    }
+
+    #[test]
+    fn warped_source_over_non_media_rejects_at_compile() {
+        let (mut controller, _executor) = render_plane();
+        let spec = lane_master_spec(
+            1.0,
+            vec![RenderClipSpec {
+                clip_id: 1008,
+                start_frames: 0,
+                end_frames: u64::MAX,
+                source: RenderSource::Warped {
+                    source: Box::new(RenderSource::TestTone {
+                        frequency_hz: 440.0,
+                    }),
+                    rate: 1.5,
+                },
+                loop_source: false,
+            }],
+        );
+        let error = controller.install_plan(&spec).unwrap_err();
+        let expected = RenderPlanCompileError::WarpedSourceUnsupported {
+            stage_id: LANE_ID,
+            clip_id: 1008,
+        };
+        assert!(
+            error.message.contains(&expected.to_string()),
+            "unexpected error: {}",
+            error.message
+        );
+    }
+
+    #[test]
+    fn warped_source_sanitizes_degenerate_rates_to_identity() {
+        // NaN/zero/negative rates compile as 1.0: playback matches the
+        // unwarped source sample for sample.
+        for rate in [f64::NAN, 0.0, -2.0] {
+            let (mut controller, mut executor) = render_plane();
+            let data: Vec<f32> = (0..9_600)
+                .flat_map(|n| {
+                    let value = ((n as f32 * 0.13).sin()) * 0.5;
+                    [value, value]
+                })
+                .collect();
+            let buffer = RenderSampleBuffer {
+                sample_rate_hz: 48_000,
+                frames: data.into(),
+            };
+            let warped = lane_master_spec(
+                1.0,
+                vec![RenderClipSpec {
+                    clip_id: 1009,
+                    start_frames: 0,
+                    end_frames: u64::MAX,
+                    source: RenderSource::Warped {
+                        source: Box::new(RenderSource::Samples(buffer.clone())),
+                        rate,
+                    },
+                    loop_source: false,
+                }],
+            );
+            controller.install_plan(&warped).unwrap();
+            controller.set_playing(true).unwrap();
+            let mut warped_frames = vec![0.0f32; 2048];
+            executor.render_block(&mut warped_frames);
+
+            let (mut controller, mut executor) = render_plane();
+            let plain = lane_master_spec(
+                1.0,
+                vec![RenderClipSpec {
+                    clip_id: 1009,
+                    start_frames: 0,
+                    end_frames: u64::MAX,
+                    source: RenderSource::Samples(buffer),
+                    loop_source: false,
+                }],
+            );
+            controller.install_plan(&plain).unwrap();
+            controller.set_playing(true).unwrap();
+            let mut plain_frames = vec![0.0f32; 2048];
+            executor.render_block(&mut plain_frames);
+
+            assert_eq!(warped_frames, plain_frames, "rate {rate}");
+        }
     }
 
     // ── Plugin processors (g11.012) ─────────────────────────────────────

@@ -5,6 +5,7 @@ members = [
   "crates/signal-dsp",
   "crates/signal-dsp-resample",
   "crates/signal-dsp-spectral",
+  "crates/signal-dsp-stretch",
   "crates/signal-analysis",
   "crates/signal-analysis-rhythm",
   "crates/signal-analysis-tonal",
@@ -40,6 +41,7 @@ signal-primitives = { path = "crates/signal-primitives" }
 signal-dsp = { path = "crates/signal-dsp" }
 signal-dsp-resample = { path = "crates/signal-dsp-resample" }
 signal-dsp-spectral = { path = "crates/signal-dsp-spectral" }
+signal-dsp-stretch = { path = "crates/signal-dsp-stretch" }
 signal-analysis = { path = "crates/signal-analysis" }
 signal-analysis-rhythm = { path = "crates/signal-analysis-rhythm" }
 signal-analysis-tonal = { path = "crates/signal-analysis-tonal" }
