@@ -37,12 +37,13 @@ mod benchmark;
 mod phase_vocoder;
 
 pub use benchmark::{
-    assess_stretch_metrics, compare_sustained_material_coherence, format_stretch_acceptance_report,
-    generate_synthetic_stretch_audio, output_length_drift_samples, synthetic_stretch_corpus_cases,
-    StretchAcceptanceReport, StretchAcceptanceSeverity, StretchAcceptanceStatus,
-    StretchCoherenceComparison, StretchCorpusCase, StretchCorpusFamily, StretchCorpusSource,
-    StretchMetric, StretchMetricAssessment, StretchMetricLimit, StretchMetricValue,
-    StretchSyntheticAudio, STRETCH_BENCHMARK_CORPUS,
+    assess_stretch_metrics, compare_sustained_material_coherence, detect_stretch_transients,
+    format_stretch_acceptance_report, generate_synthetic_stretch_audio,
+    output_length_drift_samples, synthetic_stretch_corpus_cases, StretchAcceptanceReport,
+    StretchAcceptanceSeverity, StretchAcceptanceStatus, StretchCoherenceComparison,
+    StretchCorpusCase, StretchCorpusFamily, StretchCorpusSource, StretchMetric,
+    StretchMetricAssessment, StretchMetricLimit, StretchMetricValue, StretchSyntheticAudio,
+    StretchTransientEvent, STRETCH_BENCHMARK_CORPUS,
 };
 
 use phase_vocoder::phase_vocoder;
@@ -571,5 +572,39 @@ mod tests {
         assert_eq!(report.status, StretchAcceptanceStatus::Pass);
         assert!(formatted.contains("metric=VerticalCoherenceDelta"));
         assert!(formatted.contains("status=Pass"));
+    }
+
+    #[test]
+    fn transient_detector_finds_synthetic_attack_frames() {
+        let audio = generate_synthetic_stretch_audio(StretchCorpusFamily::ExtremeRatio)
+            .expect("extreme-ratio synthetic audio exists");
+        let events = detect_stretch_transients(&audio.samples, 1024, 256);
+
+        assert!(
+            events.len() >= 10,
+            "expected repeated synthetic attacks, got {events:?}"
+        );
+        for expected in [8_000usize, 16_000, 24_000, 32_000, 40_000] {
+            assert!(
+                events
+                    .iter()
+                    .any(|event| event.frame_index.abs_diff(expected) <= 768),
+                "missing transient near frame {expected}, got {events:?}"
+            );
+        }
+        assert!(events.iter().all(|event| event.energy_score.is_finite()
+            && event.spectral_flux_score.is_finite()
+            && event.combined_score.is_finite()));
+    }
+
+    #[test]
+    fn transient_detector_stays_quiet_on_plain_sustain() {
+        let input = sine(440.0, 48_000.0, 48_000);
+        let events = detect_stretch_transients(&input, 1024, 256);
+
+        assert!(
+            events.len() <= 1,
+            "plain sustain should not generate repeated transient events: {events:?}"
+        );
     }
 }

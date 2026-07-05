@@ -231,6 +231,19 @@ pub struct StretchCoherenceComparison {
     pub metric: StretchMetricValue,
 }
 
+/// One detected transient candidate in benchmark audio.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct StretchTransientEvent {
+    /// Sample-frame index at the beginning of the detected analysis frame.
+    pub frame_index: usize,
+    /// Normalized positive frame-energy rise score.
+    pub energy_score: f64,
+    /// Normalized positive spectral-flux score.
+    pub spectral_flux_score: f64,
+    /// Combined detector score. Higher means a stronger transient candidate.
+    pub combined_score: f64,
+}
+
 /// Compare sustained-material vertical coherence for the draft baseline and
 /// the identity phase-locked prototype.
 ///
@@ -265,6 +278,59 @@ pub fn compare_sustained_material_coherence(ratio: f64) -> StretchCoherenceCompa
         phase_locked_vertical_coherence_score: phase_locked_score,
         metric: StretchMetricValue::new(StretchMetric::VerticalCoherenceDelta, gap),
     }
+}
+
+/// Detect transient candidates from frame energy rise and positive spectral
+/// flux. This is a measurement primitive only; it does not change synthesis.
+pub fn detect_stretch_transients(
+    samples: &[Sample],
+    window_size: usize,
+    hop_size: usize,
+) -> Vec<StretchTransientEvent> {
+    if samples.len() < window_size || window_size < 16 || hop_size == 0 {
+        return Vec::new();
+    }
+
+    let frame_features = transient_frame_features(samples, window_size, hop_size);
+    if frame_features.len() < 3 {
+        return Vec::new();
+    }
+
+    let mut energy_rises = Vec::with_capacity(frame_features.len());
+    let mut fluxes = Vec::with_capacity(frame_features.len());
+    energy_rises.push(0.0);
+    fluxes.push(0.0);
+    for pair in frame_features.windows(2) {
+        energy_rises.push((pair[1].energy - pair[0].energy).max(0.0));
+        fluxes.push(pair[1].spectral_flux);
+    }
+
+    let energy_scale = mean_plus_stddev(&energy_rises).max(1.0e-12);
+    let flux_scale = mean_plus_stddev(&fluxes).max(1.0e-12);
+    let mut events = Vec::new();
+
+    for index in 1..frame_features.len() - 1 {
+        let energy_score = energy_rises[index] / energy_scale;
+        let flux_score = fluxes[index] / flux_scale;
+        let combined_score = energy_score + flux_score;
+        let previous_score =
+            energy_rises[index - 1] / energy_scale + fluxes[index - 1] / flux_scale;
+        let next_score = energy_rises[index + 1] / energy_scale + fluxes[index + 1] / flux_scale;
+        if combined_score >= 3.0
+            && combined_score >= previous_score
+            && combined_score > next_score
+            && flux_score >= 2.0
+        {
+            events.push(StretchTransientEvent {
+                frame_index: frame_features[index].frame_index,
+                energy_score,
+                spectral_flux_score: flux_score,
+                combined_score,
+            });
+        }
+    }
+
+    merge_nearby_transients(events, hop_size * 2)
 }
 
 /// Upper-bound limit for a stretch benchmark metric.
@@ -517,6 +583,95 @@ fn peak_neighborhood_phase_curvature(samples: &[Sample], window_size: usize, hop
     } else {
         f64::NAN
     }
+}
+
+#[derive(Clone, Copy, Debug)]
+struct TransientFrameFeature {
+    frame_index: usize,
+    energy: f64,
+    spectral_flux: f64,
+}
+
+fn transient_frame_features(
+    samples: &[Sample],
+    window_size: usize,
+    hop_size: usize,
+) -> Vec<TransientFrameFeature> {
+    let bins = window_size / 2 + 1;
+    let window: Vec<f32> = (0..window_size)
+        .map(|index| 0.5 - 0.5 * (std::f32::consts::TAU * index as f32 / window_size as f32).cos())
+        .collect();
+    let mut planner = FftPlanner::<f32>::new();
+    let forward = planner.plan_fft_forward(window_size);
+    let mut buffer = vec![Complex32::new(0.0, 0.0); window_size];
+    let mut previous_magnitudes = vec![0.0f32; bins];
+    let mut magnitudes = vec![0.0f32; bins];
+    let mut features = Vec::new();
+
+    for start in (0..=samples.len() - window_size).step_by(hop_size) {
+        let mut energy = 0.0f64;
+        for (slot, (sample, weight)) in buffer.iter_mut().zip(
+            samples[start..start + window_size]
+                .iter()
+                .zip(window.iter()),
+        ) {
+            let windowed = sample * weight;
+            energy += (windowed * windowed) as f64;
+            *slot = Complex32::new(windowed, 0.0);
+        }
+        forward.process(&mut buffer);
+
+        let mut flux = 0.0f64;
+        for bin in 0..bins {
+            let magnitude = buffer[bin].norm();
+            magnitudes[bin] = magnitude;
+            flux += (magnitude - previous_magnitudes[bin]).max(0.0) as f64;
+        }
+        previous_magnitudes.copy_from_slice(&magnitudes);
+
+        features.push(TransientFrameFeature {
+            frame_index: start,
+            energy: energy / window_size as f64,
+            spectral_flux: flux / bins as f64,
+        });
+    }
+
+    features
+}
+
+fn mean_plus_stddev(values: &[f64]) -> f64 {
+    if values.is_empty() {
+        return f64::NAN;
+    }
+    let mean = values.iter().sum::<f64>() / values.len() as f64;
+    let variance = values
+        .iter()
+        .map(|value| {
+            let delta = value - mean;
+            delta * delta
+        })
+        .sum::<f64>()
+        / values.len() as f64;
+    mean + variance.sqrt()
+}
+
+fn merge_nearby_transients(
+    events: Vec<StretchTransientEvent>,
+    merge_distance_frames: usize,
+) -> Vec<StretchTransientEvent> {
+    let mut merged = Vec::<StretchTransientEvent>::new();
+    for event in events {
+        if let Some(last) = merged.last_mut() {
+            if event.frame_index.saturating_sub(last.frame_index) <= merge_distance_frames {
+                if event.combined_score > last.combined_score {
+                    *last = event;
+                }
+                continue;
+            }
+        }
+        merged.push(event);
+    }
+    merged
 }
 
 fn severity_to_stretch_status(severity: StretchAcceptanceSeverity) -> StretchAcceptanceStatus {
