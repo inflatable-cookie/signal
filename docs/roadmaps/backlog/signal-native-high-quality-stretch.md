@@ -199,16 +199,16 @@ Work:
 - [x] split current phase-vocoder internals into analysis, phase, and
   synthesis helpers
 - [x] add spectral peak tracking per frame
-- [ ] add identity phase locking around peak neighborhoods
-- [ ] keep current `PhaseVocoderStretcher` behavior available as the draft
+- [x] add identity phase locking around peak neighborhoods
+- [x] keep current `PhaseVocoderStretcher` behavior available as the draft
   baseline for regression comparison
 
 Acceptance:
 
-- [ ] fixed-ratio length contract remains exact
-- [ ] tonal pitch preservation does not regress against the draft baseline
+- [x] fixed-ratio length contract remains exact
+- [x] tonal pitch preservation does not regress against the draft baseline
 - [ ] sustained-material coherence metrics improve or log a measured gap
-- [ ] no new realtime render-plane path is introduced
+- [x] no new realtime render-plane path is introduced
 
 Validation:
 
@@ -271,5 +271,5 @@ Work:
 
 ## Next Task
 
-Continue Slice 2 by adding identity phase locking around tracked spectral peak
-neighborhoods while preserving the draft baseline for regression comparison.
+Finish Slice 2 by adding or logging a sustained-material coherence metric for
+the phase-locked prototype against the draft baseline.
