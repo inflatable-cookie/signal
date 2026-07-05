@@ -20,7 +20,10 @@ use std::{
 use clap_sys::{
     audio_buffer::clap_audio_buffer,
     entry::clap_plugin_entry,
-    events::{clap_event_header, clap_input_events, clap_output_events},
+    events::{
+        clap_event_header, clap_event_param_value, clap_input_events, clap_output_events,
+        CLAP_CORE_EVENT_SPACE_ID, CLAP_EVENT_PARAM_VALUE,
+    },
     ext::audio_ports::{clap_plugin_audio_ports, CLAP_EXT_AUDIO_PORTS},
     ext::gui::{clap_host_gui, clap_plugin_gui, CLAP_EXT_GUI},
     factory::plugin_factory::{clap_plugin_factory, CLAP_PLUGIN_FACTORY_ID},
@@ -30,7 +33,11 @@ use clap_sys::{
     version::clap_version,
 };
 use libloading::Library;
-use signal_plugin::{PluginAudioBusDirection, PluginParameterDescriptor};
+use signal_plugin::{
+    PluginAudioBusDirection, PluginParamChange, PluginParamChangeQueue, PluginParameterDescriptor,
+    PLUGIN_PARAM_CHANGE_CAPACITY,
+};
+use std::sync::Arc;
 
 use crate::gui::{ClapGuiEvent, ClapGuiSession};
 
@@ -169,6 +176,10 @@ pub struct ClapHostedInstance {
     /// The live editor, when open. Ordered before `plugin` teardown in
     /// `Drop` (gui destroy must precede plugin destroy).
     gui_session: Option<ClapGuiSession>,
+    /// Pending param writes bound for the audio thread's process in-events
+    /// (g12.023); shared with every process session built from this
+    /// instance.
+    param_changes: Arc<PluginParamChangeQueue>,
 }
 
 impl ClapHostedInstance {
@@ -218,12 +229,37 @@ impl ClapHostedInstance {
             gui_extension,
             gui_api_supported,
             gui_session: None,
+            param_changes: Arc::new(PluginParamChangeQueue::new()),
         })
     }
 
-    /// Parameter inventory enumerated at load (read-only phase 1).
+    /// Parameter inventory enumerated at load.
     pub fn parameters(&self) -> &[PluginParameterDescriptor] {
         &self.parameters
+    }
+
+    /// Queue one parameter write (g12.023). `normalized` is the host's
+    /// 0..1 value; CLAP param events carry PLAIN values, so it maps
+    /// linearly onto the descriptor's plain range before queueing. The
+    /// audio thread delivers it as a `CLAP_EVENT_PARAM_VALUE` in-event at
+    /// the top of the next processed block (block-boundary posture v1).
+    pub fn set_parameter_normalized(
+        &self,
+        parameter_id: u32,
+        normalized: f32,
+    ) -> Result<(), ClapHostingError> {
+        let descriptor = self
+            .parameters
+            .iter()
+            .find(|parameter| parameter.parameter_id == parameter_id)
+            .ok_or_else(|| ClapHostingError::new("unknown_parameter"))?;
+        let normalized = f64::from(normalized.clamp(0.0, 1.0));
+        let plain = f64::from(descriptor.min_plain)
+            + normalized * f64::from(descriptor.max_plain - descriptor.min_plain);
+        if !self.param_changes.push(parameter_id, plain) {
+            return Err(ClapHostingError::new("param_queue_full"));
+        }
+        Ok(())
     }
 
     /// Main-bus port layout enumerated at load.
@@ -342,6 +378,7 @@ impl ClapHostedInstance {
         Ok(ClapProcessSession::new(
             self.plugin,
             self.activated_max_frames as usize,
+            Arc::clone(&self.param_changes),
         ))
     }
 }
@@ -493,7 +530,8 @@ unsafe extern "C" fn host_gui_closed(host: *const clap_host, was_destroyed: bool
 
 // ── Raw process session (audio thread) ─────────────────────────────────────
 
-/// Empty input event list: the phase-1 bridge carries audio only.
+/// Empty input event list, served when no param change is pending
+/// (g12.023: pending changes ride a session-owned event list instead).
 static EMPTY_IN_EVENTS: clap_input_events = clap_input_events {
     ctx: ptr::null_mut(),
     size: Some(empty_in_events_size),
@@ -524,6 +562,41 @@ unsafe extern "C" fn sink_out_events_try_push(
     false
 }
 
+/// The session-owned param in-event list served to the plugin through
+/// `clap_input_events` (g12.023). Boxed by the session so the `ctx`
+/// pointer inside the embedded `clap_input_events` stays stable while the
+/// session moves between threads. Events are rebuilt at the top of every
+/// processed block from the shared change queue (block-boundary
+/// application, time offset 0) — alloc-free, both vecs preallocated at
+/// the queue capacity.
+struct ParamEventList {
+    events: Vec<clap_event_param_value>,
+    /// The `clap_input_events` handed to the plugin; `ctx` points back at
+    /// this boxed struct.
+    list: clap_input_events,
+}
+
+unsafe extern "C" fn param_in_events_size(list: *const clap_input_events) -> u32 {
+    if list.is_null() || (*list).ctx.is_null() {
+        return 0;
+    }
+    (*(*list).ctx.cast::<ParamEventList>()).events.len() as u32
+}
+
+unsafe extern "C" fn param_in_events_get(
+    list: *const clap_input_events,
+    index: u32,
+) -> *const clap_event_header {
+    if list.is_null() || (*list).ctx.is_null() {
+        return ptr::null();
+    }
+    let events = &(*(*list).ctx.cast::<ParamEventList>()).events;
+    match events.get(index as usize) {
+        Some(event) => (&event.header as *const clap_event_header).cast(),
+        None => ptr::null(),
+    }
+}
+
 /// Raw, movable process handle for one activated instance: the plugin
 /// pointer plus preallocated planar stereo buffers. The sandbox moves this
 /// onto its audio thread; the owning [`ClapHostedInstance`] must outlive it
@@ -536,6 +609,12 @@ pub struct ClapProcessSession {
     output_right: Vec<f32>,
     steady_time: AtomicI64,
     processing: bool,
+    /// Pending param writes shared with the owning instance (g12.023).
+    param_changes: Arc<PluginParamChangeQueue>,
+    /// Drain scratch (preallocated; audio thread never allocates).
+    param_scratch: Vec<PluginParamChange>,
+    /// The in-event list served to the plugin, rebuilt per block.
+    param_events: Box<ParamEventList>,
 }
 
 // Safety: the session is handed to exactly one audio thread; CLAP's process
@@ -544,7 +623,22 @@ pub struct ClapProcessSession {
 unsafe impl Send for ClapProcessSession {}
 
 impl ClapProcessSession {
-    fn new(plugin: *const clap_plugin, max_frames: usize) -> Self {
+    fn new(
+        plugin: *const clap_plugin,
+        max_frames: usize,
+        param_changes: Arc<PluginParamChangeQueue>,
+    ) -> Self {
+        let mut param_events = Box::new(ParamEventList {
+            events: Vec::with_capacity(PLUGIN_PARAM_CHANGE_CAPACITY),
+            list: clap_input_events {
+                ctx: ptr::null_mut(),
+                size: Some(param_in_events_size),
+                get: Some(param_in_events_get),
+            },
+        });
+        // Self-referential ctx: the list lives inside the box (stable
+        // address) for the session's whole lifetime.
+        param_events.list.ctx = (&mut *param_events as *mut ParamEventList).cast();
         Self {
             plugin,
             input_left: vec![0.0; max_frames],
@@ -553,7 +647,41 @@ impl ClapProcessSession {
             output_right: vec![0.0; max_frames],
             steady_time: AtomicI64::new(0),
             processing: false,
+            param_changes,
+            param_scratch: Vec::with_capacity(PLUGIN_PARAM_CHANGE_CAPACITY),
+            param_events,
         }
+    }
+
+    /// Rebuild the block's param in-events from the shared change queue
+    /// (block-boundary application: every event lands at time offset 0).
+    /// Alloc-free; returns the `clap_input_events` to hand to the plugin
+    /// (the empty static list when nothing is pending).
+    fn prepare_param_events(&mut self) -> *const clap_input_events {
+        self.param_events.events.clear();
+        if self.param_changes.is_empty() {
+            return &EMPTY_IN_EVENTS;
+        }
+        self.param_changes.drain_coalesced(&mut self.param_scratch);
+        for change in &self.param_scratch {
+            self.param_events.events.push(clap_event_param_value {
+                header: clap_event_header {
+                    size: std::mem::size_of::<clap_event_param_value>() as u32,
+                    time: 0,
+                    space_id: CLAP_CORE_EVENT_SPACE_ID,
+                    type_: CLAP_EVENT_PARAM_VALUE,
+                    flags: 0,
+                },
+                param_id: change.parameter_id,
+                cookie: ptr::null_mut(),
+                note_id: -1,
+                port_index: -1,
+                channel: -1,
+                key: -1,
+                value: change.value,
+            });
+        }
+        &self.param_events.list
     }
 
     /// `start_processing` on the audio thread; must precede `process`.
@@ -598,6 +726,7 @@ impl ClapProcessSession {
             .min(self.input_left.len())
             .min(input.len() / 2)
             .min(output.len() / 2);
+        let in_events = self.prepare_param_events();
         for frame in 0..frames {
             self.input_left[frame] = input[frame * 2];
             self.input_right[frame] = input[frame * 2 + 1];
@@ -631,7 +760,7 @@ impl ClapProcessSession {
             audio_outputs: &mut output_buffer,
             audio_inputs_count: 1,
             audio_outputs_count: 1,
-            in_events: &EMPTY_IN_EVENTS,
+            in_events,
             out_events: &SINK_OUT_EVENTS,
         };
         self.steady_time
@@ -660,6 +789,7 @@ impl ClapProcessSession {
     /// semantics). Alloc-free. `true` = buffer transformed.
     pub fn process_in_place(&mut self, io: &mut [f32], frame_count: usize) -> bool {
         let frames = frame_count.min(self.input_left.len()).min(io.len() / 2);
+        let in_events = self.prepare_param_events();
         for frame in 0..frames {
             self.input_left[frame] = io[frame * 2];
             self.input_right[frame] = io[frame * 2 + 1];
@@ -693,7 +823,7 @@ impl ClapProcessSession {
             audio_outputs: &mut output_buffer,
             audio_inputs_count: 1,
             audio_outputs_count: 1,
-            in_events: &EMPTY_IN_EVENTS,
+            in_events,
             out_events: &SINK_OUT_EVENTS,
         };
         self.steady_time

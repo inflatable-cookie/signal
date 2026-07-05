@@ -77,9 +77,30 @@ impl InProcessClapProcessor {
         })
     }
 
-    /// Parameter inventory enumerated at load (read-only phase 1).
+    /// Parameter inventory enumerated at load.
     pub fn parameters(&self) -> &[PluginParameterDescriptor] {
         &self.parameters
+    }
+
+    /// Queue one normalized 0..1 parameter write (g12.023): delivered to
+    /// the plugin as a `CLAP_EVENT_PARAM_VALUE` in-event at the top of the
+    /// next processed block. Not part of the audio path — takes the
+    /// instance lock.
+    pub fn set_parameter_normalized(
+        &self,
+        parameter_id: u32,
+        normalized: f32,
+    ) -> Result<(), String> {
+        if !self.alive.load(Ordering::Relaxed) {
+            return Err("backend_dead".to_string());
+        }
+        let instance = self
+            .instance
+            .lock()
+            .map_err(|_| "instance_lock_poisoned".to_string())?;
+        instance
+            .set_parameter_normalized(parameter_id, normalized)
+            .map_err(|error| error.token)
     }
 
     /// Blocks bypassed so far, cumulative.
@@ -293,9 +314,29 @@ impl InProcessVst3Processor {
         })
     }
 
-    /// Parameter inventory enumerated at load (read-only phase 1).
+    /// Parameter inventory enumerated at load.
     pub fn parameters(&self) -> &[PluginParameterDescriptor] {
         &self.parameters
+    }
+
+    /// Queue one normalized 0..1 parameter write (g12.023): syncs the edit
+    /// controller and rides the next block's input `IParameterChanges`.
+    /// Not part of the audio path — takes the instance lock.
+    pub fn set_parameter_normalized(
+        &self,
+        parameter_id: u32,
+        normalized: f32,
+    ) -> Result<(), String> {
+        if !self.alive.load(Ordering::Relaxed) {
+            return Err("backend_dead".to_string());
+        }
+        let instance = self
+            .instance
+            .lock()
+            .map_err(|_| "instance_lock_poisoned".to_string())?;
+        instance
+            .set_parameter_normalized(parameter_id, normalized)
+            .map_err(|error| error.token)
     }
 
     /// Blocks bypassed so far, cumulative.
@@ -421,15 +462,14 @@ impl InProcessAuProcessor {
         })
     }
 
-    /// Parameter inventory enumerated at load (read-only phase 1).
+    /// Parameter inventory enumerated at load.
     pub fn parameters(&self) -> &[PluginParameterDescriptor] {
         &self.parameters
     }
 
     /// Set one parameter's plain value on the hosted unit
-    /// (`AudioUnitSetParameter`). Phase 1 uses this from tests only; it is
-    /// the natural phase-2 param-set seam. Not part of the audio path —
-    /// takes the instance lock.
+    /// (`AudioUnitSetParameter`). Not part of the audio path — takes the
+    /// instance lock.
     pub fn set_parameter(&self, parameter_id: u32, value: f32) -> Result<(), String> {
         let mut instance = self
             .instance
@@ -437,6 +477,27 @@ impl InProcessAuProcessor {
             .map_err(|_| "instance_lock_poisoned".to_string())?;
         instance
             .set_parameter(parameter_id, value)
+            .map_err(|error| error.token)
+    }
+
+    /// Normalized 0..1 parameter write (g12.023): maps onto the unit's
+    /// plain range and applies via `AudioUnitSetParameter` — the unit picks
+    /// it up on its next render pull. Not part of the audio path — takes
+    /// the instance lock.
+    pub fn set_parameter_normalized(
+        &self,
+        parameter_id: u32,
+        normalized: f32,
+    ) -> Result<(), String> {
+        if !self.alive.load(Ordering::Relaxed) {
+            return Err("backend_dead".to_string());
+        }
+        let mut instance = self
+            .instance
+            .lock()
+            .map_err(|_| "instance_lock_poisoned".to_string())?;
+        instance
+            .set_parameter_normalized(parameter_id, normalized)
             .map_err(|error| error.token)
     }
 
@@ -563,10 +624,30 @@ impl InProcessLv2Processor {
         })
     }
 
-    /// Parameter inventory from the bundle TTL (control input ports;
-    /// read-only phase 1).
+    /// Parameter inventory from the bundle TTL (control input ports).
     pub fn parameters(&self) -> &[PluginParameterDescriptor] {
         &self.parameters
+    }
+
+    /// Queue one normalized 0..1 parameter write (g12.023): maps onto the
+    /// control port's TTL range and lands in the connected slot at the top
+    /// of the next `run()`. Not part of the audio path — takes the
+    /// instance lock.
+    pub fn set_parameter_normalized(
+        &self,
+        parameter_id: u32,
+        normalized: f32,
+    ) -> Result<(), String> {
+        if !self.alive.load(Ordering::Relaxed) {
+            return Err("backend_dead".to_string());
+        }
+        let instance = self
+            .instance
+            .lock()
+            .map_err(|_| "instance_lock_poisoned".to_string())?;
+        instance
+            .set_parameter_normalized(parameter_id, normalized)
+            .map_err(|error| error.token)
     }
 
     /// Blocks bypassed so far, cumulative.
@@ -688,6 +769,207 @@ mod tests {
         assert!(!handle.process(&mut scratch, 128, 2));
         assert_eq!(scratch, reference);
         assert_eq!(backend.miss_count(), 1);
+
+        drop(handle);
+        drop(backend);
+        let _ = std::fs::remove_dir_all(&directory);
+    }
+
+    /// g12.023: the CLAP set-then-process proof — a wire param write lands
+    /// in the plugin's DSP via process in-events, byte-exact, at the next
+    /// block (block-boundary posture).
+    #[test]
+    fn in_process_clap_param_set_reaches_the_dsp_next_block() {
+        use signal_plugin_clap::fixture::CLAP_FIXTURE_GAIN_PARAM_ID;
+
+        if !rustc_available() {
+            eprintln!("skipping: rustc unavailable for the CLAP fixture");
+            return;
+        }
+        let directory = std::env::temp_dir().join(format!(
+            "signal-plugin-bridge-inproc-set-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_nanos(),
+        ));
+        let library = compile_clap_fixture(
+            &directory,
+            "com.signal.bridge-inproc-set",
+            "Signal Bridge InProc Set",
+            0,
+        )
+        .expect("fixture should compile");
+
+        let backend = Arc::new(
+            InProcessClapProcessor::load_and_activate(
+                &library,
+                "com.signal.bridge-inproc-set",
+                48_000,
+                256,
+            )
+            .expect("backend should load and activate"),
+        );
+        let handle = RenderPluginProcessor::new(Arc::clone(&backend) as Arc<_>);
+
+        // Block 1: fixture default gain.
+        let reference: Vec<f32> = (0..256).map(|index| index as f32 / 256.0).collect();
+        let mut scratch = reference.clone();
+        assert!(handle.process(&mut scratch, 128, 2));
+        for (output, input) in scratch.iter().zip(reference.iter()) {
+            assert!((output - input * CLAP_FIXTURE_GAIN).abs() < 1e-7);
+        }
+
+        // Set Gain (plain range 0..1, so normalized == plain) mid-stream:
+        // the NEXT block applies the new value exactly.
+        backend
+            .set_parameter_normalized(CLAP_FIXTURE_GAIN_PARAM_ID, 0.25)
+            .expect("param set queues");
+        let mut scratch = reference.clone();
+        assert!(handle.process(&mut scratch, 128, 2));
+        for (index, (output, input)) in scratch.iter().zip(reference.iter()).enumerate() {
+            assert!(
+                (output - input * 0.25).abs() < 1e-7,
+                "sample {index}: {output} vs {input} * 0.25",
+            );
+        }
+
+        // Unknown parameters and dead backends fail typed.
+        assert_eq!(
+            backend.set_parameter_normalized(9999, 0.5).unwrap_err(),
+            "unknown_parameter",
+        );
+        backend.shutdown();
+        assert_eq!(
+            backend
+                .set_parameter_normalized(CLAP_FIXTURE_GAIN_PARAM_ID, 0.5)
+                .unwrap_err(),
+            "backend_dead",
+        );
+
+        drop(handle);
+        drop(backend);
+        let _ = std::fs::remove_dir_all(&directory);
+    }
+
+    /// g12.023: the VST3 mirror — the write rides the block's input
+    /// `IParameterChanges` and the fixture's processor applies it.
+    #[test]
+    fn in_process_vst3_param_set_reaches_the_dsp_next_block() {
+        use signal_plugin_vst3::fixture::VST3_FIXTURE_GAIN_PARAM_ID;
+
+        if !rustc_available() {
+            eprintln!("skipping: rustc unavailable for the VST3 fixture");
+            return;
+        }
+        let directory = std::env::temp_dir().join(format!(
+            "signal-plugin-bridge-inproc-vst3-set-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_nanos(),
+        ));
+        let bundle = compile_vst3_fixture(
+            &directory,
+            "plugin:vst3:bridge-inproc-set",
+            "Signal Bridge InProc VST3 Set",
+        )
+        .expect("vst3 fixture should compile");
+
+        let backend = Arc::new(
+            InProcessVst3Processor::load_and_activate(
+                &bundle,
+                VST3_FIXTURE_CLASS_ID_HEX,
+                48_000,
+                256,
+            )
+            .expect("backend should load and activate"),
+        );
+        let handle = RenderPluginProcessor::new(Arc::clone(&backend) as Arc<_>);
+
+        let reference: Vec<f32> = (0..256).map(|index| index as f32 / 256.0).collect();
+        let mut scratch = reference.clone();
+        assert!(handle.process(&mut scratch, 128, 2));
+        for (output, input) in scratch.iter().zip(reference.iter()) {
+            assert!((output - input * VST3_FIXTURE_GAIN).abs() < 1e-7);
+        }
+
+        backend
+            .set_parameter_normalized(VST3_FIXTURE_GAIN_PARAM_ID, 0.75)
+            .expect("param set queues");
+        let mut scratch = reference.clone();
+        assert!(handle.process(&mut scratch, 128, 2));
+        for (index, (output, input)) in scratch.iter().zip(reference.iter()).enumerate() {
+            assert!(
+                (output - input * 0.75).abs() < 1e-7,
+                "sample {index}: {output} vs {input} * 0.75",
+            );
+        }
+        assert_eq!(
+            backend.set_parameter_normalized(9999, 0.5).unwrap_err(),
+            "unknown_parameter",
+        );
+
+        drop(handle);
+        drop(backend);
+        let _ = std::fs::remove_dir_all(&directory);
+    }
+
+    /// g12.023: the LV2 mirror — the write lands in the connected Gain
+    /// control slot before the next `run()`.
+    #[test]
+    fn in_process_lv2_param_set_reaches_the_dsp_next_block() {
+        use signal_plugin_lv2::fixture::{
+            compile_lv2_fixture, rustc_available as lv2_rustc_available, LV2_FIXTURE_GAIN,
+            LV2_FIXTURE_GAIN_PORT_INDEX,
+        };
+        if !lv2_rustc_available() {
+            eprintln!("skipping: rustc unavailable for the LV2 fixture");
+            return;
+        }
+        let directory = std::env::temp_dir().join(format!(
+            "signal-plugin-bridge-inproc-lv2-set-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_nanos(),
+        ));
+        let plugin_uri = "https://signal.dev/fixtures/lv2/bridge-inproc-set";
+        let bundle = compile_lv2_fixture(&directory, plugin_uri, "Signal Bridge InProc LV2 Set")
+            .expect("lv2 fixture should compile");
+
+        let backend = Arc::new(
+            InProcessLv2Processor::load_and_activate(&bundle, plugin_uri, 48_000, 256)
+                .expect("backend should load and activate"),
+        );
+        let handle = RenderPluginProcessor::new(Arc::clone(&backend) as Arc<_>);
+
+        let reference: Vec<f32> = (0..256).map(|index| index as f32 / 256.0).collect();
+        let mut scratch = reference.clone();
+        assert!(handle.process(&mut scratch, 128, 2));
+        for (output, input) in scratch.iter().zip(reference.iter()) {
+            assert!((output - input * LV2_FIXTURE_GAIN).abs() < 1e-7);
+        }
+
+        // Gain port TTL range is 0..1, so normalized == plain.
+        backend
+            .set_parameter_normalized(LV2_FIXTURE_GAIN_PORT_INDEX, 1.0)
+            .expect("param set queues");
+        let mut scratch = reference.clone();
+        assert!(handle.process(&mut scratch, 128, 2));
+        for (index, (output, input)) in scratch.iter().zip(reference.iter()).enumerate() {
+            assert!(
+                (output - input).abs() < 1e-7,
+                "sample {index}: {output} vs {input} (unity gain)",
+            );
+        }
+        assert_eq!(
+            backend.set_parameter_normalized(9999, 0.5).unwrap_err(),
+            "unknown_parameter",
+        );
 
         drop(handle);
         drop(backend);

@@ -15,8 +15,13 @@ use std::{
     process::Command,
 };
 
-/// Fixed linear gain the fixture's `process()` applies to every sample.
+/// Linear gain the fixture's `process()` applies until a param write lands
+/// (the Gain param's default; g12.023 makes the param live via
+/// `CLAP_EVENT_PARAM_VALUE` in-events).
 pub const CLAP_FIXTURE_GAIN: f32 = 0.5;
+
+/// Param id of the fixture's live Gain parameter (plain range 0..1).
+pub const CLAP_FIXTURE_GAIN_PARAM_ID: u32 = 4096;
 
 /// Initial `clap.gui` content size the fixture reports from `get_size`.
 pub const CLAP_FIXTURE_GUI_INITIAL_SIZE: (u32, u32) = (400, 300);
@@ -283,6 +288,39 @@ pub struct clap_host_gui {{
     pub closed: Option<unsafe extern "C" fn(*const clap_host, bool)>,
 }}
 
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct clap_event_header {{
+    pub size: u32,
+    pub time: u32,
+    pub space_id: u16,
+    pub type_: u16,
+    pub flags: u32,
+}}
+
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct clap_event_param_value {{
+    pub header: clap_event_header,
+    pub param_id: u32,
+    pub cookie: *mut c_void,
+    pub note_id: i32,
+    pub port_index: i16,
+    pub channel: i16,
+    pub key: i16,
+    pub value: f64,
+}}
+
+#[repr(C)]
+pub struct clap_input_events {{
+    pub ctx: *mut c_void,
+    pub size: Option<unsafe extern "C" fn(*const clap_input_events) -> u32>,
+    pub get: Option<unsafe extern "C" fn(*const clap_input_events, u32) -> *const clap_event_header>,
+}}
+
+const CLAP_CORE_EVENT_SPACE_ID: u16 = 0;
+const CLAP_EVENT_PARAM_VALUE_TYPE: u16 = 5;
+
 const CLAP_AUDIO_PORT_IS_MAIN: u32 = 1;
 const CLAP_PARAM_IS_STEPPED: u32 = 1 << 0;
 const CLAP_PARAM_IS_BYPASS: u32 = 1 << 4;
@@ -290,9 +328,14 @@ const CLAP_PARAM_IS_AUTOMATABLE: u32 = 1 << 5;
 const CLAP_PARAM_IS_MODULATABLE: u32 = 1 << 10;
 const CLAP_NOTE_DIALECT_MIDI: u32 = 1 << 1;
 
-/// Fixed gain the fixture's process() applies (kept in sync with the host
-/// crate's `CLAP_FIXTURE_GAIN`).
+/// Default gain the fixture's process() applies (kept in sync with the
+/// host crate's `CLAP_FIXTURE_GAIN`). Live value in `GAIN_BITS`.
 const FIXTURE_GAIN: f32 = {gain};
+
+/// Live Gain param value (f32 bits): defaults to FIXTURE_GAIN and follows
+/// CLAP_EVENT_PARAM_VALUE in-events for param id 4096 (g12.023).
+static GAIN_BITS: std::sync::atomic::AtomicU32 =
+    std::sync::atomic::AtomicU32::new(f32::to_bits(FIXTURE_GAIN));
 
 struct FeaturePtrs([*const c_char; 3]);
 unsafe impl Sync for FeaturePtrs {{}}
@@ -445,8 +488,40 @@ unsafe extern "C" fn plugin_start_processing(_plugin: *const clap_plugin) -> boo
 unsafe extern "C" fn plugin_stop_processing(_plugin: *const clap_plugin) {{}}
 unsafe extern "C" fn plugin_reset(_plugin: *const clap_plugin) {{}}
 
-/// Real audio processing: output = input × FIXTURE_GAIN on every channel of
-/// the main port pair. Returns CLAP_PROCESS_CONTINUE (1) on success.
+/// Apply pending CLAP_EVENT_PARAM_VALUE in-events for the Gain param
+/// (id 4096) before the block renders — the g12.023 live-param proof.
+unsafe fn apply_param_events(in_events: *const c_void) {{
+    if in_events.is_null() {{
+        return;
+    }}
+    let list = &*(in_events as *const clap_input_events);
+    let (Some(size), Some(get)) = (list.size, list.get) else {{
+        return;
+    }};
+    let count = size(list as *const clap_input_events);
+    for index in 0..count {{
+        let header = get(list as *const clap_input_events, index);
+        if header.is_null() {{
+            continue;
+        }}
+        if (*header).space_id != CLAP_CORE_EVENT_SPACE_ID
+            || (*header).type_ != CLAP_EVENT_PARAM_VALUE_TYPE
+        {{
+            continue;
+        }}
+        let event = &*(header as *const clap_event_param_value);
+        if event.param_id == 4096 {{
+            GAIN_BITS.store(
+                (event.value as f32).to_bits(),
+                std::sync::atomic::Ordering::SeqCst,
+            );
+        }}
+    }}
+}}
+
+/// Real audio processing: output = input × the LIVE Gain param on every
+/// channel of the main port pair (in-events applied first, block-boundary).
+/// Returns CLAP_PROCESS_CONTINUE (1) on success.
 unsafe extern "C" fn plugin_process(
     _plugin: *const clap_plugin,
     process: *const clap_process,
@@ -455,6 +530,7 @@ unsafe extern "C" fn plugin_process(
         return 0;
     }}
     let process = &*process;
+    apply_param_events(process.in_events);
     if process.audio_inputs_count < 1
         || process.audio_outputs_count < 1
         || process.audio_inputs.is_null()
@@ -469,6 +545,7 @@ unsafe extern "C" fn plugin_process(
     }}
     let frames = process.frames_count as usize;
     let channels = input.channel_count.min(output.channel_count) as usize;
+    let gain = f32::from_bits(GAIN_BITS.load(std::sync::atomic::Ordering::SeqCst));
     for channel in 0..channels {{
         let source = *input.data32.add(channel);
         let dest = *output.data32.add(channel);
@@ -476,7 +553,7 @@ unsafe extern "C" fn plugin_process(
             return 0;
         }}
         for frame in 0..frames {{
-            *dest.add(frame) = *source.add(frame) * FIXTURE_GAIN;
+            *dest.add(frame) = *source.add(frame) * gain;
         }}
     }}
     1
@@ -696,7 +773,11 @@ unsafe extern "C" fn param_get_value(
     out_value: *mut f64,
 ) -> bool {{
     if out_value.is_null() {{ return false; }}
-    *out_value = if param_id == 4096 {{ 0.5 }} else {{ 0.0 }};
+    *out_value = if param_id == 4096 {{
+        f32::from_bits(GAIN_BITS.load(std::sync::atomic::Ordering::SeqCst)) as f64
+    }} else {{
+        0.0
+    }};
     true
 }}
 "#,

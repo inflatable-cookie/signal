@@ -66,6 +66,7 @@ pub enum SandboxBrokerState {
     ProcessingStopped,
     PluginDeactivated,
     PluginUnloaded,
+    ParamSet,
 }
 
 impl SandboxBrokerState {
@@ -86,6 +87,7 @@ impl SandboxBrokerState {
             Self::ProcessingStopped => "processing_stopped",
             Self::PluginDeactivated => "plugin_deactivated",
             Self::PluginUnloaded => "plugin_unloaded",
+            Self::ParamSet => "param_set",
         }
     }
 }
@@ -171,6 +173,12 @@ enum SandboxBrokerCommand {
     StopProcessing,
     DeactivatePlugin,
     UnloadPlugin,
+    /// One or more `(parameter_id, normalized 0..1)` writes (g12.023):
+    /// `set-param <id> <normalized>` or the batched
+    /// `set-params <id:normalized[;id:normalized...]>`.
+    SetParameters {
+        changes: Vec<(u32, f32)>,
+    },
 }
 
 impl SandboxBrokerCommand {
@@ -214,6 +222,44 @@ impl SandboxBrokerCommand {
                     min_frames,
                     max_frames,
                 })
+            }
+            "set-param" => {
+                let parameter_id = tokens
+                    .next()
+                    .and_then(|token| token.parse::<u32>().ok())
+                    .ok_or_else(|| "set_param_missing_parameter_id".to_string())?;
+                let normalized = tokens
+                    .next()
+                    .and_then(|token| token.parse::<f32>().ok())
+                    .filter(|value| value.is_finite())
+                    .ok_or_else(|| "set_param_missing_value".to_string())?;
+                Ok(Self::SetParameters {
+                    changes: vec![(parameter_id, normalized)],
+                })
+            }
+            "set-params" => {
+                let blob = tokens
+                    .next()
+                    .ok_or_else(|| "set_params_missing_changes".to_string())?;
+                let mut changes = Vec::new();
+                for entry in blob.split(';').filter(|entry| !entry.is_empty()) {
+                    let (id, value) = entry
+                        .split_once(':')
+                        .ok_or_else(|| "set_params_malformed_entry".to_string())?;
+                    let parameter_id = id
+                        .parse::<u32>()
+                        .map_err(|_| "set_params_malformed_entry".to_string())?;
+                    let normalized = value
+                        .parse::<f32>()
+                        .ok()
+                        .filter(|value| value.is_finite())
+                        .ok_or_else(|| "set_params_malformed_entry".to_string())?;
+                    changes.push((parameter_id, normalized));
+                }
+                if changes.is_empty() {
+                    return Err("set_params_missing_changes".to_string());
+                }
+                Ok(Self::SetParameters { changes })
             }
             "start-processing" => Ok(Self::StartProcessing),
             "stop-processing" => Ok(Self::StopProcessing),
@@ -373,6 +419,32 @@ impl HostedPluginInstance {
         }
     }
 
+    /// Queue one normalized 0..1 parameter write on the format's set path
+    /// (g12.023): CLAP process in-events, VST3 IParameterChanges +
+    /// controller sync, AU AudioUnitSetParameter, LV2 control-slot write
+    /// before `run()`. Delivery is block-boundary on the child's audio
+    /// thread.
+    fn set_parameter_normalized(
+        &mut self,
+        parameter_id: u32,
+        normalized: f32,
+    ) -> Result<(), String> {
+        match self {
+            Self::Clap(instance) => instance
+                .set_parameter_normalized(parameter_id, normalized)
+                .map_err(|error| error.token),
+            Self::Vst3(instance) => instance
+                .set_parameter_normalized(parameter_id, normalized)
+                .map_err(|error| error.token),
+            Self::Au(instance) => instance
+                .set_parameter_normalized(parameter_id, normalized)
+                .map_err(|error| error.token),
+            Self::Lv2(instance) => instance
+                .set_parameter_normalized(parameter_id, normalized)
+                .map_err(|error| error.token),
+        }
+    }
+
     fn process_session(&self) -> Result<HostedProcessSession, String> {
         match self {
             Self::Clap(instance) => instance
@@ -515,6 +587,10 @@ impl SandboxBrokerProcess {
                     max_frames,
                 }) => {
                     let receipt = self.activate_plugin(sample_rate_hz, min_frames, max_frames);
+                    writeln!(output, "{}", receipt.render_line())?;
+                }
+                Ok(SandboxBrokerCommand::SetParameters { changes }) => {
+                    let receipt = self.set_parameters(&changes);
                     writeln!(output, "{}", receipt.render_line())?;
                 }
                 Ok(SandboxBrokerCommand::StartProcessing) => {
@@ -701,6 +777,29 @@ impl SandboxBrokerProcess {
             .push(("max_frames".into(), max_frames.to_string()));
         receipt.extra.push(("channels".into(), "2".into()));
         receipt
+    }
+
+    /// Apply a batch of normalized parameter writes to the loaded instance
+    /// (g12.023). Valid on any loaded plugin — queue-backed formats apply
+    /// at the next processed block; AU applies immediately. Preserves
+    /// `last_state` (a param set is not a lifecycle transition); the first
+    /// failing change crashes the receipt with its typed token.
+    fn set_parameters(&mut self, changes: &[(u32, f32)]) -> SandboxBrokerReceipt {
+        let Some(plugin) = self.plugin.as_mut() else {
+            return self.crashed_receipt("missing_loaded_plugin");
+        };
+        for (parameter_id, normalized) in changes {
+            if let Err(token) = plugin
+                .instance
+                .set_parameter_normalized(*parameter_id, *normalized)
+            {
+                return self.crashed_receipt(&format!("set_param:{parameter_id}:{token}"));
+            }
+        }
+        self.receipt(
+            SandboxBrokerState::ParamSet,
+            &format!("param_set|count={}", changes.len()),
+        )
     }
 
     /// Spawn the audio thread: `start_processing` runs there (CLAP audio
@@ -1182,6 +1281,30 @@ mod tests {
             serve_lines("load-plugin /nonexistent/fixture.clap com.signal.missing\nshutdown\n");
         assert!(lines.iter().any(|line| line.contains("state=crashed")
             && line.contains("load_plugin:library_open_failed")));
+    }
+
+    #[test]
+    fn broker_rejects_param_sets_without_a_loaded_plugin_and_malformed_commands() {
+        let lines = serve_lines(
+            "set-param 4096 0.25\nset-params 4096:0.25;0:1\nset-param 4096\nset-param nope 0.5\nset-params\nset-params 4096-0.25\nshutdown\n",
+        );
+        let missing = lines
+            .iter()
+            .filter(|line| line.contains("state=crashed") && line.contains("missing_loaded_plugin"))
+            .count();
+        assert_eq!(missing, 2, "well-formed sets fail on the missing plugin");
+        assert!(lines
+            .iter()
+            .any(|line| line.contains("set_param_missing_value")));
+        assert!(lines
+            .iter()
+            .any(|line| line.contains("set_param_missing_parameter_id")));
+        assert!(lines
+            .iter()
+            .any(|line| line.contains("set_params_missing_changes")));
+        assert!(lines
+            .iter()
+            .any(|line| line.contains("set_params_malformed_entry")));
     }
 
     #[test]

@@ -23,6 +23,7 @@
 mod blocks;
 mod event_codec;
 mod events;
+mod param_changes;
 mod plugin_block_transport;
 mod plugin_event_reports;
 mod plugin_model;
@@ -36,6 +37,7 @@ pub use events::{
     ParameterGestureEvent, ParameterGesturePhase, ParameterModulationEvent, ParameterValueEvent,
     PluginEvent,
 };
+pub use param_changes::{PluginParamChange, PluginParamChangeQueue, PLUGIN_PARAM_CHANGE_CAPACITY};
 pub use render_context_codec::{read_render_context_from_slice, write_render_context_to_slice};
 
 pub use plugin_block_transport::{

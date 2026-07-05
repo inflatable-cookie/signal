@@ -141,8 +141,31 @@ fn vst3_in_process_soak_processes_every_clocked_block_without_misses() {
         .expect("install plan");
     controller.set_playing(true).expect("play");
 
-    // ~1.2 s of simulated callbacks (256 frames ≈ 5.3 ms per block).
+    // ~1.2 s of simulated callbacks (256 frames ≈ 5.3 ms per block),
+    // with a continuous fader-style param sweep hammering the g12.023 set
+    // path from a control thread the whole time: the queue-backed
+    // IParameterChanges delivery must never cost the audio thread a
+    // deadline (miss_count stays 0 below).
+    use signal_plugin_vst3::fixture::VST3_FIXTURE_GAIN_PARAM_ID;
+    let sweep_backend = Arc::clone(&backend);
+    let sweep = std::thread::spawn(move || {
+        for step in 0..1_200u32 {
+            // 0.25..=0.75 triangle sweep; the exact values are irrelevant,
+            // sustained concurrent pressure is the point.
+            let phase = (step % 100) as f32 / 100.0;
+            let normalized = 0.25
+                + 0.5
+                    * if phase < 0.5 {
+                        phase * 2.0
+                    } else {
+                        2.0 - phase * 2.0
+                    };
+            let _ = sweep_backend.set_parameter_normalized(VST3_FIXTURE_GAIN_PARAM_ID, normalized);
+            std::thread::sleep(Duration::from_millis(1));
+        }
+    });
     std::thread::sleep(Duration::from_millis(1_200));
+    sweep.join().expect("sweep thread joins");
 
     let callbacks = controller.callback_count();
     assert!(

@@ -541,9 +541,30 @@ impl AuHostedInstance {
         self.port_layout
     }
 
+    /// Queue-free parameter write (g12.023): AU's set domain is the PLAIN
+    /// value and `AudioUnitSetParameter` is safe from a non-render thread
+    /// (AudioToolbox serializes against the render), so the host's
+    /// normalized 0..1 value maps linearly onto the descriptor range and
+    /// applies immediately — the unit picks it up on its next render pull
+    /// (block-boundary in practice).
+    pub fn set_parameter_normalized(
+        &mut self,
+        parameter_id: u32,
+        normalized: f32,
+    ) -> Result<(), AuHostingError> {
+        let descriptor = self
+            .parameters
+            .iter()
+            .find(|parameter| parameter.parameter_id == parameter_id)
+            .ok_or_else(|| AuHostingError::new("unknown_parameter"))?;
+        let normalized = normalized.clamp(0.0, 1.0);
+        let plain =
+            descriptor.min_plain + normalized * (descriptor.max_plain - descriptor.min_plain);
+        self.set_parameter(parameter_id, plain)
+    }
+
     /// Set one parameter's plain value on the global scope
-    /// (`AudioUnitSetParameter`). Phase 1 uses this from tests only; it is
-    /// the natural phase-2 param-set entry point.
+    /// (`AudioUnitSetParameter`).
     pub fn set_parameter(&mut self, parameter_id: u32, value: f32) -> Result<(), AuHostingError> {
         #[cfg(target_os = "macos")]
         {

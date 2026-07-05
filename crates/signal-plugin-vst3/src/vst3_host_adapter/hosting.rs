@@ -33,9 +33,13 @@
 use std::ffi::c_void;
 use std::path::Path;
 use std::ptr;
+use std::sync::Arc;
 
 use libloading::Library;
-use signal_plugin::{PluginParameterDescriptor, PluginParameterDomain, PluginParameterFlags};
+use signal_plugin::{
+    PluginParamChange, PluginParamChangeQueue, PluginParameterDescriptor, PluginParameterDomain,
+    PluginParameterFlags, PLUGIN_PARAM_CHANGE_CAPACITY,
+};
 
 use super::introspection::resolve_module_binary_path;
 use super::Vst3HostPlatform;
@@ -167,6 +171,9 @@ const ICOMPONENT_IID: Tuid = tuid_from_uid(0xE831FF31, 0xF2D54301, 0x928EBBEE, 0
 const IAUDIO_PROCESSOR_IID: Tuid = tuid_from_uid(0x42043F99, 0xB7DA453C, 0xA569E79D, 0x9AAEC33D);
 const IEDIT_CONTROLLER_IID: Tuid = tuid_from_uid(0xDCD7BBE3, 0x7742448D, 0xA874AAF0, 0x0B96B23E);
 const IHOST_APPLICATION_IID: Tuid = tuid_from_uid(0x58E595CC, 0xDB2D4969, 0x8B6AAF8C, 0x36A664E5);
+// ivstparameterchanges.h (published interface definitions).
+const IPARAMETER_CHANGES_IID: Tuid = tuid_from_uid(0xA4779663, 0x0BB64A56, 0xB44384A8, 0x466FEB9D);
+const IPARAM_VALUE_QUEUE_IID: Tuid = tuid_from_uid(0x01263A18, 0xED074F6F, 0x98C9D356, 0x4686F9BA);
 
 // Bus/processing constants.
 const K_AUDIO: i32 = 0;
@@ -266,7 +273,8 @@ struct AudioBusBuffers {
     channel_buffers32: *mut *mut f32,
 }
 
-/// `Steinberg::Vst::ProcessData` (event/parameter queues null in phase 1).
+/// `Steinberg::Vst::ProcessData` (input parameter changes live per
+/// g12.023; event queues still null).
 #[repr(C)]
 struct ProcessData {
     process_mode: i32,
@@ -541,6 +549,199 @@ impl Drop for LoadedVst3Module {
     }
 }
 
+// ── Host-side IParameterChanges (g12.023 param-set wire) ───────────────────
+//
+// The input parameter-change list handed to `IAudioProcessor::process`:
+// one single-point queue per changed parameter, every point at sample
+// offset 0 (block-boundary application, sample-accuracy posture v1).
+// Everything is preallocated at the change-queue capacity and rebuilt in
+// place per block — no allocation on the audio thread. Refcounting is a
+// no-op: the session owns the objects and outlives every process call.
+
+/// `IParamValueQueue` vtable (FUnknown + queue methods, declaration order).
+#[repr(C)]
+struct ParamValueQueueVTable {
+    query_interface: unsafe extern "C" fn(*mut c_void, *const Tuid, *mut *mut c_void) -> Tresult,
+    add_ref: unsafe extern "C" fn(*mut c_void) -> u32,
+    release: unsafe extern "C" fn(*mut c_void) -> u32,
+    get_parameter_id: unsafe extern "C" fn(*mut c_void) -> u32,
+    get_point_count: unsafe extern "C" fn(*mut c_void) -> i32,
+    get_point: unsafe extern "C" fn(*mut c_void, i32, *mut i32, *mut f64) -> Tresult,
+    add_point: unsafe extern "C" fn(*mut c_void, i32, f64, *mut i32) -> Tresult,
+}
+
+/// `IParameterChanges` vtable (FUnknown + list methods, declaration order).
+#[repr(C)]
+struct ParameterChangesVTable {
+    query_interface: unsafe extern "C" fn(*mut c_void, *const Tuid, *mut *mut c_void) -> Tresult,
+    add_ref: unsafe extern "C" fn(*mut c_void) -> u32,
+    release: unsafe extern "C" fn(*mut c_void) -> u32,
+    get_parameter_count: unsafe extern "C" fn(*mut c_void) -> i32,
+    get_parameter_data: unsafe extern "C" fn(*mut c_void, i32) -> *mut c_void,
+    add_parameter_data: unsafe extern "C" fn(*mut c_void, *const u32, *mut i32) -> *mut c_void,
+}
+
+/// One single-point value queue: `(parameter_id, value)` at offset 0.
+#[repr(C)]
+struct HostParamValueQueue {
+    vtable: *const ParamValueQueueVTable,
+    parameter_id: u32,
+    value: f64,
+}
+
+/// The block's input parameter-change list: a fixed-length queue pool plus
+/// the active count. Boxed by the session so every pointer handed to the
+/// plugin stays stable.
+#[repr(C)]
+struct HostParameterChanges {
+    vtable: *const ParameterChangesVTable,
+    queues: Box<[HostParamValueQueue]>,
+    active: usize,
+}
+
+static PARAM_VALUE_QUEUE_VTABLE: ParamValueQueueVTable = ParamValueQueueVTable {
+    query_interface: param_queue_query_interface,
+    add_ref: param_com_add_ref,
+    release: param_com_release,
+    get_parameter_id: param_queue_get_parameter_id,
+    get_point_count: param_queue_get_point_count,
+    get_point: param_queue_get_point,
+    add_point: param_queue_add_point,
+};
+
+static PARAMETER_CHANGES_VTABLE: ParameterChangesVTable = ParameterChangesVTable {
+    query_interface: param_changes_query_interface,
+    add_ref: param_com_add_ref,
+    release: param_com_release,
+    get_parameter_count: param_changes_get_parameter_count,
+    get_parameter_data: param_changes_get_parameter_data,
+    add_parameter_data: param_changes_add_parameter_data,
+};
+
+unsafe extern "C" fn param_com_add_ref(_this: *mut c_void) -> u32 {
+    1
+}
+
+unsafe extern "C" fn param_com_release(_this: *mut c_void) -> u32 {
+    1
+}
+
+unsafe extern "C" fn param_queue_query_interface(
+    this: *mut c_void,
+    iid: *const Tuid,
+    out: *mut *mut c_void,
+) -> Tresult {
+    if out.is_null() {
+        return K_NO_INTERFACE;
+    }
+    if !iid.is_null() && (*iid == FUNKNOWN_IID || *iid == IPARAM_VALUE_QUEUE_IID) {
+        *out = this;
+        return K_RESULT_OK;
+    }
+    *out = ptr::null_mut();
+    K_NO_INTERFACE
+}
+
+unsafe extern "C" fn param_queue_get_parameter_id(this: *mut c_void) -> u32 {
+    (*this.cast::<HostParamValueQueue>()).parameter_id
+}
+
+unsafe extern "C" fn param_queue_get_point_count(_this: *mut c_void) -> i32 {
+    1
+}
+
+unsafe extern "C" fn param_queue_get_point(
+    this: *mut c_void,
+    index: i32,
+    sample_offset: *mut i32,
+    value: *mut f64,
+) -> Tresult {
+    if index != 0 || sample_offset.is_null() || value.is_null() {
+        return K_NO_INTERFACE;
+    }
+    *sample_offset = 0;
+    *value = (*this.cast::<HostParamValueQueue>()).value;
+    K_RESULT_OK
+}
+
+unsafe extern "C" fn param_queue_add_point(
+    _this: *mut c_void,
+    _sample_offset: i32,
+    _value: f64,
+    _index: *mut i32,
+) -> Tresult {
+    // Input list: the host writes it, the plugin only reads.
+    K_NO_INTERFACE
+}
+
+unsafe extern "C" fn param_changes_query_interface(
+    this: *mut c_void,
+    iid: *const Tuid,
+    out: *mut *mut c_void,
+) -> Tresult {
+    if out.is_null() {
+        return K_NO_INTERFACE;
+    }
+    if !iid.is_null() && (*iid == FUNKNOWN_IID || *iid == IPARAMETER_CHANGES_IID) {
+        *out = this;
+        return K_RESULT_OK;
+    }
+    *out = ptr::null_mut();
+    K_NO_INTERFACE
+}
+
+unsafe extern "C" fn param_changes_get_parameter_count(this: *mut c_void) -> i32 {
+    (*this.cast::<HostParameterChanges>()).active as i32
+}
+
+unsafe extern "C" fn param_changes_get_parameter_data(
+    this: *mut c_void,
+    index: i32,
+) -> *mut c_void {
+    let changes = &mut *this.cast::<HostParameterChanges>();
+    if index < 0 || index as usize >= changes.active {
+        return ptr::null_mut();
+    }
+    (&mut changes.queues[index as usize] as *mut HostParamValueQueue).cast()
+}
+
+unsafe extern "C" fn param_changes_add_parameter_data(
+    _this: *mut c_void,
+    _id: *const u32,
+    _index: *mut i32,
+) -> *mut c_void {
+    // Input list: the host writes it, the plugin only reads.
+    ptr::null_mut()
+}
+
+impl HostParameterChanges {
+    fn new() -> Box<Self> {
+        let queues = (0..PLUGIN_PARAM_CHANGE_CAPACITY)
+            .map(|_| HostParamValueQueue {
+                vtable: &PARAM_VALUE_QUEUE_VTABLE,
+                parameter_id: 0,
+                value: 0.0,
+            })
+            .collect::<Vec<_>>()
+            .into_boxed_slice();
+        Box::new(Self {
+            vtable: &PARAMETER_CHANGES_VTABLE,
+            queues,
+            active: 0,
+        })
+    }
+
+    /// Rebuild the list in place from the drained changes. Alloc-free.
+    fn set_changes(&mut self, changes: &[PluginParamChange]) {
+        let count = changes.len().min(self.queues.len());
+        for (queue, change) in self.queues.iter_mut().zip(changes.iter().take(count)) {
+            queue.parameter_id = change.parameter_id;
+            queue.value = change.value;
+        }
+        self.active = count;
+    }
+}
+
 // ── Hosted instance ─────────────────────────────────────────────────────────
 
 /// Main-bus stereo port layout summary for a hosted VST3 instance (mirrors
@@ -599,6 +800,10 @@ pub struct Vst3HostedInstance {
     port_layout: Vst3HostedPortLayout,
     state: HostedInstanceState,
     activated_max_frames: u32,
+    /// Pending param writes bound for the audio thread's
+    /// `IParameterChanges` (g12.023); shared with every process session
+    /// built from this instance.
+    param_changes: Arc<PluginParamChangeQueue>,
     /// Keeps the module mapped for the instance lifetime; declared last so
     /// it drops after the COM pointers above are released in `drop`.
     _module: LoadedVst3Module,
@@ -655,14 +860,47 @@ impl Vst3HostedInstance {
             port_layout,
             state: HostedInstanceState::Created,
             activated_max_frames: 0,
+            param_changes: Arc::new(PluginParamChangeQueue::new()),
             _module: module,
         })
     }
 
     /// Parameter inventory enumerated at load via `IEditController`
-    /// (read-only phase 1; empty when no controller could be acquired).
+    /// (empty when no controller could be acquired).
     pub fn parameters(&self) -> &[PluginParameterDescriptor] {
         &self.parameters
+    }
+
+    /// Queue one parameter write (g12.023). VST3's set domain is the
+    /// normalized 0..1 value itself: it lands in the processor through the
+    /// next block's `IParameterChanges` (block-boundary posture v1), and
+    /// `IEditController::setParamNormalized` runs here so the controller's
+    /// state (GUIs, `getParamNormalized`) stays in sync — the documented
+    /// host duty for host-driven changes.
+    pub fn set_parameter_normalized(
+        &self,
+        parameter_id: u32,
+        normalized: f32,
+    ) -> Result<(), Vst3HostingError> {
+        if !self
+            .parameters
+            .iter()
+            .any(|parameter| parameter.parameter_id == parameter_id)
+        {
+            return Err(Vst3HostingError::new("unknown_parameter"));
+        }
+        let normalized = f64::from(normalized.clamp(0.0, 1.0));
+        if let Some(controller) = &self.controller {
+            unsafe {
+                let vtable = vtable_of::<EditControllerVTable>(controller.ptr());
+                let _ =
+                    ((*vtable).set_param_normalized)(controller.ptr(), parameter_id, normalized);
+            }
+        }
+        if !self.param_changes.push(parameter_id, normalized) {
+            return Err(Vst3HostingError::new("param_queue_full"));
+        }
+        Ok(())
     }
 
     /// Main-bus port layout enumerated at load.
@@ -762,6 +1000,7 @@ impl Vst3HostedInstance {
         Ok(Vst3ProcessSession::new(
             self.processor,
             self.activated_max_frames as usize,
+            Arc::clone(&self.param_changes),
         ))
     }
 }
@@ -927,6 +1166,13 @@ pub struct Vst3ProcessSession {
     output_left: Vec<f32>,
     output_right: Vec<f32>,
     processing: bool,
+    /// Pending param writes shared with the owning instance (g12.023).
+    param_changes: Arc<PluginParamChangeQueue>,
+    /// Drain scratch (preallocated; audio thread never allocates).
+    param_scratch: Vec<PluginParamChange>,
+    /// The host-side `IParameterChanges` rebuilt per block; boxed so the
+    /// pointers handed to the plugin stay stable.
+    input_changes: Box<HostParameterChanges>,
 }
 
 // Safety: the session is handed to exactly one audio thread;
@@ -935,7 +1181,11 @@ pub struct Vst3ProcessSession {
 unsafe impl Send for Vst3ProcessSession {}
 
 impl Vst3ProcessSession {
-    fn new(processor: *mut c_void, max_frames: usize) -> Self {
+    fn new(
+        processor: *mut c_void,
+        max_frames: usize,
+        param_changes: Arc<PluginParamChangeQueue>,
+    ) -> Self {
         Self {
             processor,
             input_left: vec![0.0; max_frames],
@@ -943,6 +1193,9 @@ impl Vst3ProcessSession {
             output_left: vec![0.0; max_frames],
             output_right: vec![0.0; max_frames],
             processing: false,
+            param_changes,
+            param_scratch: Vec::with_capacity(PLUGIN_PARAM_CHANGE_CAPACITY),
+            input_changes: HostParameterChanges::new(),
         }
     }
 
@@ -984,6 +1237,19 @@ impl Vst3ProcessSession {
     /// # Safety
     /// `frames` must be within the preallocated buffer bounds (callers clamp).
     unsafe fn process_planar(&mut self, frames: usize) -> bool {
+        // Drain pending param writes into the block's IParameterChanges
+        // (block-boundary application, offset 0). Alloc-free.
+        if self.param_changes.is_empty() {
+            self.input_changes.active = 0;
+        } else {
+            self.param_changes.drain_coalesced(&mut self.param_scratch);
+            self.input_changes.set_changes(&self.param_scratch);
+        }
+        let input_parameter_changes: *mut c_void = if self.input_changes.active > 0 {
+            (&mut *self.input_changes as *mut HostParameterChanges).cast()
+        } else {
+            ptr::null_mut()
+        };
         let mut input_channels = [self.input_left.as_mut_ptr(), self.input_right.as_mut_ptr()];
         let mut output_channels = [
             self.output_left.as_mut_ptr(),
@@ -1007,7 +1273,7 @@ impl Vst3ProcessSession {
             num_outputs: 1,
             inputs: &mut input_bus,
             outputs: &mut output_bus,
-            input_parameter_changes: ptr::null_mut(),
+            input_parameter_changes,
             output_parameter_changes: ptr::null_mut(),
             input_events: ptr::null_mut(),
             output_events: ptr::null_mut(),

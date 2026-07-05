@@ -22,8 +22,13 @@ use std::{
     process::Command,
 };
 
-/// Fixed linear gain the fixture's `process()` applies to every sample.
+/// Linear gain the fixture's `process()` applies until a param write lands
+/// (the Gain param's default; g12.023 makes the param live via the block's
+/// input `IParameterChanges`).
 pub const VST3_FIXTURE_GAIN: f32 = 0.5;
+
+/// Param id of the fixture's live Gain parameter (normalized == plain).
+pub const VST3_FIXTURE_GAIN_PARAM_ID: u32 = 4096;
 
 /// Canonical component-class ID hex of the fixture (the catalog load key on
 /// non-Windows platforms; hosting's hex decoder applies the COM swap on
@@ -210,9 +215,14 @@ const IEDIT_CONTROLLER_IID: Tuid = tuid_from_uid(0xDCD7BBE3, 0x7742448D, 0xA874A
 /// (kept in sync with the host crate's `VST3_FIXTURE_CLASS_ID_HEX`).
 const FIXTURE_CID: Tuid = tuid_from_uid(0x51F1C7A1, 0x5E0C4B3D, 0x9A2F41D6, 0x7B3C55E2);
 
-/// Fixed gain applied by process() (kept in sync with the host crate's
-/// `VST3_FIXTURE_GAIN`).
+/// Default gain applied by process() (kept in sync with the host crate's
+/// `VST3_FIXTURE_GAIN`). Live value in `GAIN_BITS`, updated ONLY from the
+/// process-data input `IParameterChanges` — the g12.023 processor-side
+/// param wire (controller setParamNormalized stays bookkeeping).
 const FIXTURE_GAIN: f32 = {gain};
+
+static GAIN_BITS: std::sync::atomic::AtomicU32 =
+    std::sync::atomic::AtomicU32::new(f32::to_bits(FIXTURE_GAIN));
 
 const PLUGIN_NAME: &str = "{plugin_name}";
 
@@ -655,13 +665,72 @@ unsafe extern "C" fn processor_set_processing(_this: *mut c_void, _state: u8) ->
     K_RESULT_OK
 }}
 
-/// Real audio processing: output = input × FIXTURE_GAIN on every channel of
-/// the main bus pair.
+// ── Input IParameterChanges consumption (g12.023) ──────────────────────────
+
+#[repr(C)]
+struct ParamValueQueueVTable {{
+    query_interface: unsafe extern "C" fn(*mut c_void, *const Tuid, *mut *mut c_void) -> Tresult,
+    add_ref: unsafe extern "C" fn(*mut c_void) -> u32,
+    release: unsafe extern "C" fn(*mut c_void) -> u32,
+    get_parameter_id: unsafe extern "C" fn(*mut c_void) -> u32,
+    get_point_count: unsafe extern "C" fn(*mut c_void) -> i32,
+    get_point: unsafe extern "C" fn(*mut c_void, i32, *mut i32, *mut f64) -> Tresult,
+    add_point: unsafe extern "C" fn(*mut c_void, i32, f64, *mut i32) -> Tresult,
+}}
+
+#[repr(C)]
+struct ParameterChangesVTable {{
+    query_interface: unsafe extern "C" fn(*mut c_void, *const Tuid, *mut *mut c_void) -> Tresult,
+    add_ref: unsafe extern "C" fn(*mut c_void) -> u32,
+    release: unsafe extern "C" fn(*mut c_void) -> u32,
+    get_parameter_count: unsafe extern "C" fn(*mut c_void) -> i32,
+    get_parameter_data: unsafe extern "C" fn(*mut c_void, i32) -> *mut c_void,
+    add_parameter_data: unsafe extern "C" fn(*mut c_void, *const u32, *mut i32) -> *mut c_void,
+}}
+
+/// Apply the LAST point of every Gain (id 4096) queue in the block's input
+/// parameter changes — the real host contract processors follow.
+unsafe fn apply_input_parameter_changes(changes: *mut c_void) {{
+    if changes.is_null() {{
+        return;
+    }}
+    let changes_vtable = *(changes as *mut *const ParameterChangesVTable);
+    let count = ((*changes_vtable).get_parameter_count)(changes);
+    for index in 0..count {{
+        let queue = ((*changes_vtable).get_parameter_data)(changes, index);
+        if queue.is_null() {{
+            continue;
+        }}
+        let queue_vtable = *(queue as *mut *const ParamValueQueueVTable);
+        if ((*queue_vtable).get_parameter_id)(queue) != 4096 {{
+            continue;
+        }}
+        let points = ((*queue_vtable).get_point_count)(queue);
+        if points <= 0 {{
+            continue;
+        }}
+        let mut sample_offset = 0i32;
+        let mut value = 0f64;
+        if ((*queue_vtable).get_point)(queue, points - 1, &mut sample_offset, &mut value)
+            == K_RESULT_OK
+        {{
+            GAIN_BITS.store(
+                (value as f32).to_bits(),
+                std::sync::atomic::Ordering::SeqCst,
+            );
+        }}
+    }}
+}}
+
+/// Real audio processing: output = input × the LIVE Gain param on every
+/// channel of the main bus pair (input IParameterChanges applied first,
+/// block-boundary).
 unsafe extern "C" fn processor_process(_this: *mut c_void, data: *mut ProcessData) -> Tresult {{
     if data.is_null() {{
         return K_RESULT_FALSE;
     }}
     let data = &*data;
+    apply_input_parameter_changes(data.input_parameter_changes);
     if data.num_inputs < 1
         || data.num_outputs < 1
         || data.inputs.is_null()
@@ -676,6 +745,7 @@ unsafe extern "C" fn processor_process(_this: *mut c_void, data: *mut ProcessDat
     }}
     let frames = data.num_samples.max(0) as usize;
     let channels = input.num_channels.min(output.num_channels).max(0) as usize;
+    let gain = f32::from_bits(GAIN_BITS.load(std::sync::atomic::Ordering::SeqCst));
     for channel in 0..channels {{
         let source = *input.channel_buffers32.add(channel);
         let dest = *output.channel_buffers32.add(channel);
@@ -683,7 +753,7 @@ unsafe extern "C" fn processor_process(_this: *mut c_void, data: *mut ProcessDat
             return K_RESULT_FALSE;
         }}
         for frame in 0..frames {{
-            *dest.add(frame) = *source.add(frame) * FIXTURE_GAIN;
+            *dest.add(frame) = *source.add(frame) * gain;
         }}
     }}
     K_RESULT_OK

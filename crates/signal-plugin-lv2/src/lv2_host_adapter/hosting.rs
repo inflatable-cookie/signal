@@ -34,10 +34,13 @@ use std::collections::HashMap;
 use std::ffi::{c_char, c_void, CStr, CString};
 use std::path::Path;
 use std::ptr;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
 use libloading::Library;
-use signal_plugin::PluginParameterDescriptor;
+use signal_plugin::{
+    PluginParamChange, PluginParamChangeQueue, PluginParameterDescriptor,
+    PLUGIN_PARAM_CHANGE_CAPACITY,
+};
 
 use super::introspection::{
     parameter_descriptors_from_model, parse_lv2_bundle, Lv2PluginModel, URID_MAP_FEATURE,
@@ -234,6 +237,11 @@ pub struct Lv2HostedInstance {
     port_layout: Lv2HostedPortLayout,
     state: HostedInstanceState,
     activated_max_frames: u32,
+    /// Pending param writes bound for the audio thread (g12.023): the
+    /// process session drains them into the connected control slots at the
+    /// top of each `run()` — the slots are only ever written from the
+    /// audio thread once processing starts.
+    param_changes: Arc<PluginParamChangeQueue>,
     /// Keeps the binary mapped for the instance lifetime; declared last so
     /// dlclose happens after deactivate/cleanup in `drop`.
     _library: Library,
@@ -305,15 +313,40 @@ impl Lv2HostedInstance {
             port_layout,
             state: HostedInstanceState::Created,
             activated_max_frames: 0,
+            param_changes: Arc::new(PluginParamChangeQueue::new()),
             _library: library,
         })
     }
 
     /// Parameter inventory from the bundle TTL: control input ports double
-    /// as parameters (`parameter_id` = port index; read-only phase 1 — no
-    /// param setting until the wire grows param-set).
+    /// as parameters (`parameter_id` = port index).
     pub fn parameters(&self) -> &[PluginParameterDescriptor] {
         &self.parameters
+    }
+
+    /// Queue one parameter write (g12.023). LV2 control ports carry PLAIN
+    /// values, so the host's normalized 0..1 value maps linearly onto the
+    /// TTL min/max before queueing; the audio thread writes the connected
+    /// control slot at the top of the next `run()` (block-boundary posture
+    /// v1). Writes queued while inactive apply on the first processed
+    /// block after activation.
+    pub fn set_parameter_normalized(
+        &self,
+        parameter_id: u32,
+        normalized: f32,
+    ) -> Result<(), Lv2HostingError> {
+        let descriptor = self
+            .parameters
+            .iter()
+            .find(|parameter| parameter.parameter_id == parameter_id)
+            .ok_or_else(|| Lv2HostingError::new("unknown_parameter"))?;
+        let normalized = f64::from(normalized.clamp(0.0, 1.0));
+        let plain = f64::from(descriptor.min_plain)
+            + normalized * f64::from(descriptor.max_plain - descriptor.min_plain);
+        if !self.param_changes.push(parameter_id, plain) {
+            return Err(Lv2HostingError::new("param_queue_full"));
+        }
+        Ok(())
     }
 
     /// Audio port layout from the bundle TTL.
@@ -469,6 +502,20 @@ impl Lv2HostedInstance {
         let run = descriptor
             .run
             .ok_or_else(|| Lv2HostingError::new("run_missing"))?;
+        // Control INPUT slots the session may write param changes into
+        // (g12.023). Output control slots stay plugin-owned.
+        let control_inputs: Vec<(u32, *mut f32)> = self
+            .model
+            .ports
+            .iter()
+            .filter(|port| port.classes.control && port.classes.input)
+            .filter_map(|port| {
+                self.control_slots
+                    .iter()
+                    .find(|(index, _)| *index == port.index)
+                    .map(|(index, slot)| (*index, (&**slot as *const f32) as *mut f32))
+            })
+            .collect();
         Ok(Lv2ProcessSession {
             handle: self.handle,
             run,
@@ -478,6 +525,9 @@ impl Lv2HostedInstance {
             output_right: self.audio_outputs[1].as_ptr() as *mut f32,
             max_frames: self.activated_max_frames as usize,
             processing: false,
+            param_changes: Arc::clone(&self.param_changes),
+            param_scratch: Vec::with_capacity(PLUGIN_PARAM_CHANGE_CAPACITY),
+            control_inputs,
         })
     }
 }
@@ -507,6 +557,13 @@ pub struct Lv2ProcessSession {
     output_right: *mut f32,
     max_frames: usize,
     processing: bool,
+    /// Pending param writes shared with the owning instance (g12.023).
+    param_changes: Arc<PluginParamChangeQueue>,
+    /// Drain scratch (preallocated; audio thread never allocates).
+    param_scratch: Vec<PluginParamChange>,
+    /// `(port_index, slot)` for every control INPUT port; the slots live
+    /// in the owning instance until after the session stops.
+    control_inputs: Vec<(u32, *mut f32)>,
 }
 
 // Safety: the session is handed to exactly one audio thread; LV2's `run`
@@ -532,6 +589,28 @@ impl Lv2ProcessSession {
     /// Whether `start()` has run and `stop()` has not yet.
     pub fn is_processing(&self) -> bool {
         self.processing
+    }
+
+    /// Drain pending param writes into the connected control-input slots
+    /// (g12.023, block-boundary application). Audio thread only —
+    /// alloc-free; the slot pointers stay valid per the session contract.
+    fn apply_param_changes(&mut self) {
+        if self.param_changes.is_empty() {
+            return;
+        }
+        self.param_changes.drain_coalesced(&mut self.param_scratch);
+        for change in &self.param_scratch {
+            if let Some((_, slot)) = self
+                .control_inputs
+                .iter()
+                .find(|(index, _)| *index == change.parameter_id)
+            {
+                // Safety: control slots are instance-owned boxes that
+                // outlive the session; only this thread writes them while
+                // processing runs.
+                unsafe { **slot = change.value as f32 };
+            }
+        }
     }
 
     /// Run one block through the connected planar buffers.
@@ -561,6 +640,7 @@ impl Lv2ProcessSession {
             output[..frames * 2].copy_from_slice(&input[..frames * 2]);
             return false;
         }
+        self.apply_param_changes();
         // Safety: pointers target the instance-owned boxed buffers sized
         // at max_frames; frames is clamped above.
         unsafe {
@@ -586,6 +666,7 @@ impl Lv2ProcessSession {
         if self.handle.is_null() {
             return false;
         }
+        self.apply_param_changes();
         // Safety: as in `process_interleaved_stereo`.
         unsafe {
             for frame in 0..frames {
