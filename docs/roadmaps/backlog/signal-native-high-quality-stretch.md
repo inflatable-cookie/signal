@@ -161,6 +161,86 @@ Start in `signal-dsp-stretch`:
 7. Add the benchmark harness before tuning thresholds, so improvement is
    measured against corpus evidence instead of ad hoc listening only.
 
+## Ready Slice Queue
+
+### Slice 1: Corpus Harness Foundation
+
+Status: complete
+Repos: `signal`
+
+Work:
+
+- [x] encode required material families in `signal-dsp-stretch`
+- [x] encode fixed-ratio output-length drift measurement
+- [x] encode lower-is-better metric limit assessment
+- [x] add synthetic audio generators for ramp, seam, and extreme-ratio cases
+- [x] add benchmark report output that can later compare draft,
+  OfflineHighQuality, and external benchmark renders
+
+Acceptance:
+
+- [x] corpus blueprint covers drums/percussion, bass, vocals, pads/sustains,
+  full mixes, tempo ramps, loop seams, and extreme ratios
+- [x] metric assessment distinguishes pass, warn, and fail
+- [x] synthetic cases run without file I/O
+- [x] harness output is deterministic and suitable for future CI artifacts
+
+Validation:
+
+- `cargo test -p signal-dsp-stretch`
+
+### Slice 2: Offline Phase-Locking Prototype
+
+Status: ready
+Repos: `signal`
+
+Work:
+
+- [ ] split current phase-vocoder internals into analysis, phase, and
+  synthesis helpers
+- [ ] add spectral peak tracking per frame
+- [ ] add identity phase locking around peak neighborhoods
+- [ ] keep current `PhaseVocoderStretcher` behavior available as the draft
+  baseline for regression comparison
+
+Acceptance:
+
+- [ ] fixed-ratio length contract remains exact
+- [ ] tonal pitch preservation does not regress against the draft baseline
+- [ ] sustained-material coherence metrics improve or log a measured gap
+- [ ] no new realtime render-plane path is introduced
+
+Validation:
+
+- `cargo test -p signal-dsp-stretch`
+- `effigy check:docs` if public docs change
+
+### Slice 3: Transient And Linked-Stereo Depth
+
+Status: blocked on Slice 2
+Repos: `signal`
+
+Work:
+
+- [ ] add transient detection over energy and spectral flux
+- [ ] add transient-preserving phase reset or local splice strategy
+- [ ] add linked stereo analysis/synthesis so image movement is measured
+- [ ] add loop seam and transient smear metrics to the corpus harness
+
+### Slice 4: Render, Cache, And Loophole Contracts
+
+Status: blocked on Chorus generation rollover
+Repos: `signal`, `pulse`, `aura`, `chorus` if product contracts widen
+
+Work:
+
+- [ ] define cache identity for engine version, tier, content hash,
+  ratio/pitch curves, warp markers, channel layout, and projection epoch
+- [ ] wire OfflineHighQuality artifacts into render/export/freeze only after
+  corpus evidence beats the draft baseline
+- [ ] add Pulse/Aura contract changes only for product-visible mode, ratio,
+  pitch, marker, and cache behavior
+
 ## Integration Plan
 
 - Keep Signal as DSP owner. Pulse/Aura only need mode, ratio/pitch, marker, and
@@ -191,6 +271,6 @@ Start in `signal-dsp-stretch`:
 
 ## Next Task
 
-Promote this backlog item into the next Signal/Loophole planning lane by
-creating ready cards for the corpus harness and the first offline
-phase-locking prototype.
+Start Slice 2 by splitting the draft phase-vocoder internals into explicit
+analysis, phase, and synthesis helpers, keeping current behavior as the draft
+baseline before adding peak tracking.

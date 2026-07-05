@@ -33,6 +33,16 @@
 
 #![warn(missing_docs)]
 
+mod benchmark;
+
+pub use benchmark::{
+    assess_stretch_metrics, format_stretch_acceptance_report, generate_synthetic_stretch_audio,
+    output_length_drift_samples, synthetic_stretch_corpus_cases, StretchAcceptanceReport,
+    StretchAcceptanceSeverity, StretchAcceptanceStatus, StretchCorpusCase, StretchCorpusFamily,
+    StretchCorpusSource, StretchMetric, StretchMetricAssessment, StretchMetricLimit,
+    StretchMetricValue, StretchSyntheticAudio, STRETCH_BENCHMARK_CORPUS,
+};
+
 use rustfft::{num_complex::Complex32, FftPlanner};
 use signal_primitives::Sample;
 
@@ -145,7 +155,6 @@ pub fn stretch_backend_plan(tier: StretchBackendTier) -> StretchBackendPlan {
         .find(|plan| plan.tier == tier)
         .expect("all StretchBackendTier variants are represented")
 }
-
 /// Abstract time-stretcher contract (memo 013): stretch audio in time while
 /// preserving pitch. `ratio` is the OUTPUT/INPUT duration factor — 2.0 makes
 /// the audio twice as long (half speed), 0.5 twice as fast.
@@ -516,5 +525,106 @@ mod tests {
         assert!(offline.transient_preservation);
         assert!(offline.vertical_phase_coherence);
         assert!(offline.deterministic_output);
+    }
+
+    #[test]
+    fn benchmark_corpus_covers_required_material_families() {
+        let required = [
+            StretchCorpusFamily::DrumsPercussion,
+            StretchCorpusFamily::Bass,
+            StretchCorpusFamily::Vocals,
+            StretchCorpusFamily::PadsSustains,
+            StretchCorpusFamily::FullMix,
+            StretchCorpusFamily::TempoRamp,
+            StretchCorpusFamily::LoopSeam,
+            StretchCorpusFamily::ExtremeRatio,
+        ];
+
+        for family in required {
+            assert!(
+                STRETCH_BENCHMARK_CORPUS
+                    .iter()
+                    .any(|case| case.family == family),
+                "missing corpus family {family:?}"
+            );
+        }
+        assert!(STRETCH_BENCHMARK_CORPUS.iter().all(|case| case
+            .ratios
+            .iter()
+            .all(|ratio| ratio.is_finite() && *ratio > 0.0)));
+    }
+
+    #[test]
+    fn output_length_drift_tracks_fixed_ratio_contract() {
+        assert_eq!(output_length_drift_samples(1_000, 1_500, 1.5), 0.0);
+        assert_eq!(output_length_drift_samples(1_001, 1_502, 1.5), 0.0);
+        assert_eq!(output_length_drift_samples(1_001, 1_503, 1.5), 1.0);
+        assert!(output_length_drift_samples(1_000, 1_000, f64::NAN).is_nan());
+    }
+
+    #[test]
+    fn metric_assessment_aggregates_warnings_and_failures() {
+        let measurements = [
+            StretchMetricValue::new(StretchMetric::TimingDriftSamples, 0.0),
+            StretchMetricValue::new(StretchMetric::StereoImageDelta, 0.2),
+            StretchMetricValue::new(StretchMetric::LoopBoundaryClickDbfs, -24.0),
+        ];
+        let limits = [
+            StretchMetricLimit::max(
+                StretchMetric::TimingDriftSamples,
+                1.0,
+                StretchAcceptanceSeverity::Fail,
+            ),
+            StretchMetricLimit::max(
+                StretchMetric::StereoImageDelta,
+                0.1,
+                StretchAcceptanceSeverity::Warn,
+            ),
+            StretchMetricLimit::max(
+                StretchMetric::LoopBoundaryClickDbfs,
+                -60.0,
+                StretchAcceptanceSeverity::Fail,
+            ),
+        ];
+
+        let report = assess_stretch_metrics(&measurements, &limits);
+
+        assert_eq!(report.status, StretchAcceptanceStatus::Fail);
+        assert_eq!(report.metrics[0].status, StretchAcceptanceStatus::Pass);
+        assert_eq!(report.metrics[1].status, StretchAcceptanceStatus::Warn);
+        assert_eq!(report.metrics[2].status, StretchAcceptanceStatus::Fail);
+    }
+
+    #[test]
+    fn synthetic_corpus_cases_run_without_file_io() {
+        let cases = synthetic_stretch_corpus_cases();
+        assert_eq!(cases.len(), 3);
+        for (case, audio) in cases {
+            assert_eq!(case.source, StretchCorpusSource::Synthetic);
+            assert!(audio.sample_rate_hz > 0);
+            assert!(audio.channels > 0);
+            assert_eq!(audio.samples.len() % audio.channels as usize, 0);
+            assert!(audio.samples.iter().any(|sample| sample.abs() > 0.01));
+        }
+    }
+
+    #[test]
+    fn acceptance_report_format_is_deterministic() {
+        let report = assess_stretch_metrics(
+            &[StretchMetricValue::new(
+                StretchMetric::TimingDriftSamples,
+                0.0,
+            )],
+            &[StretchMetricLimit::max(
+                StretchMetric::TimingDriftSamples,
+                1.0,
+                StretchAcceptanceSeverity::Fail,
+            )],
+        );
+
+        assert_eq!(
+            format_stretch_acceptance_report("stretch:tempo_ramp", &report),
+            "case=stretch:tempo_ramp status=Pass\nmetric=TimingDriftSamples value=0.000000 max=1.000000 status=Pass"
+        );
     }
 }
