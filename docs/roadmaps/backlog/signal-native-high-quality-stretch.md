@@ -198,7 +198,7 @@ Work:
 
 - [x] split current phase-vocoder internals into analysis, phase, and
   synthesis helpers
-- [ ] add spectral peak tracking per frame
+- [x] add spectral peak tracking per frame
 - [ ] add identity phase locking around peak neighborhoods
 - [ ] keep current `PhaseVocoderStretcher` behavior available as the draft
   baseline for regression comparison
@@ -271,5 +271,5 @@ Work:
 
 ## Next Task
 
-Continue Slice 2 by adding spectral peak tracking per frame on top of the new
-analysis/phase/synthesis helper split.
+Continue Slice 2 by adding identity phase locking around tracked spectral peak
+neighborhoods while preserving the draft baseline for regression comparison.
