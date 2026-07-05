@@ -4,12 +4,14 @@ use signal_plugin::{
 };
 
 mod discovery;
+mod gui;
 mod hosting;
 mod introspection;
 mod model;
 #[cfg(test)]
 mod scaffold;
 
+pub use gui::{Vst3GuiEvent, Vst3GuiSession};
 pub use hosting::{
     current_vst3_platform, Vst3HostedInstance, Vst3HostedPortLayout, Vst3HostingError,
     Vst3ProcessSession,

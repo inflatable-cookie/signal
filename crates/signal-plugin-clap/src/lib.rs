@@ -22,7 +22,8 @@ mod hosting;
 pub use adapter::{ClapDiscoveredPluginType, ClapHostExtension, ClapPluginHostAdapter};
 pub use gui::{ClapGuiEvent, ClapGuiSession};
 pub use hosting::{
-    ClapHostedInstance, ClapHostedPortLayout, ClapHostingError, ClapProcessSession, LoadedClapEntry,
+    ClapHostParamsEvent, ClapHostedInstance, ClapHostedPortLayout, ClapHostingError,
+    ClapProcessSession, LoadedClapEntry,
 };
 
 #[cfg(test)]

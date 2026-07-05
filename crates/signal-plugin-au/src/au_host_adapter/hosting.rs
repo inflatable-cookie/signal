@@ -33,6 +33,7 @@ use std::path::Path;
 
 use signal_plugin::{PluginParameterDescriptor, PluginParameterDomain, PluginParameterFlags};
 
+use super::gui::{AuCocoaViewInfo, AuGuiSession};
 use super::AuHostPlatform;
 
 /// Sentinel `.component` path for registry-resolved AU entries: the file is
@@ -50,7 +51,7 @@ pub struct AuHostingError {
 }
 
 impl AuHostingError {
-    fn new(token: impl Into<String>) -> Self {
+    pub(crate) fn new(token: impl Into<String>) -> Self {
         Self {
             token: token.into(),
         }
@@ -457,6 +458,14 @@ pub struct AuHostedInstance {
     port_layout: AuHostedPortLayout,
     state: HostedInstanceState,
     activated_max_frames: u32,
+    /// The unit's custom Cocoa editor description, probed at load via
+    /// `kAudioUnitProperty_CocoaUI` (g12.024). `None` = no editor UI (the
+    /// generic view is deliberately not built — the parameter editor
+    /// covers those units).
+    cocoa_view: Option<AuCocoaViewInfo>,
+    /// The live editor view, when open. Torn down (removeFromSuperview +
+    /// release) BEFORE the unit is disposed in `Drop`.
+    gui_session: Option<AuGuiSession>,
 }
 
 // Safety: the raw AudioUnit handle is only used through this type's public
@@ -509,12 +518,15 @@ impl AuHostedInstance {
             }
             let parameters = parameter_inventory(unit);
             let port_layout = main_element_layout(unit);
+            let cocoa_view = super::gui::cocoa_view_info(unit);
             Ok(Self {
                 unit,
                 parameters,
                 port_layout,
                 state: HostedInstanceState::Created,
                 activated_max_frames: 0,
+                cocoa_view,
+                gui_session: None,
             })
         }
     }
@@ -671,6 +683,72 @@ impl AuHostedInstance {
         Ok(())
     }
 
+    // ── Cocoa editor view hosting (g12.024, GUI phase 2) ───────────────
+    //
+    // MAIN-THREAD CONTRACT: `gui_open_embedded` and `gui_destroy` touch
+    // AppKit and must run on the application main thread (Tauri
+    // `run_on_main_thread`); this type only serializes access.
+
+    /// Whether the unit provides a custom Cocoa editor
+    /// (`kAudioUnitProperty_CocoaUI` probed and cached at load).
+    pub fn gui_supported(&self) -> bool {
+        self.cocoa_view.is_some()
+    }
+
+    /// The probed Cocoa editor description (bundle path + factory class),
+    /// when the unit provides one.
+    pub fn cocoa_view_info(&self) -> Option<&AuCocoaViewInfo> {
+        self.cocoa_view.as_ref()
+    }
+
+    /// Whether an editor view is currently attached.
+    pub fn gui_is_open(&self) -> bool {
+        self.gui_session.is_some()
+    }
+
+    /// Open the unit's Cocoa editor child-attached into `parent` (a live
+    /// `NSView*`): load the view bundle → instantiate the factory class →
+    /// `uiViewForAudioUnit:withSize:` → `addSubview`. Returns the view's
+    /// reported frame size (logical units). MAIN THREAD ONLY. Errors with
+    /// stable tokens (`gui_unsupported`, `gui_already_open`,
+    /// `gui_view_create_failed`, …).
+    pub fn gui_open_embedded(
+        &mut self,
+        parent: *mut std::ffi::c_void,
+        _scale: Option<f64>,
+    ) -> Result<(u32, u32), AuHostingError> {
+        if self.gui_session.is_some() {
+            return Err(AuHostingError::new("gui_already_open"));
+        }
+        #[cfg(target_os = "macos")]
+        {
+            let info = self
+                .cocoa_view
+                .as_ref()
+                .ok_or_else(|| AuHostingError::new("gui_unsupported"))?;
+            let session = unsafe { super::gui::open_embedded(self.unit, info, parent) }?;
+            let size = session.size();
+            self.gui_session = Some(session);
+            Ok(size)
+        }
+        #[cfg(not(target_os = "macos"))]
+        {
+            let _ = parent;
+            Err(AuHostingError::new("unsupported_platform"))
+        }
+    }
+
+    /// The open editor view, read-only.
+    pub fn gui_session(&self) -> Option<&AuGuiSession> {
+        self.gui_session.as_ref()
+    }
+
+    /// Destroy the open editor view (idempotent; removeFromSuperview +
+    /// release — the unit stays live). MAIN THREAD ONLY.
+    pub fn gui_destroy(&mut self) {
+        self.gui_session = None;
+    }
+
     /// Build the raw process session for the sandbox audio thread. Only
     /// valid while active; the session preallocates its planar buffers at
     /// the activated max block size and installs the pull-model render
@@ -692,6 +770,10 @@ impl AuHostedInstance {
 
 impl Drop for AuHostedInstance {
     fn drop(&mut self) {
+        // View teardown must precede unit disposal. This is the fallback
+        // path (teardown with an editor still open); the orderly path
+        // closes the editor on the main thread first.
+        self.gui_session = None;
         #[cfg(target_os = "macos")]
         unsafe {
             if self.state == HostedInstanceState::Active {

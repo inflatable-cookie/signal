@@ -30,6 +30,12 @@ pub const CLAP_FIXTURE_GUI_INITIAL_SIZE: (u32, u32) = (400, 300);
 /// the host-callback path without any real window system).
 pub const CLAP_FIXTURE_GUI_REQUESTED_SIZE: (u32, u32) = (500, 320);
 
+/// The PLAIN Gain value the fixture's gui "tweaks" on `show`: pushed as a
+/// `CLAP_EVENT_PARAM_VALUE` OUT-event at the top of the next processed
+/// block (g12.024 plugin→host param sync proof; the Gain range is 0..1 so
+/// plain == normalized).
+pub const CLAP_FIXTURE_GUI_PARAM_OUT_VALUE: f64 = 0.75;
+
 /// Returns `true` when a `rustc` binary is invocable (fixture tests skip
 /// gracefully when it is not).
 pub fn rustc_available() -> bool {
@@ -280,6 +286,14 @@ pub struct clap_plugin_gui {{
 
 #[repr(C)]
 #[derive(Copy, Clone)]
+pub struct clap_host_params {{
+    pub rescan: Option<unsafe extern "C" fn(*const clap_host, u32)>,
+    pub clear: Option<unsafe extern "C" fn(*const clap_host, u32, u32)>,
+    pub request_flush: Option<unsafe extern "C" fn(*const clap_host)>,
+}}
+
+#[repr(C)]
+#[derive(Copy, Clone)]
 pub struct clap_host_gui {{
     pub resize_hints_changed: Option<unsafe extern "C" fn(*const clap_host)>,
     pub request_resize: Option<unsafe extern "C" fn(*const clap_host, u32, u32) -> bool>,
@@ -318,6 +332,12 @@ pub struct clap_input_events {{
     pub get: Option<unsafe extern "C" fn(*const clap_input_events, u32) -> *const clap_event_header>,
 }}
 
+#[repr(C)]
+pub struct clap_output_events {{
+    pub ctx: *mut c_void,
+    pub try_push: Option<unsafe extern "C" fn(*const clap_output_events, *const clap_event_header) -> bool>,
+}}
+
 const CLAP_CORE_EVENT_SPACE_ID: u16 = 0;
 const CLAP_EVENT_PARAM_VALUE_TYPE: u16 = 5;
 
@@ -349,6 +369,10 @@ static GUI_WIDTH: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::n
 static GUI_HEIGHT: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new({gui_initial_height});
 static HOST: std::sync::atomic::AtomicPtr<clap_host> =
     std::sync::atomic::AtomicPtr::new(ptr::null_mut());
+/// Set by gui_show: the next processed block pushes a Gain PARAM_VALUE
+/// out-event (the "user tweaked the editor" stand-in, g12.024).
+static PENDING_PARAM_OUT: std::sync::atomic::AtomicBool =
+    std::sync::atomic::AtomicBool::new(false);
 
 static GUI: clap_plugin_gui = clap_plugin_gui {{
     is_api_supported: Some(gui_is_api_supported),
@@ -531,6 +555,37 @@ unsafe extern "C" fn plugin_process(
     }}
     let process = &*process;
     apply_param_events(process.in_events);
+    if PENDING_PARAM_OUT.swap(false, std::sync::atomic::Ordering::SeqCst)
+        && !process.out_events.is_null()
+    {{
+        let out_events = &*(process.out_events as *const clap_output_events);
+        if let Some(try_push) = out_events.try_push {{
+            let event = clap_event_param_value {{
+                header: clap_event_header {{
+                    size: std::mem::size_of::<clap_event_param_value>() as u32,
+                    time: 0,
+                    space_id: CLAP_CORE_EVENT_SPACE_ID,
+                    type_: CLAP_EVENT_PARAM_VALUE_TYPE,
+                    flags: 0,
+                }},
+                param_id: 4096,
+                cookie: ptr::null_mut(),
+                note_id: -1,
+                port_index: -1,
+                channel: -1,
+                key: -1,
+                value: {gui_param_out_value}f64,
+            }};
+            GAIN_BITS.store(
+                ({gui_param_out_value}f32).to_bits(),
+                std::sync::atomic::Ordering::SeqCst,
+            );
+            let _ = try_push(
+                out_events as *const clap_output_events,
+                &event.header as *const clap_event_header,
+            );
+        }}
+    }}
     if process.audio_inputs_count < 1
         || process.audio_outputs_count < 1
         || process.audio_inputs.is_null()
@@ -668,6 +723,9 @@ unsafe extern "C" fn gui_show(_plugin: *const clap_plugin) -> bool {{
         return false;
     }}
     GUI_VISIBLE.store(true, std::sync::atomic::Ordering::SeqCst);
+    // Stand-in editor tweak: the next processed block pushes a Gain
+    // PARAM_VALUE out-event for the plugin→host sync proof (g12.024).
+    PENDING_PARAM_OUT.store(true, std::sync::atomic::Ordering::SeqCst);
     // Exercise the host-callback path: ask the host for a resize.
     let host = HOST.load(std::sync::atomic::Ordering::SeqCst);
     if !host.is_null() {{
@@ -677,6 +735,15 @@ unsafe extern "C" fn gui_show(_plugin: *const clap_plugin) -> bool {{
                 let host_gui = extension as *const clap_host_gui;
                 if let Some(request_resize) = (*host_gui).request_resize {{
                     let _ = request_resize(host, {gui_request_width}, {gui_request_height});
+                }}
+            }}
+            // Exercise the host clap.params wiring too (g12.024): an
+            // editor tweak conventionally asks the host for a flush.
+            let params_extension = get_extension(host, PARAMS_ID.as_ptr() as *const c_char);
+            if !params_extension.is_null() {{
+                let host_params = params_extension as *const clap_host_params;
+                if let Some(request_flush) = (*host_params).request_flush {{
+                    request_flush(host);
                 }}
             }}
         }}
@@ -789,5 +856,6 @@ unsafe extern "C" fn param_get_value(
         gui_initial_height = CLAP_FIXTURE_GUI_INITIAL_SIZE.1,
         gui_request_width = CLAP_FIXTURE_GUI_REQUESTED_SIZE.0,
         gui_request_height = CLAP_FIXTURE_GUI_REQUESTED_SIZE.1,
+        gui_param_out_value = CLAP_FIXTURE_GUI_PARAM_OUT_VALUE,
     )
 }

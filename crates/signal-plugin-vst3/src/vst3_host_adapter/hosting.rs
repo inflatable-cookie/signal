@@ -41,6 +41,7 @@ use signal_plugin::{
     PluginParameterFlags, PLUGIN_PARAM_CHANGE_CAPACITY,
 };
 
+use super::gui::{Vst3GuiEvent, Vst3GuiSession, IPLUG_VIEW_IID, VIEW_TYPE_EDITOR};
 use super::introspection::resolve_module_binary_path;
 use super::Vst3HostPlatform;
 
@@ -53,7 +54,7 @@ pub struct Vst3HostingError {
 }
 
 impl Vst3HostingError {
-    fn new(token: impl Into<String>) -> Self {
+    pub(crate) fn new(token: impl Into<String>) -> Self {
         Self {
             token: token.into(),
         }
@@ -82,23 +83,23 @@ pub const fn current_vst3_platform() -> Vst3HostPlatform {
 // ── COM primitives ──────────────────────────────────────────────────────────
 
 /// Steinberg `tresult`.
-type Tresult = i32;
+pub(crate) type Tresult = i32;
 
 /// `kResultOk` / `kResultTrue` (0 on every platform).
-const K_RESULT_OK: Tresult = 0;
+pub(crate) const K_RESULT_OK: Tresult = 0;
 
 /// `kNoInterface` (platform-dependent: COM `E_NOINTERFACE` on Windows).
 #[cfg(target_os = "windows")]
-const K_NO_INTERFACE: Tresult = 0x8000_4002_u32 as i32;
+pub(crate) const K_NO_INTERFACE: Tresult = 0x8000_4002_u32 as i32;
 #[cfg(not(target_os = "windows"))]
-const K_NO_INTERFACE: Tresult = -1;
+pub(crate) const K_NO_INTERFACE: Tresult = -1;
 
 /// 16-byte Steinberg TUID.
-type Tuid = [u8; 16];
+pub(crate) type Tuid = [u8; 16];
 
 /// Build a TUID from the four canonical `u32` fields with the platform's
 /// `INLINE_UID` byte layout (see module docs).
-const fn tuid_from_uid(l1: u32, l2: u32, l3: u32, l4: u32) -> Tuid {
+pub(crate) const fn tuid_from_uid(l1: u32, l2: u32, l3: u32, l4: u32) -> Tuid {
     if cfg!(target_os = "windows") {
         [
             (l1 & 0xFF) as u8,
@@ -166,7 +167,7 @@ fn tuid_from_class_id_hex(class_id_hex: &str) -> Option<Tuid> {
 
 // Interface IIDs (canonical field values from the published VST3 interface
 // definitions; encoded per-platform by `tuid_from_uid`).
-const FUNKNOWN_IID: Tuid = tuid_from_uid(0x00000000, 0x00000000, 0xC0000000, 0x00000046);
+pub(crate) const FUNKNOWN_IID: Tuid = tuid_from_uid(0x00000000, 0x00000000, 0xC0000000, 0x00000046);
 const ICOMPONENT_IID: Tuid = tuid_from_uid(0xE831FF31, 0xF2D54301, 0x928EBBEE, 0x25697802);
 const IAUDIO_PROCESSOR_IID: Tuid = tuid_from_uid(0x42043F99, 0xB7DA453C, 0xA569E79D, 0x9AAEC33D);
 const IEDIT_CONTROLLER_IID: Tuid = tuid_from_uid(0xDCD7BBE3, 0x7742448D, 0xA874AAF0, 0x0B96B23E);
@@ -364,7 +365,7 @@ struct EditControllerVTable {
 ///
 /// # Safety
 /// `object` must be a live COM interface pointer whose vtable matches `V`.
-unsafe fn vtable_of<V>(object: *mut c_void) -> *const V {
+pub(crate) unsafe fn vtable_of<V>(object: *mut c_void) -> *const V {
     *(object as *mut *const V)
 }
 
@@ -377,7 +378,7 @@ unsafe fn com_query_interface(object: *mut c_void, iid: &Tuid) -> Option<*mut c_
 }
 
 /// `FUnknown::release`.
-unsafe fn com_release(object: *mut c_void) {
+pub(crate) unsafe fn com_release(object: *mut c_void) {
     let vtable = vtable_of::<FUnknownVTable>(object);
     ((*vtable).release)(object);
 }
@@ -800,6 +801,13 @@ pub struct Vst3HostedInstance {
     port_layout: Vst3HostedPortLayout,
     state: HostedInstanceState,
     activated_max_frames: u32,
+    /// Whether the controller produced an editor view at the load-time
+    /// probe (g12.024): `createView("editor")` returned non-null. Cached —
+    /// `gui_supported` must stay a cheap read for the states poll.
+    gui_view_supported: bool,
+    /// The live editor view, when open. Torn down (removed + released)
+    /// BEFORE the controller in `Drop` — the mandated release ordering.
+    gui_session: Option<Vst3GuiSession>,
     /// Pending param writes bound for the audio thread's
     /// `IParameterChanges` (g12.023); shared with every process session
     /// built from this instance.
@@ -851,6 +859,21 @@ impl Vst3HostedInstance {
             .map(|handle| unsafe { parameter_inventory(handle.ptr()) })
             .unwrap_or_default();
         let port_layout = unsafe { main_bus_layout(component) };
+        // Editor probe (g12.024): createView + immediate release — the
+        // standard capability check. Mirrors the CLAP load-time
+        // `is_api_supported` probe's threading posture.
+        let gui_view_supported = controller
+            .as_ref()
+            .map(|handle| unsafe {
+                let view = controller_create_view(handle.ptr());
+                if view.is_null() {
+                    false
+                } else {
+                    com_release(view);
+                    true
+                }
+            })
+            .unwrap_or(false);
 
         Ok(Self {
             component,
@@ -860,6 +883,8 @@ impl Vst3HostedInstance {
             port_layout,
             state: HostedInstanceState::Created,
             activated_max_frames: 0,
+            gui_view_supported,
+            gui_session: None,
             param_changes: Arc::new(PluginParamChangeQueue::new()),
             _module: module,
         })
@@ -990,6 +1015,73 @@ impl Vst3HostedInstance {
         Ok(())
     }
 
+    // ── IPlugView hosting (g12.024, GUI phase 2) ───────────────────────
+    //
+    // MAIN-THREAD CONTRACT: every gui_* method below maps to a VST3
+    // UI-thread function. The embedding host must dispatch these onto the
+    // application main thread (Tauri `run_on_main_thread`); this type only
+    // serializes access, it cannot pick the thread.
+
+    /// Whether the controller produced an editor view at the load-time
+    /// probe. Cached at load.
+    pub fn gui_supported(&self) -> bool {
+        self.gui_view_supported
+    }
+
+    /// Whether an editor view is currently attached.
+    pub fn gui_is_open(&self) -> bool {
+        self.gui_session.is_some()
+    }
+
+    /// Open the embedded editor parented into `parent` (an `NSView*` on
+    /// macOS): `createView("editor")` → platform check → `setFrame` →
+    /// `getSize` → `attached`. Returns the plugin's initial content size
+    /// (logical units). Errors with stable tokens (`gui_unsupported`,
+    /// `gui_already_open`, `gui_attached_failed`, …).
+    pub fn gui_open_embedded(
+        &mut self,
+        parent: *mut c_void,
+        _scale: Option<f64>,
+    ) -> Result<(u32, u32), Vst3HostingError> {
+        if self.gui_session.is_some() {
+            return Err(Vst3HostingError::new("gui_already_open"));
+        }
+        let controller = self
+            .controller
+            .as_ref()
+            .ok_or_else(|| Vst3HostingError::new("gui_unsupported"))?;
+        let view = unsafe { controller_create_view(controller.ptr()) };
+        let session = unsafe { Vst3GuiSession::open_embedded(view, parent) }?;
+        let size = session.size();
+        self.gui_session = Some(session);
+        Ok(size)
+    }
+
+    /// The open editor view, for size/resize interaction.
+    pub fn gui_session_mut(&mut self) -> Option<&mut Vst3GuiSession> {
+        self.gui_session.as_mut()
+    }
+
+    /// The open editor view, read-only.
+    pub fn gui_session(&self) -> Option<&Vst3GuiSession> {
+        self.gui_session.as_ref()
+    }
+
+    /// Destroy the open editor view (idempotent; `removed` + release — the
+    /// plugin instance stays live).
+    pub fn gui_destroy(&mut self) {
+        self.gui_session = None;
+    }
+
+    /// Drain host-side view callbacks queued since the last call
+    /// (`resizeView` requests). Empty when no editor is open.
+    pub fn take_gui_events(&self) -> Vec<Vst3GuiEvent> {
+        self.gui_session
+            .as_ref()
+            .map(|session| session.take_events())
+            .unwrap_or_default()
+    }
+
     /// Build the raw process session for the sandbox audio thread. Only
     /// valid while active; the session preallocates its planar buffers at
     /// the activated max block size, so processing never allocates.
@@ -1007,6 +1099,11 @@ impl Vst3HostedInstance {
 
 impl Drop for Vst3HostedInstance {
     fn drop(&mut self) {
+        // View teardown (removed + release) must precede controller
+        // teardown. This is the fallback path (teardown with an editor
+        // still open); the orderly path closes the editor on the main
+        // thread first.
+        self.gui_session = None;
         unsafe {
             if self.state == HostedInstanceState::Active {
                 let component = vtable_of::<ComponentVTable>(self.component);
@@ -1054,6 +1151,29 @@ unsafe fn acquire_controller(
         return None;
     }
     Some(ControllerHandle::Separate(controller))
+}
+
+/// `IEditController::createView(ViewType::kEditor)`: the plugin's editor
+/// view, owned by the caller (null when the plugin has no editor).
+pub(crate) unsafe fn controller_create_view(controller: *mut c_void) -> *mut c_void {
+    let vtable = vtable_of::<EditControllerVTable>(controller);
+    let view = ((*vtable).create_view)(controller, VIEW_TYPE_EDITOR.as_ptr());
+    // Some plugins return a view that fails the IPlugView identity check;
+    // trust queryInterface over the raw pointer.
+    if view.is_null() {
+        return ptr::null_mut();
+    }
+    match com_query_interface(view, &IPLUG_VIEW_IID) {
+        Some(typed) => {
+            // createView's reference plus queryInterface's addRef: drop one.
+            com_release(view);
+            typed
+        }
+        None => {
+            com_release(view);
+            ptr::null_mut()
+        }
+    }
 }
 
 /// Enumerate the controller's parameter inventory into Signal descriptors.

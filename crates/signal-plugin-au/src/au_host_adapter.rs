@@ -4,6 +4,7 @@ use signal_plugin::{
 };
 
 mod discovery;
+mod gui;
 mod hosting;
 mod introspection;
 mod model;
@@ -13,6 +14,7 @@ mod scaffold;
 #[cfg(test)]
 pub(crate) use scaffold::au_scaffold_component_metadata_contents;
 
+pub use gui::{AuCocoaViewInfo, AuGuiSession};
 pub use hosting::{
     current_au_platform, AuHostedInstance, AuHostedPortLayout, AuHostingError, AuProcessSession,
     AU_REGISTRY_COMPONENT_PATH,
