@@ -16,9 +16,11 @@ mod adapter;
 mod discovery;
 #[doc(hidden)]
 pub mod fixture;
+mod gui;
 mod hosting;
 
 pub use adapter::{ClapDiscoveredPluginType, ClapHostExtension, ClapPluginHostAdapter};
+pub use gui::{ClapGuiEvent, ClapGuiSession};
 pub use hosting::{
     ClapHostedInstance, ClapHostedPortLayout, ClapHostingError, ClapProcessSession, LoadedClapEntry,
 };

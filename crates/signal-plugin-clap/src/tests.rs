@@ -117,6 +117,77 @@ mod tests {
         instance.deactivate().expect("fixture should deactivate");
     }
 
+    /// g12.022: full offscreen `clap.gui` lifecycle against the fixture's
+    /// bookkeeping-only gui — create/parent/size/show → resize negotiation →
+    /// hide → destroy, plus the host-callback queue (the fixture requests a
+    /// resize on `show`). No display assertions: real editor rendering is
+    /// operator-owed.
+    #[test]
+    fn hosted_instance_gui_lifecycle_runs_offscreen() {
+        use crate::fixture::{CLAP_FIXTURE_GUI_INITIAL_SIZE, CLAP_FIXTURE_GUI_REQUESTED_SIZE};
+        use crate::ClapGuiEvent;
+
+        let scan_root = temp_real_clap_scan_root("com.signal.gui-fixture", "Signal Gui Fixture", 0);
+        let library_path = scan_root.path().join("signal-gui-fixture.clap");
+
+        let mut instance = ClapHostedInstance::load(&library_path, "com.signal.gui-fixture")
+            .expect("fixture instance should load");
+        assert!(instance.gui_supported(), "fixture exposes clap.gui");
+        assert!(!instance.gui_is_open());
+
+        // Null parent is rejected before any FFI runs.
+        let refused = instance.gui_open_embedded(std::ptr::null_mut(), None);
+        assert_eq!(refused.unwrap_err().token, "gui_parent_null");
+
+        // The fixture records but never dereferences the parent handle, so
+        // any non-null pointer stands in for the NSView.
+        let mut fake_parent = 0u8;
+        let size = instance
+            .gui_open_embedded((&mut fake_parent as *mut u8).cast(), None)
+            .expect("embedded gui open should succeed");
+        assert_eq!(size, CLAP_FIXTURE_GUI_INITIAL_SIZE);
+        assert!(instance.gui_is_open());
+
+        // Double-open is a tokened error, not UB.
+        let double = instance.gui_open_embedded((&mut fake_parent as *mut u8).cast(), None);
+        assert_eq!(double.unwrap_err().token, "gui_already_open");
+
+        // The fixture's show() requested a resize through the host gui
+        // callback; it lands in the drainable event queue exactly once.
+        let events = instance.take_gui_events();
+        assert!(events.contains(&ClapGuiEvent::RequestResize {
+            width: CLAP_FIXTURE_GUI_REQUESTED_SIZE.0,
+            height: CLAP_FIXTURE_GUI_REQUESTED_SIZE.1,
+        }));
+        assert!(instance.take_gui_events().is_empty(), "drain empties");
+
+        {
+            let session = instance.gui_session_mut().expect("open session");
+            assert!(session.can_resize());
+            assert!(session.is_visible());
+            let accepted = session.set_size(512, 384).expect("resize accepted");
+            assert_eq!(accepted, (512, 384));
+            assert_eq!(session.size(), (512, 384));
+            session.hide();
+            assert!(!session.is_visible());
+            session.show();
+            assert!(session.is_visible());
+        }
+
+        instance.gui_destroy();
+        assert!(!instance.gui_is_open());
+        // Destroy is idempotent.
+        instance.gui_destroy();
+
+        // Reopen, then drop the instance with the editor still open: the
+        // Drop fallback destroys the gui before the plugin (no panic, no
+        // leak — verified by the fixture accepting a later create).
+        instance
+            .gui_open_embedded((&mut fake_parent as *mut u8).cast(), None)
+            .expect("gui reopens after destroy");
+        drop(instance);
+    }
+
     #[test]
     fn hosted_instance_load_rejects_missing_library_and_unknown_plugin_id() {
         let missing = ClapHostedInstance::load(

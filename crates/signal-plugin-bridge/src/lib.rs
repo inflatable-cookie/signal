@@ -29,6 +29,9 @@ mod shm;
 pub use in_process::{
     InProcessAuProcessor, InProcessClapProcessor, InProcessLv2Processor, InProcessVst3Processor,
 };
+// Re-exported so embedding hosts can drain gui events without a direct
+// signal-plugin-clap dependency (g12.022).
 pub use shm::{
     plugin_process_wait_budget, ShmPluginProcessor, PLUGIN_PROCESS_WAIT_BUDGET_MAX_MICROS,
 };
+pub use signal_plugin_clap::ClapGuiEvent;

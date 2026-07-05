@@ -87,6 +87,97 @@ impl InProcessClapProcessor {
         self.misses.load(Ordering::Relaxed)
     }
 
+    // ── clap.gui delegation (g12.022 phase 1) ───────────────────────────
+    //
+    // All gui methods take the INSTANCE lock, never the audio-path session
+    // lock, so an open editor cannot contend with `process()`. MAIN-THREAD
+    // CONTRACT: CLAP gui functions are main-thread; the embedding host must
+    // dispatch every call below onto the application main thread (Tauri
+    // `run_on_main_thread`) — the classic plugin-crash source when missed.
+
+    /// Whether the plugin exposes an embeddable `clap.gui` for this
+    /// platform's window API.
+    pub fn gui_supported(&self) -> bool {
+        self.alive.load(Ordering::Relaxed)
+            && self
+                .instance
+                .lock()
+                .map(|instance| instance.gui_supported())
+                .unwrap_or(false)
+    }
+
+    /// Whether an editor is currently created on this instance.
+    pub fn gui_is_open(&self) -> bool {
+        self.instance
+            .lock()
+            .map(|instance| instance.gui_is_open())
+            .unwrap_or(false)
+    }
+
+    /// Open the embedded editor parented into `parent_view` (an `NSView*`
+    /// on macOS, passed as `usize` so callers stay `Send`). Returns the
+    /// plugin's initial content size in logical units. MAIN THREAD ONLY.
+    pub fn gui_open_embedded(
+        &self,
+        parent_view: usize,
+        scale: Option<f64>,
+    ) -> Result<(u32, u32), String> {
+        if !self.alive.load(Ordering::Relaxed) {
+            return Err("backend_dead".to_string());
+        }
+        let mut instance = self
+            .instance
+            .lock()
+            .map_err(|_| "instance_lock_poisoned".to_string())?;
+        instance
+            .gui_open_embedded(parent_view as *mut std::ffi::c_void, scale)
+            .map_err(|error| error.token)
+    }
+
+    /// Last observed editor content size, when open.
+    pub fn gui_size(&self) -> Option<(u32, u32)> {
+        self.instance
+            .lock()
+            .ok()
+            .and_then(|instance| instance.gui_session().map(|session| session.size()))
+    }
+
+    /// Whether the open editor is user-resizable. MAIN THREAD ONLY.
+    pub fn gui_can_resize(&self) -> bool {
+        self.instance
+            .lock()
+            .ok()
+            .and_then(|instance| instance.gui_session().map(|session| session.can_resize()))
+            .unwrap_or(false)
+    }
+
+    /// Propose a new editor content size (user drag or a granted
+    /// `RequestResize`); returns the accepted size. MAIN THREAD ONLY.
+    pub fn gui_set_size(&self, width: u32, height: u32) -> Option<(u32, u32)> {
+        self.instance.lock().ok().and_then(|mut instance| {
+            instance
+                .gui_session_mut()
+                .and_then(|session| session.set_size(width, height))
+        })
+    }
+
+    /// Destroy the open editor (idempotent; processing continues). MAIN
+    /// THREAD ONLY.
+    pub fn gui_close(&self) {
+        if let Ok(mut instance) = self.instance.lock() {
+            instance.gui_destroy();
+        }
+    }
+
+    /// Drain queued host-side gui callbacks (`request_resize`, `closed`, …)
+    /// for the embedding host to apply to its window.
+    pub fn gui_take_events(&self) -> Vec<signal_plugin_clap::ClapGuiEvent> {
+        self.instance
+            .lock()
+            .map(|instance| instance.take_gui_events())
+            .unwrap_or_default()
+    }
+
     /// Stop processing and mark the backend dead: subsequent blocks bypass.
     /// Call before dropping the last handle while a plan may still run.
     pub fn shutdown(&self) {
@@ -597,6 +688,96 @@ mod tests {
         assert!(!handle.process(&mut scratch, 128, 2));
         assert_eq!(scratch, reference);
         assert_eq!(backend.miss_count(), 1);
+
+        drop(handle);
+        drop(backend);
+        let _ = std::fs::remove_dir_all(&directory);
+    }
+
+    /// g12.022: gui lifecycle through the in-process backend's delegates —
+    /// the exact surface the Tauri host calls (open/size/resize/events/
+    /// close), offscreen against the fixture's bookkeeping gui, while the
+    /// audio path keeps processing (gui takes the instance lock, never the
+    /// session lock).
+    #[test]
+    fn in_process_backend_hosts_the_fixture_gui_offscreen() {
+        use signal_plugin_clap::fixture::{
+            CLAP_FIXTURE_GUI_INITIAL_SIZE, CLAP_FIXTURE_GUI_REQUESTED_SIZE,
+        };
+        use signal_plugin_clap::ClapGuiEvent;
+
+        if !rustc_available() {
+            eprintln!("skipping: rustc unavailable for the CLAP fixture");
+            return;
+        }
+        let directory = std::env::temp_dir().join(format!(
+            "signal-plugin-bridge-inproc-gui-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_nanos(),
+        ));
+        let library = compile_clap_fixture(
+            &directory,
+            "com.signal.bridge-inproc-gui",
+            "Signal Bridge InProc Gui",
+            0,
+        )
+        .expect("fixture should compile");
+
+        let backend = Arc::new(
+            InProcessClapProcessor::load_and_activate(
+                &library,
+                "com.signal.bridge-inproc-gui",
+                48_000,
+                256,
+            )
+            .expect("backend should load and activate"),
+        );
+        assert!(backend.gui_supported());
+        assert!(!backend.gui_is_open());
+        assert_eq!(backend.gui_size(), None);
+
+        let mut fake_parent = 0u8;
+        let size = backend
+            .gui_open_embedded(&mut fake_parent as *mut u8 as usize, None)
+            .expect("gui opens");
+        assert_eq!(size, CLAP_FIXTURE_GUI_INITIAL_SIZE);
+        assert!(backend.gui_is_open());
+        assert_eq!(backend.gui_size(), Some(CLAP_FIXTURE_GUI_INITIAL_SIZE));
+        assert!(backend.gui_can_resize());
+
+        // Audio still processes with the editor open.
+        let handle = RenderPluginProcessor::new(Arc::clone(&backend) as Arc<_>);
+        let mut scratch: Vec<f32> = (0..256).map(|index| index as f32 / 256.0).collect();
+        assert!(handle.process(&mut scratch, 128, 2));
+
+        // Fixture show() queued a host resize request.
+        let events = backend.gui_take_events();
+        assert!(events.contains(&ClapGuiEvent::RequestResize {
+            width: CLAP_FIXTURE_GUI_REQUESTED_SIZE.0,
+            height: CLAP_FIXTURE_GUI_REQUESTED_SIZE.1,
+        }));
+
+        // Granting the request through set_size sticks.
+        assert_eq!(
+            backend.gui_set_size(
+                CLAP_FIXTURE_GUI_REQUESTED_SIZE.0,
+                CLAP_FIXTURE_GUI_REQUESTED_SIZE.1
+            ),
+            Some(CLAP_FIXTURE_GUI_REQUESTED_SIZE)
+        );
+        assert_eq!(backend.gui_size(), Some(CLAP_FIXTURE_GUI_REQUESTED_SIZE));
+
+        backend.gui_close();
+        assert!(!backend.gui_is_open());
+        backend.gui_close(); // idempotent
+
+        // Dead backends refuse to open editors.
+        backend.shutdown();
+        let refused = backend.gui_open_embedded(&mut fake_parent as *mut u8 as usize, None);
+        assert_eq!(refused.unwrap_err(), "backend_dead");
 
         drop(handle);
         drop(backend);

@@ -8,10 +8,13 @@
 //! hosting and scanning speak the same dlopen path.
 
 use std::{
-    ffi::{c_char, c_void, CString},
+    ffi::{c_char, c_void, CStr, CString},
     path::Path,
     ptr,
-    sync::atomic::{AtomicI64, Ordering},
+    sync::{
+        atomic::{AtomicI64, Ordering},
+        Mutex,
+    },
 };
 
 use clap_sys::{
@@ -19,6 +22,7 @@ use clap_sys::{
     entry::clap_plugin_entry,
     events::{clap_event_header, clap_input_events, clap_output_events},
     ext::audio_ports::{clap_plugin_audio_ports, CLAP_EXT_AUDIO_PORTS},
+    ext::gui::{clap_host_gui, clap_plugin_gui, CLAP_EXT_GUI},
     factory::plugin_factory::{clap_plugin_factory, CLAP_PLUGIN_FACTORY_ID},
     host::clap_host,
     plugin::clap_plugin,
@@ -27,6 +31,8 @@ use clap_sys::{
 };
 use libloading::Library;
 use signal_plugin::{PluginAudioBusDirection, PluginParameterDescriptor};
+
+use crate::gui::{ClapGuiEvent, ClapGuiSession};
 
 use crate::discovery::{
     audio_buses_from_extension, parameter_descriptors_from_extension, PluginAudioBusDescriptorList,
@@ -41,7 +47,7 @@ pub struct ClapHostingError {
 }
 
 impl ClapHostingError {
-    fn new(token: impl Into<String>) -> Self {
+    pub(crate) fn new(token: impl Into<String>) -> Self {
         Self {
             token: token.into(),
         }
@@ -146,14 +152,23 @@ enum HostedInstanceState {
 pub struct ClapHostedInstance {
     /// Keeps the library and entry alive for the instance lifetime.
     _entry: LoadedClapEntry,
-    /// Host struct the plugin may retain a pointer to; boxed so it never
-    /// moves.
-    _host: Box<clap_host>,
+    /// Host struct + callback state the plugin may retain a pointer to;
+    /// boxed so it never moves.
+    host_shim: Box<ClapHostShim>,
     plugin: *const clap_plugin,
     state: HostedInstanceState,
     parameters: Vec<PluginParameterDescriptor>,
     port_layout: ClapHostedPortLayout,
     activated_max_frames: u32,
+    /// The plugin's `clap.gui` extension, queried once at load (null when
+    /// the plugin has no gui).
+    gui_extension: *const clap_plugin_gui,
+    /// Whether the gui extension supports this platform's embedded window
+    /// API (cached `is_api_supported` result from load).
+    gui_api_supported: bool,
+    /// The live editor, when open. Ordered before `plugin` teardown in
+    /// `Drop` (gui destroy must precede plugin destroy).
+    gui_session: Option<ClapGuiSession>,
 }
 
 impl ClapHostedInstance {
@@ -169,8 +184,14 @@ impl ClapHostedInstance {
             .ok_or_else(|| ClapHostingError::new("factory_create_missing"))?;
         let plugin_id =
             CString::new(plugin_id).map_err(|_| ClapHostingError::new("plugin_id_invalid"))?;
-        let host = Box::new(sandbox_host());
-        let plugin = unsafe { create_plugin(factory, &*host, plugin_id.as_ptr()) };
+        let mut host_shim = Box::new(ClapHostShim {
+            host: sandbox_host(),
+            gui_events: Mutex::new(Vec::new()),
+        });
+        // Self-referential host_data: the shim is boxed (stable address)
+        // and outlives the plugin, so callbacks can always recover it.
+        host_shim.host.host_data = (&mut *host_shim as *mut ClapHostShim).cast();
+        let plugin = unsafe { create_plugin(factory, &host_shim.host, plugin_id.as_ptr()) };
         if plugin.is_null() {
             return Err(ClapHostingError::new("create_plugin_failed"));
         }
@@ -185,14 +206,18 @@ impl ClapHostedInstance {
         }
 
         let (parameters, port_layout) = unsafe { instance_shape(plugin) };
+        let (gui_extension, gui_api_supported) = unsafe { gui_shape(plugin) };
         Ok(Self {
             _entry: entry,
-            _host: host,
+            host_shim,
             plugin,
             state: HostedInstanceState::Created,
             parameters,
             port_layout,
             activated_max_frames: 0,
+            gui_extension,
+            gui_api_supported,
+            gui_session: None,
         })
     }
 
@@ -240,6 +265,73 @@ impl ClapHostedInstance {
         Ok(())
     }
 
+    // ── clap.gui hosting (g12.022 phase 1, embedded editors) ───────────
+    //
+    // MAIN-THREAD CONTRACT: every gui_* method below maps to a CLAP
+    // main-thread function. The embedding host must dispatch these onto
+    // the application main thread (Tauri `run_on_main_thread`); this type
+    // only serializes access, it cannot pick the thread.
+
+    /// Whether the plugin exposes `clap.gui` supporting this platform's
+    /// embedded window API (cocoa on macOS). Cached at load.
+    pub fn gui_supported(&self) -> bool {
+        !self.gui_extension.is_null() && self.gui_api_supported
+    }
+
+    /// Whether an editor is currently created.
+    pub fn gui_is_open(&self) -> bool {
+        self.gui_session.is_some()
+    }
+
+    /// Open the embedded editor parented into `parent` (an `NSView*` on
+    /// macOS): create → get_size → set_parent → show. Returns the plugin's
+    /// initial content size (logical units). Errors with stable tokens
+    /// (`gui_unsupported`, `gui_already_open`, `gui_create_failed`, …).
+    pub fn gui_open_embedded(
+        &mut self,
+        parent: *mut c_void,
+        scale: Option<f64>,
+    ) -> Result<(u32, u32), ClapHostingError> {
+        if !self.gui_supported() {
+            return Err(ClapHostingError::new("gui_unsupported"));
+        }
+        if self.gui_session.is_some() {
+            return Err(ClapHostingError::new("gui_already_open"));
+        }
+        let session =
+            ClapGuiSession::open_embedded(self.plugin, self.gui_extension, parent, scale)?;
+        let size = session.size();
+        self.gui_session = Some(session);
+        Ok(size)
+    }
+
+    /// The open editor, for size/show/hide interaction.
+    pub fn gui_session_mut(&mut self) -> Option<&mut ClapGuiSession> {
+        self.gui_session.as_mut()
+    }
+
+    /// The open editor, read-only.
+    pub fn gui_session(&self) -> Option<&ClapGuiSession> {
+        self.gui_session.as_ref()
+    }
+
+    /// Destroy the open editor (idempotent; the plugin instance stays
+    /// live).
+    pub fn gui_destroy(&mut self) {
+        self.gui_session = None;
+    }
+
+    /// Drain host-side gui callbacks queued since the last call
+    /// (`request_resize`, `closed`, …). The embedding host applies them to
+    /// its window.
+    pub fn take_gui_events(&self) -> Vec<ClapGuiEvent> {
+        self.host_shim
+            .gui_events
+            .lock()
+            .map(|mut events| std::mem::take(&mut *events))
+            .unwrap_or_default()
+    }
+
     /// Build the raw process session for the sandbox audio thread. Only
     /// valid while active; the session preallocates its planar buffers at
     /// the activated max block size, so processing never allocates.
@@ -256,6 +348,10 @@ impl ClapHostedInstance {
 
 impl Drop for ClapHostedInstance {
     fn drop(&mut self) {
+        // Gui destroy must precede plugin destroy. This is the fallback
+        // path (teardown with an editor still open); the orderly path
+        // closes the editor on the main thread first.
+        self.gui_session = None;
         unsafe {
             if self.state == HostedInstanceState::Active {
                 if let Some(deactivate) = (*self.plugin).deactivate {
@@ -305,6 +401,94 @@ unsafe fn instance_shape(
         }
     }
     (parameters, layout)
+}
+
+/// Query the plugin's `clap.gui` extension and whether it supports this
+/// platform's embedded window API. Runs at load, on the lifecycle thread.
+unsafe fn gui_shape(plugin: *const clap_plugin) -> (*const clap_plugin_gui, bool) {
+    let Some(get_extension) = (*plugin).get_extension else {
+        return (ptr::null(), false);
+    };
+    let extension = get_extension(plugin, CLAP_EXT_GUI.as_ptr());
+    if extension.is_null() {
+        return (ptr::null(), false);
+    }
+    let gui = extension.cast::<clap_plugin_gui>();
+    let api_supported = (*gui)
+        .is_api_supported
+        .map(|is_api_supported| is_api_supported(plugin, crate::gui::WINDOW_API.as_ptr(), false))
+        .unwrap_or(false);
+    (gui, api_supported)
+}
+
+// ── Host shim (host struct + callback state) ────────────────────────────────
+
+/// The `clap_host` handed to the plugin plus the state its callbacks write
+/// into. Boxed by the instance so both have stable addresses for the
+/// plugin's lifetime; `host.host_data` points back at the shim.
+pub(crate) struct ClapHostShim {
+    pub(crate) host: clap_host,
+    /// Gui callbacks queued for the embedding host (g12.022). Plugins may
+    /// fire these from any thread, hence the mutex.
+    pub(crate) gui_events: Mutex<Vec<ClapGuiEvent>>,
+}
+
+/// Recover the shim from a host pointer inside a callback. Null when the
+/// plugin passed a foreign/never-initialized host.
+unsafe fn shim_from_host<'a>(host: *const clap_host) -> Option<&'a ClapHostShim> {
+    if host.is_null() {
+        return None;
+    }
+    let shim = (*host).host_data.cast::<ClapHostShim>();
+    if shim.is_null() {
+        return None;
+    }
+    Some(&*shim)
+}
+
+fn push_gui_event(host: *const clap_host, event: ClapGuiEvent) {
+    if let Some(shim) = unsafe { shim_from_host(host) } {
+        if let Ok(mut events) = shim.gui_events.lock() {
+            events.push(event);
+        }
+    }
+}
+
+/// Host-side `clap.gui` extension (g12.022): every callback queues an event
+/// for the embedding host to drain and apply to its window.
+static HOST_GUI_EXTENSION: clap_host_gui = clap_host_gui {
+    resize_hints_changed: Some(host_gui_resize_hints_changed),
+    request_resize: Some(host_gui_request_resize),
+    request_show: Some(host_gui_request_show),
+    request_hide: Some(host_gui_request_hide),
+    closed: Some(host_gui_closed),
+};
+
+unsafe extern "C" fn host_gui_resize_hints_changed(host: *const clap_host) {
+    push_gui_event(host, ClapGuiEvent::ResizeHintsChanged);
+}
+
+unsafe extern "C" fn host_gui_request_resize(
+    host: *const clap_host,
+    width: u32,
+    height: u32,
+) -> bool {
+    push_gui_event(host, ClapGuiEvent::RequestResize { width, height });
+    true
+}
+
+unsafe extern "C" fn host_gui_request_show(host: *const clap_host) -> bool {
+    push_gui_event(host, ClapGuiEvent::RequestShow);
+    true
+}
+
+unsafe extern "C" fn host_gui_request_hide(host: *const clap_host) -> bool {
+    push_gui_event(host, ClapGuiEvent::RequestHide);
+    true
+}
+
+unsafe extern "C" fn host_gui_closed(host: *const clap_host, was_destroyed: bool) {
+    push_gui_event(host, ClapGuiEvent::Closed { was_destroyed });
 }
 
 // ── Raw process session (audio thread) ─────────────────────────────────────
@@ -558,8 +742,14 @@ fn sandbox_host() -> clap_host {
 
 unsafe extern "C" fn sandbox_host_get_extension(
     _host: *const clap_host,
-    _extension_id: *const c_char,
+    extension_id: *const c_char,
 ) -> *const c_void {
+    if extension_id.is_null() {
+        return ptr::null();
+    }
+    if CStr::from_ptr(extension_id) == CLAP_EXT_GUI {
+        return (&HOST_GUI_EXTENSION as *const clap_host_gui).cast();
+    }
     ptr::null()
 }
 

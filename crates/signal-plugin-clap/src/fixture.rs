@@ -18,6 +18,13 @@ use std::{
 /// Fixed linear gain the fixture's `process()` applies to every sample.
 pub const CLAP_FIXTURE_GAIN: f32 = 0.5;
 
+/// Initial `clap.gui` content size the fixture reports from `get_size`.
+pub const CLAP_FIXTURE_GUI_INITIAL_SIZE: (u32, u32) = (400, 300);
+
+/// The resize the fixture's gui requests from the host on `show` (exercises
+/// the host-callback path without any real window system).
+pub const CLAP_FIXTURE_GUI_REQUESTED_SIZE: (u32, u32) = (500, 320);
+
 /// Returns `true` when a `rustc` binary is invocable (fixture tests skip
 /// gracefully when it is not).
 pub fn rustc_available() -> bool {
@@ -214,6 +221,68 @@ pub struct clap_plugin_params {{
     pub flush: Option<unsafe extern "C" fn(*const clap_plugin, *const c_void, *const c_void)>,
 }}
 
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct clap_host {{
+    pub clap_version: clap_version,
+    pub host_data: *mut c_void,
+    pub name: *const c_char,
+    pub vendor: *const c_char,
+    pub url: *const c_char,
+    pub version: *const c_char,
+    pub get_extension: Option<unsafe extern "C" fn(*const clap_host, *const c_char) -> *const c_void>,
+    pub request_restart: Option<unsafe extern "C" fn(*const clap_host)>,
+    pub request_process: Option<unsafe extern "C" fn(*const clap_host)>,
+    pub request_callback: Option<unsafe extern "C" fn(*const clap_host)>,
+}}
+
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct clap_window {{
+    pub api: *const c_char,
+    pub specific: *mut c_void,
+}}
+
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct clap_gui_resize_hints {{
+    pub can_resize_horizontally: bool,
+    pub can_resize_vertically: bool,
+    pub preserve_aspect_ratio: bool,
+    pub aspect_ratio_width: u32,
+    pub aspect_ratio_height: u32,
+}}
+
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct clap_plugin_gui {{
+    pub is_api_supported: Option<unsafe extern "C" fn(*const clap_plugin, *const c_char, bool) -> bool>,
+    pub get_preferred_api: Option<unsafe extern "C" fn(*const clap_plugin, *mut *const c_char, *mut bool) -> bool>,
+    pub create: Option<unsafe extern "C" fn(*const clap_plugin, *const c_char, bool) -> bool>,
+    pub destroy: Option<unsafe extern "C" fn(*const clap_plugin)>,
+    pub set_scale: Option<unsafe extern "C" fn(*const clap_plugin, f64) -> bool>,
+    pub get_size: Option<unsafe extern "C" fn(*const clap_plugin, *mut u32, *mut u32) -> bool>,
+    pub can_resize: Option<unsafe extern "C" fn(*const clap_plugin) -> bool>,
+    pub get_resize_hints: Option<unsafe extern "C" fn(*const clap_plugin, *mut clap_gui_resize_hints) -> bool>,
+    pub adjust_size: Option<unsafe extern "C" fn(*const clap_plugin, *mut u32, *mut u32) -> bool>,
+    pub set_size: Option<unsafe extern "C" fn(*const clap_plugin, u32, u32) -> bool>,
+    pub set_parent: Option<unsafe extern "C" fn(*const clap_plugin, *const clap_window) -> bool>,
+    pub set_transient: Option<unsafe extern "C" fn(*const clap_plugin, *const clap_window) -> bool>,
+    pub suggest_title: Option<unsafe extern "C" fn(*const clap_plugin, *const c_char)>,
+    pub show: Option<unsafe extern "C" fn(*const clap_plugin) -> bool>,
+    pub hide: Option<unsafe extern "C" fn(*const clap_plugin) -> bool>,
+}}
+
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct clap_host_gui {{
+    pub resize_hints_changed: Option<unsafe extern "C" fn(*const clap_host)>,
+    pub request_resize: Option<unsafe extern "C" fn(*const clap_host, u32, u32) -> bool>,
+    pub request_show: Option<unsafe extern "C" fn(*const clap_host) -> bool>,
+    pub request_hide: Option<unsafe extern "C" fn(*const clap_host) -> bool>,
+    pub closed: Option<unsafe extern "C" fn(*const clap_host, bool)>,
+}}
+
 const CLAP_AUDIO_PORT_IS_MAIN: u32 = 1;
 const CLAP_PARAM_IS_STEPPED: u32 = 1 << 0;
 const CLAP_PARAM_IS_BYPASS: u32 = 1 << 4;
@@ -228,10 +297,39 @@ const FIXTURE_GAIN: f32 = {gain};
 struct FeaturePtrs([*const c_char; 3]);
 unsafe impl Sync for FeaturePtrs {{}}
 
+/// Trivial offscreen gui state (g12.022 fixture): pure bookkeeping, no
+/// window system touched, so automated tests can run headless.
+static GUI_CREATED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+static GUI_VISIBLE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+static GUI_PARENTED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+static GUI_WIDTH: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new({gui_initial_width});
+static GUI_HEIGHT: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new({gui_initial_height});
+static HOST: std::sync::atomic::AtomicPtr<clap_host> =
+    std::sync::atomic::AtomicPtr::new(ptr::null_mut());
+
+static GUI: clap_plugin_gui = clap_plugin_gui {{
+    is_api_supported: Some(gui_is_api_supported),
+    get_preferred_api: None,
+    create: Some(gui_create),
+    destroy: Some(gui_destroy),
+    set_scale: Some(gui_set_scale),
+    get_size: Some(gui_get_size),
+    can_resize: Some(gui_can_resize),
+    get_resize_hints: None,
+    adjust_size: Some(gui_adjust_size),
+    set_size: Some(gui_set_size),
+    set_parent: Some(gui_set_parent),
+    set_transient: None,
+    suggest_title: None,
+    show: Some(gui_show),
+    hide: Some(gui_hide),
+}};
+
 static FACTORY_ID: &[u8] = b"clap.plugin-factory\0";
 static AUDIO_PORTS_ID: &[u8] = b"clap.audio-ports\0";
 static NOTE_PORTS_ID: &[u8] = b"clap.note-ports\0";
 static PARAMS_ID: &[u8] = b"clap.params\0";
+static GUI_ID: &[u8] = b"clap.gui\0";
 static STATE_ID: &[u8] = b"clap.state\0";
 static LATENCY_ID: &[u8] = b"clap.latency\0";
 static TAIL_ID: &[u8] = b"clap.tail\0";
@@ -332,9 +430,10 @@ unsafe extern "C" fn factory_get_plugin_descriptor(
 
 unsafe extern "C" fn factory_create_plugin(
     _factory: *const clap_plugin_factory,
-    _host: *const c_void,
+    host: *const c_void,
     _plugin_id: *const c_char,
 ) -> *const clap_plugin {{
+    HOST.store(host as *mut clap_host, std::sync::atomic::Ordering::SeqCst);
     &PLUGIN
 }}
 
@@ -394,11 +493,123 @@ unsafe extern "C" fn plugin_get_extension(
         (&NOTE_PORTS as *const clap_plugin_note_ports).cast()
     }} else if requested == PARAMS_ID {{
         (&PARAMS as *const clap_plugin_params).cast()
+    }} else if requested == GUI_ID {{
+        (&GUI as *const clap_plugin_gui).cast()
     }} else if requested == STATE_ID || requested == LATENCY_ID || requested == TAIL_ID {{
         1usize as *const c_void
     }} else {{
         ptr::null()
     }}
+}}
+
+// ── clap.gui (offscreen bookkeeping only) ──────────────────────────────────
+
+unsafe extern "C" fn gui_is_api_supported(
+    _plugin: *const clap_plugin,
+    _api: *const c_char,
+    is_floating: bool,
+) -> bool {{
+    // Embedded on every window API (nothing is dereferenced), floating
+    // unsupported: matches the phase-1 host path.
+    !is_floating
+}}
+
+unsafe extern "C" fn gui_create(
+    _plugin: *const clap_plugin,
+    _api: *const c_char,
+    is_floating: bool,
+) -> bool {{
+    if is_floating {{
+        return false;
+    }}
+    GUI_WIDTH.store({gui_initial_width}, std::sync::atomic::Ordering::SeqCst);
+    GUI_HEIGHT.store({gui_initial_height}, std::sync::atomic::Ordering::SeqCst);
+    GUI_CREATED.store(true, std::sync::atomic::Ordering::SeqCst);
+    true
+}}
+
+unsafe extern "C" fn gui_destroy(_plugin: *const clap_plugin) {{
+    GUI_CREATED.store(false, std::sync::atomic::Ordering::SeqCst);
+    GUI_VISIBLE.store(false, std::sync::atomic::Ordering::SeqCst);
+    GUI_PARENTED.store(false, std::sync::atomic::Ordering::SeqCst);
+}}
+
+unsafe extern "C" fn gui_set_scale(_plugin: *const clap_plugin, _scale: f64) -> bool {{
+    true
+}}
+
+unsafe extern "C" fn gui_get_size(
+    _plugin: *const clap_plugin,
+    width: *mut u32,
+    height: *mut u32,
+) -> bool {{
+    if !GUI_CREATED.load(std::sync::atomic::Ordering::SeqCst) || width.is_null() || height.is_null()
+    {{
+        return false;
+    }}
+    *width = GUI_WIDTH.load(std::sync::atomic::Ordering::SeqCst);
+    *height = GUI_HEIGHT.load(std::sync::atomic::Ordering::SeqCst);
+    true
+}}
+
+unsafe extern "C" fn gui_can_resize(_plugin: *const clap_plugin) -> bool {{
+    true
+}}
+
+unsafe extern "C" fn gui_adjust_size(
+    _plugin: *const clap_plugin,
+    width: *mut u32,
+    height: *mut u32,
+) -> bool {{
+    !width.is_null() && !height.is_null()
+}}
+
+unsafe extern "C" fn gui_set_size(_plugin: *const clap_plugin, width: u32, height: u32) -> bool {{
+    if !GUI_CREATED.load(std::sync::atomic::Ordering::SeqCst) {{
+        return false;
+    }}
+    GUI_WIDTH.store(width, std::sync::atomic::Ordering::SeqCst);
+    GUI_HEIGHT.store(height, std::sync::atomic::Ordering::SeqCst);
+    true
+}}
+
+unsafe extern "C" fn gui_set_parent(
+    _plugin: *const clap_plugin,
+    window: *const clap_window,
+) -> bool {{
+    // The parent handle is recorded, never dereferenced (offscreen test
+    // plugin): any non-null handle parents successfully.
+    if window.is_null() || (*window).specific.is_null() {{
+        return false;
+    }}
+    GUI_PARENTED.store(true, std::sync::atomic::Ordering::SeqCst);
+    true
+}}
+
+unsafe extern "C" fn gui_show(_plugin: *const clap_plugin) -> bool {{
+    if !GUI_CREATED.load(std::sync::atomic::Ordering::SeqCst) {{
+        return false;
+    }}
+    GUI_VISIBLE.store(true, std::sync::atomic::Ordering::SeqCst);
+    // Exercise the host-callback path: ask the host for a resize.
+    let host = HOST.load(std::sync::atomic::Ordering::SeqCst);
+    if !host.is_null() {{
+        if let Some(get_extension) = (*host).get_extension {{
+            let extension = get_extension(host, GUI_ID.as_ptr() as *const c_char);
+            if !extension.is_null() {{
+                let host_gui = extension as *const clap_host_gui;
+                if let Some(request_resize) = (*host_gui).request_resize {{
+                    let _ = request_resize(host, {gui_request_width}, {gui_request_height});
+                }}
+            }}
+        }}
+    }}
+    true
+}}
+
+unsafe extern "C" fn gui_hide(_plugin: *const clap_plugin) -> bool {{
+    GUI_VISIBLE.store(false, std::sync::atomic::Ordering::SeqCst);
+    true
 }}
 
 unsafe extern "C" fn audio_port_count(_plugin: *const clap_plugin, _is_input: bool) -> u32 {{ 1 }}
@@ -493,5 +704,9 @@ unsafe extern "C" fn param_get_value(
         plugin_type_id = plugin_type_id,
         plugin_name = plugin_name,
         midi_outputs = midi_outputs,
+        gui_initial_width = CLAP_FIXTURE_GUI_INITIAL_SIZE.0,
+        gui_initial_height = CLAP_FIXTURE_GUI_INITIAL_SIZE.1,
+        gui_request_width = CLAP_FIXTURE_GUI_REQUESTED_SIZE.0,
+        gui_request_height = CLAP_FIXTURE_GUI_REQUESTED_SIZE.1,
     )
 }
