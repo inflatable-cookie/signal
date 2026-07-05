@@ -39,11 +39,12 @@ mod phase_vocoder;
 pub use benchmark::{
     assess_stretch_metrics, compare_sustained_material_coherence, detect_stretch_transients,
     format_stretch_acceptance_report, generate_synthetic_stretch_audio,
-    output_length_drift_samples, synthetic_stretch_corpus_cases, StretchAcceptanceReport,
-    StretchAcceptanceSeverity, StretchAcceptanceStatus, StretchCoherenceComparison,
-    StretchCorpusCase, StretchCorpusFamily, StretchCorpusSource, StretchMetric,
-    StretchMetricAssessment, StretchMetricLimit, StretchMetricValue, StretchSyntheticAudio,
-    StretchTransientEvent, STRETCH_BENCHMARK_CORPUS,
+    measure_draft_transient_smear, measure_transient_smear, output_length_drift_samples,
+    synthetic_stretch_corpus_cases, StretchAcceptanceReport, StretchAcceptanceSeverity,
+    StretchAcceptanceStatus, StretchCoherenceComparison, StretchCorpusCase, StretchCorpusFamily,
+    StretchCorpusSource, StretchMetric, StretchMetricAssessment, StretchMetricLimit,
+    StretchMetricValue, StretchSyntheticAudio, StretchTransientEvent,
+    StretchTransientSmearMeasurement, STRETCH_BENCHMARK_CORPUS,
 };
 
 use phase_vocoder::phase_vocoder;
@@ -606,5 +607,40 @@ mod tests {
             events.len() <= 1,
             "plain sustain should not generate repeated transient events: {events:?}"
         );
+    }
+
+    #[test]
+    fn transient_smear_metric_reports_synthetic_draft_case() {
+        let measurement = measure_draft_transient_smear(1.5);
+
+        assert_eq!(measurement.ratio, 1.5);
+        assert!(measurement.input_transients >= 10);
+        assert!(measurement.output_transients > 0);
+        assert!(measurement.matched_transients > 0);
+        assert!(measurement.mean_smear_frames.is_finite());
+        assert!(measurement.max_smear_frames.is_finite());
+        assert_eq!(
+            measurement.metric.metric,
+            StretchMetric::TransientSmearFrames
+        );
+        assert_eq!(measurement.metric.value, measurement.max_smear_frames);
+    }
+
+    #[test]
+    fn transient_smear_metric_formats_as_acceptance_metric() {
+        let measurement = measure_draft_transient_smear(1.25);
+        let report = assess_stretch_metrics(
+            &[measurement.metric],
+            &[StretchMetricLimit::max(
+                StretchMetric::TransientSmearFrames,
+                f64::INFINITY,
+                StretchAcceptanceSeverity::Warn,
+            )],
+        );
+        let formatted = format_stretch_acceptance_report("stretch:extreme_ratio", &report);
+
+        assert_eq!(report.status, StretchAcceptanceStatus::Pass);
+        assert!(formatted.contains("metric=TransientSmearFrames"));
+        assert!(formatted.contains("status=Pass"));
     }
 }

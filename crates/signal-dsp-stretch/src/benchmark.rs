@@ -244,6 +244,25 @@ pub struct StretchTransientEvent {
     pub combined_score: f64,
 }
 
+/// Transient smear measurement for one rendered stretch output.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct StretchTransientSmearMeasurement {
+    /// Output/input duration ratio measured.
+    pub ratio: f64,
+    /// Number of detected input transient candidates.
+    pub input_transients: usize,
+    /// Number of detected output transient candidates.
+    pub output_transients: usize,
+    /// Number of input transients matched to stretched-output transients.
+    pub matched_transients: usize,
+    /// Mean positive attack widening in sample frames.
+    pub mean_smear_frames: f64,
+    /// Worst positive attack widening in sample frames.
+    pub max_smear_frames: f64,
+    /// Metric reported to the acceptance harness.
+    pub metric: StretchMetricValue,
+}
+
 /// Compare sustained-material vertical coherence for the draft baseline and
 /// the identity phase-locked prototype.
 ///
@@ -331,6 +350,80 @@ pub fn detect_stretch_transients(
     }
 
     merge_nearby_transients(events, hop_size * 2)
+}
+
+/// Measure transient attack widening between input and stretched output.
+///
+/// The metric value is the worst positive attack-width increase in sample
+/// frames across matched transient events. Missing or invalid matches report
+/// `NaN` so benchmark policy can decide whether that is warn or fail.
+pub fn measure_transient_smear(
+    input: &[Sample],
+    output: &[Sample],
+    ratio: f64,
+    window_size: usize,
+    hop_size: usize,
+) -> StretchTransientSmearMeasurement {
+    if !ratio.is_finite() || ratio <= 0.0 || input.is_empty() || output.is_empty() {
+        return transient_smear_nan(ratio);
+    }
+
+    let input_events = detect_stretch_transients(input, window_size, hop_size);
+    let output_events = detect_stretch_transients(output, window_size, hop_size);
+    let mut matched = 0usize;
+    let mut smear_sum = 0.0f64;
+    let mut max_smear = 0.0f64;
+    let tolerance = window_size.max(hop_size * 4) as f64;
+
+    for input_event in &input_events {
+        let expected_output_frame = input_event.frame_index as f64 * ratio;
+        let Some(output_event) =
+            nearest_transient(&output_events, expected_output_frame, tolerance)
+        else {
+            continue;
+        };
+        let input_width = transient_attack_width(input, input_event.frame_index, window_size);
+        let output_width = transient_attack_width(output, output_event.frame_index, window_size);
+        if !input_width.is_finite() || !output_width.is_finite() {
+            continue;
+        }
+        let smear = (output_width - input_width).max(0.0);
+        matched += 1;
+        smear_sum += smear;
+        max_smear = max_smear.max(smear);
+    }
+
+    let mean_smear = if matched > 0 {
+        smear_sum / matched as f64
+    } else {
+        f64::NAN
+    };
+    let max_smear = if matched > 0 { max_smear } else { f64::NAN };
+
+    StretchTransientSmearMeasurement {
+        ratio,
+        input_transients: input_events.len(),
+        output_transients: output_events.len(),
+        matched_transients: matched,
+        mean_smear_frames: mean_smear,
+        max_smear_frames: max_smear,
+        metric: StretchMetricValue::new(StretchMetric::TransientSmearFrames, max_smear),
+    }
+}
+
+/// Measure draft phase-vocoder transient smear on the synthetic extreme-ratio
+/// corpus case.
+pub fn measure_draft_transient_smear(ratio: f64) -> StretchTransientSmearMeasurement {
+    if !ratio.is_finite() || ratio <= 0.0 {
+        return transient_smear_nan(ratio);
+    }
+
+    const WINDOW_SIZE: usize = 1_024;
+    const HOP_SIZE: usize = 256;
+    let input = synthetic_extreme_ratio().samples;
+    let target_len = (input.len() as f64 * ratio).round() as usize;
+    let output = phase_vocoder(&input, target_len, ratio, 2_048, 512);
+    measure_transient_smear(&input, &output, ratio, WINDOW_SIZE, HOP_SIZE)
 }
 
 /// Upper-bound limit for a stretch benchmark metric.
@@ -672,6 +765,75 @@ fn merge_nearby_transients(
         merged.push(event);
     }
     merged
+}
+
+fn transient_smear_nan(ratio: f64) -> StretchTransientSmearMeasurement {
+    StretchTransientSmearMeasurement {
+        ratio,
+        input_transients: 0,
+        output_transients: 0,
+        matched_transients: 0,
+        mean_smear_frames: f64::NAN,
+        max_smear_frames: f64::NAN,
+        metric: StretchMetricValue::new(StretchMetric::TransientSmearFrames, f64::NAN),
+    }
+}
+
+fn nearest_transient(
+    events: &[StretchTransientEvent],
+    expected_frame: f64,
+    tolerance_frames: f64,
+) -> Option<StretchTransientEvent> {
+    events
+        .iter()
+        .copied()
+        .filter_map(|event| {
+            let distance = (event.frame_index as f64 - expected_frame).abs();
+            if distance <= tolerance_frames {
+                Some((distance, event))
+            } else {
+                None
+            }
+        })
+        .min_by(|left, right| left.0.total_cmp(&right.0))
+        .map(|(_, event)| event)
+}
+
+fn transient_attack_width(samples: &[Sample], event_frame: usize, search_radius: usize) -> f64 {
+    if samples.is_empty() {
+        return f64::NAN;
+    }
+
+    let start = event_frame.saturating_sub(search_radius);
+    let end = (event_frame + search_radius).min(samples.len().saturating_sub(1));
+    if start >= end {
+        return f64::NAN;
+    }
+
+    let mut peak_index = start;
+    let mut peak = 0.0f32;
+    for (offset, sample) in samples[start..=end].iter().enumerate() {
+        let magnitude = sample.abs();
+        if magnitude > peak {
+            peak = magnitude;
+            peak_index = start + offset;
+        }
+    }
+    if peak <= 1.0e-6 {
+        return f64::NAN;
+    }
+
+    let threshold = peak * 0.5;
+    let mut left = peak_index;
+    while left > start && samples[left - 1].abs() >= threshold {
+        left -= 1;
+    }
+    let mut right = peak_index;
+    while right < end && samples[right + 1].abs() >= threshold {
+        right += 1;
+    }
+
+    (right - left + 1) as f64
 }
 
 fn severity_to_stretch_status(severity: StretchAcceptanceSeverity) -> StretchAcceptanceStatus {
