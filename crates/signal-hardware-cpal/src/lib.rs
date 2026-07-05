@@ -51,14 +51,29 @@ const STATE_RUNNING: u8 = 0;
 const STATE_STOPPED: u8 = 1;
 const STATE_FAULTED: u8 = 2;
 
-/// Output backend over the host's default cpal device.
+/// Output backend over the host's default cpal device, or a specific device
+/// chosen by name (device selection seam, aura g12.016).
 #[derive(Debug, Default)]
-pub struct CpalOutputBackend;
+pub struct CpalOutputBackend {
+    /// OS device name to open on; `None` follows the host default.
+    preferred_device: Option<String>,
+}
 
 impl CpalOutputBackend {
-    /// Construct a backend over the default cpal host.
+    /// Construct a backend over the default cpal host's default device.
     pub fn new() -> Self {
-        Self
+        Self::default()
+    }
+
+    /// Construct a backend that opens streams on the named output device
+    /// (as reported by [`enumerate_output_devices`]). Opening fails with a
+    /// typed [`OutputStreamError`] when no device by that name exists, so
+    /// hosts can fall back to the default device visibly instead of
+    /// silently.
+    pub fn with_preferred_device(name: impl Into<String>) -> Self {
+        Self {
+            preferred_device: Some(name.into()),
+        }
     }
 }
 
@@ -268,6 +283,7 @@ impl OutputStreamBackend for CpalOutputBackend {
         type Negotiated = (u32, u16, Option<String>);
         let (ready_tx, ready_rx) = mpsc::channel::<Result<Negotiated, OutputStreamError>>();
         let (stop_tx, stop_rx) = mpsc::channel::<()>();
+        let preferred_device = self.preferred_device.clone();
 
         // The stream lives and dies on this thread; cpal::Stream is not Send
         // on every platform, so it never crosses a thread boundary.
@@ -276,9 +292,23 @@ impl OutputStreamBackend for CpalOutputBackend {
             .spawn(move || {
                 let open = (|| {
                     let host = cpal::default_host();
-                    let device = host
-                        .default_output_device()
-                        .ok_or_else(|| OutputStreamError::new("no default output device"))?;
+                    let device = match preferred_device.as_deref() {
+                        // Named device: resolve against the same enumeration
+                        // the pickers list; a missing name is a typed error,
+                        // never a silent fallback (the host owns fallback).
+                        Some(name) => host
+                            .output_devices()
+                            .map_err(|error| {
+                                OutputStreamError::new(format!("enumerate output devices: {error}"))
+                            })?
+                            .find(|device| device.name().ok().as_deref() == Some(name))
+                            .ok_or_else(|| {
+                                OutputStreamError::new(format!("output device not found: {name}"))
+                            })?,
+                        None => host
+                            .default_output_device()
+                            .ok_or_else(|| OutputStreamError::new("no default output device"))?,
+                    };
                     let device_name = device.name().ok();
                     let config = negotiate_config(&device, &spec)?;
                     let error_state = Arc::clone(&thread_state);
@@ -413,6 +443,28 @@ mod tests {
             stream.device_name()
         );
         drop(stream);
+    }
+
+    /// A preferred device that does not exist is a typed open error — never
+    /// a silent fallback to the default device. Deterministic on any machine
+    /// (the name cannot exist).
+    #[test]
+    fn preferred_device_not_found_is_a_typed_error() {
+        let backend = CpalOutputBackend::with_preferred_device("signal-test-no-such-device-7f3a");
+        let result = backend.open_output_stream(
+            OutputStreamSpec {
+                sample_rate_hz: 48_000,
+                channels: 2,
+                buffer_frames: None,
+            },
+            Box::new(|frames| frames.fill(0.0)),
+        );
+        let error = result.err().expect("open must fail for a missing device");
+        assert!(
+            error.message.contains("output device not found"),
+            "unexpected error: {}",
+            error.message
+        );
     }
 
     #[test]
