@@ -196,7 +196,7 @@ Repos: `signal`
 
 Work:
 
-- [ ] split current phase-vocoder internals into analysis, phase, and
+- [x] split current phase-vocoder internals into analysis, phase, and
   synthesis helpers
 - [ ] add spectral peak tracking per frame
 - [ ] add identity phase locking around peak neighborhoods
@@ -271,6 +271,5 @@ Work:
 
 ## Next Task
 
-Start Slice 2 by splitting the draft phase-vocoder internals into explicit
-analysis, phase, and synthesis helpers, keeping current behavior as the draft
-baseline before adding peak tracking.
+Continue Slice 2 by adding spectral peak tracking per frame on top of the new
+analysis/phase/synthesis helper split.

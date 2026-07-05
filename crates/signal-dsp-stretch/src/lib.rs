@@ -34,6 +34,7 @@
 #![warn(missing_docs)]
 
 mod benchmark;
+mod phase_vocoder;
 
 pub use benchmark::{
     assess_stretch_metrics, format_stretch_acceptance_report, generate_synthetic_stretch_audio,
@@ -43,7 +44,7 @@ pub use benchmark::{
     StretchMetricValue, StretchSyntheticAudio, STRETCH_BENCHMARK_CORPUS,
 };
 
-use rustfft::{num_complex::Complex32, FftPlanner};
+use phase_vocoder::phase_vocoder;
 use signal_primitives::Sample;
 
 /// Quality tier of a stretch backend (memo 013 vocabulary). One tier exists
@@ -301,101 +302,6 @@ fn linear_time_scale(input: &[Sample], target_len: usize) -> Vec<Sample> {
             input[left] + (input[right] - input[left]) * fraction
         })
         .collect()
-}
-
-fn wrap_phase(phase: f32) -> f32 {
-    let tau = std::f32::consts::TAU;
-    let wrapped = phase - tau * (phase / tau).round();
-    wrapped
-}
-
-fn phase_vocoder(
-    input: &[Sample],
-    target_len: usize,
-    ratio: f64,
-    window_size: usize,
-    analysis_hop: usize,
-) -> Vec<Sample> {
-    let synthesis_hop = analysis_hop as f64 * ratio;
-    let bins = window_size / 2 + 1;
-    let window: Vec<f32> = (0..window_size)
-        .map(|index| 0.5 - 0.5 * (std::f32::consts::TAU * index as f32 / window_size as f32).cos())
-        .collect();
-
-    let mut planner = FftPlanner::<f32>::new();
-    let forward = planner.plan_fft_forward(window_size);
-    let inverse = planner.plan_fft_inverse(window_size);
-
-    // Expected per-hop phase advance of each bin's center frequency.
-    let omega: Vec<f32> = (0..bins)
-        .map(|bin| std::f32::consts::TAU * bin as f32 * analysis_hop as f32 / window_size as f32)
-        .collect();
-
-    let frame_count = (input.len().saturating_sub(window_size)) / analysis_hop + 1;
-    let output_len = target_len;
-    let ola_len =
-        ((frame_count.saturating_sub(1)) as f64 * synthesis_hop).ceil() as usize + window_size + 1;
-    let mut output = vec![0.0f32; ola_len.max(output_len)];
-    let mut norm = vec![0.0f32; output.len()];
-
-    let mut prev_phase = vec![0.0f32; bins];
-    let mut synth_phase = vec![0.0f32; bins];
-    let mut buffer = vec![Complex32::new(0.0, 0.0); window_size];
-
-    for frame_index in 0..frame_count {
-        let analysis_start = frame_index * analysis_hop;
-        for (slot, (sample, weight)) in buffer.iter_mut().zip(
-            input[analysis_start..analysis_start + window_size]
-                .iter()
-                .zip(window.iter()),
-        ) {
-            *slot = Complex32::new(sample * weight, 0.0);
-        }
-        forward.process(&mut buffer);
-
-        // Phase propagation on the positive-frequency half; the negative
-        // half is rebuilt by conjugate symmetry before the inverse FFT.
-        let mut spectrum = vec![Complex32::new(0.0, 0.0); window_size];
-        for bin in 0..bins {
-            let magnitude = buffer[bin].norm();
-            let phase = buffer[bin].arg();
-            if frame_index == 0 {
-                synth_phase[bin] = phase;
-            } else {
-                let deviation = wrap_phase(phase - prev_phase[bin] - omega[bin]);
-                let advance =
-                    (omega[bin] + deviation) * (synthesis_hop / analysis_hop as f64) as f32;
-                synth_phase[bin] = wrap_phase(synth_phase[bin] + advance);
-            }
-            prev_phase[bin] = phase;
-            spectrum[bin] = Complex32::from_polar(magnitude, synth_phase[bin]);
-        }
-        for bin in 1..window_size.div_ceil(2) {
-            spectrum[window_size - bin] = spectrum[bin].conj();
-        }
-
-        inverse.process(&mut spectrum);
-        let synthesis_start = (frame_index as f64 * synthesis_hop).round() as usize;
-        let scale = 1.0 / window_size as f32;
-        for (index, weight) in window.iter().enumerate() {
-            let out_index = synthesis_start + index;
-            if out_index >= output.len() {
-                break;
-            }
-            output[out_index] += spectrum[index].re * scale * weight;
-            norm[out_index] += weight * weight;
-        }
-    }
-
-    // Window-power OLA normalization with a floor so sparse edges never blow
-    // up; then trim/pad to the length contract.
-    for (sample, weight) in output.iter_mut().zip(norm.iter()) {
-        if *weight > 1.0e-3 {
-            *sample /= *weight;
-        }
-    }
-    output.resize(output_len, 0.0);
-    output
 }
 
 #[cfg(test)]
