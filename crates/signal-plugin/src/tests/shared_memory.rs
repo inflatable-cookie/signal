@@ -84,6 +84,7 @@ fn plugin_descriptor_carries_neutral_contract_metadata() {
                 default_normalized: 0.5,
                 min_plain: 20.0,
                 max_plain: 20_000.0,
+                step_count: None,
                 flags: PluginParameterFlags::automatable(),
             }])
             .with_state_contract(crate::PluginStateContract {

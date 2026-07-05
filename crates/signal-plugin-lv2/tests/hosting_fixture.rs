@@ -62,11 +62,23 @@ fn hosted_instance_loads_activates_and_processes_the_fixture() {
     assert!((gain.min_plain - 0.0).abs() < 1e-6);
     assert!((gain.max_plain - 1.0).abs() < 1e-6);
     assert!((gain.default_normalized - LV2_FIXTURE_GAIN).abs() < 1e-6);
+    // Descriptor enrichment (g12.013): units:unit from the TTL, continuous
+    // range, automatable, not bypass.
+    assert_eq!(gain.unit.as_deref(), Some("coef"));
+    assert_eq!(gain.step_count, None);
+    assert!(gain.is_automatable());
+    assert!(!gain.is_bypass());
     let bypass = parameters
         .iter()
         .find(|parameter| parameter.name == "Bypass")
         .expect("Bypass parameter in the inventory");
     assert_eq!(bypass.parameter_id, LV2_FIXTURE_BYPASS_PORT_INDEX);
+    // lv2:portProperty lv2:toggled = one step; lv2:designation lv2:enabled
+    // marks the bypass control.
+    assert_eq!(bypass.step_count, Some(1));
+    assert!(bypass.flags.stepped);
+    assert!(bypass.is_bypass());
+    assert_eq!(bypass.unit, None);
 
     // Stereo effect gate reads the TTL port model.
     let layout = instance.port_layout();

@@ -82,6 +82,41 @@ fn load_enumerates_the_known_audelay_parameter_inventory() {
     assert!((wet_dry.min_plain - 0.0).abs() < 1e-6);
     assert!((wet_dry.max_plain - 100.0).abs() < 1e-6);
     assert!(wet_dry.flags.automatable);
+    // Descriptor enrichment (g12.013): AudioUnitParameterInfo units map to
+    // display labels; AUDelay's params are continuous (no Indexed/Boolean
+    // units) and AU exposes no bypass parameter through this API.
+    assert_eq!(
+        wet_dry.unit.as_deref(),
+        Some("%"),
+        "EqualPowerCrossfade displays as percent",
+    );
+    assert_eq!(wet_dry.step_count, None);
+    assert!(wet_dry.is_automatable());
+    assert!(!wet_dry.is_bypass());
+
+    let delay_time = parameters
+        .iter()
+        .find(|p| p.parameter_id == PARAM_DELAY_TIME)
+        .expect("delay time descriptor");
+    assert_eq!(delay_time.unit.as_deref(), Some("s"), "Seconds unit");
+    assert!((delay_time.min_plain - 0.0001).abs() < 1e-6);
+    assert!((delay_time.max_plain - 2.0).abs() < 1e-6);
+
+    let feedback = parameters
+        .iter()
+        .find(|p| p.parameter_id == PARAM_FEEDBACK)
+        .expect("feedback descriptor");
+    assert_eq!(feedback.unit.as_deref(), Some("%"), "Percent unit");
+    assert!((feedback.min_plain + 99.9).abs() < 1e-4);
+    assert!((feedback.max_plain - 99.9).abs() < 1e-4);
+
+    let cutoff = parameters
+        .iter()
+        .find(|p| p.parameter_id == PARAM_LOPASS_CUTOFF)
+        .expect("lowpass cutoff descriptor");
+    assert_eq!(cutoff.unit.as_deref(), Some("Hz"), "Hertz unit");
+    assert!((cutoff.min_plain - 10.0).abs() < 1e-6);
+    assert_eq!(cutoff.step_count, None);
 
     let layout = instance.port_layout();
     assert_eq!(layout.main_input_channels, 2);

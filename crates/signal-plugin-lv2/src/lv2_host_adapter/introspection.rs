@@ -34,6 +34,9 @@ const RDFS_SEE_ALSO: &str = "http://www.w3.org/2000/01/rdf-schema#seeAlso";
 const DOAP_NAME: &str = "http://usefulinc.com/ns/doap#name";
 const ATOM_PORT: &str = "http://lv2plug.in/ns/ext/atom#AtomPort";
 const EVENT_PORT: &str = "http://lv2plug.in/ns/ext/event#EventPort";
+/// LV2 units extension: `units:unit` names a port's display unit.
+const UNITS_UNIT: &str = "http://lv2plug.in/ns/extensions/units#unit";
+const UNITS_PREFIX: &str = "http://lv2plug.in/ns/extensions/units#";
 
 /// The only feature phase-1 hosting provides (packet g11.033 decision 3);
 /// the scan pre-filter allowlist is exactly this set.
@@ -263,9 +266,19 @@ fn port_from_term(doc: &TurtleDocument, port: &TurtleTerm) -> Result<Lv2Port, St
             .and_then(TurtleTerm::as_number)
             .map(|value| value as f32)
     };
-    let connection_optional = doc
+    let port_properties: Vec<String> = doc
         .objects(port, &lv2("portProperty"))
-        .any(|object| object.as_iri() == Some(lv2("connectionOptional").as_str()));
+        .filter_map(|object| object.as_iri().map(str::to_string))
+        .collect();
+    let has_property = |name: &str| port_properties.iter().any(|iri| *iri == lv2(name));
+    let connection_optional = has_property("connectionOptional");
+    let unit_iri = doc
+        .object(port, UNITS_UNIT)
+        .and_then(TurtleTerm::as_iri)
+        .map(str::to_string);
+    let designated_enabled = doc
+        .objects(port, &lv2("designation"))
+        .any(|object| object.as_iri() == Some(lv2("enabled").as_str()));
     Ok(Lv2Port {
         index: index as u32,
         symbol: doc
@@ -281,6 +294,38 @@ fn port_from_term(doc: &TurtleDocument, port: &TurtleTerm) -> Result<Lv2Port, St
         minimum: number("minimum"),
         maximum: number("maximum"),
         connection_optional,
+        toggled: has_property("toggled"),
+        integer: has_property("integer"),
+        enumeration: has_property("enumeration"),
+        scale_point_count: doc.objects(port, &lv2("scalePoint")).count(),
+        unit_iri,
+        designated_enabled,
+    })
+}
+
+/// Map an LV2 `units:unit` IRI to a display label. Only the well-known
+/// units-extension vocabulary maps; unknown or custom unit resources
+/// report `None` — never synthesized.
+fn lv2_unit_label(unit_iri: &str) -> Option<&'static str> {
+    let name = unit_iri.strip_prefix(UNITS_PREFIX)?;
+    Some(match name {
+        "db" => "dB",
+        "hz" => "Hz",
+        "khz" => "kHz",
+        "mhz" => "MHz",
+        "s" => "s",
+        "ms" => "ms",
+        "min" => "min",
+        "pc" => "%",
+        "bpm" => "BPM",
+        "beat" => "beats",
+        "bar" => "bars",
+        "cent" => "cents",
+        "semitone12TET" => "semitones",
+        "oct" => "oct",
+        "degree" => "deg",
+        "coef" => "coef",
+        _ => return None,
     })
 }
 
@@ -305,6 +350,20 @@ pub fn parameter_descriptors_from_model(model: &Lv2PluginModel) -> Vec<PluginPar
             } else {
                 0.0
             };
+            // Step vocabulary (g12.013): toggled = one step; enumeration =
+            // scale-point steps; integer = integer span of the range;
+            // otherwise continuous.
+            let step_count = if port.toggled {
+                Some(1)
+            } else if port.enumeration && port.scale_point_count >= 2 {
+                Some(port.scale_point_count as u32 - 1)
+            } else if port.integer {
+                Some(((max_plain - min_plain).round() as u32).max(1))
+            } else {
+                None
+            };
+            let mut flags = PluginParameterFlags::automatable();
+            flags.stepped = step_count.is_some();
             PluginParameterDescriptor {
                 parameter_id: port.index,
                 name: port
@@ -312,12 +371,23 @@ pub fn parameter_descriptors_from_model(model: &Lv2PluginModel) -> Vec<PluginPar
                     .clone()
                     .or_else(|| port.symbol.clone())
                     .unwrap_or_else(|| format!("Port {}", port.index)),
-                unit: None,
-                domain: PluginParameterDomain::GenericNormalized,
+                unit: port
+                    .unit_iri
+                    .as_deref()
+                    .and_then(lv2_unit_label)
+                    .map(str::to_string),
+                // `lv2:designation lv2:enabled` marks the plugin's
+                // enabled/bypass control.
+                domain: if port.designated_enabled {
+                    PluginParameterDomain::Bypass
+                } else {
+                    PluginParameterDomain::GenericNormalized
+                },
                 default_normalized,
                 min_plain,
                 max_plain,
-                flags: PluginParameterFlags::automatable(),
+                step_count,
+                flags,
             }
         })
         .collect()

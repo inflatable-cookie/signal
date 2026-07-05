@@ -61,12 +61,22 @@ fn hosted_instance_loads_activates_and_processes_the_fixture() {
     assert!((gain.max_plain - 1.0).abs() < 1e-6);
     assert!((gain.default_normalized - 0.5).abs() < 1e-6);
     assert!(gain.flags.automatable);
+    // Descriptor enrichment (g12.013): ParameterInfo.units and step_count
+    // plumb through.
+    assert_eq!(gain.unit.as_deref(), Some("dB"));
+    assert_eq!(gain.step_count, None);
+    assert!(gain.is_automatable());
+    assert!(!gain.is_bypass());
     let bypass = parameters
         .iter()
         .find(|parameter| parameter.name == "Bypass")
         .expect("Bypass parameter in the inventory");
     assert_eq!(bypass.parameter_id, 0);
     assert!(bypass.flags.stepped);
+    assert_eq!(bypass.step_count, Some(1), "ParameterInfo.step_count = 1");
+    assert_eq!(bypass.unit, None, "empty units field maps to None");
+    assert!(bypass.is_bypass());
+    assert!(bypass.is_automatable());
 
     // Stereo effect gate reads the main audio buses.
     let layout = instance.port_layout();

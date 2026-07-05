@@ -76,6 +76,20 @@ pub struct Lv2Port {
     /// `lv2:portProperty lv2:connectionOptional` — the host may connect
     /// this port to NULL.
     pub connection_optional: bool,
+    /// `lv2:portProperty lv2:toggled` — off/on control (g12.013).
+    pub toggled: bool,
+    /// `lv2:portProperty lv2:integer` — integer-valued control.
+    pub integer: bool,
+    /// `lv2:portProperty lv2:enumeration` — value restricted to the
+    /// port's scale points.
+    pub enumeration: bool,
+    /// Number of `lv2:scalePoint` declarations on the port.
+    pub scale_point_count: usize,
+    /// `units:unit` object IRI (LV2 units extension), unresolved.
+    pub unit_iri: Option<String>,
+    /// `lv2:designation lv2:enabled` — the port is the plugin's
+    /// enabled/bypass control.
+    pub designated_enabled: bool,
 }
 
 impl Lv2Port {

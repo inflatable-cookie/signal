@@ -420,6 +420,23 @@ pub(crate) unsafe fn parameter_descriptors_from_extension(
         if get_info(plugin, index, info.as_mut_ptr()) {
             let info = info.assume_init();
             let flags = info.flags;
+            // CLAP param info reports min/max/default all in the PLAIN
+            // range; normalize the default into the descriptor's 0..=1
+            // vocabulary (degenerate ranges normalize to 0).
+            let range = info.max_value - info.min_value;
+            let default_normalized = if range > f64::EPSILON {
+                (((info.default_value - info.min_value) / range) as f32).clamp(0.0, 1.0)
+            } else {
+                0.0
+            };
+            // CLAP stepped parameters take integer plain values: the step
+            // count is the integer span of the range (g12.013). CLAP param
+            // info carries no unit string.
+            let step_count = if flags & CLAP_PARAM_IS_STEPPED != 0 {
+                Some((range.round() as u32).max(1))
+            } else {
+                None
+            };
             parameters.push(PluginParameterDescriptor {
                 parameter_id: info.id,
                 name: clap_char_buffer_to_string(&info.name),
@@ -429,9 +446,10 @@ pub(crate) unsafe fn parameter_descriptors_from_extension(
                 } else {
                     PluginParameterDomain::GenericNormalized
                 },
-                default_normalized: info.default_value as f32,
+                default_normalized,
                 min_plain: info.min_value as f32,
                 max_plain: info.max_value as f32,
+                step_count,
                 flags: PluginParameterFlags {
                     automatable: flags & CLAP_PARAM_IS_AUTOMATABLE != 0,
                     modulatable: flags & CLAP_PARAM_IS_MODULATABLE != 0,

@@ -69,7 +69,27 @@ mod tests {
         // Param inventory enumerated at load (read-only phase 1).
         let parameters = instance.parameters();
         assert_eq!(parameters.len(), 2);
-        assert!(parameters.iter().any(|parameter| parameter.name == "Gain"));
+        // Descriptor enrichment (g12.013): the fixture Gain is a
+        // continuous automatable param (CLAP param info has no unit
+        // string — unit stays None, never synthesized); the fixture
+        // Bypass is a stepped bypass toggle.
+        let gain = parameters
+            .iter()
+            .find(|parameter| parameter.name == "Gain")
+            .expect("fixture Gain param");
+        assert_eq!(gain.unit, None);
+        assert_eq!(gain.step_count, None);
+        assert!(gain.is_automatable());
+        assert!(!gain.is_bypass());
+        assert!((gain.default_normalized - 0.5).abs() < 1e-6);
+        let bypass = parameters
+            .iter()
+            .find(|parameter| parameter.name == "Bypass")
+            .expect("fixture Bypass param");
+        assert_eq!(bypass.step_count, Some(1), "stepped 0..1 = one step");
+        assert!(bypass.flags.stepped);
+        assert!(bypass.is_bypass());
+        assert!(bypass.is_automatable());
         // Main stereo in + stereo out: the supported phase-1 layout.
         assert!(instance.port_layout().is_stereo_effect());
 

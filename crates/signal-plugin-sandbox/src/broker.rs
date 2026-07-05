@@ -1040,18 +1040,44 @@ impl SandboxBrokerProcess {
 }
 
 /// Encode the parameter inventory as
-/// `id:name:min:max:default;...` with wire-encoded names.
+/// `id:name:min:max:default:unit:steps:flags;...` with wire-encoded
+/// names/units.
+///
+/// The v1 prefix (`id:name:min:max:default`) is unchanged; the g12.013
+/// descriptor fields ride as additive trailing tokens so pre-g12 parsers
+/// (which read the first five fields and ignore the rest) keep working:
+///
+/// - `unit` — wire-encoded display unit, empty when the format reports none
+/// - `steps` — discrete step count, empty for continuous parameters
+/// - `flags` — letter set: `a` = automatable, `b` = bypass (empty = neither)
 fn encode_parameter_inventory(parameters: &[PluginParameterDescriptor]) -> String {
     parameters
         .iter()
         .map(|parameter| {
+            let mut flags = String::new();
+            if parameter.is_automatable() {
+                flags.push('a');
+            }
+            if parameter.is_bypass() {
+                flags.push('b');
+            }
             format!(
-                "{}:{}:{}:{}:{}",
+                "{}:{}:{}:{}:{}:{}:{}:{}",
                 parameter.parameter_id,
                 encode_wire_token(&parameter.name),
                 parameter.min_plain,
                 parameter.max_plain,
                 parameter.default_normalized,
+                parameter
+                    .unit
+                    .as_deref()
+                    .map(encode_wire_token)
+                    .unwrap_or_default(),
+                parameter
+                    .step_count
+                    .map(|steps| steps.to_string())
+                    .unwrap_or_default(),
+                flags,
             )
         })
         .collect::<Vec<_>>()
@@ -1163,5 +1189,40 @@ mod tests {
         assert_eq!(encode_wire_token("Gain"), "Gain");
         assert_eq!(encode_wire_token("Dry / Wet Mix"), "Dry%20/%20Wet%20Mix");
         assert_eq!(encode_wire_token("a:b;c=d|e%f"), "a%3Ab%3Bc%3Dd%7Ce%25f");
+    }
+
+    #[test]
+    fn parameter_inventory_encodes_descriptor_tokens() {
+        use signal_plugin::{PluginParameterDomain, PluginParameterFlags};
+
+        let parameters = vec![
+            PluginParameterDescriptor {
+                parameter_id: 4096,
+                name: "Gain".into(),
+                unit: Some("dB".into()),
+                domain: PluginParameterDomain::GenericNormalized,
+                default_normalized: 0.5,
+                min_plain: 0.0,
+                max_plain: 1.0,
+                step_count: None,
+                flags: PluginParameterFlags::automatable(),
+            },
+            PluginParameterDescriptor {
+                parameter_id: 0,
+                name: "Bypass".into(),
+                unit: None,
+                domain: PluginParameterDomain::Bypass,
+                default_normalized: 0.0,
+                min_plain: 0.0,
+                max_plain: 1.0,
+                step_count: Some(1),
+                flags: PluginParameterFlags::bypass(),
+            },
+        ];
+        assert_eq!(
+            encode_parameter_inventory(&parameters),
+            "4096:Gain:0:1:0.5:dB::a;0:Bypass:0:1:0::1:ab",
+            "v1 prefix unchanged; unit/steps/flags ride as trailing tokens",
+        );
     }
 }

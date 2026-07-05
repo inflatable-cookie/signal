@@ -701,9 +701,9 @@ unsafe extern "C" fn controller_get_parameter_info(
     if info.is_null() {{
         return K_RESULT_FALSE;
     }}
-    let (id, title, flags, step_count, default_value) = match index {{
-        0 => (4096u32, "Gain", PARAM_CAN_AUTOMATE, 0, 0.5f64),
-        1 => (0u32, "Bypass", PARAM_CAN_AUTOMATE | PARAM_IS_BYPASS, 1, 0.0f64),
+    let (id, title, unit, flags, step_count, default_value) = match index {{
+        0 => (4096u32, "Gain", "dB", PARAM_CAN_AUTOMATE, 0, 0.5f64),
+        1 => (0u32, "Bypass", "", PARAM_CAN_AUTOMATE | PARAM_IS_BYPASS, 1, 0.0f64),
         _ => return K_RESULT_FALSE,
     }};
     let info = &mut *info;
@@ -712,7 +712,9 @@ unsafe extern "C" fn controller_get_parameter_info(
     write_utf16(&mut buffer, title);
     info.title = buffer;
     info.short_title = buffer;
-    info.units = [0; 128];
+    let mut unit_buffer = [0i16; 128];
+    write_utf16(&mut unit_buffer, unit);
+    info.units = unit_buffer;
     info.step_count = step_count;
     info.default_normalized_value = default_value;
     info.unit_id = 0;

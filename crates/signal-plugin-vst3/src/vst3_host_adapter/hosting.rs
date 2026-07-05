@@ -843,6 +843,9 @@ unsafe fn parameter_inventory(controller: *mut c_void) -> Vec<PluginParameterDes
             default_normalized: info.default_normalized_value as f32,
             min_plain: min_plain.min(max_plain),
             max_plain: max_plain.max(min_plain),
+            // VST3 reports the step count directly: 0 = continuous,
+            // n = n discrete steps (n + 1 values, 1 = toggle).
+            step_count: (info.step_count > 0).then_some(info.step_count as u32),
             flags: PluginParameterFlags {
                 automatable: info.flags & PARAM_CAN_AUTOMATE != 0,
                 modulatable: false,

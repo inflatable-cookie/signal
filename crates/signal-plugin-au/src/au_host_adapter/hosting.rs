@@ -270,6 +270,27 @@ pub(crate) mod ffi {
 
     /// `kAudioUnitParameterUnit_Indexed` (discrete stepped values).
     pub const kAudioUnitParameterUnit_Indexed: u32 = 1;
+    /// `kAudioUnitParameterUnit_Boolean` (off/on toggle).
+    pub const kAudioUnitParameterUnit_Boolean: u32 = 2;
+    pub const kAudioUnitParameterUnit_Percent: u32 = 3;
+    pub const kAudioUnitParameterUnit_Seconds: u32 = 4;
+    pub const kAudioUnitParameterUnit_Phase: u32 = 6;
+    pub const kAudioUnitParameterUnit_Rate: u32 = 7;
+    pub const kAudioUnitParameterUnit_Hertz: u32 = 8;
+    pub const kAudioUnitParameterUnit_Cents: u32 = 9;
+    pub const kAudioUnitParameterUnit_RelativeSemiTones: u32 = 10;
+    pub const kAudioUnitParameterUnit_Decibels: u32 = 13;
+    pub const kAudioUnitParameterUnit_Degrees: u32 = 15;
+    /// 0..100 crossfade (e.g. AUDelay's wet/dry mix); displays as percent.
+    pub const kAudioUnitParameterUnit_EqualPowerCrossfade: u32 = 16;
+    pub const kAudioUnitParameterUnit_AbsoluteCents: u32 = 20;
+    pub const kAudioUnitParameterUnit_Octaves: u32 = 21;
+    pub const kAudioUnitParameterUnit_BPM: u32 = 22;
+    pub const kAudioUnitParameterUnit_Beats: u32 = 23;
+    pub const kAudioUnitParameterUnit_Milliseconds: u32 = 24;
+    pub const kAudioUnitParameterUnit_Ratio: u32 = 25;
+    /// `kAudioUnitParameterUnit_CustomUnit`: `unitName` carries the label.
+    pub const kAudioUnitParameterUnit_CustomUnit: u32 = 26;
 
     pub const kCFStringEncodingUTF8: u32 = 0x0800_0100;
 
@@ -805,25 +826,66 @@ unsafe fn parameter_inventory(unit: ffi::AudioUnit) -> Vec<PluginParameterDescri
             0.0
         };
         let writable = info.flags & ffi::kAudioUnitParameterFlag_IsWritable != 0;
+        // Indexed and Boolean units take discrete integer values; the step
+        // count is the integer span of the range (g12.013).
+        let stepped = matches!(
+            info.unit,
+            ffi::kAudioUnitParameterUnit_Indexed | ffi::kAudioUnitParameterUnit_Boolean
+        );
+        let step_count = stepped.then(|| (range.round().abs() as u32).max(1));
         parameters.push(PluginParameterDescriptor {
             parameter_id: id,
             name,
-            unit: None,
+            unit: parameter_unit_label(&info),
             domain: PluginParameterDomain::GenericNormalized,
             default_normalized,
             min_plain: info.minValue.min(info.maxValue),
             max_plain: info.maxValue.max(info.minValue),
+            step_count,
             flags: PluginParameterFlags {
                 automatable: writable,
                 modulatable: false,
                 supports_gesture: false,
-                stepped: info.unit == ffi::kAudioUnitParameterUnit_Indexed,
+                stepped,
                 hidden: false,
                 read_only: !writable,
             },
         });
     }
     parameters
+}
+
+/// Map `AudioUnitParameterInfo.unit` to a display label. Well-known
+/// AudioToolbox unit enums map to conventional short strings; a
+/// `CustomUnit` copies the plugin-provided `unitName` (read-only borrow —
+/// AudioToolbox owns the CFString for the info's lifetime, mirroring how
+/// other hosts consume it). Unknown or unitless enums report `None` —
+/// never synthesized.
+#[cfg(target_os = "macos")]
+unsafe fn parameter_unit_label(info: &ffi::AudioUnitParameterInfo) -> Option<String> {
+    let label = match info.unit {
+        ffi::kAudioUnitParameterUnit_Percent | ffi::kAudioUnitParameterUnit_EqualPowerCrossfade => {
+            "%"
+        }
+        ffi::kAudioUnitParameterUnit_Seconds => "s",
+        ffi::kAudioUnitParameterUnit_Milliseconds => "ms",
+        ffi::kAudioUnitParameterUnit_Hertz => "Hz",
+        ffi::kAudioUnitParameterUnit_Decibels => "dB",
+        ffi::kAudioUnitParameterUnit_Cents | ffi::kAudioUnitParameterUnit_AbsoluteCents => "cents",
+        ffi::kAudioUnitParameterUnit_RelativeSemiTones => "semitones",
+        ffi::kAudioUnitParameterUnit_Octaves => "oct",
+        ffi::kAudioUnitParameterUnit_BPM => "BPM",
+        ffi::kAudioUnitParameterUnit_Beats => "beats",
+        ffi::kAudioUnitParameterUnit_Phase | ffi::kAudioUnitParameterUnit_Degrees => "deg",
+        ffi::kAudioUnitParameterUnit_Rate | ffi::kAudioUnitParameterUnit_Ratio => "x",
+        ffi::kAudioUnitParameterUnit_CustomUnit => {
+            return ffi::cfstring_to_string(info.unitName)
+                .map(|name| name.trim().to_string())
+                .filter(|name| !name.is_empty());
+        }
+        _ => return None,
+    };
+    Some(label.to_string())
 }
 
 #[cfg(target_os = "macos")]

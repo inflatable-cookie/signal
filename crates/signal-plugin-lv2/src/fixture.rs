@@ -152,6 +152,7 @@ fn fixture_plugin_ttl(plugin_uri: &str, plugin_name: &str, with_atom_input: bool
         "@prefix lv2:  <http://lv2plug.in/ns/lv2core#> .\n\
          @prefix doap: <http://usefulinc.com/ns/doap#> .\n\
          @prefix atom: <http://lv2plug.in/ns/ext/atom#> .\n\
+         @prefix units: <http://lv2plug.in/ns/extensions/units#> .\n\
          \n\
          <{plugin_uri}>\n\
          \ta lv2:Plugin ;\n\
@@ -186,6 +187,7 @@ fn fixture_plugin_ttl(plugin_uri: &str, plugin_name: &str, with_atom_input: bool
          \t\tlv2:default {gain} ;\n\
          \t\tlv2:minimum 0.0 ;\n\
          \t\tlv2:maximum 1.0 ;\n\
+         \t\tunits:unit units:coef ;\n\
          \t] , [\n\
          \t\ta lv2:ControlPort , lv2:InputPort ;\n\
          \t\tlv2:index {bypass_index} ;\n\
@@ -194,6 +196,8 @@ fn fixture_plugin_ttl(plugin_uri: &str, plugin_name: &str, with_atom_input: bool
          \t\tlv2:default 0.0 ;\n\
          \t\tlv2:minimum 0.0 ;\n\
          \t\tlv2:maximum 1.0 ;\n\
+         \t\tlv2:portProperty lv2:toggled ;\n\
+         \t\tlv2:designation lv2:enabled ;\n\
          \t]\n\
          {atom_port}\
          \t.\n",

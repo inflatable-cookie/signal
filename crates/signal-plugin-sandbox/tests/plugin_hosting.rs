@@ -90,6 +90,29 @@ fn spawn_processing_session_for(
     assert!((gain.min_value - 0.0).abs() < 1e-6);
     assert!((gain.max_value - 1.0).abs() < 1e-6);
     assert!((gain.default_value - 0.5).abs() < 1e-6);
+    // Descriptor tokens round-trip the wire (g12.013): the fixture Gain is
+    // continuous and automatable; the fixture Bypass is a one-step
+    // automatable bypass toggle (identical in the CLAP and VST3 fixtures).
+    assert_eq!(gain.step_count, None);
+    assert!(gain.is_automatable);
+    assert!(!gain.is_bypass);
+    // Unit strings are per-format truth: the VST3 fixture labels Gain
+    // "dB" via ParameterInfo.units; CLAP param info has no unit field.
+    let is_vst3 = library_path.extension().and_then(|e| e.to_str()) == Some("vst3");
+    if is_vst3 {
+        assert_eq!(gain.unit.as_deref(), Some("dB"));
+    } else {
+        assert_eq!(gain.unit, None);
+    }
+    let bypass = inventory
+        .parameters
+        .iter()
+        .find(|parameter| parameter.name == "Bypass")
+        .expect("fixture Bypass param in the inventory");
+    assert_eq!(bypass.step_count, Some(1));
+    assert!(bypass.is_automatable);
+    assert!(bypass.is_bypass);
+    assert_eq!(bypass.unit, None);
 
     let lease = match client
         .activate_plugin(SAMPLE_RATE_HZ, 1, MAX_FRAMES)
@@ -345,6 +368,20 @@ fn lv2_child_processes_blocks_and_killed_child_bypasses_within_budget() {
     assert!((gain.min_value - 0.0).abs() < 1e-6);
     assert!((gain.max_value - 1.0).abs() < 1e-6);
     assert!((gain.default_value - LV2_FIXTURE_GAIN).abs() < 1e-6);
+    // Descriptor tokens round-trip the wire (g12.013): units:unit from the
+    // TTL; toggled + designation lv2:enabled mark the bypass toggle.
+    assert_eq!(gain.unit.as_deref(), Some("coef"));
+    assert_eq!(gain.step_count, None);
+    assert!(gain.is_automatable);
+    assert!(!gain.is_bypass);
+    let bypass = inventory
+        .parameters
+        .iter()
+        .find(|parameter| parameter.name == "Bypass")
+        .expect("fixture Bypass param in the inventory");
+    assert_eq!(bypass.step_count, Some(1));
+    assert!(bypass.is_bypass);
+    assert_eq!(bypass.unit, None);
 
     let lease = match client
         .activate_plugin(SAMPLE_RATE_HZ, 1, MAX_FRAMES)
@@ -456,6 +493,25 @@ fn au_child_processes_blocks_and_killed_child_bypasses_within_budget() {
             "AUDelay parameter id {id} missing from the receipt inventory",
         );
     }
+    // Descriptor tokens round-trip the wire (g12.013): AUDelay's real
+    // ranges and unit labels arrive from the AudioUnit property API.
+    let wet_dry = inventory
+        .parameters
+        .iter()
+        .find(|parameter| parameter.parameter_id == 0)
+        .expect("wet/dry mix in the receipt inventory");
+    assert_eq!(wet_dry.unit.as_deref(), Some("%"));
+    assert!((wet_dry.min_value - 0.0).abs() < 1e-6);
+    assert!((wet_dry.max_value - 100.0).abs() < 1e-6);
+    assert_eq!(wet_dry.step_count, None);
+    assert!(wet_dry.is_automatable);
+    assert!(!wet_dry.is_bypass);
+    let cutoff = inventory
+        .parameters
+        .iter()
+        .find(|parameter| parameter.parameter_id == 3)
+        .expect("lowpass cutoff in the receipt inventory");
+    assert_eq!(cutoff.unit.as_deref(), Some("Hz"));
 
     let lease = match client
         .activate_plugin(SAMPLE_RATE_HZ, 1, MAX_FRAMES)

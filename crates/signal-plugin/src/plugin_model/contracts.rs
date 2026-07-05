@@ -167,8 +167,27 @@ pub struct PluginParameterDescriptor {
     pub min_plain: f32,
     /// Maximum value in the plugin's native (plain) range.
     pub max_plain: f32,
+    /// Number of discrete steps across \[`min_plain`, `max_plain`\]
+    /// (g12.013): `Some(1)` for a toggle, `Some(n)` for an n-step integer
+    /// or enumeration range, `None` for continuous parameters. When set,
+    /// the parameter takes `step_count + 1` distinct values.
+    pub step_count: Option<u32>,
     /// Capability flags for this parameter.
     pub flags: PluginParameterFlags,
+}
+
+impl PluginParameterDescriptor {
+    /// Whether the host may record and play back automation for this
+    /// parameter (the descriptor-vocabulary view of `flags.automatable`).
+    pub fn is_automatable(&self) -> bool {
+        self.flags.automatable
+    }
+
+    /// Whether this parameter is the plugin's bypass control (the
+    /// descriptor-vocabulary view of `domain == Bypass`).
+    pub fn is_bypass(&self) -> bool {
+        self.domain == PluginParameterDomain::Bypass
+    }
 }
 
 /// Declares which state operations a plugin supports.

@@ -143,10 +143,10 @@ impl SandboxBrokerReceiptLine {
 }
 
 /// One plugin parameter from the child's load-time inventory (read-only
-/// phase 1).
+/// phase 1; descriptor fields enriched in g12.013).
 #[derive(Clone, Debug, PartialEq)]
 pub struct SandboxPluginParameter {
-    /// Stable CLAP parameter id.
+    /// Stable plugin-format parameter id.
     pub parameter_id: u32,
     /// Human-readable parameter name.
     pub name: String,
@@ -156,6 +156,16 @@ pub struct SandboxPluginParameter {
     pub max_value: f32,
     /// Default value (normalized).
     pub default_value: f32,
+    /// Display unit (e.g. "dB", "Hz"); `None` when the format reports none.
+    pub unit: Option<String>,
+    /// Discrete step count across the plain range (`Some(1)` = toggle);
+    /// `None` for continuous parameters.
+    pub step_count: Option<u32>,
+    /// Whether the host may automate this parameter. Legacy receipts
+    /// without a flags token parse as automatable (the pre-g12 assumption).
+    pub is_automatable: bool,
+    /// Whether this is the plugin's bypass parameter.
+    pub is_bypass: bool,
 }
 
 /// Receipt of a successful `load-plugin`: the child's parameter inventory
@@ -221,7 +231,13 @@ fn decode_wire_token(value: &str) -> String {
     String::from_utf8_lossy(&decoded).into_owned()
 }
 
-/// Parse the `params=` inventory blob: `id:name:min:max:default;...`.
+/// Parse the `params=` inventory blob:
+/// `id:name:min:max:default[:unit:steps:flags];...`.
+///
+/// The three descriptor tokens are additive (g12.013) and version-tolerant
+/// both ways: a legacy five-field entry parses with `None`/legacy defaults
+/// (automatable, not bypass), and entries with unknown trailing tokens
+/// parse by ignoring them.
 fn parse_parameter_inventory(blob: &str) -> Vec<SandboxPluginParameter> {
     blob.split(';')
         .filter(|entry| !entry.is_empty())
@@ -232,12 +248,25 @@ fn parse_parameter_inventory(blob: &str) -> Vec<SandboxPluginParameter> {
             let min_value = fields.next()?.parse::<f32>().ok()?;
             let max_value = fields.next()?.parse::<f32>().ok()?;
             let default_value = fields.next()?.parse::<f32>().ok()?;
+            let unit = fields
+                .next()
+                .map(decode_wire_token)
+                .filter(|unit| !unit.is_empty());
+            let step_count = fields.next().and_then(|value| value.parse::<u32>().ok());
+            let (is_automatable, is_bypass) = match fields.next() {
+                Some(flags) => (flags.contains('a'), flags.contains('b')),
+                None => (true, false),
+            };
             Some(SandboxPluginParameter {
                 parameter_id,
                 name,
                 min_value,
                 max_value,
                 default_value,
+                unit,
+                step_count,
+                is_automatable,
+                is_bypass,
             })
         })
         .collect()
@@ -1368,7 +1397,63 @@ fn record_broker_failure_and_convert(
 
 #[cfg(test)]
 mod tests {
-    use super::{parse_broker_receipt_line, split_broker_args, SandboxBrokerReceiptState};
+    use super::{
+        parse_broker_receipt_line, parse_parameter_inventory, split_broker_args,
+        SandboxBrokerReceiptState,
+    };
+
+    #[test]
+    fn parses_legacy_five_field_parameter_inventory() {
+        // Pre-g12.013 receipts carry no descriptor tokens: descriptor
+        // fields fall back to None/automatable/not-bypass.
+        let parameters = parse_parameter_inventory("4096:Gain:0:1:0.5;0:Bypass:0:1:0");
+        assert_eq!(parameters.len(), 2);
+        let gain = &parameters[0];
+        assert_eq!(gain.parameter_id, 4096);
+        assert_eq!(gain.name, "Gain");
+        assert_eq!(gain.unit, None);
+        assert_eq!(gain.step_count, None);
+        assert!(gain.is_automatable, "legacy default: automatable");
+        assert!(!gain.is_bypass, "legacy default: not bypass");
+    }
+
+    #[test]
+    fn parses_enriched_parameter_inventory_tokens() {
+        let parameters = parse_parameter_inventory(
+            "7:Dry%20/%20Wet:0:100:0.5:%25:::;0:Bypass:0:1:0::1:ab;9:Cutoff:20:20000:0.3:Hz::a",
+        );
+        assert_eq!(parameters.len(), 3);
+
+        let mix = &parameters[0];
+        assert_eq!(mix.name, "Dry / Wet");
+        assert_eq!(mix.unit.as_deref(), Some("%"), "wire-encoded unit decodes");
+        assert_eq!(mix.step_count, None, "empty steps token = continuous");
+        assert!(
+            !mix.is_automatable,
+            "an explicit empty flags token means no flags",
+        );
+
+        let bypass = &parameters[1];
+        assert_eq!(bypass.unit, None, "empty unit token = None");
+        assert_eq!(bypass.step_count, Some(1));
+        assert!(bypass.is_automatable);
+        assert!(bypass.is_bypass);
+
+        let cutoff = &parameters[2];
+        assert_eq!(cutoff.unit.as_deref(), Some("Hz"));
+        assert_eq!(cutoff.step_count, None);
+        assert!(cutoff.is_automatable);
+        assert!(!cutoff.is_bypass);
+    }
+
+    #[test]
+    fn parameter_inventory_ignores_unknown_trailing_tokens() {
+        // Forward tolerance: a future encoder may append more tokens.
+        let parameters = parse_parameter_inventory("1:Mode:0:2:0::2:a:future:tokens");
+        assert_eq!(parameters.len(), 1);
+        assert_eq!(parameters[0].step_count, Some(2));
+        assert!(parameters[0].is_automatable);
+    }
 
     #[test]
     fn splits_plain_whitespace_args() {
