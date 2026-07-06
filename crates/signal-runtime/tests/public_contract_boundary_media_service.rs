@@ -192,7 +192,7 @@ fn public_runtime_reports_offline_stretch_artifact_plan_receipts_without_promoti
     let snapshot = &observation.offline_stretch_artifact_plan_snapshot;
 
     assert_eq!(snapshot.plan_count, 2);
-    assert_eq!(snapshot.awaiting_implementation_count, 1);
+    assert_eq!(snapshot.awaiting_corpus_evidence_count, 1);
     assert_eq!(snapshot.invalid_plan_count, 1);
     assert_eq!(snapshot.ready_plan_count, 0);
     let offline_plan = snapshot
@@ -206,7 +206,7 @@ fn public_runtime_reports_offline_stretch_artifact_plan_receipts_without_promoti
         .stable_hash;
     assert_eq!(
         offline_plan.readiness,
-        RuntimeOfflineStretchArtifactReadiness::AwaitingImplementation
+        RuntimeOfflineStretchArtifactReadiness::AwaitingCorpusEvidence
     );
     assert!(!offline_plan.product_facing_allowed);
     assert_eq!(

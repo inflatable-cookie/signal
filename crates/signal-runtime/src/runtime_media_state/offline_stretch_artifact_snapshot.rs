@@ -122,6 +122,13 @@ fn snapshot_plan(
             RuntimeOfflineStretchArtifactReadiness::AwaitingImplementation,
             Some("OfflineHighQuality is not implemented yet".to_string()),
         ),
+        (StretchBackendStatus::Prototype, _) => (
+            RuntimeOfflineStretchArtifactReadiness::AwaitingCorpusEvidence,
+            Some(
+                "OfflineHighQuality prototype has not accepted product-facing promotion"
+                    .to_string(),
+            ),
+        ),
         (StretchBackendStatus::Implemented, false) => (
             RuntimeOfflineStretchArtifactReadiness::AwaitingCorpusEvidence,
             Some(

@@ -18,7 +18,8 @@ pub enum RuntimeOfflineStretchArtifactScope {
 pub enum RuntimeOfflineStretchArtifactReadiness {
     /// The plan has a stable identity, but the tier is not implemented yet.
     AwaitingImplementation,
-    /// The tier exists, but corpus evidence has not accepted product-facing use.
+    /// The tier exists, but corpus evidence or prototype promotion has not
+    /// accepted product-facing use.
     AwaitingCorpusEvidence,
     /// The artifact may feed product-facing render/export/freeze consumers.
     Ready,

@@ -150,8 +150,8 @@ Start in `signal-dsp-stretch`:
 1. Split the current draft phase vocoder into explicit analysis, phase, and
    synthesis modules.
 2. Add a mono offline high-quality prototype behind a new
-   `OfflineHighQuality` constructor, still marked experimental until corpus
-   acceptance passes.
+   `OfflineHighQualityStretcher` constructor, still marked prototype until
+   corpus acceptance passes.
 3. Add spectral peak tracking and identity phase locking.
 4. Add transient detection using energy/spectral-flux features, then reset or
    splice transients without copying Rubber Band implementation details.
@@ -243,6 +243,8 @@ Work:
   plans through observation and host supervisor reports
 - [x] add explicit corpus-evidence promotion receipt for OfflineHighQuality so
   artifact planning no longer uses a boolean placeholder
+- [x] expose an OfflineHighQuality prototype DSP path over the transient-reset,
+  identity-locked phase-vocoder foundation while keeping promotion blocked
 - [ ] wire OfflineHighQuality artifacts into render/export/freeze only after
   corpus evidence beats the draft baseline
 - [ ] add Pulse/Aura contract changes only for product-visible mode, ratio,
@@ -278,7 +280,9 @@ Work:
 
 ## Next Task
 
-Continue Slice 4 in Signal by keeping render/export/freeze wiring blocked
-until `OfflineHighQuality` has an implemented DSP path and an accepted
-`StretchPromotionReceipt`; the next implementation batch should return to DSP
-quality depth rather than product-facing wiring.
+Continue the Signal DSP quality batch by benchmarking
+`OfflineHighQualityStretcher` against the draft baseline across the synthetic
+corpus, then close the next quality gaps: linked stereo synthesis, pitch-shift
+composition, and dynamic-ratio automation. Keep render/export/freeze wiring
+blocked until the tier is no longer prototype-only and an accepted
+`StretchPromotionReceipt` exists.

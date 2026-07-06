@@ -82,7 +82,8 @@ pub enum OfflineStretchArtifactScope {
 pub enum OfflineStretchArtifactReadiness {
     /// The artifact has a stable identity, but the tier is not implemented yet.
     AwaitingImplementation,
-    /// The tier exists, but corpus evidence has not accepted product-facing use.
+    /// The tier exists, but corpus evidence or prototype promotion has not
+    /// accepted product-facing use.
     AwaitingCorpusEvidence,
     /// The artifact may be consumed by render/export/freeze callers.
     Ready,
@@ -154,6 +155,9 @@ pub fn plan_offline_stretch_artifact(
     let readiness = match (backend.status, promotion_accepted) {
         (StretchBackendStatus::Planned, _) => {
             OfflineStretchArtifactReadiness::AwaitingImplementation
+        }
+        (StretchBackendStatus::Prototype, _) => {
+            OfflineStretchArtifactReadiness::AwaitingCorpusEvidence
         }
         (StretchBackendStatus::Implemented, false) => {
             OfflineStretchArtifactReadiness::AwaitingCorpusEvidence
@@ -492,7 +496,7 @@ mod tests {
         assert_eq!(plan.tier, StretchBackendTier::OfflineHighQuality);
         assert_eq!(
             plan.readiness,
-            OfflineStretchArtifactReadiness::AwaitingImplementation
+            OfflineStretchArtifactReadiness::AwaitingCorpusEvidence
         );
         assert!(plan
             .promotion_receipt

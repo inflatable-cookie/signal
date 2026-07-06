@@ -173,13 +173,13 @@ fn local_shared_host_edge_exports_offline_stretch_artifact_receipts() {
     let report = host.supervisor_report();
     let snapshot = &report.observation.offline_stretch_artifact_plan_snapshot;
     assert_eq!(snapshot.plan_count, 1);
-    assert_eq!(snapshot.awaiting_implementation_count, 1);
+    assert_eq!(snapshot.awaiting_corpus_evidence_count, 1);
     assert_eq!(snapshot.ready_plan_count, 0);
     let plan = &snapshot.plans[0];
     assert_eq!(plan.plan_id, "host-stretch-plan:offline-hq");
     assert_eq!(
         plan.readiness,
-        RuntimeOfflineStretchArtifactReadiness::AwaitingImplementation
+        RuntimeOfflineStretchArtifactReadiness::AwaitingCorpusEvidence
     );
     assert_eq!(plan.promotion_status, StretchPromotionStatus::Accepted);
     assert_eq!(

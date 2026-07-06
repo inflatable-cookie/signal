@@ -1,8 +1,10 @@
 //! Time-stretching backends for the Signal workspace.
 //!
 //! The crate defines the abstract [`TimeStretcher`] contract — stretch audio
-//! in time without shifting pitch — and ships ONE backend this round:
-//! [`PhaseVocoderStretcher`], a dependency-light draft-quality phase vocoder.
+//! in time without shifting pitch — and ships two offline backends this round:
+//! [`PhaseVocoderStretcher`], a dependency-light draft-quality phase vocoder,
+//! and [`OfflineHighQualityStretcher`], Signal's experimental offline-quality
+//! foundation for corpus benchmarking.
 //!
 //! ## Signal-owned backend tiers
 //!
@@ -17,10 +19,11 @@
 //!
 //! The current [`PhaseVocoderStretcher`] remains [`StretchQuality::Draft`]: a
 //! plain Hann-windowed phase vocoder with NO phase locking and NO transient
-//! preservation. Sustained/tonal material stretches cleanly; percussive
-//! transients smear audibly at larger ratios. Rubber Band-class quality is the
-//! target for the planned Signal-native tiers, but Rubber Band source is not
-//! an implementation input.
+//! preservation. [`OfflineHighQualityStretcher`] uses identity phase locking
+//! and transient phase resets as the first clean-room Signal-owned foundation,
+//! but product-facing use remains blocked until corpus evidence accepts
+//! promotion. Rubber Band-class quality is the target for the planned
+//! Signal-native tiers, but Rubber Band source is not an implementation input.
 //!
 //! ## Real-time posture
 //!
@@ -58,7 +61,7 @@ pub use cache_identity::{
 };
 pub use promotion::{StretchPromotionReceipt, StretchPromotionStatus};
 
-use phase_vocoder::phase_vocoder;
+use phase_vocoder::{phase_vocoder, transient_reset_phase_vocoder};
 use signal_primitives::Sample;
 
 /// Quality tier of a stretch backend (memo 013 vocabulary). One tier exists
@@ -72,8 +75,9 @@ pub enum StretchQuality {
     /// Bounded-latency preview quality. Planned; not implemented by the
     /// current backend.
     RealtimePreview,
-    /// Highest-quality deterministic offline/export quality. Planned; not
-    /// implemented by the current backend.
+    /// Highest-quality deterministic offline/export quality. A prototype
+    /// backend exists for corpus benchmarking; product-facing use is still
+    /// promotion-gated.
     OfflineHighQuality,
 }
 
@@ -94,6 +98,9 @@ pub enum StretchBackendTier {
 pub enum StretchBackendStatus {
     /// The tier is implemented in Signal today.
     Implemented,
+    /// The tier has an implemented DSP path, but it has not yet satisfied the
+    /// full product-facing backend contract or corpus promotion gate.
+    Prototype,
     /// The tier is designed but not implemented.
     Planned,
 }
@@ -151,7 +158,7 @@ pub const SIGNAL_STRETCH_BACKEND_PLAN: [StretchBackendPlan; 3] = [
     },
     StretchBackendPlan {
         tier: StretchBackendTier::OfflineHighQuality,
-        status: StretchBackendStatus::Planned,
+        status: StretchBackendStatus::Prototype,
         independent_tempo_and_pitch: true,
         dynamic_ratio: true,
         transient_preservation: true,
@@ -209,6 +216,20 @@ pub struct PhaseVocoderStretcher {
     analysis_hop: usize,
 }
 
+/// Experimental offline high-quality time-stretcher.
+///
+/// This is the first Signal-owned offline-quality DSP path: a deterministic
+/// whole-buffer STFT stretcher with identity phase locking and transient phase
+/// resets. It is intentionally exposed as [`StretchQuality::OfflineHighQuality`]
+/// so the benchmark harness can exercise the target tier, but the backend plan
+/// remains [`StretchBackendStatus::Prototype`] until corpus evidence accepts
+/// promotion and the full offline contract is satisfied.
+pub struct OfflineHighQualityStretcher {
+    ratio: f64,
+    window_size: usize,
+    analysis_hop: usize,
+}
+
 /// Default STFT window: 2048 samples (~43 ms at 48 kHz).
 pub const DEFAULT_WINDOW_SIZE: usize = 2_048;
 /// Default analysis hop: window / 4 (75% overlap).
@@ -245,30 +266,61 @@ impl TimeStretcher for PhaseVocoderStretcher {
     }
 
     fn set_ratio(&mut self, ratio: f64) {
-        self.ratio = if ratio.is_finite() && ratio > 0.0 {
-            ratio
-        } else {
-            1.0
-        };
+        self.ratio = sanitize_ratio(ratio);
     }
 
     fn stretch_mono(&mut self, input: &[Sample]) -> Vec<Sample> {
-        let target_len = (input.len() as f64 * self.ratio).round() as usize;
-        if input.is_empty() || target_len == 0 {
-            return Vec::new();
-        }
-        if (self.ratio - 1.0).abs() < 1.0e-9 {
-            return input.to_vec();
-        }
-        if input.len() < self.window_size {
-            return linear_time_scale(input, target_len);
-        }
-        phase_vocoder(
+        stretch_mono_with_engine(
             input,
-            target_len,
             self.ratio,
             self.window_size,
             self.analysis_hop,
+            phase_vocoder,
+        )
+    }
+}
+
+impl OfflineHighQualityStretcher {
+    /// Stretcher with the default window/hop configuration.
+    pub fn new(ratio: f64) -> Self {
+        Self::with_window(ratio, DEFAULT_WINDOW_SIZE, DEFAULT_ANALYSIS_HOP)
+    }
+
+    /// Stretcher with an explicit window size and analysis hop. The window
+    /// is clamped to a power of two ≥ 64; the hop to `1..=window/2`.
+    pub fn with_window(ratio: f64, window_size: usize, analysis_hop: usize) -> Self {
+        let window_size = window_size.next_power_of_two().max(64);
+        let analysis_hop = analysis_hop.clamp(1, window_size / 2);
+        let mut stretcher = Self {
+            ratio: 1.0,
+            window_size,
+            analysis_hop,
+        };
+        stretcher.set_ratio(ratio);
+        stretcher
+    }
+}
+
+impl TimeStretcher for OfflineHighQualityStretcher {
+    fn quality(&self) -> StretchQuality {
+        StretchQuality::OfflineHighQuality
+    }
+
+    fn ratio(&self) -> f64 {
+        self.ratio
+    }
+
+    fn set_ratio(&mut self, ratio: f64) {
+        self.ratio = sanitize_ratio(ratio);
+    }
+
+    fn stretch_mono(&mut self, input: &[Sample]) -> Vec<Sample> {
+        stretch_mono_with_engine(
+            input,
+            self.ratio,
+            self.window_size,
+            self.analysis_hop,
+            transient_reset_phase_vocoder,
         )
     }
 }
@@ -316,6 +368,34 @@ fn linear_time_scale(input: &[Sample], target_len: usize) -> Vec<Sample> {
             input[left] + (input[right] - input[left]) * fraction
         })
         .collect()
+}
+
+fn sanitize_ratio(ratio: f64) -> f64 {
+    if ratio.is_finite() && ratio > 0.0 {
+        ratio
+    } else {
+        1.0
+    }
+}
+
+fn stretch_mono_with_engine(
+    input: &[Sample],
+    ratio: f64,
+    window_size: usize,
+    analysis_hop: usize,
+    engine: fn(&[Sample], usize, f64, usize, usize) -> Vec<Sample>,
+) -> Vec<Sample> {
+    let target_len = (input.len() as f64 * ratio).round() as usize;
+    if input.is_empty() || target_len == 0 {
+        return Vec::new();
+    }
+    if (ratio - 1.0).abs() < 1.0e-9 {
+        return input.to_vec();
+    }
+    if input.len() < window_size {
+        return linear_time_scale(input, target_len);
+    }
+    engine(input, target_len, ratio, window_size, analysis_hop)
 }
 
 #[cfg(test)]
@@ -375,6 +455,40 @@ mod tests {
                 "ratio {ratio}"
             );
         }
+    }
+
+    #[test]
+    fn offline_high_quality_reports_target_quality() {
+        let stretcher = OfflineHighQualityStretcher::new(1.25);
+
+        assert_eq!(stretcher.quality(), StretchQuality::OfflineHighQuality);
+        assert_eq!(stretcher.ratio(), 1.25);
+    }
+
+    #[test]
+    fn offline_high_quality_is_deterministic_and_honors_output_length() {
+        let input = sine(440.0, 48_000.0, 48_000);
+        for ratio in [0.5, 0.75, 1.25, 1.5, 2.0] {
+            let mut first = OfflineHighQualityStretcher::new(ratio);
+            let mut repeated = OfflineHighQualityStretcher::new(ratio);
+            let first_output = first.stretch_mono(&input);
+            let repeated_output = repeated.stretch_mono(&input);
+
+            assert_eq!(
+                first_output.len(),
+                (input.len() as f64 * ratio).round() as usize,
+                "ratio {ratio}"
+            );
+            assert_eq!(first_output, repeated_output, "ratio {ratio}");
+        }
+    }
+
+    #[test]
+    fn offline_high_quality_identity_ratio_is_passthrough() {
+        let input = sine(330.0, 48_000.0, 8_192);
+        let mut stretcher = OfflineHighQualityStretcher::new(1.0);
+
+        assert_eq!(stretcher.stretch_mono(&input), input);
     }
 
     #[test]
@@ -441,7 +555,7 @@ mod tests {
         assert!(!preview.audio_thread_safe);
 
         let offline = stretch_backend_plan(StretchBackendTier::OfflineHighQuality);
-        assert_eq!(offline.status, StretchBackendStatus::Planned);
+        assert_eq!(offline.status, StretchBackendStatus::Prototype);
         assert!(offline.transient_preservation);
         assert!(offline.vertical_phase_coherence);
         assert!(offline.deterministic_output);
