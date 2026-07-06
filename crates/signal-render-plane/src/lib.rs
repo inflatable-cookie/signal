@@ -35,7 +35,8 @@ mod offline;
 
 pub use offline::{
     materialize_offline_stretch_artifact_pcm, plan_offline_stretch_artifact, render_plan_to_pcm,
-    write_wav, OfflineRenderOptions, OfflineRenderOutput, OfflineStretchArtifactMaterializeError,
+    write_wav, OfflineRenderOptions, OfflineRenderOutput,
+    OfflineStretchArtifactMaterializationReceipt, OfflineStretchArtifactMaterializeError,
     OfflineStretchArtifactPcm, OfflineStretchArtifactPlan, OfflineStretchArtifactPlanError,
     OfflineStretchArtifactReadiness, OfflineStretchArtifactScope, WavBitDepth,
 };

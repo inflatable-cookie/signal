@@ -402,6 +402,49 @@ impl OfflineHighQualityStretcher {
         stretch_to_exact_linked_stereo(&pitched, target_frames, self.window_size, self.analysis_hop)
     }
 
+    /// Apply one static pitch shift while following a stepwise dynamic ratio
+    /// curve over interleaved stereo.
+    ///
+    /// Segment boundaries use the same source-frame vocabulary as
+    /// [`Self::stretch_dynamic_ratio_interleaved_stereo`]. Pitch shifting is
+    /// applied per source segment before that segment is stretched to its
+    /// target duration, so cache identity marker frames stay anchored to the
+    /// original decoded source.
+    pub fn stretch_dynamic_ratio_pitch_interleaved_stereo(
+        &mut self,
+        frames: &[Sample],
+        ratio_curve: &[StretchRatioPoint],
+        sample_rate: SampleRate,
+        pitch_shift_semitones: f64,
+    ) -> Vec<Sample> {
+        if pitch_shift_semitones.abs() < 1.0e-9 || sample_rate.0 == 0 {
+            return self.stretch_dynamic_ratio_interleaved_stereo(frames, ratio_curve);
+        }
+
+        let frame_count = frames.len() / 2;
+        let even_frames = &frames[..frame_count * 2];
+        let segments = dynamic_ratio_segments(frame_count, ratio_curve, sanitize_ratio(self.ratio));
+        let target_frames: usize = segments.iter().map(|segment| segment.target_frames).sum();
+        let mut output = Vec::with_capacity(target_frames * 2);
+        for segment in segments {
+            let start = segment.start_frame * 2;
+            let end = segment.end_frame * 2;
+            let pitched = pitch_shift_interleaved_stereo_to_nominal_rate(
+                &even_frames[start..end],
+                sample_rate,
+                pitch_shift_semitones,
+            );
+            let rendered = stretch_to_exact_linked_stereo(
+                &pitched,
+                segment.target_frames,
+                self.window_size,
+                self.analysis_hop,
+            );
+            output.extend(rendered);
+        }
+        output
+    }
+
     /// Stretch one mono buffer with a stepwise dynamic ratio curve.
     ///
     /// `ratio_curve` uses the same sample-frame vocabulary as cache identity:
@@ -1134,6 +1177,43 @@ mod tests {
         let first_output = first.stretch_dynamic_ratio_interleaved_stereo(&frames, &ratio_curve);
         let repeated_output =
             repeated.stretch_dynamic_ratio_interleaved_stereo(&frames, &ratio_curve);
+
+        assert_eq!(
+            first_output.len(),
+            dynamic_ratio_output_frames(left.len(), &ratio_curve, 1.0) * 2
+        );
+        assert_eq!(first_output, repeated_output);
+    }
+
+    #[test]
+    fn offline_high_quality_dynamic_ratio_pitch_stereo_is_exact_and_deterministic() {
+        let sample_rate = 48_000.0;
+        let left = sine(220.0, sample_rate, 48_000);
+        let right = sine(440.0, sample_rate, 48_000);
+        let mut frames = Vec::with_capacity(left.len() * 2);
+        for (l, r) in left.iter().zip(right.iter()) {
+            frames.push(*l);
+            frames.push(*r);
+        }
+        let ratio_curve = [
+            StretchRatioPoint::new(0, 0.75),
+            StretchRatioPoint::new(16_000, 1.0),
+            StretchRatioPoint::new(32_000, 1.5),
+        ];
+        let mut first = OfflineHighQualityStretcher::new(1.0);
+        let mut repeated = OfflineHighQualityStretcher::new(1.0);
+        let first_output = first.stretch_dynamic_ratio_pitch_interleaved_stereo(
+            &frames,
+            &ratio_curve,
+            SampleRate(48_000),
+            2.0,
+        );
+        let repeated_output = repeated.stretch_dynamic_ratio_pitch_interleaved_stereo(
+            &frames,
+            &ratio_curve,
+            SampleRate(48_000),
+            2.0,
+        );
 
         assert_eq!(
             first_output.len(),

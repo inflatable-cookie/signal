@@ -114,6 +114,8 @@ pub struct OfflineStretchArtifactPlan {
 pub struct OfflineStretchArtifactPcm {
     /// Readiness and cache identity used to produce this artifact.
     pub plan: OfflineStretchArtifactPlan,
+    /// Materialization receipt for cache/export/freeze bookkeeping.
+    pub receipt: OfflineStretchArtifactMaterializationReceipt,
     /// Cacheable interleaved stereo PCM that render/export/freeze consumers can
     /// feed back through [`crate::RenderSource::Samples`].
     pub buffer: RenderSampleBuffer,
@@ -121,6 +123,31 @@ pub struct OfflineStretchArtifactPcm {
     pub input_frame_count: usize,
     /// Output frame count produced in `buffer`.
     pub output_frame_count: usize,
+}
+
+/// Receipt for one materialized offline stretch artifact.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct OfflineStretchArtifactMaterializationReceipt {
+    /// Consumer scope this artifact was materialized for.
+    pub scope: OfflineStretchArtifactScope,
+    /// Signal stretch tier used to produce the artifact.
+    pub tier: StretchBackendTier,
+    /// Stable cache identity hash for the materialized artifact.
+    pub cache_identity_hash: String,
+    /// Canonical cache identity key for the materialized artifact.
+    pub cache_identity_key: String,
+    /// Accepted promotion evidence used for product-facing materialization.
+    pub promotion_evidence_id: String,
+    /// Source frame count consumed from the decoded source buffer.
+    pub input_frame_count: usize,
+    /// Output frame count produced for cache/export/freeze consumption.
+    pub output_frame_count: usize,
+    /// Output channel count.
+    pub channels: u16,
+    /// Output sample rate.
+    pub sample_rate_hz: u32,
+    /// Whether this materialized artifact may feed product-facing output.
+    pub product_facing_allowed: bool,
 }
 
 /// Control-side failure while planning a stretch artifact.
@@ -167,9 +194,8 @@ pub enum OfflineStretchArtifactMaterializeError {
         /// Sample rate on the source buffer.
         actual_hz: u32,
     },
-    /// Dynamic ratio plus non-zero pitch automation is not materialized by
-    /// this first artifact path.
-    UnsupportedDynamicPitchCurve,
+    /// Non-static pitch automation is not materialized by this artifact path.
+    UnsupportedPitchAutomation,
 }
 
 impl std::fmt::Display for OfflineStretchArtifactMaterializeError {
@@ -193,9 +219,9 @@ impl std::fmt::Display for OfflineStretchArtifactMaterializeError {
                 formatter,
                 "offline stretch artifact source sample rate mismatch: expected {expected_hz}, got {actual_hz}",
             ),
-            OfflineStretchArtifactMaterializeError::UnsupportedDynamicPitchCurve => write!(
+            OfflineStretchArtifactMaterializeError::UnsupportedPitchAutomation => write!(
                 formatter,
-                "offline stretch artifact materialization does not yet support non-zero pitch with dynamic ratio curves",
+                "offline stretch artifact materialization requires static pitch shift",
             ),
         }
     }
@@ -264,9 +290,7 @@ pub fn plan_offline_stretch_artifact(
 /// [`OfflineStretchArtifactReadiness::Ready`].
 ///
 /// The first materialization slice supports interleaved stereo render-plane
-/// media with either a dynamic ratio curve and zero pitch shift, or a static
-/// ratio with a static pitch shift. Non-zero pitch with multiple ratio
-/// segments is rejected until that composition has a dedicated quality gate.
+/// media with a dynamic ratio curve and one static pitch shift.
 pub fn materialize_offline_stretch_artifact_pcm(
     scope: OfflineStretchArtifactScope,
     identity_input: &StretchCacheIdentityInput,
@@ -299,11 +323,9 @@ pub fn materialize_offline_stretch_artifact_pcm(
     let pitch_shift = static_pitch_shift(identity_input)?;
     let mut stretcher = OfflineHighQualityStretcher::new(ratio);
     let frames = if pitch_shift.abs() > 1.0e-9 {
-        if has_dynamic_ratio_curve(&identity_input.ratio_curve) {
-            return Err(OfflineStretchArtifactMaterializeError::UnsupportedDynamicPitchCurve);
-        }
-        stretcher.stretch_pitch_interleaved_stereo(
+        stretcher.stretch_dynamic_ratio_pitch_interleaved_stereo(
             &source.frames,
+            &identity_input.ratio_curve,
             SampleRate(source.sample_rate_hz),
             pitch_shift,
         )
@@ -315,8 +337,21 @@ pub fn materialize_offline_stretch_artifact_pcm(
     };
 
     let output_frame_count = frames.len() / 2;
+    let receipt = OfflineStretchArtifactMaterializationReceipt {
+        scope,
+        tier: plan.tier,
+        cache_identity_hash: plan.identity.stable_hash.clone(),
+        cache_identity_key: plan.identity.canonical_key.clone(),
+        promotion_evidence_id: plan.promotion_receipt.evidence_id.clone(),
+        input_frame_count: source.frame_count(),
+        output_frame_count,
+        channels: identity_input.channel_layout.channels,
+        sample_rate_hz: source.sample_rate_hz,
+        product_facing_allowed: plan.product_facing_allowed,
+    };
     Ok(OfflineStretchArtifactPcm {
         plan,
+        receipt,
         buffer: RenderSampleBuffer {
             sample_rate_hz: source.sample_rate_hz,
             frames: Arc::from(frames.into_boxed_slice()),
@@ -347,18 +382,9 @@ fn static_pitch_shift(
         .iter()
         .any(|point| (point.semitones - first).abs() > 1.0e-9)
     {
-        return Err(OfflineStretchArtifactMaterializeError::UnsupportedDynamicPitchCurve);
+        return Err(OfflineStretchArtifactMaterializeError::UnsupportedPitchAutomation);
     }
     Ok(first)
-}
-
-fn has_dynamic_ratio_curve(ratio_curve: &[StretchRatioPoint]) -> bool {
-    let Some(first) = ratio_curve.first() else {
-        return false;
-    };
-    ratio_curve
-        .iter()
-        .any(|point| (point.ratio - first.ratio).abs() > 1.0e-9)
 }
 
 /// Render `spec` offline: install it on a fresh controller/executor pair and
@@ -735,6 +761,23 @@ mod tests {
         assert!(artifact.plan.product_facing_allowed);
         assert_eq!(artifact.input_frame_count, 480);
         assert_eq!(artifact.output_frame_count, 600);
+        assert_eq!(
+            artifact.receipt.cache_identity_hash,
+            artifact.plan.identity.stable_hash
+        );
+        assert_eq!(
+            artifact.receipt.promotion_evidence_id,
+            "synthetic:materialize-current"
+        );
+        assert_eq!(
+            artifact.receipt.input_frame_count,
+            artifact.input_frame_count
+        );
+        assert_eq!(
+            artifact.receipt.output_frame_count,
+            artifact.output_frame_count
+        );
+        assert!(artifact.receipt.product_facing_allowed);
         assert_eq!(artifact.buffer.sample_rate_hz, source.sample_rate_hz);
         assert_eq!(artifact.buffer.frame_count(), artifact.output_frame_count);
         assert_eq!(
@@ -809,7 +852,7 @@ mod tests {
     }
 
     #[test]
-    fn stretch_artifact_materialization_rejects_dynamic_ratio_with_pitch_curve() {
+    fn stretch_artifact_materializes_static_pitch_with_dynamic_ratio_curve() {
         let input = stretch_identity_input()
             .with_ratio_curve(vec![
                 StretchRatioPoint::new(0, 1.0),
@@ -818,14 +861,38 @@ mod tests {
             .with_pitch_curve(vec![StretchPitchPoint::new(0, 2.0)]);
         let source = stretch_artifact_source(480);
 
+        let artifact = materialize_offline_stretch_artifact_pcm(
+            OfflineStretchArtifactScope::RenderCache,
+            &input,
+            accepted_synthetic_promotion_receipt("synthetic:static-pitch-dynamic-ratio"),
+            &source,
+        )
+        .expect("static pitch plus dynamic ratio should materialize");
+
+        assert_eq!(artifact.output_frame_count, 540);
+        assert_eq!(artifact.buffer.frame_count(), artifact.output_frame_count);
+        assert_eq!(
+            artifact.receipt.promotion_evidence_id,
+            "synthetic:static-pitch-dynamic-ratio"
+        );
+    }
+
+    #[test]
+    fn stretch_artifact_materialization_rejects_pitch_automation() {
+        let input = stretch_identity_input().with_pitch_curve(vec![
+            StretchPitchPoint::new(0, 0.0),
+            StretchPitchPoint::new(240, 2.0),
+        ]);
+        let source = stretch_artifact_source(480);
+
         assert_eq!(
             materialize_offline_stretch_artifact_pcm(
                 OfflineStretchArtifactScope::RenderCache,
                 &input,
-                accepted_synthetic_promotion_receipt("synthetic:unsupported-composition"),
+                accepted_synthetic_promotion_receipt("synthetic:pitch-automation"),
                 &source,
             ),
-            Err(OfflineStretchArtifactMaterializeError::UnsupportedDynamicPitchCurve)
+            Err(OfflineStretchArtifactMaterializeError::UnsupportedPitchAutomation)
         );
     }
 
