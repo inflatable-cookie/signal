@@ -11,15 +11,18 @@
 //! fades, the master limiter, the hardware-boundary write — is the realtime
 //! code, byte for byte.
 
-use std::path::Path;
+use std::{path::Path, sync::Arc};
 
 use crate::{
-    render_plane, RenderPlanSpec, RenderPlaneError, RenderPlaneExecutor, MAX_BLOCK_FRAMES,
+    render_plane, RenderPlanSpec, RenderPlaneError, RenderPlaneExecutor, RenderSampleBuffer,
+    MAX_BLOCK_FRAMES,
 };
 use signal_dsp_stretch::{
-    stretch_backend_plan, StretchBackendStatus, StretchBackendTier, StretchCacheIdentity,
-    StretchCacheIdentityError, StretchCacheIdentityInput, StretchPromotionReceipt,
+    stretch_backend_plan, OfflineHighQualityStretcher, StretchBackendStatus, StretchBackendTier,
+    StretchCacheIdentity, StretchCacheIdentityError, StretchCacheIdentityInput,
+    StretchPromotionReceipt, StretchRatioPoint,
 };
+use signal_primitives::SampleRate;
 
 /// Default block quantum for offline rendering.
 const DEFAULT_BLOCK_FRAMES: usize = 1024;
@@ -106,6 +109,20 @@ pub struct OfflineStretchArtifactPlan {
     pub product_facing_allowed: bool,
 }
 
+/// Materialized offline stretch artifact PCM.
+#[derive(Debug, Clone, PartialEq)]
+pub struct OfflineStretchArtifactPcm {
+    /// Readiness and cache identity used to produce this artifact.
+    pub plan: OfflineStretchArtifactPlan,
+    /// Cacheable interleaved stereo PCM that render/export/freeze consumers can
+    /// feed back through [`crate::RenderSource::Samples`].
+    pub buffer: RenderSampleBuffer,
+    /// Source frame count consumed from `source`.
+    pub input_frame_count: usize,
+    /// Output frame count produced in `buffer`.
+    pub output_frame_count: usize,
+}
+
 /// Control-side failure while planning a stretch artifact.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum OfflineStretchArtifactPlanError {
@@ -130,6 +147,67 @@ impl std::fmt::Display for OfflineStretchArtifactPlanError {
 }
 
 impl std::error::Error for OfflineStretchArtifactPlanError {}
+
+/// Control-side failure while materializing an offline stretch artifact.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum OfflineStretchArtifactMaterializeError {
+    /// Artifact planning failed before rendering could begin.
+    Plan(OfflineStretchArtifactPlanError),
+    /// The plan did not satisfy the accepted promotion gate.
+    NotReady(OfflineStretchArtifactReadiness),
+    /// The current render-plane PCM artifact path only accepts stereo media.
+    UnsupportedChannelLayout {
+        /// Channel count declared by the stretch cache identity.
+        channels: u16,
+    },
+    /// The source buffer's sample rate did not match the cache identity.
+    SourceSampleRateMismatch {
+        /// Sample rate declared in the cache identity.
+        expected_hz: u32,
+        /// Sample rate on the source buffer.
+        actual_hz: u32,
+    },
+    /// Dynamic ratio plus non-zero pitch automation is not materialized by
+    /// this first artifact path.
+    UnsupportedDynamicPitchCurve,
+}
+
+impl std::fmt::Display for OfflineStretchArtifactMaterializeError {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            OfflineStretchArtifactMaterializeError::Plan(error) => write!(formatter, "{error}"),
+            OfflineStretchArtifactMaterializeError::NotReady(readiness) => write!(
+                formatter,
+                "offline stretch artifact is not product-facing ready: {readiness:?}",
+            ),
+            OfflineStretchArtifactMaterializeError::UnsupportedChannelLayout { channels } => {
+                write!(
+                    formatter,
+                    "offline stretch artifact PCM requires stereo source, got {channels} channels",
+                )
+            }
+            OfflineStretchArtifactMaterializeError::SourceSampleRateMismatch {
+                expected_hz,
+                actual_hz,
+            } => write!(
+                formatter,
+                "offline stretch artifact source sample rate mismatch: expected {expected_hz}, got {actual_hz}",
+            ),
+            OfflineStretchArtifactMaterializeError::UnsupportedDynamicPitchCurve => write!(
+                formatter,
+                "offline stretch artifact materialization does not yet support non-zero pitch with dynamic ratio curves",
+            ),
+        }
+    }
+}
+
+impl std::error::Error for OfflineStretchArtifactMaterializeError {}
+
+impl From<OfflineStretchArtifactPlanError> for OfflineStretchArtifactMaterializeError {
+    fn from(error: OfflineStretchArtifactPlanError) -> Self {
+        Self::Plan(error)
+    }
+}
 
 /// Build a control-side artifact plan for an offline high-quality stretch
 /// candidate.
@@ -173,6 +251,114 @@ pub fn plan_offline_stretch_artifact(
         promotion_receipt,
         product_facing_allowed: readiness == OfflineStretchArtifactReadiness::Ready,
     })
+}
+
+/// Materialize a ready OfflineHighQuality stretch artifact as interleaved
+/// stereo PCM.
+///
+/// This is an offline control-side operation. It never runs on the realtime
+/// audio thread. The result is a [`RenderSampleBuffer`] so render-cache,
+/// freeze, and export callers can consume the artifact through the existing
+/// sample-source render path. Product-facing output is refused unless the
+/// attached promotion receipt makes the artifact plan
+/// [`OfflineStretchArtifactReadiness::Ready`].
+///
+/// The first materialization slice supports interleaved stereo render-plane
+/// media with either a dynamic ratio curve and zero pitch shift, or a static
+/// ratio with a static pitch shift. Non-zero pitch with multiple ratio
+/// segments is rejected until that composition has a dedicated quality gate.
+pub fn materialize_offline_stretch_artifact_pcm(
+    scope: OfflineStretchArtifactScope,
+    identity_input: &StretchCacheIdentityInput,
+    promotion_receipt: StretchPromotionReceipt,
+    source: &RenderSampleBuffer,
+) -> Result<OfflineStretchArtifactPcm, OfflineStretchArtifactMaterializeError> {
+    let plan = plan_offline_stretch_artifact(scope, identity_input, promotion_receipt)?;
+    if plan.readiness != OfflineStretchArtifactReadiness::Ready {
+        return Err(OfflineStretchArtifactMaterializeError::NotReady(
+            plan.readiness,
+        ));
+    }
+    if identity_input.channel_layout.channels != 2 {
+        return Err(
+            OfflineStretchArtifactMaterializeError::UnsupportedChannelLayout {
+                channels: identity_input.channel_layout.channels,
+            },
+        );
+    }
+    if source.sample_rate_hz != identity_input.channel_layout.sample_rate_hz {
+        return Err(
+            OfflineStretchArtifactMaterializeError::SourceSampleRateMismatch {
+                expected_hz: identity_input.channel_layout.sample_rate_hz,
+                actual_hz: source.sample_rate_hz,
+            },
+        );
+    }
+
+    let ratio = static_or_initial_ratio(&identity_input.ratio_curve);
+    let pitch_shift = static_pitch_shift(identity_input)?;
+    let mut stretcher = OfflineHighQualityStretcher::new(ratio);
+    let frames = if pitch_shift.abs() > 1.0e-9 {
+        if has_dynamic_ratio_curve(&identity_input.ratio_curve) {
+            return Err(OfflineStretchArtifactMaterializeError::UnsupportedDynamicPitchCurve);
+        }
+        stretcher.stretch_pitch_interleaved_stereo(
+            &source.frames,
+            SampleRate(source.sample_rate_hz),
+            pitch_shift,
+        )
+    } else if identity_input.ratio_curve.is_empty() {
+        stretcher.stretch_interleaved_stereo(&source.frames)
+    } else {
+        stretcher
+            .stretch_dynamic_ratio_interleaved_stereo(&source.frames, &identity_input.ratio_curve)
+    };
+
+    let output_frame_count = frames.len() / 2;
+    Ok(OfflineStretchArtifactPcm {
+        plan,
+        buffer: RenderSampleBuffer {
+            sample_rate_hz: source.sample_rate_hz,
+            frames: Arc::from(frames.into_boxed_slice()),
+        },
+        input_frame_count: source.frame_count(),
+        output_frame_count,
+    })
+}
+
+fn static_or_initial_ratio(ratio_curve: &[StretchRatioPoint]) -> f64 {
+    ratio_curve
+        .iter()
+        .find(|point| point.ratio.is_finite() && point.ratio > 0.0)
+        .map(|point| point.ratio)
+        .unwrap_or(1.0)
+}
+
+fn static_pitch_shift(
+    identity_input: &StretchCacheIdentityInput,
+) -> Result<f64, OfflineStretchArtifactMaterializeError> {
+    let first = identity_input
+        .pitch_curve
+        .first()
+        .map(|point| point.semitones)
+        .unwrap_or(0.0);
+    if identity_input
+        .pitch_curve
+        .iter()
+        .any(|point| (point.semitones - first).abs() > 1.0e-9)
+    {
+        return Err(OfflineStretchArtifactMaterializeError::UnsupportedDynamicPitchCurve);
+    }
+    Ok(first)
+}
+
+fn has_dynamic_ratio_curve(ratio_curve: &[StretchRatioPoint]) -> bool {
+    let Some(first) = ratio_curve.first() else {
+        return false;
+    };
+    ratio_curve
+        .iter()
+        .any(|point| (point.ratio - first.ratio).abs() > 1.0e-9)
 }
 
 /// Render `spec` offline: install it on a fresh controller/executor pair and
@@ -484,6 +670,19 @@ mod tests {
         .with_warp_markers(vec![StretchWarpMarker::new(0, 0)])
     }
 
+    fn stretch_artifact_source(frame_count: usize) -> RenderSampleBuffer {
+        let mut frames = Vec::with_capacity(frame_count * 2);
+        for frame in 0..frame_count {
+            let sample = (frame as f32 / 17.0).sin() * 0.25;
+            frames.push(sample);
+            frames.push(sample * 0.75);
+        }
+        RenderSampleBuffer {
+            sample_rate_hz: 48_000,
+            frames: Arc::from(frames.into_boxed_slice()),
+        }
+    }
+
     fn accepted_synthetic_promotion_receipt(evidence_id: &str) -> StretchPromotionReceipt {
         let report = compare_synthetic_stretch_backends();
         StretchPromotionReceipt::from_synthetic_offline_high_quality_report(
@@ -516,6 +715,65 @@ mod tests {
     }
 
     #[test]
+    fn ready_stretch_artifact_materializes_cacheable_pcm_for_render_consumers() {
+        let input =
+            stretch_identity_input().with_ratio_curve(vec![StretchRatioPoint::new(0, 1.25)]);
+        let source = stretch_artifact_source(480);
+        let artifact = materialize_offline_stretch_artifact_pcm(
+            OfflineStretchArtifactScope::Freeze,
+            &input,
+            accepted_synthetic_promotion_receipt("synthetic:materialize-current"),
+            &source,
+        )
+        .expect("ready artifact should materialize");
+
+        assert_eq!(artifact.plan.scope, OfflineStretchArtifactScope::Freeze);
+        assert_eq!(
+            artifact.plan.readiness,
+            OfflineStretchArtifactReadiness::Ready
+        );
+        assert!(artifact.plan.product_facing_allowed);
+        assert_eq!(artifact.input_frame_count, 480);
+        assert_eq!(artifact.output_frame_count, 600);
+        assert_eq!(artifact.buffer.sample_rate_hz, source.sample_rate_hz);
+        assert_eq!(artifact.buffer.frame_count(), artifact.output_frame_count);
+        assert_eq!(
+            artifact.plan.identity,
+            input.identity().expect("same identity")
+        );
+
+        let spec = RenderPlanSpec {
+            sample_rate_hz: 48_000,
+            master_gain: 1.0,
+            master_limiter: None,
+            stages: vec![
+                lane(
+                    44,
+                    1.0,
+                    vec![RenderClipSpec {
+                        clip_id: 440,
+                        start_frames: 0,
+                        end_frames: artifact.output_frame_count as u64,
+                        source: RenderSource::Samples(artifact.buffer.clone()),
+                        loop_source: false,
+                    }],
+                ),
+                master(vec![44]),
+            ],
+        };
+        let rendered = render_plan_to_pcm(
+            &spec,
+            &OfflineRenderOptions {
+                frame_count: artifact.output_frame_count as u64,
+                ..OfflineRenderOptions::default()
+            },
+        )
+        .expect("materialized artifact should render as a sample source");
+
+        assert_eq!(rendered.master.len(), artifact.output_frame_count * 2);
+    }
+
+    #[test]
     fn stretch_artifact_plan_blocks_export_without_accepted_promotion() {
         let input = stretch_identity_input();
         let plan = plan_offline_stretch_artifact(
@@ -530,6 +788,45 @@ mod tests {
             OfflineStretchArtifactReadiness::AwaitingCorpusEvidence
         );
         assert!(!plan.product_facing_allowed);
+    }
+
+    #[test]
+    fn stretch_artifact_materialization_blocks_without_accepted_promotion() {
+        let input = stretch_identity_input();
+        let source = stretch_artifact_source(480);
+
+        assert_eq!(
+            materialize_offline_stretch_artifact_pcm(
+                OfflineStretchArtifactScope::Export,
+                &input,
+                StretchPromotionReceipt::default(),
+                &source,
+            ),
+            Err(OfflineStretchArtifactMaterializeError::NotReady(
+                OfflineStretchArtifactReadiness::AwaitingCorpusEvidence
+            ))
+        );
+    }
+
+    #[test]
+    fn stretch_artifact_materialization_rejects_dynamic_ratio_with_pitch_curve() {
+        let input = stretch_identity_input()
+            .with_ratio_curve(vec![
+                StretchRatioPoint::new(0, 1.0),
+                StretchRatioPoint::new(240, 1.25),
+            ])
+            .with_pitch_curve(vec![StretchPitchPoint::new(0, 2.0)]);
+        let source = stretch_artifact_source(480);
+
+        assert_eq!(
+            materialize_offline_stretch_artifact_pcm(
+                OfflineStretchArtifactScope::RenderCache,
+                &input,
+                accepted_synthetic_promotion_receipt("synthetic:unsupported-composition"),
+                &source,
+            ),
+            Err(OfflineStretchArtifactMaterializeError::UnsupportedDynamicPitchCurve)
+        );
     }
 
     #[test]

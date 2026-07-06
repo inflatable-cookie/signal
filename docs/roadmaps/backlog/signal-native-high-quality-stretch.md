@@ -275,6 +275,9 @@ Work:
 - [x] promote OfflineHighQuality artifact readiness from prototype-blocked to
   product-facing `Ready` only when render/runtime/host plans carry accepted
   promotion evidence
+- [x] materialize the first ready OfflineHighQuality stereo PCM artifact for
+  render-cache/freeze/export consumers through the existing `RenderSource::Samples`
+  path, with unsupported pitch/dynamic-ratio combinations rejected explicitly
 - [ ] wire OfflineHighQuality artifacts into render/export/freeze only after
   corpus evidence beats the draft baseline
 - [ ] add Pulse/Aura contract changes only for product-visible mode, ratio,
@@ -311,8 +314,9 @@ Work:
 ## Next Task
 
 Continue the Signal DSP quality batch by turning the synthetic comparison
-report into a promotion-readiness loop: materialize the first ready
-OfflineHighQuality stretch artifact for render-cache/freeze/export consumers,
-using the existing cache identity and `StretchPromotionReceipt` readiness gate.
-Keep broader Pulse/Aura contract changes deferred until a product workflow
-consumes the Signal-owned contract.
+report into a promotion-readiness loop: broaden the materialized artifact
+contract beyond the first stereo slice by adding explicit materialization
+receipts and closing the next DSP composition gap for static pitch plus dynamic
+ratio, or recording a measured stop condition if that composition needs a
+separate quality gate. Keep broader Pulse/Aura contract changes deferred until
+a product workflow consumes the Signal-owned contract.
