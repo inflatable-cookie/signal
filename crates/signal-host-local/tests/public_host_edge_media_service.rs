@@ -6,11 +6,12 @@ use std::{fs, sync::Arc};
 use public_host_edge_media::{public_local_media_fixture_path, write_public_test_wav};
 use signal_host_local::LocalRuntimeHost;
 use signal_render_plane::{
-    build_offline_stretch_artifact_render_source_with_synthetic_policy,
-    OfflineStretchArtifactBuildRequest, OfflineStretchArtifactPolicyRequest,
-    OfflineStretchArtifactRenderCacheBridge,
-    OfflineStretchArtifactScope as RenderOfflineStretchArtifactScope, RenderSampleBuffer,
-    RenderSource,
+    build_offline_stretch_artifact_render_source_with_synthetic_policy, render_plan_to_pcm,
+    ChannelFormat, OfflineRenderOptions, OfflineStretchArtifactBuildRequest,
+    OfflineStretchArtifactPolicyRequest, OfflineStretchArtifactRenderCacheBridge,
+    OfflineStretchArtifactScope as RenderOfflineStretchArtifactScope, RenderClipSpec,
+    RenderEdgeSpec, RenderPlanSpec, RenderSampleBuffer, RenderSource, RenderStageKind,
+    RenderStageSpec,
 };
 use signal_runtime::{
     RuntimeConfig, RuntimeConfigRequest, RuntimeLifecycleApi, RuntimeMediaPreviewState,
@@ -191,6 +192,21 @@ fn local_shared_host_edge_exports_offline_stretch_artifact_receipts() {
             source: &source,
         })
         .expect("host-local render-cache decision should resolve");
+    let cache_render_source = cache_decision.handoff.source.clone();
+    let cache_output_frames = cache_decision.handoff.receipt.output_frame_count as u64;
+    let rendered = render_plan_to_pcm(
+        &cache_consumption_spec(cache_render_source, cache_output_frames),
+        &OfflineRenderOptions {
+            frame_count: cache_output_frames,
+            capture_stage_ids: vec![61],
+            ..OfflineRenderOptions::default()
+        },
+    )
+    .expect("host-local cache decision source should render through export/freeze path");
+    assert_eq!(rendered.master.len(), cache_output_frames as usize * 2);
+    assert_eq!(rendered.stems.len(), 1);
+    assert_eq!(rendered.stems[0].0, 61);
+    assert_eq!(rendered.stems[0].1.len(), cache_output_frames as usize * 2);
 
     let mut host = LocalRuntimeHost::new(runtime);
     host.reconcile_offline_stretch_artifact_plans(vec![
@@ -276,4 +292,46 @@ fn local_shared_host_edge_exports_offline_stretch_artifact_receipts() {
     );
     assert_eq!(cache_decision.output_frame_count, 600);
     assert!(cache_decision.product_facing_allowed);
+}
+
+fn cache_consumption_spec(source: RenderSource, output_frames: u64) -> RenderPlanSpec {
+    RenderPlanSpec {
+        sample_rate_hz: 48_000,
+        master_gain: 1.0,
+        master_limiter: None,
+        stages: vec![
+            RenderStageSpec {
+                stage_id: 61,
+                kind: RenderStageKind::Source {
+                    clips: vec![RenderClipSpec {
+                        clip_id: 610,
+                        start_frames: 0,
+                        end_frames: output_frames,
+                        source,
+                        loop_source: false,
+                    }],
+                },
+                format: ChannelFormat::stereo(),
+                gain: 1.0,
+                gain_automation: None,
+                processor: None,
+                events: None,
+                inputs: Vec::new(),
+            },
+            RenderStageSpec {
+                stage_id: 62,
+                kind: RenderStageKind::Output,
+                format: ChannelFormat::stereo(),
+                gain: 1.0,
+                gain_automation: None,
+                processor: None,
+                events: None,
+                inputs: vec![RenderEdgeSpec {
+                    source_stage_id: 61,
+                    gain: 1.0,
+                    matrix: None,
+                }],
+            },
+        ],
+    }
 }
