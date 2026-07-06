@@ -6,9 +6,12 @@ use std::{fs, sync::Arc};
 use public_host_edge_media::{public_local_media_fixture_path, write_public_test_wav};
 use signal_host_local::LocalRuntimeHost;
 use signal_render_plane::{
-    build_offline_stretch_artifact_render_source_with_synthetic_policy, render_plan_to_pcm,
-    ChannelFormat, OfflineRenderOptions, OfflineStretchArtifactBuildRequest,
-    OfflineStretchArtifactPolicyRequest, OfflineStretchArtifactRenderCacheBridge,
+    build_offline_stretch_artifact_cache_handoff_with_synthetic_policy,
+    build_offline_stretch_artifact_render_source_with_synthetic_policy,
+    plan_offline_stretch_artifact_with_synthetic_policy, render_plan_to_pcm, ChannelFormat,
+    OfflineRenderOptions, OfflineStretchArtifactBuildRequest,
+    OfflineStretchArtifactMaterializeError, OfflineStretchArtifactPolicyRequest,
+    OfflineStretchArtifactReadiness, OfflineStretchArtifactRenderCacheBridge,
     OfflineStretchArtifactScope as RenderOfflineStretchArtifactScope, RenderClipSpec,
     RenderEdgeSpec, RenderPlanSpec, RenderSampleBuffer, RenderSource, RenderStageKind,
     RenderStageSpec,
@@ -292,6 +295,93 @@ fn local_shared_host_edge_exports_offline_stretch_artifact_receipts() {
     );
     assert_eq!(cache_decision.output_frame_count, 600);
     assert!(cache_decision.product_facing_allowed);
+}
+
+#[test]
+fn local_shared_host_edge_blocks_rejected_offline_stretch_cache_artifacts() {
+    let runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
+    let identity_input = StretchCacheIdentityInput::signal_native(
+        StretchBackendTier::OfflineHighQuality,
+        "sha256:host-local-rejected-stretch-source",
+        StretchChannelLayout::new(2, 48_000),
+        "projection-host-local-rejected",
+    )
+    .with_ratio_curve(vec![StretchRatioPoint::new(0, 1.25)])
+    .with_pitch_curve(vec![StretchPitchPoint::new(0, 0.0)])
+    .with_warp_markers(vec![StretchWarpMarker::new(0, 0)]);
+    let source = RenderSampleBuffer {
+        sample_rate_hz: 48_000,
+        frames: Arc::from(vec![0.125_f32; 480 * 2].into_boxed_slice()),
+    };
+    let rejecting_policy = StretchSyntheticPromotionPolicy {
+        min_comparison_count: usize::MAX,
+        ..StretchSyntheticPromotionPolicy::default()
+    };
+    let policy_request = OfflineStretchArtifactPolicyRequest {
+        scope: RenderOfflineStretchArtifactScope::RenderCache,
+        identity_input: &identity_input,
+        evidence_id: "stretch-corpus:host-local-rejected-cache",
+        promotion_policy: rejecting_policy,
+    };
+    let rejected_plan = plan_offline_stretch_artifact_with_synthetic_policy(policy_request)
+        .expect("rejected policy should still produce a non-ready plan");
+    assert_eq!(
+        rejected_plan.readiness,
+        OfflineStretchArtifactReadiness::AwaitingCorpusEvidence
+    );
+    let build_request = OfflineStretchArtifactBuildRequest {
+        policy: policy_request,
+        source: &source,
+    };
+
+    assert_eq!(
+        build_offline_stretch_artifact_cache_handoff_with_synthetic_policy(build_request),
+        Err(OfflineStretchArtifactMaterializeError::NotReady(
+            OfflineStretchArtifactReadiness::AwaitingCorpusEvidence
+        ))
+    );
+    assert_eq!(
+        build_offline_stretch_artifact_render_source_with_synthetic_policy(build_request),
+        Err(OfflineStretchArtifactMaterializeError::NotReady(
+            OfflineStretchArtifactReadiness::AwaitingCorpusEvidence
+        ))
+    );
+    let mut cache_bridge = OfflineStretchArtifactRenderCacheBridge::new();
+    assert_eq!(
+        cache_bridge.resolve_with_synthetic_policy(build_request),
+        Err(OfflineStretchArtifactMaterializeError::NotReady(
+            OfflineStretchArtifactReadiness::AwaitingCorpusEvidence
+        ))
+    );
+    assert!(cache_bridge.is_empty());
+
+    let mut host = LocalRuntimeHost::new(runtime);
+    host.reconcile_offline_stretch_artifact_plans(vec![
+        RuntimeOfflineStretchArtifactPlanRegistration {
+            plan_id: "host-stretch-plan:rejected-cache".into(),
+            clip_id: Some("clip:host-rejected-cache".into()),
+            media_asset_id: Some("asset:host-rejected-cache".into()),
+            scope: RuntimeOfflineStretchArtifactScope::RenderCache,
+            identity_input,
+            promotion_receipt: rejected_plan.promotion_receipt.clone(),
+        },
+    ])
+    .expect("host should forward rejected offline stretch artifact plan");
+
+    let report = host.supervisor_report();
+    let snapshot = &report.observation.offline_stretch_artifact_plan_snapshot;
+    assert_eq!(snapshot.plan_count, 1);
+    assert_eq!(snapshot.ready_plan_count, 0);
+    assert_eq!(snapshot.awaiting_corpus_evidence_count, 1);
+    assert_eq!(snapshot.materialized_artifact_count, 0);
+    assert_eq!(snapshot.cache_decision_count, 0);
+    let plan = &snapshot.plans[0];
+    assert_eq!(plan.plan_id, "host-stretch-plan:rejected-cache");
+    assert_eq!(
+        plan.readiness,
+        RuntimeOfflineStretchArtifactReadiness::AwaitingCorpusEvidence
+    );
+    assert!(!plan.product_facing_allowed);
 }
 
 fn cache_consumption_spec(source: RenderSource, output_frames: u64) -> RenderPlanSpec {

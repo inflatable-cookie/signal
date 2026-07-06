@@ -321,6 +321,10 @@ Work:
 - [x] add a render/export/freeze cache decision fixture that records artifact
   plan, cache decision, materialization, and render consumption in one
   observable Signal path
+- [x] tighten the render/export/freeze path so accepted OfflineHighQuality
+  policy evidence is the only route that creates cache-backed render sources,
+  with rejected policy proving no renderable cache source or observation
+  receipt is produced
 - [ ] wire OfflineHighQuality artifacts into render/export/freeze only after
   corpus evidence beats the draft baseline
 - [ ] add Pulse/Aura contract changes only for product-visible mode, ratio,
@@ -357,8 +361,8 @@ Work:
 ## Next Task
 
 Continue the Signal DSP quality batch by turning the synthetic comparison
-report into a promotion-readiness loop: tighten the render/export/freeze path
-so accepted OfflineHighQuality policy evidence is the only route that creates
-cache-backed render sources, with rejected policy proving no renderable cache
-source or observation receipt is produced. Keep Pulse/Aura contract planning
-deferred until a Loophole product workflow consumes the Signal-owned contract.
+report into a promotion-readiness loop: turn the current accepted/rejected
+host-edge fixtures into reusable render-plane test helpers so future export,
+freeze, and render-cache integration can assert the same policy gate without
+duplicating setup. Keep Pulse/Aura contract planning deferred until a Loophole
+product workflow consumes the Signal-owned contract.
