@@ -12,4 +12,5 @@ workspace = true
 
 [dependencies]
 rustfft = { workspace = true }
+signal-dsp-resample = { workspace = true }
 signal-primitives = { workspace = true }

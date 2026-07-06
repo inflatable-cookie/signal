@@ -249,6 +249,8 @@ Work:
   prototype metrics against the draft baseline
 - [x] add a linked mid/side stereo stretch path for the OfflineHighQuality
   prototype so stereo metrics no longer rely on independent left/right renders
+- [x] add independent pitch-shift composition for OfflineHighQuality prototype
+  mono and linked stereo paths using Signal's band-limited resampler plus stretch
 - [ ] wire OfflineHighQuality artifacts into render/export/freeze only after
   corpus evidence beats the draft baseline
 - [ ] add Pulse/Aura contract changes only for product-visible mode, ratio,
@@ -284,9 +286,8 @@ Work:
 
 ## Next Task
 
-Continue the Signal DSP quality batch by adding pitch-shift composition for
-the OfflineHighQuality prototype using stretch plus resample, then move to
-dynamic-ratio automation. Use the synthetic comparison report to track whether
-the linked stereo path improves image metrics, and keep render/export/freeze
-wiring blocked until the tier is no longer prototype-only and an accepted
-`StretchPromotionReceipt` exists.
+Continue the Signal DSP quality batch by adding dynamic-ratio automation for
+the OfflineHighQuality prototype, then feed tempo-ramp evidence into the
+synthetic comparison report. Keep render/export/freeze wiring blocked until
+the tier is no longer prototype-only and an accepted `StretchPromotionReceipt`
+exists.

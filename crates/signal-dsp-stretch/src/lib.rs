@@ -68,7 +68,8 @@ pub use promotion::{StretchPromotionReceipt, StretchPromotionStatus};
 use phase_vocoder::{
     phase_vocoder, transient_reset_phase_vocoder, transient_reset_phase_vocoder_linked_stereo,
 };
-use signal_primitives::Sample;
+use signal_dsp_resample::{resample_mono, ResampleConfig, ResampleQuality};
+use signal_primitives::{Sample, SampleRate};
 
 /// Quality tier of a stretch backend (memo 013 vocabulary). One tier exists
 /// today; real-time and offline production tiers land with the library
@@ -335,6 +336,65 @@ impl OfflineHighQualityStretcher {
             self.analysis_hop,
         )
     }
+
+    /// Apply independent pitch shift and tempo stretch to one mono buffer.
+    ///
+    /// `pitch_shift_semitones` changes pitch without changing the final
+    /// duration target. The current [`Self::ratio`] remains the tempo/output
+    /// duration contract, so output length is
+    /// `round(input.len() as f64 * self.ratio)`.
+    pub fn stretch_pitch_mono(
+        &mut self,
+        input: &[Sample],
+        sample_rate: SampleRate,
+        pitch_shift_semitones: f64,
+    ) -> Vec<Sample> {
+        let target_len = (input.len() as f64 * self.ratio).round() as usize;
+        if input.is_empty() || target_len == 0 {
+            return Vec::new();
+        }
+        if pitch_shift_semitones.abs() < 1.0e-9 || sample_rate.0 == 0 {
+            return self.stretch_mono(input);
+        }
+
+        let pitched = pitch_shift_mono_to_nominal_rate(input, sample_rate, pitch_shift_semitones);
+        stretch_to_exact_mono(
+            &pitched,
+            target_len,
+            self.window_size,
+            self.analysis_hop,
+            transient_reset_phase_vocoder,
+        )
+    }
+
+    /// Apply independent pitch shift and tempo stretch to interleaved stereo.
+    ///
+    /// Pitch shift is composed through linked mid/side resampling, then the
+    /// linked OfflineHighQuality stereo stretcher restores the requested tempo
+    /// duration. A trailing odd sample is ignored.
+    pub fn stretch_pitch_interleaved_stereo(
+        &mut self,
+        frames: &[Sample],
+        sample_rate: SampleRate,
+        pitch_shift_semitones: f64,
+    ) -> Vec<Sample> {
+        let frame_count = frames.len() / 2;
+        let target_frames = (frame_count as f64 * self.ratio).round() as usize;
+        if frame_count == 0 || target_frames == 0 {
+            return Vec::new();
+        }
+        let even_frames = &frames[..frame_count * 2];
+        if pitch_shift_semitones.abs() < 1.0e-9 || sample_rate.0 == 0 {
+            return self.stretch_interleaved_stereo(even_frames);
+        }
+
+        let pitched = pitch_shift_interleaved_stereo_to_nominal_rate(
+            even_frames,
+            sample_rate,
+            pitch_shift_semitones,
+        );
+        stretch_to_exact_linked_stereo(&pitched, target_frames, self.window_size, self.analysis_hop)
+    }
 }
 
 impl TimeStretcher for OfflineHighQualityStretcher {
@@ -452,6 +512,113 @@ fn stretch_mono_with_engine(
         return linear_time_scale(input, target_len);
     }
     engine(input, target_len, ratio, window_size, analysis_hop)
+}
+
+fn stretch_to_exact_mono(
+    input: &[Sample],
+    target_len: usize,
+    window_size: usize,
+    analysis_hop: usize,
+    engine: fn(&[Sample], usize, f64, usize, usize) -> Vec<Sample>,
+) -> Vec<Sample> {
+    if input.is_empty() || target_len == 0 {
+        return Vec::new();
+    }
+    let ratio = target_len as f64 / input.len() as f64;
+    if (ratio - 1.0).abs() < 1.0e-9 {
+        let mut output = input.to_vec();
+        output.resize(target_len, 0.0);
+        return output;
+    }
+    if input.len() < window_size {
+        return linear_time_scale(input, target_len);
+    }
+    engine(input, target_len, ratio, window_size, analysis_hop)
+}
+
+fn stretch_to_exact_linked_stereo(
+    input: &[Sample],
+    target_frames: usize,
+    window_size: usize,
+    analysis_hop: usize,
+) -> Vec<Sample> {
+    let frame_count = input.len() / 2;
+    if frame_count == 0 || target_frames == 0 {
+        return Vec::new();
+    }
+    let ratio = target_frames as f64 / frame_count as f64;
+    if (ratio - 1.0).abs() < 1.0e-9 {
+        let mut output = input[..frame_count * 2].to_vec();
+        output.resize(target_frames * 2, 0.0);
+        return output;
+    }
+    if frame_count < window_size {
+        return linear_time_scale_interleaved_stereo(&input[..frame_count * 2], target_frames);
+    }
+    transient_reset_phase_vocoder_linked_stereo(
+        &input[..frame_count * 2],
+        target_frames,
+        ratio,
+        window_size,
+        analysis_hop,
+    )
+}
+
+fn pitch_shift_mono_to_nominal_rate(
+    input: &[Sample],
+    sample_rate: SampleRate,
+    semitones: f64,
+) -> Vec<Sample> {
+    let Some(config) = pitch_shift_resample_config(sample_rate, semitones) else {
+        return input.to_vec();
+    };
+    resample_mono(config, input)
+}
+
+fn pitch_shift_interleaved_stereo_to_nominal_rate(
+    input: &[Sample],
+    sample_rate: SampleRate,
+    semitones: f64,
+) -> Vec<Sample> {
+    let frame_count = input.len() / 2;
+    let Some(config) = pitch_shift_resample_config(sample_rate, semitones) else {
+        return input[..frame_count * 2].to_vec();
+    };
+
+    let mut mid = Vec::with_capacity(frame_count);
+    let mut side = Vec::with_capacity(frame_count);
+    for frame in input[..frame_count * 2].chunks_exact(2) {
+        let left = frame[0];
+        let right = frame[1];
+        mid.push((left + right) * 0.5);
+        side.push((left - right) * 0.5);
+    }
+    let mid = resample_mono(config, &mid);
+    let side = resample_mono(config, &side);
+    let out_frames = mid.len().min(side.len());
+    let mut output = Vec::with_capacity(out_frames * 2);
+    for index in 0..out_frames {
+        output.push(mid[index] + side[index]);
+        output.push(mid[index] - side[index]);
+    }
+    output
+}
+
+fn pitch_shift_resample_config(sample_rate: SampleRate, semitones: f64) -> Option<ResampleConfig> {
+    if sample_rate.0 == 0 || !semitones.is_finite() || semitones.abs() < 1.0e-9 {
+        return None;
+    }
+    let factor = 2.0f64.powf(semitones / 12.0);
+    if !factor.is_finite() || factor <= 0.0 {
+        return None;
+    }
+    let virtual_input_rate =
+        ((sample_rate.0 as f64 * factor).round()).clamp(1.0, u32::MAX as f64) as u32;
+    Some(ResampleConfig::new(
+        SampleRate(virtual_input_rate),
+        sample_rate,
+        ResampleQuality::BandLimited,
+    ))
 }
 
 #[cfg(test)]
@@ -646,6 +813,59 @@ mod tests {
             first.stretch_interleaved_stereo(&frames),
             repeated.stretch_interleaved_stereo(&frames)
         );
+    }
+
+    #[test]
+    fn offline_high_quality_pitch_shift_preserves_tempo_length_contract() {
+        let input = sine(440.0, 48_000.0, 48_000);
+        for (ratio, semitones) in [(1.0, 12.0), (1.5, -7.0), (0.75, 5.0)] {
+            let mut stretcher = OfflineHighQualityStretcher::new(ratio);
+            let output = stretcher.stretch_pitch_mono(&input, SampleRate(48_000), semitones);
+
+            assert_eq!(
+                output.len(),
+                (input.len() as f64 * ratio).round() as usize,
+                "ratio {ratio}, semitones {semitones}"
+            );
+        }
+    }
+
+    #[test]
+    fn offline_high_quality_pitch_shift_raises_tonal_pitch() {
+        let sample_rate = 48_000.0;
+        let input = sine(440.0, sample_rate, 48_000);
+        let mut stretcher = OfflineHighQualityStretcher::new(1.0);
+
+        let output = stretcher.stretch_pitch_mono(&input, SampleRate(48_000), 12.0);
+        let frequency = dominant_frequency_hz(&output, sample_rate);
+
+        assert_eq!(output.len(), input.len());
+        assert!(
+            (frequency - 880.0).abs() < 35.0,
+            "expected pitch near 880 Hz, got {frequency} Hz"
+        );
+    }
+
+    #[test]
+    fn offline_high_quality_pitch_shift_stereo_is_exact_and_deterministic() {
+        let sample_rate = 48_000.0;
+        let left = sine(220.0, sample_rate, 48_000);
+        let right = sine(440.0, sample_rate, 48_000);
+        let mut frames = Vec::with_capacity(left.len() * 2);
+        for (l, r) in left.iter().zip(right.iter()) {
+            frames.push(*l);
+            frames.push(*r);
+        }
+
+        let mut first = OfflineHighQualityStretcher::new(1.25);
+        let mut repeated = OfflineHighQualityStretcher::new(1.25);
+        let first_output =
+            first.stretch_pitch_interleaved_stereo(&frames, SampleRate(48_000), -5.0);
+        let repeated_output =
+            repeated.stretch_pitch_interleaved_stereo(&frames, SampleRate(48_000), -5.0);
+
+        assert_eq!(first_output.len(), (48_000f64 * 1.25).round() as usize * 2);
+        assert_eq!(first_output, repeated_output);
     }
 
     #[test]
