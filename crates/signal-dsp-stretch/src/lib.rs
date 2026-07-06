@@ -34,6 +34,7 @@
 #![warn(missing_docs)]
 
 mod benchmark;
+mod cache_identity;
 mod phase_vocoder;
 
 pub use benchmark::{
@@ -48,6 +49,11 @@ pub use benchmark::{
     StretchCorpusSource, StretchLoopBoundaryMeasurement, StretchMetric, StretchMetricAssessment,
     StretchMetricLimit, StretchMetricValue, StretchStereoImageMeasurement, StretchSyntheticAudio,
     StretchTransientEvent, StretchTransientSmearMeasurement, STRETCH_BENCHMARK_CORPUS,
+};
+pub use cache_identity::{
+    StretchCacheIdentity, StretchCacheIdentityError, StretchCacheIdentityInput,
+    StretchChannelLayout, StretchPitchPoint, StretchRatioPoint, StretchWarpMarker,
+    SIGNAL_STRETCH_ENGINE_VERSION, STRETCH_CACHE_IDENTITY_SCHEMA_VERSION,
 };
 
 use phase_vocoder::phase_vocoder;

@@ -230,12 +230,12 @@ Work:
 
 ### Slice 4: Render, Cache, And Loophole Contracts
 
-Status: blocked on Chorus generation rollover
-Repos: `signal`, `pulse`, `aura`, `chorus` if product contracts widen
+Status: in progress
+Repos: `signal`; Loophole integration planning happens later in Chorus
 
 Work:
 
-- [ ] define cache identity for engine version, tier, content hash,
+- [x] define cache identity for engine version, tier, content hash,
   ratio/pitch curves, warp markers, channel layout, and projection epoch
 - [ ] wire OfflineHighQuality artifacts into render/export/freeze only after
   corpus evidence beats the draft baseline
@@ -267,10 +267,12 @@ Work:
   benchmark, with no source dependency or copied implementation.
 - Exports, freezes, previews, and warp-marker renders share one engine
   vocabulary and cache identity model.
-- g13 planning has ready cards for DSP prototype, corpus harness, render/cache
-  integration, and Loophole-facing contract updates.
+- Loophole-facing integration planning is recorded in Chorus only when a
+  product workflow consumes the Signal-owned contract.
 
 ## Next Task
 
-Stop Signal-local stretch batches here until Chorus generation rollover opens
-Slice 4 render/cache contract work.
+Continue Slice 4 in Signal by adding a render/export artifact-planning seam
+that consumes `StretchCacheIdentityInput` without promoting
+`OfflineHighQuality` to product-facing use before corpus evidence beats the
+draft baseline.
