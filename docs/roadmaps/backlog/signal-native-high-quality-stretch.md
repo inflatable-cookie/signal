@@ -270,6 +270,8 @@ Work:
   candidate evidence, clearing the 0.5x loop-click priority row
 - [x] set transient-smear comparison tolerance to one sample frame so the
   synthetic priority report remains driven by actionable quality regressions
+- [x] add synthetic report threshold policy that converts the empty-priority
+  comparison report into accepted or rejected `StretchPromotionReceipt` evidence
 - [ ] wire OfflineHighQuality artifacts into render/export/freeze only after
   corpus evidence beats the draft baseline
 - [ ] add Pulse/Aura contract changes only for product-visible mode, ratio,
@@ -306,8 +308,8 @@ Work:
 ## Next Task
 
 Continue the Signal DSP quality batch by turning the synthetic comparison
-report into a promotion-readiness loop: with the current synthetic priority
-report empty, add accepted-threshold policy for the synthetic report and use it
-to produce the next `StretchPromotionReceipt` evidence shape. Keep
-render/export/freeze wiring blocked until the tier is no longer prototype-only
-and an accepted `StretchPromotionReceipt` exists.
+report into a promotion-readiness loop: use the accepted synthetic
+`StretchPromotionReceipt` shape to gate OfflineHighQuality artifact wiring, then
+add the first render/export/freeze integration only where the receipt is
+explicitly accepted. Keep broader Pulse/Aura contract changes deferred until a
+product workflow consumes the Signal-owned contract.

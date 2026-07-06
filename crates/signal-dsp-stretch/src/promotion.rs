@@ -1,4 +1,7 @@
-use crate::StretchBackendTier;
+use crate::{
+    prioritize_stretch_quality_work, StretchBackendTier, StretchBenchmarkComparisonOutcome,
+    StretchSyntheticBenchmarkComparisonReport,
+};
 
 /// Promotion decision for a Signal-owned stretch tier.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -28,6 +31,30 @@ pub struct StretchPromotionReceipt {
     pub required_case_count: u32,
     /// Operator or CI note associated with the decision.
     pub note: String,
+}
+
+/// Acceptance policy for synthetic OfflineHighQuality promotion evidence.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct StretchSyntheticPromotionPolicy {
+    /// Minimum number of comparison rows required in the synthetic report.
+    pub min_comparison_count: usize,
+    /// Maximum allowed regressed comparison rows.
+    pub max_regressed_count: usize,
+    /// Maximum allowed inconclusive comparison rows.
+    pub max_inconclusive_count: usize,
+    /// Maximum allowed quality-priority rows derived from the report.
+    pub max_priority_count: usize,
+}
+
+impl Default for StretchSyntheticPromotionPolicy {
+    fn default() -> Self {
+        Self {
+            min_comparison_count: 27,
+            max_regressed_count: 0,
+            max_inconclusive_count: 0,
+            max_priority_count: 0,
+        }
+    }
 }
 
 impl StretchPromotionReceipt {
@@ -79,6 +106,50 @@ impl StretchPromotionReceipt {
         }
     }
 
+    /// Build an OfflineHighQuality promotion receipt from the synthetic
+    /// comparison report and acceptance policy.
+    pub fn from_synthetic_offline_high_quality_report(
+        evidence_id: impl Into<String>,
+        report: &StretchSyntheticBenchmarkComparisonReport,
+        policy: StretchSyntheticPromotionPolicy,
+    ) -> Self {
+        let evidence_id = evidence_id.into();
+        let passed_count = report
+            .comparisons
+            .iter()
+            .filter(|comparison| {
+                matches!(
+                    comparison.outcome,
+                    StretchBenchmarkComparisonOutcome::Improved
+                        | StretchBenchmarkComparisonOutcome::Unchanged
+                )
+            })
+            .count() as u32;
+        let required_count = policy.min_comparison_count as u32;
+        let priorities =
+            prioritize_stretch_quality_work(report, policy.max_priority_count.saturating_add(1));
+
+        let rejection_note = if evidence_id.is_empty() {
+            Some("synthetic promotion evidence id is empty")
+        } else if report.comparisons.len() < policy.min_comparison_count {
+            Some("synthetic promotion report did not meet required comparison coverage")
+        } else if report.regressed_count > policy.max_regressed_count {
+            Some("synthetic promotion report has regressed comparison rows")
+        } else if report.inconclusive_count > policy.max_inconclusive_count {
+            Some("synthetic promotion report has inconclusive comparison rows")
+        } else if priorities.len() > policy.max_priority_count {
+            Some("synthetic promotion report has open quality priorities")
+        } else {
+            None
+        };
+
+        if let Some(note) = rejection_note {
+            Self::rejected_offline_high_quality(evidence_id, passed_count, required_count, note)
+        } else {
+            Self::accepted_offline_high_quality(evidence_id, passed_count, required_count)
+        }
+    }
+
     /// Whether this receipt allows product-facing use for `tier`.
     pub fn accepts_product_facing_use(&self, tier: StretchBackendTier) -> bool {
         self.tier == tier
@@ -122,6 +193,7 @@ impl Default for StretchPromotionReceipt {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::compare_synthetic_stretch_backends;
 
     #[test]
     fn accepted_offline_high_quality_receipt_allows_product_use() {
@@ -154,6 +226,48 @@ mod tests {
         assert_eq!(
             mismatched.product_facing_blocker(StretchBackendTier::RealtimePreview),
             Some("promotion receipt tier does not match artifact tier")
+        );
+    }
+
+    #[test]
+    fn synthetic_report_policy_accepts_current_offline_high_quality_evidence() {
+        let report = compare_synthetic_stretch_backends();
+        let receipt = StretchPromotionReceipt::from_synthetic_offline_high_quality_report(
+            "synthetic:current",
+            &report,
+            StretchSyntheticPromotionPolicy::default(),
+        );
+
+        assert_eq!(receipt.status, StretchPromotionStatus::Accepted);
+        assert_eq!(receipt.passed_case_count, report.comparisons.len() as u32);
+        assert_eq!(
+            receipt.required_case_count,
+            StretchSyntheticPromotionPolicy::default().min_comparison_count as u32
+        );
+        assert!(receipt.accepts_product_facing_use(StretchBackendTier::OfflineHighQuality));
+    }
+
+    #[test]
+    fn synthetic_report_policy_rejects_missing_coverage() {
+        let report = compare_synthetic_stretch_backends();
+        let policy = StretchSyntheticPromotionPolicy {
+            min_comparison_count: report.comparisons.len() + 1,
+            ..StretchSyntheticPromotionPolicy::default()
+        };
+        let receipt = StretchPromotionReceipt::from_synthetic_offline_high_quality_report(
+            "synthetic:short",
+            &report,
+            policy,
+        );
+
+        assert_eq!(receipt.status, StretchPromotionStatus::Rejected);
+        assert_eq!(
+            receipt.note,
+            "synthetic promotion report did not meet required comparison coverage"
+        );
+        assert_eq!(
+            receipt.product_facing_blocker(StretchBackendTier::OfflineHighQuality),
+            Some("promotion evidence has not accepted product-facing use")
         );
     }
 }

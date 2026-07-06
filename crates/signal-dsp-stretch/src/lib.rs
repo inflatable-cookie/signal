@@ -67,7 +67,9 @@ pub use cache_identity::{
     StretchChannelLayout, StretchPitchPoint, StretchRatioPoint, StretchWarpMarker,
     SIGNAL_STRETCH_ENGINE_VERSION, STRETCH_CACHE_IDENTITY_SCHEMA_VERSION,
 };
-pub use promotion::{StretchPromotionReceipt, StretchPromotionStatus};
+pub use promotion::{
+    StretchPromotionReceipt, StretchPromotionStatus, StretchSyntheticPromotionPolicy,
+};
 
 use phase_vocoder::{
     phase_vocoder, transient_reset_phase_vocoder, transient_reset_phase_vocoder_linked_stereo,
