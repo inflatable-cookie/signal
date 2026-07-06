@@ -1,4 +1,6 @@
-use signal_dsp_stretch::{StretchBackendTier, StretchCacheIdentityInput};
+use signal_dsp_stretch::{
+    StretchBackendTier, StretchCacheIdentityInput, StretchPromotionReceipt, StretchPromotionStatus,
+};
 
 /// Offline destination that may consume a stretch artifact.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -37,8 +39,8 @@ pub struct RuntimeOfflineStretchArtifactPlanRegistration {
     pub scope: RuntimeOfflineStretchArtifactScope,
     /// Cache identity input shared with render/export planning.
     pub identity_input: StretchCacheIdentityInput,
-    /// Whether corpus evidence has accepted product-facing use.
-    pub corpus_evidence_accepted: bool,
+    /// Promotion evidence associated with this artifact plan.
+    pub promotion_receipt: StretchPromotionReceipt,
 }
 
 /// Runtime-owned observation receipt for one offline stretch artifact plan.
@@ -60,6 +62,16 @@ pub struct RuntimeOfflineStretchArtifactPlanSnapshot {
     pub cache_identity_key: Option<String>,
     /// Current runtime-owned readiness.
     pub readiness: RuntimeOfflineStretchArtifactReadiness,
+    /// Promotion decision from the attached receipt.
+    pub promotion_status: StretchPromotionStatus,
+    /// Stable evidence or benchmark run identifier.
+    pub promotion_evidence_id: Option<String>,
+    /// Number of corpus cases accepted by the promotion evidence.
+    pub promotion_passed_case_count: u32,
+    /// Number of required corpus cases in the promotion evidence.
+    pub promotion_required_case_count: u32,
+    /// Whether the promotion evidence compared against the draft baseline.
+    pub promotion_compared_to_draft_baseline: bool,
     /// Whether the artifact is allowed to feed product-facing output.
     pub product_facing_allowed: bool,
     /// Validation or promotion-blocking reason.

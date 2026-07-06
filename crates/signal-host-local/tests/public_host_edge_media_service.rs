@@ -10,7 +10,8 @@ use signal_runtime::{
     RuntimeObservationApi, RuntimeOfflineStretchArtifactPlanRegistration,
     RuntimeOfflineStretchArtifactReadiness, RuntimeOfflineStretchArtifactScope,
     RuntimeSupervisorApi, SignalRuntime, StretchBackendTier, StretchCacheIdentityInput,
-    StretchChannelLayout, StretchPitchPoint, StretchRatioPoint, StretchWarpMarker,
+    StretchChannelLayout, StretchPitchPoint, StretchPromotionReceipt, StretchPromotionStatus,
+    StretchRatioPoint, StretchWarpMarker,
 };
 
 #[test]
@@ -160,7 +161,11 @@ fn local_shared_host_edge_exports_offline_stretch_artifact_receipts() {
             media_asset_id: Some("asset:host-offline-hq".into()),
             scope: RuntimeOfflineStretchArtifactScope::Freeze,
             identity_input,
-            corpus_evidence_accepted: true,
+            promotion_receipt: StretchPromotionReceipt::accepted_offline_high_quality(
+                "stretch-corpus:host-local",
+                8,
+                8,
+            ),
         },
     ])
     .expect("host should forward offline stretch artifact plans");
@@ -176,6 +181,14 @@ fn local_shared_host_edge_exports_offline_stretch_artifact_receipts() {
         plan.readiness,
         RuntimeOfflineStretchArtifactReadiness::AwaitingImplementation
     );
+    assert_eq!(plan.promotion_status, StretchPromotionStatus::Accepted);
+    assert_eq!(
+        plan.promotion_evidence_id.as_deref(),
+        Some("stretch-corpus:host-local")
+    );
+    assert_eq!(plan.promotion_passed_case_count, 8);
+    assert_eq!(plan.promotion_required_case_count, 8);
+    assert!(plan.promotion_compared_to_draft_baseline);
     assert!(!plan.product_facing_allowed);
     assert_eq!(
         plan.cache_identity_hash.as_deref(),

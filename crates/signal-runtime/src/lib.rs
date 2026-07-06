@@ -84,5 +84,5 @@ pub use sandbox_broker_support::{
 };
 pub use signal_dsp_stretch::{
     StretchBackendTier, StretchCacheIdentityInput, StretchChannelLayout, StretchPitchPoint,
-    StretchRatioPoint, StretchWarpMarker,
+    StretchPromotionReceipt, StretchPromotionStatus, StretchRatioPoint, StretchWarpMarker,
 };

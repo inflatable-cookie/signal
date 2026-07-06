@@ -36,6 +36,7 @@
 mod benchmark;
 mod cache_identity;
 mod phase_vocoder;
+mod promotion;
 
 pub use benchmark::{
     assess_stretch_metrics, compare_sustained_material_coherence, detect_stretch_transients,
@@ -55,6 +56,7 @@ pub use cache_identity::{
     StretchChannelLayout, StretchPitchPoint, StretchRatioPoint, StretchWarpMarker,
     SIGNAL_STRETCH_ENGINE_VERSION, STRETCH_CACHE_IDENTITY_SCHEMA_VERSION,
 };
+pub use promotion::{StretchPromotionReceipt, StretchPromotionStatus};
 
 use phase_vocoder::phase_vocoder;
 use signal_primitives::Sample;

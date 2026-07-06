@@ -64,6 +64,13 @@ fn snapshot_plan(
             cache_identity_hash: None,
             cache_identity_key: None,
             readiness: RuntimeOfflineStretchArtifactReadiness::Invalid,
+            promotion_status: registration.promotion_receipt.status,
+            promotion_evidence_id: promotion_evidence_id(&registration.promotion_receipt),
+            promotion_passed_case_count: registration.promotion_receipt.passed_case_count,
+            promotion_required_case_count: registration.promotion_receipt.required_case_count,
+            promotion_compared_to_draft_baseline: registration
+                .promotion_receipt
+                .compared_to_draft_baseline,
             product_facing_allowed: false,
             last_error: Some(format!(
                 "offline stretch artifacts require OfflineHighQuality, got {:?}",
@@ -91,20 +98,37 @@ fn snapshot_plan(
             cache_identity_hash,
             cache_identity_key,
             readiness: RuntimeOfflineStretchArtifactReadiness::Invalid,
+            promotion_status: registration.promotion_receipt.status,
+            promotion_evidence_id: promotion_evidence_id(&registration.promotion_receipt),
+            promotion_passed_case_count: registration.promotion_receipt.passed_case_count,
+            promotion_required_case_count: registration.promotion_receipt.required_case_count,
+            promotion_compared_to_draft_baseline: registration
+                .promotion_receipt
+                .compared_to_draft_baseline,
             product_facing_allowed: false,
             last_error: Some(error),
         };
     }
 
     let backend = stretch_backend_plan(registration.identity_input.tier);
-    let (readiness, last_error) = match (backend.status, registration.corpus_evidence_accepted) {
+    let promotion_accepted = registration
+        .promotion_receipt
+        .accepts_product_facing_use(registration.identity_input.tier);
+    let promotion_blocker = registration
+        .promotion_receipt
+        .product_facing_blocker(registration.identity_input.tier);
+    let (readiness, last_error) = match (backend.status, promotion_accepted) {
         (StretchBackendStatus::Planned, _) => (
             RuntimeOfflineStretchArtifactReadiness::AwaitingImplementation,
             Some("OfflineHighQuality is not implemented yet".to_string()),
         ),
         (StretchBackendStatus::Implemented, false) => (
             RuntimeOfflineStretchArtifactReadiness::AwaitingCorpusEvidence,
-            Some("OfflineHighQuality corpus evidence has not accepted promotion".to_string()),
+            Some(
+                promotion_blocker
+                    .unwrap_or("OfflineHighQuality corpus evidence has not accepted promotion")
+                    .to_string(),
+            ),
         ),
         (StretchBackendStatus::Implemented, true) => {
             (RuntimeOfflineStretchArtifactReadiness::Ready, None)
@@ -120,7 +144,22 @@ fn snapshot_plan(
         cache_identity_hash,
         cache_identity_key,
         readiness,
+        promotion_status: registration.promotion_receipt.status,
+        promotion_evidence_id: promotion_evidence_id(&registration.promotion_receipt),
+        promotion_passed_case_count: registration.promotion_receipt.passed_case_count,
+        promotion_required_case_count: registration.promotion_receipt.required_case_count,
+        promotion_compared_to_draft_baseline: registration
+            .promotion_receipt
+            .compared_to_draft_baseline,
         product_facing_allowed: readiness == RuntimeOfflineStretchArtifactReadiness::Ready,
         last_error,
+    }
+}
+
+fn promotion_evidence_id(receipt: &signal_dsp_stretch::StretchPromotionReceipt) -> Option<String> {
+    if receipt.evidence_id.is_empty() {
+        None
+    } else {
+        Some(receipt.evidence_id.clone())
     }
 }

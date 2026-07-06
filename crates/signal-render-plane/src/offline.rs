@@ -18,7 +18,7 @@ use crate::{
 };
 use signal_dsp_stretch::{
     stretch_backend_plan, StretchBackendStatus, StretchBackendTier, StretchCacheIdentity,
-    StretchCacheIdentityError, StretchCacheIdentityInput,
+    StretchCacheIdentityError, StretchCacheIdentityInput, StretchPromotionReceipt,
 };
 
 /// Default block quantum for offline rendering.
@@ -99,6 +99,8 @@ pub struct OfflineStretchArtifactPlan {
     pub tier: StretchBackendTier,
     /// Current implementation/evidence readiness.
     pub readiness: OfflineStretchArtifactReadiness,
+    /// Promotion evidence associated with this artifact plan.
+    pub promotion_receipt: StretchPromotionReceipt,
     /// Whether the artifact is allowed to feed product-facing render/export output.
     pub product_facing_allowed: bool,
 }
@@ -137,7 +139,7 @@ impl std::error::Error for OfflineStretchArtifactPlanError {}
 pub fn plan_offline_stretch_artifact(
     scope: OfflineStretchArtifactScope,
     identity_input: &StretchCacheIdentityInput,
-    corpus_evidence_accepted: bool,
+    promotion_receipt: StretchPromotionReceipt,
 ) -> Result<OfflineStretchArtifactPlan, OfflineStretchArtifactPlanError> {
     if identity_input.tier != StretchBackendTier::OfflineHighQuality {
         return Err(OfflineStretchArtifactPlanError::UnsupportedTier(
@@ -148,7 +150,8 @@ pub fn plan_offline_stretch_artifact(
         .identity()
         .map_err(OfflineStretchArtifactPlanError::InvalidIdentity)?;
     let backend = stretch_backend_plan(identity_input.tier);
-    let readiness = match (backend.status, corpus_evidence_accepted) {
+    let promotion_accepted = promotion_receipt.accepts_product_facing_use(identity_input.tier);
+    let readiness = match (backend.status, promotion_accepted) {
         (StretchBackendStatus::Planned, _) => {
             OfflineStretchArtifactReadiness::AwaitingImplementation
         }
@@ -163,6 +166,7 @@ pub fn plan_offline_stretch_artifact(
         identity,
         tier: identity_input.tier,
         readiness,
+        promotion_receipt,
         product_facing_allowed: readiness == OfflineStretchArtifactReadiness::Ready,
     })
 }
@@ -371,7 +375,8 @@ mod tests {
         RenderSource, RenderStageKind, RenderStageSpec,
     };
     use signal_dsp_stretch::{
-        StretchChannelLayout, StretchPitchPoint, StretchRatioPoint, StretchWarpMarker,
+        StretchChannelLayout, StretchPitchPoint, StretchPromotionReceipt, StretchRatioPoint,
+        StretchWarpMarker,
     };
     use std::sync::Arc;
 
@@ -477,8 +482,11 @@ mod tests {
     #[test]
     fn stretch_artifact_plan_materializes_identity_without_promotion() {
         let input = stretch_identity_input();
-        let plan = plan_offline_stretch_artifact(OfflineStretchArtifactScope::Export, &input, true)
-            .expect("artifact plan");
+        let promotion =
+            StretchPromotionReceipt::accepted_offline_high_quality("stretch-corpus:accepted", 8, 8);
+        let plan =
+            plan_offline_stretch_artifact(OfflineStretchArtifactScope::Export, &input, promotion)
+                .expect("artifact plan");
 
         assert_eq!(plan.scope, OfflineStretchArtifactScope::Export);
         assert_eq!(plan.tier, StretchBackendTier::OfflineHighQuality);
@@ -486,6 +494,9 @@ mod tests {
             plan.readiness,
             OfflineStretchArtifactReadiness::AwaitingImplementation
         );
+        assert!(plan
+            .promotion_receipt
+            .accepts_product_facing_use(StretchBackendTier::OfflineHighQuality));
         assert!(!plan.product_facing_allowed);
         assert!(plan
             .identity
@@ -501,13 +512,16 @@ mod tests {
             projection_epoch: "projection-43".to_string(),
             ..stretch_identity_input()
         };
-        let base_plan =
-            plan_offline_stretch_artifact(OfflineStretchArtifactScope::RenderCache, &input, false)
-                .expect("artifact plan");
+        let base_plan = plan_offline_stretch_artifact(
+            OfflineStretchArtifactScope::RenderCache,
+            &input,
+            StretchPromotionReceipt::default(),
+        )
+        .expect("artifact plan");
         let changed_plan = plan_offline_stretch_artifact(
             OfflineStretchArtifactScope::RenderCache,
             &changed,
-            false,
+            StretchPromotionReceipt::default(),
         )
         .expect("artifact plan");
 
@@ -535,13 +549,21 @@ mod tests {
         );
 
         assert_eq!(
-            plan_offline_stretch_artifact(OfflineStretchArtifactScope::Export, &preview, true),
+            plan_offline_stretch_artifact(
+                OfflineStretchArtifactScope::Export,
+                &preview,
+                StretchPromotionReceipt::accepted_offline_high_quality("stretch-corpus:ok", 8, 8),
+            ),
             Err(OfflineStretchArtifactPlanError::UnsupportedTier(
                 StretchBackendTier::RealtimePreview
             ))
         );
         assert_eq!(
-            plan_offline_stretch_artifact(OfflineStretchArtifactScope::Freeze, &repitch, true),
+            plan_offline_stretch_artifact(
+                OfflineStretchArtifactScope::Freeze,
+                &repitch,
+                StretchPromotionReceipt::accepted_offline_high_quality("stretch-corpus:ok", 8, 8),
+            ),
             Err(OfflineStretchArtifactPlanError::UnsupportedTier(
                 StretchBackendTier::Repitch
             ))

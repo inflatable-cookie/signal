@@ -9,8 +9,8 @@ use signal_runtime::{
     RuntimeLifecycleApi, RuntimeMediaPreviewState, RuntimeObservationApi, RuntimeObservationReport,
     RuntimeOfflineStretchArtifactPlanRegistration, RuntimeOfflineStretchArtifactReadiness,
     RuntimeOfflineStretchArtifactScope, RuntimeSupervisorReport, SignalRuntime, StretchBackendTier,
-    StretchCacheIdentityInput, StretchChannelLayout, StretchPitchPoint, StretchRatioPoint,
-    StretchWarpMarker,
+    StretchCacheIdentityInput, StretchChannelLayout, StretchPitchPoint, StretchPromotionReceipt,
+    StretchPromotionStatus, StretchRatioPoint, StretchWarpMarker,
 };
 
 #[test]
@@ -166,7 +166,11 @@ fn public_runtime_reports_offline_stretch_artifact_plan_receipts_without_promoti
                 media_asset_id: Some("asset:offline-hq".into()),
                 scope: RuntimeOfflineStretchArtifactScope::Export,
                 identity_input: accepted_plan.clone(),
-                corpus_evidence_accepted: true,
+                promotion_receipt: StretchPromotionReceipt::accepted_offline_high_quality(
+                    "stretch-corpus:public-runtime",
+                    8,
+                    8,
+                ),
             },
             RuntimeOfflineStretchArtifactPlanRegistration {
                 plan_id: "stretch-plan:preview".into(),
@@ -174,7 +178,11 @@ fn public_runtime_reports_offline_stretch_artifact_plan_receipts_without_promoti
                 media_asset_id: Some("asset:preview".into()),
                 scope: RuntimeOfflineStretchArtifactScope::RenderCache,
                 identity_input: invalid_tier,
-                corpus_evidence_accepted: true,
+                promotion_receipt: StretchPromotionReceipt::accepted_offline_high_quality(
+                    "stretch-corpus:public-runtime",
+                    8,
+                    8,
+                ),
             },
         ])
         .expect("offline stretch artifact plans should reconcile");
@@ -201,6 +209,17 @@ fn public_runtime_reports_offline_stretch_artifact_plan_receipts_without_promoti
         RuntimeOfflineStretchArtifactReadiness::AwaitingImplementation
     );
     assert!(!offline_plan.product_facing_allowed);
+    assert_eq!(
+        offline_plan.promotion_status,
+        StretchPromotionStatus::Accepted
+    );
+    assert_eq!(
+        offline_plan.promotion_evidence_id.as_deref(),
+        Some("stretch-corpus:public-runtime")
+    );
+    assert_eq!(offline_plan.promotion_passed_case_count, 8);
+    assert_eq!(offline_plan.promotion_required_case_count, 8);
+    assert!(offline_plan.promotion_compared_to_draft_baseline);
     assert_eq!(
         offline_plan.cache_identity_hash.as_deref(),
         Some(expected_hash.as_str())

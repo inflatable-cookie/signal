@@ -241,6 +241,8 @@ Work:
   identity while keeping product-facing promotion gated
 - [x] add runtime/export receipt seam that observes offline stretch artifact
   plans through observation and host supervisor reports
+- [x] add explicit corpus-evidence promotion receipt for OfflineHighQuality so
+  artifact planning no longer uses a boolean placeholder
 - [ ] wire OfflineHighQuality artifacts into render/export/freeze only after
   corpus evidence beats the draft baseline
 - [ ] add Pulse/Aura contract changes only for product-visible mode, ratio,
@@ -276,6 +278,7 @@ Work:
 
 ## Next Task
 
-Continue Slice 4 in Signal by adding an explicit corpus-evidence promotion
-receipt for OfflineHighQuality so render/export/freeze wiring has a typed
-gate instead of a boolean placeholder.
+Continue Slice 4 in Signal by keeping render/export/freeze wiring blocked
+until `OfflineHighQuality` has an implemented DSP path and an accepted
+`StretchPromotionReceipt`; the next implementation batch should return to DSP
+quality depth rather than product-facing wiring.
