@@ -42,17 +42,21 @@ mod phase_vocoder;
 mod promotion;
 
 pub use benchmark::{
-    assess_stretch_metrics, compare_sustained_material_coherence, detect_stretch_transients,
-    format_stretch_acceptance_report, generate_synthetic_stretch_audio,
-    measure_draft_loop_boundary_click, measure_draft_stereo_image_delta,
-    measure_draft_transient_smear, measure_loop_boundary_click, measure_stereo_image_delta,
-    measure_transient_reset_loop_boundary_click, measure_transient_reset_stereo_image_delta,
-    measure_transient_reset_transient_smear, measure_transient_smear, output_length_drift_samples,
-    synthetic_stretch_corpus_cases, StretchAcceptanceReport, StretchAcceptanceSeverity,
-    StretchAcceptanceStatus, StretchCoherenceComparison, StretchCorpusCase, StretchCorpusFamily,
-    StretchCorpusSource, StretchLoopBoundaryMeasurement, StretchMetric, StretchMetricAssessment,
-    StretchMetricLimit, StretchMetricValue, StretchStereoImageMeasurement, StretchSyntheticAudio,
-    StretchTransientEvent, StretchTransientSmearMeasurement, STRETCH_BENCHMARK_CORPUS,
+    assess_stretch_metrics, compare_sustained_material_coherence,
+    compare_synthetic_stretch_backends, detect_stretch_transients,
+    format_stretch_acceptance_report, format_synthetic_stretch_comparison_report,
+    generate_synthetic_stretch_audio, measure_draft_loop_boundary_click,
+    measure_draft_stereo_image_delta, measure_draft_transient_smear, measure_loop_boundary_click,
+    measure_stereo_image_delta, measure_transient_reset_loop_boundary_click,
+    measure_transient_reset_stereo_image_delta, measure_transient_reset_transient_smear,
+    measure_transient_smear, output_length_drift_samples, synthetic_stretch_corpus_cases,
+    StretchAcceptanceReport, StretchAcceptanceSeverity, StretchAcceptanceStatus,
+    StretchBenchmarkBackend, StretchBenchmarkComparisonOutcome, StretchCoherenceComparison,
+    StretchCorpusCase, StretchCorpusFamily, StretchCorpusSource, StretchLoopBoundaryMeasurement,
+    StretchMetric, StretchMetricAssessment, StretchMetricLimit, StretchMetricValue,
+    StretchStereoImageMeasurement, StretchSyntheticAudio, StretchSyntheticBenchmarkComparison,
+    StretchSyntheticBenchmarkComparisonReport, StretchTransientEvent,
+    StretchTransientSmearMeasurement, STRETCH_BENCHMARK_CORPUS,
 };
 pub use cache_identity::{
     StretchCacheIdentity, StretchCacheIdentityError, StretchCacheIdentityInput,
@@ -640,6 +644,63 @@ mod tests {
             assert_eq!(audio.samples.len() % audio.channels as usize, 0);
             assert!(audio.samples.iter().any(|sample| sample.abs() > 0.01));
         }
+    }
+
+    #[test]
+    fn synthetic_backend_comparison_covers_all_synthetic_cases() {
+        let report = compare_synthetic_stretch_backends();
+
+        assert_eq!(report.comparisons.len(), 20);
+        assert_eq!(
+            report.improved_count
+                + report.regressed_count
+                + report.unchanged_count
+                + report.inconclusive_count,
+            report.comparisons.len()
+        );
+        for comparison in &report.comparisons {
+            assert_eq!(comparison.baseline_backend, StretchBenchmarkBackend::Draft);
+            assert_eq!(
+                comparison.candidate_backend,
+                StretchBenchmarkBackend::OfflineHighQualityPrototype
+            );
+            assert!(comparison.ratio.is_finite());
+            assert!(comparison.ratio > 0.0);
+            assert!(matches!(
+                comparison.case_id,
+                "stretch:tempo_ramp" | "stretch:loop_seam" | "stretch:extreme_ratio"
+            ));
+        }
+        assert!(report.comparisons.iter().any(|comparison| {
+            comparison.case_id == "stretch:tempo_ramp"
+                && comparison.metric == StretchMetric::TimingDriftSamples
+        }));
+        assert!(report.comparisons.iter().any(|comparison| {
+            comparison.case_id == "stretch:loop_seam"
+                && comparison.metric == StretchMetric::LoopBoundaryClickDbfs
+        }));
+        assert!(report.comparisons.iter().any(|comparison| {
+            comparison.case_id == "stretch:loop_seam"
+                && comparison.metric == StretchMetric::StereoImageDelta
+        }));
+        assert!(report.comparisons.iter().any(|comparison| {
+            comparison.case_id == "stretch:extreme_ratio"
+                && comparison.metric == StretchMetric::TransientSmearFrames
+        }));
+    }
+
+    #[test]
+    fn synthetic_backend_comparison_report_formats_deterministically() {
+        let report = compare_synthetic_stretch_backends();
+        let formatted = format_synthetic_stretch_comparison_report(&report);
+        let repeated = format_synthetic_stretch_comparison_report(&report);
+
+        assert_eq!(formatted, repeated);
+        assert!(formatted.starts_with("synthetic_stretch_comparison improved="));
+        assert!(formatted.contains("case=stretch:tempo_ramp"));
+        assert!(formatted.contains("metric=TimingDriftSamples"));
+        assert!(formatted.contains("offline_hq="));
+        assert!(formatted.contains("outcome="));
     }
 
     #[test]

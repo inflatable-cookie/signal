@@ -245,6 +245,8 @@ Work:
   artifact planning no longer uses a boolean placeholder
 - [x] expose an OfflineHighQuality prototype DSP path over the transient-reset,
   identity-locked phase-vocoder foundation while keeping promotion blocked
+- [x] add synthetic corpus comparison reporting for OfflineHighQuality
+  prototype metrics against the draft baseline
 - [ ] wire OfflineHighQuality artifacts into render/export/freeze only after
   corpus evidence beats the draft baseline
 - [ ] add Pulse/Aura contract changes only for product-visible mode, ratio,
@@ -280,9 +282,9 @@ Work:
 
 ## Next Task
 
-Continue the Signal DSP quality batch by benchmarking
-`OfflineHighQualityStretcher` against the draft baseline across the synthetic
-corpus, then close the next quality gaps: linked stereo synthesis, pitch-shift
-composition, and dynamic-ratio automation. Keep render/export/freeze wiring
-blocked until the tier is no longer prototype-only and an accepted
-`StretchPromotionReceipt` exists.
+Continue the Signal DSP quality batch by using the synthetic comparison report
+to guide the next algorithmic gap. Start with linked stereo synthesis so image
+metrics can improve without relying on independent per-channel processing,
+then move to pitch-shift composition and dynamic-ratio automation. Keep
+render/export/freeze wiring blocked until the tier is no longer prototype-only
+and an accepted `StretchPromotionReceipt` exists.

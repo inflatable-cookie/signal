@@ -220,6 +220,70 @@ impl StretchMetricValue {
     }
 }
 
+/// Benchmark backend identity used for draft-vs-prototype comparison reports.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum StretchBenchmarkBackend {
+    /// Current independent-bin phase-vocoder baseline.
+    Draft,
+    /// OfflineHighQuality prototype path: identity phase locking plus
+    /// transient phase resets.
+    OfflineHighQualityPrototype,
+}
+
+/// Direction of one metric comparison. All stretch metrics in this harness are
+/// lower-is-better.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum StretchBenchmarkComparisonOutcome {
+    /// The prototype value is lower than the draft value.
+    Improved,
+    /// The prototype value is higher than the draft value.
+    Regressed,
+    /// The values are equal within the report tolerance.
+    Unchanged,
+    /// One or both values were not finite.
+    Inconclusive,
+}
+
+/// One synthetic-corpus metric comparison between Draft and OfflineHighQuality
+/// prototype output.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct StretchSyntheticBenchmarkComparison {
+    /// Corpus case identifier.
+    pub case_id: &'static str,
+    /// Output/input duration ratio measured.
+    pub ratio: f64,
+    /// Metric identity.
+    pub metric: StretchMetric,
+    /// Baseline backend measured.
+    pub baseline_backend: StretchBenchmarkBackend,
+    /// Candidate backend measured.
+    pub candidate_backend: StretchBenchmarkBackend,
+    /// Draft baseline value.
+    pub draft_value: f64,
+    /// OfflineHighQuality prototype value.
+    pub offline_high_quality_value: f64,
+    /// Candidate minus draft. Negative means improvement.
+    pub delta: f64,
+    /// Direction of the comparison.
+    pub outcome: StretchBenchmarkComparisonOutcome,
+}
+
+/// Aggregate synthetic-corpus comparison report for the OfflineHighQuality
+/// prototype against the draft baseline.
+#[derive(Clone, Debug, PartialEq)]
+pub struct StretchSyntheticBenchmarkComparisonReport {
+    /// Per-case, per-ratio, per-metric comparisons.
+    pub comparisons: Vec<StretchSyntheticBenchmarkComparison>,
+    /// Number of improved metric comparisons.
+    pub improved_count: usize,
+    /// Number of regressed metric comparisons.
+    pub regressed_count: usize,
+    /// Number of unchanged metric comparisons.
+    pub unchanged_count: usize,
+    /// Number of inconclusive metric comparisons.
+    pub inconclusive_count: usize,
+}
+
 /// Draft-vs-prototype sustained-material coherence measurement.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct StretchCoherenceComparison {
@@ -619,6 +683,81 @@ pub fn measure_transient_reset_stereo_image_delta(ratio: f64) -> StretchStereoIm
     measure_stereo_image_delta(&input.samples, &output, ratio)
 }
 
+/// Compare the OfflineHighQuality prototype against the draft baseline across
+/// all repository-local synthetic stretch corpus cases.
+///
+/// This is a measurement report, not a promotion decision. It intentionally
+/// includes both improvements and regressions so later promotion work can tune
+/// thresholds from evidence.
+pub fn compare_synthetic_stretch_backends() -> StretchSyntheticBenchmarkComparisonReport {
+    let mut comparisons = Vec::new();
+
+    for case in STRETCH_BENCHMARK_CORPUS
+        .iter()
+        .filter(|case| case.source == StretchCorpusSource::Synthetic)
+    {
+        for ratio in case.ratios {
+            comparisons.push(compare_metric(
+                case.case_id,
+                *ratio,
+                StretchMetric::TimingDriftSamples,
+                measure_synthetic_length_drift(case.family, *ratio, phase_vocoder),
+                measure_synthetic_length_drift(case.family, *ratio, transient_reset_phase_vocoder),
+            ));
+
+            match case.family {
+                StretchCorpusFamily::LoopSeam => {
+                    comparisons.push(compare_metric(
+                        case.case_id,
+                        *ratio,
+                        StretchMetric::LoopBoundaryClickDbfs,
+                        measure_draft_loop_boundary_click(*ratio).metric.value,
+                        measure_transient_reset_loop_boundary_click(*ratio)
+                            .metric
+                            .value,
+                    ));
+                    comparisons.push(compare_metric(
+                        case.case_id,
+                        *ratio,
+                        StretchMetric::StereoImageDelta,
+                        measure_draft_stereo_image_delta(*ratio).metric.value,
+                        measure_transient_reset_stereo_image_delta(*ratio)
+                            .metric
+                            .value,
+                    ));
+                }
+                StretchCorpusFamily::ExtremeRatio => {
+                    comparisons.push(compare_metric(
+                        case.case_id,
+                        *ratio,
+                        StretchMetric::TransientSmearFrames,
+                        measure_draft_transient_smear(*ratio).metric.value,
+                        measure_transient_reset_transient_smear(*ratio).metric.value,
+                    ));
+                }
+                _ => {}
+            }
+        }
+    }
+
+    let mut report = StretchSyntheticBenchmarkComparisonReport {
+        comparisons,
+        improved_count: 0,
+        regressed_count: 0,
+        unchanged_count: 0,
+        inconclusive_count: 0,
+    };
+    for comparison in &report.comparisons {
+        match comparison.outcome {
+            StretchBenchmarkComparisonOutcome::Improved => report.improved_count += 1,
+            StretchBenchmarkComparisonOutcome::Regressed => report.regressed_count += 1,
+            StretchBenchmarkComparisonOutcome::Unchanged => report.unchanged_count += 1,
+            StretchBenchmarkComparisonOutcome::Inconclusive => report.inconclusive_count += 1,
+        }
+    }
+    report
+}
+
 /// Upper-bound limit for a stretch benchmark metric.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct StretchMetricLimit {
@@ -713,6 +852,93 @@ pub fn format_stretch_acceptance_report(case_id: &str, report: &StretchAcceptanc
         ));
     }
     lines.join("\n")
+}
+
+/// Deterministic line-oriented report for synthetic draft-vs-prototype
+/// benchmark comparisons.
+pub fn format_synthetic_stretch_comparison_report(
+    report: &StretchSyntheticBenchmarkComparisonReport,
+) -> String {
+    let mut lines = Vec::with_capacity(report.comparisons.len() + 1);
+    lines.push(format!(
+        "synthetic_stretch_comparison improved={} regressed={} unchanged={} inconclusive={}",
+        report.improved_count,
+        report.regressed_count,
+        report.unchanged_count,
+        report.inconclusive_count
+    ));
+    for comparison in &report.comparisons {
+        lines.push(format!(
+            "case={} ratio={:.6} metric={:?} draft={:.6} offline_hq={:.6} delta={:.6} outcome={:?}",
+            comparison.case_id,
+            comparison.ratio,
+            comparison.metric,
+            comparison.draft_value,
+            comparison.offline_high_quality_value,
+            comparison.delta,
+            comparison.outcome
+        ));
+    }
+    lines.join("\n")
+}
+
+fn compare_metric(
+    case_id: &'static str,
+    ratio: f64,
+    metric: StretchMetric,
+    draft_value: f64,
+    offline_high_quality_value: f64,
+) -> StretchSyntheticBenchmarkComparison {
+    let delta = offline_high_quality_value - draft_value;
+    let outcome = if !draft_value.is_finite()
+        || !offline_high_quality_value.is_finite()
+        || !delta.is_finite()
+    {
+        StretchBenchmarkComparisonOutcome::Inconclusive
+    } else if delta < -1.0e-9 {
+        StretchBenchmarkComparisonOutcome::Improved
+    } else if delta > 1.0e-9 {
+        StretchBenchmarkComparisonOutcome::Regressed
+    } else {
+        StretchBenchmarkComparisonOutcome::Unchanged
+    };
+
+    StretchSyntheticBenchmarkComparison {
+        case_id,
+        ratio,
+        metric,
+        baseline_backend: StretchBenchmarkBackend::Draft,
+        candidate_backend: StretchBenchmarkBackend::OfflineHighQualityPrototype,
+        draft_value,
+        offline_high_quality_value,
+        delta,
+        outcome,
+    }
+}
+
+fn measure_synthetic_length_drift(
+    family: StretchCorpusFamily,
+    ratio: f64,
+    stretcher: fn(&[Sample], usize, f64, usize, usize) -> Vec<Sample>,
+) -> f64 {
+    let Some(input) = generate_synthetic_stretch_audio(family) else {
+        return f64::NAN;
+    };
+    if !ratio.is_finite() || ratio <= 0.0 {
+        return f64::NAN;
+    }
+
+    let input_frames = input.frame_count();
+    let output_frames = match input.channels {
+        1 => {
+            let target_len = (input_frames as f64 * ratio).round() as usize;
+            stretcher(&input.samples, target_len, ratio, 2_048, 512).len()
+        }
+        2 => stretch_stereo_synthetic(&input, ratio, stretcher).len() / 2,
+        _ => return f64::NAN,
+    };
+
+    output_length_drift_samples(input_frames, output_frames, ratio)
 }
 
 fn synthetic_tempo_ramp() -> StretchSyntheticAudio {
