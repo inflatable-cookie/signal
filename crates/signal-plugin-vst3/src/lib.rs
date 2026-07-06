@@ -218,7 +218,7 @@ mod tests {
     }
 
     #[test]
-    fn vst3_adapter_skips_bundles_without_moduleinfo() {
+    fn vst3_adapter_skips_bundles_without_metadata_or_binary() {
         let adapter = Vst3HostAdapter::default();
         let root = temp_plugin_root("metadata-required");
         let bundle = root.join("Signal Missing Moduleinfo.vst3");

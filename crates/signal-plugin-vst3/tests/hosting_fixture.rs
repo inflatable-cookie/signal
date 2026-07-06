@@ -193,3 +193,39 @@ fn discovery_reports_the_fixture_with_an_empty_scan_time_inventory() {
         "scan-time VST3 inventory must be empty (real inventory at load)",
     );
 }
+
+#[test]
+fn discovery_falls_back_to_factory_when_moduleinfo_is_missing() {
+    if !rustc_available() {
+        eprintln!("skipping: rustc unavailable for the VST3 fixture");
+        return;
+    }
+    let directory = unique_fixture_dir("discovery-fallback");
+    let bundle = compile_vst3_fixture(
+        &directory.path,
+        "plugin:vst3:signal-fixture-fallback",
+        "Signal VST3 Fixture Fallback",
+    )
+    .expect("fixture should compile");
+    std::fs::remove_file(
+        bundle
+            .join("Contents")
+            .join("Resources")
+            .join("moduleinfo.json"),
+    )
+    .expect("moduleinfo should be removable");
+
+    let adapter = Vst3HostAdapter::default();
+    let discovered = adapter.discover_plugins_for_roots(
+        current_vst3_platform(),
+        &[directory.path.display().to_string()],
+    );
+
+    assert_eq!(discovered.len(), 1);
+    let plugin = &discovered[0];
+    assert_eq!(
+        plugin.plugin_type_id.0,
+        "plugin:vst3:signal-fixture-fallback"
+    );
+    assert_eq!(plugin.class_id, VST3_FIXTURE_CLASS_ID_HEX);
+}

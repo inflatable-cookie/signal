@@ -4,9 +4,13 @@ use signal_plugin::{
     PluginProcessingContract, PluginStateContract,
 };
 use std::{
+    ffi::{c_char, c_void, CString},
     fs, io,
     path::{Path, PathBuf},
 };
+
+#[cfg(not(target_os = "macos"))]
+use libloading::Library;
 
 pub(crate) const VST3_MODULEINFO_FILE: &str = "moduleinfo.json";
 
@@ -92,6 +96,179 @@ struct ModuleInfoClass {
     version: Option<String>,
     #[serde(rename = "Sub Categories", default)]
     subcategories: Vec<String>,
+}
+
+#[repr(C)]
+struct RawPluginFactory {
+    vtable: *const PluginFactoryVTable,
+}
+
+#[repr(C)]
+struct PluginFactoryVTable {
+    query_interface: unsafe extern "C" fn(*mut c_void, *const c_void, *mut *mut c_void) -> i32,
+    add_ref: unsafe extern "C" fn(*mut c_void) -> u32,
+    release: unsafe extern "C" fn(*mut c_void) -> u32,
+    get_factory_info: unsafe extern "C" fn(*mut c_void, *mut PFactoryInfo) -> i32,
+    count_classes: unsafe extern "C" fn(*mut c_void) -> i32,
+    get_class_info: unsafe extern "C" fn(*mut c_void, i32, *mut PClassInfo) -> i32,
+    create_instance:
+        unsafe extern "C" fn(*mut c_void, *const u8, *const c_void, *mut *mut c_void) -> i32,
+}
+
+#[repr(C)]
+struct PFactoryInfo {
+    vendor: [c_char; 64],
+    url: [c_char; 256],
+    email: [c_char; 128],
+    flags: i32,
+}
+
+#[repr(C)]
+struct PClassInfo {
+    cid: [u8; 16],
+    cardinality: i32,
+    category: [c_char; 32],
+    name: [c_char; 64],
+}
+
+type EntryProc = unsafe extern "C" fn(*mut c_void) -> bool;
+type ExitProc = unsafe extern "C" fn();
+type GetPluginFactoryProc = unsafe extern "C" fn() -> *mut c_void;
+
+#[cfg(target_os = "macos")]
+mod macos_bundle {
+    use super::*;
+
+    type CFAllocatorRef = *const c_void;
+    type CFStringRef = *const c_void;
+    type CFURLRef = *const c_void;
+    type CFBundleRef = *mut c_void;
+
+    #[link(name = "CoreFoundation", kind = "framework")]
+    extern "C" {
+        static kCFAllocatorDefault: CFAllocatorRef;
+        fn CFBundleCreate(allocator: CFAllocatorRef, bundleURL: CFURLRef) -> CFBundleRef;
+        fn CFBundleGetFunctionPointerForName(
+            bundle: CFBundleRef,
+            functionName: CFStringRef,
+        ) -> *mut c_void;
+        fn CFBundleLoadExecutable(bundle: CFBundleRef) -> u8;
+        fn CFRelease(cf: *const c_void);
+        fn CFStringCreateWithCString(
+            alloc: CFAllocatorRef,
+            cStr: *const c_char,
+            encoding: u32,
+        ) -> CFStringRef;
+        fn CFURLCreateWithFileSystemPath(
+            allocator: CFAllocatorRef,
+            filePath: CFStringRef,
+            pathStyle: isize,
+            isDirectory: u8,
+        ) -> CFURLRef;
+    }
+
+    const K_CF_STRING_ENCODING_UTF8: u32 = 0x0800_0100;
+    const K_CF_URL_POSIX_PATH_STYLE: isize = 0;
+
+    pub(super) struct MacVst3Bundle {
+        bundle: CFBundleRef,
+    }
+
+    impl MacVst3Bundle {
+        pub(super) fn load(bundle_root: &Path) -> io::Result<Self> {
+            let path = bundle_root
+                .to_str()
+                .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "invalid VST3 path"))?;
+            let path_c = CString::new(path)
+                .map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "invalid VST3 path"))?;
+            unsafe {
+                let path_string = CFStringCreateWithCString(
+                    kCFAllocatorDefault,
+                    path_c.as_ptr(),
+                    K_CF_STRING_ENCODING_UTF8,
+                );
+                if path_string.is_null() {
+                    return Err(io::Error::new(
+                        io::ErrorKind::InvalidData,
+                        "invalid VST3 path",
+                    ));
+                }
+                let bundle_url = CFURLCreateWithFileSystemPath(
+                    kCFAllocatorDefault,
+                    path_string,
+                    K_CF_URL_POSIX_PATH_STYLE,
+                    1,
+                );
+                CFRelease(path_string);
+                if bundle_url.is_null() {
+                    return Err(io::Error::new(
+                        io::ErrorKind::InvalidData,
+                        "invalid VST3 bundle URL",
+                    ));
+                }
+                let bundle = CFBundleCreate(kCFAllocatorDefault, bundle_url);
+                CFRelease(bundle_url);
+                if bundle.is_null() {
+                    return Err(io::Error::new(
+                        io::ErrorKind::NotFound,
+                        "failed to open VST3 bundle",
+                    ));
+                }
+                if CFBundleLoadExecutable(bundle) == 0 {
+                    CFRelease(bundle);
+                    return Err(io::Error::other("failed to load VST3 bundle executable"));
+                }
+                Ok(Self { bundle })
+            }
+        }
+
+        pub(super) fn bundle_ref(&self) -> *mut c_void {
+            self.bundle.cast()
+        }
+
+        fn function_ptr(&self, name: &str) -> Option<*mut c_void> {
+            let name_c = CString::new(name).ok()?;
+            unsafe {
+                let name_string = CFStringCreateWithCString(
+                    kCFAllocatorDefault,
+                    name_c.as_ptr(),
+                    K_CF_STRING_ENCODING_UTF8,
+                );
+                if name_string.is_null() {
+                    return None;
+                }
+                let pointer = CFBundleGetFunctionPointerForName(self.bundle, name_string);
+                CFRelease(name_string);
+                (!pointer.is_null()).then_some(pointer)
+            }
+        }
+
+        pub(super) fn entry(&self) -> Option<EntryProc> {
+            self.function_ptr("bundleEntry")
+                .map(|pointer| unsafe { std::mem::transmute(pointer) })
+        }
+
+        pub(super) fn exit(&self) -> Option<ExitProc> {
+            self.function_ptr("bundleExit")
+                .map(|pointer| unsafe { std::mem::transmute(pointer) })
+        }
+
+        pub(super) fn factory(&self) -> Option<GetPluginFactoryProc> {
+            self.function_ptr("GetPluginFactory")
+                .map(|pointer| unsafe { std::mem::transmute(pointer) })
+        }
+    }
+
+    impl Drop for MacVst3Bundle {
+        fn drop(&mut self) {
+            unsafe {
+                // Objective-C classes registered by a plugin bundle cannot be
+                // unregistered safely, so discovery releases the bundle object
+                // without unloading executable code.
+                CFRelease(self.bundle);
+            }
+        }
+    }
 }
 
 pub(crate) fn read_vst3_bundle_snapshot(
@@ -252,7 +429,7 @@ fn read_vst3_bundle_info(bundle_root: &Path) -> io::Result<Vst3BundleInfo> {
 
 fn read_vst3_factory_snapshot(
     bundle_root: &Path,
-    _platform: Vst3HostPlatform,
+    platform: Vst3HostPlatform,
 ) -> io::Result<(Option<String>, Vec<Vst3FactoryClass>)> {
     if let Some(moduleinfo_path) = candidate_moduleinfo_paths(bundle_root)
         .into_iter()
@@ -295,10 +472,148 @@ fn read_vst3_factory_snapshot(
         }
         return Ok((vendor, classes));
     }
-    Err(io::Error::new(
-        io::ErrorKind::NotFound,
-        "VST3 moduleinfo.json is required for descriptor-only discovery",
-    ))
+    load_vst3_factory_classes_from_module(bundle_root, platform)
+}
+
+#[cfg(not(target_os = "macos"))]
+fn entry_symbol(platform: Vst3HostPlatform) -> &'static [u8] {
+    match platform {
+        Vst3HostPlatform::MacOs => b"bundleEntry\0",
+        Vst3HostPlatform::Linux => b"ModuleEntry\0",
+        Vst3HostPlatform::Windows => b"InitDll\0",
+    }
+}
+
+#[cfg(not(target_os = "macos"))]
+fn exit_symbol(platform: Vst3HostPlatform) -> &'static [u8] {
+    match platform {
+        Vst3HostPlatform::MacOs => b"bundleExit\0",
+        Vst3HostPlatform::Linux => b"ModuleExit\0",
+        Vst3HostPlatform::Windows => b"ExitDll\0",
+    }
+}
+
+#[cfg(target_os = "macos")]
+fn load_vst3_factory_classes_from_module(
+    bundle_root: &Path,
+    _platform: Vst3HostPlatform,
+) -> io::Result<(Option<String>, Vec<Vst3FactoryClass>)> {
+    let bundle = macos_bundle::MacVst3Bundle::load(bundle_root)?;
+    unsafe {
+        if let Some(entry) = bundle.entry() {
+            if !entry(bundle.bundle_ref()) {
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    "VST3 bundleEntry returned false",
+                ));
+            }
+        }
+        let get_plugin_factory = bundle.factory().ok_or_else(|| {
+            io::Error::new(io::ErrorKind::InvalidData, "VST3 GetPluginFactory missing")
+        })?;
+        let snapshot = read_factory_classes(get_plugin_factory());
+        if let Some(exit) = bundle.exit() {
+            exit();
+        }
+        snapshot
+    }
+}
+
+#[cfg(not(target_os = "macos"))]
+fn load_vst3_factory_classes_from_module(
+    bundle_root: &Path,
+    platform: Vst3HostPlatform,
+) -> io::Result<(Option<String>, Vec<Vst3FactoryClass>)> {
+    let module_path = resolve_module_binary_path(bundle_root, platform)?;
+    let library = unsafe { Library::new(&module_path) }.map_err(libloading_to_io)?;
+    unsafe {
+        if let Ok(entry) = library.get::<EntryProc>(entry_symbol(platform)) {
+            if !entry(std::ptr::null_mut()) {
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    "VST3 module entry returned false",
+                ));
+            }
+        }
+        let get_plugin_factory = library
+            .get::<GetPluginFactoryProc>(b"GetPluginFactory\0")
+            .map_err(libloading_to_io)?;
+        let snapshot = read_factory_classes(get_plugin_factory());
+        if let Ok(exit) = library.get::<ExitProc>(exit_symbol(platform)) {
+            exit();
+        }
+        snapshot
+    }
+}
+
+fn read_factory_classes(
+    factory_ptr: *mut c_void,
+) -> io::Result<(Option<String>, Vec<Vst3FactoryClass>)> {
+    if factory_ptr.is_null() {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "VST3 GetPluginFactory returned null",
+        ));
+    }
+
+    let factory = factory_ptr as *mut RawPluginFactory;
+    let vtable = unsafe { (*factory).vtable };
+    if vtable.is_null() {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "VST3 factory vtable was null",
+        ));
+    }
+
+    let mut factory_info = PFactoryInfo {
+        vendor: [0; 64],
+        url: [0; 256],
+        email: [0; 128],
+        flags: 0,
+    };
+    let vendor = if unsafe { ((*vtable).get_factory_info)(factory_ptr, &mut factory_info) } == 0 {
+        Some(c_char_array_to_string(&factory_info.vendor))
+    } else {
+        None
+    };
+
+    let class_count = unsafe { ((*vtable).count_classes)(factory_ptr) };
+    if class_count <= 0 {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "VST3 factory exposed no classes",
+        ));
+    }
+    let mut classes = Vec::new();
+    for index in 0..class_count {
+        let mut class_info = PClassInfo {
+            cid: [0; 16],
+            cardinality: 0,
+            category: [0; 32],
+            name: [0; 64],
+        };
+        if unsafe { ((*vtable).get_class_info)(factory_ptr, index, &mut class_info) } != 0 {
+            continue;
+        }
+        let category = c_char_array_to_string(&class_info.category);
+        classes.push(Vst3FactoryClass {
+            role: role_from_category(&category),
+            class_id: bytes_to_upper_hex(&class_info.cid),
+            category,
+            name: c_char_array_to_string(&class_info.name),
+            vendor: None,
+            version: None,
+            subcategories: Vec::new(),
+        });
+    }
+
+    if classes.is_empty() {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "VST3 factory exposed no readable classes",
+        ));
+    }
+    Ok((vendor.filter(|value| !value.is_empty()), classes))
 }
 
 fn candidate_info_plist_paths(bundle_root: &Path) -> Vec<PathBuf> {
@@ -527,8 +842,27 @@ fn parse_feature_list(raw: &str) -> io::Result<Vec<PluginFeature>> {
         .collect::<io::Result<Vec<_>>>()
 }
 
+fn bytes_to_upper_hex(bytes: &[u8]) -> String {
+    bytes.iter().map(|byte| format!("{byte:02X}")).collect()
+}
+
+fn c_char_array_to_string<const N: usize>(value: &[c_char; N]) -> String {
+    let bytes = value
+        .iter()
+        .copied()
+        .take_while(|byte| *byte != 0)
+        .map(|byte| byte as u8)
+        .collect::<Vec<_>>();
+    String::from_utf8_lossy(&bytes).trim().to_string()
+}
+
 fn plist_to_io_error(error: plist::Error) -> io::Error {
     io::Error::new(io::ErrorKind::InvalidData, error.to_string())
+}
+
+#[cfg(not(target_os = "macos"))]
+fn libloading_to_io(error: libloading::Error) -> io::Error {
+    io::Error::other(error.to_string())
 }
 
 impl Vst3FactoryClass {
