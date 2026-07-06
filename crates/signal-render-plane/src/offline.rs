@@ -379,7 +379,8 @@ mod tests {
         RenderSource, RenderStageKind, RenderStageSpec,
     };
     use signal_dsp_stretch::{
-        StretchChannelLayout, StretchPitchPoint, StretchPromotionReceipt, StretchRatioPoint,
+        compare_synthetic_stretch_backends, StretchChannelLayout, StretchPitchPoint,
+        StretchPromotionReceipt, StretchRatioPoint, StretchSyntheticPromotionPolicy,
         StretchWarpMarker,
     };
     use std::sync::Arc;
@@ -483,30 +484,52 @@ mod tests {
         .with_warp_markers(vec![StretchWarpMarker::new(0, 0)])
     }
 
+    fn accepted_synthetic_promotion_receipt(evidence_id: &str) -> StretchPromotionReceipt {
+        let report = compare_synthetic_stretch_backends();
+        StretchPromotionReceipt::from_synthetic_offline_high_quality_report(
+            evidence_id,
+            &report,
+            StretchSyntheticPromotionPolicy::default(),
+        )
+    }
+
     #[test]
-    fn stretch_artifact_plan_materializes_identity_without_promotion() {
+    fn stretch_artifact_plan_allows_export_with_accepted_synthetic_promotion() {
         let input = stretch_identity_input();
-        let promotion =
-            StretchPromotionReceipt::accepted_offline_high_quality("stretch-corpus:accepted", 8, 8);
+        let promotion = accepted_synthetic_promotion_receipt("synthetic:render-plane-current");
         let plan =
             plan_offline_stretch_artifact(OfflineStretchArtifactScope::Export, &input, promotion)
                 .expect("artifact plan");
 
         assert_eq!(plan.scope, OfflineStretchArtifactScope::Export);
         assert_eq!(plan.tier, StretchBackendTier::OfflineHighQuality);
-        assert_eq!(
-            plan.readiness,
-            OfflineStretchArtifactReadiness::AwaitingCorpusEvidence
-        );
+        assert_eq!(plan.readiness, OfflineStretchArtifactReadiness::Ready);
         assert!(plan
             .promotion_receipt
             .accepts_product_facing_use(StretchBackendTier::OfflineHighQuality));
-        assert!(!plan.product_facing_allowed);
+        assert!(plan.product_facing_allowed);
         assert!(plan
             .identity
             .canonical_key
             .contains("tier=OfflineHighQuality"));
         assert_eq!(plan.identity, input.identity().expect("same identity"));
+    }
+
+    #[test]
+    fn stretch_artifact_plan_blocks_export_without_accepted_promotion() {
+        let input = stretch_identity_input();
+        let plan = plan_offline_stretch_artifact(
+            OfflineStretchArtifactScope::Export,
+            &input,
+            StretchPromotionReceipt::default(),
+        )
+        .expect("artifact plan");
+
+        assert_eq!(
+            plan.readiness,
+            OfflineStretchArtifactReadiness::AwaitingCorpusEvidence
+        );
+        assert!(!plan.product_facing_allowed);
     }
 
     #[test]

@@ -272,6 +272,9 @@ Work:
   synthetic priority report remains driven by actionable quality regressions
 - [x] add synthetic report threshold policy that converts the empty-priority
   comparison report into accepted or rejected `StretchPromotionReceipt` evidence
+- [x] promote OfflineHighQuality artifact readiness from prototype-blocked to
+  product-facing `Ready` only when render/runtime/host plans carry accepted
+  promotion evidence
 - [ ] wire OfflineHighQuality artifacts into render/export/freeze only after
   corpus evidence beats the draft baseline
 - [ ] add Pulse/Aura contract changes only for product-visible mode, ratio,
@@ -308,8 +311,8 @@ Work:
 ## Next Task
 
 Continue the Signal DSP quality batch by turning the synthetic comparison
-report into a promotion-readiness loop: use the accepted synthetic
-`StretchPromotionReceipt` shape to gate OfflineHighQuality artifact wiring, then
-add the first render/export/freeze integration only where the receipt is
-explicitly accepted. Keep broader Pulse/Aura contract changes deferred until a
-product workflow consumes the Signal-owned contract.
+report into a promotion-readiness loop: materialize the first ready
+OfflineHighQuality stretch artifact for render-cache/freeze/export consumers,
+using the existing cache identity and `StretchPromotionReceipt` readiness gate.
+Keep broader Pulse/Aura contract changes deferred until a product workflow
+consumes the Signal-owned contract.

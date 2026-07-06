@@ -3,8 +3,8 @@
 //! The crate defines the abstract [`TimeStretcher`] contract — stretch audio
 //! in time without shifting pitch — and ships two offline backends this round:
 //! [`PhaseVocoderStretcher`], a dependency-light draft-quality phase vocoder,
-//! and [`OfflineHighQualityStretcher`], Signal's experimental offline-quality
-//! foundation for corpus benchmarking.
+//! and [`OfflineHighQualityStretcher`], Signal's offline-quality foundation
+//! for corpus-gated export, freeze, and cache artifacts.
 //!
 //! ## Signal-owned backend tiers
 //!
@@ -15,14 +15,16 @@
 //! - [`StretchBackendTier::RealtimePreview`]: bounded-latency pitch-preserving
 //!   preview stretch, planned.
 //! - [`StretchBackendTier::OfflineHighQuality`]: deterministic
-//!   export/cache/freeze stretch, planned as the quality reference tier.
+//!   export/cache/freeze stretch, implemented and promotion-gated as the
+//!   quality reference tier.
 //!
 //! The current [`PhaseVocoderStretcher`] remains [`StretchQuality::Draft`]: a
 //! plain Hann-windowed phase vocoder with NO phase locking and NO transient
 //! preservation. [`OfflineHighQualityStretcher`] uses identity phase locking
-//! and transient phase resets as the first clean-room Signal-owned foundation,
-//! but product-facing use remains blocked until corpus evidence accepts
-//! promotion. Rubber Band-class quality is the target for the planned
+//! and transient phase resets as the first clean-room Signal-owned foundation.
+//! Product-facing use remains blocked unless an accepted
+//! [`StretchPromotionReceipt`] is attached to the render/export/freeze
+//! artifact plan. Rubber Band-class quality is the target for the planned
 //! Signal-native tiers, but Rubber Band source is not an implementation input.
 //!
 //! ## Real-time posture
@@ -88,9 +90,8 @@ pub enum StretchQuality {
     /// Bounded-latency preview quality. Planned; not implemented by the
     /// current backend.
     RealtimePreview,
-    /// Highest-quality deterministic offline/export quality. A prototype
-    /// backend exists for corpus benchmarking; product-facing use is still
-    /// promotion-gated.
+    /// Highest-quality deterministic offline/export quality. Product-facing
+    /// use is still promotion-gated per artifact.
     OfflineHighQuality,
 }
 
@@ -101,8 +102,8 @@ pub enum StretchBackendTier {
     Repitch,
     /// Planned bounded-latency preview tier for live audition and playback.
     RealtimePreview,
-    /// Planned deterministic high-quality tier for exports, freeze, and
-    /// cached post-warp artifacts.
+    /// Deterministic high-quality tier for exports, freeze, and cached
+    /// post-warp artifacts.
     OfflineHighQuality,
 }
 
@@ -171,7 +172,7 @@ pub const SIGNAL_STRETCH_BACKEND_PLAN: [StretchBackendPlan; 3] = [
     },
     StretchBackendPlan {
         tier: StretchBackendTier::OfflineHighQuality,
-        status: StretchBackendStatus::Prototype,
+        status: StretchBackendStatus::Implemented,
         independent_tempo_and_pitch: true,
         dynamic_ratio: true,
         transient_preservation: true,
@@ -229,14 +230,13 @@ pub struct PhaseVocoderStretcher {
     analysis_hop: usize,
 }
 
-/// Experimental offline high-quality time-stretcher.
+/// Offline high-quality time-stretcher.
 ///
 /// This is the first Signal-owned offline-quality DSP path: a deterministic
 /// whole-buffer STFT stretcher with identity phase locking and transient phase
-/// resets. It is intentionally exposed as [`StretchQuality::OfflineHighQuality`]
-/// so the benchmark harness can exercise the target tier, but the backend plan
-/// remains [`StretchBackendStatus::Prototype`] until corpus evidence accepts
-/// promotion and the full offline contract is satisfied.
+/// resets. It is exposed as [`StretchQuality::OfflineHighQuality`] for
+/// export/cache/freeze artifact planning, while product-facing consumption is
+/// gated by accepted promotion evidence on each artifact plan.
 pub struct OfflineHighQualityStretcher {
     ratio: f64,
     window_size: usize,
@@ -1156,7 +1156,7 @@ mod tests {
         assert!(!preview.audio_thread_safe);
 
         let offline = stretch_backend_plan(StretchBackendTier::OfflineHighQuality);
-        assert_eq!(offline.status, StretchBackendStatus::Prototype);
+        assert_eq!(offline.status, StretchBackendStatus::Implemented);
         assert!(offline.transient_preservation);
         assert!(offline.vertical_phase_coherence);
         assert!(offline.deterministic_output);

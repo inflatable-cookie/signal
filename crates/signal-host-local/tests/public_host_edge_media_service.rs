@@ -173,13 +173,13 @@ fn local_shared_host_edge_exports_offline_stretch_artifact_receipts() {
     let report = host.supervisor_report();
     let snapshot = &report.observation.offline_stretch_artifact_plan_snapshot;
     assert_eq!(snapshot.plan_count, 1);
-    assert_eq!(snapshot.awaiting_corpus_evidence_count, 1);
-    assert_eq!(snapshot.ready_plan_count, 0);
+    assert_eq!(snapshot.awaiting_corpus_evidence_count, 0);
+    assert_eq!(snapshot.ready_plan_count, 1);
     let plan = &snapshot.plans[0];
     assert_eq!(plan.plan_id, "host-stretch-plan:offline-hq");
     assert_eq!(
         plan.readiness,
-        RuntimeOfflineStretchArtifactReadiness::AwaitingCorpusEvidence
+        RuntimeOfflineStretchArtifactReadiness::Ready
     );
     assert_eq!(plan.promotion_status, StretchPromotionStatus::Accepted);
     assert_eq!(
@@ -189,7 +189,7 @@ fn local_shared_host_edge_exports_offline_stretch_artifact_receipts() {
     assert_eq!(plan.promotion_passed_case_count, 8);
     assert_eq!(plan.promotion_required_case_count, 8);
     assert!(plan.promotion_compared_to_draft_baseline);
-    assert!(!plan.product_facing_allowed);
+    assert!(plan.product_facing_allowed);
     assert_eq!(
         plan.cache_identity_hash.as_deref(),
         Some(expected_hash.as_str())

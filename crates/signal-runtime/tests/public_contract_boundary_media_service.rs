@@ -136,7 +136,7 @@ fn public_runtime_media_service_boundary_reports_runtime_owned_readiness_and_inv
 }
 
 #[test]
-fn public_runtime_reports_offline_stretch_artifact_plan_receipts_without_promotion() {
+fn public_runtime_reports_offline_stretch_artifact_plan_receipts_with_promotion_gate() {
     let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
     let recorder = RuntimeEventRecorder::default();
     let accepted_plan = StretchCacheIdentityInput::signal_native(
@@ -192,9 +192,9 @@ fn public_runtime_reports_offline_stretch_artifact_plan_receipts_without_promoti
     let snapshot = &observation.offline_stretch_artifact_plan_snapshot;
 
     assert_eq!(snapshot.plan_count, 2);
-    assert_eq!(snapshot.awaiting_corpus_evidence_count, 1);
+    assert_eq!(snapshot.awaiting_corpus_evidence_count, 0);
     assert_eq!(snapshot.invalid_plan_count, 1);
-    assert_eq!(snapshot.ready_plan_count, 0);
+    assert_eq!(snapshot.ready_plan_count, 1);
     let offline_plan = snapshot
         .plans
         .iter()
@@ -206,9 +206,9 @@ fn public_runtime_reports_offline_stretch_artifact_plan_receipts_without_promoti
         .stable_hash;
     assert_eq!(
         offline_plan.readiness,
-        RuntimeOfflineStretchArtifactReadiness::AwaitingCorpusEvidence
+        RuntimeOfflineStretchArtifactReadiness::Ready
     );
-    assert!(!offline_plan.product_facing_allowed);
+    assert!(offline_plan.product_facing_allowed);
     assert_eq!(
         offline_plan.promotion_status,
         StretchPromotionStatus::Accepted
