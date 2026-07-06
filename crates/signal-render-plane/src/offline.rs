@@ -1064,6 +1064,62 @@ mod tests {
     }
 
     #[test]
+    fn policy_gated_artifact_sources_preserve_cache_identity_and_change_on_projection_or_curve() {
+        let input =
+            stretch_identity_input().with_ratio_curve(vec![StretchRatioPoint::new(0, 1.25)]);
+        let changed_projection = StretchCacheIdentityInput {
+            projection_epoch: "projection-43".to_string(),
+            ..input.clone()
+        };
+        let changed_curve = stretch_identity_input()
+            .with_ratio_curve(vec![StretchRatioPoint::new(0, 1.5)])
+            .with_pitch_curve(vec![StretchPitchPoint::new(0, 0.0)]);
+        let source = stretch_artifact_source(480);
+        let build = |identity_input: &StretchCacheIdentityInput| {
+            build_offline_stretch_artifact_render_source_with_synthetic_policy(
+                OfflineStretchArtifactBuildRequest {
+                    policy: OfflineStretchArtifactPolicyRequest {
+                        scope: OfflineStretchArtifactScope::RenderCache,
+                        identity_input,
+                        evidence_id: "synthetic:builder-cache-identity",
+                        promotion_policy: StretchSyntheticPromotionPolicy::default(),
+                    },
+                    source: &source,
+                },
+            )
+            .expect("accepted policy should produce cacheable render source")
+        };
+
+        let base = build(&input);
+        let repeated = build(&input);
+        let projection_changed = build(&changed_projection);
+        let curve_changed = build(&changed_curve);
+
+        assert_eq!(
+            base.artifact.receipt.cache_identity_hash,
+            repeated.artifact.receipt.cache_identity_hash
+        );
+        assert_eq!(
+            base.artifact.receipt.cache_identity_key,
+            repeated.artifact.receipt.cache_identity_key
+        );
+        assert_ne!(
+            base.artifact.receipt.cache_identity_hash,
+            projection_changed.artifact.receipt.cache_identity_hash
+        );
+        assert_ne!(
+            base.artifact.receipt.cache_identity_hash,
+            curve_changed.artifact.receipt.cache_identity_hash
+        );
+        assert_ne!(base.source, projection_changed.source);
+        assert_ne!(base.source, curve_changed.source);
+        assert_ne!(
+            base.artifact.output_frame_count,
+            curve_changed.artifact.output_frame_count
+        );
+    }
+
+    #[test]
     fn artifact_builder_gate_blocks_rejected_policy_without_product_buffer() {
         let input =
             stretch_identity_input().with_ratio_curve(vec![StretchRatioPoint::new(0, 1.25)]);
