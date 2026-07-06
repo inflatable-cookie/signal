@@ -281,6 +281,9 @@ Work:
 - [x] add render-plane materialization receipts and close the static pitch plus
   dynamic-ratio composition gap while keeping pitch automation explicitly
   unsupported
+- [x] surface materialized artifact receipts through Signal runtime/host
+  observation so planned and produced OfflineHighQuality artifact state report
+  together
 - [ ] wire OfflineHighQuality artifacts into render/export/freeze only after
   corpus evidence beats the draft baseline
 - [ ] add Pulse/Aura contract changes only for product-visible mode, ratio,
@@ -317,8 +320,7 @@ Work:
 ## Next Task
 
 Continue the Signal DSP quality batch by turning the synthetic comparison
-report into a promotion-readiness loop: surface materialized artifact receipts
-through Signal runtime/host observation so render-cache/freeze/export callers
-can report both planned and produced artifact state. Keep broader Pulse/Aura
-contract changes deferred until a product workflow consumes the Signal-owned
-contract.
+report into a promotion-readiness loop: consume the materialized artifact
+receipt path from the first render-cache/freeze/export workflow inside Signal,
+then leave Pulse/Aura contract planning for the point where a Loophole product
+workflow consumes the Signal-owned contract.

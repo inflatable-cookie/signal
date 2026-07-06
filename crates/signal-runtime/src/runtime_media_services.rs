@@ -71,4 +71,14 @@ impl SignalRuntime {
         self.offline_stretch_artifact_plans.reconcile_plans(plans);
         Ok(())
     }
+
+    /// Reconciles materialized offline stretch artifacts observed by render/export/freeze.
+    pub fn reconcile_offline_stretch_artifact_materializations(
+        &mut self,
+        artifacts: Vec<RuntimeOfflineStretchArtifactMaterializationRegistration>,
+    ) -> Result<(), RuntimeError> {
+        self.offline_stretch_artifact_plans
+            .reconcile_materialized_artifacts(artifacts);
+        Ok(())
+    }
 }

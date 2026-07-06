@@ -3,7 +3,10 @@ use std::fs;
 #[path = "support/public_contract_boundary_media.rs"]
 mod public_contract_boundary_media_support;
 
-use public_contract_boundary_media_support::{public_media_fixture_path, write_public_test_wav};
+use public_contract_boundary_media_support::{
+    public_media_fixture_path, public_offline_stretch_artifact_materialization,
+    write_public_test_wav,
+};
 use signal_runtime::{
     HandshakeRequest, RuntimeConfig, RuntimeConfigRequest, RuntimeEventRecorder,
     RuntimeLifecycleApi, RuntimeMediaPreviewState, RuntimeObservationApi, RuntimeObservationReport,
@@ -186,6 +189,11 @@ fn public_runtime_reports_offline_stretch_artifact_plan_receipts_with_promotion_
             },
         ])
         .expect("offline stretch artifact plans should reconcile");
+    let materialization = public_offline_stretch_artifact_materialization(&accepted_plan);
+    let expected_hash = materialization.cache_identity_hash.clone();
+    runtime
+        .reconcile_offline_stretch_artifact_materializations(vec![materialization])
+        .expect("offline stretch artifact materializations should reconcile");
 
     let observation = RuntimeObservationReport::capture(&runtime, &recorder);
     let supervisor = RuntimeSupervisorReport::capture(&runtime, &recorder);
@@ -200,10 +208,6 @@ fn public_runtime_reports_offline_stretch_artifact_plan_receipts_with_promotion_
         .iter()
         .find(|plan| plan.plan_id == "stretch-plan:offline-hq")
         .expect("offline high-quality plan should be present");
-    let expected_hash = accepted_plan
-        .identity()
-        .expect("identity should validate")
-        .stable_hash;
     assert_eq!(
         offline_plan.readiness,
         RuntimeOfflineStretchArtifactReadiness::Ready
@@ -224,6 +228,16 @@ fn public_runtime_reports_offline_stretch_artifact_plan_receipts_with_promotion_
         offline_plan.cache_identity_hash.as_deref(),
         Some(expected_hash.as_str())
     );
+    assert_eq!(snapshot.materialized_artifact_count, 1);
+    assert_eq!(snapshot.product_facing_materialized_artifact_count, 1);
+    let artifact = snapshot
+        .materialized_artifacts
+        .iter()
+        .find(|artifact| artifact.artifact_id == "stretch-artifact:offline-hq")
+        .expect("materialized offline high-quality artifact should be present");
+    assert_eq!(artifact.cache_identity_hash, expected_hash);
+    assert_eq!(artifact.output_frame_count, 72_000);
+    assert!(artifact.product_facing_allowed);
     let invalid_plan = snapshot
         .plans
         .iter()
@@ -241,7 +255,7 @@ fn public_runtime_reports_offline_stretch_artifact_plan_receipts_with_promotion_
         supervisor
             .observation
             .offline_stretch_artifact_plan_snapshot
-            .plan_count,
-        snapshot.plan_count
+            .materialized_artifact_count,
+        snapshot.materialized_artifact_count
     );
 }

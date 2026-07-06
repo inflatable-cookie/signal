@@ -44,6 +44,72 @@ pub struct RuntimeOfflineStretchArtifactPlanRegistration {
     pub promotion_receipt: StretchPromotionReceipt,
 }
 
+/// Registration for a runtime-observed materialized offline stretch artifact.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimeOfflineStretchArtifactMaterializationRegistration {
+    /// Stable materialized artifact identity supplied by the caller.
+    pub artifact_id: String,
+    /// Plan that produced this artifact.
+    pub plan_id: String,
+    /// Clip this artifact belongs to, if known.
+    pub clip_id: Option<String>,
+    /// Media asset this artifact belongs to, if known.
+    pub media_asset_id: Option<String>,
+    /// Consumer scope this artifact was materialized for.
+    pub scope: RuntimeOfflineStretchArtifactScope,
+    /// Signal stretch tier used to produce the artifact.
+    pub tier: StretchBackendTier,
+    /// Stable cache identity hash for the materialized artifact.
+    pub cache_identity_hash: String,
+    /// Canonical cache identity key for the materialized artifact.
+    pub cache_identity_key: String,
+    /// Accepted promotion evidence used for product-facing materialization.
+    pub promotion_evidence_id: String,
+    /// Source frame count consumed from the decoded source buffer.
+    pub input_frame_count: usize,
+    /// Output frame count produced for cache/export/freeze consumption.
+    pub output_frame_count: usize,
+    /// Output channel count.
+    pub channels: u16,
+    /// Output sample rate.
+    pub sample_rate_hz: u32,
+    /// Whether this materialized artifact may feed product-facing output.
+    pub product_facing_allowed: bool,
+}
+
+/// Runtime-owned observation receipt for one materialized offline stretch artifact.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimeOfflineStretchArtifactMaterializationSnapshot {
+    /// Stable materialized artifact identity supplied by the caller.
+    pub artifact_id: String,
+    /// Plan that produced this artifact.
+    pub plan_id: String,
+    /// Clip this artifact belongs to, if known.
+    pub clip_id: Option<String>,
+    /// Media asset this artifact belongs to, if known.
+    pub media_asset_id: Option<String>,
+    /// Consumer scope this artifact was materialized for.
+    pub scope: RuntimeOfflineStretchArtifactScope,
+    /// Signal stretch tier used to produce the artifact.
+    pub tier: StretchBackendTier,
+    /// Stable cache identity hash for the materialized artifact.
+    pub cache_identity_hash: String,
+    /// Canonical cache identity key for the materialized artifact.
+    pub cache_identity_key: String,
+    /// Accepted promotion evidence used for product-facing materialization.
+    pub promotion_evidence_id: String,
+    /// Source frame count consumed from the decoded source buffer.
+    pub input_frame_count: usize,
+    /// Output frame count produced for cache/export/freeze consumption.
+    pub output_frame_count: usize,
+    /// Output channel count.
+    pub channels: u16,
+    /// Output sample rate.
+    pub sample_rate_hz: u32,
+    /// Whether this materialized artifact may feed product-facing output.
+    pub product_facing_allowed: bool,
+}
+
 /// Runtime-owned observation receipt for one offline stretch artifact plan.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RuntimeOfflineStretchArtifactPlanSnapshot {
@@ -92,6 +158,12 @@ pub struct RuntimeOfflineStretchArtifactPlanSnapshotSet {
     pub awaiting_corpus_evidence_count: usize,
     /// Number of invalid plans.
     pub invalid_plan_count: usize,
+    /// Number of materialized artifacts observed by render/export/freeze.
+    pub materialized_artifact_count: usize,
+    /// Number of materialized artifacts allowed to feed product-facing output.
+    pub product_facing_materialized_artifact_count: usize,
     /// Per-plan receipts.
     pub plans: Vec<RuntimeOfflineStretchArtifactPlanSnapshot>,
+    /// Per-materialized-artifact receipts.
+    pub materialized_artifacts: Vec<RuntimeOfflineStretchArtifactMaterializationSnapshot>,
 }

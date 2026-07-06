@@ -9,6 +9,7 @@ use signal_runtime::{
     BackendPolicyOverride, PluginSandboxLifecycleStage, PluginSandboxSpec, PluginScanRequest,
     RuntimeClipProcessingRegistration, RuntimeError, RuntimeEventRecorder,
     RuntimeHostSupervisorReport, RuntimeMediaAssetRegistration, RuntimeObservationApi,
+    RuntimeOfflineStretchArtifactMaterializationRegistration,
     RuntimeOfflineStretchArtifactPlanRegistration, RuntimeRecordingCaptureCommitReceipt,
     RuntimeRecordingCaptureStartRequest, RuntimeSupervisorApi, RuntimeWarpClipRegistration,
     SignalRuntime,

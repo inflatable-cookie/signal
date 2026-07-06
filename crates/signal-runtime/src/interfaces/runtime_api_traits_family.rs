@@ -163,6 +163,11 @@ pub trait RuntimeSupervisorApi {
         &mut self,
         plans: Vec<RuntimeOfflineStretchArtifactPlanRegistration>,
     ) -> Result<(), RuntimeError>;
+    /// Reconciles the set of materialized offline stretch artifacts observed by render/export/freeze.
+    fn reconcile_offline_stretch_artifact_materializations(
+        &mut self,
+        artifacts: Vec<RuntimeOfflineStretchArtifactMaterializationRegistration>,
+    ) -> Result<(), RuntimeError>;
     /// Tears down the plugin sandbox with the given ID.
     fn teardown_plugin_sandbox(&mut self, sandbox_id: &str) -> Result<(), RuntimeError>;
     /// Restarts the plugin sandbox with the given ID.

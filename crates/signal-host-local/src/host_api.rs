@@ -109,6 +109,14 @@ impl RuntimeSupervisorApi for LocalRuntimeHost {
         self.runtime.reconcile_offline_stretch_artifact_plans(plans)
     }
 
+    fn reconcile_offline_stretch_artifact_materializations(
+        &mut self,
+        artifacts: Vec<RuntimeOfflineStretchArtifactMaterializationRegistration>,
+    ) -> Result<(), RuntimeError> {
+        self.runtime
+            .reconcile_offline_stretch_artifact_materializations(artifacts)
+    }
+
     fn teardown_plugin_sandbox(&mut self, sandbox_id: &str) -> Result<(), RuntimeError> {
         self.supervisor.teardowns = self.supervisor.teardowns.saturating_add(1);
         self.supervisor.last_sandbox_id = Some(sandbox_id.to_string());

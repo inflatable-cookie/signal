@@ -4,6 +4,33 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use signal_runtime::{
+    RuntimeOfflineStretchArtifactMaterializationRegistration, RuntimeOfflineStretchArtifactScope,
+    StretchBackendTier, StretchCacheIdentityInput,
+};
+
+pub(crate) fn public_offline_stretch_artifact_materialization(
+    identity_input: &StretchCacheIdentityInput,
+) -> RuntimeOfflineStretchArtifactMaterializationRegistration {
+    let identity = identity_input.identity().expect("identity should validate");
+    RuntimeOfflineStretchArtifactMaterializationRegistration {
+        artifact_id: "stretch-artifact:offline-hq".into(),
+        plan_id: "stretch-plan:offline-hq".into(),
+        clip_id: Some("clip:offline-hq".into()),
+        media_asset_id: Some("asset:offline-hq".into()),
+        scope: RuntimeOfflineStretchArtifactScope::Export,
+        tier: StretchBackendTier::OfflineHighQuality,
+        cache_identity_hash: identity.stable_hash,
+        cache_identity_key: identity.canonical_key,
+        promotion_evidence_id: "stretch-corpus:public-runtime".into(),
+        input_frame_count: 48_000,
+        output_frame_count: 72_000,
+        channels: 2,
+        sample_rate_hz: 48_000,
+        product_facing_allowed: true,
+    }
+}
+
 pub(crate) fn public_media_fixture_path(label: &str) -> PathBuf {
     let unique = SystemTime::now()
         .duration_since(UNIX_EPOCH)

@@ -17,8 +17,29 @@ impl RuntimeOfflineStretchArtifactPlanStateModel {
         }
     }
 
+    pub(crate) fn reconcile_materialized_artifacts(
+        &mut self,
+        artifacts: Vec<RuntimeOfflineStretchArtifactMaterializationRegistration>,
+    ) {
+        let retained_ids = artifacts
+            .iter()
+            .map(|artifact| artifact.artifact_id.clone())
+            .collect::<BTreeSet<_>>();
+        self.materialized_artifacts
+            .retain(|artifact_id, _| retained_ids.contains(artifact_id));
+        for artifact in artifacts {
+            self.materialized_artifacts
+                .insert(artifact.artifact_id.clone(), artifact);
+        }
+    }
+
     pub(crate) fn snapshot(&self) -> RuntimeOfflineStretchArtifactPlanSnapshotSet {
         let plans = self.plans.values().map(snapshot_plan).collect::<Vec<_>>();
+        let materialized_artifacts = self
+            .materialized_artifacts
+            .values()
+            .map(snapshot_materialized_artifact)
+            .collect::<Vec<_>>();
         let ready_plan_count = plans
             .iter()
             .filter(|plan| plan.readiness == RuntimeOfflineStretchArtifactReadiness::Ready)
@@ -39,6 +60,10 @@ impl RuntimeOfflineStretchArtifactPlanStateModel {
             .iter()
             .filter(|plan| plan.readiness == RuntimeOfflineStretchArtifactReadiness::Invalid)
             .count();
+        let product_facing_materialized_artifact_count = materialized_artifacts
+            .iter()
+            .filter(|artifact| artifact.product_facing_allowed)
+            .count();
 
         RuntimeOfflineStretchArtifactPlanSnapshotSet {
             plan_count: plans.len(),
@@ -46,8 +71,32 @@ impl RuntimeOfflineStretchArtifactPlanStateModel {
             awaiting_implementation_count,
             awaiting_corpus_evidence_count,
             invalid_plan_count,
+            materialized_artifact_count: materialized_artifacts.len(),
+            product_facing_materialized_artifact_count,
             plans,
+            materialized_artifacts,
         }
+    }
+}
+
+fn snapshot_materialized_artifact(
+    registration: &RuntimeOfflineStretchArtifactMaterializationRegistration,
+) -> RuntimeOfflineStretchArtifactMaterializationSnapshot {
+    RuntimeOfflineStretchArtifactMaterializationSnapshot {
+        artifact_id: registration.artifact_id.clone(),
+        plan_id: registration.plan_id.clone(),
+        clip_id: registration.clip_id.clone(),
+        media_asset_id: registration.media_asset_id.clone(),
+        scope: registration.scope,
+        tier: registration.tier,
+        cache_identity_hash: registration.cache_identity_hash.clone(),
+        cache_identity_key: registration.cache_identity_key.clone(),
+        promotion_evidence_id: registration.promotion_evidence_id.clone(),
+        input_frame_count: registration.input_frame_count,
+        output_frame_count: registration.output_frame_count,
+        channels: registration.channels,
+        sample_rate_hz: registration.sample_rate_hz,
+        product_facing_allowed: registration.product_facing_allowed,
     }
 }
 
