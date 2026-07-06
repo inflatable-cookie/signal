@@ -245,6 +245,8 @@ pub enum StretchBenchmarkBackend {
 pub enum StretchBenchmarkPath {
     /// Fixed-ratio mono or independent-channel stereo stretch.
     FixedRatio,
+    /// Identity phase-locked sustained-material path.
+    PhaseLocked,
     /// Linked-stereo candidate path.
     LinkedStereo,
     /// Stepwise dynamic-ratio candidate path.
@@ -265,6 +267,27 @@ pub enum StretchBenchmarkComparisonOutcome {
     Unchanged,
     /// One or both values were not finite.
     Inconclusive,
+}
+
+/// Quality work area identified from a benchmark metric.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum StretchQualityWorkArea {
+    /// Output duration or marker alignment.
+    TimingAlignment,
+    /// Transient preservation and attack width.
+    TransientPreservation,
+    /// Vertical phase coherence for sustained material.
+    VerticalCoherence,
+    /// Stereo image and mid/side stability.
+    StereoImageStability,
+    /// Loop boundary click control.
+    LoopBoundaryClicks,
+    /// Dynamic-ratio segment seam smoothing.
+    DynamicRatioSeams,
+    /// Independent pitch-shift accuracy.
+    PitchShiftAccuracy,
+    /// CPU, latency, or memory budget.
+    ResourceBudget,
 }
 
 /// One synthetic-corpus metric comparison between Draft and OfflineHighQuality
@@ -294,6 +317,33 @@ pub struct StretchSyntheticBenchmarkComparison {
     pub delta: f64,
     /// Direction of the comparison.
     pub outcome: StretchBenchmarkComparisonOutcome,
+}
+
+/// One prioritized quality-tuning item derived from comparison evidence.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct StretchQualityPriority {
+    /// Work area the metric maps to.
+    pub area: StretchQualityWorkArea,
+    /// Corpus case identifier.
+    pub case_id: &'static str,
+    /// Execution path under measurement.
+    pub path: StretchBenchmarkPath,
+    /// Metric identity.
+    pub metric: StretchMetric,
+    /// Output/input duration ratio measured.
+    pub ratio: f64,
+    /// Requested pitch shift in semitones, when present.
+    pub pitch_shift_semitones: Option<f64>,
+    /// Draft baseline value.
+    pub draft_value: f64,
+    /// OfflineHighQuality prototype value.
+    pub offline_high_quality_value: f64,
+    /// Candidate minus draft. Positive values are regressions.
+    pub delta: f64,
+    /// Comparison outcome that caused this priority.
+    pub outcome: StretchBenchmarkComparisonOutcome,
+    /// Normalized sorting score for this work item. Higher means more urgent.
+    pub priority_score: f64,
 }
 
 /// Aggregate synthetic-corpus comparison report for the OfflineHighQuality
@@ -895,6 +945,7 @@ pub fn compare_synthetic_stretch_backends() -> StretchSyntheticBenchmarkComparis
         }
     }
     comparisons.extend(compare_pitch_shift());
+    comparisons.extend(compare_sustained_coherence());
 
     let mut report = StretchSyntheticBenchmarkComparisonReport {
         comparisons,
@@ -912,6 +963,32 @@ pub fn compare_synthetic_stretch_backends() -> StretchSyntheticBenchmarkComparis
         }
     }
     report
+}
+
+/// Rank quality-tuning work from comparison evidence.
+///
+/// Only regressions and inconclusive rows become priorities. Lower-is-better
+/// metric values are normalized by metric family so the result is useful for
+/// ordering, not for acceptance.
+pub fn prioritize_stretch_quality_work(
+    report: &StretchSyntheticBenchmarkComparisonReport,
+    limit: usize,
+) -> Vec<StretchQualityPriority> {
+    let mut priorities = report
+        .comparisons
+        .iter()
+        .filter_map(priority_from_comparison)
+        .collect::<Vec<_>>();
+    priorities.sort_by(|left, right| {
+        right
+            .priority_score
+            .total_cmp(&left.priority_score)
+            .then_with(|| left.case_id.cmp(right.case_id))
+            .then_with(|| format!("{:?}", left.metric).cmp(&format!("{:?}", right.metric)))
+            .then_with(|| left.ratio.total_cmp(&right.ratio))
+    });
+    priorities.truncate(limit);
+    priorities
 }
 
 /// Upper-bound limit for a stretch benchmark metric.
@@ -1044,6 +1121,36 @@ pub fn format_synthetic_stretch_comparison_report(
     lines.join("\n")
 }
 
+/// Deterministic line-oriented report for prioritized stretch quality work.
+pub fn format_stretch_quality_priority_report(priorities: &[StretchQualityPriority]) -> String {
+    let mut lines = Vec::with_capacity(priorities.len() + 1);
+    lines.push(format!(
+        "stretch_quality_priorities count={}",
+        priorities.len()
+    ));
+    for priority in priorities {
+        let pitch_shift = priority
+            .pitch_shift_semitones
+            .map(|semitones| format!("{semitones:.6}"))
+            .unwrap_or_else(|| "none".to_string());
+        lines.push(format!(
+            "area={:?} case={} ratio={:.6} path={:?} pitch_shift={} metric={:?} draft={:.6} offline_hq={:.6} delta={:.6} outcome={:?} score={:.6}",
+            priority.area,
+            priority.case_id,
+            priority.ratio,
+            priority.path,
+            pitch_shift,
+            priority.metric,
+            priority.draft_value,
+            priority.offline_high_quality_value,
+            priority.delta,
+            priority.outcome,
+            priority.priority_score
+        ));
+    }
+    lines.join("\n")
+}
+
 fn compare_metric(
     case_id: &'static str,
     ratio: f64,
@@ -1077,6 +1184,68 @@ fn compare_metric(
         offline_high_quality_value,
         delta,
         outcome,
+    }
+}
+
+fn priority_from_comparison(
+    comparison: &StretchSyntheticBenchmarkComparison,
+) -> Option<StretchQualityPriority> {
+    let priority_score = match comparison.outcome {
+        StretchBenchmarkComparisonOutcome::Regressed => {
+            priority_score(comparison.metric, comparison.delta)
+        }
+        StretchBenchmarkComparisonOutcome::Inconclusive => 1.0e9,
+        StretchBenchmarkComparisonOutcome::Improved
+        | StretchBenchmarkComparisonOutcome::Unchanged => {
+            return None;
+        }
+    };
+    if !priority_score.is_finite() || priority_score <= 0.0 {
+        return None;
+    }
+
+    Some(StretchQualityPriority {
+        area: quality_work_area(comparison.metric),
+        case_id: comparison.case_id,
+        path: comparison.path,
+        metric: comparison.metric,
+        ratio: comparison.ratio,
+        pitch_shift_semitones: comparison.pitch_shift_semitones,
+        draft_value: comparison.draft_value,
+        offline_high_quality_value: comparison.offline_high_quality_value,
+        delta: comparison.delta,
+        outcome: comparison.outcome,
+        priority_score,
+    })
+}
+
+fn quality_work_area(metric: StretchMetric) -> StretchQualityWorkArea {
+    match metric {
+        StretchMetric::TimingDriftSamples => StretchQualityWorkArea::TimingAlignment,
+        StretchMetric::TransientSmearFrames => StretchQualityWorkArea::TransientPreservation,
+        StretchMetric::VerticalCoherenceDelta => StretchQualityWorkArea::VerticalCoherence,
+        StretchMetric::StereoImageDelta => StretchQualityWorkArea::StereoImageStability,
+        StretchMetric::LoopBoundaryClickDbfs => StretchQualityWorkArea::LoopBoundaryClicks,
+        StretchMetric::DynamicSegmentSeamClickDbfs => StretchQualityWorkArea::DynamicRatioSeams,
+        StretchMetric::PitchErrorCents => StretchQualityWorkArea::PitchShiftAccuracy,
+        StretchMetric::CpuRealtimeFactor
+        | StretchMetric::LatencyFrames
+        | StretchMetric::PeakMemoryBytes => StretchQualityWorkArea::ResourceBudget,
+    }
+}
+
+fn priority_score(metric: StretchMetric, delta: f64) -> f64 {
+    if !delta.is_finite() || delta <= 0.0 {
+        return f64::NAN;
+    }
+
+    match metric {
+        StretchMetric::LoopBoundaryClickDbfs | StretchMetric::DynamicSegmentSeamClickDbfs => {
+            delta / 6.0
+        }
+        StretchMetric::StereoImageDelta | StretchMetric::VerticalCoherenceDelta => delta * 10.0,
+        StretchMetric::PitchErrorCents => delta / 10.0,
+        _ => delta,
     }
 }
 
@@ -1206,6 +1375,25 @@ fn compare_pitch_shift() -> Vec<StretchSyntheticBenchmarkComparison> {
                 .value,
             )
             .with_pitch_shift(semitones)
+        })
+        .collect()
+}
+
+fn compare_sustained_coherence() -> Vec<StretchSyntheticBenchmarkComparison> {
+    const CASE_ID: &str = "stretch:sustained_coherence";
+
+    [0.75, 1.25, 1.5]
+        .into_iter()
+        .map(|ratio| {
+            let coherence = compare_sustained_material_coherence(ratio);
+            compare_metric(
+                CASE_ID,
+                ratio,
+                StretchMetric::VerticalCoherenceDelta,
+                coherence.draft_vertical_coherence_score,
+                coherence.phase_locked_vertical_coherence_score,
+            )
+            .with_path(StretchBenchmarkPath::PhaseLocked)
         })
         .collect()
 }

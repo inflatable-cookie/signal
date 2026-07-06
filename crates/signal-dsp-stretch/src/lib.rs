@@ -44,21 +44,23 @@ mod promotion;
 pub use benchmark::{
     assess_stretch_metrics, compare_sustained_material_coherence,
     compare_synthetic_stretch_backends, detect_stretch_transients,
-    format_stretch_acceptance_report, format_synthetic_stretch_comparison_report,
-    generate_synthetic_stretch_audio, measure_draft_loop_boundary_click,
-    measure_draft_stereo_image_delta, measure_draft_transient_smear,
-    measure_dynamic_segment_seam_click, measure_loop_boundary_click,
+    format_stretch_acceptance_report, format_stretch_quality_priority_report,
+    format_synthetic_stretch_comparison_report, generate_synthetic_stretch_audio,
+    measure_draft_loop_boundary_click, measure_draft_stereo_image_delta,
+    measure_draft_transient_smear, measure_dynamic_segment_seam_click, measure_loop_boundary_click,
     measure_pitch_shift_error_cents, measure_stereo_image_delta,
     measure_transient_reset_loop_boundary_click, measure_transient_reset_stereo_image_delta,
     measure_transient_reset_transient_smear, measure_transient_smear, output_length_drift_samples,
-    synthetic_stretch_corpus_cases, StretchAcceptanceReport, StretchAcceptanceSeverity,
-    StretchAcceptanceStatus, StretchBenchmarkBackend, StretchBenchmarkComparisonOutcome,
-    StretchBenchmarkPath, StretchCoherenceComparison, StretchCorpusCase, StretchCorpusFamily,
-    StretchCorpusSource, StretchDynamicSegmentSeamMeasurement, StretchLoopBoundaryMeasurement,
-    StretchMetric, StretchMetricAssessment, StretchMetricLimit, StretchMetricValue,
-    StretchPitchShiftMeasurement, StretchStereoImageMeasurement, StretchSyntheticAudio,
-    StretchSyntheticBenchmarkComparison, StretchSyntheticBenchmarkComparisonReport,
-    StretchTransientEvent, StretchTransientSmearMeasurement, STRETCH_BENCHMARK_CORPUS,
+    prioritize_stretch_quality_work, synthetic_stretch_corpus_cases, StretchAcceptanceReport,
+    StretchAcceptanceSeverity, StretchAcceptanceStatus, StretchBenchmarkBackend,
+    StretchBenchmarkComparisonOutcome, StretchBenchmarkPath, StretchCoherenceComparison,
+    StretchCorpusCase, StretchCorpusFamily, StretchCorpusSource,
+    StretchDynamicSegmentSeamMeasurement, StretchLoopBoundaryMeasurement, StretchMetric,
+    StretchMetricAssessment, StretchMetricLimit, StretchMetricValue, StretchPitchShiftMeasurement,
+    StretchQualityPriority, StretchQualityWorkArea, StretchStereoImageMeasurement,
+    StretchSyntheticAudio, StretchSyntheticBenchmarkComparison,
+    StretchSyntheticBenchmarkComparisonReport, StretchTransientEvent,
+    StretchTransientSmearMeasurement, STRETCH_BENCHMARK_CORPUS,
 };
 pub use cache_identity::{
     StretchCacheIdentity, StretchCacheIdentityError, StretchCacheIdentityInput,
@@ -1246,7 +1248,7 @@ mod tests {
     fn synthetic_backend_comparison_covers_all_synthetic_cases() {
         let report = compare_synthetic_stretch_backends();
 
-        assert_eq!(report.comparisons.len(), 24);
+        assert_eq!(report.comparisons.len(), 27);
         assert_eq!(
             report.improved_count
                 + report.regressed_count
@@ -1268,6 +1270,7 @@ mod tests {
                     | "stretch:loop_seam"
                     | "stretch:extreme_ratio"
                     | "stretch:pitch_shift"
+                    | "stretch:sustained_coherence"
             ));
         }
         assert!(report.comparisons.iter().any(|comparison| {
@@ -1303,6 +1306,11 @@ mod tests {
                 && comparison.path == StretchBenchmarkPath::PitchShift
                 && comparison.pitch_shift_semitones == Some(12.0)
         }));
+        assert!(report.comparisons.iter().any(|comparison| {
+            comparison.case_id == "stretch:sustained_coherence"
+                && comparison.metric == StretchMetric::VerticalCoherenceDelta
+                && comparison.path == StretchBenchmarkPath::PhaseLocked
+        }));
     }
 
     #[test]
@@ -1315,14 +1323,40 @@ mod tests {
         assert!(formatted.starts_with("synthetic_stretch_comparison improved="));
         assert!(formatted.contains("case=stretch:tempo_ramp"));
         assert!(formatted.contains("path=DynamicRatio"));
+        assert!(formatted.contains("path=PhaseLocked"));
         assert!(formatted.contains("path=LinkedStereo"));
         assert!(formatted.contains("path=PitchShift"));
         assert!(formatted.contains("pitch_shift=12.000000"));
         assert!(formatted.contains("metric=TimingDriftSamples"));
         assert!(formatted.contains("metric=DynamicSegmentSeamClickDbfs"));
+        assert!(formatted.contains("metric=VerticalCoherenceDelta"));
         assert!(formatted.contains("metric=PitchErrorCents"));
         assert!(formatted.contains("offline_hq="));
         assert!(formatted.contains("outcome="));
+    }
+
+    #[test]
+    fn stretch_quality_priorities_are_regression_only_and_sorted() {
+        let report = compare_synthetic_stretch_backends();
+        let priorities = prioritize_stretch_quality_work(&report, 8);
+        let formatted = format_stretch_quality_priority_report(&priorities);
+
+        assert!(priorities.len() <= 8);
+        for priority in &priorities {
+            assert!(matches!(
+                priority.outcome,
+                StretchBenchmarkComparisonOutcome::Regressed
+                    | StretchBenchmarkComparisonOutcome::Inconclusive
+            ));
+            assert!(priority.priority_score.is_finite());
+            assert!(priority.priority_score > 0.0);
+        }
+        for pair in priorities.windows(2) {
+            assert!(pair[0].priority_score >= pair[1].priority_score);
+        }
+        assert!(formatted.starts_with("stretch_quality_priorities count="));
+        assert!(formatted.contains("area="));
+        assert!(formatted.contains("score="));
     }
 
     #[test]

@@ -47,14 +47,12 @@ pub(crate) fn transient_reset_phase_vocoder(
     window_size: usize,
     analysis_hop: usize,
 ) -> Vec<Sample> {
-    run_phase_vocoder(
-        input,
-        target_len,
-        ratio,
-        window_size,
-        analysis_hop,
-        PhasePropagationMode::IdentityLockedTransientReset,
-    )
+    let mode = if ratio < 1.0 {
+        PhasePropagationMode::IdentityLocked
+    } else {
+        PhasePropagationMode::IdentityLockedTransientReset
+    };
+    run_phase_vocoder(input, target_len, ratio, window_size, analysis_hop, mode)
 }
 
 /// Run the OfflineHighQuality prototype over interleaved stereo with a linked
@@ -516,6 +514,18 @@ mod tests {
             let output = transient_reset_phase_vocoder(&input, target_len, ratio, 1024, 256);
             assert_eq!(output.len(), target_len, "ratio {ratio}");
         }
+    }
+
+    #[test]
+    fn transient_reset_uses_phase_locking_for_time_compression() {
+        let ratio = 0.75;
+        let input = bin_centered_sine(11, 8192);
+        let target_len = (input.len() as f64 * ratio).round() as usize;
+
+        assert_eq!(
+            transient_reset_phase_vocoder(&input, target_len, ratio, 1024, 256),
+            phase_locked_phase_vocoder(&input, target_len, ratio, 1024, 256)
+        );
     }
 
     #[test]

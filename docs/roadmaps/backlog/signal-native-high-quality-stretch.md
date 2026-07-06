@@ -258,6 +258,12 @@ Work:
   so tempo-ramp evidence includes both timing drift and boundary artifacts
 - [x] record explicit linked-stereo and pitch-shift evidence in the synthetic
   comparison report, including path labels and requested pitch semitones
+- [x] add sustained-material coherence rows and a deterministic quality-priority
+  report so the next DSP target is selected from measured regressions
+- [x] apply the first priority-led transient tuning slice by routing
+  time-compression ratios through phase locking instead of transient resets,
+  reducing measured compression-smear regressions while keeping the tier
+  prototype-gated
 - [ ] wire OfflineHighQuality artifacts into render/export/freeze only after
   corpus evidence beats the draft baseline
 - [ ] add Pulse/Aura contract changes only for product-visible mode, ratio,
@@ -294,8 +300,8 @@ Work:
 ## Next Task
 
 Continue the Signal DSP quality batch by turning the synthetic comparison
-report into a tighter quality tuning loop: use the recorded timing, seam,
-linked-stereo, pitch-shift, transient, loop, and coherence results to prioritize
-the next transient/loop/coherence improvements. Keep render/export/freeze wiring
-blocked until the tier is no longer prototype-only and an accepted
-`StretchPromotionReceipt` exists.
+report into a tighter quality tuning loop: run the priority report, choose the
+remaining top transient, loop, seam, stereo, pitch, or coherence regression it
+identifies, and implement the next bounded DSP improvement against that target.
+Keep render/export/freeze wiring blocked until the tier is no longer
+prototype-only and an accepted `StretchPromotionReceipt` exists.
