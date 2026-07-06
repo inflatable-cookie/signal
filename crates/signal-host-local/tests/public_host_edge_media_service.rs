@@ -6,7 +6,8 @@ use std::{fs, sync::Arc};
 use public_host_edge_media::{public_local_media_fixture_path, write_public_test_wav};
 use signal_host_local::LocalRuntimeHost;
 use signal_render_plane::{
-    build_offline_stretch_artifact_pcm_with_synthetic_policy,
+    build_offline_stretch_artifact_pcm_with_synthetic_policy, OfflineStretchArtifactBuildRequest,
+    OfflineStretchArtifactPolicyRequest,
     OfflineStretchArtifactScope as RenderOfflineStretchArtifactScope, RenderSampleBuffer,
 };
 use signal_runtime::{
@@ -155,11 +156,15 @@ fn local_shared_host_edge_exports_offline_stretch_artifact_receipts() {
         frames: Arc::from(vec![0.25_f32; 480 * 2].into_boxed_slice()),
     };
     let artifact = build_offline_stretch_artifact_pcm_with_synthetic_policy(
-        RenderOfflineStretchArtifactScope::Freeze,
-        &identity_input,
-        "stretch-corpus:host-local",
-        StretchSyntheticPromotionPolicy::default(),
-        &source,
+        OfflineStretchArtifactBuildRequest {
+            policy: OfflineStretchArtifactPolicyRequest {
+                scope: RenderOfflineStretchArtifactScope::Freeze,
+                identity_input: &identity_input,
+                evidence_id: "stretch-corpus:host-local",
+                promotion_policy: StretchSyntheticPromotionPolicy::default(),
+            },
+            source: &source,
+        },
     )
     .expect("host-local freeze artifact should materialize through the policy gate");
     let expected_passed_case_count = artifact.plan.promotion_receipt.passed_case_count;

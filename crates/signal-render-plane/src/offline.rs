@@ -110,6 +110,28 @@ pub struct OfflineStretchArtifactPlan {
     pub product_facing_allowed: bool,
 }
 
+/// Policy-derived offline stretch artifact planning request.
+#[derive(Clone, Copy, Debug)]
+pub struct OfflineStretchArtifactPolicyRequest<'a> {
+    /// Consumer scope this artifact would serve.
+    pub scope: OfflineStretchArtifactScope,
+    /// Cache identity input for the artifact candidate.
+    pub identity_input: &'a StretchCacheIdentityInput,
+    /// Stable evidence id to attach to the derived promotion receipt.
+    pub evidence_id: &'a str,
+    /// Promotion policy applied to Signal's synthetic comparison report.
+    pub promotion_policy: StretchSyntheticPromotionPolicy,
+}
+
+/// Policy-derived offline stretch artifact materialization request.
+#[derive(Clone, Copy, Debug)]
+pub struct OfflineStretchArtifactBuildRequest<'a> {
+    /// Planning and promotion policy inputs for this artifact.
+    pub policy: OfflineStretchArtifactPolicyRequest<'a>,
+    /// Decoded source buffer to stretch into a cacheable render source.
+    pub source: &'a RenderSampleBuffer,
+}
+
 /// Materialized offline stretch artifact PCM.
 #[derive(Debug, Clone, PartialEq)]
 pub struct OfflineStretchArtifactPcm {
@@ -288,18 +310,10 @@ pub fn plan_offline_stretch_artifact(
 /// Callers still pass the evidence id and policy, but the acceptance receipt is
 /// derived from Signal's comparison report rather than supplied directly.
 pub fn plan_offline_stretch_artifact_with_synthetic_policy(
-    scope: OfflineStretchArtifactScope,
-    identity_input: &StretchCacheIdentityInput,
-    evidence_id: impl Into<String>,
-    promotion_policy: StretchSyntheticPromotionPolicy,
+    request: OfflineStretchArtifactPolicyRequest<'_>,
 ) -> Result<OfflineStretchArtifactPlan, OfflineStretchArtifactPlanError> {
-    let report = compare_synthetic_stretch_backends();
-    let promotion_receipt = StretchPromotionReceipt::from_synthetic_offline_high_quality_report(
-        evidence_id,
-        &report,
-        promotion_policy,
-    );
-    plan_offline_stretch_artifact(scope, identity_input, promotion_receipt)
+    let promotion_receipt = synthetic_policy_promotion_receipt(&request);
+    plan_offline_stretch_artifact(request.scope, request.identity_input, promotion_receipt)
 }
 
 /// Materialize a ready OfflineHighQuality stretch artifact as interleaved
@@ -392,19 +406,26 @@ pub fn materialize_offline_stretch_artifact_pcm(
 /// [`OfflineStretchArtifactMaterializeError::NotReady`] and no PCM buffer is
 /// produced.
 pub fn build_offline_stretch_artifact_pcm_with_synthetic_policy(
-    scope: OfflineStretchArtifactScope,
-    identity_input: &StretchCacheIdentityInput,
-    evidence_id: impl Into<String>,
-    promotion_policy: StretchSyntheticPromotionPolicy,
-    source: &RenderSampleBuffer,
+    request: OfflineStretchArtifactBuildRequest<'_>,
 ) -> Result<OfflineStretchArtifactPcm, OfflineStretchArtifactMaterializeError> {
+    let promotion_receipt = synthetic_policy_promotion_receipt(&request.policy);
+    materialize_offline_stretch_artifact_pcm(
+        request.policy.scope,
+        request.policy.identity_input,
+        promotion_receipt,
+        request.source,
+    )
+}
+
+fn synthetic_policy_promotion_receipt(
+    request: &OfflineStretchArtifactPolicyRequest<'_>,
+) -> StretchPromotionReceipt {
     let report = compare_synthetic_stretch_backends();
-    let promotion_receipt = StretchPromotionReceipt::from_synthetic_offline_high_quality_report(
-        evidence_id,
+    StretchPromotionReceipt::from_synthetic_offline_high_quality_report(
+        request.evidence_id,
         &report,
-        promotion_policy,
-    );
-    materialize_offline_stretch_artifact_pcm(scope, identity_input, promotion_receipt, source)
+        request.promotion_policy,
+    )
 }
 
 fn static_or_initial_ratio(ratio_curve: &[StretchRatioPoint]) -> f64 {
@@ -864,11 +885,15 @@ mod tests {
         let source = stretch_artifact_source(480);
 
         let artifact = build_offline_stretch_artifact_pcm_with_synthetic_policy(
-            OfflineStretchArtifactScope::Export,
-            &input,
-            "synthetic:builder-policy-current",
-            StretchSyntheticPromotionPolicy::default(),
-            &source,
+            OfflineStretchArtifactBuildRequest {
+                policy: OfflineStretchArtifactPolicyRequest {
+                    scope: OfflineStretchArtifactScope::Export,
+                    identity_input: &input,
+                    evidence_id: "synthetic:builder-policy-current",
+                    promotion_policy: StretchSyntheticPromotionPolicy::default(),
+                },
+                source: &source,
+            },
         )
         .expect("policy-derived accepted evidence should materialize");
 
@@ -894,13 +919,14 @@ mod tests {
             min_comparison_count: usize::MAX,
             ..StretchSyntheticPromotionPolicy::default()
         };
-        let plan = plan_offline_stretch_artifact_with_synthetic_policy(
-            OfflineStretchArtifactScope::Freeze,
-            &input,
-            "synthetic:builder-policy-rejected",
-            rejecting_policy,
-        )
-        .expect("rejected policy still produces a non-ready plan");
+        let policy_request = OfflineStretchArtifactPolicyRequest {
+            scope: OfflineStretchArtifactScope::Freeze,
+            identity_input: &input,
+            evidence_id: "synthetic:builder-policy-rejected",
+            promotion_policy: rejecting_policy,
+        };
+        let plan = plan_offline_stretch_artifact_with_synthetic_policy(policy_request)
+            .expect("rejected policy still produces a non-ready plan");
 
         assert_eq!(
             plan.readiness,
@@ -909,11 +935,10 @@ mod tests {
         assert!(!plan.product_facing_allowed);
         assert_eq!(
             build_offline_stretch_artifact_pcm_with_synthetic_policy(
-                OfflineStretchArtifactScope::Freeze,
-                &input,
-                "synthetic:builder-policy-rejected",
-                rejecting_policy,
-                &source,
+                OfflineStretchArtifactBuildRequest {
+                    policy: policy_request,
+                    source: &source,
+                },
             ),
             Err(OfflineStretchArtifactMaterializeError::NotReady(
                 OfflineStretchArtifactReadiness::AwaitingCorpusEvidence

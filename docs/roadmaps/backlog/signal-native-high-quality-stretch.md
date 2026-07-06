@@ -294,6 +294,9 @@ Work:
   OfflineHighQuality render/export/freeze artifacts only from policy-derived
   promotion evidence, including a rejected-policy path that produces no
   product-facing buffer
+- [x] route the public host-edge artifact consumer through a typed builder
+  request, leaving direct receipt-based materialization as the lower-level
+  render-plane test seam
 - [ ] wire OfflineHighQuality artifacts into render/export/freeze only after
   corpus evidence beats the draft baseline
 - [ ] add Pulse/Aura contract changes only for product-visible mode, ratio,
@@ -330,8 +333,9 @@ Work:
 ## Next Task
 
 Continue the Signal DSP quality batch by turning the synthetic comparison
-report into a promotion-readiness loop: route any remaining Signal
-render/export/freeze artifact consumers through the builder gate, leaving
-direct receipt-based materialization as the lower-level seam for targeted
-render-plane tests. Keep Pulse/Aura contract planning deferred until a Loophole
-product workflow consumes the Signal-owned contract.
+report into a promotion-readiness loop: add a render-plane helper that turns a
+policy-gated OfflineHighQuality artifact into a `RenderSource::Samples`
+consumer path for render/export/freeze plans, while preserving the rejected
+policy path that produces no product-facing source. Keep Pulse/Aura contract
+planning deferred until a Loophole product workflow consumes the Signal-owned
+contract.
