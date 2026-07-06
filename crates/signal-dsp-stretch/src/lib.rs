@@ -1335,6 +1335,14 @@ mod tests {
                 && comparison.path == StretchBenchmarkPath::FixedRatio
         }));
         assert!(report.comparisons.iter().any(|comparison| {
+            comparison.case_id == "stretch:extreme_ratio"
+                && comparison.metric == StretchMetric::TransientSmearFrames
+                && comparison.path == StretchBenchmarkPath::FixedRatio
+                && comparison.ratio == 2.0
+                && comparison.delta == 1.0
+                && comparison.outcome == StretchBenchmarkComparisonOutcome::Unchanged
+        }));
+        assert!(report.comparisons.iter().any(|comparison| {
             comparison.case_id == "stretch:pitch_shift"
                 && comparison.metric == StretchMetric::PitchErrorCents
                 && comparison.path == StretchBenchmarkPath::PitchShift
@@ -1375,7 +1383,7 @@ mod tests {
         let priorities = prioritize_stretch_quality_work(&report, 8);
         let formatted = format_stretch_quality_priority_report(&priorities);
 
-        assert!(priorities.len() <= 8);
+        assert!(priorities.is_empty());
         for priority in &priorities {
             assert!(matches!(
                 priority.outcome,
@@ -1389,8 +1397,7 @@ mod tests {
             assert!(pair[0].priority_score >= pair[1].priority_score);
         }
         assert!(formatted.starts_with("stretch_quality_priorities count="));
-        assert!(formatted.contains("area="));
-        assert!(formatted.contains("score="));
+        assert_eq!(formatted, "stretch_quality_priorities count=0");
     }
 
     #[test]

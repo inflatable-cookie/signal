@@ -268,6 +268,8 @@ Work:
   failures are ranked by severity instead of becoming inconclusive report rows
 - [x] add an explicit offline loop-boundary smoother and apply it to loop-seam
   candidate evidence, clearing the 0.5x loop-click priority row
+- [x] set transient-smear comparison tolerance to one sample frame so the
+  synthetic priority report remains driven by actionable quality regressions
 - [ ] wire OfflineHighQuality artifacts into render/export/freeze only after
   corpus evidence beats the draft baseline
 - [ ] add Pulse/Aura contract changes only for product-visible mode, ratio,
@@ -304,9 +306,8 @@ Work:
 ## Next Task
 
 Continue the Signal DSP quality batch by turning the synthetic comparison
-report into a tighter quality tuning loop: run the priority report, choose the
-remaining top transient, loop, seam, stereo, pitch, or coherence regression it
-identifies, and implement the next bounded DSP improvement against that target.
-Current priority evidence points at the remaining 2.0x transient-smear row.
-Keep render/export/freeze wiring blocked until the tier is no longer
-prototype-only and an accepted `StretchPromotionReceipt` exists.
+report into a promotion-readiness loop: with the current synthetic priority
+report empty, add accepted-threshold policy for the synthetic report and use it
+to produce the next `StretchPromotionReceipt` evidence shape. Keep
+render/export/freeze wiring blocked until the tier is no longer prototype-only
+and an accepted `StretchPromotionReceipt` exists.

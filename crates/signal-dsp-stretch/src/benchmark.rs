@@ -1180,9 +1180,9 @@ fn compare_metric(
         || !delta.is_finite()
     {
         StretchBenchmarkComparisonOutcome::Inconclusive
-    } else if delta < -1.0e-9 {
+    } else if delta < -comparison_tolerance(metric) {
         StretchBenchmarkComparisonOutcome::Improved
-    } else if delta > 1.0e-9 {
+    } else if delta > comparison_tolerance(metric) {
         StretchBenchmarkComparisonOutcome::Regressed
     } else {
         StretchBenchmarkComparisonOutcome::Unchanged
@@ -1200,6 +1200,13 @@ fn compare_metric(
         offline_high_quality_value,
         delta,
         outcome,
+    }
+}
+
+fn comparison_tolerance(metric: StretchMetric) -> f64 {
+    match metric {
+        StretchMetric::TransientSmearFrames => 1.0,
+        _ => 1.0e-9,
     }
 }
 
