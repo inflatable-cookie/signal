@@ -216,4 +216,26 @@ mod tests {
             .all(|plugin| plugin.module_root.starts_with(&root.display().to_string())));
         let _ = fs::remove_dir_all(root);
     }
+
+    #[test]
+    fn vst3_adapter_skips_bundles_without_moduleinfo() {
+        let adapter = Vst3HostAdapter::default();
+        let root = temp_plugin_root("metadata-required");
+        let bundle = root.join("Signal Missing Moduleinfo.vst3");
+        fs::create_dir_all(bundle.join("Contents"))
+            .expect("vst3 bundle contents should be created");
+        let metadata = vst3_scaffold_module_metadata_contents("plugin:vst3:utility")
+            .expect("utility scaffold metadata should exist");
+        fs::write(
+            bundle.join("Contents").join("Info.plist"),
+            vst3_info_plist_contents(&metadata, &bundle),
+        )
+        .expect("vst3 info plist should be written");
+
+        let discovered = adapter
+            .discover_plugins_for_roots(Vst3HostPlatform::Linux, &[root.display().to_string()]);
+
+        assert!(discovered.is_empty());
+        let _ = fs::remove_dir_all(root);
+    }
 }

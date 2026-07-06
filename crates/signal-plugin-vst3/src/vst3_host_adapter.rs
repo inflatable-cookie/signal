@@ -20,7 +20,8 @@ pub use model::*;
 #[cfg(test)]
 pub(crate) use scaffold::vst3_scaffold_module_metadata_contents;
 
-/// Host-side adapter for VST3 plugins. Handles module discovery, factory introspection, instantiation, and capability negotiation.
+/// Host-side adapter for VST3 plugins. Handles metadata discovery,
+/// instantiation, and capability negotiation.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Vst3HostAdapter {
     strict_sandbox_default: bool,

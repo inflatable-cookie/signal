@@ -53,10 +53,12 @@ impl Vst3HostAdapter {
         }
     }
 
-    /// Scans the given filesystem roots for VST3 bundle directories and
-    /// returns all discovered plugin types. An empty root list scans
-    /// nothing — system plugin directories are never scanned implicitly;
-    /// pass [`Vst3HostAdapter::default_scan_roots`] explicitly to opt in.
+    /// Scans the given filesystem roots for VST3 bundle directories carrying
+    /// `moduleinfo.json` and returns all discovered plugin types. Discovery
+    /// never loads plugin binaries; bundles without metadata are skipped. An
+    /// empty root list scans nothing — system plugin directories are never
+    /// scanned implicitly; pass [`Vst3HostAdapter::default_scan_roots`]
+    /// explicitly to opt in.
     pub fn discover_plugins_for_roots(
         &self,
         platform: Vst3HostPlatform,

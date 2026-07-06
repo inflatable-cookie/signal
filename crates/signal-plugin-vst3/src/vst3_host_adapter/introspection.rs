@@ -4,7 +4,6 @@ use signal_plugin::{
     PluginProcessingContract, PluginStateContract,
 };
 use std::{
-    ffi::{c_char, c_void},
     fs, io,
     path::{Path, PathBuf},
 };
@@ -94,43 +93,6 @@ struct ModuleInfoClass {
     #[serde(rename = "Sub Categories", default)]
     subcategories: Vec<String>,
 }
-
-#[repr(C)]
-struct RawPluginFactory {
-    vtable: *const PluginFactoryVTable,
-}
-
-#[repr(C)]
-struct PluginFactoryVTable {
-    query_interface: unsafe extern "C" fn(*mut c_void, *const c_void, *mut *mut c_void) -> i32,
-    add_ref: unsafe extern "C" fn(*mut c_void) -> u32,
-    release: unsafe extern "C" fn(*mut c_void) -> u32,
-    get_factory_info: unsafe extern "C" fn(*mut c_void, *mut PFactoryInfo) -> i32,
-    count_classes: unsafe extern "C" fn(*mut c_void) -> i32,
-    get_class_info: unsafe extern "C" fn(*mut c_void, i32, *mut PClassInfo) -> i32,
-    create_instance:
-        unsafe extern "C" fn(*mut c_void, *const u8, *const c_void, *mut *mut c_void) -> i32,
-}
-
-#[repr(C)]
-struct PFactoryInfo {
-    vendor: [c_char; 64],
-    url: [c_char; 256],
-    email: [c_char; 128],
-    flags: i32,
-}
-
-#[repr(C)]
-struct PClassInfo {
-    cid: [u8; 16],
-    cardinality: i32,
-    category: [c_char; 32],
-    name: [c_char; 64],
-}
-
-type EntryProc = unsafe extern "C" fn(*mut c_void) -> bool;
-type ExitProc = unsafe extern "C" fn();
-type GetPluginFactoryProc = unsafe extern "C" fn() -> *mut c_void;
 
 pub(crate) fn read_vst3_bundle_snapshot(
     bundle_root: &Path,
@@ -290,7 +252,7 @@ fn read_vst3_bundle_info(bundle_root: &Path) -> io::Result<Vst3BundleInfo> {
 
 fn read_vst3_factory_snapshot(
     bundle_root: &Path,
-    platform: Vst3HostPlatform,
+    _platform: Vst3HostPlatform,
 ) -> io::Result<(Option<String>, Vec<Vst3FactoryClass>)> {
     if let Some(moduleinfo_path) = candidate_moduleinfo_paths(bundle_root)
         .into_iter()
@@ -333,138 +295,10 @@ fn read_vst3_factory_snapshot(
         }
         return Ok((vendor, classes));
     }
-    load_vst3_factory_classes_from_module(bundle_root, platform)
-}
-
-fn load_vst3_factory_classes_from_module(
-    bundle_root: &Path,
-    platform: Vst3HostPlatform,
-) -> io::Result<(Option<String>, Vec<Vst3FactoryClass>)> {
-    let module_path = resolve_module_binary_path(bundle_root, platform)?;
-    let library = unsafe { libloading::Library::new(&module_path) }.map_err(libloading_to_io)?;
-
-    unsafe {
-        match platform {
-            Vst3HostPlatform::MacOs => {
-                if let Ok(entry) = library.get::<EntryProc>(b"bundleEntry\0") {
-                    if !entry(std::ptr::null_mut()) {
-                        return Err(io::Error::new(
-                            io::ErrorKind::InvalidData,
-                            "VST3 bundleEntry returned false",
-                        ));
-                    }
-                }
-            }
-            Vst3HostPlatform::Linux => {
-                if let Ok(entry) = library.get::<EntryProc>(b"ModuleEntry\0") {
-                    if !entry(std::ptr::null_mut()) {
-                        return Err(io::Error::new(
-                            io::ErrorKind::InvalidData,
-                            "VST3 ModuleEntry returned false",
-                        ));
-                    }
-                }
-            }
-            Vst3HostPlatform::Windows => {
-                if let Ok(entry) = library.get::<EntryProc>(b"InitDll\0") {
-                    if !entry(std::ptr::null_mut()) {
-                        return Err(io::Error::new(
-                            io::ErrorKind::InvalidData,
-                            "VST3 InitDll returned false",
-                        ));
-                    }
-                }
-            }
-        }
-
-        let get_plugin_factory = library
-            .get::<GetPluginFactoryProc>(b"GetPluginFactory\0")
-            .map_err(libloading_to_io)?;
-        let factory_ptr = get_plugin_factory();
-        if factory_ptr.is_null() {
-            return Err(io::Error::new(
-                io::ErrorKind::InvalidData,
-                "VST3 GetPluginFactory returned null",
-            ));
-        }
-
-        let factory = factory_ptr as *mut RawPluginFactory;
-        let vtable = (*factory).vtable;
-        if vtable.is_null() {
-            return Err(io::Error::new(
-                io::ErrorKind::InvalidData,
-                "VST3 factory vtable was null",
-            ));
-        }
-
-        let mut factory_info = PFactoryInfo {
-            vendor: [0; 64],
-            url: [0; 256],
-            email: [0; 128],
-            flags: 0,
-        };
-        let vendor = if ((*vtable).get_factory_info)(factory_ptr, &mut factory_info) == 0 {
-            Some(c_char_array_to_string(&factory_info.vendor))
-        } else {
-            None
-        };
-
-        let class_count = ((*vtable).count_classes)(factory_ptr);
-        if class_count <= 0 {
-            return Err(io::Error::new(
-                io::ErrorKind::InvalidData,
-                "VST3 factory exposed no classes",
-            ));
-        }
-        let mut classes = Vec::new();
-        for index in 0..class_count {
-            let mut class_info = PClassInfo {
-                cid: [0; 16],
-                cardinality: 0,
-                category: [0; 32],
-                name: [0; 64],
-            };
-            if ((*vtable).get_class_info)(factory_ptr, index, &mut class_info) != 0 {
-                continue;
-            }
-            let category = c_char_array_to_string(&class_info.category);
-            classes.push(Vst3FactoryClass {
-                role: role_from_category(&category),
-                class_id: bytes_to_upper_hex(&class_info.cid),
-                category,
-                name: c_char_array_to_string(&class_info.name),
-                vendor: None,
-                version: None,
-                subcategories: Vec::new(),
-            });
-        }
-
-        match platform {
-            Vst3HostPlatform::MacOs => {
-                if let Ok(exit) = library.get::<ExitProc>(b"bundleExit\0") {
-                    exit();
-                }
-            }
-            Vst3HostPlatform::Linux => {
-                if let Ok(exit) = library.get::<ExitProc>(b"ModuleExit\0") {
-                    exit();
-                }
-            }
-            Vst3HostPlatform::Windows => {
-                if let Ok(exit) = library.get::<ExitProc>(b"ExitDll\0") {
-                    exit();
-                }
-            }
-        }
-
-        if classes.is_empty() {
-            return Err(io::Error::new(
-                io::ErrorKind::InvalidData,
-                "VST3 factory exposed no readable classes",
-            ));
-        }
-        Ok((vendor.filter(|value| !value.is_empty()), classes))
-    }
+    Err(io::Error::new(
+        io::ErrorKind::NotFound,
+        "VST3 moduleinfo.json is required for descriptor-only discovery",
+    ))
 }
 
 fn candidate_info_plist_paths(bundle_root: &Path) -> Vec<PathBuf> {
@@ -692,26 +526,8 @@ fn parse_feature_list(raw: &str) -> io::Result<Vec<PluginFeature>> {
         .collect::<io::Result<Vec<_>>>()
 }
 
-fn bytes_to_upper_hex(bytes: &[u8]) -> String {
-    bytes.iter().map(|byte| format!("{byte:02X}")).collect()
-}
-
-fn c_char_array_to_string<const N: usize>(value: &[c_char; N]) -> String {
-    let bytes = value
-        .iter()
-        .copied()
-        .take_while(|byte| *byte != 0)
-        .map(|byte| byte as u8)
-        .collect::<Vec<_>>();
-    String::from_utf8_lossy(&bytes).trim().to_string()
-}
-
 fn plist_to_io_error(error: plist::Error) -> io::Error {
     io::Error::new(io::ErrorKind::InvalidData, error.to_string())
-}
-
-fn libloading_to_io(error: libloading::Error) -> io::Error {
-    io::Error::other(error.to_string())
 }
 
 impl Vst3FactoryClass {
