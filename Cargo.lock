@@ -1042,6 +1042,7 @@ dependencies = [
  "libloading",
  "plist",
  "serde",
+ "serde_json",
  "signal-plugin",
 ]
 

@@ -4,9 +4,13 @@ use signal_plugin::{
     PluginProcessingContract, PluginStateContract,
 };
 use std::{
-    ffi::{c_char, c_void, CString},
+    ffi::{c_char, c_void, CString, OsString},
     fs, io,
+    io::Read,
     path::{Path, PathBuf},
+    process::{Command, Stdio},
+    thread,
+    time::{Duration, Instant},
 };
 
 #[cfg(not(target_os = "macos"))]
@@ -30,7 +34,7 @@ pub(crate) struct Vst3ModuleMetadata {
     pub(crate) features: Vec<PluginFeature>,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub(crate) struct Vst3FactoryClass {
     pub(crate) role: Vst3FactoryClassRole,
     pub(crate) class_id: String,
@@ -41,12 +45,23 @@ pub(crate) struct Vst3FactoryClass {
     pub(crate) subcategories: Vec<String>,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub(crate) enum Vst3FactoryClassRole {
     Component,
     Controller,
     Other,
 }
+
+#[derive(serde::Serialize, serde::Deserialize)]
+struct Vst3FactorySnapshotWire {
+    vendor: Option<String>,
+    classes: Vec<Vst3FactoryClass>,
+}
+
+const VST3_SCAN_HELPER_ENV: &str = "SIGNAL_VST3_SCAN_HELPER";
+const VST3_SCAN_HELPER_TIMEOUT_MS_ENV: &str = "SIGNAL_VST3_SCAN_HELPER_TIMEOUT_MS";
+const VST3_SCAN_HELPER_DEFAULT_TIMEOUT: Duration = Duration::from_secs(10);
+const VST3_SCAN_HELPER_BINARY: &str = "signal-vst3-scan-helper";
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct Vst3BundleSnapshot {
@@ -472,7 +487,162 @@ fn read_vst3_factory_snapshot(
         }
         return Ok((vendor, classes));
     }
-    load_vst3_factory_classes_from_module(bundle_root, platform)
+    load_vst3_factory_classes_with_helper(bundle_root, platform)
+}
+
+pub(super) fn run_vst3_scan_helper<I>(args: I) -> i32
+where
+    I: IntoIterator<Item = OsString>,
+{
+    let mut args = args.into_iter();
+    let Some(first) = args.next() else {
+        eprintln!("missing VST3 scan helper platform");
+        return 64;
+    };
+    let platform_arg = if first == super::VST3_SCAN_HELPER_ARG {
+        let Some(platform) = args.next() else {
+            eprintln!("missing VST3 scan helper platform");
+            return 64;
+        };
+        platform
+    } else {
+        first
+    };
+    let Some(bundle_root) = args.next() else {
+        eprintln!("missing VST3 scan helper bundle path");
+        return 64;
+    };
+    let Some(platform) = parse_platform_arg(&platform_arg) else {
+        eprintln!("unsupported VST3 scan helper platform");
+        return 64;
+    };
+    let bundle_root = PathBuf::from(bundle_root);
+    match load_vst3_factory_classes_from_module(&bundle_root, platform) {
+        Ok((vendor, classes)) => {
+            let payload = Vst3FactorySnapshotWire { vendor, classes };
+            match serde_json::to_string(&payload) {
+                Ok(json) => {
+                    println!("{json}");
+                    0
+                }
+                Err(error) => {
+                    eprintln!("failed to encode VST3 scan helper result: {error}");
+                    70
+                }
+            }
+        }
+        Err(error) => {
+            eprintln!("{error}");
+            65
+        }
+    }
+}
+
+fn load_vst3_factory_classes_with_helper(
+    bundle_root: &Path,
+    platform: Vst3HostPlatform,
+) -> io::Result<(Option<String>, Vec<Vst3FactoryClass>)> {
+    let mut command = scan_helper_command()?;
+    command
+        .arg(super::VST3_SCAN_HELPER_ARG)
+        .arg(platform_arg(platform))
+        .arg(bundle_root)
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::null());
+    let mut child = command.spawn().map_err(|error| {
+        io::Error::new(
+            error.kind(),
+            format!("failed to start VST3 scan helper: {error}"),
+        )
+    })?;
+    let deadline = Instant::now() + scan_helper_timeout();
+    loop {
+        if let Some(status) = child.try_wait()? {
+            let mut stdout = Vec::new();
+            if let Some(mut output) = child.stdout.take() {
+                output.read_to_end(&mut stdout)?;
+            }
+            if !status.success() {
+                return Err(io::Error::other(format!(
+                    "VST3 scan helper exited with status {status}"
+                )));
+            }
+            let snapshot = serde_json::from_slice::<Vst3FactorySnapshotWire>(&stdout)
+                .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error.to_string()))?;
+            return Ok((snapshot.vendor, snapshot.classes));
+        }
+        if Instant::now() >= deadline {
+            let _ = child.kill();
+            let _ = child.wait();
+            return Err(io::Error::new(
+                io::ErrorKind::TimedOut,
+                "VST3 scan helper timed out",
+            ));
+        }
+        thread::sleep(Duration::from_millis(10));
+    }
+}
+
+fn scan_helper_command() -> io::Result<Command> {
+    if let Some(path) = std::env::var_os(VST3_SCAN_HELPER_ENV).filter(|path| !path.is_empty()) {
+        return Ok(Command::new(path));
+    }
+    if let Some(path) = nearby_scan_helper_binary()? {
+        return Ok(Command::new(path));
+    }
+    Ok(Command::new(std::env::current_exe()?))
+}
+
+fn nearby_scan_helper_binary() -> io::Result<Option<PathBuf>> {
+    let current_exe = std::env::current_exe()?;
+    let Some(current_dir) = current_exe.parent() else {
+        return Ok(None);
+    };
+    let candidates = [
+        current_dir.join(helper_binary_name()),
+        current_dir
+            .parent()
+            .map(|parent| parent.join(helper_binary_name()))
+            .unwrap_or_else(|| current_dir.join(helper_binary_name())),
+    ];
+    Ok(candidates.into_iter().find(|path| path.is_file()))
+}
+
+fn helper_binary_name() -> String {
+    #[cfg(target_os = "windows")]
+    {
+        format!("{VST3_SCAN_HELPER_BINARY}.exe")
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        VST3_SCAN_HELPER_BINARY.to_string()
+    }
+}
+
+fn scan_helper_timeout() -> Duration {
+    std::env::var(VST3_SCAN_HELPER_TIMEOUT_MS_ENV)
+        .ok()
+        .and_then(|raw| raw.parse::<u64>().ok())
+        .map(Duration::from_millis)
+        .unwrap_or(VST3_SCAN_HELPER_DEFAULT_TIMEOUT)
+}
+
+fn platform_arg(platform: Vst3HostPlatform) -> &'static str {
+    match platform {
+        Vst3HostPlatform::MacOs => "macos",
+        Vst3HostPlatform::Linux => "linux",
+        Vst3HostPlatform::Windows => "windows",
+    }
+}
+
+fn parse_platform_arg(value: &OsString) -> Option<Vst3HostPlatform> {
+    match value.to_str()? {
+        "macos" => Some(Vst3HostPlatform::MacOs),
+        "linux" => Some(Vst3HostPlatform::Linux),
+        "windows" => Some(Vst3HostPlatform::Windows),
+        _ => None,
+    }
 }
 
 #[cfg(not(target_os = "macos"))]
