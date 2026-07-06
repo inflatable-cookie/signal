@@ -998,6 +998,72 @@ mod tests {
     }
 
     #[test]
+    fn policy_gated_artifact_source_feeds_export_and_freeze_spec_fixture() {
+        let input =
+            stretch_identity_input().with_ratio_curve(vec![StretchRatioPoint::new(0, 1.25)]);
+        let source = stretch_artifact_source(480);
+        let artifact_source = build_offline_stretch_artifact_render_source_with_synthetic_policy(
+            OfflineStretchArtifactBuildRequest {
+                policy: OfflineStretchArtifactPolicyRequest {
+                    scope: OfflineStretchArtifactScope::Freeze,
+                    identity_input: &input,
+                    evidence_id: "synthetic:builder-export-freeze-current",
+                    promotion_policy: StretchSyntheticPromotionPolicy::default(),
+                },
+                source: &source,
+            },
+        )
+        .expect("accepted policy should produce a freeze/export render source");
+        let artifact_stage_id = 46;
+        let companion_stage_id = 47;
+        let output_frames = artifact_source.artifact.output_frame_count as u64;
+
+        let spec = RenderPlanSpec {
+            sample_rate_hz: 48_000,
+            master_gain: 0.9,
+            master_limiter: Some(RenderLimiterSpec {
+                threshold: 0.8,
+                knee_width: 0.2,
+                release_seconds: 0.05,
+            }),
+            stages: vec![
+                lane(
+                    artifact_stage_id,
+                    1.0,
+                    vec![RenderClipSpec {
+                        clip_id: 460,
+                        start_frames: 0,
+                        end_frames: output_frames,
+                        source: artifact_source.source.clone(),
+                        loop_source: false,
+                    }],
+                ),
+                lane(companion_stage_id, 0.25, vec![tone_clip(470, 220.0)]),
+                master(vec![artifact_stage_id, companion_stage_id]),
+            ],
+        };
+        let rendered = render_plan_to_pcm(
+            &spec,
+            &OfflineRenderOptions {
+                frame_count: output_frames,
+                capture_stage_ids: vec![artifact_stage_id],
+                ..OfflineRenderOptions::default()
+            },
+        )
+        .expect("policy-gated artifact source should render through export/freeze fixture");
+
+        assert_eq!(rendered.master.len(), output_frames as usize * 2);
+        assert_eq!(rendered.stems.len(), 1);
+        assert_eq!(rendered.stems[0].0, artifact_stage_id);
+        assert_eq!(rendered.stems[0].1.len(), output_frames as usize * 2);
+        assert_eq!(
+            artifact_source.artifact.receipt.promotion_evidence_id,
+            "synthetic:builder-export-freeze-current"
+        );
+        assert!(artifact_source.artifact.receipt.product_facing_allowed);
+    }
+
+    #[test]
     fn artifact_builder_gate_blocks_rejected_policy_without_product_buffer() {
         let input =
             stretch_identity_input().with_ratio_curve(vec![StretchRatioPoint::new(0, 1.25)]);

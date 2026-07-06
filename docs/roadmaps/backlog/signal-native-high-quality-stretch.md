@@ -303,6 +303,9 @@ Work:
 - [x] route the public host-edge receipt path through the packaged
   `RenderSource::Samples` helper so render consumption and runtime
   materialization evidence share one policy-gated artifact object
+- [x] wire a full render-plane export/freeze spec fixture through the packaged
+  artifact source helper, including a rejected-policy fixture that cannot
+  create a renderable clip source
 - [ ] wire OfflineHighQuality artifacts into render/export/freeze only after
   corpus evidence beats the draft baseline
 - [ ] add Pulse/Aura contract changes only for product-visible mode, ratio,
@@ -339,8 +342,8 @@ Work:
 ## Next Task
 
 Continue the Signal DSP quality batch by turning the synthetic comparison
-report into a promotion-readiness loop: wire a full render-plane export/freeze
-spec fixture through the packaged artifact source helper, including a
-rejected-policy fixture that cannot create a renderable clip source. Keep
-Pulse/Aura contract planning deferred until a Loophole product workflow
-consumes the Signal-owned contract.
+report into a promotion-readiness loop: add cache/source reuse evidence around
+the packaged artifact source path, proving identical policy-gated artifacts
+share stable cache identity while projection or curve changes produce distinct
+render sources. Keep Pulse/Aura contract planning deferred until a Loophole
+product workflow consumes the Signal-owned contract.
