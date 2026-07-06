@@ -63,10 +63,13 @@ pub use interfaces::{
     RuntimeLifecycleApi, RuntimeLv2ExtensionCapabilitySummary, RuntimeLv2PreparedNegotiationRecord,
     RuntimeMediaAnalysisDescriptorState, RuntimeMediaAnalysisFamilyState,
     RuntimeMediaAssetRegistration, RuntimeMediaPreviewState, RuntimeMultichannelIoSummary,
-    RuntimeObservationApi, RuntimeObservationReport, RuntimePluginComplexIoSummary,
-    RuntimePluginDiscoveredTypeRecord, RuntimePluginFormatPlatformCoverageRecord,
-    RuntimePluginHostPlatform, RuntimePluginIsolationOutcome, RuntimePluginLifecycleState,
-    RuntimePluginParityBand, RuntimeProjectionApi, RuntimeRecordingCaptureCommitReceipt,
+    RuntimeObservationApi, RuntimeObservationReport, RuntimeOfflineStretchArtifactPlanRegistration,
+    RuntimeOfflineStretchArtifactPlanSnapshot, RuntimeOfflineStretchArtifactPlanSnapshotSet,
+    RuntimeOfflineStretchArtifactReadiness, RuntimeOfflineStretchArtifactScope,
+    RuntimePluginComplexIoSummary, RuntimePluginDiscoveredTypeRecord,
+    RuntimePluginFormatPlatformCoverageRecord, RuntimePluginHostPlatform,
+    RuntimePluginIsolationOutcome, RuntimePluginLifecycleState, RuntimePluginParityBand,
+    RuntimeProjectionApi, RuntimeRecordingCaptureCommitReceipt,
     RuntimeRecordingCaptureStartRequest, RuntimeSupervisorApi, RuntimeSupervisorReport,
     RuntimeWarpClipRegistration, SandboxHandle, ScanHandle, StopReason,
 };
@@ -78,4 +81,8 @@ pub use sandbox_broker_support::{
     SandboxBrokerAttachedSession, SandboxBrokerClientSession, SandboxBrokerReceiptState,
     SandboxBrokerSession, SandboxBrokerSpawnConfig, SandboxPluginActivateOutcome,
     SandboxPluginAudioLease, SandboxPluginInventory, SandboxPluginParameter,
+};
+pub use signal_dsp_stretch::{
+    StretchBackendTier, StretchCacheIdentityInput, StretchChannelLayout, StretchPitchPoint,
+    StretchRatioPoint, StretchWarpMarker,
 };

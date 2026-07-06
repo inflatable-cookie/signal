@@ -62,4 +62,13 @@ impl SignalRuntime {
         self.clip_processing_pipeline.reconcile_clips(clips);
         Ok(())
     }
+
+    /// Reconciles offline stretch artifact plans observed by render/export/freeze.
+    pub fn reconcile_offline_stretch_artifact_plans(
+        &mut self,
+        plans: Vec<RuntimeOfflineStretchArtifactPlanRegistration>,
+    ) -> Result<(), RuntimeError> {
+        self.offline_stretch_artifact_plans.reconcile_plans(plans);
+        Ok(())
+    }
 }

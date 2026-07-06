@@ -1069,6 +1069,7 @@ dependencies = [
  "signal-analysis",
  "signal-analysis-character",
  "signal-analysis-loudness",
+ "signal-dsp-stretch",
  "signal-graph",
  "signal-hardware",
  "signal-plugin",

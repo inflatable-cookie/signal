@@ -20,5 +20,6 @@ signal-analysis-loudness = { workspace = true }
 signal-graph = { workspace = true }
 signal-hardware = { workspace = true }
 signal-plugin = { workspace = true }
+signal-dsp-stretch = { workspace = true }
 signal-primitives = { workspace = true }
 symphonia = { workspace = true }

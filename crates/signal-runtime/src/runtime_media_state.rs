@@ -10,6 +10,8 @@ mod media_library_snapshot;
 mod media_pipeline_reconcile;
 #[path = "runtime_media_state/media_pipeline_snapshots.rs"]
 mod media_pipeline_snapshots;
+#[path = "runtime_media_state/offline_stretch_artifact_snapshot.rs"]
+mod offline_stretch_artifact_snapshot;
 
 #[derive(Clone, Debug, Default, PartialEq)]
 pub(crate) struct RuntimeMediaPipelineStateModel {
@@ -22,6 +24,11 @@ pub(crate) struct RuntimeMediaPipelineStateModel {
 #[derive(Clone, Debug, Default, PartialEq)]
 pub(crate) struct RuntimeClipProcessingPipelineStateModel {
     pub(crate) clips: BTreeMap<String, RuntimeClipProcessingRegistration>,
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub(crate) struct RuntimeOfflineStretchArtifactPlanStateModel {
+    pub(crate) plans: BTreeMap<String, RuntimeOfflineStretchArtifactPlanRegistration>,
 }
 
 pub(crate) fn media_family_state(

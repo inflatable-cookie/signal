@@ -51,6 +51,12 @@ impl RuntimeObservationApi for SignalRuntime {
         self.media_library_service_snapshot()
     }
 
+    fn get_offline_stretch_artifact_plan_snapshot(
+        &self,
+    ) -> RuntimeOfflineStretchArtifactPlanSnapshotSet {
+        self.offline_stretch_artifact_plan_snapshot()
+    }
+
     fn get_tempo_map_snapshot(&self) -> RuntimeTempoMapSnapshot {
         self.tempo_map_snapshot()
     }

@@ -7,7 +7,10 @@ use public_contract_boundary_media_support::{public_media_fixture_path, write_pu
 use signal_runtime::{
     HandshakeRequest, RuntimeConfig, RuntimeConfigRequest, RuntimeEventRecorder,
     RuntimeLifecycleApi, RuntimeMediaPreviewState, RuntimeObservationApi, RuntimeObservationReport,
-    RuntimeSupervisorReport, SignalRuntime,
+    RuntimeOfflineStretchArtifactPlanRegistration, RuntimeOfflineStretchArtifactReadiness,
+    RuntimeOfflineStretchArtifactScope, RuntimeSupervisorReport, SignalRuntime, StretchBackendTier,
+    StretchCacheIdentityInput, StretchChannelLayout, StretchPitchPoint, StretchRatioPoint,
+    StretchWarpMarker,
 };
 
 #[test]
@@ -130,4 +133,96 @@ fn public_runtime_media_service_boundary_reports_runtime_owned_readiness_and_inv
     {
         let _ = fs::remove_file(path);
     }
+}
+
+#[test]
+fn public_runtime_reports_offline_stretch_artifact_plan_receipts_without_promotion() {
+    let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
+    let recorder = RuntimeEventRecorder::default();
+    let accepted_plan = StretchCacheIdentityInput::signal_native(
+        StretchBackendTier::OfflineHighQuality,
+        "sha256:public-runtime-stretch-source",
+        StretchChannelLayout::new(2, 48_000),
+        "projection-17",
+    )
+    .with_ratio_curve(vec![
+        StretchRatioPoint::new(0, 1.0),
+        StretchRatioPoint::new(48_000, 1.5),
+    ])
+    .with_pitch_curve(vec![StretchPitchPoint::new(0, 0.0)])
+    .with_warp_markers(vec![StretchWarpMarker::new(0, 0)]);
+    let invalid_tier = StretchCacheIdentityInput::signal_native(
+        StretchBackendTier::RealtimePreview,
+        "sha256:public-runtime-stretch-source",
+        StretchChannelLayout::new(2, 48_000),
+        "projection-17",
+    );
+
+    runtime
+        .reconcile_offline_stretch_artifact_plans(vec![
+            RuntimeOfflineStretchArtifactPlanRegistration {
+                plan_id: "stretch-plan:offline-hq".into(),
+                clip_id: Some("clip:offline-hq".into()),
+                media_asset_id: Some("asset:offline-hq".into()),
+                scope: RuntimeOfflineStretchArtifactScope::Export,
+                identity_input: accepted_plan.clone(),
+                corpus_evidence_accepted: true,
+            },
+            RuntimeOfflineStretchArtifactPlanRegistration {
+                plan_id: "stretch-plan:preview".into(),
+                clip_id: Some("clip:preview".into()),
+                media_asset_id: Some("asset:preview".into()),
+                scope: RuntimeOfflineStretchArtifactScope::RenderCache,
+                identity_input: invalid_tier,
+                corpus_evidence_accepted: true,
+            },
+        ])
+        .expect("offline stretch artifact plans should reconcile");
+
+    let observation = RuntimeObservationReport::capture(&runtime, &recorder);
+    let supervisor = RuntimeSupervisorReport::capture(&runtime, &recorder);
+    let snapshot = &observation.offline_stretch_artifact_plan_snapshot;
+
+    assert_eq!(snapshot.plan_count, 2);
+    assert_eq!(snapshot.awaiting_implementation_count, 1);
+    assert_eq!(snapshot.invalid_plan_count, 1);
+    assert_eq!(snapshot.ready_plan_count, 0);
+    let offline_plan = snapshot
+        .plans
+        .iter()
+        .find(|plan| plan.plan_id == "stretch-plan:offline-hq")
+        .expect("offline high-quality plan should be present");
+    let expected_hash = accepted_plan
+        .identity()
+        .expect("identity should validate")
+        .stable_hash;
+    assert_eq!(
+        offline_plan.readiness,
+        RuntimeOfflineStretchArtifactReadiness::AwaitingImplementation
+    );
+    assert!(!offline_plan.product_facing_allowed);
+    assert_eq!(
+        offline_plan.cache_identity_hash.as_deref(),
+        Some(expected_hash.as_str())
+    );
+    let invalid_plan = snapshot
+        .plans
+        .iter()
+        .find(|plan| plan.plan_id == "stretch-plan:preview")
+        .expect("invalid preview plan should be present");
+    assert_eq!(
+        invalid_plan.readiness,
+        RuntimeOfflineStretchArtifactReadiness::Invalid
+    );
+    assert!(invalid_plan
+        .last_error
+        .as_deref()
+        .is_some_and(|error| error.contains("OfflineHighQuality")));
+    assert_eq!(
+        supervisor
+            .observation
+            .offline_stretch_artifact_plan_snapshot
+            .plan_count,
+        snapshot.plan_count
+    );
 }

@@ -40,6 +40,8 @@ pub struct RuntimeObservationReport {
     pub media_service_snapshot: RuntimeMediaServiceSnapshot,
     /// Media library service snapshot (analysis descriptor state).
     pub media_library_snapshot: RuntimeMediaLibraryServiceSnapshot,
+    /// Offline stretch artifact plan receipts observed by render/export/freeze.
+    pub offline_stretch_artifact_plan_snapshot: RuntimeOfflineStretchArtifactPlanSnapshotSet,
     /// Plugin discovery snapshot.
     pub plugin_discovery_snapshot: RuntimePluginDiscoverySnapshot,
     /// Plugin lifecycle snapshot.
@@ -72,6 +74,8 @@ impl RuntimeObservationReport {
         let media_pipeline_snapshot = runtime.get_media_pipeline_snapshot();
         let media_service_snapshot = runtime.get_media_service_snapshot();
         let media_library_snapshot = runtime.get_media_library_service_snapshot();
+        let offline_stretch_artifact_plan_snapshot =
+            runtime.get_offline_stretch_artifact_plan_snapshot();
         let execution_topology_summary = runtime.get_execution_topology_summary();
         let graph_latency_samples = runtime.get_graph_latency_samples();
         let plugin_discovery_snapshot = runtime.get_plugin_discovery_snapshot();
@@ -116,6 +120,7 @@ impl RuntimeObservationReport {
             media_pipeline_snapshot,
             media_service_snapshot,
             media_library_snapshot,
+            offline_stretch_artifact_plan_snapshot,
             plugin_discovery_snapshot,
             plugin_lifecycle_snapshot,
             plugin_chain_snapshot,

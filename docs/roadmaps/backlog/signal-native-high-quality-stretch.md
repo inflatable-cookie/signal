@@ -239,6 +239,8 @@ Work:
   ratio/pitch curves, warp markers, channel layout, and projection epoch
 - [x] add render/export/freeze artifact-planning seam that consumes the cache
   identity while keeping product-facing promotion gated
+- [x] add runtime/export receipt seam that observes offline stretch artifact
+  plans through observation and host supervisor reports
 - [ ] wire OfflineHighQuality artifacts into render/export/freeze only after
   corpus evidence beats the draft baseline
 - [ ] add Pulse/Aura contract changes only for product-visible mode, ratio,
@@ -274,6 +276,6 @@ Work:
 
 ## Next Task
 
-Continue Slice 4 in Signal by adding a runtime/export receipt seam that can
-observe offline stretch artifact plans while still blocking product-facing
-`OfflineHighQuality` use until corpus evidence beats the draft baseline.
+Continue Slice 4 in Signal by adding an explicit corpus-evidence promotion
+receipt for OfflineHighQuality so render/export/freeze wiring has a typed
+gate instead of a boolean placeholder.

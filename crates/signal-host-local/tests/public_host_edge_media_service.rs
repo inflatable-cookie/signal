@@ -7,7 +7,10 @@ use public_host_edge_media::{public_local_media_fixture_path, write_public_test_
 use signal_host_local::LocalRuntimeHost;
 use signal_runtime::{
     RuntimeConfig, RuntimeConfigRequest, RuntimeLifecycleApi, RuntimeMediaPreviewState,
-    RuntimeObservationApi, SignalRuntime,
+    RuntimeObservationApi, RuntimeOfflineStretchArtifactPlanRegistration,
+    RuntimeOfflineStretchArtifactReadiness, RuntimeOfflineStretchArtifactScope,
+    RuntimeSupervisorApi, SignalRuntime, StretchBackendTier, StretchCacheIdentityInput,
+    StretchChannelLayout, StretchPitchPoint, StretchRatioPoint, StretchWarpMarker,
 };
 
 #[test]
@@ -127,4 +130,55 @@ fn local_shared_host_edge_exports_runtime_media_service_truth() {
     {
         let _ = fs::remove_file(path);
     }
+}
+
+#[test]
+fn local_shared_host_edge_exports_offline_stretch_artifact_receipts() {
+    let runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
+    let identity_input = StretchCacheIdentityInput::signal_native(
+        StretchBackendTier::OfflineHighQuality,
+        "sha256:host-local-stretch-source",
+        StretchChannelLayout::new(2, 48_000),
+        "projection-host-local-3",
+    )
+    .with_ratio_curve(vec![
+        StretchRatioPoint::new(0, 1.0),
+        StretchRatioPoint::new(96_000, 0.75),
+    ])
+    .with_pitch_curve(vec![StretchPitchPoint::new(0, 2.0)])
+    .with_warp_markers(vec![StretchWarpMarker::new(0, 0)]);
+    let expected_hash = identity_input
+        .identity()
+        .expect("identity should validate")
+        .stable_hash;
+
+    let mut host = LocalRuntimeHost::new(runtime);
+    host.reconcile_offline_stretch_artifact_plans(vec![
+        RuntimeOfflineStretchArtifactPlanRegistration {
+            plan_id: "host-stretch-plan:offline-hq".into(),
+            clip_id: Some("clip:host-offline-hq".into()),
+            media_asset_id: Some("asset:host-offline-hq".into()),
+            scope: RuntimeOfflineStretchArtifactScope::Freeze,
+            identity_input,
+            corpus_evidence_accepted: true,
+        },
+    ])
+    .expect("host should forward offline stretch artifact plans");
+
+    let report = host.supervisor_report();
+    let snapshot = &report.observation.offline_stretch_artifact_plan_snapshot;
+    assert_eq!(snapshot.plan_count, 1);
+    assert_eq!(snapshot.awaiting_implementation_count, 1);
+    assert_eq!(snapshot.ready_plan_count, 0);
+    let plan = &snapshot.plans[0];
+    assert_eq!(plan.plan_id, "host-stretch-plan:offline-hq");
+    assert_eq!(
+        plan.readiness,
+        RuntimeOfflineStretchArtifactReadiness::AwaitingImplementation
+    );
+    assert!(!plan.product_facing_allowed);
+    assert_eq!(
+        plan.cache_identity_hash.as_deref(),
+        Some(expected_hash.as_str())
+    );
 }

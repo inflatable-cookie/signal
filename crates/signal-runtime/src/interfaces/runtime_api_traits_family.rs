@@ -95,6 +95,10 @@ pub trait RuntimeObservationApi {
     fn get_media_service_snapshot(&self) -> RuntimeMediaServiceSnapshot;
     /// Returns the current media library service snapshot.
     fn get_media_library_service_snapshot(&self) -> RuntimeMediaLibraryServiceSnapshot;
+    /// Returns the current offline stretch artifact plan snapshot set.
+    fn get_offline_stretch_artifact_plan_snapshot(
+        &self,
+    ) -> RuntimeOfflineStretchArtifactPlanSnapshotSet;
     /// Returns the current tempo map snapshot.
     fn get_tempo_map_snapshot(&self) -> RuntimeTempoMapSnapshot;
     /// Returns the current warp pipeline snapshot.
@@ -153,6 +157,11 @@ pub trait RuntimeSupervisorApi {
     fn reconcile_clip_processing_clips(
         &mut self,
         clips: Vec<RuntimeClipProcessingRegistration>,
+    ) -> Result<(), RuntimeError>;
+    /// Reconciles the set of offline stretch artifact plans observed by render/export/freeze.
+    fn reconcile_offline_stretch_artifact_plans(
+        &mut self,
+        plans: Vec<RuntimeOfflineStretchArtifactPlanRegistration>,
     ) -> Result<(), RuntimeError>;
     /// Tears down the plugin sandbox with the given ID.
     fn teardown_plugin_sandbox(&mut self, sandbox_id: &str) -> Result<(), RuntimeError>;

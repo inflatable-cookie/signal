@@ -55,6 +55,7 @@ use runtime_execution_plan::RuntimeExecutionPlanState;
 use runtime_media_processing::analyze_runtime_media_asset;
 pub(crate) use runtime_media_state::{
     RuntimeClipProcessingPipelineStateModel, RuntimeMediaPipelineStateModel,
+    RuntimeOfflineStretchArtifactPlanStateModel,
 };
 use runtime_plugin_lifecycle::{
     runtime_plugin_boundary_counts, runtime_plugin_stage_assignment,
@@ -107,6 +108,7 @@ pub struct SignalRuntime {
     plugin_placement_policy: RuntimePluginPlacementPolicy,
     recording_capture: RuntimeRecordingCaptureStateModel,
     media_pipeline: RuntimeMediaPipelineStateModel,
+    offline_stretch_artifact_plans: RuntimeOfflineStretchArtifactPlanStateModel,
     tempo_map: RuntimeTempoMapStateModel,
     warp_pipeline: RuntimeWarpPipelineStateModel,
     clip_processing_pipeline: RuntimeClipProcessingPipelineStateModel,
@@ -133,6 +135,7 @@ impl SignalRuntime {
             plugin_placement_policy: RuntimePluginPlacementPolicy::default(),
             recording_capture: RuntimeRecordingCaptureStateModel::default(),
             media_pipeline: RuntimeMediaPipelineStateModel::default(),
+            offline_stretch_artifact_plans: RuntimeOfflineStretchArtifactPlanStateModel::default(),
             tempo_map: RuntimeTempoMapStateModel::default(),
             warp_pipeline: RuntimeWarpPipelineStateModel::default(),
             clip_processing_pipeline: RuntimeClipProcessingPipelineStateModel::default(),
