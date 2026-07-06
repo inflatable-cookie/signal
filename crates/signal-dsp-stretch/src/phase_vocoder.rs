@@ -57,6 +57,49 @@ pub(crate) fn transient_reset_phase_vocoder(
     )
 }
 
+/// Run the OfflineHighQuality prototype over interleaved stereo with a linked
+/// mid/side analysis surface instead of independent left/right stretching.
+pub(crate) fn transient_reset_phase_vocoder_linked_stereo(
+    input_interleaved: &[Sample],
+    target_frames: usize,
+    ratio: f64,
+    window_size: usize,
+    analysis_hop: usize,
+) -> Vec<Sample> {
+    let frame_count = input_interleaved.len() / 2;
+    if frame_count == 0 || target_frames == 0 {
+        return Vec::new();
+    }
+
+    let mut mid = Vec::with_capacity(frame_count);
+    let mut side = Vec::with_capacity(frame_count);
+    for frame in input_interleaved.chunks_exact(2) {
+        let left = frame[0];
+        let right = frame[1];
+        mid.push((left + right) * 0.5);
+        side.push((left - right) * 0.5);
+    }
+
+    let stretched_mid =
+        transient_reset_phase_vocoder(&mid, target_frames, ratio, window_size, analysis_hop);
+    let stretched_side =
+        transient_reset_phase_vocoder(&side, target_frames, ratio, window_size, analysis_hop);
+
+    let out_frames = stretched_mid
+        .len()
+        .min(stretched_side.len())
+        .min(target_frames);
+    let mut output = Vec::with_capacity(target_frames * 2);
+    for index in 0..out_frames {
+        let mid = stretched_mid[index];
+        let side = stretched_side[index];
+        output.push(mid + side);
+        output.push(mid - side);
+    }
+    output.resize(target_frames * 2, 0.0);
+    output
+}
+
 fn run_phase_vocoder(
     input: &[Sample],
     target_len: usize,

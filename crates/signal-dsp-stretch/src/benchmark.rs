@@ -1,5 +1,6 @@
 use crate::phase_vocoder::{
     phase_locked_phase_vocoder, phase_vocoder, transient_reset_phase_vocoder,
+    transient_reset_phase_vocoder_linked_stereo,
 };
 use rustfft::{num_complex::Complex32, FftPlanner};
 use signal_primitives::Sample;
@@ -671,15 +672,15 @@ pub fn measure_draft_stereo_image_delta(ratio: f64) -> StretchStereoImageMeasure
     measure_stereo_image_delta(&input.samples, &output, ratio)
 }
 
-/// Measure transient-reset prototype stereo image movement on the synthetic
-/// loop-seam corpus case.
+/// Measure transient-reset linked-stereo prototype image movement on the
+/// synthetic loop-seam corpus case.
 pub fn measure_transient_reset_stereo_image_delta(ratio: f64) -> StretchStereoImageMeasurement {
     if !ratio.is_finite() || ratio <= 0.0 {
         return stereo_image_nan(ratio);
     }
 
     let input = synthetic_loop_seam();
-    let output = stretch_stereo_synthetic(&input, ratio, transient_reset_phase_vocoder);
+    let output = stretch_stereo_synthetic_linked(&input, ratio);
     measure_stereo_image_delta(&input.samples, &output, ratio)
 }
 
@@ -1277,6 +1278,14 @@ fn stretch_stereo_synthetic(
         output_channels.push(stretcher(&mono, target_len, ratio, 2_048, 512));
     }
     interleave_channels(&output_channels)
+}
+
+fn stretch_stereo_synthetic_linked(input: &StretchSyntheticAudio, ratio: f64) -> Vec<Sample> {
+    if input.channels != 2 {
+        return Vec::new();
+    }
+    let target_len = (input.frame_count() as f64 * ratio).round() as usize;
+    transient_reset_phase_vocoder_linked_stereo(&input.samples, target_len, ratio, 2_048, 512)
 }
 
 fn amplitude_to_dbfs(amplitude: f64) -> f64 {

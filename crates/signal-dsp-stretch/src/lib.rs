@@ -65,7 +65,9 @@ pub use cache_identity::{
 };
 pub use promotion::{StretchPromotionReceipt, StretchPromotionStatus};
 
-use phase_vocoder::{phase_vocoder, transient_reset_phase_vocoder};
+use phase_vocoder::{
+    phase_vocoder, transient_reset_phase_vocoder, transient_reset_phase_vocoder_linked_stereo,
+};
 use signal_primitives::Sample;
 
 /// Quality tier of a stretch backend (memo 013 vocabulary). One tier exists
@@ -303,6 +305,36 @@ impl OfflineHighQualityStretcher {
         stretcher.set_ratio(ratio);
         stretcher
     }
+
+    /// Stretch an interleaved stereo buffer through the linked
+    /// OfflineHighQuality prototype path.
+    ///
+    /// Unlike [`stretch_interleaved_stereo`], this path does not process left
+    /// and right independently. It uses a mid/side linked analysis surface so
+    /// stereo image metrics can be measured against a candidate that preserves
+    /// channel relationships more directly. A trailing odd sample is ignored.
+    pub fn stretch_interleaved_stereo(&mut self, frames: &[Sample]) -> Vec<Sample> {
+        let frame_count = frames.len() / 2;
+        let target_frames = (frame_count as f64 * self.ratio).round() as usize;
+        if frame_count == 0 || target_frames == 0 {
+            return Vec::new();
+        }
+        let even_frames = &frames[..frame_count * 2];
+        if (self.ratio - 1.0).abs() < 1.0e-9 {
+            return even_frames.to_vec();
+        }
+        if frame_count < self.window_size {
+            return linear_time_scale_interleaved_stereo(even_frames, target_frames);
+        }
+
+        transient_reset_phase_vocoder_linked_stereo(
+            even_frames,
+            target_frames,
+            self.ratio,
+            self.window_size,
+            self.analysis_hop,
+        )
+    }
 }
 
 impl TimeStretcher for OfflineHighQualityStretcher {
@@ -372,6 +404,26 @@ fn linear_time_scale(input: &[Sample], target_len: usize) -> Vec<Sample> {
             input[left] + (input[right] - input[left]) * fraction
         })
         .collect()
+}
+
+fn linear_time_scale_interleaved_stereo(input: &[Sample], target_frames: usize) -> Vec<Sample> {
+    let frame_count = input.len() / 2;
+    let mut left = Vec::with_capacity(frame_count);
+    let mut right = Vec::with_capacity(frame_count);
+    for frame in input.chunks_exact(2) {
+        left.push(frame[0]);
+        right.push(frame[1]);
+    }
+    let left = linear_time_scale(&left, target_frames);
+    let right = linear_time_scale(&right, target_frames);
+    let out_frames = left.len().min(right.len()).min(target_frames);
+    let mut output = Vec::with_capacity(target_frames * 2);
+    for index in 0..out_frames {
+        output.push(left[index]);
+        output.push(right[index]);
+    }
+    output.resize(target_frames * 2, 0.0);
+    output
 }
 
 fn sanitize_ratio(ratio: f64) -> f64 {
@@ -543,6 +595,57 @@ mod tests {
         let out_right: Vec<f32> = output.iter().skip(1).step_by(2).copied().collect();
         assert!((dominant_frequency_hz(&out_left, sample_rate) - 440.0).abs() < 15.0);
         assert!((dominant_frequency_hz(&out_right, sample_rate) - 220.0).abs() < 10.0);
+    }
+
+    #[test]
+    fn offline_high_quality_linked_stereo_honors_output_length_contract() {
+        let sample_rate = 48_000.0;
+        let left = sine(440.0, sample_rate, 48_000);
+        let right = sine(660.0, sample_rate, 48_000);
+        let mut frames = Vec::with_capacity(left.len() * 2);
+        for (l, r) in left.iter().zip(right.iter()) {
+            frames.push(*l);
+            frames.push(*r);
+        }
+
+        for ratio in [0.5, 0.75, 1.25, 1.5, 2.0] {
+            let mut stretcher = OfflineHighQualityStretcher::new(ratio);
+            let output = stretcher.stretch_interleaved_stereo(&frames);
+
+            assert_eq!(
+                output.len(),
+                ((left.len() as f64 * ratio).round() as usize) * 2,
+                "ratio {ratio}"
+            );
+        }
+    }
+
+    #[test]
+    fn offline_high_quality_linked_stereo_is_identity_passthrough() {
+        let frames = [0.0, 0.1, 0.2, 0.3, 0.4];
+        let mut stretcher = OfflineHighQualityStretcher::new(1.0);
+
+        assert_eq!(stretcher.stretch_interleaved_stereo(&frames), frames[..4]);
+    }
+
+    #[test]
+    fn offline_high_quality_linked_stereo_is_deterministic() {
+        let sample_rate = 48_000.0;
+        let left = sine(330.0, sample_rate, 48_000);
+        let right = sine(550.0, sample_rate, 48_000);
+        let mut frames = Vec::with_capacity(left.len() * 2);
+        for (l, r) in left.iter().zip(right.iter()) {
+            frames.push(*l);
+            frames.push(*r);
+        }
+
+        let mut first = OfflineHighQualityStretcher::new(1.5);
+        let mut repeated = OfflineHighQualityStretcher::new(1.5);
+
+        assert_eq!(
+            first.stretch_interleaved_stereo(&frames),
+            repeated.stretch_interleaved_stereo(&frames)
+        );
     }
 
     #[test]

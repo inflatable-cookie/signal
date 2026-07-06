@@ -247,6 +247,8 @@ Work:
   identity-locked phase-vocoder foundation while keeping promotion blocked
 - [x] add synthetic corpus comparison reporting for OfflineHighQuality
   prototype metrics against the draft baseline
+- [x] add a linked mid/side stereo stretch path for the OfflineHighQuality
+  prototype so stereo metrics no longer rely on independent left/right renders
 - [ ] wire OfflineHighQuality artifacts into render/export/freeze only after
   corpus evidence beats the draft baseline
 - [ ] add Pulse/Aura contract changes only for product-visible mode, ratio,
@@ -282,9 +284,9 @@ Work:
 
 ## Next Task
 
-Continue the Signal DSP quality batch by using the synthetic comparison report
-to guide the next algorithmic gap. Start with linked stereo synthesis so image
-metrics can improve without relying on independent per-channel processing,
-then move to pitch-shift composition and dynamic-ratio automation. Keep
-render/export/freeze wiring blocked until the tier is no longer prototype-only
-and an accepted `StretchPromotionReceipt` exists.
+Continue the Signal DSP quality batch by adding pitch-shift composition for
+the OfflineHighQuality prototype using stretch plus resample, then move to
+dynamic-ratio automation. Use the synthetic comparison report to track whether
+the linked stereo path improves image metrics, and keep render/export/freeze
+wiring blocked until the tier is no longer prototype-only and an accepted
+`StretchPromotionReceipt` exists.
