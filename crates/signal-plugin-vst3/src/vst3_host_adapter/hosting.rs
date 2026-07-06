@@ -30,20 +30,24 @@
 // than clippy's default argument budget for a few methods.
 #![allow(clippy::too_many_arguments)]
 
-use std::ffi::c_void;
+use std::ffi::{c_char, c_void, CString};
 use std::path::Path;
 use std::ptr;
 use std::sync::Arc;
 
-use libloading::Library;
 use signal_plugin::{
     PluginEvent, PluginParamChange, PluginParamChangeQueue, PluginParameterDescriptor,
     PluginParameterDomain, PluginParameterFlags, PLUGIN_PARAM_CHANGE_CAPACITY,
 };
 
+#[cfg(not(target_os = "macos"))]
+use libloading::Library;
+
 use super::gui::{Vst3GuiEvent, Vst3GuiSession, IPLUG_VIEW_IID, VIEW_TYPE_EDITOR};
-use super::introspection::resolve_module_binary_path;
 use super::Vst3HostPlatform;
+
+#[cfg(not(target_os = "macos"))]
+use super::introspection::resolve_module_binary_path;
 
 /// Error surface for VST3 hosting operations; carries a stable snake_case
 /// token suitable for broker receipt details (mirrors `ClapHostingError`).
@@ -477,6 +481,132 @@ type EntryProc = unsafe extern "C" fn(*mut c_void) -> bool;
 type ExitProc = unsafe extern "C" fn();
 type GetPluginFactoryProc = unsafe extern "C" fn() -> *mut c_void;
 
+#[cfg(target_os = "macos")]
+mod macos_bundle {
+    use super::*;
+
+    type CFAllocatorRef = *const c_void;
+    type CFStringRef = *const c_void;
+    type CFURLRef = *const c_void;
+    type CFBundleRef = *mut c_void;
+
+    #[link(name = "CoreFoundation", kind = "framework")]
+    extern "C" {
+        static kCFAllocatorDefault: CFAllocatorRef;
+        fn CFBundleCreate(allocator: CFAllocatorRef, bundleURL: CFURLRef) -> CFBundleRef;
+        fn CFBundleGetFunctionPointerForName(
+            bundle: CFBundleRef,
+            functionName: CFStringRef,
+        ) -> *mut c_void;
+        fn CFBundleLoadExecutable(bundle: CFBundleRef) -> u8;
+        fn CFRelease(cf: *const c_void);
+        fn CFStringCreateWithCString(
+            alloc: CFAllocatorRef,
+            cStr: *const c_char,
+            encoding: u32,
+        ) -> CFStringRef;
+        fn CFURLCreateWithFileSystemPath(
+            allocator: CFAllocatorRef,
+            filePath: CFStringRef,
+            pathStyle: isize,
+            isDirectory: u8,
+        ) -> CFURLRef;
+    }
+
+    const K_CF_STRING_ENCODING_UTF8: u32 = 0x0800_0100;
+    const K_CF_URL_POSIX_PATH_STYLE: isize = 0;
+
+    pub(super) struct MacVst3Bundle {
+        bundle: CFBundleRef,
+    }
+
+    impl MacVst3Bundle {
+        pub(super) fn load(bundle_root: &Path) -> Result<Self, Vst3HostingError> {
+            let path = bundle_root
+                .to_str()
+                .ok_or_else(|| Vst3HostingError::new("module_bundle_path_invalid"))?;
+            let path_c = CString::new(path)
+                .map_err(|_| Vst3HostingError::new("module_bundle_path_invalid"))?;
+            unsafe {
+                let path_string = CFStringCreateWithCString(
+                    kCFAllocatorDefault,
+                    path_c.as_ptr(),
+                    K_CF_STRING_ENCODING_UTF8,
+                );
+                if path_string.is_null() {
+                    return Err(Vst3HostingError::new("module_bundle_path_invalid"));
+                }
+                let bundle_url = CFURLCreateWithFileSystemPath(
+                    kCFAllocatorDefault,
+                    path_string,
+                    K_CF_URL_POSIX_PATH_STYLE,
+                    1,
+                );
+                CFRelease(path_string);
+                if bundle_url.is_null() {
+                    return Err(Vst3HostingError::new("module_bundle_url_invalid"));
+                }
+                let bundle = CFBundleCreate(kCFAllocatorDefault, bundle_url);
+                CFRelease(bundle_url);
+                if bundle.is_null() {
+                    return Err(Vst3HostingError::new("module_bundle_open_failed"));
+                }
+                if CFBundleLoadExecutable(bundle) == 0 {
+                    CFRelease(bundle);
+                    return Err(Vst3HostingError::new("module_open_failed"));
+                }
+                Ok(Self { bundle })
+            }
+        }
+
+        pub(super) fn bundle_ref(&self) -> *mut c_void {
+            self.bundle.cast()
+        }
+
+        unsafe fn function_ptr(&self, name: &str) -> Option<*mut c_void> {
+            let name_c = CString::new(name).ok()?;
+            let name_string = CFStringCreateWithCString(
+                kCFAllocatorDefault,
+                name_c.as_ptr(),
+                K_CF_STRING_ENCODING_UTF8,
+            );
+            if name_string.is_null() {
+                return None;
+            }
+            let pointer = CFBundleGetFunctionPointerForName(self.bundle, name_string);
+            CFRelease(name_string);
+            (!pointer.is_null()).then_some(pointer)
+        }
+
+        pub(super) unsafe fn entry(&self) -> Option<EntryProc> {
+            self.function_ptr("bundleEntry")
+                .map(|pointer| std::mem::transmute(pointer))
+        }
+
+        pub(super) unsafe fn exit(&self) -> Option<ExitProc> {
+            self.function_ptr("bundleExit")
+                .map(|pointer| std::mem::transmute(pointer))
+        }
+
+        pub(super) unsafe fn factory(&self) -> Option<GetPluginFactoryProc> {
+            self.function_ptr("GetPluginFactory")
+                .map(|pointer| std::mem::transmute(pointer))
+        }
+    }
+
+    impl Drop for MacVst3Bundle {
+        fn drop(&mut self) {
+            unsafe {
+                // Do not CFBundleUnloadExecutable: Objective-C classes cannot
+                // be unregistered safely once a plugin bundle has registered
+                // them with the process runtime.
+                CFRelease(self.bundle);
+            }
+        }
+    }
+}
+
+#[cfg(not(target_os = "macos"))]
 fn entry_symbol(platform: Vst3HostPlatform) -> &'static [u8] {
     match platform {
         Vst3HostPlatform::MacOs => b"bundleEntry\0",
@@ -485,6 +615,7 @@ fn entry_symbol(platform: Vst3HostPlatform) -> &'static [u8] {
     }
 }
 
+#[cfg(not(target_os = "macos"))]
 fn exit_symbol(platform: Vst3HostPlatform) -> &'static [u8] {
     match platform {
         Vst3HostPlatform::MacOs => b"bundleExit\0",
@@ -496,12 +627,41 @@ fn exit_symbol(platform: Vst3HostPlatform) -> &'static [u8] {
 /// A dlopen'd VST3 module with its platform entry run and the factory
 /// resolved. Runs the exit proc and closes the library on drop.
 struct LoadedVst3Module {
+    #[cfg(target_os = "macos")]
+    bundle: macos_bundle::MacVst3Bundle,
+    #[cfg(not(target_os = "macos"))]
     library: Library,
     factory: *mut c_void,
     exit: Option<ExitProc>,
 }
 
 impl LoadedVst3Module {
+    #[cfg(target_os = "macos")]
+    fn load(bundle_root: &Path) -> Result<Self, Vst3HostingError> {
+        let bundle = macos_bundle::MacVst3Bundle::load(bundle_root)?;
+        unsafe {
+            if let Some(entry) = bundle.entry() {
+                if !entry(bundle.bundle_ref()) {
+                    return Err(Vst3HostingError::new("module_entry_failed"));
+                }
+            }
+            let get_factory = bundle
+                .factory()
+                .ok_or_else(|| Vst3HostingError::new("get_plugin_factory_missing"))?;
+            let factory = get_factory();
+            if factory.is_null() {
+                return Err(Vst3HostingError::new("plugin_factory_null"));
+            }
+            let exit = bundle.exit();
+            Ok(Self {
+                bundle,
+                factory,
+                exit,
+            })
+        }
+    }
+
+    #[cfg(not(target_os = "macos"))]
     fn load(bundle_root: &Path) -> Result<Self, Vst3HostingError> {
         let platform = current_vst3_platform();
         let module_path = resolve_module_binary_path(bundle_root, platform)
@@ -548,8 +708,12 @@ impl Drop for LoadedVst3Module {
         if let Some(exit) = self.exit {
             unsafe { exit() };
         }
+        #[cfg(not(target_os = "macos"))]
         // `library` drops after this body, unloading the module last.
         let _ = &self.library;
+        #[cfg(target_os = "macos")]
+        // `bundle` drops after this body, releasing the CFBundle object last.
+        let _ = &self.bundle;
     }
 }
 

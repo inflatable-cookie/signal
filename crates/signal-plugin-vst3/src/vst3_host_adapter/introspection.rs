@@ -315,6 +315,7 @@ fn candidate_moduleinfo_paths(bundle_root: &Path) -> Vec<PathBuf> {
     ]
 }
 
+#[cfg(not(target_os = "macos"))]
 pub(crate) fn resolve_module_binary_path(
     bundle_root: &Path,
     platform: Vst3HostPlatform,

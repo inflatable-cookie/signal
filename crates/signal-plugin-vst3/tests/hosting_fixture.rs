@@ -159,6 +159,9 @@ fn load_rejects_bad_class_ids_and_missing_bundles() {
         std::path::Path::new("/nonexistent/fixture.vst3"),
         VST3_FIXTURE_CLASS_ID_HEX,
     );
+    #[cfg(target_os = "macos")]
+    assert_eq!(error_token(missing), "module_bundle_open_failed");
+    #[cfg(not(target_os = "macos"))]
     assert_eq!(error_token(missing), "module_binary_unresolved");
 }
 

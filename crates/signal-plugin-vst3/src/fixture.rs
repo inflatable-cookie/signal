@@ -1340,6 +1340,10 @@ pub unsafe extern "C" fn GetPluginFactory() -> *mut c_void {{
 }}
 
 #[no_mangle]
+#[cfg(target_os = "macos")]
+pub unsafe extern "C" fn bundleEntry(bundle_ref: *mut c_void) -> bool {{ !bundle_ref.is_null() }}
+#[cfg(not(target_os = "macos"))]
+#[no_mangle]
 pub unsafe extern "C" fn bundleEntry(_bundle_ref: *mut c_void) -> bool {{ true }}
 
 #[no_mangle]
