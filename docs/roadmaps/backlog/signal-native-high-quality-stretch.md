@@ -254,6 +254,8 @@ Work:
 - [x] add stepwise dynamic-ratio automation for OfflineHighQuality prototype
   mono and linked stereo paths, with tempo-ramp timing evidence in the
   synthetic comparison report
+- [x] add dynamic-segment seam click metrics to the synthetic comparison report
+  so tempo-ramp evidence includes both timing drift and boundary artifacts
 - [ ] wire OfflineHighQuality artifacts into render/export/freeze only after
   corpus evidence beats the draft baseline
 - [ ] add Pulse/Aura contract changes only for product-visible mode, ratio,
@@ -290,8 +292,8 @@ Work:
 ## Next Task
 
 Continue the Signal DSP quality batch by turning the synthetic comparison
-report into a tighter quality tuning loop: add dynamic-segment seam metrics,
-record linked-stereo and pitch-shift evidence explicitly, and use those results
-to prioritize the next transient/loop/coherence improvements. Keep
-render/export/freeze wiring blocked until the tier is no longer prototype-only
-and an accepted `StretchPromotionReceipt` exists.
+report into a tighter quality tuning loop: record linked-stereo and pitch-shift
+evidence explicitly, then use those results to prioritize the next
+transient/loop/coherence improvements. Keep render/export/freeze wiring blocked
+until the tier is no longer prototype-only and an accepted
+`StretchPromotionReceipt` exists.

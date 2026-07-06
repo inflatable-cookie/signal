@@ -3,8 +3,8 @@ use crate::phase_vocoder::{
     transient_reset_phase_vocoder_linked_stereo,
 };
 use crate::{
-    dynamic_ratio_output_frames, stretch_dynamic_ratio_mono_with_engine,
-    OfflineHighQualityStretcher, StretchRatioPoint,
+    dynamic_ratio_output_boundaries, dynamic_ratio_output_frames,
+    stretch_dynamic_ratio_mono_with_engine, OfflineHighQualityStretcher, StretchRatioPoint,
 };
 use rustfft::{num_complex::Complex32, FftPlanner};
 use signal_primitives::Sample;
@@ -181,6 +181,9 @@ pub enum StretchMetric {
     StereoImageDelta,
     /// Highest click or discontinuity at a loop boundary, in dBFS.
     LoopBoundaryClickDbfs,
+    /// Highest click or discontinuity at a dynamic-ratio segment boundary, in
+    /// dBFS.
+    DynamicSegmentSeamClickDbfs,
     /// CPU time relative to rendered audio duration.
     CpuRealtimeFactor,
     /// Reported algorithmic latency, in frames.
@@ -346,6 +349,23 @@ pub struct StretchLoopBoundaryMeasurement {
     /// Boundary discontinuity converted to dBFS.
     pub click_dbfs: f64,
     /// Metric reported to the acceptance harness.
+    pub metric: StretchMetricValue,
+}
+
+/// Dynamic-ratio segment seam click measurement for one rendered output.
+#[derive(Clone, Debug, PartialEq)]
+pub struct StretchDynamicSegmentSeamMeasurement {
+    /// Effective output/input duration ratio measured.
+    pub ratio: f64,
+    /// Number of interleaved channels measured.
+    pub channels: u16,
+    /// Output-frame seam positions measured.
+    pub seam_frames: Vec<usize>,
+    /// Worst absolute discontinuity across any measured seam.
+    pub peak_seam_delta: f64,
+    /// Seam discontinuity converted to dBFS.
+    pub click_dbfs: f64,
+    /// Metric reported to the comparison harness.
     pub metric: StretchMetricValue,
 }
 
@@ -580,6 +600,51 @@ pub fn measure_loop_boundary_click(
     }
 }
 
+/// Measure dynamic-ratio segment seam clicks as previous-frame to next-frame
+/// discontinuities at each output seam.
+pub fn measure_dynamic_segment_seam_click(
+    interleaved_samples: &[Sample],
+    channels: u16,
+    seam_frames: &[usize],
+    ratio: f64,
+) -> StretchDynamicSegmentSeamMeasurement {
+    let channel_count = channels as usize;
+    if channel_count == 0 || interleaved_samples.len() < channel_count * 2 {
+        return dynamic_segment_seam_nan(ratio, channels);
+    }
+
+    let frames = interleaved_samples.len() / channel_count;
+    let mut peak_delta = 0.0f64;
+    let mut measured_seams = Vec::new();
+    for seam_frame in seam_frames {
+        if *seam_frame == 0 || *seam_frame >= frames {
+            continue;
+        }
+        let before_start = (*seam_frame - 1) * channel_count;
+        let after_start = *seam_frame * channel_count;
+        let before = &interleaved_samples[before_start..before_start + channel_count];
+        let after = &interleaved_samples[after_start..after_start + channel_count];
+        for (left, right) in before.iter().zip(after.iter()) {
+            peak_delta = peak_delta.max((left - right).abs() as f64);
+        }
+        measured_seams.push(*seam_frame);
+    }
+
+    if measured_seams.is_empty() {
+        return dynamic_segment_seam_nan(ratio, channels);
+    }
+
+    let click_dbfs = amplitude_to_dbfs(peak_delta);
+    StretchDynamicSegmentSeamMeasurement {
+        ratio,
+        channels,
+        seam_frames: measured_seams,
+        peak_seam_delta: peak_delta,
+        click_dbfs,
+        metric: StretchMetricValue::new(StretchMetric::DynamicSegmentSeamClickDbfs, click_dbfs),
+    }
+}
+
 /// Measure draft phase-vocoder loop-boundary click on the synthetic loop-seam
 /// corpus case.
 pub fn measure_draft_loop_boundary_click(ratio: f64) -> StretchLoopBoundaryMeasurement {
@@ -745,7 +810,7 @@ pub fn compare_synthetic_stretch_backends() -> StretchSyntheticBenchmarkComparis
         }
 
         if case.family == StretchCorpusFamily::TempoRamp {
-            comparisons.push(compare_dynamic_tempo_ramp_timing_drift(case.case_id));
+            comparisons.extend(compare_dynamic_tempo_ramp(case.case_id));
         }
     }
 
@@ -950,12 +1015,11 @@ fn measure_synthetic_length_drift(
     output_length_drift_samples(input_frames, output_frames, ratio)
 }
 
-fn compare_dynamic_tempo_ramp_timing_drift(
-    case_id: &'static str,
-) -> StretchSyntheticBenchmarkComparison {
+fn compare_dynamic_tempo_ramp(case_id: &'static str) -> Vec<StretchSyntheticBenchmarkComparison> {
     let input = synthetic_tempo_ramp();
     let ratio_curve = synthetic_tempo_ramp_ratio_curve(input.frame_count());
     let expected_frames = dynamic_ratio_output_frames(input.frame_count(), &ratio_curve, 1.0);
+    let seam_frames = dynamic_ratio_output_boundaries(input.frame_count(), &ratio_curve, 1.0);
     let effective_ratio = expected_frames as f64 / input.frame_count() as f64;
     let draft_output =
         stretch_dynamic_ratio_stereo_independent(&input, &ratio_curve, phase_vocoder);
@@ -963,13 +1027,36 @@ fn compare_dynamic_tempo_ramp_timing_drift(
     let offline_high_quality_output =
         offline_high_quality.stretch_dynamic_ratio_interleaved_stereo(&input.samples, &ratio_curve);
 
-    compare_metric(
-        case_id,
-        effective_ratio,
-        StretchMetric::TimingDriftSamples,
-        (draft_output.len() / 2).abs_diff(expected_frames) as f64,
-        (offline_high_quality_output.len() / 2).abs_diff(expected_frames) as f64,
-    )
+    vec![
+        compare_metric(
+            case_id,
+            effective_ratio,
+            StretchMetric::TimingDriftSamples,
+            (draft_output.len() / 2).abs_diff(expected_frames) as f64,
+            (offline_high_quality_output.len() / 2).abs_diff(expected_frames) as f64,
+        ),
+        compare_metric(
+            case_id,
+            effective_ratio,
+            StretchMetric::DynamicSegmentSeamClickDbfs,
+            measure_dynamic_segment_seam_click(
+                &draft_output,
+                input.channels,
+                &seam_frames,
+                effective_ratio,
+            )
+            .metric
+            .value,
+            measure_dynamic_segment_seam_click(
+                &offline_high_quality_output,
+                input.channels,
+                &seam_frames,
+                effective_ratio,
+            )
+            .metric
+            .value,
+        ),
+    ]
 }
 
 fn synthetic_tempo_ramp_ratio_curve(input_frames: usize) -> Vec<StretchRatioPoint> {
@@ -1244,6 +1331,17 @@ fn loop_boundary_nan(ratio: f64, channels: u16) -> StretchLoopBoundaryMeasuremen
         peak_boundary_delta: f64::NAN,
         click_dbfs: f64::NAN,
         metric: StretchMetricValue::new(StretchMetric::LoopBoundaryClickDbfs, f64::NAN),
+    }
+}
+
+fn dynamic_segment_seam_nan(ratio: f64, channels: u16) -> StretchDynamicSegmentSeamMeasurement {
+    StretchDynamicSegmentSeamMeasurement {
+        ratio,
+        channels,
+        seam_frames: Vec::new(),
+        peak_seam_delta: f64::NAN,
+        click_dbfs: f64::NAN,
+        metric: StretchMetricValue::new(StretchMetric::DynamicSegmentSeamClickDbfs, f64::NAN),
     }
 }
 

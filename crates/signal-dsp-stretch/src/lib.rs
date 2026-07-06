@@ -46,15 +46,16 @@ pub use benchmark::{
     compare_synthetic_stretch_backends, detect_stretch_transients,
     format_stretch_acceptance_report, format_synthetic_stretch_comparison_report,
     generate_synthetic_stretch_audio, measure_draft_loop_boundary_click,
-    measure_draft_stereo_image_delta, measure_draft_transient_smear, measure_loop_boundary_click,
-    measure_stereo_image_delta, measure_transient_reset_loop_boundary_click,
-    measure_transient_reset_stereo_image_delta, measure_transient_reset_transient_smear,
-    measure_transient_smear, output_length_drift_samples, synthetic_stretch_corpus_cases,
-    StretchAcceptanceReport, StretchAcceptanceSeverity, StretchAcceptanceStatus,
-    StretchBenchmarkBackend, StretchBenchmarkComparisonOutcome, StretchCoherenceComparison,
-    StretchCorpusCase, StretchCorpusFamily, StretchCorpusSource, StretchLoopBoundaryMeasurement,
-    StretchMetric, StretchMetricAssessment, StretchMetricLimit, StretchMetricValue,
-    StretchStereoImageMeasurement, StretchSyntheticAudio, StretchSyntheticBenchmarkComparison,
+    measure_draft_stereo_image_delta, measure_draft_transient_smear,
+    measure_dynamic_segment_seam_click, measure_loop_boundary_click, measure_stereo_image_delta,
+    measure_transient_reset_loop_boundary_click, measure_transient_reset_stereo_image_delta,
+    measure_transient_reset_transient_smear, measure_transient_smear, output_length_drift_samples,
+    synthetic_stretch_corpus_cases, StretchAcceptanceReport, StretchAcceptanceSeverity,
+    StretchAcceptanceStatus, StretchBenchmarkBackend, StretchBenchmarkComparisonOutcome,
+    StretchCoherenceComparison, StretchCorpusCase, StretchCorpusFamily, StretchCorpusSource,
+    StretchDynamicSegmentSeamMeasurement, StretchLoopBoundaryMeasurement, StretchMetric,
+    StretchMetricAssessment, StretchMetricLimit, StretchMetricValue, StretchStereoImageMeasurement,
+    StretchSyntheticAudio, StretchSyntheticBenchmarkComparison,
     StretchSyntheticBenchmarkComparisonReport, StretchTransientEvent,
     StretchTransientSmearMeasurement, STRETCH_BENCHMARK_CORPUS,
 };
@@ -586,6 +587,25 @@ pub(crate) fn dynamic_ratio_output_frames(
         .iter()
         .map(|segment| segment.target_frames)
         .sum()
+}
+
+pub(crate) fn dynamic_ratio_output_boundaries(
+    input_frames: usize,
+    ratio_curve: &[StretchRatioPoint],
+    fallback_ratio: f64,
+) -> Vec<usize> {
+    let segments =
+        dynamic_ratio_segments(input_frames, ratio_curve, sanitize_ratio(fallback_ratio));
+    let mut boundaries = Vec::with_capacity(segments.len().saturating_sub(1));
+    let mut output_frame = 0usize;
+    let total_frames: usize = segments.iter().map(|segment| segment.target_frames).sum();
+    for segment in segments.iter().take(segments.len().saturating_sub(1)) {
+        output_frame += segment.target_frames;
+        if output_frame > 0 && output_frame < total_frames {
+            boundaries.push(output_frame);
+        }
+    }
+    boundaries
 }
 
 pub(crate) fn stretch_dynamic_ratio_mono_with_engine(
@@ -1172,6 +1192,23 @@ mod tests {
     }
 
     #[test]
+    fn dynamic_segment_seam_metric_reports_direct_discontinuity() {
+        let frames = [0.0, 0.0, 0.1, 0.2, 0.9, -0.4, 1.0, -0.3];
+        let measurement = measure_dynamic_segment_seam_click(&frames, 2, &[2], 1.0);
+
+        assert_eq!(measurement.ratio, 1.0);
+        assert_eq!(measurement.channels, 2);
+        assert_eq!(measurement.seam_frames, vec![2]);
+        assert!((measurement.peak_seam_delta - 0.8).abs() < 1.0e-6);
+        assert!((measurement.click_dbfs - (20.0f64 * 0.8f64.log10())).abs() < 1.0e-6);
+        assert_eq!(
+            measurement.metric.metric,
+            StretchMetric::DynamicSegmentSeamClickDbfs
+        );
+        assert_eq!(measurement.metric.value, measurement.click_dbfs);
+    }
+
+    #[test]
     fn synthetic_corpus_cases_run_without_file_io() {
         let cases = synthetic_stretch_corpus_cases();
         assert_eq!(cases.len(), 3);
@@ -1188,7 +1225,7 @@ mod tests {
     fn synthetic_backend_comparison_covers_all_synthetic_cases() {
         let report = compare_synthetic_stretch_backends();
 
-        assert_eq!(report.comparisons.len(), 21);
+        assert_eq!(report.comparisons.len(), 22);
         assert_eq!(
             report.improved_count
                 + report.regressed_count
@@ -1215,6 +1252,11 @@ mod tests {
                 && comparison.ratio > 1.0
         }));
         assert!(report.comparisons.iter().any(|comparison| {
+            comparison.case_id == "stretch:tempo_ramp"
+                && comparison.metric == StretchMetric::DynamicSegmentSeamClickDbfs
+                && comparison.ratio > 1.0
+        }));
+        assert!(report.comparisons.iter().any(|comparison| {
             comparison.case_id == "stretch:loop_seam"
                 && comparison.metric == StretchMetric::LoopBoundaryClickDbfs
         }));
@@ -1238,6 +1280,7 @@ mod tests {
         assert!(formatted.starts_with("synthetic_stretch_comparison improved="));
         assert!(formatted.contains("case=stretch:tempo_ramp"));
         assert!(formatted.contains("metric=TimingDriftSamples"));
+        assert!(formatted.contains("metric=DynamicSegmentSeamClickDbfs"));
         assert!(formatted.contains("offline_hq="));
         assert!(formatted.contains("outcome="));
     }
