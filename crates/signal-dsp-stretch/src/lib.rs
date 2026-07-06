@@ -39,14 +39,15 @@ mod phase_vocoder;
 pub use benchmark::{
     assess_stretch_metrics, compare_sustained_material_coherence, detect_stretch_transients,
     format_stretch_acceptance_report, generate_synthetic_stretch_audio,
-    measure_draft_loop_boundary_click, measure_draft_transient_smear, measure_loop_boundary_click,
-    measure_transient_reset_loop_boundary_click, measure_transient_reset_transient_smear,
-    measure_transient_smear, output_length_drift_samples, synthetic_stretch_corpus_cases,
-    StretchAcceptanceReport, StretchAcceptanceSeverity, StretchAcceptanceStatus,
-    StretchCoherenceComparison, StretchCorpusCase, StretchCorpusFamily, StretchCorpusSource,
-    StretchLoopBoundaryMeasurement, StretchMetric, StretchMetricAssessment, StretchMetricLimit,
-    StretchMetricValue, StretchSyntheticAudio, StretchTransientEvent,
-    StretchTransientSmearMeasurement, STRETCH_BENCHMARK_CORPUS,
+    measure_draft_loop_boundary_click, measure_draft_stereo_image_delta,
+    measure_draft_transient_smear, measure_loop_boundary_click, measure_stereo_image_delta,
+    measure_transient_reset_loop_boundary_click, measure_transient_reset_stereo_image_delta,
+    measure_transient_reset_transient_smear, measure_transient_smear, output_length_drift_samples,
+    synthetic_stretch_corpus_cases, StretchAcceptanceReport, StretchAcceptanceSeverity,
+    StretchAcceptanceStatus, StretchCoherenceComparison, StretchCorpusCase, StretchCorpusFamily,
+    StretchCorpusSource, StretchLoopBoundaryMeasurement, StretchMetric, StretchMetricAssessment,
+    StretchMetricLimit, StretchMetricValue, StretchStereoImageMeasurement, StretchSyntheticAudio,
+    StretchTransientEvent, StretchTransientSmearMeasurement, STRETCH_BENCHMARK_CORPUS,
 };
 
 use phase_vocoder::phase_vocoder;
@@ -718,6 +719,62 @@ mod tests {
 
         assert_eq!(report.status, StretchAcceptanceStatus::Pass);
         assert!(formatted.contains("metric=LoopBoundaryClickDbfs"));
+        assert!(formatted.contains("status=Pass"));
+    }
+
+    #[test]
+    fn stereo_image_metric_reports_direct_movement() {
+        let input = [0.5, 0.5, 0.25, 0.25, -0.25, -0.25, -0.5, -0.5];
+        let output = [0.5, -0.5, 0.25, -0.25, -0.25, 0.25, -0.5, 0.5];
+        let measurement = measure_stereo_image_delta(&input, &output, 1.0);
+
+        assert_eq!(measurement.ratio, 1.0);
+        assert!(measurement.input_correlation > 0.99);
+        assert!(measurement.output_correlation < -0.99);
+        assert!(measurement.image_delta > 1.0);
+        assert_eq!(measurement.metric.metric, StretchMetric::StereoImageDelta);
+        assert_eq!(measurement.metric.value, measurement.image_delta);
+    }
+
+    #[test]
+    fn stereo_image_metric_reports_synthetic_draft_case() {
+        let measurement = measure_draft_stereo_image_delta(1.25);
+
+        assert_eq!(measurement.ratio, 1.25);
+        assert!(measurement.input_correlation.is_finite());
+        assert!(measurement.output_correlation.is_finite());
+        assert!(measurement.input_side_mid_ratio.is_finite());
+        assert!(measurement.output_side_mid_ratio.is_finite());
+        assert!(measurement.image_delta.is_finite());
+        assert_eq!(measurement.metric.metric, StretchMetric::StereoImageDelta);
+    }
+
+    #[test]
+    fn transient_reset_stereo_image_metric_reports_synthetic_case() {
+        let measurement = measure_transient_reset_stereo_image_delta(1.25);
+
+        assert_eq!(measurement.ratio, 1.25);
+        assert!(measurement.input_correlation.is_finite());
+        assert!(measurement.output_correlation.is_finite());
+        assert!(measurement.image_delta.is_finite());
+        assert_eq!(measurement.metric.metric, StretchMetric::StereoImageDelta);
+    }
+
+    #[test]
+    fn stereo_image_metric_formats_as_acceptance_metric() {
+        let measurement = measure_draft_stereo_image_delta(1.5);
+        let report = assess_stretch_metrics(
+            &[measurement.metric],
+            &[StretchMetricLimit::max(
+                StretchMetric::StereoImageDelta,
+                f64::INFINITY,
+                StretchAcceptanceSeverity::Warn,
+            )],
+        );
+        let formatted = format_stretch_acceptance_report("stretch:full_mix", &report);
+
+        assert_eq!(report.status, StretchAcceptanceStatus::Pass);
+        assert!(formatted.contains("metric=StereoImageDelta"));
         assert!(formatted.contains("status=Pass"));
     }
 }

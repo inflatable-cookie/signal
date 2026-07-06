@@ -217,14 +217,14 @@ Validation:
 
 ### Slice 3: Transient And Linked-Stereo Depth
 
-Status: ready
+Status: complete
 Repos: `signal`
 
 Work:
 
 - [x] add transient detection over energy and spectral flux
 - [x] add transient-preserving phase reset or local splice strategy
-- [ ] add linked stereo analysis/synthesis so image movement is measured
+- [x] add linked stereo analysis/synthesis so image movement is measured
 - [x] add transient smear metrics to the corpus harness
 - [x] add loop seam metrics to the corpus harness
 
@@ -272,5 +272,5 @@ Work:
 
 ## Next Task
 
-Continue Slice 3 by adding linked stereo analysis/synthesis measurement so
-image movement is tracked before routing any prototype into production.
+Stop Signal-local stretch batches here until Chorus generation rollover opens
+Slice 4 render/cache contract work.

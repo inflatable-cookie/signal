@@ -280,6 +280,25 @@ pub struct StretchLoopBoundaryMeasurement {
     pub metric: StretchMetricValue,
 }
 
+/// Stereo image movement measurement for one rendered stretch output.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct StretchStereoImageMeasurement {
+    /// Output/input duration ratio measured.
+    pub ratio: f64,
+    /// Input left-right correlation.
+    pub input_correlation: f64,
+    /// Output left-right correlation.
+    pub output_correlation: f64,
+    /// Input side/mid RMS ratio.
+    pub input_side_mid_ratio: f64,
+    /// Output side/mid RMS ratio.
+    pub output_side_mid_ratio: f64,
+    /// Combined image delta. Lower is better.
+    pub image_delta: f64,
+    /// Metric reported to the acceptance harness.
+    pub metric: StretchMetricValue,
+}
+
 /// Compare sustained-material vertical coherence for the draft baseline and
 /// the identity phase-locked prototype.
 ///
@@ -532,6 +551,72 @@ pub fn measure_transient_reset_loop_boundary_click(ratio: f64) -> StretchLoopBou
     }
     let output = interleave_channels(&output_channels);
     measure_loop_boundary_click(&output, input.channels, ratio)
+}
+
+/// Measure stereo image movement from left-right correlation and mid/side
+/// balance deltas. This is measurement-only and does not imply linked
+/// synthesis.
+pub fn measure_stereo_image_delta(
+    input_interleaved: &[Sample],
+    output_interleaved: &[Sample],
+    ratio: f64,
+) -> StretchStereoImageMeasurement {
+    if !ratio.is_finite()
+        || ratio <= 0.0
+        || input_interleaved.len() < 4
+        || output_interleaved.len() < 4
+        || input_interleaved.len() % 2 != 0
+        || output_interleaved.len() % 2 != 0
+    {
+        return stereo_image_nan(ratio);
+    }
+
+    let input_stats = stereo_image_stats(input_interleaved);
+    let output_stats = stereo_image_stats(output_interleaved);
+    if !input_stats.correlation.is_finite()
+        || !output_stats.correlation.is_finite()
+        || !input_stats.side_mid_ratio.is_finite()
+        || !output_stats.side_mid_ratio.is_finite()
+    {
+        return stereo_image_nan(ratio);
+    }
+
+    let image_delta = (output_stats.correlation - input_stats.correlation).abs()
+        + (output_stats.side_mid_ratio - input_stats.side_mid_ratio).abs();
+
+    StretchStereoImageMeasurement {
+        ratio,
+        input_correlation: input_stats.correlation,
+        output_correlation: output_stats.correlation,
+        input_side_mid_ratio: input_stats.side_mid_ratio,
+        output_side_mid_ratio: output_stats.side_mid_ratio,
+        image_delta,
+        metric: StretchMetricValue::new(StretchMetric::StereoImageDelta, image_delta),
+    }
+}
+
+/// Measure draft phase-vocoder stereo image movement on the synthetic
+/// loop-seam corpus case.
+pub fn measure_draft_stereo_image_delta(ratio: f64) -> StretchStereoImageMeasurement {
+    if !ratio.is_finite() || ratio <= 0.0 {
+        return stereo_image_nan(ratio);
+    }
+
+    let input = synthetic_loop_seam();
+    let output = stretch_stereo_synthetic(&input, ratio, phase_vocoder);
+    measure_stereo_image_delta(&input.samples, &output, ratio)
+}
+
+/// Measure transient-reset prototype stereo image movement on the synthetic
+/// loop-seam corpus case.
+pub fn measure_transient_reset_stereo_image_delta(ratio: f64) -> StretchStereoImageMeasurement {
+    if !ratio.is_finite() || ratio <= 0.0 {
+        return stereo_image_nan(ratio);
+    }
+
+    let input = synthetic_loop_seam();
+    let output = stretch_stereo_synthetic(&input, ratio, transient_reset_phase_vocoder);
+    measure_stereo_image_delta(&input.samples, &output, ratio)
 }
 
 /// Upper-bound limit for a stretch benchmark metric.
@@ -895,6 +980,77 @@ fn loop_boundary_nan(ratio: f64, channels: u16) -> StretchLoopBoundaryMeasuremen
         click_dbfs: f64::NAN,
         metric: StretchMetricValue::new(StretchMetric::LoopBoundaryClickDbfs, f64::NAN),
     }
+}
+
+fn stereo_image_nan(ratio: f64) -> StretchStereoImageMeasurement {
+    StretchStereoImageMeasurement {
+        ratio,
+        input_correlation: f64::NAN,
+        output_correlation: f64::NAN,
+        input_side_mid_ratio: f64::NAN,
+        output_side_mid_ratio: f64::NAN,
+        image_delta: f64::NAN,
+        metric: StretchMetricValue::new(StretchMetric::StereoImageDelta, f64::NAN),
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+struct StereoImageStats {
+    correlation: f64,
+    side_mid_ratio: f64,
+}
+
+fn stereo_image_stats(interleaved_samples: &[Sample]) -> StereoImageStats {
+    let frames = interleaved_samples.len() / 2;
+    if frames == 0 {
+        return StereoImageStats {
+            correlation: f64::NAN,
+            side_mid_ratio: f64::NAN,
+        };
+    }
+
+    let mut left_square_sum = 0.0f64;
+    let mut right_square_sum = 0.0f64;
+    let mut cross_sum = 0.0f64;
+    let mut mid_square_sum = 0.0f64;
+    let mut side_square_sum = 0.0f64;
+    for frame in interleaved_samples.chunks_exact(2) {
+        let left = frame[0] as f64;
+        let right = frame[1] as f64;
+        left_square_sum += left * left;
+        right_square_sum += right * right;
+        cross_sum += left * right;
+        let mid = 0.5 * (left + right);
+        let side = 0.5 * (left - right);
+        mid_square_sum += mid * mid;
+        side_square_sum += side * side;
+    }
+
+    let correlation = cross_sum / ((left_square_sum * right_square_sum).sqrt() + 1.0e-12);
+    let side_mid_ratio = (side_square_sum / frames as f64).sqrt()
+        / ((mid_square_sum / frames as f64).sqrt() + 1.0e-12);
+    StereoImageStats {
+        correlation,
+        side_mid_ratio,
+    }
+}
+
+fn stretch_stereo_synthetic(
+    input: &StretchSyntheticAudio,
+    ratio: f64,
+    stretcher: fn(&[Sample], usize, f64, usize, usize) -> Vec<Sample>,
+) -> Vec<Sample> {
+    let channel_count = input.channels as usize;
+    if channel_count != 2 {
+        return Vec::new();
+    }
+    let target_len = (input.frame_count() as f64 * ratio).round() as usize;
+    let mut output_channels = Vec::with_capacity(channel_count);
+    for channel in 0..channel_count {
+        let mono = deinterleave_channel(&input.samples, channel_count, channel);
+        output_channels.push(stretcher(&mono, target_len, ratio, 2_048, 512));
+    }
+    interleave_channels(&output_channels)
 }
 
 fn amplitude_to_dbfs(amplitude: f64) -> f64 {
