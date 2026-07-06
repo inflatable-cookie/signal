@@ -34,7 +34,9 @@
 mod offline;
 
 pub use offline::{
-    render_plan_to_pcm, write_wav, OfflineRenderOptions, OfflineRenderOutput, WavBitDepth,
+    plan_offline_stretch_artifact, render_plan_to_pcm, write_wav, OfflineRenderOptions,
+    OfflineRenderOutput, OfflineStretchArtifactPlan, OfflineStretchArtifactPlanError,
+    OfflineStretchArtifactReadiness, OfflineStretchArtifactScope, WavBitDepth,
 };
 
 use std::cell::UnsafeCell;

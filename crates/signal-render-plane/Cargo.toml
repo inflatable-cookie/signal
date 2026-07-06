@@ -20,4 +20,5 @@ workspace = true
 [dependencies]
 hound = { workspace = true }
 signal-dsp = { workspace = true }
+signal-dsp-stretch = { workspace = true }
 signal-primitives = { workspace = true }

@@ -237,6 +237,8 @@ Work:
 
 - [x] define cache identity for engine version, tier, content hash,
   ratio/pitch curves, warp markers, channel layout, and projection epoch
+- [x] add render/export/freeze artifact-planning seam that consumes the cache
+  identity while keeping product-facing promotion gated
 - [ ] wire OfflineHighQuality artifacts into render/export/freeze only after
   corpus evidence beats the draft baseline
 - [ ] add Pulse/Aura contract changes only for product-visible mode, ratio,
@@ -272,7 +274,6 @@ Work:
 
 ## Next Task
 
-Continue Slice 4 in Signal by adding a render/export artifact-planning seam
-that consumes `StretchCacheIdentityInput` without promoting
-`OfflineHighQuality` to product-facing use before corpus evidence beats the
-draft baseline.
+Continue Slice 4 in Signal by adding a runtime/export receipt seam that can
+observe offline stretch artifact plans while still blocking product-facing
+`OfflineHighQuality` use until corpus evidence beats the draft baseline.

@@ -16,6 +16,10 @@ use std::path::Path;
 use crate::{
     render_plane, RenderPlanSpec, RenderPlaneError, RenderPlaneExecutor, MAX_BLOCK_FRAMES,
 };
+use signal_dsp_stretch::{
+    stretch_backend_plan, StretchBackendStatus, StretchBackendTier, StretchCacheIdentity,
+    StretchCacheIdentityError, StretchCacheIdentityInput,
+};
 
 /// Default block quantum for offline rendering.
 const DEFAULT_BLOCK_FRAMES: usize = 1024;
@@ -60,6 +64,107 @@ pub struct OfflineRenderOutput {
     /// order of [`OfflineRenderOptions::capture_stage_ids`]. Each stem is
     /// interleaved at its stage's own channel count.
     pub stems: Vec<(u64, Vec<f32>)>,
+}
+
+/// Offline destination that may consume a cacheable stretch artifact.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum OfflineStretchArtifactScope {
+    /// Final exported render output.
+    Export,
+    /// Frozen track or clip output.
+    Freeze,
+    /// Internal post-warp render cache reuse.
+    RenderCache,
+}
+
+/// Promotion/readiness posture for a planned offline stretch artifact.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum OfflineStretchArtifactReadiness {
+    /// The artifact has a stable identity, but the tier is not implemented yet.
+    AwaitingImplementation,
+    /// The tier exists, but corpus evidence has not accepted product-facing use.
+    AwaitingCorpusEvidence,
+    /// The artifact may be consumed by render/export/freeze callers.
+    Ready,
+}
+
+/// Control-side plan for a cacheable offline stretch artifact.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct OfflineStretchArtifactPlan {
+    /// Consumer scope this artifact would serve.
+    pub scope: OfflineStretchArtifactScope,
+    /// Validated cache identity for this artifact candidate.
+    pub identity: StretchCacheIdentity,
+    /// Signal stretch tier named by the identity input.
+    pub tier: StretchBackendTier,
+    /// Current implementation/evidence readiness.
+    pub readiness: OfflineStretchArtifactReadiness,
+    /// Whether the artifact is allowed to feed product-facing render/export output.
+    pub product_facing_allowed: bool,
+}
+
+/// Control-side failure while planning a stretch artifact.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum OfflineStretchArtifactPlanError {
+    /// The cache identity input was invalid.
+    InvalidIdentity(StretchCacheIdentityError),
+    /// Render/export artifacts must use the high-quality offline tier.
+    UnsupportedTier(StretchBackendTier),
+}
+
+impl std::fmt::Display for OfflineStretchArtifactPlanError {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            OfflineStretchArtifactPlanError::InvalidIdentity(error) => {
+                write!(formatter, "invalid stretch cache identity: {error:?}")
+            }
+            OfflineStretchArtifactPlanError::UnsupportedTier(tier) => write!(
+                formatter,
+                "offline stretch artifacts require OfflineHighQuality, got {tier:?}",
+            ),
+        }
+    }
+}
+
+impl std::error::Error for OfflineStretchArtifactPlanError {}
+
+/// Build a control-side artifact plan for an offline high-quality stretch
+/// candidate.
+///
+/// This function does not render or promote anything. It gives cache/export
+/// callers a deterministic identity and a typed answer for why the artifact
+/// may or may not feed product-facing output yet.
+pub fn plan_offline_stretch_artifact(
+    scope: OfflineStretchArtifactScope,
+    identity_input: &StretchCacheIdentityInput,
+    corpus_evidence_accepted: bool,
+) -> Result<OfflineStretchArtifactPlan, OfflineStretchArtifactPlanError> {
+    if identity_input.tier != StretchBackendTier::OfflineHighQuality {
+        return Err(OfflineStretchArtifactPlanError::UnsupportedTier(
+            identity_input.tier,
+        ));
+    }
+    let identity = identity_input
+        .identity()
+        .map_err(OfflineStretchArtifactPlanError::InvalidIdentity)?;
+    let backend = stretch_backend_plan(identity_input.tier);
+    let readiness = match (backend.status, corpus_evidence_accepted) {
+        (StretchBackendStatus::Planned, _) => {
+            OfflineStretchArtifactReadiness::AwaitingImplementation
+        }
+        (StretchBackendStatus::Implemented, false) => {
+            OfflineStretchArtifactReadiness::AwaitingCorpusEvidence
+        }
+        (StretchBackendStatus::Implemented, true) => OfflineStretchArtifactReadiness::Ready,
+    };
+
+    Ok(OfflineStretchArtifactPlan {
+        scope,
+        identity,
+        tier: identity_input.tier,
+        readiness,
+        product_facing_allowed: readiness == OfflineStretchArtifactReadiness::Ready,
+    })
 }
 
 /// Render `spec` offline: install it on a fresh controller/executor pair and
@@ -265,6 +370,9 @@ mod tests {
         ChannelFormat, RenderClipSpec, RenderEdgeSpec, RenderLimiterSpec, RenderSampleBuffer,
         RenderSource, RenderStageKind, RenderStageSpec,
     };
+    use signal_dsp_stretch::{
+        StretchChannelLayout, StretchPitchPoint, StretchRatioPoint, StretchWarpMarker,
+    };
     use std::sync::Arc;
 
     const MASTER_ID: u64 = 9_000;
@@ -349,6 +457,95 @@ mod tests {
                 master(vec![1, 2]),
             ],
         }
+    }
+
+    fn stretch_identity_input() -> StretchCacheIdentityInput {
+        StretchCacheIdentityInput::signal_native(
+            StretchBackendTier::OfflineHighQuality,
+            "sha256:render-source",
+            StretchChannelLayout::new(2, 48_000),
+            "projection-42",
+        )
+        .with_ratio_curve(vec![
+            StretchRatioPoint::new(0, 1.0),
+            StretchRatioPoint::new(48_000, 1.25),
+        ])
+        .with_pitch_curve(vec![StretchPitchPoint::new(0, 0.0)])
+        .with_warp_markers(vec![StretchWarpMarker::new(0, 0)])
+    }
+
+    #[test]
+    fn stretch_artifact_plan_materializes_identity_without_promotion() {
+        let input = stretch_identity_input();
+        let plan = plan_offline_stretch_artifact(OfflineStretchArtifactScope::Export, &input, true)
+            .expect("artifact plan");
+
+        assert_eq!(plan.scope, OfflineStretchArtifactScope::Export);
+        assert_eq!(plan.tier, StretchBackendTier::OfflineHighQuality);
+        assert_eq!(
+            plan.readiness,
+            OfflineStretchArtifactReadiness::AwaitingImplementation
+        );
+        assert!(!plan.product_facing_allowed);
+        assert!(plan
+            .identity
+            .canonical_key
+            .contains("tier=OfflineHighQuality"));
+        assert_eq!(plan.identity, input.identity().expect("same identity"));
+    }
+
+    #[test]
+    fn stretch_artifact_plan_changes_identity_when_projection_changes() {
+        let input = stretch_identity_input();
+        let changed = StretchCacheIdentityInput {
+            projection_epoch: "projection-43".to_string(),
+            ..stretch_identity_input()
+        };
+        let base_plan =
+            plan_offline_stretch_artifact(OfflineStretchArtifactScope::RenderCache, &input, false)
+                .expect("artifact plan");
+        let changed_plan = plan_offline_stretch_artifact(
+            OfflineStretchArtifactScope::RenderCache,
+            &changed,
+            false,
+        )
+        .expect("artifact plan");
+
+        assert_ne!(
+            base_plan.identity.stable_hash,
+            changed_plan.identity.stable_hash
+        );
+        assert!(!base_plan.product_facing_allowed);
+        assert!(!changed_plan.product_facing_allowed);
+    }
+
+    #[test]
+    fn stretch_artifact_plan_rejects_preview_or_repitch_tiers() {
+        let preview = StretchCacheIdentityInput::signal_native(
+            StretchBackendTier::RealtimePreview,
+            "sha256:render-source",
+            StretchChannelLayout::new(2, 48_000),
+            "projection-42",
+        );
+        let repitch = StretchCacheIdentityInput::signal_native(
+            StretchBackendTier::Repitch,
+            "sha256:render-source",
+            StretchChannelLayout::new(2, 48_000),
+            "projection-42",
+        );
+
+        assert_eq!(
+            plan_offline_stretch_artifact(OfflineStretchArtifactScope::Export, &preview, true),
+            Err(OfflineStretchArtifactPlanError::UnsupportedTier(
+                StretchBackendTier::RealtimePreview
+            ))
+        );
+        assert_eq!(
+            plan_offline_stretch_artifact(OfflineStretchArtifactScope::Freeze, &repitch, true),
+            Err(OfflineStretchArtifactPlanError::UnsupportedTier(
+                StretchBackendTier::Repitch
+            ))
+        );
     }
 
     #[test]
