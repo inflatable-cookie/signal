@@ -492,6 +492,40 @@ pub fn stretch_interleaved_stereo(
     output
 }
 
+/// Smooth an interleaved loop boundary in place.
+///
+/// This is an offline loop-context helper, not a generic stretch post-process:
+/// it distributes the final-to-first-frame discontinuity across `fade_frames`
+/// at both ends so explicit loop renders can reduce boundary clicks while
+/// preserving the interior audio.
+pub fn smooth_loop_boundary_interleaved(
+    interleaved_samples: &mut [Sample],
+    channels: u16,
+    fade_frames: usize,
+) {
+    let channel_count = channels as usize;
+    if channel_count == 0 || fade_frames == 0 {
+        return;
+    }
+    let frames = interleaved_samples.len() / channel_count;
+    if frames < 2 {
+        return;
+    }
+
+    let fade_frames = fade_frames.min(frames / 2).max(1);
+    for channel in 0..channel_count {
+        let first = interleaved_samples[channel];
+        let last = interleaved_samples[(frames - 1) * channel_count + channel];
+        let correction = (first - last) * 0.5;
+        for frame in 0..fade_frames {
+            let weight = (fade_frames - frame) as f32 / fade_frames as f32;
+            interleaved_samples[frame * channel_count + channel] -= correction * weight;
+            let tail_frame = frames - 1 - frame;
+            interleaved_samples[tail_frame * channel_count + channel] += correction * weight;
+        }
+    }
+}
+
 /// Cheap fallback for sub-window inputs: linear interpolation over time
 /// (this pitch-shifts, but a sub-window buffer is too short for the phase
 /// vocoder to do better; documented, deterministic).
@@ -1543,6 +1577,18 @@ mod tests {
             StretchMetric::LoopBoundaryClickDbfs
         );
         assert_eq!(measurement.metric.value, measurement.click_dbfs);
+    }
+
+    #[test]
+    fn loop_boundary_smoothing_equalizes_endpoints() {
+        let mut frames = [1.0, -0.5, 0.25, 0.25, -1.0, 0.75];
+
+        smooth_loop_boundary_interleaved(&mut frames, 2, 1);
+
+        assert!((frames[0] - frames[4]).abs() < 1.0e-6);
+        assert!((frames[1] - frames[5]).abs() < 1.0e-6);
+        assert!((frames[2] - 0.25).abs() < 1.0e-6);
+        assert!((frames[3] - 0.25).abs() < 1.0e-6);
     }
 
     #[test]

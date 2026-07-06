@@ -3,7 +3,7 @@ use crate::phase_vocoder::{
     transient_reset_phase_vocoder_linked_stereo,
 };
 use crate::{
-    dynamic_ratio_output_boundaries, dynamic_ratio_output_frames,
+    dynamic_ratio_output_boundaries, dynamic_ratio_output_frames, smooth_loop_boundary_interleaved,
     stretch_dynamic_ratio_mono_with_engine, OfflineHighQualityStretcher, StretchRatioPoint,
 };
 use rustfft::{num_complex::Complex32, FftPlanner};
@@ -826,7 +826,8 @@ pub fn measure_transient_reset_loop_boundary_click(ratio: f64) -> StretchLoopBou
             &mono, target_len, ratio, 2_048, 512,
         ));
     }
-    let output = interleave_channels(&output_channels);
+    let mut output = interleave_channels(&output_channels);
+    smooth_loop_boundary_interleaved(&mut output, input.channels, 256);
     measure_loop_boundary_click(&output, input.channels, ratio)
 }
 
