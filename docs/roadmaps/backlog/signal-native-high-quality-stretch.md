@@ -264,6 +264,8 @@ Work:
   time-compression ratios through phase locking instead of transient resets,
   reducing measured compression-smear regressions while keeping the tier
   prototype-gated
+- [x] make missed transient matches a finite smear penalty so preservation
+  failures are ranked by severity instead of becoming inconclusive report rows
 - [ ] wire OfflineHighQuality artifacts into render/export/freeze only after
   corpus evidence beats the draft baseline
 - [ ] add Pulse/Aura contract changes only for product-visible mode, ratio,
@@ -303,5 +305,6 @@ Continue the Signal DSP quality batch by turning the synthetic comparison
 report into a tighter quality tuning loop: run the priority report, choose the
 remaining top transient, loop, seam, stereo, pitch, or coherence regression it
 identifies, and implement the next bounded DSP improvement against that target.
-Keep render/export/freeze wiring blocked until the tier is no longer
-prototype-only and an accepted `StretchPromotionReceipt` exists.
+Current priority evidence points first at 2.0x transient smear, then 0.5x
+loop-boundary click. Keep render/export/freeze wiring blocked until the tier is
+no longer prototype-only and an accepted `StretchPromotionReceipt` exists.

@@ -1459,6 +1459,10 @@ mod tests {
         assert!(measurement.input_transients >= 10);
         assert!(measurement.output_transients > 0);
         assert!(measurement.matched_transients > 0);
+        assert_eq!(
+            measurement.input_transients,
+            measurement.matched_transients + measurement.missed_transients
+        );
         assert!(measurement.mean_smear_frames.is_finite());
         assert!(measurement.max_smear_frames.is_finite());
         assert_eq!(
@@ -1477,8 +1481,34 @@ mod tests {
         assert_eq!(reset.input_transients, draft.input_transients);
         assert!(reset.output_transients > 0);
         assert!(reset.matched_transients > 0);
+        assert_eq!(
+            reset.input_transients,
+            reset.matched_transients + reset.missed_transients
+        );
         assert!(reset.max_smear_frames.is_finite());
         assert_eq!(reset.metric.metric, StretchMetric::TransientSmearFrames);
+    }
+
+    #[test]
+    fn transient_smear_metric_penalizes_missing_matches() {
+        let mut input = vec![0.0; 64];
+        input[20] = 1.0;
+        input[21] = 0.5;
+        input[22] = 0.25;
+        let output = vec![0.0; 64];
+        let measurement = measure_transient_smear(&input, &output, 1.0, 16, 4);
+
+        assert!(measurement.input_transients > 0);
+        assert_eq!(measurement.output_transients, 0);
+        assert_eq!(measurement.matched_transients, 0);
+        assert_eq!(measurement.missed_transients, measurement.input_transients);
+        assert_eq!(measurement.mean_smear_frames, 16.0);
+        assert_eq!(measurement.max_smear_frames, 16.0);
+        assert_eq!(
+            measurement.metric.metric,
+            StretchMetric::TransientSmearFrames
+        );
+        assert_eq!(measurement.metric.value, 16.0);
     }
 
     #[test]

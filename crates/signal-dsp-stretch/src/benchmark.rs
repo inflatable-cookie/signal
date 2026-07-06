@@ -399,6 +399,8 @@ pub struct StretchTransientSmearMeasurement {
     pub output_transients: usize,
     /// Number of input transients matched to stretched-output transients.
     pub matched_transients: usize,
+    /// Number of input transients with no output transient match.
+    pub missed_transients: usize,
     /// Mean positive attack widening in sample frames.
     pub mean_smear_frames: f64,
     /// Worst positive attack widening in sample frames.
@@ -567,8 +569,9 @@ pub fn detect_stretch_transients(
 /// Measure transient attack widening between input and stretched output.
 ///
 /// The metric value is the worst positive attack-width increase in sample
-/// frames across matched transient events. Missing or invalid matches report
-/// `NaN` so benchmark policy can decide whether that is warn or fail.
+/// frames across matched transient events. Missing input transient matches are
+/// reported as a finite search-window penalty so preservation failures can be
+/// ranked instead of hiding behind an inconclusive `NaN` row.
 pub fn measure_transient_smear(
     input: &[Sample],
     output: &[Sample],
@@ -605,18 +608,30 @@ pub fn measure_transient_smear(
         max_smear = max_smear.max(smear);
     }
 
-    let mean_smear = if matched > 0 {
-        smear_sum / matched as f64
+    let missed = input_events.len().saturating_sub(matched);
+    let missed_penalty = window_size as f64;
+    let total_measured = matched + missed;
+    let mean_smear = if total_measured > 0 {
+        (smear_sum + missed_penalty * missed as f64) / total_measured as f64
     } else {
         f64::NAN
     };
-    let max_smear = if matched > 0 { max_smear } else { f64::NAN };
+    let max_smear = if total_measured > 0 {
+        if missed > 0 {
+            max_smear.max(missed_penalty)
+        } else {
+            max_smear
+        }
+    } else {
+        f64::NAN
+    };
 
     StretchTransientSmearMeasurement {
         ratio,
         input_transients: input_events.len(),
         output_transients: output_events.len(),
         matched_transients: matched,
+        missed_transients: missed,
         mean_smear_frames: mean_smear,
         max_smear_frames: max_smear,
         metric: StretchMetricValue::new(StretchMetric::TransientSmearFrames, max_smear),
@@ -1673,6 +1688,7 @@ fn transient_smear_nan(ratio: f64) -> StretchTransientSmearMeasurement {
         input_transients: 0,
         output_transients: 0,
         matched_transients: 0,
+        missed_transients: 0,
         mean_smear_frames: f64::NAN,
         max_smear_frames: f64::NAN,
         metric: StretchMetricValue::new(StretchMetric::TransientSmearFrames, f64::NAN),
