@@ -6,11 +6,12 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use signal_runtime::{
     RuntimeOfflineStretchArtifactMaterializationRegistration, RuntimeOfflineStretchArtifactScope,
-    StretchBackendTier, StretchCacheIdentityInput,
+    StretchBackendTier, StretchCacheIdentityInput, StretchPromotionReceipt,
 };
 
 pub(crate) fn public_offline_stretch_artifact_materialization(
     identity_input: &StretchCacheIdentityInput,
+    promotion_receipt: &StretchPromotionReceipt,
 ) -> RuntimeOfflineStretchArtifactMaterializationRegistration {
     let identity = identity_input.identity().expect("identity should validate");
     RuntimeOfflineStretchArtifactMaterializationRegistration {
@@ -22,12 +23,13 @@ pub(crate) fn public_offline_stretch_artifact_materialization(
         tier: StretchBackendTier::OfflineHighQuality,
         cache_identity_hash: identity.stable_hash,
         cache_identity_key: identity.canonical_key,
-        promotion_evidence_id: "stretch-corpus:public-runtime".into(),
+        promotion_evidence_id: promotion_receipt.evidence_id.clone(),
         input_frame_count: 48_000,
         output_frame_count: 72_000,
         channels: 2,
         sample_rate_hz: 48_000,
-        product_facing_allowed: true,
+        product_facing_allowed: promotion_receipt
+            .accepts_product_facing_use(StretchBackendTier::OfflineHighQuality),
     }
 }
 

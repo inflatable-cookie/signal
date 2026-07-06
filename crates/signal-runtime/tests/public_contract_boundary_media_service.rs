@@ -8,12 +8,13 @@ use public_contract_boundary_media_support::{
     write_public_test_wav,
 };
 use signal_runtime::{
-    HandshakeRequest, RuntimeConfig, RuntimeConfigRequest, RuntimeEventRecorder,
-    RuntimeLifecycleApi, RuntimeMediaPreviewState, RuntimeObservationApi, RuntimeObservationReport,
-    RuntimeOfflineStretchArtifactPlanRegistration, RuntimeOfflineStretchArtifactReadiness,
-    RuntimeOfflineStretchArtifactScope, RuntimeSupervisorReport, SignalRuntime, StretchBackendTier,
-    StretchCacheIdentityInput, StretchChannelLayout, StretchPitchPoint, StretchPromotionReceipt,
-    StretchPromotionStatus, StretchRatioPoint, StretchWarpMarker,
+    current_synthetic_offline_high_quality_promotion_receipt, HandshakeRequest, RuntimeConfig,
+    RuntimeConfigRequest, RuntimeEventRecorder, RuntimeLifecycleApi, RuntimeMediaPreviewState,
+    RuntimeObservationApi, RuntimeObservationReport, RuntimeOfflineStretchArtifactPlanRegistration,
+    RuntimeOfflineStretchArtifactReadiness, RuntimeOfflineStretchArtifactScope,
+    RuntimeSupervisorReport, SignalRuntime, StretchBackendTier, StretchCacheIdentityInput,
+    StretchChannelLayout, StretchPitchPoint, StretchPromotionStatus, StretchRatioPoint,
+    StretchWarpMarker,
 };
 
 #[test]
@@ -160,6 +161,8 @@ fn public_runtime_reports_offline_stretch_artifact_plan_receipts_with_promotion_
         StretchChannelLayout::new(2, 48_000),
         "projection-17",
     );
+    let promotion =
+        current_synthetic_offline_high_quality_promotion_receipt("stretch-corpus:public-runtime");
 
     runtime
         .reconcile_offline_stretch_artifact_plans(vec![
@@ -169,11 +172,7 @@ fn public_runtime_reports_offline_stretch_artifact_plan_receipts_with_promotion_
                 media_asset_id: Some("asset:offline-hq".into()),
                 scope: RuntimeOfflineStretchArtifactScope::Export,
                 identity_input: accepted_plan.clone(),
-                promotion_receipt: StretchPromotionReceipt::accepted_offline_high_quality(
-                    "stretch-corpus:public-runtime",
-                    8,
-                    8,
-                ),
+                promotion_receipt: promotion.clone(),
             },
             RuntimeOfflineStretchArtifactPlanRegistration {
                 plan_id: "stretch-plan:preview".into(),
@@ -181,15 +180,12 @@ fn public_runtime_reports_offline_stretch_artifact_plan_receipts_with_promotion_
                 media_asset_id: Some("asset:preview".into()),
                 scope: RuntimeOfflineStretchArtifactScope::RenderCache,
                 identity_input: invalid_tier,
-                promotion_receipt: StretchPromotionReceipt::accepted_offline_high_quality(
-                    "stretch-corpus:public-runtime",
-                    8,
-                    8,
-                ),
+                promotion_receipt: promotion.clone(),
             },
         ])
         .expect("offline stretch artifact plans should reconcile");
-    let materialization = public_offline_stretch_artifact_materialization(&accepted_plan);
+    let materialization =
+        public_offline_stretch_artifact_materialization(&accepted_plan, &promotion);
     let expected_hash = materialization.cache_identity_hash.clone();
     runtime
         .reconcile_offline_stretch_artifact_materializations(vec![materialization])
@@ -221,8 +217,14 @@ fn public_runtime_reports_offline_stretch_artifact_plan_receipts_with_promotion_
         offline_plan.promotion_evidence_id.as_deref(),
         Some("stretch-corpus:public-runtime")
     );
-    assert_eq!(offline_plan.promotion_passed_case_count, 8);
-    assert_eq!(offline_plan.promotion_required_case_count, 8);
+    assert_eq!(
+        offline_plan.promotion_passed_case_count,
+        promotion.passed_case_count
+    );
+    assert_eq!(
+        offline_plan.promotion_required_case_count,
+        promotion.required_case_count
+    );
     assert!(offline_plan.promotion_compared_to_draft_baseline);
     assert_eq!(
         offline_plan.cache_identity_hash.as_deref(),

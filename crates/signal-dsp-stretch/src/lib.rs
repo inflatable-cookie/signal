@@ -70,7 +70,8 @@ pub use cache_identity::{
     SIGNAL_STRETCH_ENGINE_VERSION, STRETCH_CACHE_IDENTITY_SCHEMA_VERSION,
 };
 pub use promotion::{
-    StretchPromotionReceipt, StretchPromotionStatus, StretchSyntheticPromotionPolicy,
+    current_synthetic_offline_high_quality_promotion_receipt, StretchPromotionReceipt,
+    StretchPromotionStatus, StretchSyntheticPromotionPolicy,
 };
 
 use phase_vocoder::{

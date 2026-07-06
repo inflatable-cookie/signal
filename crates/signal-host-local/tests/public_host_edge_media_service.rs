@@ -10,11 +10,11 @@ use signal_render_plane::{
     OfflineStretchArtifactScope as RenderOfflineStretchArtifactScope, RenderSampleBuffer,
 };
 use signal_runtime::{
-    RuntimeConfig, RuntimeConfigRequest, RuntimeLifecycleApi, RuntimeMediaPreviewState,
-    RuntimeObservationApi, RuntimeOfflineStretchArtifactPlanRegistration,
-    RuntimeOfflineStretchArtifactReadiness, RuntimeOfflineStretchArtifactScope,
-    RuntimeSupervisorApi, SignalRuntime, StretchBackendTier, StretchCacheIdentityInput,
-    StretchChannelLayout, StretchPitchPoint, StretchPromotionReceipt, StretchPromotionStatus,
+    current_synthetic_offline_high_quality_promotion_receipt, RuntimeConfig, RuntimeConfigRequest,
+    RuntimeLifecycleApi, RuntimeMediaPreviewState, RuntimeObservationApi,
+    RuntimeOfflineStretchArtifactPlanRegistration, RuntimeOfflineStretchArtifactReadiness,
+    RuntimeOfflineStretchArtifactScope, RuntimeSupervisorApi, SignalRuntime, StretchBackendTier,
+    StretchCacheIdentityInput, StretchChannelLayout, StretchPitchPoint, StretchPromotionStatus,
     StretchRatioPoint, StretchWarpMarker,
 };
 
@@ -151,7 +151,9 @@ fn local_shared_host_edge_exports_offline_stretch_artifact_receipts() {
     .with_warp_markers(vec![StretchWarpMarker::new(0, 0)]);
     let expected_identity = identity_input.identity().expect("identity should validate");
     let promotion =
-        StretchPromotionReceipt::accepted_offline_high_quality("stretch-corpus:host-local", 8, 8);
+        current_synthetic_offline_high_quality_promotion_receipt("stretch-corpus:host-local");
+    let expected_passed_case_count = promotion.passed_case_count;
+    let expected_required_case_count = promotion.required_case_count;
     let source = RenderSampleBuffer {
         sample_rate_hz: 48_000,
         frames: Arc::from(vec![0.25_f32; 480 * 2].into_boxed_slice()),
@@ -201,8 +203,11 @@ fn local_shared_host_edge_exports_offline_stretch_artifact_receipts() {
         plan.promotion_evidence_id.as_deref(),
         Some("stretch-corpus:host-local")
     );
-    assert_eq!(plan.promotion_passed_case_count, 8);
-    assert_eq!(plan.promotion_required_case_count, 8);
+    assert_eq!(plan.promotion_passed_case_count, expected_passed_case_count);
+    assert_eq!(
+        plan.promotion_required_case_count,
+        expected_required_case_count
+    );
     assert!(plan.promotion_compared_to_draft_baseline);
     assert!(plan.product_facing_allowed);
     assert_eq!(

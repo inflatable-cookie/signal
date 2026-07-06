@@ -1,6 +1,6 @@
 use crate::{
-    prioritize_stretch_quality_work, StretchBackendTier, StretchBenchmarkComparisonOutcome,
-    StretchSyntheticBenchmarkComparisonReport,
+    compare_synthetic_stretch_backends, prioritize_stretch_quality_work, StretchBackendTier,
+    StretchBenchmarkComparisonOutcome, StretchSyntheticBenchmarkComparisonReport,
 };
 
 /// Promotion decision for a Signal-owned stretch tier.
@@ -44,6 +44,18 @@ pub struct StretchSyntheticPromotionPolicy {
     pub max_inconclusive_count: usize,
     /// Maximum allowed quality-priority rows derived from the report.
     pub max_priority_count: usize,
+}
+
+/// Build the current OfflineHighQuality promotion receipt from Signal's
+/// synthetic comparison report and the default synthetic promotion policy.
+pub fn current_synthetic_offline_high_quality_promotion_receipt(
+    evidence_id: impl Into<String>,
+) -> StretchPromotionReceipt {
+    StretchPromotionReceipt::from_synthetic_offline_high_quality_report(
+        evidence_id,
+        &compare_synthetic_stretch_backends(),
+        StretchSyntheticPromotionPolicy::default(),
+    )
 }
 
 impl Default for StretchSyntheticPromotionPolicy {
@@ -193,7 +205,6 @@ impl Default for StretchPromotionReceipt {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::compare_synthetic_stretch_backends;
 
     #[test]
     fn accepted_offline_high_quality_receipt_allows_product_use() {
@@ -240,6 +251,20 @@ mod tests {
 
         assert_eq!(receipt.status, StretchPromotionStatus::Accepted);
         assert_eq!(receipt.passed_case_count, report.comparisons.len() as u32);
+        assert_eq!(
+            receipt.required_case_count,
+            StretchSyntheticPromotionPolicy::default().min_comparison_count as u32
+        );
+        assert!(receipt.accepts_product_facing_use(StretchBackendTier::OfflineHighQuality));
+    }
+
+    #[test]
+    fn current_synthetic_receipt_uses_default_policy_report() {
+        let receipt =
+            current_synthetic_offline_high_quality_promotion_receipt("synthetic:current-helper");
+
+        assert_eq!(receipt.status, StretchPromotionStatus::Accepted);
+        assert_eq!(receipt.evidence_id, "synthetic:current-helper");
         assert_eq!(
             receipt.required_case_count,
             StretchSyntheticPromotionPolicy::default().min_comparison_count as u32

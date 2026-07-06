@@ -287,6 +287,9 @@ Work:
 - [x] consume render-plane materialization receipts from the first Signal host
   edge freeze/export/cache bridge so runtime observation reports the receipt
   produced by real OfflineHighQuality PCM materialization
+- [x] replace public-boundary accepted-promotion fixtures with the current
+  synthetic comparison-policy receipt so readiness and materialization evidence
+  come from the Signal report gate
 - [ ] wire OfflineHighQuality artifacts into render/export/freeze only after
   corpus evidence beats the draft baseline
 - [ ] add Pulse/Aura contract changes only for product-visible mode, ratio,
@@ -323,8 +326,9 @@ Work:
 ## Next Task
 
 Continue the Signal DSP quality batch by turning the synthetic comparison
-report into a promotion-readiness loop: replace the host-edge synthetic
-promotion fixture with accepted report evidence from the Signal comparison
-policy, then use that same gate before any render/export/freeze artifact can
-become product-facing. Keep Pulse/Aura contract planning deferred until a
-Loophole product workflow consumes the Signal-owned contract.
+report into a promotion-readiness loop: add a reusable Signal artifact-builder
+gate that plans and materializes OfflineHighQuality render/export/freeze
+artifacts only from policy-derived promotion evidence, with a rejected-policy
+test path that never produces a product-facing buffer. Keep Pulse/Aura contract
+planning deferred until a Loophole product workflow consumes the Signal-owned
+contract.

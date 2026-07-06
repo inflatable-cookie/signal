@@ -591,9 +591,8 @@ mod tests {
         RenderSource, RenderStageKind, RenderStageSpec,
     };
     use signal_dsp_stretch::{
-        compare_synthetic_stretch_backends, StretchChannelLayout, StretchPitchPoint,
-        StretchPromotionReceipt, StretchRatioPoint, StretchSyntheticPromotionPolicy,
-        StretchWarpMarker,
+        current_synthetic_offline_high_quality_promotion_receipt, StretchChannelLayout,
+        StretchPitchPoint, StretchPromotionReceipt, StretchRatioPoint, StretchWarpMarker,
     };
     use std::sync::Arc;
 
@@ -710,12 +709,7 @@ mod tests {
     }
 
     fn accepted_synthetic_promotion_receipt(evidence_id: &str) -> StretchPromotionReceipt {
-        let report = compare_synthetic_stretch_backends();
-        StretchPromotionReceipt::from_synthetic_offline_high_quality_report(
-            evidence_id,
-            &report,
-            StretchSyntheticPromotionPolicy::default(),
-        )
+        current_synthetic_offline_high_quality_promotion_receipt(evidence_id)
     }
 
     #[test]
@@ -943,7 +937,7 @@ mod tests {
             plan_offline_stretch_artifact(
                 OfflineStretchArtifactScope::Export,
                 &preview,
-                StretchPromotionReceipt::accepted_offline_high_quality("stretch-corpus:ok", 8, 8),
+                accepted_synthetic_promotion_receipt("stretch-corpus:ok"),
             ),
             Err(OfflineStretchArtifactPlanError::UnsupportedTier(
                 StretchBackendTier::RealtimePreview
@@ -953,7 +947,7 @@ mod tests {
             plan_offline_stretch_artifact(
                 OfflineStretchArtifactScope::Freeze,
                 &repitch,
-                StretchPromotionReceipt::accepted_offline_high_quality("stretch-corpus:ok", 8, 8),
+                accepted_synthetic_promotion_receipt("stretch-corpus:ok"),
             ),
             Err(OfflineStretchArtifactPlanError::UnsupportedTier(
                 StretchBackendTier::Repitch
