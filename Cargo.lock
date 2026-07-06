@@ -954,6 +954,7 @@ dependencies = [
  "signal-plugin-clap",
  "signal-plugin-vst3",
  "signal-primitives",
+ "signal-render-plane",
  "signal-runtime",
 ]
 

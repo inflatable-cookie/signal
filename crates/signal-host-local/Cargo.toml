@@ -20,6 +20,7 @@ signal-plugin-clap = { workspace = true }
 signal-plugin-au = { workspace = true }
 signal-plugin-vst3 = { workspace = true }
 signal-primitives = { workspace = true }
+signal-render-plane = { workspace = true }
 signal-runtime = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }

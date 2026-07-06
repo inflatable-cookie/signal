@@ -1,17 +1,21 @@
 #[path = "support/public_host_edge_media.rs"]
 mod public_host_edge_media;
 
-use std::fs;
+use std::{fs, sync::Arc};
 
 use public_host_edge_media::{public_local_media_fixture_path, write_public_test_wav};
 use signal_host_local::LocalRuntimeHost;
+use signal_render_plane::{
+    materialize_offline_stretch_artifact_pcm,
+    OfflineStretchArtifactScope as RenderOfflineStretchArtifactScope, RenderSampleBuffer,
+};
 use signal_runtime::{
     RuntimeConfig, RuntimeConfigRequest, RuntimeLifecycleApi, RuntimeMediaPreviewState,
-    RuntimeObservationApi, RuntimeOfflineStretchArtifactMaterializationRegistration,
-    RuntimeOfflineStretchArtifactPlanRegistration, RuntimeOfflineStretchArtifactReadiness,
-    RuntimeOfflineStretchArtifactScope, RuntimeSupervisorApi, SignalRuntime, StretchBackendTier,
-    StretchCacheIdentityInput, StretchChannelLayout, StretchPitchPoint, StretchPromotionReceipt,
-    StretchPromotionStatus, StretchRatioPoint, StretchWarpMarker,
+    RuntimeObservationApi, RuntimeOfflineStretchArtifactPlanRegistration,
+    RuntimeOfflineStretchArtifactReadiness, RuntimeOfflineStretchArtifactScope,
+    RuntimeSupervisorApi, SignalRuntime, StretchBackendTier, StretchCacheIdentityInput,
+    StretchChannelLayout, StretchPitchPoint, StretchPromotionReceipt, StretchPromotionStatus,
+    StretchRatioPoint, StretchWarpMarker,
 };
 
 #[test]
@@ -142,13 +146,23 @@ fn local_shared_host_edge_exports_offline_stretch_artifact_receipts() {
         StretchChannelLayout::new(2, 48_000),
         "projection-host-local-3",
     )
-    .with_ratio_curve(vec![
-        StretchRatioPoint::new(0, 1.0),
-        StretchRatioPoint::new(96_000, 0.75),
-    ])
-    .with_pitch_curve(vec![StretchPitchPoint::new(0, 2.0)])
+    .with_ratio_curve(vec![StretchRatioPoint::new(0, 1.25)])
+    .with_pitch_curve(vec![StretchPitchPoint::new(0, 0.0)])
     .with_warp_markers(vec![StretchWarpMarker::new(0, 0)]);
     let expected_identity = identity_input.identity().expect("identity should validate");
+    let promotion =
+        StretchPromotionReceipt::accepted_offline_high_quality("stretch-corpus:host-local", 8, 8);
+    let source = RenderSampleBuffer {
+        sample_rate_hz: 48_000,
+        frames: Arc::from(vec![0.25_f32; 480 * 2].into_boxed_slice()),
+    };
+    let artifact = materialize_offline_stretch_artifact_pcm(
+        RenderOfflineStretchArtifactScope::Freeze,
+        &identity_input,
+        promotion.clone(),
+        &source,
+    )
+    .expect("host-local freeze artifact should materialize");
 
     let mut host = LocalRuntimeHost::new(runtime);
     host.reconcile_offline_stretch_artifact_plans(vec![
@@ -158,33 +172,18 @@ fn local_shared_host_edge_exports_offline_stretch_artifact_receipts() {
             media_asset_id: Some("asset:host-offline-hq".into()),
             scope: RuntimeOfflineStretchArtifactScope::Freeze,
             identity_input,
-            promotion_receipt: StretchPromotionReceipt::accepted_offline_high_quality(
-                "stretch-corpus:host-local",
-                8,
-                8,
-            ),
+            promotion_receipt: promotion,
         },
     ])
     .expect("host should forward offline stretch artifact plans");
-    host.reconcile_offline_stretch_artifact_materializations(vec![
-        RuntimeOfflineStretchArtifactMaterializationRegistration {
-            artifact_id: "host-stretch-artifact:offline-hq".into(),
-            plan_id: "host-stretch-plan:offline-hq".into(),
-            clip_id: Some("clip:host-offline-hq".into()),
-            media_asset_id: Some("asset:host-offline-hq".into()),
-            scope: RuntimeOfflineStretchArtifactScope::Freeze,
-            tier: StretchBackendTier::OfflineHighQuality,
-            cache_identity_hash: expected_identity.stable_hash.clone(),
-            cache_identity_key: expected_identity.canonical_key.clone(),
-            promotion_evidence_id: "stretch-corpus:host-local".into(),
-            input_frame_count: 96_000,
-            output_frame_count: 72_000,
-            channels: 2,
-            sample_rate_hz: 48_000,
-            product_facing_allowed: true,
-        },
-    ])
-    .expect("host should forward offline stretch artifact materializations");
+    host.record_offline_stretch_artifact_materialization_receipt(
+        "host-stretch-artifact:offline-hq",
+        "host-stretch-plan:offline-hq",
+        Some("clip:host-offline-hq".into()),
+        Some("asset:host-offline-hq".into()),
+        artifact.receipt.clone(),
+    )
+    .expect("host should record render-plane stretch artifact materialization");
 
     let report = host.supervisor_report();
     let snapshot = &report.observation.offline_stretch_artifact_plan_snapshot;
@@ -218,6 +217,7 @@ fn local_shared_host_edge_exports_offline_stretch_artifact_receipts() {
     assert_eq!(artifact.cache_identity_hash, expected_identity.stable_hash);
     assert_eq!(artifact.cache_identity_key, expected_identity.canonical_key);
     assert_eq!(artifact.promotion_evidence_id, "stretch-corpus:host-local");
-    assert_eq!(artifact.output_frame_count, 72_000);
+    assert_eq!(artifact.input_frame_count, 480);
+    assert_eq!(artifact.output_frame_count, 600);
     assert!(artifact.product_facing_allowed);
 }

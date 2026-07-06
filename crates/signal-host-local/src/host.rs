@@ -5,6 +5,10 @@ use signal_plugin::PluginFormat;
 use signal_plugin_au::AuHostAdapter;
 use signal_plugin_clap::ClapPluginHostAdapter;
 use signal_plugin_vst3::Vst3HostAdapter;
+use signal_render_plane::{
+    OfflineStretchArtifactMaterializationReceipt as RenderOfflineStretchArtifactMaterializationReceipt,
+    OfflineStretchArtifactScope as RenderOfflineStretchArtifactScope,
+};
 use signal_runtime::{
     BackendPolicyOverride, PluginSandboxLifecycleStage, PluginSandboxSpec, PluginScanRequest,
     RuntimeClipProcessingRegistration, RuntimeError, RuntimeEventRecorder,
@@ -99,6 +103,58 @@ impl LocalRuntimeHost {
     pub fn host_supervisor_report(&self) -> RuntimeHostSupervisorReport {
         let (supervisor, host_io) = self.supervisor_with_host_io();
         RuntimeHostSupervisorReport::new(supervisor, host_io)
+    }
+
+    /// Records a render-plane materialization receipt on the runtime observation surface.
+    ///
+    /// Render/export/freeze callers produce [`RenderOfflineStretchArtifactMaterializationReceipt`]
+    /// when they materialize an OfflineHighQuality stretch artifact. The local
+    /// host owns the crate boundary that can translate that render-plane receipt
+    /// into runtime-owned observation without making `signal-runtime` depend on
+    /// `signal-render-plane`.
+    pub fn record_offline_stretch_artifact_materialization_receipt(
+        &mut self,
+        artifact_id: impl Into<String>,
+        plan_id: impl Into<String>,
+        clip_id: Option<String>,
+        media_asset_id: Option<String>,
+        receipt: RenderOfflineStretchArtifactMaterializationReceipt,
+    ) -> Result<(), RuntimeError> {
+        self.runtime
+            .reconcile_offline_stretch_artifact_materializations(vec![
+                RuntimeOfflineStretchArtifactMaterializationRegistration {
+                    artifact_id: artifact_id.into(),
+                    plan_id: plan_id.into(),
+                    clip_id,
+                    media_asset_id,
+                    scope: runtime_offline_stretch_artifact_scope(receipt.scope),
+                    tier: receipt.tier,
+                    cache_identity_hash: receipt.cache_identity_hash,
+                    cache_identity_key: receipt.cache_identity_key,
+                    promotion_evidence_id: receipt.promotion_evidence_id,
+                    input_frame_count: receipt.input_frame_count,
+                    output_frame_count: receipt.output_frame_count,
+                    channels: receipt.channels,
+                    sample_rate_hz: receipt.sample_rate_hz,
+                    product_facing_allowed: receipt.product_facing_allowed,
+                },
+            ])
+    }
+}
+
+fn runtime_offline_stretch_artifact_scope(
+    scope: RenderOfflineStretchArtifactScope,
+) -> signal_runtime::RuntimeOfflineStretchArtifactScope {
+    match scope {
+        RenderOfflineStretchArtifactScope::Export => {
+            signal_runtime::RuntimeOfflineStretchArtifactScope::Export
+        }
+        RenderOfflineStretchArtifactScope::Freeze => {
+            signal_runtime::RuntimeOfflineStretchArtifactScope::Freeze
+        }
+        RenderOfflineStretchArtifactScope::RenderCache => {
+            signal_runtime::RuntimeOfflineStretchArtifactScope::RenderCache
+        }
     }
 }
 
