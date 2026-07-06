@@ -40,11 +40,12 @@ pub use offline::{
     materialize_offline_stretch_artifact_pcm, plan_offline_stretch_artifact,
     plan_offline_stretch_artifact_with_synthetic_policy, render_plan_to_pcm, write_wav,
     OfflineRenderOptions, OfflineRenderOutput, OfflineStretchArtifactBuildRequest,
+    OfflineStretchArtifactCacheDecision, OfflineStretchArtifactCacheDecisionKind,
     OfflineStretchArtifactCacheHandoff, OfflineStretchArtifactMaterializationReceipt,
     OfflineStretchArtifactMaterializeError, OfflineStretchArtifactPcm, OfflineStretchArtifactPlan,
     OfflineStretchArtifactPlanError, OfflineStretchArtifactPolicyRequest,
-    OfflineStretchArtifactReadiness, OfflineStretchArtifactRenderSource,
-    OfflineStretchArtifactScope, WavBitDepth,
+    OfflineStretchArtifactReadiness, OfflineStretchArtifactRenderCacheBridge,
+    OfflineStretchArtifactRenderSource, OfflineStretchArtifactScope, WavBitDepth,
 };
 
 use std::cell::UnsafeCell;

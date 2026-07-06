@@ -11,7 +11,7 @@
 //! fades, the master limiter, the hardware-boundary write — is the realtime
 //! code, byte for byte.
 
-use std::{path::Path, sync::Arc};
+use std::{collections::HashMap, path::Path, sync::Arc};
 
 use crate::{
     render_plane, RenderPlanSpec, RenderPlaneError, RenderPlaneExecutor, RenderSampleBuffer,
@@ -169,6 +169,91 @@ pub struct OfflineStretchArtifactCacheHandoff {
     pub receipt: OfflineStretchArtifactMaterializationReceipt,
     /// Ready render source wrapping the cacheable artifact PCM.
     pub source: crate::RenderSource,
+}
+
+/// Outcome kind for a render-cache bridge lookup/write decision.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum OfflineStretchArtifactCacheDecisionKind {
+    /// A matching cache identity already existed and was reused.
+    Hit,
+    /// No matching cache identity existed, so a new handoff was written.
+    Written,
+}
+
+/// Render-cache bridge decision for a policy-gated stretch artifact.
+#[derive(Debug, Clone, PartialEq)]
+pub struct OfflineStretchArtifactCacheDecision {
+    /// Whether the bridge reused an existing handoff or wrote a new one.
+    pub kind: OfflineStretchArtifactCacheDecisionKind,
+    /// Cache identity, render source, and receipt selected by this decision.
+    pub handoff: OfflineStretchArtifactCacheHandoff,
+}
+
+/// Control-side render-cache bridge for policy-gated stretch artifacts.
+#[derive(Debug, Clone, Default)]
+pub struct OfflineStretchArtifactRenderCacheBridge {
+    handoffs_by_hash: HashMap<String, OfflineStretchArtifactCacheHandoff>,
+}
+
+impl OfflineStretchArtifactRenderCacheBridge {
+    /// Create an empty render-cache bridge.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Number of cache handoffs currently retained by this bridge.
+    pub fn len(&self) -> usize {
+        self.handoffs_by_hash.len()
+    }
+
+    /// Whether the bridge has no retained cache handoffs.
+    pub fn is_empty(&self) -> bool {
+        self.handoffs_by_hash.is_empty()
+    }
+
+    /// Return true when a stable cache identity hash is retained.
+    pub fn contains_identity_hash(&self, cache_identity_hash: &str) -> bool {
+        self.handoffs_by_hash.contains_key(cache_identity_hash)
+    }
+
+    /// Remove one retained cache handoff by stable identity hash.
+    pub fn invalidate_identity_hash(
+        &mut self,
+        cache_identity_hash: &str,
+    ) -> Option<OfflineStretchArtifactCacheHandoff> {
+        self.handoffs_by_hash.remove(cache_identity_hash)
+    }
+
+    /// Resolve a policy-gated render-cache request against retained handoffs.
+    ///
+    /// Accepted policy evidence writes a new handoff on miss and returns a hit
+    /// on later requests with the same identity. Rejected policy evidence
+    /// returns [`OfflineStretchArtifactMaterializeError::NotReady`] and writes
+    /// nothing.
+    pub fn resolve_with_synthetic_policy(
+        &mut self,
+        request: OfflineStretchArtifactBuildRequest<'_>,
+    ) -> Result<OfflineStretchArtifactCacheDecision, OfflineStretchArtifactMaterializeError> {
+        let identity = request
+            .policy
+            .identity_input
+            .identity()
+            .map_err(OfflineStretchArtifactPlanError::InvalidIdentity)?;
+        if let Some(handoff) = self.handoffs_by_hash.get(&identity.stable_hash) {
+            return Ok(OfflineStretchArtifactCacheDecision {
+                kind: OfflineStretchArtifactCacheDecisionKind::Hit,
+                handoff: handoff.clone(),
+            });
+        }
+
+        let handoff = build_offline_stretch_artifact_cache_handoff_with_synthetic_policy(request)?;
+        self.handoffs_by_hash
+            .insert(handoff.cache_identity_hash.clone(), handoff.clone());
+        Ok(OfflineStretchArtifactCacheDecision {
+            kind: OfflineStretchArtifactCacheDecisionKind::Written,
+            handoff,
+        })
+    }
 }
 
 /// Receipt for one materialized offline stretch artifact.
@@ -855,6 +940,22 @@ mod tests {
         }
     }
 
+    fn cache_bridge_request<'a>(
+        identity_input: &'a StretchCacheIdentityInput,
+        source: &'a RenderSampleBuffer,
+        promotion_policy: StretchSyntheticPromotionPolicy,
+    ) -> OfflineStretchArtifactBuildRequest<'a> {
+        OfflineStretchArtifactBuildRequest {
+            policy: OfflineStretchArtifactPolicyRequest {
+                scope: OfflineStretchArtifactScope::RenderCache,
+                identity_input,
+                evidence_id: "synthetic:cache-bridge-current",
+                promotion_policy,
+            },
+            source,
+        }
+    }
+
     fn accepted_synthetic_promotion_receipt(evidence_id: &str) -> StretchPromotionReceipt {
         current_synthetic_offline_high_quality_promotion_receipt(evidence_id)
     }
@@ -1259,6 +1360,112 @@ mod tests {
                 OfflineStretchArtifactReadiness::AwaitingCorpusEvidence
             ))
         );
+    }
+
+    #[test]
+    fn render_cache_bridge_records_write_hit_rejection_and_identity_invalidation_decisions() {
+        let input =
+            stretch_identity_input().with_ratio_curve(vec![StretchRatioPoint::new(0, 1.25)]);
+        let changed_projection = StretchCacheIdentityInput {
+            projection_epoch: "projection-44".to_string(),
+            ..input.clone()
+        };
+        let source = stretch_artifact_source(480);
+        let mut bridge = OfflineStretchArtifactRenderCacheBridge::new();
+
+        assert!(bridge.is_empty());
+        let written = bridge
+            .resolve_with_synthetic_policy(cache_bridge_request(
+                &input,
+                &source,
+                StretchSyntheticPromotionPolicy::default(),
+            ))
+            .expect("accepted cache bridge request should write on miss");
+        assert_eq!(
+            written.kind,
+            OfflineStretchArtifactCacheDecisionKind::Written
+        );
+        assert_eq!(bridge.len(), 1);
+
+        let hit = bridge
+            .resolve_with_synthetic_policy(cache_bridge_request(
+                &input,
+                &source,
+                StretchSyntheticPromotionPolicy::default(),
+            ))
+            .expect("repeated cache bridge request should hit");
+        assert_eq!(hit.kind, OfflineStretchArtifactCacheDecisionKind::Hit);
+        assert_eq!(
+            hit.handoff.cache_identity_hash,
+            written.handoff.cache_identity_hash
+        );
+        assert_eq!(hit.handoff.source, written.handoff.source);
+
+        let rejecting_policy = StretchSyntheticPromotionPolicy {
+            min_comparison_count: usize::MAX,
+            ..StretchSyntheticPromotionPolicy::default()
+        };
+        assert_eq!(
+            bridge.resolve_with_synthetic_policy(cache_bridge_request(
+                &changed_projection,
+                &source,
+                rejecting_policy
+            )),
+            Err(OfflineStretchArtifactMaterializeError::NotReady(
+                OfflineStretchArtifactReadiness::AwaitingCorpusEvidence
+            ))
+        );
+        assert_eq!(bridge.len(), 1);
+        assert!(!bridge.contains_identity_hash(
+            &changed_projection
+                .identity()
+                .expect("changed identity should validate")
+                .stable_hash
+        ));
+
+        let changed_written = bridge
+            .resolve_with_synthetic_policy(cache_bridge_request(
+                &changed_projection,
+                &source,
+                StretchSyntheticPromotionPolicy::default(),
+            ))
+            .expect("changed projection should write a distinct cache identity");
+        assert_eq!(
+            changed_written.kind,
+            OfflineStretchArtifactCacheDecisionKind::Written
+        );
+        assert_ne!(
+            changed_written.handoff.cache_identity_hash,
+            written.handoff.cache_identity_hash
+        );
+        assert_eq!(bridge.len(), 2);
+
+        let invalidated = bridge
+            .invalidate_identity_hash(&written.handoff.cache_identity_hash)
+            .expect("base identity should invalidate");
+        assert_eq!(
+            invalidated.cache_identity_hash,
+            written.handoff.cache_identity_hash
+        );
+        assert!(!bridge.contains_identity_hash(&written.handoff.cache_identity_hash));
+        assert_eq!(bridge.len(), 1);
+
+        let rewritten = bridge
+            .resolve_with_synthetic_policy(cache_bridge_request(
+                &input,
+                &source,
+                StretchSyntheticPromotionPolicy::default(),
+            ))
+            .expect("invalidated identity should write again");
+        assert_eq!(
+            rewritten.kind,
+            OfflineStretchArtifactCacheDecisionKind::Written
+        );
+        assert_eq!(
+            rewritten.handoff.cache_identity_hash,
+            written.handoff.cache_identity_hash
+        );
+        assert_eq!(bridge.len(), 2);
     }
 
     #[test]
