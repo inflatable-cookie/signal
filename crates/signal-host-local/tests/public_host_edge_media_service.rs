@@ -6,9 +6,10 @@ use std::{fs, sync::Arc};
 use public_host_edge_media::{public_local_media_fixture_path, write_public_test_wav};
 use signal_host_local::LocalRuntimeHost;
 use signal_render_plane::{
-    build_offline_stretch_artifact_pcm_with_synthetic_policy, OfflineStretchArtifactBuildRequest,
-    OfflineStretchArtifactPolicyRequest,
+    build_offline_stretch_artifact_render_source_with_synthetic_policy,
+    OfflineStretchArtifactBuildRequest, OfflineStretchArtifactPolicyRequest,
     OfflineStretchArtifactScope as RenderOfflineStretchArtifactScope, RenderSampleBuffer,
+    RenderSource,
 };
 use signal_runtime::{
     RuntimeConfig, RuntimeConfigRequest, RuntimeLifecycleApi, RuntimeMediaPreviewState,
@@ -155,7 +156,7 @@ fn local_shared_host_edge_exports_offline_stretch_artifact_receipts() {
         sample_rate_hz: 48_000,
         frames: Arc::from(vec![0.25_f32; 480 * 2].into_boxed_slice()),
     };
-    let artifact = build_offline_stretch_artifact_pcm_with_synthetic_policy(
+    let artifact_source = build_offline_stretch_artifact_render_source_with_synthetic_policy(
         OfflineStretchArtifactBuildRequest {
             policy: OfflineStretchArtifactPolicyRequest {
                 scope: RenderOfflineStretchArtifactScope::Freeze,
@@ -166,7 +167,15 @@ fn local_shared_host_edge_exports_offline_stretch_artifact_receipts() {
             source: &source,
         },
     )
-    .expect("host-local freeze artifact should materialize through the policy gate");
+    .expect("host-local freeze artifact should produce a policy-gated render source");
+    let RenderSource::Samples(buffer) = &artifact_source.source else {
+        panic!("host-local artifact source should be RenderSource::Samples");
+    };
+    assert_eq!(
+        buffer.frame_count(),
+        artifact_source.artifact.output_frame_count
+    );
+    let artifact = &artifact_source.artifact;
     let expected_passed_case_count = artifact.plan.promotion_receipt.passed_case_count;
     let expected_required_case_count = artifact.plan.promotion_receipt.required_case_count;
 

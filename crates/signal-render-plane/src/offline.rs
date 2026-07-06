@@ -148,6 +148,16 @@ pub struct OfflineStretchArtifactPcm {
     pub output_frame_count: usize,
 }
 
+/// Policy-gated stretch artifact packaged for direct render-plan consumption.
+#[derive(Debug, Clone, PartialEq)]
+pub struct OfflineStretchArtifactRenderSource {
+    /// Materialized artifact metadata and PCM.
+    pub artifact: OfflineStretchArtifactPcm,
+    /// Ready render source wrapping the artifact buffer as
+    /// [`crate::RenderSource::Samples`].
+    pub source: crate::RenderSource,
+}
+
 /// Receipt for one materialized offline stretch artifact.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct OfflineStretchArtifactMaterializationReceipt {
@@ -415,6 +425,22 @@ pub fn build_offline_stretch_artifact_pcm_with_synthetic_policy(
         promotion_receipt,
         request.source,
     )
+}
+
+/// Build a policy-gated OfflineHighQuality artifact as a render-plan sample source.
+///
+/// This is the render/export/freeze consumer helper: accepted policy evidence
+/// returns a source that can be installed directly in [`crate::RenderClipSpec`].
+/// Rejected policy evidence returns [`OfflineStretchArtifactMaterializeError::NotReady`]
+/// and does not produce a product-facing source.
+pub fn build_offline_stretch_artifact_render_source_with_synthetic_policy(
+    request: OfflineStretchArtifactBuildRequest<'_>,
+) -> Result<OfflineStretchArtifactRenderSource, OfflineStretchArtifactMaterializeError> {
+    let artifact = build_offline_stretch_artifact_pcm_with_synthetic_policy(request)?;
+    Ok(OfflineStretchArtifactRenderSource {
+        source: crate::RenderSource::Samples(artifact.buffer.clone()),
+        artifact,
+    })
 }
 
 fn synthetic_policy_promotion_receipt(
@@ -911,6 +937,67 @@ mod tests {
     }
 
     #[test]
+    fn artifact_builder_gate_returns_render_source_samples_for_consumers() {
+        let input =
+            stretch_identity_input().with_ratio_curve(vec![StretchRatioPoint::new(0, 1.25)]);
+        let source = stretch_artifact_source(480);
+
+        let artifact_source = build_offline_stretch_artifact_render_source_with_synthetic_policy(
+            OfflineStretchArtifactBuildRequest {
+                policy: OfflineStretchArtifactPolicyRequest {
+                    scope: OfflineStretchArtifactScope::RenderCache,
+                    identity_input: &input,
+                    evidence_id: "synthetic:builder-render-source-current",
+                    promotion_policy: StretchSyntheticPromotionPolicy::default(),
+                },
+                source: &source,
+            },
+        )
+        .expect("policy-derived accepted evidence should produce a render source");
+
+        let RenderSource::Samples(buffer) = &artifact_source.source else {
+            panic!("builder should return RenderSource::Samples");
+        };
+        assert_eq!(
+            buffer.frame_count(),
+            artifact_source.artifact.output_frame_count
+        );
+
+        let spec = RenderPlanSpec {
+            sample_rate_hz: 48_000,
+            master_gain: 1.0,
+            master_limiter: None,
+            stages: vec![
+                lane(
+                    45,
+                    1.0,
+                    vec![RenderClipSpec {
+                        clip_id: 450,
+                        start_frames: 0,
+                        end_frames: artifact_source.artifact.output_frame_count as u64,
+                        source: artifact_source.source.clone(),
+                        loop_source: false,
+                    }],
+                ),
+                master(vec![45]),
+            ],
+        };
+        let rendered = render_plan_to_pcm(
+            &spec,
+            &OfflineRenderOptions {
+                frame_count: artifact_source.artifact.output_frame_count as u64,
+                ..OfflineRenderOptions::default()
+            },
+        )
+        .expect("policy-gated artifact source should render");
+
+        assert_eq!(
+            rendered.master.len(),
+            artifact_source.artifact.output_frame_count * 2
+        );
+    }
+
+    #[test]
     fn artifact_builder_gate_blocks_rejected_policy_without_product_buffer() {
         let input =
             stretch_identity_input().with_ratio_curve(vec![StretchRatioPoint::new(0, 1.25)]);
@@ -935,6 +1022,17 @@ mod tests {
         assert!(!plan.product_facing_allowed);
         assert_eq!(
             build_offline_stretch_artifact_pcm_with_synthetic_policy(
+                OfflineStretchArtifactBuildRequest {
+                    policy: policy_request,
+                    source: &source,
+                },
+            ),
+            Err(OfflineStretchArtifactMaterializeError::NotReady(
+                OfflineStretchArtifactReadiness::AwaitingCorpusEvidence
+            ))
+        );
+        assert_eq!(
+            build_offline_stretch_artifact_render_source_with_synthetic_policy(
                 OfflineStretchArtifactBuildRequest {
                     policy: policy_request,
                     source: &source,
