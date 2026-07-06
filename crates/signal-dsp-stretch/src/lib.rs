@@ -47,17 +47,18 @@ pub use benchmark::{
     format_stretch_acceptance_report, format_synthetic_stretch_comparison_report,
     generate_synthetic_stretch_audio, measure_draft_loop_boundary_click,
     measure_draft_stereo_image_delta, measure_draft_transient_smear,
-    measure_dynamic_segment_seam_click, measure_loop_boundary_click, measure_stereo_image_delta,
+    measure_dynamic_segment_seam_click, measure_loop_boundary_click,
+    measure_pitch_shift_error_cents, measure_stereo_image_delta,
     measure_transient_reset_loop_boundary_click, measure_transient_reset_stereo_image_delta,
     measure_transient_reset_transient_smear, measure_transient_smear, output_length_drift_samples,
     synthetic_stretch_corpus_cases, StretchAcceptanceReport, StretchAcceptanceSeverity,
     StretchAcceptanceStatus, StretchBenchmarkBackend, StretchBenchmarkComparisonOutcome,
-    StretchCoherenceComparison, StretchCorpusCase, StretchCorpusFamily, StretchCorpusSource,
-    StretchDynamicSegmentSeamMeasurement, StretchLoopBoundaryMeasurement, StretchMetric,
-    StretchMetricAssessment, StretchMetricLimit, StretchMetricValue, StretchStereoImageMeasurement,
-    StretchSyntheticAudio, StretchSyntheticBenchmarkComparison,
-    StretchSyntheticBenchmarkComparisonReport, StretchTransientEvent,
-    StretchTransientSmearMeasurement, STRETCH_BENCHMARK_CORPUS,
+    StretchBenchmarkPath, StretchCoherenceComparison, StretchCorpusCase, StretchCorpusFamily,
+    StretchCorpusSource, StretchDynamicSegmentSeamMeasurement, StretchLoopBoundaryMeasurement,
+    StretchMetric, StretchMetricAssessment, StretchMetricLimit, StretchMetricValue,
+    StretchPitchShiftMeasurement, StretchStereoImageMeasurement, StretchSyntheticAudio,
+    StretchSyntheticBenchmarkComparison, StretchSyntheticBenchmarkComparisonReport,
+    StretchTransientEvent, StretchTransientSmearMeasurement, STRETCH_BENCHMARK_CORPUS,
 };
 pub use cache_identity::{
     StretchCacheIdentity, StretchCacheIdentityError, StretchCacheIdentityInput,
@@ -1209,6 +1210,26 @@ mod tests {
     }
 
     #[test]
+    fn pitch_shift_metric_reports_dominant_frequency_error() {
+        let sample_rate_hz = 48_000;
+        let sample_rate = sample_rate_hz as f32;
+        let input = sine(440.0, sample_rate, sample_rate_hz as usize);
+        let mut stretcher = OfflineHighQualityStretcher::new(1.0);
+        let output = stretcher.stretch_pitch_mono(&input, SampleRate(sample_rate_hz), 12.0);
+        let measurement =
+            measure_pitch_shift_error_cents(&output, sample_rate_hz, 440.0, 12.0, 1.0);
+
+        assert_eq!(measurement.ratio, 1.0);
+        assert_eq!(measurement.pitch_shift_semitones, 12.0);
+        assert!((measurement.expected_frequency_hz - 880.0).abs() < 1.0e-6);
+        assert!(measurement.measured_frequency_hz > 850.0);
+        assert!(measurement.measured_frequency_hz < 910.0);
+        assert!(measurement.pitch_error_cents < 75.0);
+        assert_eq!(measurement.metric.metric, StretchMetric::PitchErrorCents);
+        assert_eq!(measurement.metric.value, measurement.pitch_error_cents);
+    }
+
+    #[test]
     fn synthetic_corpus_cases_run_without_file_io() {
         let cases = synthetic_stretch_corpus_cases();
         assert_eq!(cases.len(), 3);
@@ -1225,7 +1246,7 @@ mod tests {
     fn synthetic_backend_comparison_covers_all_synthetic_cases() {
         let report = compare_synthetic_stretch_backends();
 
-        assert_eq!(report.comparisons.len(), 22);
+        assert_eq!(report.comparisons.len(), 24);
         assert_eq!(
             report.improved_count
                 + report.regressed_count
@@ -1243,30 +1264,44 @@ mod tests {
             assert!(comparison.ratio > 0.0);
             assert!(matches!(
                 comparison.case_id,
-                "stretch:tempo_ramp" | "stretch:loop_seam" | "stretch:extreme_ratio"
+                "stretch:tempo_ramp"
+                    | "stretch:loop_seam"
+                    | "stretch:extreme_ratio"
+                    | "stretch:pitch_shift"
             ));
         }
         assert!(report.comparisons.iter().any(|comparison| {
             comparison.case_id == "stretch:tempo_ramp"
                 && comparison.metric == StretchMetric::TimingDriftSamples
                 && comparison.ratio > 1.0
+                && comparison.path == StretchBenchmarkPath::DynamicRatio
         }));
         assert!(report.comparisons.iter().any(|comparison| {
             comparison.case_id == "stretch:tempo_ramp"
                 && comparison.metric == StretchMetric::DynamicSegmentSeamClickDbfs
                 && comparison.ratio > 1.0
+                && comparison.path == StretchBenchmarkPath::DynamicRatio
         }));
         assert!(report.comparisons.iter().any(|comparison| {
             comparison.case_id == "stretch:loop_seam"
                 && comparison.metric == StretchMetric::LoopBoundaryClickDbfs
+                && comparison.path == StretchBenchmarkPath::FixedRatio
         }));
         assert!(report.comparisons.iter().any(|comparison| {
             comparison.case_id == "stretch:loop_seam"
                 && comparison.metric == StretchMetric::StereoImageDelta
+                && comparison.path == StretchBenchmarkPath::LinkedStereo
         }));
         assert!(report.comparisons.iter().any(|comparison| {
             comparison.case_id == "stretch:extreme_ratio"
                 && comparison.metric == StretchMetric::TransientSmearFrames
+                && comparison.path == StretchBenchmarkPath::FixedRatio
+        }));
+        assert!(report.comparisons.iter().any(|comparison| {
+            comparison.case_id == "stretch:pitch_shift"
+                && comparison.metric == StretchMetric::PitchErrorCents
+                && comparison.path == StretchBenchmarkPath::PitchShift
+                && comparison.pitch_shift_semitones == Some(12.0)
         }));
     }
 
@@ -1279,8 +1314,13 @@ mod tests {
         assert_eq!(formatted, repeated);
         assert!(formatted.starts_with("synthetic_stretch_comparison improved="));
         assert!(formatted.contains("case=stretch:tempo_ramp"));
+        assert!(formatted.contains("path=DynamicRatio"));
+        assert!(formatted.contains("path=LinkedStereo"));
+        assert!(formatted.contains("path=PitchShift"));
+        assert!(formatted.contains("pitch_shift=12.000000"));
         assert!(formatted.contains("metric=TimingDriftSamples"));
         assert!(formatted.contains("metric=DynamicSegmentSeamClickDbfs"));
+        assert!(formatted.contains("metric=PitchErrorCents"));
         assert!(formatted.contains("offline_hq="));
         assert!(formatted.contains("outcome="));
     }

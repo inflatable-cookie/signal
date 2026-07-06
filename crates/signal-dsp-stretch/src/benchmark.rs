@@ -7,7 +7,7 @@ use crate::{
     stretch_dynamic_ratio_mono_with_engine, OfflineHighQualityStretcher, StretchRatioPoint,
 };
 use rustfft::{num_complex::Complex32, FftPlanner};
-use signal_primitives::Sample;
+use signal_primitives::{Sample, SampleRate};
 
 /// Corpus family required by the Signal-native stretch benchmark program.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -190,6 +190,8 @@ pub enum StretchMetric {
     LatencyFrames,
     /// Peak memory used by the render, in bytes.
     PeakMemoryBytes,
+    /// Absolute pitch error from the requested pitch shift, in cents.
+    PitchErrorCents,
 }
 
 /// Severity for one stretch metric limit.
@@ -238,6 +240,19 @@ pub enum StretchBenchmarkBackend {
     OfflineHighQualityPrototype,
 }
 
+/// Execution path used for one synthetic benchmark comparison.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum StretchBenchmarkPath {
+    /// Fixed-ratio mono or independent-channel stereo stretch.
+    FixedRatio,
+    /// Linked-stereo candidate path.
+    LinkedStereo,
+    /// Stepwise dynamic-ratio candidate path.
+    DynamicRatio,
+    /// Independent tempo plus pitch-shift candidate path.
+    PitchShift,
+}
+
 /// Direction of one metric comparison. All stretch metrics in this harness are
 /// lower-is-better.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -262,6 +277,11 @@ pub struct StretchSyntheticBenchmarkComparison {
     pub ratio: f64,
     /// Metric identity.
     pub metric: StretchMetric,
+    /// Execution path under measurement.
+    pub path: StretchBenchmarkPath,
+    /// Requested pitch shift in semitones, when this row measures pitch-shift
+    /// behavior.
+    pub pitch_shift_semitones: Option<f64>,
     /// Baseline backend measured.
     pub baseline_backend: StretchBenchmarkBackend,
     /// Candidate backend measured.
@@ -365,6 +385,23 @@ pub struct StretchDynamicSegmentSeamMeasurement {
     pub peak_seam_delta: f64,
     /// Seam discontinuity converted to dBFS.
     pub click_dbfs: f64,
+    /// Metric reported to the comparison harness.
+    pub metric: StretchMetricValue,
+}
+
+/// Pitch-shift accuracy measurement for one rendered output.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct StretchPitchShiftMeasurement {
+    /// Output/input duration ratio measured.
+    pub ratio: f64,
+    /// Requested pitch shift in semitones.
+    pub pitch_shift_semitones: f64,
+    /// Expected dominant frequency after shifting.
+    pub expected_frequency_hz: f64,
+    /// Measured dominant frequency in the rendered output.
+    pub measured_frequency_hz: f64,
+    /// Absolute pitch error from the requested shift, in cents.
+    pub pitch_error_cents: f64,
     /// Metric reported to the comparison harness.
     pub metric: StretchMetricValue,
 }
@@ -645,6 +682,47 @@ pub fn measure_dynamic_segment_seam_click(
     }
 }
 
+/// Measure pitch-shift accuracy from the dominant frequency in a rendered
+/// output.
+pub fn measure_pitch_shift_error_cents(
+    output_samples: &[Sample],
+    sample_rate_hz: u32,
+    source_frequency_hz: f64,
+    pitch_shift_semitones: f64,
+    ratio: f64,
+) -> StretchPitchShiftMeasurement {
+    if output_samples.is_empty()
+        || sample_rate_hz == 0
+        || !source_frequency_hz.is_finite()
+        || source_frequency_hz <= 0.0
+        || !pitch_shift_semitones.is_finite()
+        || !ratio.is_finite()
+        || ratio <= 0.0
+    {
+        return pitch_shift_nan(ratio, pitch_shift_semitones, source_frequency_hz);
+    }
+
+    let expected_frequency_hz = source_frequency_hz * 2.0f64.powf(pitch_shift_semitones / 12.0);
+    let measured_frequency_hz = dominant_frequency_hz(output_samples, sample_rate_hz);
+    if !expected_frequency_hz.is_finite()
+        || expected_frequency_hz <= 0.0
+        || !measured_frequency_hz.is_finite()
+        || measured_frequency_hz <= 0.0
+    {
+        return pitch_shift_nan(ratio, pitch_shift_semitones, source_frequency_hz);
+    }
+
+    let pitch_error_cents = (1200.0 * (measured_frequency_hz / expected_frequency_hz).log2()).abs();
+    StretchPitchShiftMeasurement {
+        ratio,
+        pitch_shift_semitones,
+        expected_frequency_hz,
+        measured_frequency_hz,
+        pitch_error_cents,
+        metric: StretchMetricValue::new(StretchMetric::PitchErrorCents, pitch_error_cents),
+    }
+}
+
 /// Measure draft phase-vocoder loop-boundary click on the synthetic loop-seam
 /// corpus case.
 pub fn measure_draft_loop_boundary_click(ratio: f64) -> StretchLoopBoundaryMeasurement {
@@ -786,15 +864,18 @@ pub fn compare_synthetic_stretch_backends() -> StretchSyntheticBenchmarkComparis
                             .metric
                             .value,
                     ));
-                    comparisons.push(compare_metric(
-                        case.case_id,
-                        *ratio,
-                        StretchMetric::StereoImageDelta,
-                        measure_draft_stereo_image_delta(*ratio).metric.value,
-                        measure_transient_reset_stereo_image_delta(*ratio)
-                            .metric
-                            .value,
-                    ));
+                    comparisons.push(
+                        compare_metric(
+                            case.case_id,
+                            *ratio,
+                            StretchMetric::StereoImageDelta,
+                            measure_draft_stereo_image_delta(*ratio).metric.value,
+                            measure_transient_reset_stereo_image_delta(*ratio)
+                                .metric
+                                .value,
+                        )
+                        .with_path(StretchBenchmarkPath::LinkedStereo),
+                    );
                 }
                 StretchCorpusFamily::ExtremeRatio => {
                     comparisons.push(compare_metric(
@@ -813,6 +894,7 @@ pub fn compare_synthetic_stretch_backends() -> StretchSyntheticBenchmarkComparis
             comparisons.extend(compare_dynamic_tempo_ramp(case.case_id));
         }
     }
+    comparisons.extend(compare_pitch_shift());
 
     let mut report = StretchSyntheticBenchmarkComparisonReport {
         comparisons,
@@ -942,10 +1024,16 @@ pub fn format_synthetic_stretch_comparison_report(
         report.inconclusive_count
     ));
     for comparison in &report.comparisons {
+        let pitch_shift = comparison
+            .pitch_shift_semitones
+            .map(|semitones| format!("{semitones:.6}"))
+            .unwrap_or_else(|| "none".to_string());
         lines.push(format!(
-            "case={} ratio={:.6} metric={:?} draft={:.6} offline_hq={:.6} delta={:.6} outcome={:?}",
+            "case={} ratio={:.6} path={:?} pitch_shift={} metric={:?} draft={:.6} offline_hq={:.6} delta={:.6} outcome={:?}",
             comparison.case_id,
             comparison.ratio,
+            comparison.path,
+            pitch_shift,
             comparison.metric,
             comparison.draft_value,
             comparison.offline_high_quality_value,
@@ -981,12 +1069,27 @@ fn compare_metric(
         case_id,
         ratio,
         metric,
+        path: StretchBenchmarkPath::FixedRatio,
+        pitch_shift_semitones: None,
         baseline_backend: StretchBenchmarkBackend::Draft,
         candidate_backend: StretchBenchmarkBackend::OfflineHighQualityPrototype,
         draft_value,
         offline_high_quality_value,
         delta,
         outcome,
+    }
+}
+
+impl StretchSyntheticBenchmarkComparison {
+    fn with_path(mut self, path: StretchBenchmarkPath) -> Self {
+        self.path = path;
+        self
+    }
+
+    fn with_pitch_shift(mut self, pitch_shift_semitones: f64) -> Self {
+        self.path = StretchBenchmarkPath::PitchShift;
+        self.pitch_shift_semitones = Some(pitch_shift_semitones);
+        self
     }
 }
 
@@ -1034,7 +1137,8 @@ fn compare_dynamic_tempo_ramp(case_id: &'static str) -> Vec<StretchSyntheticBenc
             StretchMetric::TimingDriftSamples,
             (draft_output.len() / 2).abs_diff(expected_frames) as f64,
             (offline_high_quality_output.len() / 2).abs_diff(expected_frames) as f64,
-        ),
+        )
+        .with_path(StretchBenchmarkPath::DynamicRatio),
         compare_metric(
             case_id,
             effective_ratio,
@@ -1055,8 +1159,55 @@ fn compare_dynamic_tempo_ramp(case_id: &'static str) -> Vec<StretchSyntheticBenc
             )
             .metric
             .value,
-        ),
+        )
+        .with_path(StretchBenchmarkPath::DynamicRatio),
     ]
+}
+
+fn compare_pitch_shift() -> Vec<StretchSyntheticBenchmarkComparison> {
+    const CASE_ID: &str = "stretch:pitch_shift";
+    const SAMPLE_RATE_HZ: u32 = 48_000;
+    const SOURCE_FREQUENCY_HZ: f64 = 440.0;
+
+    let input = synthetic_pitch_shift_tone(SOURCE_FREQUENCY_HZ, SAMPLE_RATE_HZ, 48_000);
+    [(1.0, 12.0), (1.25, -5.0)]
+        .into_iter()
+        .map(|(ratio, semitones)| {
+            let target_len = (input.len() as f64 * ratio).round() as usize;
+            let draft_output = phase_vocoder(&input, target_len, ratio, 2_048, 512);
+            let mut offline_high_quality = OfflineHighQualityStretcher::new(ratio);
+            let offline_high_quality_output = offline_high_quality.stretch_pitch_mono(
+                &input,
+                SampleRate(SAMPLE_RATE_HZ),
+                semitones,
+            );
+
+            compare_metric(
+                CASE_ID,
+                ratio,
+                StretchMetric::PitchErrorCents,
+                measure_pitch_shift_error_cents(
+                    &draft_output,
+                    SAMPLE_RATE_HZ,
+                    SOURCE_FREQUENCY_HZ,
+                    semitones,
+                    ratio,
+                )
+                .metric
+                .value,
+                measure_pitch_shift_error_cents(
+                    &offline_high_quality_output,
+                    SAMPLE_RATE_HZ,
+                    SOURCE_FREQUENCY_HZ,
+                    semitones,
+                    ratio,
+                )
+                .metric
+                .value,
+            )
+            .with_pitch_shift(semitones)
+        })
+        .collect()
 }
 
 fn synthetic_tempo_ramp_ratio_curve(input_frames: usize) -> Vec<StretchRatioPoint> {
@@ -1130,6 +1281,22 @@ fn synthetic_extreme_ratio() -> StretchSyntheticAudio {
         channels: 1,
         samples,
     }
+}
+
+fn synthetic_pitch_shift_tone(
+    source_frequency_hz: f64,
+    sample_rate_hz: u32,
+    frames: usize,
+) -> Vec<Sample> {
+    (0..frames)
+        .map(|frame| {
+            let time = frame as f64 / sample_rate_hz as f64;
+            let fade_in = (frame as f32 / 1_024.0).min(1.0);
+            let fade_out = ((frames - 1 - frame) as f32 / 1_024.0).min(1.0);
+            let fade = fade_in.min(fade_out);
+            (std::f64::consts::TAU * source_frequency_hz * time).sin() as f32 * 0.7 * fade
+        })
+        .collect()
 }
 
 fn synthetic_sustained_material() -> Vec<Sample> {
@@ -1345,6 +1512,21 @@ fn dynamic_segment_seam_nan(ratio: f64, channels: u16) -> StretchDynamicSegmentS
     }
 }
 
+fn pitch_shift_nan(
+    ratio: f64,
+    pitch_shift_semitones: f64,
+    source_frequency_hz: f64,
+) -> StretchPitchShiftMeasurement {
+    StretchPitchShiftMeasurement {
+        ratio,
+        pitch_shift_semitones,
+        expected_frequency_hz: source_frequency_hz * 2.0f64.powf(pitch_shift_semitones / 12.0),
+        measured_frequency_hz: f64::NAN,
+        pitch_error_cents: f64::NAN,
+        metric: StretchMetricValue::new(StretchMetric::PitchErrorCents, f64::NAN),
+    }
+}
+
 fn stereo_image_nan(ratio: f64) -> StretchStereoImageMeasurement {
     StretchStereoImageMeasurement {
         ratio,
@@ -1354,6 +1536,38 @@ fn stereo_image_nan(ratio: f64) -> StretchStereoImageMeasurement {
         output_side_mid_ratio: f64::NAN,
         image_delta: f64::NAN,
         metric: StretchMetricValue::new(StretchMetric::StereoImageDelta, f64::NAN),
+    }
+}
+
+fn dominant_frequency_hz(samples: &[Sample], sample_rate_hz: u32) -> f64 {
+    if samples.len() < 2 || sample_rate_hz == 0 {
+        return f64::NAN;
+    }
+
+    let fft_size = samples.len().next_power_of_two();
+    let mut planner = FftPlanner::<f32>::new();
+    let fft = planner.plan_fft_forward(fft_size);
+    let mut buffer = vec![Complex32::new(0.0, 0.0); fft_size];
+    for (index, sample) in samples.iter().enumerate() {
+        let window =
+            0.5 - 0.5 * (std::f32::consts::TAU * index as f32 / samples.len() as f32).cos();
+        buffer[index] = Complex32::new(sample * window, 0.0);
+    }
+    fft.process(&mut buffer);
+
+    let mut best_bin = 0usize;
+    let mut best_magnitude = 0.0f32;
+    for (bin, spectrum) in buffer.iter().take(fft_size / 2).enumerate().skip(1) {
+        let magnitude = spectrum.norm_sqr();
+        if magnitude > best_magnitude {
+            best_magnitude = magnitude;
+            best_bin = bin;
+        }
+    }
+    if best_bin == 0 {
+        f64::NAN
+    } else {
+        best_bin as f64 * sample_rate_hz as f64 / fft_size as f64
     }
 }
 
