@@ -395,6 +395,47 @@ impl OfflineHighQualityStretcher {
         );
         stretch_to_exact_linked_stereo(&pitched, target_frames, self.window_size, self.analysis_hop)
     }
+
+    /// Stretch one mono buffer with a stepwise dynamic ratio curve.
+    ///
+    /// `ratio_curve` uses the same sample-frame vocabulary as cache identity:
+    /// each [`StretchRatioPoint::timeline_frame`] is interpreted as a
+    /// source-frame offset in this buffer where the point's ratio becomes
+    /// active. Invalid points are ignored. Gaps before the first valid point
+    /// use the stretcher's current [`Self::ratio`].
+    pub fn stretch_dynamic_ratio_mono(
+        &mut self,
+        input: &[Sample],
+        ratio_curve: &[StretchRatioPoint],
+    ) -> Vec<Sample> {
+        stretch_dynamic_ratio_mono_with_engine(
+            input,
+            ratio_curve,
+            self.ratio,
+            self.window_size,
+            self.analysis_hop,
+            transient_reset_phase_vocoder,
+        )
+    }
+
+    /// Stretch an interleaved stereo buffer with a stepwise dynamic ratio
+    /// curve through the linked OfflineHighQuality prototype path.
+    ///
+    /// A trailing odd sample is ignored. Segment boundaries are deterministic
+    /// and sample-domain; smoothing/crossfade policy remains promotion work.
+    pub fn stretch_dynamic_ratio_interleaved_stereo(
+        &mut self,
+        frames: &[Sample],
+        ratio_curve: &[StretchRatioPoint],
+    ) -> Vec<Sample> {
+        stretch_dynamic_ratio_linked_stereo_with_engine(
+            frames,
+            ratio_curve,
+            self.ratio,
+            self.window_size,
+            self.analysis_hop,
+        )
+    }
 }
 
 impl TimeStretcher for OfflineHighQualityStretcher {
@@ -536,6 +577,67 @@ fn stretch_to_exact_mono(
     engine(input, target_len, ratio, window_size, analysis_hop)
 }
 
+pub(crate) fn dynamic_ratio_output_frames(
+    input_frames: usize,
+    ratio_curve: &[StretchRatioPoint],
+    fallback_ratio: f64,
+) -> usize {
+    dynamic_ratio_segments(input_frames, ratio_curve, sanitize_ratio(fallback_ratio))
+        .iter()
+        .map(|segment| segment.target_frames)
+        .sum()
+}
+
+pub(crate) fn stretch_dynamic_ratio_mono_with_engine(
+    input: &[Sample],
+    ratio_curve: &[StretchRatioPoint],
+    fallback_ratio: f64,
+    window_size: usize,
+    analysis_hop: usize,
+    engine: fn(&[Sample], usize, f64, usize, usize) -> Vec<Sample>,
+) -> Vec<Sample> {
+    let segments = dynamic_ratio_segments(input.len(), ratio_curve, sanitize_ratio(fallback_ratio));
+    let target_len: usize = segments.iter().map(|segment| segment.target_frames).sum();
+    let mut output = Vec::with_capacity(target_len);
+    for segment in segments {
+        let rendered = stretch_to_exact_mono(
+            &input[segment.start_frame..segment.end_frame],
+            segment.target_frames,
+            window_size,
+            analysis_hop,
+            engine,
+        );
+        output.extend(rendered);
+    }
+    output
+}
+
+fn stretch_dynamic_ratio_linked_stereo_with_engine(
+    input: &[Sample],
+    ratio_curve: &[StretchRatioPoint],
+    fallback_ratio: f64,
+    window_size: usize,
+    analysis_hop: usize,
+) -> Vec<Sample> {
+    let frame_count = input.len() / 2;
+    let even_input = &input[..frame_count * 2];
+    let segments = dynamic_ratio_segments(frame_count, ratio_curve, sanitize_ratio(fallback_ratio));
+    let target_frames: usize = segments.iter().map(|segment| segment.target_frames).sum();
+    let mut output = Vec::with_capacity(target_frames * 2);
+    for segment in segments {
+        let start = segment.start_frame * 2;
+        let end = segment.end_frame * 2;
+        let rendered = stretch_to_exact_linked_stereo(
+            &even_input[start..end],
+            segment.target_frames,
+            window_size,
+            analysis_hop,
+        );
+        output.extend(rendered);
+    }
+    output
+}
+
 fn stretch_to_exact_linked_stereo(
     input: &[Sample],
     target_frames: usize,
@@ -562,6 +664,56 @@ fn stretch_to_exact_linked_stereo(
         window_size,
         analysis_hop,
     )
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct DynamicRatioSegment {
+    start_frame: usize,
+    end_frame: usize,
+    target_frames: usize,
+}
+
+fn dynamic_ratio_segments(
+    input_frames: usize,
+    ratio_curve: &[StretchRatioPoint],
+    fallback_ratio: f64,
+) -> Vec<DynamicRatioSegment> {
+    if input_frames == 0 {
+        return Vec::new();
+    }
+
+    let mut points = std::collections::BTreeMap::<usize, f64>::new();
+    for point in ratio_curve {
+        if point.timeline_frame < 0 || !point.ratio.is_finite() || point.ratio <= 0.0 {
+            continue;
+        }
+        points.insert(point.timeline_frame as usize, point.ratio);
+    }
+
+    let mut segments = Vec::new();
+    let mut start_frame = 0usize;
+    let mut ratio = sanitize_ratio(fallback_ratio);
+    for (point_frame, point_ratio) in points {
+        let point_frame = point_frame.min(input_frames);
+        if point_frame > start_frame {
+            segments.push(dynamic_ratio_segment(start_frame, point_frame, ratio));
+        }
+        ratio = point_ratio;
+        start_frame = point_frame;
+    }
+
+    if start_frame < input_frames {
+        segments.push(dynamic_ratio_segment(start_frame, input_frames, ratio));
+    }
+    segments
+}
+
+fn dynamic_ratio_segment(start_frame: usize, end_frame: usize, ratio: f64) -> DynamicRatioSegment {
+    DynamicRatioSegment {
+        start_frame,
+        end_frame,
+        target_frames: ((end_frame - start_frame) as f64 * ratio).round() as usize,
+    }
 }
 
 fn pitch_shift_mono_to_nominal_rate(
@@ -869,6 +1021,69 @@ mod tests {
     }
 
     #[test]
+    fn offline_high_quality_dynamic_ratio_mono_sums_segment_targets() {
+        let input = sine(440.0, 48_000.0, 48_000);
+        let ratio_curve = [
+            StretchRatioPoint::new(0, 0.75),
+            StretchRatioPoint::new(16_000, 1.0),
+            StretchRatioPoint::new(32_000, 1.5),
+        ];
+        let mut stretcher = OfflineHighQualityStretcher::new(1.0);
+        let output = stretcher.stretch_dynamic_ratio_mono(&input, &ratio_curve);
+
+        assert_eq!(
+            output.len(),
+            dynamic_ratio_output_frames(input.len(), &ratio_curve, 1.0)
+        );
+        assert_eq!(output.len(), 52_000);
+    }
+
+    #[test]
+    fn offline_high_quality_dynamic_ratio_ignores_invalid_points() {
+        let input = sine(440.0, 48_000.0, 8_000);
+        let ratio_curve = [
+            StretchRatioPoint::new(-128, 0.5),
+            StretchRatioPoint::new(2_000, f64::NAN),
+            StretchRatioPoint::new(4_000, -2.0),
+        ];
+        let mut dynamic = OfflineHighQualityStretcher::new(1.25);
+        let mut fixed = OfflineHighQualityStretcher::new(1.25);
+
+        assert_eq!(
+            dynamic.stretch_dynamic_ratio_mono(&input, &ratio_curve),
+            fixed.stretch_mono(&input)
+        );
+    }
+
+    #[test]
+    fn offline_high_quality_dynamic_ratio_stereo_is_exact_and_deterministic() {
+        let sample_rate = 48_000.0;
+        let left = sine(220.0, sample_rate, 48_000);
+        let right = sine(440.0, sample_rate, 48_000);
+        let mut frames = Vec::with_capacity(left.len() * 2);
+        for (l, r) in left.iter().zip(right.iter()) {
+            frames.push(*l);
+            frames.push(*r);
+        }
+        let ratio_curve = [
+            StretchRatioPoint::new(0, 0.75),
+            StretchRatioPoint::new(16_000, 1.0),
+            StretchRatioPoint::new(32_000, 1.5),
+        ];
+        let mut first = OfflineHighQualityStretcher::new(1.0);
+        let mut repeated = OfflineHighQualityStretcher::new(1.0);
+        let first_output = first.stretch_dynamic_ratio_interleaved_stereo(&frames, &ratio_curve);
+        let repeated_output =
+            repeated.stretch_dynamic_ratio_interleaved_stereo(&frames, &ratio_curve);
+
+        assert_eq!(
+            first_output.len(),
+            dynamic_ratio_output_frames(left.len(), &ratio_curve, 1.0) * 2
+        );
+        assert_eq!(first_output, repeated_output);
+    }
+
+    #[test]
     fn backend_plan_tracks_signal_owned_tiers() {
         assert_eq!(SIGNAL_STRETCH_BACKEND_PLAN.len(), 3);
         assert_eq!(
@@ -973,7 +1188,7 @@ mod tests {
     fn synthetic_backend_comparison_covers_all_synthetic_cases() {
         let report = compare_synthetic_stretch_backends();
 
-        assert_eq!(report.comparisons.len(), 20);
+        assert_eq!(report.comparisons.len(), 21);
         assert_eq!(
             report.improved_count
                 + report.regressed_count
@@ -997,6 +1212,7 @@ mod tests {
         assert!(report.comparisons.iter().any(|comparison| {
             comparison.case_id == "stretch:tempo_ramp"
                 && comparison.metric == StretchMetric::TimingDriftSamples
+                && comparison.ratio > 1.0
         }));
         assert!(report.comparisons.iter().any(|comparison| {
             comparison.case_id == "stretch:loop_seam"

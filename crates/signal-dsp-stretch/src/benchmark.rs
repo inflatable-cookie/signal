@@ -2,6 +2,10 @@ use crate::phase_vocoder::{
     phase_locked_phase_vocoder, phase_vocoder, transient_reset_phase_vocoder,
     transient_reset_phase_vocoder_linked_stereo,
 };
+use crate::{
+    dynamic_ratio_output_frames, stretch_dynamic_ratio_mono_with_engine,
+    OfflineHighQualityStretcher, StretchRatioPoint,
+};
 use rustfft::{num_complex::Complex32, FftPlanner};
 use signal_primitives::Sample;
 
@@ -739,6 +743,10 @@ pub fn compare_synthetic_stretch_backends() -> StretchSyntheticBenchmarkComparis
                 _ => {}
             }
         }
+
+        if case.family == StretchCorpusFamily::TempoRamp {
+            comparisons.push(compare_dynamic_tempo_ramp_timing_drift(case.case_id));
+        }
     }
 
     let mut report = StretchSyntheticBenchmarkComparisonReport {
@@ -940,6 +948,36 @@ fn measure_synthetic_length_drift(
     };
 
     output_length_drift_samples(input_frames, output_frames, ratio)
+}
+
+fn compare_dynamic_tempo_ramp_timing_drift(
+    case_id: &'static str,
+) -> StretchSyntheticBenchmarkComparison {
+    let input = synthetic_tempo_ramp();
+    let ratio_curve = synthetic_tempo_ramp_ratio_curve(input.frame_count());
+    let expected_frames = dynamic_ratio_output_frames(input.frame_count(), &ratio_curve, 1.0);
+    let effective_ratio = expected_frames as f64 / input.frame_count() as f64;
+    let draft_output =
+        stretch_dynamic_ratio_stereo_independent(&input, &ratio_curve, phase_vocoder);
+    let mut offline_high_quality = OfflineHighQualityStretcher::new(1.0);
+    let offline_high_quality_output =
+        offline_high_quality.stretch_dynamic_ratio_interleaved_stereo(&input.samples, &ratio_curve);
+
+    compare_metric(
+        case_id,
+        effective_ratio,
+        StretchMetric::TimingDriftSamples,
+        (draft_output.len() / 2).abs_diff(expected_frames) as f64,
+        (offline_high_quality_output.len() / 2).abs_diff(expected_frames) as f64,
+    )
+}
+
+fn synthetic_tempo_ramp_ratio_curve(input_frames: usize) -> Vec<StretchRatioPoint> {
+    vec![
+        StretchRatioPoint::new(0, 0.75),
+        StretchRatioPoint::new((input_frames / 3) as i64, 1.0),
+        StretchRatioPoint::new((input_frames * 2 / 3) as i64, 1.5),
+    ]
 }
 
 fn synthetic_tempo_ramp() -> StretchSyntheticAudio {
@@ -1276,6 +1314,30 @@ fn stretch_stereo_synthetic(
     for channel in 0..channel_count {
         let mono = deinterleave_channel(&input.samples, channel_count, channel);
         output_channels.push(stretcher(&mono, target_len, ratio, 2_048, 512));
+    }
+    interleave_channels(&output_channels)
+}
+
+fn stretch_dynamic_ratio_stereo_independent(
+    input: &StretchSyntheticAudio,
+    ratio_curve: &[StretchRatioPoint],
+    stretcher: fn(&[Sample], usize, f64, usize, usize) -> Vec<Sample>,
+) -> Vec<Sample> {
+    let channel_count = input.channels as usize;
+    if channel_count != 2 {
+        return Vec::new();
+    }
+    let mut output_channels = Vec::with_capacity(channel_count);
+    for channel in 0..channel_count {
+        let mono = deinterleave_channel(&input.samples, channel_count, channel);
+        output_channels.push(stretch_dynamic_ratio_mono_with_engine(
+            &mono,
+            ratio_curve,
+            1.0,
+            2_048,
+            512,
+            stretcher,
+        ));
     }
     interleave_channels(&output_channels)
 }
