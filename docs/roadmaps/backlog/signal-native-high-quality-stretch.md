@@ -223,7 +223,7 @@ Repos: `signal`
 Work:
 
 - [x] add transient detection over energy and spectral flux
-- [ ] add transient-preserving phase reset or local splice strategy
+- [x] add transient-preserving phase reset or local splice strategy
 - [ ] add linked stereo analysis/synthesis so image movement is measured
 - [x] add transient smear metrics to the corpus harness
 - [x] add loop seam metrics to the corpus harness
@@ -272,5 +272,5 @@ Work:
 
 ## Next Task
 
-Continue Slice 3 by choosing and prototyping the transient-preserving phase
-reset or local splice strategy against the new transient and loop metrics.
+Continue Slice 3 by adding linked stereo analysis/synthesis measurement so
+image movement is tracked before routing any prototype into production.

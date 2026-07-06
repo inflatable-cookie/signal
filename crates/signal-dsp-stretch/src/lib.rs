@@ -40,6 +40,7 @@ pub use benchmark::{
     assess_stretch_metrics, compare_sustained_material_coherence, detect_stretch_transients,
     format_stretch_acceptance_report, generate_synthetic_stretch_audio,
     measure_draft_loop_boundary_click, measure_draft_transient_smear, measure_loop_boundary_click,
+    measure_transient_reset_loop_boundary_click, measure_transient_reset_transient_smear,
     measure_transient_smear, output_length_drift_samples, synthetic_stretch_corpus_cases,
     StretchAcceptanceReport, StretchAcceptanceSeverity, StretchAcceptanceStatus,
     StretchCoherenceComparison, StretchCorpusCase, StretchCorpusFamily, StretchCorpusSource,
@@ -628,6 +629,19 @@ mod tests {
     }
 
     #[test]
+    fn transient_reset_smear_metric_reports_synthetic_case() {
+        let draft = measure_draft_transient_smear(1.5);
+        let reset = measure_transient_reset_transient_smear(1.5);
+
+        assert_eq!(reset.ratio, 1.5);
+        assert_eq!(reset.input_transients, draft.input_transients);
+        assert!(reset.output_transients > 0);
+        assert!(reset.matched_transients > 0);
+        assert!(reset.max_smear_frames.is_finite());
+        assert_eq!(reset.metric.metric, StretchMetric::TransientSmearFrames);
+    }
+
+    #[test]
     fn transient_smear_metric_formats_as_acceptance_metric() {
         let measurement = measure_draft_transient_smear(1.25);
         let report = assess_stretch_metrics(
@@ -664,6 +678,20 @@ mod tests {
     #[test]
     fn loop_boundary_metric_reports_synthetic_draft_case() {
         let measurement = measure_draft_loop_boundary_click(1.25);
+
+        assert_eq!(measurement.ratio, 1.25);
+        assert_eq!(measurement.channels, 2);
+        assert!(measurement.peak_boundary_delta.is_finite());
+        assert!(measurement.click_dbfs.is_finite());
+        assert_eq!(
+            measurement.metric.metric,
+            StretchMetric::LoopBoundaryClickDbfs
+        );
+    }
+
+    #[test]
+    fn transient_reset_loop_boundary_metric_reports_synthetic_case() {
+        let measurement = measure_transient_reset_loop_boundary_click(1.25);
 
         assert_eq!(measurement.ratio, 1.25);
         assert_eq!(measurement.channels, 2);

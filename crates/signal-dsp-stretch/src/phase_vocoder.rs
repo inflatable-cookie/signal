@@ -39,6 +39,24 @@ pub(crate) fn phase_locked_phase_vocoder(
     )
 }
 
+/// Run the identity phase-locked prototype with transient phase resets.
+pub(crate) fn transient_reset_phase_vocoder(
+    input: &[Sample],
+    target_len: usize,
+    ratio: f64,
+    window_size: usize,
+    analysis_hop: usize,
+) -> Vec<Sample> {
+    run_phase_vocoder(
+        input,
+        target_len,
+        ratio,
+        window_size,
+        analysis_hop,
+        PhasePropagationMode::IdentityLockedTransientReset,
+    )
+}
+
 fn run_phase_vocoder(
     input: &[Sample],
     target_len: usize,
@@ -72,6 +90,7 @@ struct SpectralPeak {
 enum PhasePropagationMode {
     IndependentBins,
     IdentityLocked,
+    IdentityLockedTransientReset,
 }
 
 impl PhaseVocoderConfig {
@@ -105,6 +124,10 @@ struct DraftPhaseVocoder {
     current_magnitudes: Vec<f32>,
     current_phases: Vec<f32>,
     current_peaks: Vec<SpectralPeak>,
+    previous_magnitudes: Vec<f32>,
+    current_energy: f64,
+    previous_energy: f64,
+    transient_reset_current_frame: bool,
     analysis_buffer: Vec<Complex32>,
     synthesis_spectrum: Vec<Complex32>,
     output: Vec<f32>,
@@ -140,6 +163,10 @@ impl DraftPhaseVocoder {
             current_magnitudes: vec![0.0; config.bins],
             current_phases: vec![0.0; config.bins],
             current_peaks: Vec::with_capacity(config.bins / 4),
+            previous_magnitudes: vec![0.0; config.bins],
+            current_energy: 0.0,
+            previous_energy: 0.0,
+            transient_reset_current_frame: false,
             analysis_buffer: vec![Complex32::new(0.0, 0.0); config.window_size],
             synthesis_spectrum: vec![Complex32::new(0.0, 0.0); config.window_size],
             output: vec![0.0; output_len],
@@ -156,7 +183,7 @@ impl DraftPhaseVocoder {
     fn process(&mut self, input: &[Sample]) {
         for frame_index in 0..self.config.frame_count {
             self.analyze_frame(input, frame_index);
-            self.track_spectral_peaks();
+            self.track_spectral_peaks(frame_index);
             self.propagate_phase(frame_index);
             self.synthesize_frame(frame_index);
         }
@@ -164,23 +191,31 @@ impl DraftPhaseVocoder {
 
     fn analyze_frame(&mut self, input: &[Sample], frame_index: usize) {
         let analysis_start = frame_index * self.config.analysis_hop;
+        self.current_energy = 0.0;
         for (slot, (sample, weight)) in self.analysis_buffer.iter_mut().zip(
             input[analysis_start..analysis_start + self.config.window_size]
                 .iter()
                 .zip(self.window.iter()),
         ) {
-            *slot = Complex32::new(sample * weight, 0.0);
+            let windowed = sample * weight;
+            self.current_energy += (windowed * windowed) as f64;
+            *slot = Complex32::new(windowed, 0.0);
         }
+        self.current_energy /= self.config.window_size as f64;
         self.forward.process(&mut self.analysis_buffer);
     }
 
-    fn track_spectral_peaks(&mut self) {
+    fn track_spectral_peaks(&mut self, frame_index: usize) {
         self.current_peaks.clear();
         for (bin, magnitude) in self.current_magnitudes.iter_mut().enumerate() {
             *magnitude = self.analysis_buffer[bin].norm();
         }
+        self.transient_reset_current_frame = self.should_reset_phase_at_transient(frame_index);
 
         if self.config.bins < 3 {
+            self.previous_magnitudes
+                .copy_from_slice(&self.current_magnitudes);
+            self.previous_energy = self.current_energy;
             return;
         }
 
@@ -195,13 +230,17 @@ impl DraftPhaseVocoder {
                 self.current_peaks.push(SpectralPeak { bin, magnitude });
             }
         }
+
+        self.previous_magnitudes
+            .copy_from_slice(&self.current_magnitudes);
+        self.previous_energy = self.current_energy;
     }
 
     fn propagate_phase(&mut self, frame_index: usize) {
         for bin in 0..self.config.bins {
             let phase = self.analysis_buffer[bin].arg();
             self.current_phases[bin] = phase;
-            if frame_index == 0 {
+            if frame_index == 0 || self.transient_reset_current_frame {
                 self.synthesis_phase[bin] = phase;
             } else {
                 let deviation = wrap_phase(phase - self.previous_phase[bin] - self.omega[bin]);
@@ -212,7 +251,7 @@ impl DraftPhaseVocoder {
             self.previous_phase[bin] = phase;
         }
 
-        if self.mode == PhasePropagationMode::IdentityLocked {
+        if self.mode.uses_identity_locking() {
             self.lock_phase_to_peaks();
         }
 
@@ -225,6 +264,27 @@ impl DraftPhaseVocoder {
             self.synthesis_spectrum[self.config.window_size - bin] =
                 self.synthesis_spectrum[bin].conj();
         }
+    }
+
+    fn should_reset_phase_at_transient(&self, frame_index: usize) -> bool {
+        if self.mode != PhasePropagationMode::IdentityLockedTransientReset || frame_index == 0 {
+            return false;
+        }
+
+        let mut flux = 0.0f32;
+        let mut magnitude_sum = 0.0f32;
+        for (current, previous) in self
+            .current_magnitudes
+            .iter()
+            .zip(self.previous_magnitudes.iter())
+        {
+            flux += (current - previous).max(0.0);
+            magnitude_sum += *current;
+        }
+
+        let flux_ratio = flux as f64 / (magnitude_sum as f64 + 1.0e-12);
+        let energy_ratio = self.current_energy / (self.previous_energy + 1.0e-12);
+        flux_ratio >= 0.30 && energy_ratio >= 1.20
     }
 
     fn lock_phase_to_peaks(&mut self) {
@@ -279,6 +339,16 @@ impl DraftPhaseVocoder {
     }
 }
 
+impl PhasePropagationMode {
+    fn uses_identity_locking(self) -> bool {
+        matches!(
+            self,
+            PhasePropagationMode::IdentityLocked
+                | PhasePropagationMode::IdentityLockedTransientReset
+        )
+    }
+}
+
 fn wrap_phase(phase: f32) -> f32 {
     let tau = std::f32::consts::TAU;
     phase - tau * (phase / tau).round()
@@ -316,7 +386,7 @@ mod tests {
         let mut engine = DraftPhaseVocoder::new(config, PhasePropagationMode::IndependentBins);
 
         engine.analyze_frame(&input, 0);
-        engine.track_spectral_peaks();
+        engine.track_spectral_peaks(0);
 
         assert!(
             engine
@@ -326,6 +396,26 @@ mod tests {
             "expected a peak near bin {target_bin}, got {:?}",
             engine.current_peaks
         );
+    }
+
+    #[test]
+    fn transient_reset_detector_flags_energy_and_flux_jump() {
+        let window_size = 256;
+        let mut input = vec![0.0; window_size * 2];
+        for sample in &mut input[window_size..] {
+            *sample = 1.0;
+        }
+        let config = PhaseVocoderConfig::new(&input, input.len(), 1.0, window_size, window_size);
+        let mut engine =
+            DraftPhaseVocoder::new(config, PhasePropagationMode::IdentityLockedTransientReset);
+
+        engine.analyze_frame(&input, 0);
+        engine.track_spectral_peaks(0);
+        assert!(!engine.transient_reset_current_frame);
+
+        engine.analyze_frame(&input, 1);
+        engine.track_spectral_peaks(1);
+        assert!(engine.transient_reset_current_frame);
     }
 
     #[test]
@@ -376,6 +466,16 @@ mod tests {
     }
 
     #[test]
+    fn transient_reset_prototype_honors_output_length_contract() {
+        let input = bin_centered_sine(11, 8192);
+        for ratio in [0.5, 0.75, 1.25, 1.5, 2.0] {
+            let target_len = (input.len() as f64 * ratio).round() as usize;
+            let output = transient_reset_phase_vocoder(&input, target_len, ratio, 1024, 256);
+            assert_eq!(output.len(), target_len, "ratio {ratio}");
+        }
+    }
+
+    #[test]
     fn phase_locked_prototype_preserves_tonal_pitch_near_draft_baseline() {
         let sample_rate = 48_000.0;
         let frequency_hz = 468.75;
@@ -393,6 +493,29 @@ mod tests {
             assert!(
                 (locked_frequency - frequency_hz).abs() <= (draft_frequency - frequency_hz).abs() + 3.0,
                 "ratio {ratio}: locked frequency {locked_frequency} Hz regressed from draft {draft_frequency} Hz"
+            );
+        }
+    }
+
+    #[test]
+    fn transient_reset_prototype_preserves_tonal_pitch_near_draft_baseline() {
+        let sample_rate = 48_000.0;
+        let frequency_hz = 468.75;
+        let input = (0..48_000)
+            .map(|index| (std::f32::consts::TAU * frequency_hz * index as f32 / sample_rate).sin())
+            .collect::<Vec<_>>();
+
+        for ratio in [0.75, 1.5, 2.0] {
+            let target_len = (input.len() as f64 * ratio).round() as usize;
+            let draft = phase_vocoder(&input, target_len, ratio, 2048, 512);
+            let reset = transient_reset_phase_vocoder(&input, target_len, ratio, 2048, 512);
+            let draft_frequency = dominant_frequency_hz(&draft, sample_rate);
+            let reset_frequency = dominant_frequency_hz(&reset, sample_rate);
+
+            assert!(
+                (reset_frequency - frequency_hz).abs()
+                    <= (draft_frequency - frequency_hz).abs() + 3.0,
+                "ratio {ratio}: reset frequency {reset_frequency} Hz regressed from draft {draft_frequency} Hz"
             );
         }
     }

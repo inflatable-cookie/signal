@@ -1,4 +1,6 @@
-use crate::phase_vocoder::{phase_locked_phase_vocoder, phase_vocoder};
+use crate::phase_vocoder::{
+    phase_locked_phase_vocoder, phase_vocoder, transient_reset_phase_vocoder,
+};
 use rustfft::{num_complex::Complex32, FftPlanner};
 use signal_primitives::Sample;
 
@@ -441,6 +443,21 @@ pub fn measure_draft_transient_smear(ratio: f64) -> StretchTransientSmearMeasure
     measure_transient_smear(&input, &output, ratio, WINDOW_SIZE, HOP_SIZE)
 }
 
+/// Measure transient-reset prototype smear on the synthetic extreme-ratio
+/// corpus case.
+pub fn measure_transient_reset_transient_smear(ratio: f64) -> StretchTransientSmearMeasurement {
+    if !ratio.is_finite() || ratio <= 0.0 {
+        return transient_smear_nan(ratio);
+    }
+
+    const WINDOW_SIZE: usize = 1_024;
+    const HOP_SIZE: usize = 256;
+    let input = synthetic_extreme_ratio().samples;
+    let target_len = (input.len() as f64 * ratio).round() as usize;
+    let output = transient_reset_phase_vocoder(&input, target_len, ratio, 2_048, 512);
+    measure_transient_smear(&input, &output, ratio, WINDOW_SIZE, HOP_SIZE)
+}
+
 /// Measure a loop-boundary click as the final-to-first-frame discontinuity.
 pub fn measure_loop_boundary_click(
     interleaved_samples: &[Sample],
@@ -490,6 +507,28 @@ pub fn measure_draft_loop_boundary_click(ratio: f64) -> StretchLoopBoundaryMeasu
     for channel in 0..channel_count {
         let mono = deinterleave_channel(&input.samples, channel_count, channel);
         output_channels.push(phase_vocoder(&mono, target_len, ratio, 2_048, 512));
+    }
+    let output = interleave_channels(&output_channels);
+    measure_loop_boundary_click(&output, input.channels, ratio)
+}
+
+/// Measure transient-reset prototype loop-boundary click on the synthetic
+/// loop-seam corpus case.
+pub fn measure_transient_reset_loop_boundary_click(ratio: f64) -> StretchLoopBoundaryMeasurement {
+    if !ratio.is_finite() || ratio <= 0.0 {
+        return loop_boundary_nan(ratio, 0);
+    }
+
+    let input = synthetic_loop_seam();
+    let channel_count = input.channels as usize;
+    let frame_count = input.frame_count();
+    let target_len = (frame_count as f64 * ratio).round() as usize;
+    let mut output_channels = Vec::with_capacity(channel_count);
+    for channel in 0..channel_count {
+        let mono = deinterleave_channel(&input.samples, channel_count, channel);
+        output_channels.push(transient_reset_phase_vocoder(
+            &mono, target_len, ratio, 2_048, 512,
+        ));
     }
     let output = interleave_channels(&output_channels);
     measure_loop_boundary_click(&output, input.channels, ratio)
