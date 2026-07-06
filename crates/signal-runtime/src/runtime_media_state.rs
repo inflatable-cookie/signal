@@ -31,6 +31,8 @@ pub(crate) struct RuntimeOfflineStretchArtifactPlanStateModel {
     pub(crate) plans: BTreeMap<String, RuntimeOfflineStretchArtifactPlanRegistration>,
     pub(crate) materialized_artifacts:
         BTreeMap<String, RuntimeOfflineStretchArtifactMaterializationRegistration>,
+    pub(crate) cache_decisions:
+        BTreeMap<String, RuntimeOfflineStretchArtifactCacheDecisionRegistration>,
 }
 
 pub(crate) fn media_family_state(

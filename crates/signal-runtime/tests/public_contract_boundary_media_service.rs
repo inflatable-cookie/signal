@@ -10,11 +10,13 @@ use public_contract_boundary_media_support::{
 use signal_runtime::{
     current_synthetic_offline_high_quality_promotion_receipt, HandshakeRequest, RuntimeConfig,
     RuntimeConfigRequest, RuntimeEventRecorder, RuntimeLifecycleApi, RuntimeMediaPreviewState,
-    RuntimeObservationApi, RuntimeObservationReport, RuntimeOfflineStretchArtifactPlanRegistration,
-    RuntimeOfflineStretchArtifactReadiness, RuntimeOfflineStretchArtifactScope,
-    RuntimeSupervisorReport, SignalRuntime, StretchBackendTier, StretchCacheIdentityInput,
-    StretchChannelLayout, StretchPitchPoint, StretchPromotionStatus, StretchRatioPoint,
-    StretchWarpMarker,
+    RuntimeObservationApi, RuntimeObservationReport,
+    RuntimeOfflineStretchArtifactCacheDecisionKind,
+    RuntimeOfflineStretchArtifactCacheDecisionRegistration,
+    RuntimeOfflineStretchArtifactPlanRegistration, RuntimeOfflineStretchArtifactReadiness,
+    RuntimeOfflineStretchArtifactScope, RuntimeSupervisorReport, SignalRuntime, StretchBackendTier,
+    StretchCacheIdentityInput, StretchChannelLayout, StretchPitchPoint, StretchPromotionStatus,
+    StretchRatioPoint, StretchWarpMarker,
 };
 
 #[test]
@@ -190,6 +192,56 @@ fn public_runtime_reports_offline_stretch_artifact_plan_receipts_with_promotion_
     runtime
         .reconcile_offline_stretch_artifact_materializations(vec![materialization])
         .expect("offline stretch artifact materializations should reconcile");
+    let expected_key = accepted_plan
+        .identity()
+        .expect("accepted identity should validate")
+        .canonical_key;
+    runtime
+        .reconcile_offline_stretch_artifact_cache_decisions(vec![
+            RuntimeOfflineStretchArtifactCacheDecisionRegistration {
+                decision_id: "stretch-cache-decision:write".into(),
+                plan_id: "stretch-plan:offline-hq".into(),
+                clip_id: Some("clip:offline-hq".into()),
+                media_asset_id: Some("asset:offline-hq".into()),
+                scope: RuntimeOfflineStretchArtifactScope::RenderCache,
+                kind: RuntimeOfflineStretchArtifactCacheDecisionKind::Written,
+                tier: StretchBackendTier::OfflineHighQuality,
+                cache_identity_hash: expected_hash.clone(),
+                cache_identity_key: expected_key.clone(),
+                promotion_evidence_id: "stretch-corpus:public-runtime".into(),
+                output_frame_count: 72_000,
+                product_facing_allowed: true,
+            },
+            RuntimeOfflineStretchArtifactCacheDecisionRegistration {
+                decision_id: "stretch-cache-decision:hit".into(),
+                plan_id: "stretch-plan:offline-hq".into(),
+                clip_id: Some("clip:offline-hq".into()),
+                media_asset_id: Some("asset:offline-hq".into()),
+                scope: RuntimeOfflineStretchArtifactScope::RenderCache,
+                kind: RuntimeOfflineStretchArtifactCacheDecisionKind::Hit,
+                tier: StretchBackendTier::OfflineHighQuality,
+                cache_identity_hash: expected_hash.clone(),
+                cache_identity_key: expected_key.clone(),
+                promotion_evidence_id: "stretch-corpus:public-runtime".into(),
+                output_frame_count: 72_000,
+                product_facing_allowed: true,
+            },
+            RuntimeOfflineStretchArtifactCacheDecisionRegistration {
+                decision_id: "stretch-cache-decision:invalidate".into(),
+                plan_id: "stretch-plan:offline-hq".into(),
+                clip_id: Some("clip:offline-hq".into()),
+                media_asset_id: Some("asset:offline-hq".into()),
+                scope: RuntimeOfflineStretchArtifactScope::RenderCache,
+                kind: RuntimeOfflineStretchArtifactCacheDecisionKind::Invalidated,
+                tier: StretchBackendTier::OfflineHighQuality,
+                cache_identity_hash: expected_hash.clone(),
+                cache_identity_key: expected_key,
+                promotion_evidence_id: "stretch-corpus:public-runtime".into(),
+                output_frame_count: 72_000,
+                product_facing_allowed: true,
+            },
+        ])
+        .expect("offline stretch artifact cache decisions should reconcile");
 
     let observation = RuntimeObservationReport::capture(&runtime, &recorder);
     let supervisor = RuntimeSupervisorReport::capture(&runtime, &recorder);
@@ -232,6 +284,10 @@ fn public_runtime_reports_offline_stretch_artifact_plan_receipts_with_promotion_
     );
     assert_eq!(snapshot.materialized_artifact_count, 1);
     assert_eq!(snapshot.product_facing_materialized_artifact_count, 1);
+    assert_eq!(snapshot.cache_decision_count, 3);
+    assert_eq!(snapshot.cache_write_count, 1);
+    assert_eq!(snapshot.cache_hit_count, 1);
+    assert_eq!(snapshot.cache_invalidation_count, 1);
     let artifact = snapshot
         .materialized_artifacts
         .iter()
@@ -240,6 +296,18 @@ fn public_runtime_reports_offline_stretch_artifact_plan_receipts_with_promotion_
     assert_eq!(artifact.cache_identity_hash, expected_hash);
     assert_eq!(artifact.output_frame_count, 72_000);
     assert!(artifact.product_facing_allowed);
+    let cache_hit = snapshot
+        .cache_decisions
+        .iter()
+        .find(|decision| decision.decision_id == "stretch-cache-decision:hit")
+        .expect("cache hit decision should be present");
+    assert_eq!(
+        cache_hit.kind,
+        RuntimeOfflineStretchArtifactCacheDecisionKind::Hit
+    );
+    assert_eq!(cache_hit.cache_identity_hash, expected_hash);
+    assert_eq!(cache_hit.output_frame_count, artifact.output_frame_count);
+    assert!(cache_hit.product_facing_allowed);
     let invalid_plan = snapshot
         .plans
         .iter()
@@ -259,5 +327,12 @@ fn public_runtime_reports_offline_stretch_artifact_plan_receipts_with_promotion_
             .offline_stretch_artifact_plan_snapshot
             .materialized_artifact_count,
         snapshot.materialized_artifact_count
+    );
+    assert_eq!(
+        supervisor
+            .observation
+            .offline_stretch_artifact_plan_snapshot
+            .cache_decision_count,
+        snapshot.cache_decision_count
     );
 }

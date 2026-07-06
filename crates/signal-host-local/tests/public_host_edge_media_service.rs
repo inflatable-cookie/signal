@@ -8,16 +8,17 @@ use signal_host_local::LocalRuntimeHost;
 use signal_render_plane::{
     build_offline_stretch_artifact_render_source_with_synthetic_policy,
     OfflineStretchArtifactBuildRequest, OfflineStretchArtifactPolicyRequest,
+    OfflineStretchArtifactRenderCacheBridge,
     OfflineStretchArtifactScope as RenderOfflineStretchArtifactScope, RenderSampleBuffer,
     RenderSource,
 };
 use signal_runtime::{
     RuntimeConfig, RuntimeConfigRequest, RuntimeLifecycleApi, RuntimeMediaPreviewState,
-    RuntimeObservationApi, RuntimeOfflineStretchArtifactPlanRegistration,
-    RuntimeOfflineStretchArtifactReadiness, RuntimeOfflineStretchArtifactScope,
-    RuntimeSupervisorApi, SignalRuntime, StretchBackendTier, StretchCacheIdentityInput,
-    StretchChannelLayout, StretchPitchPoint, StretchPromotionStatus, StretchRatioPoint,
-    StretchSyntheticPromotionPolicy, StretchWarpMarker,
+    RuntimeObservationApi, RuntimeOfflineStretchArtifactCacheDecisionKind,
+    RuntimeOfflineStretchArtifactPlanRegistration, RuntimeOfflineStretchArtifactReadiness,
+    RuntimeOfflineStretchArtifactScope, RuntimeSupervisorApi, SignalRuntime, StretchBackendTier,
+    StretchCacheIdentityInput, StretchChannelLayout, StretchPitchPoint, StretchPromotionStatus,
+    StretchRatioPoint, StretchSyntheticPromotionPolicy, StretchWarpMarker,
 };
 
 #[test]
@@ -178,6 +179,18 @@ fn local_shared_host_edge_exports_offline_stretch_artifact_receipts() {
     let artifact = &artifact_source.artifact;
     let expected_passed_case_count = artifact.plan.promotion_receipt.passed_case_count;
     let expected_required_case_count = artifact.plan.promotion_receipt.required_case_count;
+    let mut cache_bridge = OfflineStretchArtifactRenderCacheBridge::new();
+    let cache_decision = cache_bridge
+        .resolve_with_synthetic_policy(OfflineStretchArtifactBuildRequest {
+            policy: OfflineStretchArtifactPolicyRequest {
+                scope: RenderOfflineStretchArtifactScope::RenderCache,
+                identity_input: &identity_input,
+                evidence_id: "stretch-corpus:host-local-cache",
+                promotion_policy: StretchSyntheticPromotionPolicy::default(),
+            },
+            source: &source,
+        })
+        .expect("host-local render-cache decision should resolve");
 
     let mut host = LocalRuntimeHost::new(runtime);
     host.reconcile_offline_stretch_artifact_plans(vec![
@@ -186,7 +199,7 @@ fn local_shared_host_edge_exports_offline_stretch_artifact_receipts() {
             clip_id: Some("clip:host-offline-hq".into()),
             media_asset_id: Some("asset:host-offline-hq".into()),
             scope: RuntimeOfflineStretchArtifactScope::Freeze,
-            identity_input,
+            identity_input: identity_input.clone(),
             promotion_receipt: artifact.plan.promotion_receipt.clone(),
         },
     ])
@@ -199,6 +212,14 @@ fn local_shared_host_edge_exports_offline_stretch_artifact_receipts() {
         artifact.receipt.clone(),
     )
     .expect("host should record render-plane stretch artifact materialization");
+    host.record_offline_stretch_artifact_cache_decision_receipt(
+        "host-stretch-cache-decision:write",
+        "host-stretch-plan:offline-hq",
+        Some("clip:host-offline-hq".into()),
+        Some("asset:host-offline-hq".into()),
+        cache_decision,
+    )
+    .expect("host should record render-plane stretch artifact cache decision");
 
     let report = host.supervisor_report();
     let snapshot = &report.observation.offline_stretch_artifact_plan_snapshot;
@@ -238,4 +259,21 @@ fn local_shared_host_edge_exports_offline_stretch_artifact_receipts() {
     assert_eq!(artifact.input_frame_count, 480);
     assert_eq!(artifact.output_frame_count, 600);
     assert!(artifact.product_facing_allowed);
+    assert_eq!(snapshot.cache_decision_count, 1);
+    assert_eq!(snapshot.cache_write_count, 1);
+    let cache_decision = &snapshot.cache_decisions[0];
+    assert_eq!(
+        cache_decision.kind,
+        RuntimeOfflineStretchArtifactCacheDecisionKind::Written
+    );
+    assert_eq!(
+        cache_decision.decision_id,
+        "host-stretch-cache-decision:write"
+    );
+    assert_eq!(
+        cache_decision.cache_identity_hash,
+        expected_identity.stable_hash
+    );
+    assert_eq!(cache_decision.output_frame_count, 600);
+    assert!(cache_decision.product_facing_allowed);
 }

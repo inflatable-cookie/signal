@@ -33,12 +33,33 @@ impl RuntimeOfflineStretchArtifactPlanStateModel {
         }
     }
 
+    pub(crate) fn reconcile_cache_decisions(
+        &mut self,
+        decisions: Vec<RuntimeOfflineStretchArtifactCacheDecisionRegistration>,
+    ) {
+        let retained_ids = decisions
+            .iter()
+            .map(|decision| decision.decision_id.clone())
+            .collect::<BTreeSet<_>>();
+        self.cache_decisions
+            .retain(|decision_id, _| retained_ids.contains(decision_id));
+        for decision in decisions {
+            self.cache_decisions
+                .insert(decision.decision_id.clone(), decision);
+        }
+    }
+
     pub(crate) fn snapshot(&self) -> RuntimeOfflineStretchArtifactPlanSnapshotSet {
         let plans = self.plans.values().map(snapshot_plan).collect::<Vec<_>>();
         let materialized_artifacts = self
             .materialized_artifacts
             .values()
             .map(snapshot_materialized_artifact)
+            .collect::<Vec<_>>();
+        let cache_decisions = self
+            .cache_decisions
+            .values()
+            .map(snapshot_cache_decision)
             .collect::<Vec<_>>();
         let ready_plan_count = plans
             .iter()
@@ -64,6 +85,22 @@ impl RuntimeOfflineStretchArtifactPlanStateModel {
             .iter()
             .filter(|artifact| artifact.product_facing_allowed)
             .count();
+        let cache_hit_count = cache_decisions
+            .iter()
+            .filter(|decision| decision.kind == RuntimeOfflineStretchArtifactCacheDecisionKind::Hit)
+            .count();
+        let cache_write_count = cache_decisions
+            .iter()
+            .filter(|decision| {
+                decision.kind == RuntimeOfflineStretchArtifactCacheDecisionKind::Written
+            })
+            .count();
+        let cache_invalidation_count = cache_decisions
+            .iter()
+            .filter(|decision| {
+                decision.kind == RuntimeOfflineStretchArtifactCacheDecisionKind::Invalidated
+            })
+            .count();
 
         RuntimeOfflineStretchArtifactPlanSnapshotSet {
             plan_count: plans.len(),
@@ -73,8 +110,13 @@ impl RuntimeOfflineStretchArtifactPlanStateModel {
             invalid_plan_count,
             materialized_artifact_count: materialized_artifacts.len(),
             product_facing_materialized_artifact_count,
+            cache_decision_count: cache_decisions.len(),
+            cache_hit_count,
+            cache_write_count,
+            cache_invalidation_count,
             plans,
             materialized_artifacts,
+            cache_decisions,
         }
     }
 }
@@ -96,6 +138,25 @@ fn snapshot_materialized_artifact(
         output_frame_count: registration.output_frame_count,
         channels: registration.channels,
         sample_rate_hz: registration.sample_rate_hz,
+        product_facing_allowed: registration.product_facing_allowed,
+    }
+}
+
+fn snapshot_cache_decision(
+    registration: &RuntimeOfflineStretchArtifactCacheDecisionRegistration,
+) -> RuntimeOfflineStretchArtifactCacheDecisionSnapshot {
+    RuntimeOfflineStretchArtifactCacheDecisionSnapshot {
+        decision_id: registration.decision_id.clone(),
+        plan_id: registration.plan_id.clone(),
+        clip_id: registration.clip_id.clone(),
+        media_asset_id: registration.media_asset_id.clone(),
+        scope: registration.scope,
+        kind: registration.kind,
+        tier: registration.tier,
+        cache_identity_hash: registration.cache_identity_hash.clone(),
+        cache_identity_key: registration.cache_identity_key.clone(),
+        promotion_evidence_id: registration.promotion_evidence_id.clone(),
+        output_frame_count: registration.output_frame_count,
         product_facing_allowed: registration.product_facing_allowed,
     }
 }

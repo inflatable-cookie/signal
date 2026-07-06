@@ -81,4 +81,14 @@ impl SignalRuntime {
             .reconcile_materialized_artifacts(artifacts);
         Ok(())
     }
+
+    /// Reconciles render-cache decisions observed by render/export/freeze.
+    pub fn reconcile_offline_stretch_artifact_cache_decisions(
+        &mut self,
+        decisions: Vec<RuntimeOfflineStretchArtifactCacheDecisionRegistration>,
+    ) -> Result<(), RuntimeError> {
+        self.offline_stretch_artifact_plans
+            .reconcile_cache_decisions(decisions);
+        Ok(())
+    }
 }

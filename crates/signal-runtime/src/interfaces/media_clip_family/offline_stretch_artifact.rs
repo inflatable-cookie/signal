@@ -27,6 +27,17 @@ pub enum RuntimeOfflineStretchArtifactReadiness {
     Invalid,
 }
 
+/// Runtime-owned render-cache decision kind for offline stretch artifacts.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RuntimeOfflineStretchArtifactCacheDecisionKind {
+    /// A matching render-cache identity was reused.
+    Hit,
+    /// A new render-cache artifact was written.
+    Written,
+    /// A retained render-cache artifact was invalidated.
+    Invalidated,
+}
+
 /// Registration for a runtime-observed offline stretch artifact plan.
 #[derive(Clone, Debug, PartialEq)]
 pub struct RuntimeOfflineStretchArtifactPlanRegistration {
@@ -77,6 +88,35 @@ pub struct RuntimeOfflineStretchArtifactMaterializationRegistration {
     pub product_facing_allowed: bool,
 }
 
+/// Registration for a runtime-observed render-cache decision.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimeOfflineStretchArtifactCacheDecisionRegistration {
+    /// Stable cache decision identity supplied by the caller.
+    pub decision_id: String,
+    /// Plan the cache decision belongs to.
+    pub plan_id: String,
+    /// Clip this artifact belongs to, if known.
+    pub clip_id: Option<String>,
+    /// Media asset this artifact belongs to, if known.
+    pub media_asset_id: Option<String>,
+    /// Consumer scope this cache decision served.
+    pub scope: RuntimeOfflineStretchArtifactScope,
+    /// Cache lookup/write/invalidation decision.
+    pub kind: RuntimeOfflineStretchArtifactCacheDecisionKind,
+    /// Signal stretch tier used to produce the cache handoff.
+    pub tier: StretchBackendTier,
+    /// Stable cache identity hash selected by this decision.
+    pub cache_identity_hash: String,
+    /// Canonical cache identity key selected by this decision.
+    pub cache_identity_key: String,
+    /// Accepted promotion evidence used for the selected cache handoff.
+    pub promotion_evidence_id: String,
+    /// Output frame count selected by the cache decision.
+    pub output_frame_count: usize,
+    /// Whether the selected cache handoff may feed product-facing output.
+    pub product_facing_allowed: bool,
+}
+
 /// Runtime-owned observation receipt for one materialized offline stretch artifact.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RuntimeOfflineStretchArtifactMaterializationSnapshot {
@@ -107,6 +147,35 @@ pub struct RuntimeOfflineStretchArtifactMaterializationSnapshot {
     /// Output sample rate.
     pub sample_rate_hz: u32,
     /// Whether this materialized artifact may feed product-facing output.
+    pub product_facing_allowed: bool,
+}
+
+/// Runtime-owned observation receipt for one render-cache decision.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimeOfflineStretchArtifactCacheDecisionSnapshot {
+    /// Stable cache decision identity supplied by the caller.
+    pub decision_id: String,
+    /// Plan the cache decision belongs to.
+    pub plan_id: String,
+    /// Clip this artifact belongs to, if known.
+    pub clip_id: Option<String>,
+    /// Media asset this artifact belongs to, if known.
+    pub media_asset_id: Option<String>,
+    /// Consumer scope this cache decision served.
+    pub scope: RuntimeOfflineStretchArtifactScope,
+    /// Cache lookup/write/invalidation decision.
+    pub kind: RuntimeOfflineStretchArtifactCacheDecisionKind,
+    /// Signal stretch tier used to produce the cache handoff.
+    pub tier: StretchBackendTier,
+    /// Stable cache identity hash selected by this decision.
+    pub cache_identity_hash: String,
+    /// Canonical cache identity key selected by this decision.
+    pub cache_identity_key: String,
+    /// Accepted promotion evidence used for the selected cache handoff.
+    pub promotion_evidence_id: String,
+    /// Output frame count selected by the cache decision.
+    pub output_frame_count: usize,
+    /// Whether the selected cache handoff may feed product-facing output.
     pub product_facing_allowed: bool,
 }
 
@@ -162,8 +231,18 @@ pub struct RuntimeOfflineStretchArtifactPlanSnapshotSet {
     pub materialized_artifact_count: usize,
     /// Number of materialized artifacts allowed to feed product-facing output.
     pub product_facing_materialized_artifact_count: usize,
+    /// Number of render-cache bridge decisions observed.
+    pub cache_decision_count: usize,
+    /// Number of render-cache hit decisions observed.
+    pub cache_hit_count: usize,
+    /// Number of render-cache write decisions observed.
+    pub cache_write_count: usize,
+    /// Number of render-cache invalidation decisions observed.
+    pub cache_invalidation_count: usize,
     /// Per-plan receipts.
     pub plans: Vec<RuntimeOfflineStretchArtifactPlanSnapshot>,
     /// Per-materialized-artifact receipts.
     pub materialized_artifacts: Vec<RuntimeOfflineStretchArtifactMaterializationSnapshot>,
+    /// Per-render-cache decision receipts.
+    pub cache_decisions: Vec<RuntimeOfflineStretchArtifactCacheDecisionSnapshot>,
 }

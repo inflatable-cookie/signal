@@ -6,6 +6,8 @@ use signal_plugin_au::AuHostAdapter;
 use signal_plugin_clap::ClapPluginHostAdapter;
 use signal_plugin_vst3::Vst3HostAdapter;
 use signal_render_plane::{
+    OfflineStretchArtifactCacheDecision as RenderOfflineStretchArtifactCacheDecision,
+    OfflineStretchArtifactCacheDecisionKind as RenderOfflineStretchArtifactCacheDecisionKind,
     OfflineStretchArtifactMaterializationReceipt as RenderOfflineStretchArtifactMaterializationReceipt,
     OfflineStretchArtifactScope as RenderOfflineStretchArtifactScope,
 };
@@ -13,6 +15,8 @@ use signal_runtime::{
     BackendPolicyOverride, PluginSandboxLifecycleStage, PluginSandboxSpec, PluginScanRequest,
     RuntimeClipProcessingRegistration, RuntimeError, RuntimeEventRecorder,
     RuntimeHostSupervisorReport, RuntimeMediaAssetRegistration, RuntimeObservationApi,
+    RuntimeOfflineStretchArtifactCacheDecisionKind,
+    RuntimeOfflineStretchArtifactCacheDecisionRegistration,
     RuntimeOfflineStretchArtifactMaterializationRegistration,
     RuntimeOfflineStretchArtifactPlanRegistration, RuntimeRecordingCaptureCommitReceipt,
     RuntimeRecordingCaptureStartRequest, RuntimeSupervisorApi, RuntimeWarpClipRegistration,
@@ -140,6 +144,41 @@ impl LocalRuntimeHost {
                 },
             ])
     }
+
+    /// Records a render-cache decision on the runtime observation surface.
+    ///
+    /// Render-cache callers produce [`RenderOfflineStretchArtifactCacheDecision`]
+    /// when they resolve an OfflineHighQuality artifact through Signal's
+    /// render-cache bridge. The local host translates that render-plane receipt
+    /// into runtime-owned observation without adding a runtime dependency on
+    /// `signal-render-plane`.
+    pub fn record_offline_stretch_artifact_cache_decision_receipt(
+        &mut self,
+        decision_id: impl Into<String>,
+        plan_id: impl Into<String>,
+        clip_id: Option<String>,
+        media_asset_id: Option<String>,
+        decision: RenderOfflineStretchArtifactCacheDecision,
+    ) -> Result<(), RuntimeError> {
+        let receipt = decision.handoff.receipt;
+        self.runtime
+            .reconcile_offline_stretch_artifact_cache_decisions(vec![
+                RuntimeOfflineStretchArtifactCacheDecisionRegistration {
+                    decision_id: decision_id.into(),
+                    plan_id: plan_id.into(),
+                    clip_id,
+                    media_asset_id,
+                    scope: runtime_offline_stretch_artifact_scope(receipt.scope),
+                    kind: runtime_offline_stretch_artifact_cache_decision_kind(decision.kind),
+                    tier: receipt.tier,
+                    cache_identity_hash: receipt.cache_identity_hash,
+                    cache_identity_key: receipt.cache_identity_key,
+                    promotion_evidence_id: receipt.promotion_evidence_id,
+                    output_frame_count: receipt.output_frame_count,
+                    product_facing_allowed: receipt.product_facing_allowed,
+                },
+            ])
+    }
 }
 
 fn runtime_offline_stretch_artifact_scope(
@@ -154,6 +193,22 @@ fn runtime_offline_stretch_artifact_scope(
         }
         RenderOfflineStretchArtifactScope::RenderCache => {
             signal_runtime::RuntimeOfflineStretchArtifactScope::RenderCache
+        }
+    }
+}
+
+fn runtime_offline_stretch_artifact_cache_decision_kind(
+    kind: RenderOfflineStretchArtifactCacheDecisionKind,
+) -> RuntimeOfflineStretchArtifactCacheDecisionKind {
+    match kind {
+        RenderOfflineStretchArtifactCacheDecisionKind::Hit => {
+            RuntimeOfflineStretchArtifactCacheDecisionKind::Hit
+        }
+        RenderOfflineStretchArtifactCacheDecisionKind::Written => {
+            RuntimeOfflineStretchArtifactCacheDecisionKind::Written
+        }
+        RenderOfflineStretchArtifactCacheDecisionKind::Invalidated => {
+            RuntimeOfflineStretchArtifactCacheDecisionKind::Invalidated
         }
     }
 }

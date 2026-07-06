@@ -178,6 +178,8 @@ pub enum OfflineStretchArtifactCacheDecisionKind {
     Hit,
     /// No matching cache identity existed, so a new handoff was written.
     Written,
+    /// A retained cache identity was invalidated.
+    Invalidated,
 }
 
 /// Render-cache bridge decision for a policy-gated stretch artifact.
@@ -221,7 +223,21 @@ impl OfflineStretchArtifactRenderCacheBridge {
         &mut self,
         cache_identity_hash: &str,
     ) -> Option<OfflineStretchArtifactCacheHandoff> {
-        self.handoffs_by_hash.remove(cache_identity_hash)
+        self.invalidate_identity_hash_with_decision(cache_identity_hash)
+            .map(|decision| decision.handoff)
+    }
+
+    /// Remove one retained cache handoff and return an invalidation decision.
+    pub fn invalidate_identity_hash_with_decision(
+        &mut self,
+        cache_identity_hash: &str,
+    ) -> Option<OfflineStretchArtifactCacheDecision> {
+        self.handoffs_by_hash
+            .remove(cache_identity_hash)
+            .map(|handoff| OfflineStretchArtifactCacheDecision {
+                kind: OfflineStretchArtifactCacheDecisionKind::Invalidated,
+                handoff,
+            })
     }
 
     /// Resolve a policy-gated render-cache request against retained handoffs.
@@ -1441,10 +1457,14 @@ mod tests {
         assert_eq!(bridge.len(), 2);
 
         let invalidated = bridge
-            .invalidate_identity_hash(&written.handoff.cache_identity_hash)
+            .invalidate_identity_hash_with_decision(&written.handoff.cache_identity_hash)
             .expect("base identity should invalidate");
         assert_eq!(
-            invalidated.cache_identity_hash,
+            invalidated.kind,
+            OfflineStretchArtifactCacheDecisionKind::Invalidated
+        );
+        assert_eq!(
+            invalidated.handoff.cache_identity_hash,
             written.handoff.cache_identity_hash
         );
         assert!(!bridge.contains_identity_hash(&written.handoff.cache_identity_hash));
