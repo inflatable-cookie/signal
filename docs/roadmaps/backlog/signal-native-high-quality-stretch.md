@@ -309,6 +309,9 @@ Work:
 - [x] add cache/source reuse evidence around the packaged artifact source path,
   proving identical policy-gated artifacts share stable cache identity while
   projection or curve changes produce distinct render sources
+- [x] add a first render-cache handoff surface that returns cache identity,
+  render source, and materialization receipt together for cache lookup/write
+  decisions, with rejected policy producing no cacheable source
 - [ ] wire OfflineHighQuality artifacts into render/export/freeze only after
   corpus evidence beats the draft baseline
 - [ ] add Pulse/Aura contract changes only for product-visible mode, ratio,
@@ -345,9 +348,8 @@ Work:
 ## Next Task
 
 Continue the Signal DSP quality batch by turning the synthetic comparison
-report into a promotion-readiness loop: tighten the artifact builder into a
-first render-cache handoff surface that returns cache identity, render source,
-and materialization receipt together for cache lookup/write decisions, while
-rejected policy still produces no cacheable source. Keep Pulse/Aura contract
-planning deferred until a Loophole product workflow consumes the Signal-owned
-contract.
+report into a promotion-readiness loop: route the first Signal cache bridge
+through the render-cache handoff surface and add cache lookup/write decision
+evidence for accepted, rejected, hit, and invalidated identities. Keep
+Pulse/Aura contract planning deferred until a Loophole product workflow
+consumes the Signal-owned contract.

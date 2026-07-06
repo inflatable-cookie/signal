@@ -158,6 +158,19 @@ pub struct OfflineStretchArtifactRenderSource {
     pub source: crate::RenderSource,
 }
 
+/// Cache write/read handoff for a policy-gated render-cache stretch artifact.
+#[derive(Debug, Clone, PartialEq)]
+pub struct OfflineStretchArtifactCacheHandoff {
+    /// Stable cache identity hash for lookup/write decisions.
+    pub cache_identity_hash: String,
+    /// Canonical cache identity key for cache diagnostics and receipts.
+    pub cache_identity_key: String,
+    /// Materialization receipt produced with the same cache identity and source.
+    pub receipt: OfflineStretchArtifactMaterializationReceipt,
+    /// Ready render source wrapping the cacheable artifact PCM.
+    pub source: crate::RenderSource,
+}
+
 /// Receipt for one materialized offline stretch artifact.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct OfflineStretchArtifactMaterializationReceipt {
@@ -229,6 +242,11 @@ pub enum OfflineStretchArtifactMaterializeError {
     },
     /// Non-static pitch automation is not materialized by this artifact path.
     UnsupportedPitchAutomation,
+    /// Render-cache handoff helpers only accept render-cache scoped artifacts.
+    UnsupportedCacheHandoffScope {
+        /// Scope supplied to the render-cache handoff helper.
+        scope: OfflineStretchArtifactScope,
+    },
 }
 
 impl std::fmt::Display for OfflineStretchArtifactMaterializeError {
@@ -256,6 +274,12 @@ impl std::fmt::Display for OfflineStretchArtifactMaterializeError {
                 formatter,
                 "offline stretch artifact materialization requires static pitch shift",
             ),
+            OfflineStretchArtifactMaterializeError::UnsupportedCacheHandoffScope { scope } => {
+                write!(
+                    formatter,
+                    "offline stretch render-cache handoff requires RenderCache scope, got {scope:?}",
+                )
+            }
         }
     }
 }
@@ -440,6 +464,35 @@ pub fn build_offline_stretch_artifact_render_source_with_synthetic_policy(
     Ok(OfflineStretchArtifactRenderSource {
         source: crate::RenderSource::Samples(artifact.buffer.clone()),
         artifact,
+    })
+}
+
+/// Build a policy-gated OfflineHighQuality artifact handoff for render-cache
+/// lookup/write decisions.
+///
+/// This helper is intentionally scoped to [`OfflineStretchArtifactScope::RenderCache`].
+/// Accepted policy evidence returns the cache identity, render source, and
+/// materialization receipt as one object. Rejected policy evidence returns
+/// [`OfflineStretchArtifactMaterializeError::NotReady`] and produces no
+/// cacheable source.
+pub fn build_offline_stretch_artifact_cache_handoff_with_synthetic_policy(
+    request: OfflineStretchArtifactBuildRequest<'_>,
+) -> Result<OfflineStretchArtifactCacheHandoff, OfflineStretchArtifactMaterializeError> {
+    if request.policy.scope != OfflineStretchArtifactScope::RenderCache {
+        return Err(
+            OfflineStretchArtifactMaterializeError::UnsupportedCacheHandoffScope {
+                scope: request.policy.scope,
+            },
+        );
+    }
+    let artifact_source =
+        build_offline_stretch_artifact_render_source_with_synthetic_policy(request)?;
+    let receipt = artifact_source.artifact.receipt.clone();
+    Ok(OfflineStretchArtifactCacheHandoff {
+        cache_identity_hash: receipt.cache_identity_hash.clone(),
+        cache_identity_key: receipt.cache_identity_key.clone(),
+        receipt,
+        source: artifact_source.source,
     })
 }
 
@@ -1116,6 +1169,95 @@ mod tests {
         assert_ne!(
             base.artifact.output_frame_count,
             curve_changed.artifact.output_frame_count
+        );
+    }
+
+    #[test]
+    fn render_cache_handoff_returns_identity_source_and_receipt_for_cache_decisions() {
+        let input =
+            stretch_identity_input().with_ratio_curve(vec![StretchRatioPoint::new(0, 1.25)]);
+        let expected_identity = input.identity().expect("identity should validate");
+        let source = stretch_artifact_source(480);
+
+        let handoff = build_offline_stretch_artifact_cache_handoff_with_synthetic_policy(
+            OfflineStretchArtifactBuildRequest {
+                policy: OfflineStretchArtifactPolicyRequest {
+                    scope: OfflineStretchArtifactScope::RenderCache,
+                    identity_input: &input,
+                    evidence_id: "synthetic:cache-handoff-current",
+                    promotion_policy: StretchSyntheticPromotionPolicy::default(),
+                },
+                source: &source,
+            },
+        )
+        .expect("accepted policy should produce render-cache handoff");
+
+        assert_eq!(handoff.cache_identity_hash, expected_identity.stable_hash);
+        assert_eq!(handoff.cache_identity_key, expected_identity.canonical_key);
+        assert_eq!(
+            handoff.receipt.cache_identity_hash,
+            handoff.cache_identity_hash
+        );
+        assert_eq!(
+            handoff.receipt.cache_identity_key,
+            handoff.cache_identity_key
+        );
+        assert_eq!(
+            handoff.receipt.promotion_evidence_id,
+            "synthetic:cache-handoff-current"
+        );
+        assert_eq!(handoff.receipt.output_frame_count, 600);
+        assert!(handoff.receipt.product_facing_allowed);
+
+        let RenderSource::Samples(buffer) = &handoff.source else {
+            panic!("cache handoff should return RenderSource::Samples");
+        };
+        assert_eq!(buffer.frame_count(), handoff.receipt.output_frame_count);
+    }
+
+    #[test]
+    fn render_cache_handoff_rejects_non_cache_scope_and_rejected_policy_without_source() {
+        let input =
+            stretch_identity_input().with_ratio_curve(vec![StretchRatioPoint::new(0, 1.25)]);
+        let source = stretch_artifact_source(480);
+        let rejected_policy = StretchSyntheticPromotionPolicy {
+            min_comparison_count: usize::MAX,
+            ..StretchSyntheticPromotionPolicy::default()
+        };
+
+        assert_eq!(
+            build_offline_stretch_artifact_cache_handoff_with_synthetic_policy(
+                OfflineStretchArtifactBuildRequest {
+                    policy: OfflineStretchArtifactPolicyRequest {
+                        scope: OfflineStretchArtifactScope::Freeze,
+                        identity_input: &input,
+                        evidence_id: "synthetic:cache-handoff-wrong-scope",
+                        promotion_policy: StretchSyntheticPromotionPolicy::default(),
+                    },
+                    source: &source,
+                },
+            ),
+            Err(
+                OfflineStretchArtifactMaterializeError::UnsupportedCacheHandoffScope {
+                    scope: OfflineStretchArtifactScope::Freeze
+                }
+            )
+        );
+        assert_eq!(
+            build_offline_stretch_artifact_cache_handoff_with_synthetic_policy(
+                OfflineStretchArtifactBuildRequest {
+                    policy: OfflineStretchArtifactPolicyRequest {
+                        scope: OfflineStretchArtifactScope::RenderCache,
+                        identity_input: &input,
+                        evidence_id: "synthetic:cache-handoff-rejected",
+                        promotion_policy: rejected_policy,
+                    },
+                    source: &source,
+                },
+            ),
+            Err(OfflineStretchArtifactMaterializeError::NotReady(
+                OfflineStretchArtifactReadiness::AwaitingCorpusEvidence
+            ))
         );
     }
 
