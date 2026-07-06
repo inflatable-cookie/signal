@@ -6,16 +6,16 @@ use std::{fs, sync::Arc};
 use public_host_edge_media::{public_local_media_fixture_path, write_public_test_wav};
 use signal_host_local::LocalRuntimeHost;
 use signal_render_plane::{
-    materialize_offline_stretch_artifact_pcm,
+    build_offline_stretch_artifact_pcm_with_synthetic_policy,
     OfflineStretchArtifactScope as RenderOfflineStretchArtifactScope, RenderSampleBuffer,
 };
 use signal_runtime::{
-    current_synthetic_offline_high_quality_promotion_receipt, RuntimeConfig, RuntimeConfigRequest,
-    RuntimeLifecycleApi, RuntimeMediaPreviewState, RuntimeObservationApi,
-    RuntimeOfflineStretchArtifactPlanRegistration, RuntimeOfflineStretchArtifactReadiness,
-    RuntimeOfflineStretchArtifactScope, RuntimeSupervisorApi, SignalRuntime, StretchBackendTier,
-    StretchCacheIdentityInput, StretchChannelLayout, StretchPitchPoint, StretchPromotionStatus,
-    StretchRatioPoint, StretchWarpMarker,
+    RuntimeConfig, RuntimeConfigRequest, RuntimeLifecycleApi, RuntimeMediaPreviewState,
+    RuntimeObservationApi, RuntimeOfflineStretchArtifactPlanRegistration,
+    RuntimeOfflineStretchArtifactReadiness, RuntimeOfflineStretchArtifactScope,
+    RuntimeSupervisorApi, SignalRuntime, StretchBackendTier, StretchCacheIdentityInput,
+    StretchChannelLayout, StretchPitchPoint, StretchPromotionStatus, StretchRatioPoint,
+    StretchSyntheticPromotionPolicy, StretchWarpMarker,
 };
 
 #[test]
@@ -150,21 +150,20 @@ fn local_shared_host_edge_exports_offline_stretch_artifact_receipts() {
     .with_pitch_curve(vec![StretchPitchPoint::new(0, 0.0)])
     .with_warp_markers(vec![StretchWarpMarker::new(0, 0)]);
     let expected_identity = identity_input.identity().expect("identity should validate");
-    let promotion =
-        current_synthetic_offline_high_quality_promotion_receipt("stretch-corpus:host-local");
-    let expected_passed_case_count = promotion.passed_case_count;
-    let expected_required_case_count = promotion.required_case_count;
     let source = RenderSampleBuffer {
         sample_rate_hz: 48_000,
         frames: Arc::from(vec![0.25_f32; 480 * 2].into_boxed_slice()),
     };
-    let artifact = materialize_offline_stretch_artifact_pcm(
+    let artifact = build_offline_stretch_artifact_pcm_with_synthetic_policy(
         RenderOfflineStretchArtifactScope::Freeze,
         &identity_input,
-        promotion.clone(),
+        "stretch-corpus:host-local",
+        StretchSyntheticPromotionPolicy::default(),
         &source,
     )
-    .expect("host-local freeze artifact should materialize");
+    .expect("host-local freeze artifact should materialize through the policy gate");
+    let expected_passed_case_count = artifact.plan.promotion_receipt.passed_case_count;
+    let expected_required_case_count = artifact.plan.promotion_receipt.required_case_count;
 
     let mut host = LocalRuntimeHost::new(runtime);
     host.reconcile_offline_stretch_artifact_plans(vec![
@@ -174,7 +173,7 @@ fn local_shared_host_edge_exports_offline_stretch_artifact_receipts() {
             media_asset_id: Some("asset:host-offline-hq".into()),
             scope: RuntimeOfflineStretchArtifactScope::Freeze,
             identity_input,
-            promotion_receipt: promotion,
+            promotion_receipt: artifact.plan.promotion_receipt.clone(),
         },
     ])
     .expect("host should forward offline stretch artifact plans");

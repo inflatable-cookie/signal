@@ -87,5 +87,5 @@ pub use sandbox_broker_support::{
 pub use signal_dsp_stretch::{
     current_synthetic_offline_high_quality_promotion_receipt, StretchBackendTier,
     StretchCacheIdentityInput, StretchChannelLayout, StretchPitchPoint, StretchPromotionReceipt,
-    StretchPromotionStatus, StretchRatioPoint, StretchWarpMarker,
+    StretchPromotionStatus, StretchRatioPoint, StretchSyntheticPromotionPolicy, StretchWarpMarker,
 };

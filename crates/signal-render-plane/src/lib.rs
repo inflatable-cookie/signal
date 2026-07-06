@@ -34,11 +34,13 @@
 mod offline;
 
 pub use offline::{
-    materialize_offline_stretch_artifact_pcm, plan_offline_stretch_artifact, render_plan_to_pcm,
-    write_wav, OfflineRenderOptions, OfflineRenderOutput,
-    OfflineStretchArtifactMaterializationReceipt, OfflineStretchArtifactMaterializeError,
-    OfflineStretchArtifactPcm, OfflineStretchArtifactPlan, OfflineStretchArtifactPlanError,
-    OfflineStretchArtifactReadiness, OfflineStretchArtifactScope, WavBitDepth,
+    build_offline_stretch_artifact_pcm_with_synthetic_policy,
+    materialize_offline_stretch_artifact_pcm, plan_offline_stretch_artifact,
+    plan_offline_stretch_artifact_with_synthetic_policy, render_plan_to_pcm, write_wav,
+    OfflineRenderOptions, OfflineRenderOutput, OfflineStretchArtifactMaterializationReceipt,
+    OfflineStretchArtifactMaterializeError, OfflineStretchArtifactPcm, OfflineStretchArtifactPlan,
+    OfflineStretchArtifactPlanError, OfflineStretchArtifactReadiness, OfflineStretchArtifactScope,
+    WavBitDepth,
 };
 
 use std::cell::UnsafeCell;
