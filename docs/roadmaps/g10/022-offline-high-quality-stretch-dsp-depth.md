@@ -464,6 +464,19 @@ comparison reports, not add more receipt or fixture surfaces.
   OfflineHighQuality is over-retaining energy relative to source intent,
   Rubber Band is applying protective gain, or the current comparison should
   loudness-normalize before judging phase/envelope quality.
+- 2026-07-07: added capped `external_benchmark_level_normalized_review` rows
+  for the same top feature-divergence cases. The review applies a report-only
+  matched-RMS gain to Signal output, leaves raw comparator rows unchanged, and
+  emits before/after divergence fields. The regenerated broad Rubber Band R3
+  report emitted 8 normalized review rows: 6 classified as
+  `MostlyLevelExplained` and 2 as `LevelReducesDivergence`. Mean raw feature
+  score was `1.191988`; mean normalized score was `0.517920`; mean score delta
+  was `-0.674068`; mean applied Signal gain was `-4.110853` dB. The top
+  `pads_sustains` `000870.wav` `1.5x` row dropped from `1.459699` to
+  `0.428825` after applying `-6.716807` dB, with normalized RMS delta
+  `0.000000` dB and unchanged envelope correlation `0.639086`. This says most
+  of the worst comparator feature gap is level-related, while residual envelope
+  correlation still needs a non-level quality check before any DSP gain change.
 
 ## Next Task
 
@@ -476,10 +489,9 @@ FMA no-listening check and the first Rubber Band R3 black-box comparator pass.
 Next useful work is a measured quality-decision batch, still report-only:
 use the feature-delta rows to separate comparator findings into metric noise,
 likely audible gain/envelope differences, and actual DSP targets. Preserve the
-existing timing-drift and transient-smear gates. Next add a report-only
-level-normalized comparator view for the eight `SignalConsistentlyLouder`
-review rows: compare feature divergence before and after matched RMS or LUFS-ish
-normalization, keep the raw rows unchanged, and decide whether a real DSP
-gain/envelope correction is warranted before promoting the gated short-window
+existing timing-drift and transient-smear gates. Next do not add a DSP gain
+change yet. Add a report-only residual-envelope/coherence view on the
+level-normalized top rows, so the remaining low envelope correlation can be
+separated from harmless phase choice before promoting the gated short-window
 selector, adding a multiresolution selector, or starting a sustained-material
 vertical-coherence path.

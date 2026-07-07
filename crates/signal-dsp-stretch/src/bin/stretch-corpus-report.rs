@@ -56,6 +56,8 @@ const EXTERNAL_BENCHMARK_GAIN_ENVELOPE_REVIEW_ROWS: usize = 8;
 const EXTERNAL_BENCHMARK_GAIN_ENVELOPE_WINDOW_SIZE: usize = 4_096;
 const EXTERNAL_BENCHMARK_GAIN_ENVELOPE_HOP_SIZE: usize = 2_048;
 const EXTERNAL_BENCHMARK_GAIN_ENVELOPE_NEAR_DB: f64 = 0.5;
+const EXTERNAL_BENCHMARK_LEVEL_NORMALIZED_REVIEW_ROWS: usize =
+    EXTERNAL_BENCHMARK_GAIN_ENVELOPE_REVIEW_ROWS;
 const MAX_EXTERNAL_BENCHMARK_MISSING_RENDER_ROWS: usize = 20;
 const DETECTOR_POLICY: StretchTransientDetectorPolicy =
     StretchTransientDetectorPolicy::production();
@@ -1647,6 +1649,63 @@ impl ExternalBenchmarkGainEnvelopeReviewMeasurement {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+struct ExternalBenchmarkLevelNormalizedReviewMeasurement {
+    case_id: String,
+    source_path: String,
+    render_path: String,
+    tool_name: String,
+    ratio: f64,
+    source_boundary: &'static str,
+    aligned_compared_frames: usize,
+    signal_gain_db_applied: f64,
+    raw_feature_divergence_score: f64,
+    normalized_feature_divergence_score: f64,
+    feature_divergence_score_delta: f64,
+    raw_envelope_correlation: f64,
+    normalized_envelope_correlation: f64,
+    raw_rms_delta_db: f64,
+    normalized_rms_delta_db: f64,
+    raw_peak_delta_db: f64,
+    normalized_peak_delta_db: f64,
+    raw_spectral_centroid_delta_hz: f64,
+    normalized_spectral_centroid_delta_hz: f64,
+    raw_high_frequency_energy_ratio_delta: f64,
+    normalized_high_frequency_energy_ratio_delta: f64,
+    normalization_pattern: &'static str,
+}
+
+impl ExternalBenchmarkLevelNormalizedReviewMeasurement {
+    fn format_report_line(&self, rank: usize) -> String {
+        format!(
+            "external_benchmark_level_normalized_review rank={} case={} source={} ratio={:.6} tool={} render={} status=Measured reason=TopFeatureDivergence source_boundary={} aligned_compared_frames={} signal_gain_db_applied={:.6} raw_feature_divergence_score={:.6} normalized_feature_divergence_score={:.6} feature_divergence_score_delta={:.6} raw_envelope_correlation={:.6} normalized_envelope_correlation={:.6} raw_rms_delta_db={:.6} normalized_rms_delta_db={:.6} raw_peak_delta_db={:.6} normalized_peak_delta_db={:.6} raw_spectral_centroid_delta_hz={:.6} normalized_spectral_centroid_delta_hz={:.6} raw_high_frequency_energy_ratio_delta={:.6} normalized_high_frequency_energy_ratio_delta={:.6} normalization_pattern={}",
+            rank,
+            self.case_id,
+            quoted_report_field(&self.source_path),
+            self.ratio,
+            quoted_report_field(&self.tool_name),
+            quoted_report_field(&self.render_path),
+            quoted_report_field(self.source_boundary),
+            self.aligned_compared_frames,
+            self.signal_gain_db_applied,
+            self.raw_feature_divergence_score,
+            self.normalized_feature_divergence_score,
+            self.feature_divergence_score_delta,
+            self.raw_envelope_correlation,
+            self.normalized_envelope_correlation,
+            self.raw_rms_delta_db,
+            self.normalized_rms_delta_db,
+            self.raw_peak_delta_db,
+            self.normalized_peak_delta_db,
+            self.raw_spectral_centroid_delta_hz,
+            self.normalized_spectral_centroid_delta_hz,
+            self.raw_high_frequency_energy_ratio_delta,
+            self.normalized_high_frequency_energy_ratio_delta,
+            self.normalization_pattern,
+        )
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
 struct ExternalBenchmarkDecodedAudio {
     sample_rate_hz: u32,
     channels: u16,
@@ -1666,6 +1725,7 @@ fn format_external_benchmark_quality_metrics(
 ) -> Result<String, String> {
     let mut lines = Vec::new();
     let mut gain_envelope_reviews = Vec::new();
+    let mut level_normalized_reviews = Vec::new();
     for render in renders {
         let source = match source_for_external_quality_render(sources, render) {
             ExternalBenchmarkQualitySource::Found(source) => source,
@@ -1758,6 +1818,13 @@ fn format_external_benchmark_quality_metrics(
             &aligned,
             &feature_delta,
         );
+        let level_normalized_review = measure_external_benchmark_level_normalized_review(
+            &signal_output,
+            &external_audio.mono_samples,
+            &aligned,
+            &feature_delta,
+            source_audio.sample_rate_hz,
+        );
         gain_envelope_reviews.push(ExternalBenchmarkGainEnvelopeReviewMeasurement {
             case_id: render.case_id.clone(),
             source_path: source.source_path.clone(),
@@ -1778,6 +1845,67 @@ fn format_external_benchmark_quality_metrics(
             quieter_windows: gain_envelope_review.quieter_windows,
             near_windows: gain_envelope_review.near_windows,
             gain_pattern: gain_envelope_review.gain_pattern,
+        });
+        level_normalized_reviews.push(ExternalBenchmarkLevelNormalizedReviewMeasurement {
+            case_id: render.case_id.clone(),
+            source_path: source.source_path.clone(),
+            render_path: render.rendered_path.clone(),
+            tool_name: render.tool_name.clone(),
+            ratio: render.ratio,
+            source_boundary: "rendered-output-only; no external source or library dependency",
+            aligned_compared_frames: feature_delta.compared_frames,
+            signal_gain_db_applied: level_normalized_review.signal_gain_db_applied,
+            raw_feature_divergence_score: feature_delta.divergence_score(),
+            normalized_feature_divergence_score: level_normalized_review
+                .normalized_feature_delta
+                .divergence_score(),
+            feature_divergence_score_delta: level_normalized_review
+                .normalized_feature_delta
+                .divergence_score()
+                - feature_delta.divergence_score(),
+            raw_envelope_correlation: feature_delta.envelope_correlation,
+            normalized_envelope_correlation: level_normalized_review
+                .normalized_feature_delta
+                .envelope_correlation,
+            raw_rms_delta_db: feature_delta.signal.rms_db - feature_delta.external.rms_db,
+            normalized_rms_delta_db: level_normalized_review
+                .normalized_feature_delta
+                .signal
+                .rms_db
+                - level_normalized_review
+                    .normalized_feature_delta
+                    .external
+                    .rms_db,
+            raw_peak_delta_db: feature_delta.signal.peak_db - feature_delta.external.peak_db,
+            normalized_peak_delta_db: level_normalized_review
+                .normalized_feature_delta
+                .signal
+                .peak_db
+                - level_normalized_review
+                    .normalized_feature_delta
+                    .external
+                    .peak_db,
+            raw_spectral_centroid_delta_hz: feature_delta.signal.spectral_centroid_hz
+                - feature_delta.external.spectral_centroid_hz,
+            normalized_spectral_centroid_delta_hz: level_normalized_review
+                .normalized_feature_delta
+                .signal
+                .spectral_centroid_hz
+                - level_normalized_review
+                    .normalized_feature_delta
+                    .external
+                    .spectral_centroid_hz,
+            raw_high_frequency_energy_ratio_delta: feature_delta.signal.high_frequency_energy_ratio
+                - feature_delta.external.high_frequency_energy_ratio,
+            normalized_high_frequency_energy_ratio_delta: level_normalized_review
+                .normalized_feature_delta
+                .signal
+                .high_frequency_energy_ratio
+                - level_normalized_review
+                    .normalized_feature_delta
+                    .external
+                    .high_frequency_energy_ratio,
+            normalization_pattern: level_normalized_review.normalization_pattern,
         });
 
         lines.push(
@@ -1868,6 +1996,22 @@ fn format_external_benchmark_quality_metrics(
     for (index, review) in gain_envelope_reviews
         .iter()
         .take(EXTERNAL_BENCHMARK_GAIN_ENVELOPE_REVIEW_ROWS)
+        .enumerate()
+    {
+        lines.push(review.format_report_line(index + 1));
+    }
+    level_normalized_reviews.sort_by(|left, right| {
+        right
+            .raw_feature_divergence_score
+            .total_cmp(&left.raw_feature_divergence_score)
+            .then_with(|| left.case_id.cmp(&right.case_id))
+            .then_with(|| left.source_path.cmp(&right.source_path))
+            .then_with(|| left.ratio.total_cmp(&right.ratio))
+            .then_with(|| left.render_path.cmp(&right.render_path))
+    });
+    for (index, review) in level_normalized_reviews
+        .iter()
+        .take(EXTERNAL_BENCHMARK_LEVEL_NORMALIZED_REVIEW_ROWS)
         .enumerate()
     {
         lines.push(review.format_report_line(index + 1));
@@ -2154,6 +2298,13 @@ struct ExternalBenchmarkGainEnvelopeReview {
     gain_pattern: &'static str,
 }
 
+#[derive(Clone, Debug, PartialEq)]
+struct ExternalBenchmarkLevelNormalizedReview {
+    signal_gain_db_applied: f64,
+    normalized_feature_delta: ExternalBenchmarkFeatureDelta,
+    normalization_pattern: &'static str,
+}
+
 fn measure_external_benchmark_feature_delta(
     signal: &[f32],
     external: &[f32],
@@ -2179,6 +2330,77 @@ fn measure_external_benchmark_feature_delta(
         signal: summarize_external_benchmark_features(signal_slice, sample_rate_hz),
         external: summarize_external_benchmark_features(external_slice, sample_rate_hz),
     }
+}
+
+fn measure_external_benchmark_level_normalized_review(
+    signal: &[f32],
+    external: &[f32],
+    aligned: &AlignedErrorMeasurement,
+    feature_delta: &ExternalBenchmarkFeatureDelta,
+    sample_rate_hz: u32,
+) -> ExternalBenchmarkLevelNormalizedReview {
+    let signal_gain = finite_ratio(feature_delta.external.rms, feature_delta.signal.rms);
+    if !signal_gain.is_finite() {
+        return ExternalBenchmarkLevelNormalizedReview {
+            signal_gain_db_applied: f64::NAN,
+            normalized_feature_delta: empty_external_benchmark_feature_delta(),
+            normalization_pattern: "Inconclusive",
+        };
+    }
+
+    let normalized_signal = signal
+        .iter()
+        .map(|sample| (*sample as f64 * signal_gain) as f32)
+        .collect::<Vec<_>>();
+    let normalized_feature_delta = measure_external_benchmark_feature_delta(
+        &normalized_signal,
+        external,
+        aligned,
+        sample_rate_hz,
+    );
+    let normalization_pattern =
+        classify_external_benchmark_level_normalization(feature_delta, &normalized_feature_delta);
+
+    ExternalBenchmarkLevelNormalizedReview {
+        signal_gain_db_applied: amplitude_db(signal_gain),
+        normalized_feature_delta,
+        normalization_pattern,
+    }
+}
+
+fn empty_external_benchmark_feature_delta() -> ExternalBenchmarkFeatureDelta {
+    ExternalBenchmarkFeatureDelta {
+        compared_frames: 0,
+        envelope_correlation: f64::NAN,
+        signal: empty_external_benchmark_feature_summary(),
+        external: empty_external_benchmark_feature_summary(),
+    }
+}
+
+fn classify_external_benchmark_level_normalization(
+    raw: &ExternalBenchmarkFeatureDelta,
+    normalized: &ExternalBenchmarkFeatureDelta,
+) -> &'static str {
+    let raw_score = raw.divergence_score();
+    let normalized_score = normalized.divergence_score();
+    if !raw_score.is_finite() || !normalized_score.is_finite() {
+        return "Inconclusive";
+    }
+    let normalized_rms_delta_db = normalized.signal.rms_db - normalized.external.rms_db;
+    if normalized_rms_delta_db.abs() <= EXTERNAL_BENCHMARK_GAIN_ENVELOPE_NEAR_DB
+        && normalized_score <= raw_score * 0.5
+    {
+        return "MostlyLevelExplained";
+    }
+    if normalized_rms_delta_db.abs() <= EXTERNAL_BENCHMARK_GAIN_ENVELOPE_NEAR_DB
+        && normalized_score < raw_score
+    {
+        return "LevelReducesDivergence";
+    }
+    if normalized_score >= raw_score - 0.05 {
+        return "ResidualEnvelopeOrSpectralDivergence";
+    }
+    "PartlyLevelExplained"
 }
 
 fn measure_external_benchmark_gain_envelope_review(
@@ -4901,6 +5123,10 @@ mod tests {
         assert!(formatted.contains("window_count=1"));
         assert!(formatted.contains("median_window_rms_delta_db=0.000000"));
         assert!(formatted.contains("gain_pattern=CloseGain"));
+        assert!(formatted.contains("external_benchmark_level_normalized_review rank=1"));
+        assert!(formatted.contains("signal_gain_db_applied=0.000000"));
+        assert!(formatted.contains("normalized_feature_divergence_score=0.000000"));
+        assert!(formatted.contains("normalization_pattern=MostlyLevelExplained"));
 
         let _ = fs::remove_file(path);
     }
