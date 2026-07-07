@@ -11,10 +11,13 @@ use signal_dsp_stretch::{
     build_stretch_corpus_comparison_report_with_sources, detect_stretch_transients,
     format_stretch_corpus_comparison_report, measure_transient_smear,
     measure_transient_smear_with_output_recovery_policy, measure_transient_smear_with_policies,
-    measure_transient_smear_with_policy, output_length_drift_samples, OfflineHighQualityStretcher,
-    PhaseVocoderStretcher, StretchCorpusAssetRequirement, StretchCorpusListeningSource,
-    StretchExternalBenchmarkRender, StretchTransientDetectorPolicy, TimeStretcher,
-    STRETCH_CORPUS_MANIFEST,
+    measure_transient_smear_with_policy, output_length_drift_samples, OfflineHighQualityPath,
+    OfflineHighQualityStretcher, PhaseVocoderStretcher, StretchCorpusAssetRequirement,
+    StretchCorpusListeningSource, StretchExternalBenchmarkRender, StretchTransientDetectorPolicy,
+    TimeStretcher, COMPRESSION_SHORT_WINDOW_SELECTOR_ANALYSIS_HOP,
+    COMPRESSION_SHORT_WINDOW_SELECTOR_MIN_CURRENT_MISSES,
+    COMPRESSION_SHORT_WINDOW_SELECTOR_MIN_CURRENT_SMEAR_FRAMES,
+    COMPRESSION_SHORT_WINDOW_SELECTOR_WINDOW_SIZE, STRETCH_CORPUS_MANIFEST,
 };
 use symphonia::core::{
     audio::SampleBuffer as SymphoniaSampleBuffer,
@@ -33,9 +36,6 @@ const DEFAULT_DECODE_SOURCE_FRAME_LIMIT: usize = 48_000 * 60;
 const DEFAULT_DECODED_STRETCH_FRAME_LIMIT: usize = 48_000 * 10;
 const QUALITY_METRIC_WINDOW_SIZE: usize = 1_024;
 const QUALITY_METRIC_HOP_SIZE: usize = 256;
-const COMPRESSION_SHORT_WINDOW_REVIEW_WINDOW_SIZE: usize = 1_024;
-const COMPRESSION_SHORT_WINDOW_REVIEW_ANALYSIS_HOP: usize =
-    COMPRESSION_SHORT_WINDOW_REVIEW_WINDOW_SIZE / 4;
 const MAX_TRANSIENT_ALIGNMENT_EVENTS_PER_BACKEND: usize = 3;
 const TRANSIENT_ALIGNMENT_WINDOW_RADIUS: usize = QUALITY_METRIC_WINDOW_SIZE;
 const EXPECTED_TRANSIENT_ENERGY_PRESENT_RATIO: f64 = 0.50;
@@ -46,8 +46,6 @@ const RECOVERY_GATE_MAX_SMEAR_WORSENED_ROWS: usize = 0;
 const RECOVERY_GATE_MAX_GLOBAL_CANDIDATE_INPUT_RATIO: f64 = 2.0;
 const WIDTH_CONTROL_EDIT_GATE_MAX_SAMPLE_DELTA: f64 = 0.25;
 const WIDTH_CONTROL_EDIT_GATE_MAX_ADDED_ADJACENT_STEP_DELTA: f64 = 0.05;
-const SHORT_WINDOW_SELECTOR_MIN_CURRENT_MISSES: usize = 1;
-const SHORT_WINDOW_SELECTOR_MIN_CURRENT_SMEAR_FRAMES: f64 = 64.0;
 const EXTERNAL_BENCHMARK_ALIGNMENT_MAX_LAG_FRAMES: isize = 2_048;
 const EXTERNAL_BENCHMARK_ALIGNMENT_MAX_COMPARE_FRAMES: usize = 65_536;
 const EXTERNAL_BENCHMARK_FEATURE_FFT_SIZE: usize = 2_048;
@@ -1211,6 +1209,7 @@ fn format_decoded_stretch_metrics(
     .with_feature_report("decoded_compression_short_window_feature");
     let mut compression_short_window_selector_candidate =
         ShortWindowSelectorCandidateAccumulator::default();
+    let mut compression_short_window_selector_path = ShortWindowSelectorPathAccumulator::default();
     let mut width_control_candidate = TransientWidthControlCandidateAccumulator::default();
     let mut width_control_edit_gate = TransientWidthControlEditGateAccumulator::default();
     for source in sources {
@@ -1328,13 +1327,26 @@ fn format_decoded_stretch_metrics(
             );
             let mut offline_short_window = OfflineHighQualityStretcher::with_window(
                 ratio,
-                COMPRESSION_SHORT_WINDOW_REVIEW_WINDOW_SIZE,
-                COMPRESSION_SHORT_WINDOW_REVIEW_ANALYSIS_HOP,
+                COMPRESSION_SHORT_WINDOW_SELECTOR_WINDOW_SIZE,
+                COMPRESSION_SHORT_WINDOW_SELECTOR_ANALYSIS_HOP,
             );
             let offline_short_window_output = offline_short_window.stretch_mono(&mono);
             let offline_short_window_smear = measure_transient_smear(
                 &mono,
                 &offline_short_window_output,
+                ratio,
+                QUALITY_METRIC_WINDOW_SIZE,
+                QUALITY_METRIC_HOP_SIZE,
+            );
+            let mut offline_short_window_selector = OfflineHighQualityStretcher::with_path(
+                ratio,
+                OfflineHighQualityPath::CompressionShortWindowSelector,
+            );
+            let offline_short_window_selector_output =
+                offline_short_window_selector.stretch_mono(&mono);
+            let offline_short_window_selector_smear = measure_transient_smear(
+                &mono,
+                &offline_short_window_selector_output,
                 ratio,
                 QUALITY_METRIC_WINDOW_SIZE,
                 QUALITY_METRIC_HOP_SIZE,
@@ -1371,6 +1383,15 @@ fn format_decoded_stretch_metrics(
                 &draft_smear,
                 &offline_smear,
                 &offline_short_window_smear,
+            );
+            compression_short_window_selector_path.record(
+                ratio,
+                &offline_output,
+                &offline_short_window_output,
+                &offline_short_window_selector_output,
+                &offline_smear,
+                &offline_short_window_smear,
+                &offline_short_window_selector_smear,
             );
             width_control_candidate.record(
                 &audio,
@@ -1452,6 +1473,9 @@ fn format_decoded_stretch_metrics(
     }
     if compression_short_window_selector_candidate.rows > 0 {
         lines.push(compression_short_window_selector_candidate.format_report_line());
+    }
+    if compression_short_window_selector_path.rows > 0 {
+        lines.push(compression_short_window_selector_path.format_report_line());
     }
     if width_control_candidate.rows > 0 {
         lines.push(width_control_candidate.format_report_line());
@@ -3737,9 +3761,9 @@ impl ShortWindowSelectorCandidateAccumulator {
 
         self.rows += 1;
         let accepts_missed_transients =
-            offline.missed_transients >= SHORT_WINDOW_SELECTOR_MIN_CURRENT_MISSES;
+            offline.missed_transients >= COMPRESSION_SHORT_WINDOW_SELECTOR_MIN_CURRENT_MISSES;
         let accepts_current_smear =
-            offline.max_smear_frames >= SHORT_WINDOW_SELECTOR_MIN_CURRENT_SMEAR_FRAMES;
+            offline.max_smear_frames >= COMPRESSION_SHORT_WINDOW_SELECTOR_MIN_CURRENT_SMEAR_FRAMES;
         let accepted = accepts_missed_transients || accepts_current_smear;
         if accepted {
             self.accepted_rows += 1;
@@ -3834,8 +3858,8 @@ impl ShortWindowSelectorCandidateAccumulator {
         format!(
             "decoded_compression_short_window_selector_candidate rows={} candidate_path=offline_hq_short_window_selector selected_path=offline_hq_or_short_window baseline_path=offline_hq gate=CurrentMissesOrHighCurrentSmear min_current_misses={} min_current_smear_frames={:.6} accepted_rows={} rejected_rows={} accepted_by_missed_transients_rows={} accepted_by_current_smear_rows={} accepted_by_both_rows={} accepted_candidate_better_rows={} accepted_current_better_rows={} rejected_candidate_better_rows={} rejected_current_better_rows={} gated_better_rows={} current_better_rows={} unchanged_rows={} inconclusive_rows={} finite_rows={} mean_gated_smear_frames={:.6} mean_current_smear_frames={:.6} best_gated_improvement_delta_frames={:.6} best_gated_improvement_case={} best_gated_improvement_source={} best_gated_improvement_ratio={:.6} worst_gated_regression_delta_frames={:.6} worst_gated_regression_case={} worst_gated_regression_source={} worst_gated_regression_ratio={:.6} worst_draft_regression_delta_frames={:.6} worst_draft_regression_case={} worst_draft_regression_source={} worst_draft_regression_ratio={:.6} rejected_candidate_improvement_delta_frames={:.6} accepted_candidate_regression_delta_frames={:.6}",
             self.rows,
-            SHORT_WINDOW_SELECTOR_MIN_CURRENT_MISSES,
-            SHORT_WINDOW_SELECTOR_MIN_CURRENT_SMEAR_FRAMES,
+            COMPRESSION_SHORT_WINDOW_SELECTOR_MIN_CURRENT_MISSES,
+            COMPRESSION_SHORT_WINDOW_SELECTOR_MIN_CURRENT_SMEAR_FRAMES,
             self.accepted_rows,
             self.rejected_rows,
             self.accepted_by_missed_transients_rows,
@@ -3866,6 +3890,82 @@ impl ShortWindowSelectorCandidateAccumulator {
             self.worst_draft_regression_ratio,
             self.rejected_candidate_improvement_delta_frames,
             self.accepted_candidate_regression_delta_frames,
+        )
+    }
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+struct ShortWindowSelectorPathAccumulator {
+    rows: usize,
+    selected_short_window_rows: usize,
+    selected_default_rows: usize,
+    output_match_rows: usize,
+    output_mismatch_rows: usize,
+    smear_match_rows: usize,
+    smear_mismatch_rows: usize,
+    max_abs_smear_delta_frames: f64,
+}
+
+impl ShortWindowSelectorPathAccumulator {
+    fn record(
+        &mut self,
+        ratio: f64,
+        offline_output: &[f32],
+        short_window_output: &[f32],
+        selector_output: &[f32],
+        offline_smear: &signal_dsp_stretch::StretchTransientSmearMeasurement,
+        short_window_smear: &signal_dsp_stretch::StretchTransientSmearMeasurement,
+        selector_smear: &signal_dsp_stretch::StretchTransientSmearMeasurement,
+    ) {
+        if ratio >= 1.0 {
+            return;
+        }
+
+        self.rows += 1;
+        let accepted = offline_smear.missed_transients
+            >= COMPRESSION_SHORT_WINDOW_SELECTOR_MIN_CURRENT_MISSES
+            || offline_smear.max_smear_frames
+                >= COMPRESSION_SHORT_WINDOW_SELECTOR_MIN_CURRENT_SMEAR_FRAMES;
+        let (expected_output, expected_smear) = if accepted {
+            self.selected_short_window_rows += 1;
+            (short_window_output, short_window_smear)
+        } else {
+            self.selected_default_rows += 1;
+            (offline_output, offline_smear)
+        };
+
+        if selector_output == expected_output {
+            self.output_match_rows += 1;
+        } else {
+            self.output_mismatch_rows += 1;
+        }
+
+        let smear_delta = (selector_smear.max_smear_frames - expected_smear.max_smear_frames).abs();
+        if smear_delta <= 1.0e-9
+            || (!smear_delta.is_finite() && !expected_smear.max_smear_frames.is_finite())
+        {
+            self.smear_match_rows += 1;
+        } else {
+            self.smear_mismatch_rows += 1;
+            if smear_delta.is_finite() && smear_delta > self.max_abs_smear_delta_frames {
+                self.max_abs_smear_delta_frames = smear_delta;
+            }
+        }
+    }
+
+    fn format_report_line(&self) -> String {
+        format!(
+            "decoded_compression_short_window_selector_path rows={} path=offline_hq_compression_short_window_selector baseline_path=offline_hq short_window_path=offline_hq_short_window gate=CurrentMissesOrHighCurrentSmear min_current_misses={} min_current_smear_frames={:.6} selected_short_window_rows={} selected_default_rows={} output_match_rows={} output_mismatch_rows={} smear_match_rows={} smear_mismatch_rows={} max_abs_smear_delta_frames={:.6}",
+            self.rows,
+            COMPRESSION_SHORT_WINDOW_SELECTOR_MIN_CURRENT_MISSES,
+            COMPRESSION_SHORT_WINDOW_SELECTOR_MIN_CURRENT_SMEAR_FRAMES,
+            self.selected_short_window_rows,
+            self.selected_default_rows,
+            self.output_match_rows,
+            self.output_mismatch_rows,
+            self.smear_match_rows,
+            self.smear_mismatch_rows,
+            self.max_abs_smear_delta_frames,
         )
     }
 }
@@ -5699,6 +5799,8 @@ mod tests {
         assert!(formatted.contains("candidate_path=offline_hq_short_window"));
         assert!(formatted.contains("decoded_compression_short_window_selector_candidate rows="));
         assert!(formatted.contains("gate=CurrentMissesOrHighCurrentSmear"));
+        assert!(formatted.contains("decoded_compression_short_window_selector_path rows="));
+        assert!(formatted.contains("path=offline_hq_compression_short_window_selector"));
         assert!(formatted.contains("decoded_transient_width_control_candidate rows="));
         assert!(formatted.contains("candidate_path=offline_hq_width_control"));
         assert!(formatted.contains("baseline_path=offline_hq"));
@@ -5938,6 +6040,45 @@ mod tests {
         assert!(line.contains("worst_gated_regression_delta_frames=0.000000"));
         assert!(line.contains("rejected_candidate_improvement_delta_frames=18.000000"));
         assert!(line.contains("accepted_candidate_regression_delta_frames=0.000000"));
+    }
+
+    #[test]
+    fn short_window_selector_path_counts_expected_output_selection() {
+        let offline_output = vec![0.0, 0.25, 0.5];
+        let short_window_output = vec![0.0, 0.5, 1.0];
+        let mut missed_current = transient_smear_measurement(128.0);
+        missed_current.missed_transients = 1;
+        let mild_current = transient_smear_measurement(22.0);
+        let selected_short_window = transient_smear_measurement(48.0);
+        let selected_default = mild_current.clone();
+        let mut accumulator = ShortWindowSelectorPathAccumulator::default();
+
+        accumulator.record(
+            0.75,
+            &offline_output,
+            &short_window_output,
+            &short_window_output,
+            &missed_current,
+            &selected_short_window,
+            &selected_short_window,
+        );
+        accumulator.record(
+            0.75,
+            &offline_output,
+            &short_window_output,
+            &offline_output,
+            &mild_current,
+            &selected_short_window,
+            &selected_default,
+        );
+        let line = accumulator.format_report_line();
+
+        assert!(line.contains("selected_short_window_rows=1"));
+        assert!(line.contains("selected_default_rows=1"));
+        assert!(line.contains("output_match_rows=2"));
+        assert!(line.contains("output_mismatch_rows=0"));
+        assert!(line.contains("smear_match_rows=2"));
+        assert!(line.contains("smear_mismatch_rows=0"));
     }
 
     #[test]

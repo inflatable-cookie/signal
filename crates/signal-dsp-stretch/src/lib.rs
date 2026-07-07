@@ -259,12 +259,34 @@ pub struct OfflineHighQualityStretcher {
     ratio: f64,
     window_size: usize,
     analysis_hop: usize,
+    path: OfflineHighQualityPath,
+}
+
+/// Offline high-quality renderer path.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum OfflineHighQualityPath {
+    /// Current production-candidate OfflineHighQuality path.
+    Default,
+    /// Compression-only selector that switches to a shorter STFT window when
+    /// the current path misses transients or exceeds the current-smear gate.
+    CompressionShortWindowSelector,
 }
 
 /// Default STFT window: 2048 samples (~43 ms at 48 kHz).
 pub const DEFAULT_WINDOW_SIZE: usize = 2_048;
 /// Default analysis hop: window / 4 (75% overlap).
 pub const DEFAULT_ANALYSIS_HOP: usize = DEFAULT_WINDOW_SIZE / 4;
+/// Short-window selector STFT size for compression material.
+pub const COMPRESSION_SHORT_WINDOW_SELECTOR_WINDOW_SIZE: usize = 1_024;
+/// Short-window selector analysis hop.
+pub const COMPRESSION_SHORT_WINDOW_SELECTOR_ANALYSIS_HOP: usize =
+    COMPRESSION_SHORT_WINDOW_SELECTOR_WINDOW_SIZE / 4;
+/// Short-window selector gate: current path must miss at least this many
+/// source transients before the selector may switch.
+pub const COMPRESSION_SHORT_WINDOW_SELECTOR_MIN_CURRENT_MISSES: usize = 1;
+/// Short-window selector gate: current path must exceed this transient-smear
+/// value before the selector may switch.
+pub const COMPRESSION_SHORT_WINDOW_SELECTOR_MIN_CURRENT_SMEAR_FRAMES: f64 = 64.0;
 
 impl PhaseVocoderStretcher {
     /// Stretcher with the default window/hop configuration.
@@ -326,9 +348,27 @@ impl OfflineHighQualityStretcher {
             ratio: 1.0,
             window_size,
             analysis_hop,
+            path: OfflineHighQualityPath::Default,
         };
         stretcher.set_ratio(ratio);
         stretcher
+    }
+
+    /// Stretcher with the default window/hop and an explicit offline path.
+    pub fn with_path(ratio: f64, path: OfflineHighQualityPath) -> Self {
+        let mut stretcher = Self::new(ratio);
+        stretcher.path = path;
+        stretcher
+    }
+
+    /// Current offline high-quality renderer path.
+    pub fn path(&self) -> OfflineHighQualityPath {
+        self.path
+    }
+
+    /// Set the offline high-quality renderer path.
+    pub fn set_path(&mut self, path: OfflineHighQualityPath) {
+        self.path = path;
     }
 
     /// Stretch an interleaved stereo buffer through the linked
@@ -546,11 +586,24 @@ impl TimeStretcher for OfflineHighQualityStretcher {
     }
 
     fn stretch_mono(&mut self, input: &[Sample]) -> Vec<Sample> {
-        stretch_mono_with_engine(
+        let default_output = stretch_mono_with_engine(
             input,
             self.ratio,
             self.window_size,
             self.analysis_hop,
+            transient_reset_phase_vocoder,
+        );
+        if self.path != OfflineHighQualityPath::CompressionShortWindowSelector
+            || !should_select_compression_short_window(input, &default_output, self.ratio)
+        {
+            return default_output;
+        }
+
+        stretch_mono_with_engine(
+            input,
+            self.ratio,
+            COMPRESSION_SHORT_WINDOW_SELECTOR_WINDOW_SIZE,
+            COMPRESSION_SHORT_WINDOW_SELECTOR_ANALYSIS_HOP,
             transient_reset_phase_vocoder,
         )
     }
@@ -974,6 +1027,27 @@ fn pitch_shift_resample_config(sample_rate: SampleRate, semitones: f64) -> Optio
     ))
 }
 
+fn should_select_compression_short_window(
+    input: &[Sample],
+    current_output: &[Sample],
+    ratio: f64,
+) -> bool {
+    if ratio >= 1.0 || input.is_empty() || current_output.is_empty() {
+        return false;
+    }
+
+    let current_smear = measure_transient_smear(
+        input,
+        current_output,
+        ratio,
+        COMPRESSION_SHORT_WINDOW_SELECTOR_WINDOW_SIZE,
+        COMPRESSION_SHORT_WINDOW_SELECTOR_ANALYSIS_HOP,
+    );
+    current_smear.missed_transients >= COMPRESSION_SHORT_WINDOW_SELECTOR_MIN_CURRENT_MISSES
+        || current_smear.max_smear_frames
+            >= COMPRESSION_SHORT_WINDOW_SELECTOR_MIN_CURRENT_SMEAR_FRAMES
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1060,6 +1134,22 @@ mod tests {
 
         assert_eq!(stretcher.quality(), StretchQuality::OfflineHighQuality);
         assert_eq!(stretcher.ratio(), 1.25);
+        assert_eq!(stretcher.path(), OfflineHighQualityPath::Default);
+    }
+
+    #[test]
+    fn offline_high_quality_path_can_be_selected_explicitly() {
+        let mut stretcher = OfflineHighQualityStretcher::with_path(
+            0.75,
+            OfflineHighQualityPath::CompressionShortWindowSelector,
+        );
+
+        assert_eq!(
+            stretcher.path(),
+            OfflineHighQualityPath::CompressionShortWindowSelector
+        );
+        stretcher.set_path(OfflineHighQualityPath::Default);
+        assert_eq!(stretcher.path(), OfflineHighQualityPath::Default);
     }
 
     #[test]
@@ -1094,6 +1184,61 @@ mod tests {
             (input.len() as f64 * ratio).round() as usize
         );
         assert_eq!(first_output, repeated_output);
+    }
+
+    #[test]
+    fn compression_short_window_selector_matches_gate_decision() {
+        let input = masked_soft_attack_probe(0.35);
+        let ratio = 0.75;
+        let mut default = OfflineHighQualityStretcher::new(ratio);
+        let default_output = default.stretch_mono(&input);
+        let mut short_window = OfflineHighQualityStretcher::with_window(
+            ratio,
+            COMPRESSION_SHORT_WINDOW_SELECTOR_WINDOW_SIZE,
+            COMPRESSION_SHORT_WINDOW_SELECTOR_ANALYSIS_HOP,
+        );
+        let short_window_output = short_window.stretch_mono(&input);
+        let mut selector = OfflineHighQualityStretcher::with_path(
+            ratio,
+            OfflineHighQualityPath::CompressionShortWindowSelector,
+        );
+        let selector_output = selector.stretch_mono(&input);
+        let default_smear = measure_transient_smear(
+            &input,
+            &default_output,
+            ratio,
+            COMPRESSION_SHORT_WINDOW_SELECTOR_WINDOW_SIZE,
+            COMPRESSION_SHORT_WINDOW_SELECTOR_ANALYSIS_HOP,
+        );
+        let accepted = default_smear.missed_transients
+            >= COMPRESSION_SHORT_WINDOW_SELECTOR_MIN_CURRENT_MISSES
+            || default_smear.max_smear_frames
+                >= COMPRESSION_SHORT_WINDOW_SELECTOR_MIN_CURRENT_SMEAR_FRAMES;
+
+        let expected = if accepted {
+            &short_window_output
+        } else {
+            &default_output
+        };
+        assert_eq!(selector_output, *expected);
+        assert_eq!(
+            selector_output.len(),
+            (input.len() as f64 * ratio).round() as usize
+        );
+    }
+
+    #[test]
+    fn compression_short_window_selector_does_not_switch_expansion_ratios() {
+        let input = masked_soft_attack_probe(0.35);
+        let ratio = 1.25;
+        let mut default = OfflineHighQualityStretcher::new(ratio);
+        let default_output = default.stretch_mono(&input);
+        let mut selector = OfflineHighQualityStretcher::with_path(
+            ratio,
+            OfflineHighQualityPath::CompressionShortWindowSelector,
+        );
+
+        assert_eq!(selector.stretch_mono(&input), default_output);
     }
 
     #[test]

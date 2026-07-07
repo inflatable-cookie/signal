@@ -21,9 +21,9 @@ comparison reports, not add more receipt or fixture surfaces.
   each algorithm change
 - [x] choose one top measured weakness per batch: transient smear, loop seams,
   sustained phasiness, stereo image drift, pitch error, or timing drift
-- [ ] add a multiresolution or hybrid STFT/time-domain path when the measured
+- [x] add a multiresolution or hybrid STFT/time-domain path when the measured
   weakness justifies it
-- [ ] improve transient anchoring or local time-domain splice behavior for
+- [x] improve transient anchoring or local time-domain splice behavior for
   percussive material
 - [ ] improve vertical coherence for dense sustained and polyphonic material
 - [ ] improve loop-seam handling under fixed ratios and dynamic ratio segments
@@ -46,8 +46,17 @@ comparison reports, not add more receipt or fixture surfaces.
 
 ### Batch 22.3 - Multiresolution Or Hybrid Path
 
-- [ ] add the next engine path only when a measured weakness requires it
-- [ ] keep the lower-complexity path available for regression comparison
+- [x] add the next engine path only when a measured weakness requires it
+- [x] keep the lower-complexity path available for regression comparison
+
+### Batch 22.4 - Selector Promotion Integration
+
+- [ ] carry the new `OfflineHighQualityPath` option through cache identity and
+  render/export/freeze artifact planning before any consumer uses it
+- [ ] require the broad FMA/Rubber Band selector-path evidence in promotion
+  receipts
+- [ ] keep the default OfflineHighQuality path unchanged until selector use is
+  explicitly selected by artifact policy
 
 ## Acceptance Criteria
 
@@ -491,24 +500,30 @@ comparison reports, not add more receipt or fixture surfaces.
   argues against a DSP gain/envelope correction as the next move. The measured
   residual is mostly phase/fine-texture or mild spectral-magnitude difference
   after level matching.
+- 2026-07-07: promoted the gated shorter-window selector into an explicit
+  opt-in `OfflineHighQualityPath::CompressionShortWindowSelector` path.
+  `OfflineHighQualityStretcher::new()` still routes to the default
+  OfflineHighQuality engine, so raw comparator evidence is not silently
+  changed. The selector reuses the measured gate:
+  `min_current_misses=1` or `min_current_smear_frames=64.000000`, and only
+  applies below `1.0x`. The broad FMA/Rubber Band R3 refresh emitted the same
+  60 measured external quality rows, 60 feature-delta rows, and 8 rows each for
+  gain-envelope, level-normalized, and residual-coherence review. The new
+  `decoded_compression_short_window_selector_path` line proved the promoted
+  renderer matched the report-only gate on all 20 compression rows:
+  `selected_short_window_rows=7`, `selected_default_rows=13`,
+  `output_match_rows=20`, `output_mismatch_rows=0`, `smear_match_rows=20`,
+  `smear_mismatch_rows=0`, and `max_abs_smear_delta_frames=0.000000`. The
+  candidate evidence remained unchanged: 5 gated-better rows, 0 current-better
+  rows, finite mean max-smear `132.647059` frames versus current
+  `374.352941`, and `worst_gated_regression_delta_frames=0.000000`.
 
 ## Next Task
 
-Do not add a multiresolution or hybrid path until measured evidence requires
-it. The width-control postprocess and simple compression phase-reset anchor
-lines are now closed as report-only/rejected. A global shorter-window switch is
-also rejected, and the `000900.mp3` matched-event width issue is not solved by
-window size alone. The gated shorter-window selector now clears the first broad
-FMA no-listening check and the first Rubber Band R3 black-box comparator pass.
-Next useful work is a measured quality-decision batch, still report-only:
-use the feature-delta rows to separate comparator findings into metric noise,
-likely audible gain/envelope differences, and actual DSP targets. Preserve the
-existing timing-drift and transient-smear gates. Next useful step is no longer
-another comparator receipt row. Move to a promotion decision batch for the
-gated short-window selector: prove the selector can become an OfflineHighQuality
-path option without changing raw comparator evidence, keep raw and
-level-normalized comparator reports as promotion evidence, and require no new
-timing drift, transient-smear regression, or raw level/coherence surprise on
-the broad FMA/Rubber Band pack. If that promotion gate fails, then open the
-multiresolution or sustained-material coherence path with this evidence as the
-entry condition.
+Do not make the selector a consumer-visible default yet. Next useful work is
+Batch 22.4: carry `OfflineHighQualityPath` through cache identity and
+render/export/freeze artifact planning, then require the broad FMA/Rubber Band
+selector-path evidence in promotion receipts. The default OfflineHighQuality
+path stays unchanged until artifact policy explicitly selects the compression
+short-window selector. The `000900.mp3` matched-event width issue remains open;
+do not treat window selection as solving that sustained-material target.
