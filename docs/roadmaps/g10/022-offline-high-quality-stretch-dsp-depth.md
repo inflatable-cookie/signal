@@ -198,13 +198,22 @@ comparison reports, not add more receipt or fixture surfaces.
   misses to 3 matches and 0 misses, with candidate-output max smear `4` frames.
   This rejects a global threshold drop but supports output-side scoring or
   normalization work for energy-present misses.
+- 2026-07-07: added a stricter output-recovery measurement that keeps
+  production input and production output detection as the primary path, then
+  tries candidate output detection only for production misses. The regenerated
+  local FMA review seed kept OfflineHighQuality matches at 119 and misses at 4,
+  the same recovery count as candidate-output replacement, but avoided the one
+  max-smear worsening: recovery max-smear rows improved 8, stayed same 22, and
+  worsened 0. Draft recovery also improved 20 of 30 rows, moving from 41
+  matches/82 misses to 88 matches/35 misses. This is the better prototype
+  shape: targeted output recovery instead of replacing output detection or
+  lowering input thresholds globally.
 
 ## Next Task
 
 Do not add a multiresolution or hybrid path until measured evidence requires
-it. Next useful work is to prototype output-side detector scoring normalization
-for decoded real-source matching, keeping production input detection stable and
-guarding against the full-candidate false-positive pressure. Compare against the
-candidate-output-only evidence before changing any production metric policy.
-Listened real-source curation and external rendered-output comparison remain
-promotion inputs.
+it. Next useful work is to turn the recovery-only prototype into a promotion
+gate: add acceptance thresholds for recovered misses, max-smear non-worsening,
+and candidate false-positive pressure, then decide whether this targeted output
+recovery belongs in the production metric policy or should stay report-only
+until listened/external comparison evidence lands.

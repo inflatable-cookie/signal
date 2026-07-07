@@ -55,20 +55,21 @@ pub use benchmark::{
     measure_pitch_shift_error_cents, measure_stereo_image_delta,
     measure_transient_reset_loop_boundary_click, measure_transient_reset_stereo_image_delta,
     measure_transient_reset_transient_smear, measure_transient_smear,
-    measure_transient_smear_with_policies, measure_transient_smear_with_policy,
-    output_length_drift_samples, prioritize_stretch_quality_work, synthetic_stretch_corpus_cases,
-    StretchAcceptanceReport, StretchAcceptanceSeverity, StretchAcceptanceStatus,
-    StretchBenchmarkBackend, StretchBenchmarkComparisonOutcome, StretchBenchmarkPath,
-    StretchCoherenceComparison, StretchCorpusAssetRequirement, StretchCorpusCase,
-    StretchCorpusFamily, StretchCorpusManifest, StretchCorpusManifestEntry,
-    StretchCorpusMissingAssetBehavior, StretchCorpusSource, StretchCorpusSourcePolicy,
-    StretchDynamicSegmentSeamMeasurement, StretchLoopBoundaryMeasurement, StretchMetric,
-    StretchMetricAssessment, StretchMetricLimit, StretchMetricValue, StretchPitchShiftMeasurement,
-    StretchQualityPriority, StretchQualityWorkArea, StretchStereoImageMeasurement,
-    StretchSyntheticAudio, StretchSyntheticBenchmarkComparison,
-    StretchSyntheticBenchmarkComparisonReport, StretchTransientDetectorPolicy,
-    StretchTransientEvent, StretchTransientSmearMeasurement, STRETCH_BENCHMARK_CORPUS,
-    STRETCH_CORPUS_MANIFEST, STRETCH_CORPUS_MANIFEST_ENTRIES, STRETCH_CORPUS_SOURCE_POLICY,
+    measure_transient_smear_with_output_recovery_policy, measure_transient_smear_with_policies,
+    measure_transient_smear_with_policy, output_length_drift_samples,
+    prioritize_stretch_quality_work, synthetic_stretch_corpus_cases, StretchAcceptanceReport,
+    StretchAcceptanceSeverity, StretchAcceptanceStatus, StretchBenchmarkBackend,
+    StretchBenchmarkComparisonOutcome, StretchBenchmarkPath, StretchCoherenceComparison,
+    StretchCorpusAssetRequirement, StretchCorpusCase, StretchCorpusFamily, StretchCorpusManifest,
+    StretchCorpusManifestEntry, StretchCorpusMissingAssetBehavior, StretchCorpusSource,
+    StretchCorpusSourcePolicy, StretchDynamicSegmentSeamMeasurement,
+    StretchLoopBoundaryMeasurement, StretchMetric, StretchMetricAssessment, StretchMetricLimit,
+    StretchMetricValue, StretchPitchShiftMeasurement, StretchQualityPriority,
+    StretchQualityWorkArea, StretchStereoImageMeasurement, StretchSyntheticAudio,
+    StretchSyntheticBenchmarkComparison, StretchSyntheticBenchmarkComparisonReport,
+    StretchTransientDetectorPolicy, StretchTransientEvent, StretchTransientSmearMeasurement,
+    STRETCH_BENCHMARK_CORPUS, STRETCH_CORPUS_MANIFEST, STRETCH_CORPUS_MANIFEST_ENTRIES,
+    STRETCH_CORPUS_SOURCE_POLICY,
 };
 pub use cache_identity::{
     StretchCacheIdentity, StretchCacheIdentityError, StretchCacheIdentityInput,
@@ -2135,6 +2136,37 @@ mod tests {
         );
         assert!(candidate_output.matched_transients > production.matched_transients);
         assert!(candidate_output.missed_transients < production.missed_transients);
+    }
+
+    #[test]
+    fn output_recovery_policy_keeps_primary_matches_before_candidate_recovery() {
+        let input = masked_soft_attack_probe(1.0);
+        let output = masked_soft_attack_probe(0.25);
+        let production = measure_transient_smear_with_policies(
+            &input,
+            &output,
+            1.0,
+            1024,
+            256,
+            StretchTransientDetectorPolicy::production(),
+            StretchTransientDetectorPolicy::production(),
+        );
+        let recovery = measure_transient_smear_with_output_recovery_policy(
+            &input,
+            &output,
+            1.0,
+            1024,
+            256,
+            StretchTransientDetectorPolicy::production(),
+            StretchTransientDetectorPolicy::production(),
+            StretchTransientDetectorPolicy::candidate_review(),
+        );
+
+        assert_eq!(recovery.input_transients, production.input_transients);
+        assert_eq!(recovery.output_transients, production.output_transients);
+        assert!(recovery.matched_transients > production.matched_transients);
+        assert!(recovery.missed_transients < production.missed_transients);
+        assert!(recovery.max_smear_frames <= production.max_smear_frames);
     }
 
     #[test]

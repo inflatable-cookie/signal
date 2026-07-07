@@ -874,6 +874,90 @@ pub fn measure_transient_smear_with_policies(
     }
 }
 
+/// Measure transient smear by preserving production input/output detection and
+/// using a recovery output policy only for production misses.
+///
+/// This is an evidence path for output-side detector normalization. It must not
+/// replace the production metric until promoted by corpus evidence.
+pub fn measure_transient_smear_with_output_recovery_policy(
+    input: &[Sample],
+    output: &[Sample],
+    ratio: f64,
+    window_size: usize,
+    hop_size: usize,
+    input_policy: StretchTransientDetectorPolicy,
+    output_policy: StretchTransientDetectorPolicy,
+    recovery_output_policy: StretchTransientDetectorPolicy,
+) -> StretchTransientSmearMeasurement {
+    if !ratio.is_finite() || ratio <= 0.0 || input.is_empty() || output.is_empty() {
+        return transient_smear_nan(ratio);
+    }
+
+    let input_events =
+        detect_stretch_transients_with_policy(input, window_size, hop_size, input_policy);
+    let output_events =
+        detect_stretch_transients_with_policy(output, window_size, hop_size, output_policy);
+    let recovery_output_events = detect_stretch_transients_with_policy(
+        output,
+        window_size,
+        hop_size,
+        recovery_output_policy,
+    );
+    let mut matched = 0usize;
+    let mut smear_sum = 0.0f64;
+    let mut max_smear = 0.0f64;
+    let tolerance = window_size.max(hop_size * 4) as f64;
+
+    for input_event in &input_events {
+        let expected_output_frame = input_event.frame_index as f64 * ratio;
+        let output_event = nearest_transient(&output_events, expected_output_frame, tolerance)
+            .or_else(|| {
+                nearest_transient(&recovery_output_events, expected_output_frame, tolerance)
+            });
+        let Some(output_event) = output_event else {
+            continue;
+        };
+        let input_width = transient_attack_width(input, input_event.frame_index, window_size);
+        let output_width = transient_attack_width(output, output_event.frame_index, window_size);
+        if !input_width.is_finite() || !output_width.is_finite() {
+            continue;
+        }
+        let smear = (output_width - input_width).max(0.0);
+        matched += 1;
+        smear_sum += smear;
+        max_smear = max_smear.max(smear);
+    }
+
+    let missed = input_events.len().saturating_sub(matched);
+    let missed_penalty = window_size as f64;
+    let total_measured = matched + missed;
+    let mean_smear = if total_measured > 0 {
+        (smear_sum + missed_penalty * missed as f64) / total_measured as f64
+    } else {
+        f64::NAN
+    };
+    let max_smear = if total_measured > 0 {
+        if missed > 0 {
+            max_smear.max(missed_penalty)
+        } else {
+            max_smear
+        }
+    } else {
+        f64::NAN
+    };
+
+    StretchTransientSmearMeasurement {
+        ratio,
+        input_transients: input_events.len(),
+        output_transients: output_events.len(),
+        matched_transients: matched,
+        missed_transients: missed,
+        mean_smear_frames: mean_smear,
+        max_smear_frames: max_smear,
+        metric: StretchMetricValue::new(StretchMetric::TransientSmearFrames, max_smear),
+    }
+}
+
 /// Measure draft phase-vocoder transient smear on the synthetic extreme-ratio
 /// corpus case.
 pub fn measure_draft_transient_smear(ratio: f64) -> StretchTransientSmearMeasurement {
