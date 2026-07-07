@@ -19,9 +19,9 @@ notes before more product-facing quality claims land.
 - [x] define the first checked-in corpus manifest shape for drums/percussion,
   bass, vocals, pads/sustains, full mixes, tempo ramps, loop seams, and extreme
   ratios without committing licensed source audio
-- [ ] add a runner that produces deterministic comparison reports for draft,
+- [x] add a runner that produces deterministic comparison reports for draft,
   OfflineHighQuality, and optional external benchmark output
-- [ ] add Rubber Band CLI output as a behavioral benchmark option only; do not
+- [x] add Rubber Band CLI output as a behavioral benchmark option only; do not
   add source or library dependency
 - [x] record listening-note slots next to objective metrics so operator review
   can capture artifacts the metrics miss
@@ -42,7 +42,7 @@ notes before more product-facing quality claims land.
 
 ### Batch 21.3 - External Benchmark Option
 
-- [ ] optional Rubber Band CLI render comparison path with clean-room source
+- [x] optional Rubber Band CLI render comparison path with clean-room source
   boundary documented
 
 ## Acceptance Criteria
@@ -50,8 +50,8 @@ notes before more product-facing quality claims land.
 - [x] synthetic reports remain available for fast local tests
 - [x] real-corpus report output can be saved as an artifact and compared across
   runs
-- [ ] benchmark comparison is optional and clean-room
-- [ ] no product-facing gate depends on unaudited external source code
+- [x] benchmark comparison is optional and clean-room
+- [x] no product-facing gate depends on unaudited external source code
 
 ## Validation
 
@@ -69,8 +69,14 @@ notes before more product-facing quality claims land.
 - 2026-07-07: implemented `stretch-corpus-report`, deterministic report
   formatting, missing licensed-asset rows, objective synthetic comparison rows,
   ratio/pitch curve fields, projection epoch output, and listening-note slots.
+- 2026-07-07: added optional `--external-benchmark-render` support for
+  operator-supplied rendered WAV outputs. Signal records external tool identity,
+  rendered metadata, timing drift when the case maps to Signal-generated source,
+  and the rendered-output-only clean-room boundary. No Rubber Band source,
+  library, or dependency was added.
 
 ## Next Task
 
-Implement Batch 21.3: optional external benchmark render comparison path with a
-documented clean-room source boundary.
+Collect operator-supplied licensed listening material and optional external
+rendered-output comparisons, then review the first real report before opening
+the next stretch-quality tuning card.

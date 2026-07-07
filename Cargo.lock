@@ -910,6 +910,7 @@ dependencies = [
 name = "signal-dsp-stretch"
 version = "0.1.0"
 dependencies = [
+ "hound",
  "rustfft",
  "signal-dsp-resample",
  "signal-primitives",

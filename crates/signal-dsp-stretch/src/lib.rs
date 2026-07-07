@@ -73,8 +73,10 @@ pub use cache_identity::{
     SIGNAL_STRETCH_ENGINE_VERSION, STRETCH_CACHE_IDENTITY_SCHEMA_VERSION,
 };
 pub use corpus_report::{
-    build_stretch_corpus_comparison_report, format_stretch_corpus_comparison_report,
-    StretchCorpusComparisonReport, StretchCorpusListeningNoteSlot, StretchCorpusSkippedAsset,
+    build_stretch_corpus_comparison_report, build_stretch_corpus_comparison_report_with_external,
+    format_stretch_corpus_comparison_report, StretchCorpusComparisonReport,
+    StretchCorpusListeningNoteSlot, StretchCorpusSkippedAsset, StretchExternalBenchmarkComparison,
+    StretchExternalBenchmarkRender,
 };
 pub use promotion::{
     current_synthetic_offline_high_quality_promotion_receipt, StretchPromotionReceipt,
@@ -1593,7 +1595,8 @@ mod tests {
         assert!(formatted.contains("engine=signal-native-stretch-v1"));
         assert!(formatted.contains("projection_epoch=\"projection:unit\""));
         assert!(formatted.contains("source_policy synthetic="));
-        assert!(formatted.contains("summary comparisons=27 missing_assets=5"));
+        assert!(formatted
+            .contains("summary comparisons=27 external_benchmark_comparisons=0 missing_assets=5"));
         assert!(formatted.contains("asset case=stretch:drums_percussion status=missing_required"));
         assert!(formatted.contains("comparison case=stretch:tempo_ramp"));
         assert!(formatted.contains("ratio_curve=synthetic_tempo_ramp:"));
@@ -1603,6 +1606,71 @@ mod tests {
         assert!(formatted.contains(
             "prompt=\"operator-note: record audible artifacts beside objective metrics\""
         ));
+    }
+
+    #[test]
+    fn stretch_corpus_report_accepts_optional_external_benchmark_render() {
+        let loop_frames = generate_synthetic_stretch_audio(StretchCorpusFamily::LoopSeam)
+            .expect("loop seam synthetic exists")
+            .frame_count();
+        let report = build_stretch_corpus_comparison_report_with_external(
+            "stretch-corpus-v1-local",
+            "projection:unit",
+            &[StretchExternalBenchmarkRender {
+                case_id: "stretch:loop_seam".to_string(),
+                ratio: 1.0,
+                pitch_shift_semitones: None,
+                tool_name: "rubberband-cli".to_string(),
+                rendered_path: "fixtures/stretch-corpus/external-benchmark/loop.wav".to_string(),
+                rendered_frames: loop_frames + 2,
+                sample_rate_hz: 48_000,
+                channels: 2,
+            }],
+        );
+        let comparison = &report.external_benchmark_comparisons[0];
+
+        assert_eq!(comparison.case_id, "stretch:loop_seam");
+        assert_eq!(comparison.tool_name, "rubberband-cli");
+        assert_eq!(comparison.expected_frames, Some(loop_frames));
+        assert_eq!(comparison.timing_drift_samples, Some(2.0));
+        assert_eq!(
+            comparison.source_boundary,
+            "rendered-output-only; no external source or library dependency"
+        );
+
+        let formatted = format_stretch_corpus_comparison_report(&report);
+        assert!(formatted.contains("external_benchmark case=stretch:loop_seam"));
+        assert!(formatted.contains("tool=\"rubberband-cli\""));
+        assert!(formatted.contains(
+            "source_boundary=\"rendered-output-only; no external source or library dependency\""
+        ));
+        assert!(formatted.contains("timing_drift_samples=2.000000"));
+    }
+
+    #[test]
+    fn stretch_corpus_report_keeps_unknown_external_benchmark_metadata_only() {
+        let report = build_stretch_corpus_comparison_report_with_external(
+            "stretch-corpus-v1-local",
+            "projection:unit",
+            &[StretchExternalBenchmarkRender {
+                case_id: "stretch:licensed-only".to_string(),
+                ratio: 1.25,
+                pitch_shift_semitones: None,
+                tool_name: "rubberband-cli".to_string(),
+                rendered_path: "fixtures/stretch-corpus/external-benchmark/licensed.wav"
+                    .to_string(),
+                rendered_frames: 60_000,
+                sample_rate_hz: 48_000,
+                channels: 2,
+            }],
+        );
+        let comparison = &report.external_benchmark_comparisons[0];
+
+        assert_eq!(comparison.expected_frames, None);
+        assert_eq!(comparison.timing_drift_samples, None);
+        assert_eq!(comparison.rendered_frames, 60_000);
+        assert_eq!(comparison.sample_rate_hz, 48_000);
+        assert_eq!(comparison.channels, 2);
     }
 
     #[test]

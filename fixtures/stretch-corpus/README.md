@@ -47,7 +47,25 @@ rows, ratio/pitch curve fields, and listening-note slots. The `--output` path is
 local evidence and should not be committed unless a future roadmap explicitly
 defines an artifact location.
 
+Add optional external rendered-output comparisons with repeated
+`--external-benchmark-render` groups:
+
+```bash
+cargo run -p signal-dsp-stretch --bin stretch-corpus-report -- \
+  --report-name stretch-corpus-v1-local \
+  --projection-epoch projection:local \
+  --external-benchmark-tool rubberband-cli \
+  --external-benchmark-render stretch:loop_seam 1.0 \
+    fixtures/stretch-corpus/external-benchmark/rubberband-loop-seam-1x.wav \
+  --output target/stretch-corpus-v1-local.txt
+```
+
+This is a rendered-output-only comparison. Signal reads WAV metadata from the
+operator-supplied file and records timing drift when the case maps to a
+Signal-generated source. Signal does not run, link, vendor, translate, or depend
+on Rubber Band.
+
 ## Next Task
 
-Implement the optional external benchmark comparison path from `g10.021` Batch
-21.3.
+Use the completed `g10.021` evidence runner to collect operator-supplied real
+listening material and optional external rendered-output comparisons.

@@ -43,11 +43,17 @@ audio.
 
 ## External Benchmark Policy
 
-Rubber Band may be used as an optional command-line behavioral comparator once
-Batch 21.3 exists. The runner may compare against rendered outputs from that
-tool, but Signal must not depend on Rubber Band source or libraries.
+Rubber Band may be used as an optional command-line behavioral comparator. The
+runner may compare against rendered outputs from that tool, but Signal must not
+depend on Rubber Band source or libraries.
+
+`stretch-corpus-report` accepts external rendered WAVs through
+`--external-benchmark-render CASE RATIO WAV`. Signal reads rendered metadata and
+records timing drift when the case maps to Signal-generated source. The boundary
+is rendered output only; no external source code, libraries, or translated
+implementation details are allowed.
 
 ## Next Task
 
-Implement `g10.021` Batch 21.3: optional external benchmark render comparison
-for this manifest, with the clean-room source boundary documented.
+Collect operator-supplied licensed listening material and optional external
+rendered-output comparisons for the first real report.
