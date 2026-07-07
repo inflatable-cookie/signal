@@ -84,6 +84,11 @@ fn scan_clap_root(root: &str, probe_capabilities: bool) -> Vec<ClapDiscoveredPlu
     if metadata.is_file() {
         return discover_from_clap_library(&root, probe_capabilities).unwrap_or_default();
     }
+    if path_extension_matches(&root, "clap") {
+        return clap_bundle_binary(&root)
+            .and_then(|library| discover_from_clap_library(&library, probe_capabilities))
+            .unwrap_or_default();
+    }
 
     collect_clap_candidates(&root)
         .into_iter()
@@ -99,27 +104,25 @@ fn collect_clap_candidates(root: &Path) -> Vec<PathBuf> {
         for entry in entries.flatten() {
             let path = entry.path();
             if path.is_dir() {
-                if path
-                    .extension()
-                    .and_then(|extension| extension.to_str())
-                    .is_some_and(|extension| extension.eq_ignore_ascii_case("clap"))
-                {
+                if path_extension_matches(&path, "clap") {
                     if let Some(bundle_binary) = clap_bundle_binary(&path) {
                         candidates.push(bundle_binary);
                     }
                 } else {
                     candidates.extend(collect_clap_candidates(&path));
                 }
-            } else if path
-                .extension()
-                .and_then(|extension| extension.to_str())
-                .is_some_and(|extension| extension.eq_ignore_ascii_case("clap"))
-            {
+            } else if path_extension_matches(&path, "clap") {
                 candidates.push(path);
             }
         }
     }
     candidates
+}
+
+fn path_extension_matches(path: &Path, extension: &str) -> bool {
+    path.extension()
+        .and_then(|value| value.to_str())
+        .is_some_and(|value| value.eq_ignore_ascii_case(extension))
 }
 
 fn clap_bundle_binary(bundle_root: &Path) -> Option<PathBuf> {

@@ -58,6 +58,35 @@ fn clap_adapter_descriptor_only_scan_never_instantiates_plugins() {
 }
 
 #[test]
+fn clap_adapter_discovers_direct_macos_bundle_root() {
+    let adapter = ClapPluginHostAdapter::default();
+    let scan_root = temp_real_clap_scan_root(
+        "com.signal.bundle-root-fixture",
+        "Signal Bundle Root Fixture",
+        0,
+    );
+    let compiled = scan_root.path().join("signal-bundle-root-fixture.clap");
+    let bundle = scan_root.path().join("Signal Bundle Root Fixture.clap");
+    let bundle_binary = bundle
+        .join("Contents")
+        .join("MacOS")
+        .join("Signal Bundle Root Fixture");
+    std::fs::create_dir_all(bundle_binary.parent().expect("bundle binary parent"))
+        .expect("bundle dirs");
+    std::fs::rename(compiled, &bundle_binary).expect("fixture moved into bundle");
+
+    let discovered = adapter.discover_plugins_for_roots(&[bundle.display().to_string()]);
+
+    assert_eq!(discovered.len(), 1);
+    let discovered = &discovered[0];
+    assert_eq!(
+        discovered.plugin_type_id.0,
+        "com.signal.bundle-root-fixture"
+    );
+    assert_eq!(discovered.library_path, bundle_binary.display().to_string());
+}
+
+#[test]
 fn clap_adapter_opt_in_capability_probe_reads_full_plugin_shape() {
     let adapter = ClapPluginHostAdapter::default();
     let scan_root = temp_real_clap_scan_root(
