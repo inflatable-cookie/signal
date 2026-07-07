@@ -240,12 +240,22 @@ comparison reports, not add more receipt or fixture surfaces.
   `000900.mp3` at `0.75x`, where draft max smear is `2` frames and
   OfflineHighQuality max smear is `13` frames after both match all 5 production
   input transients.
+- 2026-07-07: added max-matched-smear event diagnostics to the transient-smear
+  measurement and decoded report. The broader FMA diagnostic report kept the
+  same promoted-metric shape: 40 improved, 10 unchanged, 9 inconclusive, and 1
+  regressed transient-smear row. The regressed row is a real matched-event
+  width issue, not a missing-transient penalty: both draft and OfflineHighQuality
+  match all 5 promoted input transients on `stretch:pads_sustains` `000900.mp3`
+  at `0.75x`. The worst event is input frame `153344`; draft maps it to output
+  frame `115456` and widens `7` input frames to `9` output frames, while
+  OfflineHighQuality maps it to output frame `115200` and widens `7` input
+  frames to `20` output frames.
 
 ## Next Task
 
 Do not add a multiresolution or hybrid path until measured evidence requires
-it. Next useful work is to investigate the promoted-metric finite-smear
-regression on `stretch:pads_sustains` `000900.mp3` at `0.75x`, then decide
-whether the fix belongs in transient anchoring, local reconstruction, or
-sustained-material coherence. Keep the strict baseline and recovery-gate fields
-in the report while making that DSP choice.
+it. Next useful work is to run an ablation that compares compression
+phase-locking against the independent-bin draft path on the `000900.mp3`
+matched-smear event and the broader FMA seed. Do not switch the compression
+path globally unless the ablation holds timing, sustained coherence, and
+transient-smear outcomes across the corpus.

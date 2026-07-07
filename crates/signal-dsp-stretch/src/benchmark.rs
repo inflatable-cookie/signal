@@ -574,6 +574,16 @@ pub struct StretchTransientSmearMeasurement {
     pub mean_smear_frames: f64,
     /// Worst positive attack widening in sample frames.
     pub max_smear_frames: f64,
+    /// Worst positive attack widening among matched transient events only.
+    pub max_matched_smear_frames: f64,
+    /// Input frame for the worst matched transient smear event.
+    pub max_matched_input_frame: f64,
+    /// Output frame for the worst matched transient smear event.
+    pub max_matched_output_frame: f64,
+    /// Input attack width for the worst matched transient smear event.
+    pub max_matched_input_width_frames: f64,
+    /// Output attack width for the worst matched transient smear event.
+    pub max_matched_output_width_frames: f64,
     /// Metric reported to the acceptance harness.
     pub metric: StretchMetricValue,
 }
@@ -826,6 +836,11 @@ pub fn measure_transient_smear_with_policies(
     let mut matched = 0usize;
     let mut smear_sum = 0.0f64;
     let mut max_smear = 0.0f64;
+    let mut max_matched_smear = f64::NAN;
+    let mut max_matched_input_frame = f64::NAN;
+    let mut max_matched_output_frame = f64::NAN;
+    let mut max_matched_input_width = f64::NAN;
+    let mut max_matched_output_width = f64::NAN;
     let tolerance = window_size.max(hop_size * 4) as f64;
 
     for input_event in &input_events {
@@ -843,6 +858,13 @@ pub fn measure_transient_smear_with_policies(
         let smear = (output_width - input_width).max(0.0);
         matched += 1;
         smear_sum += smear;
+        if !max_matched_smear.is_finite() || smear > max_matched_smear {
+            max_matched_smear = smear;
+            max_matched_input_frame = input_event.frame_index as f64;
+            max_matched_output_frame = output_event.frame_index as f64;
+            max_matched_input_width = input_width;
+            max_matched_output_width = output_width;
+        }
         max_smear = max_smear.max(smear);
     }
 
@@ -872,6 +894,11 @@ pub fn measure_transient_smear_with_policies(
         missed_transients: missed,
         mean_smear_frames: mean_smear,
         max_smear_frames: max_smear,
+        max_matched_smear_frames: max_matched_smear,
+        max_matched_input_frame,
+        max_matched_output_frame,
+        max_matched_input_width_frames: max_matched_input_width,
+        max_matched_output_width_frames: max_matched_output_width,
         metric: StretchMetricValue::new(StretchMetric::TransientSmearFrames, max_smear),
     }
 }
@@ -908,6 +935,11 @@ pub fn measure_transient_smear_with_output_recovery_policy(
     let mut matched = 0usize;
     let mut smear_sum = 0.0f64;
     let mut max_smear = 0.0f64;
+    let mut max_matched_smear = f64::NAN;
+    let mut max_matched_input_frame = f64::NAN;
+    let mut max_matched_output_frame = f64::NAN;
+    let mut max_matched_input_width = f64::NAN;
+    let mut max_matched_output_width = f64::NAN;
     let tolerance = window_size.max(hop_size * 4) as f64;
 
     for input_event in &input_events {
@@ -927,6 +959,13 @@ pub fn measure_transient_smear_with_output_recovery_policy(
         let smear = (output_width - input_width).max(0.0);
         matched += 1;
         smear_sum += smear;
+        if !max_matched_smear.is_finite() || smear > max_matched_smear {
+            max_matched_smear = smear;
+            max_matched_input_frame = input_event.frame_index as f64;
+            max_matched_output_frame = output_event.frame_index as f64;
+            max_matched_input_width = input_width;
+            max_matched_output_width = output_width;
+        }
         max_smear = max_smear.max(smear);
     }
 
@@ -956,6 +995,11 @@ pub fn measure_transient_smear_with_output_recovery_policy(
         missed_transients: missed,
         mean_smear_frames: mean_smear,
         max_smear_frames: max_smear,
+        max_matched_smear_frames: max_matched_smear,
+        max_matched_input_frame,
+        max_matched_output_frame,
+        max_matched_input_width_frames: max_matched_input_width,
+        max_matched_output_width_frames: max_matched_output_width,
         metric: StretchMetricValue::new(StretchMetric::TransientSmearFrames, max_smear),
     }
 }
@@ -2021,6 +2065,11 @@ fn transient_smear_nan(ratio: f64) -> StretchTransientSmearMeasurement {
         missed_transients: 0,
         mean_smear_frames: f64::NAN,
         max_smear_frames: f64::NAN,
+        max_matched_smear_frames: f64::NAN,
+        max_matched_input_frame: f64::NAN,
+        max_matched_output_frame: f64::NAN,
+        max_matched_input_width_frames: f64::NAN,
+        max_matched_output_width_frames: f64::NAN,
         metric: StretchMetricValue::new(StretchMetric::TransientSmearFrames, f64::NAN),
     }
 }
