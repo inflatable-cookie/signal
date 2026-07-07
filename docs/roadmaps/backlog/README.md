@@ -15,8 +15,7 @@ Each backlog item should include effort estimate, promotion trigger, and success
 
 ## Current Items
 
-- `signal-native-high-quality-stretch.md` — first-party Rubber Band-class
-  stretch/pitch program for a future Loophole/Signal lane
+No current backlog items.
 
 ## Next task
 

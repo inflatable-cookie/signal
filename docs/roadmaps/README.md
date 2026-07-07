@@ -32,10 +32,14 @@ CI. Phase two planned (010-020): the engine build-out on the surviving seed
 parameter fast path + automation (012), DSP kit (013), RT observability
 (014), WYSIWYG bounce (015), output-time honesty (016), recording (017),
 disk streaming (018), transport regions (019), runtime endgame (020).
+Phase three planned (021-025): first-party high-quality stretch work —
+real corpus/benchmark evidence (021), OfflineHighQuality DSP depth (022),
+offline artifact scale and format depth (023), RealtimePreview tier (024),
+and product workflow contract checkpoint (025).
 Assessment driving phase two:
 `docs/research/2026-06-11-post-demolition-assessment.md`. Plugin hosting,
-MIDI, stretch, PDC stay in `backlog/post-g10-rebuild-on-demand.md` until
-their prerequisites land.
+MIDI, higher-quality SRC, and PDC stay in
+`backlog/post-g10-rebuild-on-demand.md` until their prerequisites land.
 
 `g06`, `g07`, `g08`, and `g09` are complete. The earlier post-`g08` backlog
 note remains in

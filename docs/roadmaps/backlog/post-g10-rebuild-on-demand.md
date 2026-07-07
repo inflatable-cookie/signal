@@ -33,13 +33,7 @@ device selection UI contract. Builds on g10.003's cpal enumeration.
 
 ## Resampling/time domain
 
-Disk streaming for long media; time-stretch; higher-quality SRC tiers beyond
-the g10.008 polyphase table.
-
-Time-stretch is now split into a dedicated first-party quality program:
-`signal-native-high-quality-stretch.md`. Treat that item as the authority for
-Rubber Band-class stretch/pitch planning rather than promoting a shallow
-fallback.
+Higher-quality SRC tiers beyond the g10.008 polyphase table remain deferred.
 
 ## Beat tracking upgrade
 
