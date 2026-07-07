@@ -2066,19 +2066,32 @@ mod tests {
     }
 
     #[test]
-    fn transient_smear_policy_default_matches_production_entry_point() {
-        let input = masked_soft_attack_probe(0.25);
-        let production = measure_transient_smear(&input, &input, 1.0, 1024, 256);
-        let explicit = measure_transient_smear_with_policy(
+    fn transient_smear_entry_point_uses_promoted_output_recovery_policy() {
+        let input = masked_soft_attack_probe(1.0);
+        let output = masked_soft_attack_probe(0.25);
+        let promoted = measure_transient_smear(&input, &output, 1.0, 1024, 256);
+        let strict = measure_transient_smear_with_policy(
             &input,
-            &input,
+            &output,
             1.0,
             1024,
             256,
             StretchTransientDetectorPolicy::production(),
         );
+        let recovery = measure_transient_smear_with_output_recovery_policy(
+            &input,
+            &output,
+            1.0,
+            1024,
+            256,
+            StretchTransientDetectorPolicy::production(),
+            StretchTransientDetectorPolicy::production(),
+            StretchTransientDetectorPolicy::candidate_review(),
+        );
 
-        assert_eq!(production, explicit);
+        assert_eq!(promoted, recovery);
+        assert!(promoted.matched_transients > strict.matched_transients);
+        assert!(promoted.missed_transients < strict.missed_transients);
     }
 
     #[test]

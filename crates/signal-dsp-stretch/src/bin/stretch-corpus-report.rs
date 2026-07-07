@@ -771,19 +771,21 @@ fn format_decoded_stretch_metrics(
                 None,
             ));
 
-            let draft_smear = measure_transient_smear(
+            let draft_strict_smear = measure_transient_smear_with_policy(
                 &mono,
                 &draft_output,
                 ratio,
                 QUALITY_METRIC_WINDOW_SIZE,
                 QUALITY_METRIC_HOP_SIZE,
+                DETECTOR_POLICY,
             );
-            let offline_smear = measure_transient_smear(
+            let offline_strict_smear = measure_transient_smear_with_policy(
                 &mono,
                 &offline_output,
                 ratio,
                 QUALITY_METRIC_WINDOW_SIZE,
                 QUALITY_METRIC_HOP_SIZE,
+                DETECTOR_POLICY,
             );
             let draft_candidate_smear = measure_transient_smear_with_policy(
                 &mono,
@@ -841,13 +843,27 @@ fn format_decoded_stretch_metrics(
                     DETECTOR_POLICY,
                     CANDIDATE_DETECTOR_POLICY,
                 );
+            let draft_smear = measure_transient_smear(
+                &mono,
+                &draft_output,
+                ratio,
+                QUALITY_METRIC_WINDOW_SIZE,
+                QUALITY_METRIC_HOP_SIZE,
+            );
+            let offline_smear = measure_transient_smear(
+                &mono,
+                &offline_output,
+                ratio,
+                QUALITY_METRIC_WINDOW_SIZE,
+                QUALITY_METRIC_HOP_SIZE,
+            );
             draft_recovery_gate.record(
-                &draft_smear,
+                &draft_strict_smear,
                 &draft_candidate_smear,
                 &draft_candidate_recovery_smear,
             );
             offline_recovery_gate.record(
-                &offline_smear,
+                &offline_strict_smear,
                 &offline_candidate_smear,
                 &offline_candidate_recovery_smear,
             );
@@ -862,6 +878,8 @@ fn format_decoded_stretch_metrics(
                 Some(format_transient_metric_detail(
                     &draft_smear,
                     &offline_smear,
+                    &draft_strict_smear,
+                    &offline_strict_smear,
                     &draft_candidate_smear,
                     &offline_candidate_smear,
                     &draft_candidate_output_smear,
@@ -1436,6 +1454,8 @@ fn detector_shape_nan() -> DetectorShape {
 fn format_transient_metric_detail(
     draft_smear: &signal_dsp_stretch::StretchTransientSmearMeasurement,
     offline_smear: &signal_dsp_stretch::StretchTransientSmearMeasurement,
+    draft_strict_smear: &signal_dsp_stretch::StretchTransientSmearMeasurement,
+    offline_strict_smear: &signal_dsp_stretch::StretchTransientSmearMeasurement,
     draft_candidate_smear: &signal_dsp_stretch::StretchTransientSmearMeasurement,
     offline_candidate_smear: &signal_dsp_stretch::StretchTransientSmearMeasurement,
     draft_candidate_output_smear: &signal_dsp_stretch::StretchTransientSmearMeasurement,
@@ -1446,11 +1466,16 @@ fn format_transient_metric_detail(
     offline_alignment: &TransientAlignmentDiagnostic,
 ) -> String {
     format!(
-        "draft_input_transients={} draft_output_transients={} draft_matched_transients={} draft_missed_transients={} draft_candidate_input_transients={} draft_candidate_output_transients={} draft_candidate_matched_transients={} draft_candidate_missed_transients={} draft_candidate_max_smear_frames={:.6} draft_candidate_output_matched_transients={} draft_candidate_output_missed_transients={} draft_candidate_output_max_smear_frames={:.6} draft_candidate_recovery_matched_transients={} draft_candidate_recovery_missed_transients={} draft_candidate_recovery_max_smear_frames={:.6} draft_mean_match_error_frames={:.6} draft_max_match_error_frames={:.6} draft_mean_missed_nearest_distance_frames={:.6} draft_max_missed_nearest_distance_frames={:.6} draft_max_missed_expected_output_frame={:.6} draft_max_missed_nearest_output_frame={:.6} offline_input_transients={} offline_output_transients={} offline_matched_transients={} offline_missed_transients={} offline_candidate_input_transients={} offline_candidate_output_transients={} offline_candidate_matched_transients={} offline_candidate_missed_transients={} offline_candidate_max_smear_frames={:.6} offline_candidate_output_matched_transients={} offline_candidate_output_missed_transients={} offline_candidate_output_max_smear_frames={:.6} offline_candidate_recovery_matched_transients={} offline_candidate_recovery_missed_transients={} offline_candidate_recovery_max_smear_frames={:.6} offline_mean_match_error_frames={:.6} offline_max_match_error_frames={:.6} offline_mean_missed_nearest_distance_frames={:.6} offline_max_missed_nearest_distance_frames={:.6} offline_max_missed_expected_output_frame={:.6} offline_max_missed_nearest_output_frame={:.6}",
+        "draft_input_transients={} draft_output_transients={} draft_matched_transients={} draft_missed_transients={} draft_strict_input_transients={} draft_strict_output_transients={} draft_strict_matched_transients={} draft_strict_missed_transients={} draft_strict_max_smear_frames={:.6} draft_candidate_input_transients={} draft_candidate_output_transients={} draft_candidate_matched_transients={} draft_candidate_missed_transients={} draft_candidate_max_smear_frames={:.6} draft_candidate_output_matched_transients={} draft_candidate_output_missed_transients={} draft_candidate_output_max_smear_frames={:.6} draft_candidate_recovery_matched_transients={} draft_candidate_recovery_missed_transients={} draft_candidate_recovery_max_smear_frames={:.6} draft_mean_match_error_frames={:.6} draft_max_match_error_frames={:.6} draft_mean_missed_nearest_distance_frames={:.6} draft_max_missed_nearest_distance_frames={:.6} draft_max_missed_expected_output_frame={:.6} draft_max_missed_nearest_output_frame={:.6} offline_input_transients={} offline_output_transients={} offline_matched_transients={} offline_missed_transients={} offline_strict_input_transients={} offline_strict_output_transients={} offline_strict_matched_transients={} offline_strict_missed_transients={} offline_strict_max_smear_frames={:.6} offline_candidate_input_transients={} offline_candidate_output_transients={} offline_candidate_matched_transients={} offline_candidate_missed_transients={} offline_candidate_max_smear_frames={:.6} offline_candidate_output_matched_transients={} offline_candidate_output_missed_transients={} offline_candidate_output_max_smear_frames={:.6} offline_candidate_recovery_matched_transients={} offline_candidate_recovery_missed_transients={} offline_candidate_recovery_max_smear_frames={:.6} offline_mean_match_error_frames={:.6} offline_max_match_error_frames={:.6} offline_mean_missed_nearest_distance_frames={:.6} offline_max_missed_nearest_distance_frames={:.6} offline_max_missed_expected_output_frame={:.6} offline_max_missed_nearest_output_frame={:.6}",
         draft_smear.input_transients,
         draft_smear.output_transients,
         draft_smear.matched_transients,
         draft_smear.missed_transients,
+        draft_strict_smear.input_transients,
+        draft_strict_smear.output_transients,
+        draft_strict_smear.matched_transients,
+        draft_strict_smear.missed_transients,
+        draft_strict_smear.max_smear_frames,
         draft_candidate_smear.input_transients,
         draft_candidate_smear.output_transients,
         draft_candidate_smear.matched_transients,
@@ -1472,6 +1497,11 @@ fn format_transient_metric_detail(
         offline_smear.output_transients,
         offline_smear.matched_transients,
         offline_smear.missed_transients,
+        offline_strict_smear.input_transients,
+        offline_strict_smear.output_transients,
+        offline_strict_smear.matched_transients,
+        offline_strict_smear.missed_transients,
+        offline_strict_smear.max_smear_frames,
         offline_candidate_smear.input_transients,
         offline_candidate_smear.output_transients,
         offline_candidate_smear.matched_transients,
@@ -1933,6 +1963,9 @@ mod tests {
         assert!(formatted.contains("global_threshold_status="));
         assert!(formatted.contains("full_candidate_input_ratio="));
         assert!(formatted.contains("offline_matched_transients="));
+        assert!(formatted.contains("offline_strict_matched_transients="));
+        assert!(formatted.contains("offline_strict_missed_transients="));
+        assert!(formatted.contains("offline_strict_max_smear_frames="));
         assert!(formatted.contains("offline_candidate_matched_transients="));
         assert!(formatted.contains("offline_candidate_missed_transients="));
         assert!(formatted.contains("offline_candidate_max_smear_frames="));

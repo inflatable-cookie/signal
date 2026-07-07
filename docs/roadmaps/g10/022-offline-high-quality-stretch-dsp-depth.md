@@ -227,11 +227,25 @@ comparison reports, not add more receipt or fixture surfaces.
   0, and full-candidate input pressure rose to `3.681159` against the `2.0`
   limit. This satisfies the broader decoded-source stability condition for a
   production metric-policy decision.
+- 2026-07-07: promoted targeted output recovery into the production
+  transient-smear metric policy. The public metric now keeps production input
+  and primary output detection, then applies candidate-review output detection
+  only to production misses. The decoded report keeps strict production-only
+  fields for the recovery gate and comparison evidence. On the broader FMA seed,
+  the recovery gate stayed unchanged: OfflineHighQuality recovered 44 misses,
+  had 0 missed-row worsens, 0 max-smear worsens, and still rejected global
+  threshold relaxation at `3.681159` input pressure. The promoted decoded metric
+  now reports 40 improved, 10 unchanged, 9 inconclusive, and 1 regressed
+  transient-smear row. The regression is `stretch:pads_sustains` on
+  `000900.mp3` at `0.75x`, where draft max smear is `2` frames and
+  OfflineHighQuality max smear is `13` frames after both match all 5 production
+  input transients.
 
 ## Next Task
 
 Do not add a multiresolution or hybrid path until measured evidence requires
-it. Next useful work is to promote targeted output recovery into the production
-transient-smear metric policy, keeping the global candidate threshold rejected
-and preserving report fields that show recovery/gate evidence separately. This
-changes acceptance measurement, not stretch synthesis.
+it. Next useful work is to investigate the promoted-metric finite-smear
+regression on `stretch:pads_sustains` `000900.mp3` at `0.75x`, then decide
+whether the fix belongs in transient anchoring, local reconstruction, or
+sustained-material coherence. Keep the strict baseline and recovery-gate fields
+in the report while making that DSP choice.

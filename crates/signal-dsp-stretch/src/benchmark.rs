@@ -766,20 +766,22 @@ pub fn measure_transient_smear(
     window_size: usize,
     hop_size: usize,
 ) -> StretchTransientSmearMeasurement {
-    measure_transient_smear_with_policy(
+    measure_transient_smear_with_output_recovery_policy(
         input,
         output,
         ratio,
         window_size,
         hop_size,
         StretchTransientDetectorPolicy::production(),
+        StretchTransientDetectorPolicy::production(),
+        StretchTransientDetectorPolicy::candidate_review(),
     )
 }
 
 /// Measure transient attack widening with an explicit detector policy.
 ///
-/// This is for benchmark/report evidence. Production callers should keep using
-/// [`measure_transient_smear`] unless a policy change has been promoted.
+/// This is for benchmark/report evidence where strict detector-policy baselines
+/// or global-threshold candidates need to stay visible.
 pub fn measure_transient_smear_with_policy(
     input: &[Sample],
     output: &[Sample],
@@ -877,8 +879,8 @@ pub fn measure_transient_smear_with_policies(
 /// Measure transient smear by preserving production input/output detection and
 /// using a recovery output policy only for production misses.
 ///
-/// This is an evidence path for output-side detector normalization. It must not
-/// replace the production metric until promoted by corpus evidence.
+/// The production transient-smear metric uses this path with production input
+/// and primary output policies plus candidate-review output recovery.
 pub fn measure_transient_smear_with_output_recovery_policy(
     input: &[Sample],
     output: &[Sample],
