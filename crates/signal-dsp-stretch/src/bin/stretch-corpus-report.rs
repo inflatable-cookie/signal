@@ -29,6 +29,7 @@ const DEFAULT_DECODE_SOURCE_FRAME_LIMIT: usize = 48_000 * 60;
 const DEFAULT_DECODED_STRETCH_FRAME_LIMIT: usize = 48_000 * 10;
 const QUALITY_METRIC_WINDOW_SIZE: usize = 1_024;
 const QUALITY_METRIC_HOP_SIZE: usize = 256;
+const MAX_TRANSIENT_ALIGNMENT_EVENTS_PER_BACKEND: usize = 3;
 
 #[derive(Debug, PartialEq, Eq)]
 struct ReportArgs {
@@ -783,12 +784,24 @@ fn format_decoded_stretch_metrics(
                     &offline_alignment,
                 )),
             ));
+            lines.extend(format_transient_alignment_event_lines(
+                &audio,
+                ratio,
+                "draft",
+                &draft_alignment,
+            ));
+            lines.extend(format_transient_alignment_event_lines(
+                &audio,
+                ratio,
+                "offline_hq",
+                &offline_alignment,
+            ));
         }
     }
     Ok(lines.join("\n"))
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 struct TransientAlignmentDiagnostic {
     mean_match_error_frames: f64,
     max_match_error_frames: f64,
@@ -796,6 +809,15 @@ struct TransientAlignmentDiagnostic {
     max_missed_nearest_distance_frames: f64,
     max_missed_expected_output_frame: f64,
     max_missed_nearest_output_frame: f64,
+    missed_events: Vec<TransientAlignmentMissEvent>,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+struct TransientAlignmentMissEvent {
+    input_frame: usize,
+    expected_output_frame: f64,
+    nearest_output_frame: Option<f64>,
+    nearest_distance_frames: f64,
 }
 
 fn transient_alignment_diagnostic(
@@ -820,6 +842,7 @@ fn transient_alignment_diagnostic(
     let mut missed_nearest_max = 0.0f64;
     let mut max_missed_expected_output_frame = f64::NAN;
     let mut max_missed_nearest_output_frame = f64::NAN;
+    let mut missed_events = Vec::new();
 
     for input_event in input_events {
         let expected_output_frame = input_event.frame_index as f64 * ratio;
@@ -833,15 +856,34 @@ fn transient_alignment_diagnostic(
             Some((distance, nearest_frame)) => {
                 missed_nearest_count += 1;
                 missed_nearest_sum += distance;
+                missed_events.push(TransientAlignmentMissEvent {
+                    input_frame: input_event.frame_index,
+                    expected_output_frame,
+                    nearest_output_frame: Some(nearest_frame),
+                    nearest_distance_frames: distance,
+                });
                 if distance > missed_nearest_max {
                     missed_nearest_max = distance;
                     max_missed_expected_output_frame = expected_output_frame;
                     max_missed_nearest_output_frame = nearest_frame;
                 }
             }
-            None => {}
+            None => {
+                missed_events.push(TransientAlignmentMissEvent {
+                    input_frame: input_event.frame_index,
+                    expected_output_frame,
+                    nearest_output_frame: None,
+                    nearest_distance_frames: f64::NAN,
+                });
+            }
         }
     }
+    missed_events.sort_by(|left, right| {
+        right
+            .nearest_distance_frames
+            .total_cmp(&left.nearest_distance_frames)
+    });
+    missed_events.truncate(MAX_TRANSIENT_ALIGNMENT_EVENTS_PER_BACKEND);
 
     TransientAlignmentDiagnostic {
         mean_match_error_frames: if matched_count > 0 {
@@ -874,6 +916,7 @@ fn transient_alignment_diagnostic(
         } else {
             f64::NAN
         },
+        missed_events,
     }
 }
 
@@ -885,6 +928,7 @@ fn transient_alignment_nan() -> TransientAlignmentDiagnostic {
         max_missed_nearest_distance_frames: f64::NAN,
         max_missed_expected_output_frame: f64::NAN,
         max_missed_nearest_output_frame: f64::NAN,
+        missed_events: Vec::new(),
     }
 }
 
@@ -930,6 +974,34 @@ fn format_transient_metric_detail(
         offline_alignment.max_missed_expected_output_frame,
         offline_alignment.max_missed_nearest_output_frame,
     )
+}
+
+fn format_transient_alignment_event_lines(
+    audio: &DecodedListeningSourceAudio,
+    ratio: f64,
+    backend: &str,
+    alignment: &TransientAlignmentDiagnostic,
+) -> Vec<String> {
+    alignment
+        .missed_events
+        .iter()
+        .enumerate()
+        .map(|(rank, event)| {
+            format!(
+                "decoded_transient_alignment_event case={} source={} ratio={:.6} backend={} rank={} input_frame={} expected_output_frame={:.6} nearest_output_frame={:.6} nearest_distance_frames={:.6} tolerance_frames={}",
+                audio.case_id,
+                quoted_report_field(&audio.source_path),
+                ratio,
+                backend,
+                rank + 1,
+                event.input_frame,
+                event.expected_output_frame,
+                event.nearest_output_frame.unwrap_or(f64::NAN),
+                event.nearest_distance_frames,
+                QUALITY_METRIC_WINDOW_SIZE.max(QUALITY_METRIC_HOP_SIZE * 4),
+            )
+        })
+        .collect()
 }
 
 fn listening_source_ratios(case_id: &str) -> Result<&'static [f64], String> {
@@ -1231,6 +1303,50 @@ mod tests {
         assert!(formatted.contains("analysis_limited=true"));
 
         let _ = fs::remove_file(path);
+    }
+
+    #[test]
+    fn transient_alignment_event_rows_are_capped_and_sorted() {
+        let audio = DecodedListeningSourceAudio {
+            case_id: "stretch:bass".to_string(),
+            source_path: "target/source.wav".to_string(),
+            sample_rate_hz: 48_000,
+            channels: 2,
+            samples: vec![0.0; 4_096],
+            analysis_limited: true,
+        };
+        let alignment = TransientAlignmentDiagnostic {
+            mean_match_error_frames: f64::NAN,
+            max_match_error_frames: f64::NAN,
+            mean_missed_nearest_distance_frames: 2_000.0,
+            max_missed_nearest_distance_frames: 3_000.0,
+            max_missed_expected_output_frame: 4_000.0,
+            max_missed_nearest_output_frame: 7_000.0,
+            missed_events: vec![
+                TransientAlignmentMissEvent {
+                    input_frame: 128,
+                    expected_output_frame: 160.0,
+                    nearest_output_frame: Some(3_160.0),
+                    nearest_distance_frames: 3_000.0,
+                },
+                TransientAlignmentMissEvent {
+                    input_frame: 256,
+                    expected_output_frame: 320.0,
+                    nearest_output_frame: Some(1_320.0),
+                    nearest_distance_frames: 1_000.0,
+                },
+            ],
+        };
+
+        let lines = format_transient_alignment_event_lines(&audio, 1.25, "offline_hq", &alignment);
+
+        assert_eq!(lines.len(), 2);
+        assert!(lines[0].starts_with("decoded_transient_alignment_event case=stretch:bass"));
+        assert!(lines[0].contains("backend=offline_hq rank=1 input_frame=128"));
+        assert!(lines[0].contains("expected_output_frame=160.000000"));
+        assert!(lines[0].contains("nearest_output_frame=3160.000000"));
+        assert!(lines[0].contains("nearest_distance_frames=3000.000000"));
+        assert!(lines[0].contains("tolerance_frames=1024"));
     }
 
     fn write_test_wav(path: &PathBuf, frames: usize) {

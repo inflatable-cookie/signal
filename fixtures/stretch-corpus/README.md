@@ -64,7 +64,9 @@ output, matched, and missed transient counts for each backend so high penalties
 can be separated from true attack widening. They also include mean/max timing
 error for matched transients and mean/max nearest-output distance for missed
 transients, plus the expected and nearest output frame for the largest missed
-distance, so alignment failures can be sorted before DSP changes. Use
+distance, so alignment failures can be sorted before DSP changes. The report
+also emits capped `decoded_transient_alignment_event` rows for the largest
+missed events per backend and ratio. Use
 `--decoded-stretch-frame-limit N` to change the excerpt size; the default is
 ten seconds at 48 kHz. These rows are objective evidence, not a replacement
 for listened curation.

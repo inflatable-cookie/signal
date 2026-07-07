@@ -130,12 +130,20 @@ comparison reports, not add more receipt or fixture surfaces.
   was `89088`. Other high misses land tens of thousands of frames away. This
   narrows the next question to early-window event preservation/detection before
   another DSP algorithm change.
+- 2026-07-07: added capped `decoded_transient_alignment_event` rows for the
+  largest missed transient events per backend and ratio. The local FMA review
+  seed emitted 80 event rows: 58 draft and 22 OfflineHighQuality. The top two
+  OfflineHighQuality misses are both `stretch:bass` `1.25x` on `000384.mp3`
+  early events: input frame `1280` expects output frame `1600` but nearest
+  detected output is `89088`, and input frame `7168` expects `8960` but again
+  lands nearest to `89088`. This makes the next investigation concrete:
+  preserve or detect early output attacks in that source window.
 
 ## Next Task
 
 Do not add a multiresolution or hybrid path until measured evidence requires
-it. Next useful work is to inspect the largest missed-nearest rows by source,
-ratio, and per-event transient list, then decide whether the next batch targets
-early-window output event preservation, transient detection alignment, or corpus
-window selection. Listened real-source curation and external rendered-output
-comparison remain promotion inputs.
+it. Next useful work is to inspect the `000384.mp3` bass `1.25x` early-window
+render around expected frames `1600` and `8960`, then decide whether the next
+batch targets early-output event preservation or transient detection alignment.
+Listened real-source curation and external rendered-output comparison remain
+promotion inputs.
