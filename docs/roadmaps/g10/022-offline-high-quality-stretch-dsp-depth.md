@@ -430,6 +430,24 @@ comparison reports, not add more receipt or fixture surfaces.
   divergence was `stretch:pads_sustains` `000870.wav` at `1.5x` with ratio
   `2.246718`. Treat that as an inspection queue for phase/envelope/perceptual
   metrics, not as a sample-difference pass/fail verdict.
+- 2026-07-07: added `external_benchmark_feature_delta` rows beside the existing
+  black-box quality rows. The new report-only row measures aligned envelope
+  correlation, RMS and peak deltas, zero-crossing-rate delta, spectral-centroid
+  delta, high-frequency energy-ratio delta, and a bounded divergence score.
+  It uses only Signal output and rendered comparator WAVs; it does not invoke
+  or link comparator DSP. The regenerated broad Rubber Band R3 report emitted
+  60 feature rows. Mean divergence score was `0.744393`, max was `1.459699`,
+  minimum envelope correlation was `0.541594`, mean absolute RMS delta was
+  `1.935619` dB, mean absolute peak delta was `2.241843` dB, mean absolute
+  spectral-centroid delta was `179.261112` Hz, and mean absolute high-frequency
+  energy-ratio delta was `0.001997`. The top feature-divergence rows were
+  `stretch:pads_sustains` `000870.wav` at `1.5x` (`score=1.459699`,
+  `rms_delta_db=6.716807`), `stretch:full_mix` `000190.wav` at `1.25x`
+  (`score=1.292193`, `rms_delta_db=4.722903`), and `stretch:pads_sustains`
+  `000870.wav` at `0.75x` (`score=1.254252`, `rms_delta_db=5.137926`).
+  This points the next listening or metric pass toward gain/envelope behavior
+  on sustained/polyphonic material before treating low sample correlation as a
+  phase-vocoder failure by itself.
 
 ## Next Task
 
@@ -440,9 +458,10 @@ also rejected, and the `000900.mp3` matched-event width issue is not solved by
 window size alone. The gated shorter-window selector now clears the first broad
 FMA no-listening check and the first Rubber Band R3 black-box comparator pass.
 Next useful work is a measured quality-decision batch, still report-only:
-separate comparator findings into metric noise, likely audible phase/envelope
-differences, and actual DSP targets. Add a perceptual or feature-level
-divergence report for the worst RMS/correlation rows, preserve the existing
-timing-drift and transient-smear gates, and only then decide whether the next
-DSP promotion is the gated short-window selector, a multiresolution selector,
-or a sustained-material vertical-coherence path.
+use the feature-delta rows to separate comparator findings into metric noise,
+likely audible gain/envelope differences, and actual DSP targets. Preserve the
+existing timing-drift and transient-smear gates, add a focused gain/envelope
+normalization or vertical-coherence review for the top pads/sustains and
+full-mix divergence rows, and only then decide whether the next DSP promotion
+is the gated short-window selector, a multiresolution selector, or a
+sustained-material vertical-coherence path.

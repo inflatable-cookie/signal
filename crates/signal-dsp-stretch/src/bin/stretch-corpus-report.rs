@@ -50,6 +50,8 @@ const SHORT_WINDOW_SELECTOR_MIN_CURRENT_MISSES: usize = 1;
 const SHORT_WINDOW_SELECTOR_MIN_CURRENT_SMEAR_FRAMES: f64 = 64.0;
 const EXTERNAL_BENCHMARK_ALIGNMENT_MAX_LAG_FRAMES: isize = 2_048;
 const EXTERNAL_BENCHMARK_ALIGNMENT_MAX_COMPARE_FRAMES: usize = 65_536;
+const EXTERNAL_BENCHMARK_FEATURE_FFT_SIZE: usize = 2_048;
+const EXTERNAL_BENCHMARK_FEATURE_MAX_WINDOWS: usize = 16;
 const MAX_EXTERNAL_BENCHMARK_MISSING_RENDER_ROWS: usize = 20;
 const DETECTOR_POLICY: StretchTransientDetectorPolicy =
     StretchTransientDetectorPolicy::production();
@@ -1524,6 +1526,70 @@ impl ExternalBenchmarkQualityMeasurement {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+struct ExternalBenchmarkFeatureDeltaMeasurement {
+    case_id: String,
+    source_path: String,
+    render_path: String,
+    tool_name: String,
+    ratio: f64,
+    status: &'static str,
+    reason: &'static str,
+    source_boundary: &'static str,
+    aligned_compared_frames: usize,
+    envelope_correlation: f64,
+    signal_rms: f64,
+    external_rms: f64,
+    rms_delta_db: f64,
+    signal_peak: f64,
+    external_peak: f64,
+    peak_delta_db: f64,
+    signal_zero_crossings_per_second: f64,
+    external_zero_crossings_per_second: f64,
+    zero_crossings_delta_per_second: f64,
+    signal_spectral_centroid_hz: f64,
+    external_spectral_centroid_hz: f64,
+    spectral_centroid_delta_hz: f64,
+    signal_high_frequency_energy_ratio: f64,
+    external_high_frequency_energy_ratio: f64,
+    high_frequency_energy_ratio_delta: f64,
+    feature_divergence_score: f64,
+}
+
+impl ExternalBenchmarkFeatureDeltaMeasurement {
+    fn format_report_line(&self) -> String {
+        format!(
+            "external_benchmark_feature_delta case={} source={} ratio={:.6} tool={} render={} status={} reason={} source_boundary={} aligned_compared_frames={} envelope_correlation={:.6} signal_rms={:.9} external_rms={:.9} rms_delta_db={:.6} signal_peak={:.9} external_peak={:.9} peak_delta_db={:.6} signal_zero_crossings_per_second={:.6} external_zero_crossings_per_second={:.6} zero_crossings_delta_per_second={:.6} signal_spectral_centroid_hz={:.6} external_spectral_centroid_hz={:.6} spectral_centroid_delta_hz={:.6} signal_high_frequency_energy_ratio={:.6} external_high_frequency_energy_ratio={:.6} high_frequency_energy_ratio_delta={:.6} feature_divergence_score={:.6}",
+            self.case_id,
+            quoted_report_field(&self.source_path),
+            self.ratio,
+            quoted_report_field(&self.tool_name),
+            quoted_report_field(&self.render_path),
+            self.status,
+            self.reason,
+            quoted_report_field(self.source_boundary),
+            self.aligned_compared_frames,
+            self.envelope_correlation,
+            self.signal_rms,
+            self.external_rms,
+            self.rms_delta_db,
+            self.signal_peak,
+            self.external_peak,
+            self.peak_delta_db,
+            self.signal_zero_crossings_per_second,
+            self.external_zero_crossings_per_second,
+            self.zero_crossings_delta_per_second,
+            self.signal_spectral_centroid_hz,
+            self.external_spectral_centroid_hz,
+            self.spectral_centroid_delta_hz,
+            self.signal_high_frequency_energy_ratio,
+            self.external_high_frequency_energy_ratio,
+            self.high_frequency_energy_ratio_delta,
+            self.feature_divergence_score,
+        )
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
 struct ExternalBenchmarkDecodedAudio {
     sample_rate_hz: u32,
     channels: u16,
@@ -1622,6 +1688,12 @@ fn format_external_benchmark_quality_metrics(
             render.ratio,
         );
         let aligned = align_and_measure_error(&signal_output, &external_audio.mono_samples);
+        let feature_delta = measure_external_benchmark_feature_delta(
+            &signal_output,
+            &external_audio.mono_samples,
+            &aligned,
+            source_audio.sample_rate_hz,
+        );
 
         lines.push(
             ExternalBenchmarkQualityMeasurement {
@@ -1655,6 +1727,46 @@ fn format_external_benchmark_quality_metrics(
                 signal_rms: aligned.signal_rms,
                 external_rms: aligned.external_rms,
                 aligned_rms_error_ratio: finite_ratio(aligned.rms_error, aligned.external_rms),
+            }
+            .format_report_line(),
+        );
+        lines.push(
+            ExternalBenchmarkFeatureDeltaMeasurement {
+                case_id: render.case_id.clone(),
+                source_path: source.source_path.clone(),
+                render_path: render.rendered_path.clone(),
+                tool_name: render.tool_name.clone(),
+                ratio: render.ratio,
+                status: "Measured",
+                reason: "Ok",
+                source_boundary: "rendered-output-only; no external source or library dependency",
+                aligned_compared_frames: feature_delta.compared_frames,
+                envelope_correlation: feature_delta.envelope_correlation,
+                signal_rms: feature_delta.signal.rms,
+                external_rms: feature_delta.external.rms,
+                rms_delta_db: feature_delta.signal.rms_db - feature_delta.external.rms_db,
+                signal_peak: feature_delta.signal.peak,
+                external_peak: feature_delta.external.peak,
+                peak_delta_db: feature_delta.signal.peak_db - feature_delta.external.peak_db,
+                signal_zero_crossings_per_second: feature_delta.signal.zero_crossings_per_second,
+                external_zero_crossings_per_second: feature_delta
+                    .external
+                    .zero_crossings_per_second,
+                zero_crossings_delta_per_second: feature_delta.signal.zero_crossings_per_second
+                    - feature_delta.external.zero_crossings_per_second,
+                signal_spectral_centroid_hz: feature_delta.signal.spectral_centroid_hz,
+                external_spectral_centroid_hz: feature_delta.external.spectral_centroid_hz,
+                spectral_centroid_delta_hz: feature_delta.signal.spectral_centroid_hz
+                    - feature_delta.external.spectral_centroid_hz,
+                signal_high_frequency_energy_ratio: feature_delta
+                    .signal
+                    .high_frequency_energy_ratio,
+                external_high_frequency_energy_ratio: feature_delta
+                    .external
+                    .high_frequency_energy_ratio,
+                high_frequency_energy_ratio_delta: feature_delta.signal.high_frequency_energy_ratio
+                    - feature_delta.external.high_frequency_energy_ratio,
+                feature_divergence_score: feature_delta.divergence_score(),
             }
             .format_report_line(),
         );
@@ -1787,6 +1899,8 @@ fn decode_external_benchmark_render_audio(
 #[derive(Clone, Debug, PartialEq)]
 struct AlignedErrorMeasurement {
     lag_frames: isize,
+    signal_start: usize,
+    external_start: usize,
     compared_frames: usize,
     correlation: f64,
     rms_error: f64,
@@ -1821,6 +1935,8 @@ fn align_and_measure_error(signal: &[f32], external: &[f32]) -> AlignedErrorMeas
     else {
         return AlignedErrorMeasurement {
             lag_frames: 0,
+            signal_start: 0,
+            external_start: 0,
             compared_frames: 0,
             correlation: f64::NAN,
             rms_error: f64::NAN,
@@ -1847,6 +1963,8 @@ fn align_and_measure_error(signal: &[f32], external: &[f32]) -> AlignedErrorMeas
 
     AlignedErrorMeasurement {
         lag_frames: best_lag,
+        signal_start,
+        external_start,
         compared_frames: frames,
         correlation: best_correlation,
         rms_error: (square_error_sum / frames as f64).sqrt(),
@@ -1880,6 +1998,218 @@ fn normalized_correlation(signal: &[f32], external: &[f32]) -> f64 {
         external_square_sum += external_value * external_value;
     }
     finite_ratio(dot, (signal_square_sum * external_square_sum).sqrt())
+}
+
+#[derive(Clone, Debug, PartialEq)]
+struct ExternalBenchmarkFeatureDelta {
+    compared_frames: usize,
+    envelope_correlation: f64,
+    signal: ExternalBenchmarkFeatureSummary,
+    external: ExternalBenchmarkFeatureSummary,
+}
+
+impl ExternalBenchmarkFeatureDelta {
+    fn divergence_score(&self) -> f64 {
+        if self.compared_frames == 0 {
+            return f64::NAN;
+        }
+        let envelope_term = if self.envelope_correlation.is_finite() {
+            (1.0 - self.envelope_correlation).max(0.0)
+        } else {
+            0.0
+        };
+        let rms_term = finite_abs(self.signal.rms_db - self.external.rms_db) / 12.0;
+        let peak_term = finite_abs(self.signal.peak_db - self.external.peak_db) / 12.0;
+        let centroid_term =
+            finite_abs(self.signal.spectral_centroid_hz - self.external.spectral_centroid_hz)
+                / 2_000.0;
+        let high_frequency_term = finite_abs(
+            self.signal.high_frequency_energy_ratio - self.external.high_frequency_energy_ratio,
+        ) * 4.0;
+        envelope_term + rms_term + peak_term + centroid_term + high_frequency_term
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+struct ExternalBenchmarkFeatureSummary {
+    rms: f64,
+    rms_db: f64,
+    peak: f64,
+    peak_db: f64,
+    zero_crossings_per_second: f64,
+    spectral_centroid_hz: f64,
+    high_frequency_energy_ratio: f64,
+}
+
+fn measure_external_benchmark_feature_delta(
+    signal: &[f32],
+    external: &[f32],
+    aligned: &AlignedErrorMeasurement,
+    sample_rate_hz: u32,
+) -> ExternalBenchmarkFeatureDelta {
+    if aligned.compared_frames == 0 {
+        return ExternalBenchmarkFeatureDelta {
+            compared_frames: 0,
+            envelope_correlation: f64::NAN,
+            signal: empty_external_benchmark_feature_summary(),
+            external: empty_external_benchmark_feature_summary(),
+        };
+    }
+
+    let signal_slice =
+        &signal[aligned.signal_start..aligned.signal_start + aligned.compared_frames];
+    let external_slice =
+        &external[aligned.external_start..aligned.external_start + aligned.compared_frames];
+    ExternalBenchmarkFeatureDelta {
+        compared_frames: aligned.compared_frames,
+        envelope_correlation: normalized_envelope_correlation(signal_slice, external_slice),
+        signal: summarize_external_benchmark_features(signal_slice, sample_rate_hz),
+        external: summarize_external_benchmark_features(external_slice, sample_rate_hz),
+    }
+}
+
+fn empty_external_benchmark_feature_summary() -> ExternalBenchmarkFeatureSummary {
+    ExternalBenchmarkFeatureSummary {
+        rms: f64::NAN,
+        rms_db: f64::NAN,
+        peak: f64::NAN,
+        peak_db: f64::NAN,
+        zero_crossings_per_second: f64::NAN,
+        spectral_centroid_hz: f64::NAN,
+        high_frequency_energy_ratio: f64::NAN,
+    }
+}
+
+fn summarize_external_benchmark_features(
+    samples: &[f32],
+    sample_rate_hz: u32,
+) -> ExternalBenchmarkFeatureSummary {
+    if samples.is_empty() || sample_rate_hz == 0 {
+        return empty_external_benchmark_feature_summary();
+    }
+
+    let mut peak = 0.0f64;
+    let mut square_sum = 0.0;
+    for sample in samples {
+        let value = *sample as f64;
+        peak = peak.max(value.abs());
+        square_sum += value * value;
+    }
+    let rms = (square_sum / samples.len() as f64).sqrt();
+    let duration_seconds = samples.len() as f64 / sample_rate_hz as f64;
+    let zero_crossings = samples
+        .windows(2)
+        .filter(|pair| (pair[0] < 0.0 && pair[1] >= 0.0) || (pair[0] >= 0.0 && pair[1] < 0.0))
+        .count();
+    let spectral = summarize_external_benchmark_spectrum(samples, sample_rate_hz);
+
+    ExternalBenchmarkFeatureSummary {
+        rms,
+        rms_db: amplitude_db(rms),
+        peak,
+        peak_db: amplitude_db(peak),
+        zero_crossings_per_second: zero_crossings as f64 / duration_seconds.max(1.0e-12),
+        spectral_centroid_hz: spectral.centroid_hz,
+        high_frequency_energy_ratio: spectral.high_frequency_energy_ratio,
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct ExternalBenchmarkSpectralSummary {
+    centroid_hz: f64,
+    high_frequency_energy_ratio: f64,
+}
+
+fn summarize_external_benchmark_spectrum(
+    samples: &[f32],
+    sample_rate_hz: u32,
+) -> ExternalBenchmarkSpectralSummary {
+    if samples.len() < EXTERNAL_BENCHMARK_FEATURE_FFT_SIZE || sample_rate_hz == 0 {
+        return ExternalBenchmarkSpectralSummary {
+            centroid_hz: f64::NAN,
+            high_frequency_energy_ratio: f64::NAN,
+        };
+    }
+
+    let mut planner = FftPlanner::<f32>::new();
+    let fft = planner.plan_fft_forward(EXTERNAL_BENCHMARK_FEATURE_FFT_SIZE);
+    let window = hann_window(EXTERNAL_BENCHMARK_FEATURE_FFT_SIZE);
+    let hop = EXTERNAL_BENCHMARK_FEATURE_FFT_SIZE;
+    let max_start = samples.len() - EXTERNAL_BENCHMARK_FEATURE_FFT_SIZE;
+    let window_count = (max_start / hop + 1).min(EXTERNAL_BENCHMARK_FEATURE_MAX_WINDOWS);
+    let mut centroid_weighted_hz_sum = 0.0;
+    let mut magnitude_sum = 0.0;
+    let mut total_energy = 0.0;
+    let mut high_frequency_energy = 0.0;
+    let high_frequency_bin = EXTERNAL_BENCHMARK_FEATURE_FFT_SIZE / 6;
+    let nyquist_bin = EXTERNAL_BENCHMARK_FEATURE_FFT_SIZE / 2;
+    let bin_hz = sample_rate_hz as f64 / EXTERNAL_BENCHMARK_FEATURE_FFT_SIZE as f64;
+
+    for window_index in 0..window_count {
+        let start = window_index * hop;
+        let mut buffer = vec![Complex32::new(0.0, 0.0); EXTERNAL_BENCHMARK_FEATURE_FFT_SIZE];
+        for index in 0..EXTERNAL_BENCHMARK_FEATURE_FFT_SIZE {
+            buffer[index].re = samples[start + index] * window[index];
+        }
+        fft.process(&mut buffer);
+        for (bin, value) in buffer.iter().enumerate().take(nyquist_bin + 1).skip(1) {
+            let magnitude = value.norm() as f64;
+            let energy = magnitude * magnitude;
+            centroid_weighted_hz_sum += bin as f64 * bin_hz * magnitude;
+            magnitude_sum += magnitude;
+            total_energy += energy;
+            if bin >= high_frequency_bin {
+                high_frequency_energy += energy;
+            }
+        }
+    }
+
+    ExternalBenchmarkSpectralSummary {
+        centroid_hz: finite_ratio(centroid_weighted_hz_sum, magnitude_sum),
+        high_frequency_energy_ratio: finite_ratio(high_frequency_energy, total_energy),
+    }
+}
+
+fn hann_window(size: usize) -> Vec<f32> {
+    if size <= 1 {
+        return vec![1.0; size];
+    }
+    (0..size)
+        .map(|index| {
+            let phase = std::f32::consts::TAU * index as f32 / (size - 1) as f32;
+            0.5 - 0.5 * phase.cos()
+        })
+        .collect()
+}
+
+fn normalized_envelope_correlation(signal: &[f32], external: &[f32]) -> f64 {
+    let mut dot = 0.0;
+    let mut signal_square_sum = 0.0;
+    let mut external_square_sum = 0.0;
+    for (signal_sample, external_sample) in signal.iter().zip(external) {
+        let signal_value = signal_sample.abs() as f64;
+        let external_value = external_sample.abs() as f64;
+        dot += signal_value * external_value;
+        signal_square_sum += signal_value * signal_value;
+        external_square_sum += external_value * external_value;
+    }
+    finite_ratio(dot, (signal_square_sum * external_square_sum).sqrt())
+}
+
+fn amplitude_db(value: f64) -> f64 {
+    if !value.is_finite() || value <= 1.0e-12 {
+        -240.0
+    } else {
+        20.0 * value.log10()
+    }
+}
+
+fn finite_abs(value: f64) -> f64 {
+    if value.is_finite() {
+        value.abs()
+    } else {
+        0.0
+    }
 }
 
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -4317,6 +4647,11 @@ mod tests {
         assert!(formatted.contains("alignment_lag_frames=0"));
         assert!(formatted.contains("aligned_compared_frames=4096"));
         assert!(formatted.contains("aligned_rms_error=0.000000000"));
+        assert!(formatted.contains("external_benchmark_feature_delta case=stretch:vocals"));
+        assert!(formatted.contains("envelope_correlation=1.000000"));
+        assert!(formatted.contains("rms_delta_db=0.000000"));
+        assert!(formatted.contains("spectral_centroid_delta_hz=0.000000"));
+        assert!(formatted.contains("feature_divergence_score=0.000000"));
 
         let _ = fs::remove_file(path);
     }
@@ -4372,7 +4707,26 @@ mod tests {
             format_external_benchmark_quality_metrics(&listening_sources, &renders, 4_096)
                 .expect("format source-wav external quality metrics");
 
-        assert_eq!(formatted.matches("status=Measured").count(), 2);
+        assert_eq!(
+            formatted
+                .lines()
+                .filter(|line| {
+                    line.starts_with("external_benchmark_quality ")
+                        && line.contains("status=Measured")
+                })
+                .count(),
+            2
+        );
+        assert_eq!(
+            formatted
+                .lines()
+                .filter(|line| {
+                    line.starts_with("external_benchmark_feature_delta ")
+                        && line.contains("status=Measured")
+                })
+                .count(),
+            2
+        );
         assert!(formatted.contains(&format!(
             "source={}",
             quoted_report_field(&source_a.display().to_string())
