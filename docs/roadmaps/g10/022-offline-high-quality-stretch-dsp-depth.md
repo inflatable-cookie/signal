@@ -218,12 +218,20 @@ comparison reports, not add more receipt or fixture surfaces.
   against the `2.0` global-threshold limit. This promotes targeted recovery as
   the only detector-policy candidate worth considering; global threshold
   relaxation remains rejected.
+- 2026-07-07: ran the same recovery gate on a broader no-listening FMA seed
+  with 20 sources, four per family. The broader decoded report covered 60
+  transient-smear rows. OfflineHighQuality still passed targeted recovery and
+  still rejected global threshold relaxation: production had 207 input
+  transients, 152 matches, and 55 misses; recovery had 196 matches, 11 misses,
+  and 44 recovered misses; missed-row worsens stayed 0, max-smear worsens stayed
+  0, and full-candidate input pressure rose to `3.681159` against the `2.0`
+  limit. This satisfies the broader decoded-source stability condition for a
+  production metric-policy decision.
 
 ## Next Task
 
 Do not add a multiresolution or hybrid path until measured evidence requires
-it. Next useful work is to decide whether targeted output recovery should affect
-only acceptance/reporting or also production transient-smear policy. Before
-changing production policy, require one of: listened curation, external rendered
-comparison, or a broader decoded-source seed that keeps the recovery gate pass
-and global threshold rejection stable.
+it. Next useful work is to promote targeted output recovery into the production
+transient-smear metric policy, keeping the global candidate threshold rejected
+and preserving report fields that show recovery/gate evidence separately. This
+changes acceptance measurement, not stretch synthesis.

@@ -130,6 +130,10 @@ The review-seed TSV is a no-listening shortcut. It keeps a fixed number of
 candidates per family and avoids repeated artists where possible. It is coverage
 evidence, not a subjective quality choice.
 
+Use a larger `--review-seed-per-family` value when a detector or recovery gate
+needs no-listening stability evidence across more decoded sources. Keep those
+generated broad-seed reports in `target/`; they are local evidence only.
+
 ## Next Task
 
 Run `stretch-corpus-report --measure-decoded-stretch` with the review-seed TSV
