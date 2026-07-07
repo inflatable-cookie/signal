@@ -74,9 +74,10 @@ pub use cache_identity::{
 };
 pub use corpus_report::{
     build_stretch_corpus_comparison_report, build_stretch_corpus_comparison_report_with_external,
-    format_stretch_corpus_comparison_report, StretchCorpusComparisonReport,
-    StretchCorpusListeningNoteSlot, StretchCorpusSkippedAsset, StretchExternalBenchmarkComparison,
-    StretchExternalBenchmarkRender,
+    build_stretch_corpus_comparison_report_with_sources, format_stretch_corpus_comparison_report,
+    StretchCorpusComparisonReport, StretchCorpusListeningNoteSlot, StretchCorpusListeningSource,
+    StretchCorpusListeningSourceRecord, StretchCorpusSkippedAsset,
+    StretchExternalBenchmarkComparison, StretchExternalBenchmarkRender,
 };
 pub use promotion::{
     current_synthetic_offline_high_quality_promotion_receipt, StretchPromotionReceipt,
@@ -1683,8 +1684,9 @@ mod tests {
         assert!(formatted.contains("engine=signal-native-stretch-v1"));
         assert!(formatted.contains("projection_epoch=\"projection:unit\""));
         assert!(formatted.contains("source_policy synthetic="));
-        assert!(formatted
-            .contains("summary comparisons=27 external_benchmark_comparisons=0 missing_assets=5"));
+        assert!(formatted.contains(
+            "summary comparisons=27 external_benchmark_comparisons=0 operator_listening_sources=0 missing_assets=5"
+        ));
         assert!(formatted.contains("asset case=stretch:drums_percussion status=missing_required"));
         assert!(formatted.contains("comparison case=stretch:tempo_ramp"));
         assert!(formatted.contains("ratio_curve=synthetic_tempo_ramp:"));
@@ -1693,6 +1695,46 @@ mod tests {
         assert!(formatted.contains("listening_note case=stretch:pitch_shift"));
         assert!(formatted.contains(
             "prompt=\"operator-note: record audible artifacts beside objective metrics\""
+        ));
+    }
+
+    #[test]
+    fn stretch_corpus_report_accepts_operator_listening_sources() {
+        let report = build_stretch_corpus_comparison_report_with_sources(
+            "stretch-corpus-v1-local",
+            "projection:unit",
+            &[],
+            &[StretchCorpusListeningSource {
+                case_id: "stretch:vocals".to_string(),
+                source_path: "/Users/tom/Downloads/FMA/fma_large/000/000010.mp3".to_string(),
+                source_label: "Kurt Vile - Freeway".to_string(),
+                license_title: "Attribution-NonCommercial-NoDerivatives".to_string(),
+                license_url: "https://example.test/license".to_string(),
+                provenance_url: "https://example.test/track".to_string(),
+            }],
+        );
+
+        assert_eq!(report.operator_listening_sources.len(), 1);
+        assert_eq!(report.missing_assets.len(), 4);
+        assert!(report
+            .missing_assets
+            .iter()
+            .all(|asset| asset.case.case_id != "stretch:vocals"));
+        assert!(report
+            .listening_note_slots
+            .iter()
+            .any(|slot| slot.case_id == "stretch:vocals"
+                && slot.source_path_hint == "/Users/tom/Downloads/FMA/fma_large/000/000010.mp3"
+                && slot.prompt
+                    == "operator-note: record real-source listening artifacts before promotion"));
+
+        let formatted = format_stretch_corpus_comparison_report(&report);
+
+        assert!(formatted.contains("operator_listening_sources=1 missing_assets=4"));
+        assert!(formatted.contains("operator_listening_source case=stretch:vocals"));
+        assert!(formatted.contains("label=\"Kurt Vile - Freeway\""));
+        assert!(formatted.contains(
+            "source_boundary=\"operator-provided licensed local audio; no source audio committed\""
         ));
     }
 

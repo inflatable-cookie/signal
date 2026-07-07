@@ -26,9 +26,9 @@ pub struct StretchCorpusSkippedAsset {
 #[derive(Clone, Debug, PartialEq)]
 pub struct StretchCorpusListeningNoteSlot {
     /// Corpus or derived case id.
-    pub case_id: &'static str,
+    pub case_id: String,
     /// Source location hint used by the row.
-    pub source_path_hint: &'static str,
+    pub source_path_hint: String,
     /// Backend path under review, when this is a measured comparison row.
     pub path: Option<StretchBenchmarkPath>,
     /// Output/input duration ratio, when measured.
@@ -37,6 +37,42 @@ pub struct StretchCorpusListeningNoteSlot {
     pub pitch_shift_semitones: Option<f64>,
     /// Deterministic prompt label for operator listening notes.
     pub prompt: &'static str,
+}
+
+/// One operator-supplied local source file for real-corpus listening review.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct StretchCorpusListeningSource {
+    /// Corpus case id this source covers.
+    pub case_id: String,
+    /// Local source path outside the repository.
+    pub source_path: String,
+    /// Human-readable source label.
+    pub source_label: String,
+    /// License title recorded by the source catalog or operator.
+    pub license_title: String,
+    /// License URL recorded by the source catalog or operator.
+    pub license_url: String,
+    /// Source catalog or track URL.
+    pub provenance_url: String,
+}
+
+/// One local listening source accepted into a corpus report.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct StretchCorpusListeningSourceRecord {
+    /// Corpus case id this source covers.
+    pub case_id: String,
+    /// Local source path outside the repository.
+    pub source_path: String,
+    /// Human-readable source label.
+    pub source_label: String,
+    /// License title recorded by the source catalog or operator.
+    pub license_title: String,
+    /// License URL recorded by the source catalog or operator.
+    pub license_url: String,
+    /// Source catalog or track URL.
+    pub provenance_url: String,
+    /// Source boundary applied to local listening files.
+    pub source_boundary: &'static str,
 }
 
 /// Deterministic corpus report for draft-vs-OfflineHighQuality evidence.
@@ -54,6 +90,8 @@ pub struct StretchCorpusComparisonReport {
     pub synthetic_report: StretchSyntheticBenchmarkComparisonReport,
     /// Optional external rendered-output comparisons supplied by the operator.
     pub external_benchmark_comparisons: Vec<StretchExternalBenchmarkComparison>,
+    /// Operator-supplied local source files available for listening review.
+    pub operator_listening_sources: Vec<StretchCorpusListeningSourceRecord>,
     /// Required operator-provided source assets that were unavailable.
     pub missing_assets: Vec<StretchCorpusSkippedAsset>,
     /// Optional external benchmark rows skipped because no comparator output
@@ -131,12 +169,29 @@ pub fn build_stretch_corpus_comparison_report_with_external(
     projection_epoch: &str,
     external_renders: &[StretchExternalBenchmarkRender],
 ) -> StretchCorpusComparisonReport {
+    build_stretch_corpus_comparison_report_with_sources(
+        report_name,
+        projection_epoch,
+        external_renders,
+        &[],
+    )
+}
+
+/// Build the stretch corpus report with optional external renders and
+/// operator-supplied local listening sources.
+pub fn build_stretch_corpus_comparison_report_with_sources(
+    report_name: &str,
+    projection_epoch: &str,
+    external_renders: &[StretchExternalBenchmarkRender],
+    listening_sources: &[StretchCorpusListeningSource],
+) -> StretchCorpusComparisonReport {
     let manifest = STRETCH_CORPUS_MANIFEST;
     let synthetic_report = compare_synthetic_stretch_backends();
     let external_benchmark_comparisons = external_renders
         .iter()
         .map(compare_external_benchmark_render)
         .collect::<Vec<_>>();
+    let mut operator_listening_sources = Vec::new();
     let mut missing_assets = Vec::new();
     let mut optional_benchmark_skips = Vec::new();
     let mut listening_note_slots = Vec::new();
@@ -145,15 +200,33 @@ pub fn build_stretch_corpus_comparison_report_with_external(
         match entry.asset_requirement {
             StretchCorpusAssetRequirement::InlineSynthetic => {}
             StretchCorpusAssetRequirement::OperatorProvidedAudio => {
-                missing_assets.push(skipped_asset_from_manifest_entry(entry));
-                listening_note_slots.push(StretchCorpusListeningNoteSlot {
-                    case_id: entry.case.case_id,
-                    source_path_hint: entry.source_path_hint,
-                    path: None,
-                    ratio: None,
-                    pitch_shift_semitones: None,
-                    prompt: "operator-note: add listening observations when licensed source is supplied",
-                });
+                let sources = listening_sources
+                    .iter()
+                    .filter(|source| source.case_id == entry.case.case_id)
+                    .collect::<Vec<_>>();
+                if sources.is_empty() {
+                    missing_assets.push(skipped_asset_from_manifest_entry(entry));
+                    listening_note_slots.push(StretchCorpusListeningNoteSlot {
+                        case_id: entry.case.case_id.to_string(),
+                        source_path_hint: entry.source_path_hint.to_string(),
+                        path: None,
+                        ratio: None,
+                        pitch_shift_semitones: None,
+                        prompt: "operator-note: add listening observations when licensed source is supplied",
+                    });
+                } else {
+                    for source in sources {
+                        operator_listening_sources.push(listening_source_record(source));
+                        listening_note_slots.push(StretchCorpusListeningNoteSlot {
+                            case_id: source.case_id.clone(),
+                            source_path_hint: source.source_path.clone(),
+                            path: None,
+                            ratio: None,
+                            pitch_shift_semitones: None,
+                            prompt: "operator-note: record real-source listening artifacts before promotion",
+                        });
+                    }
+                }
             }
             StretchCorpusAssetRequirement::OptionalExternalBenchmark => {
                 optional_benchmark_skips.push(skipped_asset_from_manifest_entry(entry));
@@ -163,8 +236,8 @@ pub fn build_stretch_corpus_comparison_report_with_external(
 
     for comparison in &synthetic_report.comparisons {
         listening_note_slots.push(StretchCorpusListeningNoteSlot {
-            case_id: comparison.case_id,
-            source_path_hint: source_path_hint_for_comparison(comparison.case_id),
+            case_id: comparison.case_id.to_string(),
+            source_path_hint: source_path_hint_for_comparison(comparison.case_id).to_string(),
             path: Some(comparison.path),
             ratio: Some(comparison.ratio),
             pitch_shift_semitones: comparison.pitch_shift_semitones,
@@ -179,6 +252,7 @@ pub fn build_stretch_corpus_comparison_report_with_external(
         engine_version: SIGNAL_STRETCH_ENGINE_VERSION,
         synthetic_report,
         external_benchmark_comparisons,
+        operator_listening_sources,
         missing_assets,
         optional_benchmark_skips,
         listening_note_slots,
@@ -192,6 +266,7 @@ pub fn format_stretch_corpus_comparison_report(report: &StretchCorpusComparisonR
             + report.optional_benchmark_skips.len()
             + report.synthetic_report.comparisons.len()
             + report.external_benchmark_comparisons.len()
+            + report.operator_listening_sources.len()
             + report.listening_note_slots.len(),
     );
     lines.push(format!(
@@ -211,9 +286,10 @@ pub fn format_stretch_corpus_comparison_report(report: &StretchCorpusComparisonR
         quoted_report_field(report.manifest.source_policy.external_benchmark_policy)
     ));
     lines.push(format!(
-        "summary comparisons={} external_benchmark_comparisons={} missing_assets={} optional_benchmark_skips={} listening_note_slots={} improved={} regressed={} unchanged={} inconclusive={}",
+        "summary comparisons={} external_benchmark_comparisons={} operator_listening_sources={} missing_assets={} optional_benchmark_skips={} listening_note_slots={} improved={} regressed={} unchanged={} inconclusive={}",
         report.synthetic_report.comparisons.len(),
         report.external_benchmark_comparisons.len(),
+        report.operator_listening_sources.len(),
         report.missing_assets.len(),
         report.optional_benchmark_skips.len(),
         report.listening_note_slots.len(),
@@ -228,6 +304,19 @@ pub fn format_stretch_corpus_comparison_report(report: &StretchCorpusComparisonR
     }
     for skipped in &report.optional_benchmark_skips {
         lines.push(format_skipped_asset("skipped_optional", skipped));
+    }
+
+    for source in &report.operator_listening_sources {
+        lines.push(format!(
+            "operator_listening_source case={} source={} label={} license={} license_url={} provenance_url={} source_boundary={}",
+            source.case_id,
+            quoted_report_field(&source.source_path),
+            quoted_report_field(&source.source_label),
+            quoted_report_field(&source.license_title),
+            quoted_report_field(&source.license_url),
+            quoted_report_field(&source.provenance_url),
+            quoted_report_field(source.source_boundary)
+        ));
     }
 
     for comparison in &report.external_benchmark_comparisons {
@@ -273,7 +362,7 @@ pub fn format_stretch_corpus_comparison_report(report: &StretchCorpusComparisonR
         lines.push(format!(
             "listening_note case={} source={} ratio={} path={} pitch_shift={} prompt={}",
             slot.case_id,
-            slot.source_path_hint,
+            quoted_report_field(&slot.source_path_hint),
             optional_f64_report_field(slot.ratio),
             path,
             optional_f64_report_field(slot.pitch_shift_semitones),
@@ -327,6 +416,20 @@ fn skipped_asset_from_manifest_entry(
         missing_asset_behavior: entry.missing_asset_behavior,
         source_path_hint: entry.source_path_hint,
         provenance_note: entry.provenance_note,
+    }
+}
+
+fn listening_source_record(
+    source: &StretchCorpusListeningSource,
+) -> StretchCorpusListeningSourceRecord {
+    StretchCorpusListeningSourceRecord {
+        case_id: source.case_id.clone(),
+        source_path: source.source_path.clone(),
+        source_label: source.source_label.clone(),
+        license_title: source.license_title.clone(),
+        license_url: source.license_url.clone(),
+        provenance_url: source.provenance_url.clone(),
+        source_boundary: "operator-provided licensed local audio; no source audio committed",
     }
 }
 

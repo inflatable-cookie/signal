@@ -19,7 +19,7 @@ audio.
 - External benchmark renders are optional clean-room comparison outputs, never
   source material.
 - Missing licensed listening material is reported as a gap and skipped by the
-  future real-corpus runner.
+  real-corpus runner.
 
 ## Corpus Defaults
 
@@ -53,7 +53,15 @@ records timing drift when the case maps to Signal-generated source. The boundary
 is rendered output only; no external source code, libraries, or translated
 implementation details are allowed.
 
+## Local Listening Source Manifest
+
+`stretch-corpus-report` accepts operator-provided local source manifests through
+`--listening-source-manifest TSV`. The TSV must include `case_id` and
+`local_path` or `source_path`, plus license and provenance fields when known.
+Signal verifies that the local file exists and records source presence and
+listening-note slots. It does not commit, decode, or copy licensed source audio.
+
 ## Next Task
 
-Collect operator-supplied licensed listening material and optional external
+Collect operator-supplied local listening manifests and optional external
 rendered-output comparisons for the first real report.

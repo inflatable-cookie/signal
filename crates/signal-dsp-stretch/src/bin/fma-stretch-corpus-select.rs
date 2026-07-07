@@ -54,6 +54,7 @@ struct SelectorArgs {
     fma_root: PathBuf,
     metadata: PathBuf,
     output: PathBuf,
+    tsv_output: Option<PathBuf>,
     per_family: usize,
 }
 
@@ -64,6 +65,7 @@ impl Default for SelectorArgs {
             metadata: fma_root.join("fma_metadata/raw_tracks.csv"),
             fma_root,
             output: PathBuf::from(DEFAULT_OUTPUT),
+            tsv_output: None,
             per_family: DEFAULT_PER_FAMILY,
         }
     }
@@ -120,6 +122,27 @@ fn main() {
         process::exit(1);
     }
     println!("wrote {}", args.output.display());
+
+    if let Some(tsv_output) = &args.tsv_output {
+        let tsv = match format_fma_selection_tsv(&candidates) {
+            Ok(tsv) => tsv,
+            Err(message) => {
+                eprintln!("{message}");
+                process::exit(1);
+            }
+        };
+        if let Some(parent) = tsv_output.parent() {
+            if let Err(error) = fs::create_dir_all(parent) {
+                eprintln!("failed to create {}: {error}", parent.display());
+                process::exit(1);
+            }
+        }
+        if let Err(error) = fs::write(tsv_output, tsv) {
+            eprintln!("failed to write {}: {error}", tsv_output.display());
+            process::exit(1);
+        }
+        println!("wrote {}", tsv_output.display());
+    }
 }
 
 fn parse_args<I>(args: I) -> Result<SelectorArgs, String>
@@ -139,6 +162,9 @@ where
             }
             "--output" => {
                 parsed.output = PathBuf::from(next_value(&mut iter, "--output")?);
+            }
+            "--tsv-output" => {
+                parsed.tsv_output = Some(PathBuf::from(next_value(&mut iter, "--tsv-output")?));
             }
             "--per-family" => {
                 parsed.per_family = next_value(&mut iter, "--per-family")?
@@ -166,7 +192,7 @@ where
 }
 
 fn usage() -> &'static str {
-    "usage: fma-stretch-corpus-select [--fma-root PATH] [--metadata CSV] [--per-family N] [--output PATH]"
+    "usage: fma-stretch-corpus-select [--fma-root PATH] [--metadata CSV] [--per-family N] [--output PATH] [--tsv-output PATH]"
 }
 
 fn select_fma_candidates(args: &SelectorArgs) -> Result<Vec<FmaCandidate>, String> {
@@ -408,6 +434,52 @@ fn format_fma_selection_report(args: &SelectorArgs, candidates: &[FmaCandidate])
     lines.join("\n")
 }
 
+fn format_fma_selection_tsv(candidates: &[FmaCandidate]) -> Result<String, String> {
+    let mut writer = csv::WriterBuilder::new()
+        .delimiter(b'\t')
+        .from_writer(Vec::new());
+    writer
+        .write_record([
+            "case_id",
+            "family",
+            "track_id",
+            "artist",
+            "title",
+            "album",
+            "genres",
+            "duration",
+            "license_title",
+            "license_url",
+            "track_url",
+            "local_path",
+        ])
+        .map_err(|error| format!("failed to write FMA TSV header: {error}"))?;
+
+    for candidate in candidates {
+        writer
+            .write_record([
+                candidate.family.signal_case_id(),
+                candidate.family.label(),
+                &candidate.track_id.to_string(),
+                &candidate.artist_name,
+                &candidate.track_title,
+                &candidate.album_title,
+                &genre_summary(&candidate.genres),
+                &candidate.duration,
+                &candidate.license_title,
+                &candidate.license_url,
+                &candidate.track_url,
+                &candidate.local_path.display().to_string(),
+            ])
+            .map_err(|error| format!("failed to write FMA TSV row: {error}"))?;
+    }
+
+    let bytes = writer
+        .into_inner()
+        .map_err(|error| format!("failed to finish FMA TSV: {error}"))?;
+    String::from_utf8(bytes).map_err(|error| format!("failed to encode FMA TSV: {error}"))
+}
+
 fn markdown_cell(value: &str) -> String {
     value.replace('|', "\\|").replace('\n', " ")
 }
@@ -473,7 +545,34 @@ mod tests {
     #[test]
     fn report_includes_source_boundary_and_cases() {
         let args = SelectorArgs::default();
-        let candidates = vec![FmaCandidate {
+        let candidates = vec![test_candidate()];
+
+        let report = format_fma_selection_report(&args, &candidates);
+
+        assert!(report.contains("Do not commit FMA audio files."));
+        assert!(report.contains("Signal case: `stretch:full_mix`"));
+        assert!(report.contains("`/fma/fma_large/000/000010.mp3`"));
+    }
+
+    #[test]
+    fn tsv_includes_report_manifest_fields() {
+        let tsv = format_fma_selection_tsv(&[test_candidate()]).expect("format tsv");
+
+        assert!(tsv.starts_with("case_id\tfamily\ttrack_id\tartist"));
+        assert!(tsv.contains("stretch:full_mix\tfull_mix\t10\tArtist\tTrack"));
+        assert!(tsv.contains("Attribution\thttps://example.test/license"));
+        assert!(tsv.contains("https://example.test/track\t/fma/fma_large/000/000010.mp3"));
+    }
+
+    #[test]
+    fn genre_summary_extracts_fma_titles() {
+        let raw = "[{'genre_id': '10', 'genre_title': 'Pop'}, {'genre_title': 'Rock'}]";
+
+        assert_eq!(genre_summary(raw), "Pop, Rock");
+    }
+
+    fn test_candidate() -> FmaCandidate {
+        FmaCandidate {
             family: FmaCorpusFamily::FullMix,
             track_id: 10,
             artist_name: "Artist".to_string(),
@@ -485,19 +584,6 @@ mod tests {
             track_url: "https://example.test/track".to_string(),
             genres: "Rock".to_string(),
             local_path: PathBuf::from("/fma/fma_large/000/000010.mp3"),
-        }];
-
-        let report = format_fma_selection_report(&args, &candidates);
-
-        assert!(report.contains("Do not commit FMA audio files."));
-        assert!(report.contains("Signal case: `stretch:full_mix`"));
-        assert!(report.contains("`/fma/fma_large/000/000010.mp3`"));
-    }
-
-    #[test]
-    fn genre_summary_extracts_fma_titles() {
-        let raw = "[{'genre_id': '10', 'genre_title': 'Pop'}, {'genre_title': 'Rock'}]";
-
-        assert_eq!(genre_summary(raw), "Pop, Rock");
+        }
     }
 }

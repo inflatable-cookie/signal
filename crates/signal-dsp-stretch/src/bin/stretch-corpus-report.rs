@@ -6,8 +6,9 @@ use std::path::PathBuf;
 use std::process;
 
 use signal_dsp_stretch::{
-    build_stretch_corpus_comparison_report_with_external, format_stretch_corpus_comparison_report,
-    StretchExternalBenchmarkRender,
+    build_stretch_corpus_comparison_report_with_sources, format_stretch_corpus_comparison_report,
+    StretchCorpusAssetRequirement, StretchCorpusListeningSource, StretchExternalBenchmarkRender,
+    STRETCH_CORPUS_MANIFEST,
 };
 
 const DEFAULT_REPORT_NAME: &str = "stretch-corpus-v1-offline-evidence";
@@ -21,6 +22,7 @@ struct ReportArgs {
     output: Option<PathBuf>,
     external_benchmark_tool: String,
     external_benchmark_renders: Vec<ExternalBenchmarkRenderArg>,
+    listening_source_manifests: Vec<PathBuf>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -38,6 +40,7 @@ impl Default for ReportArgs {
             output: None,
             external_benchmark_tool: DEFAULT_EXTERNAL_BENCHMARK_TOOL.to_string(),
             external_benchmark_renders: Vec::new(),
+            listening_source_manifests: Vec::new(),
         }
     }
 }
@@ -63,10 +66,18 @@ fn main() {
             process::exit(1);
         }
     };
-    let report = build_stretch_corpus_comparison_report_with_external(
+    let listening_sources = match load_listening_sources(&args) {
+        Ok(sources) => sources,
+        Err(message) => {
+            eprintln!("{message}");
+            process::exit(1);
+        }
+    };
+    let report = build_stretch_corpus_comparison_report_with_sources(
         &args.report_name,
         &args.projection_epoch,
         &external_renders,
+        &listening_sources,
     );
     let formatted = format_stretch_corpus_comparison_report(&report);
 
@@ -119,6 +130,14 @@ where
                         )?),
                     });
             }
+            "--listening-source-manifest" => {
+                parsed
+                    .listening_source_manifests
+                    .push(PathBuf::from(next_value(
+                        &mut iter,
+                        "--listening-source-manifest",
+                    )?));
+            }
             "--help" | "-h" => {
                 return Ok(ParseOutcome::Help);
             }
@@ -140,7 +159,7 @@ where
 }
 
 fn usage() -> &'static str {
-    "usage: stretch-corpus-report [--report-name NAME] [--projection-epoch EPOCH] [--external-benchmark-tool NAME] [--external-benchmark-render CASE RATIO WAV] [--output PATH]"
+    "usage: stretch-corpus-report [--report-name NAME] [--projection-epoch EPOCH] [--listening-source-manifest TSV] [--external-benchmark-tool NAME] [--external-benchmark-render CASE RATIO WAV] [--output PATH]"
 }
 
 fn load_external_benchmark_renders(
@@ -191,6 +210,130 @@ fn load_external_benchmark_render(
     })
 }
 
+fn load_listening_sources(args: &ReportArgs) -> Result<Vec<StretchCorpusListeningSource>, String> {
+    let mut sources = Vec::new();
+    for manifest in &args.listening_source_manifests {
+        sources.extend(load_listening_source_manifest(manifest)?);
+    }
+    Ok(sources)
+}
+
+fn load_listening_source_manifest(
+    manifest: &PathBuf,
+) -> Result<Vec<StretchCorpusListeningSource>, String> {
+    let mut reader = csv::ReaderBuilder::new()
+        .delimiter(b'\t')
+        .from_path(manifest)
+        .map_err(|error| format!("failed to open {}: {error}", manifest.display()))?;
+    let headers = reader
+        .headers()
+        .map_err(|error| format!("failed to read {} headers: {error}", manifest.display()))?
+        .clone();
+    let mut sources = Vec::new();
+
+    for row in reader.records() {
+        let record =
+            row.map_err(|error| format!("failed to read {} row: {error}", manifest.display()))?;
+        let case_id = required_field(manifest, &headers, &record, "case_id")?;
+        if !is_operator_listening_case(case_id) {
+            return Err(format!(
+                "{} uses unsupported listening case id {case_id}",
+                manifest.display()
+            ));
+        }
+        let source_path =
+            required_any_field(manifest, &headers, &record, &["source_path", "local_path"])?;
+        let source_path_buf = PathBuf::from(source_path);
+        if !source_path_buf.exists() {
+            return Err(format!(
+                "{} references missing source {}",
+                manifest.display(),
+                source_path_buf.display()
+            ));
+        }
+
+        sources.push(StretchCorpusListeningSource {
+            case_id: case_id.to_string(),
+            source_path: source_path.to_string(),
+            source_label: listening_source_label(&headers, &record),
+            license_title: field(&headers, &record, "license_title")
+                .unwrap_or("unknown")
+                .to_string(),
+            license_url: field(&headers, &record, "license_url")
+                .unwrap_or("")
+                .to_string(),
+            provenance_url: field(&headers, &record, "provenance_url")
+                .or_else(|| field(&headers, &record, "track_url"))
+                .unwrap_or("")
+                .to_string(),
+        });
+    }
+
+    Ok(sources)
+}
+
+fn is_operator_listening_case(case_id: &str) -> bool {
+    STRETCH_CORPUS_MANIFEST.entries.iter().any(|entry| {
+        entry.case.case_id == case_id
+            && entry.asset_requirement == StretchCorpusAssetRequirement::OperatorProvidedAudio
+    })
+}
+
+fn required_any_field<'a>(
+    manifest: &PathBuf,
+    headers: &csv::StringRecord,
+    record: &'a csv::StringRecord,
+    names: &[&str],
+) -> Result<&'a str, String> {
+    names
+        .iter()
+        .find_map(|name| field(headers, record, name))
+        .ok_or_else(|| {
+            format!(
+                "{} is missing required field {}",
+                manifest.display(),
+                names.join(" or ")
+            )
+        })
+}
+
+fn required_field<'a>(
+    manifest: &PathBuf,
+    headers: &csv::StringRecord,
+    record: &'a csv::StringRecord,
+    name: &str,
+) -> Result<&'a str, String> {
+    field(headers, record, name)
+        .ok_or_else(|| format!("{} is missing required field {name}", manifest.display()))
+}
+
+fn field<'a>(
+    headers: &csv::StringRecord,
+    record: &'a csv::StringRecord,
+    name: &str,
+) -> Option<&'a str> {
+    headers
+        .iter()
+        .position(|header| header == name)
+        .and_then(|index| record.get(index))
+        .filter(|value| !value.is_empty())
+}
+
+fn listening_source_label(headers: &csv::StringRecord, record: &csv::StringRecord) -> String {
+    if let Some(label) = field(headers, record, "source_label") {
+        return label.to_string();
+    }
+    match (
+        field(headers, record, "artist"),
+        field(headers, record, "title"),
+    ) {
+        (Some(artist), Some(title)) => format!("{artist} - {title}"),
+        (Some(artist), None) => artist.to_string(),
+        (None, Some(title)) => title.to_string(),
+        (None, None) => "operator listening source".to_string(),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -207,6 +350,7 @@ mod tests {
                 output: None,
                 external_benchmark_tool: DEFAULT_EXTERNAL_BENCHMARK_TOOL.to_string(),
                 external_benchmark_renders: Vec::new(),
+                listening_source_manifests: Vec::new(),
             })
         );
     }
@@ -220,6 +364,8 @@ mod tests {
             "epoch:1".to_string(),
             "--output".to_string(),
             "target/stretch-report.txt".to_string(),
+            "--listening-source-manifest".to_string(),
+            "target/fma.tsv".to_string(),
             "--external-benchmark-tool".to_string(),
             "rubberband-cli".to_string(),
             "--external-benchmark-render".to_string(),
@@ -241,6 +387,7 @@ mod tests {
                     ratio: "1.5".to_string(),
                     path: PathBuf::from("target/rubberband-loop.wav"),
                 }],
+                listening_source_manifests: vec![PathBuf::from("target/fma.tsv")],
             })
         );
     }
@@ -276,6 +423,7 @@ mod tests {
                 ratio: "1.0".to_string(),
                 path: path.clone(),
             }],
+            listening_source_manifests: Vec::new(),
         };
 
         let renders = load_external_benchmark_renders(&args).expect("load external render");
@@ -288,6 +436,41 @@ mod tests {
         assert_eq!(renders[0].channels, 2);
 
         let _ = fs::remove_file(path);
+    }
+
+    #[test]
+    fn load_listening_source_manifest_reads_tsv_and_checks_source_path() {
+        let audio_path = PathBuf::from(format!(
+            "target/stretch-corpus-source-test-{}.mp3",
+            std::process::id()
+        ));
+        if let Some(parent) = audio_path.parent() {
+            fs::create_dir_all(parent).expect("create target dir");
+        }
+        fs::write(&audio_path, b"local test source").expect("write test source");
+        let manifest_path = PathBuf::from(format!(
+            "target/stretch-corpus-source-test-{}.tsv",
+            std::process::id()
+        ));
+        fs::write(
+            &manifest_path,
+            format!(
+                "case_id\tartist\ttitle\tlicense_title\tlicense_url\ttrack_url\tlocal_path\nstretch:vocals\tArtist\tSong\tAttribution\thttps://example.test/license\thttps://example.test/track\t{}\n",
+                audio_path.display()
+            ),
+        )
+        .expect("write source manifest");
+
+        let sources = load_listening_source_manifest(&manifest_path).expect("load source manifest");
+
+        assert_eq!(sources.len(), 1);
+        assert_eq!(sources[0].case_id, "stretch:vocals");
+        assert_eq!(sources[0].source_label, "Artist - Song");
+        assert_eq!(sources[0].license_title, "Attribution");
+        assert_eq!(sources[0].provenance_url, "https://example.test/track");
+
+        let _ = fs::remove_file(audio_path);
+        let _ = fs::remove_file(manifest_path);
     }
 
     fn write_test_wav(path: &PathBuf, frames: usize) {

@@ -79,9 +79,15 @@ notes before more product-facing quality claims land.
   verifies local MP3 paths, classifies candidates into stretch corpus families,
   and writes a generated manifest under `target/` without copying or committing
   audio.
+- 2026-07-07: connected local listening source manifests to
+  `stretch-corpus-report`. FMA selection can now emit TSV, and the report runner
+  verifies local paths, records source/provenance rows, reduces missing required
+  source counts, and creates listening-note slots against actual local files
+  without decoding, copying, or committing licensed audio.
 
 ## Next Task
 
-Review the generated FMA selection, promote hand-picked tracks into a local
-operator run, and collect optional external rendered-output comparisons before
-opening the next stretch-quality tuning card.
+Review/listen to the generated FMA candidates, trim the TSV to hand-picked
+sources, run the local report with `--listening-source-manifest`, and collect
+optional external rendered-output comparisons before opening the next
+stretch-quality tuning card.

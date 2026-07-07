@@ -39,13 +39,15 @@ Generate the deterministic draft-vs-OfflineHighQuality report:
 cargo run -p signal-dsp-stretch --bin stretch-corpus-report -- \
   --report-name stretch-corpus-v1-local \
   --projection-epoch projection:local \
+  --listening-source-manifest target/stretch-corpus-fma-selection.tsv \
   --output target/stretch-corpus-v1-local.txt
 ```
 
-The report includes missing licensed-asset rows, synthetic objective comparison
-rows, ratio/pitch curve fields, and listening-note slots. The `--output` path is
-local evidence and should not be committed unless a future roadmap explicitly
-defines an artifact location.
+The report includes local listening-source provenance rows when a manifest is
+supplied, missing licensed-asset rows for still-uncovered cases, synthetic
+objective comparison rows, ratio/pitch curve fields, and listening-note slots.
+The `--output` path is local evidence and should not be committed unless a
+future roadmap explicitly defines an artifact location.
 
 Add optional external rendered-output comparisons with repeated
 `--external-benchmark-render` groups:
@@ -73,14 +75,19 @@ The FMA large bundle can seed local-only listening candidates:
 cargo run -p signal-dsp-stretch --bin fma-stretch-corpus-select -- \
   --fma-root /Users/tom/Downloads/FMA \
   --per-family 5 \
-  --output target/stretch-corpus-fma-selection.md
+  --output target/stretch-corpus-fma-selection.md \
+  --tsv-output target/stretch-corpus-fma-selection.tsv
 ```
 
-The generated file records FMA track ids, local MP3 paths, genre-derived corpus
-family, artist/title, track URL, and artist license metadata. It is a local
-selection aid only. Do not commit FMA audio or generated local evidence reports.
+The Markdown file is for operator review. The TSV file can be passed to
+`stretch-corpus-report --listening-source-manifest` after unwanted candidates
+are removed. Both files record FMA track ids, local MP3 paths, genre-derived
+corpus family, artist/title, track URL, and artist license metadata. They are
+local selection aids only. Do not commit FMA audio or generated local evidence
+reports.
 
 ## Next Task
 
-Use the completed `g10.021` evidence runner to collect operator-supplied real
-listening material and optional external rendered-output comparisons.
+Review and trim the generated FMA TSV, run `stretch-corpus-report` with
+`--listening-source-manifest`, then add optional external rendered-output
+comparisons.
