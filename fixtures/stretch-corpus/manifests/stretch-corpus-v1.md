@@ -58,8 +58,11 @@ implementation details are allowed.
 `stretch-corpus-report` accepts operator-provided local source manifests through
 `--listening-source-manifest TSV`. The TSV must include `case_id` and
 `local_path` or `source_path`, plus license and provenance fields when known.
-Signal verifies that the local file exists and records source presence and
-listening-note slots. It does not commit, decode, or copy licensed source audio.
+By default, Signal verifies that the local file exists and records source
+presence and listening-note slots. It does not commit, decode, or copy licensed
+source audio.
+When `--decode-listening-sources` is set, the report also decodes bounded local
+source windows for source-profile metrics only; decoded audio is not written.
 
 ## Next Task
 

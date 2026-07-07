@@ -92,10 +92,15 @@ comparison reports, not add more receipt or fixture surfaces.
   transient phase resets for ratios below 1.0 changed synthetic extreme-ratio
   transient smear at `0.5x` and `0.75x` from OfflineHighQuality `8`/`6` frames
   back to the draft `1024` frame value, so no DSP patch landed.
+- 2026-07-07: added opt-in decoded listening-source profiling to
+  `stretch-corpus-report`. The FMA review seed now emits ten decoded MP3 source
+  rows with sample rate, channel count, analyzed frames, peak/RMS,
+  zero-crossing rate, and transient density. This is source-profile evidence,
+  not a stretch-quality verdict.
 
 ## Next Task
 
 Do not add a multiresolution or hybrid path until measured evidence requires
-it. Next useful work is listened real-source curation, external rendered-output
-comparison on a machine with the comparator tools installed, or a new decoded
-real-audio metric path that can expose an actual Batch 22 target.
+it. Next useful work is decoded real-source stretch metrics over bounded
+excerpts, listened real-source curation, or external rendered-output comparison
+on a machine with the comparator tools installed.

@@ -40,6 +40,7 @@ cargo run -p signal-dsp-stretch --bin stretch-corpus-report -- \
   --report-name stretch-corpus-v1-local \
   --projection-epoch projection:local \
   --listening-source-manifest target/stretch-corpus-fma-review-seed.tsv \
+  --decode-listening-sources \
   --output target/stretch-corpus-v1-local.txt
 ```
 
@@ -48,6 +49,11 @@ supplied, missing licensed-asset rows for still-uncovered cases, synthetic
 objective comparison rows, ratio/pitch curve fields, and listening-note slots.
 The `--output` path is local evidence and should not be committed unless a
 future roadmap explicitly defines an artifact location.
+
+`--decode-listening-sources` appends bounded decoded source-profile rows:
+sample rate, channels, analyzed frames, peak/RMS, zero-crossing rate, and
+transient density. These rows prove decoder and source-profile coverage. They
+are not stretch-quality verdicts.
 
 Add optional external rendered-output comparisons with repeated
 `--external-benchmark-render` groups:

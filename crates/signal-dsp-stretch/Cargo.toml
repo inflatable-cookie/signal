@@ -16,3 +16,4 @@ hound = { workspace = true }
 rustfft = { workspace = true }
 signal-dsp-resample = { workspace = true }
 signal-primitives = { workspace = true }
+symphonia = { workspace = true }
