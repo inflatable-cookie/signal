@@ -58,6 +58,8 @@ const EXTERNAL_BENCHMARK_GAIN_ENVELOPE_HOP_SIZE: usize = 2_048;
 const EXTERNAL_BENCHMARK_GAIN_ENVELOPE_NEAR_DB: f64 = 0.5;
 const EXTERNAL_BENCHMARK_LEVEL_NORMALIZED_REVIEW_ROWS: usize =
     EXTERNAL_BENCHMARK_GAIN_ENVELOPE_REVIEW_ROWS;
+const EXTERNAL_BENCHMARK_RESIDUAL_COHERENCE_REVIEW_ROWS: usize =
+    EXTERNAL_BENCHMARK_LEVEL_NORMALIZED_REVIEW_ROWS;
 const MAX_EXTERNAL_BENCHMARK_MISSING_RENDER_ROWS: usize = 20;
 const DETECTOR_POLICY: StretchTransientDetectorPolicy =
     StretchTransientDetectorPolicy::production();
@@ -1706,6 +1708,55 @@ impl ExternalBenchmarkLevelNormalizedReviewMeasurement {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+struct ExternalBenchmarkResidualCoherenceReviewMeasurement {
+    case_id: String,
+    source_path: String,
+    render_path: String,
+    tool_name: String,
+    ratio: f64,
+    source_boundary: &'static str,
+    aligned_compared_frames: usize,
+    signal_gain_db_applied: f64,
+    raw_feature_divergence_score: f64,
+    normalized_feature_divergence_score: f64,
+    normalized_sample_envelope_correlation: f64,
+    block_rms_envelope_correlation: f64,
+    mean_abs_block_rms_delta_db: f64,
+    max_abs_block_rms_delta_db: f64,
+    spectral_magnitude_coherence: f64,
+    normalized_spectral_centroid_delta_hz: f64,
+    normalized_high_frequency_energy_ratio_delta: f64,
+    residual_pattern: &'static str,
+}
+
+impl ExternalBenchmarkResidualCoherenceReviewMeasurement {
+    fn format_report_line(&self, rank: usize) -> String {
+        format!(
+            "external_benchmark_residual_coherence_review rank={} case={} source={} ratio={:.6} tool={} render={} status=Measured reason=TopFeatureDivergence source_boundary={} aligned_compared_frames={} signal_gain_db_applied={:.6} raw_feature_divergence_score={:.6} normalized_feature_divergence_score={:.6} normalized_sample_envelope_correlation={:.6} block_rms_envelope_correlation={:.6} mean_abs_block_rms_delta_db={:.6} max_abs_block_rms_delta_db={:.6} spectral_magnitude_coherence={:.6} normalized_spectral_centroid_delta_hz={:.6} normalized_high_frequency_energy_ratio_delta={:.6} residual_pattern={}",
+            rank,
+            self.case_id,
+            quoted_report_field(&self.source_path),
+            self.ratio,
+            quoted_report_field(&self.tool_name),
+            quoted_report_field(&self.render_path),
+            quoted_report_field(self.source_boundary),
+            self.aligned_compared_frames,
+            self.signal_gain_db_applied,
+            self.raw_feature_divergence_score,
+            self.normalized_feature_divergence_score,
+            self.normalized_sample_envelope_correlation,
+            self.block_rms_envelope_correlation,
+            self.mean_abs_block_rms_delta_db,
+            self.max_abs_block_rms_delta_db,
+            self.spectral_magnitude_coherence,
+            self.normalized_spectral_centroid_delta_hz,
+            self.normalized_high_frequency_energy_ratio_delta,
+            self.residual_pattern,
+        )
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
 struct ExternalBenchmarkDecodedAudio {
     sample_rate_hz: u32,
     channels: u16,
@@ -1726,6 +1777,7 @@ fn format_external_benchmark_quality_metrics(
     let mut lines = Vec::new();
     let mut gain_envelope_reviews = Vec::new();
     let mut level_normalized_reviews = Vec::new();
+    let mut residual_coherence_reviews = Vec::new();
     for render in renders {
         let source = match source_for_external_quality_render(sources, render) {
             ExternalBenchmarkQualitySource::Found(source) => source,
@@ -1825,6 +1877,14 @@ fn format_external_benchmark_quality_metrics(
             &feature_delta,
             source_audio.sample_rate_hz,
         );
+        let residual_coherence_review = measure_external_benchmark_residual_coherence_review(
+            &signal_output,
+            &external_audio.mono_samples,
+            &aligned,
+            &feature_delta,
+            &level_normalized_review,
+            source_audio.sample_rate_hz,
+        );
         gain_envelope_reviews.push(ExternalBenchmarkGainEnvelopeReviewMeasurement {
             case_id: render.case_id.clone(),
             source_path: source.source_path.clone(),
@@ -1906,6 +1966,45 @@ fn format_external_benchmark_quality_metrics(
                     .external
                     .high_frequency_energy_ratio,
             normalization_pattern: level_normalized_review.normalization_pattern,
+        });
+        residual_coherence_reviews.push(ExternalBenchmarkResidualCoherenceReviewMeasurement {
+            case_id: render.case_id.clone(),
+            source_path: source.source_path.clone(),
+            render_path: render.rendered_path.clone(),
+            tool_name: render.tool_name.clone(),
+            ratio: render.ratio,
+            source_boundary: "rendered-output-only; no external source or library dependency",
+            aligned_compared_frames: feature_delta.compared_frames,
+            signal_gain_db_applied: level_normalized_review.signal_gain_db_applied,
+            raw_feature_divergence_score: feature_delta.divergence_score(),
+            normalized_feature_divergence_score: level_normalized_review
+                .normalized_feature_delta
+                .divergence_score(),
+            normalized_sample_envelope_correlation: level_normalized_review
+                .normalized_feature_delta
+                .envelope_correlation,
+            block_rms_envelope_correlation: residual_coherence_review
+                .block_rms_envelope_correlation,
+            mean_abs_block_rms_delta_db: residual_coherence_review.mean_abs_block_rms_delta_db,
+            max_abs_block_rms_delta_db: residual_coherence_review.max_abs_block_rms_delta_db,
+            spectral_magnitude_coherence: residual_coherence_review.spectral_magnitude_coherence,
+            normalized_spectral_centroid_delta_hz: level_normalized_review
+                .normalized_feature_delta
+                .signal
+                .spectral_centroid_hz
+                - level_normalized_review
+                    .normalized_feature_delta
+                    .external
+                    .spectral_centroid_hz,
+            normalized_high_frequency_energy_ratio_delta: level_normalized_review
+                .normalized_feature_delta
+                .signal
+                .high_frequency_energy_ratio
+                - level_normalized_review
+                    .normalized_feature_delta
+                    .external
+                    .high_frequency_energy_ratio,
+            residual_pattern: residual_coherence_review.residual_pattern,
         });
 
         lines.push(
@@ -2012,6 +2111,22 @@ fn format_external_benchmark_quality_metrics(
     for (index, review) in level_normalized_reviews
         .iter()
         .take(EXTERNAL_BENCHMARK_LEVEL_NORMALIZED_REVIEW_ROWS)
+        .enumerate()
+    {
+        lines.push(review.format_report_line(index + 1));
+    }
+    residual_coherence_reviews.sort_by(|left, right| {
+        right
+            .raw_feature_divergence_score
+            .total_cmp(&left.raw_feature_divergence_score)
+            .then_with(|| left.case_id.cmp(&right.case_id))
+            .then_with(|| left.source_path.cmp(&right.source_path))
+            .then_with(|| left.ratio.total_cmp(&right.ratio))
+            .then_with(|| left.render_path.cmp(&right.render_path))
+    });
+    for (index, review) in residual_coherence_reviews
+        .iter()
+        .take(EXTERNAL_BENCHMARK_RESIDUAL_COHERENCE_REVIEW_ROWS)
         .enumerate()
     {
         lines.push(review.format_report_line(index + 1));
@@ -2245,6 +2360,18 @@ fn normalized_correlation(signal: &[f32], external: &[f32]) -> f64 {
     finite_ratio(dot, (signal_square_sum * external_square_sum).sqrt())
 }
 
+fn normalized_correlation_f64(signal: &[f64], external: &[f64]) -> f64 {
+    let mut dot = 0.0;
+    let mut signal_square_sum = 0.0;
+    let mut external_square_sum = 0.0;
+    for (signal_value, external_value) in signal.iter().zip(external) {
+        dot += signal_value * external_value;
+        signal_square_sum += signal_value * signal_value;
+        external_square_sum += external_value * external_value;
+    }
+    finite_ratio(dot, (signal_square_sum * external_square_sum).sqrt())
+}
+
 #[derive(Clone, Debug, PartialEq)]
 struct ExternalBenchmarkFeatureDelta {
     compared_frames: usize,
@@ -2303,6 +2430,15 @@ struct ExternalBenchmarkLevelNormalizedReview {
     signal_gain_db_applied: f64,
     normalized_feature_delta: ExternalBenchmarkFeatureDelta,
     normalization_pattern: &'static str,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+struct ExternalBenchmarkResidualCoherenceReview {
+    block_rms_envelope_correlation: f64,
+    mean_abs_block_rms_delta_db: f64,
+    max_abs_block_rms_delta_db: f64,
+    spectral_magnitude_coherence: f64,
+    residual_pattern: &'static str,
 }
 
 fn measure_external_benchmark_feature_delta(
@@ -2366,6 +2502,193 @@ fn measure_external_benchmark_level_normalized_review(
         normalized_feature_delta,
         normalization_pattern,
     }
+}
+
+fn measure_external_benchmark_residual_coherence_review(
+    signal: &[f32],
+    external: &[f32],
+    aligned: &AlignedErrorMeasurement,
+    raw_feature_delta: &ExternalBenchmarkFeatureDelta,
+    normalized_review: &ExternalBenchmarkLevelNormalizedReview,
+    sample_rate_hz: u32,
+) -> ExternalBenchmarkResidualCoherenceReview {
+    let signal_gain = amplitude_from_db(normalized_review.signal_gain_db_applied);
+    if !signal_gain.is_finite()
+        || aligned.compared_frames < EXTERNAL_BENCHMARK_GAIN_ENVELOPE_WINDOW_SIZE
+    {
+        return empty_external_benchmark_residual_coherence_review();
+    }
+
+    let normalized_signal = signal
+        .iter()
+        .map(|sample| (*sample as f64 * signal_gain) as f32)
+        .collect::<Vec<_>>();
+    let normalized_signal_slice =
+        &normalized_signal[aligned.signal_start..aligned.signal_start + aligned.compared_frames];
+    let external_slice =
+        &external[aligned.external_start..aligned.external_start + aligned.compared_frames];
+    let envelope = measure_block_rms_envelope_delta(normalized_signal_slice, external_slice);
+    let spectral_magnitude_coherence = measure_spectral_magnitude_coherence(
+        normalized_signal_slice,
+        external_slice,
+        sample_rate_hz,
+    );
+
+    ExternalBenchmarkResidualCoherenceReview {
+        block_rms_envelope_correlation: envelope.block_rms_envelope_correlation,
+        mean_abs_block_rms_delta_db: envelope.mean_abs_block_rms_delta_db,
+        max_abs_block_rms_delta_db: envelope.max_abs_block_rms_delta_db,
+        spectral_magnitude_coherence,
+        residual_pattern: classify_external_benchmark_residual_coherence(
+            raw_feature_delta,
+            &normalized_review.normalized_feature_delta,
+            envelope.block_rms_envelope_correlation,
+            spectral_magnitude_coherence,
+        ),
+    }
+}
+
+fn empty_external_benchmark_residual_coherence_review() -> ExternalBenchmarkResidualCoherenceReview
+{
+    ExternalBenchmarkResidualCoherenceReview {
+        block_rms_envelope_correlation: f64::NAN,
+        mean_abs_block_rms_delta_db: f64::NAN,
+        max_abs_block_rms_delta_db: f64::NAN,
+        spectral_magnitude_coherence: f64::NAN,
+        residual_pattern: "Inconclusive",
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+struct ExternalBenchmarkBlockEnvelopeDelta {
+    block_rms_envelope_correlation: f64,
+    mean_abs_block_rms_delta_db: f64,
+    max_abs_block_rms_delta_db: f64,
+}
+
+fn measure_block_rms_envelope_delta(
+    signal: &[f32],
+    external: &[f32],
+) -> ExternalBenchmarkBlockEnvelopeDelta {
+    if signal.len() < EXTERNAL_BENCHMARK_GAIN_ENVELOPE_WINDOW_SIZE
+        || external.len() < EXTERNAL_BENCHMARK_GAIN_ENVELOPE_WINDOW_SIZE
+    {
+        return ExternalBenchmarkBlockEnvelopeDelta {
+            block_rms_envelope_correlation: f64::NAN,
+            mean_abs_block_rms_delta_db: f64::NAN,
+            max_abs_block_rms_delta_db: f64::NAN,
+        };
+    }
+
+    let frame_count = signal.len().min(external.len());
+    let max_start = frame_count - EXTERNAL_BENCHMARK_GAIN_ENVELOPE_WINDOW_SIZE;
+    let mut signal_envelope = Vec::new();
+    let mut external_envelope = Vec::new();
+    let mut abs_delta_sum = 0.0;
+    let mut max_abs_delta = 0.0f64;
+    let mut start = 0;
+    while start <= max_start {
+        let end = start + EXTERNAL_BENCHMARK_GAIN_ENVELOPE_WINDOW_SIZE;
+        let signal_rms = slice_rms(&signal[start..end]);
+        let external_rms = slice_rms(&external[start..end]);
+        signal_envelope.push(signal_rms);
+        external_envelope.push(external_rms);
+        let abs_delta = (amplitude_db(signal_rms) - amplitude_db(external_rms)).abs();
+        abs_delta_sum += abs_delta;
+        max_abs_delta = max_abs_delta.max(abs_delta);
+        start += EXTERNAL_BENCHMARK_GAIN_ENVELOPE_HOP_SIZE;
+    }
+
+    ExternalBenchmarkBlockEnvelopeDelta {
+        block_rms_envelope_correlation: normalized_correlation_f64(
+            &signal_envelope,
+            &external_envelope,
+        ),
+        mean_abs_block_rms_delta_db: finite_ratio(abs_delta_sum, signal_envelope.len() as f64),
+        max_abs_block_rms_delta_db: max_abs_delta,
+    }
+}
+
+fn measure_spectral_magnitude_coherence(
+    signal: &[f32],
+    external: &[f32],
+    sample_rate_hz: u32,
+) -> f64 {
+    let frame_count = signal.len().min(external.len());
+    if frame_count < EXTERNAL_BENCHMARK_FEATURE_FFT_SIZE || sample_rate_hz == 0 {
+        return f64::NAN;
+    }
+
+    let mut planner = FftPlanner::<f32>::new();
+    let fft = planner.plan_fft_forward(EXTERNAL_BENCHMARK_FEATURE_FFT_SIZE);
+    let window = hann_window(EXTERNAL_BENCHMARK_FEATURE_FFT_SIZE);
+    let hop = EXTERNAL_BENCHMARK_FEATURE_FFT_SIZE;
+    let max_start = frame_count - EXTERNAL_BENCHMARK_FEATURE_FFT_SIZE;
+    let window_count = (max_start / hop + 1).min(EXTERNAL_BENCHMARK_FEATURE_MAX_WINDOWS);
+    let mut cosine_sum = 0.0;
+    let mut measured_windows = 0;
+
+    for window_index in 0..window_count {
+        let start = window_index * hop;
+        let signal_magnitudes = windowed_magnitudes(signal, start, &window, fft.clone());
+        let external_magnitudes = windowed_magnitudes(external, start, &window, fft.clone());
+        let cosine = normalized_correlation_f64(&signal_magnitudes, &external_magnitudes);
+        if cosine.is_finite() {
+            cosine_sum += cosine;
+            measured_windows += 1;
+        }
+    }
+
+    finite_ratio(cosine_sum, measured_windows as f64)
+}
+
+fn windowed_magnitudes(
+    samples: &[f32],
+    start: usize,
+    window: &[f32],
+    fft: std::sync::Arc<dyn rustfft::Fft<f32>>,
+) -> Vec<f64> {
+    let mut buffer = vec![Complex32::new(0.0, 0.0); EXTERNAL_BENCHMARK_FEATURE_FFT_SIZE];
+    for index in 0..EXTERNAL_BENCHMARK_FEATURE_FFT_SIZE {
+        buffer[index].re = samples[start + index] * window[index];
+    }
+    fft.process(&mut buffer);
+    buffer
+        .iter()
+        .take(EXTERNAL_BENCHMARK_FEATURE_FFT_SIZE / 2 + 1)
+        .skip(1)
+        .map(|value| value.norm() as f64)
+        .collect()
+}
+
+fn classify_external_benchmark_residual_coherence(
+    raw: &ExternalBenchmarkFeatureDelta,
+    normalized: &ExternalBenchmarkFeatureDelta,
+    block_rms_envelope_correlation: f64,
+    spectral_magnitude_coherence: f64,
+) -> &'static str {
+    let raw_score = raw.divergence_score();
+    let normalized_score = normalized.divergence_score();
+    if !raw_score.is_finite()
+        || !normalized_score.is_finite()
+        || !block_rms_envelope_correlation.is_finite()
+        || !spectral_magnitude_coherence.is_finite()
+    {
+        return "Inconclusive";
+    }
+    if normalized_score <= raw_score * 0.5
+        && block_rms_envelope_correlation >= 0.85
+        && spectral_magnitude_coherence >= 0.85
+    {
+        return "MostlyPhaseOrFineTextureResidual";
+    }
+    if block_rms_envelope_correlation < 0.70 {
+        return "ResidualEnvelopeDivergence";
+    }
+    if spectral_magnitude_coherence < 0.75 {
+        return "ResidualSpectralMagnitudeDivergence";
+    }
+    "MixedResidualCoherence"
 }
 
 fn empty_external_benchmark_feature_delta() -> ExternalBenchmarkFeatureDelta {
@@ -2667,6 +2990,14 @@ fn amplitude_db(value: f64) -> f64 {
         -240.0
     } else {
         20.0 * value.log10()
+    }
+}
+
+fn amplitude_from_db(value_db: f64) -> f64 {
+    if !value_db.is_finite() {
+        f64::NAN
+    } else {
+        10.0f64.powf(value_db / 20.0)
     }
 }
 
@@ -5127,6 +5458,10 @@ mod tests {
         assert!(formatted.contains("signal_gain_db_applied=0.000000"));
         assert!(formatted.contains("normalized_feature_divergence_score=0.000000"));
         assert!(formatted.contains("normalization_pattern=MostlyLevelExplained"));
+        assert!(formatted.contains("external_benchmark_residual_coherence_review rank=1"));
+        assert!(formatted.contains("block_rms_envelope_correlation=1.000000"));
+        assert!(formatted.contains("spectral_magnitude_coherence=1.000000"));
+        assert!(formatted.contains("residual_pattern=MostlyPhaseOrFineTextureResidual"));
 
         let _ = fs::remove_file(path);
     }

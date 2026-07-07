@@ -477,6 +477,20 @@ comparison reports, not add more receipt or fixture surfaces.
   `0.000000` dB and unchanged envelope correlation `0.639086`. This says most
   of the worst comparator feature gap is level-related, while residual envelope
   correlation still needs a non-level quality check before any DSP gain change.
+- 2026-07-07: added capped `external_benchmark_residual_coherence_review` rows
+  for the level-normalized top cases. The row measures block-RMS envelope
+  correlation, mean/max absolute block RMS delta, and STFT magnitude coherence
+  after matched-RMS normalization. The regenerated broad Rubber Band R3 report
+  emitted 8 residual rows: 5 classified as `MostlyPhaseOrFineTextureResidual`
+  and 3 as `MixedResidualCoherence`. Mean block-RMS envelope correlation was
+  `0.992373`, mean spectral magnitude coherence was `0.911277`, mean absolute
+  block RMS delta was `0.867780` dB, and max absolute block RMS delta was
+  `4.425477` dB. The worst raw row, `pads_sustains` `000870.wav` at `1.5x`,
+  still landed as mixed residual because spectral magnitude coherence was
+  `0.816178`, but block-RMS envelope correlation was high at `0.975399`. This
+  argues against a DSP gain/envelope correction as the next move. The measured
+  residual is mostly phase/fine-texture or mild spectral-magnitude difference
+  after level matching.
 
 ## Next Task
 
@@ -489,9 +503,12 @@ FMA no-listening check and the first Rubber Band R3 black-box comparator pass.
 Next useful work is a measured quality-decision batch, still report-only:
 use the feature-delta rows to separate comparator findings into metric noise,
 likely audible gain/envelope differences, and actual DSP targets. Preserve the
-existing timing-drift and transient-smear gates. Next do not add a DSP gain
-change yet. Add a report-only residual-envelope/coherence view on the
-level-normalized top rows, so the remaining low envelope correlation can be
-separated from harmless phase choice before promoting the gated short-window
-selector, adding a multiresolution selector, or starting a sustained-material
-vertical-coherence path.
+existing timing-drift and transient-smear gates. Next useful step is no longer
+another comparator receipt row. Move to a promotion decision batch for the
+gated short-window selector: prove the selector can become an OfflineHighQuality
+path option without changing raw comparator evidence, keep raw and
+level-normalized comparator reports as promotion evidence, and require no new
+timing drift, transient-smear regression, or raw level/coherence surprise on
+the broad FMA/Rubber Band pack. If that promotion gate fails, then open the
+multiresolution or sustained-material coherence path with this evidence as the
+entry condition.
