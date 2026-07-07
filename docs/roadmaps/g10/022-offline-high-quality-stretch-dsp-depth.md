@@ -53,7 +53,7 @@ comparison reports, not add more receipt or fixture surfaces.
 
 - [x] carry the new `OfflineHighQualityPath` option through cache identity and
   render/export/freeze artifact planning before any consumer uses it
-- [ ] require the broad FMA/Rubber Band selector-path evidence in promotion
+- [x] require the broad FMA/Rubber Band selector-path evidence in promotion
   receipts
 - [x] keep the default OfflineHighQuality path unchanged until selector use is
   explicitly selected by artifact policy
@@ -529,13 +529,21 @@ comparison reports, not add more receipt or fixture surfaces.
   and pitch-shift selector artifact materialization are explicitly rejected
   until those combinations have their own corpus evidence, so consumers cannot
   accidentally request selector cache keys backed by default-path PCM.
+- 2026-07-07: made stretch promotion receipts path-aware. Default synthetic
+  OfflineHighQuality receipts now authorize only `OfflineHighQualityPath::Default`.
+  `accepted_compression_short_window_selector(...)` records the broad
+  FMA/Rubber Band selector-path evidence for
+  `OfflineHighQualityPath::CompressionShortWindowSelector`, and render-plane
+  plus runtime plan snapshots now gate product-facing use through
+  `accepts_product_facing_path(...)` / `product_facing_path_blocker(...)`.
+  Selector artifact materialization rejects default-path receipts and still
+  rejects dynamic-ratio or pitch-shift selector combinations until those paths
+  have separate evidence.
 
 ## Next Task
 
-Do not make the selector a consumer-visible default yet. Next useful work is
-the remaining Batch 22.4 gate: require the broad FMA/Rubber Band
-selector-path evidence in promotion receipts before selector artifacts can be
-accepted as product-facing policy. Keep dynamic-ratio and pitch-shift selector
-artifact materialization blocked until those path combinations have separate
-evidence. The `000900.mp3` matched-event width issue remains open; do not
-treat window selection as solving that sustained-material target.
+Batch 22.4 is closed. Next useful work is a measured quality batch, not more
+artifact plumbing: either reopen the `000900.mp3` pads/sustains matched-event
+width issue, or collect separate selector evidence before enabling dynamic-ratio
+or pitch-shift selector artifact materialization. Do not make the selector a
+consumer-visible default yet.

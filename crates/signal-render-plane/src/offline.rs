@@ -441,7 +441,8 @@ pub fn plan_offline_stretch_artifact(
         .identity()
         .map_err(OfflineStretchArtifactPlanError::InvalidIdentity)?;
     let backend = stretch_backend_plan(identity_input.tier);
-    let promotion_accepted = promotion_receipt.accepts_product_facing_use(identity_input.tier);
+    let promotion_accepted = promotion_receipt
+        .accepts_product_facing_path(identity_input.tier, identity_input.offline_path);
     let readiness = match (backend.status, promotion_accepted) {
         (StretchBackendStatus::Planned, _) => {
             OfflineStretchArtifactReadiness::AwaitingImplementation
@@ -1064,6 +1065,21 @@ mod tests {
         receipt
     }
 
+    fn accepted_selector_promotion_receipt(evidence_id: &str) -> StretchPromotionReceipt {
+        let receipt = StretchPromotionReceipt::accepted_compression_short_window_selector(
+            evidence_id,
+            20,
+            20,
+        );
+        assert_eq!(receipt.status, StretchPromotionStatus::Accepted);
+        assert_eq!(receipt.evidence_id, evidence_id);
+        assert!(receipt.accepts_product_facing_path(
+            StretchBackendTier::OfflineHighQuality,
+            OfflineHighQualityPath::CompressionShortWindowSelector
+        ));
+        receipt
+    }
+
     fn assert_current_corpus_promotion_receipt(
         receipt: &StretchPromotionReceipt,
         evidence_id: &str,
@@ -1075,6 +1091,7 @@ mod tests {
             receipt.required_case_count,
             StretchSyntheticPromotionPolicy::default().min_comparison_count as u32
         );
+        assert_eq!(receipt.offline_path, OfflineHighQualityPath::Default);
         assert!(receipt.passed_case_count >= receipt.required_case_count);
         assert!(receipt.accepts_product_facing_use(StretchBackendTier::OfflineHighQuality));
     }
@@ -1416,8 +1433,8 @@ mod tests {
         let changed_curve = stretch_identity_input()
             .with_ratio_curve(vec![StretchRatioPoint::new(0, 1.5)])
             .with_pitch_curve(vec![StretchPitchPoint::new(0, 0.0)]);
-        let changed_path = input
-            .clone()
+        let changed_path = stretch_identity_input()
+            .with_ratio_curve(vec![StretchRatioPoint::new(0, 0.75)])
             .with_offline_path(OfflineHighQualityPath::CompressionShortWindowSelector);
         let source = stretch_artifact_source(480);
         let build = |identity_input: &StretchCacheIdentityInput| {
@@ -1439,7 +1456,13 @@ mod tests {
         let repeated = build(&input);
         let projection_changed = build(&changed_projection);
         let curve_changed = build(&changed_curve);
-        let path_changed = build(&changed_path);
+        let path_changed = materialize_offline_stretch_artifact_pcm(
+            OfflineStretchArtifactScope::RenderCache,
+            &changed_path,
+            accepted_selector_promotion_receipt("fma-rubberband:builder-cache-identity"),
+            &source,
+        )
+        .expect("selector-specific evidence should produce selector cache identity");
 
         assert_eq!(
             base.artifact.receipt.cache_identity_hash,
@@ -1459,10 +1482,10 @@ mod tests {
         );
         assert_ne!(
             base.artifact.receipt.cache_identity_hash,
-            path_changed.artifact.receipt.cache_identity_hash
+            path_changed.receipt.cache_identity_hash
         );
         assert_eq!(
-            path_changed.artifact.receipt.offline_path,
+            path_changed.receipt.offline_path,
             OfflineHighQualityPath::CompressionShortWindowSelector
         );
         assert_ne!(base.source, projection_changed.source);
@@ -1872,7 +1895,7 @@ mod tests {
         let selector_artifact = materialize_offline_stretch_artifact_pcm(
             OfflineStretchArtifactScope::RenderCache,
             &selector_input,
-            accepted_synthetic_promotion_receipt("synthetic:selector-path-static"),
+            accepted_selector_promotion_receipt("fma-rubberband:selector-path-static"),
             &source,
         )
         .expect("selector path should materialize static stereo");
@@ -1897,6 +1920,50 @@ mod tests {
     }
 
     #[test]
+    fn compression_short_window_selector_rejects_default_promotion_receipt() {
+        let selector_input = stretch_identity_input()
+            .with_ratio_curve(vec![StretchRatioPoint::new(0, 0.75)])
+            .with_offline_path(OfflineHighQualityPath::CompressionShortWindowSelector);
+        let source = stretch_artifact_source(2_048);
+        let default_receipt =
+            accepted_synthetic_promotion_receipt("synthetic:default-path-not-selector");
+
+        let plan = plan_offline_stretch_artifact(
+            OfflineStretchArtifactScope::RenderCache,
+            &selector_input,
+            default_receipt.clone(),
+        )
+        .expect("selector plan should still validate identity");
+        assert_eq!(
+            plan.readiness,
+            OfflineStretchArtifactReadiness::AwaitingCorpusEvidence
+        );
+        assert!(!plan.product_facing_allowed);
+        assert_eq!(
+            materialize_offline_stretch_artifact_pcm(
+                OfflineStretchArtifactScope::RenderCache,
+                &selector_input,
+                default_receipt,
+                &source,
+            ),
+            Err(OfflineStretchArtifactMaterializeError::NotReady(
+                OfflineStretchArtifactReadiness::AwaitingCorpusEvidence
+            ))
+        );
+        assert_eq!(
+            build_offline_stretch_artifact_pcm_with_synthetic_policy(current_corpus_build_request(
+                OfflineStretchArtifactScope::RenderCache,
+                &selector_input,
+                "synthetic:selector-default-policy",
+                &source,
+            )),
+            Err(OfflineStretchArtifactMaterializeError::NotReady(
+                OfflineStretchArtifactReadiness::AwaitingCorpusEvidence
+            ))
+        );
+    }
+
+    #[test]
     fn compression_short_window_selector_rejects_unproven_artifact_combinations() {
         let dynamic_input = stretch_identity_input()
             .with_ratio_curve(vec![
@@ -1914,7 +1981,7 @@ mod tests {
             materialize_offline_stretch_artifact_pcm(
                 OfflineStretchArtifactScope::RenderCache,
                 &dynamic_input,
-                accepted_synthetic_promotion_receipt("synthetic:selector-dynamic"),
+                accepted_selector_promotion_receipt("fma-rubberband:selector-dynamic"),
                 &source,
             ),
             Err(
@@ -1927,7 +1994,7 @@ mod tests {
             materialize_offline_stretch_artifact_pcm(
                 OfflineStretchArtifactScope::RenderCache,
                 &pitch_input,
-                accepted_synthetic_promotion_receipt("synthetic:selector-pitch"),
+                accepted_selector_promotion_receipt("fma-rubberband:selector-pitch"),
                 &source,
             ),
             Err(

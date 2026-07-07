@@ -225,12 +225,14 @@ fn snapshot_plan(
     }
 
     let backend = stretch_backend_plan(registration.identity_input.tier);
-    let promotion_accepted = registration
-        .promotion_receipt
-        .accepts_product_facing_use(registration.identity_input.tier);
-    let promotion_blocker = registration
-        .promotion_receipt
-        .product_facing_blocker(registration.identity_input.tier);
+    let promotion_accepted = registration.promotion_receipt.accepts_product_facing_path(
+        registration.identity_input.tier,
+        registration.identity_input.offline_path,
+    );
+    let promotion_blocker = registration.promotion_receipt.product_facing_path_blocker(
+        registration.identity_input.tier,
+        registration.identity_input.offline_path,
+    );
     let (readiness, last_error) = match (backend.status, promotion_accepted) {
         (StretchBackendStatus::Planned, _) => (
             RuntimeOfflineStretchArtifactReadiness::AwaitingImplementation,

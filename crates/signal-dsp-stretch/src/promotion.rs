@@ -1,6 +1,7 @@
 use crate::{
-    compare_synthetic_stretch_backends, prioritize_stretch_quality_work, StretchBackendTier,
-    StretchBenchmarkComparisonOutcome, StretchSyntheticBenchmarkComparisonReport,
+    compare_synthetic_stretch_backends, prioritize_stretch_quality_work, OfflineHighQualityPath,
+    StretchBackendTier, StretchBenchmarkComparisonOutcome,
+    StretchSyntheticBenchmarkComparisonReport,
 };
 
 /// Promotion decision for a Signal-owned stretch tier.
@@ -19,6 +20,8 @@ pub enum StretchPromotionStatus {
 pub struct StretchPromotionReceipt {
     /// Stretch tier covered by this receipt.
     pub tier: StretchBackendTier,
+    /// Offline high-quality renderer path covered by this receipt.
+    pub offline_path: OfflineHighQualityPath,
     /// Promotion decision.
     pub status: StretchPromotionStatus,
     /// Stable evidence or benchmark run identifier.
@@ -74,6 +77,7 @@ impl StretchPromotionReceipt {
     pub fn not_evaluated(tier: StretchBackendTier) -> Self {
         Self {
             tier,
+            offline_path: OfflineHighQualityPath::Default,
             status: StretchPromotionStatus::NotEvaluated,
             evidence_id: String::new(),
             compared_to_draft_baseline: false,
@@ -91,12 +95,37 @@ impl StretchPromotionReceipt {
     ) -> Self {
         Self {
             tier: StretchBackendTier::OfflineHighQuality,
+            offline_path: OfflineHighQualityPath::Default,
             status: StretchPromotionStatus::Accepted,
             evidence_id: evidence_id.into(),
             compared_to_draft_baseline: true,
             passed_case_count,
             required_case_count,
             note: "OfflineHighQuality evidence accepted product-facing promotion".to_string(),
+        }
+    }
+
+    /// Accepted receipt for the compression short-window selector path.
+    ///
+    /// This receipt is intentionally separate from
+    /// [`Self::accepted_offline_high_quality`]. The selector is an opt-in
+    /// OfflineHighQuality path with its own broad FMA/Rubber Band evidence
+    /// gate, so default-path synthetic evidence cannot unlock selector
+    /// artifacts.
+    pub fn accepted_compression_short_window_selector(
+        evidence_id: impl Into<String>,
+        passed_case_count: u32,
+        required_case_count: u32,
+    ) -> Self {
+        Self {
+            tier: StretchBackendTier::OfflineHighQuality,
+            offline_path: OfflineHighQualityPath::CompressionShortWindowSelector,
+            status: StretchPromotionStatus::Accepted,
+            evidence_id: evidence_id.into(),
+            compared_to_draft_baseline: true,
+            passed_case_count,
+            required_case_count,
+            note: "CompressionShortWindowSelector broad FMA/Rubber Band selector-path evidence accepted product-facing promotion".to_string(),
         }
     }
 
@@ -109,6 +138,7 @@ impl StretchPromotionReceipt {
     ) -> Self {
         Self {
             tier: StretchBackendTier::OfflineHighQuality,
+            offline_path: OfflineHighQualityPath::Default,
             status: StretchPromotionStatus::Rejected,
             evidence_id: evidence_id.into(),
             compared_to_draft_baseline: true,
@@ -164,7 +194,18 @@ impl StretchPromotionReceipt {
 
     /// Whether this receipt allows product-facing use for `tier`.
     pub fn accepts_product_facing_use(&self, tier: StretchBackendTier) -> bool {
+        self.accepts_product_facing_path(tier, OfflineHighQualityPath::Default)
+    }
+
+    /// Whether this receipt allows product-facing use for `tier` and
+    /// `offline_path`.
+    pub fn accepts_product_facing_path(
+        &self,
+        tier: StretchBackendTier,
+        offline_path: OfflineHighQualityPath,
+    ) -> bool {
         self.tier == tier
+            && self.offline_path == offline_path
             && self.status == StretchPromotionStatus::Accepted
             && !self.evidence_id.is_empty()
             && self.compared_to_draft_baseline
@@ -174,8 +215,21 @@ impl StretchPromotionReceipt {
 
     /// Human-readable blocking reason when product-facing use is not accepted.
     pub fn product_facing_blocker(&self, tier: StretchBackendTier) -> Option<&'static str> {
+        self.product_facing_path_blocker(tier, OfflineHighQualityPath::Default)
+    }
+
+    /// Human-readable blocking reason when product-facing use is not accepted
+    /// for `tier` and `offline_path`.
+    pub fn product_facing_path_blocker(
+        &self,
+        tier: StretchBackendTier,
+        offline_path: OfflineHighQualityPath,
+    ) -> Option<&'static str> {
         if self.tier != tier {
             return Some("promotion receipt tier does not match artifact tier");
+        }
+        if self.offline_path != offline_path {
+            return Some("promotion receipt offline path does not match artifact path");
         }
         if self.status != StretchPromotionStatus::Accepted {
             return Some("promotion evidence has not accepted product-facing use");
@@ -211,17 +265,51 @@ mod tests {
         let receipt = StretchPromotionReceipt::accepted_offline_high_quality("run:001", 8, 8);
 
         assert!(receipt.accepts_product_facing_use(StretchBackendTier::OfflineHighQuality));
+        assert!(receipt.accepts_product_facing_path(
+            StretchBackendTier::OfflineHighQuality,
+            OfflineHighQualityPath::Default
+        ));
         assert_eq!(
             receipt.product_facing_blocker(StretchBackendTier::OfflineHighQuality),
+            None
+        );
+        assert_eq!(
+            receipt.product_facing_path_blocker(
+                StretchBackendTier::OfflineHighQuality,
+                OfflineHighQualityPath::Default
+            ),
             None
         );
     }
 
     #[test]
-    fn promotion_receipt_blocks_incomplete_or_mismatched_evidence() {
+    fn selector_receipt_allows_only_selector_path() {
+        let receipt = StretchPromotionReceipt::accepted_compression_short_window_selector(
+            "fma-rubberband-selector:001",
+            20,
+            20,
+        );
+
+        assert!(receipt.accepts_product_facing_path(
+            StretchBackendTier::OfflineHighQuality,
+            OfflineHighQualityPath::CompressionShortWindowSelector
+        ));
+        assert!(!receipt.accepts_product_facing_use(StretchBackendTier::OfflineHighQuality));
+        assert_eq!(
+            receipt.product_facing_path_blocker(
+                StretchBackendTier::OfflineHighQuality,
+                OfflineHighQualityPath::Default
+            ),
+            Some("promotion receipt offline path does not match artifact path")
+        );
+    }
+
+    #[test]
+    fn promotion_receipt_blocks_incomplete_mismatched_or_wrong_path_evidence() {
         let not_evaluated = StretchPromotionReceipt::default();
         let incomplete = StretchPromotionReceipt::accepted_offline_high_quality("run:002", 7, 8);
         let mismatched = StretchPromotionReceipt::accepted_offline_high_quality("run:003", 8, 8);
+        let default_path = StretchPromotionReceipt::accepted_offline_high_quality("run:004", 8, 8);
 
         assert!(!not_evaluated.accepts_product_facing_use(StretchBackendTier::OfflineHighQuality));
         assert_eq!(
@@ -237,6 +325,17 @@ mod tests {
         assert_eq!(
             mismatched.product_facing_blocker(StretchBackendTier::RealtimePreview),
             Some("promotion receipt tier does not match artifact tier")
+        );
+        assert!(!default_path.accepts_product_facing_path(
+            StretchBackendTier::OfflineHighQuality,
+            OfflineHighQualityPath::CompressionShortWindowSelector
+        ));
+        assert_eq!(
+            default_path.product_facing_path_blocker(
+                StretchBackendTier::OfflineHighQuality,
+                OfflineHighQualityPath::CompressionShortWindowSelector
+            ),
+            Some("promotion receipt offline path does not match artifact path")
         );
     }
 

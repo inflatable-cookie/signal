@@ -29,8 +29,10 @@ pub(crate) fn public_offline_stretch_artifact_materialization(
         output_frame_count: 72_000,
         channels: 2,
         sample_rate_hz: 48_000,
-        product_facing_allowed: promotion_receipt
-            .accepts_product_facing_use(StretchBackendTier::OfflineHighQuality),
+        product_facing_allowed: promotion_receipt.accepts_product_facing_path(
+            StretchBackendTier::OfflineHighQuality,
+            identity_input.offline_path,
+        ),
     }
 }
 
