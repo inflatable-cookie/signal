@@ -768,27 +768,141 @@ fn format_decoded_stretch_metrics(
                 QUALITY_METRIC_WINDOW_SIZE,
                 QUALITY_METRIC_HOP_SIZE,
             );
+            let draft_alignment = transient_alignment_diagnostic(&mono, &draft_output, ratio);
+            let offline_alignment = transient_alignment_diagnostic(&mono, &offline_output, ratio);
             lines.push(format_decoded_stretch_metric_line(
                 &audio,
                 ratio,
                 "TransientSmearFrames",
                 draft_smear.max_smear_frames,
                 offline_smear.max_smear_frames,
-                Some(format!(
-                    "draft_input_transients={} draft_output_transients={} draft_matched_transients={} draft_missed_transients={} offline_input_transients={} offline_output_transients={} offline_matched_transients={} offline_missed_transients={}",
-                    draft_smear.input_transients,
-                    draft_smear.output_transients,
-                    draft_smear.matched_transients,
-                    draft_smear.missed_transients,
-                    offline_smear.input_transients,
-                    offline_smear.output_transients,
-                    offline_smear.matched_transients,
-                    offline_smear.missed_transients,
+                Some(format_transient_metric_detail(
+                    &draft_smear,
+                    &offline_smear,
+                    &draft_alignment,
+                    &offline_alignment,
                 )),
             ));
         }
     }
     Ok(lines.join("\n"))
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct TransientAlignmentDiagnostic {
+    mean_match_error_frames: f64,
+    max_match_error_frames: f64,
+    mean_missed_nearest_distance_frames: f64,
+    max_missed_nearest_distance_frames: f64,
+}
+
+fn transient_alignment_diagnostic(
+    input: &[f32],
+    output: &[f32],
+    ratio: f64,
+) -> TransientAlignmentDiagnostic {
+    if !ratio.is_finite() || ratio <= 0.0 || input.is_empty() || output.is_empty() {
+        return transient_alignment_nan();
+    }
+
+    let input_events =
+        detect_stretch_transients(input, QUALITY_METRIC_WINDOW_SIZE, QUALITY_METRIC_HOP_SIZE);
+    let output_events =
+        detect_stretch_transients(output, QUALITY_METRIC_WINDOW_SIZE, QUALITY_METRIC_HOP_SIZE);
+    let tolerance = QUALITY_METRIC_WINDOW_SIZE.max(QUALITY_METRIC_HOP_SIZE * 4) as f64;
+    let mut matched_count = 0usize;
+    let mut matched_error_sum = 0.0f64;
+    let mut matched_error_max = 0.0f64;
+    let mut missed_nearest_count = 0usize;
+    let mut missed_nearest_sum = 0.0f64;
+    let mut missed_nearest_max = 0.0f64;
+
+    for input_event in input_events {
+        let expected_output_frame = input_event.frame_index as f64 * ratio;
+        let nearest_distance = nearest_transient_distance(&output_events, expected_output_frame);
+        match nearest_distance {
+            Some(distance) if distance <= tolerance => {
+                matched_count += 1;
+                matched_error_sum += distance;
+                matched_error_max = matched_error_max.max(distance);
+            }
+            Some(distance) => {
+                missed_nearest_count += 1;
+                missed_nearest_sum += distance;
+                missed_nearest_max = missed_nearest_max.max(distance);
+            }
+            None => {}
+        }
+    }
+
+    TransientAlignmentDiagnostic {
+        mean_match_error_frames: if matched_count > 0 {
+            matched_error_sum / matched_count as f64
+        } else {
+            f64::NAN
+        },
+        max_match_error_frames: if matched_count > 0 {
+            matched_error_max
+        } else {
+            f64::NAN
+        },
+        mean_missed_nearest_distance_frames: if missed_nearest_count > 0 {
+            missed_nearest_sum / missed_nearest_count as f64
+        } else {
+            f64::NAN
+        },
+        max_missed_nearest_distance_frames: if missed_nearest_count > 0 {
+            missed_nearest_max
+        } else {
+            f64::NAN
+        },
+    }
+}
+
+fn transient_alignment_nan() -> TransientAlignmentDiagnostic {
+    TransientAlignmentDiagnostic {
+        mean_match_error_frames: f64::NAN,
+        max_match_error_frames: f64::NAN,
+        mean_missed_nearest_distance_frames: f64::NAN,
+        max_missed_nearest_distance_frames: f64::NAN,
+    }
+}
+
+fn nearest_transient_distance(
+    events: &[signal_dsp_stretch::StretchTransientEvent],
+    expected_frame: f64,
+) -> Option<f64> {
+    events
+        .iter()
+        .map(|event| (event.frame_index as f64 - expected_frame).abs())
+        .min_by(|left, right| left.total_cmp(right))
+}
+
+fn format_transient_metric_detail(
+    draft_smear: &signal_dsp_stretch::StretchTransientSmearMeasurement,
+    offline_smear: &signal_dsp_stretch::StretchTransientSmearMeasurement,
+    draft_alignment: &TransientAlignmentDiagnostic,
+    offline_alignment: &TransientAlignmentDiagnostic,
+) -> String {
+    format!(
+        "draft_input_transients={} draft_output_transients={} draft_matched_transients={} draft_missed_transients={} draft_mean_match_error_frames={:.6} draft_max_match_error_frames={:.6} draft_mean_missed_nearest_distance_frames={:.6} draft_max_missed_nearest_distance_frames={:.6} offline_input_transients={} offline_output_transients={} offline_matched_transients={} offline_missed_transients={} offline_mean_match_error_frames={:.6} offline_max_match_error_frames={:.6} offline_mean_missed_nearest_distance_frames={:.6} offline_max_missed_nearest_distance_frames={:.6}",
+        draft_smear.input_transients,
+        draft_smear.output_transients,
+        draft_smear.matched_transients,
+        draft_smear.missed_transients,
+        draft_alignment.mean_match_error_frames,
+        draft_alignment.max_match_error_frames,
+        draft_alignment.mean_missed_nearest_distance_frames,
+        draft_alignment.max_missed_nearest_distance_frames,
+        offline_smear.input_transients,
+        offline_smear.output_transients,
+        offline_smear.matched_transients,
+        offline_smear.missed_transients,
+        offline_alignment.mean_match_error_frames,
+        offline_alignment.max_match_error_frames,
+        offline_alignment.mean_missed_nearest_distance_frames,
+        offline_alignment.max_missed_nearest_distance_frames,
+    )
 }
 
 fn listening_source_ratios(case_id: &str) -> Result<&'static [f64], String> {
@@ -1083,6 +1197,8 @@ mod tests {
         assert!(formatted.contains("ratio=0.750000 metric=TimingDriftSamples"));
         assert!(formatted.contains("metric=TransientSmearFrames"));
         assert!(formatted.contains("offline_matched_transients="));
+        assert!(formatted.contains("offline_mean_match_error_frames="));
+        assert!(formatted.contains("offline_mean_missed_nearest_distance_frames="));
         assert!(formatted.contains("analysis_limited=true"));
 
         let _ = fs::remove_file(path);

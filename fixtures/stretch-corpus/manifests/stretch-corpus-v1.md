@@ -67,7 +67,9 @@ When `--measure-decoded-stretch` is set, the report decodes bounded local
 source excerpts and records objective draft-vs-OfflineHighQuality stretch
 metric rows for each case ratio. The first metric set covers timing drift and
 transient smear. Transient rows include matched and missed transient counts so
-metric penalties can be sorted before a DSP change is chosen.
+metric penalties can be sorted before a DSP change is chosen. They also include
+matched timing error and nearest-missed distance diagnostics for alignment
+triage.
 
 ## Next Task
 

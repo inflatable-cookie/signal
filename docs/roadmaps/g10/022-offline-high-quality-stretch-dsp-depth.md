@@ -114,11 +114,21 @@ comparison reports, not add more receipt or fixture surfaces.
   transient rows recorded 95 matched and 28 missed OfflineHighQuality transient
   matches. The next DSP choice should therefore start from transient
   alignment/detection evidence, not a blind compression transient-reset patch.
+- 2026-07-07: added bounded transient-alignment diagnostics to decoded
+  real-source transient rows. The regenerated FMA review-seed report still had
+  15 improved, 42 unchanged, 3 inconclusive, and 0 regressed metric rows.
+  OfflineHighQuality matched 95 transients and missed 28. Matched timing errors
+  stayed within the 1024-frame search tolerance; the largest missed-nearest
+  distances were far outside it, including a bass `1.25x` row with mean
+  `83808` frames and max `87488` frames. This points to sparse or shifted
+  output transient detection on specific material windows, not simple attack
+  widening on matched events.
 
 ## Next Task
 
 Do not add a multiresolution or hybrid path until measured evidence requires
-it. Next useful work is to add a bounded transient-alignment diagnostic for
-decoded real-source rows so missed matches can be sorted by timing error and
-material family before choosing a DSP change. Listened real-source curation and
-external rendered-output comparison remain promotion inputs.
+it. Next useful work is to inspect the largest missed-nearest rows by source,
+ratio, and transient event position, then decide whether the next batch targets
+transient detection alignment, output event preservation, or corpus window
+selection. Listened real-source curation and external rendered-output
+comparison remain promotion inputs.
