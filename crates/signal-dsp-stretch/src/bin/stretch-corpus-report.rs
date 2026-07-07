@@ -766,7 +766,8 @@ fn format_decoded_stretch_metrics(
     let mut compression_short_window_candidate = CompressionReviewCandidateAccumulator::new(
         "decoded_compression_short_window_candidate",
         "offline_hq_short_window",
-    );
+    )
+    .with_feature_report("decoded_compression_short_window_feature");
     let mut width_control_candidate = TransientWidthControlCandidateAccumulator::default();
     let mut width_control_edit_gate = TransientWidthControlEditGateAccumulator::default();
     for source in sources {
@@ -997,6 +998,7 @@ fn format_decoded_stretch_metrics(
     }
     if compression_short_window_candidate.rows > 0 {
         lines.push(compression_short_window_candidate.format_report_line());
+        lines.extend(compression_short_window_candidate.format_feature_lines());
     }
     if width_control_candidate.rows > 0 {
         lines.push(width_control_candidate.format_report_line());
@@ -1478,6 +1480,7 @@ impl CompressionPhaseLockAblationAccumulator {
 struct CompressionReviewCandidateAccumulator {
     report_name: &'static str,
     candidate_path: &'static str,
+    feature_report_name: Option<&'static str>,
     rows: usize,
     candidate_better_rows: usize,
     current_better_rows: usize,
@@ -1505,6 +1508,7 @@ struct CompressionReviewCandidateAccumulator {
     baseline_worst_draft_smear_frames: f64,
     baseline_worst_current_smear_frames: f64,
     baseline_worst_candidate_smear_frames: f64,
+    feature_rows: Vec<CompressionReviewFeatureRow>,
 }
 
 impl CompressionReviewCandidateAccumulator {
@@ -1512,6 +1516,7 @@ impl CompressionReviewCandidateAccumulator {
         Self {
             report_name,
             candidate_path,
+            feature_report_name: None,
             rows: 0,
             candidate_better_rows: 0,
             current_better_rows: 0,
@@ -1539,7 +1544,13 @@ impl CompressionReviewCandidateAccumulator {
             baseline_worst_draft_smear_frames: f64::NAN,
             baseline_worst_current_smear_frames: f64::NAN,
             baseline_worst_candidate_smear_frames: f64::NAN,
+            feature_rows: Vec::new(),
         }
+    }
+
+    fn with_feature_report(mut self, feature_report_name: &'static str) -> Self {
+        self.feature_report_name = Some(feature_report_name);
+        self
     }
 
     fn record(
@@ -1555,7 +1566,9 @@ impl CompressionReviewCandidateAccumulator {
         }
 
         self.rows += 1;
-        match compare_metric_values(candidate.max_smear_frames, offline.max_smear_frames) {
+        let comparison =
+            compare_metric_values(candidate.max_smear_frames, offline.max_smear_frames);
+        match comparison {
             MetricComparison::Improved => self.candidate_better_rows += 1,
             MetricComparison::Same => {
                 if candidate.max_smear_frames.is_finite() && offline.max_smear_frames.is_finite() {
@@ -1565,6 +1578,24 @@ impl CompressionReviewCandidateAccumulator {
                 }
             }
             MetricComparison::Worsened => self.current_better_rows += 1,
+        }
+        if let Some(feature_report_name) = self.feature_report_name {
+            if matches!(
+                comparison,
+                MetricComparison::Improved | MetricComparison::Worsened
+            ) {
+                self.feature_rows
+                    .push(CompressionReviewFeatureRow::from_measurements(
+                        feature_report_name,
+                        self.candidate_path,
+                        audio,
+                        ratio,
+                        comparison,
+                        draft,
+                        offline,
+                        candidate,
+                    ));
+            }
         }
 
         if offline.max_smear_frames.is_finite() && candidate.max_smear_frames.is_finite() {
@@ -1646,6 +1677,124 @@ impl CompressionReviewCandidateAccumulator {
             self.baseline_worst_draft_smear_frames,
             self.baseline_worst_current_smear_frames,
             self.baseline_worst_candidate_smear_frames,
+        )
+    }
+
+    fn format_feature_lines(&self) -> Vec<String> {
+        self.feature_rows
+            .iter()
+            .map(CompressionReviewFeatureRow::format_report_line)
+            .collect()
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+struct CompressionReviewFeatureRow {
+    report_name: &'static str,
+    candidate_path: &'static str,
+    outcome: &'static str,
+    case_id: String,
+    source_path: String,
+    ratio: f64,
+    draft_smear_frames: f64,
+    current_smear_frames: f64,
+    candidate_smear_frames: f64,
+    candidate_delta_frames: f64,
+    current_vs_draft_delta_frames: f64,
+    candidate_vs_draft_delta_frames: f64,
+    input_transients: usize,
+    current_output_transients: usize,
+    current_matched_transients: usize,
+    current_missed_transients: usize,
+    candidate_output_transients: usize,
+    candidate_matched_transients: usize,
+    candidate_missed_transients: usize,
+    current_output_input_transient_ratio: f64,
+    candidate_output_input_transient_ratio: f64,
+    current_max_matched_input_width_frames: f64,
+    current_max_matched_output_width_frames: f64,
+    candidate_max_matched_input_width_frames: f64,
+    candidate_max_matched_output_width_frames: f64,
+}
+
+impl CompressionReviewFeatureRow {
+    fn from_measurements(
+        report_name: &'static str,
+        candidate_path: &'static str,
+        audio: &DecodedListeningSourceAudio,
+        ratio: f64,
+        comparison: MetricComparison,
+        draft: &signal_dsp_stretch::StretchTransientSmearMeasurement,
+        current: &signal_dsp_stretch::StretchTransientSmearMeasurement,
+        candidate: &signal_dsp_stretch::StretchTransientSmearMeasurement,
+    ) -> Self {
+        Self {
+            report_name,
+            candidate_path,
+            outcome: match comparison {
+                MetricComparison::Improved => "CandidateBetter",
+                MetricComparison::Worsened => "CurrentBetter",
+                MetricComparison::Same => "Unchanged",
+            },
+            case_id: audio.case_id.clone(),
+            source_path: audio.source_path.clone(),
+            ratio,
+            draft_smear_frames: draft.max_smear_frames,
+            current_smear_frames: current.max_smear_frames,
+            candidate_smear_frames: candidate.max_smear_frames,
+            candidate_delta_frames: candidate.max_smear_frames - current.max_smear_frames,
+            current_vs_draft_delta_frames: current.max_smear_frames - draft.max_smear_frames,
+            candidate_vs_draft_delta_frames: candidate.max_smear_frames - draft.max_smear_frames,
+            input_transients: current.input_transients,
+            current_output_transients: current.output_transients,
+            current_matched_transients: current.matched_transients,
+            current_missed_transients: current.missed_transients,
+            candidate_output_transients: candidate.output_transients,
+            candidate_matched_transients: candidate.matched_transients,
+            candidate_missed_transients: candidate.missed_transients,
+            current_output_input_transient_ratio: finite_ratio(
+                current.output_transients as f64,
+                current.input_transients as f64,
+            ),
+            candidate_output_input_transient_ratio: finite_ratio(
+                candidate.output_transients as f64,
+                candidate.input_transients as f64,
+            ),
+            current_max_matched_input_width_frames: current.max_matched_input_width_frames,
+            current_max_matched_output_width_frames: current.max_matched_output_width_frames,
+            candidate_max_matched_input_width_frames: candidate.max_matched_input_width_frames,
+            candidate_max_matched_output_width_frames: candidate.max_matched_output_width_frames,
+        }
+    }
+
+    fn format_report_line(&self) -> String {
+        format!(
+            "{} candidate_path={} outcome={} case={} source={} ratio={:.6} draft_smear_frames={:.6} current_smear_frames={:.6} candidate_smear_frames={:.6} candidate_delta_frames={:.6} current_vs_draft_delta_frames={:.6} candidate_vs_draft_delta_frames={:.6} input_transients={} current_output_transients={} current_matched_transients={} current_missed_transients={} candidate_output_transients={} candidate_matched_transients={} candidate_missed_transients={} current_output_input_transient_ratio={:.6} candidate_output_input_transient_ratio={:.6} current_max_matched_input_width_frames={:.6} current_max_matched_output_width_frames={:.6} candidate_max_matched_input_width_frames={:.6} candidate_max_matched_output_width_frames={:.6}",
+            self.report_name,
+            self.candidate_path,
+            self.outcome,
+            self.case_id,
+            quoted_report_field(&self.source_path),
+            self.ratio,
+            self.draft_smear_frames,
+            self.current_smear_frames,
+            self.candidate_smear_frames,
+            self.candidate_delta_frames,
+            self.current_vs_draft_delta_frames,
+            self.candidate_vs_draft_delta_frames,
+            self.input_transients,
+            self.current_output_transients,
+            self.current_matched_transients,
+            self.current_missed_transients,
+            self.candidate_output_transients,
+            self.candidate_matched_transients,
+            self.candidate_missed_transients,
+            self.current_output_input_transient_ratio,
+            self.candidate_output_input_transient_ratio,
+            self.current_max_matched_input_width_frames,
+            self.current_max_matched_output_width_frames,
+            self.candidate_max_matched_input_width_frames,
+            self.candidate_max_matched_output_width_frames,
         )
     }
 }
@@ -3143,6 +3292,41 @@ mod tests {
         assert!(line.contains("baseline_worst_draft_smear_frames=2.000000"));
         assert!(line.contains("baseline_worst_current_smear_frames=13.000000"));
         assert!(line.contains("baseline_worst_candidate_smear_frames=4.000000"));
+    }
+
+    #[test]
+    fn compression_review_feature_rows_capture_short_window_outcomes() {
+        let audio = DecodedListeningSourceAudio {
+            case_id: "stretch:drums_percussion".to_string(),
+            source_path: "target/source.wav".to_string(),
+            sample_rate_hz: 48_000,
+            channels: 1,
+            samples: vec![0.0; 8],
+            analysis_limited: false,
+        };
+        let draft = transient_smear_measurement(12.0);
+        let current = transient_smear_measurement(10.0);
+        let improved = transient_smear_measurement(4.0);
+        let unchanged = transient_smear_measurement(10.0);
+        let worsened = transient_smear_measurement(16.0);
+        let mut candidate = CompressionReviewCandidateAccumulator::new(
+            "decoded_compression_short_window_candidate",
+            "offline_hq_short_window",
+        )
+        .with_feature_report("decoded_compression_short_window_feature");
+
+        candidate.record(&audio, 0.75, &draft, &current, &improved);
+        candidate.record(&audio, 0.75, &draft, &current, &unchanged);
+        candidate.record(&audio, 0.75, &draft, &current, &worsened);
+        let lines = candidate.format_feature_lines();
+
+        assert_eq!(lines.len(), 2);
+        assert!(lines[0].contains("outcome=CandidateBetter"));
+        assert!(lines[0].contains("candidate_delta_frames=-6.000000"));
+        assert!(lines[0].contains("current_vs_draft_delta_frames=-2.000000"));
+        assert!(lines[0].contains("candidate_path=offline_hq_short_window"));
+        assert!(lines[1].contains("outcome=CurrentBetter"));
+        assert!(lines[1].contains("candidate_delta_frames=6.000000"));
     }
 
     #[test]

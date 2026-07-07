@@ -331,6 +331,21 @@ comparison reports, not add more receipt or fixture surfaces.
   regression is `36.000000` frames. This rejects a global shorter-window switch,
   but it keeps multiresolution selection alive as a candidate because the mean
   improvement is large and localized regressions are measurable.
+- 2026-07-07: added report-only `decoded_compression_short_window_feature`
+  rows for the shorter-window candidate's finite win/loss cases. The broader
+  FMA seed emitted 12 feature rows: 8 `CandidateBetter` and 4 `CurrentBetter`.
+  A simple non-oracle gate is visible but not yet implemented: choose the
+  shorter window when current OfflineHighQuality has missed promoted transients
+  or very high current finite smear. `current_missed_transients > 0` captures 4
+  high-impact wins and no regressions; adding `current_smear_frames >= 64`
+  captures the `stretch:vocals` `000020.mp3` `0.75x` win. Together those five
+  cases account for `4109` frames of improvement and avoid all four
+  current-better rows in this seed. The mild remaining wins overlap the
+  current-better feature space and should not drive the first selector. The
+  worst rejected regression remains `stretch:drums_percussion` `000002.mp3`
+  at `0.75x`, where current has no misses and moderate current smear
+  (`43.000000` frames) while the shorter window widens the max matched output
+  event from `71.000000` to `109.000000` frames.
 
 ## Next Task
 
@@ -338,8 +353,10 @@ Do not add a multiresolution or hybrid path until measured evidence requires
 it. The width-control postprocess and simple compression phase-reset anchor
 lines are now closed as report-only/rejected. A global shorter-window switch is
 also rejected, and the `000900.mp3` matched-event width issue is not solved by
-window size alone. Next useful work is a report-only multiresolution selection
-diagnostic: localize the 8 short-window wins and 4 short-window regressions
-with feature rows that could support a non-oracle selector. Do not promote a
-multiresolution path until that selector can retain the mean-smear improvement
-without the `000002.mp3` drum regression or new draft regressions.
+window size alone. Next useful work is a report-only gated multiresolution
+selector candidate: use the shorter-window path only for compression rows where
+current OfflineHighQuality has missed promoted transients or
+`current_smear_frames >= 64`. Regenerate the broader FMA seed and require the
+gate to retain the large mean-smear improvement without the `000002.mp3` drum
+regression, without new draft regressions, and without promoting the mild
+overlapping wins that currently share feature space with regressions.
