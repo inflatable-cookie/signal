@@ -307,13 +307,23 @@ comparison reports, not add more receipt or fixture surfaces.
   improvement total is `117.000000` frames. This rejects the current
   sample-edit width-control candidate as a promotable DSP path under
   conservative edit-pressure limits.
+- 2026-07-07: added a report-only compression transient-anchor review path with
+  stricter compression phase-reset thresholds than the expansion reset path. On
+  the broader FMA seed, the candidate improved 4 compression rows, worsened 3,
+  left 10 unchanged, and left 3 inconclusive. Finite-row mean max-smear moved
+  the wrong way: `374.882353` candidate versus `374.352941` current. The best
+  improvement was `986.000000` frames on `stretch:bass` `000236.mp3` at
+  `0.75x`, but the worst regression was `1011.000000` frames on the exact
+  residual target, `stretch:pads_sustains` `000900.mp3` at `0.75x`; worst
+  draft regression there was `1022.000000` frames. This rejects simple
+  compression phase-reset anchoring as the next OfflineHighQuality path.
 
 ## Next Task
 
 Do not add a multiresolution or hybrid path until measured evidence requires
-it. The width-control postprocess line is now closed as report-only/rejected.
-Next useful work is to reselect the next OfflineHighQuality weakness from the
-current decoded evidence instead of tuning this candidate: either a safer
-transient-anchor path that reduces the `000900.mp3` compression matched-event
-width without high sample edits, or a broader multiresolution/hybrid STFT path
-if the next report shows the residual weakness is not local transient anchoring.
+it. The width-control postprocess and simple compression phase-reset anchor
+lines are now closed as report-only/rejected. Next useful work is a bounded
+multiresolution review candidate for compression rows, such as a shorter-window
+OfflineHighQuality render only in the report path. It must prove whether the
+`000900.mp3` matched-event width issue is a window-resolution problem without
+raising broad mean smear or creating new draft regressions.

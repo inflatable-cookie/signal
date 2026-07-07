@@ -89,7 +89,8 @@ pub use promotion::{
 };
 
 use phase_vocoder::{
-    phase_vocoder, transient_reset_phase_vocoder, transient_reset_phase_vocoder_linked_stereo,
+    compression_transient_anchor_phase_vocoder, phase_vocoder, transient_reset_phase_vocoder,
+    transient_reset_phase_vocoder_linked_stereo,
 };
 use signal_dsp_resample::{resample_mono, ResampleConfig, ResampleQuality};
 use signal_primitives::{Sample, SampleRate};
@@ -507,6 +508,26 @@ impl OfflineHighQualityStretcher {
             self.ratio,
             self.window_size,
             self.analysis_hop,
+        )
+    }
+
+    /// Report-only compression transient-anchor review path.
+    ///
+    /// This is not the promoted OfflineHighQuality renderer. It exists so the
+    /// decoded corpus report can compare a stricter compression transient-reset
+    /// candidate against the current OfflineHighQuality path before any
+    /// production routing changes.
+    #[doc(hidden)]
+    pub fn stretch_compression_transient_anchor_review_mono(
+        &mut self,
+        input: &[Sample],
+    ) -> Vec<Sample> {
+        stretch_mono_with_engine(
+            input,
+            self.ratio,
+            self.window_size,
+            self.analysis_hop,
+            compression_transient_anchor_phase_vocoder,
         )
     }
 }
@@ -1057,6 +1078,22 @@ mod tests {
             );
             assert_eq!(first_output, repeated_output, "ratio {ratio}");
         }
+    }
+
+    #[test]
+    fn compression_transient_anchor_review_path_is_deterministic_and_honors_output_length() {
+        let input = masked_soft_attack_probe(0.35);
+        let ratio = 0.75;
+        let mut first = OfflineHighQualityStretcher::new(ratio);
+        let mut repeated = OfflineHighQualityStretcher::new(ratio);
+        let first_output = first.stretch_compression_transient_anchor_review_mono(&input);
+        let repeated_output = repeated.stretch_compression_transient_anchor_review_mono(&input);
+
+        assert_eq!(
+            first_output.len(),
+            (input.len() as f64 * ratio).round() as usize
+        );
+        assert_eq!(first_output, repeated_output);
     }
 
     #[test]

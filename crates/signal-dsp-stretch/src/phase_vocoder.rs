@@ -55,6 +55,22 @@ pub(crate) fn transient_reset_phase_vocoder(
     run_phase_vocoder(input, target_len, ratio, window_size, analysis_hop, mode)
 }
 
+/// Run a report-only compression transient-anchor candidate.
+pub(crate) fn compression_transient_anchor_phase_vocoder(
+    input: &[Sample],
+    target_len: usize,
+    ratio: f64,
+    window_size: usize,
+    analysis_hop: usize,
+) -> Vec<Sample> {
+    let mode = if ratio < 1.0 {
+        PhasePropagationMode::IdentityLockedCompressionTransientAnchor
+    } else {
+        PhasePropagationMode::IdentityLockedTransientReset
+    };
+    run_phase_vocoder(input, target_len, ratio, window_size, analysis_hop, mode)
+}
+
 /// Run the OfflineHighQuality prototype over interleaved stereo with a linked
 /// mid/side analysis surface instead of independent left/right stretching.
 pub(crate) fn transient_reset_phase_vocoder_linked_stereo(
@@ -132,6 +148,7 @@ enum PhasePropagationMode {
     IndependentBins,
     IdentityLocked,
     IdentityLockedTransientReset,
+    IdentityLockedCompressionTransientAnchor,
 }
 
 impl PhaseVocoderConfig {
@@ -308,7 +325,7 @@ impl DraftPhaseVocoder {
     }
 
     fn should_reset_phase_at_transient(&self, frame_index: usize) -> bool {
-        if self.mode != PhasePropagationMode::IdentityLockedTransientReset || frame_index == 0 {
+        if frame_index == 0 {
             return false;
         }
 
@@ -325,7 +342,15 @@ impl DraftPhaseVocoder {
 
         let flux_ratio = flux as f64 / (magnitude_sum as f64 + 1.0e-12);
         let energy_ratio = self.current_energy / (self.previous_energy + 1.0e-12);
-        flux_ratio >= 0.30 && energy_ratio >= 1.20
+        match self.mode {
+            PhasePropagationMode::IdentityLockedTransientReset => {
+                flux_ratio >= 0.30 && energy_ratio >= 1.20
+            }
+            PhasePropagationMode::IdentityLockedCompressionTransientAnchor => {
+                flux_ratio >= 0.55 && energy_ratio >= 1.35
+            }
+            PhasePropagationMode::IndependentBins | PhasePropagationMode::IdentityLocked => false,
+        }
     }
 
     fn lock_phase_to_peaks(&mut self) {
@@ -386,6 +411,7 @@ impl PhasePropagationMode {
             self,
             PhasePropagationMode::IdentityLocked
                 | PhasePropagationMode::IdentityLockedTransientReset
+                | PhasePropagationMode::IdentityLockedCompressionTransientAnchor
         )
     }
 }

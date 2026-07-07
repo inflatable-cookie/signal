@@ -756,6 +756,8 @@ fn format_decoded_stretch_metrics(
     let mut draft_recovery_gate = TransientRecoveryGateAccumulator::new("draft");
     let mut offline_recovery_gate = TransientRecoveryGateAccumulator::new("offline_hq");
     let mut compression_ablation = CompressionPhaseLockAblationAccumulator::default();
+    let mut compression_anchor_candidate =
+        CompressionTransientAnchorCandidateAccumulator::default();
     let mut width_control_candidate = TransientWidthControlCandidateAccumulator::default();
     let mut width_control_edit_gate = TransientWidthControlEditGateAccumulator::default();
     for source in sources {
@@ -862,6 +864,15 @@ fn format_decoded_stretch_metrics(
                 QUALITY_METRIC_WINDOW_SIZE,
                 QUALITY_METRIC_HOP_SIZE,
             );
+            let offline_compression_anchor_output =
+                offline.stretch_compression_transient_anchor_review_mono(&mono);
+            let offline_compression_anchor_smear = measure_transient_smear(
+                &mono,
+                &offline_compression_anchor_output,
+                ratio,
+                QUALITY_METRIC_WINDOW_SIZE,
+                QUALITY_METRIC_HOP_SIZE,
+            );
             let offline_width_control_output =
                 apply_transient_width_control_candidate(&mono, &offline_output, ratio);
             let offline_width_control_smear = measure_transient_smear(
@@ -874,6 +885,13 @@ fn format_decoded_stretch_metrics(
             let offline_width_control_edit =
                 width_control_edit_stats(&offline_output, &offline_width_control_output, ratio);
             compression_ablation.record(&audio, ratio, &draft_smear, &offline_smear);
+            compression_anchor_candidate.record(
+                &audio,
+                ratio,
+                &draft_smear,
+                &offline_smear,
+                &offline_compression_anchor_smear,
+            );
             width_control_candidate.record(
                 &audio,
                 ratio,
@@ -944,6 +962,9 @@ fn format_decoded_stretch_metrics(
     }
     if compression_ablation.rows > 0 {
         lines.push(compression_ablation.format_report_line());
+    }
+    if compression_anchor_candidate.rows > 0 {
+        lines.push(compression_anchor_candidate.format_report_line());
     }
     if width_control_candidate.rows > 0 {
         lines.push(width_control_candidate.format_report_line());
@@ -1417,6 +1438,114 @@ impl CompressionPhaseLockAblationAccumulator {
             self.worst_regression_case_id,
             quoted_report_field(&self.worst_regression_source),
             self.worst_regression_ratio,
+        )
+    }
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+struct CompressionTransientAnchorCandidateAccumulator {
+    rows: usize,
+    candidate_better_rows: usize,
+    current_better_rows: usize,
+    unchanged_rows: usize,
+    inconclusive_rows: usize,
+    finite_rows: usize,
+    offline_smear_sum: f64,
+    candidate_smear_sum: f64,
+    best_candidate_improvement_delta_frames: f64,
+    best_candidate_improvement_case_id: String,
+    best_candidate_improvement_source: String,
+    best_candidate_improvement_ratio: f64,
+    worst_candidate_regression_delta_frames: f64,
+    worst_candidate_regression_case_id: String,
+    worst_candidate_regression_source: String,
+    worst_candidate_regression_ratio: f64,
+    worst_draft_regression_delta_frames: f64,
+    worst_draft_regression_case_id: String,
+    worst_draft_regression_source: String,
+    worst_draft_regression_ratio: f64,
+}
+
+impl CompressionTransientAnchorCandidateAccumulator {
+    fn record(
+        &mut self,
+        audio: &DecodedListeningSourceAudio,
+        ratio: f64,
+        draft: &signal_dsp_stretch::StretchTransientSmearMeasurement,
+        offline: &signal_dsp_stretch::StretchTransientSmearMeasurement,
+        candidate: &signal_dsp_stretch::StretchTransientSmearMeasurement,
+    ) {
+        if ratio >= 1.0 {
+            return;
+        }
+
+        self.rows += 1;
+        match compare_metric_values(candidate.max_smear_frames, offline.max_smear_frames) {
+            MetricComparison::Improved => self.candidate_better_rows += 1,
+            MetricComparison::Same => {
+                if candidate.max_smear_frames.is_finite() && offline.max_smear_frames.is_finite() {
+                    self.unchanged_rows += 1;
+                } else {
+                    self.inconclusive_rows += 1;
+                }
+            }
+            MetricComparison::Worsened => self.current_better_rows += 1,
+        }
+
+        if offline.max_smear_frames.is_finite() && candidate.max_smear_frames.is_finite() {
+            self.finite_rows += 1;
+            self.offline_smear_sum += offline.max_smear_frames;
+            self.candidate_smear_sum += candidate.max_smear_frames;
+            let candidate_delta = candidate.max_smear_frames - offline.max_smear_frames;
+            let improvement_delta = offline.max_smear_frames - candidate.max_smear_frames;
+            if improvement_delta > self.best_candidate_improvement_delta_frames {
+                self.best_candidate_improvement_delta_frames = improvement_delta;
+                self.best_candidate_improvement_case_id = audio.case_id.clone();
+                self.best_candidate_improvement_source = audio.source_path.clone();
+                self.best_candidate_improvement_ratio = ratio;
+            }
+            if candidate_delta > self.worst_candidate_regression_delta_frames {
+                self.worst_candidate_regression_delta_frames = candidate_delta;
+                self.worst_candidate_regression_case_id = audio.case_id.clone();
+                self.worst_candidate_regression_source = audio.source_path.clone();
+                self.worst_candidate_regression_ratio = ratio;
+            }
+        }
+
+        if draft.max_smear_frames.is_finite() && candidate.max_smear_frames.is_finite() {
+            let draft_delta = candidate.max_smear_frames - draft.max_smear_frames;
+            if draft_delta > self.worst_draft_regression_delta_frames {
+                self.worst_draft_regression_delta_frames = draft_delta;
+                self.worst_draft_regression_case_id = audio.case_id.clone();
+                self.worst_draft_regression_source = audio.source_path.clone();
+                self.worst_draft_regression_ratio = ratio;
+            }
+        }
+    }
+
+    fn format_report_line(&self) -> String {
+        format!(
+            "decoded_compression_transient_anchor_candidate rows={} candidate_path=offline_hq_compression_anchor baseline_path=offline_hq candidate_better_rows={} current_better_rows={} unchanged_rows={} inconclusive_rows={} finite_rows={} mean_candidate_smear_frames={:.6} mean_current_smear_frames={:.6} best_candidate_improvement_delta_frames={:.6} best_candidate_improvement_case={} best_candidate_improvement_source={} best_candidate_improvement_ratio={:.6} worst_candidate_regression_delta_frames={:.6} worst_candidate_regression_case={} worst_candidate_regression_source={} worst_candidate_regression_ratio={:.6} worst_draft_regression_delta_frames={:.6} worst_draft_regression_case={} worst_draft_regression_source={} worst_draft_regression_ratio={:.6}",
+            self.rows,
+            self.candidate_better_rows,
+            self.current_better_rows,
+            self.unchanged_rows,
+            self.inconclusive_rows,
+            self.finite_rows,
+            finite_ratio(self.candidate_smear_sum, self.finite_rows as f64),
+            finite_ratio(self.offline_smear_sum, self.finite_rows as f64),
+            self.best_candidate_improvement_delta_frames,
+            self.best_candidate_improvement_case_id,
+            quoted_report_field(&self.best_candidate_improvement_source),
+            self.best_candidate_improvement_ratio,
+            self.worst_candidate_regression_delta_frames,
+            self.worst_candidate_regression_case_id,
+            quoted_report_field(&self.worst_candidate_regression_source),
+            self.worst_candidate_regression_ratio,
+            self.worst_draft_regression_delta_frames,
+            self.worst_draft_regression_case_id,
+            quoted_report_field(&self.worst_draft_regression_source),
+            self.worst_draft_regression_ratio,
         )
     }
 }
@@ -2766,6 +2895,8 @@ mod tests {
         assert!(formatted.contains("decoded_compression_phase_lock_ablation rows="));
         assert!(formatted.contains("phase_locked_path=offline_hq"));
         assert!(formatted.contains("independent_bins_path=draft"));
+        assert!(formatted.contains("decoded_compression_transient_anchor_candidate rows="));
+        assert!(formatted.contains("candidate_path=offline_hq_compression_anchor"));
         assert!(formatted.contains("decoded_transient_width_control_candidate rows="));
         assert!(formatted.contains("candidate_path=offline_hq_width_control"));
         assert!(formatted.contains("baseline_path=offline_hq"));
@@ -2876,6 +3007,33 @@ mod tests {
         assert!(line.contains("unchanged_rows=1"));
         assert!(line.contains("rejected_candidate_improvement_delta_frames=10.000000"));
         assert!(line.contains("max_rejected_added_adjacent_step_delta=0.100000000"));
+    }
+
+    #[test]
+    fn compression_transient_anchor_candidate_counts_metric_outcomes() {
+        let audio = DecodedListeningSourceAudio {
+            case_id: "stretch:pads_sustains".to_string(),
+            source_path: "target/source.wav".to_string(),
+            sample_rate_hz: 48_000,
+            channels: 1,
+            samples: vec![0.0; 8],
+            analysis_limited: false,
+        };
+        let draft = transient_smear_measurement(2.0);
+        let offline = transient_smear_measurement(13.0);
+        let improved_candidate = transient_smear_measurement(4.0);
+        let regressed_candidate = transient_smear_measurement(20.0);
+        let mut candidate = CompressionTransientAnchorCandidateAccumulator::default();
+
+        candidate.record(&audio, 0.75, &draft, &offline, &improved_candidate);
+        candidate.record(&audio, 0.75, &draft, &offline, &regressed_candidate);
+        let line = candidate.format_report_line();
+
+        assert!(line.contains("candidate_better_rows=1"));
+        assert!(line.contains("current_better_rows=1"));
+        assert!(line.contains("best_candidate_improvement_delta_frames=9.000000"));
+        assert!(line.contains("worst_candidate_regression_delta_frames=7.000000"));
+        assert!(line.contains("worst_draft_regression_delta_frames=18.000000"));
     }
 
     #[test]
