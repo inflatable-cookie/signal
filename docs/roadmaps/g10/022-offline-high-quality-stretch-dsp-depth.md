@@ -404,6 +404,32 @@ comparison reports, not add more receipt or fixture surfaces.
   `rendered_path`, and `tool`, so the readiness report can directly drive an
   external render script or manual render pass without looking back into the
   TSV. The broad FMA pack still reports 60 missing rendered WAVs locally.
+- 2026-07-07: filled the broad FMA external comparator pack with Rubber Band
+  CLI `4.0.0` R3 output as a black-box rendered-output benchmark. The render
+  plan readiness report is now complete: 60 planned rows, 60 present rows, 0
+  missing rows, and 0 invalid rows. `stretch-corpus-report` also now preserves
+  `source_wav` from render manifests for external quality rows and skips
+  ambiguous case-only matches, fixing the duplicate-case source pairing issue
+  in broad manifests.
+- 2026-07-07: regenerated the broad FMA decoded stretch and Rubber Band R3
+  quality report with corrected source pairing. The report measured 60 external
+  rows and skipped 0. Gated shorter-window selector evidence still held:
+  7 accepted compression rows, 13 rejected rows, 5 gated-better rows,
+  0 current-better rows, finite-row mean max-smear `132.647059` frames versus
+  current OfflineHighQuality `374.352941`, and
+  `worst_gated_regression_delta_frames=0.000000`. Against Rubber Band R3,
+  timing drift delta was `0` samples on every measured row. The transient-smear
+  proxy favored Signal in 32 rows, Rubber Band in 7 rows, and tied 21 rows;
+  mean delta was `-189.633333` frames where negative means Signal measured
+  lower smear. The worst Signal transient-smear regressions were bounded:
+  `stretch:full_mix` `000237.wav` at `1.5x` by `32` frames,
+  `stretch:drums_percussion` `000002.wav` at `1.5x` by `27` frames, and
+  `stretch:bass` `000236.wav` at `1.25x` by `22` frames. Direct waveform
+  similarity remains weak as a parity signal: mean aligned correlation was
+  `0.329881`, mean aligned RMS-error ratio was `1.319973`, and the largest RMS
+  divergence was `stretch:pads_sustains` `000870.wav` at `1.5x` with ratio
+  `2.246718`. Treat that as an inspection queue for phase/envelope/perceptual
+  metrics, not as a sample-difference pass/fail verdict.
 
 ## Next Task
 
@@ -412,13 +438,11 @@ it. The width-control postprocess and simple compression phase-reset anchor
 lines are now closed as report-only/rejected. A global shorter-window switch is
 also rejected, and the `000900.mp3` matched-event width issue is not solved by
 window size alone. The gated shorter-window selector now clears the first broad
-FMA no-listening check. Next useful work is promotion pressure, still
-report-only: fill the generated broad FMA comparator pack's 60 planned
-`rendered_path` WAVs with an external black-box renderer, use
-`--check-external-benchmark-render-plan` until it reports `Complete`, then run
-`--external-benchmark-render-manifest`,
-`--measure-external-benchmark-quality`, and the gated selector report together.
-Require the selector to keep `current_better_rows=0`,
-`worst_gated_regression_delta_frames=0`, and no new draft regression, while
-comparator rows identify the worst aligned RMS, transient-smear, and
-timing-drift gaps to review by ear.
+FMA no-listening check and the first Rubber Band R3 black-box comparator pass.
+Next useful work is a measured quality-decision batch, still report-only:
+separate comparator findings into metric noise, likely audible phase/envelope
+differences, and actual DSP targets. Add a perceptual or feature-level
+divergence report for the worst RMS/correlation rows, preserve the existing
+timing-drift and transient-smear gates, and only then decide whether the next
+DSP promotion is the gated short-window selector, a multiresolution selector,
+or a sustained-material vertical-coherence path.

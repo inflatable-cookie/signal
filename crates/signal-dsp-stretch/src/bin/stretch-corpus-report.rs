@@ -1,5 +1,6 @@
 //! Emit deterministic Signal stretch corpus evidence reports.
 
+use std::borrow::Cow;
 use std::env;
 use std::fs::{self, File};
 use std::path::{Path, PathBuf};
@@ -169,9 +170,16 @@ fn main() {
         }
     }
     if args.measure_external_benchmark_quality {
+        let quality_renders = match load_external_benchmark_quality_renders(&args) {
+            Ok(renders) => renders,
+            Err(message) => {
+                eprintln!("{message}");
+                process::exit(1);
+            }
+        };
         match format_external_benchmark_quality_metrics(
             &listening_sources,
-            &external_renders,
+            &quality_renders,
             args.decoded_stretch_frame_limit,
         ) {
             Ok(external_quality) => {
@@ -402,16 +410,7 @@ fn load_external_benchmark_render(
     args: &ReportArgs,
     render: &ExternalBenchmarkRenderArg,
 ) -> Result<StretchExternalBenchmarkRender, String> {
-    let ratio = render
-        .ratio
-        .parse::<f64>()
-        .map_err(|error| format!("invalid external benchmark ratio {}: {error}", render.ratio))?;
-    if !ratio.is_finite() || ratio <= 0.0 {
-        return Err(format!(
-            "invalid external benchmark ratio {}: expected positive finite value",
-            render.ratio
-        ));
-    }
+    let ratio = parse_external_benchmark_ratio(&render.ratio)?;
 
     let reader = hound::WavReader::open(&render.path)
         .map_err(|error| format!("failed to open {}: {error}", render.path.display()))?;
@@ -438,6 +437,91 @@ fn load_external_benchmark_render(
         sample_rate_hz: spec.sample_rate,
         channels,
     })
+}
+
+#[derive(Clone, Debug, PartialEq)]
+struct ExternalBenchmarkQualityRender {
+    case_id: String,
+    ratio: f64,
+    tool_name: String,
+    rendered_path: String,
+    source_wav: Option<String>,
+}
+
+fn load_external_benchmark_quality_renders(
+    args: &ReportArgs,
+) -> Result<Vec<ExternalBenchmarkQualityRender>, String> {
+    let mut renders = args
+        .external_benchmark_renders
+        .iter()
+        .map(|render| {
+            let ratio = parse_external_benchmark_ratio(&render.ratio)?;
+            Ok(ExternalBenchmarkQualityRender {
+                case_id: render.case_id.clone(),
+                ratio,
+                tool_name: render
+                    .tool_name
+                    .clone()
+                    .unwrap_or_else(|| args.external_benchmark_tool.clone()),
+                rendered_path: render.path.display().to_string(),
+                source_wav: None,
+            })
+        })
+        .collect::<Result<Vec<_>, String>>()?;
+    for manifest in &args.external_benchmark_render_manifests {
+        renders.extend(load_external_benchmark_quality_render_manifest(
+            args, manifest,
+        )?);
+    }
+    Ok(renders)
+}
+
+fn load_external_benchmark_quality_render_manifest(
+    args: &ReportArgs,
+    manifest: &PathBuf,
+) -> Result<Vec<ExternalBenchmarkQualityRender>, String> {
+    let mut reader = csv::ReaderBuilder::new()
+        .delimiter(b'\t')
+        .from_path(manifest)
+        .map_err(|error| format!("failed to open {}: {error}", manifest.display()))?;
+    let headers = reader
+        .headers()
+        .map_err(|error| format!("failed to read {} headers: {error}", manifest.display()))?
+        .clone();
+    let mut renders = Vec::new();
+    for row in reader.records() {
+        let record =
+            row.map_err(|error| format!("failed to read {} row: {error}", manifest.display()))?;
+        let case_id = required_field(manifest, &headers, &record, "case_id")?;
+        let ratio =
+            parse_external_benchmark_ratio(required_field(manifest, &headers, &record, "ratio")?)?;
+        let rendered_path =
+            required_any_field(manifest, &headers, &record, &["rendered_path", "path"])?;
+        let tool_name = field(&headers, &record, "tool_name")
+            .or_else(|| field(&headers, &record, "tool"))
+            .unwrap_or(&args.external_benchmark_tool);
+        let source_wav = field(&headers, &record, "source_wav").map(str::to_string);
+        renders.push(ExternalBenchmarkQualityRender {
+            case_id: case_id.to_string(),
+            ratio,
+            tool_name: tool_name.to_string(),
+            rendered_path: rendered_path.to_string(),
+            source_wav,
+        });
+    }
+    Ok(renders)
+}
+
+fn parse_external_benchmark_ratio(ratio: &str) -> Result<f64, String> {
+    let parsed = ratio
+        .parse::<f64>()
+        .map_err(|error| format!("invalid external benchmark ratio {ratio}: {error}"))?;
+    if !parsed.is_finite() || parsed <= 0.0 {
+        return Err(format!(
+            "invalid external benchmark ratio {ratio}: expected positive finite value",
+        ));
+    }
+    Ok(parsed)
 }
 
 fn export_external_benchmark_pack(
@@ -1454,17 +1538,14 @@ impl ExternalBenchmarkDecodedAudio {
 
 fn format_external_benchmark_quality_metrics(
     sources: &[StretchCorpusListeningSource],
-    renders: &[StretchExternalBenchmarkRender],
+    renders: &[ExternalBenchmarkQualityRender],
     frame_limit: usize,
 ) -> Result<String, String> {
     let mut lines = Vec::new();
     for render in renders {
-        let source = match sources
-            .iter()
-            .find(|source| source.case_id == render.case_id)
-        {
-            Some(source) => source,
-            None => {
+        let source = match source_for_external_quality_render(sources, render) {
+            ExternalBenchmarkQualitySource::Found(source) => source,
+            ExternalBenchmarkQualitySource::Missing => {
                 lines.push(format_external_benchmark_quality_skip_line(
                     render,
                     "",
@@ -1476,8 +1557,20 @@ fn format_external_benchmark_quality_metrics(
                 ));
                 continue;
             }
+            ExternalBenchmarkQualitySource::Ambiguous => {
+                lines.push(format_external_benchmark_quality_skip_line(
+                    render,
+                    "",
+                    "AmbiguousListeningSource",
+                    0,
+                    0,
+                    0,
+                    0,
+                ));
+                continue;
+            }
         };
-        let source_audio = decode_listening_source_audio(source, frame_limit)?;
+        let source_audio = decode_listening_source_audio(source.as_ref(), frame_limit)?;
         let external_audio = decode_external_benchmark_render_audio(render)?;
         if external_audio.frames() == 0 {
             lines.push(format_external_benchmark_quality_skip_line(
@@ -1569,8 +1662,41 @@ fn format_external_benchmark_quality_metrics(
     Ok(lines.join("\n"))
 }
 
+enum ExternalBenchmarkQualitySource<'a> {
+    Found(Cow<'a, StretchCorpusListeningSource>),
+    Missing,
+    Ambiguous,
+}
+
+fn source_for_external_quality_render<'a>(
+    sources: &'a [StretchCorpusListeningSource],
+    render: &ExternalBenchmarkQualityRender,
+) -> ExternalBenchmarkQualitySource<'a> {
+    if let Some(source_wav) = &render.source_wav {
+        return ExternalBenchmarkQualitySource::Found(Cow::Owned(StretchCorpusListeningSource {
+            case_id: render.case_id.clone(),
+            source_path: source_wav.clone(),
+            source_label: "external benchmark source excerpt".to_string(),
+            license_title: "operator-provided local excerpt".to_string(),
+            license_url: String::new(),
+            provenance_url: String::new(),
+        }));
+    }
+
+    let mut matches = sources
+        .iter()
+        .filter(|source| source.case_id == render.case_id);
+    let Some(source) = matches.next() else {
+        return ExternalBenchmarkQualitySource::Missing;
+    };
+    if matches.next().is_some() {
+        return ExternalBenchmarkQualitySource::Ambiguous;
+    }
+    ExternalBenchmarkQualitySource::Found(Cow::Borrowed(source))
+}
+
 fn format_external_benchmark_quality_skip_line(
-    render: &StretchExternalBenchmarkRender,
+    render: &ExternalBenchmarkQualityRender,
     source_path: &str,
     reason: &'static str,
     source_sample_rate_hz: u32,
@@ -1614,7 +1740,7 @@ fn format_external_benchmark_quality_skip_line(
 }
 
 fn decode_external_benchmark_render_audio(
-    render: &StretchExternalBenchmarkRender,
+    render: &ExternalBenchmarkQualityRender,
 ) -> Result<ExternalBenchmarkDecodedAudio, String> {
     let path = PathBuf::from(&render.rendered_path);
     let mut reader = hound::WavReader::open(&path)
@@ -4165,15 +4291,12 @@ mod tests {
             license_url: "https://example.test/license".to_string(),
             provenance_url: "https://example.test/track".to_string(),
         };
-        let render = StretchExternalBenchmarkRender {
+        let render = ExternalBenchmarkQualityRender {
             case_id: "stretch:vocals".to_string(),
             ratio: 1.0,
-            pitch_shift_semitones: None,
             tool_name: "rubberband-cli".to_string(),
             rendered_path: path.display().to_string(),
-            rendered_frames: 4_096,
-            sample_rate_hz: 48_000,
-            channels: 2,
+            source_wav: None,
         };
 
         let formatted = format_external_benchmark_quality_metrics(&[source], &[render], 4_096)
@@ -4196,6 +4319,115 @@ mod tests {
         assert!(formatted.contains("aligned_rms_error=0.000000000"));
 
         let _ = fs::remove_file(path);
+    }
+
+    #[test]
+    fn external_benchmark_quality_uses_manifest_source_wav_for_duplicate_cases() {
+        let source_a = PathBuf::from(format!(
+            "target/stretch-corpus-external-quality-source-a-test-{}.wav",
+            std::process::id()
+        ));
+        let source_b = PathBuf::from(format!(
+            "target/stretch-corpus-external-quality-source-b-test-{}.wav",
+            std::process::id()
+        ));
+        write_test_wav(&source_a, 4_096);
+        write_test_wav(&source_b, 4_096);
+        let listening_sources = vec![
+            StretchCorpusListeningSource {
+                case_id: "stretch:vocals".to_string(),
+                source_path: "target/original-a.mp3".to_string(),
+                source_label: "Artist - Song A".to_string(),
+                license_title: "Attribution".to_string(),
+                license_url: "https://example.test/license".to_string(),
+                provenance_url: "https://example.test/track-a".to_string(),
+            },
+            StretchCorpusListeningSource {
+                case_id: "stretch:vocals".to_string(),
+                source_path: "target/original-b.mp3".to_string(),
+                source_label: "Artist - Song B".to_string(),
+                license_title: "Attribution".to_string(),
+                license_url: "https://example.test/license".to_string(),
+                provenance_url: "https://example.test/track-b".to_string(),
+            },
+        ];
+        let renders = vec![
+            ExternalBenchmarkQualityRender {
+                case_id: "stretch:vocals".to_string(),
+                ratio: 1.0,
+                tool_name: "rubberband-cli".to_string(),
+                rendered_path: source_a.display().to_string(),
+                source_wav: Some(source_a.display().to_string()),
+            },
+            ExternalBenchmarkQualityRender {
+                case_id: "stretch:vocals".to_string(),
+                ratio: 1.0,
+                tool_name: "rubberband-cli".to_string(),
+                rendered_path: source_b.display().to_string(),
+                source_wav: Some(source_b.display().to_string()),
+            },
+        ];
+
+        let formatted =
+            format_external_benchmark_quality_metrics(&listening_sources, &renders, 4_096)
+                .expect("format source-wav external quality metrics");
+
+        assert_eq!(formatted.matches("status=Measured").count(), 2);
+        assert!(formatted.contains(&format!(
+            "source={}",
+            quoted_report_field(&source_a.display().to_string())
+        )));
+        assert!(formatted.contains(&format!(
+            "source={}",
+            quoted_report_field(&source_b.display().to_string())
+        )));
+        assert!(!formatted.contains("target/original-a.mp3"));
+        assert!(!formatted.contains("target/original-b.mp3"));
+
+        let _ = fs::remove_file(source_a);
+        let _ = fs::remove_file(source_b);
+    }
+
+    #[test]
+    fn external_benchmark_quality_skips_ambiguous_case_without_source_wav() {
+        let render_path = PathBuf::from(format!(
+            "target/stretch-corpus-external-quality-ambiguous-test-{}.wav",
+            std::process::id()
+        ));
+        write_test_wav(&render_path, 4_096);
+        let listening_sources = vec![
+            StretchCorpusListeningSource {
+                case_id: "stretch:vocals".to_string(),
+                source_path: "target/original-a.mp3".to_string(),
+                source_label: "Artist - Song A".to_string(),
+                license_title: "Attribution".to_string(),
+                license_url: "https://example.test/license".to_string(),
+                provenance_url: "https://example.test/track-a".to_string(),
+            },
+            StretchCorpusListeningSource {
+                case_id: "stretch:vocals".to_string(),
+                source_path: "target/original-b.mp3".to_string(),
+                source_label: "Artist - Song B".to_string(),
+                license_title: "Attribution".to_string(),
+                license_url: "https://example.test/license".to_string(),
+                provenance_url: "https://example.test/track-b".to_string(),
+            },
+        ];
+        let render = ExternalBenchmarkQualityRender {
+            case_id: "stretch:vocals".to_string(),
+            ratio: 1.0,
+            tool_name: "rubberband-cli".to_string(),
+            rendered_path: render_path.display().to_string(),
+            source_wav: None,
+        };
+
+        let formatted =
+            format_external_benchmark_quality_metrics(&listening_sources, &[render], 4_096)
+                .expect("format ambiguous external quality metrics");
+
+        assert!(formatted.contains("status=Skipped reason=AmbiguousListeningSource"));
+
+        let _ = fs::remove_file(render_path);
     }
 
     #[test]
