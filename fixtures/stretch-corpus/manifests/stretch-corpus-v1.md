@@ -66,7 +66,8 @@ source windows for source-profile metrics only; decoded audio is not written.
 When `--measure-decoded-stretch` is set, the report decodes bounded local
 source excerpts and records objective draft-vs-OfflineHighQuality stretch
 metric rows for each case ratio. The first metric set covers timing drift and
-transient smear.
+transient smear. Transient rows include matched and missed transient counts so
+metric penalties can be sorted before a DSP change is chosen.
 
 ## Next Task
 

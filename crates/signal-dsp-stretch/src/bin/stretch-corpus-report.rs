@@ -751,6 +751,7 @@ fn format_decoded_stretch_metrics(
                 "TimingDriftSamples",
                 output_length_drift_samples(mono.len(), draft_output.len(), ratio),
                 output_length_drift_samples(mono.len(), offline_output.len(), ratio),
+                None,
             ));
 
             let draft_smear = measure_transient_smear(
@@ -773,6 +774,17 @@ fn format_decoded_stretch_metrics(
                 "TransientSmearFrames",
                 draft_smear.max_smear_frames,
                 offline_smear.max_smear_frames,
+                Some(format!(
+                    "draft_input_transients={} draft_output_transients={} draft_matched_transients={} draft_missed_transients={} offline_input_transients={} offline_output_transients={} offline_matched_transients={} offline_missed_transients={}",
+                    draft_smear.input_transients,
+                    draft_smear.output_transients,
+                    draft_smear.matched_transients,
+                    draft_smear.missed_transients,
+                    offline_smear.input_transients,
+                    offline_smear.output_transients,
+                    offline_smear.matched_transients,
+                    offline_smear.missed_transients,
+                )),
             ));
         }
     }
@@ -794,8 +806,9 @@ fn format_decoded_stretch_metric_line(
     metric: &str,
     draft: f64,
     offline_hq: f64,
+    detail: Option<String>,
 ) -> String {
-    format!(
+    let mut line = format!(
         "decoded_stretch_metric case={} source={} ratio={:.6} metric={} draft={:.6} offline_hq={:.6} delta={:.6} outcome={} analyzed_frames={} analysis_limited={}",
         audio.case_id,
         quoted_report_field(&audio.source_path),
@@ -807,7 +820,12 @@ fn format_decoded_stretch_metric_line(
         decoded_metric_outcome(draft, offline_hq),
         audio.analyzed_frames(),
         audio.analysis_limited,
-    )
+    );
+    if let Some(detail) = detail {
+        line.push(' ');
+        line.push_str(&detail);
+    }
+    line
 }
 
 fn decoded_metric_outcome(draft: f64, offline_hq: f64) -> &'static str {
@@ -1064,6 +1082,7 @@ mod tests {
         assert!(formatted.contains("decoded_stretch_metric case=stretch:vocals"));
         assert!(formatted.contains("ratio=0.750000 metric=TimingDriftSamples"));
         assert!(formatted.contains("metric=TransientSmearFrames"));
+        assert!(formatted.contains("offline_matched_transients="));
         assert!(formatted.contains("analysis_limited=true"));
 
         let _ = fs::remove_file(path);

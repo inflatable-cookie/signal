@@ -59,7 +59,9 @@ are not stretch-quality verdicts.
 `--measure-decoded-stretch` appends bounded decoded-source stretch metric rows
 for each corpus ratio on each local source. The first metric set compares the
 draft phase-vocoder baseline with OfflineHighQuality for timing drift and
-transient smear over a short decoded excerpt. Use
+transient smear over a short decoded excerpt. Transient rows include input,
+output, matched, and missed transient counts for each backend so high penalties
+can be separated from true attack widening. Use
 `--decoded-stretch-frame-limit N` to change the excerpt size; the default is
 ten seconds at 48 kHz. These rows are objective evidence, not a replacement
 for listened curation.

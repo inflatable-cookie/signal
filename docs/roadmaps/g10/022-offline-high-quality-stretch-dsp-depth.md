@@ -103,11 +103,22 @@ comparison reports, not add more receipt or fixture surfaces.
   excerpts for timing drift and transient smear across each listening-source
   case ratio. This creates real-audio objective evidence before any listened
   curation or external comparator render is available.
+- 2026-07-07: extended decoded real-source transient-smear rows with input,
+  output, matched, and missed transient counts for draft and OfflineHighQuality.
+  This separates true attack widening from failed transient matching before the
+  next DSP change is selected.
+- 2026-07-07: regenerated the local FMA review-seed metric report with
+  transient match detail. OfflineHighQuality had no decoded real-source
+  regressions. The high `1024`-frame transient-smear penalties were all tied to
+  missed transient matches, not finite measured attack widening; the 30
+  transient rows recorded 95 matched and 28 missed OfflineHighQuality transient
+  matches. The next DSP choice should therefore start from transient
+  alignment/detection evidence, not a blind compression transient-reset patch.
 
 ## Next Task
 
 Do not add a multiresolution or hybrid path until measured evidence requires
-it. Next useful work is to inspect the decoded real-source metric rows for the
-largest OfflineHighQuality regressions, then choose one DSP change or corpus
-expansion from that evidence. Listened real-source curation and external
-rendered-output comparison remain promotion inputs.
+it. Next useful work is to add a bounded transient-alignment diagnostic for
+decoded real-source rows so missed matches can be sorted by timing error and
+material family before choosing a DSP change. Listened real-source curation and
+external rendered-output comparison remain promotion inputs.
