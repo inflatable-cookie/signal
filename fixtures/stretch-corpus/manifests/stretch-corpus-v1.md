@@ -63,8 +63,13 @@ presence and listening-note slots. It does not commit, decode, or copy licensed
 source audio.
 When `--decode-listening-sources` is set, the report also decodes bounded local
 source windows for source-profile metrics only; decoded audio is not written.
+When `--measure-decoded-stretch` is set, the report decodes bounded local
+source excerpts and records objective draft-vs-OfflineHighQuality stretch
+metric rows for each case ratio. The first metric set covers timing drift and
+transient smear.
 
 ## Next Task
 
-Collect operator-supplied local listening manifests and optional external
-rendered-output comparisons for the first real report.
+Collect operator-supplied local listening manifests with decoded stretch metric
+rows and optional external rendered-output comparisons for the first real
+report.

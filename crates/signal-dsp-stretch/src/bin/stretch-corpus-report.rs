@@ -7,8 +7,10 @@ use std::process;
 
 use signal_dsp_stretch::{
     build_stretch_corpus_comparison_report_with_sources, detect_stretch_transients,
-    format_stretch_corpus_comparison_report, StretchCorpusAssetRequirement,
-    StretchCorpusListeningSource, StretchExternalBenchmarkRender, STRETCH_CORPUS_MANIFEST,
+    format_stretch_corpus_comparison_report, measure_transient_smear, output_length_drift_samples,
+    OfflineHighQualityStretcher, PhaseVocoderStretcher, StretchCorpusAssetRequirement,
+    StretchCorpusListeningSource, StretchExternalBenchmarkRender, TimeStretcher,
+    STRETCH_CORPUS_MANIFEST,
 };
 use symphonia::core::{
     audio::SampleBuffer as SymphoniaSampleBuffer,
@@ -24,6 +26,9 @@ const DEFAULT_REPORT_NAME: &str = "stretch-corpus-v1-offline-evidence";
 const DEFAULT_PROJECTION_EPOCH: &str = "projection:deterministic-report-v1";
 const DEFAULT_EXTERNAL_BENCHMARK_TOOL: &str = "external-render";
 const DEFAULT_DECODE_SOURCE_FRAME_LIMIT: usize = 48_000 * 60;
+const DEFAULT_DECODED_STRETCH_FRAME_LIMIT: usize = 48_000 * 10;
+const QUALITY_METRIC_WINDOW_SIZE: usize = 1_024;
+const QUALITY_METRIC_HOP_SIZE: usize = 256;
 
 #[derive(Debug, PartialEq, Eq)]
 struct ReportArgs {
@@ -35,6 +40,8 @@ struct ReportArgs {
     listening_source_manifests: Vec<PathBuf>,
     decode_listening_sources: bool,
     decode_source_frame_limit: usize,
+    measure_decoded_stretch: bool,
+    decoded_stretch_frame_limit: usize,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -55,6 +62,8 @@ impl Default for ReportArgs {
             listening_source_manifests: Vec::new(),
             decode_listening_sources: false,
             decode_source_frame_limit: DEFAULT_DECODE_SOURCE_FRAME_LIMIT,
+            measure_decoded_stretch: false,
+            decoded_stretch_frame_limit: DEFAULT_DECODED_STRETCH_FRAME_LIMIT,
         }
     }
 }
@@ -103,6 +112,20 @@ fn main() {
                 if !decoded_profiles.is_empty() {
                     formatted.push('\n');
                     formatted.push_str(&decoded_profiles);
+                }
+            }
+            Err(message) => {
+                eprintln!("{message}");
+                process::exit(1);
+            }
+        }
+    }
+    if args.measure_decoded_stretch {
+        match format_decoded_stretch_metrics(&listening_sources, args.decoded_stretch_frame_limit) {
+            Ok(decoded_metrics) => {
+                if !decoded_metrics.is_empty() {
+                    formatted.push('\n');
+                    formatted.push_str(&decoded_metrics);
                 }
             }
             Err(message) => {
@@ -180,6 +203,17 @@ where
                             format!("invalid --decode-source-frame-limit value: {error}")
                         })?;
             }
+            "--measure-decoded-stretch" => {
+                parsed.measure_decoded_stretch = true;
+            }
+            "--decoded-stretch-frame-limit" => {
+                parsed.decoded_stretch_frame_limit =
+                    next_value(&mut iter, "--decoded-stretch-frame-limit")?
+                        .parse::<usize>()
+                        .map_err(|error| {
+                            format!("invalid --decoded-stretch-frame-limit value: {error}")
+                        })?;
+            }
             "--help" | "-h" => {
                 return Ok(ParseOutcome::Help);
             }
@@ -201,7 +235,7 @@ where
 }
 
 fn usage() -> &'static str {
-    "usage: stretch-corpus-report [--report-name NAME] [--projection-epoch EPOCH] [--listening-source-manifest TSV] [--decode-listening-sources] [--decode-source-frame-limit N] [--external-benchmark-tool NAME] [--external-benchmark-render CASE RATIO WAV] [--output PATH]"
+    "usage: stretch-corpus-report [--report-name NAME] [--projection-epoch EPOCH] [--listening-source-manifest TSV] [--decode-listening-sources] [--decode-source-frame-limit N] [--measure-decoded-stretch] [--decoded-stretch-frame-limit N] [--external-benchmark-tool NAME] [--external-benchmark-render CASE RATIO WAV] [--output PATH]"
 }
 
 fn load_external_benchmark_renders(
@@ -391,6 +425,30 @@ struct DecodedListeningSourceProfile {
     transient_density_per_second: f64,
 }
 
+#[derive(Clone, Debug, PartialEq)]
+struct DecodedListeningSourceAudio {
+    case_id: String,
+    source_path: String,
+    sample_rate_hz: u32,
+    channels: u16,
+    samples: Vec<f32>,
+    analysis_limited: bool,
+}
+
+impl DecodedListeningSourceAudio {
+    fn analyzed_frames(&self) -> usize {
+        self.samples.len() / self.channels as usize
+    }
+
+    fn mono_samples(&self) -> Vec<f32> {
+        let channel_count = self.channels as usize;
+        self.samples
+            .chunks_exact(channel_count)
+            .map(|frame| frame.iter().sum::<f32>() / channel_count as f32)
+            .collect()
+    }
+}
+
 fn format_decoded_listening_source_profiles(
     sources: &[StretchCorpusListeningSource],
     frame_limit: usize,
@@ -420,23 +478,31 @@ fn decode_listening_source_profile(
     source: &StretchCorpusListeningSource,
     frame_limit: usize,
 ) -> Result<DecodedListeningSourceProfile, String> {
+    let audio = decode_listening_source_audio(source, frame_limit)?;
+    profile_from_decoded_audio(&audio)
+}
+
+fn decode_listening_source_audio(
+    source: &StretchCorpusListeningSource,
+    frame_limit: usize,
+) -> Result<DecodedListeningSourceAudio, String> {
     let path = PathBuf::from(&source.source_path);
     if path
         .extension()
         .and_then(|extension| extension.to_str())
         .is_some_and(|extension| extension.eq_ignore_ascii_case("wav"))
     {
-        decode_wav_source_profile(source, &path, frame_limit)
+        decode_wav_source_audio(source, &path, frame_limit)
     } else {
-        decode_symphonia_source_profile(source, &path, frame_limit)
+        decode_symphonia_source_audio(source, &path, frame_limit)
     }
 }
 
-fn decode_wav_source_profile(
+fn decode_wav_source_audio(
     source: &StretchCorpusListeningSource,
     path: &Path,
     frame_limit: usize,
-) -> Result<DecodedListeningSourceProfile, String> {
+) -> Result<DecodedListeningSourceAudio, String> {
     let mut reader = hound::WavReader::open(path)
         .map_err(|error| format!("failed to open source {}: {error}", path.display()))?;
     let spec = reader.spec();
@@ -446,6 +512,7 @@ fn decode_wav_source_profile(
             path.display()
         ));
     }
+    let total_frames = reader.duration() as usize;
     let max_samples = sample_limit(frame_limit, spec.channels as usize);
     let samples = match spec.sample_format {
         hound::SampleFormat::Float => reader
@@ -469,20 +536,20 @@ fn decode_wav_source_profile(
         }
     };
 
-    profile_from_interleaved_samples(
+    decoded_audio_from_interleaved_samples(
         source,
         spec.sample_rate,
         spec.channels,
         samples,
-        frame_analysis_limited(frame_limit, reader.duration() as usize),
+        frame_analysis_limited(frame_limit, total_frames),
     )
 }
 
-fn decode_symphonia_source_profile(
+fn decode_symphonia_source_audio(
     source: &StretchCorpusListeningSource,
     path: &Path,
     frame_limit: usize,
-) -> Result<DecodedListeningSourceProfile, String> {
+) -> Result<DecodedListeningSourceAudio, String> {
     let file = File::open(path)
         .map_err(|error| format!("failed to open source {}: {error}", path.display()))?;
     let media_stream = MediaSourceStream::new(Box::new(file), Default::default());
@@ -576,7 +643,7 @@ fn decode_symphonia_source_profile(
         }
     }
 
-    profile_from_interleaved_samples(
+    decoded_audio_from_interleaved_samples(
         source,
         sample_rate_hz
             .ok_or_else(|| format!("source {} produced no sample rate", path.display()))?,
@@ -586,13 +653,13 @@ fn decode_symphonia_source_profile(
     )
 }
 
-fn profile_from_interleaved_samples(
+fn decoded_audio_from_interleaved_samples(
     source: &StretchCorpusListeningSource,
     sample_rate_hz: u32,
     channels: u16,
     samples: Vec<f32>,
     analysis_limited: bool,
-) -> Result<DecodedListeningSourceProfile, String> {
+) -> Result<DecodedListeningSourceAudio, String> {
     let channel_count = channels as usize;
     if sample_rate_hz == 0 || channel_count == 0 || samples.len() < channel_count {
         return Err(format!(
@@ -600,10 +667,33 @@ fn profile_from_interleaved_samples(
             source.source_path
         ));
     }
-    let analyzed_frames = samples.len() / channel_count;
-    let mut mono = Vec::with_capacity(analyzed_frames);
-    for frame in samples.chunks_exact(channel_count) {
-        mono.push(frame.iter().sum::<f32>() / channel_count as f32);
+    Ok(DecodedListeningSourceAudio {
+        case_id: source.case_id.clone(),
+        source_path: source.source_path.clone(),
+        sample_rate_hz,
+        channels,
+        samples,
+        analysis_limited,
+    })
+}
+
+fn profile_from_decoded_audio(
+    audio: &DecodedListeningSourceAudio,
+) -> Result<DecodedListeningSourceProfile, String> {
+    let channel_count = audio.channels as usize;
+    if audio.sample_rate_hz == 0 || channel_count == 0 || audio.samples.len() < channel_count {
+        return Err(format!(
+            "source {} produced no decodable audio frames",
+            audio.source_path
+        ));
+    }
+    let analyzed_frames = audio.analyzed_frames();
+    let mono = audio.mono_samples();
+    if mono.is_empty() {
+        return Err(format!(
+            "source {} produced no decodable audio frames",
+            audio.source_path
+        ));
     }
 
     let peak = mono
@@ -623,22 +713,113 @@ fn profile_from_interleaved_samples(
         .windows(2)
         .filter(|pair| (pair[0] >= 0.0) != (pair[1] >= 0.0))
         .count();
-    let duration_seconds = analyzed_frames as f64 / sample_rate_hz as f64;
+    let duration_seconds = analyzed_frames as f64 / audio.sample_rate_hz as f64;
     let transients = detect_stretch_transients(&mono, 1024, 256);
 
     Ok(DecodedListeningSourceProfile {
-        case_id: source.case_id.clone(),
-        source_path: source.source_path.clone(),
-        sample_rate_hz,
-        channels,
+        case_id: audio.case_id.clone(),
+        source_path: audio.source_path.clone(),
+        sample_rate_hz: audio.sample_rate_hz,
+        channels: audio.channels,
         analyzed_frames,
-        analysis_limited,
+        analysis_limited: audio.analysis_limited,
         peak,
         rms,
         zero_crossings_per_second: zero_crossings as f64 / duration_seconds.max(1.0e-12),
         transient_count: transients.len(),
         transient_density_per_second: transients.len() as f64 / duration_seconds.max(1.0e-12),
     })
+}
+
+fn format_decoded_stretch_metrics(
+    sources: &[StretchCorpusListeningSource],
+    frame_limit: usize,
+) -> Result<String, String> {
+    let mut lines = Vec::new();
+    for source in sources {
+        let audio = decode_listening_source_audio(source, frame_limit)?;
+        let mono = audio.mono_samples();
+        for &ratio in listening_source_ratios(&source.case_id)? {
+            let mut draft = PhaseVocoderStretcher::new(ratio);
+            let draft_output = draft.stretch_mono(&mono);
+            let mut offline = OfflineHighQualityStretcher::new(ratio);
+            let offline_output = offline.stretch_mono(&mono);
+
+            lines.push(format_decoded_stretch_metric_line(
+                &audio,
+                ratio,
+                "TimingDriftSamples",
+                output_length_drift_samples(mono.len(), draft_output.len(), ratio),
+                output_length_drift_samples(mono.len(), offline_output.len(), ratio),
+            ));
+
+            let draft_smear = measure_transient_smear(
+                &mono,
+                &draft_output,
+                ratio,
+                QUALITY_METRIC_WINDOW_SIZE,
+                QUALITY_METRIC_HOP_SIZE,
+            );
+            let offline_smear = measure_transient_smear(
+                &mono,
+                &offline_output,
+                ratio,
+                QUALITY_METRIC_WINDOW_SIZE,
+                QUALITY_METRIC_HOP_SIZE,
+            );
+            lines.push(format_decoded_stretch_metric_line(
+                &audio,
+                ratio,
+                "TransientSmearFrames",
+                draft_smear.max_smear_frames,
+                offline_smear.max_smear_frames,
+            ));
+        }
+    }
+    Ok(lines.join("\n"))
+}
+
+fn listening_source_ratios(case_id: &str) -> Result<&'static [f64], String> {
+    STRETCH_CORPUS_MANIFEST
+        .entries
+        .iter()
+        .find(|entry| entry.case.case_id == case_id)
+        .map(|entry| entry.case.ratios)
+        .ok_or_else(|| format!("unknown listening source case {case_id}"))
+}
+
+fn format_decoded_stretch_metric_line(
+    audio: &DecodedListeningSourceAudio,
+    ratio: f64,
+    metric: &str,
+    draft: f64,
+    offline_hq: f64,
+) -> String {
+    format!(
+        "decoded_stretch_metric case={} source={} ratio={:.6} metric={} draft={:.6} offline_hq={:.6} delta={:.6} outcome={} analyzed_frames={} analysis_limited={}",
+        audio.case_id,
+        quoted_report_field(&audio.source_path),
+        ratio,
+        metric,
+        draft,
+        offline_hq,
+        offline_hq - draft,
+        decoded_metric_outcome(draft, offline_hq),
+        audio.analyzed_frames(),
+        audio.analysis_limited,
+    )
+}
+
+fn decoded_metric_outcome(draft: f64, offline_hq: f64) -> &'static str {
+    if !draft.is_finite() || !offline_hq.is_finite() {
+        "Inconclusive"
+    } else if offline_hq < draft {
+        "Improved"
+    } else if (offline_hq - draft).abs() <= 1.0e-9 {
+        "Unchanged"
+    } else {
+        "Regressed"
+    }
 }
 
 fn sample_limit(frame_limit: usize, channels: usize) -> Option<usize> {
@@ -686,6 +867,8 @@ mod tests {
                 listening_source_manifests: Vec::new(),
                 decode_listening_sources: false,
                 decode_source_frame_limit: DEFAULT_DECODE_SOURCE_FRAME_LIMIT,
+                measure_decoded_stretch: false,
+                decoded_stretch_frame_limit: DEFAULT_DECODED_STRETCH_FRAME_LIMIT,
             })
         );
     }
@@ -704,6 +887,9 @@ mod tests {
             "--decode-listening-sources".to_string(),
             "--decode-source-frame-limit".to_string(),
             "2048".to_string(),
+            "--measure-decoded-stretch".to_string(),
+            "--decoded-stretch-frame-limit".to_string(),
+            "1024".to_string(),
             "--external-benchmark-tool".to_string(),
             "rubberband-cli".to_string(),
             "--external-benchmark-render".to_string(),
@@ -728,6 +914,8 @@ mod tests {
                 listening_source_manifests: vec![PathBuf::from("target/fma.tsv")],
                 decode_listening_sources: true,
                 decode_source_frame_limit: 2048,
+                measure_decoded_stretch: true,
+                decoded_stretch_frame_limit: 1024,
             })
         );
     }
@@ -766,6 +954,8 @@ mod tests {
             listening_source_manifests: Vec::new(),
             decode_listening_sources: false,
             decode_source_frame_limit: DEFAULT_DECODE_SOURCE_FRAME_LIMIT,
+            measure_decoded_stretch: false,
+            decoded_stretch_frame_limit: DEFAULT_DECODED_STRETCH_FRAME_LIMIT,
         };
 
         let renders = load_external_benchmark_renders(&args).expect("load external render");
@@ -847,6 +1037,33 @@ mod tests {
 
         assert!(formatted.starts_with("decoded_listening_source case=stretch:vocals"));
         assert!(formatted.contains("sample_rate=48000 channels=2"));
+        assert!(formatted.contains("analysis_limited=true"));
+
+        let _ = fs::remove_file(path);
+    }
+
+    #[test]
+    fn decoded_stretch_metrics_measure_wav_excerpt() {
+        let path = PathBuf::from(format!(
+            "target/stretch-corpus-decode-stretch-test-{}.wav",
+            std::process::id()
+        ));
+        write_test_wav(&path, 4_096);
+        let source = StretchCorpusListeningSource {
+            case_id: "stretch:vocals".to_string(),
+            source_path: path.display().to_string(),
+            source_label: "Artist - Song".to_string(),
+            license_title: "Attribution".to_string(),
+            license_url: "https://example.test/license".to_string(),
+            provenance_url: "https://example.test/track".to_string(),
+        };
+
+        let formatted =
+            format_decoded_stretch_metrics(&[source], 2_048).expect("format decoded metrics");
+
+        assert!(formatted.contains("decoded_stretch_metric case=stretch:vocals"));
+        assert!(formatted.contains("ratio=0.750000 metric=TimingDriftSamples"));
+        assert!(formatted.contains("metric=TransientSmearFrames"));
         assert!(formatted.contains("analysis_limited=true"));
 
         let _ = fs::remove_file(path);

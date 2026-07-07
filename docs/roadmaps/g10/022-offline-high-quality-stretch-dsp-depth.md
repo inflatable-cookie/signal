@@ -97,10 +97,17 @@ comparison reports, not add more receipt or fixture surfaces.
   rows with sample rate, channel count, analyzed frames, peak/RMS,
   zero-crossing rate, and transient density. This is source-profile evidence,
   not a stretch-quality verdict.
+- 2026-07-07: added opt-in decoded real-source stretch metric rows to
+  `stretch-corpus-report`. `--measure-decoded-stretch` now compares the draft
+  phase-vocoder baseline with OfflineHighQuality on bounded decoded local
+  excerpts for timing drift and transient smear across each listening-source
+  case ratio. This creates real-audio objective evidence before any listened
+  curation or external comparator render is available.
 
 ## Next Task
 
 Do not add a multiresolution or hybrid path until measured evidence requires
-it. Next useful work is decoded real-source stretch metrics over bounded
-excerpts, listened real-source curation, or external rendered-output comparison
-on a machine with the comparator tools installed.
+it. Next useful work is to inspect the decoded real-source metric rows for the
+largest OfflineHighQuality regressions, then choose one DSP change or corpus
+expansion from that evidence. Listened real-source curation and external
+rendered-output comparison remain promotion inputs.
