@@ -368,6 +368,14 @@ comparison reports, not add more receipt or fixture surfaces.
   sample-rate compatibility, alignment lag, aligned correlation, RMS error,
   peak error, and rendered-output-only source-boundary evidence. This gives the
   stretch program a clean black-box comparison surface before promotion.
+- 2026-07-07: added external-comparator render-pack ingestion. Local comparator
+  tools were not available on this machine, so no Rubber Band or elastique
+  renders were generated here. Instead, `stretch-corpus-report` now accepts
+  `--external-benchmark-render-manifest TSV` with `case_id`, `ratio`, and
+  `rendered_path` or `path`, plus optional `tool_name` or `tool`. This lets an
+  operator-supplied Rubber Band or elastique render pack feed the same
+  report-only quality harness without expanding the command line into repeated
+  render flags.
 
 ## Next Task
 
@@ -378,8 +386,9 @@ also rejected, and the `000900.mp3` matched-event width issue is not solved by
 window size alone. The gated shorter-window selector now clears the first broad
 FMA no-listening check. Next useful work is promotion pressure, still
 report-only: generate or supply a small black-box comparator render pack for
-the broad FMA seed, then run `--measure-external-benchmark-quality` and the
-gated selector report together. Require the selector to keep
+the broad FMA seed, record it as an external-render TSV manifest, then run
+`--external-benchmark-render-manifest`, `--measure-external-benchmark-quality`,
+and the gated selector report together. Require the selector to keep
 `current_better_rows=0`, `worst_gated_regression_delta_frames=0`, and no new
 draft regression, while comparator rows identify the worst aligned RMS,
 transient-smear, and timing-drift gaps to review by ear.
