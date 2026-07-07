@@ -206,6 +206,7 @@ fn public_runtime_reports_offline_stretch_artifact_plan_receipts_with_promotion_
                 scope: RuntimeOfflineStretchArtifactScope::RenderCache,
                 kind: RuntimeOfflineStretchArtifactCacheDecisionKind::Written,
                 tier: StretchBackendTier::OfflineHighQuality,
+                offline_path: accepted_plan.offline_path,
                 cache_identity_hash: expected_hash.clone(),
                 cache_identity_key: expected_key.clone(),
                 promotion_evidence_id: "stretch-corpus:public-runtime".into(),
@@ -220,6 +221,7 @@ fn public_runtime_reports_offline_stretch_artifact_plan_receipts_with_promotion_
                 scope: RuntimeOfflineStretchArtifactScope::RenderCache,
                 kind: RuntimeOfflineStretchArtifactCacheDecisionKind::Hit,
                 tier: StretchBackendTier::OfflineHighQuality,
+                offline_path: accepted_plan.offline_path,
                 cache_identity_hash: expected_hash.clone(),
                 cache_identity_key: expected_key.clone(),
                 promotion_evidence_id: "stretch-corpus:public-runtime".into(),
@@ -234,6 +236,7 @@ fn public_runtime_reports_offline_stretch_artifact_plan_receipts_with_promotion_
                 scope: RuntimeOfflineStretchArtifactScope::RenderCache,
                 kind: RuntimeOfflineStretchArtifactCacheDecisionKind::Invalidated,
                 tier: StretchBackendTier::OfflineHighQuality,
+                offline_path: accepted_plan.offline_path,
                 cache_identity_hash: expected_hash.clone(),
                 cache_identity_key: expected_key,
                 promotion_evidence_id: "stretch-corpus:public-runtime".into(),
@@ -260,6 +263,7 @@ fn public_runtime_reports_offline_stretch_artifact_plan_receipts_with_promotion_
         offline_plan.readiness,
         RuntimeOfflineStretchArtifactReadiness::Ready
     );
+    assert_eq!(offline_plan.offline_path, accepted_plan.offline_path);
     assert!(offline_plan.product_facing_allowed);
     assert_eq!(
         offline_plan.promotion_status,
@@ -294,6 +298,7 @@ fn public_runtime_reports_offline_stretch_artifact_plan_receipts_with_promotion_
         .find(|artifact| artifact.artifact_id == "stretch-artifact:offline-hq")
         .expect("materialized offline high-quality artifact should be present");
     assert_eq!(artifact.cache_identity_hash, expected_hash);
+    assert_eq!(artifact.offline_path, accepted_plan.offline_path);
     assert_eq!(artifact.output_frame_count, 72_000);
     assert!(artifact.product_facing_allowed);
     let cache_hit = snapshot
@@ -306,6 +311,7 @@ fn public_runtime_reports_offline_stretch_artifact_plan_receipts_with_promotion_
         RuntimeOfflineStretchArtifactCacheDecisionKind::Hit
     );
     assert_eq!(cache_hit.cache_identity_hash, expected_hash);
+    assert_eq!(cache_hit.offline_path, accepted_plan.offline_path);
     assert_eq!(cache_hit.output_frame_count, artifact.output_frame_count);
     assert!(cache_hit.product_facing_allowed);
     let invalid_plan = snapshot

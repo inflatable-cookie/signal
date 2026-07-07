@@ -51,11 +51,11 @@ comparison reports, not add more receipt or fixture surfaces.
 
 ### Batch 22.4 - Selector Promotion Integration
 
-- [ ] carry the new `OfflineHighQualityPath` option through cache identity and
+- [x] carry the new `OfflineHighQualityPath` option through cache identity and
   render/export/freeze artifact planning before any consumer uses it
 - [ ] require the broad FMA/Rubber Band selector-path evidence in promotion
   receipts
-- [ ] keep the default OfflineHighQuality path unchanged until selector use is
+- [x] keep the default OfflineHighQuality path unchanged until selector use is
   explicitly selected by artifact policy
 
 ## Acceptance Criteria
@@ -517,13 +517,25 @@ comparison reports, not add more receipt or fixture surfaces.
   candidate evidence remained unchanged: 5 gated-better rows, 0 current-better
   rows, finite mean max-smear `132.647059` frames versus current
   `374.352941`, and `worst_gated_regression_delta_frames=0.000000`.
+- 2026-07-07: carried `OfflineHighQualityPath` through cache identity and
+  render/export/freeze artifact planning. `StretchCacheIdentityInput` now
+  records `offline_path`, the canonical key includes `offline_path=...`, and
+  the cache schema advanced to `signal-stretch-cache-v2` so default and
+  selector artifacts cannot collide. Render-plane plans and materialization
+  receipts now expose the path, runtime observation snapshots carry the path
+  for plans, materializations, and cache decisions, and host-local forwards the
+  render-plane receipt path into runtime. Static stereo selector
+  materialization is allowed and uses the opt-in stretcher path. Dynamic-ratio
+  and pitch-shift selector artifact materialization are explicitly rejected
+  until those combinations have their own corpus evidence, so consumers cannot
+  accidentally request selector cache keys backed by default-path PCM.
 
 ## Next Task
 
 Do not make the selector a consumer-visible default yet. Next useful work is
-Batch 22.4: carry `OfflineHighQualityPath` through cache identity and
-render/export/freeze artifact planning, then require the broad FMA/Rubber Band
-selector-path evidence in promotion receipts. The default OfflineHighQuality
-path stays unchanged until artifact policy explicitly selects the compression
-short-window selector. The `000900.mp3` matched-event width issue remains open;
-do not treat window selection as solving that sustained-material target.
+the remaining Batch 22.4 gate: require the broad FMA/Rubber Band
+selector-path evidence in promotion receipts before selector artifacts can be
+accepted as product-facing policy. Keep dynamic-ratio and pitch-shift selector
+artifact materialization blocked until those path combinations have separate
+evidence. The `000900.mp3` matched-event width issue remains open; do not
+treat window selection as solving that sustained-material target.

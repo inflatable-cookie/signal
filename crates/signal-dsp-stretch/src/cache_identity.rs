@@ -1,10 +1,10 @@
-use crate::StretchBackendTier;
+use crate::{OfflineHighQualityPath, StretchBackendTier};
 
 const FNV_OFFSET_BASIS: u64 = 0xcbf2_9ce4_8422_2325;
 const FNV_PRIME: u64 = 0x0000_0100_0000_01b3;
 
 /// Current Signal-owned stretch cache identity schema.
-pub const STRETCH_CACHE_IDENTITY_SCHEMA_VERSION: &str = "signal-stretch-cache-v1";
+pub const STRETCH_CACHE_IDENTITY_SCHEMA_VERSION: &str = "signal-stretch-cache-v2";
 
 /// Version tag for the first-party Signal stretch engine implementation.
 pub const SIGNAL_STRETCH_ENGINE_VERSION: &str = "signal-native-stretch-v1";
@@ -92,6 +92,8 @@ pub struct StretchCacheIdentityInput {
     pub engine_version: String,
     /// Stretch tier that produced the artifact.
     pub tier: StretchBackendTier,
+    /// Offline high-quality renderer path used for the artifact.
+    pub offline_path: OfflineHighQualityPath,
     /// Content hash of the decoded source media identity.
     pub source_content_hash: String,
     /// Source channel layout.
@@ -117,6 +119,7 @@ impl StretchCacheIdentityInput {
         Self {
             engine_version: SIGNAL_STRETCH_ENGINE_VERSION.to_string(),
             tier,
+            offline_path: OfflineHighQualityPath::Default,
             source_content_hash: source_content_hash.into(),
             channel_layout,
             ratio_curve: Vec::new(),
@@ -124,6 +127,12 @@ impl StretchCacheIdentityInput {
             warp_markers: Vec::new(),
             projection_epoch: projection_epoch.into(),
         }
+    }
+
+    /// Set the offline high-quality renderer path.
+    pub fn with_offline_path(mut self, offline_path: OfflineHighQualityPath) -> Self {
+        self.offline_path = offline_path;
+        self
     }
 
     /// Set the ratio curve.
@@ -235,6 +244,11 @@ fn canonical_key(input: &StretchCacheIdentityInput) -> String {
     );
     push_field(&mut key, "engine", input.engine_version.clone());
     push_field(&mut key, "tier", format!("{:?}", input.tier));
+    push_field(
+        &mut key,
+        "offline_path",
+        format!("{:?}", input.offline_path),
+    );
     push_field(
         &mut key,
         "source_content_hash",
@@ -350,13 +364,14 @@ mod tests {
         assert_eq!(left, right);
         assert!(left
             .canonical_key
-            .contains("schema=signal-stretch-cache-v1"));
+            .contains("schema=signal-stretch-cache-v2"));
         assert!(left.canonical_key.contains("tier=OfflineHighQuality"));
+        assert!(left.canonical_key.contains("offline_path=Default"));
         assert_eq!(left.stable_hash.len(), 16);
     }
 
     #[test]
-    fn cache_identity_changes_for_projection_or_curve_changes() {
+    fn cache_identity_changes_for_projection_curve_or_offline_path_changes() {
         let base = base_input().identity().expect("valid identity");
         let changed_projection = StretchCacheIdentityInput {
             projection_epoch: "projection-8".to_string(),
@@ -371,9 +386,17 @@ mod tests {
             ])
             .identity()
             .expect("valid identity");
+        let changed_path = base_input()
+            .with_offline_path(OfflineHighQualityPath::CompressionShortWindowSelector)
+            .identity()
+            .expect("valid identity");
 
         assert_ne!(base.stable_hash, changed_projection.stable_hash);
         assert_ne!(base.stable_hash, changed_ratio.stable_hash);
+        assert_ne!(base.stable_hash, changed_path.stable_hash);
+        assert!(changed_path
+            .canonical_key
+            .contains("offline_path=CompressionShortWindowSelector"));
     }
 
     #[test]

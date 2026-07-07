@@ -1,5 +1,6 @@
 use signal_dsp_stretch::{
-    StretchBackendTier, StretchCacheIdentityInput, StretchPromotionReceipt, StretchPromotionStatus,
+    OfflineHighQualityPath, StretchBackendTier, StretchCacheIdentityInput, StretchPromotionReceipt,
+    StretchPromotionStatus,
 };
 
 /// Offline destination that may consume a stretch artifact.
@@ -70,6 +71,8 @@ pub struct RuntimeOfflineStretchArtifactMaterializationRegistration {
     pub scope: RuntimeOfflineStretchArtifactScope,
     /// Signal stretch tier used to produce the artifact.
     pub tier: StretchBackendTier,
+    /// Offline high-quality renderer path used to produce the artifact.
+    pub offline_path: OfflineHighQualityPath,
     /// Stable cache identity hash for the materialized artifact.
     pub cache_identity_hash: String,
     /// Canonical cache identity key for the materialized artifact.
@@ -105,6 +108,8 @@ pub struct RuntimeOfflineStretchArtifactCacheDecisionRegistration {
     pub kind: RuntimeOfflineStretchArtifactCacheDecisionKind,
     /// Signal stretch tier used to produce the cache handoff.
     pub tier: StretchBackendTier,
+    /// Offline high-quality renderer path used to produce the cache handoff.
+    pub offline_path: OfflineHighQualityPath,
     /// Stable cache identity hash selected by this decision.
     pub cache_identity_hash: String,
     /// Canonical cache identity key selected by this decision.
@@ -132,6 +137,8 @@ pub struct RuntimeOfflineStretchArtifactMaterializationSnapshot {
     pub scope: RuntimeOfflineStretchArtifactScope,
     /// Signal stretch tier used to produce the artifact.
     pub tier: StretchBackendTier,
+    /// Offline high-quality renderer path used to produce the artifact.
+    pub offline_path: OfflineHighQualityPath,
     /// Stable cache identity hash for the materialized artifact.
     pub cache_identity_hash: String,
     /// Canonical cache identity key for the materialized artifact.
@@ -167,6 +174,8 @@ pub struct RuntimeOfflineStretchArtifactCacheDecisionSnapshot {
     pub kind: RuntimeOfflineStretchArtifactCacheDecisionKind,
     /// Signal stretch tier used to produce the cache handoff.
     pub tier: StretchBackendTier,
+    /// Offline high-quality renderer path used to produce the cache handoff.
+    pub offline_path: OfflineHighQualityPath,
     /// Stable cache identity hash selected by this decision.
     pub cache_identity_hash: String,
     /// Canonical cache identity key selected by this decision.
@@ -192,6 +201,8 @@ pub struct RuntimeOfflineStretchArtifactPlanSnapshot {
     pub scope: RuntimeOfflineStretchArtifactScope,
     /// Signal stretch tier named by the identity input.
     pub tier: StretchBackendTier,
+    /// Offline high-quality renderer path named by the identity input.
+    pub offline_path: OfflineHighQualityPath,
     /// Stable cache identity hash, if validation succeeded.
     pub cache_identity_hash: Option<String>,
     /// Canonical cache identity key, if validation succeeded.

@@ -88,7 +88,8 @@ pub use sandbox_broker_support::{
     SandboxPluginAudioLease, SandboxPluginInventory, SandboxPluginParameter,
 };
 pub use signal_dsp_stretch::{
-    current_synthetic_offline_high_quality_promotion_receipt, StretchBackendTier,
-    StretchCacheIdentityInput, StretchChannelLayout, StretchPitchPoint, StretchPromotionReceipt,
-    StretchPromotionStatus, StretchRatioPoint, StretchSyntheticPromotionPolicy, StretchWarpMarker,
+    current_synthetic_offline_high_quality_promotion_receipt, OfflineHighQualityPath,
+    StretchBackendTier, StretchCacheIdentityInput, StretchChannelLayout, StretchPitchPoint,
+    StretchPromotionReceipt, StretchPromotionStatus, StretchRatioPoint,
+    StretchSyntheticPromotionPolicy, StretchWarpMarker,
 };

@@ -392,12 +392,29 @@ impl OfflineHighQualityStretcher {
             return linear_time_scale_interleaved_stereo(even_frames, target_frames);
         }
 
-        transient_reset_phase_vocoder_linked_stereo(
+        let default_output = transient_reset_phase_vocoder_linked_stereo(
             even_frames,
             target_frames,
             self.ratio,
             self.window_size,
             self.analysis_hop,
+        );
+        if self.path != OfflineHighQualityPath::CompressionShortWindowSelector
+            || !should_select_compression_short_window_interleaved(
+                even_frames,
+                &default_output,
+                self.ratio,
+            )
+        {
+            return default_output;
+        }
+
+        transient_reset_phase_vocoder_linked_stereo(
+            even_frames,
+            target_frames,
+            self.ratio,
+            COMPRESSION_SHORT_WINDOW_SELECTOR_WINDOW_SIZE,
+            COMPRESSION_SHORT_WINDOW_SELECTOR_ANALYSIS_HOP,
         )
     }
 
@@ -1046,6 +1063,23 @@ fn should_select_compression_short_window(
     current_smear.missed_transients >= COMPRESSION_SHORT_WINDOW_SELECTOR_MIN_CURRENT_MISSES
         || current_smear.max_smear_frames
             >= COMPRESSION_SHORT_WINDOW_SELECTOR_MIN_CURRENT_SMEAR_FRAMES
+}
+
+fn should_select_compression_short_window_interleaved(
+    input: &[Sample],
+    current_output: &[Sample],
+    ratio: f64,
+) -> bool {
+    let input_mono = downmix_interleaved_stereo_to_mono(input);
+    let output_mono = downmix_interleaved_stereo_to_mono(current_output);
+    should_select_compression_short_window(&input_mono, &output_mono, ratio)
+}
+
+fn downmix_interleaved_stereo_to_mono(samples: &[Sample]) -> Vec<Sample> {
+    samples
+        .chunks_exact(2)
+        .map(|frame| (frame[0] + frame[1]) * 0.5)
+        .collect()
 }
 
 #[cfg(test)]

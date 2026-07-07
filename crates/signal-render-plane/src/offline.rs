@@ -18,10 +18,10 @@ use crate::{
     MAX_BLOCK_FRAMES,
 };
 use signal_dsp_stretch::{
-    compare_synthetic_stretch_backends, stretch_backend_plan, OfflineHighQualityStretcher,
-    StretchBackendStatus, StretchBackendTier, StretchCacheIdentity, StretchCacheIdentityError,
-    StretchCacheIdentityInput, StretchPromotionReceipt, StretchRatioPoint,
-    StretchSyntheticPromotionPolicy,
+    compare_synthetic_stretch_backends, stretch_backend_plan, OfflineHighQualityPath,
+    OfflineHighQualityStretcher, StretchBackendStatus, StretchBackendTier, StretchCacheIdentity,
+    StretchCacheIdentityError, StretchCacheIdentityInput, StretchPromotionReceipt,
+    StretchRatioPoint, StretchSyntheticPromotionPolicy,
 };
 use signal_primitives::SampleRate;
 
@@ -102,6 +102,8 @@ pub struct OfflineStretchArtifactPlan {
     pub identity: StretchCacheIdentity,
     /// Signal stretch tier named by the identity input.
     pub tier: StretchBackendTier,
+    /// Offline high-quality renderer path named by the identity input.
+    pub offline_path: OfflineHighQualityPath,
     /// Current implementation/evidence readiness.
     pub readiness: OfflineStretchArtifactReadiness,
     /// Promotion evidence associated with this artifact plan.
@@ -279,6 +281,8 @@ pub struct OfflineStretchArtifactMaterializationReceipt {
     pub scope: OfflineStretchArtifactScope,
     /// Signal stretch tier used to produce the artifact.
     pub tier: StretchBackendTier,
+    /// Offline high-quality renderer path used to produce the artifact.
+    pub offline_path: OfflineHighQualityPath,
     /// Stable cache identity hash for the materialized artifact.
     pub cache_identity_hash: String,
     /// Canonical cache identity key for the materialized artifact.
@@ -343,6 +347,18 @@ pub enum OfflineStretchArtifactMaterializeError {
     },
     /// Non-static pitch automation is not materialized by this artifact path.
     UnsupportedPitchAutomation,
+    /// The requested offline path is not implemented for dynamic ratio curves
+    /// in artifact materialization.
+    UnsupportedOfflinePathDynamicRatio {
+        /// Requested offline high-quality renderer path.
+        path: OfflineHighQualityPath,
+    },
+    /// The requested offline path is not implemented for static pitch shift in
+    /// artifact materialization.
+    UnsupportedOfflinePathPitchShift {
+        /// Requested offline high-quality renderer path.
+        path: OfflineHighQualityPath,
+    },
     /// Render-cache handoff helpers only accept render-cache scoped artifacts.
     UnsupportedCacheHandoffScope {
         /// Scope supplied to the render-cache handoff helper.
@@ -375,6 +391,18 @@ impl std::fmt::Display for OfflineStretchArtifactMaterializeError {
                 formatter,
                 "offline stretch artifact materialization requires static pitch shift",
             ),
+            OfflineStretchArtifactMaterializeError::UnsupportedOfflinePathDynamicRatio {
+                path,
+            } => write!(
+                formatter,
+                "offline stretch artifact path {path:?} does not support dynamic ratio materialization yet",
+            ),
+            OfflineStretchArtifactMaterializeError::UnsupportedOfflinePathPitchShift { path } => {
+                write!(
+                    formatter,
+                    "offline stretch artifact path {path:?} does not support pitch-shift materialization yet",
+                )
+            }
             OfflineStretchArtifactMaterializeError::UnsupportedCacheHandoffScope { scope } => {
                 write!(
                     formatter,
@@ -431,6 +459,7 @@ pub fn plan_offline_stretch_artifact(
         scope,
         identity,
         tier: identity_input.tier,
+        offline_path: identity_input.offline_path,
         readiness,
         promotion_receipt,
         product_facing_allowed: readiness == OfflineStretchArtifactReadiness::Ready,
@@ -493,8 +522,28 @@ pub fn materialize_offline_stretch_artifact_pcm(
 
     let ratio = static_or_initial_ratio(&identity_input.ratio_curve);
     let pitch_shift = static_pitch_shift(identity_input)?;
-    let mut stretcher = OfflineHighQualityStretcher::new(ratio);
-    let frames = if pitch_shift.abs() > 1.0e-9 {
+    if identity_input.offline_path == OfflineHighQualityPath::CompressionShortWindowSelector {
+        if ratio_curve_has_dynamic_changes(&identity_input.ratio_curve) {
+            return Err(
+                OfflineStretchArtifactMaterializeError::UnsupportedOfflinePathDynamicRatio {
+                    path: identity_input.offline_path,
+                },
+            );
+        }
+        if pitch_shift.abs() > 1.0e-9 {
+            return Err(
+                OfflineStretchArtifactMaterializeError::UnsupportedOfflinePathPitchShift {
+                    path: identity_input.offline_path,
+                },
+            );
+        }
+    }
+    let mut stretcher = OfflineHighQualityStretcher::with_path(ratio, identity_input.offline_path);
+    let frames = if identity_input.offline_path
+        == OfflineHighQualityPath::CompressionShortWindowSelector
+    {
+        stretcher.stretch_interleaved_stereo(&source.frames)
+    } else if pitch_shift.abs() > 1.0e-9 {
         stretcher.stretch_dynamic_ratio_pitch_interleaved_stereo(
             &source.frames,
             &identity_input.ratio_curve,
@@ -512,6 +561,7 @@ pub fn materialize_offline_stretch_artifact_pcm(
     let receipt = OfflineStretchArtifactMaterializationReceipt {
         scope,
         tier: plan.tier,
+        offline_path: plan.offline_path,
         cache_identity_hash: plan.identity.stable_hash.clone(),
         cache_identity_key: plan.identity.canonical_key.clone(),
         promotion_evidence_id: plan.promotion_receipt.evidence_id.clone(),
@@ -614,6 +664,17 @@ fn static_or_initial_ratio(ratio_curve: &[StretchRatioPoint]) -> f64 {
         .find(|point| point.ratio.is_finite() && point.ratio > 0.0)
         .map(|point| point.ratio)
         .unwrap_or(1.0)
+}
+
+fn ratio_curve_has_dynamic_changes(ratio_curve: &[StretchRatioPoint]) -> bool {
+    let mut valid_ratios = ratio_curve
+        .iter()
+        .filter(|point| point.ratio.is_finite() && point.ratio > 0.0)
+        .map(|point| point.ratio);
+    let Some(first) = valid_ratios.next() else {
+        return false;
+    };
+    valid_ratios.any(|ratio| (ratio - first).abs() > 1.0e-9)
 }
 
 fn static_pitch_shift(
@@ -838,9 +899,9 @@ mod tests {
         RenderSource, RenderStageKind, RenderStageSpec,
     };
     use signal_dsp_stretch::{
-        current_synthetic_offline_high_quality_promotion_receipt, StretchChannelLayout,
-        StretchPitchPoint, StretchPromotionReceipt, StretchPromotionStatus, StretchRatioPoint,
-        StretchSyntheticPromotionPolicy, StretchWarpMarker,
+        current_synthetic_offline_high_quality_promotion_receipt, OfflineHighQualityPath,
+        StretchChannelLayout, StretchPitchPoint, StretchPromotionReceipt, StretchPromotionStatus,
+        StretchRatioPoint, StretchSyntheticPromotionPolicy, StretchWarpMarker,
     };
     use std::sync::Arc;
 
@@ -1031,6 +1092,7 @@ mod tests {
 
         assert_eq!(plan.scope, OfflineStretchArtifactScope::Export);
         assert_eq!(plan.tier, StretchBackendTier::OfflineHighQuality);
+        assert_eq!(plan.offline_path, OfflineHighQualityPath::Default);
         assert_eq!(plan.readiness, OfflineStretchArtifactReadiness::Ready);
         assert_current_corpus_promotion_receipt(
             &plan.promotion_receipt,
@@ -1041,6 +1103,7 @@ mod tests {
             .identity
             .canonical_key
             .contains("tier=OfflineHighQuality"));
+        assert!(plan.identity.canonical_key.contains("offline_path=Default"));
         assert_eq!(plan.identity, input.identity().expect("same identity"));
     }
 
@@ -1073,6 +1136,10 @@ mod tests {
         assert_eq!(
             artifact.receipt.cache_identity_hash,
             artifact.plan.identity.stable_hash
+        );
+        assert_eq!(
+            artifact.receipt.offline_path,
+            OfflineHighQualityPath::Default
         );
         assert_eq!(
             artifact.receipt.promotion_evidence_id,
@@ -1349,6 +1416,9 @@ mod tests {
         let changed_curve = stretch_identity_input()
             .with_ratio_curve(vec![StretchRatioPoint::new(0, 1.5)])
             .with_pitch_curve(vec![StretchPitchPoint::new(0, 0.0)]);
+        let changed_path = input
+            .clone()
+            .with_offline_path(OfflineHighQualityPath::CompressionShortWindowSelector);
         let source = stretch_artifact_source(480);
         let build = |identity_input: &StretchCacheIdentityInput| {
             build_offline_stretch_artifact_render_source_with_synthetic_policy(
@@ -1369,6 +1439,7 @@ mod tests {
         let repeated = build(&input);
         let projection_changed = build(&changed_projection);
         let curve_changed = build(&changed_curve);
+        let path_changed = build(&changed_path);
 
         assert_eq!(
             base.artifact.receipt.cache_identity_hash,
@@ -1385,6 +1456,14 @@ mod tests {
         assert_ne!(
             base.artifact.receipt.cache_identity_hash,
             curve_changed.artifact.receipt.cache_identity_hash
+        );
+        assert_ne!(
+            base.artifact.receipt.cache_identity_hash,
+            path_changed.artifact.receipt.cache_identity_hash
+        );
+        assert_eq!(
+            path_changed.artifact.receipt.offline_path,
+            OfflineHighQualityPath::CompressionShortWindowSelector
         );
         assert_ne!(base.source, projection_changed.source);
         assert_ne!(base.source, curve_changed.source);
@@ -1430,6 +1509,10 @@ mod tests {
         );
         assert_eq!(handoff.receipt.output_frame_count, 600);
         assert!(handoff.receipt.product_facing_allowed);
+        assert_eq!(
+            handoff.receipt.offline_path,
+            OfflineHighQualityPath::Default
+        );
 
         let RenderSource::Samples(buffer) = &handoff.source else {
             panic!("cache handoff should return RenderSource::Samples");
@@ -1767,6 +1850,91 @@ mod tests {
                 &source,
             ),
             Err(OfflineStretchArtifactMaterializeError::UnsupportedPitchAutomation)
+        );
+    }
+
+    #[test]
+    fn compression_short_window_selector_materializes_static_stereo_and_changes_identity() {
+        let default_input =
+            stretch_identity_input().with_ratio_curve(vec![StretchRatioPoint::new(0, 0.75)]);
+        let selector_input = default_input
+            .clone()
+            .with_offline_path(OfflineHighQualityPath::CompressionShortWindowSelector);
+        let source = stretch_artifact_source(2_048);
+
+        let default_artifact = materialize_offline_stretch_artifact_pcm(
+            OfflineStretchArtifactScope::RenderCache,
+            &default_input,
+            accepted_synthetic_promotion_receipt("synthetic:default-path-static"),
+            &source,
+        )
+        .expect("default path should materialize");
+        let selector_artifact = materialize_offline_stretch_artifact_pcm(
+            OfflineStretchArtifactScope::RenderCache,
+            &selector_input,
+            accepted_synthetic_promotion_receipt("synthetic:selector-path-static"),
+            &source,
+        )
+        .expect("selector path should materialize static stereo");
+
+        assert_eq!(
+            selector_artifact.plan.offline_path,
+            OfflineHighQualityPath::CompressionShortWindowSelector
+        );
+        assert_eq!(
+            selector_artifact.receipt.offline_path,
+            OfflineHighQualityPath::CompressionShortWindowSelector
+        );
+        assert_eq!(selector_artifact.output_frame_count, 1_536);
+        assert_ne!(
+            default_artifact.receipt.cache_identity_hash,
+            selector_artifact.receipt.cache_identity_hash
+        );
+        assert!(selector_artifact
+            .receipt
+            .cache_identity_key
+            .contains("offline_path=CompressionShortWindowSelector"));
+    }
+
+    #[test]
+    fn compression_short_window_selector_rejects_unproven_artifact_combinations() {
+        let dynamic_input = stretch_identity_input()
+            .with_ratio_curve(vec![
+                StretchRatioPoint::new(0, 0.75),
+                StretchRatioPoint::new(240, 1.25),
+            ])
+            .with_offline_path(OfflineHighQualityPath::CompressionShortWindowSelector);
+        let pitch_input = stretch_identity_input()
+            .with_ratio_curve(vec![StretchRatioPoint::new(0, 0.75)])
+            .with_pitch_curve(vec![StretchPitchPoint::new(0, 2.0)])
+            .with_offline_path(OfflineHighQualityPath::CompressionShortWindowSelector);
+        let source = stretch_artifact_source(480);
+
+        assert_eq!(
+            materialize_offline_stretch_artifact_pcm(
+                OfflineStretchArtifactScope::RenderCache,
+                &dynamic_input,
+                accepted_synthetic_promotion_receipt("synthetic:selector-dynamic"),
+                &source,
+            ),
+            Err(
+                OfflineStretchArtifactMaterializeError::UnsupportedOfflinePathDynamicRatio {
+                    path: OfflineHighQualityPath::CompressionShortWindowSelector
+                }
+            )
+        );
+        assert_eq!(
+            materialize_offline_stretch_artifact_pcm(
+                OfflineStretchArtifactScope::RenderCache,
+                &pitch_input,
+                accepted_synthetic_promotion_receipt("synthetic:selector-pitch"),
+                &source,
+            ),
+            Err(
+                OfflineStretchArtifactMaterializeError::UnsupportedOfflinePathPitchShift {
+                    path: OfflineHighQualityPath::CompressionShortWindowSelector
+                }
+            )
         );
     }
 

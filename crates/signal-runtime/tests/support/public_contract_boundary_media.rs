@@ -21,6 +21,7 @@ pub(crate) fn public_offline_stretch_artifact_materialization(
         media_asset_id: Some("asset:offline-hq".into()),
         scope: RuntimeOfflineStretchArtifactScope::Export,
         tier: StretchBackendTier::OfflineHighQuality,
+        offline_path: identity_input.offline_path,
         cache_identity_hash: identity.stable_hash,
         cache_identity_key: identity.canonical_key,
         promotion_evidence_id: promotion_receipt.evidence_id.clone(),
