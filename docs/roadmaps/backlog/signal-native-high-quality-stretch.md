@@ -325,6 +325,9 @@ Work:
   policy evidence is the only route that creates cache-backed render sources,
   with rejected policy proving no renderable cache source or observation
   receipt is produced
+- [x] turn accepted/rejected host-edge fixtures into reusable render-plane
+  policy helpers so future export, freeze, and render-cache tests assert the
+  same gate without duplicating setup
 - [ ] wire OfflineHighQuality artifacts into render/export/freeze only after
   corpus evidence beats the draft baseline
 - [ ] add Pulse/Aura contract changes only for product-visible mode, ratio,
@@ -360,9 +363,7 @@ Work:
 
 ## Next Task
 
-Continue the Signal DSP quality batch by turning the synthetic comparison
-report into a promotion-readiness loop: turn the current accepted/rejected
-host-edge fixtures into reusable render-plane test helpers so future export,
-freeze, and render-cache integration can assert the same policy gate without
-duplicating setup. Keep Pulse/Aura contract planning deferred until a Loophole
+Continue the Signal DSP quality batch by replacing fixture-local accepted
+promotion with corpus-report promotion evidence at the next render/export/freeze
+integration seam. Keep Pulse/Aura contract planning deferred until a Loophole
 product workflow consumes the Signal-owned contract.

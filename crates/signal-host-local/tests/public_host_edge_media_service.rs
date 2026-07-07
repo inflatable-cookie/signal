@@ -1,28 +1,31 @@
 #[path = "support/public_host_edge_media.rs"]
 mod public_host_edge_media;
+#[path = "support/public_host_edge_stretch.rs"]
+mod public_host_edge_stretch;
 
-use std::{fs, sync::Arc};
+use std::fs;
 
 use public_host_edge_media::{public_local_media_fixture_path, write_public_test_wav};
+use public_host_edge_stretch::{
+    accepted_stretch_policy_request, cache_consumption_options, cache_consumption_spec,
+    host_stretch_identity_input, host_stretch_source, rejected_stretch_policy_request,
+    stretch_build_request, CACHE_CONSUMPTION_STAGE_ID,
+};
 use signal_host_local::LocalRuntimeHost;
 use signal_render_plane::{
     build_offline_stretch_artifact_cache_handoff_with_synthetic_policy,
     build_offline_stretch_artifact_render_source_with_synthetic_policy,
-    plan_offline_stretch_artifact_with_synthetic_policy, render_plan_to_pcm, ChannelFormat,
-    OfflineRenderOptions, OfflineStretchArtifactBuildRequest,
-    OfflineStretchArtifactMaterializeError, OfflineStretchArtifactPolicyRequest,
-    OfflineStretchArtifactReadiness, OfflineStretchArtifactRenderCacheBridge,
-    OfflineStretchArtifactScope as RenderOfflineStretchArtifactScope, RenderClipSpec,
-    RenderEdgeSpec, RenderPlanSpec, RenderSampleBuffer, RenderSource, RenderStageKind,
-    RenderStageSpec,
+    plan_offline_stretch_artifact_with_synthetic_policy, render_plan_to_pcm,
+    OfflineStretchArtifactMaterializeError, OfflineStretchArtifactReadiness,
+    OfflineStretchArtifactRenderCacheBridge,
+    OfflineStretchArtifactScope as RenderOfflineStretchArtifactScope, RenderSource,
 };
 use signal_runtime::{
     RuntimeConfig, RuntimeConfigRequest, RuntimeLifecycleApi, RuntimeMediaPreviewState,
     RuntimeObservationApi, RuntimeOfflineStretchArtifactCacheDecisionKind,
     RuntimeOfflineStretchArtifactPlanRegistration, RuntimeOfflineStretchArtifactReadiness,
-    RuntimeOfflineStretchArtifactScope, RuntimeSupervisorApi, SignalRuntime, StretchBackendTier,
-    StretchCacheIdentityInput, StretchChannelLayout, StretchPitchPoint, StretchPromotionStatus,
-    StretchRatioPoint, StretchSyntheticPromotionPolicy, StretchWarpMarker,
+    RuntimeOfflineStretchArtifactScope, RuntimeSupervisorApi, SignalRuntime,
+    StretchPromotionStatus,
 };
 
 #[test]
@@ -147,32 +150,22 @@ fn local_shared_host_edge_exports_runtime_media_service_truth() {
 #[test]
 fn local_shared_host_edge_exports_offline_stretch_artifact_receipts() {
     let runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
-    let identity_input = StretchCacheIdentityInput::signal_native(
-        StretchBackendTier::OfflineHighQuality,
+    let identity_input = host_stretch_identity_input(
         "sha256:host-local-stretch-source",
-        StretchChannelLayout::new(2, 48_000),
         "projection-host-local-3",
-    )
-    .with_ratio_curve(vec![StretchRatioPoint::new(0, 1.25)])
-    .with_pitch_curve(vec![StretchPitchPoint::new(0, 0.0)])
-    .with_warp_markers(vec![StretchWarpMarker::new(0, 0)]);
+    );
     let expected_identity = identity_input.identity().expect("identity should validate");
-    let source = RenderSampleBuffer {
-        sample_rate_hz: 48_000,
-        frames: Arc::from(vec![0.25_f32; 480 * 2].into_boxed_slice()),
-    };
-    let artifact_source = build_offline_stretch_artifact_render_source_with_synthetic_policy(
-        OfflineStretchArtifactBuildRequest {
-            policy: OfflineStretchArtifactPolicyRequest {
-                scope: RenderOfflineStretchArtifactScope::Freeze,
-                identity_input: &identity_input,
-                evidence_id: "stretch-corpus:host-local",
-                promotion_policy: StretchSyntheticPromotionPolicy::default(),
-            },
-            source: &source,
-        },
-    )
-    .expect("host-local freeze artifact should produce a policy-gated render source");
+    let source = host_stretch_source(0.25, 480);
+    let artifact_source =
+        build_offline_stretch_artifact_render_source_with_synthetic_policy(stretch_build_request(
+            accepted_stretch_policy_request(
+                RenderOfflineStretchArtifactScope::Freeze,
+                &identity_input,
+                "stretch-corpus:host-local",
+            ),
+            &source,
+        ))
+        .expect("host-local freeze artifact should produce a policy-gated render source");
     let RenderSource::Samples(buffer) = &artifact_source.source else {
         panic!("host-local artifact source should be RenderSource::Samples");
     };
@@ -185,30 +178,25 @@ fn local_shared_host_edge_exports_offline_stretch_artifact_receipts() {
     let expected_required_case_count = artifact.plan.promotion_receipt.required_case_count;
     let mut cache_bridge = OfflineStretchArtifactRenderCacheBridge::new();
     let cache_decision = cache_bridge
-        .resolve_with_synthetic_policy(OfflineStretchArtifactBuildRequest {
-            policy: OfflineStretchArtifactPolicyRequest {
-                scope: RenderOfflineStretchArtifactScope::RenderCache,
-                identity_input: &identity_input,
-                evidence_id: "stretch-corpus:host-local-cache",
-                promotion_policy: StretchSyntheticPromotionPolicy::default(),
-            },
-            source: &source,
-        })
+        .resolve_with_synthetic_policy(stretch_build_request(
+            accepted_stretch_policy_request(
+                RenderOfflineStretchArtifactScope::RenderCache,
+                &identity_input,
+                "stretch-corpus:host-local-cache",
+            ),
+            &source,
+        ))
         .expect("host-local render-cache decision should resolve");
     let cache_render_source = cache_decision.handoff.source.clone();
     let cache_output_frames = cache_decision.handoff.receipt.output_frame_count as u64;
     let rendered = render_plan_to_pcm(
         &cache_consumption_spec(cache_render_source, cache_output_frames),
-        &OfflineRenderOptions {
-            frame_count: cache_output_frames,
-            capture_stage_ids: vec![61],
-            ..OfflineRenderOptions::default()
-        },
+        &cache_consumption_options(cache_output_frames),
     )
     .expect("host-local cache decision source should render through export/freeze path");
     assert_eq!(rendered.master.len(), cache_output_frames as usize * 2);
     assert_eq!(rendered.stems.len(), 1);
-    assert_eq!(rendered.stems[0].0, 61);
+    assert_eq!(rendered.stems[0].0, CACHE_CONSUMPTION_STAGE_ID);
     assert_eq!(rendered.stems[0].1.len(), cache_output_frames as usize * 2);
 
     let mut host = LocalRuntimeHost::new(runtime);
@@ -300,39 +288,23 @@ fn local_shared_host_edge_exports_offline_stretch_artifact_receipts() {
 #[test]
 fn local_shared_host_edge_blocks_rejected_offline_stretch_cache_artifacts() {
     let runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
-    let identity_input = StretchCacheIdentityInput::signal_native(
-        StretchBackendTier::OfflineHighQuality,
+    let identity_input = host_stretch_identity_input(
         "sha256:host-local-rejected-stretch-source",
-        StretchChannelLayout::new(2, 48_000),
         "projection-host-local-rejected",
-    )
-    .with_ratio_curve(vec![StretchRatioPoint::new(0, 1.25)])
-    .with_pitch_curve(vec![StretchPitchPoint::new(0, 0.0)])
-    .with_warp_markers(vec![StretchWarpMarker::new(0, 0)]);
-    let source = RenderSampleBuffer {
-        sample_rate_hz: 48_000,
-        frames: Arc::from(vec![0.125_f32; 480 * 2].into_boxed_slice()),
-    };
-    let rejecting_policy = StretchSyntheticPromotionPolicy {
-        min_comparison_count: usize::MAX,
-        ..StretchSyntheticPromotionPolicy::default()
-    };
-    let policy_request = OfflineStretchArtifactPolicyRequest {
-        scope: RenderOfflineStretchArtifactScope::RenderCache,
-        identity_input: &identity_input,
-        evidence_id: "stretch-corpus:host-local-rejected-cache",
-        promotion_policy: rejecting_policy,
-    };
+    );
+    let source = host_stretch_source(0.125, 480);
+    let policy_request = rejected_stretch_policy_request(
+        RenderOfflineStretchArtifactScope::RenderCache,
+        &identity_input,
+        "stretch-corpus:host-local-rejected-cache",
+    );
     let rejected_plan = plan_offline_stretch_artifact_with_synthetic_policy(policy_request)
         .expect("rejected policy should still produce a non-ready plan");
     assert_eq!(
         rejected_plan.readiness,
         OfflineStretchArtifactReadiness::AwaitingCorpusEvidence
     );
-    let build_request = OfflineStretchArtifactBuildRequest {
-        policy: policy_request,
-        source: &source,
-    };
+    let build_request = stretch_build_request(policy_request, &source);
 
     assert_eq!(
         build_offline_stretch_artifact_cache_handoff_with_synthetic_policy(build_request),
@@ -382,46 +354,4 @@ fn local_shared_host_edge_blocks_rejected_offline_stretch_cache_artifacts() {
         RuntimeOfflineStretchArtifactReadiness::AwaitingCorpusEvidence
     );
     assert!(!plan.product_facing_allowed);
-}
-
-fn cache_consumption_spec(source: RenderSource, output_frames: u64) -> RenderPlanSpec {
-    RenderPlanSpec {
-        sample_rate_hz: 48_000,
-        master_gain: 1.0,
-        master_limiter: None,
-        stages: vec![
-            RenderStageSpec {
-                stage_id: 61,
-                kind: RenderStageKind::Source {
-                    clips: vec![RenderClipSpec {
-                        clip_id: 610,
-                        start_frames: 0,
-                        end_frames: output_frames,
-                        source,
-                        loop_source: false,
-                    }],
-                },
-                format: ChannelFormat::stereo(),
-                gain: 1.0,
-                gain_automation: None,
-                processor: None,
-                events: None,
-                inputs: Vec::new(),
-            },
-            RenderStageSpec {
-                stage_id: 62,
-                kind: RenderStageKind::Output,
-                format: ChannelFormat::stereo(),
-                gain: 1.0,
-                gain_automation: None,
-                processor: None,
-                events: None,
-                inputs: vec![RenderEdgeSpec {
-                    source_stage_id: 61,
-                    gain: 1.0,
-                    matrix: None,
-                }],
-            },
-        ],
-    }
 }
