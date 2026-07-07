@@ -317,13 +317,29 @@ comparison reports, not add more receipt or fixture surfaces.
   residual target, `stretch:pads_sustains` `000900.mp3` at `0.75x`; worst
   draft regression there was `1022.000000` frames. This rejects simple
   compression phase-reset anchoring as the next OfflineHighQuality path.
+- 2026-07-07: added a report-only shorter-window OfflineHighQuality review
+  candidate for compression rows (`1024` window, `256` hop) and generalized the
+  compression candidate summary so each candidate reports what it does on the
+  current baseline's worst draft-regression row. On the broader FMA seed, the
+  shorter-window candidate improved 8 compression rows, worsened 4, left 5
+  unchanged, and left 3 inconclusive. Finite-row mean max-smear improved
+  substantially: `133.941176` candidate versus `374.352941` current. It did
+  not fix the target residual row: `stretch:pads_sustains` `000900.mp3` at
+  `0.75x` stays draft `2.000000`, current `13.000000`, candidate `13.000000`.
+  The worst new candidate regression is `38.000000` frames on
+  `stretch:drums_percussion` `000002.mp3` at `0.75x`, where worst draft
+  regression is `36.000000` frames. This rejects a global shorter-window switch,
+  but it keeps multiresolution selection alive as a candidate because the mean
+  improvement is large and localized regressions are measurable.
 
 ## Next Task
 
 Do not add a multiresolution or hybrid path until measured evidence requires
 it. The width-control postprocess and simple compression phase-reset anchor
-lines are now closed as report-only/rejected. Next useful work is a bounded
-multiresolution review candidate for compression rows, such as a shorter-window
-OfflineHighQuality render only in the report path. It must prove whether the
-`000900.mp3` matched-event width issue is a window-resolution problem without
-raising broad mean smear or creating new draft regressions.
+lines are now closed as report-only/rejected. A global shorter-window switch is
+also rejected, and the `000900.mp3` matched-event width issue is not solved by
+window size alone. Next useful work is a report-only multiresolution selection
+diagnostic: localize the 8 short-window wins and 4 short-window regressions
+with feature rows that could support a non-oracle selector. Do not promote a
+multiresolution path until that selector can retain the mean-smear improvement
+without the `000002.mp3` drum regression or new draft regressions.

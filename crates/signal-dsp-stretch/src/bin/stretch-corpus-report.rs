@@ -32,6 +32,9 @@ const DEFAULT_DECODE_SOURCE_FRAME_LIMIT: usize = 48_000 * 60;
 const DEFAULT_DECODED_STRETCH_FRAME_LIMIT: usize = 48_000 * 10;
 const QUALITY_METRIC_WINDOW_SIZE: usize = 1_024;
 const QUALITY_METRIC_HOP_SIZE: usize = 256;
+const COMPRESSION_SHORT_WINDOW_REVIEW_WINDOW_SIZE: usize = 1_024;
+const COMPRESSION_SHORT_WINDOW_REVIEW_ANALYSIS_HOP: usize =
+    COMPRESSION_SHORT_WINDOW_REVIEW_WINDOW_SIZE / 4;
 const MAX_TRANSIENT_ALIGNMENT_EVENTS_PER_BACKEND: usize = 3;
 const TRANSIENT_ALIGNMENT_WINDOW_RADIUS: usize = QUALITY_METRIC_WINDOW_SIZE;
 const EXPECTED_TRANSIENT_ENERGY_PRESENT_RATIO: f64 = 0.50;
@@ -756,8 +759,14 @@ fn format_decoded_stretch_metrics(
     let mut draft_recovery_gate = TransientRecoveryGateAccumulator::new("draft");
     let mut offline_recovery_gate = TransientRecoveryGateAccumulator::new("offline_hq");
     let mut compression_ablation = CompressionPhaseLockAblationAccumulator::default();
-    let mut compression_anchor_candidate =
-        CompressionTransientAnchorCandidateAccumulator::default();
+    let mut compression_anchor_candidate = CompressionReviewCandidateAccumulator::new(
+        "decoded_compression_transient_anchor_candidate",
+        "offline_hq_compression_anchor",
+    );
+    let mut compression_short_window_candidate = CompressionReviewCandidateAccumulator::new(
+        "decoded_compression_short_window_candidate",
+        "offline_hq_short_window",
+    );
     let mut width_control_candidate = TransientWidthControlCandidateAccumulator::default();
     let mut width_control_edit_gate = TransientWidthControlEditGateAccumulator::default();
     for source in sources {
@@ -873,6 +882,19 @@ fn format_decoded_stretch_metrics(
                 QUALITY_METRIC_WINDOW_SIZE,
                 QUALITY_METRIC_HOP_SIZE,
             );
+            let mut offline_short_window = OfflineHighQualityStretcher::with_window(
+                ratio,
+                COMPRESSION_SHORT_WINDOW_REVIEW_WINDOW_SIZE,
+                COMPRESSION_SHORT_WINDOW_REVIEW_ANALYSIS_HOP,
+            );
+            let offline_short_window_output = offline_short_window.stretch_mono(&mono);
+            let offline_short_window_smear = measure_transient_smear(
+                &mono,
+                &offline_short_window_output,
+                ratio,
+                QUALITY_METRIC_WINDOW_SIZE,
+                QUALITY_METRIC_HOP_SIZE,
+            );
             let offline_width_control_output =
                 apply_transient_width_control_candidate(&mono, &offline_output, ratio);
             let offline_width_control_smear = measure_transient_smear(
@@ -891,6 +913,13 @@ fn format_decoded_stretch_metrics(
                 &draft_smear,
                 &offline_smear,
                 &offline_compression_anchor_smear,
+            );
+            compression_short_window_candidate.record(
+                &audio,
+                ratio,
+                &draft_smear,
+                &offline_smear,
+                &offline_short_window_smear,
             );
             width_control_candidate.record(
                 &audio,
@@ -965,6 +994,9 @@ fn format_decoded_stretch_metrics(
     }
     if compression_anchor_candidate.rows > 0 {
         lines.push(compression_anchor_candidate.format_report_line());
+    }
+    if compression_short_window_candidate.rows > 0 {
+        lines.push(compression_short_window_candidate.format_report_line());
     }
     if width_control_candidate.rows > 0 {
         lines.push(width_control_candidate.format_report_line());
@@ -1442,8 +1474,10 @@ impl CompressionPhaseLockAblationAccumulator {
     }
 }
 
-#[derive(Clone, Debug, Default, PartialEq)]
-struct CompressionTransientAnchorCandidateAccumulator {
+#[derive(Clone, Debug, PartialEq)]
+struct CompressionReviewCandidateAccumulator {
+    report_name: &'static str,
+    candidate_path: &'static str,
     rows: usize,
     candidate_better_rows: usize,
     current_better_rows: usize,
@@ -1464,9 +1498,50 @@ struct CompressionTransientAnchorCandidateAccumulator {
     worst_draft_regression_case_id: String,
     worst_draft_regression_source: String,
     worst_draft_regression_ratio: f64,
+    baseline_worst_draft_regression_delta_frames: f64,
+    baseline_worst_draft_regression_case_id: String,
+    baseline_worst_draft_regression_source: String,
+    baseline_worst_draft_regression_ratio: f64,
+    baseline_worst_draft_smear_frames: f64,
+    baseline_worst_current_smear_frames: f64,
+    baseline_worst_candidate_smear_frames: f64,
 }
 
-impl CompressionTransientAnchorCandidateAccumulator {
+impl CompressionReviewCandidateAccumulator {
+    fn new(report_name: &'static str, candidate_path: &'static str) -> Self {
+        Self {
+            report_name,
+            candidate_path,
+            rows: 0,
+            candidate_better_rows: 0,
+            current_better_rows: 0,
+            unchanged_rows: 0,
+            inconclusive_rows: 0,
+            finite_rows: 0,
+            offline_smear_sum: 0.0,
+            candidate_smear_sum: 0.0,
+            best_candidate_improvement_delta_frames: 0.0,
+            best_candidate_improvement_case_id: String::new(),
+            best_candidate_improvement_source: String::new(),
+            best_candidate_improvement_ratio: 0.0,
+            worst_candidate_regression_delta_frames: 0.0,
+            worst_candidate_regression_case_id: String::new(),
+            worst_candidate_regression_source: String::new(),
+            worst_candidate_regression_ratio: 0.0,
+            worst_draft_regression_delta_frames: 0.0,
+            worst_draft_regression_case_id: String::new(),
+            worst_draft_regression_source: String::new(),
+            worst_draft_regression_ratio: 0.0,
+            baseline_worst_draft_regression_delta_frames: 0.0,
+            baseline_worst_draft_regression_case_id: String::new(),
+            baseline_worst_draft_regression_source: String::new(),
+            baseline_worst_draft_regression_ratio: 0.0,
+            baseline_worst_draft_smear_frames: f64::NAN,
+            baseline_worst_current_smear_frames: f64::NAN,
+            baseline_worst_candidate_smear_frames: f64::NAN,
+        }
+    }
+
     fn record(
         &mut self,
         audio: &DecodedListeningSourceAudio,
@@ -1521,12 +1596,30 @@ impl CompressionTransientAnchorCandidateAccumulator {
                 self.worst_draft_regression_ratio = ratio;
             }
         }
+
+        if draft.max_smear_frames.is_finite()
+            && offline.max_smear_frames.is_finite()
+            && candidate.max_smear_frames.is_finite()
+        {
+            let baseline_draft_delta = offline.max_smear_frames - draft.max_smear_frames;
+            if baseline_draft_delta > self.baseline_worst_draft_regression_delta_frames {
+                self.baseline_worst_draft_regression_delta_frames = baseline_draft_delta;
+                self.baseline_worst_draft_regression_case_id = audio.case_id.clone();
+                self.baseline_worst_draft_regression_source = audio.source_path.clone();
+                self.baseline_worst_draft_regression_ratio = ratio;
+                self.baseline_worst_draft_smear_frames = draft.max_smear_frames;
+                self.baseline_worst_current_smear_frames = offline.max_smear_frames;
+                self.baseline_worst_candidate_smear_frames = candidate.max_smear_frames;
+            }
+        }
     }
 
     fn format_report_line(&self) -> String {
         format!(
-            "decoded_compression_transient_anchor_candidate rows={} candidate_path=offline_hq_compression_anchor baseline_path=offline_hq candidate_better_rows={} current_better_rows={} unchanged_rows={} inconclusive_rows={} finite_rows={} mean_candidate_smear_frames={:.6} mean_current_smear_frames={:.6} best_candidate_improvement_delta_frames={:.6} best_candidate_improvement_case={} best_candidate_improvement_source={} best_candidate_improvement_ratio={:.6} worst_candidate_regression_delta_frames={:.6} worst_candidate_regression_case={} worst_candidate_regression_source={} worst_candidate_regression_ratio={:.6} worst_draft_regression_delta_frames={:.6} worst_draft_regression_case={} worst_draft_regression_source={} worst_draft_regression_ratio={:.6}",
+            "{} rows={} candidate_path={} baseline_path=offline_hq candidate_better_rows={} current_better_rows={} unchanged_rows={} inconclusive_rows={} finite_rows={} mean_candidate_smear_frames={:.6} mean_current_smear_frames={:.6} best_candidate_improvement_delta_frames={:.6} best_candidate_improvement_case={} best_candidate_improvement_source={} best_candidate_improvement_ratio={:.6} worst_candidate_regression_delta_frames={:.6} worst_candidate_regression_case={} worst_candidate_regression_source={} worst_candidate_regression_ratio={:.6} worst_draft_regression_delta_frames={:.6} worst_draft_regression_case={} worst_draft_regression_source={} worst_draft_regression_ratio={:.6} baseline_worst_draft_regression_delta_frames={:.6} baseline_worst_draft_regression_case={} baseline_worst_draft_regression_source={} baseline_worst_draft_regression_ratio={:.6} baseline_worst_draft_smear_frames={:.6} baseline_worst_current_smear_frames={:.6} baseline_worst_candidate_smear_frames={:.6}",
+            self.report_name,
             self.rows,
+            self.candidate_path,
             self.candidate_better_rows,
             self.current_better_rows,
             self.unchanged_rows,
@@ -1546,6 +1639,13 @@ impl CompressionTransientAnchorCandidateAccumulator {
             self.worst_draft_regression_case_id,
             quoted_report_field(&self.worst_draft_regression_source),
             self.worst_draft_regression_ratio,
+            self.baseline_worst_draft_regression_delta_frames,
+            self.baseline_worst_draft_regression_case_id,
+            quoted_report_field(&self.baseline_worst_draft_regression_source),
+            self.baseline_worst_draft_regression_ratio,
+            self.baseline_worst_draft_smear_frames,
+            self.baseline_worst_current_smear_frames,
+            self.baseline_worst_candidate_smear_frames,
         )
     }
 }
@@ -2897,6 +2997,8 @@ mod tests {
         assert!(formatted.contains("independent_bins_path=draft"));
         assert!(formatted.contains("decoded_compression_transient_anchor_candidate rows="));
         assert!(formatted.contains("candidate_path=offline_hq_compression_anchor"));
+        assert!(formatted.contains("decoded_compression_short_window_candidate rows="));
+        assert!(formatted.contains("candidate_path=offline_hq_short_window"));
         assert!(formatted.contains("decoded_transient_width_control_candidate rows="));
         assert!(formatted.contains("candidate_path=offline_hq_width_control"));
         assert!(formatted.contains("baseline_path=offline_hq"));
@@ -3023,7 +3125,10 @@ mod tests {
         let offline = transient_smear_measurement(13.0);
         let improved_candidate = transient_smear_measurement(4.0);
         let regressed_candidate = transient_smear_measurement(20.0);
-        let mut candidate = CompressionTransientAnchorCandidateAccumulator::default();
+        let mut candidate = CompressionReviewCandidateAccumulator::new(
+            "decoded_compression_transient_anchor_candidate",
+            "offline_hq_compression_anchor",
+        );
 
         candidate.record(&audio, 0.75, &draft, &offline, &improved_candidate);
         candidate.record(&audio, 0.75, &draft, &offline, &regressed_candidate);
@@ -3034,6 +3139,10 @@ mod tests {
         assert!(line.contains("best_candidate_improvement_delta_frames=9.000000"));
         assert!(line.contains("worst_candidate_regression_delta_frames=7.000000"));
         assert!(line.contains("worst_draft_regression_delta_frames=18.000000"));
+        assert!(line.contains("baseline_worst_draft_regression_delta_frames=11.000000"));
+        assert!(line.contains("baseline_worst_draft_smear_frames=2.000000"));
+        assert!(line.contains("baseline_worst_current_smear_frames=13.000000"));
+        assert!(line.contains("baseline_worst_candidate_smear_frames=4.000000"));
     }
 
     #[test]
