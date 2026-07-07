@@ -138,12 +138,21 @@ comparison reports, not add more receipt or fixture surfaces.
   detected output is `89088`, and input frame `7168` expects `8960` but again
   lands nearest to `89088`. This makes the next investigation concrete:
   preserve or detect early output attacks in that source window.
+- 2026-07-07: added peak/RMS window probes to
+  `decoded_transient_alignment_event` rows. For the worst `000384.mp3`
+  `stretch:bass` `1.25x` early miss, the expected output window at frame `1600`
+  still has peak `0.144759` and RMS `0.033492` against input-window peak
+  `0.163390` and RMS `0.036949`. The second early miss at expected frame `8960`
+  also retains substantial energy: expected-output peak `0.274770` and RMS
+  `0.114111` against input peak `0.372374` and RMS `0.127199`. This points to
+  transient detection/alignment classification before output-energy
+  preservation for the next batch.
 
 ## Next Task
 
 Do not add a multiresolution or hybrid path until measured evidence requires
-it. Next useful work is to inspect the `000384.mp3` bass `1.25x` early-window
-render around expected frames `1600` and `8960`, then decide whether the next
-batch targets early-output event preservation or transient detection alignment.
+it. Next useful work is to target transient detection/alignment classification
+for real-source rows, starting with why the `000384.mp3` bass `1.25x` expected
+windows carry energy but do not produce matched output transient events.
 Listened real-source curation and external rendered-output comparison remain
 promotion inputs.

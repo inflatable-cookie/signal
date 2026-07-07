@@ -30,6 +30,7 @@ const DEFAULT_DECODED_STRETCH_FRAME_LIMIT: usize = 48_000 * 10;
 const QUALITY_METRIC_WINDOW_SIZE: usize = 1_024;
 const QUALITY_METRIC_HOP_SIZE: usize = 256;
 const MAX_TRANSIENT_ALIGNMENT_EVENTS_PER_BACKEND: usize = 3;
+const TRANSIENT_ALIGNMENT_WINDOW_RADIUS: usize = QUALITY_METRIC_WINDOW_SIZE;
 
 #[derive(Debug, PartialEq, Eq)]
 struct ReportArgs {
@@ -818,6 +819,18 @@ struct TransientAlignmentMissEvent {
     expected_output_frame: f64,
     nearest_output_frame: Option<f64>,
     nearest_distance_frames: f64,
+    input_window_peak: f64,
+    input_window_rms: f64,
+    expected_output_window_peak: f64,
+    expected_output_window_rms: f64,
+    nearest_output_window_peak: f64,
+    nearest_output_window_rms: f64,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct WindowEnergyStats {
+    peak: f64,
+    rms: f64,
 }
 
 fn transient_alignment_diagnostic(
@@ -856,11 +869,20 @@ fn transient_alignment_diagnostic(
             Some((distance, nearest_frame)) => {
                 missed_nearest_count += 1;
                 missed_nearest_sum += distance;
+                let input_window = window_energy_stats(input, input_event.frame_index as f64);
+                let expected_output_window = window_energy_stats(output, expected_output_frame);
+                let nearest_output_window = window_energy_stats(output, nearest_frame);
                 missed_events.push(TransientAlignmentMissEvent {
                     input_frame: input_event.frame_index,
                     expected_output_frame,
                     nearest_output_frame: Some(nearest_frame),
                     nearest_distance_frames: distance,
+                    input_window_peak: input_window.peak,
+                    input_window_rms: input_window.rms,
+                    expected_output_window_peak: expected_output_window.peak,
+                    expected_output_window_rms: expected_output_window.rms,
+                    nearest_output_window_peak: nearest_output_window.peak,
+                    nearest_output_window_rms: nearest_output_window.rms,
                 });
                 if distance > missed_nearest_max {
                     missed_nearest_max = distance;
@@ -869,11 +891,19 @@ fn transient_alignment_diagnostic(
                 }
             }
             None => {
+                let input_window = window_energy_stats(input, input_event.frame_index as f64);
+                let expected_output_window = window_energy_stats(output, expected_output_frame);
                 missed_events.push(TransientAlignmentMissEvent {
                     input_frame: input_event.frame_index,
                     expected_output_frame,
                     nearest_output_frame: None,
                     nearest_distance_frames: f64::NAN,
+                    input_window_peak: input_window.peak,
+                    input_window_rms: input_window.rms,
+                    expected_output_window_peak: expected_output_window.peak,
+                    expected_output_window_rms: expected_output_window.rms,
+                    nearest_output_window_peak: f64::NAN,
+                    nearest_output_window_rms: f64::NAN,
                 });
             }
         }
@@ -945,6 +975,38 @@ fn nearest_transient_position(
         .min_by(|left, right| left.0.total_cmp(&right.0))
 }
 
+fn window_energy_stats(samples: &[f32], center_frame: f64) -> WindowEnergyStats {
+    if samples.is_empty() || !center_frame.is_finite() || center_frame < 0.0 {
+        return WindowEnergyStats {
+            peak: f64::NAN,
+            rms: f64::NAN,
+        };
+    }
+
+    let center = center_frame.round() as usize;
+    let start = center.saturating_sub(TRANSIENT_ALIGNMENT_WINDOW_RADIUS);
+    let end = (center + TRANSIENT_ALIGNMENT_WINDOW_RADIUS + 1).min(samples.len());
+    if start >= end {
+        return WindowEnergyStats {
+            peak: f64::NAN,
+            rms: f64::NAN,
+        };
+    }
+
+    let mut peak = 0.0f64;
+    let mut square_sum = 0.0f64;
+    for sample in &samples[start..end] {
+        let value = *sample as f64;
+        peak = peak.max(value.abs());
+        square_sum += value * value;
+    }
+
+    WindowEnergyStats {
+        peak,
+        rms: (square_sum / (end - start) as f64).sqrt(),
+    }
+}
+
 fn format_transient_metric_detail(
     draft_smear: &signal_dsp_stretch::StretchTransientSmearMeasurement,
     offline_smear: &signal_dsp_stretch::StretchTransientSmearMeasurement,
@@ -988,7 +1050,7 @@ fn format_transient_alignment_event_lines(
         .enumerate()
         .map(|(rank, event)| {
             format!(
-                "decoded_transient_alignment_event case={} source={} ratio={:.6} backend={} rank={} input_frame={} expected_output_frame={:.6} nearest_output_frame={:.6} nearest_distance_frames={:.6} tolerance_frames={}",
+                "decoded_transient_alignment_event case={} source={} ratio={:.6} backend={} rank={} input_frame={} expected_output_frame={:.6} nearest_output_frame={:.6} nearest_distance_frames={:.6} tolerance_frames={} input_window_peak={:.6} input_window_rms={:.6} expected_output_window_peak={:.6} expected_output_window_rms={:.6} nearest_output_window_peak={:.6} nearest_output_window_rms={:.6}",
                 audio.case_id,
                 quoted_report_field(&audio.source_path),
                 ratio,
@@ -999,6 +1061,12 @@ fn format_transient_alignment_event_lines(
                 event.nearest_output_frame.unwrap_or(f64::NAN),
                 event.nearest_distance_frames,
                 QUALITY_METRIC_WINDOW_SIZE.max(QUALITY_METRIC_HOP_SIZE * 4),
+                event.input_window_peak,
+                event.input_window_rms,
+                event.expected_output_window_peak,
+                event.expected_output_window_rms,
+                event.nearest_output_window_peak,
+                event.nearest_output_window_rms,
             )
         })
         .collect()
@@ -1328,12 +1396,24 @@ mod tests {
                     expected_output_frame: 160.0,
                     nearest_output_frame: Some(3_160.0),
                     nearest_distance_frames: 3_000.0,
+                    input_window_peak: 0.75,
+                    input_window_rms: 0.25,
+                    expected_output_window_peak: 0.10,
+                    expected_output_window_rms: 0.05,
+                    nearest_output_window_peak: 0.70,
+                    nearest_output_window_rms: 0.20,
                 },
                 TransientAlignmentMissEvent {
                     input_frame: 256,
                     expected_output_frame: 320.0,
                     nearest_output_frame: Some(1_320.0),
                     nearest_distance_frames: 1_000.0,
+                    input_window_peak: 0.5,
+                    input_window_rms: 0.2,
+                    expected_output_window_peak: 0.4,
+                    expected_output_window_rms: 0.1,
+                    nearest_output_window_peak: 0.6,
+                    nearest_output_window_rms: 0.15,
                 },
             ],
         };
@@ -1347,6 +1427,9 @@ mod tests {
         assert!(lines[0].contains("nearest_output_frame=3160.000000"));
         assert!(lines[0].contains("nearest_distance_frames=3000.000000"));
         assert!(lines[0].contains("tolerance_frames=1024"));
+        assert!(lines[0].contains("input_window_peak=0.750000"));
+        assert!(lines[0].contains("expected_output_window_peak=0.100000"));
+        assert!(lines[0].contains("nearest_output_window_peak=0.700000"));
     }
 
     fn write_test_wav(path: &PathBuf, frames: usize) {

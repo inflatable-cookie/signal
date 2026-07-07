@@ -70,7 +70,9 @@ transient smear. Transient rows include matched and missed transient counts so
 metric penalties can be sorted before a DSP change is chosen. They also include
 matched timing error and nearest-missed distance diagnostics for alignment
 triage, with event-position fields for the largest missed distance and capped
-event rows for the largest misses per backend and ratio.
+event rows for the largest misses per backend and ratio. Event rows include
+peak/RMS probes around the input event, expected output frame, and nearest
+detected output frame.
 
 ## Next Task
 
