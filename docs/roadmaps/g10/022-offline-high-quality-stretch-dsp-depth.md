@@ -358,6 +358,16 @@ comparison reports, not add more receipt or fixture surfaces.
   with `0.000000` worst gated regression. The known `000900.mp3` pads/sustains
   draft regression remains unchanged at `11.000000` frames because neither the
   global shorter-window path nor the gate solves that matched-event width case.
+- 2026-07-07: added the first report-only external-comparator quality harness.
+  `stretch-corpus-report` now accepts `--measure-external-benchmark-quality`
+  alongside operator listening sources and `--external-benchmark-render CASE
+  RATIO WAV`. It does not invoke or depend on Rubber Band, elastique, or any
+  comparator code. It only reads rendered WAV output supplied by the operator,
+  renders Signal OfflineHighQuality from the same decoded source excerpt, and
+  emits `external_benchmark_quality` rows with timing drift, transient smear,
+  sample-rate compatibility, alignment lag, aligned correlation, RMS error,
+  peak error, and rendered-output-only source-boundary evidence. This gives the
+  stretch program a clean black-box comparison surface before promotion.
 
 ## Next Task
 
@@ -367,7 +377,9 @@ lines are now closed as report-only/rejected. A global shorter-window switch is
 also rejected, and the `000900.mp3` matched-event width issue is not solved by
 window size alone. The gated shorter-window selector now clears the first broad
 FMA no-listening check. Next useful work is promotion pressure, still
-report-only: add a second broad-seed or expanded-manifest selector stability
-run and require the same gate to keep `current_better_rows=0`,
-`worst_gated_regression_delta_frames=0`, and no new draft regression before it
-is considered for OfflineHighQuality DSP integration.
+report-only: generate or supply a small black-box comparator render pack for
+the broad FMA seed, then run `--measure-external-benchmark-quality` and the
+gated selector report together. Require the selector to keep
+`current_better_rows=0`, `worst_gated_regression_delta_frames=0`, and no new
+draft regression, while comparator rows identify the worst aligned RMS,
+transient-smear, and timing-drift gaps to review by ear.

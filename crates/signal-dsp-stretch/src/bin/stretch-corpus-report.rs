@@ -47,6 +47,8 @@ const WIDTH_CONTROL_EDIT_GATE_MAX_SAMPLE_DELTA: f64 = 0.25;
 const WIDTH_CONTROL_EDIT_GATE_MAX_ADDED_ADJACENT_STEP_DELTA: f64 = 0.05;
 const SHORT_WINDOW_SELECTOR_MIN_CURRENT_MISSES: usize = 1;
 const SHORT_WINDOW_SELECTOR_MIN_CURRENT_SMEAR_FRAMES: f64 = 64.0;
+const EXTERNAL_BENCHMARK_ALIGNMENT_MAX_LAG_FRAMES: isize = 2_048;
+const EXTERNAL_BENCHMARK_ALIGNMENT_MAX_COMPARE_FRAMES: usize = 65_536;
 const DETECTOR_POLICY: StretchTransientDetectorPolicy =
     StretchTransientDetectorPolicy::production();
 const CANDIDATE_DETECTOR_POLICY: StretchTransientDetectorPolicy =
@@ -64,6 +66,7 @@ struct ReportArgs {
     decode_source_frame_limit: usize,
     measure_decoded_stretch: bool,
     decoded_stretch_frame_limit: usize,
+    measure_external_benchmark_quality: bool,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -86,6 +89,7 @@ impl Default for ReportArgs {
             decode_source_frame_limit: DEFAULT_DECODE_SOURCE_FRAME_LIMIT,
             measure_decoded_stretch: false,
             decoded_stretch_frame_limit: DEFAULT_DECODED_STRETCH_FRAME_LIMIT,
+            measure_external_benchmark_quality: false,
         }
     }
 }
@@ -148,6 +152,24 @@ fn main() {
                 if !decoded_metrics.is_empty() {
                     formatted.push('\n');
                     formatted.push_str(&decoded_metrics);
+                }
+            }
+            Err(message) => {
+                eprintln!("{message}");
+                process::exit(1);
+            }
+        }
+    }
+    if args.measure_external_benchmark_quality {
+        match format_external_benchmark_quality_metrics(
+            &listening_sources,
+            &external_renders,
+            args.decoded_stretch_frame_limit,
+        ) {
+            Ok(external_quality) => {
+                if !external_quality.is_empty() {
+                    formatted.push('\n');
+                    formatted.push_str(&external_quality);
                 }
             }
             Err(message) => {
@@ -228,6 +250,9 @@ where
             "--measure-decoded-stretch" => {
                 parsed.measure_decoded_stretch = true;
             }
+            "--measure-external-benchmark-quality" => {
+                parsed.measure_external_benchmark_quality = true;
+            }
             "--decoded-stretch-frame-limit" => {
                 parsed.decoded_stretch_frame_limit =
                     next_value(&mut iter, "--decoded-stretch-frame-limit")?
@@ -257,7 +282,7 @@ where
 }
 
 fn usage() -> &'static str {
-    "usage: stretch-corpus-report [--report-name NAME] [--projection-epoch EPOCH] [--listening-source-manifest TSV] [--decode-listening-sources] [--decode-source-frame-limit N] [--measure-decoded-stretch] [--decoded-stretch-frame-limit N] [--external-benchmark-tool NAME] [--external-benchmark-render CASE RATIO WAV] [--output PATH]"
+    "usage: stretch-corpus-report [--report-name NAME] [--projection-epoch EPOCH] [--listening-source-manifest TSV] [--decode-listening-sources] [--decode-source-frame-limit N] [--measure-decoded-stretch] [--measure-external-benchmark-quality] [--decoded-stretch-frame-limit N] [--external-benchmark-tool NAME] [--external-benchmark-render CASE RATIO WAV] [--output PATH]"
 }
 
 fn load_external_benchmark_renders(
@@ -1022,6 +1047,393 @@ fn format_decoded_stretch_metrics(
         lines.push(width_control_edit_gate.format_report_line());
     }
     Ok(lines.join("\n"))
+}
+
+#[derive(Clone, Debug, PartialEq)]
+struct ExternalBenchmarkQualityMeasurement {
+    case_id: String,
+    source_path: String,
+    render_path: String,
+    tool_name: String,
+    ratio: f64,
+    status: &'static str,
+    reason: &'static str,
+    source_boundary: &'static str,
+    sample_rate_match: bool,
+    source_sample_rate_hz: u32,
+    external_sample_rate_hz: u32,
+    external_channels: u16,
+    source_frames: usize,
+    signal_frames: usize,
+    external_frames: usize,
+    signal_timing_drift_samples: f64,
+    external_timing_drift_samples: f64,
+    timing_drift_delta_samples: f64,
+    signal_transient_smear_frames: f64,
+    external_transient_smear_frames: f64,
+    transient_smear_delta_frames: f64,
+    alignment_lag_frames: isize,
+    aligned_compared_frames: usize,
+    aligned_correlation: f64,
+    aligned_rms_error: f64,
+    aligned_peak_error: f64,
+    signal_rms: f64,
+    external_rms: f64,
+    aligned_rms_error_ratio: f64,
+}
+
+impl ExternalBenchmarkQualityMeasurement {
+    fn format_report_line(&self) -> String {
+        format!(
+            "external_benchmark_quality case={} source={} ratio={:.6} tool={} render={} status={} reason={} source_boundary={} sample_rate_match={} source_sample_rate={} external_sample_rate={} external_channels={} source_frames={} signal_frames={} external_frames={} signal_timing_drift_samples={:.6} external_timing_drift_samples={:.6} timing_drift_delta_samples={:.6} signal_transient_smear_frames={:.6} external_transient_smear_frames={:.6} transient_smear_delta_frames={:.6} alignment_lag_frames={} aligned_compared_frames={} aligned_correlation={:.6} aligned_rms_error={:.9} aligned_peak_error={:.9} signal_rms={:.9} external_rms={:.9} aligned_rms_error_ratio={:.6}",
+            self.case_id,
+            quoted_report_field(&self.source_path),
+            self.ratio,
+            quoted_report_field(&self.tool_name),
+            quoted_report_field(&self.render_path),
+            self.status,
+            self.reason,
+            quoted_report_field(self.source_boundary),
+            self.sample_rate_match,
+            self.source_sample_rate_hz,
+            self.external_sample_rate_hz,
+            self.external_channels,
+            self.source_frames,
+            self.signal_frames,
+            self.external_frames,
+            self.signal_timing_drift_samples,
+            self.external_timing_drift_samples,
+            self.timing_drift_delta_samples,
+            self.signal_transient_smear_frames,
+            self.external_transient_smear_frames,
+            self.transient_smear_delta_frames,
+            self.alignment_lag_frames,
+            self.aligned_compared_frames,
+            self.aligned_correlation,
+            self.aligned_rms_error,
+            self.aligned_peak_error,
+            self.signal_rms,
+            self.external_rms,
+            self.aligned_rms_error_ratio,
+        )
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+struct ExternalBenchmarkDecodedAudio {
+    sample_rate_hz: u32,
+    channels: u16,
+    mono_samples: Vec<f32>,
+}
+
+impl ExternalBenchmarkDecodedAudio {
+    fn frames(&self) -> usize {
+        self.mono_samples.len()
+    }
+}
+
+fn format_external_benchmark_quality_metrics(
+    sources: &[StretchCorpusListeningSource],
+    renders: &[StretchExternalBenchmarkRender],
+    frame_limit: usize,
+) -> Result<String, String> {
+    let mut lines = Vec::new();
+    for render in renders {
+        let source = match sources
+            .iter()
+            .find(|source| source.case_id == render.case_id)
+        {
+            Some(source) => source,
+            None => {
+                lines.push(format_external_benchmark_quality_skip_line(
+                    render,
+                    "",
+                    "MissingListeningSource",
+                    0,
+                    0,
+                    0,
+                    0,
+                ));
+                continue;
+            }
+        };
+        let source_audio = decode_listening_source_audio(source, frame_limit)?;
+        let external_audio = decode_external_benchmark_render_audio(render)?;
+        if external_audio.frames() == 0 {
+            lines.push(format_external_benchmark_quality_skip_line(
+                render,
+                &source.source_path,
+                "NoComparatorAudio",
+                source_audio.sample_rate_hz,
+                external_audio.sample_rate_hz,
+                external_audio.channels,
+                source_audio.analyzed_frames(),
+            ));
+            continue;
+        }
+        if source_audio.sample_rate_hz != external_audio.sample_rate_hz {
+            lines.push(format_external_benchmark_quality_skip_line(
+                render,
+                &source.source_path,
+                "SampleRateMismatch",
+                source_audio.sample_rate_hz,
+                external_audio.sample_rate_hz,
+                external_audio.channels,
+                source_audio.analyzed_frames(),
+            ));
+            continue;
+        }
+
+        let source_mono = source_audio.mono_samples();
+        let mut signal = OfflineHighQualityStretcher::new(render.ratio);
+        let signal_output = signal.stretch_mono(&source_mono);
+        let signal_smear = measure_transient_smear(
+            &source_mono,
+            &signal_output,
+            render.ratio,
+            QUALITY_METRIC_WINDOW_SIZE,
+            QUALITY_METRIC_HOP_SIZE,
+        );
+        let external_smear = measure_transient_smear(
+            &source_mono,
+            &external_audio.mono_samples,
+            render.ratio,
+            QUALITY_METRIC_WINDOW_SIZE,
+            QUALITY_METRIC_HOP_SIZE,
+        );
+        let signal_timing_drift =
+            output_length_drift_samples(source_mono.len(), signal_output.len(), render.ratio);
+        let external_timing_drift = output_length_drift_samples(
+            source_mono.len(),
+            external_audio.mono_samples.len(),
+            render.ratio,
+        );
+        let aligned = align_and_measure_error(&signal_output, &external_audio.mono_samples);
+
+        lines.push(
+            ExternalBenchmarkQualityMeasurement {
+                case_id: render.case_id.clone(),
+                source_path: source.source_path.clone(),
+                render_path: render.rendered_path.clone(),
+                tool_name: render.tool_name.clone(),
+                ratio: render.ratio,
+                status: "Measured",
+                reason: "Ok",
+                source_boundary: "rendered-output-only; no external source or library dependency",
+                sample_rate_match: true,
+                source_sample_rate_hz: source_audio.sample_rate_hz,
+                external_sample_rate_hz: external_audio.sample_rate_hz,
+                external_channels: external_audio.channels,
+                source_frames: source_mono.len(),
+                signal_frames: signal_output.len(),
+                external_frames: external_audio.frames(),
+                signal_timing_drift_samples: signal_timing_drift,
+                external_timing_drift_samples: external_timing_drift,
+                timing_drift_delta_samples: signal_timing_drift - external_timing_drift,
+                signal_transient_smear_frames: signal_smear.max_smear_frames,
+                external_transient_smear_frames: external_smear.max_smear_frames,
+                transient_smear_delta_frames: signal_smear.max_smear_frames
+                    - external_smear.max_smear_frames,
+                alignment_lag_frames: aligned.lag_frames,
+                aligned_compared_frames: aligned.compared_frames,
+                aligned_correlation: aligned.correlation,
+                aligned_rms_error: aligned.rms_error,
+                aligned_peak_error: aligned.peak_error,
+                signal_rms: aligned.signal_rms,
+                external_rms: aligned.external_rms,
+                aligned_rms_error_ratio: finite_ratio(aligned.rms_error, aligned.external_rms),
+            }
+            .format_report_line(),
+        );
+    }
+    Ok(lines.join("\n"))
+}
+
+fn format_external_benchmark_quality_skip_line(
+    render: &StretchExternalBenchmarkRender,
+    source_path: &str,
+    reason: &'static str,
+    source_sample_rate_hz: u32,
+    external_sample_rate_hz: u32,
+    external_channels: u16,
+    source_frames: usize,
+) -> String {
+    ExternalBenchmarkQualityMeasurement {
+        case_id: render.case_id.clone(),
+        source_path: source_path.to_string(),
+        render_path: render.rendered_path.clone(),
+        tool_name: render.tool_name.clone(),
+        ratio: render.ratio,
+        status: "Skipped",
+        reason,
+        source_boundary: "rendered-output-only; no external source or library dependency",
+        sample_rate_match: source_sample_rate_hz != 0
+            && source_sample_rate_hz == external_sample_rate_hz,
+        source_sample_rate_hz,
+        external_sample_rate_hz,
+        external_channels,
+        source_frames,
+        signal_frames: 0,
+        external_frames: 0,
+        signal_timing_drift_samples: f64::NAN,
+        external_timing_drift_samples: f64::NAN,
+        timing_drift_delta_samples: f64::NAN,
+        signal_transient_smear_frames: f64::NAN,
+        external_transient_smear_frames: f64::NAN,
+        transient_smear_delta_frames: f64::NAN,
+        alignment_lag_frames: 0,
+        aligned_compared_frames: 0,
+        aligned_correlation: f64::NAN,
+        aligned_rms_error: f64::NAN,
+        aligned_peak_error: f64::NAN,
+        signal_rms: f64::NAN,
+        external_rms: f64::NAN,
+        aligned_rms_error_ratio: f64::NAN,
+    }
+    .format_report_line()
+}
+
+fn decode_external_benchmark_render_audio(
+    render: &StretchExternalBenchmarkRender,
+) -> Result<ExternalBenchmarkDecodedAudio, String> {
+    let path = PathBuf::from(&render.rendered_path);
+    let mut reader = hound::WavReader::open(&path)
+        .map_err(|error| format!("failed to open external render {}: {error}", path.display()))?;
+    let spec = reader.spec();
+    if spec.channels == 0 || spec.sample_rate == 0 {
+        return Err(format!(
+            "invalid external render WAV {}: sample rate and channels must be non-zero",
+            path.display()
+        ));
+    }
+    let samples = match spec.sample_format {
+        hound::SampleFormat::Float => reader
+            .samples::<f32>()
+            .map(|sample| {
+                sample.map_err(|error| format!("failed to read {}: {error}", path.display()))
+            })
+            .collect::<Result<Vec<_>, _>>()?,
+        hound::SampleFormat::Int => {
+            let scale = integer_sample_scale(spec.bits_per_sample);
+            reader
+                .samples::<i32>()
+                .map(|sample| {
+                    sample
+                        .map(|value| value as f32 / scale)
+                        .map_err(|error| format!("failed to read {}: {error}", path.display()))
+                })
+                .collect::<Result<Vec<_>, _>>()?
+        }
+    };
+    let channel_count = spec.channels as usize;
+    let mono_samples = samples
+        .chunks_exact(channel_count)
+        .map(|frame| frame.iter().sum::<f32>() / channel_count as f32)
+        .collect();
+
+    Ok(ExternalBenchmarkDecodedAudio {
+        sample_rate_hz: spec.sample_rate,
+        channels: spec.channels,
+        mono_samples,
+    })
+}
+
+#[derive(Clone, Debug, PartialEq)]
+struct AlignedErrorMeasurement {
+    lag_frames: isize,
+    compared_frames: usize,
+    correlation: f64,
+    rms_error: f64,
+    peak_error: f64,
+    signal_rms: f64,
+    external_rms: f64,
+}
+
+fn align_and_measure_error(signal: &[f32], external: &[f32]) -> AlignedErrorMeasurement {
+    let mut best_lag: isize = 0;
+    let mut best_correlation = f64::NEG_INFINITY;
+    for lag in
+        -EXTERNAL_BENCHMARK_ALIGNMENT_MAX_LAG_FRAMES..=EXTERNAL_BENCHMARK_ALIGNMENT_MAX_LAG_FRAMES
+    {
+        let Some((signal_start, external_start, frames)) = aligned_ranges(signal, external, lag)
+        else {
+            continue;
+        };
+        let correlation = normalized_correlation(
+            &signal[signal_start..signal_start + frames],
+            &external[external_start..external_start + frames],
+        );
+        if correlation > best_correlation + 1.0e-12
+            || ((correlation - best_correlation).abs() <= 1.0e-12 && lag.abs() < best_lag.abs())
+        {
+            best_correlation = correlation;
+            best_lag = lag;
+        }
+    }
+
+    let Some((signal_start, external_start, frames)) = aligned_ranges(signal, external, best_lag)
+    else {
+        return AlignedErrorMeasurement {
+            lag_frames: 0,
+            compared_frames: 0,
+            correlation: f64::NAN,
+            rms_error: f64::NAN,
+            peak_error: f64::NAN,
+            signal_rms: f64::NAN,
+            external_rms: f64::NAN,
+        };
+    };
+    let signal_slice = &signal[signal_start..signal_start + frames];
+    let external_slice = &external[external_start..external_start + frames];
+    let mut square_error_sum = 0.0;
+    let mut signal_square_sum = 0.0;
+    let mut external_square_sum = 0.0;
+    let mut peak_error = 0.0f64;
+    for (signal_sample, external_sample) in signal_slice.iter().zip(external_slice) {
+        let signal_value = *signal_sample as f64;
+        let external_value = *external_sample as f64;
+        let error = signal_value - external_value;
+        square_error_sum += error * error;
+        signal_square_sum += signal_value * signal_value;
+        external_square_sum += external_value * external_value;
+        peak_error = peak_error.max(error.abs());
+    }
+
+    AlignedErrorMeasurement {
+        lag_frames: best_lag,
+        compared_frames: frames,
+        correlation: best_correlation,
+        rms_error: (square_error_sum / frames as f64).sqrt(),
+        peak_error,
+        signal_rms: (signal_square_sum / frames as f64).sqrt(),
+        external_rms: (external_square_sum / frames as f64).sqrt(),
+    }
+}
+
+fn aligned_ranges(signal: &[f32], external: &[f32], lag: isize) -> Option<(usize, usize, usize)> {
+    let signal_start = if lag < 0 { (-lag) as usize } else { 0 };
+    let external_start = if lag > 0 { lag as usize } else { 0 };
+    if signal_start >= signal.len() || external_start >= external.len() {
+        return None;
+    }
+    let frames = (signal.len() - signal_start)
+        .min(external.len() - external_start)
+        .min(EXTERNAL_BENCHMARK_ALIGNMENT_MAX_COMPARE_FRAMES);
+    (frames > 0).then_some((signal_start, external_start, frames))
+}
+
+fn normalized_correlation(signal: &[f32], external: &[f32]) -> f64 {
+    let mut dot = 0.0;
+    let mut signal_square_sum = 0.0;
+    let mut external_square_sum = 0.0;
+    for (signal_sample, external_sample) in signal.iter().zip(external) {
+        let signal_value = *signal_sample as f64;
+        let external_value = *external_sample as f64;
+        dot += signal_value * external_value;
+        signal_square_sum += signal_value * signal_value;
+        external_square_sum += external_value * external_value;
+    }
+    finite_ratio(dot, (signal_square_sum * external_square_sum).sqrt())
 }
 
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -3141,6 +3553,7 @@ mod tests {
                 decode_source_frame_limit: DEFAULT_DECODE_SOURCE_FRAME_LIMIT,
                 measure_decoded_stretch: false,
                 decoded_stretch_frame_limit: DEFAULT_DECODED_STRETCH_FRAME_LIMIT,
+                measure_external_benchmark_quality: false,
             })
         );
     }
@@ -3160,6 +3573,7 @@ mod tests {
             "--decode-source-frame-limit".to_string(),
             "2048".to_string(),
             "--measure-decoded-stretch".to_string(),
+            "--measure-external-benchmark-quality".to_string(),
             "--decoded-stretch-frame-limit".to_string(),
             "1024".to_string(),
             "--external-benchmark-tool".to_string(),
@@ -3188,6 +3602,7 @@ mod tests {
                 decode_source_frame_limit: 2048,
                 measure_decoded_stretch: true,
                 decoded_stretch_frame_limit: 1024,
+                measure_external_benchmark_quality: true,
             })
         );
     }
@@ -3228,6 +3643,7 @@ mod tests {
             decode_source_frame_limit: DEFAULT_DECODE_SOURCE_FRAME_LIMIT,
             measure_decoded_stretch: false,
             decoded_stretch_frame_limit: DEFAULT_DECODED_STRETCH_FRAME_LIMIT,
+            measure_external_benchmark_quality: false,
         };
 
         let renders = load_external_benchmark_renders(&args).expect("load external render");
@@ -3238,6 +3654,54 @@ mod tests {
         assert_eq!(renders[0].rendered_frames, 16);
         assert_eq!(renders[0].sample_rate_hz, 48_000);
         assert_eq!(renders[0].channels, 2);
+
+        let _ = fs::remove_file(path);
+    }
+
+    #[test]
+    fn external_benchmark_quality_measures_rendered_wav_against_signal_output() {
+        let path = PathBuf::from(format!(
+            "target/stretch-corpus-external-quality-test-{}.wav",
+            std::process::id()
+        ));
+        write_test_wav(&path, 4_096);
+        let source = StretchCorpusListeningSource {
+            case_id: "stretch:vocals".to_string(),
+            source_path: path.display().to_string(),
+            source_label: "Artist - Song".to_string(),
+            license_title: "Attribution".to_string(),
+            license_url: "https://example.test/license".to_string(),
+            provenance_url: "https://example.test/track".to_string(),
+        };
+        let render = StretchExternalBenchmarkRender {
+            case_id: "stretch:vocals".to_string(),
+            ratio: 1.0,
+            pitch_shift_semitones: None,
+            tool_name: "rubberband-cli".to_string(),
+            rendered_path: path.display().to_string(),
+            rendered_frames: 4_096,
+            sample_rate_hz: 48_000,
+            channels: 2,
+        };
+
+        let formatted = format_external_benchmark_quality_metrics(&[source], &[render], 4_096)
+            .expect("format external quality metrics");
+
+        assert!(formatted.starts_with("external_benchmark_quality case=stretch:vocals"));
+        assert!(formatted.contains("tool=\"rubberband-cli\""));
+        assert!(formatted.contains("status=Measured reason=Ok"));
+        assert!(formatted.contains(
+            "source_boundary=\"rendered-output-only; no external source or library dependency\""
+        ));
+        assert!(formatted.contains("sample_rate_match=true"));
+        assert!(formatted.contains("source_frames=4096"));
+        assert!(formatted.contains("signal_frames=4096"));
+        assert!(formatted.contains("external_frames=4096"));
+        assert!(formatted.contains("signal_timing_drift_samples=0.000000"));
+        assert!(formatted.contains("external_timing_drift_samples=0.000000"));
+        assert!(formatted.contains("alignment_lag_frames=0"));
+        assert!(formatted.contains("aligned_compared_frames=4096"));
+        assert!(formatted.contains("aligned_rms_error=0.000000000"));
 
         let _ = fs::remove_file(path);
     }
