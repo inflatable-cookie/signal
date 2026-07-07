@@ -448,6 +448,22 @@ comparison reports, not add more receipt or fixture surfaces.
   This points the next listening or metric pass toward gain/envelope behavior
   on sustained/polyphonic material before treating low sample correlation as a
   phase-vocoder failure by itself.
+- 2026-07-07: added capped `external_benchmark_gain_envelope_review` rows for
+  the top feature-divergence comparator cases. The row ranks the worst feature
+  deltas and measures 4096-frame windowed RMS deltas over the aligned Signal
+  and comparator slices. The regenerated broad Rubber Band R3 report emitted
+  8 review rows: all 8 classified as `SignalConsistentlyLouder`, with
+  `louder_windows=31`, `quieter_windows=0`, and `near_windows=0` in every row.
+  The top row remains `stretch:pads_sustains` `000870.wav` at `1.5x`:
+  feature score `1.459699`, whole-slice RMS delta `6.716807` dB, mean window
+  RMS delta `7.009287` dB, median `6.470331` dB, and max absolute window delta
+  `11.142284` dB. The next two rows were `stretch:full_mix` `000190.wav` at
+  `1.25x` with median window delta `2.520436` dB and
+  `stretch:pads_sustains` `000870.wav` at `0.75x` with median window delta
+  `5.175870` dB. This makes the next DSP question narrower: determine whether
+  OfflineHighQuality is over-retaining energy relative to source intent,
+  Rubber Band is applying protective gain, or the current comparison should
+  loudness-normalize before judging phase/envelope quality.
 
 ## Next Task
 
@@ -460,8 +476,10 @@ FMA no-listening check and the first Rubber Band R3 black-box comparator pass.
 Next useful work is a measured quality-decision batch, still report-only:
 use the feature-delta rows to separate comparator findings into metric noise,
 likely audible gain/envelope differences, and actual DSP targets. Preserve the
-existing timing-drift and transient-smear gates, add a focused gain/envelope
-normalization or vertical-coherence review for the top pads/sustains and
-full-mix divergence rows, and only then decide whether the next DSP promotion
-is the gated short-window selector, a multiresolution selector, or a
-sustained-material vertical-coherence path.
+existing timing-drift and transient-smear gates. Next add a report-only
+level-normalized comparator view for the eight `SignalConsistentlyLouder`
+review rows: compare feature divergence before and after matched RMS or LUFS-ish
+normalization, keep the raw rows unchanged, and decide whether a real DSP
+gain/envelope correction is warranted before promoting the gated short-window
+selector, adding a multiresolution selector, or starting a sustained-material
+vertical-coherence path.

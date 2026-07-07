@@ -52,6 +52,10 @@ const EXTERNAL_BENCHMARK_ALIGNMENT_MAX_LAG_FRAMES: isize = 2_048;
 const EXTERNAL_BENCHMARK_ALIGNMENT_MAX_COMPARE_FRAMES: usize = 65_536;
 const EXTERNAL_BENCHMARK_FEATURE_FFT_SIZE: usize = 2_048;
 const EXTERNAL_BENCHMARK_FEATURE_MAX_WINDOWS: usize = 16;
+const EXTERNAL_BENCHMARK_GAIN_ENVELOPE_REVIEW_ROWS: usize = 8;
+const EXTERNAL_BENCHMARK_GAIN_ENVELOPE_WINDOW_SIZE: usize = 4_096;
+const EXTERNAL_BENCHMARK_GAIN_ENVELOPE_HOP_SIZE: usize = 2_048;
+const EXTERNAL_BENCHMARK_GAIN_ENVELOPE_NEAR_DB: f64 = 0.5;
 const MAX_EXTERNAL_BENCHMARK_MISSING_RENDER_ROWS: usize = 20;
 const DETECTOR_POLICY: StretchTransientDetectorPolicy =
     StretchTransientDetectorPolicy::production();
@@ -1590,6 +1594,59 @@ impl ExternalBenchmarkFeatureDeltaMeasurement {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+struct ExternalBenchmarkGainEnvelopeReviewMeasurement {
+    case_id: String,
+    source_path: String,
+    render_path: String,
+    tool_name: String,
+    ratio: f64,
+    source_boundary: &'static str,
+    aligned_compared_frames: usize,
+    feature_divergence_score: f64,
+    envelope_correlation: f64,
+    rms_delta_db: f64,
+    peak_delta_db: f64,
+    window_count: usize,
+    mean_window_rms_delta_db: f64,
+    median_window_rms_delta_db: f64,
+    max_abs_window_rms_delta_db: f64,
+    louder_windows: usize,
+    quieter_windows: usize,
+    near_windows: usize,
+    gain_pattern: &'static str,
+}
+
+impl ExternalBenchmarkGainEnvelopeReviewMeasurement {
+    fn format_report_line(&self, rank: usize) -> String {
+        format!(
+            "external_benchmark_gain_envelope_review rank={} case={} source={} ratio={:.6} tool={} render={} status=Measured reason=TopFeatureDivergence source_boundary={} aligned_compared_frames={} feature_divergence_score={:.6} envelope_correlation={:.6} rms_delta_db={:.6} peak_delta_db={:.6} window_size_frames={} hop_size_frames={} window_count={} mean_window_rms_delta_db={:.6} median_window_rms_delta_db={:.6} max_abs_window_rms_delta_db={:.6} louder_windows={} quieter_windows={} near_windows={} gain_pattern={}",
+            rank,
+            self.case_id,
+            quoted_report_field(&self.source_path),
+            self.ratio,
+            quoted_report_field(&self.tool_name),
+            quoted_report_field(&self.render_path),
+            quoted_report_field(self.source_boundary),
+            self.aligned_compared_frames,
+            self.feature_divergence_score,
+            self.envelope_correlation,
+            self.rms_delta_db,
+            self.peak_delta_db,
+            EXTERNAL_BENCHMARK_GAIN_ENVELOPE_WINDOW_SIZE,
+            EXTERNAL_BENCHMARK_GAIN_ENVELOPE_HOP_SIZE,
+            self.window_count,
+            self.mean_window_rms_delta_db,
+            self.median_window_rms_delta_db,
+            self.max_abs_window_rms_delta_db,
+            self.louder_windows,
+            self.quieter_windows,
+            self.near_windows,
+            self.gain_pattern,
+        )
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
 struct ExternalBenchmarkDecodedAudio {
     sample_rate_hz: u32,
     channels: u16,
@@ -1608,6 +1665,7 @@ fn format_external_benchmark_quality_metrics(
     frame_limit: usize,
 ) -> Result<String, String> {
     let mut lines = Vec::new();
+    let mut gain_envelope_reviews = Vec::new();
     for render in renders {
         let source = match source_for_external_quality_render(sources, render) {
             ExternalBenchmarkQualitySource::Found(source) => source,
@@ -1694,6 +1752,33 @@ fn format_external_benchmark_quality_metrics(
             &aligned,
             source_audio.sample_rate_hz,
         );
+        let gain_envelope_review = measure_external_benchmark_gain_envelope_review(
+            &signal_output,
+            &external_audio.mono_samples,
+            &aligned,
+            &feature_delta,
+        );
+        gain_envelope_reviews.push(ExternalBenchmarkGainEnvelopeReviewMeasurement {
+            case_id: render.case_id.clone(),
+            source_path: source.source_path.clone(),
+            render_path: render.rendered_path.clone(),
+            tool_name: render.tool_name.clone(),
+            ratio: render.ratio,
+            source_boundary: "rendered-output-only; no external source or library dependency",
+            aligned_compared_frames: feature_delta.compared_frames,
+            feature_divergence_score: feature_delta.divergence_score(),
+            envelope_correlation: feature_delta.envelope_correlation,
+            rms_delta_db: feature_delta.signal.rms_db - feature_delta.external.rms_db,
+            peak_delta_db: feature_delta.signal.peak_db - feature_delta.external.peak_db,
+            window_count: gain_envelope_review.window_count,
+            mean_window_rms_delta_db: gain_envelope_review.mean_window_rms_delta_db,
+            median_window_rms_delta_db: gain_envelope_review.median_window_rms_delta_db,
+            max_abs_window_rms_delta_db: gain_envelope_review.max_abs_window_rms_delta_db,
+            louder_windows: gain_envelope_review.louder_windows,
+            quieter_windows: gain_envelope_review.quieter_windows,
+            near_windows: gain_envelope_review.near_windows,
+            gain_pattern: gain_envelope_review.gain_pattern,
+        });
 
         lines.push(
             ExternalBenchmarkQualityMeasurement {
@@ -1770,6 +1855,22 @@ fn format_external_benchmark_quality_metrics(
             }
             .format_report_line(),
         );
+    }
+    gain_envelope_reviews.sort_by(|left, right| {
+        right
+            .feature_divergence_score
+            .total_cmp(&left.feature_divergence_score)
+            .then_with(|| left.case_id.cmp(&right.case_id))
+            .then_with(|| left.source_path.cmp(&right.source_path))
+            .then_with(|| left.ratio.total_cmp(&right.ratio))
+            .then_with(|| left.render_path.cmp(&right.render_path))
+    });
+    for (index, review) in gain_envelope_reviews
+        .iter()
+        .take(EXTERNAL_BENCHMARK_GAIN_ENVELOPE_REVIEW_ROWS)
+        .enumerate()
+    {
+        lines.push(review.format_report_line(index + 1));
     }
     Ok(lines.join("\n"))
 }
@@ -2041,6 +2142,18 @@ struct ExternalBenchmarkFeatureSummary {
     high_frequency_energy_ratio: f64,
 }
 
+#[derive(Clone, Debug, PartialEq)]
+struct ExternalBenchmarkGainEnvelopeReview {
+    window_count: usize,
+    mean_window_rms_delta_db: f64,
+    median_window_rms_delta_db: f64,
+    max_abs_window_rms_delta_db: f64,
+    louder_windows: usize,
+    quieter_windows: usize,
+    near_windows: usize,
+    gain_pattern: &'static str,
+}
+
 fn measure_external_benchmark_feature_delta(
     signal: &[f32],
     external: &[f32],
@@ -2066,6 +2179,123 @@ fn measure_external_benchmark_feature_delta(
         signal: summarize_external_benchmark_features(signal_slice, sample_rate_hz),
         external: summarize_external_benchmark_features(external_slice, sample_rate_hz),
     }
+}
+
+fn measure_external_benchmark_gain_envelope_review(
+    signal: &[f32],
+    external: &[f32],
+    aligned: &AlignedErrorMeasurement,
+    feature_delta: &ExternalBenchmarkFeatureDelta,
+) -> ExternalBenchmarkGainEnvelopeReview {
+    if aligned.compared_frames < EXTERNAL_BENCHMARK_GAIN_ENVELOPE_WINDOW_SIZE {
+        return empty_external_benchmark_gain_envelope_review();
+    }
+
+    let signal_slice =
+        &signal[aligned.signal_start..aligned.signal_start + aligned.compared_frames];
+    let external_slice =
+        &external[aligned.external_start..aligned.external_start + aligned.compared_frames];
+    let mut deltas = Vec::new();
+    let max_start = aligned.compared_frames - EXTERNAL_BENCHMARK_GAIN_ENVELOPE_WINDOW_SIZE;
+    let mut start = 0;
+    while start <= max_start {
+        let end = start + EXTERNAL_BENCHMARK_GAIN_ENVELOPE_WINDOW_SIZE;
+        let signal_rms = slice_rms(&signal_slice[start..end]);
+        let external_rms = slice_rms(&external_slice[start..end]);
+        deltas.push(amplitude_db(signal_rms) - amplitude_db(external_rms));
+        start += EXTERNAL_BENCHMARK_GAIN_ENVELOPE_HOP_SIZE;
+    }
+
+    let window_count = deltas.len();
+    if window_count == 0 {
+        return empty_external_benchmark_gain_envelope_review();
+    }
+
+    let mean = deltas.iter().sum::<f64>() / window_count as f64;
+    let mut sorted = deltas.clone();
+    sorted.sort_by(f64::total_cmp);
+    let median = if sorted.len() % 2 == 0 {
+        let upper = sorted.len() / 2;
+        (sorted[upper - 1] + sorted[upper]) * 0.5
+    } else {
+        sorted[sorted.len() / 2]
+    };
+    let max_abs = deltas
+        .iter()
+        .map(|delta| delta.abs())
+        .fold(0.0f64, f64::max);
+    let louder_windows = deltas
+        .iter()
+        .filter(|delta| **delta > EXTERNAL_BENCHMARK_GAIN_ENVELOPE_NEAR_DB)
+        .count();
+    let quieter_windows = deltas
+        .iter()
+        .filter(|delta| **delta < -EXTERNAL_BENCHMARK_GAIN_ENVELOPE_NEAR_DB)
+        .count();
+    let near_windows = window_count - louder_windows - quieter_windows;
+
+    ExternalBenchmarkGainEnvelopeReview {
+        window_count,
+        mean_window_rms_delta_db: mean,
+        median_window_rms_delta_db: median,
+        max_abs_window_rms_delta_db: max_abs,
+        louder_windows,
+        quieter_windows,
+        near_windows,
+        gain_pattern: classify_external_benchmark_gain_pattern(
+            median,
+            max_abs,
+            louder_windows,
+            quieter_windows,
+            near_windows,
+            feature_delta.envelope_correlation,
+        ),
+    }
+}
+
+fn empty_external_benchmark_gain_envelope_review() -> ExternalBenchmarkGainEnvelopeReview {
+    ExternalBenchmarkGainEnvelopeReview {
+        window_count: 0,
+        mean_window_rms_delta_db: f64::NAN,
+        median_window_rms_delta_db: f64::NAN,
+        max_abs_window_rms_delta_db: f64::NAN,
+        louder_windows: 0,
+        quieter_windows: 0,
+        near_windows: 0,
+        gain_pattern: "Inconclusive",
+    }
+}
+
+fn classify_external_benchmark_gain_pattern(
+    median_delta_db: f64,
+    max_abs_delta_db: f64,
+    louder_windows: usize,
+    quieter_windows: usize,
+    near_windows: usize,
+    envelope_correlation: f64,
+) -> &'static str {
+    if !median_delta_db.is_finite() || !max_abs_delta_db.is_finite() {
+        return "Inconclusive";
+    }
+    if max_abs_delta_db <= EXTERNAL_BENCHMARK_GAIN_ENVELOPE_NEAR_DB
+        && near_windows >= louder_windows + quieter_windows
+    {
+        return "CloseGain";
+    }
+    if median_delta_db > EXTERNAL_BENCHMARK_GAIN_ENVELOPE_NEAR_DB
+        && louder_windows >= quieter_windows.saturating_mul(2).max(1)
+    {
+        return "SignalConsistentlyLouder";
+    }
+    if median_delta_db < -EXTERNAL_BENCHMARK_GAIN_ENVELOPE_NEAR_DB
+        && quieter_windows >= louder_windows.saturating_mul(2).max(1)
+    {
+        return "SignalConsistentlyQuieter";
+    }
+    if envelope_correlation.is_finite() && envelope_correlation < 0.70 {
+        return "EnvelopeShapeDivergence";
+    }
+    "MixedGainEnvelope"
 }
 
 fn empty_external_benchmark_feature_summary() -> ExternalBenchmarkFeatureSummary {
@@ -2194,6 +2424,20 @@ fn normalized_envelope_correlation(signal: &[f32], external: &[f32]) -> f64 {
         external_square_sum += external_value * external_value;
     }
     finite_ratio(dot, (signal_square_sum * external_square_sum).sqrt())
+}
+
+fn slice_rms(samples: &[f32]) -> f64 {
+    if samples.is_empty() {
+        return f64::NAN;
+    }
+    let square_sum = samples
+        .iter()
+        .map(|sample| {
+            let value = *sample as f64;
+            value * value
+        })
+        .sum::<f64>();
+    (square_sum / samples.len() as f64).sqrt()
 }
 
 fn amplitude_db(value: f64) -> f64 {
@@ -4652,6 +4896,11 @@ mod tests {
         assert!(formatted.contains("rms_delta_db=0.000000"));
         assert!(formatted.contains("spectral_centroid_delta_hz=0.000000"));
         assert!(formatted.contains("feature_divergence_score=0.000000"));
+        assert!(formatted.contains("external_benchmark_gain_envelope_review rank=1"));
+        assert!(formatted.contains("reason=TopFeatureDivergence"));
+        assert!(formatted.contains("window_count=1"));
+        assert!(formatted.contains("median_window_rms_delta_db=0.000000"));
+        assert!(formatted.contains("gain_pattern=CloseGain"));
 
         let _ = fs::remove_file(path);
     }
