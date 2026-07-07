@@ -1,6 +1,6 @@
 # 022 - OfflineHighQuality Stretch DSP Depth
 
-Status: planned
+Status: ready
 Owner: dsp
 Created: 2026-07-07
 Depends on: g10.021
@@ -17,9 +17,9 @@ comparison reports, not add more receipt or fixture surfaces.
 
 ## Goals
 
-- [ ] run the current comparison and quality-priority reports before choosing
+- [x] run the current comparison and quality-priority reports before choosing
   each algorithm change
-- [ ] choose one top measured weakness per batch: transient smear, loop seams,
+- [x] choose one top measured weakness per batch: transient smear, loop seams,
   sustained phasiness, stereo image drift, pitch error, or timing drift
 - [ ] add a multiresolution or hybrid STFT/time-domain path when the measured
   weakness justifies it
@@ -28,20 +28,20 @@ comparison reports, not add more receipt or fixture surfaces.
 - [ ] improve vertical coherence for dense sustained and polyphonic material
 - [ ] improve loop-seam handling under fixed ratios and dynamic ratio segments
 - [ ] add static-pitch quality evidence across vocals, bass, and full mixes
-- [ ] keep `PhaseVocoderStretcher` as the draft baseline for regression
+- [x] keep `PhaseVocoderStretcher` as the draft baseline for regression
   comparison
 
 ## Execution Plan
 
 ### Batch 22.1 - Measured Weakness Selection
 
-- [ ] run synthetic comparison and quality-priority reports
-- [ ] record the top target and the rejected alternatives before coding
+- [x] run synthetic comparison and quality-priority reports
+- [x] record the top target and the rejected alternatives before coding
 
 ### Batch 22.2 - First Quality Improvement
 
-- [ ] implement one DSP change against the selected target
-- [ ] prove the chosen metric improves or holds without creating a higher
+- [x] implement one DSP change against the selected target
+- [x] prove the chosen metric improves or holds without creating a higher
   priority regression
 
 ### Batch 22.3 - Multiresolution Or Hybrid Path
@@ -51,11 +51,11 @@ comparison reports, not add more receipt or fixture surfaces.
 
 ## Acceptance Criteria
 
-- [ ] every DSP batch names the metric or listening failure it targets
-- [ ] OfflineHighQuality improves or holds against the draft baseline on the
+- [x] every DSP batch names the metric or listening failure it targets
+- [x] OfflineHighQuality improves or holds against the draft baseline on the
   chosen target and does not create a higher-priority regression elsewhere
-- [ ] output length and deterministic cache identity behavior remain stable
-- [ ] no realtime audio-thread path calls whole-buffer stretch processing
+- [x] output length and deterministic cache identity behavior remain stable
+- [x] no realtime audio-thread path calls whole-buffer stretch processing
 
 ## Validation
 
@@ -67,8 +67,24 @@ comparison reports, not add more receipt or fixture surfaces.
 - 2026-07-07: opened as active g10 OfflineHighQuality DSP quality work after
   the stretch policy/fixture line was judged mature enough and further
   proof-shaping was called out as churn.
+- 2026-07-07: ran `stretch-corpus-report` with
+  `projection:g10.022-selection`. No operator licensed material or external
+  renders were present, so real-report evidence remains an operator input.
+  Synthetic comparison had no regressions or inconclusive rows. The selected
+  residual target was dynamic-ratio segment seam click:
+  `stretch:tempo_ramp` reported OfflineHighQuality seam click at `-16.814012`
+  dBFS despite improving draft `-4.908878` dBFS. Rejected alternatives:
+  pitch error was already below one cent, loop fixed-ratio click was already
+  silent on measured joins, stereo image deltas were near zero, and sustained
+  coherence already improved draft.
+- 2026-07-07: implemented offline dynamic-ratio segment-boundary smoothing for
+  linked stereo and dynamic-ratio pitch paths. Output length and deterministic
+  behavior stayed stable. The selected synthetic seam metric improved to
+  `-240.000000` dBFS with no new higher-priority regression in the comparison
+  report.
 
 ## Next Task
 
-Run the current synthetic comparison and quality-priority reports, then pick
-one DSP weakness for Batch 22.2.
+Do not add a multiresolution or hybrid path until measured evidence requires
+it. Next useful work is either the operator-supplied real corpus report, or a
+fresh Batch 22 target selected from new report evidence.

@@ -89,6 +89,8 @@ use phase_vocoder::{
 use signal_dsp_resample::{resample_mono, ResampleConfig, ResampleQuality};
 use signal_primitives::{Sample, SampleRate};
 
+const DYNAMIC_RATIO_SEAM_SMOOTH_FRAMES: usize = 256;
+
 /// Quality tier of a stretch backend (memo 013 vocabulary). One tier exists
 /// today; real-time and offline production tiers land with the library
 /// evaluation (P-TS-001).
@@ -434,6 +436,7 @@ impl OfflineHighQualityStretcher {
         let frame_count = frames.len() / 2;
         let even_frames = &frames[..frame_count * 2];
         let segments = dynamic_ratio_segments(frame_count, ratio_curve, sanitize_ratio(self.ratio));
+        let boundaries = dynamic_ratio_segment_boundaries(&segments);
         let target_frames: usize = segments.iter().map(|segment| segment.target_frames).sum();
         let mut output = Vec::with_capacity(target_frames * 2);
         for segment in segments {
@@ -452,6 +455,12 @@ impl OfflineHighQualityStretcher {
             );
             output.extend(rendered);
         }
+        smooth_dynamic_segment_boundaries_interleaved(
+            &mut output,
+            2,
+            &boundaries,
+            DYNAMIC_RATIO_SEAM_SMOOTH_FRAMES,
+        );
         output
     }
 
@@ -581,6 +590,49 @@ pub fn smooth_loop_boundary_interleaved(
     }
 }
 
+/// Smooth deterministic dynamic-ratio segment joins in place.
+///
+/// This is an offline render helper for independently rendered segment joins.
+/// It does not change output length or boundary positions.
+pub(crate) fn smooth_dynamic_segment_boundaries_interleaved(
+    interleaved_samples: &mut [Sample],
+    channels: u16,
+    boundary_frames: &[usize],
+    fade_frames: usize,
+) {
+    let channel_count = channels as usize;
+    if channel_count == 0 || fade_frames == 0 {
+        return;
+    }
+    let frames = interleaved_samples.len() / channel_count;
+    if frames < 2 {
+        return;
+    }
+
+    for boundary in boundary_frames {
+        if *boundary == 0 || *boundary >= frames {
+            continue;
+        }
+        let fade_frames = fade_frames.min(*boundary).min(frames - *boundary).max(1);
+        for channel in 0..channel_count {
+            let before_edge_index = (*boundary - 1) * channel_count + channel;
+            let after_edge_index = *boundary * channel_count + channel;
+            let before_edge = interleaved_samples[before_edge_index];
+            let after_edge = interleaved_samples[after_edge_index];
+            let midpoint = (before_edge + after_edge) * 0.5;
+            for offset in 0..fade_frames {
+                let weight = (fade_frames - offset) as f32 / fade_frames as f32;
+                let before_frame = *boundary - 1 - offset;
+                let after_frame = *boundary + offset;
+                let before_index = before_frame * channel_count + channel;
+                let after_index = after_frame * channel_count + channel;
+                interleaved_samples[before_index] += (midpoint - before_edge) * weight;
+                interleaved_samples[after_index] += (midpoint - after_edge) * weight;
+            }
+        }
+    }
+}
+
 /// Cheap fallback for sub-window inputs: linear interpolation over time
 /// (this pitch-shifts, but a sub-window buffer is too short for the phase
 /// vocoder to do better; documented, deterministic).
@@ -688,16 +740,7 @@ pub(crate) fn dynamic_ratio_output_boundaries(
 ) -> Vec<usize> {
     let segments =
         dynamic_ratio_segments(input_frames, ratio_curve, sanitize_ratio(fallback_ratio));
-    let mut boundaries = Vec::with_capacity(segments.len().saturating_sub(1));
-    let mut output_frame = 0usize;
-    let total_frames: usize = segments.iter().map(|segment| segment.target_frames).sum();
-    for segment in segments.iter().take(segments.len().saturating_sub(1)) {
-        output_frame += segment.target_frames;
-        if output_frame > 0 && output_frame < total_frames {
-            boundaries.push(output_frame);
-        }
-    }
-    boundaries
+    dynamic_ratio_segment_boundaries(&segments)
 }
 
 pub(crate) fn stretch_dynamic_ratio_mono_with_engine(
@@ -734,6 +777,7 @@ fn stretch_dynamic_ratio_linked_stereo_with_engine(
     let frame_count = input.len() / 2;
     let even_input = &input[..frame_count * 2];
     let segments = dynamic_ratio_segments(frame_count, ratio_curve, sanitize_ratio(fallback_ratio));
+    let boundaries = dynamic_ratio_segment_boundaries(&segments);
     let target_frames: usize = segments.iter().map(|segment| segment.target_frames).sum();
     let mut output = Vec::with_capacity(target_frames * 2);
     for segment in segments {
@@ -747,6 +791,12 @@ fn stretch_dynamic_ratio_linked_stereo_with_engine(
         );
         output.extend(rendered);
     }
+    smooth_dynamic_segment_boundaries_interleaved(
+        &mut output,
+        2,
+        &boundaries,
+        DYNAMIC_RATIO_SEAM_SMOOTH_FRAMES,
+    );
     output
 }
 
@@ -826,6 +876,19 @@ fn dynamic_ratio_segment(start_frame: usize, end_frame: usize, ratio: f64) -> Dy
         end_frame,
         target_frames: ((end_frame - start_frame) as f64 * ratio).round() as usize,
     }
+}
+
+fn dynamic_ratio_segment_boundaries(segments: &[DynamicRatioSegment]) -> Vec<usize> {
+    let mut boundaries = Vec::with_capacity(segments.len().saturating_sub(1));
+    let total_frames: usize = segments.iter().map(|segment| segment.target_frames).sum();
+    let mut output_frame = 0usize;
+    for segment in segments.iter().take(segments.len().saturating_sub(1)) {
+        output_frame += segment.target_frames;
+        if output_frame > 0 && output_frame < total_frames {
+            boundaries.push(output_frame);
+        }
+    }
+    boundaries
 }
 
 fn pitch_shift_mono_to_nominal_rate(
@@ -1193,6 +1256,31 @@ mod tests {
             dynamic_ratio_output_frames(left.len(), &ratio_curve, 1.0) * 2
         );
         assert_eq!(first_output, repeated_output);
+    }
+
+    #[test]
+    fn offline_high_quality_dynamic_ratio_smoothing_reduces_segment_seams() {
+        let sample_rate = 48_000.0;
+        let left = sine(220.0, sample_rate, 48_000);
+        let right = sine(440.0, sample_rate, 48_000);
+        let mut frames = Vec::with_capacity(left.len() * 2);
+        for (l, r) in left.iter().zip(right.iter()) {
+            frames.push(*l);
+            frames.push(*r);
+        }
+        let ratio_curve = [
+            StretchRatioPoint::new(0, 0.75),
+            StretchRatioPoint::new(16_000, 1.0),
+            StretchRatioPoint::new(32_000, 1.5),
+        ];
+        let boundaries = dynamic_ratio_output_boundaries(left.len(), &ratio_curve, 1.0);
+        let mut raw = frames.clone();
+        let before = measure_dynamic_segment_seam_click(&raw, 2, &boundaries, 1.0);
+        smooth_dynamic_segment_boundaries_interleaved(&mut raw, 2, &boundaries, 64);
+        let after = measure_dynamic_segment_seam_click(&raw, 2, &boundaries, 1.0);
+
+        assert!(after.peak_seam_delta < before.peak_seam_delta);
+        assert_eq!(raw.len(), frames.len());
     }
 
     #[test]
@@ -1892,6 +1980,20 @@ mod tests {
         assert!((frames[1] - frames[5]).abs() < 1.0e-6);
         assert!((frames[2] - 0.25).abs() < 1.0e-6);
         assert!((frames[3] - 0.25).abs() < 1.0e-6);
+    }
+
+    #[test]
+    fn dynamic_segment_boundary_smoothing_equalizes_join_edges() {
+        let mut frames = [0.0, 0.0, 1.0, -1.0, -1.0, 1.0, 0.0, 0.0];
+
+        smooth_dynamic_segment_boundaries_interleaved(&mut frames, 2, &[2], 1);
+
+        assert!((frames[2] - frames[4]).abs() < 1.0e-6);
+        assert!((frames[3] - frames[5]).abs() < 1.0e-6);
+        assert_eq!(frames[0], 0.0);
+        assert_eq!(frames[1], 0.0);
+        assert_eq!(frames[6], 0.0);
+        assert_eq!(frames[7], 0.0);
     }
 
     #[test]
