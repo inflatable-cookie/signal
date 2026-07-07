@@ -346,6 +346,18 @@ comparison reports, not add more receipt or fixture surfaces.
   at `0.75x`, where current has no misses and moderate current smear
   (`43.000000` frames) while the shorter window widens the max matched output
   event from `71.000000` to `109.000000` frames.
+- 2026-07-07: added a report-only gated shorter-window selector candidate.
+  The gate chooses the shorter-window path only when current OfflineHighQuality
+  has at least one promoted missed transient or current max smear is at least
+  `64.000000` frames. On the broader FMA seed, the gate accepted 7 compression
+  rows and rejected 13. It retained 5 of the 8 raw shorter-window wins,
+  rejected all 4 raw shorter-window regressions, and rejected 3 mild wins worth
+  `26.000000` frames total. Gated rows improved 5, worsened 0, left 12
+  unchanged, and left 3 inconclusive. Finite-row mean max-smear improved from
+  current OfflineHighQuality `374.352941` frames to gated `132.647059` frames,
+  with `0.000000` worst gated regression. The known `000900.mp3` pads/sustains
+  draft regression remains unchanged at `11.000000` frames because neither the
+  global shorter-window path nor the gate solves that matched-event width case.
 
 ## Next Task
 
@@ -353,10 +365,9 @@ Do not add a multiresolution or hybrid path until measured evidence requires
 it. The width-control postprocess and simple compression phase-reset anchor
 lines are now closed as report-only/rejected. A global shorter-window switch is
 also rejected, and the `000900.mp3` matched-event width issue is not solved by
-window size alone. Next useful work is a report-only gated multiresolution
-selector candidate: use the shorter-window path only for compression rows where
-current OfflineHighQuality has missed promoted transients or
-`current_smear_frames >= 64`. Regenerate the broader FMA seed and require the
-gate to retain the large mean-smear improvement without the `000002.mp3` drum
-regression, without new draft regressions, and without promoting the mild
-overlapping wins that currently share feature space with regressions.
+window size alone. The gated shorter-window selector now clears the first broad
+FMA no-listening check. Next useful work is promotion pressure, still
+report-only: add a second broad-seed or expanded-manifest selector stability
+run and require the same gate to keep `current_better_rows=0`,
+`worst_gated_regression_delta_frames=0`, and no new draft regression before it
+is considered for OfflineHighQuality DSP integration.
