@@ -155,11 +155,20 @@ comparison reports, not add more receipt or fixture surfaces.
   expected-output peak ratio `0.885974` and RMS ratio `0.906419`, so the output
   window preserves energy but the current detector/matcher does not accept it as
   a corresponding transient.
+- 2026-07-07: added detector-shape diagnostics to missed-event rows. The local
+  FMA review seed classified 64 missed events as `CombinedBelowThreshold`, 14 as
+  `FluxBelowThreshold`, and 2 as `NotLocalMaximum`; OfflineHighQuality split was
+  18, 3, and 1 respectively. The worst `000384.mp3` bass `1.25x` miss now
+  reports expected energy score `0.653325`, flux score `1.685165`, and combined
+  score `2.338490`, below the detector's `3.0` combined threshold and `2.0`
+  flux threshold. The next change should refine real-source transient scoring or
+  thresholding, not alter stretch synthesis.
 
 ## Next Task
 
 Do not add a multiresolution or hybrid path until measured evidence requires
-it. Next useful work is to add detector-shape diagnostics around
-`ExpectedEnergyPresent` misses, starting with local flux/energy-rise scores for
-the `000384.mp3` bass `1.25x` expected windows. Listened real-source curation
-and external rendered-output comparison remain promotion inputs.
+it. Next useful work is to refine real-source transient detection scoring for
+energy-present misses, starting with a threshold/normalization experiment that
+does not change synthesis and is checked against synthetic transient metrics.
+Listened real-source curation and external rendered-output comparison remain
+promotion inputs.

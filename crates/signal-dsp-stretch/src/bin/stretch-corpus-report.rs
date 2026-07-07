@@ -5,6 +5,7 @@ use std::fs::{self, File};
 use std::path::{Path, PathBuf};
 use std::process;
 
+use rustfft::{num_complex::Complex32, FftPlanner};
 use signal_dsp_stretch::{
     build_stretch_corpus_comparison_report_with_sources, detect_stretch_transients,
     format_stretch_corpus_comparison_report, measure_transient_smear, output_length_drift_samples,
@@ -827,12 +828,31 @@ struct TransientAlignmentMissEvent {
     expected_output_window_rms: f64,
     nearest_output_window_peak: f64,
     nearest_output_window_rms: f64,
+    expected_detector_shape: DetectorShape,
+    nearest_detector_shape: DetectorShape,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 struct WindowEnergyStats {
     peak: f64,
     rms: f64,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct DetectorShape {
+    frame_index: f64,
+    energy_score: f64,
+    spectral_flux_score: f64,
+    combined_score: f64,
+    previous_combined_score: f64,
+    next_combined_score: f64,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct DetectorFrameFeature {
+    frame_index: usize,
+    energy: f64,
+    spectral_flux: f64,
 }
 
 fn transient_alignment_diagnostic(
@@ -848,6 +868,7 @@ fn transient_alignment_diagnostic(
         detect_stretch_transients(input, QUALITY_METRIC_WINDOW_SIZE, QUALITY_METRIC_HOP_SIZE);
     let output_events =
         detect_stretch_transients(output, QUALITY_METRIC_WINDOW_SIZE, QUALITY_METRIC_HOP_SIZE);
+    let output_detector_shapes = detector_shape_trace(output);
     let tolerance = QUALITY_METRIC_WINDOW_SIZE.max(QUALITY_METRIC_HOP_SIZE * 4) as f64;
     let mut matched_count = 0usize;
     let mut matched_error_sum = 0.0f64;
@@ -874,6 +895,10 @@ fn transient_alignment_diagnostic(
                 let input_window = window_energy_stats(input, input_event.frame_index as f64);
                 let expected_output_window = window_energy_stats(output, expected_output_frame);
                 let nearest_output_window = window_energy_stats(output, nearest_frame);
+                let expected_detector_shape =
+                    nearest_detector_shape(&output_detector_shapes, expected_output_frame);
+                let nearest_detector_shape =
+                    nearest_detector_shape(&output_detector_shapes, nearest_frame);
                 missed_events.push(TransientAlignmentMissEvent {
                     input_frame: input_event.frame_index,
                     expected_output_frame,
@@ -885,6 +910,8 @@ fn transient_alignment_diagnostic(
                     expected_output_window_rms: expected_output_window.rms,
                     nearest_output_window_peak: nearest_output_window.peak,
                     nearest_output_window_rms: nearest_output_window.rms,
+                    expected_detector_shape,
+                    nearest_detector_shape,
                 });
                 if distance > missed_nearest_max {
                     missed_nearest_max = distance;
@@ -895,6 +922,8 @@ fn transient_alignment_diagnostic(
             None => {
                 let input_window = window_energy_stats(input, input_event.frame_index as f64);
                 let expected_output_window = window_energy_stats(output, expected_output_frame);
+                let expected_detector_shape =
+                    nearest_detector_shape(&output_detector_shapes, expected_output_frame);
                 missed_events.push(TransientAlignmentMissEvent {
                     input_frame: input_event.frame_index,
                     expected_output_frame,
@@ -906,6 +935,8 @@ fn transient_alignment_diagnostic(
                     expected_output_window_rms: expected_output_window.rms,
                     nearest_output_window_peak: f64::NAN,
                     nearest_output_window_rms: f64::NAN,
+                    expected_detector_shape,
+                    nearest_detector_shape: detector_shape_nan(),
                 });
             }
         }
@@ -1009,6 +1040,139 @@ fn window_energy_stats(samples: &[f32], center_frame: f64) -> WindowEnergyStats 
     }
 }
 
+fn detector_shape_trace(samples: &[f32]) -> Vec<DetectorShape> {
+    let features =
+        detector_frame_features(samples, QUALITY_METRIC_WINDOW_SIZE, QUALITY_METRIC_HOP_SIZE);
+    if features.len() < 3 {
+        return Vec::new();
+    }
+
+    let mut energy_rises = Vec::with_capacity(features.len());
+    let mut fluxes = Vec::with_capacity(features.len());
+    energy_rises.push(0.0);
+    fluxes.push(0.0);
+    for pair in features.windows(2) {
+        energy_rises.push((pair[1].energy - pair[0].energy).max(0.0));
+        fluxes.push(pair[1].spectral_flux);
+    }
+
+    let energy_scale = mean_plus_stddev(&energy_rises).max(1.0e-12);
+    let flux_scale = mean_plus_stddev(&fluxes).max(1.0e-12);
+    let mut shapes = Vec::with_capacity(features.len().saturating_sub(2));
+
+    for index in 1..features.len() - 1 {
+        let energy_score = energy_rises[index] / energy_scale;
+        let spectral_flux_score = fluxes[index] / flux_scale;
+        let previous_combined_score =
+            energy_rises[index - 1] / energy_scale + fluxes[index - 1] / flux_scale;
+        let next_combined_score =
+            energy_rises[index + 1] / energy_scale + fluxes[index + 1] / flux_scale;
+        shapes.push(DetectorShape {
+            frame_index: features[index].frame_index as f64,
+            energy_score,
+            spectral_flux_score,
+            combined_score: energy_score + spectral_flux_score,
+            previous_combined_score,
+            next_combined_score,
+        });
+    }
+
+    shapes
+}
+
+fn detector_frame_features(
+    samples: &[f32],
+    window_size: usize,
+    hop_size: usize,
+) -> Vec<DetectorFrameFeature> {
+    if samples.len() < window_size || window_size < 16 || hop_size == 0 {
+        return Vec::new();
+    }
+
+    let bins = window_size / 2 + 1;
+    let window: Vec<f32> = (0..window_size)
+        .map(|index| 0.5 - 0.5 * (std::f32::consts::TAU * index as f32 / window_size as f32).cos())
+        .collect();
+    let mut planner = FftPlanner::<f32>::new();
+    let forward = planner.plan_fft_forward(window_size);
+    let mut buffer = vec![Complex32::new(0.0, 0.0); window_size];
+    let mut previous_magnitudes = vec![0.0f32; bins];
+    let mut magnitudes = vec![0.0f32; bins];
+    let mut features = Vec::new();
+
+    for start in (0..=samples.len() - window_size).step_by(hop_size) {
+        let mut energy = 0.0f64;
+        for (slot, (sample, weight)) in buffer.iter_mut().zip(
+            samples[start..start + window_size]
+                .iter()
+                .zip(window.iter()),
+        ) {
+            let windowed = sample * weight;
+            energy += (windowed * windowed) as f64;
+            *slot = Complex32::new(windowed, 0.0);
+        }
+        forward.process(&mut buffer);
+
+        let mut flux = 0.0f64;
+        for bin in 0..bins {
+            let magnitude = buffer[bin].norm();
+            magnitudes[bin] = magnitude;
+            flux += (magnitude - previous_magnitudes[bin]).max(0.0) as f64;
+        }
+        previous_magnitudes.copy_from_slice(&magnitudes);
+
+        features.push(DetectorFrameFeature {
+            frame_index: start,
+            energy: energy / window_size as f64,
+            spectral_flux: flux / bins as f64,
+        });
+    }
+
+    features
+}
+
+fn mean_plus_stddev(values: &[f64]) -> f64 {
+    if values.is_empty() {
+        return f64::NAN;
+    }
+    let mean = values.iter().sum::<f64>() / values.len() as f64;
+    let variance = values
+        .iter()
+        .map(|value| {
+            let delta = value - mean;
+            delta * delta
+        })
+        .sum::<f64>()
+        / values.len() as f64;
+    mean + variance.sqrt()
+}
+
+fn nearest_detector_shape(shapes: &[DetectorShape], expected_frame: f64) -> DetectorShape {
+    if !expected_frame.is_finite() {
+        return detector_shape_nan();
+    }
+    shapes
+        .iter()
+        .copied()
+        .min_by(|left, right| {
+            (left.frame_index - expected_frame)
+                .abs()
+                .total_cmp(&(right.frame_index - expected_frame).abs())
+        })
+        .unwrap_or_else(detector_shape_nan)
+}
+
+fn detector_shape_nan() -> DetectorShape {
+    DetectorShape {
+        frame_index: f64::NAN,
+        energy_score: f64::NAN,
+        spectral_flux_score: f64::NAN,
+        combined_score: f64::NAN,
+        previous_combined_score: f64::NAN,
+        next_combined_score: f64::NAN,
+    }
+}
+
 fn format_transient_metric_detail(
     draft_smear: &signal_dsp_stretch::StretchTransientSmearMeasurement,
     offline_smear: &signal_dsp_stretch::StretchTransientSmearMeasurement,
@@ -1060,13 +1224,14 @@ fn format_transient_alignment_event_lines(
             let nearest_rms_ratio =
                 finite_ratio(event.nearest_output_window_rms, event.input_window_rms);
             format!(
-                "decoded_transient_alignment_event case={} source={} ratio={:.6} backend={} rank={} alignment_class={} input_frame={} expected_output_frame={:.6} nearest_output_frame={:.6} nearest_distance_frames={:.6} tolerance_frames={} input_window_peak={:.6} input_window_rms={:.6} expected_output_window_peak={:.6} expected_output_window_rms={:.6} expected_output_peak_ratio={:.6} expected_output_rms_ratio={:.6} nearest_output_window_peak={:.6} nearest_output_window_rms={:.6} nearest_output_peak_ratio={:.6} nearest_output_rms_ratio={:.6}",
+                "decoded_transient_alignment_event case={} source={} ratio={:.6} backend={} rank={} alignment_class={} detector_class={} input_frame={} expected_output_frame={:.6} nearest_output_frame={:.6} nearest_distance_frames={:.6} tolerance_frames={} input_window_peak={:.6} input_window_rms={:.6} expected_output_window_peak={:.6} expected_output_window_rms={:.6} expected_output_peak_ratio={:.6} expected_output_rms_ratio={:.6} expected_detector_frame={:.6} expected_energy_score={:.6} expected_flux_score={:.6} expected_combined_score={:.6} expected_previous_combined_score={:.6} expected_next_combined_score={:.6} nearest_output_window_peak={:.6} nearest_output_window_rms={:.6} nearest_output_peak_ratio={:.6} nearest_output_rms_ratio={:.6} nearest_detector_frame={:.6} nearest_energy_score={:.6} nearest_flux_score={:.6} nearest_combined_score={:.6}",
                 audio.case_id,
                 quoted_report_field(&audio.source_path),
                 ratio,
                 backend,
                 rank + 1,
                 classify_transient_alignment_event(event),
+                classify_detector_shape(&event.expected_detector_shape),
                 event.input_frame,
                 event.expected_output_frame,
                 event.nearest_output_frame.unwrap_or(f64::NAN),
@@ -1078,10 +1243,20 @@ fn format_transient_alignment_event_lines(
                 event.expected_output_window_rms,
                 expected_peak_ratio,
                 expected_rms_ratio,
+                event.expected_detector_shape.frame_index,
+                event.expected_detector_shape.energy_score,
+                event.expected_detector_shape.spectral_flux_score,
+                event.expected_detector_shape.combined_score,
+                event.expected_detector_shape.previous_combined_score,
+                event.expected_detector_shape.next_combined_score,
                 event.nearest_output_window_peak,
                 event.nearest_output_window_rms,
                 nearest_peak_ratio,
                 nearest_rms_ratio,
+                event.nearest_detector_shape.frame_index,
+                event.nearest_detector_shape.energy_score,
+                event.nearest_detector_shape.spectral_flux_score,
+                event.nearest_detector_shape.combined_score,
             )
         })
         .collect()
@@ -1104,6 +1279,23 @@ fn classify_transient_alignment_event(event: &TransientAlignmentMissEvent) -> &'
         "ExpectedEnergyWeak"
     } else {
         "ExpectedEnergyMissing"
+    }
+}
+
+fn classify_detector_shape(shape: &DetectorShape) -> &'static str {
+    if !shape.combined_score.is_finite() || !shape.spectral_flux_score.is_finite() {
+        return "Inconclusive";
+    }
+    if shape.combined_score < 3.0 {
+        "CombinedBelowThreshold"
+    } else if shape.spectral_flux_score < 2.0 {
+        "FluxBelowThreshold"
+    } else if shape.combined_score < shape.previous_combined_score
+        || shape.combined_score <= shape.next_combined_score
+    {
+        "NotLocalMaximum"
+    } else {
+        "DetectorWouldPass"
     }
 }
 
@@ -1445,6 +1637,22 @@ mod tests {
                     expected_output_window_rms: 0.05,
                     nearest_output_window_peak: 0.70,
                     nearest_output_window_rms: 0.20,
+                    expected_detector_shape: DetectorShape {
+                        frame_index: 256.0,
+                        energy_score: 0.25,
+                        spectral_flux_score: 0.75,
+                        combined_score: 1.0,
+                        previous_combined_score: 0.5,
+                        next_combined_score: 0.25,
+                    },
+                    nearest_detector_shape: DetectorShape {
+                        frame_index: 3_072.0,
+                        energy_score: 2.0,
+                        spectral_flux_score: 2.5,
+                        combined_score: 4.5,
+                        previous_combined_score: 1.0,
+                        next_combined_score: 1.0,
+                    },
                 },
                 TransientAlignmentMissEvent {
                     input_frame: 256,
@@ -1457,6 +1665,22 @@ mod tests {
                     expected_output_window_rms: 0.1,
                     nearest_output_window_peak: 0.6,
                     nearest_output_window_rms: 0.15,
+                    expected_detector_shape: DetectorShape {
+                        frame_index: 256.0,
+                        energy_score: 1.5,
+                        spectral_flux_score: 2.5,
+                        combined_score: 4.0,
+                        previous_combined_score: 2.0,
+                        next_combined_score: 5.0,
+                    },
+                    nearest_detector_shape: DetectorShape {
+                        frame_index: 1_280.0,
+                        energy_score: 2.0,
+                        spectral_flux_score: 2.5,
+                        combined_score: 4.5,
+                        previous_combined_score: 1.0,
+                        next_combined_score: 1.0,
+                    },
                 },
             ],
         };
@@ -1466,7 +1690,7 @@ mod tests {
         assert_eq!(lines.len(), 2);
         assert!(lines[0].starts_with("decoded_transient_alignment_event case=stretch:bass"));
         assert!(lines[0].contains(
-            "backend=offline_hq rank=1 alignment_class=ExpectedEnergyWeak input_frame=128"
+            "backend=offline_hq rank=1 alignment_class=ExpectedEnergyWeak detector_class=CombinedBelowThreshold input_frame=128"
         ));
         assert!(lines[0].contains("expected_output_frame=160.000000"));
         assert!(lines[0].contains("nearest_output_frame=3160.000000"));
@@ -1475,8 +1699,13 @@ mod tests {
         assert!(lines[0].contains("input_window_peak=0.750000"));
         assert!(lines[0].contains("expected_output_window_peak=0.100000"));
         assert!(lines[0].contains("expected_output_peak_ratio=0.133333"));
+        assert!(lines[0].contains("expected_detector_frame=256.000000"));
+        assert!(lines[0].contains("expected_energy_score=0.250000"));
+        assert!(lines[0].contains("expected_flux_score=0.750000"));
+        assert!(lines[0].contains("expected_combined_score=1.000000"));
         assert!(lines[0].contains("nearest_output_window_peak=0.700000"));
         assert!(lines[0].contains("nearest_output_peak_ratio=0.933333"));
+        assert!(lines[0].contains("nearest_combined_score=4.500000"));
     }
 
     fn write_test_wav(path: &PathBuf, frames: usize) {
