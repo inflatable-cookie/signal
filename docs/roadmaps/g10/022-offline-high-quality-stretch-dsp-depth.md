@@ -399,6 +399,11 @@ comparison reports, not add more receipt or fixture surfaces.
   Running it against the generated broad FMA pack reports `planned_rows=60`,
   `present_rows=0`, `missing_rows=60`, and `invalid_rows=0`, which confirms the
   pack is correctly planned but not yet rendered.
+- 2026-07-07: made missing render-plan rows self-contained. Each capped
+  `external_benchmark_render_plan_missing` row now includes `source_wav`,
+  `rendered_path`, and `tool`, so the readiness report can directly drive an
+  external render script or manual render pass without looking back into the
+  TSV. The broad FMA pack still reports 60 missing rendered WAVs locally.
 
 ## Next Task
 

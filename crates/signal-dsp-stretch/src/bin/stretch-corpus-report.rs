@@ -551,6 +551,10 @@ fn format_external_benchmark_render_plan_status(manifest: &PathBuf) -> Result<St
         planned_rows += 1;
         let case_id = required_field(manifest, &headers, &record, "case_id")?;
         let ratio = required_field(manifest, &headers, &record, "ratio")?;
+        let source_wav = field(&headers, &record, "source_wav").unwrap_or("");
+        let tool_name = field(&headers, &record, "tool_name")
+            .or_else(|| field(&headers, &record, "tool"))
+            .unwrap_or("");
         let rendered_path =
             required_any_field(manifest, &headers, &record, &["rendered_path", "path"])?;
         let rendered_path = PathBuf::from(rendered_path);
@@ -558,10 +562,12 @@ fn format_external_benchmark_render_plan_status(manifest: &PathBuf) -> Result<St
             missing_rows += 1;
             if missing_detail_rows.len() < MAX_EXTERNAL_BENCHMARK_MISSING_RENDER_ROWS {
                 missing_detail_rows.push(format!(
-                    "external_benchmark_render_plan_missing case={} ratio={} rendered_path={} manifest={}",
+                    "external_benchmark_render_plan_missing case={} ratio={} source_wav={} rendered_path={} tool={} manifest={}",
                     case_id,
                     ratio,
+                    quoted_report_field(source_wav),
                     quoted_report_field(&rendered_path.display().to_string()),
+                    quoted_report_field(tool_name),
                     quoted_report_field(&manifest.display().to_string()),
                 ));
             }
@@ -4065,7 +4071,9 @@ mod tests {
         fs::write(
             &manifest_path,
             format!(
-                "case_id\tratio\trendered_path\ttool_name\nstretch:vocals\t0.75\t{}\trubberband-cli\nstretch:vocals\t1.25\t{}\trubberband-cli\n",
+                "case_id\tratio\tsource_wav\trendered_path\ttool_name\nstretch:vocals\t0.75\t{}\t{}\trubberband-cli\nstretch:vocals\t1.25\t{}\t{}\trubberband-cli\n",
+                present_wav_path.display(),
+                present_wav_path.display(),
                 present_wav_path.display(),
                 missing_wav_path.display()
             ),
@@ -4084,6 +4092,11 @@ mod tests {
         assert!(report.contains("capped_missing_rows=1"));
         assert!(report.contains("external_benchmark_render_plan_missing case=stretch:vocals"));
         assert!(report.contains("ratio=1.25"));
+        assert!(report.contains(&format!(
+            "source_wav={}",
+            quoted_report_field(&present_wav_path.display().to_string())
+        )));
+        assert!(report.contains("tool=\"rubberband-cli\""));
         assert!(report.contains(&quoted_report_field(
             &missing_wav_path.display().to_string()
         )));
