@@ -186,13 +186,25 @@ comparison reports, not add more receipt or fixture surfaces.
   the candidate policy recovers. This turns the threshold experiment into a
   guarded review path without changing production transient metrics or stretch
   synthesis.
+- 2026-07-07: added policy-aware transient-smear measurement and decoded report
+  fields for full-candidate matching plus candidate-output-only matching. On the
+  regenerated local FMA review seed, OfflineHighQuality production matching had
+  123 input transients, 95 matches, and 28 misses. Applying the candidate policy
+  to both input and output raised input candidates to 420 and matches to 352,
+  but worsened misses to 68 across 25 of 30 rows. Holding production input
+  events fixed and applying candidate detection only to output raised matches to
+  119 and cut misses to 4, improving missed counts on 11 rows with no worsened
+  rows. The worst `000384.mp3` bass `1.25x` row improved from 1 match and 2
+  misses to 3 matches and 0 misses, with candidate-output max smear `4` frames.
+  This rejects a global threshold drop but supports output-side scoring or
+  normalization work for energy-present misses.
 
 ## Next Task
 
 Do not add a multiresolution or hybrid path until measured evidence requires
-it. Next useful work is to run the policy gate over the decoded FMA seed and
-compare production versus candidate transient-smear matching directly, not just
-event-row classes. If candidate matching improves without synthetic false
-positives, decide whether to promote threshold relaxation or move to scoring
-normalization/local-max handling. Listened real-source curation and external
-rendered-output comparison remain promotion inputs.
+it. Next useful work is to prototype output-side detector scoring normalization
+for decoded real-source matching, keeping production input detection stable and
+guarding against the full-candidate false-positive pressure. Compare against the
+candidate-output-only evidence before changing any production metric policy.
+Listened real-source curation and external rendered-output comparison remain
+promotion inputs.

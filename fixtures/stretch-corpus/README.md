@@ -64,11 +64,14 @@ output, matched, and missed transient counts for each backend so high penalties
 can be separated from true attack widening. They also include mean/max timing
 error for matched transients and mean/max nearest-output distance for missed
 transients, plus the expected and nearest output frame for the largest missed
-distance, so alignment failures can be sorted before DSP changes. The report
-also emits capped `decoded_transient_alignment_event` rows for the largest
-missed events per backend and ratio. Event rows include peak/RMS probes around
-the input event, expected output frame, and nearest detected output frame, plus
-an alignment class: `ExpectedEnergyPresent`, `ExpectedEnergyWeak`,
+distance, so alignment failures can be sorted before DSP changes. Transient
+rows also include report-only candidate detector matching counts, both with the
+candidate policy applied to input and output and with production input events
+held fixed while candidate detection is applied to output only. The report also
+emits capped `decoded_transient_alignment_event` rows for the largest missed
+events per backend and ratio. Event rows include peak/RMS probes around the
+input event, expected output frame, and nearest detected output frame, plus an
+alignment class: `ExpectedEnergyPresent`, `ExpectedEnergyWeak`,
 `ExpectedEnergyMissing`, or `Inconclusive`. They also include local detector
 shape scores for expected output frames: normalized energy rise, spectral flux,
 combined score, neighboring combined scores, current detector class, threshold

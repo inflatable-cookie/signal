@@ -766,12 +766,61 @@ pub fn measure_transient_smear(
     window_size: usize,
     hop_size: usize,
 ) -> StretchTransientSmearMeasurement {
+    measure_transient_smear_with_policy(
+        input,
+        output,
+        ratio,
+        window_size,
+        hop_size,
+        StretchTransientDetectorPolicy::production(),
+    )
+}
+
+/// Measure transient attack widening with an explicit detector policy.
+///
+/// This is for benchmark/report evidence. Production callers should keep using
+/// [`measure_transient_smear`] unless a policy change has been promoted.
+pub fn measure_transient_smear_with_policy(
+    input: &[Sample],
+    output: &[Sample],
+    ratio: f64,
+    window_size: usize,
+    hop_size: usize,
+    policy: StretchTransientDetectorPolicy,
+) -> StretchTransientSmearMeasurement {
+    measure_transient_smear_with_policies(
+        input,
+        output,
+        ratio,
+        window_size,
+        hop_size,
+        policy,
+        policy,
+    )
+}
+
+/// Measure transient attack widening with separate input and output detector
+/// policies.
+///
+/// This isolates whether a candidate output detector would recover matches for
+/// the production input-event set before promoting a broader threshold change.
+pub fn measure_transient_smear_with_policies(
+    input: &[Sample],
+    output: &[Sample],
+    ratio: f64,
+    window_size: usize,
+    hop_size: usize,
+    input_policy: StretchTransientDetectorPolicy,
+    output_policy: StretchTransientDetectorPolicy,
+) -> StretchTransientSmearMeasurement {
     if !ratio.is_finite() || ratio <= 0.0 || input.is_empty() || output.is_empty() {
         return transient_smear_nan(ratio);
     }
 
-    let input_events = detect_stretch_transients(input, window_size, hop_size);
-    let output_events = detect_stretch_transients(output, window_size, hop_size);
+    let input_events =
+        detect_stretch_transients_with_policy(input, window_size, hop_size, input_policy);
+    let output_events =
+        detect_stretch_transients_with_policy(output, window_size, hop_size, output_policy);
     let mut matched = 0usize;
     let mut smear_sum = 0.0f64;
     let mut max_smear = 0.0f64;

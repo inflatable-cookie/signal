@@ -69,11 +69,13 @@ metric rows for each case ratio. The first metric set covers timing drift and
 transient smear. Transient rows include matched and missed transient counts so
 metric penalties can be sorted before a DSP change is chosen. They also include
 matched timing error and nearest-missed distance diagnostics for alignment
-triage, with event-position fields for the largest missed distance and capped
-event rows for the largest misses per backend and ratio. Event rows include
-peak/RMS probes around the input event, expected output frame, and nearest
-detected output frame, plus expected-output energy, current detector-shape
-classes, detector-threshold margins, and report-only candidate detector classes.
+triage, report-only candidate detector matching counts, candidate-output-only
+matching counts, event-position fields for the largest missed distance, and
+capped event rows for the largest misses per backend and ratio. Event rows
+include peak/RMS probes around the input event, expected output frame, and
+nearest detected output frame, plus expected-output energy, current
+detector-shape classes, detector-threshold margins, and report-only candidate
+detector classes.
 
 ## Next Task
 

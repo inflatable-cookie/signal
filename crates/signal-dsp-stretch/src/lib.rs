@@ -54,20 +54,21 @@ pub use benchmark::{
     measure_dynamic_segment_seam_click, measure_loop_boundary_click,
     measure_pitch_shift_error_cents, measure_stereo_image_delta,
     measure_transient_reset_loop_boundary_click, measure_transient_reset_stereo_image_delta,
-    measure_transient_reset_transient_smear, measure_transient_smear, output_length_drift_samples,
-    prioritize_stretch_quality_work, synthetic_stretch_corpus_cases, StretchAcceptanceReport,
-    StretchAcceptanceSeverity, StretchAcceptanceStatus, StretchBenchmarkBackend,
-    StretchBenchmarkComparisonOutcome, StretchBenchmarkPath, StretchCoherenceComparison,
-    StretchCorpusAssetRequirement, StretchCorpusCase, StretchCorpusFamily, StretchCorpusManifest,
-    StretchCorpusManifestEntry, StretchCorpusMissingAssetBehavior, StretchCorpusSource,
-    StretchCorpusSourcePolicy, StretchDynamicSegmentSeamMeasurement,
-    StretchLoopBoundaryMeasurement, StretchMetric, StretchMetricAssessment, StretchMetricLimit,
-    StretchMetricValue, StretchPitchShiftMeasurement, StretchQualityPriority,
-    StretchQualityWorkArea, StretchStereoImageMeasurement, StretchSyntheticAudio,
-    StretchSyntheticBenchmarkComparison, StretchSyntheticBenchmarkComparisonReport,
-    StretchTransientDetectorPolicy, StretchTransientEvent, StretchTransientSmearMeasurement,
-    STRETCH_BENCHMARK_CORPUS, STRETCH_CORPUS_MANIFEST, STRETCH_CORPUS_MANIFEST_ENTRIES,
-    STRETCH_CORPUS_SOURCE_POLICY,
+    measure_transient_reset_transient_smear, measure_transient_smear,
+    measure_transient_smear_with_policies, measure_transient_smear_with_policy,
+    output_length_drift_samples, prioritize_stretch_quality_work, synthetic_stretch_corpus_cases,
+    StretchAcceptanceReport, StretchAcceptanceSeverity, StretchAcceptanceStatus,
+    StretchBenchmarkBackend, StretchBenchmarkComparisonOutcome, StretchBenchmarkPath,
+    StretchCoherenceComparison, StretchCorpusAssetRequirement, StretchCorpusCase,
+    StretchCorpusFamily, StretchCorpusManifest, StretchCorpusManifestEntry,
+    StretchCorpusMissingAssetBehavior, StretchCorpusSource, StretchCorpusSourcePolicy,
+    StretchDynamicSegmentSeamMeasurement, StretchLoopBoundaryMeasurement, StretchMetric,
+    StretchMetricAssessment, StretchMetricLimit, StretchMetricValue, StretchPitchShiftMeasurement,
+    StretchQualityPriority, StretchQualityWorkArea, StretchStereoImageMeasurement,
+    StretchSyntheticAudio, StretchSyntheticBenchmarkComparison,
+    StretchSyntheticBenchmarkComparisonReport, StretchTransientDetectorPolicy,
+    StretchTransientEvent, StretchTransientSmearMeasurement, STRETCH_BENCHMARK_CORPUS,
+    STRETCH_CORPUS_MANIFEST, STRETCH_CORPUS_MANIFEST_ENTRIES, STRETCH_CORPUS_SOURCE_POLICY,
 };
 pub use cache_identity::{
     StretchCacheIdentity, StretchCacheIdentityError, StretchCacheIdentityInput,
@@ -2061,6 +2062,79 @@ mod tests {
             StretchMetric::TransientSmearFrames
         );
         assert_eq!(measurement.metric.value, 16.0);
+    }
+
+    #[test]
+    fn transient_smear_policy_default_matches_production_entry_point() {
+        let input = masked_soft_attack_probe(0.25);
+        let production = measure_transient_smear(&input, &input, 1.0, 1024, 256);
+        let explicit = measure_transient_smear_with_policy(
+            &input,
+            &input,
+            1.0,
+            1024,
+            256,
+            StretchTransientDetectorPolicy::production(),
+        );
+
+        assert_eq!(production, explicit);
+    }
+
+    #[test]
+    fn candidate_transient_smear_counts_masked_soft_attack() {
+        let input = masked_soft_attack_probe(0.25);
+        let production = measure_transient_smear_with_policy(
+            &input,
+            &input,
+            1.0,
+            1024,
+            256,
+            StretchTransientDetectorPolicy::production(),
+        );
+        let candidate = measure_transient_smear_with_policy(
+            &input,
+            &input,
+            1.0,
+            1024,
+            256,
+            StretchTransientDetectorPolicy::candidate_review(),
+        );
+
+        assert!(candidate.input_transients > production.input_transients);
+        assert!(candidate.matched_transients > production.matched_transients);
+        assert_eq!(candidate.missed_transients, 0);
+        assert_eq!(candidate.max_smear_frames, 0.0);
+    }
+
+    #[test]
+    fn candidate_output_policy_recovers_production_input_match() {
+        let input = masked_soft_attack_probe(1.0);
+        let output = masked_soft_attack_probe(0.25);
+        let production = measure_transient_smear_with_policies(
+            &input,
+            &output,
+            1.0,
+            1024,
+            256,
+            StretchTransientDetectorPolicy::production(),
+            StretchTransientDetectorPolicy::production(),
+        );
+        let candidate_output = measure_transient_smear_with_policies(
+            &input,
+            &output,
+            1.0,
+            1024,
+            256,
+            StretchTransientDetectorPolicy::production(),
+            StretchTransientDetectorPolicy::candidate_review(),
+        );
+
+        assert_eq!(
+            candidate_output.input_transients,
+            production.input_transients
+        );
+        assert!(candidate_output.matched_transients > production.matched_transients);
+        assert!(candidate_output.missed_transients < production.missed_transients);
     }
 
     #[test]
