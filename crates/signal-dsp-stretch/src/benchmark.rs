@@ -530,6 +530,33 @@ pub struct StretchTransientEvent {
     pub combined_score: f64,
 }
 
+/// Threshold policy for benchmark transient detection.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct StretchTransientDetectorPolicy {
+    /// Minimum combined normalized energy-rise plus spectral-flux score.
+    pub minimum_combined_score: f64,
+    /// Minimum normalized spectral-flux score.
+    pub minimum_spectral_flux_score: f64,
+}
+
+impl StretchTransientDetectorPolicy {
+    /// Current production metric policy used by [`detect_stretch_transients`].
+    pub const fn production() -> Self {
+        Self {
+            minimum_combined_score: 3.0,
+            minimum_spectral_flux_score: 2.0,
+        }
+    }
+
+    /// Report-only candidate policy for real-source detector review.
+    pub const fn candidate_review() -> Self {
+        Self {
+            minimum_combined_score: 2.0,
+            minimum_spectral_flux_score: 1.5,
+        }
+    }
+}
+
 /// Transient smear measurement for one rendered stretch output.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct StretchTransientSmearMeasurement {
@@ -662,6 +689,24 @@ pub fn detect_stretch_transients(
     window_size: usize,
     hop_size: usize,
 ) -> Vec<StretchTransientEvent> {
+    detect_stretch_transients_with_policy(
+        samples,
+        window_size,
+        hop_size,
+        StretchTransientDetectorPolicy::production(),
+    )
+}
+
+/// Detect transient candidates using an explicit threshold policy.
+///
+/// This is a measurement primitive only. Candidate policies are for corpus
+/// evidence and review gates; they do not change synthesis.
+pub fn detect_stretch_transients_with_policy(
+    samples: &[Sample],
+    window_size: usize,
+    hop_size: usize,
+    policy: StretchTransientDetectorPolicy,
+) -> Vec<StretchTransientEvent> {
     if samples.len() < window_size || window_size < 16 || hop_size == 0 {
         return Vec::new();
     }
@@ -691,10 +736,10 @@ pub fn detect_stretch_transients(
         let previous_score =
             energy_rises[index - 1] / energy_scale + fluxes[index - 1] / flux_scale;
         let next_score = energy_rises[index + 1] / energy_scale + fluxes[index + 1] / flux_scale;
-        if combined_score >= 3.0
+        if combined_score >= policy.minimum_combined_score
             && combined_score >= previous_score
             && combined_score > next_score
-            && flux_score >= 2.0
+            && flux_score >= policy.minimum_spectral_flux_score
         {
             events.push(StretchTransientEvent {
                 frame_index: frame_features[index].frame_index,

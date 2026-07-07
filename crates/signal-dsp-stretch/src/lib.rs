@@ -47,10 +47,11 @@ mod promotion;
 pub use benchmark::{
     assess_stretch_metrics, compare_sustained_material_coherence,
     compare_synthetic_stretch_backends, detect_stretch_transients,
-    format_stretch_acceptance_report, format_stretch_quality_priority_report,
-    format_synthetic_stretch_comparison_report, generate_synthetic_stretch_audio,
-    measure_draft_loop_boundary_click, measure_draft_stereo_image_delta,
-    measure_draft_transient_smear, measure_dynamic_segment_seam_click, measure_loop_boundary_click,
+    detect_stretch_transients_with_policy, format_stretch_acceptance_report,
+    format_stretch_quality_priority_report, format_synthetic_stretch_comparison_report,
+    generate_synthetic_stretch_audio, measure_draft_loop_boundary_click,
+    measure_draft_stereo_image_delta, measure_draft_transient_smear,
+    measure_dynamic_segment_seam_click, measure_loop_boundary_click,
     measure_pitch_shift_error_cents, measure_stereo_image_delta,
     measure_transient_reset_loop_boundary_click, measure_transient_reset_stereo_image_delta,
     measure_transient_reset_transient_smear, measure_transient_smear, output_length_drift_samples,
@@ -64,8 +65,9 @@ pub use benchmark::{
     StretchMetricValue, StretchPitchShiftMeasurement, StretchQualityPriority,
     StretchQualityWorkArea, StretchStereoImageMeasurement, StretchSyntheticAudio,
     StretchSyntheticBenchmarkComparison, StretchSyntheticBenchmarkComparisonReport,
-    StretchTransientEvent, StretchTransientSmearMeasurement, STRETCH_BENCHMARK_CORPUS,
-    STRETCH_CORPUS_MANIFEST, STRETCH_CORPUS_MANIFEST_ENTRIES, STRETCH_CORPUS_SOURCE_POLICY,
+    StretchTransientDetectorPolicy, StretchTransientEvent, StretchTransientSmearMeasurement,
+    STRETCH_BENCHMARK_CORPUS, STRETCH_CORPUS_MANIFEST, STRETCH_CORPUS_MANIFEST_ENTRIES,
+    STRETCH_CORPUS_SOURCE_POLICY,
 };
 pub use cache_identity::{
     StretchCacheIdentity, StretchCacheIdentityError, StretchCacheIdentityInput,
@@ -975,6 +977,27 @@ mod tests {
 
     fn rms(samples: &[Sample]) -> f32 {
         (samples.iter().map(|s| s * s).sum::<f32>() / samples.len().max(1) as f32).sqrt()
+    }
+
+    fn add_decaying_burst(samples: &mut [Sample], start: usize, frames: usize, amplitude: f32) {
+        for offset in 0..frames {
+            let Some(sample) = samples.get_mut(start + offset) else {
+                break;
+            };
+            let envelope = 1.0 - offset as f32 / frames as f32;
+            let polarity = if offset % 2 == 0 { 1.0 } else { -1.0 };
+            *sample += amplitude * envelope * polarity;
+        }
+    }
+
+    fn masked_soft_attack_probe(soft_attack_amplitude: f32) -> Vec<Sample> {
+        let mut input = sine(180.0, 48_000.0, 48_000)
+            .into_iter()
+            .map(|sample| sample * 0.06)
+            .collect::<Vec<_>>();
+        add_decaying_burst(&mut input, 8_000, 96, 1.0);
+        add_decaying_burst(&mut input, 24_000, 96, soft_attack_amplitude);
+        input
     }
 
     #[test]
@@ -1908,6 +1931,52 @@ mod tests {
     }
 
     #[test]
+    fn transient_detector_default_policy_matches_production_entry_point() {
+        let audio = generate_synthetic_stretch_audio(StretchCorpusFamily::ExtremeRatio)
+            .expect("extreme-ratio synthetic audio exists");
+
+        assert_eq!(
+            detect_stretch_transients(&audio.samples, 1024, 256),
+            detect_stretch_transients_with_policy(
+                &audio.samples,
+                1024,
+                256,
+                StretchTransientDetectorPolicy::production()
+            )
+        );
+    }
+
+    #[test]
+    fn candidate_transient_detector_recovers_masked_soft_attack() {
+        let input = masked_soft_attack_probe(0.25);
+        let production = detect_stretch_transients_with_policy(
+            &input,
+            1024,
+            256,
+            StretchTransientDetectorPolicy::production(),
+        );
+        let candidate = detect_stretch_transients_with_policy(
+            &input,
+            1024,
+            256,
+            StretchTransientDetectorPolicy::candidate_review(),
+        );
+
+        assert!(
+            production
+                .iter()
+                .all(|event| event.frame_index.abs_diff(24_000) > 768),
+            "production policy should miss the softened probe attack: {production:?}"
+        );
+        assert!(
+            candidate
+                .iter()
+                .any(|event| event.frame_index.abs_diff(24_000) <= 768),
+            "candidate policy should recover the softened probe attack: {candidate:?}"
+        );
+    }
+
+    #[test]
     fn transient_detector_stays_quiet_on_plain_sustain() {
         let input = sine(440.0, 48_000.0, 48_000);
         let events = detect_stretch_transients(&input, 1024, 256);
@@ -1915,6 +1984,22 @@ mod tests {
         assert!(
             events.len() <= 1,
             "plain sustain should not generate repeated transient events: {events:?}"
+        );
+    }
+
+    #[test]
+    fn candidate_transient_detector_stays_quiet_on_plain_sustain() {
+        let input = sine(440.0, 48_000.0, 48_000);
+        let events = detect_stretch_transients_with_policy(
+            &input,
+            1024,
+            256,
+            StretchTransientDetectorPolicy::candidate_review(),
+        );
+
+        assert!(
+            events.len() <= 1,
+            "candidate policy should not generate repeated sustain events: {events:?}"
         );
     }
 

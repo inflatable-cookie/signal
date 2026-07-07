@@ -177,13 +177,22 @@ comparison reports, not add more receipt or fixture surfaces.
   comparisons, 13 improved, 0 regressed, and 0 inconclusive. This is useful
   evidence, but threshold relaxation alone is not enough to promote because most
   missed real-source events still fail candidate scoring or local-max checks.
+- 2026-07-07: added a shared transient detector policy gate. The production
+  detector entry point still uses the current `3.0` combined and `2.0` flux
+  thresholds, while `detect_stretch_transients_with_policy` exposes explicit
+  production and candidate-review policies for evidence runs. Focused synthetic
+  tests now prove default-policy parity, keep the candidate policy quiet on
+  plain sustain, and cover a masked softened attack that production misses but
+  the candidate policy recovers. This turns the threshold experiment into a
+  guarded review path without changing production transient metrics or stretch
+  synthesis.
 
 ## Next Task
 
 Do not add a multiresolution or hybrid path until measured evidence requires
-it. Next useful work is to add a bounded detector-policy gate before any
-production threshold change: keep the candidate policy report-only, add focused
-synthetic detector cases for lower-threshold false positives and real-source
-energy-present misses, then decide whether scoring normalization or local-max
-handling should change. Listened real-source curation and external
+it. Next useful work is to run the policy gate over the decoded FMA seed and
+compare production versus candidate transient-smear matching directly, not just
+event-row classes. If candidate matching improves without synthetic false
+positives, decide whether to promote threshold relaxation or move to scoring
+normalization/local-max handling. Listened real-source curation and external
 rendered-output comparison remain promotion inputs.

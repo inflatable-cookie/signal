@@ -10,8 +10,8 @@ use signal_dsp_stretch::{
     build_stretch_corpus_comparison_report_with_sources, detect_stretch_transients,
     format_stretch_corpus_comparison_report, measure_transient_smear, output_length_drift_samples,
     OfflineHighQualityStretcher, PhaseVocoderStretcher, StretchCorpusAssetRequirement,
-    StretchCorpusListeningSource, StretchExternalBenchmarkRender, TimeStretcher,
-    STRETCH_CORPUS_MANIFEST,
+    StretchCorpusListeningSource, StretchExternalBenchmarkRender, StretchTransientDetectorPolicy,
+    TimeStretcher, STRETCH_CORPUS_MANIFEST,
 };
 use symphonia::core::{
     audio::SampleBuffer as SymphoniaSampleBuffer,
@@ -34,10 +34,10 @@ const MAX_TRANSIENT_ALIGNMENT_EVENTS_PER_BACKEND: usize = 3;
 const TRANSIENT_ALIGNMENT_WINDOW_RADIUS: usize = QUALITY_METRIC_WINDOW_SIZE;
 const EXPECTED_TRANSIENT_ENERGY_PRESENT_RATIO: f64 = 0.50;
 const EXPECTED_TRANSIENT_ENERGY_WEAK_RATIO: f64 = 0.10;
-const DETECTOR_COMBINED_THRESHOLD: f64 = 3.0;
-const DETECTOR_FLUX_THRESHOLD: f64 = 2.0;
-const CANDIDATE_DETECTOR_COMBINED_THRESHOLD: f64 = 2.0;
-const CANDIDATE_DETECTOR_FLUX_THRESHOLD: f64 = 1.5;
+const DETECTOR_POLICY: StretchTransientDetectorPolicy =
+    StretchTransientDetectorPolicy::production();
+const CANDIDATE_DETECTOR_POLICY: StretchTransientDetectorPolicy =
+    StretchTransientDetectorPolicy::candidate_review();
 
 #[derive(Debug, PartialEq, Eq)]
 struct ReportArgs {
@@ -1228,17 +1228,19 @@ fn format_transient_alignment_event_lines(
             let nearest_rms_ratio =
                 finite_ratio(event.nearest_output_window_rms, event.input_window_rms);
             let expected_combined_margin =
-                event.expected_detector_shape.combined_score - DETECTOR_COMBINED_THRESHOLD;
+                event.expected_detector_shape.combined_score
+                    - DETECTOR_POLICY.minimum_combined_score;
             let expected_flux_margin =
-                event.expected_detector_shape.spectral_flux_score - DETECTOR_FLUX_THRESHOLD;
+                event.expected_detector_shape.spectral_flux_score
+                    - DETECTOR_POLICY.minimum_spectral_flux_score;
             let expected_local_previous_margin = event.expected_detector_shape.combined_score
                 - event.expected_detector_shape.previous_combined_score;
             let expected_local_next_margin = event.expected_detector_shape.combined_score
                 - event.expected_detector_shape.next_combined_score;
             let candidate_combined_margin = event.expected_detector_shape.combined_score
-                - CANDIDATE_DETECTOR_COMBINED_THRESHOLD;
+                - CANDIDATE_DETECTOR_POLICY.minimum_combined_score;
             let candidate_flux_margin = event.expected_detector_shape.spectral_flux_score
-                - CANDIDATE_DETECTOR_FLUX_THRESHOLD;
+                - CANDIDATE_DETECTOR_POLICY.minimum_spectral_flux_score;
             format!(
                 "decoded_transient_alignment_event case={} source={} ratio={:.6} backend={} rank={} alignment_class={} detector_class={} candidate_detector_class={} input_frame={} expected_output_frame={:.6} nearest_output_frame={:.6} nearest_distance_frames={:.6} tolerance_frames={} input_window_peak={:.6} input_window_rms={:.6} expected_output_window_peak={:.6} expected_output_window_rms={:.6} expected_output_peak_ratio={:.6} expected_output_rms_ratio={:.6} expected_detector_frame={:.6} expected_energy_score={:.6} expected_flux_score={:.6} expected_combined_score={:.6} expected_combined_margin={:.6} expected_flux_margin={:.6} expected_local_previous_margin={:.6} expected_local_next_margin={:.6} candidate_combined_margin={:.6} candidate_flux_margin={:.6} expected_previous_combined_score={:.6} expected_next_combined_score={:.6} nearest_output_window_peak={:.6} nearest_output_window_rms={:.6} nearest_output_peak_ratio={:.6} nearest_output_rms_ratio={:.6} nearest_detector_frame={:.6} nearest_energy_score={:.6} nearest_flux_score={:.6} nearest_combined_score={:.6}",
                 audio.case_id,
@@ -1308,16 +1310,16 @@ fn classify_transient_alignment_event(event: &TransientAlignmentMissEvent) -> &'
 fn classify_detector_shape(shape: &DetectorShape) -> &'static str {
     classify_detector_shape_with_thresholds(
         shape,
-        DETECTOR_COMBINED_THRESHOLD,
-        DETECTOR_FLUX_THRESHOLD,
+        DETECTOR_POLICY.minimum_combined_score,
+        DETECTOR_POLICY.minimum_spectral_flux_score,
     )
 }
 
 fn classify_candidate_detector_shape(shape: &DetectorShape) -> &'static str {
     classify_detector_shape_with_thresholds(
         shape,
-        CANDIDATE_DETECTOR_COMBINED_THRESHOLD,
-        CANDIDATE_DETECTOR_FLUX_THRESHOLD,
+        CANDIDATE_DETECTOR_POLICY.minimum_combined_score,
+        CANDIDATE_DETECTOR_POLICY.minimum_spectral_flux_score,
     )
 }
 
