@@ -34,6 +34,10 @@ const MAX_TRANSIENT_ALIGNMENT_EVENTS_PER_BACKEND: usize = 3;
 const TRANSIENT_ALIGNMENT_WINDOW_RADIUS: usize = QUALITY_METRIC_WINDOW_SIZE;
 const EXPECTED_TRANSIENT_ENERGY_PRESENT_RATIO: f64 = 0.50;
 const EXPECTED_TRANSIENT_ENERGY_WEAK_RATIO: f64 = 0.10;
+const DETECTOR_COMBINED_THRESHOLD: f64 = 3.0;
+const DETECTOR_FLUX_THRESHOLD: f64 = 2.0;
+const CANDIDATE_DETECTOR_COMBINED_THRESHOLD: f64 = 2.0;
+const CANDIDATE_DETECTOR_FLUX_THRESHOLD: f64 = 1.5;
 
 #[derive(Debug, PartialEq, Eq)]
 struct ReportArgs {
@@ -1223,8 +1227,20 @@ fn format_transient_alignment_event_lines(
                 finite_ratio(event.nearest_output_window_peak, event.input_window_peak);
             let nearest_rms_ratio =
                 finite_ratio(event.nearest_output_window_rms, event.input_window_rms);
+            let expected_combined_margin =
+                event.expected_detector_shape.combined_score - DETECTOR_COMBINED_THRESHOLD;
+            let expected_flux_margin =
+                event.expected_detector_shape.spectral_flux_score - DETECTOR_FLUX_THRESHOLD;
+            let expected_local_previous_margin = event.expected_detector_shape.combined_score
+                - event.expected_detector_shape.previous_combined_score;
+            let expected_local_next_margin = event.expected_detector_shape.combined_score
+                - event.expected_detector_shape.next_combined_score;
+            let candidate_combined_margin = event.expected_detector_shape.combined_score
+                - CANDIDATE_DETECTOR_COMBINED_THRESHOLD;
+            let candidate_flux_margin = event.expected_detector_shape.spectral_flux_score
+                - CANDIDATE_DETECTOR_FLUX_THRESHOLD;
             format!(
-                "decoded_transient_alignment_event case={} source={} ratio={:.6} backend={} rank={} alignment_class={} detector_class={} input_frame={} expected_output_frame={:.6} nearest_output_frame={:.6} nearest_distance_frames={:.6} tolerance_frames={} input_window_peak={:.6} input_window_rms={:.6} expected_output_window_peak={:.6} expected_output_window_rms={:.6} expected_output_peak_ratio={:.6} expected_output_rms_ratio={:.6} expected_detector_frame={:.6} expected_energy_score={:.6} expected_flux_score={:.6} expected_combined_score={:.6} expected_previous_combined_score={:.6} expected_next_combined_score={:.6} nearest_output_window_peak={:.6} nearest_output_window_rms={:.6} nearest_output_peak_ratio={:.6} nearest_output_rms_ratio={:.6} nearest_detector_frame={:.6} nearest_energy_score={:.6} nearest_flux_score={:.6} nearest_combined_score={:.6}",
+                "decoded_transient_alignment_event case={} source={} ratio={:.6} backend={} rank={} alignment_class={} detector_class={} candidate_detector_class={} input_frame={} expected_output_frame={:.6} nearest_output_frame={:.6} nearest_distance_frames={:.6} tolerance_frames={} input_window_peak={:.6} input_window_rms={:.6} expected_output_window_peak={:.6} expected_output_window_rms={:.6} expected_output_peak_ratio={:.6} expected_output_rms_ratio={:.6} expected_detector_frame={:.6} expected_energy_score={:.6} expected_flux_score={:.6} expected_combined_score={:.6} expected_combined_margin={:.6} expected_flux_margin={:.6} expected_local_previous_margin={:.6} expected_local_next_margin={:.6} candidate_combined_margin={:.6} candidate_flux_margin={:.6} expected_previous_combined_score={:.6} expected_next_combined_score={:.6} nearest_output_window_peak={:.6} nearest_output_window_rms={:.6} nearest_output_peak_ratio={:.6} nearest_output_rms_ratio={:.6} nearest_detector_frame={:.6} nearest_energy_score={:.6} nearest_flux_score={:.6} nearest_combined_score={:.6}",
                 audio.case_id,
                 quoted_report_field(&audio.source_path),
                 ratio,
@@ -1232,6 +1248,7 @@ fn format_transient_alignment_event_lines(
                 rank + 1,
                 classify_transient_alignment_event(event),
                 classify_detector_shape(&event.expected_detector_shape),
+                classify_candidate_detector_shape(&event.expected_detector_shape),
                 event.input_frame,
                 event.expected_output_frame,
                 event.nearest_output_frame.unwrap_or(f64::NAN),
@@ -1247,6 +1264,12 @@ fn format_transient_alignment_event_lines(
                 event.expected_detector_shape.energy_score,
                 event.expected_detector_shape.spectral_flux_score,
                 event.expected_detector_shape.combined_score,
+                expected_combined_margin,
+                expected_flux_margin,
+                expected_local_previous_margin,
+                expected_local_next_margin,
+                candidate_combined_margin,
+                candidate_flux_margin,
                 event.expected_detector_shape.previous_combined_score,
                 event.expected_detector_shape.next_combined_score,
                 event.nearest_output_window_peak,
@@ -1283,12 +1306,32 @@ fn classify_transient_alignment_event(event: &TransientAlignmentMissEvent) -> &'
 }
 
 fn classify_detector_shape(shape: &DetectorShape) -> &'static str {
+    classify_detector_shape_with_thresholds(
+        shape,
+        DETECTOR_COMBINED_THRESHOLD,
+        DETECTOR_FLUX_THRESHOLD,
+    )
+}
+
+fn classify_candidate_detector_shape(shape: &DetectorShape) -> &'static str {
+    classify_detector_shape_with_thresholds(
+        shape,
+        CANDIDATE_DETECTOR_COMBINED_THRESHOLD,
+        CANDIDATE_DETECTOR_FLUX_THRESHOLD,
+    )
+}
+
+fn classify_detector_shape_with_thresholds(
+    shape: &DetectorShape,
+    combined_threshold: f64,
+    flux_threshold: f64,
+) -> &'static str {
     if !shape.combined_score.is_finite() || !shape.spectral_flux_score.is_finite() {
         return "Inconclusive";
     }
-    if shape.combined_score < 3.0 {
+    if shape.combined_score < combined_threshold {
         "CombinedBelowThreshold"
-    } else if shape.spectral_flux_score < 2.0 {
+    } else if shape.spectral_flux_score < flux_threshold {
         "FluxBelowThreshold"
     } else if shape.combined_score < shape.previous_combined_score
         || shape.combined_score <= shape.next_combined_score
@@ -1690,7 +1733,7 @@ mod tests {
         assert_eq!(lines.len(), 2);
         assert!(lines[0].starts_with("decoded_transient_alignment_event case=stretch:bass"));
         assert!(lines[0].contains(
-            "backend=offline_hq rank=1 alignment_class=ExpectedEnergyWeak detector_class=CombinedBelowThreshold input_frame=128"
+            "backend=offline_hq rank=1 alignment_class=ExpectedEnergyWeak detector_class=CombinedBelowThreshold candidate_detector_class=CombinedBelowThreshold input_frame=128"
         ));
         assert!(lines[0].contains("expected_output_frame=160.000000"));
         assert!(lines[0].contains("nearest_output_frame=3160.000000"));
@@ -1703,9 +1746,16 @@ mod tests {
         assert!(lines[0].contains("expected_energy_score=0.250000"));
         assert!(lines[0].contains("expected_flux_score=0.750000"));
         assert!(lines[0].contains("expected_combined_score=1.000000"));
+        assert!(lines[0].contains("expected_combined_margin=-2.000000"));
+        assert!(lines[0].contains("expected_flux_margin=-1.250000"));
+        assert!(lines[0].contains("expected_local_previous_margin=0.500000"));
+        assert!(lines[0].contains("expected_local_next_margin=0.750000"));
+        assert!(lines[0].contains("candidate_combined_margin=-1.000000"));
+        assert!(lines[0].contains("candidate_flux_margin=-0.750000"));
         assert!(lines[0].contains("nearest_output_window_peak=0.700000"));
         assert!(lines[0].contains("nearest_output_peak_ratio=0.933333"));
         assert!(lines[0].contains("nearest_combined_score=4.500000"));
+        assert!(lines[1].contains("candidate_detector_class=NotLocalMaximum"));
     }
 
     fn write_test_wav(path: &PathBuf, frames: usize) {

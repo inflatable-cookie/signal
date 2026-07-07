@@ -163,12 +163,27 @@ comparison reports, not add more receipt or fixture surfaces.
   score `2.338490`, below the detector's `3.0` combined threshold and `2.0`
   flux threshold. The next change should refine real-source transient scoring or
   thresholding, not alter stretch synthesis.
+- 2026-07-07: added report-only detector threshold experiment fields to
+  `decoded_transient_alignment_event` rows. The candidate policy uses combined
+  score `2.0`, flux score `1.5`, and the same local-maximum rule; it does not
+  change synthesis or the production detector. On the regenerated local FMA
+  review seed, current detector classes remained 64 `CombinedBelowThreshold`,
+  14 `FluxBelowThreshold`, and 2 `NotLocalMaximum`. Candidate classes were 46
+  `CombinedBelowThreshold`, 7 `FluxBelowThreshold`, 11 `NotLocalMaximum`, and
+  16 `DetectorWouldPass`; OfflineHighQuality recovered 6 of 22 missed-event rows
+  as candidate passes. The worst `000384.mp3` bass `1.25x` miss would pass the
+  candidate policy with combined margin `0.338490`, flux margin `0.185165`, and
+  positive local margins. Synthetic report validation stayed clean with 27
+  comparisons, 13 improved, 0 regressed, and 0 inconclusive. This is useful
+  evidence, but threshold relaxation alone is not enough to promote because most
+  missed real-source events still fail candidate scoring or local-max checks.
 
 ## Next Task
 
 Do not add a multiresolution or hybrid path until measured evidence requires
-it. Next useful work is to refine real-source transient detection scoring for
-energy-present misses, starting with a threshold/normalization experiment that
-does not change synthesis and is checked against synthetic transient metrics.
-Listened real-source curation and external rendered-output comparison remain
-promotion inputs.
+it. Next useful work is to add a bounded detector-policy gate before any
+production threshold change: keep the candidate policy report-only, add focused
+synthetic detector cases for lower-threshold false positives and real-source
+energy-present misses, then decide whether scoring normalization or local-max
+handling should change. Listened real-source curation and external
+rendered-output comparison remain promotion inputs.

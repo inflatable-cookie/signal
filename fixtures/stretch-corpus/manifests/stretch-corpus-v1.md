@@ -72,7 +72,8 @@ matched timing error and nearest-missed distance diagnostics for alignment
 triage, with event-position fields for the largest missed distance and capped
 event rows for the largest misses per backend and ratio. Event rows include
 peak/RMS probes around the input event, expected output frame, and nearest
-detected output frame, plus expected-output energy and detector-shape classes.
+detected output frame, plus expected-output energy, current detector-shape
+classes, detector-threshold margins, and report-only candidate detector classes.
 
 ## Next Task
 

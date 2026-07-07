@@ -71,10 +71,12 @@ the input event, expected output frame, and nearest detected output frame, plus
 an alignment class: `ExpectedEnergyPresent`, `ExpectedEnergyWeak`,
 `ExpectedEnergyMissing`, or `Inconclusive`. They also include local detector
 shape scores for expected output frames: normalized energy rise, spectral flux,
-combined score, neighboring combined scores, and a detector class. Use
-`--decoded-stretch-frame-limit N` to change the excerpt size; the default is
-ten seconds at 48 kHz. These rows are objective evidence, not a replacement
-for listened curation.
+combined score, neighboring combined scores, current detector class, threshold
+margins, and a conservative candidate detector class. Candidate detector fields
+are report-only threshold experiments; they do not change stretch synthesis or
+the production detector. Use `--decoded-stretch-frame-limit N` to change the
+excerpt size; the default is ten seconds at 48 kHz. These rows are objective
+evidence, not a replacement for listened curation.
 
 Add optional external rendered-output comparisons with repeated
 `--external-benchmark-render` groups:
