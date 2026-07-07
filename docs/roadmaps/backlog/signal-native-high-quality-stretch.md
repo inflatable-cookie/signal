@@ -1,6 +1,6 @@
 # Signal-Native High-Quality Stretch Program
 
-Status: backlog
+Status: active backlog item
 Created: 2026-07-05
 Effort estimate: XL
 Promotion trigger: Loophole g13 or another consumer needs Rubber Band-class
@@ -37,12 +37,15 @@ Implemented Signal surfaces:
 Known gaps:
 
 - no realtime pitch-preserving streaming stretcher
-- no transient detector/reset path in the stretch crate
-- no phase locking or vertical phase-coherence strategy
-- no independent pitch API above stretch+resample composition
-- no dynamic ratio automation path inside the stretcher
-- no benchmark corpus, metric harness, or listening-evidence protocol
-- no cache identity contract for high-quality offline stretch artifacts
+- no real-audio corpus runs or listening-evidence protocol
+- no external benchmark output comparison path
+- no multiresolution or hybrid STFT/time-domain OfflineHighQuality engine yet
+- no pitch automation or formant-aware pitch behavior
+- no multichannel materialization path beyond the current linked stereo
+  artifact path
+- no bounded-memory long-media/offline chunking strategy
+- no product workflow contract for Loophole mode, ratio, pitch, marker, and
+  cache behavior yet
 
 ## Target Backend Architecture
 
@@ -333,6 +336,187 @@ Work:
 - [ ] add Pulse/Aura contract changes only for product-visible mode, ratio,
   pitch, marker, and cache behavior
 
+## Remaining Roadmap
+
+### R1: Real Corpus And Benchmark Evidence
+
+Status: ready
+Repos: `signal`
+
+Purpose: move the promotion gate from repository-local synthetic evidence to
+real material and repeatable comparison output.
+
+Work:
+
+- [ ] define the first checked-in corpus manifest shape for drums/percussion,
+  bass, vocals, pads/sustains, full mixes, tempo ramps, loop seams, and extreme
+  ratios without committing licensed source audio
+- [ ] add a runner that produces deterministic comparison reports for draft,
+  OfflineHighQuality, and optional external benchmark output
+- [ ] add Rubber Band CLI output as a behavioral benchmark option only; do not
+  add source or library dependency
+- [ ] record listening-note slots next to objective metrics so operator
+  review can capture artifacts the metrics miss
+- [ ] make the report name, engine version, corpus id, ratio/pitch curves, and
+  projection epoch visible in the output
+
+Acceptance:
+
+- [ ] synthetic reports remain available for fast local tests
+- [ ] real-corpus report output can be saved as an artifact and compared across
+  runs
+- [ ] benchmark comparison is optional and clean-room
+- [ ] no product-facing gate depends on unaudited external source code
+
+Validation:
+
+- `cargo test -p signal-dsp-stretch`
+- focused report-runner command once the runner exists
+- `effigy qa:docs` when roadmap/report docs change
+
+### R2: OfflineHighQuality DSP Quality Depth
+
+Status: next meaningful implementation lane
+Repos: `signal`
+
+Purpose: spend engineering time on audible quality, not receipt plumbing.
+
+Work:
+
+- [ ] run the current comparison and quality-priority reports before choosing
+  the next algorithm change
+- [ ] choose one top measured weakness per batch: transient smear, loop seams,
+  sustained phasiness, stereo image drift, pitch error, or timing drift
+- [ ] add a multiresolution or hybrid STFT/time-domain path when the measured
+  weakness justifies it
+- [ ] improve transient anchoring or local time-domain splice behavior for
+  percussive material
+- [ ] improve vertical coherence for dense sustained and polyphonic material
+- [ ] improve loop-seam handling under fixed ratios and dynamic ratio segments
+- [ ] add static-pitch quality evidence across vocals, bass, and full mixes
+- [ ] keep `PhaseVocoderStretcher` as the draft baseline for regression
+  comparison
+
+Acceptance:
+
+- [ ] every DSP batch names the metric or listening failure it targets
+- [ ] OfflineHighQuality improves or holds against the draft baseline on the
+  chosen target and does not create a higher-priority regression elsewhere
+- [ ] output length and deterministic cache identity behavior remain stable
+- [ ] no realtime audio-thread path calls whole-buffer stretch processing
+
+Validation:
+
+- `cargo test -p signal-dsp-stretch`
+- focused synthetic and real-corpus report runs
+
+### R3: Offline Artifact Scale And Format Depth
+
+Status: planned
+Repos: `signal`
+
+Purpose: make offline artifacts usable for real sessions, not only small stereo
+fixtures.
+
+Work:
+
+- [ ] add bounded-memory long-media processing or chunked artifact rendering
+- [ ] define overlap/crossfade rules for chunk boundaries and warp-marker seams
+- [ ] support pitch automation or reject it with a product-visible capability
+  contract
+- [ ] widen linked processing beyond stereo when the channel-layout contract is
+  ready
+- [ ] harden cache invalidation around media identity, engine version,
+  projection epoch, ratio/pitch curves, and warp markers
+- [ ] add export/freeze/cache soak coverage with realistic source durations
+
+Acceptance:
+
+- [ ] peak memory is bounded and documented by tier
+- [ ] chunked output is deterministic and click-safe at chunk boundaries
+- [ ] unsupported pitch or channel behavior is explicit and observable
+- [ ] cache hits, writes, and invalidations remain auditable through runtime
+  receipts
+
+Validation:
+
+- `cargo test -p signal-render-plane`
+- `cargo test -p signal-host-local --test public_host_edge_media_service`
+- focused long-media/cache tests once added
+
+### R4: RealtimePreview Tier
+
+Status: planned
+Repos: `signal`
+
+Purpose: add pitch-preserving preview playback without compromising the
+render-plane realtime contract.
+
+Work:
+
+- [ ] define a bounded-latency streaming stretcher state separate from the
+  offline whole-buffer engine
+- [ ] report input latency, output latency, and ratio-change alignment
+  tolerance
+- [ ] support dynamic ratio changes with bounded work per render quantum
+- [ ] preserve stereo image and transient timing well enough for edit preview
+- [ ] prove no allocation, blocking, locks, or unbounded work on the audio
+  thread
+- [ ] integrate through anticipative pre-rendering or a proven RT-safe state
+  object only
+
+Acceptance:
+
+- [ ] preview latency is explicit and testable
+- [ ] ratio automation lands within the documented tolerance
+- [ ] preview degradation is honest at extreme ratios
+- [ ] render-plane realtime safety remains intact
+
+Validation:
+
+- focused `signal-dsp-stretch` streaming tests
+- focused render-plane realtime-safety tests if/when the tier enters render
+  plans
+
+### R5: Product Workflow Contract Checkpoint
+
+Status: deferred
+Repos: `signal`; Loophole integration planning happens later in Chorus
+
+Purpose: only add Pulse/Aura/Loophole-facing contract work when a product
+workflow needs it.
+
+Work:
+
+- [ ] define product-visible tier selection: Repitch, RealtimePreview,
+  OfflineHighQuality
+- [ ] define ratio, pitch, marker, projection, latency, and cache behavior
+  exposed to consumers
+- [ ] map export/freeze/cache workflows to Signal-owned artifact receipts
+- [ ] record Loophole integration planning in Chorus when the product workflow
+  is ready
+
+Acceptance:
+
+- [ ] Signal remains the DSP owner
+- [ ] Pulse/Aura changes are narrow contract additions, not duplicate DSP
+  policy
+- [ ] Chorus planning describes integration only, not Signal internals as a
+  blocker
+
+## Churn Guardrails
+
+- [ ] Do not add more receipt, fixture, or promotion-evidence shapes unless a
+  real report artifact, cache consumer, or product workflow needs them.
+- [ ] Do not spend another batch tightening accepted/rejected policy tests
+  unless behavior changes.
+- [ ] Do not treat the current synthetic report as Rubber Band-class evidence;
+  it is a fast local gate only.
+- [ ] Do not add Pulse/Aura or Chorus work until a Loophole product workflow
+  consumes the Signal-owned contract.
+- [ ] Prefer DSP quality, real corpus evidence, bounded-memory rendering, or
+  RealtimePreview over docs or fixture polish.
+
 ## Integration Plan
 
 - Keep Signal as DSP owner. Pulse/Aura only need mode, ratio/pitch, marker, and
@@ -363,8 +547,7 @@ Work:
 
 ## Next Task
 
-Continue the Signal DSP quality batch by adding a Signal-owned promotion
-evidence artifact shape so OfflineHighQuality receipts can point at a concrete
-benchmark run/report instead of only an in-memory synthetic comparison. Keep
-Pulse/Aura contract planning deferred until a Loophole product workflow
-consumes the Signal-owned contract.
+Run the current synthetic comparison and quality-priority reports, pick the top
+measured OfflineHighQuality DSP weakness, and implement one quality improvement
+against that target. Do not add more receipt or fixture surfaces unless the
+behavior changes.
