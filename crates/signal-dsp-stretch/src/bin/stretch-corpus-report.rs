@@ -869,7 +869,7 @@ fn format_decoded_stretch_metrics(
                 QUALITY_METRIC_HOP_SIZE,
             );
             let offline_width_control_edit =
-                width_control_edit_stats(&offline_output, &offline_width_control_output);
+                width_control_edit_stats(&offline_output, &offline_width_control_output, ratio);
             compression_ablation.record(&audio, ratio, &draft_smear, &offline_smear);
             width_control_candidate.record(
                 &audio,
@@ -937,6 +937,7 @@ fn format_decoded_stretch_metrics(
     }
     if width_control_candidate.rows > 0 {
         lines.push(width_control_candidate.format_report_line());
+        lines.extend(width_control_candidate.format_edit_event_lines());
     }
     Ok(lines.join("\n"))
 }
@@ -969,10 +970,12 @@ struct TransientWidthControlCandidateAccumulator {
     max_abs_sample_delta_case_id: String,
     max_abs_sample_delta_source: String,
     max_abs_sample_delta_ratio: f64,
+    max_abs_sample_delta_event: Option<WidthControlEditEvent>,
     max_added_adjacent_step_delta: f64,
     max_added_adjacent_step_case_id: String,
     max_added_adjacent_step_source: String,
     max_added_adjacent_step_ratio: f64,
+    max_added_adjacent_step_event: Option<WidthControlEditEvent>,
 }
 
 impl TransientWidthControlCandidateAccumulator {
@@ -998,12 +1001,18 @@ impl TransientWidthControlCandidateAccumulator {
                 self.max_abs_sample_delta_case_id = audio.case_id.clone();
                 self.max_abs_sample_delta_source = audio.source_path.clone();
                 self.max_abs_sample_delta_ratio = ratio;
+                self.max_abs_sample_delta_event = edit
+                    .max_abs_sample_delta_event
+                    .map(|event| event.with_source(audio, ratio, "MaxSampleDelta"));
             }
             if edit.max_added_adjacent_step_delta > self.max_added_adjacent_step_delta {
                 self.max_added_adjacent_step_delta = edit.max_added_adjacent_step_delta;
                 self.max_added_adjacent_step_case_id = audio.case_id.clone();
                 self.max_added_adjacent_step_source = audio.source_path.clone();
                 self.max_added_adjacent_step_ratio = ratio;
+                self.max_added_adjacent_step_event = edit
+                    .max_added_adjacent_step_event
+                    .map(|event| event.with_source(audio, ratio, "MaxAddedAdjacentStep"));
             }
         }
         match compare_metric_values(candidate.max_smear_frames, offline.max_smear_frames) {
@@ -1084,13 +1093,107 @@ impl TransientWidthControlCandidateAccumulator {
             self.max_added_adjacent_step_ratio,
         )
     }
+
+    fn format_edit_event_lines(&self) -> Vec<String> {
+        [
+            self.max_abs_sample_delta_event.as_ref(),
+            self.max_added_adjacent_step_event.as_ref(),
+        ]
+        .into_iter()
+        .flatten()
+        .map(WidthControlEditEvent::format_report_line)
+        .collect()
+    }
 }
 
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[derive(Clone, Debug, Default, PartialEq)]
 struct WidthControlEditStats {
     changed_samples: usize,
     max_abs_sample_delta: f64,
+    max_abs_sample_delta_event: Option<WidthControlEditEvent>,
     max_added_adjacent_step_delta: f64,
+    max_added_adjacent_step_event: Option<WidthControlEditEvent>,
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+struct WidthControlEditEvent {
+    kind: &'static str,
+    output_frame: usize,
+    source_frame: f64,
+    sample_delta: f64,
+    added_adjacent_step_delta: f64,
+    baseline_peak: f64,
+    baseline_rms: f64,
+    candidate_peak: f64,
+    candidate_rms: f64,
+    baseline_adjacent_step: f64,
+    candidate_adjacent_step: f64,
+    case_id: String,
+    source_path: String,
+    ratio: f64,
+}
+
+impl WidthControlEditEvent {
+    fn from_output_frame(
+        output_frame: usize,
+        baseline: &[f32],
+        candidate: &[f32],
+        ratio: f64,
+    ) -> Self {
+        let baseline_window = window_energy_stats(baseline, output_frame as f64);
+        let candidate_window = window_energy_stats(candidate, output_frame as f64);
+        let baseline_adjacent_step = adjacent_step_at(baseline, output_frame);
+        let candidate_adjacent_step = adjacent_step_at(candidate, output_frame);
+        Self {
+            kind: "",
+            output_frame,
+            source_frame: output_frame as f64 / ratio,
+            sample_delta: sample_delta_at(baseline, candidate, output_frame),
+            added_adjacent_step_delta: (candidate_adjacent_step - baseline_adjacent_step).max(0.0),
+            baseline_peak: baseline_window.peak,
+            baseline_rms: baseline_window.rms,
+            candidate_peak: candidate_window.peak,
+            candidate_rms: candidate_window.rms,
+            baseline_adjacent_step,
+            candidate_adjacent_step,
+            case_id: String::new(),
+            source_path: String::new(),
+            ratio,
+        }
+    }
+
+    fn with_source(
+        mut self,
+        audio: &DecodedListeningSourceAudio,
+        ratio: f64,
+        kind: &'static str,
+    ) -> Self {
+        self.kind = kind;
+        self.case_id = audio.case_id.clone();
+        self.source_path = audio.source_path.clone();
+        self.ratio = ratio;
+        self
+    }
+
+    fn format_report_line(&self) -> String {
+        format!(
+            "decoded_transient_width_control_edit_event kind={} case={} source={} ratio={:.6} source_frame={:.6} output_frame={} sample_delta={:.9} added_adjacent_step_delta={:.9} baseline_peak={:.9} baseline_rms={:.9} candidate_peak={:.9} candidate_rms={:.9} baseline_adjacent_step={:.9} candidate_adjacent_step={:.9}",
+            self.kind,
+            self.case_id,
+            quoted_report_field(&self.source_path),
+            self.ratio,
+            self.source_frame,
+            self.output_frame,
+            self.sample_delta,
+            self.added_adjacent_step_delta,
+            self.baseline_peak,
+            self.baseline_rms,
+            self.candidate_peak,
+            self.candidate_rms,
+            self.baseline_adjacent_step,
+            self.candidate_adjacent_step,
+        )
+    }
 }
 
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -2003,7 +2106,11 @@ fn apply_transient_width_control_candidate(input: &[f32], output: &[f32], ratio:
     }
 }
 
-fn width_control_edit_stats(baseline: &[f32], candidate: &[f32]) -> WidthControlEditStats {
+fn width_control_edit_stats(
+    baseline: &[f32],
+    candidate: &[f32],
+    ratio: f64,
+) -> WidthControlEditStats {
     let len = baseline.len().min(candidate.len());
     if len == 0 {
         return WidthControlEditStats::default();
@@ -2011,25 +2118,55 @@ fn width_control_edit_stats(baseline: &[f32], candidate: &[f32]) -> WidthControl
 
     let mut changed_samples = 0usize;
     let mut max_abs_sample_delta = 0.0f64;
+    let mut max_abs_sample_delta_event = None;
     let mut max_added_adjacent_step_delta = 0.0f64;
+    let mut max_added_adjacent_step_event = None;
     for index in 0..len {
         let sample_delta = (candidate[index] - baseline[index]).abs() as f64;
         if sample_delta > 1.0e-9 {
             changed_samples += 1;
-            max_abs_sample_delta = max_abs_sample_delta.max(sample_delta);
+            if sample_delta > max_abs_sample_delta {
+                max_abs_sample_delta = sample_delta;
+                max_abs_sample_delta_event = Some(WidthControlEditEvent::from_output_frame(
+                    index, baseline, candidate, ratio,
+                ));
+            }
         }
         if index > 0 {
             let baseline_step = (baseline[index] - baseline[index - 1]).abs() as f64;
             let candidate_step = (candidate[index] - candidate[index - 1]).abs() as f64;
-            max_added_adjacent_step_delta =
-                max_added_adjacent_step_delta.max(candidate_step - baseline_step);
+            let added_step_delta = candidate_step - baseline_step;
+            if added_step_delta > max_added_adjacent_step_delta {
+                max_added_adjacent_step_delta = added_step_delta;
+                max_added_adjacent_step_event = Some(WidthControlEditEvent::from_output_frame(
+                    index, baseline, candidate, ratio,
+                ));
+            }
         }
     }
 
     WidthControlEditStats {
         changed_samples,
         max_abs_sample_delta,
+        max_abs_sample_delta_event,
         max_added_adjacent_step_delta: max_added_adjacent_step_delta.max(0.0),
+        max_added_adjacent_step_event,
+    }
+}
+
+fn sample_delta_at(baseline: &[f32], candidate: &[f32], index: usize) -> f64 {
+    if index >= baseline.len() || index >= candidate.len() {
+        f64::NAN
+    } else {
+        (candidate[index] - baseline[index]).abs() as f64
+    }
+}
+
+fn adjacent_step_at(samples: &[f32], index: usize) -> f64 {
+    if index == 0 || index >= samples.len() {
+        f64::NAN
+    } else {
+        (samples[index] - samples[index - 1]).abs() as f64
     }
 }
 
@@ -2491,6 +2628,36 @@ mod tests {
         assert!(formatted.contains("analysis_limited=true"));
 
         let _ = fs::remove_file(path);
+    }
+
+    #[test]
+    fn width_control_edit_event_formats_window_damage_fields() {
+        let baseline = vec![0.0, 0.0, 1.0, 1.0, 1.0, 0.0];
+        let candidate = vec![0.0, 0.0, 1.0, 0.4, 1.0, 0.0];
+        let audio = DecodedListeningSourceAudio {
+            case_id: "stretch:bass".to_string(),
+            source_path: "target/source.wav".to_string(),
+            sample_rate_hz: 48_000,
+            channels: 1,
+            samples: candidate.clone(),
+            analysis_limited: false,
+        };
+
+        let stats = width_control_edit_stats(&baseline, &candidate, 0.75);
+        let line = stats
+            .max_abs_sample_delta_event
+            .expect("sample edit event")
+            .with_source(&audio, 0.75, "MaxSampleDelta")
+            .format_report_line();
+
+        assert!(line.starts_with("decoded_transient_width_control_edit_event kind=MaxSampleDelta"));
+        assert!(line.contains("case=stretch:bass"));
+        assert!(line.contains("source_frame=4.000000"));
+        assert!(line.contains("output_frame=3"));
+        assert!(line.contains("baseline_peak="));
+        assert!(line.contains("candidate_peak="));
+        assert!(line.contains("baseline_adjacent_step="));
+        assert!(line.contains("candidate_adjacent_step="));
     }
 
     #[test]

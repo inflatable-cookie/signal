@@ -278,12 +278,29 @@ comparison reports, not add more receipt or fixture surfaces.
   `000236.mp3` at `0.75x`. This is too much unmanaged edit pressure to promote
   into reusable OfflineHighQuality DSP without window-level inspection or
   listening/external comparison evidence. Keep it report-only for now.
+- 2026-07-07: added bounded edit-event rows for the guarded width-control
+  candidate's highest-pressure windows. The broader FMA seed still reports 7
+  better candidate rows, 0 current-better rows, 10 unchanged rows, and 3
+  inconclusive rows; finite-row mean max-smear remains `367.470588` candidate
+  versus `374.352941` current. The max sample-delta event is `stretch:full_mix`
+  `000144.mp3` at `0.75x`: source frame `112857.333333`, output frame `84643`,
+  sample delta `0.422849804`, added adjacent-step delta `0.000000000`, peak
+  unchanged at `0.966210067`, and RMS reduced from `0.268733651` to
+  `0.262553828`. The max added-step event is `stretch:bass` `000236.mp3` at
+  `0.75x`: source frame `45064.000000`, output frame `33798`, sample delta
+  `0.321874976`, added adjacent-step delta `0.309232593`, peak unchanged at
+  `1.473660707`, RMS reduced from `0.504574776` to `0.501747207`, and adjacent
+  step raised from `0.006321192` to `0.315553784`. The full-mix row does not
+  look like a new step edge by this metric, but the bass row does. Keep the
+  candidate report-only and measure an edit-pressure gate before any DSP
+  promotion.
 
 ## Next Task
 
 Do not add a multiresolution or hybrid path until measured evidence requires
-it. Next useful work is to localize the high edit-pressure windows
-(`000144.mp3` full mix and `000236.mp3` bass at `0.75x`) with bounded report
-rows that show source frame, output frame, peak/RMS before/after, and adjacent
-step before/after. Do not promote the width-control candidate until those rows
-show the edits are not creating click or energy damage.
+it. Next useful work is to add a report-only edit-pressure gate for the guarded
+width-control candidate, then rerun the broad FMA seed to answer one question:
+how much of the 7-row transient-smear improvement remains if candidate edits
+that introduce large adjacent-step deltas or large sample deltas are rejected?
+Do not promote the width-control candidate until that gate removes the bass
+step-edge risk or proves the remaining candidate benefit is too small.
