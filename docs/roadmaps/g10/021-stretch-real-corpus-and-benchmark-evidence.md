@@ -23,9 +23,9 @@ notes before more product-facing quality claims land.
   OfflineHighQuality, and optional external benchmark output
 - [ ] add Rubber Band CLI output as a behavioral benchmark option only; do not
   add source or library dependency
-- [ ] record listening-note slots next to objective metrics so operator review
+- [x] record listening-note slots next to objective metrics so operator review
   can capture artifacts the metrics miss
-- [ ] make the report name, engine version, corpus id, ratio/pitch curves, and
+- [x] make the report name, engine version, corpus id, ratio/pitch curves, and
   projection epoch visible in the output
 
 ## Execution Plan
@@ -37,8 +37,8 @@ notes before more product-facing quality claims land.
 
 ### Batch 21.2 - Report Runner
 
-- [ ] deterministic report command for draft and OfflineHighQuality outputs
-- [ ] saved report artifact with objective metrics and listening-note slots
+- [x] deterministic report command for draft and OfflineHighQuality outputs
+- [x] saved report artifact with objective metrics and listening-note slots
 
 ### Batch 21.3 - External Benchmark Option
 
@@ -48,7 +48,7 @@ notes before more product-facing quality claims land.
 ## Acceptance Criteria
 
 - [x] synthetic reports remain available for fast local tests
-- [ ] real-corpus report output can be saved as an artifact and compared across
+- [x] real-corpus report output can be saved as an artifact and compared across
   runs
 - [ ] benchmark comparison is optional and clean-room
 - [ ] no product-facing gate depends on unaudited external source code
@@ -66,8 +66,11 @@ notes before more product-facing quality claims land.
 - 2026-07-07: implemented `STRETCH_CORPUS_MANIFEST` with source policy,
   missing-asset behavior, fixture path rules, and checked-in manifest docs under
   `fixtures/stretch-corpus/`. Licensed listening audio remains local-only.
+- 2026-07-07: implemented `stretch-corpus-report`, deterministic report
+  formatting, missing licensed-asset rows, objective synthetic comparison rows,
+  ratio/pitch curve fields, projection epoch output, and listening-note slots.
 
 ## Next Task
 
-Implement Batch 21.2: deterministic draft and OfflineHighQuality report output
-for `stretch-corpus-v1`.
+Implement Batch 21.3: optional external benchmark render comparison path with a
+documented clean-room source boundary.

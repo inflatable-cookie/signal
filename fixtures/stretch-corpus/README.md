@@ -31,6 +31,23 @@ machine, but those files must not be committed.
   future real-corpus runner.
 - Synthetic cases must remain runnable without file I/O.
 
+## Report Command
+
+Generate the deterministic draft-vs-OfflineHighQuality report:
+
+```bash
+cargo run -p signal-dsp-stretch --bin stretch-corpus-report -- \
+  --report-name stretch-corpus-v1-local \
+  --projection-epoch projection:local \
+  --output target/stretch-corpus-v1-local.txt
+```
+
+The report includes missing licensed-asset rows, synthetic objective comparison
+rows, ratio/pitch curve fields, and listening-note slots. The `--output` path is
+local evidence and should not be committed unless a future roadmap explicitly
+defines an artifact location.
+
 ## Next Task
 
-Implement the real-corpus report runner from `g10.021` Batch 21.2.
+Implement the optional external benchmark comparison path from `g10.021` Batch
+21.3.

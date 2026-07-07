@@ -49,5 +49,5 @@ tool, but Signal must not depend on Rubber Band source or libraries.
 
 ## Next Task
 
-Implement `g10.021` Batch 21.2: deterministic draft and OfflineHighQuality
-report runner output for this manifest.
+Implement `g10.021` Batch 21.3: optional external benchmark render comparison
+for this manifest, with the clean-room source boundary documented.

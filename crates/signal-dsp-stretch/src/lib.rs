@@ -40,6 +40,7 @@
 
 mod benchmark;
 mod cache_identity;
+mod corpus_report;
 mod phase_vocoder;
 mod promotion;
 
@@ -70,6 +71,10 @@ pub use cache_identity::{
     StretchCacheIdentity, StretchCacheIdentityError, StretchCacheIdentityInput,
     StretchChannelLayout, StretchPitchPoint, StretchRatioPoint, StretchWarpMarker,
     SIGNAL_STRETCH_ENGINE_VERSION, STRETCH_CACHE_IDENTITY_SCHEMA_VERSION,
+};
+pub use corpus_report::{
+    build_stretch_corpus_comparison_report, format_stretch_corpus_comparison_report,
+    StretchCorpusComparisonReport, StretchCorpusListeningNoteSlot, StretchCorpusSkippedAsset,
 };
 pub use promotion::{
     current_synthetic_offline_high_quality_promotion_receipt, StretchPromotionReceipt,
@@ -1538,6 +1543,66 @@ mod tests {
         assert!(formatted.contains("metric=PitchErrorCents"));
         assert!(formatted.contains("offline_hq="));
         assert!(formatted.contains("outcome="));
+    }
+
+    #[test]
+    fn stretch_corpus_comparison_report_covers_manifest_and_note_slots() {
+        let report =
+            build_stretch_corpus_comparison_report("stretch-corpus-v1-local", "projection:unit");
+
+        assert_eq!(report.report_name, "stretch-corpus-v1-local");
+        assert_eq!(report.projection_epoch, "projection:unit");
+        assert_eq!(report.manifest.manifest_id, "stretch-corpus-v1");
+        assert_eq!(report.engine_version, SIGNAL_STRETCH_ENGINE_VERSION);
+        assert_eq!(report.missing_assets.len(), 5);
+        assert_eq!(report.optional_benchmark_skips.len(), 0);
+        assert_eq!(report.synthetic_report.comparisons.len(), 27);
+        assert_eq!(
+            report.listening_note_slots.len(),
+            report.missing_assets.len() + report.synthetic_report.comparisons.len()
+        );
+        assert!(report
+            .missing_assets
+            .iter()
+            .all(|asset| asset.missing_asset_behavior
+                == StretchCorpusMissingAssetBehavior::ReportMissingAndSkipCase));
+        assert!(report.listening_note_slots.iter().any(|slot| slot.case_id
+            == "stretch:drums_percussion"
+            && slot.ratio.is_none()
+            && slot
+                .source_path_hint
+                .starts_with("fixtures/stretch-corpus/licensed-listening/")));
+        assert!(report.listening_note_slots.iter().any(|slot| {
+            slot.case_id == "stretch:pitch_shift"
+                && slot.pitch_shift_semitones == Some(12.0)
+                && slot.source_path_hint == "inline:pitch-shift-tone"
+        }));
+    }
+
+    #[test]
+    fn stretch_corpus_comparison_report_formats_deterministically() {
+        let report =
+            build_stretch_corpus_comparison_report("stretch-corpus-v1-local", "projection:unit");
+        let formatted = format_stretch_corpus_comparison_report(&report);
+        let repeated = format_stretch_corpus_comparison_report(&report);
+
+        assert_eq!(formatted, repeated);
+        assert!(formatted.starts_with(
+            "stretch_corpus_report name=\"stretch-corpus-v1-local\" corpus=stretch-corpus-v1"
+        ));
+        assert!(formatted.contains("engine=signal-native-stretch-v1"));
+        assert!(formatted.contains("projection_epoch=\"projection:unit\""));
+        assert!(formatted.contains("source_policy synthetic="));
+        assert!(formatted.contains("summary comparisons=27 missing_assets=5"));
+        assert!(formatted.contains("asset case=stretch:drums_percussion status=missing_required"));
+        assert!(formatted.contains("comparison case=stretch:tempo_ramp"));
+        assert!(formatted.contains("ratio_curve=synthetic_tempo_ramp:"));
+        assert!(formatted.contains("pitch_curve=constant:12.000000"));
+        assert!(formatted.contains("metric=DynamicSegmentSeamClickDbfs"));
+        assert!(formatted.contains("listening_note case=stretch:pitch_shift"));
+        assert!(formatted.contains(
+            "prompt=\"operator-note: record audible artifacts beside objective metrics\""
+        ));
     }
 
     #[test]
