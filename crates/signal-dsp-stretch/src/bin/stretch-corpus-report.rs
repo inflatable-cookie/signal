@@ -794,6 +794,8 @@ struct TransientAlignmentDiagnostic {
     max_match_error_frames: f64,
     mean_missed_nearest_distance_frames: f64,
     max_missed_nearest_distance_frames: f64,
+    max_missed_expected_output_frame: f64,
+    max_missed_nearest_output_frame: f64,
 }
 
 fn transient_alignment_diagnostic(
@@ -816,20 +818,26 @@ fn transient_alignment_diagnostic(
     let mut missed_nearest_count = 0usize;
     let mut missed_nearest_sum = 0.0f64;
     let mut missed_nearest_max = 0.0f64;
+    let mut max_missed_expected_output_frame = f64::NAN;
+    let mut max_missed_nearest_output_frame = f64::NAN;
 
     for input_event in input_events {
         let expected_output_frame = input_event.frame_index as f64 * ratio;
-        let nearest_distance = nearest_transient_distance(&output_events, expected_output_frame);
-        match nearest_distance {
-            Some(distance) if distance <= tolerance => {
+        let nearest = nearest_transient_position(&output_events, expected_output_frame);
+        match nearest {
+            Some((distance, _nearest_frame)) if distance <= tolerance => {
                 matched_count += 1;
                 matched_error_sum += distance;
                 matched_error_max = matched_error_max.max(distance);
             }
-            Some(distance) => {
+            Some((distance, nearest_frame)) => {
                 missed_nearest_count += 1;
                 missed_nearest_sum += distance;
-                missed_nearest_max = missed_nearest_max.max(distance);
+                if distance > missed_nearest_max {
+                    missed_nearest_max = distance;
+                    max_missed_expected_output_frame = expected_output_frame;
+                    max_missed_nearest_output_frame = nearest_frame;
+                }
             }
             None => {}
         }
@@ -856,6 +864,16 @@ fn transient_alignment_diagnostic(
         } else {
             f64::NAN
         },
+        max_missed_expected_output_frame: if missed_nearest_count > 0 {
+            max_missed_expected_output_frame
+        } else {
+            f64::NAN
+        },
+        max_missed_nearest_output_frame: if missed_nearest_count > 0 {
+            max_missed_nearest_output_frame
+        } else {
+            f64::NAN
+        },
     }
 }
 
@@ -865,17 +883,22 @@ fn transient_alignment_nan() -> TransientAlignmentDiagnostic {
         max_match_error_frames: f64::NAN,
         mean_missed_nearest_distance_frames: f64::NAN,
         max_missed_nearest_distance_frames: f64::NAN,
+        max_missed_expected_output_frame: f64::NAN,
+        max_missed_nearest_output_frame: f64::NAN,
     }
 }
 
-fn nearest_transient_distance(
+fn nearest_transient_position(
     events: &[signal_dsp_stretch::StretchTransientEvent],
     expected_frame: f64,
-) -> Option<f64> {
+) -> Option<(f64, f64)> {
     events
         .iter()
-        .map(|event| (event.frame_index as f64 - expected_frame).abs())
-        .min_by(|left, right| left.total_cmp(right))
+        .map(|event| {
+            let event_frame = event.frame_index as f64;
+            ((event_frame - expected_frame).abs(), event_frame)
+        })
+        .min_by(|left, right| left.0.total_cmp(&right.0))
 }
 
 fn format_transient_metric_detail(
@@ -885,7 +908,7 @@ fn format_transient_metric_detail(
     offline_alignment: &TransientAlignmentDiagnostic,
 ) -> String {
     format!(
-        "draft_input_transients={} draft_output_transients={} draft_matched_transients={} draft_missed_transients={} draft_mean_match_error_frames={:.6} draft_max_match_error_frames={:.6} draft_mean_missed_nearest_distance_frames={:.6} draft_max_missed_nearest_distance_frames={:.6} offline_input_transients={} offline_output_transients={} offline_matched_transients={} offline_missed_transients={} offline_mean_match_error_frames={:.6} offline_max_match_error_frames={:.6} offline_mean_missed_nearest_distance_frames={:.6} offline_max_missed_nearest_distance_frames={:.6}",
+        "draft_input_transients={} draft_output_transients={} draft_matched_transients={} draft_missed_transients={} draft_mean_match_error_frames={:.6} draft_max_match_error_frames={:.6} draft_mean_missed_nearest_distance_frames={:.6} draft_max_missed_nearest_distance_frames={:.6} draft_max_missed_expected_output_frame={:.6} draft_max_missed_nearest_output_frame={:.6} offline_input_transients={} offline_output_transients={} offline_matched_transients={} offline_missed_transients={} offline_mean_match_error_frames={:.6} offline_max_match_error_frames={:.6} offline_mean_missed_nearest_distance_frames={:.6} offline_max_missed_nearest_distance_frames={:.6} offline_max_missed_expected_output_frame={:.6} offline_max_missed_nearest_output_frame={:.6}",
         draft_smear.input_transients,
         draft_smear.output_transients,
         draft_smear.matched_transients,
@@ -894,6 +917,8 @@ fn format_transient_metric_detail(
         draft_alignment.max_match_error_frames,
         draft_alignment.mean_missed_nearest_distance_frames,
         draft_alignment.max_missed_nearest_distance_frames,
+        draft_alignment.max_missed_expected_output_frame,
+        draft_alignment.max_missed_nearest_output_frame,
         offline_smear.input_transients,
         offline_smear.output_transients,
         offline_smear.matched_transients,
@@ -902,6 +927,8 @@ fn format_transient_metric_detail(
         offline_alignment.max_match_error_frames,
         offline_alignment.mean_missed_nearest_distance_frames,
         offline_alignment.max_missed_nearest_distance_frames,
+        offline_alignment.max_missed_expected_output_frame,
+        offline_alignment.max_missed_nearest_output_frame,
     )
 }
 
@@ -1199,6 +1226,8 @@ mod tests {
         assert!(formatted.contains("offline_matched_transients="));
         assert!(formatted.contains("offline_mean_match_error_frames="));
         assert!(formatted.contains("offline_mean_missed_nearest_distance_frames="));
+        assert!(formatted.contains("offline_max_missed_expected_output_frame="));
+        assert!(formatted.contains("offline_max_missed_nearest_output_frame="));
         assert!(formatted.contains("analysis_limited=true"));
 
         let _ = fs::remove_file(path);

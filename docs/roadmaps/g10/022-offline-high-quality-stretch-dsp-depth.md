@@ -123,12 +123,19 @@ comparison reports, not add more receipt or fixture surfaces.
   `83808` frames and max `87488` frames. This points to sparse or shifted
   output transient detection on specific material windows, not simple attack
   widening on matched events.
+- 2026-07-07: extended the alignment diagnostics with event-position fields for
+  the largest missed-nearest distance in each transient row. The worst local
+  FMA review-seed row is `stretch:bass` at `1.25x` on `000384.mp3`: the expected
+  output transient frame was `1600`, while the nearest detected output transient
+  was `89088`. Other high misses land tens of thousands of frames away. This
+  narrows the next question to early-window event preservation/detection before
+  another DSP algorithm change.
 
 ## Next Task
 
 Do not add a multiresolution or hybrid path until measured evidence requires
 it. Next useful work is to inspect the largest missed-nearest rows by source,
-ratio, and transient event position, then decide whether the next batch targets
-transient detection alignment, output event preservation, or corpus window
-selection. Listened real-source curation and external rendered-output
+ratio, and per-event transient list, then decide whether the next batch targets
+early-window output event preservation, transient detection alignment, or corpus
+window selection. Listened real-source curation and external rendered-output
 comparison remain promotion inputs.

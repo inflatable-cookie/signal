@@ -63,7 +63,8 @@ transient smear over a short decoded excerpt. Transient rows include input,
 output, matched, and missed transient counts for each backend so high penalties
 can be separated from true attack widening. They also include mean/max timing
 error for matched transients and mean/max nearest-output distance for missed
-transients, so alignment failures can be sorted before DSP changes. Use
+transients, plus the expected and nearest output frame for the largest missed
+distance, so alignment failures can be sorted before DSP changes. Use
 `--decoded-stretch-frame-limit N` to change the excerpt size; the default is
 ten seconds at 48 kHz. These rows are objective evidence, not a replacement
 for listened curation.
