@@ -147,12 +147,19 @@ comparison reports, not add more receipt or fixture surfaces.
   `0.114111` against input peak `0.372374` and RMS `0.127199`. This points to
   transient detection/alignment classification before output-energy
   preservation for the next batch.
+- 2026-07-07: added event-level expected-output energy classification to
+  `decoded_transient_alignment_event` rows. In the regenerated local FMA review
+  seed, 78 of 80 missed-event rows classified as `ExpectedEnergyPresent`; the
+  other 2 were `ExpectedEnergyWeak`. All 22 OfflineHighQuality missed-event rows
+  were `ExpectedEnergyPresent`. The worst `000384.mp3` bass `1.25x` miss has
+  expected-output peak ratio `0.885974` and RMS ratio `0.906419`, so the output
+  window preserves energy but the current detector/matcher does not accept it as
+  a corresponding transient.
 
 ## Next Task
 
 Do not add a multiresolution or hybrid path until measured evidence requires
-it. Next useful work is to target transient detection/alignment classification
-for real-source rows, starting with why the `000384.mp3` bass `1.25x` expected
-windows carry energy but do not produce matched output transient events.
-Listened real-source curation and external rendered-output comparison remain
-promotion inputs.
+it. Next useful work is to add detector-shape diagnostics around
+`ExpectedEnergyPresent` misses, starting with local flux/energy-rise scores for
+the `000384.mp3` bass `1.25x` expected windows. Listened real-source curation
+and external rendered-output comparison remain promotion inputs.

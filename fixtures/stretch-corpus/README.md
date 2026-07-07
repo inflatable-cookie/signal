@@ -67,7 +67,9 @@ transients, plus the expected and nearest output frame for the largest missed
 distance, so alignment failures can be sorted before DSP changes. The report
 also emits capped `decoded_transient_alignment_event` rows for the largest
 missed events per backend and ratio. Event rows include peak/RMS probes around
-the input event, expected output frame, and nearest detected output frame. Use
+the input event, expected output frame, and nearest detected output frame, plus
+an alignment class: `ExpectedEnergyPresent`, `ExpectedEnergyWeak`,
+`ExpectedEnergyMissing`, or `Inconclusive`. Use
 `--decoded-stretch-frame-limit N` to change the excerpt size; the default is
 ten seconds at 48 kHz. These rows are objective evidence, not a replacement
 for listened curation.

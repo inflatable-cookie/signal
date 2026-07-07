@@ -31,6 +31,8 @@ const QUALITY_METRIC_WINDOW_SIZE: usize = 1_024;
 const QUALITY_METRIC_HOP_SIZE: usize = 256;
 const MAX_TRANSIENT_ALIGNMENT_EVENTS_PER_BACKEND: usize = 3;
 const TRANSIENT_ALIGNMENT_WINDOW_RADIUS: usize = QUALITY_METRIC_WINDOW_SIZE;
+const EXPECTED_TRANSIENT_ENERGY_PRESENT_RATIO: f64 = 0.50;
+const EXPECTED_TRANSIENT_ENERGY_WEAK_RATIO: f64 = 0.10;
 
 #[derive(Debug, PartialEq, Eq)]
 struct ReportArgs {
@@ -1049,13 +1051,22 @@ fn format_transient_alignment_event_lines(
         .iter()
         .enumerate()
         .map(|(rank, event)| {
+            let expected_peak_ratio =
+                finite_ratio(event.expected_output_window_peak, event.input_window_peak);
+            let expected_rms_ratio =
+                finite_ratio(event.expected_output_window_rms, event.input_window_rms);
+            let nearest_peak_ratio =
+                finite_ratio(event.nearest_output_window_peak, event.input_window_peak);
+            let nearest_rms_ratio =
+                finite_ratio(event.nearest_output_window_rms, event.input_window_rms);
             format!(
-                "decoded_transient_alignment_event case={} source={} ratio={:.6} backend={} rank={} input_frame={} expected_output_frame={:.6} nearest_output_frame={:.6} nearest_distance_frames={:.6} tolerance_frames={} input_window_peak={:.6} input_window_rms={:.6} expected_output_window_peak={:.6} expected_output_window_rms={:.6} nearest_output_window_peak={:.6} nearest_output_window_rms={:.6}",
+                "decoded_transient_alignment_event case={} source={} ratio={:.6} backend={} rank={} alignment_class={} input_frame={} expected_output_frame={:.6} nearest_output_frame={:.6} nearest_distance_frames={:.6} tolerance_frames={} input_window_peak={:.6} input_window_rms={:.6} expected_output_window_peak={:.6} expected_output_window_rms={:.6} expected_output_peak_ratio={:.6} expected_output_rms_ratio={:.6} nearest_output_window_peak={:.6} nearest_output_window_rms={:.6} nearest_output_peak_ratio={:.6} nearest_output_rms_ratio={:.6}",
                 audio.case_id,
                 quoted_report_field(&audio.source_path),
                 ratio,
                 backend,
                 rank + 1,
+                classify_transient_alignment_event(event),
                 event.input_frame,
                 event.expected_output_frame,
                 event.nearest_output_frame.unwrap_or(f64::NAN),
@@ -1065,11 +1076,43 @@ fn format_transient_alignment_event_lines(
                 event.input_window_rms,
                 event.expected_output_window_peak,
                 event.expected_output_window_rms,
+                expected_peak_ratio,
+                expected_rms_ratio,
                 event.nearest_output_window_peak,
                 event.nearest_output_window_rms,
+                nearest_peak_ratio,
+                nearest_rms_ratio,
             )
         })
         .collect()
+}
+
+fn classify_transient_alignment_event(event: &TransientAlignmentMissEvent) -> &'static str {
+    let expected_peak_ratio =
+        finite_ratio(event.expected_output_window_peak, event.input_window_peak);
+    let expected_rms_ratio = finite_ratio(event.expected_output_window_rms, event.input_window_rms);
+    if !expected_peak_ratio.is_finite() && !expected_rms_ratio.is_finite() {
+        return "Inconclusive";
+    }
+    if expected_peak_ratio >= EXPECTED_TRANSIENT_ENERGY_PRESENT_RATIO
+        || expected_rms_ratio >= EXPECTED_TRANSIENT_ENERGY_PRESENT_RATIO
+    {
+        "ExpectedEnergyPresent"
+    } else if expected_peak_ratio >= EXPECTED_TRANSIENT_ENERGY_WEAK_RATIO
+        || expected_rms_ratio >= EXPECTED_TRANSIENT_ENERGY_WEAK_RATIO
+    {
+        "ExpectedEnergyWeak"
+    } else {
+        "ExpectedEnergyMissing"
+    }
+}
+
+fn finite_ratio(numerator: f64, denominator: f64) -> f64 {
+    if !numerator.is_finite() || !denominator.is_finite() || denominator.abs() <= 1.0e-12 {
+        f64::NAN
+    } else {
+        numerator / denominator
+    }
 }
 
 fn listening_source_ratios(case_id: &str) -> Result<&'static [f64], String> {
@@ -1422,14 +1465,18 @@ mod tests {
 
         assert_eq!(lines.len(), 2);
         assert!(lines[0].starts_with("decoded_transient_alignment_event case=stretch:bass"));
-        assert!(lines[0].contains("backend=offline_hq rank=1 input_frame=128"));
+        assert!(lines[0].contains(
+            "backend=offline_hq rank=1 alignment_class=ExpectedEnergyWeak input_frame=128"
+        ));
         assert!(lines[0].contains("expected_output_frame=160.000000"));
         assert!(lines[0].contains("nearest_output_frame=3160.000000"));
         assert!(lines[0].contains("nearest_distance_frames=3000.000000"));
         assert!(lines[0].contains("tolerance_frames=1024"));
         assert!(lines[0].contains("input_window_peak=0.750000"));
         assert!(lines[0].contains("expected_output_window_peak=0.100000"));
+        assert!(lines[0].contains("expected_output_peak_ratio=0.133333"));
         assert!(lines[0].contains("nearest_output_window_peak=0.700000"));
+        assert!(lines[0].contains("nearest_output_peak_ratio=0.933333"));
     }
 
     fn write_test_wav(path: &PathBuf, frames: usize) {
