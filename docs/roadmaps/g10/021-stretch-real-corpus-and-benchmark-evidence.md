@@ -16,7 +16,7 @@ notes before more product-facing quality claims land.
 
 ## Goals
 
-- [ ] define the first checked-in corpus manifest shape for drums/percussion,
+- [x] define the first checked-in corpus manifest shape for drums/percussion,
   bass, vocals, pads/sustains, full mixes, tempo ramps, loop seams, and extreme
   ratios without committing licensed source audio
 - [ ] add a runner that produces deterministic comparison reports for draft,
@@ -32,7 +32,7 @@ notes before more product-facing quality claims land.
 
 ### Batch 21.1 - Corpus Manifest
 
-- [ ] manifest schema, source-audio policy, corpus family coverage, and
+- [x] manifest schema, source-audio policy, corpus family coverage, and
   missing-asset behavior
 
 ### Batch 21.2 - Report Runner
@@ -47,7 +47,7 @@ notes before more product-facing quality claims land.
 
 ## Acceptance Criteria
 
-- [ ] synthetic reports remain available for fast local tests
+- [x] synthetic reports remain available for fast local tests
 - [ ] real-corpus report output can be saved as an artifact and compared across
   runs
 - [ ] benchmark comparison is optional and clean-room
@@ -63,7 +63,11 @@ notes before more product-facing quality claims land.
 
 - 2026-07-07: opened as active g10 stretch evidence work. Time-stretch is not
   a deferred backlog item.
+- 2026-07-07: implemented `STRETCH_CORPUS_MANIFEST` with source policy,
+  missing-asset behavior, fixture path rules, and checked-in manifest docs under
+  `fixtures/stretch-corpus/`. Licensed listening audio remains local-only.
 
 ## Next Task
 
-Implement Batch 21.1: corpus manifest shape and source-audio policy.
+Implement Batch 21.2: deterministic draft and OfflineHighQuality report output
+for `stretch-corpus-v1`.
