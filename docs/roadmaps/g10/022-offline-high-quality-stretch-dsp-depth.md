@@ -250,12 +250,21 @@ comparison reports, not add more receipt or fixture surfaces.
   frame `115456` and widens `7` input frames to `9` output frames, while
   OfflineHighQuality maps it to output frame `115200` and widens `7` input
   frames to `20` output frames.
+- 2026-07-07: added decoded compression phase-lock ablation summary rows. On
+  the broader FMA seed, compression rows show current OfflineHighQuality
+  phase-locking is better than independent-bin draft on 10 rows, independent
+  bins are better on 1 row, 6 rows are unchanged, and 3 are inconclusive.
+  Finite-row mean max-smear is also lower for phase locking: `374.352941`
+  frames versus independent-bin `668.705882` frames. The only finite regression
+  remains `stretch:pads_sustains` `000900.mp3` at `0.75x` with an `11`-frame
+  delta. This rejects a global compression rollback to independent bins.
 
 ## Next Task
 
 Do not add a multiresolution or hybrid path until measured evidence requires
-it. Next useful work is to run an ablation that compares compression
-phase-locking against the independent-bin draft path on the `000900.mp3`
-matched-smear event and the broader FMA seed. Do not switch the compression
-path globally unless the ablation holds timing, sustained coherence, and
-transient-smear outcomes across the corpus.
+it. Next useful work is to prototype a targeted local transient-width control
+for the matched-smear event on `stretch:pads_sustains` `000900.mp3` at `0.75x`.
+Do not disable compression phase locking globally; the broader ablation favors
+the current phase-locked path. Any prototype must hold the broader FMA
+compression ablation, recovery gate, timing drift, and synthetic comparison
+shape.

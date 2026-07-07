@@ -753,6 +753,7 @@ fn format_decoded_stretch_metrics(
     let mut lines = Vec::new();
     let mut draft_recovery_gate = TransientRecoveryGateAccumulator::new("draft");
     let mut offline_recovery_gate = TransientRecoveryGateAccumulator::new("offline_hq");
+    let mut compression_ablation = CompressionPhaseLockAblationAccumulator::default();
     for source in sources {
         let audio = decode_listening_source_audio(source, frame_limit)?;
         let mono = audio.mono_samples();
@@ -857,6 +858,7 @@ fn format_decoded_stretch_metrics(
                 QUALITY_METRIC_WINDOW_SIZE,
                 QUALITY_METRIC_HOP_SIZE,
             );
+            compression_ablation.record(&audio, ratio, &draft_smear, &offline_smear);
             draft_recovery_gate.record(
                 &draft_strict_smear,
                 &draft_candidate_smear,
@@ -910,7 +912,84 @@ fn format_decoded_stretch_metrics(
     if offline_recovery_gate.rows > 0 {
         lines.push(offline_recovery_gate.format_report_line());
     }
+    if compression_ablation.rows > 0 {
+        lines.push(compression_ablation.format_report_line());
+    }
     Ok(lines.join("\n"))
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+struct CompressionPhaseLockAblationAccumulator {
+    rows: usize,
+    phase_locked_better_rows: usize,
+    independent_bins_better_rows: usize,
+    unchanged_rows: usize,
+    inconclusive_rows: usize,
+    draft_smear_sum: f64,
+    offline_smear_sum: f64,
+    finite_rows: usize,
+    worst_regression_delta_frames: f64,
+    worst_regression_case_id: String,
+    worst_regression_source: String,
+    worst_regression_ratio: f64,
+}
+
+impl CompressionPhaseLockAblationAccumulator {
+    fn record(
+        &mut self,
+        audio: &DecodedListeningSourceAudio,
+        ratio: f64,
+        draft: &signal_dsp_stretch::StretchTransientSmearMeasurement,
+        offline: &signal_dsp_stretch::StretchTransientSmearMeasurement,
+    ) {
+        if ratio >= 1.0 {
+            return;
+        }
+
+        self.rows += 1;
+        match compare_metric_values(offline.max_smear_frames, draft.max_smear_frames) {
+            MetricComparison::Improved => self.phase_locked_better_rows += 1,
+            MetricComparison::Same => {
+                if draft.max_smear_frames.is_finite() && offline.max_smear_frames.is_finite() {
+                    self.unchanged_rows += 1;
+                } else {
+                    self.inconclusive_rows += 1;
+                }
+            }
+            MetricComparison::Worsened => self.independent_bins_better_rows += 1,
+        }
+
+        if draft.max_smear_frames.is_finite() && offline.max_smear_frames.is_finite() {
+            self.finite_rows += 1;
+            self.draft_smear_sum += draft.max_smear_frames;
+            self.offline_smear_sum += offline.max_smear_frames;
+            let delta = offline.max_smear_frames - draft.max_smear_frames;
+            if delta > self.worst_regression_delta_frames {
+                self.worst_regression_delta_frames = delta;
+                self.worst_regression_case_id = audio.case_id.clone();
+                self.worst_regression_source = audio.source_path.clone();
+                self.worst_regression_ratio = ratio;
+            }
+        }
+    }
+
+    fn format_report_line(&self) -> String {
+        format!(
+            "decoded_compression_phase_lock_ablation rows={} phase_locked_path=offline_hq independent_bins_path=draft phase_locked_better_rows={} independent_bins_better_rows={} unchanged_rows={} inconclusive_rows={} finite_rows={} mean_phase_locked_smear_frames={:.6} mean_independent_bins_smear_frames={:.6} worst_regression_delta_frames={:.6} worst_regression_case={} worst_regression_source={} worst_regression_ratio={:.6}",
+            self.rows,
+            self.phase_locked_better_rows,
+            self.independent_bins_better_rows,
+            self.unchanged_rows,
+            self.inconclusive_rows,
+            self.finite_rows,
+            finite_ratio(self.offline_smear_sum, self.finite_rows as f64),
+            finite_ratio(self.draft_smear_sum, self.finite_rows as f64),
+            self.worst_regression_delta_frames,
+            self.worst_regression_case_id,
+            quoted_report_field(&self.worst_regression_source),
+            self.worst_regression_ratio,
+        )
+    }
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -1969,6 +2048,9 @@ mod tests {
         assert!(formatted.contains("metric=TransientSmearFrames"));
         assert!(formatted.contains("decoded_transient_recovery_gate backend=draft"));
         assert!(formatted.contains("decoded_transient_recovery_gate backend=offline_hq"));
+        assert!(formatted.contains("decoded_compression_phase_lock_ablation rows="));
+        assert!(formatted.contains("phase_locked_path=offline_hq"));
+        assert!(formatted.contains("independent_bins_path=draft"));
         assert!(formatted.contains("target_status="));
         assert!(formatted.contains("global_threshold_status="));
         assert!(formatted.contains("full_candidate_input_ratio="));
