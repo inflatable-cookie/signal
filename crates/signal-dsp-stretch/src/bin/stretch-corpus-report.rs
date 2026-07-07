@@ -40,6 +40,8 @@ const RECOVERY_GATE_MIN_RECOVERED_MISSES: usize = 1;
 const RECOVERY_GATE_MAX_MISSED_WORSENED_ROWS: usize = 0;
 const RECOVERY_GATE_MAX_SMEAR_WORSENED_ROWS: usize = 0;
 const RECOVERY_GATE_MAX_GLOBAL_CANDIDATE_INPUT_RATIO: f64 = 2.0;
+const WIDTH_CONTROL_EDIT_GATE_MAX_SAMPLE_DELTA: f64 = 0.25;
+const WIDTH_CONTROL_EDIT_GATE_MAX_ADDED_ADJACENT_STEP_DELTA: f64 = 0.05;
 const DETECTOR_POLICY: StretchTransientDetectorPolicy =
     StretchTransientDetectorPolicy::production();
 const CANDIDATE_DETECTOR_POLICY: StretchTransientDetectorPolicy =
@@ -755,6 +757,7 @@ fn format_decoded_stretch_metrics(
     let mut offline_recovery_gate = TransientRecoveryGateAccumulator::new("offline_hq");
     let mut compression_ablation = CompressionPhaseLockAblationAccumulator::default();
     let mut width_control_candidate = TransientWidthControlCandidateAccumulator::default();
+    let mut width_control_edit_gate = TransientWidthControlEditGateAccumulator::default();
     for source in sources {
         let audio = decode_listening_source_audio(source, frame_limit)?;
         let mono = audio.mono_samples();
@@ -877,7 +880,14 @@ fn format_decoded_stretch_metrics(
                 &draft_smear,
                 &offline_smear,
                 &offline_width_control_smear,
-                offline_width_control_edit,
+                offline_width_control_edit.clone(),
+            );
+            width_control_edit_gate.record(
+                &audio,
+                ratio,
+                &offline_smear,
+                &offline_width_control_smear,
+                &offline_width_control_edit,
             );
             draft_recovery_gate.record(
                 &draft_strict_smear,
@@ -938,6 +948,9 @@ fn format_decoded_stretch_metrics(
     if width_control_candidate.rows > 0 {
         lines.push(width_control_candidate.format_report_line());
         lines.extend(width_control_candidate.format_edit_event_lines());
+    }
+    if width_control_edit_gate.rows > 0 {
+        lines.push(width_control_edit_gate.format_report_line());
     }
     Ok(lines.join("\n"))
 }
@@ -1107,12 +1120,150 @@ impl TransientWidthControlCandidateAccumulator {
 }
 
 #[derive(Clone, Debug, Default, PartialEq)]
+struct TransientWidthControlEditGateAccumulator {
+    rows: usize,
+    accepted_rows: usize,
+    rejected_rows: usize,
+    accepted_edited_rows: usize,
+    rejected_edited_rows: usize,
+    gated_better_rows: usize,
+    current_better_rows: usize,
+    unchanged_rows: usize,
+    inconclusive_rows: usize,
+    finite_rows: usize,
+    offline_smear_sum: f64,
+    gated_smear_sum: f64,
+    accepted_candidate_better_rows: usize,
+    rejected_candidate_better_rows: usize,
+    rejected_candidate_improvement_delta_frames: f64,
+    max_rejected_abs_sample_delta: f64,
+    max_rejected_abs_sample_delta_case_id: String,
+    max_rejected_abs_sample_delta_source: String,
+    max_rejected_abs_sample_delta_ratio: f64,
+    max_rejected_added_adjacent_step_delta: f64,
+    max_rejected_added_adjacent_step_case_id: String,
+    max_rejected_added_adjacent_step_source: String,
+    max_rejected_added_adjacent_step_ratio: f64,
+}
+
+impl TransientWidthControlEditGateAccumulator {
+    fn record(
+        &mut self,
+        audio: &DecodedListeningSourceAudio,
+        ratio: f64,
+        offline: &signal_dsp_stretch::StretchTransientSmearMeasurement,
+        candidate: &signal_dsp_stretch::StretchTransientSmearMeasurement,
+        edit: &WidthControlEditStats,
+    ) {
+        if ratio >= 1.0 {
+            return;
+        }
+
+        self.rows += 1;
+        let accepted = width_control_edit_gate_accepts(edit);
+        if accepted {
+            self.accepted_rows += 1;
+            if edit.changed_samples > 0 {
+                self.accepted_edited_rows += 1;
+            }
+        } else {
+            self.rejected_rows += 1;
+            if edit.changed_samples > 0 {
+                self.rejected_edited_rows += 1;
+            }
+            if edit.max_abs_sample_delta > self.max_rejected_abs_sample_delta {
+                self.max_rejected_abs_sample_delta = edit.max_abs_sample_delta;
+                self.max_rejected_abs_sample_delta_case_id = audio.case_id.clone();
+                self.max_rejected_abs_sample_delta_source = audio.source_path.clone();
+                self.max_rejected_abs_sample_delta_ratio = ratio;
+            }
+            if edit.max_added_adjacent_step_delta > self.max_rejected_added_adjacent_step_delta {
+                self.max_rejected_added_adjacent_step_delta = edit.max_added_adjacent_step_delta;
+                self.max_rejected_added_adjacent_step_case_id = audio.case_id.clone();
+                self.max_rejected_added_adjacent_step_source = audio.source_path.clone();
+                self.max_rejected_added_adjacent_step_ratio = ratio;
+            }
+        }
+
+        if compare_metric_values(candidate.max_smear_frames, offline.max_smear_frames)
+            == MetricComparison::Improved
+        {
+            if accepted {
+                self.accepted_candidate_better_rows += 1;
+            } else {
+                self.rejected_candidate_better_rows += 1;
+                if candidate.max_smear_frames.is_finite() && offline.max_smear_frames.is_finite() {
+                    self.rejected_candidate_improvement_delta_frames +=
+                        offline.max_smear_frames - candidate.max_smear_frames;
+                }
+            }
+        }
+
+        let gated = if accepted { candidate } else { offline };
+        match compare_metric_values(gated.max_smear_frames, offline.max_smear_frames) {
+            MetricComparison::Improved => self.gated_better_rows += 1,
+            MetricComparison::Same => {
+                if gated.max_smear_frames.is_finite() && offline.max_smear_frames.is_finite() {
+                    self.unchanged_rows += 1;
+                } else {
+                    self.inconclusive_rows += 1;
+                }
+            }
+            MetricComparison::Worsened => self.current_better_rows += 1,
+        }
+
+        if offline.max_smear_frames.is_finite() && gated.max_smear_frames.is_finite() {
+            self.finite_rows += 1;
+            self.offline_smear_sum += offline.max_smear_frames;
+            self.gated_smear_sum += gated.max_smear_frames;
+        }
+    }
+
+    fn format_report_line(&self) -> String {
+        format!(
+            "decoded_transient_width_control_edit_gate rows={} gate=ConservativeEditPressure max_abs_sample_delta_limit={:.9} max_added_adjacent_step_delta_limit={:.9} accepted_rows={} rejected_rows={} accepted_edited_rows={} rejected_edited_rows={} gated_better_rows={} current_better_rows={} unchanged_rows={} inconclusive_rows={} finite_rows={} mean_gated_smear_frames={:.6} mean_current_smear_frames={:.6} accepted_candidate_better_rows={} rejected_candidate_better_rows={} rejected_candidate_improvement_delta_frames={:.6} max_rejected_abs_sample_delta={:.9} max_rejected_abs_sample_delta_case={} max_rejected_abs_sample_delta_source={} max_rejected_abs_sample_delta_ratio={:.6} max_rejected_added_adjacent_step_delta={:.9} max_rejected_added_adjacent_step_case={} max_rejected_added_adjacent_step_source={} max_rejected_added_adjacent_step_ratio={:.6}",
+            self.rows,
+            WIDTH_CONTROL_EDIT_GATE_MAX_SAMPLE_DELTA,
+            WIDTH_CONTROL_EDIT_GATE_MAX_ADDED_ADJACENT_STEP_DELTA,
+            self.accepted_rows,
+            self.rejected_rows,
+            self.accepted_edited_rows,
+            self.rejected_edited_rows,
+            self.gated_better_rows,
+            self.current_better_rows,
+            self.unchanged_rows,
+            self.inconclusive_rows,
+            self.finite_rows,
+            finite_ratio(self.gated_smear_sum, self.finite_rows as f64),
+            finite_ratio(self.offline_smear_sum, self.finite_rows as f64),
+            self.accepted_candidate_better_rows,
+            self.rejected_candidate_better_rows,
+            self.rejected_candidate_improvement_delta_frames,
+            self.max_rejected_abs_sample_delta,
+            self.max_rejected_abs_sample_delta_case_id,
+            quoted_report_field(&self.max_rejected_abs_sample_delta_source),
+            self.max_rejected_abs_sample_delta_ratio,
+            self.max_rejected_added_adjacent_step_delta,
+            self.max_rejected_added_adjacent_step_case_id,
+            quoted_report_field(&self.max_rejected_added_adjacent_step_source),
+            self.max_rejected_added_adjacent_step_ratio,
+        )
+    }
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
 struct WidthControlEditStats {
     changed_samples: usize,
     max_abs_sample_delta: f64,
     max_abs_sample_delta_event: Option<WidthControlEditEvent>,
     max_added_adjacent_step_delta: f64,
     max_added_adjacent_step_event: Option<WidthControlEditEvent>,
+}
+
+fn width_control_edit_gate_accepts(edit: &WidthControlEditStats) -> bool {
+    edit.max_abs_sample_delta <= WIDTH_CONTROL_EDIT_GATE_MAX_SAMPLE_DELTA
+        && edit.max_added_adjacent_step_delta
+            <= WIDTH_CONTROL_EDIT_GATE_MAX_ADDED_ADJACENT_STEP_DELTA
 }
 
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -2375,6 +2526,29 @@ fn quoted_report_field(value: &str) -> String {
 mod tests {
     use super::*;
 
+    fn transient_smear_measurement(
+        max_smear_frames: f64,
+    ) -> signal_dsp_stretch::StretchTransientSmearMeasurement {
+        signal_dsp_stretch::StretchTransientSmearMeasurement {
+            ratio: 0.75,
+            input_transients: 1,
+            output_transients: 1,
+            matched_transients: 1,
+            missed_transients: 0,
+            mean_smear_frames: max_smear_frames,
+            max_smear_frames,
+            max_matched_smear_frames: max_smear_frames,
+            max_matched_input_frame: 0.0,
+            max_matched_output_frame: 0.0,
+            max_matched_input_width_frames: 1.0,
+            max_matched_output_width_frames: 1.0,
+            metric: signal_dsp_stretch::StretchMetricValue::new(
+                signal_dsp_stretch::StretchMetric::TransientSmearFrames,
+                max_smear_frames,
+            ),
+        }
+    }
+
     #[test]
     fn parse_args_uses_defaults() {
         let args = parse_args(Vec::<String>::new()).expect("defaults parse");
@@ -2595,6 +2769,8 @@ mod tests {
         assert!(formatted.contains("decoded_transient_width_control_candidate rows="));
         assert!(formatted.contains("candidate_path=offline_hq_width_control"));
         assert!(formatted.contains("baseline_path=offline_hq"));
+        assert!(formatted.contains("decoded_transient_width_control_edit_gate rows="));
+        assert!(formatted.contains("gate=ConservativeEditPressure"));
         assert!(formatted.contains("best_candidate_improvement_delta_frames="));
         assert!(formatted.contains("max_abs_sample_delta="));
         assert!(formatted.contains("max_abs_sample_delta_source="));
@@ -2658,6 +2834,48 @@ mod tests {
         assert!(line.contains("candidate_peak="));
         assert!(line.contains("baseline_adjacent_step="));
         assert!(line.contains("candidate_adjacent_step="));
+    }
+
+    #[test]
+    fn width_control_edit_gate_counts_retained_and_rejected_improvements() {
+        let audio = DecodedListeningSourceAudio {
+            case_id: "stretch:bass".to_string(),
+            source_path: "target/source.wav".to_string(),
+            sample_rate_hz: 48_000,
+            channels: 1,
+            samples: vec![0.0; 8],
+            analysis_limited: false,
+        };
+        let offline = transient_smear_measurement(20.0);
+        let candidate = transient_smear_measurement(10.0);
+        let safe_edit = WidthControlEditStats {
+            changed_samples: 2,
+            max_abs_sample_delta: WIDTH_CONTROL_EDIT_GATE_MAX_SAMPLE_DELTA * 0.5,
+            max_added_adjacent_step_delta: WIDTH_CONTROL_EDIT_GATE_MAX_ADDED_ADJACENT_STEP_DELTA
+                * 0.5,
+            ..Default::default()
+        };
+        let risky_edit = WidthControlEditStats {
+            changed_samples: 2,
+            max_abs_sample_delta: WIDTH_CONTROL_EDIT_GATE_MAX_SAMPLE_DELTA * 0.5,
+            max_added_adjacent_step_delta: WIDTH_CONTROL_EDIT_GATE_MAX_ADDED_ADJACENT_STEP_DELTA
+                * 2.0,
+            ..Default::default()
+        };
+        let mut gate = TransientWidthControlEditGateAccumulator::default();
+
+        gate.record(&audio, 0.75, &offline, &candidate, &safe_edit);
+        gate.record(&audio, 0.75, &offline, &candidate, &risky_edit);
+        let line = gate.format_report_line();
+
+        assert!(line.contains("accepted_rows=1"));
+        assert!(line.contains("rejected_rows=1"));
+        assert!(line.contains("accepted_candidate_better_rows=1"));
+        assert!(line.contains("rejected_candidate_better_rows=1"));
+        assert!(line.contains("gated_better_rows=1"));
+        assert!(line.contains("unchanged_rows=1"));
+        assert!(line.contains("rejected_candidate_improvement_delta_frames=10.000000"));
+        assert!(line.contains("max_rejected_added_adjacent_step_delta=0.100000000"));
     }
 
     #[test]

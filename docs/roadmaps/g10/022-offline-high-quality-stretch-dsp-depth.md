@@ -294,13 +294,26 @@ comparison reports, not add more receipt or fixture surfaces.
   look like a new step edge by this metric, but the bass row does. Keep the
   candidate report-only and measure an edit-pressure gate before any DSP
   promotion.
+- 2026-07-07: added a report-only conservative edit-pressure gate for the
+  guarded width-control candidate. The gate limits row promotion to
+  `max_abs_sample_delta <= 0.250000000` and
+  `max_added_adjacent_step_delta <= 0.050000000`. On the broader FMA seed, the
+  raw candidate still improves 7 rows, worsens 0, leaves 10 unchanged, and
+  leaves 3 inconclusive, but the gate accepts 10 rows, rejects 10 rows, and
+  rejects all 7 candidate-improved rows. Gated evidence therefore has 0 better
+  rows, 0 current-better rows, 17 unchanged rows, and 3 inconclusive rows;
+  finite-row mean max-smear returns to current OfflineHighQuality exactly:
+  `374.352941` gated versus `374.352941` current. The rejected candidate
+  improvement total is `117.000000` frames. This rejects the current
+  sample-edit width-control candidate as a promotable DSP path under
+  conservative edit-pressure limits.
 
 ## Next Task
 
 Do not add a multiresolution or hybrid path until measured evidence requires
-it. Next useful work is to add a report-only edit-pressure gate for the guarded
-width-control candidate, then rerun the broad FMA seed to answer one question:
-how much of the 7-row transient-smear improvement remains if candidate edits
-that introduce large adjacent-step deltas or large sample deltas are rejected?
-Do not promote the width-control candidate until that gate removes the bass
-step-edge risk or proves the remaining candidate benefit is too small.
+it. The width-control postprocess line is now closed as report-only/rejected.
+Next useful work is to reselect the next OfflineHighQuality weakness from the
+current decoded evidence instead of tuning this candidate: either a safer
+transient-anchor path that reduces the `000900.mp3` compression matched-event
+width without high sample edits, or a broader multiresolution/hybrid STFT path
+if the next report shows the residual weakness is not local transient anchoring.
