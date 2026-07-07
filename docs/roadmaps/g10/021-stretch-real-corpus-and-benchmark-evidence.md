@@ -88,9 +88,12 @@ notes before more product-facing quality claims land.
   seed keeps fixed per-family coverage and avoids repeated artists where
   possible. It is explicitly coverage evidence, not a subjective quality
   judgment.
+- 2026-07-07: ran the local report with the FMA review-seed TSV:
+  `operator_listening_sources=10`, `missing_assets=0`, no external benchmark
+  comparisons. This proves local real-source coverage wiring, not listened
+  quality.
 
 ## Next Task
 
-Run the local report with the FMA review-seed TSV, collect optional external
-rendered-output comparisons, and replace the seed with listened curation before
-using real-source evidence for promotion.
+Replace the review seed with listened curation and/or add optional external
+rendered-output comparisons before using real-source evidence for promotion.

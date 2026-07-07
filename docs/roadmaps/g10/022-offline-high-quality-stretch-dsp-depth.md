@@ -82,9 +82,20 @@ comparison reports, not add more receipt or fixture surfaces.
   behavior stayed stable. The selected synthetic seam metric improved to
   `-240.000000` dBFS with no new higher-priority regression in the comparison
   report.
+- 2026-07-07: reran the report with the no-listening FMA review seed. Real
+  source coverage was present (`operator_listening_sources=10`,
+  `missing_assets=0`), but it still provided no subjective or decoded
+  real-audio quality metric. Synthetic comparison had no regressions or
+  inconclusive rows. External rendered-output comparison could not be collected
+  locally because `rubberband`, `ffmpeg`, and `sox` were not installed.
+- 2026-07-07: rejected a narrow compression transient-reset change. Enabling
+  transient phase resets for ratios below 1.0 changed synthetic extreme-ratio
+  transient smear at `0.5x` and `0.75x` from OfflineHighQuality `8`/`6` frames
+  back to the draft `1024` frame value, so no DSP patch landed.
 
 ## Next Task
 
 Do not add a multiresolution or hybrid path until measured evidence requires
-it. Next useful work is either the operator-supplied real corpus report, or a
-fresh Batch 22 target selected from new report evidence.
+it. Next useful work is listened real-source curation, external rendered-output
+comparison on a machine with the comparator tools installed, or a new decoded
+real-audio metric path that can expose an actual Batch 22 target.
