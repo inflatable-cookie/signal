@@ -868,6 +868,8 @@ fn format_decoded_stretch_metrics(
                 QUALITY_METRIC_WINDOW_SIZE,
                 QUALITY_METRIC_HOP_SIZE,
             );
+            let offline_width_control_edit =
+                width_control_edit_stats(&offline_output, &offline_width_control_output);
             compression_ablation.record(&audio, ratio, &draft_smear, &offline_smear);
             width_control_candidate.record(
                 &audio,
@@ -875,6 +877,7 @@ fn format_decoded_stretch_metrics(
                 &draft_smear,
                 &offline_smear,
                 &offline_width_control_smear,
+                offline_width_control_edit,
             );
             draft_recovery_gate.record(
                 &draft_strict_smear,
@@ -960,6 +963,16 @@ struct TransientWidthControlCandidateAccumulator {
     worst_draft_regression_case_id: String,
     worst_draft_regression_source: String,
     worst_draft_regression_ratio: f64,
+    edited_rows: usize,
+    edited_samples: usize,
+    max_abs_sample_delta: f64,
+    max_abs_sample_delta_case_id: String,
+    max_abs_sample_delta_source: String,
+    max_abs_sample_delta_ratio: f64,
+    max_added_adjacent_step_delta: f64,
+    max_added_adjacent_step_case_id: String,
+    max_added_adjacent_step_source: String,
+    max_added_adjacent_step_ratio: f64,
 }
 
 impl TransientWidthControlCandidateAccumulator {
@@ -970,12 +983,29 @@ impl TransientWidthControlCandidateAccumulator {
         draft: &signal_dsp_stretch::StretchTransientSmearMeasurement,
         offline: &signal_dsp_stretch::StretchTransientSmearMeasurement,
         candidate: &signal_dsp_stretch::StretchTransientSmearMeasurement,
+        edit: WidthControlEditStats,
     ) {
         if ratio >= 1.0 {
             return;
         }
 
         self.rows += 1;
+        if edit.changed_samples > 0 {
+            self.edited_rows += 1;
+            self.edited_samples += edit.changed_samples;
+            if edit.max_abs_sample_delta > self.max_abs_sample_delta {
+                self.max_abs_sample_delta = edit.max_abs_sample_delta;
+                self.max_abs_sample_delta_case_id = audio.case_id.clone();
+                self.max_abs_sample_delta_source = audio.source_path.clone();
+                self.max_abs_sample_delta_ratio = ratio;
+            }
+            if edit.max_added_adjacent_step_delta > self.max_added_adjacent_step_delta {
+                self.max_added_adjacent_step_delta = edit.max_added_adjacent_step_delta;
+                self.max_added_adjacent_step_case_id = audio.case_id.clone();
+                self.max_added_adjacent_step_source = audio.source_path.clone();
+                self.max_added_adjacent_step_ratio = ratio;
+            }
+        }
         match compare_metric_values(candidate.max_smear_frames, offline.max_smear_frames) {
             MetricComparison::Improved => self.candidate_better_rows += 1,
             MetricComparison::Same => {
@@ -1021,7 +1051,7 @@ impl TransientWidthControlCandidateAccumulator {
 
     fn format_report_line(&self) -> String {
         format!(
-            "decoded_transient_width_control_candidate rows={} candidate_path=offline_hq_width_control baseline_path=offline_hq candidate_better_rows={} current_better_rows={} unchanged_rows={} inconclusive_rows={} finite_rows={} mean_candidate_smear_frames={:.6} mean_current_smear_frames={:.6} best_candidate_improvement_delta_frames={:.6} best_candidate_improvement_case={} best_candidate_improvement_source={} best_candidate_improvement_ratio={:.6} worst_candidate_regression_delta_frames={:.6} worst_candidate_regression_case={} worst_candidate_regression_source={} worst_candidate_regression_ratio={:.6} worst_draft_regression_delta_frames={:.6} worst_draft_regression_case={} worst_draft_regression_source={} worst_draft_regression_ratio={:.6}",
+            "decoded_transient_width_control_candidate rows={} candidate_path=offline_hq_width_control baseline_path=offline_hq candidate_better_rows={} current_better_rows={} unchanged_rows={} inconclusive_rows={} finite_rows={} mean_candidate_smear_frames={:.6} mean_current_smear_frames={:.6} best_candidate_improvement_delta_frames={:.6} best_candidate_improvement_case={} best_candidate_improvement_source={} best_candidate_improvement_ratio={:.6} worst_candidate_regression_delta_frames={:.6} worst_candidate_regression_case={} worst_candidate_regression_source={} worst_candidate_regression_ratio={:.6} worst_draft_regression_delta_frames={:.6} worst_draft_regression_case={} worst_draft_regression_source={} worst_draft_regression_ratio={:.6} edited_rows={} edited_samples={} max_abs_sample_delta={:.9} max_abs_sample_delta_case={} max_abs_sample_delta_source={} max_abs_sample_delta_ratio={:.6} max_added_adjacent_step_delta={:.9} max_added_adjacent_step_case={} max_added_adjacent_step_source={} max_added_adjacent_step_ratio={:.6}",
             self.rows,
             self.candidate_better_rows,
             self.current_better_rows,
@@ -1042,8 +1072,25 @@ impl TransientWidthControlCandidateAccumulator {
             self.worst_draft_regression_case_id,
             quoted_report_field(&self.worst_draft_regression_source),
             self.worst_draft_regression_ratio,
+            self.edited_rows,
+            self.edited_samples,
+            self.max_abs_sample_delta,
+            self.max_abs_sample_delta_case_id,
+            quoted_report_field(&self.max_abs_sample_delta_source),
+            self.max_abs_sample_delta_ratio,
+            self.max_added_adjacent_step_delta,
+            self.max_added_adjacent_step_case_id,
+            quoted_report_field(&self.max_added_adjacent_step_source),
+            self.max_added_adjacent_step_ratio,
         )
     }
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+struct WidthControlEditStats {
+    changed_samples: usize,
+    max_abs_sample_delta: f64,
+    max_added_adjacent_step_delta: f64,
 }
 
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -1956,6 +2003,36 @@ fn apply_transient_width_control_candidate(input: &[f32], output: &[f32], ratio:
     }
 }
 
+fn width_control_edit_stats(baseline: &[f32], candidate: &[f32]) -> WidthControlEditStats {
+    let len = baseline.len().min(candidate.len());
+    if len == 0 {
+        return WidthControlEditStats::default();
+    }
+
+    let mut changed_samples = 0usize;
+    let mut max_abs_sample_delta = 0.0f64;
+    let mut max_added_adjacent_step_delta = 0.0f64;
+    for index in 0..len {
+        let sample_delta = (candidate[index] - baseline[index]).abs() as f64;
+        if sample_delta > 1.0e-9 {
+            changed_samples += 1;
+            max_abs_sample_delta = max_abs_sample_delta.max(sample_delta);
+        }
+        if index > 0 {
+            let baseline_step = (baseline[index] - baseline[index - 1]).abs() as f64;
+            let candidate_step = (candidate[index] - candidate[index - 1]).abs() as f64;
+            max_added_adjacent_step_delta =
+                max_added_adjacent_step_delta.max(candidate_step - baseline_step);
+        }
+    }
+
+    WidthControlEditStats {
+        changed_samples,
+        max_abs_sample_delta,
+        max_added_adjacent_step_delta: max_added_adjacent_step_delta.max(0.0),
+    }
+}
+
 fn nearest_transient_event(
     events: &[signal_dsp_stretch::StretchTransientEvent],
     expected_frame: f64,
@@ -2382,6 +2459,10 @@ mod tests {
         assert!(formatted.contains("candidate_path=offline_hq_width_control"));
         assert!(formatted.contains("baseline_path=offline_hq"));
         assert!(formatted.contains("best_candidate_improvement_delta_frames="));
+        assert!(formatted.contains("max_abs_sample_delta="));
+        assert!(formatted.contains("max_abs_sample_delta_source="));
+        assert!(formatted.contains("max_added_adjacent_step_delta="));
+        assert!(formatted.contains("max_added_adjacent_step_source="));
         assert!(formatted.contains("target_status="));
         assert!(formatted.contains("global_threshold_status="));
         assert!(formatted.contains("full_candidate_input_ratio="));

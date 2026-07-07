@@ -270,12 +270,20 @@ comparison reports, not add more receipt or fixture surfaces.
   `41` frames on `stretch:drums_percussion` `000002.mp3` at `0.75x`; the worst
   candidate regression and worst draft regression were both `0`, so the
   `000900.mp3` finite-smear regression is removed under the guarded candidate.
+- 2026-07-07: added edit-pressure diagnostics to the guarded width-control
+  candidate summary. The broader FMA seed still shows the same metric shape, but
+  the candidate edits 11 compression rows and 290 samples. The largest sample
+  delta is `0.422849804` on `stretch:full_mix` `000144.mp3` at `0.75x`; the
+  largest added adjacent-step delta is `0.309232593` on `stretch:bass`
+  `000236.mp3` at `0.75x`. This is too much unmanaged edit pressure to promote
+  into reusable OfflineHighQuality DSP without window-level inspection or
+  listening/external comparison evidence. Keep it report-only for now.
 
 ## Next Task
 
 Do not add a multiresolution or hybrid path until measured evidence requires
-it. Next useful work is to decide whether the guarded transient-width control
-belongs in the reusable OfflineHighQuality DSP path or should stay report-only
-until listening/external comparison evidence exists. Before promotion, inspect
-the controlled windows for click/energy damage and rerun the broader FMA seed
-with any implementation candidate.
+it. Next useful work is to localize the high edit-pressure windows
+(`000144.mp3` full mix and `000236.mp3` bass at `0.75x`) with bounded report
+rows that show source frame, output frame, peak/RMS before/after, and adjacent
+step before/after. Do not promote the width-control candidate until those rows
+show the edits are not creating click or energy damage.
