@@ -1210,6 +1210,7 @@ fn format_decoded_stretch_metrics(
     let mut compression_short_window_selector_candidate =
         ShortWindowSelectorCandidateAccumulator::default();
     let mut compression_short_window_selector_path = ShortWindowSelectorPathAccumulator::default();
+    let mut matched_width_review = MatchedTransientWidthReviewAccumulator::default();
     let mut width_control_candidate = TransientWidthControlCandidateAccumulator::default();
     let mut width_control_edit_gate = TransientWidthControlEditGateAccumulator::default();
     for source in sources {
@@ -1393,6 +1394,14 @@ fn format_decoded_stretch_metrics(
                 &offline_short_window_smear,
                 &offline_short_window_selector_smear,
             );
+            matched_width_review.record(
+                &audio,
+                ratio,
+                &draft_smear,
+                &offline_smear,
+                &offline_short_window_smear,
+                &offline_short_window_selector_smear,
+            );
             width_control_candidate.record(
                 &audio,
                 ratio,
@@ -1476,6 +1485,9 @@ fn format_decoded_stretch_metrics(
     }
     if compression_short_window_selector_path.rows > 0 {
         lines.push(compression_short_window_selector_path.format_report_line());
+    }
+    if matched_width_review.rows > 0 {
+        lines.push(matched_width_review.format_report_line());
     }
     if width_control_candidate.rows > 0 {
         lines.push(width_control_candidate.format_report_line());
@@ -3970,6 +3982,139 @@ impl ShortWindowSelectorPathAccumulator {
     }
 }
 
+#[derive(Default)]
+struct MatchedTransientWidthReviewAccumulator {
+    rows: usize,
+    finite_rows: usize,
+    offline_worse_than_draft_rows: usize,
+    offline_better_than_draft_rows: usize,
+    offline_same_as_draft_rows: usize,
+    selector_worse_than_draft_rows: usize,
+    selector_better_than_draft_rows: usize,
+    selector_same_as_draft_rows: usize,
+    selector_better_than_offline_rows: usize,
+    selector_worse_than_offline_rows: usize,
+    selector_same_as_offline_rows: usize,
+    max_offline_vs_draft_delta_frames: f64,
+    max_offline_vs_draft_case_id: String,
+    max_offline_vs_draft_source: String,
+    max_offline_vs_draft_ratio: f64,
+    max_selector_vs_draft_delta_frames: f64,
+    max_selector_vs_draft_case_id: String,
+    max_selector_vs_draft_source: String,
+    max_selector_vs_draft_ratio: f64,
+    max_selector_residual_smear_frames: f64,
+    max_selector_residual_case_id: String,
+    max_selector_residual_source: String,
+    max_selector_residual_ratio: f64,
+    max_selector_residual_input_width_frames: f64,
+    max_selector_residual_output_width_frames: f64,
+    max_short_window_residual_smear_frames: f64,
+}
+
+impl MatchedTransientWidthReviewAccumulator {
+    fn record(
+        &mut self,
+        audio: &DecodedListeningSourceAudio,
+        ratio: f64,
+        draft: &signal_dsp_stretch::StretchTransientSmearMeasurement,
+        offline: &signal_dsp_stretch::StretchTransientSmearMeasurement,
+        short_window: &signal_dsp_stretch::StretchTransientSmearMeasurement,
+        selector: &signal_dsp_stretch::StretchTransientSmearMeasurement,
+    ) {
+        self.rows += 1;
+        let draft_smear = draft.max_matched_smear_frames;
+        let offline_smear = offline.max_matched_smear_frames;
+        let short_window_smear = short_window.max_matched_smear_frames;
+        let selector_smear = selector.max_matched_smear_frames;
+        if !draft_smear.is_finite()
+            || !offline_smear.is_finite()
+            || !short_window_smear.is_finite()
+            || !selector_smear.is_finite()
+        {
+            return;
+        }
+
+        self.finite_rows += 1;
+        match compare_metric_values(offline_smear, draft_smear) {
+            MetricComparison::Improved => self.offline_better_than_draft_rows += 1,
+            MetricComparison::Same => self.offline_same_as_draft_rows += 1,
+            MetricComparison::Worsened => self.offline_worse_than_draft_rows += 1,
+        }
+        match compare_metric_values(selector_smear, draft_smear) {
+            MetricComparison::Improved => self.selector_better_than_draft_rows += 1,
+            MetricComparison::Same => self.selector_same_as_draft_rows += 1,
+            MetricComparison::Worsened => self.selector_worse_than_draft_rows += 1,
+        }
+        match compare_metric_values(selector_smear, offline_smear) {
+            MetricComparison::Improved => self.selector_better_than_offline_rows += 1,
+            MetricComparison::Same => self.selector_same_as_offline_rows += 1,
+            MetricComparison::Worsened => self.selector_worse_than_offline_rows += 1,
+        }
+
+        let offline_delta = offline_smear - draft_smear;
+        if offline_delta > self.max_offline_vs_draft_delta_frames {
+            self.max_offline_vs_draft_delta_frames = offline_delta;
+            self.max_offline_vs_draft_case_id = audio.case_id.clone();
+            self.max_offline_vs_draft_source = audio.source_path.clone();
+            self.max_offline_vs_draft_ratio = ratio;
+        }
+
+        let selector_delta = selector_smear - draft_smear;
+        if selector_delta > self.max_selector_vs_draft_delta_frames {
+            self.max_selector_vs_draft_delta_frames = selector_delta;
+            self.max_selector_vs_draft_case_id = audio.case_id.clone();
+            self.max_selector_vs_draft_source = audio.source_path.clone();
+            self.max_selector_vs_draft_ratio = ratio;
+        }
+
+        if selector_smear > self.max_selector_residual_smear_frames {
+            self.max_selector_residual_smear_frames = selector_smear;
+            self.max_selector_residual_case_id = audio.case_id.clone();
+            self.max_selector_residual_source = audio.source_path.clone();
+            self.max_selector_residual_ratio = ratio;
+            self.max_selector_residual_input_width_frames = selector.max_matched_input_width_frames;
+            self.max_selector_residual_output_width_frames =
+                selector.max_matched_output_width_frames;
+        }
+        if short_window_smear > self.max_short_window_residual_smear_frames {
+            self.max_short_window_residual_smear_frames = short_window_smear;
+        }
+    }
+
+    fn format_report_line(&self) -> String {
+        format!(
+            "decoded_matched_transient_width_review rows={} finite_rows={} baseline_path=offline_hq selector_path=offline_hq_compression_short_window_selector metric=max_matched_smear_frames offline_worse_than_draft_rows={} offline_better_than_draft_rows={} offline_same_as_draft_rows={} selector_worse_than_draft_rows={} selector_better_than_draft_rows={} selector_same_as_draft_rows={} selector_better_than_offline_rows={} selector_worse_than_offline_rows={} selector_same_as_offline_rows={} max_offline_vs_draft_delta_frames={:.6} max_offline_vs_draft_case={} max_offline_vs_draft_source={} max_offline_vs_draft_ratio={:.6} max_selector_vs_draft_delta_frames={:.6} max_selector_vs_draft_case={} max_selector_vs_draft_source={} max_selector_vs_draft_ratio={:.6} max_selector_residual_smear_frames={:.6} max_selector_residual_case={} max_selector_residual_source={} max_selector_residual_ratio={:.6} max_selector_residual_input_width_frames={:.6} max_selector_residual_output_width_frames={:.6} max_short_window_residual_smear_frames={:.6}",
+            self.rows,
+            self.finite_rows,
+            self.offline_worse_than_draft_rows,
+            self.offline_better_than_draft_rows,
+            self.offline_same_as_draft_rows,
+            self.selector_worse_than_draft_rows,
+            self.selector_better_than_draft_rows,
+            self.selector_same_as_draft_rows,
+            self.selector_better_than_offline_rows,
+            self.selector_worse_than_offline_rows,
+            self.selector_same_as_offline_rows,
+            self.max_offline_vs_draft_delta_frames,
+            self.max_offline_vs_draft_case_id,
+            quoted_report_field(&self.max_offline_vs_draft_source),
+            self.max_offline_vs_draft_ratio,
+            self.max_selector_vs_draft_delta_frames,
+            self.max_selector_vs_draft_case_id,
+            quoted_report_field(&self.max_selector_vs_draft_source),
+            self.max_selector_vs_draft_ratio,
+            self.max_selector_residual_smear_frames,
+            self.max_selector_residual_case_id,
+            quoted_report_field(&self.max_selector_residual_source),
+            self.max_selector_residual_ratio,
+            self.max_selector_residual_input_width_frames,
+            self.max_selector_residual_output_width_frames,
+            self.max_short_window_residual_smear_frames,
+        )
+    }
+}
+
 #[derive(Clone, Debug, PartialEq)]
 struct CompressionReviewFeatureRow {
     report_name: &'static str,
@@ -5801,6 +5946,8 @@ mod tests {
         assert!(formatted.contains("gate=CurrentMissesOrHighCurrentSmear"));
         assert!(formatted.contains("decoded_compression_short_window_selector_path rows="));
         assert!(formatted.contains("path=offline_hq_compression_short_window_selector"));
+        assert!(formatted.contains("decoded_matched_transient_width_review rows="));
+        assert!(formatted.contains("metric=max_matched_smear_frames"));
         assert!(formatted.contains("decoded_transient_width_control_candidate rows="));
         assert!(formatted.contains("candidate_path=offline_hq_width_control"));
         assert!(formatted.contains("baseline_path=offline_hq"));
@@ -6079,6 +6226,43 @@ mod tests {
         assert!(line.contains("output_mismatch_rows=0"));
         assert!(line.contains("smear_match_rows=2"));
         assert!(line.contains("smear_mismatch_rows=0"));
+    }
+
+    #[test]
+    fn matched_width_review_keeps_residual_widening_visible() {
+        let audio = DecodedListeningSourceAudio {
+            case_id: "stretch:pads_sustains".to_string(),
+            source_path: "target/source.wav".to_string(),
+            sample_rate_hz: 48_000,
+            channels: 1,
+            samples: vec![0.0; 8],
+            analysis_limited: false,
+        };
+        let draft = transient_smear_measurement(2.0);
+        let mut offline = transient_smear_measurement(13.0);
+        offline.max_matched_input_width_frames = 7.0;
+        offline.max_matched_output_width_frames = 20.0;
+        let mut short_window = transient_smear_measurement(13.0);
+        short_window.max_matched_input_width_frames = 7.0;
+        short_window.max_matched_output_width_frames = 20.0;
+        let mut selector = transient_smear_measurement(13.0);
+        selector.max_matched_input_width_frames = 7.0;
+        selector.max_matched_output_width_frames = 20.0;
+        let mut accumulator = MatchedTransientWidthReviewAccumulator::default();
+
+        accumulator.record(&audio, 0.75, &draft, &offline, &short_window, &selector);
+        let line = accumulator.format_report_line();
+
+        assert!(line.contains("rows=1"));
+        assert!(line.contains("finite_rows=1"));
+        assert!(line.contains("offline_worse_than_draft_rows=1"));
+        assert!(line.contains("selector_worse_than_draft_rows=1"));
+        assert!(line.contains("selector_same_as_offline_rows=1"));
+        assert!(line.contains("max_offline_vs_draft_delta_frames=11.000000"));
+        assert!(line.contains("max_selector_vs_draft_delta_frames=11.000000"));
+        assert!(line.contains("max_selector_residual_smear_frames=13.000000"));
+        assert!(line.contains("max_selector_residual_input_width_frames=7.000000"));
+        assert!(line.contains("max_selector_residual_output_width_frames=20.000000"));
     }
 
     #[test]

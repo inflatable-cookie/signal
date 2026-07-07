@@ -58,6 +58,15 @@ comparison reports, not add more receipt or fixture surfaces.
 - [x] keep the default OfflineHighQuality path unchanged until selector use is
   explicitly selected by artifact policy
 
+### Batch 22.5 - Matched-Width Residual Isolation
+
+- [x] reproduce the focused `000900.mp3` pads/sustains case with the existing
+  Rubber Band render pack
+- [x] separate matched-event width evidence from missing-transient penalties in
+  decoded reports
+- [ ] design or reject a low-edit-pressure DSP candidate for matched-event
+  width after the residual is visible across the broad corpus
+
 ## Acceptance Criteria
 
 - [x] every DSP batch names the metric or listening failure it targets
@@ -539,11 +548,26 @@ comparison reports, not add more receipt or fixture surfaces.
   Selector artifact materialization rejects default-path receipts and still
   rejects dynamic-ratio or pitch-shift selector combinations until those paths
   have separate evidence.
+- 2026-07-07: reopened the `000900.mp3` pads/sustains residual as Batch 22.5
+  and added a report-only `decoded_matched_transient_width_review` row. The
+  focused local run used one FMA source and the existing Rubber Band render pack
+  at `target/stretch-corpus-fma-000900-width-followup.tsv`. The default decoded
+  0.75x headline transient-smear metric is still dominated by one missed
+  transient penalty (`offline_hq=1024.000000`), while the matched-event residual
+  is `13.000000` frames from input width `7.000000` to output width
+  `20.000000`. The selector path selected the short-window output and matched
+  the selector gate, but `decoded_matched_transient_width_review` showed
+  selector and default matched-width results were identical across the three
+  `000900` ratios (`selector_same_as_offline_rows=3`). Against the Rubber Band
+  rendered WAV excerpt at 0.75x, Signal timing drift stayed at `0` samples and
+  the transient-smear proxy favored Signal (`13.000000` frames versus
+  Rubber Band `25.000000`), so this case is a Signal-vs-draft matched-width
+  residual, not clear Rubber Band underperformance by that proxy.
 
 ## Next Task
 
-Batch 22.4 is closed. Next useful work is a measured quality batch, not more
-artifact plumbing: either reopen the `000900.mp3` pads/sustains matched-event
-width issue, or collect separate selector evidence before enabling dynamic-ratio
-or pitch-shift selector artifact materialization. Do not make the selector a
-consumer-visible default yet.
+Continue Batch 22.5. Run the broad FMA/Rubber Band report with
+`decoded_matched_transient_width_review` enabled, then decide whether a
+low-edit-pressure matched-width DSP candidate is justified. Do not revive the
+previous width-control sample edit path unless the new broad evidence proves
+its edit pressure can be bounded.
