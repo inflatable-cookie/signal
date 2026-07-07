@@ -208,12 +208,22 @@ comparison reports, not add more receipt or fixture surfaces.
   matches/82 misses to 88 matches/35 misses. This is the better prototype
   shape: targeted output recovery instead of replacing output detection or
   lowering input thresholds globally.
+- 2026-07-07: added decoded `decoded_transient_recovery_gate` summary rows with
+  explicit thresholds: at least 1 recovered miss, 0 missed-row worsens, 0
+  max-smear worsens, and global candidate input ratio no higher than `2.0`.
+  The regenerated local FMA review seed reports `offline_hq target_status=Pass`
+  and `global_threshold_status=Rejected`, recommending `TargetedOutputRecovery`.
+  OfflineHighQuality recovered 24 misses, had 0 recovery missed-row worsens, 0
+  max-smear worsens, and showed full-candidate input pressure of `3.414634`
+  against the `2.0` global-threshold limit. This promotes targeted recovery as
+  the only detector-policy candidate worth considering; global threshold
+  relaxation remains rejected.
 
 ## Next Task
 
 Do not add a multiresolution or hybrid path until measured evidence requires
-it. Next useful work is to turn the recovery-only prototype into a promotion
-gate: add acceptance thresholds for recovered misses, max-smear non-worsening,
-and candidate false-positive pressure, then decide whether this targeted output
-recovery belongs in the production metric policy or should stay report-only
-until listened/external comparison evidence lands.
+it. Next useful work is to decide whether targeted output recovery should affect
+only acceptance/reporting or also production transient-smear policy. Before
+changing production policy, require one of: listened curation, external rendered
+comparison, or a broader decoded-source seed that keeps the recovery gate pass
+and global threshold rejection stable.

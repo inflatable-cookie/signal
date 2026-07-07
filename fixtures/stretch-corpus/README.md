@@ -69,11 +69,15 @@ rows also include report-only candidate detector matching counts, both with the
 candidate policy applied to input and output and with production input events
 held fixed while candidate detection is applied to output only. They also
 include a stricter recovery-only variant that keeps production output matches
-first and tries candidate output detection only for production misses. The
-report also emits capped `decoded_transient_alignment_event` rows for the
-largest missed events per backend and ratio. Event rows include peak/RMS probes
-around the input event, expected output frame, and nearest detected output
-frame, plus an alignment class: `ExpectedEnergyPresent`, `ExpectedEnergyWeak`,
+first and tries candidate output detection only for production misses. When
+decoded stretch metrics are emitted, the report appends
+`decoded_transient_recovery_gate` summary rows for draft and OfflineHighQuality.
+Those rows apply explicit thresholds for recovered misses, recovery
+non-worsening, and global-threshold false-positive pressure. The report also
+emits capped `decoded_transient_alignment_event` rows for the largest missed
+events per backend and ratio. Event rows include peak/RMS probes around the
+input event, expected output frame, and nearest detected output frame, plus an
+alignment class: `ExpectedEnergyPresent`, `ExpectedEnergyWeak`,
 `ExpectedEnergyMissing`, or `Inconclusive`. They also include local detector
 shape scores for expected output frames: normalized energy rise, spectral flux,
 combined score, neighboring combined scores, current detector class, threshold

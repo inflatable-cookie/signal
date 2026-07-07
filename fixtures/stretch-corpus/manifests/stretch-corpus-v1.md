@@ -72,10 +72,13 @@ matched timing error and nearest-missed distance diagnostics for alignment
 triage, report-only candidate detector matching counts, candidate-output-only
 matching counts, recovery-only output matching counts, event-position fields
 for the largest missed distance, and capped event rows for the largest misses
-per backend and ratio. Event rows include peak/RMS probes around the input
-event, expected output frame, and nearest detected output frame, plus
-expected-output energy, current detector-shape classes, detector-threshold
-margins, and report-only candidate detector classes.
+per backend and ratio. Recovery gate rows summarize whether targeted recovery
+passes recovered-miss and non-worsening thresholds, and whether a global
+candidate-threshold change is rejected by false-positive pressure. Event rows
+include peak/RMS probes around the input event, expected output frame, and
+nearest detected output frame, plus expected-output energy, current
+detector-shape classes, detector-threshold margins, and report-only candidate
+detector classes.
 
 ## Next Task
 

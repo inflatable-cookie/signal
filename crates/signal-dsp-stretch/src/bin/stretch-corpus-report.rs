@@ -36,6 +36,10 @@ const MAX_TRANSIENT_ALIGNMENT_EVENTS_PER_BACKEND: usize = 3;
 const TRANSIENT_ALIGNMENT_WINDOW_RADIUS: usize = QUALITY_METRIC_WINDOW_SIZE;
 const EXPECTED_TRANSIENT_ENERGY_PRESENT_RATIO: f64 = 0.50;
 const EXPECTED_TRANSIENT_ENERGY_WEAK_RATIO: f64 = 0.10;
+const RECOVERY_GATE_MIN_RECOVERED_MISSES: usize = 1;
+const RECOVERY_GATE_MAX_MISSED_WORSENED_ROWS: usize = 0;
+const RECOVERY_GATE_MAX_SMEAR_WORSENED_ROWS: usize = 0;
+const RECOVERY_GATE_MAX_GLOBAL_CANDIDATE_INPUT_RATIO: f64 = 2.0;
 const DETECTOR_POLICY: StretchTransientDetectorPolicy =
     StretchTransientDetectorPolicy::production();
 const CANDIDATE_DETECTOR_POLICY: StretchTransientDetectorPolicy =
@@ -747,6 +751,8 @@ fn format_decoded_stretch_metrics(
     frame_limit: usize,
 ) -> Result<String, String> {
     let mut lines = Vec::new();
+    let mut draft_recovery_gate = TransientRecoveryGateAccumulator::new("draft");
+    let mut offline_recovery_gate = TransientRecoveryGateAccumulator::new("offline_hq");
     for source in sources {
         let audio = decode_listening_source_audio(source, frame_limit)?;
         let mono = audio.mono_samples();
@@ -835,6 +841,16 @@ fn format_decoded_stretch_metrics(
                     DETECTOR_POLICY,
                     CANDIDATE_DETECTOR_POLICY,
                 );
+            draft_recovery_gate.record(
+                &draft_smear,
+                &draft_candidate_smear,
+                &draft_candidate_recovery_smear,
+            );
+            offline_recovery_gate.record(
+                &offline_smear,
+                &offline_candidate_smear,
+                &offline_candidate_recovery_smear,
+            );
             let draft_alignment = transient_alignment_diagnostic(&mono, &draft_output, ratio);
             let offline_alignment = transient_alignment_diagnostic(&mono, &offline_output, ratio);
             lines.push(format_decoded_stretch_metric_line(
@@ -870,7 +886,183 @@ fn format_decoded_stretch_metrics(
             ));
         }
     }
+    if draft_recovery_gate.rows > 0 {
+        lines.push(draft_recovery_gate.format_report_line());
+    }
+    if offline_recovery_gate.rows > 0 {
+        lines.push(offline_recovery_gate.format_report_line());
+    }
     Ok(lines.join("\n"))
+}
+
+#[derive(Clone, Debug, PartialEq)]
+struct TransientRecoveryGateAccumulator {
+    backend: &'static str,
+    rows: usize,
+    production_input_transients: usize,
+    production_matched_transients: usize,
+    production_missed_transients: usize,
+    full_candidate_input_transients: usize,
+    full_candidate_matched_transients: usize,
+    full_candidate_missed_transients: usize,
+    recovery_matched_transients: usize,
+    recovery_missed_transients: usize,
+    recovery_missed_rows_improved: usize,
+    recovery_missed_rows_same: usize,
+    recovery_missed_rows_worsened: usize,
+    recovery_max_rows_improved: usize,
+    recovery_max_rows_same: usize,
+    recovery_max_rows_worsened: usize,
+}
+
+impl TransientRecoveryGateAccumulator {
+    fn new(backend: &'static str) -> Self {
+        Self {
+            backend,
+            rows: 0,
+            production_input_transients: 0,
+            production_matched_transients: 0,
+            production_missed_transients: 0,
+            full_candidate_input_transients: 0,
+            full_candidate_matched_transients: 0,
+            full_candidate_missed_transients: 0,
+            recovery_matched_transients: 0,
+            recovery_missed_transients: 0,
+            recovery_missed_rows_improved: 0,
+            recovery_missed_rows_same: 0,
+            recovery_missed_rows_worsened: 0,
+            recovery_max_rows_improved: 0,
+            recovery_max_rows_same: 0,
+            recovery_max_rows_worsened: 0,
+        }
+    }
+
+    fn record(
+        &mut self,
+        production: &signal_dsp_stretch::StretchTransientSmearMeasurement,
+        full_candidate: &signal_dsp_stretch::StretchTransientSmearMeasurement,
+        recovery: &signal_dsp_stretch::StretchTransientSmearMeasurement,
+    ) {
+        self.rows += 1;
+        self.production_input_transients += production.input_transients;
+        self.production_matched_transients += production.matched_transients;
+        self.production_missed_transients += production.missed_transients;
+        self.full_candidate_input_transients += full_candidate.input_transients;
+        self.full_candidate_matched_transients += full_candidate.matched_transients;
+        self.full_candidate_missed_transients += full_candidate.missed_transients;
+        self.recovery_matched_transients += recovery.matched_transients;
+        self.recovery_missed_transients += recovery.missed_transients;
+
+        if recovery.missed_transients < production.missed_transients {
+            self.recovery_missed_rows_improved += 1;
+        } else if recovery.missed_transients > production.missed_transients {
+            self.recovery_missed_rows_worsened += 1;
+        } else {
+            self.recovery_missed_rows_same += 1;
+        }
+
+        match compare_metric_values(recovery.max_smear_frames, production.max_smear_frames) {
+            MetricComparison::Improved => self.recovery_max_rows_improved += 1,
+            MetricComparison::Same => self.recovery_max_rows_same += 1,
+            MetricComparison::Worsened => self.recovery_max_rows_worsened += 1,
+        }
+    }
+
+    fn recovered_misses(&self) -> usize {
+        self.production_missed_transients
+            .saturating_sub(self.recovery_missed_transients)
+    }
+
+    fn full_candidate_input_ratio(&self) -> f64 {
+        finite_ratio(
+            self.full_candidate_input_transients as f64,
+            self.production_input_transients as f64,
+        )
+    }
+
+    fn target_status(&self) -> &'static str {
+        if self.recovered_misses() >= RECOVERY_GATE_MIN_RECOVERED_MISSES
+            && self.recovery_missed_rows_worsened <= RECOVERY_GATE_MAX_MISSED_WORSENED_ROWS
+            && self.recovery_max_rows_worsened <= RECOVERY_GATE_MAX_SMEAR_WORSENED_ROWS
+        {
+            "Pass"
+        } else {
+            "Fail"
+        }
+    }
+
+    fn global_threshold_status(&self) -> &'static str {
+        let ratio = self.full_candidate_input_ratio();
+        if ratio.is_finite() && ratio <= RECOVERY_GATE_MAX_GLOBAL_CANDIDATE_INPUT_RATIO {
+            "Pass"
+        } else {
+            "Rejected"
+        }
+    }
+
+    fn recommendation(&self) -> &'static str {
+        match (self.target_status(), self.global_threshold_status()) {
+            ("Pass", "Rejected") => "TargetedOutputRecovery",
+            ("Pass", "Pass") => "ReviewGlobalThreshold",
+            _ => "KeepReportOnly",
+        }
+    }
+
+    fn format_report_line(&self) -> String {
+        format!(
+            "decoded_transient_recovery_gate backend={} target_status={} global_threshold_status={} recommendation={} rows={} production_input_transients={} production_matched_transients={} production_missed_transients={} recovery_matched_transients={} recovery_missed_transients={} recovered_misses={} recovery_missed_rows_improved={} recovery_missed_rows_same={} recovery_missed_rows_worsened={} recovery_max_rows_improved={} recovery_max_rows_same={} recovery_max_rows_worsened={} min_recovered_misses={} max_missed_worsened_rows={} max_smear_worsened_rows={} full_candidate_input_transients={} full_candidate_matched_transients={} full_candidate_missed_transients={} full_candidate_input_ratio={:.6} max_global_candidate_input_ratio={:.6}",
+            self.backend,
+            self.target_status(),
+            self.global_threshold_status(),
+            self.recommendation(),
+            self.rows,
+            self.production_input_transients,
+            self.production_matched_transients,
+            self.production_missed_transients,
+            self.recovery_matched_transients,
+            self.recovery_missed_transients,
+            self.recovered_misses(),
+            self.recovery_missed_rows_improved,
+            self.recovery_missed_rows_same,
+            self.recovery_missed_rows_worsened,
+            self.recovery_max_rows_improved,
+            self.recovery_max_rows_same,
+            self.recovery_max_rows_worsened,
+            RECOVERY_GATE_MIN_RECOVERED_MISSES,
+            RECOVERY_GATE_MAX_MISSED_WORSENED_ROWS,
+            RECOVERY_GATE_MAX_SMEAR_WORSENED_ROWS,
+            self.full_candidate_input_transients,
+            self.full_candidate_matched_transients,
+            self.full_candidate_missed_transients,
+            self.full_candidate_input_ratio(),
+            RECOVERY_GATE_MAX_GLOBAL_CANDIDATE_INPUT_RATIO,
+        )
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum MetricComparison {
+    Improved,
+    Same,
+    Worsened,
+}
+
+fn compare_metric_values(candidate: f64, production: f64) -> MetricComparison {
+    if candidate.is_finite() && production.is_finite() {
+        if candidate < production {
+            MetricComparison::Improved
+        } else if candidate > production {
+            MetricComparison::Worsened
+        } else {
+            MetricComparison::Same
+        }
+    } else if candidate.is_finite() && !production.is_finite() {
+        MetricComparison::Improved
+    } else if !candidate.is_finite() && production.is_finite() {
+        MetricComparison::Worsened
+    } else {
+        MetricComparison::Same
+    }
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -1735,6 +1927,11 @@ mod tests {
         assert!(formatted.contains("decoded_stretch_metric case=stretch:vocals"));
         assert!(formatted.contains("ratio=0.750000 metric=TimingDriftSamples"));
         assert!(formatted.contains("metric=TransientSmearFrames"));
+        assert!(formatted.contains("decoded_transient_recovery_gate backend=draft"));
+        assert!(formatted.contains("decoded_transient_recovery_gate backend=offline_hq"));
+        assert!(formatted.contains("target_status="));
+        assert!(formatted.contains("global_threshold_status="));
+        assert!(formatted.contains("full_candidate_input_ratio="));
         assert!(formatted.contains("offline_matched_transients="));
         assert!(formatted.contains("offline_candidate_matched_transients="));
         assert!(formatted.contains("offline_candidate_missed_transients="));
