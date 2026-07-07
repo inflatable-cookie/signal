@@ -8,6 +8,7 @@ use std::process;
 
 const DEFAULT_FMA_ROOT: &str = "/Users/tom/Downloads/FMA";
 const DEFAULT_PER_FAMILY: usize = 5;
+const DEFAULT_REVIEW_SEED_PER_FAMILY: usize = 2;
 const DEFAULT_OUTPUT: &str = "target/stretch-corpus-fma-selection.md";
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -55,7 +56,9 @@ struct SelectorArgs {
     metadata: PathBuf,
     output: PathBuf,
     tsv_output: Option<PathBuf>,
+    review_seed_tsv_output: Option<PathBuf>,
     per_family: usize,
+    review_seed_per_family: usize,
 }
 
 impl Default for SelectorArgs {
@@ -66,7 +69,9 @@ impl Default for SelectorArgs {
             fma_root,
             output: PathBuf::from(DEFAULT_OUTPUT),
             tsv_output: None,
+            review_seed_tsv_output: None,
             per_family: DEFAULT_PER_FAMILY,
+            review_seed_per_family: DEFAULT_REVIEW_SEED_PER_FAMILY,
         }
     }
 }
@@ -143,6 +148,31 @@ fn main() {
         }
         println!("wrote {}", tsv_output.display());
     }
+
+    if let Some(review_seed_tsv_output) = &args.review_seed_tsv_output {
+        let review_seed = review_seed_candidates(&candidates, args.review_seed_per_family);
+        let tsv = match format_fma_selection_tsv(&review_seed) {
+            Ok(tsv) => tsv,
+            Err(message) => {
+                eprintln!("{message}");
+                process::exit(1);
+            }
+        };
+        if let Some(parent) = review_seed_tsv_output.parent() {
+            if let Err(error) = fs::create_dir_all(parent) {
+                eprintln!("failed to create {}: {error}", parent.display());
+                process::exit(1);
+            }
+        }
+        if let Err(error) = fs::write(review_seed_tsv_output, tsv) {
+            eprintln!(
+                "failed to write {}: {error}",
+                review_seed_tsv_output.display()
+            );
+            process::exit(1);
+        }
+        println!("wrote {}", review_seed_tsv_output.display());
+    }
 }
 
 fn parse_args<I>(args: I) -> Result<SelectorArgs, String>
@@ -166,12 +196,26 @@ where
             "--tsv-output" => {
                 parsed.tsv_output = Some(PathBuf::from(next_value(&mut iter, "--tsv-output")?));
             }
+            "--review-seed-tsv-output" => {
+                parsed.review_seed_tsv_output = Some(PathBuf::from(next_value(
+                    &mut iter,
+                    "--review-seed-tsv-output",
+                )?));
+            }
             "--per-family" => {
                 parsed.per_family = next_value(&mut iter, "--per-family")?
                     .parse::<usize>()
                     .map_err(|error| format!("invalid --per-family value: {error}"))?;
                 if parsed.per_family == 0 {
                     return Err("--per-family must be greater than zero".to_string());
+                }
+            }
+            "--review-seed-per-family" => {
+                parsed.review_seed_per_family = next_value(&mut iter, "--review-seed-per-family")?
+                    .parse::<usize>()
+                    .map_err(|error| format!("invalid --review-seed-per-family value: {error}"))?;
+                if parsed.review_seed_per_family == 0 {
+                    return Err("--review-seed-per-family must be greater than zero".to_string());
                 }
             }
             unknown => {
@@ -192,7 +236,7 @@ where
 }
 
 fn usage() -> &'static str {
-    "usage: fma-stretch-corpus-select [--fma-root PATH] [--metadata CSV] [--per-family N] [--output PATH] [--tsv-output PATH]"
+    "usage: fma-stretch-corpus-select [--fma-root PATH] [--metadata CSV] [--per-family N] [--output PATH] [--tsv-output PATH] [--review-seed-tsv-output PATH] [--review-seed-per-family N]"
 }
 
 fn select_fma_candidates(args: &SelectorArgs) -> Result<Vec<FmaCandidate>, String> {
@@ -381,6 +425,41 @@ fn contains_any(value: &str, needles: &[&str]) -> bool {
     needles.iter().any(|needle| value.contains(needle))
 }
 
+fn review_seed_candidates(candidates: &[FmaCandidate], per_family: usize) -> Vec<FmaCandidate> {
+    let mut selected = Vec::new();
+    let mut selected_track_ids = HashSet::new();
+    let mut selected_artists = HashSet::new();
+
+    for family in FmaCorpusFamily::ALL {
+        for candidate in candidates {
+            if candidate.family != family || family_count(&selected, family) >= per_family {
+                continue;
+            }
+            if selected_artists.contains(&candidate.artist_name.to_ascii_lowercase()) {
+                continue;
+            }
+            selected_track_ids.insert(candidate.track_id);
+            selected_artists.insert(candidate.artist_name.to_ascii_lowercase());
+            selected.push(candidate.clone());
+        }
+    }
+
+    for family in FmaCorpusFamily::ALL {
+        for candidate in candidates {
+            if candidate.family != family || family_count(&selected, family) >= per_family {
+                continue;
+            }
+            if selected_track_ids.contains(&candidate.track_id) {
+                continue;
+            }
+            selected_track_ids.insert(candidate.track_id);
+            selected.push(candidate.clone());
+        }
+    }
+
+    selected
+}
+
 fn format_fma_selection_report(args: &SelectorArgs, candidates: &[FmaCandidate]) -> String {
     let mut lines = Vec::new();
     lines.push("# FMA Stretch Corpus Local Selection".to_string());
@@ -565,6 +644,28 @@ mod tests {
     }
 
     #[test]
+    fn review_seed_caps_family_count_and_deduplicates_artists_when_possible() {
+        let candidates = vec![
+            test_candidate_with(FmaCorpusFamily::DrumsPercussion, 1, "Shared"),
+            test_candidate_with(FmaCorpusFamily::DrumsPercussion, 2, "Percussion Two"),
+            test_candidate_with(FmaCorpusFamily::Bass, 3, "Shared"),
+            test_candidate_with(FmaCorpusFamily::Bass, 4, "Bass Two"),
+            test_candidate_with(FmaCorpusFamily::Vocals, 5, "Vocal One"),
+            test_candidate_with(FmaCorpusFamily::Vocals, 6, "Vocal Two"),
+        ];
+
+        let seed = review_seed_candidates(&candidates, 1);
+
+        assert_eq!(family_count(&seed, FmaCorpusFamily::DrumsPercussion), 1);
+        assert_eq!(family_count(&seed, FmaCorpusFamily::Bass), 1);
+        assert_eq!(family_count(&seed, FmaCorpusFamily::Vocals), 1);
+        assert!(seed
+            .iter()
+            .any(|candidate| candidate.family == FmaCorpusFamily::Bass
+                && candidate.artist_name == "Bass Two"));
+    }
+
+    #[test]
     fn genre_summary_extracts_fma_titles() {
         let raw = "[{'genre_id': '10', 'genre_title': 'Pop'}, {'genre_title': 'Rock'}]";
 
@@ -572,10 +673,18 @@ mod tests {
     }
 
     fn test_candidate() -> FmaCandidate {
+        test_candidate_with(FmaCorpusFamily::FullMix, 10, "Artist")
+    }
+
+    fn test_candidate_with(
+        family: FmaCorpusFamily,
+        track_id: u32,
+        artist_name: &str,
+    ) -> FmaCandidate {
         FmaCandidate {
-            family: FmaCorpusFamily::FullMix,
-            track_id: 10,
-            artist_name: "Artist".to_string(),
+            family,
+            track_id,
+            artist_name: artist_name.to_string(),
             track_title: "Track".to_string(),
             album_title: "Album".to_string(),
             duration: "01:00".to_string(),
@@ -583,7 +692,7 @@ mod tests {
             license_url: "https://example.test/license".to_string(),
             track_url: "https://example.test/track".to_string(),
             genres: "Rock".to_string(),
-            local_path: PathBuf::from("/fma/fma_large/000/000010.mp3"),
+            local_path: PathBuf::from(format!("/fma/fma_large/000/{track_id:06}.mp3")),
         }
     }
 }

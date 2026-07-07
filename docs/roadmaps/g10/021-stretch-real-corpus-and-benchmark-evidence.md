@@ -84,10 +84,13 @@ notes before more product-facing quality claims land.
   verifies local paths, records source/provenance rows, reduces missing required
   source counts, and creates listening-note slots against actual local files
   without decoding, copying, or committing licensed audio.
+- 2026-07-07: added an FMA review-seed TSV output for no-listening runs. The
+  seed keeps fixed per-family coverage and avoids repeated artists where
+  possible. It is explicitly coverage evidence, not a subjective quality
+  judgment.
 
 ## Next Task
 
-Review/listen to the generated FMA candidates, trim the TSV to hand-picked
-sources, run the local report with `--listening-source-manifest`, and collect
-optional external rendered-output comparisons before opening the next
-stretch-quality tuning card.
+Run the local report with the FMA review-seed TSV, collect optional external
+rendered-output comparisons, and replace the seed with listened curation before
+using real-source evidence for promotion.

@@ -39,7 +39,7 @@ Generate the deterministic draft-vs-OfflineHighQuality report:
 cargo run -p signal-dsp-stretch --bin stretch-corpus-report -- \
   --report-name stretch-corpus-v1-local \
   --projection-epoch projection:local \
-  --listening-source-manifest target/stretch-corpus-fma-selection.tsv \
+  --listening-source-manifest target/stretch-corpus-fma-review-seed.tsv \
   --output target/stretch-corpus-v1-local.txt
 ```
 
@@ -76,7 +76,9 @@ cargo run -p signal-dsp-stretch --bin fma-stretch-corpus-select -- \
   --fma-root /Users/tom/Downloads/FMA \
   --per-family 5 \
   --output target/stretch-corpus-fma-selection.md \
-  --tsv-output target/stretch-corpus-fma-selection.tsv
+  --tsv-output target/stretch-corpus-fma-selection.tsv \
+  --review-seed-tsv-output target/stretch-corpus-fma-review-seed.tsv \
+  --review-seed-per-family 2
 ```
 
 The Markdown file is for operator review. The TSV file can be passed to
@@ -86,8 +88,11 @@ corpus family, artist/title, track URL, and artist license metadata. They are
 local selection aids only. Do not commit FMA audio or generated local evidence
 reports.
 
+The review-seed TSV is a no-listening shortcut. It keeps a fixed number of
+candidates per family and avoids repeated artists where possible. It is coverage
+evidence, not a subjective quality choice.
+
 ## Next Task
 
-Review and trim the generated FMA TSV, run `stretch-corpus-report` with
-`--listening-source-manifest`, then add optional external rendered-output
-comparisons.
+Run `stretch-corpus-report` with the review-seed TSV when listening review is
+not available, then replace it with a listened curation before promotion.
