@@ -49,6 +49,7 @@ const SHORT_WINDOW_SELECTOR_MIN_CURRENT_MISSES: usize = 1;
 const SHORT_WINDOW_SELECTOR_MIN_CURRENT_SMEAR_FRAMES: f64 = 64.0;
 const EXTERNAL_BENCHMARK_ALIGNMENT_MAX_LAG_FRAMES: isize = 2_048;
 const EXTERNAL_BENCHMARK_ALIGNMENT_MAX_COMPARE_FRAMES: usize = 65_536;
+const MAX_EXTERNAL_BENCHMARK_MISSING_RENDER_ROWS: usize = 20;
 const DETECTOR_POLICY: StretchTransientDetectorPolicy =
     StretchTransientDetectorPolicy::production();
 const CANDIDATE_DETECTOR_POLICY: StretchTransientDetectorPolicy =
@@ -63,6 +64,7 @@ struct ReportArgs {
     external_benchmark_renders: Vec<ExternalBenchmarkRenderArg>,
     external_benchmark_render_manifests: Vec<PathBuf>,
     export_external_benchmark_pack: Option<PathBuf>,
+    external_benchmark_render_plan_status_manifests: Vec<PathBuf>,
     listening_source_manifests: Vec<PathBuf>,
     decode_listening_sources: bool,
     decode_source_frame_limit: usize,
@@ -89,6 +91,7 @@ impl Default for ReportArgs {
             external_benchmark_renders: Vec::new(),
             external_benchmark_render_manifests: Vec::new(),
             export_external_benchmark_pack: None,
+            external_benchmark_render_plan_status_manifests: Vec::new(),
             listening_source_manifests: Vec::new(),
             decode_listening_sources: false,
             decode_source_frame_limit: DEFAULT_DECODE_SOURCE_FRAME_LIMIT,
@@ -202,6 +205,20 @@ fn main() {
             }
         }
     }
+    for manifest in &args.external_benchmark_render_plan_status_manifests {
+        match format_external_benchmark_render_plan_status(manifest) {
+            Ok(status_report) => {
+                if !status_report.is_empty() {
+                    formatted.push('\n');
+                    formatted.push_str(&status_report);
+                }
+            }
+            Err(message) => {
+                eprintln!("{message}");
+                process::exit(1);
+            }
+        }
+    }
 
     if let Some(output) = args.output {
         if let Err(error) = fs::write(&output, formatted) {
@@ -267,6 +284,14 @@ where
                     "--export-external-benchmark-pack",
                 )?));
             }
+            "--check-external-benchmark-render-plan" => {
+                parsed
+                    .external_benchmark_render_plan_status_manifests
+                    .push(PathBuf::from(next_value(
+                        &mut iter,
+                        "--check-external-benchmark-render-plan",
+                    )?));
+            }
             "--listening-source-manifest" => {
                 parsed
                     .listening_source_manifests
@@ -321,7 +346,7 @@ where
 }
 
 fn usage() -> &'static str {
-    "usage: stretch-corpus-report [--report-name NAME] [--projection-epoch EPOCH] [--listening-source-manifest TSV] [--decode-listening-sources] [--decode-source-frame-limit N] [--measure-decoded-stretch] [--measure-external-benchmark-quality] [--decoded-stretch-frame-limit N] [--external-benchmark-tool NAME] [--external-benchmark-render CASE RATIO WAV] [--external-benchmark-render-manifest TSV] [--export-external-benchmark-pack DIR] [--output PATH]"
+    "usage: stretch-corpus-report [--report-name NAME] [--projection-epoch EPOCH] [--listening-source-manifest TSV] [--decode-listening-sources] [--decode-source-frame-limit N] [--measure-decoded-stretch] [--measure-external-benchmark-quality] [--decoded-stretch-frame-limit N] [--external-benchmark-tool NAME] [--external-benchmark-render CASE RATIO WAV] [--external-benchmark-render-manifest TSV] [--export-external-benchmark-pack DIR] [--check-external-benchmark-render-plan TSV] [--output PATH]"
 }
 
 fn load_external_benchmark_renders(
@@ -503,6 +528,76 @@ fn export_external_benchmark_pack(
     )];
     report.extend(lines);
     Ok(report.join("\n"))
+}
+
+fn format_external_benchmark_render_plan_status(manifest: &PathBuf) -> Result<String, String> {
+    let mut reader = csv::ReaderBuilder::new()
+        .delimiter(b'\t')
+        .from_path(manifest)
+        .map_err(|error| format!("failed to open {}: {error}", manifest.display()))?;
+    let headers = reader
+        .headers()
+        .map_err(|error| format!("failed to read {} headers: {error}", manifest.display()))?
+        .clone();
+
+    let mut planned_rows = 0usize;
+    let mut present_rows = 0usize;
+    let mut missing_rows = 0usize;
+    let mut invalid_rows = 0usize;
+    let mut missing_detail_rows = Vec::new();
+    for row in reader.records() {
+        let record =
+            row.map_err(|error| format!("failed to read {} row: {error}", manifest.display()))?;
+        planned_rows += 1;
+        let case_id = required_field(manifest, &headers, &record, "case_id")?;
+        let ratio = required_field(manifest, &headers, &record, "ratio")?;
+        let rendered_path =
+            required_any_field(manifest, &headers, &record, &["rendered_path", "path"])?;
+        let rendered_path = PathBuf::from(rendered_path);
+        if !rendered_path.exists() {
+            missing_rows += 1;
+            if missing_detail_rows.len() < MAX_EXTERNAL_BENCHMARK_MISSING_RENDER_ROWS {
+                missing_detail_rows.push(format!(
+                    "external_benchmark_render_plan_missing case={} ratio={} rendered_path={} manifest={}",
+                    case_id,
+                    ratio,
+                    quoted_report_field(&rendered_path.display().to_string()),
+                    quoted_report_field(&manifest.display().to_string()),
+                ));
+            }
+            continue;
+        }
+
+        match hound::WavReader::open(&rendered_path) {
+            Ok(reader) if reader.spec().channels > 0 && reader.spec().sample_rate > 0 => {
+                present_rows += 1;
+            }
+            Ok(_) | Err(_) => {
+                invalid_rows += 1;
+            }
+        }
+    }
+    let status = if planned_rows == 0 {
+        "Empty"
+    } else if missing_rows == 0 && invalid_rows == 0 {
+        "Complete"
+    } else {
+        "Incomplete"
+    };
+
+    let mut lines = vec![format!(
+        "external_benchmark_render_plan_status manifest={} status={} planned_rows={} present_rows={} missing_rows={} invalid_rows={} capped_missing_rows={} source_boundary={}",
+        quoted_report_field(&manifest.display().to_string()),
+        status,
+        planned_rows,
+        present_rows,
+        missing_rows,
+        invalid_rows,
+        missing_detail_rows.len(),
+        quoted_report_field("rendered-output-only readiness check; does not load external code"),
+    )];
+    lines.extend(missing_detail_rows);
+    Ok(lines.join("\n"))
 }
 
 fn write_decoded_audio_wav(path: &Path, audio: &DecodedListeningSourceAudio) -> Result<(), String> {
@@ -3769,6 +3864,7 @@ mod tests {
                 external_benchmark_renders: Vec::new(),
                 external_benchmark_render_manifests: Vec::new(),
                 export_external_benchmark_pack: None,
+                external_benchmark_render_plan_status_manifests: Vec::new(),
                 listening_source_manifests: Vec::new(),
                 decode_listening_sources: false,
                 decode_source_frame_limit: DEFAULT_DECODE_SOURCE_FRAME_LIMIT,
@@ -3807,6 +3903,8 @@ mod tests {
             "target/external-renders.tsv".to_string(),
             "--export-external-benchmark-pack".to_string(),
             "target/external-pack".to_string(),
+            "--check-external-benchmark-render-plan".to_string(),
+            "target/external-pack/external-benchmark-render-plan.tsv".to_string(),
         ])
         .expect("custom args parse");
 
@@ -3827,6 +3925,9 @@ mod tests {
                     "target/external-renders.tsv"
                 )],
                 export_external_benchmark_pack: Some(PathBuf::from("target/external-pack")),
+                external_benchmark_render_plan_status_manifests: vec![PathBuf::from(
+                    "target/external-pack/external-benchmark-render-plan.tsv"
+                )],
                 listening_source_manifests: vec![PathBuf::from("target/fma.tsv")],
                 decode_listening_sources: true,
                 decode_source_frame_limit: 2048,
@@ -3871,6 +3972,7 @@ mod tests {
             }],
             external_benchmark_render_manifests: Vec::new(),
             export_external_benchmark_pack: None,
+            external_benchmark_render_plan_status_manifests: Vec::new(),
             listening_source_manifests: Vec::new(),
             decode_listening_sources: false,
             decode_source_frame_limit: DEFAULT_DECODE_SOURCE_FRAME_LIMIT,
@@ -3921,6 +4023,7 @@ mod tests {
             external_benchmark_renders: Vec::new(),
             external_benchmark_render_manifests: vec![manifest_path.clone()],
             export_external_benchmark_pack: None,
+            external_benchmark_render_plan_status_manifests: Vec::new(),
             listening_source_manifests: Vec::new(),
             decode_listening_sources: false,
             decode_source_frame_limit: DEFAULT_DECODE_SOURCE_FRAME_LIMIT,
@@ -3938,6 +4041,54 @@ mod tests {
         assert_eq!(renders[0].rendered_frames, 16);
 
         let _ = fs::remove_file(wav_path);
+        let _ = fs::remove_file(manifest_path);
+    }
+
+    #[test]
+    fn external_benchmark_render_plan_status_reports_missing_outputs() {
+        let present_wav_path = PathBuf::from(format!(
+            "target/stretch-corpus-render-plan-present-test-{}.wav",
+            std::process::id()
+        ));
+        let missing_wav_path = PathBuf::from(format!(
+            "target/stretch-corpus-render-plan-missing-test-{}.wav",
+            std::process::id()
+        ));
+        let manifest_path = PathBuf::from(format!(
+            "target/stretch-corpus-render-plan-status-test-{}.tsv",
+            std::process::id()
+        ));
+        write_test_wav(&present_wav_path, 16);
+        if let Some(parent) = manifest_path.parent() {
+            fs::create_dir_all(parent).expect("create target dir");
+        }
+        fs::write(
+            &manifest_path,
+            format!(
+                "case_id\tratio\trendered_path\ttool_name\nstretch:vocals\t0.75\t{}\trubberband-cli\nstretch:vocals\t1.25\t{}\trubberband-cli\n",
+                present_wav_path.display(),
+                missing_wav_path.display()
+            ),
+        )
+        .expect("write render status manifest");
+
+        let report = format_external_benchmark_render_plan_status(&manifest_path)
+            .expect("format render plan status");
+
+        assert!(report.starts_with("external_benchmark_render_plan_status manifest="));
+        assert!(report.contains("status=Incomplete"));
+        assert!(report.contains("planned_rows=2"));
+        assert!(report.contains("present_rows=1"));
+        assert!(report.contains("missing_rows=1"));
+        assert!(report.contains("invalid_rows=0"));
+        assert!(report.contains("capped_missing_rows=1"));
+        assert!(report.contains("external_benchmark_render_plan_missing case=stretch:vocals"));
+        assert!(report.contains("ratio=1.25"));
+        assert!(report.contains(&quoted_report_field(
+            &missing_wav_path.display().to_string()
+        )));
+
+        let _ = fs::remove_file(present_wav_path);
         let _ = fs::remove_file(manifest_path);
     }
 

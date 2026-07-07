@@ -392,6 +392,13 @@ comparison reports, not add more receipt or fixture surfaces.
   source WAV excerpts and 60 render-plan rows in
   `external-benchmark-render-plan.tsv`. `renders/` is intentionally empty
   locally because no comparator renderer is installed here.
+- 2026-07-07: added a tolerant external render-plan readiness check. The report
+  now accepts `--check-external-benchmark-render-plan TSV` and emits
+  `external_benchmark_render_plan_status` plus capped missing-render rows
+  without loading external DSP code or requiring the rendered WAVs to exist.
+  Running it against the generated broad FMA pack reports `planned_rows=60`,
+  `present_rows=0`, `missing_rows=60`, and `invalid_rows=0`, which confirms the
+  pack is correctly planned but not yet rendered.
 
 ## Next Task
 
@@ -401,8 +408,9 @@ lines are now closed as report-only/rejected. A global shorter-window switch is
 also rejected, and the `000900.mp3` matched-event width issue is not solved by
 window size alone. The gated shorter-window selector now clears the first broad
 FMA no-listening check. Next useful work is promotion pressure, still
-report-only: fill the generated broad FMA comparator pack's planned
-`rendered_path` WAVs with an external black-box renderer, then run
+report-only: fill the generated broad FMA comparator pack's 60 planned
+`rendered_path` WAVs with an external black-box renderer, use
+`--check-external-benchmark-render-plan` until it reports `Complete`, then run
 `--external-benchmark-render-manifest`,
 `--measure-external-benchmark-quality`, and the gated selector report together.
 Require the selector to keep `current_better_rows=0`,
