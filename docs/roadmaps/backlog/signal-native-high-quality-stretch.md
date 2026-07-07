@@ -328,7 +328,7 @@ Work:
 - [x] turn accepted/rejected host-edge fixtures into reusable render-plane
   policy helpers so future export, freeze, and render-cache tests assert the
   same gate without duplicating setup
-- [ ] wire OfflineHighQuality artifacts into render/export/freeze only after
+- [x] wire OfflineHighQuality artifacts into render/export/freeze only after
   corpus evidence beats the draft baseline
 - [ ] add Pulse/Aura contract changes only for product-visible mode, ratio,
   pitch, marker, and cache behavior
@@ -363,7 +363,8 @@ Work:
 
 ## Next Task
 
-Continue the Signal DSP quality batch by replacing fixture-local accepted
-promotion with corpus-report promotion evidence at the next render/export/freeze
-integration seam. Keep Pulse/Aura contract planning deferred until a Loophole
-product workflow consumes the Signal-owned contract.
+Continue the Signal DSP quality batch by adding a Signal-owned promotion
+evidence artifact shape so OfflineHighQuality receipts can point at a concrete
+benchmark run/report instead of only an in-memory synthetic comparison. Keep
+Pulse/Aura contract planning deferred until a Loophole product workflow
+consumes the Signal-owned contract.

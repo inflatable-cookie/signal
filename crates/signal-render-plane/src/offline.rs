@@ -839,7 +839,7 @@ mod tests {
     };
     use signal_dsp_stretch::{
         current_synthetic_offline_high_quality_promotion_receipt, StretchChannelLayout,
-        StretchPitchPoint, StretchPromotionReceipt, StretchRatioPoint,
+        StretchPitchPoint, StretchPromotionReceipt, StretchPromotionStatus, StretchRatioPoint,
         StretchSyntheticPromotionPolicy, StretchWarpMarker,
     };
     use std::sync::Arc;
@@ -972,24 +972,70 @@ mod tests {
         }
     }
 
+    fn current_corpus_policy_request<'a>(
+        scope: OfflineStretchArtifactScope,
+        identity_input: &'a StretchCacheIdentityInput,
+        evidence_id: &'a str,
+    ) -> OfflineStretchArtifactPolicyRequest<'a> {
+        OfflineStretchArtifactPolicyRequest {
+            scope,
+            identity_input,
+            evidence_id,
+            promotion_policy: StretchSyntheticPromotionPolicy::default(),
+        }
+    }
+
+    fn current_corpus_build_request<'a>(
+        scope: OfflineStretchArtifactScope,
+        identity_input: &'a StretchCacheIdentityInput,
+        evidence_id: &'a str,
+        source: &'a RenderSampleBuffer,
+    ) -> OfflineStretchArtifactBuildRequest<'a> {
+        OfflineStretchArtifactBuildRequest {
+            policy: current_corpus_policy_request(scope, identity_input, evidence_id),
+            source,
+        }
+    }
+
     fn accepted_synthetic_promotion_receipt(evidence_id: &str) -> StretchPromotionReceipt {
-        current_synthetic_offline_high_quality_promotion_receipt(evidence_id)
+        let receipt = current_synthetic_offline_high_quality_promotion_receipt(evidence_id);
+        assert_current_corpus_promotion_receipt(&receipt, evidence_id);
+        receipt
+    }
+
+    fn assert_current_corpus_promotion_receipt(
+        receipt: &StretchPromotionReceipt,
+        evidence_id: &str,
+    ) {
+        assert_eq!(receipt.status, StretchPromotionStatus::Accepted);
+        assert_eq!(receipt.evidence_id, evidence_id);
+        assert!(receipt.compared_to_draft_baseline);
+        assert_eq!(
+            receipt.required_case_count,
+            StretchSyntheticPromotionPolicy::default().min_comparison_count as u32
+        );
+        assert!(receipt.passed_case_count >= receipt.required_case_count);
+        assert!(receipt.accepts_product_facing_use(StretchBackendTier::OfflineHighQuality));
     }
 
     #[test]
-    fn stretch_artifact_plan_allows_export_with_accepted_synthetic_promotion() {
+    fn stretch_artifact_plan_allows_export_with_current_corpus_policy() {
         let input = stretch_identity_input();
-        let promotion = accepted_synthetic_promotion_receipt("synthetic:render-plane-current");
         let plan =
-            plan_offline_stretch_artifact(OfflineStretchArtifactScope::Export, &input, promotion)
-                .expect("artifact plan");
+            plan_offline_stretch_artifact_with_synthetic_policy(current_corpus_policy_request(
+                OfflineStretchArtifactScope::Export,
+                &input,
+                "synthetic:render-plane-current",
+            ))
+            .expect("current corpus policy should produce artifact plan");
 
         assert_eq!(plan.scope, OfflineStretchArtifactScope::Export);
         assert_eq!(plan.tier, StretchBackendTier::OfflineHighQuality);
         assert_eq!(plan.readiness, OfflineStretchArtifactReadiness::Ready);
-        assert!(plan
-            .promotion_receipt
-            .accepts_product_facing_use(StretchBackendTier::OfflineHighQuality));
+        assert_current_corpus_promotion_receipt(
+            &plan.promotion_receipt,
+            "synthetic:render-plane-current",
+        );
         assert!(plan.product_facing_allowed);
         assert!(plan
             .identity
@@ -1003,13 +1049,18 @@ mod tests {
         let input =
             stretch_identity_input().with_ratio_curve(vec![StretchRatioPoint::new(0, 1.25)]);
         let source = stretch_artifact_source(480);
-        let artifact = materialize_offline_stretch_artifact_pcm(
-            OfflineStretchArtifactScope::Freeze,
-            &input,
-            accepted_synthetic_promotion_receipt("synthetic:materialize-current"),
-            &source,
-        )
-        .expect("ready artifact should materialize");
+        let artifact =
+            build_offline_stretch_artifact_pcm_with_synthetic_policy(current_corpus_build_request(
+                OfflineStretchArtifactScope::Freeze,
+                &input,
+                "synthetic:materialize-current",
+                &source,
+            ))
+            .expect("current corpus policy should materialize");
+        assert_current_corpus_promotion_receipt(
+            &artifact.plan.promotion_receipt,
+            "synthetic:materialize-current",
+        );
 
         assert_eq!(artifact.plan.scope, OfflineStretchArtifactScope::Freeze);
         assert_eq!(
@@ -1072,6 +1123,60 @@ mod tests {
         .expect("materialized artifact should render as a sample source");
 
         assert_eq!(rendered.master.len(), artifact.output_frame_count * 2);
+    }
+
+    #[test]
+    fn direct_receipt_materialization_keeps_lower_level_plan_gate() {
+        let input =
+            stretch_identity_input().with_ratio_curve(vec![StretchRatioPoint::new(0, 1.25)]);
+        let source = stretch_artifact_source(480);
+        let artifact = materialize_offline_stretch_artifact_pcm(
+            OfflineStretchArtifactScope::RenderCache,
+            &input,
+            accepted_synthetic_promotion_receipt("synthetic:direct-materialize-current"),
+            &source,
+        )
+        .expect("accepted direct receipt should materialize through the lower-level gate");
+
+        assert_eq!(
+            artifact.plan.scope,
+            OfflineStretchArtifactScope::RenderCache
+        );
+        assert_eq!(
+            artifact.plan.readiness,
+            OfflineStretchArtifactReadiness::Ready
+        );
+        assert!(artifact.plan.product_facing_allowed);
+        assert_eq!(artifact.input_frame_count, 480);
+        assert_eq!(artifact.output_frame_count, 600);
+        assert_eq!(
+            artifact.receipt.cache_identity_hash,
+            artifact.plan.identity.stable_hash
+        );
+        assert_eq!(
+            artifact.receipt.promotion_evidence_id,
+            "synthetic:direct-materialize-current"
+        );
+        assert_eq!(
+            artifact.receipt.input_frame_count,
+            artifact.input_frame_count
+        );
+        assert_eq!(
+            artifact.receipt.output_frame_count,
+            artifact.output_frame_count
+        );
+        assert!(artifact.receipt.product_facing_allowed);
+        assert_eq!(artifact.buffer.sample_rate_hz, source.sample_rate_hz);
+        assert_eq!(artifact.buffer.frame_count(), artifact.output_frame_count);
+        assert_eq!(
+            artifact.plan.identity,
+            input.identity().expect("same identity")
+        );
+
+        assert_current_corpus_promotion_receipt(
+            &artifact.plan.promotion_receipt,
+            "synthetic:direct-materialize-current",
+        );
     }
 
     #[test]
@@ -1580,19 +1685,50 @@ mod tests {
             .with_pitch_curve(vec![StretchPitchPoint::new(0, 2.0)]);
         let source = stretch_artifact_source(480);
 
-        let artifact = materialize_offline_stretch_artifact_pcm(
-            OfflineStretchArtifactScope::RenderCache,
-            &input,
-            accepted_synthetic_promotion_receipt("synthetic:static-pitch-dynamic-ratio"),
-            &source,
-        )
-        .expect("static pitch plus dynamic ratio should materialize");
+        let artifact =
+            build_offline_stretch_artifact_pcm_with_synthetic_policy(current_corpus_build_request(
+                OfflineStretchArtifactScope::RenderCache,
+                &input,
+                "synthetic:static-pitch-dynamic-ratio",
+                &source,
+            ))
+            .expect("static pitch plus dynamic ratio should materialize");
+        assert_current_corpus_promotion_receipt(
+            &artifact.plan.promotion_receipt,
+            "synthetic:static-pitch-dynamic-ratio",
+        );
 
         assert_eq!(artifact.output_frame_count, 540);
         assert_eq!(artifact.buffer.frame_count(), artifact.output_frame_count);
         assert_eq!(
             artifact.receipt.promotion_evidence_id,
             "synthetic:static-pitch-dynamic-ratio"
+        );
+    }
+
+    #[test]
+    fn direct_receipt_materializes_static_pitch_with_dynamic_ratio_curve() {
+        let input = stretch_identity_input()
+            .with_ratio_curve(vec![
+                StretchRatioPoint::new(0, 1.0),
+                StretchRatioPoint::new(240, 1.25),
+            ])
+            .with_pitch_curve(vec![StretchPitchPoint::new(0, 2.0)]);
+        let source = stretch_artifact_source(480);
+
+        let artifact = materialize_offline_stretch_artifact_pcm(
+            OfflineStretchArtifactScope::RenderCache,
+            &input,
+            accepted_synthetic_promotion_receipt("synthetic:direct-static-pitch-dynamic-ratio"),
+            &source,
+        )
+        .expect("accepted direct receipt should materialize static pitch plus dynamic ratio");
+
+        assert_eq!(artifact.output_frame_count, 540);
+        assert_eq!(artifact.buffer.frame_count(), artifact.output_frame_count);
+        assert_eq!(
+            artifact.receipt.promotion_evidence_id,
+            "synthetic:direct-static-pitch-dynamic-ratio"
         );
     }
 
@@ -1605,10 +1741,29 @@ mod tests {
         let source = stretch_artifact_source(480);
 
         assert_eq!(
+            build_offline_stretch_artifact_pcm_with_synthetic_policy(current_corpus_build_request(
+                OfflineStretchArtifactScope::RenderCache,
+                &input,
+                "synthetic:pitch-automation",
+                &source,
+            ),),
+            Err(OfflineStretchArtifactMaterializeError::UnsupportedPitchAutomation)
+        );
+    }
+
+    #[test]
+    fn direct_receipt_materialization_rejects_pitch_automation() {
+        let input = stretch_identity_input().with_pitch_curve(vec![
+            StretchPitchPoint::new(0, 0.0),
+            StretchPitchPoint::new(240, 2.0),
+        ]);
+        let source = stretch_artifact_source(480);
+
+        assert_eq!(
             materialize_offline_stretch_artifact_pcm(
                 OfflineStretchArtifactScope::RenderCache,
                 &input,
-                accepted_synthetic_promotion_receipt("synthetic:pitch-automation"),
+                accepted_synthetic_promotion_receipt("synthetic:direct-pitch-automation"),
                 &source,
             ),
             Err(OfflineStretchArtifactMaterializeError::UnsupportedPitchAutomation)
