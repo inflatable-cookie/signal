@@ -62,6 +62,7 @@ struct ReportArgs {
     external_benchmark_tool: String,
     external_benchmark_renders: Vec<ExternalBenchmarkRenderArg>,
     external_benchmark_render_manifests: Vec<PathBuf>,
+    export_external_benchmark_pack: Option<PathBuf>,
     listening_source_manifests: Vec<PathBuf>,
     decode_listening_sources: bool,
     decode_source_frame_limit: usize,
@@ -87,6 +88,7 @@ impl Default for ReportArgs {
             external_benchmark_tool: DEFAULT_EXTERNAL_BENCHMARK_TOOL.to_string(),
             external_benchmark_renders: Vec::new(),
             external_benchmark_render_manifests: Vec::new(),
+            export_external_benchmark_pack: None,
             listening_source_manifests: Vec::new(),
             decode_listening_sources: false,
             decode_source_frame_limit: DEFAULT_DECODE_SOURCE_FRAME_LIMIT,
@@ -181,6 +183,25 @@ fn main() {
             }
         }
     }
+    if let Some(export_dir) = &args.export_external_benchmark_pack {
+        match export_external_benchmark_pack(
+            &listening_sources,
+            export_dir,
+            &args.external_benchmark_tool,
+            args.decoded_stretch_frame_limit,
+        ) {
+            Ok(export_report) => {
+                if !export_report.is_empty() {
+                    formatted.push('\n');
+                    formatted.push_str(&export_report);
+                }
+            }
+            Err(message) => {
+                eprintln!("{message}");
+                process::exit(1);
+            }
+        }
+    }
 
     if let Some(output) = args.output {
         if let Err(error) = fs::write(&output, formatted) {
@@ -240,6 +261,12 @@ where
                         "--external-benchmark-render-manifest",
                     )?));
             }
+            "--export-external-benchmark-pack" => {
+                parsed.export_external_benchmark_pack = Some(PathBuf::from(next_value(
+                    &mut iter,
+                    "--export-external-benchmark-pack",
+                )?));
+            }
             "--listening-source-manifest" => {
                 parsed
                     .listening_source_manifests
@@ -294,7 +321,7 @@ where
 }
 
 fn usage() -> &'static str {
-    "usage: stretch-corpus-report [--report-name NAME] [--projection-epoch EPOCH] [--listening-source-manifest TSV] [--decode-listening-sources] [--decode-source-frame-limit N] [--measure-decoded-stretch] [--measure-external-benchmark-quality] [--decoded-stretch-frame-limit N] [--external-benchmark-tool NAME] [--external-benchmark-render CASE RATIO WAV] [--external-benchmark-render-manifest TSV] [--output PATH]"
+    "usage: stretch-corpus-report [--report-name NAME] [--projection-epoch EPOCH] [--listening-source-manifest TSV] [--decode-listening-sources] [--decode-source-frame-limit N] [--measure-decoded-stretch] [--measure-external-benchmark-quality] [--decoded-stretch-frame-limit N] [--external-benchmark-tool NAME] [--external-benchmark-render CASE RATIO WAV] [--external-benchmark-render-manifest TSV] [--export-external-benchmark-pack DIR] [--output PATH]"
 }
 
 fn load_external_benchmark_renders(
@@ -386,6 +413,143 @@ fn load_external_benchmark_render(
         sample_rate_hz: spec.sample_rate,
         channels,
     })
+}
+
+fn export_external_benchmark_pack(
+    sources: &[StretchCorpusListeningSource],
+    export_dir: &Path,
+    tool_name: &str,
+    frame_limit: usize,
+) -> Result<String, String> {
+    let source_dir = export_dir.join("sources");
+    let render_dir = export_dir.join("renders");
+    fs::create_dir_all(&source_dir)
+        .map_err(|error| format!("failed to create {}: {error}", source_dir.display()))?;
+    fs::create_dir_all(&render_dir)
+        .map_err(|error| format!("failed to create {}: {error}", render_dir.display()))?;
+
+    let manifest_path = export_dir.join("external-benchmark-render-plan.tsv");
+    let mut writer = csv::WriterBuilder::new()
+        .delimiter(b'\t')
+        .from_path(&manifest_path)
+        .map_err(|error| format!("failed to create {}: {error}", manifest_path.display()))?;
+    writer
+        .write_record([
+            "case_id",
+            "ratio",
+            "source_wav",
+            "rendered_path",
+            "tool_name",
+        ])
+        .map_err(|error| {
+            format!(
+                "failed to write {} header: {error}",
+                manifest_path.display()
+            )
+        })?;
+
+    let mut lines = Vec::new();
+    let mut exported_sources = 0usize;
+    let mut render_slots = 0usize;
+    for (index, source) in sources.iter().enumerate() {
+        let audio = decode_listening_source_audio(source, frame_limit)?;
+        let source_stem = source_export_stem(index, source);
+        let source_wav = source_dir.join(format!("{source_stem}.wav"));
+        write_decoded_audio_wav(&source_wav, &audio)?;
+        exported_sources += 1;
+        for &ratio in listening_source_ratios(&source.case_id)? {
+            let ratio_label = ratio_export_label(ratio);
+            let rendered_path = render_dir.join(format!("{source_stem}-ratio-{ratio_label}.wav"));
+            let ratio_field = format!("{ratio:.6}");
+            let source_wav_field = source_wav.display().to_string();
+            let rendered_path_field = rendered_path.display().to_string();
+            writer
+                .write_record([
+                    source.case_id.as_str(),
+                    &ratio_field,
+                    &source_wav_field,
+                    &rendered_path_field,
+                    tool_name,
+                ])
+                .map_err(|error| {
+                    format!("failed to write {} row: {error}", manifest_path.display())
+                })?;
+            render_slots += 1;
+            lines.push(format!(
+                "external_benchmark_render_plan case={} source={} ratio={:.6} source_wav={} rendered_path={} tool={} source_boundary={}",
+                source.case_id,
+                quoted_report_field(&source.source_path),
+                ratio,
+                quoted_report_field(&source_wav.display().to_string()),
+                quoted_report_field(&rendered_path.display().to_string()),
+                quoted_report_field(tool_name),
+                quoted_report_field("operator-provided rendered output; no external library dependency"),
+            ));
+        }
+    }
+    writer
+        .flush()
+        .map_err(|error| format!("failed to flush {}: {error}", manifest_path.display()))?;
+
+    let mut report = vec![format!(
+        "external_benchmark_render_pack export_dir={} manifest={} exported_sources={} render_slots={} tool={} frame_limit={} source_boundary={}",
+        quoted_report_field(&export_dir.display().to_string()),
+        quoted_report_field(&manifest_path.display().to_string()),
+        exported_sources,
+        render_slots,
+        quoted_report_field(tool_name),
+        frame_limit,
+        quoted_report_field("source excerpts are operator-provided licensed local audio; rendered outputs remain external black-box evidence"),
+    )];
+    report.extend(lines);
+    Ok(report.join("\n"))
+}
+
+fn write_decoded_audio_wav(path: &Path, audio: &DecodedListeningSourceAudio) -> Result<(), String> {
+    let spec = hound::WavSpec {
+        channels: audio.channels,
+        sample_rate: audio.sample_rate_hz,
+        bits_per_sample: 32,
+        sample_format: hound::SampleFormat::Float,
+    };
+    let mut writer = hound::WavWriter::create(path, spec)
+        .map_err(|error| format!("failed to create {}: {error}", path.display()))?;
+    for sample in &audio.samples {
+        writer
+            .write_sample(*sample)
+            .map_err(|error| format!("failed to write {}: {error}", path.display()))?;
+    }
+    writer
+        .finalize()
+        .map_err(|error| format!("failed to finalize {}: {error}", path.display()))
+}
+
+fn source_export_stem(index: usize, source: &StretchCorpusListeningSource) -> String {
+    let source_name = Path::new(&source.source_path)
+        .file_stem()
+        .and_then(|stem| stem.to_str())
+        .unwrap_or("source");
+    format!(
+        "{index:04}-{}-{}",
+        sanitize_path_component(&source.case_id.replace("stretch:", "")),
+        sanitize_path_component(source_name)
+    )
+}
+
+fn ratio_export_label(ratio: f64) -> String {
+    format!("{ratio:.6}").replace('.', "p")
+}
+
+fn sanitize_path_component(value: &str) -> String {
+    let mut sanitized = String::new();
+    for character in value.chars() {
+        if character.is_ascii_alphanumeric() || character == '-' || character == '_' {
+            sanitized.push(character);
+        } else {
+            sanitized.push('-');
+        }
+    }
+    sanitized.trim_matches('-').to_string()
 }
 
 fn load_listening_sources(args: &ReportArgs) -> Result<Vec<StretchCorpusListeningSource>, String> {
@@ -3604,6 +3768,7 @@ mod tests {
                 external_benchmark_tool: DEFAULT_EXTERNAL_BENCHMARK_TOOL.to_string(),
                 external_benchmark_renders: Vec::new(),
                 external_benchmark_render_manifests: Vec::new(),
+                export_external_benchmark_pack: None,
                 listening_source_manifests: Vec::new(),
                 decode_listening_sources: false,
                 decode_source_frame_limit: DEFAULT_DECODE_SOURCE_FRAME_LIMIT,
@@ -3640,6 +3805,8 @@ mod tests {
             "target/rubberband-loop.wav".to_string(),
             "--external-benchmark-render-manifest".to_string(),
             "target/external-renders.tsv".to_string(),
+            "--export-external-benchmark-pack".to_string(),
+            "target/external-pack".to_string(),
         ])
         .expect("custom args parse");
 
@@ -3659,6 +3826,7 @@ mod tests {
                 external_benchmark_render_manifests: vec![PathBuf::from(
                     "target/external-renders.tsv"
                 )],
+                export_external_benchmark_pack: Some(PathBuf::from("target/external-pack")),
                 listening_source_manifests: vec![PathBuf::from("target/fma.tsv")],
                 decode_listening_sources: true,
                 decode_source_frame_limit: 2048,
@@ -3702,6 +3870,7 @@ mod tests {
                 tool_name: None,
             }],
             external_benchmark_render_manifests: Vec::new(),
+            export_external_benchmark_pack: None,
             listening_source_manifests: Vec::new(),
             decode_listening_sources: false,
             decode_source_frame_limit: DEFAULT_DECODE_SOURCE_FRAME_LIMIT,
@@ -3751,6 +3920,7 @@ mod tests {
             external_benchmark_tool: "fallback-tool".to_string(),
             external_benchmark_renders: Vec::new(),
             external_benchmark_render_manifests: vec![manifest_path.clone()],
+            export_external_benchmark_pack: None,
             listening_source_manifests: Vec::new(),
             decode_listening_sources: false,
             decode_source_frame_limit: DEFAULT_DECODE_SOURCE_FRAME_LIMIT,
@@ -3769,6 +3939,51 @@ mod tests {
 
         let _ = fs::remove_file(wav_path);
         let _ = fs::remove_file(manifest_path);
+    }
+
+    #[test]
+    fn export_external_benchmark_pack_writes_source_wavs_and_render_plan() {
+        let source_path = PathBuf::from(format!(
+            "target/stretch-corpus-pack-source-test-{}.wav",
+            std::process::id()
+        ));
+        let export_dir = PathBuf::from(format!(
+            "target/stretch-corpus-pack-test-{}",
+            std::process::id()
+        ));
+        write_test_wav(&source_path, 4_096);
+        let source = StretchCorpusListeningSource {
+            case_id: "stretch:vocals".to_string(),
+            source_path: source_path.display().to_string(),
+            source_label: "Artist - Song".to_string(),
+            license_title: "Attribution".to_string(),
+            license_url: "https://example.test/license".to_string(),
+            provenance_url: "https://example.test/track".to_string(),
+        };
+
+        let report = export_external_benchmark_pack(&[source], &export_dir, "rubberband-cli", 1024)
+            .expect("export comparator pack");
+        let manifest_path = export_dir.join("external-benchmark-render-plan.tsv");
+        let manifest = fs::read_to_string(&manifest_path).expect("read render plan");
+
+        assert!(report.starts_with("external_benchmark_render_pack export_dir="));
+        assert!(report.contains("exported_sources=1"));
+        assert!(report.contains("tool=\"rubberband-cli\""));
+        assert!(report.contains("external_benchmark_render_plan case=stretch:vocals"));
+        assert!(manifest.starts_with("case_id\tratio\tsource_wav\trendered_path\ttool_name\n"));
+        assert!(manifest.contains("stretch:vocals\t0.750000\t"));
+        assert!(manifest.contains("\trubberband-cli\n"));
+        assert!(export_dir.join("sources").exists());
+        assert!(export_dir.join("renders").exists());
+        assert_eq!(
+            fs::read_dir(export_dir.join("sources"))
+                .expect("source dir entries")
+                .count(),
+            1
+        );
+
+        let _ = fs::remove_file(source_path);
+        let _ = fs::remove_dir_all(export_dir);
     }
 
     #[test]

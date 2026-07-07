@@ -376,6 +376,22 @@ comparison reports, not add more receipt or fixture surfaces.
   operator-supplied Rubber Band or elastique render pack feed the same
   report-only quality harness without expanding the command line into repeated
   render flags.
+- 2026-07-07: added external-comparator pack export. Since local comparator
+  tools are still absent, `stretch-corpus-report` now accepts
+  `--export-external-benchmark-pack DIR`. It decodes bounded operator listening
+  source excerpts to `DIR/sources/*.wav`, creates `DIR/renders/`, and writes
+  `DIR/external-benchmark-render-plan.tsv` with `case_id`, `ratio`,
+  `source_wav`, `rendered_path`, and `tool_name`. The same TSV can be supplied
+  back through `--external-benchmark-render-manifest` after an external
+  renderer fills the planned output WAV paths. This keeps the comparator path
+  clean-room and rendered-output-only while making the next operator step
+  deterministic.
+- 2026-07-07: exercised the pack exporter on the broad FMA review seed with
+  `rubberband-cli` as the planned tool label. The generated target-only pack at
+  `target/stretch-corpus-external-benchmark-pack-fma-broad` contains 20 decoded
+  source WAV excerpts and 60 render-plan rows in
+  `external-benchmark-render-plan.tsv`. `renders/` is intentionally empty
+  locally because no comparator renderer is installed here.
 
 ## Next Task
 
@@ -385,10 +401,11 @@ lines are now closed as report-only/rejected. A global shorter-window switch is
 also rejected, and the `000900.mp3` matched-event width issue is not solved by
 window size alone. The gated shorter-window selector now clears the first broad
 FMA no-listening check. Next useful work is promotion pressure, still
-report-only: generate or supply a small black-box comparator render pack for
-the broad FMA seed, record it as an external-render TSV manifest, then run
-`--external-benchmark-render-manifest`, `--measure-external-benchmark-quality`,
-and the gated selector report together. Require the selector to keep
-`current_better_rows=0`, `worst_gated_regression_delta_frames=0`, and no new
-draft regression, while comparator rows identify the worst aligned RMS,
-transient-smear, and timing-drift gaps to review by ear.
+report-only: fill the generated broad FMA comparator pack's planned
+`rendered_path` WAVs with an external black-box renderer, then run
+`--external-benchmark-render-manifest`,
+`--measure-external-benchmark-quality`, and the gated selector report together.
+Require the selector to keep `current_better_rows=0`,
+`worst_gated_regression_delta_frames=0`, and no new draft regression, while
+comparator rows identify the worst aligned RMS, transient-smear, and
+timing-drift gaps to review by ear.
