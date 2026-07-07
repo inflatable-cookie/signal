@@ -65,6 +65,21 @@ operator-supplied file and records timing drift when the case maps to a
 Signal-generated source. Signal does not run, link, vendor, translate, or depend
 on Rubber Band.
 
+## FMA Local Selection
+
+The FMA large bundle can seed local-only listening candidates:
+
+```bash
+cargo run -p signal-dsp-stretch --bin fma-stretch-corpus-select -- \
+  --fma-root /Users/tom/Downloads/FMA \
+  --per-family 5 \
+  --output target/stretch-corpus-fma-selection.md
+```
+
+The generated file records FMA track ids, local MP3 paths, genre-derived corpus
+family, artist/title, track URL, and artist license metadata. It is a local
+selection aid only. Do not commit FMA audio or generated local evidence reports.
+
 ## Next Task
 
 Use the completed `g10.021` evidence runner to collect operator-supplied real

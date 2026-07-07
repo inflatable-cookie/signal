@@ -11,6 +11,7 @@ description = "Time-stretching backends behind the TimeStretcher trait for Signa
 workspace = true
 
 [dependencies]
+csv = { workspace = true }
 hound = { workspace = true }
 rustfft = { workspace = true }
 signal-dsp-resample = { workspace = true }

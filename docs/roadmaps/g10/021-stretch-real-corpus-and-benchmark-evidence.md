@@ -74,9 +74,14 @@ notes before more product-facing quality claims land.
   rendered metadata, timing drift when the case maps to Signal-generated source,
   and the rendered-output-only clean-room boundary. No Rubber Band source,
   library, or dependency was added.
+- 2026-07-07: added `fma-stretch-corpus-select` for local-only FMA large-bundle
+  listening candidates. It reads FMA metadata with license/provenance fields,
+  verifies local MP3 paths, classifies candidates into stretch corpus families,
+  and writes a generated manifest under `target/` without copying or committing
+  audio.
 
 ## Next Task
 
-Collect operator-supplied licensed listening material and optional external
-rendered-output comparisons, then review the first real report before opening
-the next stretch-quality tuning card.
+Review the generated FMA selection, promote hand-picked tracks into a local
+operator run, and collect optional external rendered-output comparisons before
+opening the next stretch-quality tuning card.
