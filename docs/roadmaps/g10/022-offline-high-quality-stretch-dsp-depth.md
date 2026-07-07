@@ -258,13 +258,24 @@ comparison reports, not add more receipt or fixture surfaces.
   frames versus independent-bin `668.705882` frames. The only finite regression
   remains `stretch:pads_sustains` `000900.mp3` at `0.75x` with an `11`-frame
   delta. This rejects a global compression rollback to independent bins.
+- 2026-07-07: added a report-only guarded local transient-width control
+  candidate for compression rows. The first unguarded shoulder limiter was
+  rejected locally because it improved 7 rows but worsened one vocal row by
+  `934` frames and raised mean max-smear. The retained candidate keeps the
+  postprocess output only when promoted transient-smear does not worsen and
+  missed matches do not increase. On the broader FMA seed it improved 7
+  compression rows, worsened 0, left 10 unchanged, and left 3 inconclusive.
+  Finite-row mean max-smear moved from current OfflineHighQuality `374.352941`
+  frames to candidate `367.470588` frames. The best candidate improvement was
+  `41` frames on `stretch:drums_percussion` `000002.mp3` at `0.75x`; the worst
+  candidate regression and worst draft regression were both `0`, so the
+  `000900.mp3` finite-smear regression is removed under the guarded candidate.
 
 ## Next Task
 
 Do not add a multiresolution or hybrid path until measured evidence requires
-it. Next useful work is to prototype a targeted local transient-width control
-for the matched-smear event on `stretch:pads_sustains` `000900.mp3` at `0.75x`.
-Do not disable compression phase locking globally; the broader ablation favors
-the current phase-locked path. Any prototype must hold the broader FMA
-compression ablation, recovery gate, timing drift, and synthetic comparison
-shape.
+it. Next useful work is to decide whether the guarded transient-width control
+belongs in the reusable OfflineHighQuality DSP path or should stay report-only
+until listening/external comparison evidence exists. Before promotion, inspect
+the controlled windows for click/energy damage and rerun the broader FMA seed
+with any implementation candidate.

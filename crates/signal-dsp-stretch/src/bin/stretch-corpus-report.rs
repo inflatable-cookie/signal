@@ -754,6 +754,7 @@ fn format_decoded_stretch_metrics(
     let mut draft_recovery_gate = TransientRecoveryGateAccumulator::new("draft");
     let mut offline_recovery_gate = TransientRecoveryGateAccumulator::new("offline_hq");
     let mut compression_ablation = CompressionPhaseLockAblationAccumulator::default();
+    let mut width_control_candidate = TransientWidthControlCandidateAccumulator::default();
     for source in sources {
         let audio = decode_listening_source_audio(source, frame_limit)?;
         let mono = audio.mono_samples();
@@ -858,7 +859,23 @@ fn format_decoded_stretch_metrics(
                 QUALITY_METRIC_WINDOW_SIZE,
                 QUALITY_METRIC_HOP_SIZE,
             );
+            let offline_width_control_output =
+                apply_transient_width_control_candidate(&mono, &offline_output, ratio);
+            let offline_width_control_smear = measure_transient_smear(
+                &mono,
+                &offline_width_control_output,
+                ratio,
+                QUALITY_METRIC_WINDOW_SIZE,
+                QUALITY_METRIC_HOP_SIZE,
+            );
             compression_ablation.record(&audio, ratio, &draft_smear, &offline_smear);
+            width_control_candidate.record(
+                &audio,
+                ratio,
+                &draft_smear,
+                &offline_smear,
+                &offline_width_control_smear,
+            );
             draft_recovery_gate.record(
                 &draft_strict_smear,
                 &draft_candidate_smear,
@@ -915,7 +932,118 @@ fn format_decoded_stretch_metrics(
     if compression_ablation.rows > 0 {
         lines.push(compression_ablation.format_report_line());
     }
+    if width_control_candidate.rows > 0 {
+        lines.push(width_control_candidate.format_report_line());
+    }
     Ok(lines.join("\n"))
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+struct TransientWidthControlCandidateAccumulator {
+    rows: usize,
+    candidate_better_rows: usize,
+    current_better_rows: usize,
+    unchanged_rows: usize,
+    inconclusive_rows: usize,
+    finite_rows: usize,
+    offline_smear_sum: f64,
+    candidate_smear_sum: f64,
+    worst_candidate_regression_delta_frames: f64,
+    worst_candidate_regression_case_id: String,
+    worst_candidate_regression_source: String,
+    worst_candidate_regression_ratio: f64,
+    best_candidate_improvement_delta_frames: f64,
+    best_candidate_improvement_case_id: String,
+    best_candidate_improvement_source: String,
+    best_candidate_improvement_ratio: f64,
+    worst_draft_regression_delta_frames: f64,
+    worst_draft_regression_case_id: String,
+    worst_draft_regression_source: String,
+    worst_draft_regression_ratio: f64,
+}
+
+impl TransientWidthControlCandidateAccumulator {
+    fn record(
+        &mut self,
+        audio: &DecodedListeningSourceAudio,
+        ratio: f64,
+        draft: &signal_dsp_stretch::StretchTransientSmearMeasurement,
+        offline: &signal_dsp_stretch::StretchTransientSmearMeasurement,
+        candidate: &signal_dsp_stretch::StretchTransientSmearMeasurement,
+    ) {
+        if ratio >= 1.0 {
+            return;
+        }
+
+        self.rows += 1;
+        match compare_metric_values(candidate.max_smear_frames, offline.max_smear_frames) {
+            MetricComparison::Improved => self.candidate_better_rows += 1,
+            MetricComparison::Same => {
+                if candidate.max_smear_frames.is_finite() && offline.max_smear_frames.is_finite() {
+                    self.unchanged_rows += 1;
+                } else {
+                    self.inconclusive_rows += 1;
+                }
+            }
+            MetricComparison::Worsened => self.current_better_rows += 1,
+        }
+
+        if offline.max_smear_frames.is_finite() && candidate.max_smear_frames.is_finite() {
+            self.finite_rows += 1;
+            self.offline_smear_sum += offline.max_smear_frames;
+            self.candidate_smear_sum += candidate.max_smear_frames;
+            let candidate_delta = candidate.max_smear_frames - offline.max_smear_frames;
+            let improvement_delta = offline.max_smear_frames - candidate.max_smear_frames;
+            if improvement_delta > self.best_candidate_improvement_delta_frames {
+                self.best_candidate_improvement_delta_frames = improvement_delta;
+                self.best_candidate_improvement_case_id = audio.case_id.clone();
+                self.best_candidate_improvement_source = audio.source_path.clone();
+                self.best_candidate_improvement_ratio = ratio;
+            }
+            if candidate_delta > self.worst_candidate_regression_delta_frames {
+                self.worst_candidate_regression_delta_frames = candidate_delta;
+                self.worst_candidate_regression_case_id = audio.case_id.clone();
+                self.worst_candidate_regression_source = audio.source_path.clone();
+                self.worst_candidate_regression_ratio = ratio;
+            }
+        }
+
+        if draft.max_smear_frames.is_finite() && candidate.max_smear_frames.is_finite() {
+            let draft_delta = candidate.max_smear_frames - draft.max_smear_frames;
+            if draft_delta > self.worst_draft_regression_delta_frames {
+                self.worst_draft_regression_delta_frames = draft_delta;
+                self.worst_draft_regression_case_id = audio.case_id.clone();
+                self.worst_draft_regression_source = audio.source_path.clone();
+                self.worst_draft_regression_ratio = ratio;
+            }
+        }
+    }
+
+    fn format_report_line(&self) -> String {
+        format!(
+            "decoded_transient_width_control_candidate rows={} candidate_path=offline_hq_width_control baseline_path=offline_hq candidate_better_rows={} current_better_rows={} unchanged_rows={} inconclusive_rows={} finite_rows={} mean_candidate_smear_frames={:.6} mean_current_smear_frames={:.6} best_candidate_improvement_delta_frames={:.6} best_candidate_improvement_case={} best_candidate_improvement_source={} best_candidate_improvement_ratio={:.6} worst_candidate_regression_delta_frames={:.6} worst_candidate_regression_case={} worst_candidate_regression_source={} worst_candidate_regression_ratio={:.6} worst_draft_regression_delta_frames={:.6} worst_draft_regression_case={} worst_draft_regression_source={} worst_draft_regression_ratio={:.6}",
+            self.rows,
+            self.candidate_better_rows,
+            self.current_better_rows,
+            self.unchanged_rows,
+            self.inconclusive_rows,
+            self.finite_rows,
+            finite_ratio(self.candidate_smear_sum, self.finite_rows as f64),
+            finite_ratio(self.offline_smear_sum, self.finite_rows as f64),
+            self.best_candidate_improvement_delta_frames,
+            self.best_candidate_improvement_case_id,
+            quoted_report_field(&self.best_candidate_improvement_source),
+            self.best_candidate_improvement_ratio,
+            self.worst_candidate_regression_delta_frames,
+            self.worst_candidate_regression_case_id,
+            quoted_report_field(&self.worst_candidate_regression_source),
+            self.worst_candidate_regression_ratio,
+            self.worst_draft_regression_delta_frames,
+            self.worst_draft_regression_case_id,
+            quoted_report_field(&self.worst_draft_regression_source),
+            self.worst_draft_regression_ratio,
+        )
+    }
 }
 
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -1747,6 +1875,205 @@ fn classify_detector_shape_with_thresholds(
     }
 }
 
+fn apply_transient_width_control_candidate(input: &[f32], output: &[f32], ratio: f64) -> Vec<f32> {
+    if !ratio.is_finite() || ratio <= 0.0 || ratio >= 1.0 || input.is_empty() || output.is_empty() {
+        return output.to_vec();
+    }
+
+    let baseline = measure_transient_smear(
+        input,
+        output,
+        ratio,
+        QUALITY_METRIC_WINDOW_SIZE,
+        QUALITY_METRIC_HOP_SIZE,
+    );
+    let input_events = signal_dsp_stretch::detect_stretch_transients_with_policy(
+        input,
+        QUALITY_METRIC_WINDOW_SIZE,
+        QUALITY_METRIC_HOP_SIZE,
+        DETECTOR_POLICY,
+    );
+    let output_events = signal_dsp_stretch::detect_stretch_transients_with_policy(
+        output,
+        QUALITY_METRIC_WINDOW_SIZE,
+        QUALITY_METRIC_HOP_SIZE,
+        DETECTOR_POLICY,
+    );
+    let recovery_output_events = signal_dsp_stretch::detect_stretch_transients_with_policy(
+        output,
+        QUALITY_METRIC_WINDOW_SIZE,
+        QUALITY_METRIC_HOP_SIZE,
+        CANDIDATE_DETECTOR_POLICY,
+    );
+    let tolerance = QUALITY_METRIC_WINDOW_SIZE.max(QUALITY_METRIC_HOP_SIZE * 4) as f64;
+    let mut controlled = output.to_vec();
+
+    for input_event in input_events {
+        let expected_output_frame = input_event.frame_index as f64 * ratio;
+        let Some(output_event) = nearest_transient_event(
+            &output_events,
+            expected_output_frame,
+            tolerance,
+        )
+        .or_else(|| {
+            nearest_transient_event(&recovery_output_events, expected_output_frame, tolerance)
+        }) else {
+            continue;
+        };
+
+        let Some(input_bounds) =
+            transient_attack_bounds(input, input_event.frame_index, QUALITY_METRIC_WINDOW_SIZE)
+        else {
+            continue;
+        };
+        let Some(output_bounds) =
+            transient_attack_bounds(output, output_event.frame_index, QUALITY_METRIC_WINDOW_SIZE)
+        else {
+            continue;
+        };
+        let target_width = input_bounds.width().saturating_add(2);
+        if output_bounds.width() <= target_width {
+            continue;
+        }
+
+        limit_transient_attack_width(&mut controlled, output_bounds, target_width);
+    }
+
+    let candidate = measure_transient_smear(
+        input,
+        &controlled,
+        ratio,
+        QUALITY_METRIC_WINDOW_SIZE,
+        QUALITY_METRIC_HOP_SIZE,
+    );
+    if candidate.missed_transients > baseline.missed_transients
+        || compare_metric_values(candidate.max_smear_frames, baseline.max_smear_frames)
+            == MetricComparison::Worsened
+    {
+        output.to_vec()
+    } else {
+        controlled
+    }
+}
+
+fn nearest_transient_event(
+    events: &[signal_dsp_stretch::StretchTransientEvent],
+    expected_frame: f64,
+    tolerance_frames: f64,
+) -> Option<signal_dsp_stretch::StretchTransientEvent> {
+    events
+        .iter()
+        .copied()
+        .filter_map(|event| {
+            let distance = (event.frame_index as f64 - expected_frame).abs();
+            if distance <= tolerance_frames {
+                Some((distance, event))
+            } else {
+                None
+            }
+        })
+        .min_by(|left, right| left.0.total_cmp(&right.0))
+        .map(|(_, event)| event)
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct TransientAttackBounds {
+    left: usize,
+    right: usize,
+    peak_index: usize,
+}
+
+impl TransientAttackBounds {
+    fn width(self) -> usize {
+        self.right - self.left + 1
+    }
+}
+
+fn transient_attack_bounds(
+    samples: &[f32],
+    event_frame: usize,
+    search_radius: usize,
+) -> Option<TransientAttackBounds> {
+    if samples.is_empty() {
+        return None;
+    }
+
+    let start = event_frame.saturating_sub(search_radius);
+    let end = (event_frame + search_radius).min(samples.len().saturating_sub(1));
+    if start >= end {
+        return None;
+    }
+
+    let mut peak_index = start;
+    let mut peak = 0.0f32;
+    for (offset, sample) in samples[start..=end].iter().enumerate() {
+        let magnitude = sample.abs();
+        if magnitude > peak {
+            peak = magnitude;
+            peak_index = start + offset;
+        }
+    }
+    if peak <= 1.0e-6 {
+        return None;
+    }
+
+    let threshold = peak * 0.5;
+    let mut left = peak_index;
+    while left > start && samples[left - 1].abs() >= threshold {
+        left -= 1;
+    }
+    let mut right = peak_index;
+    while right < end && samples[right + 1].abs() >= threshold {
+        right += 1;
+    }
+
+    Some(TransientAttackBounds {
+        left,
+        right,
+        peak_index,
+    })
+}
+
+fn limit_transient_attack_width(
+    samples: &mut [f32],
+    bounds: TransientAttackBounds,
+    target_width: usize,
+) {
+    if target_width == 0 || bounds.left >= samples.len() || bounds.right >= samples.len() {
+        return;
+    }
+
+    let peak = samples[bounds.peak_index].abs();
+    if peak <= 1.0e-6 {
+        return;
+    }
+
+    let threshold = peak * 0.5;
+    let left_width = target_width / 2;
+    let right_width = target_width.saturating_sub(left_width + 1);
+    let target_left = bounds
+        .peak_index
+        .saturating_sub(left_width)
+        .max(bounds.left);
+    let target_right = (bounds.peak_index + right_width)
+        .min(bounds.right)
+        .min(samples.len().saturating_sub(1));
+
+    for (index, sample) in samples
+        .iter_mut()
+        .enumerate()
+        .take(bounds.right + 1)
+        .skip(bounds.left)
+    {
+        if (target_left..=target_right).contains(&index) {
+            continue;
+        }
+        if sample.abs() >= threshold {
+            *sample = sample.signum() * threshold * 0.999;
+        }
+    }
+}
+
 fn finite_ratio(numerator: f64, denominator: f64) -> f64 {
     if !numerator.is_finite() || !denominator.is_finite() || denominator.abs() <= 1.0e-12 {
         f64::NAN
@@ -2051,6 +2378,10 @@ mod tests {
         assert!(formatted.contains("decoded_compression_phase_lock_ablation rows="));
         assert!(formatted.contains("phase_locked_path=offline_hq"));
         assert!(formatted.contains("independent_bins_path=draft"));
+        assert!(formatted.contains("decoded_transient_width_control_candidate rows="));
+        assert!(formatted.contains("candidate_path=offline_hq_width_control"));
+        assert!(formatted.contains("baseline_path=offline_hq"));
+        assert!(formatted.contains("best_candidate_improvement_delta_frames="));
         assert!(formatted.contains("target_status="));
         assert!(formatted.contains("global_threshold_status="));
         assert!(formatted.contains("full_candidate_input_ratio="));
