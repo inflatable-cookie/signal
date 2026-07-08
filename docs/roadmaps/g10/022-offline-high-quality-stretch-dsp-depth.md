@@ -64,8 +64,12 @@ comparison reports, not add more receipt or fixture surfaces.
   Rubber Band render pack
 - [x] separate matched-event width evidence from missing-transient penalties in
   decoded reports
-- [ ] design or reject a low-edit-pressure DSP candidate for matched-event
-  width after the residual is visible across the broad corpus
+- [x] run bounded broad FMA evidence so matched-width residuals are visible
+  outside the focused `000900.mp3` case
+- [x] add report-only expansion short-window evidence before changing
+  production DSP
+- [ ] design or reject a non-oracle expansion selector gate before any
+  production DSP routing change
 
 ## Acceptance Criteria
 
@@ -563,11 +567,39 @@ comparison reports, not add more receipt or fixture surfaces.
   the transient-smear proxy favored Signal (`13.000000` frames versus
   Rubber Band `25.000000`), so this case is a Signal-vs-draft matched-width
   residual, not clear Rubber Band underperformance by that proxy.
+- 2026-07-08: ran the broad FMA decoded matched-width evidence with a bounded
+  `120000`-frame per-source analysis limit after the full broad external
+  comparator run and the full-frame decoded run were too slow for this batch.
+  The bounded run covered 20 operator FMA sources and 60 ratio rows with no
+  missing assets. `decoded_matched_transient_width_review` found 24 finite
+  matched-width rows: OfflineHighQuality was worse than draft on 13 rows,
+  better on 8, and equal on 3. The worst residual moved from the focused
+  `000900.mp3` case to `stretch:bass` `000236.mp3` at `1.25x`, where
+  OfflineHighQuality widened a matched event from input width `48.000000` to
+  output width `97.000000` (`49.000000` frames smear), while draft's matched
+  width was `17.000000` frames but draft also missed 3 of 4 input transients.
+  The compression selector did not address the expansion residual:
+  `selector_same_as_offline_rows=20`, `selector_better_than_offline_rows=1`,
+  and `selector_worse_than_offline_rows=3`.
+- 2026-07-08: added report-only expansion short-window candidate evidence
+  using the same short-window renderer already used by the compression review
+  path. On the bounded broad FMA run, `decoded_expansion_short_window_candidate`
+  covered 40 expansion rows, 30 finite: candidate was better on 15 rows,
+  current was better on 7, 8 were unchanged, and 10 were inconclusive. Mean
+  finite smear fell from current `181.533333` frames to candidate `44.333333`
+  frames. The best improvement was `1018.000000` frames on `stretch:bass`
+  `000384.mp3` at `1.25x`; the worst candidate regression was `18.000000`
+  frames on `stretch:bass` `000236.mp3` at `1.5x`. The current worst
+  Signal-vs-draft residual, `000236.mp3` at `1.25x`, worsened under the
+  short-window candidate by `15.000000` frames, so a global expansion
+  short-window switch is rejected. The useful next shape is a report-only
+  selector gate, not production routing.
 
 ## Next Task
 
-Continue Batch 22.5. Run the broad FMA/Rubber Band report with
-`decoded_matched_transient_width_review` enabled, then decide whether a
-low-edit-pressure matched-width DSP candidate is justified. Do not revive the
-previous width-control sample edit path unless the new broad evidence proves
-its edit pressure can be bounded.
+Continue Batch 22.5 by deriving a report-only non-oracle expansion selector
+gate from `decoded_expansion_short_window_feature` rows. The gate must retain
+the large expansion wins without selecting the `000236.mp3` current-better
+cases. Do not route expansion material to the short-window renderer in
+production until broad evidence shows zero or explicitly bounded selector
+regressions.

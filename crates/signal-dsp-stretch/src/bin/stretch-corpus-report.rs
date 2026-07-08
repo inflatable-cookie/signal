@@ -1207,6 +1207,12 @@ fn format_decoded_stretch_metrics(
         "offline_hq_short_window",
     )
     .with_feature_report("decoded_compression_short_window_feature");
+    let mut expansion_short_window_candidate =
+        CompressionReviewCandidateAccumulator::new_expansion(
+            "decoded_expansion_short_window_candidate",
+            "offline_hq_short_window",
+        )
+        .with_feature_report("decoded_expansion_short_window_feature");
     let mut compression_short_window_selector_candidate =
         ShortWindowSelectorCandidateAccumulator::default();
     let mut compression_short_window_selector_path = ShortWindowSelectorPathAccumulator::default();
@@ -1378,6 +1384,13 @@ fn format_decoded_stretch_metrics(
                 &offline_smear,
                 &offline_short_window_smear,
             );
+            expansion_short_window_candidate.record(
+                &audio,
+                ratio,
+                &draft_smear,
+                &offline_smear,
+                &offline_short_window_smear,
+            );
             compression_short_window_selector_candidate.record(
                 &audio,
                 ratio,
@@ -1479,6 +1492,10 @@ fn format_decoded_stretch_metrics(
     if compression_short_window_candidate.rows > 0 {
         lines.push(compression_short_window_candidate.format_report_line());
         lines.extend(compression_short_window_candidate.format_feature_lines());
+    }
+    if expansion_short_window_candidate.rows > 0 {
+        lines.push(expansion_short_window_candidate.format_report_line());
+        lines.extend(expansion_short_window_candidate.format_feature_lines());
     }
     if compression_short_window_selector_candidate.rows > 0 {
         lines.push(compression_short_window_selector_candidate.format_report_line());
@@ -3515,6 +3532,7 @@ impl CompressionPhaseLockAblationAccumulator {
 struct CompressionReviewCandidateAccumulator {
     report_name: &'static str,
     candidate_path: &'static str,
+    ratio_scope: CandidateRatioScope,
     feature_report_name: Option<&'static str>,
     rows: usize,
     candidate_better_rows: usize,
@@ -3546,11 +3564,34 @@ struct CompressionReviewCandidateAccumulator {
     feature_rows: Vec<CompressionReviewFeatureRow>,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum CandidateRatioScope {
+    Compression,
+    Expansion,
+}
+
+impl CandidateRatioScope {
+    fn accepts(self, ratio: f64) -> bool {
+        match self {
+            Self::Compression => ratio < 1.0,
+            Self::Expansion => ratio > 1.0,
+        }
+    }
+
+    fn label(self) -> &'static str {
+        match self {
+            Self::Compression => "compression",
+            Self::Expansion => "expansion",
+        }
+    }
+}
+
 impl CompressionReviewCandidateAccumulator {
     fn new(report_name: &'static str, candidate_path: &'static str) -> Self {
         Self {
             report_name,
             candidate_path,
+            ratio_scope: CandidateRatioScope::Compression,
             feature_report_name: None,
             rows: 0,
             candidate_better_rows: 0,
@@ -3583,6 +3624,13 @@ impl CompressionReviewCandidateAccumulator {
         }
     }
 
+    fn new_expansion(report_name: &'static str, candidate_path: &'static str) -> Self {
+        Self {
+            ratio_scope: CandidateRatioScope::Expansion,
+            ..Self::new(report_name, candidate_path)
+        }
+    }
+
     fn with_feature_report(mut self, feature_report_name: &'static str) -> Self {
         self.feature_report_name = Some(feature_report_name);
         self
@@ -3596,7 +3644,7 @@ impl CompressionReviewCandidateAccumulator {
         offline: &signal_dsp_stretch::StretchTransientSmearMeasurement,
         candidate: &signal_dsp_stretch::StretchTransientSmearMeasurement,
     ) {
-        if ratio >= 1.0 {
+        if !self.ratio_scope.accepts(ratio) {
             return;
         }
 
@@ -3682,10 +3730,11 @@ impl CompressionReviewCandidateAccumulator {
 
     fn format_report_line(&self) -> String {
         format!(
-            "{} rows={} candidate_path={} baseline_path=offline_hq candidate_better_rows={} current_better_rows={} unchanged_rows={} inconclusive_rows={} finite_rows={} mean_candidate_smear_frames={:.6} mean_current_smear_frames={:.6} best_candidate_improvement_delta_frames={:.6} best_candidate_improvement_case={} best_candidate_improvement_source={} best_candidate_improvement_ratio={:.6} worst_candidate_regression_delta_frames={:.6} worst_candidate_regression_case={} worst_candidate_regression_source={} worst_candidate_regression_ratio={:.6} worst_draft_regression_delta_frames={:.6} worst_draft_regression_case={} worst_draft_regression_source={} worst_draft_regression_ratio={:.6} baseline_worst_draft_regression_delta_frames={:.6} baseline_worst_draft_regression_case={} baseline_worst_draft_regression_source={} baseline_worst_draft_regression_ratio={:.6} baseline_worst_draft_smear_frames={:.6} baseline_worst_current_smear_frames={:.6} baseline_worst_candidate_smear_frames={:.6}",
+            "{} rows={} candidate_path={} ratio_scope={} baseline_path=offline_hq candidate_better_rows={} current_better_rows={} unchanged_rows={} inconclusive_rows={} finite_rows={} mean_candidate_smear_frames={:.6} mean_current_smear_frames={:.6} best_candidate_improvement_delta_frames={:.6} best_candidate_improvement_case={} best_candidate_improvement_source={} best_candidate_improvement_ratio={:.6} worst_candidate_regression_delta_frames={:.6} worst_candidate_regression_case={} worst_candidate_regression_source={} worst_candidate_regression_ratio={:.6} worst_draft_regression_delta_frames={:.6} worst_draft_regression_case={} worst_draft_regression_source={} worst_draft_regression_ratio={:.6} baseline_worst_draft_regression_delta_frames={:.6} baseline_worst_draft_regression_case={} baseline_worst_draft_regression_source={} baseline_worst_draft_regression_ratio={:.6} baseline_worst_draft_smear_frames={:.6} baseline_worst_current_smear_frames={:.6} baseline_worst_candidate_smear_frames={:.6}",
             self.report_name,
             self.rows,
             self.candidate_path,
+            self.ratio_scope.label(),
             self.candidate_better_rows,
             self.current_better_rows,
             self.unchanged_rows,
@@ -5942,6 +5991,8 @@ mod tests {
         assert!(formatted.contains("candidate_path=offline_hq_compression_anchor"));
         assert!(formatted.contains("decoded_compression_short_window_candidate rows="));
         assert!(formatted.contains("candidate_path=offline_hq_short_window"));
+        assert!(formatted.contains("decoded_expansion_short_window_candidate rows="));
+        assert!(formatted.contains("ratio_scope=expansion"));
         assert!(formatted.contains("decoded_compression_short_window_selector_candidate rows="));
         assert!(formatted.contains("gate=CurrentMissesOrHighCurrentSmear"));
         assert!(formatted.contains("decoded_compression_short_window_selector_path rows="));
@@ -6127,6 +6178,43 @@ mod tests {
         assert!(lines[0].contains("candidate_path=offline_hq_short_window"));
         assert!(lines[1].contains("outcome=CurrentBetter"));
         assert!(lines[1].contains("candidate_delta_frames=6.000000"));
+    }
+
+    #[test]
+    fn expansion_review_candidate_counts_only_expansion_rows() {
+        let audio = DecodedListeningSourceAudio {
+            case_id: "stretch:bass".to_string(),
+            source_path: "target/source.wav".to_string(),
+            sample_rate_hz: 48_000,
+            channels: 1,
+            samples: vec![0.0; 8],
+            analysis_limited: false,
+        };
+        let draft = transient_smear_measurement(1024.0);
+        let current = transient_smear_measurement(49.0);
+        let improved = transient_smear_measurement(10.0);
+        let worsened = transient_smear_measurement(64.0);
+        let mut candidate = CompressionReviewCandidateAccumulator::new_expansion(
+            "decoded_expansion_short_window_candidate",
+            "offline_hq_short_window",
+        )
+        .with_feature_report("decoded_expansion_short_window_feature");
+
+        candidate.record(&audio, 0.75, &draft, &current, &improved);
+        candidate.record(&audio, 1.25, &draft, &current, &improved);
+        candidate.record(&audio, 1.5, &draft, &current, &worsened);
+        let line = candidate.format_report_line();
+        let feature_lines = candidate.format_feature_lines();
+
+        assert!(line.contains("rows=2"));
+        assert!(line.contains("ratio_scope=expansion"));
+        assert!(line.contains("candidate_better_rows=1"));
+        assert!(line.contains("current_better_rows=1"));
+        assert!(line.contains("best_candidate_improvement_delta_frames=39.000000"));
+        assert!(line.contains("worst_candidate_regression_delta_frames=15.000000"));
+        assert_eq!(feature_lines.len(), 2);
+        assert!(feature_lines[0].contains("ratio=1.250000"));
+        assert!(feature_lines[1].contains("ratio=1.500000"));
     }
 
     #[test]
