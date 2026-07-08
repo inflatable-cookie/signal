@@ -610,12 +610,32 @@ comparison reports, not add more receipt or fixture surfaces.
   it also rejected all 7 current-better rows, including both `000236.mp3`
   current-better cases. This is a viable report-only selector shape; it still
   needs full-frame and comparator-backed evidence before production routing.
+- 2026-07-08: ran the targeted default-limit expansion selector pack at
+  `target/stretch-corpus-fma-expansion-selector-full.tsv`. The pack covered 6
+  FMA sources, 18 ratio rows, and the existing Rubber Band rendered outputs for
+  accepted selector wins, rejected current-better guard cases, and rejected
+  candidate-better opportunity cases. The raw expansion short-window candidate
+  covered 12 finite expansion rows: candidate was better on 8, current was
+  better on 4, mean candidate smear was `59.416667` frames, and mean current
+  smear was `378.000000` frames. The selector gate accepted 4 of 12 expansion
+  rows, selected 0 current-better rows, kept `worst_gated_regression_delta_frames=0`,
+  and moved mean gated smear to `54.000000` frames. It rejected 4 additional
+  candidate-better rows worth `80.000000` frames of possible improvement. The
+  larger analysis window changed important row outcomes versus the bounded
+  `120000`-frame run: `000384.mp3` no longer looked like a missed-transient
+  win, while `000020.mp3` at `1.5x` became a missed-transient win. The external
+  comparator pass measured zero timing drift for all 18 Signal and Rubber Band
+  rows; on expansion rows, Signal's transient-smear proxy was better on 6,
+  Rubber Band's was better on 2, and 4 were equal. This supports the gate as
+  conservative report evidence, but it also shows the heuristic is
+  analysis-window sensitive. Do not promote expansion short-window routing to a
+  product path yet.
 
 ## Next Task
 
-Continue Batch 22.5 by validating the expansion selector gate beyond the
-bounded 120k report: either make the broad/full-frame report path cheaper, or
-run a targeted full-frame pack over accepted/rejected selector cases plus the
-Rubber Band rendered outputs. Do not route expansion material to the
-short-window renderer in production until that evidence also shows zero or
-explicitly bounded selector regressions.
+Continue Batch 22.5 by making the default-limit/broad decoded report path
+cheaper enough to run over the 20-source FMA broad pack with Rubber Band
+comparator rows, or by adding a broader targeted sweep that covers the
+analysis-window-sensitive expansion rows. Do not route expansion material to
+the short-window renderer in production until broader default-limit evidence
+also shows zero or explicitly bounded selector regressions.
