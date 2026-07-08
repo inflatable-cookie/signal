@@ -630,12 +630,39 @@ comparison reports, not add more receipt or fixture surfaces.
   conservative report evidence, but it also shows the heuristic is
   analysis-window sensitive. Do not promote expansion short-window routing to a
   product path yet.
+- 2026-07-08: made the broad/default-limit evidence path bounded enough to run.
+  `stretch-corpus-report` now keeps full behavior as the default, and adds
+  `--decoded-stretch-report-mode expansion-selector` for the Batch 22.5
+  decoded evidence path plus `--external-benchmark-quality-mode core` for
+  timing/transient/alignment comparator rows without the heavier feature-review
+  rows. The external comparator pass also caches decoded source audio and mono
+  buffers across ratio rows. A targeted fast rerun at
+  `target/stretch-corpus-fma-expansion-selector-fast.tsv` preserved the prior
+  targeted selector result and completed in `164.09` seconds; the broader
+  20-source/60-render run at
+  `target/stretch-corpus-fma-broad-expansion-selector-fast.tsv` completed in
+  `518.13` seconds.
+- 2026-07-08: ran the 20-source broad/default-limit expansion selector evidence
+  with Rubber Band core comparator rows. The raw expansion short-window
+  candidate covered 40 expansion rows, 38 finite: candidate was better on 18,
+  current was better on 13, 7 were unchanged, and 2 were inconclusive. Mean
+  candidate smear was `54.184211` frames versus current `231.315789`. The
+  selector gate accepted 9 of 40 rows, selected 0 current-better rows, kept
+  `worst_gated_regression_delta_frames=0`, and moved mean gated smear to
+  `53.000000` frames. It retained 8 candidate-better rows and rejected 10
+  additional candidate-better rows worth `138.000000` frames of possible
+  improvement. The Rubber Band core comparator pass measured zero timing drift
+  for all 60 rows. On finite expansion transient-smear rows, Signal's proxy was
+  better on 23 of 34, Rubber Band's was better on 5, and 6 were equal. This is
+  enough broad/default-limit evidence to promote the expansion selector shape
+  deliberately; keep full external feature-review rows as a separate quality
+  audit, not as a blocker for this selector gate.
 
 ## Next Task
 
-Continue Batch 22.5 by making the default-limit/broad decoded report path
-cheaper enough to run over the 20-source FMA broad pack with Rubber Band
-comparator rows, or by adding a broader targeted sweep that covers the
-analysis-window-sensitive expansion rows. Do not route expansion material to
-the short-window renderer in production until broader default-limit evidence
-also shows zero or explicitly bounded selector regressions.
+Continue Batch 22.5 by promoting the expansion short-window selector from
+report-only evidence to an explicit product path. Keep it distinct from the
+existing compression selector in cache identity, receipts, and render/runtime
+plan surfaces, and gate promotion on the broad/default-limit evidence above.
+Do not fold expansion into the existing compression selector path or route it
+through a generic short-window switch.

@@ -1,6 +1,7 @@
 //! Emit deterministic Signal stretch corpus evidence reports.
 
 use std::borrow::Cow;
+use std::collections::HashMap;
 use std::env;
 use std::fs::{self, File};
 use std::path::{Path, PathBuf};
@@ -78,8 +79,10 @@ struct ReportArgs {
     decode_listening_sources: bool,
     decode_source_frame_limit: usize,
     measure_decoded_stretch: bool,
+    decoded_stretch_report_mode: DecodedStretchReportMode,
     decoded_stretch_frame_limit: usize,
     measure_external_benchmark_quality: bool,
+    external_benchmark_quality_mode: ExternalBenchmarkQualityMode,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -88,6 +91,42 @@ struct ExternalBenchmarkRenderArg {
     ratio: String,
     path: PathBuf,
     tool_name: Option<String>,
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+enum DecodedStretchReportMode {
+    Full,
+    ExpansionSelector,
+}
+
+impl DecodedStretchReportMode {
+    fn parse(value: &str) -> Result<Self, String> {
+        match value {
+            "full" => Ok(Self::Full),
+            "expansion-selector" => Ok(Self::ExpansionSelector),
+            _ => Err(format!(
+                "invalid --decoded-stretch-report-mode value: {value}; expected full or expansion-selector"
+            )),
+        }
+    }
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+enum ExternalBenchmarkQualityMode {
+    Core,
+    Full,
+}
+
+impl ExternalBenchmarkQualityMode {
+    fn parse(value: &str) -> Result<Self, String> {
+        match value {
+            "core" => Ok(Self::Core),
+            "full" => Ok(Self::Full),
+            _ => Err(format!(
+                "invalid --external-benchmark-quality-mode value: {value}; expected core or full"
+            )),
+        }
+    }
 }
 
 impl Default for ReportArgs {
@@ -105,8 +144,10 @@ impl Default for ReportArgs {
             decode_listening_sources: false,
             decode_source_frame_limit: DEFAULT_DECODE_SOURCE_FRAME_LIMIT,
             measure_decoded_stretch: false,
+            decoded_stretch_report_mode: DecodedStretchReportMode::Full,
             decoded_stretch_frame_limit: DEFAULT_DECODED_STRETCH_FRAME_LIMIT,
             measure_external_benchmark_quality: false,
+            external_benchmark_quality_mode: ExternalBenchmarkQualityMode::Full,
         }
     }
 }
@@ -164,7 +205,11 @@ fn main() {
         }
     }
     if args.measure_decoded_stretch {
-        match format_decoded_stretch_metrics(&listening_sources, args.decoded_stretch_frame_limit) {
+        match format_decoded_stretch_metrics(
+            &listening_sources,
+            args.decoded_stretch_frame_limit,
+            args.decoded_stretch_report_mode,
+        ) {
             Ok(decoded_metrics) => {
                 if !decoded_metrics.is_empty() {
                     formatted.push('\n');
@@ -189,6 +234,7 @@ fn main() {
             &listening_sources,
             &quality_renders,
             args.decoded_stretch_frame_limit,
+            args.external_benchmark_quality_mode,
         ) {
             Ok(external_quality) => {
                 if !external_quality.is_empty() {
@@ -330,8 +376,19 @@ where
             "--measure-decoded-stretch" => {
                 parsed.measure_decoded_stretch = true;
             }
+            "--decoded-stretch-report-mode" => {
+                parsed.decoded_stretch_report_mode = DecodedStretchReportMode::parse(&next_value(
+                    &mut iter,
+                    "--decoded-stretch-report-mode",
+                )?)?;
+            }
             "--measure-external-benchmark-quality" => {
                 parsed.measure_external_benchmark_quality = true;
+            }
+            "--external-benchmark-quality-mode" => {
+                parsed.external_benchmark_quality_mode = ExternalBenchmarkQualityMode::parse(
+                    &next_value(&mut iter, "--external-benchmark-quality-mode")?,
+                )?;
             }
             "--decoded-stretch-frame-limit" => {
                 parsed.decoded_stretch_frame_limit =
@@ -362,7 +419,7 @@ where
 }
 
 fn usage() -> &'static str {
-    "usage: stretch-corpus-report [--report-name NAME] [--projection-epoch EPOCH] [--listening-source-manifest TSV] [--decode-listening-sources] [--decode-source-frame-limit N] [--measure-decoded-stretch] [--measure-external-benchmark-quality] [--decoded-stretch-frame-limit N] [--external-benchmark-tool NAME] [--external-benchmark-render CASE RATIO WAV] [--external-benchmark-render-manifest TSV] [--export-external-benchmark-pack DIR] [--check-external-benchmark-render-plan TSV] [--output PATH]"
+    "usage: stretch-corpus-report [--report-name NAME] [--projection-epoch EPOCH] [--listening-source-manifest TSV] [--decode-listening-sources] [--decode-source-frame-limit N] [--measure-decoded-stretch] [--decoded-stretch-report-mode full|expansion-selector] [--measure-external-benchmark-quality] [--external-benchmark-quality-mode core|full] [--decoded-stretch-frame-limit N] [--external-benchmark-tool NAME] [--external-benchmark-render CASE RATIO WAV] [--external-benchmark-render-manifest TSV] [--export-external-benchmark-pack DIR] [--check-external-benchmark-render-plan TSV] [--output PATH]"
 }
 
 fn load_external_benchmark_renders(
@@ -1193,6 +1250,7 @@ fn profile_from_decoded_audio(
 fn format_decoded_stretch_metrics(
     sources: &[StretchCorpusListeningSource],
     frame_limit: usize,
+    mode: DecodedStretchReportMode,
 ) -> Result<String, String> {
     let mut lines = Vec::new();
     let mut draft_recovery_gate = TransientRecoveryGateAccumulator::new("draft");
@@ -1225,10 +1283,58 @@ fn format_decoded_stretch_metrics(
         let audio = decode_listening_source_audio(source, frame_limit)?;
         let mono = audio.mono_samples();
         for &ratio in listening_source_ratios(&source.case_id)? {
+            if mode == DecodedStretchReportMode::ExpansionSelector && ratio <= 1.0 {
+                continue;
+            }
             let mut draft = PhaseVocoderStretcher::new(ratio);
             let draft_output = draft.stretch_mono(&mono);
             let mut offline = OfflineHighQualityStretcher::new(ratio);
             let offline_output = offline.stretch_mono(&mono);
+
+            if mode == DecodedStretchReportMode::ExpansionSelector {
+                let draft_smear = measure_transient_smear(
+                    &mono,
+                    &draft_output,
+                    ratio,
+                    QUALITY_METRIC_WINDOW_SIZE,
+                    QUALITY_METRIC_HOP_SIZE,
+                );
+                let offline_smear = measure_transient_smear(
+                    &mono,
+                    &offline_output,
+                    ratio,
+                    QUALITY_METRIC_WINDOW_SIZE,
+                    QUALITY_METRIC_HOP_SIZE,
+                );
+                let mut offline_short_window = OfflineHighQualityStretcher::with_window(
+                    ratio,
+                    COMPRESSION_SHORT_WINDOW_SELECTOR_WINDOW_SIZE,
+                    COMPRESSION_SHORT_WINDOW_SELECTOR_ANALYSIS_HOP,
+                );
+                let offline_short_window_output = offline_short_window.stretch_mono(&mono);
+                let offline_short_window_smear = measure_transient_smear(
+                    &mono,
+                    &offline_short_window_output,
+                    ratio,
+                    QUALITY_METRIC_WINDOW_SIZE,
+                    QUALITY_METRIC_HOP_SIZE,
+                );
+                expansion_short_window_candidate.record(
+                    &audio,
+                    ratio,
+                    &draft_smear,
+                    &offline_smear,
+                    &offline_short_window_smear,
+                );
+                expansion_short_window_selector_candidate.record(
+                    &audio,
+                    ratio,
+                    &draft_smear,
+                    &offline_smear,
+                    &offline_short_window_smear,
+                );
+                continue;
+            }
 
             lines.push(format_decoded_stretch_metric_line(
                 &audio,
@@ -1838,11 +1944,14 @@ fn format_external_benchmark_quality_metrics(
     sources: &[StretchCorpusListeningSource],
     renders: &[ExternalBenchmarkQualityRender],
     frame_limit: usize,
+    mode: ExternalBenchmarkQualityMode,
 ) -> Result<String, String> {
     let mut lines = Vec::new();
     let mut gain_envelope_reviews = Vec::new();
     let mut level_normalized_reviews = Vec::new();
     let mut residual_coherence_reviews = Vec::new();
+    let mut source_audio_cache = HashMap::new();
+    let mut source_mono_cache = HashMap::new();
     for render in renders {
         let source = match source_for_external_quality_render(sources, render) {
             ExternalBenchmarkQualitySource::Found(source) => source,
@@ -1871,7 +1980,17 @@ fn format_external_benchmark_quality_metrics(
                 continue;
             }
         };
-        let source_audio = decode_listening_source_audio(source.as_ref(), frame_limit)?;
+        let source_cache_key = source.source_path.clone();
+        let source_audio = match source_audio_cache.get(&source_cache_key) {
+            Some(audio) => audio,
+            None => {
+                let audio = decode_listening_source_audio(source.as_ref(), frame_limit)?;
+                source_audio_cache.insert(source_cache_key.clone(), audio);
+                source_audio_cache
+                    .get(&source_cache_key)
+                    .expect("cached decoded source audio")
+            }
+        };
         let external_audio = decode_external_benchmark_render_audio(render)?;
         if external_audio.frames() == 0 {
             lines.push(format_external_benchmark_quality_skip_line(
@@ -1898,7 +2017,15 @@ fn format_external_benchmark_quality_metrics(
             continue;
         }
 
-        let source_mono = source_audio.mono_samples();
+        let source_mono = match source_mono_cache.get(&source_cache_key) {
+            Some(mono) => mono,
+            None => {
+                source_mono_cache.insert(source_cache_key.clone(), source_audio.mono_samples());
+                source_mono_cache
+                    .get(&source_cache_key)
+                    .expect("cached decoded mono source audio")
+            }
+        };
         let mut signal = OfflineHighQualityStretcher::new(render.ratio);
         let signal_output = signal.stretch_mono(&source_mono);
         let signal_smear = measure_transient_smear(
@@ -1923,154 +2050,205 @@ fn format_external_benchmark_quality_metrics(
             render.ratio,
         );
         let aligned = align_and_measure_error(&signal_output, &external_audio.mono_samples);
-        let feature_delta = measure_external_benchmark_feature_delta(
-            &signal_output,
-            &external_audio.mono_samples,
-            &aligned,
-            source_audio.sample_rate_hz,
-        );
-        let gain_envelope_review = measure_external_benchmark_gain_envelope_review(
-            &signal_output,
-            &external_audio.mono_samples,
-            &aligned,
-            &feature_delta,
-        );
-        let level_normalized_review = measure_external_benchmark_level_normalized_review(
-            &signal_output,
-            &external_audio.mono_samples,
-            &aligned,
-            &feature_delta,
-            source_audio.sample_rate_hz,
-        );
-        let residual_coherence_review = measure_external_benchmark_residual_coherence_review(
-            &signal_output,
-            &external_audio.mono_samples,
-            &aligned,
-            &feature_delta,
-            &level_normalized_review,
-            source_audio.sample_rate_hz,
-        );
-        gain_envelope_reviews.push(ExternalBenchmarkGainEnvelopeReviewMeasurement {
-            case_id: render.case_id.clone(),
-            source_path: source.source_path.clone(),
-            render_path: render.rendered_path.clone(),
-            tool_name: render.tool_name.clone(),
-            ratio: render.ratio,
-            source_boundary: "rendered-output-only; no external source or library dependency",
-            aligned_compared_frames: feature_delta.compared_frames,
-            feature_divergence_score: feature_delta.divergence_score(),
-            envelope_correlation: feature_delta.envelope_correlation,
-            rms_delta_db: feature_delta.signal.rms_db - feature_delta.external.rms_db,
-            peak_delta_db: feature_delta.signal.peak_db - feature_delta.external.peak_db,
-            window_count: gain_envelope_review.window_count,
-            mean_window_rms_delta_db: gain_envelope_review.mean_window_rms_delta_db,
-            median_window_rms_delta_db: gain_envelope_review.median_window_rms_delta_db,
-            max_abs_window_rms_delta_db: gain_envelope_review.max_abs_window_rms_delta_db,
-            louder_windows: gain_envelope_review.louder_windows,
-            quieter_windows: gain_envelope_review.quieter_windows,
-            near_windows: gain_envelope_review.near_windows,
-            gain_pattern: gain_envelope_review.gain_pattern,
-        });
-        level_normalized_reviews.push(ExternalBenchmarkLevelNormalizedReviewMeasurement {
-            case_id: render.case_id.clone(),
-            source_path: source.source_path.clone(),
-            render_path: render.rendered_path.clone(),
-            tool_name: render.tool_name.clone(),
-            ratio: render.ratio,
-            source_boundary: "rendered-output-only; no external source or library dependency",
-            aligned_compared_frames: feature_delta.compared_frames,
-            signal_gain_db_applied: level_normalized_review.signal_gain_db_applied,
-            raw_feature_divergence_score: feature_delta.divergence_score(),
-            normalized_feature_divergence_score: level_normalized_review
-                .normalized_feature_delta
-                .divergence_score(),
-            feature_divergence_score_delta: level_normalized_review
-                .normalized_feature_delta
-                .divergence_score()
-                - feature_delta.divergence_score(),
-            raw_envelope_correlation: feature_delta.envelope_correlation,
-            normalized_envelope_correlation: level_normalized_review
-                .normalized_feature_delta
-                .envelope_correlation,
-            raw_rms_delta_db: feature_delta.signal.rms_db - feature_delta.external.rms_db,
-            normalized_rms_delta_db: level_normalized_review
-                .normalized_feature_delta
-                .signal
-                .rms_db
-                - level_normalized_review
+        let mut feature_delta_line = None;
+        if mode == ExternalBenchmarkQualityMode::Full {
+            let feature_delta = measure_external_benchmark_feature_delta(
+                &signal_output,
+                &external_audio.mono_samples,
+                &aligned,
+                source_audio.sample_rate_hz,
+            );
+            let gain_envelope_review = measure_external_benchmark_gain_envelope_review(
+                &signal_output,
+                &external_audio.mono_samples,
+                &aligned,
+                &feature_delta,
+            );
+            let level_normalized_review = measure_external_benchmark_level_normalized_review(
+                &signal_output,
+                &external_audio.mono_samples,
+                &aligned,
+                &feature_delta,
+                source_audio.sample_rate_hz,
+            );
+            let residual_coherence_review = measure_external_benchmark_residual_coherence_review(
+                &signal_output,
+                &external_audio.mono_samples,
+                &aligned,
+                &feature_delta,
+                &level_normalized_review,
+                source_audio.sample_rate_hz,
+            );
+            gain_envelope_reviews.push(ExternalBenchmarkGainEnvelopeReviewMeasurement {
+                case_id: render.case_id.clone(),
+                source_path: source.source_path.clone(),
+                render_path: render.rendered_path.clone(),
+                tool_name: render.tool_name.clone(),
+                ratio: render.ratio,
+                source_boundary: "rendered-output-only; no external source or library dependency",
+                aligned_compared_frames: feature_delta.compared_frames,
+                feature_divergence_score: feature_delta.divergence_score(),
+                envelope_correlation: feature_delta.envelope_correlation,
+                rms_delta_db: feature_delta.signal.rms_db - feature_delta.external.rms_db,
+                peak_delta_db: feature_delta.signal.peak_db - feature_delta.external.peak_db,
+                window_count: gain_envelope_review.window_count,
+                mean_window_rms_delta_db: gain_envelope_review.mean_window_rms_delta_db,
+                median_window_rms_delta_db: gain_envelope_review.median_window_rms_delta_db,
+                max_abs_window_rms_delta_db: gain_envelope_review.max_abs_window_rms_delta_db,
+                louder_windows: gain_envelope_review.louder_windows,
+                quieter_windows: gain_envelope_review.quieter_windows,
+                near_windows: gain_envelope_review.near_windows,
+                gain_pattern: gain_envelope_review.gain_pattern,
+            });
+            level_normalized_reviews.push(ExternalBenchmarkLevelNormalizedReviewMeasurement {
+                case_id: render.case_id.clone(),
+                source_path: source.source_path.clone(),
+                render_path: render.rendered_path.clone(),
+                tool_name: render.tool_name.clone(),
+                ratio: render.ratio,
+                source_boundary: "rendered-output-only; no external source or library dependency",
+                aligned_compared_frames: feature_delta.compared_frames,
+                signal_gain_db_applied: level_normalized_review.signal_gain_db_applied,
+                raw_feature_divergence_score: feature_delta.divergence_score(),
+                normalized_feature_divergence_score: level_normalized_review
                     .normalized_feature_delta
-                    .external
-                    .rms_db,
-            raw_peak_delta_db: feature_delta.signal.peak_db - feature_delta.external.peak_db,
-            normalized_peak_delta_db: level_normalized_review
-                .normalized_feature_delta
-                .signal
-                .peak_db
-                - level_normalized_review
+                    .divergence_score(),
+                feature_divergence_score_delta: level_normalized_review
                     .normalized_feature_delta
-                    .external
-                    .peak_db,
-            raw_spectral_centroid_delta_hz: feature_delta.signal.spectral_centroid_hz
-                - feature_delta.external.spectral_centroid_hz,
-            normalized_spectral_centroid_delta_hz: level_normalized_review
-                .normalized_feature_delta
-                .signal
-                .spectral_centroid_hz
-                - level_normalized_review
+                    .divergence_score()
+                    - feature_delta.divergence_score(),
+                raw_envelope_correlation: feature_delta.envelope_correlation,
+                normalized_envelope_correlation: level_normalized_review
                     .normalized_feature_delta
-                    .external
-                    .spectral_centroid_hz,
-            raw_high_frequency_energy_ratio_delta: feature_delta.signal.high_frequency_energy_ratio
-                - feature_delta.external.high_frequency_energy_ratio,
-            normalized_high_frequency_energy_ratio_delta: level_normalized_review
-                .normalized_feature_delta
-                .signal
-                .high_frequency_energy_ratio
-                - level_normalized_review
+                    .envelope_correlation,
+                raw_rms_delta_db: feature_delta.signal.rms_db - feature_delta.external.rms_db,
+                normalized_rms_delta_db: level_normalized_review
                     .normalized_feature_delta
-                    .external
-                    .high_frequency_energy_ratio,
-            normalization_pattern: level_normalized_review.normalization_pattern,
-        });
-        residual_coherence_reviews.push(ExternalBenchmarkResidualCoherenceReviewMeasurement {
-            case_id: render.case_id.clone(),
-            source_path: source.source_path.clone(),
-            render_path: render.rendered_path.clone(),
-            tool_name: render.tool_name.clone(),
-            ratio: render.ratio,
-            source_boundary: "rendered-output-only; no external source or library dependency",
-            aligned_compared_frames: feature_delta.compared_frames,
-            signal_gain_db_applied: level_normalized_review.signal_gain_db_applied,
-            raw_feature_divergence_score: feature_delta.divergence_score(),
-            normalized_feature_divergence_score: level_normalized_review
-                .normalized_feature_delta
-                .divergence_score(),
-            normalized_sample_envelope_correlation: level_normalized_review
-                .normalized_feature_delta
-                .envelope_correlation,
-            block_rms_envelope_correlation: residual_coherence_review
-                .block_rms_envelope_correlation,
-            mean_abs_block_rms_delta_db: residual_coherence_review.mean_abs_block_rms_delta_db,
-            max_abs_block_rms_delta_db: residual_coherence_review.max_abs_block_rms_delta_db,
-            spectral_magnitude_coherence: residual_coherence_review.spectral_magnitude_coherence,
-            normalized_spectral_centroid_delta_hz: level_normalized_review
-                .normalized_feature_delta
-                .signal
-                .spectral_centroid_hz
-                - level_normalized_review
+                    .signal
+                    .rms_db
+                    - level_normalized_review
+                        .normalized_feature_delta
+                        .external
+                        .rms_db,
+                raw_peak_delta_db: feature_delta.signal.peak_db - feature_delta.external.peak_db,
+                normalized_peak_delta_db: level_normalized_review
                     .normalized_feature_delta
-                    .external
-                    .spectral_centroid_hz,
-            normalized_high_frequency_energy_ratio_delta: level_normalized_review
-                .normalized_feature_delta
-                .signal
-                .high_frequency_energy_ratio
-                - level_normalized_review
+                    .signal
+                    .peak_db
+                    - level_normalized_review
+                        .normalized_feature_delta
+                        .external
+                        .peak_db,
+                raw_spectral_centroid_delta_hz: feature_delta.signal.spectral_centroid_hz
+                    - feature_delta.external.spectral_centroid_hz,
+                normalized_spectral_centroid_delta_hz: level_normalized_review
                     .normalized_feature_delta
-                    .external
-                    .high_frequency_energy_ratio,
-            residual_pattern: residual_coherence_review.residual_pattern,
-        });
+                    .signal
+                    .spectral_centroid_hz
+                    - level_normalized_review
+                        .normalized_feature_delta
+                        .external
+                        .spectral_centroid_hz,
+                raw_high_frequency_energy_ratio_delta: feature_delta
+                    .signal
+                    .high_frequency_energy_ratio
+                    - feature_delta.external.high_frequency_energy_ratio,
+                normalized_high_frequency_energy_ratio_delta: level_normalized_review
+                    .normalized_feature_delta
+                    .signal
+                    .high_frequency_energy_ratio
+                    - level_normalized_review
+                        .normalized_feature_delta
+                        .external
+                        .high_frequency_energy_ratio,
+                normalization_pattern: level_normalized_review.normalization_pattern,
+            });
+            residual_coherence_reviews.push(ExternalBenchmarkResidualCoherenceReviewMeasurement {
+                case_id: render.case_id.clone(),
+                source_path: source.source_path.clone(),
+                render_path: render.rendered_path.clone(),
+                tool_name: render.tool_name.clone(),
+                ratio: render.ratio,
+                source_boundary: "rendered-output-only; no external source or library dependency",
+                aligned_compared_frames: feature_delta.compared_frames,
+                signal_gain_db_applied: level_normalized_review.signal_gain_db_applied,
+                raw_feature_divergence_score: feature_delta.divergence_score(),
+                normalized_feature_divergence_score: level_normalized_review
+                    .normalized_feature_delta
+                    .divergence_score(),
+                normalized_sample_envelope_correlation: level_normalized_review
+                    .normalized_feature_delta
+                    .envelope_correlation,
+                block_rms_envelope_correlation: residual_coherence_review
+                    .block_rms_envelope_correlation,
+                mean_abs_block_rms_delta_db: residual_coherence_review.mean_abs_block_rms_delta_db,
+                max_abs_block_rms_delta_db: residual_coherence_review.max_abs_block_rms_delta_db,
+                spectral_magnitude_coherence: residual_coherence_review
+                    .spectral_magnitude_coherence,
+                normalized_spectral_centroid_delta_hz: level_normalized_review
+                    .normalized_feature_delta
+                    .signal
+                    .spectral_centroid_hz
+                    - level_normalized_review
+                        .normalized_feature_delta
+                        .external
+                        .spectral_centroid_hz,
+                normalized_high_frequency_energy_ratio_delta: level_normalized_review
+                    .normalized_feature_delta
+                    .signal
+                    .high_frequency_energy_ratio
+                    - level_normalized_review
+                        .normalized_feature_delta
+                        .external
+                        .high_frequency_energy_ratio,
+                residual_pattern: residual_coherence_review.residual_pattern,
+            });
+            feature_delta_line = Some(
+                ExternalBenchmarkFeatureDeltaMeasurement {
+                    case_id: render.case_id.clone(),
+                    source_path: source.source_path.clone(),
+                    render_path: render.rendered_path.clone(),
+                    tool_name: render.tool_name.clone(),
+                    ratio: render.ratio,
+                    status: "Measured",
+                    reason: "Ok",
+                    source_boundary:
+                        "rendered-output-only; no external source or library dependency",
+                    aligned_compared_frames: feature_delta.compared_frames,
+                    envelope_correlation: feature_delta.envelope_correlation,
+                    signal_rms: feature_delta.signal.rms,
+                    external_rms: feature_delta.external.rms,
+                    rms_delta_db: feature_delta.signal.rms_db - feature_delta.external.rms_db,
+                    signal_peak: feature_delta.signal.peak,
+                    external_peak: feature_delta.external.peak,
+                    peak_delta_db: feature_delta.signal.peak_db - feature_delta.external.peak_db,
+                    signal_zero_crossings_per_second: feature_delta
+                        .signal
+                        .zero_crossings_per_second,
+                    external_zero_crossings_per_second: feature_delta
+                        .external
+                        .zero_crossings_per_second,
+                    zero_crossings_delta_per_second: feature_delta.signal.zero_crossings_per_second
+                        - feature_delta.external.zero_crossings_per_second,
+                    signal_spectral_centroid_hz: feature_delta.signal.spectral_centroid_hz,
+                    external_spectral_centroid_hz: feature_delta.external.spectral_centroid_hz,
+                    spectral_centroid_delta_hz: feature_delta.signal.spectral_centroid_hz
+                        - feature_delta.external.spectral_centroid_hz,
+                    signal_high_frequency_energy_ratio: feature_delta
+                        .signal
+                        .high_frequency_energy_ratio,
+                    external_high_frequency_energy_ratio: feature_delta
+                        .external
+                        .high_frequency_energy_ratio,
+                    high_frequency_energy_ratio_delta: feature_delta
+                        .signal
+                        .high_frequency_energy_ratio
+                        - feature_delta.external.high_frequency_energy_ratio,
+                    feature_divergence_score: feature_delta.divergence_score(),
+                }
+                .format_report_line(),
+            );
+        }
 
         lines.push(
             ExternalBenchmarkQualityMeasurement {
@@ -2107,47 +2285,14 @@ fn format_external_benchmark_quality_metrics(
             }
             .format_report_line(),
         );
-        lines.push(
-            ExternalBenchmarkFeatureDeltaMeasurement {
-                case_id: render.case_id.clone(),
-                source_path: source.source_path.clone(),
-                render_path: render.rendered_path.clone(),
-                tool_name: render.tool_name.clone(),
-                ratio: render.ratio,
-                status: "Measured",
-                reason: "Ok",
-                source_boundary: "rendered-output-only; no external source or library dependency",
-                aligned_compared_frames: feature_delta.compared_frames,
-                envelope_correlation: feature_delta.envelope_correlation,
-                signal_rms: feature_delta.signal.rms,
-                external_rms: feature_delta.external.rms,
-                rms_delta_db: feature_delta.signal.rms_db - feature_delta.external.rms_db,
-                signal_peak: feature_delta.signal.peak,
-                external_peak: feature_delta.external.peak,
-                peak_delta_db: feature_delta.signal.peak_db - feature_delta.external.peak_db,
-                signal_zero_crossings_per_second: feature_delta.signal.zero_crossings_per_second,
-                external_zero_crossings_per_second: feature_delta
-                    .external
-                    .zero_crossings_per_second,
-                zero_crossings_delta_per_second: feature_delta.signal.zero_crossings_per_second
-                    - feature_delta.external.zero_crossings_per_second,
-                signal_spectral_centroid_hz: feature_delta.signal.spectral_centroid_hz,
-                external_spectral_centroid_hz: feature_delta.external.spectral_centroid_hz,
-                spectral_centroid_delta_hz: feature_delta.signal.spectral_centroid_hz
-                    - feature_delta.external.spectral_centroid_hz,
-                signal_high_frequency_energy_ratio: feature_delta
-                    .signal
-                    .high_frequency_energy_ratio,
-                external_high_frequency_energy_ratio: feature_delta
-                    .external
-                    .high_frequency_energy_ratio,
-                high_frequency_energy_ratio_delta: feature_delta.signal.high_frequency_energy_ratio
-                    - feature_delta.external.high_frequency_energy_ratio,
-                feature_divergence_score: feature_delta.divergence_score(),
-            }
-            .format_report_line(),
-        );
+        if let Some(line) = feature_delta_line {
+            lines.push(line);
+        }
     }
+    if mode == ExternalBenchmarkQualityMode::Core {
+        return Ok(lines.join("\n"));
+    }
+
     gain_envelope_reviews.sort_by(|left, right| {
         right
             .feature_divergence_score
@@ -5599,8 +5744,10 @@ mod tests {
                 decode_listening_sources: false,
                 decode_source_frame_limit: DEFAULT_DECODE_SOURCE_FRAME_LIMIT,
                 measure_decoded_stretch: false,
+                decoded_stretch_report_mode: DecodedStretchReportMode::Full,
                 decoded_stretch_frame_limit: DEFAULT_DECODED_STRETCH_FRAME_LIMIT,
                 measure_external_benchmark_quality: false,
+                external_benchmark_quality_mode: ExternalBenchmarkQualityMode::Full,
             })
         );
     }
@@ -5620,7 +5767,11 @@ mod tests {
             "--decode-source-frame-limit".to_string(),
             "2048".to_string(),
             "--measure-decoded-stretch".to_string(),
+            "--decoded-stretch-report-mode".to_string(),
+            "expansion-selector".to_string(),
             "--measure-external-benchmark-quality".to_string(),
+            "--external-benchmark-quality-mode".to_string(),
+            "core".to_string(),
             "--decoded-stretch-frame-limit".to_string(),
             "1024".to_string(),
             "--external-benchmark-tool".to_string(),
@@ -5662,8 +5813,10 @@ mod tests {
                 decode_listening_sources: true,
                 decode_source_frame_limit: 2048,
                 measure_decoded_stretch: true,
+                decoded_stretch_report_mode: DecodedStretchReportMode::ExpansionSelector,
                 decoded_stretch_frame_limit: 1024,
                 measure_external_benchmark_quality: true,
+                external_benchmark_quality_mode: ExternalBenchmarkQualityMode::Core,
             })
         );
     }
@@ -5707,8 +5860,10 @@ mod tests {
             decode_listening_sources: false,
             decode_source_frame_limit: DEFAULT_DECODE_SOURCE_FRAME_LIMIT,
             measure_decoded_stretch: false,
+            decoded_stretch_report_mode: DecodedStretchReportMode::Full,
             decoded_stretch_frame_limit: DEFAULT_DECODED_STRETCH_FRAME_LIMIT,
             measure_external_benchmark_quality: false,
+            external_benchmark_quality_mode: ExternalBenchmarkQualityMode::Full,
         };
 
         let renders = load_external_benchmark_renders(&args).expect("load external render");
@@ -5758,8 +5913,10 @@ mod tests {
             decode_listening_sources: false,
             decode_source_frame_limit: DEFAULT_DECODE_SOURCE_FRAME_LIMIT,
             measure_decoded_stretch: false,
+            decoded_stretch_report_mode: DecodedStretchReportMode::Full,
             decoded_stretch_frame_limit: DEFAULT_DECODED_STRETCH_FRAME_LIMIT,
             measure_external_benchmark_quality: false,
+            external_benchmark_quality_mode: ExternalBenchmarkQualityMode::Full,
         };
 
         let renders = load_external_benchmark_renders(&args).expect("load manifest renders");
@@ -5897,8 +6054,13 @@ mod tests {
             source_wav: None,
         };
 
-        let formatted = format_external_benchmark_quality_metrics(&[source], &[render], 4_096)
-            .expect("format external quality metrics");
+        let formatted = format_external_benchmark_quality_metrics(
+            &[source],
+            &[render],
+            4_096,
+            ExternalBenchmarkQualityMode::Full,
+        )
+        .expect("format external quality metrics");
 
         assert!(formatted.starts_with("external_benchmark_quality case=stretch:vocals"));
         assert!(formatted.contains("tool=\"rubberband-cli\""));
@@ -5933,6 +6095,46 @@ mod tests {
         assert!(formatted.contains("block_rms_envelope_correlation=1.000000"));
         assert!(formatted.contains("spectral_magnitude_coherence=1.000000"));
         assert!(formatted.contains("residual_pattern=MostlyPhaseOrFineTextureResidual"));
+
+        let _ = fs::remove_file(path);
+    }
+
+    #[test]
+    fn external_benchmark_quality_core_mode_skips_feature_reviews() {
+        let path = PathBuf::from(format!(
+            "target/stretch-corpus-external-quality-core-test-{}.wav",
+            std::process::id()
+        ));
+        write_test_wav(&path, 4_096);
+        let source = StretchCorpusListeningSource {
+            case_id: "stretch:vocals".to_string(),
+            source_path: path.display().to_string(),
+            source_label: "Artist - Song".to_string(),
+            license_title: "Attribution".to_string(),
+            license_url: "https://example.test/license".to_string(),
+            provenance_url: "https://example.test/track".to_string(),
+        };
+        let render = ExternalBenchmarkQualityRender {
+            case_id: "stretch:vocals".to_string(),
+            ratio: 1.0,
+            tool_name: "rubberband-cli".to_string(),
+            rendered_path: path.display().to_string(),
+            source_wav: None,
+        };
+
+        let formatted = format_external_benchmark_quality_metrics(
+            &[source],
+            &[render],
+            4_096,
+            ExternalBenchmarkQualityMode::Core,
+        )
+        .expect("format core external quality metrics");
+
+        assert!(formatted.starts_with("external_benchmark_quality case=stretch:vocals"));
+        assert!(!formatted.contains("external_benchmark_feature_delta "));
+        assert!(!formatted.contains("external_benchmark_gain_envelope_review "));
+        assert!(!formatted.contains("external_benchmark_level_normalized_review "));
+        assert!(!formatted.contains("external_benchmark_residual_coherence_review "));
 
         let _ = fs::remove_file(path);
     }
@@ -5984,9 +6186,13 @@ mod tests {
             },
         ];
 
-        let formatted =
-            format_external_benchmark_quality_metrics(&listening_sources, &renders, 4_096)
-                .expect("format source-wav external quality metrics");
+        let formatted = format_external_benchmark_quality_metrics(
+            &listening_sources,
+            &renders,
+            4_096,
+            ExternalBenchmarkQualityMode::Full,
+        )
+        .expect("format source-wav external quality metrics");
 
         assert_eq!(
             formatted
@@ -6056,9 +6262,13 @@ mod tests {
             source_wav: None,
         };
 
-        let formatted =
-            format_external_benchmark_quality_metrics(&listening_sources, &[render], 4_096)
-                .expect("format ambiguous external quality metrics");
+        let formatted = format_external_benchmark_quality_metrics(
+            &listening_sources,
+            &[render],
+            4_096,
+            ExternalBenchmarkQualityMode::Full,
+        )
+        .expect("format ambiguous external quality metrics");
 
         assert!(formatted.contains("status=Skipped reason=AmbiguousListeningSource"));
 
@@ -6154,7 +6364,8 @@ mod tests {
         };
 
         let formatted =
-            format_decoded_stretch_metrics(&[source], 2_048).expect("format decoded metrics");
+            format_decoded_stretch_metrics(&[source], 2_048, DecodedStretchReportMode::Full)
+                .expect("format decoded metrics");
 
         assert!(formatted.contains("decoded_stretch_metric case=stretch:vocals"));
         assert!(formatted.contains("ratio=0.750000 metric=TimingDriftSamples"));
@@ -6214,6 +6425,40 @@ mod tests {
         assert!(formatted.contains("offline_max_missed_expected_output_frame="));
         assert!(formatted.contains("offline_max_missed_nearest_output_frame="));
         assert!(formatted.contains("analysis_limited=true"));
+
+        let _ = fs::remove_file(path);
+    }
+
+    #[test]
+    fn decoded_stretch_expansion_selector_mode_skips_unrelated_reviews() {
+        let path = PathBuf::from(format!(
+            "target/stretch-corpus-decode-expansion-selector-test-{}.wav",
+            std::process::id()
+        ));
+        write_test_wav(&path, 4_096);
+        let source = StretchCorpusListeningSource {
+            case_id: "stretch:vocals".to_string(),
+            source_path: path.display().to_string(),
+            source_label: "Artist - Song".to_string(),
+            license_title: "Attribution".to_string(),
+            license_url: "https://example.test/license".to_string(),
+            provenance_url: "https://example.test/track".to_string(),
+        };
+
+        let formatted = format_decoded_stretch_metrics(
+            &[source],
+            2_048,
+            DecodedStretchReportMode::ExpansionSelector,
+        )
+        .expect("format expansion selector decoded metrics");
+
+        assert!(formatted.contains("decoded_expansion_short_window_candidate rows="));
+        assert!(formatted.contains("decoded_expansion_short_window_selector_candidate rows="));
+        assert!(formatted.contains("gate=CurrentMissesOrDraftRegression"));
+        assert!(!formatted.contains("decoded_stretch_metric "));
+        assert!(!formatted.contains("decoded_compression_short_window_candidate "));
+        assert!(!formatted.contains("decoded_matched_transient_width_review "));
+        assert!(!formatted.contains("decoded_transient_width_control_candidate "));
 
         let _ = fs::remove_file(path);
     }
