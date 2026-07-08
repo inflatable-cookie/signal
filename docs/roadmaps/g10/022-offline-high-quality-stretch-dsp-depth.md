@@ -68,8 +68,10 @@ comparison reports, not add more receipt or fixture surfaces.
   outside the focused `000900.mp3` case
 - [x] add report-only expansion short-window evidence before changing
   production DSP
-- [ ] design or reject a non-oracle expansion selector gate before any
+- [x] design a report-only non-oracle expansion selector gate before any
   production DSP routing change
+- [ ] validate expansion selector evidence at full-frame/broader comparator
+  depth before production routing change
 
 ## Acceptance Criteria
 
@@ -594,12 +596,26 @@ comparison reports, not add more receipt or fixture surfaces.
   short-window candidate by `15.000000` frames, so a global expansion
   short-window switch is rejected. The useful next shape is a report-only
   selector gate, not production routing.
+- 2026-07-08: added the report-only
+  `decoded_expansion_short_window_selector_candidate` gate. The gate selects
+  the short-window expansion path only when current OfflineHighQuality misses
+  at least one promoted transient or when current matched-smear is worse than
+  draft. On the bounded 120k broad FMA run, it accepted 6 of 40 expansion rows
+  and rejected 34. It retained 5 candidate-better rows, selected 0
+  current-better rows, and reported `worst_gated_regression_delta_frames=0`.
+  Mean finite smear moved from current `181.533333` frames to gated
+  `47.833333` frames. The best retained win stayed `1018.000000` frames on
+  `stretch:bass` `000384.mp3` at `1.25x`. The gate rejected 10 additional
+  candidate-better rows worth `148.000000` frames of possible improvement, but
+  it also rejected all 7 current-better rows, including both `000236.mp3`
+  current-better cases. This is a viable report-only selector shape; it still
+  needs full-frame and comparator-backed evidence before production routing.
 
 ## Next Task
 
-Continue Batch 22.5 by deriving a report-only non-oracle expansion selector
-gate from `decoded_expansion_short_window_feature` rows. The gate must retain
-the large expansion wins without selecting the `000236.mp3` current-better
-cases. Do not route expansion material to the short-window renderer in
-production until broad evidence shows zero or explicitly bounded selector
-regressions.
+Continue Batch 22.5 by validating the expansion selector gate beyond the
+bounded 120k report: either make the broad/full-frame report path cheaper, or
+run a targeted full-frame pack over accepted/rejected selector cases plus the
+Rubber Band rendered outputs. Do not route expansion material to the
+short-window renderer in production until that evidence also shows zero or
+explicitly bounded selector regressions.

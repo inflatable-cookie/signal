@@ -1213,6 +1213,8 @@ fn format_decoded_stretch_metrics(
             "offline_hq_short_window",
         )
         .with_feature_report("decoded_expansion_short_window_feature");
+    let mut expansion_short_window_selector_candidate =
+        ExpansionShortWindowSelectorCandidateAccumulator::default();
     let mut compression_short_window_selector_candidate =
         ShortWindowSelectorCandidateAccumulator::default();
     let mut compression_short_window_selector_path = ShortWindowSelectorPathAccumulator::default();
@@ -1391,6 +1393,13 @@ fn format_decoded_stretch_metrics(
                 &offline_smear,
                 &offline_short_window_smear,
             );
+            expansion_short_window_selector_candidate.record(
+                &audio,
+                ratio,
+                &draft_smear,
+                &offline_smear,
+                &offline_short_window_smear,
+            );
             compression_short_window_selector_candidate.record(
                 &audio,
                 ratio,
@@ -1496,6 +1505,9 @@ fn format_decoded_stretch_metrics(
     if expansion_short_window_candidate.rows > 0 {
         lines.push(expansion_short_window_candidate.format_report_line());
         lines.extend(expansion_short_window_candidate.format_feature_lines());
+    }
+    if expansion_short_window_selector_candidate.rows > 0 {
+        lines.push(expansion_short_window_selector_candidate.format_report_line());
     }
     if compression_short_window_selector_candidate.rows > 0 {
         lines.push(compression_short_window_selector_candidate.format_report_line());
@@ -3956,6 +3968,171 @@ impl ShortWindowSelectorCandidateAccumulator {
 }
 
 #[derive(Clone, Debug, Default, PartialEq)]
+struct ExpansionShortWindowSelectorCandidateAccumulator {
+    rows: usize,
+    accepted_rows: usize,
+    rejected_rows: usize,
+    accepted_by_missed_transients_rows: usize,
+    accepted_by_draft_regression_rows: usize,
+    accepted_by_both_rows: usize,
+    accepted_candidate_better_rows: usize,
+    accepted_current_better_rows: usize,
+    rejected_candidate_better_rows: usize,
+    rejected_current_better_rows: usize,
+    gated_better_rows: usize,
+    current_better_rows: usize,
+    unchanged_rows: usize,
+    inconclusive_rows: usize,
+    finite_rows: usize,
+    offline_smear_sum: f64,
+    gated_smear_sum: f64,
+    best_gated_improvement_delta_frames: f64,
+    best_gated_improvement_case_id: String,
+    best_gated_improvement_source: String,
+    best_gated_improvement_ratio: f64,
+    worst_gated_regression_delta_frames: f64,
+    worst_gated_regression_case_id: String,
+    worst_gated_regression_source: String,
+    worst_gated_regression_ratio: f64,
+    rejected_candidate_improvement_delta_frames: f64,
+    accepted_candidate_regression_delta_frames: f64,
+}
+
+impl ExpansionShortWindowSelectorCandidateAccumulator {
+    fn record(
+        &mut self,
+        audio: &DecodedListeningSourceAudio,
+        ratio: f64,
+        draft: &signal_dsp_stretch::StretchTransientSmearMeasurement,
+        offline: &signal_dsp_stretch::StretchTransientSmearMeasurement,
+        short_window: &signal_dsp_stretch::StretchTransientSmearMeasurement,
+    ) {
+        if ratio <= 1.0 {
+            return;
+        }
+
+        self.rows += 1;
+        let accepts_missed_transients =
+            offline.missed_transients >= COMPRESSION_SHORT_WINDOW_SELECTOR_MIN_CURRENT_MISSES;
+        let accepts_draft_regression =
+            compare_metric_values(offline.max_smear_frames, draft.max_smear_frames)
+                == MetricComparison::Worsened;
+        let accepted = accepts_missed_transients || accepts_draft_regression;
+        if accepted {
+            self.accepted_rows += 1;
+            if accepts_missed_transients {
+                self.accepted_by_missed_transients_rows += 1;
+            }
+            if accepts_draft_regression {
+                self.accepted_by_draft_regression_rows += 1;
+            }
+            if accepts_missed_transients && accepts_draft_regression {
+                self.accepted_by_both_rows += 1;
+            }
+        } else {
+            self.rejected_rows += 1;
+        }
+
+        match compare_metric_values(short_window.max_smear_frames, offline.max_smear_frames) {
+            MetricComparison::Improved => {
+                if accepted {
+                    self.accepted_candidate_better_rows += 1;
+                } else {
+                    self.rejected_candidate_better_rows += 1;
+                    if offline.max_smear_frames.is_finite()
+                        && short_window.max_smear_frames.is_finite()
+                    {
+                        self.rejected_candidate_improvement_delta_frames +=
+                            offline.max_smear_frames - short_window.max_smear_frames;
+                    }
+                }
+            }
+            MetricComparison::Same => {}
+            MetricComparison::Worsened => {
+                if accepted {
+                    self.accepted_current_better_rows += 1;
+                    if offline.max_smear_frames.is_finite()
+                        && short_window.max_smear_frames.is_finite()
+                    {
+                        self.accepted_candidate_regression_delta_frames +=
+                            short_window.max_smear_frames - offline.max_smear_frames;
+                    }
+                } else {
+                    self.rejected_current_better_rows += 1;
+                }
+            }
+        }
+
+        let gated = if accepted { short_window } else { offline };
+        match compare_metric_values(gated.max_smear_frames, offline.max_smear_frames) {
+            MetricComparison::Improved => self.gated_better_rows += 1,
+            MetricComparison::Same => {
+                if gated.max_smear_frames.is_finite() && offline.max_smear_frames.is_finite() {
+                    self.unchanged_rows += 1;
+                } else {
+                    self.inconclusive_rows += 1;
+                }
+            }
+            MetricComparison::Worsened => self.current_better_rows += 1,
+        }
+
+        if offline.max_smear_frames.is_finite() && gated.max_smear_frames.is_finite() {
+            self.finite_rows += 1;
+            self.offline_smear_sum += offline.max_smear_frames;
+            self.gated_smear_sum += gated.max_smear_frames;
+            let gated_delta = gated.max_smear_frames - offline.max_smear_frames;
+            let improvement_delta = offline.max_smear_frames - gated.max_smear_frames;
+            if improvement_delta > self.best_gated_improvement_delta_frames {
+                self.best_gated_improvement_delta_frames = improvement_delta;
+                self.best_gated_improvement_case_id = audio.case_id.clone();
+                self.best_gated_improvement_source = audio.source_path.clone();
+                self.best_gated_improvement_ratio = ratio;
+            }
+            if gated_delta > self.worst_gated_regression_delta_frames {
+                self.worst_gated_regression_delta_frames = gated_delta;
+                self.worst_gated_regression_case_id = audio.case_id.clone();
+                self.worst_gated_regression_source = audio.source_path.clone();
+                self.worst_gated_regression_ratio = ratio;
+            }
+        }
+    }
+
+    fn format_report_line(&self) -> String {
+        format!(
+            "decoded_expansion_short_window_selector_candidate rows={} candidate_path=offline_hq_short_window_selector selected_path=offline_hq_or_short_window baseline_path=offline_hq gate=CurrentMissesOrDraftRegression min_current_misses={} accepted_rows={} rejected_rows={} accepted_by_missed_transients_rows={} accepted_by_draft_regression_rows={} accepted_by_both_rows={} accepted_candidate_better_rows={} accepted_current_better_rows={} rejected_candidate_better_rows={} rejected_current_better_rows={} gated_better_rows={} current_better_rows={} unchanged_rows={} inconclusive_rows={} finite_rows={} mean_gated_smear_frames={:.6} mean_current_smear_frames={:.6} best_gated_improvement_delta_frames={:.6} best_gated_improvement_case={} best_gated_improvement_source={} best_gated_improvement_ratio={:.6} worst_gated_regression_delta_frames={:.6} worst_gated_regression_case={} worst_gated_regression_source={} worst_gated_regression_ratio={:.6} rejected_candidate_improvement_delta_frames={:.6} accepted_candidate_regression_delta_frames={:.6}",
+            self.rows,
+            COMPRESSION_SHORT_WINDOW_SELECTOR_MIN_CURRENT_MISSES,
+            self.accepted_rows,
+            self.rejected_rows,
+            self.accepted_by_missed_transients_rows,
+            self.accepted_by_draft_regression_rows,
+            self.accepted_by_both_rows,
+            self.accepted_candidate_better_rows,
+            self.accepted_current_better_rows,
+            self.rejected_candidate_better_rows,
+            self.rejected_current_better_rows,
+            self.gated_better_rows,
+            self.current_better_rows,
+            self.unchanged_rows,
+            self.inconclusive_rows,
+            self.finite_rows,
+            finite_ratio(self.gated_smear_sum, self.finite_rows as f64),
+            finite_ratio(self.offline_smear_sum, self.finite_rows as f64),
+            self.best_gated_improvement_delta_frames,
+            self.best_gated_improvement_case_id,
+            quoted_report_field(&self.best_gated_improvement_source),
+            self.best_gated_improvement_ratio,
+            self.worst_gated_regression_delta_frames,
+            self.worst_gated_regression_case_id,
+            quoted_report_field(&self.worst_gated_regression_source),
+            self.worst_gated_regression_ratio,
+            self.rejected_candidate_improvement_delta_frames,
+            self.accepted_candidate_regression_delta_frames,
+        )
+    }
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
 struct ShortWindowSelectorPathAccumulator {
     rows: usize,
     selected_short_window_rows: usize,
@@ -5993,6 +6170,8 @@ mod tests {
         assert!(formatted.contains("candidate_path=offline_hq_short_window"));
         assert!(formatted.contains("decoded_expansion_short_window_candidate rows="));
         assert!(formatted.contains("ratio_scope=expansion"));
+        assert!(formatted.contains("decoded_expansion_short_window_selector_candidate rows="));
+        assert!(formatted.contains("gate=CurrentMissesOrDraftRegression"));
         assert!(formatted.contains("decoded_compression_short_window_selector_candidate rows="));
         assert!(formatted.contains("gate=CurrentMissesOrHighCurrentSmear"));
         assert!(formatted.contains("decoded_compression_short_window_selector_path rows="));
@@ -6215,6 +6394,50 @@ mod tests {
         assert_eq!(feature_lines.len(), 2);
         assert!(feature_lines[0].contains("ratio=1.250000"));
         assert!(feature_lines[1].contains("ratio=1.500000"));
+    }
+
+    #[test]
+    fn expansion_selector_gate_rejects_current_better_cases() {
+        let audio = DecodedListeningSourceAudio {
+            case_id: "stretch:bass".to_string(),
+            source_path: "target/source.wav".to_string(),
+            sample_rate_hz: 48_000,
+            channels: 1,
+            samples: vec![0.0; 8],
+            analysis_limited: false,
+        };
+        let draft = transient_smear_measurement(1024.0);
+        let mut missed_current = transient_smear_measurement(1024.0);
+        missed_current.missed_transients = 1;
+        let draft_regressed_current = transient_smear_measurement(24.0);
+        let clean_current = transient_smear_measurement(49.0);
+        let strong_candidate = transient_smear_measurement(6.0);
+        let safer_candidate = transient_smear_measurement(0.0);
+        let regressed_candidate = transient_smear_measurement(64.0);
+        let mut selector = ExpansionShortWindowSelectorCandidateAccumulator::default();
+
+        selector.record(&audio, 1.25, &draft, &missed_current, &strong_candidate);
+        selector.record(
+            &audio,
+            1.25,
+            &transient_smear_measurement(8.0),
+            &draft_regressed_current,
+            &safer_candidate,
+        );
+        selector.record(&audio, 1.25, &draft, &clean_current, &regressed_candidate);
+        let line = selector.format_report_line();
+
+        assert!(line.contains("rows=3"));
+        assert!(line.contains("accepted_rows=2"));
+        assert!(line.contains("rejected_rows=1"));
+        assert!(line.contains("accepted_by_missed_transients_rows=1"));
+        assert!(line.contains("accepted_by_draft_regression_rows=1"));
+        assert!(line.contains("accepted_candidate_better_rows=2"));
+        assert!(line.contains("accepted_current_better_rows=0"));
+        assert!(line.contains("rejected_current_better_rows=1"));
+        assert!(line.contains("gated_better_rows=2"));
+        assert!(line.contains("current_better_rows=0"));
+        assert!(line.contains("accepted_candidate_regression_delta_frames=0.000000"));
     }
 
     #[test]
