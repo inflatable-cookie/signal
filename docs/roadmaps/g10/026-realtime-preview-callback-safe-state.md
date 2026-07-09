@@ -17,7 +17,7 @@ ratio-change alignment proof before any render-plane plan can use it.
 ## Goals
 
 - [x] define the callback-safe RealtimePreview state contract and reset rules
-- [ ] preallocate all scratch, rings, windows, spectra, and output buffers
+- [x] preallocate all scratch, rings, windows, spectra, and output buffers
   outside the audio callback
 - [ ] process bounded render quanta with no allocation, locks, blocking, I/O,
   or unbounded loops
@@ -66,7 +66,7 @@ ratio-change alignment proof before any render-plane plan can use it.
 
 ## Acceptance Criteria
 
-- [ ] callback-facing process method allocates zero bytes after construction
+- [x] callback-facing process method allocates zero bytes after construction
 - [ ] process method does not lock, block, perform I/O, or loop over unbounded
   input
 - [ ] fixed-ratio output stays deterministic and within latency contract
@@ -95,9 +95,14 @@ ratio-change alignment proof before any render-plane plan can use it.
   zero bytes. Processing still returns explicit unsupported status, and
   `RealtimePreviewStreamingContract` still reports callback processing
   unsupported.
+- 2026-07-09: Started Batch 26.2 without enabling callback DSP. The callback
+  state now preallocates input/output/normalization rings, window coefficients,
+  per-channel spectral buffers, phase state, and FFT plans during construction.
+  The allocation proof now covers repeated callback-facing process attempts and
+  resets. Actual streaming phase-vocoder processing remains the next step.
 
 ## Next Task
 
-Start Batch 26.2 only when implementing real streaming DSP state. Do not add
-render-plane integration and do not run the whole-buffer prototype on the audio
-callback.
+Continue Batch 26.2 by implementing the mono streaming phase-vocoder process
+loop against the preallocated state. Do not add render-plane integration and do
+not run the whole-buffer prototype on the audio callback.

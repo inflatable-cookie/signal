@@ -160,5 +160,5 @@ Before rollover:
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the active generation front door.
-`g10.026` Batch 26.1 is complete; Batch 26.2 should start only when
-implementing real streaming DSP state.
+`g10.026` Batch 26.2 is active; the next task is the mono streaming
+phase-vocoder process loop against the preallocated callback state.

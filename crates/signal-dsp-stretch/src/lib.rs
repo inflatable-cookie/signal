@@ -103,8 +103,10 @@ use phase_vocoder::{
     tracked_peak_region_phase_vocoder, transient_reset_phase_vocoder,
     transient_reset_phase_vocoder_linked_stereo,
 };
+use rustfft::{num_complex::Complex32, Fft, FftPlanner};
 use signal_dsp_resample::{resample_mono, ResampleConfig, ResampleQuality};
 use signal_primitives::{Sample, SampleRate};
+use std::sync::Arc;
 
 const DYNAMIC_RATIO_SEAM_SMOOTH_FRAMES: usize = 256;
 
@@ -419,6 +421,18 @@ pub enum RealtimePreviewPlanError {
 pub struct RealtimePreviewCallbackState {
     config: RealtimePreviewStreamConfig,
     scratch: Vec<Sample>,
+    input_ring: Vec<Sample>,
+    output_ring: Vec<Sample>,
+    normalization_ring: Vec<f32>,
+    window: Vec<f32>,
+    analysis_buffer: Vec<Complex32>,
+    synthesis_spectrum: Vec<Complex32>,
+    previous_phase: Vec<f32>,
+    synthesis_phase: Vec<f32>,
+    current_magnitudes: Vec<f32>,
+    current_phases: Vec<f32>,
+    forward: Arc<dyn Fft<f32>>,
+    inverse: Arc<dyn Fft<f32>>,
     current_ratio: f64,
     processed_frames: u64,
 }
@@ -521,9 +535,35 @@ impl RealtimePreviewCallbackState {
     pub fn new(config: RealtimePreviewStreamConfig) -> Result<Self, RealtimePreviewPlanError> {
         let contract = plan_realtime_preview_stream(config)?;
         let config = contract.config;
+        let channel_count = config.channel_count;
+        let bins = config.window_size / 2 + 1;
+        let spectral_values = bins * channel_count;
+        let spectral_samples = config.window_size * channel_count;
+        let ring_frames =
+            (config.window_size * 4 + config.max_block_frames * 4).max(config.window_size * 2);
+        let mut planner = FftPlanner::<f32>::new();
+        let forward = planner.plan_fft_forward(config.window_size);
+        let inverse = planner.plan_fft_inverse(config.window_size);
         Ok(Self {
             config,
-            scratch: vec![0.0; config.max_block_frames * config.channel_count],
+            scratch: vec![0.0; config.max_block_frames * channel_count],
+            input_ring: vec![0.0; ring_frames * channel_count],
+            output_ring: vec![0.0; ring_frames * channel_count],
+            normalization_ring: vec![0.0; ring_frames * channel_count],
+            window: (0..config.window_size)
+                .map(|index| {
+                    0.5 - 0.5
+                        * (std::f32::consts::TAU * index as f32 / config.window_size as f32).cos()
+                })
+                .collect(),
+            analysis_buffer: vec![Complex32::new(0.0, 0.0); spectral_samples],
+            synthesis_spectrum: vec![Complex32::new(0.0, 0.0); spectral_samples],
+            previous_phase: vec![0.0; spectral_values],
+            synthesis_phase: vec![0.0; spectral_values],
+            current_magnitudes: vec![0.0; spectral_values],
+            current_phases: vec![0.0; spectral_values],
+            forward,
+            inverse,
             current_ratio: 1.0,
             processed_frames: 0,
         })
@@ -544,6 +584,47 @@ impl RealtimePreviewCallbackState {
     /// Preallocated scratch capacity in interleaved samples.
     pub fn scratch_capacity_samples(&self) -> usize {
         self.scratch.len()
+    }
+
+    /// Preallocated input ring capacity in interleaved samples.
+    pub fn input_ring_capacity_samples(&self) -> usize {
+        self.input_ring.len()
+    }
+
+    /// Preallocated output ring capacity in interleaved samples.
+    pub fn output_ring_capacity_samples(&self) -> usize {
+        self.output_ring.len()
+    }
+
+    /// Preallocated normalization ring capacity in interleaved samples.
+    pub fn normalization_ring_capacity_samples(&self) -> usize {
+        self.normalization_ring.len()
+    }
+
+    /// Preallocated analysis window length in sample frames.
+    pub fn window_size(&self) -> usize {
+        self.window.len()
+    }
+
+    /// Preallocated complex analysis/synthesis buffer size in samples.
+    pub fn spectral_scratch_samples(&self) -> usize {
+        self.analysis_buffer
+            .len()
+            .min(self.synthesis_spectrum.len())
+    }
+
+    /// Preallocated per-bin phase-state size.
+    pub fn phase_state_values(&self) -> usize {
+        self.previous_phase
+            .len()
+            .min(self.synthesis_phase.len())
+            .min(self.current_phases.len())
+            .min(self.current_magnitudes.len())
+    }
+
+    /// Whether FFT plans are already constructed for the callback state.
+    pub fn fft_plans_ready(&self) -> bool {
+        Arc::strong_count(&self.forward) >= 1 && Arc::strong_count(&self.inverse) >= 1
     }
 
     /// Current sanitized ratio remembered by the state.
@@ -1983,6 +2064,25 @@ mod tests {
 
         assert_eq!(state.config().channel_count, 2);
         assert_eq!(state.scratch_capacity_samples(), 128 * 2);
+        assert!(state.input_ring_capacity_samples() >= REALTIME_PREVIEW_WINDOW_SIZE * 2);
+        assert_eq!(
+            state.input_ring_capacity_samples(),
+            state.output_ring_capacity_samples()
+        );
+        assert_eq!(
+            state.output_ring_capacity_samples(),
+            state.normalization_ring_capacity_samples()
+        );
+        assert_eq!(state.window_size(), REALTIME_PREVIEW_WINDOW_SIZE);
+        assert_eq!(
+            state.spectral_scratch_samples(),
+            REALTIME_PREVIEW_WINDOW_SIZE * 2
+        );
+        assert_eq!(
+            state.phase_state_values(),
+            (REALTIME_PREVIEW_WINDOW_SIZE / 2 + 1) * 2
+        );
+        assert!(state.fft_plans_ready());
         assert!(!state.contract().audio_thread_processing_supported);
         assert_eq!(
             state.process(&input, &mut output, 128, 1.25),

@@ -103,6 +103,7 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Start `g10.026` Batch 26.2 only when implementing real streaming DSP state.
-Do not add render-plane integration and do not run the whole-buffer prototype
-on the audio callback.
+Continue `g10.026` Batch 26.2 by implementing the mono streaming
+phase-vocoder process loop against the preallocated callback state. Do not add
+render-plane integration and do not run the whole-buffer prototype on the audio
+callback.

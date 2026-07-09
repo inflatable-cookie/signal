@@ -56,6 +56,7 @@ fn realtime_preview_callback_contract_path_allocates_nothing() {
             .process(&input, &mut output, 128, 1.0)
             .map(|_| ())
             .map_err(|error| error);
+        state.reset();
     }
     IN_CALLBACK.store(false, Ordering::SeqCst);
 

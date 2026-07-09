@@ -52,4 +52,5 @@ If that cleanup has not happened, stay in the current generation and finish the 
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the current active-generation front door.
-Start `g10.026` Batch 26.2 only when implementing real streaming DSP state.
+Continue `g10.026` Batch 26.2 with the mono streaming phase-vocoder process
+loop against the preallocated callback state.
