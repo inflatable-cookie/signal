@@ -87,8 +87,10 @@ comparison reports, not add more receipt or fixture surfaces.
   regression review
 - [x] validate the sustained-coherence candidate gate on broader material
   before any production promotion
-- [ ] design a product-observable selector or promotion contract for the
-  sustained-coherence candidate before any cache/render-plane routing change
+- [x] test a product-observable selector probe before any cache/render-plane
+  routing change
+- [ ] keep the long-window sustained-coherence path benchmark-only unless a
+  better product-observable selector or DSP candidate emerges
 
 ## Acceptance Criteria
 
@@ -776,12 +778,28 @@ comparison reports, not add more receipt or fixture surfaces.
   rejected all 19 current-better rows. This is a good benchmark gate shape, but
   not a DAW-time product selector yet because the residual reason is derived
   from external comparator analysis.
+- 2026-07-09: added a report-only product-observable probe named
+  `source-character-v1` using Signal-owned character descriptors from the source
+  audio: low-band weight, sustain body, rhythmic activity, spectral complexity,
+  and descriptor confidence. Regenerated the broad report at
+  `target/stretch-corpus-fma-coherence-source-probe-broad.tsv` (`real 703.47`).
+  The benchmark gate still selected 6 rows, all improved, with 0 selected
+  regressions. The source-character probe selected 0 rows, rejected all 48,
+  rejected all 29 candidate-better rows, agreed with the benchmark gate on 42
+  rows, and disagreed on the 6 benchmark-selected wins. All 6 disagreements
+  were rejected for `LowSourceDescriptorConfidence`; descriptor confidence was
+  `0.500000`, and rhythmic activity was high (`0.935000` to `1.000000`) on the
+  same wins. Quick threshold checks over the generated fields were not safe:
+  broad `complex_sustain` would select 39 rows with 13 regressions, the
+  material-guarded variant would select 26 rows with 10 regressions, and a
+  low-rhythm variant would still select 3 regressions. Conclusion:
+  `source-character-v1` is rejected as a product selector. The long-window
+  sustained-coherence path remains benchmark-only evidence.
 
 ## Next Task
 
-Continue Batch 22.6 by translating the successful report-only material guard
-into a product-observable decision surface, or explicitly keeping it as
-benchmark-only evidence and moving to the next DSP candidate. Do not change
-product routing, cache identity, dynamic-ratio materialization, or pitch-shift
-materialization until the selector inputs are available without Rubber Band or
-external comparator output.
+Continue Batch 22.6 by either designing a richer product-observable analysis
+surface for sustained/polyphonic selector decisions, or moving to a second
+vertical-coherence DSP candidate that can be judged without comparator-derived
+routing. Do not change product routing, cache identity, dynamic-ratio
+materialization, or pitch-shift materialization for the long-window path.

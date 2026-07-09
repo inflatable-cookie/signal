@@ -8,6 +8,7 @@ use std::path::{Path, PathBuf};
 use std::process;
 
 use rustfft::{num_complex::Complex32, FftPlanner};
+use signal_analysis_character::{CharacterAnalyzer, CharacterAnalyzerConfig};
 use signal_dsp_stretch::{
     build_stretch_corpus_comparison_report_with_sources, detect_stretch_transients,
     format_stretch_corpus_comparison_report, measure_transient_smear,
@@ -62,6 +63,7 @@ const EXTERNAL_BENCHMARK_RESIDUAL_COHERENCE_REVIEW_ROWS: usize =
 const EXTERNAL_BENCHMARK_COHERENCE_TARGET_REVIEW_ROWS: usize = 6;
 const EXTERNAL_BENCHMARK_COHERENCE_CANDIDATE_REVIEW_ROWS: usize = 64;
 const EXTERNAL_BENCHMARK_COHERENCE_CANDIDATE_GATE: &str = "spectral-magnitude-material-guard";
+const EXTERNAL_BENCHMARK_COHERENCE_PRODUCT_PROBE: &str = "source-character-v1";
 const MAX_EXTERNAL_BENCHMARK_MISSING_RENDER_ROWS: usize = 20;
 const DETECTOR_POLICY: StretchTransientDetectorPolicy =
     StretchTransientDetectorPolicy::production();
@@ -2035,6 +2037,13 @@ struct ExternalBenchmarkCoherenceCandidateReviewMeasurement {
     outcome: &'static str,
     gate_decision: &'static str,
     gate_reason: &'static str,
+    product_probe_decision: &'static str,
+    product_probe_reason: &'static str,
+    product_probe_low_band_weight: f64,
+    product_probe_sustain_body: f64,
+    product_probe_rhythmic_activity: f64,
+    product_probe_spectral_complexity: f64,
+    product_probe_confidence: f64,
     current_target_score: f64,
     candidate_target_score: f64,
     target_score_delta: f64,
@@ -2055,7 +2064,7 @@ struct ExternalBenchmarkCoherenceCandidateReviewMeasurement {
 impl ExternalBenchmarkCoherenceCandidateReviewMeasurement {
     fn format_report_line(&self, rank: usize) -> String {
         format!(
-            "external_benchmark_coherence_candidate_review rank={} case={} source={} signal_path={:?} candidate_path={} ratio={:.6} tool={} render={} status=Measured reason=ReportOnlySustainedCoherenceCandidate source_boundary={} material_scope={} target_reason={} outcome={} gate={} gate_decision={} gate_reason={} current_target_score={:.6} candidate_target_score={:.6} target_score_delta={:.6} candidate_aligned_compared_frames={} candidate_signal_gain_db_applied={:.6} candidate_raw_feature_divergence_score={:.6} candidate_normalized_feature_divergence_score={:.6} candidate_normalized_sample_envelope_correlation={:.6} candidate_block_rms_envelope_correlation={:.6} candidate_mean_abs_block_rms_delta_db={:.6} candidate_max_abs_block_rms_delta_db={:.6} candidate_spectral_magnitude_coherence={:.6} candidate_normalized_spectral_centroid_delta_hz={:.6} candidate_normalized_high_frequency_energy_ratio_delta={:.6} candidate_residual_pattern={}",
+            "external_benchmark_coherence_candidate_review rank={} case={} source={} signal_path={:?} candidate_path={} ratio={:.6} tool={} render={} status=Measured reason=ReportOnlySustainedCoherenceCandidate source_boundary={} material_scope={} target_reason={} outcome={} gate={} gate_decision={} gate_reason={} product_probe={} product_probe_decision={} product_probe_reason={} product_probe_low_band_weight={:.6} product_probe_sustain_body={:.6} product_probe_rhythmic_activity={:.6} product_probe_spectral_complexity={:.6} product_probe_confidence={:.6} current_target_score={:.6} candidate_target_score={:.6} target_score_delta={:.6} candidate_aligned_compared_frames={} candidate_signal_gain_db_applied={:.6} candidate_raw_feature_divergence_score={:.6} candidate_normalized_feature_divergence_score={:.6} candidate_normalized_sample_envelope_correlation={:.6} candidate_block_rms_envelope_correlation={:.6} candidate_mean_abs_block_rms_delta_db={:.6} candidate_max_abs_block_rms_delta_db={:.6} candidate_spectral_magnitude_coherence={:.6} candidate_normalized_spectral_centroid_delta_hz={:.6} candidate_normalized_high_frequency_energy_ratio_delta={:.6} candidate_residual_pattern={}",
             rank,
             self.case_id,
             quoted_report_field(&self.source_path),
@@ -2071,6 +2080,14 @@ impl ExternalBenchmarkCoherenceCandidateReviewMeasurement {
             EXTERNAL_BENCHMARK_COHERENCE_CANDIDATE_GATE,
             self.gate_decision,
             self.gate_reason,
+            EXTERNAL_BENCHMARK_COHERENCE_PRODUCT_PROBE,
+            self.product_probe_decision,
+            self.product_probe_reason,
+            self.product_probe_low_band_weight,
+            self.product_probe_sustain_body,
+            self.product_probe_rhythmic_activity,
+            self.product_probe_spectral_complexity,
+            self.product_probe_confidence,
             self.current_target_score,
             self.candidate_target_score,
             self.target_score_delta,
@@ -2118,6 +2135,7 @@ fn format_external_benchmark_quality_metrics(
     let mut coherence_candidate_reviews = Vec::new();
     let mut source_audio_cache = HashMap::new();
     let mut source_mono_cache = HashMap::new();
+    let mut source_character_probe_cache = HashMap::new();
     for render in renders {
         let source = match source_for_external_quality_render(sources, render) {
             ExternalBenchmarkQualitySource::Found(source) => source,
@@ -2512,6 +2530,16 @@ fn format_external_benchmark_quality_metrics(
                         material_scope,
                         render.ratio,
                     );
+                let product_probe = source_character_probe_cache
+                    .entry(source.source_path.clone())
+                    .or_insert_with(|| {
+                        measure_coherence_product_observable_probe(
+                            source_audio.sample_rate_hz,
+                            source_mono,
+                        )
+                    });
+                let (product_probe_decision, product_probe_reason) =
+                    coherence_product_observable_probe_decision(product_probe, render.ratio);
                 coherence_candidate_reviews.push(
                     ExternalBenchmarkCoherenceCandidateReviewMeasurement {
                         case_id: render.case_id.clone(),
@@ -2531,6 +2559,13 @@ fn format_external_benchmark_quality_metrics(
                         ),
                         gate_decision: candidate_gate_decision,
                         gate_reason: candidate_gate_reason,
+                        product_probe_decision,
+                        product_probe_reason,
+                        product_probe_low_band_weight: product_probe.low_band_weight,
+                        product_probe_sustain_body: product_probe.sustain_body,
+                        product_probe_rhythmic_activity: product_probe.rhythmic_activity,
+                        product_probe_spectral_complexity: product_probe.spectral_complexity,
+                        product_probe_confidence: product_probe.confidence,
                         current_target_score: target_score,
                         candidate_target_score,
                         target_score_delta: candidate_target_score - target_score,
@@ -2738,6 +2773,9 @@ fn format_external_benchmark_quality_metrics(
         lines.push(format_external_benchmark_coherence_candidate_gate_summary(
             &coherence_candidate_reviews,
         ));
+        lines.push(format_external_benchmark_coherence_product_probe_summary(
+            &coherence_candidate_reviews,
+        ));
     }
     for (index, review) in coherence_candidate_reviews
         .iter()
@@ -2847,6 +2885,59 @@ fn external_benchmark_coherence_candidate_gate_decision(
         return ("Rejected", "ExtremeExpansionMaterialGuard");
     }
     ("Selected", "TargetSpectralMagnitudeCoherence")
+}
+
+#[derive(Clone, Debug, PartialEq)]
+struct CoherenceProductObservableProbe {
+    low_band_weight: f64,
+    sustain_body: f64,
+    rhythmic_activity: f64,
+    spectral_complexity: f64,
+    confidence: f64,
+}
+
+fn measure_coherence_product_observable_probe(
+    sample_rate_hz: u32,
+    source_mono: &[f32],
+) -> CoherenceProductObservableProbe {
+    let mut analyzer = CharacterAnalyzer::new(CharacterAnalyzerConfig::low());
+    let analysis =
+        analyzer.analyze_mono(signal_primitives::SampleRate(sample_rate_hz), source_mono);
+    let spectral_profile = &analysis.spectral_profile.normalized_mel_band_profile;
+    let low_band_weight = spectral_profile.first().copied().unwrap_or_default()
+        + spectral_profile.get(1).copied().unwrap_or_default() * 0.5;
+    let sustain_body = analysis.temporal.sustain_ratio * 0.55
+        + analysis.temporal_shape.sustain_plateau_ratio * 0.45;
+    let rhythmic_activity = (analysis.temporal.onset_density / 4.0).clamp(0.0, 1.0) * 0.65
+        + analysis.temporal_shape.peak_transient_strength * 0.35;
+    let spectral_complexity = (analysis.spectral_shape.spread_hz / 4_000.0).clamp(0.0, 1.0);
+
+    CoherenceProductObservableProbe {
+        low_band_weight: low_band_weight.clamp(0.0, 1.0) as f64,
+        sustain_body: sustain_body.clamp(0.0, 1.0) as f64,
+        rhythmic_activity: rhythmic_activity.clamp(0.0, 1.0) as f64,
+        spectral_complexity: spectral_complexity as f64,
+        confidence: analysis.confidence.0 as f64,
+    }
+}
+
+fn coherence_product_observable_probe_decision(
+    probe: &CoherenceProductObservableProbe,
+    ratio: f64,
+) -> (&'static str, &'static str) {
+    if probe.confidence < 0.75 {
+        return ("Rejected", "LowSourceDescriptorConfidence");
+    }
+    if probe.rhythmic_activity >= 0.55 {
+        return ("Rejected", "PulseDrivenSource");
+    }
+    if ratio >= 1.5 && (probe.low_band_weight >= 0.45 || probe.sustain_body >= 0.55) {
+        return ("Rejected", "ExtremeExpansionSourceGuard");
+    }
+    if probe.spectral_complexity >= 0.35 && probe.sustain_body >= 0.35 {
+        return ("Selected", "ComplexSustainedSource");
+    }
+    ("Rejected", "InsufficientSourceCoherenceSignal")
 }
 
 fn format_external_benchmark_coherence_candidate_summary(
@@ -2974,6 +3065,80 @@ fn format_external_benchmark_coherence_candidate_gate_summary(
             .map(|review| review.ratio)
             .unwrap_or(f64::NAN),
         best_rejected_improvement_delta,
+    )
+}
+
+fn format_external_benchmark_coherence_product_probe_summary(
+    reviews: &[ExternalBenchmarkCoherenceCandidateReviewMeasurement],
+) -> String {
+    let mut selected_rows = 0;
+    let mut rejected_rows = 0;
+    let mut selected_improved_rows = 0;
+    let mut selected_unchanged_rows = 0;
+    let mut selected_regressed_rows = 0;
+    let mut rejected_candidate_better_rows = 0;
+    let mut rejected_current_better_rows = 0;
+    let mut benchmark_gate_agree_rows = 0;
+    let mut benchmark_gate_disagree_rows = 0;
+    let mut worst_selected_regression_delta = 0.0_f64;
+
+    for review in reviews {
+        if review.product_probe_decision == review.gate_decision {
+            benchmark_gate_agree_rows += 1;
+        } else {
+            benchmark_gate_disagree_rows += 1;
+        }
+
+        if review.product_probe_decision == "Selected" {
+            selected_rows += 1;
+            match review.outcome {
+                "Improved" => selected_improved_rows += 1,
+                "Unchanged" => selected_unchanged_rows += 1,
+                "Regressed" => {
+                    selected_regressed_rows += 1;
+                    if review.target_score_delta > worst_selected_regression_delta {
+                        worst_selected_regression_delta = review.target_score_delta;
+                    }
+                }
+                _ => {}
+            }
+        } else {
+            rejected_rows += 1;
+            match review.outcome {
+                "Improved" => rejected_candidate_better_rows += 1,
+                "Regressed" => rejected_current_better_rows += 1,
+                _ => {}
+            }
+        }
+    }
+
+    let (promotion_status, promotion_reason) =
+        if selected_rows == 0 && rejected_candidate_better_rows > 0 {
+            ("Rejected", "NoSelectedCandidateWins")
+        } else if selected_regressed_rows > 0 {
+            ("Rejected", "SelectedRegressions")
+        } else if benchmark_gate_disagree_rows > 0 {
+            ("NeedsReview", "BenchmarkGateDisagreement")
+        } else {
+            ("Candidate", "MatchesBenchmarkGate")
+        };
+
+    format!(
+        "external_benchmark_coherence_product_probe_summary probe={} promotion_status={} promotion_reason={} rows={} selected_rows={} rejected_rows={} selected_improved_rows={} selected_unchanged_rows={} selected_regressed_rows={} rejected_candidate_better_rows={} rejected_current_better_rows={} benchmark_gate_agree_rows={} benchmark_gate_disagree_rows={} worst_selected_regression_delta={:.6}",
+        EXTERNAL_BENCHMARK_COHERENCE_PRODUCT_PROBE,
+        promotion_status,
+        promotion_reason,
+        reviews.len(),
+        selected_rows,
+        rejected_rows,
+        selected_improved_rows,
+        selected_unchanged_rows,
+        selected_regressed_rows,
+        rejected_candidate_better_rows,
+        rejected_current_better_rows,
+        benchmark_gate_agree_rows,
+        benchmark_gate_disagree_rows,
+        worst_selected_regression_delta,
     )
 }
 
@@ -6750,6 +6915,9 @@ mod tests {
         assert!(formatted.contains("gate=spectral-magnitude-material-guard"));
         assert!(formatted.contains("gate_decision=Rejected"));
         assert!(formatted.contains("gate_reason=NonSpectralTargetReason"));
+        assert!(formatted.contains("product_probe=source-character-v1"));
+        assert!(formatted.contains("product_probe_decision="));
+        assert!(formatted.contains("product_probe_confidence="));
         assert!(formatted.contains("external_benchmark_coherence_candidate_summary rows=1"));
         assert!(formatted.contains("improved_rows=0 unchanged_rows=1 regressed_rows=0"));
         assert!(formatted.contains(
@@ -6759,6 +6927,11 @@ mod tests {
         assert!(
             formatted.contains("rejected_candidate_better_rows=0 rejected_current_better_rows=0")
         );
+        assert!(formatted.contains(
+            "external_benchmark_coherence_product_probe_summary probe=source-character-v1"
+        ));
+        assert!(formatted.contains("promotion_status="));
+        assert!(formatted.contains("benchmark_gate_agree_rows="));
 
         let _ = fs::remove_file(path);
     }
@@ -6804,6 +6977,7 @@ mod tests {
         assert!(!formatted.contains("external_benchmark_coherence_candidate_review "));
         assert!(!formatted.contains("external_benchmark_coherence_candidate_summary "));
         assert!(!formatted.contains("external_benchmark_coherence_candidate_gate_summary "));
+        assert!(!formatted.contains("external_benchmark_coherence_product_probe_summary "));
 
         let _ = fs::remove_file(path);
     }
@@ -6864,6 +7038,40 @@ mod tests {
                 1.25
             ),
             ("Rejected", "NonSpectralTargetReason")
+        );
+        let confident_complex = CoherenceProductObservableProbe {
+            low_band_weight: 0.2,
+            sustain_body: 0.5,
+            rhythmic_activity: 0.2,
+            spectral_complexity: 0.5,
+            confidence: 0.95,
+        };
+        assert_eq!(
+            coherence_product_observable_probe_decision(&confident_complex, 1.25),
+            ("Selected", "ComplexSustainedSource")
+        );
+        assert_eq!(
+            coherence_product_observable_probe_decision(&confident_complex, 1.5),
+            ("Selected", "ComplexSustainedSource")
+        );
+        let low_band_extreme = CoherenceProductObservableProbe {
+            low_band_weight: 0.5,
+            sustain_body: 0.2,
+            rhythmic_activity: 0.2,
+            spectral_complexity: 0.5,
+            confidence: 0.95,
+        };
+        assert_eq!(
+            coherence_product_observable_probe_decision(&low_band_extreme, 1.5),
+            ("Rejected", "ExtremeExpansionSourceGuard")
+        );
+        let pulse_driven = CoherenceProductObservableProbe {
+            rhythmic_activity: 0.7,
+            ..confident_complex
+        };
+        assert_eq!(
+            coherence_product_observable_probe_decision(&pulse_driven, 1.25),
+            ("Rejected", "PulseDrivenSource")
         );
     }
 

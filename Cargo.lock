@@ -940,6 +940,7 @@ dependencies = [
  "csv",
  "hound",
  "rustfft",
+ "signal-analysis-character",
  "signal-dsp-resample",
  "signal-primitives",
  "symphonia",
