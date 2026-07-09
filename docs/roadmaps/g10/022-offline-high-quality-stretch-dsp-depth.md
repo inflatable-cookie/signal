@@ -101,7 +101,7 @@ comparison reports, not add more receipt or fixture surfaces.
   product routing
 - [x] test one stable-frame magnitude-evolution candidate before changing
   product routing
-- [ ] keep the long-window sustained-coherence path benchmark-only unless a
+- [x] keep the long-window sustained-coherence path benchmark-only unless a
   better product-observable selector or DSP candidate emerges
 
 ## Acceptance Criteria
@@ -887,16 +887,23 @@ comparison reports, not add more receipt or fixture surfaces.
   (`delta=-0.260414`), but reduced the vocal and bass wins and increased the
   regression count. Do not tune this scalar slew limiter as a product path from
   this evidence.
+- 2026-07-09: concluded Batch 22.6 low-risk candidate work. The sustained
+  coherence review found real long-window benefits, especially vocal `1.5x`
+  and bass `1.25x` cases, but every selector, blend, envelope, phase-region,
+  and scalar magnitude-evolution attempt left targeted regressions. The best
+  rejected shape is still `expansion-long-window-transient-reset` with
+  7 improved, 5 unchanged, 3 regressed, and worst regression `delta=0.039756`.
+  That is useful design evidence for a future structural hybrid, not enough to
+  justify broad validation, cache identity changes, render-plane routing, or
+  product promotion in this batch. Keep all long-window sustained-coherence
+  paths report-only/benchmark-only.
 
 ## Next Task
 
-Continue Batch 22.6 by moving away from selector or simple-blend promotion for
-the long-window path. The next DSP candidate should address the actual
-regression mechanism more directly than scalar magnitude slew limiting. The
-best rejected shape remains `expansion-long-window-transient-reset`, so the
-next useful step is either a more structural long-window/transient hybrid or a
-stop-and-summarize decision on whether Batch 22.6 has exhausted low-risk
-single-batch candidates. Reject on targeted evidence before a broad run if it
-shows material regressions. Do not change product routing, cache identity,
-dynamic-ratio materialization, or pitch-shift materialization for the
-long-window path.
+Close Batch 22.6 as evidence-complete for low-risk single-batch candidates.
+Do not add more selector, blend, threshold, or one-parameter long-window probes.
+The next stretch DSP work should either open a new, explicitly structural
+hybrid-design batch or move back to the remaining g10 stretch priorities
+outside sustained/polyphonic long-window promotion. Do not change product
+routing, cache identity, dynamic-ratio materialization, or pitch-shift
+materialization for the long-window path from Batch 22.6 evidence.
