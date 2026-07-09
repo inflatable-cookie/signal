@@ -47,6 +47,7 @@ mod corpus_report;
 mod phase_vocoder;
 mod promotion;
 mod render_integrity;
+mod transient_detail;
 
 pub use artifact_plan::{
     plan_offline_stretch_chunks, StretchOfflineChunk, StretchOfflineChunkConfig,
@@ -102,6 +103,7 @@ pub use render_integrity::{
     StretchRenderIntegrityAssessment, StretchRenderIntegrityLimits,
     StretchRenderIntegrityMeasurement,
 };
+pub use transient_detail::{measure_transient_detail, StretchTransientDetailMeasurement};
 
 use phase_vocoder::{
     compression_transient_anchor_phase_vocoder, magnitude_slew_phase_vocoder,

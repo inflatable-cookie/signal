@@ -297,6 +297,14 @@ level-match source and candidates under one documented policy, and require
 transient, tonal, stereo, formant, boundary, and preference fields. A synthetic
 receipt may pass its own policy while product-facing use remains blocked.
 
+Output-length drift and transient-event placement are separate evidence.
+Timing claims must refine detected source attacks against their ratio-projected
+output positions and report signed and absolute offsets. Transient spike review
+must use level-invariant local crest evidence with source/output event locations;
+full-render peak growth alone cannot identify the failing attack. Diagnostic
+search bounds and incomplete event matches must remain explicit and must not be
+promoted into acceptance limits without corpus calibration.
+
 Planning authority:
 `docs/roadmaps/g10/029-stretch-correctness-and-listening-gate.md`.
 

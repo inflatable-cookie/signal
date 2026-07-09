@@ -19,10 +19,12 @@ implementation remains Signal-owned.
 `g10` now has three stretch gates instead of another ready coding lane:
 
 - OfflineHighQuality boundary coverage and absolute full-render measurement now
-  pass the bounded Signal/Rubber Band pack. Synthetic-only promotion is closed,
-  and a 15-pair five-family blind pack is ready. Rubber Band-class promotion
-  remains blocked on completed operator listening findings and the later
-  structural hybrid checkpoint.
+  pass the bounded Signal/Rubber Band pack. Synthetic-only promotion is closed.
+  Aggregate operator findings from the 15-pair pack now identify transient
+  crest spikes and long-stretch grain, while event timing is effectively tied
+  in the first objective follow-up. Rubber Band-class promotion remains blocked
+  on independent stereo/row-level completion and the later structural hybrid
+  checkpoint.
 - Sustained/polyphonic long-window candidates produced useful evidence but no
   production route; the next DSP quality jump needs a structural hybrid design,
   not another one-parameter probe.
@@ -115,7 +117,7 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Complete the operator notes in the target-local `g10.029` blind-listening pack,
-validate all five required families, then use the classified failures for Batch
-29.4 structural hybrid ownership. Keep RealtimePreview source-fill and broader
-product integration paused.
+Run the same-event `L001` phase-lock/overlap-add control probe while independent
+stereo and row-level listening completion remain open. Do not start Batch 29.4
+or product promotion until all five listening families validate. Keep
+RealtimePreview source-fill and broader product integration paused.

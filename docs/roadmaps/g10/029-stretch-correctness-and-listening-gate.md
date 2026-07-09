@@ -59,8 +59,14 @@ be trustworthy before the callback contract or a structural hybrid widens.
 
 - [x] prevent synthetic-only receipts from opening product-quality promotion
 - [x] generate source/Signal/Rubber Band level-matched blind-listening renders
-- [ ] record operator findings for percussion, bass, vocals, sustains, and full mix
-- [ ] classify failures by transient, tonal, stereo, formant, and boundary behavior
+- [x] record aggregate operator findings across percussion, bass, vocals,
+  sustains, and full mix
+- [x] classify observed transient and tonal failures without fabricating
+  row-level notes
+- [x] add event-level timing and transient-crest diagnostics distinct from
+  output-length drift
+- [ ] complete row-level manifest validation and independent stereo review
+- [ ] close formant and boundary classification after the remaining review
 
 ### Batch 29.4 - Structural Hybrid Checkpoint
 
@@ -139,11 +145,27 @@ be trustworthy before the callback contract or a structural hybrid widens.
   boundary, preference, and completion fields. Current validator status is
   `Incomplete`: 15 pairs, 0 of 5 completed families, 0 invalid completed rows.
   No listening findings were fabricated.
+- 2026-07-10: Recorded the operator's aggregate 15-pair findings without
+  fabricating row-level TSV completion. Signal is close on most attacks, but
+  shows occasional visible transient spikes, slightly softer secondary attacks
+  under compression, and slightly grainier/atonal long stretches. Rubber Band
+  remains slightly more musical at longer stretches. Stereo is unassessed and
+  still requires an independent listener.
+- 2026-07-10: Added sample-frame-refined transient placement and local crest
+  evidence. Across 47 matched rows, mean absolute placement was effectively
+  tied: `102.826` frames Signal versus `101.845` Rubber Band, so the suspected
+  global timing drift is not confirmed. `L001` at `0.75x` is the strongest
+  Signal crest outlier: `5.655 dB` versus `1.832 dB` Rubber Band and `3.647 dB`
+  for the independent-bin draft. Compression does not enable transient reset,
+  so the next focused probe owns identity locking and overlap-add reconstruction,
+  not reset tuning. Evidence is target-local at
+  `target/stretch-corpus-g10-029-transient-detail-v1.tsv`; durable findings are
+  in `docs/logs/2026-07/10-g10-029-operator-listening-and-transient-diagnostic.md`.
 
 ## Next Task
 
-Complete the blind pack at
-`target/stretch-corpus-g10-029-blind-listening-pack-v1` without opening the key:
-fill every classification and preference field, set `completed=true` per heard
-pair, then rerun `stretch-corpus-report --check-blind-listening-notes`. Do not
-open product promotion or start Batch 29.4 until all five families validate.
+Add a same-event `L001` control probe for identity locking, independent bins,
+and bounded peak-region variants. Reject candidates that only move the crest
+problem or regress the 60-row pack. In parallel, obtain independent stereo
+review and complete row-level manifest validation. Do not open product
+promotion or start Batch 29.4 until all five families validate.

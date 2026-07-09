@@ -20,12 +20,12 @@ use signal_analysis_character::{CharacterAnalyzer, CharacterAnalyzerConfig};
 use signal_dsp_stretch::{
     build_stretch_corpus_comparison_report_with_sources, detect_stretch_transients,
     format_stretch_corpus_comparison_report, measure_stretch_render_integrity,
-    measure_transient_smear, measure_transient_smear_with_output_recovery_policy,
-    measure_transient_smear_with_policies, measure_transient_smear_with_policy,
-    output_length_drift_samples, OfflineHighQualityPath, OfflineHighQualityStretcher,
-    PhaseVocoderStretcher, StretchCorpusAssetRequirement, StretchCorpusListeningSource,
-    StretchExternalBenchmarkRender, StretchRenderIntegrityLimits, StretchTransientDetectorPolicy,
-    TimeStretcher, COMPRESSION_SHORT_WINDOW_SELECTOR_ANALYSIS_HOP,
+    measure_transient_detail, measure_transient_smear,
+    measure_transient_smear_with_output_recovery_policy, measure_transient_smear_with_policies,
+    measure_transient_smear_with_policy, output_length_drift_samples, OfflineHighQualityPath,
+    OfflineHighQualityStretcher, PhaseVocoderStretcher, StretchCorpusAssetRequirement,
+    StretchCorpusListeningSource, StretchExternalBenchmarkRender, StretchRenderIntegrityLimits,
+    StretchTransientDetectorPolicy, TimeStretcher, COMPRESSION_SHORT_WINDOW_SELECTOR_ANALYSIS_HOP,
     COMPRESSION_SHORT_WINDOW_SELECTOR_MIN_CURRENT_MISSES,
     COMPRESSION_SHORT_WINDOW_SELECTOR_MIN_CURRENT_SMEAR_FRAMES,
     COMPRESSION_SHORT_WINDOW_SELECTOR_WINDOW_SIZE, STRETCH_CORPUS_MANIFEST,
@@ -1765,6 +1765,24 @@ struct ExternalBenchmarkQualityMeasurement {
     signal_transient_smear_frames: f64,
     external_transient_smear_frames: f64,
     transient_smear_delta_frames: f64,
+    signal_transient_matches: usize,
+    external_transient_matches: usize,
+    signal_transient_mean_signed_offset_frames: f64,
+    external_transient_mean_signed_offset_frames: f64,
+    signal_transient_mean_absolute_offset_frames: f64,
+    external_transient_mean_absolute_offset_frames: f64,
+    signal_transient_max_absolute_offset_frames: f64,
+    external_transient_max_absolute_offset_frames: f64,
+    signal_transient_max_crest_growth_db: f64,
+    external_transient_max_crest_growth_db: f64,
+    signal_transient_max_crest_input_frame: usize,
+    external_transient_max_crest_input_frame: usize,
+    signal_transient_max_crest_output_frame: usize,
+    external_transient_max_crest_output_frame: usize,
+    draft_transient_mean_absolute_offset_frames: f64,
+    draft_transient_max_crest_growth_db: f64,
+    draft_transient_max_crest_input_frame: usize,
+    draft_transient_max_crest_output_frame: usize,
     alignment_lag_frames: isize,
     aligned_compared_frames: usize,
     aligned_correlation: f64,
@@ -1794,7 +1812,7 @@ struct ExternalBenchmarkQualityMeasurement {
 impl ExternalBenchmarkQualityMeasurement {
     fn format_report_line(&self) -> String {
         format!(
-            "external_benchmark_quality case={} source={} signal_path={:?} ratio={:.6} tool={} render={} status={} reason={} source_boundary={} sample_rate_match={} source_sample_rate={} external_sample_rate={} external_channels={} source_frames={} signal_frames={} external_frames={} signal_timing_drift_samples={:.6} external_timing_drift_samples={:.6} timing_drift_delta_samples={:.6} signal_transient_smear_frames={:.6} external_transient_smear_frames={:.6} transient_smear_delta_frames={:.6} alignment_lag_frames={} aligned_compared_frames={} aligned_correlation={:.6} aligned_rms_error={:.9} aligned_peak_error={:.9} signal_rms={:.9} external_rms={:.9} aligned_rms_error_ratio={:.6} integrity_limit_id={} signal_integrity_passed={} external_integrity_passed={} signal_measured_endpoint_count={} external_measured_endpoint_count={} signal_endpoint_energy_delta_db={:.6} external_endpoint_energy_delta_db={:.6} signal_added_silence_frames={} external_added_silence_frames={} signal_peak_growth_db={:.6} external_peak_growth_db={:.6} signal_render_seconds={:.9} signal_cpu_realtime_factor={:.6} signal_cpu_realtime_factor_basis=rendered-audio-duration signal_heap_baseline_bytes={} signal_heap_peak_bytes={} signal_peak_working_memory_bytes={} signal_peak_working_memory_scope=peak-live-heap-growth-above-pre-render-baseline",
+            "external_benchmark_quality case={} source={} signal_path={:?} ratio={:.6} tool={} render={} status={} reason={} source_boundary={} sample_rate_match={} source_sample_rate={} external_sample_rate={} external_channels={} source_frames={} signal_frames={} external_frames={} signal_timing_drift_samples={:.6} external_timing_drift_samples={:.6} timing_drift_delta_samples={:.6} signal_transient_smear_frames={:.6} external_transient_smear_frames={:.6} transient_smear_delta_frames={:.6} signal_transient_matches={} external_transient_matches={} signal_transient_mean_signed_offset_frames={:.6} external_transient_mean_signed_offset_frames={:.6} signal_transient_mean_absolute_offset_frames={:.6} external_transient_mean_absolute_offset_frames={:.6} signal_transient_max_absolute_offset_frames={:.6} external_transient_max_absolute_offset_frames={:.6} signal_transient_max_crest_growth_db={:.6} external_transient_max_crest_growth_db={:.6} signal_transient_max_crest_input_frame={} external_transient_max_crest_input_frame={} signal_transient_max_crest_output_frame={} external_transient_max_crest_output_frame={} draft_transient_mean_absolute_offset_frames={:.6} draft_transient_max_crest_growth_db={:.6} draft_transient_max_crest_input_frame={} draft_transient_max_crest_output_frame={} alignment_lag_frames={} aligned_compared_frames={} aligned_correlation={:.6} aligned_rms_error={:.9} aligned_peak_error={:.9} signal_rms={:.9} external_rms={:.9} aligned_rms_error_ratio={:.6} integrity_limit_id={} signal_integrity_passed={} external_integrity_passed={} signal_measured_endpoint_count={} external_measured_endpoint_count={} signal_endpoint_energy_delta_db={:.6} external_endpoint_energy_delta_db={:.6} signal_added_silence_frames={} external_added_silence_frames={} signal_peak_growth_db={:.6} external_peak_growth_db={:.6} signal_render_seconds={:.9} signal_cpu_realtime_factor={:.6} signal_cpu_realtime_factor_basis=rendered-audio-duration signal_heap_baseline_bytes={} signal_heap_peak_bytes={} signal_peak_working_memory_bytes={} signal_peak_working_memory_scope=peak-live-heap-growth-above-pre-render-baseline",
             self.case_id,
             quoted_report_field(&self.source_path),
             self.signal_path,
@@ -1817,6 +1835,24 @@ impl ExternalBenchmarkQualityMeasurement {
             self.signal_transient_smear_frames,
             self.external_transient_smear_frames,
             self.transient_smear_delta_frames,
+            self.signal_transient_matches,
+            self.external_transient_matches,
+            self.signal_transient_mean_signed_offset_frames,
+            self.external_transient_mean_signed_offset_frames,
+            self.signal_transient_mean_absolute_offset_frames,
+            self.external_transient_mean_absolute_offset_frames,
+            self.signal_transient_max_absolute_offset_frames,
+            self.external_transient_max_absolute_offset_frames,
+            self.signal_transient_max_crest_growth_db,
+            self.external_transient_max_crest_growth_db,
+            self.signal_transient_max_crest_input_frame,
+            self.external_transient_max_crest_input_frame,
+            self.signal_transient_max_crest_output_frame,
+            self.external_transient_max_crest_output_frame,
+            self.draft_transient_mean_absolute_offset_frames,
+            self.draft_transient_max_crest_growth_db,
+            self.draft_transient_max_crest_input_frame,
+            self.draft_transient_max_crest_output_frame,
             self.alignment_lag_frames,
             self.aligned_compared_frames,
             self.aligned_correlation,
@@ -2386,6 +2422,8 @@ fn format_external_benchmark_quality_metrics(
             let output = signal.stretch_mono(source_mono);
             (output, started.elapsed().as_secs_f64())
         });
+        let mut draft_stretcher = PhaseVocoderStretcher::new(render.ratio);
+        let draft_output = draft_stretcher.stretch_mono(source_mono);
         let rendered_audio_seconds =
             signal_output.len() as f64 / source_audio.sample_rate_hz as f64;
         let signal_cpu_realtime_factor = if rendered_audio_seconds > 0.0 {
@@ -2403,6 +2441,27 @@ fn format_external_benchmark_quality_metrics(
         let external_smear = measure_transient_smear(
             &source_mono,
             &external_audio.mono_samples,
+            render.ratio,
+            QUALITY_METRIC_WINDOW_SIZE,
+            QUALITY_METRIC_HOP_SIZE,
+        );
+        let signal_transient_detail = measure_transient_detail(
+            &source_mono,
+            &signal_output,
+            render.ratio,
+            QUALITY_METRIC_WINDOW_SIZE,
+            QUALITY_METRIC_HOP_SIZE,
+        );
+        let external_transient_detail = measure_transient_detail(
+            &source_mono,
+            &external_audio.mono_samples,
+            render.ratio,
+            QUALITY_METRIC_WINDOW_SIZE,
+            QUALITY_METRIC_HOP_SIZE,
+        );
+        let draft_transient_detail = measure_transient_detail(
+            &source_mono,
+            &draft_output,
             render.ratio,
             QUALITY_METRIC_WINDOW_SIZE,
             QUALITY_METRIC_HOP_SIZE,
@@ -2914,6 +2973,39 @@ fn format_external_benchmark_quality_metrics(
                 external_transient_smear_frames: external_smear.max_smear_frames,
                 transient_smear_delta_frames: signal_smear.max_smear_frames
                     - external_smear.max_smear_frames,
+                signal_transient_matches: signal_transient_detail.matched_transients,
+                external_transient_matches: external_transient_detail.matched_transients,
+                signal_transient_mean_signed_offset_frames: signal_transient_detail
+                    .mean_signed_timing_offset_frames,
+                external_transient_mean_signed_offset_frames: external_transient_detail
+                    .mean_signed_timing_offset_frames,
+                signal_transient_mean_absolute_offset_frames: signal_transient_detail
+                    .mean_absolute_timing_offset_frames,
+                external_transient_mean_absolute_offset_frames: external_transient_detail
+                    .mean_absolute_timing_offset_frames,
+                signal_transient_max_absolute_offset_frames: signal_transient_detail
+                    .max_absolute_timing_offset_frames,
+                external_transient_max_absolute_offset_frames: external_transient_detail
+                    .max_absolute_timing_offset_frames,
+                signal_transient_max_crest_growth_db: signal_transient_detail
+                    .max_transient_crest_growth_db,
+                external_transient_max_crest_growth_db: external_transient_detail
+                    .max_transient_crest_growth_db,
+                signal_transient_max_crest_input_frame: signal_transient_detail
+                    .max_crest_input_frame,
+                external_transient_max_crest_input_frame: external_transient_detail
+                    .max_crest_input_frame,
+                signal_transient_max_crest_output_frame: signal_transient_detail
+                    .max_crest_output_frame,
+                external_transient_max_crest_output_frame: external_transient_detail
+                    .max_crest_output_frame,
+                draft_transient_mean_absolute_offset_frames: draft_transient_detail
+                    .mean_absolute_timing_offset_frames,
+                draft_transient_max_crest_growth_db: draft_transient_detail
+                    .max_transient_crest_growth_db,
+                draft_transient_max_crest_input_frame: draft_transient_detail.max_crest_input_frame,
+                draft_transient_max_crest_output_frame: draft_transient_detail
+                    .max_crest_output_frame,
                 alignment_lag_frames: aligned.lag_frames,
                 aligned_compared_frames: aligned.compared_frames,
                 aligned_correlation: aligned.correlation,
@@ -3901,6 +3993,24 @@ fn format_external_benchmark_quality_skip_line(
         signal_transient_smear_frames: f64::NAN,
         external_transient_smear_frames: f64::NAN,
         transient_smear_delta_frames: f64::NAN,
+        signal_transient_matches: 0,
+        external_transient_matches: 0,
+        signal_transient_mean_signed_offset_frames: f64::NAN,
+        external_transient_mean_signed_offset_frames: f64::NAN,
+        signal_transient_mean_absolute_offset_frames: f64::NAN,
+        external_transient_mean_absolute_offset_frames: f64::NAN,
+        signal_transient_max_absolute_offset_frames: f64::NAN,
+        external_transient_max_absolute_offset_frames: f64::NAN,
+        signal_transient_max_crest_growth_db: f64::NAN,
+        external_transient_max_crest_growth_db: f64::NAN,
+        signal_transient_max_crest_input_frame: 0,
+        external_transient_max_crest_input_frame: 0,
+        signal_transient_max_crest_output_frame: 0,
+        external_transient_max_crest_output_frame: 0,
+        draft_transient_mean_absolute_offset_frames: f64::NAN,
+        draft_transient_max_crest_growth_db: f64::NAN,
+        draft_transient_max_crest_input_frame: 0,
+        draft_transient_max_crest_output_frame: 0,
         alignment_lag_frames: 0,
         aligned_compared_frames: 0,
         aligned_correlation: f64::NAN,
@@ -7615,6 +7725,10 @@ mod tests {
         assert!(formatted.contains("external_frames=4096"));
         assert!(formatted.contains("signal_timing_drift_samples=0.000000"));
         assert!(formatted.contains("external_timing_drift_samples=0.000000"));
+        assert!(formatted.contains("signal_transient_mean_absolute_offset_frames="));
+        assert!(formatted.contains("external_transient_mean_absolute_offset_frames="));
+        assert!(formatted.contains("signal_transient_max_crest_growth_db="));
+        assert!(formatted.contains("draft_transient_max_crest_growth_db="));
         assert!(formatted.contains("alignment_lag_frames=0"));
         assert!(formatted.contains("aligned_compared_frames=4096"));
         assert!(formatted.contains("aligned_rms_error=0.000000000"));
