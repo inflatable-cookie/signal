@@ -55,12 +55,12 @@ pub use artifact_plan::{
 };
 pub use benchmark::{
     assess_stretch_metrics, compare_sustained_material_coherence,
-    compare_synthetic_stretch_backends, detect_stretch_transients,
-    detect_stretch_transients_with_policy, format_stretch_acceptance_report,
-    format_stretch_quality_priority_report, format_synthetic_stretch_comparison_report,
-    generate_synthetic_stretch_audio, measure_draft_loop_boundary_click,
-    measure_draft_stereo_image_delta, measure_draft_transient_smear,
-    measure_dynamic_segment_seam_click, measure_loop_boundary_click,
+    compare_synthetic_realtime_preview_backends, compare_synthetic_stretch_backends,
+    detect_stretch_transients, detect_stretch_transients_with_policy,
+    format_stretch_acceptance_report, format_stretch_quality_priority_report,
+    format_synthetic_stretch_comparison_report, generate_synthetic_stretch_audio,
+    measure_draft_loop_boundary_click, measure_draft_stereo_image_delta,
+    measure_draft_transient_smear, measure_dynamic_segment_seam_click, measure_loop_boundary_click,
     measure_pitch_shift_error_cents, measure_stereo_image_delta,
     measure_transient_reset_loop_boundary_click, measure_transient_reset_stereo_image_delta,
     measure_transient_reset_transient_smear, measure_transient_smear,
@@ -575,6 +575,58 @@ impl RealtimePreviewStretcher {
             self.window_size,
             self.analysis_hop,
         )
+    }
+
+    /// Apply independent pitch shift and tempo stretch to one mono preview
+    /// buffer.
+    pub fn stretch_pitch_mono(
+        &mut self,
+        input: &[Sample],
+        sample_rate: SampleRate,
+        pitch_shift_semitones: f64,
+    ) -> Vec<Sample> {
+        let target_len = (input.len() as f64 * self.ratio).round() as usize;
+        if input.is_empty() || target_len == 0 {
+            return Vec::new();
+        }
+        if pitch_shift_semitones.abs() < 1.0e-9 || sample_rate.0 == 0 {
+            return self.stretch_mono(input);
+        }
+
+        let pitched = pitch_shift_mono_to_nominal_rate(input, sample_rate, pitch_shift_semitones);
+        stretch_to_exact_mono(
+            &pitched,
+            target_len,
+            self.window_size,
+            self.analysis_hop,
+            transient_reset_phase_vocoder,
+        )
+    }
+
+    /// Apply independent pitch shift and tempo stretch to interleaved stereo
+    /// preview material.
+    pub fn stretch_pitch_interleaved_stereo(
+        &mut self,
+        frames: &[Sample],
+        sample_rate: SampleRate,
+        pitch_shift_semitones: f64,
+    ) -> Vec<Sample> {
+        let frame_count = frames.len() / 2;
+        let target_frames = (frame_count as f64 * self.ratio).round() as usize;
+        if frame_count == 0 || target_frames == 0 {
+            return Vec::new();
+        }
+        let even_frames = &frames[..frame_count * 2];
+        if pitch_shift_semitones.abs() < 1.0e-9 || sample_rate.0 == 0 {
+            return self.stretch_interleaved_stereo(even_frames);
+        }
+
+        let pitched = pitch_shift_interleaved_stereo_to_nominal_rate(
+            even_frames,
+            sample_rate,
+            pitch_shift_semitones,
+        );
+        stretch_to_exact_linked_stereo(&pitched, target_frames, self.window_size, self.analysis_hop)
     }
 
     /// Stretch one mono buffer with a stepwise dynamic ratio curve.
@@ -1846,6 +1898,17 @@ mod tests {
         assert_eq!(output.len(), 20_000);
     }
 
+    #[test]
+    fn realtime_preview_pitch_shift_preserves_tempo_length_contract() {
+        let input = sine(440.0, 48_000.0, 12_000);
+        let mut stretcher = RealtimePreviewStretcher::new(1.25);
+
+        let output = stretcher.stretch_pitch_mono(&input, SampleRate(48_000), 12.0);
+
+        assert_eq!(output.len(), 15_000);
+        assert!((dominant_frequency_hz(&output, 48_000.0) - 880.0).abs() < 35.0);
+    }
+
     fn add_decaying_burst(samples: &mut [Sample], start: usize, frames: usize, amplitude: f32) {
         for offset in 0..frames {
             let Some(sample) = samples.get_mut(start + offset) else {
@@ -2836,6 +2899,45 @@ mod tests {
     }
 
     #[test]
+    fn realtime_preview_backend_comparison_covers_preview_subset() {
+        let report = compare_synthetic_realtime_preview_backends();
+
+        assert_eq!(report.comparisons.len(), 24);
+        assert_eq!(
+            report.improved_count
+                + report.regressed_count
+                + report.unchanged_count
+                + report.inconclusive_count,
+            report.comparisons.len()
+        );
+        for comparison in &report.comparisons {
+            assert_eq!(comparison.baseline_backend, StretchBenchmarkBackend::Draft);
+            assert_eq!(
+                comparison.candidate_backend,
+                StretchBenchmarkBackend::RealtimePreviewPrototype
+            );
+            assert!(comparison.ratio.is_finite());
+            assert!(comparison.ratio > 0.0);
+        }
+        assert!(report.comparisons.iter().any(|comparison| {
+            comparison.case_id == "stretch:tempo_ramp"
+                && comparison.metric == StretchMetric::DynamicSegmentSeamClickDbfs
+                && comparison.path == StretchBenchmarkPath::DynamicRatio
+        }));
+        assert!(report.comparisons.iter().any(|comparison| {
+            comparison.case_id == "stretch:loop_seam"
+                && comparison.metric == StretchMetric::StereoImageDelta
+                && comparison.path == StretchBenchmarkPath::LinkedStereo
+        }));
+        assert!(report.comparisons.iter().any(|comparison| {
+            comparison.case_id == "stretch:pitch_shift"
+                && comparison.metric == StretchMetric::PitchErrorCents
+                && comparison.path == StretchBenchmarkPath::PitchShift
+                && comparison.pitch_shift_semitones == Some(12.0)
+        }));
+    }
+
+    #[test]
     fn synthetic_backend_comparison_report_formats_deterministically() {
         let report = compare_synthetic_stretch_backends();
         let formatted = format_synthetic_stretch_comparison_report(&report);
@@ -2853,7 +2955,8 @@ mod tests {
         assert!(formatted.contains("metric=DynamicSegmentSeamClickDbfs"));
         assert!(formatted.contains("metric=VerticalCoherenceDelta"));
         assert!(formatted.contains("metric=PitchErrorCents"));
-        assert!(formatted.contains("offline_hq="));
+        assert!(formatted.contains("candidate_backend=OfflineHighQualityPrototype"));
+        assert!(formatted.contains("candidate="));
         assert!(formatted.contains("outcome="));
     }
 

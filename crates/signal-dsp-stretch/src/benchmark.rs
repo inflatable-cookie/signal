@@ -4,7 +4,8 @@ use crate::phase_vocoder::{
 };
 use crate::{
     dynamic_ratio_output_boundaries, dynamic_ratio_output_frames, smooth_loop_boundary_interleaved,
-    stretch_dynamic_ratio_mono_with_engine, OfflineHighQualityStretcher, StretchRatioPoint,
+    stretch_dynamic_ratio_mono_with_engine, OfflineHighQualityStretcher, RealtimePreviewStretcher,
+    StretchRatioPoint, TimeStretcher,
 };
 use rustfft::{num_complex::Complex32, FftPlanner};
 use signal_primitives::{Sample, SampleRate};
@@ -377,6 +378,8 @@ impl StretchMetricValue {
 pub enum StretchBenchmarkBackend {
     /// Current independent-bin phase-vocoder baseline.
     Draft,
+    /// RealtimePreview prototype path.
+    RealtimePreviewPrototype,
     /// OfflineHighQuality prototype path: identity phase locking plus
     /// transient phase resets.
     OfflineHighQualityPrototype,
@@ -432,8 +435,8 @@ pub enum StretchQualityWorkArea {
     ResourceBudget,
 }
 
-/// One synthetic-corpus metric comparison between Draft and OfflineHighQuality
-/// prototype output.
+/// One synthetic-corpus metric comparison between a baseline and prototype
+/// output.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct StretchSyntheticBenchmarkComparison {
     /// Corpus case identifier.
@@ -451,11 +454,11 @@ pub struct StretchSyntheticBenchmarkComparison {
     pub baseline_backend: StretchBenchmarkBackend,
     /// Candidate backend measured.
     pub candidate_backend: StretchBenchmarkBackend,
-    /// Draft baseline value.
-    pub draft_value: f64,
-    /// OfflineHighQuality prototype value.
-    pub offline_high_quality_value: f64,
-    /// Candidate minus draft. Negative means improvement.
+    /// Baseline metric value.
+    pub baseline_value: f64,
+    /// Candidate metric value.
+    pub candidate_value: f64,
+    /// Candidate minus baseline. Negative means improvement.
     pub delta: f64,
     /// Direction of the comparison.
     pub outcome: StretchBenchmarkComparisonOutcome,
@@ -476,11 +479,11 @@ pub struct StretchQualityPriority {
     pub ratio: f64,
     /// Requested pitch shift in semitones, when present.
     pub pitch_shift_semitones: Option<f64>,
-    /// Draft baseline value.
-    pub draft_value: f64,
-    /// OfflineHighQuality prototype value.
-    pub offline_high_quality_value: f64,
-    /// Candidate minus draft. Positive values are regressions.
+    /// Baseline metric value.
+    pub baseline_value: f64,
+    /// Candidate metric value.
+    pub candidate_value: f64,
+    /// Candidate minus baseline. Positive values are regressions.
     pub delta: f64,
     /// Comparison outcome that caused this priority.
     pub outcome: StretchBenchmarkComparisonOutcome,
@@ -488,8 +491,8 @@ pub struct StretchQualityPriority {
     pub priority_score: f64,
 }
 
-/// Aggregate synthetic-corpus comparison report for the OfflineHighQuality
-/// prototype against the draft baseline.
+/// Aggregate synthetic-corpus comparison report for one prototype against the
+/// draft baseline.
 #[derive(Clone, Debug, PartialEq)]
 pub struct StretchSyntheticBenchmarkComparisonReport {
     /// Per-case, per-ratio, per-metric comparisons.
@@ -1329,6 +1332,82 @@ pub fn compare_synthetic_stretch_backends() -> StretchSyntheticBenchmarkComparis
     comparisons.extend(compare_pitch_shift());
     comparisons.extend(compare_sustained_coherence());
 
+    finish_synthetic_benchmark_report(comparisons)
+}
+
+/// Compare the RealtimePreview prototype against the draft baseline across
+/// the synthetic corpus subset relevant to low-latency preview.
+pub fn compare_synthetic_realtime_preview_backends() -> StretchSyntheticBenchmarkComparisonReport {
+    let mut comparisons = Vec::new();
+
+    for case in STRETCH_BENCHMARK_CORPUS
+        .iter()
+        .filter(|case| case.source == StretchCorpusSource::Synthetic)
+    {
+        for ratio in case.ratios {
+            comparisons.push(compare_metric_for_backend(
+                case.case_id,
+                *ratio,
+                StretchMetric::TimingDriftSamples,
+                StretchBenchmarkBackend::RealtimePreviewPrototype,
+                measure_synthetic_length_drift(case.family, *ratio, phase_vocoder),
+                measure_synthetic_length_drift_realtime_preview(case.family, *ratio),
+            ));
+
+            match case.family {
+                StretchCorpusFamily::LoopSeam => {
+                    comparisons.push(compare_metric_for_backend(
+                        case.case_id,
+                        *ratio,
+                        StretchMetric::LoopBoundaryClickDbfs,
+                        StretchBenchmarkBackend::RealtimePreviewPrototype,
+                        measure_draft_loop_boundary_click(*ratio).metric.value,
+                        measure_realtime_preview_loop_boundary_click(*ratio)
+                            .metric
+                            .value,
+                    ));
+                    comparisons.push(
+                        compare_metric_for_backend(
+                            case.case_id,
+                            *ratio,
+                            StretchMetric::StereoImageDelta,
+                            StretchBenchmarkBackend::RealtimePreviewPrototype,
+                            measure_draft_stereo_image_delta(*ratio).metric.value,
+                            measure_realtime_preview_stereo_image_delta(*ratio)
+                                .metric
+                                .value,
+                        )
+                        .with_path(StretchBenchmarkPath::LinkedStereo),
+                    );
+                }
+                StretchCorpusFamily::ExtremeRatio => {
+                    comparisons.push(compare_metric_for_backend(
+                        case.case_id,
+                        *ratio,
+                        StretchMetric::TransientSmearFrames,
+                        StretchBenchmarkBackend::RealtimePreviewPrototype,
+                        measure_draft_transient_smear(*ratio).metric.value,
+                        measure_realtime_preview_transient_smear(*ratio)
+                            .metric
+                            .value,
+                    ));
+                }
+                _ => {}
+            }
+        }
+
+        if case.family == StretchCorpusFamily::TempoRamp {
+            comparisons.extend(compare_dynamic_tempo_ramp_realtime_preview(case.case_id));
+        }
+    }
+    comparisons.extend(compare_pitch_shift_realtime_preview());
+
+    finish_synthetic_benchmark_report(comparisons)
+}
+
+fn finish_synthetic_benchmark_report(
+    comparisons: Vec<StretchSyntheticBenchmarkComparison>,
+) -> StretchSyntheticBenchmarkComparisonReport {
     let mut report = StretchSyntheticBenchmarkComparisonReport {
         comparisons,
         improved_count: 0,
@@ -1469,7 +1548,7 @@ pub fn format_stretch_acceptance_report(case_id: &str, report: &StretchAcceptanc
     lines.join("\n")
 }
 
-/// Deterministic line-oriented report for synthetic draft-vs-prototype
+/// Deterministic line-oriented report for synthetic baseline-vs-prototype
 /// benchmark comparisons.
 pub fn format_synthetic_stretch_comparison_report(
     report: &StretchSyntheticBenchmarkComparisonReport,
@@ -1488,14 +1567,16 @@ pub fn format_synthetic_stretch_comparison_report(
             .map(|semitones| format!("{semitones:.6}"))
             .unwrap_or_else(|| "none".to_string());
         lines.push(format!(
-            "case={} ratio={:.6} path={:?} pitch_shift={} metric={:?} draft={:.6} offline_hq={:.6} delta={:.6} outcome={:?}",
+            "case={} ratio={:.6} path={:?} pitch_shift={} metric={:?} baseline_backend={:?} candidate_backend={:?} baseline={:.6} candidate={:.6} delta={:.6} outcome={:?}",
             comparison.case_id,
             comparison.ratio,
             comparison.path,
             pitch_shift,
             comparison.metric,
-            comparison.draft_value,
-            comparison.offline_high_quality_value,
+            comparison.baseline_backend,
+            comparison.candidate_backend,
+            comparison.baseline_value,
+            comparison.candidate_value,
             comparison.delta,
             comparison.outcome
         ));
@@ -1516,15 +1597,15 @@ pub fn format_stretch_quality_priority_report(priorities: &[StretchQualityPriori
             .map(|semitones| format!("{semitones:.6}"))
             .unwrap_or_else(|| "none".to_string());
         lines.push(format!(
-            "area={:?} case={} ratio={:.6} path={:?} pitch_shift={} metric={:?} draft={:.6} offline_hq={:.6} delta={:.6} outcome={:?} score={:.6}",
+            "area={:?} case={} ratio={:.6} path={:?} pitch_shift={} metric={:?} baseline={:.6} candidate={:.6} delta={:.6} outcome={:?} score={:.6}",
             priority.area,
             priority.case_id,
             priority.ratio,
             priority.path,
             pitch_shift,
             priority.metric,
-            priority.draft_value,
-            priority.offline_high_quality_value,
+            priority.baseline_value,
+            priority.candidate_value,
             priority.delta,
             priority.outcome,
             priority.priority_score
@@ -1537,22 +1618,38 @@ fn compare_metric(
     case_id: &'static str,
     ratio: f64,
     metric: StretchMetric,
-    draft_value: f64,
-    offline_high_quality_value: f64,
+    baseline_value: f64,
+    candidate_value: f64,
 ) -> StretchSyntheticBenchmarkComparison {
-    let delta = offline_high_quality_value - draft_value;
-    let outcome = if !draft_value.is_finite()
-        || !offline_high_quality_value.is_finite()
-        || !delta.is_finite()
-    {
-        StretchBenchmarkComparisonOutcome::Inconclusive
-    } else if delta < -comparison_tolerance(metric) {
-        StretchBenchmarkComparisonOutcome::Improved
-    } else if delta > comparison_tolerance(metric) {
-        StretchBenchmarkComparisonOutcome::Regressed
-    } else {
-        StretchBenchmarkComparisonOutcome::Unchanged
-    };
+    compare_metric_for_backend(
+        case_id,
+        ratio,
+        metric,
+        StretchBenchmarkBackend::OfflineHighQualityPrototype,
+        baseline_value,
+        candidate_value,
+    )
+}
+
+fn compare_metric_for_backend(
+    case_id: &'static str,
+    ratio: f64,
+    metric: StretchMetric,
+    candidate_backend: StretchBenchmarkBackend,
+    baseline_value: f64,
+    candidate_value: f64,
+) -> StretchSyntheticBenchmarkComparison {
+    let delta = candidate_value - baseline_value;
+    let outcome =
+        if !baseline_value.is_finite() || !candidate_value.is_finite() || !delta.is_finite() {
+            StretchBenchmarkComparisonOutcome::Inconclusive
+        } else if delta < -comparison_tolerance(metric) {
+            StretchBenchmarkComparisonOutcome::Improved
+        } else if delta > comparison_tolerance(metric) {
+            StretchBenchmarkComparisonOutcome::Regressed
+        } else {
+            StretchBenchmarkComparisonOutcome::Unchanged
+        };
 
     StretchSyntheticBenchmarkComparison {
         case_id,
@@ -1561,9 +1658,9 @@ fn compare_metric(
         path: StretchBenchmarkPath::FixedRatio,
         pitch_shift_semitones: None,
         baseline_backend: StretchBenchmarkBackend::Draft,
-        candidate_backend: StretchBenchmarkBackend::OfflineHighQualityPrototype,
-        draft_value,
-        offline_high_quality_value,
+        candidate_backend,
+        baseline_value,
+        candidate_value,
         delta,
         outcome,
     }
@@ -1600,8 +1697,8 @@ fn priority_from_comparison(
         metric: comparison.metric,
         ratio: comparison.ratio,
         pitch_shift_semitones: comparison.pitch_shift_semitones,
-        draft_value: comparison.draft_value,
-        offline_high_quality_value: comparison.offline_high_quality_value,
+        baseline_value: comparison.baseline_value,
+        candidate_value: comparison.candidate_value,
         delta: comparison.delta,
         outcome: comparison.outcome,
         priority_score,
@@ -1676,6 +1773,61 @@ fn measure_synthetic_length_drift(
     output_length_drift_samples(input_frames, output_frames, ratio)
 }
 
+fn measure_synthetic_length_drift_realtime_preview(family: StretchCorpusFamily, ratio: f64) -> f64 {
+    let Some(input) = generate_synthetic_stretch_audio(family) else {
+        return f64::NAN;
+    };
+    if !ratio.is_finite() || ratio <= 0.0 {
+        return f64::NAN;
+    }
+
+    let input_frames = input.frame_count();
+    let mut preview = RealtimePreviewStretcher::new(ratio);
+    let output_frames = match input.channels {
+        1 => preview.stretch_mono(&input.samples).len(),
+        2 => preview.stretch_interleaved_stereo(&input.samples).len() / 2,
+        _ => return f64::NAN,
+    };
+
+    output_length_drift_samples(input_frames, output_frames, ratio)
+}
+
+fn measure_realtime_preview_loop_boundary_click(ratio: f64) -> StretchLoopBoundaryMeasurement {
+    if !ratio.is_finite() || ratio <= 0.0 {
+        return loop_boundary_nan(ratio, 2);
+    }
+
+    let input = synthetic_loop_seam();
+    let mut preview = RealtimePreviewStretcher::new(ratio);
+    let mut output = preview.stretch_interleaved_stereo(&input.samples);
+    smooth_loop_boundary_interleaved(&mut output, input.channels, 128);
+    measure_loop_boundary_click(&output, input.channels, ratio)
+}
+
+fn measure_realtime_preview_stereo_image_delta(ratio: f64) -> StretchStereoImageMeasurement {
+    if !ratio.is_finite() || ratio <= 0.0 {
+        return stereo_image_nan(ratio);
+    }
+
+    let input = synthetic_loop_seam();
+    let mut preview = RealtimePreviewStretcher::new(ratio);
+    let output = preview.stretch_interleaved_stereo(&input.samples);
+    measure_stereo_image_delta(&input.samples, &output, ratio)
+}
+
+fn measure_realtime_preview_transient_smear(ratio: f64) -> StretchTransientSmearMeasurement {
+    if !ratio.is_finite() || ratio <= 0.0 {
+        return transient_smear_nan(ratio);
+    }
+
+    const WINDOW_SIZE: usize = 1_024;
+    const HOP_SIZE: usize = 256;
+    let input = synthetic_extreme_ratio().samples;
+    let mut preview = RealtimePreviewStretcher::new(ratio);
+    let output = preview.stretch_mono(&input);
+    measure_transient_smear(&input, &output, ratio, WINDOW_SIZE, HOP_SIZE)
+}
+
 fn compare_dynamic_tempo_ramp(case_id: &'static str) -> Vec<StretchSyntheticBenchmarkComparison> {
     let input = synthetic_tempo_ramp();
     let ratio_curve = synthetic_tempo_ramp_ratio_curve(input.frame_count());
@@ -1722,6 +1874,56 @@ fn compare_dynamic_tempo_ramp(case_id: &'static str) -> Vec<StretchSyntheticBenc
     ]
 }
 
+fn compare_dynamic_tempo_ramp_realtime_preview(
+    case_id: &'static str,
+) -> Vec<StretchSyntheticBenchmarkComparison> {
+    let input = synthetic_tempo_ramp();
+    let ratio_curve = synthetic_tempo_ramp_ratio_curve(input.frame_count());
+    let expected_frames = dynamic_ratio_output_frames(input.frame_count(), &ratio_curve, 1.0);
+    let seam_frames = dynamic_ratio_output_boundaries(input.frame_count(), &ratio_curve, 1.0);
+    let effective_ratio = expected_frames as f64 / input.frame_count() as f64;
+    let draft_output =
+        stretch_dynamic_ratio_stereo_independent(&input, &ratio_curve, phase_vocoder);
+    let mut preview = RealtimePreviewStretcher::new(1.0);
+    let preview_output =
+        preview.stretch_dynamic_ratio_interleaved_stereo(&input.samples, &ratio_curve);
+
+    vec![
+        compare_metric_for_backend(
+            case_id,
+            effective_ratio,
+            StretchMetric::TimingDriftSamples,
+            StretchBenchmarkBackend::RealtimePreviewPrototype,
+            (draft_output.len() / 2).abs_diff(expected_frames) as f64,
+            (preview_output.len() / 2).abs_diff(expected_frames) as f64,
+        )
+        .with_path(StretchBenchmarkPath::DynamicRatio),
+        compare_metric_for_backend(
+            case_id,
+            effective_ratio,
+            StretchMetric::DynamicSegmentSeamClickDbfs,
+            StretchBenchmarkBackend::RealtimePreviewPrototype,
+            measure_dynamic_segment_seam_click(
+                &draft_output,
+                input.channels,
+                &seam_frames,
+                effective_ratio,
+            )
+            .metric
+            .value,
+            measure_dynamic_segment_seam_click(
+                &preview_output,
+                input.channels,
+                &seam_frames,
+                effective_ratio,
+            )
+            .metric
+            .value,
+        )
+        .with_path(StretchBenchmarkPath::DynamicRatio),
+    ]
+}
+
 fn compare_pitch_shift() -> Vec<StretchSyntheticBenchmarkComparison> {
     const CASE_ID: &str = "stretch:pitch_shift";
     const SAMPLE_RATE_HZ: u32 = 48_000;
@@ -1755,6 +1957,50 @@ fn compare_pitch_shift() -> Vec<StretchSyntheticBenchmarkComparison> {
                 .value,
                 measure_pitch_shift_error_cents(
                     &offline_high_quality_output,
+                    SAMPLE_RATE_HZ,
+                    SOURCE_FREQUENCY_HZ,
+                    semitones,
+                    ratio,
+                )
+                .metric
+                .value,
+            )
+            .with_pitch_shift(semitones)
+        })
+        .collect()
+}
+
+fn compare_pitch_shift_realtime_preview() -> Vec<StretchSyntheticBenchmarkComparison> {
+    const CASE_ID: &str = "stretch:pitch_shift";
+    const SAMPLE_RATE_HZ: u32 = 48_000;
+    const SOURCE_FREQUENCY_HZ: f64 = 440.0;
+
+    let input = synthetic_pitch_shift_tone(SOURCE_FREQUENCY_HZ, SAMPLE_RATE_HZ, 48_000);
+    [(1.0, 12.0), (1.25, -5.0)]
+        .into_iter()
+        .map(|(ratio, semitones)| {
+            let target_len = (input.len() as f64 * ratio).round() as usize;
+            let draft_output = phase_vocoder(&input, target_len, ratio, 2_048, 512);
+            let mut preview = RealtimePreviewStretcher::new(ratio);
+            let preview_output =
+                preview.stretch_pitch_mono(&input, SampleRate(SAMPLE_RATE_HZ), semitones);
+
+            compare_metric_for_backend(
+                CASE_ID,
+                ratio,
+                StretchMetric::PitchErrorCents,
+                StretchBenchmarkBackend::RealtimePreviewPrototype,
+                measure_pitch_shift_error_cents(
+                    &draft_output,
+                    SAMPLE_RATE_HZ,
+                    SOURCE_FREQUENCY_HZ,
+                    semitones,
+                    ratio,
+                )
+                .metric
+                .value,
+                measure_pitch_shift_error_cents(
+                    &preview_output,
                     SAMPLE_RATE_HZ,
                     SOURCE_FREQUENCY_HZ,
                     semitones,

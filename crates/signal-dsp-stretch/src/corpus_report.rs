@@ -338,7 +338,7 @@ pub fn format_stretch_corpus_comparison_report(report: &StretchCorpusComparisonR
 
     for comparison in &report.synthetic_report.comparisons {
         lines.push(format!(
-            "comparison case={} source={} ratio={:.6} ratio_curve={} path={:?} pitch_curve={} pitch_shift={} metric={:?} draft={:.6} offline_hq={:.6} delta={:.6} outcome={:?}",
+            "comparison case={} source={} ratio={:.6} ratio_curve={} path={:?} pitch_curve={} pitch_shift={} metric={:?} baseline_backend={:?} candidate_backend={:?} baseline={:.6} candidate={:.6} delta={:.6} outcome={:?}",
             comparison.case_id,
             source_path_hint_for_comparison(comparison.case_id),
             comparison.ratio,
@@ -347,8 +347,10 @@ pub fn format_stretch_corpus_comparison_report(report: &StretchCorpusComparisonR
             pitch_curve_label(comparison),
             optional_f64_report_field(comparison.pitch_shift_semitones),
             comparison.metric,
-            comparison.draft_value,
-            comparison.offline_high_quality_value,
+            comparison.baseline_backend,
+            comparison.candidate_backend,
+            comparison.baseline_value,
+            comparison.candidate_value,
             comparison.delta,
             comparison.outcome
         ));
