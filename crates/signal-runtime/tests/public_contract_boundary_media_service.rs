@@ -163,6 +163,10 @@ fn public_runtime_reports_offline_stretch_artifact_plan_receipts_with_promotion_
         StretchChannelLayout::new(2, 48_000),
         "projection-17",
     );
+    let unsupported_pitch_automation = accepted_plan.clone().with_pitch_curve(vec![
+        StretchPitchPoint::new(0, 0.0),
+        StretchPitchPoint::new(24_000, 2.0),
+    ]);
     let promotion =
         current_synthetic_offline_high_quality_promotion_receipt("stretch-corpus:public-runtime");
 
@@ -182,6 +186,14 @@ fn public_runtime_reports_offline_stretch_artifact_plan_receipts_with_promotion_
                 media_asset_id: Some("asset:preview".into()),
                 scope: RuntimeOfflineStretchArtifactScope::RenderCache,
                 identity_input: invalid_tier,
+                promotion_receipt: promotion.clone(),
+            },
+            RuntimeOfflineStretchArtifactPlanRegistration {
+                plan_id: "stretch-plan:pitch-automation".into(),
+                clip_id: Some("clip:pitch-automation".into()),
+                media_asset_id: Some("asset:pitch-automation".into()),
+                scope: RuntimeOfflineStretchArtifactScope::RenderCache,
+                identity_input: unsupported_pitch_automation,
                 promotion_receipt: promotion.clone(),
             },
         ])
@@ -211,6 +223,10 @@ fn public_runtime_reports_offline_stretch_artifact_plan_receipts_with_promotion_
                 cache_identity_key: expected_key.clone(),
                 promotion_evidence_id: "stretch-corpus:public-runtime".into(),
                 output_frame_count: 72_000,
+                chunk_count: 1,
+                max_chunk_source_frames: 48_000,
+                chunk_overlap_frames: 2_048,
+                max_chunk_render_source_frames: 48_000,
                 product_facing_allowed: true,
             },
             RuntimeOfflineStretchArtifactCacheDecisionRegistration {
@@ -226,6 +242,10 @@ fn public_runtime_reports_offline_stretch_artifact_plan_receipts_with_promotion_
                 cache_identity_key: expected_key.clone(),
                 promotion_evidence_id: "stretch-corpus:public-runtime".into(),
                 output_frame_count: 72_000,
+                chunk_count: 1,
+                max_chunk_source_frames: 48_000,
+                chunk_overlap_frames: 2_048,
+                max_chunk_render_source_frames: 48_000,
                 product_facing_allowed: true,
             },
             RuntimeOfflineStretchArtifactCacheDecisionRegistration {
@@ -241,6 +261,10 @@ fn public_runtime_reports_offline_stretch_artifact_plan_receipts_with_promotion_
                 cache_identity_key: expected_key,
                 promotion_evidence_id: "stretch-corpus:public-runtime".into(),
                 output_frame_count: 72_000,
+                chunk_count: 1,
+                max_chunk_source_frames: 48_000,
+                chunk_overlap_frames: 2_048,
+                max_chunk_render_source_frames: 48_000,
                 product_facing_allowed: true,
             },
         ])
@@ -250,8 +274,9 @@ fn public_runtime_reports_offline_stretch_artifact_plan_receipts_with_promotion_
     let supervisor = RuntimeSupervisorReport::capture(&runtime, &recorder);
     let snapshot = &observation.offline_stretch_artifact_plan_snapshot;
 
-    assert_eq!(snapshot.plan_count, 2);
+    assert_eq!(snapshot.plan_count, 3);
     assert_eq!(snapshot.awaiting_corpus_evidence_count, 0);
+    assert_eq!(snapshot.unsupported_capability_count, 1);
     assert_eq!(snapshot.invalid_plan_count, 1);
     assert_eq!(snapshot.ready_plan_count, 1);
     let offline_plan = snapshot
@@ -314,6 +339,20 @@ fn public_runtime_reports_offline_stretch_artifact_plan_receipts_with_promotion_
     assert_eq!(cache_hit.offline_path, accepted_plan.offline_path);
     assert_eq!(cache_hit.output_frame_count, artifact.output_frame_count);
     assert!(cache_hit.product_facing_allowed);
+    let unsupported_plan = snapshot
+        .plans
+        .iter()
+        .find(|plan| plan.plan_id == "stretch-plan:pitch-automation")
+        .expect("unsupported pitch automation plan should be present");
+    assert_eq!(
+        unsupported_plan.readiness,
+        RuntimeOfflineStretchArtifactReadiness::UnsupportedCapability
+    );
+    assert!(!unsupported_plan.product_facing_allowed);
+    assert!(unsupported_plan
+        .last_error
+        .as_deref()
+        .is_some_and(|error| error.contains("static pitch shift")));
     let invalid_plan = snapshot
         .plans
         .iter()

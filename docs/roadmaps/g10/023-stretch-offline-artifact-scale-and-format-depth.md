@@ -18,7 +18,7 @@ use.
 
 - [x] add bounded-memory long-media processing or chunked artifact rendering
 - [ ] define overlap/crossfade rules for chunk boundaries and warp-marker seams
-- [ ] support pitch automation or reject it with a product-visible capability
+- [x] support pitch automation or reject it with a product-visible capability
   contract
 - [ ] widen linked processing beyond stereo when the channel-layout contract is
   ready
@@ -35,8 +35,8 @@ use.
 
 ### Batch 23.2 - Capability Boundaries
 
-- [ ] pitch automation support decision or explicit product-visible rejection
-- [ ] multichannel support decision beyond linked stereo
+- [x] pitch automation support decision or explicit product-visible rejection
+- [x] multichannel support decision beyond linked stereo
 
 ### Batch 23.3 - Soak And Cache Hardening
 
@@ -48,7 +48,7 @@ use.
 
 - [ ] peak memory is bounded and documented by tier
 - [ ] chunked output is deterministic and click-safe at chunk boundaries
-- [ ] unsupported pitch or channel behavior is explicit and observable
+- [x] unsupported pitch or channel behavior is explicit and observable
 - [ ] cache hits, writes, and invalidations remain auditable through runtime
   receipts
 
@@ -74,10 +74,16 @@ use.
   summaries in the materialization receipt. Selector paths remain whole-buffer
   static-ratio materialization until their chunked behavior has separate
   evidence.
+- 2026-07-09: closed Batch 23.2 as explicit capability boundaries. Artifact
+  planning now distinguishes unsupported capability from invalid identity or
+  missing promotion: pitch automation is rejected in favor of one static pitch
+  shift, and non-stereo materialization remains blocked until the channel-layout
+  contract is ready. Runtime snapshots carry the same unsupported-capability
+  readiness, and materialization/cache receipts now expose chunk-count and
+  source-span summaries.
 
 ## Next Task
 
-Start Batch 23.2 by making the pitch-automation rejection and stereo-only
-channel boundary product-visible through the artifact planning/materialization
-surface, then decide whether runtime snapshots need the new chunk summary
-fields.
+Start Batch 23.3 with cache/soak hardening: add focused coverage that proves
+engine, projection epoch, ratio curve, pitch curve, warp marker, media identity,
+and chunk-policy changes remain auditable through cache/render receipts.

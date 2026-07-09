@@ -22,6 +22,9 @@ pub enum RuntimeOfflineStretchArtifactReadiness {
     /// The tier exists, but corpus evidence or prototype promotion has not
     /// accepted product-facing use.
     AwaitingCorpusEvidence,
+    /// The plan identity is valid, but the requested artifact shape is not
+    /// supported by the current materialization surface.
+    UnsupportedCapability,
     /// The artifact may feed product-facing render/export/freeze consumers.
     Ready,
     /// The plan could not be validated.
@@ -87,6 +90,14 @@ pub struct RuntimeOfflineStretchArtifactMaterializationRegistration {
     pub channels: u16,
     /// Output sample rate.
     pub sample_rate_hz: u32,
+    /// Number of planned offline stretch chunks.
+    pub chunk_count: usize,
+    /// Maximum non-overlap source payload frames allowed per chunk.
+    pub max_chunk_source_frames: usize,
+    /// Source overlap context requested around each chunk payload.
+    pub chunk_overlap_frames: usize,
+    /// Largest source render span requested by any chunk, including context.
+    pub max_chunk_render_source_frames: usize,
     /// Whether this materialized artifact may feed product-facing output.
     pub product_facing_allowed: bool,
 }
@@ -118,6 +129,14 @@ pub struct RuntimeOfflineStretchArtifactCacheDecisionRegistration {
     pub promotion_evidence_id: String,
     /// Output frame count selected by the cache decision.
     pub output_frame_count: usize,
+    /// Number of planned offline stretch chunks selected by the cache decision.
+    pub chunk_count: usize,
+    /// Maximum non-overlap source payload frames allowed per chunk.
+    pub max_chunk_source_frames: usize,
+    /// Source overlap context requested around each chunk payload.
+    pub chunk_overlap_frames: usize,
+    /// Largest source render span requested by any chunk, including context.
+    pub max_chunk_render_source_frames: usize,
     /// Whether the selected cache handoff may feed product-facing output.
     pub product_facing_allowed: bool,
 }
@@ -153,6 +172,14 @@ pub struct RuntimeOfflineStretchArtifactMaterializationSnapshot {
     pub channels: u16,
     /// Output sample rate.
     pub sample_rate_hz: u32,
+    /// Number of planned offline stretch chunks.
+    pub chunk_count: usize,
+    /// Maximum non-overlap source payload frames allowed per chunk.
+    pub max_chunk_source_frames: usize,
+    /// Source overlap context requested around each chunk payload.
+    pub chunk_overlap_frames: usize,
+    /// Largest source render span requested by any chunk, including context.
+    pub max_chunk_render_source_frames: usize,
     /// Whether this materialized artifact may feed product-facing output.
     pub product_facing_allowed: bool,
 }
@@ -184,6 +211,14 @@ pub struct RuntimeOfflineStretchArtifactCacheDecisionSnapshot {
     pub promotion_evidence_id: String,
     /// Output frame count selected by the cache decision.
     pub output_frame_count: usize,
+    /// Number of planned offline stretch chunks selected by the cache decision.
+    pub chunk_count: usize,
+    /// Maximum non-overlap source payload frames allowed per chunk.
+    pub max_chunk_source_frames: usize,
+    /// Source overlap context requested around each chunk payload.
+    pub chunk_overlap_frames: usize,
+    /// Largest source render span requested by any chunk, including context.
+    pub max_chunk_render_source_frames: usize,
     /// Whether the selected cache handoff may feed product-facing output.
     pub product_facing_allowed: bool,
 }
@@ -236,6 +271,8 @@ pub struct RuntimeOfflineStretchArtifactPlanSnapshotSet {
     pub awaiting_implementation_count: usize,
     /// Number of plans waiting for corpus acceptance.
     pub awaiting_corpus_evidence_count: usize,
+    /// Number of plans blocked by unsupported artifact capability.
+    pub unsupported_capability_count: usize,
     /// Number of invalid plans.
     pub invalid_plan_count: usize,
     /// Number of materialized artifacts observed by render/export/freeze.

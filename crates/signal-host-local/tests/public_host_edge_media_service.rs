@@ -265,6 +265,25 @@ fn local_shared_host_edge_exports_offline_stretch_artifact_receipts() {
     assert_eq!(artifact.promotion_evidence_id, "stretch-corpus:host-local");
     assert_eq!(artifact.input_frame_count, 480);
     assert_eq!(artifact.output_frame_count, 600);
+    assert_eq!(
+        artifact.chunk_count,
+        artifact_source.artifact.receipt.chunk_count
+    );
+    assert_eq!(
+        artifact.max_chunk_source_frames,
+        artifact_source.artifact.receipt.max_chunk_source_frames
+    );
+    assert_eq!(
+        artifact.chunk_overlap_frames,
+        artifact_source.artifact.receipt.chunk_overlap_frames
+    );
+    assert_eq!(
+        artifact.max_chunk_render_source_frames,
+        artifact_source
+            .artifact
+            .receipt
+            .max_chunk_render_source_frames
+    );
     assert!(artifact.product_facing_allowed);
     assert_eq!(snapshot.cache_decision_count, 1);
     assert_eq!(snapshot.cache_write_count, 1);
@@ -282,6 +301,16 @@ fn local_shared_host_edge_exports_offline_stretch_artifact_receipts() {
         expected_identity.stable_hash
     );
     assert_eq!(cache_decision.output_frame_count, 600);
+    assert_eq!(cache_decision.chunk_count, 1);
+    assert_eq!(
+        cache_decision.max_chunk_source_frames,
+        artifact_source.artifact.receipt.max_chunk_source_frames
+    );
+    assert_eq!(
+        cache_decision.chunk_overlap_frames,
+        artifact_source.artifact.receipt.chunk_overlap_frames
+    );
+    assert_eq!(cache_decision.max_chunk_render_source_frames, 480);
     assert!(cache_decision.product_facing_allowed);
 }
 

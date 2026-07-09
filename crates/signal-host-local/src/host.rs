@@ -141,6 +141,10 @@ impl LocalRuntimeHost {
                     output_frame_count: receipt.output_frame_count,
                     channels: receipt.channels,
                     sample_rate_hz: receipt.sample_rate_hz,
+                    chunk_count: receipt.chunk_count,
+                    max_chunk_source_frames: receipt.max_chunk_source_frames,
+                    chunk_overlap_frames: receipt.chunk_overlap_frames,
+                    max_chunk_render_source_frames: receipt.max_chunk_render_source_frames,
                     product_facing_allowed: receipt.product_facing_allowed,
                 },
             ])
@@ -177,6 +181,10 @@ impl LocalRuntimeHost {
                     cache_identity_key: receipt.cache_identity_key,
                     promotion_evidence_id: receipt.promotion_evidence_id,
                     output_frame_count: receipt.output_frame_count,
+                    chunk_count: receipt.chunk_count,
+                    max_chunk_source_frames: receipt.max_chunk_source_frames,
+                    chunk_overlap_frames: receipt.chunk_overlap_frames,
+                    max_chunk_render_source_frames: receipt.max_chunk_render_source_frames,
                     product_facing_allowed: receipt.product_facing_allowed,
                 },
             ])

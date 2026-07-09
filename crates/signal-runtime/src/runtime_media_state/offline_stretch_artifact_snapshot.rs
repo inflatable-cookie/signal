@@ -77,6 +77,12 @@ impl RuntimeOfflineStretchArtifactPlanStateModel {
                 plan.readiness == RuntimeOfflineStretchArtifactReadiness::AwaitingCorpusEvidence
             })
             .count();
+        let unsupported_capability_count = plans
+            .iter()
+            .filter(|plan| {
+                plan.readiness == RuntimeOfflineStretchArtifactReadiness::UnsupportedCapability
+            })
+            .count();
         let invalid_plan_count = plans
             .iter()
             .filter(|plan| plan.readiness == RuntimeOfflineStretchArtifactReadiness::Invalid)
@@ -107,6 +113,7 @@ impl RuntimeOfflineStretchArtifactPlanStateModel {
             ready_plan_count,
             awaiting_implementation_count,
             awaiting_corpus_evidence_count,
+            unsupported_capability_count,
             invalid_plan_count,
             materialized_artifact_count: materialized_artifacts.len(),
             product_facing_materialized_artifact_count,
@@ -139,6 +146,10 @@ fn snapshot_materialized_artifact(
         output_frame_count: registration.output_frame_count,
         channels: registration.channels,
         sample_rate_hz: registration.sample_rate_hz,
+        chunk_count: registration.chunk_count,
+        max_chunk_source_frames: registration.max_chunk_source_frames,
+        chunk_overlap_frames: registration.chunk_overlap_frames,
+        max_chunk_render_source_frames: registration.max_chunk_render_source_frames,
         product_facing_allowed: registration.product_facing_allowed,
     }
 }
@@ -159,6 +170,10 @@ fn snapshot_cache_decision(
         cache_identity_key: registration.cache_identity_key.clone(),
         promotion_evidence_id: registration.promotion_evidence_id.clone(),
         output_frame_count: registration.output_frame_count,
+        chunk_count: registration.chunk_count,
+        max_chunk_source_frames: registration.max_chunk_source_frames,
+        chunk_overlap_frames: registration.chunk_overlap_frames,
+        max_chunk_render_source_frames: registration.max_chunk_render_source_frames,
         product_facing_allowed: registration.product_facing_allowed,
     }
 }
@@ -225,6 +240,8 @@ fn snapshot_plan(
     }
 
     let backend = stretch_backend_plan(registration.identity_input.tier);
+    let capability_blocker =
+        offline_stretch_artifact_capability_blocker(&registration.identity_input);
     let promotion_accepted = registration.promotion_receipt.accepts_product_facing_path(
         registration.identity_input.tier,
         registration.identity_input.offline_path,
@@ -233,28 +250,35 @@ fn snapshot_plan(
         registration.identity_input.tier,
         registration.identity_input.offline_path,
     );
-    let (readiness, last_error) = match (backend.status, promotion_accepted) {
-        (StretchBackendStatus::Planned, _) => (
-            RuntimeOfflineStretchArtifactReadiness::AwaitingImplementation,
-            Some("OfflineHighQuality is not implemented yet".to_string()),
-        ),
-        (StretchBackendStatus::Prototype, _) => (
-            RuntimeOfflineStretchArtifactReadiness::AwaitingCorpusEvidence,
-            Some(
-                "OfflineHighQuality prototype has not accepted product-facing promotion"
-                    .to_string(),
+    let (readiness, last_error) = if let Some(blocker) = capability_blocker {
+        (
+            RuntimeOfflineStretchArtifactReadiness::UnsupportedCapability,
+            Some(blocker),
+        )
+    } else {
+        match (backend.status, promotion_accepted) {
+            (StretchBackendStatus::Planned, _) => (
+                RuntimeOfflineStretchArtifactReadiness::AwaitingImplementation,
+                Some("OfflineHighQuality is not implemented yet".to_string()),
             ),
-        ),
-        (StretchBackendStatus::Implemented, false) => (
-            RuntimeOfflineStretchArtifactReadiness::AwaitingCorpusEvidence,
-            Some(
-                promotion_blocker
-                    .unwrap_or("OfflineHighQuality corpus evidence has not accepted promotion")
-                    .to_string(),
+            (StretchBackendStatus::Prototype, _) => (
+                RuntimeOfflineStretchArtifactReadiness::AwaitingCorpusEvidence,
+                Some(
+                    "OfflineHighQuality prototype has not accepted product-facing promotion"
+                        .to_string(),
+                ),
             ),
-        ),
-        (StretchBackendStatus::Implemented, true) => {
-            (RuntimeOfflineStretchArtifactReadiness::Ready, None)
+            (StretchBackendStatus::Implemented, false) => (
+                RuntimeOfflineStretchArtifactReadiness::AwaitingCorpusEvidence,
+                Some(
+                    promotion_blocker
+                        .unwrap_or("OfflineHighQuality corpus evidence has not accepted promotion")
+                        .to_string(),
+                ),
+            ),
+            (StretchBackendStatus::Implemented, true) => {
+                (RuntimeOfflineStretchArtifactReadiness::Ready, None)
+            }
         }
     };
 
@@ -286,4 +310,63 @@ fn promotion_evidence_id(receipt: &signal_dsp_stretch::StretchPromotionReceipt) 
     } else {
         Some(receipt.evidence_id.clone())
     }
+}
+
+fn offline_stretch_artifact_capability_blocker(
+    input: &signal_dsp_stretch::StretchCacheIdentityInput,
+) -> Option<String> {
+    if input.channel_layout.channels != 2 {
+        return Some(format!(
+            "offline stretch artifact PCM requires stereo source, got {} channels",
+            input.channel_layout.channels
+        ));
+    }
+    let pitch_shift = input
+        .pitch_curve
+        .first()
+        .map(|point| point.semitones)
+        .unwrap_or(0.0);
+    if input
+        .pitch_curve
+        .iter()
+        .any(|point| (point.semitones - pitch_shift).abs() > 1.0e-9)
+    {
+        return Some("offline stretch artifact materialization requires static pitch shift".into());
+    }
+    if selector_offline_path_requires_static_materialization(input.offline_path) {
+        if ratio_curve_has_dynamic_changes(&input.ratio_curve) {
+            return Some(format!(
+                "offline stretch artifact path {:?} does not support dynamic ratio materialization yet",
+                input.offline_path
+            ));
+        }
+        if pitch_shift.abs() > 1.0e-9 {
+            return Some(format!(
+                "offline stretch artifact path {:?} does not support pitch-shift materialization yet",
+                input.offline_path
+            ));
+        }
+    }
+    None
+}
+
+fn selector_offline_path_requires_static_materialization(
+    path: signal_dsp_stretch::OfflineHighQualityPath,
+) -> bool {
+    matches!(
+        path,
+        signal_dsp_stretch::OfflineHighQualityPath::CompressionShortWindowSelector
+            | signal_dsp_stretch::OfflineHighQualityPath::ExpansionShortWindowSelector
+    )
+}
+
+fn ratio_curve_has_dynamic_changes(ratio_curve: &[signal_dsp_stretch::StretchRatioPoint]) -> bool {
+    let mut valid_ratios = ratio_curve
+        .iter()
+        .filter(|point| point.ratio.is_finite() && point.ratio > 0.0)
+        .map(|point| point.ratio);
+    let Some(first) = valid_ratios.next() else {
+        return false;
+    };
+    valid_ratios.any(|ratio| (ratio - first).abs() > 1.0e-9)
 }

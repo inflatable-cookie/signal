@@ -91,8 +91,37 @@ pub enum OfflineStretchArtifactReadiness {
     /// The tier exists, but corpus evidence or prototype promotion has not
     /// accepted product-facing use.
     AwaitingCorpusEvidence,
+    /// The plan identity is valid, but this artifact shape is not supported
+    /// by the current materialization surface.
+    UnsupportedCapability,
     /// The artifact may be consumed by render/export/freeze callers.
     Ready,
+}
+
+/// Product capability status for a planned offline stretch artifact.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum OfflineStretchArtifactCapabilityStatus {
+    /// The current materialization surface can build this artifact shape.
+    Supported,
+    /// The current artifact path only supports linked stereo PCM.
+    UnsupportedChannelLayout {
+        /// Channel count declared by the stretch cache identity.
+        channels: u16,
+    },
+    /// The current artifact path supports one static pitch shift, not pitch
+    /// automation.
+    UnsupportedPitchAutomation,
+    /// Selector paths are currently limited to static-ratio materialization.
+    UnsupportedOfflinePathDynamicRatio {
+        /// Requested offline high-quality renderer path.
+        path: OfflineHighQualityPath,
+    },
+    /// Selector paths are currently limited to unshifted static-ratio
+    /// materialization.
+    UnsupportedOfflinePathPitchShift {
+        /// Requested offline high-quality renderer path.
+        path: OfflineHighQualityPath,
+    },
 }
 
 /// Control-side plan for a cacheable offline stretch artifact.
@@ -108,6 +137,8 @@ pub struct OfflineStretchArtifactPlan {
     pub offline_path: OfflineHighQualityPath,
     /// Current implementation/evidence readiness.
     pub readiness: OfflineStretchArtifactReadiness,
+    /// Current product capability support for this artifact shape.
+    pub capability_status: OfflineStretchArtifactCapabilityStatus,
     /// Promotion evidence associated with this artifact plan.
     pub promotion_receipt: StretchPromotionReceipt,
     /// Whether the artifact is allowed to feed product-facing render/export output.
@@ -453,19 +484,27 @@ pub fn plan_offline_stretch_artifact(
         .identity()
         .map_err(OfflineStretchArtifactPlanError::InvalidIdentity)?;
     let backend = stretch_backend_plan(identity_input.tier);
+    let capability_status = offline_stretch_artifact_capability_status(identity_input);
     let promotion_accepted = promotion_receipt
         .accepts_product_facing_path(identity_input.tier, identity_input.offline_path);
-    let readiness = match (backend.status, promotion_accepted) {
-        (StretchBackendStatus::Planned, _) => {
+    let readiness = match (backend.status, promotion_accepted, capability_status) {
+        (StretchBackendStatus::Planned, _, _) => {
             OfflineStretchArtifactReadiness::AwaitingImplementation
         }
-        (StretchBackendStatus::Prototype, _) => {
+        (StretchBackendStatus::Prototype, _, _) => {
             OfflineStretchArtifactReadiness::AwaitingCorpusEvidence
         }
-        (StretchBackendStatus::Implemented, false) => {
+        (StretchBackendStatus::Implemented, false, _) => {
             OfflineStretchArtifactReadiness::AwaitingCorpusEvidence
         }
-        (StretchBackendStatus::Implemented, true) => OfflineStretchArtifactReadiness::Ready,
+        (
+            StretchBackendStatus::Implemented,
+            true,
+            OfflineStretchArtifactCapabilityStatus::Supported,
+        ) => OfflineStretchArtifactReadiness::Ready,
+        (StretchBackendStatus::Implemented, true, _) => {
+            OfflineStretchArtifactReadiness::UnsupportedCapability
+        }
     };
 
     Ok(OfflineStretchArtifactPlan {
@@ -474,6 +513,7 @@ pub fn plan_offline_stretch_artifact(
         tier: identity_input.tier,
         offline_path: identity_input.offline_path,
         readiness,
+        capability_status,
         promotion_receipt,
         product_facing_allowed: readiness == OfflineStretchArtifactReadiness::Ready,
     })
@@ -534,6 +574,9 @@ pub fn materialize_offline_stretch_artifact_pcm_with_chunk_config(
     chunk_config: StretchOfflineChunkConfig,
 ) -> Result<OfflineStretchArtifactPcm, OfflineStretchArtifactMaterializeError> {
     let plan = plan_offline_stretch_artifact(scope, identity_input, promotion_receipt)?;
+    if let Some(error) = materialization_error_for_capability(plan.capability_status) {
+        return Err(error);
+    }
     if plan.readiness != OfflineStretchArtifactReadiness::Ready {
         return Err(OfflineStretchArtifactMaterializeError::NotReady(
             plan.readiness,
@@ -831,6 +874,63 @@ fn selector_offline_path_requires_static_materialization(path: OfflineHighQualit
         OfflineHighQualityPath::CompressionShortWindowSelector
             | OfflineHighQualityPath::ExpansionShortWindowSelector
     )
+}
+
+fn offline_stretch_artifact_capability_status(
+    identity_input: &StretchCacheIdentityInput,
+) -> OfflineStretchArtifactCapabilityStatus {
+    if identity_input.channel_layout.channels != 2 {
+        return OfflineStretchArtifactCapabilityStatus::UnsupportedChannelLayout {
+            channels: identity_input.channel_layout.channels,
+        };
+    }
+    let pitch_shift = identity_input
+        .pitch_curve
+        .first()
+        .map(|point| point.semitones)
+        .unwrap_or(0.0);
+    if identity_input
+        .pitch_curve
+        .iter()
+        .any(|point| (point.semitones - pitch_shift).abs() > 1.0e-9)
+    {
+        return OfflineStretchArtifactCapabilityStatus::UnsupportedPitchAutomation;
+    }
+    if selector_offline_path_requires_static_materialization(identity_input.offline_path) {
+        if ratio_curve_has_dynamic_changes(&identity_input.ratio_curve) {
+            return OfflineStretchArtifactCapabilityStatus::UnsupportedOfflinePathDynamicRatio {
+                path: identity_input.offline_path,
+            };
+        }
+        if pitch_shift.abs() > 1.0e-9 {
+            return OfflineStretchArtifactCapabilityStatus::UnsupportedOfflinePathPitchShift {
+                path: identity_input.offline_path,
+            };
+        }
+    }
+    OfflineStretchArtifactCapabilityStatus::Supported
+}
+
+fn materialization_error_for_capability(
+    capability_status: OfflineStretchArtifactCapabilityStatus,
+) -> Option<OfflineStretchArtifactMaterializeError> {
+    match capability_status {
+        OfflineStretchArtifactCapabilityStatus::Supported => None,
+        OfflineStretchArtifactCapabilityStatus::UnsupportedChannelLayout { channels } => {
+            Some(OfflineStretchArtifactMaterializeError::UnsupportedChannelLayout { channels })
+        }
+        OfflineStretchArtifactCapabilityStatus::UnsupportedPitchAutomation => {
+            Some(OfflineStretchArtifactMaterializeError::UnsupportedPitchAutomation)
+        }
+        OfflineStretchArtifactCapabilityStatus::UnsupportedOfflinePathDynamicRatio { path } => {
+            Some(
+                OfflineStretchArtifactMaterializeError::UnsupportedOfflinePathDynamicRatio { path },
+            )
+        }
+        OfflineStretchArtifactCapabilityStatus::UnsupportedOfflinePathPitchShift { path } => {
+            Some(OfflineStretchArtifactMaterializeError::UnsupportedOfflinePathPitchShift { path })
+        }
+    }
 }
 
 fn ratio_curve_has_dynamic_changes(ratio_curve: &[StretchRatioPoint]) -> bool {
@@ -2044,6 +2144,83 @@ mod tests {
             Err(OfflineStretchArtifactMaterializeError::NotReady(
                 OfflineStretchArtifactReadiness::AwaitingCorpusEvidence
             ))
+        );
+    }
+
+    #[test]
+    fn stretch_artifact_plan_marks_unsupported_channel_layout_as_capability_blocker() {
+        let input = StretchCacheIdentityInput::signal_native(
+            StretchBackendTier::OfflineHighQuality,
+            "sha256:mono-render-source",
+            StretchChannelLayout::new(1, 48_000),
+            "projection-mono",
+        )
+        .with_ratio_curve(vec![StretchRatioPoint::new(0, 1.25)])
+        .with_pitch_curve(vec![StretchPitchPoint::new(0, 0.0)]);
+        let source = RenderSampleBuffer {
+            sample_rate_hz: 48_000,
+            frames: Arc::from(vec![0.0f32; 480].into_boxed_slice()),
+        };
+        let receipt = accepted_synthetic_promotion_receipt("synthetic:mono-capability");
+        let plan = plan_offline_stretch_artifact(
+            OfflineStretchArtifactScope::RenderCache,
+            &input,
+            receipt.clone(),
+        )
+        .expect("mono identity should still produce an observable plan");
+
+        assert_eq!(
+            plan.readiness,
+            OfflineStretchArtifactReadiness::UnsupportedCapability
+        );
+        assert_eq!(
+            plan.capability_status,
+            OfflineStretchArtifactCapabilityStatus::UnsupportedChannelLayout { channels: 1 }
+        );
+        assert!(!plan.product_facing_allowed);
+        assert_eq!(
+            materialize_offline_stretch_artifact_pcm(
+                OfflineStretchArtifactScope::RenderCache,
+                &input,
+                receipt,
+                &source,
+            ),
+            Err(OfflineStretchArtifactMaterializeError::UnsupportedChannelLayout { channels: 1 })
+        );
+    }
+
+    #[test]
+    fn stretch_artifact_plan_marks_pitch_automation_as_capability_blocker() {
+        let input = stretch_identity_input().with_pitch_curve(vec![
+            StretchPitchPoint::new(0, 0.0),
+            StretchPitchPoint::new(240, 2.0),
+        ]);
+        let source = stretch_artifact_source(480);
+        let receipt = accepted_synthetic_promotion_receipt("synthetic:pitch-automation-plan");
+        let plan = plan_offline_stretch_artifact(
+            OfflineStretchArtifactScope::RenderCache,
+            &input,
+            receipt.clone(),
+        )
+        .expect("pitch automation identity should still produce an observable plan");
+
+        assert_eq!(
+            plan.readiness,
+            OfflineStretchArtifactReadiness::UnsupportedCapability
+        );
+        assert_eq!(
+            plan.capability_status,
+            OfflineStretchArtifactCapabilityStatus::UnsupportedPitchAutomation
+        );
+        assert!(!plan.product_facing_allowed);
+        assert_eq!(
+            materialize_offline_stretch_artifact_pcm(
+                OfflineStretchArtifactScope::RenderCache,
+                &input,
+                receipt,
+                &source,
+            ),
+            Err(OfflineStretchArtifactMaterializeError::UnsupportedPitchAutomation)
         );
     }
 
