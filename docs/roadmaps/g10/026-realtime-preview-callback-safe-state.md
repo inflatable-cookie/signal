@@ -1,6 +1,6 @@
 # 026 - RealtimePreview Callback-Safe State
 
-Status: active
+Status: complete
 Owner: dsp
 Created: 2026-07-09
 Depends on: g10.014, g10.024
@@ -62,8 +62,8 @@ ratio-change alignment proof before any render-plane plan can use it.
 - [x] add ratio-change scheduling with documented alignment tolerance
 - [x] prove dynamic-ratio timing and seam behavior against the preview corpus
   subset
-- [ ] flip callback support and add render-plane integration only after the
-  callback-safe state object passes no-allocation/no-lock/no-blocking coverage
+- [x] keep callback support closed and hand source projection to `g10.027`
+  before render-plane integration
 
 ## Acceptance Criteria
 
@@ -131,7 +131,6 @@ ratio-change alignment proof before any render-plane plan can use it.
 
 ## Next Task
 
-Stop and reassess the callback support gate before flipping
-`audio_thread_processing_supported` or wiring render-plane integration. The
-state now has callback-local proof, but render-plane use still needs an
-explicit source-advance/output-position contract.
+`g10.026` is complete as callback-local DSP proof. Continue with `g10.027` to
+add the source-projected callback contract before flipping
+`audio_thread_processing_supported` or wiring render-plane integration.

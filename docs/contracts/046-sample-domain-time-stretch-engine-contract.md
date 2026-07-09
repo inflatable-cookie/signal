@@ -2,7 +2,7 @@
 
 Status: complete; amended for first-party quality-depth program
 Owner: core-product
-Updated: 2026-07-05
+Updated: 2026-07-09
 Related contracts: `docs/contracts/028-media-indexing-waveform-analysis-and-preview-service-contract.md`, `docs/contracts/029-analysis-metadata-extraction-and-library-service-contract.md`, `docs/contracts/034-multi-bus-graph-execution-and-auxiliary-topology-contract.md`
 Related architecture: `docs/architecture/graph-runtime-feature-reference.md`
 
@@ -213,6 +213,31 @@ Required evidence before promotion:
   curves, warp markers, channel layout, and tick/sample projection epoch
 - focused tests for DSP length/alignment contracts before render/export
   integration widens
+
+## 2026-07-09 RealtimePreview Callback Gate Addendum
+
+`RealtimePreview` callback DSP has two separate gates:
+
+- callback-local DSP safety: bounded work, no allocation, no locks, no I/O,
+  deterministic latency, linked stereo, dynamic-ratio alignment, and seam
+  evidence
+- render-plane source projection: a runtime-owned contract for how output
+  frames advance through source media when ratio is not `1.0`
+
+Passing callback-local DSP safety is not enough to enter realtime playback.
+The stream contract must expose a source/output timeline mode:
+
+- `QuantumLocked`: caller provides one input quantum for one output quantum.
+  This can prove callback-local DSP behavior and is useful for preview
+  evidence, but it is not render-plane time-stretch playback.
+- `SourceProjected`: the callback path owns or reports ratio-projected source
+  advancement, output position, latency, and underrun/fill behavior well
+  enough for the render plane to remain sample-domain honest.
+
+`audio_thread_processing_supported` must stay `false` while the
+RealtimePreview stream is `QuantumLocked`. It may only become `true` after the
+source-projected contract has focused tests for source advance, output
+position, latency, and no-allocation behavior.
 
 Planning authority: `docs/roadmaps/backlog/signal-native-high-quality-stretch.md`.
 

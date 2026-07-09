@@ -355,6 +355,18 @@ pub enum RealtimePreviewIntegrationMode {
     CallbackSafeStreaming,
 }
 
+/// Source/output timeline mode for a RealtimePreview callback stream.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RealtimePreviewCallbackTimelineMode {
+    /// The caller supplies one input quantum for one output quantum. This can
+    /// prove callback-local DSP safety, but it is not a render-plane
+    /// time-stretch source-advance contract.
+    QuantumLocked,
+    /// The callback state owns ratio-projected source advancement and reports
+    /// consumed source position against produced output position.
+    SourceProjected,
+}
+
 /// Configuration used to plan a RealtimePreview stream.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct RealtimePreviewStreamConfig {
@@ -377,6 +389,8 @@ pub struct RealtimePreviewStreamingContract {
     pub config: RealtimePreviewStreamConfig,
     /// Current integration posture.
     pub integration_mode: RealtimePreviewIntegrationMode,
+    /// Source/output timeline contract for callback processing.
+    pub callback_timeline_mode: RealtimePreviewCallbackTimelineMode,
     /// Input-side latency in sample frames.
     pub input_latency_frames: usize,
     /// Output-side latency in sample frames.
@@ -392,9 +406,11 @@ pub struct RealtimePreviewStreamingContract {
 /// Unsupported RealtimePreview routing mode.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum RealtimePreviewUnsupportedMode {
-    /// The current prototype allocates scratch buffers and processes whole
-    /// preview buffers, so it must remain outside the audio callback.
+    /// The current path cannot run directly on the audio callback.
     AudioThreadProcessing,
+    /// Callback DSP is locally bounded, but the public contract does not yet
+    /// own ratio-projected source advancement for render-plane playback.
+    SourceAdvanceContract,
     /// The requested channel layout is not part of the current linked preview
     /// contract.
     ChannelLayout,
@@ -551,8 +567,9 @@ pub fn plan_realtime_preview_stream(
         output_latency_frames: config.window_size,
         ratio_change_alignment_tolerance_frames: config.analysis_hop + config.max_block_frames,
         integration_mode: RealtimePreviewIntegrationMode::AnticipativePreRender,
+        callback_timeline_mode: RealtimePreviewCallbackTimelineMode::QuantumLocked,
         audio_thread_processing_supported: false,
-        unsupported_mode: Some(RealtimePreviewUnsupportedMode::AudioThreadProcessing),
+        unsupported_mode: Some(RealtimePreviewUnsupportedMode::SourceAdvanceContract),
         config,
     })
 }
@@ -2416,10 +2433,14 @@ mod tests {
             contract.integration_mode,
             RealtimePreviewIntegrationMode::AnticipativePreRender
         );
+        assert_eq!(
+            contract.callback_timeline_mode,
+            RealtimePreviewCallbackTimelineMode::QuantumLocked
+        );
         assert!(!contract.audio_thread_processing_supported);
         assert_eq!(
             contract.unsupported_mode,
-            Some(RealtimePreviewUnsupportedMode::AudioThreadProcessing)
+            Some(RealtimePreviewUnsupportedMode::SourceAdvanceContract)
         );
     }
 

@@ -84,8 +84,10 @@ a product workflow consumes the Signal-owned stretch contract.
   - RealtimePreview stretch tier
 - `g10.025` `deferred`
   - stretch product workflow contract checkpoint
-- `g10.026` `active`
+- `g10.026` `complete`
   - RealtimePreview callback-safe state
+- `g10.027` `active`
+  - RealtimePreview source-projected callback
 
 ## Stretch Boundary
 
@@ -93,10 +95,9 @@ Current stretch status:
 
 - `Repitch`: implemented as the render-plane realtime-safe varispeed path.
 - `RealtimePreview`: prototype and metrics landed; direct callback processing
-  remains unsupported for render-plane routing. Mono callback-state DSP now has
-  a no-allocation proof; linked stereo is implemented; ratio scheduling now has
-  source-frame alignment proof; dynamic-ratio seam evidence is covered against
-  the synthetic tempo-ramp corpus subset.
+  remains unsupported for render-plane routing. Callback-local DSP now has
+  no-allocation, linked-stereo, ratio-scheduling, and synthetic tempo-ramp seam
+  evidence. `g10.027` owns the missing source-projected callback contract.
 - `OfflineHighQuality`: implemented for default-path artifacts with chunked
   materialization and cache receipts; quality promotion still depends on real
   evidence and structural DSP work.
@@ -106,7 +107,7 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Stop and reassess the `g10.026` callback support gate before flipping
-`audio_thread_processing_supported` or wiring render-plane integration. The
-state now has callback-local proof, but render-plane use still needs an
-explicit source-advance/output-position contract.
+Continue `g10.027` Batch 27.1 by adding the source-projection report shape and
+fixed-ratio source-advance contract to `signal-dsp-stretch`. Keep
+`audio_thread_processing_supported=false` and do not add render-plane
+integration.

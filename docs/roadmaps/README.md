@@ -34,7 +34,7 @@ stable identity, parameter fast path + automation, DSP kit, RT observability,
 WYSIWYG bounce, output-time honesty, recording capture, disk streaming,
 transport regions, and runtime endgame.
 
-Phase three (021-025) is the first-party high-quality stretch program. The
+Phase three (021-027) is the first-party high-quality stretch program. The
 Signal-owned stretch tiers now have evidence and contracts, but the remaining
 work is structural rather than a ready micro-batch: OfflineHighQuality needs a
 new hybrid design before another sustained/polyphonic quality jump;
@@ -44,7 +44,7 @@ before render-plane integration. Mono callback-state DSP now has a
 no-allocation proof, linked stereo is implemented, and ratio scheduling has
 source-frame alignment proof. Dynamic-ratio seam evidence is covered against
 the synthetic tempo-ramp corpus subset; render-plane use still needs an
-explicit source-advance/output-position contract.
+explicit source-advance/output-position contract, now tracked in `g10.027`.
 Product workflow planning remains deferred in `g10.025` until a real consumer
 needs the Signal-owned contract.
 Assessment driving phase two:
@@ -165,5 +165,6 @@ Before rollover:
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the active generation front door.
-`g10.026` Batch 26.2 is active; the next task is the mono streaming
-phase-vocoder process loop against the preallocated callback state.
+`g10.027` Batch 27.1 is active; the next task is the source-projection report
+shape and fixed-ratio source-advance contract in `signal-dsp-stretch`. Keep
+render-plane integration blocked.
