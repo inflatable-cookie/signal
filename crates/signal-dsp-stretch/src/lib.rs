@@ -90,7 +90,8 @@ pub use promotion::{
 
 use phase_vocoder::{
     compression_transient_anchor_phase_vocoder, phase_locked_phase_vocoder, phase_vocoder,
-    transient_reset_phase_vocoder, transient_reset_phase_vocoder_linked_stereo,
+    stability_adaptive_phase_vocoder, transient_reset_phase_vocoder,
+    transient_reset_phase_vocoder_linked_stereo,
 };
 use signal_dsp_resample::{resample_mono, ResampleConfig, ResampleQuality};
 use signal_primitives::{Sample, SampleRate};
@@ -714,6 +715,29 @@ impl OfflineHighQualityStretcher {
             SUSTAINED_COHERENCE_REVIEW_WINDOW_SIZE,
             SUSTAINED_COHERENCE_REVIEW_ANALYSIS_HOP,
             transient_reset_phase_vocoder,
+        )
+    }
+
+    /// Report-only expansion-focused sustained-coherence path with adaptive
+    /// phase locking.
+    ///
+    /// This keeps current OfflineHighQuality output for compression and tests
+    /// long-window identity locking only on spectrally stable expansion frames.
+    /// It is not a promoted OfflineHighQuality renderer.
+    #[doc(hidden)]
+    pub fn stretch_sustained_coherence_stability_adaptive_review_mono(
+        &mut self,
+        input: &[Sample],
+    ) -> Vec<Sample> {
+        if self.ratio <= 1.0 {
+            return self.stretch_mono(input);
+        }
+        stretch_mono_with_engine(
+            input,
+            self.ratio,
+            SUSTAINED_COHERENCE_REVIEW_WINDOW_SIZE,
+            SUSTAINED_COHERENCE_REVIEW_ANALYSIS_HOP,
+            stability_adaptive_phase_vocoder,
         )
     }
 }
@@ -1582,6 +1606,36 @@ mod tests {
         let first_output = first.stretch_sustained_coherence_expansion_reset_review_mono(&input);
         let repeated_output =
             repeated.stretch_sustained_coherence_expansion_reset_review_mono(&input);
+
+        assert_eq!(
+            first_output.len(),
+            (input.len() as f64 * ratio).round() as usize
+        );
+        assert_eq!(first_output, repeated_output);
+    }
+
+    #[test]
+    fn sustained_coherence_stability_adaptive_review_path_is_ratio_scoped_and_deterministic() {
+        let input = sine(110.0, 48_000.0, 48_000)
+            .into_iter()
+            .zip(sine(220.0, 48_000.0, 48_000))
+            .map(|(low, high)| low * 0.7 + high * 0.3)
+            .collect::<Vec<_>>();
+        let mut compression_candidate = OfflineHighQualityStretcher::new(0.75);
+        let mut compression_current = OfflineHighQualityStretcher::new(0.75);
+
+        assert_eq!(
+            compression_candidate
+                .stretch_sustained_coherence_stability_adaptive_review_mono(&input),
+            compression_current.stretch_mono(&input)
+        );
+
+        let ratio = 1.25;
+        let mut first = OfflineHighQualityStretcher::new(ratio);
+        let mut repeated = OfflineHighQualityStretcher::new(ratio);
+        let first_output = first.stretch_sustained_coherence_stability_adaptive_review_mono(&input);
+        let repeated_output =
+            repeated.stretch_sustained_coherence_stability_adaptive_review_mono(&input);
 
         assert_eq!(
             first_output.len(),

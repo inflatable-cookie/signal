@@ -95,6 +95,8 @@ comparison reports, not add more receipt or fixture surfaces.
   changing product routing
 - [x] test one ratio-scoped long-window transient-reset candidate before
   changing product routing
+- [x] test one frame-stability adaptive phase-locking candidate before
+  changing product routing
 - [ ] keep the long-window sustained-coherence path benchmark-only unless a
   better product-observable selector or DSP candidate emerges
 
@@ -841,14 +843,27 @@ comparison reports, not add more receipt or fixture surfaces.
   `stretch:bass` `000236` at `1.25x`, `delta=-0.251598`), but the remaining
   full-mix and bass regressions mean no broad run or product routing change is
   justified.
+- 2026-07-09: added a report-only frame-stability candidate named
+  `expansion-long-window-stability-adaptive`. The path keeps current
+  OfflineHighQuality output for compression and tests a long-window expansion
+  engine that applies identity phase locking only on frames whose spectral
+  magnitude profile remains stable. Regenerated the targeted report at
+  `target/stretch-corpus-fma-coherence-stability-adaptive-candidate-targeted.tsv`
+  (`real 501.56`). The candidate is rejected and is worse than the
+  ratio-scoped transient-reset candidate: 15 rows, 6 improved, 5 unchanged,
+  4 regressed, worst regression `delta=0.178415` on `stretch:full_mix` `0016`
+  at `1.25x`. It improved the best vocal target more than transient reset
+  (`-0.321471` versus `-0.295449`), but the full-mix regressions are too large.
+  Do not tune the scalar stability threshold as a product path from this
+  evidence; the failure mode needs a different mechanism.
 
 ## Next Task
 
 Continue Batch 22.6 by moving away from selector or simple-blend promotion for
 the long-window path. The next DSP candidate should address the actual
-regression mechanism more directly than ratio-scoped transient resets, likely
-by making phase propagation adapt per frame from spectral stability rather than
-from the global ratio alone. Reject on targeted evidence before a broad run if
-it shows material regressions. Do not change product routing, cache identity,
-dynamic-ratio materialization, or pitch-shift materialization for the
-long-window path.
+regression mechanism more directly than scalar frame-stability phase-lock
+gating, likely by changing magnitude evolution or peak-region tracking instead
+of switching identity locking on and off. Reject on targeted evidence before a
+broad run if it shows material regressions. Do not change product routing,
+cache identity, dynamic-ratio materialization, or pitch-shift materialization
+for the long-window path.

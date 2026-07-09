@@ -39,6 +39,25 @@ pub(crate) fn phase_locked_phase_vocoder(
     )
 }
 
+/// Run a report-only phase-locked prototype that applies identity locking only
+/// on spectrally stable frames.
+pub(crate) fn stability_adaptive_phase_vocoder(
+    input: &[Sample],
+    target_len: usize,
+    ratio: f64,
+    window_size: usize,
+    analysis_hop: usize,
+) -> Vec<Sample> {
+    run_phase_vocoder(
+        input,
+        target_len,
+        ratio,
+        window_size,
+        analysis_hop,
+        PhasePropagationMode::IdentityLockedStabilityAdaptive,
+    )
+}
+
 /// Run the identity phase-locked prototype with transient phase resets.
 pub(crate) fn transient_reset_phase_vocoder(
     input: &[Sample],
@@ -147,6 +166,7 @@ struct SpectralPeak {
 enum PhasePropagationMode {
     IndependentBins,
     IdentityLocked,
+    IdentityLockedStabilityAdaptive,
     IdentityLockedTransientReset,
     IdentityLockedCompressionTransientAnchor,
 }
@@ -183,6 +203,7 @@ struct DraftPhaseVocoder {
     current_phases: Vec<f32>,
     current_peaks: Vec<SpectralPeak>,
     previous_magnitudes: Vec<f32>,
+    current_spectral_stability: f64,
     current_energy: f64,
     previous_energy: f64,
     transient_reset_current_frame: bool,
@@ -222,6 +243,7 @@ impl DraftPhaseVocoder {
             current_phases: vec![0.0; config.bins],
             current_peaks: Vec::with_capacity(config.bins / 4),
             previous_magnitudes: vec![0.0; config.bins],
+            current_spectral_stability: 1.0,
             current_energy: 0.0,
             previous_energy: 0.0,
             transient_reset_current_frame: false,
@@ -268,6 +290,7 @@ impl DraftPhaseVocoder {
         for (bin, magnitude) in self.current_magnitudes.iter_mut().enumerate() {
             *magnitude = self.analysis_buffer[bin].norm();
         }
+        self.current_spectral_stability = self.spectral_stability_score(frame_index);
         self.transient_reset_current_frame = self.should_reset_phase_at_transient(frame_index);
 
         if self.config.bins < 3 {
@@ -309,7 +332,7 @@ impl DraftPhaseVocoder {
             self.previous_phase[bin] = phase;
         }
 
-        if self.mode.uses_identity_locking() {
+        if self.should_lock_phase_to_peaks(frame_index) {
             self.lock_phase_to_peaks();
         }
 
@@ -322,6 +345,25 @@ impl DraftPhaseVocoder {
             self.synthesis_spectrum[self.config.window_size - bin] =
                 self.synthesis_spectrum[bin].conj();
         }
+    }
+
+    fn spectral_stability_score(&self, frame_index: usize) -> f64 {
+        if frame_index == 0 {
+            return 1.0;
+        }
+
+        let mut magnitude_sum = 0.0f64;
+        let mut absolute_delta_sum = 0.0f64;
+        for (current, previous) in self
+            .current_magnitudes
+            .iter()
+            .zip(self.previous_magnitudes.iter())
+        {
+            magnitude_sum += (*current + *previous) as f64;
+            absolute_delta_sum += (*current - *previous).abs() as f64;
+        }
+
+        (1.0 - absolute_delta_sum / (magnitude_sum + 1.0e-12)).clamp(0.0, 1.0)
     }
 
     fn should_reset_phase_at_transient(&self, frame_index: usize) -> bool {
@@ -349,7 +391,21 @@ impl DraftPhaseVocoder {
             PhasePropagationMode::IdentityLockedCompressionTransientAnchor => {
                 flux_ratio >= 0.55 && energy_ratio >= 1.35
             }
-            PhasePropagationMode::IndependentBins | PhasePropagationMode::IdentityLocked => false,
+            PhasePropagationMode::IndependentBins
+            | PhasePropagationMode::IdentityLocked
+            | PhasePropagationMode::IdentityLockedStabilityAdaptive => false,
+        }
+    }
+
+    fn should_lock_phase_to_peaks(&self, frame_index: usize) -> bool {
+        match self.mode {
+            PhasePropagationMode::IdentityLocked
+            | PhasePropagationMode::IdentityLockedTransientReset
+            | PhasePropagationMode::IdentityLockedCompressionTransientAnchor => true,
+            PhasePropagationMode::IdentityLockedStabilityAdaptive => {
+                frame_index == 0 || self.current_spectral_stability >= 0.70
+            }
+            PhasePropagationMode::IndependentBins => false,
         }
     }
 
@@ -402,17 +458,6 @@ impl DraftPhaseVocoder {
         }
         self.output.resize(self.config.target_len, 0.0);
         self.output
-    }
-}
-
-impl PhasePropagationMode {
-    fn uses_identity_locking(self) -> bool {
-        matches!(
-            self,
-            PhasePropagationMode::IdentityLocked
-                | PhasePropagationMode::IdentityLockedTransientReset
-                | PhasePropagationMode::IdentityLockedCompressionTransientAnchor
-        )
     }
 }
 
@@ -507,6 +552,22 @@ mod tests {
     }
 
     #[test]
+    fn stability_adaptive_locking_uses_frame_spectral_stability() {
+        let input = vec![0.0; 512];
+        let config = PhaseVocoderConfig::new(&input, input.len(), 1.0, 512, 128);
+        let mut engine = DraftPhaseVocoder::new(
+            config,
+            PhasePropagationMode::IdentityLockedStabilityAdaptive,
+        );
+
+        assert!(engine.should_lock_phase_to_peaks(0));
+        engine.current_spectral_stability = 0.69;
+        assert!(!engine.should_lock_phase_to_peaks(1));
+        engine.current_spectral_stability = 0.70;
+        assert!(engine.should_lock_phase_to_peaks(1));
+    }
+
+    #[test]
     fn draft_phase_vocoder_keeps_independent_bin_baseline() {
         let input = bin_centered_sine(9, 4096);
         let draft = phase_vocoder(&input, 6144, 1.5, 512, 128);
@@ -528,6 +589,16 @@ mod tests {
         for ratio in [0.5, 0.75, 1.25, 1.5, 2.0] {
             let target_len = (input.len() as f64 * ratio).round() as usize;
             let output = phase_locked_phase_vocoder(&input, target_len, ratio, 1024, 256);
+            assert_eq!(output.len(), target_len, "ratio {ratio}");
+        }
+    }
+
+    #[test]
+    fn stability_adaptive_prototype_honors_output_length_contract() {
+        let input = bin_centered_sine(11, 8192);
+        for ratio in [0.75, 1.25, 1.5, 2.0] {
+            let target_len = (input.len() as f64 * ratio).round() as usize;
+            let output = stability_adaptive_phase_vocoder(&input, target_len, ratio, 1024, 256);
             assert_eq!(output.len(), target_len, "ratio {ratio}");
         }
     }
