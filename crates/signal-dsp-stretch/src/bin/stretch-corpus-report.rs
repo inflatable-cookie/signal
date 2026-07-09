@@ -66,6 +66,8 @@ const EXTERNAL_BENCHMARK_COHERENCE_CANDIDATE_REVIEW_ROWS: usize = 64;
 const EXTERNAL_BENCHMARK_COHERENCE_CANDIDATE_GATE: &str = "spectral-magnitude-material-guard";
 const EXTERNAL_BENCHMARK_COHERENCE_PRODUCT_PROBE: &str = "source-character-v1";
 const EXTERNAL_BENCHMARK_COHERENCE_BLEND_CANDIDATE_PATH: &str = "current-long-window-half-blend";
+const EXTERNAL_BENCHMARK_COHERENCE_ENVELOPE_CANDIDATE_PATH: &str =
+    "long-window-current-envelope-match";
 const MAX_EXTERNAL_BENCHMARK_MISSING_RENDER_ROWS: usize = 20;
 const DETECTOR_POLICY: StretchTransientDetectorPolicy =
     StretchTransientDetectorPolicy::production();
@@ -2075,6 +2077,13 @@ impl ExternalBenchmarkCoherenceCandidateReviewMeasurement {
         )
     }
 
+    fn format_envelope_report_line(&self, rank: usize) -> String {
+        self.format_report_line_with_prefix(
+            "external_benchmark_coherence_envelope_candidate_review",
+            rank,
+        )
+    }
+
     fn format_report_line_with_prefix(&self, prefix: &str, rank: usize) -> String {
         format!(
             "{} rank={} case={} source={} signal_path={:?} candidate_path={} ratio={:.6} tool={} render={} status=Measured reason=ReportOnlySustainedCoherenceCandidate source_boundary={} material_scope={} target_reason={} outcome={} gate={} gate_decision={} gate_reason={} product_probe={} product_probe_decision={} product_probe_reason={} product_probe_low_band_weight={:.6} product_probe_sustain_body={:.6} product_probe_rhythmic_activity={:.6} product_probe_spectral_complexity={:.6} product_probe_confidence={:.6} current_target_score={:.6} candidate_target_score={:.6} target_score_delta={:.6} candidate_aligned_compared_frames={} candidate_signal_gain_db_applied={:.6} candidate_raw_feature_divergence_score={:.6} candidate_normalized_feature_divergence_score={:.6} candidate_normalized_sample_envelope_correlation={:.6} candidate_block_rms_envelope_correlation={:.6} candidate_mean_abs_block_rms_delta_db={:.6} candidate_max_abs_block_rms_delta_db={:.6} candidate_spectral_magnitude_coherence={:.6} candidate_normalized_spectral_centroid_delta_hz={:.6} candidate_normalized_high_frequency_energy_ratio_delta={:.6} candidate_residual_pattern={}",
@@ -2148,6 +2157,7 @@ fn format_external_benchmark_quality_metrics(
     let mut coherence_target_reviews = Vec::new();
     let mut coherence_candidate_reviews = Vec::new();
     let mut coherence_blend_candidate_reviews = Vec::new();
+    let mut coherence_envelope_candidate_reviews = Vec::new();
     let mut source_audio_cache = HashMap::new();
     let mut source_mono_cache = HashMap::new();
     let mut source_character_probe_cache = HashMap::new();
@@ -2542,6 +2552,29 @@ fn format_external_benchmark_quality_metrics(
                         "UniformBlendCandidate",
                     ),
                 );
+
+                let mut envelope_candidate = OfflineHighQualityStretcher::new(render.ratio);
+                let envelope_candidate_output = envelope_candidate
+                    .stretch_sustained_coherence_envelope_review_mono(source_mono);
+                coherence_envelope_candidate_reviews.push(
+                    measure_external_benchmark_coherence_candidate_review(
+                        render,
+                        &source.source_path,
+                        signal_path,
+                        EXTERNAL_BENCHMARK_COHERENCE_ENVELOPE_CANDIDATE_PATH,
+                        &envelope_candidate_output,
+                        &external_audio,
+                        source_audio.sample_rate_hz,
+                        material_scope,
+                        target_reason,
+                        target_score,
+                        product_probe,
+                        "Selected",
+                        "UniformEnvelopeCandidate",
+                        "Selected",
+                        "UniformEnvelopeCandidate",
+                    ),
+                );
             }
             feature_delta_line = Some(
                 ExternalBenchmarkFeatureDeltaMeasurement {
@@ -2754,6 +2787,33 @@ fn format_external_benchmark_quality_metrics(
         .enumerate()
     {
         lines.push(review.format_blend_report_line(index + 1));
+    }
+    coherence_envelope_candidate_reviews.sort_by(|left, right| {
+        left.target_score_delta
+            .total_cmp(&right.target_score_delta)
+            .then_with(|| {
+                right
+                    .current_target_score
+                    .total_cmp(&left.current_target_score)
+            })
+            .then_with(|| left.case_id.cmp(&right.case_id))
+            .then_with(|| left.source_path.cmp(&right.source_path))
+            .then_with(|| left.ratio.total_cmp(&right.ratio))
+            .then_with(|| left.render_path.cmp(&right.render_path))
+    });
+    if !coherence_envelope_candidate_reviews.is_empty() {
+        lines.push(
+            format_external_benchmark_coherence_envelope_candidate_summary(
+                &coherence_envelope_candidate_reviews,
+            ),
+        );
+    }
+    for (index, review) in coherence_envelope_candidate_reviews
+        .iter()
+        .take(EXTERNAL_BENCHMARK_COHERENCE_CANDIDATE_REVIEW_ROWS)
+        .enumerate()
+    {
+        lines.push(review.format_envelope_report_line(index + 1));
     }
     Ok(lines.join("\n"))
 }
@@ -3247,6 +3307,28 @@ fn format_external_benchmark_coherence_product_probe_summary(
 fn format_external_benchmark_coherence_blend_candidate_summary(
     reviews: &[ExternalBenchmarkCoherenceCandidateReviewMeasurement],
 ) -> String {
+    format_external_benchmark_coherence_named_candidate_summary(
+        "external_benchmark_coherence_blend_candidate_summary",
+        EXTERNAL_BENCHMARK_COHERENCE_BLEND_CANDIDATE_PATH,
+        reviews,
+    )
+}
+
+fn format_external_benchmark_coherence_envelope_candidate_summary(
+    reviews: &[ExternalBenchmarkCoherenceCandidateReviewMeasurement],
+) -> String {
+    format_external_benchmark_coherence_named_candidate_summary(
+        "external_benchmark_coherence_envelope_candidate_summary",
+        EXTERNAL_BENCHMARK_COHERENCE_ENVELOPE_CANDIDATE_PATH,
+        reviews,
+    )
+}
+
+fn format_external_benchmark_coherence_named_candidate_summary(
+    line_name: &str,
+    candidate_path: &str,
+    reviews: &[ExternalBenchmarkCoherenceCandidateReviewMeasurement],
+) -> String {
     let mut improved_rows = 0;
     let mut unchanged_rows = 0;
     let mut regressed_rows = 0;
@@ -3293,8 +3375,9 @@ fn format_external_benchmark_coherence_blend_candidate_summary(
     };
 
     format!(
-        "external_benchmark_coherence_blend_candidate_summary candidate_path={} promotion_status={} promotion_reason={} rows={} improved_rows={} unchanged_rows={} regressed_rows={} inconclusive_rows={} best_improvement_delta={:.6} best_improvement_case={} best_improvement_source={} best_improvement_ratio={:.6} worst_regression_delta={:.6} worst_regression_case={} worst_regression_source={} worst_regression_ratio={:.6}",
-        EXTERNAL_BENCHMARK_COHERENCE_BLEND_CANDIDATE_PATH,
+        "{} candidate_path={} promotion_status={} promotion_reason={} rows={} improved_rows={} unchanged_rows={} regressed_rows={} inconclusive_rows={} best_improvement_delta={:.6} best_improvement_case={} best_improvement_source={} best_improvement_ratio={:.6} worst_regression_delta={:.6} worst_regression_case={} worst_regression_source={} worst_regression_ratio={:.6}",
+        line_name,
+        candidate_path,
         promotion_status,
         promotion_reason,
         reviews.len(),
@@ -7107,6 +7190,10 @@ mod tests {
             "external_benchmark_coherence_blend_candidate_summary candidate_path=current-long-window-half-blend"
         ));
         assert!(formatted.contains("external_benchmark_coherence_blend_candidate_review rank=1"));
+        assert!(formatted.contains(
+            "external_benchmark_coherence_envelope_candidate_summary candidate_path=long-window-current-envelope-match"
+        ));
+        assert!(formatted.contains("external_benchmark_coherence_envelope_candidate_review rank=1"));
 
         let _ = fs::remove_file(path);
     }
@@ -7155,6 +7242,8 @@ mod tests {
         assert!(!formatted.contains("external_benchmark_coherence_product_probe_summary "));
         assert!(!formatted.contains("external_benchmark_coherence_blend_candidate_summary "));
         assert!(!formatted.contains("external_benchmark_coherence_blend_candidate_review "));
+        assert!(!formatted.contains("external_benchmark_coherence_envelope_candidate_summary "));
+        assert!(!formatted.contains("external_benchmark_coherence_envelope_candidate_review "));
 
         let _ = fs::remove_file(path);
     }

@@ -91,6 +91,8 @@ comparison reports, not add more receipt or fixture surfaces.
   routing change
 - [x] test one selector-free second vertical-coherence DSP candidate before
   changing product routing
+- [x] test one envelope-preserving vertical-coherence DSP candidate before
+  changing product routing
 - [ ] keep the long-window sustained-coherence path benchmark-only unless a
   better product-observable selector or DSP candidate emerges
 
@@ -809,13 +811,26 @@ comparison reports, not add more receipt or fixture surfaces.
   (`stretch:bass` `000236` at `1.25x`, `delta=-0.235859`), but the regression
   profile is worse than the raw long-window candidate. No broad run is needed
   for this blend shape.
+- 2026-07-09: added a report-only envelope-preserving candidate named
+  `long-window-current-envelope-match`. The path renders the long-window
+  sustained-coherence candidate, then applies block RMS envelope matching
+  against the current selected Signal output. Regenerated the targeted report at
+  `target/stretch-corpus-fma-coherence-envelope-candidate-targeted.tsv`
+  (`real 243.23`). The envelope candidate is also rejected on targeted
+  evidence: 15 rows, 9 improved, 6 regressed, worst regression `delta=0.272430`
+  on `stretch:bass` `000236` at `0.75x`. It improved the selected bass target
+  more than the raw long-window candidate (`000236` at `1.25x`,
+  `delta=-0.458178`), but it did not remove the regression class and made the
+  worst targeted regression larger than the raw long-window candidate
+  (`0.272430` versus `0.193586`). No broad run is needed for this envelope
+  shape.
 
 ## Next Task
 
 Continue Batch 22.6 by moving away from selector or simple-blend promotion for
 the long-window path. The next DSP candidate should address the actual
-regression mechanism, likely compression/expansion-specific phase or envelope
-handling, and should be rejected on targeted evidence before a broad run if it
-shows material regressions. Do not change product routing, cache identity,
-dynamic-ratio materialization, or pitch-shift materialization for the
-long-window path.
+regression mechanism more directly than envelope matching, likely by changing
+phase propagation or magnitude evolution by ratio class. Reject on targeted
+evidence before a broad run if it shows material regressions. Do not change
+product routing, cache identity, dynamic-ratio materialization, or pitch-shift
+materialization for the long-window path.

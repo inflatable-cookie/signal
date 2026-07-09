@@ -308,6 +308,11 @@ pub const SUSTAINED_COHERENCE_REVIEW_ANALYSIS_HOP: usize =
     SUSTAINED_COHERENCE_REVIEW_WINDOW_SIZE / 4;
 /// Report-only blend weight for the sustained-coherence review path.
 pub const SUSTAINED_COHERENCE_BLEND_REVIEW_WEIGHT: f32 = 0.5;
+/// Report-only sustained-coherence envelope-match review window.
+pub const SUSTAINED_COHERENCE_ENVELOPE_REVIEW_WINDOW_SIZE: usize = DEFAULT_WINDOW_SIZE * 2;
+/// Report-only sustained-coherence envelope-match review hop.
+pub const SUSTAINED_COHERENCE_ENVELOPE_REVIEW_HOP_SIZE: usize =
+    SUSTAINED_COHERENCE_ENVELOPE_REVIEW_WINDOW_SIZE / 2;
 
 impl PhaseVocoderStretcher {
     /// Stretcher with the default window/hop configuration.
@@ -660,6 +665,33 @@ impl OfflineHighQualityStretcher {
             &current_output,
             &long_window_output,
             SUSTAINED_COHERENCE_BLEND_REVIEW_WEIGHT,
+        )
+    }
+
+    /// Report-only long-window sustained-coherence path with current-output
+    /// envelope matching.
+    ///
+    /// This tests whether the long-window candidate's regressions are caused
+    /// mainly by local gain/envelope drift. It is not a promoted
+    /// OfflineHighQuality renderer.
+    #[doc(hidden)]
+    pub fn stretch_sustained_coherence_envelope_review_mono(
+        &mut self,
+        input: &[Sample],
+    ) -> Vec<Sample> {
+        let current_output = self.stretch_mono(input);
+        let long_window_output = stretch_mono_with_engine(
+            input,
+            self.ratio,
+            SUSTAINED_COHERENCE_REVIEW_WINDOW_SIZE,
+            SUSTAINED_COHERENCE_REVIEW_ANALYSIS_HOP,
+            phase_locked_phase_vocoder,
+        );
+        match_review_envelope(
+            &current_output,
+            &long_window_output,
+            SUSTAINED_COHERENCE_ENVELOPE_REVIEW_WINDOW_SIZE,
+            SUSTAINED_COHERENCE_ENVELOPE_REVIEW_HOP_SIZE,
         )
     }
 }
@@ -1255,6 +1287,55 @@ fn blend_review_outputs(
         .collect()
 }
 
+fn match_review_envelope(
+    reference: &[Sample],
+    candidate: &[Sample],
+    window_size: usize,
+    hop_size: usize,
+) -> Vec<Sample> {
+    let len = reference.len();
+    if len == 0 {
+        return Vec::new();
+    }
+    let window_size = window_size.clamp(1, len);
+    let hop_size = hop_size.clamp(1, window_size);
+    let mut output = vec![0.0; len];
+    let mut normalization = vec![0.0; len];
+    let mut start = 0;
+    loop {
+        let end = (start + window_size).min(len);
+        let reference_rms = block_rms(&reference[start..end]);
+        let candidate_rms = block_rms(&candidate[start..candidate.len().min(end)]);
+        let gain = if candidate_rms > 1.0e-9 {
+            (reference_rms / candidate_rms).clamp(0.25, 4.0)
+        } else {
+            1.0
+        };
+        for index in start..end {
+            let sample = candidate.get(index).copied().unwrap_or(0.0);
+            output[index] += sample * gain;
+            normalization[index] += 1.0;
+        }
+        if end == len {
+            break;
+        }
+        start += hop_size;
+    }
+    for (sample, weight) in output.iter_mut().zip(normalization.iter()) {
+        if *weight > 0.0 {
+            *sample /= *weight;
+        }
+    }
+    output
+}
+
+fn block_rms(samples: &[Sample]) -> f32 {
+    if samples.is_empty() {
+        return 0.0;
+    }
+    (samples.iter().map(|sample| sample * sample).sum::<f32>() / samples.len() as f32).sqrt()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1430,6 +1511,26 @@ mod tests {
         let mut repeated = OfflineHighQualityStretcher::new(ratio);
         let first_output = first.stretch_sustained_coherence_blend_review_mono(&input);
         let repeated_output = repeated.stretch_sustained_coherence_blend_review_mono(&input);
+
+        assert_eq!(
+            first_output.len(),
+            (input.len() as f64 * ratio).round() as usize
+        );
+        assert_eq!(first_output, repeated_output);
+    }
+
+    #[test]
+    fn sustained_coherence_envelope_review_path_is_deterministic_and_honors_output_length() {
+        let input = sine(110.0, 48_000.0, 48_000)
+            .into_iter()
+            .zip(sine(220.0, 48_000.0, 48_000))
+            .map(|(low, high)| low * 0.7 + high * 0.3)
+            .collect::<Vec<_>>();
+        let ratio = 1.25;
+        let mut first = OfflineHighQualityStretcher::new(ratio);
+        let mut repeated = OfflineHighQualityStretcher::new(ratio);
+        let first_output = first.stretch_sustained_coherence_envelope_review_mono(&input);
+        let repeated_output = repeated.stretch_sustained_coherence_envelope_review_mono(&input);
 
         assert_eq!(
             first_output.len(),
