@@ -47,7 +47,7 @@ use.
 ## Acceptance Criteria
 
 - [ ] peak memory is bounded and documented by tier
-- [ ] chunked output is deterministic and click-safe at chunk boundaries
+- [x] chunked output is deterministic and click-safe at chunk boundaries
 - [x] unsupported pitch or channel behavior is explicit and observable
 - [x] cache hits, writes, and invalidations remain auditable through runtime
   receipts
@@ -87,10 +87,18 @@ use.
   epoch, ratio curve, pitch curve, and warp-marker changes. Chunk-policy
   changes are observable through receipt chunk summaries, and a bounded
   realistic-duration chunked artifact renders through the export fixture.
+- 2026-07-09: added rendered chunk-boundary seam evidence. The test builds raw
+  chunk payload joins, measures seam discontinuity, applies the artifact
+  boundary smoothing policy, and verifies the measured seam click drops. Current
+  memory posture is explicit but not fully closed: OfflineHighQuality default
+  path processing is bounded by `max_chunk_render_source_frames`, while the
+  materialized artifact buffer still holds full output PCM in memory until a
+  streaming artifact writer/cache target lands.
 
 ## Next Task
 
-Reassess the remaining open g10.023 gaps before more code: marker-specific
-seam/click evidence and formal peak-memory documentation are still open, while
-broader multichannel widening stays blocked until the channel-layout contract is
-ready.
+Pause g10.023 code changes at the current contract boundary. Remaining open
+items are structural: marker-specific warp seams need a warp-marker render
+segmentation contract, full peak-memory closure needs a streaming artifact
+writer/cache target, and multichannel widening stays blocked until the
+channel-layout contract is ready.

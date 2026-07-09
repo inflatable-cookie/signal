@@ -1166,9 +1166,10 @@ mod tests {
         RenderSource, RenderStageKind, RenderStageSpec,
     };
     use signal_dsp_stretch::{
-        current_synthetic_offline_high_quality_promotion_receipt, OfflineHighQualityPath,
-        StretchChannelLayout, StretchPitchPoint, StretchPromotionReceipt, StretchPromotionStatus,
-        StretchRatioPoint, StretchSyntheticPromotionPolicy, StretchWarpMarker,
+        current_synthetic_offline_high_quality_promotion_receipt,
+        measure_dynamic_segment_seam_click, OfflineHighQualityPath, StretchChannelLayout,
+        StretchPitchPoint, StretchPromotionReceipt, StretchPromotionStatus, StretchRatioPoint,
+        StretchSyntheticPromotionPolicy, StretchWarpMarker,
     };
     use std::sync::Arc;
 
@@ -1626,6 +1627,54 @@ mod tests {
         assert_eq!(
             first.receipt.cache_identity_hash,
             repeated.receipt.cache_identity_hash
+        );
+    }
+
+    #[test]
+    fn chunked_artifact_boundary_smoothing_reduces_rendered_seam_clicks() {
+        let input = stretch_identity_input()
+            .with_ratio_curve(vec![
+                StretchRatioPoint::new(0, 1.0),
+                StretchRatioPoint::new(512, 1.25),
+            ])
+            .with_pitch_curve(vec![StretchPitchPoint::new(0, 0.0)]);
+        let source = stretch_artifact_source(2_048);
+        let chunk_plan = plan_offline_stretch_chunks(
+            source.frame_count(),
+            &input.ratio_curve,
+            static_or_initial_ratio(&input.ratio_curve),
+            StretchOfflineChunkConfig::new(512, 128),
+        );
+        let even_source = &source.frames[..source.frame_count() * 2];
+        let mut raw = Vec::with_capacity(chunk_plan.total_output_frames * 2);
+        let mut boundaries = Vec::with_capacity(chunk_plan.chunks.len().saturating_sub(1));
+        for (index, chunk) in chunk_plan.chunks.iter().enumerate() {
+            raw.extend(materialize_stretch_chunk_payload(
+                even_source,
+                source.sample_rate_hz,
+                input.offline_path,
+                0.0,
+                chunk,
+            ));
+            if index + 1 < chunk_plan.chunks.len() {
+                boundaries.push(raw.len() / 2);
+            }
+        }
+
+        let before = measure_dynamic_segment_seam_click(&raw, 2, &boundaries, 1.0);
+        let mut smoothed = raw.clone();
+        smooth_artifact_chunk_boundaries_interleaved(
+            &mut smoothed,
+            &boundaries,
+            OFFLINE_STRETCH_ARTIFACT_CHUNK_CROSSFADE_FRAMES,
+        );
+        let after = measure_dynamic_segment_seam_click(&smoothed, 2, &boundaries, 1.0);
+
+        assert_eq!(before.seam_frames, boundaries);
+        assert_eq!(after.seam_frames, boundaries);
+        assert!(
+            after.peak_seam_delta < before.peak_seam_delta,
+            "boundary smoothing should reduce rendered chunk seam clicks"
         );
     }
 
