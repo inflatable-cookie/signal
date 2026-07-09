@@ -53,5 +53,5 @@ If that cleanup has not happened, stay in the current generation and finish the 
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the current active-generation front door.
-Continue `g10.027` Batch 27.1 with the source-projection report shape and
-fixed-ratio source-advance contract.
+Continue `g10.027` Batch 27.2 with stateful fractional source cursors and
+bounded input-demand reporting.

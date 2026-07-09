@@ -403,6 +403,31 @@ pub struct RealtimePreviewStreamingContract {
     pub unsupported_mode: Option<RealtimePreviewUnsupportedMode>,
 }
 
+/// Fixed-ratio source projection for a RealtimePreview output span.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct RealtimePreviewSourceProjectionReport {
+    /// Sanitized output/input duration ratio.
+    pub ratio: f64,
+    /// Output-domain start frame for the projected span.
+    pub output_start_frame: u64,
+    /// Output frames in this projected span.
+    pub output_frames: usize,
+    /// Exclusive output-domain end frame for the projected span.
+    pub output_end_frame: u64,
+    /// Fractional source-domain start frame.
+    pub source_start_frame: f64,
+    /// Fractional source-domain end frame.
+    pub source_end_frame: f64,
+    /// Fractional source-domain advance required for this output span.
+    pub source_advance_frames: f64,
+    /// First integer source frame needed by the projected span.
+    pub source_frame_floor: u64,
+    /// Exclusive integer source frame bound needed by the projected span.
+    pub source_frame_ceil: u64,
+    /// Integer source frame count covering the projected fractional span.
+    pub source_frames_required: usize,
+}
+
 /// Unsupported RealtimePreview routing mode.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum RealtimePreviewUnsupportedMode {
@@ -572,6 +597,38 @@ pub fn plan_realtime_preview_stream(
         unsupported_mode: Some(RealtimePreviewUnsupportedMode::SourceAdvanceContract),
         config,
     })
+}
+
+/// Project a fixed-ratio RealtimePreview output span into source frames.
+///
+/// `ratio` uses the crate-wide output/input duration convention: `2.0`
+/// produces twice as much output time as source time, so a 256-frame output
+/// quantum advances 128 source frames.
+pub fn project_realtime_preview_fixed_ratio_source_advance(
+    output_start_frame: u64,
+    output_frames: usize,
+    ratio: f64,
+) -> RealtimePreviewSourceProjectionReport {
+    let ratio = sanitize_ratio(ratio);
+    let output_end_frame = output_start_frame.saturating_add(usize_to_u64(output_frames));
+    let source_start_frame = output_start_frame as f64 / ratio;
+    let source_end_frame = output_end_frame as f64 / ratio;
+    let source_frame_floor = floor_frame_to_u64(source_start_frame);
+    let source_frame_ceil = ceil_frame_to_u64(source_end_frame);
+    let source_frames_required = abs_diff_frames(source_frame_ceil, source_frame_floor);
+
+    RealtimePreviewSourceProjectionReport {
+        ratio,
+        output_start_frame,
+        output_frames,
+        output_end_frame,
+        source_start_frame,
+        source_end_frame,
+        source_advance_frames: source_end_frame - source_start_frame,
+        source_frame_floor,
+        source_frame_ceil,
+        source_frames_required,
+    }
 }
 
 impl RealtimePreviewCallbackState {
@@ -1928,8 +1985,32 @@ fn align_to_next_grid(frame: u64, grid: u64) -> u64 {
     }
 }
 
+fn usize_to_u64(value: usize) -> u64 {
+    value.try_into().unwrap_or(u64::MAX)
+}
+
 fn abs_diff_frames(left: u64, right: u64) -> usize {
     left.abs_diff(right).try_into().unwrap_or(usize::MAX)
+}
+
+fn floor_frame_to_u64(frame: f64) -> u64 {
+    if !frame.is_finite() || frame <= 0.0 {
+        0
+    } else if frame >= u64::MAX as f64 {
+        u64::MAX
+    } else {
+        frame.floor() as u64
+    }
+}
+
+fn ceil_frame_to_u64(frame: f64) -> u64 {
+    if !frame.is_finite() || frame <= 0.0 {
+        0
+    } else if frame >= u64::MAX as f64 {
+        u64::MAX
+    } else {
+        frame.ceil() as u64
+    }
 }
 
 fn wrap_phase(phase: f32) -> f32 {
@@ -2466,6 +2547,47 @@ mod tests {
             )),
             Err(RealtimePreviewPlanError::InvalidBlockSize)
         );
+    }
+
+    #[test]
+    fn realtime_preview_fixed_ratio_source_projection_reports_required_source_span() {
+        let slow = project_realtime_preview_fixed_ratio_source_advance(480, 96, 2.0);
+        assert_eq!(slow.ratio, 2.0);
+        assert_eq!(slow.output_start_frame, 480);
+        assert_eq!(slow.output_frames, 96);
+        assert_eq!(slow.output_end_frame, 576);
+        assert_eq!(slow.source_start_frame, 240.0);
+        assert_eq!(slow.source_end_frame, 288.0);
+        assert_eq!(slow.source_advance_frames, 48.0);
+        assert_eq!(slow.source_frame_floor, 240);
+        assert_eq!(slow.source_frame_ceil, 288);
+        assert_eq!(slow.source_frames_required, 48);
+
+        let fast = project_realtime_preview_fixed_ratio_source_advance(480, 96, 0.5);
+        assert_eq!(fast.source_start_frame, 960.0);
+        assert_eq!(fast.source_end_frame, 1152.0);
+        assert_eq!(fast.source_advance_frames, 192.0);
+        assert_eq!(fast.source_frames_required, 192);
+
+        let identity = project_realtime_preview_fixed_ratio_source_advance(480, 96, 1.0);
+        assert_eq!(identity.source_start_frame, 480.0);
+        assert_eq!(identity.source_end_frame, 576.0);
+        assert_eq!(identity.source_frames_required, 96);
+    }
+
+    #[test]
+    fn realtime_preview_fixed_ratio_source_projection_covers_fractional_source_bounds() {
+        let projection = project_realtime_preview_fixed_ratio_source_advance(0, 256, 1.5);
+
+        assert_eq!(projection.source_frame_floor, 0);
+        assert_eq!(projection.source_frame_ceil, 171);
+        assert_eq!(projection.source_frames_required, 171);
+        assert!((projection.source_advance_frames - (256.0 / 1.5)).abs() < 1.0e-9);
+
+        let sanitized = project_realtime_preview_fixed_ratio_source_advance(32, 64, f64::NAN);
+        assert_eq!(sanitized.ratio, 1.0);
+        assert_eq!(sanitized.source_start_frame, 32.0);
+        assert_eq!(sanitized.source_end_frame, 96.0);
     }
 
     #[test]

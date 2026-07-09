@@ -165,6 +165,6 @@ Before rollover:
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the active generation front door.
-`g10.027` Batch 27.1 is active; the next task is the source-projection report
-shape and fixed-ratio source-advance contract in `signal-dsp-stretch`. Keep
+`g10.027` Batch 27.2 is active; the next task is stateful fractional source
+cursors and bounded input-demand reporting in `signal-dsp-stretch`. Keep
 render-plane integration blocked.

@@ -25,12 +25,13 @@ underrun/fill behavior without allocation.
 
 ## Goals
 
-- [ ] define source-projected callback semantics for fixed ratio and dynamic
-  ratio streams
-- [ ] report source frames consumed, output frames produced, and source/output
-  positions per callback quantum
-- [ ] prove source advancement follows the active ratio within documented
-  tolerance
+- [ ] define source-projected callback semantics for dynamic ratio streams
+- [x] report fixed-ratio source span, output span, and integer source demand
+  for projected output quanta
+- [x] prove fixed-ratio source advancement follows the active ratio within
+  documented tolerance
+- [ ] prove stateful source advancement follows the active ratio within
+  documented tolerance
 - [ ] keep all source-projection state preallocated and callback-safe
 - [ ] keep render-plane integration blocked until source projection is proven
 
@@ -45,10 +46,10 @@ underrun/fill behavior without allocation.
 
 ### Batch 27.1 - Source Projection Contract
 
-- [ ] add a source-projection report shape to `signal-dsp-stretch`
-- [ ] define fixed-ratio source advance for `ratio > 1.0`, `ratio == 1.0`,
+- [x] add a source-projection report shape to `signal-dsp-stretch`
+- [x] define fixed-ratio source advance for `ratio > 1.0`, `ratio == 1.0`,
   and `ratio < 1.0`
-- [ ] keep `RealtimePreviewStreamingContract.audio_thread_processing_supported`
+- [x] keep `RealtimePreviewStreamingContract.audio_thread_processing_supported`
   false while the mode is `QuantumLocked`
 
 ### Batch 27.2 - Source-Projected State
@@ -68,10 +69,10 @@ underrun/fill behavior without allocation.
 
 ## Acceptance Criteria
 
-- [ ] fixed-ratio source advance matches the active ratio within tolerance
+- [x] fixed-ratio source advance matches the active ratio within tolerance
 - [ ] dynamic-ratio source advance stays monotonic and bounded at seams
-- [ ] callback reports enough position data for a render plan to remain
-  sample-domain honest
+- [ ] stateful callback reports enough position data for a render plan to
+  remain sample-domain honest
 - [ ] process still allocates zero bytes after construction
 - [ ] support flag remains closed until the source projection contract passes
 
@@ -88,10 +89,16 @@ underrun/fill behavior without allocation.
   exposed `QuantumLocked` as the current callback timeline mode. This roadmap
   owns the missing source/output projection contract before any render-plane
   callback support flag can open.
+- 2026-07-09: Started Batch 27.1 with a fixed-ratio source projection report
+  in `signal-dsp-stretch`. The report maps output start/end frames to
+  fractional source start/end frames plus integer source demand for `ratio >
+  1.0`, `ratio == 1.0`, `ratio < 1.0`, fractional ratios, and sanitized invalid
+  ratios. The stream contract remains `QuantumLocked` and
+  `audio_thread_processing_supported=false`.
 
 ## Next Task
 
-Start Batch 27.1 by adding the source-projection report shape and fixed-ratio
-source-advance contract to `signal-dsp-stretch`. Keep
+Continue Batch 27.2 by adding stateful fractional source cursors and bounded
+input-demand reporting to the callback state. Keep
 `audio_thread_processing_supported=false` and do not add render-plane
 integration.

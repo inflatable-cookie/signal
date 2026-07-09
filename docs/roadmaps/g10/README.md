@@ -107,7 +107,7 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Continue `g10.027` Batch 27.1 by adding the source-projection report shape and
-fixed-ratio source-advance contract to `signal-dsp-stretch`. Keep
+Continue `g10.027` Batch 27.2 by adding stateful fractional source cursors and
+bounded input-demand reporting to the callback state. Keep
 `audio_thread_processing_supported=false` and do not add render-plane
 integration.
