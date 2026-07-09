@@ -12,8 +12,8 @@ Updated: 2026-07-09
   first-party stretch evidence, OfflineHighQuality DSP depth, offline artifact
   scale, RealtimePreview, and a deferred product-workflow checkpoint. The
   active structural stretch lane is `g10.026`, callback-safe RealtimePreview
-  state; mono callback DSP now has a no-allocation proof, while linked stereo
-  and ratio scheduling remain open.
+  state; mono and linked-stereo callback DSP now have a no-allocation proof,
+  while ratio scheduling remains open.
 - audit evidence: `chorus/research/2026-06-11-signal-deep-audit.md` (phase
   one) and `docs/research/2026-06-11-post-demolition-assessment.md` (phase
   two)
@@ -53,5 +53,5 @@ If that cleanup has not happened, stay in the current generation and finish the 
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the current active-generation front door.
-Continue `g10.026` Batch 26.2 with linked-stereo callback state on top of the
-mono kernel.
+Continue `g10.026` Batch 26.3 with callback-safe ratio-change scheduling and
+documented sample-domain alignment tolerance.

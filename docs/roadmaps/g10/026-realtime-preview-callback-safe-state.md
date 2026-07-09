@@ -21,7 +21,7 @@ ratio-change alignment proof before any render-plane plan can use it.
   outside the audio callback
 - [x] process bounded mono render quanta with no allocation, locks, blocking,
   I/O, or unbounded loops
-- [ ] extend the callback-safe process path to linked stereo
+- [x] extend the callback-safe process path to linked stereo
 - [ ] apply ratio changes through a documented sample-domain alignment
   tolerance
 - [ ] preserve the existing prototype metric surface as the preview quality
@@ -53,7 +53,7 @@ ratio-change alignment proof before any render-plane plan can use it.
 
 - [x] implement bounded mono streaming state with preallocated STFT/ring
   scratch
-- [ ] add linked-stereo state only after mono proves bounded work
+- [x] add linked-stereo state only after mono proves bounded work
 - [x] prove deterministic output length, bounded latency, and no per-block
   allocation for fixed ratios
 
@@ -108,9 +108,15 @@ ratio-change alignment proof before any render-plane plan can use it.
   callback output latency, and the counting-allocator no-allocation proof.
   Linked stereo, ratio-change scheduling, and render-plane integration remain
   blocked.
+- 2026-07-09: Completed Batch 26.2 linked-stereo state. The callback kernel now
+  processes interleaved mono and linked stereo through channel-indexed spectral
+  and phase state while sharing preallocated FFT scratch. Focused tests cover
+  deterministic stereo output, per-channel pitch preservation, the contract
+  gate staying closed, and the no-allocation proof across both mono and stereo.
+  Dynamic-ratio scheduling and render-plane integration remain blocked.
 
 ## Next Task
 
-Continue Batch 26.2 by adding linked-stereo callback state on top of the mono
-kernel. Keep render-plane integration blocked and do not run the whole-buffer
-prototype on the audio callback.
+Start Batch 26.3 by adding callback-safe ratio-change scheduling with a
+documented sample-domain alignment tolerance. Keep render-plane integration
+blocked and do not run the whole-buffer prototype on the audio callback.

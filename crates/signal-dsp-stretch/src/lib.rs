@@ -414,8 +414,8 @@ pub enum RealtimePreviewPlanError {
 /// Callback-facing RealtimePreview state.
 ///
 /// This state owns the preallocated scratch required for the callback-facing
-/// RealtimePreview kernel. Batch 26.2 supports mono streaming DSP only; linked
-/// stereo and render-plane routing remain gated.
+/// RealtimePreview kernel. Batch 26.2 supports mono and linked-stereo
+/// streaming DSP; render-plane routing remains gated.
 pub struct RealtimePreviewCallbackState {
     config: RealtimePreviewStreamConfig,
     scratch: Vec<Sample>,
@@ -443,8 +443,8 @@ pub struct RealtimePreviewCallbackState {
     next_synthesis_frame: f64,
     processed_frames: u64,
     spectral_frame_index: u64,
-    current_energy: f64,
-    previous_energy: f64,
+    current_energy: Vec<f64>,
+    previous_energy: Vec<f64>,
 }
 
 /// Report returned by a successful RealtimePreview callback process call.
@@ -593,8 +593,8 @@ impl RealtimePreviewCallbackState {
             next_synthesis_frame: config.window_size as f64,
             processed_frames: 0,
             spectral_frame_index: 0,
-            current_energy: 0.0,
-            previous_energy: 0.0,
+            current_energy: vec![0.0; channel_count],
+            previous_energy: vec![0.0; channel_count],
         })
     }
 
@@ -690,15 +690,15 @@ impl RealtimePreviewCallbackState {
         self.next_synthesis_frame = self.config.window_size as f64;
         self.processed_frames = 0;
         self.spectral_frame_index = 0;
-        self.current_energy = 0.0;
-        self.previous_energy = 0.0;
+        self.current_energy.fill(0.0);
+        self.previous_energy.fill(0.0);
     }
 
     /// Process one callback quantum.
     ///
-    /// Mono streams run through the bounded preview kernel. Linked stereo
-    /// remains explicitly unsupported until the stereo phase-state contract
-    /// lands.
+    /// Mono and linked-stereo streams run through the bounded preview kernel.
+    /// The callback contract still reports unsupported render-plane routing
+    /// until dynamic-ratio scheduling and integration proof land.
     pub fn process(
         &mut self,
         input: &[Sample],
@@ -722,16 +722,11 @@ impl RealtimePreviewCallbackState {
                 output_samples: output.len(),
             });
         }
-        if self.config.channel_count != 1 {
-            self.current_ratio = sanitize_ratio(ratio);
-            return Err(RealtimePreviewCallbackProcessError::CallbackProcessingUnsupported);
-        }
-
         let ratio = sanitize_ratio(ratio);
         self.current_ratio = ratio;
-        self.push_mono_input(input, frame_count);
-        self.process_available_mono_frames(ratio);
-        self.read_mono_output(output, frame_count);
+        self.push_interleaved_input(input, frame_count);
+        self.process_available_streaming_frames(ratio);
+        self.read_interleaved_output(output, frame_count);
         self.processed_frames = self.processed_frames.saturating_add(frame_count as u64);
         Ok(RealtimePreviewCallbackProcessReport {
             ratio,
@@ -745,16 +740,20 @@ impl RealtimePreviewCallbackState {
         self.input_ring.len() / self.config.channel_count
     }
 
-    fn push_mono_input(&mut self, input: &[Sample], frame_count: usize) {
+    fn push_interleaved_input(&mut self, input: &[Sample], frame_count: usize) {
         let ring_frames = self.ring_frame_capacity();
-        for (offset, sample) in input.iter().take(frame_count).enumerate() {
-            let ring_index = (self.input_write_frame as usize + offset) % ring_frames;
-            self.input_ring[ring_index] = *sample;
+        let channel_count = self.config.channel_count;
+        for frame_offset in 0..frame_count {
+            let ring_frame = (self.input_write_frame as usize + frame_offset) % ring_frames;
+            for channel in 0..channel_count {
+                self.input_ring[ring_frame * channel_count + channel] =
+                    input[frame_offset * channel_count + channel];
+            }
         }
         self.input_write_frame = self.input_write_frame.saturating_add(frame_count as u64);
     }
 
-    fn process_available_mono_frames(&mut self, ratio: f64) {
+    fn process_available_streaming_frames(&mut self, ratio: f64) {
         let ring_frames = self.ring_frame_capacity() as u64;
         while self.next_analysis_frame + self.config.window_size as u64 <= self.input_write_frame {
             if self
@@ -770,9 +769,11 @@ impl RealtimePreviewCallbackState {
             {
                 break;
             }
-            self.analyze_mono_streaming_frame();
-            self.propagate_mono_streaming_phase(ratio);
-            self.synthesize_mono_streaming_frame(synthesis_start);
+            for channel in 0..self.config.channel_count {
+                self.analyze_streaming_frame(channel);
+                self.propagate_streaming_phase(channel, ratio);
+                self.synthesize_streaming_frame(channel, synthesis_start);
+            }
             self.next_analysis_frame = self
                 .next_analysis_frame
                 .saturating_add(self.config.analysis_hop as u64);
@@ -781,94 +782,114 @@ impl RealtimePreviewCallbackState {
         }
     }
 
-    fn analyze_mono_streaming_frame(&mut self) {
+    fn analyze_streaming_frame(&mut self, channel: usize) {
         let ring_frames = self.ring_frame_capacity();
-        self.current_energy = 0.0;
+        let channel_count = self.config.channel_count;
+        let fft_offset = channel * self.config.window_size;
+        self.current_energy[channel] = 0.0;
         for index in 0..self.config.window_size {
             let source_index = (self.next_analysis_frame as usize + index) % ring_frames;
-            let windowed = self.input_ring[source_index] * self.window[index];
-            self.current_energy += (windowed * windowed) as f64;
-            self.analysis_buffer[index] = Complex32::new(windowed, 0.0);
+            let windowed =
+                self.input_ring[source_index * channel_count + channel] * self.window[index];
+            self.current_energy[channel] += (windowed * windowed) as f64;
+            self.analysis_buffer[fft_offset + index] = Complex32::new(windowed, 0.0);
         }
-        self.current_energy /= self.config.window_size as f64;
-        self.forward
-            .process_with_scratch(&mut self.analysis_buffer, &mut self.forward_fft_scratch);
+        self.current_energy[channel] /= self.config.window_size as f64;
+        self.forward.process_with_scratch(
+            &mut self.analysis_buffer[fft_offset..fft_offset + self.config.window_size],
+            &mut self.forward_fft_scratch,
+        );
     }
 
-    fn propagate_mono_streaming_phase(&mut self, ratio: f64) {
+    fn propagate_streaming_phase(&mut self, channel: usize, ratio: f64) {
         let bins = self.config.window_size / 2 + 1;
+        let fft_offset = channel * self.config.window_size;
+        let bin_offset = channel * bins;
         let is_first_frame = self.spectral_frame_index == 0;
-        let reset_at_transient = self.should_reset_streaming_phase_at_transient(bins, ratio);
+        let reset_at_transient =
+            self.should_reset_streaming_phase_at_transient(channel, bins, ratio);
         self.current_peak_bins.clear();
 
         for bin in 0..bins {
-            let spectrum = self.analysis_buffer[bin];
-            self.current_magnitudes[bin] = spectrum.norm();
-            self.current_phases[bin] = spectrum.arg();
+            let spectrum = self.analysis_buffer[fft_offset + bin];
+            self.current_magnitudes[bin_offset + bin] = spectrum.norm();
+            self.current_phases[bin_offset + bin] = spectrum.arg();
         }
         for bin in 1..bins.saturating_sub(1) {
-            let magnitude = self.current_magnitudes[bin];
+            let magnitude = self.current_magnitudes[bin_offset + bin];
             if magnitude > 1.0e-6
-                && magnitude > self.current_magnitudes[bin - 1]
-                && magnitude >= self.current_magnitudes[bin + 1]
+                && magnitude > self.current_magnitudes[bin_offset + bin - 1]
+                && magnitude >= self.current_magnitudes[bin_offset + bin + 1]
             {
                 self.current_peak_bins.push(bin);
             }
         }
 
         for bin in 0..bins {
-            let phase = self.current_phases[bin];
+            let index = bin_offset + bin;
+            let phase = self.current_phases[index];
             if is_first_frame || reset_at_transient {
-                self.synthesis_phase[bin] = phase;
+                self.synthesis_phase[index] = phase;
             } else {
-                let deviation = wrap_phase(phase - self.previous_phase[bin] - self.omega[bin]);
+                let deviation = wrap_phase(phase - self.previous_phase[index] - self.omega[bin]);
                 let advance = (self.omega[bin] + deviation) * (ratio as f32);
-                self.synthesis_phase[bin] = wrap_phase(self.synthesis_phase[bin] + advance);
+                self.synthesis_phase[index] = wrap_phase(self.synthesis_phase[index] + advance);
             }
-            self.previous_phase[bin] = phase;
+            self.previous_phase[index] = phase;
         }
 
-        self.lock_mono_streaming_phase_to_peaks(bins);
+        self.lock_streaming_phase_to_peaks(channel, bins);
         for bin in 0..bins {
-            self.synthesis_spectrum[bin] =
-                Complex32::from_polar(self.current_magnitudes[bin], self.synthesis_phase[bin]);
-            self.previous_magnitudes[bin] = self.current_magnitudes[bin];
+            let index = bin_offset + bin;
+            self.synthesis_spectrum[fft_offset + bin] =
+                Complex32::from_polar(self.current_magnitudes[index], self.synthesis_phase[index]);
+            self.previous_magnitudes[index] = self.current_magnitudes[index];
         }
-        self.previous_energy = self.current_energy;
+        self.previous_energy[channel] = self.current_energy[channel];
 
         for bin in 1..self.config.window_size.div_ceil(2) {
-            self.synthesis_spectrum[self.config.window_size - bin] =
-                self.synthesis_spectrum[bin].conj();
+            self.synthesis_spectrum[fft_offset + self.config.window_size - bin] =
+                self.synthesis_spectrum[fft_offset + bin].conj();
         }
     }
 
-    fn should_reset_streaming_phase_at_transient(&self, bins: usize, ratio: f64) -> bool {
+    fn should_reset_streaming_phase_at_transient(
+        &self,
+        channel: usize,
+        bins: usize,
+        ratio: f64,
+    ) -> bool {
         if self.spectral_frame_index == 0 || ratio < 1.0 {
             return false;
         }
+        let fft_offset = channel * self.config.window_size;
+        let bin_offset = channel * bins;
         let mut flux = 0.0f32;
         let mut magnitude_sum = 0.0f32;
         for bin in 0..bins {
-            flux += (self.analysis_buffer[bin].norm() - self.previous_magnitudes[bin]).max(0.0);
-            magnitude_sum += self.analysis_buffer[bin].norm();
+            let magnitude = self.analysis_buffer[fft_offset + bin].norm();
+            flux += (magnitude - self.previous_magnitudes[bin_offset + bin]).max(0.0);
+            magnitude_sum += magnitude;
         }
         let flux_ratio = flux as f64 / (magnitude_sum as f64 + 1.0e-12);
-        let energy_ratio = self.current_energy / (self.previous_energy + 1.0e-12);
+        let energy_ratio = self.current_energy[channel] / (self.previous_energy[channel] + 1.0e-12);
         flux_ratio >= 0.30 && energy_ratio >= 1.20
     }
 
-    fn lock_mono_streaming_phase_to_peaks(&mut self, bins: usize) {
+    fn lock_streaming_phase_to_peaks(&mut self, channel: usize, bins: usize) {
         if self.current_peak_bins.is_empty() {
             return;
         }
+        let bin_offset = channel * bins;
         for peak_index in 0..self.current_peak_bins.len() {
             let peak_bin = self.current_peak_bins[peak_index];
-            let peak_phase = self.synthesis_phase[peak_bin];
-            let analysis_peak_phase = self.current_phases[peak_bin];
+            let peak_phase = self.synthesis_phase[bin_offset + peak_bin];
+            let analysis_peak_phase = self.current_phases[bin_offset + peak_bin];
             let (left, right) = self.streaming_peak_region_bounds(peak_index, bins);
             for bin in left..right {
-                let relative_phase = wrap_phase(self.current_phases[bin] - analysis_peak_phase);
-                self.synthesis_phase[bin] = wrap_phase(peak_phase + relative_phase);
+                let index = bin_offset + bin;
+                let relative_phase = wrap_phase(self.current_phases[index] - analysis_peak_phase);
+                self.synthesis_phase[index] = wrap_phase(peak_phase + relative_phase);
             }
         }
     }
@@ -888,31 +909,42 @@ impl RealtimePreviewCallbackState {
         (left, right)
     }
 
-    fn synthesize_mono_streaming_frame(&mut self, synthesis_start: u64) {
-        self.inverse
-            .process_with_scratch(&mut self.synthesis_spectrum, &mut self.inverse_fft_scratch);
+    fn synthesize_streaming_frame(&mut self, channel: usize, synthesis_start: u64) {
+        let fft_offset = channel * self.config.window_size;
+        self.inverse.process_with_scratch(
+            &mut self.synthesis_spectrum[fft_offset..fft_offset + self.config.window_size],
+            &mut self.inverse_fft_scratch,
+        );
         let ring_frames = self.ring_frame_capacity();
+        let channel_count = self.config.channel_count;
         let scale = 1.0 / self.config.window_size as f32;
         for index in 0..self.config.window_size {
             let output_index = (synthesis_start as usize + index) % ring_frames;
-            let sample = self.synthesis_spectrum[index].re * scale * self.window[index];
-            self.output_ring[output_index] += sample;
-            self.normalization_ring[output_index] += self.window[index] * self.window[index];
+            let ring_index = output_index * channel_count + channel;
+            let sample =
+                self.synthesis_spectrum[fft_offset + index].re * scale * self.window[index];
+            self.output_ring[ring_index] += sample;
+            self.normalization_ring[ring_index] += self.window[index] * self.window[index];
         }
     }
 
-    fn read_mono_output(&mut self, output: &mut [Sample], frame_count: usize) {
+    fn read_interleaved_output(&mut self, output: &mut [Sample], frame_count: usize) {
         let ring_frames = self.ring_frame_capacity();
-        for (offset, sample) in output.iter_mut().take(frame_count).enumerate() {
-            let ring_index = (self.output_read_frame as usize + offset) % ring_frames;
-            let weight = self.normalization_ring[ring_index];
-            *sample = if weight > 1.0e-3 {
-                self.output_ring[ring_index] / weight
-            } else {
-                0.0
-            };
-            self.output_ring[ring_index] = 0.0;
-            self.normalization_ring[ring_index] = 0.0;
+        let channel_count = self.config.channel_count;
+        for frame_offset in 0..frame_count {
+            let ring_frame = (self.output_read_frame as usize + frame_offset) % ring_frames;
+            for channel in 0..channel_count {
+                let ring_index = ring_frame * channel_count + channel;
+                let output_index = frame_offset * channel_count + channel;
+                let weight = self.normalization_ring[ring_index];
+                output[output_index] = if weight > 1.0e-3 {
+                    self.output_ring[ring_index] / weight
+                } else {
+                    0.0
+                };
+                self.output_ring[ring_index] = 0.0;
+                self.normalization_ring[ring_index] = 0.0;
+            }
         }
         self.output_read_frame = self.output_read_frame.saturating_add(frame_count as u64);
     }
@@ -2296,7 +2328,7 @@ mod tests {
     }
 
     #[test]
-    fn realtime_preview_callback_state_validates_geometry_without_claiming_support() {
+    fn realtime_preview_callback_state_validates_stereo_geometry_without_enabling_contract() {
         let mut state = RealtimePreviewCallbackState::new(RealtimePreviewStreamConfig::new(
             SampleRate(48_000),
             2,
@@ -2328,12 +2360,14 @@ mod tests {
         );
         assert!(state.fft_plans_ready());
         assert!(!state.contract().audio_thread_processing_supported);
-        assert_eq!(
-            state.process(&input, &mut output, 128, 1.25),
-            Err(RealtimePreviewCallbackProcessError::CallbackProcessingUnsupported)
-        );
+        let report = state
+            .process(&input, &mut output, 128, 1.25)
+            .expect("linked-stereo callback kernel should process");
+        assert_eq!(report.input_frames, 128);
+        assert_eq!(report.output_frames, 128);
+        assert_eq!(report.processed_frames, 128);
         assert_eq!(state.current_ratio(), 1.25);
-        assert!(output.iter().all(|sample| *sample == 0.25));
+        assert!(output.iter().all(|sample| *sample == 0.0));
 
         state.reset();
         assert_eq!(state.current_ratio(), 1.0);
@@ -2441,6 +2475,66 @@ mod tests {
 
         assert_eq!(first_output, second_output);
         assert!(rms(&first_output[1024..]) > 0.02);
+    }
+
+    #[test]
+    fn realtime_preview_callback_state_processes_linked_stereo_stream() {
+        let left = sine(330.0, 48_000.0, 128 * 64);
+        let right = sine(660.0, 48_000.0, 128 * 64);
+        let input = left
+            .iter()
+            .zip(right.iter())
+            .flat_map(|(left, right)| [*left, *right])
+            .collect::<Vec<_>>();
+        let mut first = RealtimePreviewCallbackState::new(RealtimePreviewStreamConfig::new(
+            SampleRate(48_000),
+            2,
+            128,
+        ))
+        .expect("callback state config should validate");
+        let mut second = RealtimePreviewCallbackState::new(RealtimePreviewStreamConfig::new(
+            SampleRate(48_000),
+            2,
+            128,
+        ))
+        .expect("callback state config should validate");
+        let mut first_output = vec![0.0; input.len()];
+        let mut second_output = vec![0.0; input.len()];
+
+        for block_index in 0..64 {
+            let start = block_index * 128 * 2;
+            first
+                .process(
+                    &input[start..start + 128 * 2],
+                    &mut first_output[start..start + 128 * 2],
+                    128,
+                    1.0,
+                )
+                .expect("first linked-stereo callback kernel should process");
+            second
+                .process(
+                    &input[start..start + 128 * 2],
+                    &mut second_output[start..start + 128 * 2],
+                    128,
+                    1.0,
+                )
+                .expect("second linked-stereo callback kernel should process");
+        }
+
+        let out_left = first_output
+            .chunks_exact(2)
+            .map(|frame| frame[0])
+            .collect::<Vec<_>>();
+        let out_right = first_output
+            .chunks_exact(2)
+            .map(|frame| frame[1])
+            .collect::<Vec<_>>();
+
+        assert_eq!(first_output, second_output);
+        assert!(rms(&out_left[1024..]) > 0.05);
+        assert!(rms(&out_right[1024..]) > 0.05);
+        assert!((dominant_frequency_hz(&out_left[1024..], 48_000.0) - 330.0).abs() < 20.0);
+        assert!((dominant_frequency_hz(&out_right[1024..], 48_000.0) - 660.0).abs() < 25.0);
     }
 
     #[test]
