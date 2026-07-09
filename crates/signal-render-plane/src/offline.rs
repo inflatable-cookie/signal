@@ -2066,6 +2066,173 @@ mod tests {
     }
 
     #[test]
+    fn materialization_receipts_audit_cache_identity_inputs() {
+        let base = stretch_identity_input()
+            .with_ratio_curve(vec![StretchRatioPoint::new(0, 1.25)])
+            .with_pitch_curve(vec![StretchPitchPoint::new(0, 0.0)])
+            .with_warp_markers(vec![StretchWarpMarker::new(0, 0)]);
+        let changed_engine = StretchCacheIdentityInput {
+            engine_version: "signal-native-stretch-v2".to_string(),
+            ..base.clone()
+        };
+        let changed_media = StretchCacheIdentityInput {
+            source_content_hash: "sha256:render-source-b".to_string(),
+            ..base.clone()
+        };
+        let changed_projection = StretchCacheIdentityInput {
+            projection_epoch: "projection-43".to_string(),
+            ..base.clone()
+        };
+        let changed_ratio = base
+            .clone()
+            .with_ratio_curve(vec![StretchRatioPoint::new(0, 1.5)]);
+        let changed_pitch = base
+            .clone()
+            .with_pitch_curve(vec![StretchPitchPoint::new(0, 1.0)]);
+        let changed_marker = base
+            .clone()
+            .with_warp_markers(vec![StretchWarpMarker::new(96, 128)]);
+        let source = stretch_artifact_source(96);
+        let receipt = accepted_synthetic_promotion_receipt("synthetic:identity-audit");
+
+        let mut observed = Vec::new();
+        for input in [
+            &base,
+            &changed_engine,
+            &changed_media,
+            &changed_projection,
+            &changed_ratio,
+            &changed_pitch,
+            &changed_marker,
+        ] {
+            let artifact = materialize_offline_stretch_artifact_pcm(
+                OfflineStretchArtifactScope::RenderCache,
+                input,
+                receipt.clone(),
+                &source,
+            )
+            .expect("identity variant should materialize");
+            observed.push((
+                artifact.receipt.cache_identity_hash,
+                artifact.receipt.cache_identity_key,
+            ));
+        }
+
+        for (index, (hash, _)) in observed.iter().enumerate() {
+            assert!(
+                observed
+                    .iter()
+                    .enumerate()
+                    .all(
+                        |(other_index, (other_hash, _))| index == other_index || hash != other_hash
+                    ),
+                "identity hash {hash} should be unique"
+            );
+        }
+        assert!(observed[1].1.contains("engine=signal-native-stretch-v2"));
+        assert!(observed[2]
+            .1
+            .contains("source_content_hash=sha256:render-source-b"));
+        assert!(observed[3].1.contains("projection_epoch=projection-43"));
+        assert!(observed[4].1.contains("ratio_curve="));
+        assert!(observed[5].1.contains("pitch_curve="));
+        assert!(observed[6].1.contains("warp_markers=96:128"));
+    }
+
+    #[test]
+    fn materialization_receipts_make_chunk_policy_auditable() {
+        let input =
+            stretch_identity_input().with_ratio_curve(vec![StretchRatioPoint::new(0, 1.25)]);
+        let source = stretch_artifact_source(1_024);
+        let receipt = accepted_synthetic_promotion_receipt("synthetic:chunk-policy-audit");
+
+        let fine = materialize_offline_stretch_artifact_pcm_with_chunk_config(
+            OfflineStretchArtifactScope::RenderCache,
+            &input,
+            receipt.clone(),
+            &source,
+            StretchOfflineChunkConfig::new(256, 64),
+        )
+        .expect("fine chunk policy should materialize");
+        let coarse = materialize_offline_stretch_artifact_pcm_with_chunk_config(
+            OfflineStretchArtifactScope::RenderCache,
+            &input,
+            receipt,
+            &source,
+            StretchOfflineChunkConfig::new(512, 128),
+        )
+        .expect("coarse chunk policy should materialize");
+
+        assert_eq!(fine.output_frame_count, coarse.output_frame_count);
+        assert_eq!(fine.receipt.chunk_count, 4);
+        assert_eq!(coarse.receipt.chunk_count, 2);
+        assert_eq!(fine.receipt.max_chunk_source_frames, 256);
+        assert_eq!(coarse.receipt.max_chunk_source_frames, 512);
+        assert_eq!(fine.receipt.chunk_overlap_frames, 64);
+        assert_eq!(coarse.receipt.chunk_overlap_frames, 128);
+        assert_ne!(
+            fine.receipt.max_chunk_render_source_frames,
+            coarse.receipt.max_chunk_render_source_frames
+        );
+    }
+
+    #[test]
+    fn chunked_artifact_renders_realistic_duration_through_export_fixture() {
+        let input = stretch_identity_input()
+            .with_ratio_curve(vec![
+                StretchRatioPoint::new(0, 1.0),
+                StretchRatioPoint::new(24_000, 1.25),
+            ])
+            .with_pitch_curve(vec![StretchPitchPoint::new(0, 0.0)]);
+        let source = stretch_artifact_source(48_000);
+        let artifact = materialize_offline_stretch_artifact_pcm_with_chunk_config(
+            OfflineStretchArtifactScope::Export,
+            &input,
+            accepted_synthetic_promotion_receipt("synthetic:realistic-duration-chunked"),
+            &source,
+            StretchOfflineChunkConfig::new(8_000, 512),
+        )
+        .expect("realistic-duration chunked artifact should materialize");
+
+        assert_eq!(artifact.input_frame_count, 48_000);
+        assert_eq!(artifact.output_frame_count, 54_000);
+        assert_eq!(artifact.receipt.chunk_count, 6);
+        assert!(artifact.receipt.max_chunk_render_source_frames <= 9_024);
+
+        let spec = RenderPlanSpec {
+            sample_rate_hz: 48_000,
+            master_gain: 1.0,
+            master_limiter: None,
+            stages: vec![
+                lane(
+                    48,
+                    1.0,
+                    vec![RenderClipSpec {
+                        clip_id: 480,
+                        start_frames: 0,
+                        end_frames: artifact.output_frame_count as u64,
+                        source: RenderSource::Samples(artifact.buffer.clone()),
+                        loop_source: false,
+                    }],
+                ),
+                master(vec![48]),
+            ],
+        };
+        let rendered = render_plan_to_pcm(
+            &spec,
+            &OfflineRenderOptions {
+                frame_count: artifact.output_frame_count as u64,
+                block_frames: 512,
+                ..OfflineRenderOptions::default()
+            },
+        )
+        .expect("chunked artifact should render through export fixture");
+
+        assert_eq!(rendered.master.len(), artifact.output_frame_count * 2);
+        assert_eq!(rendered.sample_rate_hz, 48_000);
+    }
+
+    #[test]
     fn artifact_builder_gate_blocks_rejected_policy_without_product_buffer() {
         let input =
             stretch_identity_input().with_ratio_curve(vec![StretchRatioPoint::new(0, 1.25)]);

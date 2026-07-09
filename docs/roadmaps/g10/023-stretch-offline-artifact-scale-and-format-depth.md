@@ -22,9 +22,9 @@ use.
   contract
 - [ ] widen linked processing beyond stereo when the channel-layout contract is
   ready
-- [ ] harden cache invalidation around media identity, engine version,
+- [x] harden cache invalidation around media identity, engine version,
   projection epoch, ratio/pitch curves, and warp markers
-- [ ] add export/freeze/cache soak coverage with realistic source durations
+- [x] add export/freeze/cache soak coverage with realistic source durations
 
 ## Execution Plan
 
@@ -40,8 +40,8 @@ use.
 
 ### Batch 23.3 - Soak And Cache Hardening
 
-- [ ] realistic-duration export/freeze/cache soak tests
-- [ ] cache invalidation coverage for engine, projection, curve, marker, and
+- [x] realistic-duration export/freeze/cache soak tests
+- [x] cache invalidation coverage for engine, projection, curve, marker, and
   media changes
 
 ## Acceptance Criteria
@@ -49,7 +49,7 @@ use.
 - [ ] peak memory is bounded and documented by tier
 - [ ] chunked output is deterministic and click-safe at chunk boundaries
 - [x] unsupported pitch or channel behavior is explicit and observable
-- [ ] cache hits, writes, and invalidations remain auditable through runtime
+- [x] cache hits, writes, and invalidations remain auditable through runtime
   receipts
 
 ## Validation
@@ -81,9 +81,16 @@ use.
   contract is ready. Runtime snapshots carry the same unsupported-capability
   readiness, and materialization/cache receipts now expose chunk-count and
   source-span summaries.
+- 2026-07-09: closed Batch 23.3 with focused render-plane coverage for cache
+  identity and receipt auditability. Materialization receipts now have tests
+  proving distinct hashes/keys for engine version, media identity, projection
+  epoch, ratio curve, pitch curve, and warp-marker changes. Chunk-policy
+  changes are observable through receipt chunk summaries, and a bounded
+  realistic-duration chunked artifact renders through the export fixture.
 
 ## Next Task
 
-Start Batch 23.3 with cache/soak hardening: add focused coverage that proves
-engine, projection epoch, ratio curve, pitch curve, warp marker, media identity,
-and chunk-policy changes remain auditable through cache/render receipts.
+Reassess the remaining open g10.023 gaps before more code: marker-specific
+seam/click evidence and formal peak-memory documentation are still open, while
+broader multichannel widening stays blocked until the channel-layout contract is
+ready.
