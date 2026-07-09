@@ -99,6 +99,8 @@ comparison reports, not add more receipt or fixture surfaces.
   changing product routing
 - [x] test one tracked peak-region phase-locking candidate before changing
   product routing
+- [x] test one stable-frame magnitude-evolution candidate before changing
+  product routing
 - [ ] keep the long-window sustained-coherence path benchmark-only unless a
   better product-observable selector or DSP candidate emerges
 
@@ -872,13 +874,29 @@ comparison reports, not add more receipt or fixture surfaces.
   more rows than the simpler ratio-scoped transient-reset path and has a worse
   worst regression (`0.059913` versus `0.039756`). No broad run or product
   routing change is justified.
+- 2026-07-09: added a report-only magnitude-evolution candidate named
+  `expansion-long-window-magnitude-slew`. The path keeps current
+  OfflineHighQuality output for compression and tests long-window expansion
+  identity locking with per-bin magnitude slew limiting on spectrally stable
+  frames. Regenerated the targeted report at
+  `target/stretch-corpus-fma-coherence-magnitude-slew-candidate-targeted.tsv`
+  (`real 455.71`). The candidate is rejected and is worse than the
+  ratio-scoped transient-reset path: 15 rows, 5 improved, 5 unchanged,
+  5 regressed, worst regression `delta=0.112175` on `stretch:full_mix` `0016`
+  at `1.25x`. It produced a useful full-mix `1.5x` improvement
+  (`delta=-0.260414`), but reduced the vocal and bass wins and increased the
+  regression count. Do not tune this scalar slew limiter as a product path from
+  this evidence.
 
 ## Next Task
 
 Continue Batch 22.6 by moving away from selector or simple-blend promotion for
 the long-window path. The next DSP candidate should address the actual
-regression mechanism more directly than peak-region phase-lock tracking,
-likely by changing magnitude evolution rather than phase propagation. Reject
-on targeted evidence before a broad run if it shows material regressions. Do
-not change product routing, cache identity, dynamic-ratio materialization, or
-pitch-shift materialization for the long-window path.
+regression mechanism more directly than scalar magnitude slew limiting. The
+best rejected shape remains `expansion-long-window-transient-reset`, so the
+next useful step is either a more structural long-window/transient hybrid or a
+stop-and-summarize decision on whether Batch 22.6 has exhausted low-risk
+single-batch candidates. Reject on targeted evidence before a broad run if it
+shows material regressions. Do not change product routing, cache identity,
+dynamic-ratio materialization, or pitch-shift materialization for the
+long-window path.

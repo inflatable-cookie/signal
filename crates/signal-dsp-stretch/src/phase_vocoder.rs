@@ -77,6 +77,25 @@ pub(crate) fn tracked_peak_region_phase_vocoder(
     )
 }
 
+/// Run a report-only phase-locked prototype that limits per-bin magnitude
+/// changes on spectrally stable frames.
+pub(crate) fn magnitude_slew_phase_vocoder(
+    input: &[Sample],
+    target_len: usize,
+    ratio: f64,
+    window_size: usize,
+    analysis_hop: usize,
+) -> Vec<Sample> {
+    run_phase_vocoder(
+        input,
+        target_len,
+        ratio,
+        window_size,
+        analysis_hop,
+        PhasePropagationMode::IdentityLockedMagnitudeSlew,
+    )
+}
+
 /// Run the identity phase-locked prototype with transient phase resets.
 pub(crate) fn transient_reset_phase_vocoder(
     input: &[Sample],
@@ -187,6 +206,7 @@ enum PhasePropagationMode {
     IdentityLocked,
     IdentityLockedStabilityAdaptive,
     IdentityLockedTrackedPeakRegions,
+    IdentityLockedMagnitudeSlew,
     IdentityLockedTransientReset,
     IdentityLockedCompressionTransientAnchor,
 }
@@ -224,6 +244,7 @@ struct DraftPhaseVocoder {
     current_peaks: Vec<SpectralPeak>,
     previous_peaks: Vec<SpectralPeak>,
     previous_magnitudes: Vec<f32>,
+    previous_synthesis_magnitudes: Vec<f32>,
     current_spectral_stability: f64,
     current_energy: f64,
     previous_energy: f64,
@@ -265,6 +286,7 @@ impl DraftPhaseVocoder {
             current_peaks: Vec::with_capacity(config.bins / 4),
             previous_peaks: Vec::with_capacity(config.bins / 4),
             previous_magnitudes: vec![0.0; config.bins],
+            previous_synthesis_magnitudes: vec![0.0; config.bins],
             current_spectral_stability: 1.0,
             current_energy: 0.0,
             previous_energy: 0.0,
@@ -367,14 +389,31 @@ impl DraftPhaseVocoder {
         }
 
         for bin in 0..self.config.bins {
-            let magnitude = self.current_magnitudes[bin];
+            let magnitude = self.synthesis_magnitude(bin, frame_index);
             self.synthesis_spectrum[bin] =
                 Complex32::from_polar(magnitude, self.synthesis_phase[bin]);
+            self.previous_synthesis_magnitudes[bin] = magnitude;
         }
         for bin in 1..self.config.window_size.div_ceil(2) {
             self.synthesis_spectrum[self.config.window_size - bin] =
                 self.synthesis_spectrum[bin].conj();
         }
+    }
+
+    fn synthesis_magnitude(&self, bin: usize, frame_index: usize) -> f32 {
+        let current = self.current_magnitudes[bin];
+        if self.mode != PhasePropagationMode::IdentityLockedMagnitudeSlew
+            || frame_index == 0
+            || self.current_spectral_stability < 0.70
+        {
+            return current;
+        }
+
+        let previous = self.previous_synthesis_magnitudes[bin];
+        if previous <= 1.0e-6 || current <= 1.0e-6 {
+            return current;
+        }
+        current.clamp(previous * 0.5, previous * 2.0)
     }
 
     fn spectral_stability_score(&self, frame_index: usize) -> f64 {
@@ -424,7 +463,8 @@ impl DraftPhaseVocoder {
             PhasePropagationMode::IndependentBins
             | PhasePropagationMode::IdentityLocked
             | PhasePropagationMode::IdentityLockedStabilityAdaptive
-            | PhasePropagationMode::IdentityLockedTrackedPeakRegions => false,
+            | PhasePropagationMode::IdentityLockedTrackedPeakRegions
+            | PhasePropagationMode::IdentityLockedMagnitudeSlew => false,
         }
     }
 
@@ -432,7 +472,8 @@ impl DraftPhaseVocoder {
         match self.mode {
             PhasePropagationMode::IdentityLocked
             | PhasePropagationMode::IdentityLockedTransientReset
-            | PhasePropagationMode::IdentityLockedCompressionTransientAnchor => true,
+            | PhasePropagationMode::IdentityLockedCompressionTransientAnchor
+            | PhasePropagationMode::IdentityLockedMagnitudeSlew => true,
             PhasePropagationMode::IdentityLockedStabilityAdaptive => {
                 frame_index == 0 || self.current_spectral_stability >= 0.70
             }
@@ -655,6 +696,23 @@ mod tests {
     }
 
     #[test]
+    fn magnitude_slew_limits_stable_frame_bin_changes() {
+        let input = vec![0.0; 512];
+        let config = PhaseVocoderConfig::new(&input, input.len(), 1.0, 512, 128);
+        let mut engine =
+            DraftPhaseVocoder::new(config, PhasePropagationMode::IdentityLockedMagnitudeSlew);
+
+        engine.current_spectral_stability = 0.75;
+        engine.current_magnitudes[10] = 10.0;
+        engine.previous_synthesis_magnitudes[10] = 2.0;
+
+        assert_eq!(engine.synthesis_magnitude(10, 1), 4.0);
+
+        engine.current_spectral_stability = 0.69;
+        assert_eq!(engine.synthesis_magnitude(10, 1), 10.0);
+    }
+
+    #[test]
     fn stability_adaptive_locking_uses_frame_spectral_stability() {
         let input = vec![0.0; 512];
         let config = PhaseVocoderConfig::new(&input, input.len(), 1.0, 512, 128);
@@ -712,6 +770,16 @@ mod tests {
         for ratio in [0.75, 1.25, 1.5, 2.0] {
             let target_len = (input.len() as f64 * ratio).round() as usize;
             let output = tracked_peak_region_phase_vocoder(&input, target_len, ratio, 1024, 256);
+            assert_eq!(output.len(), target_len, "ratio {ratio}");
+        }
+    }
+
+    #[test]
+    fn magnitude_slew_prototype_honors_output_length_contract() {
+        let input = bin_centered_sine(11, 8192);
+        for ratio in [0.75, 1.25, 1.5, 2.0] {
+            let target_len = (input.len() as f64 * ratio).round() as usize;
+            let output = magnitude_slew_phase_vocoder(&input, target_len, ratio, 1024, 256);
             assert_eq!(output.len(), target_len, "ratio {ratio}");
         }
     }
