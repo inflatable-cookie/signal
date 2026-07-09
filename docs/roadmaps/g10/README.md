@@ -95,7 +95,8 @@ Current stretch status:
 - `RealtimePreview`: prototype and metrics landed; direct callback processing
   remains unsupported for render-plane routing. Mono callback-state DSP now has
   a no-allocation proof; linked stereo is implemented; ratio scheduling now has
-  source-frame alignment proof. Dynamic-ratio seam evidence remains open.
+  source-frame alignment proof; dynamic-ratio seam evidence is covered against
+  the synthetic tempo-ramp corpus subset.
 - `OfflineHighQuality`: implemented for default-path artifacts with chunked
   materialization and cache receipts; quality promotion still depends on real
   evidence and structural DSP work.
@@ -105,6 +106,7 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Continue `g10.026` Batch 26.3 by proving dynamic-ratio seam behavior against
-the preview corpus subset. Do not add render-plane integration and do not run
-the whole-buffer prototype on the audio callback.
+Stop and reassess the `g10.026` callback support gate before flipping
+`audio_thread_processing_supported` or wiring render-plane integration. The
+state now has callback-local proof, but render-plane use still needs an
+explicit source-advance/output-position contract.

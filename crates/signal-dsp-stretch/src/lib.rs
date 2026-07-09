@@ -444,6 +444,7 @@ pub struct RealtimePreviewCallbackState {
     pending_ratio_change: bool,
     last_ratio_change_request_frame: u64,
     last_ratio_change_applied_frame: u64,
+    last_ratio_change_output_frame: u64,
     last_ratio_change_alignment_error_frames: usize,
     ratio_change_count: u64,
     input_write_frame: u64,
@@ -467,6 +468,8 @@ pub struct RealtimePreviewCallbackProcessReport {
     pub ratio_change_count: u64,
     /// Alignment error, in source frames, for the last applied ratio change.
     pub ratio_change_alignment_error_frames: usize,
+    /// Output frame where the last applied ratio change first contributes.
+    pub ratio_change_output_frame: u64,
     /// Frames consumed from the input block.
     pub input_frames: usize,
     /// Frames produced into the output block.
@@ -609,6 +612,7 @@ impl RealtimePreviewCallbackState {
             pending_ratio_change: false,
             last_ratio_change_request_frame: 0,
             last_ratio_change_applied_frame: 0,
+            last_ratio_change_output_frame: 0,
             last_ratio_change_alignment_error_frames: 0,
             ratio_change_count: 0,
             input_write_frame: 0,
@@ -706,6 +710,11 @@ impl RealtimePreviewCallbackState {
         self.last_ratio_change_applied_frame
     }
 
+    /// Output frame where the latest applied ratio change first contributes.
+    pub fn last_ratio_change_output_frame(&self) -> u64 {
+        self.last_ratio_change_output_frame
+    }
+
     /// Source-frame error between the latest ratio request and its application.
     pub fn last_ratio_change_alignment_error_frames(&self) -> usize {
         self.last_ratio_change_alignment_error_frames
@@ -745,6 +754,7 @@ impl RealtimePreviewCallbackState {
         self.pending_ratio_change = false;
         self.last_ratio_change_request_frame = 0;
         self.last_ratio_change_applied_frame = 0;
+        self.last_ratio_change_output_frame = 0;
         self.last_ratio_change_alignment_error_frames = 0;
         self.ratio_change_count = 0;
         self.input_write_frame = 0;
@@ -796,6 +806,7 @@ impl RealtimePreviewCallbackState {
             active_ratio: self.active_ratio,
             ratio_change_count: self.ratio_change_count,
             ratio_change_alignment_error_frames: self.last_ratio_change_alignment_error_frames,
+            ratio_change_output_frame: self.last_ratio_change_output_frame,
             input_frames: frame_count,
             output_frames: frame_count,
             processed_frames: self.processed_frames,
@@ -814,11 +825,12 @@ impl RealtimePreviewCallbackState {
         self.pending_ratio_change = true;
     }
 
-    fn ratio_for_next_analysis_frame(&mut self) -> f64 {
+    fn ratio_for_next_analysis_frame(&mut self, synthesis_start: u64) -> f64 {
         if self.pending_ratio_change && self.next_analysis_frame >= self.pending_ratio_apply_frame {
             self.active_ratio = self.pending_ratio;
             self.last_ratio_change_request_frame = self.pending_ratio_request_frame;
             self.last_ratio_change_applied_frame = self.next_analysis_frame;
+            self.last_ratio_change_output_frame = synthesis_start;
             self.last_ratio_change_alignment_error_frames =
                 abs_diff_frames(self.next_analysis_frame, self.pending_ratio_request_frame);
             self.pending_ratio_change = false;
@@ -860,7 +872,7 @@ impl RealtimePreviewCallbackState {
             {
                 break;
             }
-            let ratio = self.ratio_for_next_analysis_frame();
+            let ratio = self.ratio_for_next_analysis_frame(synthesis_start);
             for channel in 0..self.config.channel_count {
                 self.analyze_streaming_frame(channel);
                 self.propagate_streaming_phase(channel, ratio);
@@ -2679,10 +2691,69 @@ mod tests {
         assert_eq!(state.ratio_change_count(), 1);
         assert_eq!(state.last_ratio_change_request_frame(), 480);
         assert_eq!(state.last_ratio_change_applied_frame(), 512);
+        assert_eq!(state.last_ratio_change_output_frame(), 1024);
         assert_eq!(state.last_ratio_change_alignment_error_frames(), 32);
         assert!(
             state.last_ratio_change_alignment_error_frames()
                 <= state.ratio_change_alignment_tolerance_frames()
+        );
+    }
+
+    #[test]
+    fn realtime_preview_callback_state_bounds_dynamic_ratio_seams_on_tempo_ramp() {
+        let input = generate_synthetic_stretch_audio(StretchCorpusFamily::TempoRamp)
+            .expect("tempo ramp synthetic case should exist");
+        let ratio_change_frames = [input.frame_count() / 3, input.frame_count() * 2 / 3];
+        let mut state = RealtimePreviewCallbackState::new(RealtimePreviewStreamConfig::new(
+            SampleRate(input.sample_rate_hz),
+            input.channels as usize,
+            96,
+        ))
+        .expect("callback state config should validate");
+        let mut output = vec![0.0; input.samples.len()];
+        let mut seam_frames = Vec::new();
+        let mut last_ratio_change_count = 0;
+
+        for block_start in (0..input.frame_count()).step_by(96) {
+            let frame_count = (input.frame_count() - block_start).min(96);
+            let sample_start = block_start * input.channels as usize;
+            let sample_end = sample_start + frame_count * input.channels as usize;
+            let ratio = if block_start < ratio_change_frames[0] {
+                0.75
+            } else if block_start < ratio_change_frames[1] {
+                1.0
+            } else {
+                1.5
+            };
+            let report = state
+                .process(
+                    &input.samples[sample_start..sample_end],
+                    &mut output[sample_start..sample_end],
+                    frame_count,
+                    ratio,
+                )
+                .expect("callback kernel should process tempo ramp");
+            if report.ratio_change_count > last_ratio_change_count
+                && state.last_ratio_change_request_frame() > 0
+            {
+                seam_frames.push(report.ratio_change_output_frame as usize);
+            }
+            last_ratio_change_count = report.ratio_change_count;
+        }
+
+        let seam = measure_dynamic_segment_seam_click(&output, input.channels, &seam_frames, 1.0);
+
+        assert_eq!(seam_frames.len(), 2);
+        assert_eq!(seam.seam_frames, seam_frames);
+        assert!(
+            seam.peak_seam_delta < 0.35,
+            "peak seam delta {}",
+            seam.peak_seam_delta
+        );
+        assert!(
+            seam.click_dbfs < -9.0,
+            "seam click dBFS {}",
+            seam.click_dbfs
         );
     }
 

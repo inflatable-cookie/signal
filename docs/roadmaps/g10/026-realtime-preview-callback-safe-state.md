@@ -24,7 +24,7 @@ ratio-change alignment proof before any render-plane plan can use it.
 - [x] extend the callback-safe process path to linked stereo
 - [x] apply ratio changes through a documented sample-domain alignment
   tolerance
-- [ ] preserve the existing prototype metric surface as the preview quality
+- [x] preserve the existing prototype metric surface as the preview quality
   baseline
 - [x] keep render-plane integration blocked until the state object passes the
   RT-safety proof
@@ -60,7 +60,7 @@ ratio-change alignment proof before any render-plane plan can use it.
 ### Batch 26.3 - Dynamic Ratio And Render-Plane Gate
 
 - [x] add ratio-change scheduling with documented alignment tolerance
-- [ ] prove dynamic-ratio timing and seam behavior against the preview corpus
+- [x] prove dynamic-ratio timing and seam behavior against the preview corpus
   subset
 - [ ] flip callback support and add render-plane integration only after the
   callback-safe state object passes no-allocation/no-lock/no-blocking coverage
@@ -72,9 +72,9 @@ ratio-change alignment proof before any render-plane plan can use it.
   input
 - [x] fixed-ratio output stays deterministic and within latency contract
 - [x] dynamic-ratio changes land within documented tolerance
-- [ ] `RealtimePreviewStreamingContract` only reports callback support when
+- [x] `RealtimePreviewStreamingContract` only reports callback support when
   the implementation and tests prove it
-- [ ] render-plane realtime safety remains intact
+- [x] render-plane realtime safety remains intact
 
 ## Validation
 
@@ -122,9 +122,16 @@ ratio-change alignment proof before any render-plane plan can use it.
   documented tolerance. The no-allocation proof now includes ratio changes.
   Dynamic-ratio seam/corpus evidence and render-plane integration remain
   blocked.
+- 2026-07-09: Added dynamic-ratio seam evidence against the synthetic
+  `TempoRamp` corpus case. The callback state now reports the output frame
+  where a scheduled ratio change first contributes, and the test measures those
+  frames with the existing `DynamicSegmentSeamClickDbfs` metric. Mid-stream
+  ratio seams stay below the preview threshold, while the support flag remains
+  closed and render-plane integration remains untouched.
 
 ## Next Task
 
-Continue Batch 26.3 by proving dynamic-ratio seam behavior against the preview
-corpus subset. Keep render-plane integration blocked and do not run the
-whole-buffer prototype on the audio callback.
+Stop and reassess the callback support gate before flipping
+`audio_thread_processing_supported` or wiring render-plane integration. The
+state now has callback-local proof, but render-plane use still needs an
+explicit source-advance/output-position contract.

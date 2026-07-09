@@ -13,8 +13,8 @@ Updated: 2026-07-09
   scale, RealtimePreview, and a deferred product-workflow checkpoint. The
   active structural stretch lane is `g10.026`, callback-safe RealtimePreview
   state; mono and linked-stereo callback DSP now have a no-allocation proof,
-  and ratio scheduling has source-frame alignment proof. Dynamic-ratio seam
-  evidence remains open.
+  ratio scheduling has source-frame alignment proof, and dynamic-ratio seam
+  evidence is covered against the synthetic tempo-ramp corpus subset.
 - audit evidence: `chorus/research/2026-06-11-signal-deep-audit.md` (phase
   one) and `docs/research/2026-06-11-post-demolition-assessment.md` (phase
   two)
@@ -54,5 +54,5 @@ If that cleanup has not happened, stay in the current generation and finish the 
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the current active-generation front door.
-Continue `g10.026` Batch 26.3 with dynamic-ratio seam behavior against the
-preview corpus subset.
+Reassess the `g10.026` callback support gate before flipping callback support
+or wiring render-plane integration.
