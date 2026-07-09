@@ -16,7 +16,7 @@ use.
 
 ## Goals
 
-- [ ] add bounded-memory long-media processing or chunked artifact rendering
+- [x] add bounded-memory long-media processing or chunked artifact rendering
 - [ ] define overlap/crossfade rules for chunk boundaries and warp-marker seams
 - [ ] support pitch automation or reject it with a product-visible capability
   contract
@@ -31,7 +31,7 @@ use.
 ### Batch 23.1 - Long-Media Artifact Shape
 
 - [x] bounded-memory processing plan and deterministic chunk identity
-- [ ] chunk boundary overlap/crossfade policy
+- [x] chunk boundary overlap/crossfade policy
 
 ### Batch 23.2 - Capability Boundaries
 
@@ -67,9 +67,17 @@ use.
   exact output coordinates, dynamic-ratio boundary preservation, and bounded
   maximum source payload policy. This does not yet change render-plane
   materialization.
+- 2026-07-09: wired render-plane OfflineHighQuality default-path
+  materialization to bounded chunk plans. Multi-chunk artifacts now render
+  chunk payloads with source overlap context, trim to exact output
+  coordinates, smooth chunk boundaries, and record chunk-count/source-span
+  summaries in the materialization receipt. Selector paths remain whole-buffer
+  static-ratio materialization until their chunked behavior has separate
+  evidence.
 
 ## Next Task
 
-Continue Batch 23.1 by wiring render/export/freeze offline artifact
-materialization to the chunk plan, then implement the boundary
-trim/crossfade policy without changing cache identity semantics.
+Start Batch 23.2 by making the pitch-automation rejection and stereo-only
+channel boundary product-visible through the artifact planning/materialization
+surface, then decide whether runtime snapshots need the new chunk summary
+fields.

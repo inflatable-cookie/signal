@@ -18,15 +18,17 @@ use crate::{
     MAX_BLOCK_FRAMES,
 };
 use signal_dsp_stretch::{
-    compare_synthetic_stretch_backends, stretch_backend_plan, OfflineHighQualityPath,
-    OfflineHighQualityStretcher, StretchBackendStatus, StretchBackendTier, StretchCacheIdentity,
-    StretchCacheIdentityError, StretchCacheIdentityInput, StretchPromotionReceipt,
-    StretchRatioPoint, StretchSyntheticPromotionPolicy,
+    compare_synthetic_stretch_backends, plan_offline_stretch_chunks, stretch_backend_plan,
+    OfflineHighQualityPath, OfflineHighQualityStretcher, StretchBackendStatus, StretchBackendTier,
+    StretchCacheIdentity, StretchCacheIdentityError, StretchCacheIdentityInput,
+    StretchOfflineChunk, StretchOfflineChunkConfig, StretchOfflineChunkPlan,
+    StretchPromotionReceipt, StretchRatioPoint, StretchSyntheticPromotionPolicy,
 };
 use signal_primitives::SampleRate;
 
 /// Default block quantum for offline rendering.
 const DEFAULT_BLOCK_FRAMES: usize = 1024;
+const OFFLINE_STRETCH_ARTIFACT_CHUNK_CROSSFADE_FRAMES: usize = 256;
 
 /// Options for one offline render pass.
 #[derive(Debug, Clone)]
@@ -144,6 +146,8 @@ pub struct OfflineStretchArtifactPcm {
     /// Cacheable interleaved stereo PCM that render/export/freeze consumers can
     /// feed back through [`crate::RenderSource::Samples`].
     pub buffer: RenderSampleBuffer,
+    /// Deterministic chunk plan used to materialize the artifact.
+    pub chunk_plan: StretchOfflineChunkPlan,
     /// Source frame count consumed from `source`.
     pub input_frame_count: usize,
     /// Output frame count produced in `buffer`.
@@ -297,6 +301,14 @@ pub struct OfflineStretchArtifactMaterializationReceipt {
     pub channels: u16,
     /// Output sample rate.
     pub sample_rate_hz: u32,
+    /// Number of planned offline stretch chunks.
+    pub chunk_count: usize,
+    /// Maximum non-overlap source payload frames allowed per chunk.
+    pub max_chunk_source_frames: usize,
+    /// Source overlap context requested around each chunk payload.
+    pub chunk_overlap_frames: usize,
+    /// Largest source render span requested by any chunk, including context.
+    pub max_chunk_render_source_frames: usize,
     /// Whether this materialized artifact may feed product-facing output.
     pub product_facing_allowed: bool,
 }
@@ -499,6 +511,28 @@ pub fn materialize_offline_stretch_artifact_pcm(
     promotion_receipt: StretchPromotionReceipt,
     source: &RenderSampleBuffer,
 ) -> Result<OfflineStretchArtifactPcm, OfflineStretchArtifactMaterializeError> {
+    materialize_offline_stretch_artifact_pcm_with_chunk_config(
+        scope,
+        identity_input,
+        promotion_receipt,
+        source,
+        StretchOfflineChunkConfig::default(),
+    )
+}
+
+/// Materialize a ready OfflineHighQuality stretch artifact with an explicit
+/// chunking policy.
+///
+/// This is the long-media test and integration entry point. Production callers
+/// normally use [`materialize_offline_stretch_artifact_pcm`], which applies the
+/// default bounded chunk policy.
+pub fn materialize_offline_stretch_artifact_pcm_with_chunk_config(
+    scope: OfflineStretchArtifactScope,
+    identity_input: &StretchCacheIdentityInput,
+    promotion_receipt: StretchPromotionReceipt,
+    source: &RenderSampleBuffer,
+    chunk_config: StretchOfflineChunkConfig,
+) -> Result<OfflineStretchArtifactPcm, OfflineStretchArtifactMaterializeError> {
     let plan = plan_offline_stretch_artifact(scope, identity_input, promotion_receipt)?;
     if plan.readiness != OfflineStretchArtifactReadiness::Ready {
         return Err(OfflineStretchArtifactMaterializeError::NotReady(
@@ -540,22 +574,37 @@ pub fn materialize_offline_stretch_artifact_pcm(
         }
     }
     let mut stretcher = OfflineHighQualityStretcher::with_path(ratio, identity_input.offline_path);
+    let chunk_plan = plan_offline_stretch_chunks(
+        source.frame_count(),
+        &identity_input.ratio_curve,
+        ratio,
+        chunk_config,
+    );
     let frames =
         if selector_offline_path_requires_static_materialization(identity_input.offline_path) {
             stretcher.stretch_interleaved_stereo(&source.frames)
-        } else if pitch_shift.abs() > 1.0e-9 {
-            stretcher.stretch_dynamic_ratio_pitch_interleaved_stereo(
-                &source.frames,
-                &identity_input.ratio_curve,
-                SampleRate(source.sample_rate_hz),
-                pitch_shift,
-            )
-        } else if identity_input.ratio_curve.is_empty() {
-            stretcher.stretch_interleaved_stereo(&source.frames)
+        } else if chunk_plan.is_single_chunk() {
+            if pitch_shift.abs() > 1.0e-9 {
+                stretcher.stretch_dynamic_ratio_pitch_interleaved_stereo(
+                    &source.frames,
+                    &identity_input.ratio_curve,
+                    SampleRate(source.sample_rate_hz),
+                    pitch_shift,
+                )
+            } else if identity_input.ratio_curve.is_empty() {
+                stretcher.stretch_interleaved_stereo(&source.frames)
+            } else {
+                stretcher.stretch_dynamic_ratio_interleaved_stereo(
+                    &source.frames,
+                    &identity_input.ratio_curve,
+                )
+            }
         } else {
-            stretcher.stretch_dynamic_ratio_interleaved_stereo(
-                &source.frames,
-                &identity_input.ratio_curve,
+            materialize_chunked_offline_stretch_artifact_frames(
+                source,
+                identity_input.offline_path,
+                pitch_shift,
+                &chunk_plan,
             )
         };
 
@@ -571,6 +620,10 @@ pub fn materialize_offline_stretch_artifact_pcm(
         output_frame_count,
         channels: identity_input.channel_layout.channels,
         sample_rate_hz: source.sample_rate_hz,
+        chunk_count: chunk_plan.chunks.len(),
+        max_chunk_source_frames: chunk_plan.config.max_source_frames,
+        chunk_overlap_frames: chunk_plan.config.overlap_frames,
+        max_chunk_render_source_frames: chunk_plan.max_render_source_frames(),
         product_facing_allowed: plan.product_facing_allowed,
     };
     Ok(OfflineStretchArtifactPcm {
@@ -580,6 +633,7 @@ pub fn materialize_offline_stretch_artifact_pcm(
             sample_rate_hz: source.sample_rate_hz,
             frames: Arc::from(frames.into_boxed_slice()),
         },
+        chunk_plan,
         input_frame_count: source.frame_count(),
         output_frame_count,
     })
@@ -647,6 +701,109 @@ pub fn build_offline_stretch_artifact_cache_handoff_with_synthetic_policy(
         receipt,
         source: artifact_source.source,
     })
+}
+
+fn materialize_chunked_offline_stretch_artifact_frames(
+    source: &RenderSampleBuffer,
+    offline_path: OfflineHighQualityPath,
+    pitch_shift: f64,
+    chunk_plan: &StretchOfflineChunkPlan,
+) -> Vec<f32> {
+    let frame_count = source.frame_count();
+    let even_source = &source.frames[..frame_count * 2];
+    let mut output = Vec::with_capacity(chunk_plan.total_output_frames * 2);
+    let mut boundaries = Vec::with_capacity(chunk_plan.chunks.len().saturating_sub(1));
+
+    for (index, chunk) in chunk_plan.chunks.iter().enumerate() {
+        let chunk_payload = materialize_stretch_chunk_payload(
+            even_source,
+            source.sample_rate_hz,
+            offline_path,
+            pitch_shift,
+            chunk,
+        );
+        output.extend(chunk_payload);
+        if index + 1 < chunk_plan.chunks.len() {
+            boundaries.push(output.len() / 2);
+        }
+    }
+
+    output.resize(chunk_plan.total_output_frames * 2, 0.0);
+    smooth_artifact_chunk_boundaries_interleaved(
+        &mut output,
+        &boundaries,
+        OFFLINE_STRETCH_ARTIFACT_CHUNK_CROSSFADE_FRAMES,
+    );
+    output
+}
+
+fn materialize_stretch_chunk_payload(
+    even_source: &[f32],
+    sample_rate_hz: u32,
+    offline_path: OfflineHighQualityPath,
+    pitch_shift: f64,
+    chunk: &StretchOfflineChunk,
+) -> Vec<f32> {
+    let render_start = chunk.render_start_frame * 2;
+    let render_end = chunk.render_end_frame * 2;
+    let render_source = &even_source[render_start..render_end];
+    let mut stretcher = OfflineHighQualityStretcher::with_path(chunk.ratio, offline_path);
+    let rendered = if pitch_shift.abs() > 1.0e-9 {
+        stretcher.stretch_pitch_interleaved_stereo(
+            render_source,
+            SampleRate(sample_rate_hz),
+            pitch_shift,
+        )
+    } else {
+        stretcher.stretch_interleaved_stereo(render_source)
+    };
+
+    let prefix_source_frames = chunk.source_start_frame - chunk.render_start_frame;
+    let prefix_output_frames = (prefix_source_frames as f64 * chunk.ratio).round() as usize;
+    let payload_output_frames = chunk.output_frames();
+    let rendered_frames = rendered.len() / 2;
+    let start_frame = prefix_output_frames.min(rendered_frames);
+    let end_frame = (start_frame + payload_output_frames).min(rendered_frames);
+    let mut payload = rendered[start_frame * 2..end_frame * 2].to_vec();
+    payload.resize(payload_output_frames * 2, 0.0);
+    payload
+}
+
+fn smooth_artifact_chunk_boundaries_interleaved(
+    interleaved_samples: &mut [f32],
+    boundary_frames: &[usize],
+    fade_frames: usize,
+) {
+    if fade_frames == 0 {
+        return;
+    }
+    let frames = interleaved_samples.len() / 2;
+    if frames < 2 {
+        return;
+    }
+
+    for boundary in boundary_frames {
+        if *boundary == 0 || *boundary >= frames {
+            continue;
+        }
+        let fade_frames = fade_frames.min(*boundary).min(frames - *boundary).max(1);
+        for channel in 0..2 {
+            let before_edge_index = (*boundary - 1) * 2 + channel;
+            let after_edge_index = *boundary * 2 + channel;
+            let before_edge = interleaved_samples[before_edge_index];
+            let after_edge = interleaved_samples[after_edge_index];
+            let midpoint = (before_edge + after_edge) * 0.5;
+            for offset in 0..fade_frames {
+                let weight = (fade_frames - offset) as f32 / fade_frames as f32;
+                let before_frame = *boundary - 1 - offset;
+                let after_frame = *boundary + offset;
+                let before_index = before_frame * 2 + channel;
+                let after_index = after_frame * 2 + channel;
+                interleaved_samples[before_index] += (midpoint - before_edge) * weight;
+                interleaved_samples[after_index] += (midpoint - after_edge) * weight;
+            }
+        }
+    }
 }
 
 fn synthetic_policy_promotion_receipt(
@@ -1117,6 +1274,13 @@ mod tests {
         assert!(receipt.accepts_product_facing_use(StretchBackendTier::OfflineHighQuality));
     }
 
+    fn max_abs_delta(left: &[f32], right: &[f32]) -> f32 {
+        left.iter()
+            .zip(right.iter())
+            .map(|(left, right)| (left - right).abs())
+            .fold(0.0f32, f32::max)
+    }
+
     #[test]
     fn stretch_artifact_plan_allows_export_with_current_corpus_policy() {
         let input = stretch_identity_input();
@@ -1281,6 +1445,87 @@ mod tests {
         assert_current_corpus_promotion_receipt(
             &artifact.plan.promotion_receipt,
             "synthetic:direct-materialize-current",
+        );
+    }
+
+    #[test]
+    fn chunked_artifact_materialization_records_bounded_chunk_plan() {
+        let input = stretch_identity_input()
+            .with_ratio_curve(vec![StretchRatioPoint::new(0, 1.25)])
+            .with_pitch_curve(vec![StretchPitchPoint::new(0, 0.0)]);
+        let source = stretch_artifact_source(1_024);
+        let artifact = materialize_offline_stretch_artifact_pcm_with_chunk_config(
+            OfflineStretchArtifactScope::RenderCache,
+            &input,
+            accepted_synthetic_promotion_receipt("synthetic:chunked-materialize-current"),
+            &source,
+            StretchOfflineChunkConfig::new(256, 64),
+        )
+        .expect("accepted direct receipt should materialize with bounded chunks");
+
+        assert_eq!(artifact.chunk_plan.chunks.len(), 4);
+        assert_eq!(
+            artifact.chunk_plan.total_source_frames,
+            source.frame_count()
+        );
+        assert_eq!(artifact.chunk_plan.total_output_frames, 1_280);
+        assert_eq!(artifact.output_frame_count, 1_280);
+        assert_eq!(artifact.buffer.frame_count(), artifact.output_frame_count);
+        assert_eq!(artifact.receipt.chunk_count, 4);
+        assert_eq!(artifact.receipt.max_chunk_source_frames, 256);
+        assert_eq!(artifact.receipt.chunk_overlap_frames, 64);
+        assert!(artifact.receipt.max_chunk_render_source_frames <= 256 + 64 * 2);
+        assert_eq!(
+            artifact.receipt.max_chunk_render_source_frames,
+            artifact.chunk_plan.max_render_source_frames()
+        );
+        assert!(artifact.receipt.product_facing_allowed);
+    }
+
+    #[test]
+    fn chunked_artifact_materialization_is_deterministic_for_dynamic_ratio() {
+        let input = stretch_identity_input()
+            .with_ratio_curve(vec![
+                StretchRatioPoint::new(0, 1.0),
+                StretchRatioPoint::new(512, 1.25),
+            ])
+            .with_pitch_curve(vec![StretchPitchPoint::new(0, 0.0)]);
+        let source = stretch_artifact_source(2_048);
+        let receipt = accepted_synthetic_promotion_receipt("synthetic:chunked-dynamic-ratio");
+
+        let first = materialize_offline_stretch_artifact_pcm_with_chunk_config(
+            OfflineStretchArtifactScope::RenderCache,
+            &input,
+            receipt.clone(),
+            &source,
+            StretchOfflineChunkConfig::new(512, 128),
+        )
+        .expect("first chunked materialization should succeed");
+        let repeated = materialize_offline_stretch_artifact_pcm_with_chunk_config(
+            OfflineStretchArtifactScope::RenderCache,
+            &input,
+            receipt,
+            &source,
+            StretchOfflineChunkConfig::new(512, 128),
+        )
+        .expect("repeated chunked materialization should succeed");
+
+        assert_eq!(first.output_frame_count, 2_432);
+        assert_eq!(
+            first.chunk_plan.total_output_frames,
+            first.output_frame_count
+        );
+        assert_eq!(first.receipt.chunk_count, 4);
+        assert_eq!(first.buffer.sample_rate_hz, repeated.buffer.sample_rate_hz);
+        assert_eq!(first.buffer.frame_count(), repeated.buffer.frame_count());
+        assert!(
+            max_abs_delta(&first.buffer.frames, &repeated.buffer.frames) < 1.0e-6,
+            "chunked materialization should be sample-stable"
+        );
+        assert_eq!(first.chunk_plan, repeated.chunk_plan);
+        assert_eq!(
+            first.receipt.cache_identity_hash,
+            repeated.receipt.cache_identity_hash
         );
     }
 
