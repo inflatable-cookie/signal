@@ -22,7 +22,7 @@ ratio-change alignment proof before any render-plane plan can use it.
 - [x] process bounded mono render quanta with no allocation, locks, blocking,
   I/O, or unbounded loops
 - [x] extend the callback-safe process path to linked stereo
-- [ ] apply ratio changes through a documented sample-domain alignment
+- [x] apply ratio changes through a documented sample-domain alignment
   tolerance
 - [ ] preserve the existing prototype metric surface as the preview quality
   baseline
@@ -59,7 +59,7 @@ ratio-change alignment proof before any render-plane plan can use it.
 
 ### Batch 26.3 - Dynamic Ratio And Render-Plane Gate
 
-- [ ] add ratio-change scheduling with documented alignment tolerance
+- [x] add ratio-change scheduling with documented alignment tolerance
 - [ ] prove dynamic-ratio timing and seam behavior against the preview corpus
   subset
 - [ ] flip callback support and add render-plane integration only after the
@@ -71,7 +71,7 @@ ratio-change alignment proof before any render-plane plan can use it.
 - [x] process method does not lock, block, perform I/O, or loop over unbounded
   input
 - [x] fixed-ratio output stays deterministic and within latency contract
-- [ ] dynamic-ratio changes land within documented tolerance
+- [x] dynamic-ratio changes land within documented tolerance
 - [ ] `RealtimePreviewStreamingContract` only reports callback support when
   the implementation and tests prove it
 - [ ] render-plane realtime safety remains intact
@@ -114,9 +114,17 @@ ratio-change alignment proof before any render-plane plan can use it.
   deterministic stereo output, per-channel pitch preservation, the contract
   gate staying closed, and the no-allocation proof across both mono and stereo.
   Dynamic-ratio scheduling and render-plane integration remain blocked.
+- 2026-07-09: Started Batch 26.3 with callback-safe ratio-change scheduling.
+  The state now keeps a single pending ratio change, snaps it to the next
+  analysis-hop boundary, records requested/applied source frames, and reports
+  the alignment error. Focused tests cover an off-grid 96-frame callback block
+  snapping to the 128-frame analysis grid with 32 frames of error, inside the
+  documented tolerance. The no-allocation proof now includes ratio changes.
+  Dynamic-ratio seam/corpus evidence and render-plane integration remain
+  blocked.
 
 ## Next Task
 
-Start Batch 26.3 by adding callback-safe ratio-change scheduling with a
-documented sample-domain alignment tolerance. Keep render-plane integration
-blocked and do not run the whole-buffer prototype on the audio callback.
+Continue Batch 26.3 by proving dynamic-ratio seam behavior against the preview
+corpus subset. Keep render-plane integration blocked and do not run the
+whole-buffer prototype on the audio callback.

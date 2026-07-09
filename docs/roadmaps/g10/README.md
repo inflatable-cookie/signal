@@ -94,8 +94,8 @@ Current stretch status:
 - `Repitch`: implemented as the render-plane realtime-safe varispeed path.
 - `RealtimePreview`: prototype and metrics landed; direct callback processing
   remains unsupported for render-plane routing. Mono callback-state DSP now has
-  a no-allocation proof; linked stereo is implemented; ratio scheduling remains
-  open.
+  a no-allocation proof; linked stereo is implemented; ratio scheduling now has
+  source-frame alignment proof. Dynamic-ratio seam evidence remains open.
 - `OfflineHighQuality`: implemented for default-path artifacts with chunked
   materialization and cache receipts; quality promotion still depends on real
   evidence and structural DSP work.
@@ -105,6 +105,6 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Continue `g10.026` Batch 26.3 by adding callback-safe ratio-change scheduling
-with documented sample-domain alignment tolerance. Do not add render-plane
-integration and do not run the whole-buffer prototype on the audio callback.
+Continue `g10.026` Batch 26.3 by proving dynamic-ratio seam behavior against
+the preview corpus subset. Do not add render-plane integration and do not run
+the whole-buffer prototype on the audio callback.

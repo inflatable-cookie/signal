@@ -41,8 +41,8 @@ new hybrid design before another sustained/polyphonic quality jump;
 offline artifacts need a streaming artifact writer/cache target for full peak
 memory closure; RealtimePreview needs a proven callback-safe state object
 before render-plane integration. Mono callback-state DSP now has a
-no-allocation proof, linked stereo is implemented, and ratio scheduling remains
-open.
+no-allocation proof, linked stereo is implemented, and ratio scheduling has
+source-frame alignment proof. Dynamic-ratio seam evidence remains open.
 Product workflow planning remains deferred in `g10.025` until a real consumer
 needs the Signal-owned contract.
 Assessment driving phase two:

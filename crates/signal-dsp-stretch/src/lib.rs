@@ -437,6 +437,15 @@ pub struct RealtimePreviewCallbackState {
     forward: Arc<dyn Fft<f32>>,
     inverse: Arc<dyn Fft<f32>>,
     current_ratio: f64,
+    active_ratio: f64,
+    pending_ratio: f64,
+    pending_ratio_request_frame: u64,
+    pending_ratio_apply_frame: u64,
+    pending_ratio_change: bool,
+    last_ratio_change_request_frame: u64,
+    last_ratio_change_applied_frame: u64,
+    last_ratio_change_alignment_error_frames: usize,
+    ratio_change_count: u64,
     input_write_frame: u64,
     output_read_frame: u64,
     next_analysis_frame: u64,
@@ -450,8 +459,14 @@ pub struct RealtimePreviewCallbackState {
 /// Report returned by a successful RealtimePreview callback process call.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct RealtimePreviewCallbackProcessReport {
-    /// Sanitized ratio used for this block.
+    /// Sanitized ratio requested by this block.
     pub ratio: f64,
+    /// Active ratio at the end of this process call.
+    pub active_ratio: f64,
+    /// Number of scheduled ratio changes applied by this state.
+    pub ratio_change_count: u64,
+    /// Alignment error, in source frames, for the last applied ratio change.
+    pub ratio_change_alignment_error_frames: usize,
     /// Frames consumed from the input block.
     pub input_frames: usize,
     /// Frames produced into the output block.
@@ -587,6 +602,15 @@ impl RealtimePreviewCallbackState {
             forward,
             inverse,
             current_ratio: 1.0,
+            active_ratio: 1.0,
+            pending_ratio: 1.0,
+            pending_ratio_request_frame: 0,
+            pending_ratio_apply_frame: 0,
+            pending_ratio_change: false,
+            last_ratio_change_request_frame: 0,
+            last_ratio_change_applied_frame: 0,
+            last_ratio_change_alignment_error_frames: 0,
+            ratio_change_count: 0,
             input_write_frame: 0,
             output_read_frame: 0,
             next_analysis_frame: 0,
@@ -662,6 +686,36 @@ impl RealtimePreviewCallbackState {
         self.current_ratio
     }
 
+    /// Ratio currently applied to streaming spectral frames.
+    pub fn active_ratio(&self) -> f64 {
+        self.active_ratio
+    }
+
+    /// Number of scheduled ratio changes applied by this state.
+    pub fn ratio_change_count(&self) -> u64 {
+        self.ratio_change_count
+    }
+
+    /// Source frame where the latest applied ratio change was requested.
+    pub fn last_ratio_change_request_frame(&self) -> u64 {
+        self.last_ratio_change_request_frame
+    }
+
+    /// Source frame where the latest ratio change reached the analysis grid.
+    pub fn last_ratio_change_applied_frame(&self) -> u64 {
+        self.last_ratio_change_applied_frame
+    }
+
+    /// Source-frame error between the latest ratio request and its application.
+    pub fn last_ratio_change_alignment_error_frames(&self) -> usize {
+        self.last_ratio_change_alignment_error_frames
+    }
+
+    /// Contracted source-frame tolerance for scheduled ratio changes.
+    pub fn ratio_change_alignment_tolerance_frames(&self) -> usize {
+        self.config.analysis_hop + self.config.max_block_frames
+    }
+
     /// Cumulative source-domain frames accepted by this state.
     pub fn processed_frames(&self) -> u64 {
         self.processed_frames
@@ -684,6 +738,15 @@ impl RealtimePreviewCallbackState {
         self.previous_magnitudes.fill(0.0);
         self.current_peak_bins.clear();
         self.current_ratio = 1.0;
+        self.active_ratio = 1.0;
+        self.pending_ratio = 1.0;
+        self.pending_ratio_request_frame = 0;
+        self.pending_ratio_apply_frame = 0;
+        self.pending_ratio_change = false;
+        self.last_ratio_change_request_frame = 0;
+        self.last_ratio_change_applied_frame = 0;
+        self.last_ratio_change_alignment_error_frames = 0;
+        self.ratio_change_count = 0;
         self.input_write_frame = 0;
         self.output_read_frame = 0;
         self.next_analysis_frame = 0;
@@ -723,17 +786,45 @@ impl RealtimePreviewCallbackState {
             });
         }
         let ratio = sanitize_ratio(ratio);
-        self.current_ratio = ratio;
+        self.schedule_ratio_change(ratio);
         self.push_interleaved_input(input, frame_count);
-        self.process_available_streaming_frames(ratio);
+        self.process_available_streaming_frames();
         self.read_interleaved_output(output, frame_count);
         self.processed_frames = self.processed_frames.saturating_add(frame_count as u64);
         Ok(RealtimePreviewCallbackProcessReport {
             ratio,
+            active_ratio: self.active_ratio,
+            ratio_change_count: self.ratio_change_count,
+            ratio_change_alignment_error_frames: self.last_ratio_change_alignment_error_frames,
             input_frames: frame_count,
             output_frames: frame_count,
             processed_frames: self.processed_frames,
         })
+    }
+
+    fn schedule_ratio_change(&mut self, ratio: f64) {
+        if (ratio - self.current_ratio).abs() <= f64::EPSILON {
+            return;
+        }
+        self.current_ratio = ratio;
+        self.pending_ratio = ratio;
+        self.pending_ratio_request_frame = self.input_write_frame;
+        self.pending_ratio_apply_frame =
+            align_to_next_grid(self.input_write_frame, self.config.analysis_hop as u64);
+        self.pending_ratio_change = true;
+    }
+
+    fn ratio_for_next_analysis_frame(&mut self) -> f64 {
+        if self.pending_ratio_change && self.next_analysis_frame >= self.pending_ratio_apply_frame {
+            self.active_ratio = self.pending_ratio;
+            self.last_ratio_change_request_frame = self.pending_ratio_request_frame;
+            self.last_ratio_change_applied_frame = self.next_analysis_frame;
+            self.last_ratio_change_alignment_error_frames =
+                abs_diff_frames(self.next_analysis_frame, self.pending_ratio_request_frame);
+            self.pending_ratio_change = false;
+            self.ratio_change_count = self.ratio_change_count.saturating_add(1);
+        }
+        self.active_ratio
     }
 
     fn ring_frame_capacity(&self) -> usize {
@@ -753,7 +844,7 @@ impl RealtimePreviewCallbackState {
         self.input_write_frame = self.input_write_frame.saturating_add(frame_count as u64);
     }
 
-    fn process_available_streaming_frames(&mut self, ratio: f64) {
+    fn process_available_streaming_frames(&mut self) {
         let ring_frames = self.ring_frame_capacity() as u64;
         while self.next_analysis_frame + self.config.window_size as u64 <= self.input_write_frame {
             if self
@@ -769,6 +860,7 @@ impl RealtimePreviewCallbackState {
             {
                 break;
             }
+            let ratio = self.ratio_for_next_analysis_frame();
             for channel in 0..self.config.channel_count {
                 self.analyze_streaming_frame(channel);
                 self.propagate_streaming_phase(channel, ratio);
@@ -1795,6 +1887,22 @@ fn sanitize_ratio(ratio: f64) -> f64 {
     }
 }
 
+fn align_to_next_grid(frame: u64, grid: u64) -> u64 {
+    if grid == 0 {
+        return frame;
+    }
+    let remainder = frame % grid;
+    if remainder == 0 {
+        frame
+    } else {
+        frame.saturating_add(grid - remainder)
+    }
+}
+
+fn abs_diff_frames(left: u64, right: u64) -> usize {
+    left.abs_diff(right).try_into().unwrap_or(usize::MAX)
+}
+
 fn wrap_phase(phase: f32) -> f32 {
     (phase + std::f32::consts::PI).rem_euclid(std::f32::consts::TAU) - std::f32::consts::PI
 }
@@ -2535,6 +2643,47 @@ mod tests {
         assert!(rms(&out_right[1024..]) > 0.05);
         assert!((dominant_frequency_hz(&out_left[1024..], 48_000.0) - 330.0).abs() < 20.0);
         assert!((dominant_frequency_hz(&out_right[1024..], 48_000.0) - 660.0).abs() < 25.0);
+    }
+
+    #[test]
+    fn realtime_preview_callback_state_schedules_ratio_changes_on_analysis_grid() {
+        let mut state = RealtimePreviewCallbackState::new(RealtimePreviewStreamConfig::new(
+            SampleRate(48_000),
+            1,
+            96,
+        ))
+        .expect("callback state config should validate");
+        let input = sine(440.0, 48_000.0, 96 * 16);
+        let mut output = vec![0.0; input.len()];
+
+        for block_index in 0..16 {
+            let start = block_index * 96;
+            let ratio = if block_index < 5 { 1.0 } else { 1.5 };
+            let report = state
+                .process(
+                    &input[start..start + 96],
+                    &mut output[start..start + 96],
+                    96,
+                    ratio,
+                )
+                .expect("callback kernel should process dynamic ratio");
+            assert_eq!(report.ratio, ratio);
+            assert!(
+                report.ratio_change_alignment_error_frames
+                    <= state.ratio_change_alignment_tolerance_frames()
+            );
+        }
+
+        assert_eq!(state.current_ratio(), 1.5);
+        assert_eq!(state.active_ratio(), 1.5);
+        assert_eq!(state.ratio_change_count(), 1);
+        assert_eq!(state.last_ratio_change_request_frame(), 480);
+        assert_eq!(state.last_ratio_change_applied_frame(), 512);
+        assert_eq!(state.last_ratio_change_alignment_error_frames(), 32);
+        assert!(
+            state.last_ratio_change_alignment_error_frames()
+                <= state.ratio_change_alignment_tolerance_frames()
+        );
     }
 
     #[test]

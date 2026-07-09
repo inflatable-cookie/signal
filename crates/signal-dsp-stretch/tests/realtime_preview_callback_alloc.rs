@@ -63,16 +63,18 @@ fn realtime_preview_callback_contract_path_allocates_nothing() {
 
     let mut last_result = Ok(());
     IN_CALLBACK.store(true, Ordering::SeqCst);
-    for _ in 0..64 {
+    for iteration in 0..64 {
+        let mono_ratio = if iteration < 32 { 1.0 } else { 1.25 };
+        let stereo_ratio = if iteration < 32 { 1.0 } else { 0.75 };
         last_result = mono_state
-            .process(&mono_input, &mut mono_output, 128, 1.0)
+            .process(&mono_input, &mut mono_output, 128, mono_ratio)
             .map(|_| ())
             .map_err(|error| error);
         if last_result.is_err() {
             break;
         }
         last_result = stereo_state
-            .process(&stereo_input, &mut stereo_output, 128, 1.0)
+            .process(&stereo_input, &mut stereo_output, 128, stereo_ratio)
             .map(|_| ())
             .map_err(|error| error);
     }
