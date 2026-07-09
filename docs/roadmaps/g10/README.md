@@ -93,7 +93,8 @@ Current stretch status:
 
 - `Repitch`: implemented as the render-plane realtime-safe varispeed path.
 - `RealtimePreview`: prototype and metrics landed; direct callback processing
-  remains unsupported until a proven no-allocation state object exists.
+  remains unsupported for render-plane routing. Mono callback-state DSP now has
+  a no-allocation proof; linked stereo and ratio scheduling remain open.
 - `OfflineHighQuality`: implemented for default-path artifacts with chunked
   materialization and cache receipts; quality promotion still depends on real
   evidence and structural DSP work.
@@ -103,7 +104,6 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Continue `g10.026` Batch 26.2 by implementing the mono streaming
-phase-vocoder process loop against the preallocated callback state. Do not add
-render-plane integration and do not run the whole-buffer prototype on the audio
-callback.
+Continue `g10.026` Batch 26.2 by adding linked-stereo callback state on top of
+the mono kernel. Do not add render-plane integration and do not run the
+whole-buffer prototype on the audio callback.

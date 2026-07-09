@@ -1,16 +1,12 @@
 //! Counting-allocator proof for the RealtimePreview callback state contract.
 //!
-//! Batch 26.1 does not implement streaming DSP yet. This test proves the
-//! callback-facing `process` shell validates geometry and returns its explicit
-//! unsupported status without allocating or deallocating while the callback
-//! flag is raised.
+//! This test proves the mono callback-facing DSP path processes repeated
+//! quanta without allocating or deallocating while the callback flag is raised.
 
 use std::alloc::{GlobalAlloc, Layout, System};
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 
-use signal_dsp_stretch::{
-    RealtimePreviewCallbackProcessError, RealtimePreviewCallbackState, RealtimePreviewStreamConfig,
-};
+use signal_dsp_stretch::{RealtimePreviewCallbackState, RealtimePreviewStreamConfig};
 use signal_primitives::SampleRate;
 
 static IN_CALLBACK: AtomicBool = AtomicBool::new(false);
@@ -42,12 +38,14 @@ static ALLOCATOR: CountingAllocator = CountingAllocator;
 fn realtime_preview_callback_contract_path_allocates_nothing() {
     let mut state = RealtimePreviewCallbackState::new(RealtimePreviewStreamConfig::new(
         SampleRate(48_000),
-        2,
+        1,
         128,
     ))
     .expect("callback state config should validate");
-    let input = vec![0.0; 128 * 2];
-    let mut output = vec![0.0; 128 * 2];
+    let input = (0..128)
+        .map(|index| (std::f32::consts::TAU * 440.0 * index as f32 / 48_000.0).sin())
+        .collect::<Vec<_>>();
+    let mut output = vec![0.0; 128];
 
     let mut last_result = Ok(());
     IN_CALLBACK.store(true, Ordering::SeqCst);
@@ -56,14 +54,10 @@ fn realtime_preview_callback_contract_path_allocates_nothing() {
             .process(&input, &mut output, 128, 1.0)
             .map(|_| ())
             .map_err(|error| error);
-        state.reset();
     }
     IN_CALLBACK.store(false, Ordering::SeqCst);
 
-    assert_eq!(
-        last_result,
-        Err(RealtimePreviewCallbackProcessError::CallbackProcessingUnsupported)
-    );
+    assert_eq!(last_result, Ok(()));
     assert_eq!(
         CALLBACK_ALLOCS.load(Ordering::Relaxed),
         0,

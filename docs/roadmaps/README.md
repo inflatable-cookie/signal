@@ -40,8 +40,10 @@ work is structural rather than a ready micro-batch: OfflineHighQuality needs a
 new hybrid design before another sustained/polyphonic quality jump;
 offline artifacts need a streaming artifact writer/cache target for full peak
 memory closure; RealtimePreview needs a proven callback-safe state object
-before render-plane integration; product workflow planning remains deferred in
-`g10.025` until a real consumer needs the Signal-owned contract.
+before render-plane integration. Mono callback-state DSP now has a
+no-allocation proof, with linked stereo and ratio scheduling still open.
+Product workflow planning remains deferred in `g10.025` until a real consumer
+needs the Signal-owned contract.
 Assessment driving phase two:
 `docs/research/2026-06-11-post-demolition-assessment.md`. Plugin hosting,
 MIDI, higher-quality SRC, and PDC stay in

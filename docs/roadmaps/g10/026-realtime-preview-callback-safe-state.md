@@ -19,8 +19,9 @@ ratio-change alignment proof before any render-plane plan can use it.
 - [x] define the callback-safe RealtimePreview state contract and reset rules
 - [x] preallocate all scratch, rings, windows, spectra, and output buffers
   outside the audio callback
-- [ ] process bounded render quanta with no allocation, locks, blocking, I/O,
-  or unbounded loops
+- [x] process bounded mono render quanta with no allocation, locks, blocking,
+  I/O, or unbounded loops
+- [ ] extend the callback-safe process path to linked stereo
 - [ ] apply ratio changes through a documented sample-domain alignment
   tolerance
 - [ ] preserve the existing prototype metric surface as the preview quality
@@ -50,10 +51,10 @@ ratio-change alignment proof before any render-plane plan can use it.
 
 ### Batch 26.2 - Streaming DSP State
 
-- [ ] implement bounded mono streaming state with preallocated STFT/ring
+- [x] implement bounded mono streaming state with preallocated STFT/ring
   scratch
 - [ ] add linked-stereo state only after mono proves bounded work
-- [ ] prove deterministic output length, bounded latency, and no per-block
+- [x] prove deterministic output length, bounded latency, and no per-block
   allocation for fixed ratios
 
 ### Batch 26.3 - Dynamic Ratio And Render-Plane Gate
@@ -67,9 +68,9 @@ ratio-change alignment proof before any render-plane plan can use it.
 ## Acceptance Criteria
 
 - [x] callback-facing process method allocates zero bytes after construction
-- [ ] process method does not lock, block, perform I/O, or loop over unbounded
+- [x] process method does not lock, block, perform I/O, or loop over unbounded
   input
-- [ ] fixed-ratio output stays deterministic and within latency contract
+- [x] fixed-ratio output stays deterministic and within latency contract
 - [ ] dynamic-ratio changes land within documented tolerance
 - [ ] `RealtimePreviewStreamingContract` only reports callback support when
   the implementation and tests prove it
@@ -100,9 +101,16 @@ ratio-change alignment proof before any render-plane plan can use it.
   per-channel spectral buffers, phase state, and FFT plans during construction.
   The allocation proof now covers repeated callback-facing process attempts and
   resets. Actual streaming phase-vocoder processing remains the next step.
+- 2026-07-09: Landed the first real mono callback DSP path. The callback state
+  now runs a bounded mono streaming phase-vocoder kernel with preallocated FFT
+  scratch, ring buffers, phase state, identity peak locking, and transient phase
+  reset. Focused tests cover mono processing, deterministic fixed-ratio output,
+  callback output latency, and the counting-allocator no-allocation proof.
+  Linked stereo, ratio-change scheduling, and render-plane integration remain
+  blocked.
 
 ## Next Task
 
-Continue Batch 26.2 by implementing the mono streaming phase-vocoder process
-loop against the preallocated state. Do not add render-plane integration and do
-not run the whole-buffer prototype on the audio callback.
+Continue Batch 26.2 by adding linked-stereo callback state on top of the mono
+kernel. Keep render-plane integration blocked and do not run the whole-buffer
+prototype on the audio callback.
