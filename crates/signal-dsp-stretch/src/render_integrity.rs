@@ -15,6 +15,8 @@ pub struct StretchRenderIntegrityMeasurement {
     pub output_length_drift_frames: f64,
     /// Largest absolute head/tail RMS change, in decibels.
     pub endpoint_energy_delta_db: f64,
+    /// Number of source endpoints with enough energy for an RMS comparison.
+    pub measured_endpoint_count: u8,
     /// Output silence beyond the ratio-scaled longest input silence run.
     pub added_silence_frames: usize,
     /// Positive output peak growth relative to the input, in decibels.
@@ -65,6 +67,17 @@ impl StretchRenderIntegrityLimits {
             max_peak_growth_db,
         }
     }
+
+    /// Current absolute correctness limits for promoted OfflineHighQuality paths.
+    ///
+    /// These bounds keep sample-length error within rounding and reject any new
+    /// full-render silence run. The 7 dB endpoint envelope covers the active
+    /// endpoints in the g10.029 18-row Signal/Rubber Band evidence pack
+    /// (observed maxima 5.772 dB and 6.528 dB); peak growth remains bounded to
+    /// 6 dB. These are correctness limits, not a perceptual-quality claim.
+    pub const fn offline_high_quality() -> Self {
+        Self::new(0.5, 7.0, 0, 6.0)
+    }
 }
 
 /// Absolute full-render integrity assessment.
@@ -106,8 +119,19 @@ pub fn measure_stretch_render_integrity(
     let input_tail_rms = rms(&input[input.len() - input_endpoint_frames..]);
     let output_head_rms = rms(&output[..output_endpoint_frames]);
     let output_tail_rms = rms(&output[output.len() - output_endpoint_frames..]);
-    let head_delta_db = amplitude_delta_db(output_head_rms, input_head_rms);
-    let tail_delta_db = amplitude_delta_db(output_tail_rms, input_tail_rms);
+    let active_endpoint_floor = silence_threshold.abs() as f64;
+    let mut endpoint_energy_delta_db = 0.0_f64;
+    let mut measured_endpoint_count = 0_u8;
+    if input_head_rms > active_endpoint_floor {
+        endpoint_energy_delta_db =
+            endpoint_energy_delta_db.max(amplitude_delta_db(output_head_rms, input_head_rms).abs());
+        measured_endpoint_count += 1;
+    }
+    if input_tail_rms > active_endpoint_floor {
+        endpoint_energy_delta_db =
+            endpoint_energy_delta_db.max(amplitude_delta_db(output_tail_rms, input_tail_rms).abs());
+        measured_endpoint_count += 1;
+    }
     let input_peak = peak(input);
     let output_peak = peak(output);
     let longest_input_silence_frames = longest_silence_run(input, silence_threshold);
@@ -119,7 +143,8 @@ pub fn measure_stretch_render_integrity(
         input_frames: input.len(),
         output_frames: output.len(),
         output_length_drift_frames: (output.len() as f64 - input.len() as f64 * ratio).abs(),
-        endpoint_energy_delta_db: head_delta_db.abs().max(tail_delta_db.abs()),
+        endpoint_energy_delta_db,
+        measured_endpoint_count,
         added_silence_frames: longest_output_silence_frames.saturating_sub(expected_output_silence),
         peak_growth_db: amplitude_delta_db(output_peak, input_peak).max(0.0),
         input_peak,
@@ -169,6 +194,7 @@ fn invalid_measurement(
         output_frames,
         output_length_drift_frames: f64::NAN,
         endpoint_energy_delta_db: f64::NAN,
+        measured_endpoint_count: 0,
         added_silence_frames: usize::MAX,
         peak_growth_db: f64::NAN,
         input_peak: f64::NAN,
@@ -265,6 +291,35 @@ mod tests {
         let measurement = measure_stretch_render_integrity(&input, &output, 1.0, 128, 1.0e-6);
 
         assert!((measurement.peak_growth_db - 6.020_599_913).abs() < 1.0e-6);
+    }
+
+    #[test]
+    fn render_integrity_ignores_inactive_source_endpoints() {
+        let mut input = vec![0.0; 4_096];
+        input[1_024..3_072].fill(0.25);
+        let mut output = input.clone();
+        output[..512].fill(0.1);
+        output[3_584..].fill(0.1);
+
+        let measurement = measure_stretch_render_integrity(&input, &output, 1.0, 512, 1.0e-6);
+
+        assert_eq!(measurement.measured_endpoint_count, 0);
+        assert_eq!(measurement.endpoint_energy_delta_db, 0.0);
+    }
+
+    #[test]
+    fn offline_high_quality_limits_reject_envelope_breaches() {
+        let input = vec![0.25; 1_024];
+        let output = vec![0.57; 1_024];
+        let measurement = measure_stretch_render_integrity(&input, &output, 1.0, 128, 1.0e-6);
+        let assessment = assess_stretch_render_integrity(
+            measurement,
+            StretchRenderIntegrityLimits::offline_high_quality(),
+        );
+
+        assert!(!assessment.passed);
+        assert!(!assessment.endpoint_energy_passed);
+        assert!(!assessment.peak_growth_passed);
     }
 
     #[test]

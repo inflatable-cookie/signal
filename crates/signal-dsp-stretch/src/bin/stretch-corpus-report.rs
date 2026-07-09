@@ -6,6 +6,12 @@ use std::env;
 use std::fs::{self, File};
 use std::path::{Path, PathBuf};
 use std::process;
+use std::time::Instant;
+
+#[path = "stretch-corpus-report/alloc_tracker.rs"]
+mod alloc_tracker;
+
+use alloc_tracker::measure_peak_live_heap;
 
 use rustfft::{num_complex::Complex32, FftPlanner};
 use signal_analysis_character::{CharacterAnalyzer, CharacterAnalyzerConfig};
@@ -16,8 +22,8 @@ use signal_dsp_stretch::{
     measure_transient_smear_with_policies, measure_transient_smear_with_policy,
     output_length_drift_samples, OfflineHighQualityPath, OfflineHighQualityStretcher,
     PhaseVocoderStretcher, StretchCorpusAssetRequirement, StretchCorpusListeningSource,
-    StretchExternalBenchmarkRender, StretchTransientDetectorPolicy, TimeStretcher,
-    COMPRESSION_SHORT_WINDOW_SELECTOR_ANALYSIS_HOP,
+    StretchExternalBenchmarkRender, StretchRenderIntegrityLimits, StretchTransientDetectorPolicy,
+    TimeStretcher, COMPRESSION_SHORT_WINDOW_SELECTOR_ANALYSIS_HOP,
     COMPRESSION_SHORT_WINDOW_SELECTOR_MIN_CURRENT_MISSES,
     COMPRESSION_SHORT_WINDOW_SELECTOR_MIN_CURRENT_SMEAR_FRAMES,
     COMPRESSION_SHORT_WINDOW_SELECTOR_WINDOW_SIZE, STRETCH_CORPUS_MANIFEST,
@@ -42,6 +48,7 @@ const QUALITY_METRIC_WINDOW_SIZE: usize = 1_024;
 const QUALITY_METRIC_HOP_SIZE: usize = 256;
 const RENDER_INTEGRITY_ENDPOINT_SOURCE_FRAMES: usize = 1_024;
 const RENDER_INTEGRITY_SILENCE_THRESHOLD: f32 = 1.0e-6;
+const OFFLINE_HIGH_QUALITY_INTEGRITY_LIMIT_ID: &str = "offline-high-quality-v1";
 const MAX_TRANSIENT_ALIGNMENT_EVENTS_PER_BACKEND: usize = 3;
 const TRANSIENT_ALIGNMENT_WINDOW_RADIUS: usize = QUALITY_METRIC_WINDOW_SIZE;
 const EXPECTED_TRANSIENT_ENERGY_PRESENT_RATIO: f64 = 0.50;
@@ -1709,18 +1716,28 @@ struct ExternalBenchmarkQualityMeasurement {
     signal_rms: f64,
     external_rms: f64,
     aligned_rms_error_ratio: f64,
+    integrity_limit_id: &'static str,
+    signal_integrity_passed: bool,
+    external_integrity_passed: bool,
+    signal_measured_endpoint_count: u8,
+    external_measured_endpoint_count: u8,
     signal_endpoint_energy_delta_db: f64,
     external_endpoint_energy_delta_db: f64,
     signal_added_silence_frames: usize,
     external_added_silence_frames: usize,
     signal_peak_growth_db: f64,
     external_peak_growth_db: f64,
+    signal_render_seconds: f64,
+    signal_cpu_realtime_factor: f64,
+    signal_heap_baseline_bytes: usize,
+    signal_heap_peak_bytes: usize,
+    signal_peak_working_memory_bytes: usize,
 }
 
 impl ExternalBenchmarkQualityMeasurement {
     fn format_report_line(&self) -> String {
         format!(
-            "external_benchmark_quality case={} source={} signal_path={:?} ratio={:.6} tool={} render={} status={} reason={} source_boundary={} sample_rate_match={} source_sample_rate={} external_sample_rate={} external_channels={} source_frames={} signal_frames={} external_frames={} signal_timing_drift_samples={:.6} external_timing_drift_samples={:.6} timing_drift_delta_samples={:.6} signal_transient_smear_frames={:.6} external_transient_smear_frames={:.6} transient_smear_delta_frames={:.6} alignment_lag_frames={} aligned_compared_frames={} aligned_correlation={:.6} aligned_rms_error={:.9} aligned_peak_error={:.9} signal_rms={:.9} external_rms={:.9} aligned_rms_error_ratio={:.6} signal_endpoint_energy_delta_db={:.6} external_endpoint_energy_delta_db={:.6} signal_added_silence_frames={} external_added_silence_frames={} signal_peak_growth_db={:.6} external_peak_growth_db={:.6}",
+            "external_benchmark_quality case={} source={} signal_path={:?} ratio={:.6} tool={} render={} status={} reason={} source_boundary={} sample_rate_match={} source_sample_rate={} external_sample_rate={} external_channels={} source_frames={} signal_frames={} external_frames={} signal_timing_drift_samples={:.6} external_timing_drift_samples={:.6} timing_drift_delta_samples={:.6} signal_transient_smear_frames={:.6} external_transient_smear_frames={:.6} transient_smear_delta_frames={:.6} alignment_lag_frames={} aligned_compared_frames={} aligned_correlation={:.6} aligned_rms_error={:.9} aligned_peak_error={:.9} signal_rms={:.9} external_rms={:.9} aligned_rms_error_ratio={:.6} integrity_limit_id={} signal_integrity_passed={} external_integrity_passed={} signal_measured_endpoint_count={} external_measured_endpoint_count={} signal_endpoint_energy_delta_db={:.6} external_endpoint_energy_delta_db={:.6} signal_added_silence_frames={} external_added_silence_frames={} signal_peak_growth_db={:.6} external_peak_growth_db={:.6} signal_render_seconds={:.9} signal_cpu_realtime_factor={:.6} signal_cpu_realtime_factor_basis=rendered-audio-duration signal_heap_baseline_bytes={} signal_heap_peak_bytes={} signal_peak_working_memory_bytes={} signal_peak_working_memory_scope=peak-live-heap-growth-above-pre-render-baseline",
             self.case_id,
             quoted_report_field(&self.source_path),
             self.signal_path,
@@ -1751,12 +1768,22 @@ impl ExternalBenchmarkQualityMeasurement {
             self.signal_rms,
             self.external_rms,
             self.aligned_rms_error_ratio,
+            self.integrity_limit_id,
+            self.signal_integrity_passed,
+            self.external_integrity_passed,
+            self.signal_measured_endpoint_count,
+            self.external_measured_endpoint_count,
             self.signal_endpoint_energy_delta_db,
             self.external_endpoint_energy_delta_db,
             self.signal_added_silence_frames,
             self.external_added_silence_frames,
             self.signal_peak_growth_db,
             self.external_peak_growth_db,
+            self.signal_render_seconds,
+            self.signal_cpu_realtime_factor,
+            self.signal_heap_baseline_bytes,
+            self.signal_heap_peak_bytes,
+            self.signal_peak_working_memory_bytes,
         )
     }
 }
@@ -2201,6 +2228,7 @@ fn format_external_benchmark_quality_metrics(
     mode: ExternalBenchmarkQualityMode,
     signal_path: OfflineHighQualityPath,
 ) -> Result<String, String> {
+    let integrity_limits = StretchRenderIntegrityLimits::offline_high_quality();
     let mut lines = Vec::new();
     let mut gain_envelope_reviews = Vec::new();
     let mut level_normalized_reviews = Vec::new();
@@ -2294,8 +2322,19 @@ fn format_external_benchmark_quality_metrics(
                     .expect("cached decoded mono source audio")
             }
         };
-        let mut signal = OfflineHighQualityStretcher::with_path(render.ratio, signal_path);
-        let signal_output = signal.stretch_mono(&source_mono);
+        let ((signal_output, signal_render_seconds), signal_heap) = measure_peak_live_heap(|| {
+            let started = Instant::now();
+            let mut signal = OfflineHighQualityStretcher::with_path(render.ratio, signal_path);
+            let output = signal.stretch_mono(source_mono);
+            (output, started.elapsed().as_secs_f64())
+        });
+        let rendered_audio_seconds =
+            signal_output.len() as f64 / source_audio.sample_rate_hz as f64;
+        let signal_cpu_realtime_factor = if rendered_audio_seconds > 0.0 {
+            signal_render_seconds / rendered_audio_seconds
+        } else {
+            f64::NAN
+        };
         let signal_smear = measure_transient_smear(
             &source_mono,
             &signal_output,
@@ -2331,6 +2370,12 @@ fn format_external_benchmark_quality_metrics(
             render.ratio,
             RENDER_INTEGRITY_ENDPOINT_SOURCE_FRAMES,
             RENDER_INTEGRITY_SILENCE_THRESHOLD,
+        );
+        let signal_integrity_assessment =
+            signal_dsp_stretch::assess_stretch_render_integrity(signal_integrity, integrity_limits);
+        let external_integrity_assessment = signal_dsp_stretch::assess_stretch_render_integrity(
+            external_integrity,
+            integrity_limits,
         );
         let mut feature_delta_line = None;
         if mode == ExternalBenchmarkQualityMode::Full {
@@ -2819,12 +2864,22 @@ fn format_external_benchmark_quality_metrics(
                 signal_rms: aligned.signal_rms,
                 external_rms: aligned.external_rms,
                 aligned_rms_error_ratio: finite_ratio(aligned.rms_error, aligned.external_rms),
+                integrity_limit_id: OFFLINE_HIGH_QUALITY_INTEGRITY_LIMIT_ID,
+                signal_integrity_passed: signal_integrity_assessment.passed,
+                external_integrity_passed: external_integrity_assessment.passed,
+                signal_measured_endpoint_count: signal_integrity.measured_endpoint_count,
+                external_measured_endpoint_count: external_integrity.measured_endpoint_count,
                 signal_endpoint_energy_delta_db: signal_integrity.endpoint_energy_delta_db,
                 external_endpoint_energy_delta_db: external_integrity.endpoint_energy_delta_db,
                 signal_added_silence_frames: signal_integrity.added_silence_frames,
                 external_added_silence_frames: external_integrity.added_silence_frames,
                 signal_peak_growth_db: signal_integrity.peak_growth_db,
                 external_peak_growth_db: external_integrity.peak_growth_db,
+                signal_render_seconds,
+                signal_cpu_realtime_factor,
+                signal_heap_baseline_bytes: signal_heap.baseline_live_bytes,
+                signal_heap_peak_bytes: signal_heap.peak_live_bytes,
+                signal_peak_working_memory_bytes: signal_heap.peak_growth_bytes,
             }
             .format_report_line(),
         );
@@ -2832,6 +2887,15 @@ fn format_external_benchmark_quality_metrics(
             lines.push(line);
         }
     }
+    lines.push(format!(
+        "stretch_render_integrity_limits id={} max_output_length_drift_frames={:.6} max_endpoint_energy_delta_db={:.6} max_added_silence_frames={} max_peak_growth_db={:.6} endpoint_policy=active-source-endpoints-only evidence={}",
+        OFFLINE_HIGH_QUALITY_INTEGRITY_LIMIT_ID,
+        integrity_limits.max_output_length_drift_frames,
+        integrity_limits.max_endpoint_energy_delta_db,
+        integrity_limits.max_added_silence_frames,
+        integrity_limits.max_peak_growth_db,
+        quoted_report_field("g10.029 18-row Signal/Rubber Band v2 pack"),
+    ));
     if mode == ExternalBenchmarkQualityMode::Core {
         return Ok(lines.join("\n"));
     }
@@ -3787,12 +3851,22 @@ fn format_external_benchmark_quality_skip_line(
         signal_rms: f64::NAN,
         external_rms: f64::NAN,
         aligned_rms_error_ratio: f64::NAN,
+        integrity_limit_id: OFFLINE_HIGH_QUALITY_INTEGRITY_LIMIT_ID,
+        signal_integrity_passed: false,
+        external_integrity_passed: false,
+        signal_measured_endpoint_count: 0,
+        external_measured_endpoint_count: 0,
         signal_endpoint_energy_delta_db: f64::NAN,
         external_endpoint_energy_delta_db: f64::NAN,
         signal_added_silence_frames: usize::MAX,
         external_added_silence_frames: usize::MAX,
         signal_peak_growth_db: f64::NAN,
         external_peak_growth_db: f64::NAN,
+        signal_render_seconds: f64::NAN,
+        signal_cpu_realtime_factor: f64::NAN,
+        signal_heap_baseline_bytes: 0,
+        signal_heap_peak_bytes: 0,
+        signal_peak_working_memory_bytes: 0,
     }
     .format_report_line()
 }
@@ -7078,6 +7152,15 @@ fn quoted_report_field(value: &str) -> String {
 mod tests {
     use super::*;
 
+    fn numeric_report_field(line: &str, name: &str) -> f64 {
+        let prefix = format!("{name}=");
+        line.split_whitespace()
+            .find_map(|field| field.strip_prefix(&prefix))
+            .unwrap_or_else(|| panic!("missing report field {name}"))
+            .parse::<f64>()
+            .unwrap_or_else(|error| panic!("invalid report field {name}: {error}"))
+    }
+
     fn transient_smear_measurement(
         max_smear_frames: f64,
     ) -> signal_dsp_stretch::StretchTransientSmearMeasurement {
@@ -7464,10 +7547,31 @@ mod tests {
         assert!(formatted.contains("aligned_rms_error=0.000000000"));
         assert!(formatted.contains("signal_endpoint_energy_delta_db=0.000000"));
         assert!(formatted.contains("external_endpoint_energy_delta_db=0.000000"));
+        assert!(formatted.contains("integrity_limit_id=offline-high-quality-v1"));
+        assert!(formatted.contains("signal_integrity_passed=true"));
+        assert!(formatted.contains("external_integrity_passed=true"));
+        assert!(formatted.contains("signal_measured_endpoint_count=2"));
+        assert!(formatted.contains("external_measured_endpoint_count=2"));
         assert!(formatted.contains("signal_added_silence_frames=0"));
         assert!(formatted.contains("external_added_silence_frames=0"));
         assert!(formatted.contains("signal_peak_growth_db=0.000000"));
         assert!(formatted.contains("external_peak_growth_db=0.000000"));
+        assert!(formatted.contains("signal_render_seconds="));
+        assert!(formatted.contains("signal_cpu_realtime_factor="));
+        assert!(formatted.contains("signal_cpu_realtime_factor_basis=rendered-audio-duration"));
+        assert!(formatted.contains("signal_heap_baseline_bytes="));
+        assert!(formatted.contains("signal_heap_peak_bytes="));
+        assert!(formatted.contains("signal_peak_working_memory_bytes="));
+        assert!(formatted.contains(
+            "signal_peak_working_memory_scope=peak-live-heap-growth-above-pre-render-baseline"
+        ));
+        assert!(formatted.contains(
+            "stretch_render_integrity_limits id=offline-high-quality-v1 max_output_length_drift_frames=0.500000 max_endpoint_energy_delta_db=7.000000 max_added_silence_frames=0 max_peak_growth_db=6.000000"
+        ));
+        let quality_line = formatted.lines().next().expect("quality row");
+        assert!(numeric_report_field(quality_line, "signal_render_seconds") > 0.0);
+        assert!(numeric_report_field(quality_line, "signal_cpu_realtime_factor") > 0.0);
+        assert!(numeric_report_field(quality_line, "signal_peak_working_memory_bytes") > 0.0);
         assert!(formatted.contains("external_benchmark_feature_delta case=stretch:vocals"));
         assert!(formatted.contains("envelope_correlation=1.000000"));
         assert!(formatted.contains("rms_delta_db=0.000000"));

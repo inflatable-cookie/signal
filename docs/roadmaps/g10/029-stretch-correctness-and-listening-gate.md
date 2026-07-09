@@ -52,8 +52,8 @@ be trustworthy before the callback contract or a structural hybrid widens.
 - [x] wire full-render integrity fields into comparator quality rows for both
   Signal and the external render
 - [x] make comparator reports inspect the full render as well as aligned excerpts
-- [ ] measure CPU realtime factor and peak working memory for promoted paths
-- [ ] add absolute acceptance limits separate from draft comparisons
+- [x] measure CPU realtime factor and peak working memory for promoted paths
+- [x] add absolute acceptance limits separate from draft comparisons
 
 ### Batch 29.3 - Promotion And Listening
 
@@ -74,7 +74,7 @@ be trustworthy before the callback contract or a structural hybrid widens.
 
 - [x] no contractual output tail is created only by post-render zero fill
 - [ ] fixed and dynamic paths have content-aware boundary coverage
-- [ ] quality gates include absolute full-render measurements
+- [x] quality gates include absolute full-render measurements
 - [ ] required real-source families have completed listening findings
 - [ ] OfflineHighQuality status and promotion language match measured evidence
 - [ ] the next hybrid batch has explicit algorithm ownership and failure targets
@@ -104,9 +104,29 @@ be trustworthy before the callback contract or a structural hybrid widens.
   and peak growth. External comparator quality rows report those fields for both
   Signal and the external render instead of limiting correctness evidence to an
   aligned excerpt.
+- 2026-07-09: Completed Batch 29.2. `offline-high-quality-v1` now enforces
+  absolute limits of `0.5` frame length drift, `7 dB` active-endpoint RMS
+  change, zero added-silence frames, and `6 dB` peak growth. Inactive source
+  endpoints are reported but do not create false `240 dB` failures. The 7 dB
+  envelope covers the measured 18-row Signal/Rubber Band v2 pack: active
+  endpoint maxima were `5.772470 dB` for Signal and `6.527985 dB` for Rubber
+  Band. All 18 Signal and 18 external rows passed; Signal added no silence and
+  peaked at `3.162587 dB` growth.
+- 2026-07-09: Added explicit per-render resource measurements. CPU realtime
+  factor is elapsed Signal render time divided by rendered-audio duration.
+  Peak working memory is measured live-heap growth above the pre-render
+  baseline, not inferred from output length or buffer capacity. On an Apple M5
+  Max release build (`rustc 1.96.0`), the 18-row path means/maxima were:
+  Default `0.002678/0.003896` CPU and `3,708,980` bytes peak heap;
+  CompressionShortWindowSelector `0.005292/0.016049` CPU and `3,708,980`
+  bytes; ExpansionShortWindowSelector `0.005231/0.008431` CPU and `5,031,980`
+  bytes. Evidence is target-local under
+  `target/stretch-corpus-g10-029-*-measurement-v2.tsv`; timings are machine
+  observations, not portable acceptance limits.
 
 ## Next Task
 
-Continue Batch 29.2 by setting evidence-backed absolute integrity limits, then
-measure CPU realtime factor and peak working memory. Keep those measurements
-explicit rather than inferring them from render duration or buffer sizes.
+Start Batch 29.3 by preventing synthetic-only evidence from opening
+product-quality promotion. Require the absolute integrity receipt and completed
+real-source listening evidence together; keep comparator parity a separate
+claim until the blind-listening pack is complete.

@@ -268,6 +268,21 @@ quality until all of these gates pass together:
 Rubber Band-class quality claim, while this gate is open. RealtimePreview keeps
 `audio_thread_processing_supported=false`.
 
+The first absolute OfflineHighQuality correctness gate is
+`offline-high-quality-v1`:
+
+- output length drift: at most `0.5` frame
+- active-source endpoint RMS change: at most `7 dB`
+- added full-render silence: `0` frames
+- positive peak growth: at most `6 dB`
+
+Endpoints below the configured source silence floor are reported as inactive
+instead of manufacturing a `240 dB` delta. CPU realtime factor uses measured
+Signal render time divided by rendered-audio duration. Peak working memory uses
+measured live-heap growth above the pre-render baseline. Neither resource
+metric may be reconstructed from report wall time, output length, or buffer
+capacity.
+
 Planning authority:
 `docs/roadmaps/g10/029-stretch-correctness-and-listening-gate.md`.
 
