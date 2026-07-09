@@ -283,6 +283,20 @@ measured live-heap growth above the pre-render baseline. Neither resource
 metric may be reconstructed from report wall time, output length, or buffer
 capacity.
 
+Synthetic draft comparisons are regression evidence only. A product-facing
+OfflineHighQuality receipt must also carry:
+
+- a passing `offline-high-quality-v1` absolute integrity result
+- non-zero external-comparator coverage meeting its declared row requirement
+- corpus coverage meeting its declared case requirement
+- completed blind-listening findings for percussion, bass, vocals,
+  pads/sustains, and full mix
+
+The blind pack must conceal Signal/external assignment until notes are frozen,
+level-match source and candidates under one documented policy, and require
+transient, tonal, stereo, formant, boundary, and preference fields. A synthetic
+receipt may pass its own policy while product-facing use remains blocked.
+
 Planning authority:
 `docs/roadmaps/g10/029-stretch-correctness-and-listening-gate.md`.
 

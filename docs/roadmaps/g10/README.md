@@ -18,10 +18,11 @@ implementation remains Signal-owned.
 
 `g10` now has three stretch gates instead of another ready coding lane:
 
-- OfflineHighQuality evidence is strong enough for fast regression and
-  local-corpus reports, but not for Rubber Band-class promotion claims. The
-  current core loses boundary content on some expanded renders, lacks absolute
-  quality gates, and has no completed listened real-source evidence.
+- OfflineHighQuality boundary coverage and absolute full-render measurement now
+  pass the bounded Signal/Rubber Band pack. Synthetic-only promotion is closed,
+  and a 15-pair five-family blind pack is ready. Rubber Band-class promotion
+  remains blocked on completed operator listening findings and the later
+  structural hybrid checkpoint.
 - Sustained/polyphonic long-window candidates produced useful evidence but no
   production route; the next DSP quality jump needs a structural hybrid design,
   not another one-parameter probe.
@@ -114,6 +115,7 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Continue `g10.029` Batch 29.1 by fixing offline STFT boundary coverage and
-adding content-aware head/tail tests. Keep RealtimePreview source-fill and
-render-plane integration paused.
+Complete the operator notes in the target-local `g10.029` blind-listening pack,
+validate all five required families, then use the classified failures for Batch
+29.4 structural hybrid ownership. Keep RealtimePreview source-fill and broader
+product integration paused.

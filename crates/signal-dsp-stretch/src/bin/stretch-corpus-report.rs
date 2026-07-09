@@ -10,6 +10,8 @@ use std::time::Instant;
 
 #[path = "stretch-corpus-report/alloc_tracker.rs"]
 mod alloc_tracker;
+#[path = "stretch-corpus-report/listening_pack.rs"]
+mod listening_pack;
 
 use alloc_tracker::measure_peak_live_heap;
 
@@ -111,6 +113,8 @@ struct ReportArgs {
     measure_external_benchmark_quality: bool,
     external_benchmark_quality_mode: ExternalBenchmarkQualityMode,
     external_benchmark_signal_path: OfflineHighQualityPath,
+    export_blind_listening_pack: Option<PathBuf>,
+    blind_listening_note_manifests: Vec<PathBuf>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -192,13 +196,15 @@ impl Default for ReportArgs {
             measure_external_benchmark_quality: false,
             external_benchmark_quality_mode: ExternalBenchmarkQualityMode::Full,
             external_benchmark_signal_path: OfflineHighQualityPath::Default,
+            export_blind_listening_pack: None,
+            blind_listening_note_manifests: Vec::new(),
         }
     }
 }
 
 fn main() {
     let args = match parse_args(env::args().skip(1)) {
-        Ok(ParseOutcome::Run(args)) => args,
+        Ok(ParseOutcome::Run(args)) => *args,
         Ok(ParseOutcome::Help) => {
             println!("{}", usage());
             return;
@@ -293,6 +299,43 @@ fn main() {
             }
         }
     }
+    if let Some(export_dir) = &args.export_blind_listening_pack {
+        let quality_renders = match load_external_benchmark_quality_renders(&args) {
+            Ok(renders) => renders,
+            Err(message) => {
+                eprintln!("{message}");
+                process::exit(1);
+            }
+        };
+        match listening_pack::export_blind_listening_pack(
+            &listening_sources,
+            &quality_renders,
+            args.decoded_stretch_frame_limit,
+            args.external_benchmark_signal_path,
+            export_dir,
+        ) {
+            Ok(pack_report) => {
+                formatted.push('\n');
+                formatted.push_str(&pack_report);
+            }
+            Err(message) => {
+                eprintln!("{message}");
+                process::exit(1);
+            }
+        }
+    }
+    for notes_manifest in &args.blind_listening_note_manifests {
+        match listening_pack::format_blind_listening_note_status(notes_manifest) {
+            Ok(status_report) => {
+                formatted.push('\n');
+                formatted.push_str(&status_report);
+            }
+            Err(message) => {
+                eprintln!("{message}");
+                process::exit(1);
+            }
+        }
+    }
     if let Some(export_dir) = &args.export_external_benchmark_pack {
         match export_external_benchmark_pack(
             &listening_sources,
@@ -339,7 +382,7 @@ fn main() {
 
 #[derive(Debug, PartialEq, Eq)]
 enum ParseOutcome {
-    Run(ReportArgs),
+    Run(Box<ReportArgs>),
     Help,
 }
 
@@ -440,6 +483,20 @@ where
                     &next_value(&mut iter, "--external-benchmark-signal-path")?,
                 )?;
             }
+            "--export-blind-listening-pack" => {
+                parsed.export_blind_listening_pack = Some(PathBuf::from(next_value(
+                    &mut iter,
+                    "--export-blind-listening-pack",
+                )?));
+            }
+            "--check-blind-listening-notes" => {
+                parsed
+                    .blind_listening_note_manifests
+                    .push(PathBuf::from(next_value(
+                        &mut iter,
+                        "--check-blind-listening-notes",
+                    )?));
+            }
             "--decoded-stretch-frame-limit" => {
                 parsed.decoded_stretch_frame_limit =
                     next_value(&mut iter, "--decoded-stretch-frame-limit")?
@@ -456,7 +513,7 @@ where
             }
         }
     }
-    Ok(ParseOutcome::Run(parsed))
+    Ok(ParseOutcome::Run(Box::new(parsed)))
 }
 
 fn next_value<I>(iter: &mut I, name: &str) -> Result<String, String>
@@ -469,7 +526,7 @@ where
 }
 
 fn usage() -> &'static str {
-    "usage: stretch-corpus-report [--report-name NAME] [--projection-epoch EPOCH] [--listening-source-manifest TSV] [--decode-listening-sources] [--decode-source-frame-limit N] [--measure-decoded-stretch] [--decoded-stretch-report-mode full|expansion-selector] [--measure-external-benchmark-quality] [--external-benchmark-quality-mode core|full] [--external-benchmark-signal-path default|compression-short-window-selector|expansion-short-window-selector] [--decoded-stretch-frame-limit N] [--external-benchmark-tool NAME] [--external-benchmark-render CASE RATIO WAV] [--external-benchmark-render-manifest TSV] [--export-external-benchmark-pack DIR] [--check-external-benchmark-render-plan TSV] [--output PATH]"
+    "usage: stretch-corpus-report [--report-name NAME] [--projection-epoch EPOCH] [--listening-source-manifest TSV] [--decode-listening-sources] [--decode-source-frame-limit N] [--measure-decoded-stretch] [--decoded-stretch-report-mode full|expansion-selector] [--measure-external-benchmark-quality] [--external-benchmark-quality-mode core|full] [--external-benchmark-signal-path default|compression-short-window-selector|expansion-short-window-selector] [--export-blind-listening-pack DIR] [--check-blind-listening-notes TSV] [--decoded-stretch-frame-limit N] [--external-benchmark-tool NAME] [--external-benchmark-render CASE RATIO WAV] [--external-benchmark-render-manifest TSV] [--export-external-benchmark-pack DIR] [--check-external-benchmark-render-plan TSV] [--output PATH]"
 }
 
 fn load_external_benchmark_renders(
@@ -2212,6 +2269,7 @@ impl ExternalBenchmarkCoherenceCandidateReviewMeasurement {
 struct ExternalBenchmarkDecodedAudio {
     sample_rate_hz: u32,
     channels: u16,
+    samples: Vec<f32>,
     mono_samples: Vec<f32>,
 }
 
@@ -3912,6 +3970,7 @@ fn decode_external_benchmark_render_audio(
     Ok(ExternalBenchmarkDecodedAudio {
         sample_rate_hz: spec.sample_rate,
         channels: spec.channels,
+        samples,
         mono_samples,
     })
 }
@@ -7190,7 +7249,7 @@ mod tests {
 
         assert_eq!(
             args,
-            ParseOutcome::Run(ReportArgs {
+            ParseOutcome::Run(Box::new(ReportArgs {
                 report_name: DEFAULT_REPORT_NAME.to_string(),
                 projection_epoch: DEFAULT_PROJECTION_EPOCH.to_string(),
                 output: None,
@@ -7208,7 +7267,9 @@ mod tests {
                 measure_external_benchmark_quality: false,
                 external_benchmark_quality_mode: ExternalBenchmarkQualityMode::Full,
                 external_benchmark_signal_path: OfflineHighQualityPath::Default,
-            })
+                export_blind_listening_pack: None,
+                blind_listening_note_manifests: Vec::new(),
+            }))
         );
     }
 
@@ -7234,6 +7295,10 @@ mod tests {
             "core".to_string(),
             "--external-benchmark-signal-path".to_string(),
             "expansion-short-window-selector".to_string(),
+            "--export-blind-listening-pack".to_string(),
+            "target/blind-pack".to_string(),
+            "--check-blind-listening-notes".to_string(),
+            "target/blind-pack/blind-listening-notes.tsv".to_string(),
             "--decoded-stretch-frame-limit".to_string(),
             "1024".to_string(),
             "--external-benchmark-tool".to_string(),
@@ -7253,7 +7318,7 @@ mod tests {
 
         assert_eq!(
             args,
-            ParseOutcome::Run(ReportArgs {
+            ParseOutcome::Run(Box::new(ReportArgs {
                 report_name: "custom".to_string(),
                 projection_epoch: "epoch:1".to_string(),
                 output: Some(PathBuf::from("target/stretch-report.txt")),
@@ -7281,7 +7346,11 @@ mod tests {
                 external_benchmark_quality_mode: ExternalBenchmarkQualityMode::Core,
                 external_benchmark_signal_path:
                     OfflineHighQualityPath::ExpansionShortWindowSelector,
-            })
+                export_blind_listening_pack: Some(PathBuf::from("target/blind-pack")),
+                blind_listening_note_manifests: vec![PathBuf::from(
+                    "target/blind-pack/blind-listening-notes.tsv",
+                )],
+            }))
         );
     }
 
@@ -7329,6 +7398,8 @@ mod tests {
             measure_external_benchmark_quality: false,
             external_benchmark_quality_mode: ExternalBenchmarkQualityMode::Full,
             external_benchmark_signal_path: OfflineHighQualityPath::Default,
+            export_blind_listening_pack: None,
+            blind_listening_note_manifests: Vec::new(),
         };
 
         let renders = load_external_benchmark_renders(&args).expect("load external render");
@@ -7383,6 +7454,8 @@ mod tests {
             measure_external_benchmark_quality: false,
             external_benchmark_quality_mode: ExternalBenchmarkQualityMode::Full,
             external_benchmark_signal_path: OfflineHighQualityPath::Default,
+            export_blind_listening_pack: None,
+            blind_listening_note_manifests: Vec::new(),
         };
 
         let renders = load_external_benchmark_renders(&args).expect("load manifest renders");

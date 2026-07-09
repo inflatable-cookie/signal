@@ -8,15 +8,15 @@ use public_contract_boundary_media_support::{
     write_public_test_wav,
 };
 use signal_runtime::{
-    current_synthetic_offline_high_quality_promotion_receipt, HandshakeRequest, RuntimeConfig,
-    RuntimeConfigRequest, RuntimeEventRecorder, RuntimeLifecycleApi, RuntimeMediaPreviewState,
-    RuntimeObservationApi, RuntimeObservationReport,
-    RuntimeOfflineStretchArtifactCacheDecisionKind,
+    HandshakeRequest, OfflineHighQualityPath, RuntimeConfig, RuntimeConfigRequest,
+    RuntimeEventRecorder, RuntimeLifecycleApi, RuntimeMediaPreviewState, RuntimeObservationApi,
+    RuntimeObservationReport, RuntimeOfflineStretchArtifactCacheDecisionKind,
     RuntimeOfflineStretchArtifactCacheDecisionRegistration,
     RuntimeOfflineStretchArtifactPlanRegistration, RuntimeOfflineStretchArtifactReadiness,
     RuntimeOfflineStretchArtifactScope, RuntimeSupervisorReport, SignalRuntime, StretchBackendTier,
-    StretchCacheIdentityInput, StretchChannelLayout, StretchPitchPoint, StretchPromotionStatus,
-    StretchRatioPoint, StretchWarpMarker,
+    StretchCacheIdentityInput, StretchChannelLayout, StretchPitchPoint,
+    StretchProductQualityEvidence, StretchPromotionReceipt, StretchPromotionStatus,
+    StretchRatioPoint, StretchWarpMarker, REQUIRED_STRETCH_LISTENING_FAMILY_COUNT,
 };
 
 #[test]
@@ -167,8 +167,20 @@ fn public_runtime_reports_offline_stretch_artifact_plan_receipts_with_promotion_
         StretchPitchPoint::new(0, 0.0),
         StretchPitchPoint::new(24_000, 2.0),
     ]);
-    let promotion =
-        current_synthetic_offline_high_quality_promotion_receipt("stretch-corpus:public-runtime");
+    let promotion = StretchPromotionReceipt::from_product_quality_evidence(
+        "product-quality:public-runtime",
+        OfflineHighQualityPath::Default,
+        StretchProductQualityEvidence {
+            compared_to_draft_baseline: true,
+            absolute_integrity_passed: true,
+            comparator_row_count: 18,
+            required_comparator_row_count: 18,
+            passed_case_count: 27,
+            required_case_count: 27,
+            completed_listening_family_count: REQUIRED_STRETCH_LISTENING_FAMILY_COUNT,
+            required_listening_family_count: REQUIRED_STRETCH_LISTENING_FAMILY_COUNT,
+        },
+    );
 
     runtime
         .reconcile_offline_stretch_artifact_plans(vec![
@@ -221,7 +233,7 @@ fn public_runtime_reports_offline_stretch_artifact_plan_receipts_with_promotion_
                 offline_path: accepted_plan.offline_path,
                 cache_identity_hash: expected_hash.clone(),
                 cache_identity_key: expected_key.clone(),
-                promotion_evidence_id: "stretch-corpus:public-runtime".into(),
+                promotion_evidence_id: "product-quality:public-runtime".into(),
                 output_frame_count: 72_000,
                 chunk_count: 1,
                 max_chunk_source_frames: 48_000,
@@ -240,7 +252,7 @@ fn public_runtime_reports_offline_stretch_artifact_plan_receipts_with_promotion_
                 offline_path: accepted_plan.offline_path,
                 cache_identity_hash: expected_hash.clone(),
                 cache_identity_key: expected_key.clone(),
-                promotion_evidence_id: "stretch-corpus:public-runtime".into(),
+                promotion_evidence_id: "product-quality:public-runtime".into(),
                 output_frame_count: 72_000,
                 chunk_count: 1,
                 max_chunk_source_frames: 48_000,
@@ -259,7 +271,7 @@ fn public_runtime_reports_offline_stretch_artifact_plan_receipts_with_promotion_
                 offline_path: accepted_plan.offline_path,
                 cache_identity_hash: expected_hash.clone(),
                 cache_identity_key: expected_key,
-                promotion_evidence_id: "stretch-corpus:public-runtime".into(),
+                promotion_evidence_id: "product-quality:public-runtime".into(),
                 output_frame_count: 72_000,
                 chunk_count: 1,
                 max_chunk_source_frames: 48_000,
@@ -296,7 +308,7 @@ fn public_runtime_reports_offline_stretch_artifact_plan_receipts_with_promotion_
     );
     assert_eq!(
         offline_plan.promotion_evidence_id.as_deref(),
-        Some("stretch-corpus:public-runtime")
+        Some("product-quality:public-runtime")
     );
     assert_eq!(
         offline_plan.promotion_passed_case_count,

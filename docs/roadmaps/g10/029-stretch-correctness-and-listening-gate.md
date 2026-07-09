@@ -24,7 +24,7 @@ be trustworthy before the callback contract or a structural hybrid widens.
 - [ ] preserve source content through both contractual output endpoints
 - [ ] measure full-render dropout, endpoint energy, peak growth, CPU, latency,
   and memory
-- [ ] replace draft-relative product promotion with absolute and
+- [x] replace draft-relative product promotion with absolute and
   comparator-backed gates
 - [ ] produce a bounded blind-listening pack with completed operator notes
 - [ ] freeze the requirements for the next structural hybrid design
@@ -57,8 +57,8 @@ be trustworthy before the callback contract or a structural hybrid widens.
 
 ### Batch 29.3 - Promotion And Listening
 
-- [ ] prevent synthetic-only receipts from opening product-quality promotion
-- [ ] generate source/Signal/Rubber Band level-matched blind-listening renders
+- [x] prevent synthetic-only receipts from opening product-quality promotion
+- [x] generate source/Signal/Rubber Band level-matched blind-listening renders
 - [ ] record operator findings for percussion, bass, vocals, sustains, and full mix
 - [ ] classify failures by transient, tonal, stereo, formant, and boundary behavior
 
@@ -76,7 +76,7 @@ be trustworthy before the callback contract or a structural hybrid widens.
 - [ ] fixed and dynamic paths have content-aware boundary coverage
 - [x] quality gates include absolute full-render measurements
 - [ ] required real-source families have completed listening findings
-- [ ] OfflineHighQuality status and promotion language match measured evidence
+- [x] OfflineHighQuality status and promotion language match measured evidence
 - [ ] the next hybrid batch has explicit algorithm ownership and failure targets
 
 ## Validation
@@ -123,10 +123,27 @@ be trustworthy before the callback contract or a structural hybrid widens.
   bytes. Evidence is target-local under
   `target/stretch-corpus-g10-029-*-measurement-v2.tsv`; timings are machine
   observations, not portable acceptance limits.
+- 2026-07-09: Closed synthetic-only product promotion. Synthetic comparison
+  receipts may pass their regression policy, but product-facing acceptance now
+  additionally requires absolute integrity, external-comparator coverage, and
+  completed findings for all five real-source families. Direct composite
+  receipts remain path-specific. Synthetic-policy render/cache helpers now
+  return non-ready plans or `NotReady` instead of materializing product output.
+- 2026-07-09: Generated the first bounded blind pack at
+  `target/stretch-corpus-g10-029-blind-listening-pack-v1`. It contains 15
+  stereo A/B pairs: one source per percussion, bass, vocals, pads/sustains, and
+  full-mix family at `0.75x`, `1.25x`, and `1.5x`. Source, Signal Default, and
+  Rubber Band R3 renders use one per-pair RMS target with a `0.95` peak ceiling.
+  The deterministic assignment is concealed in `blind-listening-key.tsv`;
+  `blind-listening-notes.tsv` requires transient, tonal, stereo, formant,
+  boundary, preference, and completion fields. Current validator status is
+  `Incomplete`: 15 pairs, 0 of 5 completed families, 0 invalid completed rows.
+  No listening findings were fabricated.
 
 ## Next Task
 
-Start Batch 29.3 by preventing synthetic-only evidence from opening
-product-quality promotion. Require the absolute integrity receipt and completed
-real-source listening evidence together; keep comparator parity a separate
-claim until the blind-listening pack is complete.
+Complete the blind pack at
+`target/stretch-corpus-g10-029-blind-listening-pack-v1` without opening the key:
+fill every classification and preference field, set `completed=true` per heard
+pair, then rerun `stretch-corpus-report --check-blind-listening-notes`. Do not
+open product promotion or start Batch 29.4 until all five families validate.

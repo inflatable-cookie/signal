@@ -7,7 +7,7 @@ use std::fs;
 
 use public_host_edge_media::{public_local_media_fixture_path, write_public_test_wav};
 use public_host_edge_stretch::{
-    accepted_stretch_policy_request, cache_consumption_options, cache_consumption_spec,
+    accepted_stretch_promotion_receipt, cache_consumption_options, cache_consumption_spec,
     host_stretch_identity_input, host_stretch_source, rejected_stretch_policy_request,
     stretch_build_request, CACHE_CONSUMPTION_STAGE_ID,
 };
@@ -15,9 +15,11 @@ use signal_host_local::LocalRuntimeHost;
 use signal_render_plane::{
     build_offline_stretch_artifact_cache_handoff_with_synthetic_policy,
     build_offline_stretch_artifact_render_source_with_synthetic_policy,
-    plan_offline_stretch_artifact_with_synthetic_policy, render_plan_to_pcm,
+    materialize_offline_stretch_artifact_pcm, plan_offline_stretch_artifact_with_synthetic_policy,
+    render_plan_to_pcm, OfflineStretchArtifactCacheDecision,
+    OfflineStretchArtifactCacheDecisionKind, OfflineStretchArtifactCacheHandoff,
     OfflineStretchArtifactMaterializeError, OfflineStretchArtifactReadiness,
-    OfflineStretchArtifactRenderCacheBridge,
+    OfflineStretchArtifactRenderCacheBridge, OfflineStretchArtifactRenderSource,
     OfflineStretchArtifactScope as RenderOfflineStretchArtifactScope, RenderSource,
 };
 use signal_runtime::{
@@ -156,16 +158,18 @@ fn local_shared_host_edge_exports_offline_stretch_artifact_receipts() {
     );
     let expected_identity = identity_input.identity().expect("identity should validate");
     let source = host_stretch_source(0.25, 480);
-    let artifact_source =
-        build_offline_stretch_artifact_render_source_with_synthetic_policy(stretch_build_request(
-            accepted_stretch_policy_request(
-                RenderOfflineStretchArtifactScope::Freeze,
-                &identity_input,
-                "stretch-corpus:host-local",
-            ),
-            &source,
-        ))
-        .expect("host-local freeze artifact should produce a policy-gated render source");
+    let promotion_receipt = accepted_stretch_promotion_receipt("product-quality:host-local");
+    let artifact = materialize_offline_stretch_artifact_pcm(
+        RenderOfflineStretchArtifactScope::Freeze,
+        &identity_input,
+        promotion_receipt.clone(),
+        &source,
+    )
+    .expect("host-local freeze artifact should accept composite quality evidence");
+    let artifact_source = OfflineStretchArtifactRenderSource {
+        source: RenderSource::Samples(artifact.buffer.clone()),
+        artifact,
+    };
     let RenderSource::Samples(buffer) = &artifact_source.source else {
         panic!("host-local artifact source should be RenderSource::Samples");
     };
@@ -176,17 +180,23 @@ fn local_shared_host_edge_exports_offline_stretch_artifact_receipts() {
     let artifact = &artifact_source.artifact;
     let expected_passed_case_count = artifact.plan.promotion_receipt.passed_case_count;
     let expected_required_case_count = artifact.plan.promotion_receipt.required_case_count;
-    let mut cache_bridge = OfflineStretchArtifactRenderCacheBridge::new();
-    let cache_decision = cache_bridge
-        .resolve_with_synthetic_policy(stretch_build_request(
-            accepted_stretch_policy_request(
-                RenderOfflineStretchArtifactScope::RenderCache,
-                &identity_input,
-                "stretch-corpus:host-local-cache",
-            ),
-            &source,
-        ))
-        .expect("host-local render-cache decision should resolve");
+    let cache_artifact = materialize_offline_stretch_artifact_pcm(
+        RenderOfflineStretchArtifactScope::RenderCache,
+        &identity_input,
+        promotion_receipt,
+        &source,
+    )
+    .expect("host-local cache artifact should accept composite quality evidence");
+    let cache_source = RenderSource::Samples(cache_artifact.buffer.clone());
+    let cache_decision = OfflineStretchArtifactCacheDecision {
+        kind: OfflineStretchArtifactCacheDecisionKind::Written,
+        handoff: OfflineStretchArtifactCacheHandoff {
+            cache_identity_hash: cache_artifact.receipt.cache_identity_hash.clone(),
+            cache_identity_key: cache_artifact.receipt.cache_identity_key.clone(),
+            receipt: cache_artifact.receipt,
+            source: cache_source,
+        },
+    };
     let cache_render_source = cache_decision.handoff.source.clone();
     let cache_output_frames = cache_decision.handoff.receipt.output_frame_count as u64;
     let rendered = render_plan_to_pcm(
@@ -242,7 +252,7 @@ fn local_shared_host_edge_exports_offline_stretch_artifact_receipts() {
     assert_eq!(plan.promotion_status, StretchPromotionStatus::Accepted);
     assert_eq!(
         plan.promotion_evidence_id.as_deref(),
-        Some("stretch-corpus:host-local")
+        Some("product-quality:host-local")
     );
     assert_eq!(plan.promotion_passed_case_count, expected_passed_case_count);
     assert_eq!(
@@ -262,7 +272,7 @@ fn local_shared_host_edge_exports_offline_stretch_artifact_receipts() {
     assert_eq!(artifact.plan_id, "host-stretch-plan:offline-hq");
     assert_eq!(artifact.cache_identity_hash, expected_identity.stable_hash);
     assert_eq!(artifact.cache_identity_key, expected_identity.canonical_key);
-    assert_eq!(artifact.promotion_evidence_id, "stretch-corpus:host-local");
+    assert_eq!(artifact.promotion_evidence_id, "product-quality:host-local");
     assert_eq!(artifact.input_frame_count, 480);
     assert_eq!(artifact.output_frame_count, 600);
     assert_eq!(

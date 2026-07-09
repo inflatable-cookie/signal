@@ -93,8 +93,9 @@ pub use corpus_report::{
     StretchExternalBenchmarkComparison, StretchExternalBenchmarkRender,
 };
 pub use promotion::{
-    current_synthetic_offline_high_quality_promotion_receipt, StretchPromotionReceipt,
-    StretchPromotionStatus, StretchSyntheticPromotionPolicy,
+    current_synthetic_offline_high_quality_promotion_receipt, StretchProductQualityEvidence,
+    StretchPromotionReceipt, StretchPromotionStatus, StretchSyntheticPromotionPolicy,
+    REQUIRED_STRETCH_LISTENING_FAMILY_COUNT,
 };
 pub use render_integrity::{
     assess_stretch_render_integrity, measure_stretch_render_integrity,

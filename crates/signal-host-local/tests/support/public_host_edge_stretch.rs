@@ -9,8 +9,9 @@ use signal_render_plane::{
     RenderStageSpec,
 };
 use signal_runtime::{
-    StretchBackendTier, StretchCacheIdentityInput, StretchChannelLayout, StretchPitchPoint,
-    StretchRatioPoint, StretchSyntheticPromotionPolicy, StretchWarpMarker,
+    OfflineHighQualityPath, StretchBackendTier, StretchCacheIdentityInput, StretchChannelLayout,
+    StretchPitchPoint, StretchProductQualityEvidence, StretchPromotionReceipt, StretchRatioPoint,
+    StretchSyntheticPromotionPolicy, StretchWarpMarker, REQUIRED_STRETCH_LISTENING_FAMILY_COUNT,
 };
 
 pub const CACHE_CONSUMPTION_STAGE_ID: u64 = 61;
@@ -37,16 +38,20 @@ pub fn host_stretch_source(value: f32, frame_count: usize) -> RenderSampleBuffer
     }
 }
 
-pub fn accepted_stretch_policy_request<'a>(
-    scope: OfflineStretchArtifactScope,
-    identity_input: &'a StretchCacheIdentityInput,
-    evidence_id: &'a str,
-) -> OfflineStretchArtifactPolicyRequest<'a> {
-    stretch_policy_request(
-        scope,
-        identity_input,
+pub fn accepted_stretch_promotion_receipt(evidence_id: &str) -> StretchPromotionReceipt {
+    StretchPromotionReceipt::from_product_quality_evidence(
         evidence_id,
-        StretchSyntheticPromotionPolicy::default(),
+        OfflineHighQualityPath::Default,
+        StretchProductQualityEvidence {
+            compared_to_draft_baseline: true,
+            absolute_integrity_passed: true,
+            comparator_row_count: 18,
+            required_comparator_row_count: 18,
+            passed_case_count: 27,
+            required_case_count: 27,
+            completed_listening_family_count: REQUIRED_STRETCH_LISTENING_FAMILY_COUNT,
+            required_listening_family_count: REQUIRED_STRETCH_LISTENING_FAMILY_COUNT,
+        },
     )
 }
 
