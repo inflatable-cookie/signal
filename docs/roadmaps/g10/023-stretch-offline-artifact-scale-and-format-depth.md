@@ -1,6 +1,6 @@
 # 023 - Stretch Offline Artifact Scale And Format Depth
 
-Status: planned
+Status: active
 Owner: core-product
 Created: 2026-07-07
 Depends on: g10.018, g10.021, g10.022
@@ -30,7 +30,7 @@ use.
 
 ### Batch 23.1 - Long-Media Artifact Shape
 
-- [ ] bounded-memory processing plan and deterministic chunk identity
+- [x] bounded-memory processing plan and deterministic chunk identity
 - [ ] chunk boundary overlap/crossfade policy
 
 ### Batch 23.2 - Capability Boundaries
@@ -62,8 +62,14 @@ use.
 
 - 2026-07-07: opened as active g10 stretch scale and format work after the
   initial policy-gated stereo artifact path landed.
+- 2026-07-09: added `signal-dsp-stretch` offline chunk planning primitives:
+  deterministic payload ranges, render-context ranges, static per-chunk ratio,
+  exact output coordinates, dynamic-ratio boundary preservation, and bounded
+  maximum source payload policy. This does not yet change render-plane
+  materialization.
 
 ## Next Task
 
-Start Batch 23.1 only after g10.021/g10.022 have enough evidence to justify
-scaling the artifact path.
+Continue Batch 23.1 by wiring render/export/freeze offline artifact
+materialization to the chunk plan, then implement the boundary
+trim/crossfade policy without changing cache identity semantics.

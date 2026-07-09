@@ -38,12 +38,18 @@
 
 #![warn(missing_docs)]
 
+mod artifact_plan;
 mod benchmark;
 mod cache_identity;
 mod corpus_report;
 mod phase_vocoder;
 mod promotion;
 
+pub use artifact_plan::{
+    plan_offline_stretch_chunks, StretchOfflineChunk, StretchOfflineChunkConfig,
+    StretchOfflineChunkPlan, DEFAULT_OFFLINE_STRETCH_CHUNK_OVERLAP_FRAMES,
+    DEFAULT_OFFLINE_STRETCH_CHUNK_SOURCE_FRAMES,
+};
 pub use benchmark::{
     assess_stretch_metrics, compare_sustained_material_coherence,
     compare_synthetic_stretch_backends, detect_stretch_transients,
@@ -1138,6 +1144,7 @@ struct DynamicRatioSegment {
     start_frame: usize,
     end_frame: usize,
     target_frames: usize,
+    ratio: f64,
 }
 
 fn dynamic_ratio_segments(
@@ -1180,6 +1187,7 @@ fn dynamic_ratio_segment(start_frame: usize, end_frame: usize, ratio: f64) -> Dy
         start_frame,
         end_frame,
         target_frames: ((end_frame - start_frame) as f64 * ratio).round() as usize,
+        ratio,
     }
 }
 
