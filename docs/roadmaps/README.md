@@ -159,6 +159,6 @@ Before rollover:
 
 ## Next Task
 
-Use `docs/roadmaps/g10/README.md` as the active generation front door. Do not
-continue stretch by adding another small probe; either open a structural Signal
-roadmap for one paused stretch gate or re-enter the next-generation boundary.
+Use `docs/roadmaps/g10/README.md` as the active generation front door. The next
+ready stretch task is `g10.026` Batch 26.1: callback-safe RealtimePreview state
+contract and no-allocation proof harness.
