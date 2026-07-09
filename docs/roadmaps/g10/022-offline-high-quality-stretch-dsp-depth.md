@@ -79,10 +79,12 @@ comparison reports, not add more receipt or fixture surfaces.
   one dense sustained or polyphonic residual target
 - [x] separate level/gain differences from actual residual coherence before any
   DSP change
-- [ ] implement one vertical-coherence improvement only when the selected metric
-  is not mostly explained by level
-- [ ] keep the promoted expansion selector fixed unless new selector evidence
+- [x] implement one report-only vertical-coherence prototype only when the
+  selected metric is not mostly explained by level
+- [x] keep the promoted expansion selector fixed unless new selector evidence
   explicitly supports another route
+- [ ] promote, gate, or reject the sustained-coherence prototype from broader
+  regression evidence
 
 ## Acceptance Criteria
 
@@ -724,12 +726,32 @@ comparison reports, not add more receipt or fixture surfaces.
   `target_reason=SampleEnvelopeCoherence`) and `1.5x`
   (`target_score=1.140551`, `target_reason=SpectralMagnitudeCoherence`). The
   target is level-separated; do not solve it with comparator gain matching.
+- 2026-07-09: added a report-only sustained-coherence candidate path using a
+  longer STFT window, wider hop, identity phase locking, and no transient reset.
+  The path is exposed only through the full external benchmark review and does
+  not alter OfflineHighQuality product routing, cache identity, render-plane
+  materialization, the promoted expansion selector, dynamic-ratio rendering, or
+  pitch-shift rendering. Regenerated the targeted FMA/Rubber Band report at
+  `target/stretch-corpus-fma-coherence-candidate-review.tsv` (`real 181.24`).
+  Candidate summary: 15 rows, 9 improved, 0 unchanged, 6 regressed. The selected
+  target improved: `stretch:bass` `000236` at `1.25x` moved from target score
+  `1.248686` to `0.986865` (`delta=-0.261821`), with spectral magnitude
+  coherence `0.970345`, normalized sample-envelope correlation `0.748078`, and
+  mean block RMS residual `0.353962` dB. The dense `0017` full-mix controls also
+  improved at `0.75x` (`delta=-0.053303`) and `1.5x` (`delta=-0.048220`).
+  Regressions remain material: the worst row is `stretch:bass` `000236` at
+  `0.75x` (`delta=0.193586`), with additional regressions on full mix, vocals,
+  and bass. This is useful evidence for vertical coherence, not a promotable
+  product path yet.
 
 ## Next Task
 
-Continue Batch 22.6 by designing one bounded vertical-coherence DSP prototype
-against `stretch:bass` `000236` at `1.25x`, with `stretch:full_mix` `0017`
-at `0.75x` and `1.5x` as dense-polyphonic controls. The promoted expansion
-selector should stay fixed unless new selector evidence explicitly supports
-another route. Do not add dynamic-ratio or pitch-shift selector materialization
-until those combinations have their own evidence.
+Continue Batch 22.6 by investigating the sustained-coherence candidate
+regressions before any promotion. Start with `stretch:bass` `000236` at
+`0.75x` as the worst regression, while keeping the selected target
+(`stretch:bass` `000236` at `1.25x`) and dense `0017` full-mix controls visible.
+The next DSP move should either gate the long-window candidate by material and
+ratio, or replace it with a second candidate that keeps the selected-target win
+without the compression and mid-expansion regressions. Do not change product
+routing, dynamic-ratio materialization, or pitch-shift materialization until
+that evidence exists.

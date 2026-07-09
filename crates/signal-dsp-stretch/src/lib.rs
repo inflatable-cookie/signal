@@ -89,8 +89,8 @@ pub use promotion::{
 };
 
 use phase_vocoder::{
-    compression_transient_anchor_phase_vocoder, phase_vocoder, transient_reset_phase_vocoder,
-    transient_reset_phase_vocoder_linked_stereo,
+    compression_transient_anchor_phase_vocoder, phase_locked_phase_vocoder, phase_vocoder,
+    transient_reset_phase_vocoder, transient_reset_phase_vocoder_linked_stereo,
 };
 use signal_dsp_resample::{resample_mono, ResampleConfig, ResampleQuality};
 use signal_primitives::{Sample, SampleRate};
@@ -301,6 +301,11 @@ pub const EXPANSION_SHORT_WINDOW_SELECTOR_ANALYSIS_HOP: usize =
 /// many source transients before the selector may switch.
 pub const EXPANSION_SHORT_WINDOW_SELECTOR_MIN_CURRENT_MISSES: usize =
     COMPRESSION_SHORT_WINDOW_SELECTOR_MIN_CURRENT_MISSES;
+/// Report-only sustained-coherence review STFT size.
+pub const SUSTAINED_COHERENCE_REVIEW_WINDOW_SIZE: usize = DEFAULT_WINDOW_SIZE * 2;
+/// Report-only sustained-coherence review analysis hop.
+pub const SUSTAINED_COHERENCE_REVIEW_ANALYSIS_HOP: usize =
+    SUSTAINED_COHERENCE_REVIEW_WINDOW_SIZE / 4;
 
 impl PhaseVocoderStretcher {
     /// Stretcher with the default window/hop configuration.
@@ -610,6 +615,24 @@ impl OfflineHighQualityStretcher {
             self.window_size,
             self.analysis_hop,
             compression_transient_anchor_phase_vocoder,
+        )
+    }
+
+    /// Report-only sustained/coherence review path.
+    ///
+    /// This candidate deliberately uses a longer window and identity phase
+    /// locking without transient resets. It tests whether tonal and
+    /// polyphonic residuals improve when the offline path favors stable
+    /// vertical phase/magnitude behavior over attack preservation. It is not a
+    /// promoted OfflineHighQuality renderer.
+    #[doc(hidden)]
+    pub fn stretch_sustained_coherence_review_mono(&mut self, input: &[Sample]) -> Vec<Sample> {
+        stretch_mono_with_engine(
+            input,
+            self.ratio,
+            SUSTAINED_COHERENCE_REVIEW_WINDOW_SIZE,
+            SUSTAINED_COHERENCE_REVIEW_ANALYSIS_HOP,
+            phase_locked_phase_vocoder,
         )
     }
 }
@@ -1323,6 +1346,26 @@ mod tests {
         let mut repeated = OfflineHighQualityStretcher::new(ratio);
         let first_output = first.stretch_compression_transient_anchor_review_mono(&input);
         let repeated_output = repeated.stretch_compression_transient_anchor_review_mono(&input);
+
+        assert_eq!(
+            first_output.len(),
+            (input.len() as f64 * ratio).round() as usize
+        );
+        assert_eq!(first_output, repeated_output);
+    }
+
+    #[test]
+    fn sustained_coherence_review_path_is_deterministic_and_honors_output_length() {
+        let input = sine(110.0, 48_000.0, 48_000)
+            .into_iter()
+            .zip(sine(220.0, 48_000.0, 48_000))
+            .map(|(low, high)| low * 0.7 + high * 0.3)
+            .collect::<Vec<_>>();
+        let ratio = 1.25;
+        let mut first = OfflineHighQualityStretcher::new(ratio);
+        let mut repeated = OfflineHighQualityStretcher::new(ratio);
+        let first_output = first.stretch_sustained_coherence_review_mono(&input);
+        let repeated_output = repeated.stretch_sustained_coherence_review_mono(&input);
 
         assert_eq!(
             first_output.len(),
