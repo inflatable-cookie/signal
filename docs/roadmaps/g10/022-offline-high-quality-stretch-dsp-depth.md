@@ -93,6 +93,8 @@ comparison reports, not add more receipt or fixture surfaces.
   changing product routing
 - [x] test one envelope-preserving vertical-coherence DSP candidate before
   changing product routing
+- [x] test one ratio-scoped long-window transient-reset candidate before
+  changing product routing
 - [ ] keep the long-window sustained-coherence path benchmark-only unless a
   better product-observable selector or DSP candidate emerges
 
@@ -824,13 +826,29 @@ comparison reports, not add more receipt or fixture surfaces.
   worst targeted regression larger than the raw long-window candidate
   (`0.272430` versus `0.193586`). No broad run is needed for this envelope
   shape.
+- 2026-07-09: added a report-only ratio-scoped candidate named
+  `expansion-long-window-transient-reset`. The path keeps current
+  OfflineHighQuality output for compression and tests long-window
+  transient-reset phase propagation for expansion, instead of using
+  long-window identity locking through attacks. Regenerated the targeted
+  report at
+  `target/stretch-corpus-fma-coherence-expansion-reset-candidate-targeted.tsv`
+  (`real 337.49`). The candidate improved the shape but is still rejected on
+  targeted evidence: 15 rows, 7 improved, 5 unchanged, 3 regressed, worst
+  regression `delta=0.039756` on `stretch:full_mix` `0017` at `1.25x`.
+  Compression regressions were removed by construction, and expansion wins
+  remained (`stretch:vocals` `000020` at `1.5x`, `delta=-0.295449`;
+  `stretch:bass` `000236` at `1.25x`, `delta=-0.251598`), but the remaining
+  full-mix and bass regressions mean no broad run or product routing change is
+  justified.
 
 ## Next Task
 
 Continue Batch 22.6 by moving away from selector or simple-blend promotion for
 the long-window path. The next DSP candidate should address the actual
-regression mechanism more directly than envelope matching, likely by changing
-phase propagation or magnitude evolution by ratio class. Reject on targeted
-evidence before a broad run if it shows material regressions. Do not change
-product routing, cache identity, dynamic-ratio materialization, or pitch-shift
-materialization for the long-window path.
+regression mechanism more directly than ratio-scoped transient resets, likely
+by making phase propagation adapt per frame from spectral stability rather than
+from the global ratio alone. Reject on targeted evidence before a broad run if
+it shows material regressions. Do not change product routing, cache identity,
+dynamic-ratio materialization, or pitch-shift materialization for the
+long-window path.
