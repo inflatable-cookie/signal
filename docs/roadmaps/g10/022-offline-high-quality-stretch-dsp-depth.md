@@ -75,9 +75,9 @@ comparison reports, not add more receipt or fixture surfaces.
 
 ### Batch 22.6 - Sustained And Polyphonic Coherence
 
-- [ ] use the full external feature-review rows and decoded reports to select
+- [x] use the full external feature-review rows and decoded reports to select
   one dense sustained or polyphonic residual target
-- [ ] separate level/gain differences from actual residual coherence before any
+- [x] separate level/gain differences from actual residual coherence before any
   DSP change
 - [ ] implement one vertical-coherence improvement only when the selected metric
   is not mostly explained by level
@@ -708,11 +708,28 @@ comparison reports, not add more receipt or fixture surfaces.
   level from remaining texture/phase differences. Batch 22.5 is closed; the
   next work should move to sustained/polyphonic coherence rather than more
   expansion-selector evidence.
+- 2026-07-09: added dedicated
+  `external_benchmark_coherence_target_review` rows to the full external
+  benchmark report. The row is report-only and ranks sustained/polyphonic
+  candidates after RMS normalization using remaining feature divergence,
+  sample-envelope mismatch, block-envelope mismatch, block gain residual, and
+  spectral magnitude mismatch. Regenerated the targeted FMA/Rubber Band report
+  at `target/stretch-corpus-fma-coherence-target-selection.tsv` (`real 157.56`).
+  The top selected target is `stretch:bass` `000236` at `1.25x`
+  (`material_scope=BassSustain`, `target_reason=SpectralMagnitudeCoherence`,
+  `target_score=1.248686`, normalized divergence `0.488981`, normalized sample
+  envelope correlation `0.654801`, mean block RMS residual `1.544930` dB,
+  spectral magnitude coherence `0.860039`). The nearest dense-polyphonic
+  controls are `stretch:full_mix` `0017` at `0.75x` (`target_score=1.158133`,
+  `target_reason=SampleEnvelopeCoherence`) and `1.5x`
+  (`target_score=1.140551`, `target_reason=SpectralMagnitudeCoherence`). The
+  target is level-separated; do not solve it with comparator gain matching.
 
 ## Next Task
 
-Start Batch 22.6 by selecting one sustained/polyphonic coherence target from
-`target/stretch-corpus-fma-expansion-selector-path-full.tsv`, with level/gain
-differences separated from residual phase or texture differences before any DSP
-change. Do not add dynamic-ratio or pitch-shift selector materialization until
-those combinations have their own evidence.
+Continue Batch 22.6 by designing one bounded vertical-coherence DSP prototype
+against `stretch:bass` `000236` at `1.25x`, with `stretch:full_mix` `0017`
+at `0.75x` and `1.5x` as dense-polyphonic controls. The promoted expansion
+selector should stay fixed unless new selector evidence explicitly supports
+another route. Do not add dynamic-ratio or pitch-shift selector materialization
+until those combinations have their own evidence.
