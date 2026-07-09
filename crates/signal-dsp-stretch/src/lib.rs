@@ -428,6 +428,45 @@ pub struct RealtimePreviewSourceProjectionReport {
     pub source_frames_required: usize,
 }
 
+/// Dynamic-ratio source projection for a RealtimePreview output span.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct RealtimePreviewDynamicSourceProjectionReport {
+    /// Output-domain start frame for the projected span.
+    pub output_start_frame: u64,
+    /// Output frames in this projected span.
+    pub output_frames: usize,
+    /// Exclusive output-domain end frame for the projected span.
+    pub output_end_frame: u64,
+    /// Fractional source-domain start frame.
+    pub source_start_frame: f64,
+    /// Fractional source-domain end frame.
+    pub source_end_frame: f64,
+    /// Fractional source-domain advance required for this output span.
+    pub source_advance_frames: f64,
+    /// First integer source frame needed by the projected span.
+    pub source_frame_floor: u64,
+    /// Exclusive integer source frame bound needed by the projected span.
+    pub source_frame_ceil: u64,
+    /// Integer source frame count covering the projected fractional span.
+    pub source_frames_required: usize,
+    /// Active ratio at the start of this projection span.
+    pub start_ratio: f64,
+    /// Active ratio at the end of this projection span.
+    pub end_ratio: f64,
+    /// Whether a scheduled ratio change was applied inside this span.
+    pub ratio_change_applied: bool,
+    /// Number of scheduled source-projection ratio changes applied by this state.
+    pub ratio_change_count: u64,
+    /// Output frame where the latest source-projection ratio change was requested.
+    pub ratio_change_request_output_frame: u64,
+    /// Output frame where the latest source-projection ratio change first contributes.
+    pub ratio_change_output_frame: u64,
+    /// Fractional source frame at the latest source-projection ratio change seam.
+    pub ratio_change_source_frame: f64,
+    /// Output-frame error between latest ratio request and application.
+    pub ratio_change_alignment_error_frames: usize,
+}
+
 /// Unsupported RealtimePreview routing mode.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum RealtimePreviewUnsupportedMode {
@@ -493,6 +532,18 @@ pub struct RealtimePreviewCallbackState {
     source_projection_output_frame: u64,
     source_projection_source_cursor: f64,
     last_source_projection: RealtimePreviewSourceProjectionReport,
+    source_projection_current_ratio: f64,
+    source_projection_active_ratio: f64,
+    source_projection_pending_ratio: f64,
+    source_projection_pending_ratio_request_frame: u64,
+    source_projection_pending_ratio_apply_frame: u64,
+    source_projection_pending_ratio_change: bool,
+    last_source_projection_ratio_change_request_frame: u64,
+    last_source_projection_ratio_change_output_frame: u64,
+    last_source_projection_ratio_change_source_frame: f64,
+    last_source_projection_ratio_change_alignment_error_frames: usize,
+    source_projection_ratio_change_count: u64,
+    last_dynamic_source_projection: RealtimePreviewDynamicSourceProjectionReport,
     next_analysis_frame: u64,
     next_synthesis_frame: f64,
     processed_frames: u64,
@@ -652,6 +703,46 @@ fn build_realtime_preview_source_projection_report(
     }
 }
 
+fn build_realtime_preview_dynamic_source_projection_report(
+    output_start_frame: u64,
+    output_frames: usize,
+    output_end_frame: u64,
+    source_start_frame: f64,
+    source_end_frame: f64,
+    start_ratio: f64,
+    end_ratio: f64,
+    ratio_change_applied: bool,
+    ratio_change_count: u64,
+    ratio_change_request_output_frame: u64,
+    ratio_change_output_frame: u64,
+    ratio_change_source_frame: f64,
+    ratio_change_alignment_error_frames: usize,
+) -> RealtimePreviewDynamicSourceProjectionReport {
+    let source_frame_floor = floor_frame_to_u64(source_start_frame);
+    let source_frame_ceil = ceil_frame_to_u64(source_end_frame);
+    let source_frames_required = abs_diff_frames(source_frame_ceil, source_frame_floor);
+
+    RealtimePreviewDynamicSourceProjectionReport {
+        output_start_frame,
+        output_frames,
+        output_end_frame,
+        source_start_frame,
+        source_end_frame,
+        source_advance_frames: source_end_frame - source_start_frame,
+        source_frame_floor,
+        source_frame_ceil,
+        source_frames_required,
+        start_ratio,
+        end_ratio,
+        ratio_change_applied,
+        ratio_change_count,
+        ratio_change_request_output_frame,
+        ratio_change_output_frame,
+        ratio_change_source_frame,
+        ratio_change_alignment_error_frames,
+    }
+}
+
 impl RealtimePreviewCallbackState {
     /// Construct callback state and allocate all state-owned scratch outside
     /// the audio callback.
@@ -715,6 +806,20 @@ impl RealtimePreviewCallbackState {
             source_projection_output_frame: 0,
             source_projection_source_cursor: 0.0,
             last_source_projection: project_realtime_preview_fixed_ratio_source_advance(0, 0, 1.0),
+            source_projection_current_ratio: 1.0,
+            source_projection_active_ratio: 1.0,
+            source_projection_pending_ratio: 1.0,
+            source_projection_pending_ratio_request_frame: 0,
+            source_projection_pending_ratio_apply_frame: 0,
+            source_projection_pending_ratio_change: false,
+            last_source_projection_ratio_change_request_frame: 0,
+            last_source_projection_ratio_change_output_frame: 0,
+            last_source_projection_ratio_change_source_frame: 0.0,
+            last_source_projection_ratio_change_alignment_error_frames: 0,
+            source_projection_ratio_change_count: 0,
+            last_dynamic_source_projection: build_realtime_preview_dynamic_source_projection_report(
+                0, 0, 0, 0.0, 0.0, 1.0, 1.0, false, 0, 0, 0, 0.0, 0,
+            ),
             next_analysis_frame: 0,
             next_synthesis_frame: config.window_size as f64,
             processed_frames: 0,
@@ -843,6 +948,46 @@ impl RealtimePreviewCallbackState {
         self.last_source_projection
     }
 
+    /// Ratio currently requested by source-projection planning.
+    pub fn source_projection_current_ratio(&self) -> f64 {
+        self.source_projection_current_ratio
+    }
+
+    /// Ratio currently applied to scheduled source-projection advancement.
+    pub fn source_projection_active_ratio(&self) -> f64 {
+        self.source_projection_active_ratio
+    }
+
+    /// Number of scheduled source-projection ratio changes applied by this state.
+    pub fn source_projection_ratio_change_count(&self) -> u64 {
+        self.source_projection_ratio_change_count
+    }
+
+    /// Last dynamic source projection advanced by this callback state.
+    pub fn last_dynamic_source_projection(&self) -> RealtimePreviewDynamicSourceProjectionReport {
+        self.last_dynamic_source_projection
+    }
+
+    /// Output frame where the latest projected ratio change was requested.
+    pub fn last_source_projection_ratio_change_request_frame(&self) -> u64 {
+        self.last_source_projection_ratio_change_request_frame
+    }
+
+    /// Output frame where the latest projected ratio change first contributes.
+    pub fn last_source_projection_ratio_change_output_frame(&self) -> u64 {
+        self.last_source_projection_ratio_change_output_frame
+    }
+
+    /// Fractional source frame where the latest projected ratio change applies.
+    pub fn last_source_projection_ratio_change_source_frame(&self) -> f64 {
+        self.last_source_projection_ratio_change_source_frame
+    }
+
+    /// Output-frame error between the latest projected ratio request and application.
+    pub fn last_source_projection_ratio_change_alignment_error_frames(&self) -> usize {
+        self.last_source_projection_ratio_change_alignment_error_frames
+    }
+
     /// Conservative input-frame demand bound for one configured output block.
     pub fn source_projection_input_demand_limit_frames(&self, ratio: f64) -> usize {
         let ratio = sanitize_ratio(ratio);
@@ -883,6 +1028,80 @@ impl RealtimePreviewCallbackState {
         Ok(projection)
     }
 
+    /// Advance scheduled source projection state for one output quantum.
+    pub fn advance_scheduled_source_projection(
+        &mut self,
+        output_frames: usize,
+        ratio: f64,
+    ) -> Result<RealtimePreviewDynamicSourceProjectionReport, RealtimePreviewCallbackProcessError>
+    {
+        if output_frames > self.config.max_block_frames {
+            return Err(
+                RealtimePreviewCallbackProcessError::FrameCountExceedsConfig {
+                    requested: output_frames,
+                    max: self.config.max_block_frames,
+                },
+            );
+        }
+
+        let ratio = sanitize_ratio(ratio);
+        self.schedule_source_projection_ratio_change(ratio);
+
+        let output_start_frame = self.source_projection_output_frame;
+        let output_end_frame = output_start_frame.saturating_add(usize_to_u64(output_frames));
+        let source_start_frame = self.source_projection_source_cursor;
+        let start_ratio = self.source_projection_active_ratio;
+        let mut source_end_frame = source_start_frame;
+        let mut active_ratio = self.source_projection_active_ratio;
+        let mut ratio_change_applied = false;
+
+        if self.source_projection_pending_ratio_change
+            && self.source_projection_pending_ratio_apply_frame <= output_start_frame
+        {
+            self.apply_source_projection_ratio_change(output_start_frame, source_end_frame);
+            active_ratio = self.source_projection_active_ratio;
+            ratio_change_applied = true;
+        }
+
+        if self.source_projection_pending_ratio_change
+            && self.source_projection_pending_ratio_apply_frame < output_end_frame
+        {
+            let ratio_change_output_frame = self.source_projection_pending_ratio_apply_frame;
+            let frames_before_change =
+                abs_diff_frames(ratio_change_output_frame, output_start_frame);
+            source_end_frame += frames_before_change as f64 / active_ratio;
+            self.apply_source_projection_ratio_change(ratio_change_output_frame, source_end_frame);
+            active_ratio = self.source_projection_active_ratio;
+            ratio_change_applied = true;
+
+            let frames_after_change = abs_diff_frames(output_end_frame, ratio_change_output_frame);
+            source_end_frame += frames_after_change as f64 / active_ratio;
+        } else {
+            source_end_frame += output_frames as f64 / active_ratio;
+        }
+
+        let projection = build_realtime_preview_dynamic_source_projection_report(
+            output_start_frame,
+            output_frames,
+            output_end_frame,
+            source_start_frame,
+            source_end_frame,
+            start_ratio,
+            active_ratio,
+            ratio_change_applied,
+            self.source_projection_ratio_change_count,
+            self.last_source_projection_ratio_change_request_frame,
+            self.last_source_projection_ratio_change_output_frame,
+            self.last_source_projection_ratio_change_source_frame,
+            self.last_source_projection_ratio_change_alignment_error_frames,
+        );
+
+        self.source_projection_output_frame = output_end_frame;
+        self.source_projection_source_cursor = source_end_frame;
+        self.last_dynamic_source_projection = projection;
+        Ok(projection)
+    }
+
     /// Reset callback state without reallocating.
     pub fn reset(&mut self) {
         self.scratch.fill(0.0);
@@ -916,6 +1135,21 @@ impl RealtimePreviewCallbackState {
         self.source_projection_source_cursor = 0.0;
         self.last_source_projection =
             project_realtime_preview_fixed_ratio_source_advance(0, 0, 1.0);
+        self.source_projection_current_ratio = 1.0;
+        self.source_projection_active_ratio = 1.0;
+        self.source_projection_pending_ratio = 1.0;
+        self.source_projection_pending_ratio_request_frame = 0;
+        self.source_projection_pending_ratio_apply_frame = 0;
+        self.source_projection_pending_ratio_change = false;
+        self.last_source_projection_ratio_change_request_frame = 0;
+        self.last_source_projection_ratio_change_output_frame = 0;
+        self.last_source_projection_ratio_change_source_frame = 0.0;
+        self.last_source_projection_ratio_change_alignment_error_frames = 0;
+        self.source_projection_ratio_change_count = 0;
+        self.last_dynamic_source_projection =
+            build_realtime_preview_dynamic_source_projection_report(
+                0, 0, 0, 0.0, 0.0, 1.0, 1.0, false, 0, 0, 0, 0.0, 0,
+            );
         self.next_analysis_frame = 0;
         self.next_synthesis_frame = self.config.window_size as f64;
         self.processed_frames = 0;
@@ -968,6 +1202,35 @@ impl RealtimePreviewCallbackState {
             output_frames: frame_count,
             processed_frames: self.processed_frames,
         })
+    }
+
+    fn schedule_source_projection_ratio_change(&mut self, ratio: f64) {
+        if (ratio - self.source_projection_current_ratio).abs() <= f64::EPSILON {
+            return;
+        }
+        self.source_projection_current_ratio = ratio;
+        self.source_projection_pending_ratio = ratio;
+        self.source_projection_pending_ratio_request_frame = self.source_projection_output_frame;
+        self.source_projection_pending_ratio_apply_frame = align_to_next_grid(
+            self.source_projection_output_frame,
+            self.config.analysis_hop as u64,
+        );
+        self.source_projection_pending_ratio_change = true;
+    }
+
+    fn apply_source_projection_ratio_change(&mut self, output_frame: u64, source_frame: f64) {
+        self.source_projection_active_ratio = self.source_projection_pending_ratio;
+        self.last_source_projection_ratio_change_request_frame =
+            self.source_projection_pending_ratio_request_frame;
+        self.last_source_projection_ratio_change_output_frame = output_frame;
+        self.last_source_projection_ratio_change_source_frame = source_frame;
+        self.last_source_projection_ratio_change_alignment_error_frames = abs_diff_frames(
+            output_frame,
+            self.source_projection_pending_ratio_request_frame,
+        );
+        self.source_projection_pending_ratio_change = false;
+        self.source_projection_ratio_change_count =
+            self.source_projection_ratio_change_count.saturating_add(1);
     }
 
     fn schedule_ratio_change(&mut self, ratio: f64) {
@@ -2794,6 +3057,125 @@ mod tests {
             (first.source_projection_source_cursor() - second.source_projection_source_cursor())
                 .abs()
                 < 1.0e-9
+        );
+    }
+
+    #[test]
+    fn realtime_preview_scheduled_source_projection_applies_ratio_change_on_grid() {
+        let mut state = RealtimePreviewCallbackState::new(RealtimePreviewStreamConfig::new(
+            SampleRate(48_000),
+            1,
+            96,
+        ))
+        .expect("callback state config should validate");
+
+        for _ in 0..5 {
+            let report = state
+                .advance_scheduled_source_projection(96, 1.0)
+                .expect("projection should stay within the configured block size");
+            assert!(!report.ratio_change_applied);
+            assert_eq!(report.start_ratio, 1.0);
+            assert_eq!(report.end_ratio, 1.0);
+        }
+
+        let changed = state
+            .advance_scheduled_source_projection(96, 1.5)
+            .expect("projection should stay within the configured block size");
+
+        assert!(changed.ratio_change_applied);
+        assert_eq!(changed.output_start_frame, 480);
+        assert_eq!(changed.output_end_frame, 576);
+        assert_eq!(changed.source_start_frame, 480.0);
+        assert_eq!(changed.ratio_change_request_output_frame, 480);
+        assert_eq!(changed.ratio_change_output_frame, 512);
+        assert_eq!(changed.ratio_change_source_frame, 512.0);
+        assert_eq!(changed.ratio_change_alignment_error_frames, 32);
+        assert_eq!(changed.start_ratio, 1.0);
+        assert_eq!(changed.end_ratio, 1.5);
+        assert!((changed.source_end_frame - (512.0 + 64.0 / 1.5)).abs() < 1.0e-9);
+        assert_eq!(state.source_projection_active_ratio(), 1.5);
+        assert_eq!(state.source_projection_ratio_change_count(), 1);
+        assert_eq!(
+            state.last_source_projection_ratio_change_output_frame(),
+            512
+        );
+        assert_eq!(
+            state.last_source_projection_ratio_change_source_frame(),
+            512.0
+        );
+        assert!(
+            state.last_source_projection_ratio_change_alignment_error_frames()
+                <= state.ratio_change_alignment_tolerance_frames()
+        );
+
+        let next = state
+            .advance_scheduled_source_projection(96, 1.5)
+            .expect("projection should stay within the configured block size");
+        assert!(!next.ratio_change_applied);
+        assert_eq!(next.start_ratio, 1.5);
+        assert_eq!(next.end_ratio, 1.5);
+        assert!((next.source_start_frame - changed.source_end_frame).abs() < 1.0e-9);
+        assert_eq!(next.output_start_frame, changed.output_end_frame);
+    }
+
+    #[test]
+    fn realtime_preview_scheduled_source_projection_is_continuous_across_tempo_ramp() {
+        let mut state = RealtimePreviewCallbackState::new(RealtimePreviewStreamConfig::new(
+            SampleRate(48_000),
+            2,
+            96,
+        ))
+        .expect("callback state config should validate");
+        let mut previous_output_end = 0;
+        let mut previous_source_end = 0.0;
+        let mut changes = Vec::new();
+
+        for block_index in 0..18 {
+            let ratio = if block_index < 5 {
+                0.75
+            } else if block_index < 10 {
+                1.0
+            } else {
+                1.5
+            };
+            let report = state
+                .advance_scheduled_source_projection(96, ratio)
+                .expect("projection should stay within the configured block size");
+
+            assert_eq!(report.output_start_frame, previous_output_end);
+            assert!((report.source_start_frame - previous_source_end).abs() < 1.0e-9);
+            assert!(report.source_end_frame >= report.source_start_frame);
+            assert!(report.source_frames_required <= 129);
+            if report.ratio_change_applied {
+                assert!(
+                    report.ratio_change_alignment_error_frames
+                        <= state.ratio_change_alignment_tolerance_frames()
+                );
+                assert!(
+                    report.ratio_change_source_frame >= report.source_start_frame
+                        && report.ratio_change_source_frame <= report.source_end_frame
+                );
+                changes.push((
+                    report.ratio_change_output_frame,
+                    report.ratio_change_source_frame,
+                ));
+            }
+
+            previous_output_end = report.output_end_frame;
+            previous_source_end = report.source_end_frame;
+        }
+
+        assert_eq!(changes.len(), 3);
+        assert_eq!(changes[0].0, 0);
+        assert_eq!(changes[1].0, 512);
+        assert_eq!(changes[2].0, 1024);
+        assert!(changes.windows(2).all(|pair| pair[0].1 <= pair[1].1));
+        assert_eq!(state.source_projection_ratio_change_count(), 3);
+        assert_eq!(state.source_projection_current_ratio(), 1.5);
+        assert_eq!(state.source_projection_active_ratio(), 1.5);
+        assert_eq!(
+            state.last_dynamic_source_projection().output_end_frame,
+            previous_output_end
         );
     }
 

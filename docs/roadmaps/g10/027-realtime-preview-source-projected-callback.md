@@ -25,7 +25,7 @@ underrun/fill behavior without allocation.
 
 ## Goals
 
-- [ ] define source-projected callback semantics for dynamic ratio streams
+- [x] define source-projected callback semantics for dynamic ratio streams
 - [x] report fixed-ratio source span, output span, and integer source demand
   for projected output quanta
 - [x] prove fixed-ratio source advancement follows the active ratio within
@@ -33,7 +33,7 @@ underrun/fill behavior without allocation.
 - [x] prove stateful source advancement follows the active ratio within
   documented tolerance
 - [x] keep all source-projection state preallocated and callback-safe
-- [ ] keep render-plane integration blocked until source projection is proven
+- [x] keep render-plane integration blocked until source projection is proven
 
 ## Non-Goals
 
@@ -62,19 +62,19 @@ underrun/fill behavior without allocation.
 
 ### Batch 27.3 - Dynamic Ratio Projection
 
-- [ ] combine scheduled ratio changes with source-projected advancement
-- [ ] prove source/output position continuity across ratio changes
+- [x] combine scheduled ratio changes with source-projected advancement
+- [x] prove source/output position continuity across ratio changes
 - [ ] reassess whether `CallbackSafeStreaming` can be exposed without render
   integration
 
 ## Acceptance Criteria
 
 - [x] fixed-ratio source advance matches the active ratio within tolerance
-- [ ] dynamic-ratio source advance stays monotonic and bounded at seams
+- [x] dynamic-ratio source advance stays monotonic and bounded at seams
 - [x] stateful callback reports enough position data for a render plan to
   remain sample-domain honest
 - [x] process still allocates zero bytes after construction
-- [ ] support flag remains closed until the source projection contract passes
+- [x] support flag remains closed until the source projection contract passes
 
 ## Validation
 
@@ -100,10 +100,16 @@ underrun/fill behavior without allocation.
   source/output projection tests, reset coverage, and counting-allocator
   coverage for projection calls under the callback flag. The stream contract
   remains `QuantumLocked`; render-plane integration is still blocked.
+- 2026-07-09: Completed the dynamic-ratio projection part of Batch 27.3.
+  Scheduled source projection now uses callback-owned pending/active ratio
+  state, applies changes on the analysis-hop grid, reports output/source seam
+  frames, and proves monotonic source/output continuity across tempo-ramp
+  changes. The public stream contract remains `QuantumLocked` and
+  `audio_thread_processing_supported=false`.
 
 ## Next Task
 
-Continue Batch 27.3 by combining scheduled ratio changes with source-projected
-advancement. Prove source/output position continuity across ratio-change seams,
-keep `audio_thread_processing_supported=false`, and do not add render-plane
-integration.
+Finish Batch 27.3 with a contract reassessment. Decide whether the proven
+source-projection reporting is enough to expose a narrow
+`CallbackSafeStreaming` mode, or whether another roadmap is needed for
+underrun/fill behavior before render-plane integration can start.

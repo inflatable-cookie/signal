@@ -67,7 +67,7 @@ fn realtime_preview_callback_contract_path_allocates_nothing() {
         let mono_ratio = if iteration < 32 { 1.0 } else { 1.25 };
         let stereo_ratio = if iteration < 32 { 1.0 } else { 0.75 };
         last_result = mono_state
-            .advance_source_projection(128, mono_ratio)
+            .advance_scheduled_source_projection(128, mono_ratio)
             .map(|_| ())
             .map_err(|error| error);
         if last_result.is_err() {
@@ -81,7 +81,7 @@ fn realtime_preview_callback_contract_path_allocates_nothing() {
             break;
         }
         last_result = stereo_state
-            .advance_source_projection(128, stereo_ratio)
+            .advance_scheduled_source_projection(128, stereo_ratio)
             .map(|_| ())
             .map_err(|error| error);
         if last_result.is_err() {
