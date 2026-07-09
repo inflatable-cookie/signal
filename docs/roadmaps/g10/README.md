@@ -117,7 +117,8 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Run the same-event `L001` phase-lock/overlap-add control probe while independent
-stereo and row-level listening completion remain open. Do not start Batch 29.4
-or product promotion until all five listening families validate. Keep
-RealtimePreview source-fill and broader product integration paused.
+Measure long-stretch grain and atonal ringing after the `L001` controls rejected
+local phase-lock variants. Independent stereo and row-level listening completion
+remain open. Do not start Batch 29.4 or product promotion until all five
+listening families validate. Keep RealtimePreview source-fill and broader
+product integration paused.

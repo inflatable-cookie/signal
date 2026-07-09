@@ -3,6 +3,10 @@ use crate::{
     StretchTransientEvent,
 };
 
+mod event;
+
+pub use event::{measure_transient_event_detail, StretchTransientEventDetail};
+
 /// Fine-grained timing and peak-shape evidence for matched stretch transients.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct StretchTransientDetailMeasurement {

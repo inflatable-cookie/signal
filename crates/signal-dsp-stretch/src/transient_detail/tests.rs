@@ -42,3 +42,17 @@ fn transient_detail_rejects_invalid_ratio() {
     assert_eq!(measurement.matched_transients, 0);
     assert!(measurement.mean_absolute_timing_offset_frames.is_nan());
 }
+
+#[test]
+fn transient_event_detail_uses_the_supplied_source_event() {
+    let input = transient_train(8_192, &[1_024, 3_072]);
+    let output = transient_train(8_192, &[1_031, 3_079]);
+
+    let event = measure_transient_event_detail(&input, &output, 1.0, 3_072, 512, 128)
+        .expect("valid event detail");
+
+    assert_eq!(event.input_frame, 3_072);
+    assert_eq!(event.output_frame, 3_079);
+    assert_eq!(event.timing_offset_frames, 7.0);
+    assert!(event.crest_growth_db.abs() < 1.0e-6);
+}

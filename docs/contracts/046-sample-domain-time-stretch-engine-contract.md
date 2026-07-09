@@ -305,6 +305,12 @@ full-render peak growth alone cannot identify the failing attack. Diagnostic
 search bounds and incomplete event matches must remain explicit and must not be
 promoted into acceptance limits without corpus calibration.
 
+A transient candidate must report its result at the current path's failing
+source event and its own worst event. Moving the largest crest to another attack
+is not an improvement. Phase-lock changes must also retain event-placement
+evidence; a local crest reduction cannot promote a path that regresses timing
+across the bounded corpus.
+
 Planning authority:
 `docs/roadmaps/g10/029-stretch-correctness-and-listening-gate.md`.
 

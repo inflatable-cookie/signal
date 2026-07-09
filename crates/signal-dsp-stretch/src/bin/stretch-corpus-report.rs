@@ -20,7 +20,7 @@ use signal_analysis_character::{CharacterAnalyzer, CharacterAnalyzerConfig};
 use signal_dsp_stretch::{
     build_stretch_corpus_comparison_report_with_sources, detect_stretch_transients,
     format_stretch_corpus_comparison_report, measure_stretch_render_integrity,
-    measure_transient_detail, measure_transient_smear,
+    measure_transient_detail, measure_transient_event_detail, measure_transient_smear,
     measure_transient_smear_with_output_recovery_policy, measure_transient_smear_with_policies,
     measure_transient_smear_with_policy, output_length_drift_samples, OfflineHighQualityPath,
     OfflineHighQualityStretcher, PhaseVocoderStretcher, StretchCorpusAssetRequirement,
@@ -1882,6 +1882,68 @@ impl ExternalBenchmarkQualityMeasurement {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+struct ExternalBenchmarkTransientControlMeasurement {
+    case_id: String,
+    source_path: String,
+    ratio: f64,
+    anchor_input_frame: usize,
+    signal_event_output_frame: usize,
+    external_event_output_frame: usize,
+    draft_event_output_frame: usize,
+    stability_event_output_frame: usize,
+    tracked_peak_event_output_frame: usize,
+    magnitude_slew_event_output_frame: usize,
+    signal_event_crest_growth_db: f64,
+    external_event_crest_growth_db: f64,
+    draft_event_crest_growth_db: f64,
+    stability_event_crest_growth_db: f64,
+    tracked_peak_event_crest_growth_db: f64,
+    magnitude_slew_event_crest_growth_db: f64,
+    signal_max_crest_growth_db: f64,
+    external_max_crest_growth_db: f64,
+    draft_max_crest_growth_db: f64,
+    stability_max_crest_growth_db: f64,
+    tracked_peak_max_crest_growth_db: f64,
+    magnitude_slew_max_crest_growth_db: f64,
+    stability_mean_absolute_offset_frames: f64,
+    tracked_peak_mean_absolute_offset_frames: f64,
+    magnitude_slew_mean_absolute_offset_frames: f64,
+}
+
+impl ExternalBenchmarkTransientControlMeasurement {
+    fn format_report_line(&self) -> String {
+        format!(
+            "external_benchmark_transient_control case={} source={} ratio={:.6} anchor_input_frame={} signal_event_output_frame={} external_event_output_frame={} draft_event_output_frame={} stability_event_output_frame={} tracked_peak_event_output_frame={} magnitude_slew_event_output_frame={} signal_event_crest_growth_db={:.6} external_event_crest_growth_db={:.6} draft_event_crest_growth_db={:.6} stability_event_crest_growth_db={:.6} tracked_peak_event_crest_growth_db={:.6} magnitude_slew_event_crest_growth_db={:.6} signal_max_crest_growth_db={:.6} external_max_crest_growth_db={:.6} draft_max_crest_growth_db={:.6} stability_max_crest_growth_db={:.6} tracked_peak_max_crest_growth_db={:.6} magnitude_slew_max_crest_growth_db={:.6} stability_mean_absolute_offset_frames={:.6} tracked_peak_mean_absolute_offset_frames={:.6} magnitude_slew_mean_absolute_offset_frames={:.6}",
+            self.case_id,
+            quoted_report_field(&self.source_path),
+            self.ratio,
+            self.anchor_input_frame,
+            self.signal_event_output_frame,
+            self.external_event_output_frame,
+            self.draft_event_output_frame,
+            self.stability_event_output_frame,
+            self.tracked_peak_event_output_frame,
+            self.magnitude_slew_event_output_frame,
+            self.signal_event_crest_growth_db,
+            self.external_event_crest_growth_db,
+            self.draft_event_crest_growth_db,
+            self.stability_event_crest_growth_db,
+            self.tracked_peak_event_crest_growth_db,
+            self.magnitude_slew_event_crest_growth_db,
+            self.signal_max_crest_growth_db,
+            self.external_max_crest_growth_db,
+            self.draft_max_crest_growth_db,
+            self.stability_max_crest_growth_db,
+            self.tracked_peak_max_crest_growth_db,
+            self.magnitude_slew_max_crest_growth_db,
+            self.stability_mean_absolute_offset_frames,
+            self.tracked_peak_mean_absolute_offset_frames,
+            self.magnitude_slew_mean_absolute_offset_frames,
+        )
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
 struct ExternalBenchmarkFeatureDeltaMeasurement {
     case_id: String,
     source_path: String,
@@ -2424,6 +2486,15 @@ fn format_external_benchmark_quality_metrics(
         });
         let mut draft_stretcher = PhaseVocoderStretcher::new(render.ratio);
         let draft_output = draft_stretcher.stretch_mono(source_mono);
+        let mut stability_stretcher = OfflineHighQualityStretcher::new(render.ratio);
+        let stability_output =
+            stability_stretcher.stretch_phase_lock_stability_review_mono(source_mono);
+        let mut tracked_peak_stretcher = OfflineHighQualityStretcher::new(render.ratio);
+        let tracked_peak_output =
+            tracked_peak_stretcher.stretch_phase_lock_tracked_peak_review_mono(source_mono);
+        let mut magnitude_slew_stretcher = OfflineHighQualityStretcher::new(render.ratio);
+        let magnitude_slew_output =
+            magnitude_slew_stretcher.stretch_phase_lock_magnitude_slew_review_mono(source_mono);
         let rendered_audio_seconds =
             signal_output.len() as f64 / source_audio.sample_rate_hz as f64;
         let signal_cpu_realtime_factor = if rendered_audio_seconds > 0.0 {
@@ -2466,6 +2537,82 @@ fn format_external_benchmark_quality_metrics(
             QUALITY_METRIC_WINDOW_SIZE,
             QUALITY_METRIC_HOP_SIZE,
         );
+        let stability_transient_detail = measure_transient_detail(
+            &source_mono,
+            &stability_output,
+            render.ratio,
+            QUALITY_METRIC_WINDOW_SIZE,
+            QUALITY_METRIC_HOP_SIZE,
+        );
+        let tracked_peak_transient_detail = measure_transient_detail(
+            &source_mono,
+            &tracked_peak_output,
+            render.ratio,
+            QUALITY_METRIC_WINDOW_SIZE,
+            QUALITY_METRIC_HOP_SIZE,
+        );
+        let magnitude_slew_transient_detail = measure_transient_detail(
+            &source_mono,
+            &magnitude_slew_output,
+            render.ratio,
+            QUALITY_METRIC_WINDOW_SIZE,
+            QUALITY_METRIC_HOP_SIZE,
+        );
+        let transient_control_line = (signal_transient_detail.matched_transients > 0).then(|| {
+            let anchor = signal_transient_detail.max_crest_input_frame;
+            let event = |output: &[f32]| {
+                measure_transient_event_detail(
+                    source_mono,
+                    output,
+                    render.ratio,
+                    anchor,
+                    QUALITY_METRIC_WINDOW_SIZE,
+                    QUALITY_METRIC_HOP_SIZE,
+                )
+                .expect("matched transient anchor must remain measurable")
+            };
+            let signal_event = event(&signal_output);
+            let external_event = event(&external_audio.mono_samples);
+            let draft_event = event(&draft_output);
+            let stability_event = event(&stability_output);
+            let tracked_peak_event = event(&tracked_peak_output);
+            let magnitude_slew_event = event(&magnitude_slew_output);
+            ExternalBenchmarkTransientControlMeasurement {
+                case_id: render.case_id.clone(),
+                source_path: source.source_path.clone(),
+                ratio: render.ratio,
+                anchor_input_frame: anchor,
+                signal_event_output_frame: signal_event.output_frame,
+                external_event_output_frame: external_event.output_frame,
+                draft_event_output_frame: draft_event.output_frame,
+                stability_event_output_frame: stability_event.output_frame,
+                tracked_peak_event_output_frame: tracked_peak_event.output_frame,
+                magnitude_slew_event_output_frame: magnitude_slew_event.output_frame,
+                signal_event_crest_growth_db: signal_event.crest_growth_db,
+                external_event_crest_growth_db: external_event.crest_growth_db,
+                draft_event_crest_growth_db: draft_event.crest_growth_db,
+                stability_event_crest_growth_db: stability_event.crest_growth_db,
+                tracked_peak_event_crest_growth_db: tracked_peak_event.crest_growth_db,
+                magnitude_slew_event_crest_growth_db: magnitude_slew_event.crest_growth_db,
+                signal_max_crest_growth_db: signal_transient_detail.max_transient_crest_growth_db,
+                external_max_crest_growth_db: external_transient_detail
+                    .max_transient_crest_growth_db,
+                draft_max_crest_growth_db: draft_transient_detail.max_transient_crest_growth_db,
+                stability_max_crest_growth_db: stability_transient_detail
+                    .max_transient_crest_growth_db,
+                tracked_peak_max_crest_growth_db: tracked_peak_transient_detail
+                    .max_transient_crest_growth_db,
+                magnitude_slew_max_crest_growth_db: magnitude_slew_transient_detail
+                    .max_transient_crest_growth_db,
+                stability_mean_absolute_offset_frames: stability_transient_detail
+                    .mean_absolute_timing_offset_frames,
+                tracked_peak_mean_absolute_offset_frames: tracked_peak_transient_detail
+                    .mean_absolute_timing_offset_frames,
+                magnitude_slew_mean_absolute_offset_frames: magnitude_slew_transient_detail
+                    .mean_absolute_timing_offset_frames,
+            }
+            .format_report_line()
+        });
         let signal_timing_drift =
             output_length_drift_samples(source_mono.len(), signal_output.len(), render.ratio);
         let external_timing_drift = output_length_drift_samples(
@@ -3033,6 +3180,9 @@ fn format_external_benchmark_quality_metrics(
             }
             .format_report_line(),
         );
+        if let Some(line) = transient_control_line {
+            lines.push(line);
+        }
         if let Some(line) = feature_delta_line {
             lines.push(line);
         }
@@ -7839,6 +7989,50 @@ mod tests {
     }
 
     #[test]
+    fn external_benchmark_quality_reports_same_event_phase_lock_controls() {
+        let path = PathBuf::from(format!(
+            "target/stretch-corpus-transient-control-test-{}.wav",
+            std::process::id()
+        ));
+        write_transient_test_wav(&path, 48_000);
+        let source = StretchCorpusListeningSource {
+            case_id: "stretch:drums_percussion".to_string(),
+            source_path: path.display().to_string(),
+            source_label: "Transient probe".to_string(),
+            license_title: "Local test".to_string(),
+            license_url: String::new(),
+            provenance_url: String::new(),
+        };
+        let render = ExternalBenchmarkQualityRender {
+            case_id: source.case_id.clone(),
+            ratio: 0.75,
+            tool_name: "control".to_string(),
+            rendered_path: path.display().to_string(),
+            source_wav: None,
+        };
+
+        let formatted = format_external_benchmark_quality_metrics(
+            &[source],
+            &[render],
+            48_000,
+            ExternalBenchmarkQualityMode::Core,
+            OfflineHighQualityPath::Default,
+        )
+        .expect("format transient control metrics");
+
+        let control = formatted
+            .lines()
+            .find(|line| line.starts_with("external_benchmark_transient_control "))
+            .expect("same-event control row");
+        assert!(control.contains("anchor_input_frame="));
+        assert!(control.contains("stability_event_crest_growth_db="));
+        assert!(control.contains("tracked_peak_max_crest_growth_db="));
+        assert!(control.contains("magnitude_slew_mean_absolute_offset_frames="));
+
+        let _ = fs::remove_file(path);
+    }
+
+    #[test]
     fn external_benchmark_quality_core_mode_skips_feature_reviews() {
         let path = PathBuf::from(format!(
             "target/stretch-corpus-external-quality-core-test-{}.wav",
@@ -8842,6 +9036,31 @@ mod tests {
         let mut writer = hound::WavWriter::create(path, spec).expect("create test wav");
         for frame in 0..frames {
             let sample = if frame % 2 == 0 { 0.25 } else { -0.25 };
+            writer.write_sample(sample).expect("write left sample");
+            writer.write_sample(sample).expect("write right sample");
+        }
+        writer.finalize().expect("finalize test wav");
+    }
+
+    fn write_transient_test_wav(path: &PathBuf, frames: usize) {
+        if let Some(parent) = path.parent() {
+            fs::create_dir_all(parent).expect("create target dir");
+        }
+        let spec = hound::WavSpec {
+            channels: 2,
+            sample_rate: 48_000,
+            bits_per_sample: 32,
+            sample_format: hound::SampleFormat::Float,
+        };
+        let mut writer = hound::WavWriter::create(path, spec).expect("create test wav");
+        for frame in 0..frames {
+            let tonal = (std::f32::consts::TAU * 330.0 * frame as f32 / 48_000.0).sin() * 0.25;
+            let transient = if frame % 8_000 < 64 {
+                0.9 * (1.0 - (frame % 8_000) as f32 / 64.0)
+            } else {
+                0.0
+            };
+            let sample = tonal + transient;
             writer.write_sample(sample).expect("write left sample");
             writer.write_sample(sample).expect("write right sample");
         }

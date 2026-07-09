@@ -103,7 +103,10 @@ pub use render_integrity::{
     StretchRenderIntegrityAssessment, StretchRenderIntegrityLimits,
     StretchRenderIntegrityMeasurement,
 };
-pub use transient_detail::{measure_transient_detail, StretchTransientDetailMeasurement};
+pub use transient_detail::{
+    measure_transient_detail, measure_transient_event_detail, StretchTransientDetailMeasurement,
+    StretchTransientEventDetail,
+};
 
 use phase_vocoder::{
     compression_transient_anchor_phase_vocoder, magnitude_slew_phase_vocoder,
@@ -2134,6 +2137,45 @@ impl OfflineHighQualityStretcher {
             magnitude_slew_phase_vocoder,
         )
     }
+
+    /// Report-only current-window path with stability-adaptive phase locking.
+    #[doc(hidden)]
+    pub fn stretch_phase_lock_stability_review_mono(&mut self, input: &[Sample]) -> Vec<Sample> {
+        stretch_mono_with_engine(
+            input,
+            self.ratio,
+            self.window_size,
+            self.analysis_hop,
+            stability_adaptive_phase_vocoder,
+        )
+    }
+
+    /// Report-only current-window path with tracked peak-lock regions.
+    #[doc(hidden)]
+    pub fn stretch_phase_lock_tracked_peak_review_mono(&mut self, input: &[Sample]) -> Vec<Sample> {
+        stretch_mono_with_engine(
+            input,
+            self.ratio,
+            self.window_size,
+            self.analysis_hop,
+            tracked_peak_region_phase_vocoder,
+        )
+    }
+
+    /// Report-only current-window path with stable-frame magnitude slew.
+    #[doc(hidden)]
+    pub fn stretch_phase_lock_magnitude_slew_review_mono(
+        &mut self,
+        input: &[Sample],
+    ) -> Vec<Sample> {
+        stretch_mono_with_engine(
+            input,
+            self.ratio,
+            self.window_size,
+            self.analysis_hop,
+            magnitude_slew_phase_vocoder,
+        )
+    }
 }
 
 impl TimeStretcher for OfflineHighQualityStretcher {
@@ -3711,6 +3753,30 @@ mod tests {
             (input.len() as f64 * ratio).round() as usize
         );
         assert_eq!(first_output, repeated_output);
+    }
+
+    #[test]
+    fn phase_lock_control_paths_are_deterministic_and_honor_output_length() {
+        let input = masked_soft_attack_probe(0.35);
+        let ratio = 0.75;
+        let paths: [fn(&mut OfflineHighQualityStretcher, &[Sample]) -> Vec<Sample>; 3] = [
+            OfflineHighQualityStretcher::stretch_phase_lock_stability_review_mono,
+            OfflineHighQualityStretcher::stretch_phase_lock_tracked_peak_review_mono,
+            OfflineHighQualityStretcher::stretch_phase_lock_magnitude_slew_review_mono,
+        ];
+
+        for path in paths {
+            let mut first = OfflineHighQualityStretcher::new(ratio);
+            let mut repeated = OfflineHighQualityStretcher::new(ratio);
+            let first_output = path(&mut first, &input);
+            let repeated_output = path(&mut repeated, &input);
+
+            assert_eq!(
+                first_output.len(),
+                (input.len() as f64 * ratio).round() as usize
+            );
+            assert_eq!(first_output, repeated_output);
+        }
     }
 
     #[test]

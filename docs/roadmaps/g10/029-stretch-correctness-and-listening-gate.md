@@ -65,6 +65,8 @@ be trustworthy before the callback contract or a structural hybrid widens.
   row-level notes
 - [x] add event-level timing and transient-crest diagnostics distinct from
   output-length drift
+- [x] isolate the `L001` spike with same-event phase-lock controls and reject
+  corpus-regressing local variants
 - [ ] complete row-level manifest validation and independent stereo review
 - [ ] close formant and boundary classification after the remaining review
 
@@ -161,11 +163,20 @@ be trustworthy before the callback contract or a structural hybrid widens.
   not reset tuning. Evidence is target-local at
   `target/stretch-corpus-g10-029-transient-detail-v1.tsv`; durable findings are
   in `docs/logs/2026-07/10-g10-029-operator-listening-and-transient-diagnostic.md`.
+- 2026-07-10: Same-event controls isolate broad identity locking as the direct
+  `L001` spike cause: Signal Default measured `5.655 dB`, independent bins
+  `0.459 dB`, and Rubber Band `-0.515 dB` at source frame `180354`. Shared
+  overlap-add reconstruction does not reproduce the event under independent
+  propagation. Stability-adaptive locking removes the local spike but worsens
+  timing in `37` of 48 measured rows. Tracked peak regions and magnitude slew
+  regress worst crest in `28` and `34` rows. Two tighter bounded-region probes
+  also failed combined crest/timing gates and were removed. No production path
+  changed. Evidence and the rejection decision are in
+  `docs/logs/2026-07/10-g10-029-phase-lock-control-rejection.md`.
 
 ## Next Task
 
-Add a same-event `L001` control probe for identity locking, independent bins,
-and bounded peak-region variants. Reject candidates that only move the crest
-problem or regress the 60-row pack. In parallel, obtain independent stereo
-review and complete row-level manifest validation. Do not open product
+Measure the reported long-stretch grain and atonal ringing with bounded tonal
+sideband, residual, and modulation evidence. In parallel, obtain independent
+stereo review and complete row-level manifest validation. Do not open product
 promotion or start Batch 29.4 until all five families validate.
