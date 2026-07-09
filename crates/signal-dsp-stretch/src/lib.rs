@@ -270,6 +270,10 @@ pub enum OfflineHighQualityPath {
     /// Compression-only selector that switches to a shorter STFT window when
     /// the current path misses transients or exceeds the current-smear gate.
     CompressionShortWindowSelector,
+    /// Expansion-only selector that switches to a shorter STFT window when
+    /// the current path misses transients or regresses versus the draft
+    /// transient-smear baseline.
+    ExpansionShortWindowSelector,
 }
 
 /// Default STFT window: 2048 samples (~43 ms at 48 kHz).
@@ -287,6 +291,16 @@ pub const COMPRESSION_SHORT_WINDOW_SELECTOR_MIN_CURRENT_MISSES: usize = 1;
 /// Short-window selector gate: current path must exceed this transient-smear
 /// value before the selector may switch.
 pub const COMPRESSION_SHORT_WINDOW_SELECTOR_MIN_CURRENT_SMEAR_FRAMES: f64 = 64.0;
+/// Short-window selector STFT size for expansion material.
+pub const EXPANSION_SHORT_WINDOW_SELECTOR_WINDOW_SIZE: usize =
+    COMPRESSION_SHORT_WINDOW_SELECTOR_WINDOW_SIZE;
+/// Short-window selector analysis hop for expansion material.
+pub const EXPANSION_SHORT_WINDOW_SELECTOR_ANALYSIS_HOP: usize =
+    COMPRESSION_SHORT_WINDOW_SELECTOR_ANALYSIS_HOP;
+/// Expansion short-window selector gate: current path must miss at least this
+/// many source transients before the selector may switch.
+pub const EXPANSION_SHORT_WINDOW_SELECTOR_MIN_CURRENT_MISSES: usize =
+    COMPRESSION_SHORT_WINDOW_SELECTOR_MIN_CURRENT_MISSES;
 
 impl PhaseVocoderStretcher {
     /// Stretcher with the default window/hop configuration.
@@ -399,23 +413,34 @@ impl OfflineHighQualityStretcher {
             self.window_size,
             self.analysis_hop,
         );
-        if self.path != OfflineHighQualityPath::CompressionShortWindowSelector
-            || !should_select_compression_short_window_interleaved(
+        let selected_short_window = match self.path {
+            OfflineHighQualityPath::Default => false,
+            OfflineHighQualityPath::CompressionShortWindowSelector => {
+                should_select_compression_short_window_interleaved(
+                    even_frames,
+                    &default_output,
+                    self.ratio,
+                )
+            }
+            OfflineHighQualityPath::ExpansionShortWindowSelector => {
+                should_select_expansion_short_window_interleaved(
+                    even_frames,
+                    &default_output,
+                    self.ratio,
+                )
+            }
+        };
+        if selected_short_window {
+            transient_reset_phase_vocoder_linked_stereo(
                 even_frames,
-                &default_output,
+                target_frames,
                 self.ratio,
+                short_window_size_for_path(self.path),
+                short_window_analysis_hop_for_path(self.path),
             )
-        {
-            return default_output;
+        } else {
+            default_output
         }
-
-        transient_reset_phase_vocoder_linked_stereo(
-            even_frames,
-            target_frames,
-            self.ratio,
-            COMPRESSION_SHORT_WINDOW_SELECTOR_WINDOW_SIZE,
-            COMPRESSION_SHORT_WINDOW_SELECTOR_ANALYSIS_HOP,
-        )
     }
 
     /// Apply independent pitch shift and tempo stretch to one mono buffer.
@@ -610,19 +635,26 @@ impl TimeStretcher for OfflineHighQualityStretcher {
             self.analysis_hop,
             transient_reset_phase_vocoder,
         );
-        if self.path != OfflineHighQualityPath::CompressionShortWindowSelector
-            || !should_select_compression_short_window(input, &default_output, self.ratio)
-        {
-            return default_output;
+        let selected_short_window = match self.path {
+            OfflineHighQualityPath::Default => false,
+            OfflineHighQualityPath::CompressionShortWindowSelector => {
+                should_select_compression_short_window(input, &default_output, self.ratio)
+            }
+            OfflineHighQualityPath::ExpansionShortWindowSelector => {
+                should_select_expansion_short_window(input, &default_output, self.ratio)
+            }
+        };
+        if selected_short_window {
+            stretch_mono_with_engine(
+                input,
+                self.ratio,
+                short_window_size_for_path(self.path),
+                short_window_analysis_hop_for_path(self.path),
+                transient_reset_phase_vocoder,
+            )
+        } else {
+            default_output
         }
-
-        stretch_mono_with_engine(
-            input,
-            self.ratio,
-            COMPRESSION_SHORT_WINDOW_SELECTOR_WINDOW_SIZE,
-            COMPRESSION_SHORT_WINDOW_SELECTOR_ANALYSIS_HOP,
-            transient_reset_phase_vocoder,
-        )
     }
 }
 
@@ -1075,6 +1107,80 @@ fn should_select_compression_short_window_interleaved(
     should_select_compression_short_window(&input_mono, &output_mono, ratio)
 }
 
+fn should_select_expansion_short_window(
+    input: &[Sample],
+    current_output: &[Sample],
+    ratio: f64,
+) -> bool {
+    if ratio <= 1.0 || input.is_empty() || current_output.is_empty() {
+        return false;
+    }
+
+    let current_smear = measure_transient_smear(
+        input,
+        current_output,
+        ratio,
+        EXPANSION_SHORT_WINDOW_SELECTOR_WINDOW_SIZE,
+        EXPANSION_SHORT_WINDOW_SELECTOR_ANALYSIS_HOP,
+    );
+    if current_smear.missed_transients >= EXPANSION_SHORT_WINDOW_SELECTOR_MIN_CURRENT_MISSES {
+        return true;
+    }
+
+    let mut draft = PhaseVocoderStretcher::new(ratio);
+    let draft_output = draft.stretch_mono(input);
+    let draft_smear = measure_transient_smear(
+        input,
+        &draft_output,
+        ratio,
+        EXPANSION_SHORT_WINDOW_SELECTOR_WINDOW_SIZE,
+        EXPANSION_SHORT_WINDOW_SELECTOR_ANALYSIS_HOP,
+    );
+    metric_worsened(current_smear.max_smear_frames, draft_smear.max_smear_frames)
+}
+
+fn should_select_expansion_short_window_interleaved(
+    input: &[Sample],
+    current_output: &[Sample],
+    ratio: f64,
+) -> bool {
+    let input_mono = downmix_interleaved_stereo_to_mono(input);
+    let output_mono = downmix_interleaved_stereo_to_mono(current_output);
+    should_select_expansion_short_window(&input_mono, &output_mono, ratio)
+}
+
+fn metric_worsened(candidate: f64, production: f64) -> bool {
+    if candidate.is_finite() && production.is_finite() {
+        candidate > production
+    } else {
+        !candidate.is_finite() && production.is_finite()
+    }
+}
+
+fn short_window_size_for_path(path: OfflineHighQualityPath) -> usize {
+    match path {
+        OfflineHighQualityPath::Default => DEFAULT_WINDOW_SIZE,
+        OfflineHighQualityPath::CompressionShortWindowSelector => {
+            COMPRESSION_SHORT_WINDOW_SELECTOR_WINDOW_SIZE
+        }
+        OfflineHighQualityPath::ExpansionShortWindowSelector => {
+            EXPANSION_SHORT_WINDOW_SELECTOR_WINDOW_SIZE
+        }
+    }
+}
+
+fn short_window_analysis_hop_for_path(path: OfflineHighQualityPath) -> usize {
+    match path {
+        OfflineHighQualityPath::Default => DEFAULT_ANALYSIS_HOP,
+        OfflineHighQualityPath::CompressionShortWindowSelector => {
+            COMPRESSION_SHORT_WINDOW_SELECTOR_ANALYSIS_HOP
+        }
+        OfflineHighQualityPath::ExpansionShortWindowSelector => {
+            EXPANSION_SHORT_WINDOW_SELECTOR_ANALYSIS_HOP
+        }
+    }
+}
+
 fn downmix_interleaved_stereo_to_mono(samples: &[Sample]) -> Vec<Sample> {
     samples
         .chunks_exact(2)
@@ -1184,6 +1290,11 @@ mod tests {
         );
         stretcher.set_path(OfflineHighQualityPath::Default);
         assert_eq!(stretcher.path(), OfflineHighQualityPath::Default);
+        stretcher.set_path(OfflineHighQualityPath::ExpansionShortWindowSelector);
+        assert_eq!(
+            stretcher.path(),
+            OfflineHighQualityPath::ExpansionShortWindowSelector
+        );
     }
 
     #[test]
@@ -1273,6 +1384,69 @@ mod tests {
         );
 
         assert_eq!(selector.stretch_mono(&input), default_output);
+    }
+
+    #[test]
+    fn expansion_short_window_selector_matches_gate_decision() {
+        let input = masked_soft_attack_probe(0.35);
+        let ratio = 1.25;
+        let mut default = OfflineHighQualityStretcher::new(ratio);
+        let default_output = default.stretch_mono(&input);
+        let mut short_window = OfflineHighQualityStretcher::with_window(
+            ratio,
+            EXPANSION_SHORT_WINDOW_SELECTOR_WINDOW_SIZE,
+            EXPANSION_SHORT_WINDOW_SELECTOR_ANALYSIS_HOP,
+        );
+        let short_window_output = short_window.stretch_mono(&input);
+        let mut selector = OfflineHighQualityStretcher::with_path(
+            ratio,
+            OfflineHighQualityPath::ExpansionShortWindowSelector,
+        );
+        let selector_output = selector.stretch_mono(&input);
+        let accepted = should_select_expansion_short_window(&input, &default_output, ratio);
+
+        let expected = if accepted {
+            &short_window_output
+        } else {
+            &default_output
+        };
+        assert_eq!(selector_output, *expected);
+        assert_eq!(
+            selector_output.len(),
+            (input.len() as f64 * ratio).round() as usize
+        );
+    }
+
+    #[test]
+    fn expansion_short_window_selector_rejects_compression_ratios() {
+        let input = masked_soft_attack_probe(0.35);
+        let ratio = 0.75;
+        let mut default = OfflineHighQualityStretcher::new(ratio);
+        let default_output = default.stretch_mono(&input);
+        let mut selector = OfflineHighQualityStretcher::with_path(
+            ratio,
+            OfflineHighQualityPath::ExpansionShortWindowSelector,
+        );
+
+        assert_eq!(selector.stretch_mono(&input), default_output);
+    }
+
+    #[test]
+    fn expansion_short_window_gate_accepts_current_misses() {
+        let input = masked_soft_attack_probe(0.35);
+        let ratio = 1.25;
+        let silent_current = vec![0.0; (input.len() as f64 * ratio).round() as usize];
+
+        assert!(should_select_expansion_short_window(
+            &input,
+            &silent_current,
+            ratio
+        ));
+        assert!(!should_select_expansion_short_window(
+            &input,
+            &silent_current,
+            0.75
+        ));
     }
 
     #[test]

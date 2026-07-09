@@ -523,7 +523,7 @@ pub fn materialize_offline_stretch_artifact_pcm(
 
     let ratio = static_or_initial_ratio(&identity_input.ratio_curve);
     let pitch_shift = static_pitch_shift(identity_input)?;
-    if identity_input.offline_path == OfflineHighQualityPath::CompressionShortWindowSelector {
+    if selector_offline_path_requires_static_materialization(identity_input.offline_path) {
         if ratio_curve_has_dynamic_changes(&identity_input.ratio_curve) {
             return Err(
                 OfflineStretchArtifactMaterializeError::UnsupportedOfflinePathDynamicRatio {
@@ -540,23 +540,24 @@ pub fn materialize_offline_stretch_artifact_pcm(
         }
     }
     let mut stretcher = OfflineHighQualityStretcher::with_path(ratio, identity_input.offline_path);
-    let frames = if identity_input.offline_path
-        == OfflineHighQualityPath::CompressionShortWindowSelector
-    {
-        stretcher.stretch_interleaved_stereo(&source.frames)
-    } else if pitch_shift.abs() > 1.0e-9 {
-        stretcher.stretch_dynamic_ratio_pitch_interleaved_stereo(
-            &source.frames,
-            &identity_input.ratio_curve,
-            SampleRate(source.sample_rate_hz),
-            pitch_shift,
-        )
-    } else if identity_input.ratio_curve.is_empty() {
-        stretcher.stretch_interleaved_stereo(&source.frames)
-    } else {
-        stretcher
-            .stretch_dynamic_ratio_interleaved_stereo(&source.frames, &identity_input.ratio_curve)
-    };
+    let frames =
+        if selector_offline_path_requires_static_materialization(identity_input.offline_path) {
+            stretcher.stretch_interleaved_stereo(&source.frames)
+        } else if pitch_shift.abs() > 1.0e-9 {
+            stretcher.stretch_dynamic_ratio_pitch_interleaved_stereo(
+                &source.frames,
+                &identity_input.ratio_curve,
+                SampleRate(source.sample_rate_hz),
+                pitch_shift,
+            )
+        } else if identity_input.ratio_curve.is_empty() {
+            stretcher.stretch_interleaved_stereo(&source.frames)
+        } else {
+            stretcher.stretch_dynamic_ratio_interleaved_stereo(
+                &source.frames,
+                &identity_input.ratio_curve,
+            )
+        };
 
     let output_frame_count = frames.len() / 2;
     let receipt = OfflineStretchArtifactMaterializationReceipt {
@@ -665,6 +666,14 @@ fn static_or_initial_ratio(ratio_curve: &[StretchRatioPoint]) -> f64 {
         .find(|point| point.ratio.is_finite() && point.ratio > 0.0)
         .map(|point| point.ratio)
         .unwrap_or(1.0)
+}
+
+fn selector_offline_path_requires_static_materialization(path: OfflineHighQualityPath) -> bool {
+    matches!(
+        path,
+        OfflineHighQualityPath::CompressionShortWindowSelector
+            | OfflineHighQualityPath::ExpansionShortWindowSelector
+    )
 }
 
 fn ratio_curve_has_dynamic_changes(ratio_curve: &[StretchRatioPoint]) -> bool {
@@ -1076,6 +1085,18 @@ mod tests {
         assert!(receipt.accepts_product_facing_path(
             StretchBackendTier::OfflineHighQuality,
             OfflineHighQualityPath::CompressionShortWindowSelector
+        ));
+        receipt
+    }
+
+    fn accepted_expansion_selector_promotion_receipt(evidence_id: &str) -> StretchPromotionReceipt {
+        let receipt =
+            StretchPromotionReceipt::accepted_expansion_short_window_selector(evidence_id, 40, 40);
+        assert_eq!(receipt.status, StretchPromotionStatus::Accepted);
+        assert_eq!(receipt.evidence_id, evidence_id);
+        assert!(receipt.accepts_product_facing_path(
+            StretchBackendTier::OfflineHighQuality,
+            OfflineHighQualityPath::ExpansionShortWindowSelector
         ));
         receipt
     }
@@ -1920,6 +1941,51 @@ mod tests {
     }
 
     #[test]
+    fn expansion_short_window_selector_materializes_static_stereo_and_changes_identity() {
+        let default_input =
+            stretch_identity_input().with_ratio_curve(vec![StretchRatioPoint::new(0, 1.25)]);
+        let selector_input = default_input
+            .clone()
+            .with_offline_path(OfflineHighQualityPath::ExpansionShortWindowSelector);
+        let source = stretch_artifact_source(2_048);
+
+        let default_artifact = materialize_offline_stretch_artifact_pcm(
+            OfflineStretchArtifactScope::RenderCache,
+            &default_input,
+            accepted_synthetic_promotion_receipt("synthetic:default-expansion-static"),
+            &source,
+        )
+        .expect("default path should materialize");
+        let selector_artifact = materialize_offline_stretch_artifact_pcm(
+            OfflineStretchArtifactScope::RenderCache,
+            &selector_input,
+            accepted_expansion_selector_promotion_receipt(
+                "fma-rubberband:expansion-selector-path-static",
+            ),
+            &source,
+        )
+        .expect("expansion selector path should materialize static stereo");
+
+        assert_eq!(
+            selector_artifact.plan.offline_path,
+            OfflineHighQualityPath::ExpansionShortWindowSelector
+        );
+        assert_eq!(
+            selector_artifact.receipt.offline_path,
+            OfflineHighQualityPath::ExpansionShortWindowSelector
+        );
+        assert_eq!(selector_artifact.output_frame_count, 2_560);
+        assert_ne!(
+            default_artifact.receipt.cache_identity_hash,
+            selector_artifact.receipt.cache_identity_hash
+        );
+        assert!(selector_artifact
+            .receipt
+            .cache_identity_key
+            .contains("offline_path=ExpansionShortWindowSelector"));
+    }
+
+    #[test]
     fn compression_short_window_selector_rejects_default_promotion_receipt() {
         let selector_input = stretch_identity_input()
             .with_ratio_curve(vec![StretchRatioPoint::new(0, 0.75)])
@@ -1964,6 +2030,39 @@ mod tests {
     }
 
     #[test]
+    fn expansion_short_window_selector_rejects_default_promotion_receipt() {
+        let selector_input = stretch_identity_input()
+            .with_ratio_curve(vec![StretchRatioPoint::new(0, 1.25)])
+            .with_offline_path(OfflineHighQualityPath::ExpansionShortWindowSelector);
+        let source = stretch_artifact_source(2_048);
+        let default_receipt =
+            accepted_synthetic_promotion_receipt("synthetic:default-path-not-expansion-selector");
+
+        let plan = plan_offline_stretch_artifact(
+            OfflineStretchArtifactScope::RenderCache,
+            &selector_input,
+            default_receipt.clone(),
+        )
+        .expect("expansion selector plan should still validate identity");
+        assert_eq!(
+            plan.readiness,
+            OfflineStretchArtifactReadiness::AwaitingCorpusEvidence
+        );
+        assert!(!plan.product_facing_allowed);
+        assert_eq!(
+            materialize_offline_stretch_artifact_pcm(
+                OfflineStretchArtifactScope::RenderCache,
+                &selector_input,
+                default_receipt,
+                &source,
+            ),
+            Err(OfflineStretchArtifactMaterializeError::NotReady(
+                OfflineStretchArtifactReadiness::AwaitingCorpusEvidence
+            ))
+        );
+    }
+
+    #[test]
     fn compression_short_window_selector_rejects_unproven_artifact_combinations() {
         let dynamic_input = stretch_identity_input()
             .with_ratio_curve(vec![
@@ -2000,6 +2099,52 @@ mod tests {
             Err(
                 OfflineStretchArtifactMaterializeError::UnsupportedOfflinePathPitchShift {
                     path: OfflineHighQualityPath::CompressionShortWindowSelector
+                }
+            )
+        );
+    }
+
+    #[test]
+    fn expansion_short_window_selector_rejects_unproven_artifact_combinations() {
+        let dynamic_input = stretch_identity_input()
+            .with_ratio_curve(vec![
+                StretchRatioPoint::new(0, 1.25),
+                StretchRatioPoint::new(240, 1.5),
+            ])
+            .with_offline_path(OfflineHighQualityPath::ExpansionShortWindowSelector);
+        let pitch_input = stretch_identity_input()
+            .with_ratio_curve(vec![StretchRatioPoint::new(0, 1.25)])
+            .with_pitch_curve(vec![StretchPitchPoint::new(0, 2.0)])
+            .with_offline_path(OfflineHighQualityPath::ExpansionShortWindowSelector);
+        let source = stretch_artifact_source(480);
+
+        assert_eq!(
+            materialize_offline_stretch_artifact_pcm(
+                OfflineStretchArtifactScope::RenderCache,
+                &dynamic_input,
+                accepted_expansion_selector_promotion_receipt(
+                    "fma-rubberband:expansion-selector-dynamic"
+                ),
+                &source,
+            ),
+            Err(
+                OfflineStretchArtifactMaterializeError::UnsupportedOfflinePathDynamicRatio {
+                    path: OfflineHighQualityPath::ExpansionShortWindowSelector
+                }
+            )
+        );
+        assert_eq!(
+            materialize_offline_stretch_artifact_pcm(
+                OfflineStretchArtifactScope::RenderCache,
+                &pitch_input,
+                accepted_expansion_selector_promotion_receipt(
+                    "fma-rubberband:expansion-selector-pitch"
+                ),
+                &source,
+            ),
+            Err(
+                OfflineStretchArtifactMaterializeError::UnsupportedOfflinePathPitchShift {
+                    path: OfflineHighQualityPath::ExpansionShortWindowSelector
                 }
             )
         );

@@ -70,7 +70,7 @@ comparison reports, not add more receipt or fixture surfaces.
   production DSP
 - [x] design a report-only non-oracle expansion selector gate before any
   production DSP routing change
-- [ ] validate expansion selector evidence at full-frame/broader comparator
+- [x] validate expansion selector evidence at full-frame/broader comparator
   depth before production routing change
 
 ## Acceptance Criteria
@@ -657,12 +657,27 @@ comparison reports, not add more receipt or fixture surfaces.
   enough broad/default-limit evidence to promote the expansion selector shape
   deliberately; keep full external feature-review rows as a separate quality
   audit, not as a blocker for this selector gate.
+- 2026-07-09: promoted the expansion short-window selector into an explicit
+  `OfflineHighQualityPath::ExpansionShortWindowSelector` product path. The DSP
+  path is expansion-only and keeps the measured gate:
+  current OfflineHighQuality must miss at least one promoted transient or
+  regress versus the draft transient-smear baseline before it switches to the
+  short-window renderer. Promotion receipts now distinguish expansion selector
+  evidence from both default OfflineHighQuality and compression selector
+  evidence. Cache identity gets a distinct
+  `offline_path=ExpansionShortWindowSelector` key, and render-plane
+  materialization allows only static stereo artifacts for the expansion
+  selector while still rejecting default receipts, dynamic-ratio selector
+  artifacts, and pitch-shift selector artifacts.
+- 2026-07-09: validated the promoted expansion selector path with focused
+  `signal-dsp-stretch` and `signal-render-plane` package tests plus repo
+  validation. The path is product-addressable for static stereo artifacts with
+  matching expansion-selector promotion evidence; unsupported dynamic-ratio and
+  pitch-shift selector combinations remain blocked.
 
 ## Next Task
 
-Continue Batch 22.5 by promoting the expansion short-window selector from
-report-only evidence to an explicit product path. Keep it distinct from the
-existing compression selector in cache identity, receipts, and render/runtime
-plan surfaces, and gate promotion on the broad/default-limit evidence above.
-Do not fold expansion into the existing compression selector path or route it
-through a generic short-window switch.
+Continue by deciding whether Batch 22.5 needs a full external feature-review
+audit for the promoted expansion selector, or whether to close Batch 22.5 and
+select the next DSP quality target. Do not add dynamic-ratio or pitch-shift
+selector materialization until those combinations have their own evidence.

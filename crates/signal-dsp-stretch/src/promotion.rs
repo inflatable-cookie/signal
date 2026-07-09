@@ -129,6 +129,29 @@ impl StretchPromotionReceipt {
         }
     }
 
+    /// Accepted receipt for the expansion short-window selector path.
+    ///
+    /// This receipt is intentionally separate from the default
+    /// OfflineHighQuality and compression selector receipts. The expansion
+    /// selector has its own broad/default-limit FMA and Rubber Band evidence
+    /// gate, so no other path evidence can unlock expansion selector artifacts.
+    pub fn accepted_expansion_short_window_selector(
+        evidence_id: impl Into<String>,
+        passed_case_count: u32,
+        required_case_count: u32,
+    ) -> Self {
+        Self {
+            tier: StretchBackendTier::OfflineHighQuality,
+            offline_path: OfflineHighQualityPath::ExpansionShortWindowSelector,
+            status: StretchPromotionStatus::Accepted,
+            evidence_id: evidence_id.into(),
+            compared_to_draft_baseline: true,
+            passed_case_count,
+            required_case_count,
+            note: "ExpansionShortWindowSelector broad FMA/Rubber Band selector-path evidence accepted product-facing promotion".to_string(),
+        }
+    }
+
     /// Rejected receipt for `OfflineHighQuality` promotion evidence.
     pub fn rejected_offline_high_quality(
         evidence_id: impl Into<String>,
@@ -305,6 +328,32 @@ mod tests {
     }
 
     #[test]
+    fn expansion_selector_receipt_allows_only_expansion_selector_path() {
+        let receipt = StretchPromotionReceipt::accepted_expansion_short_window_selector(
+            "fma-rubberband-expansion-selector:001",
+            40,
+            40,
+        );
+
+        assert!(receipt.accepts_product_facing_path(
+            StretchBackendTier::OfflineHighQuality,
+            OfflineHighQualityPath::ExpansionShortWindowSelector
+        ));
+        assert!(!receipt.accepts_product_facing_path(
+            StretchBackendTier::OfflineHighQuality,
+            OfflineHighQualityPath::CompressionShortWindowSelector
+        ));
+        assert!(!receipt.accepts_product_facing_use(StretchBackendTier::OfflineHighQuality));
+        assert_eq!(
+            receipt.product_facing_path_blocker(
+                StretchBackendTier::OfflineHighQuality,
+                OfflineHighQualityPath::Default
+            ),
+            Some("promotion receipt offline path does not match artifact path")
+        );
+    }
+
+    #[test]
     fn promotion_receipt_blocks_incomplete_mismatched_or_wrong_path_evidence() {
         let not_evaluated = StretchPromotionReceipt::default();
         let incomplete = StretchPromotionReceipt::accepted_offline_high_quality("run:002", 7, 8);
@@ -329,6 +378,10 @@ mod tests {
         assert!(!default_path.accepts_product_facing_path(
             StretchBackendTier::OfflineHighQuality,
             OfflineHighQualityPath::CompressionShortWindowSelector
+        ));
+        assert!(!default_path.accepts_product_facing_path(
+            StretchBackendTier::OfflineHighQuality,
+            OfflineHighQualityPath::ExpansionShortWindowSelector
         ));
         assert_eq!(
             default_path.product_facing_path_blocker(

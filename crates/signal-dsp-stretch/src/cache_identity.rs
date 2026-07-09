@@ -386,17 +386,29 @@ mod tests {
             ])
             .identity()
             .expect("valid identity");
-        let changed_path = base_input()
+        let changed_compression_path = base_input()
             .with_offline_path(OfflineHighQualityPath::CompressionShortWindowSelector)
+            .identity()
+            .expect("valid identity");
+        let changed_expansion_path = base_input()
+            .with_offline_path(OfflineHighQualityPath::ExpansionShortWindowSelector)
             .identity()
             .expect("valid identity");
 
         assert_ne!(base.stable_hash, changed_projection.stable_hash);
         assert_ne!(base.stable_hash, changed_ratio.stable_hash);
-        assert_ne!(base.stable_hash, changed_path.stable_hash);
-        assert!(changed_path
+        assert_ne!(base.stable_hash, changed_compression_path.stable_hash);
+        assert_ne!(base.stable_hash, changed_expansion_path.stable_hash);
+        assert_ne!(
+            changed_compression_path.stable_hash,
+            changed_expansion_path.stable_hash
+        );
+        assert!(changed_compression_path
             .canonical_key
             .contains("offline_path=CompressionShortWindowSelector"));
+        assert!(changed_expansion_path
+            .canonical_key
+            .contains("offline_path=ExpansionShortWindowSelector"));
     }
 
     #[test]
