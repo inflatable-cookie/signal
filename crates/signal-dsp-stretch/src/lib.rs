@@ -475,6 +475,9 @@ pub enum RealtimePreviewUnsupportedMode {
     /// Callback DSP is locally bounded, but the public contract does not yet
     /// own ratio-projected source advancement for render-plane playback.
     SourceAdvanceContract,
+    /// Source projection is reported, but the callback path does not yet own
+    /// bounded source fill, underrun, or input-demand behavior.
+    SourceBufferingContract,
     /// The requested channel layout is not part of the current linked preview
     /// contract.
     ChannelLayout,
@@ -648,7 +651,7 @@ pub fn plan_realtime_preview_stream(
         integration_mode: RealtimePreviewIntegrationMode::AnticipativePreRender,
         callback_timeline_mode: RealtimePreviewCallbackTimelineMode::QuantumLocked,
         audio_thread_processing_supported: false,
-        unsupported_mode: Some(RealtimePreviewUnsupportedMode::SourceAdvanceContract),
+        unsupported_mode: Some(RealtimePreviewUnsupportedMode::SourceBufferingContract),
         config,
     })
 }
@@ -2877,7 +2880,7 @@ mod tests {
         assert!(!contract.audio_thread_processing_supported);
         assert_eq!(
             contract.unsupported_mode,
-            Some(RealtimePreviewUnsupportedMode::SourceAdvanceContract)
+            Some(RealtimePreviewUnsupportedMode::SourceBufferingContract)
         );
     }
 

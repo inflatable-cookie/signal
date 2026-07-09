@@ -26,7 +26,7 @@ implementation remains Signal-owned.
   not another one-parameter probe.
 - Offline artifacts and RealtimePreview have bounded contracts and prototype
   paths, but callback-safe preview integration and fully streaming artifact
-  output are paused until their owning state/cache contracts exist.
+  output remain gated until their owning source-fill/cache contracts exist.
 
 Do not start Loophole integration planning in Chorus from Signal internals.
 `g10.025` is the Signal product-workflow checkpoint and remains deferred until
@@ -86,8 +86,10 @@ a product workflow consumes the Signal-owned stretch contract.
   - stretch product workflow contract checkpoint
 - `g10.026` `complete`
   - RealtimePreview callback-safe state
-- `g10.027` `active`
+- `g10.027` `complete`
   - RealtimePreview source-projected callback
+- `g10.028` `active`
+  - RealtimePreview source fill contract
 
 ## Stretch Boundary
 
@@ -96,8 +98,9 @@ Current stretch status:
 - `Repitch`: implemented as the render-plane realtime-safe varispeed path.
 - `RealtimePreview`: prototype and metrics landed; direct callback processing
   remains unsupported for render-plane routing. Callback-local DSP now has
-  no-allocation, linked-stereo, ratio-scheduling, and synthetic tempo-ramp seam
-  evidence. `g10.027` owns the missing source-projected callback contract.
+  no-allocation, linked-stereo, ratio-scheduling, source-projection reporting,
+  and synthetic tempo-ramp seam evidence. `g10.028` owns the missing
+  source-fill and underrun contract before callback streaming can open.
 - `OfflineHighQuality`: implemented for default-path artifacts with chunked
   materialization and cache receipts; quality promotion still depends on real
   evidence and structural DSP work.
@@ -107,7 +110,7 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Continue `g10.027` Batch 27.2 by adding stateful fractional source cursors and
-bounded input-demand reporting to the callback state. Keep
+Continue `g10.028` Batch 28.1 by defining the source-fill readiness report and
+focused tests for ready, partial, and underrun source ranges. Keep
 `audio_thread_processing_supported=false` and do not add render-plane
 integration.

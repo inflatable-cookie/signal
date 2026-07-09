@@ -1,6 +1,6 @@
 # 027 - RealtimePreview Source-Projected Callback
 
-Status: active
+Status: complete
 Owner: dsp
 Created: 2026-07-09
 Depends on: g10.014, g10.026
@@ -37,10 +37,10 @@ underrun/fill behavior without allocation.
 
 ## Non-Goals
 
-- [ ] no render-plane integration in this roadmap
-- [ ] no Loophole or Chorus product workflow planning
-- [ ] no whole-buffer preview fallback on the audio callback
-- [ ] no claim that RealtimePreview equals OfflineHighQuality quality
+- [x] no render-plane integration in this roadmap
+- [x] no Loophole or Chorus product workflow planning
+- [x] no whole-buffer preview fallback on the audio callback
+- [x] no claim that RealtimePreview equals OfflineHighQuality quality
 
 ## Execution Plan
 
@@ -64,7 +64,7 @@ underrun/fill behavior without allocation.
 
 - [x] combine scheduled ratio changes with source-projected advancement
 - [x] prove source/output position continuity across ratio changes
-- [ ] reassess whether `CallbackSafeStreaming` can be exposed without render
+- [x] reassess whether `CallbackSafeStreaming` can be exposed without render
   integration
 
 ## Acceptance Criteria
@@ -106,10 +106,14 @@ underrun/fill behavior without allocation.
   frames, and proves monotonic source/output continuity across tempo-ramp
   changes. The public stream contract remains `QuantumLocked` and
   `audio_thread_processing_supported=false`.
+- 2026-07-09: Closed Batch 27.3 reassessment. The proven reporting is not
+  enough to expose `CallbackSafeStreaming`: the callback path still lacks an
+  owned source-buffer fill and underrun policy for variable input demand. The
+  public unsupported reason now points at `SourceBufferingContract`, and
+  `g10.028` owns the next Signal implementation batch.
 
 ## Next Task
 
-Finish Batch 27.3 with a contract reassessment. Decide whether the proven
-source-projection reporting is enough to expose a narrow
-`CallbackSafeStreaming` mode, or whether another roadmap is needed for
-underrun/fill behavior before render-plane integration can start.
+Continue `g10.028` by implementing the source-fill and underrun contract needed
+before `RealtimePreview` can expose `CallbackSafeStreaming` or render-plane
+integration.

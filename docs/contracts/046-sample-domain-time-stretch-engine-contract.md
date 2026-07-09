@@ -235,11 +235,14 @@ The stream contract must expose a source/output timeline mode:
   enough for the render plane to remain sample-domain honest.
 
 `audio_thread_processing_supported` must stay `false` while the
-RealtimePreview stream is `QuantumLocked`. It may only become `true` after the
-source-projected contract has focused tests for source advance, output
-position, latency, and no-allocation behavior.
+RealtimePreview stream is `QuantumLocked`. `g10.027` proved source-projection
+reporting and dynamic-ratio source/output continuity, but it did not give the
+callback path ownership of source-buffer fill or underrun behavior. The stream
+may only become `CallbackSafeStreaming`/`SourceProjected` after focused tests
+prove source advance, output position, bounded input demand, underrun/fill
+policy, latency, and no-allocation behavior together.
 
-Planning authority: `docs/roadmaps/backlog/signal-native-high-quality-stretch.md`.
+Planning authority: `docs/roadmaps/g10/028-realtime-preview-source-fill-contract.md`.
 
 ## Batch 15.1 outcome
 
