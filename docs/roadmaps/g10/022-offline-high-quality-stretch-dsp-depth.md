@@ -97,6 +97,8 @@ comparison reports, not add more receipt or fixture surfaces.
   changing product routing
 - [x] test one frame-stability adaptive phase-locking candidate before
   changing product routing
+- [x] test one tracked peak-region phase-locking candidate before changing
+  product routing
 - [ ] keep the long-window sustained-coherence path benchmark-only unless a
   better product-observable selector or DSP candidate emerges
 
@@ -856,14 +858,27 @@ comparison reports, not add more receipt or fixture surfaces.
   (`-0.321471` versus `-0.295449`), but the full-mix regressions are too large.
   Do not tune the scalar stability threshold as a product path from this
   evidence; the failure mode needs a different mechanism.
+- 2026-07-09: added a report-only peak-region candidate named
+  `expansion-long-window-tracked-peak-regions`. The path keeps current
+  OfflineHighQuality output for compression and tests long-window expansion
+  identity locking where peaks tracked from the previous analysis frame keep
+  normal phase-lock regions, while new/untracked peaks lock only a narrow local
+  region. Regenerated the targeted report at
+  `target/stretch-corpus-fma-coherence-tracked-peak-candidate-targeted.tsv`
+  (`real 330.32`). The candidate is rejected: 15 rows, 6 improved, 5 unchanged,
+  4 regressed, worst regression `delta=0.059913` on `stretch:vocals` `000020`
+  at `1.25x`. It preserves the strongest vocal improvement from raw
+  long-window identity locking (`delta=-0.389153` at `1.5x`), but it regresses
+  more rows than the simpler ratio-scoped transient-reset path and has a worse
+  worst regression (`0.059913` versus `0.039756`). No broad run or product
+  routing change is justified.
 
 ## Next Task
 
 Continue Batch 22.6 by moving away from selector or simple-blend promotion for
 the long-window path. The next DSP candidate should address the actual
-regression mechanism more directly than scalar frame-stability phase-lock
-gating, likely by changing magnitude evolution or peak-region tracking instead
-of switching identity locking on and off. Reject on targeted evidence before a
-broad run if it shows material regressions. Do not change product routing,
-cache identity, dynamic-ratio materialization, or pitch-shift materialization
-for the long-window path.
+regression mechanism more directly than peak-region phase-lock tracking,
+likely by changing magnitude evolution rather than phase propagation. Reject
+on targeted evidence before a broad run if it shows material regressions. Do
+not change product routing, cache identity, dynamic-ratio materialization, or
+pitch-shift materialization for the long-window path.

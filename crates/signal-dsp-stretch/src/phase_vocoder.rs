@@ -58,6 +58,25 @@ pub(crate) fn stability_adaptive_phase_vocoder(
     )
 }
 
+/// Run a report-only phase-locked prototype that narrows peak-lock regions
+/// for peaks not tracked from the previous analysis frame.
+pub(crate) fn tracked_peak_region_phase_vocoder(
+    input: &[Sample],
+    target_len: usize,
+    ratio: f64,
+    window_size: usize,
+    analysis_hop: usize,
+) -> Vec<Sample> {
+    run_phase_vocoder(
+        input,
+        target_len,
+        ratio,
+        window_size,
+        analysis_hop,
+        PhasePropagationMode::IdentityLockedTrackedPeakRegions,
+    )
+}
+
 /// Run the identity phase-locked prototype with transient phase resets.
 pub(crate) fn transient_reset_phase_vocoder(
     input: &[Sample],
@@ -167,6 +186,7 @@ enum PhasePropagationMode {
     IndependentBins,
     IdentityLocked,
     IdentityLockedStabilityAdaptive,
+    IdentityLockedTrackedPeakRegions,
     IdentityLockedTransientReset,
     IdentityLockedCompressionTransientAnchor,
 }
@@ -202,6 +222,7 @@ struct DraftPhaseVocoder {
     current_magnitudes: Vec<f32>,
     current_phases: Vec<f32>,
     current_peaks: Vec<SpectralPeak>,
+    previous_peaks: Vec<SpectralPeak>,
     previous_magnitudes: Vec<f32>,
     current_spectral_stability: f64,
     current_energy: f64,
@@ -242,6 +263,7 @@ impl DraftPhaseVocoder {
             current_magnitudes: vec![0.0; config.bins],
             current_phases: vec![0.0; config.bins],
             current_peaks: Vec::with_capacity(config.bins / 4),
+            previous_peaks: Vec::with_capacity(config.bins / 4),
             previous_magnitudes: vec![0.0; config.bins],
             current_spectral_stability: 1.0,
             current_energy: 0.0,
@@ -286,6 +308,9 @@ impl DraftPhaseVocoder {
     }
 
     fn track_spectral_peaks(&mut self, frame_index: usize) {
+        self.previous_peaks.clear();
+        self.previous_peaks
+            .extend(self.current_peaks.iter().copied());
         self.current_peaks.clear();
         for (bin, magnitude) in self.current_magnitudes.iter_mut().enumerate() {
             *magnitude = self.analysis_buffer[bin].norm();
@@ -333,7 +358,12 @@ impl DraftPhaseVocoder {
         }
 
         if self.should_lock_phase_to_peaks(frame_index) {
-            self.lock_phase_to_peaks();
+            match self.mode {
+                PhasePropagationMode::IdentityLockedTrackedPeakRegions => {
+                    self.lock_phase_to_tracked_peak_regions(frame_index);
+                }
+                _ => self.lock_phase_to_peaks(),
+            }
         }
 
         for bin in 0..self.config.bins {
@@ -393,7 +423,8 @@ impl DraftPhaseVocoder {
             }
             PhasePropagationMode::IndependentBins
             | PhasePropagationMode::IdentityLocked
-            | PhasePropagationMode::IdentityLockedStabilityAdaptive => false,
+            | PhasePropagationMode::IdentityLockedStabilityAdaptive
+            | PhasePropagationMode::IdentityLockedTrackedPeakRegions => false,
         }
     }
 
@@ -405,6 +436,7 @@ impl DraftPhaseVocoder {
             PhasePropagationMode::IdentityLockedStabilityAdaptive => {
                 frame_index == 0 || self.current_spectral_stability >= 0.70
             }
+            PhasePropagationMode::IdentityLockedTrackedPeakRegions => true,
             PhasePropagationMode::IndependentBins => false,
         }
     }
@@ -418,22 +450,59 @@ impl DraftPhaseVocoder {
             let peak = self.current_peaks[peak_index];
             let peak_phase = self.synthesis_phase[peak.bin];
             let analysis_peak_phase = self.current_phases[peak.bin];
-            let left = if peak_index == 0 {
-                0
-            } else {
-                (self.current_peaks[peak_index - 1].bin + peak.bin) / 2 + 1
-            };
-            let right = self
-                .current_peaks
-                .get(peak_index + 1)
-                .map(|next| (peak.bin + next.bin) / 2 + 1)
-                .unwrap_or(self.config.bins);
+            let (left, right) = self.peak_region_bounds(peak_index);
 
             for bin in left..right {
                 let relative_phase = wrap_phase(self.current_phases[bin] - analysis_peak_phase);
                 self.synthesis_phase[bin] = wrap_phase(peak_phase + relative_phase);
             }
         }
+    }
+
+    fn lock_phase_to_tracked_peak_regions(&mut self, frame_index: usize) {
+        if frame_index == 0 || self.previous_peaks.is_empty() {
+            self.lock_phase_to_peaks();
+            return;
+        }
+        if self.current_peaks.is_empty() {
+            return;
+        }
+
+        for peak_index in 0..self.current_peaks.len() {
+            let peak = self.current_peaks[peak_index];
+            let peak_phase = self.synthesis_phase[peak.bin];
+            let analysis_peak_phase = self.current_phases[peak.bin];
+            let (left, right) = if self.previous_peaks.iter().any(|previous| {
+                previous.bin.abs_diff(peak.bin) <= tracked_peak_max_bin_drift(self.config.bins)
+            }) {
+                self.peak_region_bounds(peak_index)
+            } else {
+                (
+                    peak.bin.saturating_sub(1),
+                    (peak.bin + 2).min(self.config.bins),
+                )
+            };
+
+            for bin in left..right {
+                let relative_phase = wrap_phase(self.current_phases[bin] - analysis_peak_phase);
+                self.synthesis_phase[bin] = wrap_phase(peak_phase + relative_phase);
+            }
+        }
+    }
+
+    fn peak_region_bounds(&self, peak_index: usize) -> (usize, usize) {
+        let peak = self.current_peaks[peak_index];
+        let left = if peak_index == 0 {
+            0
+        } else {
+            (self.current_peaks[peak_index - 1].bin + peak.bin) / 2 + 1
+        };
+        let right = self
+            .current_peaks
+            .get(peak_index + 1)
+            .map(|next| (peak.bin + next.bin) / 2 + 1)
+            .unwrap_or(self.config.bins);
+        (left, right)
     }
 
     fn synthesize_frame(&mut self, frame_index: usize) {
@@ -459,6 +528,10 @@ impl DraftPhaseVocoder {
         self.output.resize(self.config.target_len, 0.0);
         self.output
     }
+}
+
+fn tracked_peak_max_bin_drift(bin_count: usize) -> usize {
+    (bin_count / 128).clamp(2, 6)
 }
 
 fn wrap_phase(phase: f32) -> f32 {
@@ -552,6 +625,36 @@ mod tests {
     }
 
     #[test]
+    fn tracked_peak_regions_narrow_unmatched_peak_locks() {
+        let input = vec![0.0; 512];
+        let config = PhaseVocoderConfig::new(&input, input.len(), 1.0, 512, 128);
+        let mut engine = DraftPhaseVocoder::new(
+            config,
+            PhasePropagationMode::IdentityLockedTrackedPeakRegions,
+        );
+        engine.previous_peaks.push(SpectralPeak {
+            bin: 40,
+            magnitude: 1.0,
+        });
+        engine.current_peaks.push(SpectralPeak {
+            bin: 10,
+            magnitude: 1.0,
+        });
+        engine.current_phases[9] = 0.20;
+        engine.current_phases[10] = 0.50;
+        engine.current_phases[11] = 0.90;
+        engine.synthesis_phase[10] = 1.25;
+
+        engine.lock_phase_to_tracked_peak_regions(1);
+
+        assert_eq!(engine.synthesis_phase[8], 0.0);
+        assert!((wrap_phase(engine.synthesis_phase[9] - 0.95)).abs() < 1.0e-6);
+        assert!((wrap_phase(engine.synthesis_phase[10] - 1.25)).abs() < 1.0e-6);
+        assert!((wrap_phase(engine.synthesis_phase[11] - 1.65)).abs() < 1.0e-6);
+        assert_eq!(engine.synthesis_phase[12], 0.0);
+    }
+
+    #[test]
     fn stability_adaptive_locking_uses_frame_spectral_stability() {
         let input = vec![0.0; 512];
         let config = PhaseVocoderConfig::new(&input, input.len(), 1.0, 512, 128);
@@ -599,6 +702,16 @@ mod tests {
         for ratio in [0.75, 1.25, 1.5, 2.0] {
             let target_len = (input.len() as f64 * ratio).round() as usize;
             let output = stability_adaptive_phase_vocoder(&input, target_len, ratio, 1024, 256);
+            assert_eq!(output.len(), target_len, "ratio {ratio}");
+        }
+    }
+
+    #[test]
+    fn tracked_peak_region_prototype_honors_output_length_contract() {
+        let input = bin_centered_sine(11, 8192);
+        for ratio in [0.75, 1.25, 1.5, 2.0] {
+            let target_len = (input.len() as f64 * ratio).round() as usize;
+            let output = tracked_peak_region_phase_vocoder(&input, target_len, ratio, 1024, 256);
             assert_eq!(output.len(), target_len, "ratio {ratio}");
         }
     }
