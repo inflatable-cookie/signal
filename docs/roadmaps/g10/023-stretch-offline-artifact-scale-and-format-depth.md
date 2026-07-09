@@ -1,6 +1,6 @@
 # 023 - Stretch Offline Artifact Scale And Format Depth
 
-Status: active
+Status: paused
 Owner: core-product
 Created: 2026-07-07
 Depends on: g10.018, g10.021, g10.022

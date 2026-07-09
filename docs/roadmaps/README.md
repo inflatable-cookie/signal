@@ -1,7 +1,7 @@
 # Roadmaps
 
 Status: active
-Updated: 2026-06-11
+Updated: 2026-07-09
 
 ## Why this section matters now
 
@@ -25,17 +25,23 @@ Use this section for:
 
 ## Current posture
 
-`g10` is active. Phase one complete (002-009): audit remediation —
-production-path declick + hardening, ~98k LoC demolition, consolidation +
-CI. Phase two planned (010-020): the engine build-out on the surviving seed
-— graph-shaped plans and mixer realization (010), stable identity (011),
-parameter fast path + automation (012), DSP kit (013), RT observability
-(014), WYSIWYG bounce (015), output-time honesty (016), recording (017),
-disk streaming (018), transport regions (019), runtime endgame (020).
-Phase three planned (021-025): first-party high-quality stretch work —
-real corpus/benchmark evidence (021), OfflineHighQuality DSP depth (022),
-offline artifact scale and format depth (023), RealtimePreview tier (024),
-and product workflow contract checkpoint (025).
+`g10` is active. Its per-generation front door is
+`docs/roadmaps/g10/README.md`. Phase one (002-009) completed the audit
+remediation work: production-path declick + hardening, simulated/narration
+mass demolition, workspace consolidation, and CI cleanup. Phase two (010-020)
+completed the engine build-out on the surviving seed: graph-shaped plans,
+stable identity, parameter fast path + automation, DSP kit, RT observability,
+WYSIWYG bounce, output-time honesty, recording capture, disk streaming,
+transport regions, and runtime endgame.
+
+Phase three (021-025) is the first-party high-quality stretch program. The
+Signal-owned stretch tiers now have evidence and contracts, but the remaining
+work is structural rather than a ready micro-batch: OfflineHighQuality needs a
+new hybrid design before another sustained/polyphonic quality jump;
+offline artifacts need a streaming artifact writer/cache target for full peak
+memory closure; RealtimePreview needs a proven callback-safe state object
+before render-plane integration; product workflow planning remains deferred in
+`g10.025` until a real consumer needs the Signal-owned contract.
 Assessment driving phase two:
 `docs/research/2026-06-11-post-demolition-assessment.md`. Plugin hosting,
 MIDI, higher-quality SRC, and PDC stay in
@@ -153,5 +159,6 @@ Before rollover:
 
 ## Next Task
 
-Re-enter planning at the next-generation boundary before promoting another
-strict execution lane.
+Use `docs/roadmaps/g10/README.md` as the active generation front door. Do not
+continue stretch by adding another small probe; either open a structural Signal
+roadmap for one paused stretch gate or re-enter the next-generation boundary.

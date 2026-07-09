@@ -1,6 +1,6 @@
 # 024 - RealtimePreview Stretch Tier
 
-Status: active
+Status: paused
 Owner: dsp
 Created: 2026-07-07
 Depends on: g10.014, g10.021, g10.022

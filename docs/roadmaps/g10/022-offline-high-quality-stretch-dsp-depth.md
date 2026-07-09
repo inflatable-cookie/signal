@@ -1,6 +1,6 @@
 # 022 - OfflineHighQuality Stretch DSP Depth
 
-Status: ready
+Status: paused
 Owner: dsp
 Created: 2026-07-07
 Depends on: g10.021

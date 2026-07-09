@@ -1,6 +1,6 @@
 # 021 - Stretch Real Corpus And Benchmark Evidence
 
-Status: ready
+Status: complete
 Owner: dsp
 Created: 2026-07-07
 Depends on: g10.015, g10.020
