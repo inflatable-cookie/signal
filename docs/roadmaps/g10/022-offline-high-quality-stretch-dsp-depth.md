@@ -83,8 +83,12 @@ comparison reports, not add more receipt or fixture surfaces.
   selected metric is not mostly explained by level
 - [x] keep the promoted expansion selector fixed unless new selector evidence
   explicitly supports another route
-- [ ] promote, gate, or reject the sustained-coherence prototype from broader
-  regression evidence
+- [x] define a report-only sustained-coherence candidate gate from the first
+  regression review
+- [x] validate the sustained-coherence candidate gate on broader material
+  before any production promotion
+- [ ] design a product-observable selector or promotion contract for the
+  sustained-coherence candidate before any cache/render-plane routing change
 
 ## Acceptance Criteria
 
@@ -743,15 +747,41 @@ comparison reports, not add more receipt or fixture surfaces.
   `0.75x` (`delta=0.193586`), with additional regressions on full mix, vocals,
   and bass. This is useful evidence for vertical coherence, not a promotable
   product path yet.
+- 2026-07-09: tested a report-only sustained-coherence gate named
+  `spectral-magnitude-target`, then rejected it as too loose after broad
+  evidence. The first gate selected rows whose level-separated residual reason
+  was `SpectralMagnitudeCoherence`. It passed the targeted report
+  (`target/stretch-corpus-fma-coherence-candidate-gate-review.tsv`,
+  `real 181.22`) with 4 selected-improved rows and 0 selected regressions, but
+  the broad run selected 9 rows with 7 improvements and 2 regressions. Worst
+  selected regression was `stretch:bass` `000441` at `1.5x`
+  (`delta=0.138614`), with another selected regression on
+  `stretch:pads_sustains` `000870` at `1.5x` (`delta=0.031855`).
+- 2026-07-09: replaced the loose gate with
+  `spectral-magnitude-material-guard`. The refined report gate still requires
+  `SpectralMagnitudeCoherence`, and also rejects `1.5x` or higher bass and
+  sustained-polyphonic material. Targeted report:
+  `target/stretch-corpus-fma-coherence-candidate-material-guard-targeted.tsv`
+  (`real 179.19`) selected 4 rows, all improved, with 0 selected regressions.
+  Broad report:
+  `target/stretch-corpus-fma-coherence-candidate-material-guard-broad.tsv`
+  (`real 576.97`) measured 48 sustained/polyphonic candidate rows: raw
+  candidate was 29 improved and 19 regressed; the refined gate selected 6 rows,
+  all improved, with 0 selected regressions and
+  `worst_selected_regression_delta=0.000000`. It retained the selected bass
+  target (`000236` at `1.25x`, `delta=-0.261821`), the strongest broad bass
+  win (`000441` at `0.75x`, `delta=-0.810077`), a vocal `1.5x` win, a
+  pads/sustains `1.25x` win, and two full-mix `1.5x` wins. It rejected 23
+  candidate-better rows, including one guarded pads/sustains `1.5x` win, and
+  rejected all 19 current-better rows. This is a good benchmark gate shape, but
+  not a DAW-time product selector yet because the residual reason is derived
+  from external comparator analysis.
 
 ## Next Task
 
-Continue Batch 22.6 by investigating the sustained-coherence candidate
-regressions before any promotion. Start with `stretch:bass` `000236` at
-`0.75x` as the worst regression, while keeping the selected target
-(`stretch:bass` `000236` at `1.25x`) and dense `0017` full-mix controls visible.
-The next DSP move should either gate the long-window candidate by material and
-ratio, or replace it with a second candidate that keeps the selected-target win
-without the compression and mid-expansion regressions. Do not change product
-routing, dynamic-ratio materialization, or pitch-shift materialization until
-that evidence exists.
+Continue Batch 22.6 by translating the successful report-only material guard
+into a product-observable decision surface, or explicitly keeping it as
+benchmark-only evidence and moving to the next DSP candidate. Do not change
+product routing, cache identity, dynamic-ratio materialization, or pitch-shift
+materialization until the selector inputs are available without Rubber Band or
+external comparator output.

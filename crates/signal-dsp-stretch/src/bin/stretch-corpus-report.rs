@@ -60,7 +60,8 @@ const EXTERNAL_BENCHMARK_LEVEL_NORMALIZED_REVIEW_ROWS: usize =
 const EXTERNAL_BENCHMARK_RESIDUAL_COHERENCE_REVIEW_ROWS: usize =
     EXTERNAL_BENCHMARK_LEVEL_NORMALIZED_REVIEW_ROWS;
 const EXTERNAL_BENCHMARK_COHERENCE_TARGET_REVIEW_ROWS: usize = 6;
-const EXTERNAL_BENCHMARK_COHERENCE_CANDIDATE_REVIEW_ROWS: usize = 15;
+const EXTERNAL_BENCHMARK_COHERENCE_CANDIDATE_REVIEW_ROWS: usize = 64;
+const EXTERNAL_BENCHMARK_COHERENCE_CANDIDATE_GATE: &str = "spectral-magnitude-material-guard";
 const MAX_EXTERNAL_BENCHMARK_MISSING_RENDER_ROWS: usize = 20;
 const DETECTOR_POLICY: StretchTransientDetectorPolicy =
     StretchTransientDetectorPolicy::production();
@@ -2032,6 +2033,8 @@ struct ExternalBenchmarkCoherenceCandidateReviewMeasurement {
     material_scope: &'static str,
     target_reason: &'static str,
     outcome: &'static str,
+    gate_decision: &'static str,
+    gate_reason: &'static str,
     current_target_score: f64,
     candidate_target_score: f64,
     target_score_delta: f64,
@@ -2052,7 +2055,7 @@ struct ExternalBenchmarkCoherenceCandidateReviewMeasurement {
 impl ExternalBenchmarkCoherenceCandidateReviewMeasurement {
     fn format_report_line(&self, rank: usize) -> String {
         format!(
-            "external_benchmark_coherence_candidate_review rank={} case={} source={} signal_path={:?} candidate_path={} ratio={:.6} tool={} render={} status=Measured reason=ReportOnlySustainedCoherenceCandidate source_boundary={} material_scope={} target_reason={} outcome={} current_target_score={:.6} candidate_target_score={:.6} target_score_delta={:.6} candidate_aligned_compared_frames={} candidate_signal_gain_db_applied={:.6} candidate_raw_feature_divergence_score={:.6} candidate_normalized_feature_divergence_score={:.6} candidate_normalized_sample_envelope_correlation={:.6} candidate_block_rms_envelope_correlation={:.6} candidate_mean_abs_block_rms_delta_db={:.6} candidate_max_abs_block_rms_delta_db={:.6} candidate_spectral_magnitude_coherence={:.6} candidate_normalized_spectral_centroid_delta_hz={:.6} candidate_normalized_high_frequency_energy_ratio_delta={:.6} candidate_residual_pattern={}",
+            "external_benchmark_coherence_candidate_review rank={} case={} source={} signal_path={:?} candidate_path={} ratio={:.6} tool={} render={} status=Measured reason=ReportOnlySustainedCoherenceCandidate source_boundary={} material_scope={} target_reason={} outcome={} gate={} gate_decision={} gate_reason={} current_target_score={:.6} candidate_target_score={:.6} target_score_delta={:.6} candidate_aligned_compared_frames={} candidate_signal_gain_db_applied={:.6} candidate_raw_feature_divergence_score={:.6} candidate_normalized_feature_divergence_score={:.6} candidate_normalized_sample_envelope_correlation={:.6} candidate_block_rms_envelope_correlation={:.6} candidate_mean_abs_block_rms_delta_db={:.6} candidate_max_abs_block_rms_delta_db={:.6} candidate_spectral_magnitude_coherence={:.6} candidate_normalized_spectral_centroid_delta_hz={:.6} candidate_normalized_high_frequency_energy_ratio_delta={:.6} candidate_residual_pattern={}",
             rank,
             self.case_id,
             quoted_report_field(&self.source_path),
@@ -2065,6 +2068,9 @@ impl ExternalBenchmarkCoherenceCandidateReviewMeasurement {
             self.material_scope,
             self.target_reason,
             self.outcome,
+            EXTERNAL_BENCHMARK_COHERENCE_CANDIDATE_GATE,
+            self.gate_decision,
+            self.gate_reason,
             self.current_target_score,
             self.candidate_target_score,
             self.target_score_delta,
@@ -2500,6 +2506,12 @@ fn format_external_benchmark_quality_metrics(
                             .normalized_feature_delta
                             .external
                             .high_frequency_energy_ratio;
+                let (candidate_gate_decision, candidate_gate_reason) =
+                    external_benchmark_coherence_candidate_gate_decision(
+                        target_reason,
+                        material_scope,
+                        render.ratio,
+                    );
                 coherence_candidate_reviews.push(
                     ExternalBenchmarkCoherenceCandidateReviewMeasurement {
                         case_id: render.case_id.clone(),
@@ -2517,6 +2529,8 @@ fn format_external_benchmark_quality_metrics(
                             target_score,
                             candidate_target_score,
                         ),
+                        gate_decision: candidate_gate_decision,
+                        gate_reason: candidate_gate_reason,
                         current_target_score: target_score,
                         candidate_target_score,
                         target_score_delta: candidate_target_score - target_score,
@@ -2721,6 +2735,9 @@ fn format_external_benchmark_quality_metrics(
         lines.push(format_external_benchmark_coherence_candidate_summary(
             &coherence_candidate_reviews,
         ));
+        lines.push(format_external_benchmark_coherence_candidate_gate_summary(
+            &coherence_candidate_reviews,
+        ));
     }
     for (index, review) in coherence_candidate_reviews
         .iter()
@@ -2818,6 +2835,20 @@ fn external_benchmark_candidate_outcome(
     }
 }
 
+fn external_benchmark_coherence_candidate_gate_decision(
+    target_reason: &str,
+    material_scope: &str,
+    ratio: f64,
+) -> (&'static str, &'static str) {
+    if target_reason != "SpectralMagnitudeCoherence" {
+        return ("Rejected", "NonSpectralTargetReason");
+    }
+    if ratio >= 1.5 && matches!(material_scope, "BassSustain" | "SustainedPolyphonic") {
+        return ("Rejected", "ExtremeExpansionMaterialGuard");
+    }
+    ("Selected", "TargetSpectralMagnitudeCoherence")
+}
+
 fn format_external_benchmark_coherence_candidate_summary(
     reviews: &[ExternalBenchmarkCoherenceCandidateReviewMeasurement],
 ) -> String {
@@ -2866,6 +2897,83 @@ fn format_external_benchmark_coherence_candidate_summary(
         worst.map(|review| review.case_id.as_str()).unwrap_or(""),
         quoted_report_field(worst.map(|review| review.source_path.as_str()).unwrap_or("")),
         worst.map(|review| review.ratio).unwrap_or(f64::NAN),
+    )
+}
+
+fn format_external_benchmark_coherence_candidate_gate_summary(
+    reviews: &[ExternalBenchmarkCoherenceCandidateReviewMeasurement],
+) -> String {
+    let mut selected_rows = 0;
+    let mut rejected_rows = 0;
+    let mut selected_improved_rows = 0;
+    let mut selected_unchanged_rows = 0;
+    let mut selected_regressed_rows = 0;
+    let mut rejected_candidate_better_rows = 0;
+    let mut rejected_current_better_rows = 0;
+    let mut rejected_inconclusive_rows = 0;
+    let mut worst_selected_regression_delta = 0.0_f64;
+    let mut worst_selected_regression =
+        None::<&ExternalBenchmarkCoherenceCandidateReviewMeasurement>;
+    let mut best_rejected_improvement_delta = f64::NAN;
+
+    for review in reviews {
+        if review.gate_decision == "Selected" {
+            selected_rows += 1;
+            match review.outcome {
+                "Improved" => selected_improved_rows += 1,
+                "Unchanged" => selected_unchanged_rows += 1,
+                "Regressed" => {
+                    selected_regressed_rows += 1;
+                    if review.target_score_delta > worst_selected_regression_delta {
+                        worst_selected_regression_delta = review.target_score_delta;
+                        worst_selected_regression = Some(review);
+                    }
+                }
+                _ => {}
+            }
+        } else {
+            rejected_rows += 1;
+            match review.outcome {
+                "Improved" => {
+                    rejected_candidate_better_rows += 1;
+                    if !best_rejected_improvement_delta.is_finite()
+                        || review.target_score_delta < best_rejected_improvement_delta
+                    {
+                        best_rejected_improvement_delta = review.target_score_delta;
+                    }
+                }
+                "Regressed" => rejected_current_better_rows += 1,
+                "Inconclusive" => rejected_inconclusive_rows += 1,
+                _ => {}
+            }
+        }
+    }
+
+    format!(
+        "external_benchmark_coherence_candidate_gate_summary gate={} rows={} selected_rows={} rejected_rows={} selected_improved_rows={} selected_unchanged_rows={} selected_regressed_rows={} rejected_candidate_better_rows={} rejected_current_better_rows={} rejected_inconclusive_rows={} worst_selected_regression_delta={:.6} worst_selected_regression_case={} worst_selected_regression_source={} worst_selected_regression_ratio={:.6} best_rejected_improvement_delta={:.6}",
+        EXTERNAL_BENCHMARK_COHERENCE_CANDIDATE_GATE,
+        reviews.len(),
+        selected_rows,
+        rejected_rows,
+        selected_improved_rows,
+        selected_unchanged_rows,
+        selected_regressed_rows,
+        rejected_candidate_better_rows,
+        rejected_current_better_rows,
+        rejected_inconclusive_rows,
+        worst_selected_regression_delta,
+        worst_selected_regression
+            .map(|review| review.case_id.as_str())
+            .unwrap_or(""),
+        quoted_report_field(
+            worst_selected_regression
+                .map(|review| review.source_path.as_str())
+                .unwrap_or("")
+        ),
+        worst_selected_regression
+            .map(|review| review.ratio)
+            .unwrap_or(f64::NAN),
+        best_rejected_improvement_delta,
     )
 }
 
@@ -6639,8 +6747,18 @@ mod tests {
         assert!(
             formatted.contains("candidate_path=sustained-coherence-long-window-identity-locked")
         );
+        assert!(formatted.contains("gate=spectral-magnitude-material-guard"));
+        assert!(formatted.contains("gate_decision=Rejected"));
+        assert!(formatted.contains("gate_reason=NonSpectralTargetReason"));
         assert!(formatted.contains("external_benchmark_coherence_candidate_summary rows=1"));
         assert!(formatted.contains("improved_rows=0 unchanged_rows=1 regressed_rows=0"));
+        assert!(formatted.contains(
+            "external_benchmark_coherence_candidate_gate_summary gate=spectral-magnitude-material-guard"
+        ));
+        assert!(formatted.contains("selected_rows=0 rejected_rows=1"));
+        assert!(
+            formatted.contains("rejected_candidate_better_rows=0 rejected_current_better_rows=0")
+        );
 
         let _ = fs::remove_file(path);
     }
@@ -6685,6 +6803,7 @@ mod tests {
         assert!(!formatted.contains("external_benchmark_coherence_target_review "));
         assert!(!formatted.contains("external_benchmark_coherence_candidate_review "));
         assert!(!formatted.contains("external_benchmark_coherence_candidate_summary "));
+        assert!(!formatted.contains("external_benchmark_coherence_candidate_gate_summary "));
 
         let _ = fs::remove_file(path);
     }
@@ -6714,6 +6833,38 @@ mod tests {
         assert_eq!(external_benchmark_candidate_outcome(1.0, 0.75), "Improved");
         assert_eq!(external_benchmark_candidate_outcome(1.0, 1.0), "Unchanged");
         assert_eq!(external_benchmark_candidate_outcome(1.0, 1.25), "Regressed");
+        assert_eq!(
+            external_benchmark_coherence_candidate_gate_decision(
+                "SpectralMagnitudeCoherence",
+                "BassSustain",
+                1.25
+            ),
+            ("Selected", "TargetSpectralMagnitudeCoherence")
+        );
+        assert_eq!(
+            external_benchmark_coherence_candidate_gate_decision(
+                "SpectralMagnitudeCoherence",
+                "BassSustain",
+                1.5
+            ),
+            ("Rejected", "ExtremeExpansionMaterialGuard")
+        );
+        assert_eq!(
+            external_benchmark_coherence_candidate_gate_decision(
+                "SpectralMagnitudeCoherence",
+                "DensePolyphonic",
+                1.5
+            ),
+            ("Selected", "TargetSpectralMagnitudeCoherence")
+        );
+        assert_eq!(
+            external_benchmark_coherence_candidate_gate_decision(
+                "SampleEnvelopeCoherence",
+                "DensePolyphonic",
+                1.25
+            ),
+            ("Rejected", "NonSpectralTargetReason")
+        );
     }
 
     #[test]
