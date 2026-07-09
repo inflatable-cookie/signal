@@ -48,6 +48,10 @@ Signal's active implementation surface is the Rust workspace under `crates/`
 - `signal-dsp-resample`
   - deterministic offline/streaming mono resampler for analysis input prep;
     not the realtime path
+- `signal-dsp-stretch`
+  - Signal-owned offline and preview time-stretch prototypes, corpus and
+    comparator evidence, cache identity, and callback-state experiments;
+    product-quality promotion remains blocked by `g10.029`
 
 ### Analysis substrate
 

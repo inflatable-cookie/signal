@@ -19,8 +19,9 @@ implementation remains Signal-owned.
 `g10` now has three stretch gates instead of another ready coding lane:
 
 - OfflineHighQuality evidence is strong enough for fast regression and
-  local-corpus reports, but not for Rubber Band-class promotion claims without
-  listened real-source evidence and/or external rendered-output comparison.
+  local-corpus reports, but not for Rubber Band-class promotion claims. The
+  current core loses boundary content on some expanded renders, lacks absolute
+  quality gates, and has no completed listened real-source evidence.
 - Sustained/polyphonic long-window candidates produced useful evidence but no
   production route; the next DSP quality jump needs a structural hybrid design,
   not another one-parameter probe.
@@ -88,8 +89,10 @@ a product workflow consumes the Signal-owned stretch contract.
   - RealtimePreview callback-safe state
 - `g10.027` `complete`
   - RealtimePreview source-projected callback
-- `g10.028` `active`
+- `g10.028` `paused`
   - RealtimePreview source fill contract
+- `g10.029` `active`
+  - stretch correctness and listening gate
 
 ## Stretch Boundary
 
@@ -101,16 +104,16 @@ Current stretch status:
   no-allocation, linked-stereo, ratio-scheduling, source-projection reporting,
   and synthetic tempo-ramp seam evidence. `g10.028` owns the missing
   source-fill and underrun contract before callback streaming can open.
-- `OfflineHighQuality`: implemented for default-path artifacts with chunked
-  materialization and cache receipts; quality promotion still depends on real
-  evidence and structural DSP work.
+- `OfflineHighQuality`: materialized for default-path artifacts with chunked
+  output and cache receipts, but the DSP path is classified as a prototype until
+  `g10.029` closes boundary correctness, absolute measurement, and listening
+  evidence.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Continue `g10.028` Batch 28.1 by defining the source-fill readiness report and
-focused tests for ready, partial, and underrun source ranges. Keep
-`audio_thread_processing_supported=false` and do not add render-plane
-integration.
+Continue `g10.029` Batch 29.1 by fixing offline STFT boundary coverage and
+adding content-aware head/tail tests. Keep RealtimePreview source-fill and
+render-plane integration paused.

@@ -16,9 +16,8 @@
 //!   changes with tempo, realtime-safe today.
 //! - [`StretchBackendTier::RealtimePreview`]: bounded-latency pitch-preserving
 //!   preview stretch, prototype.
-//! - [`StretchBackendTier::OfflineHighQuality`]: deterministic
-//!   export/cache/freeze stretch, implemented and promotion-gated as the
-//!   quality reference tier.
+//! - [`StretchBackendTier::OfflineHighQuality`][]: deterministic
+//!   export/cache/freeze stretch prototype, correctness- and promotion-gated.
 //!
 //! The current [`PhaseVocoderStretcher`] remains [`StretchQuality::Draft`]: a
 //! plain Hann-windowed phase vocoder with NO phase locking and NO transient
@@ -47,6 +46,7 @@ mod cache_identity;
 mod corpus_report;
 mod phase_vocoder;
 mod promotion;
+mod render_integrity;
 
 pub use artifact_plan::{
     plan_offline_stretch_chunks, StretchOfflineChunk, StretchOfflineChunkConfig,
@@ -95,6 +95,11 @@ pub use corpus_report::{
 pub use promotion::{
     current_synthetic_offline_high_quality_promotion_receipt, StretchPromotionReceipt,
     StretchPromotionStatus, StretchSyntheticPromotionPolicy,
+};
+pub use render_integrity::{
+    assess_stretch_render_integrity, measure_stretch_render_integrity,
+    StretchRenderIntegrityAssessment, StretchRenderIntegrityLimits,
+    StretchRenderIntegrityMeasurement,
 };
 
 use phase_vocoder::{
@@ -2852,6 +2857,13 @@ mod tests {
         (samples.iter().map(|s| s * s).sum::<f32>() / samples.len().max(1) as f32).sqrt()
     }
 
+    fn boundary_content_probe(len: usize, edge_frames: usize) -> Vec<Sample> {
+        let mut input = vec![0.0; len];
+        input[..edge_frames].fill(0.5);
+        input[len - edge_frames..].fill(-0.5);
+        input
+    }
+
     #[test]
     fn realtime_preview_contract_reports_latency_and_callback_blocker() {
         let contract = plan_realtime_preview_stream(RealtimePreviewStreamConfig::new(
@@ -3659,6 +3671,26 @@ mod tests {
                 "ratio {ratio}"
             );
             assert_eq!(first_output, repeated_output, "ratio {ratio}");
+        }
+    }
+
+    #[test]
+    fn offline_high_quality_boundary_preserves_endpoint_content() {
+        let input = boundary_content_probe(48_000, 384);
+        for ratio in [0.5, 2.0] {
+            let mut stretcher = OfflineHighQualityStretcher::new(ratio);
+            let output = stretcher.stretch_mono(&input);
+            let edge_span = 2_048.min(output.len());
+
+            assert_eq!(output.len(), (input.len() as f64 * ratio).round() as usize);
+            assert!(
+                rms(&output[..edge_span]) > 0.01,
+                "ratio {ratio}: silent head"
+            );
+            assert!(
+                rms(&output[output.len() - edge_span..]) > 0.01,
+                "ratio {ratio}: silent tail"
+            );
         }
     }
 
@@ -4531,14 +4563,23 @@ mod tests {
                 && comparison.metric == StretchMetric::TransientSmearFrames
                 && comparison.path == StretchBenchmarkPath::FixedRatio
         }));
-        assert!(report.comparisons.iter().any(|comparison| {
-            comparison.case_id == "stretch:extreme_ratio"
-                && comparison.metric == StretchMetric::TransientSmearFrames
-                && comparison.path == StretchBenchmarkPath::FixedRatio
-                && comparison.ratio == 2.0
-                && comparison.delta == 1.0
-                && comparison.outcome == StretchBenchmarkComparisonOutcome::Unchanged
-        }));
+        let expanded_transient = report
+            .comparisons
+            .iter()
+            .find(|comparison| {
+                comparison.case_id == "stretch:extreme_ratio"
+                    && comparison.metric == StretchMetric::TransientSmearFrames
+                    && comparison.path == StretchBenchmarkPath::FixedRatio
+                    && comparison.ratio == 2.0
+            })
+            .expect("2x transient-smear comparison should remain covered");
+        assert!(expanded_transient.baseline_value.is_finite());
+        assert!(expanded_transient.candidate_value.is_finite());
+        assert!(expanded_transient.delta.is_finite());
+        assert_ne!(
+            expanded_transient.outcome,
+            StretchBenchmarkComparisonOutcome::Inconclusive
+        );
         assert!(report.comparisons.iter().any(|comparison| {
             comparison.case_id == "stretch:pitch_shift"
                 && comparison.metric == StretchMetric::PitchErrorCents
@@ -4659,7 +4700,7 @@ mod tests {
         assert!(formatted.starts_with(
             "stretch_corpus_report name=\"stretch-corpus-v1-local\" corpus=stretch-corpus-v1"
         ));
-        assert!(formatted.contains("engine=signal-native-stretch-v1"));
+        assert!(formatted.contains("engine=signal-native-stretch-v2"));
         assert!(formatted.contains("projection_epoch=\"projection:unit\""));
         assert!(formatted.contains("source_policy synthetic="));
         assert!(formatted.contains(

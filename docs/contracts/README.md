@@ -18,7 +18,7 @@ Use this section for:
 
 ## Current Baseline
 
-- `001-working-rules.md` for the active lane-first strict `g09` surface
+- `001-working-rules.md` for repository execution posture
 - `001-shared-dsp-and-host-boundary.md`
 - `002-supervisor-export-schema-and-report-boundary.md`
 - `003-crate-maturity-and-public-runtime-boundary-baseline.md`
@@ -107,6 +107,6 @@ Add a new contract only when the boundary needs stronger guarantees than
 
 ## Next Task
 
-Use `docs/contracts/contract-index.md` and `001-working-rules.md` as the front
-doors for the reopened strict `g09` lane, then keep the broader contract
-baseline aligned as the production-readiness gate is refined.
+Use `docs/contracts/contract-index.md` and `001-working-rules.md` as the
+contract front doors. Active stretch correctness work is governed by contract
+`046` and roadmap `g10.029`; no strict spec lane is open.

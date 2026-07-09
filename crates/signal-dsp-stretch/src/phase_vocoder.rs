@@ -179,10 +179,25 @@ fn run_phase_vocoder(
     analysis_hop: usize,
     mode: PhasePropagationMode,
 ) -> Vec<Sample> {
-    let config = PhaseVocoderConfig::new(input, target_len, ratio, window_size, analysis_hop);
+    // Give the first and last source samples complete overlapping analysis
+    // windows. The extra post-roll hop guarantees that the cropped target
+    // remains inside synthesized coverage for both compression and expansion.
+    let prefix_frames = window_size / 2;
+    let suffix_frames = window_size + analysis_hop;
+    let mut padded_input = vec![0.0; prefix_frames + input.len() + suffix_frames];
+    padded_input[prefix_frames..prefix_frames + input.len()].copy_from_slice(input);
+
+    // Synthesis hops scale while the samples inside each synthesis window do
+    // not. Align the analysis and synthesis window centres before cropping.
+    let half_window = window_size as f64 * 0.5;
+    let output_start =
+        ((prefix_frames as f64 - half_window) * ratio + half_window).round() as usize;
+    let output_end = output_start + target_len;
+    let config =
+        PhaseVocoderConfig::new(&padded_input, output_end, ratio, window_size, analysis_hop);
     let mut engine = DraftPhaseVocoder::new(config, mode);
-    engine.process(input);
-    engine.finish()
+    engine.process(&padded_input);
+    engine.finish()[output_start..output_end].to_vec()
 }
 
 struct PhaseVocoderConfig {
@@ -600,6 +615,38 @@ mod tests {
             .filter(|pair| (pair[0] >= 0.0) != (pair[1] >= 0.0))
             .count();
         crossings as f32 * sample_rate_hz / (2.0 * interior.len() as f32)
+    }
+
+    fn rms(samples: &[Sample]) -> f32 {
+        (samples.iter().map(|sample| sample * sample).sum::<f32>() / samples.len().max(1) as f32)
+            .sqrt()
+    }
+
+    fn boundary_content_probe(len: usize, edge_frames: usize) -> Vec<Sample> {
+        let mut input = vec![0.0; len];
+        input[..edge_frames].fill(0.5);
+        input[len - edge_frames..].fill(-0.5);
+        input
+    }
+
+    #[test]
+    fn phase_vocoder_boundary_expansion_preserves_head_and_tail_content() {
+        let input = boundary_content_probe(48_000, 384);
+        let output = transient_reset_phase_vocoder(&input, 96_000, 2.0, 2_048, 512);
+        let edge_span = 2_048;
+
+        assert!(rms(&output[..edge_span]) > 0.01);
+        assert!(rms(&output[output.len() - edge_span..]) > 0.01);
+    }
+
+    #[test]
+    fn phase_vocoder_boundary_compression_preserves_head_and_tail_content() {
+        let input = boundary_content_probe(48_000, 384);
+        let output = transient_reset_phase_vocoder(&input, 24_000, 0.5, 2_048, 512);
+        let edge_span = 1_024;
+
+        assert!(rms(&output[..edge_span]) > 0.01);
+        assert!(rms(&output[output.len() - edge_span..]) > 0.01);
     }
 
     #[test]

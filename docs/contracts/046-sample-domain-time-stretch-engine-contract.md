@@ -244,6 +244,33 @@ policy, latency, and no-allocation behavior together.
 
 Planning authority: `docs/roadmaps/g10/028-realtime-preview-source-fill-contract.md`.
 
+## 2026-07-09 Correctness And Listening Gate Addendum
+
+Audit evidence invalidates automatic continuation from callback projection into
+source-fill exposure. The current stretch implementation remains prototype
+quality until all of these gates pass together:
+
+- offline STFT analysis covers source content at both boundaries instead of
+  satisfying length contracts through zero padding after incomplete analysis
+- dynamic-ratio output preserves continuous algorithm state or uses an
+  explicitly measured transition mechanism rather than raw segment
+  concatenation
+- linked stereo claims distinguish mid/side transport from genuinely shared
+  multichannel phase, peak, and transient decisions
+- full-render measurements cover endpoint energy, dropout spans, peak growth,
+  CPU, latency, and memory instead of relying on aligned excerpts alone
+- promotion requires absolute acceptance limits plus completed real-source
+  listening evidence; improvement over the draft backend is insufficient
+- callback source projection is coupled to actual kernel input consumption
+  before source-fill or render-plane exposure can open
+
+`OfflineHighQuality` remains a product-addressable prototype, not a
+Rubber Band-class quality claim, while this gate is open. RealtimePreview keeps
+`audio_thread_processing_supported=false`.
+
+Planning authority:
+`docs/roadmaps/g10/029-stretch-correctness-and-listening-gate.md`.
+
 ## Batch 15.1 outcome
 
 Batch 15.1 freezes the first bounded sample-domain stretch-engine contract:

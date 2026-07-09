@@ -7,7 +7,7 @@ const FNV_PRIME: u64 = 0x0000_0100_0000_01b3;
 pub const STRETCH_CACHE_IDENTITY_SCHEMA_VERSION: &str = "signal-stretch-cache-v2";
 
 /// Version tag for the first-party Signal stretch engine implementation.
-pub const SIGNAL_STRETCH_ENGINE_VERSION: &str = "signal-native-stretch-v1";
+pub const SIGNAL_STRETCH_ENGINE_VERSION: &str = "signal-native-stretch-v2";
 
 /// One point on an output/input stretch-ratio curve.
 #[derive(Clone, Debug, PartialEq)]

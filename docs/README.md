@@ -33,6 +33,7 @@ strict lane.
 - Supervisor export boundary: [contracts/002-supervisor-export-schema-and-report-boundary.md](./contracts/002-supervisor-export-schema-and-report-boundary.md)
 - Roadmap index: [roadmaps/README.md](./roadmaps/README.md)
 - Generation index: [roadmaps/generation-index.md](./roadmaps/generation-index.md)
+- Active roadmap: [roadmaps/g10/029-stretch-correctness-and-listening-gate.md](./roadmaps/g10/029-stretch-correctness-and-listening-gate.md)
 - Strict-lane reference: [specs/001-g09-lane-first-strict-adoption.md](./specs/001-g09-lane-first-strict-adoption.md)
 - Active strict-lane card: none
 - Research index: [research/master-index.md](./research/master-index.md)

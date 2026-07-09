@@ -2,7 +2,7 @@
 
 Status: active
 Owner: core-product
-Updated: 2026-04-11
+Updated: 2026-07-09
 
 ## Purpose
 
@@ -12,18 +12,15 @@ memory alone.
 
 ## Current Lane
 
-- Signal completed the lane-first stricter adoption run for the reopened `g09`
-  interactive-demo queue
-- `001-working-rules` governs the strict-lane execution posture
-- there is currently no active strict-execution milestone; `g09.015` is
-  complete
-- `docs/specs/001-g09-lane-first-strict-adoption.md` records the completed
-  strict-lane model
-- there is currently no ready card because `g09` is complete
+- Signal is baseline-routed with no active strict spec lane
+- `g10.029` is the active correctness-first stretch roadmap
+- `046` governs sample-domain stretch behavior and its promotion gates
+- `g10.028` source-fill work is paused until the actual DSP kernel and source
+  consumption geometry pass the `g10.029` correctness gate
 
-## Strict Lane Working Rule
+## Working Rule
 
-- `001` working rules for the active strict `g09` surface
+- `001` repository working rules
 
 ## Core architecture and export baseline
 
@@ -143,5 +140,5 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Use this index as the contract-selection front door when the next generation
-opens a new active planning lane.
+Continue `g10.029` Batch 29.1 under contract `046`: fix offline STFT boundary
+coverage and prove output content reaches both contractual endpoints.

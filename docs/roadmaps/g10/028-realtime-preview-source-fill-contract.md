@@ -1,6 +1,6 @@
 # 028 - RealtimePreview Source Fill Contract
 
-Status: active
+Status: paused
 Owner: dsp
 Created: 2026-07-09
 Depends on: g10.026, g10.027
@@ -79,10 +79,13 @@ fill behavior without allocation before `CallbackSafeStreaming` can open.
 - 2026-07-09: Opened after `g10.027` closed source projection but kept
   `audio_thread_processing_supported=false`. This roadmap owns the missing
   source-fill and underrun behavior before callback-safe render-plane exposure.
+- 2026-07-09: Paused after correctness audit. Source projection is a separate
+  arithmetic state machine and is not coupled to the callback kernel's actual
+  input consumption. Resume only after `g10.029` establishes trustworthy DSP
+  boundary behavior, promotion gates, and streaming geometry.
 
 ## Next Task
 
-Start Batch 28.1 by defining the source-fill readiness report and focused tests
-for ready, partial, and underrun source ranges. Keep
-`audio_thread_processing_supported=false` and do not add render-plane
-integration.
+Do not start Batch 28.1. Continue `g10.029`; reassess this roadmap after the
+kernel and source-consumption contract are stable. Keep
+`audio_thread_processing_supported=false`.
