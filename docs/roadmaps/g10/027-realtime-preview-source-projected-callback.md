@@ -30,9 +30,9 @@ underrun/fill behavior without allocation.
   for projected output quanta
 - [x] prove fixed-ratio source advancement follows the active ratio within
   documented tolerance
-- [ ] prove stateful source advancement follows the active ratio within
+- [x] prove stateful source advancement follows the active ratio within
   documented tolerance
-- [ ] keep all source-projection state preallocated and callback-safe
+- [x] keep all source-projection state preallocated and callback-safe
 - [ ] keep render-plane integration blocked until source projection is proven
 
 ## Non-Goals
@@ -54,11 +54,11 @@ underrun/fill behavior without allocation.
 
 ### Batch 27.2 - Source-Projected State
 
-- [ ] add callback state for fractional source cursors and bounded input
+- [x] add callback state for fractional source cursors and bounded input
   demand
-- [ ] prove deterministic source consumption and output production for fixed
+- [x] prove deterministic source consumption and output production for fixed
   ratios
-- [ ] preserve no-allocation coverage under the counting allocator
+- [x] preserve no-allocation coverage under the counting allocator
 
 ### Batch 27.3 - Dynamic Ratio Projection
 
@@ -71,9 +71,9 @@ underrun/fill behavior without allocation.
 
 - [x] fixed-ratio source advance matches the active ratio within tolerance
 - [ ] dynamic-ratio source advance stays monotonic and bounded at seams
-- [ ] stateful callback reports enough position data for a render plan to
+- [x] stateful callback reports enough position data for a render plan to
   remain sample-domain honest
-- [ ] process still allocates zero bytes after construction
+- [x] process still allocates zero bytes after construction
 - [ ] support flag remains closed until the source projection contract passes
 
 ## Validation
@@ -95,10 +95,15 @@ underrun/fill behavior without allocation.
   1.0`, `ratio == 1.0`, `ratio < 1.0`, fractional ratios, and sanitized invalid
   ratios. The stream contract remains `QuantumLocked` and
   `audio_thread_processing_supported=false`.
+- 2026-07-09: Completed Batch 27.2 with callback-owned fractional source
+  projection cursors, bounded input-demand reporting, deterministic fixed-ratio
+  source/output projection tests, reset coverage, and counting-allocator
+  coverage for projection calls under the callback flag. The stream contract
+  remains `QuantumLocked`; render-plane integration is still blocked.
 
 ## Next Task
 
-Continue Batch 27.2 by adding stateful fractional source cursors and bounded
-input-demand reporting to the callback state. Keep
-`audio_thread_processing_supported=false` and do not add render-plane
+Continue Batch 27.3 by combining scheduled ratio changes with source-projected
+advancement. Prove source/output position continuity across ratio-change seams,
+keep `audio_thread_processing_supported=false`, and do not add render-plane
 integration.

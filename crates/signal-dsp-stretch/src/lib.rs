@@ -490,6 +490,9 @@ pub struct RealtimePreviewCallbackState {
     ratio_change_count: u64,
     input_write_frame: u64,
     output_read_frame: u64,
+    source_projection_output_frame: u64,
+    source_projection_source_cursor: f64,
+    last_source_projection: RealtimePreviewSourceProjectionReport,
     next_analysis_frame: u64,
     next_synthesis_frame: f64,
     processed_frames: u64,
@@ -613,6 +616,24 @@ pub fn project_realtime_preview_fixed_ratio_source_advance(
     let output_end_frame = output_start_frame.saturating_add(usize_to_u64(output_frames));
     let source_start_frame = output_start_frame as f64 / ratio;
     let source_end_frame = output_end_frame as f64 / ratio;
+    build_realtime_preview_source_projection_report(
+        ratio,
+        output_start_frame,
+        output_frames,
+        output_end_frame,
+        source_start_frame,
+        source_end_frame,
+    )
+}
+
+fn build_realtime_preview_source_projection_report(
+    ratio: f64,
+    output_start_frame: u64,
+    output_frames: usize,
+    output_end_frame: u64,
+    source_start_frame: f64,
+    source_end_frame: f64,
+) -> RealtimePreviewSourceProjectionReport {
     let source_frame_floor = floor_frame_to_u64(source_start_frame);
     let source_frame_ceil = ceil_frame_to_u64(source_end_frame);
     let source_frames_required = abs_diff_frames(source_frame_ceil, source_frame_floor);
@@ -691,6 +712,9 @@ impl RealtimePreviewCallbackState {
             ratio_change_count: 0,
             input_write_frame: 0,
             output_read_frame: 0,
+            source_projection_output_frame: 0,
+            source_projection_source_cursor: 0.0,
+            last_source_projection: project_realtime_preview_fixed_ratio_source_advance(0, 0, 1.0),
             next_analysis_frame: 0,
             next_synthesis_frame: config.window_size as f64,
             processed_frames: 0,
@@ -804,6 +828,61 @@ impl RealtimePreviewCallbackState {
         self.processed_frames
     }
 
+    /// Output-domain cursor used by source-projection planning.
+    pub fn source_projection_output_frame(&self) -> u64 {
+        self.source_projection_output_frame
+    }
+
+    /// Fractional source-domain cursor used by source-projection planning.
+    pub fn source_projection_source_cursor(&self) -> f64 {
+        self.source_projection_source_cursor
+    }
+
+    /// Last source projection advanced by this callback state.
+    pub fn last_source_projection(&self) -> RealtimePreviewSourceProjectionReport {
+        self.last_source_projection
+    }
+
+    /// Conservative input-frame demand bound for one configured output block.
+    pub fn source_projection_input_demand_limit_frames(&self, ratio: f64) -> usize {
+        let ratio = sanitize_ratio(ratio);
+        ceil_frame_to_usize(self.config.max_block_frames as f64 / ratio).saturating_add(1)
+    }
+
+    /// Advance callback-owned source projection state for one output quantum.
+    pub fn advance_source_projection(
+        &mut self,
+        output_frames: usize,
+        ratio: f64,
+    ) -> Result<RealtimePreviewSourceProjectionReport, RealtimePreviewCallbackProcessError> {
+        if output_frames > self.config.max_block_frames {
+            return Err(
+                RealtimePreviewCallbackProcessError::FrameCountExceedsConfig {
+                    requested: output_frames,
+                    max: self.config.max_block_frames,
+                },
+            );
+        }
+
+        let ratio = sanitize_ratio(ratio);
+        let output_start_frame = self.source_projection_output_frame;
+        let output_end_frame = output_start_frame.saturating_add(usize_to_u64(output_frames));
+        let source_start_frame = self.source_projection_source_cursor;
+        let source_end_frame = source_start_frame + output_frames as f64 / ratio;
+        let projection = build_realtime_preview_source_projection_report(
+            ratio,
+            output_start_frame,
+            output_frames,
+            output_end_frame,
+            source_start_frame,
+            source_end_frame,
+        );
+        self.source_projection_output_frame = output_end_frame;
+        self.source_projection_source_cursor = source_end_frame;
+        self.last_source_projection = projection;
+        Ok(projection)
+    }
+
     /// Reset callback state without reallocating.
     pub fn reset(&mut self) {
         self.scratch.fill(0.0);
@@ -833,6 +912,10 @@ impl RealtimePreviewCallbackState {
         self.ratio_change_count = 0;
         self.input_write_frame = 0;
         self.output_read_frame = 0;
+        self.source_projection_output_frame = 0;
+        self.source_projection_source_cursor = 0.0;
+        self.last_source_projection =
+            project_realtime_preview_fixed_ratio_source_advance(0, 0, 1.0);
         self.next_analysis_frame = 0;
         self.next_synthesis_frame = self.config.window_size as f64;
         self.processed_frames = 0;
@@ -2013,6 +2096,16 @@ fn ceil_frame_to_u64(frame: f64) -> u64 {
     }
 }
 
+fn ceil_frame_to_usize(frame: f64) -> usize {
+    if !frame.is_finite() || frame <= 0.0 {
+        0
+    } else if frame >= usize::MAX as f64 {
+        usize::MAX
+    } else {
+        frame.ceil() as usize
+    }
+}
+
 fn wrap_phase(phase: f32) -> f32 {
     (phase + std::f32::consts::PI).rem_euclid(std::f32::consts::TAU) - std::f32::consts::PI
 }
@@ -2588,6 +2681,120 @@ mod tests {
         assert_eq!(sanitized.ratio, 1.0);
         assert_eq!(sanitized.source_start_frame, 32.0);
         assert_eq!(sanitized.source_end_frame, 96.0);
+    }
+
+    #[test]
+    fn realtime_preview_source_projection_state_advances_fractional_cursor() {
+        let mut state = RealtimePreviewCallbackState::new(RealtimePreviewStreamConfig::new(
+            SampleRate(48_000),
+            2,
+            128,
+        ))
+        .expect("callback state config should validate");
+
+        let first = state
+            .advance_source_projection(96, 1.5)
+            .expect("projection should stay within the configured block size");
+        let second = state
+            .advance_source_projection(96, 1.5)
+            .expect("projection should stay within the configured block size");
+
+        assert_eq!(first.output_start_frame, 0);
+        assert_eq!(first.output_end_frame, 96);
+        assert_eq!(first.source_start_frame, 0.0);
+        assert_eq!(first.source_end_frame, 64.0);
+        assert_eq!(first.source_frames_required, 64);
+        assert_eq!(second.output_start_frame, 96);
+        assert_eq!(second.output_end_frame, 192);
+        assert_eq!(second.source_start_frame, 64.0);
+        assert_eq!(second.source_end_frame, 128.0);
+        assert_eq!(second.source_frames_required, 64);
+        assert_eq!(state.source_projection_output_frame(), 192);
+        assert_eq!(state.source_projection_source_cursor(), 128.0);
+        assert_eq!(state.last_source_projection(), second);
+
+        state.reset();
+        assert_eq!(state.source_projection_output_frame(), 0);
+        assert_eq!(state.source_projection_source_cursor(), 0.0);
+        assert_eq!(
+            state.last_source_projection(),
+            project_realtime_preview_fixed_ratio_source_advance(0, 0, 1.0)
+        );
+    }
+
+    #[test]
+    fn realtime_preview_source_projection_state_bounds_input_demand() {
+        let mut state = RealtimePreviewCallbackState::new(RealtimePreviewStreamConfig::new(
+            SampleRate(48_000),
+            1,
+            128,
+        ))
+        .expect("callback state config should validate");
+
+        let fast_limit = state.source_projection_input_demand_limit_frames(0.5);
+        let fast = state
+            .advance_source_projection(128, 0.5)
+            .expect("projection should stay within the configured block size");
+        assert_eq!(fast.source_advance_frames, 256.0);
+        assert_eq!(fast.source_frames_required, 256);
+        assert!(fast.source_frames_required <= fast_limit);
+
+        let fractional_limit = state.source_projection_input_demand_limit_frames(3.0);
+        let fractional = state
+            .advance_source_projection(100, 3.0)
+            .expect("projection should stay within the configured block size");
+        assert!((fractional.source_advance_frames - (100.0 / 3.0)).abs() < 1.0e-9);
+        assert_eq!(fractional.source_frame_floor, 256);
+        assert_eq!(fractional.source_frame_ceil, 290);
+        assert_eq!(fractional.source_frames_required, 34);
+        assert!(fractional.source_frames_required <= fractional_limit);
+
+        assert_eq!(
+            state.advance_source_projection(129, 1.0),
+            Err(
+                RealtimePreviewCallbackProcessError::FrameCountExceedsConfig {
+                    requested: 129,
+                    max: 128,
+                }
+            )
+        );
+    }
+
+    #[test]
+    fn realtime_preview_source_projection_state_is_deterministic_for_fixed_ratio() {
+        let mut first = RealtimePreviewCallbackState::new(RealtimePreviewStreamConfig::new(
+            SampleRate(48_000),
+            1,
+            128,
+        ))
+        .expect("callback state config should validate");
+        let mut second = RealtimePreviewCallbackState::new(RealtimePreviewStreamConfig::new(
+            SampleRate(48_000),
+            1,
+            128,
+        ))
+        .expect("callback state config should validate");
+
+        for _ in 0..16 {
+            let first_report = first
+                .advance_source_projection(100, 3.0)
+                .expect("projection should stay within the configured block size");
+            let second_report = second
+                .advance_source_projection(100, 3.0)
+                .expect("projection should stay within the configured block size");
+            assert_eq!(first_report, second_report);
+            assert!(first_report.source_frames_required <= 35);
+        }
+
+        assert_eq!(
+            first.source_projection_output_frame(),
+            second.source_projection_output_frame()
+        );
+        assert!(
+            (first.source_projection_source_cursor() - second.source_projection_source_cursor())
+                .abs()
+                < 1.0e-9
+        );
     }
 
     #[test]
