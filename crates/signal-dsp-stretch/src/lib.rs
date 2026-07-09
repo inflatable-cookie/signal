@@ -1,10 +1,12 @@
 //! Time-stretching backends for the Signal workspace.
 //!
 //! The crate defines the abstract [`TimeStretcher`] contract — stretch audio
-//! in time without shifting pitch — and ships two offline backends this round:
+//! in time without shifting pitch — and ships two offline backends plus one
+//! preview prototype this round:
 //! [`PhaseVocoderStretcher`], a dependency-light draft-quality phase vocoder,
-//! and [`OfflineHighQualityStretcher`], Signal's offline-quality foundation
-//! for corpus-gated export, freeze, and cache artifacts.
+//! [`RealtimePreviewStretcher`], a lower-latency pitch-preserving preview
+//! prototype, and [`OfflineHighQualityStretcher`], Signal's offline-quality
+//! foundation for corpus-gated export, freeze, and cache artifacts.
 //!
 //! ## Signal-owned backend tiers
 //!
@@ -13,7 +15,7 @@
 //! - [`StretchBackendTier::Repitch`]: render-plane rate conversion, pitch
 //!   changes with tempo, realtime-safe today.
 //! - [`StretchBackendTier::RealtimePreview`]: bounded-latency pitch-preserving
-//!   preview stretch, planned.
+//!   preview stretch, prototype.
 //! - [`StretchBackendTier::OfflineHighQuality`]: deterministic
 //!   export/cache/freeze stretch, implemented and promotion-gated as the
 //!   quality reference tier.
@@ -33,8 +35,9 @@
 //! per call and processes whole buffers. It must never run on the audio
 //! thread. Consumers that need stretched playback precompute the stretched
 //! buffer control-side (anticipative posture) and hand the render plane an
-//! ordinary sample buffer; a bounded-latency streaming tier is future work
-//! behind the same trait.
+//! ordinary sample buffer. [`RealtimePreviewStreamingContract`] names the
+//! callback-safe boundary that must be satisfied before direct render-plane
+//! integration is allowed.
 
 #![warn(missing_docs)]
 
@@ -113,8 +116,8 @@ pub enum StretchQuality {
     /// Draft-quality phase vocoder: pitch-preserving, but transients smear
     /// and no formant handling. Offline use only.
     Draft,
-    /// Bounded-latency preview quality. Planned; not implemented by the
-    /// current backend.
+    /// Bounded-latency preview quality. Implemented as a control-side
+    /// prototype; direct audio-thread processing is still unsupported.
     RealtimePreview,
     /// Highest-quality deterministic offline/export quality. Product-facing
     /// use is still promotion-gated per artifact.
@@ -126,7 +129,7 @@ pub enum StretchQuality {
 pub enum StretchBackendTier {
     /// Existing render-plane varispeed path. Tempo changes also shift pitch.
     Repitch,
-    /// Planned bounded-latency preview tier for live audition and playback.
+    /// Prototype bounded-latency preview tier for live audition and playback.
     RealtimePreview,
     /// Deterministic high-quality tier for exports, freeze, and cached
     /// post-warp artifacts.
@@ -187,7 +190,7 @@ pub const SIGNAL_STRETCH_BACKEND_PLAN: [StretchBackendPlan; 3] = [
     },
     StretchBackendPlan {
         tier: StretchBackendTier::RealtimePreview,
-        status: StretchBackendStatus::Planned,
+        status: StretchBackendStatus::Prototype,
         independent_tempo_and_pitch: true,
         dynamic_ratio: true,
         transient_preservation: true,
@@ -221,9 +224,10 @@ pub fn stretch_backend_plan(tier: StretchBackendTier) -> StretchBackendPlan {
 /// preserving pitch. `ratio` is the OUTPUT/INPUT duration factor — 2.0 makes
 /// the audio twice as long (half speed), 0.5 twice as fast.
 ///
-/// v1 scope is offline whole-buffer processing; the streaming/RT surface
-/// (bounded latency, PDC reporting, variable ratio mid-stream) extends this
-/// trait when a production backend lands.
+/// v1 scope is offline/control-side whole-buffer processing; the direct
+/// streaming/RT surface (bounded latency, PDC reporting, variable ratio
+/// mid-stream) extends this trait when a production callback-safe backend
+/// lands.
 pub trait TimeStretcher {
     /// Quality tier this backend provides — consumers must be able to make
     /// an honest offline/RT routing decision from this.
@@ -251,6 +255,18 @@ pub trait TimeStretcher {
 /// window fall back to linear time-domain interpolation (the honest cheap
 /// path — a single window carries no phase-propagation benefit).
 pub struct PhaseVocoderStretcher {
+    ratio: f64,
+    window_size: usize,
+    analysis_hop: usize,
+}
+
+/// Lower-latency pitch-preserving preview stretcher.
+///
+/// This is a control-side prototype, not a render-callback object. It uses a
+/// shorter STFT window than [`OfflineHighQualityStretcher`] so edits can be
+/// previewed with lower algorithmic latency, while keeping the same clean-room
+/// transient-reset and linked-stereo foundation.
+pub struct RealtimePreviewStretcher {
     ratio: f64,
     window_size: usize,
     analysis_hop: usize,
@@ -293,6 +309,10 @@ pub const COMPRESSION_SHORT_WINDOW_SELECTOR_WINDOW_SIZE: usize = 1_024;
 /// Short-window selector analysis hop.
 pub const COMPRESSION_SHORT_WINDOW_SELECTOR_ANALYSIS_HOP: usize =
     COMPRESSION_SHORT_WINDOW_SELECTOR_WINDOW_SIZE / 4;
+/// RealtimePreview prototype STFT size.
+pub const REALTIME_PREVIEW_WINDOW_SIZE: usize = 512;
+/// RealtimePreview prototype analysis hop.
+pub const REALTIME_PREVIEW_ANALYSIS_HOP: usize = REALTIME_PREVIEW_WINDOW_SIZE / 4;
 /// Short-window selector gate: current path must miss at least this many
 /// source transients before the selector may switch.
 pub const COMPRESSION_SHORT_WINDOW_SELECTOR_MIN_CURRENT_MISSES: usize = 1;
@@ -321,6 +341,129 @@ pub const SUSTAINED_COHERENCE_ENVELOPE_REVIEW_WINDOW_SIZE: usize = DEFAULT_WINDO
 /// Report-only sustained-coherence envelope-match review hop.
 pub const SUSTAINED_COHERENCE_ENVELOPE_REVIEW_HOP_SIZE: usize =
     SUSTAINED_COHERENCE_ENVELOPE_REVIEW_WINDOW_SIZE / 2;
+
+/// Integration posture for a RealtimePreview stream.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RealtimePreviewIntegrationMode {
+    /// Preview renders are built control-side and handed to the render plane
+    /// as normal sample buffers.
+    AnticipativePreRender,
+    /// Direct render-callback processing by a proven allocation-free state
+    /// object. This mode is not implemented yet.
+    CallbackSafeStreaming,
+}
+
+/// Configuration used to plan a RealtimePreview stream.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct RealtimePreviewStreamConfig {
+    /// Session sample rate.
+    pub sample_rate: SampleRate,
+    /// Number of linked channels in the preview stream.
+    pub channel_count: usize,
+    /// Maximum render quantum or preview block size in sample frames.
+    pub max_block_frames: usize,
+    /// STFT window size in sample frames.
+    pub window_size: usize,
+    /// Analysis hop in sample frames.
+    pub analysis_hop: usize,
+}
+
+/// Planned latency and routing contract for a RealtimePreview stream.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct RealtimePreviewStreamingContract {
+    /// Validated stream configuration.
+    pub config: RealtimePreviewStreamConfig,
+    /// Current integration posture.
+    pub integration_mode: RealtimePreviewIntegrationMode,
+    /// Input-side latency in sample frames.
+    pub input_latency_frames: usize,
+    /// Output-side latency in sample frames.
+    pub output_latency_frames: usize,
+    /// Maximum source-frame alignment tolerance for an immediate ratio change.
+    pub ratio_change_alignment_tolerance_frames: usize,
+    /// Whether the planned path may run directly on the realtime callback.
+    pub audio_thread_processing_supported: bool,
+    /// Unsupported mode that keeps this contract out of direct callback use.
+    pub unsupported_mode: Option<RealtimePreviewUnsupportedMode>,
+}
+
+/// Unsupported RealtimePreview routing mode.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RealtimePreviewUnsupportedMode {
+    /// The current prototype allocates scratch buffers and processes whole
+    /// preview buffers, so it must remain outside the audio callback.
+    AudioThreadProcessing,
+    /// The requested channel layout is not part of the current linked preview
+    /// contract.
+    ChannelLayout,
+}
+
+/// RealtimePreview stream planning failure.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RealtimePreviewPlanError {
+    /// The sample rate is zero.
+    InvalidSampleRate,
+    /// The channel count is zero or not currently supported.
+    UnsupportedChannelCount(usize),
+    /// The maximum block size is zero.
+    InvalidBlockSize,
+}
+
+impl RealtimePreviewStreamConfig {
+    /// Default RealtimePreview stream configuration for a session.
+    pub fn new(sample_rate: SampleRate, channel_count: usize, max_block_frames: usize) -> Self {
+        Self {
+            sample_rate,
+            channel_count,
+            max_block_frames,
+            window_size: REALTIME_PREVIEW_WINDOW_SIZE,
+            analysis_hop: REALTIME_PREVIEW_ANALYSIS_HOP,
+        }
+    }
+
+    /// Clamp window and hop sizes to the supported STFT range.
+    pub fn normalized(self) -> Self {
+        let window_size = self.window_size.next_power_of_two().max(64);
+        let analysis_hop = self.analysis_hop.clamp(1, window_size / 2);
+        Self {
+            window_size,
+            analysis_hop,
+            ..self
+        }
+    }
+}
+
+/// Build a RealtimePreview streaming contract.
+///
+/// The first Signal-owned preview implementation is intentionally
+/// anticipative: it defines latency and ratio-change tolerance, but returns an
+/// unsupported callback mode until the state object proves allocation-free
+/// bounded work.
+pub fn plan_realtime_preview_stream(
+    config: RealtimePreviewStreamConfig,
+) -> Result<RealtimePreviewStreamingContract, RealtimePreviewPlanError> {
+    if config.sample_rate.0 == 0 {
+        return Err(RealtimePreviewPlanError::InvalidSampleRate);
+    }
+    if !(1..=2).contains(&config.channel_count) {
+        return Err(RealtimePreviewPlanError::UnsupportedChannelCount(
+            config.channel_count,
+        ));
+    }
+    if config.max_block_frames == 0 {
+        return Err(RealtimePreviewPlanError::InvalidBlockSize);
+    }
+    let config = config.normalized();
+    Ok(RealtimePreviewStreamingContract {
+        input_latency_frames: config.window_size,
+        output_latency_frames: config.window_size,
+        ratio_change_alignment_tolerance_frames: config.analysis_hop + config.max_block_frames,
+        integration_mode: RealtimePreviewIntegrationMode::AnticipativePreRender,
+        audio_thread_processing_supported: false,
+        unsupported_mode: Some(RealtimePreviewUnsupportedMode::AudioThreadProcessing),
+        config,
+    })
+}
 
 impl PhaseVocoderStretcher {
     /// Stretcher with the default window/hop configuration.
@@ -363,6 +506,130 @@ impl TimeStretcher for PhaseVocoderStretcher {
             self.window_size,
             self.analysis_hop,
             phase_vocoder,
+        )
+    }
+}
+
+impl RealtimePreviewStretcher {
+    /// Stretcher with the preview window/hop configuration.
+    pub fn new(ratio: f64) -> Self {
+        Self::with_window(
+            ratio,
+            REALTIME_PREVIEW_WINDOW_SIZE,
+            REALTIME_PREVIEW_ANALYSIS_HOP,
+        )
+    }
+
+    /// Stretcher with an explicit window size and analysis hop. The window
+    /// is clamped to a power of two ≥ 64; the hop to `1..=window/2`.
+    pub fn with_window(ratio: f64, window_size: usize, analysis_hop: usize) -> Self {
+        let window_size = window_size.next_power_of_two().max(64);
+        let analysis_hop = analysis_hop.clamp(1, window_size / 2);
+        let mut stretcher = Self {
+            ratio: 1.0,
+            window_size,
+            analysis_hop,
+        };
+        stretcher.set_ratio(ratio);
+        stretcher
+    }
+
+    /// Build the stream contract for this preview stretcher.
+    pub fn streaming_contract(
+        &self,
+        sample_rate: SampleRate,
+        channel_count: usize,
+        max_block_frames: usize,
+    ) -> Result<RealtimePreviewStreamingContract, RealtimePreviewPlanError> {
+        plan_realtime_preview_stream(RealtimePreviewStreamConfig {
+            sample_rate,
+            channel_count,
+            max_block_frames,
+            window_size: self.window_size,
+            analysis_hop: self.analysis_hop,
+        })
+    }
+
+    /// Stretch an interleaved stereo buffer through the linked preview path.
+    ///
+    /// A trailing odd sample is ignored. This allocates and processes a whole
+    /// control-side preview buffer, so callers must not use it on the audio
+    /// callback.
+    pub fn stretch_interleaved_stereo(&mut self, frames: &[Sample]) -> Vec<Sample> {
+        let frame_count = frames.len() / 2;
+        let target_frames = (frame_count as f64 * self.ratio).round() as usize;
+        if frame_count == 0 || target_frames == 0 {
+            return Vec::new();
+        }
+        let even_frames = &frames[..frame_count * 2];
+        if (self.ratio - 1.0).abs() < 1.0e-9 {
+            return even_frames.to_vec();
+        }
+        if frame_count < self.window_size {
+            return linear_time_scale_interleaved_stereo(even_frames, target_frames);
+        }
+        transient_reset_phase_vocoder_linked_stereo(
+            even_frames,
+            target_frames,
+            self.ratio,
+            self.window_size,
+            self.analysis_hop,
+        )
+    }
+
+    /// Stretch one mono buffer with a stepwise dynamic ratio curve.
+    pub fn stretch_dynamic_ratio_mono(
+        &mut self,
+        input: &[Sample],
+        ratio_curve: &[StretchRatioPoint],
+    ) -> Vec<Sample> {
+        stretch_dynamic_ratio_mono_with_engine(
+            input,
+            ratio_curve,
+            self.ratio,
+            self.window_size,
+            self.analysis_hop,
+            transient_reset_phase_vocoder,
+        )
+    }
+
+    /// Stretch an interleaved stereo buffer with a stepwise dynamic ratio
+    /// curve through the linked preview path.
+    pub fn stretch_dynamic_ratio_interleaved_stereo(
+        &mut self,
+        frames: &[Sample],
+        ratio_curve: &[StretchRatioPoint],
+    ) -> Vec<Sample> {
+        stretch_dynamic_ratio_linked_stereo_with_engine(
+            frames,
+            ratio_curve,
+            self.ratio,
+            self.window_size,
+            self.analysis_hop,
+        )
+    }
+}
+
+impl TimeStretcher for RealtimePreviewStretcher {
+    fn quality(&self) -> StretchQuality {
+        StretchQuality::RealtimePreview
+    }
+
+    fn ratio(&self) -> f64 {
+        self.ratio
+    }
+
+    fn set_ratio(&mut self, ratio: f64) {
+        self.ratio = sanitize_ratio(ratio);
+    }
+
+    fn stretch_mono(&mut self, input: &[Sample]) -> Vec<Sample> {
+        stretch_mono_with_engine(
+            input,
+            self.ratio,
+            self.window_size,
+            self.analysis_hop,
+            transient_reset_phase_vocoder,
         )
     }
 }
@@ -1467,6 +1734,118 @@ mod tests {
         (samples.iter().map(|s| s * s).sum::<f32>() / samples.len().max(1) as f32).sqrt()
     }
 
+    #[test]
+    fn realtime_preview_contract_reports_latency_and_callback_blocker() {
+        let contract = plan_realtime_preview_stream(RealtimePreviewStreamConfig::new(
+            SampleRate(48_000),
+            2,
+            128,
+        ))
+        .expect("default preview contract should plan");
+
+        assert_eq!(contract.config.window_size, REALTIME_PREVIEW_WINDOW_SIZE);
+        assert_eq!(contract.config.analysis_hop, REALTIME_PREVIEW_ANALYSIS_HOP);
+        assert_eq!(contract.input_latency_frames, REALTIME_PREVIEW_WINDOW_SIZE);
+        assert_eq!(contract.output_latency_frames, REALTIME_PREVIEW_WINDOW_SIZE);
+        assert_eq!(
+            contract.ratio_change_alignment_tolerance_frames,
+            REALTIME_PREVIEW_ANALYSIS_HOP + 128
+        );
+        assert_eq!(
+            contract.integration_mode,
+            RealtimePreviewIntegrationMode::AnticipativePreRender
+        );
+        assert!(!contract.audio_thread_processing_supported);
+        assert_eq!(
+            contract.unsupported_mode,
+            Some(RealtimePreviewUnsupportedMode::AudioThreadProcessing)
+        );
+    }
+
+    #[test]
+    fn realtime_preview_contract_rejects_invalid_streams() {
+        assert_eq!(
+            plan_realtime_preview_stream(RealtimePreviewStreamConfig::new(SampleRate(0), 2, 128,)),
+            Err(RealtimePreviewPlanError::InvalidSampleRate)
+        );
+        assert_eq!(
+            plan_realtime_preview_stream(RealtimePreviewStreamConfig::new(
+                SampleRate(48_000),
+                6,
+                128,
+            )),
+            Err(RealtimePreviewPlanError::UnsupportedChannelCount(6))
+        );
+        assert_eq!(
+            plan_realtime_preview_stream(RealtimePreviewStreamConfig::new(
+                SampleRate(48_000),
+                2,
+                0,
+            )),
+            Err(RealtimePreviewPlanError::InvalidBlockSize)
+        );
+    }
+
+    #[test]
+    fn realtime_preview_mono_is_deterministic_and_pitch_preserving() {
+        let input = sine(440.0, 48_000.0, 12_000);
+        let mut first = RealtimePreviewStretcher::new(1.25);
+        let mut second = RealtimePreviewStretcher::new(1.25);
+
+        let first_output = first.stretch_mono(&input);
+        let second_output = second.stretch_mono(&input);
+
+        assert_eq!(first.quality(), StretchQuality::RealtimePreview);
+        assert_eq!(
+            first_output.len(),
+            (input.len() as f64 * 1.25).round() as usize
+        );
+        assert_eq!(first_output, second_output);
+        assert!((dominant_frequency_hz(&first_output, 48_000.0) - 440.0).abs() < 20.0);
+    }
+
+    #[test]
+    fn realtime_preview_linked_stereo_is_deterministic_and_exact_length() {
+        let left = sine(330.0, 48_000.0, 16_000);
+        let right = sine(660.0, 48_000.0, 16_000);
+        let input = left
+            .iter()
+            .zip(right.iter())
+            .flat_map(|(left, right)| [*left, *right])
+            .collect::<Vec<_>>();
+        let mut first = RealtimePreviewStretcher::new(0.75);
+        let mut second = RealtimePreviewStretcher::new(0.75);
+
+        let first_output = first.stretch_interleaved_stereo(&input);
+        let second_output = second.stretch_interleaved_stereo(&input);
+
+        assert_eq!(
+            first_output.len(),
+            (16_000.0_f64 * 0.75).round() as usize * 2
+        );
+        assert_eq!(first_output, second_output);
+    }
+
+    #[test]
+    fn realtime_preview_dynamic_ratio_curve_keeps_sample_domain_length() {
+        let input = sine(220.0, 48_000.0, 16_000);
+        let ratio_curve = [
+            StretchRatioPoint {
+                timeline_frame: 0,
+                ratio: 1.0,
+            },
+            StretchRatioPoint {
+                timeline_frame: 8_000,
+                ratio: 1.5,
+            },
+        ];
+        let mut stretcher = RealtimePreviewStretcher::new(1.0);
+
+        let output = stretcher.stretch_dynamic_ratio_mono(&input, &ratio_curve);
+
+        assert_eq!(output.len(), 20_000);
+    }
+
     fn add_decaying_burst(samples: &mut [Sample], start: usize, frames: usize, amplitude: f32) {
         for offset in 0..frames {
             let Some(sample) = samples.get_mut(start + offset) else {
@@ -2171,7 +2550,7 @@ mod tests {
             StretchBackendStatus::Implemented
         );
         let preview = stretch_backend_plan(StretchBackendTier::RealtimePreview);
-        assert_eq!(preview.status, StretchBackendStatus::Planned);
+        assert_eq!(preview.status, StretchBackendStatus::Prototype);
         assert!(preview.independent_tempo_and_pitch);
         assert!(preview.dynamic_ratio);
         assert!(!preview.audio_thread_safe);

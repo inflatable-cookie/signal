@@ -1,6 +1,6 @@
 # 024 - RealtimePreview Stretch Tier
 
-Status: planned
+Status: active
 Owner: dsp
 Created: 2026-07-07
 Depends on: g10.014, g10.021, g10.022
@@ -15,9 +15,9 @@ render-plane callback contract.
 
 ## Goals
 
-- [ ] define a bounded-latency streaming stretcher state separate from the
-  offline whole-buffer engine
-- [ ] report input latency, output latency, and ratio-change alignment
+- [x] define a bounded-latency preview contract separate from the offline
+  whole-buffer engine
+- [x] report input latency, output latency, and ratio-change alignment
   tolerance
 - [ ] support dynamic ratio changes with bounded work per render quantum
 - [ ] preserve stereo image and transient timing well enough for edit preview
@@ -30,12 +30,12 @@ render-plane callback contract.
 
 ### Batch 24.1 - Streaming Contract
 
-- [ ] state object, latency model, ratio-change alignment contract, and
-  unsupported-mode behavior
+- [x] latency model, ratio-change alignment contract, and unsupported-mode
+  behavior
 
 ### Batch 24.2 - Preview DSP Prototype
 
-- [ ] bounded-latency pitch-preserving preview algorithm with dynamic ratio
+- [x] bounded-latency pitch-preserving preview algorithm with dynamic ratio
   changes
 - [ ] preview quality metrics against the corpus subset
 
@@ -46,10 +46,10 @@ render-plane callback contract.
 
 ## Acceptance Criteria
 
-- [ ] preview latency is explicit and testable
+- [x] preview latency is explicit and testable
 - [ ] ratio automation lands within the documented tolerance
 - [ ] preview degradation is honest at extreme ratios
-- [ ] render-plane realtime safety remains intact
+- [x] render-plane realtime safety remains intact
 
 ## Validation
 
@@ -59,10 +59,16 @@ render-plane callback contract.
 
 ## Progress
 
-- 2026-07-07: opened as active g10 RealtimePreview planning. This remains
-  planned until offline evidence and the streaming contract are ready.
+- 2026-07-07: opened as active g10 RealtimePreview planning. Initial execution
+  waited for offline evidence and the preview contract.
+- 2026-07-09: Batch 24.1 landed in `signal-dsp-stretch`: preview stream
+  contract reports input/output latency and ratio-change tolerance, rejects
+  invalid stream shapes, and explicitly blocks direct audio-thread processing.
+  The RealtimePreview tier is now a prototype with a shorter-window
+  transient-reset path for mono, linked stereo, and dynamic-ratio preview.
 
 ## Next Task
 
-Do not start this before g10.021 and the first g10.022 DSP quality pass clarify
-the preview quality target.
+Run Batch 24.2 quality metrics against the corpus subset. Do not integrate this
+through render-plane callback paths until Batch 24.3 proves bounded work with
+no allocation, blocking, locks, or unbounded loops.
