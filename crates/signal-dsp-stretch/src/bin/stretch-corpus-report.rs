@@ -83,6 +83,7 @@ struct ReportArgs {
     decoded_stretch_frame_limit: usize,
     measure_external_benchmark_quality: bool,
     external_benchmark_quality_mode: ExternalBenchmarkQualityMode,
+    external_benchmark_signal_path: OfflineHighQualityPath,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -129,6 +130,21 @@ impl ExternalBenchmarkQualityMode {
     }
 }
 
+fn parse_offline_high_quality_path(value: &str) -> Result<OfflineHighQualityPath, String> {
+    match value {
+        "default" => Ok(OfflineHighQualityPath::Default),
+        "compression-short-window-selector" => {
+            Ok(OfflineHighQualityPath::CompressionShortWindowSelector)
+        }
+        "expansion-short-window-selector" => {
+            Ok(OfflineHighQualityPath::ExpansionShortWindowSelector)
+        }
+        _ => Err(format!(
+            "invalid offline high-quality path: {value}; expected default, compression-short-window-selector, or expansion-short-window-selector"
+        )),
+    }
+}
+
 impl Default for ReportArgs {
     fn default() -> Self {
         Self {
@@ -148,6 +164,7 @@ impl Default for ReportArgs {
             decoded_stretch_frame_limit: DEFAULT_DECODED_STRETCH_FRAME_LIMIT,
             measure_external_benchmark_quality: false,
             external_benchmark_quality_mode: ExternalBenchmarkQualityMode::Full,
+            external_benchmark_signal_path: OfflineHighQualityPath::Default,
         }
     }
 }
@@ -235,6 +252,7 @@ fn main() {
             &quality_renders,
             args.decoded_stretch_frame_limit,
             args.external_benchmark_quality_mode,
+            args.external_benchmark_signal_path,
         ) {
             Ok(external_quality) => {
                 if !external_quality.is_empty() {
@@ -390,6 +408,11 @@ where
                     &next_value(&mut iter, "--external-benchmark-quality-mode")?,
                 )?;
             }
+            "--external-benchmark-signal-path" => {
+                parsed.external_benchmark_signal_path = parse_offline_high_quality_path(
+                    &next_value(&mut iter, "--external-benchmark-signal-path")?,
+                )?;
+            }
             "--decoded-stretch-frame-limit" => {
                 parsed.decoded_stretch_frame_limit =
                     next_value(&mut iter, "--decoded-stretch-frame-limit")?
@@ -419,7 +442,7 @@ where
 }
 
 fn usage() -> &'static str {
-    "usage: stretch-corpus-report [--report-name NAME] [--projection-epoch EPOCH] [--listening-source-manifest TSV] [--decode-listening-sources] [--decode-source-frame-limit N] [--measure-decoded-stretch] [--decoded-stretch-report-mode full|expansion-selector] [--measure-external-benchmark-quality] [--external-benchmark-quality-mode core|full] [--decoded-stretch-frame-limit N] [--external-benchmark-tool NAME] [--external-benchmark-render CASE RATIO WAV] [--external-benchmark-render-manifest TSV] [--export-external-benchmark-pack DIR] [--check-external-benchmark-render-plan TSV] [--output PATH]"
+    "usage: stretch-corpus-report [--report-name NAME] [--projection-epoch EPOCH] [--listening-source-manifest TSV] [--decode-listening-sources] [--decode-source-frame-limit N] [--measure-decoded-stretch] [--decoded-stretch-report-mode full|expansion-selector] [--measure-external-benchmark-quality] [--external-benchmark-quality-mode core|full] [--external-benchmark-signal-path default|compression-short-window-selector|expansion-short-window-selector] [--decoded-stretch-frame-limit N] [--external-benchmark-tool NAME] [--external-benchmark-render CASE RATIO WAV] [--external-benchmark-render-manifest TSV] [--export-external-benchmark-pack DIR] [--check-external-benchmark-render-plan TSV] [--output PATH]"
 }
 
 fn load_external_benchmark_renders(
@@ -1638,6 +1661,7 @@ fn format_decoded_stretch_metrics(
 struct ExternalBenchmarkQualityMeasurement {
     case_id: String,
     source_path: String,
+    signal_path: OfflineHighQualityPath,
     render_path: String,
     tool_name: String,
     ratio: f64,
@@ -1670,9 +1694,10 @@ struct ExternalBenchmarkQualityMeasurement {
 impl ExternalBenchmarkQualityMeasurement {
     fn format_report_line(&self) -> String {
         format!(
-            "external_benchmark_quality case={} source={} ratio={:.6} tool={} render={} status={} reason={} source_boundary={} sample_rate_match={} source_sample_rate={} external_sample_rate={} external_channels={} source_frames={} signal_frames={} external_frames={} signal_timing_drift_samples={:.6} external_timing_drift_samples={:.6} timing_drift_delta_samples={:.6} signal_transient_smear_frames={:.6} external_transient_smear_frames={:.6} transient_smear_delta_frames={:.6} alignment_lag_frames={} aligned_compared_frames={} aligned_correlation={:.6} aligned_rms_error={:.9} aligned_peak_error={:.9} signal_rms={:.9} external_rms={:.9} aligned_rms_error_ratio={:.6}",
+            "external_benchmark_quality case={} source={} signal_path={:?} ratio={:.6} tool={} render={} status={} reason={} source_boundary={} sample_rate_match={} source_sample_rate={} external_sample_rate={} external_channels={} source_frames={} signal_frames={} external_frames={} signal_timing_drift_samples={:.6} external_timing_drift_samples={:.6} timing_drift_delta_samples={:.6} signal_transient_smear_frames={:.6} external_transient_smear_frames={:.6} transient_smear_delta_frames={:.6} alignment_lag_frames={} aligned_compared_frames={} aligned_correlation={:.6} aligned_rms_error={:.9} aligned_peak_error={:.9} signal_rms={:.9} external_rms={:.9} aligned_rms_error_ratio={:.6}",
             self.case_id,
             quoted_report_field(&self.source_path),
+            self.signal_path,
             self.ratio,
             quoted_report_field(&self.tool_name),
             quoted_report_field(&self.render_path),
@@ -1708,6 +1733,7 @@ impl ExternalBenchmarkQualityMeasurement {
 struct ExternalBenchmarkFeatureDeltaMeasurement {
     case_id: String,
     source_path: String,
+    signal_path: OfflineHighQualityPath,
     render_path: String,
     tool_name: String,
     ratio: f64,
@@ -1737,9 +1763,10 @@ struct ExternalBenchmarkFeatureDeltaMeasurement {
 impl ExternalBenchmarkFeatureDeltaMeasurement {
     fn format_report_line(&self) -> String {
         format!(
-            "external_benchmark_feature_delta case={} source={} ratio={:.6} tool={} render={} status={} reason={} source_boundary={} aligned_compared_frames={} envelope_correlation={:.6} signal_rms={:.9} external_rms={:.9} rms_delta_db={:.6} signal_peak={:.9} external_peak={:.9} peak_delta_db={:.6} signal_zero_crossings_per_second={:.6} external_zero_crossings_per_second={:.6} zero_crossings_delta_per_second={:.6} signal_spectral_centroid_hz={:.6} external_spectral_centroid_hz={:.6} spectral_centroid_delta_hz={:.6} signal_high_frequency_energy_ratio={:.6} external_high_frequency_energy_ratio={:.6} high_frequency_energy_ratio_delta={:.6} feature_divergence_score={:.6}",
+            "external_benchmark_feature_delta case={} source={} signal_path={:?} ratio={:.6} tool={} render={} status={} reason={} source_boundary={} aligned_compared_frames={} envelope_correlation={:.6} signal_rms={:.9} external_rms={:.9} rms_delta_db={:.6} signal_peak={:.9} external_peak={:.9} peak_delta_db={:.6} signal_zero_crossings_per_second={:.6} external_zero_crossings_per_second={:.6} zero_crossings_delta_per_second={:.6} signal_spectral_centroid_hz={:.6} external_spectral_centroid_hz={:.6} spectral_centroid_delta_hz={:.6} signal_high_frequency_energy_ratio={:.6} external_high_frequency_energy_ratio={:.6} high_frequency_energy_ratio_delta={:.6} feature_divergence_score={:.6}",
             self.case_id,
             quoted_report_field(&self.source_path),
+            self.signal_path,
             self.ratio,
             quoted_report_field(&self.tool_name),
             quoted_report_field(&self.render_path),
@@ -1772,6 +1799,7 @@ impl ExternalBenchmarkFeatureDeltaMeasurement {
 struct ExternalBenchmarkGainEnvelopeReviewMeasurement {
     case_id: String,
     source_path: String,
+    signal_path: OfflineHighQualityPath,
     render_path: String,
     tool_name: String,
     ratio: f64,
@@ -1794,10 +1822,11 @@ struct ExternalBenchmarkGainEnvelopeReviewMeasurement {
 impl ExternalBenchmarkGainEnvelopeReviewMeasurement {
     fn format_report_line(&self, rank: usize) -> String {
         format!(
-            "external_benchmark_gain_envelope_review rank={} case={} source={} ratio={:.6} tool={} render={} status=Measured reason=TopFeatureDivergence source_boundary={} aligned_compared_frames={} feature_divergence_score={:.6} envelope_correlation={:.6} rms_delta_db={:.6} peak_delta_db={:.6} window_size_frames={} hop_size_frames={} window_count={} mean_window_rms_delta_db={:.6} median_window_rms_delta_db={:.6} max_abs_window_rms_delta_db={:.6} louder_windows={} quieter_windows={} near_windows={} gain_pattern={}",
+            "external_benchmark_gain_envelope_review rank={} case={} source={} signal_path={:?} ratio={:.6} tool={} render={} status=Measured reason=TopFeatureDivergence source_boundary={} aligned_compared_frames={} feature_divergence_score={:.6} envelope_correlation={:.6} rms_delta_db={:.6} peak_delta_db={:.6} window_size_frames={} hop_size_frames={} window_count={} mean_window_rms_delta_db={:.6} median_window_rms_delta_db={:.6} max_abs_window_rms_delta_db={:.6} louder_windows={} quieter_windows={} near_windows={} gain_pattern={}",
             rank,
             self.case_id,
             quoted_report_field(&self.source_path),
+            self.signal_path,
             self.ratio,
             quoted_report_field(&self.tool_name),
             quoted_report_field(&self.render_path),
@@ -1825,6 +1854,7 @@ impl ExternalBenchmarkGainEnvelopeReviewMeasurement {
 struct ExternalBenchmarkLevelNormalizedReviewMeasurement {
     case_id: String,
     source_path: String,
+    signal_path: OfflineHighQualityPath,
     render_path: String,
     tool_name: String,
     ratio: f64,
@@ -1850,10 +1880,11 @@ struct ExternalBenchmarkLevelNormalizedReviewMeasurement {
 impl ExternalBenchmarkLevelNormalizedReviewMeasurement {
     fn format_report_line(&self, rank: usize) -> String {
         format!(
-            "external_benchmark_level_normalized_review rank={} case={} source={} ratio={:.6} tool={} render={} status=Measured reason=TopFeatureDivergence source_boundary={} aligned_compared_frames={} signal_gain_db_applied={:.6} raw_feature_divergence_score={:.6} normalized_feature_divergence_score={:.6} feature_divergence_score_delta={:.6} raw_envelope_correlation={:.6} normalized_envelope_correlation={:.6} raw_rms_delta_db={:.6} normalized_rms_delta_db={:.6} raw_peak_delta_db={:.6} normalized_peak_delta_db={:.6} raw_spectral_centroid_delta_hz={:.6} normalized_spectral_centroid_delta_hz={:.6} raw_high_frequency_energy_ratio_delta={:.6} normalized_high_frequency_energy_ratio_delta={:.6} normalization_pattern={}",
+            "external_benchmark_level_normalized_review rank={} case={} source={} signal_path={:?} ratio={:.6} tool={} render={} status=Measured reason=TopFeatureDivergence source_boundary={} aligned_compared_frames={} signal_gain_db_applied={:.6} raw_feature_divergence_score={:.6} normalized_feature_divergence_score={:.6} feature_divergence_score_delta={:.6} raw_envelope_correlation={:.6} normalized_envelope_correlation={:.6} raw_rms_delta_db={:.6} normalized_rms_delta_db={:.6} raw_peak_delta_db={:.6} normalized_peak_delta_db={:.6} raw_spectral_centroid_delta_hz={:.6} normalized_spectral_centroid_delta_hz={:.6} raw_high_frequency_energy_ratio_delta={:.6} normalized_high_frequency_energy_ratio_delta={:.6} normalization_pattern={}",
             rank,
             self.case_id,
             quoted_report_field(&self.source_path),
+            self.signal_path,
             self.ratio,
             quoted_report_field(&self.tool_name),
             quoted_report_field(&self.render_path),
@@ -1882,6 +1913,7 @@ impl ExternalBenchmarkLevelNormalizedReviewMeasurement {
 struct ExternalBenchmarkResidualCoherenceReviewMeasurement {
     case_id: String,
     source_path: String,
+    signal_path: OfflineHighQualityPath,
     render_path: String,
     tool_name: String,
     ratio: f64,
@@ -1903,10 +1935,11 @@ struct ExternalBenchmarkResidualCoherenceReviewMeasurement {
 impl ExternalBenchmarkResidualCoherenceReviewMeasurement {
     fn format_report_line(&self, rank: usize) -> String {
         format!(
-            "external_benchmark_residual_coherence_review rank={} case={} source={} ratio={:.6} tool={} render={} status=Measured reason=TopFeatureDivergence source_boundary={} aligned_compared_frames={} signal_gain_db_applied={:.6} raw_feature_divergence_score={:.6} normalized_feature_divergence_score={:.6} normalized_sample_envelope_correlation={:.6} block_rms_envelope_correlation={:.6} mean_abs_block_rms_delta_db={:.6} max_abs_block_rms_delta_db={:.6} spectral_magnitude_coherence={:.6} normalized_spectral_centroid_delta_hz={:.6} normalized_high_frequency_energy_ratio_delta={:.6} residual_pattern={}",
+            "external_benchmark_residual_coherence_review rank={} case={} source={} signal_path={:?} ratio={:.6} tool={} render={} status=Measured reason=TopFeatureDivergence source_boundary={} aligned_compared_frames={} signal_gain_db_applied={:.6} raw_feature_divergence_score={:.6} normalized_feature_divergence_score={:.6} normalized_sample_envelope_correlation={:.6} block_rms_envelope_correlation={:.6} mean_abs_block_rms_delta_db={:.6} max_abs_block_rms_delta_db={:.6} spectral_magnitude_coherence={:.6} normalized_spectral_centroid_delta_hz={:.6} normalized_high_frequency_energy_ratio_delta={:.6} residual_pattern={}",
             rank,
             self.case_id,
             quoted_report_field(&self.source_path),
+            self.signal_path,
             self.ratio,
             quoted_report_field(&self.tool_name),
             quoted_report_field(&self.render_path),
@@ -1945,6 +1978,7 @@ fn format_external_benchmark_quality_metrics(
     renders: &[ExternalBenchmarkQualityRender],
     frame_limit: usize,
     mode: ExternalBenchmarkQualityMode,
+    signal_path: OfflineHighQualityPath,
 ) -> Result<String, String> {
     let mut lines = Vec::new();
     let mut gain_envelope_reviews = Vec::new();
@@ -1960,6 +1994,7 @@ fn format_external_benchmark_quality_metrics(
                     render,
                     "",
                     "MissingListeningSource",
+                    signal_path,
                     0,
                     0,
                     0,
@@ -1972,6 +2007,7 @@ fn format_external_benchmark_quality_metrics(
                     render,
                     "",
                     "AmbiguousListeningSource",
+                    signal_path,
                     0,
                     0,
                     0,
@@ -1997,6 +2033,7 @@ fn format_external_benchmark_quality_metrics(
                 render,
                 &source.source_path,
                 "NoComparatorAudio",
+                signal_path,
                 source_audio.sample_rate_hz,
                 external_audio.sample_rate_hz,
                 external_audio.channels,
@@ -2009,6 +2046,7 @@ fn format_external_benchmark_quality_metrics(
                 render,
                 &source.source_path,
                 "SampleRateMismatch",
+                signal_path,
                 source_audio.sample_rate_hz,
                 external_audio.sample_rate_hz,
                 external_audio.channels,
@@ -2026,7 +2064,7 @@ fn format_external_benchmark_quality_metrics(
                     .expect("cached decoded mono source audio")
             }
         };
-        let mut signal = OfflineHighQualityStretcher::new(render.ratio);
+        let mut signal = OfflineHighQualityStretcher::with_path(render.ratio, signal_path);
         let signal_output = signal.stretch_mono(&source_mono);
         let signal_smear = measure_transient_smear(
             &source_mono,
@@ -2082,6 +2120,7 @@ fn format_external_benchmark_quality_metrics(
             gain_envelope_reviews.push(ExternalBenchmarkGainEnvelopeReviewMeasurement {
                 case_id: render.case_id.clone(),
                 source_path: source.source_path.clone(),
+                signal_path,
                 render_path: render.rendered_path.clone(),
                 tool_name: render.tool_name.clone(),
                 ratio: render.ratio,
@@ -2103,6 +2142,7 @@ fn format_external_benchmark_quality_metrics(
             level_normalized_reviews.push(ExternalBenchmarkLevelNormalizedReviewMeasurement {
                 case_id: render.case_id.clone(),
                 source_path: source.source_path.clone(),
+                signal_path,
                 render_path: render.rendered_path.clone(),
                 tool_name: render.tool_name.clone(),
                 ratio: render.ratio,
@@ -2166,6 +2206,7 @@ fn format_external_benchmark_quality_metrics(
             residual_coherence_reviews.push(ExternalBenchmarkResidualCoherenceReviewMeasurement {
                 case_id: render.case_id.clone(),
                 source_path: source.source_path.clone(),
+                signal_path,
                 render_path: render.rendered_path.clone(),
                 tool_name: render.tool_name.clone(),
                 ratio: render.ratio,
@@ -2207,6 +2248,7 @@ fn format_external_benchmark_quality_metrics(
                 ExternalBenchmarkFeatureDeltaMeasurement {
                     case_id: render.case_id.clone(),
                     source_path: source.source_path.clone(),
+                    signal_path,
                     render_path: render.rendered_path.clone(),
                     tool_name: render.tool_name.clone(),
                     ratio: render.ratio,
@@ -2254,6 +2296,7 @@ fn format_external_benchmark_quality_metrics(
             ExternalBenchmarkQualityMeasurement {
                 case_id: render.case_id.clone(),
                 source_path: source.source_path.clone(),
+                signal_path,
                 render_path: render.rendered_path.clone(),
                 tool_name: render.tool_name.clone(),
                 ratio: render.ratio,
@@ -2381,6 +2424,7 @@ fn format_external_benchmark_quality_skip_line(
     render: &ExternalBenchmarkQualityRender,
     source_path: &str,
     reason: &'static str,
+    signal_path: OfflineHighQualityPath,
     source_sample_rate_hz: u32,
     external_sample_rate_hz: u32,
     external_channels: u16,
@@ -2389,6 +2433,7 @@ fn format_external_benchmark_quality_skip_line(
     ExternalBenchmarkQualityMeasurement {
         case_id: render.case_id.clone(),
         source_path: source_path.to_string(),
+        signal_path,
         render_path: render.rendered_path.clone(),
         tool_name: render.tool_name.clone(),
         ratio: render.ratio,
@@ -5748,6 +5793,7 @@ mod tests {
                 decoded_stretch_frame_limit: DEFAULT_DECODED_STRETCH_FRAME_LIMIT,
                 measure_external_benchmark_quality: false,
                 external_benchmark_quality_mode: ExternalBenchmarkQualityMode::Full,
+                external_benchmark_signal_path: OfflineHighQualityPath::Default,
             })
         );
     }
@@ -5772,6 +5818,8 @@ mod tests {
             "--measure-external-benchmark-quality".to_string(),
             "--external-benchmark-quality-mode".to_string(),
             "core".to_string(),
+            "--external-benchmark-signal-path".to_string(),
+            "expansion-short-window-selector".to_string(),
             "--decoded-stretch-frame-limit".to_string(),
             "1024".to_string(),
             "--external-benchmark-tool".to_string(),
@@ -5817,6 +5865,8 @@ mod tests {
                 decoded_stretch_frame_limit: 1024,
                 measure_external_benchmark_quality: true,
                 external_benchmark_quality_mode: ExternalBenchmarkQualityMode::Core,
+                external_benchmark_signal_path:
+                    OfflineHighQualityPath::ExpansionShortWindowSelector,
             })
         );
     }
@@ -5864,6 +5914,7 @@ mod tests {
             decoded_stretch_frame_limit: DEFAULT_DECODED_STRETCH_FRAME_LIMIT,
             measure_external_benchmark_quality: false,
             external_benchmark_quality_mode: ExternalBenchmarkQualityMode::Full,
+            external_benchmark_signal_path: OfflineHighQualityPath::Default,
         };
 
         let renders = load_external_benchmark_renders(&args).expect("load external render");
@@ -5917,6 +5968,7 @@ mod tests {
             decoded_stretch_frame_limit: DEFAULT_DECODED_STRETCH_FRAME_LIMIT,
             measure_external_benchmark_quality: false,
             external_benchmark_quality_mode: ExternalBenchmarkQualityMode::Full,
+            external_benchmark_signal_path: OfflineHighQualityPath::Default,
         };
 
         let renders = load_external_benchmark_renders(&args).expect("load manifest renders");
@@ -6059,10 +6111,12 @@ mod tests {
             &[render],
             4_096,
             ExternalBenchmarkQualityMode::Full,
+            OfflineHighQualityPath::Default,
         )
         .expect("format external quality metrics");
 
         assert!(formatted.starts_with("external_benchmark_quality case=stretch:vocals"));
+        assert!(formatted.contains("signal_path=Default"));
         assert!(formatted.contains("tool=\"rubberband-cli\""));
         assert!(formatted.contains("status=Measured reason=Ok"));
         assert!(formatted.contains(
@@ -6127,6 +6181,7 @@ mod tests {
             &[render],
             4_096,
             ExternalBenchmarkQualityMode::Core,
+            OfflineHighQualityPath::Default,
         )
         .expect("format core external quality metrics");
 
@@ -6135,6 +6190,45 @@ mod tests {
         assert!(!formatted.contains("external_benchmark_gain_envelope_review "));
         assert!(!formatted.contains("external_benchmark_level_normalized_review "));
         assert!(!formatted.contains("external_benchmark_residual_coherence_review "));
+
+        let _ = fs::remove_file(path);
+    }
+
+    #[test]
+    fn external_benchmark_quality_uses_selected_signal_path() {
+        let path = PathBuf::from(format!(
+            "target/stretch-corpus-external-quality-path-test-{}.wav",
+            std::process::id()
+        ));
+        write_test_wav(&path, 4_096);
+        let source = StretchCorpusListeningSource {
+            case_id: "stretch:vocals".to_string(),
+            source_path: path.display().to_string(),
+            source_label: "Artist - Song".to_string(),
+            license_title: "Attribution".to_string(),
+            license_url: "https://example.test/license".to_string(),
+            provenance_url: "https://example.test/track".to_string(),
+        };
+        let render = ExternalBenchmarkQualityRender {
+            case_id: "stretch:vocals".to_string(),
+            ratio: 1.25,
+            tool_name: "rubberband-cli".to_string(),
+            rendered_path: path.display().to_string(),
+            source_wav: None,
+        };
+
+        let formatted = format_external_benchmark_quality_metrics(
+            &[source],
+            &[render],
+            4_096,
+            ExternalBenchmarkQualityMode::Core,
+            OfflineHighQualityPath::ExpansionShortWindowSelector,
+        )
+        .expect("format selected-path external quality metrics");
+
+        assert!(formatted.starts_with("external_benchmark_quality case=stretch:vocals"));
+        assert!(formatted.contains("signal_path=ExpansionShortWindowSelector"));
+        assert!(formatted.contains("status=Measured reason=Ok"));
 
         let _ = fs::remove_file(path);
     }
@@ -6191,6 +6285,7 @@ mod tests {
             &renders,
             4_096,
             ExternalBenchmarkQualityMode::Full,
+            OfflineHighQualityPath::Default,
         )
         .expect("format source-wav external quality metrics");
 
@@ -6267,6 +6362,7 @@ mod tests {
             &[render],
             4_096,
             ExternalBenchmarkQualityMode::Full,
+            OfflineHighQualityPath::Default,
         )
         .expect("format ambiguous external quality metrics");
 

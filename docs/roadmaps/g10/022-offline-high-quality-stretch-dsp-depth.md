@@ -73,6 +73,17 @@ comparison reports, not add more receipt or fixture surfaces.
 - [x] validate expansion selector evidence at full-frame/broader comparator
   depth before production routing change
 
+### Batch 22.6 - Sustained And Polyphonic Coherence
+
+- [ ] use the full external feature-review rows and decoded reports to select
+  one dense sustained or polyphonic residual target
+- [ ] separate level/gain differences from actual residual coherence before any
+  DSP change
+- [ ] implement one vertical-coherence improvement only when the selected metric
+  is not mostly explained by level
+- [ ] keep the promoted expansion selector fixed unless new selector evidence
+  explicitly supports another route
+
 ## Acceptance Criteria
 
 - [x] every DSP batch names the metric or listening failure it targets
@@ -674,10 +685,34 @@ comparison reports, not add more receipt or fixture surfaces.
   validation. The path is product-addressable for static stereo artifacts with
   matching expansion-selector promotion evidence; unsupported dynamic-ratio and
   pitch-shift selector combinations remain blocked.
+- 2026-07-09: added selector-aware external benchmark reporting so the full
+  feature-review rows can compare Rubber Band renders against a specific Signal
+  offline path instead of always using default OfflineHighQuality. The report
+  now accepts
+  `--external-benchmark-signal-path default|compression-short-window-selector|expansion-short-window-selector`
+  and tags every external benchmark row with `signal_path=...`.
+- 2026-07-09: ran the targeted full external feature-review audit for the
+  promoted expansion selector at
+  `target/stretch-corpus-fma-expansion-selector-path-full.tsv`
+  (`real 165.09`). The audit measured 18 Rubber Band comparator rows, all
+  tagged `signal_path=ExpansionShortWindowSelector`. Signal and Rubber Band
+  both had zero timing drift on all 18 rows. On the 12 expansion rows, the
+  transient-smear proxy favored Signal on 9 rows, Rubber Band on 2, and tied
+  on 1. The selector candidate summary stayed conservative: 12 finite
+  expansion rows, 4 accepted rows, 8 rejected rows,
+  `worst_gated_regression_delta_frames=0.000000`, mean gated smear
+  `54.000000` frames versus current `378.000000`. Full feature-review rows
+  also make the next quality target visible: the highest divergence is
+  dominated by full-mix and bass cases where Signal is consistently louder
+  before level normalization, with residual-coherence review rows separating
+  level from remaining texture/phase differences. Batch 22.5 is closed; the
+  next work should move to sustained/polyphonic coherence rather than more
+  expansion-selector evidence.
 
 ## Next Task
 
-Continue by deciding whether Batch 22.5 needs a full external feature-review
-audit for the promoted expansion selector, or whether to close Batch 22.5 and
-select the next DSP quality target. Do not add dynamic-ratio or pitch-shift
-selector materialization until those combinations have their own evidence.
+Start Batch 22.6 by selecting one sustained/polyphonic coherence target from
+`target/stretch-corpus-fma-expansion-selector-path-full.tsv`, with level/gain
+differences separated from residual phase or texture differences before any DSP
+change. Do not add dynamic-ratio or pitch-shift selector materialization until
+those combinations have their own evidence.
