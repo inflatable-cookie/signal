@@ -1,6 +1,6 @@
 # 026 - RealtimePreview Callback-Safe State
 
-Status: ready
+Status: active
 Owner: dsp
 Created: 2026-07-09
 Depends on: g10.014, g10.024
@@ -16,7 +16,7 @@ ratio-change alignment proof before any render-plane plan can use it.
 
 ## Goals
 
-- [ ] define the callback-safe RealtimePreview state contract and reset rules
+- [x] define the callback-safe RealtimePreview state contract and reset rules
 - [ ] preallocate all scratch, rings, windows, spectra, and output buffers
   outside the audio callback
 - [ ] process bounded render quanta with no allocation, locks, blocking, I/O,
@@ -25,7 +25,7 @@ ratio-change alignment proof before any render-plane plan can use it.
   tolerance
 - [ ] preserve the existing prototype metric surface as the preview quality
   baseline
-- [ ] keep render-plane integration blocked until the state object passes the
+- [x] keep render-plane integration blocked until the state object passes the
   RT-safety proof
 
 ## Non-Goals
@@ -40,11 +40,11 @@ ratio-change alignment proof before any render-plane plan can use it.
 
 ### Batch 26.1 - State Contract And Allocation Proof Harness
 
-- [ ] define config, state, reset, latency, supported channel count, and
+- [x] define config, state, reset, latency, supported channel count, and
   unsupported-mode errors
-- [ ] add a focused no-allocation test harness around the callback-facing
+- [x] add a focused no-allocation test harness around the callback-facing
   process method
-- [ ] keep `RealtimePreviewStreamingContract` reporting
+- [x] keep `RealtimePreviewStreamingContract` reporting
   `audio_thread_processing_supported=false` until the process method passes
   the proof
 
@@ -88,9 +88,16 @@ ratio-change alignment proof before any render-plane plan can use it.
 - 2026-07-09: opened as the structural continuation of `g10.024`. This is the
   only ready RealtimePreview continuation; more prototype metric tweaks stay
   out of scope.
+- 2026-07-09: Batch 26.1 landed the callback-state contract shell in
+  `signal-dsp-stretch`. The state validates stream config and callback block
+  geometry, owns preallocated scratch, supports reset, and has a
+  counting-allocator proof that the callback-facing `process` path allocates
+  zero bytes. Processing still returns explicit unsupported status, and
+  `RealtimePreviewStreamingContract` still reports callback processing
+  unsupported.
 
 ## Next Task
 
-Start Batch 26.1: define the callback-safe state contract and no-allocation
-proof harness. Do not add render-plane integration and do not run the
-whole-buffer prototype on the audio callback.
+Start Batch 26.2 only when implementing real streaming DSP state. Do not add
+render-plane integration and do not run the whole-buffer prototype on the audio
+callback.

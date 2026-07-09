@@ -409,6 +409,56 @@ pub enum RealtimePreviewPlanError {
     InvalidBlockSize,
 }
 
+/// Callback-facing RealtimePreview state.
+///
+/// This is the Batch 26.1 state-contract shell. It validates block geometry
+/// and owns preallocated scratch, but it does not yet implement callback
+/// stretch DSP. [`Self::process`] therefore returns
+/// [`RealtimePreviewCallbackProcessError::CallbackProcessingUnsupported`] and
+/// leaves caller buffers untouched until the streaming DSP state lands.
+pub struct RealtimePreviewCallbackState {
+    config: RealtimePreviewStreamConfig,
+    scratch: Vec<Sample>,
+    current_ratio: f64,
+    processed_frames: u64,
+}
+
+/// Report returned by a successful RealtimePreview callback process call.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct RealtimePreviewCallbackProcessReport {
+    /// Sanitized ratio used for this block.
+    pub ratio: f64,
+    /// Frames consumed from the input block.
+    pub input_frames: usize,
+    /// Frames produced into the output block.
+    pub output_frames: usize,
+    /// Cumulative source-domain frames accepted by this state.
+    pub processed_frames: u64,
+}
+
+/// RealtimePreview callback process failure.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RealtimePreviewCallbackProcessError {
+    /// The requested frame count exceeds the state's configured maximum block.
+    FrameCountExceedsConfig {
+        /// Requested process frame count.
+        requested: usize,
+        /// Configured maximum frame count.
+        max: usize,
+    },
+    /// Input or output buffer is shorter than `frame_count * channel_count`.
+    BufferTooSmall {
+        /// Buffer samples required for this block.
+        required_samples: usize,
+        /// Available input samples.
+        input_samples: usize,
+        /// Available output samples.
+        output_samples: usize,
+    },
+    /// The callback-facing state exists, but streaming DSP is not implemented.
+    CallbackProcessingUnsupported,
+}
+
 impl RealtimePreviewStreamConfig {
     /// Default RealtimePreview stream configuration for a session.
     pub fn new(sample_rate: SampleRate, channel_count: usize, max_block_frames: usize) -> Self {
@@ -463,6 +513,88 @@ pub fn plan_realtime_preview_stream(
         unsupported_mode: Some(RealtimePreviewUnsupportedMode::AudioThreadProcessing),
         config,
     })
+}
+
+impl RealtimePreviewCallbackState {
+    /// Construct callback state and allocate all state-owned scratch outside
+    /// the audio callback.
+    pub fn new(config: RealtimePreviewStreamConfig) -> Result<Self, RealtimePreviewPlanError> {
+        let contract = plan_realtime_preview_stream(config)?;
+        let config = contract.config;
+        Ok(Self {
+            config,
+            scratch: vec![0.0; config.max_block_frames * config.channel_count],
+            current_ratio: 1.0,
+            processed_frames: 0,
+        })
+    }
+
+    /// Validated stream configuration.
+    pub fn config(&self) -> RealtimePreviewStreamConfig {
+        self.config
+    }
+
+    /// Current callback contract. This intentionally remains unsupported for
+    /// direct audio-thread processing until streaming DSP lands.
+    pub fn contract(&self) -> RealtimePreviewStreamingContract {
+        plan_realtime_preview_stream(self.config)
+            .expect("callback state stores a validated RealtimePreview config")
+    }
+
+    /// Preallocated scratch capacity in interleaved samples.
+    pub fn scratch_capacity_samples(&self) -> usize {
+        self.scratch.len()
+    }
+
+    /// Current sanitized ratio remembered by the state.
+    pub fn current_ratio(&self) -> f64 {
+        self.current_ratio
+    }
+
+    /// Cumulative source-domain frames accepted by this state.
+    pub fn processed_frames(&self) -> u64 {
+        self.processed_frames
+    }
+
+    /// Reset callback state without reallocating.
+    pub fn reset(&mut self) {
+        self.scratch.fill(0.0);
+        self.current_ratio = 1.0;
+        self.processed_frames = 0;
+    }
+
+    /// Process one callback quantum.
+    ///
+    /// Batch 26.1 only establishes the callback-facing contract and
+    /// no-allocation proof harness. The method validates block geometry
+    /// without allocating, then returns an explicit unsupported error until
+    /// Batch 26.2 implements the streaming DSP state.
+    pub fn process(
+        &mut self,
+        input: &[Sample],
+        output: &mut [Sample],
+        frame_count: usize,
+        ratio: f64,
+    ) -> Result<RealtimePreviewCallbackProcessReport, RealtimePreviewCallbackProcessError> {
+        if frame_count > self.config.max_block_frames {
+            return Err(
+                RealtimePreviewCallbackProcessError::FrameCountExceedsConfig {
+                    requested: frame_count,
+                    max: self.config.max_block_frames,
+                },
+            );
+        }
+        let required_samples = frame_count * self.config.channel_count;
+        if input.len() < required_samples || output.len() < required_samples {
+            return Err(RealtimePreviewCallbackProcessError::BufferTooSmall {
+                required_samples,
+                input_samples: input.len(),
+                output_samples: output.len(),
+            });
+        }
+        self.current_ratio = sanitize_ratio(ratio);
+        Err(RealtimePreviewCallbackProcessError::CallbackProcessingUnsupported)
+    }
 }
 
 impl PhaseVocoderStretcher {
@@ -1835,6 +1967,62 @@ mod tests {
                 0,
             )),
             Err(RealtimePreviewPlanError::InvalidBlockSize)
+        );
+    }
+
+    #[test]
+    fn realtime_preview_callback_state_validates_geometry_without_claiming_support() {
+        let mut state = RealtimePreviewCallbackState::new(RealtimePreviewStreamConfig::new(
+            SampleRate(48_000),
+            2,
+            128,
+        ))
+        .expect("callback state config should validate");
+        let input = vec![0.0; 128 * 2];
+        let mut output = vec![0.25; 128 * 2];
+
+        assert_eq!(state.config().channel_count, 2);
+        assert_eq!(state.scratch_capacity_samples(), 128 * 2);
+        assert!(!state.contract().audio_thread_processing_supported);
+        assert_eq!(
+            state.process(&input, &mut output, 128, 1.25),
+            Err(RealtimePreviewCallbackProcessError::CallbackProcessingUnsupported)
+        );
+        assert_eq!(state.current_ratio(), 1.25);
+        assert!(output.iter().all(|sample| *sample == 0.25));
+
+        state.reset();
+        assert_eq!(state.current_ratio(), 1.0);
+        assert_eq!(state.processed_frames(), 0);
+    }
+
+    #[test]
+    fn realtime_preview_callback_state_rejects_bad_callback_blocks() {
+        let mut state = RealtimePreviewCallbackState::new(RealtimePreviewStreamConfig::new(
+            SampleRate(48_000),
+            2,
+            128,
+        ))
+        .expect("callback state config should validate");
+        let input = vec![0.0; 128 * 2];
+        let mut output = vec![0.0; 128 * 2];
+
+        assert_eq!(
+            state.process(&input, &mut output, 129, 1.0),
+            Err(
+                RealtimePreviewCallbackProcessError::FrameCountExceedsConfig {
+                    requested: 129,
+                    max: 128,
+                }
+            )
+        );
+        assert_eq!(
+            state.process(&input[..64], &mut output, 128, 1.0),
+            Err(RealtimePreviewCallbackProcessError::BufferTooSmall {
+                required_samples: 256,
+                input_samples: 64,
+                output_samples: 256,
+            })
         );
     }
 

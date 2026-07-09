@@ -84,7 +84,7 @@ a product workflow consumes the Signal-owned stretch contract.
   - RealtimePreview stretch tier
 - `g10.025` `deferred`
   - stretch product workflow contract checkpoint
-- `g10.026` `ready`
+- `g10.026` `active`
   - RealtimePreview callback-safe state
 
 ## Stretch Boundary
@@ -103,6 +103,6 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Start `g10.026` Batch 26.1: define the callback-safe RealtimePreview state
-contract and no-allocation proof harness. Do not add render-plane integration
-and do not run the whole-buffer prototype on the audio callback.
+Start `g10.026` Batch 26.2 only when implementing real streaming DSP state.
+Do not add render-plane integration and do not run the whole-buffer prototype
+on the audio callback.
