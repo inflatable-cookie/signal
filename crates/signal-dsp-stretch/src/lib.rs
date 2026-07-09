@@ -306,6 +306,8 @@ pub const SUSTAINED_COHERENCE_REVIEW_WINDOW_SIZE: usize = DEFAULT_WINDOW_SIZE * 
 /// Report-only sustained-coherence review analysis hop.
 pub const SUSTAINED_COHERENCE_REVIEW_ANALYSIS_HOP: usize =
     SUSTAINED_COHERENCE_REVIEW_WINDOW_SIZE / 4;
+/// Report-only blend weight for the sustained-coherence review path.
+pub const SUSTAINED_COHERENCE_BLEND_REVIEW_WEIGHT: f32 = 0.5;
 
 impl PhaseVocoderStretcher {
     /// Stretcher with the default window/hop configuration.
@@ -633,6 +635,31 @@ impl OfflineHighQualityStretcher {
             SUSTAINED_COHERENCE_REVIEW_WINDOW_SIZE,
             SUSTAINED_COHERENCE_REVIEW_ANALYSIS_HOP,
             phase_locked_phase_vocoder,
+        )
+    }
+
+    /// Report-only current/long-window sustained-coherence blend path.
+    ///
+    /// This tests whether the long-window vertical-coherence wins can be
+    /// softened by blending with the currently selected OfflineHighQuality
+    /// output. It is not a promoted OfflineHighQuality renderer.
+    #[doc(hidden)]
+    pub fn stretch_sustained_coherence_blend_review_mono(
+        &mut self,
+        input: &[Sample],
+    ) -> Vec<Sample> {
+        let current_output = self.stretch_mono(input);
+        let long_window_output = stretch_mono_with_engine(
+            input,
+            self.ratio,
+            SUSTAINED_COHERENCE_REVIEW_WINDOW_SIZE,
+            SUSTAINED_COHERENCE_REVIEW_ANALYSIS_HOP,
+            phase_locked_phase_vocoder,
+        );
+        blend_review_outputs(
+            &current_output,
+            &long_window_output,
+            SUSTAINED_COHERENCE_BLEND_REVIEW_WEIGHT,
         )
     }
 }
@@ -1211,6 +1238,23 @@ fn downmix_interleaved_stereo_to_mono(samples: &[Sample]) -> Vec<Sample> {
         .collect()
 }
 
+fn blend_review_outputs(
+    current: &[Sample],
+    candidate: &[Sample],
+    candidate_weight: f32,
+) -> Vec<Sample> {
+    let candidate_weight = candidate_weight.clamp(0.0, 1.0);
+    let current_weight = 1.0 - candidate_weight;
+    current
+        .iter()
+        .enumerate()
+        .map(|(index, current_sample)| {
+            let candidate_sample = candidate.get(index).copied().unwrap_or(0.0);
+            current_sample * current_weight + candidate_sample * candidate_weight
+        })
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1366,6 +1410,26 @@ mod tests {
         let mut repeated = OfflineHighQualityStretcher::new(ratio);
         let first_output = first.stretch_sustained_coherence_review_mono(&input);
         let repeated_output = repeated.stretch_sustained_coherence_review_mono(&input);
+
+        assert_eq!(
+            first_output.len(),
+            (input.len() as f64 * ratio).round() as usize
+        );
+        assert_eq!(first_output, repeated_output);
+    }
+
+    #[test]
+    fn sustained_coherence_blend_review_path_is_deterministic_and_honors_output_length() {
+        let input = sine(110.0, 48_000.0, 48_000)
+            .into_iter()
+            .zip(sine(220.0, 48_000.0, 48_000))
+            .map(|(low, high)| low * 0.7 + high * 0.3)
+            .collect::<Vec<_>>();
+        let ratio = 1.25;
+        let mut first = OfflineHighQualityStretcher::new(ratio);
+        let mut repeated = OfflineHighQualityStretcher::new(ratio);
+        let first_output = first.stretch_sustained_coherence_blend_review_mono(&input);
+        let repeated_output = repeated.stretch_sustained_coherence_blend_review_mono(&input);
 
         assert_eq!(
             first_output.len(),

@@ -20,6 +20,7 @@ use signal_dsp_stretch::{
     COMPRESSION_SHORT_WINDOW_SELECTOR_MIN_CURRENT_MISSES,
     COMPRESSION_SHORT_WINDOW_SELECTOR_MIN_CURRENT_SMEAR_FRAMES,
     COMPRESSION_SHORT_WINDOW_SELECTOR_WINDOW_SIZE, STRETCH_CORPUS_MANIFEST,
+    SUSTAINED_COHERENCE_BLEND_REVIEW_WEIGHT,
 };
 use symphonia::core::{
     audio::SampleBuffer as SymphoniaSampleBuffer,
@@ -64,6 +65,7 @@ const EXTERNAL_BENCHMARK_COHERENCE_TARGET_REVIEW_ROWS: usize = 6;
 const EXTERNAL_BENCHMARK_COHERENCE_CANDIDATE_REVIEW_ROWS: usize = 64;
 const EXTERNAL_BENCHMARK_COHERENCE_CANDIDATE_GATE: &str = "spectral-magnitude-material-guard";
 const EXTERNAL_BENCHMARK_COHERENCE_PRODUCT_PROBE: &str = "source-character-v1";
+const EXTERNAL_BENCHMARK_COHERENCE_BLEND_CANDIDATE_PATH: &str = "current-long-window-half-blend";
 const MAX_EXTERNAL_BENCHMARK_MISSING_RENDER_ROWS: usize = 20;
 const DETECTOR_POLICY: StretchTransientDetectorPolicy =
     StretchTransientDetectorPolicy::production();
@@ -2063,8 +2065,20 @@ struct ExternalBenchmarkCoherenceCandidateReviewMeasurement {
 
 impl ExternalBenchmarkCoherenceCandidateReviewMeasurement {
     fn format_report_line(&self, rank: usize) -> String {
+        self.format_report_line_with_prefix("external_benchmark_coherence_candidate_review", rank)
+    }
+
+    fn format_blend_report_line(&self, rank: usize) -> String {
+        self.format_report_line_with_prefix(
+            "external_benchmark_coherence_blend_candidate_review",
+            rank,
+        )
+    }
+
+    fn format_report_line_with_prefix(&self, prefix: &str, rank: usize) -> String {
         format!(
-            "external_benchmark_coherence_candidate_review rank={} case={} source={} signal_path={:?} candidate_path={} ratio={:.6} tool={} render={} status=Measured reason=ReportOnlySustainedCoherenceCandidate source_boundary={} material_scope={} target_reason={} outcome={} gate={} gate_decision={} gate_reason={} product_probe={} product_probe_decision={} product_probe_reason={} product_probe_low_band_weight={:.6} product_probe_sustain_body={:.6} product_probe_rhythmic_activity={:.6} product_probe_spectral_complexity={:.6} product_probe_confidence={:.6} current_target_score={:.6} candidate_target_score={:.6} target_score_delta={:.6} candidate_aligned_compared_frames={} candidate_signal_gain_db_applied={:.6} candidate_raw_feature_divergence_score={:.6} candidate_normalized_feature_divergence_score={:.6} candidate_normalized_sample_envelope_correlation={:.6} candidate_block_rms_envelope_correlation={:.6} candidate_mean_abs_block_rms_delta_db={:.6} candidate_max_abs_block_rms_delta_db={:.6} candidate_spectral_magnitude_coherence={:.6} candidate_normalized_spectral_centroid_delta_hz={:.6} candidate_normalized_high_frequency_energy_ratio_delta={:.6} candidate_residual_pattern={}",
+            "{} rank={} case={} source={} signal_path={:?} candidate_path={} ratio={:.6} tool={} render={} status=Measured reason=ReportOnlySustainedCoherenceCandidate source_boundary={} material_scope={} target_reason={} outcome={} gate={} gate_decision={} gate_reason={} product_probe={} product_probe_decision={} product_probe_reason={} product_probe_low_band_weight={:.6} product_probe_sustain_body={:.6} product_probe_rhythmic_activity={:.6} product_probe_spectral_complexity={:.6} product_probe_confidence={:.6} current_target_score={:.6} candidate_target_score={:.6} target_score_delta={:.6} candidate_aligned_compared_frames={} candidate_signal_gain_db_applied={:.6} candidate_raw_feature_divergence_score={:.6} candidate_normalized_feature_divergence_score={:.6} candidate_normalized_sample_envelope_correlation={:.6} candidate_block_rms_envelope_correlation={:.6} candidate_mean_abs_block_rms_delta_db={:.6} candidate_max_abs_block_rms_delta_db={:.6} candidate_spectral_magnitude_coherence={:.6} candidate_normalized_spectral_centroid_delta_hz={:.6} candidate_normalized_high_frequency_energy_ratio_delta={:.6} candidate_residual_pattern={}",
+            prefix,
             rank,
             self.case_id,
             quoted_report_field(&self.source_path),
@@ -2133,6 +2147,7 @@ fn format_external_benchmark_quality_metrics(
     let mut residual_coherence_reviews = Vec::new();
     let mut coherence_target_reviews = Vec::new();
     let mut coherence_candidate_reviews = Vec::new();
+    let mut coherence_blend_candidate_reviews = Vec::new();
     let mut source_audio_cache = HashMap::new();
     let mut source_mono_cache = HashMap::new();
     let mut source_character_probe_cache = HashMap::new();
@@ -2470,60 +2485,6 @@ fn format_external_benchmark_quality_metrics(
                 let mut candidate = OfflineHighQualityStretcher::new(render.ratio);
                 let candidate_output =
                     candidate.stretch_sustained_coherence_review_mono(source_mono);
-                let candidate_aligned =
-                    align_and_measure_error(&candidate_output, &external_audio.mono_samples);
-                let candidate_feature_delta = measure_external_benchmark_feature_delta(
-                    &candidate_output,
-                    &external_audio.mono_samples,
-                    &candidate_aligned,
-                    source_audio.sample_rate_hz,
-                );
-                let candidate_level_normalized_review =
-                    measure_external_benchmark_level_normalized_review(
-                        &candidate_output,
-                        &external_audio.mono_samples,
-                        &candidate_aligned,
-                        &candidate_feature_delta,
-                        source_audio.sample_rate_hz,
-                    );
-                let candidate_residual_coherence_review =
-                    measure_external_benchmark_residual_coherence_review(
-                        &candidate_output,
-                        &external_audio.mono_samples,
-                        &candidate_aligned,
-                        &candidate_feature_delta,
-                        &candidate_level_normalized_review,
-                        source_audio.sample_rate_hz,
-                    );
-                let candidate_target_score = external_benchmark_coherence_target_score(
-                    candidate_level_normalized_review
-                        .normalized_feature_delta
-                        .divergence_score(),
-                    candidate_level_normalized_review
-                        .normalized_feature_delta
-                        .envelope_correlation,
-                    candidate_residual_coherence_review.block_rms_envelope_correlation,
-                    candidate_residual_coherence_review.mean_abs_block_rms_delta_db,
-                    candidate_residual_coherence_review.spectral_magnitude_coherence,
-                );
-                let candidate_normalized_spectral_centroid_delta_hz =
-                    candidate_level_normalized_review
-                        .normalized_feature_delta
-                        .signal
-                        .spectral_centroid_hz
-                        - candidate_level_normalized_review
-                            .normalized_feature_delta
-                            .external
-                            .spectral_centroid_hz;
-                let candidate_normalized_high_frequency_energy_ratio_delta =
-                    candidate_level_normalized_review
-                        .normalized_feature_delta
-                        .signal
-                        .high_frequency_energy_ratio
-                        - candidate_level_normalized_review
-                            .normalized_feature_delta
-                            .external
-                            .high_frequency_energy_ratio;
                 let (candidate_gate_decision, candidate_gate_reason) =
                     external_benchmark_coherence_candidate_gate_decision(
                         target_reason,
@@ -2541,60 +2502,45 @@ fn format_external_benchmark_quality_metrics(
                 let (product_probe_decision, product_probe_reason) =
                     coherence_product_observable_probe_decision(product_probe, render.ratio);
                 coherence_candidate_reviews.push(
-                    ExternalBenchmarkCoherenceCandidateReviewMeasurement {
-                        case_id: render.case_id.clone(),
-                        source_path: source.source_path.clone(),
+                    measure_external_benchmark_coherence_candidate_review(
+                        render,
+                        &source.source_path,
                         signal_path,
-                        candidate_path: "sustained-coherence-long-window-identity-locked",
-                        render_path: render.rendered_path.clone(),
-                        tool_name: render.tool_name.clone(),
-                        ratio: render.ratio,
-                        source_boundary:
-                            "rendered-output-only; no external source or library dependency",
+                        "sustained-coherence-long-window-identity-locked",
+                        &candidate_output,
+                        &external_audio,
+                        source_audio.sample_rate_hz,
                         material_scope,
                         target_reason,
-                        outcome: external_benchmark_candidate_outcome(
-                            target_score,
-                            candidate_target_score,
-                        ),
-                        gate_decision: candidate_gate_decision,
-                        gate_reason: candidate_gate_reason,
+                        target_score,
+                        product_probe,
+                        candidate_gate_decision,
+                        candidate_gate_reason,
                         product_probe_decision,
                         product_probe_reason,
-                        product_probe_low_band_weight: product_probe.low_band_weight,
-                        product_probe_sustain_body: product_probe.sustain_body,
-                        product_probe_rhythmic_activity: product_probe.rhythmic_activity,
-                        product_probe_spectral_complexity: product_probe.spectral_complexity,
-                        product_probe_confidence: product_probe.confidence,
-                        current_target_score: target_score,
-                        candidate_target_score,
-                        target_score_delta: candidate_target_score - target_score,
-                        candidate_aligned_compared_frames: candidate_feature_delta.compared_frames,
-                        candidate_signal_gain_db_applied: candidate_level_normalized_review
-                            .signal_gain_db_applied,
-                        candidate_raw_feature_divergence_score: candidate_feature_delta
-                            .divergence_score(),
-                        candidate_normalized_feature_divergence_score:
-                            candidate_level_normalized_review
-                                .normalized_feature_delta
-                                .divergence_score(),
-                        candidate_normalized_sample_envelope_correlation:
-                            candidate_level_normalized_review
-                                .normalized_feature_delta
-                                .envelope_correlation,
-                        candidate_block_rms_envelope_correlation:
-                            candidate_residual_coherence_review.block_rms_envelope_correlation,
-                        candidate_mean_abs_block_rms_delta_db: candidate_residual_coherence_review
-                            .mean_abs_block_rms_delta_db,
-                        candidate_max_abs_block_rms_delta_db: candidate_residual_coherence_review
-                            .max_abs_block_rms_delta_db,
-                        candidate_spectral_magnitude_coherence: candidate_residual_coherence_review
-                            .spectral_magnitude_coherence,
-                        candidate_normalized_spectral_centroid_delta_hz,
-                        candidate_normalized_high_frequency_energy_ratio_delta,
-                        candidate_residual_pattern: candidate_residual_coherence_review
-                            .residual_pattern,
-                    },
+                    ),
+                );
+
+                let blended_candidate_output =
+                    blend_external_benchmark_candidate_output(&signal_output, &candidate_output);
+                coherence_blend_candidate_reviews.push(
+                    measure_external_benchmark_coherence_candidate_review(
+                        render,
+                        &source.source_path,
+                        signal_path,
+                        EXTERNAL_BENCHMARK_COHERENCE_BLEND_CANDIDATE_PATH,
+                        &blended_candidate_output,
+                        &external_audio,
+                        source_audio.sample_rate_hz,
+                        material_scope,
+                        target_reason,
+                        target_score,
+                        product_probe,
+                        "Selected",
+                        "UniformBlendCandidate",
+                        "Selected",
+                        "UniformBlendCandidate",
+                    ),
                 );
             }
             feature_delta_line = Some(
@@ -2784,6 +2730,31 @@ fn format_external_benchmark_quality_metrics(
     {
         lines.push(review.format_report_line(index + 1));
     }
+    coherence_blend_candidate_reviews.sort_by(|left, right| {
+        left.target_score_delta
+            .total_cmp(&right.target_score_delta)
+            .then_with(|| {
+                right
+                    .current_target_score
+                    .total_cmp(&left.current_target_score)
+            })
+            .then_with(|| left.case_id.cmp(&right.case_id))
+            .then_with(|| left.source_path.cmp(&right.source_path))
+            .then_with(|| left.ratio.total_cmp(&right.ratio))
+            .then_with(|| left.render_path.cmp(&right.render_path))
+    });
+    if !coherence_blend_candidate_reviews.is_empty() {
+        lines.push(format_external_benchmark_coherence_blend_candidate_summary(
+            &coherence_blend_candidate_reviews,
+        ));
+    }
+    for (index, review) in coherence_blend_candidate_reviews
+        .iter()
+        .take(EXTERNAL_BENCHMARK_COHERENCE_CANDIDATE_REVIEW_ROWS)
+        .enumerate()
+    {
+        lines.push(review.format_blend_report_line(index + 1));
+    }
     Ok(lines.join("\n"))
 }
 
@@ -2938,6 +2909,137 @@ fn coherence_product_observable_probe_decision(
         return ("Selected", "ComplexSustainedSource");
     }
     ("Rejected", "InsufficientSourceCoherenceSignal")
+}
+
+#[allow(clippy::too_many_arguments)]
+fn measure_external_benchmark_coherence_candidate_review(
+    render: &ExternalBenchmarkQualityRender,
+    source_path: &str,
+    signal_path: OfflineHighQualityPath,
+    candidate_path: &'static str,
+    candidate_output: &[f32],
+    external_audio: &ExternalBenchmarkDecodedAudio,
+    sample_rate_hz: u32,
+    material_scope: &'static str,
+    target_reason: &'static str,
+    current_target_score: f64,
+    product_probe: &CoherenceProductObservableProbe,
+    gate_decision: &'static str,
+    gate_reason: &'static str,
+    product_probe_decision: &'static str,
+    product_probe_reason: &'static str,
+) -> ExternalBenchmarkCoherenceCandidateReviewMeasurement {
+    let candidate_aligned = align_and_measure_error(candidate_output, &external_audio.mono_samples);
+    let candidate_feature_delta = measure_external_benchmark_feature_delta(
+        candidate_output,
+        &external_audio.mono_samples,
+        &candidate_aligned,
+        sample_rate_hz,
+    );
+    let candidate_level_normalized_review = measure_external_benchmark_level_normalized_review(
+        candidate_output,
+        &external_audio.mono_samples,
+        &candidate_aligned,
+        &candidate_feature_delta,
+        sample_rate_hz,
+    );
+    let candidate_residual_coherence_review = measure_external_benchmark_residual_coherence_review(
+        candidate_output,
+        &external_audio.mono_samples,
+        &candidate_aligned,
+        &candidate_feature_delta,
+        &candidate_level_normalized_review,
+        sample_rate_hz,
+    );
+    let candidate_target_score = external_benchmark_coherence_target_score(
+        candidate_level_normalized_review
+            .normalized_feature_delta
+            .divergence_score(),
+        candidate_level_normalized_review
+            .normalized_feature_delta
+            .envelope_correlation,
+        candidate_residual_coherence_review.block_rms_envelope_correlation,
+        candidate_residual_coherence_review.mean_abs_block_rms_delta_db,
+        candidate_residual_coherence_review.spectral_magnitude_coherence,
+    );
+    let candidate_normalized_spectral_centroid_delta_hz = candidate_level_normalized_review
+        .normalized_feature_delta
+        .signal
+        .spectral_centroid_hz
+        - candidate_level_normalized_review
+            .normalized_feature_delta
+            .external
+            .spectral_centroid_hz;
+    let candidate_normalized_high_frequency_energy_ratio_delta = candidate_level_normalized_review
+        .normalized_feature_delta
+        .signal
+        .high_frequency_energy_ratio
+        - candidate_level_normalized_review
+            .normalized_feature_delta
+            .external
+            .high_frequency_energy_ratio;
+
+    ExternalBenchmarkCoherenceCandidateReviewMeasurement {
+        case_id: render.case_id.clone(),
+        source_path: source_path.to_string(),
+        signal_path,
+        candidate_path,
+        render_path: render.rendered_path.clone(),
+        tool_name: render.tool_name.clone(),
+        ratio: render.ratio,
+        source_boundary: "rendered-output-only; no external source or library dependency",
+        material_scope,
+        target_reason,
+        outcome: external_benchmark_candidate_outcome(current_target_score, candidate_target_score),
+        gate_decision,
+        gate_reason,
+        product_probe_decision,
+        product_probe_reason,
+        product_probe_low_band_weight: product_probe.low_band_weight,
+        product_probe_sustain_body: product_probe.sustain_body,
+        product_probe_rhythmic_activity: product_probe.rhythmic_activity,
+        product_probe_spectral_complexity: product_probe.spectral_complexity,
+        product_probe_confidence: product_probe.confidence,
+        current_target_score,
+        candidate_target_score,
+        target_score_delta: candidate_target_score - current_target_score,
+        candidate_aligned_compared_frames: candidate_feature_delta.compared_frames,
+        candidate_signal_gain_db_applied: candidate_level_normalized_review.signal_gain_db_applied,
+        candidate_raw_feature_divergence_score: candidate_feature_delta.divergence_score(),
+        candidate_normalized_feature_divergence_score: candidate_level_normalized_review
+            .normalized_feature_delta
+            .divergence_score(),
+        candidate_normalized_sample_envelope_correlation: candidate_level_normalized_review
+            .normalized_feature_delta
+            .envelope_correlation,
+        candidate_block_rms_envelope_correlation: candidate_residual_coherence_review
+            .block_rms_envelope_correlation,
+        candidate_mean_abs_block_rms_delta_db: candidate_residual_coherence_review
+            .mean_abs_block_rms_delta_db,
+        candidate_max_abs_block_rms_delta_db: candidate_residual_coherence_review
+            .max_abs_block_rms_delta_db,
+        candidate_spectral_magnitude_coherence: candidate_residual_coherence_review
+            .spectral_magnitude_coherence,
+        candidate_normalized_spectral_centroid_delta_hz,
+        candidate_normalized_high_frequency_energy_ratio_delta,
+        candidate_residual_pattern: candidate_residual_coherence_review.residual_pattern,
+    }
+}
+
+fn blend_external_benchmark_candidate_output(
+    current_output: &[f32],
+    candidate_output: &[f32],
+) -> Vec<f32> {
+    let candidate_weight = SUSTAINED_COHERENCE_BLEND_REVIEW_WEIGHT.clamp(0.0, 1.0);
+    let current_weight = 1.0 - candidate_weight;
+    current_output
+        .iter()
+        .enumerate()
+        .map(|(index, current_sample)| {
+            let candidate_sample = candidate_output.get(index).copied().unwrap_or(0.0);
+            current_sample * current_weight + candidate_sample * candidate_weight
+        })
+        .collect()
 }
 
 fn format_external_benchmark_coherence_candidate_summary(
@@ -3139,6 +3241,75 @@ fn format_external_benchmark_coherence_product_probe_summary(
         benchmark_gate_agree_rows,
         benchmark_gate_disagree_rows,
         worst_selected_regression_delta,
+    )
+}
+
+fn format_external_benchmark_coherence_blend_candidate_summary(
+    reviews: &[ExternalBenchmarkCoherenceCandidateReviewMeasurement],
+) -> String {
+    let mut improved_rows = 0;
+    let mut unchanged_rows = 0;
+    let mut regressed_rows = 0;
+    let mut inconclusive_rows = 0;
+    let mut best = None::<&ExternalBenchmarkCoherenceCandidateReviewMeasurement>;
+    let mut worst = None::<&ExternalBenchmarkCoherenceCandidateReviewMeasurement>;
+
+    for review in reviews {
+        match review.outcome {
+            "Improved" => improved_rows += 1,
+            "Unchanged" => unchanged_rows += 1,
+            "Regressed" => regressed_rows += 1,
+            _ => inconclusive_rows += 1,
+        }
+        if review.target_score_delta.is_finite() {
+            best = match best {
+                Some(current) if current.target_score_delta <= review.target_score_delta => {
+                    Some(current)
+                }
+                _ => Some(review),
+            };
+            worst = match worst {
+                Some(current) if current.target_score_delta >= review.target_score_delta => {
+                    Some(current)
+                }
+                _ => Some(review),
+            };
+        }
+    }
+
+    let promotion_status = if regressed_rows == 0 && improved_rows > 0 {
+        "Candidate"
+    } else if regressed_rows > 0 {
+        "Rejected"
+    } else {
+        "NeedsReview"
+    };
+    let promotion_reason = if regressed_rows > 0 {
+        "RegressedRows"
+    } else if improved_rows > 0 {
+        "ImprovedWithoutRegressions"
+    } else {
+        "NoImprovedRows"
+    };
+
+    format!(
+        "external_benchmark_coherence_blend_candidate_summary candidate_path={} promotion_status={} promotion_reason={} rows={} improved_rows={} unchanged_rows={} regressed_rows={} inconclusive_rows={} best_improvement_delta={:.6} best_improvement_case={} best_improvement_source={} best_improvement_ratio={:.6} worst_regression_delta={:.6} worst_regression_case={} worst_regression_source={} worst_regression_ratio={:.6}",
+        EXTERNAL_BENCHMARK_COHERENCE_BLEND_CANDIDATE_PATH,
+        promotion_status,
+        promotion_reason,
+        reviews.len(),
+        improved_rows,
+        unchanged_rows,
+        regressed_rows,
+        inconclusive_rows,
+        best.map(|review| review.target_score_delta).unwrap_or(f64::NAN),
+        best.map(|review| review.case_id.as_str()).unwrap_or(""),
+        quoted_report_field(best.map(|review| review.source_path.as_str()).unwrap_or("")),
+        best.map(|review| review.ratio).unwrap_or(f64::NAN),
+        worst.map(|review| review.target_score_delta).unwrap_or(f64::NAN),
+        worst.map(|review| review.case_id.as_str()).unwrap_or(""),
+        quoted_report_field(worst.map(|review| review.source_path.as_str()).unwrap_or("")),
+        worst.map(|review| review.ratio).unwrap_or(f64::NAN),
     )
 }
 
@@ -6932,6 +7103,10 @@ mod tests {
         ));
         assert!(formatted.contains("promotion_status="));
         assert!(formatted.contains("benchmark_gate_agree_rows="));
+        assert!(formatted.contains(
+            "external_benchmark_coherence_blend_candidate_summary candidate_path=current-long-window-half-blend"
+        ));
+        assert!(formatted.contains("external_benchmark_coherence_blend_candidate_review rank=1"));
 
         let _ = fs::remove_file(path);
     }
@@ -6978,6 +7153,8 @@ mod tests {
         assert!(!formatted.contains("external_benchmark_coherence_candidate_summary "));
         assert!(!formatted.contains("external_benchmark_coherence_candidate_gate_summary "));
         assert!(!formatted.contains("external_benchmark_coherence_product_probe_summary "));
+        assert!(!formatted.contains("external_benchmark_coherence_blend_candidate_summary "));
+        assert!(!formatted.contains("external_benchmark_coherence_blend_candidate_review "));
 
         let _ = fs::remove_file(path);
     }

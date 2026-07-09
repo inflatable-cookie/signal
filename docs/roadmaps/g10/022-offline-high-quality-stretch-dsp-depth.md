@@ -89,6 +89,8 @@ comparison reports, not add more receipt or fixture surfaces.
   before any production promotion
 - [x] test a product-observable selector probe before any cache/render-plane
   routing change
+- [x] test one selector-free second vertical-coherence DSP candidate before
+  changing product routing
 - [ ] keep the long-window sustained-coherence path benchmark-only unless a
   better product-observable selector or DSP candidate emerges
 
@@ -795,11 +797,25 @@ comparison reports, not add more receipt or fixture surfaces.
   low-rhythm variant would still select 3 regressions. Conclusion:
   `source-character-v1` is rejected as a product selector. The long-window
   sustained-coherence path remains benchmark-only evidence.
+- 2026-07-09: added a report-only selector-free blend candidate named
+  `current-long-window-half-blend`. The path mixes the current selected Signal
+  output with the long-window sustained-coherence output at a fixed `0.5`
+  candidate weight, preserving output length and determinism without using a
+  material selector. Regenerated the targeted report at
+  `target/stretch-corpus-fma-coherence-blend-candidate-targeted.tsv`
+  (`real 247.29`). The blend was rejected on targeted evidence: 15 rows,
+  3 improved, 12 regressed, worst regression `delta=0.715346` on
+  `stretch:bass` `000236` at `0.75x`. It kept some selected-target benefit
+  (`stretch:bass` `000236` at `1.25x`, `delta=-0.235859`), but the regression
+  profile is worse than the raw long-window candidate. No broad run is needed
+  for this blend shape.
 
 ## Next Task
 
-Continue Batch 22.6 by either designing a richer product-observable analysis
-surface for sustained/polyphonic selector decisions, or moving to a second
-vertical-coherence DSP candidate that can be judged without comparator-derived
-routing. Do not change product routing, cache identity, dynamic-ratio
-materialization, or pitch-shift materialization for the long-window path.
+Continue Batch 22.6 by moving away from selector or simple-blend promotion for
+the long-window path. The next DSP candidate should address the actual
+regression mechanism, likely compression/expansion-specific phase or envelope
+handling, and should be rejected on targeted evidence before a broad run if it
+shows material regressions. Do not change product routing, cache identity,
+dynamic-ratio materialization, or pitch-shift materialization for the
+long-window path.
