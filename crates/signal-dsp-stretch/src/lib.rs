@@ -45,6 +45,7 @@ mod benchmark;
 mod cache_identity;
 mod corpus_report;
 mod formant_boundary;
+mod hybrid_trace;
 mod phase_vocoder;
 mod promotion;
 mod render_integrity;
@@ -97,6 +98,9 @@ pub use corpus_report::{
     StretchExternalBenchmarkComparison, StretchExternalBenchmarkRender,
 };
 pub use formant_boundary::{measure_formant_boundary, StretchFormantBoundaryMeasurement};
+pub use hybrid_trace::{
+    StretchHybridFrameTrace, StretchHybridOwner, StretchHybridTrace, StretchHybridTransitionTrace,
+};
 pub use promotion::{
     current_synthetic_offline_high_quality_promotion_receipt, StretchProductQualityEvidence,
     StretchPromotionReceipt, StretchPromotionStatus, StretchSyntheticPromotionPolicy,
@@ -2223,6 +2227,17 @@ impl OfflineHighQualityStretcher {
         fade_output_tail_to_silence(&mut output);
         output
     }
+
+    /// Build the report-only structural-hybrid classifier and transition trace.
+    ///
+    /// This renders only the current selected path needed for deterministic
+    /// low-energy transition placement. It does not render or mix transient or
+    /// tonal branch audio and does not change product routing or cache identity.
+    #[doc(hidden)]
+    pub fn hybrid_trace_review_mono(&mut self, input: &[Sample]) -> StretchHybridTrace {
+        let current_output = self.stretch_mono(input);
+        hybrid_trace::build_hybrid_trace(input, &current_output, self.ratio)
+    }
 }
 
 impl TimeStretcher for OfflineHighQualityStretcher {
@@ -3784,6 +3799,21 @@ mod tests {
                 "ratio {ratio}: silent tail"
             );
         }
+    }
+
+    #[test]
+    fn hybrid_trace_review_preserves_current_output_and_reports_only() {
+        let input = masked_soft_attack_probe(0.35);
+        let ratio = 1.5;
+        let mut stretcher = OfflineHighQualityStretcher::new(ratio);
+        let before = stretcher.stretch_mono(&input);
+        let trace = stretcher.hybrid_trace_review_mono(&input);
+        let after = stretcher.stretch_mono(&input);
+
+        assert_eq!(before, after);
+        assert_eq!(trace.input_frames, input.len());
+        assert_eq!(trace.output_frames, before.len());
+        assert!(!trace.frames.is_empty());
     }
 
     #[test]

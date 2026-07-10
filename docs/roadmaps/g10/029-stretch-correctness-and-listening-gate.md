@@ -107,11 +107,11 @@ independent stereo review.
 
 ### Batch 29.5 - Kernel Seam And Classification Trace
 
-- [ ] extract reusable analysis, propagation, and synthesis state while proving
+- [x] extract reusable analysis, propagation, and synthesis state while proving
   the current default output remains bit-exact
-- [ ] add the frozen transient, mixed, and tonal classifier as a report-only
+- [x] add the frozen transient, mixed, and tonal classifier as a report-only
   frame trace
-- [ ] add the bounded transition schedule and trace without mixing branch audio
+- [x] add the bounded transition schedule and trace without mixing branch audio
 
 ### Batch 29.6 - Fixed-Ratio Mono Hybrid
 
@@ -339,13 +339,22 @@ independent stereo review.
   29.5 starts with bit-exact kernel extraction and report-only traces. Full
   design, gates, and stop conditions are in
   `docs/logs/2026-07/10-g10-029-structural-hybrid-design.md`.
+- 2026-07-10: Completed Batch 29.5. The current phase-vocoder core now has
+  explicit analysis, propagation, and synthesis state, with output locked by
+  sample-bit hash `0x8255b18311f778f9`. The report-only hybrid trace applies
+  the frozen transient guards, tonal hold, compression and identity scope,
+  boundary guards, and bounded low-energy transition schedule. It renders no
+  branch audio and leaves current output unchanged. Doctor returned to the
+  existing `48` god-file and `5` attention-marker baseline after module
+  splitting. Evidence is in
+  `docs/logs/2026-07/10-g10-029-hybrid-kernel-seam.md`.
 
 ## Next Task
 
-Start Batch 29.5. Extract reusable analysis, propagation, and synthesis state
-from the current phase-vocoder core without changing its output. Add the frozen
-transient, mixed, and tonal classifier plus transition schedule as report-only
-traces; do not mix branch audio yet. Prove bit-exact current-path output,
-deterministic traces, exact length, identity, and centred-boundary behavior.
-Leave production, cache identity, product promotion, pitch/dynamic routing, and
-RealtimePreview support unchanged.
+Start Batch 29.6. Render the short independent-bin transient branch, current
+mixed branch, and long identity-lock/reset tonal branch continuously for one
+fixed-ratio mono input. Apply only the frozen owner and transition schedule,
+including correlation and normalization rejection. Keep the result report-only
+until it passes the local crest, corpus timing, tonal movement, static-spectrum,
+and full-render combined gates. Leave production, cache identity, product
+promotion, pitch/dynamic routing, and RealtimePreview support unchanged.

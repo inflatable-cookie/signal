@@ -125,10 +125,11 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Start Batch 29.5. Extract reusable analysis, propagation, and synthesis state
-from the current phase-vocoder core without changing its output. Add the frozen
-transient, mixed, and tonal classifier plus transition schedule as report-only
-traces; do not mix branch audio yet. Prove bit-exact current-path output,
-deterministic traces, exact length, identity, and centred-boundary behavior.
-Leave production, cache identity, product promotion, pitch/dynamic routing,
-RealtimePreview source-fill, and broader product integration unchanged.
+Start Batch 29.6. Render the short independent-bin transient branch, current
+mixed branch, and long identity-lock/reset tonal branch continuously for one
+fixed-ratio mono input. Apply only the frozen owner and transition schedule,
+including correlation and normalization rejection. Keep the result report-only
+until it passes the local crest, corpus timing, tonal movement, static-spectrum,
+and full-render combined gates. Leave production, cache identity, product
+promotion, pitch/dynamic routing, RealtimePreview source-fill, and broader
+product integration unchanged.

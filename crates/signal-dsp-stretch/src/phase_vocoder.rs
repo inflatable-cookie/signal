@@ -249,23 +249,35 @@ struct DraftPhaseVocoder {
     config: PhaseVocoderConfig,
     mode: PhasePropagationMode,
     window: Vec<f32>,
-    omega: Vec<f32>,
+    analysis: PhaseVocoderAnalysisState,
+    propagation: PhaseVocoderPropagationState,
+    synthesis: PhaseVocoderSynthesisState,
+}
+
+struct PhaseVocoderAnalysisState {
     forward: Arc<dyn Fft<f32>>,
-    inverse: Arc<dyn Fft<f32>>,
-    previous_phase: Vec<f32>,
-    synthesis_phase: Vec<f32>,
     current_magnitudes: Vec<f32>,
     current_phases: Vec<f32>,
     current_peaks: Vec<SpectralPeak>,
     previous_peaks: Vec<SpectralPeak>,
     previous_magnitudes: Vec<f32>,
-    previous_synthesis_magnitudes: Vec<f32>,
     current_spectral_stability: f64,
     current_energy: f64,
     previous_energy: f64,
     transient_reset_current_frame: bool,
-    analysis_buffer: Vec<Complex32>,
-    synthesis_spectrum: Vec<Complex32>,
+    buffer: Vec<Complex32>,
+}
+
+struct PhaseVocoderPropagationState {
+    omega: Vec<f32>,
+    previous_phase: Vec<f32>,
+    synthesis_phase: Vec<f32>,
+    previous_synthesis_magnitudes: Vec<f32>,
+}
+
+struct PhaseVocoderSynthesisState {
+    inverse: Arc<dyn Fft<f32>>,
+    spectrum: Vec<Complex32>,
     output: Vec<f32>,
     normalization: Vec<f32>,
 }
@@ -293,29 +305,39 @@ impl DraftPhaseVocoder {
             + 1;
         let output_len = ola_len.max(config.target_len);
 
-        Self {
-            previous_phase: vec![0.0; config.bins],
-            synthesis_phase: vec![0.0; config.bins],
+        let analysis = PhaseVocoderAnalysisState {
+            forward,
             current_magnitudes: vec![0.0; config.bins],
             current_phases: vec![0.0; config.bins],
             current_peaks: Vec::with_capacity(config.bins / 4),
             previous_peaks: Vec::with_capacity(config.bins / 4),
             previous_magnitudes: vec![0.0; config.bins],
-            previous_synthesis_magnitudes: vec![0.0; config.bins],
             current_spectral_stability: 1.0,
             current_energy: 0.0,
             previous_energy: 0.0,
             transient_reset_current_frame: false,
-            analysis_buffer: vec![Complex32::new(0.0, 0.0); config.window_size],
-            synthesis_spectrum: vec![Complex32::new(0.0, 0.0); config.window_size],
+            buffer: vec![Complex32::new(0.0, 0.0); config.window_size],
+        };
+        let propagation = PhaseVocoderPropagationState {
+            omega,
+            previous_phase: vec![0.0; config.bins],
+            synthesis_phase: vec![0.0; config.bins],
+            previous_synthesis_magnitudes: vec![0.0; config.bins],
+        };
+        let synthesis = PhaseVocoderSynthesisState {
+            inverse,
+            spectrum: vec![Complex32::new(0.0, 0.0); config.window_size],
             output: vec![0.0; output_len],
             normalization: vec![0.0; output_len],
+        };
+
+        Self {
             config,
             mode,
             window,
-            omega,
-            forward,
-            inverse,
+            analysis,
+            propagation,
+            synthesis,
         }
     }
 
@@ -330,68 +352,77 @@ impl DraftPhaseVocoder {
 
     fn analyze_frame(&mut self, input: &[Sample], frame_index: usize) {
         let analysis_start = frame_index * self.config.analysis_hop;
-        self.current_energy = 0.0;
-        for (slot, (sample, weight)) in self.analysis_buffer.iter_mut().zip(
+        self.analysis.current_energy = 0.0;
+        for (slot, (sample, weight)) in self.analysis.buffer.iter_mut().zip(
             input[analysis_start..analysis_start + self.config.window_size]
                 .iter()
                 .zip(self.window.iter()),
         ) {
             let windowed = sample * weight;
-            self.current_energy += (windowed * windowed) as f64;
+            self.analysis.current_energy += (windowed * windowed) as f64;
             *slot = Complex32::new(windowed, 0.0);
         }
-        self.current_energy /= self.config.window_size as f64;
-        self.forward.process(&mut self.analysis_buffer);
+        self.analysis.current_energy /= self.config.window_size as f64;
+        self.analysis.forward.process(&mut self.analysis.buffer);
     }
 
     fn track_spectral_peaks(&mut self, frame_index: usize) {
-        self.previous_peaks.clear();
-        self.previous_peaks
-            .extend(self.current_peaks.iter().copied());
-        self.current_peaks.clear();
-        for (bin, magnitude) in self.current_magnitudes.iter_mut().enumerate() {
-            *magnitude = self.analysis_buffer[bin].norm();
+        self.analysis.previous_peaks.clear();
+        self.analysis
+            .previous_peaks
+            .extend(self.analysis.current_peaks.iter().copied());
+        self.analysis.current_peaks.clear();
+        for (bin, magnitude) in self.analysis.current_magnitudes.iter_mut().enumerate() {
+            *magnitude = self.analysis.buffer[bin].norm();
         }
-        self.current_spectral_stability = self.spectral_stability_score(frame_index);
-        self.transient_reset_current_frame = self.should_reset_phase_at_transient(frame_index);
+        self.analysis.current_spectral_stability = self.spectral_stability_score(frame_index);
+        self.analysis.transient_reset_current_frame =
+            self.should_reset_phase_at_transient(frame_index);
 
         if self.config.bins < 3 {
-            self.previous_magnitudes
-                .copy_from_slice(&self.current_magnitudes);
-            self.previous_energy = self.current_energy;
+            self.analysis
+                .previous_magnitudes
+                .copy_from_slice(&self.analysis.current_magnitudes);
+            self.analysis.previous_energy = self.analysis.current_energy;
             return;
         }
 
         for bin in 1..self.config.bins - 1 {
-            let magnitude = self.current_magnitudes[bin];
+            let magnitude = self.analysis.current_magnitudes[bin];
             if magnitude <= 1.0e-6 {
                 continue;
             }
-            if magnitude > self.current_magnitudes[bin - 1]
-                && magnitude >= self.current_magnitudes[bin + 1]
+            if magnitude > self.analysis.current_magnitudes[bin - 1]
+                && magnitude >= self.analysis.current_magnitudes[bin + 1]
             {
-                self.current_peaks.push(SpectralPeak { bin, magnitude });
+                self.analysis
+                    .current_peaks
+                    .push(SpectralPeak { bin, magnitude });
             }
         }
 
-        self.previous_magnitudes
-            .copy_from_slice(&self.current_magnitudes);
-        self.previous_energy = self.current_energy;
+        self.analysis
+            .previous_magnitudes
+            .copy_from_slice(&self.analysis.current_magnitudes);
+        self.analysis.previous_energy = self.analysis.current_energy;
     }
 
     fn propagate_phase(&mut self, frame_index: usize) {
         for bin in 0..self.config.bins {
-            let phase = self.analysis_buffer[bin].arg();
-            self.current_phases[bin] = phase;
-            if frame_index == 0 || self.transient_reset_current_frame {
-                self.synthesis_phase[bin] = phase;
+            let phase = self.analysis.buffer[bin].arg();
+            self.analysis.current_phases[bin] = phase;
+            if frame_index == 0 || self.analysis.transient_reset_current_frame {
+                self.propagation.synthesis_phase[bin] = phase;
             } else {
-                let deviation = wrap_phase(phase - self.previous_phase[bin] - self.omega[bin]);
-                let advance = (self.omega[bin] + deviation)
+                let deviation = wrap_phase(
+                    phase - self.propagation.previous_phase[bin] - self.propagation.omega[bin],
+                );
+                let advance = (self.propagation.omega[bin] + deviation)
                     * (self.config.synthesis_hop / self.config.analysis_hop as f64) as f32;
-                self.synthesis_phase[bin] = wrap_phase(self.synthesis_phase[bin] + advance);
+                self.propagation.synthesis_phase[bin] =
+                    wrap_phase(self.propagation.synthesis_phase[bin] + advance);
             }
-            self.previous_phase[bin] = phase;
+            self.propagation.previous_phase[bin] = phase;
         }
 
         if self.should_lock_phase_to_peaks(frame_index) {
@@ -405,26 +436,26 @@ impl DraftPhaseVocoder {
 
         for bin in 0..self.config.bins {
             let magnitude = self.synthesis_magnitude(bin, frame_index);
-            self.synthesis_spectrum[bin] =
-                Complex32::from_polar(magnitude, self.synthesis_phase[bin]);
-            self.previous_synthesis_magnitudes[bin] = magnitude;
+            self.synthesis.spectrum[bin] =
+                Complex32::from_polar(magnitude, self.propagation.synthesis_phase[bin]);
+            self.propagation.previous_synthesis_magnitudes[bin] = magnitude;
         }
         for bin in 1..self.config.window_size.div_ceil(2) {
-            self.synthesis_spectrum[self.config.window_size - bin] =
-                self.synthesis_spectrum[bin].conj();
+            self.synthesis.spectrum[self.config.window_size - bin] =
+                self.synthesis.spectrum[bin].conj();
         }
     }
 
     fn synthesis_magnitude(&self, bin: usize, frame_index: usize) -> f32 {
-        let current = self.current_magnitudes[bin];
+        let current = self.analysis.current_magnitudes[bin];
         if self.mode != PhasePropagationMode::IdentityLockedMagnitudeSlew
             || frame_index == 0
-            || self.current_spectral_stability < 0.70
+            || self.analysis.current_spectral_stability < 0.70
         {
             return current;
         }
 
-        let previous = self.previous_synthesis_magnitudes[bin];
+        let previous = self.propagation.previous_synthesis_magnitudes[bin];
         if previous <= 1.0e-6 || current <= 1.0e-6 {
             return current;
         }
@@ -439,9 +470,10 @@ impl DraftPhaseVocoder {
         let mut magnitude_sum = 0.0f64;
         let mut absolute_delta_sum = 0.0f64;
         for (current, previous) in self
+            .analysis
             .current_magnitudes
             .iter()
-            .zip(self.previous_magnitudes.iter())
+            .zip(self.analysis.previous_magnitudes.iter())
         {
             magnitude_sum += (*current + *previous) as f64;
             absolute_delta_sum += (*current - *previous).abs() as f64;
@@ -458,16 +490,17 @@ impl DraftPhaseVocoder {
         let mut flux = 0.0f32;
         let mut magnitude_sum = 0.0f32;
         for (current, previous) in self
+            .analysis
             .current_magnitudes
             .iter()
-            .zip(self.previous_magnitudes.iter())
+            .zip(self.analysis.previous_magnitudes.iter())
         {
             flux += (current - previous).max(0.0);
             magnitude_sum += *current;
         }
 
         let flux_ratio = flux as f64 / (magnitude_sum as f64 + 1.0e-12);
-        let energy_ratio = self.current_energy / (self.previous_energy + 1.0e-12);
+        let energy_ratio = self.analysis.current_energy / (self.analysis.previous_energy + 1.0e-12);
         match self.mode {
             PhasePropagationMode::IdentityLockedTransientReset => {
                 flux_ratio >= 0.30 && energy_ratio >= 1.20
@@ -490,7 +523,7 @@ impl DraftPhaseVocoder {
             | PhasePropagationMode::IdentityLockedCompressionTransientAnchor
             | PhasePropagationMode::IdentityLockedMagnitudeSlew => true,
             PhasePropagationMode::IdentityLockedStabilityAdaptive => {
-                frame_index == 0 || self.current_spectral_stability >= 0.70
+                frame_index == 0 || self.analysis.current_spectral_stability >= 0.70
             }
             PhasePropagationMode::IdentityLockedTrackedPeakRegions => true,
             PhasePropagationMode::IndependentBins => false,
@@ -498,37 +531,38 @@ impl DraftPhaseVocoder {
     }
 
     fn lock_phase_to_peaks(&mut self) {
-        if self.current_peaks.is_empty() {
+        if self.analysis.current_peaks.is_empty() {
             return;
         }
 
-        for peak_index in 0..self.current_peaks.len() {
-            let peak = self.current_peaks[peak_index];
-            let peak_phase = self.synthesis_phase[peak.bin];
-            let analysis_peak_phase = self.current_phases[peak.bin];
+        for peak_index in 0..self.analysis.current_peaks.len() {
+            let peak = self.analysis.current_peaks[peak_index];
+            let peak_phase = self.propagation.synthesis_phase[peak.bin];
+            let analysis_peak_phase = self.analysis.current_phases[peak.bin];
             let (left, right) = self.peak_region_bounds(peak_index);
 
             for bin in left..right {
-                let relative_phase = wrap_phase(self.current_phases[bin] - analysis_peak_phase);
-                self.synthesis_phase[bin] = wrap_phase(peak_phase + relative_phase);
+                let relative_phase =
+                    wrap_phase(self.analysis.current_phases[bin] - analysis_peak_phase);
+                self.propagation.synthesis_phase[bin] = wrap_phase(peak_phase + relative_phase);
             }
         }
     }
 
     fn lock_phase_to_tracked_peak_regions(&mut self, frame_index: usize) {
-        if frame_index == 0 || self.previous_peaks.is_empty() {
+        if frame_index == 0 || self.analysis.previous_peaks.is_empty() {
             self.lock_phase_to_peaks();
             return;
         }
-        if self.current_peaks.is_empty() {
+        if self.analysis.current_peaks.is_empty() {
             return;
         }
 
-        for peak_index in 0..self.current_peaks.len() {
-            let peak = self.current_peaks[peak_index];
-            let peak_phase = self.synthesis_phase[peak.bin];
-            let analysis_peak_phase = self.current_phases[peak.bin];
-            let (left, right) = if self.previous_peaks.iter().any(|previous| {
+        for peak_index in 0..self.analysis.current_peaks.len() {
+            let peak = self.analysis.current_peaks[peak_index];
+            let peak_phase = self.propagation.synthesis_phase[peak.bin];
+            let analysis_peak_phase = self.analysis.current_phases[peak.bin];
+            let (left, right) = if self.analysis.previous_peaks.iter().any(|previous| {
                 previous.bin.abs_diff(peak.bin) <= tracked_peak_max_bin_drift(self.config.bins)
             }) {
                 self.peak_region_bounds(peak_index)
@@ -540,20 +574,22 @@ impl DraftPhaseVocoder {
             };
 
             for bin in left..right {
-                let relative_phase = wrap_phase(self.current_phases[bin] - analysis_peak_phase);
-                self.synthesis_phase[bin] = wrap_phase(peak_phase + relative_phase);
+                let relative_phase =
+                    wrap_phase(self.analysis.current_phases[bin] - analysis_peak_phase);
+                self.propagation.synthesis_phase[bin] = wrap_phase(peak_phase + relative_phase);
             }
         }
     }
 
     fn peak_region_bounds(&self, peak_index: usize) -> (usize, usize) {
-        let peak = self.current_peaks[peak_index];
+        let peak = self.analysis.current_peaks[peak_index];
         let left = if peak_index == 0 {
             0
         } else {
-            (self.current_peaks[peak_index - 1].bin + peak.bin) / 2 + 1
+            (self.analysis.current_peaks[peak_index - 1].bin + peak.bin) / 2 + 1
         };
         let right = self
+            .analysis
             .current_peaks
             .get(peak_index + 1)
             .map(|next| (peak.bin + next.bin) / 2 + 1)
@@ -562,27 +598,32 @@ impl DraftPhaseVocoder {
     }
 
     fn synthesize_frame(&mut self, frame_index: usize) {
-        self.inverse.process(&mut self.synthesis_spectrum);
+        self.synthesis.inverse.process(&mut self.synthesis.spectrum);
         let synthesis_start = (frame_index as f64 * self.config.synthesis_hop).round() as usize;
         let scale = 1.0 / self.config.window_size as f32;
         for (index, weight) in self.window.iter().enumerate() {
             let out_index = synthesis_start + index;
-            if out_index >= self.output.len() {
+            if out_index >= self.synthesis.output.len() {
                 break;
             }
-            self.output[out_index] += self.synthesis_spectrum[index].re * scale * weight;
-            self.normalization[out_index] += weight * weight;
+            self.synthesis.output[out_index] += self.synthesis.spectrum[index].re * scale * weight;
+            self.synthesis.normalization[out_index] += weight * weight;
         }
     }
 
     fn finish(mut self) -> Vec<Sample> {
-        for (sample, weight) in self.output.iter_mut().zip(self.normalization.iter()) {
+        for (sample, weight) in self
+            .synthesis
+            .output
+            .iter_mut()
+            .zip(self.synthesis.normalization.iter())
+        {
             if *weight > 1.0e-3 {
                 *sample /= *weight;
             }
         }
-        self.output.resize(self.config.target_len, 0.0);
-        self.output
+        self.synthesis.output.resize(self.config.target_len, 0.0);
+        self.synthesis.output
     }
 }
 
@@ -629,6 +670,34 @@ mod tests {
         input
     }
 
+    fn sample_bit_hash(samples: &[Sample]) -> u64 {
+        samples.iter().fold(0xcbf2_9ce4_8422_2325, |hash, sample| {
+            sample
+                .to_bits()
+                .to_le_bytes()
+                .into_iter()
+                .fold(hash, |hash, byte| {
+                    (hash ^ u64::from(byte)).wrapping_mul(0x0000_0100_0000_01b3)
+                })
+        })
+    }
+
+    #[test]
+    fn phase_vocoder_bit_exact_baseline() {
+        let input = (0..8_192)
+            .map(|index| {
+                let fundamental =
+                    (std::f32::consts::TAU * 11.0 * index as f32 / 2_048.0).sin() * 0.6;
+                let partial = (std::f32::consts::TAU * 37.0 * index as f32 / 2_048.0).sin() * 0.2;
+                let impulse = if index % 997 == 0 { 0.75 } else { 0.0 };
+                fundamental + partial + impulse
+            })
+            .collect::<Vec<_>>();
+        let output = transient_reset_phase_vocoder(&input, 12_288, 1.5, 2_048, 512);
+
+        assert_eq!(sample_bit_hash(&output), 0x8255_b183_11f7_78f9);
+    }
+
     #[test]
     fn phase_vocoder_boundary_expansion_preserves_head_and_tail_content() {
         let input = boundary_content_probe(48_000, 384);
@@ -663,11 +732,12 @@ mod tests {
 
         assert!(
             engine
+                .analysis
                 .current_peaks
                 .iter()
                 .any(|peak| peak.bin.abs_diff(target_bin) <= 1),
             "expected a peak near bin {target_bin}, got {:?}",
-            engine.current_peaks
+            engine.analysis.current_peaks
         );
     }
 
@@ -684,11 +754,11 @@ mod tests {
 
         engine.analyze_frame(&input, 0);
         engine.track_spectral_peaks(0);
-        assert!(!engine.transient_reset_current_frame);
+        assert!(!engine.analysis.transient_reset_current_frame);
 
         engine.analyze_frame(&input, 1);
         engine.track_spectral_peaks(1);
-        assert!(engine.transient_reset_current_frame);
+        assert!(engine.analysis.transient_reset_current_frame);
     }
 
     #[test]
@@ -696,20 +766,20 @@ mod tests {
         let input = vec![0.0; 512];
         let config = PhaseVocoderConfig::new(&input, input.len(), 1.0, 512, 128);
         let mut engine = DraftPhaseVocoder::new(config, PhasePropagationMode::IdentityLocked);
-        engine.current_peaks.push(SpectralPeak {
+        engine.analysis.current_peaks.push(SpectralPeak {
             bin: 10,
             magnitude: 1.0,
         });
-        engine.current_phases[9] = 0.20;
-        engine.current_phases[10] = 0.50;
-        engine.current_phases[11] = 0.90;
-        engine.synthesis_phase[10] = 1.25;
+        engine.analysis.current_phases[9] = 0.20;
+        engine.analysis.current_phases[10] = 0.50;
+        engine.analysis.current_phases[11] = 0.90;
+        engine.propagation.synthesis_phase[10] = 1.25;
 
         engine.lock_phase_to_peaks();
 
-        assert!((wrap_phase(engine.synthesis_phase[9] - 0.95)).abs() < 1.0e-6);
-        assert!((wrap_phase(engine.synthesis_phase[10] - 1.25)).abs() < 1.0e-6);
-        assert!((wrap_phase(engine.synthesis_phase[11] - 1.65)).abs() < 1.0e-6);
+        assert!((wrap_phase(engine.propagation.synthesis_phase[9] - 0.95)).abs() < 1.0e-6);
+        assert!((wrap_phase(engine.propagation.synthesis_phase[10] - 1.25)).abs() < 1.0e-6);
+        assert!((wrap_phase(engine.propagation.synthesis_phase[11] - 1.65)).abs() < 1.0e-6);
     }
 
     #[test]
@@ -720,26 +790,26 @@ mod tests {
             config,
             PhasePropagationMode::IdentityLockedTrackedPeakRegions,
         );
-        engine.previous_peaks.push(SpectralPeak {
+        engine.analysis.previous_peaks.push(SpectralPeak {
             bin: 40,
             magnitude: 1.0,
         });
-        engine.current_peaks.push(SpectralPeak {
+        engine.analysis.current_peaks.push(SpectralPeak {
             bin: 10,
             magnitude: 1.0,
         });
-        engine.current_phases[9] = 0.20;
-        engine.current_phases[10] = 0.50;
-        engine.current_phases[11] = 0.90;
-        engine.synthesis_phase[10] = 1.25;
+        engine.analysis.current_phases[9] = 0.20;
+        engine.analysis.current_phases[10] = 0.50;
+        engine.analysis.current_phases[11] = 0.90;
+        engine.propagation.synthesis_phase[10] = 1.25;
 
         engine.lock_phase_to_tracked_peak_regions(1);
 
-        assert_eq!(engine.synthesis_phase[8], 0.0);
-        assert!((wrap_phase(engine.synthesis_phase[9] - 0.95)).abs() < 1.0e-6);
-        assert!((wrap_phase(engine.synthesis_phase[10] - 1.25)).abs() < 1.0e-6);
-        assert!((wrap_phase(engine.synthesis_phase[11] - 1.65)).abs() < 1.0e-6);
-        assert_eq!(engine.synthesis_phase[12], 0.0);
+        assert_eq!(engine.propagation.synthesis_phase[8], 0.0);
+        assert!((wrap_phase(engine.propagation.synthesis_phase[9] - 0.95)).abs() < 1.0e-6);
+        assert!((wrap_phase(engine.propagation.synthesis_phase[10] - 1.25)).abs() < 1.0e-6);
+        assert!((wrap_phase(engine.propagation.synthesis_phase[11] - 1.65)).abs() < 1.0e-6);
+        assert_eq!(engine.propagation.synthesis_phase[12], 0.0);
     }
 
     #[test]
@@ -749,13 +819,13 @@ mod tests {
         let mut engine =
             DraftPhaseVocoder::new(config, PhasePropagationMode::IdentityLockedMagnitudeSlew);
 
-        engine.current_spectral_stability = 0.75;
-        engine.current_magnitudes[10] = 10.0;
-        engine.previous_synthesis_magnitudes[10] = 2.0;
+        engine.analysis.current_spectral_stability = 0.75;
+        engine.analysis.current_magnitudes[10] = 10.0;
+        engine.propagation.previous_synthesis_magnitudes[10] = 2.0;
 
         assert_eq!(engine.synthesis_magnitude(10, 1), 4.0);
 
-        engine.current_spectral_stability = 0.69;
+        engine.analysis.current_spectral_stability = 0.69;
         assert_eq!(engine.synthesis_magnitude(10, 1), 10.0);
     }
 
@@ -769,9 +839,9 @@ mod tests {
         );
 
         assert!(engine.should_lock_phase_to_peaks(0));
-        engine.current_spectral_stability = 0.69;
+        engine.analysis.current_spectral_stability = 0.69;
         assert!(!engine.should_lock_phase_to_peaks(1));
-        engine.current_spectral_stability = 0.70;
+        engine.analysis.current_spectral_stability = 0.70;
         assert!(engine.should_lock_phase_to_peaks(1));
     }
 

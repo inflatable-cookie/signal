@@ -1,7 +1,7 @@
 # g10.029 Structural Hybrid Design
 
 Date: 2026-07-10
-Status: design frozen; kernel-seam batch ready
+Status: design frozen; kernel seam complete; mono candidate ready
 
 ## Code Map
 
@@ -179,6 +179,6 @@ Linked-stereo gate:
 
 ## Next Task
 
-Start Batch 29.5. Split analysis/propagation/synthesis state from public
-orchestration without changing output, then add the report-only classifier and
-transition trace. Prove the default path is bit-exact before any branch mixing.
+Start Batch 29.6. Render all fixed-ratio mono branches continuously and apply
+only the frozen owner and transition schedule. Keep the output report-only and
+run the complete mono candidate gate before linked stereo opens.
