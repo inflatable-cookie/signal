@@ -16,6 +16,8 @@ mod formant_boundary;
 mod listening_pack;
 #[path = "stretch-corpus-report/tail_anchor.rs"]
 mod tail_anchor;
+#[path = "stretch-corpus-report/tail_features.rs"]
+mod tail_features;
 
 use alloc_tracker::measure_peak_live_heap;
 
@@ -48,6 +50,7 @@ use symphonia::core::{
     probe::Hint as SymphoniaHint,
 };
 use tail_anchor::TailAnchorReviewEvidence;
+use tail_features::format_tail_local_feature_line;
 
 const DEFAULT_REPORT_NAME: &str = "stretch-corpus-v1-offline-evidence";
 const DEFAULT_PROJECTION_EPOCH: &str = "projection:deterministic-report-v1";
@@ -2594,6 +2597,15 @@ fn format_external_benchmark_quality_metrics(
             OfflineHighQualityStretcher::with_path(render.ratio, signal_path);
         let multiplicative_tail_fade_output = multiplicative_tail_fade_stretcher
             .stretch_multiplicative_tail_fade_review_mono(source_mono);
+        let tail_local_feature_line = format_tail_local_feature_line(
+            &render.case_id,
+            &source.source_path,
+            render.ratio,
+            source_audio.sample_rate_hz,
+            &signal_output,
+            &zero_tail_anchor_output,
+            &multiplicative_tail_fade_output,
+        );
         let mut draft_stretcher = PhaseVocoderStretcher::new(render.ratio);
         let draft_output = draft_stretcher.stretch_mono(source_mono);
         let signal_tonal_texture = measure_tonal_texture(source_mono, &signal_output, render.ratio);
@@ -3492,6 +3504,7 @@ fn format_external_benchmark_quality_metrics(
         lines.push(tail_anchor_line);
         lines.push(zero_tail_anchor_line);
         lines.push(multiplicative_tail_fade_line);
+        lines.push(tail_local_feature_line);
         if let Some(line) = feature_delta_line {
             lines.push(line);
         }
@@ -8369,6 +8382,12 @@ mod tests {
             .any(|line| line.starts_with("external_benchmark_tail_anchor_review control=zero ")));
         assert!(formatted.lines().any(|line| line
             .starts_with("external_benchmark_tail_anchor_review control=multiplicative_zero ")));
+        let tail_features = formatted
+            .lines()
+            .find(|line| line.starts_with("external_benchmark_tail_local_features "))
+            .expect("tail-local feature row");
+        assert!(tail_features.contains("low_band_energy_share="));
+        assert!(tail_features.contains("multiplicative_correction_energy_ratio="));
 
         let _ = fs::remove_file(path);
     }

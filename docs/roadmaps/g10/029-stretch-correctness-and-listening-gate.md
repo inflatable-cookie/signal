@@ -83,6 +83,8 @@ be trustworthy before the callback contract or a structural hybrid widens.
   and export its concealed comparison pack
 - [x] reject unconditional multiplicative fading after concealed full-mix
   tails exposed low-end thumps
+- [x] isolate spectral centroid as the only clean tail-local separator while
+  withholding selector implementation pending cross-source validation
 
 ### Batch 29.4 - Structural Hybrid Checkpoint
 
@@ -251,13 +253,23 @@ be trustworthy before the callback contract or a structural hybrid widens.
   whether tail-local features support a content-derived selector before any
   further DSP control is added. Findings and revealed assignments are in
   `docs/logs/2026-07/10-g10-029-multiplicative-tail-fade-objective-gate.md`.
+- 2026-07-10: Added report-only tail-local classification for the six frozen
+  labels. Only spectral centroid separated every decisive result: wins ranged
+  from `662.676157` to `1450.409813 Hz`; losses ranged from `2422.601943` to
+  `2441.410312 Hz`; neutral T006 measured `2485.733931 Hz`. A provisional
+  `< 2000 Hz` rule fits without family labels, but the evidence contains only
+  three unique source excerpts. No selector or production path changed.
+  Cross-source concealed validation is required. Evidence and stop conditions
+  are in
+  `docs/logs/2026-07/10-g10-029-tail-local-feature-classification.md`.
 
 ## Next Task
 
-Measure tail-local DC offset, low-band energy share, spectral centroid, short
-spectral movement, zero-crossing distance, and correction energy for the six
-labeled trials. Define a deterministic content-derived selector only if the
-features separate the multiplicative wins from losses without case-family
-labels; otherwise stop tail-envelope work. Keep production unchanged while
-independent stereo review and row-level manifest validation remain open. Do not
-open product promotion or start Batch 29.4 until all five families validate.
+Measure the broad source pool with the same tail-local feature row. Select a
+bounded cross-source validation pack with distinct sources below and above the
+provisional `2000 Hz` centroid threshold. Compare current, additive, and
+multiplicative candidates under concealment. Do not wire the selector before
+notes are frozen; failure to reproduce the preference split closes
+tail-envelope work. Keep production unchanged while independent stereo review
+and row-level manifest validation remain open. Do not open product promotion or
+start Batch 29.4 until all five families validate.

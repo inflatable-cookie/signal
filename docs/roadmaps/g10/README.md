@@ -123,11 +123,12 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Measure tail-local DC offset, low-band energy share, spectral centroid, short
-spectral movement, zero-crossing distance, and correction energy for the six
-labeled trials. Define a deterministic content-derived selector only if the
-features separate the multiplicative wins from losses without case-family
-labels; otherwise stop tail-envelope work. Keep production unchanged while
-independent stereo and row-level completion remain open. Do not start Batch
-29.4 or product promotion until all five listening families validate. Keep
-RealtimePreview source-fill and broader product integration paused.
+Measure the broad source pool with the same tail-local feature row. Select a
+bounded cross-source validation pack with distinct sources below and above the
+provisional `2000 Hz` centroid threshold. Compare current, additive, and
+multiplicative candidates under concealment. Do not wire the selector before
+notes are frozen; failure to reproduce the preference split closes
+tail-envelope work. Keep production unchanged while independent stereo and
+row-level completion remain open. Do not start Batch 29.4 or product promotion
+until all five listening families validate. Keep RealtimePreview source-fill
+and broader product integration paused.
