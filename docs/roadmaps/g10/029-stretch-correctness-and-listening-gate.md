@@ -233,6 +233,19 @@ independent stereo review.
 - [ ] open Batch 29.7 only after every complete mono gate passes
   - closed: complete gate passed `3/60`
 
+### Batch 29.6I - Frequency-Adaptive Painless Reconstruction
+
+- [ ] construct one report-only frequency-adaptive nonstationary Gabor frame
+  with constant-Q interior bands and explicit DC/Nyquist completion
+- [ ] derive canonical dual filters from a finite, strictly positive diagonal
+  frame operator and satisfy the per-band painless support condition
+- [ ] prove exact-length analysis/synthesis on low, crossover, high,
+  DC/Nyquist-edge, impulse, noise, mixed, and silence controls
+- [ ] report frame bounds, condition ratio, band geometry, coefficient counts,
+  spectral coverage, reconstruction error, impulse delay, and repeat hashes
+- [ ] pass Contract `082` reconstruction and determinism gates before any
+  frequency-adaptive phase propagation or corpus render opens
+
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
 - [ ] share the time map and phase-propagation decisions across channels
@@ -550,8 +563,17 @@ independent stereo review.
   mono candidate is rejected: `L001` improved `2.379387 dB`, timing worsened
   `17.789744` frames, integrity passed `57/60`, replica `27/48`, tonal `57/60`,
   and combined `3/60`. Linked stereo remains closed.
+- 2026-07-10: Reassessed attack placement and shape after exact lattice failed.
+  Frequency-adaptive painless nonstationary Gabor analysis is the next
+  materially different family: it can improve time resolution at high
+  frequencies while retaining low-frequency selectivity inside one invertible
+  transform. The published onset-adaptive TSM policy is not adopted because it
+  uses attack detection and local unity stretch. Batch 29.6I proves only
+  canonical-dual reconstruction and transform geometry. Evidence is in
+  `docs/logs/2026-07/10-g10-029-frequency-adaptive-reassessment.md`.
 
 ## Next Task
 
-Return to research for attack-placement and spectral-shape preservation. Do not
-tune exact lattice or open linked stereo. Keep product routing closed.
+Implement Batch 29.6I, the report-only frequency-adaptive painless-frame
+reconstruction proof. Do not open phase propagation, linked stereo, or product
+routing.

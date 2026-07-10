@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; exact-lattice phase-gradient candidate rejected
+Status: active; frequency-adaptive reconstruction proof ready
 Owner: dsp
 Updated: 2026-07-10
 Related contracts: `046`, `048`, `049`
@@ -380,6 +380,49 @@ means remained better than the current kernel.
 Exact lattice removes a real mapping error but does not explain the dominant
 event-placement defect. Do not tune its schedule or reopen linked stereo.
 
+### Rule 13: the next transform is frequency-adaptive and painless
+
+Batch 29.6I replaces the fixed-resolution STFT only in a report-only transform
+proof. Construct one frequency-adaptive nonstationary Gabor frame with:
+
+- logarithmically spaced constant-Q interior bands
+- explicit DC and Nyquist completion bands
+- compact frequency-domain analysis filters
+- per-band decimation no coarser than the painless-frame support condition
+- canonical dual filters computed from the strictly positive diagonal frame
+  operator
+
+The filter lattice and duals are immutable for one proof render. All bands
+belong to one analysis/synthesis system. Independent time-domain branch
+renders, crossovers, source masks, onset-adaptive windows, local ratio changes,
+and output recombination remain prohibited.
+
+### Rule 14: reconstruction truth precedes time stretching
+
+Batch 29.6I performs no time stretch and no phase modification. It must report:
+
+- minimum and maximum diagonal frame-operator values and their finite positive
+  condition ratio
+- band count, centre frequency, support length, decimation, and coefficient
+  count
+- uncovered and multiply assigned frequency samples
+- source/output length, peak error, RMS error, endpoint error, and non-finite
+  counts
+- per-band impulse peak position relative to the declared common origin
+- repeat hashes for filters, coefficients, and reconstruction
+
+Sine controls spanning low, crossover, high, DC-near, and Nyquist-near bands,
+a broadband impulse, deterministic noise, mixed tonal/transient content, and
+silence must pass. Peak reconstruction error is at most `1e-5`; RMS error is at
+most `1e-6`; lengths and endpoints are exact; all frame-operator samples are
+finite and strictly positive; impulse delay agrees with the declared origin to
+within one sample; and repeated reports and samples are identical.
+
+Failure rejects the transform geometry. Passing opens only a separately
+contracted frequency-adaptive phase-gradient mechanism proof. It does not open
+the 60-row corpus, linked stereo, dynamic ratio, cache identity, or product
+routing.
+
 ## Clean-Room Rule
 
 Public papers and public algorithm descriptions may inform Signal design.
@@ -388,6 +431,6 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Return to research for a clean-room attack-placement and spectral-shape policy
-that preserves whole-band phase-gradient tonal gains. Keep linked stereo and
-all product routing closed.
+Implement Batch 29.6I as a report-only frequency-adaptive painless-frame
+reconstruction proof. Do not stretch coefficients in that batch. Keep linked
+stereo and all product routing closed.

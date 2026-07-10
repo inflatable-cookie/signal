@@ -66,7 +66,10 @@ implementation remains Signal-owned.
   and combined gates. Batch 29.6G is rejected. Its repeated rounded analysis
   hop also exposes up to roughly `161` frames of five-second source-map drift.
   Batch 29.6H proves exact mapping but still fails timing, replica, integrity,
-  and combined gates. It is rejected; linked stereo remains closed.
+  and combined gates. It is rejected. The next bounded family is one
+  frequency-adaptive painless nonstationary Gabor transform. Batch 29.6I first
+  proves canonical-dual reconstruction and band timing without stretching;
+  linked stereo remains closed.
 - Offline artifacts and RealtimePreview have bounded contracts and prototype
   paths, but callback-safe preview integration and fully streaming artifact
   output remain gated until their owning source-fill/cache contracts exist.
@@ -156,5 +159,6 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Return to research for attack-placement and spectral-shape preservation. Do not
-tune exact lattice or open linked stereo. Product integration remains closed.
+Implement Batch 29.6I, the report-only frequency-adaptive painless-frame
+reconstruction proof. Keep phase propagation, linked stereo, and product
+integration closed.

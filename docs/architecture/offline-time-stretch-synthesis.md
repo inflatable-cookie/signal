@@ -15,17 +15,20 @@ successor architecture.
 
 ## Successor Shape
 
-The successor candidate owns one sample-domain time map and one whole-band STFT
-reconstruction.
+The next successor candidate owns one sample-domain time map and one
+frequency-adaptive, perfectly reconstructable filter bank.
 
-- fixed-resolution analysis estimates centered time and frequency derivatives
-  of the analyzed STFT phase
+- a painless frequency-adaptive nonstationary Gabor transform gives long
+  low-frequency atoms and short high-frequency atoms inside one invertible
+  representation
 - absolute analysis centres follow the exact requested source map; adjacent
   integer analysis intervals may differ by one frame
-- a magnitude-prioritized heap integrates that full phase gradient across time
-  and frequency
-- every significant bin receives synthesis phase exactly once from the
-  strongest available horizontal or vertical predecessor
+- canonical dual filters reconstruct the unmodified coefficients before any
+  stretch processing opens
+- a later proof may integrate a filter-bank phase gradient, but only after
+  reconstruction, impulse delay, coefficient coverage, and determinism pass
+- a later stretched candidate must assign every significant coefficient phase
+  exactly once from the strongest available time or frequency predecessor
 - no peak tracker, onset detector, reset schedule, component mask, independent
   component synthesis, or local timing compensation enters the first proof
 - boundary padding, normalized overlap-add, exact cropping, and identity bypass
@@ -37,11 +40,10 @@ One fixed-ratio mono engine owns:
 
 - source and output frame cursors
 - absolute ideal and rounded analysis-frame positions
-- one fixed STFT geometry and global ratio
-- current and adjacent analyzed complex frames
-- time- and frequency-direction phase derivatives
-- previous and current synthesis phase
-- significant-bin membership and a bounded max heap
+- one immutable frequency lattice, analysis-filter bank, dual-filter bank, and
+  global ratio
+- bounded per-band coefficient storage and exact coefficient time positions
+- later phase-derivative and integration state only after the transform proof
 - deterministic insignificant-bin phase
 - exact output-length and crop state
 
@@ -64,8 +66,10 @@ must not concatenate independent renders.
 5. fixed-resolution full phase-gradient kernel proof
 6. whole-band full phase-gradient fixed-ratio mono gate
 7. exact-lattice whole-band phase-gradient mono gate
-8. shared-decision linked stereo
-9. concealed listening and dynamic-ratio checkpoint
+8. frequency-adaptive painless reconstruction proof
+9. frequency-adaptive phase-gradient mono mechanism and corpus gate
+10. shared-decision linked stereo
+11. concealed listening and dynamic-ratio checkpoint
 
 Each stage stays report-only until the complete gate passes. A mechanism proof
 may authorize the next stage but cannot promote product quality alone.
@@ -81,6 +85,7 @@ may authorize the next stage but cannot promote product quality alone.
 - two-way H/P processing that forces ambiguous content into a specialized path
 - additive H/R/P TSM after its complete mono gate failed
 - WSOLA as the next full-band path
+- onset-adaptive windows coupled to local unity-ratio attack islands
 
 ## Separation Boundary
 
@@ -113,7 +118,27 @@ ratio and allowed cumulative source-map drift. The next candidate replaces
 that repeated hop with absolute rounded analysis centres. All other
 phase-gradient policy remains frozen.
 
+Exact lattice also failed the complete gate. Fixed-resolution phase-gradient
+processing is retained as evidence, not the active product candidate.
+
+## Frequency-Adaptive Boundary
+
+The next proof changes transform resolution without changing local time. Use a
+frequency-adaptive painless nonstationary Gabor frame: constant-Q-spaced
+interior bands, explicit DC and Nyquist completion bands, compact frequency
+supports, and canonical dual filters derived from the frame operator. Every
+coefficient remains part of one transform and every sample follows the same
+global map.
+
+This is not the published onset-adaptive NSG time-stretch algorithm. That
+algorithm couples short attack windows to onset detection and unity stretch at
+attacks. Signal does not adopt those policies. Batch 29.6I proves only analysis
+and synthesis identity, bounded filter support, complete spectral coverage,
+band impulse delay, finite coefficients, and repeatability. No phase
+propagation or stretched audio belongs in that batch.
+
 ## Next Task
 
-Reassess attack placement and spectral-shape preservation after exact lattice
-failed the complete mono gate. Keep linked stereo and product routing closed.
+Implement Batch 29.6I as a report-only frequency-adaptive painless-frame
+reconstruction proof. Keep phase propagation, linked stereo, and product
+routing closed.

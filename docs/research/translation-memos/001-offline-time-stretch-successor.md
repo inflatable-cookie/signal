@@ -178,8 +178,44 @@ rejected ownership crossfade.
 
 ## Next Task
 
-Return to research after exact lattice failed to close timing, replica, and
-shape gates. Do not tune it or open linked stereo.
+Implement the frequency-adaptive painless-frame reconstruction proof defined by
+Contract `082`. Do not add phase propagation or stretched output yet.
+
+## Frequency-Adaptive Reassessment
+
+Exact lattice removed source-map drift without closing attack placement,
+replica, or shape gates. Another fixed STFT parameter or phase-reset variant is
+not justified. The next candidate changes time-frequency resolution inside one
+invertible transform.
+
+Holighaus et al. give a frequency-adaptive nonstationary Gabor construction
+with compact frequency supports, a diagonal frame operator, canonical duals,
+and perfect reconstruction under the painless support condition. Its
+constant-Q layout provides long low-frequency atoms and short high-frequency
+atoms without splitting the source into independently rendered outputs. This
+directly targets Signal's combination of subtle long-stretch grain, transient
+softness, and occasional transient spikes.
+
+Ottosen and Dörfler show that nonstationary Gabor resolution can improve onset
+time resolution and sinusoidal frequency resolution. Their complete TSM is not
+Signal's design: it detects attacks, holds their local stretch at unity, and
+constructs synthesis windows around relocated onsets. Those policies reopen a
+rejected timing mechanism. Only the reconstructable transform family transfers.
+
+The first proof therefore performs identity analysis/synthesis only. It must
+establish frame bounds, spectral coverage, canonical-dual reconstruction,
+coefficient geometry, common-origin impulse delay, and determinism before a
+filter-bank phase-gradient design is authorized. This prevents transform
+approximation error or band-dependent delay from being mistaken for a stretch
+improvement.
+
+Additional primary sources:
+
+| Source | Confidence | Notes |
+| --- | --- | --- |
+| [Holighaus et al., 2012](https://arxiv.org/abs/1210.0084) | high | Frequency-adaptive painless NSG frames, canonical duals, perfect reconstruction, and sliced constant-Q implementation |
+| [Ottosen and Dörfler, 2016](https://arxiv.org/abs/1612.05156) | high | Adaptive-resolution PV evidence; onset-local unity stretch is explicitly excluded from Signal's transfer |
+| [Prusa and Holighaus, 2022](https://arxiv.org/abs/2202.07498) | medium | Extends phase-gradient reconstruction to controlled-varying filter banks; informs a later mechanism proof, not Batch 29.6I |
 
 ## Full Phase-Gradient Mono Outcome
 
