@@ -123,10 +123,10 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Complete the six concealed mono tail trials at
-`target/stretch-corpus-g10-029-tail-listening-pack-v1`. Freeze click/pop,
-pull/thump, continuity, and preference notes before opening the key. Keep
-production unchanged while tail listening, independent stereo, and row-level
-completion remain open. Do not start Batch 29.4 or product promotion until all
-five listening families validate. Keep RealtimePreview source-fill and broader
+Add one report-only 256-frame multiplicative half-cosine terminal fade. Compare
+it with current and the rejected additive zero anchor through the 60-row
+objective gate. Regenerate the same six concealed tail trials only if it passes.
+Keep production unchanged while independent stereo and row-level completion
+remain open. Do not start Batch 29.4 or product promotion until all five
+listening families validate. Keep RealtimePreview source-fill and broader
 product integration paused.

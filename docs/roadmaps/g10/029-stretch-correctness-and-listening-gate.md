@@ -77,6 +77,8 @@ be trustworthy before the callback contract or a structural hybrid widens.
   objective corpus gate
 - [x] export the worst zero-anchor corrections as a concealed three-way mono
   tail-listening pack with post-tail silence
+- [x] reject unconditional additive zero anchoring after concealed sustained
+  tails exposed low-end thumps
 
 ### Batch 29.4 - Structural Hybrid Checkpoint
 
@@ -220,11 +222,20 @@ be trustworthy before the callback contract or a structural hybrid widens.
   per-trial gain preserves relative boundary amplitude. Production and cache
   identity remain unchanged. Pack design and status are in
   `docs/logs/2026-07/10-g10-029-tail-listening-pack.md`.
+- 2026-07-10: Completed all six concealed tail trials. The additive zero anchor
+  was cleanest on the drum case but produced low-end thumps on both worst
+  sustained-pad cases, where current was preferred. The remaining three trials
+  were materially similar. Unconditional zero-anchor promotion is rejected;
+  production and cache identity remain unchanged. The next control isolates the
+  correction law with a same-span multiplicative fade. Findings and revealed
+  assignments are in
+  `docs/logs/2026-07/10-g10-029-tail-listening-pack.md`.
 
 ## Next Task
 
-Complete the six concealed tail trials and freeze click/pop, pull/thump,
-continuity, and preference notes before opening the key. Keep production
-unchanged while this local-sound check, independent stereo review, and row-level
+Add one report-only 256-frame multiplicative half-cosine terminal fade. Compare
+it with current and the rejected additive zero anchor through the 60-row
+objective gate. Regenerate the same six concealed tail trials only if it passes.
+Keep production unchanged while independent stereo review and row-level
 manifest validation remain open. Do not open product promotion or start Batch
 29.4 until all five families validate.

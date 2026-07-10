@@ -1,7 +1,7 @@
 # g10.029 Tail Listening Pack
 
 Date: 2026-07-10
-Status: ready for operator notes
+Status: complete; unconditional zero anchor rejected
 
 ## Purpose
 
@@ -40,15 +40,37 @@ The shared gain uses the current excerpt RMS and the peak across all three
 candidates. It preserves relative endpoint amplitude and cannot normalize away
 the boundary under test.
 
-## Current State
+## Operator Result
 
-The pack is ready. No listening result is inferred from objective metrics and
-no note row is marked complete. Production DSP and cache identity remain
-unchanged. Mono notes can qualify local tail sound only; linked-stereo evidence
-and independent stereo listening remain promotion blockers.
+Notes were frozen for all six trials before candidate identity was revealed.
+
+- `T001`: zero anchor produced a low-end thump; current was smoothest
+- `T002`: same result as `T001`
+- `T003`: current clicked, source anchor clicked less, zero anchor was cleanest
+- `T004`: current had a very slight low thump; no strong preference
+- `T005`: no material difference
+- `T006`: no material difference
+
+The two clearest sustained-pad cases reject the zero control. The clearest drum
+case supports it. Objective exterior-step improvement therefore does not predict
+local sound across material classes.
+
+## Decision
+
+Reject unconditional promotion of the additive zero-tail anchor. Keep current
+production DSP and cache identity unchanged. The source anchor remains rejected.
+
+The material split points at the correction law, not just its size. The current
+zero control adds a half-cosine offset reaching the negative final-sample value.
+On sustained material that offset can appear as new low-frequency movement. A
+multiplicative fade can reach zero over the same span without injecting that
+additive offset.
+
+Mono notes resolve this candidate only. Linked-stereo evidence and independent
+stereo listening remain promotion blockers for any successor.
 
 ## Next Task
 
-Complete all six concealed trials. Freeze notes before opening the key. Classify
-whether zero anchoring removes click/pop without adding pull/thump or damaging
-tail continuity.
+Add one report-only 256-frame multiplicative half-cosine terminal fade. Compare
+it against current and the rejected additive zero anchor through the 60-row
+objective gate, then regenerate the same six concealed tail trials if it passes.
