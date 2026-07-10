@@ -123,12 +123,11 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Measure the broad source pool with the same tail-local feature row. Select a
-bounded cross-source validation pack with distinct sources below and above the
-provisional `2000 Hz` centroid threshold. Compare current, additive, and
-multiplicative candidates under concealment. Do not wire the selector before
-notes are frozen; failure to reproduce the preference split closes
-tail-envelope work. Keep production unchanged while independent stereo and
-row-level completion remain open. Do not start Batch 29.4 or product promotion
-until all five listening families validate. Keep RealtimePreview source-fill
-and broader product integration paused.
+Complete the six concealed trials at
+`target/stretch-corpus-g10-029-tail-classifier-validation-pack-v1`. Freeze
+click/pop, pull/thump, fade, continuity, and preference notes before opening the
+key. Reproduce the expected centroid preference split or close tail-envelope
+work. Keep production unchanged while independent stereo and row-level
+completion remain open. Do not start Batch 29.4 or product promotion until all
+five listening families validate. Keep RealtimePreview source-fill and broader
+product integration paused.

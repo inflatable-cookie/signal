@@ -126,6 +126,7 @@ struct ReportArgs {
     external_benchmark_signal_path: OfflineHighQualityPath,
     export_blind_listening_pack: Option<PathBuf>,
     export_tail_listening_pack: Option<PathBuf>,
+    export_tail_classifier_validation_pack: Option<PathBuf>,
     blind_listening_note_manifests: Vec<PathBuf>,
 }
 
@@ -210,6 +211,7 @@ impl Default for ReportArgs {
             external_benchmark_signal_path: OfflineHighQualityPath::Default,
             export_blind_listening_pack: None,
             export_tail_listening_pack: None,
+            export_tail_classifier_validation_pack: None,
             blind_listening_note_manifests: Vec::new(),
         }
     }
@@ -346,6 +348,31 @@ fn main() {
             }
         };
         match listening_pack::export_tail_listening_pack(
+            &listening_sources,
+            &quality_renders,
+            args.decoded_stretch_frame_limit,
+            args.external_benchmark_signal_path,
+            export_dir,
+        ) {
+            Ok(pack_report) => {
+                formatted.push('\n');
+                formatted.push_str(&pack_report);
+            }
+            Err(message) => {
+                eprintln!("{message}");
+                process::exit(1);
+            }
+        }
+    }
+    if let Some(export_dir) = &args.export_tail_classifier_validation_pack {
+        let quality_renders = match load_external_benchmark_quality_renders(&args) {
+            Ok(renders) => renders,
+            Err(message) => {
+                eprintln!("{message}");
+                process::exit(1);
+            }
+        };
+        match listening_pack::export_tail_classifier_validation_pack(
             &listening_sources,
             &quality_renders,
             args.decoded_stretch_frame_limit,
@@ -533,6 +560,12 @@ where
                     "--export-tail-listening-pack",
                 )?));
             }
+            "--export-tail-classifier-validation-pack" => {
+                parsed.export_tail_classifier_validation_pack = Some(PathBuf::from(next_value(
+                    &mut iter,
+                    "--export-tail-classifier-validation-pack",
+                )?));
+            }
             "--check-blind-listening-notes" => {
                 parsed
                     .blind_listening_note_manifests
@@ -570,7 +603,7 @@ where
 }
 
 fn usage() -> &'static str {
-    "usage: stretch-corpus-report [--report-name NAME] [--projection-epoch EPOCH] [--listening-source-manifest TSV] [--decode-listening-sources] [--decode-source-frame-limit N] [--measure-decoded-stretch] [--decoded-stretch-report-mode full|expansion-selector] [--measure-external-benchmark-quality] [--external-benchmark-quality-mode core|full] [--external-benchmark-signal-path default|compression-short-window-selector|expansion-short-window-selector] [--export-blind-listening-pack DIR] [--export-tail-listening-pack DIR] [--check-blind-listening-notes TSV] [--decoded-stretch-frame-limit N] [--external-benchmark-tool NAME] [--external-benchmark-render CASE RATIO WAV] [--external-benchmark-render-manifest TSV] [--export-external-benchmark-pack DIR] [--check-external-benchmark-render-plan TSV] [--output PATH]"
+    "usage: stretch-corpus-report [--report-name NAME] [--projection-epoch EPOCH] [--listening-source-manifest TSV] [--decode-listening-sources] [--decode-source-frame-limit N] [--measure-decoded-stretch] [--decoded-stretch-report-mode full|expansion-selector] [--measure-external-benchmark-quality] [--external-benchmark-quality-mode core|full] [--external-benchmark-signal-path default|compression-short-window-selector|expansion-short-window-selector] [--export-blind-listening-pack DIR] [--export-tail-listening-pack DIR] [--export-tail-classifier-validation-pack DIR] [--check-blind-listening-notes TSV] [--decoded-stretch-frame-limit N] [--external-benchmark-tool NAME] [--external-benchmark-render CASE RATIO WAV] [--external-benchmark-render-manifest TSV] [--export-external-benchmark-pack DIR] [--check-external-benchmark-render-plan TSV] [--output PATH]"
 }
 
 fn load_external_benchmark_renders(
@@ -7851,6 +7884,7 @@ mod tests {
                 external_benchmark_signal_path: OfflineHighQualityPath::Default,
                 export_blind_listening_pack: None,
                 export_tail_listening_pack: None,
+                export_tail_classifier_validation_pack: None,
                 blind_listening_note_manifests: Vec::new(),
             }))
         );
@@ -7882,6 +7916,8 @@ mod tests {
             "target/blind-pack".to_string(),
             "--export-tail-listening-pack".to_string(),
             "target/tail-pack".to_string(),
+            "--export-tail-classifier-validation-pack".to_string(),
+            "target/tail-classifier-pack".to_string(),
             "--check-blind-listening-notes".to_string(),
             "target/blind-pack/blind-listening-notes.tsv".to_string(),
             "--decoded-stretch-frame-limit".to_string(),
@@ -7933,6 +7969,9 @@ mod tests {
                     OfflineHighQualityPath::ExpansionShortWindowSelector,
                 export_blind_listening_pack: Some(PathBuf::from("target/blind-pack")),
                 export_tail_listening_pack: Some(PathBuf::from("target/tail-pack")),
+                export_tail_classifier_validation_pack: Some(PathBuf::from(
+                    "target/tail-classifier-pack",
+                )),
                 blind_listening_note_manifests: vec![PathBuf::from(
                     "target/blind-pack/blind-listening-notes.tsv",
                 )],
@@ -7986,6 +8025,7 @@ mod tests {
             external_benchmark_signal_path: OfflineHighQualityPath::Default,
             export_blind_listening_pack: None,
             export_tail_listening_pack: None,
+            export_tail_classifier_validation_pack: None,
             blind_listening_note_manifests: Vec::new(),
         };
 
@@ -8043,6 +8083,7 @@ mod tests {
             external_benchmark_signal_path: OfflineHighQualityPath::Default,
             export_blind_listening_pack: None,
             export_tail_listening_pack: None,
+            export_tail_classifier_validation_pack: None,
             blind_listening_note_manifests: Vec::new(),
         };
 

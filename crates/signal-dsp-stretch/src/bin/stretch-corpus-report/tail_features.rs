@@ -7,6 +7,12 @@ const MOVEMENT_WINDOW_FRAMES: usize = TAIL_FEATURE_WINDOW_FRAMES / 2;
 const CORRECTION_WINDOW_FRAMES: usize = 256;
 const LOW_BAND_LIMIT_HZ: f64 = 250.0;
 
+pub(crate) fn measure_tail_spectral_centroid_hz(sample_rate_hz: u32, current: &[f32]) -> f64 {
+    let tail = tail_window(current, TAIL_FEATURE_WINDOW_FRAMES);
+    let spectrum = magnitude_spectrum(&tail);
+    spectral_summary(&spectrum, sample_rate_hz).1
+}
+
 pub(super) fn format_tail_local_feature_line(
     case_id: &str,
     source_path: &str,

@@ -9,14 +9,21 @@ use crate::{
     ExternalBenchmarkQualityRender, ExternalBenchmarkQualitySource, StretchCorpusListeningSource,
 };
 
+#[path = "tail/assignment.rs"]
+mod assignment;
 #[path = "tail/selection.rs"]
 mod selection;
 #[path = "tail/audio.rs"]
 mod tail_audio;
 
-use selection::select_tail_review_rows;
 #[cfg(test)]
-use selection::{bound_tail_review_rows, TailReviewRow, REVIEW_ROWS};
+use assignment::TailCandidate;
+use assignment::{candidate_slot, stable_tail_assignment};
+#[cfg(test)]
+use selection::{
+    bound_classifier_validation_rows, bound_tail_review_rows, TailCentroidBand, REVIEW_ROWS,
+};
+use selection::{select_tail_classifier_validation_rows, select_tail_review_rows, TailReviewRow};
 #[cfg(test)]
 use tail_audio::PEAK_CEILING;
 use tail_audio::{amplitude_dbfs, append_silence, shared_tail_gain, tail_excerpt};
@@ -24,19 +31,17 @@ use tail_audio::{amplitude_dbfs, append_silence, shared_tail_gain, tail_excerpt}
 const EXCERPT_SECONDS: usize = 1;
 const POST_TAIL_SILENCE_MILLISECONDS: usize = 250;
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-enum TailCandidate {
-    Current,
-    AdditiveZeroAnchor,
-    MultiplicativeZeroFade,
+#[derive(Clone, Copy)]
+enum TailPackPurpose {
+    WorstEndpoints,
+    ClassifierValidation,
 }
 
-impl TailCandidate {
+impl TailPackPurpose {
     fn label(self) -> &'static str {
         match self {
-            Self::Current => "current",
-            Self::AdditiveZeroAnchor => "additive-zero-anchor",
-            Self::MultiplicativeZeroFade => "multiplicative-zero-fade",
+            Self::WorstEndpoints => "worst-endpoints",
+            Self::ClassifierValidation => "cross-source-centroid-validation",
         }
     }
 }
@@ -53,6 +58,51 @@ pub(crate) fn export_tail_listening_pack(
     }
 
     let selected = select_tail_review_rows(sources, renders, frame_limit, signal_path)?;
+    export_selected_tail_listening_pack(
+        sources,
+        renders,
+        frame_limit,
+        signal_path,
+        export_dir,
+        &selected,
+        TailPackPurpose::WorstEndpoints,
+    )
+}
+
+pub(crate) fn export_tail_classifier_validation_pack(
+    sources: &[StretchCorpusListeningSource],
+    renders: &[ExternalBenchmarkQualityRender],
+    frame_limit: usize,
+    signal_path: OfflineHighQualityPath,
+    export_dir: &Path,
+) -> Result<String, String> {
+    if renders.is_empty() {
+        return Err(
+            "tail classifier validation pack requires benchmark render metadata".to_string(),
+        );
+    }
+    let selected =
+        select_tail_classifier_validation_rows(sources, renders, frame_limit, signal_path)?;
+    export_selected_tail_listening_pack(
+        sources,
+        renders,
+        frame_limit,
+        signal_path,
+        export_dir,
+        &selected,
+        TailPackPurpose::ClassifierValidation,
+    )
+}
+
+fn export_selected_tail_listening_pack(
+    sources: &[StretchCorpusListeningSource],
+    renders: &[ExternalBenchmarkQualityRender],
+    frame_limit: usize,
+    signal_path: OfflineHighQualityPath,
+    export_dir: &Path,
+    selected: &[TailReviewRow],
+    purpose: TailPackPurpose,
+) -> Result<String, String> {
     let trials_dir = export_dir.join("trials");
     fs::create_dir_all(&trials_dir)
         .map_err(|error| format!("failed to create {}: {error}", trials_dir.display()))?;
@@ -78,6 +128,8 @@ pub(crate) fn export_tail_listening_pack(
         "candidate_b_backend",
         "candidate_c_backend",
         "signal_path",
+        "selection_band",
+        "spectral_centroid_hz",
         "endpoint_correction",
         "current_endpoint_dbfs",
         "shared_gain_db",
@@ -154,6 +206,8 @@ pub(crate) fn export_tail_listening_pack(
             backends[1],
             backends[2],
             &format!("{signal_path:?}"),
+            row.centroid_band.label(),
+            &format!("{:.6}", row.spectral_centroid_hz),
             &format!("{:.9}", row.endpoint_correction),
             &format!("{:.6}", amplitude_dbfs(row.endpoint_correction)),
             &format!("{:.6}", 20.0 * shared_gain.log10()),
@@ -167,13 +221,14 @@ pub(crate) fn export_tail_listening_pack(
     write_tsv(export_dir.join("tail-listening-key.tsv"), key)?;
     fs::write(
         export_dir.join("README.md"),
-        tail_listening_readme(selected.len()),
+        tail_listening_readme(selected.len(), purpose),
     )
     .map_err(|error| format!("failed to write tail listening README: {error}"))?;
 
     Ok(format!(
-        "tail_listening_pack export_dir={:?} status=ReadyForOperator trials={} candidates_per_trial=3 channels=1 post_tail_silence_ms={} notes={:?} key={:?}",
+        "tail_listening_pack export_dir={:?} status=ReadyForOperator selection={} trials={} candidates_per_trial=3 channels=1 post_tail_silence_ms={} notes={:?} key={:?}",
         export_dir.display().to_string(),
+        purpose.label(),
         selected.len(),
         POST_TAIL_SILENCE_MILLISECONDS,
         export_dir.join("tail-listening-notes.tsv").display().to_string(),
@@ -198,63 +253,17 @@ pub(super) fn resolve_source<'a>(
     }
 }
 
-fn candidate_slot(candidate: TailCandidate) -> usize {
-    match candidate {
-        TailCandidate::Current => 0,
-        TailCandidate::AdditiveZeroAnchor => 1,
-        TailCandidate::MultiplicativeZeroFade => 2,
-    }
-}
-
-fn stable_tail_assignment(
-    render: &ExternalBenchmarkQualityRender,
-    source_path: &str,
-) -> [TailCandidate; 3] {
-    const PERMUTATIONS: [[TailCandidate; 3]; 6] = [
-        [
-            TailCandidate::Current,
-            TailCandidate::AdditiveZeroAnchor,
-            TailCandidate::MultiplicativeZeroFade,
-        ],
-        [
-            TailCandidate::Current,
-            TailCandidate::MultiplicativeZeroFade,
-            TailCandidate::AdditiveZeroAnchor,
-        ],
-        [
-            TailCandidate::AdditiveZeroAnchor,
-            TailCandidate::Current,
-            TailCandidate::MultiplicativeZeroFade,
-        ],
-        [
-            TailCandidate::AdditiveZeroAnchor,
-            TailCandidate::MultiplicativeZeroFade,
-            TailCandidate::Current,
-        ],
-        [
-            TailCandidate::MultiplicativeZeroFade,
-            TailCandidate::Current,
-            TailCandidate::AdditiveZeroAnchor,
-        ],
-        [
-            TailCandidate::MultiplicativeZeroFade,
-            TailCandidate::AdditiveZeroAnchor,
-            TailCandidate::Current,
-        ],
-    ];
-    let assignment = format!("{}|{:.9}|{source_path}", render.case_id, render.ratio);
-    let hash = assignment
-        .as_bytes()
-        .iter()
-        .fold(0xcbf2_9ce4_8422_2325_u64, |hash, byte| {
-            (hash ^ u64::from(*byte)).wrapping_mul(0x0000_0100_0000_01b3)
-        });
-    PERMUTATIONS[hash as usize % PERMUTATIONS.len()]
-}
-
-fn tail_listening_readme(trial_count: usize) -> String {
+fn tail_listening_readme(trial_count: usize, purpose: TailPackPurpose) -> String {
+    let selection = match purpose {
+        TailPackPurpose::WorstEndpoints => {
+            "Trials are the six largest current endpoint jumps in the supplied render plan."
+        }
+        TailPackPurpose::ClassifierValidation => {
+            "Trials use six distinct, previously unlabeled sources: three below and three at or above the sealed 2 kHz centroid boundary, ranked by current endpoint jump."
+        }
+    };
     format!(
-        "# Concealed Tail Listening Pack\n\nStatus: ready for operator notes\n\nTrials: {trial_count}\nCandidates per trial: 3\nAudio: mono, final one second, then 250 ms digital silence\n\n1. Keep `tail-listening-key.tsv` closed.\n2. For each row in `tail-listening-notes.tsv`, compare A, B, and C around the transition into silence.\n3. Record any click/pop, pull/thump, fade, or loss of tail continuity.\n4. Record a preference even when the differences are subtle.\n5. Set `completed=true` only after all fields were considered.\n6. Reveal the key only after notes are frozen.\n\nTrials are the six largest current endpoint jumps in the supplied render plan. The candidates are current Signal, the rejected additive zero anchor, and the multiplicative zero fade. One shared gain is applied per trial, targeting -16.48 dBFS RMS with a 0.95 peak ceiling; relative boundary amplitude is preserved. This is a local evidence artifact. Do not commit licensed audio.\n"
+        "# Concealed Tail Listening Pack\n\nStatus: ready for operator notes\n\nTrials: {trial_count}\nCandidates per trial: 3\nAudio: mono, final one second, then 250 ms digital silence\n\n1. Keep `tail-listening-key.tsv` closed.\n2. For each row in `tail-listening-notes.tsv`, compare A, B, and C around the transition into silence.\n3. Record any click/pop, pull/thump, fade, or loss of tail continuity.\n4. Record a preference even when the differences are subtle.\n5. Set `completed=true` only after all fields were considered.\n6. Reveal the key only after notes are frozen.\n\n{selection} The candidates are current Signal, the rejected additive zero anchor, and the multiplicative zero fade. One shared gain is applied per trial, targeting -16.48 dBFS RMS with a 0.95 peak ceiling; relative boundary amplitude is preserved. This is a local evidence artifact. Do not commit licensed audio.\n"
     )
 }
 

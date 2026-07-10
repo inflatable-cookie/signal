@@ -1,7 +1,7 @@
 # g10.029 Tail-Local Feature Classification
 
 Date: 2026-07-10
-Status: labeled separation found; selector validation required
+Status: cross-source concealed validation ready
 
 ## Purpose
 
@@ -58,9 +58,30 @@ The next evidence must use different source excerpts on both sides of the 2 kHz
 threshold, conceal candidate identity, and avoid repeated-source labels. Failure
 to reproduce the preference split closes tail-envelope work.
 
+## Cross-Source Validation Pack
+
+Target-local path:
+`target/stretch-corpus-g10-029-tail-classifier-validation-pack-v1`
+
+The exporter measured all 60 broad-manifest rows, excluded the three labeled
+source excerpts, ranked current endpoint jumps, and selected:
+
+- three distinct sources below `2000 Hz`, spanning `939.215402` to
+  `1973.789903 Hz`
+- three distinct sources at or above `2000 Hz`, spanning `2222.696644` to
+  `3652.827333 Hz`
+- six distinct sources total; one selected ratio per source
+- current exterior steps from `-14.123834` to `-22.034705 dBFS`
+
+The sealed key contains band membership, centroid, and candidate identity. The
+notes manifest exposes only A/B/C. Each trial compares current, additive zero,
+and multiplicative zero with the existing shared-gain, mono final-second, and
+`250 ms` post-tail-silence policy.
+
+No selector or production path changed.
+
 ## Next Task
 
-Measure the broad source pool with the same feature row. Select a bounded
-cross-source validation pack with distinct sources below and above 2 kHz. Compare
-current, additive, and multiplicative candidates under concealment. Do not wire
-the provisional selector before those notes are frozen.
+Complete all six cross-source trials. Freeze click/pop, pull/thump, fade,
+continuity, and preference notes before opening the key. Reproduce the expected
+centroid preference split or close tail-envelope work.

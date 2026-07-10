@@ -38,6 +38,8 @@ fn selection_is_bounded_and_prioritizes_largest_endpoint_corrections() {
             render_index: index,
             endpoint_correction: index as f64 / 10.0,
             source_path: format!("source-{index}"),
+            spectral_centroid_hz: 1_000.0,
+            centroid_band: TailCentroidBand::BelowThreshold,
         })
         .collect::<Vec<_>>();
 
@@ -46,6 +48,49 @@ fn selection_is_bounded_and_prioritizes_largest_endpoint_corrections() {
     assert_eq!(rows.len(), REVIEW_ROWS);
     assert_eq!(rows[0].endpoint_correction, 0.9);
     assert_eq!(rows.last().expect("last selected").endpoint_correction, 0.4);
+}
+
+#[test]
+fn classifier_selection_balances_bands_and_deduplicates_sources() {
+    let mut rows = Vec::new();
+    for (index, centroid_band) in [
+        TailCentroidBand::BelowThreshold,
+        TailCentroidBand::AtOrAboveThreshold,
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        for source in 0..4 {
+            for ratio in 0..2 {
+                rows.push(TailReviewRow {
+                    render_index: index * 100 + source * 10 + ratio,
+                    endpoint_correction: (10 - source * 2 - ratio) as f64,
+                    source_path: format!("band-{index}-source-{source}"),
+                    spectral_centroid_hz: if index == 0 { 1_000.0 } else { 3_000.0 },
+                    centroid_band,
+                });
+            }
+        }
+    }
+
+    let selected = bound_classifier_validation_rows(rows);
+
+    assert_eq!(selected.len(), 6);
+    assert_eq!(
+        selected
+            .iter()
+            .map(|row| row.source_path.as_str())
+            .collect::<std::collections::HashSet<_>>()
+            .len(),
+        6
+    );
+    assert_eq!(
+        selected
+            .iter()
+            .filter(|row| row.centroid_band == TailCentroidBand::BelowThreshold)
+            .count(),
+        3
+    );
 }
 
 #[test]
@@ -74,7 +119,9 @@ fn pack_exports_concealed_mono_tails_with_post_tail_silence() {
         export_tail_listening_pack(&[], &renders, 4_096, OfflineHighQualityPath::Default, &root)
             .expect("export tail pack");
 
-    assert!(report.contains("status=ReadyForOperator trials=1 candidates_per_trial=3"));
+    assert!(report.contains(
+        "status=ReadyForOperator selection=worst-endpoints trials=1 candidates_per_trial=3"
+    ));
     let notes = fs::read_to_string(root.join("tail-listening-notes.tsv")).expect("notes");
     let key = fs::read_to_string(root.join("tail-listening-key.tsv")).expect("key");
     assert!(!notes.contains("additive-zero-anchor"));

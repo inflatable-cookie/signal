@@ -85,6 +85,8 @@ be trustworthy before the callback contract or a structural hybrid widens.
   tails exposed low-end thumps
 - [x] isolate spectral centroid as the only clean tail-local separator while
   withholding selector implementation pending cross-source validation
+- [x] export a balanced concealed validation pack with six distinct unseen
+  sources across both centroid bands
 
 ### Batch 29.4 - Structural Hybrid Checkpoint
 
@@ -262,14 +264,21 @@ be trustworthy before the callback contract or a structural hybrid widens.
   Cross-source concealed validation is required. Evidence and stop conditions
   are in
   `docs/logs/2026-07/10-g10-029-tail-local-feature-classification.md`.
+- 2026-07-10: Measured the 60-row broad pool and exported the cross-source pack
+  at `target/stretch-corpus-g10-029-tail-classifier-validation-pack-v1`. It
+  excludes all three labeled excerpts and contains six distinct sources: three
+  below `2000 Hz` (`939.215402` to `1973.789903 Hz`) and three above
+  (`2222.696644` to `3652.827333 Hz`). Candidate identity and centroid band are
+  sealed in the key. Production and selector paths remain unchanged. Pack
+  design and stop conditions are in
+  `docs/logs/2026-07/10-g10-029-tail-local-feature-classification.md`.
 
 ## Next Task
 
-Measure the broad source pool with the same tail-local feature row. Select a
-bounded cross-source validation pack with distinct sources below and above the
-provisional `2000 Hz` centroid threshold. Compare current, additive, and
-multiplicative candidates under concealment. Do not wire the selector before
-notes are frozen; failure to reproduce the preference split closes
-tail-envelope work. Keep production unchanged while independent stereo review
-and row-level manifest validation remain open. Do not open product promotion or
-start Batch 29.4 until all five families validate.
+Complete the six concealed trials in
+`target/stretch-corpus-g10-029-tail-classifier-validation-pack-v1`. Freeze
+click/pop, pull/thump, fade, continuity, and preference notes before opening the
+key. Reproduce the expected centroid preference split or close tail-envelope
+work. Keep production unchanged while independent stereo review and row-level
+manifest validation remain open. Do not open product promotion or start Batch
+29.4 until all five families validate.
