@@ -168,7 +168,13 @@ delay-compensated phases may form vertical differences or heap neighbors.
 Positive-frequency integration remains authoritative; canonical-dual synthesis
 mirrors the solved spectrum for real output.
 
+The first horizontal phase-difference estimator is rejected. At high
+frequencies, wavelet bandwidth exceeds the `+/-62.5 Hz` residual interval
+allowed by the `384`-frame hop, so heterodyned phase differences alias before
+delay compensation. The transform remains valid; phase transport requires an
+alias-free estimator such as an auxiliary derivative-filter ratio.
+
 ## Next Task
 
-Implement Batch 29.6K, the common-grid phase-transport mechanism proof. Keep
+Research an alias-free common-grid instantaneous-frequency estimator. Keep
 corpus rendering, linked stereo, and product routing closed.

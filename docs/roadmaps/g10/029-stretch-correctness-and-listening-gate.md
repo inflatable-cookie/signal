@@ -261,9 +261,9 @@ independent stereo review.
 
 ### Batch 29.6K - Common-Grid Phase-Transport Proof
 
-- [ ] estimate centered horizontal instantaneous frequency on the `384`-frame
+- [x] estimate horizontal instantaneous frequency on the `384`-frame
   grid and prove scale on steady low, mid, and high tones
-- [ ] remove deterministic channel delay before adjacent-channel vertical
+- [x] remove deterministic channel delay before adjacent-channel vertical
   differences and prove the compensation sign/residual
 - [ ] project output columns to exact fractional source coordinates `m/ratio`;
   interpolate magnitudes and gradients, never wrapped complex coefficients
@@ -271,6 +271,8 @@ independent stereo review.
   heap and prove assignment, symmetry, coverage, impulse placement, and hashes
 - [ ] pass every Contract `082` synthetic mechanism gate before the unchanged
   60-row mono corpus opens
+  - rejected at the high-tone gate: phase differences alias outside the
+    `+/-62.5 Hz` residual interval
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -622,8 +624,13 @@ independent stereo review.
   fields at exact source coordinate `m/ratio`; synthesis stays on the proven
   uniform grid. Evidence is in
   `docs/logs/2026-07/10-g10-029-common-grid-phase-transport-contract.md`.
+- 2026-07-10: Batch 29.6K stopped before interpolation or heap work. Low/mid
+  tones passed phase scale and delay compensation, but the `8 kHz` control
+  produced `0.065450362` radians/sample frequency error and `0.243248864`
+  radians compensated residual. Evidence is in
+  `docs/logs/2026-07/10-g10-029-common-grid-phase-alias-rejection.md`.
 
 ## Next Task
 
-Implement Batch 29.6K, the report-only common-grid phase-transport proof. Keep
-corpus rendering, linked stereo, and product routing closed.
+Return to research for an alias-free common-grid instantaneous-frequency
+estimator. Keep corpus rendering, linked stereo, and product routing closed.

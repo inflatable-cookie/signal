@@ -102,9 +102,9 @@ pub use corpus_report::{
 };
 pub use formant_boundary::{measure_formant_boundary, StretchFormantBoundaryMeasurement};
 pub use frequency_adaptive::{
-    StretchCommonGridWaveletEvidence, StretchCommonGridWaveletReview,
-    StretchFrequencyAdaptiveBandEvidence, StretchFrequencyAdaptiveEvidence,
-    StretchFrequencyAdaptiveReview,
+    StretchCommonGridTonePhaseEvidence, StretchCommonGridWaveletEvidence,
+    StretchCommonGridWaveletReview, StretchFrequencyAdaptiveBandEvidence,
+    StretchFrequencyAdaptiveEvidence, StretchFrequencyAdaptiveReview,
 };
 pub use hpr_separation::{
     StretchHprAdditiveRender, StretchHprComponentEvidence, StretchHprSeparationEvidence,
@@ -2357,6 +2357,21 @@ impl OfflineHighQualityStretcher {
         sample_rate: SampleRate,
     ) -> StretchCommonGridWaveletReview {
         frequency_adaptive::common_grid_wavelet_reconstruction_review_mono(input, sample_rate)
+    }
+
+    /// Measure common-grid phase scale and channel-delay compensation on a steady tone.
+    #[doc(hidden)]
+    pub fn common_grid_tone_phase_review_mono(
+        &self,
+        input: &[Sample],
+        sample_rate: SampleRate,
+        expected_frequency_hz: f64,
+    ) -> StretchCommonGridTonePhaseEvidence {
+        frequency_adaptive::common_grid_tone_phase_review_mono(
+            input,
+            sample_rate,
+            expected_frequency_hz,
+        )
     }
 }
 

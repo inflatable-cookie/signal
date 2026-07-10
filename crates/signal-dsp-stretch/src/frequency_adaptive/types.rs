@@ -126,3 +126,22 @@ pub struct StretchCommonGridWaveletReview {
     /// Common-grid frame and reconstruction evidence.
     pub evidence: StretchCommonGridWaveletEvidence,
 }
+
+/// Steady-tone evidence for common-grid delay compensation and phase scale.
+#[derive(Clone, Debug, PartialEq)]
+pub struct StretchCommonGridTonePhaseEvidence {
+    /// Expected tone angular frequency in radians per sample.
+    pub expected_angular_frequency: f64,
+    /// Largest horizontal instantaneous-frequency error on qualified coefficients.
+    pub max_angular_frequency_error: f64,
+    /// Largest adjacent-channel phase residual after delay compensation.
+    pub max_compensated_phase_residual: f64,
+    /// Number of qualified horizontal differences.
+    pub horizontal_measurements: usize,
+    /// Number of qualified adjacent-channel comparisons.
+    pub vertical_measurements: usize,
+    /// Whether all measured derivatives and residuals are finite.
+    pub all_values_finite: bool,
+    /// Stable hash of the diagnostic trace.
+    pub trace_hash: u64,
+}

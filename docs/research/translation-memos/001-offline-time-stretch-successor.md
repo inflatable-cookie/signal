@@ -178,8 +178,8 @@ rejected ownership crossfade.
 
 ## Next Task
 
-Implement the common-grid phase-transport mechanism proof. Do not open corpus
-rendering yet.
+Research an alias-free common-grid instantaneous-frequency estimator. Do not
+open corpus rendering.
 
 ## Frequency-Adaptive Reassessment
 
@@ -261,6 +261,12 @@ output grid with the same canonical-dual synthesis geometry proven by Batch
 This is a mechanism hypothesis, not published quality evidence. Batch 29.6K
 must prove compensation sign, derivative scale, assignment truth, impulse
 placement, symmetry, coverage, and determinism before the corpus opens.
+
+The phase-difference estimator fails before heap integration. Hop `384` leaves
+only a `+/-62.5 Hz` unambiguous residual interval. At `8 kHz`, the wavelet
+passband is wider and the estimator aliases despite correct delay compensation.
+Auxiliary derivative-filter reassignment is the next bounded research question
+because it does not depend on wrapped inter-column phase.
 
 Additional primary source:
 

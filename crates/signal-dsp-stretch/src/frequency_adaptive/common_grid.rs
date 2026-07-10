@@ -1,13 +1,136 @@
 use rustfft::{num_complex::Complex64, FftPlanner};
 use signal_primitives::{Sample, SampleRate};
 
-use super::types::{StretchCommonGridWaveletEvidence, StretchCommonGridWaveletReview};
+use super::types::{
+    StretchCommonGridTonePhaseEvidence, StretchCommonGridWaveletEvidence,
+    StretchCommonGridWaveletReview,
+};
 
 const CHANNELS: usize = 1_536;
 const LOWPASS_CHANNELS: usize = 16;
 const HOP: usize = 384;
 const ALPHA: f64 = 900.0;
 const HASH_OFFSET: u64 = 0xcbf2_9ce4_8422_2325;
+
+pub(crate) fn common_grid_tone_phase_review_mono(
+    input: &[Sample],
+    sample_rate: SampleRate,
+    expected_frequency_hz: f64,
+) -> StretchCommonGridTonePhaseEvidence {
+    let fft_frames = input.len().max(HOP).div_ceil(HOP) * HOP;
+    let coefficient_frames = fft_frames / HOP;
+    let coefficients = analyze_coefficients(input, fft_frames);
+    let omega = std::f64::consts::TAU * expected_frequency_hz / sample_rate.0.max(1) as f64;
+    let maximum = coefficients
+        .iter()
+        .map(|value| value.norm())
+        .fold(0.0, f64::max);
+    let threshold = maximum * 0.5;
+    let mut frequencies = vec![f64::NAN; coefficients.len()];
+    let mut max_frequency_error = 0.0_f64;
+    let mut horizontal_measurements = 0;
+    let mut trace_hash = HASH_OFFSET;
+    for channel in 0..CHANNELS {
+        let center = std::f64::consts::PI * channel as f64 / (CHANNELS - 1) as f64;
+        for frame in 1..coefficient_frames.saturating_sub(1) {
+            let previous = coefficients[channel * coefficient_frames + frame - 1];
+            let current = coefficients[channel * coefficient_frames + frame];
+            if previous.norm() < threshold || current.norm() < threshold {
+                continue;
+            }
+            let residual = wrap_phase(current.arg() - previous.arg() - center * HOP as f64);
+            let estimate = center + residual / HOP as f64;
+            frequencies[channel * coefficient_frames + frame] = estimate;
+            max_frequency_error = max_frequency_error.max((estimate - omega).abs());
+            horizontal_measurements += 1;
+            hash_u64(&mut trace_hash, estimate.to_bits());
+        }
+    }
+    let mut shared_frequencies = vec![f64::NAN; coefficient_frames];
+    for frame in 1..coefficient_frames.saturating_sub(1) {
+        let mut weighted = 0.0;
+        let mut weight = 0.0;
+        for channel in 0..CHANNELS {
+            let index = channel * coefficient_frames + frame;
+            if frequencies[index].is_finite() {
+                let magnitude = coefficients[index].norm();
+                weighted += frequencies[index] * magnitude;
+                weight += magnitude;
+            }
+        }
+        if weight > 0.0 {
+            shared_frequencies[frame] = weighted / weight;
+        }
+    }
+    let mut max_phase_residual = 0.0_f64;
+    let mut vertical_measurements = 0;
+    for channel in 0..CHANNELS - 1 {
+        for frame in 1..coefficient_frames.saturating_sub(1) {
+            let left_index = channel * coefficient_frames + frame;
+            let right_index = (channel + 1) * coefficient_frames + frame;
+            let left_frequency = frequencies[left_index];
+            let right_frequency = frequencies[right_index];
+            if !left_frequency.is_finite() || !right_frequency.is_finite() {
+                continue;
+            }
+            let shared_frequency = shared_frequencies[frame];
+            let delay_difference =
+                HOP as f64 * (digital_delay(channel + 1) - digital_delay(channel));
+            let residual = wrap_phase(
+                coefficients[right_index].arg()
+                    - coefficients[left_index].arg()
+                    - shared_frequency * delay_difference,
+            )
+            .abs();
+            max_phase_residual = max_phase_residual.max(residual);
+            vertical_measurements += 1;
+            hash_u64(&mut trace_hash, residual.to_bits());
+        }
+    }
+    StretchCommonGridTonePhaseEvidence {
+        expected_angular_frequency: omega,
+        max_angular_frequency_error: max_frequency_error,
+        max_compensated_phase_residual: max_phase_residual,
+        horizontal_measurements,
+        vertical_measurements,
+        all_values_finite: max_frequency_error.is_finite() && max_phase_residual.is_finite(),
+        trace_hash,
+    }
+}
+
+fn analyze_coefficients(input: &[Sample], fft_frames: usize) -> Vec<Complex64> {
+    let coefficient_frames = fft_frames / HOP;
+    let positive_bins = fft_frames / 2 + 1;
+    let mut filters = build_filters(fft_frames);
+    tighten_frequency_response(&mut filters, positive_bins);
+    let mut planner = FftPlanner::<f64>::new();
+    let mut spectrum = vec![Complex64::new(0.0, 0.0); fft_frames];
+    for (slot, sample) in spectrum.iter_mut().zip(input) {
+        slot.re = f64::from(*sample);
+    }
+    planner.plan_fft_forward(fft_frames).process(&mut spectrum);
+    let mut coefficients = vec![Complex64::new(0.0, 0.0); CHANNELS * coefficient_frames];
+    for channel in 0..CHANNELS {
+        for residue in 0..coefficient_frames {
+            for bin in (residue..positive_bins).step_by(coefficient_frames) {
+                coefficients[channel * coefficient_frames + residue] +=
+                    spectrum[bin] * filters[channel * positive_bins + bin].conj();
+            }
+        }
+    }
+    let inverse = planner.plan_fft_inverse(coefficient_frames);
+    for row in coefficients.chunks_mut(coefficient_frames) {
+        inverse.process(row);
+        for value in row {
+            *value /= coefficient_frames as f64;
+        }
+    }
+    coefficients
+}
+
+fn wrap_phase(value: f64) -> f64 {
+    (value + std::f64::consts::PI).rem_euclid(std::f64::consts::TAU) - std::f64::consts::PI
+}
 
 pub(crate) fn common_grid_wavelet_reconstruction_review_mono(
     input: &[Sample],

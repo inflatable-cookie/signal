@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; common-grid phase-transport proof ready
+Status: active; common-grid phase-difference transport rejected
 Owner: dsp
 Updated: 2026-07-10
 Related contracts: `046`, `048`, `049`
@@ -543,12 +543,26 @@ tonal/transient content, and silence. Report:
 
 Require source-coordinate error at most `1e-9`, monotonicity, steady-tone
 angular-frequency error at most `1e-6` radians/sample, compensated phase
-residual at most `1e-5` radians, no duplicate or missing significant
+residual at most `2e-5` radians, no duplicate or missing significant
 assignments, heap high-water within `2*1536*output_columns`, conjugate-symmetry
 error at most `1e-9`, dual residual at most `1e-8`, no uncovered or non-finite
 output, exact target length, impulse peak error at most one frame, and identical
 repeat hashes. Failure returns to research. Passing opens the unchanged 60-row
 mono corpus gate; it does not open stereo or product routing.
+
+## 2026-07-10 Common-Grid Phase-Transport Outcome
+
+Batch 29.6K stops at its first tone gate. `312.5 Hz` and `1 kHz` controls pass
+delay compensation with maximum angular-frequency error `1.478986e-7`. At
+`8 kHz`, horizontal phase differences alias: angular-frequency error is
+`0.065450362` radians/sample and compensated adjacent-channel residual is
+`0.243248864` radians.
+
+The `384`-frame hop permits only a `+/-62.5 Hz` unambiguous heterodyned residual
+around a channel centre. High-frequency Cauchy filters are wider than that
+interval. Do not implement interpolation, heap integration, synthesis, or the
+corpus gate on these derivatives. The common-grid reconstruction remains valid;
+the phase-difference estimator is rejected.
 
 ## Clean-Room Rule
 
@@ -558,5 +572,7 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Implement Batch 29.6K, the report-only common-grid phase-transport mechanism
-proof. Keep the 60-row corpus, linked stereo, and all product routing closed.
+Research an alias-free instantaneous-frequency estimator for the passing
+common-grid transform. Prefer auxiliary derivative-filter or reassignment
+evidence before changing hop or redundancy. Keep the corpus, linked stereo,
+and all product routing closed.

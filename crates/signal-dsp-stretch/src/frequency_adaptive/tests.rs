@@ -111,6 +111,41 @@ fn common_grid_wavelet_reconstruction_controls_pass() {
     }
 }
 
+#[test]
+fn common_grid_phase_transport_rejects_high_band_phase_aliasing() {
+    for frequency in [312.5_f32, 1_000.0] {
+        let input = (0..24_576)
+            .map(|index| {
+                0.5 * (std::f32::consts::TAU * frequency * index as f32 / SAMPLE_RATE.0 as f32)
+                    .sin()
+            })
+            .collect::<Vec<_>>();
+        let evidence =
+            common_grid_tone_phase_review_mono(&input, SAMPLE_RATE, f64::from(frequency));
+        assert!(evidence.horizontal_measurements > 0, "{evidence:?}");
+        assert!(evidence.vertical_measurements > 0, "{evidence:?}");
+        assert!(
+            evidence.max_angular_frequency_error <= 1.0e-6,
+            "{evidence:?}"
+        );
+        assert!(
+            evidence.max_compensated_phase_residual <= 2.0e-5,
+            "{evidence:?}"
+        );
+        assert!(evidence.all_values_finite);
+        eprintln!("common_grid_phase frequency={frequency} {evidence:?}");
+    }
+    let frequency = 8_000.0_f32;
+    let input = (0..24_576)
+        .map(|index| {
+            0.5 * (std::f32::consts::TAU * frequency * index as f32 / SAMPLE_RATE.0 as f32).sin()
+        })
+        .collect::<Vec<_>>();
+    let evidence = common_grid_tone_phase_review_mono(&input, SAMPLE_RATE, f64::from(frequency));
+    assert!(evidence.max_angular_frequency_error > 1.0e-3);
+    assert!(evidence.max_compensated_phase_residual > 0.1);
+}
+
 fn assert_reconstruction_gate(input: &[Sample]) {
     let review = frequency_adaptive_reconstruction_review_mono(input, SAMPLE_RATE);
     let evidence = &review.evidence;

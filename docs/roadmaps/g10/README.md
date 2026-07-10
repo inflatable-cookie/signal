@@ -75,7 +75,8 @@ implementation remains Signal-owned.
   wavelet frame before phase propagation. It passes canonical-dual and control
   gates with condition ratio `1.025819956`. Batch 29.6K now owns exact
   fractional source projection and delay-compensated phase transport; linked
-  stereo remains closed.
+  stereo remains closed. Its phase-difference estimator aliases on the `8 kHz`
+  tone and is rejected before interpolation or heap integration.
 - Offline artifacts and RealtimePreview have bounded contracts and prototype
   paths, but callback-safe preview integration and fully streaming artifact
   output remain gated until their owning source-fill/cache contracts exist.
@@ -165,5 +166,5 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Implement Batch 29.6K, the report-only common-grid phase-transport proof. Keep
+Research an alias-free common-grid instantaneous-frequency estimator. Keep
 corpus rendering, linked stereo, and product integration closed.
