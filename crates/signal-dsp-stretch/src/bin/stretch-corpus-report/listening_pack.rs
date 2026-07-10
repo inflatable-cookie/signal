@@ -15,12 +15,15 @@ mod audio;
 mod note_status;
 #[path = "listening_pack/selection.rs"]
 mod selection;
+#[path = "listening_pack/tail.rs"]
+mod tail;
 
 use audio::{gain_db, level_match_group, stable_assignment_is_signal_a, write_float_wav};
 #[cfg(test)]
 use audio::{level_stats, PEAK_CEILING};
 pub(super) use note_status::format_blind_listening_note_status;
 use selection::select_one_source_per_required_family;
+pub(super) use tail::export_tail_listening_pack;
 
 const REQUIRED_FAMILIES: [&str; 5] = [
     "stretch:drums_percussion",

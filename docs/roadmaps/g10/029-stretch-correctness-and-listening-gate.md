@@ -75,6 +75,8 @@ be trustworthy before the callback contract or a structural hybrid widens.
 - [x] reject source-endpoint tail anchoring after the combined corpus gate
 - [x] qualify the bounded zero-tail anchor for focused listening after its
   objective corpus gate
+- [x] export the worst zero-anchor corrections as a concealed three-way mono
+  tail-listening pack with post-tail silence
 
 ### Batch 29.4 - Structural Hybrid Checkpoint
 
@@ -210,12 +212,19 @@ be trustworthy before the callback contract or a structural hybrid widens.
   focused listening rather than production. Cache identity remains unchanged.
   Evidence and limits are in
   `docs/logs/2026-07/10-g10-029-zero-tail-anchor-objective-gate.md`.
+- 2026-07-10: Generated the focused tail pack at
+  `target/stretch-corpus-g10-029-tail-listening-pack-v1`. It contains the six
+  largest current endpoint jumps, from `-6.328693` to `-12.769706 dBFS`, with
+  concealed current, source-anchor, and zero-anchor mono candidates. Each WAV
+  exposes the final second followed by `250 ms` digital silence. One shared
+  per-trial gain preserves relative boundary amplitude. Production and cache
+  identity remain unchanged. Pack design and status are in
+  `docs/logs/2026-07/10-g10-029-tail-listening-pack.md`.
 
 ## Next Task
 
-Generate a bounded mono tail-listening pack for the largest corrections and
-loudest current tails. Compare current, source-anchor, and zero-anchor tails
-with post-tail silence under concealed assignment. Keep production unchanged
-while operator listening, independent stereo review, and row-level manifest
-validation remain open. Do not open product promotion or start Batch 29.4 until
-all five families validate.
+Complete the six concealed tail trials and freeze click/pop, pull/thump,
+continuity, and preference notes before opening the key. Keep production
+unchanged while this local-sound check, independent stereo review, and row-level
+manifest validation remain open. Do not open product promotion or start Batch
+29.4 until all five families validate.

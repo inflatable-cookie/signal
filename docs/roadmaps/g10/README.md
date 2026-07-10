@@ -123,10 +123,10 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Generate a bounded mono tail-listening pack for the largest zero-anchor
-corrections and loudest current tails. Compare current, source-anchor, and
-zero-anchor tails under concealed assignment. Keep production unchanged while
-operator listening, independent stereo, and row-level completion remain open.
-Do not start Batch 29.4 or product promotion until all five listening families
-validate. Keep RealtimePreview source-fill and broader product integration
-paused.
+Complete the six concealed mono tail trials at
+`target/stretch-corpus-g10-029-tail-listening-pack-v1`. Freeze click/pop,
+pull/thump, continuity, and preference notes before opening the key. Keep
+production unchanged while tail listening, independent stereo, and row-level
+completion remain open. Do not start Batch 29.4 or product promotion until all
+five listening families validate. Keep RealtimePreview source-fill and broader
+product integration paused.
