@@ -99,7 +99,8 @@ pub use corpus_report::{
 };
 pub use formant_boundary::{measure_formant_boundary, StretchFormantBoundaryMeasurement};
 pub use hybrid_trace::{
-    StretchAdaptiveTimelineRender, StretchHybridFrameTrace, StretchHybridOwner,
+    StretchAdaptiveTimelineRender, StretchFixedMapPeakEventTrace, StretchFixedMapPeakRegionTrace,
+    StretchFixedMapPeakTransientRender, StretchHybridFrameTrace, StretchHybridOwner,
     StretchHybridRender, StretchHybridTrace, StretchHybridTransitionDecision,
     StretchHybridTransitionRejection, StretchHybridTransitionTrace,
 };
@@ -2265,6 +2266,20 @@ impl OfflineHighQualityStretcher {
         let current = self.stretch_mono(input);
         hybrid_trace::build_adaptive_timeline_render(input, &current, self.ratio)
     }
+
+    /// Render the report-only fixed-map peak-selective transient proof.
+    ///
+    /// This path keeps the current global synthesis map and uses the frozen
+    /// onset classifier only to guard peak-local group-delay decisions. Product
+    /// routing and cache identity never select it.
+    #[doc(hidden)]
+    pub fn stretch_fixed_map_peak_transient_review_mono(
+        &mut self,
+        input: &[Sample],
+    ) -> StretchFixedMapPeakTransientRender {
+        let current = self.stretch_mono(input);
+        hybrid_trace::build_fixed_map_peak_transient_render(input, &current, self.ratio)
+    }
 }
 
 impl TimeStretcher for OfflineHighQualityStretcher {
@@ -3876,6 +3891,45 @@ mod tests {
             .windows(2)
             .all(|pair| pair[0] < pair[1]));
         assert_eq!(render.uncovered_output_frames, 0);
+    }
+
+    #[test]
+    fn fixed_map_peak_transient_review_is_report_only_deterministic_and_exact_length() {
+        let input = masked_soft_attack_probe(0.35);
+        let ratio = 1.5;
+        let mut first = OfflineHighQualityStretcher::new(ratio);
+        let mut repeated = OfflineHighQualityStretcher::new(ratio);
+        let render = first.stretch_fixed_map_peak_transient_review_mono(&input);
+        let repeated_render = repeated.stretch_fixed_map_peak_transient_review_mono(&input);
+
+        assert_eq!(render, repeated_render);
+        assert_eq!(render.samples.len(), (input.len() as f64 * ratio) as usize);
+        assert!(render.center_threshold_frames > 0.0);
+        assert!(!render.events.is_empty());
+        assert!(!render.candidate_regions.is_empty());
+        assert!(render.threshold_crossings > 0);
+        assert!(render
+            .events
+            .iter()
+            .any(|event| event.reinitialized_analysis_frame.is_some()
+                && event.reinitialized_bins > 0));
+        assert!(render
+            .candidate_regions
+            .iter()
+            .all(|region| region.first_bin <= region.peak_bin && region.peak_bin < region.end_bin));
+        assert_eq!(render.uncovered_output_frames, 0);
+    }
+
+    #[test]
+    fn fixed_map_peak_transient_review_preserves_identity_bypass() {
+        let input = masked_soft_attack_probe(0.35);
+        let mut stretcher = OfflineHighQualityStretcher::new(1.0);
+        let current = stretcher.stretch_mono(&input);
+        let render = stretcher.stretch_fixed_map_peak_transient_review_mono(&input);
+
+        assert_eq!(render.samples, current);
+        assert!(render.events.is_empty());
+        assert!(render.candidate_regions.is_empty());
     }
 
     #[test]

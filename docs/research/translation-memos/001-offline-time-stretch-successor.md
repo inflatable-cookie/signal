@@ -128,8 +128,22 @@ component-specific stretching, and a recombination contract. It is deferred,
 not disproved. Reopen it only if fixed-map peak processing fails the frozen
 crest, placement, integrity, spectrum, and combined gates.
 
+## Fixed-Map Peak Proof Outcome
+
+The fixed-map peak proof is rejected. It produced deterministic exact-length
+output and complete overlap-add coverage, but improved anchored `L001` crest by
+only `0.040942 dB`, worsened mean measurable event placement by `16.851522`
+frames, regressed tonal residual in `21/60` rows, and passed `12/60` combined
+rows. Peak-local phase reset without time redistribution does not close
+Signal's transient defect on the current grid.
+
+Do not tune the group-delay threshold or broaden reset ownership. The next
+research task is to define a reconstructable transient/residual separation
+boundary before any component candidate is authorized.
+
 ## Next Task
 
-Implement the report-only fixed-map peak transient proof frozen in contract
-`082`. Do not tune the rejected adaptive timeline or open separation, adaptive
-resolution, linked stereo, or production routing.
+Reassess contract `082` for explicit transient/residual separation. Freeze its
+perfect-reconstruction split, mask continuity, component processing,
+recombination, evidence, and stop conditions before implementation. Keep
+adaptive resolution, linked stereo, and production routing closed.

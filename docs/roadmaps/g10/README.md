@@ -49,7 +49,11 @@ implementation remains Signal-owned.
   group-delay-selected transient peak regions near the analysis-window centre.
   Explicit transient/residual separation is deferred behind its own
   perfect-reconstruction and recombination contract. Adaptive resolution and
-  linked stereo remain closed until the peak proof passes.
+  linked stereo remained closed for the peak proof. That proof is now rejected:
+  anchored `L001` improved `0.040942 dB`, measurable-row timing worsened
+  `16.851522` frames, tonal residual regressed in `21/60` rows, and the combined
+  gate passed `12/60`. Component separation remains unimplemented pending its
+  own contract.
 - Offline artifacts and RealtimePreview have bounded contracts and prototype
   paths, but callback-safe preview integration and fully streaming artifact
   output remain gated until their owning source-fill/cache contracts exist.
@@ -139,8 +143,9 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Start Batch 29.6C with the report-only fixed-map peak transient proof frozen in
-contract `082`. Add peak-local group-delay analysis and centre-adjacent phase
-reinitialization without changing the global time map. Adaptive resolution,
-component separation, linked stereo, production, cache identity, pitch/dynamic
-routing, RealtimePreview, and product integration remain closed.
+Stop for contract `082` reassessment. Define the perfect-reconstruction split,
+mask continuity, component processing, recombination, evidence, and stop
+conditions for explicit transient/residual separation before another
+candidate. Adaptive resolution, component implementation, linked stereo,
+production, cache identity, pitch/dynamic routing, RealtimePreview, and product
+integration remain closed.

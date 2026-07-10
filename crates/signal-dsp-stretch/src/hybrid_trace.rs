@@ -6,6 +6,7 @@ use crate::{
     DEFAULT_WINDOW_SIZE,
 };
 
+mod peak_transient_render;
 mod render;
 mod timeline_render;
 mod transition;
@@ -14,6 +15,11 @@ mod transition;
 use transition::nearest_owner;
 use transition::schedule_transitions;
 
+pub(crate) use peak_transient_render::build_fixed_map_peak_transient_render;
+pub use peak_transient_render::{
+    StretchFixedMapPeakEventTrace, StretchFixedMapPeakRegionTrace,
+    StretchFixedMapPeakTransientRender,
+};
 pub(crate) use render::build_hybrid_render;
 pub use render::{
     StretchHybridRender, StretchHybridTransitionDecision, StretchHybridTransitionRejection,

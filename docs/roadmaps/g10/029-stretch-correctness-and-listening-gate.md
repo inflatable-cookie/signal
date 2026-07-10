@@ -147,16 +147,18 @@ independent stereo review.
 
 ### Batch 29.6C - Fixed-Map Peak Transient Proof
 
-- [ ] add one time-ramped companion FFT to estimate per-bin group delay on the
+- [x] add one time-ramped companion FFT to estimate per-bin group delay on the
   current `2048/512` grid
-- [ ] use frozen onset guards, magnitude-minimum peak regions, and one
+- [x] use frozen onset guards, magnitude-minimum peak regions, and one
   centre-adjacent phase-reinitialization frame per collected attack event
-- [ ] keep constant global synthesis positions and ordinary propagation for
+- [x] keep constant global synthesis positions and ordinary propagation for
   non-transient bins; do not boost magnitude or crossfade output
-- [ ] report guarded events, candidate peaks, threshold crossings, collected
+- [x] report guarded events, candidate peaks, threshold crossings, collected
   regions, reinitialized bins/frames, and unmatched guards
 - [ ] pass the unchanged contract `082` crest, placement, integrity,
   static-spectrum, formant, boundary, and combined gates
+  - mechanism rejected: `0.040942 dB` `L001` improvement, `+16.851522`
+    measurable-row mean timing delta, and `12/60` combined passes
 
 ### Batch 29.6D - Adaptive Resolution Reconstruction
 
@@ -428,11 +430,19 @@ independent stereo review.
   continuity, component-processing, and recombination contract. Adaptive
   resolution and linked stereo remain closed. Decision evidence is in
   `docs/logs/2026-07/10-g10-029-fixed-map-peak-transient-decision.md`.
+- 2026-07-10: Measured Batch 29.6C. The report-only companion FFT found
+  `249687` peak candidates across `2370` guarded events and reinitialized
+  `492156` bins at `1386` centre-threshold crossings. Integrity and coverage
+  passed `60/60`, but anchored `L001` improved only `0.040942 dB`, mean timing
+  worsened `16.851522` frames across measurable rows, and the combined gate
+  passed `12/60`. The mechanism is rejected without tuning. Evidence is in
+  `docs/logs/2026-07/10-g10-029-fixed-map-peak-transient-rejection.md`.
 
 ## Next Task
 
-Start Batch 29.6C with the report-only fixed-map peak transient proof frozen in
-contract `082`. Add the time-ramped group-delay analysis and peak-local event
-state, then run the unchanged current-grid gate. Do not tune the rejected
-timeline, open separation, adaptive resolution, or linked stereo, or change
-production, cache, pitch/dynamic, product, or RealtimePreview routing.
+Stop for contract `082` reassessment. Define explicit transient/residual
+separation through a perfect-reconstruction split, mask continuity,
+component-processing, recombination, evidence, and stop conditions before
+another candidate. Do not tune rejected mechanisms, open adaptive resolution
+or linked stereo, or change production, cache, pitch/dynamic, product, or
+RealtimePreview routing.

@@ -1,7 +1,7 @@
 # g10.029 Fixed-Map Peak Transient Decision
 
 Date: 2026-07-10
-Status: mechanism frozen; implementation not started
+Status: mechanism frozen, implemented, and rejected
 Contract: `082`
 
 ## Decision
@@ -108,7 +108,19 @@ only after its analysis/reconstruction and recombination contract exists.
 - [Axel Roebel, “A New Approach to Transient Processing in the Phase Vocoder,” DAFx-03](https://www.dafx.de/paper-archive/2003/pdfs/dafx32.pdf)
 - [Duxbury, Davies, and Sandler, “Separation Of Transient Information In Musical Audio Using Multiresolution Analysis Techniques,” DAFx-01](https://www.dafx.de/paper-archive/2001/papers/duxbury.pdf)
 
-## Next Task
+## Planned Implementation
 
 Implement the report-only Batch 29.6C analysis and peak-event state, then run
 the unchanged contract `082` gate.
+
+## Outcome
+
+Implemented in Batch 29.6C and rejected without tuning. The candidate improved
+anchored `L001` crest by `0.040942 dB`, worsened measurable-row mean placement
+by `16.851522` frames, and passed `12/60` combined rows. See
+`docs/logs/2026-07/10-g10-029-fixed-map-peak-transient-rejection.md`.
+
+## Next Task
+
+Reassess contract `082` for explicit transient/residual separation. Freeze the
+component boundary before implementation.

@@ -16,6 +16,8 @@ mod formant_boundary;
 mod hybrid_review;
 #[path = "stretch-corpus-report/listening_pack.rs"]
 mod listening_pack;
+#[path = "stretch-corpus-report/peak_transient_review.rs"]
+mod peak_transient_review;
 #[path = "stretch-corpus-report/tail_anchor.rs"]
 mod tail_anchor;
 #[path = "stretch-corpus-report/tail_features.rs"]
@@ -24,6 +26,7 @@ mod tail_features;
 mod timeline_review;
 
 use alloc_tracker::measure_peak_live_heap;
+use peak_transient_review::PeakTransientReviewEvidence;
 
 use rustfft::{num_complex::Complex32, FftPlanner};
 use signal_analysis_character::{CharacterAnalyzer, CharacterAnalyzerConfig};
@@ -2642,6 +2645,10 @@ fn format_external_benchmark_quality_metrics(
         let mut timeline_stretcher =
             OfflineHighQualityStretcher::with_path(render.ratio, signal_path);
         let timeline_render = timeline_stretcher.stretch_adaptive_timeline_review_mono(source_mono);
+        let mut peak_transient_stretcher =
+            OfflineHighQualityStretcher::with_path(render.ratio, signal_path);
+        let peak_transient_render =
+            peak_transient_stretcher.stretch_fixed_map_peak_transient_review_mono(source_mono);
         let tail_local_feature_line = format_tail_local_feature_line(
             &render.case_id,
             &source.source_path,
@@ -2664,6 +2671,8 @@ fn format_external_benchmark_quality_metrics(
             measure_tonal_texture(source_mono, &hybrid_render.samples, render.ratio);
         let timeline_tonal_texture =
             measure_tonal_texture(source_mono, &timeline_render.samples, render.ratio);
+        let peak_transient_tonal_texture =
+            measure_tonal_texture(source_mono, &peak_transient_render.samples, render.ratio);
         let external_tonal_texture =
             measure_tonal_texture(source_mono, &external_audio.mono_samples, render.ratio);
         let draft_tonal_texture = measure_tonal_texture(source_mono, &draft_output, render.ratio);
@@ -2728,6 +2737,12 @@ fn format_external_benchmark_quality_metrics(
         let timeline_formant_boundary = measure_formant_boundary(
             source_mono,
             &timeline_render.samples,
+            render.ratio,
+            source_audio.sample_rate_hz,
+        );
+        let peak_transient_formant_boundary = measure_formant_boundary(
+            source_mono,
+            &peak_transient_render.samples,
             render.ratio,
             source_audio.sample_rate_hz,
         );
@@ -2818,6 +2833,13 @@ fn format_external_benchmark_quality_metrics(
         let timeline_transient_detail = measure_transient_detail(
             source_mono,
             &timeline_render.samples,
+            render.ratio,
+            QUALITY_METRIC_WINDOW_SIZE,
+            QUALITY_METRIC_HOP_SIZE,
+        );
+        let peak_transient_detail = measure_transient_detail(
+            source_mono,
+            &peak_transient_render.samples,
             render.ratio,
             QUALITY_METRIC_WINDOW_SIZE,
             QUALITY_METRIC_HOP_SIZE,
@@ -2969,6 +2991,13 @@ fn format_external_benchmark_quality_metrics(
             RENDER_INTEGRITY_ENDPOINT_SOURCE_FRAMES,
             RENDER_INTEGRITY_SILENCE_THRESHOLD,
         );
+        let peak_transient_integrity = measure_stretch_render_integrity(
+            source_mono,
+            &peak_transient_render.samples,
+            render.ratio,
+            RENDER_INTEGRITY_ENDPOINT_SOURCE_FRAMES,
+            RENDER_INTEGRITY_SILENCE_THRESHOLD,
+        );
         let signal_integrity_assessment =
             signal_dsp_stretch::assess_stretch_render_integrity(signal_integrity, integrity_limits);
         let external_integrity_assessment = signal_dsp_stretch::assess_stretch_render_integrity(
@@ -2995,6 +3024,11 @@ fn format_external_benchmark_quality_metrics(
             timeline_integrity,
             integrity_limits,
         );
+        let peak_transient_integrity_assessment =
+            signal_dsp_stretch::assess_stretch_render_integrity(
+                peak_transient_integrity,
+                integrity_limits,
+            );
         let tail_anchor_line = TailAnchorReviewEvidence {
             control_id: "source",
             case_id: &render.case_id,
@@ -3163,6 +3197,63 @@ fn format_external_benchmark_quality_metrics(
             candidate_transient: timeline_transient_detail,
             candidate_integrity: timeline_integrity,
             candidate_integrity_passed: timeline_integrity_assessment.passed,
+        }
+        .format_report_line();
+        let peak_transient_anchor_events =
+            (signal_transient_detail.matched_transients > 0).then(|| {
+                let anchor = signal_transient_detail.max_crest_input_frame;
+                let current = measure_transient_event_detail(
+                    source_mono,
+                    &signal_output,
+                    render.ratio,
+                    anchor,
+                    QUALITY_METRIC_WINDOW_SIZE,
+                    QUALITY_METRIC_HOP_SIZE,
+                )
+                .expect("current matched transient anchor must remain measurable");
+                let candidate = measure_transient_event_detail(
+                    source_mono,
+                    &peak_transient_render.samples,
+                    render.ratio,
+                    anchor,
+                    QUALITY_METRIC_WINDOW_SIZE,
+                    QUALITY_METRIC_HOP_SIZE,
+                )
+                .expect("fixed-map peak matched transient anchor must remain measurable");
+                (current, candidate)
+            });
+        let peak_transient_line = PeakTransientReviewEvidence {
+            case_id: &render.case_id,
+            source_path: &source.source_path,
+            ratio: render.ratio,
+            render: &peak_transient_render,
+            current_tonal: signal_tonal_texture,
+            candidate_tonal: peak_transient_tonal_texture,
+            current_formant: signal_formant_boundary,
+            candidate_formant: peak_transient_formant_boundary,
+            current_transient: signal_transient_detail,
+            candidate_transient: peak_transient_detail,
+            anchor_events: peak_transient_anchor_events,
+            candidate_integrity_passed: peak_transient_integrity_assessment.passed,
+        }
+        .format_report_line();
+        let peak_transient_combined_gate_line = TailAnchorReviewEvidence {
+            control_id: "fixed_map_peak_transient",
+            case_id: &render.case_id,
+            source_path: &source.source_path,
+            ratio: render.ratio,
+            current_output: &signal_output,
+            candidate_output: &peak_transient_render.samples,
+            current_boundary: signal_formant_boundary,
+            candidate_boundary: peak_transient_formant_boundary,
+            current_tonal: signal_tonal_texture,
+            candidate_tonal: peak_transient_tonal_texture,
+            current_formant: signal_formant_boundary,
+            candidate_formant: peak_transient_formant_boundary,
+            current_transient: signal_transient_detail,
+            candidate_transient: peak_transient_detail,
+            candidate_integrity: peak_transient_integrity,
+            candidate_integrity_passed: peak_transient_integrity_assessment.passed,
         }
         .format_report_line();
         let mut feature_delta_line = None;
@@ -3716,6 +3807,8 @@ fn format_external_benchmark_quality_metrics(
         lines.push(hybrid_combined_gate_line);
         lines.push(timeline_line);
         lines.push(timeline_combined_gate_line);
+        lines.push(peak_transient_line);
+        lines.push(peak_transient_combined_gate_line);
         lines.push(tail_local_feature_line);
         if let Some(line) = feature_delta_line {
             lines.push(line);

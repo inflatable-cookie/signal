@@ -4,10 +4,18 @@ use rustfft::{num_complex::Complex32, Fft, FftPlanner};
 use signal_primitives::Sample;
 
 mod adaptive_timeline;
+mod fixed_map_peak;
 
 use adaptive_timeline::{build_adaptive_timeline_schedule, AdaptiveTimelineSchedule};
+use fixed_map_peak::{FixedMapPeakEvidence, FixedMapPeakState};
 
 pub(crate) use adaptive_timeline::AdaptiveTimelineEngineRender;
+
+pub(crate) struct FixedMapPeakEngineRender {
+    pub(crate) samples: Vec<Sample>,
+    pub(crate) evidence: FixedMapPeakEvidence,
+    pub(crate) uncovered_output_frames: usize,
+}
 
 /// Run the draft phase-vocoder backend.
 pub(crate) fn phase_vocoder(
@@ -189,6 +197,43 @@ pub(crate) fn adaptive_transient_timeline_phase_vocoder(
     }
 }
 
+/// Run the report-only fixed-map peak-selective transient candidate.
+pub(crate) fn fixed_map_peak_transient_phase_vocoder(
+    input: &[Sample],
+    target_len: usize,
+    ratio: f64,
+    window_size: usize,
+    analysis_hop: usize,
+    onset_frames: &[usize],
+) -> FixedMapPeakEngineRender {
+    let prefix_frames = window_size / 2;
+    let suffix_frames = window_size + analysis_hop;
+    let mut padded_input = vec![0.0; prefix_frames + input.len() + suffix_frames];
+    padded_input[prefix_frames..prefix_frames + input.len()].copy_from_slice(input);
+
+    let half_window = window_size as f64 * 0.5;
+    let output_start =
+        ((prefix_frames as f64 - half_window) * ratio + half_window).round() as usize;
+    let output_end = output_start + target_len;
+    let config =
+        PhaseVocoderConfig::new(&padded_input, output_end, ratio, window_size, analysis_hop);
+    let mut engine = DraftPhaseVocoder::new_with_fixed_map_peak(config, onset_frames);
+    engine.process(&padded_input);
+    let uncovered_output_frames = engine.uncovered_frames(output_start, output_end);
+    let evidence = engine
+        .peak_transient
+        .as_ref()
+        .expect("fixed-map peak state")
+        .evidence();
+    let output = engine.finish();
+
+    FixedMapPeakEngineRender {
+        samples: output[output_start..output_end].to_vec(),
+        evidence,
+        uncovered_output_frames,
+    }
+}
+
 /// Run the OfflineHighQuality prototype over interleaved stereo with a linked
 /// mid/side analysis surface instead of independent left/right stretching.
 pub(crate) fn transient_reset_phase_vocoder_linked_stereo(
@@ -286,6 +331,7 @@ enum PhasePropagationMode {
     IdentityLockedTransientReset,
     IdentityLockedCompressionTransientAnchor,
     AdaptiveTransientTimeline,
+    FixedMapPeakTransient,
 }
 
 impl PhaseVocoderConfig {
@@ -315,6 +361,7 @@ struct DraftPhaseVocoder {
     propagation: PhaseVocoderPropagationState,
     synthesis: PhaseVocoderSynthesisState,
     frame_schedule: Option<AdaptiveTimelineSchedule>,
+    peak_transient: Option<FixedMapPeakState>,
 }
 
 struct PhaseVocoderAnalysisState {
@@ -329,6 +376,7 @@ struct PhaseVocoderAnalysisState {
     previous_energy: f64,
     transient_reset_current_frame: bool,
     buffer: Vec<Complex32>,
+    time_weighted_buffer: Option<Vec<Complex32>>,
 }
 
 struct PhaseVocoderPropagationState {
@@ -356,6 +404,19 @@ impl DraftPhaseVocoder {
         schedule: AdaptiveTimelineSchedule,
     ) -> Self {
         Self::new_internal(config, mode, Some(schedule))
+    }
+
+    fn new_with_fixed_map_peak(config: PhaseVocoderConfig, onset_frames: &[usize]) -> Self {
+        let mut engine =
+            Self::new_internal(config, PhasePropagationMode::FixedMapPeakTransient, None);
+        engine.peak_transient = Some(FixedMapPeakState::new(
+            engine.config.frame_count,
+            engine.config.bins,
+            &engine.window,
+            engine.config.analysis_hop,
+            onset_frames,
+        ));
+        engine
     }
 
     fn new_internal(
@@ -388,6 +449,8 @@ impl DraftPhaseVocoder {
         let ola_len = final_synthesis_start + config.window_size + 1;
         let output_len = ola_len.max(config.target_len);
 
+        let time_weighted_buffer = (mode == PhasePropagationMode::FixedMapPeakTransient)
+            .then(|| vec![Complex32::new(0.0, 0.0); config.window_size]);
         let analysis = PhaseVocoderAnalysisState {
             forward,
             current_magnitudes: vec![0.0; config.bins],
@@ -400,6 +463,7 @@ impl DraftPhaseVocoder {
             previous_energy: 0.0,
             transient_reset_current_frame: false,
             buffer: vec![Complex32::new(0.0, 0.0); config.window_size],
+            time_weighted_buffer,
         };
         let propagation = PhaseVocoderPropagationState {
             omega,
@@ -422,6 +486,7 @@ impl DraftPhaseVocoder {
             propagation,
             synthesis,
             frame_schedule,
+            peak_transient: None,
         }
     }
 
@@ -429,6 +494,7 @@ impl DraftPhaseVocoder {
         for frame_index in 0..self.config.frame_count {
             self.analyze_frame(input, frame_index);
             self.track_spectral_peaks(frame_index);
+            self.prepare_fixed_map_peak_transient(frame_index);
             self.propagate_phase(frame_index);
             self.synthesize_frame(frame_index);
         }
@@ -437,17 +503,49 @@ impl DraftPhaseVocoder {
     fn analyze_frame(&mut self, input: &[Sample], frame_index: usize) {
         let analysis_start = frame_index * self.config.analysis_hop;
         self.analysis.current_energy = 0.0;
-        for (slot, (sample, weight)) in self.analysis.buffer.iter_mut().zip(
-            input[analysis_start..analysis_start + self.config.window_size]
-                .iter()
-                .zip(self.window.iter()),
-        ) {
+        let time_center = (self.config.window_size.saturating_sub(1)) as f32 * 0.5;
+        for (index, (slot, (sample, weight))) in self
+            .analysis
+            .buffer
+            .iter_mut()
+            .zip(
+                input[analysis_start..analysis_start + self.config.window_size]
+                    .iter()
+                    .zip(self.window.iter()),
+            )
+            .enumerate()
+        {
             let windowed = sample * weight;
             self.analysis.current_energy += (windowed * windowed) as f64;
             *slot = Complex32::new(windowed, 0.0);
+            if let Some(time_weighted) = self.analysis.time_weighted_buffer.as_mut() {
+                time_weighted[index] = Complex32::new(windowed * (index as f32 - time_center), 0.0);
+            }
         }
         self.analysis.current_energy /= self.config.window_size as f64;
         self.analysis.forward.process(&mut self.analysis.buffer);
+        if let Some(time_weighted) = self.analysis.time_weighted_buffer.as_mut() {
+            self.analysis.forward.process(time_weighted);
+        }
+    }
+
+    fn prepare_fixed_map_peak_transient(&mut self, frame_index: usize) {
+        let Some(peak_transient) = self.peak_transient.as_mut() else {
+            return;
+        };
+        let time_weighted = self
+            .analysis
+            .time_weighted_buffer
+            .as_ref()
+            .expect("fixed-map peak time-weighted spectrum");
+        peak_transient.process_frame(
+            frame_index,
+            self.config.analysis_hop,
+            &self.analysis.current_peaks,
+            &self.analysis.current_magnitudes,
+            &self.analysis.buffer,
+            time_weighted,
+        );
     }
 
     fn track_spectral_peaks(&mut self, frame_index: usize) {
@@ -521,6 +619,19 @@ impl DraftPhaseVocoder {
                     self.lock_phase_to_tracked_peak_regions(frame_index);
                 }
                 _ => self.lock_phase_to_peaks(),
+            }
+        }
+
+        if let Some(peak_transient) = self.peak_transient.as_ref() {
+            for (bin, selected) in peak_transient
+                .reinitialize_bins()
+                .iter()
+                .copied()
+                .enumerate()
+            {
+                if selected {
+                    self.propagation.synthesis_phase[bin] = self.analysis.current_phases[bin];
+                }
             }
         }
 
@@ -603,7 +714,8 @@ impl DraftPhaseVocoder {
             | PhasePropagationMode::IdentityLockedStabilityAdaptive
             | PhasePropagationMode::IdentityLockedTrackedPeakRegions
             | PhasePropagationMode::IdentityLockedMagnitudeSlew
-            | PhasePropagationMode::AdaptiveTransientTimeline => false,
+            | PhasePropagationMode::AdaptiveTransientTimeline
+            | PhasePropagationMode::FixedMapPeakTransient => false,
         }
     }
 
@@ -613,7 +725,8 @@ impl DraftPhaseVocoder {
             | PhasePropagationMode::IdentityLockedTransientReset
             | PhasePropagationMode::IdentityLockedCompressionTransientAnchor
             | PhasePropagationMode::IdentityLockedMagnitudeSlew
-            | PhasePropagationMode::AdaptiveTransientTimeline => true,
+            | PhasePropagationMode::AdaptiveTransientTimeline
+            | PhasePropagationMode::FixedMapPeakTransient => true,
             PhasePropagationMode::IdentityLockedStabilityAdaptive => {
                 frame_index == 0 || self.analysis.current_spectral_stability >= 0.70
             }

@@ -53,7 +53,8 @@ must not concatenate independent renders.
 
 1. current-grid adaptive transient timeline — rejected after timing and
    combined-gate failure
-2. fixed-map peak transient proof
+2. fixed-map peak transient proof — rejected after crest, placement, spectrum,
+   and combined-gate failure
 3. adaptive-resolution reconstruction checkpoint
 4. combined fixed-ratio mono candidate
 5. shared-decision linked stereo
@@ -73,12 +74,14 @@ may authorize the next stage but cannot promote product quality alone.
 
 ## Deferred Shape
 
-Explicit transient/residual separation remains a research fallback. It cannot
-enter the successor until it has its own perfect-reconstruction analysis,
-mask-continuity, component-processing, and recombination contract.
+Explicit transient/residual separation is now the only untested research
+fallback. It cannot enter the successor until it has its own
+perfect-reconstruction analysis, mask-continuity, component-processing, and
+recombination contract.
 
 ## Next Task
 
-Prove peak-local group-delay phase reinitialization on the fixed global time
-map before implementing nonstationary resolution. Sparse-anchor time
-redistribution and component separation are not authorized mechanisms.
+Reassess contract `082` around explicit transient/residual separation. Do not
+implement component separation or nonstationary resolution until the analysis,
+reconstruction, mask, component-processing, and recombination boundary is
+frozen.

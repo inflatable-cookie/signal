@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; fixed-map peak transient mechanism frozen
+Status: active; fixed-map peak transient mechanism rejected
 Owner: dsp
 Updated: 2026-07-10
 Related contracts: `046`, `048`, `049`
@@ -102,6 +102,18 @@ also exposes threshold leakage and synthetic-component artifacts before the
 smaller in-engine mechanism has been tested. Separation remains a research
 fallback if the fixed-map peak proof fails its frozen gate.
 
+## 2026-07-10 Fixed-Map Peak Proof Outcome
+
+The fixed-map peak proof failed. Anchored `L001` crest improved only
+`0.040942 dB`, measurable-row mean event placement worsened `16.851522`
+frames, and the combined gate passed `12/60`. Integrity, added silence, peak
+growth, and overlap-add coverage passed `60/60`, but `984/2370` guarded events
+never reached a reported centre-threshold reset. Tonal residual regressed in
+`21/60` rows and unsupported-bin mass regressed in `24/60`.
+
+Do not tune the window-derived threshold, sensitivity, event guards, or reset
+scope. Do not open adaptive resolution or linked stereo.
+
 ## Clean-Room Rule
 
 Public papers and public algorithm descriptions may inform Signal design.
@@ -110,7 +122,8 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Start Batch 29.6C with a report-only fixed-map peak transient proof. Add the
-time-ramped analysis, peak-local group-delay and event collection state, then
-run the unchanged current-grid gate. Keep adaptive resolution, linked stereo,
-production routing, and transient/residual separation closed.
+Stop for contract reassessment. Define the analysis/reconstruction, mask
+continuity, component-processing, and recombination boundary required for an
+explicit transient/residual separation proof before another candidate. Keep
+adaptive resolution, linked stereo, production routing, and implementation of
+the separation path closed until that contract exists.
