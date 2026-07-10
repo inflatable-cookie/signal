@@ -27,16 +27,16 @@ const POST_TAIL_SILENCE_MILLISECONDS: usize = 250;
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 enum TailCandidate {
     Current,
-    SourceAnchor,
-    ZeroAnchor,
+    AdditiveZeroAnchor,
+    MultiplicativeZeroFade,
 }
 
 impl TailCandidate {
     fn label(self) -> &'static str {
         match self {
             Self::Current => "current",
-            Self::SourceAnchor => "source-anchor",
-            Self::ZeroAnchor => "zero-anchor",
+            Self::AdditiveZeroAnchor => "additive-zero-anchor",
+            Self::MultiplicativeZeroFade => "multiplicative-zero-fade",
         }
     }
 }
@@ -92,25 +92,27 @@ pub(crate) fn export_tail_listening_pack(
         let source_mono = source_audio.mono_samples();
         let mut current_stretcher =
             OfflineHighQualityStretcher::with_path(render.ratio, signal_path);
-        let mut source_anchor_stretcher =
-            OfflineHighQualityStretcher::with_path(render.ratio, signal_path);
         let mut zero_anchor_stretcher =
             OfflineHighQualityStretcher::with_path(render.ratio, signal_path);
+        let mut multiplicative_fade_stretcher =
+            OfflineHighQualityStretcher::with_path(render.ratio, signal_path);
         let current = current_stretcher.stretch_mono(&source_mono);
-        let source_anchor = source_anchor_stretcher.stretch_tail_anchor_review_mono(&source_mono);
         let zero_anchor = zero_anchor_stretcher.stretch_zero_tail_anchor_review_mono(&source_mono);
+        let multiplicative_fade = multiplicative_fade_stretcher
+            .stretch_multiplicative_tail_fade_review_mono(&source_mono);
 
         let excerpt_frames = source_audio.sample_rate_hz as usize * EXCERPT_SECONDS;
         let current_tail = tail_excerpt(&current, excerpt_frames);
-        let source_anchor_tail = tail_excerpt(&source_anchor, excerpt_frames);
         let zero_anchor_tail = tail_excerpt(&zero_anchor, excerpt_frames);
-        let shared_gain = shared_tail_gain(current_tail, [source_anchor_tail, zero_anchor_tail])?;
+        let multiplicative_fade_tail = tail_excerpt(&multiplicative_fade, excerpt_frames);
+        let shared_gain =
+            shared_tail_gain(current_tail, [zero_anchor_tail, multiplicative_fade_tail])?;
         let silence_frames =
             source_audio.sample_rate_hz as usize * POST_TAIL_SILENCE_MILLISECONDS / 1_000;
         let candidates = [
             append_silence(current_tail, shared_gain, silence_frames),
-            append_silence(source_anchor_tail, shared_gain, silence_frames),
             append_silence(zero_anchor_tail, shared_gain, silence_frames),
+            append_silence(multiplicative_fade_tail, shared_gain, silence_frames),
         ];
         let assignment = stable_tail_assignment(render, &row.source_path);
         let trial_id = format!("T{:03}", index + 1);
@@ -199,8 +201,8 @@ pub(super) fn resolve_source<'a>(
 fn candidate_slot(candidate: TailCandidate) -> usize {
     match candidate {
         TailCandidate::Current => 0,
-        TailCandidate::SourceAnchor => 1,
-        TailCandidate::ZeroAnchor => 2,
+        TailCandidate::AdditiveZeroAnchor => 1,
+        TailCandidate::MultiplicativeZeroFade => 2,
     }
 }
 
@@ -211,32 +213,32 @@ fn stable_tail_assignment(
     const PERMUTATIONS: [[TailCandidate; 3]; 6] = [
         [
             TailCandidate::Current,
-            TailCandidate::SourceAnchor,
-            TailCandidate::ZeroAnchor,
+            TailCandidate::AdditiveZeroAnchor,
+            TailCandidate::MultiplicativeZeroFade,
         ],
         [
             TailCandidate::Current,
-            TailCandidate::ZeroAnchor,
-            TailCandidate::SourceAnchor,
+            TailCandidate::MultiplicativeZeroFade,
+            TailCandidate::AdditiveZeroAnchor,
         ],
         [
-            TailCandidate::SourceAnchor,
+            TailCandidate::AdditiveZeroAnchor,
             TailCandidate::Current,
-            TailCandidate::ZeroAnchor,
+            TailCandidate::MultiplicativeZeroFade,
         ],
         [
-            TailCandidate::SourceAnchor,
-            TailCandidate::ZeroAnchor,
+            TailCandidate::AdditiveZeroAnchor,
+            TailCandidate::MultiplicativeZeroFade,
             TailCandidate::Current,
         ],
         [
-            TailCandidate::ZeroAnchor,
+            TailCandidate::MultiplicativeZeroFade,
             TailCandidate::Current,
-            TailCandidate::SourceAnchor,
+            TailCandidate::AdditiveZeroAnchor,
         ],
         [
-            TailCandidate::ZeroAnchor,
-            TailCandidate::SourceAnchor,
+            TailCandidate::MultiplicativeZeroFade,
+            TailCandidate::AdditiveZeroAnchor,
             TailCandidate::Current,
         ],
     ];
@@ -252,7 +254,7 @@ fn stable_tail_assignment(
 
 fn tail_listening_readme(trial_count: usize) -> String {
     format!(
-        "# Concealed Tail Listening Pack\n\nStatus: ready for operator notes\n\nTrials: {trial_count}\nCandidates per trial: 3\nAudio: mono, final one second, then 250 ms digital silence\n\n1. Keep `tail-listening-key.tsv` closed.\n2. For each row in `tail-listening-notes.tsv`, compare A, B, and C around the transition into silence.\n3. Record any click/pop, pull/thump, or loss of tail continuity.\n4. Record a preference even when the differences are subtle.\n5. Set `completed=true` only after all fields were considered.\n6. Reveal the key only after notes are frozen.\n\nTrials are the six largest current endpoint jumps in the supplied render plan. The candidates are current Signal, the rejected source-endpoint control, and the qualified zero-endpoint control. One shared gain is applied per trial, targeting -16.48 dBFS RMS with a 0.95 peak ceiling; relative boundary amplitude is preserved. This is a local evidence artifact. Do not commit licensed audio.\n"
+        "# Concealed Tail Listening Pack\n\nStatus: ready for operator notes\n\nTrials: {trial_count}\nCandidates per trial: 3\nAudio: mono, final one second, then 250 ms digital silence\n\n1. Keep `tail-listening-key.tsv` closed.\n2. For each row in `tail-listening-notes.tsv`, compare A, B, and C around the transition into silence.\n3. Record any click/pop, pull/thump, fade, or loss of tail continuity.\n4. Record a preference even when the differences are subtle.\n5. Set `completed=true` only after all fields were considered.\n6. Reveal the key only after notes are frozen.\n\nTrials are the six largest current endpoint jumps in the supplied render plan. The candidates are current Signal, the rejected additive zero anchor, and the multiplicative zero fade. One shared gain is applied per trial, targeting -16.48 dBFS RMS with a 0.95 peak ceiling; relative boundary amplitude is preserved. This is a local evidence artifact. Do not commit licensed audio.\n"
     )
 }
 

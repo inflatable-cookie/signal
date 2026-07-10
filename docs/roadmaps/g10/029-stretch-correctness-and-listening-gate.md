@@ -79,6 +79,8 @@ be trustworthy before the callback contract or a structural hybrid widens.
   tail-listening pack with post-tail silence
 - [x] reject unconditional additive zero anchoring after concealed sustained
   tails exposed low-end thumps
+- [x] qualify a same-span multiplicative zero fade through the objective gate
+  and export its concealed comparison pack
 
 ### Batch 29.4 - Structural Hybrid Checkpoint
 
@@ -230,12 +232,21 @@ be trustworthy before the callback contract or a structural hybrid widens.
   correction law with a same-span multiplicative fade. Findings and revealed
   assignments are in
   `docs/logs/2026-07/10-g10-029-tail-listening-pack.md`.
+- 2026-07-10: The report-only 256-frame multiplicative zero fade passed the
+  complete 60-row objective gate: `60/60` integrity, transient, tonal, formant,
+  and combined passes; `17/17` loud tails materially improved; no edge worsened.
+  Its maximum correction was `0.769897819`, larger than the additive control's
+  `0.482575566`, so objective success qualifies listening only. A six-trial
+  current/additive/multiplicative pack is ready at
+  `target/stretch-corpus-g10-029-multiplicative-tail-listening-pack-v1`.
+  Production and cache identity remain unchanged. Evidence and limits are in
+  `docs/logs/2026-07/10-g10-029-multiplicative-tail-fade-objective-gate.md`.
 
 ## Next Task
 
-Add one report-only 256-frame multiplicative half-cosine terminal fade. Compare
-it with current and the rejected additive zero anchor through the 60-row
-objective gate. Regenerate the same six concealed tail trials only if it passes.
-Keep production unchanged while independent stereo review and row-level
-manifest validation remain open. Do not open product promotion or start Batch
-29.4 until all five families validate.
+Complete the six concealed trials in
+`target/stretch-corpus-g10-029-multiplicative-tail-listening-pack-v1`. Compare
+click/pop, pull/thump, fade audibility, continuity, and preference before
+opening the key. Keep production unchanged while this listening gate,
+independent stereo review, and row-level manifest validation remain open. Do
+not open product promotion or start Batch 29.4 until all five families validate.

@@ -17,6 +17,24 @@ pub(crate) fn anchor_output_tail_to_silence(output: &mut [Sample]) {
     anchor_output_tail(output, 0.0);
 }
 
+pub(crate) fn fade_output_tail_to_silence(output: &mut [Sample]) {
+    let frame_count = TAIL_ANCHOR_REVIEW_FRAMES.min(output.len());
+    if frame_count == 0 {
+        return;
+    }
+    if frame_count == 1 {
+        output[0] = 0.0;
+        return;
+    }
+    let start = output.len() - frame_count;
+    for (offset, sample) in output[start..].iter_mut().enumerate() {
+        let phase = std::f32::consts::PI * offset as f32 / (frame_count - 1) as f32;
+        let gain = 0.5 + 0.5 * phase.cos();
+        *sample *= gain;
+    }
+    *output.last_mut().expect("non-empty output") = 0.0;
+}
+
 fn anchor_output_tail(output: &mut [Sample], target: Sample) {
     let Some(output_tail) = output.last().copied() else {
         return;
@@ -99,6 +117,24 @@ mod tests {
     }
 
     #[test]
+    fn multiplicative_tail_fade_lands_on_silence_inside_bounded_span() {
+        let mut output = vec![0.25; 2_048];
+        let prefix = output[..output.len() - TAIL_ANCHOR_REVIEW_FRAMES].to_vec();
+
+        fade_output_tail_to_silence(&mut output);
+
+        assert_eq!(output.last(), Some(&0.0));
+        assert_eq!(
+            &output[..output.len() - TAIL_ANCHOR_REVIEW_FRAMES],
+            prefix.as_slice()
+        );
+        assert_eq!(output[output.len() - TAIL_ANCHOR_REVIEW_FRAMES], 0.25);
+        assert!(output[output.len() - TAIL_ANCHOR_REVIEW_FRAMES..]
+            .windows(2)
+            .all(|pair| pair[0] >= pair[1]));
+    }
+
+    #[test]
     fn tail_anchor_review_path_is_deterministic_and_honors_output_contract() {
         let mut input = (0..48_000)
             .map(|frame| (std::f32::consts::TAU * 440.0 * frame as f32 / 48_000.0).sin())
@@ -127,6 +163,22 @@ mod tests {
         let repeated_output = repeated.stretch_zero_tail_anchor_review_mono(&input);
 
         assert_eq!(first_output.len(), 36_000);
+        assert_eq!(first_output, repeated_output);
+        assert_eq!(first_output.last(), Some(&0.0));
+    }
+
+    #[test]
+    fn multiplicative_tail_fade_review_path_is_deterministic_and_honors_output_contract() {
+        let input = (0..48_000)
+            .map(|frame| (std::f32::consts::TAU * 440.0 * frame as f32 / 48_000.0).sin())
+            .collect::<Vec<_>>();
+        let mut first = OfflineHighQualityStretcher::new(1.25);
+        let mut repeated = OfflineHighQualityStretcher::new(1.25);
+
+        let first_output = first.stretch_multiplicative_tail_fade_review_mono(&input);
+        let repeated_output = repeated.stretch_multiplicative_tail_fade_review_mono(&input);
+
+        assert_eq!(first_output.len(), 60_000);
         assert_eq!(first_output, repeated_output);
         assert_eq!(first_output.last(), Some(&0.0));
     }

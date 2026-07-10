@@ -27,8 +27,8 @@ fn assignment_is_deterministic_and_contains_every_candidate() {
 
     assert_eq!(first, second);
     assert!(first.contains(&TailCandidate::Current));
-    assert!(first.contains(&TailCandidate::SourceAnchor));
-    assert!(first.contains(&TailCandidate::ZeroAnchor));
+    assert!(first.contains(&TailCandidate::AdditiveZeroAnchor));
+    assert!(first.contains(&TailCandidate::MultiplicativeZeroFade));
 }
 
 #[test]
@@ -77,11 +77,11 @@ fn pack_exports_concealed_mono_tails_with_post_tail_silence() {
     assert!(report.contains("status=ReadyForOperator trials=1 candidates_per_trial=3"));
     let notes = fs::read_to_string(root.join("tail-listening-notes.tsv")).expect("notes");
     let key = fs::read_to_string(root.join("tail-listening-key.tsv")).expect("key");
-    assert!(!notes.contains("source-anchor"));
-    assert!(!notes.contains("zero-anchor"));
+    assert!(!notes.contains("additive-zero-anchor"));
+    assert!(!notes.contains("multiplicative-zero-fade"));
     assert!(key.contains("current"));
-    assert!(key.contains("source-anchor"));
-    assert!(key.contains("zero-anchor"));
+    assert!(key.contains("additive-zero-anchor"));
+    assert!(key.contains("multiplicative-zero-fade"));
     assert_eq!(
         fs::read_dir(root.join("trials")).expect("trials").count(),
         3

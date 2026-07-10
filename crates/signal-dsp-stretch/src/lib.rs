@@ -123,7 +123,9 @@ use rustfft::{num_complex::Complex32, Fft, FftPlanner};
 use signal_dsp_resample::{resample_mono, ResampleConfig, ResampleQuality};
 use signal_primitives::{Sample, SampleRate};
 use std::sync::Arc;
-use tail_anchor::{anchor_output_tail_to_silence, anchor_output_tail_to_source};
+use tail_anchor::{
+    anchor_output_tail_to_silence, anchor_output_tail_to_source, fade_output_tail_to_silence,
+};
 
 const DYNAMIC_RATIO_SEAM_SMOOTH_FRAMES: usize = 256;
 
@@ -2204,6 +2206,21 @@ impl OfflineHighQualityStretcher {
     pub fn stretch_zero_tail_anchor_review_mono(&mut self, input: &[Sample]) -> Vec<Sample> {
         let mut output = self.stretch_mono(input);
         anchor_output_tail_to_silence(&mut output);
+        output
+    }
+
+    /// Report-only fixed-ratio path with a bounded multiplicative tail fade.
+    ///
+    /// The candidate scales only the final 256 output frames with a
+    /// half-cosine envelope and lands the final sample on digital silence. It
+    /// is not a promoted OfflineHighQuality renderer.
+    #[doc(hidden)]
+    pub fn stretch_multiplicative_tail_fade_review_mono(
+        &mut self,
+        input: &[Sample],
+    ) -> Vec<Sample> {
+        let mut output = self.stretch_mono(input);
+        fade_output_tail_to_silence(&mut output);
         output
     }
 }

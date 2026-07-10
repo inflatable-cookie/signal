@@ -123,10 +123,10 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Add one report-only 256-frame multiplicative half-cosine terminal fade. Compare
-it with current and the rejected additive zero anchor through the 60-row
-objective gate. Regenerate the same six concealed tail trials only if it passes.
-Keep production unchanged while independent stereo and row-level completion
-remain open. Do not start Batch 29.4 or product promotion until all five
-listening families validate. Keep RealtimePreview source-fill and broader
-product integration paused.
+Complete the six concealed trials at
+`target/stretch-corpus-g10-029-multiplicative-tail-listening-pack-v1`. Compare
+click/pop, pull/thump, fade audibility, continuity, and preference before
+opening the key. Keep production unchanged while independent stereo and
+row-level completion remain open. Do not start Batch 29.4 or product promotion
+until all five listening families validate. Keep RealtimePreview source-fill
+and broader product integration paused.

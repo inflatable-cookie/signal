@@ -2590,6 +2590,10 @@ fn format_external_benchmark_quality_metrics(
             OfflineHighQualityStretcher::with_path(render.ratio, signal_path);
         let zero_tail_anchor_output =
             zero_tail_anchor_stretcher.stretch_zero_tail_anchor_review_mono(source_mono);
+        let mut multiplicative_tail_fade_stretcher =
+            OfflineHighQualityStretcher::with_path(render.ratio, signal_path);
+        let multiplicative_tail_fade_output = multiplicative_tail_fade_stretcher
+            .stretch_multiplicative_tail_fade_review_mono(source_mono);
         let mut draft_stretcher = PhaseVocoderStretcher::new(render.ratio);
         let draft_output = draft_stretcher.stretch_mono(source_mono);
         let signal_tonal_texture = measure_tonal_texture(source_mono, &signal_output, render.ratio);
@@ -2597,6 +2601,8 @@ fn format_external_benchmark_quality_metrics(
             measure_tonal_texture(source_mono, &tail_anchor_output, render.ratio);
         let zero_tail_anchor_tonal_texture =
             measure_tonal_texture(source_mono, &zero_tail_anchor_output, render.ratio);
+        let multiplicative_tail_fade_tonal_texture =
+            measure_tonal_texture(source_mono, &multiplicative_tail_fade_output, render.ratio);
         let external_tonal_texture =
             measure_tonal_texture(source_mono, &external_audio.mono_samples, render.ratio);
         let draft_tonal_texture = measure_tonal_texture(source_mono, &draft_output, render.ratio);
@@ -2643,6 +2649,12 @@ fn format_external_benchmark_quality_metrics(
         let zero_tail_anchor_formant_boundary = measure_formant_boundary(
             source_mono,
             &zero_tail_anchor_output,
+            render.ratio,
+            source_audio.sample_rate_hz,
+        );
+        let multiplicative_tail_fade_formant_boundary = measure_formant_boundary(
+            source_mono,
+            &multiplicative_tail_fade_output,
             render.ratio,
             source_audio.sample_rate_hz,
         );
@@ -2712,6 +2724,13 @@ fn format_external_benchmark_quality_metrics(
         let zero_tail_anchor_transient_detail = measure_transient_detail(
             &source_mono,
             &zero_tail_anchor_output,
+            render.ratio,
+            QUALITY_METRIC_WINDOW_SIZE,
+            QUALITY_METRIC_HOP_SIZE,
+        );
+        let multiplicative_tail_fade_transient_detail = measure_transient_detail(
+            &source_mono,
+            &multiplicative_tail_fade_output,
             render.ratio,
             QUALITY_METRIC_WINDOW_SIZE,
             QUALITY_METRIC_HOP_SIZE,
@@ -2842,6 +2861,13 @@ fn format_external_benchmark_quality_metrics(
             RENDER_INTEGRITY_ENDPOINT_SOURCE_FRAMES,
             RENDER_INTEGRITY_SILENCE_THRESHOLD,
         );
+        let multiplicative_tail_fade_integrity = measure_stretch_render_integrity(
+            source_mono,
+            &multiplicative_tail_fade_output,
+            render.ratio,
+            RENDER_INTEGRITY_ENDPOINT_SOURCE_FRAMES,
+            RENDER_INTEGRITY_SILENCE_THRESHOLD,
+        );
         let signal_integrity_assessment =
             signal_dsp_stretch::assess_stretch_render_integrity(signal_integrity, integrity_limits);
         let external_integrity_assessment = signal_dsp_stretch::assess_stretch_render_integrity(
@@ -2855,6 +2881,11 @@ fn format_external_benchmark_quality_metrics(
         let zero_tail_anchor_integrity_assessment =
             signal_dsp_stretch::assess_stretch_render_integrity(
                 zero_tail_anchor_integrity,
+                integrity_limits,
+            );
+        let multiplicative_tail_fade_integrity_assessment =
+            signal_dsp_stretch::assess_stretch_render_integrity(
+                multiplicative_tail_fade_integrity,
                 integrity_limits,
             );
         let tail_anchor_line = TailAnchorReviewEvidence {
@@ -2893,6 +2924,25 @@ fn format_external_benchmark_quality_metrics(
             candidate_transient: zero_tail_anchor_transient_detail,
             candidate_integrity: zero_tail_anchor_integrity,
             candidate_integrity_passed: zero_tail_anchor_integrity_assessment.passed,
+        }
+        .format_report_line();
+        let multiplicative_tail_fade_line = TailAnchorReviewEvidence {
+            control_id: "multiplicative_zero",
+            case_id: &render.case_id,
+            source_path: &source.source_path,
+            ratio: render.ratio,
+            current_output: &signal_output,
+            candidate_output: &multiplicative_tail_fade_output,
+            current_boundary: signal_formant_boundary,
+            candidate_boundary: multiplicative_tail_fade_formant_boundary,
+            current_tonal: signal_tonal_texture,
+            candidate_tonal: multiplicative_tail_fade_tonal_texture,
+            current_formant: signal_formant_boundary,
+            candidate_formant: multiplicative_tail_fade_formant_boundary,
+            current_transient: signal_transient_detail,
+            candidate_transient: multiplicative_tail_fade_transient_detail,
+            candidate_integrity: multiplicative_tail_fade_integrity,
+            candidate_integrity_passed: multiplicative_tail_fade_integrity_assessment.passed,
         }
         .format_report_line();
         let mut feature_delta_line = None;
@@ -3441,6 +3491,7 @@ fn format_external_benchmark_quality_metrics(
         lines.push(formant_boundary_line);
         lines.push(tail_anchor_line);
         lines.push(zero_tail_anchor_line);
+        lines.push(multiplicative_tail_fade_line);
         if let Some(line) = feature_delta_line {
             lines.push(line);
         }
@@ -8316,6 +8367,8 @@ mod tests {
         assert!(formatted
             .lines()
             .any(|line| line.starts_with("external_benchmark_tail_anchor_review control=zero ")));
+        assert!(formatted.lines().any(|line| line
+            .starts_with("external_benchmark_tail_anchor_review control=multiplicative_zero ")));
 
         let _ = fs::remove_file(path);
     }
