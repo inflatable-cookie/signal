@@ -321,6 +321,21 @@ offline diagnostic proxies, not audio-thread work or promotion limits. Fixed
 windowing and source/output alignment bounds must stay explicit, and objective
 evidence does not replace completed listening review.
 
+Formant diagnostics for no-pitch-shift stretch must compare a gain-invariant,
+broadly smoothed source/output spectral envelope at ratio-projected positions.
+Broad-envelope residual and centroid movement are classification evidence, not
+exact vowel-formant tracking or promotion limits. A fixed-ratio formant
+correction requires a measured envelope failure; it must not be introduced from
+operator vocabulary alone.
+
+Boundary diagnostics must distinguish endpoint energy and silence spans from
+the actual exterior transition. Head evidence is silence to first sample; tail
+evidence is final sample to silence. Do not substitute the largest derivative
+inside an endpoint span. Relative crest evidence must exclude inactive edges,
+while absolute dBFS remains visible so near-silence cannot create a false large
+ratio. A boundary candidate must retain source content and pass full-render,
+transient, tonal-texture, and formant-envelope regression checks together.
+
 Planning authority:
 `docs/roadmaps/g10/029-stretch-correctness-and-listening-gate.md`.
 

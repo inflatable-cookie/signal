@@ -23,9 +23,11 @@ implementation remains Signal-owned.
   Aggregate operator findings from the 15-pair pack now identify transient
   crest spikes and long-stretch grain, while event timing is effectively tied.
   Objective follow-up classifies the grain as excess fast spectral movement,
-  not confirmed added sideband energy. Rubber Band-class promotion remains
-  blocked on independent stereo/row-level completion and the later structural
-  hybrid checkpoint.
+  not confirmed added sideband energy. Broad vocal-envelope evidence shows no
+  current Signal formant failure, but exterior-step evidence isolates a
+  fixed-ratio tail discontinuity. Rubber Band-class promotion remains blocked
+  on that defect, independent stereo/row-level completion, and the later
+  structural hybrid checkpoint.
 - Sustained/polyphonic long-window candidates produced useful evidence but no
   production route; the next DSP quality jump needs a structural hybrid design,
   not another one-parameter probe.
@@ -118,8 +120,9 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Close formant and boundary classification with bounded evidence from the
-existing pack. Independent stereo and row-level listening completion remain
-open. Do not start Batch 29.4 or product promotion until all five listening
-families validate. Keep RealtimePreview source-fill and broader product
-integration paused.
+Build and gate one bounded offline tail-anchor candidate against the 60-row
+exterior-step failures. Keep production unchanged unless the combined
+integrity and quality gate passes. Independent stereo and row-level listening
+completion remain open. Do not start Batch 29.4 or product promotion until all
+five listening families validate. Keep RealtimePreview source-fill and broader
+product integration paused.

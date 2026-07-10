@@ -10,6 +10,8 @@ use std::time::Instant;
 
 #[path = "stretch-corpus-report/alloc_tracker.rs"]
 mod alloc_tracker;
+#[path = "stretch-corpus-report/formant_boundary.rs"]
+mod formant_boundary;
 #[path = "stretch-corpus-report/listening_pack.rs"]
 mod listening_pack;
 
@@ -19,19 +21,21 @@ use rustfft::{num_complex::Complex32, FftPlanner};
 use signal_analysis_character::{CharacterAnalyzer, CharacterAnalyzerConfig};
 use signal_dsp_stretch::{
     build_stretch_corpus_comparison_report_with_sources, detect_stretch_transients,
-    format_stretch_corpus_comparison_report, measure_stretch_render_integrity,
-    measure_tonal_texture, measure_transient_detail, measure_transient_event_detail,
-    measure_transient_smear, measure_transient_smear_with_output_recovery_policy,
-    measure_transient_smear_with_policies, measure_transient_smear_with_policy,
-    output_length_drift_samples, OfflineHighQualityPath, OfflineHighQualityStretcher,
-    PhaseVocoderStretcher, StretchCorpusAssetRequirement, StretchCorpusListeningSource,
-    StretchExternalBenchmarkRender, StretchRenderIntegrityLimits, StretchTransientDetectorPolicy,
-    TimeStretcher, COMPRESSION_SHORT_WINDOW_SELECTOR_ANALYSIS_HOP,
+    format_stretch_corpus_comparison_report, measure_formant_boundary,
+    measure_stretch_render_integrity, measure_tonal_texture, measure_transient_detail,
+    measure_transient_event_detail, measure_transient_smear,
+    measure_transient_smear_with_output_recovery_policy, measure_transient_smear_with_policies,
+    measure_transient_smear_with_policy, output_length_drift_samples, OfflineHighQualityPath,
+    OfflineHighQualityStretcher, PhaseVocoderStretcher, StretchCorpusAssetRequirement,
+    StretchCorpusListeningSource, StretchExternalBenchmarkRender, StretchRenderIntegrityLimits,
+    StretchTransientDetectorPolicy, TimeStretcher, COMPRESSION_SHORT_WINDOW_SELECTOR_ANALYSIS_HOP,
     COMPRESSION_SHORT_WINDOW_SELECTOR_MIN_CURRENT_MISSES,
     COMPRESSION_SHORT_WINDOW_SELECTOR_MIN_CURRENT_SMEAR_FRAMES,
     COMPRESSION_SHORT_WINDOW_SELECTOR_WINDOW_SIZE, STRETCH_CORPUS_MANIFEST,
     SUSTAINED_COHERENCE_BLEND_REVIEW_WEIGHT,
 };
+
+use formant_boundary::format_external_benchmark_formant_boundary_line;
 use symphonia::core::{
     audio::SampleBuffer as SymphoniaSampleBuffer,
     codecs::{DecoderOptions as SymphoniaDecoderOptions, CODEC_TYPE_NULL},
@@ -2577,6 +2581,31 @@ fn format_external_benchmark_quality_metrics(
             draft_envelope_modulation_delta_db: draft_tonal_texture.envelope_modulation_delta_db,
         }
         .format_report_line();
+        let signal_formant_boundary = measure_formant_boundary(
+            source_mono,
+            &signal_output,
+            render.ratio,
+            source_audio.sample_rate_hz,
+        );
+        let external_formant_boundary = measure_formant_boundary(
+            source_mono,
+            &external_audio.mono_samples,
+            render.ratio,
+            source_audio.sample_rate_hz,
+        );
+        let draft_formant_boundary = measure_formant_boundary(
+            source_mono,
+            &draft_output,
+            render.ratio,
+            source_audio.sample_rate_hz,
+        );
+        let formant_boundary_line = format_external_benchmark_formant_boundary_line(
+            &render.case_id,
+            &source.source_path,
+            signal_formant_boundary,
+            external_formant_boundary,
+            draft_formant_boundary,
+        );
         let mut stability_stretcher = OfflineHighQualityStretcher::new(render.ratio);
         let stability_output =
             stability_stretcher.stretch_phase_lock_stability_review_mono(source_mono);
@@ -3275,6 +3304,7 @@ fn format_external_benchmark_quality_metrics(
             lines.push(line);
         }
         lines.push(tonal_texture_line);
+        lines.push(formant_boundary_line);
         if let Some(line) = feature_delta_line {
             lines.push(line);
         }
@@ -8127,6 +8157,13 @@ mod tests {
         assert!(tonal.contains("signal_mean_spectral_residual_ratio="));
         assert!(tonal.contains("signal_sideband_delta_vs_external="));
         assert!(tonal.contains("signal_envelope_modulation_delta_vs_external_db="));
+        let formant_boundary = formatted
+            .lines()
+            .find(|line| line.starts_with("external_benchmark_formant_boundary "))
+            .expect("source-relative formant and boundary row");
+        assert!(formant_boundary.contains("signal_mean_envelope_residual_ratio="));
+        assert!(formant_boundary.contains("signal_mean_envelope_centroid_shift_hz="));
+        assert!(formant_boundary.contains("signal_max_boundary_step_crest_growth_db="));
 
         let _ = fs::remove_file(path);
     }

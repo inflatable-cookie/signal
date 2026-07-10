@@ -70,7 +70,8 @@ be trustworthy before the callback contract or a structural hybrid widens.
 - [x] classify long-stretch grain with source-relative residual, sideband, and
   fast spectral-modulation evidence
 - [ ] complete row-level manifest validation and independent stereo review
-- [ ] close formant and boundary classification after the remaining review
+- [x] close formant and boundary classification with source-relative envelope
+  and exterior-step evidence
 
 ### Batch 29.4 - Structural Hybrid Checkpoint
 
@@ -183,10 +184,19 @@ be trustworthy before the callback contract or a structural hybrid widens.
   regressed them at `1.25x`, so no production change promoted. Evidence and
   limits are in
   `docs/logs/2026-07/10-g10-029-tonal-texture-diagnostic.md`.
+- 2026-07-10: Formant and boundary diagnostics find no broad-envelope failure
+  in Signal's 12 vocal rows, but isolate a fixed-ratio exterior-tail defect.
+  Signal beat Rubber Band's source-relative envelope residual in every vocal
+  row. Its louder exterior edge was the tail in `59/60` rows; `17/60` exceeded
+  `-20 dBFS`, and the worst pad ended at `-6.328693 dBFS`. All 60 Signal rows
+  still passed length, endpoint-energy, added-silence, and peak-growth limits.
+  Production remains unchanged. Evidence and candidate gates are in
+  `docs/logs/2026-07/10-g10-029-formant-and-boundary-diagnostic.md`.
 
 ## Next Task
 
-Close formant and boundary classification with bounded evidence from the
-existing pack. Independent stereo review and row-level manifest validation
-remain open. Do not open product promotion or start Batch 29.4 until all five
-families validate.
+Build and gate one bounded offline tail-anchor candidate against the 60-row
+exterior-step failures. Keep production unchanged unless endpoint content,
+integrity, transient, tonal-texture, and formant-envelope evidence all pass.
+Independent stereo review and row-level manifest validation remain open. Do not
+open product promotion or start Batch 29.4 until all five families validate.

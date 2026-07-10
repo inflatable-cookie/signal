@@ -44,6 +44,7 @@ mod artifact_plan;
 mod benchmark;
 mod cache_identity;
 mod corpus_report;
+mod formant_boundary;
 mod phase_vocoder;
 mod promotion;
 mod render_integrity;
@@ -94,6 +95,7 @@ pub use corpus_report::{
     StretchCorpusListeningSourceRecord, StretchCorpusSkippedAsset,
     StretchExternalBenchmarkComparison, StretchExternalBenchmarkRender,
 };
+pub use formant_boundary::{measure_formant_boundary, StretchFormantBoundaryMeasurement};
 pub use promotion::{
     current_synthetic_offline_high_quality_promotion_receipt, StretchProductQualityEvidence,
     StretchPromotionReceipt, StretchPromotionStatus, StretchSyntheticPromotionPolicy,
