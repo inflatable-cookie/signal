@@ -17,11 +17,10 @@ successor architecture.
 
 The successor owns one sample-domain time map and one reconstruction timeline.
 
-- transient detection may use shorter analysis than synthesis
-- transient protection changes local synthesis positions and phase policy
-  inside the same engine
-- local unity-rate attack spans are balanced by bounded compensation in steady
-  intervals while source anchors retain their exact projected positions
+- transient event guards may use shorter analysis than synthesis
+- transient attack position is estimated per spectral peak from group delay
+- selected peak regions may reinitialize phase inside the same engine while
+  the global synthesis positions remain fixed
 - adaptive short/long resolution must use one nonstationary analysis and
   reconstruction law, not separate output waveforms
 - peak regions own vertical phase coherence; per-bin instantaneous frequency
@@ -39,7 +38,8 @@ One fixed-ratio mono engine owns:
 - active analysis resolution and reconstruction weights
 - per-bin or per-channel phase propagation
 - peak-region and phase-reinitialization state
-- exact output-length compensation debt
+- peak-local group-delay and guarded-event collection state
+- exact output-length and crop state
 
 Linked stereo later shares the time map, resolution schedule, transient
 schedule, and peak regions. Channels retain their own instantaneous frequency
@@ -53,10 +53,11 @@ must not concatenate independent renders.
 
 1. current-grid adaptive transient timeline — rejected after timing and
    combined-gate failure
-2. adaptive-resolution reconstruction
-3. combined fixed-ratio mono candidate
-4. shared-decision linked stereo
-5. concealed listening and dynamic-ratio checkpoint
+2. fixed-map peak transient proof
+3. adaptive-resolution reconstruction checkpoint
+4. combined fixed-ratio mono candidate
+5. shared-decision linked stereo
+6. concealed listening and dynamic-ratio checkpoint
 
 Each stage stays report-only until the complete gate passes. A mechanism proof
 may authorize the next stage but cannot promote product quality alone.
@@ -68,8 +69,16 @@ may authorize the next stage but cannot promote product quality alone.
 - global removal of identity locking
 - scalar phase-lock or long-window selector sweeps
 - fixed tail envelopes or hidden output padding
+- local unity-ratio attack islands with steady-interval compensation
+
+## Deferred Shape
+
+Explicit transient/residual separation remains a research fallback. It cannot
+enter the successor until it has its own perfect-reconstruction analysis,
+mask-continuity, component-processing, and recombination contract.
 
 ## Next Task
 
-Reassess transient ownership before implementing nonstationary resolution.
-Sparse-anchor time redistribution is no longer an authorized mechanism.
+Prove peak-local group-delay phase reinitialization on the fixed global time
+map before implementing nonstationary resolution. Sparse-anchor time
+redistribution and component separation are not authorized mechanisms.

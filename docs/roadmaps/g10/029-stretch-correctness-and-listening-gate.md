@@ -145,17 +145,30 @@ independent stereo review.
   - mechanism rejected: `0.536217 dB` `L001` improvement, `+4.942263` mean
     timing delta, and `9/60` combined passes
 
-### Batch 29.6C - Adaptive Resolution Reconstruction
+### Batch 29.6C - Fixed-Map Peak Transient Proof
 
-- [ ] open only after Batch 29.6B passes
+- [ ] add one time-ramped companion FFT to estimate per-bin group delay on the
+  current `2048/512` grid
+- [ ] use frozen onset guards, magnitude-minimum peak regions, and one
+  centre-adjacent phase-reinitialization frame per collected attack event
+- [ ] keep constant global synthesis positions and ordinary propagation for
+  non-transient bins; do not boost magnitude or crossfade output
+- [ ] report guarded events, candidate peaks, threshold crossings, collected
+  regions, reinitialized bins/frames, and unmatched guards
+- [ ] pass the unchanged contract `082` crest, placement, integrity,
+  static-spectrum, formant, boundary, and combined gates
+
+### Batch 29.6D - Adaptive Resolution Reconstruction
+
+- [ ] open only after Batch 29.6C passes
 - [ ] define one nonstationary short/current/long frame schedule and compatible
   reconstruction weights
 - [ ] pass perfect-reconstruction, fast spectral-movement, static-spectrum,
   transient, and boundary gates before broad corpus promotion
 
-### Batch 29.6D - Combined Fixed-Ratio Mono Gate
+### Batch 29.6E - Combined Fixed-Ratio Mono Gate
 
-- [ ] combine the proven transient timeline and adaptive-resolution mechanisms
+- [ ] combine the proven fixed-map transient and adaptive-resolution mechanisms
 - [ ] pass every original Batch 29.6 mono gate on the 60-render corpus
 - [ ] open Batch 29.7 only after the complete mono candidate passes
 
@@ -407,12 +420,19 @@ independent stereo review.
   combined gate passed `9/60`. The mechanism is rejected and Batch 29.6C stays
   closed. Evidence is in
   `docs/logs/2026-07/10-g10-029-adaptive-transient-timeline-rejection.md`.
+- 2026-07-10: Reassessed transient ownership. Fixed-map peak-selective
+  group-delay phase reinitialization is frozen for Batch 29.6C because it
+  targets invalid attack phase prediction inside the current kernel without
+  moving unrelated events. Explicit transient/residual separation is deferred:
+  it first needs a perfect-reconstruction multiresolution split, mask
+  continuity, component-processing, and recombination contract. Adaptive
+  resolution and linked stereo remain closed. Decision evidence is in
+  `docs/logs/2026-07/10-g10-029-fixed-map-peak-transient-decision.md`.
 
 ## Next Task
 
-Stop for contract `082` reassessment after the rejected Batch 29.6B mechanism.
-Compare peak/group-delay transient preservation inside the fixed global time map
-against explicit transient/residual separation, then freeze one mechanism
-before another candidate. Do not tune classifier or compensation constants,
-open adaptive resolution or linked stereo, or change production, cache,
-pitch/dynamic, product, or RealtimePreview routing.
+Start Batch 29.6C with the report-only fixed-map peak transient proof frozen in
+contract `082`. Add the time-ramped group-delay analysis and peak-local event
+state, then run the unchanged current-grid gate. Do not tune the rejected
+timeline, open separation, adaptive resolution, or linked stereo, or change
+production, cache, pitch/dynamic, product, or RealtimePreview routing.

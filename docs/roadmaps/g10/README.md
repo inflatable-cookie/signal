@@ -39,12 +39,17 @@ implementation remains Signal-owned.
   unchanged, regressed `1.25x` static residual, and passed only `50/60`
   tonal/combined rows. Bounded lag reassessment then rejected branch alignment:
   recoverable spans needed `152.383` mean absolute lag and disagreed by
-  `210.465` frames between entry and exit. Contract `082` now requires one
-  synthesis timeline, transient-local time mapping, then adaptive resolution.
-  The transient-local timeline proof is also rejected: sparse protected onsets
+  `210.465` frames between entry and exit. Contract `082` required one synthesis
+  timeline and tested transient-local time mapping before adaptive resolution.
+  That transient-local timeline proof is also rejected: sparse protected onsets
   left `1891` dense conflicts, moved mean event placement by `+4.942263`
   frames, and passed only `9/60` combined rows. Adaptive resolution and linked
-  stereo remain closed pending transient-ownership reassessment.
+  stereo remained closed for transient-ownership reassessment. That decision is
+  now frozen: Batch 29.6C keeps the global time map fixed and reinitializes only
+  group-delay-selected transient peak regions near the analysis-window centre.
+  Explicit transient/residual separation is deferred behind its own
+  perfect-reconstruction and recombination contract. Adaptive resolution and
+  linked stereo remain closed until the peak proof passes.
 - Offline artifacts and RealtimePreview have bounded contracts and prototype
   paths, but callback-safe preview integration and fully streaming artifact
   output remain gated until their owning source-fill/cache contracts exist.
@@ -134,8 +139,8 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Stop for contract `082` reassessment. Compare peak/group-delay transient
-preservation under the fixed global time map against explicit
-transient/residual separation, then freeze one mechanism before another
-candidate. Adaptive resolution, linked stereo, production, cache identity,
-pitch/dynamic routing, RealtimePreview, and product integration remain closed.
+Start Batch 29.6C with the report-only fixed-map peak transient proof frozen in
+contract `082`. Add peak-local group-delay analysis and centre-adjacent phase
+reinitialization without changing the global time map. Adaptive resolution,
+component separation, linked stereo, production, cache identity, pitch/dynamic
+routing, RealtimePreview, and product integration remain closed.

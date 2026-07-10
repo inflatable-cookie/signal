@@ -32,16 +32,20 @@ independently phased output streams.
 - Nonstationary Gabor and multi-scale work use short time resolution around
   attacks and longer frequency resolution for stable components inside one
   reconstructable time-frequency system.
+- Duxbury, Davies, and Sandler separate transient/noise bins from steady bins
+  with multiresolution analysis and adaptive thresholds. Their results support
+  separation as a viable algorithm family, but also expose fixed-resolution,
+  threshold, synthetic-component, and spectral-subtraction risks.
 
 ## 3) Recommendation
 
 Replace waveform-branch switching with one monotonic synthesis timeline.
 
-1. Prove transient ownership first on the current `2048/512` grid. Use the
-   frozen classifier, map protected attack frames at local ratio `1`, reset or
-   reinitialize phase inside the same engine, and distribute compensation only
-   through steady intervals while retaining exact projected anchors.
-2. Add adaptive time-frequency resolution only after that timeline passes its
+1. Prove transient ownership first on the current `2048/512` grid. Keep the
+   global time map fixed. Use the frozen classifier as an event guard, estimate
+   peak-local attack position from a time-ramped companion FFT, and
+   reinitialize only collected transient peak regions near the window centre.
+2. Add adaptive time-frequency resolution only after that proof passes its
    transient and placement gate. Short and long frames must share one
    nonstationary reconstruction law; they must not produce separate waveforms
    for later crossfade.
@@ -68,7 +72,7 @@ Replace waveform-branch switching with one monotonic synthesis timeline.
 
 ## 6) Required Prototype Work
 
-- current-grid adaptive transient timeline proof
+- current-grid fixed-map peak transient proof
 - nonstationary/adaptive-resolution reconstruction proof
 - combined fixed-ratio mono gate
 - shared-decision linked-stereo gate
@@ -89,6 +93,7 @@ Replace waveform-branch switching with one monotonic synthesis timeline.
 | [Barry, Dorran, and Coyle, 2008](https://www.dafx.de/paper-archive/2008/papers/dafx08_19.pdf) | high | Unity-rate transient spans, compensation, dense-event risk |
 | [Ottosen and Dörfler, 2017](https://arxiv.org/abs/1612.05156) | high | Adaptive resolution and phase locking in nonstationary Gabor frames |
 | [Derrien, 2007](https://www.dafx.de/paper-archive/details/ycBIOtuIpgqXPSFM7I3usQ) | medium | Multi-scale low-frequency and residual/high-frequency treatment |
+| [Duxbury, Davies, and Sandler, 2001](https://www.dafx.de/paper-archive/2001/papers/duxbury.pdf) | high | Multiresolution transient/steady separation and its threshold/recombination costs |
 
 ## Clean-Room Boundary
 
@@ -105,7 +110,26 @@ unprotected events, produced hops up to `1664` frames, and passed only `9/60`
 combined rows. This removes adaptive local time redistribution from the
 recommendation. The one-reconstruction-timeline rule remains.
 
+## Transient Ownership Reassessment
+
+The next candidate is fixed-map peak-selective phase reinitialization, not
+explicit transient/residual separation.
+
+Roebel's mechanism matches Signal's measured failure and current kernel seam:
+transient phase prediction is corrected at spectral-peak resolution while
+stationary neighbours remain under ordinary propagation. A time-ramped window
+provides the group-delay estimate; peak-local energy position determines the
+single centre-adjacent reset frame. Signal already owns complex analysis
+spectra, peak tracking, peak-region locking, and per-bin propagation.
+
+Separation is a larger second mechanism. A credible proof would first need a
+perfect-reconstruction multiresolution split, soft or adaptive mask continuity,
+component-specific stretching, and a recombination contract. It is deferred,
+not disproved. Reopen it only if fixed-map peak processing fails the frozen
+crest, placement, integrity, spectrum, and combined gates.
+
 ## Next Task
 
-Reassess transient ownership under contract `082`. Compare fixed-map
-peak/group-delay preservation against explicit transient/residual separation.
+Implement the report-only fixed-map peak transient proof frozen in contract
+`082`. Do not tune the rejected adaptive timeline or open separation, adaptive
+resolution, linked stereo, or production routing.

@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; first successor mechanism rejected
+Status: active; fixed-map peak transient mechanism frozen
 Owner: dsp
 Updated: 2026-07-10
 Related contracts: `046`, `048`, `049`
@@ -20,26 +20,30 @@ The successor must own one monotonic source-to-output time map and one
 reconstruction timeline. Different analysis resolutions must not produce
 independent output waveforms for later branch crossfade or delay alignment.
 
-### Rule 2: transient preservation is local time-map policy
+### Rule 2: transient preservation keeps the global time map
 
-The first proof uses the current `2048/512` synthesis grid and onset centres
-from the frozen `g10.029` classifier. Every default-grid frame whose source
-analysis window contains a detected onset belongs to that protected attack
-island. Its synthesis centre is the exact projected onset plus its source-frame
-offset from that onset, giving local ratio `1` across the overlapping frames.
+The next proof uses the current `2048/512` synthesis grid and constant global
+synthesis hop. It must not move synthesis-frame positions, create local
+unity-ratio islands, or distribute compensation through later frames.
 
-Required duration compensation is distributed only across non-protected frames
-between adjacent fixed anchors. Synthesis positions remain strictly monotonic.
-Overlapping onset islands with incompatible synthesis positions are dense
-conflicts. They must be reported and fall back to the current constant-hop path
-for the conflicting interval.
+The frozen `g10.029` onset classifier supplies event guards only. Inside each
+guard, a time-ramped companion analysis estimates per-bin group delay. Each
+spectral peak owns the bins between its nearest surrounding magnitude minima.
+The energy-weighted group delay of that region estimates the attack position
+inside the analysis window.
 
-### Rule 3: phase policy stays inside the engine
+### Rule 3: phase reinitialization is peak-selective
 
-Protected attack frames reinitialize synthesis phase from their analysis phase.
-Steady frames use instantaneous-frequency propagation and the current identity
-locking policy. Entry and exit occur through overlapping frames on the same
-grid; no time-domain transition crossfade is added.
+An attack peak may reinitialize only when its peak-local energy position
+reaches the window-centre threshold derived for the analysis window. Peak bins
+collected for one guarded event reinitialize together in one frame. Their
+synthesis phases copy the current analysis phases. Other bins retain
+instantaneous-frequency propagation and current identity locking.
+
+The candidate must not apply a whole-frame reset, waveform crossfade, transient
+amplitude boost, corpus-tuned threshold sweep, or different synthesis timeline.
+Peak-local magnitude-minimum regions, event collection, and reset decisions
+must be explicit report data.
 
 ### Rule 4: adaptive resolution is a later reconstruction stage
 
@@ -52,14 +56,15 @@ diagnostic controls only.
 
 Every proof retains identity bypass, centred boundary coverage, deterministic
 output, finite samples, exact target length, and explicit mapping evidence.
-The transient proof must report protected spans, compensation range, maximum
-local hop, dense conflicts, anchor error, and current-versus-candidate quality.
+The transient proof must report guarded events, candidate peaks, collected
+peak regions, reinitialized bins and frames, group-delay threshold crossings,
+unmatched guards, and current-versus-candidate quality.
 
 ### Rule 6: promotion stays closed
 
 Production routing, cache identity, product receipts, pitch composition,
 dynamic-ratio routing, RealtimePreview, and linked stereo remain unchanged.
-Adaptive-resolution work opens only after the current-grid transient proof
+Adaptive-resolution work opens only after the fixed-map peak transient proof
 passes its declared gate.
 
 ## Current-Grid Transient Proof Gate
@@ -72,8 +77,8 @@ passes its declared gate.
 - no non-finite output, non-monotonic synthesis position, uncovered output
   sample, or unreported dense-transient fallback
 
-This gate proves only the transient/time-map mechanism. It does not waive the
-fast spectral-movement gate required of the later combined mono candidate.
+This gate proves only the peak-selective transient mechanism. It does not waive
+the fast spectral-movement gate required of the later combined mono candidate.
 
 ## 2026-07-10 Proof Outcome
 
@@ -83,6 +88,20 @@ mean event placement worsened by `4.942263` frames, and the combined gate passed
 required local hops up to `1664` frames and moved unprotected events. Do not
 tune classifier or compensation constants and do not open adaptive resolution.
 
+## 2026-07-10 Reassessment Decision
+
+Use peak-local group-delay phase reinitialization under the unchanged global
+time map for the next proof. This mechanism targets invalid transient phase
+prediction and broad phase ownership inside the existing STFT kernel without
+moving unrelated events.
+
+Do not implement explicit transient/residual separation in this proof. That
+branch requires a new multiresolution perfect-reconstruction split, adaptive
+mask continuity, separate component processing, and recombination policy. It
+also exposes threshold leakage and synthetic-component artifacts before the
+smaller in-engine mechanism has been tested. Separation remains a research
+fallback if the fixed-map peak proof fails its frozen gate.
+
 ## Clean-Room Rule
 
 Public papers and public algorithm descriptions may inform Signal design.
@@ -91,6 +110,7 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Reassess transient ownership. Freeze either peak/group-delay preservation under
-the global time map or explicit transient/residual separation before another
-candidate. Keep adaptive resolution and linked stereo closed.
+Start Batch 29.6C with a report-only fixed-map peak transient proof. Add the
+time-ramped analysis, peak-local group-delay and event collection state, then
+run the unchanged current-grid gate. Keep adaptive resolution, linked stereo,
+production routing, and transient/residual separation closed.
