@@ -248,15 +248,15 @@ independent stereo review.
 
 ### Batch 29.6J - Common-Grid Wavelet Reconstruction
 
-- [ ] construct the Contract `082` `alpha=900`, `1536`-channel analytic
+- [x] construct the Contract `082` `alpha=900`, `1536`-channel analytic
   wavelet bank with `16` lowpass channels and uniform `384`-frame decimation
-- [ ] apply the deterministic digital `(0,1)` channel-delay sequence and report
+- [x] apply the deterministic digital `(0,1)` channel-delay sequence and report
   its stable hash
-- [ ] compute the complete uniform-filter-bank frame bounds and canonical dual;
+- [x] compute the complete uniform-filter-bank frame bounds and canonical dual;
   do not reuse the Batch 29.6I diagonal painless dual
-- [ ] prove identity analysis/synthesis on the unchanged Batch 29.6I controls
+- [x] prove identity analysis/synthesis on the unchanged Batch 29.6I controls
   with condition ratio at most `1.25` and the frozen residual/error limits
-- [ ] keep phase propagation, the 60-row corpus, linked stereo, and product
+- [x] keep phase propagation, the 60-row corpus, linked stereo, and product
   routing closed even if reconstruction passes
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
@@ -597,9 +597,14 @@ independent stereo review.
   matrix, redundancy `8`, complete canonical dual, and bounded frame condition.
   Evidence is in
   `docs/logs/2026-07/10-g10-029-common-grid-wavelet-reassessment.md`.
+- 2026-07-10: Batch 29.6J passed. The mixed control produced a `1536 x 11`
+  coefficient matrix. Estimated frame condition was `1.025819956`, maximum
+  canonical-dual residual was `6.225219e-11`, and peak/RMS reconstruction error
+  was `2.910383e-11` / `5.520117e-13`. All control and repeat gates passed.
+  Evidence is in
+  `docs/logs/2026-07/10-g10-029-common-grid-wavelet-reconstruction-proof.md`.
 
 ## Next Task
 
-Implement Batch 29.6J, the report-only common-grid wavelet reconstruction
-proof. Keep phase propagation, corpus rendering, linked stereo, and product
-routing closed.
+Research and contract the common-grid phase mechanism. Keep corpus rendering,
+linked stereo, and product routing closed.

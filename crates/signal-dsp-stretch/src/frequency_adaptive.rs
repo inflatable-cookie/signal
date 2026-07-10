@@ -3,9 +3,13 @@ use signal_primitives::{Sample, SampleRate};
 
 mod types;
 pub use types::{
+    StretchCommonGridWaveletEvidence, StretchCommonGridWaveletReview,
     StretchFrequencyAdaptiveBandEvidence, StretchFrequencyAdaptiveEvidence,
     StretchFrequencyAdaptiveReview,
 };
+
+mod common_grid;
+pub(crate) use common_grid::common_grid_wavelet_reconstruction_review_mono;
 
 #[cfg(test)]
 mod tests;

@@ -178,8 +178,8 @@ rejected ownership crossfade.
 
 ## Next Task
 
-Implement the common-grid wavelet reconstruction proof. Do not add phase
-propagation or stretched output yet.
+Research and contract phase processing on the passing common-grid wavelet
+transform. Do not open corpus rendering yet.
 
 ## Frequency-Adaptive Reassessment
 
@@ -235,6 +235,12 @@ Signal will first reproduce that transform boundary. Unlike the painless
 Batch 29.6I frame, channel delays make the full frame operator non-diagonal, so
 the proof must derive and verify the complete canonical dual. Only a passing
 common-grid reconstruction proof may reopen phase-gradient design.
+
+Batch 29.6J passes. Frequency-response tightening plus the complete alias-block
+canonical dual produced condition ratio `1.025819956`, dual residual
+`6.225219e-11`, and RMS reconstruction error `5.520117e-13` on the mixed
+control. The next research question is now phase transport, not transform
+invertibility.
 
 Additional primary sources:
 

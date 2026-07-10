@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; common-grid wavelet reconstruction proof ready
+Status: active; common-grid wavelet reconstruction proof passed
 Owner: dsp
 Updated: 2026-07-10
 Related contracts: `046`, `048`, `049`
@@ -479,6 +479,19 @@ most `1e-8`, peak reconstruction error at most `1e-5`, RMS error at most
 reports. Failure returns to research. Passing opens only a separately
 contracted common-grid phase-gradient mechanism proof.
 
+## 2026-07-10 Common-Grid Wavelet Reconstruction Outcome
+
+Batch 29.6J passes. The `4096`-frame mixed control pads to `4224` frames and
+produces `16896` coefficients on the `1536 x 11` common grid. Deterministic
+frequency-response tightening precedes the complete alias-block frame solve.
+Estimated frame bounds were `0.984806890` and `1.010234560`, condition ratio was
+`1.025819956`, and maximum canonical-dual residual was `6.225219e-11`. Peak and
+RMS reconstruction error were `2.910383e-11` and `5.520117e-13`.
+
+All frozen sine, edge, impulse, noise, mixed, silence, empty, finite-value,
+endpoint, and repeat gates pass. This authorizes only a common-grid phase
+mechanism contract. It does not authorize a stretch or corpus candidate.
+
 ## Clean-Room Rule
 
 Public papers and public algorithm descriptions may inform Signal design.
@@ -487,6 +500,7 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Implement Batch 29.6J, the report-only common-grid wavelet reconstruction
-proof. Do not add phase propagation or stretched output. Keep corpus rendering,
-linked stereo, and all product routing closed.
+Research and contract the common-grid phase mechanism. Define channel-delay
+compensation, derivatives, integration adjacency, synthesis-time mapping, and
+real-output symmetry before implementation. Keep corpus rendering, linked
+stereo, and all product routing closed.

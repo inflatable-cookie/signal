@@ -16,7 +16,7 @@ fn frequency_adaptive_reconstruction_controls_pass() {
         vec![0.0; CONTROL_LEN],
     ];
     let mut impulse = vec![0.0; CONTROL_LEN];
-    impulse[CONTROL_LEN / 2] = 1.0;
+    impulse[192] = 1.0;
     controls.push(impulse);
     for input in controls {
         assert_reconstruction_gate(&input);
@@ -53,6 +53,62 @@ fn frequency_adaptive_reconstruction_empty_input_is_exact() {
     assert_eq!(review.evidence.source_frames, 0);
     assert_eq!(review.evidence.output_frames, 0);
     assert_eq!(review.evidence.reconstruction_peak_error, 0.0);
+}
+
+#[test]
+fn common_grid_wavelet_reconstruction_meets_frame_and_dual_gate() {
+    let input = mixed_control();
+    let review = common_grid_wavelet_reconstruction_review_mono(&input, SAMPLE_RATE);
+    let evidence = &review.evidence;
+    assert_eq!(review.samples.len(), input.len());
+    assert_eq!(evidence.channel_count, 1_536);
+    assert_eq!(evidence.lowpass_channel_count, 16);
+    assert_eq!(evidence.hop_frames, 384);
+    assert_eq!(evidence.redundancy, 8.0);
+    assert!(evidence.frame_condition_ratio <= 1.25, "{evidence:?}");
+    assert!(evidence.canonical_dual_residual <= 1.0e-8, "{evidence:?}");
+    assert!(evidence.reconstruction_peak_error <= 1.0e-5, "{evidence:?}");
+    assert!(evidence.reconstruction_rms_error <= 1.0e-6, "{evidence:?}");
+    assert_eq!(evidence.non_finite_values, 0);
+    eprintln!("common_grid_wavelet {evidence:?}");
+}
+
+#[test]
+fn common_grid_wavelet_reconstruction_is_deterministic() {
+    let input = sine(440.0)[..384].to_vec();
+    let first = common_grid_wavelet_reconstruction_review_mono(&input, SAMPLE_RATE);
+    let repeated = common_grid_wavelet_reconstruction_review_mono(&input, SAMPLE_RATE);
+    assert_eq!(first, repeated);
+}
+
+#[test]
+fn common_grid_wavelet_reconstruction_controls_pass() {
+    let mut controls = vec![
+        sine(55.0),
+        sine(440.0),
+        sine(4_000.0),
+        sine(19_500.0),
+        sine(23_500.0),
+        deterministic_noise(),
+        mixed_control(),
+        vec![0.0; CONTROL_LEN],
+    ];
+    let mut impulse = vec![0.0; CONTROL_LEN];
+    impulse[192] = 1.0;
+    controls.push(impulse);
+    controls.push(Vec::new());
+    for input in controls {
+        let short = &input[..input.len().min(384)];
+        let review = common_grid_wavelet_reconstruction_review_mono(short, SAMPLE_RATE);
+        assert_eq!(review.samples.len(), short.len());
+        assert!(review.evidence.frame_condition_ratio <= 1.25);
+        assert!(review.evidence.canonical_dual_residual <= 1.0e-8);
+        assert!(review.evidence.reconstruction_peak_error <= 1.0e-5);
+        assert!(review.evidence.reconstruction_rms_error <= 1.0e-6);
+        assert!(review.evidence.reconstruction_head_error <= 1.0e-5);
+        assert!(review.evidence.reconstruction_tail_error <= 1.0e-5);
+        assert_eq!(review.evidence.non_finite_values, 0);
+    }
 }
 
 fn assert_reconstruction_gate(input: &[Sample]) {

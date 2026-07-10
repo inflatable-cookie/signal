@@ -74,3 +74,55 @@ pub struct StretchFrequencyAdaptiveReview {
     /// Transform geometry and reconstruction evidence.
     pub evidence: StretchFrequencyAdaptiveEvidence,
 }
+
+/// Evidence from the report-only common-grid wavelet reconstruction proof.
+#[derive(Clone, Debug, PartialEq)]
+pub struct StretchCommonGridWaveletEvidence {
+    /// Number of nonnegative-frequency analysis channels.
+    pub channel_count: usize,
+    /// Number of lowpass completion channels.
+    pub lowpass_channel_count: usize,
+    /// Uniform coefficient spacing in source frames.
+    pub hop_frames: usize,
+    /// Complex-coefficient redundancy relative to real source samples.
+    pub redundancy: f64,
+    /// Stable hash of the deterministic channel delays.
+    pub delay_hash: u64,
+    /// Estimated lower frame bound.
+    pub frame_bound_min: f64,
+    /// Estimated upper frame bound.
+    pub frame_bound_max: f64,
+    /// Ratio of upper to lower frame bounds.
+    pub frame_condition_ratio: f64,
+    /// Largest relative residual from canonical-dual block solves.
+    pub canonical_dual_residual: f64,
+    /// Number of analyzed complex coefficients.
+    pub analysis_coefficient_count: usize,
+    /// Number of synthesized complex coefficients.
+    pub synthesis_coefficient_count: usize,
+    /// Largest absolute reconstruction error.
+    pub reconstruction_peak_error: f64,
+    /// Root-mean-square reconstruction error.
+    pub reconstruction_rms_error: f64,
+    /// First-sample reconstruction error.
+    pub reconstruction_head_error: f64,
+    /// Final-sample reconstruction error.
+    pub reconstruction_tail_error: f64,
+    /// Number of non-finite coefficients or output samples.
+    pub non_finite_values: usize,
+    /// Stable source-sample hash.
+    pub source_hash: u64,
+    /// Stable reconstructed-sample hash.
+    pub output_hash: u64,
+    /// Stable complex-coefficient hash.
+    pub coefficient_hash: u64,
+}
+
+/// Exact-length identity reconstruction through the common-grid wavelet frame.
+#[derive(Clone, Debug, PartialEq)]
+pub struct StretchCommonGridWaveletReview {
+    /// Reconstructed mono samples.
+    pub samples: Vec<Sample>,
+    /// Common-grid frame and reconstruction evidence.
+    pub evidence: StretchCommonGridWaveletEvidence,
+}

@@ -148,7 +148,14 @@ wavelet bandwidth still grows with frequency. Canonical dual synthesis must be
 proven from the complete uniform-filter-bank frame operator; the painless
 diagonal shortcut from Batch 29.6I does not apply.
 
+Batch 29.6J passes that proof. The analysis bank applies deterministic
+frequency-response tightening before the complete alias-block frame operator
+and canonical-dual solve. This keeps the frozen wavelet centres, bandwidth
+progression, channel delays, hop, and redundancy while improving numerical
+conditioning. It does not define modified coefficient phase.
+
 ## Next Task
 
-Implement Batch 29.6J, the common-grid wavelet reconstruction proof. Keep phase
-propagation, corpus rendering, linked stereo, and product routing closed.
+Research and contract common-grid phase derivatives, delay compensation,
+synthesis-time mapping, and real-output symmetry. Keep corpus rendering,
+linked stereo, and product routing closed.
