@@ -67,6 +67,8 @@ be trustworthy before the callback contract or a structural hybrid widens.
   output-length drift
 - [x] isolate the `L001` spike with same-event phase-lock controls and reject
   corpus-regressing local variants
+- [x] classify long-stretch grain with source-relative residual, sideband, and
+  fast spectral-modulation evidence
 - [ ] complete row-level manifest validation and independent stereo review
 - [ ] close formant and boundary classification after the remaining review
 
@@ -173,10 +175,18 @@ be trustworthy before the callback contract or a structural hybrid widens.
   also failed combined crest/timing gates and were removed. No production path
   changed. Evidence and the rejection decision are in
   `docs/logs/2026-07/10-g10-029-phase-lock-control-rejection.md`.
+- 2026-07-10: Source-relative tonal diagnostics classify the long-stretch
+  finding as excess fast spectral movement, not confirmed added ringing. Signal
+  exceeded Rubber Band spectral movement in `38/40` expansion rows while its
+  static residual and unsupported-bin mass were lower. Envelope movement was
+  mixed. Broad phase locking improved on independent bins at `1.5x` but
+  regressed them at `1.25x`, so no production change promoted. Evidence and
+  limits are in
+  `docs/logs/2026-07/10-g10-029-tonal-texture-diagnostic.md`.
 
 ## Next Task
 
-Measure the reported long-stretch grain and atonal ringing with bounded tonal
-sideband, residual, and modulation evidence. In parallel, obtain independent
-stereo review and complete row-level manifest validation. Do not open product
-promotion or start Batch 29.4 until all five families validate.
+Close formant and boundary classification with bounded evidence from the
+existing pack. Independent stereo review and row-level manifest validation
+remain open. Do not open product promotion or start Batch 29.4 until all five
+families validate.

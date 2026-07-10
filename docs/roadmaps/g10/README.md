@@ -21,10 +21,11 @@ implementation remains Signal-owned.
 - OfflineHighQuality boundary coverage and absolute full-render measurement now
   pass the bounded Signal/Rubber Band pack. Synthetic-only promotion is closed.
   Aggregate operator findings from the 15-pair pack now identify transient
-  crest spikes and long-stretch grain, while event timing is effectively tied
-  in the first objective follow-up. Rubber Band-class promotion remains blocked
-  on independent stereo/row-level completion and the later structural hybrid
-  checkpoint.
+  crest spikes and long-stretch grain, while event timing is effectively tied.
+  Objective follow-up classifies the grain as excess fast spectral movement,
+  not confirmed added sideband energy. Rubber Band-class promotion remains
+  blocked on independent stereo/row-level completion and the later structural
+  hybrid checkpoint.
 - Sustained/polyphonic long-window candidates produced useful evidence but no
   production route; the next DSP quality jump needs a structural hybrid design,
   not another one-parameter probe.
@@ -117,8 +118,8 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Measure long-stretch grain and atonal ringing after the `L001` controls rejected
-local phase-lock variants. Independent stereo and row-level listening completion
-remain open. Do not start Batch 29.4 or product promotion until all five
-listening families validate. Keep RealtimePreview source-fill and broader
-product integration paused.
+Close formant and boundary classification with bounded evidence from the
+existing pack. Independent stereo and row-level listening completion remain
+open. Do not start Batch 29.4 or product promotion until all five listening
+families validate. Keep RealtimePreview source-fill and broader product
+integration paused.

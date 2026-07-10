@@ -311,6 +311,16 @@ is not an improvement. Phase-lock changes must also retain event-placement
 evidence; a local crest reduction cannot promote a path that regresses timing
 across the bounded corpus.
 
+Long-stretch tonal diagnostics must remain source-relative and separate static
+spectral change from fast texture movement. At minimum, report gain-invariant
+spectral residual, energy added outside source-supported bins, local
+frame-to-frame spectral movement, and short-time envelope movement at
+ratio-projected positions. Added-ringing claims require unsupported-bin
+evidence; spectral movement alone is a temporal-coherence finding. These are
+offline diagnostic proxies, not audio-thread work or promotion limits. Fixed
+windowing and source/output alignment bounds must stay explicit, and objective
+evidence does not replace completed listening review.
+
 Planning authority:
 `docs/roadmaps/g10/029-stretch-correctness-and-listening-gate.md`.
 

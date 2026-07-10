@@ -47,6 +47,7 @@ mod corpus_report;
 mod phase_vocoder;
 mod promotion;
 mod render_integrity;
+mod tonal_texture;
 mod transient_detail;
 
 pub use artifact_plan::{
@@ -103,6 +104,7 @@ pub use render_integrity::{
     StretchRenderIntegrityAssessment, StretchRenderIntegrityLimits,
     StretchRenderIntegrityMeasurement,
 };
+pub use tonal_texture::{measure_tonal_texture, StretchTonalTextureMeasurement};
 pub use transient_detail::{
     measure_transient_detail, measure_transient_event_detail, StretchTransientDetailMeasurement,
     StretchTransientEventDetail,

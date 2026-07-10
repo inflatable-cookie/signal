@@ -20,12 +20,13 @@ use signal_analysis_character::{CharacterAnalyzer, CharacterAnalyzerConfig};
 use signal_dsp_stretch::{
     build_stretch_corpus_comparison_report_with_sources, detect_stretch_transients,
     format_stretch_corpus_comparison_report, measure_stretch_render_integrity,
-    measure_transient_detail, measure_transient_event_detail, measure_transient_smear,
-    measure_transient_smear_with_output_recovery_policy, measure_transient_smear_with_policies,
-    measure_transient_smear_with_policy, output_length_drift_samples, OfflineHighQualityPath,
-    OfflineHighQualityStretcher, PhaseVocoderStretcher, StretchCorpusAssetRequirement,
-    StretchCorpusListeningSource, StretchExternalBenchmarkRender, StretchRenderIntegrityLimits,
-    StretchTransientDetectorPolicy, TimeStretcher, COMPRESSION_SHORT_WINDOW_SELECTOR_ANALYSIS_HOP,
+    measure_tonal_texture, measure_transient_detail, measure_transient_event_detail,
+    measure_transient_smear, measure_transient_smear_with_output_recovery_policy,
+    measure_transient_smear_with_policies, measure_transient_smear_with_policy,
+    output_length_drift_samples, OfflineHighQualityPath, OfflineHighQualityStretcher,
+    PhaseVocoderStretcher, StretchCorpusAssetRequirement, StretchCorpusListeningSource,
+    StretchExternalBenchmarkRender, StretchRenderIntegrityLimits, StretchTransientDetectorPolicy,
+    TimeStretcher, COMPRESSION_SHORT_WINDOW_SELECTOR_ANALYSIS_HOP,
     COMPRESSION_SHORT_WINDOW_SELECTOR_MIN_CURRENT_MISSES,
     COMPRESSION_SHORT_WINDOW_SELECTOR_MIN_CURRENT_SMEAR_FRAMES,
     COMPRESSION_SHORT_WINDOW_SELECTOR_WINDOW_SIZE, STRETCH_CORPUS_MANIFEST,
@@ -1944,6 +1945,64 @@ impl ExternalBenchmarkTransientControlMeasurement {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+struct ExternalBenchmarkTonalTextureMeasurement {
+    case_id: String,
+    source_path: String,
+    ratio: f64,
+    spectral_windows: usize,
+    signal_mean_spectral_residual_ratio: f64,
+    external_mean_spectral_residual_ratio: f64,
+    draft_mean_spectral_residual_ratio: f64,
+    signal_max_spectral_residual_ratio: f64,
+    external_max_spectral_residual_ratio: f64,
+    signal_mean_added_sideband_ratio: f64,
+    external_mean_added_sideband_ratio: f64,
+    draft_mean_added_sideband_ratio: f64,
+    signal_max_added_sideband_ratio: f64,
+    external_max_added_sideband_ratio: f64,
+    signal_spectral_modulation_delta: f64,
+    external_spectral_modulation_delta: f64,
+    draft_spectral_modulation_delta: f64,
+    signal_envelope_modulation_delta_db: f64,
+    external_envelope_modulation_delta_db: f64,
+    draft_envelope_modulation_delta_db: f64,
+}
+
+impl ExternalBenchmarkTonalTextureMeasurement {
+    fn format_report_line(&self) -> String {
+        format!(
+            "external_benchmark_tonal_texture case={} source={} ratio={:.6} spectral_windows={} signal_mean_spectral_residual_ratio={:.6} external_mean_spectral_residual_ratio={:.6} draft_mean_spectral_residual_ratio={:.6} signal_residual_delta_vs_external={:.6} signal_max_spectral_residual_ratio={:.6} external_max_spectral_residual_ratio={:.6} signal_mean_added_sideband_ratio={:.6} external_mean_added_sideband_ratio={:.6} draft_mean_added_sideband_ratio={:.6} signal_sideband_delta_vs_external={:.6} signal_max_added_sideband_ratio={:.6} external_max_added_sideband_ratio={:.6} signal_spectral_modulation_delta={:.6} external_spectral_modulation_delta={:.6} draft_spectral_modulation_delta={:.6} signal_spectral_modulation_delta_vs_external={:.6} signal_envelope_modulation_delta_db={:.6} external_envelope_modulation_delta_db={:.6} draft_envelope_modulation_delta_db={:.6} signal_envelope_modulation_delta_vs_external_db={:.6}",
+            self.case_id,
+            quoted_report_field(&self.source_path),
+            self.ratio,
+            self.spectral_windows,
+            self.signal_mean_spectral_residual_ratio,
+            self.external_mean_spectral_residual_ratio,
+            self.draft_mean_spectral_residual_ratio,
+            self.signal_mean_spectral_residual_ratio
+                - self.external_mean_spectral_residual_ratio,
+            self.signal_max_spectral_residual_ratio,
+            self.external_max_spectral_residual_ratio,
+            self.signal_mean_added_sideband_ratio,
+            self.external_mean_added_sideband_ratio,
+            self.draft_mean_added_sideband_ratio,
+            self.signal_mean_added_sideband_ratio - self.external_mean_added_sideband_ratio,
+            self.signal_max_added_sideband_ratio,
+            self.external_max_added_sideband_ratio,
+            self.signal_spectral_modulation_delta,
+            self.external_spectral_modulation_delta,
+            self.draft_spectral_modulation_delta,
+            self.signal_spectral_modulation_delta - self.external_spectral_modulation_delta,
+            self.signal_envelope_modulation_delta_db,
+            self.external_envelope_modulation_delta_db,
+            self.draft_envelope_modulation_delta_db,
+            self.signal_envelope_modulation_delta_db
+                - self.external_envelope_modulation_delta_db,
+        )
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
 struct ExternalBenchmarkFeatureDeltaMeasurement {
     case_id: String,
     source_path: String,
@@ -2486,6 +2545,38 @@ fn format_external_benchmark_quality_metrics(
         });
         let mut draft_stretcher = PhaseVocoderStretcher::new(render.ratio);
         let draft_output = draft_stretcher.stretch_mono(source_mono);
+        let signal_tonal_texture = measure_tonal_texture(source_mono, &signal_output, render.ratio);
+        let external_tonal_texture =
+            measure_tonal_texture(source_mono, &external_audio.mono_samples, render.ratio);
+        let draft_tonal_texture = measure_tonal_texture(source_mono, &draft_output, render.ratio);
+        let tonal_texture_line = ExternalBenchmarkTonalTextureMeasurement {
+            case_id: render.case_id.clone(),
+            source_path: source.source_path.clone(),
+            ratio: render.ratio,
+            spectral_windows: signal_tonal_texture
+                .spectral_windows
+                .min(external_tonal_texture.spectral_windows),
+            signal_mean_spectral_residual_ratio: signal_tonal_texture.mean_spectral_residual_ratio,
+            external_mean_spectral_residual_ratio: external_tonal_texture
+                .mean_spectral_residual_ratio,
+            draft_mean_spectral_residual_ratio: draft_tonal_texture.mean_spectral_residual_ratio,
+            signal_max_spectral_residual_ratio: signal_tonal_texture.max_spectral_residual_ratio,
+            external_max_spectral_residual_ratio: external_tonal_texture
+                .max_spectral_residual_ratio,
+            signal_mean_added_sideband_ratio: signal_tonal_texture.mean_added_sideband_ratio,
+            external_mean_added_sideband_ratio: external_tonal_texture.mean_added_sideband_ratio,
+            draft_mean_added_sideband_ratio: draft_tonal_texture.mean_added_sideband_ratio,
+            signal_max_added_sideband_ratio: signal_tonal_texture.max_added_sideband_ratio,
+            external_max_added_sideband_ratio: external_tonal_texture.max_added_sideband_ratio,
+            signal_spectral_modulation_delta: signal_tonal_texture.spectral_modulation_delta,
+            external_spectral_modulation_delta: external_tonal_texture.spectral_modulation_delta,
+            draft_spectral_modulation_delta: draft_tonal_texture.spectral_modulation_delta,
+            signal_envelope_modulation_delta_db: signal_tonal_texture.envelope_modulation_delta_db,
+            external_envelope_modulation_delta_db: external_tonal_texture
+                .envelope_modulation_delta_db,
+            draft_envelope_modulation_delta_db: draft_tonal_texture.envelope_modulation_delta_db,
+        }
+        .format_report_line();
         let mut stability_stretcher = OfflineHighQualityStretcher::new(render.ratio);
         let stability_output =
             stability_stretcher.stretch_phase_lock_stability_review_mono(source_mono);
@@ -3183,6 +3274,7 @@ fn format_external_benchmark_quality_metrics(
         if let Some(line) = transient_control_line {
             lines.push(line);
         }
+        lines.push(tonal_texture_line);
         if let Some(line) = feature_delta_line {
             lines.push(line);
         }
@@ -8028,6 +8120,13 @@ mod tests {
         assert!(control.contains("stability_event_crest_growth_db="));
         assert!(control.contains("tracked_peak_max_crest_growth_db="));
         assert!(control.contains("magnitude_slew_mean_absolute_offset_frames="));
+        let tonal = formatted
+            .lines()
+            .find(|line| line.starts_with("external_benchmark_tonal_texture "))
+            .expect("source-relative tonal texture row");
+        assert!(tonal.contains("signal_mean_spectral_residual_ratio="));
+        assert!(tonal.contains("signal_sideband_delta_vs_external="));
+        assert!(tonal.contains("signal_envelope_modulation_delta_vs_external_db="));
 
         let _ = fs::remove_file(path);
     }
