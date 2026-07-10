@@ -178,8 +178,8 @@ rejected ownership crossfade.
 
 ## Next Task
 
-Reassess the fixed-resolution full phase-gradient result from Contract `082`.
-Do not tune the rejected kernel or open linked stereo.
+Implement Contract `082`'s exact-lattice phase-gradient proof. Do not add
+transient or shape processing and do not open linked stereo.
 
 ## Full Phase-Gradient Mono Outcome
 
@@ -193,6 +193,51 @@ phase-gradient core as evidence, not a product candidate. Investigate only
 clean-room mechanisms that preserve attack placement and spectral-envelope
 shape without reopening source separation, local time compensation, or
 independent output branches.
+
+## Exact-Lattice Reassessment
+
+The first phase-gradient candidate did not realize Signal's requested ratio
+inside its analysis lattice. It fixed synthesis hop to `1024`, rounded one
+constant analysis hop, then forced exact length only at the output crop. The
+resulting lattice ratios were `0.750183`, `1.250305`, and `1.499268`. Across a
+five-second source their endpoint mapping errors can reach roughly `40`, `67`,
+and `161` frames. The corpus timing failure was `+16.738760` frames on average
+and `+137` frames worst-case. That confound must close before a new attack
+mechanism is justified.
+
+Public phase-vocoder formulations place analysis frames at centres `C_l` and
+synthesis frames at transformed centres `C'_l`; phase propagation uses the
+actual difference between adjacent centres. Signal can therefore retain the
+published whole-band phase-gradient core while making its source lattice exact:
+
+1. Define absolute analysis position `A_n = round(n * 1024 / ratio)` rather
+   than repeating one rounded hop.
+2. Use the actual backward and forward integer intervals when estimating each
+   centered time-phase derivative.
+3. Keep synthesis hop `1024`, requested-ratio frequency integration, heap
+   priority, tolerance, window/FFT geometry, padding, normalization, and crop
+   policy unchanged.
+4. Prove every analysis centre is within `0.5` source frame of the ideal map,
+   then run the unchanged complete mono corpus gate.
+
+This is an architectural correction, not a parameter sweep. It can explain
+placement drift but is not expected by itself to solve attack softness or
+formant shape.
+
+Röbel's shape-invariant phase vocoder is deferred. It is designed for speech
+and introduces sinusoidal/noise classification, correlation-based phase
+alignment, spectral-envelope estimation, and voiced/unvoiced balance policy.
+Röbel's peak-local transient method is also not reopened: Signal already tested
+and rejected its group-delay phase-reinitialization family on the fixed map.
+Only if exact-lattice phase gradient retains the tonal/comparator gains and
+still fails shape may a separately contracted shape-preservation proof open.
+
+Additional primary sources:
+
+| Source | Confidence | Notes |
+| --- | --- | --- |
+| [Röbel, 2010](https://www.isca-archive.org/interspeech_2010/robel10_interspeech.html) | high | General analysis/synthesis frame-centre propagation; speech-specific shape-invariant extension |
+| [Röbel, 2003](https://www.dafx.de/paper-archive/2003/pdfs/dafx32.pdf) | high | Peak-local transient reinitialization and amplitude-spectrum limits; already tested mechanism family |
 
 ## Full Phase-Gradient Reassessment
 

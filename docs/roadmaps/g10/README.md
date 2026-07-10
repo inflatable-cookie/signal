@@ -63,7 +63,10 @@ implementation remains Signal-owned.
   assignment, bounded heap, deterministic output, and both propagation
   directions proven. Its complete mono candidate improves tonal and Rubber Band
   comparison evidence, but fails crest, timing, replica, formant, integrity,
-  and combined gates. Batch 29.6G is rejected and linked stereo remains closed.
+  and combined gates. Batch 29.6G is rejected. Its repeated rounded analysis
+  hop also exposes up to roughly `161` frames of five-second source-map drift.
+  Batch 29.6H freezes an exact absolute analysis lattice before any new
+  transient/shape policy; linked stereo remains closed.
 - Offline artifacts and RealtimePreview have bounded contracts and prototype
   paths, but callback-safe preview integration and fully streaming artifact
   output remain gated until their owning source-fill/cache contracts exist.
@@ -153,7 +156,6 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Stop implementation for offline synthesis-policy reassessment after the Batch
-29.6G rejection. Do not tune the phase-gradient kernel or open linked stereo.
-Production, cache identity, pitch/dynamic routing, RealtimePreview, and product
-integration remain closed.
+Implement Batch 29.6H's exact-lattice phase-gradient mono proof. Do not add
+transient/shape policy or open linked stereo. Production, cache identity,
+pitch/dynamic routing, RealtimePreview, and product integration remain closed.

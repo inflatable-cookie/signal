@@ -20,6 +20,8 @@ reconstruction.
 
 - fixed-resolution analysis estimates centered time and frequency derivatives
   of the analyzed STFT phase
+- absolute analysis centres follow the exact requested source map; adjacent
+  integer analysis intervals may differ by one frame
 - a magnitude-prioritized heap integrates that full phase gradient across time
   and frequency
 - every significant bin receives synthesis phase exactly once from the
@@ -34,6 +36,7 @@ reconstruction.
 One fixed-ratio mono engine owns:
 
 - source and output frame cursors
+- absolute ideal and rounded analysis-frame positions
 - one fixed STFT geometry and global ratio
 - current and adjacent analyzed complex frames
 - time- and frequency-direction phase derivatives
@@ -60,8 +63,9 @@ must not concatenate independent renders.
 4. additive H/R/P fixed-ratio mono candidate
 5. fixed-resolution full phase-gradient kernel proof
 6. whole-band full phase-gradient fixed-ratio mono gate
-7. shared-decision linked stereo
-8. concealed listening and dynamic-ratio checkpoint
+7. exact-lattice whole-band phase-gradient mono gate
+8. shared-decision linked stereo
+9. concealed listening and dynamic-ratio checkpoint
 
 Each stage stays report-only until the complete gate passes. A mechanism proof
 may authorize the next stage but cannot promote product quality alone.
@@ -103,9 +107,14 @@ Bins below the frame-pair relative tolerance keep analyzed phase instead of
 receiving random values. These are deterministic Signal boundary choices, not
 claims about the reference implementation.
 
+The first fixed-hop candidate is rejected but leaves useful tonal evidence. Its
+constant rounded analysis hop made the internal ratio differ from the requested
+ratio and allowed cumulative source-map drift. The next candidate replaces
+that repeated hop with absolute rounded analysis centres. All other
+phase-gradient policy remains frozen.
+
 ## Next Task
 
-Reassess the successor after the whole-band phase-gradient candidate improved
-tonal and comparator evidence but failed attack crest, placement, replica,
-formant, integrity, and combined gates. Keep linked stereo, dynamic ratio, and
-product routing closed.
+Implement the exact-lattice phase-gradient mono proof from Contract `082`.
+Keep transient/shape extensions, linked stereo, dynamic ratio, and product
+routing closed.

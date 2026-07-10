@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; phase-gradient mono candidate rejected
+Status: active; exact-lattice phase-gradient proof frozen
 Owner: dsp
 Updated: 2026-07-10
 Related contracts: `046`, `048`, `049`
@@ -152,6 +152,49 @@ report every existing Batch 29.6 quality and integrity field, compare against
 the current kernel and external comparator, and pass the unchanged complete
 mono gate before linked stereo opens. Do not sweep geometry, tolerance,
 derivative policy, or heap priority inside that gate.
+
+### Rule 11: exact requested mapping precedes new transient policy
+
+Batch 29.6H retains the whole-band phase-gradient core but replaces the
+rejected repeated rounded analysis hop. For rendered frame `n`, define the
+unpadded analysis centre as:
+
+`A_n = round(n * 1024 / ratio)`
+
+Adjacent analysis intervals are `A_n - A_(n-1)`. They must be positive and may
+differ only between the floor and ceiling of `1024 / ratio`. Generate absolute
+positions directly; do not accumulate floating-point positions or repair the
+final interval.
+
+Each backward and forward heterodyned time-phase difference uses its own actual
+analysis interval in both the nominal phase advance and derivative divisor.
+The centered time derivative remains the average of those two instantaneous
+frequency estimates. Synthesis hop remains `1024`; frequency-direction
+integration uses the requested global ratio.
+
+Window `4092`, FFT `8192`, tolerance `1e-6`, heap ordering, first-frame phase,
+insignificant-bin phase, conjugate mirroring, padding, normalization, exact
+target crop, and identity bypass do not change. No onset detector, phase reset,
+transient gain, envelope correction, source separation, waveform search, or
+local time compensation enters this proof.
+
+### Rule 12: exact-lattice evidence and stop gate
+
+Before corpus rendering, report ideal and integer analysis positions, interval
+floor/ceiling counts, maximum absolute mapping error, monotonicity, final
+mapping error, phase assignments, heap bound, symmetry, coverage, and hashes.
+The mapping proof requires:
+
+- every integer analysis centre is within `0.5` frame of its ideal position
+- every interval is positive and equals floor or ceiling of the ideal interval
+- positions and intervals are deterministic and monotonic
+- zero missing or duplicate significant-bin assignments
+- unchanged finite-output, symmetry, coverage, exact-length, and identity gates
+
+After the mapping proof passes, run the unchanged 60-row complete mono gate.
+Retain the Batch 29.6G comparator fields. The exact-lattice candidate must pass
+the entire gate before linked stereo opens; timing improvement alone is not
+promotion. Failure returns to research without hop, phase, or parameter tuning.
 
 ## Separation Proof Gate
 
@@ -306,6 +349,24 @@ Transient, formant, boundary, and combined gates passed `18/60`, `10/60`,
 Do not tune window geometry, tolerance, derivative policy, heap priority, or
 boundary crop. Do not open linked stereo.
 
+## 2026-07-10 Exact-Lattice Reassessment Decision
+
+The rejected candidate repeated `round(1024 / ratio)` as one constant analysis
+hop. Its actual lattice ratios differ from the requested ratios and can drift
+roughly `40`, `67`, and `161` source-mapped frames over the five-second corpus
+at `0.75x`, `1.25x`, and `1.5x`. Exact output cropping does not correct event
+positions inside that render.
+
+Public phase-vocoder equations propagate phase between arbitrary analysis and
+synthesis frame centres using their actual adjacent differences. Batch 29.6H
+therefore tests an absolute rounded analysis-centre schedule before adding any
+new attack or shape mechanism. This preserves the successful whole-band tonal
+policy while removing a measured mapping confound.
+
+Speech-specific shape-invariant processing remains deferred because it adds
+sinusoidal/noise classification, correlation, envelope, and balance policy.
+Peak-local transient phase reinitialization remains rejected by Batch 29.6C.
+
 ## Clean-Room Rule
 
 Public papers and public algorithm descriptions may inform Signal design.
@@ -314,8 +375,6 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Reassess the offline synthesis policy from the measured phase-gradient result.
-Preserve its whole-band tonal/comparator gains while identifying a materially
-different clean-room attack, placement, and shape-preservation mechanism. Keep
-linked stereo, production routing, cache identity, pitch/dynamic,
-RealtimePreview, and product integration closed.
+Implement Batch 29.6H's exact-lattice whole-band phase-gradient mono proof.
+Keep transient/shape extensions, linked stereo, production routing, cache
+identity, pitch/dynamic, RealtimePreview, and product integration closed.

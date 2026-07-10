@@ -218,6 +218,20 @@ independent stereo review.
     timing worsened `16.738760` frames, integrity passed `57/60`, replica
     protection passed `28/48`, and the combined gate passed `3/60`
 
+### Batch 29.6H - Exact-Lattice Phase-Gradient Mono Gate
+
+- [ ] replace the repeated rounded analysis hop with absolute positions
+  `A_n = round(n * 1024 / ratio)` while retaining the frozen synthesis grid
+- [ ] normalize backward and forward phase differences by their actual adjacent
+  analysis intervals before centered averaging
+- [ ] report interval floor/ceiling counts, maximum/final mapping error,
+  monotonicity, phase assignment, heap, symmetry, coverage, and hashes
+- [ ] pass the Contract `082` `0.5`-frame mapping gate on identity,
+  compression, expansion, sine, chirp, impulse, two-tone, and silence controls
+- [ ] run the unchanged 60-row mono and comparator gate without transient,
+  shape, geometry, tolerance, phase, or heap tuning
+- [ ] open Batch 29.7 only after every complete mono gate passes
+
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
 - [ ] share the time map and phase-propagation decisions across channels
@@ -524,10 +538,16 @@ independent stereo review.
   replica, transient, formant, boundary, and combined gates. Batch 29.7 remains
   closed. Evidence is in
   `docs/logs/2026-07/10-g10-029-phase-gradient-mono-rejection.md`.
+- 2026-07-10: Reassessed the phase-gradient timing failure. Repeating one
+  rounded analysis hop makes the internal lattice ratios differ from the
+  requested ratios and permits roughly `40`, `67`, and `161` frames of
+  five-second endpoint mapping drift. Batch 29.6H now freezes absolute rounded
+  analysis centres and interval-aware derivatives before any new transient or
+  shape mechanism. Evidence is in
+  `docs/logs/2026-07/10-g10-029-exact-lattice-reassessment.md`.
 
 ## Next Task
 
-Stop implementation for synthesis-policy reassessment. Preserve the measured
-whole-band tonal/comparator gains, but do not tune the rejected kernel or open
-linked stereo. Keep production, cache, pitch/dynamic, product, and
-RealtimePreview routing closed.
+Implement Batch 29.6H's exact-lattice phase-gradient mono proof. Do not add
+transient or shape processing or open linked stereo. Keep production, cache,
+pitch/dynamic, product, and RealtimePreview routing closed.
