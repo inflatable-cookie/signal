@@ -68,8 +68,10 @@ implementation remains Signal-owned.
   Batch 29.6H proves exact mapping but still fails timing, replica, integrity,
   and combined gates. It is rejected. The next bounded family is one
   frequency-adaptive painless nonstationary Gabor transform. Batch 29.6I first
-  proves canonical-dual reconstruction and band timing without stretching;
-  linked stereo remains closed.
+  proves canonical-dual reconstruction and band timing without stretching. It
+  passes with near-unity frame bounds and sub-`1e-6` reconstruction error. The
+  phase-gradient mechanism still needs its own contract; linked stereo remains
+  closed.
 - Offline artifacts and RealtimePreview have bounded contracts and prototype
   paths, but callback-safe preview integration and fully streaming artifact
   output remain gated until their owning source-fill/cache contracts exist.
@@ -159,6 +161,5 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Implement Batch 29.6I, the report-only frequency-adaptive painless-frame
-reconstruction proof. Keep phase propagation, linked stereo, and product
-integration closed.
+Research and contract the frequency-adaptive phase-gradient mechanism. Keep
+corpus rendering, linked stereo, and product integration closed.

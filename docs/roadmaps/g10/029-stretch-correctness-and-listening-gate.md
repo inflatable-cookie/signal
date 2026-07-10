@@ -235,15 +235,15 @@ independent stereo review.
 
 ### Batch 29.6I - Frequency-Adaptive Painless Reconstruction
 
-- [ ] construct one report-only frequency-adaptive nonstationary Gabor frame
+- [x] construct one report-only frequency-adaptive nonstationary Gabor frame
   with constant-Q interior bands and explicit DC/Nyquist completion
-- [ ] derive canonical dual filters from a finite, strictly positive diagonal
+- [x] derive canonical dual filters from a finite, strictly positive diagonal
   frame operator and satisfy the per-band painless support condition
-- [ ] prove exact-length analysis/synthesis on low, crossover, high,
+- [x] prove exact-length analysis/synthesis on low, crossover, high,
   DC/Nyquist-edge, impulse, noise, mixed, and silence controls
-- [ ] report frame bounds, condition ratio, band geometry, coefficient counts,
+- [x] report frame bounds, condition ratio, band geometry, coefficient counts,
   spectral coverage, reconstruction error, impulse delay, and repeat hashes
-- [ ] pass Contract `082` reconstruction and determinism gates before any
+- [x] pass Contract `082` reconstruction and determinism gates before any
   frequency-adaptive phase propagation or corpus render opens
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
@@ -571,9 +571,15 @@ independent stereo review.
   uses attack detection and local unity stretch. Batch 29.6I proves only
   canonical-dual reconstruction and transform geometry. Evidence is in
   `docs/logs/2026-07/10-g10-029-frequency-adaptive-reassessment.md`.
+- 2026-07-10: Batch 29.6I passed without tuning. The mixed control used `576`
+  bands and `10634` coefficients; frame bounds were `0.999999881` and
+  `1.000000119`; peak/RMS reconstruction error was `1.490116119e-7` /
+  `3.762034804e-8`. Coverage, painless support, zero-delay, finite-value, edge
+  control, and repeat-hash gates passed. Evidence is in
+  `docs/logs/2026-07/10-g10-029-frequency-adaptive-reconstruction-proof.md`.
 
 ## Next Task
 
-Implement Batch 29.6I, the report-only frequency-adaptive painless-frame
-reconstruction proof. Do not open phase propagation, linked stereo, or product
-routing.
+Research and contract the frequency-adaptive phase-gradient mechanism before
+implementation. Keep corpus rendering, linked stereo, and product routing
+closed.

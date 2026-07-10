@@ -45,6 +45,7 @@ mod benchmark;
 mod cache_identity;
 mod corpus_report;
 mod formant_boundary;
+mod frequency_adaptive;
 mod hpr_separation;
 mod hybrid_trace;
 mod phase_gradient;
@@ -100,6 +101,10 @@ pub use corpus_report::{
     StretchExternalBenchmarkComparison, StretchExternalBenchmarkRender,
 };
 pub use formant_boundary::{measure_formant_boundary, StretchFormantBoundaryMeasurement};
+pub use frequency_adaptive::{
+    StretchFrequencyAdaptiveBandEvidence, StretchFrequencyAdaptiveEvidence,
+    StretchFrequencyAdaptiveReview,
+};
 pub use hpr_separation::{
     StretchHprAdditiveRender, StretchHprComponentEvidence, StretchHprSeparationEvidence,
     StretchHprSeparationReview,
@@ -2327,6 +2332,20 @@ impl OfflineHighQualityStretcher {
         input: &[Sample],
     ) -> StretchPhaseGradientRender {
         phase_gradient::stretch_phase_gradient_review_mono(input, self.ratio)
+    }
+
+    /// Run the report-only frequency-adaptive painless-frame reconstruction proof.
+    ///
+    /// This path performs analysis and canonical-dual synthesis without time
+    /// stretching or phase modification. Product routing and cache identity
+    /// never select it.
+    #[doc(hidden)]
+    pub fn frequency_adaptive_reconstruction_review_mono(
+        &self,
+        input: &[Sample],
+        sample_rate: SampleRate,
+    ) -> StretchFrequencyAdaptiveReview {
+        frequency_adaptive::frequency_adaptive_reconstruction_review_mono(input, sample_rate)
     }
 }
 

@@ -139,6 +139,6 @@ propagation or stretched audio belongs in that batch.
 
 ## Next Task
 
-Implement Batch 29.6I as a report-only frequency-adaptive painless-frame
-reconstruction proof. Keep phase propagation, linked stereo, and product
-routing closed.
+Define the frequency-adaptive phase-gradient mechanism after Batch 29.6I passed
+canonical-dual reconstruction. Keep corpus rendering, linked stereo, and
+product routing closed.

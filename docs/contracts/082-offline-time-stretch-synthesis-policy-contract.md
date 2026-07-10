@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; frequency-adaptive reconstruction proof ready
+Status: active; frequency-adaptive reconstruction proof passed
 Owner: dsp
 Updated: 2026-07-10
 Related contracts: `046`, `048`, `049`
@@ -423,6 +423,20 @@ contracted frequency-adaptive phase-gradient mechanism proof. It does not open
 the 60-row corpus, linked stereo, dynamic ratio, cache identity, or product
 routing.
 
+## 2026-07-10 Frequency-Adaptive Reconstruction Outcome
+
+Batch 29.6I passes without geometry tuning. The `4096`-frame mixed control used
+`576` bands and `10634` coefficients. Frame bounds were `0.999999881` and
+`1.000000119`, condition ratio was `1.000000238`, and all `4096` frequency bins
+were covered. Peak and RMS reconstruction error were `1.490116119e-7` and
+`3.762034804e-8`. Every compact support satisfied its decimation, band delay
+was zero, samples and coefficients were finite, and repeat hashes matched.
+
+This proves transform geometry only. Filter-bank phase derivatives,
+cross-band integration topology, coefficient-time mapping under stretch, and
+real-output symmetry remain undefined. Do not infer them from the passing
+identity proof.
+
 ## Clean-Room Rule
 
 Public papers and public algorithm descriptions may inform Signal design.
@@ -431,6 +445,7 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Implement Batch 29.6I as a report-only frequency-adaptive painless-frame
-reconstruction proof. Do not stretch coefficients in that batch. Keep linked
-stereo and all product routing closed.
+Research and contract the frequency-adaptive phase-gradient mechanism. Define
+coefficient-time mapping, derivative scaling, cross-band adjacency, symmetry,
+and a synthetic stop gate before implementation. Keep corpus rendering, linked
+stereo, and all product routing closed.

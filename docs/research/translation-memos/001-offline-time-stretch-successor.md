@@ -178,8 +178,8 @@ rejected ownership crossfade.
 
 ## Next Task
 
-Implement the frequency-adaptive painless-frame reconstruction proof defined by
-Contract `082`. Do not add phase propagation or stretched output yet.
+Research and contract the frequency-adaptive phase-gradient mechanism after the
+identity reconstruction proof passed. Do not open corpus rendering yet.
 
 ## Frequency-Adaptive Reassessment
 
@@ -208,6 +208,13 @@ coefficient geometry, common-origin impulse delay, and determinism before a
 filter-bank phase-gradient design is authorized. This prevents transform
 approximation error or band-dependent delay from being mistaken for a stretch
 improvement.
+
+Batch 29.6I passes that boundary. On the mixed `4096`-frame control, frame
+bounds stayed within `1.2e-7` of unity, peak reconstruction error was
+`1.490116119e-7`, every frequency sample was covered, every band satisfied the
+painless support condition, and filter/coefficient/output hashes repeated.
+This does not yet establish a valid phase-gradient topology on unequal band
+lattices.
 
 Additional primary sources:
 
