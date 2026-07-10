@@ -22,6 +22,12 @@ pub struct StretchHybridTransitionDecision {
     pub correlation: f64,
     /// Maximum correlation-aware normalization gain required by the crossfade.
     pub max_normalization_gain_db: f64,
+    /// Diagnostic incoming-branch lag with the strongest bounded correlation.
+    pub best_lag_frames: i64,
+    /// Diagnostic correlation at [`Self::best_lag_frames`].
+    pub best_lag_correlation: f64,
+    /// Diagnostic normalization gain required at the best bounded lag.
+    pub best_lag_normalization_gain_db: f64,
     /// Whether this boundary was applied to candidate audio.
     pub applied: bool,
     /// Rejection reason when the boundary stayed on the current path.

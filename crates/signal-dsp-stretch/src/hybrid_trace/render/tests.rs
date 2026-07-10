@@ -48,6 +48,23 @@ fn normalization_bound_rejects_marginal_correlation() {
 }
 
 #[test]
+fn bounded_lag_review_recovers_a_known_local_shift() {
+    let outgoing = (0..512)
+        .map(|index| {
+            let value = (index * 73 + index * index * 19 + 11) % 257;
+            value as f32 / 128.0 - 1.0
+        })
+        .collect::<Vec<_>>();
+    let mut incoming = vec![0.0; outgoing.len()];
+    incoming[7..].copy_from_slice(&outgoing[..outgoing.len() - 7]);
+
+    let evaluation = evaluate_transition(&outgoing, &incoming, (128, 384));
+
+    assert_eq!(evaluation.best_lag_frames, 7);
+    assert!(evaluation.best_lag_correlation > 0.999_999);
+}
+
+#[test]
 fn accepted_transition_preserves_identical_samples() {
     let samples = stable_sine(256);
     let evaluation = evaluate_transition(&samples, &samples, (0, 256));

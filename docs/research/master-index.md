@@ -43,6 +43,12 @@ Finch and Loophole.
 | --- | --- | --- |
 | [Essentia](./specimen-dossiers/essentia.md) | Reference algorithms, quality targets, migration cues | In progress |
 
+## Translation Memos
+
+| Memo | Decision | Status |
+| --- | --- | --- |
+| [Offline Time-Stretch Successor](./translation-memos/001-offline-time-stretch-successor.md) | One synthesis timeline; transient-local time map before adaptive resolution | Promoted |
+
 ## Consumer Guidance
 
 | Consumer | Role | Start here |

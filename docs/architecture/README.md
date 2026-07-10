@@ -25,6 +25,7 @@ Keep milestone sequencing in `roadmaps/`.
 - `product-guardrails.md`
 - `package-map.md`
 - `dsp-analysis-feature-reference.md`
+- `offline-time-stretch-synthesis.md`
 - `graph-runtime-feature-reference.md`
 - related contracts under `docs/contracts/`
 

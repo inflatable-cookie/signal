@@ -37,8 +37,11 @@ implementation remains Signal-owned.
   stereo decisions. Its first fixed-ratio mono render is rejected: conservative
   transitions applied only `56/2024` ownership spans, left the `L001` crest
   unchanged, regressed `1.25x` static residual, and passed only `50/60`
-  tonal/combined rows. Linked stereo remains closed pending structural
-  reassessment.
+  tonal/combined rows. Bounded lag reassessment then rejected branch alignment:
+  recoverable spans needed `152.383` mean absolute lag and disagreed by
+  `210.465` frames between entry and exit. Contract `082` now requires one
+  synthesis timeline, transient-local time mapping, then adaptive resolution.
+  Linked stereo remains closed.
 - Offline artifacts and RealtimePreview have bounded contracts and prototype
   paths, but callback-safe preview integration and fully streaming artifact
   output remain gated until their owning source-fill/cache contracts exist.
@@ -128,9 +131,9 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Stop for structural reassessment after the rejected Batch 29.6 mono candidate.
-Determine whether ownership-compatible branch alignment can avoid broad
-fallback or whether the transient target needs a different synthesis
-mechanism. Do not tune the frozen classifier thresholds, open linked stereo,
-or change production, cache identity, pitch/dynamic routing, RealtimePreview,
-or broader product integration.
+Start Batch 29.6B under contract `082`: prove exact projected transient anchors,
+local-ratio-one protected frames, and bounded steady-interval compensation on
+one `2048/512` synthesis timeline. Keep the classifier frozen and output
+report-only. Adaptive resolution, linked stereo, production, cache identity,
+pitch/dynamic routing, RealtimePreview, and product integration remain closed
+until their preceding gates pass.

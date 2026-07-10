@@ -224,6 +224,9 @@ fn decision(
         transition,
         correlation: evaluation.correlation,
         max_normalization_gain_db: evaluation.max_normalization_gain_db,
+        best_lag_frames: evaluation.best_lag_frames,
+        best_lag_correlation: evaluation.best_lag_correlation,
+        best_lag_normalization_gain_db: evaluation.best_lag_normalization_gain_db,
         applied,
         rejection: evaluation.rejection,
     }
@@ -237,6 +240,9 @@ fn rejected_decision(
         transition,
         correlation: 0.0,
         max_normalization_gain_db: 0.0,
+        best_lag_frames: 0,
+        best_lag_correlation: 0.0,
+        best_lag_normalization_gain_db: 0.0,
         applied: false,
         rejection: Some(rejection),
     }

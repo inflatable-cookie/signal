@@ -15,6 +15,8 @@ memory alone.
 - Signal is baseline-routed with no active strict spec lane
 - `g10.029` is the active correctness-first stretch roadmap
 - `046` governs sample-domain stretch behavior and its promotion gates
+- `082` governs the report-only successor synthesis policy after the first
+  structural hybrid rejection
 - `g10.028` source-fill work is paused until the actual DSP kernel and source
   consumption geometry pass the `g10.029` correctness gate
 
@@ -106,6 +108,7 @@ memory alone.
 - `063` preview browser queue, media audition, and transform scheduling
 - `064` asset/session transform persistence, retention, and cache placement
   policy
+- `082` offline time-stretch synthesis policy
 
 ## Packaging, conformance, and generation closure
 

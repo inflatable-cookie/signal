@@ -3,7 +3,7 @@
 Status: complete; amended for first-party quality-depth program
 Owner: core-product
 Updated: 2026-07-09
-Related contracts: `docs/contracts/028-media-indexing-waveform-analysis-and-preview-service-contract.md`, `docs/contracts/029-analysis-metadata-extraction-and-library-service-contract.md`, `docs/contracts/034-multi-bus-graph-execution-and-auxiliary-topology-contract.md`
+Related contracts: `docs/contracts/028-media-indexing-waveform-analysis-and-preview-service-contract.md`, `docs/contracts/029-analysis-metadata-extraction-and-library-service-contract.md`, `docs/contracts/034-multi-bus-graph-execution-and-auxiliary-topology-contract.md`, `docs/contracts/082-offline-time-stretch-synthesis-policy-contract.md`
 Related architecture: `docs/architecture/graph-runtime-feature-reference.md`
 
 ## Purpose
@@ -408,6 +408,12 @@ contract gates pass.
 
 Detailed design and stop conditions:
 `docs/logs/2026-07/10-g10-029-structural-hybrid-design.md`.
+
+The independent-output hybrid was rejected by its mono gate. Contract `082`
+now governs successor proof work: one monotonic synthesis timeline, transient-
+local time mapping, then adaptive/nonstationary resolution. The first hybrid
+remains diagnostic evidence and does not authorize delay alignment or relaxed
+transition gates.
 
 ## Batch 15.1 outcome
 

@@ -4,7 +4,7 @@ Status: active
 Owner: dsp
 Created: 2026-07-09
 Depends on: g10.021, g10.022, g10.024, g10.027
-Governing contracts: `docs/contracts/046-sample-domain-time-stretch-engine-contract.md`
+Governing contracts: `docs/contracts/046-sample-domain-time-stretch-engine-contract.md`, `docs/contracts/082-offline-time-stretch-synthesis-policy-contract.md`
 Vision tags: `DSP`, `STRETCH`, `QUALITY`
 
 ## Problem
@@ -122,6 +122,40 @@ independent stereo review.
   full-render combined gates
   - first frozen candidate rejected: unchanged `L001` crest, `1.25x` static
     residual regression, and `50/60` tonal/combined passes
+
+### Batch 29.6A - Alignment Reassessment
+
+- [x] separate low-correlation, normalization, span-geometry, and missing-edge
+  transition failures
+- [x] measure bounded best-lag recovery without changing candidate audio
+- [x] reject branch-delay repair after recovered spans required large and
+  inconsistent entry/exit lags
+- [x] promote the one-timeline successor through architecture and contract `082`
+
+### Batch 29.6B - Adaptive Transient Timeline Proof
+
+- [ ] derive one monotonic synthesis-position schedule from fixed projected
+  anchors and frozen transient guards
+- [ ] keep protected overlapping attack frames at local ratio `1` and
+  compensate only inside steady intervals
+- [ ] reinitialize protected frame phase inside the current `2048/512` engine;
+  do not crossfade output waveforms
+- [ ] pass the contract `082` transient, placement, integrity, static-spectrum,
+  and combined gates
+
+### Batch 29.6C - Adaptive Resolution Reconstruction
+
+- [ ] open only after Batch 29.6B passes
+- [ ] define one nonstationary short/current/long frame schedule and compatible
+  reconstruction weights
+- [ ] pass perfect-reconstruction, fast spectral-movement, static-spectrum,
+  transient, and boundary gates before broad corpus promotion
+
+### Batch 29.6D - Combined Fixed-Ratio Mono Gate
+
+- [ ] combine the proven transient timeline and adaptive-resolution mechanisms
+- [ ] pass every original Batch 29.6 mono gate on the 60-render corpus
+- [ ] open Batch 29.7 only after the complete mono candidate passes
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -357,12 +391,20 @@ independent stereo review.
   The candidate is rejected, linked stereo stays closed, and production is
   unchanged. Evidence and the reassessment boundary are in
   `docs/logs/2026-07/10-g10-029-fixed-ratio-mono-hybrid-rejection.md`.
+- 2026-07-10: Completed the alignment reassessment. A bounded `-256..=256`-frame
+  search made `980/1968` rejected spans correlation-safe only with `152.383`
+  mean absolute lag and `210.465` mean entry/exit disagreement. Branch delay
+  and relaxed transition gates are rejected. Architecture and contract `082`
+  now require one synthesis timeline, a current-grid transient proof, then an
+  adaptive-resolution checkpoint. Evidence is in
+  `docs/logs/2026-07/10-g10-029-hybrid-alignment-reassessment.md`.
 
 ## Next Task
 
-Stop for structural reassessment after the rejected Batch 29.6 candidate.
-Determine whether ownership-compatible branch alignment can avoid broad
-fallback or whether the transient target needs a different synthesis
-mechanism. Do not tune the frozen classifier thresholds, open linked stereo,
-or change production, cache identity, product promotion, pitch/dynamic routing,
-or RealtimePreview support.
+Start Batch 29.6B under contract `082`. Build one monotonic current-grid
+synthesis schedule with exact projected transient anchors, local-ratio-one
+protected frames, steady-interval compensation, and explicit dense-conflict
+fallback. Keep the classifier frozen and the output report-only. Stop before
+adaptive resolution if crest, placement, integrity, static-spectrum, or
+combined gates fail. Do not open linked stereo or change production, cache,
+pitch/dynamic, product, or RealtimePreview routing.
