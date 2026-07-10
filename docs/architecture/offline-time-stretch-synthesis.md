@@ -137,8 +137,18 @@ and synthesis identity, bounded filter support, complete spectral coverage,
 band impulse delay, finite coefficients, and repeatability. No phase
 propagation or stretched audio belongs in that batch.
 
+Batch 29.6I's unequal per-band decimations do not form one aligned coefficient
+matrix. Published filter-bank PGHI covers controlled frequency variation only
+on a common time lattice and names nonuniform-decimation integration as future
+work. Direct propagation on the Batch 29.6I arrays is closed.
+
+The next proof uses grid-decimated analytic wavelets. Uniform decimation and
+deterministic channel delays provide one rectangular coefficient matrix while
+wavelet bandwidth still grows with frequency. Canonical dual synthesis must be
+proven from the complete uniform-filter-bank frame operator; the painless
+diagonal shortcut from Batch 29.6I does not apply.
+
 ## Next Task
 
-Define the frequency-adaptive phase-gradient mechanism after Batch 29.6I passed
-canonical-dual reconstruction. Keep corpus rendering, linked stereo, and
-product routing closed.
+Implement Batch 29.6J, the common-grid wavelet reconstruction proof. Keep phase
+propagation, corpus rendering, linked stereo, and product routing closed.

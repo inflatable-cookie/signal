@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; frequency-adaptive reconstruction proof passed
+Status: active; common-grid wavelet reconstruction proof ready
 Owner: dsp
 Updated: 2026-07-10
 Related contracts: `046`, `048`, `049`
@@ -437,6 +437,48 @@ cross-band integration topology, coefficient-time mapping under stretch, and
 real-output symmetry remain undefined. Do not infer them from the passing
 identity proof.
 
+### Rule 15: unequal band lattices do not authorize phase propagation
+
+Batch 29.6I uses one decimation per band. It proves efficient painless-frame
+reconstruction but does not provide time-aligned rows. Do not interpolate rows
+onto an implicit grid, choose nearest cross-band coefficients, or apply the
+fixed-STFT heap to unequal time positions.
+
+Published filter-bank PGHI assumes uniform decimation. Its authors identify a
+truly nonuniform heap as future work and describe filter-bank time stretching
+only as conceivable. That source does not authorize Signal to invent the
+missing topology inside a corpus candidate.
+
+### Rule 16: prove one common-grid frequency-adaptive frame
+
+Batch 29.6J replaces only the Batch 29.6I proof geometry. Use the published
+grid-decimated wavelet configuration with:
+
+- analytic Cauchy mother wavelet with `alpha=900`
+- `1536` nonnegative-frequency channels, including `16` lowpass completion
+  channels
+- uniform `384`-frame decimation, giving redundancy `8`
+- deterministic digital `(0,1)` channel delays from the published generator
+- canonical dual synthesis from the complete uniform-filter-bank frame
+  operator
+
+At `48 kHz`, channel centres are uniformly spaced from DC to Nyquist by
+`15.625 Hz`; wavelet bandwidth increases with centre frequency. The proof is
+offline, report-only, and identity-only. It performs no phase modification or
+stretch.
+
+Report channel count, lowpass count, hop, redundancy, delay-sequence hash,
+minimum/maximum frame bounds, condition ratio, dual residual, analysis and
+synthesis coefficient counts, reconstruction peak/RMS/endpoint error,
+non-finite values, source/output hashes, and repeat hashes.
+
+Run the Batch 29.6I sine, edge, impulse, noise, mixed, silence, and empty-input
+controls. Require condition ratio at most `1.25`, canonical-dual residual at
+most `1e-8`, peak reconstruction error at most `1e-5`, RMS error at most
+`1e-6`, exact length and endpoints, finite values, and identical repeated
+reports. Failure returns to research. Passing opens only a separately
+contracted common-grid phase-gradient mechanism proof.
+
 ## Clean-Room Rule
 
 Public papers and public algorithm descriptions may inform Signal design.
@@ -445,7 +487,6 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Research and contract the frequency-adaptive phase-gradient mechanism. Define
-coefficient-time mapping, derivative scaling, cross-band adjacency, symmetry,
-and a synthetic stop gate before implementation. Keep corpus rendering, linked
-stereo, and all product routing closed.
+Implement Batch 29.6J, the report-only common-grid wavelet reconstruction
+proof. Do not add phase propagation or stretched output. Keep corpus rendering,
+linked stereo, and all product routing closed.

@@ -246,6 +246,19 @@ independent stereo review.
 - [x] pass Contract `082` reconstruction and determinism gates before any
   frequency-adaptive phase propagation or corpus render opens
 
+### Batch 29.6J - Common-Grid Wavelet Reconstruction
+
+- [ ] construct the Contract `082` `alpha=900`, `1536`-channel analytic
+  wavelet bank with `16` lowpass channels and uniform `384`-frame decimation
+- [ ] apply the deterministic digital `(0,1)` channel-delay sequence and report
+  its stable hash
+- [ ] compute the complete uniform-filter-bank frame bounds and canonical dual;
+  do not reuse the Batch 29.6I diagonal painless dual
+- [ ] prove identity analysis/synthesis on the unchanged Batch 29.6I controls
+  with condition ratio at most `1.25` and the frozen residual/error limits
+- [ ] keep phase propagation, the 60-row corpus, linked stereo, and product
+  routing closed even if reconstruction passes
+
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
 - [ ] share the time map and phase-propagation decisions across channels
@@ -577,9 +590,16 @@ independent stereo review.
   `3.762034804e-8`. Coverage, painless support, zero-delay, finite-value, edge
   control, and repeat-hash gates passed. Evidence is in
   `docs/logs/2026-07/10-g10-029-frequency-adaptive-reconstruction-proof.md`.
+- 2026-07-10: Stopped direct phase propagation on the Batch 29.6I geometry.
+  Published filter-bank PGHI assumes uniform decimation and explicitly leaves
+  nonuniform heap integration as future work. Batch 29.6J now proves the
+  published grid-decimated wavelet prerequisite: one aligned coefficient
+  matrix, redundancy `8`, complete canonical dual, and bounded frame condition.
+  Evidence is in
+  `docs/logs/2026-07/10-g10-029-common-grid-wavelet-reassessment.md`.
 
 ## Next Task
 
-Research and contract the frequency-adaptive phase-gradient mechanism before
-implementation. Keep corpus rendering, linked stereo, and product routing
-closed.
+Implement Batch 29.6J, the report-only common-grid wavelet reconstruction
+proof. Keep phase propagation, corpus rendering, linked stereo, and product
+routing closed.

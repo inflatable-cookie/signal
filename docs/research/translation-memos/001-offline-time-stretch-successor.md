@@ -178,8 +178,8 @@ rejected ownership crossfade.
 
 ## Next Task
 
-Research and contract the frequency-adaptive phase-gradient mechanism after the
-identity reconstruction proof passed. Do not open corpus rendering yet.
+Implement the common-grid wavelet reconstruction proof. Do not add phase
+propagation or stretched output yet.
 
 ## Frequency-Adaptive Reassessment
 
@@ -216,6 +216,26 @@ painless support condition, and filter/coefficient/output hashes repeated.
 This does not yet establish a valid phase-gradient topology on unequal band
 lattices.
 
+## Unequal-Lattice Stop
+
+Prusa and Holighaus extend PGHI to filter banks with controlled frequency
+variation, but their discrete method assumes one uniform decimation. They call
+nonuniform-decimation heap integration significant future work and describe a
+filter-bank time-stretch application only as conceivable. Batch 29.6I's rows
+therefore cannot inherit that method directly.
+
+Holighaus et al. later provide a better prerequisite: grid-based wavelet
+decimation with aligned coefficient rows, perfect reconstruction, and stable
+frame bounds at audio-practical redundancy. Their high-resolution published
+configuration uses an analytic Cauchy wavelet, `alpha=900`, `1536` channels,
+`16` lowpass completion channels, digital `(0,1)` delays, and redundancy `8`.
+Its reported frame-bound ratio is `1.20`.
+
+Signal will first reproduce that transform boundary. Unlike the painless
+Batch 29.6I frame, channel delays make the full frame operator non-diagonal, so
+the proof must derive and verify the complete canonical dual. Only a passing
+common-grid reconstruction proof may reopen phase-gradient design.
+
 Additional primary sources:
 
 | Source | Confidence | Notes |
@@ -223,6 +243,7 @@ Additional primary sources:
 | [Holighaus et al., 2012](https://arxiv.org/abs/1210.0084) | high | Frequency-adaptive painless NSG frames, canonical duals, perfect reconstruction, and sliced constant-Q implementation |
 | [Ottosen and Dörfler, 2016](https://arxiv.org/abs/1612.05156) | high | Adaptive-resolution PV evidence; onset-local unity stretch is explicitly excluded from Signal's transfer |
 | [Prusa and Holighaus, 2022](https://arxiv.org/abs/2202.07498) | medium | Extends phase-gradient reconstruction to controlled-varying filter banks; informs a later mechanism proof, not Batch 29.6I |
+| [Holighaus et al., 2023](https://ltfat.org/notes/ltfatnote057.pdf) | high | Uniform grid-based wavelet decimation, deterministic channel delays, perfect reconstruction, and measured frame stability at redundancy `2..8` |
 
 ## Full Phase-Gradient Mono Outcome
 
