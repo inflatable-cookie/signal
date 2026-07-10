@@ -195,18 +195,18 @@ independent stereo review.
 
 ### Batch 29.6F - Full Phase-Gradient Kernel Proof
 
-- [ ] add report-only centered time- and frequency-phase derivative estimation
+- [x] add report-only centered time- and frequency-phase derivative estimation
   on the frozen `4092` Hann / `8192` FFT geometry
-- [ ] integrate significant-bin phase with deterministic bounded max-heap
+- [x] integrate significant-bin phase with deterministic bounded max-heap
   propagation and trapezoidal time/frequency rules
-- [ ] enforce nonredundant-spectrum conjugate symmetry, deterministic
+- [x] enforce nonredundant-spectrum conjugate symmetry, deterministic
   below-tolerance phase, normalized overlap-add, and exact target crop
-- [ ] prove sine, chirp, impulse, two-tone, silence, and repeatability controls
+- [x] prove sine, chirp, impulse, two-tone, silence, and repeatability controls
   against Contract `082` without rendering the corpus
 
 ### Batch 29.6G - Full Phase-Gradient Fixed-Ratio Mono Gate
 
-- [ ] open only after Batch 29.6F passes
+- [x] open only after Batch 29.6F passes
 - [ ] render the unchanged 60-row corpus without geometry, tolerance,
   derivative, or heap-priority sweeps
 - [ ] report all existing integrity, timing, crest, replica, spectral,
@@ -505,9 +505,17 @@ independent stereo review.
   split or local time compensation. Batch 29.6G owns the later corpus gate;
   linked stereo remains closed. Evidence is in
   `docs/logs/2026-07/10-g10-029-phase-gradient-reassessment.md`.
+- 2026-07-10: Batch 29.6F passed without tuning. The report-only whole-band
+  kernel uses centered time/frequency derivatives and bounded deterministic
+  heap integration. Every significant control bin was assigned exactly once;
+  heap high-water was at most `4099/8194`; conjugate symmetry, overlap-add
+  coverage, exact `0.75x` and `1.5x` lengths, finite output, identity bypass,
+  both propagation directions, and repeat hashes passed. Batch 29.6G is open;
+  no corpus render or product route changed. Evidence is in
+  `docs/logs/2026-07/10-g10-029-phase-gradient-kernel-proof.md`.
 
 ## Next Task
 
-Implement Batch 29.6F's deterministic fixed-resolution full phase-gradient
-kernel proof. Do not render the corpus. Keep production, cache, pitch/dynamic,
+Run Batch 29.6G's unchanged 60-row fixed-ratio mono corpus gate without tuning
+the frozen phase-gradient kernel. Keep production, cache, pitch/dynamic,
 product, RealtimePreview, and linked-stereo routing closed.

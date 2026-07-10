@@ -105,5 +105,6 @@ claims about the reference implementation.
 
 ## Next Task
 
-Implement Batch 29.6F's fixed-resolution full phase-gradient kernel proof. Keep
-corpus promotion, linked stereo, dynamic ratio, and product routing closed.
+Run Batch 29.6G's complete fixed-ratio mono corpus gate without tuning the
+frozen phase-gradient kernel. Keep linked stereo, dynamic ratio, and product
+routing closed.

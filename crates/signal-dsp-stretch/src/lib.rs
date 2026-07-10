@@ -47,6 +47,7 @@ mod corpus_report;
 mod formant_boundary;
 mod hpr_separation;
 mod hybrid_trace;
+mod phase_gradient;
 mod phase_vocoder;
 mod promotion;
 mod render_integrity;
@@ -109,6 +110,7 @@ pub use hybrid_trace::{
     StretchHybridRender, StretchHybridTrace, StretchHybridTransitionDecision,
     StretchHybridTransitionRejection, StretchHybridTransitionTrace,
 };
+pub use phase_gradient::{StretchPhaseGradientEvidence, StretchPhaseGradientRender};
 pub use promotion::{
     current_synthetic_offline_high_quality_promotion_receipt, StretchProductQualityEvidence,
     StretchPromotionReceipt, StretchPromotionStatus, StretchSyntheticPromotionPolicy,
@@ -2313,6 +2315,18 @@ impl OfflineHighQualityStretcher {
         sample_rate: SampleRate,
     ) -> StretchHprAdditiveRender {
         hpr_separation::stretch_hpr_additive_review_mono(input, sample_rate, self.ratio)
+    }
+
+    /// Render the report-only fixed-resolution full phase-gradient proof.
+    ///
+    /// This path integrates centered time- and frequency-phase differences in
+    /// one whole-band STFT. Product routing and cache identity never select it.
+    #[doc(hidden)]
+    pub fn stretch_phase_gradient_review_mono(
+        &self,
+        input: &[Sample],
+    ) -> StretchPhaseGradientRender {
+        phase_gradient::stretch_phase_gradient_review_mono(input, self.ratio)
     }
 }
 

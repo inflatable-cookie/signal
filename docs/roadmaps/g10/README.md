@@ -58,7 +58,11 @@ implementation remains Signal-owned.
   ownership gates without tuning. The report-only
   long-PV/residual-PV/short-OLA mono candidate then passed its anchored crest
   target but failed timing, integrity, replica, static-spectrum, and combined
-  gates. Batch 29.6E is rejected and linked stereo remains closed.
+  gates. Batch 29.6E is rejected. The replacement whole-band full
+  phase-gradient kernel now passes its synthetic mechanism gate with exact
+  assignment, bounded heap, deterministic output, and both propagation
+  directions proven. Batch 29.6G owns the complete mono corpus gate; linked
+  stereo remains closed.
 - Offline artifacts and RealtimePreview have bounded contracts and prototype
   paths, but callback-safe preview integration and fully streaming artifact
   output remain gated until their owning source-fill/cache contracts exist.
@@ -148,7 +152,7 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Start Batch 29.6F's report-only fixed-resolution full phase-gradient kernel
-proof. Do not render the corpus, tune the rejected H/R/P mechanism, or open
-linked stereo. Production, cache identity, pitch/dynamic routing,
-RealtimePreview, and product integration remain closed.
+Run Batch 29.6G's unchanged 60-row fixed-ratio full phase-gradient mono gate.
+Do not tune kernel geometry or integration policy or open linked stereo.
+Production, cache identity, pitch/dynamic routing, RealtimePreview, and product
+integration remain closed.

@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; full phase-gradient successor proof frozen
+Status: active; phase-gradient kernel passed, mono corpus gate open
 Owner: dsp
 Updated: 2026-07-10
 Related contracts: `046`, `048`, `049`
@@ -261,6 +261,24 @@ separation or local time redistribution. The published method reports
 competitive listening results against commercial universal-mode systems, but
 Signal must first prove its own deterministic kernel and complete corpus gate.
 
+## 2026-07-10 Full Phase-Gradient Kernel Outcome
+
+Batch 29.6F passes. The report-only kernel uses the frozen `4092`-sample Hann
+window, `8192` FFT, `1024` synthesis hop, ratio-derived analysis hop, centered
+time and frequency differences, and deterministic magnitude-prioritized heap.
+
+At `1.5x`, every sine, two-tone, chirp, and impulse significant bin received
+one phase assignment. Missing and duplicate assignments were zero. Heap
+high-water was `4098` or `4099` entries against the `8194` bound. The steady
+sine used `17104` horizontal and `18310` vertical assignments; the two-tone
+control used `20673` and `27422`; the chirp used `39128` and `64065`; the
+impulse used `8198` and `16384`. Silence, `0.75x` compression, bit-exact
+identity, exact length, finite derivatives/output, conjugate symmetry,
+overlap-add coverage, and repeat hashes all passed.
+
+This proves the mechanism only. It does not pass the complete mono quality gate
+or promote product routing.
+
 ## Clean-Room Rule
 
 Public papers and public algorithm descriptions may inform Signal design.
@@ -269,6 +287,7 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Implement Batch 29.6F's deterministic fixed-resolution full phase-gradient
-kernel proof. Keep the corpus candidate, linked stereo, production routing,
-cache identity, pitch/dynamic, RealtimePreview, and product integration closed.
+Run Batch 29.6G's unchanged 60-row fixed-ratio mono corpus gate without tuning
+the frozen phase-gradient geometry or integration policy. Keep linked stereo,
+production routing, cache identity, pitch/dynamic, RealtimePreview, and product
+integration closed.

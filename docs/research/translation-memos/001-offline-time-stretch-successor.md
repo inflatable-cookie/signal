@@ -178,8 +178,8 @@ rejected ownership crossfade.
 
 ## Next Task
 
-Implement the fixed-resolution full phase-gradient kernel proof from Contract
-`082`. Do not tune the rejected component split or open linked stereo.
+Run the fixed-resolution full phase-gradient mono corpus gate from Contract
+`082`. Do not tune the frozen kernel or open linked stereo.
 
 ## Full Phase-Gradient Reassessment
 
