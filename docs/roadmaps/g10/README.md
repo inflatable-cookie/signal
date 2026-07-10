@@ -32,8 +32,10 @@ implementation remains Signal-owned.
   remains blocked on independent stereo/row-level completion and the structural
   hybrid checkpoint.
 - Sustained/polyphonic long-window candidates produced useful evidence but no
-  production route; the next DSP quality jump needs a structural hybrid design,
-  not another one-parameter probe.
+  production route. The structural hybrid is now frozen as short transient,
+  current mixed, and long tonal ownership with continuous state and shared
+  stereo decisions. Implementation begins with a bit-exact kernel seam and
+  report-only classifier/transition traces, not another one-parameter probe.
 - Offline artifacts and RealtimePreview have bounded contracts and prototype
   paths, but callback-safe preview integration and fully streaming artifact
   output remain gated until their owning source-fill/cache contracts exist.
@@ -123,10 +125,10 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Start the Batch 29.4 design tranche. Map current analysis, propagation,
-synthesis, channel-link, and dynamic-ratio ownership. Freeze the
-transient/tonal classification, multiresolution window ownership, deterministic
-transition law, shared stereo peak/phase decisions, formant policy, validation
-matrix, and stop conditions before implementing a hybrid candidate. Keep the
-candidate report-only; leave production, cache identity, product promotion,
+Start Batch 29.5. Extract reusable analysis, propagation, and synthesis state
+from the current phase-vocoder core without changing its output. Add the frozen
+transient, mixed, and tonal classifier plus transition schedule as report-only
+traces; do not mix branch audio yet. Prove bit-exact current-path output,
+deterministic traces, exact length, identity, and centred-boundary behavior.
+Leave production, cache identity, product promotion, pitch/dynamic routing,
 RealtimePreview source-fill, and broader product integration unchanged.

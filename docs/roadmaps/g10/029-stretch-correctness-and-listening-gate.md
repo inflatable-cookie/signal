@@ -94,9 +94,9 @@ be trustworthy before the callback contract or a structural hybrid widens.
 
 - [x] consolidate mono evidence and separate design authority from production
   promotion gates
-- [ ] define transient/tonal classification and multiresolution window ownership
-- [ ] define shared stereo peak/phase decisions and formant policy
-- [ ] choose the first bounded hybrid implementation batch from listening and
+- [x] define transient/tonal classification and multiresolution window ownership
+- [x] define shared stereo peak/phase decisions and formant policy
+- [x] choose the first bounded hybrid implementation batch from listening and
   measurement evidence
 - [ ] reassess `g10.028` only after actual streaming source consumption is defined
 
@@ -105,6 +105,38 @@ replacement, cache-identity changes, product promotion, and realtime exposure
 remain blocked on the declared corpus gates, row-complete listening, and
 independent stereo review.
 
+### Batch 29.5 - Kernel Seam And Classification Trace
+
+- [ ] extract reusable analysis, propagation, and synthesis state while proving
+  the current default output remains bit-exact
+- [ ] add the frozen transient, mixed, and tonal classifier as a report-only
+  frame trace
+- [ ] add the bounded transition schedule and trace without mixing branch audio
+
+### Batch 29.6 - Fixed-Ratio Mono Hybrid
+
+- [ ] run the short transient, current mixed, and long tonal branches with
+  continuous state
+- [ ] apply only the frozen ownership and transition schedule
+- [ ] pass the local crest, corpus timing, tonal movement, static spectrum, and
+  full-render combined gates
+
+### Batch 29.7 - Shared-Decision Linked Stereo
+
+- [ ] replace independent mid/side mono decisions with one shared multichannel
+  classifier, peak map, reset schedule, and transition schedule
+- [ ] preserve per-channel instantaneous frequency and interchannel phase at
+  shared peaks
+- [ ] pass mono parity, image, interchannel-phase, and one-sided-transient gates
+
+### Batch 29.8 - Listening And Dynamic Checkpoint
+
+- [ ] export concealed mono and stereo artifacts only after objective gates pass
+- [ ] keep production blocked until row-complete and independent stereo findings
+  are frozen
+- [ ] open stateful dynamic-ratio design only after the fixed-ratio candidate
+  passes; do not reuse independent segment concatenation
+
 ## Acceptance Criteria
 
 - [x] no contractual output tail is created only by post-render zero fill
@@ -112,7 +144,7 @@ independent stereo review.
 - [x] quality gates include absolute full-render measurements
 - [ ] required real-source families have completed listening findings
 - [x] OfflineHighQuality status and promotion language match measured evidence
-- [ ] the next hybrid batch has explicit algorithm ownership and failure targets
+- [x] the next hybrid batch has explicit algorithm ownership and failure targets
 
 ## Validation
 
@@ -298,13 +330,22 @@ independent stereo review.
   independent stereo review still block production replacement and quality
   claims. Decision details are in
   `docs/logs/2026-07/10-g10-029-mono-evidence-reassessment.md`.
+- 2026-07-10: Froze the structural hybrid design from the code and evidence
+  map. The first candidate uses short independent-bin transient ownership,
+  current-window mixed ownership, and long identity-locked tonal ownership,
+  with continuous branch state and bounded transitions. Linked stereo requires
+  one shared classifier, peak map, reset schedule, and transition schedule;
+  the current independent mid/side engines do not satisfy that policy. Batch
+  29.5 starts with bit-exact kernel extraction and report-only traces. Full
+  design, gates, and stop conditions are in
+  `docs/logs/2026-07/10-g10-029-structural-hybrid-design.md`.
 
 ## Next Task
 
-Start the Batch 29.4 design tranche. Map current analysis, propagation,
-synthesis, channel-link, and dynamic-ratio ownership. Freeze the
-transient/tonal classification, multiresolution window ownership, deterministic
-transition law, shared stereo peak/phase decisions, formant policy, validation
-matrix, and stop conditions before implementing a hybrid candidate. Keep the
-candidate report-only and leave production, cache identity, product promotion,
-and RealtimePreview support unchanged.
+Start Batch 29.5. Extract reusable analysis, propagation, and synthesis state
+from the current phase-vocoder core without changing its output. Add the frozen
+transient, mixed, and tonal classifier plus transition schedule as report-only
+traces; do not mix branch audio yet. Prove bit-exact current-path output,
+deterministic traces, exact length, identity, and centred-boundary behavior.
+Leave production, cache identity, product promotion, pitch/dynamic routing, and
+RealtimePreview support unchanged.

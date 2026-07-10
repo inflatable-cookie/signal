@@ -361,6 +361,54 @@ share its decision across linked stereo.
 Planning authority:
 `docs/roadmaps/g10/029-stretch-correctness-and-listening-gate.md`.
 
+## 2026-07-10 OfflineHighQuality Structural Hybrid Addendum
+
+The next OfflineHighQuality candidate is a fixed-ratio, report-only structural
+hybrid. It has three local owners:
+
+- a `1024/256` independent-bin transient branch
+- the current `2048/512` identity-lock/reset branch for mixed and uncertain
+  regions
+- a `4096/1024` identity-lock/reset tonal branch for stable expansion regions
+
+The classifier is local synthesis policy, not the globally normalized benchmark
+detector. The first candidate freezes the current `0.30` spectral-flux ratio,
+`1.20` energy ratio, and `0.70` spectral-stability evidence. Transient guards
+cover one short hop before through three short hops after an onset. Tonal entry
+requires four consecutive stable short hops outside a transient guard. Failed
+combined evidence rejects this shape rather than opening a threshold sweep.
+
+All branches must retain continuous phase state and map their window centres to
+one exact output timeline. Ownership transitions are bounded to two branches,
+use a `256`-sample raised-cosine crossfade whose linear weights sum to one, and
+may move by at most one short hop to a low-energy point outside a transient
+guard. A transition requires at least `0.50` outgoing/incoming correlation and
+at most `1 dB` correlation-aware energy-normalization correction; otherwise the
+current mixed branch owns the region. Stereo uses one shared transition gain.
+Start and end guards stay on the current branch. Centred boundary padding,
+exact cropping, identity bypass, determinism, and full-render integrity remain
+mandatory.
+
+Linked stereo requires one multichannel core. Classification, branch ownership,
+transient resets, shared peak regions, and transitions are channel-shared.
+Per-channel instantaneous frequency remains independent; shared-peak synthesis
+must retain the analysis interchannel phase difference. Mid/side conversion
+followed by independent mono engines is transport, not shared stereo policy.
+
+No fixed-ratio formant correction or tail envelope is authorized. Pitch
+composition and dynamic-ratio routing remain on their current prototype paths.
+A later dynamic hybrid must carry classifier, phase, branch, and synthesis state
+through ratio changes instead of concatenating independent segment renders.
+
+The first implementation sequence is kernel extraction with bit-exact default
+proof, fixed-ratio mono gating, shared-decision linked stereo, then concealed
+listening and dynamic-ratio reassessment. Production routing, cache identity,
+product receipts, and RealtimePreview support remain unchanged until the full
+contract gates pass.
+
+Detailed design and stop conditions:
+`docs/logs/2026-07/10-g10-029-structural-hybrid-design.md`.
+
 ## Batch 15.1 outcome
 
 Batch 15.1 freezes the first bounded sample-domain stretch-engine contract:
