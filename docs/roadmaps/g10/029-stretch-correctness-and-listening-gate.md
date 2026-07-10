@@ -207,12 +207,16 @@ independent stereo review.
 ### Batch 29.6G - Full Phase-Gradient Fixed-Ratio Mono Gate
 
 - [x] open only after Batch 29.6F passes
-- [ ] render the unchanged 60-row corpus without geometry, tolerance,
+- [x] render the unchanged 60-row corpus without geometry, tolerance,
   derivative, or heap-priority sweeps
-- [ ] report all existing integrity, timing, crest, replica, spectral,
+- [x] report all existing integrity, timing, crest, replica, spectral,
   formant, boundary, and combined fields against the current kernel and
   external comparator
 - [ ] pass the complete mono gate before Batch 29.7 opens
+  - candidate rejected: tonal regression-free passed `55/60` and direct
+    comparator evidence improved, but `L001` crest improved only `1.667930 dB`,
+    timing worsened `16.738760` frames, integrity passed `57/60`, replica
+    protection passed `28/48`, and the combined gate passed `3/60`
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -513,9 +517,17 @@ independent stereo review.
   both propagation directions, and repeat hashes passed. Batch 29.6G is open;
   no corpus render or product route changed. Evidence is in
   `docs/logs/2026-07/10-g10-029-phase-gradient-kernel-proof.md`.
+- 2026-07-10: Batch 29.6G is rejected without tuning. Whole-band phase-gradient
+  integration improved tonal regression-free to `55/60`, improved expansion
+  residual/unsupported-bin means, raised mean Rubber Band correlation, and
+  lowered comparator RMS error. It failed anchored crest, timing, integrity,
+  replica, transient, formant, boundary, and combined gates. Batch 29.7 remains
+  closed. Evidence is in
+  `docs/logs/2026-07/10-g10-029-phase-gradient-mono-rejection.md`.
 
 ## Next Task
 
-Run Batch 29.6G's unchanged 60-row fixed-ratio mono corpus gate without tuning
-the frozen phase-gradient kernel. Keep production, cache, pitch/dynamic,
-product, RealtimePreview, and linked-stereo routing closed.
+Stop implementation for synthesis-policy reassessment. Preserve the measured
+whole-band tonal/comparator gains, but do not tune the rejected kernel or open
+linked stereo. Keep production, cache, pitch/dynamic, product, and
+RealtimePreview routing closed.

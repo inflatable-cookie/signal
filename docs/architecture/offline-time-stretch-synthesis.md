@@ -105,6 +105,7 @@ claims about the reference implementation.
 
 ## Next Task
 
-Run Batch 29.6G's complete fixed-ratio mono corpus gate without tuning the
-frozen phase-gradient kernel. Keep linked stereo, dynamic ratio, and product
-routing closed.
+Reassess the successor after the whole-band phase-gradient candidate improved
+tonal and comparator evidence but failed attack crest, placement, replica,
+formant, integrity, and combined gates. Keep linked stereo, dynamic ratio, and
+product routing closed.

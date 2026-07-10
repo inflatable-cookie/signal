@@ -20,6 +20,8 @@ mod hybrid_review;
 mod listening_pack;
 #[path = "stretch-corpus-report/peak_transient_review.rs"]
 mod peak_transient_review;
+#[path = "stretch-corpus-report/phase_gradient_review.rs"]
+mod phase_gradient_review;
 #[path = "stretch-corpus-report/tail_anchor.rs"]
 mod tail_anchor;
 #[path = "stretch-corpus-report/tail_features.rs"]
@@ -30,6 +32,7 @@ mod timeline_review;
 use alloc_tracker::measure_peak_live_heap;
 use hpr_additive_review::HprAdditiveReviewEvidence;
 use peak_transient_review::PeakTransientReviewEvidence;
+use phase_gradient_review::PhaseGradientReviewEvidence;
 
 use rustfft::{num_complex::Complex32, FftPlanner};
 use signal_analysis_character::{CharacterAnalyzer, CharacterAnalyzerConfig};
@@ -2657,6 +2660,10 @@ fn format_external_benchmark_quality_metrics(
             OfflineHighQualityStretcher::with_path(render.ratio, signal_path);
         let hpr_additive_render = hpr_additive_stretcher
             .stretch_hpr_additive_review_mono(source_mono, SampleRate(source_audio.sample_rate_hz));
+        let phase_gradient_stretcher =
+            OfflineHighQualityStretcher::with_path(render.ratio, signal_path);
+        let phase_gradient_render =
+            phase_gradient_stretcher.stretch_phase_gradient_review_mono(source_mono);
         let tail_local_feature_line = format_tail_local_feature_line(
             &render.case_id,
             &source.source_path,
@@ -2683,6 +2690,8 @@ fn format_external_benchmark_quality_metrics(
             measure_tonal_texture(source_mono, &peak_transient_render.samples, render.ratio);
         let hpr_additive_tonal_texture =
             measure_tonal_texture(source_mono, &hpr_additive_render.samples, render.ratio);
+        let phase_gradient_tonal_texture =
+            measure_tonal_texture(source_mono, &phase_gradient_render.samples, render.ratio);
         let external_tonal_texture =
             measure_tonal_texture(source_mono, &external_audio.mono_samples, render.ratio);
         let draft_tonal_texture = measure_tonal_texture(source_mono, &draft_output, render.ratio);
@@ -2759,6 +2768,12 @@ fn format_external_benchmark_quality_metrics(
         let hpr_additive_formant_boundary = measure_formant_boundary(
             source_mono,
             &hpr_additive_render.samples,
+            render.ratio,
+            source_audio.sample_rate_hz,
+        );
+        let phase_gradient_formant_boundary = measure_formant_boundary(
+            source_mono,
+            &phase_gradient_render.samples,
             render.ratio,
             source_audio.sample_rate_hz,
         );
@@ -2867,6 +2882,13 @@ fn format_external_benchmark_quality_metrics(
             QUALITY_METRIC_WINDOW_SIZE,
             QUALITY_METRIC_HOP_SIZE,
         );
+        let phase_gradient_transient_detail = measure_transient_detail(
+            source_mono,
+            &phase_gradient_render.samples,
+            render.ratio,
+            QUALITY_METRIC_WINDOW_SIZE,
+            QUALITY_METRIC_HOP_SIZE,
+        );
         let external_transient_detail = measure_transient_detail(
             &source_mono,
             &external_audio.mono_samples,
@@ -2965,6 +2987,8 @@ fn format_external_benchmark_quality_metrics(
             render.ratio,
         );
         let aligned = align_and_measure_error(&signal_output, &external_audio.mono_samples);
+        let phase_gradient_aligned =
+            align_and_measure_error(&phase_gradient_render.samples, &external_audio.mono_samples);
         let signal_integrity = measure_stretch_render_integrity(
             source_mono,
             &signal_output,
@@ -3028,6 +3052,13 @@ fn format_external_benchmark_quality_metrics(
             RENDER_INTEGRITY_ENDPOINT_SOURCE_FRAMES,
             RENDER_INTEGRITY_SILENCE_THRESHOLD,
         );
+        let phase_gradient_integrity = measure_stretch_render_integrity(
+            source_mono,
+            &phase_gradient_render.samples,
+            render.ratio,
+            RENDER_INTEGRITY_ENDPOINT_SOURCE_FRAMES,
+            RENDER_INTEGRITY_SILENCE_THRESHOLD,
+        );
         let signal_integrity_assessment =
             signal_dsp_stretch::assess_stretch_render_integrity(signal_integrity, integrity_limits);
         let external_integrity_assessment = signal_dsp_stretch::assess_stretch_render_integrity(
@@ -3063,6 +3094,11 @@ fn format_external_benchmark_quality_metrics(
             hpr_additive_integrity,
             integrity_limits,
         );
+        let phase_gradient_integrity_assessment =
+            signal_dsp_stretch::assess_stretch_render_integrity(
+                phase_gradient_integrity,
+                integrity_limits,
+            );
         let tail_anchor_line = TailAnchorReviewEvidence {
             control_id: "source",
             case_id: &render.case_id,
@@ -3347,6 +3383,73 @@ fn format_external_benchmark_quality_metrics(
             candidate_transient: hpr_additive_transient_detail,
             candidate_integrity: hpr_additive_integrity,
             candidate_integrity_passed: hpr_additive_integrity_assessment.passed,
+        }
+        .format_report_line();
+        let phase_gradient_anchor_events =
+            (signal_transient_detail.matched_transients > 0).then(|| {
+                let anchor = signal_transient_detail.max_crest_input_frame;
+                let current = measure_transient_event_detail(
+                    source_mono,
+                    &signal_output,
+                    render.ratio,
+                    anchor,
+                    QUALITY_METRIC_WINDOW_SIZE,
+                    QUALITY_METRIC_HOP_SIZE,
+                )
+                .expect("current matched transient anchor must remain measurable");
+                let candidate = measure_transient_event_detail(
+                    source_mono,
+                    &phase_gradient_render.samples,
+                    render.ratio,
+                    anchor,
+                    QUALITY_METRIC_WINDOW_SIZE,
+                    QUALITY_METRIC_HOP_SIZE,
+                )
+                .expect("phase-gradient matched transient anchor must remain measurable");
+                (current, candidate)
+            });
+        let phase_gradient_line = PhaseGradientReviewEvidence {
+            case_id: &render.case_id,
+            source_path: &source.source_path,
+            ratio: render.ratio,
+            render: &phase_gradient_render,
+            current_output: &signal_output,
+            current_tonal: signal_tonal_texture,
+            candidate_tonal: phase_gradient_tonal_texture,
+            current_formant: signal_formant_boundary,
+            candidate_formant: phase_gradient_formant_boundary,
+            current_transient: signal_transient_detail,
+            candidate_transient: phase_gradient_transient_detail,
+            anchor_events: phase_gradient_anchor_events,
+            candidate_integrity: phase_gradient_integrity,
+            candidate_integrity_passed: phase_gradient_integrity_assessment.passed,
+            external_tonal: external_tonal_texture,
+            external_formant: external_formant_boundary,
+            external_transient: external_transient_detail,
+            external_integrity_passed: external_integrity_assessment.passed,
+            comparator_alignment_lag_frames: phase_gradient_aligned.lag_frames,
+            comparator_aligned_frames: phase_gradient_aligned.compared_frames,
+            comparator_aligned_correlation: phase_gradient_aligned.correlation,
+            comparator_aligned_rms_error: phase_gradient_aligned.rms_error,
+        }
+        .format_report_line();
+        let phase_gradient_combined_gate_line = TailAnchorReviewEvidence {
+            control_id: "phase_gradient",
+            case_id: &render.case_id,
+            source_path: &source.source_path,
+            ratio: render.ratio,
+            current_output: &signal_output,
+            candidate_output: &phase_gradient_render.samples,
+            current_boundary: signal_formant_boundary,
+            candidate_boundary: phase_gradient_formant_boundary,
+            current_tonal: signal_tonal_texture,
+            candidate_tonal: phase_gradient_tonal_texture,
+            current_formant: signal_formant_boundary,
+            candidate_formant: phase_gradient_formant_boundary,
+            current_transient: signal_transient_detail,
+            candidate_transient: phase_gradient_transient_detail,
+            candidate_integrity: phase_gradient_integrity,
+            candidate_integrity_passed: phase_gradient_integrity_assessment.passed,
         }
         .format_report_line();
         let mut feature_delta_line = None;
@@ -3904,6 +4007,8 @@ fn format_external_benchmark_quality_metrics(
         lines.push(peak_transient_combined_gate_line);
         lines.push(hpr_additive_line);
         lines.push(hpr_additive_combined_gate_line);
+        lines.push(phase_gradient_line);
+        lines.push(phase_gradient_combined_gate_line);
         lines.push(tail_local_feature_line);
         if let Some(line) = feature_delta_line {
             lines.push(line);

@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; phase-gradient kernel passed, mono corpus gate open
+Status: active; phase-gradient mono candidate rejected
 Owner: dsp
 Updated: 2026-07-10
 Related contracts: `046`, `048`, `049`
@@ -279,6 +279,33 @@ overlap-add coverage, and repeat hashes all passed.
 This proves the mechanism only. It does not pass the complete mono quality gate
 or promote product routing.
 
+## 2026-07-10 Full Phase-Gradient Mono Outcome
+
+Batch 29.6G is rejected without tuning. All `60` rows retained exact phase
+assignment, heap bounds, conjugate symmetry, finite output, exact length, and
+overlap-add coverage. Added silence and peak-growth limits passed `60/60`;
+complete endpoint integrity passed `57/60`.
+
+The whole-band kernel improved the strongest structural evidence left by the
+H/R/P failure. Tonal regression-free passed `55/60`. At `1.25x` and `1.5x`,
+mean spectral-modulation delta improved by `-0.003056500` and `-0.002028650`,
+source-relative residual improved by `-0.034376250` and `-0.039958950`, and
+unsupported-bin mass improved by `-0.001094150` and `-0.001203250`. Against
+Rubber Band, mean aligned correlation rose from `0.327354900` for the current
+kernel to `0.367353969`; mean RMS error fell from `0.187637615` to
+`0.166064781`.
+
+The complete gate still failed. Anchored `L001` crest improved only
+`1.667930 dB`; required improvement was `3 dB`. Measurable event placement
+worsened by `16.738760` frames on average and up to `137` frames. The
+post-attack replica gate passed `28/48`, with worst ratio delta `+0.675459`.
+Transient, formant, boundary, and combined gates passed `18/60`, `10/60`,
+`53/60`, and `3/60`. Worst candidate crest was `4.103372 dB`, within the
+`5.655483 dB` limit.
+
+Do not tune window geometry, tolerance, derivative policy, heap priority, or
+boundary crop. Do not open linked stereo.
+
 ## Clean-Room Rule
 
 Public papers and public algorithm descriptions may inform Signal design.
@@ -287,7 +314,8 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Run Batch 29.6G's unchanged 60-row fixed-ratio mono corpus gate without tuning
-the frozen phase-gradient geometry or integration policy. Keep linked stereo,
-production routing, cache identity, pitch/dynamic, RealtimePreview, and product
-integration closed.
+Reassess the offline synthesis policy from the measured phase-gradient result.
+Preserve its whole-band tonal/comparator gains while identifying a materially
+different clean-room attack, placement, and shape-preservation mechanism. Keep
+linked stereo, production routing, cache identity, pitch/dynamic,
+RealtimePreview, and product integration closed.

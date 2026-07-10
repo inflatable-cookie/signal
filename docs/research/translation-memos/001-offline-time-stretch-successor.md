@@ -178,8 +178,21 @@ rejected ownership crossfade.
 
 ## Next Task
 
-Run the fixed-resolution full phase-gradient mono corpus gate from Contract
-`082`. Do not tune the frozen kernel or open linked stereo.
+Reassess the fixed-resolution full phase-gradient result from Contract `082`.
+Do not tune the rejected kernel or open linked stereo.
+
+## Full Phase-Gradient Mono Outcome
+
+The frozen whole-band candidate is rejected. It preserved exact mechanism
+truth and materially improved tonal texture and direct Rubber Band alignment,
+but did not close the defects the operator heard: transient softness and
+placement, post-attack replicas, and formant/shape damage remained broad.
+
+This result narrows the next research question. Keep the continuous whole-band
+phase-gradient core as evidence, not a product candidate. Investigate only
+clean-room mechanisms that preserve attack placement and spectral-envelope
+shape without reopening source separation, local time compensation, or
+independent output branches.
 
 ## Full Phase-Gradient Reassessment
 
