@@ -97,8 +97,15 @@ details, or use Elastique internals. External tools remain comparators. Signal's
 algorithm is derived from public papers, public technical descriptions, and its
 own measured failures.
 
+## First Prototype Outcome
+
+The current-grid local-ratio-one timeline was rejected. It preserved exact
+declared anchors but sparse protection and steady-interval compensation moved
+unprotected events, produced hops up to `1664` frames, and passed only `9/60`
+combined rows. This removes adaptive local time redistribution from the
+recommendation. The one-reconstruction-timeline rule remains.
+
 ## Next Task
 
-Implement the current-grid adaptive transient timeline proof under contract
-`082`. Keep adaptive-resolution work at its planning checkpoint until the
-transient proof passes.
+Reassess transient ownership under contract `082`. Compare fixed-map
+peak/group-delay preservation against explicit transient/residual separation.

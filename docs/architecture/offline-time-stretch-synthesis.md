@@ -51,7 +51,8 @@ must not concatenate independent renders.
 
 ## Staged Proof
 
-1. current-grid adaptive transient timeline
+1. current-grid adaptive transient timeline — rejected after timing and
+   combined-gate failure
 2. adaptive-resolution reconstruction
 3. combined fixed-ratio mono candidate
 4. shared-decision linked stereo
@@ -70,5 +71,5 @@ may authorize the next stage but cannot promote product quality alone.
 
 ## Next Task
 
-Prove transient-local synthesis timing and phase policy on the current grid
-before implementing nonstationary resolution.
+Reassess transient ownership before implementing nonstationary resolution.
+Sparse-anchor time redistribution is no longer an authorized mechanism.

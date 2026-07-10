@@ -41,7 +41,10 @@ implementation remains Signal-owned.
   recoverable spans needed `152.383` mean absolute lag and disagreed by
   `210.465` frames between entry and exit. Contract `082` now requires one
   synthesis timeline, transient-local time mapping, then adaptive resolution.
-  Linked stereo remains closed.
+  The transient-local timeline proof is also rejected: sparse protected onsets
+  left `1891` dense conflicts, moved mean event placement by `+4.942263`
+  frames, and passed only `9/60` combined rows. Adaptive resolution and linked
+  stereo remain closed pending transient-ownership reassessment.
 - Offline artifacts and RealtimePreview have bounded contracts and prototype
   paths, but callback-safe preview integration and fully streaming artifact
   output remain gated until their owning source-fill/cache contracts exist.
@@ -131,9 +134,8 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Start Batch 29.6B under contract `082`: prove exact projected transient anchors,
-local-ratio-one protected frames, and bounded steady-interval compensation on
-one `2048/512` synthesis timeline. Keep the classifier frozen and output
-report-only. Adaptive resolution, linked stereo, production, cache identity,
-pitch/dynamic routing, RealtimePreview, and product integration remain closed
-until their preceding gates pass.
+Stop for contract `082` reassessment. Compare peak/group-delay transient
+preservation under the fixed global time map against explicit
+transient/residual separation, then freeze one mechanism before another
+candidate. Adaptive resolution, linked stereo, production, cache identity,
+pitch/dynamic routing, RealtimePreview, and product integration remain closed.

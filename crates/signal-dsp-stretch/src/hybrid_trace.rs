@@ -7,6 +7,7 @@ use crate::{
 };
 
 mod render;
+mod timeline_render;
 mod transition;
 
 #[cfg(test)]
@@ -17,6 +18,8 @@ pub(crate) use render::build_hybrid_render;
 pub use render::{
     StretchHybridRender, StretchHybridTransitionDecision, StretchHybridTransitionRejection,
 };
+pub(crate) use timeline_render::build_adaptive_timeline_render;
+pub use timeline_render::StretchAdaptiveTimelineRender;
 
 const TRANSIENT_FLUX_RATIO: f64 = 0.30;
 const TRANSIENT_ENERGY_RATIO: f64 = 1.20;
@@ -52,6 +55,8 @@ pub struct StretchHybridFrameTrace {
     pub spectral_stability: f64,
     /// Frozen local owner for this frame.
     pub owner: StretchHybridOwner,
+    /// Whether this frame is an onset centre under the frozen classifier.
+    pub detected_onset: bool,
 }
 
 /// Report-only scheduled ownership transition.
@@ -118,6 +123,7 @@ pub(crate) fn build_hybrid_trace(
             energy_ratio: features.energy_ratio,
             spectral_stability: features.spectral_stability,
             owner,
+            detected_onset: features.onset,
         })
         .collect::<Vec<_>>();
     let transitions = schedule_transitions(&frames, current_output, ratio);

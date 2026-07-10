@@ -134,14 +134,16 @@ independent stereo review.
 
 ### Batch 29.6B - Adaptive Transient Timeline Proof
 
-- [ ] derive one monotonic synthesis-position schedule from fixed projected
+- [x] derive one monotonic synthesis-position schedule from fixed projected
   anchors and frozen transient guards
-- [ ] keep protected overlapping attack frames at local ratio `1` and
+- [x] keep protected overlapping attack frames at local ratio `1` and
   compensate only inside steady intervals
-- [ ] reinitialize protected frame phase inside the current `2048/512` engine;
+- [x] reinitialize protected frame phase inside the current `2048/512` engine;
   do not crossfade output waveforms
 - [ ] pass the contract `082` transient, placement, integrity, static-spectrum,
   and combined gates
+  - mechanism rejected: `0.536217 dB` `L001` improvement, `+4.942263` mean
+    timing delta, and `9/60` combined passes
 
 ### Batch 29.6C - Adaptive Resolution Reconstruction
 
@@ -398,13 +400,19 @@ independent stereo review.
   now require one synthesis timeline, a current-grid transient proof, then an
   adaptive-resolution checkpoint. Evidence is in
   `docs/logs/2026-07/10-g10-029-hybrid-alignment-reassessment.md`.
+- 2026-07-10: Measured Batch 29.6B. Exact onset anchors and overlap-add
+  coverage passed, but `479` protected onsets coexisted with `1891` dense
+  conflicts and synthesis hops up to `1664` frames. `L001` improved only
+  `0.536217 dB`, mean event placement worsened `4.942263` frames, and the
+  combined gate passed `9/60`. The mechanism is rejected and Batch 29.6C stays
+  closed. Evidence is in
+  `docs/logs/2026-07/10-g10-029-adaptive-transient-timeline-rejection.md`.
 
 ## Next Task
 
-Start Batch 29.6B under contract `082`. Build one monotonic current-grid
-synthesis schedule with exact projected transient anchors, local-ratio-one
-protected frames, steady-interval compensation, and explicit dense-conflict
-fallback. Keep the classifier frozen and the output report-only. Stop before
-adaptive resolution if crest, placement, integrity, static-spectrum, or
-combined gates fail. Do not open linked stereo or change production, cache,
+Stop for contract `082` reassessment after the rejected Batch 29.6B mechanism.
+Compare peak/group-delay transient preservation inside the fixed global time map
+against explicit transient/residual separation, then freeze one mechanism
+before another candidate. Do not tune classifier or compensation constants,
+open adaptive resolution or linked stereo, or change production, cache,
 pitch/dynamic, product, or RealtimePreview routing.

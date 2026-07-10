@@ -99,9 +99,9 @@ pub use corpus_report::{
 };
 pub use formant_boundary::{measure_formant_boundary, StretchFormantBoundaryMeasurement};
 pub use hybrid_trace::{
-    StretchHybridFrameTrace, StretchHybridOwner, StretchHybridRender, StretchHybridTrace,
-    StretchHybridTransitionDecision, StretchHybridTransitionRejection,
-    StretchHybridTransitionTrace,
+    StretchAdaptiveTimelineRender, StretchHybridFrameTrace, StretchHybridOwner,
+    StretchHybridRender, StretchHybridTrace, StretchHybridTransitionDecision,
+    StretchHybridTransitionRejection, StretchHybridTransitionTrace,
 };
 pub use promotion::{
     current_synthetic_offline_high_quality_promotion_receipt, StretchProductQualityEvidence,
@@ -2251,6 +2251,20 @@ impl OfflineHighQualityStretcher {
         let mixed = self.stretch_mono(input);
         hybrid_trace::build_hybrid_render(input, &mixed, self.ratio)
     }
+
+    /// Render the report-only current-grid adaptive transient-timeline proof.
+    ///
+    /// This path uses the frozen hybrid onset classifier but performs phase
+    /// reinitialization and local timing inside one synthesis engine. Product
+    /// routing and cache identity never select it.
+    #[doc(hidden)]
+    pub fn stretch_adaptive_timeline_review_mono(
+        &mut self,
+        input: &[Sample],
+    ) -> StretchAdaptiveTimelineRender {
+        let current = self.stretch_mono(input);
+        hybrid_trace::build_adaptive_timeline_render(input, &current, self.ratio)
+    }
 }
 
 impl TimeStretcher for OfflineHighQualityStretcher {
@@ -3844,6 +3858,24 @@ mod tests {
             (input.len() as f64 * ratio).round() as usize
         );
         assert_eq!(first.stretch_mono(&input), repeated.stretch_mono(&input));
+    }
+
+    #[test]
+    fn adaptive_timeline_review_is_report_only_deterministic_and_exact_length() {
+        let input = masked_soft_attack_probe(0.35);
+        let ratio = 1.5;
+        let mut first = OfflineHighQualityStretcher::new(ratio);
+        let mut repeated = OfflineHighQualityStretcher::new(ratio);
+        let render = first.stretch_adaptive_timeline_review_mono(&input);
+        let repeated_render = repeated.stretch_adaptive_timeline_review_mono(&input);
+
+        assert_eq!(render, repeated_render);
+        assert_eq!(render.samples.len(), (input.len() as f64 * ratio) as usize);
+        assert!(render
+            .synthesis_positions
+            .windows(2)
+            .all(|pair| pair[0] < pair[1]));
+        assert_eq!(render.uncovered_output_frames, 0);
     }
 
     #[test]

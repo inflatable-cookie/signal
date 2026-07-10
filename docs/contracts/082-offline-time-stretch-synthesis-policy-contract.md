@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; report-only successor policy
+Status: active; first successor mechanism rejected
 Owner: dsp
 Updated: 2026-07-10
 Related contracts: `046`, `048`, `049`
@@ -75,6 +75,14 @@ passes its declared gate.
 This gate proves only the transient/time-map mechanism. It does not waive the
 fast spectral-movement gate required of the later combined mono candidate.
 
+## 2026-07-10 Proof Outcome
+
+The adaptive transient timeline failed: `L001` improved only `0.536217 dB`,
+mean event placement worsened by `4.942263` frames, and the combined gate passed
+`9/60`. Exact anchors and overlap-add coverage passed, but sparse onset anchors
+required local hops up to `1664` frames and moved unprotected events. Do not
+tune classifier or compensation constants and do not open adaptive resolution.
+
 ## Clean-Room Rule
 
 Public papers and public algorithm descriptions may inform Signal design.
@@ -83,5 +91,6 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Implement the report-only current-grid adaptive transient timeline proof. Stop
-if exact anchor placement and monotonic compensation cannot coexist.
+Reassess transient ownership. Freeze either peak/group-delay preservation under
+the global time map or explicit transient/residual separation before another
+candidate. Keep adaptive resolution and linked stereo closed.

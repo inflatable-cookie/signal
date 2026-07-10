@@ -3,6 +3,12 @@ use std::sync::Arc;
 use rustfft::{num_complex::Complex32, Fft, FftPlanner};
 use signal_primitives::Sample;
 
+mod adaptive_timeline;
+
+use adaptive_timeline::{build_adaptive_timeline_schedule, AdaptiveTimelineSchedule};
+
+pub(crate) use adaptive_timeline::AdaptiveTimelineEngineRender;
+
 /// Run the draft phase-vocoder backend.
 pub(crate) fn phase_vocoder(
     input: &[Sample],
@@ -128,6 +134,61 @@ pub(crate) fn compression_transient_anchor_phase_vocoder(
     run_phase_vocoder(input, target_len, ratio, window_size, analysis_hop, mode)
 }
 
+/// Run the report-only current-grid adaptive transient-timeline candidate.
+pub(crate) fn adaptive_transient_timeline_phase_vocoder(
+    input: &[Sample],
+    target_len: usize,
+    ratio: f64,
+    window_size: usize,
+    analysis_hop: usize,
+    onset_frames: &[usize],
+) -> AdaptiveTimelineEngineRender {
+    let prefix_frames = window_size / 2;
+    let suffix_frames = window_size + analysis_hop;
+    let mut padded_input = vec![0.0; prefix_frames + input.len() + suffix_frames];
+    padded_input[prefix_frames..prefix_frames + input.len()].copy_from_slice(input);
+
+    let half_window = window_size as f64 * 0.5;
+    let output_start =
+        ((prefix_frames as f64 - half_window) * ratio + half_window).round() as usize;
+    let output_end = output_start + target_len;
+    let config =
+        PhaseVocoderConfig::new(&padded_input, output_end, ratio, window_size, analysis_hop);
+    let schedule = build_adaptive_timeline_schedule(
+        config.frame_count,
+        ratio,
+        window_size,
+        analysis_hop,
+        onset_frames,
+    );
+    let mut engine = DraftPhaseVocoder::new_with_schedule(
+        config,
+        PhasePropagationMode::AdaptiveTransientTimeline,
+        schedule.clone(),
+    );
+    engine.process(&padded_input);
+    let uncovered_output_frames = engine.uncovered_frames(output_start, output_end);
+    let output = engine.finish();
+
+    AdaptiveTimelineEngineRender {
+        samples: output[output_start..output_end].to_vec(),
+        synthesis_positions: schedule.positions,
+        reinitialized_frames: schedule
+            .reinitialize_phase
+            .iter()
+            .enumerate()
+            .filter_map(|(index, reinitialize)| reinitialize.then_some(index))
+            .collect(),
+        protected_onset_count: schedule.protected_onset_count,
+        dense_conflict_count: schedule.dense_conflict_count,
+        max_anchor_error_frames: schedule.max_anchor_error_frames,
+        min_synthesis_hop_frames: schedule.min_synthesis_hop_frames,
+        max_synthesis_hop_frames: schedule.max_synthesis_hop_frames,
+        uncovered_output_frames,
+        schedule_fallback: schedule.schedule_fallback,
+    }
+}
+
 /// Run the OfflineHighQuality prototype over interleaved stereo with a linked
 /// mid/side analysis surface instead of independent left/right stretching.
 pub(crate) fn transient_reset_phase_vocoder_linked_stereo(
@@ -224,6 +285,7 @@ enum PhasePropagationMode {
     IdentityLockedMagnitudeSlew,
     IdentityLockedTransientReset,
     IdentityLockedCompressionTransientAnchor,
+    AdaptiveTransientTimeline,
 }
 
 impl PhaseVocoderConfig {
@@ -252,6 +314,7 @@ struct DraftPhaseVocoder {
     analysis: PhaseVocoderAnalysisState,
     propagation: PhaseVocoderPropagationState,
     synthesis: PhaseVocoderSynthesisState,
+    frame_schedule: Option<AdaptiveTimelineSchedule>,
 }
 
 struct PhaseVocoderAnalysisState {
@@ -284,6 +347,22 @@ struct PhaseVocoderSynthesisState {
 
 impl DraftPhaseVocoder {
     fn new(config: PhaseVocoderConfig, mode: PhasePropagationMode) -> Self {
+        Self::new_internal(config, mode, None)
+    }
+
+    fn new_with_schedule(
+        config: PhaseVocoderConfig,
+        mode: PhasePropagationMode,
+        schedule: AdaptiveTimelineSchedule,
+    ) -> Self {
+        Self::new_internal(config, mode, Some(schedule))
+    }
+
+    fn new_internal(
+        config: PhaseVocoderConfig,
+        mode: PhasePropagationMode,
+        frame_schedule: Option<AdaptiveTimelineSchedule>,
+    ) -> Self {
         let window: Vec<f32> = (0..config.window_size)
             .map(|index| {
                 0.5 - 0.5 * (std::f32::consts::TAU * index as f32 / config.window_size as f32).cos()
@@ -299,10 +378,14 @@ impl DraftPhaseVocoder {
         let mut planner = FftPlanner::<f32>::new();
         let forward = planner.plan_fft_forward(config.window_size);
         let inverse = planner.plan_fft_inverse(config.window_size);
-        let ola_len = ((config.frame_count.saturating_sub(1)) as f64 * config.synthesis_hop).ceil()
-            as usize
-            + config.window_size
-            + 1;
+        let final_synthesis_start = frame_schedule
+            .as_ref()
+            .and_then(|schedule| schedule.positions.last().copied())
+            .unwrap_or_else(|| {
+                ((config.frame_count.saturating_sub(1)) as f64 * config.synthesis_hop).ceil()
+                    as usize
+            });
+        let ola_len = final_synthesis_start + config.window_size + 1;
         let output_len = ola_len.max(config.target_len);
 
         let analysis = PhaseVocoderAnalysisState {
@@ -338,6 +421,7 @@ impl DraftPhaseVocoder {
             analysis,
             propagation,
             synthesis,
+            frame_schedule,
         }
     }
 
@@ -408,17 +492,23 @@ impl DraftPhaseVocoder {
     }
 
     fn propagate_phase(&mut self, frame_index: usize) {
+        let reinitialize_phase = self
+            .frame_schedule
+            .as_ref()
+            .is_some_and(|schedule| schedule.reinitialize_phase[frame_index]);
+        let synthesis_hop = self.synthesis_hop_for_frame(frame_index);
         for bin in 0..self.config.bins {
             let phase = self.analysis.buffer[bin].arg();
             self.analysis.current_phases[bin] = phase;
-            if frame_index == 0 || self.analysis.transient_reset_current_frame {
+            if frame_index == 0 || self.analysis.transient_reset_current_frame || reinitialize_phase
+            {
                 self.propagation.synthesis_phase[bin] = phase;
             } else {
                 let deviation = wrap_phase(
                     phase - self.propagation.previous_phase[bin] - self.propagation.omega[bin],
                 );
                 let advance = (self.propagation.omega[bin] + deviation)
-                    * (self.config.synthesis_hop / self.config.analysis_hop as f64) as f32;
+                    * (synthesis_hop / self.config.analysis_hop as f64) as f32;
                 self.propagation.synthesis_phase[bin] =
                     wrap_phase(self.propagation.synthesis_phase[bin] + advance);
             }
@@ -512,7 +602,8 @@ impl DraftPhaseVocoder {
             | PhasePropagationMode::IdentityLocked
             | PhasePropagationMode::IdentityLockedStabilityAdaptive
             | PhasePropagationMode::IdentityLockedTrackedPeakRegions
-            | PhasePropagationMode::IdentityLockedMagnitudeSlew => false,
+            | PhasePropagationMode::IdentityLockedMagnitudeSlew
+            | PhasePropagationMode::AdaptiveTransientTimeline => false,
         }
     }
 
@@ -521,7 +612,8 @@ impl DraftPhaseVocoder {
             PhasePropagationMode::IdentityLocked
             | PhasePropagationMode::IdentityLockedTransientReset
             | PhasePropagationMode::IdentityLockedCompressionTransientAnchor
-            | PhasePropagationMode::IdentityLockedMagnitudeSlew => true,
+            | PhasePropagationMode::IdentityLockedMagnitudeSlew
+            | PhasePropagationMode::AdaptiveTransientTimeline => true,
             PhasePropagationMode::IdentityLockedStabilityAdaptive => {
                 frame_index == 0 || self.analysis.current_spectral_stability >= 0.70
             }
@@ -599,7 +691,11 @@ impl DraftPhaseVocoder {
 
     fn synthesize_frame(&mut self, frame_index: usize) {
         self.synthesis.inverse.process(&mut self.synthesis.spectrum);
-        let synthesis_start = (frame_index as f64 * self.config.synthesis_hop).round() as usize;
+        let synthesis_start = self
+            .frame_schedule
+            .as_ref()
+            .map(|schedule| schedule.positions[frame_index])
+            .unwrap_or_else(|| (frame_index as f64 * self.config.synthesis_hop).round() as usize);
         let scale = 1.0 / self.config.window_size as f32;
         for (index, weight) in self.window.iter().enumerate() {
             let out_index = synthesis_start + index;
@@ -609,6 +705,26 @@ impl DraftPhaseVocoder {
             self.synthesis.output[out_index] += self.synthesis.spectrum[index].re * scale * weight;
             self.synthesis.normalization[out_index] += weight * weight;
         }
+    }
+
+    fn synthesis_hop_for_frame(&self, frame_index: usize) -> f64 {
+        if frame_index == 0 {
+            return self.config.synthesis_hop;
+        }
+        self.frame_schedule
+            .as_ref()
+            .map(|schedule| {
+                schedule.positions[frame_index].saturating_sub(schedule.positions[frame_index - 1])
+                    as f64
+            })
+            .unwrap_or(self.config.synthesis_hop)
+    }
+
+    fn uncovered_frames(&self, start: usize, end: usize) -> usize {
+        self.synthesis.normalization[start..end]
+            .iter()
+            .filter(|weight| **weight <= 1.0e-3)
+            .count()
     }
 
     fn finish(mut self) -> Vec<Sample> {
