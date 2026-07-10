@@ -350,6 +350,14 @@ the largest corrections and loudest original edges, and keep candidate identity
 concealed until notes are frozen. Mono listening may qualify the correction's
 local sound; linked-stereo evidence remains mandatory for production routing.
 
+Fixed endpoint envelopes must not be chained through shape variants after
+material-dependent listening failures. An adaptive policy requires a
+deterministic selector derived from tail-local signal measurements, not corpus
+case labels or endpoint amplitude alone. If labeled wins and losses are not
+separable by those measurements, tail-envelope promotion stops and the boundary
+remains unmodified pending a different algorithm class. Any selector must later
+share its decision across linked stereo.
+
 Planning authority:
 `docs/roadmaps/g10/029-stretch-correctness-and-listening-gate.md`.
 

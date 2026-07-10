@@ -81,6 +81,8 @@ be trustworthy before the callback contract or a structural hybrid widens.
   tails exposed low-end thumps
 - [x] qualify a same-span multiplicative zero fade through the objective gate
   and export its concealed comparison pack
+- [x] reject unconditional multiplicative fading after concealed full-mix
+  tails exposed low-end thumps
 
 ### Batch 29.4 - Structural Hybrid Checkpoint
 
@@ -241,12 +243,21 @@ be trustworthy before the callback contract or a structural hybrid widens.
   `target/stretch-corpus-g10-029-multiplicative-tail-listening-pack-v1`.
   Production and cache identity remain unchanged. Evidence and limits are in
   `docs/logs/2026-07/10-g10-029-multiplicative-tail-fade-objective-gate.md`.
+- 2026-07-10: Completed the six concealed multiplicative trials. The control
+  was cleanest on both pads and the drum, but produced low thumps on both
+  decisive full-mix trials where additive/current were clean. No fixed
+  256-frame envelope is universally safe. Both controls remain report-only;
+  production and cache identity remain unchanged. The next reassessment tests
+  whether tail-local features support a content-derived selector before any
+  further DSP control is added. Findings and revealed assignments are in
+  `docs/logs/2026-07/10-g10-029-multiplicative-tail-fade-objective-gate.md`.
 
 ## Next Task
 
-Complete the six concealed trials in
-`target/stretch-corpus-g10-029-multiplicative-tail-listening-pack-v1`. Compare
-click/pop, pull/thump, fade audibility, continuity, and preference before
-opening the key. Keep production unchanged while this listening gate,
-independent stereo review, and row-level manifest validation remain open. Do
-not open product promotion or start Batch 29.4 until all five families validate.
+Measure tail-local DC offset, low-band energy share, spectral centroid, short
+spectral movement, zero-crossing distance, and correction energy for the six
+labeled trials. Define a deterministic content-derived selector only if the
+features separate the multiplicative wins from losses without case-family
+labels; otherwise stop tail-envelope work. Keep production unchanged while
+independent stereo review and row-level manifest validation remain open. Do not
+open product promotion or start Batch 29.4 until all five families validate.

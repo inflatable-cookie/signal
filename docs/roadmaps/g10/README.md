@@ -123,10 +123,11 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Complete the six concealed trials at
-`target/stretch-corpus-g10-029-multiplicative-tail-listening-pack-v1`. Compare
-click/pop, pull/thump, fade audibility, continuity, and preference before
-opening the key. Keep production unchanged while independent stereo and
-row-level completion remain open. Do not start Batch 29.4 or product promotion
-until all five listening families validate. Keep RealtimePreview source-fill
-and broader product integration paused.
+Measure tail-local DC offset, low-band energy share, spectral centroid, short
+spectral movement, zero-crossing distance, and correction energy for the six
+labeled trials. Define a deterministic content-derived selector only if the
+features separate the multiplicative wins from losses without case-family
+labels; otherwise stop tail-envelope work. Keep production unchanged while
+independent stereo and row-level completion remain open. Do not start Batch
+29.4 or product promotion until all five listening families validate. Keep
+RealtimePreview source-fill and broader product integration paused.

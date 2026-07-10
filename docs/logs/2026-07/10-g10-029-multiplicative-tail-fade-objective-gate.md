@@ -1,7 +1,7 @@
 # g10.029 Multiplicative Tail Fade Objective Gate
 
 Date: 2026-07-10
-Status: objective pass; ready for concealed listening
+Status: listening complete; unconditional multiplicative fade rejected
 
 ## Purpose
 
@@ -50,13 +50,35 @@ contains current Signal, the rejected additive zero anchor, and the
 multiplicative zero fade. WAVs remain mono final-second excerpts with `250 ms`
 post-tail silence and one shared per-trial gain.
 
+## Operator Result
+
+Notes were frozen for all six trials before candidate identity was revealed.
+
+- `T001`: multiplicative clean; additive low thump; current high-end click
+- `T002`: same result as `T001`
+- `T003`: multiplicative clean; current clicked; additive clicked subtly
+- `T004`: multiplicative low thump; additive and current clean
+- `T005`: same material split as `T004`
+- `T006`: all three similar and reasonably clean
+
+The multiplicative control wins the two pad trials and the drum trial. It loses
+both decisive full-mix trials. The additive control shows the inverse sustained
+material failure. No fixed 256-frame endpoint envelope is universally safe.
+
 ## Decision
 
-Qualify the multiplicative control for concealed mono listening. Do not promote
-it. Production DSP and cache identity remain unchanged. Linked-stereo behavior
-and independent stereo listening remain separate blockers.
+Reject unconditional promotion of the multiplicative fade. Keep both envelope
+controls report-only. Production DSP and cache identity remain unchanged.
+
+Do not add another fixed fade shape from these six cases. First test whether
+tail-local measurements separate the three multiplicative wins from its two
+clear losses. Case-family labels are evidence metadata, not a production
+selector. Linked-stereo behavior and independent stereo listening remain
+separate blockers for any later adaptive policy.
 
 ## Next Task
 
-Complete all six concealed trials. Freeze click/pop, pull/thump, fade,
-continuity, and preference notes before opening the key.
+Measure tail-local DC offset, low-band energy share, spectral centroid, short
+spectral movement, zero-crossing distance, and correction energy for the six
+labeled trials. Define a deterministic content-derived selector only if those
+features separate the wins from the losses without case-family labels.
