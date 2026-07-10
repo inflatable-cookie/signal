@@ -190,15 +190,35 @@ independent stereo review.
     worst crest passed, but timing regressed `23.411637` frames, integrity
     passed `51/60`, replica protection passed `26/48`, and the combined gate
     passed `0/60`
-- [ ] open Batch 29.7 only after the complete mono candidate passes
-  - closed after Batch 29.6E rejection
+- [ ] keep Batch 29.7 closed until a complete mono candidate passes
+  - Batch 29.6E is rejected; Batch 29.6G now owns the next mono gate
+
+### Batch 29.6F - Full Phase-Gradient Kernel Proof
+
+- [ ] add report-only centered time- and frequency-phase derivative estimation
+  on the frozen `4092` Hann / `8192` FFT geometry
+- [ ] integrate significant-bin phase with deterministic bounded max-heap
+  propagation and trapezoidal time/frequency rules
+- [ ] enforce nonredundant-spectrum conjugate symmetry, deterministic
+  below-tolerance phase, normalized overlap-add, and exact target crop
+- [ ] prove sine, chirp, impulse, two-tone, silence, and repeatability controls
+  against Contract `082` without rendering the corpus
+
+### Batch 29.6G - Full Phase-Gradient Fixed-Ratio Mono Gate
+
+- [ ] open only after Batch 29.6F passes
+- [ ] render the unchanged 60-row corpus without geometry, tolerance,
+  derivative, or heap-priority sweeps
+- [ ] report all existing integrity, timing, crest, replica, spectral,
+  formant, boundary, and combined fields against the current kernel and
+  external comparator
+- [ ] pass the complete mono gate before Batch 29.7 opens
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
-- [ ] share H/R/P masks, component frame positions, time map, and
-  reconstruction weights across channels
-- [ ] preserve per-channel complex spectra, instantaneous frequency, and
-  interchannel phase within every shared component
+- [ ] share the time map and phase-propagation decisions across channels
+- [ ] preserve per-channel complex spectra, phase gradients, and interchannel
+  phase under the shared heap topology
 - [ ] pass mono parity, image, interchannel-phase, and one-sided-transient gates
 
 ### Batch 29.8 - Listening And Dynamic Checkpoint
@@ -478,11 +498,16 @@ independent stereo review.
   unsupported-bin, tonal, formant, boundary, and combined gates. Batch 29.7
   remains closed. Evidence is in
   `docs/logs/2026-07/10-g10-029-hpr-additive-rejection.md`.
+- 2026-07-10: Completed the synthesis-family reassessment. WSOLA,
+  sinusoidal/residual synthesis, and onset-compensated adaptive resolution do
+  not clear Signal's measured failure boundary. Batch 29.6F now freezes one
+  whole-band fixed-resolution full phase-gradient kernel proof with no source
+  split or local time compensation. Batch 29.6G owns the later corpus gate;
+  linked stereo remains closed. Evidence is in
+  `docs/logs/2026-07/10-g10-029-phase-gradient-reassessment.md`.
 
 ## Next Task
 
-Stop implementation for synthesis-policy reassessment. Batch 29.6E exhausted
-the frozen H/R/P mechanism and Batch 29.7 remains closed. Decide whether a
-materially different clean-room synthesis family warrants research before
-opening another card. Keep production, cache, pitch/dynamic, product, and
-RealtimePreview routing closed.
+Implement Batch 29.6F's deterministic fixed-resolution full phase-gradient
+kernel proof. Do not render the corpus. Keep production, cache, pitch/dynamic,
+product, RealtimePreview, and linked-stereo routing closed.

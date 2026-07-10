@@ -178,6 +178,53 @@ rejected ownership crossfade.
 
 ## Next Task
 
-Return to research after the additive H/R/P fixed-ratio mono proof failed its
-complete gate. Identify only materially different clean-room synthesis
-families; do not tune the rejected component split or open linked stereo.
+Implement the fixed-resolution full phase-gradient kernel proof from Contract
+`082`. Do not tune the rejected component split or open linked stereo.
+
+## Full Phase-Gradient Reassessment
+
+The additive H/R/P proof invalidates this memo's original component-synthesis
+recommendation. Separation itself reconstructed the source exactly, but
+independent component TSM damaged timing, integrity, transient replicas, and
+static spectrum. More separation tuning would not address that failure.
+
+Three materially different public families were screened:
+
+- WSOLA preserves one locally dominant waveform period. Published reviews
+  identify transient skipping/doubling and polyphonic warble, while its common
+  transient-preserving variants redistribute local time around attacks. That
+  reopens mechanisms Signal has already rejected.
+- sinusoidal/residual models remain weakest on broadband noise and attacks and
+  again depend on separately synthesized components
+- adaptive-resolution and nonstationary-Gabor systems remain credible later,
+  but the surveyed TSM method also holds local stretch at unity around detected
+  onsets and compensates elsewhere
+
+Prusa and Holighaus provide the next bounded direction. Their phase vocoder
+estimates both partial derivatives of STFT phase and integrates the full phase
+gradient through a magnitude-prioritized heap. Horizontal and vertical phase
+coherence emerge in one whole-band transform without peak tracking, transient
+detection, masks, component synthesis, or local time-map compensation. Their
+listening test found the method competitive with commercial universal-mode
+systems at `1.5x` and `2x` expansion.
+
+Signal will first prove the phase-gradient kernel, not claim product quality.
+The proof uses the published fixed-resolution geometry and one global time map.
+It must establish deterministic finite derivatives, one phase assignment per
+significant bin, conjugate-symmetric reconstruction, exact length, and
+synthetic sine/chirp/impulse/two-tone behavior. The complete corpus gate opens
+only after that mechanism proof passes.
+
+Known limitations stay visible. The public method stretches rather than
+sharpens transients and can alter partial phase relationships in voiced speech.
+Adaptive resolution, transient shaping, and voice specialization remain closed
+until the unmodified whole-band core has evidence.
+
+Add these sources to the clean-room evidence set:
+
+| Source | Confidence | Notes |
+| --- | --- | --- |
+| [Prusa and Holighaus, 2022](https://arxiv.org/abs/2202.07382) | high | Full STFT phase-gradient estimation and RTPGHI integration; published listening comparison |
+| [Driedger and Muller, 2016](https://www.mdpi.com/2076-3417/6/2/57) | high | TSM review; WSOLA and phase-vocoder artifact boundaries |
+| [Roelands and Verhelst, 1993](https://www.isca-archive.org/eurospeech_1993/roelands93_eurospeech.html) | high | Original WSOLA family evidence |
+| [Balazs et al., 2011](https://arxiv.org/abs/1112.5262) | high | Nonstationary Gabor frame foundations and reconstruction conditions |

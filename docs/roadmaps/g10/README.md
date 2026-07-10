@@ -148,7 +148,7 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Stop implementation for offline synthesis-policy reassessment after the Batch
-29.6E rejection. Do not tune the H/R/P mechanism or open linked stereo.
-Production, cache identity, pitch/dynamic routing, RealtimePreview, and product
-integration remain closed.
+Start Batch 29.6F's report-only fixed-resolution full phase-gradient kernel
+proof. Do not render the corpus, tune the rejected H/R/P mechanism, or open
+linked stereo. Production, cache identity, pitch/dynamic routing,
+RealtimePreview, and product integration remain closed.

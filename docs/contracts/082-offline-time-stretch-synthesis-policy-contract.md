@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; H/R/P separation passed, additive mono TSM rejected
+Status: active; full phase-gradient successor proof frozen
 Owner: dsp
 Updated: 2026-07-10
 Related contracts: `046`, `048`, `049`
@@ -85,6 +85,73 @@ Production routing, cache identity, product receipts, pitch composition,
 dynamic-ratio routing, RealtimePreview, and linked stereo remain unchanged.
 Batch 29.6D passed on 2026-07-10. Batch 29.6E failed the frozen mono gate and
 is rejected without tuning. Batch 29.7 remains closed.
+
+### Rule 7: the active successor is one whole-band phase-gradient transform
+
+Batch 29.6F supersedes component synthesis with one fixed-resolution STFT. It
+estimates both time- and frequency-direction partial derivatives of analyzed
+phase and integrates them through a magnitude-prioritized max heap. It does not
+use peak tracking, onset detection, phase reset, source separation, component
+TSM, waveform search, adaptive resolution, or local ratio compensation.
+
+Freeze the first proof to a `4092`-sample Hann analysis window, `8192`-point
+FFT, `1024`-sample synthesis hop, and analysis hop equal to
+`round(1024 / ratio)`. Ratios remain fixed per render. The existing centered
+zero-padding, normalized overlap-add, exact target crop, and bit-exact identity
+bypass remain authoritative.
+
+### Rule 8: derivative and integration policy is explicit
+
+Use heterodyned backward and forward time-phase differences and average them
+for the centered time derivative. Use backward and forward wrapped
+frequency-phase differences and average them for the centered frequency
+derivative. Time and frequency propagation both use trapezoidal integration.
+
+The first synthesis frame copies analyzed phase. Offline analysis supplies the
+previous/current/future frames required by centered time differences. Operate
+on DC through Nyquist, use one-sided frequency differences at those two
+boundaries, then mirror the nonredundant synthesis coefficients to enforce
+conjugate symmetry.
+
+For each later frame, set `abstol` to `1e-6` times the maximum magnitude across
+the previous and current frames. Significant current bins are assigned exactly
+once. Seed the max heap with significant bins from the previous frame, then
+propagate from the highest-magnitude available predecessor in time or frequency
+until no significant current bin remains. Heap ordering must include stable
+frame/bin tie breaks. Bins at or below `abstol` copy analyzed phase rather than
+use random phase.
+
+### Rule 9: prove the kernel before the corpus candidate
+
+Batch 29.6F is a report-only mechanism proof. It covers a steady bin-centered
+sine, linear chirp, isolated broadband impulse, two simultaneous sines, silence,
+and repeated identical input. Report derivative finiteness, significant and
+insignificant bins, horizontal and vertical assignments, duplicate or missing
+assignments, heap high-water mark, conjugate-symmetry error, overlap-add
+coverage, exact output length, and deterministic hashes.
+
+The proof passes only when:
+
+- every reported derivative is finite
+- every significant current bin is assigned once and only once
+- no heap operation exceeds the declared frequency-bin bound
+- synthesized spectra are conjugate symmetric within `1e-6`
+- no output sample is non-finite or uncovered
+- output length equals the exact target length
+- repeated inputs produce identical traces, hashes, and samples
+- horizontal propagation occurs for the steady sine and both tones
+- vertical propagation occurs for the chirp and impulse
+
+These synthetic ownership checks prove that both integration directions are
+live. They do not claim sound-quality promotion.
+
+### Rule 10: the complete mono gate remains separate
+
+Batch 29.6G may render the 60-row corpus only after Batch 29.6F passes. It must
+report every existing Batch 29.6 quality and integrity field, compare against
+the current kernel and external comparator, and pass the unchanged complete
+mono gate before linked stereo opens. Do not sweep geometry, tolerance,
+derivative policy, or heap priority inside that gate.
 
 ## Separation Proof Gate
 
@@ -180,6 +247,20 @@ This additive structure does not reopen the rejected full-band branch
 crossfade. Component reconstruction is proven before TSM, and every component
 uses the same output map and target length.
 
+## 2026-07-10 Full Phase-Gradient Reassessment Decision
+
+The additive H/R/P candidate failed timing, integrity, transient-replica,
+static-spectrum, and combined gates despite passing source separation and crest
+checks. Independent component synthesis is therefore closed without tuning.
+
+WSOLA, sinusoidal/residual synthesis, and onset-compensated adaptive-resolution
+methods do not provide a sufficiently clean next boundary. The active proof is
+full phase-gradient integration inside one whole-band STFT. It targets the
+current kernel's neglected frequency-direction phase structure without source
+separation or local time redistribution. The published method reports
+competitive listening results against commercial universal-mode systems, but
+Signal must first prove its own deterministic kernel and complete corpus gate.
+
 ## Clean-Room Rule
 
 Public papers and public algorithm descriptions may inform Signal design.
@@ -188,8 +269,6 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Stop component implementation and reassess the offline synthesis policy from
-the measured Batch 29.6E failure. Decide whether a materially different
-clean-room synthesis family warrants research before another card is opened.
-Keep linked stereo, production routing, cache identity, pitch/dynamic,
-RealtimePreview, and product integration closed.
+Implement Batch 29.6F's deterministic fixed-resolution full phase-gradient
+kernel proof. Keep the corpus candidate, linked stereo, production routing,
+cache identity, pitch/dynamic, RealtimePreview, and product integration closed.
