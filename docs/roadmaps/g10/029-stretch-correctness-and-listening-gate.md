@@ -73,6 +73,8 @@ be trustworthy before the callback contract or a structural hybrid widens.
 - [x] close formant and boundary classification with source-relative envelope
   and exterior-step evidence
 - [x] reject source-endpoint tail anchoring after the combined corpus gate
+- [x] qualify the bounded zero-tail anchor for focused listening after its
+  objective corpus gate
 
 ### Batch 29.4 - Structural Hybrid Checkpoint
 
@@ -200,12 +202,20 @@ be trustworthy before the callback contract or a structural hybrid widens.
   `-7.393442 dBFS`. The control stays report-only; production and cache identity
   remain unchanged. Evidence and rejection rationale are in
   `docs/logs/2026-07/10-g10-029-source-tail-anchor-rejection.md`.
+- 2026-07-10: The bounded zero-tail control materially improved all `17/17`
+  loud tails, reduced the worst exterior step from `-6.328693` to
+  `-29.129923 dBFS`, and passed integrity, transient, tonal-texture, and
+  formant-envelope tolerances in `60/60` rows. It changes the final 255 samples
+  in every render; five peak corrections exceed `0.25`, so it qualifies for
+  focused listening rather than production. Cache identity remains unchanged.
+  Evidence and limits are in
+  `docs/logs/2026-07/10-g10-029-zero-tail-anchor-objective-gate.md`.
 
 ## Next Task
 
-Build one bounded zero-tail anchor control and compare it with current output
-and the rejected source-anchor control. Require material loud-tail improvement,
-explicit changed-frame/correction evidence, and no integrity, transient,
-tonal-texture, or formant-envelope regression. Keep production unchanged while
-independent stereo review and row-level manifest validation remain open. Do not
-open product promotion or start Batch 29.4 until all five families validate.
+Generate a bounded mono tail-listening pack for the largest corrections and
+loudest current tails. Compare current, source-anchor, and zero-anchor tails
+with post-tail silence under concealed assignment. Keep production unchanged
+while operator listening, independent stereo review, and row-level manifest
+validation remain open. Do not open product promotion or start Batch 29.4 until
+all five families validate.

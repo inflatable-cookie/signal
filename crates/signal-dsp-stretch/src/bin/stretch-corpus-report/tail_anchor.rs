@@ -14,6 +14,7 @@ const FORMANT_RESIDUAL_TOLERANCE: f64 = 0.001;
 const FORMANT_CENTROID_TOLERANCE_HZ: f64 = 2.0;
 
 pub(super) struct TailAnchorReviewEvidence<'a> {
+    pub control_id: &'static str,
     pub case_id: &'a str,
     pub source_path: &'a str,
     pub ratio: f64,
@@ -88,7 +89,8 @@ impl TailAnchorReviewEvidence<'_> {
             && formant_regression_free;
 
         format!(
-            "external_benchmark_tail_anchor_review case={} source={} ratio={:.6} changed_frames={} peak_correction={:.9} current_max_boundary_step_dbfs={:.6} candidate_max_boundary_step_dbfs={:.6} boundary_improvement_db={:.6} loud_boundary_target={} material_boundary_improvement={} candidate_integrity_passed={} candidate_endpoint_energy_delta_db={:.6} candidate_added_silence_frames={} candidate_peak_growth_db={:.6} current_transient_mean_absolute_offset_frames={:.6} candidate_transient_mean_absolute_offset_frames={:.6} current_transient_max_crest_growth_db={:.6} candidate_transient_max_crest_growth_db={:.6} transient_regression_free={} current_tonal_residual_ratio={:.6} candidate_tonal_residual_ratio={:.6} current_tonal_sideband_ratio={:.6} candidate_tonal_sideband_ratio={:.6} current_spectral_modulation_delta={:.6} candidate_spectral_modulation_delta={:.6} tonal_regression_free={} current_formant_envelope_residual_ratio={:.6} candidate_formant_envelope_residual_ratio={:.6} current_formant_centroid_shift_hz={:.6} candidate_formant_centroid_shift_hz={:.6} formant_regression_free={} combined_regression_gate_passed={}",
+            "external_benchmark_tail_anchor_review control={} case={} source={} ratio={:.6} changed_frames={} peak_correction={:.9} current_max_boundary_step_dbfs={:.6} candidate_max_boundary_step_dbfs={:.6} boundary_improvement_db={:.6} loud_boundary_target={} material_boundary_improvement={} candidate_integrity_passed={} candidate_endpoint_energy_delta_db={:.6} candidate_added_silence_frames={} candidate_peak_growth_db={:.6} current_transient_mean_absolute_offset_frames={:.6} candidate_transient_mean_absolute_offset_frames={:.6} current_transient_max_crest_growth_db={:.6} candidate_transient_max_crest_growth_db={:.6} transient_regression_free={} current_tonal_residual_ratio={:.6} candidate_tonal_residual_ratio={:.6} current_tonal_sideband_ratio={:.6} candidate_tonal_sideband_ratio={:.6} current_spectral_modulation_delta={:.6} candidate_spectral_modulation_delta={:.6} tonal_regression_free={} current_formant_envelope_residual_ratio={:.6} candidate_formant_envelope_residual_ratio={:.6} current_formant_centroid_shift_hz={:.6} candidate_formant_centroid_shift_hz={:.6} formant_regression_free={} combined_regression_gate_passed={}",
+            self.control_id,
             self.case_id,
             quoted_report_field(self.source_path),
             self.ratio,

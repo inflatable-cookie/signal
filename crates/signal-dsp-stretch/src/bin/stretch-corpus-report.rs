@@ -2553,11 +2553,17 @@ fn format_external_benchmark_quality_metrics(
         let mut tail_anchor_stretcher =
             OfflineHighQualityStretcher::with_path(render.ratio, signal_path);
         let tail_anchor_output = tail_anchor_stretcher.stretch_tail_anchor_review_mono(source_mono);
+        let mut zero_tail_anchor_stretcher =
+            OfflineHighQualityStretcher::with_path(render.ratio, signal_path);
+        let zero_tail_anchor_output =
+            zero_tail_anchor_stretcher.stretch_zero_tail_anchor_review_mono(source_mono);
         let mut draft_stretcher = PhaseVocoderStretcher::new(render.ratio);
         let draft_output = draft_stretcher.stretch_mono(source_mono);
         let signal_tonal_texture = measure_tonal_texture(source_mono, &signal_output, render.ratio);
         let tail_anchor_tonal_texture =
             measure_tonal_texture(source_mono, &tail_anchor_output, render.ratio);
+        let zero_tail_anchor_tonal_texture =
+            measure_tonal_texture(source_mono, &zero_tail_anchor_output, render.ratio);
         let external_tonal_texture =
             measure_tonal_texture(source_mono, &external_audio.mono_samples, render.ratio);
         let draft_tonal_texture = measure_tonal_texture(source_mono, &draft_output, render.ratio);
@@ -2598,6 +2604,12 @@ fn format_external_benchmark_quality_metrics(
         let tail_anchor_formant_boundary = measure_formant_boundary(
             source_mono,
             &tail_anchor_output,
+            render.ratio,
+            source_audio.sample_rate_hz,
+        );
+        let zero_tail_anchor_formant_boundary = measure_formant_boundary(
+            source_mono,
+            &zero_tail_anchor_output,
             render.ratio,
             source_audio.sample_rate_hz,
         );
@@ -2660,6 +2672,13 @@ fn format_external_benchmark_quality_metrics(
         let tail_anchor_transient_detail = measure_transient_detail(
             &source_mono,
             &tail_anchor_output,
+            render.ratio,
+            QUALITY_METRIC_WINDOW_SIZE,
+            QUALITY_METRIC_HOP_SIZE,
+        );
+        let zero_tail_anchor_transient_detail = measure_transient_detail(
+            &source_mono,
+            &zero_tail_anchor_output,
             render.ratio,
             QUALITY_METRIC_WINDOW_SIZE,
             QUALITY_METRIC_HOP_SIZE,
@@ -2783,6 +2802,13 @@ fn format_external_benchmark_quality_metrics(
             RENDER_INTEGRITY_ENDPOINT_SOURCE_FRAMES,
             RENDER_INTEGRITY_SILENCE_THRESHOLD,
         );
+        let zero_tail_anchor_integrity = measure_stretch_render_integrity(
+            source_mono,
+            &zero_tail_anchor_output,
+            render.ratio,
+            RENDER_INTEGRITY_ENDPOINT_SOURCE_FRAMES,
+            RENDER_INTEGRITY_SILENCE_THRESHOLD,
+        );
         let signal_integrity_assessment =
             signal_dsp_stretch::assess_stretch_render_integrity(signal_integrity, integrity_limits);
         let external_integrity_assessment = signal_dsp_stretch::assess_stretch_render_integrity(
@@ -2793,7 +2819,13 @@ fn format_external_benchmark_quality_metrics(
             tail_anchor_integrity,
             integrity_limits,
         );
+        let zero_tail_anchor_integrity_assessment =
+            signal_dsp_stretch::assess_stretch_render_integrity(
+                zero_tail_anchor_integrity,
+                integrity_limits,
+            );
         let tail_anchor_line = TailAnchorReviewEvidence {
+            control_id: "source",
             case_id: &render.case_id,
             source_path: &source.source_path,
             ratio: render.ratio,
@@ -2809,6 +2841,25 @@ fn format_external_benchmark_quality_metrics(
             candidate_transient: tail_anchor_transient_detail,
             candidate_integrity: tail_anchor_integrity,
             candidate_integrity_passed: tail_anchor_integrity_assessment.passed,
+        }
+        .format_report_line();
+        let zero_tail_anchor_line = TailAnchorReviewEvidence {
+            control_id: "zero",
+            case_id: &render.case_id,
+            source_path: &source.source_path,
+            ratio: render.ratio,
+            current_output: &signal_output,
+            candidate_output: &zero_tail_anchor_output,
+            current_boundary: signal_formant_boundary,
+            candidate_boundary: zero_tail_anchor_formant_boundary,
+            current_tonal: signal_tonal_texture,
+            candidate_tonal: zero_tail_anchor_tonal_texture,
+            current_formant: signal_formant_boundary,
+            candidate_formant: zero_tail_anchor_formant_boundary,
+            current_transient: signal_transient_detail,
+            candidate_transient: zero_tail_anchor_transient_detail,
+            candidate_integrity: zero_tail_anchor_integrity,
+            candidate_integrity_passed: zero_tail_anchor_integrity_assessment.passed,
         }
         .format_report_line();
         let mut feature_delta_line = None;
@@ -3356,6 +3407,7 @@ fn format_external_benchmark_quality_metrics(
         lines.push(tonal_texture_line);
         lines.push(formant_boundary_line);
         lines.push(tail_anchor_line);
+        lines.push(zero_tail_anchor_line);
         if let Some(line) = feature_delta_line {
             lines.push(line);
         }
@@ -8221,6 +8273,10 @@ mod tests {
             .expect("tail-anchor candidate row");
         assert!(tail_anchor.contains("boundary_improvement_db="));
         assert!(tail_anchor.contains("combined_regression_gate_passed="));
+        assert!(tail_anchor.contains("control=source"));
+        assert!(formatted
+            .lines()
+            .any(|line| line.starts_with("external_benchmark_tail_anchor_review control=zero ")));
 
         let _ = fs::remove_file(path);
     }

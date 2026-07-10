@@ -10,19 +10,33 @@ pub(crate) fn anchor_output_tail_to_source(input: &[Sample], output: &mut [Sampl
         return;
     }
 
-    let frame_count = TAIL_ANCHOR_REVIEW_FRAMES.min(output.len());
-    if frame_count == 1 {
-        output[0] = *source_tail;
+    anchor_output_tail(output, *source_tail);
+}
+
+pub(crate) fn anchor_output_tail_to_silence(output: &mut [Sample]) {
+    anchor_output_tail(output, 0.0);
+}
+
+fn anchor_output_tail(output: &mut [Sample], target: Sample) {
+    let Some(output_tail) = output.last().copied() else {
+        return;
+    };
+    if output_tail == target {
         return;
     }
-    let correction = *source_tail - *output_tail;
+    let frame_count = TAIL_ANCHOR_REVIEW_FRAMES.min(output.len());
+    if frame_count == 1 {
+        output[0] = target;
+        return;
+    }
+    let correction = target - output_tail;
     let start = output.len() - frame_count;
     for (offset, sample) in output[start..].iter_mut().enumerate() {
         let phase = std::f32::consts::PI * offset as f32 / (frame_count - 1) as f32;
         let weight = 0.5 - 0.5 * phase.cos();
         *sample += correction * weight;
     }
-    *output.last_mut().expect("non-empty output") = *source_tail;
+    *output.last_mut().expect("non-empty output") = target;
 }
 
 #[cfg(test)]
@@ -70,6 +84,21 @@ mod tests {
     }
 
     #[test]
+    fn zero_tail_anchor_lands_on_silence_inside_bounded_span() {
+        let mut output = vec![0.25; 2_048];
+        let prefix = output[..output.len() - TAIL_ANCHOR_REVIEW_FRAMES].to_vec();
+
+        anchor_output_tail_to_silence(&mut output);
+
+        assert_eq!(output.last(), Some(&0.0));
+        assert_eq!(
+            &output[..output.len() - TAIL_ANCHOR_REVIEW_FRAMES],
+            prefix.as_slice()
+        );
+        assert_eq!(output[output.len() - TAIL_ANCHOR_REVIEW_FRAMES], 0.25);
+    }
+
+    #[test]
     fn tail_anchor_review_path_is_deterministic_and_honors_output_contract() {
         let mut input = (0..48_000)
             .map(|frame| (std::f32::consts::TAU * 440.0 * frame as f32 / 48_000.0).sin())
@@ -84,5 +113,21 @@ mod tests {
         assert_eq!(first_output.len(), 60_000);
         assert_eq!(first_output, repeated_output);
         assert_eq!(first_output.last(), input.last());
+    }
+
+    #[test]
+    fn zero_tail_anchor_review_path_is_deterministic_and_honors_output_contract() {
+        let input = (0..48_000)
+            .map(|frame| (std::f32::consts::TAU * 440.0 * frame as f32 / 48_000.0).sin())
+            .collect::<Vec<_>>();
+        let mut first = OfflineHighQualityStretcher::new(0.75);
+        let mut repeated = OfflineHighQualityStretcher::new(0.75);
+
+        let first_output = first.stretch_zero_tail_anchor_review_mono(&input);
+        let repeated_output = repeated.stretch_zero_tail_anchor_review_mono(&input);
+
+        assert_eq!(first_output.len(), 36_000);
+        assert_eq!(first_output, repeated_output);
+        assert_eq!(first_output.last(), Some(&0.0));
     }
 }

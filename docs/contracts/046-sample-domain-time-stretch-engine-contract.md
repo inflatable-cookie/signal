@@ -343,6 +343,13 @@ frame span and peak correction, retain the absolute endpoint-energy gate, and
 remain unpromoted until linked-stereo behavior and listening evidence cover the
 same policy.
 
+Passing full-render and interior quality proxies does not promote a
+silence-target tail correction. The evidence must also expose the corrected
+span followed by digital silence in a level-matched listening artifact, cover
+the largest corrections and loudest original edges, and keep candidate identity
+concealed until notes are frozen. Mono listening may qualify the correction's
+local sound; linked-stereo evidence remains mandatory for production routing.
+
 Planning authority:
 `docs/roadmaps/g10/029-stretch-correctness-and-listening-gate.md`.
 
