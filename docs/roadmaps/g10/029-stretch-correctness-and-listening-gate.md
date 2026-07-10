@@ -162,16 +162,16 @@ independent stereo review.
 
 ### Batch 29.6D - H/R/P Separation Reconstruction
 
-- [ ] add report-only sample-rate-aware iterative H/R/P separation with
+- [x] add report-only sample-rate-aware iterative H/R/P separation with
   long-resolution harmonic extraction and short-resolution percussive
   extraction from the complement
-- [ ] apply disjoint binary masks with `beta_h=2`, `beta_p=2`, `200 ms`
+- [x] apply disjoint binary masks with `beta_h=2`, `beta_p=2`, `200 ms`
   horizontal median span, and `500 Hz` vertical median span
-- [ ] reconstruct harmonic, residual, and percussive source components through
+- [x] reconstruct harmonic, residual, and percussive source components through
   centred normalized inverse STFT without stretching
-- [ ] report mask populations, component energy, partition error,
+- [x] report mask populations, component energy, partition error,
   reconstruction RMS/peak error, boundary coverage, and deterministic hashes
-- [ ] pass the contract `082` exact reconstruction and `12 dB` synthetic
+- [x] pass the contract `082` exact reconstruction and `12 dB` synthetic
   harmonic/percussive/residual ownership gates
 
 ### Batch 29.6E - Additive H/R/P Fixed-Ratio Mono Gate
@@ -459,11 +459,18 @@ independent stereo review.
   passes, Batch 29.6E uses long PV, current PV, and short OLA under one global
   map and additive recombination. Decision evidence is in
   `docs/logs/2026-07/10-g10-029-hpr-separation-contract.md`.
+- 2026-07-10: Batch 29.6D passed without parameter tuning. At `48 kHz`, the
+  separator selected `8192/2048` long and `512/128` short STFT geometry. Mixed
+  source reconstruction measured `8.940697e-8` peak error and `1.939046e-8`
+  RMS error with exact component lengths, zero uncovered samples, finite
+  components, and deterministic hashes. Sine, impulse, and noise ownership
+  margins were `30.933980 dB`, `164.871272 dB`, and `12.925746 dB`. Batch 29.6E
+  is open; no component TSM or production routing changed.
 
 ## Next Task
 
-Start Batch 29.6D with the report-only iterative H/R/P separator and exact
-source-reconstruction proof frozen in contract `082`. Do not implement
-component TSM unless the mask partition, numerical reconstruction, boundary,
-and synthetic ownership gates pass. Keep linked stereo, production, cache,
-pitch/dynamic, product, and RealtimePreview routing closed.
+Start Batch 29.6E with the report-only additive fixed-ratio mono candidate
+frozen in contract `082`. Stretch harmonic, residual, and percussive components
+through their fixed processors under one global ratio and exact target length,
+then run the complete `60`-render mono gate. Keep linked stereo, production,
+cache, pitch/dynamic, product, and RealtimePreview routing closed.

@@ -45,6 +45,7 @@ mod benchmark;
 mod cache_identity;
 mod corpus_report;
 mod formant_boundary;
+mod hpr_separation;
 mod hybrid_trace;
 mod phase_vocoder;
 mod promotion;
@@ -98,6 +99,9 @@ pub use corpus_report::{
     StretchExternalBenchmarkComparison, StretchExternalBenchmarkRender,
 };
 pub use formant_boundary::{measure_formant_boundary, StretchFormantBoundaryMeasurement};
+pub use hpr_separation::{
+    StretchHprComponentEvidence, StretchHprSeparationEvidence, StretchHprSeparationReview,
+};
 pub use hybrid_trace::{
     StretchAdaptiveTimelineRender, StretchFixedMapPeakEventTrace, StretchFixedMapPeakRegionTrace,
     StretchFixedMapPeakTransientRender, StretchHybridFrameTrace, StretchHybridOwner,
@@ -2279,6 +2283,21 @@ impl OfflineHighQualityStretcher {
     ) -> StretchFixedMapPeakTransientRender {
         let current = self.stretch_mono(input);
         hybrid_trace::build_fixed_map_peak_transient_render(input, &current, self.ratio)
+    }
+
+    /// Run the report-only harmonic/residual/percussive source separator.
+    ///
+    /// This proof performs no time stretching. It uses the sample-rate-aware
+    /// two-stage separation policy frozen by Contract 082 and returns three
+    /// additive components plus reconstruction and mask evidence. Product
+    /// routing and cache identity never select this method.
+    #[doc(hidden)]
+    pub fn separate_hpr_review_mono(
+        &self,
+        input: &[Sample],
+        sample_rate: SampleRate,
+    ) -> StretchHprSeparationReview {
+        hpr_separation::separate_hpr_review_mono(input, sample_rate)
     }
 }
 

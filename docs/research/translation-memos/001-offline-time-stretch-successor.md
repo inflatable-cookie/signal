@@ -178,6 +178,7 @@ rejected ownership crossfade.
 
 ## Next Task
 
-Implement the report-only H/R/P separation and source-reconstruction proof
-frozen in contract `082`. Do not implement component TSM until that gate
-passes. Keep linked stereo and production routing closed.
+Implement the report-only additive H/R/P fixed-ratio mono proof frozen in
+contract `082`. The separation and synthetic ownership gate has passed. Keep
+linked stereo and production routing closed until the complete mono gate
+passes.

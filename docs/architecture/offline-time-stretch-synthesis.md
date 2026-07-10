@@ -85,6 +85,6 @@ source reconstruction before component TSM opens.
 
 ## Next Task
 
-Start the report-only H/R/P separation and source-reconstruction proof. Do not
-implement component TSM until its mask partition, reconstruction, boundary, and
-synthetic ownership gates pass.
+Start the report-only additive H/R/P fixed-ratio mono proof. The separation gate
+has passed; use its frozen masks and component processors under one global ratio
+and exact target length. Keep linked stereo and production routing closed.

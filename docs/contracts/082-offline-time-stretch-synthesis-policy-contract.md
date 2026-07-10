@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; H/R/P separation boundary frozen
+Status: active; H/R/P separation passed, additive mono TSM open
 Owner: dsp
 Updated: 2026-07-10
 Related contracts: `046`, `048`, `049`
@@ -83,7 +83,7 @@ replica ratio, recombination peak growth, and current-versus-candidate quality.
 
 Production routing, cache identity, product receipts, pitch composition,
 dynamic-ratio routing, RealtimePreview, and linked stereo remain unchanged.
-Batch 29.6E opens only after the separation gate passes. Batch 29.7 opens only
+Batch 29.6D passed on 2026-07-10. Batch 29.6E is open. Batch 29.7 opens only
 after the complete additive mono gate passes.
 
 ## Separation Proof Gate
@@ -96,6 +96,13 @@ after the complete additive mono gate passes.
 - harmonic, percussive, and residual synthetic controls each meet the `12 dB`
   ownership margin
 - identical input, sample rate, and parameters produce identical components
+
+Batch 29.6D passes this gate. At `48 kHz`, the frozen geometry resolves to
+`8192/2048` long analysis and `512/128` short analysis. The mixed reconstruction
+control measured `8.940697e-8` peak error and `1.939046e-8` RMS error with zero
+uncovered source samples. Ownership margins were `30.933980 dB` for the steady
+sine, `164.871272 dB` for the isolated impulse, and `12.925746 dB` for stationary
+noise. Repeated component vectors and hashes were identical.
 
 ## Additive Mono TSM Gate
 
@@ -168,7 +175,8 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Start Batch 29.6D with the report-only iterative H/R/P decomposition and exact
-reconstruction proof. Do not implement component TSM until the separation gate
-passes. Keep linked stereo, production routing, cache identity, pitch/dynamic,
-RealtimePreview, and product integration closed.
+Start Batch 29.6E with the report-only additive fixed-ratio mono candidate.
+Apply the frozen long identity-locked PV, current residual PV, and short
+normalized OLA processors under one ratio and exact target length. Keep linked
+stereo, production routing, cache identity, pitch/dynamic, RealtimePreview, and
+product integration closed.

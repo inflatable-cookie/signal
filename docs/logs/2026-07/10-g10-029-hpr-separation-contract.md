@@ -1,7 +1,7 @@
 # g10.029 H/R/P Separation Contract
 
 Date: 2026-07-10
-Status: mechanism frozen; implementation not started
+Status: Batch 29.6D passed; Batch 29.6E open
 Contract: `082`
 
 ## Problem
@@ -64,6 +64,25 @@ Prove separation only:
 
 Failure stops before any new TSM output.
 
+## Batch 29.6D Result
+
+Passed without parameter tuning.
+
+- `48 kHz` geometry: long `8192/2048`, short `512/128`
+- mixed-control peak reconstruction error: `8.940697e-8`
+- mixed-control RMS reconstruction error: `1.939046e-8`
+- head error: `3.725290e-9`
+- tail error: `1.862645e-9`
+- uncovered samples: `0` at both stages
+- sine harmonic margin: `30.933980 dB`
+- impulse percussive margin: `164.871272 dB`
+- stationary-noise residual margin: `12.925746 dB`
+- exact component lengths, finite samples, exact binary stage partitions, and
+  repeated component hashes: pass
+
+No component was stretched. Production routing, cache identity, linked stereo,
+pitch/dynamic routing, RealtimePreview, and product surfaces are unchanged.
+
 ## Batch 29.6E
 
 If separation passes:
@@ -100,4 +119,6 @@ move component timelines to rescue the first proof.
 
 ## Next Task
 
-Implement Batch 29.6D separation and source reconstruction only.
+Implement Batch 29.6E additive fixed-ratio mono TSM only. Use the frozen
+component processors and one global ratio/target length. Run the complete
+`60`-render mono gate before opening linked stereo.
