@@ -1,7 +1,7 @@
 # g10 Milestones
 
 Status: active
-Updated: 2026-07-09
+Updated: 2026-07-10
 
 ## Why this generation matters now
 
@@ -25,12 +25,12 @@ implementation remains Signal-owned.
   Objective follow-up classifies the grain as excess fast spectral movement,
   not confirmed added sideband energy. Broad vocal-envelope evidence shows no
   current Signal formant failure, but exterior-step evidence isolates a
-  fixed-ratio tail discontinuity. Source-endpoint anchoring is regression-free
-  but fixes too few loud tails. A bounded silence-target control closes all
-  objective exterior-step targets without measured regressions, but its local
-  tail correction still needs listening and linked-stereo proof. Rubber
-  Band-class promotion remains blocked on that evidence, independent
-  stereo/row-level completion, and the later structural hybrid checkpoint.
+  fixed-ratio tail discontinuity. Source, additive-zero, multiplicative-zero,
+  and centroid-selected endpoint controls failed objective reach, listening, or
+  cross-source prediction. Fixed-envelope work is closed and production stays
+  unchanged pending a different algorithm class. Rubber Band-class promotion
+  remains blocked on independent stereo/row-level completion and the structural
+  hybrid checkpoint.
 - Sustained/polyphonic long-window candidates produced useful evidence but no
   production route; the next DSP quality jump needs a structural hybrid design,
   not another one-parameter probe.
@@ -123,10 +123,10 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Run a `g10.029` mono-evidence reassessment. Consolidate accepted production
-behavior, rejected transient, tonal, and tail controls, and the unresolved
-independent stereo and row-level listening blockers. Decide whether the next
-contract-approved move is a bounded Batch 29.4 structural-hybrid plan or a
-paused external-listening gate. Do not add another endpoint control, change
-production, or open product promotion during the reassessment. Keep
-RealtimePreview source-fill and broader product integration paused.
+Start the Batch 29.4 design tranche. Map current analysis, propagation,
+synthesis, channel-link, and dynamic-ratio ownership. Freeze the
+transient/tonal classification, multiresolution window ownership, deterministic
+transition law, shared stereo peak/phase decisions, formant policy, validation
+matrix, and stop conditions before implementing a hybrid candidate. Keep the
+candidate report-only; leave production, cache identity, product promotion,
+RealtimePreview source-fill, and broader product integration unchanged.

@@ -92,11 +92,18 @@ be trustworthy before the callback contract or a structural hybrid widens.
 
 ### Batch 29.4 - Structural Hybrid Checkpoint
 
+- [x] consolidate mono evidence and separate design authority from production
+  promotion gates
 - [ ] define transient/tonal classification and multiresolution window ownership
 - [ ] define shared stereo peak/phase decisions and formant policy
 - [ ] choose the first bounded hybrid implementation batch from listening and
   measurement evidence
 - [ ] reassess `g10.028` only after actual streaming source consumption is defined
+
+Batch 29.4 is open for design and report-only candidate planning. Production
+replacement, cache-identity changes, product promotion, and realtime exposure
+remain blocked on the declared corpus gates, row-complete listening, and
+independent stereo review.
 
 ## Acceptance Criteria
 
@@ -282,12 +289,22 @@ be trustworthy before the callback contract or a structural hybrid widens.
   tail-envelope work is closed. Both controls remain report-only; production
   and cache identity remain unchanged. Findings are in
   `docs/logs/2026-07/10-g10-029-tail-local-feature-classification.md`.
+- 2026-07-10: Reassessed the complete mono and objective evidence. Two
+  structural targets are repeatable: broad identity locking causes the isolated
+  `L001` crest spike, and expansion shows excess fast spectral movement in
+  `38/40` rows. Timing drift and a fixed-ratio formant defect are not
+  established. Fixed-envelope tail work is closed. Batch 29.4 is authorized
+  for design and report-only candidate planning; row-complete listening and
+  independent stereo review still block production replacement and quality
+  claims. Decision details are in
+  `docs/logs/2026-07/10-g10-029-mono-evidence-reassessment.md`.
 
 ## Next Task
 
-Run a `g10.029` mono-evidence reassessment. Consolidate accepted production
-behavior, rejected transient, tonal, and tail controls, and the unresolved
-independent stereo and row-level listening blockers. Decide whether the next
-contract-approved move is a bounded Batch 29.4 structural-hybrid plan or a
-paused external-listening gate. Do not add another endpoint control, change
-production, or open product promotion during the reassessment.
+Start the Batch 29.4 design tranche. Map current analysis, propagation,
+synthesis, channel-link, and dynamic-ratio ownership. Freeze the
+transient/tonal classification, multiresolution window ownership, deterministic
+transition law, shared stereo peak/phase decisions, formant policy, validation
+matrix, and stop conditions before implementing a hybrid candidate. Keep the
+candidate report-only and leave production, cache identity, product promotion,
+and RealtimePreview support unchanged.
