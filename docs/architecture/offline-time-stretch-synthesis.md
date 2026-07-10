@@ -154,8 +154,21 @@ and canonical-dual solve. This keeps the frozen wavelet centres, bandwidth
 progression, channel delays, hop, and redundancy while improving numerical
 conditioning. It does not define modified coefficient phase.
 
+## Common-Grid Phase Boundary
+
+Keep both source and output coefficient fields on the proven `384`-frame grid.
+For output column `m`, sample source coefficients at the exact fractional
+coordinate `u=m/ratio`; do not move synthesis atoms or round a repeated hop.
+Interpolate magnitudes and phase derivatives, not wrapped complex samples.
+
+Each channel atom is centred at `n*384+d_k`. Estimate horizontal instantaneous
+frequency first, then transport analyzed phase back to the nominal column time
+with that frequency and the known deterministic delay `d_k`. Only these
+delay-compensated phases may form vertical differences or heap neighbors.
+Positive-frequency integration remains authoritative; canonical-dual synthesis
+mirrors the solved spectrum for real output.
+
 ## Next Task
 
-Research and contract common-grid phase derivatives, delay compensation,
-synthesis-time mapping, and real-output symmetry. Keep corpus rendering,
-linked stereo, and product routing closed.
+Implement Batch 29.6K, the common-grid phase-transport mechanism proof. Keep
+corpus rendering, linked stereo, and product routing closed.

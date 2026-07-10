@@ -73,7 +73,9 @@ implementation remains Signal-owned.
   unequal band-time lattices cannot directly use published filter-bank PGHI.
   Batch 29.6J replaces only the proof geometry with a uniform grid-decimated
   wavelet frame before phase propagation. It passes canonical-dual and control
-  gates with condition ratio `1.025819956`; linked stereo remains closed.
+  gates with condition ratio `1.025819956`. Batch 29.6K now owns exact
+  fractional source projection and delay-compensated phase transport; linked
+  stereo remains closed.
 - Offline artifacts and RealtimePreview have bounded contracts and prototype
   paths, but callback-safe preview integration and fully streaming artifact
   output remain gated until their owning source-fill/cache contracts exist.
@@ -163,5 +165,5 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Research and contract the common-grid phase mechanism. Keep corpus rendering,
-linked stereo, and product integration closed.
+Implement Batch 29.6K, the report-only common-grid phase-transport proof. Keep
+corpus rendering, linked stereo, and product integration closed.

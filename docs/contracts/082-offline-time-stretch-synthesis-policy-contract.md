@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; common-grid wavelet reconstruction proof passed
+Status: active; common-grid phase-transport proof ready
 Owner: dsp
 Updated: 2026-07-10
 Related contracts: `046`, `048`, `049`
@@ -492,6 +492,64 @@ All frozen sine, edge, impulse, noise, mixed, silence, empty, finite-value,
 endpoint, and repeat gates pass. This authorizes only a common-grid phase
 mechanism contract. It does not authorize a stretch or corpus candidate.
 
+### Rule 17: phase lives on nominal common-grid time
+
+For channel `k`, coefficient column `n` is analyzed by an atom centred at
+`t[n,k]=n*384+d[k]`, where `d[k]` is the frozen digital `(0,1)` delay. Centered
+wrapped differences along one channel estimate instantaneous angular frequency
+using the actual `384`-frame interval. The delay is constant in time and does
+not alter that horizontal derivative.
+
+Transport coefficient phase to nominal time `n*384` by subtracting
+`omega_hat[n,k]*d[k]` under Signal's analysis-filter convention. Compute
+vertical wrapped differences only between adjacent channel centres after that
+transport. Divide by the exact `15.625 Hz` centre interval. A synthetic steady
+tone must prove the compensation sign before any heap integration opens.
+
+### Rule 18: keep synthesis uniform and project source fractionally
+
+The output canonical-dual bank retains uniform `384`-frame decimation. Output
+column `m` projects to source coordinate `u=m/ratio`. Evaluate magnitudes and
+both phase derivatives by bounded linear interpolation between the adjacent
+source columns around `u`. Do not interpolate wrapped complex coefficients.
+
+Source padding supplies the two derivative neighbors at each boundary. The
+ideal fractional coordinate remains authoritative; no repeated rounded
+analysis or synthesis hop enters the mechanism. Exact target length is
+`round(source_frames*ratio)` and output padding is cropped only after complete
+canonical-dual coverage.
+
+### Rule 19: the first phase proof is synthetic and report-only
+
+Batch 29.6K integrates the interpolated delay-compensated gradient with one
+magnitude-prioritized bounded heap over the positive-frequency common grid.
+Every significant coefficient is assigned once from an adjacent time or
+frequency predecessor. Insignificant coefficients use deterministic analyzed
+phase. Canonical-dual synthesis mirrors positive-frequency bins explicitly.
+
+Test identity, `0.75x`, and `1.5x` on steady low/mid/high tones, two-tone,
+linear and exponential chirps, broadband impulse, deterministic noise, mixed
+tonal/transient content, and silence. Report:
+
+- maximum source-coordinate error and monotonicity
+- horizontal instantaneous-frequency error on steady tones
+- delay-compensated adjacent-channel phase residual
+- finite derivative and interpolation counts
+- significant/insignificant, horizontal/vertical, duplicate/missing assignment
+  counts and heap high-water
+- conjugate-symmetry error, canonical-dual residual, uncovered output samples,
+  exact length, non-finite values, and repeat hashes
+- impulse peak error from the exact projected position
+
+Require source-coordinate error at most `1e-9`, monotonicity, steady-tone
+angular-frequency error at most `1e-6` radians/sample, compensated phase
+residual at most `1e-5` radians, no duplicate or missing significant
+assignments, heap high-water within `2*1536*output_columns`, conjugate-symmetry
+error at most `1e-9`, dual residual at most `1e-8`, no uncovered or non-finite
+output, exact target length, impulse peak error at most one frame, and identical
+repeat hashes. Failure returns to research. Passing opens the unchanged 60-row
+mono corpus gate; it does not open stereo or product routing.
+
 ## Clean-Room Rule
 
 Public papers and public algorithm descriptions may inform Signal design.
@@ -500,7 +558,5 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Research and contract the common-grid phase mechanism. Define channel-delay
-compensation, derivatives, integration adjacency, synthesis-time mapping, and
-real-output symmetry before implementation. Keep corpus rendering, linked
-stereo, and all product routing closed.
+Implement Batch 29.6K, the report-only common-grid phase-transport mechanism
+proof. Keep the 60-row corpus, linked stereo, and all product routing closed.

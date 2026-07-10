@@ -178,8 +178,8 @@ rejected ownership crossfade.
 
 ## Next Task
 
-Research and contract phase processing on the passing common-grid wavelet
-transform. Do not open corpus rendering yet.
+Implement the common-grid phase-transport mechanism proof. Do not open corpus
+rendering yet.
 
 ## Frequency-Adaptive Reassessment
 
@@ -241,6 +241,32 @@ canonical dual produced condition ratio `1.025819956`, dual residual
 `6.225219e-11`, and RMS reconstruction error `5.520117e-13` on the mixed
 control. The next research question is now phase transport, not transform
 invertibility.
+
+## Common-Grid Phase Decision
+
+Time-frequency reassignment gives the needed interpretation: the time
+derivative of channel phase is local instantaneous frequency and the negative
+frequency derivative is local group delay. The frozen channel delay is a known
+linear phase term. Estimate instantaneous frequency horizontally, use it to
+transport every channel phase to the nominal common-grid time, then estimate
+vertical phase differences across aligned channels.
+
+Time stretch does not move the proven synthesis lattice. Output column `m`
+queries the source coefficient field at exact fractional coordinate
+`u=m/ratio`. Magnitude and gradient fields can be interpolated there without
+interpolating wrapped phase. Heap integration then operates on a rectangular
+output grid with the same canonical-dual synthesis geometry proven by Batch
+29.6J.
+
+This is a mechanism hypothesis, not published quality evidence. Batch 29.6K
+must prove compensation sign, derivative scale, assignment truth, impulse
+placement, symmetry, coverage, and determinism before the corpus opens.
+
+Additional primary source:
+
+| Source | Confidence | Notes |
+| --- | --- | --- |
+| [Fitz and Fulop, 2009](https://arxiv.org/abs/0903.3080) | high | Interprets phase-time derivative as local instantaneous frequency and phase-frequency derivative as group delay; Signal verifies its discrete delay sign synthetically |
 
 Additional primary sources:
 
