@@ -115,6 +115,5 @@ phase-gradient policy remains frozen.
 
 ## Next Task
 
-Implement the exact-lattice phase-gradient mono proof from Contract `082`.
-Keep transient/shape extensions, linked stereo, dynamic ratio, and product
-routing closed.
+Reassess attack placement and spectral-shape preservation after exact lattice
+failed the complete mono gate. Keep linked stereo and product routing closed.

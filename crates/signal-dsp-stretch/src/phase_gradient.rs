@@ -38,7 +38,8 @@ pub(crate) fn stretch_phase_gradient_review_mono(
 ) -> StretchPhaseGradientRender {
     let ratio = ratio.clamp(0.25, 4.0);
     let target_len = (input.len() as f64 * ratio).round() as usize;
-    let analysis_hop = (SYNTHESIS_HOP as f64 / ratio).round().max(1.0) as usize;
+    let ideal_analysis_hop = SYNTHESIS_HOP as f64 / ratio;
+    let analysis_hop = ideal_analysis_hop.round().max(1.0) as usize;
     if input.is_empty() || target_len == 0 || (ratio - 1.0).abs() < 1.0e-9 {
         let samples = input[..target_len.min(input.len())].to_vec();
         return StretchPhaseGradientRender {
@@ -49,17 +50,29 @@ pub(crate) fn stretch_phase_gradient_review_mono(
 
     let window = hann_window();
     let output_crop_start = (WINDOW_FRAMES as f64 * 0.5 * ratio).round() as usize;
-    let source_frame_count = (WINDOW_FRAMES / 2 + input.len() + WINDOW_FRAMES / 2)
-        .saturating_sub(WINDOW_FRAMES)
-        .div_ceil(analysis_hop)
-        + 1;
+    let source_frame_count = (input.len() as f64 / ideal_analysis_hop).ceil() as usize + 1;
     let output_frame_count = (output_crop_start + target_len)
         .saturating_sub(WINDOW_FRAMES)
         .div_ceil(SYNTHESIS_HOP)
         + 1;
     let frame_count = source_frame_count.max(output_frame_count).max(2);
-    let analysis = analyze(input, analysis_hop, frame_count + 2, &window);
-    let time_derivatives = time_phase_derivatives(&analysis.phases, analysis_hop);
+    let analysis_positions = (-1..=frame_count as isize)
+        .map(|frame| (frame as f64 * ideal_analysis_hop).round() as isize)
+        .collect::<Vec<_>>();
+    let render_positions = &analysis_positions[1..frame_count + 1];
+    let interval_floor = ideal_analysis_hop.floor() as usize;
+    let interval_ceiling = ideal_analysis_hop.ceil() as usize;
+    let intervals = render_positions
+        .windows(2)
+        .map(|pair| (pair[1] - pair[0]) as usize)
+        .collect::<Vec<_>>();
+    let mapping_errors = render_positions
+        .iter()
+        .enumerate()
+        .map(|(frame, position)| *position as f64 - frame as f64 * ideal_analysis_hop)
+        .collect::<Vec<_>>();
+    let analysis = analyze(input, &analysis_positions, &window);
+    let time_derivatives = time_phase_derivatives(&analysis.phases, &analysis_positions);
     let mut accumulator = EvidenceAccumulator {
         derivatives_finite: time_derivatives
             .iter()
@@ -129,6 +142,20 @@ pub(crate) fn stretch_phase_gradient_review_mono(
             window_frames: WINDOW_FRAMES,
             fft_frames: FFT_FRAMES,
             analysis_hop_frames: analysis_hop,
+            analysis_interval_floor_count: intervals
+                .iter()
+                .filter(|interval| **interval == interval_floor)
+                .count(),
+            analysis_interval_ceiling_count: intervals
+                .iter()
+                .filter(|interval| **interval == interval_ceiling)
+                .count(),
+            max_analysis_mapping_error_frames: mapping_errors
+                .iter()
+                .map(|error| error.abs())
+                .fold(0.0_f64, f64::max),
+            final_analysis_mapping_error_frames: mapping_errors.last().copied().unwrap_or(0.0),
+            analysis_positions_monotonic: render_positions.windows(2).all(|pair| pair[0] < pair[1]),
             synthesis_hop_frames: SYNTHESIS_HOP,
             synthesis_frames: frame_count,
             significant_bins: accumulator.significant_bins,
@@ -156,6 +183,11 @@ fn empty_evidence(samples: &[Sample], analysis_hop: usize) -> StretchPhaseGradie
         window_frames: WINDOW_FRAMES,
         fft_frames: FFT_FRAMES,
         analysis_hop_frames: analysis_hop,
+        analysis_interval_floor_count: 0,
+        analysis_interval_ceiling_count: 0,
+        max_analysis_mapping_error_frames: 0.0,
+        final_analysis_mapping_error_frames: 0.0,
+        analysis_positions_monotonic: true,
         synthesis_hop_frames: SYNTHESIS_HOP,
         synthesis_frames: usize::from(!samples.is_empty()),
         significant_bins: 0,

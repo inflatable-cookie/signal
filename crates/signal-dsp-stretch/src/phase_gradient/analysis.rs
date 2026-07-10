@@ -17,18 +17,22 @@ pub(super) fn hann_window() -> Vec<f32> {
         .collect()
 }
 
-pub(super) fn analyze(input: &[Sample], hop: usize, frames: usize, window: &[f32]) -> Analysis {
-    let padded_len = (frames - 1) * hop + FFT_FRAMES;
+pub(super) fn analyze(input: &[Sample], positions: &[isize], window: &[f32]) -> Analysis {
+    let shift = positions[0].unsigned_abs();
+    let starts = positions
+        .iter()
+        .map(|position| (*position + shift as isize) as usize)
+        .collect::<Vec<_>>();
+    let padded_len = starts[starts.len() - 1] + FFT_FRAMES;
     let mut padded = vec![0.0_f32; padded_len];
-    let source_start = hop + WINDOW_FRAMES / 2;
+    let source_start = shift + WINDOW_FRAMES / 2;
     padded[source_start..source_start + input.len()].copy_from_slice(input);
     let mut planner = FftPlanner::<f32>::new();
     let forward = planner.plan_fft_forward(FFT_FRAMES);
-    let mut spectra = Vec::with_capacity(frames);
-    let mut phases = Vec::with_capacity(frames);
-    let mut magnitudes = Vec::with_capacity(frames);
-    for frame in 0..frames {
-        let start = frame * hop;
+    let mut spectra = Vec::with_capacity(starts.len());
+    let mut phases = Vec::with_capacity(starts.len());
+    let mut magnitudes = Vec::with_capacity(starts.len());
+    for start in starts {
         let mut spectrum = vec![Complex32::new(0.0, 0.0); FFT_FRAMES];
         for index in 0..WINDOW_FRAMES {
             spectrum[index].re = padded[start + index] * window[index];
@@ -45,17 +49,21 @@ pub(super) fn analyze(input: &[Sample], hop: usize, frames: usize, window: &[f32
     }
 }
 
-pub(super) fn time_phase_derivatives(phases: &[Vec<f32>], hop: usize) -> Vec<Vec<f32>> {
+pub(super) fn time_phase_derivatives(phases: &[Vec<f32>], positions: &[isize]) -> Vec<Vec<f32>> {
     let mut derivatives = vec![vec![0.0; BINS]; phases.len()];
     for frame in 1..phases.len() - 1 {
         for bin in 0..BINS {
-            let expected = std::f32::consts::TAU * bin as f32 * hop as f32 / FFT_FRAMES as f32;
-            let backward = wrap_phase(phases[frame][bin] - phases[frame - 1][bin] - expected)
-                / hop as f32
-                + std::f32::consts::TAU * bin as f32 / FFT_FRAMES as f32;
-            let forward = wrap_phase(phases[frame + 1][bin] - phases[frame][bin] - expected)
-                / hop as f32
-                + std::f32::consts::TAU * bin as f32 / FFT_FRAMES as f32;
+            let backward_hop = (positions[frame] - positions[frame - 1]) as f32;
+            let forward_hop = (positions[frame + 1] - positions[frame]) as f32;
+            let bin_rate = std::f32::consts::TAU * bin as f32 / FFT_FRAMES as f32;
+            let backward =
+                wrap_phase(phases[frame][bin] - phases[frame - 1][bin] - bin_rate * backward_hop)
+                    / backward_hop
+                    + std::f32::consts::TAU * bin as f32 / FFT_FRAMES as f32;
+            let forward =
+                wrap_phase(phases[frame + 1][bin] - phases[frame][bin] - bin_rate * forward_hop)
+                    / forward_hop
+                    + std::f32::consts::TAU * bin as f32 / FFT_FRAMES as f32;
             derivatives[frame][bin] = 0.5 * (backward + forward);
         }
     }

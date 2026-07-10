@@ -93,6 +93,13 @@ fn assert_kernel_gate(input: &[Sample], require_horizontal: bool, require_vertic
     );
     assert!(evidence.derivatives_finite);
     assert!(evidence.all_samples_finite);
+    assert!(evidence.analysis_positions_monotonic);
+    assert!(evidence.max_analysis_mapping_error_frames <= 0.5);
+    assert!(evidence.final_analysis_mapping_error_frames.abs() <= 0.5);
+    assert_eq!(
+        evidence.analysis_interval_floor_count + evidence.analysis_interval_ceiling_count,
+        evidence.synthesis_frames - 1
+    );
     assert!(evidence.synthesis_positions_monotonic);
     assert_eq!(evidence.duplicate_assignments, 0);
     assert_eq!(evidence.missing_assignments, 0);

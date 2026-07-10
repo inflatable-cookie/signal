@@ -220,17 +220,18 @@ independent stereo review.
 
 ### Batch 29.6H - Exact-Lattice Phase-Gradient Mono Gate
 
-- [ ] replace the repeated rounded analysis hop with absolute positions
+- [x] replace the repeated rounded analysis hop with absolute positions
   `A_n = round(n * 1024 / ratio)` while retaining the frozen synthesis grid
-- [ ] normalize backward and forward phase differences by their actual adjacent
+- [x] normalize backward and forward phase differences by their actual adjacent
   analysis intervals before centered averaging
-- [ ] report interval floor/ceiling counts, maximum/final mapping error,
+- [x] report interval floor/ceiling counts, maximum/final mapping error,
   monotonicity, phase assignment, heap, symmetry, coverage, and hashes
-- [ ] pass the Contract `082` `0.5`-frame mapping gate on identity,
+- [x] pass the Contract `082` `0.5`-frame mapping gate on identity,
   compression, expansion, sine, chirp, impulse, two-tone, and silence controls
-- [ ] run the unchanged 60-row mono and comparator gate without transient,
+- [x] run the unchanged 60-row mono and comparator gate without transient,
   shape, geometry, tolerance, phase, or heap tuning
 - [ ] open Batch 29.7 only after every complete mono gate passes
+  - closed: complete gate passed `3/60`
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -545,9 +546,12 @@ independent stereo review.
   analysis centres and interval-aware derivatives before any new transient or
   shape mechanism. Evidence is in
   `docs/logs/2026-07/10-g10-029-exact-lattice-reassessment.md`.
+- 2026-07-10: Batch 29.6H mapping passed with `0.4` frame maximum error, but the
+  mono candidate is rejected: `L001` improved `2.379387 dB`, timing worsened
+  `17.789744` frames, integrity passed `57/60`, replica `27/48`, tonal `57/60`,
+  and combined `3/60`. Linked stereo remains closed.
 
 ## Next Task
 
-Implement Batch 29.6H's exact-lattice phase-gradient mono proof. Do not add
-transient or shape processing or open linked stereo. Keep production, cache,
-pitch/dynamic, product, and RealtimePreview routing closed.
+Return to research for attack-placement and spectral-shape preservation. Do not
+tune exact lattice or open linked stereo. Keep product routing closed.

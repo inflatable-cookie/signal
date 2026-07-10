@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; exact-lattice phase-gradient proof frozen
+Status: active; exact-lattice phase-gradient candidate rejected
 Owner: dsp
 Updated: 2026-07-10
 Related contracts: `046`, `048`, `049`
@@ -367,6 +367,19 @@ Speech-specific shape-invariant processing remains deferred because it adds
 sinusoidal/noise classification, correlation, envelope, and balance policy.
 Peak-local transient phase reinitialization remains rejected by Batch 29.6C.
 
+## 2026-07-10 Exact-Lattice Proof Outcome
+
+Batch 29.6H is rejected without tuning. Mapping passed `60/60` with maximum
+analysis-centre error `0.4` frame, but the complete gate did not improve enough:
+`L001` crest improvement was `2.379387 dB`, timing worsened `17.789744` frames
+on average and `151.25` frames worst-case, integrity passed `57/60`, replica
+protection passed `27/48`, and combined passed `3/60`. Tonal regression-free
+improved to `57/60`; expansion residual, unsupported-bin, and fast-movement
+means remained better than the current kernel.
+
+Exact lattice removes a real mapping error but does not explain the dominant
+event-placement defect. Do not tune its schedule or reopen linked stereo.
+
 ## Clean-Room Rule
 
 Public papers and public algorithm descriptions may inform Signal design.
@@ -375,6 +388,6 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Implement Batch 29.6H's exact-lattice whole-band phase-gradient mono proof.
-Keep transient/shape extensions, linked stereo, production routing, cache
-identity, pitch/dynamic, RealtimePreview, and product integration closed.
+Return to research for a clean-room attack-placement and spectral-shape policy
+that preserves whole-band phase-gradient tonal gains. Keep linked stereo and
+all product routing closed.

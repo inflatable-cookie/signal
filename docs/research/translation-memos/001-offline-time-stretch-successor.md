@@ -178,8 +178,8 @@ rejected ownership crossfade.
 
 ## Next Task
 
-Implement Contract `082`'s exact-lattice phase-gradient proof. Do not add
-transient or shape processing and do not open linked stereo.
+Return to research after exact lattice failed to close timing, replica, and
+shape gates. Do not tune it or open linked stereo.
 
 ## Full Phase-Gradient Mono Outcome
 
@@ -231,6 +231,14 @@ Röbel's peak-local transient method is also not reopened: Signal already tested
 and rejected its group-delay phase-reinitialization family on the fixed map.
 Only if exact-lattice phase gradient retains the tonal/comparator gains and
 still fails shape may a separately contracted shape-preservation proof open.
+
+## Exact-Lattice Outcome
+
+Exact mapping passed but the candidate remained rejected. It improved `L001`
+crest to `2.379387 dB` and tonal regression-free to `57/60`, but timing worsened
+`17.789744` frames, replica protection passed `27/48`, and combined remained
+`3/60`. Lattice drift was a real confound, not the dominant defect. The next
+research decision may now address attack placement and shape directly.
 
 Additional primary sources:
 

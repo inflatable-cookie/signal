@@ -9,6 +9,16 @@ pub struct StretchPhaseGradientEvidence {
     pub fft_frames: usize,
     /// Ratio-derived analysis hop.
     pub analysis_hop_frames: usize,
+    /// Adjacent analysis intervals equal to the ideal interval floor.
+    pub analysis_interval_floor_count: usize,
+    /// Adjacent analysis intervals equal to the ideal interval ceiling.
+    pub analysis_interval_ceiling_count: usize,
+    /// Largest absolute analysis-centre error from the ideal source map.
+    pub max_analysis_mapping_error_frames: f64,
+    /// Final analysis-centre error from the ideal source map.
+    pub final_analysis_mapping_error_frames: f64,
+    /// Whether absolute analysis centres increase strictly.
+    pub analysis_positions_monotonic: bool,
     /// Frozen synthesis hop.
     pub synthesis_hop_frames: usize,
     /// Number of synthesized STFT frames.
