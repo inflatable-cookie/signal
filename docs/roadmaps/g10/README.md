@@ -34,8 +34,11 @@ implementation remains Signal-owned.
 - Sustained/polyphonic long-window candidates produced useful evidence but no
   production route. The structural hybrid is now frozen as short transient,
   current mixed, and long tonal ownership with continuous state and shared
-  stereo decisions. Implementation begins with a bit-exact kernel seam and
-  report-only classifier/transition traces, not another one-parameter probe.
+  stereo decisions. Its first fixed-ratio mono render is rejected: conservative
+  transitions applied only `56/2024` ownership spans, left the `L001` crest
+  unchanged, regressed `1.25x` static residual, and passed only `50/60`
+  tonal/combined rows. Linked stereo remains closed pending structural
+  reassessment.
 - Offline artifacts and RealtimePreview have bounded contracts and prototype
   paths, but callback-safe preview integration and fully streaming artifact
   output remain gated until their owning source-fill/cache contracts exist.
@@ -125,11 +128,9 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Start Batch 29.6. Render the short independent-bin transient branch, current
-mixed branch, and long identity-lock/reset tonal branch continuously for one
-fixed-ratio mono input. Apply only the frozen owner and transition schedule,
-including correlation and normalization rejection. Keep the result report-only
-until it passes the local crest, corpus timing, tonal movement, static-spectrum,
-and full-render combined gates. Leave production, cache identity, product
-promotion, pitch/dynamic routing, RealtimePreview source-fill, and broader
-product integration unchanged.
+Stop for structural reassessment after the rejected Batch 29.6 mono candidate.
+Determine whether ownership-compatible branch alignment can avoid broad
+fallback or whether the transient target needs a different synthesis
+mechanism. Do not tune the frozen classifier thresholds, open linked stereo,
+or change production, cache identity, pitch/dynamic routing, RealtimePreview,
+or broader product integration.

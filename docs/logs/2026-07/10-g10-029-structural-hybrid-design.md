@@ -179,6 +179,7 @@ Linked-stereo gate:
 
 ## Next Task
 
-Start Batch 29.6. Render all fixed-ratio mono branches continuously and apply
-only the frozen owner and transition schedule. Keep the output report-only and
-run the complete mono candidate gate before linked stereo opens.
+The first Batch 29.6 candidate was rejected by the frozen mono gate. Re-enter
+structural reassessment; do not tune classifier constants or open linked
+stereo. See
+`docs/logs/2026-07/10-g10-029-fixed-ratio-mono-hybrid-rejection.md`.

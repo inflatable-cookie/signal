@@ -12,6 +12,8 @@ use std::time::Instant;
 mod alloc_tracker;
 #[path = "stretch-corpus-report/formant_boundary.rs"]
 mod formant_boundary;
+#[path = "stretch-corpus-report/hybrid_review.rs"]
+mod hybrid_review;
 #[path = "stretch-corpus-report/listening_pack.rs"]
 mod listening_pack;
 #[path = "stretch-corpus-report/tail_anchor.rs"]
@@ -40,6 +42,7 @@ use signal_dsp_stretch::{
 };
 
 use formant_boundary::format_external_benchmark_formant_boundary_line;
+use hybrid_review::HybridReviewEvidence;
 use symphonia::core::{
     audio::SampleBuffer as SymphoniaSampleBuffer,
     codecs::{DecoderOptions as SymphoniaDecoderOptions, CODEC_TYPE_NULL},
@@ -2630,6 +2633,9 @@ fn format_external_benchmark_quality_metrics(
             OfflineHighQualityStretcher::with_path(render.ratio, signal_path);
         let multiplicative_tail_fade_output = multiplicative_tail_fade_stretcher
             .stretch_multiplicative_tail_fade_review_mono(source_mono);
+        let mut hybrid_stretcher =
+            OfflineHighQualityStretcher::with_path(render.ratio, signal_path);
+        let hybrid_render = hybrid_stretcher.stretch_hybrid_review_mono(source_mono);
         let tail_local_feature_line = format_tail_local_feature_line(
             &render.case_id,
             &source.source_path,
@@ -2648,6 +2654,8 @@ fn format_external_benchmark_quality_metrics(
             measure_tonal_texture(source_mono, &zero_tail_anchor_output, render.ratio);
         let multiplicative_tail_fade_tonal_texture =
             measure_tonal_texture(source_mono, &multiplicative_tail_fade_output, render.ratio);
+        let hybrid_tonal_texture =
+            measure_tonal_texture(source_mono, &hybrid_render.samples, render.ratio);
         let external_tonal_texture =
             measure_tonal_texture(source_mono, &external_audio.mono_samples, render.ratio);
         let draft_tonal_texture = measure_tonal_texture(source_mono, &draft_output, render.ratio);
@@ -2700,6 +2708,12 @@ fn format_external_benchmark_quality_metrics(
         let multiplicative_tail_fade_formant_boundary = measure_formant_boundary(
             source_mono,
             &multiplicative_tail_fade_output,
+            render.ratio,
+            source_audio.sample_rate_hz,
+        );
+        let hybrid_formant_boundary = measure_formant_boundary(
+            source_mono,
+            &hybrid_render.samples,
             render.ratio,
             source_audio.sample_rate_hz,
         );
@@ -2776,6 +2790,13 @@ fn format_external_benchmark_quality_metrics(
         let multiplicative_tail_fade_transient_detail = measure_transient_detail(
             &source_mono,
             &multiplicative_tail_fade_output,
+            render.ratio,
+            QUALITY_METRIC_WINDOW_SIZE,
+            QUALITY_METRIC_HOP_SIZE,
+        );
+        let hybrid_transient_detail = measure_transient_detail(
+            source_mono,
+            &hybrid_render.samples,
             render.ratio,
             QUALITY_METRIC_WINDOW_SIZE,
             QUALITY_METRIC_HOP_SIZE,
@@ -2913,6 +2934,13 @@ fn format_external_benchmark_quality_metrics(
             RENDER_INTEGRITY_ENDPOINT_SOURCE_FRAMES,
             RENDER_INTEGRITY_SILENCE_THRESHOLD,
         );
+        let hybrid_integrity = measure_stretch_render_integrity(
+            source_mono,
+            &hybrid_render.samples,
+            render.ratio,
+            RENDER_INTEGRITY_ENDPOINT_SOURCE_FRAMES,
+            RENDER_INTEGRITY_SILENCE_THRESHOLD,
+        );
         let signal_integrity_assessment =
             signal_dsp_stretch::assess_stretch_render_integrity(signal_integrity, integrity_limits);
         let external_integrity_assessment = signal_dsp_stretch::assess_stretch_render_integrity(
@@ -2933,6 +2961,8 @@ fn format_external_benchmark_quality_metrics(
                 multiplicative_tail_fade_integrity,
                 integrity_limits,
             );
+        let hybrid_integrity_assessment =
+            signal_dsp_stretch::assess_stretch_render_integrity(hybrid_integrity, integrity_limits);
         let tail_anchor_line = TailAnchorReviewEvidence {
             control_id: "source",
             case_id: &render.case_id,
@@ -2988,6 +3018,63 @@ fn format_external_benchmark_quality_metrics(
             candidate_transient: multiplicative_tail_fade_transient_detail,
             candidate_integrity: multiplicative_tail_fade_integrity,
             candidate_integrity_passed: multiplicative_tail_fade_integrity_assessment.passed,
+        }
+        .format_report_line();
+        let hybrid_anchor_events = (signal_transient_detail.matched_transients > 0).then(|| {
+            let anchor = signal_transient_detail.max_crest_input_frame;
+            let current = measure_transient_event_detail(
+                source_mono,
+                &signal_output,
+                render.ratio,
+                anchor,
+                QUALITY_METRIC_WINDOW_SIZE,
+                QUALITY_METRIC_HOP_SIZE,
+            )
+            .expect("current matched transient anchor must remain measurable");
+            let candidate = measure_transient_event_detail(
+                source_mono,
+                &hybrid_render.samples,
+                render.ratio,
+                anchor,
+                QUALITY_METRIC_WINDOW_SIZE,
+                QUALITY_METRIC_HOP_SIZE,
+            )
+            .expect("hybrid matched transient anchor must remain measurable");
+            (current, candidate)
+        });
+        let hybrid_line = HybridReviewEvidence {
+            case_id: &render.case_id,
+            source_path: &source.source_path,
+            ratio: render.ratio,
+            render: &hybrid_render,
+            current_tonal: signal_tonal_texture,
+            candidate_tonal: hybrid_tonal_texture,
+            current_formant: signal_formant_boundary,
+            candidate_formant: hybrid_formant_boundary,
+            current_transient: signal_transient_detail,
+            candidate_transient: hybrid_transient_detail,
+            anchor_events: hybrid_anchor_events,
+            candidate_integrity: hybrid_integrity,
+            candidate_integrity_passed: hybrid_integrity_assessment.passed,
+        }
+        .format_report_line();
+        let hybrid_combined_gate_line = TailAnchorReviewEvidence {
+            control_id: "structural_hybrid",
+            case_id: &render.case_id,
+            source_path: &source.source_path,
+            ratio: render.ratio,
+            current_output: &signal_output,
+            candidate_output: &hybrid_render.samples,
+            current_boundary: signal_formant_boundary,
+            candidate_boundary: hybrid_formant_boundary,
+            current_tonal: signal_tonal_texture,
+            candidate_tonal: hybrid_tonal_texture,
+            current_formant: signal_formant_boundary,
+            candidate_formant: hybrid_formant_boundary,
+            current_transient: signal_transient_detail,
+            candidate_transient: hybrid_transient_detail,
+            candidate_integrity: hybrid_integrity,
+            candidate_integrity_passed: hybrid_integrity_assessment.passed,
         }
         .format_report_line();
         let mut feature_delta_line = None;
@@ -3537,6 +3624,8 @@ fn format_external_benchmark_quality_metrics(
         lines.push(tail_anchor_line);
         lines.push(zero_tail_anchor_line);
         lines.push(multiplicative_tail_fade_line);
+        lines.push(hybrid_line);
+        lines.push(hybrid_combined_gate_line);
         lines.push(tail_local_feature_line);
         if let Some(line) = feature_delta_line {
             lines.push(line);

@@ -6,11 +6,17 @@ use crate::{
     DEFAULT_WINDOW_SIZE,
 };
 
+mod render;
 mod transition;
 
 #[cfg(test)]
 use transition::nearest_owner;
 use transition::schedule_transitions;
+
+pub(crate) use render::build_hybrid_render;
+pub use render::{
+    StretchHybridRender, StretchHybridTransitionDecision, StretchHybridTransitionRejection,
+};
 
 const TRANSIENT_FLUX_RATIO: f64 = 0.30;
 const TRANSIENT_ENERGY_RATIO: f64 = 1.20;

@@ -115,11 +115,13 @@ independent stereo review.
 
 ### Batch 29.6 - Fixed-Ratio Mono Hybrid
 
-- [ ] run the short transient, current mixed, and long tonal branches with
+- [x] run the short transient, current mixed, and long tonal branches with
   continuous state
-- [ ] apply only the frozen ownership and transition schedule
+- [x] apply only the frozen ownership and transition schedule
 - [ ] pass the local crest, corpus timing, tonal movement, static spectrum, and
   full-render combined gates
+  - first frozen candidate rejected: unchanged `L001` crest, `1.25x` static
+    residual regression, and `50/60` tonal/combined passes
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -348,13 +350,19 @@ independent stereo review.
   existing `48` god-file and `5` attention-marker baseline after module
   splitting. Evidence is in
   `docs/logs/2026-07/10-g10-029-hybrid-kernel-seam.md`.
+- 2026-07-10: Measured the first Batch 29.6 fixed-ratio mono hybrid. Continuous
+  branches and conservative whole-span transition fallback applied only `56`
+  of `2024` ownership spans. The `L001` crest stayed at `5.655483 dB`, the
+  `1.25x` static residual regressed, and tonal/combined gates passed `50/60`.
+  The candidate is rejected, linked stereo stays closed, and production is
+  unchanged. Evidence and the reassessment boundary are in
+  `docs/logs/2026-07/10-g10-029-fixed-ratio-mono-hybrid-rejection.md`.
 
 ## Next Task
 
-Start Batch 29.6. Render the short independent-bin transient branch, current
-mixed branch, and long identity-lock/reset tonal branch continuously for one
-fixed-ratio mono input. Apply only the frozen owner and transition schedule,
-including correlation and normalization rejection. Keep the result report-only
-until it passes the local crest, corpus timing, tonal movement, static-spectrum,
-and full-render combined gates. Leave production, cache identity, product
-promotion, pitch/dynamic routing, and RealtimePreview support unchanged.
+Stop for structural reassessment after the rejected Batch 29.6 candidate.
+Determine whether ownership-compatible branch alignment can avoid broad
+fallback or whether the transient target needs a different synthesis
+mechanism. Do not tune the frozen classifier thresholds, open linked stereo,
+or change production, cache identity, product promotion, pitch/dynamic routing,
+or RealtimePreview support.

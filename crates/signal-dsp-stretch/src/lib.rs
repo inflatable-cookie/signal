@@ -99,7 +99,9 @@ pub use corpus_report::{
 };
 pub use formant_boundary::{measure_formant_boundary, StretchFormantBoundaryMeasurement};
 pub use hybrid_trace::{
-    StretchHybridFrameTrace, StretchHybridOwner, StretchHybridTrace, StretchHybridTransitionTrace,
+    StretchHybridFrameTrace, StretchHybridOwner, StretchHybridRender, StretchHybridTrace,
+    StretchHybridTransitionDecision, StretchHybridTransitionRejection,
+    StretchHybridTransitionTrace,
 };
 pub use promotion::{
     current_synthetic_offline_high_quality_promotion_receipt, StretchProductQualityEvidence,
@@ -2238,6 +2240,17 @@ impl OfflineHighQualityStretcher {
         let current_output = self.stretch_mono(input);
         hybrid_trace::build_hybrid_trace(input, &current_output, self.ratio)
     }
+
+    /// Render the report-only fixed-ratio mono structural-hybrid candidate.
+    ///
+    /// The candidate uses the frozen classifier and rejects unsafe ownership
+    /// spans back to the current path. Product routing and cache identity never
+    /// select this method.
+    #[doc(hidden)]
+    pub fn stretch_hybrid_review_mono(&mut self, input: &[Sample]) -> StretchHybridRender {
+        let mixed = self.stretch_mono(input);
+        hybrid_trace::build_hybrid_render(input, &mixed, self.ratio)
+    }
 }
 
 impl TimeStretcher for OfflineHighQualityStretcher {
@@ -3814,6 +3827,23 @@ mod tests {
         assert_eq!(trace.input_frames, input.len());
         assert_eq!(trace.output_frames, before.len());
         assert!(!trace.frames.is_empty());
+    }
+
+    #[test]
+    fn hybrid_render_review_is_report_only_deterministic_and_exact_length() {
+        let input = masked_soft_attack_probe(0.35);
+        let ratio = 1.5;
+        let mut first = OfflineHighQualityStretcher::new(ratio);
+        let mut repeated = OfflineHighQualityStretcher::new(ratio);
+        let render = first.stretch_hybrid_review_mono(&input);
+        let repeated_render = repeated.stretch_hybrid_review_mono(&input);
+
+        assert_eq!(render, repeated_render);
+        assert_eq!(
+            render.samples.len(),
+            (input.len() as f64 * ratio).round() as usize
+        );
+        assert_eq!(first.stretch_mono(&input), repeated.stretch_mono(&input));
     }
 
     #[test]
