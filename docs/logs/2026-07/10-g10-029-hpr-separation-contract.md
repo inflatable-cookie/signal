@@ -1,7 +1,7 @@
 # g10.029 H/R/P Separation Contract
 
 Date: 2026-07-10
-Status: Batch 29.6D passed; Batch 29.6E open
+Status: Batch 29.6D passed; Batch 29.6E rejected
 Contract: `082`
 
 ## Problem
@@ -119,6 +119,6 @@ move component timelines to rescue the first proof.
 
 ## Next Task
 
-Implement Batch 29.6E additive fixed-ratio mono TSM only. Use the frozen
-component processors and one global ratio/target length. Run the complete
-`60`-render mono gate before opening linked stereo.
+Stop implementation for synthesis-policy reassessment. Batch 29.6E failed the
+complete mono gate and linked stereo remains closed. See
+`docs/logs/2026-07/10-g10-029-hpr-additive-rejection.md`.

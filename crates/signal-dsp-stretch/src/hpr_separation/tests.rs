@@ -82,6 +82,42 @@ fn hpr_separation_assigns_stationary_noise_to_residual() {
     assert_margin(review.evidence.residual.dominance_margin_db);
 }
 
+#[test]
+fn hpr_additive_identity_is_bit_exact() {
+    let input = mixed_control(24_000);
+    let render = stretch_hpr_additive_review_mono(&input, SAMPLE_RATE, 1.0);
+
+    assert_eq!(render.samples, input);
+    assert!(render.component_lengths_match);
+    assert!(render.percussive_positions_monotonic);
+    assert_eq!(render.percussive_uncovered_output_frames, 0);
+    assert!(!render.hidden_component_gain_applied);
+}
+
+#[test]
+fn hpr_additive_render_is_deterministic_exact_length_and_additive() {
+    let input = mixed_control(24_000);
+    for ratio in [0.75, 1.25, 1.5] {
+        let first = stretch_hpr_additive_review_mono(&input, SAMPLE_RATE, ratio);
+        let repeated = stretch_hpr_additive_review_mono(&input, SAMPLE_RATE, ratio);
+        let target_len = (input.len() as f64 * ratio).round() as usize;
+
+        assert_eq!(first, repeated);
+        assert_eq!(first.samples.len(), target_len);
+        assert!(first.component_lengths_match);
+        assert!(first.percussive_positions_monotonic);
+        assert_eq!(first.percussive_uncovered_output_frames, 0);
+        assert!(!first.hidden_component_gain_applied);
+        assert!(first.samples.iter().all(|sample| sample.is_finite()));
+        for index in 0..target_len {
+            assert_eq!(
+                first.samples[index],
+                first.harmonic[index] + first.residual[index] + first.percussive[index]
+            );
+        }
+    }
+}
+
 fn assert_margin(margin_db: f64) {
     assert!(margin_db >= 12.0, "ownership margin was {margin_db:.3} dB");
 }

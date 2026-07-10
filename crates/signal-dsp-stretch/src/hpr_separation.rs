@@ -1,13 +1,21 @@
 use signal_primitives::{Sample, SampleRate};
 
+mod ola;
 mod stft;
 #[cfg(test)]
 mod tests;
 mod types;
 
+use ola::normalized_ola_time_stretch;
 use stft::{binary_median_stage, stage_config};
 pub use types::{
-    StretchHprComponentEvidence, StretchHprSeparationEvidence, StretchHprSeparationReview,
+    StretchHprAdditiveRender, StretchHprComponentEvidence, StretchHprSeparationEvidence,
+    StretchHprSeparationReview,
+};
+
+use crate::{
+    phase_vocoder::{phase_locked_phase_vocoder, transient_reset_phase_vocoder},
+    stretch_to_exact_mono, DEFAULT_ANALYSIS_HOP, DEFAULT_WINDOW_SIZE,
 };
 
 const LONG_WINDOW_SECONDS: f64 = 0.186;
@@ -88,6 +96,108 @@ pub(crate) fn separate_hpr_review_mono(
         percussive,
         evidence,
     }
+}
+
+pub(crate) fn stretch_hpr_additive_review_mono(
+    input: &[Sample],
+    sample_rate: SampleRate,
+    ratio: f64,
+) -> StretchHprAdditiveRender {
+    let separation = separate_hpr_review_mono(input, sample_rate);
+    let target_len = (input.len() as f64 * ratio).round() as usize;
+    if input.is_empty() || target_len == 0 {
+        return StretchHprAdditiveRender::empty(separation.evidence);
+    }
+    let source_component_peaks = [
+        peak(&separation.harmonic),
+        peak(&separation.residual),
+        peak(&separation.percussive),
+    ];
+
+    let (harmonic, residual, percussive, percussive_positions, percussive_uncovered) =
+        if (ratio - 1.0).abs() < 1.0e-9 {
+            (
+                separation.harmonic,
+                separation.residual,
+                separation.percussive,
+                Vec::new(),
+                0,
+            )
+        } else {
+            let harmonic = stretch_to_exact_mono(
+                &separation.harmonic,
+                target_len,
+                separation.evidence.long_window_frames,
+                separation.evidence.long_hop_frames,
+                phase_locked_phase_vocoder,
+            );
+            let residual = stretch_to_exact_mono(
+                &separation.residual,
+                target_len,
+                DEFAULT_WINDOW_SIZE,
+                DEFAULT_ANALYSIS_HOP,
+                transient_reset_phase_vocoder,
+            );
+            let percussive = normalized_ola_time_stretch(
+                &separation.percussive,
+                target_len,
+                ratio,
+                separation.evidence.short_window_frames,
+                separation.evidence.short_hop_frames,
+            );
+            (
+                harmonic,
+                residual,
+                percussive.samples,
+                percussive.synthesis_positions,
+                percussive.uncovered_output_frames,
+            )
+        };
+    let mut samples = Vec::with_capacity(target_len);
+    for index in 0..target_len {
+        samples.push(harmonic[index] + residual[index] + percussive[index]);
+    }
+    if (ratio - 1.0).abs() < 1.0e-9 {
+        samples.copy_from_slice(input);
+    }
+    let component_lengths_match = harmonic.len() == target_len
+        && residual.len() == target_len
+        && percussive.len() == target_len;
+    let percussive_positions_monotonic = percussive_positions
+        .windows(2)
+        .all(|pair| pair[0] <= pair[1]);
+    let harmonic_peak_growth_db = peak_growth_db(source_component_peaks[0], peak(&harmonic));
+    let residual_peak_growth_db = peak_growth_db(source_component_peaks[1], peak(&residual));
+    let percussive_peak_growth_db = peak_growth_db(source_component_peaks[2], peak(&percussive));
+    let recombination_peak_growth_db = peak_growth_db(peak(input), peak(&samples));
+
+    StretchHprAdditiveRender {
+        samples,
+        harmonic,
+        residual,
+        percussive,
+        separation: separation.evidence,
+        percussive_synthesis_positions: percussive_positions,
+        percussive_uncovered_output_frames: percussive_uncovered,
+        percussive_positions_monotonic,
+        component_lengths_match,
+        harmonic_peak_growth_db,
+        residual_peak_growth_db,
+        percussive_peak_growth_db,
+        recombination_peak_growth_db,
+        hidden_component_gain_applied: false,
+    }
+}
+
+fn peak(samples: &[Sample]) -> f64 {
+    samples
+        .iter()
+        .map(|sample| f64::from(sample.abs()))
+        .fold(0.0_f64, f64::max)
+}
+
+fn peak_growth_db(input_peak: f64, output_peak: f64) -> f64 {
+    20.0 * (output_peak.max(1.0e-12) / input_peak.max(1.0e-12)).log10()
 }
 
 struct ReconstructionError {

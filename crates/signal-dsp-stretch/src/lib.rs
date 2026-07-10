@@ -100,7 +100,8 @@ pub use corpus_report::{
 };
 pub use formant_boundary::{measure_formant_boundary, StretchFormantBoundaryMeasurement};
 pub use hpr_separation::{
-    StretchHprComponentEvidence, StretchHprSeparationEvidence, StretchHprSeparationReview,
+    StretchHprAdditiveRender, StretchHprComponentEvidence, StretchHprSeparationEvidence,
+    StretchHprSeparationReview,
 };
 pub use hybrid_trace::{
     StretchAdaptiveTimelineRender, StretchFixedMapPeakEventTrace, StretchFixedMapPeakRegionTrace,
@@ -2298,6 +2299,20 @@ impl OfflineHighQualityStretcher {
         sample_rate: SampleRate,
     ) -> StretchHprSeparationReview {
         hpr_separation::separate_hpr_review_mono(input, sample_rate)
+    }
+
+    /// Render the report-only additive H/R/P fixed-ratio mono candidate.
+    ///
+    /// Harmonic, residual, and percussive components use the fixed processors
+    /// from Contract 082 under one ratio and exact target length. Product
+    /// routing and cache identity never select this method.
+    #[doc(hidden)]
+    pub fn stretch_hpr_additive_review_mono(
+        &self,
+        input: &[Sample],
+        sample_rate: SampleRate,
+    ) -> StretchHprAdditiveRender {
+        hpr_separation::stretch_hpr_additive_review_mono(input, sample_rate, self.ratio)
     }
 }
 

@@ -85,6 +85,6 @@ source reconstruction before component TSM opens.
 
 ## Next Task
 
-Start the report-only additive H/R/P fixed-ratio mono proof. The separation gate
-has passed; use its frozen masks and component processors under one global ratio
-and exact target length. Keep linked stereo and production routing closed.
+Reassess the offline synthesis policy after the additive H/R/P mono proof
+failed timing, integrity, replica, static-spectrum, and combined gates. Do not
+tune the rejected component mechanism or open linked stereo.

@@ -56,7 +56,9 @@ implementation remains Signal-owned.
   family: iterative harmonic/residual/percussive separation. Batch 29.6D now
   passes exact additive source reconstruction and the three `12 dB` synthetic
   ownership gates without tuning. The report-only
-  long-PV/residual-PV/short-OLA mono candidate is open in Batch 29.6E.
+  long-PV/residual-PV/short-OLA mono candidate then passed its anchored crest
+  target but failed timing, integrity, replica, static-spectrum, and combined
+  gates. Batch 29.6E is rejected and linked stereo remains closed.
 - Offline artifacts and RealtimePreview have bounded contracts and prototype
   paths, but callback-safe preview integration and fully streaming artifact
   output remain gated until their owning source-fill/cache contracts exist.
@@ -146,7 +148,7 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Start Batch 29.6E with the report-only additive H/R/P fixed-ratio mono
-candidate frozen in contract `082`, then run the complete `60`-render gate.
-Linked stereo, production, cache identity, pitch/dynamic routing,
-RealtimePreview, and product integration remain closed.
+Stop implementation for offline synthesis-policy reassessment after the Batch
+29.6E rejection. Do not tune the H/R/P mechanism or open linked stereo.
+Production, cache identity, pitch/dynamic routing, RealtimePreview, and product
+integration remain closed.

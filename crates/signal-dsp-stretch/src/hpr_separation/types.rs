@@ -78,3 +78,57 @@ pub struct StretchHprSeparationReview {
     /// Numerical, mask, and deterministic-component evidence.
     pub evidence: StretchHprSeparationEvidence,
 }
+
+/// Report-only additive H/R/P fixed-ratio mono render and evidence.
+#[derive(Clone, Debug, PartialEq)]
+pub struct StretchHprAdditiveRender {
+    /// Sample-aligned sum of the three rendered components.
+    pub samples: Vec<Sample>,
+    /// Long-window identity-locked harmonic render.
+    pub harmonic: Vec<Sample>,
+    /// Current-kernel residual render.
+    pub residual: Vec<Sample>,
+    /// Short-window normalized OLA percussive render.
+    pub percussive: Vec<Sample>,
+    /// Source-separation evidence used by this render.
+    pub separation: StretchHprSeparationEvidence,
+    /// Global-map synthesis positions used by the percussive OLA component.
+    pub percussive_synthesis_positions: Vec<usize>,
+    /// Cropped percussive output frames without OLA normalization coverage.
+    pub percussive_uncovered_output_frames: usize,
+    /// Whether percussive synthesis positions are monotonic.
+    pub percussive_positions_monotonic: bool,
+    /// Whether every component exactly matches the final target length.
+    pub component_lengths_match: bool,
+    /// Harmonic output peak growth relative to its source component.
+    pub harmonic_peak_growth_db: f64,
+    /// Residual output peak growth relative to its source component.
+    pub residual_peak_growth_db: f64,
+    /// Percussive output peak growth relative to its source component.
+    pub percussive_peak_growth_db: f64,
+    /// Final additive output peak growth relative to the full-band source.
+    pub recombination_peak_growth_db: f64,
+    /// Must remain false: components receive no hidden gain correction.
+    pub hidden_component_gain_applied: bool,
+}
+
+impl StretchHprAdditiveRender {
+    pub(super) fn empty(separation: StretchHprSeparationEvidence) -> Self {
+        Self {
+            samples: Vec::new(),
+            harmonic: Vec::new(),
+            residual: Vec::new(),
+            percussive: Vec::new(),
+            separation,
+            percussive_synthesis_positions: Vec::new(),
+            percussive_uncovered_output_frames: 0,
+            percussive_positions_monotonic: true,
+            component_lengths_match: true,
+            harmonic_peak_growth_db: 0.0,
+            residual_peak_growth_db: 0.0,
+            percussive_peak_growth_db: 0.0,
+            recombination_peak_growth_db: 0.0,
+            hidden_component_gain_applied: false,
+        }
+    }
+}

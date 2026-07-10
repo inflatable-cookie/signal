@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; H/R/P separation passed, additive mono TSM open
+Status: active; H/R/P separation passed, additive mono TSM rejected
 Owner: dsp
 Updated: 2026-07-10
 Related contracts: `046`, `048`, `049`
@@ -83,8 +83,8 @@ replica ratio, recombination peak growth, and current-versus-candidate quality.
 
 Production routing, cache identity, product receipts, pitch composition,
 dynamic-ratio routing, RealtimePreview, and linked stereo remain unchanged.
-Batch 29.6D passed on 2026-07-10. Batch 29.6E is open. Batch 29.7 opens only
-after the complete additive mono gate passes.
+Batch 29.6D passed on 2026-07-10. Batch 29.6E failed the frozen mono gate and
+is rejected without tuning. Batch 29.7 remains closed.
 
 ## Separation Proof Gate
 
@@ -119,6 +119,19 @@ noise. Repeated component vectors and hashes were identical.
 
 This gate proves the complete fixed-ratio additive mono mechanism. It does not
 promote product routing or waive independent listening and linked-stereo gates.
+
+## 2026-07-10 Additive H/R/P Proof Outcome
+
+The additive candidate improved anchored `L001` crest by `3.375261 dB`, kept
+worst crest to `4.083747 dB`, and reduced mean fast spectral movement at both
+expansion ratios. It nevertheless failed the complete gate: measurable-row
+mean event placement worsened `23.411637` frames, integrity passed `51/60`,
+post-attack replica protection passed `26/48`, static residual and unsupported
+bin mass regressed at both expansion ratios, and the combined gate passed
+`0/60`.
+
+Do not tune masks, separation factors, component gains, processor geometry, or
+component timing. Do not open linked stereo.
 
 ## 2026-07-10 Proof Outcome
 
@@ -175,8 +188,8 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Start Batch 29.6E with the report-only additive fixed-ratio mono candidate.
-Apply the frozen long identity-locked PV, current residual PV, and short
-normalized OLA processors under one ratio and exact target length. Keep linked
-stereo, production routing, cache identity, pitch/dynamic, RealtimePreview, and
-product integration closed.
+Stop component implementation and reassess the offline synthesis policy from
+the measured Batch 29.6E failure. Decide whether a materially different
+clean-room synthesis family warrants research before another card is opened.
+Keep linked stereo, production routing, cache identity, pitch/dynamic,
+RealtimePreview, and product integration closed.

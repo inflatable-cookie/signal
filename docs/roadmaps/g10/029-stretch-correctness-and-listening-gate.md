@@ -176,17 +176,22 @@ independent stereo review.
 
 ### Batch 29.6E - Additive H/R/P Fixed-Ratio Mono Gate
 
-- [ ] open only after Batch 29.6D passes
-- [ ] stretch harmonic content with long-window identity-locked PV, residual
+- [x] open only after Batch 29.6D passes
+- [x] stretch harmonic content with long-window identity-locked PV, residual
   content with the current kernel, and percussive content with short normalized
   OLA under one ratio and exact target length
-- [ ] sum components sample-aligned without branch switching, crossfade, delay
+- [x] sum components sample-aligned without branch switching, crossfade, delay
   repair, waveform search, or component gain matching
-- [ ] report component length/peak growth, transient replica ratio, final
+- [x] report component length/peak growth, transient replica ratio, final
   recombination, and every original Batch 29.6 quality field
 - [ ] pass every contract `082` and original Batch 29.6 mono gate on the
   60-render corpus
+  - mechanism rejected: `3.375261 dB` anchored improvement and `4.083747 dB`
+    worst crest passed, but timing regressed `23.411637` frames, integrity
+    passed `51/60`, replica protection passed `26/48`, and the combined gate
+    passed `0/60`
 - [ ] open Batch 29.7 only after the complete mono candidate passes
+  - closed after Batch 29.6E rejection
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -466,11 +471,18 @@ independent stereo review.
   components, and deterministic hashes. Sine, impulse, and noise ownership
   margins were `30.933980 dB`, `164.871272 dB`, and `12.925746 dB`. Batch 29.6E
   is open; no component TSM or production routing changed.
+- 2026-07-10: Batch 29.6E is rejected without tuning. The additive candidate
+  passed the anchored crest, worst crest, fast-movement, exact-length,
+  coverage, determinism, finite-output, and no-hidden-gain checks. It failed
+  timing, endpoint integrity, transient-replica, static-residual,
+  unsupported-bin, tonal, formant, boundary, and combined gates. Batch 29.7
+  remains closed. Evidence is in
+  `docs/logs/2026-07/10-g10-029-hpr-additive-rejection.md`.
 
 ## Next Task
 
-Start Batch 29.6E with the report-only additive fixed-ratio mono candidate
-frozen in contract `082`. Stretch harmonic, residual, and percussive components
-through their fixed processors under one global ratio and exact target length,
-then run the complete `60`-render mono gate. Keep linked stereo, production,
-cache, pitch/dynamic, product, and RealtimePreview routing closed.
+Stop implementation for synthesis-policy reassessment. Batch 29.6E exhausted
+the frozen H/R/P mechanism and Batch 29.7 remains closed. Decide whether a
+materially different clean-room synthesis family warrants research before
+opening another card. Keep production, cache, pitch/dynamic, product, and
+RealtimePreview routing closed.
