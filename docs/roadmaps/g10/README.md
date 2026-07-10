@@ -123,11 +123,10 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Complete the six concealed trials at
-`target/stretch-corpus-g10-029-tail-classifier-validation-pack-v1`. Freeze
-click/pop, pull/thump, fade, continuity, and preference notes before opening the
-key. Reproduce the expected centroid preference split or close tail-envelope
-work. Keep production unchanged while independent stereo and row-level
-completion remain open. Do not start Batch 29.4 or product promotion until all
-five listening families validate. Keep RealtimePreview source-fill and broader
-product integration paused.
+Run a `g10.029` mono-evidence reassessment. Consolidate accepted production
+behavior, rejected transient, tonal, and tail controls, and the unresolved
+independent stereo and row-level listening blockers. Decide whether the next
+contract-approved move is a bounded Batch 29.4 structural-hybrid plan or a
+paused external-listening gate. Do not add another endpoint control, change
+production, or open product promotion during the reassessment. Keep
+RealtimePreview source-fill and broader product integration paused.

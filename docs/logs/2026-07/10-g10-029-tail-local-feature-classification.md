@@ -1,7 +1,7 @@
 # g10.029 Tail-Local Feature Classification
 
 Date: 2026-07-10
-Status: cross-source concealed validation ready
+Status: cross-source validation failed; tail-envelope branch closed
 
 ## Purpose
 
@@ -80,8 +80,33 @@ and multiplicative zero with the existing shared-gain, mono final-second, and
 
 No selector or production path changed.
 
+## Cross-Source Operator Result
+
+All six operator notes were frozen before the key was opened.
+
+- T001, below `2000 Hz`: no clear difference
+- T002, below `2000 Hz`: additive had a slight bass thump; current and
+  multiplicative were clean
+- T003, below `2000 Hz`: all candidates very similar
+- T004, at or above `2000 Hz`: all candidates very similar
+- T005, at or above `2000 Hz`: all candidates very similar
+- T006, at or above `2000 Hz`: all candidates very similar
+
+The multiplicative preference split did not reproduce on unseen sources.
+Neither centroid band predicted an audible preference. The only differentiated
+result was one additive artifact in the low-centroid band.
+
+## Final Decision
+
+Reject the provisional `< 2000 Hz` selector. Do not implement it or search for
+another threshold on this pack. Tail-envelope work is closed under the contract
+stop condition. Additive and multiplicative controls remain report-only;
+production DSP and cache identity remain unchanged.
+
 ## Next Task
 
-Complete all six cross-source trials. Freeze click/pop, pull/thump, fade,
-continuity, and preference notes before opening the key. Reproduce the expected
-centroid preference split or close tail-envelope work.
+Run the broader `g10.029` mono-evidence reassessment. Consolidate accepted
+production behavior, rejected transient, tonal, and tail controls, and the
+remaining stereo and row-level listening blockers. Choose between a bounded
+Batch 29.4 structural-hybrid plan and a paused external-listening gate. Do not
+add another endpoint control or change production.

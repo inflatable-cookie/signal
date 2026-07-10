@@ -87,6 +87,8 @@ be trustworthy before the callback contract or a structural hybrid widens.
   withholding selector implementation pending cross-source validation
 - [x] export a balanced concealed validation pack with six distinct unseen
   sources across both centroid bands
+- [x] reject the centroid selector after cross-source listening failed to
+  reproduce the preference split and close tail-envelope work
 
 ### Batch 29.4 - Structural Hybrid Checkpoint
 
@@ -272,13 +274,20 @@ be trustworthy before the callback contract or a structural hybrid widens.
   sealed in the key. Production and selector paths remain unchanged. Pack
   design and stop conditions are in
   `docs/logs/2026-07/10-g10-029-tail-local-feature-classification.md`.
+- 2026-07-10: Completed the six concealed cross-source trials and opened the
+  key after notes were frozen. Five trials had no clear difference. In T002 the
+  additive control alone had a slight bass thump; current and multiplicative
+  were clean. The multiplicative preference split did not reproduce in either
+  centroid band. The provisional `< 2000 Hz` selector is rejected and
+  tail-envelope work is closed. Both controls remain report-only; production
+  and cache identity remain unchanged. Findings are in
+  `docs/logs/2026-07/10-g10-029-tail-local-feature-classification.md`.
 
 ## Next Task
 
-Complete the six concealed trials in
-`target/stretch-corpus-g10-029-tail-classifier-validation-pack-v1`. Freeze
-click/pop, pull/thump, fade, continuity, and preference notes before opening the
-key. Reproduce the expected centroid preference split or close tail-envelope
-work. Keep production unchanged while independent stereo review and row-level
-manifest validation remain open. Do not open product promotion or start Batch
-29.4 until all five families validate.
+Run a `g10.029` mono-evidence reassessment. Consolidate accepted production
+behavior, rejected transient, tonal, and tail controls, and the unresolved
+independent stereo and row-level listening blockers. Decide whether the next
+contract-approved move is a bounded Batch 29.4 structural-hybrid plan or a
+paused external-listening gate. Do not add another endpoint control, change
+production, or open product promotion during the reassessment.
