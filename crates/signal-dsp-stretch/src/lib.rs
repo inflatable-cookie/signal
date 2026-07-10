@@ -48,6 +48,7 @@ mod formant_boundary;
 mod phase_vocoder;
 mod promotion;
 mod render_integrity;
+mod tail_anchor;
 mod tonal_texture;
 mod transient_detail;
 
@@ -122,6 +123,7 @@ use rustfft::{num_complex::Complex32, Fft, FftPlanner};
 use signal_dsp_resample::{resample_mono, ResampleConfig, ResampleQuality};
 use signal_primitives::{Sample, SampleRate};
 use std::sync::Arc;
+use tail_anchor::anchor_output_tail_to_source;
 
 const DYNAMIC_RATIO_SEAM_SMOOTH_FRAMES: usize = 256;
 
@@ -2179,6 +2181,18 @@ impl OfflineHighQualityStretcher {
             self.analysis_hop,
             magnitude_slew_phase_vocoder,
         )
+    }
+
+    /// Report-only fixed-ratio path with a bounded source-endpoint tail anchor.
+    ///
+    /// The candidate changes only the final 256 output frames and only when
+    /// the current output endpoint is louder than the source endpoint. It is
+    /// not a promoted OfflineHighQuality renderer.
+    #[doc(hidden)]
+    pub fn stretch_tail_anchor_review_mono(&mut self, input: &[Sample]) -> Vec<Sample> {
+        let mut output = self.stretch_mono(input);
+        anchor_output_tail_to_source(input, &mut output);
+        output
     }
 }
 

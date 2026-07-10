@@ -14,6 +14,8 @@ mod alloc_tracker;
 mod formant_boundary;
 #[path = "stretch-corpus-report/listening_pack.rs"]
 mod listening_pack;
+#[path = "stretch-corpus-report/tail_anchor.rs"]
+mod tail_anchor;
 
 use alloc_tracker::measure_peak_live_heap;
 
@@ -45,6 +47,7 @@ use symphonia::core::{
     meta::MetadataOptions as SymphoniaMetadataOptions,
     probe::Hint as SymphoniaHint,
 };
+use tail_anchor::TailAnchorReviewEvidence;
 
 const DEFAULT_REPORT_NAME: &str = "stretch-corpus-v1-offline-evidence";
 const DEFAULT_PROJECTION_EPOCH: &str = "projection:deterministic-report-v1";
@@ -2547,9 +2550,14 @@ fn format_external_benchmark_quality_metrics(
             let output = signal.stretch_mono(source_mono);
             (output, started.elapsed().as_secs_f64())
         });
+        let mut tail_anchor_stretcher =
+            OfflineHighQualityStretcher::with_path(render.ratio, signal_path);
+        let tail_anchor_output = tail_anchor_stretcher.stretch_tail_anchor_review_mono(source_mono);
         let mut draft_stretcher = PhaseVocoderStretcher::new(render.ratio);
         let draft_output = draft_stretcher.stretch_mono(source_mono);
         let signal_tonal_texture = measure_tonal_texture(source_mono, &signal_output, render.ratio);
+        let tail_anchor_tonal_texture =
+            measure_tonal_texture(source_mono, &tail_anchor_output, render.ratio);
         let external_tonal_texture =
             measure_tonal_texture(source_mono, &external_audio.mono_samples, render.ratio);
         let draft_tonal_texture = measure_tonal_texture(source_mono, &draft_output, render.ratio);
@@ -2584,6 +2592,12 @@ fn format_external_benchmark_quality_metrics(
         let signal_formant_boundary = measure_formant_boundary(
             source_mono,
             &signal_output,
+            render.ratio,
+            source_audio.sample_rate_hz,
+        );
+        let tail_anchor_formant_boundary = measure_formant_boundary(
+            source_mono,
+            &tail_anchor_output,
             render.ratio,
             source_audio.sample_rate_hz,
         );
@@ -2639,6 +2653,13 @@ fn format_external_benchmark_quality_metrics(
         let signal_transient_detail = measure_transient_detail(
             &source_mono,
             &signal_output,
+            render.ratio,
+            QUALITY_METRIC_WINDOW_SIZE,
+            QUALITY_METRIC_HOP_SIZE,
+        );
+        let tail_anchor_transient_detail = measure_transient_detail(
+            &source_mono,
+            &tail_anchor_output,
             render.ratio,
             QUALITY_METRIC_WINDOW_SIZE,
             QUALITY_METRIC_HOP_SIZE,
@@ -2755,12 +2776,41 @@ fn format_external_benchmark_quality_metrics(
             RENDER_INTEGRITY_ENDPOINT_SOURCE_FRAMES,
             RENDER_INTEGRITY_SILENCE_THRESHOLD,
         );
+        let tail_anchor_integrity = measure_stretch_render_integrity(
+            source_mono,
+            &tail_anchor_output,
+            render.ratio,
+            RENDER_INTEGRITY_ENDPOINT_SOURCE_FRAMES,
+            RENDER_INTEGRITY_SILENCE_THRESHOLD,
+        );
         let signal_integrity_assessment =
             signal_dsp_stretch::assess_stretch_render_integrity(signal_integrity, integrity_limits);
         let external_integrity_assessment = signal_dsp_stretch::assess_stretch_render_integrity(
             external_integrity,
             integrity_limits,
         );
+        let tail_anchor_integrity_assessment = signal_dsp_stretch::assess_stretch_render_integrity(
+            tail_anchor_integrity,
+            integrity_limits,
+        );
+        let tail_anchor_line = TailAnchorReviewEvidence {
+            case_id: &render.case_id,
+            source_path: &source.source_path,
+            ratio: render.ratio,
+            current_output: &signal_output,
+            candidate_output: &tail_anchor_output,
+            current_boundary: signal_formant_boundary,
+            candidate_boundary: tail_anchor_formant_boundary,
+            current_tonal: signal_tonal_texture,
+            candidate_tonal: tail_anchor_tonal_texture,
+            current_formant: signal_formant_boundary,
+            candidate_formant: tail_anchor_formant_boundary,
+            current_transient: signal_transient_detail,
+            candidate_transient: tail_anchor_transient_detail,
+            candidate_integrity: tail_anchor_integrity,
+            candidate_integrity_passed: tail_anchor_integrity_assessment.passed,
+        }
+        .format_report_line();
         let mut feature_delta_line = None;
         if mode == ExternalBenchmarkQualityMode::Full {
             let feature_delta = measure_external_benchmark_feature_delta(
@@ -3305,6 +3355,7 @@ fn format_external_benchmark_quality_metrics(
         }
         lines.push(tonal_texture_line);
         lines.push(formant_boundary_line);
+        lines.push(tail_anchor_line);
         if let Some(line) = feature_delta_line {
             lines.push(line);
         }
@@ -8164,6 +8215,12 @@ mod tests {
         assert!(formant_boundary.contains("signal_mean_envelope_residual_ratio="));
         assert!(formant_boundary.contains("signal_mean_envelope_centroid_shift_hz="));
         assert!(formant_boundary.contains("signal_max_boundary_step_crest_growth_db="));
+        let tail_anchor = formatted
+            .lines()
+            .find(|line| line.starts_with("external_benchmark_tail_anchor_review "))
+            .expect("tail-anchor candidate row");
+        assert!(tail_anchor.contains("boundary_improvement_db="));
+        assert!(tail_anchor.contains("combined_regression_gate_passed="));
 
         let _ = fs::remove_file(path);
     }

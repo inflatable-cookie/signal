@@ -72,6 +72,7 @@ be trustworthy before the callback contract or a structural hybrid widens.
 - [ ] complete row-level manifest validation and independent stereo review
 - [x] close formant and boundary classification with source-relative envelope
   and exterior-step evidence
+- [x] reject source-endpoint tail anchoring after the combined corpus gate
 
 ### Batch 29.4 - Structural Hybrid Checkpoint
 
@@ -192,11 +193,19 @@ be trustworthy before the callback contract or a structural hybrid widens.
   still passed length, endpoint-energy, added-silence, and peak-growth limits.
   Production remains unchanged. Evidence and candidate gates are in
   `docs/logs/2026-07/10-g10-029-formant-and-boundary-diagnostic.md`.
+- 2026-07-10: The bounded source-endpoint tail anchor passed integrity and all
+  transient, tonal-texture, and formant-envelope tolerances in `60/60` rows and
+  worsened no exterior edge. It materially improved only `5/17` loud-tail
+  targets against a `13/17` gate, and the worst candidate edge remained
+  `-7.393442 dBFS`. The control stays report-only; production and cache identity
+  remain unchanged. Evidence and rejection rationale are in
+  `docs/logs/2026-07/10-g10-029-source-tail-anchor-rejection.md`.
 
 ## Next Task
 
-Build and gate one bounded offline tail-anchor candidate against the 60-row
-exterior-step failures. Keep production unchanged unless endpoint content,
-integrity, transient, tonal-texture, and formant-envelope evidence all pass.
-Independent stereo review and row-level manifest validation remain open. Do not
+Build one bounded zero-tail anchor control and compare it with current output
+and the rejected source-anchor control. Require material loud-tail improvement,
+explicit changed-frame/correction evidence, and no integrity, transient,
+tonal-texture, or formant-envelope regression. Keep production unchanged while
+independent stereo review and row-level manifest validation remain open. Do not
 open product promotion or start Batch 29.4 until all five families validate.

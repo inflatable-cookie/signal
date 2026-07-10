@@ -336,6 +336,13 @@ while absolute dBFS remains visible so near-silence cannot create a false large
 ratio. A boundary candidate must retain source content and pass full-render,
 transient, tonal-texture, and formant-envelope regression checks together.
 
+A tail control must declare whether it targets the source endpoint or digital
+silence. Source matching is a content-preservation control, not proof of a
+standalone-safe artifact. A silence-target control must report its changed
+frame span and peak correction, retain the absolute endpoint-energy gate, and
+remain unpromoted until linked-stereo behavior and listening evidence cover the
+same policy.
+
 Planning authority:
 `docs/roadmaps/g10/029-stretch-correctness-and-listening-gate.md`.
 

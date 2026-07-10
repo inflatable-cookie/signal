@@ -25,7 +25,9 @@ implementation remains Signal-owned.
   Objective follow-up classifies the grain as excess fast spectral movement,
   not confirmed added sideband energy. Broad vocal-envelope evidence shows no
   current Signal formant failure, but exterior-step evidence isolates a
-  fixed-ratio tail discontinuity. Rubber Band-class promotion remains blocked
+  fixed-ratio tail discontinuity. Source-endpoint anchoring is regression-free
+  but fixes too few loud tails, so standalone-safe output needs a distinct
+  bounded silence-target control. Rubber Band-class promotion remains blocked
   on that defect, independent stereo/row-level completion, and the later
   structural hybrid checkpoint.
 - Sustained/polyphonic long-window candidates produced useful evidence but no
@@ -120,9 +122,9 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Build and gate one bounded offline tail-anchor candidate against the 60-row
-exterior-step failures. Keep production unchanged unless the combined
-integrity and quality gate passes. Independent stereo and row-level listening
+Build one bounded zero-tail anchor control against the 60-row exterior-step
+failures and compare it with current output and the rejected source anchor.
+Keep production unchanged while independent stereo and row-level listening
 completion remain open. Do not start Batch 29.4 or product promotion until all
 five listening families validate. Keep RealtimePreview source-fill and broader
 product integration paused.
