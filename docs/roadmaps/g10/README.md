@@ -53,7 +53,10 @@ implementation remains Signal-owned.
   anchored `L001` improved `0.040942 dB`, measurable-row timing worsened
   `16.851522` frames, tonal residual regressed in `21/60` rows, and the combined
   gate passed `12/60`. Component separation remains unimplemented pending its
-  own contract.
+  own contract. Contract `082` now freezes the final untested structural family:
+  iterative harmonic/residual/percussive separation. Batch 29.6D proves exact
+  additive source reconstruction first. Only a passing separator may open the
+  long-PV/residual-PV/short-OLA mono candidate in Batch 29.6E.
 - Offline artifacts and RealtimePreview have bounded contracts and prototype
   paths, but callback-safe preview integration and fully streaming artifact
   output remain gated until their owning source-fill/cache contracts exist.
@@ -143,9 +146,8 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Stop for contract `082` reassessment. Define the perfect-reconstruction split,
-mask continuity, component processing, recombination, evidence, and stop
-conditions for explicit transient/residual separation before another
-candidate. Adaptive resolution, component implementation, linked stereo,
-production, cache identity, pitch/dynamic routing, RealtimePreview, and product
-integration remain closed.
+Start Batch 29.6D with the report-only iterative H/R/P separator and exact
+source-reconstruction proof frozen in contract `082`. Component TSM opens only
+after mask partition, reconstruction, boundary, and synthetic ownership pass.
+Linked stereo, production, cache identity, pitch/dynamic routing,
+RealtimePreview, and product integration remain closed.

@@ -160,26 +160,40 @@ independent stereo review.
   - mechanism rejected: `0.040942 dB` `L001` improvement, `+16.851522`
     measurable-row mean timing delta, and `12/60` combined passes
 
-### Batch 29.6D - Adaptive Resolution Reconstruction
+### Batch 29.6D - H/R/P Separation Reconstruction
 
-- [ ] open only after Batch 29.6C passes
-- [ ] define one nonstationary short/current/long frame schedule and compatible
-  reconstruction weights
-- [ ] pass perfect-reconstruction, fast spectral-movement, static-spectrum,
-  transient, and boundary gates before broad corpus promotion
+- [ ] add report-only sample-rate-aware iterative H/R/P separation with
+  long-resolution harmonic extraction and short-resolution percussive
+  extraction from the complement
+- [ ] apply disjoint binary masks with `beta_h=2`, `beta_p=2`, `200 ms`
+  horizontal median span, and `500 Hz` vertical median span
+- [ ] reconstruct harmonic, residual, and percussive source components through
+  centred normalized inverse STFT without stretching
+- [ ] report mask populations, component energy, partition error,
+  reconstruction RMS/peak error, boundary coverage, and deterministic hashes
+- [ ] pass the contract `082` exact reconstruction and `12 dB` synthetic
+  harmonic/percussive/residual ownership gates
 
-### Batch 29.6E - Combined Fixed-Ratio Mono Gate
+### Batch 29.6E - Additive H/R/P Fixed-Ratio Mono Gate
 
-- [ ] combine the proven fixed-map transient and adaptive-resolution mechanisms
-- [ ] pass every original Batch 29.6 mono gate on the 60-render corpus
+- [ ] open only after Batch 29.6D passes
+- [ ] stretch harmonic content with long-window identity-locked PV, residual
+  content with the current kernel, and percussive content with short normalized
+  OLA under one ratio and exact target length
+- [ ] sum components sample-aligned without branch switching, crossfade, delay
+  repair, waveform search, or component gain matching
+- [ ] report component length/peak growth, transient replica ratio, final
+  recombination, and every original Batch 29.6 quality field
+- [ ] pass every contract `082` and original Batch 29.6 mono gate on the
+  60-render corpus
 - [ ] open Batch 29.7 only after the complete mono candidate passes
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
-- [ ] replace independent mid/side mono decisions with one shared multichannel
-  classifier, peak map, reset schedule, and transition schedule
-- [ ] preserve per-channel instantaneous frequency and interchannel phase at
-  shared peaks
+- [ ] share H/R/P masks, component frame positions, time map, and
+  reconstruction weights across channels
+- [ ] preserve per-channel complex spectra, instantaneous frequency, and
+  interchannel phase within every shared component
 - [ ] pass mono parity, image, interchannel-phase, and one-sided-transient gates
 
 ### Batch 29.8 - Listening And Dynamic Checkpoint
@@ -437,12 +451,19 @@ independent stereo review.
   worsened `16.851522` frames across measurable rows, and the combined gate
   passed `12/60`. The mechanism is rejected without tuning. Evidence is in
   `docs/logs/2026-07/10-g10-029-fixed-map-peak-transient-rejection.md`.
+- 2026-07-10: Froze the final untested structural family as refined iterative
+  H/R/P separation. Long-resolution tightened masking extracts clearly
+  harmonic content; short-resolution masking extracts clearly percussive
+  content from the complement; ambiguous content stays residual. Batch 29.6D
+  proves exact separation reconstruction before any component TSM. If it
+  passes, Batch 29.6E uses long PV, current PV, and short OLA under one global
+  map and additive recombination. Decision evidence is in
+  `docs/logs/2026-07/10-g10-029-hpr-separation-contract.md`.
 
 ## Next Task
 
-Stop for contract `082` reassessment. Define explicit transient/residual
-separation through a perfect-reconstruction split, mask continuity,
-component-processing, recombination, evidence, and stop conditions before
-another candidate. Do not tune rejected mechanisms, open adaptive resolution
-or linked stereo, or change production, cache, pitch/dynamic, product, or
-RealtimePreview routing.
+Start Batch 29.6D with the report-only iterative H/R/P separator and exact
+source-reconstruction proof frozen in contract `082`. Do not implement
+component TSM unless the mask partition, numerical reconstruction, boundary,
+and synthetic ownership gates pass. Keep linked stereo, production, cache,
+pitch/dynamic, product, and RealtimePreview routing closed.

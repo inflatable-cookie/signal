@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; fixed-map peak transient mechanism rejected
+Status: active; H/R/P separation boundary frozen
 Owner: dsp
 Updated: 2026-07-10
 Related contracts: `046`, `048`, `049`
@@ -14,71 +14,104 @@ does not promote a product path.
 
 ## Rules
 
-### Rule 1: one synthesis timeline
+### Rule 1: components are additive, not alternative branches
 
-The successor must own one monotonic source-to-output time map and one
-reconstruction timeline. Different analysis resolutions must not produce
-independent output waveforms for later branch crossfade or delay alignment.
+The successor owns one monotonic source-to-output time map. Harmonic, residual,
+and percussive components are a complementary decomposition of one source, not
+alternative full-band renders. They may use specialized processors, but every
+processor receives the same fixed ratio and exact target length. Final output
+is their sample-aligned sum. No ownership crossfade, branch switching, delay
+alignment, local time-map change, or component gain matching is allowed.
 
-### Rule 2: transient preservation keeps the global time map
+### Rule 2: separation is iterative H/R/P
 
-The next proof uses the current `2048/512` synthesis grid and constant global
-synthesis hop. It must not move synthesis-frame positions, create local
-unity-ratio islands, or distribute compensation through later frames.
+The report-only separator accepts sample-rate metadata and performs two
+centred, padded STFT decompositions:
 
-The frozen `g10.029` onset classifier supplies event guards only. Inside each
-guard, a time-ramped companion analysis estimates per-bin group delay. Each
-spectral peak owns the bins between its nearest surrounding magnitude minima.
-The energy-weighted group delay of that region estimates the attack position
-inside the analysis window.
+1. Extract clearly harmonic bins from the input with a frame duration nearest
+   `186 ms`, quarter-window hop, separation factor `beta_h=2`, and median spans
+   nearest `200 ms` horizontally and `500 Hz` vertically.
+2. Apply the same rule to the first-stage complement with a frame duration
+   nearest `11.6 ms`, quarter-window hop, and `beta_p=2`. Clearly percussive
+   bins become the percussive component. Everything else becomes residual.
 
-### Rule 3: phase reinitialization is peak-selective
+Supported FFT sizes are powers of two. Magnitude-median boundaries replicate
+the nearest valid frame or bin. Signal boundaries use the existing centred zero
+padding and normalized overlap-add policy.
 
-An attack peak may reinitialize only when its peak-local energy position
-reaches the window-centre threshold derived for the analysis window. Peak bins
-collected for one guarded event reinitialize together in one frame. Their
-synthesis phases copy the current analysis phases. Other bins retain
-instantaneous-frequency propagation and current identity locking.
+The binary masks are disjoint. At every time-frequency bin,
+`M_h + M_r + M_p = 1`. Each masked spectrum retains the source complex phase.
+No learned separator, soft-mask sweep, classifier guard, or post-separation
+gain correction enters the first proof.
 
-The candidate must not apply a whole-frame reset, waveform crossfade, transient
-amplitude boost, corpus-tuned threshold sweep, or different synthesis timeline.
-Peak-local magnitude-minimum regions, event collection, and reset decisions
-must be explicit report data.
+### Rule 3: separation must pass before component TSM
 
-### Rule 4: adaptive resolution is a later reconstruction stage
+Batch 29.6D proves decomposition and reconstruction only. Harmonic, residual,
+and percussive time-domain components must sum back to the exact source-domain
+render within the declared numerical tolerance. No component is stretched in
+this batch.
 
-Short attack resolution and long stable-component resolution must share one
-nonstationary frame schedule and compatible reconstruction weights. The
-current independent `1024`, `2048`, and `4096` rendered branches remain
-diagnostic controls only.
+Synthetic controls must assign a steady bin-centred sinusoid primarily to the
+harmonic component, an isolated broadband impulse primarily to the percussive
+component, and stationary broadband noise primarily to the residual. The
+expected owner must exceed either specialized non-owner by at least `12 dB`.
+Failure rejects the separator before a corpus TSM render.
+
+### Rule 4: component processing is fixed
+
+Only after Batch 29.6D passes may Batch 29.6E apply:
+
+- long-window identity-locked phase-vocoder TSM to the harmonic component
+- the current `2048/512` OfflineHighQuality kernel to the residual component
+- plain normalized OLA, using the short separation frame and quarter-window
+  analysis hop, to the percussive component
+
+OLA performs no waveform search, onset detection, transient reinsertion, phase
+reset, or local timing compensation. Each component independently produces the
+same target length from the same global ratio before sample-aligned addition.
 
 ### Rule 5: exactness and evidence remain mandatory
 
-Every proof retains identity bypass, centred boundary coverage, deterministic
-output, finite samples, exact target length, and explicit mapping evidence.
-The transient proof must report guarded events, candidate peaks, collected
-peak regions, reinitialized bins and frames, group-delay threshold crossings,
-unmatched guards, and current-versus-candidate quality.
+Every proof retains identity bypass, deterministic output, finite samples,
+centred boundary coverage, exact target length, and explicit mapping evidence.
+The separator reports mask population, partition error, component energy,
+reconstruction RMS/peak error, endpoint error, and synthetic ownership. The
+TSM proof adds component output lengths, component peak growth, transient
+replica ratio, recombination peak growth, and current-versus-candidate quality.
 
 ### Rule 6: promotion stays closed
 
 Production routing, cache identity, product receipts, pitch composition,
 dynamic-ratio routing, RealtimePreview, and linked stereo remain unchanged.
-Adaptive-resolution work opens only after the fixed-map peak transient proof
-passes its declared gate.
+Batch 29.6E opens only after the separation gate passes. Batch 29.7 opens only
+after the complete additive mono gate passes.
 
-## Current-Grid Transient Proof Gate
+## Separation Proof Gate
+
+- masks are binary, mutually exclusive, and exhaustive for every analyzed bin
+- component lengths equal input length
+- recombined source peak error is at most `1e-5`
+- recombined source RMS error is at most `1e-6`
+- no non-finite component sample, uncovered source sample, or endpoint loss
+- harmonic, percussive, and residual synthetic controls each meet the `12 dB`
+  ownership margin
+- identical input, sample rate, and parameters produce identical components
+
+## Additive Mono TSM Gate
 
 - improve anchored `L001` crest by at least `3 dB`
 - keep the candidate worst crest at or below `5.655483 dB`
 - do not worsen corpus mean absolute event placement by more than `1` frame
 - retain `60/60` integrity, transient, formant, boundary, and combined passes
 - do not regress source-relative residual or unsupported-bin mass
+- retain the original Batch 29.6 fast spectral-movement gate
+- do not worsen the strongest post-attack secondary-peak/primary-peak ratio by
+  more than `0.10` within one short percussive frame
 - no non-finite output, non-monotonic synthesis position, uncovered output
-  sample, or unreported dense-transient fallback
+  sample, component length mismatch, or hidden component gain correction
 
-This gate proves only the peak-selective transient mechanism. It does not waive
-the fast spectral-movement gate required of the later combined mono candidate.
+This gate proves the complete fixed-ratio additive mono mechanism. It does not
+promote product routing or waive independent listening and linked-stereo gates.
 
 ## 2026-07-10 Proof Outcome
 
@@ -114,6 +147,19 @@ never reached a reported centre-threshold reset. Tonal residual regressed in
 Do not tune the window-derived threshold, sensitivity, event guards, or reset
 scope. Do not open adaptive resolution or linked stereo.
 
+## 2026-07-10 H/R/P Reassessment Decision
+
+The next proof uses refined harmonic/residual/percussive separation. The
+residual component is mandatory: two-way H/P processing is known to route
+ambiguous harmonic material such as voice into the short OLA path, where phase
+jumps become audible. Iterative long/short separation and `beta=2` isolate only
+clearly harmonic or percussive structures while preserving a complementary
+residual.
+
+This additive structure does not reopen the rejected full-band branch
+crossfade. Component reconstruction is proven before TSM, and every component
+uses the same output map and target length.
+
 ## Clean-Room Rule
 
 Public papers and public algorithm descriptions may inform Signal design.
@@ -122,8 +168,7 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Stop for contract reassessment. Define the analysis/reconstruction, mask
-continuity, component-processing, and recombination boundary required for an
-explicit transient/residual separation proof before another candidate. Keep
-adaptive resolution, linked stereo, production routing, and implementation of
-the separation path closed until that contract exists.
+Start Batch 29.6D with the report-only iterative H/R/P decomposition and exact
+reconstruction proof. Do not implement component TSM until the separation gate
+passes. Keep linked stereo, production routing, cache identity, pitch/dynamic,
+RealtimePreview, and product integration closed.

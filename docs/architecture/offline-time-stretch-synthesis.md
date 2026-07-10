@@ -15,16 +15,17 @@ successor architecture.
 
 ## Successor Shape
 
-The successor owns one sample-domain time map and one reconstruction timeline.
+The successor owns one sample-domain time map and one additive component
+reconstruction.
 
-- transient event guards may use shorter analysis than synthesis
-- transient attack position is estimated per spectral peak from group delay
-- selected peak regions may reinitialize phase inside the same engine while
-  the global synthesis positions remain fixed
-- adaptive short/long resolution must use one nonstationary analysis and
-  reconstruction law, not separate output waveforms
-- peak regions own vertical phase coherence; per-bin instantaneous frequency
-  remains explicit
+- iterative long/short STFT analysis separates clearly harmonic, ambiguous
+  residual, and clearly percussive content with complementary binary masks
+- masked components sum to the source before any time modification
+- harmonic content uses long-window identity-locked phase-vocoder synthesis
+- residual content uses the current OfflineHighQuality kernel
+- percussive content uses very-short-window normalized OLA
+- all components receive one ratio and exact target length, then sum without
+  branch switching, crossfade, delay repair, or gain matching
 - boundary padding, normalization, exact cropping, and identity bypass remain
   common synthesis policy
 
@@ -33,17 +34,18 @@ The successor owns one sample-domain time map and one reconstruction timeline.
 One fixed-ratio mono engine owns:
 
 - source and output frame cursors
-- transient and stable-region schedule
-- monotonic synthesis-frame positions
-- active analysis resolution and reconstruction weights
-- per-bin or per-channel phase propagation
-- peak-region and phase-reinitialization state
-- peak-local group-delay and guarded-event collection state
+- sample-rate-scaled long and short separation geometry
+- harmonic, residual, and percussive mask partition
+- one global ratio and target length for all component processors
+- harmonic and residual phase propagation
+- percussive OLA frame positions and normalization
+- sample-aligned additive recombination
 - exact output-length and crop state
 
-Linked stereo later shares the time map, resolution schedule, transient
-schedule, and peak regions. Channels retain their own instantaneous frequency
-and preserve interchannel analysis phase at shared peaks.
+Linked stereo later shares mask decisions, the time map, component frame
+positions, and reconstruction weights. Channels retain their own complex
+spectra and instantaneous frequency. Independent per-channel masks are not an
+acceptable stereo path.
 
 Dynamic ratio remains outside the successor until fixed-ratio mono and linked
 stereo pass. Its eventual path must update the same time map continuously; it
@@ -55,8 +57,8 @@ must not concatenate independent renders.
    combined-gate failure
 2. fixed-map peak transient proof — rejected after crest, placement, spectrum,
    and combined-gate failure
-3. adaptive-resolution reconstruction checkpoint
-4. combined fixed-ratio mono candidate
+3. iterative H/R/P separation and exact reconstruction proof
+4. additive H/R/P fixed-ratio mono candidate
 5. shared-decision linked stereo
 6. concealed listening and dynamic-ratio checkpoint
 
@@ -71,17 +73,18 @@ may authorize the next stage but cannot promote product quality alone.
 - scalar phase-lock or long-window selector sweeps
 - fixed tail envelopes or hidden output padding
 - local unity-ratio attack islands with steady-interval compensation
+- two-way H/P processing that forces ambiguous content into a specialized path
 
-## Deferred Shape
+## Separation Boundary
 
-Explicit transient/residual separation is now the only untested research
-fallback. It cannot enter the successor until it has its own
-perfect-reconstruction analysis, mask-continuity, component-processing, and
-recombination contract.
+Contract `082` freezes a refined H/R/P decomposition. Long-resolution analysis
+extracts only clearly harmonic bins. Short-resolution analysis extracts only
+clearly percussive bins from the complement. The residual owns everything
+ambiguous. Binary complement masks and normalized inverse STFT must prove exact
+source reconstruction before component TSM opens.
 
 ## Next Task
 
-Reassess contract `082` around explicit transient/residual separation. Do not
-implement component separation or nonstationary resolution until the analysis,
-reconstruction, mask, component-processing, and recombination boundary is
-frozen.
+Start the report-only H/R/P separation and source-reconstruction proof. Do not
+implement component TSM until its mask partition, reconstruction, boundary, and
+synthetic ownership gates pass.
