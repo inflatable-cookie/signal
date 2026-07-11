@@ -102,10 +102,14 @@ pub use corpus_report::{
 };
 pub use formant_boundary::{measure_formant_boundary, StretchFormantBoundaryMeasurement};
 pub use frequency_adaptive::{
-    StretchCommonGridBoundaryReview, StretchCommonGridDualGuardEvidence,
-    StretchCommonGridPreconditionedReview, StretchCommonGridProjectedPhaseEvidence,
-    StretchCommonGridTailAtomEvidence, StretchCommonGridTailAttributionEvidence,
-    StretchCommonGridTailForm, StretchCommonGridTailStage, StretchCommonGridTonePhaseEvidence,
+    StretchCommonGridBoundaryReview, StretchCommonGridConditioningBank,
+    StretchCommonGridConditioningBinEvidence, StretchCommonGridConditioningChannelEvidence,
+    StretchCommonGridConditioningDirection, StretchCommonGridConditioningModeEvidence,
+    StretchCommonGridConditioningResidueEvidence, StretchCommonGridConditioningReview,
+    StretchCommonGridDualGuardEvidence, StretchCommonGridPreconditionedReview,
+    StretchCommonGridProjectedPhaseEvidence, StretchCommonGridTailAtomEvidence,
+    StretchCommonGridTailAttributionEvidence, StretchCommonGridTailForm,
+    StretchCommonGridTailStage, StretchCommonGridTonePhaseEvidence,
     StretchCommonGridWaveletEvidence, StretchCommonGridWaveletReview,
     StretchFrequencyAdaptiveBandEvidence, StretchFrequencyAdaptiveEvidence,
     StretchFrequencyAdaptiveReview,
@@ -2384,6 +2388,14 @@ impl OfflineHighQualityStretcher {
             input,
             sample_rate,
         )
+    }
+
+    /// Attribute complete alias-block conditioning across the three frozen banks.
+    #[doc(hidden)]
+    pub fn common_grid_conditioning_attribution_review(
+        &self,
+    ) -> StretchCommonGridConditioningReview {
+        frequency_adaptive::common_grid_conditioning_attribution_review()
     }
 
     /// Measure common-grid phase scale and channel-delay compensation on a steady tone.

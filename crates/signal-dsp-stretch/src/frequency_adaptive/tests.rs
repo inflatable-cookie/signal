@@ -152,6 +152,35 @@ fn common_grid_preconditioned_candidate_rejects_frame_conditioning() {
 }
 
 #[test]
+fn common_grid_conditioning_attribution_stops_on_eigenpair_residual() {
+    let first = common_grid_conditioning_attribution_review();
+    let repeated = common_grid_conditioning_attribution_review();
+    assert_eq!(first, repeated);
+    assert_eq!(first.residues.len(), 33);
+    assert_eq!(first.modes.len(), 6);
+    assert!(
+        first.maximum_errors[0] > 1.0e-6,
+        "{:?}",
+        first.maximum_errors
+    );
+    assert!(first.maximum_errors[1] <= 1.0e-8, "{first:?}");
+    assert!(first.hashes.iter().all(|hash| *hash != 0));
+    assert_eq!(
+        first.direction,
+        StretchCommonGridConditioningDirection::Inconclusive
+    );
+    assert!(first.modes.iter().all(|mode| mode.top_bins.len() == 16));
+    assert!(first
+        .modes
+        .iter()
+        .all(|mode| mode.top_total_channels.len() == 16));
+    assert!(first
+        .modes
+        .iter()
+        .all(|mode| mode.top_cross_channels.len() == 16));
+}
+
+#[test]
 fn common_grid_phase_transport_rejects_high_band_phase_aliasing() {
     for frequency in [312.5_f32, 1_000.0] {
         let input = (0..24_576)

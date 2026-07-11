@@ -178,10 +178,10 @@ rejected ownership crossfade.
 
 ## Next Task
 
-Implement the frozen report-only alias-block conditioning attribution across
-the raw, exact-pointwise, and endpoint-even boundary banks. Stop after choosing
-boundary-geometry reassessment or later block-aware preconditioner research. Do
-not implement another candidate, run guards, or open audio synthesis.
+Freeze a deterministic bounded Hermitian eigensolver proof for the inconclusive
+alias-block attribution. Worst eigenpair residual is `0.031864856` against
+`1e-6`. Do not rerun attribution, implement another candidate, run guards, or
+open audio synthesis.
 
 ## Frequency-Adaptive Reassessment
 

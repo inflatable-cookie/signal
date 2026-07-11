@@ -379,14 +379,22 @@ independent stereo review.
 
 ### Batch 29.6T - Alias-Block Conditioning Attribution Proof
 
-- [ ] measure all `11` residues for raw, exact-pointwise, and endpoint-even
-  banks with fixed eigenvector phase and residual at most `1e-6`
-- [ ] decompose each bank's global minimum and maximum modes by boundary-bin
+- [x] measure all `11` residues for raw, exact-pointwise, and endpoint-even
+  banks; reject worst eigenpair residual `0.031864856` against `1e-6`
+- [x] decompose each bank's global minimum and maximum modes by boundary-bin
   mass, cross-bank Rayleigh transfer, and bounded channel/bin contributors
-- [ ] require finite evidence, contribution closure within `1e-8`, stable
+- [x] retain finite evidence, contribution closure `6.650463e-16`, stable
   hashes, and exact repeat without reconstruction, dual, guard, or phase work
-- [ ] stop after selecting boundary-geometry reassessment or separately
-  contracted block-aware preconditioner research
+- [x] stop as numerically inconclusive before either research direction
+
+### Batch 29.6U - Deterministic Hermitian Eigensolver Contract
+
+- [ ] freeze one bounded solver and invariant cross-check for the existing
+  alias-block matrices; do not relax residuals or increase power iterations
+- [ ] require every minimum and maximum eigenpair residual at most `1e-6` with
+  deterministic phase, trace/Frobenius checks, hashes, and exact repeat
+- [ ] reopen only the frozen attribution after solver passage; keep every DSP
+  candidate, guard, phase, coefficient, corpus, and listening surface closed
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -804,10 +812,13 @@ independent stereo review.
   extremal eigenpairs, boundary-bin mass, cross-bank Rayleigh transfer, and
   bounded channel/cross-term attribution now precede any redesign. Evidence is
   in `docs/logs/2026-07/11-g10-029-alias-block-attribution-contract.md`.
+- 2026-07-11: Batch 29.6T stopped as inconclusive. The full matrix repeats and
+  contribution closure passes, but worst eigenpair residual `0.031864856`
+  exceeds `1e-6`. Evidence is in
+  `docs/logs/2026-07/11-g10-029-alias-block-attribution-inconclusive.md`.
 
 ## Next Task
 
-Implement Batch 29.6T alias-block conditioning attribution and stop after its
-direction decision. Do not implement another preconditioner or run guards.
-Keep phase reproof, coefficient assembly, audio synthesis, corpus, stereo,
-dynamic ratio, and product routing closed.
+Freeze Batch 29.6U deterministic Hermitian eigensolver proof. Do not implement
+it, rerun attribution, or run guards. Keep phase reproof, coefficient assembly,
+audio synthesis, corpus, stereo, dynamic ratio, and product routing closed.

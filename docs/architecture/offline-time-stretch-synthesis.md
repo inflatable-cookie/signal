@@ -261,9 +261,14 @@ Rayleigh transfer distinguishes a scalar-tightening failure from a localized
 endpoint-smoothing failure. The report chooses only between boundary-geometry
 reassessment and later block-aware preconditioner research.
 
+The first attribution run is inconclusive: contribution closure passes, but
+clustered residue modes leave a worst normalized eigenpair residual of
+`0.031864856`. A deterministic bounded Hermitian eigensolver proof must replace
+the fixed-start power estimator before the same attribution can choose a
+direction.
+
 ## Next Task
 
-Implement Batch 29.6T alias-block conditioning attribution. Stop after its
-direction decision. Do not implement a preconditioner or run guards. Keep phase
-reproof, audio synthesis, corpus rendering, linked stereo, dynamic ratio, and
-product routing closed.
+Freeze Batch 29.6U deterministic Hermitian eigensolver proof. Do not implement
+it or rerun attribution. Keep guards, phase reproof, audio synthesis, corpus
+rendering, linked stereo, dynamic ratio, and product routing closed.

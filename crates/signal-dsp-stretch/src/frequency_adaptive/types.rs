@@ -151,6 +151,107 @@ pub struct StretchCommonGridPreconditionedReview {
     pub multiplier_hash: u64,
 }
 
+/// Fixed bank in alias-block conditioning attribution.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum StretchCommonGridConditioningBank {
+    /// Untightened Rule 26 boundary bank.
+    Raw,
+    /// Exact pointwise inverse-energy diagnostic bank.
+    ExactPointwise,
+    /// Rejected endpoint-even diagnostic bank.
+    EndpointEven,
+}
+
+/// Direction selected by alias-block conditioning attribution.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum StretchCommonGridConditioningDirection {
+    /// Numerical attribution did not meet its proof gates.
+    Inconclusive,
+    /// Return to boundary-filter geometry.
+    BoundaryGeometry,
+    /// Contract later block-aware boundary preconditioner research.
+    BlockAwareBoundary,
+}
+
+/// Per-residue extremal frame evidence for one conditioning bank.
+#[derive(Clone, Debug, PartialEq)]
+pub struct StretchCommonGridConditioningResidueEvidence {
+    /// Bank under review.
+    pub bank: StretchCommonGridConditioningBank,
+    /// Alias residue index.
+    pub residue: usize,
+    /// Number of frequency bins in the residue block.
+    pub bin_count: usize,
+    /// Minimum and maximum frame eigenvalues.
+    pub eigenvalues: [f64; 2],
+    /// Normalized residuals for minimum and maximum eigenvectors.
+    pub residuals: [f64; 2],
+    /// Stable hashes for bins, matrix, and extremal eigenvectors.
+    pub hashes: [u64; 4],
+}
+
+/// Bounded bin contribution to one extremal conditioning mode.
+#[derive(Clone, Debug, PartialEq)]
+pub struct StretchCommonGridConditioningBinEvidence {
+    /// FFT bin index.
+    pub bin: usize,
+    /// Normalized eigenvector weight.
+    pub weight: f64,
+}
+
+/// Bounded channel contribution to one extremal conditioning mode.
+#[derive(Clone, Debug, PartialEq)]
+pub struct StretchCommonGridConditioningChannelEvidence {
+    /// Filter-bank channel index.
+    pub channel: usize,
+    /// Total quadratic contribution.
+    pub total: f64,
+    /// Diagonal contribution.
+    pub diagonal: f64,
+    /// Signed cross contribution.
+    pub cross: f64,
+}
+
+/// Attribution for one bank's global minimum or maximum frame mode.
+#[derive(Clone, Debug, PartialEq)]
+pub struct StretchCommonGridConditioningModeEvidence {
+    /// Bank under review.
+    pub bank: StretchCommonGridConditioningBank,
+    /// Whether this is the maximum rather than minimum mode.
+    pub maximum: bool,
+    /// Limiting residue and eigenvalue.
+    pub residue: usize,
+    /// Limiting eigenvalue.
+    pub eigenvalue: f64,
+    /// Rayleigh quotient under raw, exact-pointwise, and endpoint-even banks.
+    pub cross_bank_rayleigh: [f64; 3],
+    /// Eigenvector mass in DC, interior, and Nyquist regions.
+    pub region_mass: [f64; 3],
+    /// Sixteen largest bin weights.
+    pub top_bins: Vec<StretchCommonGridConditioningBinEvidence>,
+    /// Sixteen largest total channel contributions.
+    pub top_total_channels: Vec<StretchCommonGridConditioningChannelEvidence>,
+    /// Sixteen largest absolute cross-term channel contributions.
+    pub top_cross_channels: Vec<StretchCommonGridConditioningChannelEvidence>,
+    /// Total, diagonal, cross, and relative closure error.
+    pub contribution_sums: [f64; 4],
+}
+
+/// Complete report-only alias-block conditioning attribution.
+#[derive(Clone, Debug, PartialEq)]
+pub struct StretchCommonGridConditioningReview {
+    /// All three banks across all eleven residues.
+    pub residues: Vec<StretchCommonGridConditioningResidueEvidence>,
+    /// Global minimum and maximum attribution for every bank.
+    pub modes: Vec<StretchCommonGridConditioningModeEvidence>,
+    /// Raw, exact multiplier, endpoint multiplier, and evidence hashes.
+    pub hashes: [u64; 4],
+    /// Largest eigenpair residual and contribution closure error.
+    pub maximum_errors: [f64; 2],
+    /// Direction selected by the frozen contract.
+    pub direction: StretchCommonGridConditioningDirection,
+}
+
 /// Steady-tone evidence for common-grid delay compensation and phase scale.
 #[derive(Clone, Debug, PartialEq)]
 pub struct StretchCommonGridTonePhaseEvidence {

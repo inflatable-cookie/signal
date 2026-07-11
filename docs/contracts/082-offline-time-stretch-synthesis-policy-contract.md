@@ -927,6 +927,19 @@ The outcome chooses only a research direction:
 No branch authorizes implementation directly. Contract and roadmap work must
 freeze the selected next candidate or geometry reassessment first.
 
+Batch 29.6T is numerically inconclusive. All `33` residue rows and six global
+mode attributions repeat, and contribution closure reaches `6.650463e-16`, but
+the fixed estimator's worst normalized eigenpair residual is `0.031864856`
+against `1e-6`. Clustered non-limiting residue modes do not converge enough to
+support the direction decision. Do not use the apparent exact-pointwise
+condition or boundary mass until every residue has an accurate eigenpair.
+
+Batch 29.6U must freeze one deterministic Hermitian eigensolver proof for these
+bounded alias blocks. It must retain the same three banks and matrix hashes,
+prove all extremal residuals at most `1e-6`, and cross-check trace and Frobenius
+invariants before rerunning attribution. Do not increase power iterations,
+relax the residual, or authorize a preconditioner from partial rows.
+
 ### Rule 27: synthesize a protected centre, not a circular endpoint
 
 Extend the source in both directions with whole-sample even reflection,
@@ -982,7 +995,6 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Implement Batch 29.6T alias-block conditioning attribution and stop after its
-direction decision. Do not implement a preconditioner or run guards. Keep phase
-reproof, coefficient assembly, audio synthesis, corpus, stereo, dynamic ratio,
-and product routing closed.
+Freeze Batch 29.6U deterministic Hermitian eigensolver proof. Do not implement
+it, rerun attribution, or run guards. Keep phase reproof, coefficient assembly,
+audio synthesis, corpus, stereo, dynamic ratio, and product routing closed.

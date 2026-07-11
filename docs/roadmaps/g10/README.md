@@ -101,7 +101,9 @@ implementation remains Signal-owned.
   exceeds `1.25`, so no representative guard runs. Batch 29.6S must attribute
   the complete alias-block conditioning failure before another candidate. Its
   frozen matrix compares three banks across all `11` residues and decomposes
-  each global extremal mode by boundary-bin mass and channel cross terms.
+  each global extremal mode by boundary-bin mass and channel cross terms. Its
+  first run is inconclusive: worst eigenpair residual `0.031864856` exceeds
+  `1e-6`. Batch 29.6U must freeze an accurate deterministic Hermitian solver.
 - Offline artifacts and RealtimePreview have bounded contracts and prototype
   paths, but callback-safe preview integration and fully streaming artifact
   output remain gated until their owning source-fill/cache contracts exist.
@@ -191,7 +193,6 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Implement Batch 29.6T alias-block conditioning attribution and stop after its
-direction decision. Do not implement another preconditioner or run guards.
-Keep audio synthesis, corpus rendering, linked stereo, dynamic ratio, and
-product integration closed.
+Freeze Batch 29.6U deterministic Hermitian eigensolver proof. Do not implement
+it, rerun attribution, or run guards. Keep audio synthesis, corpus rendering,
+linked stereo, dynamic ratio, and product integration closed.

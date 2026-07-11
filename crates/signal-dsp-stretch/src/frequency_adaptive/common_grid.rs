@@ -8,7 +8,7 @@ use super::types::{
 };
 
 pub(super) const CHANNELS: usize = 1_536;
-const LOWPASS_CHANNELS: usize = 16;
+pub(super) const LOWPASS_CHANNELS: usize = 16;
 pub(super) const HOP: usize = 384;
 const ALPHA: f64 = 900.0;
 pub(super) const HASH_OFFSET: u64 = 0xcbf2_9ce4_8422_2325;
@@ -496,7 +496,9 @@ pub(super) fn build_boundary_candidate_filters(fft_frames: usize) -> Vec<Complex
     filters
 }
 
-fn build_preconditioned_boundary_filters(fft_frames: usize) -> (Vec<Complex64>, u64, u64) {
+pub(super) fn build_preconditioned_boundary_filters(
+    fft_frames: usize,
+) -> (Vec<Complex64>, u64, u64) {
     let positive_bins = fft_frames / 2 + 1;
     let mut filters = build_boundary_candidate_filters(fft_frames);
     let raw_filter_hash = filter_hash(&filters);
@@ -534,7 +536,7 @@ fn smootherstep(value: f64) -> f64 {
     value * value * value * (value * (value * 6.0 - 15.0) + 10.0)
 }
 
-fn filter_hash(filters: &[Complex64]) -> u64 {
+pub(super) fn filter_hash(filters: &[Complex64]) -> u64 {
     let mut hash = HASH_OFFSET;
     for value in filters {
         hash_u64(&mut hash, value.re.to_bits());
