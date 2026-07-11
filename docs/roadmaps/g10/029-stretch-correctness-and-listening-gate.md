@@ -331,7 +331,7 @@ independent stereo review.
 
 ### Batch 29.6P - Joint Boundary Completion Reassessment
 
-- [ ] freeze one smooth real-output DC/Nyquist completion design while
+- [x] freeze one smooth real-output DC/Nyquist completion design while
   preserving the passing interior Cauchy channels, delays, and `384`-frame grid
 - [ ] require complete frame conditioning, canonical-dual reconstruction, DC
   and Nyquist dual-atom guard passage, and unchanged interior controls
@@ -339,6 +339,8 @@ independent stereo review.
   after transform passage and before any audio synthesis
 - [ ] keep candidate tuning, coefficient assembly, synthesis, corpus, stereo,
   dynamic ratio, and product routing closed until the contract is frozen
+  - frozen candidate: raw channels `0..1534`, no pointwise tightening, one
+    zero-delay smoothstep-sine Nyquist completion in channel `1535`
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -734,9 +736,14 @@ independent stereo review.
   a raw `1.180453e-7` edge tail and worsens to `2.030199e-7`. Interior controls
   are compact. Evidence is in
   `docs/logs/2026-07/11-g10-029-dual-atom-tail-attribution-proof.md`.
+- 2026-07-11: Froze Batch 29.6P. One untightened-bank candidate retains raw
+  channels `0..1534` and replaces only channel `1535` with an endpoint-flat
+  Nyquist completion. Reconstruction, representative guard, all-channel guard,
+  then phase-mechanism reproof are ordered stop gates. Evidence is in
+  `docs/logs/2026-07/11-g10-029-boundary-completion-contract.md`.
 
 ## Next Task
 
-Freeze Batch 29.6P, the joint DC/Nyquist boundary-completion contract. Keep
-coefficient assembly, audio synthesis, corpus, stereo, dynamic ratio, and
-product routing closed.
+Implement Batch 29.6P through reconstruction and the representative guard.
+Keep phase reproof, coefficient assembly, audio synthesis, corpus, stereo,
+dynamic ratio, and product routing closed behind their gates.

@@ -220,8 +220,16 @@ dualization. Representative low/interior wavelets are compact at the measured
 radius. The next transform work must jointly smooth real-output DC and Nyquist
 completion while preserving the interior bank.
 
+The frozen candidate removes global pointwise tightening, retains raw channels
+`0..1534`, and replaces only channel `1535` with a zero-delay, endpoint-flat
+Nyquist completion across the existing `16`-spacing completion width. It does
+not assume a tight partition. Complete frame bounds and the exact canonical
+dual remain authoritative. Representative boundary guards precede the expensive
+all-channel scan; phase mechanisms reopen only after both reconstruction and
+all-channel guard passage.
+
 ## Next Task
 
-Freeze Batch 29.6P, the joint DC/Nyquist boundary-completion contract. Keep
-audio synthesis, corpus rendering, linked stereo, dynamic ratio, and product
-routing closed.
+Implement Batch 29.6P from reconstruction through the representative guard.
+Keep phase reproof, audio synthesis, corpus rendering, linked stereo, dynamic
+ratio, and product routing closed behind measured gates.

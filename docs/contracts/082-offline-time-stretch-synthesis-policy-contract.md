@@ -761,7 +761,52 @@ candidate must jointly define smooth real-output DC and Nyquist completion,
 then re-prove frame conditioning, reconstruction, derivative scale, projection,
 and guard bounds before synthesis can reopen.
 
-### Rule 26: synthesize a protected centre, not a circular endpoint
+### Rule 26: boundary completion uses one untightened frame candidate
+
+Batch 29.6P tests one geometry. Keep raw channels `0..1534` bit-identical to
+the pre-tightening Batch 29.6J responses, including their centres, Cauchy
+`alpha=900`, cutoff, and digital delays. Remove per-bin tightening for the
+entire candidate bank. Replace only channel `1535` with a zero-delay real
+Nyquist completion.
+
+Let normalized positive frequency be `f in [0,0.5]`, spacing be
+`h=0.5/1535`, completion width be `w=16h`, and `s=clamp((f-(0.5-w))/w,0,1)`.
+Use cubic smoothstep `q=s^2*(3-2s)` and Nyquist magnitude
+`sin(pi*q/2)`. It is zero below `0.5-w`, unity at Nyquist, and has zero first
+derivative at both support endpoints. Its phase and delay are zero. Do not add
+a matching pointwise normalizer, gain correction, or second boundary variant.
+
+This candidate is not assumed tight. The complete uniform-filter-bank frame
+operator and exact canonical dual own reconstruction. Smooth compact frequency
+windows plus verified coverage/frame bounds follow the painless and uniform
+nonstationary-Gabor construction boundary; no source implementation is copied.
+Primary references: [Holighaus et al.](https://arxiv.org/abs/1210.0084) and
+[Dörfler and Matusiak](https://arxiv.org/abs/1112.5262).
+
+First prove on the unchanged Batch 29.6J reconstruction controls:
+
+- every positive bin covered and no non-finite filter/frame values
+- complete frame condition ratio at most `1.25`
+- canonical-dual residual at most `1e-8`
+- exact length, peak error at most `1e-5`, RMS error at most `1e-6`, and
+  head/tail error at most `1e-5`
+- channels `0..1534` raw-response hashes unchanged and one stable channel
+  `1535` completion hash
+- identical evidence and hashes on repeat
+
+Then run the Rule 24 guard on channels `0`, `15`, `16`, `768`, `1534`, and
+`1535`. Every representative dual atom must fit within `16384` frames at
+`1e-12` excluded energy. Only after those pass may an all-channel guard scan
+open. The all-channel scan must meet the same cap and threshold with dual
+residual at most `1e-8`, finite atoms, and exact repeat evidence.
+
+Passing the transform and all-channel guard reopens only Batch 29.6L and 29.6M
+mechanism reproof on the new bank. The four tone estimator controls and all `30`
+projected-field/heap cases must retain their existing gates. Audio coefficient
+assembly, inverse synthesis, corpus, stereo, dynamic ratio, cache identity, and
+product routing remain closed.
+
+### Rule 27: synthesize a protected centre, not a circular endpoint
 
 Extend the source in both directions with whole-sample even reflection,
 including the endpoint sample: `x[-1]=x[0]` and `x[N]=x[N-1]`. Analyze the
@@ -784,7 +829,7 @@ canonical-dual residual, conjugate-symmetry error, maximum imaginary residue,
 crop start/end, exact output length, head/tail error, non-finite coefficients
 and samples, source/output/coefficient hashes, and repeat hashes.
 
-### Rule 27: synthetic audio gates precede the mono corpus
+### Rule 28: synthetic audio gates precede the mono corpus
 
 Run identity, `0.75x`, and `1.5x` on the unchanged steady low/mid/high tone,
 two-tone, linear/exponential chirp, broadband impulse, deterministic noise,
@@ -816,8 +861,7 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Freeze Batch 29.6P, a joint DC/Nyquist boundary-completion contract. Preserve
-the passing interior wavelet geometry and require reconstruction plus dual-atom
-guard passage before phase or synthesis work reopens. Keep coefficient
-assembly, audio synthesis, corpus, stereo, dynamic ratio, and product routing
-closed.
+Implement Batch 29.6P, starting with untightened-bank reconstruction and the
+six-channel representative guard. Stop before the all-channel guard on either
+failure. Keep phase reproof, coefficient assembly, audio synthesis, corpus,
+stereo, dynamic ratio, and product routing closed until their explicit gates.

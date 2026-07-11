@@ -178,8 +178,9 @@ rejected ownership crossfade.
 
 ## Next Task
 
-Freeze a joint DC/Nyquist boundary-completion contract from the tail evidence.
-Do not change the passing interior wavelet geometry.
+Implement the frozen untightened-bank boundary completion through
+reconstruction and representative dual-atom guards. Do not open audio
+synthesis.
 
 ## Frequency-Adaptive Reassessment
 
@@ -324,6 +325,16 @@ by only `1.000000000248x`. Nyquist is a separate boundary defect: channel
 and dualization. Channels `15`, `16`, and `768` are below numerical tail
 resolution at the measured radius. A credible redesign must handle both real
 spectrum boundaries together; simply removing tightening is insufficient.
+
+Signal will test one combined correction. Raw channels `0..1534` remain
+unchanged and global pointwise tightening is removed, preserving the compact
+real DC response. Channel `1535` becomes a zero-delay Nyquist completion with a
+cubic-smoothstep sine rise across the same `16`-spacing width used by the DC
+completion. The design relies on measured frame bounds and an exact canonical
+dual, not an assumed tight partition. This follows public nonstationary-Gabor
+coverage and dual-frame principles from
+[Holighaus et al.](https://arxiv.org/abs/1210.0084) and
+[Dörfler and Matusiak](https://arxiv.org/abs/1112.5262).
 
 Additional primary source:
 

@@ -89,7 +89,9 @@ implementation remains Signal-owned.
   three response stages, two spectrum forms, six radii, and four thresholds.
   The result assigns DC tail growth to tightening and identifies an independent
   raw Nyquist-edge tail. Batch 29.6P must jointly redesign those boundary
-  completions while retaining the passing interior bank.
+  completions while retaining the passing interior bank. Its single frozen
+  candidate removes pointwise tightening, keeps raw channels `0..1534`, and
+  uses one endpoint-flat real Nyquist completion in channel `1535`.
 - Offline artifacts and RealtimePreview have bounded contracts and prototype
   paths, but callback-safe preview integration and fully streaming artifact
   output remain gated until their owning source-fill/cache contracts exist.
@@ -179,6 +181,6 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Freeze Batch 29.6P, the joint DC/Nyquist boundary-completion contract. Keep
-audio synthesis, corpus rendering, linked stereo, dynamic ratio, and product
-integration closed.
+Implement Batch 29.6P through reconstruction and representative dual-atom
+guards. Keep audio synthesis, corpus rendering, linked stereo, dynamic ratio,
+and product integration closed.
