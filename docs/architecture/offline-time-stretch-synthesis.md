@@ -228,8 +228,15 @@ dual remain authoritative. Representative boundary guards precede the expensive
 all-channel scan; phase mechanisms reopen only after both reconstruction and
 all-channel guard passage.
 
+The candidate passes exact canonical-dual identity but fails its first hard
+gate. Frame energy spans `0.7361080721..2.1937926704`, giving condition ratio
+`2.9802589505` against the `1.25` cap. The representative guard therefore does
+not run. The next design boundary is conditioning: freeze one smooth,
+endpoint-compatible preconditioner or normalizer that does not recreate the
+DC tail caused by pointwise tightening or change the frozen Nyquist completion.
+
 ## Next Task
 
-Implement Batch 29.6P from reconstruction through the representative guard.
-Keep phase reproof, audio synthesis, corpus rendering, linked stereo, dynamic
-ratio, and product routing closed behind measured gates.
+Freeze the Batch 29.6Q preconditioner contract. Do not implement or sweep
+candidates. Keep guards, phase reproof, audio synthesis, corpus rendering,
+linked stereo, dynamic ratio, and product routing closed.

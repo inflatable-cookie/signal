@@ -178,9 +178,10 @@ rejected ownership crossfade.
 
 ## Next Task
 
-Implement the frozen untightened-bank boundary completion through
-reconstruction and representative dual-atom guards. Do not open audio
-synthesis.
+Freeze one smooth endpoint-compatible frame preconditioner or normalizer for
+the rejected untightened boundary bank. The bank reconstructs exactly but its
+condition ratio is `2.980258951` against the `1.25` cap. Do not sweep completion
+widths or tapers, run guards, or open audio synthesis.
 
 ## Frequency-Adaptive Reassessment
 

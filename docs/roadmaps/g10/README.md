@@ -91,7 +91,11 @@ implementation remains Signal-owned.
   raw Nyquist-edge tail. Batch 29.6P must jointly redesign those boundary
   completions while retaining the passing interior bank. Its single frozen
   candidate removes pointwise tightening, keeps raw channels `0..1534`, and
-  uses one endpoint-flat real Nyquist completion in channel `1535`.
+  uses one endpoint-flat real Nyquist completion in channel `1535`. It passes
+  exact reconstruction but fails frame conditioning at `2.980258951` against
+  the `1.25` cap, before representative guards. Batch 29.6Q must freeze one
+  smooth endpoint-compatible preconditioner or normalizer without reopening a
+  width or taper sweep.
 - Offline artifacts and RealtimePreview have bounded contracts and prototype
   paths, but callback-safe preview integration and fully streaming artifact
   output remain gated until their owning source-fill/cache contracts exist.
@@ -181,6 +185,7 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Implement Batch 29.6P through reconstruction and representative dual-atom
-guards. Keep audio synthesis, corpus rendering, linked stereo, dynamic ratio,
-and product integration closed.
+Freeze Batch 29.6Q around one smooth endpoint-compatible frame preconditioner
+or normalizer. Do not implement or sweep candidates. Keep guards, audio
+synthesis, corpus rendering, linked stereo, dynamic ratio, and product
+integration closed.

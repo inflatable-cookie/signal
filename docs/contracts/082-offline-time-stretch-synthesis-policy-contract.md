@@ -806,6 +806,27 @@ projected-field/heap cases must retain their existing gates. Audio coefficient
 assembly, inverse synthesis, corpus, stereo, dynamic ratio, cache identity, and
 product routing remain closed.
 
+Batch 29.6P is rejected at the first gate. The candidate covers every positive
+bin and reconstructs exactly through the complete canonical dual, but its frame
+minimum `0.7361080721` and maximum `2.1937926704` produce condition ratio
+`2.9802589505`, above `1.25`. Dual residual is `7.657381e-11`; peak, RMS, head,
+and tail identity errors pass. Preserved-channel hash `899c7f7b775c1378` and
+Nyquist-completion hash `463ca8b834c318d5` repeat exactly. The representative
+guard, all-channel guard, phase reproof, and synthesis remain unauthorized.
+
+### Rule 26A: reassess conditioning before another transform candidate
+
+Batch 29.6Q must freeze one smooth endpoint-compatible frame preconditioner or
+normalizer before implementation. It must retain raw channel `0` compactness,
+the Rule 26 channel `1535` completion, and the unchanged interior geometry. Do
+not sweep completion width, taper, delay, or channel allocation. The contract
+must explain why the preconditioner can hold condition ratio at most `1.25`
+without recreating the DC or Nyquist tails attributed in Batch 29.6O.
+
+Reconstruction remains the first implementation gate. Representative guard,
+all-channel guard, derivative and projected-field reproof keep their Rule 26
+order. Audio coefficient assembly and every synthesis surface remain closed.
+
 ### Rule 27: synthesize a protected centre, not a circular endpoint
 
 Extend the source in both directions with whole-sample even reflection,
@@ -861,7 +882,7 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Implement Batch 29.6P, starting with untightened-bank reconstruction and the
-six-channel representative guard. Stop before the all-channel guard on either
-failure. Keep phase reproof, coefficient assembly, audio synthesis, corpus,
-stereo, dynamic ratio, and product routing closed until their explicit gates.
+Freeze Batch 29.6Q around one smooth endpoint-compatible frame preconditioner
+or normalizer. Do not implement or sweep candidates. Keep guard work, phase
+reproof, coefficient assembly, audio synthesis, corpus, stereo, dynamic ratio,
+and product routing closed.

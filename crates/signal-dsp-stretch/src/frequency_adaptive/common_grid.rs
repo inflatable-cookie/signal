@@ -2,8 +2,8 @@ use rustfft::{num_complex::Complex64, FftPlanner};
 use signal_primitives::{Sample, SampleRate};
 
 use super::types::{
-    StretchCommonGridTonePhaseEvidence, StretchCommonGridWaveletEvidence,
-    StretchCommonGridWaveletReview,
+    StretchCommonGridBoundaryReview, StretchCommonGridTonePhaseEvidence,
+    StretchCommonGridWaveletEvidence, StretchCommonGridWaveletReview,
 };
 
 pub(super) const CHANNELS: usize = 1_536;
@@ -253,7 +253,6 @@ pub(crate) fn common_grid_wavelet_reconstruction_review_mono(
     _sample_rate: SampleRate,
 ) -> StretchCommonGridWaveletReview {
     let fft_frames = input.len().max(HOP).div_ceil(HOP) * HOP;
-    let coefficient_frames = fft_frames / HOP;
     let positive_bins = fft_frames / 2 + 1;
     let mut filters = build_filters(fft_frames);
     tighten_frequency_response(&mut filters, positive_bins);
@@ -261,6 +260,46 @@ pub(crate) fn common_grid_wavelet_reconstruction_review_mono(
     for channel in 0..CHANNELS {
         hash_u64(&mut delay_hash, digital_delay(channel).to_bits());
     }
+    reconstruct_with_filters(input, fft_frames, &filters, delay_hash)
+}
+
+pub(crate) fn common_grid_boundary_reconstruction_review_mono(
+    input: &[Sample],
+    _sample_rate: SampleRate,
+) -> StretchCommonGridBoundaryReview {
+    let fft_frames = input.len().max(HOP).div_ceil(HOP) * HOP;
+    let positive_bins = fft_frames / 2 + 1;
+    let filters = build_boundary_candidate_filters(fft_frames);
+    let mut preserved_filter_hash = HASH_OFFSET;
+    for value in &filters[..(CHANNELS - 1) * positive_bins] {
+        hash_u64(&mut preserved_filter_hash, value.re.to_bits());
+        hash_u64(&mut preserved_filter_hash, value.im.to_bits());
+    }
+    let mut nyquist_completion_hash = HASH_OFFSET;
+    for value in &filters[(CHANNELS - 1) * positive_bins..] {
+        hash_u64(&mut nyquist_completion_hash, value.re.to_bits());
+        hash_u64(&mut nyquist_completion_hash, value.im.to_bits());
+    }
+    let mut delay_hash = HASH_OFFSET;
+    for channel in 0..CHANNELS - 1 {
+        hash_u64(&mut delay_hash, digital_delay(channel).to_bits());
+    }
+    hash_u64(&mut delay_hash, 0.0_f64.to_bits());
+    StretchCommonGridBoundaryReview {
+        reconstruction: reconstruct_with_filters(input, fft_frames, &filters, delay_hash),
+        preserved_filter_hash,
+        nyquist_completion_hash,
+    }
+}
+
+fn reconstruct_with_filters(
+    input: &[Sample],
+    fft_frames: usize,
+    filters: &[Complex64],
+    delay_hash: u64,
+) -> StretchCommonGridWaveletReview {
+    let coefficient_frames = fft_frames / HOP;
+    let positive_bins = fft_frames / 2 + 1;
 
     let mut planner = FftPlanner::<f64>::new();
     let mut spectrum = vec![Complex64::new(0.0, 0.0); fft_frames];
@@ -415,6 +454,22 @@ pub(super) fn build_filters(fft_frames: usize) -> Vec<Complex64> {
             let phase = -std::f64::consts::TAU * bin as f64 * delay / fft_frames as f64;
             filters[channel * positive_bins + bin] = Complex64::from_polar(magnitude, phase);
         }
+    }
+    filters
+}
+
+pub(super) fn build_boundary_candidate_filters(fft_frames: usize) -> Vec<Complex64> {
+    let positive_bins = fft_frames / 2 + 1;
+    let mut filters = build_filters(fft_frames);
+    let spacing = 0.5 / (CHANNELS - 1) as f64;
+    let width = LOWPASS_CHANNELS as f64 * spacing;
+    let start = 0.5 - width;
+    let nyquist = &mut filters[(CHANNELS - 1) * positive_bins..];
+    for (bin, value) in nyquist.iter_mut().enumerate() {
+        let frequency = bin as f64 / fft_frames as f64;
+        let position = ((frequency - start) / width).clamp(0.0, 1.0);
+        let smoothstep = position * position * (3.0 - 2.0 * position);
+        *value = Complex64::new((std::f64::consts::FRAC_PI_2 * smoothstep).sin(), 0.0);
     }
     filters
 }

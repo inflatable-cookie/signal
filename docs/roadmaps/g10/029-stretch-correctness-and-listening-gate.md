@@ -333,14 +333,25 @@ independent stereo review.
 
 - [x] freeze one smooth real-output DC/Nyquist completion design while
   preserving the passing interior Cauchy channels, delays, and `384`-frame grid
-- [ ] require complete frame conditioning, canonical-dual reconstruction, DC
-  and Nyquist dual-atom guard passage, and unchanged interior controls
+- [x] test complete frame conditioning and canonical-dual reconstruction;
+  reject at condition ratio `2.980258951` before the dual-atom guard
 - [ ] require derivative-estimator, projected-field, and bounded-heap reproof
   after transform passage and before any audio synthesis
-- [ ] keep candidate tuning, coefficient assembly, synthesis, corpus, stereo,
+- [x] keep candidate tuning, coefficient assembly, synthesis, corpus, stereo,
   dynamic ratio, and product routing closed until the contract is frozen
   - frozen candidate: raw channels `0..1534`, no pointwise tightening, one
     zero-delay smoothstep-sine Nyquist completion in channel `1535`
+
+### Batch 29.6Q - Smooth Boundary Preconditioner Contract
+
+- [ ] freeze one smooth endpoint-compatible frame preconditioner or normalizer;
+  do not sweep completion widths, tapers, delays, or channel allocations
+- [ ] preserve raw channel `0` compactness, the Batch 29.6P channel `1535`
+  completion, condition ratio at most `1.25`, and exact canonical-dual identity
+- [ ] order reconstruction, representative guard, all-channel guard, then
+  derivative-estimator and projected-field reproof as hard stop gates
+- [ ] keep coefficient assembly, synthesis, corpus, stereo, dynamic ratio, and
+  product routing closed
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -741,9 +752,15 @@ independent stereo review.
   Nyquist completion. Reconstruction, representative guard, all-channel guard,
   then phase-mechanism reproof are ordered stop gates. Evidence is in
   `docs/logs/2026-07/11-g10-029-boundary-completion-contract.md`.
+- 2026-07-11: Rejected Batch 29.6P at reconstruction conditioning. Exact
+  canonical-dual identity passes, but frame condition ratio `2.980258951`
+  exceeds `1.25`. Representative guards did not run. Evidence is in
+  `docs/logs/2026-07/11-g10-029-boundary-completion-rejection.md`.
 
 ## Next Task
 
-Implement Batch 29.6P through reconstruction and the representative guard.
-Keep phase reproof, coefficient assembly, audio synthesis, corpus, stereo,
-dynamic ratio, and product routing closed behind their gates.
+Freeze Batch 29.6Q: one smooth endpoint-compatible frame preconditioner or
+normalizer that retains the compact DC response and frozen Nyquist completion.
+Do not implement or sweep candidates. Keep guards, phase reproof, coefficient
+assembly, audio synthesis, corpus, stereo, dynamic ratio, and product routing
+closed.

@@ -3,15 +3,17 @@ use signal_primitives::{Sample, SampleRate};
 
 mod types;
 pub use types::{
-    StretchCommonGridDualGuardEvidence, StretchCommonGridProjectedPhaseEvidence,
-    StretchCommonGridTailAtomEvidence, StretchCommonGridTailAttributionEvidence,
-    StretchCommonGridTailForm, StretchCommonGridTailStage, StretchCommonGridTonePhaseEvidence,
+    StretchCommonGridBoundaryReview, StretchCommonGridDualGuardEvidence,
+    StretchCommonGridProjectedPhaseEvidence, StretchCommonGridTailAtomEvidence,
+    StretchCommonGridTailAttributionEvidence, StretchCommonGridTailForm,
+    StretchCommonGridTailStage, StretchCommonGridTonePhaseEvidence,
     StretchCommonGridWaveletEvidence, StretchCommonGridWaveletReview,
     StretchFrequencyAdaptiveBandEvidence, StretchFrequencyAdaptiveEvidence,
     StretchFrequencyAdaptiveReview,
 };
 
 mod common_grid;
+pub(crate) use common_grid::common_grid_boundary_reconstruction_review_mono;
 pub(crate) use common_grid::common_grid_derivative_tone_review_mono;
 pub(crate) use common_grid::common_grid_tone_phase_review_mono;
 pub(crate) use common_grid::common_grid_wavelet_reconstruction_review_mono;

@@ -112,6 +112,25 @@ fn common_grid_wavelet_reconstruction_controls_pass() {
 }
 
 #[test]
+fn common_grid_boundary_candidate_rejects_frame_conditioning() {
+    let input = mixed_control();
+    let first = common_grid_boundary_reconstruction_review_mono(&input, SAMPLE_RATE);
+    let repeated = common_grid_boundary_reconstruction_review_mono(&input, SAMPLE_RATE);
+    assert_eq!(first, repeated);
+    let evidence = &first.reconstruction.evidence;
+    assert_eq!(first.reconstruction.samples.len(), input.len());
+    assert!(evidence.frame_condition_ratio > 1.25, "{evidence:?}");
+    assert!(evidence.canonical_dual_residual <= 1.0e-8, "{evidence:?}");
+    assert!(evidence.reconstruction_peak_error <= 1.0e-5, "{evidence:?}");
+    assert!(evidence.reconstruction_rms_error <= 1.0e-6, "{evidence:?}");
+    assert!(evidence.reconstruction_head_error <= 1.0e-5, "{evidence:?}");
+    assert!(evidence.reconstruction_tail_error <= 1.0e-5, "{evidence:?}");
+    assert_eq!(evidence.non_finite_values, 0);
+    assert_ne!(first.preserved_filter_hash, 0);
+    assert_ne!(first.nyquist_completion_hash, 0);
+}
+
+#[test]
 fn common_grid_phase_transport_rejects_high_band_phase_aliasing() {
     for frequency in [312.5_f32, 1_000.0] {
         let input = (0..24_576)

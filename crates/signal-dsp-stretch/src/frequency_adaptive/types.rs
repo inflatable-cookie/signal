@@ -127,6 +127,17 @@ pub struct StretchCommonGridWaveletReview {
     pub evidence: StretchCommonGridWaveletEvidence,
 }
 
+/// Identity reconstruction through the untightened boundary-completion candidate.
+#[derive(Clone, Debug, PartialEq)]
+pub struct StretchCommonGridBoundaryReview {
+    /// Complete canonical-dual identity reconstruction.
+    pub reconstruction: StretchCommonGridWaveletReview,
+    /// Stable hash of preserved raw channels `0..1534`.
+    pub preserved_filter_hash: u64,
+    /// Stable hash of the replacement Nyquist completion.
+    pub nyquist_completion_hash: u64,
+}
+
 /// Steady-tone evidence for common-grid delay compensation and phase scale.
 #[derive(Clone, Debug, PartialEq)]
 pub struct StretchCommonGridTonePhaseEvidence {
