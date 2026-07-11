@@ -642,6 +642,60 @@ pub struct StretchTimeAdaptivePainlessReview {
     pub direction: StretchTimeAdaptivePainlessDirection,
 }
 
+/// Direction selected by automatic Rényi time-resolution evidence.
+#[cfg(all(test, not(debug_assertions)))]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum StretchRenyiSelectorDirection {
+    /// Every selector gate passes and variable-hop phase may be contracted.
+    VariableHopPhaseContract,
+    /// At least one selector gate fails and selector research must continue.
+    SelectorResearch,
+}
+
+/// Evidence for one automatic Rényi selector control.
+#[cfg(all(test, not(debug_assertions)))]
+#[derive(Clone, Debug, PartialEq)]
+pub struct StretchRenyiControlEvidence {
+    /// Frozen control index.
+    pub control: usize,
+    /// Minimum-entropy winner at every decision anchor.
+    pub raw_winners: Vec<u8>,
+    /// Legal minimum-total-entropy resolution path.
+    pub selected_levels: Vec<u8>,
+    /// Per-anchor energies for 512, 1024, 2048, and 4096 windows.
+    pub energies: Vec<[f64; 4]>,
+    /// Per-anchor normalized Rényi entropies in the same order.
+    pub entropies: Vec<[f64; 4]>,
+    /// Selected counts by resolution level.
+    pub level_counts: [usize; 4],
+    /// Transition count and minimum/maximum derived hop.
+    pub path_shape: [usize; 3],
+    /// Reflected reads and non-finite values.
+    pub structural_counts: [usize; 2],
+    /// Maximum linked-channel energy closure error.
+    pub channel_energy_closure: f64,
+    /// Total selected path cost.
+    pub path_cost: f64,
+    /// Input, entropy, path, and complete evidence hashes.
+    pub hashes: [u64; 4],
+}
+
+/// Complete release-only automatic Rényi resolution-selection report.
+#[cfg(all(test, not(debug_assertions)))]
+#[derive(Clone, Debug, PartialEq)]
+pub struct StretchRenyiSelectorReview {
+    /// Frozen base-control evidence.
+    pub controls: Vec<StretchRenyiControlEvidence>,
+    /// Steady, event, dense, boundary, chirp/noise/mixed, and equivalence failures.
+    pub gate_failures: [usize; 7],
+    /// Maximum perturbation path-change fraction.
+    pub maximum_perturbation_change: f64,
+    /// Stable aggregate evidence hash.
+    pub evidence_hash: u64,
+    /// Selected continuation direction.
+    pub direction: StretchRenyiSelectorDirection,
+}
+
 /// Numerical evidence for one bounded Hermitian Jacobi solve.
 #[derive(Clone, Debug, PartialEq)]
 pub struct StretchCommonGridJacobiEvidence {

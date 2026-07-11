@@ -534,12 +534,21 @@ independent stereo review.
 
 ### Batch 29.6AK - Rényi Time-Resolution Selection
 
-- [ ] compute normalized `alpha=0.7` local Rényi evidence for all four passing
+- [x] compute normalized `alpha=0.7` local Rényi evidence for all four passing
   resolutions on one fixed `128`-frame decision grid
-- [ ] solve one legal minimum-entropy path and prove impulse, steady, dense,
+- [x] solve one legal minimum-entropy path and prove impulse, steady, dense,
   noise, mixed, perturbation, gain/polarity, and shared-stereo gates
-- [ ] open only a separately frozen variable-hop phase contract on complete
+- [x] open only a separately frozen variable-hop phase contract on complete
   passage; produce no modified coefficients or stretched audio
+
+### Batch 29.6AL - Rényi Selector-Failure Attribution Contract
+
+- [ ] freeze one diagnostic that separates fixed-region temporal contamination
+  from whole-band tonal-energy dominance without changing selector output
+- [ ] retain exact Batch 29.6AK energies, entropies, paths, controls, and hashes;
+  report bounded time-slice and frequency-region contributions only
+- [ ] select one next selector boundary or stop inconclusive; keep phase,
+  stretched synthesis, corpus, dynamic ratio, cache, and routing closed
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -1029,8 +1038,13 @@ independent stereo review.
   `alpha=0.7` Rényi entropy, followed by one legal minimum-cost resolution path.
   Evidence is in
   `docs/logs/2026-07/11-g10-029-renyi-resolution-selection-contract.md`.
+- 2026-07-11: Batch 29.6AK rejected the raw Rényi selector. A single impulse
+  selects `512` across `36/64` anchors, the linear chirp stays all-short, and
+  mixed tonal/transient audio stays all-long. Stability and equivalence gates
+  pass. Evidence is in
+  `docs/logs/2026-07/11-g10-029-renyi-resolution-selection-rejection.md`.
 
 ## Next Task
 
-Implement Batch 29.6AK Rényi time-resolution selection and stop at its schedule
-decision. Do not implement phase or stretched synthesis.
+Freeze Batch 29.6AL Rényi selector-failure attribution. Do not change the
+selector or implement phase or stretched synthesis.

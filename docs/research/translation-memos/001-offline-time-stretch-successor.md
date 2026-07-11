@@ -178,8 +178,8 @@ rejected ownership crossfade.
 
 ## Next Task
 
-Implement Rényi automatic time-resolution selection. Do not implement phase or
-stretched synthesis.
+Freeze Rényi selector-failure attribution. Do not change the selector or
+implement phase or stretched synthesis.
 
 ## Frequency-Adaptive Reassessment
 
@@ -611,3 +611,11 @@ Additional primary source:
 | Source | Confidence | Transfer boundary |
 | --- | --- | --- |
 | [Liuni et al., 2011](https://arxiv.org/abs/1109.6314) | high | `alpha=0.7` local Rényi entropy and minimum-sparsity resolution selection |
+
+The unmodified selector rejects. A fixed `4096`-frame comparison region keeps
+an isolated impulse inside the evidence field long enough to select `512` at
+`36/64` anchors. The linear chirp chooses `512` everywhere. Conversely, mixed
+tonal/transient audio chooses `4096` everywhere: whole-band tonal sparsity hides
+the local event. Equivalence and perturbation stability pass, so numerical
+instability does not own the failure. Attribute temporal-region contamination
+and whole-band energy dominance before changing selector policy.

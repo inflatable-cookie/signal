@@ -380,8 +380,15 @@ most one; exact ties prefer longer windows. Stereo later sums channel energies
 before normalization and shares the resulting path. No onset, HPSS, flux, peak,
 or learned classifier participates.
 
+The frozen selector is rejected. It preserves long windows on steady tones and
+passes invariance/stability gates, but one impulse selects `512` across `36/64`
+anchors, the linear chirp selects `512` everywhere, and mixed tonal/transient
+audio selects `4096` everywhere. The fixed comparison region spreads isolated
+event ownership while whole-band tonal energy hides the mixed transient. Phase
+work remains closed pending selector-failure attribution.
+
 ## Next Task
 
-Implement Batch 29.6AK Rényi time-resolution selection and stop at its schedule
-decision. Do not implement phase, stretched synthesis, corpus, dynamic ratio,
-or routing.
+Freeze Batch 29.6AL Rényi selector-failure attribution. Do not change the
+selector or implement phase, stretched synthesis, corpus, dynamic ratio, or
+routing.

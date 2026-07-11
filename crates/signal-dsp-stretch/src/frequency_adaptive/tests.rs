@@ -427,6 +427,42 @@ fn time_adaptive_painless_reconstruction_selects_identity_direction() {
 }
 
 #[test]
+#[cfg(not(debug_assertions))]
+fn renyi_time_resolution_selection_selects_schedule_direction() {
+    let first = renyi_time_resolution_selection_review();
+    let repeated = renyi_time_resolution_selection_review();
+    assert_eq!(first, repeated);
+    assert_eq!(first.controls.len(), 12);
+    assert!(first.controls.iter().all(|control| {
+        control.structural_counts[1] == 0
+            && control.channel_energy_closure <= 1.0e-12
+            && control
+                .selected_levels
+                .windows(2)
+                .all(|pair| pair[0].abs_diff(pair[1]) <= 1)
+            && control.hashes.iter().all(|hash| *hash != 0)
+    }));
+    assert_eq!(first.gate_failures, [0, 1, 0, 0, 2, 0, 0]);
+    assert_eq!(
+        first.direction,
+        StretchRenyiSelectorDirection::SelectorResearch
+    );
+    assert_ne!(first.evidence_hash, 0);
+    eprintln!(
+        "renyi_time_resolution gate_failures={:?} perturbation={} paths={:?} evidence={:016x} direction={:?}",
+        first.gate_failures,
+        first.maximum_perturbation_change,
+        first
+            .controls
+            .iter()
+            .map(|control| (control.control, control.level_counts, control.path_shape, control.path_cost))
+            .collect::<Vec<_>>(),
+        first.evidence_hash,
+        first.direction,
+    );
+}
+
+#[test]
 fn common_grid_phase_transport_rejects_high_band_phase_aliasing() {
     for frequency in [312.5_f32, 1_000.0] {
         let input = (0..24_576)

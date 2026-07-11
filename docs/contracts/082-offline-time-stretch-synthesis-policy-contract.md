@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; automatic time-resolution selection frozen
+Status: active; Rényi selector rejected
 Owner: dsp
 Updated: 2026-07-11
 Related contracts: `046`, `048`, `049`
@@ -1431,6 +1431,22 @@ frozen variable-hop phase contract on the exact selected schedules. It does not
 authorize phase modification, stretched synthesis, corpus, dynamic ratio,
 cache, or routing.
 
+Batch 29.6AK rejects the unmodified Rényi selector. Silence and all four steady
+tonal controls select `4096` at every anchor. Dense/boundary events, stationary
+noise, gain, polarity, pan, channel swap, equal-energy stereo, finite values,
+legal paths, exact repeat, and the `5%` perturbation cap pass; maximum
+perturbation change is `0.015625`.
+
+The isolated impulse selects levels `[36,4,8,16]` from shortest to longest and
+fails the far-field return-to-long gate. The linear chirp selects `512` at all
+`64` anchors, failing adaptive-level coverage. Mixed tonal/transient audio
+selects `4096` at all `64` anchors and misses its declared transient. Gate
+failures are `[0,1,0,0,2,0,0]`; evidence hash `5568f0a38f679a40` repeats.
+
+Do not add an entropy margin, onset cue, band weighting, or comparison-region
+change yet. Batch 29.6AL must attribute fixed-region temporal contamination and
+whole-band energy dominance before another selector contract.
+
 ### Rule 27: synthesize a protected centre, not a circular endpoint
 
 Extend the source in both directions with whole-sample even reflection,
@@ -1486,5 +1502,5 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Implement Batch 29.6AK Rényi time-resolution selection and stop at its schedule
-decision. Do not implement phase or stretched synthesis.
+Freeze Batch 29.6AL Rényi selector-failure attribution. Do not change the
+selector or implement phase or stretched synthesis.

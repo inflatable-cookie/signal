@@ -147,7 +147,9 @@ implementation remains Signal-owned.
   condition `1.5934675721` and sub-`1e-15` peak error. Batch 29.6AJ must freeze
   automatic time-resolution selection before detector implementation. It now
   freezes one normalized local `alpha=0.7` Rényi selector and legal minimum-cost
-  resolution path. Batch 29.6AK owns report-only selector evidence.
+  resolution path. Batch 29.6AK rejects it: isolated-event ownership is too
+  broad, a linear chirp stays all-short, and mixed tonal/transient audio stays
+  all-long. Batch 29.6AL must attribute those two failure modes before change.
 - Offline artifacts and RealtimePreview have bounded contracts and prototype
   paths, but callback-safe preview integration and fully streaming artifact
   output remain gated until their owning source-fill/cache contracts exist.
@@ -237,6 +239,6 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Implement Batch 29.6AK Rényi time-resolution selection and stop at its schedule
-decision. Keep phase, stretched synthesis, corpus, linked stereo, dynamic ratio,
-and product integration closed.
+Freeze Batch 29.6AL Rényi selector-failure attribution. Keep selector changes,
+phase, stretched synthesis, corpus, linked stereo, dynamic ratio, and product
+integration closed.
