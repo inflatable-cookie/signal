@@ -12,7 +12,7 @@ use std::{
     path::Path,
     ptr,
     sync::{
-        atomic::{AtomicI64, Ordering},
+        atomic::{AtomicI64, AtomicU64, Ordering},
         Mutex,
     },
 };
@@ -29,6 +29,7 @@ use clap_sys::{
     },
     ext::audio_ports::{clap_plugin_audio_ports, CLAP_EXT_AUDIO_PORTS},
     ext::gui::{clap_host_gui, clap_plugin_gui, CLAP_EXT_GUI},
+    ext::latency::{clap_plugin_latency, CLAP_EXT_LATENCY},
     ext::params::{
         clap_host_params, clap_param_clear_flags, clap_param_rescan_flags, CLAP_EXT_PARAMS,
     },
@@ -179,6 +180,17 @@ impl ClapHostedPortLayout {
     pub fn is_stereo_effect(&self) -> bool {
         self.main_input_channels == 2 && self.main_output_channels == 2
     }
+
+    /// MIDI instrument layout supported by the current host: no main audio
+    /// input and one stereo main output.
+    pub fn is_stereo_instrument(&self) -> bool {
+        self.main_input_channels == 0 && self.main_output_channels == 2
+    }
+
+    /// Whether the current stereo process session can host this layout.
+    pub fn is_supported_stereo_processor(&self) -> bool {
+        self.is_stereo_effect() || self.is_stereo_instrument()
+    }
 }
 
 /// Lifecycle state of a hosted instance.
@@ -243,6 +255,7 @@ impl ClapHostedInstance {
             host: sandbox_host(),
             gui_events: Mutex::new(Vec::new()),
             params_events: Mutex::new(Vec::new()),
+            restart_requests: AtomicU64::new(0),
         });
         // Self-referential host_data: the shim is boxed (stable address)
         // and outlives the plugin, so callbacks can always recover it.
@@ -311,6 +324,32 @@ impl ClapHostedInstance {
     /// Main-bus port layout enumerated at load.
     pub fn port_layout(&self) -> ClapHostedPortLayout {
         self.port_layout
+    }
+
+    /// Current plugin-reported processing latency in sample frames.
+    pub fn latency_frames(&self) -> u32 {
+        let extension = unsafe {
+            (*self.plugin)
+                .get_extension
+                .map(|get| get(self.plugin, CLAP_EXT_LATENCY.as_ptr()))
+                .unwrap_or(ptr::null())
+        };
+        if extension.is_null() {
+            return 0;
+        }
+        unsafe {
+            (*extension.cast::<clap_plugin_latency>())
+                .get
+                .map(|get| get(self.plugin))
+                .unwrap_or(0)
+        }
+    }
+
+    /// Number of plugin `request_restart` callbacks observed. CLAP uses a
+    /// restart request when processing facts such as latency change; the
+    /// embedding host re-queries the latency extension control-side.
+    pub fn restart_request_count(&self) -> u64 {
+        self.host_shim.restart_requests.load(Ordering::Relaxed)
     }
 
     /// Activate the instance for processing at `sample_rate_hz` with the
@@ -466,6 +505,7 @@ impl ClapHostedInstance {
         Ok(ClapProcessSession::new(
             self.plugin,
             self.activated_max_frames as usize,
+            self.port_layout.main_input_channels > 0,
             Arc::clone(&self.param_changes),
             Arc::clone(&self.param_out),
         ))
@@ -561,6 +601,8 @@ pub(crate) struct ClapHostShim {
     /// (g12.024): rescan/clear/request_flush, queued for the embedding
     /// host to drain.
     pub(crate) params_events: Mutex<Vec<ClapHostParamsEvent>>,
+    /// Monotonic, allocation-free notification from `request_restart`.
+    pub(crate) restart_requests: AtomicU64,
 }
 
 /// Recover the shim from a host pointer inside a callback. Null when the
@@ -825,6 +867,7 @@ pub struct ClapProcessSession {
     output_left: Vec<f32>,
     output_right: Vec<f32>,
     steady_time: AtomicI64,
+    has_audio_input: bool,
     processing: bool,
     /// Pending param writes shared with the owning instance (g12.023).
     param_changes: Arc<PluginParamChangeQueue>,
@@ -845,6 +888,7 @@ impl ClapProcessSession {
     fn new(
         plugin: *const clap_plugin,
         max_frames: usize,
+        has_audio_input: bool,
         param_changes: Arc<PluginParamChangeQueue>,
         param_out_queue: Arc<PluginParamChangeQueue>,
     ) -> Self {
@@ -878,6 +922,7 @@ impl ClapProcessSession {
             output_left: vec![0.0; max_frames],
             output_right: vec![0.0; max_frames],
             steady_time: AtomicI64::new(0),
+            has_audio_input,
             processing: false,
             param_changes,
             param_scratch: Vec::with_capacity(PLUGIN_PARAM_CHANGE_CAPACITY),
@@ -1067,7 +1112,7 @@ impl ClapProcessSession {
         self.processing = false;
     }
 
-    /// Process one block: interleaved stereo in, interleaved stereo out.
+    /// Process one block: optional interleaved stereo in, stereo out.
     /// Alloc-free (buffers preallocated at activate). On plugin error the
     /// input passes through unchanged. Returns `false` on error.
     pub fn process_interleaved_stereo(
@@ -1110,9 +1155,13 @@ impl ClapProcessSession {
             steady_time,
             frames_count: frames as u32,
             transport: ptr::null(),
-            audio_inputs: &input_buffer,
+            audio_inputs: if self.has_audio_input {
+                &input_buffer
+            } else {
+                ptr::null()
+            },
             audio_outputs: &mut output_buffer,
-            audio_inputs_count: 1,
+            audio_inputs_count: u32::from(self.has_audio_input),
             audio_outputs_count: 1,
             in_events,
             out_events: &self.param_out.list,
@@ -1186,9 +1235,13 @@ impl ClapProcessSession {
             steady_time,
             frames_count: frames as u32,
             transport: ptr::null(),
-            audio_inputs: &input_buffer,
+            audio_inputs: if self.has_audio_input {
+                &input_buffer
+            } else {
+                ptr::null()
+            },
             audio_outputs: &mut output_buffer,
-            audio_inputs_count: 1,
+            audio_inputs_count: u32::from(self.has_audio_input),
             audio_outputs_count: 1,
             in_events,
             out_events: &self.param_out.list,
@@ -1254,6 +1307,30 @@ unsafe extern "C" fn sandbox_host_get_extension(
     ptr::null()
 }
 
-unsafe extern "C" fn sandbox_host_request_restart(_host: *const clap_host) {}
+unsafe extern "C" fn sandbox_host_request_restart(host: *const clap_host) {
+    if let Some(shim) = shim_from_host(host) {
+        shim.restart_requests.fetch_add(1, Ordering::Relaxed);
+    }
+}
 unsafe extern "C" fn sandbox_host_request_process(_host: *const clap_host) {}
 unsafe extern "C" fn sandbox_host_request_callback(_host: *const clap_host) {}
+
+#[cfg(test)]
+mod host_callback_tests {
+    use super::*;
+
+    #[test]
+    fn restart_callback_advances_the_host_revision() {
+        let mut shim = Box::new(ClapHostShim {
+            host: sandbox_host(),
+            gui_events: Mutex::new(Vec::new()),
+            params_events: Mutex::new(Vec::new()),
+            restart_requests: AtomicU64::new(0),
+        });
+        shim.host.host_data = (&mut *shim as *mut ClapHostShim).cast();
+
+        unsafe { sandbox_host_request_restart(&shim.host) };
+
+        assert_eq!(shim.restart_requests.load(Ordering::Relaxed), 1);
+    }
+}

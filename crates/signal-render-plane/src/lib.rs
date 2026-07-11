@@ -319,6 +319,80 @@ pub struct RenderBlockPluginEvent {
 /// the cap in one block are dropped, earliest-first wins.
 pub const PLUGIN_EVENTS_PER_BLOCK_CAPACITY: usize = 1024;
 
+/// Reconcile a stateful plugin's active notes across a non-contiguous
+/// transport jump. Fixed stack state and the caller's preallocated scratch
+/// keep this audio-thread safe. Note IDs are not yet distinct in the render
+/// vocabulary, so state is tracked by channel/key, matching current delivery.
+fn append_plugin_note_chase(
+    events: &[RenderPluginEvent],
+    from_frame: u64,
+    to_frame: u64,
+    offset_frames: u32,
+    scratch: &mut Vec<RenderBlockPluginEvent>,
+) {
+    let mut from_active = [0u128; 16];
+    let mut to_active = [0u128; 16];
+    let mut to_velocity = [[0.0f32; 128]; 16];
+    let scan_end = from_frame.max(to_frame);
+    for event in events.iter().take_while(|event| event.frame < scan_end) {
+        let channel = usize::from(event.channel.min(15));
+        let (key, active, velocity) = match event.kind {
+            RenderPluginEventKind::NoteOn { key, velocity } => (key, true, velocity),
+            RenderPluginEventKind::NoteOff { key } => (key, false, 0.0),
+            _ => continue,
+        };
+        let bit = 1u128 << key;
+        if event.frame < from_frame {
+            if active {
+                from_active[channel] |= bit;
+            } else {
+                from_active[channel] &= !bit;
+            }
+        }
+        if event.frame < to_frame {
+            if active {
+                to_active[channel] |= bit;
+                to_velocity[channel][usize::from(key)] = velocity;
+            } else {
+                to_active[channel] &= !bit;
+            }
+        }
+    }
+    for (channel, active) in from_active.into_iter().enumerate() {
+        for key in 0..128u8 {
+            if active & (1u128 << key) == 0 {
+                continue;
+            }
+            if scratch.len() == PLUGIN_EVENTS_PER_BLOCK_CAPACITY {
+                return;
+            }
+            scratch.push(RenderBlockPluginEvent {
+                offset_frames,
+                channel: channel as u8,
+                kind: RenderPluginEventKind::NoteOff { key },
+            });
+        }
+    }
+    for (channel, active) in to_active.into_iter().enumerate() {
+        for key in 0..128u8 {
+            if active & (1u128 << key) == 0 {
+                continue;
+            }
+            if scratch.len() == PLUGIN_EVENTS_PER_BLOCK_CAPACITY {
+                return;
+            }
+            scratch.push(RenderBlockPluginEvent {
+                offset_frames,
+                channel: channel as u8,
+                kind: RenderPluginEventKind::NoteOn {
+                    key,
+                    velocity: to_velocity[channel][usize::from(key)],
+                },
+            });
+        }
+    }
+}
+
 // ── Disk-streaming clip sources (chunk mailbox) ─────────────────────────────
 //
 // Long media plays through [`RenderSource::Stream`]: a control-side feeder
@@ -762,6 +836,18 @@ pub trait PluginBlockProcessor: Send + Sync {
         0
     }
 
+    /// Processing latency reported by the live plugin, in sample frames.
+    fn latency_frames(&self) -> u32 {
+        0
+    }
+
+    /// Monotonic revision incremented when the backend observes that its
+    /// reported processing latency may have changed. Hosts poll this off the
+    /// audio thread to decide whether Pulse must rebuild graph compensation.
+    fn latency_revision(&self) -> u64 {
+        0
+    }
+
     /// Process one block in place, delivering `events` (sorted by
     /// `offset_frames`, all offsets `< frame_count`) alongside the audio.
     /// Backends convert to their plugin format's native event lists here —
@@ -827,6 +913,16 @@ impl RenderPluginProcessor {
     /// Cumulative unsupported-event attempts observed by the backend.
     pub fn unsupported_event_count(&self) -> u64 {
         self.inner.unsupported_event_count()
+    }
+
+    /// Processing latency reported by the live plugin, in sample frames.
+    pub fn latency_frames(&self) -> u32 {
+        self.inner.latency_frames()
+    }
+
+    /// Monotonic backend latency revision for control-side plan invalidation.
+    pub fn latency_revision(&self) -> u64 {
+        self.inner.latency_revision()
     }
 }
 
@@ -974,6 +1070,14 @@ pub enum RenderStageKind {
     },
     /// Sums its inputs through their edge matrices.
     Sum,
+    /// Delays its summed inputs by an exact number of stream frames. The
+    /// delay line is allocated when the plan compiles; rendering only swaps
+    /// samples through the fixed-size ring. Consumers decide where to place
+    /// compensation stages and how many frames they require.
+    Delay {
+        /// Number of stream frames to delay. Zero is an identity stage.
+        frames: u32,
+    },
     /// The output boundary: exactly one per plan. Its scratch is what the
     /// hardware boundary adapts onto the stream.
     Output,
@@ -1323,6 +1427,10 @@ struct CompiledNode {
     /// ([`PLUGIN_EVENTS_PER_BLOCK_CAPACITY`]); the audio thread only ever
     /// clears and pushes within capacity.
     event_scratch: Vec<RenderBlockPluginEvent>,
+    /// Interleaved fixed-size delay ring plus its next sample position.
+    /// Empty for non-delay stages and zero-frame delays.
+    delay_ring: Vec<f32>,
+    delay_cursor: usize,
     /// Interleaved scratch at the stage's format: `MAX_BLOCK_FRAMES × channels`.
     scratch: Vec<f32>,
 }
@@ -1609,7 +1717,9 @@ impl RenderPlan {
                         })
                     })
                     .collect::<Result<Vec<_>, RenderPlanCompileError>>()?,
-                RenderStageKind::Sum | RenderStageKind::Output => Vec::new(),
+                RenderStageKind::Sum | RenderStageKind::Delay { .. } | RenderStageKind::Output => {
+                    Vec::new()
+                }
             };
             let inputs = stage
                 .inputs
@@ -1645,6 +1755,12 @@ impl RenderPlan {
                 1.0
             };
             let gain = stage.gain * master_factor;
+            let delay_ring = match stage.kind {
+                RenderStageKind::Delay { frames } => {
+                    vec![0.0; frames as usize * dest_channels]
+                }
+                _ => Vec::new(),
+            };
             // Automation envelope: sorted, master factor folded in so the
             // render path samples one curve.
             let gain_envelope: Vec<(u64, f32)> = match &stage.gain_automation {
@@ -1680,6 +1796,8 @@ impl RenderPlan {
                 } else {
                     Vec::new()
                 },
+                delay_ring,
+                delay_cursor: 0,
                 scratch: vec![0.0f32; MAX_BLOCK_FRAMES * dest_channels],
             });
         }
@@ -1746,6 +1864,12 @@ impl RenderPlan {
                 continue;
             };
             stage.gain_current = previous_node.gain_current;
+            if stage.delay_ring.len() == previous_node.delay_ring.len()
+                && !stage.delay_ring.is_empty()
+            {
+                stage.delay_ring.copy_from_slice(&previous_node.delay_ring);
+                stage.delay_cursor = previous_node.delay_cursor;
+            }
             let clip_map = self
                 .inherit_clip_maps
                 .get(index)
@@ -2640,6 +2764,10 @@ pub struct RenderPlaneExecutor {
     edge_gain: f32,
     /// Seek requested while audible: applied once `edge_gain` reaches zero.
     pending_seek: Option<u64>,
+    /// Timeline position abandoned by the most recently applied seek. The
+    /// next event-bearing block uses it to release old notes and chase the
+    /// destination state, then clears it.
+    event_discontinuity_from: Option<u64>,
     /// Transport loop region `[start, end)`; playback wraps to `start` when
     /// a rendered block crosses `end` (see `render_block_inner`).
     loop_region: Option<(u64, u64)>,
@@ -2689,6 +2817,7 @@ impl RenderPlaneExecutor {
     }
 
     fn apply_seek(&mut self, position_frames: u64) {
+        self.event_discontinuity_from = Some(self.position_frames);
         self.position_frames = position_frames;
         self.shared
             .position_frames
@@ -2947,6 +3076,8 @@ impl RenderPlaneExecutor {
                 processor,
                 events,
                 event_scratch,
+                delay_ring,
+                delay_cursor,
                 scratch,
                 ..
             } = stage;
@@ -2997,6 +3128,20 @@ impl RenderPlaneExecutor {
                 }
             }
 
+            // Explicit graph delay: swap the summed block through the
+            // preallocated interleaved ring. Cursor state spans callbacks
+            // and compatible plan swaps, so the delay is sample-exact even
+            // when its length exceeds the current block.
+            if !delay_ring.is_empty() {
+                for sample in scratch.iter_mut() {
+                    std::mem::swap(sample, &mut delay_ring[*delay_cursor]);
+                    *delay_cursor += 1;
+                    if *delay_cursor == delay_ring.len() {
+                        *delay_cursor = 0;
+                    }
+                }
+            }
+
             // Plugin processor (g11.012): transforms the stage's summed
             // scratch in place before consumers read it. Bypass (`false` —
             // deadline miss, dead sandbox, unsupported layout) leaves the
@@ -3017,11 +3162,25 @@ impl RenderPlaneExecutor {
                 } else {
                     event_scratch.clear();
                     if playing {
-                        for (segment_start, segment_offset, segment_frames) in
-                            segments.iter().take(segment_count)
+                        for (segment_index, (segment_start, segment_offset, segment_frames)) in
+                            segments.iter().take(segment_count).enumerate()
                         {
                             if *segment_frames == 0 {
                                 continue;
+                            }
+                            let discontinuity_from = if segment_index == 0 {
+                                self.event_discontinuity_from
+                            } else {
+                                self.loop_region.map(|(_, loop_end)| loop_end)
+                            };
+                            if let Some(from) = discontinuity_from {
+                                append_plugin_note_chase(
+                                    events,
+                                    from,
+                                    *segment_start,
+                                    *segment_offset as u32,
+                                    event_scratch,
+                                );
                             }
                             let segment_end = *segment_start + *segment_frames as u64;
                             let begin =
@@ -3157,6 +3316,9 @@ impl RenderPlaneExecutor {
 
         // Seek lands at the envelope's zero crossing; the next block ramps
         // back in from the new position.
+        // Any discontinuity consumed by this block is complete. A pending
+        // seek applied below installs the source for the NEXT block.
+        self.event_discontinuity_from = None;
         if self.edge_gain <= 0.0 {
             if let Some(position) = self.pending_seek.take() {
                 self.apply_seek(position);
@@ -3189,6 +3351,7 @@ pub fn render_plane() -> (RenderPlaneController, RenderPlaneExecutor) {
             playing: false,
             edge_gain: 0.0,
             pending_seek: None,
+            event_discontinuity_from: None,
             loop_region: None,
             position_frames: 0,
             last_callback_instant: None,
@@ -4344,6 +4507,80 @@ mod tests {
         }
     }
 
+    fn impulse_delay_spec(delay_frames: u32) -> RenderPlanSpec {
+        let mut data = vec![0.0f32; 512 * 2];
+        data[100 * 2] = 1.0;
+        data[100 * 2 + 1] = 1.0;
+        RenderPlanSpec {
+            sample_rate_hz: 48_000,
+            master_gain: 1.0,
+            master_limiter: None,
+            stages: vec![
+                lane_node(
+                    LANE_ID,
+                    1.0,
+                    vec![RenderClipSpec {
+                        clip_id: 2002,
+                        start_frames: 0,
+                        end_frames: 512,
+                        source: RenderSource::Samples(RenderSampleBuffer {
+                            sample_rate_hz: 48_000,
+                            frames: data.into(),
+                        }),
+                        loop_source: false,
+                    }],
+                ),
+                RenderStageSpec {
+                    processor: None,
+                    events: None,
+                    stage_id: 78,
+                    format: ChannelFormat::stereo(),
+                    gain: 1.0,
+                    gain_automation: None,
+                    kind: RenderStageKind::Delay {
+                        frames: delay_frames,
+                    },
+                    inputs: vec![identity_edge(LANE_ID)],
+                },
+                master_node(vec![identity_edge(78)]),
+            ],
+        }
+    }
+
+    #[test]
+    fn delay_stage_moves_an_impulse_by_exact_stream_frames() {
+        let (mut controller, mut executor) = render_plane();
+        controller.install_plan(&impulse_delay_spec(7)).unwrap();
+        controller.set_playing(true).unwrap();
+
+        let mut frames = [0.0f32; 256 * 2];
+        executor.render_block(&mut frames);
+
+        assert_eq!(frames[100 * 2], 0.0);
+        assert!(frames[107 * 2] > 0.0);
+        assert_eq!(frames[107 * 2], frames[107 * 2 + 1]);
+        assert_eq!(frames[106 * 2], 0.0);
+        assert_eq!(frames[108 * 2], 0.0);
+    }
+
+    #[test]
+    fn delay_stage_carries_ring_state_across_plan_swap() {
+        let (mut controller, mut executor) = render_plane();
+        let spec = impulse_delay_spec(300);
+        controller.install_plan(&spec).unwrap();
+        controller.set_playing(true).unwrap();
+
+        let mut first = [0.0f32; 256 * 2];
+        executor.render_block(&mut first);
+        assert!(first.iter().all(|sample| *sample == 0.0));
+
+        controller.install_plan(&spec).unwrap();
+        let mut second = [0.0f32; 256 * 2];
+        executor.render_block(&mut second);
+        assert_eq!(second[144 * 2], 1.0);
+        assert_eq!(second[144 * 2 + 1], 1.0);
+    }
+
     #[test]
     fn sum_stage_processor_transforms_the_summed_scratch() {
         let (mut controller, mut executor) = render_plane();
@@ -4677,6 +4914,54 @@ mod tests {
     }
 
     #[test]
+    fn seek_into_held_plugin_note_chases_note_on_at_block_start() {
+        let (mut controller, mut executor) = render_plane();
+        let backend = RecordingEventProcessor::new();
+        let handle = RenderPluginProcessor::new(Arc::clone(&backend) as Arc<_>);
+        let buffer = event_buffer(vec![
+            RenderPluginEvent {
+                frame: 100,
+                channel: 2,
+                kind: RenderPluginEventKind::NoteOn {
+                    key: 64,
+                    velocity: 0.75,
+                },
+            },
+            RenderPluginEvent {
+                frame: 500,
+                channel: 2,
+                kind: RenderPluginEventKind::NoteOff { key: 64 },
+            },
+        ]);
+        controller
+            .install_plan(&events_spec(handle, buffer))
+            .unwrap();
+        controller.seek(300).unwrap();
+        controller.set_playing(true).unwrap();
+
+        let mut frames = vec![0.0f32; 1024];
+        executor.render_block(&mut frames);
+        assert_eq!(
+            backend.calls()[0],
+            vec![
+                RenderBlockPluginEvent {
+                    offset_frames: 0,
+                    channel: 2,
+                    kind: RenderPluginEventKind::NoteOn {
+                        key: 64,
+                        velocity: 0.75,
+                    },
+                },
+                RenderBlockPluginEvent {
+                    offset_frames: 200,
+                    channel: 2,
+                    kind: RenderPluginEventKind::NoteOff { key: 64 },
+                },
+            ],
+        );
+    }
+
+    #[test]
     fn loop_wrap_delivers_both_segments_with_buffer_relative_offsets() {
         let (mut controller, mut executor) = render_plane();
         let backend = RecordingEventProcessor::new();
@@ -4723,6 +5008,11 @@ mod tests {
                         controller: 1,
                         value: 1.0,
                     },
+                },
+                RenderBlockPluginEvent {
+                    offset_frames: 88, // wrap: release note active at loop end
+                    channel: 0,
+                    kind: RenderPluginEventKind::NoteOff { key: 60 },
                 },
                 RenderBlockPluginEvent {
                     offset_frames: 188, // 88 wrap offset + frame 100

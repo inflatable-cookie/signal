@@ -82,8 +82,54 @@ pub fn compile_clap_fixture(
     Ok(library_path)
 }
 
+/// Compile the same real CLAP fixture as a MIDI-input, stereo-output
+/// instrument with no audio input bus. Note velocity drives its generated
+/// constant signal; note-off returns it to silence.
+pub fn compile_clap_instrument_fixture(
+    directory: &Path,
+    plugin_type_id: &str,
+    plugin_name: &str,
+) -> Result<PathBuf, String> {
+    std::fs::create_dir_all(directory)
+        .map_err(|error| format!("fixture directory create failed: {error}"))?;
+    let source_path = directory.join("instrument-fixture.rs");
+    let library_path = directory.join(format!(
+        "{}.clap",
+        plugin_name.to_lowercase().replace(' ', "-")
+    ));
+    std::fs::write(
+        &source_path,
+        clap_fixture_source_for_layout(plugin_type_id, plugin_name, 0, true),
+    )
+    .map_err(|error| format!("fixture source write failed: {error}"))?;
+    let output = Command::new("rustc")
+        .arg("--crate-type=cdylib")
+        .arg("--edition=2021")
+        .arg(&source_path)
+        .arg("-o")
+        .arg(&library_path)
+        .output()
+        .map_err(|error| format!("rustc invocation failed: {error}"))?;
+    if !output.status.success() {
+        return Err(format!(
+            "clap fixture compilation failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        ));
+    }
+    Ok(library_path)
+}
+
 /// Full Rust source of the fixture cdylib.
 pub fn clap_fixture_source(plugin_type_id: &str, plugin_name: &str, midi_outputs: u16) -> String {
+    clap_fixture_source_for_layout(plugin_type_id, plugin_name, midi_outputs, false)
+}
+
+fn clap_fixture_source_for_layout(
+    plugin_type_id: &str,
+    plugin_name: &str,
+    midi_outputs: u16,
+    instrument: bool,
+) -> String {
     format!(
         r#"
 use std::ffi::{{c_char, c_void, CStr}};
@@ -190,6 +236,12 @@ pub struct clap_audio_port_info {{
 pub struct clap_plugin_audio_ports {{
     pub count: Option<unsafe extern "C" fn(*const clap_plugin, bool) -> u32>,
     pub get: Option<unsafe extern "C" fn(*const clap_plugin, u32, bool, *mut clap_audio_port_info) -> bool>,
+}}
+
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct clap_plugin_latency {{
+    pub get: Option<unsafe extern "C" fn(*const clap_plugin) -> u32>,
 }}
 
 #[repr(C)]
@@ -385,7 +437,7 @@ const CLAP_NOTE_DIALECT_MIDI: u32 = 1 << 1;
 
 /// Default gain the fixture's process() applies (kept in sync with the
 /// host crate's `CLAP_FIXTURE_GAIN`). Live value in `GAIN_BITS`.
-const FIXTURE_GAIN: f32 = {gain};
+const FIXTURE_GAIN: f32 = {gain:?};
 
 /// Live Gain param value (f32 bits): defaults to FIXTURE_GAIN and follows
 /// CLAP_EVENT_PARAM_VALUE in-events for param id 4096 (g12.023).
@@ -436,9 +488,10 @@ static STATE_ID: &[u8] = b"clap.state\0";
 static LATENCY_ID: &[u8] = b"clap.latency\0";
 static TAIL_ID: &[u8] = b"clap.tail\0";
 static FEATURE_AUDIO_EFFECT: &[u8] = b"audio-effect\0";
+static FEATURE_INSTRUMENT: &[u8] = b"instrument\0";
 static FEATURE_UTILITY: &[u8] = b"utility\0";
 static FEATURES: FeaturePtrs = FeaturePtrs([
-    FEATURE_AUDIO_EFFECT.as_ptr() as *const c_char,
+    {primary_feature_symbol}.as_ptr() as *const c_char,
     FEATURE_UTILITY.as_ptr() as *const c_char,
     ptr::null(),
 ]);
@@ -465,6 +518,9 @@ static DESCRIPTOR: clap_plugin_descriptor = clap_plugin_descriptor {{
 static AUDIO_PORTS: clap_plugin_audio_ports = clap_plugin_audio_ports {{
     count: Some(audio_port_count),
     get: Some(audio_port_get),
+}};
+static LATENCY: clap_plugin_latency = clap_plugin_latency {{
+    get: Some(latency_get),
 }};
 
 static NOTE_PORTS: clap_plugin_note_ports = clap_plugin_note_ports {{
@@ -670,24 +726,29 @@ unsafe extern "C" fn plugin_process(
             );
         }}
     }}
-    if process.audio_inputs_count < 1
-        || process.audio_outputs_count < 1
-        || process.audio_inputs.is_null()
-        || process.audio_outputs.is_null()
-    {{
+    if process.audio_outputs_count < 1 || process.audio_outputs.is_null() {{
         return 0;
     }}
-    let input = &*process.audio_inputs;
     let output = &*process.audio_outputs;
-    if input.data32.is_null() || output.data32.is_null() {{
+    if output.data32.is_null() {{
         return 0;
     }}
+    let input = if {instrument} {{
+        None
+    }} else {{
+        if process.audio_inputs_count < 1 || process.audio_inputs.is_null() {{ return 0; }}
+        let input = &*process.audio_inputs;
+        if input.data32.is_null() {{ return 0; }}
+        Some(input)
+    }};
     let frames = process.frames_count as usize;
-    let channels = input.channel_count.min(output.channel_count) as usize;
+    let channels = input
+        .map(|input| input.channel_count.min(output.channel_count))
+        .unwrap_or(output.channel_count) as usize;
     for channel in 0..channels {{
-        let source = *input.data32.add(channel);
+        let source = input.map(|input| *input.data32.add(channel));
         let dest = *output.data32.add(channel);
-        if source.is_null() || dest.is_null() {{
+        if source.is_some_and(|source| source.is_null()) || dest.is_null() {{
             return 0;
         }}
         // Per-frame gain: the live Gain param until the first note/CC step,
@@ -699,7 +760,10 @@ unsafe extern "C" fn plugin_process(
                 gain = gain_steps[next_step].1;
                 next_step += 1;
             }}
-            *dest.add(frame) = *source.add(frame) * gain;
+            *dest.add(frame) = match source {{
+                Some(source) => *source.add(frame) * gain,
+                None => gain,
+            }};
         }}
     }}
     // The last step's gain persists into later blocks (like a param write).
@@ -725,7 +789,9 @@ unsafe extern "C" fn plugin_get_extension(
         (&PARAMS as *const clap_plugin_params).cast()
     }} else if requested == GUI_ID {{
         (&GUI as *const clap_plugin_gui).cast()
-    }} else if requested == STATE_ID || requested == LATENCY_ID || requested == TAIL_ID {{
+    }} else if requested == LATENCY_ID {{
+        (&LATENCY as *const clap_plugin_latency).cast()
+    }} else if requested == STATE_ID || requested == TAIL_ID {{
         1usize as *const c_void
     }} else {{
         ptr::null()
@@ -854,7 +920,10 @@ unsafe extern "C" fn gui_hide(_plugin: *const clap_plugin) -> bool {{
     true
 }}
 
-unsafe extern "C" fn audio_port_count(_plugin: *const clap_plugin, _is_input: bool) -> u32 {{ 1 }}
+unsafe extern "C" fn audio_port_count(_plugin: *const clap_plugin, is_input: bool) -> u32 {{
+    if is_input {{ {audio_input_count} }} else {{ 1 }}
+}}
+unsafe extern "C" fn latency_get(_plugin: *const clap_plugin) -> u32 {{ 0 }}
 unsafe extern "C" fn audio_port_get(
     _plugin: *const clap_plugin,
     index: u32,
@@ -911,7 +980,7 @@ unsafe extern "C" fn param_get_info(
     info: *mut clap_param_info,
 ) -> bool {{
     let (id, name, flags, default_value) = match index {{
-        0 => (4096u32, b"Gain\0".as_slice(), CLAP_PARAM_IS_AUTOMATABLE | CLAP_PARAM_IS_MODULATABLE, 0.5f64),
+        0 => (4096u32, b"Gain\0".as_slice(), CLAP_PARAM_IS_AUTOMATABLE | CLAP_PARAM_IS_MODULATABLE, FIXTURE_GAIN as f64),
         1 => (0u32, b"Bypass\0".as_slice(), CLAP_PARAM_IS_BYPASS | CLAP_PARAM_IS_AUTOMATABLE | CLAP_PARAM_IS_STEPPED, 0.0f64),
         _ => return false,
     }};
@@ -946,10 +1015,17 @@ unsafe extern "C" fn param_get_value(
     true
 }}
 "#,
-        gain = CLAP_FIXTURE_GAIN,
+        gain = if instrument { 0.0 } else { CLAP_FIXTURE_GAIN },
         plugin_type_id = plugin_type_id,
         plugin_name = plugin_name,
         midi_outputs = midi_outputs,
+        instrument = instrument,
+        audio_input_count = if instrument { 0 } else { 1 },
+        primary_feature_symbol = if instrument {
+            "FEATURE_INSTRUMENT"
+        } else {
+            "FEATURE_AUDIO_EFFECT"
+        },
         gui_initial_width = CLAP_FIXTURE_GUI_INITIAL_SIZE.0,
         gui_initial_height = CLAP_FIXTURE_GUI_INITIAL_SIZE.1,
         gui_request_width = CLAP_FIXTURE_GUI_REQUESTED_SIZE.0,

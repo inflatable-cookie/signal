@@ -1413,6 +1413,14 @@ impl Vst3HostedInstance {
         self.port_layout
     }
 
+    /// Current processor-reported latency in sample frames.
+    pub fn latency_frames(&self) -> u32 {
+        unsafe {
+            let vtable = vtable_of::<AudioProcessorVTable>(self.processor);
+            ((*vtable).get_latency_samples)(self.processor)
+        }
+    }
+
     /// Activate for processing: stereo/stereo bus arrangement (verified via
     /// `getBusArrangement`), 32-bit samples, `setupProcessing`, main buses
     /// activated, `setActive(true)`. Non-stereo negotiation fails with the

@@ -5,7 +5,7 @@
 //! wait budget, and honestly NO crash isolation: a crashing plugin takes
 //! the host down. That is the documented tradeoff of choosing this tier.
 
-use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering};
 use std::sync::Mutex;
 
 use signal_plugin::{
@@ -187,6 +187,9 @@ pub struct InProcessClapProcessor {
     /// (taken with `try_lock` on the audio thread, like the session).
     events_scratch: Mutex<Vec<PluginEvent>>,
     parameters: Vec<PluginParameterDescriptor>,
+    latency_frames: AtomicU32,
+    latency_revision: AtomicU64,
+    observed_restart_requests: AtomicU64,
     max_frames: u32,
     /// Cleared at teardown so late callbacks bypass instead of racing the
     /// lifecycle.
@@ -205,8 +208,8 @@ unsafe impl Sync for InProcessClapProcessor {}
 impl InProcessClapProcessor {
     /// Load `plugin_id` from `library_path` in the host process, activate
     /// it at `sample_rate_hz` / `max_frames`, and build the processing
-    /// session. Rejects plugins outside the v1 stereo-effect layout with a
-    /// stable token (`layout_unsupported`).
+    /// session. Accepts a stereo effect (2-in/2-out) or instrument
+    /// (0-in/2-out); every other layout rejects with `layout_unsupported`.
     pub fn load_and_activate(
         library_path: &std::path::Path,
         plugin_id: &str,
@@ -215,7 +218,7 @@ impl InProcessClapProcessor {
     ) -> Result<Self, String> {
         let mut instance =
             ClapHostedInstance::load(library_path, plugin_id).map_err(|error| error.token)?;
-        if !instance.port_layout().is_stereo_effect() {
+        if !instance.port_layout().is_supported_stereo_processor() {
             return Err("layout_unsupported".to_string());
         }
         instance
@@ -223,16 +226,40 @@ impl InProcessClapProcessor {
             .map_err(|error| error.token)?;
         let session = instance.process_session().map_err(|error| error.token)?;
         let parameters = instance.parameters().to_vec();
+        let latency_frames = instance.latency_frames();
         Ok(Self {
             session: Mutex::new(session),
             instance: Mutex::new(instance),
             events_scratch: Mutex::new(Vec::with_capacity(EVENT_SCRATCH_CAPACITY)),
             parameters,
+            latency_frames: AtomicU32::new(latency_frames),
+            latency_revision: AtomicU64::new(0),
+            observed_restart_requests: AtomicU64::new(0),
             max_frames,
             alive: AtomicBool::new(true),
             misses: AtomicU64::new(0),
             unsupported_events: AtomicU64::new(0),
         })
+    }
+
+    /// Refresh cached latency after a CLAP restart request. Called only by
+    /// control-side observation methods; processing never takes this lock.
+    fn refresh_latency(&self) {
+        let Ok(instance) = self.instance.lock() else {
+            return;
+        };
+        let restart_requests = instance.restart_request_count();
+        let observed = self.observed_restart_requests.load(Ordering::Relaxed);
+        if restart_requests == observed {
+            return;
+        }
+        self.observed_restart_requests
+            .store(restart_requests, Ordering::Relaxed);
+        let latency_frames = instance.latency_frames();
+        let previous = self.latency_frames.swap(latency_frames, Ordering::Relaxed);
+        if previous != latency_frames {
+            self.latency_revision.fetch_add(1, Ordering::Relaxed);
+        }
     }
 
     /// Parameter inventory enumerated at load.
@@ -423,6 +450,16 @@ impl PluginBlockProcessor for InProcessClapProcessor {
         self.unsupported_events.load(Ordering::Relaxed)
     }
 
+    fn latency_frames(&self) -> u32 {
+        self.refresh_latency();
+        self.latency_frames.load(Ordering::Relaxed)
+    }
+
+    fn latency_revision(&self) -> u64 {
+        self.refresh_latency();
+        self.latency_revision.load(Ordering::Relaxed)
+    }
+
     fn process_with_events(
         &self,
         scratch: &mut [f32],
@@ -490,6 +527,7 @@ pub struct InProcessVst3Processor {
     pitch_bend_mapping: bool,
     channel_pressure_mapping: bool,
     parameters: Vec<PluginParameterDescriptor>,
+    latency_frames: u32,
     max_frames: u32,
     /// Cleared at teardown so late callbacks bypass instead of racing the
     /// lifecycle.
@@ -527,6 +565,7 @@ impl InProcessVst3Processor {
             .map_err(|error| error.token)?;
         let session = instance.process_session().map_err(|error| error.token)?;
         let parameters = instance.parameters().to_vec();
+        let latency_frames = instance.latency_frames();
         let midi_cc_mapping = instance.midi_cc_mapping_available();
         let midi_cc_mappings = std::array::from_fn(|controller| {
             instance.midi_controller_mapping_available(controller as u16)
@@ -542,6 +581,7 @@ impl InProcessVst3Processor {
             pitch_bend_mapping,
             channel_pressure_mapping,
             parameters,
+            latency_frames,
             max_frames,
             alive: AtomicBool::new(true),
             misses: AtomicU64::new(0),
@@ -728,6 +768,10 @@ impl PluginBlockProcessor for InProcessVst3Processor {
 
     fn unsupported_event_count(&self) -> u64 {
         self.unsupported_events.load(Ordering::Relaxed)
+    }
+
+    fn latency_frames(&self) -> u32 {
+        self.latency_frames
     }
 
     fn process_with_events(
@@ -1237,13 +1281,17 @@ impl PluginBlockProcessor for InProcessLv2Processor {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use signal_plugin_clap::fixture::{compile_clap_fixture, rustc_available, CLAP_FIXTURE_GAIN};
+    use signal_plugin_clap::fixture::{
+        compile_clap_fixture, compile_clap_instrument_fixture, rustc_available, CLAP_FIXTURE_GAIN,
+    };
     use signal_plugin_vst3::fixture::{
         compile_vst3_fixture, VST3_FIXTURE_CLASS_ID_HEX, VST3_FIXTURE_GAIN,
     };
     use signal_render_plane::{
-        RenderBlockPluginEvent, RenderNoteExpressionKind, RenderPluginEventKind,
-        RenderPluginProcessor,
+        render_plan_to_pcm, render_plane, ChannelFormat, OfflineRenderOptions,
+        RenderBlockPluginEvent, RenderEdgeSpec, RenderNoteExpressionKind, RenderPlanSpec,
+        RenderPluginEvent, RenderPluginEventBuffer, RenderPluginEventKind, RenderPluginProcessor,
+        RenderStageKind, RenderStageSpec,
     };
 
     #[test]
@@ -1478,6 +1526,7 @@ mod tests {
         let handle =
             signal_render_plane::RenderPluginProcessor::new(Arc::clone(&backend) as Arc<_>);
         assert_eq!(handle.event_support(), CLAP_EVENT_SUPPORT);
+        assert_eq!(handle.latency_frames(), 0);
 
         // Note-on velocity 0.25 at frame 64: gain steps 0.5 → 0.25 there.
         let reference: Vec<f32> = (0..256).map(|index| index as f32 / 256.0).collect();
@@ -1572,6 +1621,239 @@ mod tests {
         let _ = std::fs::remove_dir_all(&directory);
     }
 
+    #[test]
+    fn real_clap_instrument_generates_metered_realtime_and_offline_audio_from_silence() {
+        if !rustc_available() {
+            eprintln!("skipping: rustc unavailable for the CLAP fixture");
+            return;
+        }
+        let directory = std::env::temp_dir().join(format!(
+            "signal-plugin-bridge-inproc-instrument-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_nanos(),
+        ));
+        let plugin_id = "com.signal.bridge-inproc-instrument";
+        let library = compile_clap_instrument_fixture(
+            &directory,
+            plugin_id,
+            "Signal Bridge InProc Instrument",
+        )
+        .expect("instrument fixture should compile");
+        let backend = Arc::new(
+            InProcessClapProcessor::load_and_activate(&library, plugin_id, 48_000, 512)
+                .expect("zero-input stereo instrument should activate"),
+        );
+        let handle = RenderPluginProcessor::new(Arc::clone(&backend) as Arc<_>);
+        let events = RenderPluginEventBuffer {
+            events: vec![
+                RenderPluginEvent {
+                    frame: 64,
+                    channel: 0,
+                    kind: RenderPluginEventKind::NoteOn {
+                        key: 60,
+                        velocity: 0.5,
+                    },
+                },
+                RenderPluginEvent {
+                    frame: 320,
+                    channel: 0,
+                    kind: RenderPluginEventKind::NoteOff { key: 60 },
+                },
+            ]
+            .into(),
+        };
+        let edge = |source_stage_id| RenderEdgeSpec {
+            source_stage_id,
+            gain: 1.0,
+            matrix: None,
+        };
+        let spec = RenderPlanSpec {
+            sample_rate_hz: 48_000,
+            master_gain: 1.0,
+            master_limiter: None,
+            stages: vec![
+                RenderStageSpec {
+                    stage_id: 1,
+                    format: ChannelFormat::stereo(),
+                    gain: 1.0,
+                    gain_automation: None,
+                    kind: RenderStageKind::Source { clips: Vec::new() },
+                    inputs: Vec::new(),
+                    processor: None,
+                    events: None,
+                },
+                RenderStageSpec {
+                    stage_id: 2,
+                    format: ChannelFormat::stereo(),
+                    gain: 1.0,
+                    gain_automation: None,
+                    kind: RenderStageKind::Sum,
+                    inputs: vec![edge(1)],
+                    processor: Some(handle),
+                    events: Some(events),
+                },
+                RenderStageSpec {
+                    stage_id: 3,
+                    format: ChannelFormat::stereo(),
+                    gain: 1.0,
+                    gain_automation: None,
+                    kind: RenderStageKind::Output,
+                    inputs: vec![edge(2)],
+                    processor: None,
+                    events: None,
+                },
+            ],
+        };
+
+        let (mut controller, mut executor) = render_plane();
+        controller
+            .install_plan(&spec)
+            .expect("install instrument plan");
+        controller.set_playing(true).expect("start transport");
+        let mut realtime = vec![0.0f32; 512 * 2];
+        executor.render_block(&mut realtime);
+        assert!(realtime[..64 * 2].iter().all(|sample| *sample == 0.0));
+        assert!(realtime[96 * 2..256 * 2].iter().all(|sample| *sample > 0.0));
+        assert!(realtime[320 * 2..].iter().all(|sample| *sample == 0.0));
+        assert!(controller
+            .meters()
+            .iter()
+            .any(|(stage_id, peak, _)| *stage_id == 2 && *peak > 0.0));
+
+        let offline = render_plan_to_pcm(
+            &spec,
+            &OfflineRenderOptions {
+                start_frame: 0,
+                frame_count: 512,
+                block_frames: 128,
+                capture_stage_ids: Vec::new(),
+            },
+        )
+        .expect("offline instrument render");
+        assert!(offline.master[..64 * 2].iter().all(|sample| *sample == 0.0));
+        assert!(offline.master[96 * 2..256 * 2]
+            .iter()
+            .all(|sample| *sample > 0.0));
+        assert!(offline.master[320 * 2..]
+            .iter()
+            .all(|sample| *sample == 0.0));
+
+        // Starting transport inside the held note chases a note-on at the
+        // destination, then the original note-off lands 120 frames later.
+        let (mut seek_controller, mut seek_executor) = render_plane();
+        seek_controller
+            .install_plan(&spec)
+            .expect("install seek plan");
+        seek_controller.seek(200).expect("seek into held note");
+        seek_controller.set_playing(true).expect("play from seek");
+        let mut sought = vec![0.0f32; 512 * 2];
+        seek_executor.render_block(&mut sought);
+        assert!(sought[32 * 2..100 * 2].iter().all(|sample| *sample > 0.0));
+        assert!(sought[120 * 2..].iter().all(|sample| *sample == 0.0));
+
+        // A note crossing the loop end is explicitly released at the wrap,
+        // then its event at frame 64 retriggers in the wrapped segment.
+        let mut loop_spec = spec.clone();
+        loop_spec.stages[1].events = Some(RenderPluginEventBuffer {
+            events: vec![
+                RenderPluginEvent {
+                    frame: 64,
+                    channel: 0,
+                    kind: RenderPluginEventKind::NoteOn {
+                        key: 60,
+                        velocity: 0.5,
+                    },
+                },
+                RenderPluginEvent {
+                    frame: 500,
+                    channel: 0,
+                    kind: RenderPluginEventKind::NoteOff { key: 60 },
+                },
+            ]
+            .into(),
+        });
+        let (mut loop_controller, mut loop_executor) = render_plane();
+        loop_controller
+            .install_plan(&loop_spec)
+            .expect("install loop plan");
+        loop_controller
+            .set_loop_region(Some((0, 384)))
+            .expect("set loop");
+        loop_controller.set_playing(true).expect("play loop");
+        let mut looped = vec![0.0f32; 512 * 2];
+        loop_executor.render_block(&mut looped);
+        assert!(looped[96 * 2..256 * 2].iter().all(|sample| *sample > 0.0));
+        assert!(looped[384 * 2..448 * 2].iter().all(|sample| *sample == 0.0));
+        assert!(looped[480 * 2..].iter().all(|sample| *sample > 0.0));
+        assert_eq!(backend.miss_count(), 0);
+        let _ = std::fs::remove_dir_all(&directory);
+    }
+
+    #[test]
+    fn dead_clap_instrument_bypasses_silence_and_replacement_recovers() {
+        if !rustc_available() {
+            eprintln!("skipping: rustc unavailable for the CLAP fixture");
+            return;
+        }
+        let directory = std::env::temp_dir().join(format!(
+            "signal-plugin-bridge-inproc-instrument-restart-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_nanos(),
+        ));
+        let plugin_id = "com.signal.bridge-inproc-instrument-restart";
+        let library = compile_clap_instrument_fixture(
+            &directory,
+            plugin_id,
+            "Signal Bridge InProc Instrument Restart",
+        )
+        .expect("instrument fixture should compile");
+        let load = || {
+            Arc::new(
+                InProcessClapProcessor::load_and_activate(&library, plugin_id, 48_000, 128)
+                    .expect("instrument should activate"),
+            )
+        };
+        let event = [RenderBlockPluginEvent {
+            offset_frames: 0,
+            channel: 0,
+            kind: RenderPluginEventKind::NoteOn {
+                key: 60,
+                velocity: 0.5,
+            },
+        }];
+
+        let backend = load();
+        let handle = RenderPluginProcessor::new(Arc::clone(&backend) as Arc<_>);
+        let mut live = vec![0.0f32; 128 * 2];
+        assert!(handle.process_with_events(&mut live, 128, 2, &event));
+        assert!(live.iter().all(|sample| *sample == 0.5));
+
+        backend.shutdown();
+        let mut fallback = vec![0.0f32; 128 * 2];
+        assert!(!handle.process_with_events(&mut fallback, 128, 2, &event));
+        assert!(fallback.iter().all(|sample| *sample == 0.0));
+        assert_eq!(backend.miss_count(), 1);
+
+        let replacement = load();
+        let replacement_handle = RenderPluginProcessor::new(Arc::clone(&replacement) as Arc<_>);
+        let mut recovered = vec![0.0f32; 128 * 2];
+        assert!(replacement_handle.process_with_events(&mut recovered, 128, 2, &event));
+        assert!(recovered.iter().all(|sample| *sample == 0.5));
+        assert_eq!(replacement.miss_count(), 0);
+
+        drop(replacement_handle);
+        drop(replacement);
+        drop(handle);
+        drop(backend);
+        let _ = std::fs::remove_dir_all(&directory);
+    }
+
     /// g12.034 follow-up, VST3: notes ride the input IEventList; CC 7 maps
     /// through the fixture's IMidiMapping onto the Gain param and rides
     /// IParameterChanges with the event's sample offset — the value stays
@@ -1622,6 +1904,7 @@ mod tests {
                 note_expression: false,
             }
         );
+        assert_eq!(handle.latency_frames(), 0);
 
         // Note-on velocity 0.25 at frame 64 (input IEventList).
         let reference: Vec<f32> = (0..256).map(|index| index as f32 / 256.0).collect();
