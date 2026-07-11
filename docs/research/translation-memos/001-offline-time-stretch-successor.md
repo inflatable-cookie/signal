@@ -178,9 +178,9 @@ rejected ownership crossfade.
 
 ## Next Task
 
-Freeze complete raw-bank reassessment after boundary cross-term ablations fail
-to improve condition `2.0862893665`. Do not change filters or run identity
-reconstruction, guards, or audio synthesis.
+Implement one complete canonical block-tightener feasibility proof after
+boundary ablations fail to improve condition `2.0862893665`. Do not run
+identity reconstruction or audio synthesis.
 
 ## Frequency-Adaptive Reassessment
 
@@ -514,3 +514,9 @@ The broader raw bank is selected. DC diagonalization is neutral; high-edge and
 joint-boundary diagonalization worsen condition to `2.1170081614`. Another
 endpoint construction would continue tuning a non-owning mechanism. Reassess
 the complete bank or transform family before more implementation.
+
+The final common-grid question uses the exact per-residue canonical
+`S^-1/2`. It must earn more than a tight frame: any material support leakage or
+failure to localize every transformed atom inside the existing `16384`-frame
+cap rejects the family. No sparse or localized approximation follows a
+failure; research returns to transform-family selection.

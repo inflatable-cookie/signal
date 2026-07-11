@@ -327,9 +327,15 @@ neutral; preserved-high-edge removal raises condition from `2.0862893665` to
 cross coupling does not own the failure. Further endpoint variants are closed
 pending a complete-bank reassessment.
 
+The final common-grid feasibility candidate applies the exact canonical
+inverse square root to every complete alias block. This guarantees a tight
+frame algebraically, but mixes alias-separated bins. The decisive evidence is
+therefore compact-support leakage and all-row inverse-FFT localization, not
+condition alone. Failure closes the common-grid family rather than opening
+another correction.
+
 ## Next Task
 
-Freeze Batch 29.6AD complete raw-bank reassessment. Do not implement another
-boundary response, normalizer, row allocation, delay set, dual, or guard. Keep
-phase reproof, audio synthesis, corpus rendering, linked stereo, dynamic ratio,
-and product routing closed.
+Implement Batch 29.6AE canonical block-tightener feasibility and stop after its
+localization decision. Do not run identity reconstruction or synthesis. Keep
+phase, corpus rendering, linked stereo, dynamic ratio, and routing closed.

@@ -470,12 +470,21 @@ independent stereo review.
 
 ### Batch 29.6AD - Complete Raw-Bank Reassessment
 
-- [ ] step back from endpoint candidates and freeze one complete-bank research
+- [x] step back from endpoint candidates and freeze one complete-bank research
   question from the failed untightened geometry
-- [ ] preserve the passing common-grid timing and solver evidence while deciding
+- [x] preserve the passing common-grid timing and solver evidence while deciding
   whether the bank geometry or transform family must change
-- [ ] keep implementation, reconstruction, guards, phase, synthesis, corpus,
+- [x] keep implementation, reconstruction, guards, phase, synthesis, corpus,
   stereo, dynamic ratio, and routing closed
+
+### Batch 29.6AE - Canonical Block-Tightener Feasibility
+
+- [ ] apply exact Jacobi `S^-1/2` to every residue of the rejected `1538`-row
+  candidate; add no approximation, floor, localization, or correction
+- [ ] prove tight-frame algebra, finite values, hashes, and exact repeat, then
+  report per-row support leakage, endpoint closure, and bounded atom tails
+- [ ] open identity reconstruction only if leakage and all-row localization
+  pass; otherwise close common-grid work and select transform-family reassessment
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -933,8 +942,12 @@ independent stereo review.
   diagonalization is neutral and high-edge diagonalization worsens condition to
   `2.1170081614`; boundary cross terms are insufficient. Evidence is in
   `docs/logs/2026-07/11-g10-029-residual-boundary-attribution-decision.md`.
+- 2026-07-11: Froze Batch 29.6AD. One exact canonical block tightener gets the
+  final common-grid feasibility gate; compact-support leakage and all-row atom
+  localization, not guaranteed condition, decide the family. Evidence is in
+  `docs/logs/2026-07/11-g10-029-canonical-block-tightener-contract.md`.
 
 ## Next Task
 
-Freeze Batch 29.6AD complete raw-bank reassessment. Do not implement another
-boundary response, normalizer, row allocation, delay set, dual, or guard.
+Implement Batch 29.6AE canonical block-tightener feasibility and stop after its
+localization decision. Do not run identity reconstruction or synthesis.

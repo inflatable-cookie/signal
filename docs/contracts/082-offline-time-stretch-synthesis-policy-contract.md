@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; complete raw-bank reassessment selected
+Status: active; canonical block-tightener feasibility frozen
 Owner: dsp
 Updated: 2026-07-11
 Related contracts: `046`, `048`, `049`
@@ -1180,6 +1180,44 @@ Maximum numerical errors are residual `4.0816637991e-13`, orthogonality
 Batch 29.6AD must freeze one complete raw-bank reassessment checkpoint before
 more implementation.
 
+### Rule 26G: test one complete canonical block tightener
+
+Batch 29.6AE is the final common-grid feasibility question. Rebuild the exact
+rejected `1538`-row triplet candidate at FFT length `4224` and hop `384`. For
+each of its `11` residue blocks, use the proven Jacobi decomposition
+`S=V*diag(lambda)*V^H` and form the positive Hermitian inverse square root
+`T=V*diag(lambda^-1/2)*V^H`. Apply `T` to every channel vector in that residue.
+Do not truncate, localize, blend, fit, or otherwise modify `T`.
+
+The transformed frame must prove `T*S*T=I` with global condition at most
+`1+1e-10`, residual `1e-8`, orthogonality `1e-10`, trace `1e-12`, Frobenius
+`1e-10`, finite values, stable hashes, and exact release repeat. These algebraic
+gates are necessary but not sufficient.
+
+Measure damage against every input row before reconstruction:
+
+- energy introduced at bins where that row was exactly zero, divided by total
+  transformed-row energy
+- peak magnitude introduced outside original support
+- original and transformed support-bin counts
+- real DC/Nyquist and conjugate-mirror closure
+- whole-row inverse-FFT excluded-energy curves at radii `384`, `768`, `1536`,
+  `3072`, `6144`, `12288`, and `16384`
+- maximum values, owning rows, all-row hashes, and aggregate evidence hash
+
+Passage requires maximum relative support leakage and out-of-support peak at
+most `1e-12`, real-endpoint/mirror closure `1e-12`, and every transformed atom
+to reach excluded energy `1e-12` within `16384` frames. These gates preserve
+the compact-support and bounded-localization properties on which the common-grid
+phase and guard work depends.
+
+Any algebraic or localization failure rejects complete block tightening and
+closes this common-grid family. Do not add sparse approximations, eigenvalue
+floors, residue interpolation, localized corrections, or a second threshold.
+Passage opens only identity reconstruction. Failure opens a transform-family
+reassessment. No result opens phase, synthesis, corpus, stereo, dynamic ratio,
+cache, or product routing.
+
 ### Rule 27: synthesize a protected centre, not a circular endpoint
 
 Extend the source in both directions with whole-sample even reflection,
@@ -1235,5 +1273,5 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Freeze Batch 29.6AD complete raw-bank reassessment. Do not implement another
-boundary response, normalizer, row allocation, delay set, dual, or guard.
+Implement Batch 29.6AE canonical block-tightener feasibility and stop after its
+localization decision. Do not run identity reconstruction or synthesis.
