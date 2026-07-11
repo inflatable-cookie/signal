@@ -607,6 +607,70 @@ Batch 29.6L passes. Across the four tones, maximum angular-frequency error is
 `8.683081e-10` radians. Silence produces no qualified ratios; deterministic
 noise remains finite; repeated evidence and hashes match exactly.
 
+Rules 22 and 23 replace Rule 19's implementation staging after the rejected
+phase-difference estimator. They split projected-field integration from audio
+synthesis; Rule 19's unchanged synthetic controls and final gates remain the
+later synthesis target.
+
+### Rule 22: project three fields at the exact source coordinate
+
+Batch 29.6M is report-only. Keep the passing Batch 29.6J analysis geometry and
+Batch 29.6L instantaneous-frequency estimator unchanged. For output column
+`m`, compute `u=m/ratio` in source-column units. Linearly interpolate:
+
+- coefficient magnitude at each channel
+- absolute instantaneous angular frequency at each channel
+- delay-compensated vertical phase derivative at each channel
+
+Do not interpolate wrapped coefficient phase. Source padding supplies legal
+left and right columns at both boundaries; clamp only the interpolation index,
+not the authoritative fractional coordinate. Record lower/upper source-column
+indices, interpolation fraction, boundary-pad reads, projected-field counts,
+maximum coordinate reconstruction error, monotonicity, finite values, and a
+stable projected-field hash.
+
+Let `target_frames=round(source_frames*ratio)`. Project
+`ceil(target_frames/384)+1` columns, including the terminal coverage column.
+
+Test ratios `0.75`, `1.0`, and `1.5` on steady tones, two-tone, linear and
+exponential chirps, impulse, deterministic noise, mixed tonal/transient
+content, and silence. Require coordinate reconstruction error at most `1e-9`,
+strict monotonicity for non-empty multi-column output, finite fields, exact
+projected-column count, exercised fractional and boundary cases, and identical
+repeat reports.
+
+### Rule 23: integrate one output column with one bounded heap
+
+Solve positive-frequency channel phases one output column at a time. Column
+zero uses the interpolated delay-compensated analyzed phase as its deterministic
+seed only; later columns admit two predecessor classes:
+
+- horizontal: the same channel in the preceding solved output column, advanced
+  by `384` times the trapezoidal mean projected instantaneous frequency
+- vertical: the adjacent solved channel in the current output column, advanced
+  by the trapezoidal mean vertical phase derivative times the exact adjacent
+  centre-frequency interval `pi/1535`
+
+Use a magnitude-prioritized max heap. Break equal-magnitude ties by horizontal
+before vertical, then lower channel index. A coefficient is significant when
+its projected magnitude exceeds `1e-6` times that column's maximum. Assign each
+significant coefficient exactly once. Insignificant coefficients retain their
+deterministic interpolated analyzed phase and may provide a boundary seed, but
+do not count as heap assignments.
+
+The heap capacity is `2*1536` entries and must not scale with source or output
+length. Report significant/insignificant cells, horizontal/vertical
+assignments, duplicate/missing assignments, seed counts, heap high-water,
+capacity, non-finite phases, assignment hash, and repeat hash. Require at least
+one horizontal and one vertical assignment across the non-silent controls, no
+duplicate or missing significant assignments, high-water within capacity,
+finite phases, and exact repeat evidence.
+
+Failure returns to the projection or topology contract. Passing opens only a
+separately frozen canonical-dual synthesis and synthetic placement proof. It
+does not open audio synthesis, the 60-row corpus, linked stereo, dynamic ratio,
+or product routing.
+
 ## Clean-Room Rule
 
 Public papers and public algorithm descriptions may inform Signal design.
@@ -615,6 +679,6 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Freeze the fractional source-projection and bounded deterministic heap proof
-before implementation. Keep synthesis, the corpus, linked stereo, and all
-product routing closed.
+Implement Batch 29.6M, the report-only projected-field and bounded-heap proof.
+Stop before audio synthesis, corpus rendering, linked stereo, dynamic ratio,
+or product routing.

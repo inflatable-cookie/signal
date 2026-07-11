@@ -184,7 +184,16 @@ compensation stays downstream of that estimate. All four tone controls through
 `19.5 kHz` pass with maximum error `3.614443e-12` radians/sample and maximum
 compensated residual `8.683081e-10` radians.
 
+The next mechanism projects magnitude, absolute instantaneous frequency, and
+delay-compensated vertical phase derivatives at exact source coordinate
+`u=m/ratio`. Phase integration stays column-local: one magnitude-prioritized
+heap carries horizontal candidates from the preceding solved output column and
+vertical candidates from solved adjacent channels. Its fixed `3072`-entry cap
+does not grow with render duration. Wrapped complex coefficients are never
+interpolated.
+
 ## Next Task
 
-Freeze the fractional source-projection and bounded deterministic heap proof.
-Keep synthesis, corpus rendering, linked stereo, and product routing closed.
+Implement Batch 29.6M, the report-only projected-field and bounded-heap proof.
+Keep audio synthesis, corpus rendering, linked stereo, dynamic ratio, and
+product routing closed.

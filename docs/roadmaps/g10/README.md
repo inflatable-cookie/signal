@@ -1,7 +1,7 @@
 # g10 Milestones
 
 Status: active
-Updated: 2026-07-10
+Updated: 2026-07-11
 
 ## Why this generation matters now
 
@@ -78,8 +78,9 @@ implementation remains Signal-owned.
   stereo remains closed. Its phase-difference estimator aliases on the `8 kHz`
   tone and is rejected before interpolation or heap integration.
   Batch 29.6L passes an alias-free same-column auxiliary derivative-filter
-  ratio through `19.5 kHz`; fractional projection and bounded heap integration
-  are the next proof boundary.
+  ratio through `19.5 kHz`. Batch 29.6M now freezes exact three-field source
+  projection and duration-independent bounded heap integration. Batch 29.6N
+  owns synthetic canonical-dual synthesis only after that mechanism passes.
 - Offline artifacts and RealtimePreview have bounded contracts and prototype
   paths, but callback-safe preview integration and fully streaming artifact
   output remain gated until their owning source-fill/cache contracts exist.
@@ -169,6 +170,6 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Freeze the fractional source-projection and bounded deterministic heap proof.
-Keep synthesis, corpus rendering, linked stereo, and product integration
-closed.
+Implement Batch 29.6M, the report-only projected-field and bounded-heap proof.
+Keep audio synthesis, corpus rendering, linked stereo, dynamic ratio, and
+product integration closed.

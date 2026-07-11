@@ -178,8 +178,8 @@ rejected ownership crossfade.
 
 ## Next Task
 
-Freeze the fractional source-projection and bounded deterministic heap proof.
-Do not open synthesis or corpus rendering.
+Implement the frozen projected-field and bounded-heap proof. Do not open audio
+synthesis or corpus rendering.
 
 ## Frequency-Adaptive Reassessment
 
@@ -287,6 +287,12 @@ frequency error is `3.614443e-12` radians/sample and maximum compensated
 adjacent-channel residual is `8.683081e-10` radians. This closes estimator
 selection only; projection, heap integration, synthesis, and corpus rendering
 remain separate gates.
+
+The next proof interpolates only magnitude, absolute instantaneous frequency,
+and delay-compensated vertical phase derivatives at `u=m/ratio`. It integrates
+one output column at a time with a fixed `2*1536` heap cap. This avoids a
+whole-render topology whose memory bound grows with duration. Canonical-dual
+audio synthesis remains a later proof.
 
 Additional primary source:
 
