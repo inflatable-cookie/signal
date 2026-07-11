@@ -389,12 +389,22 @@ independent stereo review.
 
 ### Batch 29.6U - Deterministic Hermitian Eigensolver Contract
 
-- [ ] freeze one bounded solver and invariant cross-check for the existing
+- [x] freeze one bounded solver and invariant cross-check for the existing
   alias-block matrices; do not relax residuals or increase power iterations
-- [ ] require every minimum and maximum eigenpair residual at most `1e-6` with
+- [x] require every minimum and maximum eigenpair residual at most `1e-6` with
   deterministic phase, trace/Frobenius checks, hashes, and exact repeat
-- [ ] reopen only the frozen attribution after solver passage; keep every DSP
+- [x] reopen only the frozen attribution after solver passage; keep every DSP
   candidate, guard, phase, coefficient, corpus, and listening surface closed
+
+### Batch 29.6V - Cyclic Hermitian Jacobi Proof
+
+- [ ] implement lexicographic cyclic complex-Hermitian Jacobi for sizes
+  `1..=193`, `64` sweeps, and relative off-diagonal tolerance `1e-13`
+- [ ] pass analytic scalar, real/complex `2x2`, diagonal, repeated, and clustered
+  controls before the `33` frozen alias matrices
+- [ ] require residual `1e-8`, orthogonality `1e-10`, trace `1e-12`, Frobenius
+  `1e-10`, finite values, stable hashes, and exact repeat
+- [ ] reopen only Batch 29.6T attribution after passage; keep DSP work closed
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -816,9 +826,13 @@ independent stereo review.
   contribution closure passes, but worst eigenpair residual `0.031864856`
   exceeds `1e-6`. Evidence is in
   `docs/logs/2026-07/11-g10-029-alias-block-attribution-inconclusive.md`.
+- 2026-07-11: Froze Batch 29.6U. One full lexicographic cyclic complex-Hermitian
+  Jacobi solve now owns bounded alias-block eigenpairs and invariant checks.
+  Evidence is in
+  `docs/logs/2026-07/11-g10-029-hermitian-eigensolver-contract.md`.
 
 ## Next Task
 
-Freeze Batch 29.6U deterministic Hermitian eigensolver proof. Do not implement
-it, rerun attribution, or run guards. Keep phase reproof, coefficient assembly,
-audio synthesis, corpus, stereo, dynamic ratio, and product routing closed.
+Implement Batch 29.6V deterministic Hermitian eigensolver proof. Do not rerun
+attribution or run guards. Keep phase reproof, coefficient assembly, audio
+synthesis, corpus, stereo, dynamic ratio, and product routing closed.

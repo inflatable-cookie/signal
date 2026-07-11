@@ -267,8 +267,14 @@ clustered residue modes leave a worst normalized eigenpair residual of
 the fixed-start power estimator before the same attribution can choose a
 direction.
 
+The frozen numerical replacement is a full lexicographic cyclic
+complex-Hermitian Jacobi solve for blocks up to `193`. It fails closed on
+Hermitian error, non-convergence after `64` sweeps, residual, orthogonality,
+trace, or Frobenius mismatch. Only a passing eigensolver proof may rerun the
+existing attribution.
+
 ## Next Task
 
-Freeze Batch 29.6U deterministic Hermitian eigensolver proof. Do not implement
-it or rerun attribution. Keep guards, phase reproof, audio synthesis, corpus
-rendering, linked stereo, dynamic ratio, and product routing closed.
+Implement Batch 29.6V deterministic Hermitian eigensolver proof. Do not rerun
+attribution. Keep guards, phase reproof, audio synthesis, corpus rendering,
+linked stereo, dynamic ratio, and product routing closed.

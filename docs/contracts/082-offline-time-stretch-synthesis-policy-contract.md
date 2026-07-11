@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; alias-block attribution frozen
+Status: active; Hermitian eigensolver proof frozen
 Owner: dsp
 Updated: 2026-07-11
 Related contracts: `046`, `048`, `049`
@@ -940,6 +940,49 @@ prove all extremal residuals at most `1e-6`, and cross-check trace and Frobenius
 invariants before rerunning attribution. Do not increase power iterations,
 relax the residual, or authorize a preconditioner from partial rows.
 
+### Rule 26C: use one cyclic complex-Hermitian Jacobi eigensolver
+
+Batch 29.6V implements one report-only full eigendecomposition for matrices of
+size `1..=193`. Reject non-finite input or relative Hermitian error above
+`1e-12`; do not symmetrize or repair the matrix. Initialize the eigenvector
+matrix to identity and run cyclic Jacobi sweeps over pairs `(p,q)` in
+lexicographic order.
+
+For each nonzero upper-triangle entry, apply its unit complex phase to reduce
+the `p,q` pivot to a real symmetric `2x2` problem, then use the stable Jacobi
+rotation with `tau=(a_qq-a_pp)/(2*|a_pq|)`,
+`t=sign(tau)/(abs(tau)+sqrt(1+tau^2))` (`t=1` when `tau=0`),
+`c=1/sqrt(1+t^2)`, and `s=t*c`. Update both matrix triangles and accumulated
+eigenvectors from the same rotation. Force only the annihilated `p,q` pair to
+exact zero; do not zero other small entries.
+
+After each complete sweep, compute off-diagonal Frobenius norm. Converge when
+it is at most `1e-13` times total Frobenius norm, with both norms measured from
+the current matrix. Stop and reject after `64` sweeps. Do not increase the cap,
+switch pivot strategy, relax tolerance, or fall back to power iteration.
+
+Sort eigenpairs by ascending eigenvalue, breaking exact-value ties by the
+pre-sort Jacobi column index. Normalize each vector to unit norm, then rotate
+its largest-magnitude entry to nonnegative real, breaking magnitude ties by
+lowest row index. Report sweep/rotation counts, convergence, input Hermitian
+error, final off-diagonal ratio, eigenvalue/eigenvector hashes, and:
+
+- maximum normalized eigenpair residual at most `1e-8`
+- maximum orthogonality error at most `1e-10`
+- relative trace mismatch at most `1e-12`
+- relative Frobenius/eigenvalue-square mismatch at most `1e-10`
+- finite values and exact repeat evidence within one build profile
+
+Prove analytic `1x1`, real and complex `2x2`, diagonal, repeated-eigenvalue,
+and tightly clustered controls before running all `33` frozen alias matrices.
+For actual matrices, eigenvalue extrema must agree with the previous estimator
+within `5e-4` relative where that estimator's residual was at most `1e-6`;
+unconverged historical rows are not comparison truth.
+
+Passing Batch 29.6V reopens only the unchanged Batch 29.6T attribution with the
+Jacobi eigenpairs. Failure returns to numerical-method research. No filter,
+dual, guard, phase, coefficient, synthesis, corpus, or product work opens.
+
 ### Rule 27: synthesize a protected centre, not a circular endpoint
 
 Extend the source in both directions with whole-sample even reflection,
@@ -995,6 +1038,6 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Freeze Batch 29.6U deterministic Hermitian eigensolver proof. Do not implement
-it, rerun attribution, or run guards. Keep phase reproof, coefficient assembly,
-audio synthesis, corpus, stereo, dynamic ratio, and product routing closed.
+Implement Batch 29.6V deterministic Hermitian eigensolver proof. Do not rerun
+attribution or run guards. Keep phase reproof, coefficient assembly, audio
+synthesis, corpus, stereo, dynamic ratio, and product routing closed.

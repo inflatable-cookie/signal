@@ -178,10 +178,10 @@ rejected ownership crossfade.
 
 ## Next Task
 
-Freeze a deterministic bounded Hermitian eigensolver proof for the inconclusive
-alias-block attribution. Worst eigenpair residual is `0.031864856` against
-`1e-6`. Do not rerun attribution, implement another candidate, run guards, or
-open audio synthesis.
+Implement the frozen full cyclic complex-Hermitian Jacobi proof for bounded
+alias blocks. Do not rerun attribution until residual, orthogonality, trace,
+Frobenius, finite-value, and repeat gates pass. Do not implement another DSP
+candidate, run guards, or open audio synthesis.
 
 ## Frequency-Adaptive Reassessment
 

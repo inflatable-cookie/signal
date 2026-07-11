@@ -104,6 +104,8 @@ implementation remains Signal-owned.
   each global extremal mode by boundary-bin mass and channel cross terms. Its
   first run is inconclusive: worst eigenpair residual `0.031864856` exceeds
   `1e-6`. Batch 29.6U must freeze an accurate deterministic Hermitian solver.
+  It freezes a full lexicographic cyclic complex-Hermitian Jacobi proof with
+  bounded sweeps and residual, orthogonality, trace, and Frobenius gates.
 - Offline artifacts and RealtimePreview have bounded contracts and prototype
   paths, but callback-safe preview integration and fully streaming artifact
   output remain gated until their owning source-fill/cache contracts exist.
@@ -193,6 +195,6 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Freeze Batch 29.6U deterministic Hermitian eigensolver proof. Do not implement
-it, rerun attribution, or run guards. Keep audio synthesis, corpus rendering,
-linked stereo, dynamic ratio, and product integration closed.
+Implement Batch 29.6V deterministic Hermitian eigensolver proof. Do not rerun
+attribution or run guards. Keep audio synthesis, corpus rendering, linked
+stereo, dynamic ratio, and product integration closed.
