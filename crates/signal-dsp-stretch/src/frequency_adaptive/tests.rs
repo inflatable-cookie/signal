@@ -206,6 +206,46 @@ fn common_grid_hermitian_jacobi_proof_passes() {
 }
 
 #[test]
+#[cfg(not(debug_assertions))]
+fn common_grid_nyquist_alias_coupling_ablation_selects_geometry() {
+    let first = common_grid_nyquist_alias_coupling_review();
+    let repeated = common_grid_nyquist_alias_coupling_review();
+    assert_eq!(first, repeated);
+    assert_eq!(first.residues.len(), 33);
+    assert!(first.hashes.iter().all(|hash| *hash != 0));
+    assert!(first.maximum_errors[0] <= 1.0e-8, "{first:?}");
+    assert!(first.maximum_errors[1] <= 1.0e-10, "{first:?}");
+    assert!(first.maximum_errors[2] <= 1.0e-12, "{first:?}");
+    assert!(first.maximum_errors[3] <= 1.0e-10, "{first:?}");
+    assert!(first.maximum_errors[4] <= 1.0e-8, "{first:?}");
+    assert_eq!(
+        first.globals.each_ref().map(|row| row.operator),
+        [
+            StretchCommonGridNyquistAblationOperator::Full,
+            StretchCommonGridNyquistAblationOperator::CompletionRemoved,
+            StretchCommonGridNyquistAblationOperator::CompletionDiagonalized,
+        ]
+    );
+    assert!(
+        first.globals[0].condition_ratio > 1.25,
+        "{:?}",
+        first.globals
+    );
+    assert!(first.globals[1].condition_ratio > 1.25, "{first:?}");
+    assert!(first.globals[2].condition_ratio <= 1.25, "{first:?}");
+    assert_eq!(
+        first.direction,
+        StretchCommonGridNyquistAblationDirection::OrthogonalOrMultiRowCompletion
+    );
+    assert_eq!(first.modes[0].residue, 0);
+    assert_eq!(first.modes[1].residue, 0);
+    eprintln!(
+        "common_grid_nyquist_alias_coupling globals={:?} modes={:?} errors={:?} hashes={:x?} direction={:?}",
+        first.globals, first.modes, first.maximum_errors, first.hashes, first.direction
+    );
+}
+
+#[test]
 fn common_grid_phase_transport_rejects_high_band_phase_aliasing() {
     for frequency in [312.5_f32, 1_000.0] {
         let input = (0..24_576)

@@ -15,7 +15,7 @@ use super::types::{
     StretchCommonGridConditioningReview as Review,
 };
 
-const FFT_FRAMES: usize = 4_224;
+pub(super) const FFT_FRAMES: usize = 4_224;
 const TOP: usize = 16;
 
 pub(crate) fn common_grid_conditioning_attribution_review() -> Review {
@@ -124,7 +124,10 @@ pub(crate) fn common_grid_conditioning_attribution_review() -> Review {
     review
 }
 
-fn normalize_exact(mut filters: Vec<Complex64>, positive_bins: usize) -> (Vec<Complex64>, u64) {
+pub(super) fn normalize_exact(
+    mut filters: Vec<Complex64>,
+    positive_bins: usize,
+) -> (Vec<Complex64>, u64) {
     let mut hash = HASH_OFFSET;
     for bin in 0..positive_bins {
         let energy = (0..CHANNELS)
@@ -139,11 +142,15 @@ fn normalize_exact(mut filters: Vec<Complex64>, positive_bins: usize) -> (Vec<Co
     (filters, hash)
 }
 
-fn residue_bins(residue: usize, positive_bins: usize) -> Vec<usize> {
+pub(super) fn residue_bins(residue: usize, positive_bins: usize) -> Vec<usize> {
     (residue..positive_bins).step_by(FFT_FRAMES / HOP).collect()
 }
 
-fn frame_matrix(filters: &[Complex64], bins: &[usize], positive_bins: usize) -> Vec<Complex64> {
+pub(super) fn frame_matrix(
+    filters: &[Complex64],
+    bins: &[usize],
+    positive_bins: usize,
+) -> Vec<Complex64> {
     let size = bins.len();
     let mut matrix = vec![Complex64::new(0.0, 0.0); size * size];
     for channel in 0..CHANNELS {

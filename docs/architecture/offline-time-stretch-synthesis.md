@@ -293,9 +293,15 @@ the complete channel-`1535` rank-one term, or remove only its off-diagonal terms
 while retaining diagonal energy. These are matrix probes, not realizable
 filters.
 
+The ablation isolates the defect. Removing only channel `1535` off-diagonal
+coupling reduces global condition from `2.9916436058` to `1.1141796230`.
+Removing the complete channel instead leaves condition `2.6496906694`, so its
+diagonal energy is necessary. The next geometry must distribute or
+orthogonalize Nyquist completion while preserving that energy; no realizable
+response has been selected.
+
 ## Next Task
 
-Implement Batch 29.6Y Nyquist-completion matrix ablation and stop after its
-geometry research decision. Do not implement filters, duals, or guards. Keep
-phase reproof, audio synthesis, corpus rendering, linked stereo, dynamic ratio,
-and product routing closed.
+Freeze Batch 29.6Z orthogonal or multi-row Nyquist-completion research. Do not
+implement filters, duals, or guards. Keep phase reproof, audio synthesis,
+corpus rendering, linked stereo, dynamic ratio, and product routing closed.

@@ -178,9 +178,9 @@ rejected ownership crossfade.
 
 ## Next Task
 
-Freeze boundary-geometry reassessment after Jacobi attribution rejects scalar
-conditioning at ratio `2.9916436058`. Do not implement another DSP candidate,
-run guards, or open audio synthesis.
+Freeze an orthogonal or multi-row Nyquist-completion research contract after
+the alias-coupling ablation passes at condition `1.1141796230`. Do not implement
+another DSP candidate, run guards, or open audio synthesis.
 
 ## Frequency-Adaptive Reassessment
 
@@ -480,3 +480,10 @@ its diagonal energy restores the condition cap, research moves to an
 orthogonal or multi-row completion. If complete removal is required, the
 completion family must be replaced. If removal still fails, the reassessment
 broadens to the complete high-edge geometry.
+
+The ablation selects the first branch. Off-diagonal-only removal passes with
+global condition `1.1141796230`; complete channel removal remains rejected at
+`2.6496906694`. Channel `1535` therefore supplies useful diagonal energy but
+cannot own the completion as one alias-coupled row. Research must next freeze
+one orthogonal or multi-row construction that preserves the energy without
+restoring the coupling.

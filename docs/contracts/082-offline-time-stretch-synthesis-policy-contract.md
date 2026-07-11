@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; Nyquist alias-coupling ablation frozen
+Status: active; orthogonal Nyquist-completion research selected
 Owner: dsp
 Updated: 2026-07-11
 Related contracts: `046`, `048`, `049`
@@ -1037,6 +1037,17 @@ The outcome chooses one geometry research boundary:
 
 No result authorizes filter implementation, duals, guards, phase, or synthesis.
 
+Batch 29.6Y passes and selects the first branch. The full operator has global
+condition `2.9916436058`; complete channel-`1535` removal still fails at
+`2.6496906694`; retaining its diagonal energy while removing only off-diagonal
+coupling passes at `1.1141796230`. Maximum Jacobi residual is
+`6.6651241979e-13`, maximum subtraction closure is `2.2230129165e-16`, and
+evidence hash `eeef1e5788727c03` repeats exactly.
+
+The useful diagonal energy must be preserved while the single-row cross-bin
+coupling is replaced. Batch 29.6Z must freeze one orthogonal or multi-row
+Nyquist-completion research contract before any response is implemented.
+
 ### Rule 27: synthesize a protected centre, not a circular endpoint
 
 Extend the source in both directions with whole-sample even reflection,
@@ -1092,5 +1103,5 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Implement Batch 29.6Y Nyquist-completion matrix ablation and stop after its
-geometry research decision. Do not implement filters, duals, or guards.
+Freeze Batch 29.6Z orthogonal or multi-row Nyquist-completion research. Do not
+implement filters, duals, or guards. Keep phase and synthesis work closed.

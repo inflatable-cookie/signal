@@ -112,6 +112,10 @@ implementation remains Signal-owned.
   Batch 29.6X freezes one report-only ablation of channel `1535` across every
   residue, comparing the full operator, complete channel removal, and removal
   of only its off-diagonal coupling before any filter design.
+  The ablation selects orthogonal or multi-row completion research:
+  off-diagonal-only removal passes at condition `1.1141796230`, while complete
+  channel removal still fails at `2.6496906694`. Batch 29.6Z must contract one
+  realizable geometry before implementation.
 - Offline artifacts and RealtimePreview have bounded contracts and prototype
   paths, but callback-safe preview integration and fully streaming artifact
   output remain gated until their owning source-fill/cache contracts exist.
@@ -201,7 +205,6 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Implement Batch 29.6Y Nyquist-completion matrix ablation and stop after its
-geometry research decision. Do not implement filters, duals, or guards. Keep
-audio synthesis, corpus rendering, linked stereo, dynamic ratio, and product
-integration closed.
+Freeze Batch 29.6Z orthogonal or multi-row Nyquist-completion research. Do not
+implement filters, duals, or guards. Keep audio synthesis, corpus rendering,
+linked stereo, dynamic ratio, and product integration closed.

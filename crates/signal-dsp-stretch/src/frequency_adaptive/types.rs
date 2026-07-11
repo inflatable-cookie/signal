@@ -252,6 +252,106 @@ pub struct StretchCommonGridConditioningReview {
     pub direction: StretchCommonGridConditioningDirection,
 }
 
+/// Diagnostic frame operator in the Nyquist-completion coupling ablation.
+#[cfg(all(test, not(debug_assertions)))]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum StretchCommonGridNyquistAblationOperator {
+    /// Complete exact-pointwise frame operator.
+    Full,
+    /// Operator with the complete channel-1535 rank-one term removed.
+    CompletionRemoved,
+    /// Operator retaining channel-1535 diagonal energy but not cross-bin terms.
+    CompletionDiagonalized,
+}
+
+/// Research direction selected by the Nyquist-completion coupling ablation.
+#[cfg(all(test, not(debug_assertions)))]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum StretchCommonGridNyquistAblationDirection {
+    /// A numerical or matrix-identity proof gate failed.
+    Inconclusive,
+    /// Research an orthogonal or multi-row Nyquist completion.
+    OrthogonalOrMultiRowCompletion,
+    /// Replace the Nyquist completion family, including its diagonal energy.
+    ReplacementCompletion,
+    /// Broaden research to the complete high-edge channel geometry.
+    CompleteHighEdgeGeometry,
+}
+
+/// Per-residue evidence for one Nyquist-completion ablation operator.
+#[cfg(all(test, not(debug_assertions)))]
+#[derive(Clone, Debug, PartialEq)]
+pub struct StretchCommonGridNyquistAblationResidueEvidence {
+    /// Operator under review.
+    pub operator: StretchCommonGridNyquistAblationOperator,
+    /// Alias residue index.
+    pub residue: usize,
+    /// Number of frequency bins in the residue block.
+    pub bin_count: usize,
+    /// Minimum and maximum eigenvalues.
+    pub eigenvalues: [f64; 2],
+    /// Per-residue maximum-to-minimum eigenvalue ratio.
+    pub condition_ratio: f64,
+    /// Proven Jacobi solve evidence.
+    pub jacobi: StretchCommonGridJacobiEvidence,
+    /// Channel-1535 diagonal energy and off-diagonal Frobenius energy.
+    pub completion_energy: [f64; 2],
+    /// Stable hashes of bins and matrix.
+    pub hashes: [u64; 2],
+}
+
+/// Global frame extrema for one Nyquist-completion ablation operator.
+#[cfg(all(test, not(debug_assertions)))]
+#[derive(Clone, Debug, PartialEq)]
+pub struct StretchCommonGridNyquistAblationGlobalEvidence {
+    /// Operator under review.
+    pub operator: StretchCommonGridNyquistAblationOperator,
+    /// Global minimum and maximum eigenvalues.
+    pub eigenvalues: [f64; 2],
+    /// Residues owning the global minimum and maximum.
+    pub residues: [usize; 2],
+    /// Global maximum-to-minimum condition ratio.
+    pub condition_ratio: f64,
+}
+
+/// Frozen exact-pointwise extremal-mode response to all three operators.
+#[cfg(all(test, not(debug_assertions)))]
+#[derive(Clone, Debug, PartialEq)]
+pub struct StretchCommonGridNyquistAblationModeEvidence {
+    /// Whether this is the maximum rather than minimum full-operator mode.
+    pub maximum: bool,
+    /// Residue containing the frozen mode.
+    pub residue: usize,
+    /// Eigenvalue of the complete exact-pointwise operator.
+    pub eigenvalue: f64,
+    /// Rayleigh quotients for full, removed, and diagonalized operators.
+    pub rayleigh: [f64; 3],
+    /// Removed-minus-full and diagonalized-minus-full Rayleigh changes.
+    pub changes: [f64; 2],
+    /// Relative closure errors for complete and off-diagonal subtraction.
+    pub closure_errors: [f64; 2],
+    /// Stable hash of the frozen eigenvector.
+    pub vector_hash: u64,
+}
+
+/// Complete report-only Nyquist-completion alias-coupling ablation.
+#[cfg(all(test, not(debug_assertions)))]
+#[derive(Clone, Debug, PartialEq)]
+pub struct StretchCommonGridNyquistAblationReview {
+    /// All three operators across all eleven residues.
+    pub residues: Vec<StretchCommonGridNyquistAblationResidueEvidence>,
+    /// Global extrema and condition ratio for all three operators.
+    pub globals: [StretchCommonGridNyquistAblationGlobalEvidence; 3],
+    /// Frozen full-operator minimum and maximum modes.
+    pub modes: [StretchCommonGridNyquistAblationModeEvidence; 2],
+    /// Maximum residual, orthogonality, trace, Frobenius, and closure errors.
+    pub maximum_errors: [f64; 5],
+    /// Exact-pointwise filter hash and complete evidence hash.
+    pub hashes: [u64; 2],
+    /// Geometry research direction selected by the frozen gates.
+    pub direction: StretchCommonGridNyquistAblationDirection,
+}
+
 /// Numerical evidence for one bounded Hermitian Jacobi solve.
 #[derive(Clone, Debug, PartialEq)]
 pub struct StretchCommonGridJacobiEvidence {
