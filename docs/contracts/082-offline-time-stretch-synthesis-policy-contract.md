@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; orthogonal Nyquist-completion research selected
+Status: active; three-row Nyquist completion frozen
 Owner: dsp
 Updated: 2026-07-11
 Related contracts: `046`, `048`, `049`
@@ -1048,6 +1048,57 @@ The useful diagonal energy must be preserved while the single-row cross-bin
 coupling is replaced. Batch 29.6Z must freeze one orthogonal or multi-row
 Nyquist-completion research contract before any response is implemented.
 
+### Rule 26E: use one three-row DFT-coded Nyquist completion
+
+Batch 29.6AA tests one realizable geometry. Keep raw channels `0..1534`
+bit-identical to Rule 26. Replace channel `1535` with exactly three completion
+rows, increasing the candidate bank to `1538` rows while retaining hop `384`.
+Do not apply pointwise tightening or any scalar normalizer.
+
+Retain the Rule 26 completion magnitude `g(f)`, support width
+`w=16*(0.5/1535)`, cubic smoothstep, and endpoint values. For row
+`r in {-1,0,1}`, use
+
+`H_r(f)=g(f)/sqrt(3) * exp(-i*2*pi*f*d_r)`
+
+with integer delays `d_r=128*r`, or `{-128,0,128}` frames. Mirror negative
+frequencies by conjugation. All three rows are zero below `0.5-w`, preserve the
+existing magnitude smoothness, and are real and positive at Nyquist because
+each delay is even.
+
+The construction must prove its own alias cancellation. For two bins in one
+residue separated by `k/384`, the three-row cross term contains
+
+`sum_{r=-1}^{1} exp(i*2*pi*k*r/3)`.
+
+This is zero for `k=1` and `k=2`. Since `w < 3/384`, no two nonzero completion
+bins in one residue can be separated by any other positive `k`. The three rows
+therefore contribute exactly `g(f)^2` on the frame diagonal and zero off the
+diagonal. This DFT-coded delay triplet is a Signal design inference. The
+published nonstationary-Gabor results justify the compact-support, dense-sample
+frame boundary and measured dual proof, not this particular triplet. Primary
+references remain [Holighaus et al.](https://arxiv.org/abs/1210.0084) and
+[Dörfler and Matusiak](https://arxiv.org/abs/1112.5262).
+
+Batch 29.6AA is report-only. At FFT length `4224`, require:
+
+- unchanged hashes for channels `0..1534`, one stable hash per completion row,
+  exact row count `1538`, hop `384`, and finite values
+- analytic delay, support, diagonal-energy, off-diagonal-cancellation, and
+  real-Nyquist closure at `1e-12`
+- all `11` complete frame matrices solved by the proven Jacobi path, global
+  condition at most `1.25`, residual `1e-8`, orthogonality `1e-10`, trace
+  `1e-12`, Frobenius `1e-10`, stable hashes, and exact release repeat
+
+Any construction or numerical failure rejects the triplet. Condition failure
+returns to boundary geometry without changing magnitude, delays, row count,
+or normalization in the same batch. Passing opens only a separate identity
+reconstruction proof. That later proof must reuse the Rule 26 controls and
+require exact length, canonical-dual residual `1e-8`, peak error `1e-5`, RMS
+error `1e-6`, head/tail error `1e-5`, finite values, hashes, and exact repeat
+before any representative guard can open. It does not authorize dual guards,
+phase, synthesis, corpus rendering, stereo, dynamic ratio, or product routing.
+
 ### Rule 27: synthesize a protected centre, not a circular endpoint
 
 Extend the source in both directions with whole-sample even reflection,
@@ -1103,5 +1154,5 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Freeze Batch 29.6Z orthogonal or multi-row Nyquist-completion research. Do not
-implement filters, duals, or guards. Keep phase and synthesis work closed.
+Implement Batch 29.6AA three-row Nyquist-completion matrix proof and stop after
+its conditioning decision. Do not run reconstruction, duals, or guards.

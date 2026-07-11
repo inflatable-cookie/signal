@@ -116,6 +116,10 @@ implementation remains Signal-owned.
   off-diagonal-only removal passes at condition `1.1141796230`, while complete
   channel removal still fails at `2.6496906694`. Batch 29.6Z must contract one
   realizable geometry before implementation.
+  It freezes three equal-energy completion rows at delays `-128`, `0`, and
+  `+128`. Their three-point DFT phase coding preserves diagonal energy and
+  cancels all possible same-residue completion cross terms. Batch 29.6AA owns
+  only the construction and frame-matrix proof.
 - Offline artifacts and RealtimePreview have bounded contracts and prototype
   paths, but callback-safe preview integration and fully streaming artifact
   output remain gated until their owning source-fill/cache contracts exist.
@@ -205,6 +209,7 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Freeze Batch 29.6Z orthogonal or multi-row Nyquist-completion research. Do not
-implement filters, duals, or guards. Keep audio synthesis, corpus rendering,
-linked stereo, dynamic ratio, and product integration closed.
+Implement Batch 29.6AA three-row Nyquist-completion matrix proof and stop after
+its conditioning decision. Do not run reconstruction, duals, or guards. Keep
+audio synthesis, corpus rendering, linked stereo, dynamic ratio, and product
+integration closed.

@@ -300,8 +300,16 @@ diagonal energy is necessary. The next geometry must distribute or
 orthogonalize Nyquist completion while preserving that energy; no realizable
 response has been selected.
 
+The frozen realizable geometry replaces the one completion row with three
+equal-energy rows at delays `-128`, `0`, and `+128` frames. Their DFT phase
+coding cancels alias-bin separations of one and two hops; the retained support
+is narrower than three alias intervals, so these are the only possible
+off-diagonal pairs. The rows preserve the original summed diagonal energy and
+are all real at Nyquist. This is a proof candidate, not a promoted filter bank.
+
 ## Next Task
 
-Freeze Batch 29.6Z orthogonal or multi-row Nyquist-completion research. Do not
-implement filters, duals, or guards. Keep phase reproof, audio synthesis,
-corpus rendering, linked stereo, dynamic ratio, and product routing closed.
+Implement Batch 29.6AA three-row Nyquist-completion matrix proof and stop after
+its conditioning decision. Do not run reconstruction, duals, or guards. Keep
+phase reproof, audio synthesis, corpus rendering, linked stereo, dynamic ratio,
+and product routing closed.

@@ -434,12 +434,21 @@ independent stereo review.
 
 ### Batch 29.6Z - Orthogonal Nyquist Completion Research Contract
 
-- [ ] freeze one orthogonal or multi-row completion question that retains the
+- [x] freeze one orthogonal or multi-row completion question that retains the
   passing diagonal energy without same-row cross-bin alias coupling
-- [ ] preserve channels `0..1534`, common-grid timing, real endpoints, and
+- [x] preserve channels `0..1534`, common-grid timing, real endpoints, and
   smooth boundary ownership; define reconstruction, conditioning, and stop gates
-- [ ] keep filter implementation, duals, guards, phase, synthesis, corpus,
+- [x] keep filter implementation, duals, guards, phase, synthesis, corpus,
   stereo, dynamic ratio, and product routing closed
+
+### Batch 29.6AA - Three-Row Nyquist Completion Matrix Proof
+
+- [ ] replace the single completion with equal-energy rows at delays `-128`,
+  `0`, and `+128`; preserve raw channels `0..1534`, magnitude, support, and hop
+- [ ] prove row count, hashes, finite values, real Nyquist endpoints, retained
+  diagonal energy, and roots-of-unity alias cancellation at `1e-12`
+- [ ] solve all `11` frame matrices with Jacobi and require condition at most
+  `1.25`, numerical gates, stable hashes, and exact release repeat; stop there
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -880,8 +889,13 @@ independent stereo review.
   remains rejected at `2.6496906694`. Orthogonal or multi-row completion
   research is selected. Evidence is in
   `docs/logs/2026-07/11-g10-029-nyquist-alias-coupling-ablation.md`.
+- 2026-07-11: Froze Batch 29.6Z. The one allowed candidate splits the existing
+  completion across delays `-128`, `0`, and `+128`; three-point DFT coding
+  preserves diagonal energy and analytically cancels every possible same-residue
+  completion cross term. Evidence is in
+  `docs/logs/2026-07/11-g10-029-three-row-nyquist-completion-contract.md`.
 
 ## Next Task
 
-Freeze Batch 29.6Z orthogonal or multi-row Nyquist-completion research. Do not
-implement filters, duals, or guards. Keep phase and synthesis work closed.
+Implement Batch 29.6AA three-row Nyquist-completion matrix proof and stop after
+its conditioning decision. Do not run reconstruction, duals, or guards.

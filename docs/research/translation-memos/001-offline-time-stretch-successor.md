@@ -178,9 +178,9 @@ rejected ownership crossfade.
 
 ## Next Task
 
-Freeze an orthogonal or multi-row Nyquist-completion research contract after
-the alias-coupling ablation passes at condition `1.1141796230`. Do not implement
-another DSP candidate, run guards, or open audio synthesis.
+Implement the frozen three-row Nyquist-completion matrix proof after the
+alias-coupling ablation passes at condition `1.1141796230`. Do not run identity
+reconstruction, guards, or audio synthesis.
 
 ## Frequency-Adaptive Reassessment
 
@@ -487,3 +487,12 @@ global condition `1.1141796230`; complete channel removal remains rejected at
 cannot own the completion as one alias-coupled row. Research must next freeze
 one orthogonal or multi-row construction that preserves the energy without
 restoring the coupling.
+
+The bounded construction uses three equal-magnitude copies of the existing
+completion at delays `-128`, `0`, and `+128` frames. These are the three DFT
+phases for hop `384`. Their roots-of-unity sum cancels bins separated by one or
+two alias intervals, while the completion support is narrower than three
+intervals. Summed diagonal energy remains unchanged and every row is real at
+Nyquist. This algebraic triplet is a Signal inference built inside the
+published compact-support frame boundary; measured Jacobi conditioning remains
+authoritative.
