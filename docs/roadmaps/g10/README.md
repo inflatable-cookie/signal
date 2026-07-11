@@ -134,7 +134,10 @@ implementation remains Signal-owned.
   atom localization. Batch 29.6AE owns that feasibility proof only.
   It reaches numerical identity but violates compact support on row `12`, so
   common-grid correction is closed. Batch 29.6AF owns transform-family
-  reassessment before any more DSP implementation.
+  reassessment before any more DSP implementation. That reassessment returns to
+  the passing painless Batch 29.6I bank on one dense common lattice. Batch
+  29.6AG owns geometry, cost, reconstruction, boundary, and large-probe
+  localization feasibility only.
 - Offline artifacts and RealtimePreview have bounded contracts and prototype
   paths, but callback-safe preview integration and fully streaming artifact
   output remain gated until their owning source-fill/cache contracts exist.
@@ -224,6 +227,6 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Freeze Batch 29.6AF transform-family reassessment. Do not implement another
-common-grid correction, reconstruction, guard, phase, or synthesis. Keep
-corpus rendering, linked stereo, dynamic ratio, and product integration closed.
+Implement Batch 29.6AG dense painless common-lattice feasibility and stop at
+its reconstruction/localization decision. Keep phase, stretched synthesis,
+corpus, linked stereo, dynamic ratio, and product integration closed.

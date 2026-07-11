@@ -340,8 +340,16 @@ introduced outside support is `1.2528705611e-12`. This closes common-grid
 correction work without claiming audible damage; transform-family reassessment
 must now account for localization explicitly.
 
+The reassessment returns to the passing painless nonstationary-Gabor bank, not
+the rejected wavelet bank. Keep its filters and diagonal canonical dual, but
+place every band on one dense coefficient lattice using the largest existing
+per-band coefficient count. This removes unequal-lattice adjacency without an
+alias-block solve or support-mixing tightener. It is a new feasibility question,
+not a promoted successor: coefficient cost, real-boundary closure, identity
+reconstruction, and large-probe atom localization must pass before phase work.
+
 ## Next Task
 
-Freeze Batch 29.6AF transform-family reassessment. Do not implement another
-common-grid correction, reconstruction, guard, phase, or synthesis. Keep
-corpus rendering, linked stereo, dynamic ratio, and routing closed.
+Implement Batch 29.6AG dense painless common-lattice feasibility. Stop before
+phase derivatives, projection, heap integration, stretched synthesis, corpus
+rendering, linked stereo, dynamic ratio, or routing.

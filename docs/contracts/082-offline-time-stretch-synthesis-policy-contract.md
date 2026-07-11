@@ -1229,6 +1229,58 @@ Maximum identity error is `2.4357207508e-14`; evidence hash
 The common-grid family is closed. Batch 29.6AF must freeze transform-family
 reassessment before more DSP implementation.
 
+### Rule 26H: regrid the passing painless bank without changing its filters
+
+Batch 29.6AF selects one final transform-feasibility question before operator
+review. Return to the passing Batch 29.6I frequency-adaptive painless
+nonstationary-Gabor bank. Do not reuse the rejected Batch 29.6J wavelet bank,
+its pointwise tightener, alias-block dual, boundary completions, or channel
+delays.
+
+For one proof FFT length `L`, rebuild the Batch 29.6I filters bit-identically:
+`48` bands per octave from `50 Hz` to `20 kHz` clamped at Nyquist, explicit DC
+and Nyquist completion, conjugate-mirrored negative-frequency bands, and the
+same sine/cosine compact-support partition. Let each original per-band
+coefficient count be `M_k`. Freeze one common count
+`M=max_k(M_k)` and common hop `a=L/M` for every band. Zero-pad each compact
+frequency response to `M`; do not resample, widen, taper, tighten, truncate, or
+mix filter bins.
+
+Compute the canonical dual from the same strictly positive diagonal frame
+operator `S[w]=sum_k |g_k[w]|^2`. The common lattice must leave every analysis
+filter, `S`, and pointwise dual weight unchanged. This dense regridding is a
+Signal construction inside the painless-frame boundary from Holighaus et al.
+and Dörfler and Matusiak; it is not published TSM quality evidence.
+
+Batch 29.6AG is report-only. Use the unchanged Batch 29.6I identity controls
+and one large deterministic probe of at least `65536` frames. Report:
+
+- band count, common `M`, common hop, total coefficient count, redundancy, and
+  coefficient-growth ratio against the original unequal-lattice bank
+- exact analysis-filter, frame-operator, and dual-weight hash equality against
+  an unequal-lattice Batch 29.6I baseline rebuilt at the same `L`;
+  painless-support violations and non-finite values
+- frame extrema and condition, frequency coverage, real DC/Nyquist and
+  conjugate-mirror closure, exact output length, peak/RMS/head/tail error, and
+  repeat hashes
+- per-band analysis and dual atom excluded-energy curves at whole-common-hop
+  radii through `16384` frames, first radius reaching `1e-12`, limiting bands,
+  peaks, and stable aggregate hashes
+
+Require zero hash or support drift, zero uncovered bins, zero painless-support
+violations, real-boundary closure at `1e-12`, condition no worse than the
+same-`L` Batch 29.6I value plus `1e-6`, peak reconstruction error `1e-5`, RMS
+error `1e-6`, exact length and endpoint gates, finite values, and exact repeat.
+Every analysis and dual atom must reach excluded energy `1e-12` within the
+`16384`-frame cap. Report coefficient cost but do not invent a cost threshold
+after measurement.
+
+Any geometry, reconstruction, boundary, numerical, or localization failure
+stops for operator review. Passage opens only a separately frozen derivative
+and phase-topology contract on this exact bank. It does not authorize phase
+modification, stretched synthesis, corpus rendering, stereo, dynamic ratio,
+cache, or product routing.
+
 ### Rule 27: synthesize a protected centre, not a circular endpoint
 
 Extend the source in both directions with whole-sample even reflection,
@@ -1284,5 +1336,5 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Freeze Batch 29.6AF transform-family reassessment. Do not implement another
-common-grid correction, identity reconstruction, guard, phase, or synthesis.
+Implement Batch 29.6AG dense painless common-lattice feasibility and stop at
+its reconstruction/localization decision. Do not implement phase or stretch.

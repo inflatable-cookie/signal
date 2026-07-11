@@ -178,8 +178,9 @@ rejected ownership crossfade.
 
 ## Next Task
 
-Freeze transform-family reassessment after canonical block tightening violates
-the compact-support gate. Do not run identity reconstruction or synthesis.
+Implement dense painless common-lattice feasibility and stop at its
+reconstruction/localization decision. Do not modify phase or synthesize a
+stretched output.
 
 ## Frequency-Adaptive Reassessment
 
@@ -525,3 +526,23 @@ nonzero across all `2113` positive bins. Its first violating peak is
 `1.2528705611e-12`. The frozen threshold is not retuned after measurement.
 Common-grid correction is closed; the next family must make invertibility and
 localization compatible by construction.
+
+## Dense Painless Common-Lattice Reassessment
+
+The passing Batch 29.6I bank already has the required diagonal frame operator,
+compact frequency supports, near-unity bounds, and exact canonical-dual
+reconstruction. Its blocker is scheduling: per-band decimation leaves no
+published cross-band phase-integration topology.
+
+Use the largest existing per-band coefficient count for every band. This puts
+the unchanged painless filters on one dense rectangular lattice. Because no
+filter changes and the frame operator remains diagonal, canonical dualization
+does not mix alias-separated bins. The cost is deliberate oversampling; it is
+acceptable only as a measured offline feasibility trade, not silently as a
+production decision.
+
+The next proof must establish exact geometry preservation, common-grid
+coefficient cost, identity reconstruction, real-spectrum closure, and analysis
+and dual atom localization on a large probe. Failure stops for operator review.
+Passage opens only a derivative/topology contract; it does not inherit the
+rejected wavelet phase or synthesis work.

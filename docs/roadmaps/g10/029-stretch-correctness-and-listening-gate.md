@@ -488,12 +488,22 @@ independent stereo review.
 
 ### Batch 29.6AF - Transform-Family Reassessment
 
-- [ ] close common-grid correction work and reassess the next invertible
+- [x] close common-grid correction work and reassess the next invertible
   time-frequency family against the measured quality and localization failures
-- [ ] preserve one global time map, exact target length, real output, and
+- [x] preserve one global time map, exact target length, real output, and
   reconstruction-first gating; do not re-open rejected component synthesis
-- [ ] freeze one next research question or stop for operator review; keep DSP
+- [x] freeze one next research question or stop for operator review; keep DSP
   implementation, corpus, stereo, dynamic ratio, and routing closed
+
+### Batch 29.6AG - Dense Painless Common-Lattice Feasibility
+
+- [ ] rebuild the passing Batch 29.6I filters bit-identically and place every
+  band on one common lattice using the largest original coefficient count
+- [ ] prove unchanged diagonal frame/dual geometry, explicit coefficient cost,
+  identity reconstruction, real-spectrum closure, and all-band large-probe
+  analysis/dual localization through the frozen `16384`-frame cap
+- [ ] open only a separate derivative/topology contract on complete passage;
+  otherwise stop for operator review without another transform candidate
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -959,8 +969,13 @@ independent stereo review.
   reaches condition `1.0000000000005773`, but row `12` violates frozen compact
   support at peak `1.2528705611e-12`. Evidence is in
   `docs/logs/2026-07/11-g10-029-canonical-block-tightener-rejection.md`.
+- 2026-07-11: Batch 29.6AF selected one dense painless common-lattice proof.
+  It reuses the passing Batch 29.6I filters and diagonal dual, replacing only
+  unequal per-band scheduling with the largest original coefficient count.
+  Evidence is in
+  `docs/logs/2026-07/11-g10-029-transform-family-reassessment.md`.
 
 ## Next Task
 
-Freeze Batch 29.6AF transform-family reassessment. Do not implement another
-common-grid correction, identity reconstruction, guard, phase, or synthesis.
+Implement Batch 29.6AG dense painless common-lattice feasibility and stop at
+its reconstruction/localization decision. Do not implement phase or stretch.
