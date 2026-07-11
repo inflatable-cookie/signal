@@ -178,9 +178,8 @@ rejected ownership crossfade.
 
 ## Next Task
 
-Implement dense painless common-lattice feasibility and stop at its
-reconstruction/localization decision. Do not modify phase or synthesize a
-stretched output.
+Stop for operator direction after dense painless common-lattice rejection. No
+new transform candidate is ready.
 
 ## Frequency-Adaptive Reassessment
 
@@ -546,3 +545,9 @@ coefficient cost, identity reconstruction, real-spectrum closure, and analysis
 and dual atom localization on a large probe. Failure stops for operator review.
 Passage opens only a derivative/topology contract; it does not inherit the
 rejected wavelet phase or synthesis work.
+
+The proof rejects. Regridding preserves condition and identity reconstruction,
+but costs redundancy `208`, misses real-spectrum closure by five orders of
+magnitude, and leaves roughly half of the limiting atom energy outside the
+`16384`-frame radius. Dense scheduling solves coefficient adjacency without
+solving time localization. No derivative or phase-topology contract opens.

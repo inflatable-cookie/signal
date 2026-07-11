@@ -348,8 +348,14 @@ alias-block solve or support-mixing tightener. It is a new feasibility question,
 not a promoted successor: coefficient cost, real-boundary closure, identity
 reconstruction, and large-probe atom localization must pass before phase work.
 
+That dense proof is rejected. At `65536` frames it requires hop `4`, redundancy
+`208`, and `72.7455x` the unequal-lattice coefficient count. Identity
+reconstruction and condition pass, but real-spectrum closure is
+`1.7881393433e-7` and the worst analysis and dual atoms retain
+`0.4999847412` excluded energy at radius `16384`. No phase topology opens.
+
 ## Next Task
 
-Implement Batch 29.6AG dense painless common-lattice feasibility. Stop before
-phase derivatives, projection, heap integration, stretched synthesis, corpus
-rendering, linked stereo, dynamic ratio, or routing.
+Stop for the Batch 29.6AH operator direction checkpoint. No transform candidate
+is ready. Do not change thresholds or implement phase, synthesis, corpus,
+stereo, dynamic ratio, or routing.

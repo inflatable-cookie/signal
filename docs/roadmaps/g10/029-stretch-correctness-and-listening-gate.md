@@ -497,13 +497,22 @@ independent stereo review.
 
 ### Batch 29.6AG - Dense Painless Common-Lattice Feasibility
 
-- [ ] rebuild the passing Batch 29.6I filters bit-identically and place every
+- [x] rebuild the passing Batch 29.6I filters bit-identically and place every
   band on one common lattice using the largest original coefficient count
-- [ ] prove unchanged diagonal frame/dual geometry, explicit coefficient cost,
+- [x] prove unchanged diagonal frame/dual geometry, explicit coefficient cost,
   identity reconstruction, real-spectrum closure, and all-band large-probe
   analysis/dual localization through the frozen `16384`-frame cap
-- [ ] open only a separate derivative/topology contract on complete passage;
+- [x] open only a separate derivative/topology contract on complete passage;
   otherwise stop for operator review without another transform candidate
+
+### Batch 29.6AH - Operator Direction Checkpoint
+
+- [ ] decide whether to pause successor research at the current production
+  phase vocoder or authorize a new transform-research lane
+- [ ] do not relax localization or real-spectrum thresholds from failed
+  evidence and do not infer a replacement family from implementation context
+- [ ] keep phase, stretched synthesis, corpus, stereo, dynamic ratio, cache,
+  and routing closed until operator intent is recorded
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -974,8 +983,13 @@ independent stereo review.
   unequal per-band scheduling with the largest original coefficient count.
   Evidence is in
   `docs/logs/2026-07/11-g10-029-transform-family-reassessment.md`.
+- 2026-07-11: Batch 29.6AG rejected the dense painless candidate. Identity and
+  condition pass, but redundancy is `208`, real-spectrum closure is
+  `1.7881393433e-7`, and limiting atom leakage at radius `16384` is
+  `0.4999847412`. Evidence is in
+  `docs/logs/2026-07/11-g10-029-dense-painless-rejection.md`.
 
 ## Next Task
 
-Implement Batch 29.6AG dense painless common-lattice feasibility and stop at
-its reconstruction/localization decision. Do not implement phase or stretch.
+Stop for the Batch 29.6AH operator direction checkpoint. No transform candidate
+is ready and no DSP implementation is authorized.

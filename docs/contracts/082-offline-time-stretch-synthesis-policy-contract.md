@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; common-grid family rejected
+Status: active; transform research paused for operator direction
 Owner: dsp
 Updated: 2026-07-11
 Related contracts: `046`, `048`, `049`
@@ -1281,6 +1281,19 @@ and phase-topology contract on this exact bank. It does not authorize phase
 modification, stretched synthesis, corpus rendering, stereo, dynamic ratio,
 cache, or product routing.
 
+Batch 29.6AG rejects the dense candidate. The `65536`-frame proof has `832`
+bands, common coefficient count `16384`, hop `4`, and `13631488` coefficients:
+`72.7454985965x` the same-geometry unequal lattice and redundancy `208`.
+Frame condition is `1.0000001657`; peak and RMS identity errors are
+`5.5511151231e-16` and `1.3364241355e-16`.
+
+Those passing values do not override two frozen failures. Real-spectrum
+closure is `1.7881393433e-7`, above `1e-12`. At radius `16384`, the limiting
+analysis and dual atoms both retain excluded-energy ratio `0.4999847412`; no
+band-complete `1e-12` radius exists within the cap. Evidence hash
+`e0cbc3c75529c899` repeats exactly. Batch 29.6AH is an operator direction
+checkpoint. No new transform, phase topology, or threshold change is implied.
+
 ### Rule 27: synthesize a protected centre, not a circular endpoint
 
 Extend the source in both directions with whole-sample even reflection,
@@ -1336,5 +1349,5 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Implement Batch 29.6AG dense painless common-lattice feasibility and stop at
-its reconstruction/localization decision. Do not implement phase or stretch.
+Stop for the Batch 29.6AH operator direction checkpoint. No transform candidate
+is ready and no DSP implementation is authorized.

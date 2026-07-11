@@ -344,6 +344,45 @@ fn common_grid_canonical_tightener_selects_localization_direction() {
 }
 
 #[test]
+#[cfg(not(debug_assertions))]
+fn dense_painless_common_lattice_selects_feasibility_direction() {
+    let first = dense_painless_common_lattice_review();
+    let repeated = dense_painless_common_lattice_review();
+    assert_eq!(first, repeated);
+    assert_eq!(first.geometry[0], 65_536);
+    assert_eq!(first.hashes[0], first.hashes[1], "{first:?}");
+    assert_eq!(first.hashes[2], first.hashes[3], "{first:?}");
+    assert_eq!(first.hashes[4], first.hashes[5], "{first:?}");
+    assert_eq!(first.structural_failures, [0; 3], "{first:?}");
+    assert!(first.frame_values[2] <= 1.0 + 1.0e-6, "{first:?}");
+    assert!(first.reconstruction_errors[0] > 1.0e-12);
+    assert!(first.reconstruction_errors[1] <= 1.0e-5, "{first:?}");
+    assert!(first.reconstruction_errors[2] <= 1.0e-6, "{first:?}");
+    assert!(first.reconstruction_errors[3] <= 1.0e-5, "{first:?}");
+    assert!(first.reconstruction_errors[4] <= 1.0e-5, "{first:?}");
+    assert_eq!(first.required_radii, [usize::MAX; 2]);
+    assert_eq!(
+        first.direction,
+        StretchDensePainlessDirection::OperatorReview
+    );
+    assert_ne!(first.hashes[6], 0);
+    eprintln!(
+        "dense_painless_common_lattice geometry={:?} coefficients={:?} cost={:?} frame={:?} structural={:?} reconstruction={:?} cap={:?} required={:?} limiting={:?} hashes={:016x?} direction={:?}",
+        first.geometry,
+        first.coefficient_counts,
+        first.coefficient_cost,
+        first.frame_values,
+        first.structural_failures,
+        first.reconstruction_errors,
+        first.localization_curves.last().copied().unwrap_or([f64::INFINITY; 2]),
+        first.required_radii,
+        first.limiting_bands,
+        first.hashes,
+        first.direction,
+    );
+}
+
+#[test]
 fn common_grid_phase_transport_rejects_high_band_phase_aliasing() {
     for frequency in [312.5_f32, 1_000.0] {
         let input = (0..24_576)

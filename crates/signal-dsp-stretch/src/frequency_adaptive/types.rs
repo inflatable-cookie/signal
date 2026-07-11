@@ -554,6 +554,46 @@ pub struct StretchCommonGridCanonicalTightenerReview {
     pub direction: StretchCommonGridCanonicalTightenerDirection,
 }
 
+/// Direction selected by dense painless common-lattice feasibility.
+#[cfg(all(test, not(debug_assertions)))]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum StretchDensePainlessDirection {
+    /// Every frozen gate passes and phase-topology research may be contracted.
+    PhaseTopologyContract,
+    /// A frozen feasibility gate fails and requires operator review.
+    OperatorReview,
+}
+
+/// Complete release-only dense painless common-lattice feasibility report.
+#[cfg(all(test, not(debug_assertions)))]
+#[derive(Clone, Debug, PartialEq)]
+pub struct StretchDensePainlessReview {
+    /// FFT length, band count, common coefficient count, and common hop.
+    pub geometry: [usize; 4],
+    /// Unequal and dense coefficient totals.
+    pub coefficient_counts: [usize; 2],
+    /// Dense coefficient growth and redundancy relative to source frames.
+    pub coefficient_cost: [f64; 2],
+    /// Minimum, maximum, and condition ratio of the diagonal frame operator.
+    pub frame_values: [f64; 3],
+    /// Uncovered bins, support violations, and non-finite values.
+    pub structural_failures: [usize; 3],
+    /// Real-spectrum closure and peak, RMS, head, and tail reconstruction errors.
+    pub reconstruction_errors: [f64; 5],
+    /// Whole-common-hop localization radii through the frozen cap.
+    pub localization_radii: Vec<usize>,
+    /// Maximum analysis and dual excluded-energy ratios at each radius.
+    pub localization_curves: Vec<[f64; 2]>,
+    /// Maximum required analysis and dual radii, or `usize::MAX` on failure.
+    pub required_radii: [usize; 2],
+    /// Bands limiting analysis and dual localization.
+    pub limiting_bands: [usize; 2],
+    /// Unequal/dense filter, frame, and dual hashes plus complete evidence hash.
+    pub hashes: [u64; 7],
+    /// Selected continuation direction.
+    pub direction: StretchDensePainlessDirection,
+}
+
 /// Numerical evidence for one bounded Hermitian Jacobi solve.
 #[derive(Clone, Debug, PartialEq)]
 pub struct StretchCommonGridJacobiEvidence {
