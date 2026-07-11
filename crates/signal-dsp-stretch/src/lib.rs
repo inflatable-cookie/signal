@@ -103,9 +103,11 @@ pub use corpus_report::{
 pub use formant_boundary::{measure_formant_boundary, StretchFormantBoundaryMeasurement};
 pub use frequency_adaptive::{
     StretchCommonGridDualGuardEvidence, StretchCommonGridProjectedPhaseEvidence,
-    StretchCommonGridTonePhaseEvidence, StretchCommonGridWaveletEvidence,
-    StretchCommonGridWaveletReview, StretchFrequencyAdaptiveBandEvidence,
-    StretchFrequencyAdaptiveEvidence, StretchFrequencyAdaptiveReview,
+    StretchCommonGridTailAtomEvidence, StretchCommonGridTailAttributionEvidence,
+    StretchCommonGridTailForm, StretchCommonGridTailStage, StretchCommonGridTonePhaseEvidence,
+    StretchCommonGridWaveletEvidence, StretchCommonGridWaveletReview,
+    StretchFrequencyAdaptiveBandEvidence, StretchFrequencyAdaptiveEvidence,
+    StretchFrequencyAdaptiveReview,
 };
 pub use hpr_separation::{
     StretchHprAdditiveRender, StretchHprComponentEvidence, StretchHprSeparationEvidence,
@@ -2407,6 +2409,12 @@ impl OfflineHighQualityStretcher {
         source_frames: usize,
     ) -> StretchCommonGridDualGuardEvidence {
         frequency_adaptive::common_grid_dual_guard_review(source_frames)
+    }
+
+    /// Measure the fixed common-grid dual-atom tail-attribution matrix.
+    #[doc(hidden)]
+    pub fn common_grid_tail_attribution_review(&self) -> StretchCommonGridTailAttributionEvidence {
+        frequency_adaptive::common_grid_tail_attribution_review()
     }
 }
 

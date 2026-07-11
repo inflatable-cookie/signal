@@ -5,11 +5,173 @@ use super::{
         build_filters, conjugate_gradient, hash_u64, tighten_frequency_response, CHANNELS,
         HASH_OFFSET, HOP,
     },
-    types::StretchCommonGridDualGuardEvidence,
+    types::{
+        StretchCommonGridDualGuardEvidence, StretchCommonGridTailAtomEvidence,
+        StretchCommonGridTailAttributionEvidence, StretchCommonGridTailForm,
+        StretchCommonGridTailStage,
+    },
 };
 
 const GUARD_CAP_FRAMES: usize = 16_384;
 const TAIL_ENERGY_LIMIT: f64 = 1.0e-12;
+const ATTRIBUTION_FFT_FRAMES: usize = 34_176;
+const ATTRIBUTION_CHANNELS: [usize; 5] = [0, 15, 16, 768, 1_535];
+const ATTRIBUTION_RADII: [usize; 6] = [384, 1_536, 4_096, 8_192, 12_288, 16_000];
+const ATTRIBUTION_THRESHOLDS: [f64; 4] = [1.0e-6, 1.0e-8, 1.0e-10, 1.0e-12];
+
+pub(crate) fn common_grid_tail_attribution_review() -> StretchCommonGridTailAttributionEvidence {
+    let positive_bins = ATTRIBUTION_FFT_FRAMES / 2 + 1;
+    let coefficient_frames = ATTRIBUTION_FFT_FRAMES / HOP;
+    let raw_filters = build_filters(ATTRIBUTION_FFT_FRAMES);
+    let mut tightened_filters = raw_filters.clone();
+    tighten_frequency_response(&mut tightened_filters, positive_bins);
+    let (dual_spectra, dual_residuals) = dual_atom_spectra(
+        &ATTRIBUTION_CHANNELS,
+        coefficient_frames,
+        positive_bins,
+        &tightened_filters,
+    );
+    let mut planner = FftPlanner::<f64>::new();
+    let inverse = planner.plan_fft_inverse(ATTRIBUTION_FFT_FRAMES);
+    let mut atoms = Vec::with_capacity(30);
+    for (channel_position, channel) in ATTRIBUTION_CHANNELS.into_iter().enumerate() {
+        for (stage, positive) in [
+            (
+                StretchCommonGridTailStage::RawAnalysis,
+                filter_spectrum(channel, positive_bins, &raw_filters),
+            ),
+            (
+                StretchCommonGridTailStage::TightenedAnalysis,
+                filter_spectrum(channel, positive_bins, &tightened_filters),
+            ),
+            (
+                StretchCommonGridTailStage::CanonicalDual,
+                dual_spectra[channel_position].clone(),
+            ),
+        ] {
+            for form in [
+                StretchCommonGridTailForm::Analytic,
+                StretchCommonGridTailForm::RealMirrored,
+            ] {
+                atoms.push(measure_atom(
+                    channel,
+                    stage,
+                    form,
+                    &positive,
+                    if stage == StretchCommonGridTailStage::CanonicalDual {
+                        dual_residuals[channel_position]
+                    } else {
+                        0.0
+                    },
+                    &inverse,
+                ));
+            }
+        }
+    }
+    let tightening_ratios = ATTRIBUTION_CHANNELS
+        .iter()
+        .map(|channel| {
+            ratio(
+                tail(
+                    &atoms,
+                    *channel,
+                    StretchCommonGridTailStage::TightenedAnalysis,
+                    StretchCommonGridTailForm::RealMirrored,
+                ),
+                tail(
+                    &atoms,
+                    *channel,
+                    StretchCommonGridTailStage::RawAnalysis,
+                    StretchCommonGridTailForm::RealMirrored,
+                ),
+            )
+        })
+        .collect();
+    let dualization_ratios = ATTRIBUTION_CHANNELS
+        .iter()
+        .map(|channel| {
+            ratio(
+                tail(
+                    &atoms,
+                    *channel,
+                    StretchCommonGridTailStage::CanonicalDual,
+                    StretchCommonGridTailForm::RealMirrored,
+                ),
+                tail(
+                    &atoms,
+                    *channel,
+                    StretchCommonGridTailStage::TightenedAnalysis,
+                    StretchCommonGridTailForm::RealMirrored,
+                ),
+            )
+        })
+        .collect();
+    let mirroring_ratios = ATTRIBUTION_CHANNELS
+        .iter()
+        .flat_map(|channel| {
+            [
+                StretchCommonGridTailStage::RawAnalysis,
+                StretchCommonGridTailStage::TightenedAnalysis,
+                StretchCommonGridTailStage::CanonicalDual,
+            ]
+            .map(|stage| {
+                ratio(
+                    tail(
+                        &atoms,
+                        *channel,
+                        stage,
+                        StretchCommonGridTailForm::RealMirrored,
+                    ),
+                    tail(&atoms, *channel, stage, StretchCommonGridTailForm::Analytic),
+                )
+            })
+        })
+        .collect();
+    let lowpass_tail = tail(
+        &atoms,
+        0,
+        StretchCommonGridTailStage::CanonicalDual,
+        StretchCommonGridTailForm::RealMirrored,
+    );
+    let lowpass_to_first_wavelet_ratio = ratio(
+        lowpass_tail,
+        tail(
+            &atoms,
+            16,
+            StretchCommonGridTailStage::CanonicalDual,
+            StretchCommonGridTailForm::RealMirrored,
+        ),
+    );
+    let lowpass_to_interior_ratio = ratio(
+        lowpass_tail,
+        tail(
+            &atoms,
+            768,
+            StretchCommonGridTailStage::CanonicalDual,
+            StretchCommonGridTailForm::RealMirrored,
+        ),
+    );
+    let max_dual_residual = dual_residuals.iter().copied().fold(0.0_f64, f64::max);
+    let non_finite_values = atoms.iter().map(|atom| atom.non_finite_values).sum();
+    let mut report_hash = HASH_OFFSET;
+    for atom in &atoms {
+        hash_u64(&mut report_hash, atom.atom_hash);
+    }
+    StretchCommonGridTailAttributionEvidence {
+        probe_fft_frames: ATTRIBUTION_FFT_FRAMES,
+        radii_frames: ATTRIBUTION_RADII.to_vec(),
+        thresholds: ATTRIBUTION_THRESHOLDS.to_vec(),
+        atoms,
+        tightening_ratios,
+        dualization_ratios,
+        mirroring_ratios,
+        lowpass_to_first_wavelet_ratio,
+        lowpass_to_interior_ratio,
+        max_dual_residual,
+        non_finite_values,
+        report_hash,
+    }
+}
 
 pub(crate) fn common_grid_dual_guard_review(
     source_frames: usize,
@@ -92,8 +254,19 @@ fn dual_atom_spectrum(
     positive_bins: usize,
     filters: &[Complex64],
 ) -> (Vec<Complex64>, f64) {
-    let mut spectrum = vec![Complex64::new(0.0, 0.0); (positive_bins - 1) * 2];
-    let mut max_residual = 0.0_f64;
+    let (mut spectra, residuals) =
+        dual_atom_spectra(&[channel], coefficient_frames, positive_bins, filters);
+    (spectra.remove(0), residuals[0])
+}
+
+fn dual_atom_spectra(
+    channels: &[usize],
+    coefficient_frames: usize,
+    positive_bins: usize,
+    filters: &[Complex64],
+) -> (Vec<Vec<Complex64>>, Vec<f64>) {
+    let mut spectra = vec![vec![Complex64::new(0.0, 0.0); (positive_bins - 1) * 2]; channels.len()];
+    let mut max_residuals = vec![0.0_f64; channels.len()];
     for residue in 0..coefficient_frames {
         let bins = (residue..positive_bins)
             .step_by(coefficient_frames)
@@ -115,17 +288,125 @@ fn dual_atom_spectrum(
                 }
             }
         }
-        let rhs = bins
-            .iter()
-            .map(|bin| filters[channel * positive_bins + *bin])
-            .collect::<Vec<_>>();
-        let (solution, residual) = conjugate_gradient(&frame, &rhs, size);
-        max_residual = max_residual.max(residual);
-        for (bin, value) in bins.into_iter().zip(solution) {
-            spectrum[bin] = value;
+        for ((spectrum, channel), max_residual) in
+            spectra.iter_mut().zip(channels).zip(&mut max_residuals)
+        {
+            let rhs = bins
+                .iter()
+                .map(|bin| filters[*channel * positive_bins + *bin])
+                .collect::<Vec<_>>();
+            let (solution, residual) = conjugate_gradient(&frame, &rhs, size);
+            *max_residual = max_residual.max(residual);
+            for (bin, value) in bins.iter().copied().zip(solution) {
+                spectrum[bin] = value;
+            }
         }
     }
-    (spectrum, max_residual)
+    (spectra, max_residuals)
+}
+
+fn filter_spectrum(channel: usize, positive_bins: usize, filters: &[Complex64]) -> Vec<Complex64> {
+    let mut spectrum = vec![Complex64::new(0.0, 0.0); (positive_bins - 1) * 2];
+    spectrum[..positive_bins]
+        .copy_from_slice(&filters[channel * positive_bins..(channel + 1) * positive_bins]);
+    spectrum
+}
+
+fn measure_atom(
+    channel: usize,
+    stage: StretchCommonGridTailStage,
+    form: StretchCommonGridTailForm,
+    positive: &[Complex64],
+    dual_residual: f64,
+    inverse: &std::sync::Arc<dyn rustfft::Fft<f64>>,
+) -> StretchCommonGridTailAtomEvidence {
+    let mut spectrum = positive.to_vec();
+    if form == StretchCommonGridTailForm::RealMirrored {
+        for bin in 1..ATTRIBUTION_FFT_FRAMES / 2 {
+            spectrum[ATTRIBUTION_FFT_FRAMES - bin] = spectrum[bin].conj();
+        }
+        spectrum[0].im = 0.0;
+        spectrum[ATTRIBUTION_FFT_FRAMES / 2].im = 0.0;
+    }
+    let mut non_finite_values = spectrum
+        .iter()
+        .filter(|value| !value.re.is_finite() || !value.im.is_finite())
+        .count();
+    inverse.process(&mut spectrum);
+    let mut atom_hash = HASH_OFFSET;
+    for value in &mut spectrum {
+        *value /= ATTRIBUTION_FFT_FRAMES as f64;
+        hash_u64(&mut atom_hash, value.re.to_bits());
+        hash_u64(&mut atom_hash, value.im.to_bits());
+    }
+    non_finite_values += spectrum
+        .iter()
+        .filter(|value| !value.re.is_finite() || !value.im.is_finite())
+        .count();
+    let peak_frame = spectrum
+        .iter()
+        .enumerate()
+        .max_by(|left, right| left.1.norm_sqr().total_cmp(&right.1.norm_sqr()))
+        .map(|(index, _)| index)
+        .unwrap_or(0);
+    let total_energy = spectrum.iter().map(Complex64::norm_sqr).sum::<f64>();
+    let tail_energy_ratios = ATTRIBUTION_RADII
+        .iter()
+        .map(|radius| tail_energy_ratio(&spectrum, peak_frame, *radius, total_energy))
+        .collect();
+    let guard_lower_bounds = ATTRIBUTION_THRESHOLDS
+        .iter()
+        .map(|threshold| guard_lower_bound(&spectrum, peak_frame, total_energy, *threshold))
+        .collect();
+    StretchCommonGridTailAtomEvidence {
+        channel,
+        stage,
+        form,
+        peak_frame,
+        total_energy,
+        tail_energy_ratios,
+        guard_lower_bounds,
+        dual_residual,
+        non_finite_values,
+        atom_hash,
+    }
+}
+
+fn tail_energy_ratio(atom: &[Complex64], peak: usize, radius: usize, total: f64) -> f64 {
+    if total <= f64::MIN_POSITIVE {
+        return 0.0;
+    }
+    ((total - circular_energy(atom, peak, radius)).max(0.0)) / total
+}
+
+fn guard_lower_bound(atom: &[Complex64], peak: usize, total: f64, threshold: f64) -> usize {
+    for radius in (0..=16_000).step_by(HOP) {
+        if tail_energy_ratio(atom, peak, radius, total) <= threshold {
+            return radius + HOP;
+        }
+    }
+    GUARD_CAP_FRAMES + HOP
+}
+
+fn tail(
+    atoms: &[StretchCommonGridTailAtomEvidence],
+    channel: usize,
+    stage: StretchCommonGridTailStage,
+    form: StretchCommonGridTailForm,
+) -> f64 {
+    atoms
+        .iter()
+        .find(|atom| atom.channel == channel && atom.stage == stage && atom.form == form)
+        .and_then(|atom| atom.tail_energy_ratios.last().copied())
+        .unwrap_or(f64::NAN)
+}
+
+fn ratio(numerator: f64, denominator: f64) -> f64 {
+    if denominator == 0.0 {
+        f64::INFINITY
+    } else {
+        numerator / denominator
+    }
 }
 
 fn required_guard(atom: &[Complex64]) -> (usize, f64) {

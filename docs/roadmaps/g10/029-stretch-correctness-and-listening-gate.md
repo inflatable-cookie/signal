@@ -322,12 +322,23 @@ independent stereo review.
 
 - [x] freeze analysis-atom versus canonical-dual tail measurements for the
   limiting lowpass channel and representative interior/high channels
-- [ ] isolate tightening, analytic mirroring, and lowpass-completion ownership
+- [x] isolate tightening, analytic mirroring, and lowpass-completion ownership
   with report-only controls; do not tune or synthesize candidates
-- [ ] report tail-energy curves, limiting channels, finite values, solve
+- [x] report tail-energy curves, limiting channels, finite values, solve
   residuals, and repeat hashes before choosing filter or boundary redesign
-- [ ] keep coefficient assembly, audio synthesis, corpus, stereo, dynamic
+- [x] keep coefficient assembly, audio synthesis, corpus, stereo, dynamic
   ratio, and product routing closed
+
+### Batch 29.6P - Joint Boundary Completion Reassessment
+
+- [ ] freeze one smooth real-output DC/Nyquist completion design while
+  preserving the passing interior Cauchy channels, delays, and `384`-frame grid
+- [ ] require complete frame conditioning, canonical-dual reconstruction, DC
+  and Nyquist dual-atom guard passage, and unchanged interior controls
+- [ ] require derivative-estimator, projected-field, and bounded-heap reproof
+  after transform passage and before any audio synthesis
+- [ ] keep candidate tuning, coefficient assembly, synthesis, corpus, stereo,
+  dynamic ratio, and product routing closed until the contract is frozen
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -718,9 +729,14 @@ independent stereo review.
   stages, two spectrum forms, six radii, and four thresholds now attribute the
   tail without changing geometry. Evidence is in
   `docs/logs/2026-07/11-g10-029-dual-atom-tail-attribution-contract.md`.
+- 2026-07-11: Batch 29.6O attributed the tail. Tightening amplifies the DC
+  real-output tail by `3865790.426x`; dualization is neutral there. Nyquist has
+  a raw `1.180453e-7` edge tail and worsens to `2.030199e-7`. Interior controls
+  are compact. Evidence is in
+  `docs/logs/2026-07/11-g10-029-dual-atom-tail-attribution-proof.md`.
 
 ## Next Task
 
-Implement Batch 29.6O, then stop at the evidence-led redesign checkpoint. Keep
+Freeze Batch 29.6P, the joint DC/Nyquist boundary-completion contract. Keep
 coefficient assembly, audio synthesis, corpus, stereo, dynamic ratio, and
 product routing closed.

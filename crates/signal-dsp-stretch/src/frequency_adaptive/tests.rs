@@ -288,6 +288,42 @@ fn common_grid_dual_guard_is_exact_bounded_and_deterministic() {
     eprintln!("dual_guard {first:?}");
 }
 
+#[test]
+fn common_grid_tail_attribution_matrix_is_complete_and_deterministic() {
+    let first = common_grid_tail_attribution_review();
+    let repeated = common_grid_tail_attribution_review();
+    assert_eq!(first, repeated);
+    assert_eq!(first.probe_fft_frames, 34_176);
+    assert_eq!(
+        first.radii_frames,
+        [384, 1_536, 4_096, 8_192, 12_288, 16_000]
+    );
+    assert_eq!(first.thresholds, [1.0e-6, 1.0e-8, 1.0e-10, 1.0e-12]);
+    assert_eq!(first.atoms.len(), 30);
+    assert_eq!(first.tightening_ratios.len(), 5);
+    assert_eq!(first.dualization_ratios.len(), 5);
+    assert_eq!(first.mirroring_ratios.len(), 15);
+    assert!(first.max_dual_residual <= 1.0e-8, "{first:?}");
+    assert_eq!(first.non_finite_values, 0, "{first:?}");
+    assert!(first.atoms.iter().all(|atom| {
+        atom.total_energy.is_finite()
+            && atom.total_energy > 0.0
+            && atom.tail_energy_ratios.len() == 6
+            && atom.guard_lower_bounds.len() == 4
+            && atom
+                .tail_energy_ratios
+                .iter()
+                .all(|value| value.is_finite())
+    }));
+    assert!(first
+        .tightening_ratios
+        .iter()
+        .chain(&first.dualization_ratios)
+        .chain(&first.mirroring_ratios)
+        .all(|value| value.is_finite() || value.is_infinite()));
+    eprintln!("tail_attribution {first:?}");
+}
+
 fn periodic_tone(frequency: f32) -> Vec<Sample> {
     (0..24_576)
         .map(|index| {

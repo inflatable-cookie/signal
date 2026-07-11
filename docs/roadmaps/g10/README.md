@@ -87,6 +87,9 @@ implementation remains Signal-owned.
   `6.270779e-7`, so no audio is assembled. Batch 29.6O must attribute that tail
   before filter or boundary redesign. Its frozen matrix compares five channels,
   three response stages, two spectrum forms, six radii, and four thresholds.
+  The result assigns DC tail growth to tightening and identifies an independent
+  raw Nyquist-edge tail. Batch 29.6P must jointly redesign those boundary
+  completions while retaining the passing interior bank.
 - Offline artifacts and RealtimePreview have bounded contracts and prototype
   paths, but callback-safe preview integration and fully streaming artifact
   output remain gated until their owning source-fill/cache contracts exist.
@@ -176,6 +179,6 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Implement Batch 29.6O, then stop at the evidence-led redesign checkpoint. Keep
+Freeze Batch 29.6P, the joint DC/Nyquist boundary-completion contract. Keep
 audio synthesis, corpus rendering, linked stereo, dynamic ratio, and product
 integration closed.

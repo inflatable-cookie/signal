@@ -178,8 +178,8 @@ rejected ownership crossfade.
 
 ## Next Task
 
-Implement the frozen dual-atom tail-attribution diagnostic. Stop for an
-evidence-led redesign decision before changing filters or boundaries.
+Freeze a joint DC/Nyquist boundary-completion contract from the tail evidence.
+Do not change the passing interior wavelet geometry.
 
 ## Frequency-Adaptive Reassessment
 
@@ -316,6 +316,14 @@ analytic-only and conjugate-mirrored atoms. Fixed radii through `16000` frames
 and thresholds from `1e-6` through `1e-12` expose tail slope without becoming a
 parameter sweep. Its outcome opens a planning decision, not automatic filter
 work.
+
+That matrix attributes the DC failure to tightening: channel `0` real-output
+tail rises from `1.622121e-13` raw to `6.270779e-7`, while dualization changes it
+by only `1.000000000248x`. Nyquist is a separate boundary defect: channel
+`1535` starts at `1.180453e-7` raw and reaches `2.030199e-7` after tightening
+and dualization. Channels `15`, `16`, and `768` are below numerical tail
+resolution at the measured radius. A credible redesign must handle both real
+spectrum boundaries together; simply removing tightening is insufficient.
 
 Additional primary source:
 

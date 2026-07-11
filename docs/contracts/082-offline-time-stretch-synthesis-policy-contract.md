@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; projected-field and bounded-heap proof passed
+Status: active; boundary-tail ownership attributed
 Owner: dsp
 Updated: 2026-07-11
 Related contracts: `046`, `048`, `049`
@@ -729,6 +729,10 @@ Compute fixed attribution ratios at radius `16000`:
 - lowpass specificity: channel `0` tail / channel `16` tail, and channel `0`
   tail / channel `768` tail
 
+Tightening, dualization, and lowpass-specific ratios use conjugate-mirrored
+real-output atoms. Mirroring ratios compare real-output against analytic atoms
+within every stage and channel.
+
 Zero denominators report infinity explicitly rather than substituting an
 epsilon. The diagnostic passes only when all `30` stage/channel/form atoms are
 present, values are finite except declared infinite attribution ratios, dual
@@ -740,6 +744,22 @@ choose among lowpass completion, tightening, analytic boundary, dualization,
 or transform-family work based on measured ownership. Failure returns to the
 diagnostic implementation. Coefficient assembly, audio synthesis, corpus,
 stereo, dynamic ratio, and product routing remain closed.
+
+Batch 29.6O passes its diagnostic gate. At radius `16000`, channel `0` raw
+real-output tail is `1.622121e-13`; tightening raises it to `6.270779e-7`, a
+`3865790.426x` increase. Exact dualization changes that result by only
+`1.000000000248x`. Channels `15`, `16`, and `768` are below numerical tail
+resolution at that radius. Channel `1535` retains `1.180453e-7` before
+tightening, `1.699919e-7` after tightening, and `2.030199e-7` after
+dualization. Maximum dual residual is `9.524707e-11`; all atoms are finite and
+repeat exactly.
+
+The tail has two boundary owners: tightening breaks the DC real-mirror
+cancellation, while the Nyquist-edge response is already long before
+tightening. Do not remove tightening alone or retune the dual solver. Any next
+candidate must jointly define smooth real-output DC and Nyquist completion,
+then re-prove frame conditioning, reconstruction, derivative scale, projection,
+and guard bounds before synthesis can reopen.
 
 ### Rule 26: synthesize a protected centre, not a circular endpoint
 
@@ -796,7 +816,8 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Implement Batch 29.6O, the fixed dual-atom tail-attribution diagnostic. Stop at
-the planning checkpoint after evidence; do not redesign filters or boundaries.
-Keep coefficient assembly, audio synthesis, corpus, stereo, dynamic ratio, and
-product routing closed.
+Freeze Batch 29.6P, a joint DC/Nyquist boundary-completion contract. Preserve
+the passing interior wavelet geometry and require reconstruction plus dual-atom
+guard passage before phase or synthesis work reopens. Keep coefficient
+assembly, audio synthesis, corpus, stereo, dynamic ratio, and product routing
+closed.

@@ -212,8 +212,16 @@ edge channels. Positive-only analytic atoms and conjugate-mirrored real-output
 atoms remain separate measurements. This isolates filter, tightening, dual,
 mirroring, and lowpass ownership without changing transform geometry.
 
+The attribution matrix isolates two boundary defects. Per-bin tightening raises
+the channel `0` real-output tail from `1.622121e-13` to `6.270779e-7`; exact
+dualization is neutral. At Nyquist, channel `1535` already carries
+`1.180453e-7` raw tail and reaches `2.030199e-7` after tightening and
+dualization. Representative low/interior wavelets are compact at the measured
+radius. The next transform work must jointly smooth real-output DC and Nyquist
+completion while preserving the interior bank.
+
 ## Next Task
 
-Implement Batch 29.6O and stop at its evidence-led planning checkpoint. Keep
-filter redesign, audio synthesis, corpus rendering, linked stereo, dynamic
-ratio, and product routing closed.
+Freeze Batch 29.6P, the joint DC/Nyquist boundary-completion contract. Keep
+audio synthesis, corpus rendering, linked stereo, dynamic ratio, and product
+routing closed.

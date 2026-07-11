@@ -221,3 +221,77 @@ pub struct StretchCommonGridDualGuardEvidence {
     /// Stable hash of evaluated canonical-dual atoms.
     pub dual_atom_hash: u64,
 }
+
+/// Response stage measured by the common-grid tail-attribution diagnostic.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum StretchCommonGridTailStage {
+    /// Finalized analysis response before per-bin tightening.
+    RawAnalysis,
+    /// Analysis response after per-bin tightening.
+    TightenedAnalysis,
+    /// Exact complete-frame canonical-dual response after tightening.
+    CanonicalDual,
+}
+
+/// Spectrum form measured by the common-grid tail-attribution diagnostic.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum StretchCommonGridTailForm {
+    /// Positive-frequency response with an empty negative-frequency half.
+    Analytic,
+    /// Explicit conjugate mirror used for real-output synthesis.
+    RealMirrored,
+}
+
+/// Tail evidence for one channel, response stage, and spectrum form.
+#[derive(Clone, Debug, PartialEq)]
+pub struct StretchCommonGridTailAtomEvidence {
+    /// Filter-bank channel index.
+    pub channel: usize,
+    /// Response stage.
+    pub stage: StretchCommonGridTailStage,
+    /// Spectrum form.
+    pub form: StretchCommonGridTailForm,
+    /// Peak sample in circular atom ordering.
+    pub peak_frame: usize,
+    /// Total squared atom energy.
+    pub total_energy: f64,
+    /// Excluded-energy ratios at the report's fixed radii.
+    pub tail_energy_ratios: Vec<f64>,
+    /// First passing whole-hop guards, or lower bounds beyond the probe radius.
+    pub guard_lower_bounds: Vec<usize>,
+    /// Canonical-dual residual, or zero for analysis stages.
+    pub dual_residual: f64,
+    /// Non-finite spectrum or atom values.
+    pub non_finite_values: usize,
+    /// Stable hash of the complex atom.
+    pub atom_hash: u64,
+}
+
+/// Complete fixed-matrix common-grid tail-attribution report.
+#[derive(Clone, Debug, PartialEq)]
+pub struct StretchCommonGridTailAttributionEvidence {
+    /// Probe transform length.
+    pub probe_fft_frames: usize,
+    /// Fixed whole-hop tail radii.
+    pub radii_frames: Vec<usize>,
+    /// Fixed excluded-energy thresholds.
+    pub thresholds: Vec<f64>,
+    /// All five-channel, three-stage, two-form atom reports.
+    pub atoms: Vec<StretchCommonGridTailAtomEvidence>,
+    /// Real-output tightening ratios in channel order.
+    pub tightening_ratios: Vec<f64>,
+    /// Real-output canonical-dual ratios in channel order.
+    pub dualization_ratios: Vec<f64>,
+    /// Real/analytic ratios in atom stage/channel order.
+    pub mirroring_ratios: Vec<f64>,
+    /// Canonical-dual real-output channel-zero/channel-sixteen ratio.
+    pub lowpass_to_first_wavelet_ratio: f64,
+    /// Canonical-dual real-output channel-zero/interior ratio.
+    pub lowpass_to_interior_ratio: f64,
+    /// Largest exact canonical-dual block-solve residual.
+    pub max_dual_residual: f64,
+    /// Total non-finite spectrum or atom values.
+    pub non_finite_values: usize,
+    /// Stable hash of the complete evidence matrix.
+    pub report_hash: u64,
+}
