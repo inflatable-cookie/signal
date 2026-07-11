@@ -178,8 +178,8 @@ rejected ownership crossfade.
 
 ## Next Task
 
-Stop for operator direction after dense painless common-lattice rejection. No
-new transform candidate is ready.
+Implement declared-schedule time-adaptive painless-frame reconstruction. Do not
+implement automatic selection, phase, or stretched synthesis.
 
 ## Frequency-Adaptive Reassessment
 
@@ -551,3 +551,33 @@ but costs redundancy `208`, misses real-spectrum closure by five orders of
 magnitude, and leaves roughly half of the limiting atom energy outside the
 `16384`-frame radius. Dense scheduling solves coefficient adjacency without
 solving time localization. No derivative or phase-topology contract opens.
+
+## Time-Adaptive Painless-Frame Decision
+
+Operator direction keeps successor research open. The next family changes
+resolution over time rather than frequency. One nonstationary Gabor frame uses
+short compact windows around declared transient regions and long windows in
+stationary tonal regions. This directly matches Signal's measured combination
+of transient softness/spikes and long-stretch grain without additive component
+synthesis or independently phased branches.
+
+Liuni et al. establish reduced multiple-Gabor analysis with variable resolution
+and an immediate dual-frame resynthesis boundary. Rudoy, Basu, and Wolfe show
+that compact superposition windows retain stable invertible overlap-add
+structure. Akaishi, Holighaus, and Yatabe identify transient magnitude/phase
+mismatch and report natural-sounding improvement from short NSDGT windows near
+percussion. Their method uses HPSS-derived detection and its own variable-hop
+phase policy; those mechanisms do not transfer into the first Signal proof.
+
+Signal first proves only declared schedules, diagonal dual windows, exact
+identity reconstruction, compact support, and real output. Automatic selection
+is a later contract. This separates transform truth from detector quality and
+prevents a good synthetic schedule from silently authorizing onset policy.
+
+Primary additions:
+
+| Source | Confidence | Transfer boundary |
+| --- | --- | --- |
+| [Liuni et al., 2011](https://arxiv.org/abs/1109.6313) | high | Variable-time Gabor resolution and dual-frame reconstruction |
+| [Rudoy, Basu, and Wolfe, 2009](https://arxiv.org/abs/0906.5202) | high | Compact adaptive superposition frames and fast overlap-add reconstruction |
+| [Akaishi, Holighaus, and Yatabe, 2026](https://arxiv.org/abs/2602.16421) | high | Percussion magnitude/phase mismatch and time-adaptive NSDGT evidence; selection and stretch policy excluded |

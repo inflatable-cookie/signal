@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; transform research paused for operator direction
+Status: active; time-adaptive transform reconstruction frozen
 Owner: dsp
 Updated: 2026-07-11
 Related contracts: `046`, `048`, `049`
@@ -1294,6 +1294,61 @@ band-complete `1e-12` radius exists within the cap. Evidence hash
 `e0cbc3c75529c899` repeats exactly. Batch 29.6AH is an operator direction
 checkpoint. No new transform, phase topology, or threshold change is implied.
 
+### Rule 26I: adapt compact windows in time before adapting phase
+
+Batch 29.6AH records operator authorization for continued transform research.
+The next family is a time-adaptive painless nonstationary discrete Gabor
+transform. This transfers the perfect-reconstruction frame boundary from
+[Liuni et al.](https://arxiv.org/abs/1109.6313), superposition-frame locality
+from [Rudoy et al.](https://arxiv.org/abs/0906.5202), and the percussion
+phase-magnitude diagnosis from [Akaishi, Holighaus, and Yatabe](https://arxiv.org/abs/2602.16421).
+Signal does not copy their selection or stretching algorithms.
+
+Batch 29.6AI is identity-only. Use full complex FFT size `M=4096` for every
+frame and periodic square-root Hann analysis windows of exactly `512`, `1024`,
+`2048`, or `4096` samples. Window support is compact and centered on its
+declared source position. Adjacent window lengths may stay equal or change by
+one level only. Advance adjacent centers by
+`min(W[n],W[n+1])/4`. Add whole-sample even reflection sufficient to cover the
+first and final windows; padding does not change logical source coordinates.
+
+Freeze these schedule families independently of signal analysis:
+
+- all-long `4096` windows
+- all-short `512` windows
+- one symmetric `4096,2048,1024,512,1024,2048,4096` island
+- two overlapping short islands resolved by the minimum requested level
+- a boundary island at each source endpoint
+
+For each schedule, compute the diagonal time-domain frame operator
+`S[t]=sum_n g_n[t]^2` over the padded domain and the exact synthesis window
+`gamma_n[t]=g_n[t]/S[t]`. Analyze every frame with the same `4096` bins,
+preserve coefficients unchanged, synthesize through `gamma_n`, and crop exactly
+the source length. Do not normalize or endpoint-correct after the crop.
+
+Run `55 Hz`, `440 Hz`, `8 kHz`, two-tone, linear and exponential chirps,
+impulse, two impulses `256` frames apart, deterministic noise, mixed
+tonal/transient content, silence, and empty input. Report:
+
+- schedule family, window counts by size, source-center sequence, hop extrema,
+  reflected reads, and exact schedule hash
+- frame-operator minimum, maximum, condition, uncovered padded/source frames,
+  dual-window finite values, and analysis/synthesis support bounds
+- coefficient count, conjugate-symmetry error, imaginary-output residue,
+  source/output lengths, peak/RMS/head/tail error, and non-finite values
+- filter, dual, coefficient, output, schedule, and aggregate repeat hashes
+
+Require exact schedule legality, zero uncovered source frames, positive finite
+`S`, condition at most `4`, no analysis or dual support outside the declared
+window, conjugate symmetry and imaginary residue at most `1e-12`, exact length,
+peak error `1e-5`, RMS error `1e-6`, head/tail error `1e-5`, finite values, and
+exact repeat. Failure returns only to schedule/window reconstruction design.
+
+Passage opens one separately frozen automatic resolution-selection contract.
+It does not authorize onset relocation, local unity stretch, HPSS component
+synthesis, phase modification, stretched audio, corpus, stereo, dynamic ratio,
+cache, or product routing.
+
 ### Rule 27: synthesize a protected centre, not a circular endpoint
 
 Extend the source in both directions with whole-sample even reflection,
@@ -1349,5 +1404,5 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Stop for the Batch 29.6AH operator direction checkpoint. No transform candidate
-is ready and no DSP implementation is authorized.
+Implement Batch 29.6AI time-adaptive painless-frame reconstruction and stop at
+its identity decision. Do not implement selection, phase, or stretch.

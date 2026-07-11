@@ -507,12 +507,21 @@ independent stereo review.
 
 ### Batch 29.6AH - Operator Direction Checkpoint
 
-- [ ] decide whether to pause successor research at the current production
+- [x] decide whether to pause successor research at the current production
   phase vocoder or authorize a new transform-research lane
-- [ ] do not relax localization or real-spectrum thresholds from failed
+- [x] do not relax localization or real-spectrum thresholds from failed
   evidence and do not infer a replacement family from implementation context
-- [ ] keep phase, stretched synthesis, corpus, stereo, dynamic ratio, cache,
+- [x] keep phase, stretched synthesis, corpus, stereo, dynamic ratio, cache,
   and routing closed until operator intent is recorded
+
+### Batch 29.6AI - Time-Adaptive Painless Reconstruction
+
+- [ ] implement one declared-schedule `4096`-bin NSDGT proof with compact
+  square-root Hann windows of `512`, `1024`, `2048`, and `4096` frames
+- [ ] prove schedule legality, diagonal dual coverage/condition, compact
+  support, real output, exact identity reconstruction, and deterministic hashes
+- [ ] open only automatic resolution-selection research on complete passage;
+  keep phase, stretched synthesis, corpus, stereo, dynamic ratio, and routing closed
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -988,8 +997,13 @@ independent stereo review.
   `1.7881393433e-7`, and limiting atom leakage at radius `16384` is
   `0.4999847412`. Evidence is in
   `docs/logs/2026-07/11-g10-029-dense-painless-rejection.md`.
+- 2026-07-11: Batch 29.6AH records operator authorization to continue
+  transform research without relaxing failed gates. Public frame and 2026
+  TSM evidence selects time-adaptive painless NSDGT reconstruction as the next
+  bounded question. Evidence is in
+  `docs/logs/2026-07/11-g10-029-time-adaptive-transform-research.md`.
 
 ## Next Task
 
-Stop for the Batch 29.6AH operator direction checkpoint. No transform candidate
-is ready and no DSP implementation is authorized.
+Implement Batch 29.6AI time-adaptive painless-frame reconstruction and stop at
+its identity decision. Do not implement automatic selection, phase, or stretch.

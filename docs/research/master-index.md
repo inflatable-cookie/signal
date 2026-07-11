@@ -47,7 +47,7 @@ Finch and Loophole.
 
 | Memo | Decision | Status |
 | --- | --- | --- |
-| [Offline Time-Stretch Successor](./translation-memos/001-offline-time-stretch-successor.md) | One synthesis timeline; transient-local time map before adaptive resolution | Promoted |
+| [Offline Time-Stretch Successor](./translation-memos/001-offline-time-stretch-successor.md) | One global time map; time-adaptive painless frame reconstruction before selector or stretch | Promoted |
 
 ## Consumer Guidance
 

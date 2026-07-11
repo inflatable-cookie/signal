@@ -354,8 +354,20 @@ reconstruction and condition pass, but real-spectrum closure is
 `1.7881393433e-7` and the worst analysis and dual atoms retain
 `0.4999847412` excluded energy at radius `16384`. No phase topology opens.
 
+Operator direction keeps successor research open and changes the adaptation
+axis. The next family is one time-adaptive painless nonstationary Gabor frame:
+compact time windows become short in declared transient regions and remain long
+in stationary tonal regions. Every frame retains one `4096`-bin spectrum and
+one global source map. A diagonal time-domain frame operator supplies the exact
+dual; no independently synthesized resolution branch exists.
+
+The first proof uses declared schedules only. Automatic selection, onset or
+percussion detection, phase modification, and stretched synthesis remain
+closed until identity reconstruction, coverage, conditioning, compact support,
+real output, and deterministic schedule transitions pass.
+
 ## Next Task
 
-Stop for the Batch 29.6AH operator direction checkpoint. No transform candidate
-is ready. Do not change thresholds or implement phase, synthesis, corpus,
-stereo, dynamic ratio, or routing.
+Implement Batch 29.6AI time-adaptive painless-frame reconstruction. Use declared
+schedules only and stop before automatic selection, phase, stretched synthesis,
+corpus, stereo, dynamic ratio, or routing.

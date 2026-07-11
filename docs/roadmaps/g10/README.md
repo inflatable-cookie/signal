@@ -140,7 +140,10 @@ implementation remains Signal-owned.
   localization feasibility only. It is rejected: condition and identity pass,
   but redundancy is `208`, real-spectrum closure fails, and limiting atoms keep
   roughly half their energy outside the localization cap. Batch 29.6AH is an
-  operator direction checkpoint; no transform candidate is ready.
+  operator direction checkpoint. The operator authorizes continued research
+  without relaxing failed gates. Batch 29.6AI now owns declared-schedule
+  time-adaptive painless reconstruction only; selection and stretching remain
+  closed.
 - Offline artifacts and RealtimePreview have bounded contracts and prototype
   paths, but callback-safe preview integration and fully streaming artifact
   output remain gated until their owning source-fill/cache contracts exist.
@@ -230,5 +233,6 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Stop for the Batch 29.6AH operator direction checkpoint. Keep phase, stretched
-synthesis, corpus, linked stereo, dynamic ratio, and product integration closed.
+Implement Batch 29.6AI time-adaptive painless-frame reconstruction and stop at
+its identity decision. Keep automatic selection, phase, stretched synthesis,
+corpus, linked stereo, dynamic ratio, and product integration closed.
