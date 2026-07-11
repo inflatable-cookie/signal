@@ -368,14 +368,25 @@ independent stereo review.
 
 ### Batch 29.6S - Alias-Block Conditioning Attribution Contract
 
-- [ ] freeze one report-only matrix across raw, exact-pointwise, and
+- [x] freeze one report-only matrix across raw, exact-pointwise, and
   endpoint-even banks; do not synthesize another preconditioner
-- [ ] attribute limiting residue blocks, eigenvalue extrema, boundary-bin
+- [x] attribute limiting residue blocks, eigenvalue extrema, boundary-bin
   membership, and per-channel energy/cross-term ownership
-- [ ] require finite values, stable hashes, exact repeat evidence, and no
+- [x] require finite values, stable hashes, exact repeat evidence, and no
   coefficient assembly, guard, phase, corpus, or listening work
-- [ ] use the attribution to decide whether block-aware preconditioning or
+- [x] use the attribution to decide whether block-aware preconditioning or
   boundary-geometry reassessment is justified
+
+### Batch 29.6T - Alias-Block Conditioning Attribution Proof
+
+- [ ] measure all `11` residues for raw, exact-pointwise, and endpoint-even
+  banks with fixed eigenvector phase and residual at most `1e-6`
+- [ ] decompose each bank's global minimum and maximum modes by boundary-bin
+  mass, cross-bank Rayleigh transfer, and bounded channel/bin contributors
+- [ ] require finite evidence, contribution closure within `1e-8`, stable
+  hashes, and exact repeat without reconstruction, dual, guard, or phase work
+- [ ] stop after selecting boundary-geometry reassessment or separately
+  contracted block-aware preconditioner research
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -789,9 +800,14 @@ independent stereo review.
   endpoint-even scalar reaches condition ratio `3.0185626163`; exact identity
   passes, but representative guards did not run. Evidence is in
   `docs/logs/2026-07/11-g10-029-boundary-preconditioner-rejection.md`.
+- 2026-07-11: Froze Batch 29.6S. Three fixed banks, all `11` alias residues,
+  extremal eigenpairs, boundary-bin mass, cross-bank Rayleigh transfer, and
+  bounded channel/cross-term attribution now precede any redesign. Evidence is
+  in `docs/logs/2026-07/11-g10-029-alias-block-attribution-contract.md`.
 
 ## Next Task
 
-Freeze Batch 29.6S alias-block conditioning attribution. Do not implement
-another preconditioner or run guards. Keep phase reproof, coefficient assembly,
-audio synthesis, corpus, stereo, dynamic ratio, and product routing closed.
+Implement Batch 29.6T alias-block conditioning attribution and stop after its
+direction decision. Do not implement another preconditioner or run guards.
+Keep phase reproof, coefficient assembly, audio synthesis, corpus, stereo,
+dynamic ratio, and product routing closed.

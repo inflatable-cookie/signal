@@ -99,7 +99,9 @@ implementation remains Signal-owned.
   multiplier with quintic endpoint blends over the existing `16h` spans.
   Batch 29.6R rejects it at reconstruction: condition ratio `3.0185626163`
   exceeds `1.25`, so no representative guard runs. Batch 29.6S must attribute
-  the complete alias-block conditioning failure before another candidate.
+  the complete alias-block conditioning failure before another candidate. Its
+  frozen matrix compares three banks across all `11` residues and decomposes
+  each global extremal mode by boundary-bin mass and channel cross terms.
 - Offline artifacts and RealtimePreview have bounded contracts and prototype
   paths, but callback-safe preview integration and fully streaming artifact
   output remain gated until their owning source-fill/cache contracts exist.
@@ -189,6 +191,7 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Freeze Batch 29.6S alias-block conditioning attribution. Do not implement
-another preconditioner or run guards. Keep audio synthesis, corpus rendering,
-linked stereo, dynamic ratio, and product integration closed.
+Implement Batch 29.6T alias-block conditioning attribution and stop after its
+direction decision. Do not implement another preconditioner or run guards.
+Keep audio synthesis, corpus rendering, linked stereo, dynamic ratio, and
+product integration closed.

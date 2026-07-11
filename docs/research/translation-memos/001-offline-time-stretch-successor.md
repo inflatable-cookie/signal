@@ -178,10 +178,10 @@ rejected ownership crossfade.
 
 ## Next Task
 
-Freeze report-only alias-block conditioning attribution for the rejected
-endpoint-even frame normalizer. Its condition ratio is `3.0185626163` despite
-exact identity reconstruction. Do not change the normalizer, implement another
-candidate, run guards, or open audio synthesis.
+Implement the frozen report-only alias-block conditioning attribution across
+the raw, exact-pointwise, and endpoint-even boundary banks. Stop after choosing
+boundary-geometry reassessment or later block-aware preconditioner research. Do
+not implement another candidate, run guards, or open audio synthesis.
 
 ## Frequency-Adaptive Reassessment
 

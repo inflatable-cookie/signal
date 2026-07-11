@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; endpoint-even normalizer rejected
+Status: active; alias-block attribution frozen
 Owner: dsp
 Updated: 2026-07-11
 Related contracts: `046`, `048`, `049`
@@ -872,6 +872,61 @@ blocks, eigenvalue extrema, boundary-bin ownership, and channel contributions
 for the raw, exact-pointwise, and endpoint-even banks. No new preconditioner is
 authorized by this result.
 
+### Rule 26B: attribute complete alias-block conditioning before redesign
+
+Batch 29.6T measures one fixed matrix on the unchanged `4096`-frame mixed
+control padded to `4224` frames. Use hop `384`, all `11` alias residues, and
+exactly three banks derived from the Rule 26 raw boundary bank:
+
+1. raw: no scalar normalization
+2. exact-pointwise: multiply every channel by `r(f)=1/sqrt(E(f))` at every bin
+3. endpoint-even: the rejected Rule 26A multiplier
+
+The exact-pointwise bank is a diagnostic counterfactual, not a synthesis
+candidate. Do not change the raw filters, completion, width, delays, cutoff,
+normalizer formula, or eigenvalue estimator between banks.
+
+For every bank and residue, build the same complete Hermitian alias-block frame
+matrix used by reconstruction. Report residue index, member-bin count and hash,
+minimum and maximum eigenvalue, condition ratio, normalized eigenpair residual,
+and stable matrix/eigenvector hashes. Use deterministic phase normalization for
+eigenvectors: rotate the largest-magnitude entry to nonnegative real, breaking
+magnitude ties by lowest bin index. Require residual at most `1e-6`; otherwise
+the attribution is inconclusive and stops.
+
+For each bank's global minimum and maximum mode, report:
+
+- residue, eigenvalue, Rayleigh quotient under all three banks, and eigenvector
+  norm mass in DC (`f<w`), interior, and Nyquist (`f>0.5-w`) bins
+- the `16` largest bin weights, ordered by weight then bin index, with frequency
+  and region; aggregate the remainder
+- per-channel quadratic contribution
+  `q_k=|sum_i conj(H_k[i])*v[i]|^2`, diagonal part
+  `d_k=sum_i |H_k[i]|^2*|v[i]|^2`, and signed cross part `q_k-d_k`
+- the `16` largest channels by `q_k` and the `16` largest by absolute cross
+  part, ordered by contribution then channel index; aggregate every remainder
+- sums of `q_k`, `d_k`, and cross parts, with `sum_k q_k` matching the mode
+  eigenvalue within `1e-8` relative error
+
+Report raw-bank, exact-multiplier, endpoint-multiplier, matrix, evidence, and
+repeat hashes. All counts and floating-point values must be finite and repeat
+exactly within one build profile. Do not reconstruct samples, form canonical
+duals, measure atoms, assemble coefficients, run phase logic, or render audio.
+
+The outcome chooses only a research direction:
+
+- if the exact-pointwise bank exceeds condition ratio `1.25`, return to
+  boundary geometry; scalar conditioning is insufficient before smoothness
+- if exact-pointwise passes, but either endpoint-even limiting mode has less
+  than `90%` norm mass in the two boundary spans, return to boundary geometry;
+  the smoothness trade is not localized enough for a boundary preconditioner
+- if exact-pointwise passes, both endpoint-even limiting modes have at least
+  `90%` boundary-span mass, and every eigenpair/contribution gate passes, a
+  separately frozen block-aware boundary preconditioner may be researched
+
+No branch authorizes implementation directly. Contract and roadmap work must
+freeze the selected next candidate or geometry reassessment first.
+
 ### Rule 27: synthesize a protected centre, not a circular endpoint
 
 Extend the source in both directions with whole-sample even reflection,
@@ -927,6 +982,7 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Freeze Batch 29.6S alias-block conditioning attribution. Do not implement a new
-preconditioner or run guards. Keep phase reproof, coefficient assembly, audio
-synthesis, corpus, stereo, dynamic ratio, and product routing closed.
+Implement Batch 29.6T alias-block conditioning attribution and stop after its
+direction decision. Do not implement a preconditioner or run guards. Keep phase
+reproof, coefficient assembly, audio synthesis, corpus, stereo, dynamic ratio,
+and product routing closed.

@@ -252,8 +252,18 @@ decimation. No guard runs. The next proof must attribute limiting residue
 blocks and channel ownership across the raw, exact-pointwise, and endpoint-even
 banks before another preconditioner shape is frozen.
 
+Attribution uses the complete `11`-residue Hermitian frame matrices, not only
+pointwise energy. It compares raw, exact-pointwise, and endpoint-even versions
+of the same boundary bank. Per-residue extrema identify the limiting blocks;
+global limiting eigenvectors are then decomposed by DC/interior/Nyquist bin
+mass and by per-channel diagonal and cross-term contribution. Cross-bank
+Rayleigh transfer distinguishes a scalar-tightening failure from a localized
+endpoint-smoothing failure. The report chooses only between boundary-geometry
+reassessment and later block-aware preconditioner research.
+
 ## Next Task
 
-Freeze Batch 29.6S alias-block conditioning attribution. Do not implement a new
-preconditioner or run guards. Keep phase reproof, audio synthesis, corpus
-rendering, linked stereo, dynamic ratio, and product routing closed.
+Implement Batch 29.6T alias-block conditioning attribution. Stop after its
+direction decision. Do not implement a preconditioner or run guards. Keep phase
+reproof, audio synthesis, corpus rendering, linked stereo, dynamic ratio, and
+product routing closed.
