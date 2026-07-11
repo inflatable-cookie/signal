@@ -246,6 +246,49 @@ fn common_grid_nyquist_alias_coupling_ablation_selects_geometry() {
 }
 
 #[test]
+#[cfg(not(debug_assertions))]
+fn common_grid_three_row_nyquist_completion_rejects_conditioning() {
+    let first = common_grid_three_row_nyquist_review();
+    let repeated = common_grid_three_row_nyquist_review();
+    assert_eq!(first, repeated);
+    assert_eq!(first.row_count, 1_538);
+    assert_eq!(first.hop_frames, 384);
+    assert_eq!(first.completion_delays, [-128, 0, 128]);
+    assert_ne!(first.preserved_hash, 0);
+    assert!(first.completion_hashes.iter().all(|hash| *hash != 0));
+    assert!(
+        first
+            .construction_errors
+            .iter()
+            .all(|error| *error <= 1.0e-12),
+        "{first:?}"
+    );
+    assert_eq!(first.residues.len(), 11);
+    assert!(first.maximum_proof_errors[0] <= 1.0e-8, "{first:?}");
+    assert!(first.maximum_proof_errors[1] <= 1.0e-10, "{first:?}");
+    assert!(first.maximum_proof_errors[2] <= 1.0e-12, "{first:?}");
+    assert!(first.maximum_proof_errors[3] <= 1.0e-10, "{first:?}");
+    assert!(first.condition_ratio > 1.25, "{first:?}");
+    assert_eq!(
+        first.direction,
+        StretchCommonGridThreeRowNyquistDirection::BoundaryGeometry
+    );
+    assert_ne!(first.evidence_hash, 0);
+    eprintln!(
+        "common_grid_three_row_nyquist eigenvalues={:?} residues={:?} condition={:.12} construction={:?} proof={:?} preserved={:016x} completions={:x?} evidence={:016x} direction={:?}",
+        first.eigenvalues,
+        first.limiting_residues,
+        first.condition_ratio,
+        first.construction_errors,
+        first.maximum_proof_errors,
+        first.preserved_hash,
+        first.completion_hashes,
+        first.evidence_hash,
+        first.direction,
+    );
+}
+
+#[test]
 fn common_grid_phase_transport_rejects_high_band_phase_aliasing() {
     for frequency in [312.5_f32, 1_000.0] {
         let input = (0..24_576)

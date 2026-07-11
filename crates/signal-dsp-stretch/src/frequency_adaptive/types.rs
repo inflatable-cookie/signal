@@ -352,6 +352,66 @@ pub struct StretchCommonGridNyquistAblationReview {
     pub direction: StretchCommonGridNyquistAblationDirection,
 }
 
+/// Outcome of the three-row Nyquist-completion matrix proof.
+#[cfg(all(test, not(debug_assertions)))]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum StretchCommonGridThreeRowNyquistDirection {
+    /// The construction and complete frame matrix pass every frozen gate.
+    IdentityReconstructionProof,
+    /// The candidate fails and returns to boundary-geometry research.
+    BoundaryGeometry,
+}
+
+/// Per-residue evidence for the three-row Nyquist-completion candidate.
+#[cfg(all(test, not(debug_assertions)))]
+#[derive(Clone, Debug, PartialEq)]
+pub struct StretchCommonGridThreeRowNyquistResidueEvidence {
+    /// Alias residue index.
+    pub residue: usize,
+    /// Number of frequency bins in the residue block.
+    pub bin_count: usize,
+    /// Minimum and maximum frame eigenvalues.
+    pub eigenvalues: [f64; 2],
+    /// Per-residue maximum-to-minimum condition ratio.
+    pub condition_ratio: f64,
+    /// Proven Jacobi solve evidence.
+    pub jacobi: StretchCommonGridJacobiEvidence,
+    /// Stable hashes of bins and complete frame matrix.
+    pub hashes: [u64; 2],
+}
+
+/// Complete release-only three-row Nyquist-completion matrix proof.
+#[cfg(all(test, not(debug_assertions)))]
+#[derive(Clone, Debug, PartialEq)]
+pub struct StretchCommonGridThreeRowNyquistReview {
+    /// Candidate analysis-row count.
+    pub row_count: usize,
+    /// Uniform coefficient hop.
+    pub hop_frames: usize,
+    /// Completion-row delays in source frames.
+    pub completion_delays: [i32; 3],
+    /// Hash of preserved raw channels `0..1534`.
+    pub preserved_hash: u64,
+    /// Stable hash of each completion row.
+    pub completion_hashes: [u64; 3],
+    /// Support, diagonal-energy, off-diagonal, and real-Nyquist errors.
+    pub construction_errors: [f64; 4],
+    /// All eleven complete frame matrices.
+    pub residues: Vec<StretchCommonGridThreeRowNyquistResidueEvidence>,
+    /// Global minimum and maximum eigenvalues.
+    pub eigenvalues: [f64; 2],
+    /// Residues owning the global minimum and maximum.
+    pub limiting_residues: [usize; 2],
+    /// Global maximum-to-minimum condition ratio.
+    pub condition_ratio: f64,
+    /// Maximum residual, orthogonality, trace, and Frobenius errors.
+    pub maximum_proof_errors: [f64; 4],
+    /// Stable hash of the complete report evidence.
+    pub evidence_hash: u64,
+    /// Next direction selected by the frozen gates.
+    pub direction: StretchCommonGridThreeRowNyquistDirection,
+}
+
 /// Numerical evidence for one bounded Hermitian Jacobi solve.
 #[derive(Clone, Debug, PartialEq)]
 pub struct StretchCommonGridJacobiEvidence {

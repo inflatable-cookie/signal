@@ -443,12 +443,21 @@ independent stereo review.
 
 ### Batch 29.6AA - Three-Row Nyquist Completion Matrix Proof
 
-- [ ] replace the single completion with equal-energy rows at delays `-128`,
+- [x] replace the single completion with equal-energy rows at delays `-128`,
   `0`, and `+128`; preserve raw channels `0..1534`, magnitude, support, and hop
-- [ ] prove row count, hashes, finite values, real Nyquist endpoints, retained
+- [x] prove row count, hashes, finite values, real Nyquist endpoints, retained
   diagonal energy, and roots-of-unity alias cancellation at `1e-12`
-- [ ] solve all `11` frame matrices with Jacobi and require condition at most
+- [x] solve all `11` frame matrices with Jacobi and require condition at most
   `1.25`, numerical gates, stable hashes, and exact release repeat; stop there
+
+### Batch 29.6AB - Residual Boundary Geometry Attribution Contract
+
+- [ ] freeze one report question for the rejected triplet's global minimum at
+  residue `3` and maximum at residue `8`; do not design another filter
+- [ ] retain the exact candidate matrices and define bounded bin-region,
+  channel diagonal/cross, Rayleigh, closure, numerical, and repeat evidence
+- [ ] choose the next geometry boundary or stop inconclusive; keep
+  reconstruction, guards, phase, synthesis, corpus, stereo, and routing closed
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -894,8 +903,12 @@ independent stereo review.
   preserves diagonal energy and analytically cancels every possible same-residue
   completion cross term. Evidence is in
   `docs/logs/2026-07/11-g10-029-three-row-nyquist-completion-contract.md`.
+- 2026-07-11: Batch 29.6AA rejected the triplet. Its analytic completion
+  closure passes below `1e-14`, but complete condition is `2.0862893665` with
+  limiting residues `3` and `8`. Reconstruction remains closed. Evidence is in
+  `docs/logs/2026-07/11-g10-029-three-row-nyquist-completion-rejection.md`.
 
 ## Next Task
 
-Implement Batch 29.6AA three-row Nyquist-completion matrix proof and stop after
-its conditioning decision. Do not run reconstruction, duals, or guards.
+Freeze Batch 29.6AB residual boundary-geometry attribution. Do not change
+responses, row allocation, delays, normalization, duals, or guards.

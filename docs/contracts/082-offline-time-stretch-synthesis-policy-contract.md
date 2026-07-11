@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; three-row Nyquist completion frozen
+Status: active; three-row Nyquist completion rejected
 Owner: dsp
 Updated: 2026-07-11
 Related contracts: `046`, `048`, `049`
@@ -1099,6 +1099,18 @@ error `1e-6`, head/tail error `1e-5`, finite values, hashes, and exact repeat
 before any representative guard can open. It does not authorize dual guards,
 phase, synthesis, corpus rendering, stereo, dynamic ratio, or product routing.
 
+Batch 29.6AA rejects the triplet at complete frame conditioning. Construction
+passes: support error is zero, diagonal-energy error `3.3306690739e-16`,
+off-diagonal completion error `4.8294701571e-15`, and real-Nyquist error
+`9.0502420371e-15`. The preserved-channel hash is `899c7f7b775c1378`.
+
+The complete candidate has eigenvalue extrema `0.8036585061` at residue `3`
+and `1.6766641955` at residue `8`, for condition `2.0862893665`. Maximum
+Jacobi residual is `3.2769745518e-13`; evidence hash `bf8ac398c7b5372b`
+repeats exactly. Identity reconstruction and every later gate remain closed.
+Batch 29.6AB must freeze one attribution of the residual boundary geometry
+before another response, row allocation, delay set, or normalizer is proposed.
+
 ### Rule 27: synthesize a protected centre, not a circular endpoint
 
 Extend the source in both directions with whole-sample even reflection,
@@ -1154,5 +1166,5 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Implement Batch 29.6AA three-row Nyquist-completion matrix proof and stop after
-its conditioning decision. Do not run reconstruction, duals, or guards.
+Freeze Batch 29.6AB residual boundary-geometry attribution. Do not change
+responses, row allocation, delays, normalization, duals, or guards.

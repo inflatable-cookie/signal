@@ -151,9 +151,11 @@ pub(super) fn frame_matrix(
     bins: &[usize],
     positive_bins: usize,
 ) -> Vec<Complex64> {
+    assert_eq!(filters.len() % positive_bins, 0);
+    let channels = filters.len() / positive_bins;
     let size = bins.len();
     let mut matrix = vec![Complex64::new(0.0, 0.0); size * size];
-    for channel in 0..CHANNELS {
+    for channel in 0..channels {
         for (row, bin) in bins.iter().enumerate() {
             let value = filters[channel * positive_bins + *bin];
             if value.norm_sqr() == 0.0 {

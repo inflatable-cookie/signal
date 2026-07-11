@@ -178,8 +178,8 @@ rejected ownership crossfade.
 
 ## Next Task
 
-Implement the frozen three-row Nyquist-completion matrix proof after the
-alias-coupling ablation passes at condition `1.1141796230`. Do not run identity
+Freeze residual boundary-geometry attribution after the three-row completion
+rejects complete conditioning at `2.0862893665`. Do not run identity
 reconstruction, guards, or audio synthesis.
 
 ## Frequency-Adaptive Reassessment
@@ -496,3 +496,10 @@ intervals. Summed diagonal energy remains unchanged and every row is real at
 Nyquist. This algebraic triplet is a Signal inference built inside the
 published compact-support frame boundary; measured Jacobi conditioning remains
 authoritative.
+
+The triplet's algebra passes, but the complete untightened bank does not.
+Completion off-diagonal closure is `4.8294701571e-15`; global condition is
+still `2.0862893665`, now limited by residues `3` and `8`. The earlier
+single-row coupling was one defect rather than the whole defect. Attribute the
+remaining boundary modes before selecting another magnitude, row allocation,
+delay set, or normalization strategy.

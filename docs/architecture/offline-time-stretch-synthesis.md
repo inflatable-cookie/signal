@@ -307,9 +307,16 @@ is narrower than three alias intervals, so these are the only possible
 off-diagonal pairs. The rows preserve the original summed diagonal energy and
 are all real at Nyquist. This is a proof candidate, not a promoted filter bank.
 
+The triplet proves its local mechanism but fails the complete bank. Its
+completion cross terms close below `5e-15`, while complete condition remains
+`2.0862893665` with limiting residues `3` and `8`. The one-row Nyquist defect
+was real but not sufficient ownership of the untightened bank's conditioning.
+Another candidate is blocked pending attribution of the remaining boundary
+geometry.
+
 ## Next Task
 
-Implement Batch 29.6AA three-row Nyquist-completion matrix proof and stop after
-its conditioning decision. Do not run reconstruction, duals, or guards. Keep
-phase reproof, audio synthesis, corpus rendering, linked stereo, dynamic ratio,
-and product routing closed.
+Freeze Batch 29.6AB residual boundary-geometry attribution. Do not change
+responses, row allocation, delays, normalization, duals, or guards. Keep phase
+reproof, audio synthesis, corpus rendering, linked stereo, dynamic ratio, and
+product routing closed.

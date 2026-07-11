@@ -19,6 +19,7 @@ pub use types::{
 #[cfg(all(test, not(debug_assertions)))]
 pub use types::{
     StretchCommonGridNyquistAblationDirection, StretchCommonGridNyquistAblationOperator,
+    StretchCommonGridThreeRowNyquistDirection,
 };
 
 mod common_grid;
@@ -26,6 +27,8 @@ mod conditioning_attribution;
 mod hermitian_jacobi;
 #[cfg(all(test, not(debug_assertions)))]
 mod nyquist_alias_coupling;
+#[cfg(all(test, not(debug_assertions)))]
+mod three_row_nyquist;
 pub(crate) use common_grid::common_grid_boundary_reconstruction_review_mono;
 pub(crate) use common_grid::common_grid_derivative_tone_review_mono;
 pub(crate) use common_grid::common_grid_preconditioned_reconstruction_review_mono;
@@ -35,6 +38,8 @@ pub(crate) use conditioning_attribution::common_grid_conditioning_attribution_re
 pub(crate) use hermitian_jacobi::common_grid_hermitian_jacobi_review;
 #[cfg(all(test, not(debug_assertions)))]
 pub(crate) use nyquist_alias_coupling::common_grid_nyquist_alias_coupling_review;
+#[cfg(all(test, not(debug_assertions)))]
+pub(crate) use three_row_nyquist::common_grid_three_row_nyquist_review;
 mod projected_grid;
 pub(crate) use projected_grid::common_grid_projected_phase_review_mono;
 mod synthesis_guard;
