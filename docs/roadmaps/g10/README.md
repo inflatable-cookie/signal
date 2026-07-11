@@ -105,7 +105,8 @@ implementation remains Signal-owned.
   first run is inconclusive: worst eigenpair residual `0.031864856` exceeds
   `1e-6`. Batch 29.6U must freeze an accurate deterministic Hermitian solver.
   It freezes a full lexicographic cyclic complex-Hermitian Jacobi proof with
-  bounded sweeps and residual, orthogonality, trace, and Frobenius gates.
+  bounded sweeps and residual, orthogonality, trace, and Frobenius gates. The
+  proof passes all `33` matrices with maximum residual `9.186641e-13`.
 - Offline artifacts and RealtimePreview have bounded contracts and prototype
   paths, but callback-safe preview integration and fully streaming artifact
   output remain gated until their owning source-fill/cache contracts exist.
@@ -195,6 +196,6 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Implement Batch 29.6V deterministic Hermitian eigensolver proof. Do not rerun
-attribution or run guards. Keep audio synthesis, corpus rendering, linked
-stereo, dynamic ratio, and product integration closed.
+Implement Batch 29.6W Jacobi-backed attribution and stop after its direction
+decision. Do not implement a DSP candidate or run guards. Keep audio synthesis,
+corpus rendering, linked stereo, dynamic ratio, and product integration closed.

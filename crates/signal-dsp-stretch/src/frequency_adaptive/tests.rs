@@ -181,6 +181,18 @@ fn common_grid_conditioning_attribution_stops_on_eigenpair_residual() {
 }
 
 #[test]
+#[cfg(not(debug_assertions))]
+fn common_grid_hermitian_jacobi_proof_passes() {
+    let first = common_grid_hermitian_jacobi_review();
+    let repeated = common_grid_hermitian_jacobi_review();
+    assert_eq!(first, repeated);
+    assert_eq!(first.controls.len(), 6);
+    assert_eq!(first.alias_blocks.len(), 33);
+    assert!(first.passed, "{first:?}");
+    assert!(first.evidence_hash != 0);
+}
+
+#[test]
 fn common_grid_phase_transport_rejects_high_band_phase_aliasing() {
     for frequency in [312.5_f32, 1_000.0] {
         let input = (0..24_576)

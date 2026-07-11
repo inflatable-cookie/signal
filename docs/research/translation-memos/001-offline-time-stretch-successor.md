@@ -178,10 +178,9 @@ rejected ownership crossfade.
 
 ## Next Task
 
-Implement the frozen full cyclic complex-Hermitian Jacobi proof for bounded
-alias blocks. Do not rerun attribution until residual, orthogonality, trace,
-Frobenius, finite-value, and repeat gates pass. Do not implement another DSP
-candidate, run guards, or open audio synthesis.
+Rerun the frozen alias-block attribution with the passing Jacobi eigenpairs and
+stop after its direction decision. Do not implement another DSP candidate, run
+guards, or open audio synthesis.
 
 ## Frequency-Adaptive Reassessment
 

@@ -155,6 +155,22 @@ fn frame_matrix(filters: &[Complex64], bins: &[usize], positive_bins: usize) -> 
     matrix
 }
 
+pub(super) fn conditioning_matrices() -> Vec<Vec<Complex64>> {
+    let positive_bins = FFT_FRAMES / 2 + 1;
+    let raw = build_boundary_candidate_filters(FFT_FRAMES);
+    let exact = normalize_exact(raw.clone(), positive_bins).0;
+    let endpoint = build_preconditioned_boundary_filters(FFT_FRAMES).0;
+    [raw, exact, endpoint]
+        .iter()
+        .flat_map(|filters| {
+            (0..FFT_FRAMES / HOP).map(|residue| {
+                let bins = residue_bins(residue, positive_bins);
+                frame_matrix(filters, &bins, positive_bins)
+            })
+        })
+        .collect()
+}
+
 fn eigenpair(matrix: &[Complex64], size: usize, inverse: bool) -> (f64, Vec<Complex64>, f64) {
     let mut vector = vec![Complex64::new(1.0 / (size as f64).sqrt(), 0.0); size];
     for _ in 0..64 {

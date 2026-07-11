@@ -106,7 +106,8 @@ pub use frequency_adaptive::{
     StretchCommonGridConditioningBinEvidence, StretchCommonGridConditioningChannelEvidence,
     StretchCommonGridConditioningDirection, StretchCommonGridConditioningModeEvidence,
     StretchCommonGridConditioningResidueEvidence, StretchCommonGridConditioningReview,
-    StretchCommonGridDualGuardEvidence, StretchCommonGridPreconditionedReview,
+    StretchCommonGridDualGuardEvidence, StretchCommonGridJacobiEvidence,
+    StretchCommonGridJacobiReview, StretchCommonGridPreconditionedReview,
     StretchCommonGridProjectedPhaseEvidence, StretchCommonGridTailAtomEvidence,
     StretchCommonGridTailAttributionEvidence, StretchCommonGridTailForm,
     StretchCommonGridTailStage, StretchCommonGridTonePhaseEvidence,
@@ -2396,6 +2397,12 @@ impl OfflineHighQualityStretcher {
         &self,
     ) -> StretchCommonGridConditioningReview {
         frequency_adaptive::common_grid_conditioning_attribution_review()
+    }
+
+    /// Prove the bounded cyclic Hermitian Jacobi eigensolver.
+    #[doc(hidden)]
+    pub fn common_grid_hermitian_jacobi_review(&self) -> StretchCommonGridJacobiReview {
+        frequency_adaptive::common_grid_hermitian_jacobi_review()
     }
 
     /// Measure common-grid phase scale and channel-delay compensation on a steady tone.

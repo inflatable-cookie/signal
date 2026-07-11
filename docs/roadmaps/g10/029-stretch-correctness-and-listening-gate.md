@@ -398,13 +398,21 @@ independent stereo review.
 
 ### Batch 29.6V - Cyclic Hermitian Jacobi Proof
 
-- [ ] implement lexicographic cyclic complex-Hermitian Jacobi for sizes
+- [x] implement lexicographic cyclic complex-Hermitian Jacobi for sizes
   `1..=193`, `64` sweeps, and relative off-diagonal tolerance `1e-13`
-- [ ] pass analytic scalar, real/complex `2x2`, diagonal, repeated, and clustered
+- [x] pass analytic scalar, real/complex `2x2`, diagonal, repeated, and clustered
   controls before the `33` frozen alias matrices
-- [ ] require residual `1e-8`, orthogonality `1e-10`, trace `1e-12`, Frobenius
+- [x] require residual `1e-8`, orthogonality `1e-10`, trace `1e-12`, Frobenius
   `1e-10`, finite values, stable hashes, and exact repeat
-- [ ] reopen only Batch 29.6T attribution after passage; keep DSP work closed
+- [x] reopen only Batch 29.6T attribution after passage; keep DSP work closed
+
+### Batch 29.6W - Jacobi Alias Attribution Decision
+
+- [ ] replace only attribution eigenpairs with the proven Jacobi solver
+- [ ] retain the three banks, `33` matrices, contributor bounds, closure gates,
+  hashes, and exact repeat from Rule 26B
+- [ ] select only boundary geometry or separately contracted block-aware
+  research; do not implement either direction
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -830,9 +838,11 @@ independent stereo review.
   Jacobi solve now owns bounded alias-block eigenpairs and invariant checks.
   Evidence is in
   `docs/logs/2026-07/11-g10-029-hermitian-eigensolver-contract.md`.
+- 2026-07-11: Batch 29.6V passed all analytic and `33` alias-matrix gates with
+  maximum eigenpair residual `9.186641e-13`. Evidence is in
+  `docs/logs/2026-07/11-g10-029-hermitian-eigensolver-proof.md`.
 
 ## Next Task
 
-Implement Batch 29.6V deterministic Hermitian eigensolver proof. Do not rerun
-attribution or run guards. Keep phase reproof, coefficient assembly, audio
-synthesis, corpus, stereo, dynamic ratio, and product routing closed.
+Implement Batch 29.6W Jacobi-backed attribution and stop after its frozen
+direction decision. Do not implement a DSP candidate or run guards.

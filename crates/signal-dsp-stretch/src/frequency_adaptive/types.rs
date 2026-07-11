@@ -252,6 +252,40 @@ pub struct StretchCommonGridConditioningReview {
     pub direction: StretchCommonGridConditioningDirection,
 }
 
+/// Numerical evidence for one bounded Hermitian Jacobi solve.
+#[derive(Clone, Debug, PartialEq)]
+pub struct StretchCommonGridJacobiEvidence {
+    /// Matrix dimension.
+    pub size: usize,
+    /// Completed sweeps and applied rotations.
+    pub sweeps_and_rotations: [usize; 2],
+    /// Whether the frozen off-diagonal tolerance was reached.
+    pub converged: bool,
+    /// Hermitian error and final off-diagonal ratio.
+    pub structural_errors: [f64; 2],
+    /// Eigenpair residual, orthogonality, trace, and Frobenius errors.
+    pub proof_errors: [f64; 4],
+    /// Stable eigenvalue and eigenvector hashes.
+    pub hashes: [u64; 2],
+    /// Smallest and largest eigenvalues.
+    pub extrema: [f64; 2],
+}
+
+/// Complete analytic and alias-matrix Hermitian Jacobi proof.
+#[derive(Clone, Debug, PartialEq)]
+pub struct StretchCommonGridJacobiReview {
+    /// Analytic scalar, two-by-two, diagonal, repeated, and clustered controls.
+    pub controls: Vec<StretchCommonGridJacobiEvidence>,
+    /// All thirty-three frozen alias-block matrices.
+    pub alias_blocks: Vec<StretchCommonGridJacobiEvidence>,
+    /// Maximum residual, orthogonality, trace, and Frobenius errors.
+    pub maximum_errors: [f64; 4],
+    /// Stable complete evidence hash.
+    pub evidence_hash: u64,
+    /// Whether every frozen proof gate passed.
+    pub passed: bool,
+}
+
 /// Steady-tone evidence for common-grid delay compensation and phase scale.
 #[derive(Clone, Debug, PartialEq)]
 pub struct StretchCommonGridTonePhaseEvidence {

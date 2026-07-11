@@ -273,8 +273,13 @@ Hermitian error, non-convergence after `64` sweeps, residual, orthogonality,
 trace, or Frobenius mismatch. Only a passing eigensolver proof may rerun the
 existing attribution.
 
+The Jacobi proof passes all analytic controls and `33` alias matrices with
+maximum residual `9.186641e-13` and invariant errors below `1.4e-14`. The same
+attribution may now replace only its eigenpairs and make the frozen direction
+decision.
+
 ## Next Task
 
-Implement Batch 29.6V deterministic Hermitian eigensolver proof. Do not rerun
-attribution. Keep guards, phase reproof, audio synthesis, corpus rendering,
-linked stereo, dynamic ratio, and product routing closed.
+Implement Batch 29.6W Jacobi-backed attribution and stop after its direction
+decision. Keep guards, phase reproof, audio synthesis, corpus rendering, linked
+stereo, dynamic ratio, and product routing closed.

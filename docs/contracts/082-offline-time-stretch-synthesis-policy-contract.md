@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; Hermitian eigensolver proof frozen
+Status: active; Hermitian eigensolver proof passed
 Owner: dsp
 Updated: 2026-07-11
 Related contracts: `046`, `048`, `049`
@@ -983,6 +983,13 @@ Passing Batch 29.6V reopens only the unchanged Batch 29.6T attribution with the
 Jacobi eigenpairs. Failure returns to numerical-method research. No filter,
 dual, guard, phase, coefficient, synthesis, corpus, or product work opens.
 
+Batch 29.6V passes all six analytic controls and all `33` frozen alias
+matrices. Release-profile maxima are eigenpair residual `9.186641e-13`,
+orthogonality error `9.523849e-15`, trace mismatch `8.882996e-16`, and
+Frobenius mismatch `1.344433e-14`. Evidence hash `ac00e9f757b44e7a` repeats.
+This reopens only Batch 29.6W: rerun the unchanged Rule 26B attribution with
+Jacobi eigenpairs. Do not combine solver proof and direction selection.
+
 ### Rule 27: synthesize a protected centre, not a circular endpoint
 
 Extend the source in both directions with whole-sample even reflection,
@@ -1038,6 +1045,6 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Implement Batch 29.6V deterministic Hermitian eigensolver proof. Do not rerun
-attribution or run guards. Keep phase reproof, coefficient assembly, audio
-synthesis, corpus, stereo, dynamic ratio, and product routing closed.
+Implement Batch 29.6W by replacing only attribution eigenpairs with the proven
+Jacobi solver, then stop after the frozen direction decision. Do not implement
+a DSP candidate or run guards.
