@@ -178,9 +178,9 @@ rejected ownership crossfade.
 
 ## Next Task
 
-Rerun the frozen alias-block attribution with the passing Jacobi eigenpairs and
-stop after its direction decision. Do not implement another DSP candidate, run
-guards, or open audio synthesis.
+Freeze boundary-geometry reassessment after Jacobi attribution rejects scalar
+conditioning at ratio `2.9916436058`. Do not implement another DSP candidate,
+run guards, or open audio synthesis.
 
 ## Frequency-Adaptive Reassessment
 

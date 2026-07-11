@@ -9,11 +9,11 @@ use super::types::{
 pub(crate) fn common_grid_hermitian_jacobi_review() -> Review {
     let controls = control_matrices()
         .into_iter()
-        .map(|matrix| solve(&matrix))
+        .map(|matrix| jacobi_solution(&matrix).evidence)
         .collect::<Vec<_>>();
     let alias_blocks = conditioning_matrices()
         .iter()
-        .map(|matrix| solve(matrix))
+        .map(|matrix| jacobi_solution(matrix).evidence)
         .collect::<Vec<_>>();
     let mut maximum_errors = [0.0_f64; 4];
     for row in controls.iter().chain(&alias_blocks) {
@@ -40,7 +40,13 @@ pub(crate) fn common_grid_hermitian_jacobi_review() -> Review {
     }
 }
 
-fn solve(input: &[Complex64]) -> Evidence {
+pub(super) struct JacobiSolution {
+    pub(super) evidence: Evidence,
+    pub(super) eigenvalues: Vec<f64>,
+    pub(super) eigenvectors: Vec<Complex64>,
+}
+
+pub(super) fn jacobi_solution(input: &[Complex64]) -> JacobiSolution {
     let size = (input.len() as f64).sqrt() as usize;
     let hermitian_error = hermitian_error(input, size);
     if size == 0
@@ -49,7 +55,11 @@ fn solve(input: &[Complex64]) -> Evidence {
         || hermitian_error > 1.0e-12
         || input.iter().any(|v| !v.re.is_finite() || !v.im.is_finite())
     {
-        return rejected(size, hermitian_error);
+        return JacobiSolution {
+            evidence: rejected(size, hermitian_error),
+            eigenvalues: Vec::new(),
+            eigenvectors: Vec::new(),
+        };
     }
     let original = input.to_vec();
     let mut matrix = input.to_vec();
@@ -132,7 +142,7 @@ fn solve(input: &[Complex64]) -> Evidence {
         normalize_column_phase(&mut sorted, size, column);
     }
     let proof = proof_errors(&original, &eigenvalues, &sorted, size);
-    Evidence {
+    let evidence = Evidence {
         size,
         sweeps_and_rotations: [sweeps, rotations],
         converged,
@@ -140,6 +150,11 @@ fn solve(input: &[Complex64]) -> Evidence {
         proof_errors: proof,
         hashes: [hash_reals(&eigenvalues), hash_complex(&sorted)],
         extrema: [eigenvalues[0], eigenvalues[size - 1]],
+    };
+    JacobiSolution {
+        evidence,
+        eigenvalues,
+        eigenvectors: sorted,
     }
 }
 

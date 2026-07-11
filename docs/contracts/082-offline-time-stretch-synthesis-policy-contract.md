@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; Hermitian eigensolver proof passed
+Status: active; boundary-geometry reassessment selected
 Owner: dsp
 Updated: 2026-07-11
 Related contracts: `046`, `048`, `049`
@@ -990,6 +990,18 @@ Frobenius mismatch `1.344433e-14`. Evidence hash `ac00e9f757b44e7a` repeats.
 This reopens only Batch 29.6W: rerun the unchanged Rule 26B attribution with
 Jacobi eigenpairs. Do not combine solver proof and direction selection.
 
+Batch 29.6W selects boundary-geometry reassessment. The exact-pointwise bank
+has condition ratio `2.9916436058`, above `1.25`, so common scalar conditioning
+is insufficient before smoothness. Endpoint-even minimum and maximum modes are
+Nyquist-localized with boundary-span masses `0.9972172436` and `0.9973869346`,
+but Rule 26B's first branch governs. Maximum eigenpair residual is
+`9.186641e-13`, contribution closure is `4.268183e-15`, and evidence hash
+`069142f1ee68f2a4` repeats.
+
+Do not research block-aware preconditioning or modify a scalar normalizer.
+Batch 29.6X must freeze one boundary-geometry reassessment using this
+attribution before any new filter bank is implemented.
+
 ### Rule 27: synthesize a protected centre, not a circular endpoint
 
 Extend the source in both directions with whole-sample even reflection,
@@ -1045,6 +1057,5 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Implement Batch 29.6W by replacing only attribution eigenpairs with the proven
-Jacobi solver, then stop after the frozen direction decision. Do not implement
-a DSP candidate or run guards.
+Freeze Batch 29.6X boundary-geometry reassessment. Do not implement filters,
+normalizers, duals, or guards. Keep phase and synthesis work closed.

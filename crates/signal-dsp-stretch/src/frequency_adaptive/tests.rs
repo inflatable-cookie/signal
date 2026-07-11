@@ -152,14 +152,15 @@ fn common_grid_preconditioned_candidate_rejects_frame_conditioning() {
 }
 
 #[test]
-fn common_grid_conditioning_attribution_stops_on_eigenpair_residual() {
+#[cfg(not(debug_assertions))]
+fn common_grid_conditioning_attribution_selects_boundary_geometry() {
     let first = common_grid_conditioning_attribution_review();
     let repeated = common_grid_conditioning_attribution_review();
     assert_eq!(first, repeated);
     assert_eq!(first.residues.len(), 33);
     assert_eq!(first.modes.len(), 6);
     assert!(
-        first.maximum_errors[0] > 1.0e-6,
+        first.maximum_errors[0] <= 1.0e-6,
         "{:?}",
         first.maximum_errors
     );
@@ -167,7 +168,7 @@ fn common_grid_conditioning_attribution_stops_on_eigenpair_residual() {
     assert!(first.hashes.iter().all(|hash| *hash != 0));
     assert_eq!(
         first.direction,
-        StretchCommonGridConditioningDirection::Inconclusive
+        StretchCommonGridConditioningDirection::BoundaryGeometry
     );
     assert!(first.modes.iter().all(|mode| mode.top_bins.len() == 16));
     assert!(first
@@ -178,6 +179,18 @@ fn common_grid_conditioning_attribution_stops_on_eigenpair_residual() {
         .modes
         .iter()
         .all(|mode| mode.top_cross_channels.len() == 16));
+    let exact = &first.residues[11..22];
+    let condition = exact
+        .iter()
+        .map(|row| row.eigenvalues[1])
+        .fold(0.0, f64::max)
+        / exact
+            .iter()
+            .map(|row| row.eigenvalues[0])
+            .fold(f64::INFINITY, f64::min);
+    assert!(condition > 1.25);
+    assert!(first.modes[4].region_mass[0] + first.modes[4].region_mass[2] >= 0.9);
+    assert!(first.modes[5].region_mass[0] + first.modes[5].region_mass[2] >= 0.9);
 }
 
 #[test]

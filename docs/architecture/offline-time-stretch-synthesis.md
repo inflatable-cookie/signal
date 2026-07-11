@@ -278,8 +278,14 @@ maximum residual `9.186641e-13` and invariant errors below `1.4e-14`. The same
 attribution may now replace only its eigenpairs and make the frozen direction
 decision.
 
+The accurate attribution selects boundary geometry. Exact pointwise scalar
+normalization still has condition ratio `2.9916436058`, while both limiting
+endpoint-even modes carry more than `99.7%` of their mass in the Nyquist span.
+Scalar and block-aware preconditioner work is closed pending one geometry
+reassessment contract.
+
 ## Next Task
 
-Implement Batch 29.6W Jacobi-backed attribution and stop after its direction
-decision. Keep guards, phase reproof, audio synthesis, corpus rendering, linked
-stereo, dynamic ratio, and product routing closed.
+Freeze Batch 29.6X boundary-geometry reassessment. Do not implement filters,
+normalizers, or guards. Keep phase reproof, audio synthesis, corpus rendering,
+linked stereo, dynamic ratio, and product routing closed.

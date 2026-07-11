@@ -1,9 +1,10 @@
 use rustfft::num_complex::Complex64;
 
 use super::common_grid::{
-    build_boundary_candidate_filters, build_preconditioned_boundary_filters, conjugate_gradient,
-    filter_hash, hash_u64, CHANNELS, HASH_OFFSET, HOP, LOWPASS_CHANNELS,
+    build_boundary_candidate_filters, build_preconditioned_boundary_filters, filter_hash, hash_u64,
+    CHANNELS, HASH_OFFSET, HOP, LOWPASS_CHANNELS,
 };
+use super::hermitian_jacobi::jacobi_solution;
 use super::types::{
     StretchCommonGridConditioningBank as Bank,
     StretchCommonGridConditioningBinEvidence as BinEvidence,
@@ -36,8 +37,13 @@ pub(crate) fn common_grid_conditioning_attribution_review() -> Review {
         for residue in 0..FFT_FRAMES / HOP {
             let bins = residue_bins(residue, positive_bins);
             let matrix = frame_matrix(filters, &bins, positive_bins);
-            let (minimum, min_vector, min_residual) = eigenpair(&matrix, bins.len(), true);
-            let (maximum, max_vector, max_residual) = eigenpair(&matrix, bins.len(), false);
+            let solution = jacobi_solution(&matrix);
+            let minimum = solution.eigenvalues[0];
+            let maximum = solution.eigenvalues[bins.len() - 1];
+            let min_vector = eigenvector_column(&solution.eigenvectors, bins.len(), 0);
+            let max_vector = eigenvector_column(&solution.eigenvectors, bins.len(), bins.len() - 1);
+            let min_residual = solution.evidence.proof_errors[0];
+            let max_residual = solution.evidence.proof_errors[0];
             maximum_residual = maximum_residual.max(min_residual).max(max_residual);
             update_extreme(
                 &mut extrema[0],
@@ -171,45 +177,8 @@ pub(super) fn conditioning_matrices() -> Vec<Vec<Complex64>> {
         .collect()
 }
 
-fn eigenpair(matrix: &[Complex64], size: usize, inverse: bool) -> (f64, Vec<Complex64>, f64) {
-    let mut vector = vec![Complex64::new(1.0 / (size as f64).sqrt(), 0.0); size];
-    for _ in 0..64 {
-        let next = if inverse {
-            conjugate_gradient(matrix, &vector, size).0
-        } else {
-            multiply(matrix, &vector, size)
-        };
-        let norm = dot(&next, &next).re.sqrt();
-        vector = next.into_iter().map(|value| value / norm).collect();
-    }
-    normalize_phase(&mut vector);
-    let product = multiply(matrix, &vector, size);
-    let value = dot(&vector, &product).re;
-    let residual = product
-        .iter()
-        .zip(&vector)
-        .map(|(a, b)| (*a - *b * value).norm_sqr())
-        .sum::<f64>()
-        .sqrt()
-        / value.abs().max(f64::MIN_POSITIVE);
-    (value, vector, residual)
-}
-
-fn normalize_phase(vector: &mut [Complex64]) {
-    let pivot = vector
-        .iter()
-        .enumerate()
-        .max_by(|a, b| {
-            a.1.norm_sqr()
-                .total_cmp(&b.1.norm_sqr())
-                .then_with(|| b.0.cmp(&a.0))
-        })
-        .map(|v| v.0)
-        .unwrap_or(0);
-    let phase = vector[pivot].conj() / vector[pivot].norm();
-    for value in vector {
-        *value *= phase;
-    }
+fn eigenvector_column(vectors: &[Complex64], size: usize, column: usize) -> Vec<Complex64> {
+    (0..size).map(|row| vectors[row * size + column]).collect()
 }
 
 fn update_extreme(

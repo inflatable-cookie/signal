@@ -408,11 +408,20 @@ independent stereo review.
 
 ### Batch 29.6W - Jacobi Alias Attribution Decision
 
-- [ ] replace only attribution eigenpairs with the proven Jacobi solver
-- [ ] retain the three banks, `33` matrices, contributor bounds, closure gates,
+- [x] replace only attribution eigenpairs with the proven Jacobi solver
+- [x] retain the three banks, `33` matrices, contributor bounds, closure gates,
   hashes, and exact repeat from Rule 26B
-- [ ] select only boundary geometry or separately contracted block-aware
-  research; do not implement either direction
+- [x] select boundary geometry; exact-pointwise condition `2.9916436058`
+  exceeds `1.25`, so block-aware preconditioner research stays closed
+
+### Batch 29.6X - Boundary Geometry Reassessment Contract
+
+- [ ] freeze one geometry research question from the Nyquist-localized
+  attribution; do not sweep filters or normalization
+- [ ] preserve passing interior channels, common-grid timing, and exact dual
+  ownership while defining DC/Nyquist completion alternatives and stop gates
+- [ ] keep implementation, guards, phase reproof, synthesis, corpus, stereo,
+  dynamic ratio, and product routing closed
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -841,8 +850,11 @@ independent stereo review.
 - 2026-07-11: Batch 29.6V passed all analytic and `33` alias-matrix gates with
   maximum eigenpair residual `9.186641e-13`. Evidence is in
   `docs/logs/2026-07/11-g10-029-hermitian-eigensolver-proof.md`.
+- 2026-07-11: Batch 29.6W selected boundary geometry. Exact-pointwise condition
+  `2.9916436058` exceeds `1.25`; no preconditioner or guard opens. Evidence is
+  in `docs/logs/2026-07/11-g10-029-jacobi-attribution-decision.md`.
 
 ## Next Task
 
-Implement Batch 29.6W Jacobi-backed attribution and stop after its frozen
-direction decision. Do not implement a DSP candidate or run guards.
+Freeze Batch 29.6X boundary-geometry reassessment. Do not implement filters,
+normalizers, duals, or guards. Keep phase and synthesis work closed.

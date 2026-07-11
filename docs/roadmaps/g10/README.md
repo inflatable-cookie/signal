@@ -196,6 +196,6 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Implement Batch 29.6W Jacobi-backed attribution and stop after its direction
-decision. Do not implement a DSP candidate or run guards. Keep audio synthesis,
-corpus rendering, linked stereo, dynamic ratio, and product integration closed.
+Freeze Batch 29.6X boundary-geometry reassessment. Do not implement filters,
+normalizers, or guards. Keep audio synthesis, corpus rendering, linked stereo,
+dynamic ratio, and product integration closed.
