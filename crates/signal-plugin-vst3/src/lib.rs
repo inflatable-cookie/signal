@@ -12,7 +12,7 @@ pub use vst3_host_adapter::*;
 
 #[cfg(test)]
 mod tests {
-    use super::{Vst3HostAdapter, Vst3HostPlatform};
+    use super::{Vst3DiscoveryDiagnosticKind, Vst3HostAdapter, Vst3HostPlatform};
     use crate::vst3_host_adapter::vst3_scaffold_module_metadata_contents;
     use signal_plugin::PluginFormat;
     use std::{
@@ -236,6 +236,44 @@ mod tests {
             .discover_plugins_for_roots(Vst3HostPlatform::Linux, &[root.display().to_string()]);
 
         assert!(discovered.is_empty());
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn vst3_detailed_discovery_reports_invalid_bundle_and_keeps_later_success() {
+        let adapter = Vst3HostAdapter::default();
+        let root = temp_plugin_root("diagnostics");
+        let invalid = root.join("A Invalid.vst3");
+        fs::create_dir_all(invalid.join("Contents").join("Resources"))
+            .expect("invalid bundle resources should be created");
+        fs::write(
+            invalid
+                .join("Contents")
+                .join("Resources")
+                .join("moduleinfo.json"),
+            "not-json",
+        )
+        .expect("invalid moduleinfo should be written");
+        let valid = root.join("B Valid.vst3");
+        fs::create_dir_all(&valid).expect("valid bundle should be created");
+        write_vst3_metadata(&valid, "plugin:vst3:utility");
+
+        let batch = adapter.discover_plugins_for_roots_with_diagnostics(
+            Vst3HostPlatform::Linux,
+            &[root.display().to_string()],
+        );
+
+        assert_eq!(batch.discovered.len(), 1);
+        assert_eq!(batch.diagnostics.len(), 1);
+        assert_eq!(
+            batch.diagnostics[0].kind,
+            Vst3DiscoveryDiagnosticKind::InvalidData
+        );
+        assert_eq!(
+            batch.diagnostics[0].bundle_path,
+            invalid.display().to_string()
+        );
+        assert!(batch.diagnostics[0].detail.len() <= 240);
         let _ = fs::remove_dir_all(root);
     }
 }

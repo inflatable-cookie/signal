@@ -1,9 +1,43 @@
 use super::introspection::{metadata_descriptor, metadata_io_layout, read_vst3_bundle_snapshot};
 use super::*;
 use std::{
-    env, fs,
+    env, fs, io,
     path::{Path, PathBuf},
+    time::Instant,
 };
+
+/// Classification for one failed VST3 bundle discovery attempt.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Vst3DiscoveryDiagnosticKind {
+    /// The bundle scan helper exceeded its watchdog deadline.
+    TimedOut,
+    /// The helper could not start or exited unsuccessfully.
+    HelperFailed,
+    /// Bundle metadata or helper output was invalid.
+    InvalidData,
+}
+
+/// Bounded diagnostic for one VST3 bundle discovery attempt.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Vst3DiscoveryDiagnostic {
+    /// Stable failure classification.
+    pub kind: Vst3DiscoveryDiagnosticKind,
+    /// Bundle path that was attempted.
+    pub bundle_path: String,
+    /// Bounded human-readable detail.
+    pub detail: String,
+    /// Wall-clock time spent on the bundle.
+    pub elapsed_ms: u64,
+}
+
+/// Detailed result of VST3 discovery across explicit roots.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct Vst3DiscoveryBatch {
+    /// Successfully discovered plugin types.
+    pub discovered: Vec<Vst3DiscoveredPluginType>,
+    /// Bundle-level diagnostics in attempt order.
+    pub diagnostics: Vec<Vst3DiscoveryDiagnostic>,
+}
 
 impl Vst3HostAdapter {
     /// Returns the default VST3 scan roots for the given platform.
@@ -64,7 +98,18 @@ impl Vst3HostAdapter {
         platform: Vst3HostPlatform,
         roots: &[String],
     ) -> Vec<Vst3DiscoveredPluginType> {
-        let mut discovered = Vec::new();
+        self.discover_plugins_for_roots_with_diagnostics(platform, roots)
+            .discovered
+    }
+
+    /// Scans explicit roots and returns successful plugin types plus one
+    /// bounded diagnostic for each bundle that could not be inspected.
+    pub fn discover_plugins_for_roots_with_diagnostics(
+        &self,
+        platform: Vst3HostPlatform,
+        roots: &[String],
+    ) -> Vst3DiscoveryBatch {
+        let mut batch = Vst3DiscoveryBatch::default();
         for root in roots {
             let expanded_root = expand_scan_root(root);
             if expanded_root
@@ -72,7 +117,7 @@ impl Vst3HostAdapter {
                 .and_then(|extension| extension.to_str())
                 .is_some_and(|extension| extension.eq_ignore_ascii_case("vst3"))
             {
-                push_vst3_bundle_if_present(&mut discovered, &expanded_root, platform);
+                append_vst3_bundle_outcome(&mut batch, &expanded_root, platform);
                 continue;
             }
             let Ok(entries) = fs::read_dir(&expanded_root) else {
@@ -87,21 +132,39 @@ impl Vst3HostAdapter {
                 if !file_name.ends_with(".vst3") {
                     continue;
                 }
-                push_vst3_bundle_if_present(&mut discovered, &path, platform);
+                append_vst3_bundle_outcome(&mut batch, &path, platform);
             }
         }
-        discovered
+        batch
     }
 }
 
-fn push_vst3_bundle_if_present(
-    discovered: &mut Vec<Vst3DiscoveredPluginType>,
+fn append_vst3_bundle_outcome(
+    batch: &mut Vst3DiscoveryBatch,
     path: &Path,
     platform: Vst3HostPlatform,
 ) {
-    let Ok(snapshot) = read_vst3_bundle_snapshot(path, platform) else {
-        return;
+    let started_at = Instant::now();
+    let snapshot = match read_vst3_bundle_snapshot(path, platform) {
+        Ok(snapshot) => snapshot,
+        Err(error) => {
+            batch.diagnostics.push(diagnostic_from_error(
+                path,
+                error,
+                started_at.elapsed().as_millis(),
+            ));
+            return;
+        }
     };
+    if snapshot.plugins.is_empty() {
+        batch.diagnostics.push(Vst3DiscoveryDiagnostic {
+            kind: Vst3DiscoveryDiagnosticKind::InvalidData,
+            bundle_path: path.to_string_lossy().into_owned(),
+            detail: "VST3 bundle exposed no eligible plugin classes".to_string(),
+            elapsed_ms: elapsed_ms(started_at.elapsed().as_millis()),
+        });
+        return;
+    }
     for metadata in snapshot.plugins {
         let plugin = Vst3DiscoveredPluginType {
             plugin_type_id: PluginTypeId(metadata.plugin_type_id.clone()),
@@ -112,13 +175,82 @@ fn push_vst3_bundle_if_present(
             descriptor: metadata_descriptor(&metadata),
             default_io_layout: metadata_io_layout(&metadata),
         };
-        if !discovered
+        if !batch
+            .discovered
             .iter()
             .any(|existing: &Vst3DiscoveredPluginType| {
                 existing.plugin_type_id == plugin.plugin_type_id
             })
         {
-            discovered.push(plugin);
+            batch.discovered.push(plugin);
+        }
+    }
+}
+
+fn diagnostic_from_error(
+    path: &Path,
+    error: io::Error,
+    elapsed_millis: u128,
+) -> Vst3DiscoveryDiagnostic {
+    let kind = match error.kind() {
+        io::ErrorKind::TimedOut => Vst3DiscoveryDiagnosticKind::TimedOut,
+        io::ErrorKind::InvalidData => Vst3DiscoveryDiagnosticKind::InvalidData,
+        _ => Vst3DiscoveryDiagnosticKind::HelperFailed,
+    };
+    Vst3DiscoveryDiagnostic {
+        kind,
+        bundle_path: path.to_string_lossy().into_owned(),
+        detail: bounded_detail(&error.to_string()),
+        elapsed_ms: elapsed_ms(elapsed_millis),
+    }
+}
+
+fn bounded_detail(detail: &str) -> String {
+    const MAX_CHARS: usize = 240;
+    let normalized = detail.split_whitespace().collect::<Vec<_>>().join(" ");
+    if normalized.chars().count() <= MAX_CHARS {
+        return normalized;
+    }
+    normalized.chars().take(MAX_CHARS).collect()
+}
+
+fn elapsed_ms(value: u128) -> u64 {
+    value.min(u128::from(u64::MAX)) as u64
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn discovery_errors_map_to_stable_bounded_diagnostics() {
+        let cases = [
+            (
+                io::ErrorKind::TimedOut,
+                Vst3DiscoveryDiagnosticKind::TimedOut,
+            ),
+            (
+                io::ErrorKind::InvalidData,
+                Vst3DiscoveryDiagnosticKind::InvalidData,
+            ),
+            (
+                io::ErrorKind::Other,
+                Vst3DiscoveryDiagnosticKind::HelperFailed,
+            ),
+        ];
+
+        for (error_kind, expected_kind) in cases {
+            let detail = format!("detail\n{}", "x".repeat(300));
+            let diagnostic = diagnostic_from_error(
+                Path::new("/tmp/Example.vst3"),
+                io::Error::new(error_kind, detail),
+                17,
+            );
+
+            assert_eq!(diagnostic.kind, expected_kind);
+            assert_eq!(diagnostic.elapsed_ms, 17);
+            assert!(diagnostic.detail.chars().count() <= 240);
+            assert!(!diagnostic.detail.contains('\n'));
         }
     }
 }

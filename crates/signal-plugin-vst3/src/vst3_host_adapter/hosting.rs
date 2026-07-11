@@ -962,7 +962,13 @@ impl HostParameterChanges {
 // `IParameterChanges` with the CC event's intra-block sample offset. That
 // mapping query IS the VST3 downconversion boundary; plugins exposing no
 // IMidiMapping simply receive no CC (honest fallback, see
-// [`Vst3HostedInstance::midi_cc_mapping_available`]).
+// [`Vst3HostedInstance::midi_cc_mapping_available`]). Pitch bend and channel
+// pressure use the VST3 extended controller numbers 128 and 129 through the
+// same mapping interface.
+
+const VST3_PITCH_BEND_CONTROLLER: usize = 128;
+const VST3_AFTERTOUCH_CONTROLLER: usize = 129;
+const VST3_MIDI_CONTROLLER_COUNT: usize = 130;
 
 /// `Steinberg::Vst::NoteOnEvent`.
 #[repr(C)]
@@ -1168,11 +1174,13 @@ struct MidiMappingVTable {
 /// assignments (controllers 0..=127). `None` when the controller exposes no
 /// mapping — the honest no-CC fallback. Runs at load on the lifecycle
 /// thread; the resulting table is immutable and shared into sessions.
-unsafe fn midi_cc_parameter_map(controller: *mut c_void) -> Option<Arc<[Option<u32>; 128]>> {
+unsafe fn midi_cc_parameter_map(
+    controller: *mut c_void,
+) -> Option<Arc<[Option<u32>; VST3_MIDI_CONTROLLER_COUNT]>> {
     let mapping = com_query_interface(controller, &IMIDI_MAPPING_IID)?;
     let vtable = vtable_of::<MidiMappingVTable>(mapping);
-    let mut map = [None; 128];
-    for controller_number in 0..128i16 {
+    let mut map = [None; VST3_MIDI_CONTROLLER_COUNT];
+    for controller_number in 0..VST3_MIDI_CONTROLLER_COUNT as i16 {
         let mut parameter_id = 0u32;
         if ((*vtable).get_midi_controller_assignment)(
             mapping,
@@ -1261,7 +1269,7 @@ pub struct Vst3HostedInstance {
     /// Bus 0 / channel 0 CC → parameter assignments from the controller's
     /// `IMidiMapping`, queried once at load. `None` = no mapping exposed
     /// (CC events are dropped for this plugin — the honest fallback).
-    midi_cc_params: Option<Arc<[Option<u32>; 128]>>,
+    midi_cc_params: Option<Arc<[Option<u32>; VST3_MIDI_CONTROLLER_COUNT]>>,
     /// Keeps the module mapped for the instance lifetime; declared last so
     /// it drops after the COM pointers above are released in `drop`.
     _module: LoadedVst3Module,
@@ -1349,6 +1357,17 @@ impl Vst3HostedInstance {
     /// dropped (VST3 has no input CC event type).
     pub fn midi_cc_mapping_available(&self) -> bool {
         self.midi_cc_params.is_some()
+    }
+
+    /// Whether `IMidiMapping` assigns this ordinary or extended controller
+    /// number to a processor parameter.
+    pub fn midi_controller_mapping_available(&self, controller: u16) -> bool {
+        self.midi_cc_params
+            .as_ref()
+            .and_then(|map| map.get(usize::from(controller)))
+            .copied()
+            .flatten()
+            .is_some()
     }
 
     /// Parameter inventory enumerated at load via `IEditController`
@@ -1759,7 +1778,7 @@ pub struct Vst3ProcessSession {
     input_events: Box<HostEventList>,
     /// CC → parameter assignments (`IMidiMapping`, queried at load); `None`
     /// drops CC events.
-    midi_cc_params: Option<Arc<[Option<u32>; 128]>>,
+    midi_cc_params: Option<Arc<[Option<u32>; VST3_MIDI_CONTROLLER_COUNT]>>,
 }
 
 // Safety: the session is handed to exactly one audio thread;
@@ -1772,7 +1791,7 @@ impl Vst3ProcessSession {
         processor: *mut c_void,
         max_frames: usize,
         param_changes: Arc<PluginParamChangeQueue>,
-        midi_cc_params: Option<Arc<[Option<u32>; 128]>>,
+        midi_cc_params: Option<Arc<[Option<u32>; VST3_MIDI_CONTROLLER_COUNT]>>,
     ) -> Self {
         Self {
             processor,
@@ -1853,6 +1872,31 @@ impl Vst3ProcessSession {
                                 f64::from(change.value.clamp(0.0, 1.0)),
                             );
                         }
+                    }
+                }
+                PluginEvent::Midi(midi) => {
+                    let status = midi.status & 0xF0;
+                    let (controller, value) = match status {
+                        0xE0 => (
+                            VST3_PITCH_BEND_CONTROLLER,
+                            f64::from(
+                                u16::from(midi.data1 & 0x7F) | (u16::from(midi.data2 & 0x7F) << 7),
+                            ) / 16_383.0,
+                        ),
+                        0xD0 => (
+                            VST3_AFTERTOUCH_CONTROLLER,
+                            f64::from(midi.data1 & 0x7F) / 127.0,
+                        ),
+                        _ => continue,
+                    };
+                    if let Some(parameter_id) =
+                        self.midi_cc_params.as_ref().and_then(|map| map[controller])
+                    {
+                        self.input_changes.push_point(
+                            parameter_id,
+                            midi.offset_frames.min(i32::MAX as u32) as i32,
+                            value,
+                        );
                     }
                 }
                 _ => {}

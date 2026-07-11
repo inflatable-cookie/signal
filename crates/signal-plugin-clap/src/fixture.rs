@@ -341,6 +341,7 @@ pub struct clap_output_events {{
 const CLAP_CORE_EVENT_SPACE_ID: u16 = 0;
 const CLAP_EVENT_NOTE_ON_TYPE: u16 = 0;
 const CLAP_EVENT_NOTE_OFF_TYPE: u16 = 1;
+const CLAP_EVENT_NOTE_EXPRESSION_TYPE: u16 = 4;
 const CLAP_EVENT_PARAM_VALUE_TYPE: u16 = 5;
 const CLAP_EVENT_MIDI_TYPE: u16 = 10;
 
@@ -353,6 +354,18 @@ pub struct clap_event_note {{
     pub channel: i16,
     pub key: i16,
     pub velocity: f64,
+}}
+
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct clap_event_note_expression {{
+    pub header: clap_event_header,
+    pub expression_id: i32,
+    pub note_id: i32,
+    pub port_index: i16,
+    pub channel: i16,
+    pub key: i16,
+    pub value: f64,
 }}
 
 #[repr(C)]
@@ -587,6 +600,13 @@ unsafe fn apply_param_events(
                         0.0
                     }};
                     steps[step_count] = ((*header).time, gain);
+                    step_count += 1;
+                }}
+            }}
+            CLAP_EVENT_NOTE_EXPRESSION_TYPE => {{
+                let event = &*(header as *const clap_event_note_expression);
+                if step_count < GAIN_STEP_CAPACITY {{
+                    steps[step_count] = ((*header).time, event.value as f32);
                     step_count += 1;
                 }}
             }}

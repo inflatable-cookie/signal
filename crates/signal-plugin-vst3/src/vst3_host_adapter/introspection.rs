@@ -8,7 +8,7 @@ use std::{
     fs, io,
     io::Read,
     path::{Path, PathBuf},
-    process::{Command, Stdio},
+    process::{Child, Command, Stdio},
     thread,
     time::{Duration, Instant},
 };
@@ -291,6 +291,7 @@ pub(crate) fn read_vst3_bundle_snapshot(
     platform: Vst3HostPlatform,
 ) -> io::Result<Vst3BundleSnapshot> {
     let bundle = read_vst3_bundle_info(bundle_root)?;
+    preflight_vendor_scan_access(&bundle)?;
     let (factory_vendor, factory_classes) = read_vst3_factory_snapshot(bundle_root, platform)?;
     let component_classes = factory_classes
         .iter()
@@ -351,6 +352,45 @@ pub(crate) fn read_vst3_bundle_snapshot(
         plugins,
         factory_classes,
     })
+}
+
+fn preflight_vendor_scan_access(bundle: &Vst3BundleInfo) -> io::Result<()> {
+    if !bundle
+        .bundle_identifier
+        .as_deref()
+        .is_some_and(is_native_instruments_bundle)
+    {
+        return Ok(());
+    }
+    let Some(home) = std::env::var_os("HOME") else {
+        return Ok(());
+    };
+    let documents = PathBuf::from(home)
+        .join("Documents")
+        .join("Native Instruments");
+    let denied = match fs::read_dir(&documents) {
+        Err(error) => error.kind() == io::ErrorKind::PermissionDenied,
+        Ok(mut entries) => entries.next().is_some_and(|entry| {
+            entry.is_err_and(|error| error.kind() == io::ErrorKind::PermissionDenied)
+        }),
+    };
+    if denied {
+        Err(io::Error::new(
+            io::ErrorKind::PermissionDenied,
+            format!(
+                "Native Instruments VST3 inspection requires macOS Documents folder access ({})",
+                documents.display()
+            ),
+        ))
+    } else {
+        Ok(())
+    }
+}
+
+fn is_native_instruments_bundle(identifier: &str) -> bool {
+    identifier
+        .to_ascii_lowercase()
+        .starts_with("com.native-instruments.")
 }
 
 pub(crate) fn metadata_io_layout(metadata: &Vst3ModuleMetadata) -> PluginIoLayout {
@@ -446,48 +486,56 @@ fn read_vst3_factory_snapshot(
     bundle_root: &Path,
     platform: Vst3HostPlatform,
 ) -> io::Result<(Option<String>, Vec<Vst3FactoryClass>)> {
+    let mut moduleinfo_error = None;
     if let Some(moduleinfo_path) = candidate_moduleinfo_paths(bundle_root)
         .into_iter()
         .find(|path| path.is_file())
     {
-        let document = json5::from_str::<ModuleInfoDocument>(&fs::read_to_string(moduleinfo_path)?)
-            .map_err(|error| {
-                io::Error::new(
-                    io::ErrorKind::InvalidData,
-                    format!("invalid VST3 moduleinfo.json: {error}"),
-                )
-            })?;
-        let vendor = document
-            .factory_info
-            .and_then(|factory| factory.vendor)
-            .or_else(|| {
-                document
+        match json5::from_str::<ModuleInfoDocument>(&fs::read_to_string(moduleinfo_path)?) {
+            Ok(document) => {
+                let vendor = document
+                    .factory_info
+                    .and_then(|factory| factory.vendor)
+                    .or_else(|| {
+                        document
+                            .classes
+                            .iter()
+                            .find_map(|class| class.vendor.clone())
+                    });
+                let classes = document
                     .classes
-                    .iter()
-                    .find_map(|class| class.vendor.clone())
-            });
-        let classes = document
-            .classes
-            .into_iter()
-            .map(|class| Vst3FactoryClass {
-                role: role_from_category(&class.category),
-                class_id: class.cid,
-                category: class.category,
-                name: class.name,
-                vendor: class.vendor,
-                version: class.version,
-                subcategories: class.subcategories,
-            })
-            .collect::<Vec<_>>();
-        if classes.is_empty() {
-            return Err(io::Error::new(
-                io::ErrorKind::InvalidData,
-                "missing VST3 classes in moduleinfo.json",
-            ));
+                    .into_iter()
+                    .map(|class| Vst3FactoryClass {
+                        role: role_from_category(&class.category),
+                        class_id: class.cid,
+                        category: class.category,
+                        name: class.name,
+                        vendor: class.vendor,
+                        version: class.version,
+                        subcategories: class.subcategories,
+                    })
+                    .collect::<Vec<_>>();
+                if !classes.is_empty() {
+                    return Ok((vendor, classes));
+                }
+                moduleinfo_error = Some("missing VST3 classes in moduleinfo.json".to_string());
+            }
+            Err(error) => {
+                moduleinfo_error = Some(format!("invalid VST3 moduleinfo.json: {error}"));
+            }
         }
-        return Ok((vendor, classes));
     }
-    load_vst3_factory_classes_with_helper(bundle_root, platform)
+    match load_vst3_factory_classes_with_helper(bundle_root, platform) {
+        Ok(snapshot) => Ok(snapshot),
+        Err(error) if moduleinfo_error.is_some() => Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            format!(
+                "{}; factory fallback failed: {error}",
+                moduleinfo_error.expect("checked moduleinfo error")
+            ),
+        )),
+        Err(error) => Err(error),
+    }
 }
 
 pub(super) fn run_vst3_scan_helper<I>(args: I) -> i32
@@ -517,6 +565,12 @@ where
         return 64;
     };
     let bundle_root = PathBuf::from(bundle_root);
+    if let Err(error) =
+        read_vst3_bundle_info(&bundle_root).and_then(|bundle| preflight_vendor_scan_access(&bundle))
+    {
+        eprintln!("{error}");
+        return 65;
+    }
     match load_vst3_factory_classes_from_module(&bundle_root, platform) {
         Ok((vendor, classes)) => {
             let payload = Vst3FactorySnapshotWire { vendor, classes };
@@ -549,27 +603,48 @@ fn load_vst3_factory_classes_with_helper(
         .arg(bundle_root)
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
-        .stderr(Stdio::null());
-    let mut child = command.spawn().map_err(|error| {
+        .stderr(Stdio::piped());
+    let child = command.spawn().map_err(|error| {
         io::Error::new(
             error.kind(),
             format!("failed to start VST3 scan helper: {error}"),
         )
     })?;
-    let deadline = Instant::now() + scan_helper_timeout();
+    read_vst3_scan_helper_child(child, scan_helper_timeout())
+}
+
+fn read_vst3_scan_helper_child(
+    mut child: Child,
+    timeout: Duration,
+) -> io::Result<(Option<String>, Vec<Vst3FactoryClass>)> {
+    let deadline = Instant::now() + timeout;
     loop {
         if let Some(status) = child.try_wait()? {
             let mut stdout = Vec::new();
             if let Some(mut output) = child.stdout.take() {
                 output.read_to_end(&mut stdout)?;
             }
-            if !status.success() {
-                return Err(io::Error::other(format!(
-                    "VST3 scan helper exited with status {status}"
-                )));
+            let mut stderr = String::new();
+            if let Some(mut output) = child.stderr.take() {
+                output.read_to_string(&mut stderr)?;
             }
-            let snapshot = serde_json::from_slice::<Vst3FactorySnapshotWire>(&stdout)
-                .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error.to_string()))?;
+            if !status.success() {
+                let detail = stderr.split_whitespace().collect::<Vec<_>>().join(" ");
+                let message = format!(
+                    "VST3 scan helper exited with status {status}{}",
+                    if detail.is_empty() {
+                        String::new()
+                    } else {
+                        format!(": {detail}")
+                    }
+                );
+                return Err(if status.code() == Some(65) {
+                    io::Error::new(io::ErrorKind::InvalidData, message)
+                } else {
+                    io::Error::other(message)
+                });
+            }
+            let snapshot = decode_scan_helper_snapshot(&stdout)?;
             return Ok((snapshot.vendor, snapshot.classes));
         }
         if Instant::now() >= deadline {
@@ -581,6 +656,96 @@ fn load_vst3_factory_classes_with_helper(
             ));
         }
         thread::sleep(Duration::from_millis(10));
+    }
+}
+
+fn decode_scan_helper_snapshot(stdout: &[u8]) -> io::Result<Vst3FactorySnapshotWire> {
+    stdout
+        .split(|byte| *byte == b'\n')
+        .rev()
+        .find_map(|line| serde_json::from_slice::<Vst3FactorySnapshotWire>(line).ok())
+        .ok_or_else(|| {
+            let error = serde_json::from_slice::<Vst3FactorySnapshotWire>(stdout)
+                .err()
+                .expect("unmatched helper output should remain invalid");
+            io::Error::new(io::ErrorKind::InvalidData, error.to_string())
+        })
+}
+
+#[cfg(all(test, unix))]
+mod scan_helper_tests {
+    use super::*;
+
+    fn shell_child(script: &str) -> Child {
+        Command::new("/bin/sh")
+            .args(["-c", script])
+            .stdin(Stdio::null())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .expect("spawn deterministic scan helper fixture")
+    }
+
+    #[test]
+    fn scan_helper_timeout_kills_and_reaps_child() {
+        let child = shell_child("sleep 5");
+        let error = read_vst3_scan_helper_child(child, Duration::from_millis(20))
+            .expect_err("slow helper should time out");
+
+        assert_eq!(error.kind(), io::ErrorKind::TimedOut);
+    }
+
+    #[test]
+    fn scan_helper_abnormal_exit_is_reported() {
+        let child = shell_child("echo fixture-reason >&2; exit 7");
+        let error = read_vst3_scan_helper_child(child, Duration::from_secs(1))
+            .expect_err("failed helper should be reported");
+
+        assert_eq!(error.kind(), io::ErrorKind::Other);
+        assert!(error.to_string().contains("status"));
+        assert!(error.to_string().contains("fixture-reason"));
+    }
+
+    #[test]
+    fn scan_helper_inspection_failure_is_invalid_not_crashed() {
+        let child = shell_child("echo invalid-fixture >&2; exit 65");
+        let error = read_vst3_scan_helper_child(child, Duration::from_secs(1))
+            .expect_err("inspection failure should be reported");
+
+        assert_eq!(error.kind(), io::ErrorKind::InvalidData);
+        assert!(error.to_string().contains("invalid-fixture"));
+    }
+
+    #[test]
+    fn scan_helper_invalid_output_is_reported() {
+        let child = shell_child("printf not-json");
+        let error = read_vst3_scan_helper_child(child, Duration::from_secs(1))
+            .expect_err("invalid helper output should be reported");
+
+        assert_eq!(error.kind(), io::ErrorKind::InvalidData);
+    }
+
+    #[test]
+    fn scan_helper_ignores_plugin_logs_around_json_payload() {
+        let payload = r#"{"vendor":"Example","classes":[]}"#;
+        for script in [
+            format!("printf 'plugin log\\n%s\\n' '{payload}'"),
+            format!("printf '%s\\nplugin shutdown log\\n' '{payload}'"),
+        ] {
+            let child = shell_child(&script);
+            let (vendor, classes) = read_vst3_scan_helper_child(child, Duration::from_secs(1))
+                .expect("embedded helper payload");
+            assert_eq!(vendor.as_deref(), Some("Example"));
+            assert!(classes.is_empty());
+        }
+    }
+
+    #[test]
+    fn native_instruments_bundle_detection_is_vendor_scoped() {
+        assert!(is_native_instruments_bundle(
+            "com.native-instruments.Raum.vst3"
+        ));
+        assert!(!is_native_instruments_bundle("com.example.Raum.vst3"));
     }
 }
 
@@ -949,6 +1114,7 @@ fn role_from_category(category: &str) -> Vst3FactoryClassRole {
     {
         Vst3FactoryClassRole::Controller
     } else if category.eq_ignore_ascii_case("Audio Module Class")
+        || category.eq_ignore_ascii_case("Audio Mix Processor")
         || category.eq_ignore_ascii_case("Instrument")
         || category.eq_ignore_ascii_case("Fx")
     {

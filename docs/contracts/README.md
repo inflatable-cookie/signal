@@ -99,6 +99,7 @@ Use this section for:
 - `078-rhythm-continuity-failure-containment-and-policy-normalization-contract.md`
 - `079-interactive-demo-binary-and-crate-capability-proof-contract.md`
 - `080-production-readiness-grade-and-generation-release-gate-contract.md`
+- `083-vst3-discovery-diagnostic-outcome-contract.md`
 
 ## Rule
 

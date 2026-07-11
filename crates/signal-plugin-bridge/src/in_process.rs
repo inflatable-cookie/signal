@@ -9,17 +9,37 @@ use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Mutex;
 
 use signal_plugin::{
-    ControlChangeEvent, NoteEvent, NoteEventKind, PluginEvent, PluginParameterDescriptor,
+    ControlChangeEvent, MidiEvent, NoteEvent, NoteEventKind, NoteExpressionEvent,
+    NoteExpressionKind, PluginEvent, PluginParameterDescriptor,
 };
 use signal_plugin_au::{AuHostedInstance, AuProcessSession};
 use signal_plugin_clap::{ClapHostedInstance, ClapProcessSession};
 use signal_plugin_lv2::{Lv2HostedInstance, Lv2ProcessSession};
 use signal_plugin_vst3::{Vst3HostedInstance, Vst3ProcessSession};
-use signal_render_plane::{PluginBlockProcessor, RenderBlockPluginEvent, RenderPluginEventKind};
+use signal_render_plane::{
+    PluginBlockProcessor, RenderBlockPluginEvent, RenderNoteExpressionKind, RenderPluginEventKind,
+    RenderPluginEventSupport,
+};
 
 /// Per-block plugin event capacity for the in-process backends' conversion
 /// scratch (mirrors the render plane's per-block cap).
 const EVENT_SCRATCH_CAPACITY: usize = 1024;
+
+const CLAP_EVENT_SUPPORT: RenderPluginEventSupport = RenderPluginEventSupport {
+    notes: true,
+    control_change: true,
+    pitch_bend: true,
+    channel_pressure: true,
+    note_expression: true,
+};
+
+const AU_EVENT_SUPPORT: RenderPluginEventSupport = RenderPluginEventSupport {
+    notes: true,
+    control_change: true,
+    pitch_bend: true,
+    channel_pressure: true,
+    note_expression: false,
+};
 
 /// Convert the render plane's block events into the plugin event vocabulary
 /// handed to the per-format process sessions. Values stay normalized f32
@@ -57,6 +77,38 @@ fn convert_block_events(events: &[RenderBlockPluginEvent], scratch: &mut Vec<Plu
                     value,
                 })
             }
+            RenderPluginEventKind::PitchBend { value } => {
+                let bend = (((value.clamp(-1.0, 1.0) + 1.0) * 0.5) * 16_383.0).round() as u16;
+                PluginEvent::Midi(MidiEvent {
+                    offset_frames: event.offset_frames,
+                    status: 0xE0 | (event.channel & 0x0F),
+                    data1: (bend & 0x7F) as u8,
+                    data2: ((bend >> 7) & 0x7F) as u8,
+                })
+            }
+            RenderPluginEventKind::ChannelPressure { value } => PluginEvent::Midi(MidiEvent {
+                offset_frames: event.offset_frames,
+                status: 0xD0 | (event.channel & 0x0F),
+                data1: (value.clamp(0.0, 1.0) * 127.0).round() as u8,
+                data2: 0,
+            }),
+            RenderPluginEventKind::NoteExpression {
+                key,
+                expression,
+                value,
+            } => PluginEvent::NoteExpression(NoteExpressionEvent {
+                offset_frames: event.offset_frames,
+                note_id: -1,
+                port_index: 0,
+                channel: event.channel,
+                key,
+                expression: match expression {
+                    RenderNoteExpressionKind::Pressure => NoteExpressionKind::Pressure,
+                    RenderNoteExpressionKind::Timbre => NoteExpressionKind::Timbre,
+                    RenderNoteExpressionKind::Tuning => NoteExpressionKind::Tuning,
+                },
+                value,
+            }),
         });
     }
 }
@@ -141,6 +193,7 @@ pub struct InProcessClapProcessor {
     alive: AtomicBool,
     /// Blocks bypassed (unsupported layout, plugin error, teardown race).
     misses: AtomicU64,
+    unsupported_events: AtomicU64,
 }
 
 // Safety: the raw plugin pointers inside the instance and session are only
@@ -178,6 +231,7 @@ impl InProcessClapProcessor {
             max_frames,
             alive: AtomicBool::new(true),
             misses: AtomicU64::new(0),
+            unsupported_events: AtomicU64::new(0),
         })
     }
 
@@ -361,6 +415,14 @@ impl PluginBlockProcessor for InProcessClapProcessor {
         self.process_with_events(scratch, frame_count, channels, &[])
     }
 
+    fn event_support(&self) -> RenderPluginEventSupport {
+        CLAP_EVENT_SUPPORT
+    }
+
+    fn unsupported_event_count(&self) -> u64 {
+        self.unsupported_events.load(Ordering::Relaxed)
+    }
+
     fn process_with_events(
         &self,
         scratch: &mut [f32],
@@ -424,6 +486,9 @@ pub struct InProcessVst3Processor {
     /// Whether the controller exposed an `IMidiMapping` at load (CC events
     /// deliver as mapped parameter changes; without one they drop).
     midi_cc_mapping: bool,
+    midi_cc_mappings: [bool; 128],
+    pitch_bend_mapping: bool,
+    channel_pressure_mapping: bool,
     parameters: Vec<PluginParameterDescriptor>,
     max_frames: u32,
     /// Cleared at teardown so late callbacks bypass instead of racing the
@@ -431,6 +496,7 @@ pub struct InProcessVst3Processor {
     alive: AtomicBool,
     /// Blocks bypassed (unsupported layout, plugin error, teardown race).
     misses: AtomicU64,
+    unsupported_events: AtomicU64,
 }
 
 // Safety: the raw COM pointers inside the instance and session are only
@@ -462,15 +528,24 @@ impl InProcessVst3Processor {
         let session = instance.process_session().map_err(|error| error.token)?;
         let parameters = instance.parameters().to_vec();
         let midi_cc_mapping = instance.midi_cc_mapping_available();
+        let midi_cc_mappings = std::array::from_fn(|controller| {
+            instance.midi_controller_mapping_available(controller as u16)
+        });
+        let pitch_bend_mapping = instance.midi_controller_mapping_available(128);
+        let channel_pressure_mapping = instance.midi_controller_mapping_available(129);
         Ok(Self {
             session: Mutex::new(session),
             instance: Mutex::new(instance),
             events_scratch: Mutex::new(Vec::with_capacity(EVENT_SCRATCH_CAPACITY)),
             midi_cc_mapping,
+            midi_cc_mappings,
+            pitch_bend_mapping,
+            channel_pressure_mapping,
             parameters,
             max_frames,
             alive: AtomicBool::new(true),
             misses: AtomicU64::new(0),
+            unsupported_events: AtomicU64::new(0),
         })
     }
 
@@ -641,6 +716,20 @@ impl PluginBlockProcessor for InProcessVst3Processor {
         self.process_with_events(scratch, frame_count, channels, &[])
     }
 
+    fn event_support(&self) -> RenderPluginEventSupport {
+        RenderPluginEventSupport {
+            notes: true,
+            control_change: self.midi_cc_mappings.iter().any(|mapped| *mapped),
+            pitch_bend: self.pitch_bend_mapping,
+            channel_pressure: self.channel_pressure_mapping,
+            note_expression: false,
+        }
+    }
+
+    fn unsupported_event_count(&self) -> u64 {
+        self.unsupported_events.load(Ordering::Relaxed)
+    }
+
     fn process_with_events(
         &self,
         scratch: &mut [f32],
@@ -648,6 +737,22 @@ impl PluginBlockProcessor for InProcessVst3Processor {
         channels: usize,
         events: &[RenderBlockPluginEvent],
     ) -> bool {
+        let unsupported = events
+            .iter()
+            .filter(|event| match event.kind {
+                RenderPluginEventKind::NoteOn { .. } | RenderPluginEventKind::NoteOff { .. } => {
+                    false
+                }
+                RenderPluginEventKind::ControlChange { controller, .. } => {
+                    !self.midi_cc_mappings[usize::from(controller)]
+                }
+                RenderPluginEventKind::PitchBend { .. } => !self.pitch_bend_mapping,
+                RenderPluginEventKind::ChannelPressure { .. } => !self.channel_pressure_mapping,
+                RenderPluginEventKind::NoteExpression { .. } => true,
+            })
+            .count() as u64;
+        self.unsupported_events
+            .fetch_add(unsupported, Ordering::Relaxed);
         if !self.alive.load(Ordering::Relaxed)
             || channels != 2
             || frame_count > self.max_frames as usize
@@ -710,6 +815,7 @@ pub struct InProcessAuProcessor {
     alive: AtomicBool,
     /// Blocks bypassed (unsupported layout, unit error, teardown race).
     misses: AtomicU64,
+    unsupported_events: AtomicU64,
 }
 
 // Safety: the raw AudioUnit handle inside the instance and session is only
@@ -749,6 +855,7 @@ impl InProcessAuProcessor {
             max_frames,
             alive: AtomicBool::new(true),
             misses: AtomicU64::new(0),
+            unsupported_events: AtomicU64::new(0),
         })
     }
 
@@ -903,6 +1010,14 @@ impl PluginBlockProcessor for InProcessAuProcessor {
         self.process_with_events(scratch, frame_count, channels, &[])
     }
 
+    fn event_support(&self) -> RenderPluginEventSupport {
+        AU_EVENT_SUPPORT
+    }
+
+    fn unsupported_event_count(&self) -> u64 {
+        self.unsupported_events.load(Ordering::Relaxed)
+    }
+
     fn process_with_events(
         &self,
         scratch: &mut [f32],
@@ -910,6 +1025,12 @@ impl PluginBlockProcessor for InProcessAuProcessor {
         channels: usize,
         events: &[RenderBlockPluginEvent],
     ) -> bool {
+        let unsupported = events
+            .iter()
+            .filter(|event| matches!(event.kind, RenderPluginEventKind::NoteExpression { .. }))
+            .count() as u64;
+        self.unsupported_events
+            .fetch_add(unsupported, Ordering::Relaxed);
         if !self.alive.load(Ordering::Relaxed)
             || channels != 2
             || frame_count > self.max_frames as usize
@@ -969,6 +1090,7 @@ pub struct InProcessLv2Processor {
     alive: AtomicBool,
     /// Blocks bypassed (unsupported layout, dead handle, teardown race).
     misses: AtomicU64,
+    unsupported_events: AtomicU64,
 }
 
 // Safety: the raw plugin handle and buffer pointers inside the instance
@@ -1008,6 +1130,7 @@ impl InProcessLv2Processor {
             max_frames,
             alive: AtomicBool::new(true),
             misses: AtomicU64::new(0),
+            unsupported_events: AtomicU64::new(0),
         })
     }
 
@@ -1093,6 +1216,22 @@ impl PluginBlockProcessor for InProcessLv2Processor {
             false
         }
     }
+
+    fn unsupported_event_count(&self) -> u64 {
+        self.unsupported_events.load(Ordering::Relaxed)
+    }
+
+    fn process_with_events(
+        &self,
+        scratch: &mut [f32],
+        frame_count: usize,
+        channels: usize,
+        events: &[RenderBlockPluginEvent],
+    ) -> bool {
+        self.unsupported_events
+            .fetch_add(events.len() as u64, Ordering::Relaxed);
+        self.process(scratch, frame_count, channels)
+    }
 }
 
 #[cfg(test)]
@@ -1103,8 +1242,67 @@ mod tests {
         compile_vst3_fixture, VST3_FIXTURE_CLASS_ID_HEX, VST3_FIXTURE_GAIN,
     };
     use signal_render_plane::{
-        RenderBlockPluginEvent, RenderPluginEventKind, RenderPluginProcessor,
+        RenderBlockPluginEvent, RenderNoteExpressionKind, RenderPluginEventKind,
+        RenderPluginProcessor,
     };
+
+    #[test]
+    fn expressive_render_events_retain_values_at_the_neutral_boundary() {
+        let events = [
+            RenderBlockPluginEvent {
+                offset_frames: 3,
+                channel: 2,
+                kind: RenderPluginEventKind::PitchBend { value: 0.0 },
+            },
+            RenderBlockPluginEvent {
+                offset_frames: 5,
+                channel: 2,
+                kind: RenderPluginEventKind::ChannelPressure { value: 0.5 },
+            },
+            RenderBlockPluginEvent {
+                offset_frames: 7,
+                channel: 2,
+                kind: RenderPluginEventKind::NoteExpression {
+                    key: 64,
+                    expression: RenderNoteExpressionKind::Tuning,
+                    value: 37.5,
+                },
+            },
+        ];
+        let mut scratch = Vec::with_capacity(EVENT_SCRATCH_CAPACITY);
+        convert_block_events(&events, &mut scratch);
+
+        assert_eq!(
+            scratch[0],
+            PluginEvent::Midi(MidiEvent {
+                offset_frames: 3,
+                status: 0xE2,
+                data1: 0,
+                data2: 64,
+            })
+        );
+        assert_eq!(
+            scratch[1],
+            PluginEvent::Midi(MidiEvent {
+                offset_frames: 5,
+                status: 0xD2,
+                data1: 64,
+                data2: 0,
+            })
+        );
+        assert_eq!(
+            scratch[2],
+            PluginEvent::NoteExpression(NoteExpressionEvent {
+                offset_frames: 7,
+                note_id: -1,
+                port_index: 0,
+                channel: 2,
+                key: 64,
+                expression: NoteExpressionKind::Tuning,
+                value: 37.5,
+            })
+        );
+    }
     use std::sync::Arc;
 
     #[test]
@@ -1242,8 +1440,8 @@ mod tests {
         let _ = std::fs::remove_dir_all(&directory);
     }
 
-    /// g12.034 follow-up: note + CC delivery through the CLAP in-process
-    /// backend, sample-offset accurate. The fixture turns note events and
+    /// g12.034 follow-up: note, CC, and native note-expression delivery
+    /// through the CLAP in-process backend, sample-offset accurate. The fixture turns note events and
     /// MIDI CC7 into gain steps applied FROM the event's intra-block time,
     /// so the output proves the decoded bytes AND the offsets.
     #[test]
@@ -1279,6 +1477,7 @@ mod tests {
         );
         let handle =
             signal_render_plane::RenderPluginProcessor::new(Arc::clone(&backend) as Arc<_>);
+        assert_eq!(handle.event_support(), CLAP_EVENT_SUPPORT);
 
         // Note-on velocity 0.25 at frame 64: gain steps 0.5 → 0.25 there.
         let reference: Vec<f32> = (0..256).map(|index| index as f32 / 256.0).collect();
@@ -1337,7 +1536,36 @@ mod tests {
                 reference[index],
             );
         }
+
+        // Per-note tuning is stored as cents in Pulse/Signal and converted
+        // to CLAP semitones at the native event boundary: 37.5c → 0.375.
+        let mut scratch = reference.clone();
+        assert!(handle.process_with_events(
+            &mut scratch,
+            128,
+            2,
+            &[RenderBlockPluginEvent {
+                offset_frames: 48,
+                channel: 0,
+                kind: RenderPluginEventKind::NoteExpression {
+                    key: 60,
+                    expression: RenderNoteExpressionKind::Tuning,
+                    value: 37.5,
+                },
+            }],
+        ));
+        for frame in 0..128 {
+            let expected_gain = if frame < 48 { 96.0 / 127.0 } else { 0.375 };
+            let index = frame * 2;
+            assert!(
+                (scratch[index] - reference[index] * expected_gain).abs() < 1e-6,
+                "frame {frame}: {} vs {} * {expected_gain}",
+                scratch[index],
+                reference[index],
+            );
+        }
         assert_eq!(backend.miss_count(), 0);
+        assert_eq!(handle.unsupported_event_count(), 0);
 
         drop(handle);
         drop(backend);
@@ -1384,6 +1612,16 @@ mod tests {
         );
         let handle =
             signal_render_plane::RenderPluginProcessor::new(Arc::clone(&backend) as Arc<_>);
+        assert_eq!(
+            handle.event_support(),
+            RenderPluginEventSupport {
+                notes: true,
+                control_change: true,
+                pitch_bend: true,
+                channel_pressure: true,
+                note_expression: false,
+            }
+        );
 
         // Note-on velocity 0.25 at frame 64 (input IEventList).
         let reference: Vec<f32> = (0..256).map(|index| index as f32 / 256.0).collect();
@@ -1438,6 +1676,88 @@ mod tests {
                 reference[index],
             );
         }
+
+        // Pitch bend centre maps through VST3 controller 128 as the exact
+        // 14-bit MIDI centre value, 8192/16383.
+        let mut scratch = reference.clone();
+        assert!(handle.process_with_events(
+            &mut scratch,
+            128,
+            2,
+            &[RenderBlockPluginEvent {
+                offset_frames: 24,
+                channel: 0,
+                kind: RenderPluginEventKind::PitchBend { value: 0.0 },
+            }],
+        ));
+        for frame in 0..128 {
+            let expected_gain = if frame < 24 { 0.8 } else { 8192.0 / 16_383.0 };
+            let index = frame * 2;
+            assert!(
+                (scratch[index] - reference[index] * expected_gain).abs() < 1e-6,
+                "frame {frame}: {} vs {} * {expected_gain}",
+                scratch[index],
+                reference[index],
+            );
+        }
+
+        // Channel pressure maps through controller 129 with 7-bit MIDI
+        // quantization at the bridge boundary.
+        let pressure = 32.0f32 / 127.0;
+        let mut scratch = reference.clone();
+        assert!(handle.process_with_events(
+            &mut scratch,
+            128,
+            2,
+            &[RenderBlockPluginEvent {
+                offset_frames: 40,
+                channel: 0,
+                kind: RenderPluginEventKind::ChannelPressure { value: pressure },
+            }],
+        ));
+        for frame in 0..128 {
+            let expected_gain = if frame < 40 {
+                8192.0 / 16_383.0
+            } else {
+                pressure
+            };
+            let index = frame * 2;
+            assert!(
+                (scratch[index] - reference[index] * expected_gain).abs() < 1e-6,
+                "frame {frame}: {} vs {} * {expected_gain}",
+                scratch[index],
+                reference[index],
+            );
+        }
+
+        // The fixture has no CC74 assignment and the VST3 adapter has no
+        // per-note expression path. Both attempts stay observable.
+        let mut scratch = reference.clone();
+        assert!(handle.process_with_events(
+            &mut scratch,
+            128,
+            2,
+            &[
+                RenderBlockPluginEvent {
+                    offset_frames: 8,
+                    channel: 0,
+                    kind: RenderPluginEventKind::ControlChange {
+                        controller: 74,
+                        value: 0.25,
+                    },
+                },
+                RenderBlockPluginEvent {
+                    offset_frames: 16,
+                    channel: 0,
+                    kind: RenderPluginEventKind::NoteExpression {
+                        key: 60,
+                        expression: RenderNoteExpressionKind::Pressure,
+                        value: 0.5,
+                    },
+                },
+            ],
+        ));
+        assert_eq!(handle.unsupported_event_count(), 2);
         assert_eq!(backend.miss_count(), 0);
 
         drop(handle);
@@ -1744,6 +2064,7 @@ mod tests {
         );
         assert_eq!(backend.parameters().len(), 2);
         let handle = RenderPluginProcessor::new(Arc::clone(&backend) as Arc<_>);
+        assert_eq!(handle.event_support(), RenderPluginEventSupport::default());
 
         let mut scratch: Vec<f32> = (0..256).map(|index| index as f32 / 256.0).collect();
         let reference = scratch.clone();
@@ -1755,6 +2076,22 @@ mod tests {
             );
         }
         assert_eq!(backend.miss_count(), 0);
+
+        let mut scratch = reference.clone();
+        assert!(handle.process_with_events(
+            &mut scratch,
+            128,
+            2,
+            &[RenderBlockPluginEvent {
+                offset_frames: 0,
+                channel: 0,
+                kind: RenderPluginEventKind::NoteOn {
+                    key: 60,
+                    velocity: 1.0,
+                },
+            }],
+        ));
+        assert_eq!(handle.unsupported_event_count(), 1);
 
         // Shutdown: later blocks bypass and leave scratch untouched.
         backend.shutdown();
@@ -1964,6 +2301,7 @@ mod tests {
             .set_parameter(AUDELAY_WET_DRY_MIX, 0.0)
             .expect("wet/dry mix set");
         let handle = RenderPluginProcessor::new(Arc::clone(&backend) as Arc<_>);
+        assert_eq!(handle.event_support(), AU_EVENT_SUPPORT);
 
         let mut scratch: Vec<f32> = (0..256).map(|index| index as f32 / 256.0 - 0.5).collect();
         let reference = scratch.clone();
@@ -2001,6 +2339,15 @@ mod tests {
                         value: 0.5,
                     },
                 },
+                RenderBlockPluginEvent {
+                    offset_frames: 96,
+                    channel: 0,
+                    kind: RenderPluginEventKind::NoteExpression {
+                        key: 60,
+                        expression: RenderNoteExpressionKind::Pressure,
+                        value: 0.75,
+                    },
+                },
             ],
         ));
         for (index, (output, input)) in scratch.iter().zip(reference.iter()).enumerate() {
@@ -2010,6 +2357,7 @@ mod tests {
             );
         }
         assert_eq!(backend.miss_count(), 0);
+        assert_eq!(handle.unsupported_event_count(), 1);
 
         // Shutdown: later blocks bypass and leave scratch untouched.
         backend.shutdown();

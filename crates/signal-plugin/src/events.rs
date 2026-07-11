@@ -111,7 +111,7 @@ pub struct NoteExpressionEvent {
     pub key: u8,
     /// Which expression dimension this event carries.
     pub expression: NoteExpressionKind,
-    /// Expression value in the \[0.0, 1.0\] range (interpretation depends on `expression`).
+    /// Pressure/timbre use \[0.0, 1.0\]; tuning is a cents offset.
     pub value: f32,
 }
 

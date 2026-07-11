@@ -12,6 +12,7 @@ mod model;
 #[cfg(test)]
 mod scaffold;
 
+pub use discovery::{Vst3DiscoveryBatch, Vst3DiscoveryDiagnostic, Vst3DiscoveryDiagnosticKind};
 pub use gui::{Vst3GuiEvent, Vst3GuiSession};
 pub use hosting::{
     current_vst3_platform, Vst3HostedInstance, Vst3HostedPortLayout, Vst3HostingError,

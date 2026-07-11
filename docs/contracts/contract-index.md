@@ -57,6 +57,7 @@ memory alone.
 - `039` Linux cross-adapter plugin parity and sandbox policy
 - `055` LV2 worker, URID, patch, and extension negotiation
 - `056` complex plugin pin matrix and dynamic bus negotiation
+- `083` VST3 bundle discovery diagnostics and helper outcome classification
 
 ## Hardware, backend, and endpoint portability
 

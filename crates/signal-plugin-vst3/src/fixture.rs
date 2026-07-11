@@ -449,8 +449,8 @@ unsafe extern "C" fn midi_mapping_query_interface(
     shared_query_interface(iid, out)
 }}
 
-/// CC 7 on bus 0 / channel 0 maps to the Gain param (id 4096); everything
-/// else is unassigned.
+/// CC 7 plus VST3 pitch-bend (128) and aftertouch (129) on bus 0 / channel
+/// 0 map to the Gain param (id 4096); everything else is unassigned.
 unsafe extern "C" fn midi_mapping_get_assignment(
     _this: *mut c_void,
     bus_index: i32,
@@ -461,7 +461,7 @@ unsafe extern "C" fn midi_mapping_get_assignment(
     if parameter_id.is_null() {{
         return K_RESULT_FALSE;
     }}
-    if bus_index == 0 && channel == 0 && controller_number == 7 {{
+    if bus_index == 0 && channel == 0 && matches!(controller_number, 7 | 128 | 129) {{
         *parameter_id = 4096;
         K_RESULT_OK
     }} else {{

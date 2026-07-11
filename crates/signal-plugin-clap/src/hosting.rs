@@ -21,9 +21,11 @@ use clap_sys::{
     audio_buffer::clap_audio_buffer,
     entry::clap_plugin_entry,
     events::{
-        clap_event_header, clap_event_midi, clap_event_note, clap_event_param_value,
-        clap_input_events, clap_output_events, CLAP_CORE_EVENT_SPACE_ID, CLAP_EVENT_MIDI,
-        CLAP_EVENT_NOTE_OFF, CLAP_EVENT_NOTE_ON, CLAP_EVENT_PARAM_VALUE,
+        clap_event_header, clap_event_midi, clap_event_note, clap_event_note_expression,
+        clap_event_param_value, clap_input_events, clap_output_events, CLAP_CORE_EVENT_SPACE_ID,
+        CLAP_EVENT_MIDI, CLAP_EVENT_NOTE_EXPRESSION, CLAP_EVENT_NOTE_OFF, CLAP_EVENT_NOTE_ON,
+        CLAP_EVENT_PARAM_VALUE, CLAP_NOTE_EXPRESSION_BRIGHTNESS, CLAP_NOTE_EXPRESSION_PRESSURE,
+        CLAP_NOTE_EXPRESSION_TUNING,
     },
     ext::audio_ports::{clap_plugin_audio_ports, CLAP_EXT_AUDIO_PORTS},
     ext::gui::{clap_host_gui, clap_plugin_gui, CLAP_EXT_GUI},
@@ -38,8 +40,8 @@ use clap_sys::{
 };
 use libloading::Library;
 use signal_plugin::{
-    NoteEventKind, PluginAudioBusDirection, PluginEvent, PluginParamChange, PluginParamChangeQueue,
-    PluginParameterDescriptor, PLUGIN_PARAM_CHANGE_CAPACITY,
+    NoteEventKind, NoteExpressionKind, PluginAudioBusDirection, PluginEvent, PluginParamChange,
+    PluginParamChangeQueue, PluginParameterDescriptor, PLUGIN_PARAM_CHANGE_CAPACITY,
 };
 use std::sync::Arc;
 
@@ -96,8 +98,9 @@ impl LoadedClapEntry {
         if entry.is_null() {
             return Err(ClapHostingError::new("clap_entry_null"));
         }
-        let plugin_path = CString::new(library_path.to_string_lossy().to_string())
-            .map_err(|_| ClapHostingError::new("library_path_invalid"))?;
+        let plugin_path =
+            CString::new(clap_plugin_path(library_path).to_string_lossy().to_string())
+                .map_err(|_| ClapHostingError::new("library_path_invalid"))?;
         if let Some(init) = unsafe { (*entry).init } {
             if !unsafe { init(plugin_path.as_ptr()) } {
                 return Err(ClapHostingError::new("entry_init_failed"));
@@ -119,6 +122,38 @@ impl LoadedClapEntry {
     /// The raw initialized entry.
     pub(crate) fn entry(&self) -> clap_plugin_entry {
         unsafe { *self.entry }
+    }
+}
+
+fn clap_plugin_path(library_path: &Path) -> &Path {
+    library_path
+        .ancestors()
+        .find(|path| {
+            path.extension()
+                .and_then(|extension| extension.to_str())
+                .is_some_and(|extension| extension.eq_ignore_ascii_case("clap"))
+        })
+        .unwrap_or(library_path)
+}
+
+#[cfg(test)]
+mod plugin_path_tests {
+    use super::clap_plugin_path;
+    use std::path::Path;
+
+    #[test]
+    fn macos_bundle_binary_initializes_with_outer_clap_path() {
+        let binary = Path::new("/Plug-Ins/Example.clap/Contents/MacOS/Example");
+        assert_eq!(
+            clap_plugin_path(binary),
+            Path::new("/Plug-Ins/Example.clap")
+        );
+    }
+
+    #[test]
+    fn standalone_library_initializes_with_its_own_path() {
+        let library = Path::new("/usr/lib/clap/example.clap.so");
+        assert_eq!(clap_plugin_path(library), library);
     }
 }
 
@@ -710,6 +745,7 @@ const IN_EVENT_CAPACITY: usize = 1024;
 enum InEventSlot {
     Param(u32),
     Note(u32),
+    NoteExpression(u32),
     Midi(u32),
 }
 
@@ -729,6 +765,7 @@ enum InEventSlot {
 struct ParamEventList {
     params: Vec<clap_event_param_value>,
     notes: Vec<clap_event_note>,
+    note_expressions: Vec<clap_event_note_expression>,
     midi: Vec<clap_event_midi>,
     /// Delivery order (nondecreasing header time, params first at 0).
     order: Vec<InEventSlot>,
@@ -760,6 +797,11 @@ unsafe extern "C" fn param_in_events_get(
             .unwrap_or(ptr::null()),
         Some(InEventSlot::Note(slot)) => events
             .notes
+            .get(*slot as usize)
+            .map(|event| (&event.header as *const clap_event_header).cast())
+            .unwrap_or(ptr::null()),
+        Some(InEventSlot::NoteExpression(slot)) => events
+            .note_expressions
             .get(*slot as usize)
             .map(|event| (&event.header as *const clap_event_header).cast())
             .unwrap_or(ptr::null()),
@@ -809,6 +851,7 @@ impl ClapProcessSession {
         let mut param_events = Box::new(ParamEventList {
             params: Vec::with_capacity(PLUGIN_PARAM_CHANGE_CAPACITY),
             notes: Vec::with_capacity(IN_EVENT_CAPACITY),
+            note_expressions: Vec::with_capacity(IN_EVENT_CAPACITY),
             midi: Vec::with_capacity(IN_EVENT_CAPACITY),
             order: Vec::with_capacity(PLUGIN_PARAM_CHANGE_CAPACITY + IN_EVENT_CAPACITY),
             list: clap_input_events {
@@ -853,6 +896,7 @@ impl ClapProcessSession {
         let list = &mut *self.param_events;
         list.params.clear();
         list.notes.clear();
+        list.note_expressions.clear();
         list.midi.clear();
         list.order.clear();
         if !self.param_changes.is_empty() {
@@ -904,6 +948,43 @@ impl ClapProcessSession {
                     list.order
                         .push(InEventSlot::Note(list.notes.len() as u32 - 1));
                 }
+                PluginEvent::NoteExpression(expression) => {
+                    if list.note_expressions.len() == IN_EVENT_CAPACITY {
+                        continue;
+                    }
+                    let (expression_id, value) = match expression.expression {
+                        NoteExpressionKind::Pressure => (
+                            CLAP_NOTE_EXPRESSION_PRESSURE,
+                            f64::from(expression.value.clamp(0.0, 1.0)),
+                        ),
+                        NoteExpressionKind::Timbre => (
+                            CLAP_NOTE_EXPRESSION_BRIGHTNESS,
+                            f64::from(expression.value.clamp(0.0, 1.0)),
+                        ),
+                        NoteExpressionKind::Tuning => (
+                            CLAP_NOTE_EXPRESSION_TUNING,
+                            f64::from(expression.value) / 100.0,
+                        ),
+                    };
+                    list.note_expressions.push(clap_event_note_expression {
+                        header: clap_event_header {
+                            size: std::mem::size_of::<clap_event_note_expression>() as u32,
+                            time: expression.offset_frames,
+                            space_id: CLAP_CORE_EVENT_SPACE_ID,
+                            type_: CLAP_EVENT_NOTE_EXPRESSION,
+                            flags: 0,
+                        },
+                        expression_id,
+                        note_id: expression.note_id,
+                        port_index: expression.port_index as i16,
+                        channel: i16::from(expression.channel),
+                        key: i16::from(expression.key),
+                        value,
+                    });
+                    list.order.push(InEventSlot::NoteExpression(
+                        list.note_expressions.len() as u32 - 1,
+                    ));
+                }
                 PluginEvent::ControlChange(change) => {
                     // The CLAP CC boundary: normalized f32 → 3-byte MIDI 1.0
                     // (CLAP has no float CC event).
@@ -946,8 +1027,8 @@ impl ClapProcessSession {
                     list.order
                         .push(InEventSlot::Midi(list.midi.len() as u32 - 1));
                 }
-                // Parameter events ride the wire queue; expression/gesture
-                // events have no source yet.
+                // Parameter events ride the wire queue; gestures have no
+                // process input representation here.
                 _ => {}
             }
         }

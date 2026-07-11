@@ -15,7 +15,7 @@ use signal_ipc::{
     MappedSharedMemoryRegion, PluginAudioBlockLayout, PluginAudioBlockView, SharedMemoryBroker,
     SharedMemoryTransportKind, SharedMemoryTransportPayload,
 };
-use signal_render_plane::PluginBlockProcessor;
+use signal_render_plane::{PluginBlockProcessor, RenderBlockPluginEvent};
 
 /// Hard ceiling of the per-block wait budget, in microseconds.
 ///
@@ -58,6 +58,8 @@ pub struct ShmPluginProcessor {
     request_counter: AtomicU32,
     /// Blocks bypassed on budget miss or dead child.
     misses: AtomicU64,
+    /// Events rejected because the v1 shared-memory block carries audio only.
+    unsupported_events: AtomicU64,
     /// Cleared by the owning service on child death.
     alive: AtomicBool,
 }
@@ -106,6 +108,7 @@ impl ShmPluginProcessor {
             sample_rate_hz,
             request_counter,
             misses: AtomicU64::new(0),
+            unsupported_events: AtomicU64::new(0),
             alive: AtomicBool::new(true),
         })
     }
@@ -167,12 +170,30 @@ impl PluginBlockProcessor for ShmPluginProcessor {
             std::hint::spin_loop();
         }
     }
+
+    fn unsupported_event_count(&self) -> u64 {
+        self.unsupported_events.load(Ordering::Relaxed)
+    }
+
+    fn process_with_events(
+        &self,
+        scratch: &mut [f32],
+        frame_count: usize,
+        channels: usize,
+        events: &[RenderBlockPluginEvent],
+    ) -> bool {
+        self.unsupported_events
+            .fetch_add(events.len() as u64, Ordering::Relaxed);
+        self.process(scratch, frame_count, channels)
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use signal_render_plane::RenderPluginProcessor;
+    use signal_render_plane::{
+        RenderPluginEventKind, RenderPluginEventSupport, RenderPluginProcessor,
+    };
     use std::sync::Arc;
 
     fn test_region(
@@ -183,6 +204,49 @@ mod tests {
             .create_region("bridge-test", layout.region_bytes())
             .expect("test region should create");
         (broker, region)
+    }
+
+    #[test]
+    fn audio_only_shared_memory_backend_receipts_unsupported_events() {
+        let layout = PluginAudioBlockLayout {
+            max_frames: 128,
+            channels: 2,
+        };
+        let (broker, region) = test_region(layout);
+        let metadata = region.metadata().clone();
+        let processor = Arc::new(
+            ShmPluginProcessor::attach(
+                &metadata.region_id,
+                &metadata.backing_path,
+                metadata.total_bytes,
+                layout.max_frames,
+                layout.channels,
+                48_000,
+            )
+            .expect("attach processor"),
+        );
+        processor.mark_dead();
+        let handle = RenderPluginProcessor::new(Arc::clone(&processor) as Arc<_>);
+        assert_eq!(handle.event_support(), RenderPluginEventSupport::default());
+        let mut scratch = vec![0.0; 256];
+        assert!(!handle.process_with_events(
+            &mut scratch,
+            128,
+            2,
+            &[RenderBlockPluginEvent {
+                offset_frames: 0,
+                channel: 0,
+                kind: RenderPluginEventKind::NoteOn {
+                    key: 60,
+                    velocity: 1.0,
+                },
+            }],
+        ));
+        assert_eq!(handle.unsupported_event_count(), 1);
+        drop(handle);
+        drop(processor);
+        drop(region);
+        let _ = broker.destroy_region(&metadata);
     }
 
     #[test]

@@ -15,6 +15,24 @@ pub struct DiscoveredPlugin {
     pub vendor_name: String,
     /// Plugin kind string (e.g. `Instrument`, `Effect`).
     pub plugin_kind: String,
+    /// Authority posture for the discovered capability facts.
+    #[serde(default = "unknown_capability_authority")]
+    pub capability_authority: String,
+    /// Normalised functional feature identifiers declared by the plugin.
+    #[serde(default)]
+    pub feature_ids: Vec<String>,
+    /// Default number of audio input buses.
+    #[serde(default)]
+    pub audio_inputs: u16,
+    /// Default number of audio output buses.
+    #[serde(default)]
+    pub audio_outputs: u16,
+    /// Default number of MIDI/note input ports.
+    #[serde(default)]
+    pub midi_inputs: u16,
+    /// Default number of MIDI/note output ports.
+    #[serde(default)]
+    pub midi_outputs: u16,
     /// Primary plugin format (e.g. `clap`, `vst3`).
     pub primary_format: String,
     /// Format-specific plugin identifier, if applicable.
@@ -45,6 +63,10 @@ pub struct DiscoveredPlugin {
     pub bridge_source: Option<String>,
     /// Human-readable explanation for the hostability determination, if applicable.
     pub hostability_reason: Option<String>,
+}
+
+fn unknown_capability_authority() -> String {
+    "unknown".to_string()
 }
 
 /// Lightweight inventory entry for a plugin, suitable for list views without carrying full discovery metadata.

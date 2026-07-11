@@ -191,7 +191,8 @@ impl PartialEq for RenderNoteBuffer {
 // ── Plugin event delivery (g12.034 follow-up) ───────────────────────────────
 //
 // Stages carrying a plugin processor may also carry a compiled event stream
-// (notes + MIDI CC from the consumer's model). The executor slices the
+// (notes + MIDI performance data from the consumer's model). The executor
+// slices the
 // stream per block and hands the slice to the processor with intra-block
 // sample offsets; the processing backend converts to each plugin format's
 // native event lists AT THAT BOUNDARY (the model value stays 32-bit float
@@ -222,6 +223,53 @@ pub enum RenderPluginEventKind {
         /// plugin-format boundary).
         value: f32,
     },
+    /// Channel pitch bend, before any instrument-specific bend range.
+    PitchBend {
+        /// Bipolar wheel position in `-1..=1`; zero is centre.
+        value: f32,
+    },
+    /// Channel pressure (channel aftertouch).
+    ChannelPressure {
+        /// Pressure in `0..=1`.
+        value: f32,
+    },
+    /// Per-note expression targeting the active note on `channel`/`key`.
+    NoteExpression {
+        /// MIDI key number (0-127).
+        key: u8,
+        /// Expression dimension.
+        expression: RenderNoteExpressionKind,
+        /// Pressure/timbre use `0..=1`; tuning uses cents.
+        value: f32,
+    },
+}
+
+/// Format-neutral per-note expression dimensions supported by the render plane.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RenderNoteExpressionKind {
+    /// Per-note pressure / polyphonic aftertouch.
+    Pressure,
+    /// Per-note spectral brightness or sound character.
+    Timbre,
+    /// Per-note pitch deviation in cents.
+    Tuning,
+}
+
+/// Event families one live plugin processor backend can deliver to its
+/// native format. This describes host transport support, not the plugin's
+/// catalog-declared input capability.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct RenderPluginEventSupport {
+    /// Note-on and note-off delivery.
+    pub notes: bool,
+    /// Continuous-controller delivery.
+    pub control_change: bool,
+    /// Channel pitch-bend delivery.
+    pub pitch_bend: bool,
+    /// Channel-pressure delivery.
+    pub channel_pressure: bool,
+    /// Per-note pressure, timbre, and tuning delivery.
+    pub note_expression: bool,
 }
 
 /// One compiled plugin event on the ABSOLUTE stream clock (the consumer
@@ -703,6 +751,17 @@ pub trait PluginBlockProcessor: Send + Sync {
     /// Process one block in place; `false` = bypass, scratch untouched.
     fn process(&self, scratch: &mut [f32], frame_count: usize, channels: usize) -> bool;
 
+    /// Native event families this backend can deliver.
+    fn event_support(&self) -> RenderPluginEventSupport {
+        RenderPluginEventSupport::default()
+    }
+
+    /// Cumulative events rejected because this backend cannot represent or
+    /// route them. The counter is monotonic and safe to poll off-thread.
+    fn unsupported_event_count(&self) -> u64 {
+        0
+    }
+
     /// Process one block in place, delivering `events` (sorted by
     /// `offset_frames`, all offsets `< frame_count`) alongside the audio.
     /// Backends convert to their plugin format's native event lists here —
@@ -758,6 +817,16 @@ impl RenderPluginProcessor {
     ) -> bool {
         self.inner
             .process_with_events(scratch, frame_count, channels, events)
+    }
+
+    /// Native event families supported by this live backend.
+    pub fn event_support(&self) -> RenderPluginEventSupport {
+        self.inner.event_support()
+    }
+
+    /// Cumulative unsupported-event attempts observed by the backend.
+    pub fn unsupported_event_count(&self) -> u64 {
+        self.inner.unsupported_event_count()
     }
 }
 
@@ -4177,6 +4246,62 @@ mod tests {
         }
     }
 
+    /// Minimal alloc-free instrument backend: note-on starts a constant
+    /// signal at the event velocity; note-off returns to silence.
+    struct EventInstrumentProcessor {
+        amplitude_bits: AtomicU32,
+    }
+
+    impl EventInstrumentProcessor {
+        fn render(
+            &self,
+            scratch: &mut [f32],
+            frame_count: usize,
+            channels: usize,
+            events: &[RenderBlockPluginEvent],
+        ) -> bool {
+            let mut amplitude = f32::from_bits(self.amplitude_bits.load(Ordering::Relaxed));
+            let mut event_index = 0;
+            for frame in 0..frame_count {
+                while event_index < events.len()
+                    && events[event_index].offset_frames as usize == frame
+                {
+                    amplitude = match events[event_index].kind {
+                        RenderPluginEventKind::NoteOn { velocity, .. } => velocity,
+                        RenderPluginEventKind::NoteOff { .. } => 0.0,
+                        RenderPluginEventKind::ControlChange { .. }
+                        | RenderPluginEventKind::PitchBend { .. }
+                        | RenderPluginEventKind::ChannelPressure { .. }
+                        | RenderPluginEventKind::NoteExpression { .. } => amplitude,
+                    };
+                    event_index += 1;
+                }
+                for channel in 0..channels {
+                    scratch[frame * channels + channel] = amplitude;
+                }
+            }
+            self.amplitude_bits
+                .store(amplitude.to_bits(), Ordering::Relaxed);
+            true
+        }
+    }
+
+    impl PluginBlockProcessor for EventInstrumentProcessor {
+        fn process(&self, scratch: &mut [f32], frame_count: usize, channels: usize) -> bool {
+            self.render(scratch, frame_count, channels, &[])
+        }
+
+        fn process_with_events(
+            &self,
+            scratch: &mut [f32],
+            frame_count: usize,
+            channels: usize,
+            events: &[RenderBlockPluginEvent],
+        ) -> bool {
+            self.render(scratch, frame_count, channels, events)
+        }
+    }
+
     /// Constant-content plan with a Sum insert stage carrying `processor`.
     fn processor_spec(processor: Option<RenderPluginProcessor>) -> RenderPlanSpec {
         let values = vec![0.5f32; 480];
@@ -4457,6 +4582,65 @@ mod tests {
             ],
             "block 2 events land at frame − block start",
         );
+    }
+
+    #[test]
+    fn hosted_instrument_events_generate_audio_from_a_silent_lane() {
+        let (mut controller, mut executor) = render_plane();
+        let backend = Arc::new(EventInstrumentProcessor {
+            amplitude_bits: AtomicU32::new(0.0f32.to_bits()),
+        });
+        let handle = RenderPluginProcessor::new(backend as Arc<_>);
+        let events = event_buffer(vec![
+            RenderPluginEvent {
+                frame: 64,
+                channel: 0,
+                kind: RenderPluginEventKind::NoteOn {
+                    key: 60,
+                    velocity: 0.5,
+                },
+            },
+            RenderPluginEvent {
+                frame: 320,
+                channel: 0,
+                kind: RenderPluginEventKind::NoteOff { key: 60 },
+            },
+        ]);
+        let mut spec = events_spec(handle, events);
+        let RenderStageKind::Source { clips } = &mut spec.stages[0].kind else {
+            panic!("fixture lane source");
+        };
+        let RenderSource::Samples(samples) = &mut clips[0].source else {
+            panic!("fixture sample source");
+        };
+        samples.frames = vec![0.0; samples.frames.len()].into();
+        controller.install_plan(&spec).unwrap();
+        controller.set_playing(true).unwrap();
+
+        let mut frames = vec![0.0f32; 512 * 2];
+        executor.render_block(&mut frames);
+        assert!(frames[..64 * 2].iter().all(|sample| *sample == 0.0));
+        assert!(frames[96 * 2..256 * 2].iter().all(|sample| *sample > 0.0));
+        assert!(frames[320 * 2..].iter().all(|sample| *sample == 0.0));
+        assert!(controller.meters().iter().any(|(_, peak, _)| *peak > 0.0));
+
+        let offline = crate::offline::render_plan_to_pcm(
+            &spec,
+            &crate::offline::OfflineRenderOptions {
+                start_frame: 0,
+                frame_count: 512,
+                block_frames: 128,
+                capture_stage_ids: Vec::new(),
+            },
+        )
+        .expect("offline hosted instrument render");
+        assert!(offline.master[..64 * 2].iter().all(|sample| *sample == 0.0));
+        assert!(offline.master[96 * 2..256 * 2]
+            .iter()
+            .all(|sample| *sample > 0.0));
+        assert!(offline.master[320 * 2..]
+            .iter()
+            .all(|sample| *sample == 0.0));
     }
 
     #[test]
