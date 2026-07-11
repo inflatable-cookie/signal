@@ -416,12 +416,21 @@ independent stereo review.
 
 ### Batch 29.6X - Boundary Geometry Reassessment Contract
 
-- [ ] freeze one geometry research question from the Nyquist-localized
+- [x] freeze one geometry research question from the Nyquist-localized
   attribution; do not sweep filters or normalization
-- [ ] preserve passing interior channels, common-grid timing, and exact dual
+- [x] preserve passing interior channels, common-grid timing, and exact dual
   ownership while defining DC/Nyquist completion alternatives and stop gates
-- [ ] keep implementation, guards, phase reproof, synthesis, corpus, stereo,
+- [x] keep implementation, guards, phase reproof, synthesis, corpus, stereo,
   dynamic ratio, and product routing closed
+
+### Batch 29.6Y - Nyquist Completion Alias-Coupling Ablation
+
+- [ ] compare full, channel-`1535`-removed, and channel-`1535`-diagonalized
+  exact-pointwise frame matrices across all `11` residues
+- [ ] report conditioning, Jacobi gates, completion diagonal/off-diagonal energy,
+  frozen-mode Rayleigh changes, hashes, closure, and exact repeat
+- [ ] select orthogonal/multi-row completion research, replacement-completion
+  research, broader high-edge geometry, or inconclusive; implement nothing
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -853,8 +862,12 @@ independent stereo review.
 - 2026-07-11: Batch 29.6W selected boundary geometry. Exact-pointwise condition
   `2.9916436058` exceeds `1.25`; no preconditioner or guard opens. Evidence is
   in `docs/logs/2026-07/11-g10-029-jacobi-attribution-decision.md`.
+- 2026-07-11: Froze Batch 29.6X. Exact extrema isolate residue `0`, bins `2101`
+  and `2112`, and channel `1535` cross terms near `+/-0.492`; one three-operator
+  ablation must prove ownership before filter design. Evidence is in
+  `docs/logs/2026-07/11-g10-029-boundary-geometry-reassessment-contract.md`.
 
 ## Next Task
 
-Freeze Batch 29.6X boundary-geometry reassessment. Do not implement filters,
-normalizers, duals, or guards. Keep phase and synthesis work closed.
+Implement Batch 29.6Y Nyquist-completion matrix ablation and stop after its
+geometry research decision. Do not implement filters, duals, or guards.

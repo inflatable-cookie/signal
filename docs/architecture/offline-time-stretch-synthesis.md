@@ -284,8 +284,18 @@ endpoint-even modes carry more than `99.7%` of their mass in the Nyquist span.
 Scalar and block-aware preconditioner work is closed pending one geometry
 reassessment contract.
 
+That reassessment isolates channel `1535` before any filter design. The exact
+pointwise extrema both occur in residue `0`; their dominant bins are `2101`
+and `2112`. Channel `1535` contributes a cross term near `-0.491` to the
+minimum mode and `+0.492` to the maximum mode. The next report compares the
+full frame operator with two diagnostic ablations across every residue: remove
+the complete channel-`1535` rank-one term, or remove only its off-diagonal terms
+while retaining diagonal energy. These are matrix probes, not realizable
+filters.
+
 ## Next Task
 
-Freeze Batch 29.6X boundary-geometry reassessment. Do not implement filters,
-normalizers, or guards. Keep phase reproof, audio synthesis, corpus rendering,
-linked stereo, dynamic ratio, and product routing closed.
+Implement Batch 29.6Y Nyquist-completion matrix ablation and stop after its
+geometry research decision. Do not implement filters, duals, or guards. Keep
+phase reproof, audio synthesis, corpus rendering, linked stereo, dynamic ratio,
+and product routing closed.

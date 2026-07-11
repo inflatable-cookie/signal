@@ -464,3 +464,19 @@ Add these sources to the clean-room evidence set:
 | [Driedger and Muller, 2016](https://www.mdpi.com/2076-3417/6/2/57) | high | TSM review; WSOLA and phase-vocoder artifact boundaries |
 | [Roelands and Verhelst, 1993](https://www.isca-archive.org/eurospeech_1993/roelands93_eurospeech.html) | high | Original WSOLA family evidence |
 | [Balazs et al., 2011](https://arxiv.org/abs/1112.5262) | high | Nonstationary Gabor frame foundations and reconstruction conditions |
+
+## Nyquist Alias-Coupling Reassessment
+
+Accurate Jacobi attribution places both exact-pointwise limiting modes in
+residue `0`, dominated by bins `2101` and `2112`. Channel `1535` contributes a
+cross term near `-0.491` to the minimum mode and `+0.492` to the maximum mode.
+This localizes the next question but does not define a realizable boundary
+filter.
+
+The frozen report compares three frame operators across all residues: the full
+exact-pointwise operator, the operator with channel `1535` removed, and the
+operator with only that channel's off-diagonal coupling removed. If retaining
+its diagonal energy restores the condition cap, research moves to an
+orthogonal or multi-row completion. If complete removal is required, the
+completion family must be replaced. If removal still fails, the reassessment
+broadens to the complete high-edge geometry.

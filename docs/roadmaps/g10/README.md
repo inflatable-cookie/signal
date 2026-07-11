@@ -107,6 +107,11 @@ implementation remains Signal-owned.
   It freezes a full lexicographic cyclic complex-Hermitian Jacobi proof with
   bounded sweeps and residual, orthogonality, trace, and Frobenius gates. The
   proof passes all `33` matrices with maximum residual `9.186641e-13`.
+  Accurate attribution then selects boundary geometry: the exact-pointwise
+  condition is `2.9916436058`, and both limiting modes are Nyquist-localized.
+  Batch 29.6X freezes one report-only ablation of channel `1535` across every
+  residue, comparing the full operator, complete channel removal, and removal
+  of only its off-diagonal coupling before any filter design.
 - Offline artifacts and RealtimePreview have bounded contracts and prototype
   paths, but callback-safe preview integration and fully streaming artifact
   output remain gated until their owning source-fill/cache contracts exist.
@@ -196,6 +201,7 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Freeze Batch 29.6X boundary-geometry reassessment. Do not implement filters,
-normalizers, or guards. Keep audio synthesis, corpus rendering, linked stereo,
-dynamic ratio, and product integration closed.
+Implement Batch 29.6Y Nyquist-completion matrix ablation and stop after its
+geometry research decision. Do not implement filters, duals, or guards. Keep
+audio synthesis, corpus rendering, linked stereo, dynamic ratio, and product
+integration closed.

@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; boundary-geometry reassessment selected
+Status: active; Nyquist alias-coupling ablation frozen
 Owner: dsp
 Updated: 2026-07-11
 Related contracts: `046`, `048`, `049`
@@ -1002,6 +1002,41 @@ Do not research block-aware preconditioning or modify a scalar normalizer.
 Batch 29.6X must freeze one boundary-geometry reassessment using this
 attribution before any new filter bank is implemented.
 
+### Rule 26D: isolate Nyquist-completion alias coupling before filter design
+
+Batch 29.6Y asks one report-only question: is channel `1535` cross-bin coupling
+sufficient to cause the exact-pointwise bank's condition failure? Use only its
+already-built `33` Hermitian matrices and proven Jacobi solver.
+
+On every residue, compare exactly three operators:
+
+1. full exact-pointwise frame matrix
+2. channel-`1535` removed: subtract its complete rank-one outer product
+3. channel-`1535` diagonalized: subtract only its off-diagonal outer-product
+   terms while retaining its per-bin diagonal energy
+
+The last two are matrix ablations, not realizable filters or synthesis
+candidates. Do not alter responses, normalization, completion width, delays,
+hop, bin membership, or any channel other than the stated subtraction.
+
+Report all per-residue extrema and condition ratios, global extrema, Jacobi
+proof errors and hashes, channel-`1535` diagonal energy, off-diagonal Frobenius
+energy, and the eigenvalue/Rayleigh changes for the frozen exact-pointwise
+minimum and maximum modes. Require the Rule 26C numerical gates, finite values,
+contribution closure `1e-8`, and exact repeat in release.
+
+The outcome chooses one geometry research boundary:
+
+- diagonalized channel `1535` condition at most `1.25`: freeze separately
+  researched orthogonal or multi-row Nyquist completion; do not implement it
+- diagonalized condition above `1.25`, but removal condition at most `1.25`:
+  freeze a replacement completion family because diagonal energy is also wrong
+- removal condition above `1.25`: broaden reassessment to the complete high-edge
+  channel geometry; channel `1535` alone is insufficient
+- any numerical failure: stop as inconclusive
+
+No result authorizes filter implementation, duals, guards, phase, or synthesis.
+
 ### Rule 27: synthesize a protected centre, not a circular endpoint
 
 Extend the source in both directions with whole-sample even reflection,
@@ -1057,5 +1092,5 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Freeze Batch 29.6X boundary-geometry reassessment. Do not implement filters,
-normalizers, duals, or guards. Keep phase and synthesis work closed.
+Implement Batch 29.6Y Nyquist-completion matrix ablation and stop after its
+geometry research decision. Do not implement filters, duals, or guards.
