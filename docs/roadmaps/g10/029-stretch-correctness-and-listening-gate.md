@@ -525,12 +525,21 @@ independent stereo review.
 
 ### Batch 29.6AJ - Automatic Time-Resolution Selection Contract
 
-- [ ] choose one bounded source-evidence selector for the passing four-level
+- [x] choose one bounded source-evidence selector for the passing four-level
   window bank; do not combine detector families or tune against corpus output
-- [ ] freeze declared-event recovery, dense-event, false-positive, schedule
+- [x] freeze declared-event recovery, dense-event, false-positive, schedule
   legality, stability, stereo-decision, finite-value, and repeat evidence
-- [ ] open selector implementation only on a complete contract; keep phase,
+- [x] open selector implementation only on a complete contract; keep phase,
   stretched synthesis, corpus, dynamic ratio, cache, and routing closed
+
+### Batch 29.6AK - Rényi Time-Resolution Selection
+
+- [ ] compute normalized `alpha=0.7` local Rényi evidence for all four passing
+  resolutions on one fixed `128`-frame decision grid
+- [ ] solve one legal minimum-entropy path and prove impulse, steady, dense,
+  noise, mixed, perturbation, gain/polarity, and shared-stereo gates
+- [ ] open only a separately frozen variable-hop phase contract on complete
+  passage; produce no modified coefficients or stretched audio
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -1016,8 +1025,12 @@ independent stereo review.
   `1.5934675721`, peak error `7.2164496601e-16`, complete coverage, compact
   support, real output, and exact repeat. Evidence is in
   `docs/logs/2026-07/11-g10-029-time-adaptive-reconstruction-proof.md`.
+- 2026-07-11: Batch 29.6AJ froze one automatic selector: normalized local
+  `alpha=0.7` Rényi entropy, followed by one legal minimum-cost resolution path.
+  Evidence is in
+  `docs/logs/2026-07/11-g10-029-renyi-resolution-selection-contract.md`.
 
 ## Next Task
 
-Freeze Batch 29.6AJ automatic time-resolution selection. Do not implement the
-selector, phase, or stretched synthesis.
+Implement Batch 29.6AK Rényi time-resolution selection and stop at its schedule
+decision. Do not implement phase or stretched synthesis.

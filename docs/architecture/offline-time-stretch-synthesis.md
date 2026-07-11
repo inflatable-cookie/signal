@@ -372,7 +372,16 @@ is `7.2164496601e-16`, conjugate-symmetry error `4.8233240331e-13`, and
 imaginary residue `3.4192121536e-16`. Automatic resolution selection is now the
 only open research question. Phase and stretched synthesis remain closed.
 
+Automatic selection uses one evidence family: local Rényi entropy across the
+four passing window resolutions. Every candidate is measured over the same
+source region with lattice-area normalization. One bounded offline path chooses
+minimum total entropy while allowing adjacent resolution levels to differ by at
+most one; exact ties prefer longer windows. Stereo later sums channel energies
+before normalization and shares the resulting path. No onset, HPSS, flux, peak,
+or learned classifier participates.
+
 ## Next Task
 
-Freeze Batch 29.6AJ automatic time-resolution selection. Do not implement the
-selector, phase, stretched synthesis, corpus, stereo, dynamic ratio, or routing.
+Implement Batch 29.6AK Rényi time-resolution selection and stop at its schedule
+decision. Do not implement phase, stretched synthesis, corpus, dynamic ratio,
+or routing.

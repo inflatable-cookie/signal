@@ -145,7 +145,9 @@ implementation remains Signal-owned.
   time-adaptive painless reconstruction only; selection and stretching remain
   closed. That reconstruction passes all schedules and controls with adaptive
   condition `1.5934675721` and sub-`1e-15` peak error. Batch 29.6AJ must freeze
-  automatic time-resolution selection before detector implementation.
+  automatic time-resolution selection before detector implementation. It now
+  freezes one normalized local `alpha=0.7` Rényi selector and legal minimum-cost
+  resolution path. Batch 29.6AK owns report-only selector evidence.
 - Offline artifacts and RealtimePreview have bounded contracts and prototype
   paths, but callback-safe preview integration and fully streaming artifact
   output remain gated until their owning source-fill/cache contracts exist.
@@ -235,6 +237,6 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Freeze Batch 29.6AJ automatic time-resolution selection. Keep selector
-implementation, phase, stretched synthesis, corpus, linked stereo, dynamic
-ratio, and product integration closed.
+Implement Batch 29.6AK Rényi time-resolution selection and stop at its schedule
+decision. Keep phase, stretched synthesis, corpus, linked stereo, dynamic ratio,
+and product integration closed.

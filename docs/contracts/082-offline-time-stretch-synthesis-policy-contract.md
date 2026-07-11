@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; automatic time-resolution selection requires contract
+Status: active; automatic time-resolution selection frozen
 Owner: dsp
 Updated: 2026-07-11
 Related contracts: `046`, `048`, `049`
@@ -1362,6 +1362,75 @@ is `3.4192121536e-16`. Peak and RMS reconstruction errors are
 `6987080e517f1aec` repeats. Batch 29.6AJ must freeze automatic selection before
 any detector implementation.
 
+### Rule 26J: one Rényi path owns automatic time resolution
+
+Batch 29.6AJ selects the local Rényi-entropy method from
+[Liuni et al.](https://arxiv.org/abs/1109.6313) and
+[Liuni et al.](https://arxiv.org/abs/1109.6314). Do not combine it with onset,
+spectral-flux, HPSS, peak, classifier, or corpus-output evidence.
+
+Evaluate one decision anchor every `128` source frames. At each anchor, reflect
+the source into one centered `4096`-frame comparison region. Analyze that exact
+region with all four Batch 29.6AI square-root Hann windows and their natural
+hops `128`, `256`, `512`, and `1024`, retaining the common `4096` FFT size.
+Include only coefficient frames whose centers lie inside the comparison region.
+
+For resolution `r`, combine squared coefficient magnitudes across channels
+before normalization. Let `E_r` be their sum and `p_r[i]=e_r[i]/E_r`. With
+Rényi order `alpha=0.7`, compute
+
+`H_r = log2(sum_i p_r[i]^alpha)/(1-alpha) + log2(a_r*b)`
+
+where `a_r` is the resolution hop and `b=1/4096` is the shared normalized
+frequency step. If `E_r=0` for every resolution, select `4096`. Values must be
+finite otherwise. Do not floor coefficients, discard bins, weight frequency
+regions, or add an entropy margin.
+
+Across all anchors, solve one deterministic minimum-total-entropy path through
+the four resolution levels. Consecutive anchors may stay equal or change by one
+level. Equal total cost chooses the lexicographically longer-window path. Map
+the selected level field into the proven Batch 29.6AI scheduler by nearest
+decision anchor, with exact halfway ties choosing the earlier anchor. The
+scheduler's existing one-level transition and `min(W[n],W[n+1])/4` hop rules
+remain authoritative.
+
+Batch 29.6AK is report-only and produces no audio. Test mono and linked-energy
+stereo forms of:
+
+- silence and steady `55 Hz`, `440 Hz`, `8 kHz`, and two-tone controls
+- one impulse, two impulses `256` frames apart, and impulses at both boundaries
+- linear/exponential chirps, deterministic noise, and mixed tonal/transient audio
+- gain scales `0.25`, `1`, and `4`, polarity inversion, channel swap, hard pan,
+  and a transient present in only one stereo channel
+- one deterministic `1e-6` relative-noise perturbation of every non-silent control
+
+Report per-anchor energies, entropies, raw winners, selected levels, path cost,
+window counts, transition counts, hop extrema, reflected reads, non-finite
+values, channel-energy closure, and stable input/evidence/path hashes.
+
+Require:
+
+- silence and every steady tonal control choose only `4096`
+- each isolated impulse has a selected `512` anchor within `256` frames and
+  only `4096` decisions beyond `2048` frames
+- the two-impulse control has no `4096` decision between the impulses
+- boundary impulses exercise reflection and recover a `512` anchor within
+  `256` frames of the logical endpoint
+- chirps exercise at least two resolution levels; deterministic noise uses no
+  `512` window; mixed audio uses `512` near its declared transient and `4096`
+  in its stationary outer quarters
+- gain, polarity, channel-swap, and hard-pan variants produce identical paths;
+  a one-sided stereo transient produces the same shared short-window decision
+  as its mono source
+- perturbation changes at most `5%` of decision levels for each control
+- all paths and derived schedules obey level/hop rules, channel-energy closure
+  is `1e-12`, values are finite, and full reports repeat exactly
+
+Any failure returns only to selector research. Passage opens one separately
+frozen variable-hop phase contract on the exact selected schedules. It does not
+authorize phase modification, stretched synthesis, corpus, dynamic ratio,
+cache, or routing.
+
 ### Rule 27: synthesize a protected centre, not a circular endpoint
 
 Extend the source in both directions with whole-sample even reflection,
@@ -1417,5 +1486,5 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Freeze Batch 29.6AJ automatic time-resolution selection. Do not implement the
-selector, phase, or stretched synthesis.
+Implement Batch 29.6AK Rényi time-resolution selection and stop at its schedule
+decision. Do not implement phase or stretched synthesis.

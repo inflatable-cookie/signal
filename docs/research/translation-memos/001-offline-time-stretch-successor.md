@@ -178,8 +178,8 @@ rejected ownership crossfade.
 
 ## Next Task
 
-Freeze automatic time-resolution selection. Do not implement the selector,
-phase, or stretched synthesis.
+Implement Rényi automatic time-resolution selection. Do not implement phase or
+stretched synthesis.
 
 ## Frequency-Adaptive Reassessment
 
@@ -587,3 +587,27 @@ schedules cover the padded/source domains, retain compact support, reconstruct
 all controls below `7.2164496601e-16` peak error, and repeat exactly. Adaptive
 condition is `1.5934675721`, well inside the frozen cap. Transform mechanics no
 longer govern the next decision; automatic schedule selection does.
+
+## Automatic Resolution Selection
+
+Use one local Rényi-entropy selector. Liuni et al. compare spectrogram sparsity
+over the same time-frequency region and choose the minimum-entropy resolution;
+their published examples select short windows at percussion/fast modulation and
+long windows for stationary resonance. The frozen order is `alpha=0.7`.
+
+Signal evaluates the four passing resolutions every `128` frames and solves one
+minimum-cost legal level path. Lattice-cell area is included so different hops
+remain comparable. Exact ties prefer longer windows. Stereo combines channel
+energy before entropy normalization. This is still one selector; no onset,
+HPSS, flux, classifier, confidence margin, or corpus output joins it.
+
+Selector evidence must recover declared impulse regions, leave stationary tones
+long, avoid shortest windows on stationary noise, survive scale/polarity/stereo
+equivalences, remain stable under a frozen small perturbation, and emit only
+Batch 29.6AI-legal schedules before phase work can open.
+
+Additional primary source:
+
+| Source | Confidence | Transfer boundary |
+| --- | --- | --- |
+| [Liuni et al., 2011](https://arxiv.org/abs/1109.6314) | high | `alpha=0.7` local Rényi entropy and minimum-sparsity resolution selection |
