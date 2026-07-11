@@ -13,13 +13,13 @@ allowed.
 ## Decision Gate
 
 First prove the transformed frame is identity within the existing numerical
-gates. Then measure every row's new energy and peak outside its original
-support, real-endpoint/mirror closure, and inverse-FFT excluded energy through
-radius `16384`.
+gates. Then scan rows in ascending order for new energy and peak outside their
+original support plus real-endpoint/mirror closure. Stop at the first violation.
 
-Passage requires relative support leakage and out-of-support peak at most
-`1e-12`, endpoint closure `1e-12`, and excluded atom energy `1e-12` for every
-row within the radius cap. Condition one without localization is a rejection.
+Passage requires relative support leakage, out-of-support peak, and endpoint
+closure at most `1e-12` for every row. It opens a separate large-probe tail
+contract because the `4224`-point matrix proof cannot establish a
+`16384`-frame atom radius.
 
 ## Direction
 

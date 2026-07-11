@@ -520,6 +520,40 @@ pub struct StretchCommonGridResidualBoundaryReview {
     pub direction: StretchCommonGridResidualBoundaryDirection,
 }
 
+/// Direction selected by complete canonical block-tightener feasibility.
+#[cfg(all(test, not(debug_assertions)))]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum StretchCommonGridCanonicalTightenerDirection {
+    /// Every row preserves support and may advance to large-probe localization.
+    LargeProbeLocalization,
+    /// Support or endpoint damage closes the common-grid family.
+    TransformFamilyReassessment,
+    /// Numerical proof failed before a localization decision.
+    Inconclusive,
+}
+
+/// Complete release-only canonical block-tightener feasibility report.
+#[cfg(all(test, not(debug_assertions)))]
+#[derive(Clone, Debug, PartialEq)]
+pub struct StretchCommonGridCanonicalTightenerReview {
+    /// Number of transformed rows evaluated before passage or first violation.
+    pub evaluated_rows: usize,
+    /// First violating row, or `usize::MAX` when every row passes.
+    pub first_violating_row: usize,
+    /// Global transformed-frame minimum, maximum, and condition ratio.
+    pub frame_values: [f64; 3],
+    /// Maximum residual, orthogonality, trace, Frobenius, and identity errors.
+    pub maximum_proof_errors: [f64; 5],
+    /// Maximum relative support leakage, out-of-support peak, and endpoint error.
+    pub localization_errors: [f64; 3],
+    /// Original and transformed nonzero-bin counts for the limiting row.
+    pub limiting_support_bins: [usize; 2],
+    /// Stable hashes of input filters, block tighteners, evaluated rows, and report.
+    pub hashes: [u64; 4],
+    /// Selected continuation direction.
+    pub direction: StretchCommonGridCanonicalTightenerDirection,
+}
+
 /// Numerical evidence for one bounded Hermitian Jacobi solve.
 #[derive(Clone, Debug, PartialEq)]
 pub struct StretchCommonGridJacobiEvidence {

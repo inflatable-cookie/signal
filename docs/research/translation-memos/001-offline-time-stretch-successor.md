@@ -178,9 +178,8 @@ rejected ownership crossfade.
 
 ## Next Task
 
-Implement one complete canonical block-tightener feasibility proof after
-boundary ablations fail to improve condition `2.0862893665`. Do not run
-identity reconstruction or audio synthesis.
+Freeze transform-family reassessment after canonical block tightening violates
+the compact-support gate. Do not run identity reconstruction or synthesis.
 
 ## Frequency-Adaptive Reassessment
 
@@ -520,3 +519,9 @@ The final common-grid question uses the exact per-residue canonical
 failure to localize every transformed atom inside the existing `16384`-frame
 cap rejects the family. No sparse or localized approximation follows a
 failure; research returns to transform-family selection.
+
+The exact tightener reaches condition `1.0000000000005773` but makes row `12`
+nonzero across all `2113` positive bins. Its first violating peak is
+`1.2528705611e-12`. The frozen threshold is not retuned after measurement.
+Common-grid correction is closed; the next family must make invertibility and
+localization compatible by construction.

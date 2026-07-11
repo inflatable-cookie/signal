@@ -479,12 +479,21 @@ independent stereo review.
 
 ### Batch 29.6AE - Canonical Block-Tightener Feasibility
 
-- [ ] apply exact Jacobi `S^-1/2` to every residue of the rejected `1538`-row
+- [x] apply exact Jacobi `S^-1/2` to every residue of the rejected `1538`-row
   candidate; add no approximation, floor, localization, or correction
-- [ ] prove tight-frame algebra, finite values, hashes, and exact repeat, then
-  report per-row support leakage, endpoint closure, and bounded atom tails
-- [ ] open identity reconstruction only if leakage and all-row localization
-  pass; otherwise close common-grid work and select transform-family reassessment
+- [x] prove tight-frame algebra, finite values, hashes, and exact repeat, then
+  scan per-row support leakage and endpoint closure, stopping at first violation
+- [x] open a separate large-probe localization contract only if every row
+  passes; otherwise close common-grid work and select transform-family reassessment
+
+### Batch 29.6AF - Transform-Family Reassessment
+
+- [ ] close common-grid correction work and reassess the next invertible
+  time-frequency family against the measured quality and localization failures
+- [ ] preserve one global time map, exact target length, real output, and
+  reconstruction-first gating; do not re-open rejected component synthesis
+- [ ] freeze one next research question or stop for operator review; keep DSP
+  implementation, corpus, stereo, dynamic ratio, and routing closed
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -946,8 +955,12 @@ independent stereo review.
   final common-grid feasibility gate; compact-support leakage and all-row atom
   localization, not guaranteed condition, decide the family. Evidence is in
   `docs/logs/2026-07/11-g10-029-canonical-block-tightener-contract.md`.
+- 2026-07-11: Batch 29.6AE closed the common-grid family. Canonical tightening
+  reaches condition `1.0000000000005773`, but row `12` violates frozen compact
+  support at peak `1.2528705611e-12`. Evidence is in
+  `docs/logs/2026-07/11-g10-029-canonical-block-tightener-rejection.md`.
 
 ## Next Task
 
-Implement Batch 29.6AE canonical block-tightener feasibility and stop after its
-localization decision. Do not run identity reconstruction or synthesis.
+Freeze Batch 29.6AF transform-family reassessment. Do not implement another
+common-grid correction, identity reconstruction, guard, phase, or synthesis.

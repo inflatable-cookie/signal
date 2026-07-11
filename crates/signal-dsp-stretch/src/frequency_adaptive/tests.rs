@@ -323,6 +323,27 @@ fn common_grid_residual_boundary_attribution_selects_direction() {
 }
 
 #[test]
+#[cfg(not(debug_assertions))]
+fn common_grid_canonical_tightener_selects_localization_direction() {
+    let first = common_grid_canonical_tightener_review();
+    let repeated = common_grid_canonical_tightener_review();
+    assert_eq!(first, repeated);
+    assert!(first.frame_values[2] <= 1.0 + 1.0e-10, "{first:?}");
+    assert!(first.maximum_proof_errors[0] <= 1.0e-8, "{first:?}");
+    assert!(first.maximum_proof_errors[1] <= 1.0e-10, "{first:?}");
+    assert!(first.maximum_proof_errors[2] <= 1.0e-12, "{first:?}");
+    assert!(first.maximum_proof_errors[3] <= 1.0e-10, "{first:?}");
+    assert!(first.maximum_proof_errors[4] <= 1.0e-10, "{first:?}");
+    assert!(first.evaluated_rows > 0);
+    assert_eq!(
+        first.direction,
+        StretchCommonGridCanonicalTightenerDirection::TransformFamilyReassessment
+    );
+    assert!(first.hashes.iter().all(|hash| *hash != 0));
+    eprintln!("common_grid_canonical_tightener {first:?}");
+}
+
+#[test]
 fn common_grid_phase_transport_rejects_high_band_phase_aliasing() {
     for frequency in [312.5_f32, 1_000.0] {
         let input = (0..24_576)

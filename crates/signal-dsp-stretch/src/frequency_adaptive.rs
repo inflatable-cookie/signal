@@ -18,10 +18,13 @@ pub use types::{
 };
 #[cfg(all(test, not(debug_assertions)))]
 pub use types::{
-    StretchCommonGridNyquistAblationDirection, StretchCommonGridNyquistAblationOperator,
-    StretchCommonGridResidualBoundaryDirection, StretchCommonGridThreeRowNyquistDirection,
+    StretchCommonGridCanonicalTightenerDirection, StretchCommonGridNyquistAblationDirection,
+    StretchCommonGridNyquistAblationOperator, StretchCommonGridResidualBoundaryDirection,
+    StretchCommonGridThreeRowNyquistDirection,
 };
 
+#[cfg(all(test, not(debug_assertions)))]
+mod canonical_block_tightener;
 mod common_grid;
 mod conditioning_attribution;
 mod hermitian_jacobi;
@@ -31,6 +34,8 @@ mod nyquist_alias_coupling;
 mod residual_boundary_attribution;
 #[cfg(all(test, not(debug_assertions)))]
 mod three_row_nyquist;
+#[cfg(all(test, not(debug_assertions)))]
+pub(crate) use canonical_block_tightener::common_grid_canonical_tightener_review;
 pub(crate) use common_grid::common_grid_boundary_reconstruction_review_mono;
 pub(crate) use common_grid::common_grid_derivative_tone_review_mono;
 pub(crate) use common_grid::common_grid_preconditioned_reconstruction_review_mono;

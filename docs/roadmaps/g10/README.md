@@ -132,6 +132,9 @@ implementation remains Signal-owned.
   It freezes one final common-grid candidate: exact per-residue canonical
   `S^-1/2`, rejected unless it preserves compact support and bounded all-row
   atom localization. Batch 29.6AE owns that feasibility proof only.
+  It reaches numerical identity but violates compact support on row `12`, so
+  common-grid correction is closed. Batch 29.6AF owns transform-family
+  reassessment before any more DSP implementation.
 - Offline artifacts and RealtimePreview have bounded contracts and prototype
   paths, but callback-safe preview integration and fully streaming artifact
   output remain gated until their owning source-fill/cache contracts exist.
@@ -221,6 +224,6 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Implement Batch 29.6AE canonical block-tightener feasibility and stop after its
-localization decision. Do not run identity reconstruction or synthesis. Keep
+Freeze Batch 29.6AF transform-family reassessment. Do not implement another
+common-grid correction, reconstruction, guard, phase, or synthesis. Keep
 corpus rendering, linked stereo, dynamic ratio, and product integration closed.

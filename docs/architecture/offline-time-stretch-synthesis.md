@@ -334,8 +334,14 @@ therefore compact-support leakage and all-row inverse-FFT localization, not
 condition alone. Failure closes the common-grid family rather than opening
 another correction.
 
+Canonical tightening reaches numerical identity but fails the frozen support
+gate: row `12` expands from `19` bins to all `2113` positive bins. The peak
+introduced outside support is `1.2528705611e-12`. This closes common-grid
+correction work without claiming audible damage; transform-family reassessment
+must now account for localization explicitly.
+
 ## Next Task
 
-Implement Batch 29.6AE canonical block-tightener feasibility and stop after its
-localization decision. Do not run identity reconstruction or synthesis. Keep
-phase, corpus rendering, linked stereo, dynamic ratio, and routing closed.
+Freeze Batch 29.6AF transform-family reassessment. Do not implement another
+common-grid correction, reconstruction, guard, phase, or synthesis. Keep
+corpus rendering, linked stereo, dynamic ratio, and routing closed.

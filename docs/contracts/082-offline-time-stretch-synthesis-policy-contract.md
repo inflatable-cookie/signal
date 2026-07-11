@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; canonical block-tightener feasibility frozen
+Status: active; common-grid family rejected
 Owner: dsp
 Updated: 2026-07-11
 Related contracts: `046`, `048`, `049`
@@ -1194,29 +1194,40 @@ The transformed frame must prove `T*S*T=I` with global condition at most
 `1e-10`, finite values, stable hashes, and exact release repeat. These algebraic
 gates are necessary but not sufficient.
 
-Measure damage against every input row before reconstruction:
+Scan damage against input rows in ascending order before reconstruction:
 
 - energy introduced at bins where that row was exactly zero, divided by total
   transformed-row energy
 - peak magnitude introduced outside original support
 - original and transformed support-bin counts
 - real DC/Nyquist and conjugate-mirror closure
-- whole-row inverse-FFT excluded-energy curves at radii `384`, `768`, `1536`,
-  `3072`, `6144`, `12288`, and `16384`
-- maximum values, owning rows, all-row hashes, and aggregate evidence hash
+- evaluated-row count, first violating row, maximum values, row hashes, and
+  aggregate evidence hash
 
 Passage requires maximum relative support leakage and out-of-support peak at
-most `1e-12`, real-endpoint/mirror closure `1e-12`, and every transformed atom
-to reach excluded energy `1e-12` within `16384` frames. These gates preserve
-the compact-support and bounded-localization properties on which the common-grid
-phase and guard work depends.
+most `1e-12` and real-endpoint/mirror closure `1e-12`. Stop at the first
+support or endpoint violation. Only if all `1538` rows pass may a separately
+contracted large-probe atom-localization proof open; a `4224`-point inverse FFT
+must not claim a `16384`-frame tail bound.
 
 Any algebraic or localization failure rejects complete block tightening and
 closes this common-grid family. Do not add sparse approximations, eigenvalue
 floors, residue interpolation, localized corrections, or a second threshold.
-Passage opens only identity reconstruction. Failure opens a transform-family
-reassessment. No result opens phase, synthesis, corpus, stereo, dynamic ratio,
-cache, or product routing.
+Passage opens only the large-probe localization contract, not identity
+reconstruction. Failure opens a transform-family reassessment. No result opens
+phase, synthesis, corpus, stereo, dynamic ratio, cache, or product routing.
+
+Batch 29.6AE rejects complete canonical tightening at row-local support. Frame
+condition is `1.0000000000005773` and every numerical gate passes. Rows `0..11`
+pass the support scan; row `12` expands from `19` nonzero bins to all `2113`
+positive bins and reaches out-of-support peak `1.2528705611e-12`, above the
+frozen `1e-12` cap. Relative leaked energy is `2.4085528358e-24`; the decision
+is structural compact-support failure, not an audibility claim.
+
+Maximum identity error is `2.4357207508e-14`; evidence hash
+`8a45d8c4f579a111` repeats. Do not move the threshold or add localization.
+The common-grid family is closed. Batch 29.6AF must freeze transform-family
+reassessment before more DSP implementation.
 
 ### Rule 27: synthesize a protected centre, not a circular endpoint
 
@@ -1273,5 +1284,5 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Implement Batch 29.6AE canonical block-tightener feasibility and stop after its
-localization decision. Do not run identity reconstruction or synthesis.
+Freeze Batch 29.6AF transform-family reassessment. Do not implement another
+common-grid correction, identity reconstruction, guard, phase, or synthesis.
