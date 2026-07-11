@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; boundary-tail ownership attributed
+Status: active; endpoint-even normalizer frozen
 Owner: dsp
 Updated: 2026-07-11
 Related contracts: `046`, `048`, `049`
@@ -814,18 +814,47 @@ and tail identity errors pass. Preserved-channel hash `899c7f7b775c1378` and
 Nyquist-completion hash `463ca8b834c318d5` repeat exactly. The representative
 guard, all-channel guard, phase reproof, and synthesis remain unauthorized.
 
-### Rule 26A: reassess conditioning before another transform candidate
+### Rule 26A: use one endpoint-even common frame normalizer
 
-Batch 29.6Q must freeze one smooth endpoint-compatible frame preconditioner or
-normalizer before implementation. It must retain raw channel `0` compactness,
-the Rule 26 channel `1535` completion, and the unchanged interior geometry. Do
-not sweep completion width, taper, delay, or channel allocation. The contract
-must explain why the preconditioner can hold condition ratio at most `1.25`
-without recreating the DC or Nyquist tails attributed in Batch 29.6O.
+Batch 29.6Q freezes one scalar preconditioner. Start from the complete raw Rule
+26 bank, including unchanged channels `0..1534` and the channel `1535` Nyquist
+completion. Let its positive-frequency energy be
+`E(f)=sum_k |H_k(f)|^2` and its exact scalar tightener be
+`r(f)=1/sqrt(E(f))`. Coverage failure, non-finite energy, or non-positive
+energy rejects the candidate; do not clamp or repair it.
 
-Reconstruction remains the first implementation gate. Representative guard,
-all-channel guard, derivative and projected-field reproof keep their Rule 26
-order. Audio coefficient assembly and every synthesis surface remain closed.
+Use spacing `h=0.5/1535`, boundary width `w=16h`, normalized boundary position
+`s in [0,1]`, and quintic smootherstep
+`b(s)=6s^5-15s^4+10s^3`. Define one real multiplier:
+
+- for `0 <= f < w`, `p(f)=r(0)+b(f/w)*(r(f)-r(0))`
+- for `w <= f <= 0.5-w`, `p(f)=r(f)`
+- for `0.5-w < f <= 0.5`, let `s=(0.5-f)/w` and use
+  `p(f)=r(0.5)+b(s)*(r(f)-r(0.5))`
+
+Multiply every channel by the same `p(f)`. Do not change support, phase,
+delay, channel allocation, completion width, or the raw filter definitions.
+Hash the raw bank and the scalar multiplier separately. Do not add per-channel
+gains, a second correction pass, analytic derivative estimates, fitted slopes,
+or another taper. Quintic endpoint blending is a Signal design inference: the
+published frame constructions justify verified frame bounds and canonical-dual
+reconstruction, not this specific normalizer.
+
+The multiplier equals the exact tightener outside the two boundary spans. At
+DC and Nyquist it retains the exact endpoint scale while its first and second
+one-sided derivatives are zero. Even real-output mirroring therefore has no
+normalizer cusp at either endpoint. Common multiplication also preserves every
+raw filter's frequency support and relative channel geometry. These properties
+do not prove a bounded time atom; measured guards remain authoritative.
+
+Batch 29.6R first repeats the Rule 26 reconstruction proof and requires
+condition ratio at most `1.25`, dual residual at most `1e-8`, all identity
+errors within their existing bounds, finite values, raw-bank hash parity, a
+stable nonzero multiplier hash, and exact repeat evidence. Failure stops.
+Only reconstruction passage opens the representative channels `0`, `15`,
+`16`, `768`, `1534`, and `1535` at the unchanged `1e-12` excluded-energy and
+`16384`-frame cap. All-channel guard, derivative and projected-field reproof,
+coefficient assembly, and every synthesis surface retain their Rule 26 order.
 
 ### Rule 27: synthesize a protected centre, not a circular endpoint
 
@@ -882,7 +911,7 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Freeze Batch 29.6Q around one smooth endpoint-compatible frame preconditioner
-or normalizer. Do not implement or sweep candidates. Keep guard work, phase
-reproof, coefficient assembly, audio synthesis, corpus, stereo, dynamic ratio,
-and product routing closed.
+Implement Batch 29.6R through reconstruction and stop on failure. Run the six
+representative guards only after reconstruction passes. Keep all-channel guard,
+phase reproof, coefficient assembly, audio synthesis, corpus, stereo, dynamic
+ratio, and product routing closed.

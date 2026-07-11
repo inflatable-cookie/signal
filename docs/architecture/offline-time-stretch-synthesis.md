@@ -2,7 +2,7 @@
 
 Status: active successor architecture
 Owner: dsp
-Updated: 2026-07-10
+Updated: 2026-07-11
 Contract refs: `046`, `082`
 Roadmap ref: `g10.029`
 
@@ -235,8 +235,18 @@ not run. The next design boundary is conditioning: freeze one smooth,
 endpoint-compatible preconditioner or normalizer that does not recreate the
 DC tail caused by pointwise tightening or change the frozen Nyquist completion.
 
+The frozen preconditioner is one common real multiplier. It uses exact inverse
+square-root frame energy in the interior and blends that function to its exact
+endpoint values with quintic smootherstep across the existing `16`-spacing DC
+and Nyquist spans. The multiplier has zero first and second endpoint
+derivatives, preserves raw filter support and relative channel geometry, and
+requires no fitted derivative. This removes the known real-mirror cusp by
+construction; only measured conditioning and dual-atom guards can establish
+that the complete bank is usable.
+
 ## Next Task
 
-Freeze the Batch 29.6Q preconditioner contract. Do not implement or sweep
-candidates. Keep guards, phase reproof, audio synthesis, corpus rendering,
-linked stereo, dynamic ratio, and product routing closed.
+Implement Batch 29.6R through reconstruction. Run representative guards only
+after reconstruction passes. Keep the all-channel guard, phase reproof, audio
+synthesis, corpus rendering, linked stereo, dynamic ratio, and product routing
+closed.

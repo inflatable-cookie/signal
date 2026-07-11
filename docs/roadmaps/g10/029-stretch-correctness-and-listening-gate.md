@@ -344,14 +344,27 @@ independent stereo review.
 
 ### Batch 29.6Q - Smooth Boundary Preconditioner Contract
 
-- [ ] freeze one smooth endpoint-compatible frame preconditioner or normalizer;
+- [x] freeze one smooth endpoint-compatible frame preconditioner or normalizer;
   do not sweep completion widths, tapers, delays, or channel allocations
-- [ ] preserve raw channel `0` compactness, the Batch 29.6P channel `1535`
+- [x] preserve raw channel `0` compactness, the Batch 29.6P channel `1535`
   completion, condition ratio at most `1.25`, and exact canonical-dual identity
-- [ ] order reconstruction, representative guard, all-channel guard, then
+- [x] order reconstruction, representative guard, all-channel guard, then
   derivative-estimator and projected-field reproof as hard stop gates
-- [ ] keep coefficient assembly, synthesis, corpus, stereo, dynamic ratio, and
+- [x] keep coefficient assembly, synthesis, corpus, stereo, dynamic ratio, and
   product routing closed
+  - frozen candidate: one common inverse-square-root frame-energy multiplier,
+    quintic-blended to constant endpoint values across the existing `16h` spans
+
+### Batch 29.6R - Endpoint-Even Normalization Proof
+
+- [ ] implement only the frozen common scalar normalizer and separate raw-bank
+  and multiplier hashes; do not add gains, fitted slopes, or variants
+- [ ] require complete reconstruction condition ratio at most `1.25`, dual
+  residual at most `1e-8`, identity-error passage, finite values, and exact repeat
+- [ ] run the six-channel representative guard only after reconstruction passes;
+  stop before the all-channel guard on either failure
+- [ ] keep phase reproof, coefficient assembly, synthesis, corpus, stereo,
+  dynamic ratio, and product routing closed
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -756,11 +769,15 @@ independent stereo review.
   canonical-dual identity passes, but frame condition ratio `2.980258951`
   exceeds `1.25`. Representative guards did not run. Evidence is in
   `docs/logs/2026-07/11-g10-029-boundary-completion-rejection.md`.
+- 2026-07-11: Froze Batch 29.6Q. One common scalar uses exact inverse-square-root
+  frame energy in the interior and quintic blends to constant endpoint values
+  over the existing `16h` spans. Reconstruction remains the first stop gate.
+  Evidence is in
+  `docs/logs/2026-07/11-g10-029-boundary-preconditioner-contract.md`.
 
 ## Next Task
 
-Freeze Batch 29.6Q: one smooth endpoint-compatible frame preconditioner or
-normalizer that retains the compact DC response and frozen Nyquist completion.
-Do not implement or sweep candidates. Keep guards, phase reproof, coefficient
-assembly, audio synthesis, corpus, stereo, dynamic ratio, and product routing
-closed.
+Implement Batch 29.6R through reconstruction. Run the six-channel
+representative guard only if reconstruction passes; stop before the all-channel
+guard on either failure. Keep phase reproof, coefficient assembly, audio
+synthesis, corpus, stereo, dynamic ratio, and product routing closed.

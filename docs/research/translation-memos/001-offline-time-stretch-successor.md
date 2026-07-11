@@ -3,7 +3,7 @@
 Status: promoted
 Memo: `g10.029` structural reassessment
 Owner: dsp
-Last updated: 2026-07-10
+Last updated: 2026-07-11
 Related roadmap: `g10.029`
 
 ## 1) Project Problem Statement
@@ -178,10 +178,11 @@ rejected ownership crossfade.
 
 ## Next Task
 
-Freeze one smooth endpoint-compatible frame preconditioner or normalizer for
-the rejected untightened boundary bank. The bank reconstructs exactly but its
-condition ratio is `2.980258951` against the `1.25` cap. Do not sweep completion
-widths or tapers, run guards, or open audio synthesis.
+Implement the frozen common endpoint-even frame normalizer through
+reconstruction. It uses exact inverse-square-root frame energy in the interior
+and quintic endpoint blends over the existing `16h` spans. Run representative
+guards only after reconstruction passes. Do not sweep widths or tapers or open
+audio synthesis.
 
 ## Frequency-Adaptive Reassessment
 
