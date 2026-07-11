@@ -304,8 +304,13 @@ independent stereo review.
 
 ### Batch 29.6N - Common-Grid Synthetic Synthesis Proof
 
-- [ ] freeze canonical-dual spectrum assembly, real-output symmetry, padding,
+- [x] freeze canonical-dual spectrum assembly, real-output symmetry, padding,
   crop, exact-length, coverage, and impulse-placement rules after 29.6M passes
+- [ ] derive the smallest whole-hop two-sided canonical-dual guard meeting
+  `1e-12` tail energy, and stop if it exceeds `16384` frames
+- [ ] reflect-pad the source, reuse 29.6M on logical negative/positive guarded
+  columns, synthesize the complete canonical-dual spectrum, and crop only the
+  protected centre
 - [ ] prove identity, compression, and expansion on the Contract `082`
   synthetic control set before any corpus render
 - [ ] stop for research on any symmetry, dual-residual, coverage, placement,
@@ -686,9 +691,13 @@ independent stereo review.
   no duplicate or missing significant cells, and heap high-water `1756/3072`.
   Evidence is in
   `docs/logs/2026-07/11-g10-029-projected-field-heap-proof.md`.
+- 2026-07-11: Froze Batch 29.6N. A measured two-sided canonical-dual guard now
+  protects both crop boundaries from the circular transform seam. Guard
+  failure stops before coefficient assembly; audio failure stops before the
+  corpus. Evidence is in
+  `docs/logs/2026-07/11-g10-029-common-grid-synthesis-contract.md`.
 
 ## Next Task
 
-Freeze Batch 29.6N canonical-dual synthetic synthesis and placement gates.
-Keep corpus rendering, linked stereo, dynamic ratio, and product routing
-closed.
+Implement Batch 29.6N, starting with the dual-atom guard proof. Keep the corpus,
+linked stereo, dynamic ratio, and product routing closed.

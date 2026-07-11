@@ -678,6 +678,67 @@ cells. Maximum observed heap occupancy is `1756/3072`. Coordinate error is
 zero, projected fields and phases are finite, boundary and fractional cases are
 exercised, and repeated evidence and hashes match exactly.
 
+### Rule 24: derive a two-sided synthesis guard from the canonical dual
+
+Batch 29.6N must not synthesize the target from a zero-origin circular grid.
+For the render's finalized canonical-dual bank, measure every positive-channel
+dual atom in the time domain. Find the smallest whole `384`-frame guard whose
+excluded two-sided squared energy is at most `1e-12` of total atom energy for
+every channel. Add one coefficient column for the projected-field derivative
+neighbor. The resulting guard must not exceed `16384` sample frames.
+
+Report per-channel required radius, maximum tail-energy ratio, selected guard
+frames/columns, limiting channel, non-finite values, dual-atom hash, and repeat
+hash. Failure to find a finite passing guard within the cap returns to transform
+research before coefficient assembly.
+
+### Rule 25: synthesize a protected centre, not a circular endpoint
+
+Extend the source in both directions with whole-sample even reflection,
+including the endpoint sample: `x[-1]=x[0]` and `x[N]=x[N-1]`. Analyze the
+guarded source through the unchanged tightened filters and auxiliary derivative
+filters. Project logical output columns from `-guard_columns` through
+`ceil(target_frames/384)+guard_columns`, inclusive, with
+`u=m/ratio`. The source coordinate remains relative to the unpadded source;
+padding changes storage, not mapping.
+
+Reuse Batch 29.6M interpolation and heap rules on this guarded grid. Assemble
+each positive-channel coefficient as projected magnitude times the solved unit
+phasor. Transform coefficient rows back to their alias residues, apply the
+complete canonical-dual block solve from Batch 29.6J, mirror positive
+frequencies, and force DC and Nyquist imaginary parts to zero. After the real
+inverse transform, crop exactly `target_frames` from the guard-protected centre.
+Do not normalize, fade, zero-fill, or endpoint-correct the crop after synthesis.
+
+Report analyzed/projected/synthesized coefficient counts, guard coverage,
+canonical-dual residual, conjugate-symmetry error, maximum imaginary residue,
+crop start/end, exact output length, head/tail error, non-finite coefficients
+and samples, source/output/coefficient hashes, and repeat hashes.
+
+### Rule 26: synthetic audio gates precede the mono corpus
+
+Run identity, `0.75x`, and `1.5x` on the unchanged steady low/mid/high tone,
+two-tone, linear/exponential chirp, broadband impulse, deterministic noise,
+mixed tonal/transient, and silence controls. Require:
+
+- selected guard at most `16384` frames and dual-atom tail energy at most
+  `1e-12`
+- canonical-dual residual at most `1e-8`
+- conjugate-symmetry and imaginary-output residue at most `1e-9`
+- exact target length with no uncovered, zero-filled, post-faded, or non-finite
+  output
+- identity peak error at most `1e-5`, RMS error at most `1e-6`, and head/tail
+  error at most `1e-5`
+- steady-tone angular-frequency error at most `1e-6` radians/sample
+- impulse peak within one sample frame of `round(source_peak*ratio)`
+- silence peak at most `1e-12`
+- identical evidence, coefficient, sample, and trace hashes on repeat
+
+Failure stops before the corpus and returns to the failing guard, assembly,
+symmetry, crop, or placement rule. Passing opens only the unchanged fixed-ratio
+60-row mono gate. Linked stereo, dynamic ratio, production selection, cache
+identity, and product routing remain closed.
+
 ## Clean-Room Rule
 
 Public papers and public algorithm descriptions may inform Signal design.
@@ -686,7 +747,7 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Freeze Batch 29.6N canonical-dual spectrum assembly, real-output symmetry,
-padding, crop, coverage, exact-length, and impulse-placement gates before audio
-synthesis. Keep corpus rendering, linked stereo, dynamic ratio, and product
-routing closed.
+Implement Batch 29.6N, starting with the dual-atom guard proof. Stop before
+coefficient assembly if no guard within `16384` frames reaches the `1e-12`
+tail-energy gate. Keep the corpus, stereo, dynamic ratio, and product routing
+closed.

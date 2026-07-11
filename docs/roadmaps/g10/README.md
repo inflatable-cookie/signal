@@ -80,8 +80,9 @@ implementation remains Signal-owned.
   Batch 29.6L passes an alias-free same-column auxiliary derivative-filter
   ratio through `19.5 kHz`. Batch 29.6M passes exact three-field source
   projection and duration-independent bounded heap integration across all `30`
-  control/ratio cases. Batch 29.6N now owns the separately frozen synthetic
-  canonical-dual synthesis proof.
+  control/ratio cases. Batch 29.6N now owns a measured two-sided canonical-dual
+  guard followed by protected-centre synthetic synthesis. It stops before
+  assembly if no guard within `16384` frames reaches `1e-12` tail energy.
 - Offline artifacts and RealtimePreview have bounded contracts and prototype
   paths, but callback-safe preview integration and fully streaming artifact
   output remain gated until their owning source-fill/cache contracts exist.
@@ -171,6 +172,5 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Freeze Batch 29.6N canonical-dual synthetic synthesis and placement gates.
-Keep corpus rendering, linked stereo, dynamic ratio, and product integration
-closed.
+Implement Batch 29.6N from the dual-atom guard proof. Keep corpus rendering,
+linked stereo, dynamic ratio, and product integration closed.

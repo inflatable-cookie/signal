@@ -194,8 +194,17 @@ interpolated. The mechanism passes all `30` synthetic control/ratio cases with
 zero coordinate error, no duplicate or missing assignment, and maximum heap
 occupancy `1756/3072`.
 
+Audio synthesis cannot crop from a zero-origin circular transform without
+allowing the terminal seam to contaminate the head. Before coefficient
+assembly, measure the finalized canonical-dual atoms and select the smallest
+whole-hop two-sided guard whose excluded energy is at most `1e-12` for every
+channel, capped at `16384` frames. Reflect the source at both endpoints,
+synthesize the guarded coefficient grid, then crop the protected centre. No
+post-synthesis fade, normalization, zero fill, or endpoint correction may hide
+a boundary failure.
+
 ## Next Task
 
-Freeze Batch 29.6N canonical-dual synthetic synthesis and placement gates.
-Keep corpus rendering, linked stereo, dynamic ratio, and product routing
-closed.
+Implement Batch 29.6N from the dual-atom guard proof through guarded synthetic
+synthesis. Keep corpus rendering, linked stereo, dynamic ratio, and product
+routing closed.

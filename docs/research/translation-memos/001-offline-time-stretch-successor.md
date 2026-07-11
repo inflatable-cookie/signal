@@ -178,8 +178,8 @@ rejected ownership crossfade.
 
 ## Next Task
 
-Freeze canonical-dual synthetic synthesis and placement gates. Do not open
-audio synthesis or corpus rendering before that contract is complete.
+Implement the frozen canonical-dual guard and protected-centre synthetic
+synthesis proof. Do not open corpus rendering before it passes.
 
 ## Frequency-Adaptive Reassessment
 
@@ -295,6 +295,12 @@ whole-render topology whose memory bound grows with duration. Canonical-dual
 audio synthesis remains a later proof. The projected mechanism passes all `30`
 control/ratio cases with no coordinate, assignment, finite-value, heap-bound,
 or determinism failure.
+
+The synthesis proof must not expose the crop head to the circular transform
+seam. It first measures the finalized canonical-dual atoms, derives a two-sided
+whole-hop guard at `1e-12` excluded energy, reflect-pads the source, and crops
+only the protected centre. A guard above `16384` frames rejects the transform
+boundary posture before audio assembly.
 
 Additional primary source:
 
