@@ -2373,6 +2373,21 @@ impl OfflineHighQualityStretcher {
             expected_frequency_hz,
         )
     }
+
+    /// Measure the same-column auxiliary derivative-filter frequency estimator.
+    #[doc(hidden)]
+    pub fn common_grid_derivative_tone_review_mono(
+        &self,
+        input: &[Sample],
+        sample_rate: SampleRate,
+        expected_frequency_hz: f64,
+    ) -> StretchCommonGridTonePhaseEvidence {
+        frequency_adaptive::common_grid_derivative_tone_review_mono(
+            input,
+            sample_rate,
+            expected_frequency_hz,
+        )
+    }
 }
 
 impl TimeStretcher for OfflineHighQualityStretcher {

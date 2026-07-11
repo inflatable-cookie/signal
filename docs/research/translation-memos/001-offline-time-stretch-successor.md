@@ -178,8 +178,8 @@ rejected ownership crossfade.
 
 ## Next Task
 
-Implement the auxiliary derivative-filter instantaneous-frequency proof. Do
-not open phase integration or corpus rendering.
+Freeze the fractional source-projection and bounded deterministic heap proof.
+Do not open synthesis or corpus rendering.
 
 ## Frequency-Adaptive Reassessment
 
@@ -280,6 +280,13 @@ Signal derives the auxiliary response from the final tightened filter, not the
 untightened mother wavelet. The first proof covers periodic low-to-near-Nyquist
 tones, silence, noise, delay compensation, finite ratios, and repeat hashes.
 Fractional projection and heap integration remain closed until it passes.
+
+That proof passes with one deterministic maximum-energy carrier estimate per
+column. Across `312.5 Hz`, `1 kHz`, `8 kHz`, and `19.5 kHz`, maximum angular
+frequency error is `3.614443e-12` radians/sample and maximum compensated
+adjacent-channel residual is `8.683081e-10` radians. This closes estimator
+selection only; projection, heap integration, synthesis, and corpus rendering
+remain separate gates.
 
 Additional primary source:
 

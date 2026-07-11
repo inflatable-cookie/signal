@@ -19,7 +19,7 @@ pub(crate) fn common_grid_tone_phase_review_mono(
 ) -> StretchCommonGridTonePhaseEvidence {
     let fft_frames = input.len().max(HOP).div_ceil(HOP) * HOP;
     let coefficient_frames = fft_frames / HOP;
-    let coefficients = analyze_coefficients(input, fft_frames);
+    let coefficients = analyze_coefficients(input, fft_frames).0;
     let omega = std::f64::consts::TAU * expected_frequency_hz / sample_rate.0.max(1) as f64;
     let maximum = coefficients
         .iter()
@@ -94,11 +94,114 @@ pub(crate) fn common_grid_tone_phase_review_mono(
         horizontal_measurements,
         vertical_measurements,
         all_values_finite: max_frequency_error.is_finite() && max_phase_residual.is_finite(),
+        zero_energy_skips: coefficients.len() - horizontal_measurements,
+        auxiliary_hash: 0,
         trace_hash,
     }
 }
 
-fn analyze_coefficients(input: &[Sample], fft_frames: usize) -> Vec<Complex64> {
+pub(crate) fn common_grid_derivative_tone_review_mono(
+    input: &[Sample],
+    sample_rate: SampleRate,
+    expected_frequency_hz: f64,
+) -> StretchCommonGridTonePhaseEvidence {
+    let fft_frames = input.len().max(HOP).div_ceil(HOP) * HOP;
+    let coefficient_frames = fft_frames / HOP;
+    let (coefficients, derivatives) = analyze_coefficients(input, fft_frames);
+    let expected = std::f64::consts::TAU * expected_frequency_hz / sample_rate.0.max(1) as f64;
+    let maximum = coefficients
+        .iter()
+        .map(|value| value.norm())
+        .fold(0.0, f64::max);
+    let threshold = maximum * 0.5;
+    let mut frequencies = vec![f64::NAN; coefficients.len()];
+    let mut max_frequency_error = 0.0_f64;
+    let mut horizontal_measurements = 0;
+    let mut zero_energy_skips = 0;
+    let mut auxiliary_hash = HASH_OFFSET;
+    for index in 0..coefficients.len() {
+        hash_u64(&mut auxiliary_hash, derivatives[index].re.to_bits());
+        hash_u64(&mut auxiliary_hash, derivatives[index].im.to_bits());
+        let energy = coefficients[index].norm_sqr();
+        if energy == 0.0 || coefficients[index].norm() < threshold {
+            zero_energy_skips += 1;
+            continue;
+        }
+        let estimate = (derivatives[index] * coefficients[index].conj()).im / energy;
+        frequencies[index] = estimate;
+        horizontal_measurements += 1;
+    }
+    for frame in 0..coefficient_frames {
+        let strongest = (0..CHANNELS)
+            .filter_map(|channel| {
+                let index = channel * coefficient_frames + frame;
+                frequencies[index]
+                    .is_finite()
+                    .then_some((index, coefficients[index].norm_sqr()))
+            })
+            .max_by(|left, right| left.1.total_cmp(&right.1));
+        if let Some((strongest_index, _)) = strongest {
+            let shared = frequencies[strongest_index];
+            max_frequency_error = max_frequency_error.max((shared - expected).abs());
+            for channel in 0..CHANNELS {
+                let index = channel * coefficient_frames + frame;
+                if frequencies[index].is_finite() {
+                    frequencies[index] = shared;
+                }
+            }
+        }
+    }
+    let mut max_phase_residual = 0.0_f64;
+    let mut vertical_measurements = 0;
+    let mut trace_hash = HASH_OFFSET;
+    for frame in 0..coefficient_frames {
+        let strongest_pair = (0..CHANNELS - 1)
+            .filter_map(|channel| {
+                let left = channel * coefficient_frames + frame;
+                let right = (channel + 1) * coefficient_frames + frame;
+                if !frequencies[left].is_finite() || !frequencies[right].is_finite() {
+                    return None;
+                }
+                Some((
+                    channel,
+                    coefficients[left].norm().min(coefficients[right].norm()),
+                ))
+            })
+            .max_by(|left, right| left.1.total_cmp(&right.1));
+        if let Some((channel, _)) = strongest_pair {
+            let left = channel * coefficient_frames + frame;
+            let right = (channel + 1) * coefficient_frames + frame;
+            let shared_frequency = (frequencies[left] + frequencies[right]) * 0.5;
+            let delay_difference =
+                HOP as f64 * (digital_delay(channel + 1) - digital_delay(channel));
+            let residual = wrap_phase(
+                coefficients[right].arg()
+                    - coefficients[left].arg()
+                    - shared_frequency * delay_difference,
+            )
+            .abs();
+            max_phase_residual = max_phase_residual.max(residual);
+            vertical_measurements += 1;
+            hash_u64(&mut trace_hash, residual.to_bits());
+        }
+    }
+    StretchCommonGridTonePhaseEvidence {
+        expected_angular_frequency: expected,
+        max_angular_frequency_error: max_frequency_error,
+        max_compensated_phase_residual: max_phase_residual,
+        horizontal_measurements,
+        vertical_measurements,
+        all_values_finite: frequencies
+            .iter()
+            .filter(|value| !value.is_nan())
+            .all(|value| value.is_finite()),
+        zero_energy_skips,
+        auxiliary_hash,
+        trace_hash,
+    }
+}
+
+fn analyze_coefficients(input: &[Sample], fft_frames: usize) -> (Vec<Complex64>, Vec<Complex64>) {
     let coefficient_frames = fft_frames / HOP;
     let positive_bins = fft_frames / 2 + 1;
     let mut filters = build_filters(fft_frames);
@@ -110,11 +213,15 @@ fn analyze_coefficients(input: &[Sample], fft_frames: usize) -> Vec<Complex64> {
     }
     planner.plan_fft_forward(fft_frames).process(&mut spectrum);
     let mut coefficients = vec![Complex64::new(0.0, 0.0); CHANNELS * coefficient_frames];
+    let mut derivatives = vec![Complex64::new(0.0, 0.0); CHANNELS * coefficient_frames];
     for channel in 0..CHANNELS {
         for residue in 0..coefficient_frames {
             for bin in (residue..positive_bins).step_by(coefficient_frames) {
-                coefficients[channel * coefficient_frames + residue] +=
-                    spectrum[bin] * filters[channel * positive_bins + bin].conj();
+                let contribution = spectrum[bin] * filters[channel * positive_bins + bin].conj();
+                coefficients[channel * coefficient_frames + residue] += contribution;
+                let angular_frequency = std::f64::consts::TAU * bin as f64 / fft_frames as f64;
+                derivatives[channel * coefficient_frames + residue] +=
+                    contribution * Complex64::new(0.0, angular_frequency);
             }
         }
     }
@@ -125,7 +232,13 @@ fn analyze_coefficients(input: &[Sample], fft_frames: usize) -> Vec<Complex64> {
             *value /= coefficient_frames as f64;
         }
     }
-    coefficients
+    for row in derivatives.chunks_mut(coefficient_frames) {
+        inverse.process(row);
+        for value in row {
+            *value /= coefficient_frames as f64;
+        }
+    }
+    (coefficients, derivatives)
 }
 
 fn wrap_phase(value: f64) -> f64 {

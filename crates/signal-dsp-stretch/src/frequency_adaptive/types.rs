@@ -142,6 +142,10 @@ pub struct StretchCommonGridTonePhaseEvidence {
     pub vertical_measurements: usize,
     /// Whether all measured derivatives and residuals are finite.
     pub all_values_finite: bool,
+    /// Coefficients skipped because their energy did not qualify the ratio.
+    pub zero_energy_skips: usize,
+    /// Stable hash of the auxiliary derivative coefficients.
+    pub auxiliary_hash: u64,
     /// Stable hash of the diagnostic trace.
     pub trace_hash: u64,
 }

@@ -9,6 +9,7 @@ pub use types::{
 };
 
 mod common_grid;
+pub(crate) use common_grid::common_grid_derivative_tone_review_mono;
 pub(crate) use common_grid::common_grid_tone_phase_review_mono;
 pub(crate) use common_grid::common_grid_wavelet_reconstruction_review_mono;
 

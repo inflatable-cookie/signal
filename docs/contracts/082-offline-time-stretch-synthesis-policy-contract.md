@@ -1,8 +1,8 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; auxiliary derivative-filter estimator ready
+Status: active; auxiliary derivative-filter estimator passed
 Owner: dsp
-Updated: 2026-07-10
+Updated: 2026-07-11
 Related contracts: `046`, `048`, `049`
 Related architecture: `docs/architecture/offline-time-stretch-synthesis.md`
 
@@ -578,8 +578,12 @@ steady tone proves it. Do not combine this estimator with inter-column unwrap
 or a hidden shorter hop.
 
 Qualify coefficients at or above `0.5` of the maximum magnitude for that tone.
-After estimation, remove deterministic channel delay as in Rule 17 and measure
-adjacent qualified channels at nominal common-grid time.
+Within each column, choose the qualified channel with maximum coefficient
+energy as the deterministic coherent carrier estimate. Apply that shared
+carrier to qualified channels before removing deterministic channel delay as
+in Rule 17 and measuring the strongest adjacent qualified pair at nominal
+common-grid time. This dominant-carrier policy avoids combining leakage-biased
+estimates from weak overlapping filters.
 
 ### Rule 21: prove the estimator before phase integration
 
@@ -598,6 +602,11 @@ Failure returns to research. Passing opens only the remaining fractional
 projection and bounded heap mechanism proof. It does not open synthesis, the
 60-row corpus, stereo, or product routing.
 
+Batch 29.6L passes. Across the four tones, maximum angular-frequency error is
+`3.614443e-12` radians/sample and maximum compensated residual is
+`8.683081e-10` radians. Silence produces no qualified ratios; deterministic
+noise remains finite; repeated evidence and hashes match exactly.
+
 ## Clean-Room Rule
 
 Public papers and public algorithm descriptions may inform Signal design.
@@ -606,6 +615,6 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Implement Batch 29.6L, the report-only auxiliary derivative-filter estimator
-proof. Keep phase integration, synthesis, the corpus, linked stereo, and all
+Freeze the fractional source-projection and bounded deterministic heap proof
+before implementation. Keep synthesis, the corpus, linked stereo, and all
 product routing closed.

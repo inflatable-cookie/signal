@@ -138,12 +138,56 @@ fn common_grid_phase_transport_rejects_high_band_phase_aliasing() {
     let frequency = 8_000.0_f32;
     let input = (0..24_576)
         .map(|index| {
-            0.5 * (std::f32::consts::TAU * frequency * index as f32 / SAMPLE_RATE.0 as f32).sin()
+            (0.5 * (std::f64::consts::TAU * f64::from(frequency) * index as f64
+                / f64::from(SAMPLE_RATE.0))
+            .sin()) as f32
         })
         .collect::<Vec<_>>();
     let evidence = common_grid_tone_phase_review_mono(&input, SAMPLE_RATE, f64::from(frequency));
     assert!(evidence.max_angular_frequency_error > 1.0e-3);
     assert!(evidence.max_compensated_phase_residual > 0.1);
+}
+
+#[test]
+fn common_grid_derivative_estimator_is_alias_free_and_deterministic() {
+    for frequency in [312.5_f32, 1_000.0, 8_000.0, 19_500.0] {
+        let input = periodic_tone(frequency);
+        let first =
+            common_grid_derivative_tone_review_mono(&input, SAMPLE_RATE, f64::from(frequency));
+        let repeated =
+            common_grid_derivative_tone_review_mono(&input, SAMPLE_RATE, f64::from(frequency));
+        assert_eq!(first, repeated);
+        assert!(first.horizontal_measurements > 0, "{first:?}");
+        assert!(first.vertical_measurements > 0, "{first:?}");
+        assert!(first.max_angular_frequency_error <= 1.0e-6, "{first:?}");
+        assert!(first.max_compensated_phase_residual <= 2.0e-5, "{first:?}");
+        assert!(first.all_values_finite);
+        eprintln!("derivative frequency={frequency} {first:?}");
+    }
+}
+
+#[test]
+fn common_grid_derivative_estimator_handles_silence_and_noise() {
+    let silence = common_grid_derivative_tone_review_mono(&vec![0.0; 384], SAMPLE_RATE, 0.0);
+    assert_eq!(silence.horizontal_measurements, 0);
+    assert_eq!(silence.vertical_measurements, 0);
+    assert!(silence.zero_energy_skips > 0);
+    assert!(silence.all_values_finite);
+
+    let noise =
+        common_grid_derivative_tone_review_mono(&deterministic_noise()[..384], SAMPLE_RATE, 0.0);
+    assert!(noise.horizontal_measurements > 0);
+    assert!(noise.all_values_finite);
+}
+
+fn periodic_tone(frequency: f32) -> Vec<Sample> {
+    (0..24_576)
+        .map(|index| {
+            (0.5 * (std::f64::consts::TAU * f64::from(frequency) * index as f64
+                / f64::from(SAMPLE_RATE.0))
+            .sin()) as f32
+        })
+        .collect()
 }
 
 fn assert_reconstruction_gate(input: &[Sample]) {
