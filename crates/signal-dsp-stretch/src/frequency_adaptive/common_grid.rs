@@ -6,11 +6,11 @@ use super::types::{
     StretchCommonGridWaveletReview,
 };
 
-const CHANNELS: usize = 1_536;
+pub(super) const CHANNELS: usize = 1_536;
 const LOWPASS_CHANNELS: usize = 16;
-const HOP: usize = 384;
+pub(super) const HOP: usize = 384;
 const ALPHA: f64 = 900.0;
-const HASH_OFFSET: u64 = 0xcbf2_9ce4_8422_2325;
+pub(super) const HASH_OFFSET: u64 = 0xcbf2_9ce4_8422_2325;
 
 pub(crate) fn common_grid_tone_phase_review_mono(
     input: &[Sample],
@@ -201,7 +201,10 @@ pub(crate) fn common_grid_derivative_tone_review_mono(
     }
 }
 
-fn analyze_coefficients(input: &[Sample], fft_frames: usize) -> (Vec<Complex64>, Vec<Complex64>) {
+pub(super) fn analyze_coefficients(
+    input: &[Sample],
+    fft_frames: usize,
+) -> (Vec<Complex64>, Vec<Complex64>) {
     let coefficient_frames = fft_frames / HOP;
     let positive_bins = fft_frames / 2 + 1;
     let mut filters = build_filters(fft_frames);
@@ -241,7 +244,7 @@ fn analyze_coefficients(input: &[Sample], fft_frames: usize) -> (Vec<Complex64>,
     (coefficients, derivatives)
 }
 
-fn wrap_phase(value: f64) -> f64 {
+pub(super) fn wrap_phase(value: f64) -> f64 {
     (value + std::f64::consts::PI).rem_euclid(std::f64::consts::TAU) - std::f64::consts::PI
 }
 
@@ -428,7 +431,7 @@ fn tighten_frequency_response(filters: &mut [Complex64], positive_bins: usize) {
     }
 }
 
-fn digital_delay(index: usize) -> f64 {
+pub(super) fn digital_delay(index: usize) -> f64 {
     (0..usize::BITS as usize)
         .map(|bit| {
             let current = (index >> bit) & 1;
@@ -513,7 +516,7 @@ fn sample_hash(samples: &[Sample]) -> u64 {
     hash
 }
 
-fn hash_u64(hash: &mut u64, value: u64) {
+pub(super) fn hash_u64(hash: &mut u64, value: u64) {
     for byte in value.to_le_bytes() {
         *hash ^= u64::from(byte);
         *hash = hash.wrapping_mul(0x0000_0100_0000_01b3);

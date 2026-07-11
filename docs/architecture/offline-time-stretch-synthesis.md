@@ -190,10 +190,12 @@ delay-compensated vertical phase derivatives at exact source coordinate
 heap carries horizontal candidates from the preceding solved output column and
 vertical candidates from solved adjacent channels. Its fixed `3072`-entry cap
 does not grow with render duration. Wrapped complex coefficients are never
-interpolated.
+interpolated. The mechanism passes all `30` synthetic control/ratio cases with
+zero coordinate error, no duplicate or missing assignment, and maximum heap
+occupancy `1756/3072`.
 
 ## Next Task
 
-Implement Batch 29.6M, the report-only projected-field and bounded-heap proof.
-Keep audio synthesis, corpus rendering, linked stereo, dynamic ratio, and
-product routing closed.
+Freeze Batch 29.6N canonical-dual synthetic synthesis and placement gates.
+Keep corpus rendering, linked stereo, dynamic ratio, and product routing
+closed.

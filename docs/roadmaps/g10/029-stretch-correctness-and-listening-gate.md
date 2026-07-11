@@ -289,17 +289,17 @@ independent stereo review.
 
 ### Batch 29.6M - Projected Field And Bounded Heap Proof
 
-- [ ] project magnitude, absolute instantaneous frequency, and
+- [x] project magnitude, absolute instantaneous frequency, and
   delay-compensated vertical phase derivatives at exact `u=m/ratio`
-- [ ] prove bounded linear interpolation, legal padding reads, finite fields,
+- [x] prove bounded linear interpolation, legal padding reads, finite fields,
   monotonic coordinates, exact column counts, and repeat hashes on Contract
   `082` ratios and synthetic controls
-- [ ] integrate significant positive-frequency phases one output column at a
+- [x] integrate significant positive-frequency phases one output column at a
   time with deterministic horizontal/vertical priority and no duplicate or
   missing assignment
-- [ ] prove heap high-water stays within the duration-independent `3072`-entry
+- [x] prove heap high-water stays within the duration-independent `3072`-entry
   cap and all assignment evidence repeats exactly
-- [ ] keep canonical-dual audio synthesis, placement, corpus, stereo, dynamic
+- [x] keep canonical-dual audio synthesis, placement, corpus, stereo, dynamic
   ratio, and product routing closed even if the mechanism passes
 
 ### Batch 29.6N - Common-Grid Synthetic Synthesis Proof
@@ -681,9 +681,14 @@ independent stereo review.
   duration-independent `3072`-entry heap bound. Audio synthesis remains Batch
   29.6N. Evidence is in
   `docs/logs/2026-07/11-g10-029-projected-field-heap-contract.md`.
+- 2026-07-11: Batch 29.6M passed all `30` synthetic control/ratio cases with
+  zero coordinate error, `34592` horizontal and `10405` vertical assignments,
+  no duplicate or missing significant cells, and heap high-water `1756/3072`.
+  Evidence is in
+  `docs/logs/2026-07/11-g10-029-projected-field-heap-proof.md`.
 
 ## Next Task
 
-Implement Batch 29.6M, the report-only projected-field and bounded-heap proof.
-Stop before audio synthesis, corpus rendering, linked stereo, dynamic ratio,
-or product routing.
+Freeze Batch 29.6N canonical-dual synthetic synthesis and placement gates.
+Keep corpus rendering, linked stereo, dynamic ratio, and product routing
+closed.

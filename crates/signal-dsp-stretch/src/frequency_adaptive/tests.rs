@@ -180,12 +180,128 @@ fn common_grid_derivative_estimator_handles_silence_and_noise() {
     assert!(noise.all_values_finite);
 }
 
+#[test]
+fn common_grid_projected_phase_fields_are_exact_finite_and_deterministic() {
+    let input = mixed_control()[..768].to_vec();
+    for ratio in [0.75, 1.0, 1.5] {
+        let first = common_grid_projected_phase_review_mono(&input, ratio);
+        let repeated = common_grid_projected_phase_review_mono(&input, ratio);
+        assert_eq!(first, repeated);
+        assert_eq!(
+            first.target_frames,
+            (input.len() as f64 * ratio).round() as usize
+        );
+        assert_eq!(first.output_columns, first.target_frames.div_ceil(384) + 1);
+        assert_eq!(
+            first.projected_field_values,
+            first.output_columns * 1_536 * 3
+        );
+        assert!(first.max_coordinate_error <= 1.0e-9, "{first:?}");
+        assert!(first.coordinates_monotonic);
+        assert!(first.boundary_pad_reads > 0, "{first:?}");
+        assert_eq!(first.missing_assignments, 0, "{first:?}");
+        assert_eq!(first.duplicate_assignments, 0, "{first:?}");
+        assert!(first.heap_high_water <= first.heap_capacity, "{first:?}");
+        assert_eq!(first.non_finite_values, 0, "{first:?}");
+        if ratio != 1.0 {
+            assert!(first.fractional_columns > 0, "{first:?}");
+        }
+        eprintln!("projected ratio={ratio} {first:?}");
+    }
+}
+
+#[test]
+fn common_grid_projected_phase_heap_uses_both_directions_and_handles_silence() {
+    let mixed = common_grid_projected_phase_review_mono(&mixed_control()[..1_536], 1.5);
+    assert!(mixed.seed_assignments > 0, "{mixed:?}");
+    assert!(mixed.horizontal_assignments > 0, "{mixed:?}");
+    assert!(mixed.vertical_assignments > 0, "{mixed:?}");
+    assert_eq!(mixed.missing_assignments, 0, "{mixed:?}");
+    assert!(mixed.heap_high_water <= mixed.heap_capacity, "{mixed:?}");
+
+    let silence = common_grid_projected_phase_review_mono(&vec![0.0; 768], 0.75);
+    assert_eq!(silence.seed_assignments, 0);
+    assert_eq!(silence.horizontal_assignments, 0);
+    assert_eq!(silence.vertical_assignments, 0);
+    assert_eq!(silence.missing_assignments, 0);
+    assert_eq!(silence.non_finite_values, 0);
+}
+
+#[test]
+fn common_grid_projected_phase_contract_controls_pass() {
+    let mut impulse = vec![0.0; 768];
+    impulse[192] = 1.0;
+    let controls = [
+        sine(312.5)[..768].to_vec(),
+        sine(1_000.0)[..768].to_vec(),
+        sine(8_000.0)[..768].to_vec(),
+        two_tone_control(),
+        chirp_control(false),
+        chirp_control(true),
+        impulse,
+        deterministic_noise()[..768].to_vec(),
+        mixed_control()[..768].to_vec(),
+        vec![0.0; 768],
+    ];
+    let mut horizontal = 0;
+    let mut vertical = 0;
+    let mut max_heap_high_water = 0;
+    for input in controls {
+        for ratio in [0.75, 1.0, 1.5] {
+            let evidence = common_grid_projected_phase_review_mono(&input, ratio);
+            assert!(evidence.max_coordinate_error <= 1.0e-9, "{evidence:?}");
+            assert!(evidence.coordinates_monotonic);
+            assert_eq!(evidence.missing_assignments, 0, "{evidence:?}");
+            assert_eq!(evidence.duplicate_assignments, 0, "{evidence:?}");
+            assert!(
+                evidence.heap_high_water <= evidence.heap_capacity,
+                "{evidence:?}"
+            );
+            assert_eq!(evidence.non_finite_values, 0, "{evidence:?}");
+            horizontal += evidence.horizontal_assignments;
+            vertical += evidence.vertical_assignments;
+            max_heap_high_water = max_heap_high_water.max(evidence.heap_high_water);
+        }
+    }
+    assert!(horizontal > 0);
+    assert!(vertical > 0);
+    eprintln!(
+        "projected controls horizontal={horizontal} vertical={vertical} heap={max_heap_high_water}/3072"
+    );
+}
+
 fn periodic_tone(frequency: f32) -> Vec<Sample> {
     (0..24_576)
         .map(|index| {
             (0.5 * (std::f64::consts::TAU * f64::from(frequency) * index as f64
                 / f64::from(SAMPLE_RATE.0))
             .sin()) as f32
+        })
+        .collect()
+}
+
+fn two_tone_control() -> Vec<Sample> {
+    (0..768)
+        .map(|index| {
+            let time = index as f64 / f64::from(SAMPLE_RATE.0);
+            (0.3 * (std::f64::consts::TAU * 440.0 * time).sin()
+                + 0.2 * (std::f64::consts::TAU * 4_000.0 * time).sin()) as f32
+        })
+        .collect()
+}
+
+fn chirp_control(exponential: bool) -> Vec<Sample> {
+    let mut phase = 0.0_f64;
+    (0..768)
+        .map(|index| {
+            let position = index as f64 / 767.0;
+            let frequency = if exponential {
+                200.0_f64 * (8_000.0_f64 / 200.0).powf(position)
+            } else {
+                200.0 + (8_000.0 - 200.0) * position
+            };
+            phase += std::f64::consts::TAU * frequency / f64::from(SAMPLE_RATE.0);
+            (0.5 * phase.sin()) as f32
         })
         .collect()
 }

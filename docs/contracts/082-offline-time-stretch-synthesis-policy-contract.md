@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; auxiliary derivative-filter estimator passed
+Status: active; projected-field and bounded-heap proof passed
 Owner: dsp
 Updated: 2026-07-11
 Related contracts: `046`, `048`, `049`
@@ -641,9 +641,10 @@ repeat reports.
 
 ### Rule 23: integrate one output column with one bounded heap
 
-Solve positive-frequency channel phases one output column at a time. Column
-zero uses the interpolated delay-compensated analyzed phase as its deterministic
-seed only; later columns admit two predecessor classes:
+Solve positive-frequency channel phases one output column at a time. Phase is
+never interpolated: column zero uses the nearest source column's
+delay-compensated analyzed phase as its deterministic seed, with exact halfway
+ties choosing the lower column. Later columns admit two predecessor classes:
 
 - horizontal: the same channel in the preceding solved output column, advanced
   by `384` times the trapezoidal mean projected instantaneous frequency
@@ -652,11 +653,11 @@ seed only; later columns admit two predecessor classes:
   centre-frequency interval `pi/1535`
 
 Use a magnitude-prioritized max heap. Break equal-magnitude ties by horizontal
-before vertical, then lower channel index. A coefficient is significant when
-its projected magnitude exceeds `1e-6` times that column's maximum. Assign each
-significant coefficient exactly once. Insignificant coefficients retain their
-deterministic interpolated analyzed phase and may provide a boundary seed, but
-do not count as heap assignments.
+before vertical, then lower target channel, then lower predecessor channel. A
+coefficient is significant when its projected magnitude exceeds `1e-6` times
+that column's maximum. Assign each significant coefficient exactly once.
+Insignificant coefficients retain their deterministic nearest-column analyzed
+phase and may provide a boundary seed, but do not count as heap assignments.
 
 The heap capacity is `2*1536` entries and must not scale with source or output
 length. Report significant/insignificant cells, horizontal/vertical
@@ -671,6 +672,12 @@ separately frozen canonical-dual synthesis and synthetic placement proof. It
 does not open audio synthesis, the 60-row corpus, linked stereo, dynamic ratio,
 or product routing.
 
+Batch 29.6M passes all `30` control/ratio cases. It records `34592` horizontal
+and `10405` vertical assignments with no duplicate or missing significant
+cells. Maximum observed heap occupancy is `1756/3072`. Coordinate error is
+zero, projected fields and phases are finite, boundary and fractional cases are
+exercised, and repeated evidence and hashes match exactly.
+
 ## Clean-Room Rule
 
 Public papers and public algorithm descriptions may inform Signal design.
@@ -679,6 +686,7 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Implement Batch 29.6M, the report-only projected-field and bounded-heap proof.
-Stop before audio synthesis, corpus rendering, linked stereo, dynamic ratio,
-or product routing.
+Freeze Batch 29.6N canonical-dual spectrum assembly, real-output symmetry,
+padding, crop, coverage, exact-length, and impulse-placement gates before audio
+synthesis. Keep corpus rendering, linked stereo, dynamic ratio, and product
+routing closed.

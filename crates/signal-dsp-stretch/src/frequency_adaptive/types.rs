@@ -149,3 +149,48 @@ pub struct StretchCommonGridTonePhaseEvidence {
     /// Stable hash of the diagnostic trace.
     pub trace_hash: u64,
 }
+
+/// Evidence from exact common-grid field projection and bounded phase assignment.
+#[derive(Clone, Debug, PartialEq)]
+pub struct StretchCommonGridProjectedPhaseEvidence {
+    /// Fixed-ratio source-to-output duration multiplier.
+    pub ratio: f64,
+    /// Exact rounded target length in sample frames.
+    pub target_frames: usize,
+    /// Source coefficient columns available before logical boundary extension.
+    pub source_columns: usize,
+    /// Projected output columns, including terminal coverage.
+    pub output_columns: usize,
+    /// Largest reconstruction error for the authoritative fractional coordinate.
+    pub max_coordinate_error: f64,
+    /// Whether projected coordinates increase strictly.
+    pub coordinates_monotonic: bool,
+    /// Projected columns with a non-integral source coordinate.
+    pub fractional_columns: usize,
+    /// Logical interpolation reads served by boundary extension.
+    pub boundary_pad_reads: usize,
+    /// Magnitude, frequency, and vertical-derivative values projected.
+    pub projected_field_values: usize,
+    /// Significant phase cells seeded in column zero.
+    pub seed_assignments: usize,
+    /// Significant cells assigned from the preceding output column.
+    pub horizontal_assignments: usize,
+    /// Significant cells assigned from an adjacent current-column channel.
+    pub vertical_assignments: usize,
+    /// Significant cells assigned more than once.
+    pub duplicate_assignments: usize,
+    /// Significant cells left without an assignment.
+    pub missing_assignments: usize,
+    /// Projected cells below the relative magnitude threshold.
+    pub insignificant_cells: usize,
+    /// Largest number of live heap candidates.
+    pub heap_high_water: usize,
+    /// Fixed heap-entry capacity contract.
+    pub heap_capacity: usize,
+    /// Number of projected fields or assigned phases that were non-finite.
+    pub non_finite_values: usize,
+    /// Stable hash of projected field values.
+    pub projected_field_hash: u64,
+    /// Stable hash of phase-assignment decisions and values.
+    pub assignment_hash: u64,
+}

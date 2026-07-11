@@ -102,9 +102,10 @@ pub use corpus_report::{
 };
 pub use formant_boundary::{measure_formant_boundary, StretchFormantBoundaryMeasurement};
 pub use frequency_adaptive::{
-    StretchCommonGridTonePhaseEvidence, StretchCommonGridWaveletEvidence,
-    StretchCommonGridWaveletReview, StretchFrequencyAdaptiveBandEvidence,
-    StretchFrequencyAdaptiveEvidence, StretchFrequencyAdaptiveReview,
+    StretchCommonGridProjectedPhaseEvidence, StretchCommonGridTonePhaseEvidence,
+    StretchCommonGridWaveletEvidence, StretchCommonGridWaveletReview,
+    StretchFrequencyAdaptiveBandEvidence, StretchFrequencyAdaptiveEvidence,
+    StretchFrequencyAdaptiveReview,
 };
 pub use hpr_separation::{
     StretchHprAdditiveRender, StretchHprComponentEvidence, StretchHprSeparationEvidence,
@@ -2387,6 +2388,16 @@ impl OfflineHighQualityStretcher {
             sample_rate,
             expected_frequency_hz,
         )
+    }
+
+    /// Review exact common-grid field projection and bounded phase assignment.
+    #[doc(hidden)]
+    pub fn common_grid_projected_phase_review_mono(
+        &self,
+        input: &[Sample],
+        ratio: f64,
+    ) -> StretchCommonGridProjectedPhaseEvidence {
+        frequency_adaptive::common_grid_projected_phase_review_mono(input, ratio)
     }
 }
 

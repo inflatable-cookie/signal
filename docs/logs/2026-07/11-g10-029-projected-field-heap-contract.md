@@ -10,10 +10,13 @@ coefficient magnitude, absolute instantaneous angular frequency, and
 delay-compensated vertical phase derivatives. Never interpolate wrapped
 complex coefficients.
 
+Deterministic phase seeds use the nearest source column; halfway ties choose
+the lower column. This keeps wrapped phase outside linear interpolation.
+
 Integrate positive-frequency phases one output column at a time. Horizontal
 candidates advance from the preceding solved column. Vertical candidates
 advance from an adjacent solved channel. Magnitude owns priority; deterministic
-direction and channel ordering break ties.
+direction, target-channel, and predecessor-channel ordering break ties.
 
 ## Stop Gate
 

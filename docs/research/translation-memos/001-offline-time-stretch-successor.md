@@ -178,8 +178,8 @@ rejected ownership crossfade.
 
 ## Next Task
 
-Implement the frozen projected-field and bounded-heap proof. Do not open audio
-synthesis or corpus rendering.
+Freeze canonical-dual synthetic synthesis and placement gates. Do not open
+audio synthesis or corpus rendering before that contract is complete.
 
 ## Frequency-Adaptive Reassessment
 
@@ -292,7 +292,9 @@ The next proof interpolates only magnitude, absolute instantaneous frequency,
 and delay-compensated vertical phase derivatives at `u=m/ratio`. It integrates
 one output column at a time with a fixed `2*1536` heap cap. This avoids a
 whole-render topology whose memory bound grows with duration. Canonical-dual
-audio synthesis remains a later proof.
+audio synthesis remains a later proof. The projected mechanism passes all `30`
+control/ratio cases with no coordinate, assignment, finite-value, heap-bound,
+or determinism failure.
 
 Additional primary source:
 

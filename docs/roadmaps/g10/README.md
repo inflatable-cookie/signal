@@ -78,9 +78,10 @@ implementation remains Signal-owned.
   stereo remains closed. Its phase-difference estimator aliases on the `8 kHz`
   tone and is rejected before interpolation or heap integration.
   Batch 29.6L passes an alias-free same-column auxiliary derivative-filter
-  ratio through `19.5 kHz`. Batch 29.6M now freezes exact three-field source
-  projection and duration-independent bounded heap integration. Batch 29.6N
-  owns synthetic canonical-dual synthesis only after that mechanism passes.
+  ratio through `19.5 kHz`. Batch 29.6M passes exact three-field source
+  projection and duration-independent bounded heap integration across all `30`
+  control/ratio cases. Batch 29.6N now owns the separately frozen synthetic
+  canonical-dual synthesis proof.
 - Offline artifacts and RealtimePreview have bounded contracts and prototype
   paths, but callback-safe preview integration and fully streaming artifact
   output remain gated until their owning source-fill/cache contracts exist.
@@ -170,6 +171,6 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Implement Batch 29.6M, the report-only projected-field and bounded-heap proof.
-Keep audio synthesis, corpus rendering, linked stereo, dynamic ratio, and
-product integration closed.
+Freeze Batch 29.6N canonical-dual synthetic synthesis and placement gates.
+Keep corpus rendering, linked stereo, dynamic ratio, and product integration
+closed.
