@@ -314,9 +314,16 @@ was real but not sufficient ownership of the untightened bank's conditioning.
 Another candidate is blocked pending attribution of the remaining boundary
 geometry.
 
+The residual attribution now separates the unchanged raw boundary groups
+without designing another response. It compares the full triplet candidate
+with off-diagonal coupling removed from DC rows `0..15`, preserved high-edge
+rows `1520..1534`, or both. Completion rows remain unchanged. Per-mode group
+contributions and complete-bank conditions will select DC, high edge, joint
+boundary, or broader raw-bank ownership.
+
 ## Next Task
 
-Freeze Batch 29.6AB residual boundary-geometry attribution. Do not change
-responses, row allocation, delays, normalization, duals, or guards. Keep phase
-reproof, audio synthesis, corpus rendering, linked stereo, dynamic ratio, and
-product routing closed.
+Implement Batch 29.6AC residual boundary matrix attribution and stop after its
+direction decision. Do not change filters, rows, delays, or normalization.
+Keep phase reproof, audio synthesis, corpus rendering, linked stereo, dynamic
+ratio, and product routing closed.

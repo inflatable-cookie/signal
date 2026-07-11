@@ -452,12 +452,21 @@ independent stereo review.
 
 ### Batch 29.6AB - Residual Boundary Geometry Attribution Contract
 
-- [ ] freeze one report question for the rejected triplet's global minimum at
+- [x] freeze one report question for the rejected triplet's global minimum at
   residue `3` and maximum at residue `8`; do not design another filter
-- [ ] retain the exact candidate matrices and define bounded bin-region,
+- [x] retain the exact candidate matrices and define bounded bin-region,
   channel diagonal/cross, Rayleigh, closure, numerical, and repeat evidence
-- [ ] choose the next geometry boundary or stop inconclusive; keep
+- [x] choose the next geometry boundary or stop inconclusive; keep
   reconstruction, guards, phase, synthesis, corpus, stereo, and routing closed
+
+### Batch 29.6AC - Residual Boundary Matrix Attribution
+
+- [ ] compare full, DC-diagonalized, preserved-high-edge-diagonalized, and
+  both-boundary-diagonalized operators across all `11` residues
+- [ ] attribute the frozen residue-`3` minimum and residue-`8` maximum by four
+  channel groups, bins, channel totals/cross terms, Rayleigh changes, and closure
+- [ ] pass Jacobi, finite, hash, closure, and exact-repeat gates; select DC,
+  high edge, joint boundary, broader bank, or inconclusive; implement nothing
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -907,8 +916,12 @@ independent stereo review.
   closure passes below `1e-14`, but complete condition is `2.0862893665` with
   limiting residues `3` and `8`. Reconstruction remains closed. Evidence is in
   `docs/logs/2026-07/11-g10-029-three-row-nyquist-completion-rejection.md`.
+- 2026-07-11: Froze Batch 29.6AB. One four-operator ablation isolates cross
+  coupling from raw DC rows `0..15`, preserved high-edge rows `1520..1534`, or
+  both before another geometry is proposed. Evidence is in
+  `docs/logs/2026-07/11-g10-029-residual-boundary-attribution-contract.md`.
 
 ## Next Task
 
-Freeze Batch 29.6AB residual boundary-geometry attribution. Do not change
-responses, row allocation, delays, normalization, duals, or guards.
+Implement Batch 29.6AC residual boundary matrix attribution and stop after its
+direction decision. Do not change filters, rows, delays, or normalization.

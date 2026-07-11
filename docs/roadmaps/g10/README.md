@@ -123,6 +123,9 @@ implementation remains Signal-owned.
   The construction passes, but the complete bank rejects at condition
   `2.0862893665`, with limiting residues `3` and `8`. Batch 29.6AB must freeze
   residual boundary attribution before another candidate.
+  It freezes a four-operator comparison of the full candidate against DC,
+  preserved-high-edge, and joint boundary cross-term diagonalization. Batch
+  29.6AC owns the report and direction decision only.
 - Offline artifacts and RealtimePreview have bounded contracts and prototype
   paths, but callback-safe preview integration and fully streaming artifact
   output remain gated until their owning source-fill/cache contracts exist.
@@ -212,7 +215,7 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Freeze Batch 29.6AB residual boundary-geometry attribution. Do not change
-responses, row allocation, delays, normalization, duals, or guards. Keep audio
-synthesis, corpus rendering, linked stereo, dynamic ratio, and product
-integration closed.
+Implement Batch 29.6AC residual boundary matrix attribution and stop after its
+direction decision. Do not change filters, rows, delays, or normalization.
+Keep audio synthesis, corpus rendering, linked stereo, dynamic ratio, and
+product integration closed.

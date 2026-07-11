@@ -178,9 +178,9 @@ rejected ownership crossfade.
 
 ## Next Task
 
-Freeze residual boundary-geometry attribution after the three-row completion
-rejects complete conditioning at `2.0862893665`. Do not run identity
-reconstruction, guards, or audio synthesis.
+Implement residual DC/high-edge matrix attribution after the three-row
+completion rejects complete conditioning at `2.0862893665`. Do not change
+filters or run identity reconstruction, guards, or audio synthesis.
 
 ## Frequency-Adaptive Reassessment
 
@@ -503,3 +503,9 @@ still `2.0862893665`, now limited by residues `3` and `8`. The earlier
 single-row coupling was one defect rather than the whole defect. Attribute the
 remaining boundary modes before selecting another magnitude, row allocation,
 delay set, or normalization strategy.
+
+The frozen report diagonalizes cross terms from raw DC rows `0..15`, preserved
+high-edge rows `1520..1534`, and both groups in turn. It retains every diagonal,
+interior, and completion contribution. Complete condition and frozen-mode
+Rayleigh changes then decide whether the next geometry belongs to DC, the high
+edge, both boundaries, or the broader raw bank.

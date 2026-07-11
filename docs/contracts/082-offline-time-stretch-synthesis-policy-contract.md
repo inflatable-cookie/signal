@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; three-row Nyquist completion rejected
+Status: active; residual boundary attribution frozen
 Owner: dsp
 Updated: 2026-07-11
 Related contracts: `046`, `048`, `049`
@@ -1111,6 +1111,60 @@ repeats exactly. Identity reconstruction and every later gate remain closed.
 Batch 29.6AB must freeze one attribution of the residual boundary geometry
 before another response, row allocation, delay set, or normalizer is proposed.
 
+### Rule 26F: attribute residual DC and high-edge cross coupling
+
+Batch 29.6AC asks one report-only question: after the completion triplet removes
+its own coupling, which remaining boundary group owns the complete frame
+condition failure? Rebuild the exact rejected `1538`-row candidate at FFT
+length `4224`; do not change any response, magnitude, delay, row, support, hop,
+or normalization.
+
+Use four fixed channel groups:
+
+- DC lowpass: rows `0..15`
+- interior: rows `16..1519`
+- preserved high edge: rows `1520..1534`
+- DFT-coded completion: rows `1535..1537`
+
+Across every residue, compare exactly four Hermitian operators:
+
+1. full rejected candidate
+2. DC diagonalized: subtract only off-diagonal outer-product terms from rows
+   `0..15`
+3. preserved high edge diagonalized: subtract only off-diagonal terms from rows
+   `1520..1534`
+4. both boundary groups diagonalized
+
+These are matrix ablations, not filter banks. Retain all diagonal energy and
+leave interior and completion contributions unchanged. Prove each subtraction
+against independently summed channel outer products with relative closure
+`1e-8`.
+
+Report all `44` residue/operator rows with extrema, condition ratios, Jacobi
+evidence, matrix/bin hashes, and exact release repeat. For the full candidate's
+frozen minimum at residue `3` and maximum at residue `8`, also report:
+
+- DC, interior, and Nyquist bin-region mass
+- the `16` largest bin weights, total channel contributions, and absolute
+  channel cross contributions
+- total, diagonal, cross, and closure for each of the four channel groups
+- Rayleigh quotients and changes under all four operators
+
+Require finite values and the Rule 26C Jacobi gates. The global condition
+results choose exactly one direction:
+
+- high-edge diagonalized condition at most `1.25`, DC above: preserved
+  high-edge geometry
+- DC diagonalized condition at most `1.25`, high edge above: DC lowpass geometry
+- neither individual ablation passes, but both-boundary condition at most
+  `1.25`: joint DC/high-edge geometry
+- both-boundary condition above `1.25`: broaden attribution to the complete raw
+  bank; boundary cross coupling is insufficient
+- any numerical, closure, or repeat failure: inconclusive
+
+No result authorizes another filter, normalizer, row allocation, delay set,
+identity reconstruction, dual, guard, phase, or synthesis.
+
 ### Rule 27: synthesize a protected centre, not a circular endpoint
 
 Extend the source in both directions with whole-sample even reflection,
@@ -1166,5 +1220,5 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Freeze Batch 29.6AB residual boundary-geometry attribution. Do not change
-responses, row allocation, delays, normalization, duals, or guards.
+Implement Batch 29.6AC residual boundary matrix attribution and stop after its
+direction decision. Do not change filters, rows, delays, or normalization.
