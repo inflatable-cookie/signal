@@ -698,7 +698,50 @@ radius. Its guard lower bound is `16768` frames, beyond the `16384`-frame cap.
 The block-solve residual is `1.051210e-12`, all values are finite, and repeated
 atom hashes match. No coefficient assembly or audio synthesis is authorized.
 
-### Rule 25: synthesize a protected centre, not a circular endpoint
+### Rule 25: attribute the dual-atom tail before redesign
+
+Batch 29.6O is diagnostic-only. On the unchanged `34176`-frame probe, measure
+channels `0`, `15`, `16`, `768`, and `1535`. They represent the limiting DC
+lowpass, final lowpass completion, first ordinary wavelet, interior wavelet,
+and Nyquist-edge wavelet.
+
+For each channel, measure these frozen response stages:
+
+- raw finalized analysis response before per-bin tightening
+- tightened analysis response used by Batch 29.6J
+- exact complete-frame canonical-dual response after tightening
+
+For every stage, form both the positive-only analytic complex atom and the
+explicit conjugate-mirrored real-output atom. Do not alter cutoff, `alpha`,
+channel count, lowpass count, delays, tightening, decimation, or dual solver.
+
+Report excluded squared-energy ratios at whole-hop radii `384`, `1536`, `4096`,
+`8192`, `12288`, and `16000` frames. Also report the first whole-hop guard lower
+bound for thresholds `1e-6`, `1e-8`, `1e-10`, and `1e-12`; peak position, total
+energy, exact dual residual, non-finite values, per-stage/channel hashes, and a
+repeat hash.
+
+Compute fixed attribution ratios at radius `16000`:
+
+- tightening: tightened-analysis tail / raw-analysis tail
+- dualization: canonical-dual tail / tightened-analysis tail
+- mirroring: real-output tail / analytic tail
+- lowpass specificity: channel `0` tail / channel `16` tail, and channel `0`
+  tail / channel `768` tail
+
+Zero denominators report infinity explicitly rather than substituting an
+epsilon. The diagnostic passes only when all `30` stage/channel/form atoms are
+present, values are finite except declared infinite attribution ratios, dual
+residual is at most `1e-8`, fixed radii and thresholds are unchanged, and
+repeated evidence and hashes match exactly.
+
+Passing does not authorize a redesign. It opens one planning checkpoint to
+choose among lowpass completion, tightening, analytic boundary, dualization,
+or transform-family work based on measured ownership. Failure returns to the
+diagnostic implementation. Coefficient assembly, audio synthesis, corpus,
+stereo, dynamic ratio, and product routing remain closed.
+
+### Rule 26: synthesize a protected centre, not a circular endpoint
 
 Extend the source in both directions with whole-sample even reflection,
 including the endpoint sample: `x[-1]=x[0]` and `x[N]=x[N-1]`. Analyze the
@@ -721,7 +764,7 @@ canonical-dual residual, conjugate-symmetry error, maximum imaginary residue,
 crop start/end, exact output length, head/tail error, non-finite coefficients
 and samples, source/output/coefficient hashes, and repeat hashes.
 
-### Rule 26: synthetic audio gates precede the mono corpus
+### Rule 27: synthetic audio gates precede the mono corpus
 
 Run identity, `0.75x`, and `1.5x` on the unchanged steady low/mid/high tone,
 two-tone, linear/exponential chirp, broadband impulse, deterministic noise,
@@ -753,7 +796,7 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Freeze a report-only dual-atom tail-attribution diagnostic. It must distinguish
-analysis-filter, canonical-dual, tightening, analytic-mirroring, and lowpass
-completion ownership before any filter redesign. Keep coefficient assembly,
-audio synthesis, the corpus, stereo, dynamic ratio, and product routing closed.
+Implement Batch 29.6O, the fixed dual-atom tail-attribution diagnostic. Stop at
+the planning checkpoint after evidence; do not redesign filters or boundaries.
+Keep coefficient assembly, audio synthesis, corpus, stereo, dynamic ratio, and
+product routing closed.

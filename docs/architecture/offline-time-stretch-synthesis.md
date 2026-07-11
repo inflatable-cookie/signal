@@ -206,8 +206,14 @@ assembly: lowpass channel `0` retains `6.270779e-7` excluded energy at the
 largest legal support radius and requires more than `16384` guard frames. The
 complete-frame solve itself remains accurate at `1.051210e-12` residual.
 
+Tail attribution now compares raw analysis, tightened analysis, and exact
+canonical-dual atoms at fixed radii for representative lowpass, interior, and
+edge channels. Positive-only analytic atoms and conjugate-mirrored real-output
+atoms remain separate measurements. This isolates filter, tightening, dual,
+mirroring, and lowpass ownership without changing transform geometry.
+
 ## Next Task
 
-Freeze a report-only dual-atom tail-attribution diagnostic before changing the
-lowpass completion or common-grid synthesis geometry. Keep audio synthesis,
-corpus rendering, linked stereo, dynamic ratio, and product routing closed.
+Implement Batch 29.6O and stop at its evidence-led planning checkpoint. Keep
+filter redesign, audio synthesis, corpus rendering, linked stereo, dynamic
+ratio, and product routing closed.

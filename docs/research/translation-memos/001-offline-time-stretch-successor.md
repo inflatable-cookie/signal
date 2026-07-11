@@ -178,8 +178,8 @@ rejected ownership crossfade.
 
 ## Next Task
 
-Freeze the dual-atom tail-attribution diagnostic. Do not redesign filters or
-open coefficient assembly before the limiting lowpass tail is explained.
+Implement the frozen dual-atom tail-attribution diagnostic. Stop for an
+evidence-led redesign decision before changing filters or boundaries.
 
 ## Frequency-Adaptive Reassessment
 
@@ -309,6 +309,13 @@ canonical-dual solve is not the numerical failure: residual is
 `1.051210e-12`, values are finite, and the repeated atom hash is exact. Research
 must now attribute the tail to analysis response, dualization, tightening,
 analytic mirroring, or lowpass completion before choosing a redesign.
+
+The frozen attribution matrix uses channels `0`, `15`, `16`, `768`, and `1535`;
+raw analysis, tightened analysis, and exact tightened-dual responses; and both
+analytic-only and conjugate-mirrored atoms. Fixed radii through `16000` frames
+and thresholds from `1e-6` through `1e-12` expose tail slope without becoming a
+parameter sweep. Its outcome opens a planning decision, not automatic filter
+work.
 
 Additional primary source:
 

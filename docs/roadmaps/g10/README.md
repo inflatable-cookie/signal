@@ -85,7 +85,8 @@ implementation remains Signal-owned.
   assembly if no guard within `16384` frames reaches `1e-12` tail energy. The
   guard fails immediately on lowpass channel `0`: excluded energy remains
   `6.270779e-7`, so no audio is assembled. Batch 29.6O must attribute that tail
-  before filter or boundary redesign.
+  before filter or boundary redesign. Its frozen matrix compares five channels,
+  three response stages, two spectrum forms, six radii, and four thresholds.
 - Offline artifacts and RealtimePreview have bounded contracts and prototype
   paths, but callback-safe preview integration and fully streaming artifact
   output remain gated until their owning source-fill/cache contracts exist.
@@ -175,6 +176,6 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Freeze Batch 29.6O, the report-only dual-atom tail-attribution diagnostic. Keep
+Implement Batch 29.6O, then stop at the evidence-led redesign checkpoint. Keep
 audio synthesis, corpus rendering, linked stereo, dynamic ratio, and product
 integration closed.

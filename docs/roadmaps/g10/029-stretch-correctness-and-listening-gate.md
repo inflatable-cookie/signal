@@ -320,7 +320,7 @@ independent stereo review.
 
 ### Batch 29.6O - Dual-Atom Tail Attribution
 
-- [ ] freeze analysis-atom versus canonical-dual tail measurements for the
+- [x] freeze analysis-atom versus canonical-dual tail measurements for the
   limiting lowpass channel and representative interior/high channels
 - [ ] isolate tightening, analytic mirroring, and lowpass-completion ownership
   with report-only controls; do not tune or synthesize candidates
@@ -714,9 +714,13 @@ independent stereo review.
   energy at the largest legal support radius despite a `1.051210e-12` dual
   residual. Evidence is in
   `docs/logs/2026-07/11-g10-029-common-grid-guard-rejection.md`.
+- 2026-07-11: Froze Batch 29.6O. Five representative channels, three response
+  stages, two spectrum forms, six radii, and four thresholds now attribute the
+  tail without changing geometry. Evidence is in
+  `docs/logs/2026-07/11-g10-029-dual-atom-tail-attribution-contract.md`.
 
 ## Next Task
 
-Freeze Batch 29.6O, the report-only dual-atom tail-attribution diagnostic. Keep
+Implement Batch 29.6O, then stop at the evidence-led redesign checkpoint. Keep
 coefficient assembly, audio synthesis, corpus, stereo, dynamic ratio, and
 product routing closed.
