@@ -3,10 +3,10 @@ use signal_primitives::{Sample, SampleRate};
 
 mod types;
 pub use types::{
-    StretchCommonGridProjectedPhaseEvidence, StretchCommonGridTonePhaseEvidence,
-    StretchCommonGridWaveletEvidence, StretchCommonGridWaveletReview,
-    StretchFrequencyAdaptiveBandEvidence, StretchFrequencyAdaptiveEvidence,
-    StretchFrequencyAdaptiveReview,
+    StretchCommonGridDualGuardEvidence, StretchCommonGridProjectedPhaseEvidence,
+    StretchCommonGridTonePhaseEvidence, StretchCommonGridWaveletEvidence,
+    StretchCommonGridWaveletReview, StretchFrequencyAdaptiveBandEvidence,
+    StretchFrequencyAdaptiveEvidence, StretchFrequencyAdaptiveReview,
 };
 
 mod common_grid;
@@ -15,6 +15,8 @@ pub(crate) use common_grid::common_grid_tone_phase_review_mono;
 pub(crate) use common_grid::common_grid_wavelet_reconstruction_review_mono;
 mod projected_grid;
 pub(crate) use projected_grid::common_grid_projected_phase_review_mono;
+mod synthesis_guard;
+pub(crate) use synthesis_guard::common_grid_dual_guard_review;
 
 #[cfg(test)]
 mod tests;

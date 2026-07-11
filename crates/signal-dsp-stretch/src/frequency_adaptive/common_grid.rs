@@ -383,7 +383,7 @@ pub(crate) fn common_grid_wavelet_reconstruction_review_mono(
     }
 }
 
-fn build_filters(fft_frames: usize) -> Vec<Complex64> {
+pub(super) fn build_filters(fft_frames: usize) -> Vec<Complex64> {
     let positive_bins = fft_frames / 2 + 1;
     let spacing = 0.5 / (CHANNELS - 1) as f64;
     let base_center = LOWPASS_CHANNELS as f64 * spacing;
@@ -419,7 +419,7 @@ fn build_filters(fft_frames: usize) -> Vec<Complex64> {
     filters
 }
 
-fn tighten_frequency_response(filters: &mut [Complex64], positive_bins: usize) {
+pub(super) fn tighten_frequency_response(filters: &mut [Complex64], positive_bins: usize) {
     for bin in 0..positive_bins {
         let energy = (0..CHANNELS)
             .map(|channel| filters[channel * positive_bins + bin].norm_sqr())
@@ -455,7 +455,7 @@ fn multiply(matrix: &[Complex64], vector: &[Complex64], size: usize) -> Vec<Comp
         .collect()
 }
 
-fn conjugate_gradient(
+pub(super) fn conjugate_gradient(
     matrix: &[Complex64],
     rhs: &[Complex64],
     size: usize,

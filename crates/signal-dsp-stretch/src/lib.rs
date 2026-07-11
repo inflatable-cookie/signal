@@ -102,10 +102,10 @@ pub use corpus_report::{
 };
 pub use formant_boundary::{measure_formant_boundary, StretchFormantBoundaryMeasurement};
 pub use frequency_adaptive::{
-    StretchCommonGridProjectedPhaseEvidence, StretchCommonGridTonePhaseEvidence,
-    StretchCommonGridWaveletEvidence, StretchCommonGridWaveletReview,
-    StretchFrequencyAdaptiveBandEvidence, StretchFrequencyAdaptiveEvidence,
-    StretchFrequencyAdaptiveReview,
+    StretchCommonGridDualGuardEvidence, StretchCommonGridProjectedPhaseEvidence,
+    StretchCommonGridTonePhaseEvidence, StretchCommonGridWaveletEvidence,
+    StretchCommonGridWaveletReview, StretchFrequencyAdaptiveBandEvidence,
+    StretchFrequencyAdaptiveEvidence, StretchFrequencyAdaptiveReview,
 };
 pub use hpr_separation::{
     StretchHprAdditiveRender, StretchHprComponentEvidence, StretchHprSeparationEvidence,
@@ -2398,6 +2398,15 @@ impl OfflineHighQualityStretcher {
         ratio: f64,
     ) -> StretchCommonGridProjectedPhaseEvidence {
         frequency_adaptive::common_grid_projected_phase_review_mono(input, ratio)
+    }
+
+    /// Measure the complete canonical-dual synthesis-guard stop gate.
+    #[doc(hidden)]
+    pub fn common_grid_dual_guard_review(
+        &self,
+        source_frames: usize,
+    ) -> StretchCommonGridDualGuardEvidence {
+        frequency_adaptive::common_grid_dual_guard_review(source_frames)
     }
 }
 

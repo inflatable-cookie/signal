@@ -82,7 +82,10 @@ implementation remains Signal-owned.
   projection and duration-independent bounded heap integration across all `30`
   control/ratio cases. Batch 29.6N now owns a measured two-sided canonical-dual
   guard followed by protected-centre synthetic synthesis. It stops before
-  assembly if no guard within `16384` frames reaches `1e-12` tail energy.
+  assembly if no guard within `16384` frames reaches `1e-12` tail energy. The
+  guard fails immediately on lowpass channel `0`: excluded energy remains
+  `6.270779e-7`, so no audio is assembled. Batch 29.6O must attribute that tail
+  before filter or boundary redesign.
 - Offline artifacts and RealtimePreview have bounded contracts and prototype
   paths, but callback-safe preview integration and fully streaming artifact
   output remain gated until their owning source-fill/cache contracts exist.
@@ -172,5 +175,6 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Implement Batch 29.6N from the dual-atom guard proof. Keep corpus rendering,
-linked stereo, dynamic ratio, and product integration closed.
+Freeze Batch 29.6O, the report-only dual-atom tail-attribution diagnostic. Keep
+audio synthesis, corpus rendering, linked stereo, dynamic ratio, and product
+integration closed.

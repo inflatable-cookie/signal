@@ -306,8 +306,10 @@ independent stereo review.
 
 - [x] freeze canonical-dual spectrum assembly, real-output symmetry, padding,
   crop, exact-length, coverage, and impulse-placement rules after 29.6M passes
-- [ ] derive the smallest whole-hop two-sided canonical-dual guard meeting
+- [x] derive the smallest whole-hop two-sided canonical-dual guard meeting
   `1e-12` tail energy, and stop if it exceeds `16384` frames
+  - rejected on lowpass channel `0`: guard lower bound `16768`, excluded energy
+    `6.270779e-7`, dual residual `1.051210e-12`
 - [ ] reflect-pad the source, reuse 29.6M on logical negative/positive guarded
   columns, synthesize the complete canonical-dual spectrum, and crop only the
   protected centre
@@ -315,6 +317,17 @@ independent stereo review.
   synthetic control set before any corpus render
 - [ ] stop for research on any symmetry, dual-residual, coverage, placement,
   finite-value, or determinism failure
+
+### Batch 29.6O - Dual-Atom Tail Attribution
+
+- [ ] freeze analysis-atom versus canonical-dual tail measurements for the
+  limiting lowpass channel and representative interior/high channels
+- [ ] isolate tightening, analytic mirroring, and lowpass-completion ownership
+  with report-only controls; do not tune or synthesize candidates
+- [ ] report tail-energy curves, limiting channels, finite values, solve
+  residuals, and repeat hashes before choosing filter or boundary redesign
+- [ ] keep coefficient assembly, audio synthesis, corpus, stereo, dynamic
+  ratio, and product routing closed
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -696,8 +709,14 @@ independent stereo review.
   failure stops before coefficient assembly; audio failure stops before the
   corpus. Evidence is in
   `docs/logs/2026-07/11-g10-029-common-grid-synthesis-contract.md`.
+- 2026-07-11: Batch 29.6N stopped before coefficient assembly. Lowpass channel
+  `0` requires a guard beyond `16384` frames and retains `6.270779e-7` excluded
+  energy at the largest legal support radius despite a `1.051210e-12` dual
+  residual. Evidence is in
+  `docs/logs/2026-07/11-g10-029-common-grid-guard-rejection.md`.
 
 ## Next Task
 
-Implement Batch 29.6N, starting with the dual-atom guard proof. Keep the corpus,
-linked stereo, dynamic ratio, and product routing closed.
+Freeze Batch 29.6O, the report-only dual-atom tail-attribution diagnostic. Keep
+coefficient assembly, audio synthesis, corpus, stereo, dynamic ratio, and
+product routing closed.

@@ -692,6 +692,12 @@ frames/columns, limiting channel, non-finite values, dual-atom hash, and repeat
 hash. Failure to find a finite passing guard within the cap returns to transform
 research before coefficient assembly.
 
+Batch 29.6N stops here. The exact complete-frame canonical dual for lowpass
+channel `0` has excluded energy `6.270779e-7` at the largest legal support
+radius. Its guard lower bound is `16768` frames, beyond the `16384`-frame cap.
+The block-solve residual is `1.051210e-12`, all values are finite, and repeated
+atom hashes match. No coefficient assembly or audio synthesis is authorized.
+
 ### Rule 25: synthesize a protected centre, not a circular endpoint
 
 Extend the source in both directions with whole-sample even reflection,
@@ -747,7 +753,7 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Implement Batch 29.6N, starting with the dual-atom guard proof. Stop before
-coefficient assembly if no guard within `16384` frames reaches the `1e-12`
-tail-energy gate. Keep the corpus, stereo, dynamic ratio, and product routing
-closed.
+Freeze a report-only dual-atom tail-attribution diagnostic. It must distinguish
+analysis-filter, canonical-dual, tightening, analytic-mirroring, and lowpass
+completion ownership before any filter redesign. Keep coefficient assembly,
+audio synthesis, the corpus, stereo, dynamic ratio, and product routing closed.

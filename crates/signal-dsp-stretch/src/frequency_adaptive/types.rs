@@ -194,3 +194,30 @@ pub struct StretchCommonGridProjectedPhaseEvidence {
     /// Stable hash of phase-assignment decisions and values.
     pub assignment_hash: u64,
 }
+
+/// Evidence from the canonical-dual synthesis-guard stop gate.
+#[derive(Clone, Debug, PartialEq)]
+pub struct StretchCommonGridDualGuardEvidence {
+    /// Transform length used to measure complete canonical-dual atoms.
+    pub probe_fft_frames: usize,
+    /// Total positive-frequency channels in the finalized bank.
+    pub channel_count: usize,
+    /// Channels evaluated before passage or fail-fast rejection.
+    pub evaluated_channels: usize,
+    /// Maximum permitted two-sided guard in sample frames.
+    pub guard_cap_frames: usize,
+    /// Passing guard, or first whole-hop lower bound beyond the legal cap.
+    pub required_guard_lower_bound_frames: usize,
+    /// Largest excluded-energy ratio at the selected legal guard.
+    pub max_tail_energy_ratio: f64,
+    /// Channel that produced the limiting tail measurement.
+    pub limiting_channel: usize,
+    /// Largest canonical-dual block-solve residual.
+    pub max_dual_residual: f64,
+    /// Non-finite dual spectrum or atom values.
+    pub non_finite_values: usize,
+    /// Whether every channel passed within the guard cap.
+    pub passed: bool,
+    /// Stable hash of evaluated canonical-dual atoms.
+    pub dual_atom_hash: u64,
+}

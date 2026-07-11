@@ -201,10 +201,13 @@ whole-hop two-sided guard whose excluded energy is at most `1e-12` for every
 channel, capped at `16384` frames. Reflect the source at both endpoints,
 synthesize the guarded coefficient grid, then crop the protected centre. No
 post-synthesis fade, normalization, zero fill, or endpoint correction may hide
-a boundary failure.
+a boundary failure. The exact guard proof rejects the current bank before
+assembly: lowpass channel `0` retains `6.270779e-7` excluded energy at the
+largest legal support radius and requires more than `16384` guard frames. The
+complete-frame solve itself remains accurate at `1.051210e-12` residual.
 
 ## Next Task
 
-Implement Batch 29.6N from the dual-atom guard proof through guarded synthetic
-synthesis. Keep corpus rendering, linked stereo, dynamic ratio, and product
-routing closed.
+Freeze a report-only dual-atom tail-attribution diagnostic before changing the
+lowpass completion or common-grid synthesis geometry. Keep audio synthesis,
+corpus rendering, linked stereo, dynamic ratio, and product routing closed.

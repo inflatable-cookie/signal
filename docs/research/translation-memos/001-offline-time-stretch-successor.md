@@ -178,8 +178,8 @@ rejected ownership crossfade.
 
 ## Next Task
 
-Implement the frozen canonical-dual guard and protected-centre synthetic
-synthesis proof. Do not open corpus rendering before it passes.
+Freeze the dual-atom tail-attribution diagnostic. Do not redesign filters or
+open coefficient assembly before the limiting lowpass tail is explained.
 
 ## Frequency-Adaptive Reassessment
 
@@ -301,6 +301,14 @@ seam. It first measures the finalized canonical-dual atoms, derives a two-sided
 whole-hop guard at `1e-12` excluded energy, reflect-pads the source, and crops
 only the protected centre. A guard above `16384` frames rejects the transform
 boundary posture before audio assembly.
+
+The exact guard proof rejects the current common-grid bank on lowpass channel
+`0`. At the largest legal support radius it retains `6.270779e-7` of dual-atom
+energy outside the crop guard; the guard lower bound is `16768` frames. The
+canonical-dual solve is not the numerical failure: residual is
+`1.051210e-12`, values are finite, and the repeated atom hash is exact. Research
+must now attribute the tail to analysis response, dualization, tightening,
+analytic mirroring, or lowpass completion before choosing a redesign.
 
 Additional primary source:
 

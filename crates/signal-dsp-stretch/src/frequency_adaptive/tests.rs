@@ -270,6 +270,24 @@ fn common_grid_projected_phase_contract_controls_pass() {
     );
 }
 
+#[test]
+fn common_grid_dual_guard_is_exact_bounded_and_deterministic() {
+    let first = common_grid_dual_guard_review(384);
+    let repeated = common_grid_dual_guard_review(384);
+    assert_eq!(first, repeated);
+    assert!(first.evaluated_channels > 0, "{first:?}");
+    assert!(first.max_dual_residual <= 1.0e-8, "{first:?}");
+    assert_eq!(first.non_finite_values, 0, "{first:?}");
+    if first.passed {
+        assert_eq!(first.evaluated_channels, first.channel_count);
+        assert!(first.required_guard_lower_bound_frames <= first.guard_cap_frames);
+        assert!(first.max_tail_energy_ratio <= 1.0e-12, "{first:?}");
+    } else {
+        assert!(first.required_guard_lower_bound_frames > first.guard_cap_frames);
+    }
+    eprintln!("dual_guard {first:?}");
+}
+
 fn periodic_tone(frequency: f32) -> Vec<Sample> {
     (0..24_576)
         .map(|index| {
