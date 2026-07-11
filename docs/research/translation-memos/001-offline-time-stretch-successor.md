@@ -178,9 +178,9 @@ rejected ownership crossfade.
 
 ## Next Task
 
-Implement residual DC/high-edge matrix attribution after the three-row
-completion rejects complete conditioning at `2.0862893665`. Do not change
-filters or run identity reconstruction, guards, or audio synthesis.
+Freeze complete raw-bank reassessment after boundary cross-term ablations fail
+to improve condition `2.0862893665`. Do not change filters or run identity
+reconstruction, guards, or audio synthesis.
 
 ## Frequency-Adaptive Reassessment
 
@@ -509,3 +509,8 @@ high-edge rows `1520..1534`, and both groups in turn. It retains every diagonal,
 interior, and completion contribution. Complete condition and frozen-mode
 Rayleigh changes then decide whether the next geometry belongs to DC, the high
 edge, both boundaries, or the broader raw bank.
+
+The broader raw bank is selected. DC diagonalization is neutral; high-edge and
+joint-boundary diagonalization worsen condition to `2.1170081614`. Another
+endpoint construction would continue tuning a non-owning mechanism. Reassess
+the complete bank or transform family before more implementation.

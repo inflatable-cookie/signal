@@ -412,6 +412,114 @@ pub struct StretchCommonGridThreeRowNyquistReview {
     pub direction: StretchCommonGridThreeRowNyquistDirection,
 }
 
+/// Matrix operator in residual boundary-geometry attribution.
+#[cfg(all(test, not(debug_assertions)))]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum StretchCommonGridResidualBoundaryOperator {
+    /// Complete rejected three-row candidate.
+    Full,
+    /// DC-row cross terms removed while retaining diagonal energy.
+    DcDiagonalized,
+    /// Preserved high-edge cross terms removed while retaining diagonal energy.
+    HighEdgeDiagonalized,
+    /// DC and preserved high-edge cross terms removed together.
+    BothBoundaryDiagonalized,
+}
+
+/// Geometry direction selected by residual boundary attribution.
+#[cfg(all(test, not(debug_assertions)))]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum StretchCommonGridResidualBoundaryDirection {
+    /// Numerical, closure, or repeat evidence failed.
+    Inconclusive,
+    /// Preserved high-edge rows own the remaining condition failure.
+    HighEdgeGeometry,
+    /// DC lowpass rows own the remaining condition failure.
+    DcGeometry,
+    /// Both boundary groups jointly own the failure.
+    JointBoundaryGeometry,
+    /// Boundary cross terms are insufficient; broaden to the complete raw bank.
+    CompleteRawBank,
+}
+
+/// Per-residue evidence for one residual-boundary operator.
+#[cfg(all(test, not(debug_assertions)))]
+#[derive(Clone, Debug, PartialEq)]
+pub struct StretchCommonGridResidualBoundaryResidueEvidence {
+    /// Operator under review.
+    pub operator: StretchCommonGridResidualBoundaryOperator,
+    /// Alias residue index.
+    pub residue: usize,
+    /// Minimum and maximum eigenvalues.
+    pub eigenvalues: [f64; 2],
+    /// Per-residue condition ratio.
+    pub condition_ratio: f64,
+    /// Jacobi proof evidence.
+    pub jacobi: StretchCommonGridJacobiEvidence,
+    /// Stable bin and matrix hashes.
+    pub hashes: [u64; 2],
+    /// Relative matrix-subtraction closure.
+    pub closure_error: f64,
+}
+
+/// Contribution from one frozen channel group.
+#[cfg(all(test, not(debug_assertions)))]
+#[derive(Clone, Debug, PartialEq)]
+pub struct StretchCommonGridResidualBoundaryGroupEvidence {
+    /// Inclusive-exclusive candidate-row range.
+    pub rows: [usize; 2],
+    /// Total, diagonal, signed cross, and relative arithmetic closure.
+    pub contributions: [f64; 4],
+}
+
+/// Attribution of one frozen full-candidate extremal mode.
+#[cfg(all(test, not(debug_assertions)))]
+#[derive(Clone, Debug, PartialEq)]
+pub struct StretchCommonGridResidualBoundaryModeEvidence {
+    /// Whether this is the maximum rather than minimum mode.
+    pub maximum: bool,
+    /// Frozen residue and eigenvalue.
+    pub residue: usize,
+    /// Full-candidate eigenvalue.
+    pub eigenvalue: f64,
+    /// Eigenvector mass in DC, interior, and Nyquist regions.
+    pub region_mass: [f64; 3],
+    /// Sixteen largest bin weights.
+    pub top_bins: Vec<StretchCommonGridConditioningBinEvidence>,
+    /// Sixteen largest total row contributions.
+    pub top_total_channels: Vec<StretchCommonGridConditioningChannelEvidence>,
+    /// Sixteen largest absolute row cross contributions.
+    pub top_cross_channels: Vec<StretchCommonGridConditioningChannelEvidence>,
+    /// DC, interior, preserved-high-edge, and completion contributions.
+    pub groups: [StretchCommonGridResidualBoundaryGroupEvidence; 4],
+    /// Rayleigh quotients for all four operators.
+    pub rayleigh: [f64; 4],
+    /// DC, high-edge, and both-boundary changes from full.
+    pub changes: [f64; 3],
+    /// Relative total-contribution closure.
+    pub closure_error: f64,
+    /// Stable eigenvector hash.
+    pub vector_hash: u64,
+}
+
+/// Complete release-only residual boundary-geometry attribution.
+#[cfg(all(test, not(debug_assertions)))]
+#[derive(Clone, Debug, PartialEq)]
+pub struct StretchCommonGridResidualBoundaryReview {
+    /// All four operators across all eleven residues.
+    pub residues: Vec<StretchCommonGridResidualBoundaryResidueEvidence>,
+    /// Global condition ratios in operator order.
+    pub conditions: [f64; 4],
+    /// Frozen full-candidate minimum and maximum modes.
+    pub modes: [StretchCommonGridResidualBoundaryModeEvidence; 2],
+    /// Maximum residual, orthogonality, trace, Frobenius, and closure errors.
+    pub maximum_errors: [f64; 5],
+    /// Stable complete evidence hash.
+    pub evidence_hash: u64,
+    /// Selected geometry direction.
+    pub direction: StretchCommonGridResidualBoundaryDirection,
+}
+
 /// Numerical evidence for one bounded Hermitian Jacobi solve.
 #[derive(Clone, Debug, PartialEq)]
 pub struct StretchCommonGridJacobiEvidence {

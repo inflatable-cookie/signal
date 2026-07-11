@@ -17,25 +17,12 @@ const CANDIDATE_ROWS: usize = CHANNELS + 2;
 
 pub(crate) fn common_grid_three_row_nyquist_review() -> Review {
     let positive_bins = FFT_FRAMES / 2 + 1;
-    let raw = build_boundary_candidate_filters(FFT_FRAMES);
+    let (filters, preserved_hash, completion_hashes, original_completion) =
+        three_row_candidate_filters();
     let preserved_end = (CHANNELS - 1) * positive_bins;
-    let preserved_hash = filter_hash(&raw[..preserved_end]);
-    let original_completion = &raw[preserved_end..];
-    let mut filters = Vec::with_capacity(CANDIDATE_ROWS * positive_bins);
-    filters.extend_from_slice(&raw[..preserved_end]);
-    let scale = 3.0_f64.sqrt().recip();
-    let mut completion_hashes = [0; 3];
-    for (row, delay) in COMPLETION_DELAYS.into_iter().enumerate() {
-        let start = filters.len();
-        for (bin, value) in original_completion.iter().enumerate() {
-            let phase = -std::f64::consts::TAU * bin as f64 * delay as f64 / FFT_FRAMES as f64;
-            filters.push(*value * scale * Complex64::from_polar(1.0, phase));
-        }
-        completion_hashes[row] = filter_hash(&filters[start..]);
-    }
 
     let construction_errors = construction_errors(
-        original_completion,
+        &original_completion,
         &filters[preserved_end..],
         positive_bins,
     );
@@ -101,6 +88,32 @@ pub(crate) fn common_grid_three_row_nyquist_review() -> Review {
     };
     review.evidence_hash = evidence_hash(&review);
     review
+}
+
+pub(super) fn three_row_candidate_filters() -> (Vec<Complex64>, u64, [u64; 3], Vec<Complex64>) {
+    let positive_bins = FFT_FRAMES / 2 + 1;
+    let raw = build_boundary_candidate_filters(FFT_FRAMES);
+    let preserved_end = (CHANNELS - 1) * positive_bins;
+    let preserved_hash = filter_hash(&raw[..preserved_end]);
+    let original_completion = raw[preserved_end..].to_vec();
+    let mut filters = Vec::with_capacity(CANDIDATE_ROWS * positive_bins);
+    filters.extend_from_slice(&raw[..preserved_end]);
+    let scale = 3.0_f64.sqrt().recip();
+    let mut completion_hashes = [0; 3];
+    for (row, delay) in COMPLETION_DELAYS.into_iter().enumerate() {
+        let start = filters.len();
+        for (bin, value) in original_completion.iter().enumerate() {
+            let phase = -std::f64::consts::TAU * bin as f64 * delay as f64 / FFT_FRAMES as f64;
+            filters.push(*value * scale * Complex64::from_polar(1.0, phase));
+        }
+        completion_hashes[row] = filter_hash(&filters[start..]);
+    }
+    (
+        filters,
+        preserved_hash,
+        completion_hashes,
+        original_completion,
+    )
 }
 
 fn construction_errors(

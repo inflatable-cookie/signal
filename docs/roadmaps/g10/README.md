@@ -126,6 +126,9 @@ implementation remains Signal-owned.
   It freezes a four-operator comparison of the full candidate against DC,
   preserved-high-edge, and joint boundary cross-term diagonalization. Batch
   29.6AC owns the report and direction decision only.
+  The report selects complete raw-bank reassessment: DC removal is neutral and
+  high-edge removal worsens condition to `2.1170081614`. Batch 29.6AD is an
+  explicit step-back checkpoint before more implementation.
 - Offline artifacts and RealtimePreview have bounded contracts and prototype
   paths, but callback-safe preview integration and fully streaming artifact
   output remain gated until their owning source-fill/cache contracts exist.
@@ -215,7 +218,7 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Implement Batch 29.6AC residual boundary matrix attribution and stop after its
-direction decision. Do not change filters, rows, delays, or normalization.
-Keep audio synthesis, corpus rendering, linked stereo, dynamic ratio, and
-product integration closed.
+Freeze Batch 29.6AD complete raw-bank reassessment. Do not implement another
+boundary response, normalizer, row allocation, delay set, dual, or guard. Keep
+audio synthesis, corpus rendering, linked stereo, dynamic ratio, and product
+integration closed.

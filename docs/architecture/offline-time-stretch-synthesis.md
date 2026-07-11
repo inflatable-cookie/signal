@@ -321,9 +321,15 @@ rows `1520..1534`, or both. Completion rows remain unchanged. Per-mode group
 contributions and complete-bank conditions will select DC, high edge, joint
 boundary, or broader raw-bank ownership.
 
+The report selects broader raw-bank ownership. DC cross-term removal is
+neutral; preserved-high-edge removal raises condition from `2.0862893665` to
+`2.1170081614`. The limiting modes remain Nyquist-localized, but endpoint-group
+cross coupling does not own the failure. Further endpoint variants are closed
+pending a complete-bank reassessment.
+
 ## Next Task
 
-Implement Batch 29.6AC residual boundary matrix attribution and stop after its
-direction decision. Do not change filters, rows, delays, or normalization.
-Keep phase reproof, audio synthesis, corpus rendering, linked stereo, dynamic
-ratio, and product routing closed.
+Freeze Batch 29.6AD complete raw-bank reassessment. Do not implement another
+boundary response, normalizer, row allocation, delay set, dual, or guard. Keep
+phase reproof, audio synthesis, corpus rendering, linked stereo, dynamic ratio,
+and product routing closed.

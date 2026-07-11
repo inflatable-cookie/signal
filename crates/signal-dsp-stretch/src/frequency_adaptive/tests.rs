@@ -289,6 +289,40 @@ fn common_grid_three_row_nyquist_completion_rejects_conditioning() {
 }
 
 #[test]
+#[cfg(not(debug_assertions))]
+fn common_grid_residual_boundary_attribution_selects_direction() {
+    let first = common_grid_residual_boundary_attribution_review();
+    let repeated = common_grid_residual_boundary_attribution_review();
+    assert_eq!(first, repeated);
+    assert_eq!(first.residues.len(), 44);
+    assert!(first.maximum_errors[0] <= 1.0e-8, "{first:?}");
+    assert!(first.maximum_errors[1] <= 1.0e-10, "{first:?}");
+    assert!(first.maximum_errors[2] <= 1.0e-12, "{first:?}");
+    assert!(first.maximum_errors[3] <= 1.0e-10, "{first:?}");
+    assert!(first.maximum_errors[4] <= 1.0e-8, "{first:?}");
+    assert_eq!(first.modes[0].residue, 3);
+    assert_eq!(first.modes[1].residue, 8);
+    assert!(first.modes.iter().all(|mode| mode.top_bins.len() == 16));
+    assert!(first
+        .modes
+        .iter()
+        .all(|mode| mode.top_total_channels.len() == 16));
+    assert!(first
+        .modes
+        .iter()
+        .all(|mode| mode.top_cross_channels.len() == 16));
+    assert_eq!(
+        first.direction,
+        StretchCommonGridResidualBoundaryDirection::CompleteRawBank
+    );
+    assert_ne!(first.evidence_hash, 0);
+    eprintln!(
+        "common_grid_residual_boundary conditions={:?} modes={:?} errors={:?} evidence={:016x} direction={:?}",
+        first.conditions, first.modes, first.maximum_errors, first.evidence_hash, first.direction
+    );
+}
+
+#[test]
 fn common_grid_phase_transport_rejects_high_band_phase_aliasing() {
     for frequency in [312.5_f32, 1_000.0] {
         let input = (0..24_576)

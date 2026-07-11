@@ -461,12 +461,21 @@ independent stereo review.
 
 ### Batch 29.6AC - Residual Boundary Matrix Attribution
 
-- [ ] compare full, DC-diagonalized, preserved-high-edge-diagonalized, and
+- [x] compare full, DC-diagonalized, preserved-high-edge-diagonalized, and
   both-boundary-diagonalized operators across all `11` residues
-- [ ] attribute the frozen residue-`3` minimum and residue-`8` maximum by four
+- [x] attribute the frozen residue-`3` minimum and residue-`8` maximum by four
   channel groups, bins, channel totals/cross terms, Rayleigh changes, and closure
-- [ ] pass Jacobi, finite, hash, closure, and exact-repeat gates; select DC,
+- [x] pass Jacobi, finite, hash, closure, and exact-repeat gates; select DC,
   high edge, joint boundary, broader bank, or inconclusive; implement nothing
+
+### Batch 29.6AD - Complete Raw-Bank Reassessment
+
+- [ ] step back from endpoint candidates and freeze one complete-bank research
+  question from the failed untightened geometry
+- [ ] preserve the passing common-grid timing and solver evidence while deciding
+  whether the bank geometry or transform family must change
+- [ ] keep implementation, reconstruction, guards, phase, synthesis, corpus,
+  stereo, dynamic ratio, and routing closed
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -920,8 +929,12 @@ independent stereo review.
   coupling from raw DC rows `0..15`, preserved high-edge rows `1520..1534`, or
   both before another geometry is proposed. Evidence is in
   `docs/logs/2026-07/11-g10-029-residual-boundary-attribution-contract.md`.
+- 2026-07-11: Batch 29.6AC selected complete raw-bank reassessment. DC
+  diagonalization is neutral and high-edge diagonalization worsens condition to
+  `2.1170081614`; boundary cross terms are insufficient. Evidence is in
+  `docs/logs/2026-07/11-g10-029-residual-boundary-attribution-decision.md`.
 
 ## Next Task
 
-Implement Batch 29.6AC residual boundary matrix attribution and stop after its
-direction decision. Do not change filters, rows, delays, or normalization.
+Freeze Batch 29.6AD complete raw-bank reassessment. Do not implement another
+boundary response, normalizer, row allocation, delay set, dual, or guard.

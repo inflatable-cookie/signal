@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; residual boundary attribution frozen
+Status: active; complete raw-bank reassessment selected
 Owner: dsp
 Updated: 2026-07-11
 Related contracts: `046`, `048`, `049`
@@ -1158,12 +1158,27 @@ results choose exactly one direction:
 - DC diagonalized condition at most `1.25`, high edge above: DC lowpass geometry
 - neither individual ablation passes, but both-boundary condition at most
   `1.25`: joint DC/high-edge geometry
+- both individual ablations pass: joint DC/high-edge geometry; neither group
+  has exclusive ownership
 - both-boundary condition above `1.25`: broaden attribution to the complete raw
   bank; boundary cross coupling is insufficient
 - any numerical, closure, or repeat failure: inconclusive
 
 No result authorizes another filter, normalizer, row allocation, delay set,
 identity reconstruction, dual, guard, phase, or synthesis.
+
+Batch 29.6AC selects complete raw-bank reassessment. Conditions are
+`2.0862893665` full, `2.0862893665` with DC cross terms diagonalized,
+`2.1170081614` with preserved-high-edge terms diagonalized, and
+`2.1170081614` with both boundary groups diagonalized. Boundary cross coupling
+is insufficient and its removal does not improve the bank.
+
+Maximum numerical errors are residual `4.0816637991e-13`, orthogonality
+`9.0612880085e-15`, trace `1.0056895525e-15`, Frobenius
+`1.2119742216e-14`, and closure `1.4078218646e-14`. Evidence hash
+`a9f55eb001e8d125` repeats exactly. Another boundary filter is not justified.
+Batch 29.6AD must freeze one complete raw-bank reassessment checkpoint before
+more implementation.
 
 ### Rule 27: synthesize a protected centre, not a circular endpoint
 
@@ -1220,5 +1235,5 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Implement Batch 29.6AC residual boundary matrix attribution and stop after its
-direction decision. Do not change filters, rows, delays, or normalization.
+Freeze Batch 29.6AD complete raw-bank reassessment. Do not implement another
+boundary response, normalizer, row allocation, delay set, dual, or guard.
