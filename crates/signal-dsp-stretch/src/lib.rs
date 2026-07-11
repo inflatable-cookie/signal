@@ -103,9 +103,9 @@ pub use corpus_report::{
 pub use formant_boundary::{measure_formant_boundary, StretchFormantBoundaryMeasurement};
 pub use frequency_adaptive::{
     StretchCommonGridBoundaryReview, StretchCommonGridDualGuardEvidence,
-    StretchCommonGridProjectedPhaseEvidence, StretchCommonGridTailAtomEvidence,
-    StretchCommonGridTailAttributionEvidence, StretchCommonGridTailForm,
-    StretchCommonGridTailStage, StretchCommonGridTonePhaseEvidence,
+    StretchCommonGridPreconditionedReview, StretchCommonGridProjectedPhaseEvidence,
+    StretchCommonGridTailAtomEvidence, StretchCommonGridTailAttributionEvidence,
+    StretchCommonGridTailForm, StretchCommonGridTailStage, StretchCommonGridTonePhaseEvidence,
     StretchCommonGridWaveletEvidence, StretchCommonGridWaveletReview,
     StretchFrequencyAdaptiveBandEvidence, StretchFrequencyAdaptiveEvidence,
     StretchFrequencyAdaptiveReview,
@@ -2371,6 +2371,19 @@ impl OfflineHighQualityStretcher {
         sample_rate: SampleRate,
     ) -> StretchCommonGridBoundaryReview {
         frequency_adaptive::common_grid_boundary_reconstruction_review_mono(input, sample_rate)
+    }
+
+    /// Review identity reconstruction through the endpoint-even preconditioned frame.
+    #[doc(hidden)]
+    pub fn common_grid_preconditioned_reconstruction_review_mono(
+        &self,
+        input: &[Sample],
+        sample_rate: SampleRate,
+    ) -> StretchCommonGridPreconditionedReview {
+        frequency_adaptive::common_grid_preconditioned_reconstruction_review_mono(
+            input,
+            sample_rate,
+        )
     }
 
     /// Measure common-grid phase scale and channel-delay compensation on a steady tone.

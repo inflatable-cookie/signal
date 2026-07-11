@@ -178,11 +178,10 @@ rejected ownership crossfade.
 
 ## Next Task
 
-Implement the frozen common endpoint-even frame normalizer through
-reconstruction. It uses exact inverse-square-root frame energy in the interior
-and quintic endpoint blends over the existing `16h` spans. Run representative
-guards only after reconstruction passes. Do not sweep widths or tapers or open
-audio synthesis.
+Freeze report-only alias-block conditioning attribution for the rejected
+endpoint-even frame normalizer. Its condition ratio is `3.0185626163` despite
+exact identity reconstruction. Do not change the normalizer, implement another
+candidate, run guards, or open audio synthesis.
 
 ## Frequency-Adaptive Reassessment
 

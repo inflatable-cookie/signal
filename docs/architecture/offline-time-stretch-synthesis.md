@@ -244,9 +244,16 @@ requires no fitted derivative. This removes the known real-mirror cusp by
 construction; only measured conditioning and dual-atom guards can establish
 that the complete bank is usable.
 
+The endpoint-even candidate fails the complete frame gate. Condition ratio is
+`3.0185626163`, with eigenvalue extrema `0.4649443041` and `1.4034634949`,
+despite exact identity reconstruction. The common scalar controls pointwise
+energy but not the alias-block eigenstructure created by `384`-frame
+decimation. No guard runs. The next proof must attribute limiting residue
+blocks and channel ownership across the raw, exact-pointwise, and endpoint-even
+banks before another preconditioner shape is frozen.
+
 ## Next Task
 
-Implement Batch 29.6R through reconstruction. Run representative guards only
-after reconstruction passes. Keep the all-channel guard, phase reproof, audio
-synthesis, corpus rendering, linked stereo, dynamic ratio, and product routing
-closed.
+Freeze Batch 29.6S alias-block conditioning attribution. Do not implement a new
+preconditioner or run guards. Keep phase reproof, audio synthesis, corpus
+rendering, linked stereo, dynamic ratio, and product routing closed.

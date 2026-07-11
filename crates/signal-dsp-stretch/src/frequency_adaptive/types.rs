@@ -136,6 +136,19 @@ pub struct StretchCommonGridBoundaryReview {
     pub preserved_filter_hash: u64,
     /// Stable hash of the replacement Nyquist completion.
     pub nyquist_completion_hash: u64,
+    /// Stable hash of the complete raw boundary bank.
+    pub raw_filter_hash: u64,
+}
+
+/// Identity reconstruction through the endpoint-even preconditioned frame.
+#[derive(Clone, Debug, PartialEq)]
+pub struct StretchCommonGridPreconditionedReview {
+    /// Complete canonical-dual identity reconstruction.
+    pub reconstruction: StretchCommonGridWaveletReview,
+    /// Stable hash of the complete raw boundary bank.
+    pub raw_filter_hash: u64,
+    /// Stable hash of the common scalar preconditioner.
+    pub multiplier_hash: u64,
 }
 
 /// Steady-tone evidence for common-grid delay compensation and phase scale.

@@ -357,14 +357,25 @@ independent stereo review.
 
 ### Batch 29.6R - Endpoint-Even Normalization Proof
 
-- [ ] implement only the frozen common scalar normalizer and separate raw-bank
+- [x] implement only the frozen common scalar normalizer and separate raw-bank
   and multiplier hashes; do not add gains, fitted slopes, or variants
-- [ ] require complete reconstruction condition ratio at most `1.25`, dual
-  residual at most `1e-8`, identity-error passage, finite values, and exact repeat
-- [ ] run the six-channel representative guard only after reconstruction passes;
-  stop before the all-channel guard on either failure
-- [ ] keep phase reproof, coefficient assembly, synthesis, corpus, stereo,
+- [x] test complete reconstruction; reject condition ratio `3.0185626163`
+  against `1.25` while retaining dual, identity, finite-value, and repeat gates
+- [x] honor the reconstruction stop gate; do not run the six-channel
+  representative guard or all-channel guard
+- [x] keep phase reproof, coefficient assembly, synthesis, corpus, stereo,
   dynamic ratio, and product routing closed
+
+### Batch 29.6S - Alias-Block Conditioning Attribution Contract
+
+- [ ] freeze one report-only matrix across raw, exact-pointwise, and
+  endpoint-even banks; do not synthesize another preconditioner
+- [ ] attribute limiting residue blocks, eigenvalue extrema, boundary-bin
+  membership, and per-channel energy/cross-term ownership
+- [ ] require finite values, stable hashes, exact repeat evidence, and no
+  coefficient assembly, guard, phase, corpus, or listening work
+- [ ] use the attribution to decide whether block-aware preconditioning or
+  boundary-geometry reassessment is justified
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -774,10 +785,13 @@ independent stereo review.
   over the existing `16h` spans. Reconstruction remains the first stop gate.
   Evidence is in
   `docs/logs/2026-07/11-g10-029-boundary-preconditioner-contract.md`.
+- 2026-07-11: Rejected Batch 29.6R at reconstruction conditioning. The
+  endpoint-even scalar reaches condition ratio `3.0185626163`; exact identity
+  passes, but representative guards did not run. Evidence is in
+  `docs/logs/2026-07/11-g10-029-boundary-preconditioner-rejection.md`.
 
 ## Next Task
 
-Implement Batch 29.6R through reconstruction. Run the six-channel
-representative guard only if reconstruction passes; stop before the all-channel
-guard on either failure. Keep phase reproof, coefficient assembly, audio
-synthesis, corpus, stereo, dynamic ratio, and product routing closed.
+Freeze Batch 29.6S alias-block conditioning attribution. Do not implement
+another preconditioner or run guards. Keep phase reproof, coefficient assembly,
+audio synthesis, corpus, stereo, dynamic ratio, and product routing closed.

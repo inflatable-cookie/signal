@@ -97,7 +97,9 @@ implementation remains Signal-owned.
   smooth endpoint-compatible preconditioner or normalizer without reopening a
   width or taper sweep. It freezes one common inverse-square-root frame-energy
   multiplier with quintic endpoint blends over the existing `16h` spans.
-  Batch 29.6R must prove reconstruction before any representative guard runs.
+  Batch 29.6R rejects it at reconstruction: condition ratio `3.0185626163`
+  exceeds `1.25`, so no representative guard runs. Batch 29.6S must attribute
+  the complete alias-block conditioning failure before another candidate.
 - Offline artifacts and RealtimePreview have bounded contracts and prototype
   paths, but callback-safe preview integration and fully streaming artifact
   output remain gated until their owning source-fill/cache contracts exist.
@@ -187,7 +189,6 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Implement Batch 29.6R through reconstruction. Run representative guards only
-after reconstruction passes and stop before the all-channel scan on failure.
-Keep audio synthesis, corpus rendering, linked stereo, dynamic ratio, and
-product integration closed.
+Freeze Batch 29.6S alias-block conditioning attribution. Do not implement
+another preconditioner or run guards. Keep audio synthesis, corpus rendering,
+linked stereo, dynamic ratio, and product integration closed.

@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; endpoint-even normalizer frozen
+Status: active; endpoint-even normalizer rejected
 Owner: dsp
 Updated: 2026-07-11
 Related contracts: `046`, `048`, `049`
@@ -856,6 +856,22 @@ Only reconstruction passage opens the representative channels `0`, `15`,
 `16384`-frame cap. All-channel guard, derivative and projected-field reproof,
 coefficient assembly, and every synthesis surface retain their Rule 26 order.
 
+Batch 29.6R is rejected at reconstruction conditioning. The endpoint-even
+candidate has frame minimum `0.4649443041`, maximum `1.4034634949`, and
+condition ratio `3.0185626163`, above `1.25`. Exact identity still passes:
+dual residual is `7.899949e-11`, peak error `7.275958e-12`, RMS error
+`1.992566e-13`, head error `7.048638e-13`, and tail error `0`. Raw-bank hash
+`c1014f5fc308c290` and multiplier hash `fd32b38fb8e92972` repeat in the release
+proof. The raw hash matches the unmodified Rule 26 bank in the same build.
+
+The representative guard did not run. Endpoint smoothness alone does not
+control the complete alias-block frame operator. Do not alter the blend,
+boundary width, endpoint values, or channel gains. Before another candidate,
+Batch 29.6S must freeze a report-only attribution of the limiting residue
+blocks, eigenvalue extrema, boundary-bin ownership, and channel contributions
+for the raw, exact-pointwise, and endpoint-even banks. No new preconditioner is
+authorized by this result.
+
 ### Rule 27: synthesize a protected centre, not a circular endpoint
 
 Extend the source in both directions with whole-sample even reflection,
@@ -911,7 +927,6 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Implement Batch 29.6R through reconstruction and stop on failure. Run the six
-representative guards only after reconstruction passes. Keep all-channel guard,
-phase reproof, coefficient assembly, audio synthesis, corpus, stereo, dynamic
-ratio, and product routing closed.
+Freeze Batch 29.6S alias-block conditioning attribution. Do not implement a new
+preconditioner or run guards. Keep phase reproof, coefficient assembly, audio
+synthesis, corpus, stereo, dynamic ratio, and product routing closed.
