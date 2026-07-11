@@ -77,6 +77,8 @@ implementation remains Signal-owned.
   fractional source projection and delay-compensated phase transport; linked
   stereo remains closed. Its phase-difference estimator aliases on the `8 kHz`
   tone and is rejected before interpolation or heap integration.
+  Batch 29.6L now tests an alias-free same-column auxiliary derivative-filter
+  ratio before phase integration.
 - Offline artifacts and RealtimePreview have bounded contracts and prototype
   paths, but callback-safe preview integration and fully streaming artifact
   output remain gated until their owning source-fill/cache contracts exist.
@@ -166,5 +168,6 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Research an alias-free common-grid instantaneous-frequency estimator. Keep
-corpus rendering, linked stereo, and product integration closed.
+Implement Batch 29.6L, the auxiliary derivative-filter estimator proof. Keep
+phase integration, corpus rendering, linked stereo, and product integration
+closed.

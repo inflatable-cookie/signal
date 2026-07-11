@@ -274,6 +274,19 @@ independent stereo review.
   - rejected at the high-tone gate: phase differences alias outside the
     `+/-62.5 Hz` residual interval
 
+### Batch 29.6L - Auxiliary Derivative-Filter Estimator
+
+- [ ] derive same-grid auxiliary time-derivative filters from every finalized
+  tightened analysis response
+- [ ] prove cross-ratio sign and `1e-6` angular-frequency error on periodic
+  `312.5 Hz`, `1 kHz`, `8 kHz`, and `19.5 kHz` tones
+- [ ] prove delay-compensated adjacent-channel residual at most `2e-5` radians
+  without inter-column unwrap or a hidden shorter hop
+- [ ] prove silence skips zero-energy ratios, noise remains finite, and all
+  evidence and hashes repeat exactly
+- [ ] keep projection, heap integration, synthesis, corpus, stereo, and product
+  routing closed even if the estimator passes
+
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
 - [ ] share the time map and phase-propagation decisions across channels
@@ -629,8 +642,13 @@ independent stereo review.
   produced `0.065450362` radians/sample frequency error and `0.243248864`
   radians compensated residual. Evidence is in
   `docs/logs/2026-07/10-g10-029-common-grid-phase-alias-rejection.md`.
+- 2026-07-11: Froze Batch 29.6L. Same-column auxiliary derivative-filter
+  ratios replace aliased inter-column phase differences. Tone scale/sign,
+  delay compensation, zero-energy handling, and determinism must pass before
+  heap integration. Evidence is in
+  `docs/logs/2026-07/11-g10-029-auxiliary-derivative-estimator-contract.md`.
 
 ## Next Task
 
-Return to research for an alias-free common-grid instantaneous-frequency
-estimator. Keep corpus rendering, linked stereo, and product routing closed.
+Implement Batch 29.6L, the report-only auxiliary derivative-filter estimator
+proof. Keep integration, synthesis, corpus, stereo, and product routing closed.

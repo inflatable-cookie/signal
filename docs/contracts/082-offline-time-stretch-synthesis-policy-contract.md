@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; common-grid phase-difference transport rejected
+Status: active; auxiliary derivative-filter estimator ready
 Owner: dsp
 Updated: 2026-07-10
 Related contracts: `046`, `048`, `049`
@@ -564,6 +564,40 @@ interval. Do not implement interpolation, heap integration, synthesis, or the
 corpus gate on these derivatives. The common-grid reconstruction remains valid;
 the phase-difference estimator is rejected.
 
+### Rule 20: instantaneous frequency uses a same-column derivative ratio
+
+Batch 29.6L retains the passing Batch 29.6J filters, tightening, channel delays,
+and `384`-frame coefficient grid. For finalized analysis response `G[k,w]`,
+derive an auxiliary time-derivative response by multiplying with signed angular
+frequency. Analyze the source through both banks at identical positions.
+
+For qualified coefficient `C` and derivative coefficient `Cdot`, estimate
+absolute instantaneous angular frequency from the imaginary part of
+`Cdot*conj(C)/|C|^2`. Freeze the multiplication sign only after a synthetic
+steady tone proves it. Do not combine this estimator with inter-column unwrap
+or a hidden shorter hop.
+
+Qualify coefficients at or above `0.5` of the maximum magnitude for that tone.
+After estimation, remove deterministic channel delay as in Rule 17 and measure
+adjacent qualified channels at nominal common-grid time.
+
+### Rule 21: prove the estimator before phase integration
+
+Test periodic `312.5 Hz`, `1 kHz`, `8 kHz`, and `19.5 kHz` tones over a legal
+`24576`-frame transform, plus silence and deterministic noise. Report maximum
+angular-frequency error, compensated adjacent-channel residual, qualified
+horizontal/vertical counts, zero-energy skips, non-finite values, auxiliary
+coefficient hash, and repeat hash.
+
+Every tone must have qualified horizontal and adjacent-channel evidence,
+angular-frequency error at most `1e-6` radians/sample, and compensated residual
+at most `2e-5` radians. Silence must produce no qualified values or non-finite
+ratios. Noise must remain finite. Repeated evidence must match exactly.
+
+Failure returns to research. Passing opens only the remaining fractional
+projection and bounded heap mechanism proof. It does not open synthesis, the
+60-row corpus, stereo, or product routing.
+
 ## Clean-Room Rule
 
 Public papers and public algorithm descriptions may inform Signal design.
@@ -572,7 +606,6 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Research an alias-free instantaneous-frequency estimator for the passing
-common-grid transform. Prefer auxiliary derivative-filter or reassignment
-evidence before changing hop or redundancy. Keep the corpus, linked stereo,
-and all product routing closed.
+Implement Batch 29.6L, the report-only auxiliary derivative-filter estimator
+proof. Keep phase integration, synthesis, the corpus, linked stereo, and all
+product routing closed.

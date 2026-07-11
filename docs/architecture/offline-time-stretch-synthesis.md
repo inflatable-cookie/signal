@@ -174,7 +174,14 @@ allowed by the `384`-frame hop, so heterodyned phase differences alias before
 delay compensation. The transform remains valid; phase transport requires an
 alias-free estimator such as an auxiliary derivative-filter ratio.
 
+The next proof derives that auxiliary filter from each finalized, tightened
+analysis response. Multiplication by signed angular frequency in the frequency
+domain represents the time derivative. At the same coefficient location, the
+imaginary derivative/original cross-ratio estimates absolute instantaneous
+frequency without inter-column phase unwrap. Channel-delay compensation stays
+downstream of that estimate.
+
 ## Next Task
 
-Research an alias-free common-grid instantaneous-frequency estimator. Keep
-corpus rendering, linked stereo, and product routing closed.
+Implement Batch 29.6L, the auxiliary derivative-filter estimator proof. Keep
+phase integration, corpus rendering, linked stereo, and product routing closed.

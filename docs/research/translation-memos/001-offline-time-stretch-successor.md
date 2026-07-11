@@ -178,8 +178,8 @@ rejected ownership crossfade.
 
 ## Next Task
 
-Research an alias-free common-grid instantaneous-frequency estimator. Do not
-open corpus rendering.
+Implement the auxiliary derivative-filter instantaneous-frequency proof. Do
+not open phase integration or corpus rendering.
 
 ## Frequency-Adaptive Reassessment
 
@@ -268,11 +268,24 @@ passband is wider and the estimator aliases despite correct delay compensation.
 Auxiliary derivative-filter reassignment is the next bounded research question
 because it does not depend on wrapped inter-column phase.
 
+## Auxiliary Derivative Decision
+
+Time-frequency reassignment supplies the alias-free alternative. Analyze the
+signal through the original filter and a same-position auxiliary filter that
+represents its time derivative. The imaginary derivative/original cross-ratio
+is local absolute instantaneous frequency. It uses one coefficient column, so
+the `384`-frame inter-column phase interval cannot alias it.
+
+Signal derives the auxiliary response from the final tightened filter, not the
+untightened mother wavelet. The first proof covers periodic low-to-near-Nyquist
+tones, silence, noise, delay compensation, finite ratios, and repeat hashes.
+Fractional projection and heap integration remain closed until it passes.
+
 Additional primary source:
 
 | Source | Confidence | Notes |
 | --- | --- | --- |
-| [Fitz and Fulop, 2009](https://arxiv.org/abs/0903.3080) | high | Interprets phase-time derivative as local instantaneous frequency and phase-frequency derivative as group delay; Signal verifies its discrete delay sign synthetically |
+| [Fitz and Fulop, 2009](https://arxiv.org/abs/0903.3080) | high | Derives same-location frequency reassignment from time-derivative auxiliary windows and interprets phase derivatives as instantaneous frequency/group delay |
 
 Additional primary sources:
 
