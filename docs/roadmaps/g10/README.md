@@ -143,7 +143,9 @@ implementation remains Signal-owned.
   operator direction checkpoint. The operator authorizes continued research
   without relaxing failed gates. Batch 29.6AI now owns declared-schedule
   time-adaptive painless reconstruction only; selection and stretching remain
-  closed.
+  closed. That reconstruction passes all schedules and controls with adaptive
+  condition `1.5934675721` and sub-`1e-15` peak error. Batch 29.6AJ must freeze
+  automatic time-resolution selection before detector implementation.
 - Offline artifacts and RealtimePreview have bounded contracts and prototype
   paths, but callback-safe preview integration and fully streaming artifact
   output remain gated until their owning source-fill/cache contracts exist.
@@ -233,6 +235,6 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Implement Batch 29.6AI time-adaptive painless-frame reconstruction and stop at
-its identity decision. Keep automatic selection, phase, stretched synthesis,
-corpus, linked stereo, dynamic ratio, and product integration closed.
+Freeze Batch 29.6AJ automatic time-resolution selection. Keep selector
+implementation, phase, stretched synthesis, corpus, linked stereo, dynamic
+ratio, and product integration closed.

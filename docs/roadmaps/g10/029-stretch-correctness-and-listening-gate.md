@@ -516,12 +516,21 @@ independent stereo review.
 
 ### Batch 29.6AI - Time-Adaptive Painless Reconstruction
 
-- [ ] implement one declared-schedule `4096`-bin NSDGT proof with compact
+- [x] implement one declared-schedule `4096`-bin NSDGT proof with compact
   square-root Hann windows of `512`, `1024`, `2048`, and `4096` frames
-- [ ] prove schedule legality, diagonal dual coverage/condition, compact
+- [x] prove schedule legality, diagonal dual coverage/condition, compact
   support, real output, exact identity reconstruction, and deterministic hashes
-- [ ] open only automatic resolution-selection research on complete passage;
+- [x] open only automatic resolution-selection research on complete passage;
   keep phase, stretched synthesis, corpus, stereo, dynamic ratio, and routing closed
+
+### Batch 29.6AJ - Automatic Time-Resolution Selection Contract
+
+- [ ] choose one bounded source-evidence selector for the passing four-level
+  window bank; do not combine detector families or tune against corpus output
+- [ ] freeze declared-event recovery, dense-event, false-positive, schedule
+  legality, stability, stereo-decision, finite-value, and repeat evidence
+- [ ] open selector implementation only on a complete contract; keep phase,
+  stretched synthesis, corpus, dynamic ratio, cache, and routing closed
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -1002,8 +1011,13 @@ independent stereo review.
   TSM evidence selects time-adaptive painless NSDGT reconstruction as the next
   bounded question. Evidence is in
   `docs/logs/2026-07/11-g10-029-time-adaptive-transform-research.md`.
+- 2026-07-11: Batch 29.6AI passed declared-schedule reconstruction. All five
+  schedules reconstruct eleven controls with adaptive condition at most
+  `1.5934675721`, peak error `7.2164496601e-16`, complete coverage, compact
+  support, real output, and exact repeat. Evidence is in
+  `docs/logs/2026-07/11-g10-029-time-adaptive-reconstruction-proof.md`.
 
 ## Next Task
 
-Implement Batch 29.6AI time-adaptive painless-frame reconstruction and stop at
-its identity decision. Do not implement automatic selection, phase, or stretch.
+Freeze Batch 29.6AJ automatic time-resolution selection. Do not implement the
+selector, phase, or stretched synthesis.

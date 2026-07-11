@@ -366,8 +366,13 @@ percussion detection, phase modification, and stretched synthesis remain
 closed until identity reconstruction, coverage, conditioning, compact support,
 real output, and deterministic schedule transitions pass.
 
+That identity proof passes all five schedules and eleven controls. Adaptive
+schedule condition is at most `1.5934675721`; worst peak reconstruction error
+is `7.2164496601e-16`, conjugate-symmetry error `4.8233240331e-13`, and
+imaginary residue `3.4192121536e-16`. Automatic resolution selection is now the
+only open research question. Phase and stretched synthesis remain closed.
+
 ## Next Task
 
-Implement Batch 29.6AI time-adaptive painless-frame reconstruction. Use declared
-schedules only and stop before automatic selection, phase, stretched synthesis,
-corpus, stereo, dynamic ratio, or routing.
+Freeze Batch 29.6AJ automatic time-resolution selection. Do not implement the
+selector, phase, stretched synthesis, corpus, stereo, dynamic ratio, or routing.

@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; time-adaptive transform reconstruction frozen
+Status: active; automatic time-resolution selection requires contract
 Owner: dsp
 Updated: 2026-07-11
 Related contracts: `046`, `048`, `049`
@@ -1349,6 +1349,19 @@ It does not authorize onset relocation, local unity stretch, HPSS component
 synthesis, phase modification, stretched audio, corpus, stereo, dynamic ratio,
 cache, or product routing.
 
+Batch 29.6AI passes without schedule tuning. Across all five schedules and all
+eleven non-empty controls, there are no uncovered padded/source frames, illegal
+window transitions, support failures, or non-finite values. Fixed schedules
+have condition `1.0000000000`; all adaptive schedules have maximum condition
+`1.5934675721`.
+
+Worst conjugate-symmetry error is `4.8233240331e-13`; worst imaginary residue
+is `3.4192121536e-16`. Peak and RMS reconstruction errors are
+`7.2164496601e-16` and `1.5602983071e-16`. Head/tail errors pass below
+`3.3306690739e-16`; empty input remains exact. Evidence hash
+`6987080e517f1aec` repeats. Batch 29.6AJ must freeze automatic selection before
+any detector implementation.
+
 ### Rule 27: synthesize a protected centre, not a circular endpoint
 
 Extend the source in both directions with whole-sample even reflection,
@@ -1404,5 +1417,5 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Implement Batch 29.6AI time-adaptive painless-frame reconstruction and stop at
-its identity decision. Do not implement selection, phase, or stretch.
+Freeze Batch 29.6AJ automatic time-resolution selection. Do not implement the
+selector, phase, or stretched synthesis.

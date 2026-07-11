@@ -178,8 +178,8 @@ rejected ownership crossfade.
 
 ## Next Task
 
-Implement declared-schedule time-adaptive painless-frame reconstruction. Do not
-implement automatic selection, phase, or stretched synthesis.
+Freeze automatic time-resolution selection. Do not implement the selector,
+phase, or stretched synthesis.
 
 ## Frequency-Adaptive Reassessment
 
@@ -581,3 +581,9 @@ Primary additions:
 | [Liuni et al., 2011](https://arxiv.org/abs/1109.6313) | high | Variable-time Gabor resolution and dual-frame reconstruction |
 | [Rudoy, Basu, and Wolfe, 2009](https://arxiv.org/abs/0906.5202) | high | Compact adaptive superposition frames and fast overlap-add reconstruction |
 | [Akaishi, Holighaus, and Yatabe, 2026](https://arxiv.org/abs/2602.16421) | high | Percussion magnitude/phase mismatch and time-adaptive NSDGT evidence; selection and stretch policy excluded |
+
+Declared-schedule reconstruction passes. All fixed and adaptive window
+schedules cover the padded/source domains, retain compact support, reconstruct
+all controls below `7.2164496601e-16` peak error, and repeat exactly. Adaptive
+condition is `1.5934675721`, well inside the frozen cap. Transform mechanics no
+longer govern the next decision; automatic schedule selection does.

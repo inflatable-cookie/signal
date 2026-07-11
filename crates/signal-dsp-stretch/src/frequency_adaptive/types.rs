@@ -594,6 +594,54 @@ pub struct StretchDensePainlessReview {
     pub direction: StretchDensePainlessDirection,
 }
 
+/// Direction selected by time-adaptive painless identity reconstruction.
+#[cfg(all(test, not(debug_assertions)))]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum StretchTimeAdaptivePainlessDirection {
+    /// Every identity gate passes and automatic selection may be contracted.
+    AutomaticSelectionContract,
+    /// A schedule or reconstruction gate fails and must be redesigned.
+    ScheduleRedesign,
+}
+
+/// Evidence for one declared time-adaptive window schedule.
+#[cfg(all(test, not(debug_assertions)))]
+#[derive(Clone, Debug, PartialEq)]
+pub struct StretchTimeAdaptiveScheduleEvidence {
+    /// Schedule family index and frame count.
+    pub family_and_frames: [usize; 2],
+    /// Counts of 512, 1024, 2048, and 4096-sample windows.
+    pub window_counts: [usize; 4],
+    /// Minimum and maximum adjacent source-center hops.
+    pub hop_extrema: [usize; 2],
+    /// Reflected source reads and total complex coefficients per control.
+    pub work_counts: [usize; 2],
+    /// Frame-operator minimum, maximum, and condition ratio.
+    pub frame_values: [f64; 3],
+    /// Uncovered padded/source frames, illegal transitions, and support failures.
+    pub structural_failures: [usize; 4],
+    /// Conjugate symmetry, imaginary residue, peak, RMS, head, and tail errors.
+    pub maximum_errors: [f64; 6],
+    /// Non-finite coefficient, dual, and output values.
+    pub non_finite_values: usize,
+    /// Schedule, window, dual, coefficient, output, and evidence hashes.
+    pub hashes: [u64; 6],
+}
+
+/// Complete release-only time-adaptive painless identity report.
+#[cfg(all(test, not(debug_assertions)))]
+#[derive(Clone, Debug, PartialEq)]
+pub struct StretchTimeAdaptivePainlessReview {
+    /// Evidence for all five declared schedules.
+    pub schedules: Vec<StretchTimeAdaptiveScheduleEvidence>,
+    /// Whether empty input remains exactly empty.
+    pub empty_input_exact: bool,
+    /// Stable aggregate evidence hash.
+    pub evidence_hash: u64,
+    /// Selected continuation direction.
+    pub direction: StretchTimeAdaptivePainlessDirection,
+}
+
 /// Numerical evidence for one bounded Hermitian Jacobi solve.
 #[derive(Clone, Debug, PartialEq)]
 pub struct StretchCommonGridJacobiEvidence {

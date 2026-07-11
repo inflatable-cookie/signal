@@ -383,6 +383,50 @@ fn dense_painless_common_lattice_selects_feasibility_direction() {
 }
 
 #[test]
+#[cfg(not(debug_assertions))]
+fn time_adaptive_painless_reconstruction_selects_identity_direction() {
+    let first = time_adaptive_painless_reconstruction_review();
+    let repeated = time_adaptive_painless_reconstruction_review();
+    assert_eq!(first, repeated);
+    assert_eq!(first.schedules.len(), 5);
+    assert!(first.empty_input_exact);
+    assert!(first.schedules.iter().all(|schedule| {
+        schedule.frame_values[2] <= 4.0
+            && schedule.structural_failures == [0; 4]
+            && schedule.maximum_errors[0] <= 1.0e-12
+            && schedule.maximum_errors[1] <= 1.0e-12
+            && schedule.maximum_errors[2] <= 1.0e-5
+            && schedule.maximum_errors[3] <= 1.0e-6
+            && schedule.maximum_errors[4] <= 1.0e-5
+            && schedule.maximum_errors[5] <= 1.0e-5
+            && schedule.non_finite_values == 0
+            && schedule.hashes.iter().all(|hash| *hash != 0)
+    }));
+    assert_eq!(
+        first.direction,
+        StretchTimeAdaptivePainlessDirection::AutomaticSelectionContract
+    );
+    assert_ne!(first.evidence_hash, 0);
+    eprintln!(
+        "time_adaptive_painless schedules={:?} evidence={:016x} direction={:?}",
+        first
+            .schedules
+            .iter()
+            .map(|schedule| (
+                schedule.family_and_frames,
+                schedule.window_counts,
+                schedule.hop_extrema,
+                schedule.frame_values,
+                schedule.maximum_errors,
+                schedule.hashes,
+            ))
+            .collect::<Vec<_>>(),
+        first.evidence_hash,
+        first.direction,
+    );
+}
+
+#[test]
 fn common_grid_phase_transport_rejects_high_band_phase_aliasing() {
     for frequency in [312.5_f32, 1_000.0] {
         let input = (0..24_576)
