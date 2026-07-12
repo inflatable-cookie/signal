@@ -11,7 +11,9 @@ use super::{
 };
 
 mod measure;
+mod refinement;
 use measure::{measure, Frame};
+pub(crate) use refinement::renyi_attribution_reassessment_review;
 
 const REGIONS: usize = 8;
 

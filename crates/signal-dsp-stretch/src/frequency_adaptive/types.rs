@@ -790,6 +790,90 @@ pub struct StretchRenyiAttributionReview {
     pub direction: StretchRenyiAttributionDirection,
 }
 
+/// Direction selected by the final Rényi attribution reassessment.
+#[cfg(all(test, not(debug_assertions)))]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum StretchRenyiReassessmentDirection {
+    /// Declared-event support isolates comparison-region geometry.
+    ComparisonRegionContract,
+    /// One low-frequency subregion isolates frequency evidence.
+    FrequencyEvidenceContract,
+    /// Both mechanisms pass and require one joint localized evidence contract.
+    LocalizedTimeFrequencyContract,
+    /// Evidence remains ambiguous or invalid and requires operator review.
+    OperatorReview,
+}
+
+/// Final support and low-band attribution for one decision anchor.
+#[cfg(all(test, not(debug_assertions)))]
+#[derive(Clone, Debug, PartialEq)]
+pub struct StretchRenyiRefinedAnchorEvidence {
+    /// Source-frame decision anchor.
+    pub anchor: usize,
+    /// Event-excluding and event-owning coefficient counts by resolution.
+    pub support_counts: [[usize; 2]; 4],
+    /// Event-excluding and event-owning energy sums by resolution.
+    pub support_energies: [[f64; 2]; 4],
+    /// Event-excluding and event-owning alpha-mass sums by resolution.
+    pub support_alpha_sums: [[f64; 2]; 4],
+    /// Raw winner after removing every event-owning coefficient frame.
+    pub support_removed_winner: u8,
+    /// Folded low-band subregion coefficient counts by resolution.
+    pub low_counts: [[usize; 8]; 4],
+    /// Folded low-band subregion energy sums by resolution.
+    pub low_energies: [[f64; 8]; 4],
+    /// Folded low-band subregion alpha-mass sums by resolution.
+    pub low_alpha_sums: [[f64; 8]; 4],
+    /// Untouched-complement count, energy, and alpha-mass by resolution.
+    pub complement_counts: [usize; 4],
+    /// Untouched-complement energy by resolution.
+    pub complement_energies: [f64; 4],
+    /// Untouched-complement alpha-mass by resolution.
+    pub complement_alpha_sums: [f64; 4],
+    /// Raw winners after removing each fixed low-band subregion.
+    pub low_removed_winners: [u8; 8],
+}
+
+/// Final attribution evidence for one frozen control.
+#[cfg(all(test, not(debug_assertions)))]
+#[derive(Clone, Debug, PartialEq)]
+pub struct StretchRenyiRefinedControlEvidence {
+    /// Frozen Batch 29.6AK control index.
+    pub control: usize,
+    /// Evidence for all `64` anchors.
+    pub anchors: Vec<StretchRenyiRefinedAnchorEvidence>,
+    /// Maximum support-count, support-sum, low-count, and low-sum closure errors.
+    pub closure_errors: [f64; 4],
+    /// Non-finite, empty-removal, and parent-drift failures.
+    pub structural_failures: [usize; 3],
+    /// Stable control evidence hash.
+    pub evidence_hash: u64,
+}
+
+/// Complete final Rényi selector-attribution reassessment.
+#[cfg(all(test, not(debug_assertions)))]
+#[derive(Clone, Debug, PartialEq)]
+pub struct StretchRenyiReassessmentReview {
+    /// Unchanged Batch 29.6AM attribution report.
+    pub prior: StretchRenyiAttributionReview,
+    /// Isolated-impulse, linear-chirp, and mixed-control refinement evidence.
+    pub controls: Vec<StretchRenyiRefinedControlEvidence>,
+    /// Restored isolated anchors and changed mixed negative controls.
+    pub support_effects: [usize; 2],
+    /// Restored mixed event anchors for each low-band subregion.
+    pub low_event_restorations: [usize; 8],
+    /// Changed mixed negative controls for each low-band subregion.
+    pub low_negative_changes: [usize; 8],
+    /// Changed linear-chirp winners for each low-band subregion.
+    pub linear_chirp_changes: [usize; 8],
+    /// Passing support boundary and low-band candidate counts.
+    pub candidate_counts: [usize; 2],
+    /// Stable aggregate refinement hash.
+    pub evidence_hash: u64,
+    /// Selected terminal direction.
+    pub direction: StretchRenyiReassessmentDirection,
+}
+
 /// Numerical evidence for one bounded Hermitian Jacobi solve.
 #[derive(Clone, Debug, PartialEq)]
 pub struct StretchCommonGridJacobiEvidence {

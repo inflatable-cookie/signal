@@ -641,3 +641,10 @@ region into eight fixed subregions. This is still attribution, not a parameter
 sweep: the prior reports remain exact, counterfactual winners never enter the
 path, and failure to isolate clean ownership stops selector research for
 operator review.
+
+Actual window support resolves the attribution. Removing event-owning frames
+restores all `15` distant impulse anchors and changes no stationary mixed
+control. The only low subregion that restores the mixed event also changes all
+`32` stationary controls, so frequency weighting is rejected. The next design
+question is source-blind comparison geometry within the same Rényi evidence
+family; declared event positions cannot become detector input.

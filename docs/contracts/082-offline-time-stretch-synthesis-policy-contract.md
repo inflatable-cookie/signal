@@ -1560,6 +1560,24 @@ Require exact repeat and one stable attribution hash. A conclusive result opens
 only the named selector contract. It does not authorize weights, margins,
 detectors, phase, stretched synthesis, corpus, dynamic ratio, cache, or routing.
 
+Batch 29.6AO selects comparison-region geometry. Both prior reports remain
+exact. Support and low-band counts close exactly; maximum support-sum and
+low-band-sum errors are `3.3058145415e-16` and `1.8396338770e-14`. No
+non-finite, empty-removal, or parent-drift failure occurs.
+
+Removing every frame whose actual window support contains the event restores
+all `15/15` isolated-impulse anchors and changes `0/32` mixed negative controls.
+Low subregion `0`, approximately `0–375 Hz`, restores all `5/5` mixed event
+anchors only by changing all `32/32` negatives. No other low subregion restores
+an event anchor, and no low-subregion removal changes a linear-chirp winner.
+Candidate counts are `[1,0]`; refinement hash `009a37d355b9d6fe` repeats.
+
+This rejects frequency weighting and selects comparison-region geometry as the
+only next selector boundary. A separately frozen contract must define one
+source-blind geometry from the existing Rényi evidence; declared event labels
+remain test evidence and cannot enter the selector. No selector implementation
+opens yet.
+
 ### Rule 27: synthesize a protected centre, not a circular endpoint
 
 Extend the source in both directions with whole-sample even reflection,
@@ -1615,5 +1633,5 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Run Batch 29.6AO attribution reassessment. Preserve both prior reports and do
-not change the selector or implement phase or stretched synthesis.
+Freeze Batch 29.6AP comparison-region geometry. Do not change the selector or
+implement phase or stretched synthesis.

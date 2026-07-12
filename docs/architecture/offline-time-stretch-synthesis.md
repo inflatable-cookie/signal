@@ -409,7 +409,14 @@ regions. These remain diagnostic removals over unchanged coefficients. Passage
 may identify geometry, frequency evidence, or a joint localized time-frequency
 boundary; it cannot change selection.
 
+The refinement selects comparison-region geometry. Removing frames whose
+analysis support can contain the declared event fixes every distant isolated
+decision without disturbing stationary mixed controls. Narrow low-band removal
+is not selective: the only event-restoring subregion changes every negative
+control. Event labels remain proof fixtures, not selector input; the next
+contract must express one source-blind Rényi comparison geometry.
+
 ## Next Task
 
-Run Batch 29.6AO attribution reassessment. Keep selector changes, phase,
+Freeze Batch 29.6AP comparison-region geometry. Keep selector changes, phase,
 stretched synthesis, corpus, dynamic ratio, and routing closed.

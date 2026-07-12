@@ -153,7 +153,9 @@ implementation remains Signal-owned.
   Batch 29.6AM stops inconclusive because both mechanisms are present but
   neither owns the failures cleanly. Batch 29.6AN must reassess attribution
   resolution once using event-support membership and fixed low-band
-  subdivision before any selector change.
+  subdivision before any selector change. Batch 29.6AO selects comparison-region
+  geometry and rejects frequency weighting; Batch 29.6AP must freeze one
+  source-blind geometry before implementation.
 - Offline artifacts and RealtimePreview have bounded contracts and prototype
   paths, but callback-safe preview integration and fully streaming artifact
   output remain gated until their owning source-fill/cache contracts exist.
@@ -243,6 +245,6 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Run Batch 29.6AO Rényi attribution reassessment. Keep selector changes, phase,
-stretched synthesis, corpus, linked stereo, dynamic ratio, and product
+Freeze Batch 29.6AP Rényi comparison-region geometry. Keep selector changes,
+phase, stretched synthesis, corpus, linked stereo, dynamic ratio, and product
 integration closed.

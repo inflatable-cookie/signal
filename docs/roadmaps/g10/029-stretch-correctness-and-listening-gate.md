@@ -571,12 +571,21 @@ independent stereo review.
 
 ### Batch 29.6AO - Rényi Attribution Reassessment Decision
 
-- [ ] measure declared-event support ownership and the eight frozen low-band
+- [x] measure declared-event support ownership and the eight frozen low-band
   subregions without changing either prior report
-- [ ] prove partition closure, finite values, exact repeat, and unchanged
+- [x] prove partition closure, finite values, exact repeat, and unchanged
   Batch 29.6AK and 29.6AM hashes
-- [ ] select geometry, frequency, joint localized evidence, or operator review;
+- [x] select geometry, frequency, joint localized evidence, or operator review;
   open only a separately frozen selector contract on conclusive evidence
+
+### Batch 29.6AP - Rényi Comparison-Region Geometry Contract
+
+- [ ] choose one source-blind comparison geometry within the unchanged Rényi
+  evidence family; declared event labels remain proof fixtures only
+- [ ] retain four resolutions, natural hops, `alpha=0.7`, stereo energy linking,
+  legal path, controls, and every non-geometry gate
+- [ ] freeze implementation, regression, and stop rules before changing the
+  selector; keep phase, stretched synthesis, corpus, and routing closed
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -1085,8 +1094,12 @@ independent stereo review.
   must separate the coupled mechanisms or stop selector research for operator
   review. Evidence is in
   `docs/logs/2026-07/12-g10-029-renyi-attribution-reassessment-contract.md`.
+- 2026-07-12: Batch 29.6AO selected comparison-region geometry. Event-support
+  removal restores all `15` isolated anchors with no negative changes; narrow
+  low-band removal is nonselective. Evidence is in
+  `docs/logs/2026-07/12-g10-029-renyi-attribution-reassessment-decision.md`.
 
 ## Next Task
 
-Run Batch 29.6AO Rényi attribution reassessment. Preserve both prior reports;
-do not change the selector or implement phase or stretched synthesis.
+Freeze Batch 29.6AP Rényi comparison-region geometry. Do not change the
+selector or implement phase or stretched synthesis.

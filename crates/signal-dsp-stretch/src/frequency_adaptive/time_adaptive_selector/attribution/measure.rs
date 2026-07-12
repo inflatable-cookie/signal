@@ -10,6 +10,12 @@ pub(super) struct Frame {
     pub frequency_counts: [usize; REGIONS],
     pub frequency_energies: [f64; REGIONS],
     pub frequency_alpha_sums: [f64; REGIONS],
+    pub low_counts: [usize; REGIONS],
+    pub low_energies: [f64; REGIONS],
+    pub low_alpha_sums: [f64; REGIONS],
+    pub complement_count: usize,
+    pub complement_energy: f64,
+    pub complement_alpha_sum: f64,
 }
 
 pub(super) fn measure(input: &[f64], length: usize, hop: usize) -> Vec<Frame> {
@@ -30,6 +36,12 @@ pub(super) fn measure(input: &[f64], length: usize, hop: usize) -> Vec<Frame> {
         let mut frequency_counts = [0; REGIONS];
         let mut frequency_energies = [0.0; REGIONS];
         let mut frequency_alpha_sums = [0.0; REGIONS];
+        let mut low_counts = [0; REGIONS];
+        let mut low_energies = [0.0; REGIONS];
+        let mut low_alpha_sums = [0.0; REGIONS];
+        let mut complement_count = 0;
+        let mut complement_energy = 0.0;
+        let mut complement_alpha_sum = 0.0;
         for (bin, coefficient) in buffer.iter().enumerate() {
             let value = coefficient.norm_sqr();
             let alpha = value.powf(ALPHA);
@@ -40,6 +52,16 @@ pub(super) fn measure(input: &[f64], length: usize, hop: usize) -> Vec<Frame> {
             frequency_counts[region] += 1;
             frequency_energies[region] += value;
             frequency_alpha_sums[region] += alpha;
+            if folded <= 256 {
+                let low_region = (REGIONS * folded / 257).min(REGIONS - 1);
+                low_counts[low_region] += 1;
+                low_energies[low_region] += value;
+                low_alpha_sums[low_region] += alpha;
+            } else {
+                complement_count += 1;
+                complement_energy += value;
+                complement_alpha_sum += alpha;
+            }
         }
         result.push(Frame {
             center,
@@ -48,6 +70,12 @@ pub(super) fn measure(input: &[f64], length: usize, hop: usize) -> Vec<Frame> {
             frequency_counts,
             frequency_energies,
             frequency_alpha_sums,
+            low_counts,
+            low_energies,
+            low_alpha_sums,
+            complement_count,
+            complement_energy,
+            complement_alpha_sum,
         });
     }
     result

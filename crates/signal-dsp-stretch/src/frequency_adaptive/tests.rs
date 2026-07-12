@@ -520,6 +520,48 @@ fn renyi_selector_failure_attribution_stops_inconclusive() {
 }
 
 #[test]
+#[cfg(not(debug_assertions))]
+fn renyi_attribution_reassessment_selects_terminal_direction() {
+    let first = renyi_attribution_reassessment_review();
+    let repeated = renyi_attribution_reassessment_review();
+    assert_eq!(first, repeated);
+    assert_eq!(first.prior.baseline.evidence_hash, 0x5568_f0a3_8f67_9a40);
+    assert_eq!(first.prior.evidence_hash, 0xe0b4_4210_3849_2480);
+    assert_eq!(first.controls.len(), 3);
+    assert!(first.controls.iter().all(|control| {
+        control.anchors.len() == 64
+            && control.closure_errors[0] == 0.0
+            && control.closure_errors[1] <= 1.0e-12
+            && control.closure_errors[2] == 0.0
+            && control.closure_errors[3] <= 1.0e-12
+            && control.structural_failures == [0; 3]
+            && control.evidence_hash != 0
+    }));
+    assert_ne!(first.evidence_hash, 0);
+    assert_eq!(first.support_effects, [15, 0]);
+    assert_eq!(first.low_event_restorations, [5, 0, 0, 0, 0, 0, 0, 0]);
+    assert_eq!(first.low_negative_changes, [32, 0, 0, 0, 0, 0, 0, 0]);
+    assert_eq!(first.linear_chirp_changes, [0; 8]);
+    assert_eq!(first.candidate_counts, [1, 0]);
+    assert_eq!(first.evidence_hash, 0x009a_37d3_55b9_d6fe);
+    assert_eq!(
+        first.direction,
+        StretchRenyiReassessmentDirection::ComparisonRegionContract
+    );
+    eprintln!(
+        "renyi_reassessment closure={:?} support={:?} low_event={:?} low_negative={:?} chirp={:?} candidates={:?} evidence={:016x} direction={:?}",
+        first.controls.iter().map(|control| control.closure_errors).collect::<Vec<_>>(),
+        first.support_effects,
+        first.low_event_restorations,
+        first.low_negative_changes,
+        first.linear_chirp_changes,
+        first.candidate_counts,
+        first.evidence_hash,
+        first.direction,
+    );
+}
+
+#[test]
 fn common_grid_phase_transport_rejects_high_band_phase_aliasing() {
     for frequency in [312.5_f32, 1_000.0] {
         let input = (0..24_576)
