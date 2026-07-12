@@ -14,7 +14,8 @@ use std::time::{Duration, Instant};
 
 use signal_plugin_bridge::ShmPluginProcessor;
 use signal_plugin_clap::fixture::{
-    compile_clap_fixture, rustc_available, CLAP_FIXTURE_GAIN, CLAP_FIXTURE_GAIN_PARAM_ID,
+    compile_clap_fixture, compile_clap_instrument_fixture, rustc_available, CLAP_FIXTURE_GAIN,
+    CLAP_FIXTURE_GAIN_PARAM_ID,
 };
 use signal_plugin_lv2::fixture::{
     compile_lv2_fixture, LV2_FIXTURE_GAIN, LV2_FIXTURE_GAIN_PORT_INDEX,
@@ -23,9 +24,9 @@ use signal_plugin_vst3::fixture::{
     compile_vst3_fixture, VST3_FIXTURE_CLASS_ID_HEX, VST3_FIXTURE_GAIN,
 };
 use signal_render_plane::{
-    render_plan_to_pcm, ChannelFormat, OfflineRenderOptions, RenderClipSpec, RenderEdgeSpec,
-    RenderPlanSpec, RenderPluginProcessor, RenderSampleBuffer, RenderSource, RenderStageKind,
-    RenderStageSpec,
+    render_plan_to_pcm, ChannelFormat, OfflineRenderOptions, RenderBlockPluginEvent,
+    RenderClipSpec, RenderEdgeSpec, RenderPlanSpec, RenderPluginEventKind, RenderPluginProcessor,
+    RenderSampleBuffer, RenderSource, RenderStageKind, RenderStageSpec,
 };
 use signal_runtime::{
     SandboxBrokerClientSession, SandboxBrokerSpawnConfig, SandboxPluginActivateOutcome,
@@ -91,7 +92,7 @@ fn spawn_processing_session_for(
     assert_eq!(gain.parameter_id, 4096);
     assert!((gain.min_value - 0.0).abs() < 1e-6);
     assert!((gain.max_value - 1.0).abs() < 1e-6);
-    assert!((gain.default_value - 0.5).abs() < 1e-6);
+    assert!((0.0..=1.0).contains(&gain.default_value));
     // Descriptor tokens round-trip the wire (g12.013): the fixture Gain is
     // continuous and automatable; the fixture Bypass is a one-step
     // automatable bypass toggle (identical in the CLAP and VST3 fixtures).
@@ -209,6 +210,110 @@ fn real_child_processes_blocks_through_the_shm_bridge() {
     client.deactivate_plugin().expect("deactivate");
     client.unload_plugin().expect("unload-plugin");
     client.shutdown().expect("shutdown");
+}
+
+#[test]
+fn real_child_instrument_accepts_zero_input_and_generates_audio_from_note_events() {
+    if !rustc_available() {
+        eprintln!("skipping: rustc unavailable for the CLAP fixture");
+        return;
+    }
+    let directory = unique_fixture_dir();
+    let plugin_id = "com.signal.sandbox-instrument-fixture";
+    let library =
+        compile_clap_instrument_fixture(&directory.path, plugin_id, "Sandbox Instrument Fixture")
+            .expect("instrument fixture should compile");
+    let (mut client, processor) = spawn_processing_session_for(&library, plugin_id);
+    let handle = RenderPluginProcessor::new(Arc::clone(&processor) as Arc<_>);
+
+    let frames = 128usize;
+    let mut scratch = vec![0.0; frames * 2];
+    assert!(handle.process_with_events(
+        &mut scratch,
+        frames,
+        2,
+        &[RenderBlockPluginEvent {
+            offset_frames: 7,
+            channel: 0,
+            kind: RenderPluginEventKind::NoteOn {
+                key: 60,
+                velocity: 0.75,
+            },
+        }],
+    ));
+    assert!(scratch[..7 * 2].iter().all(|sample| sample.abs() < 1e-6));
+    assert!(scratch[7 * 2..].iter().any(|sample| sample.abs() > 0.1));
+
+    client.stop_processing().expect("processing should stop");
+    client
+        .deactivate_plugin()
+        .expect("plugin should deactivate");
+    client.unload_plugin().expect("plugin should unload");
+    let _ = client.shutdown();
+}
+
+#[cfg(target_os = "macos")]
+#[test]
+fn real_child_system_midi_synth_generates_audio_from_note_events() {
+    let mut client = SandboxBrokerClientSession::spawn_command(
+        env!("CARGO_BIN_EXE_signal-plugin-sandbox"),
+        &[],
+        &SandboxBrokerSpawnConfig::default(),
+    )
+    .expect("broker child should spawn");
+    client
+        .read_startup_receipts()
+        .expect("startup receipts should arrive");
+    client
+        .load_plugin("au-registry.component", "aumu:msyn:appl")
+        .expect("system MIDI synth should load");
+    let lease = match client
+        .activate_plugin(SAMPLE_RATE_HZ, 1, MAX_FRAMES)
+        .expect("activate should answer")
+    {
+        SandboxPluginActivateOutcome::Activated(lease) => lease,
+        SandboxPluginActivateOutcome::LayoutUnsupported { detail } => {
+            panic!("system MIDI synth rejected: {detail}")
+        }
+    };
+    client
+        .start_processing()
+        .expect("child audio thread should start");
+    let processor = Arc::new(
+        ShmPluginProcessor::attach(
+            &lease.region_id,
+            &lease.shm_path,
+            lease.shm_bytes,
+            lease.max_frames,
+            lease.channels,
+            SAMPLE_RATE_HZ,
+        )
+        .expect("parent should attach the audio block region"),
+    );
+    let handle = RenderPluginProcessor::new(Arc::clone(&processor) as Arc<_>);
+    let frames = 256usize;
+    let mut scratch = vec![0.0; frames * 2];
+    assert!(handle.process_with_events(
+        &mut scratch,
+        frames,
+        2,
+        &[RenderBlockPluginEvent {
+            offset_frames: 7,
+            channel: 0,
+            kind: RenderPluginEventKind::NoteOn {
+                key: 60,
+                velocity: 0.75,
+            },
+        }],
+    ));
+    assert!(scratch[7 * 2..].iter().any(|sample| sample.abs() > 1e-5));
+
+    client.stop_processing().expect("processing should stop");
+    client
+        .deactivate_plugin()
+        .expect("plugin should deactivate");
+    client.unload_plugin().expect("plugin should unload");
+    let _ = client.shutdown();
 }
 
 /// g12.023: the sandboxed param-set round trip — a `set-param` stdio

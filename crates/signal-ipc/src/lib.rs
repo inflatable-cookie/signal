@@ -25,7 +25,8 @@ mod shared_memory;
 mod tests;
 
 pub use plugin_audio_block::{
-    PluginAudioBlockLayout, PluginAudioBlockView, PLUGIN_AUDIO_BLOCK_HEADER_BYTES,
+    PluginAudioBlockLayout, PluginAudioBlockView, PLUGIN_AUDIO_BLOCK_EVENT_BYTES,
+    PLUGIN_AUDIO_BLOCK_EVENT_CAPACITY, PLUGIN_AUDIO_BLOCK_HEADER_BYTES,
 };
 pub use plugin_protocol::{
     PluginDescriptorPayload, PluginFaultPayload, PluginInstanceStatePayload, PluginIoLayoutPayload,

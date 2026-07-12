@@ -131,6 +131,12 @@ struct PluginFactoryVTable {
 }
 
 #[repr(C)]
+struct PluginFactory2VTable {
+    base: PluginFactoryVTable,
+    get_class_info_2: unsafe extern "C" fn(*mut c_void, i32, *mut PClassInfo2) -> i32,
+}
+
+#[repr(C)]
 struct PFactoryInfo {
     vendor: [c_char; 64],
     url: [c_char; 256],
@@ -145,6 +151,63 @@ struct PClassInfo {
     category: [c_char; 32],
     name: [c_char; 64],
 }
+
+#[repr(C)]
+struct PClassInfo2 {
+    cid: [u8; 16],
+    cardinality: i32,
+    category: [c_char; 32],
+    name: [c_char; 64],
+    class_flags: u32,
+    subcategories: [c_char; 128],
+    vendor: [c_char; 64],
+    version: [c_char; 64],
+    sdk_version: [c_char; 64],
+}
+
+const fn vst3_tuid(l1: u32, l2: u32, l3: u32, l4: u32) -> [u8; 16] {
+    if cfg!(target_os = "windows") {
+        [
+            l1 as u8,
+            (l1 >> 8) as u8,
+            (l1 >> 16) as u8,
+            (l1 >> 24) as u8,
+            (l2 >> 16) as u8,
+            (l2 >> 24) as u8,
+            l2 as u8,
+            (l2 >> 8) as u8,
+            (l3 >> 24) as u8,
+            (l3 >> 16) as u8,
+            (l3 >> 8) as u8,
+            l3 as u8,
+            (l4 >> 24) as u8,
+            (l4 >> 16) as u8,
+            (l4 >> 8) as u8,
+            l4 as u8,
+        ]
+    } else {
+        [
+            (l1 >> 24) as u8,
+            (l1 >> 16) as u8,
+            (l1 >> 8) as u8,
+            l1 as u8,
+            (l2 >> 24) as u8,
+            (l2 >> 16) as u8,
+            (l2 >> 8) as u8,
+            l2 as u8,
+            (l3 >> 24) as u8,
+            (l3 >> 16) as u8,
+            (l3 >> 8) as u8,
+            l3 as u8,
+            (l4 >> 24) as u8,
+            (l4 >> 16) as u8,
+            (l4 >> 8) as u8,
+            l4 as u8,
+        ]
+    }
+}
+
+const IPLUGIN_FACTORY_2_IID: [u8; 16] = vst3_tuid(0x0007B650, 0xF24B4C0B, 0xA464EDB9, 0xF00B2ABB);
 
 type EntryProc = unsafe extern "C" fn(*mut c_void) -> bool;
 type ExitProc = unsafe extern "C" fn();
@@ -919,6 +982,20 @@ fn read_factory_classes(
             "VST3 factory exposed no classes",
         ));
     }
+    let mut factory_2_ptr = std::ptr::null_mut();
+    let factory_2 = if unsafe {
+        ((*vtable).query_interface)(
+            factory_ptr,
+            IPLUGIN_FACTORY_2_IID.as_ptr().cast(),
+            &mut factory_2_ptr,
+        )
+    } == 0
+        && !factory_2_ptr.is_null()
+    {
+        Some(factory_2_ptr)
+    } else {
+        None
+    };
     let mut classes = Vec::new();
     for index in 0..class_count {
         let mut class_info = PClassInfo {
@@ -931,15 +1008,62 @@ fn read_factory_classes(
             continue;
         }
         let category = c_char_array_to_string(&class_info.category);
+        let class_info_2 = factory_2.and_then(|factory_2_ptr| {
+            let factory_2 = factory_2_ptr as *mut RawPluginFactory;
+            let factory_2_vtable = unsafe { (*factory_2).vtable as *const PluginFactory2VTable };
+            let mut info = PClassInfo2 {
+                cid: [0; 16],
+                cardinality: 0,
+                category: [0; 32],
+                name: [0; 64],
+                class_flags: 0,
+                subcategories: [0; 128],
+                vendor: [0; 64],
+                version: [0; 64],
+                sdk_version: [0; 64],
+            };
+            if !factory_2_vtable.is_null()
+                && unsafe {
+                    ((*factory_2_vtable).get_class_info_2)(factory_2_ptr, index, &mut info)
+                } == 0
+            {
+                Some(info)
+            } else {
+                None
+            }
+        });
+        let subcategories = class_info_2
+            .as_ref()
+            .map(|info| c_char_array_to_string(&info.subcategories))
+            .unwrap_or_default()
+            .split('|')
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .map(str::to_string)
+            .collect();
         classes.push(Vst3FactoryClass {
             role: role_from_category(&category),
             class_id: bytes_to_upper_hex(&class_info.cid),
             category,
             name: c_char_array_to_string(&class_info.name),
-            vendor: None,
-            version: None,
-            subcategories: Vec::new(),
+            vendor: class_info_2
+                .as_ref()
+                .map(|info| c_char_array_to_string(&info.vendor))
+                .filter(|value| !value.is_empty()),
+            version: class_info_2
+                .as_ref()
+                .map(|info| c_char_array_to_string(&info.version))
+                .filter(|value| !value.is_empty()),
+            subcategories,
         });
+    }
+
+    if let Some(factory_2_ptr) = factory_2 {
+        let factory_2 = factory_2_ptr as *mut RawPluginFactory;
+        let factory_2_vtable = unsafe { (*factory_2).vtable };
+        if !factory_2_vtable.is_null() {
+            unsafe { ((*factory_2_vtable).release)(factory_2_ptr) };
+        }
     }
 
     if classes.is_empty() {

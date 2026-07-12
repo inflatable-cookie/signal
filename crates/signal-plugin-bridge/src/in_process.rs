@@ -46,70 +46,74 @@ const AU_EVENT_SUPPORT: RenderPluginEventSupport = RenderPluginEventSupport {
 /// here; each session downconverts (or maps) at its own format boundary.
 /// Alloc-free within the scratch's preallocated capacity (overflow drops,
 /// earliest wins).
+pub(crate) fn convert_block_event(event: &RenderBlockPluginEvent) -> PluginEvent {
+    match event.kind {
+        RenderPluginEventKind::NoteOn { key, velocity } => PluginEvent::Note(NoteEvent {
+            offset_frames: event.offset_frames,
+            note_id: -1,
+            port_index: 0,
+            channel: event.channel,
+            key,
+            velocity,
+            kind: NoteEventKind::NoteOn,
+        }),
+        RenderPluginEventKind::NoteOff { key } => PluginEvent::Note(NoteEvent {
+            offset_frames: event.offset_frames,
+            note_id: -1,
+            port_index: 0,
+            channel: event.channel,
+            key,
+            velocity: 0.0,
+            kind: NoteEventKind::NoteOff,
+        }),
+        RenderPluginEventKind::ControlChange { controller, value } => {
+            PluginEvent::ControlChange(ControlChangeEvent {
+                offset_frames: event.offset_frames,
+                port_index: 0,
+                channel: event.channel,
+                controller,
+                value,
+            })
+        }
+        RenderPluginEventKind::PitchBend { value } => {
+            let bend = (((value.clamp(-1.0, 1.0) + 1.0) * 0.5) * 16_383.0).round() as u16;
+            PluginEvent::Midi(MidiEvent {
+                offset_frames: event.offset_frames,
+                status: 0xE0 | (event.channel & 0x0F),
+                data1: (bend & 0x7F) as u8,
+                data2: ((bend >> 7) & 0x7F) as u8,
+            })
+        }
+        RenderPluginEventKind::ChannelPressure { value } => PluginEvent::Midi(MidiEvent {
+            offset_frames: event.offset_frames,
+            status: 0xD0 | (event.channel & 0x0F),
+            data1: (value.clamp(0.0, 1.0) * 127.0).round() as u8,
+            data2: 0,
+        }),
+        RenderPluginEventKind::NoteExpression {
+            key,
+            expression,
+            value,
+        } => PluginEvent::NoteExpression(NoteExpressionEvent {
+            offset_frames: event.offset_frames,
+            note_id: -1,
+            port_index: 0,
+            channel: event.channel,
+            key,
+            expression: match expression {
+                RenderNoteExpressionKind::Pressure => NoteExpressionKind::Pressure,
+                RenderNoteExpressionKind::Timbre => NoteExpressionKind::Timbre,
+                RenderNoteExpressionKind::Tuning => NoteExpressionKind::Tuning,
+            },
+            value,
+        }),
+    }
+}
+
 fn convert_block_events(events: &[RenderBlockPluginEvent], scratch: &mut Vec<PluginEvent>) {
     scratch.clear();
     for event in events.iter().take(EVENT_SCRATCH_CAPACITY) {
-        scratch.push(match event.kind {
-            RenderPluginEventKind::NoteOn { key, velocity } => PluginEvent::Note(NoteEvent {
-                offset_frames: event.offset_frames,
-                note_id: -1,
-                port_index: 0,
-                channel: event.channel,
-                key,
-                velocity,
-                kind: NoteEventKind::NoteOn,
-            }),
-            RenderPluginEventKind::NoteOff { key } => PluginEvent::Note(NoteEvent {
-                offset_frames: event.offset_frames,
-                note_id: -1,
-                port_index: 0,
-                channel: event.channel,
-                key,
-                velocity: 0.0,
-                kind: NoteEventKind::NoteOff,
-            }),
-            RenderPluginEventKind::ControlChange { controller, value } => {
-                PluginEvent::ControlChange(ControlChangeEvent {
-                    offset_frames: event.offset_frames,
-                    port_index: 0,
-                    channel: event.channel,
-                    controller,
-                    value,
-                })
-            }
-            RenderPluginEventKind::PitchBend { value } => {
-                let bend = (((value.clamp(-1.0, 1.0) + 1.0) * 0.5) * 16_383.0).round() as u16;
-                PluginEvent::Midi(MidiEvent {
-                    offset_frames: event.offset_frames,
-                    status: 0xE0 | (event.channel & 0x0F),
-                    data1: (bend & 0x7F) as u8,
-                    data2: ((bend >> 7) & 0x7F) as u8,
-                })
-            }
-            RenderPluginEventKind::ChannelPressure { value } => PluginEvent::Midi(MidiEvent {
-                offset_frames: event.offset_frames,
-                status: 0xD0 | (event.channel & 0x0F),
-                data1: (value.clamp(0.0, 1.0) * 127.0).round() as u8,
-                data2: 0,
-            }),
-            RenderPluginEventKind::NoteExpression {
-                key,
-                expression,
-                value,
-            } => PluginEvent::NoteExpression(NoteExpressionEvent {
-                offset_frames: event.offset_frames,
-                note_id: -1,
-                port_index: 0,
-                channel: event.channel,
-                key,
-                expression: match expression {
-                    RenderNoteExpressionKind::Pressure => NoteExpressionKind::Pressure,
-                    RenderNoteExpressionKind::Timbre => NoteExpressionKind::Timbre,
-                    RenderNoteExpressionKind::Tuning => NoteExpressionKind::Tuning,
-                },
-                value,
-            }),
-        });
+        scratch.push(convert_block_event(event));
     }
 }
 
@@ -286,6 +290,49 @@ impl InProcessClapProcessor {
         instance
             .set_parameter_normalized(parameter_id, normalized)
             .map_err(|error| error.token)
+    }
+
+    /// Capture opaque plugin project state on the control thread. Taking the
+    /// session lock first makes an audio callback bypass rather than racing
+    /// the format state serializer.
+    pub fn save_state(&self) -> Result<Vec<u8>, String> {
+        if !self.alive.load(Ordering::Relaxed) {
+            return Err("backend_dead".to_string());
+        }
+        let _session = self
+            .session
+            .lock()
+            .map_err(|_| "session_lock_poisoned".to_string())?;
+        self.instance
+            .lock()
+            .map_err(|_| "instance_lock_poisoned".to_string())?
+            .save_state()
+            .map_err(|error| error.token)
+    }
+
+    /// Restore opaque plugin project state on the control thread.
+    pub fn load_state(&self, bytes: &[u8]) -> Result<(), String> {
+        if !self.alive.load(Ordering::Relaxed) {
+            return Err("backend_dead".to_string());
+        }
+        let _session = self
+            .session
+            .lock()
+            .map_err(|_| "session_lock_poisoned".to_string())?;
+        self.instance
+            .lock()
+            .map_err(|_| "instance_lock_poisoned".to_string())?
+            .load_state(bytes)
+            .map_err(|error| error.token)
+    }
+
+    /// Monotonic count of plugin `clap.state` dirty notifications observed
+    /// by the host. Used by control-side autosave scheduling.
+    pub fn state_dirty_request_count(&self) -> u64 {
+        self.instance
+            .lock()
+            .map(|instance| instance.state_dirty_request_count())
+            .unwrap_or(0)
     }
 
     /// Blocks bypassed so far, cumulative.
@@ -527,7 +574,9 @@ pub struct InProcessVst3Processor {
     pitch_bend_mapping: bool,
     channel_pressure_mapping: bool,
     parameters: Vec<PluginParameterDescriptor>,
-    latency_frames: u32,
+    latency_frames: AtomicU32,
+    latency_revision: AtomicU64,
+    observed_latency_changes: AtomicU64,
     max_frames: u32,
     /// Cleared at teardown so late callbacks bypass instead of racing the
     /// lifecycle.
@@ -581,12 +630,34 @@ impl InProcessVst3Processor {
             pitch_bend_mapping,
             channel_pressure_mapping,
             parameters,
-            latency_frames,
+            latency_frames: AtomicU32::new(latency_frames),
+            latency_revision: AtomicU64::new(0),
+            observed_latency_changes: AtomicU64::new(0),
             max_frames,
             alive: AtomicBool::new(true),
             misses: AtomicU64::new(0),
             unsupported_events: AtomicU64::new(0),
         })
+    }
+
+    /// Refresh cached latency after `kLatencyChanged`. Observation runs on
+    /// the host control thread; the audio callback never takes this lock.
+    fn refresh_latency(&self) {
+        let Ok(instance) = self.instance.lock() else {
+            return;
+        };
+        let changes = instance.latency_change_count();
+        let observed = self.observed_latency_changes.load(Ordering::Relaxed);
+        if changes == observed {
+            return;
+        }
+        self.observed_latency_changes
+            .store(changes, Ordering::Relaxed);
+        let latency_frames = instance.latency_frames();
+        let previous = self.latency_frames.swap(latency_frames, Ordering::Relaxed);
+        if previous != latency_frames {
+            self.latency_revision.fetch_add(1, Ordering::Relaxed);
+        }
     }
 
     /// Parameter inventory enumerated at load.
@@ -771,7 +842,13 @@ impl PluginBlockProcessor for InProcessVst3Processor {
     }
 
     fn latency_frames(&self) -> u32 {
-        self.latency_frames
+        self.refresh_latency();
+        self.latency_frames.load(Ordering::Relaxed)
+    }
+
+    fn latency_revision(&self) -> u64 {
+        self.refresh_latency();
+        self.latency_revision.load(Ordering::Relaxed)
     }
 
     fn process_with_events(
@@ -883,7 +960,7 @@ impl InProcessAuProcessor {
     ) -> Result<Self, String> {
         let mut instance =
             AuHostedInstance::load(library_path, load_key).map_err(|error| error.token)?;
-        if !instance.port_layout().is_stereo_effect() {
+        if !instance.port_layout().is_supported_stereo_processor() {
             return Err("layout_unsupported".to_string());
         }
         instance
@@ -1793,6 +1870,71 @@ mod tests {
     }
 
     #[test]
+    fn real_clap_instrument_parameter_scales_held_note_independently() {
+        use signal_plugin_clap::fixture::CLAP_FIXTURE_GAIN_PARAM_ID;
+
+        if !rustc_available() {
+            eprintln!("skipping: rustc unavailable for the CLAP fixture");
+            return;
+        }
+        let directory = std::env::temp_dir().join(format!(
+            "signal-plugin-bridge-inproc-instrument-param-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_nanos(),
+        ));
+        let plugin_id = "com.signal.bridge-inproc-instrument-param";
+        let library = compile_clap_instrument_fixture(
+            &directory,
+            plugin_id,
+            "Signal Bridge Instrument Param",
+        )
+        .expect("instrument fixture should compile");
+        let backend = Arc::new(
+            InProcessClapProcessor::load_and_activate(&library, plugin_id, 48_000, 128)
+                .expect("instrument should activate"),
+        );
+        let handle = RenderPluginProcessor::new(Arc::clone(&backend) as Arc<_>);
+        let note_on = [RenderBlockPluginEvent {
+            offset_frames: 0,
+            channel: 0,
+            kind: RenderPluginEventKind::NoteOn {
+                key: 60,
+                velocity: 0.8,
+            },
+        }];
+
+        backend
+            .set_parameter_normalized(CLAP_FIXTURE_GAIN_PARAM_ID, 0.25)
+            .expect("set Gain");
+        let mut quarter = vec![0.0f32; 128 * 2];
+        assert!(handle.process_with_events(&mut quarter, 128, 2, &note_on));
+        assert!(quarter.iter().all(|sample| (*sample - 0.2).abs() < 1e-6));
+        let saved = backend.save_state().expect("capture instrument state");
+        assert_eq!(saved.len(), 8, "fixture stores Gain + held-note level");
+
+        backend
+            .set_parameter_normalized(CLAP_FIXTURE_GAIN_PARAM_ID, 0.5)
+            .expect("change Gain while note is held");
+        let mut half = vec![0.0f32; 128 * 2];
+        assert!(handle.process(&mut half, 128, 2));
+        assert!(half.iter().all(|sample| (*sample - 0.4).abs() < 1e-6));
+
+        backend
+            .load_state(&saved)
+            .expect("restore instrument state");
+        let mut recalled = vec![0.0f32; 128 * 2];
+        assert!(handle.process(&mut recalled, 128, 2));
+        assert!(recalled.iter().all(|sample| (*sample - 0.2).abs() < 1e-6));
+
+        drop(handle);
+        drop(backend);
+        let _ = std::fs::remove_dir_all(&directory);
+    }
+
+    #[test]
     fn dead_clap_instrument_bypasses_silence_and_replacement_recovers() {
         if !rustc_available() {
             eprintln!("skipping: rustc unavailable for the CLAP fixture");
@@ -2214,6 +2356,7 @@ mod tests {
         assert!(backend.gui_supported());
         assert!(!backend.gui_is_open());
         assert_eq!(backend.gui_size(), None);
+        assert_eq!(backend.state_dirty_request_count(), 0);
 
         let mut fake_parent = 0u8;
         let size = backend
@@ -2223,6 +2366,7 @@ mod tests {
         assert!(backend.gui_is_open());
         assert_eq!(backend.gui_size(), Some(CLAP_FIXTURE_GUI_INITIAL_SIZE));
         assert!(backend.gui_can_resize());
+        assert_eq!(backend.state_dirty_request_count(), 1);
 
         // Audio still processes with the editor open.
         let handle = RenderPluginProcessor::new(Arc::clone(&backend) as Arc<_>);

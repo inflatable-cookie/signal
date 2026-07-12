@@ -33,6 +33,7 @@
 use std::ffi::{c_char, c_void, CString};
 use std::path::Path;
 use std::ptr;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 
 use signal_plugin::{
@@ -175,6 +176,7 @@ pub(crate) const FUNKNOWN_IID: Tuid = tuid_from_uid(0x00000000, 0x00000000, 0xC0
 const ICOMPONENT_IID: Tuid = tuid_from_uid(0xE831FF31, 0xF2D54301, 0x928EBBEE, 0x25697802);
 const IAUDIO_PROCESSOR_IID: Tuid = tuid_from_uid(0x42043F99, 0xB7DA453C, 0xA569E79D, 0x9AAEC33D);
 const IEDIT_CONTROLLER_IID: Tuid = tuid_from_uid(0xDCD7BBE3, 0x7742448D, 0xA874AAF0, 0x0B96B23E);
+const ICOMPONENT_HANDLER_IID: Tuid = tuid_from_uid(0x93A0BEA3, 0x0BD045DB, 0x8E890B0C, 0xC1E46AC6);
 const IHOST_APPLICATION_IID: Tuid = tuid_from_uid(0x58E595CC, 0xDB2D4969, 0x8B6AAF8C, 0x36A664E5);
 // ivstparameterchanges.h (published interface definitions).
 const IPARAMETER_CHANGES_IID: Tuid = tuid_from_uid(0xA4779663, 0x0BB64A56, 0xB44384A8, 0x466FEB9D);
@@ -198,6 +200,8 @@ const PARAM_CAN_AUTOMATE: i32 = 1;
 const PARAM_IS_READ_ONLY: i32 = 1 << 1;
 const PARAM_IS_HIDDEN: i32 = 1 << 4;
 const PARAM_IS_BYPASS: i32 = 1 << 16;
+/// `RestartFlags::kLatencyChanged` from `ivsteditcontroller.h`.
+const RESTART_LATENCY_CHANGED: i32 = 1 << 3;
 
 /// `FUnknown` method prefix shared by every vtable below.
 #[repr(C)]
@@ -366,6 +370,107 @@ struct EditControllerVTable {
     set_param_normalized: unsafe extern "C" fn(*mut c_void, u32, f64) -> Tresult,
     set_component_handler: unsafe extern "C" fn(*mut c_void, *mut c_void) -> Tresult,
     create_view: unsafe extern "C" fn(*mut c_void, *const std::ffi::c_char) -> *mut c_void,
+}
+
+/// Minimal `IComponentHandler` receiving controller edit and restart calls.
+#[repr(C)]
+struct ComponentHandlerVTable {
+    query_interface: unsafe extern "C" fn(*mut c_void, *const Tuid, *mut *mut c_void) -> Tresult,
+    add_ref: unsafe extern "C" fn(*mut c_void) -> u32,
+    release: unsafe extern "C" fn(*mut c_void) -> u32,
+    begin_edit: unsafe extern "C" fn(*mut c_void, u32) -> Tresult,
+    perform_edit: unsafe extern "C" fn(*mut c_void, u32, f64) -> Tresult,
+    end_edit: unsafe extern "C" fn(*mut c_void, u32) -> Tresult,
+    restart_component: unsafe extern "C" fn(*mut c_void, i32) -> Tresult,
+}
+
+#[repr(C)]
+struct ComponentHandler {
+    vtable: *const ComponentHandlerVTable,
+    latency_changes: AtomicU64,
+}
+
+unsafe impl Send for ComponentHandler {}
+unsafe impl Sync for ComponentHandler {}
+
+static COMPONENT_HANDLER_VTABLE: ComponentHandlerVTable = ComponentHandlerVTable {
+    query_interface: component_handler_query_interface,
+    add_ref: component_handler_add_ref,
+    release: component_handler_release,
+    begin_edit: component_handler_begin_edit,
+    perform_edit: component_handler_perform_edit,
+    end_edit: component_handler_end_edit,
+    restart_component: component_handler_restart_component,
+};
+
+unsafe extern "C" fn component_handler_query_interface(
+    this: *mut c_void,
+    iid: *const Tuid,
+    out: *mut *mut c_void,
+) -> Tresult {
+    if out.is_null() {
+        return K_NO_INTERFACE;
+    }
+    if !iid.is_null() && (*iid == FUNKNOWN_IID || *iid == ICOMPONENT_HANDLER_IID) {
+        *out = this;
+        return K_RESULT_OK;
+    }
+    *out = ptr::null_mut();
+    K_NO_INTERFACE
+}
+
+unsafe extern "C" fn component_handler_add_ref(_this: *mut c_void) -> u32 {
+    1
+}
+
+unsafe extern "C" fn component_handler_release(_this: *mut c_void) -> u32 {
+    1
+}
+
+unsafe extern "C" fn component_handler_begin_edit(_this: *mut c_void, _id: u32) -> Tresult {
+    K_RESULT_OK
+}
+
+unsafe extern "C" fn component_handler_perform_edit(
+    _this: *mut c_void,
+    _id: u32,
+    _value: f64,
+) -> Tresult {
+    K_RESULT_OK
+}
+
+unsafe extern "C" fn component_handler_end_edit(_this: *mut c_void, _id: u32) -> Tresult {
+    K_RESULT_OK
+}
+
+unsafe extern "C" fn component_handler_restart_component(this: *mut c_void, flags: i32) -> Tresult {
+    if !this.is_null() && flags & RESTART_LATENCY_CHANGED != 0 {
+        (*(this.cast::<ComponentHandler>()))
+            .latency_changes
+            .fetch_add(1, Ordering::Relaxed);
+    }
+    K_RESULT_OK
+}
+
+#[cfg(test)]
+mod component_handler_tests {
+    use super::*;
+
+    #[test]
+    fn only_latency_restart_flags_advance_the_revision() {
+        let mut handler = Box::new(ComponentHandler {
+            vtable: &COMPONENT_HANDLER_VTABLE,
+            latency_changes: AtomicU64::new(0),
+        });
+        let ptr = (&mut *handler as *mut ComponentHandler).cast();
+
+        unsafe {
+            component_handler_restart_component(ptr, 1 << 1);
+            component_handler_restart_component(ptr, RESTART_LATENCY_CHANGED);
+        }
+
+        assert_eq!(handler.latency_changes.load(Ordering::Relaxed), 1);
+    }
 }
 
 /// Read a COM object's vtable of type `V`.
@@ -1251,6 +1356,8 @@ pub struct Vst3HostedInstance {
     component: *mut c_void,
     processor: *mut c_void,
     controller: Option<ControllerHandle>,
+    /// Stable host callback object installed on the edit controller.
+    component_handler: Option<Box<ComponentHandler>>,
     parameters: Vec<PluginParameterDescriptor>,
     port_layout: Vst3HostedPortLayout,
     state: HostedInstanceState,
@@ -1312,6 +1419,16 @@ impl Vst3HostedInstance {
         };
 
         let controller = unsafe { acquire_controller(component, &module) };
+        let component_handler = controller.as_ref().and_then(|controller| unsafe {
+            let mut handler = Box::new(ComponentHandler {
+                vtable: &COMPONENT_HANDLER_VTABLE,
+                latency_changes: AtomicU64::new(0),
+            });
+            let vtable = vtable_of::<EditControllerVTable>(controller.ptr());
+            let ptr = (&mut *handler as *mut ComponentHandler).cast();
+            (((*vtable).set_component_handler)(controller.ptr(), ptr) == K_RESULT_OK)
+                .then_some(handler)
+        });
         let parameters = controller
             .as_ref()
             .map(|handle| unsafe { parameter_inventory(handle.ptr()) })
@@ -1340,6 +1457,7 @@ impl Vst3HostedInstance {
             component,
             processor,
             controller,
+            component_handler,
             parameters,
             port_layout,
             state: HostedInstanceState::Created,
@@ -1419,6 +1537,14 @@ impl Vst3HostedInstance {
             let vtable = vtable_of::<AudioProcessorVTable>(self.processor);
             ((*vtable).get_latency_samples)(self.processor)
         }
+    }
+
+    /// Number of controller `kLatencyChanged` restart notifications.
+    pub fn latency_change_count(&self) -> u64 {
+        self.component_handler
+            .as_ref()
+            .map(|handler| handler.latency_changes.load(Ordering::Relaxed))
+            .unwrap_or(0)
     }
 
     /// Activate for processing: stereo/stereo bus arrangement (verified via
@@ -1600,6 +1726,8 @@ impl Drop for Vst3HostedInstance {
             }
             com_release(self.processor);
             if let Some(controller) = self.controller.take() {
+                let vtable = vtable_of::<EditControllerVTable>(controller.ptr());
+                let _ = ((*vtable).set_component_handler)(controller.ptr(), ptr::null_mut());
                 match controller {
                     ControllerHandle::ComponentFacet(ptr) => com_release(ptr),
                     ControllerHandle::Separate(ptr) => {

@@ -154,7 +154,8 @@ pub enum PluginEvent {
 }
 
 impl PluginEvent {
-    pub(crate) const ENCODED_BYTES: usize = 24;
+    /// Fixed byte width of one event in the shared-memory wire codec.
+    pub const ENCODED_BYTES: usize = 24;
 
     /// Returns `true` if this event is a [`ParameterValue`](Self::ParameterValue) variant.
     pub fn is_parameter_value(self) -> bool {

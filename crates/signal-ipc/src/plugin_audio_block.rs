@@ -11,10 +11,11 @@
 //!            writing output
 //!   [8..12)  frame_count  (AtomicU32) — frames in the current request
 //!   [12..16) channels     (AtomicU32) — interleaved channel count (2 in v1)
-//!   [16..20) flags        (AtomicU32) — reserved, zero
+//!   [16..20) event_count  (AtomicU32) — fixed-width events in this request
 //!   [20..64) reserved
 //! input  samples: max_frames × channels interleaved f32
 //! output samples: max_frames × channels interleaved f32
+//! events: 1024 × 24-byte format-neutral plugin events
 //! ```
 //!
 //! The parent writes input, publishes `request_seq` (release), and
@@ -27,11 +28,16 @@ use std::sync::atomic::{AtomicU32, Ordering};
 
 /// Size of the block header preceding the sample areas.
 pub const PLUGIN_AUDIO_BLOCK_HEADER_BYTES: usize = 64;
+/// Maximum events carried with one plugin audio block.
+pub const PLUGIN_AUDIO_BLOCK_EVENT_CAPACITY: usize = 1024;
+/// Fixed byte width of one format-neutral plugin event.
+pub const PLUGIN_AUDIO_BLOCK_EVENT_BYTES: usize = 24;
 
 const REQUEST_SEQ_OFFSET: usize = 0;
 const RESPONSE_SEQ_OFFSET: usize = 4;
 const FRAME_COUNT_OFFSET: usize = 8;
 const CHANNELS_OFFSET: usize = 12;
+const EVENT_COUNT_OFFSET: usize = 16;
 
 /// Fixed layout of one plugin audio block region.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -46,7 +52,9 @@ impl PluginAudioBlockLayout {
     /// Total region size in bytes for this layout.
     pub fn region_bytes(&self) -> u32 {
         let samples = self.max_frames as usize * self.channels as usize * 4;
-        (PLUGIN_AUDIO_BLOCK_HEADER_BYTES + 2 * samples) as u32
+        (PLUGIN_AUDIO_BLOCK_HEADER_BYTES
+            + 2 * samples
+            + PLUGIN_AUDIO_BLOCK_EVENT_CAPACITY * PLUGIN_AUDIO_BLOCK_EVENT_BYTES) as u32
     }
 
     /// Byte offset of the input sample area.
@@ -57,6 +65,11 @@ impl PluginAudioBlockLayout {
     /// Byte offset of the output sample area.
     pub fn output_offset(&self) -> usize {
         PLUGIN_AUDIO_BLOCK_HEADER_BYTES + self.max_frames as usize * self.channels as usize * 4
+    }
+
+    /// Byte offset of the fixed event area.
+    pub fn events_offset(&self) -> usize {
+        self.output_offset() + self.max_frames as usize * self.channels as usize * 4
     }
 }
 
@@ -119,6 +132,45 @@ impl PluginAudioBlockView {
     /// Channel count both sample areas are interleaved at.
     pub fn channels(&self) -> &AtomicU32 {
         self.atomic_at(CHANNELS_OFFSET)
+    }
+
+    /// Event count for the current request.
+    pub fn event_count(&self) -> &AtomicU32 {
+        self.atomic_at(EVENT_COUNT_OFFSET)
+    }
+
+    /// Copy one encoded event into the request area.
+    ///
+    /// # Safety
+    /// The caller must own the parent role before publishing the request.
+    pub unsafe fn write_event(&self, index: usize, bytes: &[u8]) {
+        debug_assert!(index < PLUGIN_AUDIO_BLOCK_EVENT_CAPACITY);
+        debug_assert_eq!(bytes.len(), PLUGIN_AUDIO_BLOCK_EVENT_BYTES);
+        unsafe {
+            let dest = self
+                .base
+                .add(self.layout.events_offset() + index * PLUGIN_AUDIO_BLOCK_EVENT_BYTES);
+            std::ptr::copy_nonoverlapping(bytes.as_ptr(), dest, PLUGIN_AUDIO_BLOCK_EVENT_BYTES);
+        }
+    }
+
+    /// Copy one encoded event out of the request area.
+    ///
+    /// # Safety
+    /// The caller must own the child role after observing a fresh request.
+    pub unsafe fn read_event(&self, index: usize, bytes: &mut [u8]) {
+        debug_assert!(index < PLUGIN_AUDIO_BLOCK_EVENT_CAPACITY);
+        debug_assert_eq!(bytes.len(), PLUGIN_AUDIO_BLOCK_EVENT_BYTES);
+        unsafe {
+            let source = self
+                .base
+                .add(self.layout.events_offset() + index * PLUGIN_AUDIO_BLOCK_EVENT_BYTES);
+            std::ptr::copy_nonoverlapping(
+                source,
+                bytes.as_mut_ptr(),
+                PLUGIN_AUDIO_BLOCK_EVENT_BYTES,
+            );
+        }
     }
 
     /// Copy `samples` into the input area (parent side).
@@ -194,7 +246,7 @@ impl PluginAudioBlockView {
         self.frame_count().store(0, Ordering::Relaxed);
         self.channels()
             .store(self.layout.channels, Ordering::Relaxed);
-        self.atomic_at(16).store(0, Ordering::Release);
+        self.event_count().store(0, Ordering::Release);
     }
 }
 
@@ -210,7 +262,7 @@ mod tests {
         };
         assert_eq!(layout.input_offset(), 64);
         assert_eq!(layout.output_offset(), 64 + 4096 * 2 * 4);
-        assert_eq!(layout.region_bytes(), 64 + 2 * 4096 * 2 * 4);
+        assert_eq!(layout.region_bytes(), 64 + 2 * 4096 * 2 * 4 + 1024 * 24);
     }
 
     #[test]
@@ -237,6 +289,12 @@ mod tests {
         assert_eq!(read, output);
 
         view.frame_count().store(8, Ordering::Relaxed);
+        let event = [7u8; PLUGIN_AUDIO_BLOCK_EVENT_BYTES];
+        unsafe { view.write_event(0, &event) };
+        view.event_count().store(1, Ordering::Relaxed);
+        let mut read_event = [0u8; PLUGIN_AUDIO_BLOCK_EVENT_BYTES];
+        unsafe { view.read_event(0, &mut read_event) };
+        assert_eq!(read_event, event);
         view.request_seq().store(3, Ordering::Release);
         view.response_seq().store(3, Ordering::Release);
         assert_eq!(view.request_seq().load(Ordering::Acquire), 3);

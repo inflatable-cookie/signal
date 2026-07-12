@@ -319,11 +319,11 @@ pub struct RenderBlockPluginEvent {
 /// the cap in one block are dropped, earliest-first wins.
 pub const PLUGIN_EVENTS_PER_BLOCK_CAPACITY: usize = 1024;
 
-/// Reconcile a stateful plugin's active notes across a non-contiguous
-/// transport jump. Fixed stack state and the caller's preallocated scratch
-/// keep this audio-thread safe. Note IDs are not yet distinct in the render
-/// vocabulary, so state is tracked by channel/key, matching current delivery.
-fn append_plugin_note_chase(
+/// Reconcile plugin note, controller, and expression state across a non-
+/// contiguous transport jump. Fixed bounded state and the caller's
+/// preallocated scratch keep this audio-thread safe. Note IDs are not yet
+/// distinct, so note expression is tracked by channel/key.
+fn append_plugin_state_chase(
     events: &[RenderPluginEvent],
     from_frame: u64,
     to_frame: u64,
@@ -333,29 +333,65 @@ fn append_plugin_note_chase(
     let mut from_active = [0u128; 16];
     let mut to_active = [0u128; 16];
     let mut to_velocity = [[0.0f32; 128]; 16];
+    let mut cc_seen = [0u128; 16];
+    let mut cc_values = [[0.0f32; 128]; 16];
+    let mut bend_seen = 0u16;
+    let mut bend_values = [0.0f32; 16];
+    let mut pressure_seen = 0u16;
+    let mut pressure_values = [0.0f32; 16];
+    let mut expression_seen = [[0u128; 16]; 3];
+    let mut expression_values = [[[0.0f32; 128]; 16]; 3];
     let scan_end = from_frame.max(to_frame);
     for event in events.iter().take_while(|event| event.frame < scan_end) {
         let channel = usize::from(event.channel.min(15));
-        let (key, active, velocity) = match event.kind {
-            RenderPluginEventKind::NoteOn { key, velocity } => (key, true, velocity),
-            RenderPluginEventKind::NoteOff { key } => (key, false, 0.0),
-            _ => continue,
-        };
-        let bit = 1u128 << key;
-        if event.frame < from_frame {
-            if active {
-                from_active[channel] |= bit;
-            } else {
-                from_active[channel] &= !bit;
+        match event.kind {
+            RenderPluginEventKind::NoteOn { key, velocity } => {
+                let bit = 1u128 << key;
+                if event.frame < from_frame {
+                    from_active[channel] |= bit;
+                }
+                if event.frame < to_frame {
+                    to_active[channel] |= bit;
+                    to_velocity[channel][usize::from(key)] = velocity;
+                }
             }
-        }
-        if event.frame < to_frame {
-            if active {
-                to_active[channel] |= bit;
-                to_velocity[channel][usize::from(key)] = velocity;
-            } else {
-                to_active[channel] &= !bit;
+            RenderPluginEventKind::NoteOff { key } => {
+                let bit = 1u128 << key;
+                if event.frame < from_frame {
+                    from_active[channel] &= !bit;
+                }
+                if event.frame < to_frame {
+                    to_active[channel] &= !bit;
+                }
             }
+            RenderPluginEventKind::ControlChange { controller, value }
+                if event.frame < to_frame =>
+            {
+                cc_seen[channel] |= 1u128 << controller;
+                cc_values[channel][usize::from(controller)] = value;
+            }
+            RenderPluginEventKind::PitchBend { value } if event.frame < to_frame => {
+                bend_seen |= 1u16 << channel;
+                bend_values[channel] = value;
+            }
+            RenderPluginEventKind::ChannelPressure { value } if event.frame < to_frame => {
+                pressure_seen |= 1u16 << channel;
+                pressure_values[channel] = value;
+            }
+            RenderPluginEventKind::NoteExpression {
+                key,
+                expression,
+                value,
+            } if event.frame < to_frame => {
+                let index = match expression {
+                    RenderNoteExpressionKind::Pressure => 0,
+                    RenderNoteExpressionKind::Timbre => 1,
+                    RenderNoteExpressionKind::Tuning => 2,
+                };
+                expression_seen[index][channel] |= 1u128 << key;
+                expression_values[index][channel][usize::from(key)] = value;
+            }
+            _ => {}
         }
     }
     for (channel, active) in from_active.into_iter().enumerate() {
@@ -370,6 +406,51 @@ fn append_plugin_note_chase(
                 offset_frames,
                 channel: channel as u8,
                 kind: RenderPluginEventKind::NoteOff { key },
+            });
+        }
+    }
+    // Channel-wide state must precede destination attacks.
+    for channel in 0..16 {
+        for controller in 0..128u8 {
+            if cc_seen[channel] & (1u128 << controller) == 0 {
+                continue;
+            }
+            if scratch.len() == PLUGIN_EVENTS_PER_BLOCK_CAPACITY {
+                return;
+            }
+            scratch.push(RenderBlockPluginEvent {
+                offset_frames,
+                channel: channel as u8,
+                kind: RenderPluginEventKind::ControlChange {
+                    controller,
+                    value: cc_values[channel][usize::from(controller)],
+                },
+            });
+        }
+        for (seen, kind) in [
+            (
+                bend_seen,
+                RenderPluginEventKind::PitchBend {
+                    value: bend_values[channel],
+                },
+            ),
+            (
+                pressure_seen,
+                RenderPluginEventKind::ChannelPressure {
+                    value: pressure_values[channel],
+                },
+            ),
+        ] {
+            if seen & (1u16 << channel) == 0 {
+                continue;
+            }
+            if scratch.len() == PLUGIN_EVENTS_PER_BLOCK_CAPACITY {
+                return;
+            }
+            scratch.push(RenderBlockPluginEvent {
+                offset_frames,
+                channel: channel as u8,
+                kind,
             });
         }
     }
@@ -389,6 +470,37 @@ fn append_plugin_note_chase(
                     velocity: to_velocity[channel][usize::from(key)],
                 },
             });
+        }
+    }
+    // Per-note state follows attacks so formats that require an active note
+    // can address the freshly chased voice.
+    for (index, expression) in [
+        RenderNoteExpressionKind::Pressure,
+        RenderNoteExpressionKind::Timbre,
+        RenderNoteExpressionKind::Tuning,
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        for channel in 0..16 {
+            let active = to_active[channel] & expression_seen[index][channel];
+            for key in 0..128u8 {
+                if active & (1u128 << key) == 0 {
+                    continue;
+                }
+                if scratch.len() == PLUGIN_EVENTS_PER_BLOCK_CAPACITY {
+                    return;
+                }
+                scratch.push(RenderBlockPluginEvent {
+                    offset_frames,
+                    channel: channel as u8,
+                    kind: RenderPluginEventKind::NoteExpression {
+                        key,
+                        expression,
+                        value: expression_values[index][channel][usize::from(key)],
+                    },
+                });
+            }
         }
     }
 }
@@ -3174,7 +3286,7 @@ impl RenderPlaneExecutor {
                                 self.loop_region.map(|(_, loop_end)| loop_end)
                             };
                             if let Some(from) = discontinuity_from {
-                                append_plugin_note_chase(
+                                append_plugin_state_chase(
                                     events,
                                     from,
                                     *segment_start,
@@ -4914,17 +5026,62 @@ mod tests {
     }
 
     #[test]
-    fn seek_into_held_plugin_note_chases_note_on_at_block_start() {
+    fn seek_chases_held_plugin_note_controller_and_expression_state() {
         let (mut controller, mut executor) = render_plane();
         let backend = RecordingEventProcessor::new();
         let handle = RenderPluginProcessor::new(Arc::clone(&backend) as Arc<_>);
         let buffer = event_buffer(vec![
+            RenderPluginEvent {
+                frame: 50,
+                channel: 2,
+                kind: RenderPluginEventKind::ControlChange {
+                    controller: 74,
+                    value: 0.25,
+                },
+            },
+            RenderPluginEvent {
+                frame: 50,
+                channel: 2,
+                kind: RenderPluginEventKind::PitchBend { value: 0.4 },
+            },
+            RenderPluginEvent {
+                frame: 50,
+                channel: 2,
+                kind: RenderPluginEventKind::ChannelPressure { value: 0.6 },
+            },
             RenderPluginEvent {
                 frame: 100,
                 channel: 2,
                 kind: RenderPluginEventKind::NoteOn {
                     key: 64,
                     velocity: 0.75,
+                },
+            },
+            RenderPluginEvent {
+                frame: 150,
+                channel: 2,
+                kind: RenderPluginEventKind::NoteExpression {
+                    key: 64,
+                    expression: RenderNoteExpressionKind::Pressure,
+                    value: 0.7,
+                },
+            },
+            RenderPluginEvent {
+                frame: 150,
+                channel: 2,
+                kind: RenderPluginEventKind::NoteExpression {
+                    key: 64,
+                    expression: RenderNoteExpressionKind::Timbre,
+                    value: 0.8,
+                },
+            },
+            RenderPluginEvent {
+                frame: 150,
+                channel: 2,
+                kind: RenderPluginEventKind::NoteExpression {
+                    key: 64,
+                    expression: RenderNoteExpressionKind::Tuning,
+                    value: 12.0,
                 },
             },
             RenderPluginEvent {
@@ -4947,9 +5104,54 @@ mod tests {
                 RenderBlockPluginEvent {
                     offset_frames: 0,
                     channel: 2,
+                    kind: RenderPluginEventKind::ControlChange {
+                        controller: 74,
+                        value: 0.25,
+                    },
+                },
+                RenderBlockPluginEvent {
+                    offset_frames: 0,
+                    channel: 2,
+                    kind: RenderPluginEventKind::PitchBend { value: 0.4 },
+                },
+                RenderBlockPluginEvent {
+                    offset_frames: 0,
+                    channel: 2,
+                    kind: RenderPluginEventKind::ChannelPressure { value: 0.6 },
+                },
+                RenderBlockPluginEvent {
+                    offset_frames: 0,
+                    channel: 2,
                     kind: RenderPluginEventKind::NoteOn {
                         key: 64,
                         velocity: 0.75,
+                    },
+                },
+                RenderBlockPluginEvent {
+                    offset_frames: 0,
+                    channel: 2,
+                    kind: RenderPluginEventKind::NoteExpression {
+                        key: 64,
+                        expression: RenderNoteExpressionKind::Pressure,
+                        value: 0.7,
+                    },
+                },
+                RenderBlockPluginEvent {
+                    offset_frames: 0,
+                    channel: 2,
+                    kind: RenderPluginEventKind::NoteExpression {
+                        key: 64,
+                        expression: RenderNoteExpressionKind::Timbre,
+                        value: 0.8,
+                    },
+                },
+                RenderBlockPluginEvent {
+                    offset_frames: 0,
+                    channel: 2,
+                    kind: RenderPluginEventKind::NoteExpression {
+                        key: 64,
+                        expression: RenderNoteExpressionKind::Tuning,
+                        value: 12.0,
                     },
                 },
                 RenderBlockPluginEvent {
@@ -5024,6 +5226,79 @@ mod tests {
                 },
             ],
             "wrapped block delivers both segments, buffer-relative",
+        );
+    }
+
+    #[test]
+    fn loop_wrap_chases_held_note_controller_and_expression_at_wrap_offset() {
+        let (mut controller, mut executor) = render_plane();
+        let backend = RecordingEventProcessor::new();
+        let handle = RenderPluginProcessor::new(Arc::clone(&backend) as Arc<_>);
+        let buffer = event_buffer(vec![
+            RenderPluginEvent {
+                frame: 50,
+                channel: 3,
+                kind: RenderPluginEventKind::PitchBend { value: -0.25 },
+            },
+            RenderPluginEvent {
+                frame: 100,
+                channel: 3,
+                kind: RenderPluginEventKind::NoteOn {
+                    key: 67,
+                    velocity: 0.9,
+                },
+            },
+            RenderPluginEvent {
+                frame: 150,
+                channel: 3,
+                kind: RenderPluginEventKind::NoteExpression {
+                    key: 67,
+                    expression: RenderNoteExpressionKind::Timbre,
+                    value: 0.45,
+                },
+            },
+        ]);
+        controller
+            .install_plan(&events_spec(handle, buffer))
+            .unwrap();
+        controller.set_loop_region(Some((300, 600))).unwrap();
+        controller.set_playing(true).unwrap();
+
+        let mut frames = vec![0.0f32; 1024];
+        executor.render_block(&mut frames); // [0, 512)
+        executor.render_block(&mut frames); // [512, 600) + wrap [300, 724)
+
+        assert_eq!(
+            backend.calls()[1],
+            vec![
+                RenderBlockPluginEvent {
+                    offset_frames: 88,
+                    channel: 3,
+                    kind: RenderPluginEventKind::NoteOff { key: 67 },
+                },
+                RenderBlockPluginEvent {
+                    offset_frames: 88,
+                    channel: 3,
+                    kind: RenderPluginEventKind::PitchBend { value: -0.25 },
+                },
+                RenderBlockPluginEvent {
+                    offset_frames: 88,
+                    channel: 3,
+                    kind: RenderPluginEventKind::NoteOn {
+                        key: 67,
+                        velocity: 0.9,
+                    },
+                },
+                RenderBlockPluginEvent {
+                    offset_frames: 88,
+                    channel: 3,
+                    kind: RenderPluginEventKind::NoteExpression {
+                        key: 67,
+                        expression: RenderNoteExpressionKind::Timbre,
+                        value: 0.45,
+                    },
+                },
+            ],
         );
     }
 

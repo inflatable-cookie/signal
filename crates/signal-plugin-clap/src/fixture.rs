@@ -356,6 +356,12 @@ pub struct clap_host_gui {{
 
 #[repr(C)]
 #[derive(Copy, Clone)]
+pub struct clap_host_state {{
+    pub mark_dirty: Option<unsafe extern "C" fn(*const clap_host)>,
+}}
+
+#[repr(C)]
+#[derive(Copy, Clone)]
 pub struct clap_event_header {{
     pub size: u32,
     pub time: u32,
@@ -388,6 +394,24 @@ pub struct clap_input_events {{
 pub struct clap_output_events {{
     pub ctx: *mut c_void,
     pub try_push: Option<unsafe extern "C" fn(*const clap_output_events, *const clap_event_header) -> bool>,
+}}
+
+#[repr(C)]
+pub struct clap_istream {{
+    pub ctx: *mut c_void,
+    pub read: Option<unsafe extern "C" fn(*const clap_istream, *mut c_void, u64) -> i64>,
+}}
+
+#[repr(C)]
+pub struct clap_ostream {{
+    pub ctx: *mut c_void,
+    pub write: Option<unsafe extern "C" fn(*const clap_ostream, *const c_void, u64) -> i64>,
+}}
+
+#[repr(C)]
+pub struct clap_plugin_state {{
+    pub save: Option<unsafe extern "C" fn(*const clap_plugin, *const clap_ostream) -> bool>,
+    pub load: Option<unsafe extern "C" fn(*const clap_plugin, *const clap_istream) -> bool>,
 }}
 
 const CLAP_CORE_EVENT_SPACE_ID: u16 = 0;
@@ -443,6 +467,8 @@ const FIXTURE_GAIN: f32 = {gain:?};
 /// CLAP_EVENT_PARAM_VALUE in-events for param id 4096 (g12.023).
 static GAIN_BITS: std::sync::atomic::AtomicU32 =
     std::sync::atomic::AtomicU32::new(f32::to_bits(FIXTURE_GAIN));
+static NOTE_LEVEL_BITS: std::sync::atomic::AtomicU32 =
+    std::sync::atomic::AtomicU32::new(f32::to_bits(0.0));
 
 struct FeaturePtrs([*const c_char; 3]);
 unsafe impl Sync for FeaturePtrs {{}}
@@ -537,6 +563,11 @@ static PARAMS: clap_plugin_params = clap_plugin_params {{
     flush: None,
 }};
 
+static STATE: clap_plugin_state = clap_plugin_state {{
+    save: Some(state_save),
+    load: Some(state_load),
+}};
+
 static PLUGIN: clap_plugin = clap_plugin {{
     desc: &DESCRIPTOR,
     plugin_data: ptr::null_mut(),
@@ -610,15 +641,16 @@ const GAIN_STEP_CAPACITY: usize = 64;
 /// Apply pending in-events before the block renders. PARAM_VALUE events
 /// for the Gain param (id 4096) keep their block-boundary semantics
 /// (g12.023: stored immediately). Note and MIDI CC7 events become
-/// SAMPLE-OFFSET gain steps so hosts can assert both the decoded bytes and
+/// SAMPLE-OFFSET voice-level steps for instruments (gain steps for effects)
+/// so hosts can assert both the decoded bytes and
 /// the intra-block offsets from the audio output alone:
 ///   NOTE_ON  → gain = velocity from the event's time offset
 ///   NOTE_OFF → gain = 0.0 from the event's time offset
 ///   MIDI 0xB0 cc=7 → gain = data2 / 127 from the event's time offset
-/// Returns the gathered `(time, gain)` steps in delivery order.
+/// Returns `(time, value, voice_level)` steps in delivery order.
 unsafe fn apply_param_events(
     in_events: *const c_void,
-    steps: &mut [(u32, f32); GAIN_STEP_CAPACITY],
+    steps: &mut [(u32, f32, bool); GAIN_STEP_CAPACITY],
 ) -> usize {{
     if in_events.is_null() {{
         return 0;
@@ -655,14 +687,14 @@ unsafe fn apply_param_events(
                     }} else {{
                         0.0
                     }};
-                    steps[step_count] = ((*header).time, gain);
+                    steps[step_count] = ((*header).time, gain, {instrument});
                     step_count += 1;
                 }}
             }}
             CLAP_EVENT_NOTE_EXPRESSION_TYPE => {{
                 let event = &*(header as *const clap_event_note_expression);
                 if step_count < GAIN_STEP_CAPACITY {{
-                    steps[step_count] = ((*header).time, event.value as f32);
+                    steps[step_count] = ((*header).time, event.value as f32, {instrument});
                     step_count += 1;
                 }}
             }}
@@ -672,7 +704,7 @@ unsafe fn apply_param_events(
                     && event.data[1] == 7
                     && step_count < GAIN_STEP_CAPACITY
                 {{
-                    steps[step_count] = ((*header).time, f32::from(event.data[2]) / 127.0);
+                    steps[step_count] = ((*header).time, f32::from(event.data[2]) / 127.0, {instrument});
                     step_count += 1;
                 }}
             }}
@@ -693,7 +725,7 @@ unsafe extern "C" fn plugin_process(
         return 0;
     }}
     let process = &*process;
-    let mut gain_steps = [(0u32, 0f32); GAIN_STEP_CAPACITY];
+    let mut gain_steps = [(0u32, 0f32, false); GAIN_STEP_CAPACITY];
     let step_count = apply_param_events(process.in_events, &mut gain_steps);
     if PENDING_PARAM_OUT.swap(false, std::sync::atomic::Ordering::SeqCst)
         && !process.out_events.is_null()
@@ -751,27 +783,34 @@ unsafe extern "C" fn plugin_process(
         if source.is_some_and(|source| source.is_null()) || dest.is_null() {{
             return 0;
         }}
-        // Per-frame gain: the live Gain param until the first note/CC step,
-        // then each step's gain from its sample offset (event-offset proof).
+        // Gain and instrument voice level are independent: parameter writes
+        // scale held notes instead of being overwritten by note events.
         let mut gain = f32::from_bits(GAIN_BITS.load(std::sync::atomic::Ordering::SeqCst));
+        let mut note_level = f32::from_bits(
+            NOTE_LEVEL_BITS.load(std::sync::atomic::Ordering::SeqCst),
+        );
         let mut next_step = 0usize;
         for frame in 0..frames {{
             while next_step < step_count && gain_steps[next_step].0 as usize <= frame {{
-                gain = gain_steps[next_step].1;
+                if gain_steps[next_step].2 {{
+                    note_level = gain_steps[next_step].1;
+                }} else {{
+                    gain = gain_steps[next_step].1;
+                }}
                 next_step += 1;
             }}
             *dest.add(frame) = match source {{
                 Some(source) => *source.add(frame) * gain,
-                None => gain,
+                None => note_level * gain,
             }};
         }}
     }}
-    // The last step's gain persists into later blocks (like a param write).
-    if step_count > 0 {{
-        GAIN_BITS.store(
-            gain_steps[step_count - 1].1.to_bits(),
-            std::sync::atomic::Ordering::SeqCst,
-        );
+    for step in &gain_steps[..step_count] {{
+        if step.2 {{
+            NOTE_LEVEL_BITS.store(step.1.to_bits(), std::sync::atomic::Ordering::SeqCst);
+        }} else {{
+            GAIN_BITS.store(step.1.to_bits(), std::sync::atomic::Ordering::SeqCst);
+        }}
     }}
     1
 }}
@@ -791,11 +830,73 @@ unsafe extern "C" fn plugin_get_extension(
         (&GUI as *const clap_plugin_gui).cast()
     }} else if requested == LATENCY_ID {{
         (&LATENCY as *const clap_plugin_latency).cast()
-    }} else if requested == STATE_ID || requested == TAIL_ID {{
+    }} else if requested == STATE_ID {{
+        (&STATE as *const clap_plugin_state).cast()
+    }} else if requested == TAIL_ID {{
         1usize as *const c_void
     }} else {{
         ptr::null()
     }}
+}}
+
+// ── clap.state ─────────────────────────────────────────────────────────────
+
+unsafe extern "C" fn state_save(
+    _plugin: *const clap_plugin,
+    stream: *const clap_ostream,
+) -> bool {{
+    if stream.is_null() {{
+        return false;
+    }}
+    let Some(write) = (*stream).write else {{ return false }};
+    let mut state = [0u8; 8];
+    state[..4].copy_from_slice(&GAIN_BITS.load(std::sync::atomic::Ordering::SeqCst).to_le_bytes());
+    state[4..].copy_from_slice(&NOTE_LEVEL_BITS.load(std::sync::atomic::Ordering::SeqCst).to_le_bytes());
+    let mut offset = 0usize;
+    while offset < state.len() {{
+        let written = write(
+            stream,
+            state.as_ptr().add(offset).cast(),
+            (state.len() - offset) as u64,
+        );
+        if written <= 0 || written as usize > state.len() - offset {{
+            return false;
+        }}
+        offset += written as usize;
+    }}
+    true
+}}
+
+unsafe extern "C" fn state_load(
+    _plugin: *const clap_plugin,
+    stream: *const clap_istream,
+) -> bool {{
+    if stream.is_null() {{
+        return false;
+    }}
+    let Some(read) = (*stream).read else {{ return false }};
+    let mut state = [0u8; 8];
+    let mut offset = 0usize;
+    while offset < state.len() {{
+        let count = read(
+            stream,
+            state.as_mut_ptr().add(offset).cast(),
+            (state.len() - offset) as u64,
+        );
+        if count <= 0 || count as usize > state.len() - offset {{
+            return false;
+        }}
+        offset += count as usize;
+    }}
+    GAIN_BITS.store(
+        u32::from_le_bytes(state[..4].try_into().unwrap()),
+        std::sync::atomic::Ordering::SeqCst,
+    );
+    NOTE_LEVEL_BITS.store(
+        u32::from_le_bytes(state[4..].try_into().unwrap()),
+        std::sync::atomic::Ordering::SeqCst,
+    );
+    true
 }}
 
 // ── clap.gui (offscreen bookkeeping only) ──────────────────────────────────
@@ -890,6 +991,17 @@ unsafe extern "C" fn gui_show(_plugin: *const clap_plugin) -> bool {{
     // Stand-in editor tweak: the next processed block pushes a Gain
     // PARAM_VALUE out-event for the plugin→host sync proof (g12.024).
     PENDING_PARAM_OUT.store(true, std::sync::atomic::Ordering::SeqCst);
+    let host = HOST.load(std::sync::atomic::Ordering::SeqCst);
+    if !host.is_null() {{
+        if let Some(get_extension) = (*host).get_extension {{
+            let extension = get_extension(host, STATE_ID.as_ptr().cast());
+            if !extension.is_null() {{
+                if let Some(mark_dirty) = (*(extension as *const clap_host_state)).mark_dirty {{
+                    mark_dirty(host);
+                }}
+            }}
+        }}
+    }}
     // Exercise the host-callback path: ask the host for a resize.
     let host = HOST.load(std::sync::atomic::Ordering::SeqCst);
     if !host.is_null() {{
@@ -1015,7 +1127,7 @@ unsafe extern "C" fn param_get_value(
     true
 }}
 "#,
-        gain = if instrument { 0.0 } else { CLAP_FIXTURE_GAIN },
+        gain = if instrument { 1.0 } else { CLAP_FIXTURE_GAIN },
         plugin_type_id = plugin_type_id,
         plugin_name = plugin_name,
         midi_outputs = midi_outputs,

@@ -33,10 +33,12 @@ use clap_sys::{
     ext::params::{
         clap_host_params, clap_param_clear_flags, clap_param_rescan_flags, CLAP_EXT_PARAMS,
     },
+    ext::state::{clap_host_state, clap_plugin_state, CLAP_EXT_STATE},
     factory::plugin_factory::{clap_plugin_factory, CLAP_PLUGIN_FACTORY_ID},
     host::clap_host,
     plugin::clap_plugin,
     process::{clap_process, CLAP_PROCESS_ERROR},
+    stream::{clap_istream, clap_ostream},
     version::clap_version,
 };
 use libloading::Library;
@@ -256,6 +258,7 @@ impl ClapHostedInstance {
             gui_events: Mutex::new(Vec::new()),
             params_events: Mutex::new(Vec::new()),
             restart_requests: AtomicU64::new(0),
+            state_dirty_requests: AtomicU64::new(0),
         });
         // Self-referential host_data: the shim is boxed (stable address)
         // and outlives the plugin, so callbacks can always recover it.
@@ -321,6 +324,53 @@ impl ClapHostedInstance {
         Ok(())
     }
 
+    /// Capture the plugin's opaque project state through `clap.state`.
+    /// Control-thread only; callers must exclude concurrent processing.
+    pub fn save_state(&self) -> Result<Vec<u8>, ClapHostingError> {
+        let extension = self.state_extension()?;
+        let save = unsafe { (*extension).save }
+            .ok_or_else(|| ClapHostingError::new("state_save_missing"))?;
+        let mut bytes = Vec::new();
+        let stream = clap_ostream {
+            ctx: (&mut bytes as *mut Vec<u8>).cast(),
+            write: Some(clap_state_write),
+        };
+        if !unsafe { save(self.plugin, &stream) } {
+            return Err(ClapHostingError::new("state_save_failed"));
+        }
+        Ok(bytes)
+    }
+
+    /// Restore an opaque project-state blob through `clap.state`.
+    /// Control-thread only; callers must exclude concurrent processing.
+    pub fn load_state(&self, bytes: &[u8]) -> Result<(), ClapHostingError> {
+        let extension = self.state_extension()?;
+        let load = unsafe { (*extension).load }
+            .ok_or_else(|| ClapHostingError::new("state_load_missing"))?;
+        let mut source = ClapStateReadCursor { bytes, offset: 0 };
+        let stream = clap_istream {
+            ctx: (&mut source as *mut ClapStateReadCursor<'_>).cast(),
+            read: Some(clap_state_read),
+        };
+        if !unsafe { load(self.plugin, &stream) } {
+            return Err(ClapHostingError::new("state_load_failed"));
+        }
+        Ok(())
+    }
+
+    fn state_extension(&self) -> Result<*const clap_plugin_state, ClapHostingError> {
+        let extension = unsafe {
+            (*self.plugin)
+                .get_extension
+                .map(|get| get(self.plugin, CLAP_EXT_STATE.as_ptr()))
+                .unwrap_or(ptr::null())
+        };
+        if extension.is_null() {
+            return Err(ClapHostingError::new("state_unsupported"));
+        }
+        Ok(extension.cast())
+    }
+
     /// Main-bus port layout enumerated at load.
     pub fn port_layout(&self) -> ClapHostedPortLayout {
         self.port_layout
@@ -350,6 +400,11 @@ impl ClapHostedInstance {
     /// embedding host re-queries the latency extension control-side.
     pub fn restart_request_count(&self) -> u64 {
         self.host_shim.restart_requests.load(Ordering::Relaxed)
+    }
+
+    /// Number of plugin `clap.state` dirty notifications observed.
+    pub fn state_dirty_request_count(&self) -> u64 {
+        self.host_shim.state_dirty_requests.load(Ordering::Relaxed)
     }
 
     /// Activate the instance for processing at `sample_rate_hz` with the
@@ -512,6 +567,47 @@ impl ClapHostedInstance {
     }
 }
 
+unsafe extern "C" fn clap_state_write(
+    stream: *const clap_ostream,
+    buffer: *const c_void,
+    size: u64,
+) -> i64 {
+    if stream.is_null() || buffer.is_null() || size > i64::MAX as u64 {
+        return -1;
+    }
+    let bytes = &mut *((*stream).ctx as *mut Vec<u8>);
+    let input = std::slice::from_raw_parts(buffer.cast::<u8>(), size as usize);
+    bytes.extend_from_slice(input);
+    size as i64
+}
+
+struct ClapStateReadCursor<'a> {
+    bytes: &'a [u8],
+    offset: usize,
+}
+
+unsafe extern "C" fn clap_state_read(
+    stream: *const clap_istream,
+    buffer: *mut c_void,
+    size: u64,
+) -> i64 {
+    if stream.is_null() || buffer.is_null() || size > i64::MAX as u64 {
+        return -1;
+    }
+    let source = &mut *((*stream).ctx as *mut ClapStateReadCursor<'_>);
+    let remaining = source.bytes.len().saturating_sub(source.offset);
+    let count = remaining.min(size as usize);
+    if count > 0 {
+        ptr::copy_nonoverlapping(
+            source.bytes.as_ptr().add(source.offset),
+            buffer.cast(),
+            count,
+        );
+        source.offset += count;
+    }
+    count as i64
+}
+
 impl Drop for ClapHostedInstance {
     fn drop(&mut self) {
         // Gui destroy must precede plugin destroy. This is the fallback
@@ -603,6 +699,8 @@ pub(crate) struct ClapHostShim {
     pub(crate) params_events: Mutex<Vec<ClapHostParamsEvent>>,
     /// Monotonic, allocation-free notification from `request_restart`.
     pub(crate) restart_requests: AtomicU64,
+    /// Monotonic `clap.state` dirty notification for host autosave capture.
+    pub(crate) state_dirty_requests: AtomicU64,
 }
 
 /// Recover the shim from a host pointer inside a callback. Null when the
@@ -701,6 +799,16 @@ static HOST_PARAMS_EXTENSION: clap_host_params = clap_host_params {
     clear: Some(host_params_clear),
     request_flush: Some(host_params_request_flush),
 };
+
+static HOST_STATE_EXTENSION: clap_host_state = clap_host_state {
+    mark_dirty: Some(host_state_mark_dirty),
+};
+
+unsafe extern "C" fn host_state_mark_dirty(host: *const clap_host) {
+    if let Some(shim) = shim_from_host(host) {
+        shim.state_dirty_requests.fetch_add(1, Ordering::Relaxed);
+    }
+}
 
 unsafe extern "C" fn host_params_rescan(host: *const clap_host, flags: clap_param_rescan_flags) {
     push_params_event(host, ClapHostParamsEvent::RescanRequested { flags });
@@ -1304,6 +1412,9 @@ unsafe extern "C" fn sandbox_host_get_extension(
     if extension_id == CLAP_EXT_PARAMS {
         return (&HOST_PARAMS_EXTENSION as *const clap_host_params).cast();
     }
+    if extension_id == CLAP_EXT_STATE {
+        return (&HOST_STATE_EXTENSION as *const clap_host_state).cast();
+    }
     ptr::null()
 }
 
@@ -1326,11 +1437,28 @@ mod host_callback_tests {
             gui_events: Mutex::new(Vec::new()),
             params_events: Mutex::new(Vec::new()),
             restart_requests: AtomicU64::new(0),
+            state_dirty_requests: AtomicU64::new(0),
         });
         shim.host.host_data = (&mut *shim as *mut ClapHostShim).cast();
 
         unsafe { sandbox_host_request_restart(&shim.host) };
 
         assert_eq!(shim.restart_requests.load(Ordering::Relaxed), 1);
+    }
+
+    #[test]
+    fn state_dirty_callback_advances_the_host_revision() {
+        let mut shim = Box::new(ClapHostShim {
+            host: sandbox_host(),
+            gui_events: Mutex::new(Vec::new()),
+            params_events: Mutex::new(Vec::new()),
+            restart_requests: AtomicU64::new(0),
+            state_dirty_requests: AtomicU64::new(0),
+        });
+        shim.host.host_data = (&mut *shim as *mut ClapHostShim).cast();
+
+        unsafe { host_state_mark_dirty(&shim.host) };
+
+        assert_eq!(shim.state_dirty_requests.load(Ordering::Relaxed), 1);
     }
 }

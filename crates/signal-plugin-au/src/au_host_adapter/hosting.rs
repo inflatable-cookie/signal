@@ -441,6 +441,14 @@ impl AuHostedPortLayout {
     pub fn is_stereo_effect(&self) -> bool {
         self.main_input_channels == 2 && self.main_output_channels == 2
     }
+
+    /// Supported stereo processors are effects (2x2) or instruments (0x2).
+    pub fn is_supported_stereo_processor(&self) -> bool {
+        matches!(
+            (self.main_input_channels, self.main_output_channels),
+            (0 | 2, 2)
+        )
+    }
 }
 
 /// Lifecycle state of a hosted instance.
@@ -629,14 +637,16 @@ impl AuHostedInstance {
             unsafe {
                 // A unit may reject the set yet still satisfy the format, so
                 // failures here fall through to the read-back verification.
-                let _ = ffi::AudioUnitSetProperty(
-                    self.unit,
-                    ffi::kAudioUnitProperty_StreamFormat,
-                    ffi::kAudioUnitScope_Input,
-                    0,
-                    &format as *const _ as *const _,
-                    std::mem::size_of::<ffi::AudioStreamBasicDescription>() as u32,
-                );
+                if self.port_layout.main_input_channels > 0 {
+                    let _ = ffi::AudioUnitSetProperty(
+                        self.unit,
+                        ffi::kAudioUnitProperty_StreamFormat,
+                        ffi::kAudioUnitScope_Input,
+                        0,
+                        &format as *const _ as *const _,
+                        std::mem::size_of::<ffi::AudioStreamBasicDescription>() as u32,
+                    );
+                }
                 let _ = ffi::AudioUnitSetProperty(
                     self.unit,
                     ffi::kAudioUnitProperty_StreamFormat,
@@ -657,7 +667,12 @@ impl AuHostedInstance {
                 {
                     return Err(AuHostingError::new("max_frames_rejected"));
                 }
-                for scope in [ffi::kAudioUnitScope_Input, ffi::kAudioUnitScope_Output] {
+                let scopes = if self.port_layout.main_input_channels > 0 {
+                    &[ffi::kAudioUnitScope_Input, ffi::kAudioUnitScope_Output][..]
+                } else {
+                    &[ffi::kAudioUnitScope_Output][..]
+                };
+                for &scope in scopes {
                     if !verify_stereo_format(self.unit, scope, sample_rate_hz) {
                         return Err(AuHostingError::new("layout_unsupported"));
                     }
@@ -766,7 +781,11 @@ impl AuHostedInstance {
         }
         #[cfg(target_os = "macos")]
         {
-            AuProcessSession::new(self.unit, self.activated_max_frames as usize)
+            AuProcessSession::new(
+                self.unit,
+                self.activated_max_frames as usize,
+                self.port_layout.main_input_channels > 0,
+            )
         }
         #[cfg(not(target_os = "macos"))]
         {
@@ -1099,7 +1118,11 @@ unsafe impl Send for AuProcessSession {}
 
 impl AuProcessSession {
     #[cfg(target_os = "macos")]
-    fn new(unit: ffi::AudioUnit, max_frames: usize) -> Result<Self, AuHostingError> {
+    fn new(
+        unit: ffi::AudioUnit,
+        max_frames: usize,
+        has_audio_input: bool,
+    ) -> Result<Self, AuHostingError> {
         let mut input = Box::new(RenderInputState {
             left: vec![0.0; max_frames],
             right: vec![0.0; max_frames],
@@ -1109,18 +1132,20 @@ impl AuProcessSession {
             inputProc: Some(render_input_trampoline),
             inputProcRefCon: &mut *input as *mut RenderInputState as *mut _,
         };
-        let status = unsafe {
-            ffi::AudioUnitSetProperty(
-                unit,
-                ffi::kAudioUnitProperty_SetRenderCallback,
-                ffi::kAudioUnitScope_Input,
-                0,
-                &callback as *const _ as *const _,
-                std::mem::size_of::<ffi::AURenderCallbackStruct>() as u32,
-            )
-        };
-        if status != 0 {
-            return Err(AuHostingError::new("render_callback_install_failed"));
+        if has_audio_input {
+            let status = unsafe {
+                ffi::AudioUnitSetProperty(
+                    unit,
+                    ffi::kAudioUnitProperty_SetRenderCallback,
+                    ffi::kAudioUnitScope_Input,
+                    0,
+                    &callback as *const _ as *const _,
+                    std::mem::size_of::<ffi::AURenderCallbackStruct>() as u32,
+                )
+            };
+            if status != 0 {
+                return Err(AuHostingError::new("render_callback_install_failed"));
+            }
         }
         Ok(Self {
             unit,

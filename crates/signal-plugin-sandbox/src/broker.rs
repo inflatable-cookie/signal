@@ -35,8 +35,9 @@ use std::thread::JoinHandle;
 
 use signal_ipc::{
     MappedSharedMemoryRegion, PluginAudioBlockLayout, PluginAudioBlockView, SharedMemoryBroker,
+    PLUGIN_AUDIO_BLOCK_EVENT_CAPACITY,
 };
-use signal_plugin::PluginParameterDescriptor;
+use signal_plugin::{read_event_from_slice, PluginEvent, PluginParameterDescriptor};
 use signal_plugin_au::{AuHostedInstance, AuProcessSession};
 use signal_plugin_clap::{ClapHostedInstance, ClapProcessSession};
 use signal_plugin_lv2::{Lv2HostedInstance, Lv2ProcessSession};
@@ -378,14 +379,9 @@ impl HostedPluginInstance {
         }
     }
 
-    /// Phase-1 gate: stereo main in + stereo main out effects only.
-    fn is_stereo_effect(&self) -> bool {
-        match self {
-            Self::Clap(instance) => instance.port_layout().is_stereo_effect(),
-            Self::Vst3(instance) => instance.port_layout().is_stereo_effect(),
-            Self::Au(instance) => instance.port_layout().is_stereo_effect(),
-            Self::Lv2(instance) => instance.port_layout().is_stereo_effect(),
-        }
+    fn is_supported_stereo_processor(&self) -> bool {
+        let (inputs, outputs) = self.main_ports();
+        matches!((inputs, outputs), (0 | 2, 2))
     }
 
     fn activate(
@@ -486,16 +482,23 @@ impl HostedProcessSession {
         }
     }
 
-    fn process_interleaved_stereo(
+    fn process_interleaved_stereo_with_events(
         &mut self,
         input: &[f32],
         output: &mut [f32],
         frame_count: usize,
+        events: &[PluginEvent],
     ) -> bool {
+        let samples = (frame_count * 2).min(input.len()).min(output.len());
+        output[..samples].copy_from_slice(&input[..samples]);
         match self {
-            Self::Clap(session) => session.process_interleaved_stereo(input, output, frame_count),
-            Self::Vst3(session) => session.process_interleaved_stereo(input, output, frame_count),
-            Self::Au(session) => session.process_interleaved_stereo(input, output, frame_count),
+            Self::Clap(session) => {
+                session.process_in_place_with_events(output, frame_count, events)
+            }
+            Self::Vst3(session) => {
+                session.process_in_place_with_events(output, frame_count, events)
+            }
+            Self::Au(session) => session.process_in_place_with_events(output, frame_count, events),
             Self::Lv2(session) => session.process_interleaved_stereo(input, output, frame_count),
         }
     }
@@ -693,7 +696,7 @@ impl SandboxBrokerProcess {
     }
 
     /// Activate the loaded instance and lease the shared-memory audio block
-    /// region. Phase 1 hosts stereo-in/stereo-out effects only; any other
+    /// region. Supports stereo effects (2x2) and instruments (0x2); any other
     /// main-port layout is rejected with a typed `layout_unsupported`
     /// receipt (the parent compiles the chain as passthrough).
     fn activate_plugin(
@@ -712,12 +715,12 @@ impl SandboxBrokerProcess {
             return self.crashed_receipt("activate_invalid_configuration");
         }
         let (main_inputs, main_outputs) = plugin.instance.main_ports();
-        if !plugin.instance.is_stereo_effect() {
+        if !plugin.instance.is_supported_stereo_processor() {
             self.last_state = SandboxBrokerState::LayoutUnsupported;
             return self.receipt(
                 SandboxBrokerState::LayoutUnsupported,
                 &format!(
-                    "unsupported_port_layout|main_ports={main_inputs}x{main_outputs}|supported=2x2",
+                    "unsupported_port_layout|main_ports={main_inputs}x{main_outputs}|supported=0x2,2x2",
                 ),
             );
         }
@@ -836,6 +839,7 @@ impl SandboxBrokerProcess {
                 let max_samples = layout.max_frames as usize * layout.channels as usize;
                 let mut input = vec![0.0f32; max_samples];
                 let mut output = vec![0.0f32; max_samples];
+                let mut events = Vec::with_capacity(PLUGIN_AUDIO_BLOCK_EVENT_CAPACITY);
                 if session.start().is_err() {
                     return;
                 }
@@ -860,10 +864,21 @@ impl SandboxBrokerProcess {
                     // Safety: request/response stamping serializes access to
                     // the sample areas between the two processes.
                     unsafe { view.read_input(&mut input[..samples]) };
-                    session.process_interleaved_stereo(
+                    events.clear();
+                    let event_count = (view.event_count().load(Ordering::Relaxed) as usize)
+                        .min(PLUGIN_AUDIO_BLOCK_EVENT_CAPACITY);
+                    for index in 0..event_count {
+                        let mut encoded = [0u8; PluginEvent::ENCODED_BYTES];
+                        unsafe { view.read_event(index, &mut encoded) };
+                        if let Ok(event) = read_event_from_slice(&encoded) {
+                            events.push(event);
+                        }
+                    }
+                    session.process_interleaved_stereo_with_events(
                         &input[..samples],
                         &mut output[..samples],
                         frames,
+                        &events,
                     );
                     unsafe { view.write_output(&output[..samples]) };
                     view.response_seq().store(request, Ordering::Release);

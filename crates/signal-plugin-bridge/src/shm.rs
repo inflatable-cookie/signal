@@ -13,9 +13,10 @@ use std::time::{Duration, Instant};
 
 use signal_ipc::{
     MappedSharedMemoryRegion, PluginAudioBlockLayout, PluginAudioBlockView, SharedMemoryBroker,
-    SharedMemoryTransportKind, SharedMemoryTransportPayload,
+    SharedMemoryTransportKind, SharedMemoryTransportPayload, PLUGIN_AUDIO_BLOCK_EVENT_CAPACITY,
 };
-use signal_render_plane::{PluginBlockProcessor, RenderBlockPluginEvent};
+use signal_plugin::{write_event_to_slice, PluginEvent};
+use signal_render_plane::{PluginBlockProcessor, RenderBlockPluginEvent, RenderPluginEventSupport};
 
 /// Hard ceiling of the per-block wait budget, in microseconds.
 ///
@@ -26,6 +27,11 @@ use signal_render_plane::{PluginBlockProcessor, RenderBlockPluginEvent};
 /// EVERY insert misses, and 1 ms caps the damage on very large blocks where
 /// half a block would be a pointless long stall.
 pub const PLUGIN_PROCESS_WAIT_BUDGET_MAX_MICROS: u64 = 1_000;
+
+/// A single scheduling miss is not evidence that the sandbox child died.
+/// Keep bypass bounded, but require a short run of misses before retiring
+/// the backend generation.
+pub const PLUGIN_PROCESS_CONSECUTIVE_TIMEOUT_LIMIT: u32 = 3;
 
 /// Effective bounded wait for one block: `min(1 ms, 50 % of the block
 /// duration at `sample_rate_hz`)`.
@@ -60,8 +66,13 @@ pub struct ShmPluginProcessor {
     misses: AtomicU64,
     /// Events rejected because the v1 shared-memory block carries audio only.
     unsupported_events: AtomicU64,
+    /// Fatal processing deadline runs. Reaching the consecutive-miss limit
+    /// trips the backend dead; later blocks bypass until the host replaces it.
+    timeouts: AtomicU64,
+    consecutive_misses: AtomicU32,
     /// Cleared by the owning service on child death.
     alive: AtomicBool,
+    event_support: RenderPluginEventSupport,
 }
 
 impl ShmPluginProcessor {
@@ -75,6 +86,28 @@ impl ShmPluginProcessor {
         max_frames: u32,
         channels: u32,
         sample_rate_hz: u32,
+    ) -> Result<Self, String> {
+        Self::attach_with_event_support(
+            region_id,
+            shm_path,
+            shm_bytes,
+            max_frames,
+            channels,
+            sample_rate_hz,
+            RenderPluginEventSupport::default(),
+        )
+    }
+
+    /// Attach with the format-specific event delivery support published by
+    /// the owning host for this backend.
+    pub fn attach_with_event_support(
+        region_id: &str,
+        shm_path: &str,
+        shm_bytes: u32,
+        max_frames: u32,
+        channels: u32,
+        sample_rate_hz: u32,
+        event_support: RenderPluginEventSupport,
     ) -> Result<Self, String> {
         let layout = PluginAudioBlockLayout {
             max_frames,
@@ -109,13 +142,21 @@ impl ShmPluginProcessor {
             request_counter,
             misses: AtomicU64::new(0),
             unsupported_events: AtomicU64::new(0),
+            timeouts: AtomicU64::new(0),
+            consecutive_misses: AtomicU32::new(0),
             alive: AtomicBool::new(true),
+            event_support,
         })
     }
 
     /// Blocks bypassed so far (budget miss or dead child), cumulative.
     pub fn miss_count(&self) -> u64 {
         self.misses.load(Ordering::Relaxed)
+    }
+
+    /// Processing deadline misses, cumulative for this backend generation.
+    pub fn timeout_count(&self) -> u64 {
+        self.timeouts.load(Ordering::Relaxed)
     }
 
     /// Mark the backend dead (child process gone): every subsequent block
@@ -128,9 +169,42 @@ impl ShmPluginProcessor {
     pub fn is_alive(&self) -> bool {
         self.alive.load(Ordering::Relaxed)
     }
+
+    fn process_block(&self, scratch: &mut [f32], frame_count: usize, channels: usize) -> bool {
+        let samples = frame_count * channels;
+        unsafe { self.view.write_input(&scratch[..samples]) };
+        self.view
+            .frame_count()
+            .store(frame_count as u32, Ordering::Relaxed);
+        let request = self.request_counter.fetch_add(1, Ordering::Relaxed) + 1;
+        self.view.request_seq().store(request, Ordering::Release);
+
+        let budget = plugin_process_wait_budget(frame_count, self.sample_rate_hz);
+        let deadline = Instant::now() + budget;
+        loop {
+            if self.view.response_seq().load(Ordering::Acquire) == request {
+                self.consecutive_misses.store(0, Ordering::Relaxed);
+                unsafe { self.view.read_output(&mut scratch[..samples]) };
+                return true;
+            }
+            if Instant::now() >= deadline {
+                self.misses.fetch_add(1, Ordering::Relaxed);
+                let consecutive = self.consecutive_misses.fetch_add(1, Ordering::Relaxed) + 1;
+                if consecutive >= PLUGIN_PROCESS_CONSECUTIVE_TIMEOUT_LIMIT {
+                    self.timeouts.fetch_add(1, Ordering::Relaxed);
+                    self.alive.store(false, Ordering::Release);
+                }
+                return false;
+            }
+            std::hint::spin_loop();
+        }
+    }
 }
 
 impl PluginBlockProcessor for ShmPluginProcessor {
+    fn event_support(&self) -> RenderPluginEventSupport {
+        self.event_support
+    }
     fn process(&self, scratch: &mut [f32], frame_count: usize, channels: usize) -> bool {
         if !self.alive.load(Ordering::Relaxed) {
             self.misses.fetch_add(1, Ordering::Relaxed);
@@ -144,31 +218,8 @@ impl PluginBlockProcessor for ShmPluginProcessor {
             self.misses.fetch_add(1, Ordering::Relaxed);
             return false;
         }
-        let samples = frame_count * channels;
-        // Safety: single-flight — the previous request has completed or
-        // timed out; the child only reads input after a fresh request stamp.
-        unsafe { self.view.write_input(&scratch[..samples]) };
-        self.view
-            .frame_count()
-            .store(frame_count as u32, Ordering::Relaxed);
-        let request = self.request_counter.fetch_add(1, Ordering::Relaxed) + 1;
-        self.view.request_seq().store(request, Ordering::Release);
-
-        let budget = plugin_process_wait_budget(frame_count, self.sample_rate_hz);
-        let deadline = Instant::now() + budget;
-        loop {
-            if self.view.response_seq().load(Ordering::Acquire) == request {
-                // Safety: response observed with acquire ordering — the
-                // child's output write happened-before this read.
-                unsafe { self.view.read_output(&mut scratch[..samples]) };
-                return true;
-            }
-            if Instant::now() >= deadline {
-                self.misses.fetch_add(1, Ordering::Relaxed);
-                return false;
-            }
-            std::hint::spin_loop();
-        }
+        self.view.event_count().store(0, Ordering::Relaxed);
+        self.process_block(scratch, frame_count, channels)
     }
 
     fn unsupported_event_count(&self) -> u64 {
@@ -182,9 +233,31 @@ impl PluginBlockProcessor for ShmPluginProcessor {
         channels: usize,
         events: &[RenderBlockPluginEvent],
     ) -> bool {
-        self.unsupported_events
-            .fetch_add(events.len() as u64, Ordering::Relaxed);
-        self.process(scratch, frame_count, channels)
+        if !self.alive.load(Ordering::Relaxed)
+            || channels != self.layout.channels as usize
+            || frame_count > self.layout.max_frames as usize
+        {
+            self.misses.fetch_add(1, Ordering::Relaxed);
+            return false;
+        }
+        let event_count = events.len().min(PLUGIN_AUDIO_BLOCK_EVENT_CAPACITY);
+        self.unsupported_events.fetch_add(
+            events.len().saturating_sub(event_count) as u64,
+            Ordering::Relaxed,
+        );
+        for (index, event) in events.iter().take(event_count).enumerate() {
+            let plugin_event: PluginEvent = crate::in_process::convert_block_event(event);
+            let mut encoded = [0u8; PluginEvent::ENCODED_BYTES];
+            if write_event_to_slice(&plugin_event, &mut encoded).is_err() {
+                self.unsupported_events.fetch_add(1, Ordering::Relaxed);
+                continue;
+            }
+            unsafe { self.view.write_event(index, &encoded) };
+        }
+        self.view
+            .event_count()
+            .store(event_count as u32, Ordering::Relaxed);
+        self.process_block(scratch, frame_count, channels)
     }
 }
 
@@ -207,7 +280,7 @@ mod tests {
     }
 
     #[test]
-    fn audio_only_shared_memory_backend_receipts_unsupported_events() {
+    fn dead_shared_memory_backend_bypasses_before_event_delivery() {
         let layout = PluginAudioBlockLayout {
             max_frames: 128,
             channels: 2,
@@ -242,7 +315,7 @@ mod tests {
                 },
             }],
         ));
-        assert_eq!(handle.unsupported_event_count(), 1);
+        assert_eq!(handle.unsupported_event_count(), 0);
         drop(handle);
         drop(processor);
         drop(region);
@@ -301,18 +374,30 @@ mod tests {
             "missed block must leave scratch untouched"
         );
         assert_eq!(processor.miss_count(), 1);
+        assert_eq!(processor.timeout_count(), 0);
+        assert!(processor.is_alive(), "one miss keeps the backend live");
         // The wait respected its budget (generous ceiling for CI jitter).
         assert!(
             elapsed < budget + Duration::from_millis(10),
             "bounded wait overran: {elapsed:?} vs budget {budget:?}",
         );
 
-        // Dead child: bypass is immediate.
-        processor.mark_dead();
+        // Repeated unanswered requests eventually retire the epoch.
+        for _ in 1..PLUGIN_PROCESS_CONSECUTIVE_TIMEOUT_LIMIT {
+            assert!(!processor.process(&mut scratch, 128, 2));
+        }
+        assert_eq!(processor.timeout_count(), 1);
+        assert!(!processor.is_alive());
+
+        // Timed-out epoch: every later block bypasses immediately instead
+        // of repeatedly spending the wait budget.
         let start = Instant::now();
         assert!(!processor.process(&mut scratch, 128, 2));
         assert!(start.elapsed() < Duration::from_millis(2));
-        assert_eq!(processor.miss_count(), 2);
+        assert_eq!(
+            processor.miss_count(),
+            u64::from(PLUGIN_PROCESS_CONSECUTIVE_TIMEOUT_LIMIT) + 1,
+        );
 
         drop(processor);
         drop(region);
