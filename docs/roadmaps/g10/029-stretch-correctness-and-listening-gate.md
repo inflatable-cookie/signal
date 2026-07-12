@@ -725,12 +725,54 @@ independent stereo review.
 
 ### Batch 29.6BG - Complete Signal Successor Contract
 
-- [ ] freeze one interacting offline study, time-map, phase, resolution, and
+- [x] freeze one interacting offline study, time-map, phase, resolution, and
   linked-stereo architecture
-- [ ] replace isolated detector passage with bounded full-system tuning and
+- [x] replace isolated detector passage with bounded full-system tuning and
   concealed listening checkpoints
-- [ ] open implementation only when mechanism ownership, validation, tuning
+- [x] open implementation only when mechanism ownership, validation, tuning
   budget, and terminal stop conditions are explicit
+
+### Batch 29.6BH - Simultaneous Multi-Window Union Proof
+
+- [ ] prove the `512/2048/8192` square-root-Hann union frame, exact output-side
+  canonical dual, reflected boundaries, and identity reconstruction
+- [ ] report layer/frame counts, frame bounds, coverage, work, errors, and
+  stable coefficient/output hashes across frozen controls
+- [ ] keep study, schedule modification, phase modification, tuning, corpus,
+  promotion, and routing closed until the union passes
+
+### Batch 29.6BI - Study And Local Schedule Proof
+
+- [ ] compute linked continuous evidence independently of event application
+- [ ] select ordered exact points and solve positive bounded integer hops with
+  exact final closure and maximum `256`-frame selected-event movement
+- [ ] prove dense-event retention, disabled-application evidence parity,
+  deterministic schedule hashes, and linked-channel decision equivalence
+
+### Batch 29.6BJ - Complete Synthetic Phase And Synthesis Proof
+
+- [ ] transport each layer through actual source/output intervals
+- [ ] prove event correction and cross-resolution vertical alignment are
+  separately live without changing schedule or magnitude
+- [ ] pass identity, exact length, coverage, finiteness, symmetry, tone, event,
+  boundary, stereo-decision, and repeat gates
+
+### Batch 29.6BK - Bounded Complete-System Tuning
+
+- [ ] run at most `108` complete configurations over the frozen geometry,
+  study-sensitivity, event-local strength, reset-scope, and vertical-alignment
+  grid
+- [ ] use hard gates and Pareto evidence to export at most three candidates
+- [ ] select one through concealed nine-row development listening only on at
+  least `6/9` preference over current and no new broad defect
+
+### Batch 29.6BL - Locked Mono Holdout
+
+- [ ] expose the frozen six-row family-balanced holdout only after selection
+- [ ] require at least `4/6` preference over current, no new broad defect, and
+  complete hard-gate retention
+- [ ] open linked-stereo listening and hardening only on passage; never retune
+  after holdout
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -1326,8 +1368,13 @@ independent stereo review.
   sequence; no-lamination changes no study state. Contract `082` now separates
   study, timing constraints, local schedule, event phase, and vertical phase.
   R3 direct state remains publicly unsupported.
+- 2026-07-12: Batch 29.6BG freezes the complete Signal successor under Rule 30:
+  linked offline study, bounded exact local schedule, simultaneous multi-window
+  union frame, separate event/vertical phase stages, canonical-dual synthesis,
+  linked decisions, a `108`-configuration ceiling, concealed development, and a
+  locked holdout. Batches 29.6BH-BL are ready in sequence.
 
 ## Next Task
 
-Run Batch 29.6BG. Freeze the complete interacting Signal successor architecture
-and bounded tuning program before synthesis implementation.
+Run Batch 29.6BH. Prove the simultaneous `512/2048/8192` union frame and exact
+identity dual before study, schedule, phase modification, or tuning.

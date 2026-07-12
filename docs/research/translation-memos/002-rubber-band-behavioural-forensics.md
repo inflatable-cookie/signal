@@ -99,5 +99,5 @@ Promoted into:
 
 ## Next Task
 
-Freeze the complete Signal study, local-time, event-phase, multi-resolution,
-vertical-phase, and linked-stereo successor architecture.
+Prove the simultaneous `512/2048/8192` union frame and exact identity dual
+before study, schedule, phase modification, or tuning.

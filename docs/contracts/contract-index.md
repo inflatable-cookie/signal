@@ -144,5 +144,5 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Run `g10.029` Batch 29.6BG under contract `082`: freeze the complete interacting
-Signal successor architecture and tuning program.
+Run `g10.029` Batch 29.6BH under contract `082`: prove the simultaneous
+multi-window union frame and exact identity dual.

@@ -267,5 +267,5 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Run Batch 29.6BG. Freeze the complete interacting Signal successor architecture
-and bounded tuning program before synthesis implementation.
+Run Batch 29.6BH. Prove the simultaneous `512/2048/8192` union frame and exact
+identity dual before study, schedule, phase modification, or tuning.

@@ -536,7 +536,30 @@ globally exact local schedule third, and apply event and vertical phase policy
 as distinct synthesis stages. Rubber Band's signed increment encoding does not
 transfer.
 
+The contracted successor is one simultaneous union frame with square-root-Hann
+layers at `512`, `2048`, and `8192` frames for its mechanism baseline. Every
+layer analyzes the source; none is selected as the sole owner of a time frame.
+All atoms synthesize through one exact output-side frame operator and canonical
+dual. This preserves a single waveform while retaining short attack and long
+tonal evidence concurrently.
+
+Linked offline study emits continuous evidence before application. A separate
+policy chooses exact points. A constrained optimizer then produces positive
+integer output hops, permits no more than `256` frames of selected-event
+movement, favors local unity slope near protected support, and returns all
+deviation to zero at the exact target boundary. Event phase correction and
+cross-resolution vertical alignment run after ordinary actual-hop transport and
+remain separate from the schedule.
+
+The first proof geometry is not a production constant. Complete-system tuning
+is capped at `108` configurations over three window banks, two study
+sensitivities, three local-unity strengths, three reset scopes, and vertical
+alignment on/off. Nine existing
+mono rows are development material; six are locked holdout. Objective measures
+enforce hard safety and construct a Pareto frontier. Concealed listening selects
+at most one candidate. Holdout failure permits no retuning.
+
 ## Next Task
 
-Run Batch 29.6BG. Freeze the complete interacting Signal successor architecture
-and bounded tuning program before synthesis implementation.
+Run Batch 29.6BH. Prove the simultaneous `512/2048/8192` union frame and exact
+identity dual before study, schedule, phase modification, or tuning.

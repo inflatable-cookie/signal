@@ -2152,6 +2152,156 @@ Batch 29.6BG must define its own monotonic bounded schedule whose local
 deviations close exactly at the target duration. R3 state remains opaque; only
 its measured simultaneous-resolution requirements transfer.
 
+### Rule 30: the successor is one studied simultaneous multi-window system
+
+The next Signal candidate has six ordered stages:
+
+1. linked-channel offline study
+2. exact-point selection
+3. globally exact local schedule optimization
+4. simultaneous multi-window analysis and phase transport
+5. selected event-phase correction followed by cross-resolution vertical phase
+   alignment
+6. one canonical-dual overlap-add synthesis
+
+No stage emits an independently rendered waveform. No detector is promoted or
+rejected outside the complete system. Fixed-ratio mono is implemented first,
+but study and schedule data structures must already be channel-shared.
+
+#### Rule 30A: use a union frame, not window selection
+
+The mechanism geometry is three square-root-Hann STFT layers at `512`, `2048`,
+and `8192` frames, each at quarter-window source hop. Every layer analyzes the
+complete source. All layer atoms belong to one frame; on the output grid,
+compute the exact sum of squared windows across every layer and use its
+pointwise canonical dual. Unmodified coefficients must reconstruct identity
+through the complete union, including reflected boundaries.
+
+Each layer uses actual adjacent source and output centres. Magnitudes remain
+layer-local. Phase transport estimates instantaneous frequency from actual
+source intervals and advances through actual output intervals. This is
+simultaneous resolution: never choose one layer per frame, crossfade layer
+waveforms, or normalize layer outputs independently.
+
+#### Rule 30B: study evidence is shared but application is separate
+
+Study computes one linked-channel evidence timeline on the `128`-frame base
+grid. Per layer, sum channel energies before computing log-energy rise and
+positive spectral flux. Normalize each feature by its complete-source median
+and median absolute deviation, then average rise and flux within the layer.
+Cross-layer agreement counts peaks within `256` source frames. The continuous
+evidence and agreement count are reported regardless of application.
+
+Exact-point selection is a separate policy. Responsive selection requires at
+least two agreeing layers and evidence `3` median absolute deviations above the
+median. Conservative selection requires three layers and `6` deviations. Use
+local maxima within `256` frames; peaks within `128` frames form one dense
+region but remain separately reported. Always include boundary closure points.
+
+#### Rule 30C: optimize a monotonic schedule with exact closure
+
+Let base source centres be `A_n` and ideal output centres be `r*A_n`. Solve one
+integer monotonic output sequence `S_n` with positive adjacent hops and exact
+final duration. The objective combines:
+
+- deviation from global ratio in steady regions
+- hop curvature
+- movement of selected event centres from their ideal projections
+- deviation from local unity slope across selected event support
+- compensation energy placed near another selected event
+
+Selected event centres may move by at most `256` output frames from
+`round(r*A_n)`. Events remain ordered. Adjacent output hops stay between one
+quarter and four times their ideal positive hop. All accumulated deviation must
+return to zero at the final crop boundary. No post-render pad, truncate beyond
+the exact protected crop, or timing correction is allowed.
+
+#### Rule 30D: event and vertical phase policy are distinct
+
+At selected event regions, event-phase correction reinitializes only bins and
+layers owned by the tuned reset scope. It uses analyzed phase at the selected
+source event; it does not boost magnitude or splice source waveform.
+
+Short-only resets every nonredundant bin in the `512`-frame layer.
+Confidence-owned resets only the reference layer for each spectral peak group.
+Frequency-limited uses confidence ownership but leaves `80..2000 Hz` under
+ordinary transport to protect musical fundamentals; owned bins below `80 Hz`
+or above `2000 Hz` reset. DC and Nyquist remain real in every scope.
+
+After ordinary transport and any event correction, cross-resolution vertical
+alignment groups deterministic spectral peaks at the same absolute frequency.
+One confidence-selected reference layer owns each group. Other layers retain
+their analyzed phase offset to that reference at the projected source time.
+This alignment is continuous between events and does not change the schedule.
+
+Stereo channels share evidence, exact points, schedule, layer ownership, and
+peak-group topology. Each channel retains its own complex coefficients.
+Cross-channel phase differences are preserved relative to the shared reference
+group; channels are never summed for synthesis decisions.
+
+#### Rule 30E: mechanism proofs precede tuning
+
+Batch 29.6BH proves the union frame only: identity reconstruction, frame bounds,
+boundary reflection, exact dual, deterministic coefficient/output hashes, and
+bounded work on the frozen synthetic controls. Batch 29.6BI proves study and
+schedule behavior: evidence remains available with application disabled,
+selected points are ordered, hops are positive and bounded, dense events remain
+represented, event displacement stays bounded, and final closure is exact.
+
+Batch 29.6BJ then proves complete phase/synthesis liveness with event correction
+and cross-resolution alignment separately enabled and disabled. Require exact
+length, coverage, finiteness, deterministic repeat, identity error, conjugate
+symmetry, imaginary residue, tone frequency, event ordering, and linked-channel
+decision equivalence before real-source tuning.
+
+#### Rule 30F: tuning is joint, finite, and separated from holdout
+
+Tune at most `108` complete configurations:
+
+- three union geometries: `[256,1024,4096]`, `[512,2048,8192]`, and
+  `[1024,4096,16384]`
+- two event sensitivities: responsive and conservative
+- three event-local unity strengths: `0.0`, `0.5`, `1.0`
+- three event reset scopes: short-only, confidence-owned, frequency-limited
+- vertical alignment disabled or enabled
+
+The middle geometry is the mechanism-proof baseline, not an assumed winner.
+Every configuration is a complete render; do not tune detector, schedule,
+reset, or phase policy in isolation. Hard gates are exact length, finite output,
+coverage, boundary integrity, deterministic repeat, identity tolerance, event
+ordering, maximum `256`-frame selected-event displacement, stereo decision
+equivalence, and no clipping introduced by hidden normalization.
+
+Use synthetic controls plus nine family-balanced rows from the existing
+15-row mono set as development evidence. Objective evidence removes hard-gate
+failures and retains a Pareto frontier; it does not choose the winner. Export at
+most three frontier configurations for concealed development listening against
+current Signal and Rubber Band R3. Select one only if it is preferred to current
+Signal on at least `6/9` rows without a repeatable new broad defect.
+
+Freeze the remaining six family-balanced rows before tuning and expose them
+only after selection. The chosen candidate passes holdout when preferred to
+current Signal on at least `4/6` rows, has no repeatable new broad defect, and
+retains all hard gates. Holdout failure permits no parameter change. Return to
+operator review with mechanism attribution.
+
+The `L001 0.75x` crest, event placement, replicas, tonal movement, static
+residual, unsupported mass, endpoints, and stereo image remain required report
+fields. They are diagnostic and Pareto evidence, not independent vetoes after
+hard safety gates. Rubber Band-class claims still require concealed listening.
+
+#### Rule 30G: implementation runway and stops
+
+Batch 29.6BK owns bounded development tuning. Batch 29.6BL owns the locked
+holdout and operator decision. A holdout pass opens linked-stereo listening and
+production-hardening planning; it does not directly change product routing.
+
+Stop before tuning if any mechanism proof fails. Stop after `108` configurations
+if no frontier candidate passes hard gates. Stop after development listening if
+no candidate reaches `6/9`. Stop after holdout failure without retuning. Do not
+respond to any stop by widening the grid, relabeling holdout, or reviving an
+isolated detector gate.
+
 ## Clean-Room Rule
 
 Public papers and public algorithm descriptions may inform Signal design.
@@ -2160,5 +2310,5 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Run Batch 29.6BG. Freeze one complete Signal successor contract. Do not start
-synthesis until the full interacting architecture and tuning budget are ready.
+Run Batch 29.6BH. Prove the simultaneous multi-window union frame and exact
+identity dual before study, schedule, phase modification, or tuning.
