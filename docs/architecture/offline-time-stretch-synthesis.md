@@ -514,7 +514,6 @@ renders is not assumed sufficient.
 
 ## Next Task
 
-Run the Rubber Band behavioural-forensics contract. Freeze probes and report
-schema before implementation. Keep a new Signal synthesis candidate, product
-promotion, and routing closed until the measured mechanism signatures select a
-complete architecture.
+Run the frozen `264`-row Rubber Band behavioural measurement and capability
+receipt. Keep a new Signal synthesis candidate, product promotion, and routing
+closed until cross-control mechanism signatures select a complete architecture.

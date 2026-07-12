@@ -144,5 +144,5 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Run `g10.029` Batch 29.6BD under contract `082`: freeze the Rubber Band
-behavioural probe manifest and report schema before implementation.
+Run `g10.029` Batch 29.6BE under contract `082`: implement the frozen `264`-row
+synthetic comparator measurement and capability receipt.

@@ -700,10 +700,10 @@ independent stereo review.
 
 ### Batch 29.6BD - Rubber Band Behavioural Probe Contract
 
-- [ ] freeze generated controls, ratios, R2/R3 modes, public introspection
+- [x] freeze generated controls, ratios, R2/R3 modes, public introspection
   fields, rendered-audio measures, hashes, and unsupported-mode policy
-- [ ] separate directly reported comparator state from waveform inference
-- [ ] keep new Signal synthesis, automatic selection, promotion, cache, and
+- [x] separate directly reported comparator state from waveform inference
+- [x] keep new Signal synthesis, automatic selection, promotion, cache, and
   routing closed
 
 ### Batch 29.6BE - Rubber Band Behavioural Measurement
@@ -1300,9 +1300,16 @@ independent stereo review.
   or isolated by Signal's previous rules. Rule 29 and Batches 29.6BD-BG reopen
   the complete-system research space. Evidence is in
   `docs/research/translation-memos/002-rubber-band-behavioural-forensics.md`.
+- 2026-07-12: Batch 29.6BD freezes a `264`-row synthetic matrix over five
+  controlled R2/R3 modes, four mono ratios, and bounded linked-stereo controls.
+  Direct public-API state, render receipts, and waveform inference have
+  separate schemas and hashes. Installed Rubber Band `4.0.0` supports every
+  required CLI mode; public headers and libraries are present but adapter
+  capability must be receipted. Evidence is in
+  `docs/logs/2026-07/12-g10-029-rubber-band-behavioural-probe-contract.md`.
 
 ## Next Task
 
-Run Batch 29.6BD. Freeze the Rubber Band behavioural probe manifest and report
-schema before implementation. Keep a new Signal synthesis candidate and
+Run Batch 29.6BE. Implement the frozen `264`-row synthetic comparator
+measurement and capability receipt. Keep a new Signal synthesis candidate and
 product routing closed.

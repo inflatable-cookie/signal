@@ -267,6 +267,6 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Run Batch 29.6BD. Freeze the Rubber Band behavioural probe manifest and report
-schema before extending the comparator harness. Keep a new Signal synthesis
-candidate, promotion, and product integration closed.
+Run Batch 29.6BE. Implement the frozen `264`-row Rubber Band synthetic
+measurement and capability receipt. Keep a new Signal synthesis candidate,
+promotion, and product integration closed.

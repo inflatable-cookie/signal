@@ -2058,6 +2058,57 @@ then freezes one complete Signal architecture with interacting study, time-map,
 phase, resolution, and stereo policies. No synthesis implementation begins from
 an inferred R3 detail or a single favorable waveform.
 
+#### Rule 29A: the frozen comparator modes are controlled contrasts
+
+Use exactly five offline modes:
+
+1. `r2-default`: `--fast --crisp 5`
+2. `r2-no-reset`: `--fast --no-transients`
+3. `r2-no-lamination`: `--fast --no-lamination`
+4. `r3-standard`: `--fine`
+5. `r3-short`: `--fine --window-short`
+
+R2 default versus no-reset measures the complete effect of enabling transient
+phase resynchronization, including any coupled time-profile change. R2 default
+versus no-lamination measures the complete lamination effect. R3 standard
+versus short measures the complete full-multi-resolution versus restricted
+single-window effect. These are controlled behavioral contrasts, not proof of
+one internal implementation detail.
+
+Run all five modes on the twelve mono controls at ratios `1.0`, `0.75`, `1.25`,
+and `1.5`: low bass tone, mid tone, two-tone, linear chirp, hard impulse, soft
+onset, dense impulses, boundary impulses, tonal-plus-impulse mixture,
+deterministic noise, complex synthetic mix, and silence. Run R2 default, R3
+standard, and R3 short on linked-stereo hard impulse, unequal-channel mixed,
+centre-plus-side, and anti-phase controls at `0.75` and `1.5`. Total expected
+render rows are `264`.
+
+#### Rule 29B: direct state and waveform inference remain separate
+
+The probe manifest records `probe_id`, family, channel count, sample rate,
+source frames, declared event frames, ratio, mode, exact command arguments, and
+source hash. The render receipt records tool path, tool version, capability
+status, exit status, output frames, expected frames, length error, clipping,
+non-finite samples, and output hash.
+
+Direct public-API evidence records output increments, phase-reset curve, and
+exact-time points with count, extrema, sum, stable sequence hash, and explicit
+support status. It must name the engine and confirm the requested engine
+version. Missing headers, library, symbols, or adapter support yields
+`unsupported` plus a reason; never substitute waveform inference into these
+fields.
+
+Waveform evidence records declared and measured events, projected position,
+signed displacement, pre/event/post local displacement slopes, crest, replica
+ratio, endpoint energy, added silence, vertical coherence, interchannel phase,
+tonal movement, static residual, unsupported mass, and stable measurement hash.
+Every inference field names its observation window and confidence basis.
+
+Repeat every synthetic render and direct-state query twice. Manifest, command,
+state, rendered samples, and measurement hashes must match. Any mismatch or
+missing required CLI mode stops Batch 29.6BE before attribution. Direct-state
+support may be absent without blocking rendered-audio measurement.
+
 ## Clean-Room Rule
 
 Public papers and public algorithm descriptions may inform Signal design.
@@ -2066,6 +2117,6 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Run Batch 29.6BD. Freeze the behavioural probe manifest and report schema
-before extending the corpus tool. Do not implement a new Signal synthesis
-candidate or product routing.
+Run Batch 29.6BE. Implement the frozen 264-row synthetic comparator measurement
+and capability receipt. Do not implement a new Signal synthesis candidate or
+product routing.

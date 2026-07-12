@@ -99,5 +99,5 @@ Promoted into:
 
 ## Next Task
 
-Freeze the behavioural probe manifest and report schema before extending the
-corpus tool.
+Implement the frozen `264`-row synthetic comparator measurement and public-API
+capability receipt.
