@@ -543,12 +543,22 @@ independent stereo review.
 
 ### Batch 29.6AL - Rényi Selector-Failure Attribution Contract
 
-- [ ] freeze one diagnostic that separates fixed-region temporal contamination
+- [x] freeze one diagnostic that separates fixed-region temporal contamination
   from whole-band tonal-energy dominance without changing selector output
-- [ ] retain exact Batch 29.6AK energies, entropies, paths, controls, and hashes;
+- [x] retain exact Batch 29.6AK energies, entropies, paths, controls, and hashes;
   report bounded time-slice and frequency-region contributions only
-- [ ] select one next selector boundary or stop inconclusive; keep phase,
-  stretched synthesis, corpus, dynamic ratio, cache, and routing closed
+- [x] freeze exact closure, counterfactual, repeat, and decision rules before
+  measuring attribution; keep selector and gate thresholds unchanged
+
+### Batch 29.6AM - Rényi Selector-Failure Attribution Decision
+
+- [ ] run the frozen time-slice and folded-frequency attribution on the exact
+  Batch 29.6AK controls and prove additive closure and unchanged baseline hashes
+- [ ] measure only the isolated-impulse, linear-chirp, and mixed-control failure
+  anchors; report bounded leave-one-region-out entropy and raw-winner effects
+- [ ] select comparison-region geometry, frequency evidence, or inconclusive;
+  keep phase, stretched synthesis, corpus, dynamic ratio, cache, and routing
+  closed
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -1043,8 +1053,14 @@ independent stereo review.
   mixed tonal/transient audio stays all-long. Stability and equivalence gates
   pass. Evidence is in
   `docs/logs/2026-07/11-g10-029-renyi-resolution-selection-rejection.md`.
+- 2026-07-12: Batch 29.6AL froze selector-failure attribution. Eight exact
+  time slices and eight folded-frequency regions must close the unchanged
+  Batch 29.6AK evidence before bounded leave-one-region-out diagnostics can
+  choose one selector boundary. Evidence is in
+  `docs/logs/2026-07/12-g10-029-renyi-selector-attribution-contract.md`.
 
 ## Next Task
 
-Freeze Batch 29.6AL Rényi selector-failure attribution. Do not change the
-selector or implement phase or stretched synthesis.
+Run Batch 29.6AM Rényi selector-failure attribution. Preserve every Batch
+29.6AK selector output and hash; do not implement a selector change, phase, or
+stretched synthesis.

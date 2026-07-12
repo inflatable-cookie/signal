@@ -1447,6 +1447,58 @@ Do not add an entropy margin, onset cue, band weighting, or comparison-region
 change yet. Batch 29.6AL must attribute fixed-region temporal contamination and
 whole-band energy dominance before another selector contract.
 
+### Rule 26K: attribute selector failure without changing selection
+
+Batch 29.6AL freezes one release-only diagnostic over the exact Batch 29.6AK
+STFT coefficients. It does not replace, filter, floor, weight, or normalize any
+coefficient used by the selector. The twelve controls, `64` decision anchors,
+four resolutions, full-region energies and entropies, raw winners, legal paths,
+gate failures, and input/entropy/path/evidence hashes must remain bit-exact to
+Batch 29.6AK. The aggregate gate failures remain `[0,1,0,0,2,0,0]` and the
+aggregate evidence hash remains `5568f0a38f679a40`.
+
+Partition each anchor's centered `4096`-frame comparison region into eight
+half-open `512`-frame time slices by coefficient-frame centre. Partition the
+nonnegative FFT bins `0..=2048` into eight contiguous regions by
+`floor(8*k/2049)`, folding each interior bin together with its negative-frequency
+partner; DC and Nyquist occur once. For every anchor, resolution, and region,
+report coefficient count, energy sum, and `energy^0.7` sum. Time and frequency
+partitions must each close their parent count and sums to relative error
+`1e-12`; the separately retained full-region energy and entropy fields must be
+bit-exact.
+
+For attribution only, remove one time slice or one folded-frequency region at a
+time and recompute the four normalized entropies and longest-minimum raw winner
+from the remaining sums. Keep the original lattice-cell term. Do not solve a
+new legal path, feed a counterfactual winner into scheduling, or change the
+stored Batch 29.6AK evidence. Report the entropy delta for every level, whether
+the raw winner changes, and the removed energy and alpha-mass fractions.
+
+Evaluate only the failed evidence:
+
+- isolated impulse: anchors more than `2048` frames from frame `4096` whose
+  selected level is not `4096`
+- linear chirp: all `64` anchors
+- mixed control: the five anchors within `256` frames of frame `4096`, plus the
+  stationary outer quarters as negative controls
+
+Classify comparison-region geometry only if removing the event-facing outermost
+time slice changes the failed raw winner toward `4096` at every applicable
+isolated-event anchor and no outer-quarter mixed negative control changes.
+Classify frequency evidence only if one fixed folded-frequency region changes
+the mixed event anchors toward `512` while leaving every mixed outer-quarter
+raw winner at `4096`. The linear chirp may corroborate either classification
+but cannot select one alone. If both, neither, or different frequency regions
+own different applicable anchors, stop inconclusive. Exact ties retain the
+longer-window rule.
+
+Require finite values, zero empty-removal anomalies, exact repeat, stable
+attribution hashes, and no baseline evidence drift. Failure returns to the
+diagnostic only. A conclusive result opens one separately frozen selector
+boundary; it does not authorize its implementation. Phase, stretched synthesis,
+corpus, linked-stereo production work, dynamic ratio, cache, and routing remain
+closed.
+
 ### Rule 27: synthesize a protected centre, not a circular endpoint
 
 Extend the source in both directions with whole-sample even reflection,
@@ -1502,5 +1554,6 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Freeze Batch 29.6AL Rényi selector-failure attribution. Do not change the
-selector or implement phase or stretched synthesis.
+Run Batch 29.6AM Rényi selector-failure attribution. Preserve every Batch
+29.6AK selector output and hash; do not implement a selector change, phase, or
+stretched synthesis.

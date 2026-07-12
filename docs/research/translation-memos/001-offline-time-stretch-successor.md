@@ -619,3 +619,11 @@ tonal/transient audio chooses `4096` everywhere: whole-band tonal sparsity hides
 the local event. Equivalence and perturbation stability pass, so numerical
 instability does not own the failure. Attribute temporal-region contamination
 and whole-band energy dominance before changing selector policy.
+
+The attribution contract uses the unchanged coefficient field. Eight
+coefficient-centre time slices test whether distant event energy owns the broad
+short-window decision. Eight folded-frequency regions test whether one fixed
+spectral region owns the mixed transient miss. Additive energy and alpha-mass
+closure precede leave-one-region-out entropy diagnostics. Counterfactual raw
+winners never enter the legal path, and a split or ambiguous result stops
+without a selector proposal.

@@ -387,8 +387,15 @@ audio selects `4096` everywhere. The fixed comparison region spreads isolated
 event ownership while whole-band tonal energy hides the mixed transient. Phase
 work remains closed pending selector-failure attribution.
 
+Selector-failure attribution now has a fixed report-only boundary. The exact
+Batch 29.6AK coefficient field is partitioned two ways: eight time slices by
+frame centre and eight folded-frequency regions. Both views must close the
+unchanged energy and Rényi sums. Leave-one-region-out entropy is diagnostic
+only: it may identify comparison-region geometry, frequency evidence, or an
+inconclusive split, but cannot alter a path or schedule.
+
 ## Next Task
 
-Freeze Batch 29.6AL Rényi selector-failure attribution. Do not change the
-selector or implement phase, stretched synthesis, corpus, dynamic ratio, or
-routing.
+Run Batch 29.6AM Rényi selector-failure attribution. Preserve every selector
+output and keep phase, stretched synthesis, corpus, dynamic ratio, and routing
+closed.

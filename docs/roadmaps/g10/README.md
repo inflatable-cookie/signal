@@ -149,7 +149,8 @@ implementation remains Signal-owned.
   freezes one normalized local `alpha=0.7` Rényi selector and legal minimum-cost
   resolution path. Batch 29.6AK rejects it: isolated-event ownership is too
   broad, a linear chirp stays all-short, and mixed tonal/transient audio stays
-  all-long. Batch 29.6AL must attribute those two failure modes before change.
+  all-long. Batch 29.6AL freezes exact additive time/frequency attribution;
+  Batch 29.6AM must run it before any selector change.
 - Offline artifacts and RealtimePreview have bounded contracts and prototype
   paths, but callback-safe preview integration and fully streaming artifact
   output remain gated until their owning source-fill/cache contracts exist.
@@ -239,6 +240,6 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Freeze Batch 29.6AL Rényi selector-failure attribution. Keep selector changes,
+Run Batch 29.6AM Rényi selector-failure attribution. Keep selector changes,
 phase, stretched synthesis, corpus, linked stereo, dynamic ratio, and product
 integration closed.
