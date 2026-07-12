@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; Rényi attribution inconclusive
+Status: active; automatic selector stopped for operator review
 Owner: dsp
 Updated: 2026-07-11
 Related contracts: `046`, `048`, `049`
@@ -1622,6 +1622,28 @@ second region size, frame alignment, margin, weight, or detector. Phase,
 stretched synthesis, corpus, dynamic ratio, cache identity, and routing remain
 closed.
 
+Batch 29.6AQ stops automatic-selector research for operator review. Geometry is
+structurally exact: every anchor has membership `[29,13,5,1]`, no complete
+window support escapes its comparison region, values are finite, paths are
+legal, linked-channel closure passes, and gain, polarity, pan, channel swap,
+equal-energy stereo, steady, dense, boundary, chirp, and noise gates pass.
+Membership hash `13eebb7276ee283d` repeats.
+
+Musical and stability gates still fail. The isolated impulse path has counts
+`[31,2,2,29]`; its legal one-level transition shoulders remain non-long just
+beyond the frozen `2048`-frame far-field boundary. Mixed tonal/transient audio
+remains `[0,0,0,64]` and misses the event. Perturbation change is `0.125` for
+the isolated, dense, and boundary impulse controls and zero for the other nine,
+against the `0.05` cap. Direct gain/polarity/stereo equivalence failures remain
+zero. Gate failures are `[0,1,0,0,1,1,0]`; evidence hash
+`8e6e86b6830bfa3e` repeats.
+
+The terminal geometry did not satisfy the selector contract. Do not change the
+far-field gate, perturbation cap, legal path, region size, alignment, entropy
+margin, frequency policy, or detector family without explicit operator
+direction. Variable-hop phase, stretched synthesis, corpus, dynamic ratio,
+cache identity, and routing remain closed.
+
 ### Rule 27: synthesize a protected centre, not a circular endpoint
 
 Extend the source in both directions with whole-sample even reflection,
@@ -1677,5 +1699,6 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Run Batch 29.6AQ anchor-local comparison geometry. Do not implement phase or
-stretched synthesis.
+Operator review must choose whether to retire automatic Rényi selection, reopen
+research under a new contract, or pause the successor lane. No implementation
+batch is ready.

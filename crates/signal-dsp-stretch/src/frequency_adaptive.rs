@@ -21,8 +21,9 @@ pub use types::{
     StretchCommonGridCanonicalTightenerDirection, StretchCommonGridNyquistAblationDirection,
     StretchCommonGridNyquistAblationOperator, StretchCommonGridResidualBoundaryDirection,
     StretchCommonGridThreeRowNyquistDirection, StretchDensePainlessDirection,
-    StretchRenyiAttributionDirection, StretchRenyiReassessmentDirection,
-    StretchRenyiSelectorDirection, StretchTimeAdaptivePainlessDirection,
+    StretchRenyiAttributionDirection, StretchRenyiGeometryDirection,
+    StretchRenyiReassessmentDirection, StretchRenyiSelectorDirection,
+    StretchTimeAdaptivePainlessDirection,
 };
 
 #[cfg(all(test, not(debug_assertions)))]
@@ -61,6 +62,8 @@ mod time_adaptive_painless;
 pub(crate) use time_adaptive_painless::time_adaptive_painless_reconstruction_review;
 #[cfg(all(test, not(debug_assertions)))]
 mod time_adaptive_selector;
+#[cfg(all(test, not(debug_assertions)))]
+pub(crate) use time_adaptive_selector::renyi_anchor_local_geometry_review;
 #[cfg(all(test, not(debug_assertions)))]
 pub(crate) use time_adaptive_selector::renyi_attribution_reassessment_review;
 #[cfg(all(test, not(debug_assertions)))]

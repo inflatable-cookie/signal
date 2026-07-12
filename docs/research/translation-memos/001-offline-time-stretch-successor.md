@@ -654,3 +654,9 @@ the decision anchor and admits only coefficient frames whose complete analysis
 support fits inside the fixed comparison region. Natural hops and entropy cell
 normalization stay unchanged. This directly removes the support leakage proven
 by attribution without introducing event detection or frequency policy.
+
+The anchor-local geometry passes membership and support rules but rejects as an
+automatic selector. Legal transition shoulders violate isolated-event
+far-field recovery, mixed audio stays all-long, and impulse paths change by
+`12.5%` under the frozen perturbation. The Rényi-only selection line is stopped
+pending operator direction; no additional geometry is implied by the evidence.

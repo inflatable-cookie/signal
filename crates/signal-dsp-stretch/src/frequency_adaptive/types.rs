@@ -874,6 +874,42 @@ pub struct StretchRenyiReassessmentReview {
     pub direction: StretchRenyiReassessmentDirection,
 }
 
+/// Direction selected by anchor-local Rényi geometry evidence.
+#[cfg(all(test, not(debug_assertions)))]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum StretchRenyiGeometryDirection {
+    /// Every selector gate passes and variable-hop phase may be contracted.
+    VariableHopPhaseContract,
+    /// At least one terminal selector gate fails and operator review is required.
+    OperatorReview,
+}
+
+/// Complete release-only anchor-local Rényi geometry report.
+#[cfg(all(test, not(debug_assertions)))]
+#[derive(Clone, Debug, PartialEq)]
+pub struct StretchRenyiGeometryReview {
+    /// Selector evidence for all twelve frozen controls.
+    pub controls: Vec<StretchRenyiControlEvidence>,
+    /// Per-resolution minimum and maximum centre offsets from each anchor.
+    pub support_extrema: [[isize; 2]; 4],
+    /// Membership count failures and complete-window support escapes.
+    pub geometry_failures: [usize; 2],
+    /// Steady, event, dense, boundary, chirp/noise/mixed, and equivalence failures.
+    pub gate_failures: [usize; 7],
+    /// Maximum perturbation path-change fraction.
+    pub maximum_perturbation_change: f64,
+    /// Perturbation path-change fraction for each frozen control.
+    pub perturbation_changes: Vec<f64>,
+    /// Gain, polarity, and linked-stereo path-equivalence failures.
+    pub equivalence_failures: usize,
+    /// Stable membership hash.
+    pub membership_hash: u64,
+    /// Stable aggregate evidence hash.
+    pub evidence_hash: u64,
+    /// Selected terminal direction.
+    pub direction: StretchRenyiGeometryDirection,
+}
+
 /// Numerical evidence for one bounded Hermitian Jacobi solve.
 #[derive(Clone, Debug, PartialEq)]
 pub struct StretchCommonGridJacobiEvidence {

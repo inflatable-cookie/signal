@@ -562,6 +562,54 @@ fn renyi_attribution_reassessment_selects_terminal_direction() {
 }
 
 #[test]
+#[cfg(not(debug_assertions))]
+fn renyi_anchor_local_geometry_selects_terminal_direction() {
+    let first = renyi_anchor_local_geometry_review();
+    let repeated = renyi_anchor_local_geometry_review();
+    assert_eq!(first, repeated);
+    assert_eq!(first.controls.len(), 12);
+    assert_eq!(
+        first.support_extrema,
+        [[-1792, 1792], [-1536, 1536], [-1024, 1024], [0, 0]]
+    );
+    assert_eq!(first.geometry_failures, [0, 0]);
+    assert!(first.controls.iter().all(|control| {
+        control.structural_counts[1] == 0
+            && control.channel_energy_closure <= 1.0e-12
+            && control
+                .selected_levels
+                .windows(2)
+                .all(|pair| pair[0].abs_diff(pair[1]) <= 1)
+            && control.hashes.iter().all(|hash| *hash != 0)
+    }));
+    assert_ne!(first.membership_hash, 0);
+    assert_ne!(first.evidence_hash, 0);
+    assert_eq!(first.gate_failures, [0, 1, 0, 0, 1, 1, 0]);
+    assert_eq!(
+        first.direction,
+        StretchRenyiGeometryDirection::OperatorReview
+    );
+    assert_eq!(
+        first.perturbation_changes,
+        [0.0, 0.0, 0.0, 0.0, 0.0, 0.125, 0.125, 0.125, 0.0, 0.0, 0.0, 0.0]
+    );
+    assert_eq!(first.equivalence_failures, 0);
+    assert_eq!(first.membership_hash, 0x13ee_bb72_76ee_283d);
+    assert_eq!(first.evidence_hash, 0x8e6e_86b6_830b_fa3e);
+    eprintln!(
+        "renyi_anchor_local gates={:?} perturbation={:?} equivalence={} paths={:?} failed_paths={:?} membership={:016x} evidence={:016x} direction={:?}",
+        first.gate_failures,
+        first.perturbation_changes,
+        first.equivalence_failures,
+        first.controls.iter().map(|control| (control.control, control.level_counts, control.path_shape, control.path_cost)).collect::<Vec<_>>(),
+        [5, 11].map(|index| (index, first.controls[index].selected_levels.clone())),
+        first.membership_hash,
+        first.evidence_hash,
+        first.direction,
+    );
+}
+
+#[test]
 fn common_grid_phase_transport_rejects_high_band_phase_aliasing() {
     for frequency in [312.5_f32, 1_000.0] {
         let input = (0..24_576)

@@ -589,12 +589,21 @@ independent stereo review.
 
 ### Batch 29.6AQ - Anchor-Local Rényi Geometry Decision
 
-- [ ] evaluate only natural-hop coefficient centres whose complete window
+- [x] evaluate only natural-hop coefficient centres whose complete window
   support fits inside each anchor's fixed comparison region
-- [ ] prove exact `[29,13,5,1]` membership, structural closure, unchanged
+- [x] prove exact `[29,13,5,1]` membership, structural closure, unchanged
   invariance gates, full musical gates, and deterministic hashes
-- [ ] open variable-hop phase contracting only on complete passage; otherwise
+- [x] open variable-hop phase contracting only on complete passage; otherwise
   stop automatic-selector research for operator review
+
+### Batch 29.6AR - Automatic Selector Operator Review
+
+- [ ] choose whether to retire Rényi automatic selection, authorize a new
+  evidence-family contract, or pause the time-adaptive successor lane
+- [ ] do not relax the failed far-field, mixed-event, or perturbation gates by
+  inference; any change requires explicit operator direction
+- [ ] keep variable-hop phase, stretched synthesis, corpus, dynamic ratio,
+  cache, and routing closed until a new ready card exists
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -1112,8 +1121,13 @@ independent stereo review.
   `[29,13,5,1]`; full selector passage or operator review is the next terminal
   gate. Evidence is in
   `docs/logs/2026-07/12-g10-029-renyi-comparison-geometry-contract.md`.
+- 2026-07-12: Batch 29.6AQ rejected the terminal geometry. Membership and
+  support pass, but isolated far-field recovery, mixed-event recovery, and the
+  perturbation cap fail. Automatic selector work stops for operator review.
+  Evidence is in
+  `docs/logs/2026-07/12-g10-029-renyi-comparison-geometry-rejection.md`.
 
 ## Next Task
 
-Run Batch 29.6AQ anchor-local Rényi geometry. Do not implement phase or
-stretched synthesis.
+Operator review Batch 29.6AR. No implementation batch is ready; do not infer a
+gate relaxation or new selector family.

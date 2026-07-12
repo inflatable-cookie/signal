@@ -423,7 +423,15 @@ comparison region. Counts are `[29,13,5,1]`. FFT work may be shared across
 anchors without changing membership. This removes outside-region support
 leakage while retaining one Rényi evidence family and one legal path.
 
+The terminal geometry is structurally correct but musically rejected. The
+isolated-event legal path retains transition shoulders outside the frozen
+far-field boundary, mixed tonal/transient audio remains all-long, and impulse
+controls exceed the perturbation cap. Automatic Rényi selector research is now
+stopped for operator review. Transform reconstruction remains valid; only
+automatic schedule selection is blocked.
+
 ## Next Task
 
-Run Batch 29.6AQ anchor-local comparison geometry. Keep phase, stretched
-synthesis, corpus, dynamic ratio, and routing closed.
+Operator review automatic time-resolution selection. No implementation batch is
+ready; keep phase, stretched synthesis, corpus, dynamic ratio, and routing
+closed.
