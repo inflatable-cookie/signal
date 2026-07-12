@@ -10,11 +10,13 @@ mod attribution;
 mod controls;
 mod geometry;
 mod path;
+mod transient;
 use controls::{controls, perturbed, Kind, FRAMES};
 
 pub(crate) use attribution::renyi_attribution_reassessment_review;
 pub(crate) use attribution::renyi_selector_failure_attribution_review;
 pub(crate) use geometry::renyi_anchor_local_geometry_review;
+pub(crate) use transient::transient_evidence_measurement_review;
 
 const FFT: usize = 4_096;
 const ANCHOR_HOP: usize = 128;

@@ -910,6 +910,78 @@ pub struct StretchRenyiGeometryReview {
     pub direction: StretchRenyiGeometryDirection,
 }
 
+/// Direction selected by transient-evidence measurement.
+#[cfg(all(test, not(debug_assertions)))]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum StretchTransientEvidenceDirection {
+    /// Every detector gate passes and occupancy-to-window mapping may be contracted.
+    OccupancyMappingContract,
+    /// At least one detector gate fails and operator review is required.
+    OperatorReview,
+}
+
+/// Mixed-phase transient evidence at one decision anchor.
+#[cfg(all(test, not(debug_assertions)))]
+#[derive(Clone, Debug, PartialEq)]
+pub struct StretchTransientAnchorEvidence {
+    /// Logical source-frame anchor.
+    pub anchor: usize,
+    /// Eligible and percussive channel-bin cell counts.
+    pub cell_counts: [usize; 2],
+    /// Percussive numerator and complete eligible denominator.
+    pub magnitude_sums: [f64; 2],
+    /// Linked percussive occupancy ratio.
+    pub occupancy: f64,
+}
+
+/// Detector evidence for one frozen control.
+#[cfg(all(test, not(debug_assertions)))]
+#[derive(Clone, Debug, PartialEq)]
+pub struct StretchTransientControlEvidence {
+    /// Frozen control index.
+    pub control: usize,
+    /// Evidence for all `64` decision anchors.
+    pub anchors: Vec<StretchTransientAnchorEvidence>,
+    /// Logical source-frame peak positions.
+    pub peaks: Vec<usize>,
+    /// Nearest-peak distance for each declared event, or no value when absent.
+    pub event_offsets: Vec<Option<usize>>,
+    /// Reflected reads and non-finite values.
+    pub structural_counts: [usize; 2],
+    /// Input, mask, ratio, peak, and complete evidence hashes.
+    pub hashes: [u64; 5],
+}
+
+/// Complete release-only mixed-phase transient detector report.
+#[cfg(all(test, not(debug_assertions)))]
+#[derive(Clone, Debug, PartialEq)]
+pub struct StretchTransientEvidenceReview {
+    /// Evidence for all twelve frozen controls.
+    pub controls: Vec<StretchTransientControlEvidence>,
+    /// False-positive, event, dense, mixed, equivalence, perturbation, and structural failures.
+    pub gate_failures: [usize; 7],
+    /// Maximum occupancy change under deterministic perturbation.
+    pub maximum_perturbation_change: f64,
+    /// Occupancy change under perturbation for each frozen control.
+    pub perturbation_changes: Vec<f64>,
+    /// Maximum matched-peak displacement in decision anchors.
+    pub maximum_peak_displacement: usize,
+    /// Matched-peak displacement per control, absent when peak counts differ.
+    pub peak_displacements: Vec<Option<usize>>,
+    /// Controls whose perturbation changed the number of peaks.
+    pub unmatched_perturbation_peaks: usize,
+    /// Maximum gain/polarity/stereo occupancy difference.
+    pub maximum_equivalence_error: f64,
+    /// Maximum gain/polarity/stereo occupancy difference per control.
+    pub equivalence_errors: Vec<f64>,
+    /// Gain/polarity/stereo variants whose peak indices changed.
+    pub equivalence_peak_failures: usize,
+    /// Stable aggregate evidence hash.
+    pub evidence_hash: u64,
+    /// Selected continuation direction.
+    pub direction: StretchTransientEvidenceDirection,
+}
+
 /// Numerical evidence for one bounded Hermitian Jacobi solve.
 #[derive(Clone, Debug, PartialEq)]
 pub struct StretchCommonGridJacobiEvidence {

@@ -685,6 +685,13 @@ Linked percussive magnitude divided by linked eligible magnitude is measured
 without smoothing. A `0.5` local maximum is a report peak. These choices avoid
 the paper's empirical thresholds and keep schedule policy absent.
 
+The analytic definition rejects. Mixed phase midpoint classification produces
+false peaks on every steady/chirp/noise control, poor impulse localization,
+dense-event failure, and large impulse perturbation changes. This confirms that
+the primary method's calibrated magnitude/phase masks and peak processing are
+material, not incidental. Importing them now requires explicit operator
+direction; no detector parameter is silently relaxed.
+
 Additional primary source:
 
 | Source | Confidence | Transfer boundary |

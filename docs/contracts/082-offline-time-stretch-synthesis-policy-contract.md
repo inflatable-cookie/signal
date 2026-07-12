@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; transient-aware selector research authorized
+Status: active; transient detector stopped for operator review
 Owner: dsp
 Updated: 2026-07-12
 Related contracts: `046`, `048`, `049`
@@ -1739,6 +1739,27 @@ do not sweep the window, floor, midpoint, smoothing, peak level, or control
 gates. Schedule generation, phase, stretched synthesis, corpus, dynamic ratio,
 cache identity, and routing remain closed.
 
+Batch 29.6AT rejects the analytic detector and returns to operator review.
+Silence and structural gates pass, but all seven non-event negative controls
+produce peaks: four steady tones, two chirps, and deterministic noise. The
+isolated impulse peak is `768` frames late. The boundary control recovers
+neither endpoint, with nearest offsets `7296` and `895`. Dense impulses are not
+resolved, with nearest offsets `768` and `640`. Mixed audio recovers its center
+event but adds peaks in both outer quarters.
+
+Perturbation occupancy changes are `0.6262388968` for isolated and dense
+impulses and `0.4192063519` for boundary impulses; isolated and dense peak
+counts also change. Gain, polarity, and peak-index stereo equivalence pass, but
+equal-energy stereo changes boundary occupancy by `0.0014662757`, above the
+`1e-12` cap. Gate failures are `[7,3,1,1,1,3,0]`; evidence hash
+`6f6733bda80316a9` repeats.
+
+The ideal-value midpoint and analytic energy floor do not separate percussive
+from tonal/noise evidence. Do not add the paper's empirical thresholds,
+smoothing, prominence, or another detector without explicit operator direction.
+No occupancy-to-window mapping opens. Schedule generation, phase, stretched
+synthesis, corpus, dynamic ratio, cache identity, and routing remain closed.
+
 ### Rule 27: synthesize a protected centre, not a circular endpoint
 
 Extend the source in both directions with whole-sample even reflection,
@@ -1794,5 +1815,5 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Run Batch 29.6AT transient-evidence measurement. Do not implement a schedule,
-phase, or stretched synthesis.
+Operator review must choose calibrated mixed-phase research, a different
+transient evidence family, or pause. No implementation batch is ready.

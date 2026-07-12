@@ -444,7 +444,14 @@ removes unstable cells. Linked percussive magnitude divided by linked eligible
 magnitude yields one occupancy ratio. Midpoint classification and a `0.5` local
 peak rule are analytic; no smoothing or detector vote is present.
 
+That analytic detector is rejected. It fires on every steady/chirp/noise
+negative family, localizes isolated and boundary impulses poorly, cannot resolve
+the dense pair, and is highly perturbation-sensitive. The mixed center event is
+visible but accompanied by outer-quarter false positives. Transient-aware
+selection returns to operator review before any calibration or schedule mapping.
+
 ## Next Task
 
-Run Batch 29.6AT transient-evidence measurement. Keep schedule mapping, phase,
-stretched synthesis, corpus, dynamic ratio, and routing closed.
+Operator review transient evidence. No implementation batch is ready; keep
+schedule mapping, phase, stretched synthesis, corpus, dynamic ratio, and routing
+closed.

@@ -616,12 +616,21 @@ independent stereo review.
 
 ### Batch 29.6AT - Transient-Evidence Measurement
 
-- [ ] compute the frozen normalized mixed-phase occupancy and peak reports for
+- [x] compute the frozen normalized mixed-phase occupancy and peak reports for
   all mono and linked-stereo controls without producing a schedule
-- [ ] prove declared-event recovery, steady/chirp/noise rejection, dense-event
+- [x] prove declared-event recovery, steady/chirp/noise rejection, dense-event
   resolution, invariance, perturbation stability, finiteness, and exact repeat
-- [ ] open occupancy-to-window mapping only on complete passage; otherwise
+- [x] open occupancy-to-window mapping only on complete passage; otherwise
   return the evidence definition to operator review without a parameter sweep
+
+### Batch 29.6AU - Transient-Evidence Operator Review
+
+- [ ] choose calibrated mixed-phase research, a different transient evidence
+  family, or pause the time-adaptive successor lane
+- [ ] do not infer permission to add empirical thresholds, smoothing,
+  prominence, detector votes, or relaxed control gates
+- [ ] keep schedule mapping, phase, stretched synthesis, corpus, dynamic ratio,
+  cache, and routing closed until a new ready card exists
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -1153,8 +1162,12 @@ independent stereo review.
   floor, midpoint mask, linked occupancy, no smoothing, and a `0.5` local peak.
   Evidence is in
   `docs/logs/2026-07/12-g10-029-transient-evidence-measurement-contract.md`.
+- 2026-07-12: Batch 29.6AT rejected the analytic detector. Every non-event
+  negative family produces peaks; event localization, dense resolution,
+  perturbation, and one stereo occupancy gate fail. Evidence is in
+  `docs/logs/2026-07/12-g10-029-transient-evidence-rejection.md`.
 
 ## Next Task
 
-Run Batch 29.6AT transient-evidence measurement. Do not implement schedule
-mapping, phase, or stretched synthesis.
+Operator review Batch 29.6AU. No implementation batch is ready; do not infer
+detector calibration or a new evidence family.

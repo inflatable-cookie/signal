@@ -23,7 +23,7 @@ pub use types::{
     StretchCommonGridThreeRowNyquistDirection, StretchDensePainlessDirection,
     StretchRenyiAttributionDirection, StretchRenyiGeometryDirection,
     StretchRenyiReassessmentDirection, StretchRenyiSelectorDirection,
-    StretchTimeAdaptivePainlessDirection,
+    StretchTimeAdaptivePainlessDirection, StretchTransientEvidenceDirection,
 };
 
 #[cfg(all(test, not(debug_assertions)))]
@@ -70,6 +70,8 @@ pub(crate) use time_adaptive_selector::renyi_attribution_reassessment_review;
 pub(crate) use time_adaptive_selector::renyi_selector_failure_attribution_review;
 #[cfg(all(test, not(debug_assertions)))]
 pub(crate) use time_adaptive_selector::renyi_time_resolution_selection_review;
+#[cfg(all(test, not(debug_assertions)))]
+pub(crate) use time_adaptive_selector::transient_evidence_measurement_review;
 mod projected_grid;
 pub(crate) use projected_grid::common_grid_projected_phase_review_mono;
 mod synthesis_guard;
