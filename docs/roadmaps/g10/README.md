@@ -261,6 +261,7 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Run Batch 29.6BA oracle adaptive synthesis and the targeted 15-row mono gate.
-Keep automatic selection, stereo, dynamic ratio, promotion, and product
-integration closed.
+Pause stretch-successor implementation after the oracle time-adaptive candidate
+fails synthetic event placement. Reassess the algorithm class at the next
+operator checkpoint. Keep automatic selection, stereo, dynamic ratio,
+promotion, and product integration closed.

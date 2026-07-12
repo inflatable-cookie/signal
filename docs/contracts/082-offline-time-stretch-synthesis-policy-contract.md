@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; oracle adaptive synthesis proof ready
+Status: active; oracle adaptive synthesis rejected
 Owner: dsp
 Updated: 2026-07-12
 Related contracts: `046`, `048`, `049`
@@ -1967,6 +1967,13 @@ more detector work. Listening must find a repeatable material improvement in
 attack quality or long-stretch texture without a new broad defect; otherwise
 Batch 29.6BC retires the time-adaptive successor lane.
 
+Batch 29.6BA rejects the hypothesis at the synthetic stop gate. Schedule
+legality, exact mapping, output coverage, identity, finiteness, conjugate
+symmetry, imaginary residue, and deterministic repeat pass. The isolated
+impulse lands exactly at its declared position for `1.0x`, `0.75x`, and
+`1.25x`, but lands `127` frames early at `1.5x`. Do not freeze the 15-row
+sidecar, render the corpus, open concealed listening, or resume detector work.
+
 ### Rule 27: synthesize a protected centre, not a circular endpoint
 
 Extend the source in both directions with whole-sample even reflection,
@@ -2022,5 +2029,6 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Run Batch 29.6BA oracle adaptive synthesis and the targeted 15-row mono gate.
-Do not implement automatic selection, stereo, dynamic ratio, or product routing.
+Pause stretch-successor implementation. Reassess the algorithm class at the
+next operator checkpoint. Do not implement automatic selection, stereo,
+dynamic ratio, or product routing.

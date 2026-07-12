@@ -487,13 +487,13 @@ identity-locked phase policy to actual variable hops, and synthesizes through
 the exact output-side diagonal dual. This tests adaptive magnitude resolution
 without detector error, component branches, phase resets, or local time warps.
 
-The first real-source gate is the existing 15-row mono listening set, not the
-full 60-row promotion corpus. Objective non-regression and the existing `L001`
-crest target precede a concealed source/current/oracle/Rubber-Band comparison.
-If perfect declared scheduling has no material audible value, the time-adaptive
-successor is retired rather than followed by another detector.
+The oracle candidate fails before that real-source gate. Identity, schedule,
+mapping, coverage, numerical, and repeat evidence pass, but its `1.5x` isolated
+impulse lands `127` frames early. The 15-row corpus and concealed comparison do
+not run. The time-adaptive successor and automatic-selector work are retired.
 
 ## Next Task
 
-Run oracle adaptive synthesis and the targeted mono gate. Keep automatic
-selection, component audio, stereo, dynamic ratio, promotion, and routing closed.
+Pause stretch-successor implementation and reassess the algorithm class at the
+next operator checkpoint. Keep automatic selection, component audio, stereo,
+dynamic ratio, promotion, and routing closed.

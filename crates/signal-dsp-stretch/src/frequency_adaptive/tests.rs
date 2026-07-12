@@ -1037,3 +1037,15 @@ fn mixed_control() -> Vec<Sample> {
     samples[CONTROL_LEN / 3] += 0.5;
     samples
 }
+
+#[test]
+#[cfg(not(debug_assertions))]
+fn oracle_adaptive_synthesis_selects_terminal_direction() {
+    let review = super::oracle_adaptive::oracle_adaptive_synthesis_review();
+    assert_eq!(review.impulse_errors, [0, 0, 0, -127]);
+    assert_eq!(
+        review.direction,
+        super::oracle_adaptive::Direction::RetireTimeAdaptiveSynthesis
+    );
+    eprintln!("oracle_adaptive {review:?}");
+}

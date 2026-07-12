@@ -678,28 +678,25 @@ independent stereo review.
 
 ### Batch 29.6BA - Oracle Adaptive Synthesis Gate
 
-- [ ] implement the frozen oracle renderer and prove synthetic identity,
+- [x] implement the frozen oracle renderer and prove synthetic identity,
   coverage, placement, phase, integrity, and deterministic evidence
-- [ ] freeze the 15-row source-frame interval sidecar before candidate rendering
-  and compare current Signal, oracle, and Rubber Band evidence
-- [ ] open concealed listening only if every mechanism/non-regression gate and
-  the `L001` `3 dB` crest target pass; otherwise retire the hypothesis
+- [x] stop before the 15-row sidecar and candidate render when synthetic event
+  placement fails
+- [x] keep concealed listening closed and retire the hypothesis after the
+  frozen `1.5x` impulse lands `127` frames early
 
 ### Batch 29.6BB - Oracle Concealed Listening
 
-- [ ] export source/current/oracle/Rubber-Band mono comparisons for the existing
-  15 listening rows
-- [ ] record repeatable attack and long-stretch texture preference plus any new
-  broad defect
-- [ ] open selector research only on material oracle value; otherwise retire
-  time-adaptive synthesis
+- [x] close without export because Batch 29.6BA failed its synthetic stop gate
+- [x] do not request listening evidence for a mechanism-rejected candidate
+- [x] keep selector research closed
 
 ### Batch 29.6BC - Oracle Value Decision
 
-- [ ] promote the proven oracle schedule behavior into selector requirements,
-  or close the time-adaptive successor lane
-- [ ] do not reinterpret a neutral or mixed listening result as passage
-- [ ] keep stereo, dynamic ratio, promotion, cache, and routing separately gated
+- [x] close the time-adaptive successor lane; oracle scheduling did not preserve
+  declared impulse placement under the frozen synthesis policy
+- [x] record mechanism rejection without using absent listening as evidence
+- [x] keep stereo, dynamic ratio, promotion, cache, and routing closed
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -1256,8 +1253,16 @@ independent stereo review.
   one oracle-scheduled end-to-end candidate; automatic selection reopens only
   after objective and concealed-listening value. Evidence is in
   `docs/logs/2026-07/12-g10-029-oracle-adaptive-refocus.md`.
+- 2026-07-12: Batch 29.6BA rejects oracle time-adaptive synthesis at the
+  synthetic gate. Identity, schedule legality, exact mapping, output coverage,
+  finiteness, symmetry, and deterministic repeat pass across the frozen
+  controls. The `1.5x` isolated impulse lands `127` frames early. Batches
+  29.6BB and 29.6BC therefore close without corpus rendering or listening.
+  Evidence is in
+  `docs/logs/2026-07/12-g10-029-oracle-adaptive-synthesis-rejection.md`.
 
 ## Next Task
 
-Run Batch 29.6BA oracle adaptive synthesis and targeted 15-row mono gate. Do not
-implement automatic selection, stereo, dynamic ratio, or product routing.
+Pause DSP successor implementation. Reassess the algorithm class at the next
+operator checkpoint; do not reopen selector, stereo, dynamic-ratio, promotion,
+cache, or product work from the rejected time-adaptive path.
