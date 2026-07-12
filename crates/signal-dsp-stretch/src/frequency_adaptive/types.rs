@@ -696,6 +696,100 @@ pub struct StretchRenyiSelectorReview {
     pub direction: StretchRenyiSelectorDirection,
 }
 
+/// Direction selected by Rényi selector-failure attribution.
+#[cfg(all(test, not(debug_assertions)))]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum StretchRenyiAttributionDirection {
+    /// Time-region geometry owns the failed selector evidence.
+    ComparisonRegionContract,
+    /// One folded-frequency region owns the failed selector evidence.
+    FrequencyEvidenceContract,
+    /// Attribution is split, ambiguous, or does not satisfy either boundary.
+    Inconclusive,
+}
+
+/// Effect of removing one diagnostic time or frequency region.
+#[cfg(all(test, not(debug_assertions)))]
+#[derive(Clone, Debug, PartialEq)]
+pub struct StretchRenyiRegionRemovalEvidence {
+    /// Entropy change for the four resolution levels.
+    pub entropy_deltas: [f64; 4],
+    /// Removed energy fraction for the four resolution levels.
+    pub energy_fractions: [f64; 4],
+    /// Removed alpha-mass fraction for the four resolution levels.
+    pub alpha_fractions: [f64; 4],
+    /// Longest-minimum raw winner after diagnostic removal.
+    pub raw_winner: u8,
+}
+
+/// Exact partition evidence for one selector decision anchor.
+#[cfg(all(test, not(debug_assertions)))]
+#[derive(Clone, Debug, PartialEq)]
+pub struct StretchRenyiAttributionAnchorEvidence {
+    /// Source-frame decision anchor.
+    pub anchor: usize,
+    /// Time-slice coefficient counts for each resolution.
+    pub time_counts: [[usize; 8]; 4],
+    /// Time-slice energy sums for each resolution.
+    pub time_energies: [[f64; 8]; 4],
+    /// Time-slice alpha-mass sums for each resolution.
+    pub time_alpha_sums: [[f64; 8]; 4],
+    /// Folded-frequency coefficient counts for each resolution.
+    pub frequency_counts: [[usize; 8]; 4],
+    /// Folded-frequency energy sums for each resolution.
+    pub frequency_energies: [[f64; 8]; 4],
+    /// Folded-frequency alpha-mass sums for each resolution.
+    pub frequency_alpha_sums: [[f64; 8]; 4],
+    /// Leave-one-time-slice-out diagnostic evidence.
+    pub time_removals: [StretchRenyiRegionRemovalEvidence; 8],
+    /// Leave-one-frequency-region-out diagnostic evidence.
+    pub frequency_removals: [StretchRenyiRegionRemovalEvidence; 8],
+}
+
+/// Partition evidence for one unchanged Batch 29.6AK control.
+#[cfg(all(test, not(debug_assertions)))]
+#[derive(Clone, Debug, PartialEq)]
+pub struct StretchRenyiAttributionControlEvidence {
+    /// Frozen control index.
+    pub control: usize,
+    /// Evidence for all `64` decision anchors.
+    pub anchors: Vec<StretchRenyiAttributionAnchorEvidence>,
+    /// Maximum time-count, time-sum, frequency-count, and frequency-sum errors.
+    pub closure_errors: [f64; 4],
+    /// Non-finite values and non-silent empty-removal anomalies.
+    pub structural_failures: [usize; 2],
+    /// Full-region energy or entropy fields differing from Batch 29.6AK.
+    pub baseline_drift: usize,
+    /// Stable complete attribution hash.
+    pub evidence_hash: u64,
+}
+
+/// Complete release-only Rényi selector-failure attribution report.
+#[cfg(all(test, not(debug_assertions)))]
+#[derive(Clone, Debug, PartialEq)]
+pub struct StretchRenyiAttributionReview {
+    /// Unchanged Batch 29.6AK selector report.
+    pub baseline: StretchRenyiSelectorReview,
+    /// Exact partition and counterfactual evidence for every control.
+    pub controls: Vec<StretchRenyiAttributionControlEvidence>,
+    /// Applicable isolated, mixed-event, and mixed-negative anchor counts.
+    pub diagnostic_counts: [usize; 3],
+    /// Passing geometry and frequency-region candidate counts.
+    pub candidate_counts: [usize; 2],
+    /// Restored isolated anchors and changed mixed negative controls.
+    pub geometry_effects: [usize; 2],
+    /// Mixed event anchors restored by each folded-frequency removal.
+    pub frequency_event_restorations: [usize; 8],
+    /// Mixed negative controls changed by each folded-frequency removal.
+    pub frequency_negative_changes: [usize; 8],
+    /// Linear-chirp raw-winner changes by time and frequency region.
+    pub linear_chirp_changes: [[usize; 8]; 2],
+    /// Stable aggregate attribution hash.
+    pub evidence_hash: u64,
+    /// Selected continuation direction.
+    pub direction: StretchRenyiAttributionDirection,
+}
+
 /// Numerical evidence for one bounded Hermitian Jacobi solve.
 #[derive(Clone, Debug, PartialEq)]
 pub struct StretchCommonGridJacobiEvidence {

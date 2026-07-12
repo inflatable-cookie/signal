@@ -552,13 +552,22 @@ independent stereo review.
 
 ### Batch 29.6AM - Rényi Selector-Failure Attribution Decision
 
-- [ ] run the frozen time-slice and folded-frequency attribution on the exact
+- [x] run the frozen time-slice and folded-frequency attribution on the exact
   Batch 29.6AK controls and prove additive closure and unchanged baseline hashes
-- [ ] measure only the isolated-impulse, linear-chirp, and mixed-control failure
+- [x] measure only the isolated-impulse, linear-chirp, and mixed-control failure
   anchors; report bounded leave-one-region-out entropy and raw-winner effects
-- [ ] select comparison-region geometry, frequency evidence, or inconclusive;
+- [x] select comparison-region geometry, frequency evidence, or inconclusive;
   keep phase, stretched synthesis, corpus, dynamic ratio, cache, and routing
   closed
+
+### Batch 29.6AN - Rényi Attribution Reassessment Contract
+
+- [ ] freeze whether event-support time attribution and bounded subdivision of
+  folded-frequency region `0` can separate the two coupled failure mechanisms
+- [ ] retain exact Batch 29.6AK selector evidence and Batch 29.6AM attribution;
+  do not tune a selector, threshold, margin, or weighting rule
+- [ ] open one bounded attribution proof or stop selector research for operator
+  review; keep phase and stretched synthesis closed
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -1058,9 +1067,12 @@ independent stereo review.
   Batch 29.6AK evidence before bounded leave-one-region-out diagnostics can
   choose one selector boundary. Evidence is in
   `docs/logs/2026-07/12-g10-029-renyi-selector-attribution-contract.md`.
+- 2026-07-12: Batch 29.6AM stopped inconclusive. Time removal restores `8/15`
+  isolated anchors but changes `5/32` negatives; low-band removal restores all
+  five mixed events but changes one negative. Evidence is in
+  `docs/logs/2026-07/12-g10-029-renyi-selector-attribution-inconclusive.md`.
 
 ## Next Task
 
-Run Batch 29.6AM Rényi selector-failure attribution. Preserve every Batch
-29.6AK selector output and hash; do not implement a selector change, phase, or
-stretched synthesis.
+Freeze Batch 29.6AN Rényi attribution reassessment. Do not change the selector
+or implement phase or stretched synthesis.

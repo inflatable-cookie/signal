@@ -6,9 +6,12 @@ use super::types::{
 };
 use super::HASH_OFFSET;
 
+mod attribution;
 mod controls;
 mod path;
 use controls::{controls, perturbed, Kind, FRAMES};
+
+pub(crate) use attribution::renyi_selector_failure_attribution_review;
 
 const FFT: usize = 4_096;
 const ANCHOR_HOP: usize = 128;

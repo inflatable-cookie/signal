@@ -394,8 +394,14 @@ unchanged energy and Rényi sums. Leave-one-region-out entropy is diagnostic
 only: it may identify comparison-region geometry, frequency evidence, or an
 inconclusive split, but cannot alter a path or schedule.
 
+That attribution is inconclusive. Event-facing time slices explain only part
+of the isolated-event spread and also disturb mixed stationary controls. The
+lowest folded-frequency region explains every mixed event miss and much of the
+linear chirp behavior, but also changes one stationary mixed anchor. The coarse
+time-centre and frequency partitions therefore expose coupled mechanisms rather
+than one clean selector boundary.
+
 ## Next Task
 
-Run Batch 29.6AM Rényi selector-failure attribution. Preserve every selector
-output and keep phase, stretched synthesis, corpus, dynamic ratio, and routing
-closed.
+Freeze Batch 29.6AN attribution reassessment. Keep selector changes, phase,
+stretched synthesis, corpus, dynamic ratio, and routing closed.

@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; Rényi selector rejected
+Status: active; Rényi attribution inconclusive
 Owner: dsp
 Updated: 2026-07-11
 Related contracts: `046`, `048`, `049`
@@ -1499,6 +1499,23 @@ boundary; it does not authorize its implementation. Phase, stretched synthesis,
 corpus, linked-stereo production work, dynamic ratio, cache, and routing remain
 closed.
 
+Batch 29.6AM stops inconclusive. All `12` controls and `64` anchors retain the
+Batch 29.6AK fields bit-exact. Time/frequency counts close exactly; maximum
+time-sum and folded-frequency-sum errors are `5.4116953673e-16` and
+`9.8277925391e-14`. No value, empty-removal, or baseline-drift failure occurs.
+
+Event-facing time removal restores `8/15` applicable isolated-impulse anchors
+but changes `5/32` mixed negative controls. Folded-frequency region `0`
+restores all `5/5` mixed event anchors but changes `1/32` mixed negative
+controls; no other frequency region restores an event anchor. Time removal
+changes no linear-chirp raw winner, while frequency-region `0` changes `39/64`.
+Candidate counts are `[0,0]`; attribution hash `e0b4421038492480` repeats.
+
+Neither frozen boundary owns the failure cleanly. Do not reinterpret the
+near-pass as authorization for frequency weighting or region changes. A new
+contract must first decide whether event-support time attribution and bounded
+subdivision of folded-frequency region `0` can separate the coupled evidence.
+
 ### Rule 27: synthesize a protected centre, not a circular endpoint
 
 Extend the source in both directions with whole-sample even reflection,
@@ -1554,6 +1571,5 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Run Batch 29.6AM Rényi selector-failure attribution. Preserve every Batch
-29.6AK selector output and hash; do not implement a selector change, phase, or
-stretched synthesis.
+Freeze Batch 29.6AN attribution reassessment. Do not change the selector or
+implement phase or stretched synthesis.

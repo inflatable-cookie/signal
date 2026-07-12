@@ -463,6 +463,63 @@ fn renyi_time_resolution_selection_selects_schedule_direction() {
 }
 
 #[test]
+#[cfg(not(debug_assertions))]
+fn renyi_selector_failure_attribution_stops_inconclusive() {
+    let first = renyi_selector_failure_attribution_review();
+    let repeated = renyi_selector_failure_attribution_review();
+    assert_eq!(first, repeated);
+    assert_eq!(first.baseline.gate_failures, [0, 1, 0, 0, 2, 0, 0]);
+    assert_eq!(first.baseline.evidence_hash, 0x5568_f0a3_8f67_9a40);
+    assert_eq!(first.controls.len(), 12);
+    eprintln!(
+        "renyi_attribution controls={:?}",
+        first
+            .controls
+            .iter()
+            .map(|control| (
+                control.control,
+                control.closure_errors,
+                control.structural_failures,
+                control.baseline_drift,
+            ))
+            .collect::<Vec<_>>()
+    );
+    assert!(first.controls.iter().all(|control| {
+        control.anchors.len() == 64
+            && control.closure_errors[0] == 0.0
+            && control.closure_errors[1] <= 1.0e-12
+            && control.closure_errors[2] == 0.0
+            && control.closure_errors[3] <= 1.0e-12
+            && control.structural_failures == [0, 0]
+            && control.baseline_drift == 0
+            && control.evidence_hash != 0
+    }));
+    assert_ne!(first.evidence_hash, 0);
+    assert_eq!(first.diagnostic_counts, [15, 5, 32]);
+    assert_eq!(first.candidate_counts, [0, 0]);
+    assert_eq!(first.geometry_effects, [8, 5]);
+    assert_eq!(first.frequency_event_restorations, [5, 0, 0, 0, 0, 0, 0, 0]);
+    assert_eq!(first.frequency_negative_changes, [1, 0, 0, 0, 0, 0, 0, 0]);
+    assert_eq!(first.linear_chirp_changes[0], [0; 8]);
+    assert_eq!(first.linear_chirp_changes[1], [39, 0, 0, 0, 0, 0, 0, 0]);
+    assert_eq!(
+        first.direction,
+        StretchRenyiAttributionDirection::Inconclusive
+    );
+    eprintln!(
+        "renyi_attribution diagnostics={:?} candidates={:?} geometry={:?} frequency_event={:?} frequency_negative={:?} chirp={:?} evidence={:016x} direction={:?}",
+        first.diagnostic_counts,
+        first.candidate_counts,
+        first.geometry_effects,
+        first.frequency_event_restorations,
+        first.frequency_negative_changes,
+        first.linear_chirp_changes,
+        first.evidence_hash,
+        first.direction,
+    );
+}
+
+#[test]
 fn common_grid_phase_transport_rejects_high_band_phase_aliasing() {
     for frequency in [312.5_f32, 1_000.0] {
         let input = (0..24_576)

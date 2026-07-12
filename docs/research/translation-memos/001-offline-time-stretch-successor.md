@@ -627,3 +627,10 @@ spectral region owns the mixed transient miss. Additive energy and alpha-mass
 closure precede leave-one-region-out entropy diagnostics. Counterfactual raw
 winners never enter the legal path, and a split or ambiguous result stops
 without a selector proposal.
+
+The result stops inconclusive. Event-facing time removal restores `8/15`
+distant impulse anchors but changes `5/32` stationary mixed controls. Removing
+folded region `0` restores all five mixed event anchors and changes `39/64`
+linear-chirp winners, but also changes one stationary mixed control. Temporal
+support overlap and low-band tonal dominance are coupled at the frozen
+partition resolution; neither currently authorizes a selector change.
