@@ -144,6 +144,6 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Run `g10.029` Batch 29.6BK under contract `082`: execute the bounded complete
-configuration grid, hard gates, Pareto selection, and concealed development
-listening export.
+Continue `g10.029` Batch 29.6BK under contract `082`: execute the frozen `108`
+complete configurations, hard gates, Pareto selection, and concealed
+development-listening export without exposing holdout rows.

@@ -1392,9 +1392,15 @@ independent stereo review.
   without schedule or magnitude changes. Exact length, coverage, identity,
   finiteness, symmetry, tone, event, boundary, linked-decision, and repeat gates
   pass across `0.75x`, `1.0x`, and `1.5x` linked-channel controls.
+- 2026-07-12: Batch 29.6BK configuration checkpoint freezes exactly `108`
+  unique complete-system configurations across the contracted `3x2x3x3x2`
+  dimensions. The 15 existing listening rows are partitioned before tuning into
+  nine development rows and six disjoint holdout rows with family counts
+  `2/2/2/1/2` and `1/1/1/2/1`. No grid render or holdout exposure has occurred.
 
 ## Next Task
 
-Run Batch 29.6BK. Execute at most `108` complete configurations through the
-frozen hard gates and Pareto selection, then export at most three concealed
-development-listening candidates. Keep holdout, promotion, and routing closed.
+Continue Batch 29.6BK. Parameterize the complete renderer from the frozen
+configuration surface, execute all `108` configurations on synthetic and the
+nine development rows, apply hard gates and Pareto selection, then export at
+most three concealed candidates. Keep holdout, promotion, and routing closed.

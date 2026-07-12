@@ -64,6 +64,8 @@ pub(crate) use time_adaptive_painless::time_adaptive_painless_reconstruction_rev
 #[cfg(all(test, not(debug_assertions)))]
 mod complete_phase_synthesis;
 #[cfg(all(test, not(debug_assertions)))]
+mod complete_system_tuning;
+#[cfg(all(test, not(debug_assertions)))]
 mod oracle_adaptive;
 #[cfg(all(test, not(debug_assertions)))]
 mod simultaneous_multi_window;

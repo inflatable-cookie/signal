@@ -500,6 +500,28 @@ fn complete_phase_synthesis_selects_bounded_tuning_direction() {
 
 #[test]
 #[cfg(not(debug_assertions))]
+fn complete_system_tuning_grid_is_bounded_and_frozen() {
+    use super::complete_system_tuning::{review, Direction};
+
+    let first = review();
+    let repeated = review();
+    assert_eq!(first, repeated);
+    assert_eq!(first.configuration_count, 108);
+    assert_eq!(first.unique_configuration_count, 108);
+    assert_eq!(first.dimension_counts, [3, 2, 3, 3, 2]);
+    assert_eq!(first.development_rows.len(), 9);
+    assert_eq!(first.holdout_rows.len(), 6);
+    assert_eq!(first.family_counts, [[2, 2, 2, 1, 2], [1, 1, 1, 2, 1]]);
+    assert!(first
+        .development_rows
+        .iter()
+        .all(|row| !first.holdout_rows.contains(row)));
+    assert!(first.hashes.iter().all(|hash| *hash != 0));
+    assert_eq!(first.direction, Direction::ExecuteObjectiveGrid);
+}
+
+#[test]
+#[cfg(not(debug_assertions))]
 fn renyi_time_resolution_selection_selects_schedule_direction() {
     let first = renyi_time_resolution_selection_review();
     let repeated = renyi_time_resolution_selection_review();
