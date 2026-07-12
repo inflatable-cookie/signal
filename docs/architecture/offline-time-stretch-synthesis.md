@@ -430,8 +430,14 @@ controls exceed the perturbation cap. Automatic Rényi selector research is now
 stopped for operator review. Transform reconstruction remains valid; only
 automatic schedule selection is blocked.
 
+Operator direction retires Rényi-only automatic selection and opens one
+transient-aware evidence family. The candidate is magnitude-gated mixed phase
+derivative occupancy: a pre-analysis mask identifies impulsive time-frequency
+bins and reduces them to one per-frame percussive ratio. This is analysis only.
+No harmonic/percussive component audio is separated or resynthesized, and the
+paper's adaptive hop, phase, and empirical threshold policy does not transfer.
+
 ## Next Task
 
-Operator review automatic time-resolution selection. No implementation batch is
-ready; keep phase, stretched synthesis, corpus, dynamic ratio, and routing
-closed.
+Freeze Batch 29.6AS transient-evidence measurement. Keep schedule mapping,
+phase, stretched synthesis, corpus, dynamic ratio, and routing closed.

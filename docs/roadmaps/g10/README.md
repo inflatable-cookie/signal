@@ -159,7 +159,8 @@ implementation remains Signal-owned.
   support-contained natural-hop lattices; Batch 29.6AQ is the terminal selector
   gate before phase contracting or operator review. It rejects on isolated
   far-field recovery, mixed-event recovery, and perturbation stability.
-  Automatic selector work is stopped at Batch 29.6AR for operator direction.
+  Batch 29.6AR records operator direction to retire Rényi-only selection and
+  research magnitude-gated mixed-phase-derivative percussive occupancy.
 - Offline artifacts and RealtimePreview have bounded contracts and prototype
   paths, but callback-safe preview integration and fully streaming artifact
   output remain gated until their owning source-fill/cache contracts exist.
@@ -249,6 +250,6 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Operator review automatic time-resolution selection at Batch 29.6AR. No
-implementation batch is ready; keep phase, stretched synthesis, corpus, linked
-stereo, dynamic ratio, and product integration closed.
+Freeze Batch 29.6AS transient-evidence measurement. Keep schedule mapping,
+phase, stretched synthesis, corpus, linked stereo, dynamic ratio, and product
+integration closed.

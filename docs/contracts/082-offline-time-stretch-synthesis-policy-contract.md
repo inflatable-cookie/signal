@@ -1,8 +1,8 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; automatic selector stopped for operator review
+Status: active; transient-aware selector research authorized
 Owner: dsp
-Updated: 2026-07-11
+Updated: 2026-07-12
 Related contracts: `046`, `048`, `049`
 Related architecture: `docs/architecture/offline-time-stretch-synthesis.md`
 
@@ -1644,6 +1644,42 @@ margin, frequency policy, or detector family without explicit operator
 direction. Variable-hop phase, stretched synthesis, corpus, dynamic ratio,
 cache identity, and routing remain closed.
 
+### Rule 26N: transient-aware evidence replaces Rényi-only selection
+
+Batch 29.6AR records operator direction to retire Rényi entropy as the sole
+automatic resolution selector while preserving the passing time-adaptive
+painless transform. The failed Rényi evidence, paths, attribution, and terminal
+geometry remain regression records; their gates are not relaxed.
+
+The next research family is percussive-bin occupancy derived from one fixed
+pre-analysis spectrogram. This follows the magnitude-gated mixed partial phase
+derivative used by [Akaishi, Holighaus, and Yatabe](https://arxiv.org/abs/2602.16421)
+to identify impulsive time-frequency bins and quantify their per-frame energy
+ratio. [FitzGerald](https://dafx.de/paper-archive/2010/DAFx10/DerryFitzGerald_DAFx10_P15.pdf)
+supports the underlying distinction: stationary harmonic structure forms
+horizontal ridges while percussive structure forms broadband vertical ridges.
+
+Transfer only detector evidence. Do not separate, resynthesize, or time-stretch
+harmonic and percussive audio independently. Do not import SELEBI window/hop
+mapping, stretch-factor coupling, phase generation, empirical mask thresholds,
+peak prominence, or unspecified median-filter length. Signal's four proven
+windows, diagonal dual, schedule legality, and reconstruction contract remain
+authoritative.
+
+Before schedule mapping, freeze one release-only detector-measurement contract.
+It must define the pre-analysis window/hop/FFT, magnitude normalization, phase
+derivative convention, low-energy exclusion, temporal smoothing, peak
+definition, stereo energy/phase aggregation, synthetic controls, invariances,
+noise stability, dense-event resolution, finite-value handling, and deterministic
+hashes. The first implementation may report evidence and declared-event
+recovery only; it produces no schedule or audio.
+
+Magnitude flux, Rényi entropy, median HPSS, and mixed phase derivative must not
+be combined as independent voting detectors. The contract must select one
+bounded percussive-occupancy definition and stop on ambiguous thresholds or
+control overlap. Phase, stretched synthesis, corpus, dynamic ratio, cache
+identity, and routing remain closed.
+
 ### Rule 27: synthesize a protected centre, not a circular endpoint
 
 Extend the source in both directions with whole-sample even reflection,
@@ -1699,6 +1735,5 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Operator review must choose whether to retire automatic Rényi selection, reopen
-research under a new contract, or pause the successor lane. No implementation
-batch is ready.
+Freeze Batch 29.6AS transient-evidence measurement. Do not implement a schedule,
+phase, or stretched synthesis.

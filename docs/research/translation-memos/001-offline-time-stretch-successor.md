@@ -660,3 +660,26 @@ automatic selector. Legal transition shoulders violate isolated-event
 far-field recovery, mixed audio stays all-long, and impulse paths change by
 `12.5%` under the frozen perturbation. The Rényi-only selection line is stopped
 pending operator direction; no additional geometry is implied by the evidence.
+
+## Transient-Aware Evidence Direction
+
+Operator direction retires Rényi entropy as the sole automatic selector and
+keeps the proven time-adaptive painless transform. Akaishi, Holighaus, and
+Yatabe report that magnitude-only onset evidence is unreliable for complex
+mixtures and instead classify percussive time-frequency bins with a
+magnitude-gated mixed partial phase derivative. Their per-frame ratio is the
+masked percussive magnitude divided by total magnitude. FitzGerald's median
+HPSS work supplies the horizontal-harmonic/vertical-percussive interpretation.
+
+Signal transfers only the percussive-occupancy evidence idea. It excludes
+component waveform separation, independent component TSM, the paper's
+stretch-dependent window formula, adaptive-hop construction, phase generation,
+empirical thresholds, peak prominence, and unspecified smoothing length. The
+first proof must measure one frozen detector on synthetic controls before any
+ratio-to-window mapping exists.
+
+Additional primary source:
+
+| Source | Confidence | Transfer boundary |
+| --- | --- | --- |
+| [FitzGerald, 2010](https://dafx.de/paper-archive/2010/DAFx10/DerryFitzGerald_DAFx10_P15.pdf) | high | Horizontal harmonic and vertical percussive spectrogram structure; component resynthesis excluded |
