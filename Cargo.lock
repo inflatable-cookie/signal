@@ -1054,6 +1054,8 @@ dependencies = [
 name = "signal-plugin-sandbox"
 version = "0.1.0"
 dependencies = [
+ "serde",
+ "serde_json",
  "signal-ipc",
  "signal-plugin",
  "signal-plugin-au",

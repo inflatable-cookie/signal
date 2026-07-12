@@ -17,6 +17,8 @@ signal-plugin-au = { workspace = true }
 signal-plugin-clap = { workspace = true }
 signal-plugin-lv2 = { workspace = true }
 signal-plugin-vst3 = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
 
 [dev-dependencies]
 signal-plugin-bridge = { workspace = true }
