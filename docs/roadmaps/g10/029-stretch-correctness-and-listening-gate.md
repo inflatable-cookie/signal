@@ -643,12 +643,21 @@ independent stereo review.
 
 ### Batch 29.6AW - Transient-Evidence Family Review
 
-- [ ] choose a different transient evidence family or pause the time-adaptive
+- [x] choose a different transient evidence family or pause the time-adaptive
   successor lane
-- [ ] do not infer median smoothing, prominence, asymmetric mixed-phase bands,
+- [x] do not infer median smoothing, prominence, asymmetric mixed-phase bands,
   a larger calibration grid, or relaxed gates
-- [ ] keep schedule mapping, phase, stretched synthesis, corpus, dynamic ratio,
+- [x] keep schedule mapping, phase, stretched synthesis, corpus, dynamic ratio,
   cache, and routing closed until a new ready card exists
+
+### Batch 29.6AX - Median-HPSS Evidence Measurement
+
+- [ ] compute the frozen linked-magnitude, `17`-bin percussive median,
+  `149`-frame harmonic median, `p=2` soft mask, occupancy, and peak reports
+- [ ] prove unchanged negative, event, dense, mixed, invariance, perturbation,
+  finiteness, boundary, and repeat gates without component synthesis
+- [ ] open occupancy-to-window contracting only on complete passage; otherwise
+  return to operator review without a median-length or mask-power sweep
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -1193,8 +1202,12 @@ independent stereo review.
   pairs overlap, chirp leakage remains at least `0.7759762445`, and boundary
   stereo equivalence changes by `2.6562923909e-5`. Evidence is in
   `docs/logs/2026-07/12-g10-029-mixed-phase-distribution-rejection.md`.
+- 2026-07-12: Batch 29.6AW selects one median-HPSS evidence definition. It
+  preserves the primary method's physical time support, uses a `p=2` soft mask,
+  and excludes component audio. Evidence is in
+  `docs/logs/2026-07/12-g10-029-median-hpss-evidence-contract.md`.
 
 ## Next Task
 
-Operator review Batch 29.6AW. No implementation batch is ready; do not infer a
-new evidence family or mixed-phase rescue.
+Run Batch 29.6AX median-HPSS evidence measurement. Do not produce component
+audio, a schedule, phase, stretched synthesis, corpus output, or routing change.

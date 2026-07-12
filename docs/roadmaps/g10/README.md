@@ -167,7 +167,8 @@ implementation remains Signal-owned.
   operator-review stop. Operator direction keeps the mixed-phase family and
   opens Batch 29.6AV distribution measurement before any calibrated mask. All
   `25` pairs overlap and one stereo cutoff signature fails equivalence; Batch
-  29.6AW is an evidence-family review stop.
+  29.6AW is an evidence-family review stop. Operator direction selects one
+  evidence-only median-HPSS contract; Batch 29.6AX must prove it before mapping.
 - Offline artifacts and RealtimePreview have bounded contracts and prototype
   paths, but callback-safe preview integration and fully streaming artifact
   output remain gated until their owning source-fill/cache contracts exist.
@@ -257,6 +258,6 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Operator review transient evidence at Batch 29.6AW. No implementation batch is
-ready; keep schedule mapping, phase, stretched synthesis, corpus, linked stereo
-synthesis, dynamic ratio, and product integration closed.
+Run Batch 29.6AX median-HPSS evidence measurement. Keep component audio,
+schedule mapping, phase, stretched synthesis, corpus, linked stereo synthesis,
+dynamic ratio, and product integration closed.

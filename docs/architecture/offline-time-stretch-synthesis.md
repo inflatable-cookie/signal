@@ -465,8 +465,15 @@ under useful magnitude cutoffs. Boundary equal-energy stereo also crosses a
 cutoff boundary. The mixed-phase family is stopped before smoothing,
 prominence, schedule mapping, or audio.
 
+Operator direction selects median HPSS as the next evidence family. One linked
+magnitude spectrogram is filtered vertically over 17 bins for percussive
+structure and horizontally over 149 decision frames for harmonic structure.
+The time filter preserves the physical duration of FitzGerald's 17-frame,
+1024-hop example on Signal's 128-hop grid. A `p=2` soft mask reduces the two
+estimates to percussive occupancy. No separated waveform is synthesized.
+
 ## Next Task
 
-Operator review must choose a different transient evidence family or pause.
-Keep schedule mapping, phase, stretched synthesis, corpus, dynamic ratio, and
-routing closed.
+Run the report-only median-HPSS evidence measurement. Keep component audio,
+schedule mapping, phase, stretched synthesis, corpus, dynamic ratio, and routing
+closed.

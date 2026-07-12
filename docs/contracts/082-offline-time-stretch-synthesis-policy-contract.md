@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; mixed-phase evidence stopped for operator review
+Status: active; median-HPSS evidence measurement ready
 Owner: dsp
 Updated: 2026-07-12
 Related contracts: `046`, `048`, `049`
@@ -1831,6 +1831,61 @@ The mixed-phase family returns to operator review. Schedule mapping, phase,
 stretched synthesis, corpus, dynamic ratio, cache identity, and routing remain
 closed.
 
+### Rule 26Q: measure one median-HPSS percussive occupancy
+
+Batch 29.6AW records operator direction to retire mixed-phase evidence and test
+median-HPSS evidence only. FitzGerald's primary method treats stable harmonic
+structure as horizontal spectrogram ridges and broadband percussion as vertical
+ridges. It uses median filtering in both axes, reports filter length `17`, and
+uses a soft mask with power `p=2`. Signal transfers that evidence construction
+only. It does not separate, invert, stretch, or independently phase harmonic
+and percussive components.
+
+Batch 29.6AX reuses the `2048`-frame square-root Hann, `128`-frame decision hop,
+`4096` FFT, whole-sample reflection, logical anchors, positive bins `1..2046`,
+twelve controls, perturbations, and stereo variants from Rule 26O. At each cell
+form linked magnitude
+
+`L[k,n]=sqrt(sum_c |Xc[k,n]|^2)`.
+
+The percussive estimate `P[k,n]` is the median of `L[j,n]` over `17` adjacent
+frequency bins centred on `k`. The harmonic estimate `H[k,n]` is the median of
+`L[k,m]` over `149` adjacent decision frames centred on `n`. The time length
+preserves the primary method's physical support: `(17-1)*1024/44100` seconds
+maps to `(149-1)*128/48000` seconds. Frequency and time median boundaries use
+whole-cell even reflection including the endpoint. Do not sweep either length.
+
+Compute the soft percussive mask
+
+`Mp[k,n]=P[k,n]^2/(P[k,n]^2+H[k,n]^2)`,
+
+or zero when both estimates are zero. Linked occupancy is
+`r[n]=sum_k L[k,n]*Mp[k,n]/sum_k L[k,n]`, or zero for a zero denominator. No
+magnitude threshold, mixed-phase value, Rényi evidence, flux, learned model,
+post-mask smoothing, or component waveform participates.
+
+An evidence peak at anchor `n` requires `r[n]>=0.5`, `r[n]>r[n-1]`, and
+`r[n]>=r[n+1]`; reflected neighboring anchors resolve endpoints. Batch 29.6AX
+reports linked magnitudes, both median estimates, mask values, occupancy,
+peaks, declared-event offsets, reflected sample/cell reads, non-finite values,
+gain/polarity/stereo closure, perturbation changes, input/magnitude/median/mask/
+occupancy/peak hashes, and exact repeat hashes.
+
+Apply the unchanged Rule 26O detector gates: silence is zero; steady tones,
+both chirps, and noise have no peaks; isolated and boundary events recover
+within `256` frames; dense events produce distinct peaks within `128` frames;
+mixed audio recovers its event without outer-quarter peaks; gain, polarity,
+hard pan, channel swap, and equal-energy stereo preserve occupancy within
+`1e-12` and peak indices exactly; perturbation changes occupancy by at most
+`0.05` and matched peaks by at most one anchor; values are finite and reports
+repeat exactly.
+
+Complete passage opens only a separately frozen HPSS-occupancy-to-window
+mapping contract. Any failure returns to operator review without changing
+median lengths, mask power, peak threshold, or gates. Schedule mapping, phase,
+stretched synthesis, corpus, dynamic ratio, cache identity, and routing remain
+closed.
+
 ### Rule 27: synthesize a protected centre, not a circular endpoint
 
 Extend the source in both directions with whole-sample even reflection,
@@ -1886,5 +1941,5 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Operator review must choose a different transient evidence family or pause the
-time-adaptive successor lane. No implementation batch is ready.
+Run Batch 29.6AX median-HPSS evidence measurement. Produce no component audio,
+schedule, phase, stretched synthesis, corpus output, or routing change.

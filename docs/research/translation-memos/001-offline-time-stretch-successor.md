@@ -709,6 +709,15 @@ smoothing and prominence would operate after this nonselective cell evidence,
 so they are not authorized as a rescue. The mixed-phase family is rejected for
 Signal's selector controls.
 
+Operator direction selects FitzGerald-style median HPSS as a distinct evidence
+family. The primary method uses orthogonal median filters, length `17`, and
+soft masks with `p=2`; it reports little quality sensitivity for lengths between
+15 and 30. Signal freezes rather than sweeps that design. The 17-bin frequency
+median transfers directly, while the time median becomes 149 frames to preserve
+the source method's physical span on Signal's shorter hop. Only the soft
+percussive mask and occupancy transfer. Component separation, inversion, and
+independent TSM remain excluded.
+
 Additional primary source:
 
 | Source | Confidence | Transfer boundary |
