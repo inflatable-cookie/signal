@@ -678,6 +678,13 @@ empirical thresholds, peak prominence, and unspecified smoothing length. The
 first proof must measure one frozen detector on synthetic controls before any
 ratio-to-window mapping exists.
 
+The measurement contract uses one centered mixed phase difference on a fixed
+`2048/128/4096` pre-analysis lattice. Ideal harmonic/percussive values define
+the midpoint mask; `1/4096^2` of per-frame energy defines the numerical floor.
+Linked percussive magnitude divided by linked eligible magnitude is measured
+without smoothing. A `0.5` local maximum is a report peak. These choices avoid
+the paper's empirical thresholds and keep schedule policy absent.
+
 Additional primary source:
 
 | Source | Confidence | Transfer boundary |

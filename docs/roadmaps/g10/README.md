@@ -160,7 +160,9 @@ implementation remains Signal-owned.
   gate before phase contracting or operator review. It rejects on isolated
   far-field recovery, mixed-event recovery, and perturbation stability.
   Batch 29.6AR records operator direction to retire Rényi-only selection and
-  research magnitude-gated mixed-phase-derivative percussive occupancy.
+  research magnitude-gated mixed-phase-derivative percussive occupancy. Batch
+  29.6AS freezes one analytic report-only detector; Batch 29.6AT must prove it
+  before any occupancy-to-window mapping.
 - Offline artifacts and RealtimePreview have bounded contracts and prototype
   paths, but callback-safe preview integration and fully streaming artifact
   output remain gated until their owning source-fill/cache contracts exist.
@@ -250,6 +252,6 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Freeze Batch 29.6AS transient-evidence measurement. Keep schedule mapping,
-phase, stretched synthesis, corpus, linked stereo, dynamic ratio, and product
+Run Batch 29.6AT transient-evidence measurement. Keep schedule mapping, phase,
+stretched synthesis, corpus, linked stereo, dynamic ratio, and product
 integration closed.

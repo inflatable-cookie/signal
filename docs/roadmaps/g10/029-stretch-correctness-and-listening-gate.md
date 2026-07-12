@@ -607,12 +607,21 @@ independent stereo review.
 
 ### Batch 29.6AS - Transient-Evidence Measurement Contract
 
-- [ ] freeze one magnitude-gated mixed-phase-derivative occupancy definition;
+- [x] freeze one magnitude-gated mixed-phase-derivative occupancy definition;
   do not combine independent detector votes or copy empirical paper thresholds
-- [ ] define the pre-analysis grid, normalization, smoothing, peak semantics,
+- [x] define the pre-analysis grid, normalization, smoothing, peak semantics,
   stereo aggregation, synthetic controls, invariances, stability, and hashes
-- [ ] open report-only detector implementation on a complete contract; keep
+- [x] open report-only detector implementation on a complete contract; keep
   schedule mapping, phase, stretched synthesis, corpus, and routing closed
+
+### Batch 29.6AT - Transient-Evidence Measurement
+
+- [ ] compute the frozen normalized mixed-phase occupancy and peak reports for
+  all mono and linked-stereo controls without producing a schedule
+- [ ] prove declared-event recovery, steady/chirp/noise rejection, dense-event
+  resolution, invariance, perturbation stability, finiteness, and exact repeat
+- [ ] open occupancy-to-window mapping only on complete passage; otherwise
+  return the evidence definition to operator review without a parameter sweep
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -1139,8 +1148,13 @@ independent stereo review.
   automatic selection and research one percussive-occupancy evidence family.
   Component separation and SELEBI phase/hop policy remain excluded. Evidence is
   in `docs/logs/2026-07/12-g10-029-transient-evidence-direction.md`.
+- 2026-07-12: Batch 29.6AS froze one analytic transient detector measurement:
+  centered mixed phase on a `2048/128/4096` grid, a scale-relative numerical
+  floor, midpoint mask, linked occupancy, no smoothing, and a `0.5` local peak.
+  Evidence is in
+  `docs/logs/2026-07/12-g10-029-transient-evidence-measurement-contract.md`.
 
 ## Next Task
 
-Freeze Batch 29.6AS transient-evidence measurement. Do not implement schedule
+Run Batch 29.6AT transient-evidence measurement. Do not implement schedule
 mapping, phase, or stretched synthesis.

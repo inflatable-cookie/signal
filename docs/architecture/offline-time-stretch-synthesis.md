@@ -437,7 +437,14 @@ bins and reduces them to one per-frame percussive ratio. This is analysis only.
 No harmonic/percussive component audio is separated or resynthesized, and the
 paper's adaptive hop, phase, and empirical threshold policy does not transfer.
 
+The first detector is now fixed. A `2048`-frame pre-analysis measures centered
+mixed phase increments on the `128`-frame grid and normalizes the ideal
+sinusoidal/impulsive values to `0/1`. A scale-relative numerical energy floor
+removes unstable cells. Linked percussive magnitude divided by linked eligible
+magnitude yields one occupancy ratio. Midpoint classification and a `0.5` local
+peak rule are analytic; no smoothing or detector vote is present.
+
 ## Next Task
 
-Freeze Batch 29.6AS transient-evidence measurement. Keep schedule mapping,
-phase, stretched synthesis, corpus, dynamic ratio, and routing closed.
+Run Batch 29.6AT transient-evidence measurement. Keep schedule mapping, phase,
+stretched synthesis, corpus, dynamic ratio, and routing closed.

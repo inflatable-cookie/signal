@@ -1680,6 +1680,65 @@ bounded percussive-occupancy definition and stop on ambiguous thresholds or
 control overlap. Phase, stretched synthesis, corpus, dynamic ratio, cache
 identity, and routing remain closed.
 
+### Rule 26O: measure one normalized mixed-phase percussive occupancy
+
+Batch 29.6AS freezes one release-only detector measurement. Analyze linked
+channels on the `128`-frame decision grid with the passing `2048`-frame
+square-root Hann window and common `4096` FFT. Use whole-sample even reflection
+for the window centered one hop before and after every logical anchor. Retain
+positive-frequency cells `k=1..2046`; DC, Nyquist, and the conjugate half do not
+vote.
+
+For channel `c`, bin `k`, and anchor `n`, compute the wrapped centered mixed
+phase increment
+
+`d=arg(Xc[k+1,n+1] conj(Xc[k+1,n-1]) conj(Xc[k,n+1]) Xc[k,n-1])`
+
+and normalize `m=d/(2*pi*(2*128)/4096)`. This convention maps the ideal
+stationary sinusoid toward `0` and the ideal impulse toward `1`. A cell is
+percussive when `abs(m-1)<=abs(m)`; exact midpoint ties are percussive.
+
+Exclude a cell on a channel when its anchor-frame squared magnitude is below
+that channel frame's total positive-frequency energy divided by `4096^2`.
+This is a numerical relative-energy floor, not a learned magnitude threshold.
+For all retained cells, sum anchor-frame magnitudes across channels separately
+for the percussive numerator and complete denominator. The linked occupancy is
+their ratio, or zero when the denominator is zero. Channel order, hard pan, and
+equal-energy duplication must not change it beyond `1e-12`.
+
+Apply no temporal smoothing. An occupancy peak at anchor `n` requires
+`r[n]>=0.5`, `r[n]>r[n-1]`, and `r[n]>=r[n+1]`; this chooses the first anchor of
+an exact plateau. Boundary neighbors use the reflected analysis. Do not add
+prominence, refractory distance, flux, Rényi, median HPSS, or a second mask.
+
+Batch 29.6AT produces only ratios, masks, and peak reports for the unchanged
+twelve controls and linked-stereo variants. Report per-anchor eligible and
+percussive cell counts, numerator, denominator, occupancy, peak indices,
+declared-event offsets, reflected reads, non-finite values, stereo closure,
+input/mask/ratio/peak hashes, and exact repeat hashes.
+
+Require:
+
+- silence has zero eligible/percussive cells, zero occupancy, and no peaks
+- all four steady tones, both chirps, and deterministic noise have no peaks
+- isolated and boundary impulses have a peak within `256` frames of each event
+- the dense two-impulse control has two distinct peaks, each within `128` frames
+  of its declared event
+- mixed tonal/transient audio has a peak within `256` frames of its event and
+  no peak in either outer quarter
+- gain `0.25/1/4`, polarity, channel swap, hard pan, and equal-energy stereo
+  retain peak indices exactly and occupancy within `1e-12`
+- a transient in one stereo channel retains the mono peak decision
+- deterministic relative-noise perturbation changes occupancy by at most
+  `0.05` and moves no matched peak by more than one anchor
+- all values are finite, stereo closure is `1e-12`, and reports repeat exactly
+
+Complete passage opens only a separately frozen occupancy-to-window mapping
+contract. Any failure returns to operator review of this evidence definition;
+do not sweep the window, floor, midpoint, smoothing, peak level, or control
+gates. Schedule generation, phase, stretched synthesis, corpus, dynamic ratio,
+cache identity, and routing remain closed.
+
 ### Rule 27: synthesize a protected centre, not a circular endpoint
 
 Extend the source in both directions with whole-sample even reflection,
@@ -1735,5 +1794,5 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Freeze Batch 29.6AS transient-evidence measurement. Do not implement a schedule,
+Run Batch 29.6AT transient-evidence measurement. Do not implement a schedule,
 phase, or stretched synthesis.
