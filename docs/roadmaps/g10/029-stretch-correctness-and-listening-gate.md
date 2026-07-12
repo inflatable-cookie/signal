@@ -698,6 +698,39 @@ independent stereo review.
 - [x] record mechanism rejection without using absent listening as evidence
 - [x] keep stereo, dynamic ratio, promotion, cache, and routing closed
 
+### Batch 29.6BD - Rubber Band Behavioural Probe Contract
+
+- [ ] freeze generated controls, ratios, R2/R3 modes, public introspection
+  fields, rendered-audio measures, hashes, and unsupported-mode policy
+- [ ] separate directly reported comparator state from waveform inference
+- [ ] keep new Signal synthesis, automatic selection, promotion, cache, and
+  routing closed
+
+### Batch 29.6BE - Rubber Band Behavioural Measurement
+
+- [ ] extend the existing external benchmark harness with the frozen synthetic
+  probes and deterministic report
+- [ ] measure local timing, transient phase-treatment, vertical coherence, and
+  R3 standard-versus-short multi-resolution signatures
+- [ ] stop for tool or evidence redesign if signatures do not repeat across
+  controls; do not infer architecture from one row
+
+### Batch 29.6BF - Comparator Mechanism Attribution
+
+- [ ] classify which quality deltas are owned by local timing, transient phase
+  treatment, vertical coherence, or simultaneous resolution
+- [ ] retain conflicting or R3-opaque behavior as an explicit planning gap
+- [ ] promote only cross-control signatures into architecture and contract
+
+### Batch 29.6BG - Complete Signal Successor Contract
+
+- [ ] freeze one interacting offline study, time-map, phase, resolution, and
+  linked-stereo architecture
+- [ ] replace isolated detector passage with bounded full-system tuning and
+  concealed listening checkpoints
+- [ ] open implementation only when mechanism ownership, validation, tuning
+  budget, and terminal stop conditions are explicit
+
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
 - [ ] share the time map and phase-propagation decisions across channels
@@ -1260,9 +1293,16 @@ independent stereo review.
   29.6BB and 29.6BC therefore close without corpus rendering or listening.
   Evidence is in
   `docs/logs/2026-07/12-g10-029-oracle-adaptive-synthesis-rejection.md`.
+- 2026-07-12: Operator review rejects abandonment of Signal-native quality and
+  identifies the research constraint failure. Public Rubber Band behavior
+  shows local adaptive timing, transient phase treatment, vertical coherence,
+  offline study, and R3 simultaneous multi-resolution processing were excluded
+  or isolated by Signal's previous rules. Rule 29 and Batches 29.6BD-BG reopen
+  the complete-system research space. Evidence is in
+  `docs/research/translation-memos/002-rubber-band-behavioural-forensics.md`.
 
 ## Next Task
 
-Pause DSP successor implementation. Reassess the algorithm class at the next
-operator checkpoint; do not reopen selector, stereo, dynamic-ratio, promotion,
-cache, or product work from the rejected time-adaptive path.
+Run Batch 29.6BD. Freeze the Rubber Band behavioural probe manifest and report
+schema before implementation. Keep a new Signal synthesis candidate and
+product routing closed.

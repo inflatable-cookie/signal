@@ -1,6 +1,6 @@
 # Offline Time-Stretch Successor
 
-Status: promoted
+Status: superseded by `002-rubber-band-behavioural-forensics.md`
 Memo: `g10.029` structural reassessment
 Owner: dsp
 Last updated: 2026-07-11

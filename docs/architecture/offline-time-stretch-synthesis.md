@@ -1,6 +1,6 @@
 # Offline Time-Stretch Synthesis
 
-Status: active successor architecture
+Status: behavioural-forensics reset active
 Owner: dsp
 Updated: 2026-07-11
 Contract refs: `046`, `082`
@@ -492,8 +492,29 @@ mapping, coverage, numerical, and repeat evidence pass, but its `1.5x` isolated
 impulse lands `127` frames early. The 15-row corpus and concealed comparison do
 not run. The time-adaptive successor and automatic-selector work are retired.
 
+That rejection does not close Signal-native quality work. It exposes an
+architecture error in the research program: Signal prohibited local timing,
+transient phase reset, joint mechanism tuning, and simultaneous
+multi-resolution synthesis even though mature stretchers use those mechanisms
+as an interacting system.
+
+The active architecture is therefore behavioural forensics before synthesis.
+Rubber Band R2 and R3 remain external specimens, not dependencies. Generated
+controls and the existing licensed corpus measure event-local time maps,
+transient treatment, vertical phase behaviour, and R3 standard-versus-short
+resolution deltas. Public offline introspection may supply output increments,
+phase-reset curves, and exact-time points where the installed comparator
+supports them.
+
+Signal may reopen a nonuniform local time map and coordinated transient phase
+treatment. Exact requested duration remains mandatory, but exact local ratio is
+not. A future multi-resolution candidate must combine resolutions inside one
+synthesis system; selecting one window per frame or crossfading independent
+renders is not assumed sufficient.
+
 ## Next Task
 
-Pause stretch-successor implementation and reassess the algorithm class at the
-next operator checkpoint. Keep automatic selection, component audio, stereo,
-dynamic ratio, promotion, and routing closed.
+Run the Rubber Band behavioural-forensics contract. Freeze probes and report
+schema before implementation. Keep a new Signal synthesis candidate, product
+promotion, and routing closed until the measured mechanism signatures select a
+complete architecture.

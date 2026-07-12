@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; oracle adaptive synthesis rejected
+Status: active; behavioural-forensics reset ready
 Owner: dsp
 Updated: 2026-07-12
 Related contracts: `046`, `048`, `049`
@@ -2021,6 +2021,43 @@ symmetry, crop, or placement rule. Passing opens only the unchanged fixed-ratio
 60-row mono gate. Linked stereo, dynamic ratio, production selection, cache
 identity, and product routing remain closed.
 
+### Rule 29: measure the comparator system before freezing another candidate
+
+The oracle rejection closes time-adaptive single-resolution synthesis, not the
+Signal-native quality goal. Previous successor rules over-constrained the
+research space by requiring one exact local time map, prohibiting transient
+phase reset, selecting one resolution at each frame, and gating detectors away
+from the synthesis mechanisms they control.
+
+Batch 29.6BD freezes a behavioural probe manifest and report schema for Rubber
+Band R2 and R3. Use generated tone, bass, two-tone, chirp, hard impulse, soft
+onset, dense event, boundary event, mixed, noise, silence, and linked-stereo
+controls at identity, `0.75x`, `1.25x`, and `1.5x`. Add the existing targeted
+licensed mono rows only after synthetic report determinism passes.
+
+Measure exact output length, event placement, event-local displacement, local
+increment trajectory, pre/post-event compensation, crest, replica ratio,
+vertical phase-coherence proxies, tonal movement, static residual, unsupported
+mass, endpoints, and repeat hashes. Compare R2 default, R2 smooth/no-reset, R2
+independent-phase, R3 standard multi-resolution, and R3 short
+single-resolution. Record unsupported comparator modes explicitly.
+
+Where the installed public API exposes offline output increments, phase-reset
+curves, or exact-time points, ingest them as first-party comparator evidence.
+Rendered-audio inference remains separate and must agree across more than one
+control before it selects a mechanism hypothesis.
+
+The study may reopen event-local timing redistribution, transient phase reset,
+joint detector/time-map/phase tuning, and simultaneous multi-resolution
+synthesis. Exact final duration, finite output, deterministic offline behavior,
+linked-stereo decisions, boundary coverage, and clean-room implementation stay
+mandatory. Do not require exact local ratio or isolated detector passage.
+
+Batch 29.6BF promotes only repeatable cross-control signatures. Batch 29.6BG
+then freezes one complete Signal architecture with interacting study, time-map,
+phase, resolution, and stereo policies. No synthesis implementation begins from
+an inferred R3 detail or a single favorable waveform.
+
 ## Clean-Room Rule
 
 Public papers and public algorithm descriptions may inform Signal design.
@@ -2029,6 +2066,6 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Pause stretch-successor implementation. Reassess the algorithm class at the
-next operator checkpoint. Do not implement automatic selection, stereo,
-dynamic ratio, or product routing.
+Run Batch 29.6BD. Freeze the behavioural probe manifest and report schema
+before extending the corpus tool. Do not implement a new Signal synthesis
+candidate or product routing.

@@ -15,8 +15,8 @@ memory alone.
 - Signal is baseline-routed with no active strict spec lane
 - `g10.029` is the active correctness-first stretch roadmap
 - `046` governs sample-domain stretch behavior and its promotion gates
-- `082` governs the report-only successor synthesis policy after the first
-  structural hybrid rejection
+- `082` governs the report-only successor policy and the active Rubber Band
+  behavioural-forensics reset before another Signal synthesis candidate
 - `g10.028` source-fill work is paused until the actual DSP kernel and source
   consumption geometry pass the `g10.029` correctness gate
 
@@ -144,5 +144,5 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Continue `g10.029` Batch 29.1 under contract `046`: fix offline STFT boundary
-coverage and prove output content reaches both contractual endpoints.
+Run `g10.029` Batch 29.6BD under contract `082`: freeze the Rubber Band
+behavioural probe manifest and report schema before implementation.

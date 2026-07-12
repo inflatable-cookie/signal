@@ -171,7 +171,13 @@ implementation remains Signal-owned.
   evidence-only median-HPSS contract; Batch 29.6AX must prove it before mapping.
   It rejects across every negative and event family despite passing stereo;
   Batch 29.6AY stops automatic-selector churn. Batch 29.6AZ freezes an
-  oracle-scheduled end-to-end candidate; value must pass before detection reopens.
+  oracle-scheduled end-to-end candidate; it fails `1.5x` impulse placement.
+  Operator review then identifies the broader constraint error: local timing,
+  coordinated transient phase treatment, joint mechanism tuning, and
+  simultaneous multi-resolution processing were prohibited or isolated before
+  a comparable complete system ran. Batches 29.6BD-BG reopen the lane through
+  Rubber Band behavioural forensics, cross-control mechanism attribution, and
+  one new complete-system contract before synthesis resumes.
 - Offline artifacts and RealtimePreview have bounded contracts and prototype
   paths, but callback-safe preview integration and fully streaming artifact
   output remain gated until their owning source-fill/cache contracts exist.
@@ -261,7 +267,6 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Pause stretch-successor implementation after the oracle time-adaptive candidate
-fails synthetic event placement. Reassess the algorithm class at the next
-operator checkpoint. Keep automatic selection, stereo, dynamic ratio,
-promotion, and product integration closed.
+Run Batch 29.6BD. Freeze the Rubber Band behavioural probe manifest and report
+schema before extending the comparator harness. Keep a new Signal synthesis
+candidate, promotion, and product integration closed.
