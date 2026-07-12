@@ -561,6 +561,6 @@ at most one candidate. Holdout failure permits no retuning.
 
 ## Next Task
 
-Continue Batch 29.6BK. Parameterize and execute the frozen `108`-configuration
-grid on synthetic and nine development rows, apply hard gates and Pareto
-selection, then export at most three concealed candidates. Keep holdout closed.
+Continue Batch 29.6BK. Execute the wired `108`-configuration grid on synthetic
+and nine development rows, apply hard gates and Pareto selection, then export
+at most three concealed candidates. Keep holdout closed.

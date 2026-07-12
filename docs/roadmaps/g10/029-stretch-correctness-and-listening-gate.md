@@ -1397,10 +1397,16 @@ independent stereo review.
   dimensions. The 15 existing listening rows are partitioned before tuning into
   nine development rows and six disjoint holdout rows with family counts
   `2/2/2/1/2` and `1/1/1/2/1`. No grid render or holdout exposure has occurred.
+- 2026-07-12: Batch 29.6BK renderer checkpoint wires every frozen dimension
+  into the complete renderer. Geometry changes analysis and union synthesis;
+  sensitivity changes exact points; unity strength changes the exact-closing
+  schedule; all three reset scopes perform their contracted ownership; vertical
+  alignment toggles only its projected-reference phase stage. Nine focused
+  configurations pass exact length, coverage, finiteness, boundary, event-order,
+  linked-decision, repeat, and prior BH-BJ regression gates.
 
 ## Next Task
 
-Continue Batch 29.6BK. Parameterize the complete renderer from the frozen
-configuration surface, execute all `108` configurations on synthetic and the
-nine development rows, apply hard gates and Pareto selection, then export at
-most three concealed candidates. Keep holdout, promotion, and routing closed.
+Continue Batch 29.6BK. Execute all `108` wired configurations on synthetic and
+the nine development rows, apply hard gates and Pareto selection, then export
+at most three concealed candidates. Keep holdout, promotion, and routing closed.

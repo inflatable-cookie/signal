@@ -12,6 +12,16 @@ pub(crate) fn build_schedule(
     ratio: f64,
     points: &[usize],
 ) -> Schedule {
+    build_schedule_with_strength(source_frames, base_hop, ratio, points, 1.0)
+}
+
+pub(crate) fn build_schedule_with_strength(
+    source_frames: usize,
+    base_hop: usize,
+    ratio: f64,
+    points: &[usize],
+    unity_strength: f64,
+) -> Schedule {
     let frame_count = source_frames / base_hop + 1;
     let mut anchors = points
         .iter()
@@ -23,7 +33,14 @@ pub(crate) fn build_schedule(
     anchors.dedup();
     let mut positions = vec![0; frame_count];
     for pair in anchors.windows(2) {
-        allocate_interval(&mut positions, pair[0], pair[1], base_hop, ratio);
+        allocate_interval(
+            &mut positions,
+            pair[0],
+            pair[1],
+            base_hop,
+            ratio,
+            unity_strength,
+        );
     }
     let mut result = Schedule { positions, hash: 0 };
     result.hash = schedule_hash(&result);
@@ -36,6 +53,7 @@ fn allocate_interval(
     end: usize,
     base_hop: usize,
     ratio: f64,
+    unity_strength: f64,
 ) {
     let start_position = (ratio * (start * base_hop) as f64).round() as usize;
     let end_position = (ratio * (end * base_hop) as f64).round() as usize;
@@ -48,11 +66,12 @@ fn allocate_interval(
     let mut weights = (0..count)
         .map(|index| {
             let distance = index.min(count - index - 1);
-            let blend = match distance {
-                0 => 1.0,
-                1 => 0.5,
-                _ => 0.0,
-            };
+            let blend = unity_strength
+                * match distance {
+                    0 => 1.0,
+                    1 => 0.5,
+                    _ => 0.0,
+                };
             ideal * (1.0 - blend) + base_hop as f64 * blend
         })
         .collect::<Vec<_>>();

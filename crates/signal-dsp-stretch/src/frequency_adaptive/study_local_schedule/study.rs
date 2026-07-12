@@ -13,10 +13,18 @@ pub(crate) struct Study {
 }
 
 pub(crate) fn analyze(channels: &[Vec<f64>], source_frames: usize) -> Study {
+    analyze_with_geometry(channels, source_frames, LAYERS)
+}
+
+pub(crate) fn analyze_with_geometry(
+    channels: &[Vec<f64>],
+    source_frames: usize,
+    geometry: [usize; 3],
+) -> Study {
     let frame_count = source_frames / BASE_HOP + 1;
     let mut layer_scores: [Vec<f64>; 3] = std::array::from_fn(|_| vec![0.0; frame_count]);
     let mut planner = FftPlanner::<f64>::new();
-    for (layer, length) in LAYERS.into_iter().enumerate() {
+    for (layer, length) in geometry.into_iter().enumerate() {
         let fft = planner.plan_fft_forward(length);
         let window = window(length);
         let mut energies = vec![0.0; frame_count];

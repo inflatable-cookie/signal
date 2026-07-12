@@ -1,5 +1,6 @@
 use rustfft::{num_complex::Complex64, FftPlanner};
 
+use super::super::complete_system_tuning::{Configuration, ResetScope, Sensitivity};
 use super::super::study_local_schedule::schedule::Schedule;
 use super::super::HASH_OFFSET;
 use phase::{transport, PhaseState};
@@ -8,10 +9,16 @@ use support::{frames, hash, mirror, reflected, window};
 mod phase;
 mod support;
 
-const LAYERS: [usize; 3] = [512, 2_048, 8_192];
+const BASELINE: Configuration = Configuration {
+    geometry: [512, 2_048, 8_192],
+    sensitivity: Sensitivity::Responsive,
+    unity_strength_index: 2,
+    reset_scope: ResetScope::ShortOnly,
+    vertical_alignment: true,
+};
 
 #[derive(Clone, Copy, Eq, PartialEq)]
-pub(super) enum Mode {
+pub(crate) enum Mode {
     Ordinary,
     Event,
     Vertical,
@@ -28,7 +35,7 @@ impl Mode {
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub(super) struct Render {
+pub(crate) struct Render {
     pub samples: Vec<Vec<f64>>,
     pub target_len: usize,
     pub uncovered: usize,
@@ -60,30 +67,42 @@ pub(super) fn render(
     schedule: &Schedule,
     mode: Mode,
 ) -> Render {
+    render_configured(channels, ratio, events, schedule, mode, BASELINE)
+}
+
+pub(crate) fn render_configured(
+    channels: &[Vec<f64>],
+    ratio: f64,
+    events: &[usize],
+    schedule: &Schedule,
+    mode: Mode,
+    configuration: Configuration,
+) -> Render {
+    let layers = configuration.geometry;
     let target_len = (ratio * channels[0].len() as f64).round() as usize;
-    let frames = frames(channels[0].len(), ratio, schedule);
+    let frames = frames(channels[0].len(), ratio, schedule, layers);
     let output_start = frames
         .iter()
-        .map(|frame| frame.output - LAYERS[frame.layer] as isize / 2)
+        .map(|frame| frame.output - layers[frame.layer] as isize / 2)
         .min()
         .unwrap();
     let output_end = frames
         .iter()
-        .map(|frame| frame.output + LAYERS[frame.layer] as isize / 2)
+        .map(|frame| frame.output + layers[frame.layer] as isize / 2)
         .max()
         .unwrap();
     let domain_len = (output_end - output_start) as usize;
     let mut operator = vec![0.0; domain_len];
     for frame in &frames {
-        for (offset, weight) in window(LAYERS[frame.layer]).into_iter().enumerate() {
-            let output = frame.output - LAYERS[frame.layer] as isize / 2 + offset as isize;
+        for (offset, weight) in window(layers[frame.layer]).into_iter().enumerate() {
+            let output = frame.output - layers[frame.layer] as isize / 2 + offset as isize;
             operator[(output - output_start) as usize] += weight * weight;
         }
     }
     let mut outputs = vec![vec![Complex64::new(0.0, 0.0); domain_len]; channels.len()];
     let mut states = channels
         .iter()
-        .map(|_| PhaseState::new())
+        .map(|_| PhaseState::new(layers))
         .collect::<Vec<_>>();
     let mut planner = FftPlanner::<f64>::new();
     let mut magnitude_hash = HASH_OFFSET;
@@ -95,7 +114,7 @@ pub(super) fn render(
     let mut event_resets = 0;
     let mut vertical_alignments = 0;
     for frame in &frames {
-        let length = LAYERS[frame.layer];
+        let length = layers[frame.layer];
         let window = window(length);
         let forward = planner.plan_fft_forward(length);
         let inverse = planner.plan_fft_inverse(length);
@@ -130,6 +149,7 @@ pub(super) fn render(
                 events,
                 dominant,
                 mode,
+                configuration,
             );
             event_resets += changes.0;
             vertical_alignments += changes.1;

@@ -1,11 +1,16 @@
 use rustfft::num_complex::Complex64;
 
 use super::super::super::study_local_schedule::schedule::Schedule;
-use super::{Frame, LAYERS};
+use super::Frame;
 
-pub(super) fn frames(source_len: usize, ratio: f64, schedule: &Schedule) -> Vec<Frame> {
+pub(super) fn frames(
+    source_len: usize,
+    ratio: f64,
+    schedule: &Schedule,
+    layers: [usize; 3],
+) -> Vec<Frame> {
     let mut result = Vec::new();
-    for (layer, length) in LAYERS.into_iter().enumerate() {
+    for (layer, length) in layers.into_iter().enumerate() {
         let hop = (length / 4) as isize;
         let mut source = -(length as isize / 2);
         while source < source_len as isize + length as isize / 2 {

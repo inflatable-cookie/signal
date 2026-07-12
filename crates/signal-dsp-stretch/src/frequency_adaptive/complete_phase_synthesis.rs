@@ -1,5 +1,5 @@
 mod controls;
-mod render;
+pub(super) mod render;
 
 use controls::{controls, peak_index, tone_frequency};
 use render::{render, Mode, Render};

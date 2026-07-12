@@ -522,6 +522,21 @@ fn complete_system_tuning_grid_is_bounded_and_frozen() {
 
 #[test]
 #[cfg(not(debug_assertions))]
+fn complete_system_tuning_dimensions_reach_renderer() {
+    let first = super::complete_system_tuning::reachability_review();
+    let repeated = super::complete_system_tuning::reachability_review();
+    assert_eq!(first, repeated);
+    assert_eq!(first.dimension_changes, [2, 1, 2, 2, 1]);
+    assert_eq!(first.structural_failures, [0; 6], "{first:?}");
+    assert!(
+        first.event_resets_by_scope.iter().all(|count| *count > 0),
+        "{first:?}"
+    );
+    assert!(first.hashes.iter().all(|hash| *hash != 0));
+}
+
+#[test]
+#[cfg(not(debug_assertions))]
 fn renyi_time_resolution_selection_selects_schedule_direction() {
     let first = renyi_time_resolution_selection_review();
     let repeated = renyi_time_resolution_selection_review();

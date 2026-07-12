@@ -1,6 +1,7 @@
 use rustfft::num_complex::Complex64;
 
-use super::{Frame, Mode, LAYERS};
+use super::super::super::complete_system_tuning::{Configuration, ResetScope};
+use super::{Frame, Mode};
 
 pub(super) struct PhaseState {
     analysis: [Vec<f64>; 3],
@@ -12,11 +13,11 @@ pub(super) struct PhaseState {
 }
 
 impl PhaseState {
-    pub(super) fn new() -> Self {
+    pub(super) fn new(layers: [usize; 3]) -> Self {
         Self {
-            analysis: std::array::from_fn(|layer| vec![0.0; LAYERS[layer] / 2 + 1]),
-            synthesis: std::array::from_fn(|layer| vec![0.0; LAYERS[layer] / 2 + 1]),
-            frequency: std::array::from_fn(|layer| vec![0.0; LAYERS[layer] / 2 + 1]),
+            analysis: std::array::from_fn(|layer| vec![0.0; layers[layer] / 2 + 1]),
+            synthesis: std::array::from_fn(|layer| vec![0.0; layers[layer] / 2 + 1]),
+            frequency: std::array::from_fn(|layer| vec![0.0; layers[layer] / 2 + 1]),
             source: [None; 3],
             output: [None; 3],
             reference: None,
@@ -31,9 +32,10 @@ pub(super) fn transport(
     events: &[usize],
     dominant: usize,
     mode: Mode,
+    configuration: Configuration,
 ) -> (usize, usize) {
     let layer = frame.layer;
-    let length = LAYERS[layer];
+    let length = configuration.geometry[layer];
     let first = state.source[layer].is_none();
     let source_hop = state.source[layer]
         .map(|previous| (frame.source - previous) as f64)
@@ -58,17 +60,17 @@ pub(super) fn transport(
         state.synthesis[layer][bin] = synthesis;
         state.frequency[layer][bin] = frequency;
     }
-    let event = events
-        .iter()
-        .any(|point| frame.source >= 0 && frame.source.abs_diff(*point as isize) <= 64);
-    let event_resets = if mode.event() && layer == 0 && event {
-        state.synthesis[layer].copy_from_slice(&state.analysis[layer]);
-        length / 2 + 1
+    let event = events.iter().any(|point| {
+        frame.source >= 0
+            && frame.source.abs_diff(*point as isize) <= configuration.geometry[0] as usize / 8
+    });
+    let event_resets = if mode.event() && event {
+        reset(state, layer, length, dominant, configuration.reset_scope)
     } else {
         0
     };
     let mut vertical_alignments = 0;
-    if mode.vertical() {
+    if mode.vertical() && configuration.vertical_alignment {
         if layer == 2 {
             state.reference = Some((
                 state.analysis[layer][dominant],
@@ -94,6 +96,35 @@ pub(super) fn transport(
     state.source[layer] = Some(frame.source);
     state.output[layer] = Some(frame.output);
     (event_resets, vertical_alignments)
+}
+
+fn reset(
+    state: &mut PhaseState,
+    layer: usize,
+    length: usize,
+    dominant: usize,
+    scope: ResetScope,
+) -> usize {
+    match scope {
+        ResetScope::ShortOnly if layer == 0 => {
+            state.synthesis[layer].copy_from_slice(&state.analysis[layer]);
+            length / 2 + 1
+        }
+        ResetScope::ConfidenceOwned if layer == 2 => {
+            state.synthesis[layer][dominant] = state.analysis[layer][dominant];
+            1
+        }
+        ResetScope::FrequencyLimited if layer == 2 => {
+            let frequency = dominant as f64 * 48_000.0 / length as f64;
+            if !(80.0..=2_000.0).contains(&frequency) {
+                state.synthesis[layer][dominant] = state.analysis[layer][dominant];
+                1
+            } else {
+                0
+            }
+        }
+        _ => 0,
+    }
 }
 
 fn wrap(value: f64) -> f64 {
