@@ -692,6 +692,15 @@ the primary method's calibrated magnitude/phase masks and peak processing are
 material, not incidental. Importing them now requires explicit operator
 direction; no detector parameter is silently relaxed.
 
+Operator direction authorizes bounded calibration research within the same
+mixed-phase family. The source reports an absolute magnitude threshold `0.01`,
+empirical mixed-phase thresholds `0.5/0.75`, median smoothing without a stated
+length, and peak prominence `0.1`. These are evidence anchors, not Signal
+defaults. Signal first measures scale-invariant magnitude and mixed-phase
+distributions on event and negative controls. A calibrated mask opens only if
+those distributions exhibit a nonempty stable separating interval; otherwise
+the family returns to operator review.
+
 Additional primary source:
 
 | Source | Confidence | Transfer boundary |

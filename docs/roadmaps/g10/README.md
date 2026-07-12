@@ -164,7 +164,8 @@ implementation remains Signal-owned.
   29.6AS freezes one analytic report-only detector; Batch 29.6AT must prove it
   before any occupancy-to-window mapping. It rejects across false-positive,
   localization, dense-event, perturbation, and stereo gates; Batch 29.6AU is an
-  operator-review stop.
+  operator-review stop. Operator direction keeps the mixed-phase family and
+  opens Batch 29.6AV distribution measurement before any calibrated mask.
 - Offline artifacts and RealtimePreview have bounded contracts and prototype
   paths, but callback-safe preview integration and fully streaming artifact
   output remain gated until their owning source-fill/cache contracts exist.
@@ -254,6 +255,6 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Operator review transient evidence at Batch 29.6AU. No implementation batch is
-ready; keep schedule mapping, phase, stretched synthesis, corpus, linked stereo,
+Run Batch 29.6AV mixed-phase distribution audit. Keep detector calibration,
+schedule mapping, phase, stretched synthesis, corpus, linked stereo synthesis,
 dynamic ratio, and product integration closed.

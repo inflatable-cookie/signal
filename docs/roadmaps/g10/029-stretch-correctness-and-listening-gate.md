@@ -625,12 +625,21 @@ independent stereo review.
 
 ### Batch 29.6AU - Transient-Evidence Operator Review
 
-- [ ] choose calibrated mixed-phase research, a different transient evidence
+- [x] choose calibrated mixed-phase research, a different transient evidence
   family, or pause the time-adaptive successor lane
-- [ ] do not infer permission to add empirical thresholds, smoothing,
+- [x] do not infer permission to add empirical thresholds, smoothing,
   prominence, detector votes, or relaxed control gates
-- [ ] keep schedule mapping, phase, stretched synthesis, corpus, dynamic ratio,
+- [x] keep schedule mapping, phase, stretched synthesis, corpus, dynamic ratio,
   cache, and routing closed until a new ready card exists
+
+### Batch 29.6AV - Mixed-Phase Distribution Audit
+
+- [ ] measure normalized-magnitude and mixed-phase distributions on the frozen
+  controls, stereo variants, and perturbations without producing a detector
+- [ ] prove cell-accounting, ordered finite quantiles, scale/polarity/stereo
+  closure, perturbation coverage, deterministic hashes, and exact repeat
+- [ ] open calibration contracting only on a stable event/negative separating
+  interval; otherwise return the evidence family to operator review
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -1166,8 +1175,13 @@ independent stereo review.
   negative family produces peaks; event localization, dense resolution,
   perturbation, and one stereo occupancy gate fail. Evidence is in
   `docs/logs/2026-07/12-g10-029-transient-evidence-rejection.md`.
+- 2026-07-12: Batch 29.6AU authorizes bounded mixed-phase calibration research.
+  The primary method's empirical values are evidence anchors, not defaults;
+  Batch 29.6AV must prove distribution separation before threshold fitting.
+  Evidence is in
+  `docs/logs/2026-07/12-g10-029-mixed-phase-calibration-direction.md`.
 
 ## Next Task
 
-Operator review Batch 29.6AU. No implementation batch is ready; do not infer
-detector calibration or a new evidence family.
+Run Batch 29.6AV mixed-phase distribution audit. Do not produce a mask, peak,
+schedule, phase, stretched synthesis, corpus output, or routing change.

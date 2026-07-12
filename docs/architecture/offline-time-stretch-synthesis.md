@@ -450,8 +450,15 @@ the dense pair, and is highly perturbation-sensitive. The mixed center event is
 visible but accompanied by outer-quarter false positives. Transient-aware
 selection returns to operator review before any calibration or schedule mapping.
 
+Operator direction keeps the mixed-phase family but does not authorize blind
+threshold fitting. The primary method's absolute magnitude threshold is not
+scale-invariant, its median-filter length is unspecified, and its empirical
+phase interval must be reconciled with Signal's normalization. The next proof
+therefore measures normalized-magnitude and mixed-phase distributions for event
+and negative controls. Only demonstrated separation may open a later calibrated
+mask contract.
+
 ## Next Task
 
-Operator review transient evidence. No implementation batch is ready; keep
-schedule mapping, phase, stretched synthesis, corpus, dynamic ratio, and routing
-closed.
+Run the report-only mixed-phase distribution audit. Keep calibration, schedule
+mapping, phase, stretched synthesis, corpus, dynamic ratio, and routing closed.

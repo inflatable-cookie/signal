@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; transient detector stopped for operator review
+Status: active; mixed-phase distribution audit ready
 Owner: dsp
 Updated: 2026-07-12
 Related contracts: `046`, `048`, `049`
@@ -1760,6 +1760,55 @@ smoothing, prominence, or another detector without explicit operator direction.
 No occupancy-to-window mapping opens. Schedule generation, phase, stretched
 synthesis, corpus, dynamic ratio, cache identity, and routing remain closed.
 
+### Rule 26P: measure mixed-phase separability before calibration
+
+Batch 29.6AU records operator direction to continue the same mixed-phase
+evidence family. The next step is a distribution audit, not a detector
+parameter sweep. The public SELEBI method uses an absolute magnitude threshold
+of `0.01`, empirical mixed-phase thresholds `0.5/0.75`, one-dimensional median
+filtering of unspecified length, and peak prominence `0.1`. Its magnitude scale
+and incomplete smoothing specification do not transfer directly to Signal.
+
+Batch 29.6AV retains the `2048/128/4096` analysis lattice, reflection,
+positive-bin range, linked-channel magnitude aggregation, twelve controls,
+stereo variants, and perturbations from Rule 26O. It produces no binary mask,
+occupancy, peak, schedule, or audio. For every retained cell report:
+
+- normalized magnitude `q=|X[k,n]|/sqrt(sum_j |X[j,n]|^2)` per channel, or zero
+  for a zero-energy frame
+- normalized wrapped mixed phase `m` from Rule 26O
+- control, channel, anchor, bin, and whether the anchor lies within `256`
+  frames of a declared event
+
+Reduce those cells into fixed `q` bands
+`[0,0.001)`, `[0.001,0.003)`, `[0.003,0.01)`, `[0.01,0.03)`, and `[0.03,inf)`.
+Within each band and each control family, report cell count, magnitude sum, and
+finite `m` quantiles at `0`, `0.01`, `0.05`, `0.25`, `0.5`, `0.75`, `0.95`,
+`0.99`, and `1`. Also report the same summaries for declared-event and
+non-event anchors, exact gain/polarity/stereo closure, non-finite counts, and
+input/distribution/repeat hashes.
+
+Audit the fixed lower cutoffs `q>=0`, `0.001`, `0.003`, `0.01`, and `0.03`
+against mixed-phase radii `abs(m-1)<=0.125`, `0.25`, `0.5`, `0.75`, and `1`.
+For each of the `25` pairs, report event magnitude recall and negative magnitude
+leakage separately for impulse, dense, boundary, mixed, steady, chirp, and noise
+families, including perturbations. This lattice is diagnostic; no pair becomes
+a detector parameter in this batch.
+
+The audit passes structurally only when every nonzero-energy cell is assigned
+once, quantiles are ordered and finite, gain `0.25/1/4`, polarity, hard pan,
+channel swap, and equal-energy stereo preserve normalized summaries within
+`1e-12`, and hashes repeat exactly. It selects `Calibratable` only if one fixed
+pair retains at least `0.5` of declared-event magnitude in every impulse, dense,
+boundary, and mixed family while admitting at most `0.01` of magnitude from
+every steady, chirp, and noise family, for both base and perturbed controls.
+Otherwise it selects `Overlapping` and returns to operator review. Declared
+events group audit evidence only; the selected pair cannot become a detector
+without a separate contract and the unchanged event/negative gates. Do not
+combine another detector or relax existing gates. Calibration, smoothing,
+prominence, schedule mapping, phase, stretched synthesis, corpus, dynamic
+ratio, cache identity, and routing remain closed.
+
 ### Rule 27: synthesize a protected centre, not a circular endpoint
 
 Extend the source in both directions with whole-sample even reflection,
@@ -1815,5 +1864,5 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Operator review must choose calibrated mixed-phase research, a different
-transient evidence family, or pause. No implementation batch is ready.
+Run Batch 29.6AV mixed-phase distribution audit. Produce no detector decision,
+schedule, phase, stretched synthesis, corpus output, or routing change.
