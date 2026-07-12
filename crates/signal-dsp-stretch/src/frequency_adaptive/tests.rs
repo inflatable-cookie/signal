@@ -451,6 +451,33 @@ fn simultaneous_multi_window_union_selects_study_direction() {
 
 #[test]
 #[cfg(not(debug_assertions))]
+fn linked_study_local_schedule_selects_phase_proof_direction() {
+    use super::study_local_schedule::{review, Direction};
+
+    let first = review();
+    let repeated = review();
+    eprintln!("study_local_schedule {first:?}");
+    assert_eq!(first, repeated);
+    assert_eq!(first.controls.len(), 3);
+    assert!(first.controls.iter().all(|control| {
+        control.evidence_parity
+            && control.linked_decision_equivalence
+            && control.selected_points[0] >= 2
+            && control.dense_points_retained >= 2
+            && control.local_unity_improvement > 0.0
+            && control.schedule_failures == [0; 5]
+            && control.hashes.iter().all(|hash| *hash != 0)
+    }));
+    assert!(first
+        .controls
+        .iter()
+        .any(|control| control.selected_points[1] >= 2));
+    assert_eq!(first.direction, Direction::SyntheticPhaseAndSynthesisProof);
+    assert_ne!(first.evidence_hash, 0);
+}
+
+#[test]
+#[cfg(not(debug_assertions))]
 fn renyi_time_resolution_selection_selects_schedule_direction() {
     let first = renyi_time_resolution_selection_review();
     let repeated = renyi_time_resolution_selection_review();

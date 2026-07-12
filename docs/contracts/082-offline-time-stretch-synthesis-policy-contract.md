@@ -2310,6 +2310,6 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Run Batch 29.6BI. Add linked continuous study evidence, exact-point selection,
-and a positive bounded integer-hop schedule with exact final closure. Keep phase
-modification and tuning closed.
+Run Batch 29.6BJ. Transport all three layers through actual source/output
+intervals, then prove event correction and cross-resolution vertical alignment
+as separate phase-only stages. Keep tuning closed.

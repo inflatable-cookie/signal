@@ -743,10 +743,10 @@ independent stereo review.
 
 ### Batch 29.6BI - Study And Local Schedule Proof
 
-- [ ] compute linked continuous evidence independently of event application
-- [ ] select ordered exact points and solve positive bounded integer hops with
+- [x] compute linked continuous evidence independently of event application
+- [x] select ordered exact points and solve positive bounded integer hops with
   exact final closure and maximum `256`-frame selected-event movement
-- [ ] prove dense-event retention, disabled-application evidence parity,
+- [x] prove dense-event retention, disabled-application evidence parity,
   deterministic schedule hashes, and linked-channel decision equivalence
 
 ### Batch 29.6BJ - Complete Synthetic Phase And Synthesis Proof
@@ -1379,9 +1379,16 @@ independent stereo review.
   controls reconstruct with peak error below `7.78e-16`, RMS error below
   `1.46e-16`, no non-finite values, stable hashes, and exact repeated evidence.
   Study, local scheduling, and phase modification remained absent.
+- 2026-07-12: Batch 29.6BI proves linked study and exact local scheduling.
+  Three linked-channel controls at `0.75x`, `1.5x`, and `2.0x` retain `15`
+  responsive and `4` conservative points, including four dense-region points.
+  Enabled/disabled evidence and channel-order decisions are exact. Every
+  schedule has positive bounded hops, zero selected-event movement, exact final
+  closure, deterministic hashes, and measurable event-local unity improvement.
 
 ## Next Task
 
-Run Batch 29.6BI. Add linked continuous study evidence, exact-point selection,
-and a positive bounded integer-hop schedule with exact final closure. Keep phase
-modification, tuning, corpus rendering, promotion, and routing closed.
+Run Batch 29.6BJ. Transport all three layers through actual source/output
+intervals, then prove event correction and cross-resolution vertical alignment
+as separate phase-only stages. Keep tuning, corpus rendering, promotion, and
+routing closed.
