@@ -561,6 +561,6 @@ at most one candidate. Holdout failure permits no retuning.
 
 ## Next Task
 
-Continue Batch 29.6BK. Export the three selected frontier configurations against
-current Signal and Rubber Band R3 across the nine development rows. Keep the
-key and holdout closed until development notes are frozen.
+Complete the concealed nine-row development listening pack at
+`target/stretch-successor-bk-development-pack`. Freeze notes before opening the
+key. Keep holdout closed.

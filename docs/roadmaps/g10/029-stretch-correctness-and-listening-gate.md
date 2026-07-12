@@ -762,7 +762,7 @@ independent stereo review.
 - [x] run at most `108` complete configurations over the frozen geometry,
   study-sensitivity, event-local strength, reset-scope, and vertical-alignment
   grid
-- [ ] use hard gates and Pareto evidence to export at most three candidates
+- [x] use hard gates and Pareto evidence to export at most three candidates
 - [ ] select one through concealed nine-row development listening only on at
   least `6/9` preference over current and no new broad defect
 
@@ -1411,10 +1411,16 @@ independent stereo review.
   coverage, finiteness, boundary, ordering, movement, repeat, or linked-decision
   failures occur. Three representatives are selected for concealed export;
   holdout reads remain zero.
+- 2026-07-12: Batch 29.6BK exports the concealed nine-row development pack.
+  Every row contains one mono reference and five shared-level candidates: three
+  frontier successors, current Signal, and Rubber Band R3. The pack contains
+  `54` WAVs, nine notes rows, `45` concealed assignments, zero structural
+  failures, and zero holdout reads. Candidate selection is now paused for
+  operator listening; the key remains closed.
 
 ## Next Task
 
-Continue Batch 29.6BK. Export the three selected frontier configurations against
-current Signal and Rubber Band R3 across the nine development rows with stable
-concealment and shared level matching. Keep the key and holdout closed until
-development notes are frozen.
+Complete the concealed nine-row development listening pack at
+`target/stretch-successor-bk-development-pack`. Freeze every notes row before
+opening the key. Select one successor only on at least `6/9` preference over
+current Signal with no repeatable broad defect; keep holdout closed.

@@ -553,6 +553,19 @@ fn complete_system_objective_grid_exports_pareto_candidates() {
 
 #[test]
 #[cfg(not(debug_assertions))]
+fn complete_system_exports_concealed_development_pack() {
+    let review = super::complete_system_tuning::export_development_pack();
+    eprintln!("complete_system_development_pack {review:?}");
+    assert_eq!(review.rows, 9);
+    assert_eq!(review.candidates_per_row, 5);
+    assert_eq!(review.audio_files, 54);
+    assert_eq!(review.holdout_reads, 0);
+    assert_eq!(review.structural_failures, [0; 5], "{review:?}");
+    assert!(review.hashes.iter().all(|hash| *hash != 0));
+}
+
+#[test]
+#[cfg(not(debug_assertions))]
 fn renyi_time_resolution_selection_selects_schedule_direction() {
     let first = renyi_time_resolution_selection_review();
     let repeated = renyi_time_resolution_selection_review();
