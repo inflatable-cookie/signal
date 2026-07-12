@@ -648,3 +648,9 @@ control. The only low subregion that restores the mixed event also changes all
 `32` stationary controls, so frequency weighting is rejected. The next design
 question is source-blind comparison geometry within the same Rényi evidence
 family; declared event positions cannot become detector input.
+
+The contracted source-blind geometry centres every local resolution lattice on
+the decision anchor and admits only coefficient frames whose complete analysis
+support fits inside the fixed comparison region. Natural hops and entropy cell
+normalization stay unchanged. This directly removes the support leakage proven
+by attribution without introducing event detection or frequency policy.

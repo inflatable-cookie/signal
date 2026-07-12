@@ -416,7 +416,14 @@ is not selective: the only event-restoring subregion changes every negative
 control. Event labels remain proof fixtures, not selector input; the next
 contract must express one source-blind Rényi comparison geometry.
 
+The selected geometry is anchor-local and support-contained. Each resolution
+uses its natural-hop centres symmetric around the decision anchor, but only
+when the complete analysis window fits inside the unchanged `4096`-frame
+comparison region. Counts are `[29,13,5,1]`. FFT work may be shared across
+anchors without changing membership. This removes outside-region support
+leakage while retaining one Rényi evidence family and one legal path.
+
 ## Next Task
 
-Freeze Batch 29.6AP comparison-region geometry. Keep selector changes, phase,
-stretched synthesis, corpus, dynamic ratio, and routing closed.
+Run Batch 29.6AQ anchor-local comparison geometry. Keep phase, stretched
+synthesis, corpus, dynamic ratio, and routing closed.

@@ -580,12 +580,21 @@ independent stereo review.
 
 ### Batch 29.6AP - Rényi Comparison-Region Geometry Contract
 
-- [ ] choose one source-blind comparison geometry within the unchanged Rényi
+- [x] choose one source-blind comparison geometry within the unchanged Rényi
   evidence family; declared event labels remain proof fixtures only
-- [ ] retain four resolutions, natural hops, `alpha=0.7`, stereo energy linking,
+- [x] retain four resolutions, natural hops, `alpha=0.7`, stereo energy linking,
   legal path, controls, and every non-geometry gate
-- [ ] freeze implementation, regression, and stop rules before changing the
+- [x] freeze implementation, regression, and stop rules before changing the
   selector; keep phase, stretched synthesis, corpus, and routing closed
+
+### Batch 29.6AQ - Anchor-Local Rényi Geometry Decision
+
+- [ ] evaluate only natural-hop coefficient centres whose complete window
+  support fits inside each anchor's fixed comparison region
+- [ ] prove exact `[29,13,5,1]` membership, structural closure, unchanged
+  invariance gates, full musical gates, and deterministic hashes
+- [ ] open variable-hop phase contracting only on complete passage; otherwise
+  stop automatic-selector research for operator review
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -1098,8 +1107,13 @@ independent stereo review.
   removal restores all `15` isolated anchors with no negative changes; narrow
   low-band removal is nonselective. Evidence is in
   `docs/logs/2026-07/12-g10-029-renyi-attribution-reassessment-decision.md`.
+- 2026-07-12: Batch 29.6AP froze anchor-local support-contained geometry. Every
+  decision uses natural-hop symmetric centres with exact membership
+  `[29,13,5,1]`; full selector passage or operator review is the next terminal
+  gate. Evidence is in
+  `docs/logs/2026-07/12-g10-029-renyi-comparison-geometry-contract.md`.
 
 ## Next Task
 
-Freeze Batch 29.6AP Rényi comparison-region geometry. Do not change the
-selector or implement phase or stretched synthesis.
+Run Batch 29.6AQ anchor-local Rényi geometry. Do not implement phase or
+stretched synthesis.

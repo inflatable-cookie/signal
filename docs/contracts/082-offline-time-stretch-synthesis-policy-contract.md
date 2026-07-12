@@ -1578,6 +1578,50 @@ source-blind geometry from the existing Rényi evidence; declared event labels
 remain test evidence and cannot enter the selector. No selector implementation
 opens yet.
 
+### Rule 26M: compare only anchor-local, support-contained coefficients
+
+Batch 29.6AP replaces only the Batch 29.6AJ coefficient-frame inclusion
+geometry. At each `128`-frame decision anchor `t`, retain the centered logical
+comparison region `[t-2048,t+2048)`. For resolution window `W` and natural hop
+`a=W/4`, evaluate coefficient centres `c=t+q*a` for integer `q` only when the
+complete half-open analysis support `[c-W/2,c+W/2)` lies inside the comparison
+region. Reflect source reads at logical source boundaries exactly as before.
+
+This produces exactly `29`, `13`, `5`, and `1` coefficient frames per anchor
+for windows `512`, `1024`, `2048`, and `4096`. Centres are symmetric around the
+anchor and include it. An implementation may reuse FFT results keyed by
+`(W,c)` across anchors, but cache shape cannot change membership, accumulation
+order, evidence, or hashes. The semantic lattice at each anchor retains its
+natural hop; the cache does not create a denser selector lattice.
+
+Keep the common `4096` FFT, square-root Hann windows, linked-channel energy,
+`alpha=0.7` Rényi formula, natural-hop lattice-cell term, longest exact tie,
+one-level legal minimum-cost path, scheduler mapping, and every Batch 29.6AK
+control and variant unchanged. Do not use event labels, trim coefficient bins,
+weight bands, floor energy, add a margin, or add another detector.
+
+Batch 29.6AQ is release-only and produces no audio. Report per-anchor membership
+counts, support extrema, reflected reads, energies, entropies, raw winners,
+selected path, path cost, level counts, transitions, derived-hop extrema,
+non-finite values, linked-channel closure, and stable membership/input/evidence/
+path hashes. Require zero support escape, exact `[29,13,5,1]` membership at all
+anchors, finite values, `1e-12` channel closure, legal schedules, and exact
+repeat.
+
+Rerun every Batch 29.6AK musical and invariance gate unchanged: silence and
+steady controls remain long; isolated, dense, and boundary impulses recover;
+both chirps exercise multiple levels; noise avoids `512`; mixed audio is short
+near its event and long in both outer quarters; gain, polarity, perturbation,
+hard-pan, channel-swap, and equal-energy stereo remain stable. The perturbation
+cap remains `5%`.
+
+Complete passage opens only a separately frozen variable-hop phase contract on
+the selected schedules. Any structural, musical, stability, or equivalence
+failure stops automatic-selector research for operator review; do not try a
+second region size, frame alignment, margin, weight, or detector. Phase,
+stretched synthesis, corpus, dynamic ratio, cache identity, and routing remain
+closed.
+
 ### Rule 27: synthesize a protected centre, not a circular endpoint
 
 Extend the source in both directions with whole-sample even reflection,
@@ -1633,5 +1677,5 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Freeze Batch 29.6AP comparison-region geometry. Do not change the selector or
-implement phase or stretched synthesis.
+Run Batch 29.6AQ anchor-local comparison geometry. Do not implement phase or
+stretched synthesis.

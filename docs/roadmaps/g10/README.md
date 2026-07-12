@@ -155,7 +155,9 @@ implementation remains Signal-owned.
   resolution once using event-support membership and fixed low-band
   subdivision before any selector change. Batch 29.6AO selects comparison-region
   geometry and rejects frequency weighting; Batch 29.6AP must freeze one
-  source-blind geometry before implementation.
+  source-blind geometry before implementation. It now selects anchor-local,
+  support-contained natural-hop lattices; Batch 29.6AQ is the terminal selector
+  gate before phase contracting or operator review.
 - Offline artifacts and RealtimePreview have bounded contracts and prototype
   paths, but callback-safe preview integration and fully streaming artifact
   output remain gated until their owning source-fill/cache contracts exist.
@@ -245,6 +247,5 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Freeze Batch 29.6AP Rényi comparison-region geometry. Keep selector changes,
-phase, stretched synthesis, corpus, linked stereo, dynamic ratio, and product
-integration closed.
+Run Batch 29.6AQ anchor-local Rényi geometry. Keep phase, stretched synthesis,
+corpus, linked stereo, dynamic ratio, and product integration closed.
