@@ -759,7 +759,7 @@ independent stereo review.
 
 ### Batch 29.6BK - Bounded Complete-System Tuning
 
-- [ ] run at most `108` complete configurations over the frozen geometry,
+- [x] run at most `108` complete configurations over the frozen geometry,
   study-sensitivity, event-local strength, reset-scope, and vertical-alignment
   grid
 - [ ] use hard gates and Pareto evidence to export at most three candidates
@@ -1404,9 +1404,17 @@ independent stereo review.
   alignment toggles only its projected-reference phase stage. Nine focused
   configurations pass exact length, coverage, finiteness, boundary, event-order,
   linked-decision, repeat, and prior BH-BJ regression gates.
+- 2026-07-12: Batch 29.6BK executes all `108` configurations over synthetic and
+  `972` frozen development-row renders. `68` pass every hard gate; `25` form the
+  Pareto frontier. All `36` short-geometry configurations and four nonvertical
+  short-only variants fail the combined identity/pitch/event gate. No length,
+  coverage, finiteness, boundary, ordering, movement, repeat, or linked-decision
+  failures occur. Three representatives are selected for concealed export;
+  holdout reads remain zero.
 
 ## Next Task
 
-Continue Batch 29.6BK. Execute all `108` wired configurations on synthetic and
-the nine development rows, apply hard gates and Pareto selection, then export
-at most three concealed candidates. Keep holdout, promotion, and routing closed.
+Continue Batch 29.6BK. Export the three selected frontier configurations against
+current Signal and Rubber Band R3 across the nine development rows with stable
+concealment and shared level matching. Keep the key and holdout closed until
+development notes are frozen.

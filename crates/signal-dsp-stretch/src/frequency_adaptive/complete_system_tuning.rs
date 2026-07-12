@@ -4,6 +4,8 @@ use super::HASH_OFFSET;
 
 mod reachability;
 pub(super) use reachability::reachability_review;
+mod objective_grid;
+pub(super) use objective_grid::objective_grid_review;
 
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub(super) enum Sensitivity {
@@ -146,7 +148,7 @@ pub(super) fn review() -> Review {
     }
 }
 
-fn development_rows() -> Vec<&'static str> {
+pub(super) fn development_rows() -> Vec<&'static str> {
     vec![
         "L001", "L002", "L004", "L005", "L007", "L008", "L010", "L013", "L014",
     ]

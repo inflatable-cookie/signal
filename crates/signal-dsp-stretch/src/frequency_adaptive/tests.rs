@@ -537,6 +537,22 @@ fn complete_system_tuning_dimensions_reach_renderer() {
 
 #[test]
 #[cfg(not(debug_assertions))]
+fn complete_system_objective_grid_exports_pareto_candidates() {
+    use super::complete_system_tuning::objective_grid_review;
+
+    let review = objective_grid_review();
+    eprintln!("complete_system_objective_grid {review:?}");
+    assert_eq!(review.configuration_count, 108);
+    assert_eq!(review.development_render_count, 972);
+    assert!(review.passing_count > 0, "{review:?}");
+    assert!(review.frontier_count > 0, "{review:?}");
+    assert!((1..=3).contains(&review.candidates.len()), "{review:?}");
+    assert_eq!(review.holdout_reads, 0);
+    assert!(review.hashes.iter().all(|hash| *hash != 0));
+}
+
+#[test]
+#[cfg(not(debug_assertions))]
 fn renyi_time_resolution_selection_selects_schedule_direction() {
     let first = renyi_time_resolution_selection_review();
     let repeated = renyi_time_resolution_selection_review();

@@ -2310,6 +2310,6 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Continue Batch 29.6BK. Execute the wired `108`-configuration grid on synthetic
-and nine development rows, apply hard gates and Pareto selection, then export
-at most three concealed candidates. Keep holdout closed.
+Continue Batch 29.6BK. Export the three selected frontier configurations against
+current Signal and Rubber Band R3 across the nine development rows. Keep the
+key and holdout closed until development notes are frozen.
