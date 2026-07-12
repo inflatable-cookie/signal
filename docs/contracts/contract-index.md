@@ -144,5 +144,5 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Run `g10.029` Batch 29.6BF under contract `082`: attribute only repeatable
-cross-control comparator signatures.
+Complete `g10.029` Batch 29.6BF under contract `082` with the research-only
+public C++ comparator state adapter.

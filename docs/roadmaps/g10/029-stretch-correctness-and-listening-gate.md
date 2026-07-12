@@ -717,10 +717,11 @@ independent stereo review.
 
 ### Batch 29.6BF - Comparator Mechanism Attribution
 
-- [ ] classify which quality deltas are owned by local timing, transient phase
+- [x] classify which quality deltas are owned by local timing, transient phase
   treatment, vertical coherence, or simultaneous resolution
-- [ ] retain conflicting or R3-opaque behavior as an explicit planning gap
+- [x] retain conflicting or R3-opaque behavior as an explicit planning gap
 - [ ] promote only cross-control signatures into architecture and contract
+  after direct public-state evidence closes the time-allocation gap
 
 ### Batch 29.6BG - Complete Signal Successor Contract
 
@@ -1313,8 +1314,15 @@ independent stereo review.
   standard/short signatures. Public direct-state evidence is honestly
   unsupported pending an adapter. Evidence is in
   `docs/logs/2026-07/12-g10-029-rubber-band-behavioural-measurement.md`.
+- 2026-07-12: Batch 29.6BF promotes waveform-owned mechanism boundaries.
+  Local timing, event phase treatment, vertical coherence, and simultaneous
+  resolution all produce repeatable cross-control signatures. The exact local
+  allocator stays open because the C API omits output increments, reset curves,
+  and exact-time points. BF remains active for one public C++ state adapter.
+  Evidence is in
+  `docs/logs/2026-07/12-g10-029-rubber-band-mechanism-attribution.md`.
 
 ## Next Task
 
-Run Batch 29.6BF. Attribute only repeatable cross-control comparator
-signatures. Keep a new Signal synthesis candidate and product routing closed.
+Complete Batch 29.6BF with a research-only public C++ state adapter. Keep a new
+Signal synthesis candidate and product routing closed.

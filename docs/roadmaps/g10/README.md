@@ -267,6 +267,6 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Run Batch 29.6BF. Attribute only repeatable cross-control Rubber Band
-signatures. Keep a new Signal synthesis candidate, promotion, and product
-integration closed.
+Complete Batch 29.6BF with a research-only public C++ state adapter for output
+increments, reset curves, and exact-time points. Keep a new Signal synthesis
+candidate, promotion, and product integration closed.

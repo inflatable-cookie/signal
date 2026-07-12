@@ -2109,6 +2109,32 @@ state, rendered samples, and measurement hashes must match. Any mismatch or
 missing required CLI mode stops Batch 29.6BE before attribution. Direct-state
 support may be absent without blocking rendered-audio measurement.
 
+#### Rule 29C: promoted waveform attribution and remaining gap
+
+Batch 29.6BE proves exact final duration with nonuniform event displacement.
+Future Signal synthesis must permit a bounded local time allocator whose signed
+deviation integrates back to the exact target duration.
+
+R2 default versus no-reset changes attack crest and replicas across event and
+mixed families but does not consistently change isolated or dense event
+placement. Treat phase reset as event-shape policy coupled to, but not identical
+with, the time allocator. R2 default versus no-lamination changes vertical
+coherence in `33/48` comparable mono rows and attack crest in `18/24` event
+rows. Treat vertical phase policy as full-band state, not a tonal-only cosmetic
+step.
+
+R3 standard versus short changes event placement in `23/30`, vertical
+coherence in `52/56`, spectral residual in `49/56`, and tonal movement in
+`47/56` comparable rows. The directions vary by family and ratio. Require
+simultaneous multi-resolution behavior and material-dependent decisions; do not
+encode `standard` or one fixed resolution as a universal winner.
+
+Before Batch 29.6BF closes, add a research-only public C++ API adapter and
+repeat direct output-increment, phase-reset-curve, and exact-time-point queries.
+The adapter may link the installed comparator for local research but is not a
+Signal runtime dependency. Without that evidence, do not freeze the local time
+allocation algorithm in Batch 29.6BG.
+
 ## Clean-Room Rule
 
 Public papers and public algorithm descriptions may inform Signal design.
@@ -2117,6 +2143,5 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Run Batch 29.6BF. Attribute only repeatable cross-control comparator signatures
-and retain opaque behavior as planning gaps. Do not implement a new Signal
-synthesis candidate or product routing.
+Complete Batch 29.6BF with the research-only public C++ state adapter. Do not
+implement a new Signal synthesis candidate or product routing.

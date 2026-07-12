@@ -99,5 +99,5 @@ Promoted into:
 
 ## Next Task
 
-Attribute only repeatable cross-control signatures from the passing `264`-row
-synthetic comparator measurement.
+Complete attribution with a research-only public C++ adapter for output
+increments, reset curves, and exact-time points.

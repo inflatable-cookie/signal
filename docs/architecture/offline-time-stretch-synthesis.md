@@ -512,8 +512,24 @@ not. A future multi-resolution candidate must combine resolutions inside one
 synthesis system; selecting one window per frame or crossfading independent
 renders is not assumed sufficient.
 
+The synthetic comparator matrix confirms those mechanisms interact. Exact
+final duration coexists with event displacement in every non-identity mode.
+Disabling R2 transient reset changes attack crest and replicas more consistently
+than event placement, so transient phase treatment does not own the time map by
+itself. Disabling lamination changes phase-coherence and attack-shape evidence
+across tonal, event, and mixed families. R3 standard versus short changes event
+placement in `23/30`, vertical coherence in `52/56`, and spectral residual in
+`49/56` comparable rows. No single direction wins every family.
+
+The architecture therefore requires five cooperating policies: offline study,
+bounded local time allocation, event-conditioned phase treatment, simultaneous
+multi-resolution synthesis, and linked-channel decisions. The exact time
+allocator remains a planning gap until Rubber Band's public C++ output-increment
+and exact-time-point evidence is captured; waveform displacement cannot define
+that schedule alone.
+
 ## Next Task
 
-Attribute the passing `264`-row Rubber Band measurement across controls and
-ratios. Keep a new Signal synthesis candidate, product promotion, and routing
-closed until repeatable mechanism signatures select a complete architecture.
+Complete Batch 29.6BF with a public C++ state adapter for output increments,
+phase-reset curves, and exact-time points. Keep a new Signal synthesis
+candidate, product promotion, and routing closed.
