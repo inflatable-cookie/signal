@@ -99,5 +99,5 @@ Promoted into:
 
 ## Next Task
 
-Complete attribution with a research-only public C++ adapter for output
-increments, reset curves, and exact-time points.
+Freeze the complete Signal study, local-time, event-phase, multi-resolution,
+vertical-phase, and linked-stereo successor architecture.

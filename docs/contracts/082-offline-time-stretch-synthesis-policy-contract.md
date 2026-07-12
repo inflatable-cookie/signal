@@ -2135,6 +2135,23 @@ The adapter may link the installed comparator for local research but is not a
 Signal runtime dependency. Without that evidence, do not freeze the local time
 allocation algorithm in Batch 29.6BG.
 
+The adapter passes `48/48` rows with byte-identical repeats. R2 default and
+no-lamination produce identical study state in all `16` paired rows. R2 default
+and no-reset retain identical detector curves but change exact-time points and
+output increments in all `16`. This freezes stage ownership:
+
+1. offline study computes event evidence independently of whether it will be
+   applied
+2. event policy selects exact-time points and constrains a globally exact local
+   output schedule
+3. event phase treatment acts at selected points
+4. vertical phase policy acts downstream without changing study or schedule
+
+Signal does not inherit Rubber Band's undocumented signed-increment encoding.
+Batch 29.6BG must define its own monotonic bounded schedule whose local
+deviations close exactly at the target duration. R3 state remains opaque; only
+its measured simultaneous-resolution requirements transfer.
+
 ## Clean-Room Rule
 
 Public papers and public algorithm descriptions may inform Signal design.
@@ -2143,5 +2160,5 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Complete Batch 29.6BF with the research-only public C++ state adapter. Do not
-implement a new Signal synthesis candidate or product routing.
+Run Batch 29.6BG. Freeze one complete Signal successor contract. Do not start
+synthesis until the full interacting architecture and tuning budget are ready.

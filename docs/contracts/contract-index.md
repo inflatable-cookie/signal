@@ -144,5 +144,5 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Complete `g10.029` Batch 29.6BF under contract `082` with the research-only
-public C++ comparator state adapter.
+Run `g10.029` Batch 29.6BG under contract `082`: freeze the complete interacting
+Signal successor architecture and tuning program.

@@ -720,7 +720,7 @@ independent stereo review.
 - [x] classify which quality deltas are owned by local timing, transient phase
   treatment, vertical coherence, or simultaneous resolution
 - [x] retain conflicting or R3-opaque behavior as an explicit planning gap
-- [ ] promote only cross-control signatures into architecture and contract
+- [x] promote only cross-control signatures into architecture and contract
   after direct public-state evidence closes the time-allocation gap
 
 ### Batch 29.6BG - Complete Signal Successor Contract
@@ -1321,8 +1321,13 @@ independent stereo review.
   and exact-time points. BF remains active for one public C++ state adapter.
   Evidence is in
   `docs/logs/2026-07/12-g10-029-rubber-band-mechanism-attribution.md`.
+- 2026-07-12: Batch 29.6BF closes with `48/48` repeated public R2 state rows.
+  No-reset retains detector curves but changes every exact-point and increment
+  sequence; no-lamination changes no study state. Contract `082` now separates
+  study, timing constraints, local schedule, event phase, and vertical phase.
+  R3 direct state remains publicly unsupported.
 
 ## Next Task
 
-Complete Batch 29.6BF with a research-only public C++ state adapter. Keep a new
-Signal synthesis candidate and product routing closed.
+Run Batch 29.6BG. Freeze the complete interacting Signal successor architecture
+and bounded tuning program before synthesis implementation.

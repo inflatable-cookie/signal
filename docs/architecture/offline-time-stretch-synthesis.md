@@ -523,13 +523,20 @@ placement in `23/30`, vertical coherence in `52/56`, and spectral residual in
 
 The architecture therefore requires five cooperating policies: offline study,
 bounded local time allocation, event-conditioned phase treatment, simultaneous
-multi-resolution synthesis, and linked-channel decisions. The exact time
-allocator remains a planning gap until Rubber Band's public C++ output-increment
-and exact-time-point evidence is captured; waveform displacement cannot define
-that schedule alone.
+multi-resolution synthesis, and linked-channel decisions. Waveform displacement
+alone could not define the allocator, so public C++ output-increment and
+exact-time-point evidence was required before stage ownership could close.
+
+Direct R2 state now separates those stages. Reset-disabled study produces the
+same detector curve as default but selects different exact-time points and a
+different output-increment schedule in every measured row. Lamination-disabled
+study is identical to default in every row. Signal's architecture must compute
+event evidence first, select bounded timing constraints second, construct a
+globally exact local schedule third, and apply event and vertical phase policy
+as distinct synthesis stages. Rubber Band's signed increment encoding does not
+transfer.
 
 ## Next Task
 
-Complete Batch 29.6BF with a public C++ state adapter for output increments,
-phase-reset curves, and exact-time points. Keep a new Signal synthesis
-candidate, product promotion, and routing closed.
+Run Batch 29.6BG. Freeze the complete interacting Signal successor architecture
+and bounded tuning program before synthesis implementation.

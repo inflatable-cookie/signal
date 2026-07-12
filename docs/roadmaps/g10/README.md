@@ -267,6 +267,5 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Complete Batch 29.6BF with a research-only public C++ state adapter for output
-increments, reset curves, and exact-time points. Keep a new Signal synthesis
-candidate, promotion, and product integration closed.
+Run Batch 29.6BG. Freeze the complete interacting Signal successor architecture
+and bounded tuning program before synthesis implementation.

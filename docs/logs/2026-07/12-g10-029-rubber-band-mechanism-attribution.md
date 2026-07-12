@@ -3,7 +3,7 @@
 Date: 2026-07-12
 Roadmap: `g10.029`
 Batch: `29.6BF`
-Status: active; direct-state gap remains
+Status: complete; complete-system contracting ready
 
 ## Promoted Findings
 
@@ -61,16 +61,35 @@ policy surface, not a fixed-window winner.
   impulse and dense-event rows.
 - R3 internals remain opaque. Standard/short deltas are system contrasts only.
 
-## Blocking Gap
+## Direct R2 State
 
-Rubber Band's C API exposes study and rendering but not output increments,
-phase-reset curves, or exact-time points. Those methods exist in the public C++
-API. Add one research-only adapter, run it twice over the event controls and
-five frozen modes, and record engine-confirmed sequence hashes and summaries.
+The research-only public C++ adapter runs hard impulse, dense impulses, soft
+onset, and tonal-plus-impulse controls at all four ratios under R2 default,
+no-reset, and no-lamination. All `48` rows repeat byte-for-byte. Every row
+confirms engine version `2`.
 
-Do not freeze Signal's local time allocator until that direct evidence exists.
+- R2 default versus no-lamination has identical output-increment, reset-curve,
+  exact-point, and input-increment hashes in `16/16` pairs.
+- R2 default versus no-reset has identical reset-curve and input-increment
+  hashes in `16/16`, but different output-increment and exact-point hashes in
+  `16/16`.
+- Default exact-point counts range from `1` to `7`; no-reset counts range from
+  `0` to `5` and are lower in every pair.
+- Input increments are fixed by ratio across controls and modes: `341` at
+  `1.0`, `256` at `0.75`, `272` at `1.25`, and `227` at `1.5`.
+- Output increments are signed diagnostic sequences. Their undocumented sign
+  encoding is retained as raw evidence and is not translated into Signal
+  behavior.
+
+This separates the system stages. Study computes the same event evidence even
+when reset application is disabled. Event application changes exact-time-point
+selection and the output schedule. Lamination changes neither; it belongs to
+downstream synthesis phase handling.
+
+R3 direct state remains unsupported by the public API. R3 architecture claims
+remain limited to standard/short rendered-output contrasts.
 
 ## Next Task
 
-Complete Batch 29.6BF with the public C++ state adapter. Keep Signal synthesis
-closed.
+Run Batch 29.6BG. Freeze one complete Signal study, local-time, event-phase,
+multi-resolution, vertical-phase, and linked-stereo architecture.
