@@ -701,6 +701,14 @@ distributions on event and negative controls. A calibrated mask opens only if
 those distributions exhibit a nonempty stable separating interval; otherwise
 the family returns to operator review.
 
+The distribution audit finds no separating interval. All `25` fixed pairs
+fail; chirp leakage never falls below `0.7759762445`, and cutoffs that suppress
+other negatives also erase mixed-event or isolated-impulse evidence. One
+boundary equal-energy stereo signature changes by `2.6562923909e-5`. Median
+smoothing and prominence would operate after this nonselective cell evidence,
+so they are not authorized as a rescue. The mixed-phase family is rejected for
+Signal's selector controls.
+
 Additional primary source:
 
 | Source | Confidence | Transfer boundary |

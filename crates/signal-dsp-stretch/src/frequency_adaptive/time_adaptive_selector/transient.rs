@@ -6,7 +6,10 @@ use super::super::types::{
 use super::controls::{controls, perturbed, Kind, FRAMES};
 use super::{hash_f64, hash_u64, ANCHOR_HOP, HASH_OFFSET};
 
+mod distribution;
 mod measure;
+
+pub(crate) use distribution::mixed_phase_distribution_review;
 
 pub(crate) fn transient_evidence_measurement_review() -> Review {
     let controls = controls();

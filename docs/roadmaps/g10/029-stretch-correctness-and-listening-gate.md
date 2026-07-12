@@ -634,12 +634,21 @@ independent stereo review.
 
 ### Batch 29.6AV - Mixed-Phase Distribution Audit
 
-- [ ] measure normalized-magnitude and mixed-phase distributions on the frozen
+- [x] measure normalized-magnitude and mixed-phase distributions on the frozen
   controls, stereo variants, and perturbations without producing a detector
-- [ ] prove cell-accounting, ordered finite quantiles, scale/polarity/stereo
+- [x] prove cell-accounting, ordered finite quantiles, scale/polarity/stereo
   closure, perturbation coverage, deterministic hashes, and exact repeat
-- [ ] open calibration contracting only on a stable event/negative separating
+- [x] open calibration contracting only on a stable event/negative separating
   interval; otherwise return the evidence family to operator review
+
+### Batch 29.6AW - Transient-Evidence Family Review
+
+- [ ] choose a different transient evidence family or pause the time-adaptive
+  successor lane
+- [ ] do not infer median smoothing, prominence, asymmetric mixed-phase bands,
+  a larger calibration grid, or relaxed gates
+- [ ] keep schedule mapping, phase, stretched synthesis, corpus, dynamic ratio,
+  cache, and routing closed until a new ready card exists
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -1180,8 +1189,12 @@ independent stereo review.
   Batch 29.6AV must prove distribution separation before threshold fitting.
   Evidence is in
   `docs/logs/2026-07/12-g10-029-mixed-phase-calibration-direction.md`.
+- 2026-07-12: Batch 29.6AV rejected mixed-phase calibration. All `25` audit
+  pairs overlap, chirp leakage remains at least `0.7759762445`, and boundary
+  stereo equivalence changes by `2.6562923909e-5`. Evidence is in
+  `docs/logs/2026-07/12-g10-029-mixed-phase-distribution-rejection.md`.
 
 ## Next Task
 
-Run Batch 29.6AV mixed-phase distribution audit. Do not produce a mask, peak,
-schedule, phase, stretched synthesis, corpus output, or routing change.
+Operator review Batch 29.6AW. No implementation batch is ready; do not infer a
+new evidence family or mixed-phase rescue.

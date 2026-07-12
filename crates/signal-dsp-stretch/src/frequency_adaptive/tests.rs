@@ -645,6 +645,59 @@ fn transient_evidence_measurement_selects_terminal_direction() {
 }
 
 #[test]
+#[cfg(not(debug_assertions))]
+fn mixed_phase_distribution_audit_selects_terminal_direction() {
+    let first = mixed_phase_distribution_review();
+    let repeated = mixed_phase_distribution_review();
+    assert_eq!(first, repeated);
+    assert_eq!(first.controls.len(), 24);
+    assert_eq!(first.audit_pairs.len(), 25);
+    eprintln!(
+        "mixed_phase_distribution structural={:?} equivalence={:.12e} controls={:?} pairs={:?} evidence={:016x} direction={:?}",
+        first.structural_failures,
+        first.maximum_equivalence_error,
+        first.equivalence_errors,
+        first
+            .audit_pairs
+            .iter()
+            .map(|pair| (
+                pair.magnitude_cutoff,
+                pair.mixed_phase_radius,
+                pair.event_recall,
+                pair.negative_leakage,
+                pair.separates,
+            ))
+            .collect::<Vec<_>>(),
+        first.evidence_hash,
+        first.direction,
+    );
+    assert_eq!(first.structural_failures, [0, 0, 0, 1]);
+    assert!((first.maximum_equivalence_error - 2.656292390935e-5).abs() <= 1.0e-15);
+    assert_eq!(
+        first
+            .equivalence_errors
+            .iter()
+            .enumerate()
+            .max_by(|left, right| left.1.total_cmp(right.1))
+            .map(|(index, _)| index),
+        Some(7)
+    );
+    assert!(first.audit_pairs.iter().all(|pair| !pair.separates));
+    assert_eq!(
+        first.direction,
+        StretchMixedPhaseDistributionDirection::StructuralFailure
+    );
+    assert!(first
+        .controls
+        .iter()
+        .all(|control| control.bands.len() == 10
+            && control.structural_counts[0] == control.structural_counts[1]
+            && control.structural_counts[3] == 0
+            && control.hashes.iter().all(|hash| *hash != 0)));
+    assert_eq!(first.evidence_hash, 0x5b3b_ecee_9074_5c1f);
+}
+
+#[test]
 fn common_grid_phase_transport_rejects_high_band_phase_aliasing() {
     for frequency in [312.5_f32, 1_000.0] {
         let input = (0..24_576)

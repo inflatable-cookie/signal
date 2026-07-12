@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; mixed-phase distribution audit ready
+Status: active; mixed-phase evidence stopped for operator review
 Owner: dsp
 Updated: 2026-07-12
 Related contracts: `046`, `048`, `049`
@@ -1809,6 +1809,28 @@ combine another detector or relax existing gates. Calibration, smoothing,
 prominence, schedule mapping, phase, stretched synthesis, corpus, dynamic
 ratio, cache identity, and routing remain closed.
 
+Batch 29.6AV rejects calibration of this mixed-phase evidence. None of the `25`
+fixed magnitude-cutoff/radius pairs separates every event and negative family.
+At the tightest phase radius `0.125`, chirp leakage remains at least
+`0.7759762445`; with no magnitude cutoff, mixed-event recall is only
+`0.1161677536`. Raising the cutoff to `0.01` reduces that recall to
+`0.0078331429`; `0.03` also removes the isolated-impulse evidence. Wider phase
+radii improve mixed recall only while negative leakage remains far above the
+`0.01` cap.
+
+Cell accounting, quantile ordering, finiteness, repeat, gain, polarity, hard
+pan, and channel-swap checks pass. Equal-energy stereo changes the boundary
+control's cutoff distribution by `2.6562923909e-5`, so the `1e-12` equivalence
+gate also fails. Structural failures are `[0,0,0,1]`; evidence hash
+`5b3becee90745c1f` repeats.
+
+The mixed-phase value is not independently selective for Signal's chirp and
+event controls on this analysis lattice. Do not add median smoothing, peak
+prominence, asymmetric thresholds, or a larger calibration grid by inference.
+The mixed-phase family returns to operator review. Schedule mapping, phase,
+stretched synthesis, corpus, dynamic ratio, cache identity, and routing remain
+closed.
+
 ### Rule 27: synthesize a protected centre, not a circular endpoint
 
 Extend the source in both directions with whole-sample even reflection,
@@ -1864,5 +1886,5 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Run Batch 29.6AV mixed-phase distribution audit. Produce no detector decision,
-schedule, phase, stretched synthesis, corpus output, or routing change.
+Operator review must choose a different transient evidence family or pause the
+time-adaptive successor lane. No implementation batch is ready.

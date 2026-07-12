@@ -8,7 +8,7 @@ use super::{AnchorEvidence, ControlEvidence, FRAMES};
 const WINDOW: usize = 2_048;
 const FIRST_CENTER: isize = -(2 * ANCHOR_HOP as isize);
 const LAST_CENTER: isize = FRAMES as isize + ANCHOR_HOP as isize;
-const MIXED_SCALE: f64 = std::f64::consts::TAU * (2 * ANCHOR_HOP) as f64 / FFT as f64;
+pub(super) const MIXED_SCALE: f64 = std::f64::consts::TAU * (2 * ANCHOR_HOP) as f64 / FFT as f64;
 
 pub(super) fn measure(control: usize, channels: &[&[f64]]) -> ControlEvidence {
     let (spectra, reflected_reads) = spectra(channels);
@@ -93,7 +93,7 @@ pub(super) fn measure(control: usize, channels: &[&[f64]]) -> ControlEvidence {
     evidence
 }
 
-fn spectra(channels: &[&[f64]]) -> (Vec<Vec<Vec<Complex64>>>, usize) {
+pub(super) fn spectra(channels: &[&[f64]]) -> (Vec<Vec<Vec<Complex64>>>, usize) {
     let mut planner = FftPlanner::<f64>::new();
     let fft = planner.plan_fft_forward(FFT);
     let window = window(WINDOW);

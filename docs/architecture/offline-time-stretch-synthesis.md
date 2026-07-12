@@ -458,7 +458,15 @@ therefore measures normalized-magnitude and mixed-phase distributions for event
 and negative controls. Only demonstrated separation may open a later calibrated
 mask contract.
 
+That distribution audit rejects calibration. Every fixed cutoff/radius pair
+overlaps; chirp magnitude remains strongly concentrated near the nominal
+impulsive mixed-phase value, while the mixed event loses most of its evidence
+under useful magnitude cutoffs. Boundary equal-energy stereo also crosses a
+cutoff boundary. The mixed-phase family is stopped before smoothing,
+prominence, schedule mapping, or audio.
+
 ## Next Task
 
-Run the report-only mixed-phase distribution audit. Keep calibration, schedule
-mapping, phase, stretched synthesis, corpus, dynamic ratio, and routing closed.
+Operator review must choose a different transient evidence family or pause.
+Keep schedule mapping, phase, stretched synthesis, corpus, dynamic ratio, and
+routing closed.

@@ -982,6 +982,86 @@ pub struct StretchTransientEvidenceReview {
     pub direction: StretchTransientEvidenceDirection,
 }
 
+/// Direction selected by the mixed-phase distribution audit.
+#[cfg(all(test, not(debug_assertions)))]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum StretchMixedPhaseDistributionDirection {
+    /// At least one frozen audit pair separates every event and negative family.
+    Calibratable,
+    /// Structurally valid event and negative distributions overlap.
+    Overlapping,
+    /// Cell accounting, finiteness, equivalence, or repeat evidence failed.
+    StructuralFailure,
+}
+
+/// One normalized-magnitude band from the mixed-phase distribution audit.
+#[cfg(all(test, not(debug_assertions)))]
+#[derive(Clone, Debug, PartialEq)]
+pub struct StretchMixedPhaseBandEvidence {
+    /// Inclusive band index in ascending normalized magnitude.
+    pub band: usize,
+    /// Whether the samples belong to a declared-event neighborhood.
+    pub event: bool,
+    /// Assigned cell count.
+    pub cell_count: usize,
+    /// Sum of anchor-frame magnitudes.
+    pub magnitude_sum: f64,
+    /// Mixed-phase quantiles at the nine frozen probabilities.
+    pub quantiles: [f64; 9],
+}
+
+/// Distribution evidence for one frozen control and perturbation state.
+#[cfg(all(test, not(debug_assertions)))]
+#[derive(Clone, Debug, PartialEq)]
+pub struct StretchMixedPhaseControlEvidence {
+    /// Frozen control index.
+    pub control: usize,
+    /// Whether deterministic relative-noise perturbation was applied.
+    pub perturbed: bool,
+    /// Ten event/non-event normalized-magnitude bands.
+    pub bands: Vec<StretchMixedPhaseBandEvidence>,
+    /// Nonzero-energy cells, assigned cells, reflected reads, and non-finite values.
+    pub structural_counts: [usize; 4],
+    /// Input and distribution hashes.
+    pub hashes: [u64; 2],
+}
+
+/// One cutoff/radius pair in the fixed mixed-phase audit lattice.
+#[cfg(all(test, not(debug_assertions)))]
+#[derive(Clone, Debug, PartialEq)]
+pub struct StretchMixedPhaseAuditPairEvidence {
+    /// Normalized-magnitude lower cutoff.
+    pub magnitude_cutoff: f64,
+    /// Radius around ideal impulsive mixed phase `1`.
+    pub mixed_phase_radius: f64,
+    /// Minimum event recall for impulse, dense, boundary, and mixed families.
+    pub event_recall: [f64; 4],
+    /// Maximum leakage for steady, chirp, and noise families.
+    pub negative_leakage: [f64; 3],
+    /// Whether this pair meets the frozen separation limits.
+    pub separates: bool,
+}
+
+/// Complete release-only mixed-phase distribution audit.
+#[cfg(all(test, not(debug_assertions)))]
+#[derive(Clone, Debug, PartialEq)]
+pub struct StretchMixedPhaseDistributionReview {
+    /// Base and perturbed evidence for all twelve frozen controls.
+    pub controls: Vec<StretchMixedPhaseControlEvidence>,
+    /// The fixed five-by-five audit lattice.
+    pub audit_pairs: Vec<StretchMixedPhaseAuditPairEvidence>,
+    /// Accounting, quantile-order, non-finite, and equivalence failures.
+    pub structural_failures: [usize; 4],
+    /// Maximum normalized distribution-signature equivalence error.
+    pub maximum_equivalence_error: f64,
+    /// Maximum gain, polarity, and stereo signature error per control.
+    pub equivalence_errors: Vec<f64>,
+    /// Stable aggregate evidence hash.
+    pub evidence_hash: u64,
+    /// Selected continuation direction.
+    pub direction: StretchMixedPhaseDistributionDirection,
+}
+
 /// Numerical evidence for one bounded Hermitian Jacobi solve.
 #[derive(Clone, Debug, PartialEq)]
 pub struct StretchCommonGridJacobiEvidence {
