@@ -5,14 +5,14 @@ use super::{hash, BASE_HOP, HASH_OFFSET};
 const LAYERS: [usize; 3] = [512, 2_048, 8_192];
 
 #[derive(Clone, Debug, PartialEq)]
-pub(super) struct Study {
+pub(crate) struct Study {
     pub evidence: Vec<f64>,
     pub agreement: Vec<usize>,
     pub layer_peaks: [Vec<usize>; 3],
     pub hash: u64,
 }
 
-pub(super) fn analyze(channels: &[Vec<f64>], source_frames: usize) -> Study {
+pub(crate) fn analyze(channels: &[Vec<f64>], source_frames: usize) -> Study {
     let frame_count = source_frames / BASE_HOP + 1;
     let mut layer_scores: [Vec<f64>; 3] = std::array::from_fn(|_| vec![0.0; frame_count]);
     let mut planner = FftPlanner::<f64>::new();
@@ -98,7 +98,7 @@ pub(super) fn analyze(channels: &[Vec<f64>], source_frames: usize) -> Study {
     result
 }
 
-pub(super) fn select(study: &Study, threshold: f64, required_layers: usize) -> Vec<usize> {
+pub(crate) fn select(study: &Study, threshold: f64, required_layers: usize) -> Vec<usize> {
     let normalized = robust_normalize(&study.evidence);
     let mut points = vec![0];
     for frame in 1..normalized.len() - 1 {

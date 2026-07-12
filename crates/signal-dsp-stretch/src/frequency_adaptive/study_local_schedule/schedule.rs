@@ -1,12 +1,12 @@
 use super::{hash, HASH_OFFSET};
 
 #[derive(Clone, Debug, PartialEq)]
-pub(super) struct Schedule {
-    pub positions: Vec<usize>,
-    pub hash: u64,
+pub(crate) struct Schedule {
+    pub(crate) positions: Vec<usize>,
+    pub(crate) hash: u64,
 }
 
-pub(super) fn build_schedule(
+pub(crate) fn build_schedule(
     source_frames: usize,
     base_hop: usize,
     ratio: f64,

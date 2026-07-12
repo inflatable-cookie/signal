@@ -267,6 +267,6 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Run Batch 29.6BJ. Transport all three layers through actual source/output
-intervals, then prove event correction and cross-resolution vertical alignment
-as separate phase-only stages. Keep tuning closed.
+Run Batch 29.6BK. Execute at most `108` complete configurations through the
+frozen hard gates and Pareto selection, then export at most three concealed
+development-listening candidates. Keep holdout and promotion closed.

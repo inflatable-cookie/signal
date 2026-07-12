@@ -62,6 +62,8 @@ mod time_adaptive_painless;
 #[cfg(all(test, not(debug_assertions)))]
 pub(crate) use time_adaptive_painless::time_adaptive_painless_reconstruction_review;
 #[cfg(all(test, not(debug_assertions)))]
+mod complete_phase_synthesis;
+#[cfg(all(test, not(debug_assertions)))]
 mod oracle_adaptive;
 #[cfg(all(test, not(debug_assertions)))]
 mod simultaneous_multi_window;

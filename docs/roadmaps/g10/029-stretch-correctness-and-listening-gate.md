@@ -751,10 +751,10 @@ independent stereo review.
 
 ### Batch 29.6BJ - Complete Synthetic Phase And Synthesis Proof
 
-- [ ] transport each layer through actual source/output intervals
-- [ ] prove event correction and cross-resolution vertical alignment are
+- [x] transport each layer through actual source/output intervals
+- [x] prove event correction and cross-resolution vertical alignment are
   separately live without changing schedule or magnitude
-- [ ] pass identity, exact length, coverage, finiteness, symmetry, tone, event,
+- [x] pass identity, exact length, coverage, finiteness, symmetry, tone, event,
   boundary, stereo-decision, and repeat gates
 
 ### Batch 29.6BK - Bounded Complete-System Tuning
@@ -1385,10 +1385,16 @@ independent stereo review.
   Enabled/disabled evidence and channel-order decisions are exact. Every
   schedule has positive bounded hops, zero selected-event movement, exact final
   closure, deterministic hashes, and measurable event-local unity improvement.
+- 2026-07-12: Batch 29.6BJ proves complete synthetic phase and synthesis.
+  Ordinary transport uses actual source/output intervals in every layer. Event
+  correction performs `34,952` short-layer bin resets; vertical alignment makes
+  `2,016` projected-reference assignments. Both stages are separately live
+  without schedule or magnitude changes. Exact length, coverage, identity,
+  finiteness, symmetry, tone, event, boundary, linked-decision, and repeat gates
+  pass across `0.75x`, `1.0x`, and `1.5x` linked-channel controls.
 
 ## Next Task
 
-Run Batch 29.6BJ. Transport all three layers through actual source/output
-intervals, then prove event correction and cross-resolution vertical alignment
-as separate phase-only stages. Keep tuning, corpus rendering, promotion, and
-routing closed.
+Run Batch 29.6BK. Execute at most `108` complete configurations through the
+frozen hard gates and Pareto selection, then export at most three concealed
+development-listening candidates. Keep holdout, promotion, and routing closed.

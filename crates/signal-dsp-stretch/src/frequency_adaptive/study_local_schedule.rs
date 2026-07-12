@@ -1,5 +1,5 @@
-mod schedule;
-mod study;
+pub(super) mod schedule;
+pub(super) mod study;
 
 use super::HASH_OFFSET;
 use schedule::{build_schedule, Schedule};

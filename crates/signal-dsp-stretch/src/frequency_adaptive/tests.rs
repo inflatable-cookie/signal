@@ -478,6 +478,28 @@ fn linked_study_local_schedule_selects_phase_proof_direction() {
 
 #[test]
 #[cfg(not(debug_assertions))]
+fn complete_phase_synthesis_selects_bounded_tuning_direction() {
+    use super::complete_phase_synthesis::{review, Direction};
+
+    let first = review();
+    let repeated = review();
+    eprintln!("complete_phase_synthesis {first:?}");
+    assert_eq!(first, repeated);
+    assert!(first.identity_peak_error <= 5.0e-12, "{first:?}");
+    assert_eq!(first.structural_failures, [0; 7], "{first:?}");
+    assert!(first.event_phase_changes > 0, "{first:?}");
+    assert!(first.vertical_phase_changes > 0, "{first:?}");
+    assert!(first.tone_frequency_error_hz <= 2.0, "{first:?}");
+    assert!(first.maximum_event_error <= 256, "{first:?}");
+    assert!(first.maximum_symmetry_error <= 2.0e-10, "{first:?}");
+    assert!(first.maximum_imaginary_residue <= 2.0e-10, "{first:?}");
+    assert_eq!(first.non_finite_values, 0);
+    assert!(first.hashes.iter().all(|hash| *hash != 0));
+    assert_eq!(first.direction, Direction::BoundedCompleteSystemTuning);
+}
+
+#[test]
+#[cfg(not(debug_assertions))]
 fn renyi_time_resolution_selection_selects_schedule_direction() {
     let first = renyi_time_resolution_selection_review();
     let repeated = renyi_time_resolution_selection_review();

@@ -144,5 +144,6 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Run `g10.029` Batch 29.6BJ under contract `082`: prove actual-hop phase
-transport, event correction, and cross-resolution vertical alignment.
+Run `g10.029` Batch 29.6BK under contract `082`: execute the bounded complete
+configuration grid, hard gates, Pareto selection, and concealed development
+listening export.
