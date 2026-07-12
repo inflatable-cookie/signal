@@ -170,7 +170,8 @@ implementation remains Signal-owned.
   29.6AW is an evidence-family review stop. Operator direction selects one
   evidence-only median-HPSS contract; Batch 29.6AX must prove it before mapping.
   It rejects across every negative and event family despite passing stereo;
-  Batch 29.6AY is a selector-abstraction review stop.
+  Batch 29.6AY stops automatic-selector churn. Batch 29.6AZ freezes an
+  oracle-scheduled end-to-end candidate; value must pass before detection reopens.
 - Offline artifacts and RealtimePreview have bounded contracts and prototype
   paths, but callback-safe preview integration and fully streaming artifact
   output remain gated until their owning source-fill/cache contracts exist.
@@ -260,6 +261,6 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Operator review selector abstraction at Batch 29.6AY. No implementation batch
-is ready; keep component audio, schedule mapping, phase, stretched synthesis,
-corpus, linked stereo synthesis, dynamic ratio, and product integration closed.
+Run Batch 29.6BA oracle adaptive synthesis and the targeted 15-row mono gate.
+Keep automatic selection, stereo, dynamic ratio, promotion, and product
+integration closed.

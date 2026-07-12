@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; transient evidence stopped for operator review
+Status: active; oracle adaptive synthesis proof ready
 Owner: dsp
 Updated: 2026-07-12
 Related contracts: `046`, `048`, `049`
@@ -1907,6 +1907,66 @@ rejection, this stops percussive-occupancy detector research for operator
 review. Schedule mapping, phase, stretched synthesis, corpus, dynamic ratio,
 cache identity, and routing remain closed.
 
+### Rule 26R: prove oracle adaptive synthesis before automatic selection
+
+Batch 29.6AY stops automatic-selector research. Since Batch 29.6AI, selector
+work has proven no stretched audio. Rényi, mixed-phase, calibrated mixed-phase,
+and median-HPSS evidence all reject, while the time-adaptive painless transform
+itself remains valid. Do not choose another detector until a declared schedule
+demonstrates material end-to-end value.
+
+Batch 29.6AZ freezes one oracle candidate. Reuse the passing Batch 29.6AI
+`4096`-bin square-root-Hann windows at `512`, `1024`, `2048`, and `4096` frames.
+For every manifest-declared transient centre, request the unchanged symmetric
+island: `512` within `256` frames, `1024` through `768`, `2048` through `1792`,
+and `4096` outside. Overlapping requests choose the shorter window. Adjacent
+levels differ by at most one; the next frame centre advances by one quarter of
+the shorter adjacent window. No detector runs in this path.
+
+At fixed duration ratio `r`, map each source centre `A_n` to absolute output
+centre `S_n=round(r*A_n)` relative to the unpadded source origin. Use actual
+adjacent source and output intervals; do not accumulate a rounded constant hop.
+Generalize the current identity-locked phase-vocoder policy to those intervals:
+estimate each bin's instantaneous frequency from the principal source-frame
+phase increment and advance it by `S_n-S_(n-1)`. Retain the current deterministic
+spectral-peak ownership and relative phase locking within each frame. Do not
+reset phase at declared events, crossfade waveforms, separate components, or
+apply local unity stretch.
+
+Analyze with the scheduled window and common FFT. On the output grid compute
+the exact diagonal frame operator `Sout[t]=sum_n g_n[t-S_n]^2` and synthesis
+window `gamma_n[t]=g_n[t-S_n]/Sout[t]`. Use whole-sample source reflection and a
+two-sided output guard covering every scheduled window. After normalized real
+overlap-add, crop exactly `round(source_frames*r)` from the guarded origin. Do
+not normalize, fade, anchor, zero-fill, or endpoint-correct the crop.
+
+Batch 29.6BA first proves identity and fixed-ratio mechanism behavior on the
+Batch 29.6AI tone, chirp, impulse, dense, boundary, mixed, noise, and silence
+controls. Report schedule legality, window counts, source/output centres and hop
+extrema, mapping error, frame-operator bounds, uncovered frames, reflected
+reads, coefficient/phase counts, conjugate symmetry, imaginary residue,
+non-finite values, exact length, endpoint energy, event placement, crest,
+replicas, tonal texture, and stable schedule/coefficient/output hashes.
+
+The same batch then renders the existing `15` mono listening rows at `0.75`,
+`1.25`, and `1.5` using manifest-supplied source-frame transient intervals.
+Seed annotations may come from the existing event trace but must be frozen in a
+sidecar before rendering and must not be recomputed by the candidate. Compare
+source-relative current Signal, oracle candidate, and Rubber Band evidence.
+Require zero uncovered/non-finite output, exact length, no added silence,
+deterministic repeat, identity peak error at most `1e-5`, and no objective
+regression beyond current Signal in event placement, post-attack replicas,
+endpoint integrity, or the frozen tonal movement/static/unsupported measures.
+The `L001` `0.75x` crest target remains at least `3 dB` better than current.
+
+Passing mechanism and non-regression gates opens only Batch 29.6BB: a concealed
+four-way mono listening pack over those same rows. It does not open automatic
+selection, the 60-row promotion gate, stereo, dynamic ratio, cache identity, or
+product routing. Failure rejects the time-adaptive synthesis hypothesis before
+more detector work. Listening must find a repeatable material improvement in
+attack quality or long-stretch texture without a new broad defect; otherwise
+Batch 29.6BC retires the time-adaptive successor lane.
+
 ### Rule 27: synthesize a protected centre, not a circular endpoint
 
 Extend the source in both directions with whole-sample even reflection,
@@ -1962,5 +2022,5 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Operator review must choose a different selector abstraction or pause the
-time-adaptive successor lane. No implementation batch is ready.
+Run Batch 29.6BA oracle adaptive synthesis and the targeted 15-row mono gate.
+Do not implement automatic selection, stereo, dynamic ratio, or product routing.

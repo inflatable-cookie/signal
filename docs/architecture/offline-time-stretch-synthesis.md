@@ -479,8 +479,21 @@ fail despite different cell evidence. The common failed abstraction is reducing
 percussive occupancy to local event peaks. Selector work returns to operator
 review before another evidence family or schedule mapping.
 
+The strategy checkpoint stops that loop. Automatic selection is now downstream
+of an oracle value proof. One end-to-end candidate uses manifest-declared event
+intervals to drive the passing four-window painless schedule, maps absolute
+source centres to fixed-ratio output centres, generalizes the current
+identity-locked phase policy to actual variable hops, and synthesizes through
+the exact output-side diagonal dual. This tests adaptive magnitude resolution
+without detector error, component branches, phase resets, or local time warps.
+
+The first real-source gate is the existing 15-row mono listening set, not the
+full 60-row promotion corpus. Objective non-regression and the existing `L001`
+crest target precede a concealed source/current/oracle/Rubber-Band comparison.
+If perfect declared scheduling has no material audible value, the time-adaptive
+successor is retired rather than followed by another detector.
+
 ## Next Task
 
-Operator review must choose a different selector abstraction or pause. Keep
-component audio, schedule mapping, phase, stretched synthesis, corpus, dynamic
-ratio, and routing closed.
+Run oracle adaptive synthesis and the targeted mono gate. Keep automatic
+selection, component audio, stereo, dynamic ratio, promotion, and routing closed.

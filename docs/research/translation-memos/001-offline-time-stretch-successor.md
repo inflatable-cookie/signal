@@ -726,6 +726,14 @@ fail at the same occupancy-to-local-peak boundary, further percussive mask
 tuning is not supported. The next research decision must revisit the selector
 abstraction, not add another occupancy mask.
 
+The strategy checkpoint moves automatic selection behind an oracle value proof.
+Manifest-declared event intervals now drive the already proven time-adaptive
+painless schedule through one end-to-end fixed-ratio render. This separates the
+architectural question—whether shorter event windows and longer stationary
+windows improve actual audio—from detector quality. Only a repeatable objective
+and concealed-listening win can reopen selector research. Failure retires the
+time-adaptive successor rather than selecting another salience measure.
+
 Additional primary source:
 
 | Source | Confidence | Transfer boundary |

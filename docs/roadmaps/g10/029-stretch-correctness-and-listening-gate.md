@@ -661,12 +661,45 @@ independent stereo review.
 
 ### Batch 29.6AY - Selector-Abstraction Operator Review
 
-- [ ] choose a non-occupancy selector abstraction or pause the time-adaptive
-  successor lane
-- [ ] do not infer another percussive mask, median tuning, peak tuning, relaxed
-  event gates, or relaxed perturbation limits
-- [ ] keep schedule mapping, phase, stretched synthesis, corpus, dynamic ratio,
-  cache, and routing closed until a new ready card exists
+- [x] stop automatic-selector work after repeated report-only rejection and
+  classify the current path as diminishing returns
+- [x] move automatic selection behind an oracle end-to-end value proof
+- [x] keep another detector, the 60-row gate, stereo, dynamic ratio, cache, and
+  routing closed
+
+### Batch 29.6AZ - Oracle Adaptive Synthesis Contract
+
+- [x] freeze manifest-declared four-window islands, absolute output-centre
+  mapping, actual-hop identity-locked phase transport, and output-side dual OLA
+- [x] define synthetic mechanism, 15-row mono objective, `L001`, determinism,
+  and stop gates before implementation
+- [x] open one oracle candidate without automatic selection, component
+  branches, phase reset, local time warp, stereo, or product routing
+
+### Batch 29.6BA - Oracle Adaptive Synthesis Gate
+
+- [ ] implement the frozen oracle renderer and prove synthetic identity,
+  coverage, placement, phase, integrity, and deterministic evidence
+- [ ] freeze the 15-row source-frame interval sidecar before candidate rendering
+  and compare current Signal, oracle, and Rubber Band evidence
+- [ ] open concealed listening only if every mechanism/non-regression gate and
+  the `L001` `3 dB` crest target pass; otherwise retire the hypothesis
+
+### Batch 29.6BB - Oracle Concealed Listening
+
+- [ ] export source/current/oracle/Rubber-Band mono comparisons for the existing
+  15 listening rows
+- [ ] record repeatable attack and long-stretch texture preference plus any new
+  broad defect
+- [ ] open selector research only on material oracle value; otherwise retire
+  time-adaptive synthesis
+
+### Batch 29.6BC - Oracle Value Decision
+
+- [ ] promote the proven oracle schedule behavior into selector requirements,
+  or close the time-adaptive successor lane
+- [ ] do not reinterpret a neutral or mixed listening result as passage
+- [ ] keep stereo, dynamic ratio, promotion, cache, and routing separately gated
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -1219,8 +1252,12 @@ independent stereo review.
   but every negative family peaks, all event families fail, and three impulse
   controls fail perturbation. Evidence is in
   `docs/logs/2026-07/12-g10-029-median-hpss-evidence-rejection.md`.
+- 2026-07-12: Batch 29.6AY stops automatic-selector churn. Batch 29.6AZ freezes
+  one oracle-scheduled end-to-end candidate; automatic selection reopens only
+  after objective and concealed-listening value. Evidence is in
+  `docs/logs/2026-07/12-g10-029-oracle-adaptive-refocus.md`.
 
 ## Next Task
 
-Operator review Batch 29.6AY. No implementation batch is ready; do not infer
-another percussive mask or local-peak detector.
+Run Batch 29.6BA oracle adaptive synthesis and targeted 15-row mono gate. Do not
+implement automatic selection, stereo, dynamic ratio, or product routing.
