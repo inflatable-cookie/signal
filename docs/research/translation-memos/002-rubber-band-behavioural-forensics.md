@@ -99,5 +99,5 @@ Promoted into:
 
 ## Next Task
 
-Implement the frozen `264`-row synthetic comparator measurement and public-API
-capability receipt.
+Attribute only repeatable cross-control signatures from the passing `264`-row
+synthetic comparator measurement.

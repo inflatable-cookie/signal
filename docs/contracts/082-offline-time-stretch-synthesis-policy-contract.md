@@ -2117,6 +2117,6 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Run Batch 29.6BE. Implement the frozen 264-row synthetic comparator measurement
-and capability receipt. Do not implement a new Signal synthesis candidate or
-product routing.
+Run Batch 29.6BF. Attribute only repeatable cross-control comparator signatures
+and retain opaque behavior as planning gaps. Do not implement a new Signal
+synthesis candidate or product routing.

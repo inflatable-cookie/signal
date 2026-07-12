@@ -514,6 +514,6 @@ renders is not assumed sufficient.
 
 ## Next Task
 
-Run the frozen `264`-row Rubber Band behavioural measurement and capability
-receipt. Keep a new Signal synthesis candidate, product promotion, and routing
-closed until cross-control mechanism signatures select a complete architecture.
+Attribute the passing `264`-row Rubber Band measurement across controls and
+ratios. Keep a new Signal synthesis candidate, product promotion, and routing
+closed until repeatable mechanism signatures select a complete architecture.

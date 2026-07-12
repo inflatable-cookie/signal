@@ -708,11 +708,11 @@ independent stereo review.
 
 ### Batch 29.6BE - Rubber Band Behavioural Measurement
 
-- [ ] extend the existing external benchmark harness with the frozen synthetic
+- [x] extend the existing external benchmark harness with the frozen synthetic
   probes and deterministic report
-- [ ] measure local timing, transient phase-treatment, vertical coherence, and
+- [x] measure local timing, transient phase-treatment, vertical coherence, and
   R3 standard-versus-short multi-resolution signatures
-- [ ] stop for tool or evidence redesign if signatures do not repeat across
+- [x] stop for tool or evidence redesign if signatures do not repeat across
   controls; do not infer architecture from one row
 
 ### Batch 29.6BF - Comparator Mechanism Attribution
@@ -1307,9 +1307,14 @@ independent stereo review.
   required CLI mode; public headers and libraries are present but adapter
   capability must be receipted. Evidence is in
   `docs/logs/2026-07/12-g10-029-rubber-band-behavioural-probe-contract.md`.
+- 2026-07-12: Batch 29.6BE passes the synthetic measurement gate. All `264`
+  rows have exact length, finite unclipped output, and bit-identical repeat
+  renders. The report retains distinct R2 reset/lamination and R3
+  standard/short signatures. Public direct-state evidence is honestly
+  unsupported pending an adapter. Evidence is in
+  `docs/logs/2026-07/12-g10-029-rubber-band-behavioural-measurement.md`.
 
 ## Next Task
 
-Run Batch 29.6BE. Implement the frozen `264`-row synthetic comparator
-measurement and capability receipt. Keep a new Signal synthesis candidate and
-product routing closed.
+Run Batch 29.6BF. Attribute only repeatable cross-control comparator
+signatures. Keep a new Signal synthesis candidate and product routing closed.

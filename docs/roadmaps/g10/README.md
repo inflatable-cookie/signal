@@ -267,6 +267,6 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Run Batch 29.6BE. Implement the frozen `264`-row Rubber Band synthetic
-measurement and capability receipt. Keep a new Signal synthesis candidate,
-promotion, and product integration closed.
+Run Batch 29.6BF. Attribute only repeatable cross-control Rubber Band
+signatures. Keep a new Signal synthesis candidate, promotion, and product
+integration closed.
