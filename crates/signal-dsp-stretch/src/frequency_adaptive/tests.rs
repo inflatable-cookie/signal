@@ -428,6 +428,29 @@ fn time_adaptive_painless_reconstruction_selects_identity_direction() {
 
 #[test]
 #[cfg(not(debug_assertions))]
+fn simultaneous_multi_window_union_selects_study_direction() {
+    use super::simultaneous_multi_window::{review, Direction};
+
+    let first = review();
+    let repeated = review();
+    assert_eq!(first, repeated);
+    assert_eq!(first.layer_lengths, [512, 2_048, 8_192]);
+    assert!(first.empty_input_exact);
+    assert_eq!(first.structural_failures, [0; 3]);
+    assert!(first.frame_bounds[0] > 0.0, "{first:?}");
+    assert!(first.frame_bounds[2] <= 1.000_001, "{first:?}");
+    assert!(first.maximum_errors[0] <= 2.0e-12, "{first:?}");
+    assert!(first.maximum_errors[1] <= 2.0e-12, "{first:?}");
+    assert!(first.maximum_errors[2] <= 2.0e-10, "{first:?}");
+    assert!(first.maximum_errors[3] <= 2.0e-10, "{first:?}");
+    assert_eq!(first.non_finite_values, 0);
+    assert!(first.hashes.iter().all(|hash| *hash != 0));
+    assert_eq!(first.direction, Direction::StudyAndScheduleProof);
+    eprintln!("simultaneous_multi_window {first:?}");
+}
+
+#[test]
+#[cfg(not(debug_assertions))]
 fn renyi_time_resolution_selection_selects_schedule_direction() {
     let first = renyi_time_resolution_selection_review();
     let repeated = renyi_time_resolution_selection_review();

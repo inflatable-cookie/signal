@@ -267,5 +267,6 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Run Batch 29.6BH. Prove the simultaneous `512/2048/8192` union frame and exact
-identity dual before study, schedule, phase modification, or tuning.
+Run Batch 29.6BI. Add linked continuous study evidence, exact-point selection,
+and a positive bounded integer-hop schedule with exact final closure. Keep phase
+modification and tuning closed.

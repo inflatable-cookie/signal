@@ -734,11 +734,11 @@ independent stereo review.
 
 ### Batch 29.6BH - Simultaneous Multi-Window Union Proof
 
-- [ ] prove the `512/2048/8192` square-root-Hann union frame, exact output-side
+- [x] prove the `512/2048/8192` square-root-Hann union frame, exact output-side
   canonical dual, reflected boundaries, and identity reconstruction
-- [ ] report layer/frame counts, frame bounds, coverage, work, errors, and
+- [x] report layer/frame counts, frame bounds, coverage, work, errors, and
   stable coefficient/output hashes across frozen controls
-- [ ] keep study, schedule modification, phase modification, tuning, corpus,
+- [x] keep study, schedule modification, phase modification, tuning, corpus,
   promotion, and routing closed until the union passes
 
 ### Batch 29.6BI - Study And Local Schedule Proof
@@ -1373,8 +1373,15 @@ independent stereo review.
   union frame, separate event/vertical phase stages, canonical-dual synthesis,
   linked decisions, a `108`-configuration ceiling, concealed development, and a
   locked holdout. Batches 29.6BH-BL are ready in sequence.
+- 2026-07-12: Batch 29.6BH proves the simultaneous `512/2048/8192` union.
+  The combined square-root-Hann frame operator is `6.0` with condition
+  `1.0000000000000007`; all padded and source samples are covered. Six frozen
+  controls reconstruct with peak error below `7.78e-16`, RMS error below
+  `1.46e-16`, no non-finite values, stable hashes, and exact repeated evidence.
+  Study, local scheduling, and phase modification remained absent.
 
 ## Next Task
 
-Run Batch 29.6BH. Prove the simultaneous `512/2048/8192` union frame and exact
-identity dual before study, schedule, phase modification, or tuning.
+Run Batch 29.6BI. Add linked continuous study evidence, exact-point selection,
+and a positive bounded integer-hop schedule with exact final closure. Keep phase
+modification, tuning, corpus rendering, promotion, and routing closed.

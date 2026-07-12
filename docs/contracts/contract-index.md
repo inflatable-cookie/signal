@@ -144,5 +144,5 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Run `g10.029` Batch 29.6BH under contract `082`: prove the simultaneous
-multi-window union frame and exact identity dual.
+Run `g10.029` Batch 29.6BI under contract `082`: prove linked continuous study,
+exact-point selection, and a bounded exact-closing local schedule.
