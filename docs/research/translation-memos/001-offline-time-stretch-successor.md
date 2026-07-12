@@ -634,3 +634,10 @@ folded region `0` restores all five mixed event anchors and changes `39/64`
 linear-chirp winners, but also changes one stationary mixed control. Temporal
 support overlap and low-band tonal dominance are coupled at the frozen
 partition resolution; neither currently authorizes a selector change.
+
+The final refinement tests actual window-support ownership rather than
+coefficient-frame centre and subdivides only the implicated folded `0–3 kHz`
+region into eight fixed subregions. This is still attribution, not a parameter
+sweep: the prior reports remain exact, counterfactual winners never enter the
+path, and failure to isolate clean ownership stops selector research for
+operator review.

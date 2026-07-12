@@ -401,7 +401,15 @@ linear chirp behavior, but also changes one stationary mixed anchor. The coarse
 time-centre and frequency partitions therefore expose coupled mechanisms rather
 than one clean selector boundary.
 
+One final attribution refinement is bounded before operator review. Window
+support membership replaces centre-only time slices, testing exactly which
+coefficient frames can contain the declared event. Only the implicated
+`0–3 kHz` folded region is subdivided, into eight fixed roughly `375 Hz`
+regions. These remain diagnostic removals over unchanged coefficients. Passage
+may identify geometry, frequency evidence, or a joint localized time-frequency
+boundary; it cannot change selection.
+
 ## Next Task
 
-Freeze Batch 29.6AN attribution reassessment. Keep selector changes, phase,
+Run Batch 29.6AO attribution reassessment. Keep selector changes, phase,
 stretched synthesis, corpus, dynamic ratio, and routing closed.

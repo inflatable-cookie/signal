@@ -562,12 +562,21 @@ independent stereo review.
 
 ### Batch 29.6AN - Rényi Attribution Reassessment Contract
 
-- [ ] freeze whether event-support time attribution and bounded subdivision of
+- [x] freeze whether event-support time attribution and bounded subdivision of
   folded-frequency region `0` can separate the two coupled failure mechanisms
-- [ ] retain exact Batch 29.6AK selector evidence and Batch 29.6AM attribution;
+- [x] retain exact Batch 29.6AK selector evidence and Batch 29.6AM attribution;
   do not tune a selector, threshold, margin, or weighting rule
-- [ ] open one bounded attribution proof or stop selector research for operator
+- [x] open one bounded attribution proof or stop selector research for operator
   review; keep phase and stretched synthesis closed
+
+### Batch 29.6AO - Rényi Attribution Reassessment Decision
+
+- [ ] measure declared-event support ownership and the eight frozen low-band
+  subregions without changing either prior report
+- [ ] prove partition closure, finite values, exact repeat, and unchanged
+  Batch 29.6AK and 29.6AM hashes
+- [ ] select geometry, frequency, joint localized evidence, or operator review;
+  open only a separately frozen selector contract on conclusive evidence
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -1071,8 +1080,13 @@ independent stereo review.
   isolated anchors but changes `5/32` negatives; low-band removal restores all
   five mixed events but changes one negative. Evidence is in
   `docs/logs/2026-07/12-g10-029-renyi-selector-attribution-inconclusive.md`.
+- 2026-07-12: Batch 29.6AN froze one final attribution refinement. Declared
+  event-support membership and eight fixed subdivisions of folded region `0`
+  must separate the coupled mechanisms or stop selector research for operator
+  review. Evidence is in
+  `docs/logs/2026-07/12-g10-029-renyi-attribution-reassessment-contract.md`.
 
 ## Next Task
 
-Freeze Batch 29.6AN Rényi attribution reassessment. Do not change the selector
-or implement phase or stretched synthesis.
+Run Batch 29.6AO Rényi attribution reassessment. Preserve both prior reports;
+do not change the selector or implement phase or stretched synthesis.

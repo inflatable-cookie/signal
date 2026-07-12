@@ -1516,6 +1516,50 @@ near-pass as authorization for frequency weighting or region changes. A new
 contract must first decide whether event-support time attribution and bounded
 subdivision of folded-frequency region `0` can separate the coupled evidence.
 
+### Rule 26L: reassess only the unresolved attribution resolution
+
+Batch 29.6AN freezes one final release-only attribution refinement. Retain the
+exact Batch 29.6AK selector report and Batch 29.6AM attribution report,
+including hashes `5568f0a38f679a40` and `e0b4421038492480`. Reuse the same
+coefficients. Do not recompute a legal path or alter selector evidence.
+
+Replace the inconclusive time-centre view with declared-event support
+membership. A coefficient frame owns an event when its half-open analysis
+window support `[centre-W/2,centre+W/2)` contains the declared event frame.
+For the isolated impulse and mixed control, report per-anchor and per-resolution
+coefficient count, energy, and alpha-mass for event-owning and event-excluding
+frames. Remove all event-owning frames only in a report-only counterfactual and
+recompute entropy and the longest-minimum raw winner. Support partitions must
+close their parent fields to relative error `1e-12`.
+
+Refine only folded-frequency region `0`, bins `k=0..=256`. Assign those
+nonnegative bins to eight fixed subregions by `floor(8*k/257)` and fold each
+interior negative-frequency partner into the same subregion. Report count,
+energy, alpha-mass, closure, removal entropy deltas, and raw-winner changes.
+Every bin outside region `0` remains one untouched complement. Do not inspect a
+different subdivision after results are known.
+
+Use the same `15` isolated, `5` mixed-event, and `32` mixed-negative anchors as
+Batch 29.6AM. Event-support attribution passes only if its removal restores
+`4096` at all `15` isolated anchors and changes none of the `32` mixed-negative
+raw winners. Low-band attribution passes only if exactly one fixed subregion
+restores `512` at all five mixed-event anchors and changes no mixed-negative
+raw winner. Also report raw-winner changes for all `64` linear-chirp anchors;
+the chirp remains corroboration only.
+
+Select the next boundary before implementation:
+
+- event-support only: comparison-region geometry
+- one low subregion only: frequency evidence
+- both: localized time-frequency evidence, requiring one new joint-selector
+  contract rather than two independent heuristics
+- neither, multiple low subregions, closure/baseline drift, or non-finite
+  evidence: stop selector research for operator review
+
+Require exact repeat and one stable attribution hash. A conclusive result opens
+only the named selector contract. It does not authorize weights, margins,
+detectors, phase, stretched synthesis, corpus, dynamic ratio, cache, or routing.
+
 ### Rule 27: synthesize a protected centre, not a circular endpoint
 
 Extend the source in both directions with whole-sample even reflection,
@@ -1571,5 +1615,5 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Freeze Batch 29.6AN attribution reassessment. Do not change the selector or
-implement phase or stretched synthesis.
+Run Batch 29.6AO attribution reassessment. Preserve both prior reports and do
+not change the selector or implement phase or stretched synthesis.
