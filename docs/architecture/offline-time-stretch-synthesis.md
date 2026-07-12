@@ -472,8 +472,15 @@ The time filter preserves the physical duration of FitzGerald's 17-frame,
 1024-hop example on Signal's 128-hop grid. A `p=2` soft mask reduces the two
 estimates to percussive occupancy. No separated waveform is synthesized.
 
+Median HPSS is numerically and stereo stable but rejected as an event detector.
+Every negative family peaks; impulse, boundary, dense, and mixed event placement
+fails; impulse perturbations are unstable. Mixed phase and median HPSS therefore
+fail despite different cell evidence. The common failed abstraction is reducing
+percussive occupancy to local event peaks. Selector work returns to operator
+review before another evidence family or schedule mapping.
+
 ## Next Task
 
-Run the report-only median-HPSS evidence measurement. Keep component audio,
-schedule mapping, phase, stretched synthesis, corpus, dynamic ratio, and routing
-closed.
+Operator review must choose a different selector abstraction or pause. Keep
+component audio, schedule mapping, phase, stretched synthesis, corpus, dynamic
+ratio, and routing closed.

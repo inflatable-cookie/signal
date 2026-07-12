@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; median-HPSS evidence measurement ready
+Status: active; transient evidence stopped for operator review
 Owner: dsp
 Updated: 2026-07-12
 Related contracts: `046`, `048`, `049`
@@ -1886,6 +1886,27 @@ median lengths, mask power, peak threshold, or gates. Schedule mapping, phase,
 stretched synthesis, corpus, dynamic ratio, cache identity, and routing remain
 closed.
 
+Batch 29.6AX rejects the median-HPSS detector. Every steady, chirp, and noise
+family produces peaks. The isolated impulse peak is `896` frames late. Neither
+boundary event is recovered, with nearest offsets `7168` and `1023`. Dense
+events collapse to one peak with offsets `896` and `1152`. Mixed audio produces
+only boundary-region peaks; its event offset is `3968`.
+
+Gain, polarity, hard pan, channel swap, and equal-energy stereo pass with
+maximum occupancy error below `1.34e-15` and no peak changes. Perturbation fails
+the isolated, dense, and boundary controls: maximum occupancy changes are
+`0.6159452317`, `0.6071389099`, and `0.0524528981`; isolated and dense peak
+counts change, while the boundary peak moves `56` anchors. Gate failures are
+`[7,3,1,1,0,3,0]`; evidence hash `b4812090f561ea14` repeats.
+
+Median HPSS supplies stable linked-channel evidence but does not turn
+percussive occupancy local maxima into a selective event detector on Signal's
+controls. Do not change median lengths, mask power, peak threshold, event
+tolerances, or perturbation limits by inference. Together with the mixed-phase
+rejection, this stops percussive-occupancy detector research for operator
+review. Schedule mapping, phase, stretched synthesis, corpus, dynamic ratio,
+cache identity, and routing remain closed.
+
 ### Rule 27: synthesize a protected centre, not a circular endpoint
 
 Extend the source in both directions with whole-sample even reflection,
@@ -1941,5 +1962,5 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Run Batch 29.6AX median-HPSS evidence measurement. Produce no component audio,
-schedule, phase, stretched synthesis, corpus output, or routing change.
+Operator review must choose a different selector abstraction or pause the
+time-adaptive successor lane. No implementation batch is ready.

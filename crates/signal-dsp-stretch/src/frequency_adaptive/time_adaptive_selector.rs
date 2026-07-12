@@ -16,6 +16,7 @@ use controls::{controls, perturbed, Kind, FRAMES};
 pub(crate) use attribution::renyi_attribution_reassessment_review;
 pub(crate) use attribution::renyi_selector_failure_attribution_review;
 pub(crate) use geometry::renyi_anchor_local_geometry_review;
+pub(crate) use transient::median_hpss_evidence_review;
 pub(crate) use transient::mixed_phase_distribution_review;
 pub(crate) use transient::transient_evidence_measurement_review;
 

@@ -21,10 +21,10 @@ pub use types::{
     StretchCommonGridCanonicalTightenerDirection, StretchCommonGridNyquistAblationDirection,
     StretchCommonGridNyquistAblationOperator, StretchCommonGridResidualBoundaryDirection,
     StretchCommonGridThreeRowNyquistDirection, StretchDensePainlessDirection,
-    StretchMixedPhaseDistributionDirection, StretchRenyiAttributionDirection,
-    StretchRenyiGeometryDirection, StretchRenyiReassessmentDirection,
-    StretchRenyiSelectorDirection, StretchTimeAdaptivePainlessDirection,
-    StretchTransientEvidenceDirection,
+    StretchMedianHpssDirection, StretchMixedPhaseDistributionDirection,
+    StretchRenyiAttributionDirection, StretchRenyiGeometryDirection,
+    StretchRenyiReassessmentDirection, StretchRenyiSelectorDirection,
+    StretchTimeAdaptivePainlessDirection, StretchTransientEvidenceDirection,
 };
 
 #[cfg(all(test, not(debug_assertions)))]
@@ -63,6 +63,8 @@ mod time_adaptive_painless;
 pub(crate) use time_adaptive_painless::time_adaptive_painless_reconstruction_review;
 #[cfg(all(test, not(debug_assertions)))]
 mod time_adaptive_selector;
+#[cfg(all(test, not(debug_assertions)))]
+pub(crate) use time_adaptive_selector::median_hpss_evidence_review;
 #[cfg(all(test, not(debug_assertions)))]
 pub(crate) use time_adaptive_selector::mixed_phase_distribution_review;
 #[cfg(all(test, not(debug_assertions)))]

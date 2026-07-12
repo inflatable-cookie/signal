@@ -1,19 +1,13 @@
-use super::super::types::{
-    StretchTransientAnchorEvidence as AnchorEvidence,
-    StretchTransientControlEvidence as ControlEvidence,
-    StretchTransientEvidenceDirection as Direction, StretchTransientEvidenceReview as Review,
+use super::super::super::types::{
+    StretchMedianHpssControlEvidence as ControlEvidence, StretchMedianHpssDirection as Direction,
+    StretchMedianHpssReview as Review,
 };
-use super::controls::{controls, perturbed, Kind, FRAMES};
-use super::{hash_f64, hash_u64, ANCHOR_HOP, HASH_OFFSET};
+use super::super::controls::{controls, perturbed, Kind, FRAMES};
+use super::super::{hash_f64, hash_u64, ANCHOR_HOP, HASH_OFFSET};
 
-mod distribution;
-mod hpss;
 mod measure;
 
-pub(crate) use distribution::mixed_phase_distribution_review;
-pub(crate) use hpss::median_hpss_evidence_review;
-
-pub(crate) fn transient_evidence_measurement_review() -> Review {
+pub(crate) fn median_hpss_evidence_review() -> Review {
     let controls = controls();
     let mut evidence = Vec::with_capacity(controls.len());
     let mut equivalence_failures = 0;
@@ -65,18 +59,19 @@ pub(crate) fn transient_evidence_measurement_review() -> Review {
             );
         }
         let silent = vec![0.0; FRAMES];
-        let hard_pan = measure::measure(index, &[control.samples.as_slice(), silent.as_slice()]);
-        let swapped = measure::measure(index, &[silent.as_slice(), control.samples.as_slice()]);
         let split = control
             .samples
             .iter()
             .map(|sample| sample * std::f64::consts::FRAC_1_SQRT_2)
             .collect::<Vec<_>>();
-        let centered = measure::measure(index, &[split.as_slice(), split.as_slice()]);
-        for variant in [&hard_pan, &swapped, &centered] {
+        for variant in [
+            measure::measure(index, &[control.samples.as_slice(), silent.as_slice()]),
+            measure::measure(index, &[silent.as_slice(), control.samples.as_slice()]),
+            measure::measure(index, &[split.as_slice(), split.as_slice()]),
+        ] {
             compare_equivalent(
                 &base,
-                variant,
+                &variant,
                 &mut equivalence_failures,
                 &mut maximum_equivalence_error,
                 &mut control_equivalence_error,
@@ -133,7 +128,7 @@ fn compare_equivalent(
 }
 
 fn gates(
-    controls: &[super::controls::Control],
+    controls: &[super::super::controls::Control],
     evidence: &[ControlEvidence],
     equivalence: usize,
     perturbation: usize,
@@ -144,10 +139,9 @@ fn gates(
             Kind::Silence => {
                 failures[0] += usize::from(
                     !report.peaks.is_empty()
-                        || report
-                            .anchors
-                            .iter()
-                            .any(|anchor| anchor.cell_counts != [0, 0] || anchor.occupancy != 0.0),
+                        || report.anchors.iter().any(|anchor| {
+                            anchor.magnitude_sums != [0.0; 4] || anchor.occupancy != 0.0
+                        }),
                 );
             }
             Kind::Steady | Kind::Chirp | Kind::Noise => {
@@ -160,9 +154,7 @@ fn gates(
                     .filter(|offset| offset.is_none_or(|value| value > 256))
                     .count();
             }
-            Kind::DenseImpulses => {
-                failures[2] += usize::from(!dense_gate(&report.peaks));
-            }
+            Kind::DenseImpulses => failures[2] += usize::from(!dense_gate(&report.peaks)),
             Kind::Mixed => {
                 failures[3] += usize::from(
                     report.event_offsets[0].is_none_or(|value| value > 256)
@@ -174,7 +166,7 @@ fn gates(
             }
         }
         failures[6] += usize::from(
-            report.structural_counts[1] != 0
+            report.structural_counts[2] != 0
                 || report.hashes.iter().any(|hash| *hash == 0)
                 || report.anchors.len() != FRAMES / ANCHOR_HOP,
         );
@@ -231,7 +223,7 @@ fn peak_displacement(left: &[usize], right: &[usize]) -> Option<usize> {
 fn review_hash(review: &Review) -> u64 {
     let mut hash = HASH_OFFSET;
     for control in &review.controls {
-        hash_u64(&mut hash, control.hashes[4]);
+        hash_u64(&mut hash, control.hashes[6]);
     }
     for failure in review.gate_failures {
         hash_u64(&mut hash, failure as u64);

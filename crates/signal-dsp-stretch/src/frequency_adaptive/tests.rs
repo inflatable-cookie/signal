@@ -698,6 +698,39 @@ fn mixed_phase_distribution_audit_selects_terminal_direction() {
 }
 
 #[test]
+#[cfg(not(debug_assertions))]
+fn median_hpss_evidence_selects_terminal_direction() {
+    let first = median_hpss_evidence_review();
+    let repeated = median_hpss_evidence_review();
+    assert_eq!(first, repeated);
+    assert_eq!(first.controls.len(), 12);
+    assert!(first.controls.iter().all(|control| {
+        control.anchors.len() == 64
+            && control.structural_counts[2] == 0
+            && control.hashes.iter().all(|hash| *hash != 0)
+    }));
+    assert_ne!(first.evidence_hash, 0);
+    eprintln!(
+        "median_hpss gates={:?} perturbation={:?} displacement={:?} unmatched={} equivalence={:?} peak_equivalence={} controls={:?} evidence={:016x} direction={:?}",
+        first.gate_failures,
+        first.perturbation_changes,
+        first.peak_displacements,
+        first.unmatched_perturbation_peaks,
+        first.equivalence_errors,
+        first.equivalence_peak_failures,
+        first.controls.iter().map(|control| (control.control, control.peaks.clone(), control.event_offsets.clone(), control.anchors.iter().map(|anchor| anchor.occupancy).fold(0.0_f64, f64::max))).collect::<Vec<_>>(),
+        first.evidence_hash,
+        first.direction,
+    );
+    assert_eq!(first.gate_failures, [7, 3, 1, 1, 0, 3, 0]);
+    assert_eq!(first.unmatched_perturbation_peaks, 2);
+    assert_eq!(first.equivalence_peak_failures, 0);
+    assert!(first.maximum_equivalence_error <= 2.0e-15);
+    assert_eq!(first.direction, StretchMedianHpssDirection::OperatorReview);
+    assert_eq!(first.evidence_hash, 0xb481_2090_f561_ea14);
+}
+
+#[test]
 fn common_grid_phase_transport_rejects_high_band_phase_aliasing() {
     for frequency in [312.5_f32, 1_000.0] {
         let input = (0..24_576)

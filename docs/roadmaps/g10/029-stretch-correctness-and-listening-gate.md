@@ -652,12 +652,21 @@ independent stereo review.
 
 ### Batch 29.6AX - Median-HPSS Evidence Measurement
 
-- [ ] compute the frozen linked-magnitude, `17`-bin percussive median,
+- [x] compute the frozen linked-magnitude, `17`-bin percussive median,
   `149`-frame harmonic median, `p=2` soft mask, occupancy, and peak reports
-- [ ] prove unchanged negative, event, dense, mixed, invariance, perturbation,
+- [x] prove unchanged negative, event, dense, mixed, invariance, perturbation,
   finiteness, boundary, and repeat gates without component synthesis
-- [ ] open occupancy-to-window contracting only on complete passage; otherwise
+- [x] open occupancy-to-window contracting only on complete passage; otherwise
   return to operator review without a median-length or mask-power sweep
+
+### Batch 29.6AY - Selector-Abstraction Operator Review
+
+- [ ] choose a non-occupancy selector abstraction or pause the time-adaptive
+  successor lane
+- [ ] do not infer another percussive mask, median tuning, peak tuning, relaxed
+  event gates, or relaxed perturbation limits
+- [ ] keep schedule mapping, phase, stretched synthesis, corpus, dynamic ratio,
+  cache, and routing closed until a new ready card exists
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -1206,8 +1215,12 @@ independent stereo review.
   preserves the primary method's physical time support, uses a `p=2` soft mask,
   and excludes component audio. Evidence is in
   `docs/logs/2026-07/12-g10-029-median-hpss-evidence-contract.md`.
+- 2026-07-12: Batch 29.6AX rejected median-HPSS event detection. Stereo passes,
+  but every negative family peaks, all event families fail, and three impulse
+  controls fail perturbation. Evidence is in
+  `docs/logs/2026-07/12-g10-029-median-hpss-evidence-rejection.md`.
 
 ## Next Task
 
-Run Batch 29.6AX median-HPSS evidence measurement. Do not produce component
-audio, a schedule, phase, stretched synthesis, corpus output, or routing change.
+Operator review Batch 29.6AY. No implementation batch is ready; do not infer
+another percussive mask or local-peak detector.

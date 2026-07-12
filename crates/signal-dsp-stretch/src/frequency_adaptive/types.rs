@@ -1062,6 +1062,76 @@ pub struct StretchMixedPhaseDistributionReview {
     pub direction: StretchMixedPhaseDistributionDirection,
 }
 
+/// Direction selected by median-HPSS evidence measurement.
+#[cfg(all(test, not(debug_assertions)))]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum StretchMedianHpssDirection {
+    /// Every evidence gate passes and occupancy mapping may be contracted.
+    OccupancyMappingContract,
+    /// At least one evidence gate fails and operator review is required.
+    OperatorReview,
+}
+
+/// Median-HPSS evidence at one decision anchor.
+#[cfg(all(test, not(debug_assertions)))]
+#[derive(Clone, Debug, PartialEq)]
+pub struct StretchMedianHpssAnchorEvidence {
+    /// Logical source-frame anchor.
+    pub anchor: usize,
+    /// Linked, harmonic-median, percussive-median, and masked magnitude sums.
+    pub magnitude_sums: [f64; 4],
+    /// Magnitude-weighted soft percussive occupancy.
+    pub occupancy: f64,
+}
+
+/// Median-HPSS evidence for one frozen control.
+#[cfg(all(test, not(debug_assertions)))]
+#[derive(Clone, Debug, PartialEq)]
+pub struct StretchMedianHpssControlEvidence {
+    /// Frozen control index.
+    pub control: usize,
+    /// Evidence for all `64` decision anchors.
+    pub anchors: Vec<StretchMedianHpssAnchorEvidence>,
+    /// Logical source-frame evidence peaks.
+    pub peaks: Vec<usize>,
+    /// Nearest-peak distance for each declared event, or no value when absent.
+    pub event_offsets: Vec<Option<usize>>,
+    /// Reflected sample reads, reflected median cells, and non-finite values.
+    pub structural_counts: [usize; 3],
+    /// Input, magnitude, median, mask, occupancy, peak, and complete hashes.
+    pub hashes: [u64; 7],
+}
+
+/// Complete release-only median-HPSS evidence report.
+#[cfg(all(test, not(debug_assertions)))]
+#[derive(Clone, Debug, PartialEq)]
+pub struct StretchMedianHpssReview {
+    /// Evidence for all twelve frozen controls.
+    pub controls: Vec<StretchMedianHpssControlEvidence>,
+    /// False-positive, event, dense, mixed, equivalence, perturbation, and structural failures.
+    pub gate_failures: [usize; 7],
+    /// Maximum occupancy change under deterministic perturbation.
+    pub maximum_perturbation_change: f64,
+    /// Occupancy change under perturbation for each control.
+    pub perturbation_changes: Vec<f64>,
+    /// Maximum matched-peak displacement in decision anchors.
+    pub maximum_peak_displacement: usize,
+    /// Matched-peak displacement per control, absent when peak counts differ.
+    pub peak_displacements: Vec<Option<usize>>,
+    /// Controls whose perturbation changed the number of peaks.
+    pub unmatched_perturbation_peaks: usize,
+    /// Maximum gain, polarity, or linked-stereo occupancy difference.
+    pub maximum_equivalence_error: f64,
+    /// Maximum equivalence difference per control.
+    pub equivalence_errors: Vec<f64>,
+    /// Variants whose peak indices changed.
+    pub equivalence_peak_failures: usize,
+    /// Stable aggregate evidence hash.
+    pub evidence_hash: u64,
+    /// Selected continuation direction.
+    pub direction: StretchMedianHpssDirection,
+}
+
 /// Numerical evidence for one bounded Hermitian Jacobi solve.
 #[derive(Clone, Debug, PartialEq)]
 pub struct StretchCommonGridJacobiEvidence {

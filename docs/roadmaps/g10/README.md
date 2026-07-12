@@ -169,6 +169,8 @@ implementation remains Signal-owned.
   `25` pairs overlap and one stereo cutoff signature fails equivalence; Batch
   29.6AW is an evidence-family review stop. Operator direction selects one
   evidence-only median-HPSS contract; Batch 29.6AX must prove it before mapping.
+  It rejects across every negative and event family despite passing stereo;
+  Batch 29.6AY is a selector-abstraction review stop.
 - Offline artifacts and RealtimePreview have bounded contracts and prototype
   paths, but callback-safe preview integration and fully streaming artifact
   output remain gated until their owning source-fill/cache contracts exist.
@@ -258,6 +260,6 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Run Batch 29.6AX median-HPSS evidence measurement. Keep component audio,
-schedule mapping, phase, stretched synthesis, corpus, linked stereo synthesis,
-dynamic ratio, and product integration closed.
+Operator review selector abstraction at Batch 29.6AY. No implementation batch
+is ready; keep component audio, schedule mapping, phase, stretched synthesis,
+corpus, linked stereo synthesis, dynamic ratio, and product integration closed.

@@ -718,6 +718,14 @@ the source method's physical span on Signal's shorter hop. Only the soft
 percussive mask and occupancy transfer. Component separation, inversion, and
 independent TSM remain excluded.
 
+The frozen median-HPSS detector rejects. Stereo equivalence is effectively
+exact, but all seven negative families peak and every event family misses its
+placement or resolution gate. Impulse perturbations change occupancy by more
+than `0.60`. Because mixed phase and median HPSS use different cell evidence yet
+fail at the same occupancy-to-local-peak boundary, further percussive mask
+tuning is not supported. The next research decision must revisit the selector
+abstraction, not add another occupancy mask.
+
 Additional primary source:
 
 | Source | Confidence | Transfer boundary |
