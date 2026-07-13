@@ -1,7 +1,21 @@
 use rustfft::num_complex::Complex64;
 
+mod native;
+
 use super::{wrap, ActiveOwner, PhaseState, Result, Trace};
 use crate::frequency_adaptive::adaptive_single_frame_synthesis::render::{Frame, FFT_FRAMES};
+
+pub(super) fn transport_native(
+    spectrum: &mut [Complex64],
+    tracking: &[Complex64],
+    frame: &Frame,
+    state: &mut PhaseState,
+    events: &[usize],
+    peaks: &[usize],
+    trace_bin: usize,
+) -> Result {
+    native::transport(spectrum, tracking, frame, state, events, peaks, trace_bin)
+}
 
 pub(super) fn transport(
     spectrum: &mut [Complex64],

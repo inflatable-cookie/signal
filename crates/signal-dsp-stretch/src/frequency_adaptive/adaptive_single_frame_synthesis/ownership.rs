@@ -1,19 +1,19 @@
 mod evidence;
 mod measurement;
+mod review;
 
 use super::super::study_local_schedule::{
     schedule::build_schedule,
     study::{analyze, select},
     BASE_HOP, SOURCE_FRAMES,
 };
-use super::super::HASH_OFFSET;
 use super::anchors::{detect, projected};
 use super::quality::{
     control::controls,
     measurement::{error, peak},
     Control,
 };
-use super::render::render_successor;
+use super::render::{render_native_successor_owned, render_successor};
 use evidence::{row_hash, RowEvidence};
 use measurement::{event_errors, tone_errors};
 
@@ -43,6 +43,8 @@ pub(in crate::frequency_adaptive) struct OwnershipReview {
     pub maximum_tone_errors: [f64; 2],
     pub maximum_event_errors: [usize; 3],
     pub owner_counts: [usize; 4],
+    pub resolution_transitions: usize,
+    pub matched_resolution_transitions: usize,
     pub detected_anchors: usize,
     pub expected_anchors: usize,
     pub evidence_hash: u64,
@@ -50,80 +52,41 @@ pub(in crate::frequency_adaptive) struct OwnershipReview {
 }
 
 pub(in crate::frequency_adaptive) fn ownership_review() -> OwnershipReview {
-    let controls = controls();
-    let mut rows = Vec::with_capacity(CONTROLS.len() * RATIOS.len());
-    for control in CONTROLS {
-        let input = &controls
-            .iter()
-            .find(|(candidate, _)| *candidate == control)
-            .expect("ownership control")
-            .1;
-        for ratio in RATIOS {
-            rows.push(review_row(control, input, ratio));
-        }
-    }
-    let failure_counts =
-        std::array::from_fn(|index| rows.iter().map(|row| row.failures[index]).sum::<usize>());
-    let maximum_identity_error = std::array::from_fn(|index| {
-        rows.iter()
-            .map(|row| row.identity_error[index])
-            .fold(0.0_f64, f64::max)
-    });
-    let maximum_tone_errors = std::array::from_fn(|index| {
-        rows.iter()
-            .map(|row| row.tone_errors[index])
-            .fold(0.0_f64, f64::max)
-    });
-    let maximum_event_errors = std::array::from_fn(|index| {
-        rows.iter()
-            .map(|row| row.event_errors[index])
-            .max()
-            .unwrap_or(0)
-    });
-    let owner_counts = std::array::from_fn(|index| {
-        rows.iter()
-            .map(|row| row.owner_counts[index])
-            .sum::<usize>()
-    });
-    let detected_anchors = rows.iter().map(|row| row.detected.len()).sum();
-    let expected_anchors = rows.iter().map(|row| row.expected.len()).sum();
-    let mut evidence_hash = HASH_OFFSET;
-    for row in &rows {
-        hash(&mut evidence_hash, row.hashes[8]);
-    }
-    let pass = failure_counts == [0; 8];
-    OwnershipReview {
-        rows,
-        failure_counts,
-        maximum_identity_error,
-        maximum_tone_errors,
-        maximum_event_errors,
-        owner_counts,
-        detected_anchors,
-        expected_anchors,
-        evidence_hash,
-        direction: if pass {
-            OwnershipDirection::SuccessorSyntheticQualityGate
-        } else {
-            OwnershipDirection::ActivePeakOrTransientAnchorRedesign
-        },
-    }
+    review(false)
 }
 
-fn review_row(control: Control, input: &[f64], ratio: f64) -> RowEvidence {
+pub(in crate::frequency_adaptive) fn native_ownership_review() -> OwnershipReview {
+    review(true)
+}
+
+fn review(native: bool) -> OwnershipReview {
+    review::run(native)
+}
+
+fn review_row(control: Control, input: &[f64], ratio: f64, native: bool) -> RowEvidence {
     let channels = [input.to_vec()];
     let study = analyze(&channels, SOURCE_FRAMES);
     let resolution_points = select(&study, 3.0, 2);
     let anchors = detect(&channels, SOURCE_FRAMES);
     let expected = expected(control);
     let schedule = build_schedule(SOURCE_FRAMES, BASE_HOP, ratio, &resolution_points);
-    let render = render_successor(
-        &channels,
-        ratio,
-        &resolution_points,
-        &anchors.positions,
-        &schedule,
-    );
+    let render = if native {
+        render_native_successor_owned(
+            &channels,
+            ratio,
+            &resolution_points,
+            &anchors.positions,
+            &schedule,
+        )
+    } else {
+        render_successor(
+            &channels,
+            ratio,
+            &resolution_points,
+            &anchors.positions,
+            &schedule,
+        )
+    };
     let identity_error = if ratio == 1.0 {
         error(input, &render.samples[0])
     } else {
@@ -170,6 +133,24 @@ fn review_row(control: Control, input: &[f64], ratio: f64) -> RowEvidence {
         render.phase_trace.len(),
         render.synthesis_trace.len(),
     ];
+    let resolution_transitions = render
+        .phase_trace
+        .windows(2)
+        .filter(|pair| {
+            pair[0].length != pair[1].length
+                && pair[1].phase.owner_births + pair[1].phase.owner_matches > 0
+                && pair[1].phase.owner_matches + pair[1].phase.owner_retirements > 0
+        })
+        .count();
+    let matched_resolution_transitions = render
+        .phase_trace
+        .windows(2)
+        .filter(|pair| {
+            pair[0].length != pair[1].length
+                && pair[1].phase.owner_matches > 0
+                && pair[1].phase.owner_matches + pair[1].phase.owner_retirements > 0
+        })
+        .count();
     let phase_limits = [render.symmetry_error, render.imaginary_residue];
     let silence_peak = if control == Control::Silence {
         peak(&render.samples[0])
@@ -201,7 +182,8 @@ fn review_row(control: Control, input: &[f64], ratio: f64) -> RowEvidence {
                 || phase_limits[1] > 1.0e-9
                 || frame_counts[0] != frame_counts[1]
                 || frame_counts[0] != frame_counts[2]
-                || (control != Control::Silence && owner_counts[3] == 0),
+                || (control != Control::Silence && owner_counts[3] == 0)
+                || (native && resolution_transitions != matched_resolution_transitions),
         ),
         usize::from(silence_peak > 1.0e-12),
     ];
@@ -215,6 +197,8 @@ fn review_row(control: Control, input: &[f64], ratio: f64) -> RowEvidence {
         tone_errors,
         event_errors,
         owner_counts,
+        resolution_transitions,
+        matched_resolution_transitions,
         frame_counts,
         phase_limits,
         silence_peak,

@@ -319,14 +319,19 @@ Current stretch status:
   frequency and phase only as a decision surface; native phase regions,
   sample-refined anchors, and the proven bridge owner coordinate coherence and
   replica suppression on one output timeline. Batch 29.6CF is the bounded
-  implementation and synthetic gate. Real sources, holdout, listening, stereo,
-  dynamic ratio, cache, and routing remain closed.
+  implementation and synthetic gate. It preserves identity, events, replicas,
+  boundaries, mid/high tones, and matched ownership across all `300` active
+  resolution transitions, but fails the three stretched `55 Hz` rows. Tracked
+  frequency passes; rendered error reaches `3.695086e-5` radians/sample. Batch
+  29.6CG traces native owner-bin/region projection and exact-dual accumulation.
+  Real sources, holdout, listening, stereo, dynamic ratio, cache, and routing
+  remain closed.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Execute `g10.029` Batch 29.6CF under Rule 30AA. Implement the report-only
-native-grid active-owner mono path and pass its mechanism controls plus complete
-`48`-row synthetic gate before any real-source render.
+Execute `g10.029` Batch 29.6CG under Rule 30AB. Trace the failed `55 Hz` rows
+through native coefficient projection, inverse output, and exact-dual
+accumulation before any repaired candidate or real-source render.

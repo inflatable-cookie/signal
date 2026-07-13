@@ -21,9 +21,10 @@ pub(super) use mechanism_attribution::{
     mechanism_attribution_review, MechanismAttributionDirection,
 };
 pub(super) use overlap_ownership::overlap_ownership_review;
-pub(super) use ownership::{ownership_review, OwnershipDirection};
+pub(super) use ownership::{native_ownership_review, ownership_review, OwnershipDirection};
 pub(super) use quality::{
-    owned_successor_quality_review, quality_review, successor_quality_review, QualityDirection,
+    native_successor_quality_review, owned_successor_quality_review, quality_review,
+    successor_quality_review, QualityDirection,
 };
 pub(super) use resolution_attribution::{
     resolution_attribution_review, ResolutionAttributionDirection,

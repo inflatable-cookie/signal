@@ -3,7 +3,7 @@ mod active;
 use rustfft::num_complex::Complex64;
 
 use super::{Frame, Mode};
-use active::transport as transport_active;
+use active::{transport as transport_active, transport_native};
 
 pub(super) struct PhaseState {
     analysis: Vec<f64>,
@@ -73,7 +73,19 @@ pub(super) fn transport(
     trace_bin: usize,
     tracking: Option<&[Complex64]>,
     analysis_passthrough: bool,
+    native_successor: bool,
 ) -> Result {
+    if native_successor {
+        return transport_native(
+            spectrum,
+            tracking.expect("native successor tracking spectrum"),
+            frame,
+            state,
+            events,
+            peaks,
+            trace_bin,
+        );
+    }
     if mode.successor() {
         return transport_active(
             spectrum,

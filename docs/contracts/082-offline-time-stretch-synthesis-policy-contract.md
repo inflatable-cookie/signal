@@ -3004,12 +3004,42 @@ one-to-one placement limits, and zero replica regression. Stop before real
 sources on any failure. Trace the earliest owner boundary; do not tune, sweep,
 or substitute another algorithm family.
 
-Batch 29.6CG opens only after Rule 30AA passes. Freeze the implementation and
+The frozen mono development gate opens only after the synthetic gate passes.
+Freeze the implementation and
 compare it with current Signal and captured external evidence on the unchanged
 nine-row mono development set. Report the complete integrity, transient,
 replica, static-spectrum, texture, formant, and boundary field set. A row-level
 regression returns to traced coefficient ownership. Holdout, listening,
 production routing, linked stereo, dynamic ratio, and cache work remain closed.
+
+Rule 30AA rejects the first implementation before real-source rendering. The
+`32`-row mechanism proof has three failures, all rendered-frequency failures on
+the stretched `55 Hz` control. Maximum rendered error is `3.695086e-5`
+radians/sample against `1e-6`; active-owner frequency error remains
+`1.263528e-7`. All `300/300` active resolution transitions retain a matched
+owner. Identity, coverage, exact anchors, event placement, dense one-to-one
+placement, replica protection, symmetry, residue, silence, and finiteness pass.
+
+The complete `48`-row gate confirms only those three failures at `0.75x`,
+`1.5x`, and `2.0x`. Mechanism and quality hashes are `19c5548baf4a10c8`
+and `2410e33944214b72`. The earliest unresolved boundary is after physical-
+frequency estimation: native owner-bin/region phase projection into inverse
+FFT and exact-dual overlap synthesis.
+
+#### Rule 30AB: low-frequency native-projection attribution
+
+Batch 29.6CG is trace-only. Freeze the failed `55 Hz` rows and passing identity,
+mid-tone, high-tone, event, boundary, and silence controls. Follow active-owner
+phase advance through native owner-bin projection, within-region phase offsets,
+per-frame inverse output, and exact-dual accumulation at the two frozen
+frequency-measurement apertures. Assign the error to owner-bin projection,
+region phase, per-resolution coefficient support, or overlap interaction.
+
+Do not change a threshold, window length, detector, schedule, gate, or
+production path. Do not render real sources, read holdout, export listening
+audio, or open stereo, dynamic ratio, cache, or routing. Stop with a named
+design question if one earliest boundary cannot be assigned without a factor
+sweep.
 
 ## Clean-Room Rule
 
@@ -3019,7 +3049,7 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Execute Batch 29.6CF under Rule 30AA. Implement the report-only native-grid
-active-owner mono path and run its mechanism and synthetic gates. Stop before
-real sources on any failure. Keep sweeps, holdout, listening, tuning, linked
-stereo, dynamic ratio, cache, and routing closed.
+Execute Batch 29.6CG under Rule 30AB. Trace the three failed `55 Hz` rows from
+active-owner phase through native coefficient projection and exact-dual output.
+Keep real sources, sweeps, holdout, listening, tuning, linked stereo, dynamic
+ratio, cache, and routing closed.

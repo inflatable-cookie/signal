@@ -1,6 +1,6 @@
 # Offline Time-Stretch Synthesis
 
-Status: native-grid active-owner implementation ready
+Status: low-frequency native-projection attribution ready
 Owner: dsp
 Updated: 2026-07-13
 Contract refs: `046`, `082`
@@ -812,9 +812,23 @@ Rule 30Y therefore does not re-enter through the auxiliary decision surface.
 The first implementation stays report-only and must pass the prior mechanism
 controls and complete `48`-row synthetic gate before any real-source render.
 
+That implementation stops at the synthetic gate. It chooses an FFT per frame,
+keeps real native magnitudes, projects fixed-grid physical-frequency owners to
+native bins, retains native within-region phase offsets, and composes the exact
+anchors and conflicted-bridge owner. Structure and event behavior pass. The
+three stretched `55 Hz` rows do not: rendered frequency error reaches
+`3.695086e-5` radians/sample while tracked-owner error stays at
+`1.263528e-7`. All `300/300` active resolution transitions retain a matched
+owner.
+
+The active boundary is therefore downstream of peak tracking and before final
+output: native owner-bin/region phase projection, per-frame inverse synthesis,
+or its exact-dual interaction. Real-source rendering remains closed until that
+boundary is assigned and a repaired candidate passes the unchanged synthetic
+gate.
+
 ## Next Task
 
-Execute Batch 29.6CF under Rule 30AA. Compose the native-grid active-owner path
-from the existing schedule, tracker, anchors, bridge owner, and exact-dual
-seams. Stop before real-source rendering unless the complete synthetic gate
-passes without tuning.
+Execute Batch 29.6CG under Rule 30AB. Trace the failed `55 Hz` rows from active
+phase through native coefficient projection, inverse output, and exact-dual
+accumulation. Do not render real sources or reopen factor sweeps.

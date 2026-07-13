@@ -1302,6 +1302,95 @@ fn adaptive_single_frame_active_peak_and_anchor_ownership_passes() {
 
 #[test]
 #[cfg(not(debug_assertions))]
+fn adaptive_single_frame_native_grid_active_owner_mechanism_selects_projection_owner() {
+    use super::adaptive_single_frame_synthesis::{native_ownership_review, OwnershipDirection};
+
+    let first = native_ownership_review();
+    let repeated = native_ownership_review();
+    eprintln!(
+        "adaptive_single_frame_native_grid_active_owner_mechanism failures={:?} identity={:?} tones={:?} events={:?} owners={:?} transitions={}/{} anchors={}/{} evidence={:016x} direction={:?}",
+        first.failure_counts,
+        first.maximum_identity_error,
+        first.maximum_tone_errors,
+        first.maximum_event_errors,
+        first.owner_counts,
+        first.matched_resolution_transitions,
+        first.resolution_transitions,
+        first.detected_anchors,
+        first.expected_anchors,
+        first.evidence_hash,
+        first.direction,
+    );
+    assert_eq!(first, repeated);
+    assert_eq!(first.failure_counts, [0, 0, 3, 0, 0, 0, 0, 0]);
+    assert_eq!(first.detected_anchors, first.expected_anchors);
+    assert_eq!(
+        first.matched_resolution_transitions,
+        first.resolution_transitions
+    );
+    assert!(first.resolution_transitions > 0, "{first:?}");
+    assert!(first.owner_counts[0] > 0, "{first:?}");
+    assert!(first.owner_counts[1] > 0, "{first:?}");
+    assert!(first.owner_counts[3] > 0, "{first:?}");
+    assert_eq!(first.maximum_tone_errors[1], 1.263527633866765e-7);
+    assert_eq!(first.evidence_hash, 0x19c5_548b_af4a_10c8);
+    assert_eq!(
+        first.direction,
+        OwnershipDirection::ActivePeakOrTransientAnchorRedesign
+    );
+}
+
+#[test]
+#[cfg(not(debug_assertions))]
+fn adaptive_single_frame_native_grid_active_owner_synthetic_quality_stops() {
+    use super::adaptive_single_frame_synthesis::{
+        native_successor_quality_review, QualityDirection,
+    };
+
+    let first = native_successor_quality_review();
+    let repeated = native_successor_quality_review();
+    let failures = first
+        .cases
+        .iter()
+        .filter(|case| {
+            case.ownership_failures != 0
+                || case.modes[1].hard_failures.into_iter().sum::<usize>() != 0
+        })
+        .map(|case| {
+            (
+                case.control,
+                case.ratio,
+                case.ownership_failures,
+                case.modes[1].hard_failures,
+                case.modes[1].tone_angular_error,
+                case.modes[1].isolated_error,
+                case.modes[1].dense_errors,
+                case.modes[1].replica_ratio,
+            )
+        })
+        .collect::<Vec<_>>();
+    eprintln!(
+        "adaptive_single_frame_native_grid_active_owner_synthetic_quality failures={failures:?} hard={} regressions={} evidence={:016x} direction={:?}",
+        first.hard_failures,
+        first.combined_regressions,
+        first.evidence_hash,
+        first.direction,
+    );
+    assert_eq!(first, repeated);
+    assert_eq!(first.cases.len(), 48);
+    assert_eq!(first.hard_failures, 3, "{failures:?}");
+    assert_eq!(first.combined_regressions, 0, "{failures:?}");
+    assert_eq!(failures.len(), 3);
+    assert!(failures
+        .iter()
+        .all(|failure| failure.0
+            == super::adaptive_single_frame_synthesis::quality::Control::LowTone));
+    assert_eq!(first.evidence_hash, 0x2410_e339_4421_4b72);
+    assert_eq!(first.direction, QualityDirection::SuccessorOwningMechanism);
+}
+
+#[test]
+#[cfg(not(debug_assertions))]
 fn complete_phase_synthesis_selects_bounded_tuning_direction() {
     use super::complete_phase_synthesis::{review, Direction};
 

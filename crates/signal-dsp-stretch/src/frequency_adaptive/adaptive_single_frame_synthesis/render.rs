@@ -9,8 +9,8 @@ use rustfft::{num_complex::Complex64, FftPlanner};
 
 use phase::{transport, PhaseState};
 pub(super) use successor::{
-    render_successor, render_successor_owned, render_successor_owned_traced,
-    render_successor_traced,
+    render_native_successor_owned, render_successor, render_successor_owned,
+    render_successor_owned_traced, render_successor_traced,
 };
 use trace::hash_phase_trace;
 pub(super) use trace::{PhaseFrameTrace, SampleTrace, SynthesisFrameTrace};
@@ -28,6 +28,7 @@ pub(super) enum Mode {
     Both,
     Successor,
     SuccessorOwned,
+    NativeSuccessorOwned,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -86,7 +87,11 @@ impl Mode {
     pub(super) fn event(self) -> bool {
         matches!(
             self,
-            Self::Event | Self::Both | Self::Successor | Self::SuccessorOwned
+            Self::Event
+                | Self::Both
+                | Self::Successor
+                | Self::SuccessorOwned
+                | Self::NativeSuccessorOwned
         )
     }
 
@@ -95,11 +100,18 @@ impl Mode {
     }
 
     fn successor(self) -> bool {
-        matches!(self, Self::Successor | Self::SuccessorOwned)
+        matches!(
+            self,
+            Self::Successor | Self::SuccessorOwned | Self::NativeSuccessorOwned
+        )
     }
 
     fn event_owned(self) -> bool {
-        self == Self::SuccessorOwned
+        matches!(self, Self::SuccessorOwned | Self::NativeSuccessorOwned)
+    }
+
+    fn native_successor(self) -> bool {
+        self == Self::NativeSuccessorOwned
     }
 }
 
@@ -334,11 +346,10 @@ fn render_frames_factored(
         .map(|frame| frame.length)
         .max()
         .expect("adaptive frames");
-    let fft_frames = match fft_grid {
+    let state_frames = match fft_grid {
         FftGridFactor::Shared4096 => FFT_FRAMES,
         FftGridFactor::Native => frame_length,
     };
-    assert!(frame_length <= fft_frames, "frame fits FFT grid");
     assert!(
         frame_geometry == FrameGeometryFactor::CenteredReflected
             || fft_grid == FftGridFactor::Native,
@@ -377,11 +388,10 @@ fn render_frames_factored(
     let mut outputs = vec![vec![Complex64::new(0.0, 0.0); domain_len]; channels.len()];
     let mut states = channels
         .iter()
-        .map(|_| PhaseState::new(fft_frames))
+        .map(|_| PhaseState::new(state_frames))
         .collect::<Vec<_>>();
     let mut planner = FftPlanner::<f64>::new();
-    let forward = planner.plan_fft_forward(fft_frames);
-    let inverse = planner.plan_fft_inverse(fft_frames);
+    let tracking_forward = planner.plan_fft_forward(FFT_FRAMES);
     let tracking_channels = mode
         .successor()
         .then(|| tracking::analytic_channels(channels, &mut planner));
@@ -414,6 +424,12 @@ fn render_frames_factored(
     let mut phase_trace_hash = HASH_OFFSET;
     let mut synthesis_trace_hash = HASH_OFFSET;
     for frame in &frames {
+        let fft_frames = match fft_grid {
+            FftGridFactor::Shared4096 => FFT_FRAMES,
+            FftGridFactor::Native => frame.length,
+        };
+        let forward = planner.plan_fft_forward(fft_frames);
+        let inverse = planner.plan_fft_inverse(fft_frames);
         let analysis_weights = window(frame.length, analysis_window);
         let synthesis_weights = window(frame.length, synthesis_window);
         let buffer_offset = (fft_frames - frame.length) / 2;
@@ -458,12 +474,12 @@ fn render_frames_factored(
             }
             spectra.push(spectrum);
             if mode.successor() {
-                let tracking_weights = window(fft_frames, analysis_window);
+                let tracking_weights = window(FFT_FRAMES, analysis_window);
                 tracking_spectra.push(tracking::spectrum(
                     &tracking_channels.as_ref().expect("analytic channels")[channel_index],
                     frame.source,
                     &tracking_weights,
-                    &forward,
+                    &tracking_forward,
                 ));
             }
         }
@@ -499,6 +515,7 @@ fn render_frames_factored(
                 trace_bin,
                 tracking_spectra.get(channel_index).map(Vec::as_slice),
                 phase == PhaseFactor::AnalysisPassthrough,
+                mode.native_successor(),
             );
             event_phase_changes += result.event_changes;
             vertical_phase_changes += result.vertical_changes;

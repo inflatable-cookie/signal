@@ -11,7 +11,8 @@ use measurement::{
     replica_ratio, rms_prefix, rms_suffix, texture,
 };
 pub(in crate::frequency_adaptive) use review::{
-    owned_successor_quality_review, quality_review, successor_quality_review,
+    native_successor_quality_review, owned_successor_quality_review, quality_review,
+    successor_quality_review,
 };
 
 const TIMING_SEARCH: usize = 512;

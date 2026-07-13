@@ -970,23 +970,31 @@ Status: closed without exposure. No development candidate qualified.
 
 ### Batch 29.6CF - Native-Grid Active-Owner Synthetic Proof
 
-- [ ] compose the existing single-owner schedule, fixed analytic tracker,
+- [x] compose the existing single-owner schedule, fixed analytic tracker,
   sample-refined anchors, conflicted-bridge owner, and exact dual around native
   Hann/Hann synthesis coefficients
-- [ ] project active physical-frequency owners onto each native FFT grid while
+- [x] project active physical-frequency owners onto each native FFT grid while
   preserving native magnitudes and native within-region analysis-phase offsets
-- [ ] pass the mechanism controls and complete `48`-row synthetic quality gate
-  without tuning before opening any real-source render
+- [x] run the mechanism controls and complete `48`-row synthetic quality gate;
+  reject on three stretched `55 Hz` rows before any real-source render
 
-### Batch 29.6CG - Frozen Mono Development Gate
+### Batch 29.6CG - Low-Frequency Native-Projection Attribution
 
-- [ ] open only after Batch 29.6CF passes every hard synthetic check
+- [ ] freeze the three failed `55 Hz` rows and passing synthetic controls
+- [ ] trace active phase through native owner-bin/region projection, inverse
+  output, and exact-dual accumulation at the frozen measurement apertures
+- [ ] assign one earliest boundary without changing thresholds, windows,
+  schedule, detector, or gate
+
+### Batch 29.6CH - Frozen Mono Development Gate
+
+- [ ] open only after a repaired candidate passes every hard synthetic check
 - [ ] compare the frozen candidate with current Signal and captured external
   evidence on the unchanged nine development rows
 - [ ] report every integrity, transient, replica, spectral, texture, formant,
   and boundary field; return failures to traced ownership instead of sweeping
 
-### Batch 29.6CH - Mono Decision Checkpoint
+### Batch 29.6CI - Mono Decision Checkpoint
 
 - [ ] open only after the frozen nine-row development evidence is complete
 - [ ] decide whether the candidate earns concealed mono listening, requires one
@@ -1825,10 +1833,20 @@ Status: closed without exposure. No development candidate qualified.
   Batch 29.6CF owns implementation and the complete synthetic gate. Factor
   sweeps, real sources, holdout, listening, stereo, dynamic ratio, cache, and
   routing remain closed.
+- 2026-07-13: Batch 29.6CF implements the contracted native-grid active-owner
+  path and rejects it before real-source rendering. Identity, coverage,
+  symmetry, residue, finiteness, exact anchors, event placement, dense
+  one-to-one placement, replica protection, and all mid/high-tone rows pass.
+  All `300/300` active resolution transitions retain a matched owner. Only the
+  stretched `55 Hz` rows fail: rendered angular-frequency error reaches
+  `3.695086e-5` against `1e-6`, while tracked-owner error stays at
+  `1.263528e-7`. The `48`-row gate has three hard failures and zero combined
+  regressions. Mechanism and quality hashes are `19c5548baf4a10c8` and
+  `2410e33944214b72`. Batch 29.6CG traces native coefficient projection and
+  overlap; real sources remain closed.
 
 ## Next Task
 
-Execute Batch 29.6CF under Rule 30AA. Implement the report-only native-grid
-active-owner mono path. Run mechanism controls and the complete `48`-row
-synthetic gate before any real-source render. Stop and trace the earliest owner
-on failure; do not tune or reopen factor sweeps.
+Execute Batch 29.6CG under Rule 30AB. Trace the three failed `55 Hz` rows from
+active-owner phase through native owner-bin/region projection, inverse output,
+and exact-dual accumulation. Do not render real sources or reopen sweeps.

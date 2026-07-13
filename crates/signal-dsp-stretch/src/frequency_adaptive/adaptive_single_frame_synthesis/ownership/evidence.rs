@@ -12,6 +12,8 @@ pub(super) struct RowEvidence {
     pub(super) tone_errors: [f64; 2],
     pub(super) event_errors: [usize; 3],
     pub(super) owner_counts: [usize; 4],
+    pub(super) resolution_transitions: usize,
+    pub(super) matched_resolution_transitions: usize,
     pub(super) frame_counts: [usize; 3],
     pub(super) phase_limits: [f64; 2],
     pub(super) silence_peak: f64,
