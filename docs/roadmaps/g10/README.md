@@ -307,8 +307,13 @@ Current stretch status:
   All eight factor modes still regress both timbral fields in `9/9` rows.
   Hann analysis and synthesis then reduce timing and timbral residuals, but all
   four window pairs still regress static-spectrum and formant quality in `9/9`
-  rows. Batch 29.6CD isolates shared-FFT zero-padding and centered/reflected
-  frame geometry from the current start-aligned native-FFT representation.
+  rows. Geometry attribution finds that native-`2048` centered reflection
+  lowers mean static/formant residual by `0.040495/0.017523` relative to the
+  shared `4096` grid, while start-aligned zero padding gives much of that gain
+  back. Native geometry also raises replica ratio sharply, and every mode still
+  regresses both timbral fields in `9/9` rows. Shared-grid zero-padding
+  contributes; the remaining phase/magnitude path owns the broad defect. Batch
+  29.6CE is a no-render design checkpoint before more synthesis implementation.
   Holdout and listening remain closed.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
@@ -316,7 +321,6 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Execute `g10.029` Batch 29.6CD under Rule 30Y. Separate shared-FFT zero-padding
-from centered/reflected and start-aligned/padded frame geometry on Hann/Hann
-`2048` without reading holdout, exporting listening audio, tuning, or changing
-policy.
+Execute `g10.029` Batch 29.6CE under Rule 30Z. Contract one coherent
+native-grid, reflection-preserving phase/magnitude path from the accumulated
+evidence without rendering another candidate or reopening factor sweeps.

@@ -54,6 +54,18 @@ pub(super) enum WindowFactor {
     Hann,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) enum FftGridFactor {
+    Shared4096,
+    Native,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) enum FrameGeometryFactor {
+    CenteredReflected,
+    StartAlignedPadded,
+}
+
 impl OverlapFactor {
     fn operator_weight(self, analysis: f64, synthesis: f64) -> f64 {
         match self {
@@ -213,6 +225,8 @@ pub(super) fn render_ordinary_factor(
         overlap,
         WindowFactor::RootHann,
         WindowFactor::RootHann,
+        FftGridFactor::Shared4096,
+        FrameGeometryFactor::CenteredReflected,
     )
 }
 
@@ -237,6 +251,36 @@ pub(super) fn render_ordinary_window_factor(
         OverlapFactor::DiagonalDual,
         analysis,
         synthesis,
+        FftGridFactor::Shared4096,
+        FrameGeometryFactor::CenteredReflected,
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+pub(super) fn render_ordinary_geometry_factor(
+    channels: &[Vec<f64>],
+    ratio: f64,
+    points: &[usize],
+    schedule: &Schedule,
+    length: usize,
+    fft_grid: FftGridFactor,
+    frame_geometry: FrameGeometryFactor,
+) -> Render {
+    render_frames_factored(
+        channels,
+        ratio,
+        points,
+        points,
+        &[],
+        schedule,
+        Mode::Ordinary,
+        schedule::fixed(ratio, length, schedule),
+        PhaseFactor::Transport,
+        OverlapFactor::DiagonalDual,
+        WindowFactor::Hann,
+        WindowFactor::Hann,
+        fft_grid,
+        frame_geometry,
     )
 }
 
@@ -263,6 +307,8 @@ fn render_frames(
         OverlapFactor::DiagonalDual,
         WindowFactor::RootHann,
         WindowFactor::RootHann,
+        FftGridFactor::Shared4096,
+        FrameGeometryFactor::CenteredReflected,
     )
 }
 
@@ -280,7 +326,24 @@ fn render_frames_factored(
     overlap: OverlapFactor,
     analysis_window: WindowFactor,
     synthesis_window: WindowFactor,
+    fft_grid: FftGridFactor,
+    frame_geometry: FrameGeometryFactor,
 ) -> Render {
+    let frame_length = frames
+        .iter()
+        .map(|frame| frame.length)
+        .max()
+        .expect("adaptive frames");
+    let fft_frames = match fft_grid {
+        FftGridFactor::Shared4096 => FFT_FRAMES,
+        FftGridFactor::Native => frame_length,
+    };
+    assert!(frame_length <= fft_frames, "frame fits FFT grid");
+    assert!(
+        frame_geometry == FrameGeometryFactor::CenteredReflected
+            || fft_grid == FftGridFactor::Native,
+        "start-aligned padding requires a native FFT grid"
+    );
     let target_len = (ratio * SOURCE_FRAMES as f64).round() as usize;
     let output_start = frames
         .iter()
@@ -314,11 +377,11 @@ fn render_frames_factored(
     let mut outputs = vec![vec![Complex64::new(0.0, 0.0); domain_len]; channels.len()];
     let mut states = channels
         .iter()
-        .map(|_| PhaseState::new())
+        .map(|_| PhaseState::new(fft_frames))
         .collect::<Vec<_>>();
     let mut planner = FftPlanner::<f64>::new();
-    let forward = planner.plan_fft_forward(FFT_FRAMES);
-    let inverse = planner.plan_fft_inverse(FFT_FRAMES);
+    let forward = planner.plan_fft_forward(fft_frames);
+    let inverse = planner.plan_fft_inverse(fft_frames);
     let tracking_channels = mode
         .successor()
         .then(|| tracking::analytic_channels(channels, &mut planner));
@@ -353,18 +416,24 @@ fn render_frames_factored(
     for frame in &frames {
         let analysis_weights = window(frame.length, analysis_window);
         let synthesis_weights = window(frame.length, synthesis_window);
-        let buffer_offset = (FFT_FRAMES - frame.length) / 2;
+        let buffer_offset = (fft_frames - frame.length) / 2;
         let overlap_ownership = (mode.event_owned() && ratio != 1.0)
             .then(|| overlap::Ownership::for_frame(frame, &events, schedule))
             .flatten();
         let mut spectra = Vec::with_capacity(channels.len());
-        let mut linked = vec![0.0_f64; FFT_FRAMES / 2 + 1];
+        let mut linked = vec![0.0_f64; fft_frames / 2 + 1];
         let mut tracking_spectra = Vec::with_capacity(channels.len());
         for (channel_index, channel) in channels.iter().enumerate() {
-            let mut spectrum = vec![Complex64::new(0.0, 0.0); FFT_FRAMES];
+            let mut spectrum = vec![Complex64::new(0.0, 0.0); fft_frames];
             for (offset, weight) in analysis_weights.iter().copied().enumerate() {
                 let logical = frame.source - frame.length as isize / 2 + offset as isize;
-                let original = reflected(channel, logical);
+                let original = match frame_geometry {
+                    FrameGeometryFactor::CenteredReflected => reflected(channel, logical),
+                    FrameGeometryFactor::StartAlignedPadded => channel
+                        .get(usize::try_from(logical).unwrap_or(usize::MAX))
+                        .copied()
+                        .unwrap_or(0.0),
+                };
                 let sample = overlap_ownership
                     .as_ref()
                     .and_then(|ownership| ownership.sample(channel, logical))
@@ -379,7 +448,7 @@ fn render_frames_factored(
                 spectrum[buffer_offset + offset].re = sample * weight;
             }
             forward.process(&mut spectrum);
-            for (bin, value) in spectrum.iter().take(FFT_FRAMES / 2 + 1).enumerate() {
+            for (bin, value) in spectrum.iter().take(fft_frames / 2 + 1).enumerate() {
                 linked[bin] += value.norm_sqr();
                 hash(&mut magnitude_hash, value.norm().to_bits());
             }
@@ -389,7 +458,7 @@ fn render_frames_factored(
             }
             spectra.push(spectrum);
             if mode.successor() {
-                let tracking_weights = window(FFT_FRAMES, analysis_window);
+                let tracking_weights = window(fft_frames, analysis_window);
                 tracking_spectra.push(tracking::spectrum(
                     &tracking_channels.as_ref().expect("analytic channels")[channel_index],
                     frame.source,
@@ -445,8 +514,8 @@ fn render_frames_factored(
                 phase_trace.push(trace);
             }
             mirror(spectrum);
-            for bin in 0..FFT_FRAMES {
-                let mirror_bin = if bin == 0 { 0 } else { FFT_FRAMES - bin };
+            for bin in 0..fft_frames {
+                let mirror_bin = if bin == 0 { 0 } else { fft_frames - bin };
                 symmetry_error =
                     symmetry_error.max((spectrum[bin] - spectrum[mirror_bin].conj()).norm());
                 non_finite +=
@@ -467,7 +536,7 @@ fn render_frames_factored(
                 let logical = frame.output - frame.length as isize / 2 + offset as isize;
                 let domain = (logical - output_start) as usize;
                 let value = spectrum[buffer_offset + offset]
-                    * (overlap.synthesis_weight(weight) / (FFT_FRAMES as f64 * operator[domain]));
+                    * (overlap.synthesis_weight(weight) / (fft_frames as f64 * operator[domain]));
                 imaginary_residue = imaginary_residue.max(value.im.abs());
                 outputs[channel_index][domain] += value;
                 if channel_index == 0 {
@@ -475,7 +544,7 @@ fn render_frames_factored(
                         if logical == *target {
                             traced_samples.push(SampleTrace {
                                 output: *target,
-                                dual_weight: weight / (FFT_FRAMES as f64 * operator[domain]),
+                                dual_weight: weight / (fft_frames as f64 * operator[domain]),
                                 value: [value.re, value.im],
                             });
                         }
@@ -602,10 +671,11 @@ fn reflected(input: &[f64], mut index: isize) -> f64 {
 }
 
 fn mirror(spectrum: &mut [Complex64]) {
+    let fft_frames = spectrum.len();
     spectrum[0].im = 0.0;
-    spectrum[FFT_FRAMES / 2].im = 0.0;
-    for bin in 1..FFT_FRAMES / 2 {
-        spectrum[FFT_FRAMES - bin] = spectrum[bin].conj();
+    spectrum[fft_frames / 2].im = 0.0;
+    for bin in 1..fft_frames / 2 {
+        spectrum[fft_frames - bin] = spectrum[bin].conj();
     }
 }
 

@@ -3,6 +3,7 @@ mod attribution;
 mod dense_attribution;
 mod development_measurement;
 mod development_objective;
+mod geometry_attribution;
 mod mechanism_attribution;
 mod overlap_ownership;
 mod ownership;
@@ -15,6 +16,7 @@ mod window_attribution;
 pub(super) use attribution::{attribution_review, AttributionDirection};
 pub(super) use dense_attribution::{dense_attribution_review, DenseAttributionDirection};
 pub(super) use development_objective::{development_objective_review, DevelopmentDirection};
+pub(super) use geometry_attribution::{geometry_attribution_review, GeometryAttributionDirection};
 pub(super) use mechanism_attribution::{
     mechanism_attribution_review, MechanismAttributionDirection,
 };

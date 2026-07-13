@@ -952,12 +952,21 @@ Status: closed without exposure. No development candidate qualified.
 
 ### Batch 29.6CD - Coefficient-Geometry Attribution
 
-- [ ] hold Hann analysis/synthesis, ordinary transport, exact dual
+- [x] hold Hann analysis/synthesis, ordinary transport, exact dual
   normalization, rows, ratios, and measurements fixed
-- [ ] compare centered/reflected `2048` analysis on shared `4096` and native
+- [x] compare centered/reflected `2048` analysis on shared `4096` and native
   `2048` FFT grids with start-aligned padded native-`2048` geometry
-- [ ] assign the remaining broad regression to FFT zero-padding, frame/boundary
+- [x] assign the remaining broad regression to FFT zero-padding, frame/boundary
   geometry, or the remaining phase/magnitude path before candidate design
+
+### Batch 29.6CE - Coefficient-Path Design Checkpoint
+
+- [ ] consolidate Rules 30W through 30Y and behavioural-forensics evidence
+  without rendering another candidate
+- [ ] freeze one native-grid, reflection-preserving coefficient path that owns
+  cross-bin phase coherence and transient replicas together
+- [ ] stop for a named research question if one bounded complete design cannot
+  be supported; do not reopen factor sweeps
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -1770,10 +1779,20 @@ Status: closed without exposure. No development candidate qualified.
   `7d7886402f662bc7`, `76298cafc83779af`, `a2173e14c6eb7535`, and
   `1f7a65480074cf7b`. Holdout and listening remain closed. Batch 29.6CD owns
   FFT-grid and frame/boundary geometry attribution.
+- 2026-07-13: Batch 29.6CD assigns shared-grid zero-padding as a contributor and
+  the remaining phase/magnitude path as the broad defect owner. Moving centered
+  reflected Hann/Hann `2048` frames from shared `4096` to native `2048` lowers
+  mean timing, static, and formant deltas by `32.194444`, `0.040495`, and
+  `0.017523`, but raises replica ratio by `0.842327`. Start-aligned zero padding
+  then gives back `0.029572/0.011684` static/formant residual. Every candidate
+  still regresses both timbral fields in `9/9` rows. Frozen hashes are
+  `55021268ac0cb16f`, `d788ea7642e16b09`, `b56a87e849ff3f5a`, and
+  `fcd42c867eef4419`. Holdout and listening remain closed. Batch 29.6CE is a
+  no-render coefficient-path design checkpoint before more synthesis code.
 
 ## Next Task
 
-Execute Batch 29.6CD under Rule 30Y. On Hann/Hann `2048`, separate shared-FFT
-zero-padding from centered/reflected versus start-aligned padded frame geometry.
-Keep detector/schedule policy, holdout, listening, tuning, linked stereo,
-dynamic ratio, cache, and routing closed.
+Execute Batch 29.6CE under Rule 30Z. Freeze one coherent native-grid,
+reflection-preserving coefficient path from the accumulated evidence. Do not
+render another candidate or reopen factor sweeps, holdout, listening, tuning,
+linked stereo, dynamic ratio, cache, or routing.

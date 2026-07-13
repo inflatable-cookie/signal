@@ -2,7 +2,7 @@ mod active;
 
 use rustfft::num_complex::Complex64;
 
-use super::{Frame, Mode, FFT_FRAMES};
+use super::{Frame, Mode};
 use active::transport as transport_active;
 
 pub(super) struct PhaseState {
@@ -51,10 +51,10 @@ pub(super) struct Result {
 }
 
 impl PhaseState {
-    pub(super) fn new() -> Self {
+    pub(super) fn new(fft_frames: usize) -> Self {
         Self {
-            analysis: vec![0.0; FFT_FRAMES / 2 + 1],
-            synthesis: vec![0.0; FFT_FRAMES / 2 + 1],
+            analysis: vec![0.0; fft_frames / 2 + 1],
+            synthesis: vec![0.0; fft_frames / 2 + 1],
             source: None,
             output: None,
             dominant: None,
@@ -85,6 +85,7 @@ pub(super) fn transport(
             trace_bin,
         );
     }
+    let fft_frames = spectrum.len();
     let first = state.source.is_none();
     let source_hop = state
         .source
@@ -99,15 +100,15 @@ pub(super) fn transport(
     let prior_bin = state.dominant.unwrap_or(trace_bin);
     let mut trace_frequency = 0.0;
     let mut transported_phase = 0.0;
-    for bin in 0..=FFT_FRAMES / 2 {
+    for bin in 0..=fft_frames / 2 {
         let analysis = spectrum[bin].arg();
         let (synthesis, frequency) = if first || analysis_passthrough {
             (
                 analysis,
-                std::f64::consts::TAU * bin as f64 / FFT_FRAMES as f64,
+                std::f64::consts::TAU * bin as f64 / fft_frames as f64,
             )
         } else {
-            let omega = std::f64::consts::TAU * bin as f64 / FFT_FRAMES as f64;
+            let omega = std::f64::consts::TAU * bin as f64 / fft_frames as f64;
             let residual = wrap(analysis - state.analysis[bin] - omega * source_hop);
             let frequency = omega + residual / source_hop;
             (state.synthesis[bin] + frequency * output_hop, frequency)
@@ -122,7 +123,7 @@ pub(super) fn transport(
     let event = frame.source >= 0 && events.contains(&(frame.source as usize));
     let event_changes = if mode.event() && event {
         let mut changes = 0;
-        for bin in 0..=FFT_FRAMES / 2 {
+        for bin in 0..=fft_frames / 2 {
             changes +=
                 usize::from(wrap(state.synthesis[bin] - state.analysis[bin]).abs() > 1.0e-12);
             state.synthesis[bin] = state.analysis[bin];
@@ -137,7 +138,7 @@ pub(super) fn transport(
         0
     };
     let final_phase = state.synthesis[trace_bin];
-    for bin in 0..=FFT_FRAMES / 2 {
+    for bin in 0..=fft_frames / 2 {
         spectrum[bin] = Complex64::from_polar(spectrum[bin].norm(), state.synthesis[bin]);
     }
     state.source = Some(frame.source);

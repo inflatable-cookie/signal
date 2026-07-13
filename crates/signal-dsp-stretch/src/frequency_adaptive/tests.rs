@@ -1192,6 +1192,47 @@ fn adaptive_single_frame_real_source_window_attribution_is_frozen() {
 
 #[test]
 #[cfg(not(debug_assertions))]
+fn adaptive_single_frame_real_source_geometry_attribution_is_frozen() {
+    use super::adaptive_single_frame_synthesis::{
+        geometry_attribution_review, GeometryAttributionDirection,
+    };
+
+    let first = geometry_attribution_review();
+    let repeated = geometry_attribution_review();
+    eprintln!("adaptive_single_frame_geometry_attribution {first:?}");
+    assert_eq!(first, repeated);
+    assert_eq!(first.rows, 9);
+    assert_eq!(first.modes, 5);
+    assert_eq!(first.renders, 45);
+    assert_eq!(first.holdout_reads, 0);
+    assert_eq!(first.hard_failures, 8);
+    assert_eq!(first.hard_failures_by_mode, [0, 0, 4, 2, 2]);
+    assert_eq!(first.event_fallback_renders, 27);
+    assert_eq!(first.changed_from_current, [9; 4]);
+    assert_eq!(
+        first.regression_from_current,
+        [[5, 5, 9, 9], [5, 7, 9, 9], [3, 7, 9, 9], [7, 8, 9, 9]]
+    );
+    assert_eq!(first.resolution_regressions, [4, 6, 3, 4]);
+    assert_eq!(first.fft_grid_regressions, [3, 6, 0, 0]);
+    assert_eq!(first.frame_geometry_regressions, [5, 5, 9, 7]);
+    assert_eq!(
+        first.hashes,
+        [
+            0x5502_1268_ac0c_b16f,
+            0xd788_ea76_42e1_6b09,
+            0xb56a_87e8_49ff_3f5a,
+            0xfcd4_2c86_7eef_4419,
+        ]
+    );
+    assert_eq!(
+        first.direction,
+        GeometryAttributionDirection::SharedGridContributesRemainingPathOwns
+    );
+}
+
+#[test]
+#[cfg(not(debug_assertions))]
 fn adaptive_single_frame_failure_attribution_selects_bounded_redesign() {
     use super::adaptive_single_frame_synthesis::{attribution_review, AttributionDirection};
 

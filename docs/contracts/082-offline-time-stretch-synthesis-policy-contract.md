@@ -2924,6 +2924,40 @@ report-only controls. Do not read holdout, export listening audio, tune, change
 detector/schedule policy, or open linked stereo, dynamic ratio, cache, or
 routing.
 
+Rule 30Y assigns a contributing loss to the shared FFT grid and the remaining
+broad defect to the phase/magnitude path. Moving centered reflected Hann/Hann
+`2048` frames from shared `4096` to native `2048` reduces mean timing,
+static-residual, and formant-residual deltas by `32.194444`, `0.040495`, and
+`0.017523`, but increases replica ratio by `0.842327`. Replacing reflection with
+start-aligned zero padding worsens static and formant residual by
+`0.029572/0.011684`. All four candidate modes still regress both timbral fields
+in `9/9` rows. Native-grid centered reflection is therefore the strongest
+timbral geometry, not a promotable candidate: replica protection and two
+endpoint-integrity rows still fail.
+
+Manifest, render, measurement, and aggregate hashes are
+`55021268ac0cb16f`, `d788ea7642e16b09`, `b56a87e849ff3f5a`, and
+`fcd42c867eef4419`. The TSV SHA-256 is
+`77fe8087a61537775f085611a99d769a47c2d6259cf524f9463af8801d691df9`.
+Holdout reads and listening exports remain zero.
+
+#### Rule 30Z: coefficient-path design checkpoint
+
+Batch 29.6CE is a no-render design checkpoint. Use Rules 30W through 30Y and
+the existing behavioural-forensics evidence to contract one coherent
+phase/magnitude candidate before implementation. Preserve Hann analysis and
+synthesis, native per-resolution FFT geometry, reflected boundary reads, the
+frozen detector schedule, one output timeline, and exact dual normalization.
+The design must address cross-bin phase coherence and transient replicas
+together; it may not claim the native-grid timbral gain while leaving replica
+protection as later cleanup.
+
+Do not reopen window, FFT-size, padding, detector, threshold, or schedule
+sweeps. Do not render the corpus, read holdout, export listening audio, tune,
+or open linked stereo, dynamic ratio, cache, or routing. Stop if the evidence
+cannot support one bounded complete coefficient path without a new research
+question.
+
 ## Clean-Room Rule
 
 Public papers and public algorithm descriptions may inform Signal design.
@@ -2932,7 +2966,7 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Execute Batch 29.6CD under Rule 30Y. Separate shared-FFT zero-padding from
-centered/reflected and start-aligned/padded frame geometry on Hann/Hann `2048`.
-Keep detector/schedule policy, holdout, listening, tuning, linked stereo,
+Execute Batch 29.6CE under Rule 30Z. Contract one coherent native-grid,
+reflection-preserving phase/magnitude path before more synthesis code. Keep
+factor sweeps, corpus rendering, holdout, listening, tuning, linked stereo,
 dynamic ratio, cache, and routing closed.

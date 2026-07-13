@@ -783,8 +783,20 @@ places shorter windows on a shared `4096` FFT grid, while current Signal uses
 start-aligned padded `2048` frames on a native grid. Those factors must be
 separated before changing phase or magnitude policy.
 
+Geometry attribution keeps Hann/Hann `2048` fixed and separates those factors.
+Moving centered reflected frames from the shared `4096` grid to native `2048`
+reduces mean static/formant residual by `0.040495/0.017523` and mean timing loss
+by `32.194444` frames, but raises replica ratio by `0.842327`. Replacing
+reflection with start-aligned zero padding then worsens static/formant residual
+by `0.029572/0.011684`. Every geometry still regresses both timbral fields in
+all nine rows. Shared-grid zero-padding contributes to the damage and reflected
+boundaries help, but neither owns the broad defect. The remaining owner is the
+phase/magnitude coefficient path; native-grid timbral gains cannot be promoted
+while replica protection fails.
+
 ## Next Task
 
-Run Rule 30Y on Hann/Hann `2048`. Separate shared-FFT zero-padding from
-centered/reflected and start-aligned/padded frame geometry before any redesign,
-holdout read, listening export, tuning, stereo, dynamic, cache, or routing.
+Run the Rule 30Z coefficient-path design checkpoint. Freeze one coherent
+native-grid, reflection-preserving candidate from the accumulated attribution
+evidence before more synthesis implementation. Do not reopen factor sweeps,
+holdout, listening, tuning, stereo, dynamic, cache, or routing.
