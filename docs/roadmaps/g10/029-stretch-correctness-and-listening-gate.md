@@ -848,18 +848,27 @@ Status: closed without exposure. No development candidate qualified.
 
 ### Batch 29.6BS - Adaptive Single-Frame Synthetic Quality Gate
 
-- [ ] freeze combined event-plus-vertical mode and ordinary transport as the
+- [x] freeze combined event-plus-vertical mode and ordinary transport as the
   only ablation; make no study, geometry, schedule, peak, or phase-policy change
-- [ ] run Rule 30N identity, tone, chirp, isolated/dense event, boundary,
+- [x] run Rule 30N identity, tone, chirp, isolated/dense event, boundary,
   noise, mixed, and silence controls at `0.75`, `1.5`, and `2.0`
 - [ ] pass exact structure, identity, pitch, isolated and one-to-one dense-event,
   symmetry, silence, boundary, and repeat gates
-- [ ] report crest, replicas, static/unsupported spectrum, tonal texture, and
+- [x] report crest, replicas, static/unsupported spectrum, tonal texture, and
   mode deltas without threshold fitting or corpus reads
 
-### Batch 29.6BT - Frozen Mono Development Objective Comparison
+### Batch 29.6BT - Phase And Event-Placement Failure Attribution
 
-- [ ] open only after Batch 29.6BS passes without tuning
+- [ ] freeze the failing Rule 30N tone, isolated-event, and dense-event rows
+- [ ] trace scheduled centres, synthesis contributions, phase advances, and
+  output peaks without changing study, map, window, peak, or phase policy
+- [ ] separate time-map, phase-transport, event-correction, vertical-locking,
+  and diagonal-dual synthesis responsibility for every hard failure
+- [ ] select one bounded redesign stage; keep parameter search and audio closed
+
+### Batch 29.6BU - Frozen Mono Development Objective Comparison
+
+- [ ] open only after a successor synthetic quality gate passes without tuning
 - [ ] freeze family-balanced development rows and compare the selected
   candidate with current Signal and captured external behavioural evidence
 - [ ] report the full integrity, transient, replica, spectral, texture, formant,
@@ -1561,10 +1570,20 @@ Status: closed without exposure. No development candidate qualified.
   limit. Structural, linked-order, symmetry, residue, finiteness, and repeat
   gates pass. Evidence hash `9cc7519deb368966` repeats. Batch 29.6BS owns
   synthetic quality evidence before any corpus read.
+- 2026-07-13: Batch 29.6BS rejects the frozen combined mode. Across `48`
+  control/ratio cases and ordinary-plus-combined evidence, structure, identity,
+  coefficient ownership, silence, symmetry, finiteness, and repeat pass, but
+  pitch and event placement produce `25` hard failures and one combined-mode
+  regression. Maximum angular-frequency error is `6.842e-4` radians/sample
+  against `1e-6`; isolated-event error reaches `496` frames against `1`; dense
+  one-to-one error reaches `896` against `256`. Evidence hash
+  `6781d49348dfa931` repeats. Corpus audio remains closed. Batch 29.6BT owns
+  trace-only phase and event-placement attribution before any redesign.
 
 ## Next Task
 
-Execute Batch 29.6BS. Run the frozen adaptive single-frame combined mode and
-ordinary ablation through Rule 30N synthetic quality gates. Keep corpus audio,
-holdout, listening, tuning, linked-stereo promotion, dynamic ratio, and product
+Execute Batch 29.6BT. Freeze the failing Rule 30N rows and trace scheduled
+centres, per-frame phase advances, synthesis contributions, and output peaks to
+separate map, phase, event, vertical, and synthesis responsibility. Keep corpus
+audio, holdout, listening, tuning, linked stereo, dynamic ratio, and product
 routing closed.

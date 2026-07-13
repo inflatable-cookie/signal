@@ -2558,6 +2558,39 @@ development-corpus objective comparison against current Signal and the already
 captured external behavioural reference. Holdout, listening, parameter search,
 linked-stereo promotion, dynamic ratio, and product routing remain closed.
 
+Batch 29.6BS rejects the frozen candidate. All structure, identity,
+coefficient/magnitude ownership, silence, symmetry, residue, finiteness, and
+repeat checks pass. The `48` control/ratio rows nevertheless produce `25` hard
+pitch or placement failures and one combined-mode regression. Maximum steady
+tone angular-frequency error is `6.842e-4` radians/sample; isolated-event error
+is `496` frames; dense one-to-one error is `896` frames. Evidence hash
+`6781d49348dfa931` repeats. No corpus or holdout audio is read.
+
+#### Rule 30O: attribute the failed phase and event placement before redesign
+
+Batch 29.6BT is measurement-only. Freeze every failing Rule 30N steady-tone,
+isolated-event, and dense-event row with its existing study, selected points,
+adaptive windows, global schedule, event scope, peak ownership, phase policy,
+and ordinary/combined modes. Do not add parameters or render corpus audio.
+
+For tone rows, trace source/output frame hops, expected physical-frequency
+advance, transported advance, wrapped phase error, peak-region ownership, and
+output instantaneous-frequency error per frame. For event rows, trace exact
+schedule position, every overlapping frame centre and diagonal-dual
+contribution, event and vertical phase assignment, local output energy centre,
+primary peak, replica peaks, and one-to-one dense matching. All traces must
+retain stable row, frame, coefficient, phase, contribution, output, and repeat
+hashes.
+
+Classify each failure under the earliest responsible boundary: global time map,
+physical-frequency phase transport, event correction, vertical locking, or
+diagonal-dual synthesis. Ordinary failures cannot be assigned to event or
+vertical policy. Combined-only regressions must identify the exact changed
+phase assignments and downstream peak or frequency movement. Passage selects
+one bounded redesign stage and a new synthetic acceptance batch. It does not
+authorize threshold changes, tuning, corpus, holdout, listening, stereo,
+dynamic ratio, cache, or product routing.
+
 ## Clean-Room Rule
 
 Public papers and public algorithm descriptions may inform Signal design.
@@ -2566,7 +2599,7 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Execute Batch 29.6BS synthetic quality gate. Reuse the frozen combined mode and
-ordinary ablation without parameter changes. Keep corpus audio, holdout,
+Execute Batch 29.6BT failure attribution under Rule 30O. Reuse the frozen
+failing rows and modes without parameter changes. Keep corpus audio, holdout,
 listening, tuning, linked-stereo promotion, dynamic ratio, and product routing
 closed.

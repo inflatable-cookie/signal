@@ -666,8 +666,21 @@ combined mode and measures isolated and dense event timing, crest, replicas,
 tonal spectrum and texture, silence, and boundaries on synthetic controls.
 Corpus audio remains closed until those absolute checks pass without tuning.
 
+That quality gate rejects the candidate. Exact structure, identity,
+coefficient/magnitude ownership, silence, symmetry, residue, finiteness, and
+repeat remain intact. Stretched steady tones and scheduled events do not:
+`48` control/ratio rows produce `25` hard failures and one combined-mode
+regression. Angular-frequency error reaches `6.842e-4` radians/sample;
+isolated-event displacement reaches `496` frames; dense one-to-one displacement
+reaches `896` frames. The combined mode improves several dense rows but does not
+repair isolated placement or general pitch and causes the one regression.
+
+The next stage is trace-only. It freezes the failed rows and follows frame-hop
+phase advance and event-local diagonal-dual contributions through to output
+energy and peaks. This must locate the earliest responsible boundary before any
+phase, event, vertical, or synthesis redesign. Corpus audio remains closed.
+
 ## Next Task
 
-Run the frozen adaptive single-frame combined mode and ordinary ablation through
-the Rule 30N synthetic quality gate. Keep corpus, holdout, listening, and tuning
-closed.
+Run Rule 30O failure attribution on the frozen tone and event rows. Keep corpus,
+holdout, listening, tuning, and algorithm changes closed.

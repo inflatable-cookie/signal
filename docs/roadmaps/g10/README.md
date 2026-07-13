@@ -273,7 +273,8 @@ Current stretch status:
   linked study and one-global-map attachment also pass all three ratios with
   zero structural or mapping failures. Output-lattice coverage and one
   continuous single-frame phase/synthesis path now pass four controls. Synthetic
-  transient, replica, texture, and boundary quality evidence is next; corpus
+  quality then rejects the frozen mode on pitch and event placement despite
+  intact structure and identity. Trace-only failure attribution is next; corpus
   audio remains closed.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
@@ -281,6 +282,5 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Execute `g10.029` Batch 29.6BS. Run the frozen adaptive single-frame combined
-mode and ordinary ablation through Rule 30N synthetic quality gates without
-corpus reads or parameter changes.
+Execute `g10.029` Batch 29.6BT. Trace the frozen Rule 30N pitch and event
+placement failures under Rule 30O without corpus reads or parameter changes.
