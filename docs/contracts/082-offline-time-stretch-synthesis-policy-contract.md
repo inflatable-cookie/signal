@@ -2512,6 +2512,52 @@ coverage passes returns to single-frame phase or dual synthesis. Passage opens
 fixed-ratio mono objective gating only. Corpus audio, holdout, tuning, stereo
 promotion, dynamic ratio, and product routing remain closed.
 
+Batch 29.6BR passes its mechanism gate. Each control retains `104` selected
+frames and crosses resolution `24` times while initializing one phase state
+only once per channel. Uncovered output is zero. Output-frame condition is
+`1.694641`, `1.668755`, `1.863098`, and `2.964471` at `1.0`, `0.75`, `1.5`,
+and `2.0`. Identity peak error is `1.334183e-12`; tone error is `0`, `0.5`,
+`0`, and `0 Hz`. Known injected-event error is `128`, `96`, `192`, and `256`
+frames. Symmetry error is zero and maximum imaginary residue is `2.03e-14`.
+All structural, magnitude/timing ownership, linked-order, and finite-value
+checks pass. Evidence hash `9cc7519deb368966` repeats exactly. Earlier
+identity, ownership, and map evidence remains unchanged.
+
+#### Rule 30N: synthetic quality evidence precedes corpus audio
+
+Batch 29.6BS freezes the combined event-plus-vertical mode from Rule 30M and
+keeps ordinary transport as its only ablation. Reuse the Rule 26I steady
+low/mid/high tone, two-tone, linear/exponential chirp, isolated impulse, dense
+event, boundary, deterministic noise, mixed, and silence controls at identity,
+`0.75`, `1.5`, and `2.0`. Do not change study sensitivity, island geometry,
+schedule strength, event scope, peak ownership, or phase policy.
+
+Report exact length, coverage, frame condition, coefficient and magnitude
+identity, phase assignments, symmetry, imaginary residue, finiteness, endpoint
+energy, steady-tone frequency, isolated-impulse placement and crest, dense-event
+order and one-to-one placement, post-attack replica ratio, static spectral
+residual, unsupported-bin mass, tonal spectral/envelope movement, silence
+peak, phase-mode deltas, and repeat hashes. Timing search bounds must exceed
+their acceptance limit and dense events must be matched one-to-one; do not let
+the search radius manufacture a pass.
+
+Retain Rule 28's structural and known-answer limits: exact target length, zero
+uncovered/zero-filled/post-faded/non-finite output, identity peak error at most
+`1e-5`, RMS error at most `1e-6`, head/tail error at most `1e-5`, steady-tone
+angular-frequency error at most `1e-6` radians/sample, isolated impulse within
+one sample frame of its exact schedule position, silence peak at most `1e-12`,
+symmetry and imaginary residue at most `1e-9`, and exact repeat. Dense-event
+order and matching must be complete with every error at most `256` frames.
+Combined mode may not regress an ordinary passing hard gate. Crest, replica,
+static-spectrum, unsupported-mass, and texture fields remain explicit
+attribution evidence; they do not authorize threshold fitting.
+
+Failure returns to the measured phase, event, vertical, or synthesis stage.
+Do not tune around a failure. Passage opens one frozen fixed-ratio mono
+development-corpus objective comparison against current Signal and the already
+captured external behavioural reference. Holdout, listening, parameter search,
+linked-stereo promotion, dynamic ratio, and product routing remain closed.
+
 ## Clean-Room Rule
 
 Public papers and public algorithm descriptions may inform Signal design.
@@ -2520,6 +2566,7 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Execute Batch 29.6BR single-frame phase and synthesis proof. Reuse the frozen
-study, adaptive ownership, and global map. Keep corpus audio, holdout, tuning,
-stereo promotion, dynamic ratio, and product routing closed.
+Execute Batch 29.6BS synthetic quality gate. Reuse the frozen combined mode and
+ordinary ablation without parameter changes. Keep corpus audio, holdout,
+listening, tuning, linked-stereo promotion, dynamic ratio, and product routing
+closed.

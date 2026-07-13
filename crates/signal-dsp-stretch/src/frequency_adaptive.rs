@@ -59,6 +59,8 @@ pub(crate) use residual_boundary_attribution::common_grid_residual_boundary_attr
 #[cfg(all(test, not(debug_assertions)))]
 pub(crate) use three_row_nyquist::common_grid_three_row_nyquist_review;
 #[cfg(all(test, not(debug_assertions)))]
+mod adaptive_single_frame_synthesis;
+#[cfg(all(test, not(debug_assertions)))]
 mod adaptive_study_mapping;
 #[cfg(all(test, not(debug_assertions)))]
 mod time_adaptive_painless;

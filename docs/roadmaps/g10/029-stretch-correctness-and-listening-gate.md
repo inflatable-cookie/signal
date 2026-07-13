@@ -837,14 +837,35 @@ Status: closed without exposure. No development candidate qualified.
 
 ### Batch 29.6BR - Single-Frame Phase And Synthesis Proof
 
-- [ ] reuse the frozen study, adaptive ownership, and exact global output map
+- [x] reuse the frozen study, adaptive ownership, and exact global output map
   on identity, tone, event, boundary, and linked synthetic controls
-- [ ] transport one continuous physical-frequency phase state through actual
+- [x] transport one continuous physical-frequency phase state through actual
   source/output hops without resetting at resolution changes
-- [ ] prove output-lattice coverage and exact diagonal-dual synthesis before
+- [x] prove output-lattice coverage and exact diagonal-dual synthesis before
   separately enabling event correction and current-frame vertical locking
-- [ ] pass Rule 30M structural, identity, tone, event, phase, linked-decision,
+- [x] pass Rule 30M structural, identity, tone, event, phase, linked-decision,
   and repeat gates without corpus audio, holdout, tuning, or product routing
+
+### Batch 29.6BS - Adaptive Single-Frame Synthetic Quality Gate
+
+- [ ] freeze combined event-plus-vertical mode and ordinary transport as the
+  only ablation; make no study, geometry, schedule, peak, or phase-policy change
+- [ ] run Rule 30N identity, tone, chirp, isolated/dense event, boundary,
+  noise, mixed, and silence controls at `0.75`, `1.5`, and `2.0`
+- [ ] pass exact structure, identity, pitch, isolated and one-to-one dense-event,
+  symmetry, silence, boundary, and repeat gates
+- [ ] report crest, replicas, static/unsupported spectrum, tonal texture, and
+  mode deltas without threshold fitting or corpus reads
+
+### Batch 29.6BT - Frozen Mono Development Objective Comparison
+
+- [ ] open only after Batch 29.6BS passes without tuning
+- [ ] freeze family-balanced development rows and compare the selected
+  candidate with current Signal and captured external behavioural evidence
+- [ ] report the full integrity, transient, replica, spectral, texture, formant,
+  and boundary field set before any concealed listening export
+- [ ] keep holdout, parameter search, linked stereo, dynamic ratio, and product
+  routing closed
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -1532,10 +1553,18 @@ Status: closed without exposure. No development candidate qualified.
   linked-order agreement. Evidence hash `3ea1d3a2297083e2` repeats; the prior
   identity and ownership hashes are unchanged. Batch 29.6BR owns output-lattice
   coverage and one single-frame phase/synthesis proof.
+- 2026-07-13: Batch 29.6BR passes four frozen controls. All ratios retain `104`
+  selected frames and `24` resolution changes with one continuous phase-state
+  initialization per channel. Output coverage is complete; maximum frame
+  condition is `2.964471`; identity peak error is `1.334183e-12`; tone error
+  is at most `0.5 Hz`; known-event error is at most the frozen `256`-frame
+  limit. Structural, linked-order, symmetry, residue, finiteness, and repeat
+  gates pass. Evidence hash `9cc7519deb368966` repeats. Batch 29.6BS owns
+  synthetic quality evidence before any corpus read.
 
 ## Next Task
 
-Execute Batch 29.6BR. Prove output-lattice coverage, continuous actual-hop phase
-transport, separate event and current-frame vertical phase stages, and exact
-single-owner synthesis. Keep corpus audio, holdout, tuning, stereo promotion,
-dynamic ratio, and product routing closed.
+Execute Batch 29.6BS. Run the frozen adaptive single-frame combined mode and
+ordinary ablation through Rule 30N synthetic quality gates. Keep corpus audio,
+holdout, listening, tuning, linked-stereo promotion, dynamic ratio, and product
+routing closed.

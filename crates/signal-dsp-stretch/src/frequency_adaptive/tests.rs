@@ -576,6 +576,49 @@ fn adaptive_study_time_map_selects_single_frame_phase_contract() {
 
 #[test]
 #[cfg(not(debug_assertions))]
+fn adaptive_single_frame_phase_synthesis_selects_mono_objective_gate() {
+    use super::adaptive_single_frame_synthesis::{review, Direction};
+
+    let first = review();
+    let repeated = review();
+    eprintln!("adaptive_single_frame_phase_synthesis {first:?}");
+    assert_eq!(first, repeated);
+    assert_eq!(first.controls.len(), 4);
+    assert_eq!(
+        first
+            .controls
+            .iter()
+            .map(|control| control.ratio)
+            .collect::<Vec<_>>(),
+        [1.0, 0.75, 1.5, 2.0]
+    );
+    assert!(first.controls.iter().all(|control| {
+        control.selected_points >= 2
+            && control.frame_counts[0] > 0
+            && control.frame_counts[1] > 0
+            && control.phase_state_counts[0] == control.frame_counts[1]
+            && control.phase_state_counts[1] == 2
+            && control.coverage[0] == 0
+            && control.coverage[1] > 0
+            && control.frame_values[0] > 0.0
+            && control.frame_values[2].is_finite()
+            && control.structural_failures == [0; 8]
+            && control.identity_peak_error <= 5.0e-12
+            && control.tone_frequency_error_hz <= 2.0
+            && control.maximum_event_error <= 256
+            && control.event_phase_changes > 0
+            && control.vertical_phase_changes > 0
+            && control.maximum_symmetry_error <= 2.0e-10
+            && control.maximum_imaginary_residue <= 2.0e-10
+            && control.non_finite_values == 0
+            && control.hashes.iter().all(|hash| *hash != 0)
+    }));
+    assert_eq!(first.direction, Direction::FixedRatioMonoObjectiveGate);
+    assert_ne!(first.evidence_hash, 0);
+}
+
+#[test]
+#[cfg(not(debug_assertions))]
 fn complete_phase_synthesis_selects_bounded_tuning_direction() {
     use super::complete_phase_synthesis::{review, Direction};
 

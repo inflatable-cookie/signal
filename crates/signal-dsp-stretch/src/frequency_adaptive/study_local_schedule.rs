@@ -7,6 +7,7 @@ use study::{analyze, select, Study};
 
 pub(crate) const SOURCE_FRAMES: usize = 16_384;
 pub(crate) const BASE_HOP: usize = 128;
+pub(crate) const CONTROL_EVENTS: [usize; 5] = [2_048, 4_096, 4_224, 8_192, 12_288];
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(super) enum Direction {
@@ -179,7 +180,7 @@ pub(crate) fn controls() -> Vec<(Vec<Vec<f64>>, f64)> {
         .map(|(variant, ratio)| {
             let mut left = vec![0.0; SOURCE_FRAMES];
             let mut right = vec![0.0; SOURCE_FRAMES];
-            for event in [2_048, 4_096, 4_224, 8_192, 12_288] {
+            for event in CONTROL_EVENTS {
                 for offset in 0..32 {
                     let decay = (-(offset as f64) / 7.0).exp();
                     left[event + offset] += decay;

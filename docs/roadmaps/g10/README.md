@@ -272,13 +272,15 @@ Current stretch status:
   passes all five schedules with the prior identity hash unchanged. Frozen
   linked study and one-global-map attachment also pass all three ratios with
   zero structural or mapping failures. Output-lattice coverage and one
-  single-frame phase/synthesis proof are next.
+  continuous single-frame phase/synthesis path now pass four controls. Synthetic
+  transient, replica, texture, and boundary quality evidence is next; corpus
+  audio remains closed.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Execute `g10.029` Batch 29.6BR. Prove output-lattice coverage, continuous
-actual-hop phase transport, separate event and current-frame vertical phase,
-and exact single-owner synthesis on frozen synthetic controls.
+Execute `g10.029` Batch 29.6BS. Run the frozen adaptive single-frame combined
+mode and ordinary ablation through Rule 30N synthetic quality gates without
+corpus reads or parameter changes.

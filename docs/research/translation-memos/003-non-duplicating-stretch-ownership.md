@@ -159,6 +159,6 @@ Promoted into:
 
 ## Next Task
 
-Execute Batch 29.6BR single-frame phase and synthesis proof. Prove output-lattice
-coverage before phase evidence; keep corpus audio, holdout, tuning, stereo
-promotion, dynamic ratio, and product routing closed.
+Execute Batch 29.6BS synthetic quality gate. Freeze the passing single-frame
+combined mode and ordinary ablation; keep corpus audio, holdout, listening,
+tuning, stereo promotion, dynamic ratio, and product routing closed.

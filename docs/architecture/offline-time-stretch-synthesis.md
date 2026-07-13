@@ -653,8 +653,21 @@ and peak-region vertical locking remain distinct, current-frame operations.
 Before phase quality is interpreted, the moved windows must prove positive
 output-lattice coverage and an exact diagonal dual over the protected crop.
 
+That mechanism proof passes. The moved adaptive windows cover every exact crop
+with condition at most `2.964471`. One phase state crosses all `24` resolution
+changes and initializes once per channel. Identity, coefficient/magnitude
+ownership, timing ownership, exact length, symmetry, residue, linked decisions,
+and repeat pass. The combined mode preserves the `311 Hz` control within
+`0.5 Hz`; known injected attacks remain within `256` frames. Evidence hash is
+`9cc7519deb368966`.
+
+This is synthesis liveness, not a quality win. The next gate freezes this
+combined mode and measures isolated and dense event timing, crest, replicas,
+tonal spectrum and texture, silence, and boundaries on synthetic controls.
+Corpus audio remains closed until those absolute checks pass without tuning.
+
 ## Next Task
 
-Prove the frozen adaptive frame's output-lattice coverage, actual-hop phase
-continuity, separate event and vertical phase stages, and exact synthesis on
-synthetic controls. Keep corpus, holdout, and tuning closed.
+Run the frozen adaptive single-frame combined mode and ordinary ablation through
+the Rule 30N synthetic quality gate. Keep corpus, holdout, listening, and tuning
+closed.
