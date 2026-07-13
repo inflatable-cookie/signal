@@ -559,8 +559,22 @@ mono rows are development material; six are locked holdout. Objective measures
 enforce hard safety and construct a Pareto frontier. Concealed listening selects
 at most one candidate. Holdout failure permits no retuning.
 
+Development listening rejects the complete system before holdout. Across the
+four explicitly ranked rows, all three successors are unusably blurred while
+current Signal and Rubber Band remain tight or usable. The defect sounds like
+reverb or multiple source copies separated by very small delays. Five
+unranked rows cannot recover the required `6/9`; holdout remains unread.
+
+The shared causal hypothesis is cross-resolution incoherence, not yet a design
+decision. Each layer currently carries the full signal, transports phase in an
+independent STFT state, and contributes through the union dual. Vertical policy
+aligns one dominant bin, not the complete overlapping coefficient field.
+Perfect identity reconstruction therefore does not prove coherent modified
+synthesis. The next report must separate layer-local transport quality from
+recombination smear before this architecture changes.
+
 ## Next Task
 
-Complete the concealed nine-row development listening pack at
-`target/stretch-successor-bk-development-pack`. Freeze notes before opening the
-key. Keep holdout closed.
+Attribute the rejected successor's temporal smear between independent
+per-layer transport and cross-resolution recombination. Keep holdout and tuning
+closed.

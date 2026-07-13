@@ -260,13 +260,15 @@ Current stretch status:
 - `OfflineHighQuality`: materialized for default-path artifacts with chunked
   output and cache receipts, but the DSP path is classified as a prototype until
   `g10.029` closes boundary correctness, absolute measurement, and listening
-  evidence.
+  evidence. The first complete simultaneous multi-window successor is rejected
+  at concealed development listening: all three candidates share gross temporal
+  smear and cannot reach `6/9`. Holdout remains unread. Report-only
+  cross-resolution attribution is next.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Complete the concealed nine-row development listening pack at
-`target/stretch-successor-bk-development-pack`. Freeze notes before opening the
-key. Keep holdout closed.
+Execute `g10.029` Batch 29.6BM. Attribute layer-local transport versus
+cross-resolution recombination smear without tuning or holdout exposure.

@@ -26,7 +26,7 @@ be trustworthy before the callback contract or a structural hybrid widens.
   and memory
 - [x] replace draft-relative product promotion with absolute and
   comparator-backed gates
-- [ ] produce a bounded blind-listening pack with completed operator notes
+- [x] produce a bounded blind-listening pack with completed operator notes
 - [ ] freeze the requirements for the next structural hybrid design
 
 ## Non-Goals
@@ -763,8 +763,9 @@ independent stereo review.
   study-sensitivity, event-local strength, reset-scope, and vertical-alignment
   grid
 - [x] use hard gates and Pareto evidence to export at most three candidates
-- [ ] select one through concealed nine-row development listening only on at
-  least `6/9` preference over current and no new broad defect
+- [x] apply the concealed nine-row development gate; reject all three
+  successors after four explicit losses make `6/9` unreachable and expose one
+  repeatable temporal-smear defect
 
 ### Batch 29.6BL - Locked Mono Holdout
 
@@ -773,6 +774,19 @@ independent stereo review.
   complete hard-gate retention
 - [ ] open linked-stereo listening and hardening only on passage; never retune
   after holdout
+
+Status: closed without exposure. No development candidate qualified.
+
+### Batch 29.6BM - Cross-Resolution Smear Attribution
+
+- [ ] retain the three rejected successor configurations and nine development
+  rows; do not read holdout or tune parameters
+- [ ] export per-layer and combined report-only evidence for ordinary,
+  event-only, vertical-only, and complete phase modes
+- [ ] measure layer-local usability, pairwise arrival disagreement, tonal phase
+  disagreement, and combined replica/smear growth
+- [ ] distinguish independent layer-transport failure from incoherent
+  recombination of otherwise usable layers; return to architecture review
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -1417,10 +1431,16 @@ independent stereo review.
   `54` WAVs, nine notes rows, `45` concealed assignments, zero structural
   failures, and zero holdout reads. Candidate selection is now paused for
   operator listening; the key remains closed.
+- 2026-07-13: Batch 29.6BK closes rejected. Operator notes were frozen before
+  key reveal. On `L001`, `L002`, `L004`, and `L005`, every successor was in the
+  unusable blurred set while every preference was current Signal or Rubber
+  Band. Even five wins on the remaining rows could reach only `5/9`; no
+  successor can pass. The repeated defect sounds reverberant or like multiple
+  micro-delayed source copies. Holdout remains unread. Batch 29.6BM now owns
+  report-only cross-resolution coherence attribution without retuning.
 
 ## Next Task
 
-Complete the concealed nine-row development listening pack at
-`target/stretch-successor-bk-development-pack`. Freeze every notes row before
-opening the key. Select one successor only on at least `6/9` preference over
-current Signal with no repeatable broad defect; keep holdout closed.
+Execute Batch 29.6BM. Attribute the successor-wide temporal smear across
+per-layer phase transport and cross-resolution recombination. Use only frozen
+development rows and configurations. Keep holdout and tuning closed.

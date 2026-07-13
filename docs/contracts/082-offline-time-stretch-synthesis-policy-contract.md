@@ -2302,6 +2302,28 @@ no candidate reaches `6/9`. Stop after holdout failure without retuning. Do not
 respond to any stop by widening the grid, relabeling holdout, or reviving an
 isolated detector gate.
 
+#### Rule 30H: failed development returns to cross-resolution attribution
+
+The concealed development gate rejects all three complete-system candidates.
+Every successor loses the four explicitly ranked rows to current Signal or
+Rubber Band and shares a broad reverberant or micro-replica smear. The five
+remaining rows cannot raise any successor above `5/9`, so Batch 29.6BL stays
+closed and the holdout remains unread.
+
+Batch 29.6BM owns one report-only attribution of the shared mechanism. Retain
+the rejected configurations, frozen development rows, schedule, detector,
+reset, and phase policy. Export each resolution layer before recombination and
+the combined output under ordinary, event-only, vertical-only, and complete
+phase modes. Measure pairwise event arrival disagreement, tonal phase
+disagreement, layer-local replica evidence, and combined replica growth.
+
+If individual layer renders are usable but their sum smears, return to
+architecture review for non-duplicating coefficient ownership or a complete
+cross-resolution coherence operator. If individual layers already smear,
+attribute the failing transport or event stage before redesign. Do not widen
+the grid, tune the rejected system, expose holdout, or promote a candidate from
+objective evidence.
+
 ## Clean-Room Rule
 
 Public papers and public algorithm descriptions may inform Signal design.
@@ -2310,6 +2332,5 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Complete the concealed nine-row development listening pack at
-`target/stretch-successor-bk-development-pack`. Freeze notes before opening the
-key. Keep holdout closed.
+Execute Batch 29.6BM cross-resolution smear attribution on frozen development
+material. Keep holdout and tuning closed.
