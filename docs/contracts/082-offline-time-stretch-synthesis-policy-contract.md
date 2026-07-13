@@ -2769,6 +2769,36 @@ ownership neighborhood, alter event detection or scheduling, export listening
 audio, or open linked stereo, dynamic ratio, cache, or product routing. Any
 hard-gate regression returns to the owning mechanism with row evidence.
 
+Rule 30T rejects the event-owned successor before listening. All `27` renders
+pass exact length, finiteness, and the existing full-render integrity limits,
+but the candidate loses to current Signal on event placement in `6/9` rows,
+replica ratio in `7/9`, static spectral residual in `9/9`, and formant-envelope
+residual in `9/9`. Tonal movement improves in `7/9`; that isolated gain does
+not offset the broad event and spectral regression. Five source excerpts have
+no production-detector event, so their event fields use a declared
+strongest-onset fallback; spectral and formant rejection does not depend on
+that fallback.
+
+Manifest, render, measurement, and aggregate hashes are
+`2abde0a10417b469`, `4359fd9e43ff6a9c`, `18823a809bb4b2cc`, and
+`10d25f8404262480`. The complete TSV SHA-256 is
+`9cdaedf39d80c1cefcbc34d2d78f42d30c8c1c7835467fb913b32ffca511e14f`.
+Holdout reads and listening exports remain zero.
+
+#### Rule 30U: attribute the real-source regression by synthesis stage
+
+Batch 29.6BZ keeps the Rule 30T rows, ratios, detector, schedule, measurements,
+and `64`-frame ownership neighborhood frozen. Compare current Signal with four
+same-source stages: ordinary adaptive synthesis, active-peak transport without
+transient anchors, active-peak transport with anchors, and the event-owned
+successor. The stage deltas must assign the broad regression to adaptive frame
+geometry, active-peak transport, transient reset, or overlap ownership before
+another candidate is designed.
+
+Do not tune, export listening audio, read holdout, inspect comparator
+implementation, or open linked stereo, dynamic ratio, cache, or routing. This
+is attribution, not another candidate sweep.
+
 ## Clean-Room Rule
 
 Public papers and public algorithm descriptions may inform Signal design.
@@ -2777,7 +2807,7 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Execute Batch 29.6BY under Rule 30T. Compare the event-owned successor with
-current Signal and captured external behavioural evidence on the frozen nine
-development rows. Keep holdout, listening export, parameter changes, linked
-stereo, dynamic ratio, cache, and routing closed.
+Execute Batch 29.6BZ under Rule 30U. Attribute the rejected real-source event
+and spectral regression across the frozen synthesis stages. Keep holdout,
+listening export, parameter changes, linked stereo, dynamic ratio, cache, and
+routing closed.

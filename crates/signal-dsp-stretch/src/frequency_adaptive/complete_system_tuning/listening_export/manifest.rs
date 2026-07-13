@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use super::super::{Configuration, ResetScope, Sensitivity, HASH_OFFSET};
 
-pub(super) struct Row {
+pub(in crate::frequency_adaptive) struct Row {
     pub id: &'static str,
     pub source: String,
     pub rubber_band: String,
@@ -37,7 +37,7 @@ pub(super) fn assignment(row: &str, count: usize) -> Vec<usize> {
     values
 }
 
-pub(super) fn rows() -> [Row; 9] {
+pub(in crate::frequency_adaptive) fn rows() -> [Row; 9] {
     [
         row("L001", "0000-drums_percussion-000002", "0p750000", 0.75),
         row("L002", "0000-drums_percussion-000002", "1p250000", 1.25),
@@ -64,10 +64,10 @@ fn base() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("../../target/stretch-corpus-external-benchmark-pack-fma-broad")
 }
-pub(super) fn source_root() -> PathBuf {
+pub(in crate::frequency_adaptive) fn source_root() -> PathBuf {
     base().join("sources")
 }
-pub(super) fn render_root() -> PathBuf {
+pub(in crate::frequency_adaptive) fn render_root() -> PathBuf {
     base().join("renders")
 }
 pub(super) fn export_root() -> PathBuf {

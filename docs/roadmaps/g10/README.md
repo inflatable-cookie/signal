@@ -289,8 +289,11 @@ Current stretch status:
   bounded event-local overlap owner now removes that replica, preserves both
   real attacks exactly, and leaves the passing dense ratios bit-identical. The
   complete `48`-row synthetic gate passes with zero failures or regressions;
-  evidence hashes `adf37bdd72012e19` and `dec15b718aa27de9` repeat. Frozen mono
-  development objective comparison is next. Holdout and listening remain
+  evidence hashes `adf37bdd72012e19` and `dec15b718aa27de9` repeat. The frozen
+  mono objective then rejects the candidate before listening: exact structure
+  passes, but event placement regresses in `6/9` rows, replicas in `7/9`, and
+  both static spectral and formant residuals in `9/9`. Batch 29.6BZ now assigns
+  that regression across frozen synthesis stages. Holdout and listening remain
   closed.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
@@ -298,5 +301,6 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Execute `g10.029` Batch 29.6BY under Rule 30T. Run the frozen nine-row mono
-development objective comparison without reading holdout or changing policy.
+Execute `g10.029` Batch 29.6BZ under Rule 30U. Attribute the rejected
+real-source regression across frozen synthesis stages without reading holdout,
+exporting listening audio, or changing policy.

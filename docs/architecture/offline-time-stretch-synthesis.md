@@ -735,9 +735,19 @@ while preserving both target samples exactly; passing ratios remain bit-exact.
 The unchanged synthetic quality matrix passes all `48` rows. Evidence hashes
 `adf37bdd72012e19` and `dec15b718aa27de9` repeat.
 
+The first frozen real-source objective rejects that successor before listening.
+All current, successor, and captured-external renders retain exact length,
+finite output, and full-render integrity. The successor nevertheless regresses
+current Signal on event placement in `6/9` rows, replicas in `7/9`, static
+spectral residual in `9/9`, and formant-envelope residual in `9/9`. Its tonal
+movement improves in `7/9`, so physical-frequency tracking is doing useful
+work, but the complete synthesis does not preserve enough event or spectral
+structure. The next proof is a frozen stage ablation, not parameter tuning.
+
 ## Next Task
 
-Run Rule 30T on the frozen nine-row mono development set. Compare the selected
-event-owned successor with current Signal and captured external evidence before
-any holdout read, listening export, tuning, stereo, dynamic, cache, or routing
-work.
+Run Rule 30U on the frozen nine-row mono development set. Compare ordinary
+adaptive synthesis, tracked transport without anchors, tracked transport with
+anchors, and event-owned synthesis to assign the regression before any new
+candidate, holdout read, listening export, tuning, stereo, dynamic, cache, or
+routing work.

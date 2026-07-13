@@ -905,13 +905,22 @@ Status: closed without exposure. No development candidate qualified.
 
 ### Batch 29.6BY - Frozen Mono Development Objective Comparison
 
-- [ ] open only after the successor passes Rule 30Q without tuning
-- [ ] freeze family-balanced development rows and compare the selected
+- [x] open only after the successor passes Rule 30Q without tuning
+- [x] freeze family-balanced development rows and compare the selected
   candidate with current Signal and captured external behavioural evidence
-- [ ] report the full integrity, transient, replica, spectral, texture, formant,
+- [x] report the full integrity, transient, replica, spectral, texture, formant,
   and boundary field set before any concealed listening export
-- [ ] keep holdout, parameter search, linked stereo, dynamic ratio, and product
+- [x] keep holdout, parameter search, linked stereo, dynamic ratio, and product
   routing closed
+
+### Batch 29.6BZ - Real-Source Synthesis-Stage Attribution
+
+- [ ] compare current, ordinary adaptive, tracked/no-anchor, tracked/anchor, and
+  event-owned stages on the unchanged nine development rows
+- [ ] assign the broad event, replica, static-spectrum, and formant regression
+  before designing another candidate
+- [ ] keep holdout, listening export, tuning, stereo, dynamic ratio, cache, and
+  product routing closed
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -1671,11 +1680,21 @@ Status: closed without exposure. No development candidate qualified.
   passes with zero hard failures or regressions; evidence hash
   `dec15b718aa27de9` repeats. Batch 29.6BY owns the frozen nine-row mono
   development objective comparison. Holdout and listening remain closed.
+- 2026-07-13: Batch 29.6BY rejects the event-owned successor before listening.
+  All `27` current/candidate/external renders pass exact length, finiteness, and
+  full-render integrity, but the candidate regresses current event placement in
+  `6/9` rows, replica ratio in `7/9`, static spectral residual in `9/9`, and
+  formant residual in `9/9`. Tonal movement improves in `7/9`, but does not
+  offset the broad regression. Five source excerpts require a declared
+  strongest-onset fallback for event-only fields; the spectral rejection is
+  independent. Frozen evidence hashes are `2abde0a10417b469`,
+  `4359fd9e43ff6a9c`, `18823a809bb4b2cc`, and `10d25f8404262480`.
+  Holdout reads and listening exports remain zero. Batch 29.6BZ owns
+  synthesis-stage attribution before another candidate.
 
 ## Next Task
 
-Execute Batch 29.6BY under Rule 30T. Render the frozen nine development rows
-through current Signal, the selected event-owned successor, and existing
-external behavioural references. Report the complete objective field set
-without reading holdout, exporting concealed listening, tuning, or changing
-linked stereo, dynamic ratio, cache, or routing.
+Execute Batch 29.6BZ under Rule 30U. Compare the frozen current, ordinary
+adaptive, tracked/no-anchor, tracked/anchor, and event-owned stages to assign
+the real-source regression before another candidate. Keep holdout, listening,
+tuning, linked stereo, dynamic ratio, cache, and routing closed.

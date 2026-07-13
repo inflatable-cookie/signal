@@ -1,5 +1,5 @@
 mod audio;
-mod manifest;
+pub(in crate::frequency_adaptive) mod manifest;
 
 use std::fs;
 

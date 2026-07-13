@@ -970,6 +970,41 @@ fn adaptive_single_frame_event_overlap_ownership_removes_replica() {
 
 #[test]
 #[cfg(not(debug_assertions))]
+fn adaptive_single_frame_development_objective_is_frozen() {
+    use super::adaptive_single_frame_synthesis::{
+        development_objective_review, DevelopmentDirection,
+    };
+
+    let first = development_objective_review();
+    let repeated = development_objective_review();
+    eprintln!("adaptive_single_frame_development_objective {first:?}");
+    assert_eq!(first, repeated);
+    assert_eq!(first.rows, 9);
+    assert_eq!(first.modes, 3);
+    assert_eq!(first.renders, 27);
+    assert_eq!(first.holdout_reads, 0);
+    assert_eq!(first.hard_failures, 0, "{first:?}");
+    assert_eq!(first.candidate_hard_failures, 0, "{first:?}");
+    assert_eq!(first.candidate_changed_rows, 9);
+    assert_eq!(first.event_fallback_renders, 15);
+    assert_eq!(first.candidate_regression_rows, [6, 7, 9, 9]);
+    assert_eq!(
+        first.hashes,
+        [
+            0x2abd_e0a1_0417_b469,
+            0x4359_fd9e_43ff_6a9c,
+            0x1882_3a80_9bb4_b2cc,
+            0x10d2_5f84_0426_2480,
+        ]
+    );
+    assert_eq!(
+        first.direction,
+        DevelopmentDirection::SpectralSynthesisAttribution
+    );
+}
+
+#[test]
+#[cfg(not(debug_assertions))]
 fn adaptive_single_frame_failure_attribution_selects_bounded_redesign() {
     use super::adaptive_single_frame_synthesis::{attribution_review, AttributionDirection};
 

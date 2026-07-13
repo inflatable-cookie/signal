@@ -1,6 +1,7 @@
 mod anchors;
 mod attribution;
 mod dense_attribution;
+mod development_objective;
 mod overlap_ownership;
 mod ownership;
 pub(super) mod quality;
@@ -8,6 +9,7 @@ mod render;
 
 pub(super) use attribution::{attribution_review, AttributionDirection};
 pub(super) use dense_attribution::{dense_attribution_review, DenseAttributionDirection};
+pub(super) use development_objective::{development_objective_review, DevelopmentDirection};
 pub(super) use overlap_ownership::overlap_ownership_review;
 pub(super) use ownership::{ownership_review, OwnershipDirection};
 pub(super) use quality::{
