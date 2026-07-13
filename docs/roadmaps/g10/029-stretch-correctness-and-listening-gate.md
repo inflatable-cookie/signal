@@ -859,16 +859,33 @@ Status: closed without exposure. No development candidate qualified.
 
 ### Batch 29.6BT - Phase And Event-Placement Failure Attribution
 
-- [ ] freeze the failing Rule 30N tone, isolated-event, and dense-event rows
-- [ ] trace scheduled centres, synthesis contributions, phase advances, and
+- [x] freeze the failing Rule 30N tone, isolated-event, and dense-event rows
+- [x] trace scheduled centres, synthesis contributions, phase advances, and
   output peaks without changing study, map, window, peak, or phase policy
-- [ ] separate time-map, phase-transport, event-correction, vertical-locking,
+- [x] separate time-map, phase-transport, event-correction, vertical-locking,
   and diagonal-dual synthesis responsibility for every hard failure
-- [ ] select one bounded redesign stage; keep parameter search and audio closed
+- [x] select one bounded redesign stage; keep parameter search and audio closed
 
-### Batch 29.6BU - Frozen Mono Development Objective Comparison
+### Batch 29.6BU - Active-Peak Phase And Injected-Event Ownership Proof
 
-- [ ] open only after a successor synthetic quality gate passes without tuning
+- [ ] replace dormant-bin phase continuation with one-to-one active-peak state
+  and initialize newly active owners from current analysis phase
+- [ ] separate sample-refined transient anchors from resolution-selection points
+  and attach every accepted anchor as an exact source/output frame centre
+- [ ] pass steady-tone active-owner, event known-answer, structural, identity,
+  coefficient, symmetry, finiteness, and repeat gates without quality tuning
+- [ ] keep complete Rule 30N rerun, corpus, holdout, stereo, and routing closed
+
+### Batch 29.6BV - Successor Synthetic Quality Gate
+
+- [ ] rerun the complete Rule 30N matrix only after Batch 29.6BU passes
+- [ ] require all prior structure, pitch, event, silence, and repeat limits
+- [ ] report the unchanged crest, replica, spectrum, texture, and mode fields
+- [ ] return to the owning stage on failure; do not fit thresholds
+
+### Batch 29.6BW - Frozen Mono Development Objective Comparison
+
+- [ ] open only after Batch 29.6BV passes without tuning
 - [ ] freeze family-balanced development rows and compare the selected
   candidate with current Signal and captured external behavioural evidence
 - [ ] report the full integrity, transient, replica, spectral, texture, formant,
@@ -1579,11 +1596,22 @@ Status: closed without exposure. No development candidate qualified.
   one-to-one error reaches `896` against `256`. Evidence hash
   `6781d49348dfa931` repeats. Corpus audio remains closed. Batch 29.6BT owns
   trace-only phase and event-placement attribution before any redesign.
+- 2026-07-13: Batch 29.6BT classifies all `25` frozen failures from `2,298`
+  per-frame phase records and `78` overlapping diagonal-dual contributions.
+  Fourteen failures begin in ordinary physical-frequency phase transport, ten
+  begin at event ownership/frame attachment, and the one combined-only failure
+  begins at event correction; vertical locking and diagonal-dual synthesis own
+  no earliest failure. Dominant ownership changes `738` times; maximum traced
+  frequency error is `3.174e-2` radians/sample and is larger away from
+  resolution transitions than on them. None of `18` injected event instances
+  is selected and only six land on an exact frame centre. Evidence hash
+  `ddca308a7f60f39e` repeats. Batch 29.6BU owns active-peak phase and separate
+  injected-event ownership without quality tuning.
 
 ## Next Task
 
-Execute Batch 29.6BT. Freeze the failing Rule 30N rows and trace scheduled
-centres, per-frame phase advances, synthesis contributions, and output peaks to
-separate map, phase, event, vertical, and synthesis responsibility. Keep corpus
-audio, holdout, listening, tuning, linked stereo, dynamic ratio, and product
-routing closed.
+Execute Batch 29.6BU. Replace dormant-bin phase continuation with active-peak
+ownership and separate sample-refined transient anchors from resolution
+selection. Prove the bounded mechanisms before the complete synthetic quality
+rerun. Keep corpus audio, holdout, listening, tuning, linked stereo, dynamic
+ratio, and product routing closed.

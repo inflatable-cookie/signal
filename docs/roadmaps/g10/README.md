@@ -274,13 +274,15 @@ Current stretch status:
   zero structural or mapping failures. Output-lattice coverage and one
   continuous single-frame phase/synthesis path now pass four controls. Synthetic
   quality then rejects the frozen mode on pitch and event placement despite
-  intact structure and identity. Trace-only failure attribution is next; corpus
-  audio remains closed.
+  intact structure and identity. Trace attribution assigns the failures to
+  dormant-bin phase continuation and missing independent event ownership.
+  Active-peak phase and sample-refined transient anchors are next; corpus audio
+  remains closed.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Execute `g10.029` Batch 29.6BT. Trace the frozen Rule 30N pitch and event
-placement failures under Rule 30O without corpus reads or parameter changes.
+Execute `g10.029` Batch 29.6BU. Prove Rule 30P active-peak phase state and
+sample-refined transient-anchor ownership before the full synthetic rerun.

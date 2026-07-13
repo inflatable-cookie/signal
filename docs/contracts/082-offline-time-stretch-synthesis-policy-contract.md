@@ -2591,6 +2591,59 @@ one bounded redesign stage and a new synthetic acceptance batch. It does not
 authorize threshold changes, tuning, corpus, holdout, listening, stereo,
 dynamic ratio, cache, or product routing.
 
+Batch 29.6BT closes with `2,298` per-frame phase records and `78` event-local
+diagonal-dual contribution records across the `30` frozen rows. Fourteen hard
+failures begin in ordinary physical-frequency phase transport, ten begin at
+event ownership/frame attachment, and the sole combined-only failure begins at
+event correction. No earliest failure is assigned to vertical locking or the
+diagonal dual.
+
+Dominant-bin ownership changes `738` times. Maximum per-frame frequency error
+is `3.174e-2` radians/sample on same-resolution frames and `7.199e-3` at
+resolution transitions, so resolution changes alone do not explain the tone
+failure. None of the `18` injected event instances is selected by the frozen
+study; only six coincide with a frame centre. The combined-only `0.75` mid-tone
+regression applies `37` event and `37` vertical assignments where ordinary
+transport passes. Row, frame, coefficient, phase, contribution, output, and
+repeat hashes are stable. Aggregate evidence hash `ddca308a7f60f39e` repeats.
+
+#### Rule 30P: active peaks and transient anchors own separate state
+
+Batch 29.6BU replaces two ownership boundaries without changing the painless
+single-frame transform, exact global schedule, diagonal dual, or final-duration
+contract.
+
+Phase state belongs only to active spectral-peak trajectories, not every fixed
+FFT bin indefinitely. Match current peaks one-to-one to prior active owners in
+physical-frequency order. A matched owner propagates its measured physical
+frequency through the exact output hop. A new or unmatched owner initializes
+from current analysis phase and does not inherit dormant-bin history. Current
+region bins derive phase from their active owner plus current analysis-relative
+phase. Resolution changes use the same owner rule and are not resets by
+themselves. Report owner births, matches, retirements, frequency/advance error,
+region assignments, and stable state/phase hashes per frame.
+
+Transient-anchor ownership is separate from resolution selection. Build
+linked time-domain onset evidence on the existing `128`-frame study grid, then
+refine each accepted grid event to the strongest linked sample-frame attack
+within its fixed adjacent-grid support. Tone and silence controls must select no
+internal anchors. Isolated, dense, mixed, and boundary known-answer controls
+must select every injected attack within one sample frame, retain order and
+one-to-one ownership, and attach each accepted anchor as an exact adaptive
+source centre at its exact global-map output position. Resolution points may
+change window length around an anchor but may not substitute for it.
+
+The proof runs identity, `0.75`, `1.5`, and `2.0` on the Rule 30N steady tones,
+isolated/dense events, mixed, boundary, and silence controls. Require exact
+length, coverage, coefficient/magnitude ownership, identity limits, symmetry
+and residue at most `1e-9`, finite values, silence at most `1e-12`, steady-tone
+per-frame and rendered angular-frequency error at most `1e-6`, exact transient
+anchor/frame attachment within one sample frame, dense one-to-one order, and
+exact repeat. Failure returns to active-owner matching or transient-anchor
+ownership. Passage opens only the complete unchanged Rule 30N synthetic rerun.
+Corpus, holdout, listening, parameter search, stereo, dynamic ratio, cache, and
+product routing remain closed.
+
 ## Clean-Room Rule
 
 Public papers and public algorithm descriptions may inform Signal design.
@@ -2599,7 +2652,7 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Execute Batch 29.6BT failure attribution under Rule 30O. Reuse the frozen
-failing rows and modes without parameter changes. Keep corpus audio, holdout,
-listening, tuning, linked-stereo promotion, dynamic ratio, and product routing
-closed.
+Execute Batch 29.6BU under Rule 30P. Prove active-peak phase state and separate
+sample-refined transient-anchor ownership before the complete synthetic quality
+rerun. Keep corpus audio, holdout, listening, tuning, linked-stereo promotion,
+dynamic ratio, and product routing closed.

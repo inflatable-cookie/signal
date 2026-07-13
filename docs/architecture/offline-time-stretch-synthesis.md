@@ -680,7 +680,22 @@ phase advance and event-local diagonal-dual contributions through to output
 energy and peaks. This must locate the earliest responsible boundary before any
 phase, event, vertical, or synthesis redesign. Corpus audio remains closed.
 
+That trace assigns the failures before another candidate is built. Ordinary
+physical-frequency phase transport owns `14`; event ownership/frame attachment
+owns `10`; event correction owns the one combined-only regression. Vertical
+locking and diagonal-dual synthesis own none. The tone path changes dominant
+ownership `738` times across `2,298` frame records and carries larger frequency
+error on same-resolution frames than at resolution changes. The event path
+selects none of `18` injected attacks and centres only six coincidentally.
+
+The next mechanism therefore has two separate owners. Active spectral-peak
+trajectories carry physical-frequency state; newly active peaks initialize from
+current analysis phase instead of dormant bins. Sample-refined transient
+anchors are detected independently of resolution points and become exact
+source/output frame centres. The existing painless transform, global duration,
+and diagonal dual remain fixed.
+
 ## Next Task
 
-Run Rule 30O failure attribution on the frozen tone and event rows. Keep corpus,
-holdout, listening, tuning, and algorithm changes closed.
+Run Rule 30P active-peak phase and transient-anchor ownership proof. Keep the
+complete quality rerun, corpus, holdout, listening, and tuning closed.

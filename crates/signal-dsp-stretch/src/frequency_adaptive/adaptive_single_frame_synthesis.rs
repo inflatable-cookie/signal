@@ -1,6 +1,8 @@
+mod attribution;
 pub(super) mod quality;
 mod render;
 
+pub(super) use attribution::{attribution_review, AttributionDirection};
 pub(super) use quality::{quality_review, QualityDirection};
 
 use render::{render, Mode, Render};

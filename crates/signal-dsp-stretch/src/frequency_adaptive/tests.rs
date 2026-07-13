@@ -720,6 +720,43 @@ fn adaptive_single_frame_synthetic_quality_selects_measured_direction() {
 
 #[test]
 #[cfg(not(debug_assertions))]
+fn adaptive_single_frame_failure_attribution_selects_bounded_redesign() {
+    use super::adaptive_single_frame_synthesis::{attribution_review, AttributionDirection};
+
+    let first = attribution_review();
+    let repeated = attribution_review();
+    eprintln!(
+        "adaptive_single_frame_failure_attribution failing={} stages={:?} tone={:.3e} phase={:.3e} resolution={:?} owners={} isolated={} dense={} selected={} centred={} phase_frames={} contributions={} evidence={:016x} direction={:?}",
+        first.failing_rows,
+        first.stage_counts,
+        first.maximum_tone_error,
+        first.maximum_phase_frequency_error,
+        first.resolution_frequency_error,
+        first.peak_owner_changes,
+        first.maximum_isolated_error,
+        first.maximum_dense_error,
+        first.selected_event_centres,
+        first.exact_event_centres,
+        first.traced_phase_frames,
+        first.traced_contributions,
+        first.evidence_hash,
+        first.direction,
+    );
+    assert_eq!(first, repeated);
+    assert_eq!(first.failing_rows, 25);
+    assert_eq!(first.stage_counts.iter().sum::<usize>(), first.failing_rows);
+    assert!(first.maximum_tone_error > 1.0e-6);
+    assert!(first.maximum_isolated_error > 1);
+    assert!(first.maximum_dense_error > 256);
+    assert_ne!(first.evidence_hash, 0);
+    assert_eq!(
+        first.direction,
+        AttributionDirection::ActivePeakPhaseAndInjectedEventOwnershipContract
+    );
+}
+
+#[test]
+#[cfg(not(debug_assertions))]
 fn complete_phase_synthesis_selects_bounded_tuning_direction() {
     use super::complete_phase_synthesis::{review, Direction};
 

@@ -1,8 +1,11 @@
 mod phase;
+mod trace;
 
 use rustfft::{num_complex::Complex64, FftPlanner};
 
 use phase::{transport, PhaseState};
+use trace::hash_phase_trace;
+pub(super) use trace::{PhaseFrameTrace, SynthesisFrameTrace};
 
 use super::super::study_local_schedule::{schedule::Schedule, BASE_HOP, SOURCE_FRAMES};
 use super::super::time_adaptive_painless::adaptive_schedule_for_points;
@@ -60,6 +63,9 @@ pub(super) struct Render {
     pub(super) phase_hash: u64,
     pub(super) decision_hash: u64,
     pub(super) output_hash: u64,
+    pub(super) phase_trace: Vec<PhaseFrameTrace>,
+    pub(super) synthesis_trace: Vec<SynthesisFrameTrace>,
+    pub(super) trace_hashes: [u64; 2],
 }
 
 pub(super) fn render(
@@ -120,6 +126,10 @@ pub(super) fn render(
     let mut event_phase_changes = 0;
     let mut vertical_phase_changes = 0;
     let mut phase_initializations = 0;
+    let mut phase_trace = Vec::with_capacity(frames.len());
+    let mut synthesis_trace = Vec::with_capacity(frames.len());
+    let mut phase_trace_hash = HASH_OFFSET;
+    let mut synthesis_trace_hash = HASH_OFFSET;
     for frame in &frames {
         let weights = window(frame.length);
         let buffer_offset = (FFT_FRAMES - frame.length) / 2;
@@ -148,18 +158,35 @@ pub(super) fn render(
         for peak in &peaks {
             hash(&mut decision_hash, *peak as u64);
         }
+        let trace_bin = linked
+            .iter()
+            .enumerate()
+            .max_by(|left, right| left.1.total_cmp(right.1))
+            .map(|(bin, _)| bin)
+            .unwrap_or(0);
         for (channel_index, spectrum) in spectra.iter_mut().enumerate() {
-            let changes = transport(
+            let result = transport(
                 spectrum,
                 frame,
                 &mut states[channel_index],
                 &events,
                 &peaks,
                 mode,
+                trace_bin,
             );
-            event_phase_changes += changes.0;
-            vertical_phase_changes += changes.1;
-            phase_initializations += changes.2;
+            event_phase_changes += result.event_changes;
+            vertical_phase_changes += result.vertical_changes;
+            phase_initializations += result.initialization;
+            if channel_index == 0 {
+                let trace = PhaseFrameTrace {
+                    source: frame.source,
+                    output: frame.output,
+                    length: frame.length,
+                    phase: result.trace,
+                };
+                hash_phase_trace(&mut phase_trace_hash, &trace);
+                phase_trace.push(trace);
+            }
             mirror(spectrum);
             for bin in 0..FFT_FRAMES {
                 let mirror_bin = if bin == 0 { 0 } else { FFT_FRAMES - bin };
@@ -170,6 +197,11 @@ pub(super) fn render(
                 hash(&mut phase_hash, spectrum[bin].arg().to_bits());
             }
             inverse.process(spectrum);
+            let mut contribution_energy = 0.0_f64;
+            let mut contribution_moment = 0.0_f64;
+            let mut contribution_peak = 0.0_f64;
+            let mut contribution_peak_output = frame.output;
+            let mut contribution_hash = HASH_OFFSET;
             for (offset, weight) in weights.iter().copied().enumerate() {
                 if weight == 0.0 {
                     continue;
@@ -180,6 +212,35 @@ pub(super) fn render(
                     * (weight / (FFT_FRAMES as f64 * operator[domain]));
                 imaginary_residue = imaginary_residue.max(value.im.abs());
                 outputs[channel_index][domain] += value;
+                if channel_index == 0 {
+                    let square = value.re * value.re;
+                    contribution_energy += square;
+                    contribution_moment += logical as f64 * square;
+                    if value.re.abs() > contribution_peak {
+                        contribution_peak = value.re.abs();
+                        contribution_peak_output = logical;
+                    }
+                    hash(&mut contribution_hash, logical as i64 as u64);
+                    hash(&mut contribution_hash, value.re.to_bits());
+                }
+            }
+            if channel_index == 0 {
+                let trace = SynthesisFrameTrace {
+                    source: frame.source,
+                    output: frame.output,
+                    length: frame.length,
+                    energy: contribution_energy,
+                    energy_center: if contribution_energy > 0.0 {
+                        contribution_moment / contribution_energy
+                    } else {
+                        frame.output as f64
+                    },
+                    peak_output: contribution_peak_output,
+                    peak_magnitude: contribution_peak,
+                    hash: contribution_hash,
+                };
+                hash(&mut synthesis_trace_hash, trace.hash);
+                synthesis_trace.push(trace);
             }
         }
     }
@@ -240,6 +301,9 @@ pub(super) fn render(
         phase_hash,
         decision_hash,
         output_hash,
+        phase_trace,
+        synthesis_trace,
+        trace_hashes: [phase_trace_hash, synthesis_trace_hash],
     }
 }
 
