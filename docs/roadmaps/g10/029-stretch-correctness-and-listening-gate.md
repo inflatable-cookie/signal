@@ -779,14 +779,26 @@ Status: closed without exposure. No development candidate qualified.
 
 ### Batch 29.6BM - Cross-Resolution Smear Attribution
 
-- [ ] retain the three rejected successor configurations and nine development
+- [x] retain the three rejected successor configurations and nine development
   rows; do not read holdout or tune parameters
-- [ ] export per-layer and combined report-only evidence for ordinary,
+- [x] export per-layer and combined report-only evidence for ordinary,
   event-only, vertical-only, and complete phase modes
-- [ ] measure layer-local usability, pairwise arrival disagreement, tonal phase
-  disagreement, and combined replica/smear growth
-- [ ] distinguish independent layer-transport failure from incoherent
-  recombination of otherwise usable layers; return to architecture review
+- [x] measure layer-local replicas, pairwise arrival disagreement, whole-render
+  correlation, and combined replica/smear growth
+- [x] attribute the shared failure to incoherent independent full-band layer
+  transport and return to architecture review
+
+### Batch 29.6BN - Shared Full-Field Phase Proof
+
+- [ ] replace independent per-layer synthesis phase state with one physical-
+  frequency phase field shared by all three resolutions
+- [ ] project analysis phase and instantaneous frequency to common atom centres;
+  apply event correction once, then project one solved phase back to every layer
+- [ ] retain frozen study, exact schedule, magnitudes, union dual, development
+  rows, and geometry; do not tune or read holdout
+- [ ] require mean pairwise event disagreement below `8` frames, pairwise
+  correlation above `0.8`, no combined replica growth, exact layer-sum closure,
+  and all prior hard gates before any listening export
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -1438,9 +1450,17 @@ Status: closed without exposure. No development candidate qualified.
   successor can pass. The repeated defect sounds reverberant or like multiple
   micro-delayed source copies. Holdout remains unread. Batch 29.6BM now owns
   report-only cross-resolution coherence attribution without retuning.
+- 2026-07-13: Batch 29.6BM attributes the defect across `108` frozen
+  development renders. Complete-mode layer arrivals disagree by `172.776515`
+  frames on average and up to `507`; pairwise correlation is `0.197448` and
+  recombination raises mean replica count from `36.348485` to `38.494318`.
+  Ordinary, event-only, vertical-only, and complete modes share the failure.
+  Layer-sum closure is `3.34e-16`; holdout reads remain zero. Independent
+  full-band phase transport is retired. Batch 29.6BN owns one shared full-field
+  phase proof without tuning.
 
 ## Next Task
 
-Execute Batch 29.6BM. Attribute the successor-wide temporal smear across
-per-layer phase transport and cross-resolution recombination. Use only frozen
-development rows and configurations. Keep holdout and tuning closed.
+Execute Batch 29.6BN. Replace independent layer phase transport with one shared
+physical-frequency phase field and prove cross-resolution coherence. Keep
+holdout and tuning closed.

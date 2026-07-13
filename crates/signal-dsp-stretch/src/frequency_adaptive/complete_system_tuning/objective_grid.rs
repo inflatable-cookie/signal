@@ -1,4 +1,4 @@
-mod audio;
+pub(super) mod audio;
 mod metrics;
 
 use std::{fs, path::PathBuf};

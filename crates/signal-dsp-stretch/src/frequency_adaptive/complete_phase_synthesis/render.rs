@@ -37,6 +37,7 @@ impl Mode {
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) struct Render {
     pub samples: Vec<Vec<f64>>,
+    pub layer_samples: Option<[Vec<Vec<f64>>; 3]>,
     pub target_len: usize,
     pub uncovered: usize,
     pub boundary_failures: usize,
@@ -78,6 +79,37 @@ pub(crate) fn render_configured(
     mode: Mode,
     configuration: Configuration,
 ) -> Render {
+    render_configured_internal(
+        channels,
+        ratio,
+        events,
+        schedule,
+        mode,
+        configuration,
+        false,
+    )
+}
+
+pub(crate) fn render_configured_with_layers(
+    channels: &[Vec<f64>],
+    ratio: f64,
+    events: &[usize],
+    schedule: &Schedule,
+    mode: Mode,
+    configuration: Configuration,
+) -> Render {
+    render_configured_internal(channels, ratio, events, schedule, mode, configuration, true)
+}
+
+fn render_configured_internal(
+    channels: &[Vec<f64>],
+    ratio: f64,
+    events: &[usize],
+    schedule: &Schedule,
+    mode: Mode,
+    configuration: Configuration,
+    capture_layers: bool,
+) -> Render {
     let layers = configuration.geometry;
     let target_len = (ratio * channels[0].len() as f64).round() as usize;
     let frames = frames(channels[0].len(), ratio, schedule, layers);
@@ -100,6 +132,9 @@ pub(crate) fn render_configured(
         }
     }
     let mut outputs = vec![vec![Complex64::new(0.0, 0.0); domain_len]; channels.len()];
+    let mut layer_outputs = capture_layers.then(|| {
+        std::array::from_fn(|_| vec![vec![Complex64::new(0.0, 0.0); domain_len]; channels.len()])
+    });
     let mut states = channels
         .iter()
         .map(|_| PhaseState::new(layers))
@@ -169,6 +204,9 @@ pub(crate) fn render_configured(
                 let value = *sample * (*weight / (length as f64 * operator[domain]));
                 imaginary_residue = imaginary_residue.max(value.im.abs());
                 outputs[channel_index][domain] += value;
+                if let Some(layer_outputs) = &mut layer_outputs {
+                    layer_outputs[frame.layer][channel_index][domain] += value;
+                }
             }
         }
     }
@@ -182,6 +220,19 @@ pub(crate) fn render_configured(
                 .collect::<Vec<_>>()
         })
         .collect::<Vec<_>>();
+    let layer_samples = layer_outputs.map(|layers| {
+        layers.map(|channels| {
+            channels
+                .iter()
+                .map(|channel| {
+                    channel[crop..crop + target_len]
+                        .iter()
+                        .map(|value| value.re)
+                        .collect::<Vec<_>>()
+                })
+                .collect::<Vec<_>>()
+        })
+    });
     let uncovered = operator[crop..crop + target_len]
         .iter()
         .filter(|value| **value <= 0.0)
@@ -209,6 +260,7 @@ pub(crate) fn render_configured(
     }
     Render {
         samples,
+        layer_samples,
         target_len,
         uncovered,
         boundary_failures,

@@ -8,6 +8,10 @@ mod objective_grid;
 pub(super) use objective_grid::objective_grid_review;
 mod listening_export;
 pub(super) use listening_export::export_development_pack;
+mod smear_attribution;
+pub(super) use smear_attribution::{
+    smear_attribution_review, Direction as SmearAttributionDirection,
+};
 
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub(super) enum Sensitivity {

@@ -2324,6 +2324,32 @@ attribute the failing transport or event stage before redesign. Do not widen
 the grid, tune the rejected system, expose holdout, or promote a candidate from
 objective evidence.
 
+#### Rule 30I: one shared phase field owns all resolution layers
+
+Batch 29.6BM proves the temporal smear is structural. Across `108` frozen
+development renders, complete-mode layer arrivals disagree by `172.776515`
+frames on average and up to `507`; mean pairwise correlation is `0.197448`.
+Recombination raises mean replica count from `36.348485` per layer event to
+`38.494318`. Ordinary mode already carries the same failure, and event or
+one-bin vertical policy does not repair it. Layer contributions sum to the
+combined render within `3.34e-16`, excluding accumulation error.
+
+Do not independently transport synthesis phase in three redundant full-band
+STFT states. Batch 29.6BN replaces them with one common physical-frequency
+phase field. At every common coefficient centre, project each layer's analyzed
+phase and instantaneous frequency to that centre, combine the linked evidence,
+transport one synthesis phase through the exact schedule, and apply event
+correction once. Project that solved phase back to every layer atom with its
+known time and frequency offset before union-dual synthesis.
+
+Keep study, selected points, exact schedule, coefficient magnitudes, geometry,
+union dual, and development rows frozen. No parameter grid or holdout read is
+allowed. Require mean pairwise event disagreement below `8` frames, mean
+pairwise correlation above `0.8`, no combined replica growth over the layer
+mean, exact layer-sum closure, and all prior hard gates. Failure returns to
+non-duplicating coefficient ownership architecture; passage permits one
+development listening export, not promotion.
+
 ## Clean-Room Rule
 
 Public papers and public algorithm descriptions may inform Signal design.
@@ -2332,5 +2358,5 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Execute Batch 29.6BM cross-resolution smear attribution on frozen development
+Execute Batch 29.6BN shared full-field phase proof on frozen development
 material. Keep holdout and tuning closed.

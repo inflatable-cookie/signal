@@ -566,6 +566,28 @@ fn complete_system_exports_concealed_development_pack() {
 
 #[test]
 #[cfg(not(debug_assertions))]
+fn complete_system_attributes_cross_resolution_smear() {
+    use super::complete_system_tuning::SmearAttributionDirection;
+
+    let first = super::complete_system_tuning::smear_attribution_review();
+    let repeated = super::complete_system_tuning::smear_attribution_review();
+    eprintln!("complete_system_smear_attribution {first:?}");
+    assert_eq!(first, repeated);
+    assert_eq!(first.configurations, 3);
+    assert_eq!(first.development_rows, 9);
+    assert_eq!(first.renders, 108);
+    assert_eq!(first.holdout_reads, 0);
+    assert!(first.maximum_layer_sum_error <= 1.0e-12, "{first:?}");
+    assert!(first.modes.iter().all(|mode| mode.renders == 27));
+    assert!(first.hashes.iter().all(|hash| *hash != 0));
+    assert_eq!(
+        first.direction,
+        SmearAttributionDirection::CrossResolutionRecombination
+    );
+}
+
+#[test]
+#[cfg(not(debug_assertions))]
 fn renyi_time_resolution_selection_selects_schedule_direction() {
     let first = renyi_time_resolution_selection_review();
     let repeated = renyi_time_resolution_selection_review();

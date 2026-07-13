@@ -2,12 +2,12 @@ use std::path::PathBuf;
 
 const FRAMES: usize = 16_384;
 
-pub(super) struct DevelopmentCase {
+pub(crate) struct DevelopmentCase {
     pub channels: Vec<Vec<f64>>,
     pub ratio: f64,
 }
 
-pub(super) fn development_cases() -> Vec<DevelopmentCase> {
+pub(crate) fn development_cases() -> Vec<DevelopmentCase> {
     [
         ("0000-drums_percussion-000002.wav", 0.75),
         ("0000-drums_percussion-000002.wav", 1.25),

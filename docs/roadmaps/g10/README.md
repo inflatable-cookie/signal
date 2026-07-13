@@ -262,13 +262,15 @@ Current stretch status:
   `g10.029` closes boundary correctness, absolute measurement, and listening
   evidence. The first complete simultaneous multi-window successor is rejected
   at concealed development listening: all three candidates share gross temporal
-  smear and cannot reach `6/9`. Holdout remains unread. Report-only
-  cross-resolution attribution is next.
+  smear and cannot reach `6/9`. Holdout remains unread. Attribution measures
+  roughly `173` frames of mean layer-arrival disagreement and retires
+  independent full-band layer phase transport. One shared full-field phase
+  proof is next.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Execute `g10.029` Batch 29.6BM. Attribute layer-local transport versus
-cross-resolution recombination smear without tuning or holdout exposure.
+Execute `g10.029` Batch 29.6BN. Prove one shared physical-frequency phase field
+across all resolution layers without tuning or holdout exposure.

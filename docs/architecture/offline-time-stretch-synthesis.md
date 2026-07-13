@@ -565,16 +565,22 @@ current Signal and Rubber Band remain tight or usable. The defect sounds like
 reverb or multiple source copies separated by very small delays. Five
 unranked rows cannot recover the required `6/9`; holdout remains unread.
 
-The shared causal hypothesis is cross-resolution incoherence, not yet a design
-decision. Each layer currently carries the full signal, transports phase in an
-independent STFT state, and contributes through the union dual. Vertical policy
-aligns one dominant bin, not the complete overlapping coefficient field.
-Perfect identity reconstruction therefore does not prove coherent modified
-synthesis. The next report must separate layer-local transport quality from
-recombination smear before this architecture changes.
+Cross-resolution attribution confirms the hypothesis. Across `108` frozen
+development renders, complete-mode layer arrivals disagree by `172.776515`
+frames on average and up to `507`. Pairwise correlation is `0.197448`, while
+recombination adds `2.145833` replicas per event over the layer mean. Ordinary
+mode is already broken; event reset and one-bin vertical alignment barely move
+the result. Exact `3.34e-16` layer-sum closure excludes accumulation error.
+
+Independent full-band phase transport is retired. The next proof keeps the
+union magnitudes and canonical dual but owns synthesis phase once on a common
+physical-frequency field. Every layer projects analyzed phase and frequency to
+the common atom centre. One phase is transported and event-corrected there,
+then projected back to each resolution with explicit time/frequency offsets.
+If full-field coherence cannot meet the frozen development metrics, the union
+must change to non-duplicating coefficient ownership.
 
 ## Next Task
 
-Attribute the rejected successor's temporal smear between independent
-per-layer transport and cross-resolution recombination. Keep holdout and tuning
-closed.
+Prove one shared full-field synthesis phase across all three resolution layers.
+Keep holdout and tuning closed.
