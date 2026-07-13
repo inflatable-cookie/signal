@@ -726,9 +726,18 @@ Anchor attachment, event reset, active-owner transport, and exact-sample
 contribution closure pass. The defect is an event-local duplicate, not timing
 drift or a metric artifact. Evidence hash `2336b9773c32b2ca` repeats.
 
+The overlap owner is now explicit. A non-anchor frame may keep ordinary
+background overlap, but when it straddles multiple accepted anchors whose
+projected owner supports have separated, each bounded attack neighborhood is
+replaced by interpolated boundary background. The exact anchor frames retain
+the attacks. On the frozen dense control this removes the sole midpoint replica
+while preserving both target samples exactly; passing ratios remain bit-exact.
+The unchanged synthetic quality matrix passes all `48` rows. Evidence hashes
+`adf37bdd72012e19` and `dec15b718aa27de9` repeat.
+
 ## Next Task
 
-Run Rule 30S event-local overlap ownership. Trace the midpoint replica's
-frame-level contributors, then remove duplicate attack synthesis without moving
-or attenuating the two exact attacks. Keep the full quality rerun and mono
-comparison closed until the bounded mechanism passes.
+Run Rule 30T on the frozen nine-row mono development set. Compare the selected
+event-owned successor with current Signal and captured external evidence before
+any holdout read, listening export, tuning, stereo, dynamic, cache, or routing
+work.

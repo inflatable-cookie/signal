@@ -1,17 +1,19 @@
 mod evidence;
 mod measurement;
+mod summary;
 
 use super::super::study_local_schedule::{
     schedule::build_schedule,
     study::{analyze, select},
     BASE_HOP, SOURCE_FRAMES,
 };
-use super::super::HASH_OFFSET;
 use super::anchors::{detect, projected};
 use super::quality::{control::controls, Control};
-use super::render::{render_ordinary_traced, render_successor, Render};
+use super::render::{render_ordinary_traced, render_successor, render_successor_traced, Render};
+pub(super) use evidence::SampleContribution;
 use evidence::{row_hash, DenseMode, RowEvidence, Stage};
-use measurement::{event_evidence, matched_peaks};
+use measurement::event_evidence;
+pub(super) use measurement::{matched_peaks, sample_contributions};
 
 const RATIOS: [f64; 3] = [0.75, 1.5, 2.0];
 const SOURCES: [usize; 2] = [SOURCE_FRAMES / 2 - 128, SOURCE_FRAMES / 2 + 128];
@@ -45,6 +47,8 @@ pub(in crate::frequency_adaptive) struct DenseAttributionReview {
     pub failure_target_values: [f64; 2],
     pub failure_peak_values: [f64; 2],
     pub failure_local_peaks: [[usize; 3]; 2],
+    pub target_contributions: [Vec<evidence::SampleContribution>; 2],
+    pub replica_contributions: Vec<evidence::SampleContribution>,
     pub evidence_hash: u64,
     pub direction: DenseAttributionDirection,
 }
@@ -68,14 +72,24 @@ pub(in crate::frequency_adaptive) fn dense_attribution_review() -> DenseAttribut
             &schedule,
             render_ordinary_traced(&channels, ratio, &points, &SOURCES, &schedule),
         ));
+        let successor = render_successor(&channels, ratio, &points, &anchors.positions, &schedule);
+        let targets = SOURCES.map(|source| projected(&schedule, source) as usize);
+        let peaks = matched_peaks(&successor.samples[0], targets).0;
         rows.push(review_row(
             ratio,
             DenseMode::Successor,
             &schedule,
-            render_successor(&channels, ratio, &points, &anchors.positions, &schedule),
+            render_successor_traced(
+                &channels,
+                ratio,
+                &points,
+                &anchors.positions,
+                &peaks.map(|peak| peak as isize),
+                &schedule,
+            ),
         ));
     }
-    summarize(rows)
+    summary::summarize(rows)
 }
 
 fn review_row(
@@ -90,6 +104,7 @@ fn review_row(
     let events = std::array::from_fn(|index| {
         event_evidence(SOURCES[index], targets[index], peaks[index], &render)
     });
+    let peak_contributions = peaks.map(|peak| sample_contributions(&render, peak));
     let hard_failure = mode == DenseMode::Successor
         && (unmatched != 0 || errors.into_iter().any(|error| error > 256));
     let stage = classify(mode, hard_failure, &events);
@@ -101,6 +116,7 @@ fn review_row(
         errors,
         unmatched,
         events,
+        peak_contributions,
         hashes: [
             render.schedule_hash,
             render.frame_hash,
@@ -144,112 +160,4 @@ fn classify(mode: DenseMode, failure: bool, events: &[evidence::EventEvidence; 2
     } else {
         Stage::MetricAssociation
     }
-}
-
-fn summarize(rows: Vec<RowEvidence>) -> DenseAttributionReview {
-    let failing_rows = rows.iter().filter(|row| row.hard_failure).count();
-    let mut stage_counts = [0; 5];
-    for row in rows.iter().filter(|row| row.hard_failure) {
-        let index = match row.stage {
-            Stage::AnchorPlacement => 0,
-            Stage::EventReset => 1,
-            Stage::ActiveOwnerTransport => 2,
-            Stage::OverlapSynthesis => 3,
-            Stage::MetricAssociation => 4,
-            Stage::PassingControl => continue,
-        };
-        stage_counts[index] += 1;
-    }
-    let maximum_errors = [DenseMode::Ordinary, DenseMode::Successor].map(|mode| {
-        rows.iter()
-            .filter(|row| row.mode == mode)
-            .flat_map(|row| row.errors)
-            .max()
-            .unwrap_or(0)
-    });
-    let row_errors = [DenseMode::Ordinary, DenseMode::Successor].map(|mode| {
-        std::array::from_fn(|index| {
-            rows.iter()
-                .find(|row| row.mode == mode && row.ratio == RATIOS[index])
-                .expect("dense ratio row")
-                .errors
-        })
-    });
-    let successor_events = rows
-        .iter()
-        .filter(|row| row.mode == DenseMode::Successor)
-        .flat_map(|row| row.events.iter())
-        .collect::<Vec<_>>();
-    let anchor_failures = successor_events
-        .iter()
-        .filter(|event| !event.attached)
-        .count();
-    let reset_failures = successor_events
-        .iter()
-        .filter(|event| !event.event_assignment)
-        .count();
-    let owner_failures = successor_events
-        .iter()
-        .filter(|event| event.active_state_hash == 0 || event.owner_counts[3] == 0)
-        .count();
-    let maximum_closure_error = [0, 1].map(|index| {
-        rows.iter()
-            .flat_map(|row| row.events.iter())
-            .map(|event| event.closure_error[index])
-            .fold(0.0_f64, f64::max)
-    });
-    let maximum_cancellation_ratio = rows
-        .iter()
-        .flat_map(|row| row.events.iter())
-        .map(|event| event.cancellation_ratio)
-        .fold(0.0_f64, f64::max);
-    let traced_contributions = rows
-        .iter()
-        .flat_map(|row| row.events.iter())
-        .map(|event| event.contributions.len())
-        .sum();
-    let failure = rows
-        .iter()
-        .find(|row| row.hard_failure)
-        .expect("frozen dense failure");
-    let mut evidence_hash = HASH_OFFSET;
-    for row in &rows {
-        hash(&mut evidence_hash, row.hashes[7]);
-    }
-    DenseAttributionReview {
-        row_count: rows.len(),
-        failing_rows,
-        stage_counts,
-        maximum_errors,
-        row_errors,
-        anchor_failures,
-        reset_failures,
-        owner_failures,
-        maximum_closure_error,
-        maximum_cancellation_ratio,
-        traced_contributions,
-        failure_targets: failure.events.each_ref().map(|event| event.target),
-        failure_peaks: failure.events.each_ref().map(|event| event.actual_peak),
-        failure_target_values: failure.events.each_ref().map(|event| event.target_value),
-        failure_peak_values: failure.events.each_ref().map(|event| event.peak_value),
-        failure_local_peaks: failure.events.each_ref().map(|event| event.local_peaks),
-        evidence_hash,
-        direction: direction(failure.stage),
-        rows,
-    }
-}
-
-fn direction(stage: Stage) -> DenseAttributionDirection {
-    match stage {
-        Stage::PassingControl => DenseAttributionDirection::SuccessorSyntheticQualityGate,
-        Stage::AnchorPlacement => DenseAttributionDirection::AnchorPlacementRedesign,
-        Stage::EventReset => DenseAttributionDirection::EventResetRedesign,
-        Stage::ActiveOwnerTransport => DenseAttributionDirection::ActiveOwnerTransportRedesign,
-        Stage::OverlapSynthesis => DenseAttributionDirection::OverlapSynthesisRedesign,
-        Stage::MetricAssociation => DenseAttributionDirection::MetricAssociationReview,
-    }
-}
-
-fn hash(state: &mut u64, value: u64) {
-    *state = (*state ^ value).wrapping_mul(0x100_0000_01b3);
 }

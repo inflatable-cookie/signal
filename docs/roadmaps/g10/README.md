@@ -285,13 +285,18 @@ Current stretch status:
   against `256`. All other successor hard checks pass with zero regressions;
   evidence hash `c72c005d0cd44e3e` repeats. Attribution then proves both real
   `2.0x` attacks are exact, but overlap synthesis creates a louder midpoint
-  replica at output `16382`. Evidence hash `2336b9773c32b2ca` repeats.
-  Event-local overlap ownership is next. Corpus audio remains closed.
+  replica at output `16382`. Evidence hash `2336b9773c32b2ca` repeats. One
+  bounded event-local overlap owner now removes that replica, preserves both
+  real attacks exactly, and leaves the passing dense ratios bit-identical. The
+  complete `48`-row synthetic gate passes with zero failures or regressions;
+  evidence hashes `adf37bdd72012e19` and `dec15b718aa27de9` repeat. Frozen mono
+  development objective comparison is next. Holdout and listening remain
+  closed.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Execute `g10.029` Batch 29.6BX under Rule 30S. Prove one event-local overlap
-owner removes the dense midpoint replica without moving either exact attack.
+Execute `g10.029` Batch 29.6BY under Rule 30T. Run the frozen nine-row mono
+development objective comparison without reading holdout or changing policy.

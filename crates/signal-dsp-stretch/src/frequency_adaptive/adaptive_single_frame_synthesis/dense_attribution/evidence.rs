@@ -17,14 +17,14 @@ pub(super) enum Stage {
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub(super) struct SampleContribution {
-    pub(super) frame_source: isize,
-    pub(super) frame_output: isize,
-    pub(super) frame_length: usize,
-    pub(super) dual_weight: f64,
-    pub(super) value: [f64; 2],
-    pub(super) frame_peak_output: isize,
-    pub(super) frame_peak_magnitude: f64,
+pub(in crate::frequency_adaptive) struct SampleContribution {
+    pub(in crate::frequency_adaptive) frame_source: isize,
+    pub(in crate::frequency_adaptive) frame_output: isize,
+    pub(in crate::frequency_adaptive) frame_length: usize,
+    pub(in crate::frequency_adaptive) dual_weight: f64,
+    pub(in crate::frequency_adaptive) value: [f64; 2],
+    pub(in crate::frequency_adaptive) frame_peak_output: isize,
+    pub(in crate::frequency_adaptive) frame_peak_magnitude: f64,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -55,6 +55,7 @@ pub(super) struct RowEvidence {
     pub(super) errors: [usize; 2],
     pub(super) unmatched: usize,
     pub(super) events: [EventEvidence; 2],
+    pub(super) peak_contributions: [Vec<SampleContribution>; 2],
     pub(super) hashes: [u64; 8],
 }
 

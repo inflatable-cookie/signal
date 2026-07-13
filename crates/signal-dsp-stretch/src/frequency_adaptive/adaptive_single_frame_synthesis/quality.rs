@@ -10,7 +10,9 @@ use measurement::{
     angular_frequency_error, crest_db, dense_event_errors, error, peak, peak_index, projected,
     replica_ratio, rms_prefix, rms_suffix, texture,
 };
-pub(in crate::frequency_adaptive) use review::{quality_review, successor_quality_review};
+pub(in crate::frequency_adaptive) use review::{
+    owned_successor_quality_review, quality_review, successor_quality_review,
+};
 
 const TIMING_SEARCH: usize = 512;
 pub(in crate::frequency_adaptive) use control::Control;

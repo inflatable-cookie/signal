@@ -1,13 +1,19 @@
+mod overlap;
 mod phase;
 mod schedule;
+mod successor;
 mod trace;
 mod tracking;
 
 use rustfft::{num_complex::Complex64, FftPlanner};
 
 use phase::{transport, PhaseState};
+pub(super) use successor::{
+    render_successor, render_successor_owned, render_successor_owned_traced,
+    render_successor_traced,
+};
 use trace::hash_phase_trace;
-pub(super) use trace::{EventSampleTrace, PhaseFrameTrace, SynthesisFrameTrace};
+pub(super) use trace::{PhaseFrameTrace, SampleTrace, SynthesisFrameTrace};
 
 use super::super::study_local_schedule::{schedule::Schedule, BASE_HOP, SOURCE_FRAMES};
 use super::super::HASH_OFFSET;
@@ -21,11 +27,15 @@ pub(super) enum Mode {
     Vertical,
     Both,
     Successor,
+    SuccessorOwned,
 }
 
 impl Mode {
     pub(super) fn event(self) -> bool {
-        matches!(self, Self::Event | Self::Both | Self::Successor)
+        matches!(
+            self,
+            Self::Event | Self::Both | Self::Successor | Self::SuccessorOwned
+        )
     }
 
     pub(super) fn vertical(self) -> bool {
@@ -33,7 +43,11 @@ impl Mode {
     }
 
     fn successor(self) -> bool {
-        self == Self::Successor
+        matches!(self, Self::Successor | Self::SuccessorOwned)
+    }
+
+    fn event_owned(self) -> bool {
+        self == Self::SuccessorOwned
     }
 }
 
@@ -61,6 +75,8 @@ pub(super) struct Render {
     pub(super) non_finite: usize,
     pub(super) event_phase_changes: usize,
     pub(super) vertical_phase_changes: usize,
+    pub(super) event_owned_samples: usize,
+    pub(super) event_ownership_hash: u64,
     pub(super) schedule_hash: u64,
     pub(super) frame_hash: u64,
     pub(super) dual_hash: u64,
@@ -86,27 +102,10 @@ pub(super) fn render(
         ratio,
         points,
         points,
+        &[],
         schedule,
         mode,
         schedule::legacy(ratio, points, schedule),
-    )
-}
-
-pub(super) fn render_successor(
-    channels: &[Vec<f64>],
-    ratio: f64,
-    resolution_points: &[usize],
-    anchors: &[usize],
-    schedule: &Schedule,
-) -> Render {
-    render_frames(
-        channels,
-        ratio,
-        anchors,
-        anchors,
-        schedule,
-        Mode::Successor,
-        schedule::successor(ratio, resolution_points, anchors, schedule),
     )
 }
 
@@ -122,6 +121,7 @@ pub(super) fn render_ordinary_traced(
         ratio,
         resolution_points,
         trace_events,
+        &[],
         schedule,
         Mode::Ordinary,
         schedule::legacy(ratio, resolution_points, schedule),
@@ -133,6 +133,7 @@ fn render_frames(
     ratio: f64,
     events: &[usize],
     trace_events: &[usize],
+    trace_outputs: &[isize],
     schedule: &Schedule,
     mode: Mode,
     frames: Vec<Frame>,
@@ -180,10 +181,13 @@ fn render_frames(
         .copied()
         .filter(|point| *point > 0 && *point < SOURCE_FRAMES)
         .collect::<Vec<_>>();
-    let event_targets = trace_events
+    let mut sample_targets = trace_events
         .iter()
-        .map(|source| (*source, super::anchors::projected(schedule, *source)))
+        .map(|source| super::anchors::projected(schedule, *source))
         .collect::<Vec<_>>();
+    sample_targets.extend_from_slice(trace_outputs);
+    sample_targets.sort_unstable();
+    sample_targets.dedup();
     let mut coefficient_hash = HASH_OFFSET;
     let mut magnitude_hash = HASH_OFFSET;
     let mut phase_hash = HASH_OFFSET;
@@ -193,6 +197,8 @@ fn render_frames(
     let mut non_finite = 0;
     let mut event_phase_changes = 0;
     let mut vertical_phase_changes = 0;
+    let mut event_owned_samples = 0;
+    let mut event_ownership_hash = HASH_OFFSET;
     let mut phase_initializations = 0;
     let mut phase_trace = Vec::with_capacity(frames.len());
     let mut synthesis_trace = Vec::with_capacity(frames.len());
@@ -201,6 +207,9 @@ fn render_frames(
     for frame in &frames {
         let weights = window(frame.length);
         let buffer_offset = (FFT_FRAMES - frame.length) / 2;
+        let overlap_ownership = (mode.event_owned() && ratio != 1.0)
+            .then(|| overlap::Ownership::for_frame(frame, &events, schedule))
+            .flatten();
         let mut spectra = Vec::with_capacity(channels.len());
         let mut linked = vec![0.0_f64; FFT_FRAMES / 2 + 1];
         let mut tracking_spectra = Vec::with_capacity(channels.len());
@@ -208,7 +217,19 @@ fn render_frames(
             let mut spectrum = vec![Complex64::new(0.0, 0.0); FFT_FRAMES];
             for (offset, weight) in weights.iter().copied().enumerate() {
                 let logical = frame.source - frame.length as isize / 2 + offset as isize;
-                spectrum[buffer_offset + offset].re = reflected(channel, logical) * weight;
+                let original = reflected(channel, logical);
+                let sample = overlap_ownership
+                    .as_ref()
+                    .and_then(|ownership| ownership.sample(channel, logical))
+                    .unwrap_or(original);
+                if channel_index == 0 && sample.to_bits() != original.to_bits() {
+                    event_owned_samples += 1;
+                    hash(&mut event_ownership_hash, frame.source as i64 as u64);
+                    hash(&mut event_ownership_hash, logical as i64 as u64);
+                    hash(&mut event_ownership_hash, original.to_bits());
+                    hash(&mut event_ownership_hash, sample.to_bits());
+                }
+                spectrum[buffer_offset + offset].re = sample * weight;
             }
             forward.process(&mut spectrum);
             for (bin, value) in spectrum.iter().take(FFT_FRAMES / 2 + 1).enumerate() {
@@ -289,7 +310,7 @@ fn render_frames(
             let mut contribution_moment = 0.0_f64;
             let mut contribution_peak = 0.0_f64;
             let mut contribution_peak_output = frame.output;
-            let mut event_samples = Vec::new();
+            let mut traced_samples = Vec::new();
             let mut contribution_hash = HASH_OFFSET;
             for (offset, weight) in weights.iter().copied().enumerate() {
                 if weight == 0.0 {
@@ -302,10 +323,9 @@ fn render_frames(
                 imaginary_residue = imaginary_residue.max(value.im.abs());
                 outputs[channel_index][domain] += value;
                 if channel_index == 0 {
-                    for (source, target) in &event_targets {
+                    for target in &sample_targets {
                         if logical == *target {
-                            event_samples.push(EventSampleTrace {
-                                source: *source,
+                            traced_samples.push(SampleTrace {
                                 output: *target,
                                 dual_weight: weight / (FFT_FRAMES as f64 * operator[domain]),
                                 value: [value.re, value.im],
@@ -336,7 +356,7 @@ fn render_frames(
                     },
                     peak_output: contribution_peak_output,
                     peak_magnitude: contribution_peak,
-                    event_samples,
+                    traced_samples,
                     hash: contribution_hash,
                 };
                 hash(&mut synthesis_trace_hash, trace.hash);
@@ -393,6 +413,8 @@ fn render_frames(
         non_finite,
         event_phase_changes,
         vertical_phase_changes,
+        event_owned_samples,
+        event_ownership_hash,
         schedule_hash: schedule.hash,
         frame_hash: schedule::frame_hash(&frames),
         dual_hash,

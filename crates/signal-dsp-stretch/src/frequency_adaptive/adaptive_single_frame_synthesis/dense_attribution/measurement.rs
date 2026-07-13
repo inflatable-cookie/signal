@@ -4,7 +4,10 @@ use super::evidence::{EventEvidence, SampleContribution};
 const SEARCH: usize = 512;
 const EXCLUSION: usize = 32;
 
-pub(super) fn matched_peaks(samples: &[f64], targets: [usize; 2]) -> ([usize; 2], usize) {
+pub(in crate::frequency_adaptive::adaptive_single_frame_synthesis) fn matched_peaks(
+    samples: &[f64],
+    targets: [usize; 2],
+) -> ([usize; 2], usize) {
     let start = targets[0].saturating_sub(SEARCH);
     let end = (targets[1] + SEARCH + 1).min(samples.len());
     let first = peak(samples, start, end, None);
@@ -29,25 +32,7 @@ pub(super) fn event_evidence(
         .phase_trace
         .iter()
         .find(|frame| frame.source == source as isize && frame.output == target as isize);
-    let contributions = render
-        .synthesis_trace
-        .iter()
-        .filter_map(|frame| {
-            frame
-                .event_samples
-                .iter()
-                .find(|sample| sample.source == source && sample.output == target as isize)
-                .map(|sample| SampleContribution {
-                    frame_source: frame.source,
-                    frame_output: frame.output,
-                    frame_length: frame.length,
-                    dual_weight: sample.dual_weight,
-                    value: sample.value,
-                    frame_peak_output: frame.peak_output,
-                    frame_peak_magnitude: frame.peak_magnitude,
-                })
-        })
-        .collect::<Vec<_>>();
+    let contributions = sample_contributions(render, target);
     let sum = contributions
         .iter()
         .fold([0.0_f64; 2], |sum, contribution| {
@@ -92,6 +77,31 @@ pub(super) fn event_evidence(
         cancellation_ratio: absolute_sum / sum[0].abs().max(1.0e-15),
         contributions,
     }
+}
+
+pub(in crate::frequency_adaptive::adaptive_single_frame_synthesis) fn sample_contributions(
+    render: &Render,
+    output: usize,
+) -> Vec<SampleContribution> {
+    render
+        .synthesis_trace
+        .iter()
+        .filter_map(|frame| {
+            frame
+                .traced_samples
+                .iter()
+                .find(|sample| sample.output == output as isize)
+                .map(|sample| SampleContribution {
+                    frame_source: frame.source,
+                    frame_output: frame.output,
+                    frame_length: frame.length,
+                    dual_weight: sample.dual_weight,
+                    value: sample.value,
+                    frame_peak_output: frame.peak_output,
+                    frame_peak_magnitude: frame.peak_magnitude,
+                })
+        })
+        .collect()
 }
 
 fn local_peaks(samples: &[f64], center: usize) -> [usize; 3] {

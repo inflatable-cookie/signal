@@ -2735,6 +2735,40 @@ event-local representation design, not parameter search. Mono comparison,
 corpus, holdout, listening, linked stereo, dynamic ratio, cache, and product
 routing remain closed.
 
+Rule 30S passes. The complete replica comes from one non-anchor `512`-frame
+bridge at source `8192`, projected output `16385`; its contribution at output
+`16382` is `0.787177`. The event-owned successor changes only non-anchor frames
+that straddle multiple accepted anchors when the anchors' projected owner
+supports no longer overlap. Inside each bounded `64`-frame source neighborhood,
+the bridge receives linearly interpolated boundary background instead of a
+second copy of the owned attack.
+
+The `0.75x` and `1.5x` outputs remain bit-identical. At `2.0x`, exactly two
+nonzero source samples change in the bridge analysis, the replica becomes zero,
+both real target amplitudes remain exact, and dense errors change from
+`[0,262]` to `[0,0]`. Pre/post contribution hashes are `b5fa80b289fcf1b4`
+and `3a77bac045f1d468`; bounded evidence hash `adf37bdd72012e19`
+repeats. The complete unchanged `48`-row Rule 30Q matrix then passes with zero
+hard failures and zero regressions. Evidence hash `dec15b718aa27de9` repeats.
+
+#### Rule 30T: compare the frozen mono development objective
+
+Batch 29.6BY uses the already decoded development rows `L001`, `L002`, `L004`,
+`L005`, `L007`, `L008`, `L010`, `L013`, and `L014`. Render the selected
+event-owned successor beside current Signal. Reuse the captured external
+behavioural renders; do not invoke or inspect comparator implementation.
+
+Report exact length, integrity, event placement, crest, replica ratio, tonal
+movement, static spectral residual, unsupported mass, texture, formant, and
+boundary fields for every row and mode. Freeze render, measurement, manifest,
+and aggregate hashes. Objective evidence may reject the successor or qualify
+one concealed development comparison; it does not authorize promotion.
+
+Do not read the six frozen holdout rows, tune parameters, change the `64`-frame
+ownership neighborhood, alter event detection or scheduling, export listening
+audio, or open linked stereo, dynamic ratio, cache, or product routing. Any
+hard-gate regression returns to the owning mechanism with row evidence.
+
 ## Clean-Room Rule
 
 Public papers and public algorithm descriptions may inform Signal design.
@@ -2743,8 +2777,7 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Execute Batch 29.6BX under Rule 30S. Attribute the frozen midpoint replica to
-its frame-level contributors and prove one event-local overlap owner without
-moving or attenuating either real attack. Keep the complete Rule 30Q rerun and
-all corpus, listening, stereo, dynamic, cache, and routing work closed until
-that bounded mechanism passes.
+Execute Batch 29.6BY under Rule 30T. Compare the event-owned successor with
+current Signal and captured external behavioural evidence on the frozen nine
+development rows. Keep holdout, listening export, parameter changes, linked
+stereo, dynamic ratio, cache, and routing closed.

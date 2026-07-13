@@ -73,7 +73,7 @@ pub(super) fn transport(
     trace_bin: usize,
     tracking: Option<&[Complex64]>,
 ) -> Result {
-    if mode == Mode::Successor {
+    if mode.successor() {
         return transport_active(
             spectrum,
             tracking.expect("successor tracking spectrum"),

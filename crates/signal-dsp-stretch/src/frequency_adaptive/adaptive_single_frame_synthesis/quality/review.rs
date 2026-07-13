@@ -5,7 +5,7 @@ use super::super::super::study_local_schedule::{
 };
 use super::super::super::HASH_OFFSET;
 use super::super::anchors::detect;
-use super::super::render::{render, render_successor, Mode};
+use super::super::render::{render, render_successor, render_successor_owned, Mode};
 use super::control::{controls, RATIOS};
 use super::evidence::{case_hash, QualityReview};
 use super::{measure, CaseEvidence, Control, QualityDirection};
@@ -14,6 +14,7 @@ use super::{measure, CaseEvidence, Control, QualityDirection};
 enum ReviewPath {
     LegacyCombined,
     Successor,
+    SuccessorOwned,
 }
 
 pub(in crate::frequency_adaptive) fn quality_review() -> QualityReview {
@@ -22,6 +23,10 @@ pub(in crate::frequency_adaptive) fn quality_review() -> QualityReview {
 
 pub(in crate::frequency_adaptive) fn successor_quality_review() -> QualityReview {
     review(ReviewPath::Successor)
+}
+
+pub(in crate::frequency_adaptive) fn owned_successor_quality_review() -> QualityReview {
+    review(ReviewPath::SuccessorOwned)
 }
 
 fn review(path: ReviewPath) -> QualityReview {
@@ -40,7 +45,9 @@ fn review(path: ReviewPath) -> QualityReview {
                     .iter()
                     .flat_map(|mode| mode.hard_failures)
                     .sum::<usize>(),
-                ReviewPath::Successor => case.modes[1].hard_failures.into_iter().sum(),
+                ReviewPath::Successor | ReviewPath::SuccessorOwned => {
+                    case.modes[1].hard_failures.into_iter().sum()
+                }
             };
             case.ownership_failures + mode_failures
         })
@@ -54,6 +61,10 @@ fn review(path: ReviewPath) -> QualityReview {
         }
         (ReviewPath::Successor, true) => QualityDirection::SuccessorFrozenMonoDevelopmentObjective,
         (ReviewPath::Successor, false) => QualityDirection::SuccessorOwningMechanism,
+        (ReviewPath::SuccessorOwned, true) => {
+            QualityDirection::SuccessorFrozenMonoDevelopmentObjective
+        }
+        (ReviewPath::SuccessorOwned, false) => QualityDirection::SuccessorOwningMechanism,
     };
     let mut evidence_hash = HASH_OFFSET;
     for case in &cases {
@@ -80,6 +91,10 @@ fn review_case(control: Control, input: &[f64], ratio: f64, path: ReviewPath) ->
             let anchors = detect(&channels, SOURCE_FRAMES);
             render_successor(&channels, ratio, &points, &anchors.positions, &schedule)
         }
+        ReviewPath::SuccessorOwned => {
+            let anchors = detect(&channels, SOURCE_FRAMES);
+            render_successor_owned(&channels, ratio, &points, &anchors.positions, &schedule)
+        }
     };
     let renders = [ordinary, candidate];
     let modes = [
@@ -99,7 +114,9 @@ fn review_case(control: Control, input: &[f64], ratio: f64, path: ReviewPath) ->
                 || renders[0].coefficient_hash != renders[1].coefficient_hash
                 || renders[0].magnitude_hash != renders[1].magnitude_hash
         }
-        ReviewPath::Successor => renders[0].schedule_hash != renders[1].schedule_hash,
+        ReviewPath::Successor | ReviewPath::SuccessorOwned => {
+            renders[0].schedule_hash != renders[1].schedule_hash
+        }
     });
     let mode_deltas = [
         modes[1].impulse_crest_db - modes[0].impulse_crest_db,

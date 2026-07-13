@@ -895,13 +895,13 @@ Status: closed without exposure. No development candidate qualified.
 
 ### Batch 29.6BX - Event-Local Overlap Ownership Proof
 
-- [ ] trace every frame contribution at the dominant non-target dense-event
+- [x] trace every frame contribution at the dominant non-target dense-event
   replica before changing synthesis
-- [ ] give each injected attack one bounded output-domain owner while retaining
+- [x] give each injected attack one bounded output-domain owner while retaining
   complementary overlap weights and exact target amplitudes
-- [ ] reject non-target inter-anchor replicas without moving either exact anchor
+- [x] reject non-target inter-anchor replicas without moving either exact anchor
   or weakening the unchanged dense one-to-one limit
-- [ ] rerun the complete Rule 30Q matrix only after the bounded proof passes
+- [x] rerun the complete Rule 30Q matrix only after the bounded proof passes
 
 ### Batch 29.6BY - Frozen Mono Development Objective Comparison
 
@@ -1659,11 +1659,23 @@ Status: closed without exposure. No development candidate qualified.
   zero real error and at most `6.770e-17` imaginary residue. Evidence hash
   `2336b9773c32b2ca` repeats. Batch 29.6BX owns one bounded event-local overlap
   ownership proof; mono comparison remains closed.
+- 2026-07-13: Batch 29.6BX removes the dense midpoint replica without changing
+  either real attack. One `512`-frame bridge at source `8192`, output `16385`,
+  owns the complete `0.787177` replica at `16382`. The successor now substitutes
+  bounded interpolated background only when a non-anchor frame straddles
+  multiple anchors whose projected owner supports no longer overlap. Exactly
+  two dense-control samples change at `2.0x`; `0.75x` and `1.5x` remain
+  bit-identical. The replica becomes zero, both target amplitudes are unchanged,
+  and dense errors become `[[0,0],[0,0],[0,0]]`. Bounded evidence hash
+  `adf37bdd72012e19` repeats. The complete unchanged `48`-row Rule 30Q matrix
+  passes with zero hard failures or regressions; evidence hash
+  `dec15b718aa27de9` repeats. Batch 29.6BY owns the frozen nine-row mono
+  development objective comparison. Holdout and listening remain closed.
 
 ## Next Task
 
-Execute Batch 29.6BX under Rule 30S. Trace the midpoint replica's frame-level
-contributors, then prove one bounded event-local overlap owner without moving
-the exact attacks, weakening the dense limit, or disturbing complementary
-overlap. Keep mono comparison, corpus, holdout, listening, linked stereo,
-dynamic ratio, and routing closed.
+Execute Batch 29.6BY under Rule 30T. Render the frozen nine development rows
+through current Signal, the selected event-owned successor, and existing
+external behavioural references. Report the complete objective field set
+without reading holdout, exporting concealed listening, tuning, or changing
+linked stereo, dynamic ratio, cache, or routing.

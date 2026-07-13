@@ -1,14 +1,18 @@
 mod anchors;
 mod attribution;
 mod dense_attribution;
+mod overlap_ownership;
 mod ownership;
 pub(super) mod quality;
 mod render;
 
 pub(super) use attribution::{attribution_review, AttributionDirection};
 pub(super) use dense_attribution::{dense_attribution_review, DenseAttributionDirection};
+pub(super) use overlap_ownership::overlap_ownership_review;
 pub(super) use ownership::{ownership_review, OwnershipDirection};
-pub(super) use quality::{quality_review, successor_quality_review, QualityDirection};
+pub(super) use quality::{
+    owned_successor_quality_review, quality_review, successor_quality_review, QualityDirection,
+};
 
 use render::{render, Mode, Render};
 

@@ -835,7 +835,7 @@ fn adaptive_single_frame_dense_event_attribution_selects_owner() {
     let first = dense_attribution_review();
     let repeated = dense_attribution_review();
     eprintln!(
-        "adaptive_single_frame_dense_event_attribution rows={} failing={} stages={:?} errors={:?} row_errors={:?} anchors={} resets={} owners={} closure={:?} cancellation={:.6} contributions={} targets={:?} peaks={:?} target_values={:?} peak_values={:?} local={:?} evidence={:016x} direction={:?}",
+        "adaptive_single_frame_dense_event_attribution rows={} failing={} stages={:?} errors={:?} row_errors={:?} anchors={} resets={} owners={} closure={:?} cancellation={:.6} contributions={} targets={:?} peaks={:?} target_values={:?} peak_values={:?} local={:?} target_contributions={:?} replica={:?} evidence={:016x} direction={:?}",
         first.row_count,
         first.failing_rows,
         first.stage_counts,
@@ -852,6 +852,8 @@ fn adaptive_single_frame_dense_event_attribution_selects_owner() {
         first.failure_target_values,
         first.failure_peak_values,
         first.failure_local_peaks,
+        first.target_contributions,
+        first.replica_contributions,
         first.evidence_hash,
         first.direction,
     );
@@ -881,6 +883,89 @@ fn adaptive_single_frame_dense_event_attribution_selects_owner() {
         first.direction,
         DenseAttributionDirection::OverlapSynthesisRedesign
     );
+}
+
+#[test]
+#[cfg(not(debug_assertions))]
+fn adaptive_single_frame_event_overlap_ownership_passes() {
+    use super::adaptive_single_frame_synthesis::{
+        owned_successor_quality_review, QualityDirection,
+    };
+
+    let first = owned_successor_quality_review();
+    let repeated = owned_successor_quality_review();
+    let failures = first
+        .cases
+        .iter()
+        .filter(|case| case.modes[1].hard_failures.iter().sum::<usize>() != 0)
+        .map(|case| {
+            (
+                case.control,
+                case.ratio,
+                case.modes[1].hard_failures,
+                case.modes[1].dense_errors,
+                case.modes[1].identity_error,
+            )
+        })
+        .collect::<Vec<_>>();
+    eprintln!(
+        "adaptive_single_frame_event_overlap_ownership failures={failures:?} hard={} regressions={} evidence={:016x} direction={:?}",
+        first.hard_failures,
+        first.combined_regressions,
+        first.evidence_hash,
+        first.direction,
+    );
+    assert_eq!(first, repeated);
+    assert_eq!(first.cases.len(), 48);
+    assert_eq!(first.hard_failures, 0);
+    assert_eq!(first.combined_regressions, 0);
+    assert!(first.cases.iter().all(|case| {
+        case.ownership_failures == 0 && case.modes[1].hard_failures.into_iter().sum::<usize>() == 0
+    }));
+    assert_eq!(first.evidence_hash, 0xdec1_5b71_8aa2_7de9);
+    assert_eq!(
+        first.direction,
+        QualityDirection::SuccessorFrozenMonoDevelopmentObjective
+    );
+}
+
+#[test]
+#[cfg(not(debug_assertions))]
+fn adaptive_single_frame_event_overlap_ownership_removes_replica() {
+    use super::adaptive_single_frame_synthesis::overlap_ownership_review;
+
+    let first = overlap_ownership_review();
+    let repeated = overlap_ownership_review();
+    eprintln!(
+        "adaptive_single_frame_event_overlap_ownership pre={:?} post={:?} target_delta={:.3e} replica={} values={:?} contributors={:?} owned={:?} ownership={:x?} contribution={:x?} output={:x?} evidence={:016x}",
+        first.pre_errors,
+        first.post_errors,
+        first.maximum_target_delta,
+        first.replica_output,
+        first.replica_values,
+        first.replica_contributors,
+        first.event_owned_samples,
+        first.ownership_hashes,
+        first.contribution_hashes,
+        first.output_hashes,
+        first.evidence_hash,
+    );
+    assert_eq!(first, repeated);
+    assert_eq!(first.pre_errors, [[0, 0], [0, 0], [0, 262]]);
+    assert_eq!(first.post_errors, [[0, 0]; 3]);
+    assert!(first.maximum_target_delta <= 1.0e-12, "{first:?}");
+    assert_eq!(first.replica_output, 16382);
+    assert_eq!(first.replica_contributors[0].len(), 1);
+    assert!(first.replica_values[1].abs() <= 1.0e-12, "{first:?}");
+    assert_eq!(first.event_owned_samples, [0, 0, 2]);
+    assert_eq!(first.output_hashes[0][0], first.output_hashes[0][1]);
+    assert_eq!(first.output_hashes[1][0], first.output_hashes[1][1]);
+    assert_ne!(first.output_hashes[2][0], first.output_hashes[2][1]);
+    assert_eq!(
+        first.contribution_hashes,
+        [0xb5fa_80b2_89fc_f1b4, 0x3a77_bac0_45f1_d468]
+    );
+    assert_eq!(first.evidence_hash, 0xadf3_7bdd_7201_2e19);
 }
 
 #[test]
