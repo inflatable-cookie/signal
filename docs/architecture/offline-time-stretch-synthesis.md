@@ -580,7 +580,21 @@ then projected back to each resolution with explicit time/frequency offsets.
 If full-field coherence cannot meet the frozen development metrics, the union
 must change to non-duplicating coefficient ownership.
 
+The shared-field proof fails. It retains exact structure and reduces combined
+replica growth, but mean layer-arrival disagreement remains `162.261364`
+frames, correlation falls to `0.134045`, and replica growth remains positive.
+The defect is therefore representation ownership, not merely missing phase
+lamination.
+
+Redundant full-band union synthesis is closed. The next architecture must give
+each coefficient one synthesis owner while retaining simultaneous access to
+short and long evidence. The bounded review compares complementary source
+subbands, explicit cross-resolution coefficient tiling, and one invertible
+adaptive-resolution representation. No synthesis implementation resumes until
+one family proves exact unmodified reconstruction, event-local ownership
+continuity, one time map, boundaries, and linked-stereo decisions on paper.
+
 ## Next Task
 
-Prove one shared full-field synthesis phase across all three resolution layers.
-Keep holdout and tuning closed.
+Select and contract one non-duplicating multi-resolution coefficient
+representation. Keep implementation, holdout, and tuning closed.

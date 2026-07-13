@@ -3,9 +3,11 @@ use rustfft::{num_complex::Complex64, FftPlanner};
 use super::super::complete_system_tuning::{Configuration, ResetScope, Sensitivity};
 use super::super::study_local_schedule::schedule::Schedule;
 use super::super::HASH_OFFSET;
+use output::{allocate_layer_outputs, crop_outputs};
 use phase::{transport, PhaseState};
 use support::{frames, hash, mirror, reflected, window};
 
+mod output;
 mod phase;
 mod support;
 
@@ -23,15 +25,7 @@ pub(crate) enum Mode {
     Event,
     Vertical,
     Both,
-}
-
-impl Mode {
-    fn event(self) -> bool {
-        matches!(self, Self::Event | Self::Both)
-    }
-    fn vertical(self) -> bool {
-        matches!(self, Self::Vertical | Self::Both)
-    }
+    Shared,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -132,9 +126,7 @@ fn render_configured_internal(
         }
     }
     let mut outputs = vec![vec![Complex64::new(0.0, 0.0); domain_len]; channels.len()];
-    let mut layer_outputs = capture_layers.then(|| {
-        std::array::from_fn(|_| vec![vec![Complex64::new(0.0, 0.0); domain_len]; channels.len()])
-    });
+    let mut layer_outputs = allocate_layer_outputs(capture_layers, channels.len(), domain_len);
     let mut states = channels
         .iter()
         .map(|_| PhaseState::new(layers))
@@ -185,6 +177,7 @@ fn render_configured_internal(
                 dominant,
                 mode,
                 configuration,
+                ratio == 1.0,
             );
             event_resets += changes.0;
             vertical_alignments += changes.1;
@@ -211,28 +204,7 @@ fn render_configured_internal(
         }
     }
     let crop = (-output_start) as usize;
-    let samples = outputs
-        .iter()
-        .map(|channel| {
-            channel[crop..crop + target_len]
-                .iter()
-                .map(|value| value.re)
-                .collect::<Vec<_>>()
-        })
-        .collect::<Vec<_>>();
-    let layer_samples = layer_outputs.map(|layers| {
-        layers.map(|channels| {
-            channels
-                .iter()
-                .map(|channel| {
-                    channel[crop..crop + target_len]
-                        .iter()
-                        .map(|value| value.re)
-                        .collect::<Vec<_>>()
-                })
-                .collect::<Vec<_>>()
-        })
-    });
+    let (samples, layer_samples) = crop_outputs(&outputs, layer_outputs, crop, target_len);
     let uncovered = operator[crop..crop + target_len]
         .iter()
         .filter(|value| **value <= 0.0)

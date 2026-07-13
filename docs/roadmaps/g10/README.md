@@ -265,12 +265,14 @@ Current stretch status:
   smear and cannot reach `6/9`. Holdout remains unread. Attribution measures
   roughly `173` frames of mean layer-arrival disagreement and retires
   independent full-band layer phase transport. One shared full-field phase
-  proof is next.
+  proof also fails, leaving roughly `162` frames of mean disagreement and low
+  `0.134` correlation. Redundant full-band ownership is closed. A bounded
+  non-duplicating representation review is next.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Execute `g10.029` Batch 29.6BN. Prove one shared physical-frequency phase field
-across all resolution layers without tuning or holdout exposure.
+Execute `g10.029` Batch 29.6BO. Select and contract one non-duplicating
+multi-resolution coefficient representation before more synthesis code.

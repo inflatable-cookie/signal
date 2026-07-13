@@ -2350,6 +2350,30 @@ mean, exact layer-sum closure, and all prior hard gates. Failure returns to
 non-duplicating coefficient ownership architecture; passage permits one
 development listening export, not promotion.
 
+#### Rule 30J: redundant full-band ownership is closed
+
+Batch 29.6BN preserves all structural gates and exact `1.67e-16` layer-sum
+closure, but fails every coherence gate. Mean layer-arrival disagreement is
+`162.261364` frames against `<8`; pairwise correlation is `0.134045` against
+`>0.8`; recombination adds `0.710227` replicas per event instead of zero.
+Shared phase improves neither representation enough to justify tuning or
+listening.
+
+Do not synthesize multiple independently windowed full-band copies of the same
+source, even under one projected phase field. Batch 29.6BO is architecture and
+research only. Compare at most three non-duplicating families: complementary
+source subbands, explicit coefficient-plane partitioning across resolutions,
+and one invertible adaptive-resolution representation. Public primary papers
+and already captured Rubber Band behavioural evidence may inform the review;
+Rubber Band source remains outside the clean-room boundary.
+
+Any selected family must provide exact unmodified reconstruction, one synthesis
+owner per coefficient, continuous event-local resolution ownership, one global
+time map, bounded boundary policy, and a linked-stereo decision path. Freeze
+its representation and proof sequence before implementation. Do not choose
+crossover frequencies, tiling thresholds, masks, or phase policy through a
+corpus sweep.
+
 ## Clean-Room Rule
 
 Public papers and public algorithm descriptions may inform Signal design.
@@ -2358,5 +2382,5 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Execute Batch 29.6BN shared full-field phase proof on frozen development
-material. Keep holdout and tuning closed.
+Execute Batch 29.6BO non-duplicating ownership architecture review. Keep
+implementation, holdout, and tuning closed.

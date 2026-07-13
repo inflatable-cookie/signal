@@ -12,6 +12,10 @@ mod smear_attribution;
 pub(super) use smear_attribution::{
     smear_attribution_review, Direction as SmearAttributionDirection,
 };
+mod shared_phase_proof;
+pub(super) use shared_phase_proof::{
+    shared_phase_proof_review, Direction as SharedPhaseProofDirection,
+};
 
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub(super) enum Sensitivity {

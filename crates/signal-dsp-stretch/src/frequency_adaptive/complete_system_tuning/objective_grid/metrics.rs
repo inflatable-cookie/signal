@@ -1,4 +1,4 @@
-pub(super) fn identity_error(input: &[f64], output: &[f64]) -> f64 {
+pub(crate) fn identity_error(input: &[f64], output: &[f64]) -> f64 {
     input
         .iter()
         .zip(output)
@@ -6,7 +6,7 @@ pub(super) fn identity_error(input: &[f64], output: &[f64]) -> f64 {
         .fold(0.0, f64::max)
 }
 
-pub(super) fn tone_error(output: &[f64]) -> f64 {
+pub(crate) fn tone_error(output: &[f64]) -> f64 {
     let start = output.len() * 35 / 100;
     let end = output.len() * 47 / 100;
     let mut best = (0.0, 0.0);
@@ -30,7 +30,7 @@ pub(super) fn tone_error(output: &[f64]) -> f64 {
     (best.0 - 997.0).abs()
 }
 
-pub(super) fn event_error(output: &[f64], ratio: f64) -> usize {
+pub(crate) fn event_error(output: &[f64], ratio: f64) -> usize {
     [2_048, 4_096, 4_224, 8_192, 12_288]
         .into_iter()
         .map(|event| {

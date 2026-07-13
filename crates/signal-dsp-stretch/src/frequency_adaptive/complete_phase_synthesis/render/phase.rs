@@ -2,6 +2,23 @@ use rustfft::num_complex::Complex64;
 
 use super::super::super::complete_system_tuning::{Configuration, ResetScope};
 use super::{Frame, Mode};
+use shared::SharedState;
+
+mod shared;
+
+impl Mode {
+    fn event(self) -> bool {
+        matches!(self, Self::Event | Self::Both | Self::Shared)
+    }
+
+    fn vertical(self) -> bool {
+        matches!(self, Self::Vertical | Self::Both)
+    }
+
+    fn shared(self) -> bool {
+        self == Self::Shared
+    }
+}
 
 pub(super) struct PhaseState {
     analysis: [Vec<f64>; 3],
@@ -10,6 +27,7 @@ pub(super) struct PhaseState {
     source: [Option<isize>; 3],
     output: [Option<isize>; 3],
     reference: Option<(f64, f64, f64, isize, isize)>,
+    shared: SharedState,
 }
 
 impl PhaseState {
@@ -21,6 +39,7 @@ impl PhaseState {
             source: [None; 3],
             output: [None; 3],
             reference: None,
+            shared: SharedState::new(*layers.iter().max().expect("phase geometry")),
         }
     }
 }
@@ -33,7 +52,19 @@ pub(super) fn transport(
     dominant: usize,
     mode: Mode,
     configuration: Configuration,
+    identity: bool,
 ) -> (usize, usize) {
+    if mode.shared() {
+        return shared::transport(
+            spectrum,
+            frame,
+            state,
+            events,
+            dominant,
+            configuration,
+            identity,
+        );
+    }
     let layer = frame.layer;
     let length = configuration.geometry[layer];
     let first = state.source[layer].is_none();

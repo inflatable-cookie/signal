@@ -588,6 +588,28 @@ fn complete_system_attributes_cross_resolution_smear() {
 
 #[test]
 #[cfg(not(debug_assertions))]
+fn complete_system_proves_or_rejects_shared_full_field_phase() {
+    let first = super::complete_system_tuning::shared_phase_proof_review();
+    let repeated = super::complete_system_tuning::shared_phase_proof_review();
+    eprintln!("complete_system_shared_phase {first:?}");
+    assert_eq!(first, repeated);
+    assert_eq!(first.configurations, 3);
+    assert_eq!(first.development_rows, 9);
+    assert_eq!(first.renders, 33);
+    assert_eq!(first.holdout_reads, 0);
+    assert!(first.maximum_layer_sum_error <= 1.0e-12, "{first:?}");
+    assert!(first.event_resets > 0, "{first:?}");
+    assert!(first.shared_phase_assignments > 0, "{first:?}");
+    assert!(first.hashes.iter().all(|hash| *hash != 0));
+    assert!(matches!(
+        first.direction,
+        super::complete_system_tuning::SharedPhaseProofDirection::DevelopmentListeningExport
+            | super::complete_system_tuning::SharedPhaseProofDirection::NonDuplicatingCoefficientOwnership
+    ));
+}
+
+#[test]
+#[cfg(not(debug_assertions))]
 fn renyi_time_resolution_selection_selects_schedule_direction() {
     let first = renyi_time_resolution_selection_review();
     let repeated = renyi_time_resolution_selection_review();

@@ -1,5 +1,5 @@
 pub(super) mod audio;
-mod metrics;
+pub(crate) mod metrics;
 
 use std::{fs, path::PathBuf};
 

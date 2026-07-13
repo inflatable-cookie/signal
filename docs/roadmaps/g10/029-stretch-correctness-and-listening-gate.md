@@ -790,15 +790,27 @@ Status: closed without exposure. No development candidate qualified.
 
 ### Batch 29.6BN - Shared Full-Field Phase Proof
 
-- [ ] replace independent per-layer synthesis phase state with one physical-
+- [x] replace independent per-layer synthesis phase state with one physical-
   frequency phase field shared by all three resolutions
-- [ ] project analysis phase and instantaneous frequency to common atom centres;
+- [x] project analysis phase and instantaneous frequency to common atom centres;
   apply event correction once, then project one solved phase back to every layer
-- [ ] retain frozen study, exact schedule, magnitudes, union dual, development
+- [x] retain frozen study, exact schedule, magnitudes, union dual, development
   rows, and geometry; do not tune or read holdout
-- [ ] require mean pairwise event disagreement below `8` frames, pairwise
+- [x] apply the mean pairwise event disagreement below `8` frames, pairwise
   correlation above `0.8`, no combined replica growth, exact layer-sum closure,
-  and all prior hard gates before any listening export
+  and prior hard gates; reject the proof before listening
+
+### Batch 29.6BO - Non-Duplicating Ownership Architecture Review
+
+- [ ] compare complementary source subbands, coefficient-plane partitioning,
+  and one invertible adaptive-resolution representation using public primary
+  evidence and existing Rubber Band behavioural findings
+- [ ] require exact unmodified reconstruction, one synthesis owner per
+  coefficient, continuous event-local ownership, and one global time map
+- [ ] select one representation and freeze its ownership, crossover or tiling,
+  phase, boundary, and linked-stereo contracts before implementation
+- [ ] return to operator review if no family supports both exact reconstruction
+  and event-local resolution without independent full-band copies
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -1458,9 +1470,16 @@ Status: closed without exposure. No development candidate qualified.
   Layer-sum closure is `3.34e-16`; holdout reads remain zero. Independent
   full-band phase transport is retired. Batch 29.6BN owns one shared full-field
   phase proof without tuning.
+- 2026-07-13: Batch 29.6BN rejects shared full-field phase transport. All prior
+  structural gates pass and layer-sum error is `1.67e-16`, but mean layer
+  arrival disagreement remains `162.261364` frames against `<8`, correlation is
+  `0.134045` against `>0.8`, and recombination still adds `0.710227` replicas
+  per event. No tuning or holdout read occurs. Redundant full-band union
+  ownership is closed; Batch 29.6BO owns a non-duplicating representation
+  review before more synthesis code.
 
 ## Next Task
 
-Execute Batch 29.6BN. Replace independent layer phase transport with one shared
-physical-frequency phase field and prove cross-resolution coherence. Keep
-holdout and tuning closed.
+Execute Batch 29.6BO. Select and contract one non-duplicating multi-resolution
+coefficient representation from public primary evidence and existing
+behavioural findings. Keep implementation, holdout, and tuning closed.

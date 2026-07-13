@@ -68,7 +68,7 @@ fn source_root() -> PathBuf {
         .join("../../target/stretch-corpus-external-benchmark-pack-fma-broad/sources")
 }
 
-pub(super) fn synthetic_control() -> Vec<Vec<f64>> {
+pub(crate) fn synthetic_control() -> Vec<Vec<f64>> {
     let mut left = vec![0.0; FRAMES];
     let mut right = vec![0.0; FRAMES];
     for index in 0..FRAMES {
