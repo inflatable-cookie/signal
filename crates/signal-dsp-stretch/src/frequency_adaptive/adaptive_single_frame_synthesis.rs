@@ -10,6 +10,7 @@ pub(super) mod quality;
 mod render;
 mod resolution_attribution;
 mod stage_attribution;
+mod window_attribution;
 
 pub(super) use attribution::{attribution_review, AttributionDirection};
 pub(super) use dense_attribution::{dense_attribution_review, DenseAttributionDirection};
@@ -26,6 +27,7 @@ pub(super) use resolution_attribution::{
     resolution_attribution_review, ResolutionAttributionDirection,
 };
 pub(super) use stage_attribution::{stage_attribution_review, StageAttributionDirection};
+pub(super) use window_attribution::{window_attribution_review, WindowAttributionDirection};
 
 use render::{render, Mode, Render};
 

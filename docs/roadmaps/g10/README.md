@@ -305,14 +305,18 @@ Current stretch status:
   the exact diagonal dual as primary owners: linear placement is nearly
   neutral, while phase passthrough and analysis-partition overlap are worse.
   All eight factor modes still regress both timbral fields in `9/9` rows.
-  Batch 29.6CC isolates square-root-Hann versus Hann analysis and synthesis
-  kernels. Holdout and listening remain closed.
+  Hann analysis and synthesis then reduce timing and timbral residuals, but all
+  four window pairs still regress static-spectrum and formant quality in `9/9`
+  rows. Batch 29.6CD isolates shared-FFT zero-padding and centered/reflected
+  frame geometry from the current start-aligned native-FFT representation.
+  Holdout and listening remain closed.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Execute `g10.029` Batch 29.6CC under Rule 30X. Cross square-root-Hann and Hann
-analysis and synthesis kernels under exact dual normalization on fixed `4096`
-without reading holdout, exporting listening audio, tuning, or changing policy.
+Execute `g10.029` Batch 29.6CD under Rule 30Y. Separate shared-FFT zero-padding
+from centered/reflected and start-aligned/padded frame geometry on Hann/Hann
+`2048` without reading holdout, exporting listening audio, tuning, or changing
+policy.

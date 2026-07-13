@@ -774,9 +774,17 @@ windowed coefficient representation. Signal's adaptive renderer analyzes with
 a square-root Hann; the current production phase vocoder uses Hann. Analysis
 leakage and synthesis weighting must be separated before redesign.
 
+Hann analysis and synthesis both reduce the defect. Hann/Hann roughly halves
+mean event timing loss and lowers mean static/formant residual, but every
+window pair still regresses both timbral fields in every row. The window kernel
+is therefore a contributing mechanism, not the primary owner. The remaining
+representation gap is geometric: the successor centers reflected frames and
+places shorter windows on a shared `4096` FFT grid, while current Signal uses
+start-aligned padded `2048` frames on a native grid. Those factors must be
+separated before changing phase or magnitude policy.
+
 ## Next Task
 
-Run Rule 30X on the fixed `4096` transported event-lattice control. Cross
-square-root-Hann and Hann analysis and synthesis kernels under exact dual
-normalization before any redesign, holdout read, listening export, tuning,
-stereo, dynamic, cache, or routing work.
+Run Rule 30Y on Hann/Hann `2048`. Separate shared-FFT zero-padding from
+centered/reflected and start-aligned/padded frame geometry before any redesign,
+holdout read, listening export, tuning, stereo, dynamic, cache, or routing.

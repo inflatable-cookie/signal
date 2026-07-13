@@ -48,17 +48,23 @@ pub(super) enum OverlapFactor {
     AnalysisPartition,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) enum WindowFactor {
+    RootHann,
+    Hann,
+}
+
 impl OverlapFactor {
-    fn operator_weight(self, weight: f64) -> f64 {
+    fn operator_weight(self, analysis: f64, synthesis: f64) -> f64 {
         match self {
-            Self::DiagonalDual => weight * weight,
-            Self::AnalysisPartition => weight,
+            Self::DiagonalDual => analysis * synthesis,
+            Self::AnalysisPartition => analysis,
         }
     }
 
-    fn synthesis_weight(self, weight: f64) -> f64 {
+    fn synthesis_weight(self, synthesis: f64) -> f64 {
         match self {
-            Self::DiagonalDual => weight,
+            Self::DiagonalDual => synthesis,
             Self::AnalysisPartition => 1.0,
         }
     }
@@ -205,6 +211,32 @@ pub(super) fn render_ordinary_factor(
         frames,
         phase,
         overlap,
+        WindowFactor::RootHann,
+        WindowFactor::RootHann,
+    )
+}
+
+pub(super) fn render_ordinary_window_factor(
+    channels: &[Vec<f64>],
+    ratio: f64,
+    points: &[usize],
+    schedule: &Schedule,
+    analysis: WindowFactor,
+    synthesis: WindowFactor,
+) -> Render {
+    render_frames_factored(
+        channels,
+        ratio,
+        points,
+        points,
+        &[],
+        schedule,
+        Mode::Ordinary,
+        schedule::fixed(ratio, FFT_FRAMES, schedule),
+        PhaseFactor::Transport,
+        OverlapFactor::DiagonalDual,
+        analysis,
+        synthesis,
     )
 }
 
@@ -229,6 +261,8 @@ fn render_frames(
         frames,
         PhaseFactor::Transport,
         OverlapFactor::DiagonalDual,
+        WindowFactor::RootHann,
+        WindowFactor::RootHann,
     )
 }
 
@@ -244,6 +278,8 @@ fn render_frames_factored(
     frames: Vec<Frame>,
     phase: PhaseFactor,
     overlap: OverlapFactor,
+    analysis_window: WindowFactor,
+    synthesis_window: WindowFactor,
 ) -> Render {
     let target_len = (ratio * SOURCE_FRAMES as f64).round() as usize;
     let output_start = frames
@@ -259,9 +295,12 @@ fn render_frames_factored(
     let domain_len = (output_end - output_start) as usize;
     let mut operator = vec![0.0_f64; domain_len];
     for frame in &frames {
-        for (offset, weight) in window(frame.length).into_iter().enumerate() {
+        let analysis = window(frame.length, analysis_window);
+        let synthesis = window(frame.length, synthesis_window);
+        for (offset, (analysis, synthesis)) in analysis.into_iter().zip(synthesis).enumerate() {
             let logical = frame.output - frame.length as isize / 2 + offset as isize;
-            operator[(logical - output_start) as usize] += overlap.operator_weight(weight);
+            operator[(logical - output_start) as usize] +=
+                overlap.operator_weight(analysis, synthesis);
         }
     }
     let crop = (-output_start) as usize;
@@ -312,7 +351,8 @@ fn render_frames_factored(
     let mut phase_trace_hash = HASH_OFFSET;
     let mut synthesis_trace_hash = HASH_OFFSET;
     for frame in &frames {
-        let weights = window(frame.length);
+        let analysis_weights = window(frame.length, analysis_window);
+        let synthesis_weights = window(frame.length, synthesis_window);
         let buffer_offset = (FFT_FRAMES - frame.length) / 2;
         let overlap_ownership = (mode.event_owned() && ratio != 1.0)
             .then(|| overlap::Ownership::for_frame(frame, &events, schedule))
@@ -322,7 +362,7 @@ fn render_frames_factored(
         let mut tracking_spectra = Vec::with_capacity(channels.len());
         for (channel_index, channel) in channels.iter().enumerate() {
             let mut spectrum = vec![Complex64::new(0.0, 0.0); FFT_FRAMES];
-            for (offset, weight) in weights.iter().copied().enumerate() {
+            for (offset, weight) in analysis_weights.iter().copied().enumerate() {
                 let logical = frame.source - frame.length as isize / 2 + offset as isize;
                 let original = reflected(channel, logical);
                 let sample = overlap_ownership
@@ -349,7 +389,7 @@ fn render_frames_factored(
             }
             spectra.push(spectrum);
             if mode.successor() {
-                let tracking_weights = window(FFT_FRAMES);
+                let tracking_weights = window(FFT_FRAMES, analysis_window);
                 tracking_spectra.push(tracking::spectrum(
                     &tracking_channels.as_ref().expect("analytic channels")[channel_index],
                     frame.source,
@@ -420,7 +460,7 @@ fn render_frames_factored(
             let mut contribution_peak_output = frame.output;
             let mut traced_samples = Vec::new();
             let mut contribution_hash = HASH_OFFSET;
-            for (offset, weight) in weights.iter().copied().enumerate() {
+            for (offset, weight) in synthesis_weights.iter().copied().enumerate() {
                 if weight == 0.0 {
                     continue;
                 }
@@ -537,10 +577,14 @@ fn render_frames_factored(
     }
 }
 
-fn window(length: usize) -> Vec<f64> {
+fn window(length: usize, factor: WindowFactor) -> Vec<f64> {
     (0..length)
         .map(|index| {
-            (0.5 - 0.5 * (std::f64::consts::TAU * index as f64 / length as f64).cos()).sqrt()
+            let hann = 0.5 - 0.5 * (std::f64::consts::TAU * index as f64 / length as f64).cos();
+            match factor {
+                WindowFactor::RootHann => hann.sqrt(),
+                WindowFactor::Hann => hann,
+            }
         })
         .collect()
 }

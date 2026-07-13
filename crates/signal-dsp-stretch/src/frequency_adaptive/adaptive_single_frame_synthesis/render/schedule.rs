@@ -2,7 +2,7 @@ use super::super::super::study_local_schedule::{schedule::Schedule, BASE_HOP, SO
 use super::super::super::time_adaptive_painless::adaptive_schedule_for_points;
 use super::super::super::HASH_OFFSET;
 use super::super::anchors::projected;
-use super::{window, Frame};
+use super::{window, Frame, WindowFactor};
 
 const FIXED_LENGTHS: [usize; 4] = [512, 1_024, 2_048, 4_096];
 const PAD: isize = 4_096;
@@ -110,7 +110,10 @@ pub(super) fn frame_hash(frames: &[Frame]) -> u64 {
 pub(super) fn dual_hash(frames: &[Frame], operator: &[f64], output_start: isize) -> u64 {
     let mut state = HASH_OFFSET;
     for frame in frames {
-        for (offset, weight) in window(frame.length).into_iter().enumerate() {
+        for (offset, weight) in window(frame.length, WindowFactor::RootHann)
+            .into_iter()
+            .enumerate()
+        {
             if weight == 0.0 {
                 continue;
             }

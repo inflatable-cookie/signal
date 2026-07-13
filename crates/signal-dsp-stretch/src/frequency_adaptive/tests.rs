@@ -1152,6 +1152,46 @@ fn adaptive_single_frame_real_source_mechanism_attribution_is_frozen() {
 
 #[test]
 #[cfg(not(debug_assertions))]
+fn adaptive_single_frame_real_source_window_attribution_is_frozen() {
+    use super::adaptive_single_frame_synthesis::{
+        window_attribution_review, WindowAttributionDirection,
+    };
+
+    let first = window_attribution_review();
+    let repeated = window_attribution_review();
+    eprintln!("adaptive_single_frame_window_attribution {first:?}");
+    assert_eq!(first, repeated);
+    assert_eq!(first.rows, 9);
+    assert_eq!(first.modes, 5);
+    assert_eq!(first.renders, 45);
+    assert_eq!(first.holdout_reads, 0);
+    assert_eq!(first.hard_failures, 1, "{first:?}");
+    assert_eq!(first.hard_failures_by_mode, [0, 0, 1, 0, 0]);
+    assert_eq!(first.event_fallback_renders, 30);
+    assert_eq!(first.changed_from_current, [9; 4]);
+    assert_eq!(
+        first.regression_from_current,
+        [[6, 4, 9, 9], [5, 4, 9, 9], [5, 5, 9, 9], [5, 5, 9, 9]]
+    );
+    assert_eq!(first.analysis_regressions, [[3, 5, 3, 4], [4, 5, 3, 4]]);
+    assert_eq!(first.synthesis_regressions, [[0, 7, 0, 3], [1, 5, 1, 3]]);
+    assert_eq!(
+        first.hashes,
+        [
+            0x7d78_8640_2f66_2bc7,
+            0x7629_8caf_c837_79af,
+            0xa217_3e14_c6eb_7535,
+            0x1f7a_6548_0074_cf7b,
+        ]
+    );
+    assert_eq!(
+        first.direction,
+        WindowAttributionDirection::WindowKernelsContributeButDoNotOwn
+    );
+}
+
+#[test]
+#[cfg(not(debug_assertions))]
 fn adaptive_single_frame_failure_attribution_selects_bounded_redesign() {
     use super::adaptive_single_frame_synthesis::{attribution_review, AttributionDirection};
 

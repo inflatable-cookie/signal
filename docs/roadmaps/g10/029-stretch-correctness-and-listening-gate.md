@@ -942,13 +942,22 @@ Status: closed without exposure. No development candidate qualified.
 
 ### Batch 29.6CC - Window-Kernel Attribution
 
-- [ ] hold fixed `4096`, event-warped placement, ordinary transport, and exact
+- [x] hold fixed `4096`, event-warped placement, ordinary transport, and exact
   dual normalization while crossing square-root-Hann and Hann analysis and
   synthesis kernels
-- [ ] assign broad spectral/formant damage to analysis leakage, synthesis
+- [x] assign broad spectral/formant damage to analysis leakage, synthesis
   weighting, their interaction, or the remaining coefficient path
-- [ ] keep resolution, detector, schedule, measurements, holdout, listening,
+- [x] keep resolution, detector, schedule, measurements, holdout, listening,
   stereo, dynamic ratio, cache, and routing frozen
+
+### Batch 29.6CD - Coefficient-Geometry Attribution
+
+- [ ] hold Hann analysis/synthesis, ordinary transport, exact dual
+  normalization, rows, ratios, and measurements fixed
+- [ ] compare centered/reflected `2048` analysis on shared `4096` and native
+  `2048` FFT grids with start-aligned padded native-`2048` geometry
+- [ ] assign the remaining broad regression to FFT zero-padding, frame/boundary
+  geometry, or the remaining phase/magnitude path before candidate design
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -1751,10 +1760,20 @@ Status: closed without exposure. No development candidate qualified.
   Signal. Frozen hashes are `63d64c56e0e402bb`, `671bfeb418981df8`,
   `aaf112446dc0f0a8`, and `3c9f3f66ae65d5c1`. Holdout and listening remain
   closed. Batch 29.6CC owns window-kernel attribution.
+- 2026-07-13: Batch 29.6CC shows Hann analysis and synthesis both help but do
+  not own the broad timbral defect. Moving from square-root-Hann to Hann
+  analysis reduces mean static residual by `0.003732` to `0.003815`; Hann
+  synthesis reduces it by `0.005078` to `0.005161`. Hann/Hann cuts mean timing
+  loss from `82.027778` to `41.333333` frames and lowers mean static/formant
+  residual deltas from `0.087938/0.049590` to `0.079045/0.046138`. Every
+  combination still regresses both fields in `9/9` rows. Frozen hashes are
+  `7d7886402f662bc7`, `76298cafc83779af`, `a2173e14c6eb7535`, and
+  `1f7a65480074cf7b`. Holdout and listening remain closed. Batch 29.6CD owns
+  FFT-grid and frame/boundary geometry attribution.
 
 ## Next Task
 
-Execute Batch 29.6CC under Rule 30X. Cross square-root-Hann and Hann analysis
-and synthesis kernels on the fixed `4096` transported event-lattice control.
-Keep resolution, detector/schedule policy, holdout, listening, tuning, linked
-stereo, dynamic ratio, cache, and routing closed.
+Execute Batch 29.6CD under Rule 30Y. On Hann/Hann `2048`, separate shared-FFT
+zero-padding from centered/reflected versus start-aligned padded frame geometry.
+Keep detector/schedule policy, holdout, listening, tuning, linked stereo,
+dynamic ratio, cache, and routing closed.

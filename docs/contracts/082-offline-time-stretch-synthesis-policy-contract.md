@@ -2894,6 +2894,36 @@ weighting, their interaction, or the remaining coefficient path. Do not change
 resolution, detector or schedule policy, holdout, listening export, linked
 stereo, dynamic ratio, cache, or routing.
 
+Rule 30X finds a useful but incomplete Hann improvement. Hann analysis reduces
+mean static residual by `0.003732` with square-root-Hann synthesis and
+`0.003815` with Hann synthesis. Hann synthesis reduces it by `0.005078` with
+square-root-Hann analysis and `0.005161` with Hann analysis. The Hann/Hann pair
+reduces mean timing loss from `82.027778` to `41.333333` frames and mean
+static/formant residual deltas from `0.087938/0.049590` to
+`0.079045/0.046138`. All four pairs still regress both timbral fields in `9/9`
+rows. Window leakage and weighting contribute but do not own the defect.
+
+Manifest, render, measurement, and aggregate hashes are
+`7d7886402f662bc7`, `76298cafc83779af`, `a2173e14c6eb7535`, and
+`1f7a65480074cf7b`. The TSV SHA-256 is
+`7c2a89d3d13ae3988742fc4a549c29f944d216de95951b3101da7488230fef18`.
+Holdout reads and listening exports remain zero.
+
+#### Rule 30Y: isolate FFT-grid and frame geometry
+
+Batch 29.6CD keeps the Rule 30X rows, ratios, measurements, Hann analysis and
+synthesis kernels, ordinary transport, exact dual normalization, and detector
+schedule frozen. On fixed `2048`, compare centered reflected frames on the
+shared `4096` FFT grid, centered reflected frames on a native `2048` FFT grid,
+and start-aligned padded frames on a native `2048` FFT grid. Retain current
+Signal and the Rule 30X Hann/Hann `4096` mode as references.
+
+Assign the remaining spectral/formant regression to shared-grid zero-padding,
+frame and boundary geometry, or the remaining phase/magnitude path. These are
+report-only controls. Do not read holdout, export listening audio, tune, change
+detector/schedule policy, or open linked stereo, dynamic ratio, cache, or
+routing.
+
 ## Clean-Room Rule
 
 Public papers and public algorithm descriptions may inform Signal design.
@@ -2902,7 +2932,7 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Execute Batch 29.6CC under Rule 30X. Cross square-root-Hann and Hann analysis
-and synthesis kernels under exact dual normalization on fixed `4096`. Keep
-resolution, detector/schedule policy, holdout, listening, tuning, linked
-stereo, dynamic ratio, cache, and routing closed.
+Execute Batch 29.6CD under Rule 30Y. Separate shared-FFT zero-padding from
+centered/reflected and start-aligned/padded frame geometry on Hann/Hann `2048`.
+Keep detector/schedule policy, holdout, listening, tuning, linked stereo,
+dynamic ratio, cache, and routing closed.
