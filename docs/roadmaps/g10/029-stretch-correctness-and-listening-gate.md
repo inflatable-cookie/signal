@@ -915,12 +915,21 @@ Status: closed without exposure. No development candidate qualified.
 
 ### Batch 29.6BZ - Real-Source Synthesis-Stage Attribution
 
-- [ ] compare current, ordinary adaptive, tracked/no-anchor, tracked/anchor, and
+- [x] compare current, ordinary adaptive, tracked/no-anchor, tracked/anchor, and
   event-owned stages on the unchanged nine development rows
-- [ ] assign the broad event, replica, static-spectrum, and formant regression
+- [x] assign the broad event, replica, static-spectrum, and formant regression
   before designing another candidate
-- [ ] keep holdout, listening export, tuning, stereo, dynamic ratio, cache, and
+- [x] keep holdout, listening export, tuning, stereo, dynamic ratio, cache, and
   product routing closed
+
+### Batch 29.6CA - Ordinary Resolution And Transition Attribution
+
+- [ ] compare fixed `512`, `1024`, `2048`, and `4096` ordinary controls with
+  adaptive ordinary synthesis on the unchanged nine development rows
+- [ ] assign the defect to a fixed resolution, adaptive transitions, or the
+  shared ordinary phase/output-lattice mechanism before redesign
+- [ ] keep holdout, listening export, tuning, detector/schedule policy, stereo,
+  dynamic ratio, cache, and product routing closed
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -1691,10 +1700,21 @@ Status: closed without exposure. No development candidate qualified.
   `4359fd9e43ff6a9c`, `18823a809bb4b2cc`, and `10d25f8404262480`.
   Holdout reads and listening exports remain zero. Batch 29.6BZ owns
   synthesis-stage attribution before another candidate.
+- 2026-07-13: Batch 29.6BZ assigns the dominant real-source regression to
+  ordinary adaptive synthesis. Its transition from current worsens timing in
+  `8/9` rows, replicas in `7/9`, and static-spectrum and formant residuals in
+  `9/9`; mean deltas are `+196.166667`, `+0.116000`, `+0.084362`, and
+  `+0.048668`. Seven ordinary renders fail endpoint-energy integrity. Active
+  tracking repairs most timing and some spectral/formant damage, anchors make
+  smaller mixed changes, and event-local ownership changes `0/9` outputs.
+  Frozen hashes are `59fde9d5897fe070`, `43806ef3d1b3a311`,
+  `30b29a8a65b50861`, and `557eaf8e6c9ee5c5`. Holdout and listening remain
+  closed. Batch 29.6CA owns fixed-resolution versus transition attribution.
 
 ## Next Task
 
-Execute Batch 29.6BZ under Rule 30U. Compare the frozen current, ordinary
-adaptive, tracked/no-anchor, tracked/anchor, and event-owned stages to assign
-the real-source regression before another candidate. Keep holdout, listening,
-tuning, linked stereo, dynamic ratio, cache, and routing closed.
+Execute Batch 29.6CA under Rule 30V. Compare the four fixed window-bank lengths
+with adaptive ordinary synthesis to assign fixed resolution, adaptive
+transitions, or the shared phase/output lattice. Keep holdout, listening,
+tuning, detector/schedule policy, linked stereo, dynamic ratio, cache, and
+routing closed.

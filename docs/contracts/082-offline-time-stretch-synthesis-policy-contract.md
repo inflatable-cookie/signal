@@ -2799,6 +2799,42 @@ Do not tune, export listening audio, read holdout, inspect comparator
 implementation, or open linked stereo, dynamic ratio, cache, or routing. This
 is attribution, not another candidate sweep.
 
+Rule 30U assigns the dominant regression to ordinary adaptive synthesis. The
+current-to-ordinary transition worsens event placement in `8/9` rows, replica
+ratio in `7/9`, static spectral residual in `9/9`, and formant residual in
+`9/9`. Mean deltas are `+196.166667` frames, `+0.116000`, `+0.084362`, and
+`+0.048668`. Seven ordinary renders fail only the existing endpoint-energy
+limit; current and all tracked stages pass.
+
+Active-peak transport repairs `170.111111` mean timing frames, `0.016404`
+static residual, and `0.007222` formant residual, while adding `0.104278` mean
+replica ratio. Anchors then add `35.111111` timing frames and `0.013803` static
+residual while reducing replica ratio by `0.035072`. Event-local overlap
+ownership changes zero of nine real-source outputs. Stage changes are
+`[9,9,8,0]`; stage regression-row matrices are
+`[[8,7,9,9],[2,3,1,3],[3,4,7,3],[0,0,0,0]]` for timing, replica, static
+residual, and formant residual.
+
+Manifest, render, measurement, and aggregate hashes are
+`59fde9d5897fe070`, `43806ef3d1b3a311`, `30b29a8a65b50861`, and
+`557eaf8e6c9ee5c5`. The TSV SHA-256 is
+`064703b05d84fd94d4f9258878efe5a4792c7ccb49aab2ff4bbf1c2dec579fd7`.
+Holdout reads and listening exports remain zero.
+
+#### Rule 30V: separate fixed resolution from adaptive transitions
+
+Batch 29.6CA keeps the Rule 30U rows, ratios, global time map, ordinary phase
+policy, measurements, and diagonal-dual synthesis frozen. Render fixed
+`512`, `1024`, `2048`, and `4096`-frame ordinary controls beside the adaptive
+ordinary stage. Report the same hard and objective fields. Assign the defect
+to one fixed time-frequency resolution, adaptive resolution transitions, or
+the shared ordinary phase/output-lattice mechanism before redesign.
+
+The four fixed lengths exhaust the existing adaptive window bank; they are
+controls, not a parameter search. Do not select or tune a production window,
+read holdout, export listening audio, change detection or scheduling policy,
+or open linked stereo, dynamic ratio, cache, or routing.
+
 ## Clean-Room Rule
 
 Public papers and public algorithm descriptions may inform Signal design.
@@ -2807,7 +2843,7 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Execute Batch 29.6BZ under Rule 30U. Attribute the rejected real-source event
-and spectral regression across the frozen synthesis stages. Keep holdout,
+Execute Batch 29.6CA under Rule 30V. Separate fixed-resolution behavior from
+adaptive-transition behavior inside ordinary synthesis. Keep holdout,
 listening export, parameter changes, linked stereo, dynamic ratio, cache, and
 routing closed.

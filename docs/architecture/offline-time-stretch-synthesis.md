@@ -744,10 +744,19 @@ movement improves in `7/9`, so physical-frequency tracking is doing useful
 work, but the complete synthesis does not preserve enough event or spectral
 structure. The next proof is a frozen stage ablation, not parameter tuning.
 
+That ablation locates the dominant damage before active tracking or event
+ownership. Moving from current Signal to ordinary adaptive synthesis worsens
+timing in `8/9` rows, replicas in `7/9`, and both static-spectrum and formant
+residuals in `9/9`; seven ordinary renders also breach endpoint-energy limits.
+Active-peak transport recovers most mean timing loss and some spectral/formant
+loss. Anchors make smaller mixed changes. The `64`-frame overlap owner changes
+none of the nine real-source outputs. The next boundary is therefore the
+ordinary adaptive representation: fixed window resolution versus resolution
+transitions versus their shared phase/output lattice.
+
 ## Next Task
 
-Run Rule 30U on the frozen nine-row mono development set. Compare ordinary
-adaptive synthesis, tracked transport without anchors, tracked transport with
-anchors, and event-owned synthesis to assign the regression before any new
-candidate, holdout read, listening export, tuning, stereo, dynamic, cache, or
-routing work.
+Run Rule 30V on the frozen nine-row mono development set. Compare fixed `512`,
+`1024`, `2048`, and `4096` ordinary controls with adaptive ordinary synthesis
+before any redesign, holdout read, listening export, tuning, stereo, dynamic,
+cache, or routing work.

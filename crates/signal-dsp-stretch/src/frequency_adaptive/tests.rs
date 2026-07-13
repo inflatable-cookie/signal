@@ -1005,6 +1005,44 @@ fn adaptive_single_frame_development_objective_is_frozen() {
 
 #[test]
 #[cfg(not(debug_assertions))]
+fn adaptive_single_frame_real_source_stage_attribution_is_frozen() {
+    use super::adaptive_single_frame_synthesis::{
+        stage_attribution_review, StageAttributionDirection,
+    };
+
+    let first = stage_attribution_review();
+    let repeated = stage_attribution_review();
+    eprintln!("adaptive_single_frame_stage_attribution {first:?}");
+    assert_eq!(first, repeated);
+    assert_eq!(first.rows, 9);
+    assert_eq!(first.modes, 5);
+    assert_eq!(first.renders, 45);
+    assert_eq!(first.holdout_reads, 0);
+    assert_eq!(first.hard_failures, 7, "{first:?}");
+    assert_eq!(first.hard_failures_by_mode, [0, 7, 0, 0, 0]);
+    assert_eq!(first.changed_rows, [9, 9, 8, 0]);
+    assert_eq!(first.event_fallback_renders, 26);
+    assert_eq!(
+        first.stage_regression_rows,
+        [[8, 7, 9, 9], [2, 3, 1, 3], [3, 4, 7, 3], [0; 4]]
+    );
+    assert_eq!(
+        first.hashes,
+        [
+            0x59fd_e9d5_897f_e070,
+            0x4380_6ef3_d1b3_a311,
+            0x30b2_9a8a_65b5_0861,
+            0x557e_af8e_6c9e_e5c5,
+        ]
+    );
+    assert_eq!(
+        first.direction,
+        StageAttributionDirection::OrdinaryAdaptiveSynthesis
+    );
+}
+
+#[test]
+#[cfg(not(debug_assertions))]
 fn adaptive_single_frame_failure_attribution_selects_bounded_redesign() {
     use super::adaptive_single_frame_synthesis::{attribution_review, AttributionDirection};
 

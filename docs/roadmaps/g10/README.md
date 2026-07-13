@@ -292,15 +292,19 @@ Current stretch status:
   evidence hashes `adf37bdd72012e19` and `dec15b718aa27de9` repeat. The frozen
   mono objective then rejects the candidate before listening: exact structure
   passes, but event placement regresses in `6/9` rows, replicas in `7/9`, and
-  both static spectral and formant residuals in `9/9`. Batch 29.6BZ now assigns
-  that regression across frozen synthesis stages. Holdout and listening remain
-  closed.
+  both static spectral and formant residuals in `9/9`. Stage attribution now
+  assigns the dominant damage to ordinary adaptive synthesis: its first
+  transition owns `8/9`, `7/9`, `9/9`, and `9/9` regressions respectively and
+  seven endpoint-integrity failures. Active tracking partly repairs it;
+  event-local overlap ownership changes no real-source output. Batch 29.6CA
+  separates fixed resolution from adaptive transitions. Holdout and listening
+  remain closed.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Execute `g10.029` Batch 29.6BZ under Rule 30U. Attribute the rejected
-real-source regression across frozen synthesis stages without reading holdout,
-exporting listening audio, or changing policy.
+Execute `g10.029` Batch 29.6CA under Rule 30V. Separate fixed-resolution
+behavior from adaptive-transition behavior inside ordinary synthesis without
+reading holdout, exporting listening audio, or changing policy.
