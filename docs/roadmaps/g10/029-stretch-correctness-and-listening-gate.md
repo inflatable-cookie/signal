@@ -802,15 +802,27 @@ Status: closed without exposure. No development candidate qualified.
 
 ### Batch 29.6BO - Non-Duplicating Ownership Architecture Review
 
-- [ ] compare complementary source subbands, coefficient-plane partitioning,
+- [x] compare complementary source subbands, coefficient-plane partitioning,
   and one invertible adaptive-resolution representation using public primary
   evidence and existing Rubber Band behavioural findings
-- [ ] require exact unmodified reconstruction, one synthesis owner per
+- [x] require exact unmodified reconstruction, one synthesis owner per
   coefficient, continuous event-local ownership, and one global time map
-- [ ] select one representation and freeze its ownership, crossover or tiling,
+- [x] select one representation and freeze its ownership, crossover or tiling,
   phase, boundary, and linked-stereo contracts before implementation
-- [ ] return to operator review if no family supports both exact reconstruction
+- [x] return to operator review if no family supports both exact reconstruction
   and event-local resolution without independent full-band copies
+
+### Batch 29.6BP - Single-Owner Adaptive-Frame Proof
+
+- [ ] re-express the passing `512/1024/2048/4096` painless schedule proof as
+  one selected window and coefficient vector per analysis centre
+- [ ] prove zero duplicate centre ownership, selected-frame-only coefficient
+  counts, legal transitions, positive coverage, condition at most `4`, and
+  bounded reflected support across the frozen declared schedules
+- [ ] preserve exact diagonal-dual identity, real closure, exact length,
+  deterministic repeat, and Rule 26I numerical gates on its frozen controls
+- [ ] keep study attachment, output-hop modification, phase modification,
+  corpus audio, holdout, and tuning closed
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -1477,9 +1489,17 @@ Status: closed without exposure. No development candidate qualified.
   per event. No tuning or holdout read occurs. Redundant full-band union
   ownership is closed; Batch 29.6BO owns a non-duplicating representation
   review before more synthesis code.
+- 2026-07-13: Batch 29.6BO selects one time-adaptive painless nonstationary
+  Gabor frame. Fixed complementary subbands lack event-local resolution without
+  time-varying PR transitions; generic coefficient quilts leave exact local
+  dual and phase topology unresolved. The selected family already passes
+  Signal's declared-schedule reconstruction below `1e-15`. Rule 30K freezes one
+  window and coefficient vector per centre, one global time map, exact diagonal
+  dual, bounded reflection, and linked decisions. Batch 29.6BP owns the
+  single-owner implementation proof before stretched phase resumes.
 
 ## Next Task
 
-Execute Batch 29.6BO. Select and contract one non-duplicating multi-resolution
-coefficient representation from public primary evidence and existing
-behavioural findings. Keep implementation, holdout, and tuning closed.
+Execute Batch 29.6BP. Prove single-owner adaptive-frame invariants on the frozen
+declared schedules. Keep study attachment, stretched phase, corpus audio,
+holdout, and tuning closed.

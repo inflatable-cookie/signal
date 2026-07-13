@@ -13,38 +13,40 @@ Purpose: Map promoted research findings to architecture documents, identify gaps
 
 ## Gap Analysis Results
 
-### Memo `<NNN>`: `<title>` -> `<promotion target>`
+### Memo `003`: Non-Duplicating Stretch Ownership -> offline stretch synthesis
 
 | Research finding | Architecture doc | Alignment | Gap description |
 | --- | --- | --- | --- |
-| `<finding>` | `<doc>` | `Aligned` | `<note>` |
+| Complementary subbands do not provide event-local resolution without coupled time-varying transitions | `architecture/offline-time-stretch-synthesis.md` | `Aligned` | Family rejected for the next proof |
+| Generic coefficient-plane quilts do not provide a bounded exact local dual and phase topology together | `architecture/offline-time-stretch-synthesis.md` | `Aligned` | Family retained as reserve only |
+| A time-adaptive painless NSG gives exact local duals and one event-local coefficient sequence | `architecture/offline-time-stretch-synthesis.md` | `Aligned` | Selected for Batch 29.6BP |
 
 ## Critical Gaps
 
 | Gap | Related research | Architecture area | Status |
 | --- | --- | --- | --- |
-| `<gap>` | `<memo or track>` | `<doc>` | `<open / in progress / resolved>` |
+| Single-owner invariants are not yet expressed by the implementation proof | Memo 003 | offline stretch synthesis | open: Batch 29.6BP |
 
 ## Areas Already Aligned
 
 | Finding | Research source | Architecture doc |
 | --- | --- | --- |
-| `<finding>` | `<memo or track>` | `<doc>` |
+| Adaptive resolution must share one global time map and linked-stereo decisions | Memo 003 | `architecture/offline-time-stretch-synthesis.md` |
 
 ## Prototype Dependency Ordering
 
 ### Tier 1: Architecture-blocking
 
-1. `<prototype>` - `<why it gates downstream work>`
+1. Single-owner adaptive-frame proof - gates stretched phase work.
 
 ### Tier 2: Design-constraining
 
-1. `<prototype>` - `<why it refines architecture>`
+1. Study and global schedule attachment - proves one mapping across resolution changes.
 
 ### Tier 3: Refinement
 
-1. `<prototype>` - `<why it can follow after earlier data>`
+1. Complete phase and synthesis proof - follows representation and mapping closure.
 
 ## Next Task
 
-Run the first memo-to-architecture audit and record which gaps are direct doc edits versus prototype-gated decisions.
+Execute Batch 29.6BP single-owner adaptive-frame proof.

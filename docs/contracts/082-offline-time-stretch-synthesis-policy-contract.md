@@ -2374,6 +2374,55 @@ its representation and proof sequence before implementation. Do not choose
 crossover frequencies, tiling thresholds, masks, or phase policy through a
 corpus sweep.
 
+#### Rule 30K: one time-adaptive painless frame owns synthesis
+
+Batch 29.6BO selects the time-adaptive painless nonstationary Gabor family.
+Complementary source subbands are rejected for the next proof because fixed
+frequency ownership does not provide event-local time resolution and adaptive
+switching adds a coupled perfect-reconstruction transition problem. Explicit
+coefficient-plane quilting remains reserve research: proven quilts are frames,
+but generic exact dual support and phase transport do not provide Signal's
+bounded local synthesis contract together.
+
+Reuse the passing Rule 26I representation: periodic square-root Hann windows
+of `512`, `1024`, `2048`, or `4096` frames, common full complex FFT size
+`4096`, adjacent levels equal or one step apart, centre advance
+`min(W[n],W[n+1])/4`, complete-schedule diagonal frame operator, and exact
+dual `gamma_n[t]=g_n[t]/S[t]`. One legal window and one coefficient vector own
+each analysis centre. Do not add resolution layers, coefficient masks,
+crossfades, complementary renders, or a union dual.
+
+The selected event regions from the frozen complete-system study request the
+shortest legal support. Outside protected support, transitions move
+monotonically through adjacent levels toward longer windows. No automatic
+resolution detector, entropy path, percussive mask, or corpus-fitted threshold
+participates. Batch 29.6BP proves declared schedule mechanics only; it does not
+yet attach study output.
+
+The complete candidate must use one positive-integer globally exact output-hop
+schedule for every selected resolution. Ordinary phase advances on a
+physical-frequency topology using actual output hops. Resolution changes do
+not imply a reset. Deterministic peak-region vertical locking occurs only
+inside the current selected frame. Selected event correction remains one
+separate downstream operation using analyzed phase at the projected source
+point.
+
+Use whole-sample even reflection sufficient for every analysis and synthesis
+support touching the exact crop. Derive exact output length from the global
+schedule and crop; do not zero-fill a tail. Linked channels share study,
+resolution, output hops, peak ownership, and reset decisions while retaining
+per-channel complex coefficients and interchannel phase offsets.
+
+Batch 29.6BP must restate Rule 26I evidence as ownership invariants and report
+one selected window per centre, zero duplicate centre ownership, coefficient
+count from selected frames only, schedule legality, coverage, frame condition,
+identity, reflection, real closure, deterministic repeat, and bounded work.
+Reuse the Rule 26I controls and gates, including condition at most `4`, peak
+error `1e-5`, RMS error `1e-6`, and symmetry/residue at most `1e-12`.
+Failure returns to adaptive-frame geometry. Passage opens only attachment of
+the frozen study and global output-hop schedule; stretched phase, corpus audio,
+holdout, and tuning remain closed.
+
 ## Clean-Room Rule
 
 Public papers and public algorithm descriptions may inform Signal design.
@@ -2382,5 +2431,5 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Execute Batch 29.6BO non-duplicating ownership architecture review. Keep
-implementation, holdout, and tuning closed.
+Execute Batch 29.6BP single-owner adaptive-frame proof. Keep stretched phase,
+corpus audio, holdout, and tuning closed.

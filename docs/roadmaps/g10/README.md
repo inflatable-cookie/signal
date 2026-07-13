@@ -266,13 +266,15 @@ Current stretch status:
   roughly `173` frames of mean layer-arrival disagreement and retires
   independent full-band layer phase transport. One shared full-field phase
   proof also fails, leaving roughly `162` frames of mean disagreement and low
-  `0.134` correlation. Redundant full-band ownership is closed. A bounded
-  non-duplicating representation review is next.
+  `0.134` correlation. Redundant full-band ownership is closed. The bounded
+  review selects one time-adaptive painless NSG frame with one window and
+  coefficient vector per analysis centre. A single-owner mechanics proof is
+  next before study, mapping, and phase are reattached.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Execute `g10.029` Batch 29.6BO. Select and contract one non-duplicating
-multi-resolution coefficient representation before more synthesis code.
+Execute `g10.029` Batch 29.6BP. Prove the frozen single-owner adaptive-frame
+mechanics before stretched phase, corpus audio, holdout, or tuning.

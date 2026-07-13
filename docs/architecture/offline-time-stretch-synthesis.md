@@ -594,7 +594,40 @@ adaptive-resolution representation. No synthesis implementation resumes until
 one family proves exact unmodified reconstruction, event-local ownership
 continuity, one time map, boundaries, and linked-stereo decisions on paper.
 
+The review selects one time-adaptive painless nonstationary Gabor frame.
+Complementary source subbands provide clean fixed-frequency ownership but not
+event-local resolution without a time-varying transition problem. Quilted
+Gabor systems support local coefficient selection and reconstruction in proven
+frame cases, but generic exact duals and phase transport do not provide the
+bounded local implementation boundary Signal needs. The painless NSG family
+has both direct time-stretch precedent and passing Signal reconstruction
+evidence.
+
+This is not the rejected oracle system unchanged. Batch 29.6BA proved that a
+fixed-ratio mapping without event phase treatment places an isolated `1.5x`
+impulse early. The selected architecture combines the already passing
+single-frame representation with the later complete-system study, globally
+exact local output-hop schedule, and separate event and vertical phase stages.
+
+One legal resolution owns each analysis centre. Adjacent selected windows form
+one covering frame and synthesize through its exact diagonal dual. There are no
+additive resolution layers, coefficient masks, resolution crossfades, or
+per-resolution time maps. Selected event support requests the shortest legal
+window; legal adjacent-level transitions move monotonically toward longer
+windows outside protected support. This is declared schedule geometry, not an
+automatic detector or fitted mask.
+
+All coefficients use the same positive-integer globally exact output-hop
+schedule. Ordinary physical-frequency phase transport uses actual output hops.
+Resolution changes do not reset phase by themselves. Peak-region vertical
+locking occurs inside the selected frame; selected event correction remains a
+separate downstream operation. Whole-sample even reflection bounds source
+reads, every synthesis frame touching the exact crop participates, and output
+length comes from schedule plus crop rather than fill. Linked channels share
+study, resolution, mapping, peak, and reset decisions while retaining
+per-channel spectra and interchannel phase.
+
 ## Next Task
 
-Select and contract one non-duplicating multi-resolution coefficient
-representation. Keep implementation, holdout, and tuning closed.
+Prove the single-owner adaptive-frame invariants before attaching stretched
+phase, corpus audio, holdout, or tuning.
