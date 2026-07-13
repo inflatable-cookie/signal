@@ -17,7 +17,16 @@ pub(in crate::frequency_adaptive) struct SynthesisFrameTrace {
     pub(in crate::frequency_adaptive) energy_center: f64,
     pub(in crate::frequency_adaptive) peak_output: isize,
     pub(in crate::frequency_adaptive) peak_magnitude: f64,
+    pub(in crate::frequency_adaptive) event_samples: Vec<EventSampleTrace>,
     pub(in crate::frequency_adaptive) hash: u64,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub(in crate::frequency_adaptive) struct EventSampleTrace {
+    pub(in crate::frequency_adaptive) source: usize,
+    pub(in crate::frequency_adaptive) output: isize,
+    pub(in crate::frequency_adaptive) dual_weight: f64,
+    pub(in crate::frequency_adaptive) value: [f64; 2],
 }
 
 pub(super) fn hash_phase_trace(state: &mut u64, trace: &PhaseFrameTrace) {

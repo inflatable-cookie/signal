@@ -2701,6 +2701,40 @@ one owning stage before a redesign batch can open. Frozen mono comparison,
 corpus, holdout, listening, parameter search, linked stereo, dynamic ratio,
 cache, and product routing remain closed.
 
+Rule 30R assigns the failure to overlap synthesis. The two exact `2.0x`
+targets are outputs `16126` and `16644`; their rendered amplitudes remain `1.0`
+and `0.75`. Anchor attachment, event reset, active-owner state, and exact-sample
+complex contribution closure pass. A third peak at output `16382` reaches
+`0.787177`, outranks the second real attack, and produces the frozen `262`-frame
+association error. The passing successor rows are exact at both attacks;
+ordinary errors remain `[[463,401],[219,351],[896,509]]`. Forty-nine traced
+contributions close with zero real error and at most `6.770e-17` imaginary
+residue. Evidence hash `2336b9773c32b2ca` repeats. The output metric exposes a
+real synthesized replica; it does not own the defect.
+
+#### Rule 30S: one event-local overlap owner removes dense replicas
+
+Batch 29.6BX changes only the event-local overlap mechanism. Before changing
+synthesis, record every overlapping frame's complex contribution at the frozen
+`16382` replica. Retain the Rule 30R anchors, schedule, active-owner transport,
+event reset, adaptive windows, diagonal dual, output association, and limits.
+
+Give each injected attack one bounded output-domain owner. Neighboring frames
+may retain complementary background overlap, but must not resynthesize that
+owned attack as an inter-anchor replica. Do not move either exact target,
+attenuate the real attacks, reshape the global time map, or add an output
+declick, peak clamp, threshold exception, or metric exception.
+
+The bounded proof passes only when both exact target amplitudes remain within
+`1e-12` of the Rule 30R values, the non-target inter-anchor replica no longer
+displaces either target under the unchanged one-to-one matcher, all prior
+identity, diagonal-dual closure, active-owner, event-reset, finiteness, and
+repeat gates pass, and deterministic pre/post contribution hashes are present.
+Passage opens the complete unchanged Rule 30Q rerun. Failure returns to
+event-local representation design, not parameter search. Mono comparison,
+corpus, holdout, listening, linked stereo, dynamic ratio, cache, and product
+routing remain closed.
+
 ## Clean-Room Rule
 
 Public papers and public algorithm descriptions may inform Signal design.
@@ -2709,8 +2743,8 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Execute Batch 29.6BW under Rule 30R. Attribute the sole `DenseEvent 2.0x`
-successor failure through exact anchors, active-owner/event state,
-diagonal-dual contributions, and output-peak association. Keep renderer policy,
-thresholds, corpus, holdout, listening, linked stereo, dynamic ratio, and
-routing closed.
+Execute Batch 29.6BX under Rule 30S. Attribute the frozen midpoint replica to
+its frame-level contributors and prove one event-local overlap owner without
+moving or attenuating either real attack. Keep the complete Rule 30Q rerun and
+all corpus, listening, stereo, dynamic, cache, and routing work closed until
+that bounded mechanism passes.

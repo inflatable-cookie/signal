@@ -885,15 +885,25 @@ Status: closed without exposure. No development candidate qualified.
 
 ### Batch 29.6BW - Dense-Event Replica Attribution
 
-- [ ] freeze the successor `DenseEvent` rows and the sole `2.0x` hard failure
-- [ ] trace both exact anchors, scheduled targets, dominant output peaks,
+- [x] freeze the successor `DenseEvent` rows and the sole `2.0x` hard failure
+- [x] trace both exact anchors, scheduled targets, dominant output peaks,
   active-owner/event state, and every overlapping diagonal-dual contribution
-- [ ] compare the failing row with passing `0.75x` and `1.5x` rows and the
+- [x] compare the failing row with passing `0.75x` and `1.5x` rows and the
   frozen ordinary ablation without changing renderer policy
-- [ ] assign the earliest failure to anchor placement, event reset,
+- [x] assign the earliest failure to anchor placement, event reset,
   active-owner transport, overlap synthesis, or metric association; do not tune
 
-### Batch 29.6BX - Frozen Mono Development Objective Comparison
+### Batch 29.6BX - Event-Local Overlap Ownership Proof
+
+- [ ] trace every frame contribution at the dominant non-target dense-event
+  replica before changing synthesis
+- [ ] give each injected attack one bounded output-domain owner while retaining
+  complementary overlap weights and exact target amplitudes
+- [ ] reject non-target inter-anchor replicas without moving either exact anchor
+  or weakening the unchanged dense one-to-one limit
+- [ ] rerun the complete Rule 30Q matrix only after the bounded proof passes
+
+### Batch 29.6BY - Frozen Mono Development Objective Comparison
 
 - [ ] open only after the successor passes Rule 30Q without tuning
 - [ ] freeze family-balanced development rows and compare the selected
@@ -1638,11 +1648,22 @@ Status: closed without exposure. No development candidate qualified.
   texture and mode-delta fields remain in evidence hash `c72c005d0cd44e3e`.
   No threshold or DSP policy changes. Batch 29.6BW owns trace-only dense-event
   replica/overlap attribution; mono comparison remains closed.
+- 2026-07-13: Batch 29.6BW assigns the sole successor failure to overlap
+  synthesis. Both `2.0x` attacks remain exact at outputs `16126` and `16644`
+  with amplitudes `1.0` and `0.75`; anchor attachment, event reset, active-owner
+  state, and complex contribution closure all pass. Overlapping synthesis
+  creates a third peak at `16382` with amplitude `0.787177`, so the unchanged
+  one-to-one matcher selects that midpoint replica instead of the second real
+  attack. Ordinary errors are `[[463,401],[219,351],[896,509]]`; successor
+  errors are `[[0,0],[0,0],[0,262]]`. All `49` traced contributions close with
+  zero real error and at most `6.770e-17` imaginary residue. Evidence hash
+  `2336b9773c32b2ca` repeats. Batch 29.6BX owns one bounded event-local overlap
+  ownership proof; mono comparison remains closed.
 
 ## Next Task
 
-Execute Batch 29.6BW. Freeze the sole successor hard failure and trace exact
-dense-event anchors through active-owner phase, event reset, diagonal-dual
-contributions, and dominant output-peak association. Assign the earliest owner
-without changing renderer policy or thresholds. Keep mono comparison, corpus,
-holdout, listening, linked stereo, dynamic ratio, and routing closed.
+Execute Batch 29.6BX under Rule 30S. Trace the midpoint replica's frame-level
+contributors, then prove one bounded event-local overlap owner without moving
+the exact attacks, weakening the dense limit, or disturbing complementary
+overlap. Keep mono comparison, corpus, holdout, listening, linked stereo,
+dynamic ratio, and routing closed.

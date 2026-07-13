@@ -1,10 +1,12 @@
 mod anchors;
 mod attribution;
+mod dense_attribution;
 mod ownership;
 pub(super) mod quality;
 mod render;
 
 pub(super) use attribution::{attribution_review, AttributionDirection};
+pub(super) use dense_attribution::{dense_attribution_review, DenseAttributionDirection};
 pub(super) use ownership::{ownership_review, OwnershipDirection};
 pub(super) use quality::{quality_review, successor_quality_review, QualityDirection};
 

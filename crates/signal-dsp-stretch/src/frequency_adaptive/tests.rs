@@ -827,6 +827,64 @@ fn adaptive_single_frame_successor_synthetic_quality_selects_direction() {
 
 #[test]
 #[cfg(not(debug_assertions))]
+fn adaptive_single_frame_dense_event_attribution_selects_owner() {
+    use super::adaptive_single_frame_synthesis::{
+        dense_attribution_review, DenseAttributionDirection,
+    };
+
+    let first = dense_attribution_review();
+    let repeated = dense_attribution_review();
+    eprintln!(
+        "adaptive_single_frame_dense_event_attribution rows={} failing={} stages={:?} errors={:?} row_errors={:?} anchors={} resets={} owners={} closure={:?} cancellation={:.6} contributions={} targets={:?} peaks={:?} target_values={:?} peak_values={:?} local={:?} evidence={:016x} direction={:?}",
+        first.row_count,
+        first.failing_rows,
+        first.stage_counts,
+        first.maximum_errors,
+        first.row_errors,
+        first.anchor_failures,
+        first.reset_failures,
+        first.owner_failures,
+        first.maximum_closure_error,
+        first.maximum_cancellation_ratio,
+        first.traced_contributions,
+        first.failure_targets,
+        first.failure_peaks,
+        first.failure_target_values,
+        first.failure_peak_values,
+        first.failure_local_peaks,
+        first.evidence_hash,
+        first.direction,
+    );
+    assert_eq!(first, repeated);
+    assert_eq!(first.row_count, 6);
+    assert_eq!(first.failing_rows, 1);
+    assert_eq!(first.stage_counts, [0, 0, 0, 1, 0]);
+    assert_eq!(first.maximum_errors, [896, 262]);
+    assert_eq!(
+        first.row_errors,
+        [
+            [[463, 401], [219, 351], [896, 509]],
+            [[0, 0], [0, 0], [0, 262]],
+        ]
+    );
+    assert_eq!(first.anchor_failures, 0);
+    assert_eq!(first.reset_failures, 0);
+    assert_eq!(first.owner_failures, 0);
+    assert!(first.maximum_closure_error[0] <= 1.0e-12, "{first:?}");
+    assert!(first.maximum_closure_error[1] <= 1.0e-9, "{first:?}");
+    assert!(first.traced_contributions > 0);
+    assert_eq!(first.failure_targets, [16126, 16644]);
+    assert_eq!(first.failure_peaks, [16126, 16382]);
+    assert_eq!(first.failure_target_values, [1.0, 0.75]);
+    assert_eq!(first.evidence_hash, 0x2336_b977_3c32_b2ca);
+    assert_eq!(
+        first.direction,
+        DenseAttributionDirection::OverlapSynthesisRedesign
+    );
+}
+
+#[test]
+#[cfg(not(debug_assertions))]
 fn adaptive_single_frame_failure_attribution_selects_bounded_redesign() {
     use super::adaptive_single_frame_synthesis::{attribution_review, AttributionDirection};
 

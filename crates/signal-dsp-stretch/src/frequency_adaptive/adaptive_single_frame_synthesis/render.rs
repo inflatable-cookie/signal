@@ -7,7 +7,7 @@ use rustfft::{num_complex::Complex64, FftPlanner};
 
 use phase::{transport, PhaseState};
 use trace::hash_phase_trace;
-pub(super) use trace::{PhaseFrameTrace, SynthesisFrameTrace};
+pub(super) use trace::{EventSampleTrace, PhaseFrameTrace, SynthesisFrameTrace};
 
 use super::super::study_local_schedule::{schedule::Schedule, BASE_HOP, SOURCE_FRAMES};
 use super::super::HASH_OFFSET;
@@ -85,6 +85,7 @@ pub(super) fn render(
         channels,
         ratio,
         points,
+        points,
         schedule,
         mode,
         schedule::legacy(ratio, points, schedule),
@@ -102,9 +103,28 @@ pub(super) fn render_successor(
         channels,
         ratio,
         anchors,
+        anchors,
         schedule,
         Mode::Successor,
         schedule::successor(ratio, resolution_points, anchors, schedule),
+    )
+}
+
+pub(super) fn render_ordinary_traced(
+    channels: &[Vec<f64>],
+    ratio: f64,
+    resolution_points: &[usize],
+    trace_events: &[usize],
+    schedule: &Schedule,
+) -> Render {
+    render_frames(
+        channels,
+        ratio,
+        resolution_points,
+        trace_events,
+        schedule,
+        Mode::Ordinary,
+        schedule::legacy(ratio, resolution_points, schedule),
     )
 }
 
@@ -112,6 +132,7 @@ fn render_frames(
     channels: &[Vec<f64>],
     ratio: f64,
     events: &[usize],
+    trace_events: &[usize],
     schedule: &Schedule,
     mode: Mode,
     frames: Vec<Frame>,
@@ -158,6 +179,10 @@ fn render_frames(
         .iter()
         .copied()
         .filter(|point| *point > 0 && *point < SOURCE_FRAMES)
+        .collect::<Vec<_>>();
+    let event_targets = trace_events
+        .iter()
+        .map(|source| (*source, super::anchors::projected(schedule, *source)))
         .collect::<Vec<_>>();
     let mut coefficient_hash = HASH_OFFSET;
     let mut magnitude_hash = HASH_OFFSET;
@@ -264,6 +289,7 @@ fn render_frames(
             let mut contribution_moment = 0.0_f64;
             let mut contribution_peak = 0.0_f64;
             let mut contribution_peak_output = frame.output;
+            let mut event_samples = Vec::new();
             let mut contribution_hash = HASH_OFFSET;
             for (offset, weight) in weights.iter().copied().enumerate() {
                 if weight == 0.0 {
@@ -276,6 +302,16 @@ fn render_frames(
                 imaginary_residue = imaginary_residue.max(value.im.abs());
                 outputs[channel_index][domain] += value;
                 if channel_index == 0 {
+                    for (source, target) in &event_targets {
+                        if logical == *target {
+                            event_samples.push(EventSampleTrace {
+                                source: *source,
+                                output: *target,
+                                dual_weight: weight / (FFT_FRAMES as f64 * operator[domain]),
+                                value: [value.re, value.im],
+                            });
+                        }
+                    }
                     let square = value.re * value.re;
                     contribution_energy += square;
                     contribution_moment += logical as f64 * square;
@@ -300,6 +336,7 @@ fn render_frames(
                     },
                     peak_output: contribution_peak_output,
                     peak_magnitude: contribution_peak,
+                    event_samples,
                     hash: contribution_hash,
                 };
                 hash(&mut synthesis_trace_hash, trace.hash);

@@ -283,13 +283,15 @@ Current stretch status:
   exposed to the complete synthetic quality gate. That gate now rejects only
   `DenseEvent 2.0x`: first peak exact, second peak `262` frames from target
   against `256`. All other successor hard checks pass with zero regressions;
-  evidence hash `c72c005d0cd44e3e` repeats. Trace-only replica/overlap
-  attribution is next. Corpus audio remains closed.
+  evidence hash `c72c005d0cd44e3e` repeats. Attribution then proves both real
+  `2.0x` attacks are exact, but overlap synthesis creates a louder midpoint
+  replica at output `16382`. Evidence hash `2336b9773c32b2ca` repeats.
+  Event-local overlap ownership is next. Corpus audio remains closed.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Execute `g10.029` Batch 29.6BW under Rule 30R. Attribute the sole dense-event
-failure without changing renderer policy or thresholds.
+Execute `g10.029` Batch 29.6BX under Rule 30S. Prove one event-local overlap
+owner removes the dense midpoint replica without moving either exact attack.

@@ -718,14 +718,17 @@ All tone, isolated-event, identity, structure, symmetry, finiteness, silence,
 and boundary checks pass with zero regressions. Evidence hash
 `c72c005d0cd44e3e` repeats.
 
-This is not authority to spend the six-frame miss. Exact anchor attachment is
-already proven, but the quality metric selects a later dominant peak. The next
-stage traces event reset, active-owner phase, overlapping diagonal-dual
-contributions, and peak association on the dense rows before any renderer
-change.
+Rule 30R shows that the six-frame margin was misleading. Both real `2.0x`
+attacks land exactly at outputs `16126` and `16644`, with amplitudes `1.0` and
+`0.75`. Overlapping synthesis creates a third `0.787177` peak between them at
+`16382`; the unchanged matcher correctly exposes it as a `262`-frame error.
+Anchor attachment, event reset, active-owner transport, and exact-sample
+contribution closure pass. The defect is an event-local duplicate, not timing
+drift or a metric artifact. Evidence hash `2336b9773c32b2ca` repeats.
 
 ## Next Task
 
-Run Rule 30R dense-event replica/overlap attribution. Keep renderer policy,
-thresholds, mono comparison, corpus, holdout, listening, linked stereo, dynamic
-ratio, and routing closed.
+Run Rule 30S event-local overlap ownership. Trace the midpoint replica's
+frame-level contributors, then remove duplicate attack synthesis without moving
+or attenuating the two exact attacks. Keep the full quality rerun and mono
+comparison closed until the bounded mechanism passes.
