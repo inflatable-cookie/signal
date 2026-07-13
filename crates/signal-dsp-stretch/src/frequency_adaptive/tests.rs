@@ -720,6 +720,113 @@ fn adaptive_single_frame_synthetic_quality_selects_measured_direction() {
 
 #[test]
 #[cfg(not(debug_assertions))]
+fn adaptive_single_frame_successor_synthetic_quality_selects_direction() {
+    use super::adaptive_single_frame_synthesis::{successor_quality_review, QualityDirection};
+
+    let first = successor_quality_review();
+    let repeated = successor_quality_review();
+    let candidate_modes = first
+        .cases
+        .iter()
+        .map(|case| &case.modes[1])
+        .collect::<Vec<_>>();
+    let maximum =
+        |field: fn(&super::adaptive_single_frame_synthesis::quality::ModeEvidence) -> f64| {
+            candidate_modes
+                .iter()
+                .map(|mode| field(mode))
+                .fold(0.0_f64, f64::max)
+        };
+    let maximum_texture = std::array::from_fn::<_, 6, _>(|index| {
+        candidate_modes
+            .iter()
+            .map(|mode| mode.texture[index])
+            .fold(0.0_f64, f64::max)
+    });
+    let maximum_mode_delta = std::array::from_fn::<_, 6, _>(|index| {
+        first
+            .cases
+            .iter()
+            .map(|case| case.mode_deltas[index].abs())
+            .fold(0.0_f64, f64::max)
+    });
+    eprintln!(
+        "adaptive_single_frame_successor_synthetic_quality failures={:?} evidence={:016x} direction={:?}",
+        first
+            .cases
+            .iter()
+            .filter(|case| {
+                case.ownership_failures != 0
+                    || case.modes[1].hard_failures.into_iter().sum::<usize>() != 0
+            })
+            .map(|case| (
+                case.control,
+                case.ratio,
+                case.ownership_failures,
+                case.modes[0].hard_failures,
+                case.modes[1].hard_failures,
+                case.modes[0].tone_angular_error,
+                case.modes[1].tone_angular_error,
+                case.modes[0].isolated_error,
+                case.modes[1].isolated_error,
+                case.modes[0].dense_errors,
+                case.modes[1].dense_errors,
+            ))
+            .collect::<Vec<_>>(),
+        first.evidence_hash,
+        first.direction,
+    );
+    eprintln!(
+        "adaptive_single_frame_successor_synthetic_quality summary hard={} regressions={} condition={:.6} symmetry={:.3e} residue={:.3e} identity_peak={:.3e} identity_rms={:.3e} tone={:.3e} isolated={} dense={} crest={:.6} replica={:.6} texture={:?} mode_delta={:?}",
+        first.hard_failures,
+        first.combined_regressions,
+        maximum(|mode| mode.frame_condition),
+        maximum(|mode| mode.symmetry_error),
+        maximum(|mode| mode.imaginary_residue),
+        maximum(|mode| mode.identity_error[0]),
+        maximum(|mode| mode.identity_error[1]),
+        maximum(|mode| mode.tone_angular_error),
+        first
+            .cases
+            .iter()
+            .map(|case| case.modes[1].isolated_error)
+            .max()
+            .unwrap_or(0),
+        first
+            .cases
+            .iter()
+            .flat_map(|case| case.modes[1].dense_errors)
+            .max()
+            .unwrap_or(0),
+        maximum(|mode| mode.impulse_crest_db),
+        maximum(|mode| mode.replica_ratio),
+        maximum_texture,
+        maximum_mode_delta,
+    );
+    assert_eq!(first, repeated);
+    assert_eq!(first.cases.len(), 48);
+    assert!(first.cases.iter().all(|case| {
+        case.selected_points >= 2
+            && case.modes.iter().all(|mode| {
+                mode.frame_condition.is_finite()
+                    && mode.frame_condition > 0.0
+                    && mode.hashes.iter().all(|hash| *hash != 0)
+                    && mode.texture.iter().all(|value| value.is_finite())
+            })
+    }));
+    assert_ne!(first.evidence_hash, 0);
+    assert_eq!(
+        first.direction,
+        if first.hard_failures == 0 && first.combined_regressions == 0 {
+            QualityDirection::SuccessorFrozenMonoDevelopmentObjective
+        } else {
+            QualityDirection::SuccessorOwningMechanism
+        }
+    );
+}
+
+#[test]
+#[cfg(not(debug_assertions))]
 fn adaptive_single_frame_failure_attribution_selects_bounded_redesign() {
     use super::adaptive_single_frame_synthesis::{attribution_review, AttributionDirection};
 

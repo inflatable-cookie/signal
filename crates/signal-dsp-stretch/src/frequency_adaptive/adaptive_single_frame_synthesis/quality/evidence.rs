@@ -5,6 +5,8 @@ use super::CaseEvidence;
 pub(in crate::frequency_adaptive) enum QualityDirection {
     FrozenMonoDevelopmentObjective,
     MeasuredPhaseEventVerticalOrSynthesisStage,
+    SuccessorFrozenMonoDevelopmentObjective,
+    SuccessorOwningMechanism,
 }
 
 #[derive(Clone, Debug, PartialEq)]

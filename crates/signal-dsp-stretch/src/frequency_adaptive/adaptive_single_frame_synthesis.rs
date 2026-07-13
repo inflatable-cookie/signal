@@ -6,7 +6,7 @@ mod render;
 
 pub(super) use attribution::{attribution_review, AttributionDirection};
 pub(super) use ownership::{ownership_review, OwnershipDirection};
-pub(super) use quality::{quality_review, QualityDirection};
+pub(super) use quality::{quality_review, successor_quality_review, QualityDirection};
 
 use render::{render, Mode, Render};
 

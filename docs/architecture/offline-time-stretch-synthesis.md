@@ -711,8 +711,21 @@ and matched-owner interior tone error stay below `1e-6` radians/sample; all
 rendered-peak diagnostic remains at `262` frames, so mechanism passage does not
 claim complete quality passage.
 
+The complete frozen quality matrix confirms that limit. The successor clears
+every hard check except `DenseEvent` at `2.0x`: its first dominant peak lands
+exactly and its second is `262` frames from target against the `256`-frame cap.
+All tone, isolated-event, identity, structure, symmetry, finiteness, silence,
+and boundary checks pass with zero regressions. Evidence hash
+`c72c005d0cd44e3e` repeats.
+
+This is not authority to spend the six-frame miss. Exact anchor attachment is
+already proven, but the quality metric selects a later dominant peak. The next
+stage traces event reset, active-owner phase, overlapping diagonal-dual
+contributions, and peak association on the dense rows before any renderer
+change.
+
 ## Next Task
 
-Run Rule 30Q: route the successor through the complete unchanged Rule 30N
-synthetic quality matrix. Keep corpus, holdout, listening, tuning, linked
-stereo, dynamic ratio, and routing closed.
+Run Rule 30R dense-event replica/overlap attribution. Keep renderer policy,
+thresholds, mono comparison, corpus, holdout, listening, linked stereo, dynamic
+ratio, and routing closed.

@@ -2669,6 +2669,38 @@ it does not open a parameter search. Passage opens only the frozen mono
 development objective comparison. Corpus, holdout, listening export, linked
 stereo, dynamic ratio, cache, and product routing remain closed.
 
+Rule 30Q rejects the successor on one of `48` rows. `DenseEvent` at `2.0x`
+places the first dominant peak exactly; the second is `262` frames from target
+against the unchanged `256` limit. The candidate has zero regressions and all
+other hard checks pass. Maximum tone error is `8.211e-7` radians/sample,
+isolated-event error is zero, identity peak error is `9.992e-16`, symmetry
+error is zero, and imaginary residue is `2.734e-13`. Maximum frame condition,
+crest, and replica fields are `4.941683`, `27.101174 dB`, and `1.287973`.
+Evidence hash `c72c005d0cd44e3e` repeats. No threshold, detector, owner, frame,
+event, or locking policy changes.
+
+#### Rule 30R: attribute the remaining dense-event peak before redesign
+
+Batch 29.6BW is trace-only. Freeze all successor `DenseEvent` rows, with the
+`2.0x` row as the sole failure and `0.75x`/`1.5x` as passing controls. Retain
+the ordinary ablation, exact anchors, global schedule, active-owner matching,
+event reset, adaptive windows, diagonal dual, output metric, and all Rule 30N
+limits.
+
+For both injected attacks, record exact source/output anchor positions,
+event-reset and active-owner state, every overlapping frame centre and dual
+weight, complex contribution at the expected sample, dominant local output
+peaks and amplitudes, and the dense one-to-one association decision. Compare
+the failure with the passing dense rows and ordinary ablation. Assign the
+earliest divergence to anchor placement, event reset, active-owner transport,
+diagonal-dual overlap, or metric association. Require deterministic row,
+frame, contribution, output, and aggregate hashes.
+
+Do not change renderer policy, thresholds, or audio. Attribution must select
+one owning stage before a redesign batch can open. Frozen mono comparison,
+corpus, holdout, listening, parameter search, linked stereo, dynamic ratio,
+cache, and product routing remain closed.
+
 ## Clean-Room Rule
 
 Public papers and public algorithm descriptions may inform Signal design.
@@ -2677,7 +2709,8 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Execute Batch 29.6BV under Rule 30Q. Run the complete unchanged Rule 30N matrix
-through the successor renderer and return to the owning mechanism on any hard
-failure. Keep corpus audio, holdout, listening, tuning, linked-stereo
-promotion, dynamic ratio, and product routing closed.
+Execute Batch 29.6BW under Rule 30R. Attribute the sole `DenseEvent 2.0x`
+successor failure through exact anchors, active-owner/event state,
+diagonal-dual contributions, and output-peak association. Keep renderer policy,
+thresholds, corpus, holdout, listening, linked stereo, dynamic ratio, and
+routing closed.

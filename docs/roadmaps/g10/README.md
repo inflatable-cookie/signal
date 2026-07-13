@@ -280,12 +280,16 @@ Current stretch status:
   tone errors stay below `1e-6`, all `24/24` expected anchors attach exactly,
   all eight hard failure classes are zero, and evidence hash
   `a2d3fb95545cb47f` repeats. A `262`-frame dense-event peak diagnostic remains
-  exposed to the complete synthetic quality gate. Corpus audio remains closed.
+  exposed to the complete synthetic quality gate. That gate now rejects only
+  `DenseEvent 2.0x`: first peak exact, second peak `262` frames from target
+  against `256`. All other successor hard checks pass with zero regressions;
+  evidence hash `c72c005d0cd44e3e` repeats. Trace-only replica/overlap
+  attribution is next. Corpus audio remains closed.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Execute `g10.029` Batch 29.6BV. Run the complete unchanged Rule 30N matrix
-through the successor renderer under Rule 30Q. Do not tune thresholds.
+Execute `g10.029` Batch 29.6BW under Rule 30R. Attribute the sole dense-event
+failure without changing renderer policy or thresholds.

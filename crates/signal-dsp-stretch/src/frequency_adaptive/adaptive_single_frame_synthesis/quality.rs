@@ -1,21 +1,16 @@
 pub(super) mod control;
 mod evidence;
 pub(super) mod measurement;
+mod review;
 
-use super::super::study_local_schedule::{
-    schedule::{build_schedule, Schedule},
-    study::{analyze, select},
-    BASE_HOP, SOURCE_FRAMES,
-};
-use super::super::HASH_OFFSET;
-use super::render::{render, Mode, Render};
-use control::{controls, RATIOS};
+use super::super::study_local_schedule::{schedule::Schedule, SOURCE_FRAMES};
+use super::render::Render;
 pub(in crate::frequency_adaptive) use evidence::QualityDirection;
-use evidence::{case_hash, QualityReview};
 use measurement::{
     angular_frequency_error, crest_db, dense_event_errors, error, peak, peak_index, projected,
     replica_ratio, rms_prefix, rms_suffix, texture,
 };
+pub(in crate::frequency_adaptive) use review::{quality_review, successor_quality_review};
 
 const TIMING_SEARCH: usize = 512;
 pub(in crate::frequency_adaptive) use control::Control;
@@ -56,91 +51,7 @@ pub(in crate::frequency_adaptive) struct CaseEvidence {
     pub hash: u64,
 }
 
-pub(in crate::frequency_adaptive) fn quality_review() -> QualityReview {
-    let mut cases = Vec::with_capacity(controls().len() * RATIOS.len());
-    for (control, input) in controls() {
-        for ratio in RATIOS {
-            cases.push(review_case(control, &input, ratio));
-        }
-    }
-    let hard_failures = cases
-        .iter()
-        .map(|case| {
-            case.ownership_failures
-                + case
-                    .modes
-                    .iter()
-                    .flat_map(|mode| mode.hard_failures)
-                    .sum::<usize>()
-        })
-        .sum();
-    let combined_regressions = cases.iter().map(|case| case.combined_regressions).sum();
-    let direction = if hard_failures == 0 && combined_regressions == 0 {
-        QualityDirection::FrozenMonoDevelopmentObjective
-    } else {
-        QualityDirection::MeasuredPhaseEventVerticalOrSynthesisStage
-    };
-    let mut evidence_hash = HASH_OFFSET;
-    for case in &cases {
-        hash(&mut evidence_hash, case.hash);
-    }
-    QualityReview {
-        cases,
-        hard_failures,
-        combined_regressions,
-        evidence_hash,
-        direction,
-    }
-}
-
-fn review_case(control: Control, input: &[f64], ratio: f64) -> CaseEvidence {
-    let channels = [input.to_vec()];
-    let study = analyze(&channels, SOURCE_FRAMES);
-    let points = select(&study, 3.0, 2);
-    let schedule = build_schedule(SOURCE_FRAMES, BASE_HOP, ratio, &points);
-    let renders = [
-        render(&channels, ratio, &points, &schedule, Mode::Ordinary),
-        render(&channels, ratio, &points, &schedule, Mode::Both),
-    ];
-    let modes = [
-        measure(control, input, ratio, &schedule, &renders[0]),
-        measure(control, input, ratio, &schedule, &renders[1]),
-    ];
-    let combined_regressions = modes[0]
-        .hard_failures
-        .iter()
-        .zip(modes[1].hard_failures)
-        .filter(|(ordinary, combined)| **ordinary == 0 && *combined != 0)
-        .count();
-    let ownership_failures = usize::from(
-        renders[0].schedule_hash != renders[1].schedule_hash
-            || renders[0].frame_hash != renders[1].frame_hash
-            || renders[0].coefficient_hash != renders[1].coefficient_hash
-            || renders[0].magnitude_hash != renders[1].magnitude_hash,
-    );
-    let mode_deltas = [
-        modes[1].impulse_crest_db - modes[0].impulse_crest_db,
-        modes[1].replica_ratio - modes[0].replica_ratio,
-        modes[1].texture[0] - modes[0].texture[0],
-        modes[1].texture[1] - modes[0].texture[1],
-        modes[1].texture[4] - modes[0].texture[4],
-        modes[1].texture[5] - modes[0].texture[5],
-    ];
-    let mut result = CaseEvidence {
-        control,
-        ratio,
-        selected_points: points.len(),
-        modes,
-        mode_deltas,
-        ownership_failures,
-        combined_regressions,
-        hash: 0,
-    };
-    result.hash = case_hash(&result);
-    result
-}
-
-fn measure(
+pub(super) fn measure(
     control: Control,
     input: &[f64],
     ratio: f64,

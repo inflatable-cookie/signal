@@ -878,14 +878,24 @@ Status: closed without exposure. No development candidate qualified.
 
 ### Batch 29.6BV - Successor Synthetic Quality Gate
 
-- [ ] rerun the complete Rule 30N matrix only after Batch 29.6BU passes
-- [ ] require all prior structure, pitch, event, silence, and repeat limits
-- [ ] report the unchanged crest, replica, spectrum, texture, and mode fields
-- [ ] return to the owning stage on failure; do not fit thresholds
+- [x] rerun the complete Rule 30N matrix only after Batch 29.6BU passes
+- [x] require all prior structure, pitch, event, silence, and repeat limits
+- [x] report the unchanged crest, replica, spectrum, texture, and mode fields
+- [x] return to the owning stage on failure; do not fit thresholds
 
-### Batch 29.6BW - Frozen Mono Development Objective Comparison
+### Batch 29.6BW - Dense-Event Replica Attribution
 
-- [ ] open only after Batch 29.6BV passes without tuning
+- [ ] freeze the successor `DenseEvent` rows and the sole `2.0x` hard failure
+- [ ] trace both exact anchors, scheduled targets, dominant output peaks,
+  active-owner/event state, and every overlapping diagonal-dual contribution
+- [ ] compare the failing row with passing `0.75x` and `1.5x` rows and the
+  frozen ordinary ablation without changing renderer policy
+- [ ] assign the earliest failure to anchor placement, event reset,
+  active-owner transport, overlap synthesis, or metric association; do not tune
+
+### Batch 29.6BX - Frozen Mono Development Objective Comparison
+
+- [ ] open only after the successor passes Rule 30Q without tuning
 - [ ] freeze family-balanced development rows and compare the selected
   candidate with current Signal and captured external behavioural evidence
 - [ ] report the full integrity, transient, replica, spectral, texture, formant,
@@ -1618,11 +1628,21 @@ Status: closed without exposure. No development candidate qualified.
   the unchanged Rule 30N quality gate. Corpus, holdout, listening, tuning,
   stereo, dynamic ratio, and routing remain closed. Batch 29.6BV owns the full
   successor synthetic quality rerun.
+- 2026-07-13: Batch 29.6BV rejects the successor on one of `48` frozen rows.
+  `DenseEvent` at `2.0x` places the first dominant peak exactly but the second
+  at `262` frames from target against the unchanged `256` limit. The other
+  successor hard checks pass with zero regressions: tone error `8.211e-7`,
+  isolated-event error `0`, identity peak error `9.992e-16`, zero symmetry
+  error, and `2.734e-13` maximum imaginary residue. Condition is `4.941683`;
+  maximum crest and replica fields are `27.101174 dB` and `1.287973`. Full
+  texture and mode-delta fields remain in evidence hash `c72c005d0cd44e3e`.
+  No threshold or DSP policy changes. Batch 29.6BW owns trace-only dense-event
+  replica/overlap attribution; mono comparison remains closed.
 
 ## Next Task
 
-Execute Batch 29.6BV. Run the complete unchanged Rule 30N synthetic matrix
-through the successor renderer. Require every prior hard quality limit and
-return to the owning stage on failure; do not tune thresholds. Keep corpus
-audio, holdout, listening, linked stereo, dynamic ratio, and product routing
-closed.
+Execute Batch 29.6BW. Freeze the sole successor hard failure and trace exact
+dense-event anchors through active-owner phase, event reset, diagonal-dual
+contributions, and dominant output-peak association. Assign the earliest owner
+without changing renderer policy or thresholds. Keep mono comparison, corpus,
+holdout, listening, linked stereo, dynamic ratio, and routing closed.
