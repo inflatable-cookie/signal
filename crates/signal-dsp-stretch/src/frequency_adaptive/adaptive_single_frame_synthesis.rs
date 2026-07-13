@@ -3,6 +3,7 @@ mod attribution;
 mod dense_attribution;
 mod development_measurement;
 mod development_objective;
+mod mechanism_attribution;
 mod overlap_ownership;
 mod ownership;
 pub(super) mod quality;
@@ -13,6 +14,9 @@ mod stage_attribution;
 pub(super) use attribution::{attribution_review, AttributionDirection};
 pub(super) use dense_attribution::{dense_attribution_review, DenseAttributionDirection};
 pub(super) use development_objective::{development_objective_review, DevelopmentDirection};
+pub(super) use mechanism_attribution::{
+    mechanism_attribution_review, MechanismAttributionDirection,
+};
 pub(super) use overlap_ownership::overlap_ownership_review;
 pub(super) use ownership::{ownership_review, OwnershipDirection};
 pub(super) use quality::{

@@ -933,12 +933,22 @@ Status: closed without exposure. No development candidate qualified.
 
 ### Batch 29.6CB - Ordinary Shared-Mechanism Factor Attribution
 
-- [ ] freeze the clean-integrity fixed `4096` control and compare the current
+- [x] freeze the clean-integrity fixed `4096` control and compare the current
   event-warped output lattice with a global linear lattice
-- [ ] separate phase-transport changes from lattice placement and diagonal-dual
+- [x] separate phase-transport changes from lattice placement and diagonal-dual
   overlap synthesis before proposing another complete candidate
-- [ ] keep the window bank, detector, event schedule, measurements, holdout,
+- [x] keep the window bank, detector, event schedule, measurements, holdout,
   listening, stereo, dynamic ratio, cache, and routing frozen
+
+### Batch 29.6CC - Window-Kernel Attribution
+
+- [ ] hold fixed `4096`, event-warped placement, ordinary transport, and exact
+  dual normalization while crossing square-root-Hann and Hann analysis and
+  synthesis kernels
+- [ ] assign broad spectral/formant damage to analysis leakage, synthesis
+  weighting, their interaction, or the remaining coefficient path
+- [ ] keep resolution, detector, schedule, measurements, holdout, listening,
+  stereo, dynamic ratio, cache, and routing frozen
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -1730,11 +1740,21 @@ Status: closed without exposure. No development candidate qualified.
   `c4cde9a638c1e36e`, `9a3ff69ddc1dc765`, `3e4f4a8489a8217d`, and
   `c00d6c130888505a`. Holdout and listening remain closed. Batch 29.6CB owns
   phase-transport versus output-lattice attribution on fixed `4096`.
+- 2026-07-13: Batch 29.6CB excludes output placement, phase transport, and the
+  exact diagonal dual as primary owners of the broad timbral regression. Under
+  transported diagonal-dual synthesis, moving to a global-linear lattice adds
+  only `0.000538` mean static residual and `0.000676` formant residual. Removing
+  phase transport worsens static residual in `9/9` rows on both lattices.
+  Replacing the diagonal dual with an analysis-window partition worsens both
+  static and formant residual in `9/9` rows on both transported lattices. All
+  eight factor modes still regress both fields in `9/9` rows against current
+  Signal. Frozen hashes are `63d64c56e0e402bb`, `671bfeb418981df8`,
+  `aaf112446dc0f0a8`, and `3c9f3f66ae65d5c1`. Holdout and listening remain
+  closed. Batch 29.6CC owns window-kernel attribution.
 
 ## Next Task
 
-Execute Batch 29.6CB under Rule 30W. On the fixed `4096` clean-integrity
-control, separate ordinary phase transport from event-warped output placement
-and diagonal-dual overlap synthesis. Keep holdout, listening, tuning, window
-selection, detector/schedule policy, linked stereo, dynamic ratio, cache, and
-routing closed.
+Execute Batch 29.6CC under Rule 30X. Cross square-root-Hann and Hann analysis
+and synthesis kernels on the fixed `4096` transported event-lattice control.
+Keep resolution, detector/schedule policy, holdout, listening, tuning, linked
+stereo, dynamic ratio, cache, and routing closed.

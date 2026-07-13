@@ -30,6 +30,40 @@ pub(super) enum Mode {
     SuccessorOwned,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) enum LatticeFactor {
+    EventWarped,
+    GlobalLinear,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) enum PhaseFactor {
+    Transport,
+    AnalysisPassthrough,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) enum OverlapFactor {
+    DiagonalDual,
+    AnalysisPartition,
+}
+
+impl OverlapFactor {
+    fn operator_weight(self, weight: f64) -> f64 {
+        match self {
+            Self::DiagonalDual => weight * weight,
+            Self::AnalysisPartition => weight,
+        }
+    }
+
+    fn synthesis_weight(self, weight: f64) -> f64 {
+        match self {
+            Self::DiagonalDual => weight,
+            Self::AnalysisPartition => 1.0,
+        }
+    }
+}
+
 impl Mode {
     pub(super) fn event(self) -> bool {
         matches!(
@@ -147,6 +181,33 @@ pub(super) fn render_ordinary_fixed(
     )
 }
 
+pub(super) fn render_ordinary_factor(
+    channels: &[Vec<f64>],
+    ratio: f64,
+    points: &[usize],
+    schedule: &Schedule,
+    lattice: LatticeFactor,
+    phase: PhaseFactor,
+    overlap: OverlapFactor,
+) -> Render {
+    let frames = match lattice {
+        LatticeFactor::EventWarped => schedule::fixed(ratio, FFT_FRAMES, schedule),
+        LatticeFactor::GlobalLinear => schedule::fixed_linear(ratio, FFT_FRAMES),
+    };
+    render_frames_factored(
+        channels,
+        ratio,
+        points,
+        points,
+        &[],
+        schedule,
+        Mode::Ordinary,
+        frames,
+        phase,
+        overlap,
+    )
+}
+
 fn render_frames(
     channels: &[Vec<f64>],
     ratio: f64,
@@ -156,6 +217,33 @@ fn render_frames(
     schedule: &Schedule,
     mode: Mode,
     frames: Vec<Frame>,
+) -> Render {
+    render_frames_factored(
+        channels,
+        ratio,
+        events,
+        trace_events,
+        trace_outputs,
+        schedule,
+        mode,
+        frames,
+        PhaseFactor::Transport,
+        OverlapFactor::DiagonalDual,
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+fn render_frames_factored(
+    channels: &[Vec<f64>],
+    ratio: f64,
+    events: &[usize],
+    trace_events: &[usize],
+    trace_outputs: &[isize],
+    schedule: &Schedule,
+    mode: Mode,
+    frames: Vec<Frame>,
+    phase: PhaseFactor,
+    overlap: OverlapFactor,
 ) -> Render {
     let target_len = (ratio * SOURCE_FRAMES as f64).round() as usize;
     let output_start = frames
@@ -173,7 +261,7 @@ fn render_frames(
     for frame in &frames {
         for (offset, weight) in window(frame.length).into_iter().enumerate() {
             let logical = frame.output - frame.length as isize / 2 + offset as isize;
-            operator[(logical - output_start) as usize] += weight * weight;
+            operator[(logical - output_start) as usize] += overlap.operator_weight(weight);
         }
     }
     let crop = (-output_start) as usize;
@@ -301,6 +389,7 @@ fn render_frames(
                 mode,
                 trace_bin,
                 tracking_spectra.get(channel_index).map(Vec::as_slice),
+                phase == PhaseFactor::AnalysisPassthrough,
             );
             event_phase_changes += result.event_changes;
             vertical_phase_changes += result.vertical_changes;
@@ -338,7 +427,7 @@ fn render_frames(
                 let logical = frame.output - frame.length as isize / 2 + offset as isize;
                 let domain = (logical - output_start) as usize;
                 let value = spectrum[buffer_offset + offset]
-                    * (weight / (FFT_FRAMES as f64 * operator[domain]));
+                    * (overlap.synthesis_weight(weight) / (FFT_FRAMES as f64 * operator[domain]));
                 imaginary_residue = imaginary_residue.max(value.im.abs());
                 outputs[channel_index][domain] += value;
                 if channel_index == 0 {

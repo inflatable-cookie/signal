@@ -1093,6 +1093,65 @@ fn adaptive_single_frame_real_source_resolution_attribution_is_frozen() {
 
 #[test]
 #[cfg(not(debug_assertions))]
+fn adaptive_single_frame_real_source_mechanism_attribution_is_frozen() {
+    use super::adaptive_single_frame_synthesis::{
+        mechanism_attribution_review, MechanismAttributionDirection,
+    };
+
+    let first = mechanism_attribution_review();
+    let repeated = mechanism_attribution_review();
+    eprintln!("adaptive_single_frame_mechanism_attribution {first:?}");
+    assert_eq!(first, repeated);
+    assert_eq!(first.rows, 9);
+    assert_eq!(first.modes, 9);
+    assert_eq!(first.renders, 81);
+    assert_eq!(first.holdout_reads, 0);
+    assert_eq!(first.hard_failures, 19, "{first:?}");
+    assert_eq!(first.hard_failures_by_mode, [0, 0, 0, 5, 5, 0, 0, 4, 5]);
+    assert_eq!(first.event_fallback_renders, 55);
+    assert_eq!(first.changed_from_current, [9; 8]);
+    assert_eq!(
+        first.regression_from_current,
+        [
+            [6, 4, 9, 9],
+            [7, 3, 9, 9],
+            [7, 5, 9, 9],
+            [7, 6, 9, 9],
+            [6, 4, 9, 9],
+            [7, 4, 9, 9],
+            [5, 3, 9, 9],
+            [5, 4, 9, 9],
+        ]
+    );
+    assert_eq!(
+        first.lattice_regressions,
+        [[1, 5, 5, 4], [2, 4, 8, 7], [5, 2, 9, 9], [4, 4, 9, 9]]
+    );
+    assert_eq!(
+        first.phase_regressions,
+        [[3, 5, 9, 3], [2, 7, 9, 2], [4, 4, 9, 7], [2, 7, 9, 8]]
+    );
+    assert_eq!(
+        first.overlap_regressions,
+        [[2, 4, 9, 9], [2, 8, 7, 8], [2, 4, 9, 9], [2, 6, 9, 9]]
+    );
+    assert_eq!(
+        first.hashes,
+        [
+            0x63d6_4c56_e0e4_02bb,
+            0x671b_feb4_1898_1df8,
+            0xaaf1_1244_6dc0_f0a8,
+            0x3c9f_3f66_ae65_d5c1,
+        ]
+    );
+    assert_eq!(
+        first.direction,
+        MechanismAttributionDirection::WindowedCoefficientRepresentation
+    );
+}
+
+#[test]
+#[cfg(not(debug_assertions))]
 fn adaptive_single_frame_failure_attribution_selects_bounded_redesign() {
     use super::adaptive_single_frame_synthesis::{attribution_review, AttributionDirection};
 

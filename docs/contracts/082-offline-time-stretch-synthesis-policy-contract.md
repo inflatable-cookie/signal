@@ -2864,6 +2864,36 @@ This is mechanism attribution, not a candidate or parameter sweep. Do not
 change the window bank, detector, event schedule, production policy, holdout,
 listening export, linked stereo, dynamic ratio, cache, or routing.
 
+Rule 30W excludes the three factored mechanisms as the primary owner. With
+transport and the exact diagonal dual held, global-linear placement changes
+mean static and formant residual by only `+0.000538` and `+0.000676`. Analysis
+phase passthrough worsens static residual in `9/9` rows on either lattice.
+Replacing the exact dual with a normalized analysis-window partition worsens
+static and formant residual in `9/9` rows on both transported lattices. All
+eight factor combinations still regress static-spectrum and formant residual
+in `9/9` rows against current Signal. The common failure is therefore earlier
+in the windowed coefficient representation.
+
+Manifest, render, measurement, and aggregate hashes are
+`63d64c56e0e402bb`, `671bfeb418981df8`, `aaf112446dc0f0a8`, and
+`3c9f3f66ae65d5c1`. The TSV SHA-256 is
+`856e4a5484cba6175034150e707a143d0a672d506a698b3bff94876b01244c32`.
+Holdout reads and listening exports remain zero.
+
+#### Rule 30X: isolate analysis and synthesis window kernels
+
+Batch 29.6CC keeps the Rule 30W rows, ratios, measurements, fixed `4096`
+geometry, event-warped lattice, ordinary instantaneous-frequency transport,
+and exact dual normalization frozen. Cross square-root-Hann and Hann analysis
+windows with square-root-Hann and Hann synthesis windows. Normalize every pair
+with its exact analysis-times-synthesis frame operator.
+
+The four combinations are factor controls, not production window selection.
+Assign the spectral/formant regression to analysis leakage, synthesis
+weighting, their interaction, or the remaining coefficient path. Do not change
+resolution, detector or schedule policy, holdout, listening export, linked
+stereo, dynamic ratio, cache, or routing.
+
 ## Clean-Room Rule
 
 Public papers and public algorithm descriptions may inform Signal design.
@@ -2872,8 +2902,7 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Execute Batch 29.6CB under Rule 30W. Factor phase transport, output-lattice
-placement, and diagonal-dual overlap synthesis on the fixed `4096`
-clean-integrity control. Keep holdout, listening, tuning, window selection,
-detector/schedule policy, linked stereo, dynamic ratio, cache, and routing
-closed.
+Execute Batch 29.6CC under Rule 30X. Cross square-root-Hann and Hann analysis
+and synthesis kernels under exact dual normalization on fixed `4096`. Keep
+resolution, detector/schedule policy, holdout, listening, tuning, linked
+stereo, dynamic ratio, cache, and routing closed.

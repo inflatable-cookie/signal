@@ -764,9 +764,19 @@ static-spectrum and formant residual in all nine rows. That common damage now
 belongs to the shared phase transport, output lattice, diagonal-dual overlap,
 or their interaction.
 
+The fixed-`4096` factor matrix excludes those three mechanisms as the primary
+timbral owner. Global-linear placement is nearly neutral when transport and the
+exact dual stay active. Analysis-phase passthrough increases static residual in
+every row. Replacing the exact dual with an analysis-window partition increases
+both static and formant residual in every row. Because all eight combinations
+still regress both fields in all nine rows, the next boundary is the shared
+windowed coefficient representation. Signal's adaptive renderer analyzes with
+a square-root Hann; the current production phase vocoder uses Hann. Analysis
+leakage and synthesis weighting must be separated before redesign.
+
 ## Next Task
 
-Run Rule 30W on the fixed `4096` clean-integrity control. Factor ordinary phase
-transport, event-warped versus global-linear output placement, and
-diagonal-dual overlap synthesis before any redesign, holdout read, listening
-export, tuning, stereo, dynamic, cache, or routing work.
+Run Rule 30X on the fixed `4096` transported event-lattice control. Cross
+square-root-Hann and Hann analysis and synthesis kernels under exact dual
+normalization before any redesign, holdout read, listening export, tuning,
+stereo, dynamic, cache, or routing work.

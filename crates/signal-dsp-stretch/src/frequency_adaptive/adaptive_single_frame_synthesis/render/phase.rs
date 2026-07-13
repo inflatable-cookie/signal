@@ -72,6 +72,7 @@ pub(super) fn transport(
     mode: Mode,
     trace_bin: usize,
     tracking: Option<&[Complex64]>,
+    analysis_passthrough: bool,
 ) -> Result {
     if mode.successor() {
         return transport_active(
@@ -100,7 +101,7 @@ pub(super) fn transport(
     let mut transported_phase = 0.0;
     for bin in 0..=FFT_FRAMES / 2 {
         let analysis = spectrum[bin].arg();
-        let (synthesis, frequency) = if first {
+        let (synthesis, frequency) = if first || analysis_passthrough {
             (
                 analysis,
                 std::f64::consts::TAU * bin as f64 / FFT_FRAMES as f64,

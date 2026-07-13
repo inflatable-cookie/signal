@@ -42,6 +42,23 @@ pub(super) fn fixed(ratio: f64, length: usize, schedule: &Schedule) -> Vec<Frame
         .collect()
 }
 
+pub(super) fn fixed_linear(ratio: f64, length: usize) -> Vec<Frame> {
+    assert!(FIXED_LENGTHS.contains(&length), "fixed window-bank length");
+    fixed_centres(length)
+        .map(|source| Frame {
+            source,
+            output: (ratio * source as f64).round() as isize,
+            length,
+        })
+        .collect()
+}
+
+fn fixed_centres(length: usize) -> impl Iterator<Item = isize> {
+    let start = -PAD - FFT_FRAMES / 2;
+    let end = SOURCE_FRAMES as isize + PAD + FFT_FRAMES / 2;
+    (start..=end).step_by(length / 4)
+}
+
 pub(super) fn successor(
     ratio: f64,
     resolution_points: &[usize],

@@ -300,16 +300,19 @@ Current stretch status:
   then split the ordinary defect: endpoint integrity improves from `9/9`
   failures at `512` and `1024` through `4/9` at `2048` to `0/9` at `4096`;
   adaptive timing remains worst; every fixed and adaptive ordinary render
-  regresses static-spectrum and formant residual in `9/9` rows. Batch 29.6CB
-  factors the shared phase/output-lattice mechanism. Holdout and listening
-  remain closed.
+  regresses static-spectrum and formant residual in `9/9` rows. Fixed-`4096`
+  factor controls then exclude output placement, ordinary phase transport, and
+  the exact diagonal dual as primary owners: linear placement is nearly
+  neutral, while phase passthrough and analysis-partition overlap are worse.
+  All eight factor modes still regress both timbral fields in `9/9` rows.
+  Batch 29.6CC isolates square-root-Hann versus Hann analysis and synthesis
+  kernels. Holdout and listening remain closed.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Execute `g10.029` Batch 29.6CB under Rule 30W. Factor phase transport,
-event-warped output placement, and diagonal-dual overlap synthesis on fixed
-`4096` without reading holdout, exporting listening audio, tuning, or changing
-policy.
+Execute `g10.029` Batch 29.6CC under Rule 30X. Cross square-root-Hann and Hann
+analysis and synthesis kernels under exact dual normalization on fixed `4096`
+without reading holdout, exporting listening audio, tuning, or changing policy.
