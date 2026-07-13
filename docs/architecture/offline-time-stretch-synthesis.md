@@ -1,37 +1,32 @@
 # Offline Time-Stretch Synthesis
 
-Status: behavioural-forensics reset active
+Status: native-grid active-owner implementation ready
 Owner: dsp
-Updated: 2026-07-11
+Updated: 2026-07-13
 Contract refs: `046`, `082`
 Roadmap ref: `g10.029`
 
 ## Current Boundary
 
 The production OfflineHighQuality prototype remains the current `2048/512`
-identity-lock/reset phase vocoder. The rejected report-only hybrid renders
-independent short, current, and long STFT outputs. It is evidence, not the
-successor architecture.
+identity-lock/reset phase vocoder. All successor work is report-only. Rule 30Z
+now contracts the next fixed-ratio mono implementation; no successor has earned
+real-source listening, product routing, stereo, or dynamic-ratio work.
 
 ## Successor Shape
 
-The next successor candidate owns one sample-domain time map and one
-frequency-adaptive, perfectly reconstructable filter bank.
+The successor owns one sample-domain time map and one selected adaptive frame
+at each source centre. It does not recombine independent full-band renders.
 
-- a painless frequency-adaptive nonstationary Gabor transform gives long
-  low-frequency atoms and short high-frequency atoms inside one invertible
-  representation
-- absolute analysis centres follow the exact requested source map; adjacent
-  integer analysis intervals may differ by one frame
-- canonical dual filters reconstruct the unmodified coefficients before any
-  stretch processing opens
-- a later proof may integrate a filter-bank phase gradient, but only after
-  reconstruction, impulse delay, coefficient coverage, and determinism pass
-- a later stretched candidate must assign every significant coefficient phase
-  exactly once from the strongest available time or frequency predecessor
-- no peak tracker, onset detector, reset schedule, component mask, independent
-  component synthesis, or local timing compensation enters the first proof
-- boundary padding, normalized overlap-add, exact cropping, and identity bypass
+- the existing `512/1024/2048/4096` window bank stays single-owner
+- each frame uses centered reflection, Hann/Hann kernels, its native FFT, and
+  exact diagonal-dual overlap synthesis
+- native magnitudes stay unchanged
+- a fixed analytic tracking surface carries active physical-frequency and
+  synthesis-phase decisions across native frame-size changes
+- sample-refined anchors coordinate exact event placement, phase reset, and
+  bounded conflicted-bridge replica suppression
+- exact length, one output timeline, conjugate symmetry, and identity behavior
   remain common synthesis policy
 
 ## State Ownership
@@ -39,17 +34,17 @@ frequency-adaptive, perfectly reconstructable filter bank.
 One fixed-ratio mono engine owns:
 
 - source and output frame cursors
-- absolute ideal and rounded analysis-frame positions
-- one immutable frequency lattice, analysis-filter bank, dual-filter bank, and
-  global ratio
-- bounded per-band coefficient storage and exact coefficient time positions
-- later phase-derivative and integration state only after the transform proof
-- deterministic insignificant-bin phase
+- the frozen global schedule, adaptive frame selection, and exact anchors
+- one native coefficient vector and dual weights per selected frame
+- ordered active-peak identities, physical frequencies, and synthesis phases
+- native owner-bin projection and current-frame within-region phase offsets
+- the bounded conflicted-bridge ownership decision
 - exact output-length and crop state
 
 Linked stereo later shares the time map and phase-propagation decisions.
-Channels retain their own complex spectra and phase gradients. Independent
-per-channel heap topology is not an acceptable stereo path.
+Channels retain their own native complex coefficients and interchannel phase.
+Independent per-channel event, owner, or frame-selection decisions are not an
+acceptable stereo path.
 
 Dynamic ratio remains outside the successor until fixed-ratio mono and linked
 stereo pass. Its eventual path must update the same time map continuously; it
@@ -57,19 +52,11 @@ must not concatenate independent renders.
 
 ## Staged Proof
 
-1. current-grid adaptive transient timeline — rejected after timing and
-   combined-gate failure
-2. fixed-map peak transient proof — rejected after crest, placement, spectrum,
-   and combined-gate failure
-3. iterative H/R/P separation and exact reconstruction proof
-4. additive H/R/P fixed-ratio mono candidate
-5. fixed-resolution full phase-gradient kernel proof
-6. whole-band full phase-gradient fixed-ratio mono gate
-7. exact-lattice whole-band phase-gradient mono gate
-8. frequency-adaptive painless reconstruction proof
-9. frequency-adaptive phase-gradient mono mechanism and corpus gate
-10. shared-decision linked stereo
-11. concealed listening and dynamic-ratio checkpoint
+1. native-grid active-owner mechanism and complete synthetic gate
+2. frozen nine-row mono development gate
+3. mono decision checkpoint and concealed listening only if earned
+4. shared-decision linked stereo
+5. holdout and dynamic-ratio checkpoint
 
 Each stage stays report-only until the complete gate passes. A mechanism proof
 may authorize the next stage but cannot promote product quality alone.
@@ -794,9 +781,40 @@ boundaries help, but neither owns the broad defect. The remaining owner is the
 phase/magnitude coefficient path; native-grid timbral gains cannot be promoted
 while replica protection fails.
 
+## Contracted Coefficient Path
+
+Rule 30Z closes the attribution loop with one implementation shape:
+
+- one selected adaptive frame owns each source centre; no simultaneous
+  full-band resolution layers are recombined
+- the existing `512/1024/2048/4096` bank uses centered reflected reads,
+  Hann/Hann windows, a native FFT per selected frame, and its exact diagonal
+  dual
+- native complex magnitudes remain unchanged; there is no magnitude smoothing,
+  cross-resolution interpolation, blend, or gain match
+- the fixed `4096` analytic spectrum is a decision surface only; ordered active
+  peaks carry physical frequency and synthesis phase across frame-size changes
+- physical frequency maps each active owner to its nearest native coefficient
+  bin; surrounding native bins keep their current analysis-phase offset from
+  that owner
+- owner births initialize from current native analysis phase; frames without an
+  active owner use current analysis phase instead of continuing dormant bins
+- sample-refined transient anchors own exact source/output centres and reset
+  active phase from the native frame
+- the proven conflicted-bridge background substitution shares those anchors
+  and removes bounded midpoint replicas without changing anchor samples
+- one output timeline, exact target length, real DC/Nyquist, conjugate symmetry,
+  and exact analysis-times-synthesis normalization remain invariant
+
+This is a phase-coherent native coefficient path, not a new factor search. The
+tracker never supplies synthesis coefficients. The shared-grid damage found by
+Rule 30Y therefore does not re-enter through the auxiliary decision surface.
+The first implementation stays report-only and must pass the prior mechanism
+controls and complete `48`-row synthetic gate before any real-source render.
+
 ## Next Task
 
-Run the Rule 30Z coefficient-path design checkpoint. Freeze one coherent
-native-grid, reflection-preserving candidate from the accumulated attribution
-evidence before more synthesis implementation. Do not reopen factor sweeps,
-holdout, listening, tuning, stereo, dynamic, cache, or routing.
+Execute Batch 29.6CF under Rule 30AA. Compose the native-grid active-owner path
+from the existing schedule, tracker, anchors, bridge owner, and exact-dual
+seams. Stop before real-source rendering unless the complete synthetic gate
+passes without tuning.

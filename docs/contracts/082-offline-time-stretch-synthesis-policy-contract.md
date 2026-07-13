@@ -2958,6 +2958,59 @@ or open linked stereo, dynamic ratio, cache, or routing. Stop if the evidence
 cannot support one bounded complete coefficient path without a new research
 question.
 
+Rule 30Z closes with one bounded design. The successor keeps the existing
+single-owner adaptive frame schedule and `[512, 1024, 2048, 4096]` window bank.
+Each frame uses centered reflected source reads, Hann analysis and synthesis,
+its native FFT length, and the exact analysis-times-synthesis diagonal dual.
+Native coefficient magnitudes pass through unchanged. No magnitude smoothing,
+interpolation, cross-resolution blend, or gain matching is authorized.
+
+The existing fixed `4096` analytic spectrum remains a decision-only tracking
+surface. Ordered active-peak trajectories own physical angular frequency and
+synthesis phase; the tracking FFT never supplies synthesis coefficients. For
+each native frame, an owner maps by physical frequency to the nearest native
+coefficient bin. Its phase advances on the single output timeline. Bins in its
+frequency region retain their current native analysis-phase offset from that
+native owner bin. Births initialize from current native analysis phase. A
+frame with no active owner uses current native analysis phase and creates no
+dormant-bin trajectory. DC and Nyquist remain real and negative frequencies
+retain conjugate symmetry.
+
+The frozen linked derivative-energy detector supplies exact sample-refined
+anchors on the existing base-grid schedule. An anchor owns one exact source
+centre and projected output centre and resets active owners from that frame's
+native analysis phase. The already proven bounded conflicted-bridge rule stays
+in the same renderer: a non-anchor frame that straddles separated accepted
+anchor supports receives boundary-background substitution inside the proven
+event neighborhood. Anchor frames keep the attacks. Phase reset and bridge
+ownership therefore share the same anchors and output timeline; replica
+suppression is not deferred cleanup.
+
+#### Rule 30AA: native-grid active-owner implementation gate
+
+Batch 29.6CF implements the Rule 30Z path as a report-only fixed-ratio mono
+renderer. Reuse the frozen detector, schedule, tracking floor, ordered matching,
+anchor attachment, bridge predicate, and measurements. Replace shared-grid
+synthesis coefficients with native-grid Hann/Hann coefficients and
+physical-frequency owner projection. Preserve reflected reads, exact dual
+normalization, exact length, one output timeline, and unchanged magnitudes.
+
+Run mechanism controls before the complete `48`-row successor synthetic gate.
+Require identity, exact length, positive crop coverage, endpoint integrity,
+finite output, symmetry, imaginary-residue, silence, repeatability, owner
+continuity across resolution changes, tone error no worse than the proven
+`1e-6` radians/sample bound, exact accepted-anchor attachment, unchanged dense
+one-to-one placement limits, and zero replica regression. Stop before real
+sources on any failure. Trace the earliest owner boundary; do not tune, sweep,
+or substitute another algorithm family.
+
+Batch 29.6CG opens only after Rule 30AA passes. Freeze the implementation and
+compare it with current Signal and captured external evidence on the unchanged
+nine-row mono development set. Report the complete integrity, transient,
+replica, static-spectrum, texture, formant, and boundary field set. A row-level
+regression returns to traced coefficient ownership. Holdout, listening,
+production routing, linked stereo, dynamic ratio, and cache work remain closed.
+
 ## Clean-Room Rule
 
 Public papers and public algorithm descriptions may inform Signal design.
@@ -2966,7 +3019,7 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Execute Batch 29.6CE under Rule 30Z. Contract one coherent native-grid,
-reflection-preserving phase/magnitude path before more synthesis code. Keep
-factor sweeps, corpus rendering, holdout, listening, tuning, linked stereo,
-dynamic ratio, cache, and routing closed.
+Execute Batch 29.6CF under Rule 30AA. Implement the report-only native-grid
+active-owner mono path and run its mechanism and synthetic gates. Stop before
+real sources on any failure. Keep sweeps, holdout, listening, tuning, linked
+stereo, dynamic ratio, cache, and routing closed.

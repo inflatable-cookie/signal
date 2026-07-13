@@ -961,12 +961,38 @@ Status: closed without exposure. No development candidate qualified.
 
 ### Batch 29.6CE - Coefficient-Path Design Checkpoint
 
-- [ ] consolidate Rules 30W through 30Y and behavioural-forensics evidence
+- [x] consolidate Rules 30W through 30Y and behavioural-forensics evidence
   without rendering another candidate
-- [ ] freeze one native-grid, reflection-preserving coefficient path that owns
+- [x] freeze one native-grid, reflection-preserving coefficient path that owns
   cross-bin phase coherence and transient replicas together
-- [ ] stop for a named research question if one bounded complete design cannot
+- [x] stop for a named research question if one bounded complete design cannot
   be supported; do not reopen factor sweeps
+
+### Batch 29.6CF - Native-Grid Active-Owner Synthetic Proof
+
+- [ ] compose the existing single-owner schedule, fixed analytic tracker,
+  sample-refined anchors, conflicted-bridge owner, and exact dual around native
+  Hann/Hann synthesis coefficients
+- [ ] project active physical-frequency owners onto each native FFT grid while
+  preserving native magnitudes and native within-region analysis-phase offsets
+- [ ] pass the mechanism controls and complete `48`-row synthetic quality gate
+  without tuning before opening any real-source render
+
+### Batch 29.6CG - Frozen Mono Development Gate
+
+- [ ] open only after Batch 29.6CF passes every hard synthetic check
+- [ ] compare the frozen candidate with current Signal and captured external
+  evidence on the unchanged nine development rows
+- [ ] report every integrity, transient, replica, spectral, texture, formant,
+  and boundary field; return failures to traced ownership instead of sweeping
+
+### Batch 29.6CH - Mono Decision Checkpoint
+
+- [ ] open only after the frozen nine-row development evidence is complete
+- [ ] decide whether the candidate earns concealed mono listening, requires one
+  named mechanism repair, or must return to research
+- [ ] keep holdout, linked stereo, dynamic ratio, cache, production routing,
+  and parameter search closed
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -1789,10 +1815,20 @@ Status: closed without exposure. No development candidate qualified.
   `55021268ac0cb16f`, `d788ea7642e16b09`, `b56a87e849ff3f5a`, and
   `fcd42c867eef4419`. Holdout and listening remain closed. Batch 29.6CE is a
   no-render coefficient-path design checkpoint before more synthesis code.
+- 2026-07-13: Batch 29.6CE contracts one complete successor coefficient path
+  without rendering. Each selected adaptive frame uses centered reflection,
+  Hann/Hann windows, its native FFT, unchanged magnitudes, and the exact dual.
+  The fixed `4096` analytic spectrum remains decision-only: active trajectories
+  carry physical frequency and phase, then map onto native bins while retaining
+  native within-region phase offsets. Exact transient anchors coordinate phase
+  reset and the proven conflicted-bridge replica owner on one output timeline.
+  Batch 29.6CF owns implementation and the complete synthetic gate. Factor
+  sweeps, real sources, holdout, listening, stereo, dynamic ratio, cache, and
+  routing remain closed.
 
 ## Next Task
 
-Execute Batch 29.6CE under Rule 30Z. Freeze one coherent native-grid,
-reflection-preserving coefficient path from the accumulated evidence. Do not
-render another candidate or reopen factor sweeps, holdout, listening, tuning,
-linked stereo, dynamic ratio, cache, or routing.
+Execute Batch 29.6CF under Rule 30AA. Implement the report-only native-grid
+active-owner mono path. Run mechanism controls and the complete `48`-row
+synthetic gate before any real-source render. Stop and trace the earliest owner
+on failure; do not tune or reopen factor sweeps.

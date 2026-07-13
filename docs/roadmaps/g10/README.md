@@ -1,7 +1,7 @@
 # g10 Milestones
 
 Status: active
-Updated: 2026-07-11
+Updated: 2026-07-13
 
 ## Why this generation matters now
 
@@ -313,14 +313,20 @@ Current stretch status:
   back. Native geometry also raises replica ratio sharply, and every mode still
   regresses both timbral fields in `9/9` rows. Shared-grid zero-padding
   contributes; the remaining phase/magnitude path owns the broad defect. Batch
-  29.6CE is a no-render design checkpoint before more synthesis implementation.
-  Holdout and listening remain closed.
+  29.6CE then contracts one complete path without rendering: centered reflected
+  Hann/Hann frames synthesize on native FFT grids with unchanged magnitudes and
+  exact dual normalization; the fixed analytic tracker carries physical
+  frequency and phase only as a decision surface; native phase regions,
+  sample-refined anchors, and the proven bridge owner coordinate coherence and
+  replica suppression on one output timeline. Batch 29.6CF is the bounded
+  implementation and synthetic gate. Real sources, holdout, listening, stereo,
+  dynamic ratio, cache, and routing remain closed.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Execute `g10.029` Batch 29.6CE under Rule 30Z. Contract one coherent
-native-grid, reflection-preserving phase/magnitude path from the accumulated
-evidence without rendering another candidate or reopening factor sweeps.
+Execute `g10.029` Batch 29.6CF under Rule 30AA. Implement the report-only
+native-grid active-owner mono path and pass its mechanism controls plus complete
+`48`-row synthetic gate before any real-source render.
