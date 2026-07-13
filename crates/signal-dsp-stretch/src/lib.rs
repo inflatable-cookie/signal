@@ -26,7 +26,9 @@
 //! Product-facing use remains blocked unless an accepted
 //! [`StretchPromotionReceipt`] is attached to the render/export/freeze
 //! artifact plan. Rubber Band-class quality is the target for the planned
-//! Signal-native tiers, but Rubber Band source is not an implementation input.
+//! Signal-native tiers. Pinned public source may inform report-only architecture
+//! research under Contract 082's provenance rule; external engines remain
+//! comparators, not production dependencies.
 //!
 //! ## Real-time posture
 //!

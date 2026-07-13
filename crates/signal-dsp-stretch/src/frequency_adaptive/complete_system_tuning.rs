@@ -4,7 +4,7 @@ use super::HASH_OFFSET;
 
 mod reachability;
 pub(super) use reachability::reachability_review;
-mod objective_grid;
+pub(in crate::frequency_adaptive) mod objective_grid;
 pub(super) use objective_grid::objective_grid_review;
 pub(super) mod listening_export;
 pub(super) use listening_export::export_development_pack;

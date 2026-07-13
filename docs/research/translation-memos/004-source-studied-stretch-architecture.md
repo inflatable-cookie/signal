@@ -111,5 +111,6 @@ Promoted into:
 
 ## Next Task
 
-Execute Batch 29.6CH as one complete architecture proof. Do not resume Rule
-30AB or split the work into per-mechanism repair batches.
+Complete the concealed Batch 29.6CH five-way development listen, then make the
+Batch 29.6CI whole-architecture decision. Do not resume Rule 30AB or split the
+work into per-mechanism repair batches.

@@ -63,6 +63,6 @@ Finch and Loophole.
 
 ## Next Task
 
-Execute the source-studied stretch architecture proof under contract `082`,
-Rule 31. Keep the source provenance boundary attached to every transferred
-invariant.
+Complete the Batch 29.6CH concealed five-way development listen, then decide
+the source-studied architecture as a whole at Batch 29.6CI. Keep the source
+provenance boundary attached to every transferred invariant.

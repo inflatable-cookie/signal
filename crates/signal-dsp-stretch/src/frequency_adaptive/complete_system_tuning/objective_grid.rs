@@ -1,4 +1,4 @@
-pub(super) mod audio;
+pub(in crate::frequency_adaptive) mod audio;
 pub(crate) mod metrics;
 
 use std::{fs, path::PathBuf};

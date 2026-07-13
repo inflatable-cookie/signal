@@ -1,17 +1,17 @@
 use std::path::Path;
 
-pub(super) struct MatchedCandidate {
+pub(in crate::frequency_adaptive) struct MatchedCandidate {
     pub identity: String,
     pub samples: Vec<f64>,
     pub gain: f64,
 }
 
-pub(super) struct MatchedGroup {
+pub(in crate::frequency_adaptive) struct MatchedGroup {
     pub source: Vec<f64>,
     pub candidates: Vec<MatchedCandidate>,
 }
 
-pub(super) fn read_mono(path: &Path) -> Vec<f64> {
+pub(in crate::frequency_adaptive) fn read_mono(path: &Path) -> Vec<f64> {
     let mut reader = hound::WavReader::open(path)
         .unwrap_or_else(|error| panic!("open {}: {error}", path.display()));
     let specification = reader.spec();
@@ -41,7 +41,10 @@ pub(super) fn read_mono(path: &Path) -> Vec<f64> {
         .collect()
 }
 
-pub(super) fn level_match(source: &[f64], candidates: Vec<(String, Vec<f64>)>) -> MatchedGroup {
+pub(in crate::frequency_adaptive) fn level_match(
+    source: &[f64],
+    candidates: Vec<(String, Vec<f64>)>,
+) -> MatchedGroup {
     let target = candidates
         .iter()
         .map(|(_, samples)| rms(samples))
@@ -64,7 +67,7 @@ pub(super) fn level_match(source: &[f64], candidates: Vec<(String, Vec<f64>)>) -
     MatchedGroup { source, candidates }
 }
 
-pub(super) fn write_mono(path: &Path, sample_rate: u32, samples: &[f64]) {
+pub(in crate::frequency_adaptive) fn write_mono(path: &Path, sample_rate: u32, samples: &[f64]) {
     let specification = hound::WavSpec {
         channels: 1,
         sample_rate,

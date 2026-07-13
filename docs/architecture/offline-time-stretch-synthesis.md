@@ -1,6 +1,6 @@
 # Offline Time-Stretch Synthesis
 
-Status: source-studied frequency-partition proof ready
+Status: source-studied operator listening open
 Owner: dsp
 Updated: 2026-07-13
 Contract refs: `046`, `082`
@@ -865,6 +865,6 @@ development gates before any promotion.
 
 ## Next Task
 
-Execute Batch 29.6CH under Rule 31 as one source-studied complete architecture
-proof. Add Signalsmith as the single-grid control; do not reopen Rule 30AB or a
-parameter lattice.
+Complete the concealed Batch 29.6CH five-way development listen, then decide
+the two source-studied architectures together at Batch 29.6CI. Do not reopen
+Rule 30AB or a parameter lattice.

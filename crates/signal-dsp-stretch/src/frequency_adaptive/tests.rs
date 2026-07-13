@@ -1523,6 +1523,81 @@ fn complete_system_proves_or_rejects_shared_full_field_phase() {
 
 #[test]
 #[cfg(not(debug_assertions))]
+fn source_studied_complete_architecture_proof_selects_direction() {
+    use super::source_studied::{review, Architecture, Direction};
+
+    let result = review();
+    eprintln!("source_studied_complete_architecture {result:#?}");
+    assert_eq!(result.geometry, [1_024, 2_048, 4_096]);
+    assert_eq!(result.development_rows, 9);
+    assert_eq!(result.holdout_reads, 0);
+    assert!(result.repeated, "{result:#?}");
+    assert_eq!(
+        result
+            .architecture
+            .iter()
+            .map(|item| item.architecture)
+            .collect::<Vec<_>>(),
+        [
+            Architecture::FrequencyPartitioned,
+            Architecture::WeightedPredictor,
+        ]
+    );
+    assert!(result.architecture.iter().all(|item| {
+        item.synthetic_failures[..7]
+            .iter()
+            .all(|failure| *failure == 0)
+            && item.development_failures == [0; 4]
+            && item.output_hash != 0
+            && item.mean_quality.iter().all(|value| value.is_finite())
+    }));
+    let partitioned = &result.architecture[0];
+    assert!(partitioned
+        .frequency_owner_counts
+        .iter()
+        .all(|count| *count > 0));
+    assert!(partitioned.state_counts[0] > 0);
+    assert!(partitioned.state_counts[1] > 0);
+    assert!(partitioned.state_counts[2] > 0);
+    assert!(partitioned.state_counts[4] > 0);
+    assert!(partitioned.state_counts[5] > 0);
+    assert!(result.comparators.iter().all(|item| {
+        item.available_rows == 9
+            && item.structural_failures == 0
+            && item.output_hash != 0
+            && item.mean_quality.iter().all(|value| value.is_finite())
+    }));
+    assert_eq!(result.architecture[0].synthetic_failures[7], 1);
+    assert_eq!(result.architecture[1].synthetic_failures[7], 0);
+    assert_eq!(
+        result.direction,
+        if result
+            .architecture
+            .iter()
+            .all(|item| item.synthetic_failures == [0; 8])
+        {
+            Direction::MonoDecisionCheckpoint
+        } else {
+            Direction::ArchitectureResearch
+        }
+    );
+}
+
+#[test]
+#[cfg(not(debug_assertions))]
+fn source_studied_complete_architecture_exports_concealed_pack() {
+    let result = super::source_studied::export_development_pack();
+    eprintln!("source_studied_complete_architecture_export {result:#?}");
+    assert_eq!(result.rows, 9);
+    assert_eq!(result.candidates_per_row, 5);
+    assert_eq!(result.audio_files, 54);
+    assert_eq!(result.holdout_reads, 0);
+    assert_eq!(result.structural_failures, [0; 4], "{result:#?}");
+    assert!(result.hashes.iter().all(|hash| *hash != 0));
+}
+
+#[test]
+#[cfg(not(debug_assertions))]
 fn renyi_time_resolution_selection_selects_schedule_direction() {
     let first = renyi_time_resolution_selection_review();
     let repeated = renyi_time_resolution_selection_review();

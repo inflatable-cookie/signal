@@ -31,7 +31,7 @@ fn config(
     }
 }
 
-pub(super) fn assignment(row: &str, count: usize) -> Vec<usize> {
+pub(in crate::frequency_adaptive) fn assignment(row: &str, count: usize) -> Vec<usize> {
     let mut values = (0..count).collect::<Vec<_>>();
     values.sort_by_key(|index| stable_hash(format!("{row}:{index}").as_bytes()));
     values

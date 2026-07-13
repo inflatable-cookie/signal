@@ -144,7 +144,6 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Execute `g10.029` Batch 29.6CH under contract `082` as one complete
-source-studied architecture proof. Compare frequency-partitioned
-long/middle/short synthesis with the fixed-grid weighted multi-predictor
-control; do not reopen Rule 30AB or parameter search.
+Complete the `g10.029` Batch 29.6CH concealed five-way development listen,
+then decide the whole source-studied architecture at Batch 29.6CI. Do not
+reopen Rule 30AB or parameter search.

@@ -330,18 +330,20 @@ Current stretch status:
   time-selected full-band resolution. Its full-band H/P/R classification guides
   crossover and phase state; it is not additive component synthesis.
   Signalsmith supplies the contrasting fixed-grid weighted multi-predictor
-  control. Batch 29.6CH owns one complete source-studied proof of those two
-  architectures. Rule 30AB repair, parameter lattices, and per-metric follow-up
-  chains remain closed. Real sources open only inside the frozen nine-row
-  development comparison after synthetic integrity passes; holdout, stereo,
-  dynamic ratio, cache, and routing remain closed.
+  control. Batch 29.6CH now passes structure, determinism, and all nine
+  development integrity rows for both paths. The fixed-grid control passes the
+  synthetic quality gate. The partitioned path retains a marginal `3 Hz` tone
+  miss against the `2 Hz` cap while passing event placement at `190` frames;
+  it is not tuned. A concealed five-way development pack is ready for operator
+  listening. Rule 30AB repair, parameter lattices, and per-metric follow-up
+  chains remain closed. Holdout, stereo, dynamic ratio, cache, and routing
+  remain closed.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Execute `g10.029` Batch 29.6CH under Rule 31 as one complete source-studied
-architecture proof. Compare frequency-partitioned long/middle/short synthesis
-against the fixed-grid weighted multi-predictor control. Do not reopen Rule
+Complete the `g10.029` Batch 29.6CH concealed five-way development listen,
+then make the Batch 29.6CI whole-architecture decision. Do not reopen Rule
 30AB or a parameter-repair sequence.

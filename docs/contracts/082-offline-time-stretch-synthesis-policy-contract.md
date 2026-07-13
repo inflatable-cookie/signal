@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; source-studied architecture proof ready
+Status: active; source-studied operator listening open
 Owner: dsp
 Updated: 2026-07-13
 Related contracts: `046`, `048`, `049`
@@ -3107,6 +3107,15 @@ gates pass, export one concealed listening pack. Decide on the architecture as
 a whole. An objective miss may identify a redesign question, but it must not
 open another chain of per-metric repair batches.
 
+Batch 29.6CH now passes exact length, coverage, finiteness, boundaries,
+exclusive frequency ownership, repeat determinism, and all nine development
+integrity rows for both architectures. The fixed-grid control passes the
+synthetic tone/event gate. The frequency-partitioned candidate places the
+worst event within `190` frames but measures `3 Hz` tone error against the
+frozen `2 Hz` limit. This miss is retained without tuning. Structural integrity
+permits one concealed five-way pack containing both Signal candidates, current
+Signal, Rubber Band R3, and Signalsmith Stretch `1.3.2`.
+
 Holdout, product routing, dynamic ratio, cache, and realtime source-fill remain
 closed. Linked decisions may be exercised inside the proof, but stereo
 promotion still requires independent listening.
@@ -3121,6 +3130,6 @@ dependency decision explicitly changes that boundary.
 
 ## Next Task
 
-Execute Batch 29.6CH under Rule 31 as one complete source-studied architecture
-proof. Keep parameter lattices, holdout, product routing, dynamic ratio, cache,
-and realtime source-fill closed.
+Complete the Batch 29.6CH concealed development listen, then make the Batch
+29.6CI whole-architecture decision. Keep parameter lattices, holdout, product
+routing, dynamic ratio, cache, and realtime source-fill closed.

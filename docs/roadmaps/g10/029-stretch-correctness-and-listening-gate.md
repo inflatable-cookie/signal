@@ -990,13 +990,13 @@ Status: closed without exposure. No development candidate qualified.
 
 ### Batch 29.6CH - Source-Studied Complete Architecture Proof
 
-- [ ] add Signalsmith Stretch to the frozen synthetic and nine-row development
+- [x] add Signalsmith Stretch to the frozen synthetic and nine-row development
   comparator set
-- [ ] implement one report-only frequency-partitioned long/middle/short path
+- [x] implement one report-only frequency-partitioned long/middle/short path
   with guidance-only classification and explicit phase states
-- [ ] retain one fixed-grid weighted multi-predictor control under the same
+- [x] retain one fixed-grid weighted multi-predictor control under the same
   schedule, boundary, and measurement contract
-- [ ] run the complete synthetic gate, all nine mono development rows, and one
+- [x] run the complete synthetic gate, all nine mono development rows, and one
   concealed listening pack only after hard integrity passes
 - [ ] decide on the whole architecture; do not open parameter lattices or
   per-metric repair batches
@@ -1864,10 +1864,27 @@ Status: closed without exposure. No development candidate qualified.
   time-adaptive full-band successor and freezes those two shapes for one
   complete-system comparison. Batch 29.6CH owns that proof; local repair,
   parameter lattices, and per-metric follow-up chains remain closed.
+- 2026-07-13: Batch 29.6CH implements the source-studied comparison without
+  production routing. The Signal candidate runs synchronized `1024/2048/4096`
+  transforms with exclusive high/middle/low frequency ownership, valley-guided
+  crossovers, and ordinary, peak-locked, reset, attack, unlocked, and linked
+  phase states. The control uses one `2048` grid with horizontal advance and
+  weighted vertical predictions from both directions at two distances.
+  Signalsmith Stretch `1.3.2` joins current Signal and Rubber Band R3 across
+  all nine development rows. Both Signal paths pass exact length, coverage,
+  finiteness, boundaries, ownership, repeat, and nine-row integrity. The
+  fixed-grid control passes the synthetic quality gate. The partitioned path
+  passes event placement at `190` frames but misses tone error by `1 Hz`:
+  measured `3 Hz` against the frozen `2 Hz` limit. No parameter changes follow.
+  Architecture hashes are `11782ecfa04f8ccf` and `606ac2b9c259c97f`.
+  The concealed five-way pack passes `54`-file structure with hashes
+  `875dd80994c43efd`, `67a955adff0bfc7e`, and `6cfcb102460045a8`.
+  Holdout reads remain zero. Operator listening is the remaining Batch 29.6CH
+  gate before the whole-architecture Batch 29.6CI decision.
 
 ## Next Task
 
-Execute Batch 29.6CH under Rule 31 as one complete source-studied architecture
-proof. Compare frequency-partitioned long/middle/short synthesis against the
-fixed-grid weighted multi-predictor control. Do not reopen Rule 30AB or a
+Complete the concealed Batch 29.6CH five-way development listen at
+`target/stretch-source-studied-ch-development-pack`, then make the Batch
+29.6CI whole-architecture decision. Do not reopen Rule 30AB or a
 parameter-repair sequence.

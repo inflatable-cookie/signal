@@ -46,7 +46,11 @@ pub(crate) fn event_error(output: &[f64], ratio: f64) -> usize {
         .unwrap_or(0)
 }
 
-pub(super) fn quality(input: &[f64], output: &[f64], _ratio: f64) -> [f64; 5] {
+pub(in crate::frequency_adaptive) fn quality(
+    input: &[f64],
+    output: &[f64],
+    _ratio: f64,
+) -> [f64; 5] {
     let input_rms = rms(input);
     let output_rms = rms(output);
     let crest =
