@@ -642,6 +642,48 @@ pub struct StretchTimeAdaptivePainlessReview {
     pub direction: StretchTimeAdaptivePainlessDirection,
 }
 
+/// Direction selected by the single-owner adaptive-frame proof.
+#[cfg(all(test, not(debug_assertions)))]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum StretchSingleOwnerAdaptiveDirection {
+    /// Ownership and identity gates pass; frozen study attachment may open.
+    StudyScheduleAttachment,
+    /// An ownership or identity gate fails and frame geometry must be revisited.
+    AdaptiveFrameGeometry,
+}
+
+/// Ownership evidence for one declared time-adaptive window schedule.
+#[cfg(all(test, not(debug_assertions)))]
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct StretchSingleOwnerScheduleEvidence {
+    /// Schedule family index and selected frame count.
+    pub family_and_frames: [usize; 2],
+    /// Unique centres, window owners, coefficient vectors, and maximum owners per centre.
+    pub owner_counts: [usize; 4],
+    /// Reported and independently expected selected complex coefficient totals.
+    pub coefficient_counts: [usize; 2],
+    /// Actual and maximum declared schedule frame counts.
+    pub work_bound: [usize; 2],
+    /// Duplicate owners and window, vector, and coefficient count mismatches.
+    pub ownership_failures: [usize; 4],
+    /// Stable ownership evidence hash.
+    pub evidence_hash: u64,
+}
+
+/// Complete release-only single-owner adaptive-frame report.
+#[cfg(all(test, not(debug_assertions)))]
+#[derive(Clone, Debug, PartialEq)]
+pub struct StretchSingleOwnerAdaptiveReview {
+    /// Unchanged Batch 29.6AI identity evidence.
+    pub identity: StretchTimeAdaptivePainlessReview,
+    /// Ownership evidence for all declared schedules.
+    pub schedules: Vec<StretchSingleOwnerScheduleEvidence>,
+    /// Stable aggregate identity and ownership hash.
+    pub evidence_hash: u64,
+    /// Selected continuation direction.
+    pub direction: StretchSingleOwnerAdaptiveDirection,
+}
+
 /// Direction selected by automatic Rényi time-resolution evidence.
 #[cfg(all(test, not(debug_assertions)))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

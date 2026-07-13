@@ -24,7 +24,8 @@ pub use types::{
     StretchMedianHpssDirection, StretchMixedPhaseDistributionDirection,
     StretchRenyiAttributionDirection, StretchRenyiGeometryDirection,
     StretchRenyiReassessmentDirection, StretchRenyiSelectorDirection,
-    StretchTimeAdaptivePainlessDirection, StretchTransientEvidenceDirection,
+    StretchSingleOwnerAdaptiveDirection, StretchTimeAdaptivePainlessDirection,
+    StretchTransientEvidenceDirection,
 };
 
 #[cfg(all(test, not(debug_assertions)))]
@@ -59,6 +60,8 @@ pub(crate) use residual_boundary_attribution::common_grid_residual_boundary_attr
 pub(crate) use three_row_nyquist::common_grid_three_row_nyquist_review;
 #[cfg(all(test, not(debug_assertions)))]
 mod time_adaptive_painless;
+#[cfg(all(test, not(debug_assertions)))]
+pub(crate) use time_adaptive_painless::single_owner_adaptive_frame_review;
 #[cfg(all(test, not(debug_assertions)))]
 pub(crate) use time_adaptive_painless::time_adaptive_painless_reconstruction_review;
 #[cfg(all(test, not(debug_assertions)))]

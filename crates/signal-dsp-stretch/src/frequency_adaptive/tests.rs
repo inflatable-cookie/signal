@@ -428,6 +428,49 @@ fn time_adaptive_painless_reconstruction_selects_identity_direction() {
 
 #[test]
 #[cfg(not(debug_assertions))]
+fn single_owner_adaptive_frame_selects_study_schedule_attachment() {
+    let first = single_owner_adaptive_frame_review();
+    let repeated = single_owner_adaptive_frame_review();
+    assert_eq!(first, repeated);
+    assert_eq!(first.identity.evidence_hash, 0x6987_080e_517f_1aec);
+    assert_eq!(first.schedules.len(), 5);
+    assert!(first.schedules.iter().all(|schedule| {
+        schedule.owner_counts[0] == schedule.family_and_frames[1]
+            && schedule.owner_counts[1] == schedule.family_and_frames[1]
+            && schedule.owner_counts[2] == schedule.family_and_frames[1]
+            && schedule.owner_counts[3] == 1
+            && schedule.coefficient_counts[0] == schedule.coefficient_counts[1]
+            && schedule.work_bound[0] <= schedule.work_bound[1]
+            && schedule.ownership_failures == [0; 4]
+            && schedule.evidence_hash != 0
+    }));
+    assert_eq!(
+        first.direction,
+        StretchSingleOwnerAdaptiveDirection::StudyScheduleAttachment
+    );
+    assert_ne!(first.evidence_hash, 0);
+    eprintln!(
+        "single_owner_adaptive_frame schedules={:?} identity={:016x} evidence={:016x} direction={:?}",
+        first
+            .schedules
+            .iter()
+            .map(|schedule| (
+                schedule.family_and_frames,
+                schedule.owner_counts,
+                schedule.coefficient_counts,
+                schedule.work_bound,
+                schedule.ownership_failures,
+                schedule.evidence_hash,
+            ))
+            .collect::<Vec<_>>(),
+        first.identity.evidence_hash,
+        first.evidence_hash,
+        first.direction,
+    );
+}
+
+#[test]
+#[cfg(not(debug_assertions))]
 fn simultaneous_multi_window_union_selects_study_direction() {
     use super::simultaneous_multi_window::{review, Direction};
 

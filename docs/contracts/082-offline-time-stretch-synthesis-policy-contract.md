@@ -2423,6 +2423,47 @@ Failure returns to adaptive-frame geometry. Passage opens only attachment of
 the frozen study and global output-hop schedule; stretched phase, corpus audio,
 holdout, and tuning remain closed.
 
+Batch 29.6BP passes all five declared schedules. Every analysis centre has one
+unique window owner and one coefficient vector; duplicate ownership and all
+count mismatches are zero. Selected complex coefficient totals are `86016`,
+`659456`, `131072`, `135168`, and `172032`, each derived only from selected
+frames. The all-short schedule reaches but does not exceed the fixed `161`-
+frame work bound. The complete Rule 26I identity hash remains
+`6987080e517f1aec`; ownership evidence hash `2a29d952d91e92ba` repeats exactly.
+
+#### Rule 30L: attach study and time map without phase
+
+Batch 29.6BQ reuses the three frozen Rule 30B/30C linked controls at ratios
+`0.75`, `1.5`, and `2.0`. Reuse their continuous study, responsive selected
+points, and positive-integer `128`-grid output schedules unchanged. Selected
+points drive the Rule 26I island geometry: centres within `256` source frames
+use `512`; within `768` use `1024`; within `1792` use `2048`; all others use
+`4096`. Overlap takes the shortest request. Adjacent levels and source hops
+remain governed by Rule 30K.
+
+Every adaptive-frame centre is on the same `128`-frame source grid. Project an
+in-range centre through the one Rule 30C output position at that grid index.
+Project reflected support outside the source by rounded global ratio only.
+Do not interpolate, floor to another grid, create a resolution-local map, or
+modify coefficients or phase.
+
+Report selected points, window counts, source/output centres, source/output hop
+extrema, duplicate source and output centres, mapping disagreements across
+window levels, event displacement, reflected projections, exact endpoint,
+schedule/ownership/mapping hashes, and non-finite values. Require:
+
+- one legal adaptive window owner per source centre
+- strictly increasing in-range output centres and positive output hops
+- every centre maps to the exact shared Rule 30C position
+- selected-event movement at most `256` output frames
+- exact Rule 30C endpoint and requested duration
+- zero mapping differences by selected resolution or linked-channel order
+- finite values and exact repeat
+
+Passage opens one separately frozen single-frame phase/synthesis proof. Failure
+returns to study-to-frame mapping only. Stretched phase, corpus audio, holdout,
+and tuning remain closed in Batch 29.6BQ.
+
 ## Clean-Room Rule
 
 Public papers and public algorithm descriptions may inform Signal design.
@@ -2431,5 +2472,5 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Execute Batch 29.6BP single-owner adaptive-frame proof. Keep stretched phase,
-corpus audio, holdout, and tuning closed.
+Execute Batch 29.6BQ study and time-map attachment proof. Keep coefficient and
+phase modification, corpus audio, holdout, and tuning closed.

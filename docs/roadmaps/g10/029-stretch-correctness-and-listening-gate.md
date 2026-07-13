@@ -814,15 +814,26 @@ Status: closed without exposure. No development candidate qualified.
 
 ### Batch 29.6BP - Single-Owner Adaptive-Frame Proof
 
-- [ ] re-express the passing `512/1024/2048/4096` painless schedule proof as
+- [x] re-express the passing `512/1024/2048/4096` painless schedule proof as
   one selected window and coefficient vector per analysis centre
-- [ ] prove zero duplicate centre ownership, selected-frame-only coefficient
+- [x] prove zero duplicate centre ownership, selected-frame-only coefficient
   counts, legal transitions, positive coverage, condition at most `4`, and
   bounded reflected support across the frozen declared schedules
-- [ ] preserve exact diagonal-dual identity, real closure, exact length,
+- [x] preserve exact diagonal-dual identity, real closure, exact length,
   deterministic repeat, and Rule 26I numerical gates on its frozen controls
-- [ ] keep study attachment, output-hop modification, phase modification,
+- [x] keep study attachment, output-hop modification, phase modification,
   corpus audio, holdout, and tuning closed
+
+### Batch 29.6BQ - Study And Time-Map Attachment Proof
+
+- [ ] reuse the frozen linked study, responsive selected points, and Rule 30C
+  positive-integer schedules at `0.75`, `1.5`, and `2.0`
+- [ ] map selected points through the proven adaptive island geometry and give
+  every adaptive centre the exact shared `128`-grid output position
+- [ ] prove one mapping across resolutions, positive output hops, exact endpoint,
+  bounded event displacement, linked-order equivalence, and deterministic hashes
+- [ ] keep coefficient and phase modification, corpus audio, holdout, and tuning
+  closed
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -1497,9 +1508,15 @@ Status: closed without exposure. No development candidate qualified.
   window and coefficient vector per centre, one global time map, exact diagonal
   dual, bounded reflection, and linked decisions. Batch 29.6BP owns the
   single-owner implementation proof before stretched phase resumes.
+- 2026-07-13: Batch 29.6BP passes all five declared schedules. Every centre has
+  one window and coefficient vector; duplicate ownership and count mismatches
+  are zero. Selected coefficients remain within the fixed `161`-frame bound,
+  the original identity hash stays `6987080e517f1aec`, and ownership hash
+  `2a29d952d91e92ba` repeats. Batch 29.6BQ owns study and one-global-map
+  attachment without coefficient or phase modification.
 
 ## Next Task
 
-Execute Batch 29.6BP. Prove single-owner adaptive-frame invariants on the frozen
-declared schedules. Keep study attachment, stretched phase, corpus audio,
-holdout, and tuning closed.
+Execute Batch 29.6BQ. Attach the frozen study and globally exact output schedule
+to the single-owner adaptive frame. Keep coefficient and phase modification,
+corpus audio, holdout, and tuning closed.

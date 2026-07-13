@@ -268,13 +268,14 @@ Current stretch status:
   proof also fails, leaving roughly `162` frames of mean disagreement and low
   `0.134` correlation. Redundant full-band ownership is closed. The bounded
   review selects one time-adaptive painless NSG frame with one window and
-  coefficient vector per analysis centre. A single-owner mechanics proof is
-  next before study, mapping, and phase are reattached.
+  coefficient vector per analysis centre. Its single-owner mechanics proof
+  passes all five schedules with the prior identity hash unchanged. Study and
+  one-global-map attachment are next; phase remains closed.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Execute `g10.029` Batch 29.6BP. Prove the frozen single-owner adaptive-frame
-mechanics before stretched phase, corpus audio, holdout, or tuning.
+Execute `g10.029` Batch 29.6BQ. Attach the frozen study and globally exact
+output schedule to the adaptive frame without coefficient or phase changes.

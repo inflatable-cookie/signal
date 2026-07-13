@@ -1,6 +1,11 @@
+use std::collections::BTreeMap;
+
 use rustfft::{num_complex::Complex64, FftPlanner};
 
 use super::types::{
+    StretchSingleOwnerAdaptiveDirection as OwnerDirection,
+    StretchSingleOwnerAdaptiveReview as OwnerReview,
+    StretchSingleOwnerScheduleEvidence as OwnerEvidence,
     StretchTimeAdaptivePainlessDirection as Direction, StretchTimeAdaptivePainlessReview as Review,
     StretchTimeAdaptiveScheduleEvidence as ScheduleEvidence,
 };
@@ -11,6 +16,11 @@ const SOURCE_FRAMES: usize = 8_192;
 const SAMPLE_RATE_HZ: f64 = 48_000.0;
 const PAD: isize = 4_096;
 const WINDOW_LENGTHS: [usize; 4] = [512, 1_024, 2_048, 4_096];
+const MIN_HOP: isize = WINDOW_LENGTHS[0] as isize / 4;
+const SCHEDULE_START: isize = -PAD - FFT_FRAMES as isize / 2;
+const SCHEDULE_END: isize = SOURCE_FRAMES as isize + PAD + FFT_FRAMES as isize / 2;
+const MAX_DECLARED_SCHEDULE_FRAMES: usize =
+    ((SCHEDULE_END - SCHEDULE_START) / MIN_HOP) as usize + 1;
 
 #[derive(Clone, Copy)]
 struct Frame {
@@ -37,6 +47,70 @@ pub(crate) fn time_adaptive_painless_reconstruction_review() -> Review {
     };
     review.evidence_hash = review_hash(&review);
     review
+}
+
+pub(crate) fn single_owner_adaptive_frame_review() -> OwnerReview {
+    let identity = time_adaptive_painless_reconstruction_review();
+    let schedules = identity
+        .schedules
+        .iter()
+        .map(single_owner_schedule_evidence)
+        .collect::<Vec<_>>();
+    let pass = identity.direction == Direction::AutomaticSelectionContract
+        && schedules.iter().all(|schedule| {
+            schedule.ownership_failures == [0; 4]
+                && schedule.owner_counts[3] == 1
+                && schedule.work_bound[0] <= schedule.work_bound[1]
+        });
+    let mut review = OwnerReview {
+        identity,
+        schedules,
+        evidence_hash: 0,
+        direction: if pass {
+            OwnerDirection::StudyScheduleAttachment
+        } else {
+            OwnerDirection::AdaptiveFrameGeometry
+        },
+    };
+    review.evidence_hash = single_owner_review_hash(&review);
+    review
+}
+
+fn single_owner_schedule_evidence(identity: &ScheduleEvidence) -> OwnerEvidence {
+    let family = identity.family_and_frames[0];
+    let frames = schedule(family);
+    let mut owners_by_center = BTreeMap::<isize, usize>::new();
+    for frame in &frames {
+        *owners_by_center.entry(frame.center).or_default() += 1;
+    }
+    let duplicate_owners = owners_by_center
+        .values()
+        .map(|owners| owners.saturating_sub(1))
+        .sum();
+    let maximum_owners = owners_by_center.values().copied().max().unwrap_or(0);
+    let selected_coefficients = frames.len() * FFT_FRAMES;
+    let expected_coefficients = identity.family_and_frames[1] * FFT_FRAMES;
+    let ownership_failures = [
+        duplicate_owners,
+        frames.len().abs_diff(identity.family_and_frames[1]),
+        frames.len().abs_diff(identity.family_and_frames[1]),
+        selected_coefficients.abs_diff(identity.work_counts[1]),
+    ];
+    let mut evidence = OwnerEvidence {
+        family_and_frames: [family, frames.len()],
+        owner_counts: [
+            owners_by_center.len(),
+            frames.len(),
+            frames.len(),
+            maximum_owners,
+        ],
+        coefficient_counts: [selected_coefficients, expected_coefficients],
+        work_bound: [frames.len(), MAX_DECLARED_SCHEDULE_FRAMES],
+        ownership_failures,
+        evidence_hash: 0,
+    };
+    evidence.evidence_hash = single_owner_schedule_hash(&evidence);
+    evidence
 }
 
 fn review_schedule(family: usize, controls: &[Vec<f64>]) -> ScheduleEvidence {
@@ -220,11 +294,12 @@ fn reconstruct(
 
 fn schedule(family: usize) -> Vec<Frame> {
     let mut frames = Vec::new();
-    let domain_start = -PAD;
-    let domain_end = SOURCE_FRAMES as isize + PAD;
-    let mut center = domain_start - FFT_FRAMES as isize / 2;
+    let mut center = SCHEDULE_START;
     let mut length = desired_length(family, center);
-    while center <= domain_end + FFT_FRAMES as isize / 2 {
+    for _ in 0..MAX_DECLARED_SCHEDULE_FRAMES {
+        if center > SCHEDULE_END {
+            break;
+        }
         frames.push(Frame { center, length });
         let proposed_center = center + length as isize / 4;
         let desired = desired_length(family, proposed_center);
@@ -233,6 +308,7 @@ fn schedule(family: usize) -> Vec<Frame> {
         center += length.min(next_length) as isize / 4;
         length = next_length;
     }
+    debug_assert!(center > SCHEDULE_END);
     frames
 }
 
@@ -423,6 +499,30 @@ fn review_hash(review: &Review) -> u64 {
     let mut hash = HASH_OFFSET;
     for schedule in &review.schedules {
         hash_u64(&mut hash, schedule.hashes[5]);
+    }
+    hash
+}
+
+fn single_owner_schedule_hash(evidence: &OwnerEvidence) -> u64 {
+    let mut hash = HASH_OFFSET;
+    for value in evidence
+        .family_and_frames
+        .into_iter()
+        .chain(evidence.owner_counts)
+        .chain(evidence.coefficient_counts)
+        .chain(evidence.work_bound)
+        .chain(evidence.ownership_failures)
+    {
+        hash_usize(&mut hash, value);
+    }
+    hash
+}
+
+fn single_owner_review_hash(review: &OwnerReview) -> u64 {
+    let mut hash = HASH_OFFSET;
+    hash_u64(&mut hash, review.identity.evidence_hash);
+    for schedule in &review.schedules {
+        hash_u64(&mut hash, schedule.evidence_hash);
     }
     hash
 }

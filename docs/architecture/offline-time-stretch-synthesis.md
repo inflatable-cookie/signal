@@ -627,7 +627,19 @@ length comes from schedule plus crop rather than fill. Linked channels share
 study, resolution, mapping, peak, and reset decisions while retaining
 per-channel spectra and interchannel phase.
 
+The single-owner mechanics proof passes without changing the earlier identity
+system. All five declared schedules have one unique window and coefficient
+vector at each centre, no count mismatches, bounded selected-frame work, and
+the unchanged `6987080e517f1aec` identity hash. The representation boundary is
+closed.
+
+The next proof attaches timing without synthesis phase. Existing linked study
+points drive the already proven short-window island geometry. Because every
+adaptive centre remains on the `128`-frame base grid, each centre reads the one
+globally exact output position already owned by the local schedule. Resolution
+does not interpolate, quantize, or own another map.
+
 ## Next Task
 
-Prove the single-owner adaptive-frame invariants before attaching stretched
-phase, corpus audio, holdout, or tuning.
+Attach the frozen study and global output-hop schedule to the adaptive frame.
+Keep coefficient and phase modification closed.

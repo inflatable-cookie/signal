@@ -159,5 +159,5 @@ Promoted into:
 
 ## Next Task
 
-Execute Batch 29.6BP single-owner adaptive-frame proof. Keep stretched phase,
-corpus audio, holdout, and tuning closed.
+Execute Batch 29.6BQ study and time-map attachment proof. Keep coefficient and
+phase modification, corpus audio, holdout, and tuning closed.
