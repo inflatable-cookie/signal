@@ -128,6 +128,25 @@ pub(super) fn render_ordinary_traced(
     )
 }
 
+pub(super) fn render_ordinary_fixed(
+    channels: &[Vec<f64>],
+    ratio: f64,
+    points: &[usize],
+    schedule: &Schedule,
+    length: usize,
+) -> Render {
+    render_frames(
+        channels,
+        ratio,
+        points,
+        points,
+        &[],
+        schedule,
+        Mode::Ordinary,
+        schedule::fixed(ratio, length, schedule),
+    )
+}
+
 fn render_frames(
     channels: &[Vec<f64>],
     ratio: f64,

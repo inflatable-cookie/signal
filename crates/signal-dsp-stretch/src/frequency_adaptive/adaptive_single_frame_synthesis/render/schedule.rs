@@ -4,10 +4,33 @@ use super::super::super::HASH_OFFSET;
 use super::super::anchors::projected;
 use super::{window, Frame};
 
+const FIXED_LENGTHS: [usize; 4] = [512, 1_024, 2_048, 4_096];
+const PAD: isize = 4_096;
+const FFT_FRAMES: isize = 4_096;
+
 pub(super) fn legacy(ratio: f64, points: &[usize], schedule: &Schedule) -> Vec<Frame> {
     adaptive_schedule_for_points(SOURCE_FRAMES, points)
         .into_iter()
         .map(|(source, length)| Frame {
+            source,
+            output: if source < 0 || source > SOURCE_FRAMES as isize {
+                (ratio * source as f64).round() as isize
+            } else {
+                schedule.positions[source as usize / BASE_HOP] as isize
+            },
+            length,
+        })
+        .collect()
+}
+
+pub(super) fn fixed(ratio: f64, length: usize, schedule: &Schedule) -> Vec<Frame> {
+    assert!(FIXED_LENGTHS.contains(&length), "fixed window-bank length");
+    let start = -PAD - FFT_FRAMES / 2;
+    let end = SOURCE_FRAMES as isize + PAD + FFT_FRAMES / 2;
+    let hop = length as isize / 4;
+    (start..=end)
+        .step_by(hop as usize)
+        .map(|source| Frame {
             source,
             output: if source < 0 || source > SOURCE_FRAMES as isize {
                 (ratio * source as f64).round() as isize

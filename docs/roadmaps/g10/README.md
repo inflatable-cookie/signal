@@ -296,8 +296,12 @@ Current stretch status:
   assigns the dominant damage to ordinary adaptive synthesis: its first
   transition owns `8/9`, `7/9`, `9/9`, and `9/9` regressions respectively and
   seven endpoint-integrity failures. Active tracking partly repairs it;
-  event-local overlap ownership changes no real-source output. Batch 29.6CA
-  separates fixed resolution from adaptive transitions. Holdout and listening
+  event-local overlap ownership changes no real-source output. Fixed controls
+  then split the ordinary defect: endpoint integrity improves from `9/9`
+  failures at `512` and `1024` through `4/9` at `2048` to `0/9` at `4096`;
+  adaptive timing remains worst; every fixed and adaptive ordinary render
+  regresses static-spectrum and formant residual in `9/9` rows. Batch 29.6CB
+  factors the shared phase/output-lattice mechanism. Holdout and listening
   remain closed.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
@@ -305,6 +309,7 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Execute `g10.029` Batch 29.6CA under Rule 30V. Separate fixed-resolution
-behavior from adaptive-transition behavior inside ordinary synthesis without
-reading holdout, exporting listening audio, or changing policy.
+Execute `g10.029` Batch 29.6CB under Rule 30W. Factor phase transport,
+event-warped output placement, and diagonal-dual overlap synthesis on fixed
+`4096` without reading holdout, exporting listening audio, tuning, or changing
+policy.

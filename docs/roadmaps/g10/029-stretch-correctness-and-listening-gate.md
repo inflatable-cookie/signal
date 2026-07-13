@@ -924,12 +924,21 @@ Status: closed without exposure. No development candidate qualified.
 
 ### Batch 29.6CA - Ordinary Resolution And Transition Attribution
 
-- [ ] compare fixed `512`, `1024`, `2048`, and `4096` ordinary controls with
+- [x] compare fixed `512`, `1024`, `2048`, and `4096` ordinary controls with
   adaptive ordinary synthesis on the unchanged nine development rows
-- [ ] assign the defect to a fixed resolution, adaptive transitions, or the
+- [x] assign the defect to a fixed resolution, adaptive transitions, or the
   shared ordinary phase/output-lattice mechanism before redesign
-- [ ] keep holdout, listening export, tuning, detector/schedule policy, stereo,
+- [x] keep holdout, listening export, tuning, detector/schedule policy, stereo,
   dynamic ratio, cache, and product routing closed
+
+### Batch 29.6CB - Ordinary Shared-Mechanism Factor Attribution
+
+- [ ] freeze the clean-integrity fixed `4096` control and compare the current
+  event-warped output lattice with a global linear lattice
+- [ ] separate phase-transport changes from lattice placement and diagonal-dual
+  overlap synthesis before proposing another complete candidate
+- [ ] keep the window bank, detector, event schedule, measurements, holdout,
+  listening, stereo, dynamic ratio, cache, and routing frozen
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -1710,11 +1719,22 @@ Status: closed without exposure. No development candidate qualified.
   Frozen hashes are `59fde9d5897fe070`, `43806ef3d1b3a311`,
   `30b29a8a65b50861`, and `557eaf8e6c9ee5c5`. Holdout and listening remain
   closed. Batch 29.6CA owns fixed-resolution versus transition attribution.
+- 2026-07-13: Batch 29.6CA splits the ordinary defect across three owners.
+  Endpoint integrity is resolution-dependent: fixed `512`, `1024`, `2048`,
+  and `4096` fail `9/9`, `9/9`, `4/9`, and `0/9`; adaptive fails `7/9` across
+  `214` resolution changes. Every fixed control and adaptive ordinary regresses
+  static-spectrum and formant residual in `9/9` rows, assigning that damage to
+  the shared ordinary mechanism. Adaptive timing is worse than each fixed
+  control in `5` to `7` rows and has the largest mean loss at `+196.166667`
+  frames, exposing a separate transition cost. Frozen hashes are
+  `c4cde9a638c1e36e`, `9a3ff69ddc1dc765`, `3e4f4a8489a8217d`, and
+  `c00d6c130888505a`. Holdout and listening remain closed. Batch 29.6CB owns
+  phase-transport versus output-lattice attribution on fixed `4096`.
 
 ## Next Task
 
-Execute Batch 29.6CA under Rule 30V. Compare the four fixed window-bank lengths
-with adaptive ordinary synthesis to assign fixed resolution, adaptive
-transitions, or the shared phase/output lattice. Keep holdout, listening,
-tuning, detector/schedule policy, linked stereo, dynamic ratio, cache, and
+Execute Batch 29.6CB under Rule 30W. On the fixed `4096` clean-integrity
+control, separate ordinary phase transport from event-warped output placement
+and diagonal-dual overlap synthesis. Keep holdout, listening, tuning, window
+selection, detector/schedule policy, linked stereo, dynamic ratio, cache, and
 routing closed.

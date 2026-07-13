@@ -754,9 +754,19 @@ none of the nine real-source outputs. The next boundary is therefore the
 ordinary adaptive representation: fixed window resolution versus resolution
 transitions versus their shared phase/output lattice.
 
+Fixed-resolution attribution shows that this boundary has three layers.
+Endpoint integrity improves monotonically across the existing window bank:
+fixed `512`, `1024`, `2048`, and `4096` fail `9/9`, `9/9`, `4/9`, and `0/9`
+rows, while adaptive fails `7/9`. Adaptive synthesis also has the largest mean
+timing loss. Resolution and transitions do not explain the timbral defect,
+however: every fixed length and adaptive ordinary synthesis regresses both
+static-spectrum and formant residual in all nine rows. That common damage now
+belongs to the shared phase transport, output lattice, diagonal-dual overlap,
+or their interaction.
+
 ## Next Task
 
-Run Rule 30V on the frozen nine-row mono development set. Compare fixed `512`,
-`1024`, `2048`, and `4096` ordinary controls with adaptive ordinary synthesis
-before any redesign, holdout read, listening export, tuning, stereo, dynamic,
-cache, or routing work.
+Run Rule 30W on the fixed `4096` clean-integrity control. Factor ordinary phase
+transport, event-warped versus global-linear output placement, and
+diagonal-dual overlap synthesis before any redesign, holdout read, listening
+export, tuning, stereo, dynamic, cache, or routing work.

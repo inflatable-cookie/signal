@@ -2835,6 +2835,35 @@ controls, not a parameter search. Do not select or tune a production window,
 read holdout, export listening audio, change detection or scheduling policy,
 or open linked stereo, dynamic ratio, cache, or routing.
 
+Rule 30V splits the defect rather than assigning one false owner. Fixed `512`,
+`1024`, `2048`, and `4096` fail endpoint integrity in `9/9`, `9/9`, `4/9`, and
+`0/9` rows; adaptive fails `7/9` while making `214` resolution changes. All
+five ordinary variants regress static-spectrum and formant residuals in `9/9`
+rows against current Signal. Adaptive ordinary has the largest mean timing
+loss, `+196.166667` frames, and regresses timing against each fixed control in
+`5` to `7` rows. Resolution therefore owns endpoint integrity, transitions add
+timing damage, and the shared ordinary phase/output-lattice mechanism owns the
+broad spectral/formant damage.
+
+Manifest, render, measurement, and aggregate hashes are
+`c4cde9a638c1e36e`, `9a3ff69ddc1dc765`, `3e4f4a8489a8217d`, and
+`c00d6c130888505a`. The TSV SHA-256 is
+`b5e16237c11d4733e874ac09d1ca41007690518c915a48fed1c00cd4c07b5ace`.
+Holdout reads and listening exports remain zero.
+
+#### Rule 30W: factor the shared ordinary mechanism on fixed 4096
+
+Batch 29.6CB keeps the Rule 30V rows, ratios, measurements, fixed `4096`
+analysis geometry, ordinary phase policy, and diagonal-dual synthesis frozen.
+Compare the current event-warped output lattice with a global linear lattice,
+then use bounded report-only phase and overlap ablations to assign the shared
+spectral/formant regression to phase transport, lattice placement,
+diagonal-dual overlap synthesis, or an interaction between them.
+
+This is mechanism attribution, not a candidate or parameter sweep. Do not
+change the window bank, detector, event schedule, production policy, holdout,
+listening export, linked stereo, dynamic ratio, cache, or routing.
+
 ## Clean-Room Rule
 
 Public papers and public algorithm descriptions may inform Signal design.
@@ -2843,7 +2872,8 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Execute Batch 29.6CA under Rule 30V. Separate fixed-resolution behavior from
-adaptive-transition behavior inside ordinary synthesis. Keep holdout,
-listening export, parameter changes, linked stereo, dynamic ratio, cache, and
-routing closed.
+Execute Batch 29.6CB under Rule 30W. Factor phase transport, output-lattice
+placement, and diagonal-dual overlap synthesis on the fixed `4096`
+clean-integrity control. Keep holdout, listening, tuning, window selection,
+detector/schedule policy, linked stereo, dynamic ratio, cache, and routing
+closed.

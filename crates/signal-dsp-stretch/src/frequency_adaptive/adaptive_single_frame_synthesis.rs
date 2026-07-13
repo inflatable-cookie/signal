@@ -7,6 +7,7 @@ mod overlap_ownership;
 mod ownership;
 pub(super) mod quality;
 mod render;
+mod resolution_attribution;
 mod stage_attribution;
 
 pub(super) use attribution::{attribution_review, AttributionDirection};
@@ -16,6 +17,9 @@ pub(super) use overlap_ownership::overlap_ownership_review;
 pub(super) use ownership::{ownership_review, OwnershipDirection};
 pub(super) use quality::{
     owned_successor_quality_review, quality_review, successor_quality_review, QualityDirection,
+};
+pub(super) use resolution_attribution::{
+    resolution_attribution_review, ResolutionAttributionDirection,
 };
 pub(super) use stage_attribution::{stage_attribution_review, StageAttributionDirection};
 

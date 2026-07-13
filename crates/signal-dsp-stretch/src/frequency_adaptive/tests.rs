@@ -1043,6 +1043,56 @@ fn adaptive_single_frame_real_source_stage_attribution_is_frozen() {
 
 #[test]
 #[cfg(not(debug_assertions))]
+fn adaptive_single_frame_real_source_resolution_attribution_is_frozen() {
+    use super::adaptive_single_frame_synthesis::{
+        resolution_attribution_review, ResolutionAttributionDirection,
+    };
+
+    let first = resolution_attribution_review();
+    let repeated = resolution_attribution_review();
+    eprintln!("adaptive_single_frame_resolution_attribution {first:?}");
+    assert_eq!(first, repeated);
+    assert_eq!(first.rows, 9);
+    assert_eq!(first.modes, 6);
+    assert_eq!(first.renders, 54);
+    assert_eq!(first.holdout_reads, 0);
+    assert_eq!(first.hard_failures, 29, "{first:?}");
+    assert_eq!(first.hard_failures_by_mode, [0, 9, 9, 4, 0, 7]);
+    assert_eq!(first.event_fallback_renders, 35);
+    assert_eq!(first.resolution_changes, [0, 0, 0, 0, 214]);
+    assert_eq!(first.changed_from_current, [9; 5]);
+    assert_eq!(first.changed_from_adaptive, [9; 4]);
+    assert_eq!(
+        first.regression_from_current,
+        [
+            [6, 7, 9, 9],
+            [7, 6, 9, 9],
+            [4, 4, 9, 9],
+            [6, 4, 9, 9],
+            [8, 7, 9, 9],
+        ]
+    );
+    assert_eq!(
+        first.adaptive_regression_from_fixed,
+        [[6, 4, 2, 0], [5, 6, 8, 3], [7, 5, 7, 7], [6, 5, 6, 6]]
+    );
+    assert_eq!(
+        first.hashes,
+        [
+            0xc4cd_e9a6_38c1_e36e,
+            0x9a3f_f69d_dc1d_c765,
+            0x3e4f_4a84_89a8_217d,
+            0xc00d_6c13_0888_505a,
+        ]
+    );
+    assert_eq!(
+        first.direction,
+        ResolutionAttributionDirection::SplitResolutionTransitionAndSharedMechanism
+    );
+}
+
+#[test]
+#[cfg(not(debug_assertions))]
 fn adaptive_single_frame_failure_attribution_selects_bounded_redesign() {
     use super::adaptive_single_frame_synthesis::{attribution_review, AttributionDirection};
 
