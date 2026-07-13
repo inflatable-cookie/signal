@@ -8,7 +8,7 @@ use super::control::{sinusoid, RATIOS, SAMPLE_RATE};
 const DENSE_EXCLUSION: usize = 32;
 const TIMING_SEARCH: usize = 512;
 
-pub(super) fn error(input: &[f64], output: &[f64]) -> [f64; 4] {
+pub(in crate::frequency_adaptive) fn error(input: &[f64], output: &[f64]) -> [f64; 4] {
     let differences = input
         .iter()
         .zip(output)
@@ -154,7 +154,7 @@ pub(super) fn texture(source: &[f64], output: &[f64], ratio: f64) -> [f64; 6] {
     ]
 }
 
-pub(super) fn peak(samples: &[f64]) -> f64 {
+pub(in crate::frequency_adaptive) fn peak(samples: &[f64]) -> f64 {
     samples
         .iter()
         .map(|sample| sample.abs())

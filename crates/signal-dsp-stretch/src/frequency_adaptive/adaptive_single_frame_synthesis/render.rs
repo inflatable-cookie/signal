@@ -1,5 +1,7 @@
 mod phase;
+mod schedule;
 mod trace;
+mod tracking;
 
 use rustfft::{num_complex::Complex64, FftPlanner};
 
@@ -8,7 +10,6 @@ use trace::hash_phase_trace;
 pub(super) use trace::{PhaseFrameTrace, SynthesisFrameTrace};
 
 use super::super::study_local_schedule::{schedule::Schedule, BASE_HOP, SOURCE_FRAMES};
-use super::super::time_adaptive_painless::adaptive_schedule_for_points;
 use super::super::HASH_OFFSET;
 
 const FFT_FRAMES: usize = 4_096;
@@ -19,15 +20,20 @@ pub(super) enum Mode {
     Event,
     Vertical,
     Both,
+    Successor,
 }
 
 impl Mode {
     pub(super) fn event(self) -> bool {
-        matches!(self, Self::Event | Self::Both)
+        matches!(self, Self::Event | Self::Both | Self::Successor)
     }
 
     pub(super) fn vertical(self) -> bool {
         matches!(self, Self::Vertical | Self::Both)
+    }
+
+    fn successor(self) -> bool {
+        self == Self::Successor
     }
 }
 
@@ -75,7 +81,41 @@ pub(super) fn render(
     schedule: &Schedule,
     mode: Mode,
 ) -> Render {
-    let frames = frames(ratio, points, schedule);
+    render_frames(
+        channels,
+        ratio,
+        points,
+        schedule,
+        mode,
+        schedule::legacy(ratio, points, schedule),
+    )
+}
+
+pub(super) fn render_successor(
+    channels: &[Vec<f64>],
+    ratio: f64,
+    resolution_points: &[usize],
+    anchors: &[usize],
+    schedule: &Schedule,
+) -> Render {
+    render_frames(
+        channels,
+        ratio,
+        anchors,
+        schedule,
+        Mode::Successor,
+        schedule::successor(ratio, resolution_points, anchors, schedule),
+    )
+}
+
+fn render_frames(
+    channels: &[Vec<f64>],
+    ratio: f64,
+    events: &[usize],
+    schedule: &Schedule,
+    mode: Mode,
+    frames: Vec<Frame>,
+) -> Render {
     let target_len = (ratio * SOURCE_FRAMES as f64).round() as usize;
     let output_start = frames
         .iter()
@@ -102,7 +142,7 @@ pub(super) fn render(
     let frame_min = crop_operator.iter().copied().fold(f64::INFINITY, f64::min);
     let frame_max = crop_operator.iter().copied().fold(0.0_f64, f64::max);
     let frame_values = [frame_min, frame_max, frame_max / frame_min];
-    let dual_hash = dual_hash(&frames, &operator, output_start);
+    let dual_hash = schedule::dual_hash(&frames, &operator, output_start);
     let mut outputs = vec![vec![Complex64::new(0.0, 0.0); domain_len]; channels.len()];
     let mut states = channels
         .iter()
@@ -111,7 +151,10 @@ pub(super) fn render(
     let mut planner = FftPlanner::<f64>::new();
     let forward = planner.plan_fft_forward(FFT_FRAMES);
     let inverse = planner.plan_fft_inverse(FFT_FRAMES);
-    let events = points
+    let tracking_channels = mode
+        .successor()
+        .then(|| tracking::analytic_channels(channels, &mut planner));
+    let events = events
         .iter()
         .copied()
         .filter(|point| *point > 0 && *point < SOURCE_FRAMES)
@@ -135,7 +178,8 @@ pub(super) fn render(
         let buffer_offset = (FFT_FRAMES - frame.length) / 2;
         let mut spectra = Vec::with_capacity(channels.len());
         let mut linked = vec![0.0_f64; FFT_FRAMES / 2 + 1];
-        for channel in channels {
+        let mut tracking_spectra = Vec::with_capacity(channels.len());
+        for (channel_index, channel) in channels.iter().enumerate() {
             let mut spectrum = vec![Complex64::new(0.0, 0.0); FFT_FRAMES];
             for (offset, weight) in weights.iter().copied().enumerate() {
                 let logical = frame.source - frame.length as isize / 2 + offset as isize;
@@ -151,14 +195,32 @@ pub(super) fn render(
                 hash(&mut coefficient_hash, value.im.to_bits());
             }
             spectra.push(spectrum);
+            if mode.successor() {
+                let tracking_weights = window(FFT_FRAMES);
+                tracking_spectra.push(tracking::spectrum(
+                    &tracking_channels.as_ref().expect("analytic channels")[channel_index],
+                    frame.source,
+                    &tracking_weights,
+                    &forward,
+                ));
+            }
         }
-        let peaks = peaks(&linked);
+        let tracking_linked = if mode.successor() {
+            tracking::linked(&tracking_spectra)
+        } else {
+            linked.clone()
+        };
+        let peaks = if mode.successor() {
+            tracking::active_peaks(&tracking_linked)
+        } else {
+            tracking::legacy_peaks(&linked)
+        };
         hash(&mut decision_hash, frame.source as i64 as u64);
         hash(&mut decision_hash, frame.length as u64);
         for peak in &peaks {
             hash(&mut decision_hash, *peak as u64);
         }
-        let trace_bin = linked
+        let trace_bin = tracking_linked
             .iter()
             .enumerate()
             .max_by(|left, right| left.1.total_cmp(right.1))
@@ -173,6 +235,7 @@ pub(super) fn render(
                 &peaks,
                 mode,
                 trace_bin,
+                tracking_spectra.get(channel_index).map(Vec::as_slice),
             );
             event_phase_changes += result.event_changes;
             vertical_phase_changes += result.vertical_changes;
@@ -294,7 +357,7 @@ pub(super) fn render(
         event_phase_changes,
         vertical_phase_changes,
         schedule_hash: schedule.hash,
-        frame_hash: frame_hash(&frames),
+        frame_hash: schedule::frame_hash(&frames),
         dual_hash,
         coefficient_hash,
         magnitude_hash,
@@ -305,31 +368,6 @@ pub(super) fn render(
         synthesis_trace,
         trace_hashes: [phase_trace_hash, synthesis_trace_hash],
     }
-}
-
-fn frames(ratio: f64, points: &[usize], schedule: &Schedule) -> Vec<Frame> {
-    adaptive_schedule_for_points(SOURCE_FRAMES, points)
-        .into_iter()
-        .map(|(source, length)| Frame {
-            source,
-            output: if source < 0 || source > SOURCE_FRAMES as isize {
-                (ratio * source as f64).round() as isize
-            } else {
-                schedule.positions[source as usize / BASE_HOP] as isize
-            },
-            length,
-        })
-        .collect()
-}
-
-fn peaks(linked: &[f64]) -> Vec<usize> {
-    (1..linked.len() - 1)
-        .filter(|bin| {
-            linked[*bin] > 1.0e-18
-                && linked[*bin] > linked[*bin - 1]
-                && linked[*bin] >= linked[*bin + 1]
-        })
-        .collect()
 }
 
 fn window(length: usize) -> Vec<f64> {
@@ -358,31 +396,6 @@ fn mirror(spectrum: &mut [Complex64]) {
     for bin in 1..FFT_FRAMES / 2 {
         spectrum[FFT_FRAMES - bin] = spectrum[bin].conj();
     }
-}
-
-fn frame_hash(frames: &[Frame]) -> u64 {
-    let mut state = HASH_OFFSET;
-    for frame in frames {
-        hash(&mut state, frame.source as i64 as u64);
-        hash(&mut state, frame.output as i64 as u64);
-        hash(&mut state, frame.length as u64);
-    }
-    state
-}
-
-fn dual_hash(frames: &[Frame], operator: &[f64], output_start: isize) -> u64 {
-    let mut state = HASH_OFFSET;
-    for frame in frames {
-        for (offset, weight) in window(frame.length).into_iter().enumerate() {
-            if weight == 0.0 {
-                continue;
-            }
-            let logical = frame.output - frame.length as isize / 2 + offset as isize;
-            let domain = (logical - output_start) as usize;
-            hash(&mut state, (weight / operator[domain]).to_bits());
-        }
-    }
-    state
 }
 
 fn hash(state: &mut u64, value: u64) {

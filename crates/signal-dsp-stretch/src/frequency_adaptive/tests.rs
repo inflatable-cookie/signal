@@ -757,6 +757,38 @@ fn adaptive_single_frame_failure_attribution_selects_bounded_redesign() {
 
 #[test]
 #[cfg(not(debug_assertions))]
+fn adaptive_single_frame_active_peak_and_anchor_ownership_passes() {
+    use super::adaptive_single_frame_synthesis::{ownership_review, OwnershipDirection};
+
+    let first = ownership_review();
+    let repeated = ownership_review();
+    eprintln!(
+        "adaptive_single_frame_active_peak_and_anchor_ownership failures={:?} identity={:?} tones={:?} events={:?} owners={:?} anchors={}/{} evidence={:016x} direction={:?}",
+        first.failure_counts,
+        first.maximum_identity_error,
+        first.maximum_tone_errors,
+        first.maximum_event_errors,
+        first.owner_counts,
+        first.detected_anchors,
+        first.expected_anchors,
+        first.evidence_hash,
+        first.direction,
+    );
+    assert_eq!(first, repeated);
+    assert_eq!(first.failure_counts, [0; 8], "{first:?}");
+    assert_eq!(first.detected_anchors, first.expected_anchors);
+    assert!(first.owner_counts[0] > 0, "{first:?}");
+    assert!(first.owner_counts[1] > 0, "{first:?}");
+    assert!(first.owner_counts[3] > 0, "{first:?}");
+    assert_ne!(first.evidence_hash, 0);
+    assert_eq!(
+        first.direction,
+        OwnershipDirection::SuccessorSyntheticQualityGate
+    );
+}
+
+#[test]
+#[cfg(not(debug_assertions))]
 fn complete_phase_synthesis_selects_bounded_tuning_direction() {
     use super::complete_phase_synthesis::{review, Direction};
 

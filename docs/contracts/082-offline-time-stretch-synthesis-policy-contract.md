@@ -2644,6 +2644,31 @@ ownership. Passage opens only the complete unchanged Rule 30N synthetic rerun.
 Corpus, holdout, listening, parameter search, stereo, dynamic ratio, cache, and
 product routing remain closed.
 
+Rule 30P passes all `32` control/ratio rows. The successor records `4,976`
+owner births, `46,588` one-to-one matches, `4,960` retirements, and `5,204,460`
+region assignments. Maximum rendered and matched-owner interior steady-tone
+errors are `8.211e-7` and `5.919e-7` radians/sample. The independent onset path
+detects and exactly attaches all `24/24` expected anchors. All eight hard
+failure classes are zero, identity errors stay below `6.674e-16`, and evidence
+hash `a2d3fb95545cb47f` repeats. A `262`-frame dense-event rendered-peak
+diagnostic is not an ownership failure; it remains exposed to the full quality
+gate.
+
+#### Rule 30Q: successor quality reuses the frozen synthetic gate
+
+Batch 29.6BV routes the Rule 30P successor through the complete Rule 30N
+matrix. Reuse every frozen control, ratio, ordinary ablation, hard limit, and
+reported crest, replica, spectrum, texture, and mode field. Do not adjust
+thresholds, onset detection, active-owner matching, frame geometry, event
+correction, or vertical locking while reading the result.
+
+Every Rule 30N structural, identity, pitch, isolated-event, dense one-to-one,
+silence, boundary, symmetry, finiteness, and exact-repeat check must pass.
+Failure returns to the earliest owning mechanism with the full row evidence;
+it does not open a parameter search. Passage opens only the frozen mono
+development objective comparison. Corpus, holdout, listening export, linked
+stereo, dynamic ratio, cache, and product routing remain closed.
+
 ## Clean-Room Rule
 
 Public papers and public algorithm descriptions may inform Signal design.
@@ -2652,7 +2677,7 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Execute Batch 29.6BU under Rule 30P. Prove active-peak phase state and separate
-sample-refined transient-anchor ownership before the complete synthetic quality
-rerun. Keep corpus audio, holdout, listening, tuning, linked-stereo promotion,
-dynamic ratio, and product routing closed.
+Execute Batch 29.6BV under Rule 30Q. Run the complete unchanged Rule 30N matrix
+through the successor renderer and return to the owning mechanism on any hard
+failure. Keep corpus audio, holdout, listening, tuning, linked-stereo
+promotion, dynamic ratio, and product routing closed.

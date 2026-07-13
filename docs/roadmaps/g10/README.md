@@ -275,14 +275,17 @@ Current stretch status:
   continuous single-frame phase/synthesis path now pass four controls. Synthetic
   quality then rejects the frozen mode on pitch and event placement despite
   intact structure and identity. Trace attribution assigns the failures to
-  dormant-bin phase continuation and missing independent event ownership.
-  Active-peak phase and sample-refined transient anchors are next; corpus audio
-  remains closed.
+  dormant-bin phase continuation and missing independent event ownership. The
+  successor mechanism now passes all `32` active-peak/transient-anchor rows:
+  tone errors stay below `1e-6`, all `24/24` expected anchors attach exactly,
+  all eight hard failure classes are zero, and evidence hash
+  `a2d3fb95545cb47f` repeats. A `262`-frame dense-event peak diagnostic remains
+  exposed to the complete synthetic quality gate. Corpus audio remains closed.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Execute `g10.029` Batch 29.6BU. Prove Rule 30P active-peak phase state and
-sample-refined transient-anchor ownership before the full synthetic rerun.
+Execute `g10.029` Batch 29.6BV. Run the complete unchanged Rule 30N matrix
+through the successor renderer under Rule 30Q. Do not tune thresholds.

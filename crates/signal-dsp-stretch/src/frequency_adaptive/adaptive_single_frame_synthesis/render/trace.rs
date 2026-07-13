@@ -35,6 +35,14 @@ pub(super) fn hash_phase_trace(state: &mut u64, trace: &PhaseFrameTrace) {
     hash(state, trace.phase.final_advance.to_bits());
     hash(state, trace.phase.event_assignment as u64);
     hash(state, trace.phase.vertical_assignment as u64);
+    if trace.phase.active_state_hash != 0 {
+        hash(state, trace.phase.owner_births as u64);
+        hash(state, trace.phase.owner_matches as u64);
+        hash(state, trace.phase.owner_retirements as u64);
+        hash(state, trace.phase.region_assignments as u64);
+        hash(state, trace.phase.active_state_hash);
+        hash(state, trace.phase.trace_owner_matched as u64);
+    }
 }
 
 fn hash(state: &mut u64, value: u64) {

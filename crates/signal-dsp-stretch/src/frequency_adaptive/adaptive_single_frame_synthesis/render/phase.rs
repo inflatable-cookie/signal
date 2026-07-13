@@ -1,6 +1,9 @@
+mod active;
+
 use rustfft::num_complex::Complex64;
 
 use super::{Frame, Mode, FFT_FRAMES};
+use active::transport as transport_active;
 
 pub(super) struct PhaseState {
     analysis: Vec<f64>,
@@ -8,6 +11,15 @@ pub(super) struct PhaseState {
     source: Option<isize>,
     output: Option<isize>,
     dominant: Option<usize>,
+    active: Vec<ActiveOwner>,
+}
+
+#[derive(Clone, Copy)]
+struct ActiveOwner {
+    bin: usize,
+    analysis: f64,
+    synthesis: f64,
+    frequency: f64,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -23,6 +35,12 @@ pub(in crate::frequency_adaptive) struct Trace {
     pub(in crate::frequency_adaptive) final_advance: f64,
     pub(in crate::frequency_adaptive) event_assignment: bool,
     pub(in crate::frequency_adaptive) vertical_assignment: bool,
+    pub(in crate::frequency_adaptive) owner_births: usize,
+    pub(in crate::frequency_adaptive) owner_matches: usize,
+    pub(in crate::frequency_adaptive) owner_retirements: usize,
+    pub(in crate::frequency_adaptive) region_assignments: usize,
+    pub(in crate::frequency_adaptive) active_state_hash: u64,
+    pub(in crate::frequency_adaptive) trace_owner_matched: bool,
 }
 
 pub(super) struct Result {
@@ -40,6 +58,7 @@ impl PhaseState {
             source: None,
             output: None,
             dominant: None,
+            active: Vec::new(),
         }
     }
 }
@@ -52,7 +71,19 @@ pub(super) fn transport(
     peaks: &[usize],
     mode: Mode,
     trace_bin: usize,
+    tracking: Option<&[Complex64]>,
 ) -> Result {
+    if mode == Mode::Successor {
+        return transport_active(
+            spectrum,
+            tracking.expect("successor tracking spectrum"),
+            frame,
+            state,
+            events,
+            peaks,
+            trace_bin,
+        );
+    }
     let first = state.source.is_none();
     let source_hop = state
         .source
@@ -140,6 +171,12 @@ pub(super) fn transport(
             event_assignment: mode.event() && event,
             vertical_assignment: mode.vertical()
                 && wrap(final_phase - transported_phase).abs() > 1.0e-12,
+            owner_births: 0,
+            owner_matches: 0,
+            owner_retirements: 0,
+            region_assignments: 0,
+            active_state_hash: 0,
+            trace_owner_matched: false,
         },
     }
 }

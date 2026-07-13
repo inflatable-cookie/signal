@@ -695,7 +695,24 @@ anchors are detected independently of resolution points and become exact
 source/output frame centres. The existing painless transform, global duration,
 and diagonal dual remain fixed.
 
+That ownership proof passes. A fixed analytic tracking spectrum supplies
+physical-frequency peak trajectories while the adaptive painless coefficients,
+windows, and diagonal dual remain unchanged. Ordered one-to-one peak matching
+owns synthesis phase; births initialize from current analysis phase and exact
+event-centred frames reset from current analysis at the anchor. Linked
+time-domain derivative-energy evidence refines accepted events to sample-frame
+positions before the successor schedule attaches them to exact global-map
+outputs.
+
+Across `32` mechanism rows, all eight hard failure classes are zero. Rendered
+and matched-owner interior tone error stay below `1e-6` radians/sample; all
+`24/24` expected anchors detect and attach exactly; identity stays below
+`6.674e-16`. Evidence hash `a2d3fb95545cb47f` repeats. A dense-event
+rendered-peak diagnostic remains at `262` frames, so mechanism passage does not
+claim complete quality passage.
+
 ## Next Task
 
-Run Rule 30P active-peak phase and transient-anchor ownership proof. Keep the
-complete quality rerun, corpus, holdout, listening, and tuning closed.
+Run Rule 30Q: route the successor through the complete unchanged Rule 30N
+synthetic quality matrix. Keep corpus, holdout, listening, tuning, linked
+stereo, dynamic ratio, and routing closed.

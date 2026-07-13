@@ -1,8 +1,11 @@
+mod anchors;
 mod attribution;
+mod ownership;
 pub(super) mod quality;
 mod render;
 
 pub(super) use attribution::{attribution_review, AttributionDirection};
+pub(super) use ownership::{ownership_review, OwnershipDirection};
 pub(super) use quality::{quality_review, QualityDirection};
 
 use render::{render, Mode, Render};

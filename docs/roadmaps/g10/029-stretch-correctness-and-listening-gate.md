@@ -868,13 +868,13 @@ Status: closed without exposure. No development candidate qualified.
 
 ### Batch 29.6BU - Active-Peak Phase And Injected-Event Ownership Proof
 
-- [ ] replace dormant-bin phase continuation with one-to-one active-peak state
+- [x] replace dormant-bin phase continuation with one-to-one active-peak state
   and initialize newly active owners from current analysis phase
-- [ ] separate sample-refined transient anchors from resolution-selection points
+- [x] separate sample-refined transient anchors from resolution-selection points
   and attach every accepted anchor as an exact source/output frame centre
-- [ ] pass steady-tone active-owner, event known-answer, structural, identity,
+- [x] pass steady-tone active-owner, event known-answer, structural, identity,
   coefficient, symmetry, finiteness, and repeat gates without quality tuning
-- [ ] keep complete Rule 30N rerun, corpus, holdout, stereo, and routing closed
+- [x] keep complete Rule 30N rerun, corpus, holdout, stereo, and routing closed
 
 ### Batch 29.6BV - Successor Synthetic Quality Gate
 
@@ -1607,11 +1607,22 @@ Status: closed without exposure. No development candidate qualified.
   is selected and only six land on an exact frame centre. Evidence hash
   `ddca308a7f60f39e` repeats. Batch 29.6BU owns active-peak phase and separate
   injected-event ownership without quality tuning.
+- 2026-07-13: Batch 29.6BU passes all `32` mechanism rows. One-to-one active
+  owners report `4,976` births, `46,588` matches, `4,960` retirements, and
+  `5,204,460` region assignments. Maximum rendered and matched-owner interior
+  tone errors are `8.211e-7` and `5.919e-7` radians/sample. Independent linked
+  onset evidence detects and exactly attaches all `24/24` expected anchors;
+  all eight hard failure classes are zero. Identity errors stay below
+  `6.674e-16`; evidence hash `a2d3fb95545cb47f` repeats. The dense-event
+  rendered-peak diagnostic still reaches `262` frames and remains visible for
+  the unchanged Rule 30N quality gate. Corpus, holdout, listening, tuning,
+  stereo, dynamic ratio, and routing remain closed. Batch 29.6BV owns the full
+  successor synthetic quality rerun.
 
 ## Next Task
 
-Execute Batch 29.6BU. Replace dormant-bin phase continuation with active-peak
-ownership and separate sample-refined transient anchors from resolution
-selection. Prove the bounded mechanisms before the complete synthetic quality
-rerun. Keep corpus audio, holdout, listening, tuning, linked stereo, dynamic
-ratio, and product routing closed.
+Execute Batch 29.6BV. Run the complete unchanged Rule 30N synthetic matrix
+through the successor renderer. Require every prior hard quality limit and
+return to the owning stage on failure; do not tune thresholds. Keep corpus
+audio, holdout, listening, linked stereo, dynamic ratio, and product routing
+closed.
