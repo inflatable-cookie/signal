@@ -76,6 +76,20 @@ pub(crate) fn single_owner_adaptive_frame_review() -> OwnerReview {
     review
 }
 
+pub(super) fn adaptive_schedule_for_points(
+    source_frames: usize,
+    points: &[usize],
+) -> Vec<(isize, usize)> {
+    let points = points
+        .iter()
+        .map(|point| *point as isize)
+        .collect::<Vec<_>>();
+    build_frames(source_frames, |center| island_length(center, &points))
+        .into_iter()
+        .map(|frame| (frame.center, frame.length))
+        .collect()
+}
+
 fn single_owner_schedule_evidence(identity: &ScheduleEvidence) -> OwnerEvidence {
     let family = identity.family_and_frames[0];
     let frames = schedule(family);
@@ -293,22 +307,29 @@ fn reconstruct(
 }
 
 fn schedule(family: usize) -> Vec<Frame> {
+    build_frames(SOURCE_FRAMES, |center| desired_length(family, center))
+}
+
+fn build_frames(source_frames: usize, desired_length: impl Fn(isize) -> usize) -> Vec<Frame> {
     let mut frames = Vec::new();
-    let mut center = SCHEDULE_START;
-    let mut length = desired_length(family, center);
-    for _ in 0..MAX_DECLARED_SCHEDULE_FRAMES {
-        if center > SCHEDULE_END {
+    let schedule_start = -PAD - FFT_FRAMES as isize / 2;
+    let schedule_end = source_frames as isize + PAD + FFT_FRAMES as isize / 2;
+    let maximum_frames = ((schedule_end - schedule_start) / MIN_HOP) as usize + 1;
+    let mut center = schedule_start;
+    let mut length = desired_length(center);
+    for _ in 0..maximum_frames {
+        if center > schedule_end {
             break;
         }
         frames.push(Frame { center, length });
         let proposed_center = center + length as isize / 4;
-        let desired = desired_length(family, proposed_center);
+        let desired = desired_length(proposed_center);
         let next_level = clamp_level(length_level(desired), length_level(length));
         let next_length = WINDOW_LENGTHS[next_level];
         center += length.min(next_length) as isize / 4;
         length = next_length;
     }
-    debug_assert!(center > SCHEDULE_END);
+    debug_assert!(center > schedule_end);
     frames
 }
 

@@ -5,8 +5,8 @@ use super::HASH_OFFSET;
 use schedule::{build_schedule, Schedule};
 use study::{analyze, select, Study};
 
-const SOURCE_FRAMES: usize = 16_384;
-const BASE_HOP: usize = 128;
+pub(crate) const SOURCE_FRAMES: usize = 16_384;
+pub(crate) const BASE_HOP: usize = 128;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(super) enum Direction {
@@ -172,7 +172,7 @@ fn dense_points(points: &[usize]) -> usize {
         .len()
 }
 
-fn controls() -> Vec<(Vec<Vec<f64>>, f64)> {
+pub(crate) fn controls() -> Vec<(Vec<Vec<f64>>, f64)> {
     [0.75, 1.5, 2.0]
         .into_iter()
         .enumerate()

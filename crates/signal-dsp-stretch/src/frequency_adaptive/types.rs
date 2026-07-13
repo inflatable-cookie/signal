@@ -684,6 +684,59 @@ pub struct StretchSingleOwnerAdaptiveReview {
     pub direction: StretchSingleOwnerAdaptiveDirection,
 }
 
+/// Direction selected by adaptive-frame study and time-map attachment.
+#[cfg(all(test, not(debug_assertions)))]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum StretchAdaptiveStudyMappingDirection {
+    /// Mapping gates pass; a single-frame phase contract may open.
+    SingleFramePhaseContract,
+    /// Study-to-frame mapping fails and must be redesigned.
+    StudyMappingRedesign,
+}
+
+/// Evidence for one linked study and adaptive-frame time-map attachment.
+#[cfg(all(test, not(debug_assertions)))]
+#[derive(Clone, Debug, PartialEq)]
+pub struct StretchAdaptiveStudyMappingEvidence {
+    /// Frozen stretch ratio.
+    pub ratio: f64,
+    /// Responsive selected source points, including closure points.
+    pub selected_points: Vec<usize>,
+    /// Counts of 512, 1024, 2048, and 4096-sample windows.
+    pub window_counts: [usize; 4],
+    /// Total, in-range, and reflected adaptive-frame counts.
+    pub frame_counts: [usize; 3],
+    /// Minimum/maximum source and output hops for mapped in-range frames.
+    pub hop_extrema: [usize; 4],
+    /// Complete logical source centres, including reflected support.
+    pub source_centres: Vec<isize>,
+    /// Complete projected output centres, including reflected support.
+    pub output_centres: Vec<isize>,
+    /// Mapping disagreements for each selected window level.
+    pub level_mapping_failures: [usize; 4],
+    /// Duplicate source/output centres, off-grid centres, illegal transitions,
+    /// non-positive source/output hops, endpoint mismatch, and linked-order mismatch.
+    pub structural_failures: [usize; 8],
+    /// Maximum selected-event movement from ideal projection.
+    pub maximum_event_movement: usize,
+    /// Non-finite values encountered while projecting the map.
+    pub non_finite_values: usize,
+    /// Study, points, schedule, ownership, mapping, and evidence hashes.
+    pub hashes: [u64; 6],
+}
+
+/// Complete release-only adaptive study and time-map attachment report.
+#[cfg(all(test, not(debug_assertions)))]
+#[derive(Clone, Debug, PartialEq)]
+pub struct StretchAdaptiveStudyMappingReview {
+    /// Evidence for the three frozen linked controls.
+    pub controls: Vec<StretchAdaptiveStudyMappingEvidence>,
+    /// Stable aggregate evidence hash.
+    pub evidence_hash: u64,
+    /// Selected continuation direction.
+    pub direction: StretchAdaptiveStudyMappingDirection,
+}
+
 /// Direction selected by automatic Rényi time-resolution evidence.
 #[cfg(all(test, not(debug_assertions)))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

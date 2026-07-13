@@ -639,7 +639,22 @@ adaptive centre remains on the `128`-frame base grid, each centre reads the one
 globally exact output position already owned by the local schedule. Resolution
 does not interpolate, quantize, or own another map.
 
+That attachment now passes. All three frozen ratios produce the same
+`53/24/16/11` window-count shape over `104` frames, with `81` in-range and `23`
+reflected frames. Every in-range centre reads the exact shared schedule entry;
+all ownership, transition, monotonicity, endpoint, linked-order, and mapping
+checks are zero. The mapping evidence hash is `3ea1d3a2297083e2`; earlier
+identity and ownership evidence is unchanged.
+
+The next proof is the first stretched synthesis for this representation. One
+phase state follows the selected coefficient vector across actual source and
+output hops; a window-length change is not a reset. Selected-event correction
+and peak-region vertical locking remain distinct, current-frame operations.
+Before phase quality is interpreted, the moved windows must prove positive
+output-lattice coverage and an exact diagonal dual over the protected crop.
+
 ## Next Task
 
-Attach the frozen study and global output-hop schedule to the adaptive frame.
-Keep coefficient and phase modification closed.
+Prove the frozen adaptive frame's output-lattice coverage, actual-hop phase
+continuity, separate event and vertical phase stages, and exact synthesis on
+synthetic controls. Keep corpus, holdout, and tuning closed.

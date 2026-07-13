@@ -2464,6 +2464,54 @@ Passage opens one separately frozen single-frame phase/synthesis proof. Failure
 returns to study-to-frame mapping only. Stretched phase, corpus audio, holdout,
 and tuning remain closed in Batch 29.6BQ.
 
+Batch 29.6BQ passes all three frozen controls. Each ratio selects `15` study
+points and produces `104` adaptive frames: `81` in-range and `23` reflected.
+Window counts are `[53,24,16,11]`; source hops span `128..512`. Output hops
+span `85..376`, `132..800`, and `134..1091` at `0.75`, `1.5`, and `2.0`.
+Duplicate centres, off-grid centres, illegal transitions, non-positive hops,
+endpoint mismatches, linked-order mismatches, and per-level mapping failures
+are all zero. Selected-event movement is zero. Evidence hash
+`3ea1d3a2297083e2` repeats exactly; the earlier identity and ownership hashes
+remain `6987080e517f1aec` and `2a29d952d91e92ba`.
+
+#### Rule 30M: prove one adaptive-frame phase and synthesis path
+
+Batch 29.6BR reuses the passing adaptive frames, study points, and exact output
+centres. Add one identity control to the three Rule 30L ratios. Analyze one
+reflected source frame and one `4096`-point complex spectrum per centre. The
+selected window owns its complete coefficient vector; no resolution layer,
+mask, crossfade, or second time map may appear.
+
+Ordinary transport estimates each bin's instantaneous frequency from adjacent
+analysis phases and the actual source-centre interval, then advances one
+continuous synthesis phase state by the actual output-centre interval.
+Changing window length does not reset that state. Event correction may reset
+only the current selected frame at a selected event, using analyzed phase at
+the projected source point. Deterministic peak-region vertical locking may
+change phase only within that same selected frame and must retain analyzed
+phase offsets to the owning peak. Event correction and vertical locking remain
+separately switchable and measurable.
+
+Synthesize only the selected spectra through the exact output-lattice diagonal
+dual. Every shifted window touching the protected crop participates. Derive
+the requested length from the global schedule and exact crop; do not fill or
+truncate uncovered output. Report output coverage and frame condition before
+interpreting phase evidence.
+
+Prove ordinary, event-only, vertical-only, and combined modes on frozen
+synthetic identity, tone, event, boundary, and linked controls. Require exact
+length, positive output coverage, finite output, deterministic coefficient,
+phase, decision, and output hashes, identity peak error at most `5e-12`, tone
+frequency error at most `2 Hz`, selected-event error at most `256` frames,
+event and vertical phase changes in their enabled modes, conjugate-symmetry and
+imaginary-residue error at most `2e-10`, event ordering, and linked-channel
+decision equivalence. Phase-only modes must not change magnitudes or timing.
+
+Failure on output coverage returns to schedule/frame coupling. Failure after
+coverage passes returns to single-frame phase or dual synthesis. Passage opens
+fixed-ratio mono objective gating only. Corpus audio, holdout, tuning, stereo
+promotion, dynamic ratio, and product routing remain closed.
+
 ## Clean-Room Rule
 
 Public papers and public algorithm descriptions may inform Signal design.
@@ -2472,5 +2520,6 @@ implementation details are outside the research and implementation boundary.
 
 ## Next Task
 
-Execute Batch 29.6BQ study and time-map attachment proof. Keep coefficient and
-phase modification, corpus audio, holdout, and tuning closed.
+Execute Batch 29.6BR single-frame phase and synthesis proof. Reuse the frozen
+study, adaptive ownership, and global map. Keep corpus audio, holdout, tuning,
+stereo promotion, dynamic ratio, and product routing closed.

@@ -269,13 +269,16 @@ Current stretch status:
   `0.134` correlation. Redundant full-band ownership is closed. The bounded
   review selects one time-adaptive painless NSG frame with one window and
   coefficient vector per analysis centre. Its single-owner mechanics proof
-  passes all five schedules with the prior identity hash unchanged. Study and
-  one-global-map attachment are next; phase remains closed.
+  passes all five schedules with the prior identity hash unchanged. Frozen
+  linked study and one-global-map attachment also pass all three ratios with
+  zero structural or mapping failures. Output-lattice coverage and one
+  single-frame phase/synthesis proof are next.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Execute `g10.029` Batch 29.6BQ. Attach the frozen study and globally exact
-output schedule to the adaptive frame without coefficient or phase changes.
+Execute `g10.029` Batch 29.6BR. Prove output-lattice coverage, continuous
+actual-hop phase transport, separate event and current-frame vertical phase,
+and exact single-owner synthesis on frozen synthetic controls.

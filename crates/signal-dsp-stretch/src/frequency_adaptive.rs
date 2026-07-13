@@ -2,6 +2,17 @@ use rustfft::{num_complex::Complex32, FftPlanner};
 use signal_primitives::{Sample, SampleRate};
 
 mod types;
+#[cfg(all(test, not(debug_assertions)))]
+pub use types::{
+    StretchAdaptiveStudyMappingDirection, StretchCommonGridCanonicalTightenerDirection,
+    StretchCommonGridNyquistAblationDirection, StretchCommonGridNyquistAblationOperator,
+    StretchCommonGridResidualBoundaryDirection, StretchCommonGridThreeRowNyquistDirection,
+    StretchDensePainlessDirection, StretchMedianHpssDirection,
+    StretchMixedPhaseDistributionDirection, StretchRenyiAttributionDirection,
+    StretchRenyiGeometryDirection, StretchRenyiReassessmentDirection,
+    StretchRenyiSelectorDirection, StretchSingleOwnerAdaptiveDirection,
+    StretchTimeAdaptivePainlessDirection, StretchTransientEvidenceDirection,
+};
 pub use types::{
     StretchCommonGridBoundaryReview, StretchCommonGridConditioningBank,
     StretchCommonGridConditioningBinEvidence, StretchCommonGridConditioningChannelEvidence,
@@ -15,17 +26,6 @@ pub use types::{
     StretchCommonGridWaveletEvidence, StretchCommonGridWaveletReview,
     StretchFrequencyAdaptiveBandEvidence, StretchFrequencyAdaptiveEvidence,
     StretchFrequencyAdaptiveReview,
-};
-#[cfg(all(test, not(debug_assertions)))]
-pub use types::{
-    StretchCommonGridCanonicalTightenerDirection, StretchCommonGridNyquistAblationDirection,
-    StretchCommonGridNyquistAblationOperator, StretchCommonGridResidualBoundaryDirection,
-    StretchCommonGridThreeRowNyquistDirection, StretchDensePainlessDirection,
-    StretchMedianHpssDirection, StretchMixedPhaseDistributionDirection,
-    StretchRenyiAttributionDirection, StretchRenyiGeometryDirection,
-    StretchRenyiReassessmentDirection, StretchRenyiSelectorDirection,
-    StretchSingleOwnerAdaptiveDirection, StretchTimeAdaptivePainlessDirection,
-    StretchTransientEvidenceDirection,
 };
 
 #[cfg(all(test, not(debug_assertions)))]
@@ -59,7 +59,11 @@ pub(crate) use residual_boundary_attribution::common_grid_residual_boundary_attr
 #[cfg(all(test, not(debug_assertions)))]
 pub(crate) use three_row_nyquist::common_grid_three_row_nyquist_review;
 #[cfg(all(test, not(debug_assertions)))]
+mod adaptive_study_mapping;
+#[cfg(all(test, not(debug_assertions)))]
 mod time_adaptive_painless;
+#[cfg(all(test, not(debug_assertions)))]
+pub(crate) use adaptive_study_mapping::adaptive_study_time_map_review;
 #[cfg(all(test, not(debug_assertions)))]
 pub(crate) use time_adaptive_painless::single_owner_adaptive_frame_review;
 #[cfg(all(test, not(debug_assertions)))]

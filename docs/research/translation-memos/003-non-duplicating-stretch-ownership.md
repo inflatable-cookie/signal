@@ -159,5 +159,6 @@ Promoted into:
 
 ## Next Task
 
-Execute Batch 29.6BQ study and time-map attachment proof. Keep coefficient and
-phase modification, corpus audio, holdout, and tuning closed.
+Execute Batch 29.6BR single-frame phase and synthesis proof. Prove output-lattice
+coverage before phase evidence; keep corpus audio, holdout, tuning, stereo
+promotion, dynamic ratio, and product routing closed.

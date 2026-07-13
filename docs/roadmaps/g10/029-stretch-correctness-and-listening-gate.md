@@ -826,14 +826,25 @@ Status: closed without exposure. No development candidate qualified.
 
 ### Batch 29.6BQ - Study And Time-Map Attachment Proof
 
-- [ ] reuse the frozen linked study, responsive selected points, and Rule 30C
+- [x] reuse the frozen linked study, responsive selected points, and Rule 30C
   positive-integer schedules at `0.75`, `1.5`, and `2.0`
-- [ ] map selected points through the proven adaptive island geometry and give
+- [x] map selected points through the proven adaptive island geometry and give
   every adaptive centre the exact shared `128`-grid output position
-- [ ] prove one mapping across resolutions, positive output hops, exact endpoint,
+- [x] prove one mapping across resolutions, positive output hops, exact endpoint,
   bounded event displacement, linked-order equivalence, and deterministic hashes
-- [ ] keep coefficient and phase modification, corpus audio, holdout, and tuning
+- [x] keep coefficient and phase modification, corpus audio, holdout, and tuning
   closed
+
+### Batch 29.6BR - Single-Frame Phase And Synthesis Proof
+
+- [ ] reuse the frozen study, adaptive ownership, and exact global output map
+  on identity, tone, event, boundary, and linked synthetic controls
+- [ ] transport one continuous physical-frequency phase state through actual
+  source/output hops without resetting at resolution changes
+- [ ] prove output-lattice coverage and exact diagonal-dual synthesis before
+  separately enabling event correction and current-frame vertical locking
+- [ ] pass Rule 30M structural, identity, tone, event, phase, linked-decision,
+  and repeat gates without corpus audio, holdout, tuning, or product routing
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -1514,9 +1525,17 @@ Status: closed without exposure. No development candidate qualified.
   the original identity hash stays `6987080e517f1aec`, and ownership hash
   `2a29d952d91e92ba` repeats. Batch 29.6BQ owns study and one-global-map
   attachment without coefficient or phase modification.
+- 2026-07-13: Batch 29.6BQ passes all three frozen linked controls. Each has
+  `15` selected points, `104` adaptive frames, exact per-level attachment to
+  the shared `128`-grid schedule, positive source/output hops, zero structural
+  or mapping failures, zero selected-event movement, and exact endpoint and
+  linked-order agreement. Evidence hash `3ea1d3a2297083e2` repeats; the prior
+  identity and ownership hashes are unchanged. Batch 29.6BR owns output-lattice
+  coverage and one single-frame phase/synthesis proof.
 
 ## Next Task
 
-Execute Batch 29.6BQ. Attach the frozen study and globally exact output schedule
-to the single-owner adaptive frame. Keep coefficient and phase modification,
-corpus audio, holdout, and tuning closed.
+Execute Batch 29.6BR. Prove output-lattice coverage, continuous actual-hop phase
+transport, separate event and current-frame vertical phase stages, and exact
+single-owner synthesis. Keep corpus audio, holdout, tuning, stereo promotion,
+dynamic ratio, and product routing closed.

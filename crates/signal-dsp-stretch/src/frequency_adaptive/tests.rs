@@ -521,6 +521,61 @@ fn linked_study_local_schedule_selects_phase_proof_direction() {
 
 #[test]
 #[cfg(not(debug_assertions))]
+fn adaptive_study_time_map_selects_single_frame_phase_contract() {
+    let first = adaptive_study_time_map_review();
+    let repeated = adaptive_study_time_map_review();
+    assert_eq!(first, repeated);
+    assert_eq!(first.controls.len(), 3);
+    assert_eq!(
+        first
+            .controls
+            .iter()
+            .map(|control| control.ratio)
+            .collect::<Vec<_>>(),
+        [0.75, 1.5, 2.0]
+    );
+    assert!(first.controls.iter().all(|control| {
+        control.selected_points.len() >= 2
+            && control.frame_counts[0] == control.source_centres.len()
+            && control.frame_counts[0] == control.output_centres.len()
+            && control.frame_counts[0] == control.frame_counts[1] + control.frame_counts[2]
+            && control.window_counts.iter().sum::<usize>() == control.frame_counts[0]
+            && control.hop_extrema.iter().all(|hop| *hop > 0)
+            && control.level_mapping_failures == [0; 4]
+            && control.structural_failures == [0; 8]
+            && control.maximum_event_movement <= 256
+            && control.non_finite_values == 0
+            && control.hashes.iter().all(|hash| *hash != 0)
+    }));
+    assert_eq!(
+        first.direction,
+        StretchAdaptiveStudyMappingDirection::SingleFramePhaseContract
+    );
+    assert_ne!(first.evidence_hash, 0);
+    eprintln!(
+        "adaptive_study_time_map controls={:?} evidence={:016x} direction={:?}",
+        first
+            .controls
+            .iter()
+            .map(|control| (
+                control.ratio,
+                control.selected_points.len(),
+                control.window_counts,
+                control.frame_counts,
+                control.hop_extrema,
+                control.level_mapping_failures,
+                control.structural_failures,
+                control.maximum_event_movement,
+                control.hashes,
+            ))
+            .collect::<Vec<_>>(),
+        first.evidence_hash,
+        first.direction,
+    );
+}
+
+#[test]
+#[cfg(not(debug_assertions))]
 fn complete_phase_synthesis_selects_bounded_tuning_direction() {
     use super::complete_phase_synthesis::{review, Direction};
 
