@@ -42,6 +42,8 @@ Finch and Loophole.
 | Specimen | Studied for | Status |
 | --- | --- | --- |
 | [Essentia](./specimen-dossiers/essentia.md) | Reference algorithms, quality targets, migration cues | In progress |
+| [Signalsmith Stretch](./specimen-dossiers/signalsmith-stretch.md) | Single-grid weighted phase-prediction control | Reviewed |
+| [Rubber Band Source Architecture](./specimen-dossiers/rubber-band-source-architecture.md) | R2/R3 scheduling, scale ownership, guidance, and phase topology | Reviewed |
 
 ## Translation Memos
 
@@ -50,6 +52,7 @@ Finch and Loophole.
 | [Offline Time-Stretch Successor](./translation-memos/001-offline-time-stretch-successor.md) | Historical one-global-map successor sequence | Superseded by memo 002 |
 | [Rubber Band Behavioural Forensics](./translation-memos/002-rubber-band-behavioural-forensics.md) | Reopen local timing, transient phase treatment, and simultaneous multi-resolution synthesis from measured comparator behaviour | Promoted |
 | [Non-Duplicating Stretch Ownership](./translation-memos/003-non-duplicating-stretch-ownership.md) | Select one time-adaptive painless NSG frame after redundant full-band union rejection | Promoted |
+| [Source-Studied Stretch Architecture](./translation-memos/004-source-studied-stretch-architecture.md) | Replace time-adaptive full-band synthesis with frequency-partitioned multi-scale guidance; retain a single-grid weighted predictor as control | Promoted |
 
 ## Consumer Guidance
 
@@ -60,5 +63,6 @@ Finch and Loophole.
 
 ## Next Task
 
-Promote the package-map proposal into the roadmap and align the active value
-tracks and specs to the chosen names.
+Execute the source-studied stretch architecture proof under contract `082`,
+Rule 31. Keep the source provenance boundary attached to every transferred
+invariant.

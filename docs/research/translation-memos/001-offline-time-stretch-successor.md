@@ -1,6 +1,6 @@
 # Offline Time-Stretch Successor
 
-Status: superseded by `002-rubber-band-behavioural-forensics.md`
+Status: superseded by `004-source-studied-stretch-architecture.md`
 Memo: `g10.029` structural reassessment
 Owner: dsp
 Last updated: 2026-07-11
@@ -112,6 +112,9 @@ one monotonic time map.
 | [Driedger, Müller, and Disch, 2014](https://www.audiolabs-erlangen.de/resources/2014-ISMIR-ExtHPSep/2014_DriedgerMuellerDisch_ExtensionsHPSeparation_ISMIR.pdf) | high | Tightened iterative H/R/P decomposition and exact residual complement |
 
 ## Clean-Room Boundary
+
+Historical boundary. Superseded by memo `004`, which permits pinned public
+source study under an explicit licence and provenance rule.
 
 Do not inspect or translate Rubber Band source code, reproduce unpublished R3
 details, or use Elastique internals. External tools remain comparators. Signal's

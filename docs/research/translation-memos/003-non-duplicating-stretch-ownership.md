@@ -1,6 +1,6 @@
 # Non-Duplicating Stretch Ownership
 
-Status: promoted
+Status: superseded by `004-source-studied-stretch-architecture.md`
 Memo: `g10.029` representation reset
 Owner: dsp
 Last updated: 2026-07-13
@@ -159,6 +159,6 @@ Promoted into:
 
 ## Next Task
 
-Execute Batch 29.6BS synthetic quality gate. Freeze the passing single-frame
-combined mode and ordinary ablation; keep corpus audio, holdout, listening,
-tuning, stereo promotion, dynamic ratio, and product routing closed.
+Do not continue this representation. Memo 004 retires time-adaptive full-band
+ownership after source study identified frequency-partitioned simultaneous
+resolution as the comparator's successful topology.

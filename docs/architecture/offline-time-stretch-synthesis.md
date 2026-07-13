@@ -1,6 +1,6 @@
 # Offline Time-Stretch Synthesis
 
-Status: low-frequency native-projection attribution ready
+Status: source-studied frequency-partition proof ready
 Owner: dsp
 Updated: 2026-07-13
 Contract refs: `046`, `082`
@@ -9,23 +9,23 @@ Roadmap ref: `g10.029`
 ## Current Boundary
 
 The production OfflineHighQuality prototype remains the current `2048/512`
-identity-lock/reset phase vocoder. All successor work is report-only. Rule 30Z
-now contracts the next fixed-ratio mono implementation; no successor has earned
-real-source listening, product routing, stereo, or dynamic-ratio work.
+identity-lock/reset phase vocoder. All successor work is report-only. Rule 31
+replaces the rejected time-adaptive full-band direction with a source-studied
+frequency-partitioned architecture; no successor has earned product routing,
+stereo promotion, or dynamic-ratio work.
 
 ## Successor Shape
 
-The successor owns one sample-domain time map and one selected adaptive frame
-at each source centre. It does not recombine independent full-band renders.
+The successor owns one sample-domain time map and simultaneous long, middle,
+and short transforms. They do not render redundant full-band copies.
 
-- the existing `512/1024/2048/4096` window bank stays single-owner
-- each frame uses centered reflection, Hann/Hann kernels, its native FFT, and
-  exact diagonal-dual overlap synthesis
-- native magnitudes stay unchanged
-- a fixed analytic tracking surface carries active physical-frequency and
-  synthesis-phase decisions across native frame-size changes
-- sample-refined anchors coordinate exact event placement, phase reset, and
-  bounded conflicted-bridge replica suppression
+- every output frequency has one active synthesis scale
+- one full-band reference spectrum supplies classification and guidance only
+- crossover movement is bounded and seeks local spectral minima
+- ordinary, peak-locked, reset, unlocked, attack, and channel-linked phase
+  states remain explicit
+- per-scale inverse outputs sum sample-aligned on one output timeline
+- a fixed-grid weighted multi-predictor renderer remains the required control
 - exact length, one output timeline, conjugate symmetry, and identity behavior
   remain common synthesis policy
 
@@ -821,14 +821,50 @@ three stretched `55 Hz` rows do not: rendered frequency error reaches
 `1.263528e-7`. All `300/300` active resolution transitions retain a matched
 owner.
 
-The active boundary is therefore downstream of peak tracking and before final
-output: native owner-bin/region phase projection, per-frame inverse synthesis,
-or its exact-dual interaction. Real-source rendering remains closed until that
-boundary is assigned and a repaired candidate passes the unchanged synthetic
-gate.
+The active boundary was downstream of peak tracking and before final output:
+native owner-bin/region phase projection, per-frame inverse synthesis, or its
+exact-dual interaction. Source study supersedes that local repair. The failed
+rows remain evidence, but the time-adaptive full-band representation is closed.
+
+## Source-Studied Architecture Reset
+
+Rubber Band R3 source resolves the multi-resolution ambiguity. Standard mode
+runs long, middle, and short transforms simultaneously, but assigns each a
+frequency interval. One full-band classification spectrum guides crossover,
+reset, unlock, attack, and channel policy. The scale renders are not three
+full-band copies and resolution is not selected once per time centre.
+
+This corrects two earlier Signal decisions:
+
+- the rejected union duplicated full-band synthesis across resolutions
+- the replacement adapted one full-band resolution over time
+
+R3 instead adapts exclusive frequency ownership while all scales remain on one
+timeline. Its H/P/R classification is control evidence, not additive component
+synthesis. Dynamic crossovers move to spectral valleys. Peak phase, reset,
+unlocked high bands, low attack handling, and channel locking are separate
+states inside one guide.
+
+Signalsmith Stretch provides the required control architecture. It keeps one
+long STFT and combines horizontal advance with weighted vertical predictions
+from both directions and distances. This tests whether Signal needs multi-
+resolution frequency ownership or primarily needs to replace hard owner-region
+phase assignment.
+
+The next Signal candidate is therefore one complete comparison:
+
+- fixed-grid weighted multi-predictor control
+- frequency-partitioned long/middle/short candidate
+- one common time map and boundary contract
+- classification-guided crossovers and explicit phase states
+- existing current Signal, Signalsmith, and Rubber Band comparator evidence
+
+No Rule 30AB repair, factor sweep, or per-metric follow-up chain is authorized.
+The candidate is judged as a system on the complete synthetic and frozen mono
+development gates before any promotion.
 
 ## Next Task
 
-Execute Batch 29.6CG under Rule 30AB. Trace the failed `55 Hz` rows from active
-phase through native coefficient projection, inverse output, and exact-dual
-accumulation. Do not render real sources or reopen factor sweeps.
+Execute Batch 29.6CH under Rule 31 as one source-studied complete architecture
+proof. Add Signalsmith as the single-grid control; do not reopen Rule 30AB or a
+parameter lattice.

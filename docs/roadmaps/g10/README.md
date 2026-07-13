@@ -323,15 +323,25 @@ Current stretch status:
   boundaries, mid/high tones, and matched ownership across all `300` active
   resolution transitions, but fails the three stretched `55 Hz` rows. Tracked
   frequency passes; rendered error reaches `3.695086e-5` radians/sample. Batch
-  29.6CG traces native owner-bin/region projection and exact-dual accumulation.
-  Real sources, holdout, listening, stereo, dynamic ratio, cache, and routing
-  remain closed.
+  29.6CG then stops local repair and inspects pinned Signalsmith Stretch and
+  Rubber Band R2/R3 source under an explicit provenance boundary. The study
+  corrects Signal's representation: Rubber Band R3 standard runs simultaneous
+  long/middle/short transforms with exclusive frequency ownership, not one
+  time-selected full-band resolution. Its full-band H/P/R classification guides
+  crossover and phase state; it is not additive component synthesis.
+  Signalsmith supplies the contrasting fixed-grid weighted multi-predictor
+  control. Batch 29.6CH owns one complete source-studied proof of those two
+  architectures. Rule 30AB repair, parameter lattices, and per-metric follow-up
+  chains remain closed. Real sources open only inside the frozen nine-row
+  development comparison after synthetic integrity passes; holdout, stereo,
+  dynamic ratio, cache, and routing remain closed.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Execute `g10.029` Batch 29.6CG under Rule 30AB. Trace the failed `55 Hz` rows
-through native coefficient projection, inverse output, and exact-dual
-accumulation before any repaired candidate or real-source render.
+Execute `g10.029` Batch 29.6CH under Rule 31 as one complete source-studied
+architecture proof. Compare frequency-partitioned long/middle/short synthesis
+against the fixed-grid weighted multi-predictor control. Do not reopen Rule
+30AB or a parameter-repair sequence.

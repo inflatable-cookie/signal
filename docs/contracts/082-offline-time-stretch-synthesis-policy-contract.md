@@ -1,8 +1,8 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; behavioural-forensics reset ready
+Status: active; source-studied architecture proof ready
 Owner: dsp
-Updated: 2026-07-12
+Updated: 2026-07-13
 Related contracts: `046`, `048`, `049`
 Related architecture: `docs/architecture/offline-time-stretch-synthesis.md`
 
@@ -3028,28 +3028,99 @@ FFT and exact-dual overlap synthesis.
 
 #### Rule 30AB: low-frequency native-projection attribution
 
-Batch 29.6CG is trace-only. Freeze the failed `55 Hz` rows and passing identity,
-mid-tone, high-tone, event, boundary, and silence controls. Follow active-owner
-phase advance through native owner-bin projection, within-region phase offsets,
-per-frame inverse output, and exact-dual accumulation at the two frozen
-frequency-measurement apertures. Assign the error to owner-bin projection,
-region phase, per-resolution coefficient support, or overlap interaction.
+Closed without execution. Operator review found that another local attribution
+would repair a representation no longer supported by external evidence. The
+three `55 Hz` failures remain frozen rejection evidence. No threshold or gate
+was weakened.
 
-Do not change a threshold, window length, detector, schedule, gate, or
-production path. Do not render real sources, read holdout, export listening
-audio, or open stereo, dynamic ratio, cache, or routing. Stop with a named
-design question if one earliest boundary cannot be assigned without a factor
-sweep.
+### Rule 31: source-studied architecture reset
 
-## Clean-Room Rule
+Signal may inspect public source to understand system topology, state
+ownership, invariants, failure handling, and validation shape. Every study must
+pin the upstream revision and licence. GPL source expression, copied control
+flow, and unexplained fitted constants do not transfer into Signal. MIT ideas
+and code still require normal attribution and a deliberate Signal API boundary.
 
-Public papers and public algorithm descriptions may inform Signal design.
-Rubber Band source, unpublished R3 behavior, Elastique internals, and copied
-implementation details are outside the research and implementation boundary.
+This replaces the former blanket Rubber Band source exclusion. Rubber Band
+remains a comparator, not a dependency.
+
+For the Batch 29.6CH candidate, Rule 31 supersedes earlier successor-shape
+rules wherever they conflict. Those rules remain historical evidence, not
+active implementation requirements.
+
+#### Rule 31A: retire time-adaptive full-band synthesis
+
+The Rule 30K through Rule 30AA successor remains report-only rejection
+evidence. Do not repair, promote, or route it. One selected full-band resolution
+per time centre is closed as the primary architecture. Redundant full-band
+multi-resolution layers remain closed.
+
+The source-studied distinction is frequency ownership. A successful
+multi-resolution candidate may run simultaneous transforms only when each
+output frequency has one active synthesis scale at a time.
+
+#### Rule 31B: one complete frequency-partitioned topology
+
+The next candidate must compose these stages in one report-only implementation:
+
+- one synchronized source/output schedule
+- simultaneous long, middle, and short transforms
+- exclusive frequency intervals across those transforms
+- one full-band classification spectrum used for guidance only
+- bounded crossover placement at local spectral minima
+- ordinary instantaneous-frequency phase advance per scale
+- distinct peak-locked, reset, unlocked, attack, and linked-channel states
+- per-scale inverse synthesis and one sample-aligned output sum
+
+Harmonic/percussive/residual labels may guide boundaries and states. They must
+not create additive stretched components in this candidate. Frequency
+partitioning must not become a masked full-band union.
+
+#### Rule 31C: a single-grid multi-predictor control is mandatory
+
+The complete run must include one fixed-grid control that combines horizontal
+phase prediction with weighted vertical evidence from both frequency
+directions. It shares the candidate's time schedule, output contract, source
+boundary policy, and measurements.
+
+This control decides whether any gain comes from frequency partitioning or
+from abandoning hard nearest-owner phase replacement. It is not a fallback
+production engine and does not authorize random phase diffusion at long ratios.
+
+#### Rule 31D: evaluate the system, not another parameter lattice
+
+Batch 29.6CH is one architecture proof. It may expose frozen ablations for:
+
+- single-grid versus frequency-partitioned synthesis
+- classification guidance
+- reset/unlock/attack state
+- linked-channel phase ownership
+
+It must not sweep window sizes, crossovers, thresholds, peak distances, phase-
+offset scales, or detector constants. Signal-owned values must be derived from
+declared resolution and frequency-support invariants, not copied from Rubber
+Band.
+
+Run the complete synthetic gate and unchanged nine-row mono development set.
+Add Signalsmith Stretch as an external control. If structural and integrity
+gates pass, export one concealed listening pack. Decide on the architecture as
+a whole. An objective miss may identify a redesign question, but it must not
+open another chain of per-metric repair batches.
+
+Holdout, product routing, dynamic ratio, cache, and realtime source-fill remain
+closed. Linked decisions may be exercised inside the proof, but stereo
+promotion still requires independent listening.
+
+## Source-Study Provenance Rule
+
+Public papers, public descriptions, and public source may inform architecture.
+Pin source revision and licence in a specimen dossier. Separate observed facts
+from Signal decisions. Do not copy GPL expression or infer unavailable
+Elastique internals. External engines remain comparators unless a separate
+dependency decision explicitly changes that boundary.
 
 ## Next Task
 
-Execute Batch 29.6CG under Rule 30AB. Trace the three failed `55 Hz` rows from
-active-owner phase through native coefficient projection and exact-dual output.
-Keep real sources, sweeps, holdout, listening, tuning, linked stereo, dynamic
-ratio, cache, and routing closed.
+Execute Batch 29.6CH under Rule 31 as one complete source-studied architecture
+proof. Keep parameter lattices, holdout, product routing, dynamic ratio, cache,
+and realtime source-fill closed.

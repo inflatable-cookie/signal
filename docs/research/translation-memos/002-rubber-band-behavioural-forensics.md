@@ -1,6 +1,6 @@
 # Rubber Band Behavioural Forensics
 
-Status: promoted
+Status: superseded by `004-source-studied-stretch-architecture.md`
 Memo: `g10.029` algorithm-class reset
 Owner: dsp
 Last updated: 2026-07-12
@@ -82,6 +82,10 @@ black-box rendered outputs. Do not copy Rubber Band source or implementation
 expressions into Signal. Any direct GPL source study is a separate
 operator/legal decision and must remain isolated from implementation until its
 reuse boundary is explicit.
+
+That operator decision was made on 2026-07-13. Memo 004 replaces source
+exclusion with a pinned-revision, provenance-controlled architecture study.
+GPL expression and unexplained constants remain outside Signal.
 
 ## 6) Promotion
 

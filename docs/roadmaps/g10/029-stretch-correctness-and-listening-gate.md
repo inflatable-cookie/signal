@@ -978,27 +978,34 @@ Status: closed without exposure. No development candidate qualified.
 - [x] run the mechanism controls and complete `48`-row synthetic quality gate;
   reject on three stretched `55 Hz` rows before any real-source render
 
-### Batch 29.6CG - Low-Frequency Native-Projection Attribution
+### Batch 29.6CG - Source-Studied Architecture Reset
 
-- [ ] freeze the three failed `55 Hz` rows and passing synthetic controls
-- [ ] trace active phase through native owner-bin/region projection, inverse
-  output, and exact-dual accumulation at the frozen measurement apertures
-- [ ] assign one earliest boundary without changing thresholds, windows,
-  schedule, detector, or gate
+- [x] stop Rule 30AB and retire the time-adaptive full-band candidate
+- [x] inspect pinned Signalsmith Stretch and Rubber Band R2/R3 source with an
+  explicit licence and provenance boundary
+- [x] promote simultaneous frequency-partitioned resolution as the target and
+  fixed-grid weighted phase prediction as the control
+- [x] freeze one complete-system proof instead of another parameter or
+  per-metric repair sequence
 
-### Batch 29.6CH - Frozen Mono Development Gate
+### Batch 29.6CH - Source-Studied Complete Architecture Proof
 
-- [ ] open only after a repaired candidate passes every hard synthetic check
-- [ ] compare the frozen candidate with current Signal and captured external
-  evidence on the unchanged nine development rows
-- [ ] report every integrity, transient, replica, spectral, texture, formant,
-  and boundary field; return failures to traced ownership instead of sweeping
+- [ ] add Signalsmith Stretch to the frozen synthetic and nine-row development
+  comparator set
+- [ ] implement one report-only frequency-partitioned long/middle/short path
+  with guidance-only classification and explicit phase states
+- [ ] retain one fixed-grid weighted multi-predictor control under the same
+  schedule, boundary, and measurement contract
+- [ ] run the complete synthetic gate, all nine mono development rows, and one
+  concealed listening pack only after hard integrity passes
+- [ ] decide on the whole architecture; do not open parameter lattices or
+  per-metric repair batches
 
 ### Batch 29.6CI - Mono Decision Checkpoint
 
 - [ ] open only after the frozen nine-row development evidence is complete
-- [ ] decide whether the candidate earns concealed mono listening, requires one
-  named mechanism repair, or must return to research
+- [ ] decide whether the complete architecture earns continuation or returns to
+  research as a whole
 - [ ] keep holdout, linked stereo, dynamic ratio, cache, production routing,
   and parameter search closed
 
@@ -1842,11 +1849,25 @@ Status: closed without exposure. No development candidate qualified.
   `3.695086e-5` against `1e-6`, while tracked-owner error stays at
   `1.263528e-7`. The `48`-row gate has three hard failures and zero combined
   regressions. Mechanism and quality hashes are `19c5548baf4a10c8` and
-  `2410e33944214b72`. Batch 29.6CG traces native coefficient projection and
-  overlap; real sources remain closed.
+  `2410e33944214b72`. Batch 29.6CG initially owned native coefficient
+  projection attribution; operator review stops that local repair path.
+- 2026-07-13: Batch 29.6CG completes a pinned source study at Signalsmith
+  Stretch revision `57b93f4e9206a089a45387eaa39bdc9f310d3308` (MIT) and
+  Rubber Band revision `e4296ac80b1170018a110bc326fd0d45a0eb27d6`
+  (GPL-2-or-later/commercial). No source expression transfers into Signal.
+  Rubber Band R3 standard uses simultaneous long/middle/short transforms with
+  exclusive frequency ownership, full-band H/P/R guidance, valley-adjusted
+  crossovers, and coordinated reset/unlock/peak/channel phase state. It does
+  not select one full-band resolution over time and does not synthesize
+  additive H/P/R components. Signalsmith instead demonstrates one fixed-grid
+  weighted multi-direction phase predictor. Rule 31 retires the Rule 30
+  time-adaptive full-band successor and freezes those two shapes for one
+  complete-system comparison. Batch 29.6CH owns that proof; local repair,
+  parameter lattices, and per-metric follow-up chains remain closed.
 
 ## Next Task
 
-Execute Batch 29.6CG under Rule 30AB. Trace the three failed `55 Hz` rows from
-active-owner phase through native owner-bin/region projection, inverse output,
-and exact-dual accumulation. Do not render real sources or reopen sweeps.
+Execute Batch 29.6CH under Rule 31 as one complete source-studied architecture
+proof. Compare frequency-partitioned long/middle/short synthesis against the
+fixed-grid weighted multi-predictor control. Do not reopen Rule 30AB or a
+parameter-repair sequence.

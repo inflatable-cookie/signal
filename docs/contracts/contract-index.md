@@ -15,8 +15,8 @@ memory alone.
 - Signal is baseline-routed with no active strict spec lane
 - `g10.029` is the active correctness-first stretch roadmap
 - `046` governs sample-domain stretch behavior and its promotion gates
-- `082` governs the report-only successor policy and the active Rubber Band
-  behavioural-forensics reset before another Signal synthesis candidate
+- `082` governs the report-only successor policy and the active Rule 31
+  source-studied architecture proof
 - `g10.028` source-fill work is paused until the actual DSP kernel and source
   consumption geometry pass the `g10.029` correctness gate
 
@@ -144,6 +144,7 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Continue `g10.029` Batch 29.6BK under contract `082`: execute the frozen `108`
-complete configurations, hard gates, Pareto selection, and concealed
-development-listening export without exposing holdout rows.
+Execute `g10.029` Batch 29.6CH under contract `082` as one complete
+source-studied architecture proof. Compare frequency-partitioned
+long/middle/short synthesis with the fixed-grid weighted multi-predictor
+control; do not reopen Rule 30AB or parameter search.
