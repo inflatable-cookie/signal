@@ -170,6 +170,20 @@ but its recurrence begins from the previous frame's vertically corrected
 output. Separate direct horizontal recurrence from corrected-state feedback
 before changing another mechanism.
 
+Batch 29.6CQ resolves that ambiguity without changing the candidate. A phase
+oracle carries prior horizontal state and synthesizes its phase at current
+input magnitude, removing the raw recurrence's startup-magnitude memory. It is
+cleaner than corrected-state feedback for every isolated tone, but still fails
+at `-41.444546` to `-52.739473 dB`; each strongest spur stays within `0.222 Hz`
+of one output frame rate. Mixed leakage improves from `-29.975234` to
+`-41.558047 dB`. Vertical feedback is not necessary for the modulation.
+
+This does not prove the horizontal equation is wrong. Independent-bin
+horizontal transport is an intentionally incomplete field which the vertical
+pass is meant to re-lock. Intermediate-output failure cannot choose another
+translation change. Measure the pinned upstream complete engine under the same
+final-output gate first.
+
 ## Sources
 
 | Source | Revision | Use |
@@ -179,5 +193,5 @@ before changing another mechanism.
 
 ## Next Task
 
-Split direct horizontal recurrence from prior vertically corrected state in
-report-only evidence. Keep real-source rendering and parameter changes closed.
+Measure the pinned upstream complete engine on the frozen synthetic controls.
+Keep real-source rendering and parameter changes closed.

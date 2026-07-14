@@ -952,3 +952,13 @@ to `-29.975234 dB`; isolated tones remain dirty. The current horizontal trace
 uses the previous frame's vertically corrected output state. Attribution must
 separate direct horizontal recurrence from corrected-state feedback before
 another topology correction.
+
+State-lineage attribution excludes vertical feedback as a necessary cause. A
+target-magnitude oracle carrying only horizontal phase state improves every
+isolated tone but still produces one-frame-rate sidebands at `-41.444546` to
+`-52.739473 dB`. Horizontal transport is an incomplete intermediate phase
+field, so this result does not justify another local equation change. The next
+architecture decision depends on the pinned complete upstream engine under the
+same final-output measurement: either locate a Signal translation divergence
+if upstream passes or revise the attainable target for this topology if it
+does not.

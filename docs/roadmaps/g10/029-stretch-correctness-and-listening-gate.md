@@ -1132,14 +1132,36 @@ separate direct horizontal recurrence from vertical-state feedback.
 
 ### Batch 29.6CQ - Predictor State-Lineage Attribution
 
-- [ ] add report-only horizontal recurrence with prior horizontal state beside
+- [x] add report-only horizontal recurrence with prior horizontal state beside
   the existing prior corrected state; change no production candidate equation
-- [ ] compare isolated and mixed phase advance, frame-rate sidebands, and
+- [x] compare isolated and mixed phase advance, frame-rate sidebands, and
   repeated hashes under both state lineages
-- [ ] identify whether direct horizontal transport or vertically corrected
+- [x] identify whether direct horizontal transport or vertically corrected
   state fed into the next frame first creates the modulation
-- [ ] stop with one mechanism owner; keep parameter changes, real sources,
+- [x] stop with one mechanism owner; keep parameter changes, real sources,
   listening, stereo, dynamic ratio, cache, and routing closed
+
+Decision: vertical-state feedback is not necessary. A target-magnitude phase
+oracle driven only by prior horizontal state improves every isolated tone by
+`1.228` to `24.949 dB` and mixed output by `11.583 dB`, but all isolated tones
+still fail at `-41.444546` to `-52.739473 dB`. Each retains a strongest
+sideband within `0.222 Hz` of the `33.333333 Hz` frame rate. Independent-bin
+horizontal phase transport therefore carries the earliest modulation, but it
+is an intentionally incomplete intermediate field. Do not change its equation
+until the pinned upstream engine is measured under the same final-output gate.
+
+### Batch 29.6CR - Pinned-Source Synthetic Comparator
+
+- [ ] run pinned Signalsmith Stretch revision `57b93f4e` on the frozen isolated
+  tones and chord at `8 kHz`, ratio `2`, and its matching default geometry
+- [ ] measure final-output out-of-band energy, strongest sideband offset, pitch,
+  exact output length, finiteness, and repeated evidence under Rule 31G methods
+- [ ] decide whether the `-60 dB` gate is attainable by the studied complete
+  topology or whether Signal still diverges from the source implementation
+- [ ] if upstream passes, stop at the first required internal differential;
+  if upstream fails, stop and revise the architecture target before more code
+- [ ] keep the comparator report-only and out of production dependencies; keep
+  tuning, corpus, listening, stereo, dynamic ratio, cache, and routing closed
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -2116,8 +2138,17 @@ separate direct horizontal recurrence from vertical-state feedback.
   the next attribution gap: horizontal output uses the prior vertically
   corrected state. Batch 29.6CQ splits those state lineages before another
   mechanism change. Real audio and parameter sweeps remain closed.
+- 2026-07-14: Batch 29.6CQ separates prior corrected state from direct
+  horizontal phase recurrence. The target-magnitude horizontal phase oracle is
+  cleaner for all isolated tones and the mixture, but every isolated tone
+  remains above `-60 dB` at `-41.444546` to `-52.739473 dB`; each strongest
+  spur remains one output frame rate from the tone. Vertical feedback is not
+  required for failure. Because independent-bin horizontal transport is an
+  incomplete intermediate field by design, the result does not authorize
+  another equation guess. Batch 29.6CR measures the pinned upstream complete
+  engine under the same final-output gate before more Signal changes.
 
 ## Next Task
 
-Run Batch 29.6CQ. Split direct horizontal recurrence from vertically corrected
-state feedback in report-only evidence. Do not tune or render real sources.
+Run Batch 29.6CR. Measure the pinned upstream complete engine under the same
+synthetic final-output gate. Do not tune or render real sources.

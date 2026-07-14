@@ -112,6 +112,13 @@ tones still fail. The current horizontal trace starts each frame from the prior
 vertically corrected output, leaving direct horizontal recurrence and vertical
 feedback conflated.
 
+State-lineage attribution removes that ambiguity. A target-magnitude phase
+oracle driven only by prior horizontal state is substantially cleaner, but all
+four isolated tones still retain a frame-rate sideband above `-60 dB`.
+Vertical-state feedback is not required. Since horizontal transport is only
+one half of the specimen's phase field, the next evidence measures the pinned
+complete upstream engine rather than changing another translated equation.
+
 ## Source Inventory
 
 | Source | Type | Revision | Confidence | Notes |
@@ -128,9 +135,10 @@ feedback conflated.
 - the first combined proof fails frame-rate sidebands before real-source audio
 - preliminary horizontal energy scaling is restored for source fidelity
 - the correction does not own the sideband failure
-- horizontal recurrence versus corrected-state feedback remains unresolved
+- vertical-state feedback is excluded as a necessary sideband cause
+- pinned complete-engine performance under Rule 31G remains unmeasured
 
 ## Next Task
 
-Split horizontal recurrence from corrected-state feedback in report-only
-evidence. Stop before corpus rendering or parameter changes.
+Measure the pinned complete engine under the frozen synthetic final-output
+gate. Stop before corpus rendering or parameter changes.

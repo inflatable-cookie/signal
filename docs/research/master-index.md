@@ -64,6 +64,6 @@ Finch and Loophole.
 
 ## Next Task
 
-Run Batch 29.6CQ predictor state-lineage attribution. Split direct horizontal
-recurrence from vertically corrected state feedback. Keep real-source rendering
+Run Batch 29.6CR pinned-source synthetic comparison. Measure the complete
+upstream engine under the same final-output gate. Keep real-source rendering
 and promotion lanes closed.

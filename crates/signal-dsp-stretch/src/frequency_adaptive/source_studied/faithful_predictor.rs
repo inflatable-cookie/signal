@@ -64,6 +64,7 @@ pub(super) struct Render {
 pub(in crate::frequency_adaptive) enum TraceStage {
     Analysis,
     Horizontal,
+    HorizontalPhaseRecurrence,
     ShortLower,
     ShortUpper,
     LongLower,
@@ -256,6 +257,7 @@ pub(super) fn render_stage(
         }
         let mut preliminary = current[..bins].to_vec();
         let mut traced = preliminary.clone();
+        let mut next_horizontal_state = None;
         if let Some(previous_source_center) = previous_source_center {
             for bin in 0..bins {
                 let prediction = previous_output[bin] * current[bin] * auxiliary[bin].conj();
@@ -281,6 +283,14 @@ pub(super) fn render_stage(
                 .map(Complex64::norm_sqr)
                 .fold(0.0, f64::max)
                 * 1.0e-8;
+            if trace_stage == TraceStage::HorizontalPhaseRecurrence {
+                let mut horizontal_state = preliminary.clone();
+                horizontal_state[0].im = 0.0;
+                if length % 2 == 0 {
+                    horizontal_state[bins - 1].im = 0.0;
+                }
+                next_horizontal_state = Some(horizontal_state);
+            }
             let mut corrected = preliminary.clone();
             for bin in 0..bins {
                 let mut prediction = Complex64::new(0.0, 0.0);
@@ -347,6 +357,9 @@ pub(super) fn render_stage(
                 traced[bin] = match trace_stage {
                     TraceStage::Analysis => current[bin],
                     TraceStage::Horizontal => preliminary[bin],
+                    TraceStage::HorizontalPhaseRecurrence => {
+                        normalize_or(preliminary[bin], current[bin], current[bin])
+                    }
                     TraceStage::Complete => corrected[bin],
                     _ => normalize_or(selected, current[bin], current[bin]),
                 };
@@ -376,7 +389,7 @@ pub(super) fn render_stage(
                 normalization[output_index] += window[offset] * window[offset];
             }
         }
-        previous_output = preliminary;
+        previous_output = next_horizontal_state.unwrap_or(preliminary);
         previous_source_center = Some(source_center);
         output_center += hop as isize;
     }

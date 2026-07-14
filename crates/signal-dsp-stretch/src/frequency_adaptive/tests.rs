@@ -1732,6 +1732,52 @@ fn source_studied_faithful_predictor_horizontal_mixture_attribution() {
 
 #[test]
 #[cfg(not(debug_assertions))]
+fn source_studied_faithful_predictor_state_lineage_attribution() {
+    use super::source_studied::faithful_predictor::attribution::{
+        state_lineage_review, StateLineageDirection,
+    };
+
+    let result = state_lineage_review();
+    eprintln!("source_studied_faithful_predictor_state_lineage {result:#?}");
+    assert!(result.repeated);
+    assert_eq!(result.tones.len(), 4);
+    assert!(result
+        .tones
+        .iter()
+        .all(|tone| tone.corrected_feedback_out_of_band_db > -60.0));
+    assert!(result.tones.iter().all(|tone| {
+        tone.horizontal_phase_recurrence_out_of_band_db > -60.0
+            && tone.horizontal_phase_recurrence_out_of_band_db
+                < tone.corrected_feedback_out_of_band_db
+            && (tone.horizontal_phase_recurrence_sideband_offset_hz - 100.0 / 3.0).abs() <= 0.25
+    }));
+    assert_eq!(
+        result
+            .tones
+            .map(|tone| tone.horizontal_phase_recurrence_hash),
+        [
+            0xc444_b985_3804_2212,
+            0xaf17_c2de_ab11_133d,
+            0xb606_b032_3bac_0dba,
+            0x5f08_9be7_738b_f6b0,
+        ]
+    );
+    assert_eq!(
+        result.mixed_horizontal_phase_recurrence_hash,
+        0x3f0d_01c0_2056_3c31
+    );
+    assert!(
+        result.mixed_horizontal_phase_recurrence_out_of_band_db
+            < result.mixed_corrected_feedback_out_of_band_db
+    );
+    assert_eq!(
+        result.direction,
+        StateLineageDirection::DirectHorizontalRecurrence
+    );
+}
+
+#[test]
+#[cfg(not(debug_assertions))]
 fn renyi_time_resolution_selection_selects_schedule_direction() {
     let first = renyi_time_resolution_selection_review();
     let repeated = renyi_time_resolution_selection_review();

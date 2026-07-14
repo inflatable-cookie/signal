@@ -144,6 +144,6 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Run `g10.029` Batch 29.6CQ predictor state-lineage attribution. Split direct
-horizontal recurrence from vertically corrected state feedback. Keep real-
-source rendering and promotion lanes closed.
+Run `g10.029` Batch 29.6CR pinned-source synthetic comparison. Measure the
+complete upstream engine under the same final-output gate. Keep real-source
+rendering and promotion lanes closed.

@@ -3260,8 +3260,15 @@ choice changes. The horizontal trace inherits prior vertically corrected
 state, so the next evidence must separate direct horizontal recurrence from
 vertical-state feedback before another mechanism changes.
 
+Batch 29.6CQ excludes vertical-state feedback as necessary for the sideband.
+A target-magnitude phase oracle carrying prior horizontal state improves every
+isolated tone, but all still fail at `-41.444546` to `-52.739473 dB` with a
+strongest spur within `0.222 Hz` of one output frame rate. This intermediate
+field is not a complete synthesis candidate. No further equation or geometry
+change is authorized until the pinned upstream complete engine is measured by
+the same final-output Rule 31G method.
+
 ## Next Task
 
-Run Batch 29.6CQ. Split direct horizontal recurrence from vertically corrected
-state feedback in report-only evidence. Keep real sources and parameter sweeps
-closed.
+Run Batch 29.6CR. Measure the pinned upstream complete engine under the same
+synthetic final-output gate. Keep real sources and parameter sweeps closed.
