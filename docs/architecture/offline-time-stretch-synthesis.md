@@ -1003,12 +1003,24 @@ the failure count from `[3 tones, 1 chord]` to `[4 tones, 1 chord]`; only the
 standalone correction and remains report-only rejection evidence.
 
 The remaining observed analysis differential is the window. Pinned
-Signalsmith Stretch calls Linear's symmetric Kaiser path at bandwidth
+Signalsmith Stretch calls Linear's periodic Kaiser path at bandwidth
 `block/interval = 4` and forces the `960/240` overlap product to exact
 reconstruction. Signal uses square-root Hann with post-overlap normalization.
 Test the pinned window alone on Signal's standard grid before considering any
 interaction between representation choices.
 
-Run `g10.029` Batch 29.6CW. Pin the exact source Kaiser window and test it alone
-on Signal's standard grid. Stop before corpus rendering or combined analysis
-changes.
+The window-only result is also incoherent. It improves the `110 Hz` and
+`220 Hz` controls, regresses the other two tones and the chord, and moves
+paired failures to `[4, 1]`. The source coefficients prove that the even-length
+Kaiser is periodic rather than endpoint-symmetric; the initial
+confined-Gaussian configuration is overwritten by Stretch's explicit Kaiser
+selection.
+
+Grid and window main effects are both rejected, but the actual source uses
+them together and spectral prediction is phase-basis dependent. Complete one
+bounded `2x2` interaction test. This is not permission to compound arbitrary
+rejected edits: no third mechanism or tuning may enter the combined cell.
+
+Run `g10.029` Batch 29.6CX. Combine only the pinned periodic Kaiser window and
+modified half-bin grid to measure their interaction. Stop before third
+mechanisms or corpus rendering.

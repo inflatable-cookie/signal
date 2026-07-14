@@ -3331,10 +3331,20 @@ boundaries, pitch, and repeated hashes pass. It improves `110 Hz` by
 `[3 tones, 1 chord]` to `[4 tones, 1 chord]`. Do not promote or combine this
 variant.
 
+Batch 29.6CW rejects the pinned Kaiser window as a standalone fidelity
+mechanism and corrects its shape classification. Linear revision `56686735`
+selects an even-length periodic Kaiser, not an endpoint-symmetric window or the
+initial confined-Gaussian default. Its analysis and synthesis coefficients are
+identical with hash `cd811c4f82d161be`; the `960/240` overlap product has hash
+`6dadf0c986c4bd49` and maximum unity error `8.953e-8`. The standard-grid variant
+is identity-safe at `2.776e-16` and passes structure, pitch, and repeat. It
+improves two tones, regresses two tones and the chord, and worsens paired
+failures from `[3 tones, 1 chord]` to `[4 tones, 1 chord]`. Do not promote the
+window alone.
+
 ## Next Task
 
-Run Batch 29.6CW. Pin and test only the symmetric Kaiser window selected by
-Signalsmith Linear revision `56686735`, using Signal's standard `960`-point
-grid and unchanged predictor. Require coefficient provenance, identity,
-structure, pitch, and repeat before source parity. Keep the rejected half-bin
-grid, real sources, and parameter sweeps closed.
+Run Batch 29.6CX. Complete the bounded `2x2` analysis-representation test by
+combining only the pinned periodic Kaiser window and modified half-bin grid.
+Report their interaction against both rejected main effects. Keep every
+predictor law, third mechanism, real source, and parameter sweep closed.

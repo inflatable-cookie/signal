@@ -1257,16 +1257,39 @@ by `3.736 dB`. Paired failures worsen from `[3 tone, 1 chord]` to
 
 ### Batch 29.6CW - Source Kaiser Window Attribution
 
-- [ ] pin the exact `960/240` symmetric Kaiser window selected by Signalsmith
+- [x] pin the exact `960/240` periodic Kaiser window selected by Signalsmith
   Linear revision `56686735`; freeze coefficient and overlap-product hashes
-- [ ] add one report-only standard-`960`-grid Signal variant using that window
+- [x] add one report-only standard-`960`-grid Signal variant using that window
   for analysis and synthesis with exact overlap normalization
-- [ ] hold transform grid, scheduling, predictor equations, distances,
+- [x] hold transform grid, scheduling, predictor equations, distances,
   normalization, fallback, boundary policy, and synthesis ownership fixed
-- [ ] prove identity, exact length, coverage, finiteness, pitch, and repeat
+- [x] prove identity, exact length, coverage, finiteness, pitch, and repeat
   before rerunning exact-input source parity
-- [ ] decide the window alone; do not combine it with the rejected half-bin
+- [x] decide the window alone; do not combine it with the rejected half-bin
   grid or reopen corpus, listening, stereo, dynamic ratio, cache, or routing
+
+Decision: reject the source window alone and correct the prior symmetry claim.
+The pinned even-length Kaiser is periodic: analysis and synthesis hashes are
+both `cd811c4f82d161be`, maximum mirror delta is `0.002532`, and the exact
+four-hop overlap-product hash is `6dadf0c986c4bd49` with `8.953e-8` maximum
+unity error. Identity error is `2.776e-16`; structure, pitch, and repeat pass.
+The window improves `110 Hz` and `220 Hz` by `10.078` and `8.823 dB`, but
+regresses `164.8138 Hz`, `329.6276 Hz`, and the chord by `5.906`, `30.764`, and
+`1.821 dB`. Paired failures worsen from `[3 tone, 1 chord]` to `[4 tone,
+1 chord]`. Do not promote the window alone.
+
+### Batch 29.6CX - Pinned Analysis-Representation Interaction
+
+- [ ] complete the source-derived `2x2` analysis representation comparison by
+  combining only the pinned periodic Kaiser window and modified half-bin grid
+- [ ] retain `960/240` support, scheduling, predictor equations, distances,
+  normalization, fallback, boundary policy, and synthesis ownership
+- [ ] prove identity, exact length, coverage, finiteness, pitch, and repeat
+  before reading fidelity
+- [ ] report the per-control grid/window interaction against baseline,
+  grid-only, window-only, and pinned-source evidence
+- [ ] decide whether the exact observed combination coherently reduces parity
+  failures; stop before any third mechanism or real-source render
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -2285,10 +2308,16 @@ by `3.736 dB`. Paired failures worsen from `[3 tone, 1 chord]` to
   finiteness, boundaries, pitch, and repeat pass. Only `110 Hz` improves.
   Three tones and the chord regress, moving paired failures from `[3, 1]` to
   `[4, 1]`. Batch 29.6CW tests the other observed analysis differential—the
-  pinned symmetric Kaiser window—on Signal's standard grid.
+  pinned periodic Kaiser window—on Signal's standard grid.
+- 2026-07-14: Batch 29.6CW rejects the periodic Kaiser window alone. The
+  pinned analysis/synthesis coefficients match exactly and their four-hop
+  overlap is within `8.953e-8` of unity. Identity, structure, pitch, and repeat
+  pass. Two tones improve, but two tones and the chord regress; paired failures
+  worsen to `[4, 1]`. Batch 29.6CX completes the bounded `2x2` representation
+  test because the actual pinned engine uses both observed choices together.
 
 ## Next Task
 
-Run Batch 29.6CW. Test the pinned symmetric Kaiser window alone on Signal's
-standard `960`-point grid. Do not combine it with the rejected half-bin grid,
-tune, or render real sources.
+Run Batch 29.6CX. Complete the bounded analysis-representation interaction by
+combining only the pinned periodic Kaiser window and modified half-bin grid.
+Do not add a third mechanism, tune, or render real sources.

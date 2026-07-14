@@ -144,6 +144,6 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Run `g10.029` Batch 29.6CW source Kaiser-window attribution. Test only the
-pinned symmetric window on Signal's standard grid while retaining its
-predictor law. Keep real-source rendering and promotion lanes closed.
+Run `g10.029` Batch 29.6CX analysis-representation interaction. Combine only
+the pinned periodic Kaiser window and modified half-bin grid while retaining
+Signal's predictor law. Keep real-source rendering and promotion lanes closed.

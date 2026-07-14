@@ -25,7 +25,8 @@ Pinned Signalsmith Stretch `1.3.2` configures:
 - a default output interval from one quarter of that support, corresponding to
   30 ms
 - a fast real FFT at least as long as the block support
-- an approximate confined-Gaussian perfect-reconstruction window
+- an even-length periodic Kaiser perfect-reconstruction window; the initial
+  confined-Gaussian configuration is overwritten
 - fixed output intervals with input intervals selected by the local time map
 - preliminary horizontal phase transport from an auxiliary spectrum one fixed
   output interval behind the current input centre
@@ -231,10 +232,22 @@ regresses the other tones by `3.171` to `28.993 dB` and the chord by
 alone.
 
 Source inspection leaves one untested analysis differential. Signalsmith
-Stretch explicitly selects Linear's symmetric Kaiser window after configuring
+Stretch explicitly selects Linear's periodic Kaiser window after configuring
 the STFT. At `960/240`, the bandwidth argument is `4`; Linear then normalizes
 each hop residue class for exact sum-of-squares reconstruction. Test that
 window alone on Signal's standard grid before any combined representation.
+
+Batch 29.6CW corrects the prior symmetry assumption and rejects the window
+alone. The source analysis and synthesis coefficient hashes are both
+`cd811c4f82d161be`; maximum endpoint-mirror delta is `0.002532`. Four-hop
+overlap is within `8.953e-8` of unity. The variant improves `110 Hz` and
+`220 Hz` by `10.078` and `8.823 dB`, but regresses `164.8138 Hz`, `329.6276 Hz`,
+and the chord by `5.906`, `30.764`, and `1.821 dB`. Paired failures worsen to
+`[4, 1]`.
+
+Both main effects are now measured. The source uses them together, and the
+predictor operates on their phase basis. One combined cell completes the
+bounded `2x2`; it is not an open-ended compound repair.
 
 ## Sources
 
@@ -245,6 +258,6 @@ window alone on Signal's standard grid before any combined representation.
 
 ## Next Task
 
-Pin and test the source Kaiser window alone on Signal's standard grid. Keep
-the rejected half-bin grid, equations, real-source rendering, and parameter
-changes closed.
+Combine only the pinned periodic Kaiser and modified half-bin grid to measure
+their interaction. Keep equations, third mechanisms, real-source rendering,
+and parameter changes closed.

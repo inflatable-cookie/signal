@@ -53,6 +53,15 @@ pub(in crate::frequency_adaptive) struct StageTraceReview {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+pub(super) struct PinnedWindowTrace {
+    pub(super) block_frames: usize,
+    pub(super) interval_frames: usize,
+    pub(super) analysis: Vec<f64>,
+    pub(super) synthesis: Vec<f64>,
+    pub(super) repeated: bool,
+}
+
+#[derive(Clone, Debug, PartialEq)]
 struct SourceFrameTrace {
     geometry: StageTraceGeometry,
     current: Vec<Complex64>,
@@ -61,12 +70,7 @@ struct SourceFrameTrace {
 }
 
 pub(in crate::frequency_adaptive) fn review() -> StageTraceReview {
-    let source = required_path("SIGNALSMITH_STRETCH_SOURCE");
-    let source_revision = command_text("git", &["-C", path_text(&source), "rev-parse", "HEAD"]);
-    assert_eq!(source_revision, PINNED_REVISION);
-    let linear = source.join("cmd/out/build/_deps/signalsmith-linear-src");
-    let linear_revision = command_text("git", &["-C", path_text(&linear), "rev-parse", "HEAD"]);
-    assert_eq!(linear_revision, PINNED_LINEAR_REVISION);
+    let (source, linear, source_revision, linear_revision) = verified_sources();
 
     let root =
         PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../target/stretch-pinned-stage-trace");
@@ -78,6 +82,29 @@ pub(in crate::frequency_adaptive) fn review() -> StageTraceReview {
         repeated: first == second,
         ..first
     }
+}
+
+pub(super) fn pinned_window() -> PinnedWindowTrace {
+    let (source, linear, _, _) = verified_sources();
+    let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../target/stretch-pinned-window");
+    replace_directory(&root);
+    let probe = compile_probe(&source, &linear, &root);
+    let first = parse_pinned_window(&probe);
+    let second = parse_pinned_window(&probe);
+    PinnedWindowTrace {
+        repeated: first == second,
+        ..first
+    }
+}
+
+fn verified_sources() -> (PathBuf, PathBuf, String, String) {
+    let source = required_path("SIGNALSMITH_STRETCH_SOURCE");
+    let source_revision = command_text("git", &["-C", path_text(&source), "rev-parse", "HEAD"]);
+    assert_eq!(source_revision, PINNED_REVISION);
+    let linear = source.join("cmd/out/build/_deps/signalsmith-linear-src");
+    let linear_revision = command_text("git", &["-C", path_text(&linear), "rev-parse", "HEAD"]);
+    assert_eq!(linear_revision, PINNED_LINEAR_REVISION);
+    (source, linear, source_revision, linear_revision)
 }
 
 fn run(probe: &Path, source_revision: &str, linear_revision: &str) -> StageTraceReview {
@@ -304,6 +331,39 @@ fn parse_source_trace(probe: &Path, name: &str) -> SourceFrameTrace {
         current,
         preliminary,
         corrected,
+    }
+}
+
+fn parse_pinned_window(probe: &Path) -> PinnedWindowTrace {
+    let text = command_text(path_text(probe), &["window"]);
+    let mut lines = text.lines();
+    let meta = lines
+        .next()
+        .expect("source window metadata")
+        .split('\t')
+        .collect::<Vec<_>>();
+    assert_eq!(meta.len(), 4);
+    assert_eq!(meta[0], "WINDOW_META");
+    let block_frames = parse(meta[1]);
+    let interval_frames = parse(meta[2]);
+    let coefficient_count = parse(meta[3]);
+    let mut analysis = Vec::with_capacity(coefficient_count);
+    let mut synthesis = Vec::with_capacity(coefficient_count);
+    for (expected_index, line) in lines.enumerate() {
+        let fields = line.split('\t').collect::<Vec<_>>();
+        assert_eq!(fields.len(), 4);
+        assert_eq!(fields[0], "WINDOW");
+        assert_eq!(parse::<usize>(fields[1]), expected_index);
+        analysis.push(parse(fields[2]));
+        synthesis.push(parse(fields[3]));
+    }
+    assert_eq!(analysis.len(), coefficient_count);
+    PinnedWindowTrace {
+        block_frames,
+        interval_frames,
+        analysis,
+        synthesis,
+        repeated: false,
     }
 }
 

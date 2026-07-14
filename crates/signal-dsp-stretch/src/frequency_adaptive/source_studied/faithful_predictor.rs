@@ -3,6 +3,7 @@ use rustfft::{num_complex::Complex64, FftPlanner};
 use super::HASH_OFFSET;
 
 pub(in crate::frequency_adaptive) mod analysis_grid;
+pub(in crate::frequency_adaptive) mod analysis_window;
 pub(in crate::frequency_adaptive) mod attribution;
 pub(in crate::frequency_adaptive) mod pinned_source;
 pub(in crate::frequency_adaptive) mod stage_trace;
@@ -239,13 +240,32 @@ pub(super) fn render_stage_with_grid(
     trace_stage: TraceStage,
     grid: TransformGrid,
 ) -> Render {
-    render_stage_with_boundary_policy_and_grid(
+    render_stage_with_boundary_policy_grid_and_window(
         input,
         ratio,
         sample_rate,
         trace_stage,
         FrequencyBoundaryPolicy::Clamp,
         grid,
+        None,
+    )
+}
+
+pub(super) fn render_stage_with_window(
+    input: &[f64],
+    ratio: f64,
+    sample_rate: usize,
+    trace_stage: TraceStage,
+    window: &[f64],
+) -> Render {
+    render_stage_with_boundary_policy_grid_and_window(
+        input,
+        ratio,
+        sample_rate,
+        trace_stage,
+        FrequencyBoundaryPolicy::Clamp,
+        TransformGrid::Standard,
+        Some(window),
     )
 }
 
@@ -256,23 +276,25 @@ pub(super) fn render_stage_with_boundary_policy(
     trace_stage: TraceStage,
     boundary_policy: FrequencyBoundaryPolicy,
 ) -> Render {
-    render_stage_with_boundary_policy_and_grid(
+    render_stage_with_boundary_policy_grid_and_window(
         input,
         ratio,
         sample_rate,
         trace_stage,
         boundary_policy,
         TransformGrid::Standard,
+        None,
     )
 }
 
-fn render_stage_with_boundary_policy_and_grid(
+fn render_stage_with_boundary_policy_grid_and_window(
     input: &[f64],
     ratio: f64,
     sample_rate: usize,
     trace_stage: TraceStage,
     boundary_policy: FrequencyBoundaryPolicy,
     grid: TransformGrid,
+    window_override: Option<&[f64]>,
 ) -> Render {
     let target_len = (input.len() as f64 * ratio).round() as usize;
     if ratio == 1.0 && trace_stage == TraceStage::Complete {
@@ -306,11 +328,20 @@ fn render_stage_with_boundary_policy_and_grid(
         TransformGrid::ModifiedHalfBin => transform_length / 2,
     };
     let long_distance = ((transform_length as f64 / hop as f64).round() as usize).max(1);
-    let window = (0..length)
-        .map(|index| {
-            (0.5 - 0.5 * (std::f64::consts::TAU * index as f64 / length as f64).cos()).sqrt()
-        })
-        .collect::<Vec<_>>();
+    let window = window_override.map_or_else(
+        || {
+            (0..length)
+                .map(|index| {
+                    (0.5 - 0.5 * (std::f64::consts::TAU * index as f64 / length as f64).cos())
+                        .sqrt()
+                })
+                .collect::<Vec<_>>()
+        },
+        |window| {
+            assert_eq!(window.len(), length, "frozen window support");
+            window.to_vec()
+        },
+    );
     let mut planner = FftPlanner::<f64>::new();
     let forward = planner.plan_fft_forward(transform_length);
     let inverse = planner.plan_fft_inverse(transform_length);

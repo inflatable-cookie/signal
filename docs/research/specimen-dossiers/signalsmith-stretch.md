@@ -159,10 +159,14 @@ known frame-rate sideband, is the next translation gate.
   bases are not isomorphic
 - a Signal half-bin-grid-only variant is identity-safe but worsens paired
   parity from `[3, 1]` to `[4, 1]`; the representation is not sufficient alone
-- the next isolated source differential is Linear's symmetric Kaiser window at
-  bandwidth `4`, forced to exact `960/240` overlap reconstruction
+- Linear's even-length Kaiser at bandwidth `4` is periodic, not endpoint-
+  symmetric; analysis and synthesis coefficients match exactly and are forced
+  to exact `960/240` overlap reconstruction
+- the window-only Signal variant is identity-safe but improves only two tones;
+  paired parity worsens from `[3, 1]` to `[4, 1]`
 
 ## Next Task
 
-Pin and test the exact source Kaiser window alone on Signal's standard grid.
-Retain all predictor laws and keep the rejected half-bin grid closed.
+Complete the bounded `2x2` analysis-representation comparison by combining
+only the pinned periodic Kaiser and modified half-bin grid. Retain all
+predictor laws and stop before a third mechanism.

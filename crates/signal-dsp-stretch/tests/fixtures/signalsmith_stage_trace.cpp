@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <iomanip>
 #include <iostream>
+#include <limits>
 #include <string>
 #include <vector>
 
@@ -53,6 +54,16 @@ int main(int argc, char **argv) {
 
 	Stretch stretch(0);
 	stretch.presetDefault(1, sampleRate);
+	if (std::string(argv[1]) == "window") {
+		std::cout << std::setprecision(std::numeric_limits<float>::max_digits10);
+		std::cout << "WINDOW_META\t" << stretch.blockSamples() << "\t"
+			<< stretch.intervalSamples() << "\t" << stretch.stft._analysisWindow.size() << "\n";
+		for (size_t i = 0; i < stretch.stft._analysisWindow.size(); ++i) {
+			std::cout << "WINDOW\t" << i << "\t" << stretch.stft._analysisWindow[i]
+				<< "\t" << stretch.stft._synthesisWindow[i] << "\n";
+		}
+		return 0;
+	}
 	int seekLength = stretch.outputSeekLength(0.5f);
 	stretch.outputSeek(Channels{input.data()}, seekLength);
 

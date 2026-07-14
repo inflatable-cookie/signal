@@ -1987,6 +1987,52 @@ fn source_studied_modified_half_bin_analysis_grid() {
 }
 
 #[test]
+#[ignore = "requires pinned local Signalsmith Stretch revision 57b93f4e"]
+#[cfg(not(debug_assertions))]
+fn source_studied_pinned_kaiser_analysis_window() {
+    use super::source_studied::faithful_predictor::analysis_window::{
+        review, KaiserWindowDirection,
+    };
+
+    let result = review();
+    eprintln!("source_studied_pinned_kaiser_analysis_window {result:#?}");
+    assert!(result.repeated);
+    assert_eq!(result.geometry, [960, 240, 960, 481]);
+    assert_eq!(
+        result.coefficient_hashes,
+        [0xcd81_1c4f_82d1_61be, 0xcd81_1c4f_82d1_61be]
+    );
+    assert_eq!(result.overlap_product_hash, 0x6dad_f0c9_86c4_bd49);
+    assert_eq!(result.maximum_analysis_synthesis_delta, 0.0);
+    assert!((0.0025..0.0026).contains(&result.maximum_symmetry_delta));
+    assert!(result.maximum_overlap_error <= 1.0e-6);
+    assert!(result.identity_maximum_error <= 1.0e-10);
+    assert_eq!(result.structural_failures, [0; 6]);
+    assert_eq!(result.baseline_source_relative_failures, [3, 1]);
+    assert_eq!(result.source_relative_failures, [4, 1]);
+    assert!(result
+        .tones
+        .iter()
+        .all(|tone| tone.peak_error_hz <= 0.5 && tone.hash != 0));
+    assert!(result.chord_peak_error_hz <= 0.5);
+    assert_eq!(
+        result
+            .tones
+            .iter()
+            .map(|tone| tone.hash)
+            .collect::<Vec<_>>(),
+        vec![
+            0x99ae_e1fb_82b4_aea1,
+            0x7a22_fba5_3bb2_e333,
+            0xcfd6_c08b_12f2_9e5f,
+            0x2261_9018_da9f_7247,
+        ]
+    );
+    assert_eq!(result.chord_hash, 0x943f_51d0_3c8b_b374);
+    assert_eq!(result.direction, KaiserWindowDirection::WindowRejected);
+}
+
+#[test]
 #[cfg(not(debug_assertions))]
 fn renyi_time_resolution_selection_selects_schedule_direction() {
     let first = renyi_time_resolution_selection_review();

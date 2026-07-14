@@ -370,6 +370,6 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Implement `g10.029` Batch 29.6CW. Pin and test the source symmetric Kaiser
-window alone on Signal's standard transform grid. Stop before real-source
-rendering or combined representation changes.
+Implement `g10.029` Batch 29.6CX. Complete the bounded analysis-representation
+`2x2` by combining only the pinned periodic Kaiser and modified half-bin grid.
+Stop before real-source rendering or third mechanisms.
