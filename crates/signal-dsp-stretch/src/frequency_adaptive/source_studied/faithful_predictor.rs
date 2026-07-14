@@ -2,6 +2,7 @@ use rustfft::{num_complex::Complex64, FftPlanner};
 
 use super::HASH_OFFSET;
 
+pub(in crate::frequency_adaptive) mod analysis_grid;
 pub(in crate::frequency_adaptive) mod attribution;
 pub(in crate::frequency_adaptive) mod pinned_source;
 pub(in crate::frequency_adaptive) mod stage_trace;
@@ -87,6 +88,12 @@ pub(in crate::frequency_adaptive) enum TraceStage {
 pub(in crate::frequency_adaptive) enum FrequencyBoundaryPolicy {
     Clamp,
     ZeroExtend,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(in crate::frequency_adaptive) enum TransformGrid {
+    Standard,
+    ModifiedHalfBin,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -225,12 +232,47 @@ pub(super) fn render_stage(
     )
 }
 
+pub(super) fn render_stage_with_grid(
+    input: &[f64],
+    ratio: f64,
+    sample_rate: usize,
+    trace_stage: TraceStage,
+    grid: TransformGrid,
+) -> Render {
+    render_stage_with_boundary_policy_and_grid(
+        input,
+        ratio,
+        sample_rate,
+        trace_stage,
+        FrequencyBoundaryPolicy::Clamp,
+        grid,
+    )
+}
+
 pub(super) fn render_stage_with_boundary_policy(
     input: &[f64],
     ratio: f64,
     sample_rate: usize,
     trace_stage: TraceStage,
     boundary_policy: FrequencyBoundaryPolicy,
+) -> Render {
+    render_stage_with_boundary_policy_and_grid(
+        input,
+        ratio,
+        sample_rate,
+        trace_stage,
+        boundary_policy,
+        TransformGrid::Standard,
+    )
+}
+
+fn render_stage_with_boundary_policy_and_grid(
+    input: &[f64],
+    ratio: f64,
+    sample_rate: usize,
+    trace_stage: TraceStage,
+    boundary_policy: FrequencyBoundaryPolicy,
+    grid: TransformGrid,
 ) -> Render {
     let target_len = (input.len() as f64 * ratio).round() as usize;
     if ratio == 1.0 && trace_stage == TraceStage::Complete {
@@ -252,16 +294,26 @@ pub(super) fn render_stage_with_boundary_policy(
     }
     let hop = ((sample_rate as f64 * 0.03).round() as usize).max(1);
     let length = 4 * hop;
-    let bins = length / 2 + 1;
-    let long_distance = ((length as f64 / hop as f64).round() as usize).max(1);
+    let transform_length = match grid {
+        TransformGrid::Standard => length,
+        TransformGrid::ModifiedHalfBin => {
+            assert_eq!(length, 960, "frozen 8 kHz grid attribution support");
+            1_024
+        }
+    };
+    let bins = match grid {
+        TransformGrid::Standard => transform_length / 2 + 1,
+        TransformGrid::ModifiedHalfBin => transform_length / 2,
+    };
+    let long_distance = ((transform_length as f64 / hop as f64).round() as usize).max(1);
     let window = (0..length)
         .map(|index| {
             (0.5 - 0.5 * (std::f64::consts::TAU * index as f64 / length as f64).cos()).sqrt()
         })
         .collect::<Vec<_>>();
     let mut planner = FftPlanner::<f64>::new();
-    let forward = planner.plan_fft_forward(length);
-    let inverse = planner.plan_fft_inverse(length);
+    let forward = planner.plan_fft_forward(transform_length);
+    let inverse = planner.plan_fft_inverse(transform_length);
     let mut output = vec![0.0; target_len];
     let mut normalization = vec![0.0; target_len];
     let mut previous_output = vec![Complex64::new(0.0, 0.0); bins];
@@ -276,20 +328,34 @@ pub(super) fn render_stage_with_boundary_policy(
     let mut output_center = -(length as isize / 2);
     while output_center < target_len as isize + length as isize / 2 {
         let source_center = (output_center as f64 / ratio).round() as isize;
-        let current = analyse(input, source_center, &window, &forward);
-        let auxiliary = analyse(input, source_center - hop as isize, &window, &forward);
+        let current = analyse(
+            input,
+            source_center,
+            &window,
+            transform_length,
+            grid,
+            &forward,
+        );
+        let auxiliary = analyse(
+            input,
+            source_center - hop as isize,
+            &window,
+            transform_length,
+            grid,
+            &forward,
+        );
         let interior = source_center >= sample_rate as isize / 2
             && source_center < input.len() as isize - sample_rate as isize / 2;
         if interior {
             horizontal_ratio_errors.push(std::array::from_fn(|tone| {
                 let frequency = CHORD_FREQUENCIES[tone];
-                let bin = (frequency * length as f64 / sample_rate as f64).round() as usize;
+                let bin = frequency_bin(frequency, sample_rate, transform_length, grid);
                 let observed = (current[bin] * auxiliary[bin].conj()).arg();
                 let expected = std::f64::consts::TAU * frequency * hop as f64 / sample_rate as f64;
                 wrap(observed - expected)
             }));
         }
-        let mut preliminary = current[..bins].to_vec();
+        let mut preliminary = current.clone();
         let mut traced = preliminary.clone();
         let mut next_horizontal_state = None;
         if let Some(previous_source_center) = previous_source_center {
@@ -304,7 +370,7 @@ pub(super) fn render_stage_with_boundary_policy(
             if interior {
                 horizontal_output_phases.push(std::array::from_fn(|tone| {
                     let frequency = CHORD_FREQUENCIES[tone];
-                    let bin = (frequency * length as f64 / sample_rate as f64).round() as usize;
+                    let bin = frequency_bin(frequency, sample_rate, transform_length, grid);
                     preliminary[bin].arg()
                 }));
             }
@@ -312,17 +378,11 @@ pub(super) fn render_stage_with_boundary_policy(
                 .unsigned_abs()
                 .max(1);
             let time_factor = hop as f64 / input_hop as f64;
-            let significant_energy = current[..bins]
-                .iter()
-                .map(Complex64::norm_sqr)
-                .fold(0.0, f64::max)
-                * 1.0e-8;
+            let significant_energy =
+                current.iter().map(Complex64::norm_sqr).fold(0.0, f64::max) * 1.0e-8;
             if trace_stage == TraceStage::HorizontalPhaseRecurrence {
                 let mut horizontal_state = preliminary.clone();
-                horizontal_state[0].im = 0.0;
-                if length % 2 == 0 {
-                    horizontal_state[bins - 1].im = 0.0;
-                }
+                constrain_real_edges(&mut horizontal_state, grid);
                 next_horizontal_state = Some(horizontal_state);
             }
             let mut corrected = preliminary.clone();
@@ -331,7 +391,7 @@ pub(super) fn render_stage_with_boundary_policy(
                 let mut selected = Complex64::new(0.0, 0.0);
                 if bin >= 1 {
                     let lower_input =
-                        interpolate(&current[..bins], bin as f64 - time_factor, boundary_policy);
+                        interpolate(&current, bin as f64 - time_factor, boundary_policy);
                     let twist = current[bin] * lower_input.conj();
                     let candidate = corrected[bin - 1] * twist;
                     prediction += candidate;
@@ -341,11 +401,8 @@ pub(super) fn render_stage_with_boundary_policy(
                     mechanisms.short_lower += 1;
                 }
                 if bin + 1 < bins {
-                    let lower_input = interpolate(
-                        &current[..bins],
-                        bin as f64 + 1.0 - time_factor,
-                        boundary_policy,
-                    );
+                    let lower_input =
+                        interpolate(&current, bin as f64 + 1.0 - time_factor, boundary_policy);
                     let twist = current[bin + 1] * lower_input.conj();
                     let candidate = preliminary[bin + 1] * twist.conj();
                     prediction += candidate;
@@ -356,7 +413,7 @@ pub(super) fn render_stage_with_boundary_policy(
                 }
                 if bin >= long_distance {
                     let lower_input = interpolate(
-                        &current[..bins],
+                        &current,
                         bin as f64 - long_distance as f64 * time_factor,
                         boundary_policy,
                     );
@@ -370,7 +427,7 @@ pub(super) fn render_stage_with_boundary_policy(
                 }
                 if bin + long_distance < bins {
                     let lower_input = interpolate(
-                        &current[..bins],
+                        &current,
                         bin as f64 + long_distance as f64 - long_distance as f64 * time_factor,
                         boundary_policy,
                     );
@@ -408,7 +465,7 @@ pub(super) fn render_stage_with_boundary_policy(
             if source_center == 8_400 {
                 stage_trace = Some(StageFrameTrace {
                     source_center,
-                    current: current[..bins].to_vec(),
+                    current: current.clone(),
                     preliminary: preliminary.clone(),
                     corrected: corrected.clone(),
                 });
@@ -418,23 +475,14 @@ pub(super) fn render_stage_with_boundary_policy(
         for bin in 0..bins {
             previous_input_energy[bin] = current[bin].norm_sqr();
         }
-        preliminary[0].im = 0.0;
-        traced[0].im = 0.0;
-        if length % 2 == 0 {
-            preliminary[bins - 1].im = 0.0;
-            traced[bins - 1].im = 0.0;
-        }
-        let mut spectrum = vec![Complex64::new(0.0, 0.0); length];
-        spectrum[..bins].copy_from_slice(&traced);
-        for bin in 1..length / 2 {
-            spectrum[length - bin] = spectrum[bin].conj();
-        }
-        inverse.process(&mut spectrum);
+        constrain_real_edges(&mut preliminary, grid);
+        constrain_real_edges(&mut traced, grid);
+        let frame = synthesise(&traced, length, transform_length, grid, &inverse);
         for offset in 0..length {
             let output_index = output_center - length as isize / 2 + offset as isize;
             if (0..target_len as isize).contains(&output_index) {
                 let output_index = output_index as usize;
-                output[output_index] += spectrum[offset].re * window[offset] / length as f64;
+                output[output_index] += frame[offset] * window[offset] / transform_length as f64;
                 normalization[output_index] += window[offset] * window[offset];
             }
         }
@@ -471,17 +519,96 @@ fn analyse(
     input: &[f64],
     center: isize,
     window: &[f64],
+    transform_length: usize,
+    grid: TransformGrid,
     forward: &std::sync::Arc<dyn rustfft::Fft<f64>>,
 ) -> Vec<Complex64> {
-    let length = window.len();
-    let mut spectrum = (0..length)
-        .map(|offset| {
-            let index = center - length as isize / 2 + offset as isize;
-            Complex64::new(reflected(input, index) * window[offset], 0.0)
-        })
-        .collect::<Vec<_>>();
+    let support_length = window.len();
+    let mut spectrum = vec![Complex64::new(0.0, 0.0); transform_length];
+    for offset in 0..support_length {
+        let relative = offset as isize - support_length as isize / 2;
+        let value = reflected(input, center + relative) * window[offset];
+        match grid {
+            TransformGrid::Standard => {
+                spectrum[offset] = Complex64::new(value, 0.0);
+            }
+            TransformGrid::ModifiedHalfBin => {
+                let index = relative.rem_euclid(transform_length as isize) as usize;
+                let phase = -std::f64::consts::PI * relative as f64 / transform_length as f64;
+                spectrum[index] = Complex64::from_polar(value, phase);
+            }
+        }
+    }
     forward.process(&mut spectrum);
+    spectrum.truncate(match grid {
+        TransformGrid::Standard => transform_length / 2 + 1,
+        TransformGrid::ModifiedHalfBin => transform_length / 2,
+    });
     spectrum
+}
+
+fn synthesise(
+    bins: &[Complex64],
+    support_length: usize,
+    transform_length: usize,
+    grid: TransformGrid,
+    inverse: &std::sync::Arc<dyn rustfft::Fft<f64>>,
+) -> Vec<f64> {
+    let mut spectrum = vec![Complex64::new(0.0, 0.0); transform_length];
+    spectrum[..bins.len()].copy_from_slice(bins);
+    match grid {
+        TransformGrid::Standard => {
+            for bin in 1..transform_length / 2 {
+                spectrum[transform_length - bin] = spectrum[bin].conj();
+            }
+        }
+        TransformGrid::ModifiedHalfBin => {
+            for bin in 0..transform_length / 2 {
+                spectrum[transform_length - 1 - bin] = spectrum[bin].conj();
+            }
+        }
+    }
+    inverse.process(&mut spectrum);
+    (0..support_length)
+        .map(|offset| match grid {
+            TransformGrid::Standard => spectrum[offset].re,
+            TransformGrid::ModifiedHalfBin => {
+                let relative = offset as isize - support_length as isize / 2;
+                let index = relative.rem_euclid(transform_length as isize) as usize;
+                let phase = std::f64::consts::PI * relative as f64 / transform_length as f64;
+                (spectrum[index] * Complex64::from_polar(1.0, phase)).re
+            }
+        })
+        .collect()
+}
+
+fn frequency_bin(
+    frequency: f64,
+    sample_rate: usize,
+    transform_length: usize,
+    grid: TransformGrid,
+) -> usize {
+    let position = frequency * transform_length as f64 / sample_rate as f64
+        - match grid {
+            TransformGrid::Standard => 0.0,
+            TransformGrid::ModifiedHalfBin => 0.5,
+        };
+    position.round().clamp(
+        0.0,
+        match grid {
+            TransformGrid::Standard => transform_length / 2,
+            TransformGrid::ModifiedHalfBin => transform_length / 2 - 1,
+        } as f64,
+    ) as usize
+}
+
+fn constrain_real_edges(spectrum: &mut [Complex64], grid: TransformGrid) {
+    if grid == TransformGrid::Standard {
+        spectrum[0].im = 0.0;
+        if spectrum.len() > 1 {
+            spectrum[spectrum.len() - 1].im = 0.0;
+        }
+    }
 }
 
 fn reflected(input: &[f64], mut index: isize) -> f64 {

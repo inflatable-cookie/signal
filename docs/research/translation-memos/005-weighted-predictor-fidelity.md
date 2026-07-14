@@ -223,6 +223,19 @@ standard `960`-point real transform with `481` bins. The first band centres are
 hashes repeat at source centre `8400`. Phase and magnitude differences after
 that boundary cannot isolate predictor equations because the bases differ.
 
+Batch 29.6CV tests the modified half-bin grid without changing Signal's
+square-root Hann window. Identity error is `2.220e-16`, and all structure,
+pitch, and repeat checks pass. The grid improves `110 Hz` by `6.071 dB` but
+regresses the other tones by `3.171` to `28.993 dB` and the chord by
+`3.736 dB`. Paired failures worsen from `[3, 1]` to `[4, 1]`. Reject the grid
+alone.
+
+Source inspection leaves one untested analysis differential. Signalsmith
+Stretch explicitly selects Linear's symmetric Kaiser window after configuring
+the STFT. At `960/240`, the bandwidth argument is `4`; Linear then normalizes
+each hop residue class for exact sum-of-squares reconstruction. Test that
+window alone on Signal's standard grid before any combined representation.
+
 ## Sources
 
 | Source | Revision | Use |
@@ -232,6 +245,6 @@ that boundary cannot isolate predictor equations because the bases differ.
 
 ## Next Task
 
-Test the `1024`-point modified half-bin grid alone in the report-only Signal
-predictor. Keep its window, equations, real-source rendering, and parameter
+Pin and test the source Kaiser window alone on Signal's standard grid. Keep
+the rejected half-bin grid, equations, real-source rendering, and parameter
 changes closed.

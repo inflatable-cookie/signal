@@ -157,9 +157,12 @@ known frame-rate sideband, is the next translation gate.
 - current, reconstructed preliminary, and corrected hashes repeat at aligned
   source centre `8400`; downstream bin deltas are diagnostic because the two
   bases are not isomorphic
+- a Signal half-bin-grid-only variant is identity-safe but worsens paired
+  parity from `[3, 1]` to `[4, 1]`; the representation is not sufficient alone
+- the next isolated source differential is Linear's symmetric Kaiser window at
+  bandwidth `4`, forced to exact `960/240` overlap reconstruction
 
 ## Next Task
 
-Test the modified half-bin transform grid alone in the report-only Signal
-predictor. Retain Signal's window and all predictor laws; stop before corpus
-rendering or combined parameter changes.
+Pin and test the exact source Kaiser window alone on Signal's standard grid.
+Retain all predictor laws and keep the rejected half-bin grid closed.

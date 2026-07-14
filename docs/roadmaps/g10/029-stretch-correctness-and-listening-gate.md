@@ -1237,16 +1237,36 @@ different bases and do not select another predictor-law edit.
 
 ### Batch 29.6CV - Modified Analysis-Grid Attribution
 
-- [ ] add one report-only Signal variant with `960`-frame support, `240`-frame
+- [x] add one report-only Signal variant with `960`-frame support, `240`-frame
   interval, a `1024`-point transform, and the pinned half-bin frequency grid
-- [ ] hold the Signal window, scheduling, predictor equations, normalization,
+- [x] hold the Signal window, scheduling, predictor equations, normalization,
   fallback, boundary policy, and synthesis ownership fixed
-- [ ] prove analysis/synthesis identity, exact length, finiteness, pitch, and
+- [x] prove analysis/synthesis identity, exact length, finiteness, pitch, and
   repeated hashes before reading fidelity movement
-- [ ] rerun exact-input source parity and decide whether the grid materially
+- [x] rerun exact-input source parity and decide whether the grid materially
   reduces `[3 tone, 1 chord]` paired failures
-- [ ] stop on rejection; do not combine the grid with a window change or reopen
+- [x] stop on rejection; do not combine the grid with a window change or reopen
   corpus, listening, stereo, dynamic ratio, cache, or routing
+
+Decision: reject the modified half-bin grid as a standalone parity mechanism.
+Analysis/synthesis identity error is `2.220e-16`; all structural, pitch, and
+repeat gates pass. The grid improves only `110 Hz` by `6.071 dB` versus Signal
+baseline. It regresses the other tones by `3.171` to `28.993 dB` and the chord
+by `3.736 dB`. Paired failures worsen from `[3 tone, 1 chord]` to
+`[4 tone, 1 chord]`. Do not promote or compound the variant.
+
+### Batch 29.6CW - Source Kaiser Window Attribution
+
+- [ ] pin the exact `960/240` symmetric Kaiser window selected by Signalsmith
+  Linear revision `56686735`; freeze coefficient and overlap-product hashes
+- [ ] add one report-only standard-`960`-grid Signal variant using that window
+  for analysis and synthesis with exact overlap normalization
+- [ ] hold transform grid, scheduling, predictor equations, distances,
+  normalization, fallback, boundary policy, and synthesis ownership fixed
+- [ ] prove identity, exact length, coverage, finiteness, pitch, and repeat
+  before rerunning exact-input source parity
+- [ ] decide the window alone; do not combine it with the rejected half-bin
+  grid or reopen corpus, listening, stereo, dynamic ratio, cache, or routing
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -2260,9 +2280,15 @@ different bases and do not select another predictor-law edit.
   directly onto a `960`-point standard real transform with `481` bins. Raw
   current, preliminary, and corrected hashes repeat for `110 Hz`, `220 Hz`,
   and chord controls. Batch 29.6CV tests that transform grid alone.
+- 2026-07-14: Batch 29.6CV rejects the modified half-bin grid alone. Exact
+  analysis/synthesis identity measures `2.220e-16`; length, coverage,
+  finiteness, boundaries, pitch, and repeat pass. Only `110 Hz` improves.
+  Three tones and the chord regress, moving paired failures from `[3, 1]` to
+  `[4, 1]`. Batch 29.6CW tests the other observed analysis differential—the
+  pinned symmetric Kaiser window—on Signal's standard grid.
 
 ## Next Task
 
-Run Batch 29.6CV. Test the pinned `1024`-point modified half-bin analysis grid
-as one report-only differential while retaining Signal's window and predictor.
-Do not tune or render real sources.
+Run Batch 29.6CW. Test the pinned symmetric Kaiser window alone on Signal's
+standard `960`-point grid. Do not combine it with the rejected half-bin grid,
+tune, or render real sources.

@@ -144,6 +144,6 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Run `g10.029` Batch 29.6CV modified analysis-grid attribution. Test only the
-pinned `1024`-point half-bin representation while retaining Signal's window
-and predictor law. Keep real-source rendering and promotion lanes closed.
+Run `g10.029` Batch 29.6CW source Kaiser-window attribution. Test only the
+pinned symmetric window on Signal's standard grid while retaining its
+predictor law. Keep real-source rendering and promotion lanes closed.

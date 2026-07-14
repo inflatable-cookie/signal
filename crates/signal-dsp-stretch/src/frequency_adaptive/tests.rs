@@ -1951,6 +1951,42 @@ fn source_studied_pinned_signalsmith_stage_trace() {
 }
 
 #[test]
+#[ignore = "requires pinned local Signalsmith Stretch revision 57b93f4e"]
+#[cfg(not(debug_assertions))]
+fn source_studied_modified_half_bin_analysis_grid() {
+    use super::source_studied::faithful_predictor::analysis_grid::{review, ModifiedGridDirection};
+
+    let result = review();
+    eprintln!("source_studied_modified_half_bin_analysis_grid {result:#?}");
+    assert!(result.repeated);
+    assert_eq!(result.geometry, [960, 240, 1_024, 512]);
+    assert!(result.identity_maximum_error <= 1.0e-10);
+    assert_eq!(result.structural_failures, [0; 6]);
+    assert_eq!(result.baseline_source_relative_failures, [3, 1]);
+    assert_eq!(result.source_relative_failures, [4, 1]);
+    assert!(result
+        .tones
+        .iter()
+        .all(|tone| tone.peak_error_hz <= 0.5 && tone.hash != 0));
+    assert!(result.chord_peak_error_hz <= 0.5);
+    assert_eq!(
+        result
+            .tones
+            .iter()
+            .map(|tone| tone.hash)
+            .collect::<Vec<_>>(),
+        vec![
+            0xed99_b730_4bdf_dd6b,
+            0xbced_cde4_945b_ad2f,
+            0x2c3c_ee95_8e77_c777,
+            0x9e90_6652_07d8_57bd,
+        ]
+    );
+    assert_eq!(result.chord_hash, 0x4408_80e3_f642_c797);
+    assert_eq!(result.direction, ModifiedGridDirection::GridRejected);
+}
+
+#[test]
 #[cfg(not(debug_assertions))]
 fn renyi_time_resolution_selection_selects_schedule_direction() {
     let first = renyi_time_resolution_selection_review();

@@ -3321,10 +3321,20 @@ from `1.7002` to `2.8156 rad`. Because those states inhabit different bases,
 the downstream deltas are diagnostic only. They do not authorize another
 predictor-law edit.
 
+Batch 29.6CV rejects the modified half-bin grid as a standalone fidelity
+mechanism. The report-only `1024`-point/`512`-band variant retains Signal's
+`960`-frame square-root Hann window and every predictor law. Its exact
+analysis/synthesis identity error is `2.220e-16`; length, coverage, finiteness,
+boundaries, pitch, and repeated hashes pass. It improves `110 Hz` by
+`6.071 dB` versus baseline but regresses the other tones by `3.171` to
+`28.993 dB` and the chord by `3.736 dB`. Source-relative failures worsen from
+`[3 tones, 1 chord]` to `[4 tones, 1 chord]`. Do not promote or combine this
+variant.
+
 ## Next Task
 
-Run Batch 29.6CV. Test only the `1024`-point modified half-bin transform grid in
-the report-only Signal predictor while retaining its window, scheduling,
-equations, normalization, fallback, and boundary policy. Require structural
-and repeat gates before reading source-parity movement. Keep real sources and
-parameter sweeps closed.
+Run Batch 29.6CW. Pin and test only the symmetric Kaiser window selected by
+Signalsmith Linear revision `56686735`, using Signal's standard `960`-point
+grid and unchanged predictor. Require coefficient provenance, identity,
+structure, pitch, and repeat before source parity. Keep the rejected half-bin
+grid, real sources, and parameter sweeps closed.

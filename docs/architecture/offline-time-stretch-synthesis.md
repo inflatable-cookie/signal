@@ -997,6 +997,18 @@ and `481` bins. The bases differ in size, origin, and spacing, so raw bin phase
 cannot be treated as an equation-level comparison. Test the modified half-bin
 grid alone before revisiting prediction or windows.
 
-Run `g10.029` Batch 29.6CV. Add a report-only modified half-bin transform-grid
-variant while retaining Signal's window and predictor law. Stop before corpus
-rendering or combined parameter changes.
+The grid-only variant is identity-safe but worsens exact-input parity. It moves
+the failure count from `[3 tones, 1 chord]` to `[4 tones, 1 chord]`; only the
+`110 Hz` control improves. The modified half-bin representation is not a
+standalone correction and remains report-only rejection evidence.
+
+The remaining observed analysis differential is the window. Pinned
+Signalsmith Stretch calls Linear's symmetric Kaiser path at bandwidth
+`block/interval = 4` and forces the `960/240` overlap product to exact
+reconstruction. Signal uses square-root Hann with post-overlap normalization.
+Test the pinned window alone on Signal's standard grid before considering any
+interaction between representation choices.
+
+Run `g10.029` Batch 29.6CW. Pin the exact source Kaiser window and test it alone
+on Signal's standard grid. Stop before corpus rendering or combined analysis
+changes.
