@@ -169,9 +169,12 @@ known frame-rate sideband, is the next translation gate.
   better than pinned source
 - the two analysis choices are one coupled phase-basis representation; neither
   is independently promotable
+- the coherent representation passes Signal's full synthetic predictor proof:
+  one-frame transient placement, zero replicas, exact silence, all mechanism
+  paths exercised, and stable complete hash `0905a7fd4180bff4`
 
 ## Next Task
 
-Run the complete frozen synthetic proof with the coherent periodic-Kaiser and
-modified-half-bin representation. Retain all predictor laws and stop before a
-third mechanism or real-source rendering.
+Generalize only the coherent transform geometry to the frozen long-form sample
+rate and run exact-input objective confirmation on the six existing musical
+rows. Stop before listening or production selection.

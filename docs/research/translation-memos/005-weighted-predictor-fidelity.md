@@ -257,6 +257,13 @@ the chord delta is `-0.641 dB`. Factorial interaction ranges from `-3.455` to
 `-53.403 dB`. The representation is phase-basis coherent and cannot be reduced
 to a better window or a better grid in isolation.
 
+Batch 29.6CY carries that basis through the complete frozen system proof.
+Source parity remains `[0, 0]`; bass error is `0.000718 Hz`; chord peak error is
+`0.007314 Hz`; transient placement is within one frame with zero replicas;
+silence is exact. Structure, identity, boundaries, coverage, cancellation,
+mechanism exercise, and repeat pass. The combined basis is now the faithful-
+predictor research baseline, still isolated from production selection.
+
 ## Sources
 
 | Source | Revision | Use |
@@ -266,6 +273,7 @@ to a better window or a better grid in isolation.
 
 ## Next Task
 
-Carry the coherent representation through the complete frozen synthetic proof.
-Keep equations, third mechanisms, real-source rendering, and parameter changes
-closed.
+Generalize only the source-derived transform geometry to the frozen long-form
+sample rate, then run exact-input objective confirmation on the six existing
+musical rows. Keep equations, third mechanisms, listening, stereo, dynamic
+ratio, and product routing closed.

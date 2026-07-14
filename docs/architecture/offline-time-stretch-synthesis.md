@@ -1024,6 +1024,14 @@ Every combined tone is within `0.147 dB` of pinned source and the chord is
 the complete analysis phase basis. Treat the window and grid as one coherent
 representation, not independently selectable improvements.
 
-Run `g10.029` Batch 29.6CY. Use that coherent representation in the complete
-report-only faithful-predictor synthetic proof before exact-input real-source
-confirmation. Stop before third mechanisms, tuning, or corpus rendering.
+The coherent representation also passes the complete synthetic system proof.
+Bass and chord pitch, transient placement and replica protection, silence,
+cancellation, boundaries, coverage, identity, mechanism exercise, and repeat
+all pass while exact-input tone/chord parity stays closed. The representation
+is now the report-only faithful-predictor research baseline. It is not a
+production selection.
+
+Run `g10.029` Batch 29.6CZ. Generalize only its source-derived transform
+geometry to the frozen long-form sample rate and perform exact-input objective
+confirmation on the six existing musical rows. Stop before listening, stereo,
+dynamic ratio, routing, or promotion.

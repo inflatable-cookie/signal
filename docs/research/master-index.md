@@ -64,6 +64,7 @@ Finch and Loophole.
 
 ## Next Task
 
-Run Batch 29.6CY coherent-representation synthetic gate. Carry the combined
-periodic Kaiser and modified half-bin basis through the complete frozen proof.
-Keep third mechanisms, real-source rendering, and promotion lanes closed.
+Run Batch 29.6CZ exact-input real-source confirmation. Generalize only the
+coherent source geometry to the frozen long-form sample rate and rerender the
+six existing musical rows through coherent Signal and pinned Signalsmith.
+Keep listening, stereo, dynamic ratio, and promotion lanes closed.

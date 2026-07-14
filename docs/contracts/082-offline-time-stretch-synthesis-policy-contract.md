@@ -3352,9 +3352,18 @@ Identity error is `2.220e-16`; length, coverage, finiteness, boundaries, pitch,
 and repeated hashes pass. Retain the pair as one source-derived analysis
 representation. Neither main effect has independent authority.
 
+Batch 29.6CY passes the complete synthetic gate with that representation.
+Source-relative failures remain `[0 tones, 0 chord]`. Exact length, identity,
+coverage, finiteness, boundaries, pitch, silence, cancellation, mechanism
+exercise, and repeated hashes pass. Maximum bass error is `0.000718 Hz`; chord
+peak error is `0.007314 Hz`; transient placement error is one frame with zero
+replicas. Complete-proof hash `0905a7fd4180bff4` is frozen. Exact-input real-
+source confirmation may open; product routing and promotion may not.
+
 ## Next Task
 
-Run Batch 29.6CY. Apply the coherent periodic-Kaiser/modified-half-bin
-representation to the complete report-only faithful-predictor synthetic proof.
-Retain every predictor law and the exact source-parity gate. Keep third
-mechanisms, real sources, parameter sweeps, and product routing closed.
+Run Batch 29.6CZ. Generalize only the coherent source-derived analysis geometry
+to the frozen long-form sample rate and render the six existing five-second
+musical rows through coherent Signal and pinned Signalsmith from exact shared
+inputs. Require objective structure and quality evidence before listening.
+Keep stereo, dynamic ratio, product routing, and promotion closed.

@@ -1303,15 +1303,37 @@ representation. Do not promote either component independently.
 
 ### Batch 29.6CY - Coherent Representation Synthetic Gate
 
-- [ ] make the combined periodic-Kaiser/modified-half-bin representation the
+- [x] make the combined periodic-Kaiser/modified-half-bin representation the
   report-only faithful-predictor research baseline
-- [ ] rerun the complete bass, chord, transient, silence, cancellation,
+- [x] rerun the complete bass, chord, transient, silence, cancellation,
   mechanism-exercise, boundary, coverage, duration, identity, and repeat proof
-- [ ] retain source-relative tone/chord parity and freeze the coherent output
+- [x] retain source-relative tone/chord parity and freeze the coherent output
   hashes without changing predictor equations or adding a third mechanism
-- [ ] decide whether the complete synthetic gate opens exact-input real-source
+- [x] decide whether the complete synthetic gate opens exact-input real-source
   confirmation; keep product routing, stereo, dynamic ratio, and promotion
   closed
+
+Decision: pass the complete synthetic gate and open exact-input real-source
+confirmation. The coherent representation retains `[0 tone, 0 chord]` source-
+relative failures. Structure, identity, coverage, finiteness, boundaries, and
+repeat pass. Maximum bass error is `0.000718 Hz`; chord peak error is
+`0.007314 Hz`; transient placement error is one frame with zero replicas;
+silence is exact. Every horizontal, short, long, corrected, and fallback path
+is exercised. Freeze complete-proof hash `0905a7fd4180bff4`. Product routing,
+stereo, dynamic ratio, and promotion remain closed.
+
+### Batch 29.6CZ - Exact-Input Real-Source Confirmation
+
+- [ ] generalize the coherent source-derived analysis geometry to the frozen
+  long-form sample rate without changing its `30 ms` interval, fourfold
+  support, periodic Kaiser construction, or modified half-bin basis
+- [ ] rerender the six existing five-second Batch 29.6CK musical rows through
+  coherent Signal and pinned Signalsmith from identical mono inputs
+- [ ] report exact length, finiteness, boundaries, peak growth, timing,
+  transient replicas, spectral residual, and deterministic hashes before
+  opening listening
+- [ ] decide whether objective confirmation authorizes one concealed musical
+  comparison; keep stereo, dynamic ratio, product routing, and promotion closed
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -2343,10 +2365,15 @@ representation. Do not promote either component independently.
   chord is `0.641 dB` better. Identity, structure, pitch, and repeat pass.
   Batch 29.6CY now applies the coherent representation to the complete frozen
   synthetic proof before any real-source confirmation.
+- 2026-07-14: Batch 29.6CY passes the complete coherent-representation
+  synthetic gate. Bass, chord, transient, silence, cancellation, structure,
+  identity, boundary, mechanism, and repeat controls pass; transient placement
+  error is one frame with zero replicas and paired source failures remain `[0,
+  0]`. Batch 29.6CZ now owns exact-input long-form objective confirmation.
 
 ## Next Task
 
-Run Batch 29.6CY. Promote the combined periodic-Kaiser/modified-half-bin
-representation only inside the report-only faithful-predictor research path,
-then rerun the complete frozen synthetic gate. Do not add a third mechanism,
-tune, or render real sources.
+Run Batch 29.6CZ. Generalize only the coherent source-derived representation to
+the frozen long-form sample rate, then rerender the six existing five-second
+rows through coherent Signal and pinned Signalsmith from identical inputs.
+Stop before listening, stereo, dynamic ratio, routing, or promotion.

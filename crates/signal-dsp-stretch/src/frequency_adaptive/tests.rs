@@ -2077,6 +2077,52 @@ fn source_studied_pinned_analysis_representation_interaction() {
 }
 
 #[test]
+#[ignore = "requires pinned local Signalsmith Stretch revision 57b93f4e"]
+#[cfg(not(debug_assertions))]
+fn source_studied_coherent_representation_synthetic_gate() {
+    use super::source_studied::faithful_predictor::coherent_representation::{
+        review, CoherentRepresentationDirection,
+    };
+
+    let result = review();
+    eprintln!("source_studied_coherent_representation_synthetic_gate {result:#?}");
+    assert!(result.repeated);
+    assert_eq!(result.geometry, [960, 240, 1_024, 512]);
+    assert_eq!(result.structural_failures, [0; 5]);
+    assert!(result.maximum_bass_error_hz <= 0.5);
+    assert_eq!(result.octave_failures, 0);
+    assert!(result.maximum_chord_peak_error_hz <= 0.5);
+    assert!(result.chord_input_out_of_band_db <= -60.0);
+    assert!(result.chord_out_of_band_db > -60.0);
+    assert!(result.maximum_event_error_frames <= 256);
+    assert_eq!(result.replica_failures, 0);
+    assert_eq!(result.silence_peak, 0.0);
+    assert_eq!(result.source_relative_failures, [0, 0]);
+    assert!(result.mechanisms.horizontal > 0);
+    assert!(result.mechanisms.short_lower > 0);
+    assert!(result.mechanisms.short_upper > 0);
+    assert!(result.mechanisms.long_lower > 0);
+    assert!(result.mechanisms.long_upper > 0);
+    assert!(result.mechanisms.corrected > 0);
+    assert!(result.mechanisms.fallback > 0);
+    assert_eq!(result.output_hash, 0x0905_a7fd_4180_bff4);
+    assert_eq!(
+        result.source_parity_hashes,
+        [
+            0x1497_ff00_420e_bf4e,
+            0x34d3_f1e1_8ab5_6752,
+            0x1dda_3a2c_0163_ac8f,
+            0x1146_5d18_4b11_1c89,
+            0xd23c_d768_f2a4_61bd,
+        ]
+    );
+    assert_eq!(
+        result.direction,
+        CoherentRepresentationDirection::ExactInputRealSourceConfirmation
+    );
+}
+
+#[test]
 #[cfg(not(debug_assertions))]
 fn renyi_time_resolution_selection_selects_schedule_direction() {
     let first = renyi_time_resolution_selection_review();

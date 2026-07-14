@@ -144,7 +144,7 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Run `g10.029` Batch 29.6CY coherent-representation synthetic gate. Carry the
-combined periodic Kaiser and modified half-bin basis through the complete
-faithful-predictor proof while retaining its predictor law. Keep real-source
-rendering and promotion lanes closed.
+Run `g10.029` Batch 29.6CZ exact-input real-source confirmation. Generalize
+only the coherent source geometry to the frozen long-form sample rate and
+rerender the six existing musical rows through coherent Signal and pinned
+Signalsmith. Keep listening and promotion lanes closed.

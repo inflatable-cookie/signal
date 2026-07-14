@@ -370,7 +370,7 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Implement `g10.029` Batch 29.6CY. Carry the coherent periodic-Kaiser and
-modified-half-bin representation through the complete report-only faithful-
-predictor synthetic gate. Stop before real-source rendering or third
-mechanisms.
+Implement `g10.029` Batch 29.6CZ. Generalize only the coherent source geometry
+to the frozen long-form sample rate and rerender the six existing musical rows
+through coherent Signal and pinned Signalsmith from identical inputs. Stop
+before listening, stereo, dynamic ratio, routing, or promotion.

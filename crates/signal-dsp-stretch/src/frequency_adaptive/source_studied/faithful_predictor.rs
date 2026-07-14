@@ -6,6 +6,7 @@ pub(in crate::frequency_adaptive) mod analysis_grid;
 pub(in crate::frequency_adaptive) mod analysis_interaction;
 pub(in crate::frequency_adaptive) mod analysis_window;
 pub(in crate::frequency_adaptive) mod attribution;
+pub(in crate::frequency_adaptive) mod coherent_representation;
 pub(in crate::frequency_adaptive) mod pinned_source;
 pub(in crate::frequency_adaptive) mod stage_trace;
 
@@ -107,8 +108,16 @@ pub(super) struct ChordSpectrumMetrics {
 }
 
 pub(in crate::frequency_adaptive) fn review() -> Review {
-    let first = run();
-    let second = run();
+    review_representation(TransformGrid::Standard, None)
+}
+
+pub(super) fn review_with_grid_and_window(window: &[f64]) -> Review {
+    review_representation(TransformGrid::ModifiedHalfBin, Some(window))
+}
+
+fn review_representation(grid: TransformGrid, window: Option<&[f64]>) -> Review {
+    let first = run(grid, window);
+    let second = run(grid, window);
     let repeated = first == second;
     let passed = repeated
         && first.structural_failures == [0; 5]
@@ -131,7 +140,7 @@ pub(in crate::frequency_adaptive) fn review() -> Review {
     }
 }
 
-fn run() -> Review {
+fn run(grid: TransformGrid, window: Option<&[f64]>) -> Review {
     let hop = ((SAMPLE_RATE as f64 * 0.03).round() as usize).max(1);
     let length = 4 * hop;
     let mut structural_failures = [0; 5];
@@ -140,7 +149,7 @@ fn run() -> Review {
 
     let structural = structural_control();
     for ratio in RATIOS {
-        let render = render(&structural, ratio, SAMPLE_RATE);
+        let render = render_with_representation(&structural, ratio, SAMPLE_RATE, grid, window);
         structural_failures[0] += usize::from(render.samples.len() != render.target_len);
         structural_failures[1] += render.non_finite;
         structural_failures[2] += render.uncovered;
@@ -149,7 +158,7 @@ fn run() -> Review {
         add_counts(&mut mechanisms, render.mechanisms);
         mix(&mut output_hash, render.hash);
     }
-    let identity = render(&structural, 1.0, SAMPLE_RATE);
+    let identity = render_with_representation(&structural, 1.0, SAMPLE_RATE, grid, window);
     structural_failures[4] += identity
         .samples
         .iter()
@@ -158,7 +167,7 @@ fn run() -> Review {
         .count();
     mix(&mut output_hash, identity.hash);
 
-    let (maximum_bass_error_hz, octave_failures, bass_render) = bass_review();
+    let (maximum_bass_error_hz, octave_failures, bass_render) = bass_review(grid, window);
     add_counts(&mut mechanisms, bass_render.mechanisms);
     mix(&mut output_hash, bass_render.hash);
 
@@ -167,16 +176,17 @@ fn run() -> Review {
         chord_input_out_of_band_db,
         chord_out_of_band_db,
         chord_render,
-    ) = chord_review();
+    ) = chord_review(grid, window);
     add_counts(&mut mechanisms, chord_render.mechanisms);
     mix(&mut output_hash, chord_render.hash);
 
-    let (maximum_event_error_frames, replica_failures, transient_render) = transient_review();
+    let (maximum_event_error_frames, replica_failures, transient_render) =
+        transient_review(grid, window);
     add_counts(&mut mechanisms, transient_render.mechanisms);
     mix(&mut output_hash, transient_render.hash);
 
     let silence = vec![0.0; SAMPLE_RATE];
-    let silence_render = render(&silence, 1.5, SAMPLE_RATE);
+    let silence_render = render_with_representation(&silence, 1.5, SAMPLE_RATE, grid, window);
     let silence_peak = silence_render
         .samples
         .iter()
@@ -193,7 +203,8 @@ fn run() -> Review {
             value + -value
         })
         .collect::<Vec<_>>();
-    let cancellation_render = render(&cancellation, 0.75, SAMPLE_RATE);
+    let cancellation_render =
+        render_with_representation(&cancellation, 0.75, SAMPLE_RATE, grid, window);
     add_counts(&mut mechanisms, cancellation_render.mechanisms);
     mix(&mut output_hash, cancellation_render.hash);
 
@@ -215,8 +226,22 @@ fn run() -> Review {
     }
 }
 
-fn render(input: &[f64], ratio: f64, sample_rate: usize) -> Render {
-    render_stage(input, ratio, sample_rate, TraceStage::Complete)
+fn render_with_representation(
+    input: &[f64],
+    ratio: f64,
+    sample_rate: usize,
+    grid: TransformGrid,
+    window: Option<&[f64]>,
+) -> Render {
+    render_stage_with_boundary_policy_grid_and_window(
+        input,
+        ratio,
+        sample_rate,
+        TraceStage::Complete,
+        FrequencyBoundaryPolicy::Clamp,
+        grid,
+        window,
+    )
 }
 
 pub(super) fn render_stage(
@@ -723,7 +748,7 @@ fn structural_control() -> Vec<f64> {
         .collect()
 }
 
-fn bass_review() -> (f64, usize, Render) {
+fn bass_review(grid: TransformGrid, window: Option<&[f64]>) -> (f64, usize, Render) {
     let note_frames = SAMPLE_RATE;
     let input = (0..note_frames * BASS_FREQUENCIES.len())
         .map(|index| {
@@ -732,7 +757,7 @@ fn bass_review() -> (f64, usize, Render) {
         })
         .collect::<Vec<_>>();
     let ratio = 1.5;
-    let render = render(&input, ratio, SAMPLE_RATE);
+    let render = render_with_representation(&input, ratio, SAMPLE_RATE, grid, window);
     let mut maximum_error = 0.0_f64;
     let mut octave_failures = 0;
     for (note, expected) in BASS_FREQUENCIES.into_iter().enumerate() {
@@ -763,9 +788,9 @@ fn zero_crossing_frequency(samples: &[f64], sample_rate: f64) -> f64 {
     (crossings.len() - 1) as f64 * sample_rate / (crossings[crossings.len() - 1] - crossings[0])
 }
 
-fn chord_review() -> (f64, f64, f64, Render) {
+fn chord_review(grid: TransformGrid, window: Option<&[f64]>) -> (f64, f64, f64, Render) {
     let input = chord_control();
-    let render = render(&input, 2.0, SAMPLE_RATE);
+    let render = render_with_representation(&input, 2.0, SAMPLE_RATE, grid, window);
     let input_metrics = chord_spectrum_metrics(&input);
     let output_metrics = chord_spectrum_metrics(&render.samples[SAMPLE_RATE..SAMPLE_RATE * 3]);
     (
@@ -883,14 +908,14 @@ fn wrap(value: f64) -> f64 {
     (value + std::f64::consts::PI).rem_euclid(std::f64::consts::TAU) - std::f64::consts::PI
 }
 
-fn transient_review() -> (usize, usize, Render) {
+fn transient_review(grid: TransformGrid, window: Option<&[f64]>) -> (usize, usize, Render) {
     let events = [SAMPLE_RATE / 3, SAMPLE_RATE, SAMPLE_RATE + SAMPLE_RATE / 6];
     let mut input = vec![0.0; SAMPLE_RATE * 2];
     for (event, amplitude) in events.into_iter().zip([1.0, 0.8, 0.7]) {
         input[event] = amplitude;
     }
     let ratio = 2.0;
-    let render = render(&input, ratio, SAMPLE_RATE);
+    let render = render_with_representation(&input, ratio, SAMPLE_RATE, grid, window);
     let targets = events.map(|event| (event as f64 * ratio).round() as usize);
     let mut maximum_error = 0;
     let mut peaks = [0.0; 3];
