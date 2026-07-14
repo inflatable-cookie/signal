@@ -370,6 +370,7 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Implement `g10.029` Batch 29.6CX. Complete the bounded analysis-representation
-`2x2` by combining only the pinned periodic Kaiser and modified half-bin grid.
-Stop before real-source rendering or third mechanisms.
+Implement `g10.029` Batch 29.6CY. Carry the coherent periodic-Kaiser and
+modified-half-bin representation through the complete report-only faithful-
+predictor synthetic gate. Stop before real-source rendering or third
+mechanisms.

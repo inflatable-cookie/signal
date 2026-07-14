@@ -164,9 +164,14 @@ known frame-rate sideband, is the next translation gate.
   to exact `960/240` overlap reconstruction
 - the window-only Signal variant is identity-safe but improves only two tones;
   paired parity worsens from `[3, 1]` to `[4, 1]`
+- the exact periodic-Kaiser/modified-half-bin combination closes paired parity
+  to `[0, 0]`; every tone is within `0.147 dB` and the chord is `0.641 dB`
+  better than pinned source
+- the two analysis choices are one coupled phase-basis representation; neither
+  is independently promotable
 
 ## Next Task
 
-Complete the bounded `2x2` analysis-representation comparison by combining
-only the pinned periodic Kaiser and modified half-bin grid. Retain all
-predictor laws and stop before a third mechanism.
+Run the complete frozen synthetic proof with the coherent periodic-Kaiser and
+modified-half-bin representation. Retain all predictor laws and stop before a
+third mechanism or real-source rendering.

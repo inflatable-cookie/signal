@@ -1016,11 +1016,14 @@ Kaiser is periodic rather than endpoint-symmetric; the initial
 confined-Gaussian configuration is overwritten by Stretch's explicit Kaiser
 selection.
 
-Grid and window main effects are both rejected, but the actual source uses
-them together and spectral prediction is phase-basis dependent. Complete one
-bounded `2x2` interaction test. This is not permission to compound arbitrary
-rejected edits: no third mechanism or tuning may enter the combined cell.
+The bounded interaction closes source parity. Periodic Kaiser and the modified
+half-bin transform each regress the translation when installed alone, but the
+exact pair moves failures from baseline `[3 tones, 1 chord]` to `[0, 0]`.
+Every combined tone is within `0.147 dB` of pinned source and the chord is
+`0.641 dB` better. This confirms that weighted spectral prediction depends on
+the complete analysis phase basis. Treat the window and grid as one coherent
+representation, not independently selectable improvements.
 
-Run `g10.029` Batch 29.6CX. Combine only the pinned periodic Kaiser window and
-modified half-bin grid to measure their interaction. Stop before third
-mechanisms or corpus rendering.
+Run `g10.029` Batch 29.6CY. Use that coherent representation in the complete
+report-only faithful-predictor synthetic proof before exact-input real-source
+confirmation. Stop before third mechanisms, tuning, or corpus rendering.

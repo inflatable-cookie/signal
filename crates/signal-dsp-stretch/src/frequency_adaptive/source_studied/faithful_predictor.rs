@@ -3,6 +3,7 @@ use rustfft::{num_complex::Complex64, FftPlanner};
 use super::HASH_OFFSET;
 
 pub(in crate::frequency_adaptive) mod analysis_grid;
+pub(in crate::frequency_adaptive) mod analysis_interaction;
 pub(in crate::frequency_adaptive) mod analysis_window;
 pub(in crate::frequency_adaptive) mod attribution;
 pub(in crate::frequency_adaptive) mod pinned_source;
@@ -265,6 +266,25 @@ pub(super) fn render_stage_with_window(
         trace_stage,
         FrequencyBoundaryPolicy::Clamp,
         TransformGrid::Standard,
+        Some(window),
+    )
+}
+
+pub(super) fn render_stage_with_grid_and_window(
+    input: &[f64],
+    ratio: f64,
+    sample_rate: usize,
+    trace_stage: TraceStage,
+    grid: TransformGrid,
+    window: &[f64],
+) -> Render {
+    render_stage_with_boundary_policy_grid_and_window(
+        input,
+        ratio,
+        sample_rate,
+        trace_stage,
+        FrequencyBoundaryPolicy::Clamp,
+        grid,
         Some(window),
     )
 }

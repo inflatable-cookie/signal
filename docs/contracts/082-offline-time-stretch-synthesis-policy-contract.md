@@ -3342,9 +3342,19 @@ improves two tones, regresses two tones and the chord, and worsens paired
 failures from `[3 tones, 1 chord]` to `[4 tones, 1 chord]`. Do not promote the
 window alone.
 
+Batch 29.6CX proves the two analysis choices form one coupled representation.
+Grid-only and window-only each worsen paired failures from `[3 tones, 1 chord]`
+to `[4 tones, 1 chord]`; the exact periodic-Kaiser plus modified-half-bin cell
+closes them to `[0, 0]`. Combined isolated tones differ from pinned source by
+`-0.141` to `+0.147 dB`; the chord differs by `-0.641 dB`. The factorial
+interaction is strongly non-additive, ranging from `-3.455` to `-53.403 dB`.
+Identity error is `2.220e-16`; length, coverage, finiteness, boundaries, pitch,
+and repeated hashes pass. Retain the pair as one source-derived analysis
+representation. Neither main effect has independent authority.
+
 ## Next Task
 
-Run Batch 29.6CX. Complete the bounded `2x2` analysis-representation test by
-combining only the pinned periodic Kaiser window and modified half-bin grid.
-Report their interaction against both rejected main effects. Keep every
-predictor law, third mechanism, real source, and parameter sweep closed.
+Run Batch 29.6CY. Apply the coherent periodic-Kaiser/modified-half-bin
+representation to the complete report-only faithful-predictor synthetic proof.
+Retain every predictor law and the exact source-parity gate. Keep third
+mechanisms, real sources, parameter sweeps, and product routing closed.

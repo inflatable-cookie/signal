@@ -71,7 +71,7 @@ pub(in crate::frequency_adaptive) fn review() -> ModifiedGridReview {
     }
 }
 
-fn run(pinned: &pinned_source::PinnedSourceReview) -> ModifiedGridReview {
+pub(super) fn run(pinned: &pinned_source::PinnedSourceReview) -> ModifiedGridReview {
     let identity_input = quantized(chord_control());
     let identity = render_stage_with_grid(
         &identity_input,

@@ -144,6 +144,7 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Run `g10.029` Batch 29.6CX analysis-representation interaction. Combine only
-the pinned periodic Kaiser window and modified half-bin grid while retaining
-Signal's predictor law. Keep real-source rendering and promotion lanes closed.
+Run `g10.029` Batch 29.6CY coherent-representation synthetic gate. Carry the
+combined periodic Kaiser and modified half-bin basis through the complete
+faithful-predictor proof while retaining its predictor law. Keep real-source
+rendering and promotion lanes closed.

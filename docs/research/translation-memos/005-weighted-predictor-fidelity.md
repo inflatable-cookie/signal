@@ -249,6 +249,14 @@ Both main effects are now measured. The source uses them together, and the
 predictor operates on their phase basis. One combined cell completes the
 bounded `2x2`; it is not an open-ended compound repair.
 
+Batch 29.6CX confirms that interaction decisively. The combined periodic
+Kaiser and modified half-bin grid closes paired failures from `[3, 1]` to
+`[0, 0]`, despite either main effect alone worsening them to `[4, 1]`. Tone
+deltas against pinned source are `-0.141`, `+0.147`, `+0.122`, and `+0.129 dB`;
+the chord delta is `-0.641 dB`. Factorial interaction ranges from `-3.455` to
+`-53.403 dB`. The representation is phase-basis coherent and cannot be reduced
+to a better window or a better grid in isolation.
+
 ## Sources
 
 | Source | Revision | Use |
@@ -258,6 +266,6 @@ bounded `2x2`; it is not an open-ended compound repair.
 
 ## Next Task
 
-Combine only the pinned periodic Kaiser and modified half-bin grid to measure
-their interaction. Keep equations, third mechanisms, real-source rendering,
-and parameter changes closed.
+Carry the coherent representation through the complete frozen synthetic proof.
+Keep equations, third mechanisms, real-source rendering, and parameter changes
+closed.

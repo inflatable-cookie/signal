@@ -2033,6 +2033,50 @@ fn source_studied_pinned_kaiser_analysis_window() {
 }
 
 #[test]
+#[ignore = "requires pinned local Signalsmith Stretch revision 57b93f4e"]
+#[cfg(not(debug_assertions))]
+fn source_studied_pinned_analysis_representation_interaction() {
+    use super::source_studied::faithful_predictor::analysis_interaction::{
+        review, AnalysisInteractionDirection,
+    };
+
+    let result = review();
+    eprintln!("source_studied_pinned_analysis_representation_interaction {result:#?}");
+    assert!(result.repeated);
+    assert_eq!(result.geometry, [960, 240, 1_024, 512]);
+    assert!(result.identity_maximum_error <= 1.0e-10);
+    assert_eq!(result.structural_failures, [0; 6]);
+    assert_eq!(result.baseline_source_relative_failures, [3, 1]);
+    assert_eq!(result.grid_source_relative_failures, [4, 1]);
+    assert_eq!(result.window_source_relative_failures, [4, 1]);
+    assert_eq!(result.source_relative_failures, [0, 0]);
+    assert!(result
+        .tones
+        .iter()
+        .all(|tone| tone.peak_error_hz <= 0.5 && tone.combined_minus_pinned_db <= 1.0));
+    assert!(result.chord.peak_error_hz <= 0.5);
+    assert!(result.chord.combined_minus_pinned_db <= 1.0);
+    assert_eq!(
+        result
+            .tones
+            .iter()
+            .map(|tone| tone.hash)
+            .collect::<Vec<_>>(),
+        vec![
+            0x1497_ff00_420e_bf4e,
+            0x34d3_f1e1_8ab5_6752,
+            0x1dda_3a2c_0163_ac8f,
+            0x1146_5d18_4b11_1c89,
+        ]
+    );
+    assert_eq!(result.chord.hash, 0xd23c_d768_f2a4_61bd);
+    assert_eq!(
+        result.direction,
+        AnalysisInteractionDirection::SourceParityClosed
+    );
+}
+
+#[test]
 #[cfg(not(debug_assertions))]
 fn renyi_time_resolution_selection_selects_schedule_direction() {
     let first = renyi_time_resolution_selection_review();

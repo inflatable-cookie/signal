@@ -64,7 +64,6 @@ Finch and Loophole.
 
 ## Next Task
 
-Run Batch 29.6CX analysis-representation interaction. Complete the bounded
-`2x2` comparison by combining only the pinned periodic Kaiser window and
-modified half-bin grid. Keep third mechanisms, real-source rendering, and
-promotion lanes closed.
+Run Batch 29.6CY coherent-representation synthetic gate. Carry the combined
+periodic Kaiser and modified half-bin basis through the complete frozen proof.
+Keep third mechanisms, real-source rendering, and promotion lanes closed.

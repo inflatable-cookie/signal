@@ -1280,16 +1280,38 @@ regresses `164.8138 Hz`, `329.6276 Hz`, and the chord by `5.906`, `30.764`, and
 
 ### Batch 29.6CX - Pinned Analysis-Representation Interaction
 
-- [ ] complete the source-derived `2x2` analysis representation comparison by
+- [x] complete the source-derived `2x2` analysis representation comparison by
   combining only the pinned periodic Kaiser window and modified half-bin grid
-- [ ] retain `960/240` support, scheduling, predictor equations, distances,
+- [x] retain `960/240` support, scheduling, predictor equations, distances,
   normalization, fallback, boundary policy, and synthesis ownership
-- [ ] prove identity, exact length, coverage, finiteness, pitch, and repeat
+- [x] prove identity, exact length, coverage, finiteness, pitch, and repeat
   before reading fidelity
-- [ ] report the per-control grid/window interaction against baseline,
+- [x] report the per-control grid/window interaction against baseline,
   grid-only, window-only, and pinned-source evidence
-- [ ] decide whether the exact observed combination coherently reduces parity
+- [x] decide whether the exact observed combination coherently reduces parity
   failures; stop before any third mechanism or real-source render
+
+Decision: retain the combined source representation. Neither main effect is
+valid alone: grid-only and window-only each worsen paired failures from `[3,
+1]` to `[4, 1]`. Together they close the frozen source-relative gate at `[0,
+0]`. Combined tones land from `-0.141` to `+0.147 dB` relative to pinned source;
+the chord lands at `-0.641 dB`. Identity error is `2.220e-16`; length, coverage,
+finiteness, boundaries, pitch, and repeated hashes pass. The interaction is
+strong and non-additive, from `-3.455` to `-53.403 dB` across the controls.
+Treat periodic Kaiser plus modified half-bin grid as one coherent analysis
+representation. Do not promote either component independently.
+
+### Batch 29.6CY - Coherent Representation Synthetic Gate
+
+- [ ] make the combined periodic-Kaiser/modified-half-bin representation the
+  report-only faithful-predictor research baseline
+- [ ] rerun the complete bass, chord, transient, silence, cancellation,
+  mechanism-exercise, boundary, coverage, duration, identity, and repeat proof
+- [ ] retain source-relative tone/chord parity and freeze the coherent output
+  hashes without changing predictor equations or adding a third mechanism
+- [ ] decide whether the complete synthetic gate opens exact-input real-source
+  confirmation; keep product routing, stereo, dynamic ratio, and promotion
+  closed
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -2315,9 +2337,16 @@ regresses `164.8138 Hz`, `329.6276 Hz`, and the chord by `5.906`, `30.764`, and
   pass. Two tones improve, but two tones and the chord regress; paired failures
   worsen to `[4, 1]`. Batch 29.6CX completes the bounded `2x2` representation
   test because the actual pinned engine uses both observed choices together.
+- 2026-07-14: Batch 29.6CX proves the two rejected main effects are a coupled
+  representation. The exact combined cell closes paired failures from `[3,
+  1]` to `[0, 0]`; every tone is within `0.147 dB` of pinned source and the
+  chord is `0.641 dB` better. Identity, structure, pitch, and repeat pass.
+  Batch 29.6CY now applies the coherent representation to the complete frozen
+  synthetic proof before any real-source confirmation.
 
 ## Next Task
 
-Run Batch 29.6CX. Complete the bounded analysis-representation interaction by
-combining only the pinned periodic Kaiser window and modified half-bin grid.
-Do not add a third mechanism, tune, or render real sources.
+Run Batch 29.6CY. Promote the combined periodic-Kaiser/modified-half-bin
+representation only inside the report-only faithful-predictor research path,
+then rerun the complete frozen synthetic gate. Do not add a third mechanism,
+tune, or render real sources.

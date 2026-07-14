@@ -77,7 +77,7 @@ pub(in crate::frequency_adaptive) fn review() -> KaiserWindowReview {
     }
 }
 
-fn run(
+pub(super) fn run(
     window: &stage_trace::PinnedWindowTrace,
     pinned: &pinned_source::PinnedSourceReview,
 ) -> KaiserWindowReview {
