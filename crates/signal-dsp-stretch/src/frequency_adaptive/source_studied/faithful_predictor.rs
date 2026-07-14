@@ -54,6 +54,8 @@ pub(super) struct Render {
     mechanisms: MechanismCounts,
     maximum_normalization_phase_delta: f64,
     significant_fallback: usize,
+    horizontal_ratio_errors: Vec<[f64; 4]>,
+    horizontal_output_phases: Vec<[f64; 4]>,
     hash: u64,
 }
 
@@ -209,6 +211,8 @@ pub(super) fn render_stage(
             mechanisms: MechanismCounts::default(),
             maximum_normalization_phase_delta: 0.0,
             significant_fallback: 0,
+            horizontal_ratio_errors: Vec::new(),
+            horizontal_output_phases: Vec::new(),
         };
     }
     let hop = ((sample_rate as f64 * 0.03).round() as usize).max(1);
@@ -230,11 +234,24 @@ pub(super) fn render_stage(
     let mut mechanisms = MechanismCounts::default();
     let mut maximum_normalization_phase_delta = 0.0_f64;
     let mut significant_fallback = 0;
+    let mut horizontal_ratio_errors = Vec::new();
+    let mut horizontal_output_phases = Vec::new();
     let mut output_center = -(length as isize / 2);
     while output_center < target_len as isize + length as isize / 2 {
         let source_center = (output_center as f64 / ratio).round() as isize;
         let current = analyse(input, source_center, &window, &forward);
         let auxiliary = analyse(input, source_center - hop as isize, &window, &forward);
+        let interior = source_center >= sample_rate as isize / 2
+            && source_center < input.len() as isize - sample_rate as isize / 2;
+        if interior {
+            horizontal_ratio_errors.push(std::array::from_fn(|tone| {
+                let frequency = CHORD_FREQUENCIES[tone];
+                let bin = (frequency * length as f64 / sample_rate as f64).round() as usize;
+                let observed = (current[bin] * auxiliary[bin].conj()).arg();
+                let expected = std::f64::consts::TAU * frequency * hop as f64 / sample_rate as f64;
+                wrap(observed - expected)
+            }));
+        }
         let mut preliminary = current[..bins].to_vec();
         let mut traced = preliminary.clone();
         if let Some(previous_source_center) = previous_source_center {
@@ -242,6 +259,13 @@ pub(super) fn render_stage(
                 let prediction = previous_output[bin] * current[bin] * auxiliary[bin].conj();
                 preliminary[bin] = normalize_or(prediction, current[bin], current[bin]);
                 mechanisms.horizontal += 1;
+            }
+            if interior {
+                horizontal_output_phases.push(std::array::from_fn(|tone| {
+                    let frequency = CHORD_FREQUENCIES[tone];
+                    let bin = (frequency * length as f64 / sample_rate as f64).round() as usize;
+                    preliminary[bin].arg()
+                }));
             }
             let input_hop = (source_center - previous_source_center)
                 .unsigned_abs()
@@ -367,6 +391,8 @@ pub(super) fn render_stage(
         mechanisms,
         maximum_normalization_phase_delta,
         significant_fallback,
+        horizontal_ratio_errors,
+        horizontal_output_phases,
     }
 }
 
@@ -501,6 +527,10 @@ pub(super) fn chord_control_frames(frames: usize) -> Vec<f64> {
 }
 
 pub(super) fn chord_spectrum_metrics(segment: &[f64]) -> ChordSpectrumMetrics {
+    spectrum_metrics(segment, &CHORD_FREQUENCIES)
+}
+
+pub(super) fn spectrum_metrics(segment: &[f64], frequencies: &[f64]) -> ChordSpectrumMetrics {
     let fft_len = segment.len().next_power_of_two();
     let mut planner = FftPlanner::<f64>::new();
     let fft = planner.plan_fft_forward(fft_len);
@@ -513,7 +543,7 @@ pub(super) fn chord_spectrum_metrics(segment: &[f64]) -> ChordSpectrumMetrics {
     fft.process(&mut spectrum);
     let bin_hz = SAMPLE_RATE as f64 / fft_len as f64;
     let mut maximum_peak_error = 0.0_f64;
-    for expected in CHORD_FREQUENCIES {
+    for expected in frequencies.iter().copied() {
         let nominal = (expected / bin_hz).round() as usize;
         let peak = (nominal.saturating_sub(2)..=(nominal + 2).min(fft_len / 2))
             .max_by(|left, right| {
@@ -533,7 +563,7 @@ pub(super) fn chord_spectrum_metrics(segment: &[f64]) -> ChordSpectrumMetrics {
         .iter()
         .enumerate()
         .filter(|(bin, _)| {
-            CHORD_FREQUENCIES
+            frequencies
                 .iter()
                 .all(|frequency| (*bin as f64 * bin_hz - frequency).abs() > 8.0)
         })
@@ -543,14 +573,14 @@ pub(super) fn chord_spectrum_metrics(segment: &[f64]) -> ChordSpectrumMetrics {
         .iter()
         .enumerate()
         .filter(|(bin, _)| {
-            CHORD_FREQUENCIES
+            frequencies
                 .iter()
                 .all(|frequency| (*bin as f64 * bin_hz - frequency).abs() > 8.0)
         })
         .max_by(|(_, left), (_, right)| left.norm_sqr().total_cmp(&right.norm_sqr()))
         .map(|(bin, _)| bin as f64 * bin_hz)
         .unwrap_or(0.0);
-    let strongest_sideband_offset_hz = CHORD_FREQUENCIES
+    let strongest_sideband_offset_hz = frequencies
         .iter()
         .map(|frequency| (strongest_sideband - frequency).abs())
         .fold(f64::INFINITY, f64::min);

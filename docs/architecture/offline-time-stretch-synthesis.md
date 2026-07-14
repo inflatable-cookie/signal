@@ -911,8 +911,10 @@ that complete mechanism before any more corpus tuning.
 The corrected Signal topology keeps a fixed 30 ms output interval and fourfold
 centered transform support. Input centres follow the inverse fixed-ratio map;
 an auxiliary input spectrum exactly one output interval behind the current
-projected input centre drives horizontal phase transport. Actual rounded input
-hops set the local time factor. A separate
+projected input centre drives horizontal phase transport. The preliminary
+complex product is divided by the larger of previous and current input energy;
+it is not target-normalized. Actual rounded input hops set the local time
+factor. A separate
 ascending-frequency pass combines short and transform/interval-distance
 predictions from both directions. Each prediction observes fractionally sampled
 input-frequency twists scaled by local time factor. Lower dependencies are
@@ -935,3 +937,11 @@ rate from the nearest tone. Exact overlap, normalization, and fallback are
 excluded. Compare isolated and mixed horizontal observations before choosing
 an observation-geometry or equation correction. Do not render real sources or
 open local tuning.
+
+That comparison assigns the next correction to the horizontal equation. All
+four isolated tones create a frame-rate sideband despite nearly stationary
+nearest-bin auxiliary ratios. Signal's translation target-normalized the
+preliminary horizontal product; the studied topology divides by the larger of
+previous and current input energy and defers target normalization until after
+vertical re-prediction. Correct that one law before reconsidering observation
+geometry.

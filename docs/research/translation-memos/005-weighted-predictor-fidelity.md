@@ -63,10 +63,13 @@ specimen's FFT planner or window code.
 
 For each bin, carry the previous output complex value. Analyse one auxiliary
 input spectrum exactly `H` source samples behind the current input centre.
-Predict preliminary output phase from the previous output and the complex ratio
-between current and auxiliary input. Preserve target input energy. Identity
-remains a direct bypass. The actual rounded inter-centre input hop does not set
-this observation distance; it sets the local time factor used below.
+Predict preliminary output from the previous output and the complex product of
+current input with conjugated auxiliary input. Divide by the larger of previous
+and current input energy plus the weak-evidence floor. Do not target-normalize
+this preliminary state; target-energy normalization belongs to the later
+vertical result. Identity remains a direct bypass. The actual rounded inter-
+centre input hop does not set this observation distance; it sets the local time
+factor used below.
 
 ### Vertical re-prediction
 
@@ -146,6 +149,14 @@ oracle remains clean at `-80.392196 dB`; normalization and significant fallback
 are excluded. Vertical correction reduces total leakage slightly but retains
 the same frame-rate spur.
 
+Isolated-versus-mixed attribution then rejects mixture as a necessary cause.
+Every isolated tone produces a frame-rate sideband above `-60 dB`, even though
+nearest-bin auxiliary-ratio variance remains at or below `1.710e-7`. Pinned-
+source reinspection finds a translation error in Signal's proof: it normalized
+preliminary horizontal output directly to current energy instead of using the
+specimen's previous/current energy denominator. That preliminary amplitude
+weights the vertical phase sum before final target normalization.
+
 ## Sources
 
 | Source | Revision | Use |
@@ -155,5 +166,5 @@ the same frame-rate spur.
 
 ## Next Task
 
-Compare isolated and mixed tones under the unchanged horizontal observation.
-Keep real-source rendering closed.
+Correct only the preliminary horizontal energy law, then rerun all synthetic
+and attribution gates. Keep real-source rendering closed.

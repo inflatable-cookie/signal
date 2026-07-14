@@ -3,7 +3,7 @@
 Status: reviewed; Signal fidelity gap identified
 Specimen: Signalsmith Stretch `1.3.2`
 Owner: dsp
-Last updated: 2026-07-13
+Last updated: 2026-07-14
 Scope: time-stretch phase topology at revision `57b93f4e9206a089a45387eaa39bdc9f310d3308`
 
 ## Why This Specimen Matters
@@ -20,6 +20,8 @@ necessary phase model.
 - the caller supplies input and output block lengths; their ratio defines the
   local time map
 - a preliminary horizontal phase-vocoder prediction carries phase through time
+- preliminary horizontal energy uses the larger of previous and current input
+  energy; target-energy normalization occurs after vertical re-prediction
 - a second pass adds short and long predictions from both frequency directions
 - complex predictions sum before magnitude normalization, so stronger local
   observations carry more phase weight
@@ -98,6 +100,12 @@ high correction, target-energy normalization, and weak-evidence fallback.
 Signal retains square-root Hann windows, exact overlap normalization, RustFFT,
 and deterministic behavior through `2x`.
 
+Synthetic attribution found one remaining translation error. Signal target-
+normalized the preliminary horizontal product. The specimen instead divides by
+the larger of previous and current input energy, leaving target normalization
+to the vertical result. Isolated tones show the defect without mixture
+interference, so this equation is corrected before observation geometry.
+
 ## Source Inventory
 
 | Source | Type | Revision | Confidence | Notes |
@@ -111,9 +119,11 @@ and deterministic behavior through `2x`.
 - weighted prediction beats current Signal on four of six long-form rows
 - the short-window simplified control does not isolate long-window contribution
 - frequency-partitioned multi-scale synthesis is rejected independently
-- the faithful combined geometry/predictor topology remains untested
+- the first combined proof fails frame-rate sidebands before real-source audio
+- preliminary horizontal energy scaling is the remaining source-verified
+  fidelity correction
 
 ## Next Task
 
-Implement the frozen Signal-owned topology and direct synthetic gates for
-bass-tone mutation and sustained phase damage. Stop before corpus rendering.
+Correct preliminary horizontal energy scaling and rerun the complete synthetic
+gate. Stop before corpus rendering.

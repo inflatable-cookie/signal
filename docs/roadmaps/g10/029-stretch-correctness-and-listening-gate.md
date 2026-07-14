@@ -1096,14 +1096,33 @@ overlap measures `-80.392196 dB`, normalization phase delta is at most
 
 ### Batch 29.6CO - Horizontal Mixture-Contamination Attribution
 
-- [ ] render the four frozen chord tones separately and together through the
+- [x] render the four frozen chord tones separately and together through the
   same horizontal-only trace; change no predictor or geometry value
-- [ ] measure nearest-bin auxiliary-ratio phase-advance variance and frame-rate
+- [x] measure nearest-bin auxiliary-ratio phase-advance variance and frame-rate
   sidebands for isolated and mixed controls
-- [ ] decide whether the horizontal failure begins with within-bin component
+- [x] decide whether the horizontal failure begins with within-bin component
   interference or with phase convention / synthesis attachment
-- [ ] stop with one architecture choice: observation-geometry redesign or
+- [x] stop with one architecture choice: observation-geometry redesign or
   predictor-equation correction; keep real audio and parameter sweeps closed
+
+Decision: predictor-equation correction. Every isolated tone fails at
+`-23.544808` to `-51.499468 dB` with a strongest spur one output frame rate
+from the tone. Isolated auxiliary-ratio variance stays at `5.789e-11` to
+`1.710e-7`; mixing raises it but is not required. Pinned-source reinspection
+finds Signal normalized preliminary horizontal output directly to current
+energy, while the specimen divides by the maximum of previous and current input
+energy before separate vertical target-energy normalization.
+
+### Batch 29.6CP - Preliminary Horizontal Energy-Law Correction
+
+- [ ] replace only preliminary horizontal target normalization with the
+  previous/current input-energy denominator; retain every other frozen choice
+- [ ] preserve separate vertical target-energy normalization, fallback,
+  dependency order, geometry, scheduling, windows, and overlap synthesis
+- [ ] rerun the complete Rule 31G synthetic gate plus CN/CO attribution hashes;
+  stop before real sources on any failure
+- [ ] decide the corrected equation as one complete topology; do not sweep
+  floors, weights, windows, intervals, distances, or FFT size
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -2057,9 +2076,22 @@ overlap measures `-80.392196 dB`, normalization phase delta is at most
   earliest failure. Six stage hashes repeat. Batch 29.6CO owns isolated-versus-
   mixed horizontal contamination attribution before any equation or observation
   geometry change. Corpus and promotion lanes remain closed.
+- 2026-07-14: Batch 29.6CO rejects mixture-only observation geometry as the
+  primary owner. All four isolated horizontal renders fail the `-60 dB`
+  sideband ceiling at `-26.555010`, `-37.758329`, `-23.544808`, and
+  `-51.499468 dB`; every strongest spur lies within `0.168 Hz` of one
+  `33.333333 Hz` frame-rate offset. Isolated nearest-bin auxiliary-ratio
+  variance is only `5.789e-11` to `1.710e-7`; mixed variance is larger for all
+  four tones but is not required for failure. Four isolated hashes and the
+  mixed hash repeat. Source reinspection exposes a material translation error:
+  Signal target-normalized preliminary horizontal output, while the pinned
+  specimen scales the product by the maximum previous/current input energy and
+  defers target normalization to vertical re-prediction. Batch 29.6CP owns only
+  that energy-law correction and the complete synthetic rerun. Real audio and
+  parameter sweeps remain closed.
 
 ## Next Task
 
-Run Batch 29.6CO. Compare isolated and mixed tones under the unchanged
-horizontal trace, then choose observation-geometry redesign or predictor-
-equation correction. Do not tune or render real sources.
+Run Batch 29.6CP. Correct only the preliminary horizontal energy law and rerun
+the complete synthetic and attribution gates. Do not tune or render real
+sources.

@@ -64,5 +64,5 @@ Finch and Loophole.
 
 ## Next Task
 
-Run Batch 29.6CO isolated-versus-mixed horizontal contamination attribution.
-Keep predictor changes, real-source rendering, and promotion lanes closed.
+Run Batch 29.6CP preliminary horizontal energy-law correction and the complete
+synthetic rerun. Keep real-source rendering and promotion lanes closed.

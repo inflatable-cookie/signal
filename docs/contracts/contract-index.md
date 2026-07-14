@@ -144,6 +144,6 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Run `g10.029` Batch 29.6CO isolated-versus-mixed horizontal contamination
-attribution. Keep predictor changes, real-source rendering, and promotion lanes
+Run `g10.029` Batch 29.6CP preliminary horizontal energy-law correction and the
+complete synthetic rerun. Keep real-source rendering and promotion lanes
 closed.

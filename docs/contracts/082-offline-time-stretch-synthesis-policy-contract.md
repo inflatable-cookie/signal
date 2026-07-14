@@ -3200,6 +3200,8 @@ The Signal topology is now frozen:
 - rounded input centre projection from output centre and fixed ratio
 - horizontal input observation fixed at one output interval behind the current
   projected input centre
+- preliminary horizontal complex product divided by the larger of previous and
+  current input energy; no preliminary target-energy normalization
 - short distance one and long distance `round(N / H)`
 - fractional complex input-frequency observations at offsets scaled by local
   time factor `H / actual_input_hop`
@@ -3243,9 +3245,15 @@ rate from the nearest source tone. Exact overlap remains at `-80.392196 dB`,
 normalization phase delta is negligible, and significant fallback count is
 zero.
 
+Batch 29.6CO selects predictor-equation correction. Every isolated tone fails
+the sideband ceiling despite low nearest-bin auxiliary-ratio variance. Source
+reinspection finds the frozen Signal translation incorrectly target-normalized
+preliminary horizontal output. The pinned topology divides the horizontal
+complex product by the larger of previous and current input energy, then target-
+normalizes only after vertical re-prediction.
+
 ## Next Task
 
-Run Batch 29.6CO. Compare isolated and mixed horizontal observations without
-changing geometry or equations. Use that distinction to choose observation-
-geometry redesign or predictor-equation correction. Keep corpus and promotion
-lanes closed.
+Run Batch 29.6CP. Correct only that preliminary energy law and rerun the
+complete Rule 31G and attribution gates. Keep real sources and parameter sweeps
+closed.

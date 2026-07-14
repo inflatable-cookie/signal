@@ -1700,6 +1700,38 @@ fn source_studied_faithful_predictor_sideband_attribution() {
 
 #[test]
 #[cfg(not(debug_assertions))]
+fn source_studied_faithful_predictor_horizontal_mixture_attribution() {
+    use super::source_studied::faithful_predictor::attribution::{
+        mixture_review, MixtureDirection,
+    };
+
+    let result = mixture_review();
+    eprintln!("source_studied_faithful_predictor_mixture {result:#?}");
+    assert!(result.repeated);
+    assert!(result.mixed_out_of_band_db > -60.0);
+    assert!(result
+        .tones
+        .iter()
+        .all(|tone| tone.isolated_out_of_band_db > -60.0));
+    assert!(result
+        .tones
+        .iter()
+        .all(|tone| tone.mixed_ratio_variance > tone.isolated_ratio_variance));
+    assert_eq!(
+        result.tones.map(|tone| tone.isolated_hash),
+        [
+            0x60c7_04b7_d391_eac0,
+            0x90d6_34c4_acf0_ed62,
+            0xdc7d_9193_ad4f_ab48,
+            0x2eb4_b1e9_d064_f9ae,
+        ]
+    );
+    assert_eq!(result.mixed_hash, 0x6ae9_748d_411e_5b8f);
+    assert_eq!(result.direction, MixtureDirection::PredictorEquation);
+}
+
+#[test]
+#[cfg(not(debug_assertions))]
 fn renyi_time_resolution_selection_selects_schedule_direction() {
     let first = renyi_time_resolution_selection_review();
     let repeated = renyi_time_resolution_selection_review();
