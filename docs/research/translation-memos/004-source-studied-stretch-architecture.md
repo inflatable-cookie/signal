@@ -109,6 +109,10 @@ full stereo sources while Signal used isolated mono excerpts. Batch 29.6CJ must
 repeat the comparator control with exact input identity before the remaining
 quality gap can be assessed.
 
+Batch 29.6CJ now provides that exact-input pack. Every path consumes the same
+44.1 kHz mono 16-bit `16384`-frame row input; both external engines return the
+exact requested length. Listening remains open.
+
 ## Sources
 
 | Source | Confidence | Transfer boundary |
@@ -123,5 +127,5 @@ quality gap can be assessed.
 
 ## Next Task
 
-Run the exact-input Batch 29.6CJ comparator confirmation. Do not resume the
+Complete the exact-input Batch 29.6CJ concealed listen. Do not resume the
 frequency-partitioned path, Rule 30AB, or per-mechanism repair batches.

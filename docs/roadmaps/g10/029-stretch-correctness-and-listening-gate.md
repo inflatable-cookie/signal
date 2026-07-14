@@ -1016,11 +1016,11 @@ replacement, but do not yet establish production or comparator parity.
 
 ### Batch 29.6CJ - Exact-Excerpt Comparator Confirmation
 
-- [ ] export the exact `16384`-frame mono development inputs before external
+- [x] export the exact `16384`-frame mono development inputs before external
   rendering; freeze sample rate, channel count, frame count, and content hash
-- [ ] render Rubber Band R3 and Signalsmith Stretch from those exact inputs;
+- [x] render Rubber Band R3 and Signalsmith Stretch from those exact inputs;
   reject full-source renders, truncation substitutes, or channel-contract drift
-- [ ] export one concealed four-way pack containing weighted predictor, current
+- [x] export one concealed four-way pack containing weighted predictor, current
   Signal, Rubber Band R3, and Signalsmith Stretch without parameter changes
 - [ ] use the unchanged nine rows to decide the remaining external quality gap;
   keep frequency partitioning, holdout, stereo, dynamic ratio, cache, and
@@ -1908,9 +1908,20 @@ replacement, but do not yet establish production or comparator parity.
   and Signalsmith consumed `220500`-frame stereo sources; the exporter then
   truncated their `165375`/`275625`-frame renders to the Signal target. Batch
   29.6CJ owns one exact-input confirmation. No tuning follows this invalid pack.
+- 2026-07-14: Batch 29.6CJ mechanically aligns the comparator contract. One
+  release-test runner writes nine row-specific 44.1 kHz mono 16-bit inputs of
+  exactly `16384` frames, invokes Rubber Band R3 `4.0.0` and pinned Signalsmith
+  Stretch `1.3.2`, and rejects any sample-rate, channel-count, frame-count, or
+  finiteness mismatch. All `18` external renders have exact `12288` or `20480`
+  target lengths. The four-way pack contains `45` audio files with zero
+  structural failures. Input, external, assignment, gain, and notes hashes are
+  `69887b15e8420fd7`, `9547b0d5e924d8fa`, `5e79eb98f2fbdc78`,
+  `2f1894d7c22b23de`, and `2e09fb7ce672ec30`. Operator listening remains; no
+  parameters changed and holdout reads remain zero.
 
 ## Next Task
 
-Run Batch 29.6CJ: regenerate both external controls from the exact mono excerpts
-and export one unchanged-row four-way confirmation pack. Do not reopen the
-frequency-partitioned path or a parameter-repair sequence.
+Complete the Batch 29.6CJ concealed four-way listen at
+`target/stretch-source-studied-cj-development-pack`, then decide the remaining
+weighted-predictor quality gap. Do not reopen the frequency-partitioned path or
+a parameter-repair sequence.

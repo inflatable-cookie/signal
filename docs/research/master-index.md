@@ -63,5 +63,5 @@ Finch and Loophole.
 
 ## Next Task
 
-Run the Batch 29.6CJ exact-input comparator confirmation. Keep the source
+Complete the Batch 29.6CJ exact-input concealed listen. Keep the source
 provenance boundary attached to every transferred invariant.

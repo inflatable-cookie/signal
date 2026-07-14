@@ -336,10 +336,12 @@ Current stretch status:
   miss against the `2 Hz` cap while passing event placement at `190` frames;
   it is not tuned. Concealed listening rejects frequency partitioning and
   retains only the fixed-grid weighted predictor for successor research. The
-  external rankings are invalid because Signal consumed `16384`-frame mono
+  first external rankings are invalid because Signal consumed `16384`-frame mono
   excerpts while Rubber Band and Signalsmith consumed full `220500`-frame
-  stereo sources before truncation. Batch 29.6CJ must repeat the unchanged rows
-  with exact input identity. Rule 30AB repair, parameter lattices, and per-
+  stereo sources before truncation. Batch 29.6CJ now repeats the unchanged rows
+  with exact input identity: nine hash-frozen mono inputs, `18` exact-length
+  external renders, and one `45`-file four-way pack pass structural validation.
+  Operator listening remains. Rule 30AB repair, parameter lattices, and per-
   metric follow-up chains remain closed. Holdout, stereo, dynamic ratio, cache,
   and routing remain closed.
 
@@ -348,6 +350,6 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Run `g10.029` Batch 29.6CJ: exact mono excerpt export, external re-render, and
-one unchanged-row four-way confirmation pack. Do not reopen frequency
+Complete the `g10.029` Batch 29.6CJ concealed four-way listen, then decide the
+weighted predictor's remaining external quality gap. Do not reopen frequency
 partitioning, Rule 30AB, or a parameter-repair sequence.

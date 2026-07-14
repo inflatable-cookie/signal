@@ -1,6 +1,6 @@
 # Offline Time-Stretch Synthesis
 
-Status: weighted-predictor continuation; comparator confirmation required
+Status: weighted-predictor continuation; comparator listening open
 Owner: dsp
 Updated: 2026-07-14
 Contract refs: `046`, `082`
@@ -877,8 +877,14 @@ were rendered from full stereo files, while Signal consumed isolated mono
 excerpts. Exact-input confirmation must precede any Rubber Band or Signalsmith
 ranking.
 
+Batch 29.6CJ closes that integrity gap. One runner converts the frozen source
+region into exact mono inputs, invokes both external engines, verifies their
+complete output shapes, records file hashes, and then renders Signal from the
+same decoded samples. The corrected pack is ready. No synthesis setting or
+quality threshold changed.
+
 ## Next Task
 
-Render the exact mono excerpts through both external controls and run the
-four-way Batch 29.6CJ confirmation. Do not reopen frequency partitioning, Rule
-30AB, or a parameter lattice.
+Complete the concealed Batch 29.6CJ four-way listen, then decide the weighted
+predictor's remaining external quality gap. Do not reopen frequency
+partitioning, Rule 30AB, or a parameter lattice.

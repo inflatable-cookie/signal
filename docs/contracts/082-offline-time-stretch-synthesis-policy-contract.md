@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; exact-excerpt comparator confirmation next
+Status: active; exact-excerpt comparator listening open
 Owner: dsp
 Updated: 2026-07-14
 Related contracts: `046`, `048`, `049`
@@ -3143,6 +3143,13 @@ no algorithm or parameter change. Frequency partitioning, holdout, linked
 stereo, dynamic ratio, cache, realtime source-fill, and production routing stay
 closed.
 
+The Batch 29.6CJ runner now owns input creation, both external invocations,
+receipt generation, and concealed export in one operation. All nine inputs are
+44.1 kHz mono 16-bit WAVs with exactly `16384` frames. Rubber Band R3 `4.0.0`
+and Signalsmith Stretch `1.3.2` each produced all nine exact-length outputs.
+The resulting `45`-file pack has zero structural failures. Operator listening
+is the remaining Rule 31E gate.
+
 ## Source-Study Provenance Rule
 
 Public papers, public descriptions, and public source may inform architecture.
@@ -3153,6 +3160,6 @@ dependency decision explicitly changes that boundary.
 
 ## Next Task
 
-Run the Rule 31E exact-input external confirmation. Keep parameter lattices,
+Complete the Rule 31E concealed four-way listen. Keep parameter lattices,
 holdout, product routing, linked stereo, dynamic ratio, cache, and realtime
 source-fill closed.

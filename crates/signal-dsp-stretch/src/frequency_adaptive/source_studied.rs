@@ -20,6 +20,8 @@ use super::{
 use crate::{OfflineHighQualityPath, OfflineHighQualityStretcher, TimeStretcher};
 use std::fs;
 
+pub(super) mod confirmation;
+
 const SAMPLE_RATE: f64 = 48_000.0;
 const BASE_HOP: usize = 128;
 const GEOMETRY: [usize; 3] = [1_024, 2_048, 4_096];

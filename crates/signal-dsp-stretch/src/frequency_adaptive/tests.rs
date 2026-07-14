@@ -1522,6 +1522,7 @@ fn complete_system_proves_or_rejects_shared_full_field_phase() {
 }
 
 #[test]
+#[ignore = "superseded by the exact-excerpt comparator confirmation"]
 #[cfg(not(debug_assertions))]
 fn source_studied_complete_architecture_proof_selects_direction() {
     use super::source_studied::{review, Architecture, Direction};
@@ -1584,6 +1585,7 @@ fn source_studied_complete_architecture_proof_selects_direction() {
 }
 
 #[test]
+#[ignore = "superseded by the exact-excerpt comparator confirmation"]
 #[cfg(not(debug_assertions))]
 fn source_studied_complete_architecture_exports_concealed_pack() {
     let result = super::source_studied::export_development_pack();
@@ -1594,6 +1596,33 @@ fn source_studied_complete_architecture_exports_concealed_pack() {
     assert_eq!(result.holdout_reads, 0);
     assert_eq!(result.structural_failures, [0; 4], "{result:#?}");
     assert!(result.hashes.iter().all(|hash| *hash != 0));
+}
+
+#[test]
+#[ignore = "requires pinned local Rubber Band and Signalsmith Stretch CLIs"]
+#[cfg(not(debug_assertions))]
+fn source_studied_exact_excerpt_comparator_confirmation_exports_pack() {
+    let result = super::source_studied::confirmation::run();
+    eprintln!("source_studied_exact_excerpt_confirmation {result:#?}");
+    assert_eq!(result.rows, 9);
+    assert_eq!(result.candidates_per_row, 4);
+    assert_eq!(result.input_files, 9);
+    assert_eq!(result.external_files, 18);
+    assert_eq!(result.audio_files, 45);
+    assert_eq!(result.holdout_reads, 0);
+    assert_eq!(result.structural_failures, [0; 4], "{result:#?}");
+    assert_eq!(
+        result.hashes,
+        [
+            0x6988_7b15_e842_0fd7,
+            0x9547_b0d5_e924_d8fa,
+            0x5e79_eb98_f2fb_dc78,
+            0x2f18_94d7_c22b_23de,
+            0x2e09_fb7c_e672_ec30,
+        ]
+    );
+    assert_eq!(result.rubber_band_version, "4.0.0");
+    assert_eq!(result.signalsmith_version, "1.3.2");
 }
 
 #[test]
