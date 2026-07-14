@@ -3268,7 +3268,17 @@ field is not a complete synthesis candidate. No further equation or geometry
 change is authorized until the pinned upstream complete engine is measured by
 the same final-output Rule 31G method.
 
+Batch 29.6CR proves the absolute `-60 dB` ceiling is not attainable by the
+studied complete topology at `2x`. Pinned Signalsmith Stretch revision
+`57b93f4e` measures `-44.686281` to `-46.016214 dB` on isolated tones and
+`-40.016259 dB` on the chord, with the same frame-rate sidebands. Exact length,
+finiteness, pitch, and decoded-output repeat pass. Signal remains worse on three
+paired tones by `8.041` to `21.143 dB` and on the chord by `9.779 dB`; one tone
+is better by `6.225 dB`. Keep `-60 dB` visible as an absolute diagnostic, but
+do not reject topology fidelity against a threshold the pinned topology misses.
+Replace it with exact-input source parity before another algorithm change.
+
 ## Next Task
 
-Run Batch 29.6CR. Measure the pinned upstream complete engine under the same
-synthetic final-output gate. Keep real sources and parameter sweeps closed.
+Run Batch 29.6CS. Replace the invalid absolute topology-fidelity gate with
+paired pinned-source parity. Keep real sources and parameter sweeps closed.

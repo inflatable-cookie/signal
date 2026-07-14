@@ -184,6 +184,18 @@ pass is meant to re-lock. Intermediate-output failure cannot choose another
 translation change. Measure the pinned upstream complete engine under the same
 final-output gate first.
 
+Batch 29.6CR shows the gate, not only Signal, was wrong for fidelity. Pinned
+Signalsmith Stretch revision `57b93f4e` uses the same `960/240` default geometry
+at `8 kHz` and produces isolated-tone leakage from `-44.686281` to
+`-46.016214 dB`; its chord measures `-40.016259 dB`. All isolated strongest
+spurs remain one `33.333333 Hz` output frame rate from the tone. The engine is
+exact-length, finite, pitch-correct, and bit-repeating at decoded 16-bit output.
+
+Signal remains meaningfully different under the same quantized controls. Three
+tones are `8.041` to `21.143 dB` worse, one is `6.225 dB` better, and the chord
+is `9.779 dB` worse. Preserve `-60 dB` as an absolute diagnostic, but replace it
+as the topology-fidelity rejection criterion with paired pinned-source parity.
+
 ## Sources
 
 | Source | Revision | Use |
@@ -193,5 +205,5 @@ final-output gate first.
 
 ## Next Task
 
-Measure the pinned upstream complete engine on the frozen synthetic controls.
-Keep real-source rendering and parameter changes closed.
+Freeze paired pinned-source parity as the topology-fidelity gate. Keep real-
+source rendering and parameter changes closed.

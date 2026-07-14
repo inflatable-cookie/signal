@@ -1152,16 +1152,37 @@ until the pinned upstream engine is measured under the same final-output gate.
 
 ### Batch 29.6CR - Pinned-Source Synthetic Comparator
 
-- [ ] run pinned Signalsmith Stretch revision `57b93f4e` on the frozen isolated
+- [x] run pinned Signalsmith Stretch revision `57b93f4e` on the frozen isolated
   tones and chord at `8 kHz`, ratio `2`, and its matching default geometry
-- [ ] measure final-output out-of-band energy, strongest sideband offset, pitch,
+- [x] measure final-output out-of-band energy, strongest sideband offset, pitch,
   exact output length, finiteness, and repeated evidence under Rule 31G methods
-- [ ] decide whether the `-60 dB` gate is attainable by the studied complete
+- [x] decide whether the `-60 dB` gate is attainable by the studied complete
   topology or whether Signal still diverges from the source implementation
-- [ ] if upstream passes, stop at the first required internal differential;
+- [x] if upstream passes, stop at the first required internal differential;
   if upstream fails, stop and revise the architecture target before more code
-- [ ] keep the comparator report-only and out of production dependencies; keep
+- [x] keep the comparator report-only and out of production dependencies; keep
   tuning, corpus, listening, stereo, dynamic ratio, cache, and routing closed
+
+Decision: the absolute `-60 dB` ceiling is not attainable by this studied
+topology at `2x`. Pinned Signalsmith Stretch `1.3.2` produces isolated-tone
+leakage from `-44.686281` to `-46.016214 dB` and chord leakage
+`-40.016259 dB`, with the same frame-rate sidebands. Signal also diverges from
+the source: three isolated tones are `8.041` to `21.143 dB` worse and the chord
+is `9.779 dB` worse; one isolated tone is `6.225 dB` better. Replace the invalid
+absolute fidelity gate with paired source parity before another algorithm edit.
+
+### Batch 29.6CS - Source-Relative Fidelity Gate
+
+- [ ] retain `-60 dB` as an absolute diagnostic, not a rejection criterion for
+  faithful implementation of this topology at `2x`
+- [ ] freeze paired parity on the exact quantized controls: Signal output must
+  be no more than `1 dB` worse than pinned source for every tone and the chord
+- [ ] preserve exact length, finiteness, repeat, pitch, transient, silence,
+  boundary, fallback, and mechanism gates unchanged
+- [ ] update Rule 31G, the report direction, and research front doors without
+  changing predictor code or rendering real sources
+- [ ] identify one source-versus-Signal internal differential for the failed
+  three tones and chord; keep tuning and parameter sweeps closed
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -2147,8 +2168,17 @@ until the pinned upstream engine is measured under the same final-output gate.
   incomplete intermediate field by design, the result does not authorize
   another equation guess. Batch 29.6CR measures the pinned upstream complete
   engine under the same final-output gate before more Signal changes.
+- 2026-07-14: Batch 29.6CR measures pinned Signalsmith Stretch revision
+  `57b93f4e` through the exact `8 kHz`, `2x`, `960/240` final-output gate. The
+  source engine itself misses `-60 dB`: isolated tones measure `-44.686281` to
+  `-46.016214 dB`, the chord `-40.016259 dB`, and every isolated dominant spur
+  remains one frame rate from its tone. Signal is still materially worse on
+  three tones and the chord under identical quantized input, while better on
+  one tone. Both output sets are exact-length, finite, pitch-correct, and
+  repeat bit-for-bit at the decoded-sample boundary. Batch 29.6CS replaces the
+  invalid absolute fidelity gate with paired source parity before more DSP.
 
 ## Next Task
 
-Run Batch 29.6CR. Measure the pinned upstream complete engine under the same
-synthetic final-output gate. Do not tune or render real sources.
+Run Batch 29.6CS. Replace the invalid absolute topology-fidelity gate with
+paired source parity. Do not tune or render real sources.

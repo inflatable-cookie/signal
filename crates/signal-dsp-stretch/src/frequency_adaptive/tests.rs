@@ -1777,6 +1777,63 @@ fn source_studied_faithful_predictor_state_lineage_attribution() {
 }
 
 #[test]
+#[ignore = "requires pinned local Signalsmith Stretch revision 57b93f4e"]
+#[cfg(not(debug_assertions))]
+fn source_studied_pinned_signalsmith_synthetic_comparator() {
+    use super::source_studied::faithful_predictor::pinned_source::{review, PinnedSourceDirection};
+
+    let result = review();
+    eprintln!("source_studied_pinned_signalsmith {result:#?}");
+    assert!(result.repeated);
+    assert_eq!(result.structural_failures, [0; 4]);
+    assert_eq!(result.geometry, [240, 960, 4]);
+    assert_eq!(result.revision, "57b93f4e9206a089a45387eaa39bdc9f310d3308");
+    assert_eq!(result.version, "1.3.2");
+    assert!(result.tones.iter().all(|tone| {
+        tone.input_out_of_band_db <= -60.0
+            && tone.output_out_of_band_db > -60.0
+            && tone.output_peak_error_hz <= 0.5
+            && (tone.strongest_sideband_offset_hz - 100.0 / 3.0).abs() <= 0.25
+    }));
+    assert!(result.chord_input_out_of_band_db <= -60.0);
+    assert!(result.chord_output_out_of_band_db > -60.0);
+    assert!(result.chord_peak_error_hz <= 0.5);
+    assert_eq!(
+        result.output_hashes,
+        [
+            0x7069_b2be_6cef_6725,
+            0x570e_dabe_6cef_6725,
+            0xa76d_aebe_6cef_6725,
+            0xee8e_d9be_6cef_6725,
+            0xc4a9_f43e_6cef_6725,
+        ]
+    );
+    assert_eq!(
+        result.signal_hashes,
+        [
+            0xece1_0d1f_7f11_15e8,
+            0xbea6_92e6_1f3a_72c5,
+            0x218c_b9d3_0316_ce82,
+            0xf966_7d3e_af80_c2a9,
+            0x8d12_3802_d064_25c0,
+        ]
+    );
+    assert_eq!(
+        result
+            .tones
+            .iter()
+            .filter(|tone| tone.signal_minus_pinned_db > 1.0)
+            .count(),
+        3
+    );
+    assert!(result.chord_signal_minus_pinned_db > 1.0);
+    assert_eq!(
+        result.direction,
+        PinnedSourceDirection::StudiedTopologyGateMismatchAndSignalDivergence
+    );
+}
+
+#[test]
 #[cfg(not(debug_assertions))]
 fn renyi_time_resolution_selection_selects_schedule_direction() {
     let first = renyi_time_resolution_selection_review();

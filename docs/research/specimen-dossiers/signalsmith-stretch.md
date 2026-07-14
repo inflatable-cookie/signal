@@ -119,6 +119,13 @@ Vertical-state feedback is not required. Since horizontal transport is only
 one half of the specimen's phase field, the next evidence measures the pinned
 complete upstream engine rather than changing another translated equation.
 
+The pinned complete engine confirms that the frozen `-60 dB` ceiling was not a
+valid fidelity target for this topology at `2x`. Its four isolated tones
+measure `-44.686281` to `-46.016214 dB`; the chord measures `-40.016259 dB`.
+Signal is still `9.779 dB` worse on the chord and worse on three tones under
+identical quantized input. Source-relative parity, not absolute silence of the
+known frame-rate sideband, is the next translation gate.
+
 ## Source Inventory
 
 | Source | Type | Revision | Confidence | Notes |
@@ -136,9 +143,11 @@ complete upstream engine rather than changing another translated equation.
 - preliminary horizontal energy scaling is restored for source fidelity
 - the correction does not own the sideband failure
 - vertical-state feedback is excluded as a necessary sideband cause
-- pinned complete-engine performance under Rule 31G remains unmeasured
+- pinned complete-engine performance rejects the absolute `-60 dB` fidelity
+  ceiling
+- Signal remains worse than pinned source on three tones and the chord
 
 ## Next Task
 
-Measure the pinned complete engine under the frozen synthetic final-output
-gate. Stop before corpus rendering or parameter changes.
+Freeze paired pinned-source parity as the fidelity gate. Stop before corpus
+rendering or parameter changes.

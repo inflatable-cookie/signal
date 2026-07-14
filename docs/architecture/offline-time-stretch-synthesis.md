@@ -962,3 +962,12 @@ architecture decision depends on the pinned complete upstream engine under the
 same final-output measurement: either locate a Signal translation divergence
 if upstream passes or revise the attainable target for this topology if it
 does not.
+
+Pinned complete-engine evidence resolves that fork. Signalsmith Stretch
+`1.3.2` itself produces frame-rate leakage around `-45 dB` on isolated tones
+and `-40.016259 dB` on the chord at `2x`; the prior `-60 dB` ceiling is not an
+attainable fidelity requirement for this topology. Signal is nevertheless
+`9.779 dB` worse on the paired chord and worse on three of four paired tones.
+Use the absolute ceiling as a diagnostic. Gate translation fidelity against
+the pinned complete engine on exact shared inputs before changing mechanism or
+reopening musical comparison.

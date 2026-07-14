@@ -64,6 +64,6 @@ Finch and Loophole.
 
 ## Next Task
 
-Run Batch 29.6CR pinned-source synthetic comparison. Measure the complete
-upstream engine under the same final-output gate. Keep real-source rendering
-and promotion lanes closed.
+Run Batch 29.6CS source-relative fidelity-gate correction. Preserve the absolute
+diagnostic, but gate translation against paired pinned-source output. Keep real-
+source rendering and promotion lanes closed.

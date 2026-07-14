@@ -3,6 +3,7 @@ use rustfft::{num_complex::Complex64, FftPlanner};
 use super::HASH_OFFSET;
 
 pub(in crate::frequency_adaptive) mod attribution;
+pub(in crate::frequency_adaptive) mod pinned_source;
 
 const SAMPLE_RATE: usize = 8_000;
 const HORIZONTAL_ENERGY_FLOOR: f64 = 1.0e-15;
