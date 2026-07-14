@@ -106,6 +106,12 @@ the larger of previous and current input energy, leaving target normalization
 to the vertical result. Isolated tones show the defect without mixture
 interference, so this equation is corrected before observation geometry.
 
+Correcting that law preserves source fidelity but does not remove the
+frame-rate sidebands. Complete leakage remains `-30.236852 dB`; all isolated
+tones still fail. The current horizontal trace starts each frame from the prior
+vertically corrected output, leaving direct horizontal recurrence and vertical
+feedback conflated.
+
 ## Source Inventory
 
 | Source | Type | Revision | Confidence | Notes |
@@ -120,10 +126,11 @@ interference, so this equation is corrected before observation geometry.
 - the short-window simplified control does not isolate long-window contribution
 - frequency-partitioned multi-scale synthesis is rejected independently
 - the first combined proof fails frame-rate sidebands before real-source audio
-- preliminary horizontal energy scaling is the remaining source-verified
-  fidelity correction
+- preliminary horizontal energy scaling is restored for source fidelity
+- the correction does not own the sideband failure
+- horizontal recurrence versus corrected-state feedback remains unresolved
 
 ## Next Task
 
-Correct preliminary horizontal energy scaling and rerun the complete synthetic
-gate. Stop before corpus rendering.
+Split horizontal recurrence from corrected-state feedback in report-only
+evidence. Stop before corpus rendering or parameter changes.

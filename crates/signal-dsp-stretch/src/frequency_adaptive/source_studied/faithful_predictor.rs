@@ -5,6 +5,7 @@ use super::HASH_OFFSET;
 pub(in crate::frequency_adaptive) mod attribution;
 
 const SAMPLE_RATE: usize = 8_000;
+const HORIZONTAL_ENERGY_FLOOR: f64 = 1.0e-15;
 const RATIOS: [f64; 4] = [0.75, 1.25, 1.5, 2.0];
 const BASS_FREQUENCIES: [f64; 3] = [55.0, 82.4069, 110.0];
 const CHORD_FREQUENCIES: [f64; 4] = [110.0, 164.8138, 220.0, 329.6276];
@@ -230,6 +231,7 @@ pub(super) fn render_stage(
     let mut output = vec![0.0; target_len];
     let mut normalization = vec![0.0; target_len];
     let mut previous_output = vec![Complex64::new(0.0, 0.0); bins];
+    let mut previous_input_energy = vec![0.0_f64; bins];
     let mut previous_source_center: Option<isize> = None;
     let mut mechanisms = MechanismCounts::default();
     let mut maximum_normalization_phase_delta = 0.0_f64;
@@ -257,7 +259,10 @@ pub(super) fn render_stage(
         if let Some(previous_source_center) = previous_source_center {
             for bin in 0..bins {
                 let prediction = previous_output[bin] * current[bin] * auxiliary[bin].conj();
-                preliminary[bin] = normalize_or(prediction, current[bin], current[bin]);
+                let current_energy = current[bin].norm_sqr();
+                let denominator =
+                    previous_input_energy[bin].max(current_energy) + HORIZONTAL_ENERGY_FLOOR;
+                preliminary[bin] = prediction / denominator;
                 mechanisms.horizontal += 1;
             }
             if interior {
@@ -347,6 +352,9 @@ pub(super) fn render_stage(
                 };
             }
             preliminary = corrected;
+        }
+        for bin in 0..bins {
+            previous_input_energy[bin] = current[bin].norm_sqr();
         }
         preliminary[0].im = 0.0;
         traced[0].im = 0.0;

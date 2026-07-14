@@ -157,6 +157,19 @@ preliminary horizontal output directly to current energy instead of using the
 specimen's previous/current energy denominator. That preliminary amplitude
 weights the vertical phase sum before final target normalization.
 
+Batch 29.6CP restores that source-faithful denominator and its fixed
+weak-evidence floor. It does not close the gate. Complete leakage changes only
+to `-30.236852 dB`; the horizontal trace improves to `-29.975234 dB`; all four
+isolated tones remain above the ceiling at `-23.586788` to `-51.511127 dB`.
+The correction remains part of the translated topology, but it is not the
+modulation owner.
+
+The attribution trace has one unresolved state-lineage ambiguity. Its
+horizontal spectrum is synthesized before current-frame vertical correction,
+but its recurrence begins from the previous frame's vertically corrected
+output. Separate direct horizontal recurrence from corrected-state feedback
+before changing another mechanism.
+
 ## Sources
 
 | Source | Revision | Use |
@@ -166,5 +179,5 @@ weights the vertical phase sum before final target normalization.
 
 ## Next Task
 
-Correct only the preliminary horizontal energy law, then rerun all synthetic
-and attribution gates. Keep real-source rendering closed.
+Split direct horizontal recurrence from prior vertically corrected state in
+report-only evidence. Keep real-source rendering and parameter changes closed.

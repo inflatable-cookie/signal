@@ -945,3 +945,10 @@ preliminary horizontal product; the studied topology divides by the larger of
 previous and current input energy and defers target normalization until after
 vertical re-prediction. Correct that one law before reconsidering observation
 geometry.
+
+The corrected preliminary energy law is retained but does not pass the gate.
+Complete leakage changes only to `-30.236852 dB`; horizontal leakage improves
+to `-29.975234 dB`; isolated tones remain dirty. The current horizontal trace
+uses the previous frame's vertically corrected output state. Attribution must
+separate direct horizontal recurrence from corrected-state feedback before
+another topology correction.

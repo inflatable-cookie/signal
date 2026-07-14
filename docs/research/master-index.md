@@ -64,5 +64,6 @@ Finch and Loophole.
 
 ## Next Task
 
-Run Batch 29.6CP preliminary horizontal energy-law correction and the complete
-synthetic rerun. Keep real-source rendering and promotion lanes closed.
+Run Batch 29.6CQ predictor state-lineage attribution. Split direct horizontal
+recurrence from vertically corrected state feedback. Keep real-source rendering
+and promotion lanes closed.

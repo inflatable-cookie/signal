@@ -1115,14 +1115,31 @@ energy before separate vertical target-energy normalization.
 
 ### Batch 29.6CP - Preliminary Horizontal Energy-Law Correction
 
-- [ ] replace only preliminary horizontal target normalization with the
+- [x] replace only preliminary horizontal target normalization with the
   previous/current input-energy denominator; retain every other frozen choice
-- [ ] preserve separate vertical target-energy normalization, fallback,
+- [x] preserve separate vertical target-energy normalization, fallback,
   dependency order, geometry, scheduling, windows, and overlap synthesis
-- [ ] rerun the complete Rule 31G synthetic gate plus CN/CO attribution hashes;
+- [x] rerun the complete Rule 31G synthetic gate plus CN/CO attribution hashes;
   stop before real sources on any failure
-- [ ] decide the corrected equation as one complete topology; do not sweep
+- [x] decide the corrected equation as one complete topology; do not sweep
   floors, weights, windows, intervals, distances, or FFT size
+
+Decision: retain the source-faithful energy law, reject it as the sideband
+cure. Complete leakage moves only from `-30.200611` to `-30.236852 dB` and the
+horizontal trace to `-29.975234 dB`; every isolated tone still fails. The
+trace carries the prior vertically corrected output state, so it does not yet
+separate direct horizontal recurrence from vertical-state feedback.
+
+### Batch 29.6CQ - Predictor State-Lineage Attribution
+
+- [ ] add report-only horizontal recurrence with prior horizontal state beside
+  the existing prior corrected state; change no production candidate equation
+- [ ] compare isolated and mixed phase advance, frame-rate sidebands, and
+  repeated hashes under both state lineages
+- [ ] identify whether direct horizontal transport or vertically corrected
+  state fed into the next frame first creates the modulation
+- [ ] stop with one mechanism owner; keep parameter changes, real sources,
+  listening, stereo, dynamic ratio, cache, and routing closed
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -2089,9 +2106,18 @@ energy before separate vertical target-energy normalization.
   defers target normalization to vertical re-prediction. Batch 29.6CP owns only
   that energy-law correction and the complete synthetic rerun. Real audio and
   parameter sweeps remain closed.
+- 2026-07-14: Batch 29.6CP restores the pinned preliminary horizontal energy
+  law but rejects it as the sideband cure. Complete chord leakage changes only
+  from `-30.200611` to `-30.236852 dB`; horizontal-only leakage improves to
+  `-29.975234 dB`, still far above `-60 dB`. All isolated tones still fail at
+  `-23.586788` to `-51.511127 dB`. Geometry, vertical normalization, fallback,
+  dependency order, scheduling, windows, and overlap remain unchanged. The
+  corrected equation stays for source fidelity. Existing trace state reveals
+  the next attribution gap: horizontal output uses the prior vertically
+  corrected state. Batch 29.6CQ splits those state lineages before another
+  mechanism change. Real audio and parameter sweeps remain closed.
 
 ## Next Task
 
-Run Batch 29.6CP. Correct only the preliminary horizontal energy law and rerun
-the complete synthetic and attribution gates. Do not tune or render real
-sources.
+Run Batch 29.6CQ. Split direct horizontal recurrence from vertically corrected
+state feedback in report-only evidence. Do not tune or render real sources.

@@ -1668,7 +1668,7 @@ fn source_studied_faithful_predictor_synthetic_proof() {
     assert!(result.maximum_event_error_frames <= 256);
     assert_eq!(result.replica_failures, 0);
     assert_eq!(result.silence_peak, 0.0);
-    assert_eq!(result.output_hash, 0xa66c_6564_847e_de88);
+    assert_eq!(result.output_hash, 0xe7cc_3f04_c24b_5d18);
     assert_eq!(result.direction, Direction::PredictorResearch);
 }
 
@@ -1687,12 +1687,12 @@ fn source_studied_faithful_predictor_sideband_attribution() {
     assert_eq!(
         result.stages.map(|stage| stage.output_hash),
         [
-            0x6ae9_748d_411e_5b8f,
-            0xfe61_42e0_3ec8_6aa7,
-            0x5a97_9681_d3a3_9606,
-            0xdbc8_ee79_4f0d_2278,
-            0x00da_6b29_3649_7fb0,
-            0x61b5_60b6_28b1_1e9d,
+            0xd580_6c0a_7812_2f0d,
+            0x620a_7f62_94cf_49b4,
+            0xc8c6_7ce3_00ba_84cc,
+            0x8017_e923_2161_37a9,
+            0x9c2d_3632_f76c_62f3,
+            0xabfe_4a58_2352_59ba,
         ]
     );
     assert_eq!(result.earliest_failure, TraceStage::Horizontal);
@@ -1720,13 +1720,13 @@ fn source_studied_faithful_predictor_horizontal_mixture_attribution() {
     assert_eq!(
         result.tones.map(|tone| tone.isolated_hash),
         [
-            0x60c7_04b7_d391_eac0,
-            0x90d6_34c4_acf0_ed62,
-            0xdc7d_9193_ad4f_ab48,
-            0x2eb4_b1e9_d064_f9ae,
+            0xdb66_2ac6_cf32_fb17,
+            0xd218_9114_bff2_9738,
+            0x24e6_eb18_6e42_241a,
+            0x33bc_2750_eb5a_6da1,
         ]
     );
-    assert_eq!(result.mixed_hash, 0x6ae9_748d_411e_5b8f);
+    assert_eq!(result.mixed_hash, 0xd580_6c0a_7812_2f0d);
     assert_eq!(result.direction, MixtureDirection::PredictorEquation);
 }
 

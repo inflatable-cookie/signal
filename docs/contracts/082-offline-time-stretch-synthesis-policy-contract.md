@@ -3252,8 +3252,16 @@ preliminary horizontal output. The pinned topology divides the horizontal
 complex product by the larger of previous and current input energy, then target-
 normalizes only after vertical re-prediction.
 
+Batch 29.6CP retains that corrected energy law but rejects it as the sideband
+cure. Complete leakage remains `-30.236852 dB`; horizontal leakage is
+`-29.975234 dB`; all isolated tones remain above `-60 dB`. No frozen geometry,
+vertical normalization, fallback, dependency, scheduling, window, or overlap
+choice changes. The horizontal trace inherits prior vertically corrected
+state, so the next evidence must separate direct horizontal recurrence from
+vertical-state feedback before another mechanism changes.
+
 ## Next Task
 
-Run Batch 29.6CP. Correct only that preliminary energy law and rerun the
-complete Rule 31G and attribution gates. Keep real sources and parameter sweeps
+Run Batch 29.6CQ. Split direct horizontal recurrence from vertically corrected
+state feedback in report-only evidence. Keep real sources and parameter sweeps
 closed.
