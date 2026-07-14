@@ -3300,8 +3300,17 @@ Because ascending correction can carry those decisions upward, test this
 boundary policy directly before changing weights, distances, windows, or
 other parameters. This is a candidate owner, not yet a causal result.
 
+Batch 29.6CT rejects that candidate. A source-faithful zero-extension variant
+changes isolated-tone out-of-band energy by only `-0.033206` to `+0.005683 dB`
+against the frozen clamped translation and improves the chord by only
+`0.068380 dB`. Paired failures remain `[3 tones, 1 chord]`; exact length,
+finiteness, pitch, and repeated hashes pass. Frequency-boundary policy does not
+materially own the source-parity gap. Do not promote it or combine it with
+another change.
+
 ## Next Task
 
-Run Batch 29.6CT. Compare zero-extension and edge clamping as one report-only
-frequency-boundary ablation under the frozen paired gate. Keep real sources
-and parameter sweeps closed.
+Run Batch 29.6CU. Define a stage-aligned pinned-source trace for analysis,
+preliminary horizontal state, and corrected output state on exact interior
+frames. Select the next mechanism from the first measured divergence. Keep
+real sources and parameter sweeps closed.

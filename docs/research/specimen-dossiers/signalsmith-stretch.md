@@ -149,8 +149,10 @@ known frame-rate sideband, is the next translation gate.
 - exact-input parity is frozen at no more than `1 dB` worse per control
 - pinned fractional frequency lookup zero-extends out-of-range bins; Signal
   clamps ten vertical observations per `2x` frame to an edge bin
+- a controlled zero-extension variant changes leakage by at most `0.068380 dB`
+  and leaves all four paired failures unchanged
 
 ## Next Task
 
-Test the frequency-boundary lookup differential under the paired parity gate.
-Stop before corpus rendering or parameter changes.
+Trace aligned pinned-source and Signal states to locate the first material
+internal divergence. Stop before corpus rendering or parameter changes.

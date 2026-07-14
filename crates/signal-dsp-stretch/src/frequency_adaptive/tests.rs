@@ -1787,7 +1787,7 @@ fn source_studied_pinned_signalsmith_synthetic_comparator() {
     let result = review();
     eprintln!("source_studied_pinned_signalsmith {result:#?}");
     assert!(result.repeated);
-    assert_eq!(result.structural_failures, [0; 4]);
+    assert_eq!(result.structural_failures, [0; 6]);
     assert_eq!(result.geometry, [240, 960, 4]);
     assert_eq!(result.revision, "57b93f4e9206a089a45387eaa39bdc9f310d3308");
     assert_eq!(result.version, "1.3.2");
@@ -1802,11 +1802,24 @@ fn source_studied_pinned_signalsmith_synthetic_comparator() {
     assert!(result.chord_peak_error_hz <= 0.5);
     assert_eq!(result.absolute_diagnostic_failures, [4, 1]);
     assert_eq!(result.source_relative_failures, [3, 1]);
+    assert_eq!(result.zero_extended_source_relative_failures, [3, 1]);
+    assert!(result.tones.iter().all(|tone| {
+        tone.zero_extended_out_of_band_db.is_finite()
+            && tone.zero_extended_peak_error_hz <= 0.5
+            && tone.zero_extended_hash != 0
+    }));
+    assert!(result.chord_zero_extended_out_of_band_db.is_finite());
+    assert!(result.chord_zero_extended_peak_error_hz <= 0.5);
     assert_eq!(
         result.internal_differential,
         PinnedSourceInternalDifferential::FractionalFrequencyBoundaryPolicy
     );
     assert_eq!(result.affected_frequency_observations_per_frame, 10);
+    assert!(result
+        .tones
+        .iter()
+        .all(|tone| tone.zero_extended_minus_clamped_db.abs() < 0.04));
+    assert!(result.chord_zero_extended_minus_clamped_db.abs() < 0.07);
     assert_eq!(
         result.output_hashes,
         [
@@ -1828,8 +1841,18 @@ fn source_studied_pinned_signalsmith_synthetic_comparator() {
         ]
     );
     assert_eq!(
+        result.zero_extended_hashes,
+        [
+            0xad83_e502_f285_7859,
+            0xd3ad_a3ac_a57d_9041,
+            0xa066_a6c2_165f_6fd1,
+            0x68dd_4e32_317a_46fb,
+            0x35ec_df54_6775_3361,
+        ]
+    );
+    assert_eq!(
         result.direction,
-        PinnedSourceDirection::SignalTranslationDivergence
+        PinnedSourceDirection::FrequencyBoundaryPolicyRejected
     );
 }
 

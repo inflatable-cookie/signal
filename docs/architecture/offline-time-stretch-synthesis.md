@@ -981,3 +981,10 @@ observations per frame differ near the low-frequency boundary. Ascending
 correction can propagate those low-bin phase decisions upward, so boundary
 policy is the next causal ablation. It is not yet accepted as the artifact
 owner.
+
+That ablation rejects boundary policy. Zero-extension changes isolated-tone
+leakage by at most `0.033206 dB` and chord leakage by `0.068380 dB`; the same
+three tones and chord still fail paired parity. The next comparison must align
+internal source and Signal states at the analysis, preliminary-horizontal, and
+corrected-output boundaries. Select the next candidate from the first measured
+state divergence, not from another final-output guess.

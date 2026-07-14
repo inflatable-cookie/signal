@@ -1195,15 +1195,34 @@ frame. This is the next causal ablation, not a proven owner.
 
 ### Batch 29.6CT - Frequency-Boundary Attribution
 
-- [ ] add one report-only zero-extension variant beside the frozen clamped
+- [x] add one report-only zero-extension variant beside the frozen clamped
   translation; change no other predictor law or production path
-- [ ] compare both Signal variants against pinned source on the exact quantized
+- [x] compare both Signal variants against pinned source on the exact quantized
   tones and chord using the frozen `1 dB` paired gate
-- [ ] preserve exact length, finiteness, pitch, repeat, and absolute diagnostic
+- [x] preserve exact length, finiteness, pitch, repeat, and absolute diagnostic
   reporting; verify the ten affected observations per `2x` frame
-- [ ] decide whether boundary policy materially closes the three-tone and chord
+- [x] decide whether boundary policy materially closes the three-tone and chord
   parity failures; stop if it does not
-- [ ] keep weights, windows, geometry, distances, floors, corpus, listening,
+- [x] keep weights, windows, geometry, distances, floors, corpus, listening,
+  stereo, dynamic ratio, cache, and routing closed
+
+Decision: reject frequency-boundary policy as the parity-gap owner. Zero-
+extension changes isolated-tone leakage by only `-0.033206` to `+0.005683 dB`
+and chord leakage by `-0.068380 dB` relative to clamping. Both variants retain
+`[3 tone, 1 chord]` paired failures. All structural, pitch, and repeat checks
+pass. Keep the clamped translation frozen; do not compound the rejected change.
+
+### Batch 29.6CU - Stage-Aligned Source Trace
+
+- [ ] define a pinned, report-only trace boundary for current input spectrum,
+  preliminary horizontal state, and corrected output state
+- [ ] align one steady interior frame for exact quantized `110 Hz`, `220 Hz`,
+  and chord controls at `8 kHz`, ratio `2`, geometry `960/240`
+- [ ] compare normalized magnitude and phase at source-tone bins, strongest
+  sideband bins, and the low-to-high dependency path; preserve raw hashes
+- [ ] identify the first material source-versus-Signal state divergence and
+  select exactly one following causal ablation
+- [ ] change no predictor law; keep window/FFT changes, corpus, listening,
   stereo, dynamic ratio, cache, and routing closed
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
@@ -2206,8 +2225,13 @@ frame. This is the next causal ablation, not a proven owner.
   controlled internal differential: pinned fractional frequency lookup zero-
   extends outside the spectrum, while Signal clamps ten low-boundary vertical
   observations per `2x` frame. Batch 29.6CT tests that policy alone.
+- 2026-07-14: Batch 29.6CT rejects frequency-boundary policy. Source-faithful
+  zero-extension changes tone leakage by no more than `0.033206 dB` and chord
+  leakage by `0.068380 dB`; paired failures remain `[3, 1]`. Both variants are
+  exact-length, finite, pitch-correct, and hash-repeating. Batch 29.6CU moves
+  from final-output guesses to stage-aligned pinned-source state tracing.
 
 ## Next Task
 
-Run Batch 29.6CT. Test zero-extension against edge clamping under the frozen
-paired gate. Do not tune or render real sources.
+Run Batch 29.6CU. Locate the first material internal state divergence with a
+stage-aligned pinned-source trace. Do not tune or render real sources.

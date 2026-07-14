@@ -5,8 +5,9 @@ use std::{
 };
 
 use super::{
-    chord_control, chord_spectrum_metrics, hash_samples, render_stage, spectrum_metrics,
-    TraceStage, CHORD_FREQUENCIES, SAMPLE_RATE,
+    chord_control, chord_spectrum_metrics, hash_samples, render_stage,
+    render_stage_with_boundary_policy, spectrum_metrics, FrequencyBoundaryPolicy, TraceStage,
+    CHORD_FREQUENCIES, SAMPLE_RATE,
 };
 
 const PINNED_REVISION: &str = "57b93f4e9206a089a45387eaa39bdc9f310d3308";
@@ -24,14 +25,20 @@ pub(in crate::frequency_adaptive) struct PinnedToneEvidence {
     pub(in crate::frequency_adaptive) strongest_sideband_offset_hz: f64,
     pub(in crate::frequency_adaptive) signal_out_of_band_db: f64,
     pub(in crate::frequency_adaptive) signal_minus_pinned_db: f64,
+    pub(in crate::frequency_adaptive) zero_extended_out_of_band_db: f64,
+    pub(in crate::frequency_adaptive) zero_extended_minus_pinned_db: f64,
+    pub(in crate::frequency_adaptive) zero_extended_minus_clamped_db: f64,
+    pub(in crate::frequency_adaptive) zero_extended_peak_error_hz: f64,
     pub(in crate::frequency_adaptive) output_hash: u64,
     pub(in crate::frequency_adaptive) signal_hash: u64,
+    pub(in crate::frequency_adaptive) zero_extended_hash: u64,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(in crate::frequency_adaptive) enum PinnedSourceDirection {
-    RealSourceComparison,
-    SignalTranslationDivergence,
+    FrequencyBoundaryPolicyClosesSyntheticParity,
+    FrequencyBoundaryPolicyContributes,
+    FrequencyBoundaryPolicyRejected,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -51,13 +58,19 @@ pub(in crate::frequency_adaptive) struct PinnedSourceReview {
     pub(in crate::frequency_adaptive) chord_sideband_offset_hz: f64,
     pub(in crate::frequency_adaptive) chord_signal_out_of_band_db: f64,
     pub(in crate::frequency_adaptive) chord_signal_minus_pinned_db: f64,
+    pub(in crate::frequency_adaptive) chord_zero_extended_out_of_band_db: f64,
+    pub(in crate::frequency_adaptive) chord_zero_extended_minus_pinned_db: f64,
+    pub(in crate::frequency_adaptive) chord_zero_extended_minus_clamped_db: f64,
+    pub(in crate::frequency_adaptive) chord_zero_extended_peak_error_hz: f64,
     pub(in crate::frequency_adaptive) absolute_diagnostic_failures: [usize; 2],
     pub(in crate::frequency_adaptive) source_relative_failures: [usize; 2],
+    pub(in crate::frequency_adaptive) zero_extended_source_relative_failures: [usize; 2],
     pub(in crate::frequency_adaptive) internal_differential: PinnedSourceInternalDifferential,
     pub(in crate::frequency_adaptive) affected_frequency_observations_per_frame: usize,
-    pub(in crate::frequency_adaptive) structural_failures: [usize; 4],
+    pub(in crate::frequency_adaptive) structural_failures: [usize; 6],
     pub(in crate::frequency_adaptive) output_hashes: [u64; 5],
     pub(in crate::frequency_adaptive) signal_hashes: [u64; 5],
+    pub(in crate::frequency_adaptive) zero_extended_hashes: [u64; 5],
     pub(in crate::frequency_adaptive) repeated: bool,
     pub(in crate::frequency_adaptive) direction: PinnedSourceDirection,
 }
@@ -86,20 +99,26 @@ pub(in crate::frequency_adaptive) fn review() -> PinnedSourceReview {
     let first = run(&binary, &root.join("first"), &revision, &version);
     let second = run(&binary, &root.join("second"), &revision, &version);
     let repeated = first == second;
-    let gate_passed = repeated
-        && first.structural_failures == [0; 4]
-        && first
-            .tones
-            .iter()
-            .all(|tone| tone.output_peak_error_hz <= 0.5)
+    let structurally_valid = repeated
+        && first.structural_failures == [0; 6]
+        && first.tones.iter().all(|tone| {
+            tone.output_peak_error_hz <= 0.5 && tone.zero_extended_peak_error_hz <= 0.5
+        })
         && first.chord_peak_error_hz <= 0.5
-        && first.source_relative_failures == [0; 2];
+        && first.chord_zero_extended_peak_error_hz <= 0.5;
+    let clamped_failures = first.source_relative_failures.into_iter().sum::<usize>();
+    let zero_extended_failures = first
+        .zero_extended_source_relative_failures
+        .into_iter()
+        .sum::<usize>();
     PinnedSourceReview {
         repeated,
-        direction: if gate_passed {
-            PinnedSourceDirection::RealSourceComparison
+        direction: if structurally_valid && zero_extended_failures == 0 {
+            PinnedSourceDirection::FrequencyBoundaryPolicyClosesSyntheticParity
+        } else if structurally_valid && zero_extended_failures < clamped_failures {
+            PinnedSourceDirection::FrequencyBoundaryPolicyContributes
         } else {
-            PinnedSourceDirection::SignalTranslationDivergence
+            PinnedSourceDirection::FrequencyBoundaryPolicyRejected
         },
         ..first
     }
@@ -107,9 +126,10 @@ pub(in crate::frequency_adaptive) fn review() -> PinnedSourceReview {
 
 fn run(binary: &Path, root: &Path, revision: &str, version: &str) -> PinnedSourceReview {
     fs::create_dir_all(root).unwrap_or_else(|error| panic!("create {}: {error}", root.display()));
-    let mut structural_failures = [0; 4];
+    let mut structural_failures = [0; 6];
     let mut output_hashes = [0; 5];
     let mut signal_hashes = [0; 5];
+    let mut zero_extended_hashes = [0; 5];
     let tones = CHORD_FREQUENCIES.map(|frequency| {
         let tone_index = CHORD_FREQUENCIES
             .iter()
@@ -127,8 +147,21 @@ fn run(binary: &Path, root: &Path, revision: &str, version: &str) -> PinnedSourc
         structural_failures[0] += usize::from(output.len() != OUTPUT_FRAMES);
         structural_failures[1] += output.iter().filter(|sample| !sample.is_finite()).count();
         let signal = render_stage(&quantized_input, 2.0, SAMPLE_RATE, TraceStage::Complete);
+        let zero_extended = render_stage_with_boundary_policy(
+            &quantized_input,
+            2.0,
+            SAMPLE_RATE,
+            TraceStage::Complete,
+            FrequencyBoundaryPolicy::ZeroExtend,
+        );
         structural_failures[2] += usize::from(signal.samples.len() != OUTPUT_FRAMES);
         structural_failures[3] += signal
+            .samples
+            .iter()
+            .filter(|sample| !sample.is_finite())
+            .count();
+        structural_failures[4] += usize::from(zero_extended.samples.len() != OUTPUT_FRAMES);
+        structural_failures[5] += zero_extended
             .samples
             .iter()
             .filter(|sample| !sample.is_finite())
@@ -142,10 +175,16 @@ fn run(binary: &Path, root: &Path, revision: &str, version: &str) -> PinnedSourc
             &signal.samples[SAMPLE_RATE..SAMPLE_RATE * 3],
             std::slice::from_ref(&frequency),
         );
+        let zero_extended_metrics = spectrum_metrics(
+            &zero_extended.samples[SAMPLE_RATE..SAMPLE_RATE * 3],
+            std::slice::from_ref(&frequency),
+        );
         let output_hash = hash_samples(&output);
         let signal_hash = hash_samples(&signal.samples);
+        let zero_extended_hash = hash_samples(&zero_extended.samples);
         output_hashes[tone_index] = output_hash;
         signal_hashes[tone_index] = signal_hash;
+        zero_extended_hashes[tone_index] = zero_extended_hash;
         PinnedToneEvidence {
             frequency_hz: frequency,
             input_out_of_band_db: input_metrics.out_of_band_db,
@@ -154,8 +193,15 @@ fn run(binary: &Path, root: &Path, revision: &str, version: &str) -> PinnedSourc
             strongest_sideband_offset_hz: output_metrics.strongest_sideband_offset_hz,
             signal_out_of_band_db: signal_metrics.out_of_band_db,
             signal_minus_pinned_db: signal_metrics.out_of_band_db - output_metrics.out_of_band_db,
+            zero_extended_out_of_band_db: zero_extended_metrics.out_of_band_db,
+            zero_extended_minus_pinned_db: zero_extended_metrics.out_of_band_db
+                - output_metrics.out_of_band_db,
+            zero_extended_minus_clamped_db: zero_extended_metrics.out_of_band_db
+                - signal_metrics.out_of_band_db,
+            zero_extended_peak_error_hz: zero_extended_metrics.maximum_peak_error_hz,
             output_hash,
             signal_hash,
+            zero_extended_hash,
         }
     });
     let (quantized_chord, chord_output) = render(binary, root, "chord", &chord_control());
@@ -165,8 +211,21 @@ fn run(binary: &Path, root: &Path, revision: &str, version: &str) -> PinnedSourc
         .filter(|sample| !sample.is_finite())
         .count();
     let signal_chord = render_stage(&quantized_chord, 2.0, SAMPLE_RATE, TraceStage::Complete);
+    let zero_extended_chord = render_stage_with_boundary_policy(
+        &quantized_chord,
+        2.0,
+        SAMPLE_RATE,
+        TraceStage::Complete,
+        FrequencyBoundaryPolicy::ZeroExtend,
+    );
     structural_failures[2] += usize::from(signal_chord.samples.len() != OUTPUT_FRAMES);
     structural_failures[3] += signal_chord
+        .samples
+        .iter()
+        .filter(|sample| !sample.is_finite())
+        .count();
+    structural_failures[4] += usize::from(zero_extended_chord.samples.len() != OUTPUT_FRAMES);
+    structural_failures[5] += zero_extended_chord
         .samples
         .iter()
         .filter(|sample| !sample.is_finite())
@@ -175,10 +234,15 @@ fn run(binary: &Path, root: &Path, revision: &str, version: &str) -> PinnedSourc
     let chord_output_metrics = chord_spectrum_metrics(&chord_output[SAMPLE_RATE..SAMPLE_RATE * 3]);
     let chord_signal_metrics =
         chord_spectrum_metrics(&signal_chord.samples[SAMPLE_RATE..SAMPLE_RATE * 3]);
+    let chord_zero_extended_metrics =
+        chord_spectrum_metrics(&zero_extended_chord.samples[SAMPLE_RATE..SAMPLE_RATE * 3]);
     output_hashes[4] = hash_samples(&chord_output);
     signal_hashes[4] = hash_samples(&signal_chord.samples);
+    zero_extended_hashes[4] = hash_samples(&zero_extended_chord.samples);
     let chord_signal_minus_pinned_db =
         chord_signal_metrics.out_of_band_db - chord_output_metrics.out_of_band_db;
+    let chord_zero_extended_minus_pinned_db =
+        chord_zero_extended_metrics.out_of_band_db - chord_output_metrics.out_of_band_db;
     let absolute_diagnostic_failures = [
         tones
             .iter()
@@ -193,6 +257,13 @@ fn run(binary: &Path, root: &Path, revision: &str, version: &str) -> PinnedSourc
             .count(),
         usize::from(chord_signal_minus_pinned_db > SOURCE_RELATIVE_CEILING_DB),
     ];
+    let zero_extended_source_relative_failures = [
+        tones
+            .iter()
+            .filter(|tone| tone.zero_extended_minus_pinned_db > SOURCE_RELATIVE_CEILING_DB)
+            .count(),
+        usize::from(chord_zero_extended_minus_pinned_db > SOURCE_RELATIVE_CEILING_DB),
+    ];
     PinnedSourceReview {
         revision: revision.to_string(),
         version: version.to_string(),
@@ -204,15 +275,22 @@ fn run(binary: &Path, root: &Path, revision: &str, version: &str) -> PinnedSourc
         chord_sideband_offset_hz: chord_output_metrics.strongest_sideband_offset_hz,
         chord_signal_out_of_band_db: chord_signal_metrics.out_of_band_db,
         chord_signal_minus_pinned_db,
+        chord_zero_extended_out_of_band_db: chord_zero_extended_metrics.out_of_band_db,
+        chord_zero_extended_minus_pinned_db,
+        chord_zero_extended_minus_clamped_db: chord_zero_extended_metrics.out_of_band_db
+            - chord_signal_metrics.out_of_band_db,
+        chord_zero_extended_peak_error_hz: chord_zero_extended_metrics.maximum_peak_error_hz,
         absolute_diagnostic_failures,
         source_relative_failures,
+        zero_extended_source_relative_failures,
         internal_differential: PinnedSourceInternalDifferential::FractionalFrequencyBoundaryPolicy,
         affected_frequency_observations_per_frame: frequency_boundary_differential_count(),
         structural_failures,
         output_hashes,
         signal_hashes,
+        zero_extended_hashes,
         repeated: false,
-        direction: PinnedSourceDirection::SignalTranslationDivergence,
+        direction: PinnedSourceDirection::FrequencyBoundaryPolicyRejected,
     }
 }
 

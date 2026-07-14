@@ -73,6 +73,12 @@ pub(in crate::frequency_adaptive) enum TraceStage {
     Complete,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(in crate::frequency_adaptive) enum FrequencyBoundaryPolicy {
+    Clamp,
+    ZeroExtend,
+}
+
 #[derive(Clone, Copy, Debug)]
 pub(super) struct ChordSpectrumMetrics {
     pub maximum_peak_error_hz: f64,
@@ -200,6 +206,22 @@ pub(super) fn render_stage(
     sample_rate: usize,
     trace_stage: TraceStage,
 ) -> Render {
+    render_stage_with_boundary_policy(
+        input,
+        ratio,
+        sample_rate,
+        trace_stage,
+        FrequencyBoundaryPolicy::Clamp,
+    )
+}
+
+pub(super) fn render_stage_with_boundary_policy(
+    input: &[f64],
+    ratio: f64,
+    sample_rate: usize,
+    trace_stage: TraceStage,
+    boundary_policy: FrequencyBoundaryPolicy,
+) -> Render {
     let target_len = (input.len() as f64 * ratio).round() as usize;
     if ratio == 1.0 && trace_stage == TraceStage::Complete {
         let samples = input.to_vec();
@@ -296,7 +318,8 @@ pub(super) fn render_stage(
                 let mut prediction = Complex64::new(0.0, 0.0);
                 let mut selected = Complex64::new(0.0, 0.0);
                 if bin >= 1 {
-                    let lower_input = interpolate(&current[..bins], bin as f64 - time_factor);
+                    let lower_input =
+                        interpolate(&current[..bins], bin as f64 - time_factor, boundary_policy);
                     let twist = current[bin] * lower_input.conj();
                     let candidate = corrected[bin - 1] * twist;
                     prediction += candidate;
@@ -306,7 +329,11 @@ pub(super) fn render_stage(
                     mechanisms.short_lower += 1;
                 }
                 if bin + 1 < bins {
-                    let lower_input = interpolate(&current[..bins], bin as f64 + 1.0 - time_factor);
+                    let lower_input = interpolate(
+                        &current[..bins],
+                        bin as f64 + 1.0 - time_factor,
+                        boundary_policy,
+                    );
                     let twist = current[bin + 1] * lower_input.conj();
                     let candidate = preliminary[bin + 1] * twist.conj();
                     prediction += candidate;
@@ -319,6 +346,7 @@ pub(super) fn render_stage(
                     let lower_input = interpolate(
                         &current[..bins],
                         bin as f64 - long_distance as f64 * time_factor,
+                        boundary_policy,
                     );
                     let twist = current[bin] * lower_input.conj();
                     let candidate = corrected[bin - long_distance] * twist;
@@ -332,6 +360,7 @@ pub(super) fn render_stage(
                     let lower_input = interpolate(
                         &current[..bins],
                         bin as f64 + long_distance as f64 - long_distance as f64 * time_factor,
+                        boundary_policy,
                     );
                     let twist = current[bin + long_distance] * lower_input.conj();
                     let candidate = preliminary[bin + long_distance] * twist.conj();
@@ -446,12 +475,32 @@ fn reflected(input: &[f64], mut index: isize) -> f64 {
     input[index as usize]
 }
 
-fn interpolate(spectrum: &[Complex64], position: f64) -> Complex64 {
-    let position = position.clamp(0.0, (spectrum.len() - 1) as f64);
-    let lower = position.floor() as usize;
-    let upper = (lower + 1).min(spectrum.len() - 1);
-    let fraction = position - lower as f64;
-    spectrum[lower] * (1.0 - fraction) + spectrum[upper] * fraction
+fn interpolate(
+    spectrum: &[Complex64],
+    position: f64,
+    boundary_policy: FrequencyBoundaryPolicy,
+) -> Complex64 {
+    match boundary_policy {
+        FrequencyBoundaryPolicy::Clamp => {
+            let position = position.clamp(0.0, (spectrum.len() - 1) as f64);
+            let lower = position.floor() as usize;
+            let upper = (lower + 1).min(spectrum.len() - 1);
+            let fraction = position - lower as f64;
+            spectrum[lower] * (1.0 - fraction) + spectrum[upper] * fraction
+        }
+        FrequencyBoundaryPolicy::ZeroExtend => {
+            let lower = position.floor() as isize;
+            let fraction = position - lower as f64;
+            let get = |index: isize| {
+                usize::try_from(index)
+                    .ok()
+                    .and_then(|index| spectrum.get(index))
+                    .copied()
+                    .unwrap_or_default()
+            };
+            get(lower) * (1.0 - fraction) + get(lower + 1) * fraction
+        }
+    }
 }
 
 fn normalize_or(prediction: Complex64, target: Complex64, fallback: Complex64) -> Complex64 {

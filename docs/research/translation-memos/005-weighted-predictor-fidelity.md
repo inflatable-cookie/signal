@@ -209,6 +209,12 @@ bin. The `2x`, `960/240` geometry changes ten vertical observations per frame.
 The ascending dependency graph can propagate those low-frequency decisions,
 but causality remains unproven until a controlled boundary-policy ablation.
 
+Batch 29.6CT rejects that mechanism. Zero-extension moves isolated-tone
+out-of-band energy by `-0.033206` to `+0.005683 dB` relative to clamping and
+moves the chord by `-0.068380 dB`. Both variants retain `[3 tone, 1 chord]`
+paired failures. Structure, pitch, and repeat pass. The lookup difference is
+real but not material to the fidelity gap.
+
 ## Sources
 
 | Source | Revision | Use |
@@ -218,5 +224,5 @@ but causality remains unproven until a controlled boundary-policy ablation.
 
 ## Next Task
 
-Run the frequency-boundary lookup ablation under paired parity. Keep real-source
-rendering and parameter changes closed.
+Define a stage-aligned pinned-source trace and find the first material state
+divergence. Keep real-source rendering and parameter changes closed.
