@@ -1173,16 +1173,38 @@ absolute fidelity gate with paired source parity before another algorithm edit.
 
 ### Batch 29.6CS - Source-Relative Fidelity Gate
 
-- [ ] retain `-60 dB` as an absolute diagnostic, not a rejection criterion for
+- [x] retain `-60 dB` as an absolute diagnostic, not a rejection criterion for
   faithful implementation of this topology at `2x`
-- [ ] freeze paired parity on the exact quantized controls: Signal output must
+- [x] freeze paired parity on the exact quantized controls: Signal output must
   be no more than `1 dB` worse than pinned source for every tone and the chord
-- [ ] preserve exact length, finiteness, repeat, pitch, transient, silence,
+- [x] preserve exact length, finiteness, repeat, pitch, transient, silence,
   boundary, fallback, and mechanism gates unchanged
-- [ ] update Rule 31G, the report direction, and research front doors without
+- [x] update Rule 31G, the report direction, and research front doors without
   changing predictor code or rendering real sources
-- [ ] identify one source-versus-Signal internal differential for the failed
+- [x] identify one source-versus-Signal internal differential for the failed
   three tones and chord; keep tuning and parameter sweeps closed
+
+Decision: source-relative parity is now the fidelity rejection gate. Pinned
+source records four tone and one chord failures against the retained absolute
+`-60 dB` diagnostic. Signal records three tone and one chord failures against
+the paired `1 dB` allowance, so real-source work remains closed. Exact source
+inspection identifies frequency-boundary lookup as the first bounded
+differential: pinned source zero-extends out-of-range fractional bins while
+Signal clamps them to an edge. Ten vertical observations differ per `2x`
+frame. This is the next causal ablation, not a proven owner.
+
+### Batch 29.6CT - Frequency-Boundary Attribution
+
+- [ ] add one report-only zero-extension variant beside the frozen clamped
+  translation; change no other predictor law or production path
+- [ ] compare both Signal variants against pinned source on the exact quantized
+  tones and chord using the frozen `1 dB` paired gate
+- [ ] preserve exact length, finiteness, pitch, repeat, and absolute diagnostic
+  reporting; verify the ten affected observations per `2x` frame
+- [ ] decide whether boundary policy materially closes the three-tone and chord
+  parity failures; stop if it does not
+- [ ] keep weights, windows, geometry, distances, floors, corpus, listening,
+  stereo, dynamic ratio, cache, and routing closed
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -2177,8 +2199,15 @@ absolute fidelity gate with paired source parity before another algorithm edit.
   one tone. Both output sets are exact-length, finite, pitch-correct, and
   repeat bit-for-bit at the decoded-sample boundary. Batch 29.6CS replaces the
   invalid absolute fidelity gate with paired source parity before more DSP.
+- 2026-07-14: Batch 29.6CS freezes a `1 dB` exact-input parity gate while
+  retaining `-60 dB` as an absolute diagnostic. Pinned source records `[4, 1]`
+  absolute tone/chord failures; Signal records `[3, 1]` paired failures. All
+  prior non-fidelity gates remain unchanged. Source inspection finds the first
+  controlled internal differential: pinned fractional frequency lookup zero-
+  extends outside the spectrum, while Signal clamps ten low-boundary vertical
+  observations per `2x` frame. Batch 29.6CT tests that policy alone.
 
 ## Next Task
 
-Run Batch 29.6CS. Replace the invalid absolute topology-fidelity gate with
-paired source parity. Do not tune or render real sources.
+Run Batch 29.6CT. Test zero-extension against edge clamping under the frozen
+paired gate. Do not tune or render real sources.

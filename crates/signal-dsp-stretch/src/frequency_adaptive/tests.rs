@@ -1669,7 +1669,7 @@ fn source_studied_faithful_predictor_synthetic_proof() {
     assert_eq!(result.replica_failures, 0);
     assert_eq!(result.silence_peak, 0.0);
     assert_eq!(result.output_hash, 0xe7cc_3f04_c24b_5d18);
-    assert_eq!(result.direction, Direction::PredictorResearch);
+    assert_eq!(result.direction, Direction::PinnedSourceParity);
 }
 
 #[test]
@@ -1780,7 +1780,9 @@ fn source_studied_faithful_predictor_state_lineage_attribution() {
 #[ignore = "requires pinned local Signalsmith Stretch revision 57b93f4e"]
 #[cfg(not(debug_assertions))]
 fn source_studied_pinned_signalsmith_synthetic_comparator() {
-    use super::source_studied::faithful_predictor::pinned_source::{review, PinnedSourceDirection};
+    use super::source_studied::faithful_predictor::pinned_source::{
+        review, PinnedSourceDirection, PinnedSourceInternalDifferential,
+    };
 
     let result = review();
     eprintln!("source_studied_pinned_signalsmith {result:#?}");
@@ -1798,6 +1800,13 @@ fn source_studied_pinned_signalsmith_synthetic_comparator() {
     assert!(result.chord_input_out_of_band_db <= -60.0);
     assert!(result.chord_output_out_of_band_db > -60.0);
     assert!(result.chord_peak_error_hz <= 0.5);
+    assert_eq!(result.absolute_diagnostic_failures, [4, 1]);
+    assert_eq!(result.source_relative_failures, [3, 1]);
+    assert_eq!(
+        result.internal_differential,
+        PinnedSourceInternalDifferential::FractionalFrequencyBoundaryPolicy
+    );
+    assert_eq!(result.affected_frequency_observations_per_frame, 10);
     assert_eq!(
         result.output_hashes,
         [
@@ -1819,17 +1828,8 @@ fn source_studied_pinned_signalsmith_synthetic_comparator() {
         ]
     );
     assert_eq!(
-        result
-            .tones
-            .iter()
-            .filter(|tone| tone.signal_minus_pinned_db > 1.0)
-            .count(),
-        3
-    );
-    assert!(result.chord_signal_minus_pinned_db > 1.0);
-    assert_eq!(
         result.direction,
-        PinnedSourceDirection::StudiedTopologyGateMismatchAndSignalDivergence
+        PinnedSourceDirection::SignalTranslationDivergence
     );
 }
 

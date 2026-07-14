@@ -111,7 +111,9 @@ The complete implementation must pass before real-source rendering:
 - bass: sequential `55`, `82.4069`, and `110` Hz notes retain dominant
   frequency within `0.5` Hz and introduce no octave selection
 - chord/pad: steady `110`, `164.8138`, `220`, and `329.6276` Hz components keep
-  each dominant peak within `0.5` Hz; out-of-band energy stays below `-60 dB`
+  each dominant peak within `0.5` Hz; record `-60 dB` as an absolute diagnostic
+  and require Signal out-of-band energy no more than `1 dB` worse than pinned
+  source for every isolated tone and the chord
 - transient: isolated and dense attacks stay within `256` frames of projected
   position and no intermediate replica exceeds either protected attack
 - weak evidence: silence remains exact zero; a cancellation control exercises
@@ -196,6 +198,17 @@ tones are `8.041` to `21.143 dB` worse, one is `6.225 dB` better, and the chord
 is `9.779 dB` worse. Preserve `-60 dB` as an absolute diagnostic, but replace it
 as the topology-fidelity rejection criterion with paired pinned-source parity.
 
+Batch 29.6CS freezes the paired gate and retains every non-fidelity gate. The
+absolute diagnostic reports `[4 tone, 1 chord]` pinned failures; the `1 dB`
+source-relative rejection reports `[3 tone, 1 chord]` Signal failures. Report
+direction remains translation research.
+
+The first exact internal differential is frequency-boundary lookup. Pinned
+source returns zero outside its spectrum; Signal clamps to the nearest edge
+bin. The `2x`, `960/240` geometry changes ten vertical observations per frame.
+The ascending dependency graph can propagate those low-frequency decisions,
+but causality remains unproven until a controlled boundary-policy ablation.
+
 ## Sources
 
 | Source | Revision | Use |
@@ -205,5 +218,5 @@ as the topology-fidelity rejection criterion with paired pinned-source parity.
 
 ## Next Task
 
-Freeze paired pinned-source parity as the topology-fidelity gate. Keep real-
-source rendering and parameter changes closed.
+Run the frequency-boundary lookup ablation under paired parity. Keep real-source
+rendering and parameter changes closed.

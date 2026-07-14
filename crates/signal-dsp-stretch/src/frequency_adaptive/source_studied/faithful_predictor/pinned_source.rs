@@ -13,6 +13,7 @@ const PINNED_REVISION: &str = "57b93f4e9206a089a45387eaa39bdc9f310d3308";
 const PINNED_VERSION: &str = "1.3.2";
 const INPUT_FRAMES: usize = SAMPLE_RATE * 2;
 const OUTPUT_FRAMES: usize = INPUT_FRAMES * 2;
+const SOURCE_RELATIVE_CEILING_DB: f64 = 1.0;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub(in crate::frequency_adaptive) struct PinnedToneEvidence {
@@ -29,9 +30,13 @@ pub(in crate::frequency_adaptive) struct PinnedToneEvidence {
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(in crate::frequency_adaptive) enum PinnedSourceDirection {
+    RealSourceComparison,
     SignalTranslationDivergence,
-    StudiedTopologyGateMismatch,
-    StudiedTopologyGateMismatchAndSignalDivergence,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(in crate::frequency_adaptive) enum PinnedSourceInternalDifferential {
+    FractionalFrequencyBoundaryPolicy,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -46,6 +51,10 @@ pub(in crate::frequency_adaptive) struct PinnedSourceReview {
     pub(in crate::frequency_adaptive) chord_sideband_offset_hz: f64,
     pub(in crate::frequency_adaptive) chord_signal_out_of_band_db: f64,
     pub(in crate::frequency_adaptive) chord_signal_minus_pinned_db: f64,
+    pub(in crate::frequency_adaptive) absolute_diagnostic_failures: [usize; 2],
+    pub(in crate::frequency_adaptive) source_relative_failures: [usize; 2],
+    pub(in crate::frequency_adaptive) internal_differential: PinnedSourceInternalDifferential,
+    pub(in crate::frequency_adaptive) affected_frequency_observations_per_frame: usize,
     pub(in crate::frequency_adaptive) structural_failures: [usize; 4],
     pub(in crate::frequency_adaptive) output_hashes: [u64; 5],
     pub(in crate::frequency_adaptive) signal_hashes: [u64; 5],
@@ -76,8 +85,22 @@ pub(in crate::frequency_adaptive) fn review() -> PinnedSourceReview {
     replace_directory(&root);
     let first = run(&binary, &root.join("first"), &revision, &version);
     let second = run(&binary, &root.join("second"), &revision, &version);
+    let repeated = first == second;
+    let gate_passed = repeated
+        && first.structural_failures == [0; 4]
+        && first
+            .tones
+            .iter()
+            .all(|tone| tone.output_peak_error_hz <= 0.5)
+        && first.chord_peak_error_hz <= 0.5
+        && first.source_relative_failures == [0; 2];
     PinnedSourceReview {
-        repeated: first == second,
+        repeated,
+        direction: if gate_passed {
+            PinnedSourceDirection::RealSourceComparison
+        } else {
+            PinnedSourceDirection::SignalTranslationDivergence
+        },
         ..first
     }
 }
@@ -154,10 +177,22 @@ fn run(binary: &Path, root: &Path, revision: &str, version: &str) -> PinnedSourc
         chord_spectrum_metrics(&signal_chord.samples[SAMPLE_RATE..SAMPLE_RATE * 3]);
     output_hashes[4] = hash_samples(&chord_output);
     signal_hashes[4] = hash_samples(&signal_chord.samples);
-    let gate_passed = tones.iter().all(|tone| tone.output_out_of_band_db <= -60.0)
-        && chord_output_metrics.out_of_band_db <= -60.0;
-    let signal_diverged = tones.iter().any(|tone| tone.signal_minus_pinned_db > 1.0)
-        || chord_signal_metrics.out_of_band_db - chord_output_metrics.out_of_band_db > 1.0;
+    let chord_signal_minus_pinned_db =
+        chord_signal_metrics.out_of_band_db - chord_output_metrics.out_of_band_db;
+    let absolute_diagnostic_failures = [
+        tones
+            .iter()
+            .filter(|tone| tone.output_out_of_band_db > -60.0)
+            .count(),
+        usize::from(chord_output_metrics.out_of_band_db > -60.0),
+    ];
+    let source_relative_failures = [
+        tones
+            .iter()
+            .filter(|tone| tone.signal_minus_pinned_db > SOURCE_RELATIVE_CEILING_DB)
+            .count(),
+        usize::from(chord_signal_minus_pinned_db > SOURCE_RELATIVE_CEILING_DB),
+    ];
     PinnedSourceReview {
         revision: revision.to_string(),
         version: version.to_string(),
@@ -168,20 +203,39 @@ fn run(binary: &Path, root: &Path, revision: &str, version: &str) -> PinnedSourc
         chord_peak_error_hz: chord_output_metrics.maximum_peak_error_hz,
         chord_sideband_offset_hz: chord_output_metrics.strongest_sideband_offset_hz,
         chord_signal_out_of_band_db: chord_signal_metrics.out_of_band_db,
-        chord_signal_minus_pinned_db: chord_signal_metrics.out_of_band_db
-            - chord_output_metrics.out_of_band_db,
+        chord_signal_minus_pinned_db,
+        absolute_diagnostic_failures,
+        source_relative_failures,
+        internal_differential: PinnedSourceInternalDifferential::FractionalFrequencyBoundaryPolicy,
+        affected_frequency_observations_per_frame: frequency_boundary_differential_count(),
         structural_failures,
         output_hashes,
         signal_hashes,
         repeated: false,
-        direction: if gate_passed {
-            PinnedSourceDirection::SignalTranslationDivergence
-        } else if signal_diverged {
-            PinnedSourceDirection::StudiedTopologyGateMismatchAndSignalDivergence
-        } else {
-            PinnedSourceDirection::StudiedTopologyGateMismatch
-        },
+        direction: PinnedSourceDirection::SignalTranslationDivergence,
     }
+}
+
+fn frequency_boundary_differential_count() -> usize {
+    let bins = 960 / 2 + 1;
+    let long_distance = 4;
+    let time_factor = 2.0;
+    let mut affected = 0;
+    for bin in 0..bins {
+        let positions = [
+            (bin >= 1).then_some(bin as f64 - time_factor),
+            (bin + 1 < bins).then_some(bin as f64 + 1.0 - time_factor),
+            (bin >= long_distance).then_some(bin as f64 - long_distance as f64 * time_factor),
+            (bin + long_distance < bins)
+                .then_some(bin as f64 + long_distance as f64 - long_distance as f64 * time_factor),
+        ];
+        affected += positions
+            .into_iter()
+            .flatten()
+            .filter(|position| *position < 0.0 || *position > (bins - 1) as f64)
+            .count();
+    }
+    affected
 }
 
 fn render(binary: &Path, root: &Path, stem: &str, input: &[f64]) -> (Vec<f64>, Vec<f64>) {

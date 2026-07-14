@@ -3216,11 +3216,18 @@ closed.
 
 Before real audio, the complete proof must pass bit-exact identity; exact,
 finite, covered, deterministic `0.75x/1.25x/1.5x/2.0x` output; three-note bass
-pitch within `0.5 Hz`; four-tone chord peak error within `0.5 Hz`; chord
-out-of-band energy below `-60 dB`; projected isolated/dense attacks within
-`256` frames without a louder midpoint replica; exact silence; exercised weak-
-evidence fallback; finite non-zero-fill boundaries; and non-zero horizontal,
-short/long, lower/upper, corrected, and fallback mechanism counts.
+pitch within `0.5 Hz`; four-tone chord peak error within `0.5 Hz`; projected
+isolated/dense attacks within `256` frames without a louder midpoint replica;
+exact silence; exercised weak-evidence fallback; finite non-zero-fill
+boundaries; and non-zero horizontal, short/long, lower/upper, corrected, and
+fallback mechanism counts.
+
+At `2x`, record the prior `-60 dB` tone/chord ceiling as an absolute diagnostic,
+not a topology-fidelity rejection. Translation fidelity uses the exact
+quantized controls rendered by pinned Signalsmith Stretch revision `57b93f4e`:
+Signal out-of-band energy may be no more than `1 dB` worse than pinned source
+for each isolated tone and the chord. Exact length, finiteness, pitch, and
+decoded-output repeat remain hard paired gates.
 
 ## Source-Study Provenance Rule
 
@@ -3278,7 +3285,23 @@ is better by `6.225 dB`. Keep `-60 dB` visible as an absolute diagnostic, but
 do not reject topology fidelity against a threshold the pinned topology misses.
 Replace it with exact-input source parity before another algorithm change.
 
+Batch 29.6CS freezes that correction. The absolute diagnostic records four
+tone failures and one chord failure for pinned source but no longer selects
+the report direction. The paired `1 dB` source-relative gate records three
+Signal tone failures and one chord failure, so direction remains translation
+research. All prior structural, pitch, transient, silence, boundary, fallback,
+mechanism, and repeat gates remain unchanged.
+
+Exact source comparison also identifies the next controlled differential.
+Pinned fractional frequency lookup zero-extends outside the spectrum; Signal
+clamps to the nearest edge bin. At `2x`, the frozen geometry produces ten such
+different vertical observations per frame near the low-frequency boundary.
+Because ascending correction can carry those decisions upward, test this
+boundary policy directly before changing weights, distances, windows, or
+other parameters. This is a candidate owner, not yet a causal result.
+
 ## Next Task
 
-Run Batch 29.6CS. Replace the invalid absolute topology-fidelity gate with
-paired pinned-source parity. Keep real sources and parameter sweeps closed.
+Run Batch 29.6CT. Compare zero-extension and edge clamping as one report-only
+frequency-boundary ablation under the frozen paired gate. Keep real sources
+and parameter sweeps closed.

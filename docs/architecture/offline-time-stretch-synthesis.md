@@ -971,3 +971,13 @@ attainable fidelity requirement for this topology. Signal is nevertheless
 Use the absolute ceiling as a diagnostic. Gate translation fidelity against
 the pinned complete engine on exact shared inputs before changing mechanism or
 reopening musical comparison.
+
+The frozen parity allowance is `1 dB` per exact quantized tone and chord. It
+fails on three tones and the chord while all prior structural gates remain
+closed and unchanged. Source inspection supplies the next bounded differential:
+pinned fractional frequency lookup zero-extends out-of-range bins, while the
+Signal translation clamps to the nearest edge. At `2x`, ten vertical
+observations per frame differ near the low-frequency boundary. Ascending
+correction can propagate those low-bin phase decisions upward, so boundary
+policy is the next causal ablation. It is not yet accepted as the artifact
+owner.

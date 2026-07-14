@@ -146,8 +146,11 @@ known frame-rate sideband, is the next translation gate.
 - pinned complete-engine performance rejects the absolute `-60 dB` fidelity
   ceiling
 - Signal remains worse than pinned source on three tones and the chord
+- exact-input parity is frozen at no more than `1 dB` worse per control
+- pinned fractional frequency lookup zero-extends out-of-range bins; Signal
+  clamps ten vertical observations per `2x` frame to an edge bin
 
 ## Next Task
 
-Freeze paired pinned-source parity as the fidelity gate. Stop before corpus
-rendering or parameter changes.
+Test the frequency-boundary lookup differential under the paired parity gate.
+Stop before corpus rendering or parameter changes.

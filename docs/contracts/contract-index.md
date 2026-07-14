@@ -144,6 +144,6 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Run `g10.029` Batch 29.6CS source-relative fidelity-gate correction. Preserve
-the absolute diagnostic, but gate translation against paired pinned-source
-output. Keep real-source rendering and promotion lanes closed.
+Run `g10.029` Batch 29.6CT frequency-boundary attribution. Compare pinned zero-
+extension with Signal edge clamping under the paired source-relative gate. Keep
+real-source rendering and promotion lanes closed.

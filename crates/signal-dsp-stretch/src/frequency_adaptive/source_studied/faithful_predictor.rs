@@ -24,7 +24,7 @@ pub(in crate::frequency_adaptive) struct MechanismCounts {
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(in crate::frequency_adaptive) enum Direction {
-    RealSourceComparison,
+    PinnedSourceParity,
     PredictorResearch,
 }
 
@@ -91,7 +91,6 @@ pub(in crate::frequency_adaptive) fn review() -> Review {
         && first.octave_failures == 0
         && first.maximum_chord_peak_error_hz <= 0.5
         && first.chord_input_out_of_band_db <= -60.0
-        && first.chord_out_of_band_db <= -60.0
         && first.maximum_event_error_frames <= 256
         && first.replica_failures == 0
         && first.silence_peak == 0.0
@@ -99,7 +98,7 @@ pub(in crate::frequency_adaptive) fn review() -> Review {
     Review {
         repeated,
         direction: if passed {
-            Direction::RealSourceComparison
+            Direction::PinnedSourceParity
         } else {
             Direction::PredictorResearch
         },
