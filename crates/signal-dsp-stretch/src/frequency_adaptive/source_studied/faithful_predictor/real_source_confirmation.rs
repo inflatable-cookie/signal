@@ -254,7 +254,7 @@ pub(in crate::frequency_adaptive) fn review() -> RealSourceConfirmationReview {
     }
 }
 
-fn output_root() -> PathBuf {
+pub(super) fn output_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("../../target/stretch-source-studied-cz-confirmation")
 }

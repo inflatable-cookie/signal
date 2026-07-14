@@ -3370,9 +3370,17 @@ Boundary-growth is worse on all six rows. The frozen broad-regression rule
 therefore passes, but the boundary result remains an explicit listening risk.
 This authorizes one concealed two-way comparison, not selection or promotion.
 
+Batch 29.6DA freezes that comparison without changing either engine. The pack
+contains six exact source references and twelve level-matched concealed trials
+at `44.1 kHz` mono. Frame counts, finiteness, audio count, deterministic
+assignment, gains, manifest, closed key, notes template, and metadata receipt
+repeat exactly. Listening must cover continuity, transients, grain/ringing,
+tonal stability, both boundaries, preference, and broad defects on every row.
+The key remains closed until the six-row record is complete.
+
 ## Next Task
 
-Run Batch 29.6DA. Export the six exact inputs as references plus concealed
-coherent-Signal and pinned-Signalsmith candidates. Freeze identity and audio
-hashes before judging continuity, transients, grain, tone, and start/end
-artifacts. Keep stereo, dynamic ratio, product routing, and promotion closed.
+Complete Batch 29.6DA concealed listening over all six rows, then decide whether
+coherent Signal remains the source-studied baseline. Keep the key closed until
+the record is complete. Keep stereo, dynamic ratio, product routing, and
+promotion closed.

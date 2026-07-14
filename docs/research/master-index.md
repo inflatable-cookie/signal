@@ -64,7 +64,7 @@ Finch and Loophole.
 
 ## Next Task
 
-Run Batch 29.6DA concealed coherent-source comparison. Use the six exact-input
-confirmed rows, with source references and hash-frozen coherent-Signal and
-pinned-Signalsmith candidates. Keep stereo, dynamic ratio, and promotion lanes
-closed.
+Complete Batch 29.6DA concealed listening across all six frozen rows, then
+resolve whether coherent Signal remains the source-studied baseline. Keep the
+identity key, stereo, dynamic ratio, and promotion lanes closed until the
+row-complete findings are recorded.

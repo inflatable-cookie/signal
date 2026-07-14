@@ -2177,6 +2177,35 @@ fn source_studied_exact_input_real_source_confirmation() {
 }
 
 #[test]
+#[ignore = "requires fixed-seed pinned Signalsmith Stretch and long-form source pack"]
+#[cfg(not(debug_assertions))]
+fn source_studied_concealed_coherent_source_comparison_exports_pack() {
+    use super::source_studied::faithful_predictor::concealed_comparison::export;
+
+    let first = export();
+    let repeated = export();
+    eprintln!("source_studied_concealed_coherent_source_comparison {first:#?}");
+    assert_eq!(first, repeated);
+    assert_eq!(first.rows, 6);
+    assert_eq!(first.candidates_per_row, 2);
+    assert_eq!(first.audio_files, 18);
+    assert_eq!(first.holdout_reads, 0);
+    assert_eq!(first.structural_failures, [0; 6], "{first:#?}");
+    assert_eq!(
+        first.hashes,
+        [
+            0xcb13_5aa6_4488_7edb,
+            0x64c2_874d_d6e4_7521,
+            0xffbb_ba5d_f08c_762c,
+            0xfd12_55a2_fc00_7590,
+            0xf732_0382_d5ba_c785,
+            0x91d6_8633_349f_1944,
+            0x6d1b_a75b_59a6_ad1f,
+        ]
+    );
+}
+
+#[test]
 #[cfg(not(debug_assertions))]
 fn renyi_time_resolution_selection_selects_schedule_direction() {
     let first = renyi_time_resolution_selection_review();

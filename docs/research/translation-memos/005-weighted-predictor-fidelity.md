@@ -272,6 +272,13 @@ timing and static residual in four rows each, on replica ratio in three, and on
 boundary growth in zero. This mixed result opens one concealed comparison; it
 does not establish musical superiority.
 
+Batch 29.6DA freezes the authorized comparison as six source references and
+twelve level-matched concealed trials. Audio, assignment, gain, manifest, key,
+notes, and metadata-receipt hashes repeat. No holdout, stereo, dynamic-ratio,
+or product path is present. The representation remains report-only until the
+six-row listening record resolves continuity, grain, tone, transients, and
+both boundaries.
+
 ## Sources
 
 | Source | Revision | Use |
@@ -281,6 +288,6 @@ does not establish musical superiority.
 
 ## Next Task
 
-Run one hash-frozen concealed comparison of coherent Signal and pinned
-Signalsmith on the six confirmed inputs. Keep equation changes, third
-mechanisms, stereo, dynamic ratio, and product routing closed.
+Complete the hash-frozen concealed comparison and return row-complete findings.
+Keep equation changes, third mechanisms, stereo, dynamic ratio, and product
+routing closed.

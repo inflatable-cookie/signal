@@ -144,7 +144,6 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Run `g10.029` Batch 29.6CZ exact-input real-source confirmation. Generalize
-only the coherent source geometry to the frozen long-form sample rate and
-rerender the six existing musical rows through coherent Signal and pinned
-Signalsmith. Keep listening and promotion lanes closed.
+Complete `g10.029` Batch 29.6DA concealed listening over all six frozen rows,
+then resolve the report-only coherent source baseline. Keep stereo, dynamic
+ratio, routing, and promotion closed.

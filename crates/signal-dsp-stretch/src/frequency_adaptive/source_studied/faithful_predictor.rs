@@ -7,6 +7,7 @@ pub(in crate::frequency_adaptive) mod analysis_interaction;
 pub(in crate::frequency_adaptive) mod analysis_window;
 pub(in crate::frequency_adaptive) mod attribution;
 pub(in crate::frequency_adaptive) mod coherent_representation;
+pub(in crate::frequency_adaptive) mod concealed_comparison;
 pub(in crate::frequency_adaptive) mod pinned_source;
 pub(in crate::frequency_adaptive) mod real_source_confirmation;
 pub(in crate::frequency_adaptive) mod stage_trace;

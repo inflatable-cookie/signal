@@ -1351,14 +1351,25 @@ randomization boundary.
 
 ### Batch 29.6DA - Concealed Coherent Source Comparison
 
-- [ ] export the six exact Batch 29.6CZ inputs as references plus concealed
+- [x] export the six exact Batch 29.6CZ inputs as references plus concealed
   coherent-Signal and pinned-Signalsmith candidates
-- [ ] randomize candidate identity deterministically and freeze manifest,
+- [x] randomize candidate identity deterministically and freeze manifest,
   audio, mapping, duration, channel, and sample-rate hashes before listening
 - [ ] collect row-complete judgments for musical continuity, transient
   definition, grain/ringing, tonal stability, and start/end artifacts
 - [ ] decide whether coherent Signal remains the source-studied baseline;
   keep stereo, dynamic ratio, product routing, and promotion closed
+
+Pack state: ready for concealed operator listening at
+`target/stretch-source-studied-da-concealed-pack`. Six source references and
+twelve level-matched trials pass exact frame, finite-value, `44.1 kHz` mono,
+file-count, objective-direction, and repeat gates. Freeze audio hash
+`cb135aa644887edb`, assignment hash `64c2874dd6e47521`, gain hash
+`ffbbba5df08c762c`, manifest hash `fd1255a2fc007590`, closed-key hash
+`f7320382d5bac785`, notes hash `91d68633349f1944`, and metadata-receipt hash
+`6d1ba75b59a6ad1f`. The operator must complete continuity, transient,
+grain/ringing, tonal-stability, start-boundary, end-boundary, preference, and
+broad-defect fields for all six rows before opening the key.
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -2400,10 +2411,14 @@ randomization boundary.
   Signal improves timing on `4/6` rows and static residual on `4/6`, but
   improves replica ratio on `3/6` and worsens boundary growth on `6/6`.
   Batch 29.6DA must resolve the audible meaning of that mixed evidence.
+- 2026-07-14: Batch 29.6DA exports a repeat-stable concealed two-way pack with
+  six references, twelve trials, zero structural failures, and no holdout,
+  stereo, dynamic-ratio, or product audio. The baseline decision remains open
+  until all six listening rows are complete.
 
 ## Next Task
 
-Run Batch 29.6DA. Export one hash-frozen concealed two-way comparison of
-coherent Signal and pinned Signalsmith over the six exact Batch 29.6CZ inputs.
-Judge musical continuity and boundary artifacts row by row. Stop before stereo,
-dynamic ratio, product routing, or promotion.
+Listen to Batch 29.6DA without opening `listening-key.tsv`. Complete all six
+rows in `listening-notes.tsv`, including start and end boundary findings, then
+return the findings for the source-studied baseline decision. Stop before
+stereo, dynamic ratio, product routing, or promotion.

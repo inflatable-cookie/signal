@@ -370,7 +370,7 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Implement `g10.029` Batch 29.6DA. Export one concealed two-way comparison of
-coherent Signal and pinned Signalsmith from the six exact-input confirmed
-musical rows. Judge boundary artifacts explicitly. Stop before stereo, dynamic
-ratio, routing, or promotion.
+Complete `g10.029` Batch 29.6DA concealed listening over the six frozen rows.
+Record continuity, transient, grain/ringing, tonal, and both boundary findings
+before opening the key. Stop before stereo, dynamic ratio, routing, or
+promotion.

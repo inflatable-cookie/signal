@@ -1039,6 +1039,13 @@ four rows each, replica ratio on three, and boundary growth on none. The
 representation therefore advances only to concealed listening, with boundary
 behavior called out as a specific risk.
 
-Run `g10.029` Batch 29.6DA. Build one concealed two-way comparison from the six
-confirmed inputs and judge coherent Signal against pinned Signalsmith. Stop
-before stereo, dynamic ratio, routing, or promotion.
+The concealed comparison is now frozen as six source references and twelve
+level-matched trials. Its manifest, identity assignment, gains, audio files,
+operator notes, and rate/channel/frame receipt repeat exactly. This is an
+evidence artifact only. The coherent representation remains report-only until
+all six rows have continuity, transient, grain/ringing, tonal, and boundary
+findings.
+
+Complete `g10.029` Batch 29.6DA concealed listening, then resolve the report-
+only source-studied baseline. Stop before stereo, dynamic ratio, routing, or
+promotion.
