@@ -8,6 +8,7 @@ pub(in crate::frequency_adaptive) mod analysis_window;
 pub(in crate::frequency_adaptive) mod attribution;
 pub(in crate::frequency_adaptive) mod coherent_representation;
 pub(in crate::frequency_adaptive) mod pinned_source;
+pub(in crate::frequency_adaptive) mod real_source_confirmation;
 pub(in crate::frequency_adaptive) mod stage_trace;
 
 const SAMPLE_RATE: usize = 8_000;
@@ -363,10 +364,7 @@ fn render_stage_with_boundary_policy_grid_and_window(
     let length = 4 * hop;
     let transform_length = match grid {
         TransformGrid::Standard => length,
-        TransformGrid::ModifiedHalfBin => {
-            assert_eq!(length, 960, "frozen 8 kHz grid attribution support");
-            1_024
-        }
+        TransformGrid::ModifiedHalfBin => modified_transform_length(length),
     };
     let bins = match grid {
         TransformGrid::Standard => transform_length / 2 + 1,
@@ -589,6 +587,27 @@ fn render_stage_with_boundary_policy_grid_and_window(
         horizontal_output_phases,
         stage_trace,
     }
+}
+
+fn modified_transform_length(block_frames: usize) -> usize {
+    let real_request = (block_frames + 1) / 2;
+    let complex_request = (real_request + 1) / 2;
+    split_fft_fast_size_above(complex_request) * 4
+}
+
+fn split_fft_fast_size_above(size: usize) -> usize {
+    let mut power = 1;
+    while power < 16 && power < size {
+        power *= 2;
+    }
+    while power * 8 < size {
+        power *= 2;
+    }
+    let mut multiple = size.div_ceil(power);
+    if multiple == 7 {
+        multiple += 1;
+    }
+    multiple * power
 }
 
 fn analyse(

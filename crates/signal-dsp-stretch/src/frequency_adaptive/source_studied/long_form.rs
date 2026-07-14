@@ -13,10 +13,10 @@ use crate::frequency_adaptive::complete_system_tuning::listening_export::{
 
 const INPUT_FRAMES: usize = 220_500;
 
-struct LongCase {
-    id: &'static str,
-    source: &'static str,
-    ratio: f64,
+pub(in crate::frequency_adaptive) struct LongCase {
+    pub(in crate::frequency_adaptive) id: &'static str,
+    pub(in crate::frequency_adaptive) source: &'static str,
+    pub(in crate::frequency_adaptive) ratio: f64,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -221,7 +221,7 @@ pub(in crate::frequency_adaptive) fn run() -> LongFormReview {
     }
 }
 
-fn cases() -> [LongCase; 6] {
+pub(in crate::frequency_adaptive) fn cases() -> [LongCase; 6] {
     [
         LongCase {
             id: "M001",
@@ -256,7 +256,7 @@ fn cases() -> [LongCase; 6] {
     ]
 }
 
-fn source_root() -> PathBuf {
+pub(in crate::frequency_adaptive) fn source_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("../../target/stretch-corpus-external-benchmark-pack-fma-broad/sources")
 }

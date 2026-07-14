@@ -1031,7 +1031,14 @@ all pass while exact-input tone/chord parity stays closed. The representation
 is now the report-only faithful-predictor research baseline. It is not a
 production selection.
 
-Run `g10.029` Batch 29.6CZ. Generalize only its source-derived transform
-geometry to the frozen long-form sample rate and perform exact-input objective
-confirmation on the six existing musical rows. Stop before listening, stereo,
-dynamic ratio, routing, or promotion.
+At `44.1 kHz`, the same source rules derive `5292/1323` support/interval and a
+`6144`-point, `3072`-band modified half-bin transform. Six exact-input musical
+rows pass length, finiteness, hard-integrity, and repeat gates. Relative to
+pinned Signalsmith, coherent Signal improves timing and static residual on
+four rows each, replica ratio on three, and boundary growth on none. The
+representation therefore advances only to concealed listening, with boundary
+behavior called out as a specific risk.
+
+Run `g10.029` Batch 29.6DA. Build one concealed two-way comparison from the six
+confirmed inputs and judge coherent Signal against pinned Signalsmith. Stop
+before stereo, dynamic ratio, routing, or promotion.

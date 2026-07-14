@@ -172,9 +172,13 @@ known frame-rate sideband, is the next translation gate.
 - the coherent representation passes Signal's full synthetic predictor proof:
   one-frame transient placement, zero replicas, exact silence, all mechanism
   paths exercised, and stable complete hash `0905a7fd4180bff4`
+- at `44.1 kHz`, exact source rules derive `5292/1323` support/interval and a
+  `6144`-point, `3072`-band modified half-bin transform
+- across six exact shared musical inputs, coherent Signal improves event timing
+  and static residual on four rows each, replica ratio on three, and boundary
+  growth on none; both engines pass hard integrity
 
 ## Next Task
 
-Generalize only the coherent transform geometry to the frozen long-form sample
-rate and run exact-input objective confirmation on the six existing musical
-rows. Stop before listening or production selection.
+Run one concealed two-way comparison over the six confirmed musical inputs.
+Judge boundary behavior explicitly. Stop before stereo or production selection.

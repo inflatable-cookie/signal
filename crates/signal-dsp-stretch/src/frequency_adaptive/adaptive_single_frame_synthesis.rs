@@ -1,7 +1,7 @@
 mod anchors;
 mod attribution;
 mod dense_attribution;
-mod development_measurement;
+pub(in crate::frequency_adaptive) mod development_measurement;
 mod development_objective;
 mod geometry_attribution;
 mod mechanism_attribution;

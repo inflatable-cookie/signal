@@ -1324,16 +1324,41 @@ stereo, dynamic ratio, and promotion remain closed.
 
 ### Batch 29.6CZ - Exact-Input Real-Source Confirmation
 
-- [ ] generalize the coherent source-derived analysis geometry to the frozen
+- [x] generalize the coherent source-derived analysis geometry to the frozen
   long-form sample rate without changing its `30 ms` interval, fourfold
   support, periodic Kaiser construction, or modified half-bin basis
-- [ ] rerender the six existing five-second Batch 29.6CK musical rows through
+- [x] rerender the six existing five-second Batch 29.6CK musical rows through
   coherent Signal and pinned Signalsmith from identical mono inputs
-- [ ] report exact length, finiteness, boundaries, peak growth, timing,
+- [x] report exact length, finiteness, boundaries, peak growth, timing,
   transient replicas, spectral residual, and deterministic hashes before
   opening listening
-- [ ] decide whether objective confirmation authorizes one concealed musical
+- [x] decide whether objective confirmation authorizes one concealed musical
   comparison; keep stereo, dynamic ratio, product routing, and promotion closed
+
+Decision: open one concealed musical comparison. Source-derived geometry at
+`44.1 kHz` is `[5292 support, 1323 interval, 6144 transform, 3072 bands]`.
+Both engines pass exact length, finiteness, and hard integrity on all six rows;
+coherent Signal repeats exactly. Against pinned Signalsmith, Signal has lower
+timing error on four rows, lower replica ratio on three, and lower static
+spectral residual on four. Boundary-growth is worse on all six rows. That
+metric is amplified by near-zero exterior source steps, but it is not waived:
+the concealed comparison must judge starts, ends, and transient-edge artifacts
+explicitly. Freeze hashes `8ede75dbae2254b2` (inputs),
+`7ec654eb414041ce` (Signal), `ee39390a1e17d923` (Signalsmith), and
+`7a6b1e7dd7ba5c13` (report). The pinned comparator uses seed `0`; its default
+CLI seeds from `std::random_device` and is not reproducible at the `2x` phase-
+randomization boundary.
+
+### Batch 29.6DA - Concealed Coherent Source Comparison
+
+- [ ] export the six exact Batch 29.6CZ inputs as references plus concealed
+  coherent-Signal and pinned-Signalsmith candidates
+- [ ] randomize candidate identity deterministically and freeze manifest,
+  audio, mapping, duration, channel, and sample-rate hashes before listening
+- [ ] collect row-complete judgments for musical continuity, transient
+  definition, grain/ringing, tonal stability, and start/end artifacts
+- [ ] decide whether coherent Signal remains the source-studied baseline;
+  keep stereo, dynamic ratio, product routing, and promotion closed
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -2370,10 +2395,15 @@ stereo, dynamic ratio, and promotion remain closed.
   identity, boundary, mechanism, and repeat controls pass; transient placement
   error is one frame with zero replicas and paired source failures remain `[0,
   0]`. Batch 29.6CZ now owns exact-input long-form objective confirmation.
+- 2026-07-14: Batch 29.6CZ passes its frozen objective decision rule and opens
+  one concealed comparison. Both paths pass six-row hard integrity. Coherent
+  Signal improves timing on `4/6` rows and static residual on `4/6`, but
+  improves replica ratio on `3/6` and worsens boundary growth on `6/6`.
+  Batch 29.6DA must resolve the audible meaning of that mixed evidence.
 
 ## Next Task
 
-Run Batch 29.6CZ. Generalize only the coherent source-derived representation to
-the frozen long-form sample rate, then rerender the six existing five-second
-rows through coherent Signal and pinned Signalsmith from identical inputs.
-Stop before listening, stereo, dynamic ratio, routing, or promotion.
+Run Batch 29.6DA. Export one hash-frozen concealed two-way comparison of
+coherent Signal and pinned Signalsmith over the six exact Batch 29.6CZ inputs.
+Judge musical continuity and boundary artifacts row by row. Stop before stereo,
+dynamic ratio, product routing, or promotion.

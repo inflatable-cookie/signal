@@ -264,6 +264,14 @@ silence is exact. Structure, identity, boundaries, coverage, cancellation,
 mechanism exercise, and repeat pass. The combined basis is now the faithful-
 predictor research baseline, still isolated from production selection.
 
+Batch 29.6CZ carries the source geometry to `44.1 kHz` without a new tuning
+choice. The exact rules produce `5292/1323` support/interval and a
+`6144`-point, `3072`-band transform. Six shared musical inputs pass structure,
+hard integrity, and repeat. Coherent Signal beats pinned Signalsmith on event
+timing and static residual in four rows each, on replica ratio in three, and on
+boundary growth in zero. This mixed result opens one concealed comparison; it
+does not establish musical superiority.
+
 ## Sources
 
 | Source | Revision | Use |
@@ -273,7 +281,6 @@ predictor research baseline, still isolated from production selection.
 
 ## Next Task
 
-Generalize only the source-derived transform geometry to the frozen long-form
-sample rate, then run exact-input objective confirmation on the six existing
-musical rows. Keep equations, third mechanisms, listening, stereo, dynamic
-ratio, and product routing closed.
+Run one hash-frozen concealed comparison of coherent Signal and pinned
+Signalsmith on the six confirmed inputs. Keep equation changes, third
+mechanisms, stereo, dynamic ratio, and product routing closed.

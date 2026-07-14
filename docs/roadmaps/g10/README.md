@@ -370,7 +370,7 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Implement `g10.029` Batch 29.6CZ. Generalize only the coherent source geometry
-to the frozen long-form sample rate and rerender the six existing musical rows
-through coherent Signal and pinned Signalsmith from identical inputs. Stop
-before listening, stereo, dynamic ratio, routing, or promotion.
+Implement `g10.029` Batch 29.6DA. Export one concealed two-way comparison of
+coherent Signal and pinned Signalsmith from the six exact-input confirmed
+musical rows. Judge boundary artifacts explicitly. Stop before stereo, dynamic
+ratio, routing, or promotion.

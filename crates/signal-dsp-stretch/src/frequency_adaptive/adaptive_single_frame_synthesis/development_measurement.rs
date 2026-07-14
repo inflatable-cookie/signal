@@ -10,7 +10,7 @@ use events::measure_events;
 
 const SAMPLE_RATE: u32 = 44_100;
 
-pub(super) struct Evidence {
+pub(in crate::frequency_adaptive) struct Evidence {
     pub row: &'static str,
     pub ratio: f64,
     pub mode: &'static str,
@@ -39,7 +39,7 @@ pub(super) struct Evidence {
     pub measurement_hash: u64,
 }
 
-pub(super) fn measure(
+pub(in crate::frequency_adaptive) fn measure(
     row: &'static str,
     ratio: f64,
     mode: &'static str,
@@ -119,11 +119,11 @@ pub(super) fn measure(
     }
 }
 
-pub(super) fn hard_pass(item: &Evidence) -> bool {
+pub(in crate::frequency_adaptive) fn hard_pass(item: &Evidence) -> bool {
     item.exact_length && item.non_finite == 0 && item.integrity_passed
 }
 
-pub(super) fn report(evidence: &[Evidence]) -> String {
+pub(in crate::frequency_adaptive) fn report(evidence: &[Evidence]) -> String {
     let mut output = String::from("row\tratio\tmode\toutput_frames\texact_length\tnon_finite\tintegrity_passed\tendpoint_delta_db\tadded_silence\tpeak_growth_db\tmatched_events\tevent_fallback\tmean_event_offset_frames\tmax_event_offset_frames\tcrest_growth_db\treplica_ratio\ttonal_movement_delta\tstatic_spectral_residual\tunsupported_mass\ttexture_envelope_delta_db\tformant_residual\tformant_shift_hz\tboundary_growth_db\tboundary_step_dbfs\trender_hash\tmeasurement_hash\n");
     for item in evidence {
         output.push_str(&format!(

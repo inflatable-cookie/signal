@@ -3360,10 +3360,19 @@ peak error is `0.007314 Hz`; transient placement error is one frame with zero
 replicas. Complete-proof hash `0905a7fd4180bff4` is frozen. Exact-input real-
 source confirmation may open; product routing and promotion may not.
 
+Batch 29.6CZ confirms the same representation on six exact shared musical
+inputs at `44.1 kHz`. Source-derived geometry is `5292/1323` support/interval
+with a `6144`-point modified half-bin transform and `3072` bands. Both coherent
+Signal and pinned Signalsmith pass exact length, finiteness, and hard integrity
+on every row; Signal repeats exactly. Signal has lower event-offset error on
+four rows, lower replica ratio on three, and lower static residual on four.
+Boundary-growth is worse on all six rows. The frozen broad-regression rule
+therefore passes, but the boundary result remains an explicit listening risk.
+This authorizes one concealed two-way comparison, not selection or promotion.
+
 ## Next Task
 
-Run Batch 29.6CZ. Generalize only the coherent source-derived analysis geometry
-to the frozen long-form sample rate and render the six existing five-second
-musical rows through coherent Signal and pinned Signalsmith from exact shared
-inputs. Require objective structure and quality evidence before listening.
-Keep stereo, dynamic ratio, product routing, and promotion closed.
+Run Batch 29.6DA. Export the six exact inputs as references plus concealed
+coherent-Signal and pinned-Signalsmith candidates. Freeze identity and audio
+hashes before judging continuity, transients, grain, tone, and start/end
+artifacts. Keep stereo, dynamic ratio, product routing, and promotion closed.

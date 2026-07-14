@@ -2081,11 +2081,12 @@ fn source_studied_pinned_analysis_representation_interaction() {
 #[cfg(not(debug_assertions))]
 fn source_studied_coherent_representation_synthetic_gate() {
     use super::source_studied::faithful_predictor::coherent_representation::{
-        review, CoherentRepresentationDirection,
+        review, source_geometry, CoherentRepresentationDirection,
     };
 
     let result = review();
     eprintln!("source_studied_coherent_representation_synthetic_gate {result:#?}");
+    assert_eq!(source_geometry(11_025), [1_323, 330, 1_536, 768]);
     assert!(result.repeated);
     assert_eq!(result.geometry, [960, 240, 1_024, 512]);
     assert_eq!(result.structural_failures, [0; 5]);
@@ -2098,6 +2099,8 @@ fn source_studied_coherent_representation_synthetic_gate() {
     assert_eq!(result.replica_failures, 0);
     assert_eq!(result.silence_peak, 0.0);
     assert_eq!(result.source_relative_failures, [0, 0]);
+    assert_eq!(result.window_hash, 0x7409_3f3e_27a2_8e25);
+    assert!(result.pinned_window_maximum_delta <= 1.0e-9);
     assert!(result.mechanisms.horizontal > 0);
     assert!(result.mechanisms.short_lower > 0);
     assert!(result.mechanisms.short_upper > 0);
@@ -2119,6 +2122,57 @@ fn source_studied_coherent_representation_synthetic_gate() {
     assert_eq!(
         result.direction,
         CoherentRepresentationDirection::ExactInputRealSourceConfirmation
+    );
+}
+
+#[test]
+#[ignore = "requires pinned Signalsmith Stretch and long-form source pack"]
+#[cfg(not(debug_assertions))]
+fn source_studied_exact_input_real_source_confirmation() {
+    use super::source_studied::faithful_predictor::real_source_confirmation::{
+        review, RealSourceConfirmationDirection,
+    };
+
+    let result = review();
+    eprintln!("source_studied_exact_input_real_source_confirmation {result:#?}");
+    assert_eq!(result.rows.len(), 6);
+    assert_eq!(result.geometry, [5_292, 1_323, 6_144, 3_072]);
+    assert_eq!(result.window_hash, 0x70ba_1688_509b_2915);
+    assert_eq!(result.structural_failures, [0; 5]);
+    assert_eq!(result.coherent_hard_failures, 0);
+    assert_eq!(result.pinned_hard_failures, 0);
+    assert_eq!(result.coherent_regression_rows, [2, 3, 2, 6]);
+    assert_eq!(
+        result.hashes,
+        [
+            0x8ede_75db_ae22_54b2,
+            0x7ec6_54eb_4140_41ce,
+            0xee39_390a_1e17_d923,
+            0xd9f2_2286_61af_1e53,
+            0x7a6b_1e7d_d7ba_5c13,
+        ]
+    );
+    assert_eq!(
+        result
+            .rows
+            .iter()
+            .map(|row| [row.coherent_hash, row.pinned_hash])
+            .collect::<Vec<_>>(),
+        [
+            [0xabbc_3c07_2f98_d138, 0xd325_5fce_23c2_439d],
+            [0xe552_674a_adaf_187b, 0x42df_d521_c8f5_899d],
+            [0x7116_c515_39bb_7653, 0x4d94_4e1e_d711_1845],
+            [0xafd2_e093_6115_a798, 0x09b0_bac2_8ff4_da45],
+            [0x80f3_fa01_c76b_8ea6, 0x7a5d_1184_d823_099d],
+            [0x4eed_ee52_ad33_c269, 0xb2da_890d_54d1_6c45],
+        ]
+    );
+    assert!(result.repeated);
+    assert!(result.pinned_repeated);
+    assert_eq!(result.signalsmith_version, "1.3.2");
+    assert_eq!(
+        result.direction,
+        RealSourceConfirmationDirection::ConcealedMusicalComparison
     );
 }
 

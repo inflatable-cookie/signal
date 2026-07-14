@@ -16,7 +16,7 @@ memory alone.
 - `g10.029` is the active correctness-first stretch roadmap
 - `046` governs sample-domain stretch behavior and its promotion gates
 - `082` governs the report-only successor policy and the active Rule 31
-  source-studied architecture decision and exact-input comparator confirmation
+  source-studied architecture decision and concealed coherent-source comparison
 - `g10.028` source-fill work is paused until the actual DSP kernel and source
   consumption geometry pass the `g10.029` correctness gate
 

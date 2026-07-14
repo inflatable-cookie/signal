@@ -64,7 +64,7 @@ Finch and Loophole.
 
 ## Next Task
 
-Run Batch 29.6CZ exact-input real-source confirmation. Generalize only the
-coherent source geometry to the frozen long-form sample rate and rerender the
-six existing musical rows through coherent Signal and pinned Signalsmith.
-Keep listening, stereo, dynamic ratio, and promotion lanes closed.
+Run Batch 29.6DA concealed coherent-source comparison. Use the six exact-input
+confirmed rows, with source references and hash-frozen coherent-Signal and
+pinned-Signalsmith candidates. Keep stereo, dynamic ratio, and promotion lanes
+closed.
