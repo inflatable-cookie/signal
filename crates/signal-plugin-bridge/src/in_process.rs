@@ -595,20 +595,56 @@ unsafe impl Sync for InProcessVst3Processor {}
 impl InProcessVst3Processor {
     /// Load the component class `class_id_hex` from the bundle at
     /// `bundle_root` in the host process, activate it at `sample_rate_hz` /
-    /// `max_frames`, and build the processing session. Rejects plugins
-    /// outside the v1 stereo-effect layout with a stable token
-    /// (`layout_unsupported`).
+    /// `max_frames`, negotiate the v1 stereo-effect layout, and build the
+    /// processing session. Plugins that reject stereo fail with the stable
+    /// `layout_unsupported` token.
     pub fn load_and_activate(
         bundle_root: &std::path::Path,
         class_id_hex: &str,
         sample_rate_hz: u32,
         max_frames: u32,
     ) -> Result<Self, String> {
-        let mut instance =
-            Vst3HostedInstance::load(bundle_root, class_id_hex).map_err(|error| error.token)?;
-        if !instance.port_layout().is_stereo_effect() {
-            return Err("layout_unsupported".to_string());
+        Self::load_and_activate_internal(
+            bundle_root,
+            class_id_hex,
+            sample_rate_hz,
+            max_frames,
+            false,
+        )
+    }
+
+    /// Inspection-specific load path. ARA-capable components receive an
+    /// empty document with the editor-view role before activation so their
+    /// native editor can be inspected. This does not provide ARA playback or
+    /// model editing.
+    pub fn load_and_activate_for_inspection(
+        bundle_root: &std::path::Path,
+        class_id_hex: &str,
+        sample_rate_hz: u32,
+        max_frames: u32,
+    ) -> Result<Self, String> {
+        Self::load_and_activate_internal(
+            bundle_root,
+            class_id_hex,
+            sample_rate_hz,
+            max_frames,
+            true,
+        )
+    }
+
+    fn load_and_activate_internal(
+        bundle_root: &std::path::Path,
+        class_id_hex: &str,
+        sample_rate_hz: u32,
+        max_frames: u32,
+        enable_ara_inspection: bool,
+    ) -> Result<Self, String> {
+        let mut instance = if enable_ara_inspection {
+            Vst3HostedInstance::load_for_inspection(bundle_root, class_id_hex)
+        } else {
+            Vst3HostedInstance::load(bundle_root, class_id_hex)
         }
+        .map_err(|error| error.token)?;
         instance
             .activate(f64::from(sample_rate_hz), 1, max_frames)
             .map_err(|error| error.token)?;

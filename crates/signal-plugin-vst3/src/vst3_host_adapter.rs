@@ -4,6 +4,7 @@ use signal_plugin::{
 };
 use std::process;
 
+mod ara;
 mod discovery;
 mod gui;
 mod hosting;

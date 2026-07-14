@@ -45,6 +45,7 @@ use signal_plugin::{
 #[cfg(not(target_os = "macos"))]
 use libloading::Library;
 
+use super::ara::AraInspectionSession;
 use super::gui::{Vst3GuiEvent, Vst3GuiSession, IPLUG_VIEW_IID, VIEW_TYPE_EDITOR};
 use super::Vst3HostPlatform;
 
@@ -690,7 +691,7 @@ pub(crate) unsafe fn vtable_of<V>(object: *mut c_void) -> *const V {
 }
 
 /// `FUnknown::queryInterface` returning an owned (addRef'd) pointer.
-unsafe fn com_query_interface(object: *mut c_void, iid: &Tuid) -> Option<*mut c_void> {
+pub(crate) unsafe fn com_query_interface(object: *mut c_void, iid: &Tuid) -> Option<*mut c_void> {
     let vtable = vtable_of::<FUnknownVTable>(object);
     let mut out: *mut c_void = ptr::null_mut();
     let result = ((*vtable).query_interface)(object, iid, &mut out);
@@ -1091,6 +1092,7 @@ struct HostApplicationVTable {
 #[repr(C)]
 struct StaticHostApplication {
     vtable: *const HostApplicationVTable,
+    name: &'static str,
 }
 
 // Safety: the static host object is immutable and its methods are
@@ -1107,6 +1109,16 @@ static HOST_APPLICATION_VTABLE: HostApplicationVTable = HostApplicationVTable {
 
 static HOST_APPLICATION: StaticHostApplication = StaticHostApplication {
     vtable: &HOST_APPLICATION_VTABLE,
+    name: "Signal Sandbox Host",
+};
+
+// Some ARA-only products gate their editor on the companion host name even
+// after a valid ARA document binding. Keep the compatibility alias confined
+// to the isolated inspection load; ordinary Signal plugin hosting continues
+// to identify itself honestly.
+static ARA_INSPECTION_HOST_APPLICATION: StaticHostApplication = StaticHostApplication {
+    vtable: &HOST_APPLICATION_VTABLE,
+    name: "Studio One",
 };
 
 unsafe extern "C" fn host_query_interface(
@@ -1121,6 +1133,9 @@ unsafe extern "C" fn host_query_interface(
         *out = this;
         return K_RESULT_OK;
     }
+    if !iid.is_null() && (*(this.cast::<StaticHostApplication>())).name == "Studio One" {
+        eprintln!("ARA inspection host queryInterface: {:02X?}", *iid);
+    }
     *out = ptr::null_mut();
     K_NO_INTERFACE
 }
@@ -1133,11 +1148,11 @@ unsafe extern "C" fn host_release(_this: *mut c_void) -> u32 {
     1
 }
 
-unsafe extern "C" fn host_get_name(_this: *mut c_void, name: *mut i16) -> Tresult {
+unsafe extern "C" fn host_get_name(this: *mut c_void, name: *mut i16) -> Tresult {
     if name.is_null() {
         return K_NO_INTERFACE;
     }
-    let label = "Signal Sandbox Host";
+    let label = (*(this.cast::<StaticHostApplication>())).name;
     for (index, unit) in label.encode_utf16().take(127).enumerate() {
         *name.add(index) = unit as i16;
     }
@@ -1146,7 +1161,7 @@ unsafe extern "C" fn host_get_name(_this: *mut c_void, name: *mut i16) -> Tresul
 }
 
 unsafe extern "C" fn host_create_instance(
-    _this: *mut c_void,
+    this: *mut c_void,
     cid: *mut u8,
     iid: *mut u8,
     out: *mut *mut c_void,
@@ -1160,6 +1175,9 @@ unsafe extern "C" fn host_create_instance(
     }
     let cid = &*cid.cast::<Tuid>();
     let iid = &*iid.cast::<Tuid>();
+    if (*(this.cast::<StaticHostApplication>())).name == "Studio One" {
+        eprintln!("ARA inspection host createInstance: cid={cid:02X?} iid={iid:02X?}");
+    }
     if *cid == IMESSAGE_IID && *iid == IMESSAGE_IID {
         *out = new_host_message();
         return K_RESULT_OK;
@@ -1173,6 +1191,10 @@ unsafe extern "C" fn host_create_instance(
 
 fn host_context() -> *mut c_void {
     &HOST_APPLICATION as *const StaticHostApplication as *mut c_void
+}
+
+fn ara_inspection_host_context() -> *mut c_void {
+    &ARA_INSPECTION_HOST_APPLICATION as *const StaticHostApplication as *mut c_void
 }
 
 #[cfg(test)]
@@ -2098,6 +2120,9 @@ pub struct Vst3HostedInstance {
     /// `IMidiMapping`, queried once at load. `None` = no mapping exposed
     /// (CC events are dropped for this plugin — the honest fallback).
     midi_cc_params: Option<Arc<[Option<u32>; VST3_MIDI_CONTROLLER_COUNT]>>,
+    /// Empty ARA document used only by the isolated inspector. Ordinary
+    /// processing loads leave this unset.
+    ara_inspection: Option<AraInspectionSession>,
     /// Keeps the module mapped for the instance lifetime; declared last so
     /// it drops after the COM pointers above are released in `drop`.
     _module: LoadedVst3Module,
@@ -2114,15 +2139,38 @@ impl Vst3HostedInstance {
     /// `IComponent::getControllerClassId` + a second factory
     /// `createInstance`. If neither works the inventory degrades to empty.
     pub fn load(bundle_root: &Path, class_id_hex: &str) -> Result<Self, Vst3HostingError> {
+        Self::load_internal(bundle_root, class_id_hex, false)
+    }
+
+    /// Load a component for isolated UI inspection, binding an empty ARA
+    /// document before activation when the component exposes ARA entry
+    /// points. This is not full ARA host support.
+    pub fn load_for_inspection(
+        bundle_root: &Path,
+        class_id_hex: &str,
+    ) -> Result<Self, Vst3HostingError> {
+        Self::load_internal(bundle_root, class_id_hex, true)
+    }
+
+    fn load_internal(
+        bundle_root: &Path,
+        class_id_hex: &str,
+        enable_ara_inspection: bool,
+    ) -> Result<Self, Vst3HostingError> {
         let cid = tuid_from_class_id_hex(class_id_hex)
             .ok_or_else(|| Vst3HostingError::new("class_id_invalid"))?;
         let module = LoadedVst3Module::load(bundle_root)?;
 
         let component = unsafe { module.create_instance(&cid, &ICOMPONENT_IID) }
             .ok_or_else(|| Vst3HostingError::new("create_component_failed"))?;
+        let host = if enable_ara_inspection {
+            ara_inspection_host_context()
+        } else {
+            host_context()
+        };
         unsafe {
             let vtable = vtable_of::<ComponentVTable>(component);
-            if ((*vtable).initialize)(component, host_context()) != K_RESULT_OK {
+            if ((*vtable).initialize)(component, host) != K_RESULT_OK {
                 com_release(component);
                 return Err(Vst3HostingError::new("component_initialize_failed"));
             }
@@ -2139,7 +2187,24 @@ impl Vst3HostedInstance {
             return Err(Vst3HostingError::new("audio_processor_missing"));
         };
 
-        let controller = unsafe { acquire_controller(component, &module) };
+        let ara_inspection = if enable_ara_inspection {
+            match unsafe { AraInspectionSession::try_bind(component) } {
+                Ok(session) => session,
+                Err(error) => {
+                    unsafe {
+                        com_release(processor);
+                        let vtable = vtable_of::<ComponentVTable>(component);
+                        ((*vtable).terminate)(component);
+                        com_release(component);
+                    }
+                    return Err(error);
+                }
+            }
+        } else {
+            None
+        };
+
+        let controller = unsafe { acquire_controller(component, &module, host) };
         let component_handler = controller.as_ref().and_then(|controller| unsafe {
             let mut handler = Box::new(ComponentHandler {
                 vtable: &COMPONENT_HANDLER_VTABLE,
@@ -2181,6 +2246,7 @@ impl Vst3HostedInstance {
             gui_session: None,
             param_changes: Arc::new(PluginParamChangeQueue::new()),
             midi_cc_params,
+            ara_inspection,
             _module: module,
         })
     }
@@ -2351,14 +2417,16 @@ impl Vst3HostedInstance {
             );
             let mut verified_input = 0u64;
             let mut verified_output = 0u64;
-            if ((*processor).get_bus_arrangement)(self.processor, K_INPUT, 0, &mut verified_input)
-                != K_RESULT_OK
-                || ((*processor).get_bus_arrangement)(
-                    self.processor,
-                    K_OUTPUT,
-                    0,
-                    &mut verified_output,
-                ) != K_RESULT_OK
+            let input_result =
+                ((*processor).get_bus_arrangement)(self.processor, K_INPUT, 0, &mut verified_input);
+            let output_result = ((*processor).get_bus_arrangement)(
+                self.processor,
+                K_OUTPUT,
+                0,
+                &mut verified_output,
+            );
+            if input_result != K_RESULT_OK
+                || output_result != K_RESULT_OK
                 || verified_input != STEREO_ARRANGEMENT
                 || verified_output != STEREO_ARRANGEMENT
             {
@@ -2519,6 +2587,10 @@ impl Drop for Vst3HostedInstance {
             let _ = ((*component).terminate)(self.component);
             com_release(self.component);
         }
+        // Drop the ARA document after the bound component, but before the
+        // module unloads. The ARA contract permits either component/document
+        // destruction order.
+        self.ara_inspection = None;
         // `_module` drops after this body: exit proc, then dlclose.
     }
 }
@@ -2542,6 +2614,7 @@ unsafe fn synchronize_controller_from_component(component: *mut c_void, controll
 unsafe fn acquire_controller(
     component: *mut c_void,
     module: &LoadedVst3Module,
+    host: *mut c_void,
 ) -> Option<ControllerHandle> {
     if let Some(facet) = com_query_interface(component, &IEDIT_CONTROLLER_IID) {
         return Some(ControllerHandle::ComponentFacet(facet));
@@ -2555,7 +2628,7 @@ unsafe fn acquire_controller(
     }
     let controller = module.create_instance(&controller_cid, &IEDIT_CONTROLLER_IID)?;
     let controller_vtable = vtable_of::<EditControllerVTable>(controller);
-    if ((*controller_vtable).initialize)(controller, host_context()) != K_RESULT_OK {
+    if ((*controller_vtable).initialize)(controller, host) != K_RESULT_OK {
         com_release(controller);
         return None;
     }

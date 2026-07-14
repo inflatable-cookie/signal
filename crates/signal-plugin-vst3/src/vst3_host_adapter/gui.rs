@@ -237,21 +237,38 @@ impl Vst3GuiSession {
         let _ = ((*vtable).set_frame)(view, frame_ptr);
 
         let mut rect = ViewRect::default();
-        let get_size_result = ((*vtable).get_size)(view, &mut rect);
-        eprintln!("Signal VST3 getSize: result={get_size_result} rect={rect:?}");
-        if get_size_result != K_RESULT_OK {
-            let _ = ((*vtable).set_frame)(view, ptr::null_mut());
-            com_release(view);
-            return Err(Vst3HostingError::new("gui_get_size_failed"));
-        }
-        let (width, height) = rect.size();
-        if width == 0 || height == 0 {
-            let _ = ((*vtable).set_frame)(view, ptr::null_mut());
-            com_release(view);
-            return Err(Vst3HostingError::new("gui_get_size_failed"));
+        let mut size_available = ((*vtable).get_size)(view, &mut rect) == K_RESULT_OK;
+        let mut size = rect.size();
+        size_available &= size.0 != 0 && size.1 != 0;
+
+        // A few editors (including Native Instruments' QML-based views)
+        // report kNotInitialized until they have a native parent. Keep the
+        // standard pre-attach sizing path, but attach and retry when needed.
+        let mut attached = false;
+        if !size_available {
+            if ((*vtable).attached)(view, parent, PLATFORM_TYPE.as_ptr()) != K_RESULT_OK {
+                let _ = ((*vtable).set_frame)(view, ptr::null_mut());
+                com_release(view);
+                return Err(Vst3HostingError::new("gui_attached_failed"));
+            }
+            attached = true;
+            rect = ViewRect::default();
+            size_available = ((*vtable).get_size)(view, &mut rect) == K_RESULT_OK;
+            size = rect.size();
+            size_available &= size.0 != 0 && size.1 != 0;
         }
 
-        if ((*vtable).attached)(view, parent, PLATFORM_TYPE.as_ptr()) != K_RESULT_OK {
+        if !size_available {
+            if attached {
+                let _ = ((*vtable).removed)(view);
+            }
+            let _ = ((*vtable).set_frame)(view, ptr::null_mut());
+            com_release(view);
+            return Err(Vst3HostingError::new("gui_get_size_failed"));
+        }
+        let (width, height) = size;
+
+        if !attached && ((*vtable).attached)(view, parent, PLATFORM_TYPE.as_ptr()) != K_RESULT_OK {
             let _ = ((*vtable).set_frame)(view, ptr::null_mut());
             com_release(view);
             return Err(Vst3HostingError::new("gui_attached_failed"));
@@ -337,5 +354,134 @@ impl Drop for Vst3GuiSession {
             let _ = self.frame_ptr();
             com_release(self.view);
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[repr(C)]
+    struct AttachSizedView {
+        vtable: *const PlugViewVTable,
+        attached: bool,
+        removed: bool,
+        get_size_calls: u32,
+    }
+
+    unsafe extern "C" fn query_interface(
+        this: *mut c_void,
+        _iid: *const Tuid,
+        out: *mut *mut c_void,
+    ) -> Tresult {
+        *out = this;
+        K_RESULT_OK
+    }
+
+    unsafe extern "C" fn add_ref(_this: *mut c_void) -> u32 {
+        1
+    }
+
+    unsafe extern "C" fn release(_this: *mut c_void) -> u32 {
+        1
+    }
+
+    unsafe extern "C" fn platform_supported(
+        _this: *mut c_void,
+        _platform: *const std::ffi::c_char,
+    ) -> Tresult {
+        K_RESULT_OK
+    }
+
+    unsafe extern "C" fn attached(
+        this: *mut c_void,
+        _parent: *mut c_void,
+        _platform: *const std::ffi::c_char,
+    ) -> Tresult {
+        (*this.cast::<AttachSizedView>()).attached = true;
+        K_RESULT_OK
+    }
+
+    unsafe extern "C" fn removed(this: *mut c_void) -> Tresult {
+        (*this.cast::<AttachSizedView>()).removed = true;
+        K_RESULT_OK
+    }
+
+    unsafe extern "C" fn no_op(_this: *mut c_void) -> Tresult {
+        K_RESULT_OK
+    }
+
+    unsafe extern "C" fn no_op_wheel(_this: *mut c_void, _distance: f32) -> Tresult {
+        K_RESULT_OK
+    }
+
+    unsafe extern "C" fn no_op_key(
+        _this: *mut c_void,
+        _key: u16,
+        _key_code: i16,
+        _modifiers: i16,
+    ) -> Tresult {
+        K_RESULT_OK
+    }
+
+    unsafe extern "C" fn get_size(this: *mut c_void, rect: *mut ViewRect) -> Tresult {
+        let view = &mut *this.cast::<AttachSizedView>();
+        view.get_size_calls += 1;
+        if !view.attached {
+            return K_NO_INTERFACE;
+        }
+        *rect = ViewRect::from_size(800, 600);
+        K_RESULT_OK
+    }
+
+    unsafe extern "C" fn rect_no_op(_this: *mut c_void, _rect: *mut ViewRect) -> Tresult {
+        K_RESULT_OK
+    }
+
+    unsafe extern "C" fn focus_no_op(_this: *mut c_void, _state: u8) -> Tresult {
+        K_RESULT_OK
+    }
+
+    unsafe extern "C" fn set_frame_no_op(_this: *mut c_void, _frame: *mut c_void) -> Tresult {
+        K_RESULT_OK
+    }
+
+    static ATTACH_SIZED_VIEW_VTABLE: PlugViewVTable = PlugViewVTable {
+        query_interface,
+        add_ref,
+        release,
+        is_platform_type_supported: platform_supported,
+        attached,
+        removed,
+        on_wheel: no_op_wheel,
+        on_key_down: no_op_key,
+        on_key_up: no_op_key,
+        get_size,
+        on_size: rect_no_op,
+        on_focus: focus_no_op,
+        set_frame: set_frame_no_op,
+        can_resize: no_op,
+        check_size_constraint: rect_no_op,
+    };
+
+    #[test]
+    fn retries_size_after_attaching_views_that_initialize_late() {
+        let mut view = Box::new(AttachSizedView {
+            vtable: &ATTACH_SIZED_VIEW_VTABLE,
+            attached: false,
+            removed: false,
+            get_size_calls: 0,
+        });
+        let view_ptr = (&mut *view as *mut AttachSizedView).cast();
+        let parent = std::ptr::NonNull::<u8>::dangling().as_ptr().cast();
+
+        let session = unsafe { Vst3GuiSession::open_embedded(view_ptr, parent) }
+            .expect("late-initializing view should open");
+        assert_eq!(session.size(), (800, 600));
+        assert!(view.attached);
+        assert_eq!(view.get_size_calls, 2);
+
+        drop(session);
+        assert!(view.removed);
     }
 }
