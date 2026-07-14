@@ -185,6 +185,7 @@ const IPARAM_VALUE_QUEUE_IID: Tuid = tuid_from_uid(0x01263A18, 0xED074F6F, 0x98C
 // ivstevents.h / ivstmidicontrollers.h (published interface definitions).
 const IEVENT_LIST_IID: Tuid = tuid_from_uid(0x3A2C4214, 0x346349FE, 0xB2C4F397, 0xB9695A44);
 const IMIDI_MAPPING_IID: Tuid = tuid_from_uid(0xDF695DF2, 0x8B4B47EB, 0xAB3EF8FB, 0x2D1F6BB2);
+const ICONNECTION_POINT_IID: Tuid = tuid_from_uid(0x70A4156F, 0x6E6E4026, 0x989148BF, 0xAA60D8D1);
 const IBSTREAM_IID: Tuid = tuid_from_uid(0xC3BF6EA2, 0x30994752, 0x9B6BF990, 0x1EE33E9B);
 
 // ── Host-side IBStream for opaque component/controller state ───────────────
@@ -1548,6 +1549,64 @@ impl ControllerHandle {
     }
 }
 
+/// Connected `IConnectionPoint` facets for a separate component/controller
+/// pair. The connection is established in both directions and must be torn
+/// down before either plugin object is terminated.
+struct ControllerConnection {
+    component: *mut c_void,
+    controller: *mut c_void,
+}
+
+#[repr(C)]
+struct ConnectionPointVTable {
+    query_interface: unsafe extern "C" fn(*mut c_void, *const Tuid, *mut *mut c_void) -> Tresult,
+    add_ref: unsafe extern "C" fn(*mut c_void) -> u32,
+    release: unsafe extern "C" fn(*mut c_void) -> u32,
+    connect: unsafe extern "C" fn(*mut c_void, *mut c_void) -> Tresult,
+    disconnect: unsafe extern "C" fn(*mut c_void, *mut c_void) -> Tresult,
+    notify: unsafe extern "C" fn(*mut c_void, *mut c_void) -> Tresult,
+}
+
+impl ControllerConnection {
+    unsafe fn establish(component: *mut c_void, controller: *mut c_void) -> Option<Self> {
+        let component_point = com_query_interface(component, &ICONNECTION_POINT_IID)?;
+        let Some(controller_point) = com_query_interface(controller, &ICONNECTION_POINT_IID) else {
+            com_release(component_point);
+            return None;
+        };
+        let component_vtable = vtable_of::<ConnectionPointVTable>(component_point);
+        if ((*component_vtable).connect)(component_point, controller_point) != K_RESULT_OK {
+            com_release(controller_point);
+            com_release(component_point);
+            return None;
+        }
+        let controller_vtable = vtable_of::<ConnectionPointVTable>(controller_point);
+        if ((*controller_vtable).connect)(controller_point, component_point) != K_RESULT_OK {
+            let _ = ((*component_vtable).disconnect)(component_point, controller_point);
+            com_release(controller_point);
+            com_release(component_point);
+            return None;
+        }
+        Some(Self {
+            component: component_point,
+            controller: controller_point,
+        })
+    }
+}
+
+impl Drop for ControllerConnection {
+    fn drop(&mut self) {
+        unsafe {
+            let component_vtable = vtable_of::<ConnectionPointVTable>(self.component);
+            let controller_vtable = vtable_of::<ConnectionPointVTable>(self.controller);
+            let _ = ((*controller_vtable).disconnect)(self.controller, self.component);
+            let _ = ((*component_vtable).disconnect)(self.component, self.controller);
+            com_release(self.controller);
+            com_release(self.component);
+        }
+    }
+}
+
 /// One live VST3 plugin instance hosted in this process: owns the loaded
 /// module, the `IComponent`/`IAudioProcessor` pair, and the (optional)
 /// `IEditController`.
@@ -1560,6 +1619,9 @@ pub struct Vst3HostedInstance {
     component: *mut c_void,
     processor: *mut c_void,
     controller: Option<ControllerHandle>,
+    /// Bidirectional component/controller messaging for controllers exposed
+    /// as a separate VST3 class. Dropped before either endpoint terminates.
+    controller_connection: Option<ControllerConnection>,
     /// Stable host callback object installed on the edit controller.
     component_handler: Option<Box<ComponentHandler>>,
     parameters: Vec<PluginParameterDescriptor>,
@@ -1633,6 +1695,15 @@ impl Vst3HostedInstance {
             (((*vtable).set_component_handler)(controller.ptr(), ptr) == K_RESULT_OK)
                 .then_some(handler)
         });
+        let controller_connection = match controller.as_ref() {
+            Some(ControllerHandle::Separate(controller)) => unsafe {
+                ControllerConnection::establish(component, *controller)
+            },
+            _ => None,
+        };
+        if let Some(controller) = &controller {
+            unsafe { synchronize_controller_from_component(component, controller.ptr()) };
+        }
         let parameters = controller
             .as_ref()
             .map(|handle| unsafe { parameter_inventory(handle.ptr()) })
@@ -1661,6 +1732,7 @@ impl Vst3HostedInstance {
             component,
             processor,
             controller,
+            controller_connection,
             component_handler,
             parameters,
             port_layout,
@@ -1983,6 +2055,7 @@ impl Drop for Vst3HostedInstance {
         // still open); the orderly path closes the editor on the main
         // thread first.
         self.gui_session = None;
+        self.controller_connection = None;
         unsafe {
             if self.state == HostedInstanceState::Active {
                 let component = vtable_of::<ComponentVTable>(self.component);
@@ -2007,6 +2080,20 @@ impl Drop for Vst3HostedInstance {
         }
         // `_module` drops after this body: exit proc, then dlclose.
     }
+}
+
+/// Give the edit controller the component's initial state before querying
+/// parameters or creating its editor. Separate-controller plugins commonly
+/// build their UI from this state during `setComponentState`.
+unsafe fn synchronize_controller_from_component(component: *mut c_void, controller: *mut c_void) {
+    let component_vtable = vtable_of::<ComponentVTable>(component);
+    let mut state = MemoryStream::writer();
+    if ((*component_vtable).get_state)(component, state.as_raw()) != K_RESULT_OK {
+        return;
+    }
+    state.position = 0;
+    let controller_vtable = vtable_of::<EditControllerVTable>(controller);
+    let _ = ((*controller_vtable).set_component_state)(controller, state.as_raw());
 }
 
 /// Acquire the edit controller: component facet first, else the separate
