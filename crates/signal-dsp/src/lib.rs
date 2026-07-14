@@ -9,6 +9,8 @@
 //!   low-pass, and delay kernels
 //! - control ramps and segment playback for block-local automation
 //! - basic delay, filter, and level-tracking kernels
+//! - a direct-form FIR convolution kernel ([`FirConvolver`]) for HRTF and
+//!   short/medium impulse responses
 //! - RBJ cookbook biquads ([`BiquadCoefficients`] + per-channel
 //!   [`BiquadState`]) and a soft-knee master limiter ([`LimiterState`])
 //! - stateless block mixing helpers and deterministic signal fixtures
@@ -35,6 +37,7 @@
 mod biquad;
 mod block;
 mod control;
+mod convolution;
 mod delay;
 mod denormal;
 mod filter;
@@ -52,6 +55,7 @@ pub use block::{
 };
 pub use control::SmoothedValue;
 pub use control::{ControlPlan, ControlSegment, ControlSegmentPlayer, ControlSegmentShape};
+pub use convolution::FirConvolver;
 pub use delay::DelayLine;
 pub use denormal::DenormalGuard;
 pub use filter::OnePoleLowPass;
