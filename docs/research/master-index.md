@@ -64,6 +64,7 @@ Finch and Loophole.
 
 ## Next Task
 
-Run Batch 29.6CU stage-aligned source tracing. Locate the first material pinned-
-source versus Signal state divergence before another mechanism change. Keep
-real-source rendering and promotion lanes closed.
+Run Batch 29.6CV modified analysis-grid attribution. Test the pinned
+`1024`-point half-bin representation as one report-only differential while
+retaining Signal's window and predictor law. Keep real-source rendering and
+promotion lanes closed.

@@ -215,14 +215,23 @@ moves the chord by `-0.068380 dB`. Both variants retain `[3 tone, 1 chord]`
 paired failures. Structure, pitch, and repeat pass. The lookup difference is
 real but not material to the fidelity gap.
 
+The aligned Batch 29.6CU trace moves the first divergence earlier. Pinned
+Signalsmith Linear revision `56686735` represents the `960`-frame support on a
+`1024`-point modified real transform with `512` half-bin bands. Signal uses a
+standard `960`-point real transform with `481` bins. The first band centres are
+`3.90625 Hz` and `0 Hz`; spacing is `7.8125 Hz` and `8.333333 Hz`. Exact stage
+hashes repeat at source centre `8400`. Phase and magnitude differences after
+that boundary cannot isolate predictor equations because the bases differ.
+
 ## Sources
 
 | Source | Revision | Use |
 | --- | --- | --- |
 | [Signalsmith Stretch](https://github.com/Signalsmith-Audio/signalsmith-stretch/blob/57b93f4e9206a089a45387eaa39bdc9f310d3308/signalsmith-stretch.h) | `57b93f4e` | scheduling and prediction topology |
-| [Signalsmith Linear STFT](https://github.com/Signalsmith-Audio/linear/blob/7f53cdd1ccd52b409dacf2af24e7ff838c5580cd/stft.h) | `7f53cdd1` | observed window, overlap, FFT sizing, and normalization |
+| [Signalsmith Linear STFT](https://github.com/Signalsmith-Audio/linear/blob/5668673560146a9cfe38c25315071e3fd68c8317/stft.h) | `56686735` (`0.3.1`) | observed window, overlap, modified FFT sizing, half-bin grid, and normalization |
 
 ## Next Task
 
-Define a stage-aligned pinned-source trace and find the first material state
-divergence. Keep real-source rendering and parameter changes closed.
+Test the `1024`-point modified half-bin grid alone in the report-only Signal
+predictor. Keep its window, equations, real-source rendering, and parameter
+changes closed.

@@ -988,3 +988,15 @@ three tones and chord still fail paired parity. The next comparison must align
 internal source and Signal states at the analysis, preliminary-horizontal, and
 corrected-output boundaries. Select the next candidate from the first measured
 state divergence, not from another final-output guess.
+
+The aligned trace finds that divergence before predictor transport. The pinned
+engine's `960/240` support is represented by Signalsmith Linear revision
+`56686735` as a `1024`-point modified real transform with `512` half-bin bands.
+Signal represents the same support with a `960`-point standard real transform
+and `481` bins. The bases differ in size, origin, and spacing, so raw bin phase
+cannot be treated as an equation-level comparison. Test the modified half-bin
+grid alone before revisiting prediction or windows.
+
+Run `g10.029` Batch 29.6CV. Add a report-only modified half-bin transform-grid
+variant while retaining Signal's window and predictor law. Stop before corpus
+rendering or combined parameter changes.

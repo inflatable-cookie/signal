@@ -370,5 +370,6 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Implement `g10.029` Batch 29.6CM and run the complete faithful-predictor
-synthetic gate. Stop before real-source rendering on any failure.
+Implement `g10.029` Batch 29.6CV. Test the pinned `1024`-point modified half-bin
+transform grid as one report-only differential while retaining Signal's window
+and predictor laws. Stop before real-source rendering.

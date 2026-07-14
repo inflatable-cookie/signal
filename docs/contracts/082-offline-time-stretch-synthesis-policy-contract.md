@@ -3308,9 +3308,23 @@ finiteness, pitch, and repeated hashes pass. Frequency-boundary policy does not
 materially own the source-parity gap. Do not promote it or combine it with
 another change.
 
+Batch 29.6CU locates the first material divergence at analysis representation,
+before horizontal or vertical prediction. At the aligned source centre `8400`,
+pinned Signalsmith Linear revision `56686735` uses the same `960`-frame support
+and `240`-frame interval but selects a `1024`-point modified real transform:
+`512` half-bin bands begin at `3.90625 Hz` and advance by `7.8125 Hz`. Signal
+uses a `960`-point standard real transform with `481` bins beginning at DC and
+advancing by `8.333333 Hz`. All three stage hashes repeat for the exact
+quantized `110 Hz`, `220 Hz`, and chord controls. Normalized target-bin
+magnitude deltas range from `0.0222` to `0.1452`; relative phase deltas range
+from `1.7002` to `2.8156 rad`. Because those states inhabit different bases,
+the downstream deltas are diagnostic only. They do not authorize another
+predictor-law edit.
+
 ## Next Task
 
-Run Batch 29.6CU. Define a stage-aligned pinned-source trace for analysis,
-preliminary horizontal state, and corrected output state on exact interior
-frames. Select the next mechanism from the first measured divergence. Keep
-real sources and parameter sweeps closed.
+Run Batch 29.6CV. Test only the `1024`-point modified half-bin transform grid in
+the report-only Signal predictor while retaining its window, scheduling,
+equations, normalization, fallback, and boundary policy. Require structural
+and repeat gates before reading source-parity movement. Keep real sources and
+parameter sweeps closed.

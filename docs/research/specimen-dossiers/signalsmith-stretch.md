@@ -151,8 +151,15 @@ known frame-rate sideband, is the next translation gate.
   clamps ten vertical observations per `2x` frame to an edge bin
 - a controlled zero-extension variant changes leakage by at most `0.068380 dB`
   and leaves all four paired failures unchanged
+- the aligned source trace pins Signalsmith Linear revision `56686735` and
+  exposes a `1024`-point modified half-bin transform behind the nominal
+  `960/240` support; Signal instead uses a `960`-point standard real transform
+- current, reconstructed preliminary, and corrected hashes repeat at aligned
+  source centre `8400`; downstream bin deltas are diagnostic because the two
+  bases are not isomorphic
 
 ## Next Task
 
-Trace aligned pinned-source and Signal states to locate the first material
-internal divergence. Stop before corpus rendering or parameter changes.
+Test the modified half-bin transform grid alone in the report-only Signal
+predictor. Retain Signal's window and all predictor laws; stop before corpus
+rendering or combined parameter changes.

@@ -1214,16 +1214,39 @@ pass. Keep the clamped translation frozen; do not compound the rejected change.
 
 ### Batch 29.6CU - Stage-Aligned Source Trace
 
-- [ ] define a pinned, report-only trace boundary for current input spectrum,
+- [x] define a pinned, report-only trace boundary for current input spectrum,
   preliminary horizontal state, and corrected output state
-- [ ] align one steady interior frame for exact quantized `110 Hz`, `220 Hz`,
+- [x] align one steady interior frame for exact quantized `110 Hz`, `220 Hz`,
   and chord controls at `8 kHz`, ratio `2`, geometry `960/240`
-- [ ] compare normalized magnitude and phase at source-tone bins, strongest
-  sideband bins, and the low-to-high dependency path; preserve raw hashes
-- [ ] identify the first material source-versus-Signal state divergence and
+- [x] compare normalized target-bin magnitude and relative phase; preserve raw
+  hashes and stop before downstream sideband/dependency claims once the source
+  and Signal analysis bases prove non-isomorphic
+- [x] identify the first material source-versus-Signal state divergence and
   select exactly one following causal ablation
-- [ ] change no predictor law; keep window/FFT changes, corpus, listening,
+- [x] change no predictor law; keep window/FFT changes, corpus, listening,
   stereo, dynamic ratio, cache, and routing closed
+
+Decision: the first divergence precedes predictor transport. Pinned Signalsmith
+uses a `1024`-point modified real transform over the same `960`-frame support:
+`512` half-bin bands start at `3.90625 Hz` with `7.8125 Hz` spacing. Signal uses
+a `960`-point standard real transform: `481` bins start at DC with
+`8.333333 Hz` spacing. Exact aligned hashes repeat at source centre `8400`.
+Target-bin magnitude differences are `0.0222` to `0.1452`; relative phase
+differences are `1.7002` to `2.8156 rad`. Those downstream values compare
+different bases and do not select another predictor-law edit.
+
+### Batch 29.6CV - Modified Analysis-Grid Attribution
+
+- [ ] add one report-only Signal variant with `960`-frame support, `240`-frame
+  interval, a `1024`-point transform, and the pinned half-bin frequency grid
+- [ ] hold the Signal window, scheduling, predictor equations, normalization,
+  fallback, boundary policy, and synthesis ownership fixed
+- [ ] prove analysis/synthesis identity, exact length, finiteness, pitch, and
+  repeated hashes before reading fidelity movement
+- [ ] rerun exact-input source parity and decide whether the grid materially
+  reduces `[3 tone, 1 chord]` paired failures
+- [ ] stop on rejection; do not combine the grid with a window change or reopen
+  corpus, listening, stereo, dynamic ratio, cache, or routing
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -2230,8 +2253,16 @@ pass. Keep the clamped translation frozen; do not compound the rejected change.
   leakage by `0.068380 dB`; paired failures remain `[3, 1]`. Both variants are
   exact-length, finite, pitch-correct, and hash-repeating. Batch 29.6CU moves
   from final-output guesses to stage-aligned pinned-source state tracing.
+- 2026-07-14: Batch 29.6CU aligns pinned source and Signal at source centre
+  `8400` and finds the first state divergence before predictor equations.
+  Pinned Linear revision `56686735` maps the `960`-frame support onto a
+  `1024`-point modified half-bin transform with `512` bands; Signal maps it
+  directly onto a `960`-point standard real transform with `481` bins. Raw
+  current, preliminary, and corrected hashes repeat for `110 Hz`, `220 Hz`,
+  and chord controls. Batch 29.6CV tests that transform grid alone.
 
 ## Next Task
 
-Run Batch 29.6CU. Locate the first material internal state divergence with a
-stage-aligned pinned-source trace. Do not tune or render real sources.
+Run Batch 29.6CV. Test the pinned `1024`-point modified half-bin analysis grid
+as one report-only differential while retaining Signal's window and predictor.
+Do not tune or render real sources.

@@ -1857,6 +1857,100 @@ fn source_studied_pinned_signalsmith_synthetic_comparator() {
 }
 
 #[test]
+#[ignore = "requires pinned local Signalsmith Stretch source and a C++17 compiler"]
+#[cfg(not(debug_assertions))]
+fn source_studied_pinned_signalsmith_stage_trace() {
+    use super::source_studied::faithful_predictor::stage_trace::{review, StageTraceDirection};
+
+    let result = review();
+    eprintln!("source_studied_pinned_signalsmith_stage_trace {result:#?}");
+    assert!(result.repeated);
+    assert_eq!(
+        result.source_revision,
+        "57b93f4e9206a089a45387eaa39bdc9f310d3308"
+    );
+    assert_eq!(
+        result.linear_revision,
+        "5668673560146a9cfe38c25315071e3fd68c8317"
+    );
+    assert_eq!(result.controls.len(), 3);
+    assert_eq!(result.source_geometry.block_frames, 960);
+    assert_eq!(result.source_geometry.interval_frames, 240);
+    assert_eq!(result.source_geometry.transform_frames, 1024);
+    assert_eq!(result.source_geometry.bands, 512);
+    assert!(result.source_geometry.modified_grid);
+    assert_eq!(result.source_geometry.first_bin_hz, 3.90625);
+    assert_eq!(result.source_geometry.bin_step_hz, 7.8125);
+    assert_eq!(result.source_geometry.source_center, 8_400);
+    assert_eq!(result.signal_geometry.transform_frames, 960);
+    assert_eq!(result.signal_geometry.bands, 481);
+    assert!(!result.signal_geometry.modified_grid);
+    assert_eq!(result.signal_geometry.first_bin_hz, 0.0);
+    assert_eq!(result.signal_geometry.bin_step_hz, 25.0 / 3.0);
+    assert!(result.controls.iter().all(|control| {
+        control.source_hashes.iter().all(|hash| *hash != 0)
+            && control.signal_hashes.iter().all(|hash| *hash != 0)
+            && control
+                .normalized_magnitude_deltas
+                .iter()
+                .all(|delta| delta.is_finite())
+            && control
+                .relative_phase_deltas
+                .iter()
+                .all(|delta| delta.is_finite())
+    }));
+    assert_eq!(
+        result
+            .controls
+            .iter()
+            .map(|control| control.source_hashes)
+            .collect::<Vec<_>>(),
+        vec![
+            [
+                0x900c_6f81_4d64_d4e5,
+                0x7aca_7cb5_2a25_4a16,
+                0x0bf9_39ce_f8ec_3304,
+            ],
+            [
+                0xa220_3b80_4256_6f4d,
+                0x6676_ee83_6d75_4e9d,
+                0xa674_81f4_52c6_f55e,
+            ],
+            [
+                0xd242_be28_9a89_286c,
+                0x2b65_e1d0_9eda_c920,
+                0x98d5_b0da_848b_32af,
+            ],
+        ]
+    );
+    assert_eq!(
+        result
+            .controls
+            .iter()
+            .map(|control| control.signal_hashes)
+            .collect::<Vec<_>>(),
+        vec![
+            [
+                0xbcd8_03b5_f136_9855,
+                0x5faf_1f54_0aeb_e235,
+                0xa205_cce3_3610_e027,
+            ],
+            [
+                0x0d68_2dcd_a081_bea2,
+                0x29ce_3d32_ac17_f9ac,
+                0x5faf_3ed8_6ad8_95a4,
+            ],
+            [
+                0x7411_d6fe_fdd8_50ab,
+                0xb4b3_1fae_c344_8c14,
+                0x1b50_e5e2_1f58_d59a,
+            ],
+        ]
+    );
+    assert_eq!(result.direction, StageTraceDirection::AnalysisTransformGrid);
+}
+
+#[test]
 #[cfg(not(debug_assertions))]
 fn renyi_time_resolution_selection_selects_schedule_direction() {
     let first = renyi_time_resolution_selection_review();

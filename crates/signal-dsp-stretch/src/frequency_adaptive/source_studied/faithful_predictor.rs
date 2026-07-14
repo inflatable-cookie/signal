@@ -4,6 +4,7 @@ use super::HASH_OFFSET;
 
 pub(in crate::frequency_adaptive) mod attribution;
 pub(in crate::frequency_adaptive) mod pinned_source;
+pub(in crate::frequency_adaptive) mod stage_trace;
 
 const SAMPLE_RATE: usize = 8_000;
 const HORIZONTAL_ENERGY_FLOOR: f64 = 1.0e-15;
@@ -58,7 +59,16 @@ pub(super) struct Render {
     significant_fallback: usize,
     horizontal_ratio_errors: Vec<[f64; 4]>,
     horizontal_output_phases: Vec<[f64; 4]>,
+    stage_trace: Option<StageFrameTrace>,
     hash: u64,
+}
+
+#[derive(Clone, Debug)]
+pub(super) struct StageFrameTrace {
+    source_center: isize,
+    current: Vec<Complex64>,
+    preliminary: Vec<Complex64>,
+    corrected: Vec<Complex64>,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -237,6 +247,7 @@ pub(super) fn render_stage_with_boundary_policy(
             significant_fallback: 0,
             horizontal_ratio_errors: Vec::new(),
             horizontal_output_phases: Vec::new(),
+            stage_trace: None,
         };
     }
     let hop = ((sample_rate as f64 * 0.03).round() as usize).max(1);
@@ -261,6 +272,7 @@ pub(super) fn render_stage_with_boundary_policy(
     let mut significant_fallback = 0;
     let mut horizontal_ratio_errors = Vec::new();
     let mut horizontal_output_phases = Vec::new();
+    let mut stage_trace = None;
     let mut output_center = -(length as isize / 2);
     while output_center < target_len as isize + length as isize / 2 {
         let source_center = (output_center as f64 / ratio).round() as isize;
@@ -393,6 +405,14 @@ pub(super) fn render_stage_with_boundary_policy(
                     _ => normalize_or(selected, current[bin], current[bin]),
                 };
             }
+            if source_center == 8_400 {
+                stage_trace = Some(StageFrameTrace {
+                    source_center,
+                    current: current[..bins].to_vec(),
+                    preliminary: preliminary.clone(),
+                    corrected: corrected.clone(),
+                });
+            }
             preliminary = corrected;
         }
         for bin in 0..bins {
@@ -443,6 +463,7 @@ pub(super) fn render_stage_with_boundary_policy(
         significant_fallback,
         horizontal_ratio_errors,
         horizontal_output_phases,
+        stage_trace,
     }
 }
 
