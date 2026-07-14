@@ -1022,9 +1022,26 @@ replacement, but do not yet establish production or comparator parity.
   reject full-source renders, truncation substitutes, or channel-contract drift
 - [x] export one concealed four-way pack containing weighted predictor, current
   Signal, Rubber Band R3, and Signalsmith Stretch without parameter changes
-- [ ] use the unchanged nine rows to decide the remaining external quality gap;
+- [x] use the unchanged nine rows to decide the remaining external quality gap;
   keep frequency partitioning, holdout, stereo, dynamic ratio, cache, and
   production routing closed
+
+Decision: the weighted predictor is credible but does not consistently beat
+current Signal. It wins or ties two rows and remains competitive on two, but
+repeats transient softness, smear, grain, and one end pop on four. Short stabs
+close the exact-input transient/boundary check but cannot decide musical
+continuity.
+
+### Batch 29.6CK - Long-Form Musical Continuity Gate
+
+- [x] freeze six five-second mono rows across drums, bass, vocals, pads, and
+  full mix at `1.5x` or `2.0x`
+- [x] compare only weighted predictor, current Signal, and Rubber Band R3 from
+  exact shared inputs; do not reintroduce Signalsmith or frequency partitioning
+- [x] export one concealed `24`-file pack after exact length, finiteness, input,
+  external-render, assignment, gain, and notes hashes repeat
+- [ ] decide whether weighted prediction has a coherent musical advantage; if
+  not, reject this implementation rather than opening per-row tuning
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -1918,10 +1935,23 @@ replacement, but do not yet establish production or comparator parity.
   `69887b15e8420fd7`, `9547b0d5e924d8fa`, `5e79eb98f2fbdc78`,
   `2f1894d7c22b23de`, and `2e09fb7ce672ec30`. Operator listening remains; no
   parameters changed and holdout reads remain zero.
+- 2026-07-14: corrected listening closes Batch 29.6CJ without promoting the
+  weighted predictor. It wins or ties L002 and L013, remains competitive on
+  L001 and L007, and regresses L004, L005, L008, and L014 through softness,
+  smear, grain, or an end pop. Current Signal and Rubber Band are more
+  consistently safe. Because the `16384`-frame rows last only about `0.37`
+  seconds before stretching, they are valid transient/boundary probes but weak
+  musical-continuity evidence. Batch 29.6CK therefore freezes one final compact
+  long-form gate rather than a repair sequence.
+- 2026-07-14: Batch 29.6CK exports six exact five-second mono inputs and Rubber
+  Band R3 `4.0.0` renders at `1.5x` or `2.0x`. The concealed weighted/current/
+  Rubber pack has `24` audio files and zero structural failures. Input,
+  external, assignment, gain, and notes hashes repeat as
+  `f82238ad4e332c26`, `78485bfe53e1a1d9`, `43b1b12791ced723`,
+  `69b33fe2cc5f77ec`, and `605f25c668ff5db9`. Holdout reads remain zero.
 
 ## Next Task
 
-Complete the Batch 29.6CJ concealed four-way listen at
-`target/stretch-source-studied-cj-development-pack`, then decide the remaining
-weighted-predictor quality gap. Do not reopen the frequency-partitioned path or
-a parameter-repair sequence.
+Complete the Batch 29.6CK concealed long-form listen at
+`target/stretch-source-studied-ck-long-form-pack`, then accept or reject the
+weighted predictor as a whole. Do not open per-row tuning.

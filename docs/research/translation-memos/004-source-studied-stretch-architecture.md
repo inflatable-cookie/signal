@@ -113,6 +113,12 @@ Batch 29.6CJ now provides that exact-input pack. Every path consumes the same
 44.1 kHz mono 16-bit `16384`-frame row input; both external engines return the
 exact requested length. Listening remains open.
 
+That listening retains weighted prediction as credible research but does not
+promote the implementation. Its two wins are offset by repeated softness,
+smear, grain, and boundary damage. Batch 29.6CK isolates the remaining unknown:
+musical continuity over five-second `1.5x` and `2.0x` renders. A non-win closes
+this implementation without tuning.
+
 ## Sources
 
 | Source | Confidence | Transfer boundary |
@@ -127,5 +133,5 @@ exact requested length. Listening remains open.
 
 ## Next Task
 
-Complete the exact-input Batch 29.6CJ concealed listen. Do not resume the
-frequency-partitioned path, Rule 30AB, or per-mechanism repair batches.
+Complete the Batch 29.6CK long-form concealed listen. Do not resume frequency
+partitioning, Rule 30AB, or per-mechanism repair batches.

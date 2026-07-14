@@ -63,5 +63,5 @@ Finch and Loophole.
 
 ## Next Task
 
-Complete the Batch 29.6CJ exact-input concealed listen. Keep the source
+Complete the Batch 29.6CK long-form concealed listen. Keep the source
 provenance boundary attached to every transferred invariant.

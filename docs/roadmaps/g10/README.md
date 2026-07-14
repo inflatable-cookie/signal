@@ -341,15 +341,19 @@ Current stretch status:
   stereo sources before truncation. Batch 29.6CJ now repeats the unchanged rows
   with exact input identity: nine hash-frozen mono inputs, `18` exact-length
   external renders, and one `45`-file four-way pack pass structural validation.
-  Operator listening remains. Rule 30AB repair, parameter lattices, and per-
-  metric follow-up chains remain closed. Holdout, stereo, dynamic ratio, cache,
-  and routing remain closed.
+  Listening finds the weighted predictor credible but inconsistent: two wins or
+  ties, two competitive rows, and four rows with softness, smear, grain, or a
+  boundary pop. Because those sources are shorter than half a second, Batch
+  29.6CK now owns one final musical-continuity decision using six five-second
+  `1.5x`/`2.0x` rows. Its exact-input weighted/current/Rubber pack contains `24`
+  audio files with zero structural failures. Rule 30AB repair, parameter
+  lattices, and per-metric follow-up chains remain closed. Holdout, stereo,
+  dynamic ratio, cache, and routing remain closed.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Complete the `g10.029` Batch 29.6CJ concealed four-way listen, then decide the
-weighted predictor's remaining external quality gap. Do not reopen frequency
-partitioning, Rule 30AB, or a parameter-repair sequence.
+Complete the `g10.029` Batch 29.6CK concealed long-form listen, then accept or
+reject the weighted predictor as a whole. Do not open per-row tuning.

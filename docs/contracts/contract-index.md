@@ -144,5 +144,5 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Complete the `g10.029` Batch 29.6CJ exact-input concealed listen. Do not reopen
+Complete the `g10.029` Batch 29.6CK long-form concealed listen. Do not reopen
 frequency partitioning, Rule 30AB, or parameter search.

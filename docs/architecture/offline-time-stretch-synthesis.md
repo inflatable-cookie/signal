@@ -1,6 +1,6 @@
 # Offline Time-Stretch Synthesis
 
-Status: weighted-predictor continuation; comparator listening open
+Status: weighted-predictor long-form decision open
 Owner: dsp
 Updated: 2026-07-14
 Contract refs: `046`, `082`
@@ -883,8 +883,18 @@ complete output shapes, records file hashes, and then renders Signal from the
 same decoded samples. The corrected pack is ready. No synthesis setting or
 quality threshold changed.
 
+Corrected short-form listening does not establish a weighted-predictor
+successor. The path is best or tied on two rows and competitive on two, but
+softness, smear, grain, and an end pop recur on four. Current Signal and Rubber
+Band are more consistently safe. These sub-half-second sources primarily test
+attacks and endpoints.
+
+The last bounded decision is musical continuity: six five-second expansion
+rows at `1.5x` or `2.0x`, comparing weighted predictor, current Signal, and
+Rubber Band only. No setting changes. A non-win rejects the weighted
+implementation rather than spawning local repair.
+
 ## Next Task
 
-Complete the concealed Batch 29.6CJ four-way listen, then decide the weighted
-predictor's remaining external quality gap. Do not reopen frequency
-partitioning, Rule 30AB, or a parameter lattice.
+Complete the concealed Batch 29.6CK long-form listen, then accept or reject the
+weighted predictor as a whole. Do not open local tuning.

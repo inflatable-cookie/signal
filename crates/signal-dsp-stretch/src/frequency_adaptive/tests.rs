@@ -1626,6 +1626,32 @@ fn source_studied_exact_excerpt_comparator_confirmation_exports_pack() {
 }
 
 #[test]
+#[ignore = "requires local Rubber Band 4.0.0 CLI"]
+#[cfg(not(debug_assertions))]
+fn source_studied_long_form_musical_comparison_exports_pack() {
+    let result = super::source_studied::long_form::run();
+    eprintln!("source_studied_long_form_confirmation {result:#?}");
+    assert_eq!(result.rows, 6);
+    assert_eq!(result.candidates_per_row, 3);
+    assert_eq!(result.input_files, 6);
+    assert_eq!(result.external_files, 6);
+    assert_eq!(result.audio_files, 24);
+    assert_eq!(result.holdout_reads, 0);
+    assert_eq!(result.structural_failures, [0; 4], "{result:#?}");
+    assert_eq!(
+        result.hashes,
+        [
+            0xf822_38ad_4e33_2c26,
+            0x7848_5bfe_53e1_a1d9,
+            0x43b1_b127_91ce_d723,
+            0x69b3_3fe2_cc5f_77ec,
+            0x605f_25c6_68ff_5db9,
+        ]
+    );
+    assert_eq!(result.rubber_band_version, "4.0.0");
+}
+
+#[test]
 #[cfg(not(debug_assertions))]
 fn renyi_time_resolution_selection_selects_schedule_direction() {
     let first = renyi_time_resolution_selection_review();

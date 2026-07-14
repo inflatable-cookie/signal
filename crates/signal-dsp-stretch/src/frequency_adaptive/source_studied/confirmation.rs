@@ -10,7 +10,7 @@ use crate::frequency_adaptive::complete_system_tuning::listening_export::{
     manifest::{assignment, rows},
 };
 
-const SAMPLE_RATE: u32 = 44_100;
+pub(super) const SAMPLE_RATE: u32 = 44_100;
 const INPUT_FRAMES: usize = 16_384;
 
 #[derive(Clone, Debug, PartialEq)]
@@ -264,7 +264,7 @@ fn pack_root() -> PathBuf {
         .join("../../target/stretch-source-studied-cj-development-pack")
 }
 
-fn replace_directory(path: &Path) {
+pub(super) fn replace_directory(path: &Path) {
     if path.exists() {
         fs::remove_dir_all(path)
             .unwrap_or_else(|error| panic!("replace {}: {error}", path.display()));
@@ -272,7 +272,7 @@ fn replace_directory(path: &Path) {
     fs::create_dir_all(path).unwrap_or_else(|error| panic!("create {}: {error}", path.display()));
 }
 
-fn write_input(path: &Path, samples: &[f64]) {
+pub(super) fn write_input(path: &Path, samples: &[f64]) {
     let specification = hound::WavSpec {
         channels: 1,
         sample_rate: SAMPLE_RATE,
@@ -289,7 +289,7 @@ fn write_input(path: &Path, samples: &[f64]) {
     writer.finalize().expect("finalize exact input");
 }
 
-fn read_exact(path: &Path, expected_frames: usize, expected_bits: u16) -> Vec<f64> {
+pub(super) fn read_exact(path: &Path, expected_frames: usize, expected_bits: u16) -> Vec<f64> {
     let reader = hound::WavReader::open(path)
         .unwrap_or_else(|error| panic!("open {}: {error}", path.display()));
     let specification = reader.spec();
@@ -322,7 +322,7 @@ fn read_exact(path: &Path, expected_frames: usize, expected_bits: u16) -> Vec<f6
     samples
 }
 
-fn version(program: &Path, arguments: &[&str]) -> String {
+pub(super) fn version(program: &Path, arguments: &[&str]) -> String {
     let output = Command::new(program)
         .args(arguments)
         .output()
@@ -344,7 +344,7 @@ fn version(program: &Path, arguments: &[&str]) -> String {
         .to_string()
 }
 
-fn run_command(program: &Path, arguments: &[std::ffi::OsString]) {
+pub(super) fn run_command(program: &Path, arguments: &[std::ffi::OsString]) {
     let output = Command::new(program)
         .args(arguments)
         .output()
@@ -371,7 +371,7 @@ fn receipt_row(
     )
 }
 
-fn file_hash(path: &Path) -> u64 {
+pub(super) fn file_hash(path: &Path) -> u64 {
     let bytes = fs::read(path).unwrap_or_else(|error| panic!("read {}: {error}", path.display()));
     let mut hash = HASH_OFFSET;
     hash_bytes(&mut hash, &bytes);

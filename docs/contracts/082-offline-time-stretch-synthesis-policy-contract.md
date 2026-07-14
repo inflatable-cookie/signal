@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; exact-excerpt comparator listening open
+Status: active; long-form musical listening open
 Owner: dsp
 Updated: 2026-07-14
 Related contracts: `046`, `048`, `049`
@@ -3148,7 +3148,22 @@ receipt generation, and concealed export in one operation. All nine inputs are
 44.1 kHz mono 16-bit WAVs with exactly `16384` frames. Rubber Band R3 `4.0.0`
 and Signalsmith Stretch `1.3.2` each produced all nine exact-length outputs.
 The resulting `45`-file pack has zero structural failures. Operator listening
-is the remaining Rule 31E gate.
+closes Rule 31E without promotion: weighted prediction is credible but not
+consistently better than current Signal.
+
+#### Rule 31F: one long-form musical decision
+
+Short exact-input rows remain transient and boundary evidence. They do not
+decide sustained texture, tonal evolution, or musical continuity. One final
+pack therefore uses five-second mono inputs across drums, bass, vocals, pads,
+and full mix at `1.5x` or `2.0x`.
+
+Only the weighted predictor, current Signal, and Rubber Band R3 participate.
+All share exact input files and output-length verification. The pack decides
+the weighted implementation as a whole. Failure to show a coherent musical
+advantage rejects it; no parameter, material, or per-row repair sequence opens.
+Holdout, linked stereo, dynamic ratio, cache, realtime source-fill, and product
+routing remain closed.
 
 ## Source-Study Provenance Rule
 
@@ -3160,6 +3175,6 @@ dependency decision explicitly changes that boundary.
 
 ## Next Task
 
-Complete the Rule 31E concealed four-way listen. Keep parameter lattices,
-holdout, product routing, linked stereo, dynamic ratio, cache, and realtime
-source-fill closed.
+Complete the Rule 31F concealed long-form listen, then accept or reject the
+weighted predictor as a whole. Keep parameter search and all promotion lanes
+closed.
