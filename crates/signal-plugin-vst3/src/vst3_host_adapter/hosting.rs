@@ -30,11 +30,12 @@
 // than clippy's default argument budget for a few methods.
 #![allow(clippy::too_many_arguments)]
 
-use std::ffi::{c_char, c_void, CString};
+use std::collections::HashMap;
+use std::ffi::{c_char, c_void, CStr, CString};
 use std::path::Path;
 use std::ptr;
-use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::Arc;
+use std::sync::atomic::{AtomicU32, AtomicU64, Ordering};
+use std::sync::{Arc, Mutex};
 
 use signal_plugin::{
     PluginEvent, PluginParamChange, PluginParamChangeQueue, PluginParameterDescriptor,
@@ -179,6 +180,8 @@ const IAUDIO_PROCESSOR_IID: Tuid = tuid_from_uid(0x42043F99, 0xB7DA453C, 0xA569E
 const IEDIT_CONTROLLER_IID: Tuid = tuid_from_uid(0xDCD7BBE3, 0x7742448D, 0xA874AACC, 0x979C759E);
 const ICOMPONENT_HANDLER_IID: Tuid = tuid_from_uid(0x93A0BEA3, 0x0BD045DB, 0x8E890B0C, 0xC1E46AC6);
 const IHOST_APPLICATION_IID: Tuid = tuid_from_uid(0x58E595CC, 0xDB2D4969, 0x8B6AAF8C, 0x36A664E5);
+const IMESSAGE_IID: Tuid = tuid_from_uid(0x936F033B, 0xC6C047DB, 0xBB0882F8, 0x13C1E613);
+const IATTRIBUTE_LIST_IID: Tuid = tuid_from_uid(0x1E5F0AEB, 0xCC7F4533, 0xA2544011, 0x38AD5EE4);
 // ivstparameterchanges.h (published interface definitions).
 const IPARAMETER_CHANGES_IID: Tuid = tuid_from_uid(0xA4779663, 0x0BB64A56, 0xB44384A8, 0x466FEB9D);
 const IPARAM_VALUE_QUEUE_IID: Tuid = tuid_from_uid(0x01263A18, 0xED074F6F, 0x98C9D356, 0x4686F9BA);
@@ -702,6 +705,379 @@ pub(crate) unsafe fn com_release(object: *mut c_void) {
 
 // ── Minimal host context (IHostApplication) ────────────────────────────────
 
+enum HostAttribute {
+    Integer(i64),
+    Float(f64),
+    String(Vec<i16>),
+    Binary(Vec<u8>),
+}
+
+#[repr(C)]
+struct HostAttributeListVTable {
+    query_interface: unsafe extern "C" fn(*mut c_void, *const Tuid, *mut *mut c_void) -> Tresult,
+    add_ref: unsafe extern "C" fn(*mut c_void) -> u32,
+    release: unsafe extern "C" fn(*mut c_void) -> u32,
+    set_int: unsafe extern "C" fn(*mut c_void, *const c_char, i64) -> Tresult,
+    get_int: unsafe extern "C" fn(*mut c_void, *const c_char, *mut i64) -> Tresult,
+    set_float: unsafe extern "C" fn(*mut c_void, *const c_char, f64) -> Tresult,
+    get_float: unsafe extern "C" fn(*mut c_void, *const c_char, *mut f64) -> Tresult,
+    set_string: unsafe extern "C" fn(*mut c_void, *const c_char, *const i16) -> Tresult,
+    get_string: unsafe extern "C" fn(*mut c_void, *const c_char, *mut i16, u32) -> Tresult,
+    set_binary: unsafe extern "C" fn(*mut c_void, *const c_char, *const c_void, u32) -> Tresult,
+    get_binary:
+        unsafe extern "C" fn(*mut c_void, *const c_char, *mut *const c_void, *mut u32) -> Tresult,
+}
+
+#[repr(C)]
+struct HostAttributeList {
+    vtable: *const HostAttributeListVTable,
+    refs: AtomicU32,
+    values: Mutex<HashMap<Vec<u8>, HostAttribute>>,
+}
+
+static HOST_ATTRIBUTE_LIST_VTABLE: HostAttributeListVTable = HostAttributeListVTable {
+    query_interface: host_attribute_list_query_interface,
+    add_ref: host_attribute_list_add_ref,
+    release: host_attribute_list_release,
+    set_int: host_attribute_list_set_int,
+    get_int: host_attribute_list_get_int,
+    set_float: host_attribute_list_set_float,
+    get_float: host_attribute_list_get_float,
+    set_string: host_attribute_list_set_string,
+    get_string: host_attribute_list_get_string,
+    set_binary: host_attribute_list_set_binary,
+    get_binary: host_attribute_list_get_binary,
+};
+
+fn new_host_attribute_list() -> *mut c_void {
+    Box::into_raw(Box::new(HostAttributeList {
+        vtable: &HOST_ATTRIBUTE_LIST_VTABLE,
+        refs: AtomicU32::new(1),
+        values: Mutex::new(HashMap::new()),
+    }))
+    .cast()
+}
+
+unsafe fn attribute_key(id: *const c_char) -> Option<Vec<u8>> {
+    (!id.is_null()).then(|| CStr::from_ptr(id).to_bytes().to_vec())
+}
+
+unsafe extern "C" fn host_attribute_list_query_interface(
+    this: *mut c_void,
+    iid: *const Tuid,
+    out: *mut *mut c_void,
+) -> Tresult {
+    if out.is_null() {
+        return K_NO_INTERFACE;
+    }
+    if !iid.is_null() && (*iid == FUNKNOWN_IID || *iid == IATTRIBUTE_LIST_IID) {
+        *out = this;
+        host_attribute_list_add_ref(this);
+        return K_RESULT_OK;
+    }
+    *out = ptr::null_mut();
+    K_NO_INTERFACE
+}
+
+unsafe extern "C" fn host_attribute_list_add_ref(this: *mut c_void) -> u32 {
+    (*(this.cast::<HostAttributeList>()))
+        .refs
+        .fetch_add(1, Ordering::Relaxed)
+        + 1
+}
+
+unsafe extern "C" fn host_attribute_list_release(this: *mut c_void) -> u32 {
+    let remaining = (*(this.cast::<HostAttributeList>()))
+        .refs
+        .fetch_sub(1, Ordering::Release)
+        - 1;
+    if remaining == 0 {
+        std::sync::atomic::fence(Ordering::Acquire);
+        drop(Box::from_raw(this.cast::<HostAttributeList>()));
+    }
+    remaining
+}
+
+unsafe extern "C" fn host_attribute_list_set_int(
+    this: *mut c_void,
+    id: *const c_char,
+    value: i64,
+) -> Tresult {
+    let Some(key) = attribute_key(id) else {
+        return K_RESULT_FALSE;
+    };
+    (*(this.cast::<HostAttributeList>()))
+        .values
+        .lock()
+        .expect("host attribute list poisoned")
+        .insert(key, HostAttribute::Integer(value));
+    K_RESULT_OK
+}
+
+unsafe extern "C" fn host_attribute_list_get_int(
+    this: *mut c_void,
+    id: *const c_char,
+    value: *mut i64,
+) -> Tresult {
+    let Some(key) = attribute_key(id) else {
+        return K_RESULT_FALSE;
+    };
+    if value.is_null() {
+        return K_RESULT_FALSE;
+    }
+    match (*(this.cast::<HostAttributeList>()))
+        .values
+        .lock()
+        .expect("host attribute list poisoned")
+        .get(&key)
+    {
+        Some(HostAttribute::Integer(stored)) => {
+            *value = *stored;
+            K_RESULT_OK
+        }
+        _ => K_RESULT_FALSE,
+    }
+}
+
+unsafe extern "C" fn host_attribute_list_set_float(
+    this: *mut c_void,
+    id: *const c_char,
+    value: f64,
+) -> Tresult {
+    let Some(key) = attribute_key(id) else {
+        return K_RESULT_FALSE;
+    };
+    (*(this.cast::<HostAttributeList>()))
+        .values
+        .lock()
+        .expect("host attribute list poisoned")
+        .insert(key, HostAttribute::Float(value));
+    K_RESULT_OK
+}
+
+unsafe extern "C" fn host_attribute_list_get_float(
+    this: *mut c_void,
+    id: *const c_char,
+    value: *mut f64,
+) -> Tresult {
+    let Some(key) = attribute_key(id) else {
+        return K_RESULT_FALSE;
+    };
+    if value.is_null() {
+        return K_RESULT_FALSE;
+    }
+    match (*(this.cast::<HostAttributeList>()))
+        .values
+        .lock()
+        .expect("host attribute list poisoned")
+        .get(&key)
+    {
+        Some(HostAttribute::Float(stored)) => {
+            *value = *stored;
+            K_RESULT_OK
+        }
+        _ => K_RESULT_FALSE,
+    }
+}
+
+unsafe extern "C" fn host_attribute_list_set_string(
+    this: *mut c_void,
+    id: *const c_char,
+    value: *const i16,
+) -> Tresult {
+    let Some(key) = attribute_key(id) else {
+        return K_RESULT_FALSE;
+    };
+    if value.is_null() {
+        return K_RESULT_FALSE;
+    }
+    let length = (0..).position(|index| *value.add(index) == 0).unwrap_or(0);
+    let mut stored = std::slice::from_raw_parts(value, length).to_vec();
+    stored.push(0);
+    (*(this.cast::<HostAttributeList>()))
+        .values
+        .lock()
+        .expect("host attribute list poisoned")
+        .insert(key, HostAttribute::String(stored));
+    K_RESULT_OK
+}
+
+unsafe extern "C" fn host_attribute_list_get_string(
+    this: *mut c_void,
+    id: *const c_char,
+    value: *mut i16,
+    size_in_bytes: u32,
+) -> Tresult {
+    let Some(key) = attribute_key(id) else {
+        return K_RESULT_FALSE;
+    };
+    if value.is_null() {
+        return K_RESULT_FALSE;
+    }
+    match (*(this.cast::<HostAttributeList>()))
+        .values
+        .lock()
+        .expect("host attribute list poisoned")
+        .get(&key)
+    {
+        Some(HostAttribute::String(stored)) => {
+            let units = stored.len().min(size_in_bytes as usize / size_of::<i16>());
+            ptr::copy_nonoverlapping(stored.as_ptr(), value, units);
+            K_RESULT_OK
+        }
+        _ => K_RESULT_FALSE,
+    }
+}
+
+unsafe extern "C" fn host_attribute_list_set_binary(
+    this: *mut c_void,
+    id: *const c_char,
+    value: *const c_void,
+    size_in_bytes: u32,
+) -> Tresult {
+    let Some(key) = attribute_key(id) else {
+        return K_RESULT_FALSE;
+    };
+    if value.is_null() && size_in_bytes != 0 {
+        return K_RESULT_FALSE;
+    }
+    let stored = if size_in_bytes == 0 {
+        Vec::new()
+    } else {
+        std::slice::from_raw_parts(value.cast::<u8>(), size_in_bytes as usize).to_vec()
+    };
+    (*(this.cast::<HostAttributeList>()))
+        .values
+        .lock()
+        .expect("host attribute list poisoned")
+        .insert(key, HostAttribute::Binary(stored));
+    K_RESULT_OK
+}
+
+unsafe extern "C" fn host_attribute_list_get_binary(
+    this: *mut c_void,
+    id: *const c_char,
+    value: *mut *const c_void,
+    size_in_bytes: *mut u32,
+) -> Tresult {
+    let Some(key) = attribute_key(id) else {
+        return K_RESULT_FALSE;
+    };
+    if value.is_null() || size_in_bytes.is_null() {
+        return K_RESULT_FALSE;
+    }
+    match (*(this.cast::<HostAttributeList>()))
+        .values
+        .lock()
+        .expect("host attribute list poisoned")
+        .get(&key)
+    {
+        Some(HostAttribute::Binary(stored)) => {
+            *value = stored.as_ptr().cast();
+            *size_in_bytes = stored.len() as u32;
+            K_RESULT_OK
+        }
+        _ => {
+            *value = ptr::null();
+            *size_in_bytes = 0;
+            K_RESULT_FALSE
+        }
+    }
+}
+
+#[repr(C)]
+struct HostMessageVTable {
+    query_interface: unsafe extern "C" fn(*mut c_void, *const Tuid, *mut *mut c_void) -> Tresult,
+    add_ref: unsafe extern "C" fn(*mut c_void) -> u32,
+    release: unsafe extern "C" fn(*mut c_void) -> u32,
+    get_message_id: unsafe extern "C" fn(*mut c_void) -> *const c_char,
+    set_message_id: unsafe extern "C" fn(*mut c_void, *const c_char),
+    get_attributes: unsafe extern "C" fn(*mut c_void) -> *mut c_void,
+}
+
+#[repr(C)]
+struct HostMessage {
+    vtable: *const HostMessageVTable,
+    refs: AtomicU32,
+    message_id: Mutex<Option<CString>>,
+    attributes: *mut c_void,
+}
+
+static HOST_MESSAGE_VTABLE: HostMessageVTable = HostMessageVTable {
+    query_interface: host_message_query_interface,
+    add_ref: host_message_add_ref,
+    release: host_message_release,
+    get_message_id: host_message_get_id,
+    set_message_id: host_message_set_id,
+    get_attributes: host_message_get_attributes,
+};
+
+fn new_host_message() -> *mut c_void {
+    Box::into_raw(Box::new(HostMessage {
+        vtable: &HOST_MESSAGE_VTABLE,
+        refs: AtomicU32::new(1),
+        message_id: Mutex::new(None),
+        attributes: new_host_attribute_list(),
+    }))
+    .cast()
+}
+
+unsafe extern "C" fn host_message_query_interface(
+    this: *mut c_void,
+    iid: *const Tuid,
+    out: *mut *mut c_void,
+) -> Tresult {
+    if out.is_null() {
+        return K_NO_INTERFACE;
+    }
+    if !iid.is_null() && (*iid == FUNKNOWN_IID || *iid == IMESSAGE_IID) {
+        *out = this;
+        host_message_add_ref(this);
+        return K_RESULT_OK;
+    }
+    *out = ptr::null_mut();
+    K_NO_INTERFACE
+}
+
+unsafe extern "C" fn host_message_add_ref(this: *mut c_void) -> u32 {
+    (*(this.cast::<HostMessage>()))
+        .refs
+        .fetch_add(1, Ordering::Relaxed)
+        + 1
+}
+
+unsafe extern "C" fn host_message_release(this: *mut c_void) -> u32 {
+    let message = this.cast::<HostMessage>();
+    let remaining = (*message).refs.fetch_sub(1, Ordering::Release) - 1;
+    if remaining == 0 {
+        std::sync::atomic::fence(Ordering::Acquire);
+        host_attribute_list_release((*message).attributes);
+        drop(Box::from_raw(message));
+    }
+    remaining
+}
+
+unsafe extern "C" fn host_message_get_id(this: *mut c_void) -> *const c_char {
+    (*(this.cast::<HostMessage>()))
+        .message_id
+        .lock()
+        .expect("host message ID poisoned")
+        .as_ref()
+        .map_or(ptr::null(), |id| id.as_ptr())
+}
+
+unsafe extern "C" fn host_message_set_id(this: *mut c_void, id: *const c_char) {
+    let value = (!id.is_null()).then(|| CStr::from_ptr(id).to_owned());
+    *(*(this.cast::<HostMessage>()))
+        .message_id
+        .lock()
+        .expect("host message ID poisoned") = value;
+}
+
+unsafe extern "C" fn host_message_get_attributes(this: *mut c_void) -> *mut c_void {
+    (*(this.cast::<HostMessage>())).attributes
+}
+
 #[repr(C)]
 struct HostApplicationVTable {
     query_interface: unsafe extern "C" fn(*mut c_void, *const Tuid, *mut *mut c_void) -> Tresult,
@@ -771,18 +1147,101 @@ unsafe extern "C" fn host_get_name(_this: *mut c_void, name: *mut i16) -> Tresul
 
 unsafe extern "C" fn host_create_instance(
     _this: *mut c_void,
-    _cid: *mut u8,
-    _iid: *mut u8,
+    cid: *mut u8,
+    iid: *mut u8,
     out: *mut *mut c_void,
 ) -> Tresult {
-    if !out.is_null() {
-        *out = ptr::null_mut();
+    if out.is_null() {
+        return K_RESULT_FALSE;
     }
-    K_NO_INTERFACE
+    *out = ptr::null_mut();
+    if cid.is_null() || iid.is_null() {
+        return K_RESULT_FALSE;
+    }
+    let cid = &*cid.cast::<Tuid>();
+    let iid = &*iid.cast::<Tuid>();
+    if *cid == IMESSAGE_IID && *iid == IMESSAGE_IID {
+        *out = new_host_message();
+        return K_RESULT_OK;
+    }
+    if *cid == IATTRIBUTE_LIST_IID && *iid == IATTRIBUTE_LIST_IID {
+        *out = new_host_attribute_list();
+        return K_RESULT_OK;
+    }
+    K_RESULT_FALSE
 }
 
 fn host_context() -> *mut c_void {
     &HOST_APPLICATION as *const StaticHostApplication as *mut c_void
+}
+
+#[cfg(test)]
+mod host_application_tests {
+    use super::*;
+
+    #[test]
+    fn creates_messages_with_writable_attributes() {
+        unsafe {
+            let mut cid = IMESSAGE_IID;
+            let mut iid = IMESSAGE_IID;
+            let mut message = ptr::null_mut();
+            assert_eq!(
+                host_create_instance(
+                    host_context(),
+                    cid.as_mut_ptr(),
+                    iid.as_mut_ptr(),
+                    &mut message,
+                ),
+                K_RESULT_OK
+            );
+            assert!(!message.is_null());
+
+            let message_vtable = vtable_of::<HostMessageVTable>(message);
+            let message_id = c"slate-ui-message";
+            ((*message_vtable).set_message_id)(message, message_id.as_ptr());
+            assert_eq!(
+                CStr::from_ptr(((*message_vtable).get_message_id)(message)),
+                message_id
+            );
+
+            let attributes = ((*message_vtable).get_attributes)(message);
+            assert!(!attributes.is_null());
+            let attributes_vtable = vtable_of::<HostAttributeListVTable>(attributes);
+            let key = c"parameter";
+            assert_eq!(
+                ((*attributes_vtable).set_int)(attributes, key.as_ptr(), 42),
+                K_RESULT_OK
+            );
+            let mut value = 0;
+            assert_eq!(
+                ((*attributes_vtable).get_int)(attributes, key.as_ptr(), &mut value),
+                K_RESULT_OK
+            );
+            assert_eq!(value, 42);
+
+            assert_eq!(((*message_vtable).release)(message), 0);
+        }
+    }
+
+    #[test]
+    fn creates_standalone_attribute_lists() {
+        unsafe {
+            let mut cid = IATTRIBUTE_LIST_IID;
+            let mut iid = IATTRIBUTE_LIST_IID;
+            let mut attributes = ptr::null_mut();
+            assert_eq!(
+                host_create_instance(
+                    host_context(),
+                    cid.as_mut_ptr(),
+                    iid.as_mut_ptr(),
+                    &mut attributes,
+                ),
+                K_RESULT_OK
+            );
+            assert!(!attributes.is_null());
+            assert_eq!(host_attribute_list_release(attributes), 0);
+        }
+    }
 }
 
 // ── Module loading ──────────────────────────────────────────────────────────
@@ -1628,10 +2087,6 @@ pub struct Vst3HostedInstance {
     port_layout: Vst3HostedPortLayout,
     state: HostedInstanceState,
     activated_max_frames: u32,
-    /// Whether the controller produced an editor view at the load-time
-    /// probe (g12.024): `createView("editor")` returned non-null. Cached —
-    /// `gui_supported` must stay a cheap read for the states poll.
-    gui_view_supported: bool,
     /// The live editor view, when open. Torn down (removed + released)
     /// BEFORE the controller in `Drop` — the mandated release ordering.
     gui_session: Option<Vst3GuiSession>,
@@ -1709,21 +2164,6 @@ impl Vst3HostedInstance {
             .map(|handle| unsafe { parameter_inventory(handle.ptr()) })
             .unwrap_or_default();
         let port_layout = unsafe { main_bus_layout(component) };
-        // Editor probe (g12.024): createView + immediate release — the
-        // standard capability check. Mirrors the CLAP load-time
-        // `is_api_supported` probe's threading posture.
-        let gui_view_supported = controller
-            .as_ref()
-            .map(|handle| unsafe {
-                let view = controller_create_view(handle.ptr());
-                if view.is_null() {
-                    false
-                } else {
-                    com_release(view);
-                    true
-                }
-            })
-            .unwrap_or(false);
         let midi_cc_params = controller
             .as_ref()
             .and_then(|handle| unsafe { midi_cc_parameter_map(handle.ptr()) });
@@ -1738,7 +2178,6 @@ impl Vst3HostedInstance {
             port_layout,
             state: HostedInstanceState::Created,
             activated_max_frames: 0,
-            gui_view_supported,
             gui_session: None,
             param_changes: Arc::new(PluginParamChangeQueue::new()),
             midi_cc_params,
@@ -1972,10 +2411,12 @@ impl Vst3HostedInstance {
     // application main thread (Tauri `run_on_main_thread`); this type only
     // serializes access, it cannot pick the thread.
 
-    /// Whether the controller produced an editor view at the load-time
-    /// probe. Cached at load.
+    /// Whether the plugin exposes an edit controller that may provide an
+    /// editor. `createView("editor")` is deliberately deferred until the
+    /// real GUI open: some plugins do not tolerate probe-and-discard or
+    /// require their processor to be active first.
     pub fn gui_supported(&self) -> bool {
-        self.gui_view_supported
+        self.controller.is_some()
     }
 
     /// Whether an editor view is currently attached.

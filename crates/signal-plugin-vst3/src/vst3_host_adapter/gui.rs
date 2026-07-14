@@ -237,7 +237,9 @@ impl Vst3GuiSession {
         let _ = ((*vtable).set_frame)(view, frame_ptr);
 
         let mut rect = ViewRect::default();
-        if ((*vtable).get_size)(view, &mut rect) != K_RESULT_OK {
+        let get_size_result = ((*vtable).get_size)(view, &mut rect);
+        eprintln!("Signal VST3 getSize: result={get_size_result} rect={rect:?}");
+        if get_size_result != K_RESULT_OK {
             let _ = ((*vtable).set_frame)(view, ptr::null_mut());
             com_release(view);
             return Err(Vst3HostingError::new("gui_get_size_failed"));

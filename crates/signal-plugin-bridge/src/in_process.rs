@@ -2646,7 +2646,7 @@ mod tests {
             )
             .expect("backend should load and activate"),
         );
-        assert!(backend.gui_supported(), "load-time createView probe");
+        assert!(backend.gui_supported(), "edit controller is available");
         assert!(!backend.gui_is_open());
         assert_eq!(backend.gui_size(), None);
 
