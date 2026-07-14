@@ -346,14 +346,20 @@ Current stretch status:
   boundary pop. Because those sources are shorter than half a second, Batch
   29.6CK now owns one final musical-continuity decision using six five-second
   `1.5x`/`2.0x` rows. Its exact-input weighted/current/Rubber pack contains `24`
-  audio files with zero structural failures. Rule 30AB repair, parameter
-  lattices, and per-metric follow-up chains remain closed. Holdout, stereo,
-  dynamic ratio, cache, and routing remain closed.
+  audio files with zero structural failures. Listening shows the first coherent
+  architectural improvement: weighted prediction beats current Signal on four
+  rows, but mutates one bass tone and causes severe pad phase damage; Rubber
+  Band wins four rows. Reinspection finds the Signal proof changed defining
+  predictor mechanics, including transform geometry, time-factor-scaled
+  vertical twists, energy normalization, fallback, and update ordering. Batch
+  29.6CL now freezes one faithful topology before more code. Rule 30AB repair,
+  parameter lattices, holdout, stereo, dynamic ratio, cache, and routing remain
+  closed.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Complete the `g10.029` Batch 29.6CK concealed long-form listen, then accept or
-reject the weighted predictor as a whole. Do not open per-row tuning.
+Complete `g10.029` Batch 29.6CL: freeze the faithful predictor mechanism and
+synthetic failure gates before another render. Do not open per-row tuning.

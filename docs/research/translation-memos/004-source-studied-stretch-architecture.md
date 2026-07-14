@@ -119,6 +119,14 @@ smear, grain, and boundary damage. Batch 29.6CK isolates the remaining unknown:
 musical continuity over five-second `1.5x` and `2.0x` renders. A non-win closes
 this implementation without tuning.
 
+Long-form listening validates the predictor family: it improves on current
+Signal in four of six rows. It does not validate the implementation. One bass
+tone mutates, one pad row suffers severe phase damage, and Rubber Band wins four
+rows. Source reinspection identifies architectural divergence in transform
+duration/interval, time-factor-scaled vertical twists, energy normalization,
+weak-evidence fallback, and prediction update order. Those mechanisms now
+replace local repair as the next design target.
+
 ## Sources
 
 | Source | Confidence | Transfer boundary |
@@ -133,5 +141,5 @@ this implementation without tuning.
 
 ## Next Task
 
-Complete the Batch 29.6CK long-form concealed listen. Do not resume frequency
-partitioning, Rule 30AB, or per-mechanism repair batches.
+Freeze the weighted-predictor fidelity contract and direct synthetic gates. Do
+not resume frequency partitioning, Rule 30AB, or per-row repair batches.

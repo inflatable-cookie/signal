@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; long-form musical listening open
+Status: active; weighted-predictor fidelity contract next
 Owner: dsp
 Updated: 2026-07-14
 Related contracts: `046`, `048`, `049`
@@ -3165,6 +3165,32 @@ advantage rejects it; no parameter, material, or per-row repair sequence opens.
 Holdout, linked stereo, dynamic ratio, cache, realtime source-fill, and product
 routing remain closed.
 
+Long-form listening validates the weighted-prediction family but rejects the
+current proof for promotion. It improves on current Signal in four of six rows,
+while one bass row changes tone and one sustained pad row develops severe
+phase damage. Rubber Band remains best in four rows.
+
+#### Rule 31G: predictor fidelity before repair
+
+The current Signal proof is not a faithful implementation of the studied
+predictor topology. It differs in all of these defining mechanisms:
+
+- fixed transform duration and synthesis interval
+- separation of preliminary horizontal transport from vertical re-prediction
+- local-time-factor-scaled input-frequency twists
+- energy-preserving normalization and weak-evidence fallback
+- dependency-safe frequency update ordering
+
+The next design must freeze those mechanisms as one Signal-owned topology
+before rendering. Values must follow sample-rate-scaled duration, overlap, and
+energy invariants rather than a parameter lattice. The synthetic gate must
+directly expose bass pitch/tone mutation, chord and pad phase damage, transient
+placement, silence, boundaries, determinism, exact length, and finiteness.
+
+Signalsmith's random-distance diffusion above `2x` remains rejected. No local
+repair of the `2048/128` proof is authorized. Real sources reopen only after the
+complete synthetic mechanism passes.
+
 ## Source-Study Provenance Rule
 
 Public papers, public descriptions, and public source may inform architecture.
@@ -3175,6 +3201,5 @@ dependency decision explicitly changes that boundary.
 
 ## Next Task
 
-Complete the Rule 31F concealed long-form listen, then accept or reject the
-weighted predictor as a whole. Keep parameter search and all promotion lanes
-closed.
+Freeze the Rule 31G weighted-predictor topology and synthetic gates. Keep
+parameter search, real-source rendering, and all promotion lanes closed.

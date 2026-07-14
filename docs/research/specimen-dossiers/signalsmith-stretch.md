@@ -1,6 +1,6 @@
 # Signalsmith Stretch
 
-Status: reviewed
+Status: reviewed; Signal fidelity gap identified
 Specimen: Signalsmith Stretch `1.3.2`
 Owner: dsp
 Last updated: 2026-07-13
@@ -66,6 +66,29 @@ necessary phase model.
 - do not port the header as Signal's production engine; it is a comparator and
   control architecture
 
+### Signal Proof Divergence
+
+The first Signal control validated weighted prediction but did not reproduce
+the specimen's defining mechanics:
+
+- Signal used window/hop `2048/128`; the default specimen configuration scales
+  block/interval to 120/30 ms (`5292/1323` samples at 44.1 kHz before the
+  implementation's fast-FFT sizing)
+- Signal used same-frame target/neighbour analysis-phase differences; the
+  specimen samples input-frequency offsets scaled by local time factor and
+  applies those twists to neighbouring preliminary output states
+- Signal seeded the final sum with its horizontal prediction and added
+  square-root magnitude-weighted neighbours; the specimen performs a separate
+  vertical re-prediction, normalizes to prediction energy, and falls back to
+  input phase when the combined evidence is weak
+- the specimen's update order is part of the prediction graph; Signal computed
+  one independent static sum per bin
+
+Long-form evidence matches this gap. Signal's control reduces current-engine
+grain in four of six rows but mutates one bass tone and produces severe pad
+phase damage. These are mechanism failures, not evidence for a distance or
+weight sweep.
+
 ## Source Inventory
 
 | Source | Type | Revision | Confidence | Notes |
@@ -84,5 +107,5 @@ necessary phase model.
 
 ## Next Task
 
-Add this engine to the frozen comparator matrix. Use its fixed single-grid
-multi-predictor topology as the control for the next complete Signal candidate.
+Freeze one Signal-owned faithful predictor topology and direct synthetic gates
+for bass-tone mutation and sustained phase damage before another corpus render.

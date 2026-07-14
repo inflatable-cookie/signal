@@ -1040,8 +1040,26 @@ continuity.
   exact shared inputs; do not reintroduce Signalsmith or frequency partitioning
 - [x] export one concealed `24`-file pack after exact length, finiteness, input,
   external-render, assignment, gain, and notes hashes repeat
-- [ ] decide whether weighted prediction has a coherent musical advantage; if
+- [x] decide whether weighted prediction has a coherent musical advantage; if
   not, reject this implementation rather than opening per-row tuning
+
+Decision: weighted prediction is a coherent improvement over current Signal on
+four of six long-form rows, but this implementation is rejected for promotion.
+It alters the early bass tone on M001 and collapses into MP3-like phase damage
+on M004. Rubber Band remains best on four rows.
+
+### Batch 29.6CL - Weighted-Predictor Fidelity Contract
+
+- [ ] compare the Signal proof against the pinned Signalsmith implementation at
+  window/interval geometry, preliminary horizontal transport, time-factor-
+  scaled vertical twists, energy normalization, weak-evidence fallback, and
+  update ordering
+- [ ] freeze one Signal-owned complete predictor topology from those invariants;
+  distinguish architecture correction from parameter choice
+- [ ] define synthetic bass-tone, chord/pad, transient, silence, boundary,
+  determinism, and exact-length gates before another real-source render
+- [ ] keep random phase diffusion, parameter search, frequency partitioning,
+  holdout, stereo, dynamic ratio, cache, and production routing closed
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -1949,9 +1967,20 @@ continuity.
   external, assignment, gain, and notes hashes repeat as
   `f82238ad4e332c26`, `78485bfe53e1a1d9`, `43b1b12791ced723`,
   `69b33fe2cc5f77ec`, and `605f25c668ff5db9`. Holdout reads remain zero.
+- 2026-07-14: long-form listening validates weighted phase prediction as the
+  first coherent improvement over current Signal while rejecting the proof for
+  promotion. Weighted beats current on M002, M003, M005, and M006, but mutates
+  an early bass tone on M001 and produces severe MP3-like phase damage on M004.
+  Rubber Band is best on M001, M003, M004, and M006. Source reinspection finds
+  that Signal's proof is not a faithful predictor topology: it uses `2048/128`
+  window/hop geometry instead of the specimen's 120/30 ms shape, same-frame
+  neighbour phase offsets instead of time-factor-scaled input-frequency twists,
+  and an ad-hoc horizontal-plus-vertical magnitude sum instead of separate
+  vertical re-prediction with energy normalization and weak-evidence fallback.
+  Batch 29.6CL owns one architecture contract before more synthesis code.
 
 ## Next Task
 
-Complete the Batch 29.6CK concealed long-form listen at
-`target/stretch-source-studied-ck-long-form-pack`, then accept or reject the
-weighted predictor as a whole. Do not open per-row tuning.
+Complete Batch 29.6CL: freeze the faithful weighted-predictor mechanism and its
+synthetic failure gates before another real-source render. Do not open per-row
+tuning.

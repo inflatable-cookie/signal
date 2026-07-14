@@ -42,7 +42,7 @@ Finch and Loophole.
 | Specimen | Studied for | Status |
 | --- | --- | --- |
 | [Essentia](./specimen-dossiers/essentia.md) | Reference algorithms, quality targets, migration cues | In progress |
-| [Signalsmith Stretch](./specimen-dossiers/signalsmith-stretch.md) | Single-grid weighted phase-prediction control | Reviewed |
+| [Signalsmith Stretch](./specimen-dossiers/signalsmith-stretch.md) | Single-grid weighted phase-prediction control and Signal fidelity gap | Reviewed |
 | [Rubber Band Source Architecture](./specimen-dossiers/rubber-band-source-architecture.md) | R2/R3 scheduling, scale ownership, guidance, and phase topology | Reviewed |
 
 ## Translation Memos
@@ -63,5 +63,5 @@ Finch and Loophole.
 
 ## Next Task
 
-Complete the Batch 29.6CK long-form concealed listen. Keep the source
+Freeze the Batch 29.6CL weighted-predictor fidelity contract. Keep the source
 provenance boundary attached to every transferred invariant.

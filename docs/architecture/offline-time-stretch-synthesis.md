@@ -1,6 +1,6 @@
 # Offline Time-Stretch Synthesis
 
-Status: weighted-predictor long-form decision open
+Status: weighted-predictor family validated; fidelity redesign required
 Owner: dsp
 Updated: 2026-07-14
 Contract refs: `046`, `082`
@@ -894,7 +894,21 @@ rows at `1.5x` or `2.0x`, comparing weighted predictor, current Signal, and
 Rubber Band only. No setting changes. A non-win rejects the weighted
 implementation rather than spawning local repair.
 
+That decision is now complete. Weighted prediction improves on current Signal
+in four of six long-form rows, removing much of its pervasive grain. It still
+mutates one bass tone and produces severe phase damage on one sustained pad
+row. Rubber Band remains best in four rows. The predictor family is therefore
+validated, while the current implementation is rejected for promotion.
+
+Source reinspection explains why this is not a dead end. Signal's proof used a
+short `2048` transform at hop `128`, same-frame neighbour phase differences,
+and one horizontal-plus-vertical magnitude-weighted sum. The studied topology
+uses sample-rate-scaled 120/30 ms geometry, preliminary horizontal transport,
+time-factor-scaled input-frequency twists from neighbouring output states,
+energy normalization, and weak-prediction fallback. The next work corrects
+that complete mechanism before any more corpus tuning.
+
 ## Next Task
 
-Complete the concealed Batch 29.6CK long-form listen, then accept or reject the
-weighted predictor as a whole. Do not open local tuning.
+Freeze the complete weighted-predictor fidelity contract and synthetic gates.
+Do not render real sources or open local tuning yet.
