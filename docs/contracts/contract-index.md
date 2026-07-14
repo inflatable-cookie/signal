@@ -144,5 +144,6 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Implement the `g10.029` Batch 29.6CM faithful-predictor synthetic proof. Keep
-real-source rendering and promotion lanes closed.
+Run `g10.029` Batch 29.6CO isolated-versus-mixed horizontal contamination
+attribution. Keep predictor changes, real-source rendering, and promotion lanes
+closed.

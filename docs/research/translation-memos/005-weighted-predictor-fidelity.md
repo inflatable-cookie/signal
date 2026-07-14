@@ -139,6 +139,13 @@ control produced `-30.200611 dB` out-of-band energy against the frozen
 `-60 dB` limit; the unprocessed control measured about `-80.43 dB` under the
 same analysis. The implementation is rejected before real-source rendering.
 
+Trace-only attribution assigns the earliest failure to preliminary horizontal
+transport. Horizontal-only output measures `-28.182097 dB`; its strongest spur
+is one `33.333333 Hz` output frame rate from the nearest tone. An exact overlap
+oracle remains clean at `-80.392196 dB`; normalization and significant fallback
+are excluded. Vertical correction reduces total leakage slightly but retains
+the same frame-rate spur.
+
 ## Sources
 
 | Source | Revision | Use |
@@ -148,5 +155,5 @@ same analysis. The implementation is rejected before real-source rendering.
 
 ## Next Task
 
-Attribute the chord sidebands inside the frozen predictor. Keep real-source
-rendering closed.
+Compare isolated and mixed tones under the unchanged horizontal observation.
+Keep real-source rendering closed.

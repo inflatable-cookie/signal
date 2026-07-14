@@ -2,6 +2,8 @@ use rustfft::{num_complex::Complex64, FftPlanner};
 
 use super::HASH_OFFSET;
 
+pub(in crate::frequency_adaptive) mod attribution;
+
 const SAMPLE_RATE: usize = 8_000;
 const RATIOS: [f64; 4] = [0.75, 1.25, 1.5, 2.0];
 const BASS_FREQUENCIES: [f64; 3] = [55.0, 82.4069, 110.0];
@@ -43,14 +45,35 @@ pub(in crate::frequency_adaptive) struct Review {
 }
 
 #[derive(Clone, Debug)]
-struct Render {
+pub(super) struct Render {
     samples: Vec<f64>,
     target_len: usize,
     uncovered: usize,
     non_finite: usize,
     boundary_failures: usize,
     mechanisms: MechanismCounts,
+    maximum_normalization_phase_delta: f64,
+    significant_fallback: usize,
     hash: u64,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(in crate::frequency_adaptive) enum TraceStage {
+    Analysis,
+    Horizontal,
+    ShortLower,
+    ShortUpper,
+    LongLower,
+    LongUpper,
+    Complete,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub(super) struct ChordSpectrumMetrics {
+    pub maximum_peak_error_hz: f64,
+    pub out_of_band_db: f64,
+    pub strongest_sideband_hz: f64,
+    pub strongest_sideband_offset_hz: f64,
 }
 
 pub(in crate::frequency_adaptive) fn review() -> Review {
@@ -164,8 +187,17 @@ fn run() -> Review {
 }
 
 fn render(input: &[f64], ratio: f64, sample_rate: usize) -> Render {
+    render_stage(input, ratio, sample_rate, TraceStage::Complete)
+}
+
+pub(super) fn render_stage(
+    input: &[f64],
+    ratio: f64,
+    sample_rate: usize,
+    trace_stage: TraceStage,
+) -> Render {
     let target_len = (input.len() as f64 * ratio).round() as usize;
-    if ratio == 1.0 {
+    if ratio == 1.0 && trace_stage == TraceStage::Complete {
         let samples = input.to_vec();
         return Render {
             hash: hash_samples(&samples),
@@ -175,6 +207,8 @@ fn render(input: &[f64], ratio: f64, sample_rate: usize) -> Render {
             non_finite: 0,
             boundary_failures: 0,
             mechanisms: MechanismCounts::default(),
+            maximum_normalization_phase_delta: 0.0,
+            significant_fallback: 0,
         };
     }
     let hop = ((sample_rate as f64 * 0.03).round() as usize).max(1);
@@ -194,12 +228,15 @@ fn render(input: &[f64], ratio: f64, sample_rate: usize) -> Render {
     let mut previous_output = vec![Complex64::new(0.0, 0.0); bins];
     let mut previous_source_center: Option<isize> = None;
     let mut mechanisms = MechanismCounts::default();
+    let mut maximum_normalization_phase_delta = 0.0_f64;
+    let mut significant_fallback = 0;
     let mut output_center = -(length as isize / 2);
     while output_center < target_len as isize + length as isize / 2 {
         let source_center = (output_center as f64 / ratio).round() as isize;
         let current = analyse(input, source_center, &window, &forward);
         let auxiliary = analyse(input, source_center - hop as isize, &window, &forward);
         let mut preliminary = current[..bins].to_vec();
+        let mut traced = preliminary.clone();
         if let Some(previous_source_center) = previous_source_center {
             for bin in 0..bins {
                 let prediction = previous_output[bin] * current[bin] * auxiliary[bin].conj();
@@ -210,19 +247,33 @@ fn render(input: &[f64], ratio: f64, sample_rate: usize) -> Render {
                 .unsigned_abs()
                 .max(1);
             let time_factor = hop as f64 / input_hop as f64;
+            let significant_energy = current[..bins]
+                .iter()
+                .map(Complex64::norm_sqr)
+                .fold(0.0, f64::max)
+                * 1.0e-8;
             let mut corrected = preliminary.clone();
             for bin in 0..bins {
                 let mut prediction = Complex64::new(0.0, 0.0);
+                let mut selected = Complex64::new(0.0, 0.0);
                 if bin >= 1 {
                     let lower_input = interpolate(&current[..bins], bin as f64 - time_factor);
                     let twist = current[bin] * lower_input.conj();
-                    prediction += corrected[bin - 1] * twist;
+                    let candidate = corrected[bin - 1] * twist;
+                    prediction += candidate;
+                    if trace_stage == TraceStage::ShortLower {
+                        selected = candidate;
+                    }
                     mechanisms.short_lower += 1;
                 }
                 if bin + 1 < bins {
                     let lower_input = interpolate(&current[..bins], bin as f64 + 1.0 - time_factor);
                     let twist = current[bin + 1] * lower_input.conj();
-                    prediction += preliminary[bin + 1] * twist.conj();
+                    let candidate = preliminary[bin + 1] * twist.conj();
+                    prediction += candidate;
+                    if trace_stage == TraceStage::ShortUpper {
+                        selected = candidate;
+                    }
                     mechanisms.short_upper += 1;
                 }
                 if bin >= long_distance {
@@ -231,7 +282,11 @@ fn render(input: &[f64], ratio: f64, sample_rate: usize) -> Render {
                         bin as f64 - long_distance as f64 * time_factor,
                     );
                     let twist = current[bin] * lower_input.conj();
-                    prediction += corrected[bin - long_distance] * twist;
+                    let candidate = corrected[bin - long_distance] * twist;
+                    prediction += candidate;
+                    if trace_stage == TraceStage::LongLower {
+                        selected = candidate;
+                    }
                     mechanisms.long_lower += 1;
                 }
                 if bin + long_distance < bins {
@@ -240,7 +295,11 @@ fn render(input: &[f64], ratio: f64, sample_rate: usize) -> Render {
                         bin as f64 + long_distance as f64 - long_distance as f64 * time_factor,
                     );
                     let twist = current[bin + long_distance] * lower_input.conj();
-                    prediction += preliminary[bin + long_distance] * twist.conj();
+                    let candidate = preliminary[bin + long_distance] * twist.conj();
+                    prediction += candidate;
+                    if trace_stage == TraceStage::LongUpper {
+                        selected = candidate;
+                    }
                     mechanisms.long_upper += 1;
                 }
                 let target_energy = current[bin].norm_sqr();
@@ -248,20 +307,31 @@ fn render(input: &[f64], ratio: f64, sample_rate: usize) -> Render {
                 let floor = target_energy * f64::EPSILON * 64.0;
                 if prediction_energy > floor {
                     corrected[bin] = prediction * (target_energy / prediction_energy).sqrt();
+                    maximum_normalization_phase_delta = maximum_normalization_phase_delta
+                        .max(wrap(corrected[bin].arg() - prediction.arg()).abs());
                     mechanisms.corrected += 1;
                 } else {
                     corrected[bin] = current[bin];
                     mechanisms.fallback += 1;
+                    significant_fallback += usize::from(target_energy > significant_energy);
                 }
+                traced[bin] = match trace_stage {
+                    TraceStage::Analysis => current[bin],
+                    TraceStage::Horizontal => preliminary[bin],
+                    TraceStage::Complete => corrected[bin],
+                    _ => normalize_or(selected, current[bin], current[bin]),
+                };
             }
             preliminary = corrected;
         }
         preliminary[0].im = 0.0;
+        traced[0].im = 0.0;
         if length % 2 == 0 {
             preliminary[bins - 1].im = 0.0;
+            traced[bins - 1].im = 0.0;
         }
         let mut spectrum = vec![Complex64::new(0.0, 0.0); length];
-        spectrum[..bins].copy_from_slice(&preliminary);
+        spectrum[..bins].copy_from_slice(&traced);
         for bin in 1..length / 2 {
             spectrum[length - bin] = spectrum[bin].conj();
         }
@@ -295,6 +365,8 @@ fn render(input: &[f64], ratio: f64, sample_rate: usize) -> Render {
         non_finite,
         boundary_failures,
         mechanisms,
+        maximum_normalization_phase_delta,
+        significant_fallback,
     }
 }
 
@@ -397,7 +469,24 @@ fn zero_crossing_frequency(samples: &[f64], sample_rate: f64) -> f64 {
 }
 
 fn chord_review() -> (f64, f64, f64, Render) {
-    let input = (0..SAMPLE_RATE * 2)
+    let input = chord_control();
+    let render = render(&input, 2.0, SAMPLE_RATE);
+    let input_metrics = chord_spectrum_metrics(&input);
+    let output_metrics = chord_spectrum_metrics(&render.samples[SAMPLE_RATE..SAMPLE_RATE * 3]);
+    (
+        output_metrics.maximum_peak_error_hz,
+        input_metrics.out_of_band_db,
+        output_metrics.out_of_band_db,
+        render,
+    )
+}
+
+pub(super) fn chord_control() -> Vec<f64> {
+    chord_control_frames(SAMPLE_RATE * 2)
+}
+
+pub(super) fn chord_control_frames(frames: usize) -> Vec<f64> {
+    (0..frames)
         .map(|index| {
             CHORD_FREQUENCIES
                 .iter()
@@ -408,14 +497,10 @@ fn chord_review() -> (f64, f64, f64, Render) {
                 })
                 .sum::<f64>()
         })
-        .collect::<Vec<_>>();
-    let render = render(&input, 2.0, SAMPLE_RATE);
-    let input_metrics = chord_spectrum_metrics(&input);
-    let output_metrics = chord_spectrum_metrics(&render.samples[SAMPLE_RATE..SAMPLE_RATE * 3]);
-    (output_metrics.0, input_metrics.1, output_metrics.1, render)
+        .collect()
 }
 
-fn chord_spectrum_metrics(segment: &[f64]) -> (f64, f64) {
+pub(super) fn chord_spectrum_metrics(segment: &[f64]) -> ChordSpectrumMetrics {
     let fft_len = segment.len().next_power_of_two();
     let mut planner = FftPlanner::<f64>::new();
     let fft = planner.plan_fft_forward(fft_len);
@@ -454,9 +539,29 @@ fn chord_spectrum_metrics(segment: &[f64]) -> (f64, f64) {
         })
         .map(|(_, value)| value.norm_sqr())
         .sum::<f64>();
+    let strongest_sideband = spectrum[..=fft_len / 2]
+        .iter()
+        .enumerate()
+        .filter(|(bin, _)| {
+            CHORD_FREQUENCIES
+                .iter()
+                .all(|frequency| (*bin as f64 * bin_hz - frequency).abs() > 8.0)
+        })
+        .max_by(|(_, left), (_, right)| left.norm_sqr().total_cmp(&right.norm_sqr()))
+        .map(|(bin, _)| bin as f64 * bin_hz)
+        .unwrap_or(0.0);
+    let strongest_sideband_offset_hz = CHORD_FREQUENCIES
+        .iter()
+        .map(|frequency| (strongest_sideband - frequency).abs())
+        .fold(f64::INFINITY, f64::min);
     let out_of_band_db =
         10.0 * (out_of_band.max(f64::MIN_POSITIVE) / total.max(f64::MIN_POSITIVE)).log10();
-    (maximum_peak_error, out_of_band_db)
+    ChordSpectrumMetrics {
+        maximum_peak_error_hz: maximum_peak_error,
+        out_of_band_db,
+        strongest_sideband_hz: strongest_sideband,
+        strongest_sideband_offset_hz,
+    }
 }
 
 fn parabolic_peak(spectrum: &[Complex64], bin: usize) -> f64 {
@@ -473,6 +578,10 @@ fn parabolic_peak(spectrum: &[Complex64], bin: usize) -> f64 {
         } else {
             0.0
         }
+}
+
+fn wrap(value: f64) -> f64 {
+    (value + std::f64::consts::PI).rem_euclid(std::f64::consts::TAU) - std::f64::consts::PI
 }
 
 fn transient_review() -> (usize, usize, Render) {

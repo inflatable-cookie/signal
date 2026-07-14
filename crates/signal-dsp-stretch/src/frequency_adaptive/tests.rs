@@ -1674,6 +1674,32 @@ fn source_studied_faithful_predictor_synthetic_proof() {
 
 #[test]
 #[cfg(not(debug_assertions))]
+fn source_studied_faithful_predictor_sideband_attribution() {
+    use super::source_studied::faithful_predictor::{attribution::review, TraceStage};
+
+    let result = review();
+    eprintln!("source_studied_faithful_predictor_attribution {result:#?}");
+    assert!(result.repeated);
+    assert_eq!(result.stages.len(), 6);
+    assert!(result.overlap_oracle_out_of_band_db <= -60.0);
+    assert!(result.maximum_normalization_phase_delta <= f64::EPSILON * 2.0);
+    assert_eq!(result.significant_fallback, 0);
+    assert_eq!(
+        result.stages.map(|stage| stage.output_hash),
+        [
+            0x6ae9_748d_411e_5b8f,
+            0xfe61_42e0_3ec8_6aa7,
+            0x5a97_9681_d3a3_9606,
+            0xdbc8_ee79_4f0d_2278,
+            0x00da_6b29_3649_7fb0,
+            0x61b5_60b6_28b1_1e9d,
+        ]
+    );
+    assert_eq!(result.earliest_failure, TraceStage::Horizontal);
+}
+
+#[test]
+#[cfg(not(debug_assertions))]
 fn renyi_time_resolution_selection_selects_schedule_direction() {
     let first = renyi_time_resolution_selection_review();
     let repeated = renyi_time_resolution_selection_review();

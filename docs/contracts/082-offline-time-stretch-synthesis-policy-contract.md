@@ -3228,10 +3228,24 @@ from Signal decisions. Do not copy GPL expression or infer unavailable
 Elastique internals. External engines remain comparators unless a separate
 dependency decision explicitly changes that boundary.
 
-## Next Task
+## Rule 31G Result
 
 Batch 29.6CM rejects the complete topology before real-source rendering. The
 steady four-tone control produces `-30.200611 dB` out-of-band energy against
 the frozen `-60 dB` limit while all other hard checks pass. Attribute that
 modulation inside the frozen predictor before changing topology or parameters;
 keep all promotion lanes closed.
+
+Batch 29.6CN assigns the earliest failure to preliminary horizontal transport,
+not overlap synthesis, normalization, fallback, or vertical correction. The
+horizontal trace measures `-28.182097 dB`; its dominant spur is one output frame
+rate from the nearest source tone. Exact overlap remains at `-80.392196 dB`,
+normalization phase delta is negligible, and significant fallback count is
+zero.
+
+## Next Task
+
+Run Batch 29.6CO. Compare isolated and mixed horizontal observations without
+changing geometry or equations. Use that distinction to choose observation-
+geometry redesign or predictor-equation correction. Keep corpus and promotion
+lanes closed.

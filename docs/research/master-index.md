@@ -64,5 +64,5 @@ Finch and Loophole.
 
 ## Next Task
 
-Implement the Batch 29.6CM report-only faithful predictor and synthetic gate.
-Keep real-source rendering and promotion lanes closed.
+Run Batch 29.6CO isolated-versus-mixed horizontal contamination attribution.
+Keep predictor changes, real-source rendering, and promotion lanes closed.

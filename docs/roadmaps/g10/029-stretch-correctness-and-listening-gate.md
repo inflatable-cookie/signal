@@ -1079,14 +1079,31 @@ other hard gate passes.
 
 ### Batch 29.6CN - Faithful Predictor Sideband Attribution
 
-- [ ] measure the steady four-tone spectrum after preliminary horizontal
+- [x] measure the steady four-tone spectrum after preliminary horizontal
   transport, each vertical direction/distance, complete ascending correction,
   normalization/fallback, and overlap synthesis
-- [ ] retain the frozen topology and parameters; add trace/report state only
-- [ ] identify the earliest stage that exceeds `-60 dB` and distinguish
+- [x] retain the frozen topology and parameters; add trace/report state only
+- [x] identify the earliest stage that exceeds `-60 dB` and distinguish
   stationary phase error from frame-rate modulation
-- [ ] stop with one mechanism owner and one bounded next decision; keep corpus,
+- [x] stop with one mechanism owner and one bounded next decision; keep corpus,
   holdout, listening, stereo, dynamic ratio, cache, and routing closed
+
+Decision: horizontal transport owns the earliest failure. Its output measures
+`-28.182097 dB`; the strongest spur is `33.339844 Hz` from the nearest tone,
+within `0.006510 Hz` of the `33.333333 Hz` frame rate. Exact analysis/synthesis
+overlap measures `-80.392196 dB`, normalization phase delta is at most
+`4.441e-16`, and significant fallback count is zero.
+
+### Batch 29.6CO - Horizontal Mixture-Contamination Attribution
+
+- [ ] render the four frozen chord tones separately and together through the
+  same horizontal-only trace; change no predictor or geometry value
+- [ ] measure nearest-bin auxiliary-ratio phase-advance variance and frame-rate
+  sidebands for isolated and mixed controls
+- [ ] decide whether the horizontal failure begins with within-bin component
+  interference or with phase convention / synthesis attachment
+- [ ] stop with one architecture choice: observation-geometry redesign or
+  predictor-equation correction; keep real audio and parameter sweeps closed
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -2029,9 +2046,20 @@ other hard gate passes.
   analysis. Evidence hash `a66c6564847ede88` repeats. Corpus audio remains
   closed. Batch 29.6CN owns trace-only sideband attribution inside the frozen
   predictor before any topology or parameter change.
+- 2026-07-14: Batch 29.6CN assigns the sideband failure to preliminary
+  horizontal transport. Horizontal-only output is `-28.182097 dB`; complete
+  correction is `-30.200611 dB`. Both share a `76.660156 Hz` dominant spur,
+  `33.339844 Hz` below the nearest `110 Hz` tone and within `0.006510 Hz` of
+  the `33.333333 Hz` frame rate. An exact analysis/synthesis overlap oracle is
+  clean at `-80.392196 dB`; maximum normalization phase delta is
+  `4.441e-16` radians; significant fallback count is zero. Individual vertical
+  views range from `-31.952348` to `-18.107883 dB`, so they do not own the
+  earliest failure. Six stage hashes repeat. Batch 29.6CO owns isolated-versus-
+  mixed horizontal contamination attribution before any equation or observation
+  geometry change. Corpus and promotion lanes remain closed.
 
 ## Next Task
 
-Run Batch 29.6CN and attribute the four-tone sidebands to horizontal transport,
-vertical direction/distance, update order, normalization/fallback, or overlap
-synthesis. Keep the topology and parameters frozen; do not render real sources.
+Run Batch 29.6CO. Compare isolated and mixed tones under the unchanged
+horizontal trace, then choose observation-geometry redesign or predictor-
+equation correction. Do not tune or render real sources.

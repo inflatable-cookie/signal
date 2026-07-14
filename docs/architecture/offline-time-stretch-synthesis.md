@@ -929,5 +929,9 @@ coverage, determinism, finiteness, and exact duration before real sources.
 ## Next Task
 
 The complete report-only predictor fails the steady chord/pad sideband gate at
-`-30.200611 dB` against `-60 dB`. Attribute the modulation inside the frozen
-predictor. Do not render real sources or open local tuning.
+`-30.200611 dB` against `-60 dB`. Trace attribution places the first failure in
+horizontal transport at `-28.182097 dB`, with a dominant spur one output frame
+rate from the nearest tone. Exact overlap, normalization, and fallback are
+excluded. Compare isolated and mixed horizontal observations before choosing
+an observation-geometry or equation correction. Do not render real sources or
+open local tuning.
