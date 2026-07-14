@@ -21,6 +21,7 @@ use crate::{OfflineHighQualityPath, OfflineHighQualityStretcher, TimeStretcher};
 use std::fs;
 
 pub(super) mod confirmation;
+pub(super) mod faithful_predictor;
 pub(super) mod long_form;
 
 const SAMPLE_RATE: f64 = 48_000.0;

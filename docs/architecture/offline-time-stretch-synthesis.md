@@ -910,7 +910,9 @@ that complete mechanism before any more corpus tuning.
 
 The corrected Signal topology keeps a fixed 30 ms output interval and fourfold
 centered transform support. Input centres follow the inverse fixed-ratio map;
-actual rounded input hops drive horizontal phase transport. A separate
+an auxiliary input spectrum exactly one output interval behind the current
+projected input centre drives horizontal phase transport. Actual rounded input
+hops set the local time factor. A separate
 ascending-frequency pass combines short and transform/interval-distance
 predictions from both directions. Each prediction observes fractionally sampled
 input-frequency twists scaled by local time factor. Lower dependencies are
@@ -926,5 +928,6 @@ coverage, determinism, finiteness, and exact duration before real sources.
 
 ## Next Task
 
-Implement the complete report-only weighted predictor and synthetic gate. Do
-not render real sources or open local tuning yet.
+The complete report-only predictor fails the steady chord/pad sideband gate at
+`-30.200611 dB` against `-60 dB`. Attribute the modulation inside the frozen
+predictor. Do not render real sources or open local tuning.

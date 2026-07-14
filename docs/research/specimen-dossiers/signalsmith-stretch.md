@@ -91,8 +91,9 @@ weight sweep.
 
 The corrected Signal translation keeps the specimen's scheduling and predictor
 invariants but not its implementation choices: fixed 30 ms output interval,
-fourfold centered support, ratio-projected input centres, actual-hop horizontal
-transport, time-factor-scaled fractional input-frequency twists, causal low-to-
+fourfold centered support, ratio-projected input centres, fixed-interval
+auxiliary horizontal transport, actual-hop time-factor-scaled fractional
+input-frequency twists, causal low-to-
 high correction, target-energy normalization, and weak-evidence fallback.
 Signal retains square-root Hann windows, exact overlap normalization, RustFFT,
 and deterministic behavior through `2x`.

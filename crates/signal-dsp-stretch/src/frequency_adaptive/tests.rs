@@ -1653,6 +1653,27 @@ fn source_studied_long_form_musical_comparison_exports_pack() {
 
 #[test]
 #[cfg(not(debug_assertions))]
+fn source_studied_faithful_predictor_synthetic_proof() {
+    use super::source_studied::faithful_predictor::{review, Direction};
+
+    let result = review();
+    eprintln!("source_studied_faithful_predictor {result:#?}");
+    assert!(result.repeated);
+    assert_eq!(result.structural_failures, [0; 5]);
+    assert!(result.maximum_bass_error_hz <= 0.5);
+    assert_eq!(result.octave_failures, 0);
+    assert!(result.maximum_chord_peak_error_hz <= 0.5);
+    assert!(result.chord_input_out_of_band_db <= -60.0);
+    assert!(result.chord_out_of_band_db > -60.0);
+    assert!(result.maximum_event_error_frames <= 256);
+    assert_eq!(result.replica_failures, 0);
+    assert_eq!(result.silence_peak, 0.0);
+    assert_eq!(result.output_hash, 0xa66c_6564_847e_de88);
+    assert_eq!(result.direction, Direction::PredictorResearch);
+}
+
+#[test]
+#[cfg(not(debug_assertions))]
 fn renyi_time_resolution_selection_selects_schedule_direction() {
     let first = renyi_time_resolution_selection_review();
     let repeated = renyi_time_resolution_selection_review();

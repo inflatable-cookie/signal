@@ -27,7 +27,8 @@ Pinned Signalsmith Stretch `1.3.2` configures:
 - a fast real FFT at least as long as the block support
 - an approximate confined-Gaussian perfect-reconstruction window
 - fixed output intervals with input intervals selected by the local time map
-- preliminary horizontal phase transport using the actual input interval
+- preliminary horizontal phase transport from an auxiliary spectrum one fixed
+  output interval behind the current input centre
 - a second low-to-high frequency pass using predictions from one-bin and one
   transform/interval-distance neighbours in both directions
 - input-frequency twists sampled at offsets scaled by local time factor
@@ -60,11 +61,12 @@ specimen's FFT planner or window code.
 
 ### Horizontal prediction
 
-For each bin, carry previous input complex value, previous output complex value,
-and previous input energy. Reanalyse the actual previous input centre whenever
-the rounded hop changes. Predict preliminary output phase from the previous
-output and the complex input ratio across the actual source hop. Preserve target
-input energy. Identity remains a direct bypass.
+For each bin, carry the previous output complex value. Analyse one auxiliary
+input spectrum exactly `H` source samples behind the current input centre.
+Predict preliminary output phase from the previous output and the complex ratio
+between current and auxiliary input. Preserve target input energy. Identity
+remains a direct bypass. The actual rounded inter-centre input hop does not set
+this observation distance; it sets the local time factor used below.
 
 ### Vertical re-prediction
 
@@ -128,6 +130,15 @@ Promoted into:
 - contract `082`, Rule 31G
 - roadmap `g10.029`, Batches 29.6CL and 29.6CM
 
+## Result
+
+Batch 29.6CM implemented the complete topology in a release-test-only module.
+Exact length, finiteness, coverage, boundaries, repeat, bass, chord peak,
+transient, silence, fallback, and mechanism gates passed. The steady four-tone
+control produced `-30.200611 dB` out-of-band energy against the frozen
+`-60 dB` limit; the unprocessed control measured about `-80.43 dB` under the
+same analysis. The implementation is rejected before real-source rendering.
+
 ## Sources
 
 | Source | Revision | Use |
@@ -137,5 +148,5 @@ Promoted into:
 
 ## Next Task
 
-Implement the complete report-only topology and synthetic gate in Batch
-29.6CM. Stop before real-source rendering.
+Attribute the chord sidebands inside the frozen predictor. Keep real-source
+rendering closed.

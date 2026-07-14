@@ -3198,7 +3198,8 @@ The Signal topology is now frozen:
 - square-root Hann analysis/synthesis with exact overlap normalization
 - fixed output centres at interval `H`
 - rounded input centre projection from output centre and fixed ratio
-- actual rounded input hop carried into horizontal transport
+- horizontal input observation fixed at one output interval behind the current
+  projected input centre
 - short distance one and long distance `round(N / H)`
 - fractional complex input-frequency observations at offsets scaled by local
   time factor `H / actual_input_hop`
@@ -3229,5 +3230,8 @@ dependency decision explicitly changes that boundary.
 
 ## Next Task
 
-Implement the complete Rule 31G report-only topology and synthetic gate. Stop
-before real-source rendering; keep all promotion lanes closed.
+Batch 29.6CM rejects the complete topology before real-source rendering. The
+steady four-tone control produces `-30.200611 dB` out-of-band energy against
+the frozen `-60 dB` limit while all other hard checks pass. Attribute that
+modulation inside the frozen predictor before changing topology or parameters;
+keep all promotion lanes closed.
