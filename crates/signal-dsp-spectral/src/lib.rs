@@ -1,8 +1,9 @@
 //! Spectral DSP helpers for the Signal workspace.
 //!
 //! The crate currently provides a forward mono STFT, Hann window generation,
-//! spectrogram helpers for chroma and spectral centroid extraction, and
-//! mel-spectrogram projection.
+//! spectrogram helpers for chroma and spectral centroid extraction,
+//! mel-spectrogram projection, and a uniform-partitioned frequency-domain
+//! convolver ([`PartitionedConvolver`]) for reverb-length impulse responses.
 //!
 //! ```no_run
 //! use signal_dsp_spectral::{Stft, StftConfig};
@@ -19,7 +20,10 @@
 #![warn(missing_docs)]
 
 pub mod analysis;
+mod convolution;
 pub mod mel;
+
+pub use convolution::PartitionedConvolver;
 
 use rustfft::{num_complex::Complex32, Fft, FftPlanner};
 use signal_primitives::{FrameCount, Sample, SampleRate};
