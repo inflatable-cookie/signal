@@ -89,6 +89,14 @@ grain in four of six rows but mutates one bass tone and produces severe pad
 phase damage. These are mechanism failures, not evidence for a distance or
 weight sweep.
 
+The corrected Signal translation keeps the specimen's scheduling and predictor
+invariants but not its implementation choices: fixed 30 ms output interval,
+fourfold centered support, ratio-projected input centres, actual-hop horizontal
+transport, time-factor-scaled fractional input-frequency twists, causal low-to-
+high correction, target-energy normalization, and weak-evidence fallback.
+Signal retains square-root Hann windows, exact overlap normalization, RustFFT,
+and deterministic behavior through `2x`.
+
 ## Source Inventory
 
 | Source | Type | Revision | Confidence | Notes |
@@ -97,15 +105,14 @@ weight sweep.
 | [design article](https://signalsmith-audio.co.uk/writing/2023/stretch-design/) | author explanation | 2023 | high | intended phase model and known time-alias limitation |
 | [project page](https://signalsmith-audio.co.uk/code/stretch/) | project documentation | current | high | presets, latency, API, licence |
 
-## Open Questions
+## Resolved Evidence
 
-- How much of its long-stretch quality comes from the long fixed window versus
-  multi-predictor phase transport?
-- Does it beat current Signal on the frozen bass and sustained development rows?
-- Can its weighted predictor remain a useful control inside a frequency-
-  partitioned multi-scale system?
+- weighted prediction beats current Signal on four of six long-form rows
+- the short-window simplified control does not isolate long-window contribution
+- frequency-partitioned multi-scale synthesis is rejected independently
+- the faithful combined geometry/predictor topology remains untested
 
 ## Next Task
 
-Freeze one Signal-owned faithful predictor topology and direct synthetic gates
-for bass-tone mutation and sustained phase damage before another corpus render.
+Implement the frozen Signal-owned topology and direct synthetic gates for
+bass-tone mutation and sustained phase damage. Stop before corpus rendering.

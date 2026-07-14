@@ -356,10 +356,19 @@ Current stretch status:
   parameter lattices, holdout, stereo, dynamic ratio, cache, and routing remain
   closed.
 
+  Batch 29.6CL is now complete. The corrected topology uses a fixed 30 ms output
+  grid, fourfold centered long-window support, ratio-projected input centres,
+  actual-hop horizontal transport, fractional time-factor-scaled short/long
+  vertical twists from both directions, ascending dependency order, target-
+  energy normalization, and weak-evidence fallback. Signal retains square-root
+  Hann/overlap normalization and deterministic RustFFT synthesis. Direct bass,
+  chord/pad, transient, silence, boundary, coverage, duration, mechanism, and
+  repeat gates are frozen before real-source audio.
+
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Complete `g10.029` Batch 29.6CL: freeze the faithful predictor mechanism and
-synthetic failure gates before another render. Do not open per-row tuning.
+Implement `g10.029` Batch 29.6CM and run the complete faithful-predictor
+synthetic gate. Stop before real-source rendering on any failure.

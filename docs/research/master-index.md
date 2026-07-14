@@ -53,6 +53,7 @@ Finch and Loophole.
 | [Rubber Band Behavioural Forensics](./translation-memos/002-rubber-band-behavioural-forensics.md) | Reopen local timing, transient phase treatment, and simultaneous multi-resolution synthesis from measured comparator behaviour | Promoted |
 | [Non-Duplicating Stretch Ownership](./translation-memos/003-non-duplicating-stretch-ownership.md) | Select one time-adaptive painless NSG frame after redundant full-band union rejection | Promoted |
 | [Source-Studied Stretch Architecture](./translation-memos/004-source-studied-stretch-architecture.md) | Reject frequency partitioning; retain the fixed-grid weighted predictor for exact-input comparator confirmation | Partially validated |
+| [Weighted Predictor Fidelity](./translation-memos/005-weighted-predictor-fidelity.md) | Correct scheduling, geometry, vertical twists, normalization, fallback, and update ordering as one topology | Promoted |
 
 ## Consumer Guidance
 
@@ -63,5 +64,5 @@ Finch and Loophole.
 
 ## Next Task
 
-Freeze the Batch 29.6CL weighted-predictor fidelity contract. Keep the source
-provenance boundary attached to every transferred invariant.
+Implement the Batch 29.6CM report-only faithful predictor and synthetic gate.
+Keep real-source rendering and promotion lanes closed.

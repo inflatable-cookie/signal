@@ -1,6 +1,6 @@
 # Offline Time-Stretch Synthesis
 
-Status: weighted-predictor family validated; fidelity redesign required
+Status: faithful-predictor synthetic proof next
 Owner: dsp
 Updated: 2026-07-14
 Contract refs: `046`, `082`
@@ -908,7 +908,23 @@ time-factor-scaled input-frequency twists from neighbouring output states,
 energy normalization, and weak-prediction fallback. The next work corrects
 that complete mechanism before any more corpus tuning.
 
+The corrected Signal topology keeps a fixed 30 ms output interval and fourfold
+centered transform support. Input centres follow the inverse fixed-ratio map;
+actual rounded input hops drive horizontal phase transport. A separate
+ascending-frequency pass combines short and transform/interval-distance
+predictions from both directions. Each prediction observes fractionally sampled
+input-frequency twists scaled by local time factor. Lower dependencies are
+already corrected; upper dependencies remain preliminary. The result is
+normalized to target input energy, with current-input fallback when combined
+evidence is weak.
+
+Signal uses its own square-root Hann/overlap normalization and arbitrary-length
+RustFFT geometry. It does not copy the specimen's ACG window, fast-size planner,
+control flow, or random diffusion. The complete synthetic gate directly covers
+bass pitch, chord sidebands, transient replicas, silence/fallback, boundaries,
+coverage, determinism, finiteness, and exact duration before real sources.
+
 ## Next Task
 
-Freeze the complete weighted-predictor fidelity contract and synthetic gates.
-Do not render real sources or open local tuning yet.
+Implement the complete report-only weighted predictor and synthetic gate. Do
+not render real sources or open local tuning yet.

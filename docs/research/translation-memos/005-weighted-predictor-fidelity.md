@@ -1,0 +1,141 @@
+# Weighted Predictor Fidelity
+
+Status: promoted
+Memo: `g10.029` weighted-predictor correction
+Owner: dsp
+Last updated: 2026-07-14
+Related contract: `082`, Rule 31G
+
+## Problem
+
+The first Signal weighted predictor improves on current Signal in four of six
+long-form rows, but mutates a bass tone and causes severe sustained-pad phase
+damage. It was described as a Signalsmith-style control, yet source reinspection
+shows it retained only the broad idea of multi-direction phase evidence.
+
+Local repair would tune a different topology. The scheduling, transform
+geometry, phase-gradient observation, normalization, fallback, and update graph
+must be corrected together.
+
+## Observed Specimen Topology
+
+Pinned Signalsmith Stretch `1.3.2` configures:
+
+- block support from 120 ms
+- a default output interval from one quarter of that support, corresponding to
+  30 ms
+- a fast real FFT at least as long as the block support
+- an approximate confined-Gaussian perfect-reconstruction window
+- fixed output intervals with input intervals selected by the local time map
+- preliminary horizontal phase transport using the actual input interval
+- a second low-to-high frequency pass using predictions from one-bin and one
+  transform/interval-distance neighbours in both directions
+- input-frequency twists sampled at offsets scaled by local time factor
+- target-energy normalization with input fallback when combined evidence is
+  too weak
+
+At 44.1 kHz, default block support and interval are `5292` and `1323` samples.
+The specimen's fast-size rule selects FFT length `6144`, making its rounded long
+vertical distance five bins. These are observed specimen values, not Signal
+constants.
+
+## Signal Topology
+
+Signal adopts the invariants, not the upstream implementation.
+
+### Geometry and schedule
+
+- output interval `H = max(1, round(sample_rate * 0.03))`
+- centered analysis/synthesis support `W = 4H`
+- transform length `N = W`; RustFFT may execute arbitrary `N`
+- centered square-root Hann analysis and synthesis windows
+- exact overlap-operator normalization at every output sample
+- fixed output centres separated by `H`
+- fixed-ratio input centre `round(output_center / ratio)`
+- actual signed input hop measured between adjacent rounded centres
+- centered reflection outside the source and exact target-length crop
+
+This keeps the 120/30 ms and fourfold-overlap invariants without importing the
+specimen's FFT planner or window code.
+
+### Horizontal prediction
+
+For each bin, carry previous input complex value, previous output complex value,
+and previous input energy. Reanalyse the actual previous input centre whenever
+the rounded hop changes. Predict preliminary output phase from the previous
+output and the complex input ratio across the actual source hop. Preserve target
+input energy. Identity remains a direct bypass.
+
+### Vertical re-prediction
+
+Let local time factor `R = H / max(1, actual_input_hop)`. Use distances:
+
+- short output distance `d = 1`
+- long output distance `d = round(N / H)`
+
+For a lower output neighbour, observe the input-frequency twist across `dR`
+bins toward lower frequency. For an upper output neighbour, observe the inverse
+twist across `dR` bins from that neighbour. Fractionally interpolate complex
+input values at non-integer bin positions. Combine valid short and long
+predictions from both directions.
+
+Process bins in ascending frequency order. Lower neighbours therefore carry
+already corrected output state; upper neighbours carry preliminary horizontal
+state. DC and Nyquist remain real.
+
+Normalize the combined complex prediction to target input energy. If its norm
+is at or below an energy-relative floor, use the current input complex phase at
+target energy. Do not include the target horizontal estimate as a fifth vote.
+
+### Closed behavior
+
+- no random vertical distance or phase diffusion above `2x`
+- no frequency-partitioned scales
+- no peak-region owner replacement
+- no window, interval, distance, weight, floor, or update-order sweep
+- no copied upstream control flow or FFT/window implementation
+
+## Synthetic Gate
+
+The complete implementation must pass before real-source rendering:
+
+- identity: bit-exact mono bypass
+- ratios: exact finite deterministic output at `0.75x`, `1.25x`, `1.5x`, and
+  `2.0x`
+- coverage: every target sample has positive overlap normalization
+- bass: sequential `55`, `82.4069`, and `110` Hz notes retain dominant
+  frequency within `0.5` Hz and introduce no octave selection
+- chord/pad: steady `110`, `164.8138`, `220`, and `329.6276` Hz components keep
+  each dominant peak within `0.5` Hz; out-of-band energy stays below `-60 dB`
+- transient: isolated and dense attacks stay within `256` frames of projected
+  position and no intermediate replica exceeds either protected attack
+- weak evidence: silence remains exact zero; a cancellation control exercises
+  fallback without non-finite output
+- boundaries: finite first/last samples, no uncovered crop, and no tail created
+  by post-render zero fill
+- mechanism: short/long, lower/upper, horizontal, corrected, and fallback counts
+  are all non-zero across the complete control set
+- repeat: evidence and output hashes repeat exactly
+
+These thresholds detect the heard bass mutation and sustained phase damage.
+They are not corpus-fitted quality proxies.
+
+## Promotion
+
+Promoted into:
+
+- `docs/architecture/offline-time-stretch-synthesis.md`
+- contract `082`, Rule 31G
+- roadmap `g10.029`, Batches 29.6CL and 29.6CM
+
+## Sources
+
+| Source | Revision | Use |
+| --- | --- | --- |
+| [Signalsmith Stretch](https://github.com/Signalsmith-Audio/signalsmith-stretch/blob/57b93f4e9206a089a45387eaa39bdc9f310d3308/signalsmith-stretch.h) | `57b93f4e` | scheduling and prediction topology |
+| [Signalsmith Linear STFT](https://github.com/Signalsmith-Audio/linear/blob/7f53cdd1ccd52b409dacf2af24e7ff838c5580cd/stft.h) | `7f53cdd1` | observed window, overlap, FFT sizing, and normalization |
+
+## Next Task
+
+Implement the complete report-only topology and synthetic gate in Batch
+29.6CM. Stop before real-source rendering.

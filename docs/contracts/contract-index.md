@@ -144,5 +144,5 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Complete the `g10.029` Batch 29.6CL weighted-predictor fidelity contract. Do not
-reopen frequency partitioning, Rule 30AB, or parameter search.
+Implement the `g10.029` Batch 29.6CM faithful-predictor synthetic proof. Keep
+real-source rendering and promotion lanes closed.

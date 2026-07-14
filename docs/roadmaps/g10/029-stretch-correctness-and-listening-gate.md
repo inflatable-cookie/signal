@@ -1050,16 +1050,27 @@ on M004. Rubber Band remains best on four rows.
 
 ### Batch 29.6CL - Weighted-Predictor Fidelity Contract
 
-- [ ] compare the Signal proof against the pinned Signalsmith implementation at
+- [x] compare the Signal proof against the pinned Signalsmith implementation at
   window/interval geometry, preliminary horizontal transport, time-factor-
   scaled vertical twists, energy normalization, weak-evidence fallback, and
   update ordering
-- [ ] freeze one Signal-owned complete predictor topology from those invariants;
+- [x] freeze one Signal-owned complete predictor topology from those invariants;
   distinguish architecture correction from parameter choice
-- [ ] define synthetic bass-tone, chord/pad, transient, silence, boundary,
+- [x] define synthetic bass-tone, chord/pad, transient, silence, boundary,
   determinism, and exact-length gates before another real-source render
-- [ ] keep random phase diffusion, parameter search, frequency partitioning,
+- [x] keep random phase diffusion, parameter search, frequency partitioning,
   holdout, stereo, dynamic ratio, cache, and production routing closed
+
+### Batch 29.6CM - Faithful Predictor Synthetic Proof
+
+- [ ] implement the fixed-output-grid, ratio-projected-input schedule with
+  fourfold long-window geometry and exact overlap normalization
+- [ ] implement actual-hop horizontal transport followed by fractional
+  time-factor-scaled short/long vertical correction from both directions
+- [ ] implement ascending dependency order, target-energy normalization,
+  weak-evidence fallback, real endpoints, reflection, and exact crop
+- [ ] run the complete Rule 31G synthetic gate; stop before real-source audio
+  on any failure
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -1978,9 +1989,20 @@ on M004. Rubber Band remains best on four rows.
   and an ad-hoc horizontal-plus-vertical magnitude sum instead of separate
   vertical re-prediction with energy normalization and weak-evidence fallback.
   Batch 29.6CL owns one architecture contract before more synthesis code.
+- 2026-07-14: Batch 29.6CL freezes the complete Signal topology. The output grid
+  uses `H = round(sample_rate * 0.03)`, centered support and transform length
+  `4H`, square-root Hann/Hann synthesis, and exact overlap normalization. Input
+  centres are inverse-ratio projections of fixed output centres; actual rounded
+  input hops drive horizontal transport. A separate ascending-frequency pass
+  uses fractional input-frequency twists scaled by local time factor at short
+  distance one and long distance `round(N/H)`, with corrected lower and
+  preliminary upper dependencies. Target-energy normalization and energy-
+  relative input fallback close weak evidence. Bass, chord/pad, transient,
+  silence, boundary, coverage, exact-length, finiteness, mechanism-count, and
+  repeat gates are frozen. Memo 005 records the translation. Batch 29.6CM owns
+  one complete report-only implementation and stops before real sources.
 
 ## Next Task
 
-Complete Batch 29.6CL: freeze the faithful weighted-predictor mechanism and its
-synthetic failure gates before another real-source render. Do not open per-row
-tuning.
+Implement Batch 29.6CM and run the complete Rule 31G synthetic gate. Stop before
+real-source rendering on any failure.

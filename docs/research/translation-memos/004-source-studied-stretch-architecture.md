@@ -127,6 +127,10 @@ duration/interval, time-factor-scaled vertical twists, energy normalization,
 weak-evidence fallback, and prediction update order. Those mechanisms now
 replace local repair as the next design target.
 
+Memo 005 now freezes the corrected Signal topology. It supersedes the first
+control's `2048/128` scheduling and same-frame weighted sum while retaining
+weighted prediction as the selected family.
+
 ## Sources
 
 | Source | Confidence | Transfer boundary |
@@ -141,5 +145,5 @@ replace local repair as the next design target.
 
 ## Next Task
 
-Freeze the weighted-predictor fidelity contract and direct synthetic gates. Do
-not resume frequency partitioning, Rule 30AB, or per-row repair batches.
+Implement memo 005's report-only predictor and synthetic gate. Do not resume
+frequency partitioning, Rule 30AB, or per-row repair batches.

@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; weighted-predictor fidelity contract next
+Status: active; faithful-predictor synthetic proof next
 Owner: dsp
 Updated: 2026-07-14
 Related contracts: `046`, `048`, `049`
@@ -3191,6 +3191,34 @@ Signalsmith's random-distance diffusion above `2x` remains rejected. No local
 repair of the `2048/128` proof is authorized. Real sources reopen only after the
 complete synthetic mechanism passes.
 
+The Signal topology is now frozen:
+
+- `H = max(1, round(sample_rate * 0.03))`
+- centered support `W = 4H` and transform length `N = W`
+- square-root Hann analysis/synthesis with exact overlap normalization
+- fixed output centres at interval `H`
+- rounded input centre projection from output centre and fixed ratio
+- actual rounded input hop carried into horizontal transport
+- short distance one and long distance `round(N / H)`
+- fractional complex input-frequency observations at offsets scaled by local
+  time factor `H / actual_input_hop`
+- ascending-frequency in-place vertical correction using already-corrected
+  lower neighbours and preliminary upper neighbours
+- target-energy normalization and energy-relative weak-evidence input fallback
+- real DC/Nyquist bins, centered reflection, and exact target crop
+
+The target horizontal estimate is not a fifth vertical vote. Random diffusion,
+peak-region ownership, frequency partitioning, and parameter sweeps remain
+closed.
+
+Before real audio, the complete proof must pass bit-exact identity; exact,
+finite, covered, deterministic `0.75x/1.25x/1.5x/2.0x` output; three-note bass
+pitch within `0.5 Hz`; four-tone chord peak error within `0.5 Hz`; chord
+out-of-band energy below `-60 dB`; projected isolated/dense attacks within
+`256` frames without a louder midpoint replica; exact silence; exercised weak-
+evidence fallback; finite non-zero-fill boundaries; and non-zero horizontal,
+short/long, lower/upper, corrected, and fallback mechanism counts.
+
 ## Source-Study Provenance Rule
 
 Public papers, public descriptions, and public source may inform architecture.
@@ -3201,5 +3229,5 @@ dependency decision explicitly changes that boundary.
 
 ## Next Task
 
-Freeze the Rule 31G weighted-predictor topology and synthetic gates. Keep
-parameter search, real-source rendering, and all promotion lanes closed.
+Implement the complete Rule 31G report-only topology and synthetic gate. Stop
+before real-source rendering; keep all promotion lanes closed.
