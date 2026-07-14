@@ -16,21 +16,58 @@ use signal_hardware::{
 const STATE_RUNNING: u8 = 0;
 const STATE_STOPPED: u8 = 1;
 const STATE_FAULTED: u8 = 2;
+const CHANNEL_SELECTION_SCRATCH_SAMPLES: usize = 2048;
 
-/// Input backend over the host's default cpal device.
+/// A machine-local cpal input endpoint.
+///
+/// `device_id` is the opaque selector returned by [`enumerate_input_devices`].
+/// Channel indices are zero-based physical input channels. An empty list uses
+/// the stream's negotiated channel layout unchanged.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CpalInputEndpoint {
+    /// Opaque machine-local device selector.
+    pub device_id: String,
+    /// Zero-based physical input channels to expose to the capture callback.
+    pub channel_indices: Vec<u16>,
+}
+
+impl CpalInputEndpoint {
+    /// Build an endpoint from an enumerated device id and physical channels.
+    pub fn new(device_id: impl Into<String>, channel_indices: Vec<u16>) -> Self {
+        Self {
+            device_id: device_id.into(),
+            channel_indices,
+        }
+    }
+}
+
+/// Input backend over the host's default cpal device or one explicit endpoint.
 #[derive(Debug, Default)]
-pub struct CpalInputBackend;
+pub struct CpalInputBackend {
+    endpoint: Option<CpalInputEndpoint>,
+}
 
 impl CpalInputBackend {
     /// Construct a backend over the default cpal host.
     pub fn new() -> Self {
-        Self
+        Self::default()
+    }
+
+    /// Construct a backend that opens one enumerated device and exposes the
+    /// requested physical channels. Missing devices and invalid channel
+    /// layouts fail visibly; this constructor never opens or starts a stream.
+    pub fn with_endpoint(endpoint: CpalInputEndpoint) -> Self {
+        Self {
+            endpoint: Some(endpoint),
+        }
     }
 }
 
 /// A real input device as enumerated by cpal.
 #[derive(Debug, Clone, PartialEq)]
 pub struct InputDeviceDescription {
+    /// Opaque machine-local selector accepted by [`CpalInputEndpoint`].
+    pub device_id: String,
     /// Device name as reported by the OS.
     pub name: String,
     /// Whether this is the host's current default input device.
@@ -44,6 +81,18 @@ pub struct InputDeviceDescription {
     pub supported_sample_rates_hz: Vec<u32>,
     /// Maximum input channel count across supported configs.
     pub max_channels: u16,
+    /// Stable zero-based channel choices for the largest reported layout.
+    pub channels: Vec<InputChannelDescription>,
+}
+
+/// One selectable physical input channel.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct InputChannelDescription {
+    /// Zero-based physical channel index used by route bindings.
+    pub index: u16,
+    /// Human-readable fallback label. Backends may replace this with a native
+    /// label when the host API exposes one.
+    pub label: String,
 }
 
 const COMMON_RATES_HZ: [u32; 6] = [44_100, 48_000, 88_200, 96_000, 176_400, 192_000];
@@ -87,12 +136,20 @@ pub fn enumerate_input_devices() -> Result<Vec<InputDeviceDescription>, InputStr
             }
         }
         rates.sort_unstable();
+        let channels = (0..max_channels)
+            .map(|index| InputChannelDescription {
+                index,
+                label: format!("Input {}", index + 1),
+            })
+            .collect();
         descriptions.push(InputDeviceDescription {
+            device_id: name.clone(),
             is_default: default_name.as_deref() == Some(name.as_str()),
             default_sample_rate_hz: default_config.sample_rate().0,
             default_channels: default_config.channels(),
             supported_sample_rates_hz: rates,
             max_channels,
+            channels,
             name,
         });
     }
@@ -107,18 +164,22 @@ pub fn enumerate_input_devices() -> Result<Vec<InputDeviceDescription>, InputStr
 fn negotiate_input_config(
     device: &cpal::Device,
     spec: &InputStreamSpec,
+    minimum_channels: Option<u16>,
 ) -> Result<cpal::StreamConfig, InputStreamError> {
     let default_config: cpal::StreamConfig = device
         .default_input_config()
         .map_err(|error| InputStreamError::new(format!("default input config: {error}")))?
         .into();
 
-    let mut best: Option<(u32, cpal::StreamConfig)> = None;
+    let mut best: Option<((u16, u32), cpal::StreamConfig)> = None;
     if let Ok(configs) = device.supported_input_configs() {
         for config in configs {
-            if config.channels() != spec.channels {
-                continue;
-            }
+            let channel_distance = match minimum_channels {
+                Some(minimum) if config.channels() >= minimum => config.channels() - minimum,
+                Some(_) => continue,
+                None if config.channels() == spec.channels => 0,
+                None => continue,
+            };
             let rate = spec
                 .sample_rate_hz
                 .clamp(config.min_sample_rate().0, config.max_sample_rate().0);
@@ -128,16 +189,9 @@ fn negotiate_input_config(
                 sample_rate: cpal::SampleRate(rate),
                 buffer_size: cpal::BufferSize::Default,
             };
-            if best
-                .as_ref()
-                .map(|(best_distance, _)| distance < *best_distance)
-                .unwrap_or(true)
-            {
-                let exact = distance == 0;
-                best = Some((distance, candidate));
-                if exact {
-                    break;
-                }
+            let score = (channel_distance, distance);
+            if best.as_ref().map(|(best, _)| score < *best).unwrap_or(true) {
+                best = Some((score, candidate));
             }
         }
     }
@@ -147,6 +201,50 @@ fn negotiate_input_config(
         config.buffer_size = cpal::BufferSize::Fixed(buffer_frames);
     }
     Ok(config)
+}
+
+fn validate_channel_indices(
+    channel_indices: &[u16],
+    physical_channels: u16,
+) -> Result<(), InputStreamError> {
+    if channel_indices.is_empty() {
+        return Ok(());
+    }
+    if channel_indices.len() > CHANNEL_SELECTION_SCRATCH_SAMPLES {
+        return Err(InputStreamError::new("too many selected input channels"));
+    }
+    for (position, index) in channel_indices.iter().enumerate() {
+        if *index >= physical_channels {
+            return Err(InputStreamError::new(format!(
+                "input channel index {index} is unavailable on a {physical_channels}-channel device"
+            )));
+        }
+        if channel_indices[..position].contains(index) {
+            return Err(InputStreamError::new(format!(
+                "input channel index {index} is selected more than once"
+            )));
+        }
+    }
+    Ok(())
+}
+
+fn copy_selected_channels(
+    frames: &[f32],
+    physical_channels: usize,
+    channel_indices: &[u16],
+    output: &mut [f32],
+) -> usize {
+    let mut written = 0;
+    for frame in frames
+        .chunks_exact(physical_channels)
+        .take(output.len() / channel_indices.len())
+    {
+        for index in channel_indices {
+            output[written] = frame[*index as usize];
+            written += 1;
+        }
+    }
+    written
 }
 
 /// Handle over a stream owned by its dedicated thread. Dropping signals the
@@ -222,6 +320,7 @@ impl InputStreamBackend for CpalInputBackend {
         spec: InputStreamSpec,
         mut capture: InputCaptureFn,
     ) -> Result<Box<dyn InputStreamHandle>, InputStreamError> {
+        let endpoint = self.endpoint.clone();
         let state = Arc::new(AtomicU8::new(STATE_RUNNING));
         let thread_state = Arc::clone(&state);
         let last_error: Arc<Mutex<Option<String>>> = Arc::new(Mutex::new(None));
@@ -239,11 +338,44 @@ impl InputStreamBackend for CpalInputBackend {
             .spawn(move || {
                 let open = (|| {
                     let host = cpal::default_host();
-                    let device = host
-                        .default_input_device()
-                        .ok_or_else(|| InputStreamError::new("no default input device"))?;
+                    let device = match endpoint.as_ref() {
+                        Some(endpoint) => host
+                            .input_devices()
+                            .map_err(|error| {
+                                InputStreamError::new(format!("enumerate input devices: {error}"))
+                            })?
+                            .find(|device| {
+                                device.name().ok().as_deref() == Some(endpoint.device_id.as_str())
+                            })
+                            .ok_or_else(|| {
+                                InputStreamError::new(format!(
+                                    "input device not found: {}",
+                                    endpoint.device_id
+                                ))
+                            })?,
+                        None => host
+                            .default_input_device()
+                            .ok_or_else(|| InputStreamError::new("no default input device"))?,
+                    };
                     let device_name = device.name().ok();
-                    let config = negotiate_input_config(&device, &spec)?;
+                    let selected_channels = endpoint
+                        .as_ref()
+                        .map(|endpoint| endpoint.channel_indices.as_slice())
+                        .unwrap_or_default();
+                    let minimum_channels = selected_channels
+                        .iter()
+                        .copied()
+                        .max()
+                        .map(|index| index + 1);
+                    let config = negotiate_input_config(&device, &spec, minimum_channels)?;
+                    validate_channel_indices(selected_channels, config.channels)?;
+                    let reported_channels = if selected_channels.is_empty() {
+                        config.channels
+                    } else {
+                        selected_channels.len() as u16
+                    };
+                    let physical_channels = config.channels as usize;
+                    let selected_channels = selected_channels.to_vec();
                     let error_state = Arc::clone(&thread_state);
                     let error_detail = Arc::clone(&thread_last_error);
                     let callback_latency = Arc::clone(&thread_latency);
@@ -265,7 +397,30 @@ impl InputStreamBackend for CpalInputBackend {
                                     callback_latency
                                         .store(latency.as_micros() as u64, Ordering::Relaxed);
                                 }
-                                capture(frames);
+                                if selected_channels.is_empty() {
+                                    capture(frames);
+                                } else {
+                                    // Fixed stack scratch keeps arbitrary
+                                    // channel extraction allocation-free on
+                                    // the audio callback.
+                                    let selected_count = selected_channels.len();
+                                    let mut scratch = [0.0_f32; CHANNEL_SELECTION_SCRATCH_SAMPLES];
+                                    let frames_per_chunk = scratch.len() / selected_count;
+                                    let physical_samples_per_chunk =
+                                        frames_per_chunk * physical_channels;
+                                    for physical_chunk in frames.chunks(physical_samples_per_chunk)
+                                    {
+                                        let written = copy_selected_channels(
+                                            physical_chunk,
+                                            physical_channels,
+                                            &selected_channels,
+                                            &mut scratch,
+                                        );
+                                        if written > 0 {
+                                            capture(&scratch[..written]);
+                                        }
+                                    }
+                                }
                             },
                             move |error| {
                                 // Stream errors arrive on a cpal backend
@@ -286,7 +441,10 @@ impl InputStreamBackend for CpalInputBackend {
                     stream.play().map_err(|error| {
                         InputStreamError::new(format!("start input stream: {error}"))
                     })?;
-                    Ok((stream, (config.sample_rate.0, config.channels, device_name)))
+                    Ok((
+                        stream,
+                        (config.sample_rate.0, reported_channels, device_name),
+                    ))
                 })();
 
                 match open {
@@ -405,8 +563,54 @@ mod tests {
         }
         assert!(devices.iter().any(|device| device.is_default));
         for device in &devices {
+            assert_eq!(device.device_id, device.name);
             assert!(device.default_sample_rate_hz > 0);
             assert!(device.max_channels > 0);
+            assert_eq!(device.channels.len(), device.max_channels as usize);
+            assert_eq!(device.channels[0].index, 0);
         }
+    }
+
+    #[test]
+    fn explicit_missing_input_device_is_a_typed_error() {
+        let backend = CpalInputBackend::with_endpoint(CpalInputEndpoint::new(
+            "signal-test-no-such-input-device-7f3a",
+            vec![0],
+        ));
+        let result = backend.open_input_stream(
+            InputStreamSpec {
+                sample_rate_hz: 48_000,
+                channels: 1,
+                buffer_frames: None,
+            },
+            Box::new(|_| {}),
+        );
+        let error = match result {
+            Ok(_) => panic!("missing device must not open"),
+            Err(error) => error,
+        };
+        assert!(error.message.contains("input device not found"));
+    }
+
+    #[test]
+    fn channel_selection_rejects_duplicates_and_out_of_range_indices() {
+        assert!(validate_channel_indices(&[0, 1], 2).is_ok());
+        assert!(validate_channel_indices(&[0, 0], 2)
+            .unwrap_err()
+            .message
+            .contains("more than once"));
+        assert!(validate_channel_indices(&[2], 2)
+            .unwrap_err()
+            .message
+            .contains("unavailable"));
+    }
+
+    #[test]
+    fn selected_channels_are_extracted_in_requested_order() {
+        let frames = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0];
+        let mut selected = [0.0; 4];
+        let written = copy_selected_channels(&frames, 3, &[2, 0], &mut selected);
+        assert_eq!(written, 4);
+        assert_eq!(selected, [3.0, 1.0, 6.0, 4.0]);
     }
 }

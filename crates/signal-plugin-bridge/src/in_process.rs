@@ -665,6 +665,40 @@ impl InProcessVst3Processor {
         &self.parameters
     }
 
+    /// Capture opaque VST3 component/controller state on the control
+    /// thread. Audio bypasses while the session lock is held.
+    pub fn save_state(&self) -> Result<Vec<u8>, String> {
+        if !self.alive.load(Ordering::Relaxed) {
+            return Err("backend_dead".to_string());
+        }
+        let _session = self
+            .session
+            .lock()
+            .map_err(|_| "session_lock_poisoned".to_string())?;
+        self.instance
+            .lock()
+            .map_err(|_| "instance_lock_poisoned".to_string())?
+            .save_state()
+            .map_err(|error| error.token)
+    }
+
+    /// Restore opaque VST3 component/controller state on the control
+    /// thread.
+    pub fn load_state(&self, bytes: &[u8]) -> Result<(), String> {
+        if !self.alive.load(Ordering::Relaxed) {
+            return Err("backend_dead".to_string());
+        }
+        let _session = self
+            .session
+            .lock()
+            .map_err(|_| "session_lock_poisoned".to_string())?;
+        self.instance
+            .lock()
+            .map_err(|_| "instance_lock_poisoned".to_string())?
+            .load_state(bytes)
+            .map_err(|error| error.token)
+    }
+
     /// Whether the plugin exposed a VST3 `IMidiMapping` at load: with one,
     /// delivered CC events reach the DSP as mapped parameter changes;
     /// without one CC events drop (VST3 has no input CC event type) — the
@@ -983,6 +1017,39 @@ impl InProcessAuProcessor {
     /// Parameter inventory enumerated at load.
     pub fn parameters(&self) -> &[PluginParameterDescriptor] {
         &self.parameters
+    }
+
+    /// Capture opaque AU class-info state on the control thread. Audio
+    /// bypasses while the session lock is held.
+    pub fn save_state(&self) -> Result<Vec<u8>, String> {
+        if !self.alive.load(Ordering::Relaxed) {
+            return Err("backend_dead".to_string());
+        }
+        let _session = self
+            .session
+            .lock()
+            .map_err(|_| "session_lock_poisoned".to_string())?;
+        self.instance
+            .lock()
+            .map_err(|_| "instance_lock_poisoned".to_string())?
+            .save_state()
+            .map_err(|error| error.token)
+    }
+
+    /// Restore opaque AU class-info state on the control thread.
+    pub fn load_state(&self, bytes: &[u8]) -> Result<(), String> {
+        if !self.alive.load(Ordering::Relaxed) {
+            return Err("backend_dead".to_string());
+        }
+        let _session = self
+            .session
+            .lock()
+            .map_err(|_| "session_lock_poisoned".to_string())?;
+        self.instance
+            .lock()
+            .map_err(|_| "instance_lock_poisoned".to_string())?
+            .load_state(bytes)
+            .map_err(|error| error.token)
     }
 
     /// Set one parameter's plain value on the hosted unit
@@ -1909,6 +1976,14 @@ mod tests {
         backend
             .set_parameter_normalized(CLAP_FIXTURE_GAIN_PARAM_ID, 0.25)
             .expect("set Gain");
+        let queued_state = backend
+            .save_state()
+            .expect("capture queued parameter without an audio block");
+        assert_eq!(
+            f32::from_le_bytes(queued_state[0..4].try_into().expect("Gain bytes")),
+            0.25,
+            "state capture must flush queued CLAP parameter writes",
+        );
         let mut quarter = vec![0.0f32; 128 * 2];
         assert!(handle.process_with_events(&mut quarter, 128, 2, &note_on));
         assert!(quarter.iter().all(|sample| (*sample - 0.2).abs() < 1e-6));

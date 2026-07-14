@@ -41,14 +41,25 @@ pub struct AuGuiSession {
     /// The retained plugin `NSView` (child of the host's content view).
     #[cfg(target_os = "macos")]
     view: *mut std::ffi::c_void,
+    #[cfg(not(target_os = "macos"))]
     width: u32,
+    #[cfg(not(target_os = "macos"))]
     height: u32,
 }
 
 impl AuGuiSession {
-    /// Last observed content size (the view's frame at attach).
+    /// Current content size. AU Cocoa views may resize themselves without a
+    /// host callback, so macOS reads the live view frame on every call.
+    /// MAIN THREAD ONLY while an editor is attached.
     pub fn size(&self) -> (u32, u32) {
-        (self.width, self.height)
+        #[cfg(target_os = "macos")]
+        unsafe {
+            macos::view_size(self.view)
+        }
+        #[cfg(not(target_os = "macos"))]
+        {
+            (self.width, self.height)
+        }
     }
 }
 
@@ -111,6 +122,13 @@ mod macos {
 
     #[repr(C)]
     #[derive(Clone, Copy)]
+    struct NSPoint {
+        x: f64,
+        y: f64,
+    }
+
+    #[repr(C)]
+    #[derive(Clone, Copy)]
     struct NSRect {
         x: f64,
         y: f64,
@@ -136,6 +154,7 @@ mod macos {
     type MsgSendId = unsafe extern "C" fn(*mut c_void, *mut c_void) -> *mut c_void;
     type MsgSendVoid = unsafe extern "C" fn(*mut c_void, *mut c_void);
     type MsgSendVoidId = unsafe extern "C" fn(*mut c_void, *mut c_void, *mut c_void);
+    type MsgSendVoidPoint = unsafe extern "C" fn(*mut c_void, *mut c_void, NSPoint);
     type MsgSendUiView =
         unsafe extern "C" fn(*mut c_void, *mut c_void, *mut c_void, NSSize) -> *mut c_void;
     #[cfg(target_arch = "aarch64")]
@@ -163,6 +182,11 @@ mod macos {
         send(receiver, selector, argument)
     }
 
+    unsafe fn msg_void_point(receiver: *mut c_void, selector: *mut c_void, argument: NSPoint) {
+        let send: MsgSendVoidPoint = std::mem::transmute(objc_msgSend as unsafe extern "C" fn());
+        send(receiver, selector, argument)
+    }
+
     /// `-[NSView frame]`: struct return differs per ABI — registers on
     /// arm64, hidden-pointer `objc_msgSend_stret` on x86_64.
     unsafe fn view_frame(view: *mut c_void) -> NSRect {
@@ -185,6 +209,14 @@ mod macos {
             send(&mut rect, view, selector);
             rect
         }
+    }
+
+    pub(super) unsafe fn view_size(view: *mut c_void) -> (u32, u32) {
+        let frame = view_frame(view);
+        (
+            frame.width.max(1.0).round() as u32,
+            frame.height.max(1.0).round() as u32,
+        )
     }
 
     /// Probe `kAudioUnitProperty_CocoaUI` on a live unit: the custom Cocoa
@@ -336,18 +368,17 @@ mod macos {
             view
         };
 
-        let frame = view_frame(view);
-        let width = frame.width.max(1.0) as u32;
-        let height = frame.height.max(1.0) as u32;
+        // Factories are free to return a view with a non-zero frame origin.
+        // That origin belongs to the factory's own test window, not this
+        // host's content view; preserving it can push the editor underneath
+        // the title bar or clip one edge. Anchor every embedded editor to the
+        // host content origin while retaining the factory-provided size.
+        msg_void_point(view, sel("setFrameOrigin:"), NSPoint { x: 0.0, y: 0.0 });
 
         // [parent addSubview:view]
         msg_void_id(parent, sel("addSubview:"), view);
 
-        Ok(AuGuiSession {
-            view,
-            width,
-            height,
-        })
+        Ok(AuGuiSession { view })
     }
 
     impl Drop for AuGuiSession {

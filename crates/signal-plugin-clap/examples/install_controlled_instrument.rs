@@ -21,7 +21,9 @@ fn main() -> Result<(), String> {
         .discover_plugins_for_roots_with_options(&[installed.display().to_string()], true);
     let plugin = discovered
         .iter()
-        .find(|plugin| plugin.plugin_type_id.0 == "audio.infiniteloop.loophole.controlled-instrument")
+        .find(|plugin| {
+            plugin.plugin_type_id.0 == "audio.infiniteloop.loophole.controlled-instrument"
+        })
         .ok_or_else(|| "installed fixture was not discoverable".to_string())?;
     println!("{}", installed.display());
     println!(

@@ -127,6 +127,9 @@ pub(crate) mod ffi {
     pub type AudioUnit = *mut c_void;
     pub type CFTypeRef = *const c_void;
     pub type CFStringRef = *const c_void;
+    pub type CFDataRef = *const c_void;
+    pub type CFPropertyListRef = *const c_void;
+    pub type CFAllocatorRef = *const c_void;
     pub type CFIndex = isize;
 
     #[repr(C)]
@@ -294,6 +297,8 @@ pub(crate) mod ffi {
     pub const kAudioUnitParameterUnit_CustomUnit: u32 = 26;
 
     pub const kCFStringEncodingUTF8: u32 = 0x0800_0100;
+    pub const kAudioUnitProperty_ClassInfo: u32 = 0;
+    pub const kCFPropertyListBinaryFormat_v1_0: isize = 200;
 
     #[link(name = "AudioToolbox", kind = "framework")]
     extern "C" {
@@ -373,7 +378,29 @@ pub(crate) mod ffi {
 
     #[link(name = "CoreFoundation", kind = "framework")]
     extern "C" {
+        pub static kCFAllocatorDefault: CFAllocatorRef;
         pub fn CFRelease(cf: CFTypeRef);
+        pub fn CFDataCreate(
+            allocator: CFAllocatorRef,
+            bytes: *const u8,
+            length: CFIndex,
+        ) -> CFDataRef;
+        pub fn CFDataGetBytePtr(data: CFDataRef) -> *const u8;
+        pub fn CFDataGetLength(data: CFDataRef) -> CFIndex;
+        pub fn CFPropertyListCreateData(
+            allocator: CFAllocatorRef,
+            propertyList: CFPropertyListRef,
+            format: isize,
+            options: usize,
+            error: *mut CFTypeRef,
+        ) -> CFDataRef;
+        pub fn CFPropertyListCreateWithData(
+            allocator: CFAllocatorRef,
+            data: CFDataRef,
+            options: usize,
+            format: *mut isize,
+            error: *mut CFTypeRef,
+        ) -> CFPropertyListRef;
         pub fn CFStringGetLength(theString: CFStringRef) -> CFIndex;
         pub fn CFStringGetMaximumSizeForEncoding(length: CFIndex, encoding: u32) -> CFIndex;
         pub fn CFStringGetCString(
@@ -566,6 +593,101 @@ impl AuHostedInstance {
     /// of input/output element 0).
     pub fn port_layout(&self) -> AuHostedPortLayout {
         self.port_layout
+    }
+
+    /// Capture the Audio Unit's opaque class-info dictionary as a binary
+    /// property list. The bytes are host-owned and may only be restored to
+    /// the same Audio Unit identity.
+    pub fn save_state(&self) -> Result<Vec<u8>, AuHostingError> {
+        #[cfg(target_os = "macos")]
+        unsafe {
+            let mut class_info: ffi::CFPropertyListRef = std::ptr::null();
+            let mut size = std::mem::size_of::<ffi::CFPropertyListRef>() as u32;
+            if ffi::AudioUnitGetProperty(
+                self.unit,
+                ffi::kAudioUnitProperty_ClassInfo,
+                ffi::kAudioUnitScope_Global,
+                0,
+                &mut class_info as *mut _ as *mut _,
+                &mut size,
+            ) != 0
+                || class_info.is_null()
+            {
+                return Err(AuHostingError::new("state_capture_failed"));
+            }
+            let data = ffi::CFPropertyListCreateData(
+                ffi::kCFAllocatorDefault,
+                class_info,
+                ffi::kCFPropertyListBinaryFormat_v1_0,
+                0,
+                std::ptr::null_mut(),
+            );
+            ffi::CFRelease(class_info);
+            if data.is_null() {
+                return Err(AuHostingError::new("state_serialize_failed"));
+            }
+            let length = ffi::CFDataGetLength(data).max(0) as usize;
+            let pointer = ffi::CFDataGetBytePtr(data);
+            let bytes = if length == 0 {
+                Vec::new()
+            } else if pointer.is_null() {
+                ffi::CFRelease(data);
+                return Err(AuHostingError::new("state_serialize_failed"));
+            } else {
+                std::slice::from_raw_parts(pointer, length).to_vec()
+            };
+            ffi::CFRelease(data);
+            Ok(bytes)
+        }
+        #[cfg(not(target_os = "macos"))]
+        {
+            Err(AuHostingError::new("unsupported_platform"))
+        }
+    }
+
+    /// Restore a binary class-info property list previously captured from
+    /// this Audio Unit identity.
+    pub fn load_state(&mut self, bytes: &[u8]) -> Result<(), AuHostingError> {
+        #[cfg(target_os = "macos")]
+        unsafe {
+            let data = ffi::CFDataCreate(
+                ffi::kCFAllocatorDefault,
+                bytes.as_ptr(),
+                bytes.len() as ffi::CFIndex,
+            );
+            if data.is_null() {
+                return Err(AuHostingError::new("state_deserialize_failed"));
+            }
+            let property_list = ffi::CFPropertyListCreateWithData(
+                ffi::kCFAllocatorDefault,
+                data,
+                0,
+                std::ptr::null_mut(),
+                std::ptr::null_mut(),
+            );
+            ffi::CFRelease(data);
+            if property_list.is_null() {
+                return Err(AuHostingError::new("state_deserialize_failed"));
+            }
+            let status = ffi::AudioUnitSetProperty(
+                self.unit,
+                ffi::kAudioUnitProperty_ClassInfo,
+                ffi::kAudioUnitScope_Global,
+                0,
+                &property_list as *const _ as *const _,
+                std::mem::size_of::<ffi::CFPropertyListRef>() as u32,
+            );
+            ffi::CFRelease(property_list);
+            if status != 0 {
+                return Err(AuHostingError::new("state_restore_failed"));
+            }
+            Ok(())
+        }
+        #[cfg(not(target_os = "macos"))]
+        {
+            let _ = bytes;
+            Err(AuHostingError::new("unsupported_platform"))
+        }
     }
 
     /// Queue-free parameter write (g12.023): AU's set domain is the PLAIN

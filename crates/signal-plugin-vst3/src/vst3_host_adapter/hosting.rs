@@ -92,6 +92,7 @@ pub(crate) type Tresult = i32;
 
 /// `kResultOk` / `kResultTrue` (0 on every platform).
 pub(crate) const K_RESULT_OK: Tresult = 0;
+const K_RESULT_FALSE: Tresult = 1;
 
 /// `kNoInterface` (platform-dependent: COM `E_NOINTERFACE` on Windows).
 #[cfg(target_os = "windows")]
@@ -175,7 +176,7 @@ fn tuid_from_class_id_hex(class_id_hex: &str) -> Option<Tuid> {
 pub(crate) const FUNKNOWN_IID: Tuid = tuid_from_uid(0x00000000, 0x00000000, 0xC0000000, 0x00000046);
 const ICOMPONENT_IID: Tuid = tuid_from_uid(0xE831FF31, 0xF2D54301, 0x928EBBEE, 0x25697802);
 const IAUDIO_PROCESSOR_IID: Tuid = tuid_from_uid(0x42043F99, 0xB7DA453C, 0xA569E79D, 0x9AAEC33D);
-const IEDIT_CONTROLLER_IID: Tuid = tuid_from_uid(0xDCD7BBE3, 0x7742448D, 0xA874AAF0, 0x0B96B23E);
+const IEDIT_CONTROLLER_IID: Tuid = tuid_from_uid(0xDCD7BBE3, 0x7742448D, 0xA874AACC, 0x979C759E);
 const ICOMPONENT_HANDLER_IID: Tuid = tuid_from_uid(0x93A0BEA3, 0x0BD045DB, 0x8E890B0C, 0xC1E46AC6);
 const IHOST_APPLICATION_IID: Tuid = tuid_from_uid(0x58E595CC, 0xDB2D4969, 0x8B6AAF8C, 0x36A664E5);
 // ivstparameterchanges.h (published interface definitions).
@@ -184,6 +185,209 @@ const IPARAM_VALUE_QUEUE_IID: Tuid = tuid_from_uid(0x01263A18, 0xED074F6F, 0x98C
 // ivstevents.h / ivstmidicontrollers.h (published interface definitions).
 const IEVENT_LIST_IID: Tuid = tuid_from_uid(0x3A2C4214, 0x346349FE, 0xB2C4F397, 0xB9695A44);
 const IMIDI_MAPPING_IID: Tuid = tuid_from_uid(0xDF695DF2, 0x8B4B47EB, 0xAB3EF8FB, 0x2D1F6BB2);
+const IBSTREAM_IID: Tuid = tuid_from_uid(0xC3BF6EA2, 0x30994752, 0x9B6BF990, 0x1EE33E9B);
+
+// ── Host-side IBStream for opaque component/controller state ───────────────
+
+#[repr(C)]
+struct MemoryStreamVTable {
+    query_interface: unsafe extern "C" fn(*mut c_void, *const Tuid, *mut *mut c_void) -> Tresult,
+    add_ref: unsafe extern "C" fn(*mut c_void) -> u32,
+    release: unsafe extern "C" fn(*mut c_void) -> u32,
+    read: unsafe extern "C" fn(*mut c_void, *mut c_void, i32, *mut i32) -> Tresult,
+    write: unsafe extern "C" fn(*mut c_void, *const c_void, i32, *mut i32) -> Tresult,
+    seek: unsafe extern "C" fn(*mut c_void, i64, i32, *mut i64) -> Tresult,
+    tell: unsafe extern "C" fn(*mut c_void, *mut i64) -> Tresult,
+}
+
+#[repr(C)]
+struct MemoryStream {
+    vtable: *const MemoryStreamVTable,
+    bytes: Vec<u8>,
+    position: usize,
+    writable: bool,
+}
+
+impl MemoryStream {
+    fn writer() -> Self {
+        Self {
+            vtable: &MEMORY_STREAM_VTABLE,
+            bytes: Vec::new(),
+            position: 0,
+            writable: true,
+        }
+    }
+
+    fn reader(bytes: &[u8]) -> Self {
+        Self {
+            vtable: &MEMORY_STREAM_VTABLE,
+            bytes: bytes.to_vec(),
+            position: 0,
+            writable: false,
+        }
+    }
+
+    fn as_raw(&mut self) -> *mut c_void {
+        (self as *mut Self).cast()
+    }
+}
+
+unsafe extern "C" fn stream_query_interface(
+    this: *mut c_void,
+    iid: *const Tuid,
+    out: *mut *mut c_void,
+) -> Tresult {
+    if out.is_null() {
+        return K_RESULT_FALSE;
+    }
+    *out = ptr::null_mut();
+    if !iid.is_null() && (*iid == FUNKNOWN_IID || *iid == IBSTREAM_IID) {
+        *out = this;
+        return K_RESULT_OK;
+    }
+    K_NO_INTERFACE
+}
+
+unsafe extern "C" fn stream_add_ref(_this: *mut c_void) -> u32 {
+    1
+}
+
+unsafe extern "C" fn stream_release(_this: *mut c_void) -> u32 {
+    1
+}
+
+unsafe extern "C" fn stream_read(
+    this: *mut c_void,
+    buffer: *mut c_void,
+    requested: i32,
+    read: *mut i32,
+) -> Tresult {
+    if this.is_null() || buffer.is_null() || requested < 0 {
+        return K_RESULT_FALSE;
+    }
+    let stream = &mut *(this as *mut MemoryStream);
+    let available = stream.bytes.len().saturating_sub(stream.position);
+    let count = available.min(requested as usize);
+    ptr::copy_nonoverlapping(
+        stream.bytes.as_ptr().add(stream.position),
+        buffer.cast::<u8>(),
+        count,
+    );
+    stream.position += count;
+    if !read.is_null() {
+        *read = count as i32;
+    }
+    K_RESULT_OK
+}
+
+unsafe extern "C" fn stream_write(
+    this: *mut c_void,
+    buffer: *const c_void,
+    requested: i32,
+    written: *mut i32,
+) -> Tresult {
+    if this.is_null() || buffer.is_null() || requested < 0 {
+        return K_RESULT_FALSE;
+    }
+    let stream = &mut *(this as *mut MemoryStream);
+    if !stream.writable {
+        return K_RESULT_FALSE;
+    }
+    let count = requested as usize;
+    let end = match stream.position.checked_add(count) {
+        Some(end) => end,
+        None => return K_RESULT_FALSE,
+    };
+    if end > stream.bytes.len() {
+        stream.bytes.resize(end, 0);
+    }
+    ptr::copy_nonoverlapping(
+        buffer.cast::<u8>(),
+        stream.bytes.as_mut_ptr().add(stream.position),
+        count,
+    );
+    stream.position = end;
+    if !written.is_null() {
+        *written = requested;
+    }
+    K_RESULT_OK
+}
+
+unsafe extern "C" fn stream_seek(
+    this: *mut c_void,
+    offset: i64,
+    mode: i32,
+    result: *mut i64,
+) -> Tresult {
+    if this.is_null() {
+        return K_RESULT_FALSE;
+    }
+    let stream = &mut *(this as *mut MemoryStream);
+    let base = match mode {
+        0 => 0i64,
+        1 => stream.position as i64,
+        2 => stream.bytes.len() as i64,
+        _ => return K_RESULT_FALSE,
+    };
+    let Some(position) = base.checked_add(offset) else {
+        return K_RESULT_FALSE;
+    };
+    if position < 0 {
+        return K_RESULT_FALSE;
+    }
+    stream.position = position as usize;
+    if !result.is_null() {
+        *result = position;
+    }
+    K_RESULT_OK
+}
+
+unsafe extern "C" fn stream_tell(this: *mut c_void, position: *mut i64) -> Tresult {
+    if this.is_null() || position.is_null() {
+        return K_RESULT_FALSE;
+    }
+    *position = (*(this as *mut MemoryStream)).position as i64;
+    K_RESULT_OK
+}
+
+static MEMORY_STREAM_VTABLE: MemoryStreamVTable = MemoryStreamVTable {
+    query_interface: stream_query_interface,
+    add_ref: stream_add_ref,
+    release: stream_release,
+    read: stream_read,
+    write: stream_write,
+    seek: stream_seek,
+    tell: stream_tell,
+};
+
+const STATE_ENVELOPE_MAGIC: &[u8; 8] = b"SCV3ST\0\x01";
+
+fn encode_state_envelope(component: &[u8], controller: &[u8]) -> Vec<u8> {
+    let mut result = Vec::with_capacity(24 + component.len() + controller.len());
+    result.extend_from_slice(STATE_ENVELOPE_MAGIC);
+    result.extend_from_slice(&(component.len() as u64).to_le_bytes());
+    result.extend_from_slice(&(controller.len() as u64).to_le_bytes());
+    result.extend_from_slice(component);
+    result.extend_from_slice(controller);
+    result
+}
+
+fn decode_state_envelope(bytes: &[u8]) -> Option<(&[u8], &[u8])> {
+    if bytes.len() < 24 || &bytes[..8] != STATE_ENVELOPE_MAGIC {
+        return None;
+    }
+    let component_len = u64::from_le_bytes(bytes[8..16].try_into().ok()?) as usize;
+    let controller_len = u64::from_le_bytes(bytes[16..24].try_into().ok()?) as usize;
+    let component_end = 24usize.checked_add(component_len)?;
+    let controller_end = component_end.checked_add(controller_len)?;
+    if controller_end != bytes.len() {
+        return None;
+    }
+    Some((
+        &bytes[24..component_end],
+        &bytes[component_end..controller_end],
+    ))
+}
 
 // Bus/processing constants.
 const K_AUDIO: i32 = 0;
@@ -1494,6 +1698,66 @@ impl Vst3HostedInstance {
         &self.parameters
     }
 
+    /// Capture component and optional controller state into a small
+    /// host-owned envelope. The payload remains opaque to Signal.
+    pub fn save_state(&self) -> Result<Vec<u8>, Vst3HostingError> {
+        unsafe {
+            let component_vtable = vtable_of::<ComponentVTable>(self.component);
+            let mut component = MemoryStream::writer();
+            if ((*component_vtable).get_state)(self.component, component.as_raw()) != K_RESULT_OK {
+                return Err(Vst3HostingError::new("state_capture_failed"));
+            }
+
+            let mut controller_bytes = Vec::new();
+            if let Some(controller) = &self.controller {
+                let controller_vtable = vtable_of::<EditControllerVTable>(controller.ptr());
+                let mut controller_stream = MemoryStream::writer();
+                if ((*controller_vtable).get_state)(controller.ptr(), controller_stream.as_raw())
+                    == K_RESULT_OK
+                {
+                    controller_bytes = controller_stream.bytes;
+                }
+            }
+            Ok(encode_state_envelope(&component.bytes, &controller_bytes))
+        }
+    }
+
+    /// Restore component and optional controller state captured by
+    /// [`Self::save_state`].
+    pub fn load_state(&mut self, bytes: &[u8]) -> Result<(), Vst3HostingError> {
+        let (component_bytes, controller_bytes) = decode_state_envelope(bytes)
+            .ok_or_else(|| Vst3HostingError::new("state_deserialize_failed"))?;
+        unsafe {
+            let component_vtable = vtable_of::<ComponentVTable>(self.component);
+            let mut component_stream = MemoryStream::reader(component_bytes);
+            if ((*component_vtable).set_state)(self.component, component_stream.as_raw())
+                != K_RESULT_OK
+            {
+                return Err(Vst3HostingError::new("state_restore_failed"));
+            }
+
+            if let Some(controller) = &self.controller {
+                let controller_vtable = vtable_of::<EditControllerVTable>(controller.ptr());
+                let mut component_for_controller = MemoryStream::reader(component_bytes);
+                let _ = ((*controller_vtable).set_component_state)(
+                    controller.ptr(),
+                    component_for_controller.as_raw(),
+                );
+                if !controller_bytes.is_empty() {
+                    let mut controller_stream = MemoryStream::reader(controller_bytes);
+                    if ((*controller_vtable).set_state)(
+                        controller.ptr(),
+                        controller_stream.as_raw(),
+                    ) != K_RESULT_OK
+                    {
+                        return Err(Vst3HostingError::new("controller_state_restore_failed"));
+                    }
+                }
+            }
+        }
+        Ok(())
+    }
+
     /// Queue one parameter write (g12.023). VST3's set domain is the
     /// normalized 0..1 value itself: it lands in the processor through the
     /// next block's `IParameterChanges` (block-boundary posture v1), and
@@ -2180,5 +2444,60 @@ mod tuid_tests {
         assert_eq!(decoded, expected);
         assert!(tuid_from_class_id_hex("nonsense").is_none());
         assert!(tuid_from_class_id_hex("1122").is_none());
+    }
+
+    #[test]
+    fn state_envelope_round_trips_component_and_controller_state() {
+        let encoded = encode_state_envelope(b"component-state", b"controller-state");
+        let (component, controller) =
+            decode_state_envelope(&encoded).expect("valid state envelope");
+
+        assert_eq!(component, b"component-state");
+        assert_eq!(controller, b"controller-state");
+        assert!(decode_state_envelope(b"not-a-state-envelope").is_none());
+
+        let mut trailing_bytes = encoded;
+        trailing_bytes.push(0);
+        assert!(decode_state_envelope(&trailing_bytes).is_none());
+    }
+
+    #[test]
+    fn memory_stream_supports_plugin_write_seek_and_read_calls() {
+        let mut stream = MemoryStream::writer();
+        let source = b"plugin-state";
+        let mut written = 0;
+        let result = unsafe {
+            stream_write(
+                stream.as_raw(),
+                source.as_ptr().cast(),
+                source.len() as i32,
+                &mut written,
+            )
+        };
+        assert_eq!(result, K_RESULT_OK);
+        assert_eq!(written, source.len() as i32);
+
+        let mut position = -1;
+        assert_eq!(
+            unsafe { stream_seek(stream.as_raw(), 0, 0, &mut position) },
+            K_RESULT_OK
+        );
+        assert_eq!(position, 0);
+
+        let mut destination = [0u8; 12];
+        let mut read = 0;
+        assert_eq!(
+            unsafe {
+                stream_read(
+                    stream.as_raw(),
+                    destination.as_mut_ptr().cast(),
+                    destination.len() as i32,
+                    &mut read,
+                )
+            },
+            K_RESULT_OK
+        );
+        assert_eq!(read, destination.len() as i32);
+        assert_eq!(&destination, source);
     }
 }

@@ -125,7 +125,7 @@ fn path_extension_matches(path: &Path, extension: &str) -> bool {
         .is_some_and(|value| value.eq_ignore_ascii_case(extension))
 }
 
-fn clap_bundle_binary(bundle_root: &Path) -> Option<PathBuf> {
+pub(crate) fn clap_bundle_binary(bundle_root: &Path) -> Option<PathBuf> {
     let macos_root = bundle_root.join("Contents").join("MacOS");
     if let Ok(entries) = std::fs::read_dir(&macos_root) {
         for entry in entries.flatten() {

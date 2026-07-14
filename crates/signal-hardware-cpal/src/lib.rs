@@ -44,7 +44,8 @@ use signal_hardware::{
 };
 
 pub use input::{
-    default_input_device_name, enumerate_input_devices, CpalInputBackend, InputDeviceDescription,
+    default_input_device_name, enumerate_input_devices, CpalInputBackend, CpalInputEndpoint,
+    InputChannelDescription, InputDeviceDescription,
 };
 
 const STATE_RUNNING: u8 = 0;

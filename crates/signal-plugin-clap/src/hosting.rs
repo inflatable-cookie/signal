@@ -31,7 +31,8 @@ use clap_sys::{
     ext::gui::{clap_host_gui, clap_plugin_gui, CLAP_EXT_GUI},
     ext::latency::{clap_plugin_latency, CLAP_EXT_LATENCY},
     ext::params::{
-        clap_host_params, clap_param_clear_flags, clap_param_rescan_flags, CLAP_EXT_PARAMS,
+        clap_host_params, clap_param_clear_flags, clap_param_rescan_flags, clap_plugin_params,
+        CLAP_EXT_PARAMS,
     },
     ext::state::{clap_host_state, clap_plugin_state, CLAP_EXT_STATE},
     factory::plugin_factory::{clap_plugin_factory, CLAP_PLUGIN_FACTORY_ID},
@@ -51,7 +52,8 @@ use std::sync::Arc;
 use crate::gui::{ClapGuiEvent, ClapGuiSession};
 
 use crate::discovery::{
-    audio_buses_from_extension, parameter_descriptors_from_extension, PluginAudioBusDescriptorList,
+    audio_buses_from_extension, clap_bundle_binary, parameter_descriptors_from_extension,
+    PluginAudioBusDescriptorList,
 };
 
 /// Error surface for hosting operations; carries a stable snake_case token
@@ -90,7 +92,8 @@ pub struct LoadedClapEntry {
 impl LoadedClapEntry {
     /// dlopen `library_path`, resolve `clap_entry`, and run its `init`.
     pub fn load(library_path: &Path) -> Result<Self, ClapHostingError> {
-        let library = unsafe { Library::new(library_path) }
+        let load_path = clap_library_binary_path(library_path)?;
+        let library = unsafe { Library::new(&load_path) }
             .map_err(|_| ClapHostingError::new("library_open_failed"))?;
         let entry = unsafe {
             library
@@ -128,6 +131,19 @@ impl LoadedClapEntry {
     }
 }
 
+fn clap_library_binary_path(library_path: &Path) -> Result<std::path::PathBuf, ClapHostingError> {
+    if library_path.is_dir()
+        && library_path
+            .extension()
+            .and_then(|extension| extension.to_str())
+            .is_some_and(|extension| extension.eq_ignore_ascii_case("clap"))
+    {
+        return clap_bundle_binary(library_path)
+            .ok_or_else(|| ClapHostingError::new("bundle_binary_missing"));
+    }
+    Ok(library_path.to_path_buf())
+}
+
 fn clap_plugin_path(library_path: &Path) -> &Path {
     library_path
         .ancestors()
@@ -141,7 +157,7 @@ fn clap_plugin_path(library_path: &Path) -> &Path {
 
 #[cfg(test)]
 mod plugin_path_tests {
-    use super::clap_plugin_path;
+    use super::{clap_library_binary_path, clap_plugin_path};
     use std::path::Path;
 
     #[test]
@@ -157,6 +173,29 @@ mod plugin_path_tests {
     fn standalone_library_initializes_with_its_own_path() {
         let library = Path::new("/usr/lib/clap/example.clap.so");
         assert_eq!(clap_plugin_path(library), library);
+    }
+
+    #[test]
+    fn macos_bundle_loads_its_contents_binary() {
+        let root = std::env::temp_dir().join(format!(
+            "signal-clap-bundle-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_nanos(),
+        ));
+        let bundle = root.join("Example.clap");
+        let binary = bundle.join("Contents/MacOS/Example");
+        std::fs::create_dir_all(binary.parent().expect("binary parent")).expect("bundle dirs");
+        std::fs::write(&binary, b"fixture").expect("bundle binary");
+
+        assert_eq!(
+            clap_library_binary_path(&bundle).expect("resolve bundle binary"),
+            binary,
+        );
+
+        let _ = std::fs::remove_dir_all(root);
     }
 }
 
@@ -324,9 +363,79 @@ impl ClapHostedInstance {
         Ok(())
     }
 
+    /// Apply queued control-thread parameter writes before an operation such
+    /// as state capture that must observe them without waiting for an audio
+    /// block. CLAP's params flush is the non-processing delivery path.
+    fn flush_parameter_changes(&self) -> Result<(), ClapHostingError> {
+        if self.param_changes.is_empty() {
+            return Ok(());
+        }
+        let extension = unsafe {
+            (*self.plugin)
+                .get_extension
+                .map(|get| get(self.plugin, CLAP_EXT_PARAMS.as_ptr()))
+                .unwrap_or(ptr::null())
+                .cast::<clap_plugin_params>()
+        };
+        if extension.is_null() {
+            return Err(ClapHostingError::new("params_extension_missing"));
+        }
+        let flush = unsafe { (*extension).flush }
+            .ok_or_else(|| ClapHostingError::new("params_flush_missing"))?;
+
+        let mut scratch = Vec::with_capacity(PLUGIN_PARAM_CHANGE_CAPACITY);
+        self.param_changes.drain_coalesced(&mut scratch);
+        let mut input = Box::new(ParamEventList {
+            params: Vec::with_capacity(scratch.len()),
+            notes: Vec::new(),
+            note_expressions: Vec::new(),
+            midi: Vec::new(),
+            order: Vec::with_capacity(scratch.len()),
+            list: clap_input_events {
+                ctx: ptr::null_mut(),
+                size: Some(param_in_events_size),
+                get: Some(param_in_events_get),
+            },
+        });
+        for change in scratch {
+            input.params.push(clap_event_param_value {
+                header: clap_event_header {
+                    size: std::mem::size_of::<clap_event_param_value>() as u32,
+                    time: 0,
+                    space_id: CLAP_CORE_EVENT_SPACE_ID,
+                    type_: CLAP_EVENT_PARAM_VALUE,
+                    flags: 0,
+                },
+                param_id: change.parameter_id,
+                cookie: ptr::null_mut(),
+                note_id: -1,
+                port_index: -1,
+                channel: -1,
+                key: -1,
+                value: change.value,
+            });
+            input
+                .order
+                .push(InEventSlot::Param(input.params.len() as u32 - 1));
+        }
+        input.list.ctx = (&mut *input as *mut ParamEventList).cast();
+
+        let mut output = Box::new(ParamOutCapture {
+            queue: Arc::clone(&self.param_out),
+            list: clap_output_events {
+                ctx: ptr::null_mut(),
+                try_push: Some(param_out_events_try_push),
+            },
+        });
+        output.list.ctx = (&mut *output as *mut ParamOutCapture).cast();
+        unsafe { flush(self.plugin, &input.list, &output.list) };
+        Ok(())
+    }
+
     /// Capture the plugin's opaque project state through `clap.state`.
     /// Control-thread only; callers must exclude concurrent processing.
     pub fn save_state(&self) -> Result<Vec<u8>, ClapHostingError> {
+        self.flush_parameter_changes()?;
         let extension = self.state_extension()?;
         let save = unsafe { (*extension).save }
             .ok_or_else(|| ClapHostingError::new("state_save_missing"))?;

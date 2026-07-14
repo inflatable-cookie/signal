@@ -560,7 +560,7 @@ static PARAMS: clap_plugin_params = clap_plugin_params {{
     get_value: Some(param_get_value),
     value_to_text: None,
     text_to_value: None,
-    flush: None,
+    flush: Some(param_flush),
 }};
 
 static STATE: clap_plugin_state = clap_plugin_state {{
@@ -712,6 +712,18 @@ unsafe fn apply_param_events(
         }}
     }}
     step_count
+}}
+
+/// CLAP control-thread parameter delivery used while audio processing is
+/// stopped. State capture relies on this path to observe the latest queued
+/// Gain value without requiring a synthetic audio block.
+unsafe extern "C" fn param_flush(
+    _plugin: *const clap_plugin,
+    in_events: *const c_void,
+    _out_events: *const c_void,
+) {{
+    let mut ignored_steps = [(0u32, 0f32, false); GAIN_STEP_CAPACITY];
+    let _ = apply_param_events(in_events, &mut ignored_steps);
 }}
 
 /// Real audio processing: output = input × the LIVE Gain param on every
