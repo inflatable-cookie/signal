@@ -998,16 +998,33 @@ Status: closed without exposure. No development candidate qualified.
   schedule, boundary, and measurement contract
 - [x] run the complete synthetic gate, all nine mono development rows, and one
   concealed listening pack only after hard integrity passes
-- [ ] decide on the whole architecture; do not open parameter lattices or
+- [x] decide on the whole architecture; do not open parameter lattices or
   per-metric repair batches
 
 ### Batch 29.6CI - Mono Decision Checkpoint
 
-- [ ] open only after the frozen nine-row development evidence is complete
-- [ ] decide whether the complete architecture earns continuation or returns to
+- [x] open only after the frozen nine-row development evidence is complete
+- [x] decide whether the complete architecture earns continuation or returns to
   research as a whole
-- [ ] keep holdout, linked stereo, dynamic ratio, cache, production routing,
+- [x] keep holdout, linked stereo, dynamic ratio, cache, production routing,
   and parameter search closed
+
+Decision: reject the frequency-partitioned architecture. Continue only the
+fixed-grid weighted predictor as a successor research direction. Its repeated
+clean/tight/tidy results show a real improvement over hard nearest-owner phase
+replacement, but do not yet establish production or comparator parity.
+
+### Batch 29.6CJ - Exact-Excerpt Comparator Confirmation
+
+- [ ] export the exact `16384`-frame mono development inputs before external
+  rendering; freeze sample rate, channel count, frame count, and content hash
+- [ ] render Rubber Band R3 and Signalsmith Stretch from those exact inputs;
+  reject full-source renders, truncation substitutes, or channel-contract drift
+- [ ] export one concealed four-way pack containing weighted predictor, current
+  Signal, Rubber Band R3, and Signalsmith Stretch without parameter changes
+- [ ] use the unchanged nine rows to decide the remaining external quality gap;
+  keep frequency partitioning, holdout, stereo, dynamic ratio, cache, and
+  production routing closed
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -1881,10 +1898,19 @@ Status: closed without exposure. No development candidate qualified.
   `875dd80994c43efd`, `67a955adff0bfc7e`, and `6cfcb102460045a8`.
   Holdout reads remain zero. Operator listening is the remaining Batch 29.6CH
   gate before the whole-architecture Batch 29.6CI decision.
+- 2026-07-14: concealed listening completes the internal architecture decision.
+  The frequency-partitioned path is rejected after repeated stutter, transient
+  duplication, softened attacks, start/end clicks, and definition loss. The
+  weighted predictor is the only continuing successor direction: it is cleanest
+  or competitive on multiple drum, bass, vocal, pad, and mix rows, though smear,
+  grain, transient-shape, and one end-pop defect remain. External ranking is
+  invalid. Signal paths consumed a `16384`-frame mono downmix, while Rubber Band
+  and Signalsmith consumed `220500`-frame stereo sources; the exporter then
+  truncated their `165375`/`275625`-frame renders to the Signal target. Batch
+  29.6CJ owns one exact-input confirmation. No tuning follows this invalid pack.
 
 ## Next Task
 
-Complete the concealed Batch 29.6CH five-way development listen at
-`target/stretch-source-studied-ch-development-pack`, then make the Batch
-29.6CI whole-architecture decision. Do not reopen Rule 30AB or a
-parameter-repair sequence.
+Run Batch 29.6CJ: regenerate both external controls from the exact mono excerpts
+and export one unchanged-row four-way confirmation pack. Do not reopen the
+frequency-partitioned path or a parameter-repair sequence.

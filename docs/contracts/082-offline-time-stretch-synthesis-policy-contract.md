@@ -1,8 +1,8 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; source-studied operator listening open
+Status: active; exact-excerpt comparator confirmation next
 Owner: dsp
-Updated: 2026-07-13
+Updated: 2026-07-14
 Related contracts: `046`, `048`, `049`
 Related architecture: `docs/architecture/offline-time-stretch-synthesis.md`
 
@@ -3120,6 +3120,29 @@ Holdout, product routing, dynamic ratio, cache, and realtime source-fill remain
 closed. Linked decisions may be exercised inside the proof, but stereo
 promotion still requires independent listening.
 
+Batch 29.6CI rejects the frequency-partitioned architecture as a whole. The
+fixed-grid weighted predictor alone earns continuation as research evidence;
+it is not production-routed and has no Rubber Band-class claim.
+
+The first five-way pack cannot rank external controls. Signal consumed a
+`16384`-frame mono downmix. Rubber Band R3 and Signalsmith Stretch consumed the
+full `220500`-frame stereo source, after which only the first Signal-length
+output region was retained. Boundary state, channel input, and render span were
+therefore different. Internal Signal-to-Signal listening remains admissible.
+
+#### Rule 31E: exact-input external confirmation
+
+One confirmation pack must render every engine from identical mono sample
+content, sample rate, frame count, and start/end boundaries. The receipt must
+freeze the input hash and output frame count for every row. Post-render
+truncation of a longer-source output is not an equivalent control.
+
+The pack contains only current Signal, the weighted predictor, Rubber Band R3,
+and Signalsmith Stretch. It uses the unchanged nine development rows and makes
+no algorithm or parameter change. Frequency partitioning, holdout, linked
+stereo, dynamic ratio, cache, realtime source-fill, and production routing stay
+closed.
+
 ## Source-Study Provenance Rule
 
 Public papers, public descriptions, and public source may inform architecture.
@@ -3130,6 +3153,6 @@ dependency decision explicitly changes that boundary.
 
 ## Next Task
 
-Complete the Batch 29.6CH concealed development listen, then make the Batch
-29.6CI whole-architecture decision. Keep parameter lattices, holdout, product
-routing, dynamic ratio, cache, and realtime source-fill closed.
+Run the Rule 31E exact-input external confirmation. Keep parameter lattices,
+holdout, product routing, linked stereo, dynamic ratio, cache, and realtime
+source-fill closed.

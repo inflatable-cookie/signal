@@ -2,7 +2,7 @@
 
 Status: active
 Owner: core-product
-Updated: 2026-07-09
+Updated: 2026-07-14
 
 ## Purpose
 
@@ -16,7 +16,7 @@ memory alone.
 - `g10.029` is the active correctness-first stretch roadmap
 - `046` governs sample-domain stretch behavior and its promotion gates
 - `082` governs the report-only successor policy and the active Rule 31
-  source-studied architecture proof
+  source-studied architecture decision and exact-input comparator confirmation
 - `g10.028` source-fill work is paused until the actual DSP kernel and source
   consumption geometry pass the `g10.029` correctness gate
 
@@ -144,6 +144,5 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Complete the `g10.029` Batch 29.6CH concealed five-way development listen,
-then decide the whole source-studied architecture at Batch 29.6CI. Do not
-reopen Rule 30AB or parameter search.
+Run the `g10.029` Batch 29.6CJ exact-input comparator confirmation. Do not
+reopen frequency partitioning, Rule 30AB, or parameter search.

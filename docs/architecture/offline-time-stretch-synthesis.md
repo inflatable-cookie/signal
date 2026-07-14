@@ -1,8 +1,8 @@
 # Offline Time-Stretch Synthesis
 
-Status: source-studied operator listening open
+Status: weighted-predictor continuation; comparator confirmation required
 Owner: dsp
-Updated: 2026-07-13
+Updated: 2026-07-14
 Contract refs: `046`, `082`
 Roadmap ref: `g10.029`
 
@@ -863,8 +863,22 @@ No Rule 30AB repair, factor sweep, or per-metric follow-up chain is authorized.
 The candidate is judged as a system on the complete synthetic and frozen mono
 development gates before any promotion.
 
+Concealed development listening rejects the frequency-partitioned path. Its
+exclusive-scale topology did not transfer into a coherent Signal synthesis
+system: stutter, double/soft transients, definition loss, and boundary clicks
+repeat across rows. The fixed-grid weighted predictor is the only successor
+direction retained. It repeatedly sounds clean, tight, or refined, confirming
+that weighted multi-direction evidence is more promising than hard nearest-
+owner phase replacement. Residual smear, grain, transient-shape variation, and
+an end pop still block promotion.
+
+No external parity conclusion follows from the first pack. External engines
+were rendered from full stereo files, while Signal consumed isolated mono
+excerpts. Exact-input confirmation must precede any Rubber Band or Signalsmith
+ranking.
+
 ## Next Task
 
-Complete the concealed Batch 29.6CH five-way development listen, then decide
-the two source-studied architectures together at Batch 29.6CI. Do not reopen
-Rule 30AB or a parameter lattice.
+Render the exact mono excerpts through both external controls and run the
+four-way Batch 29.6CJ confirmation. Do not reopen frequency partitioning, Rule
+30AB, or a parameter lattice.

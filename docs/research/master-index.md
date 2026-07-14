@@ -52,7 +52,7 @@ Finch and Loophole.
 | [Offline Time-Stretch Successor](./translation-memos/001-offline-time-stretch-successor.md) | Historical one-global-map successor sequence | Superseded by memo 002 |
 | [Rubber Band Behavioural Forensics](./translation-memos/002-rubber-band-behavioural-forensics.md) | Reopen local timing, transient phase treatment, and simultaneous multi-resolution synthesis from measured comparator behaviour | Promoted |
 | [Non-Duplicating Stretch Ownership](./translation-memos/003-non-duplicating-stretch-ownership.md) | Select one time-adaptive painless NSG frame after redundant full-band union rejection | Promoted |
-| [Source-Studied Stretch Architecture](./translation-memos/004-source-studied-stretch-architecture.md) | Replace time-adaptive full-band synthesis with frequency-partitioned multi-scale guidance; retain a single-grid weighted predictor as control | Promoted |
+| [Source-Studied Stretch Architecture](./translation-memos/004-source-studied-stretch-architecture.md) | Reject frequency partitioning; retain the fixed-grid weighted predictor for exact-input comparator confirmation | Partially validated |
 
 ## Consumer Guidance
 
@@ -63,6 +63,5 @@ Finch and Loophole.
 
 ## Next Task
 
-Complete the Batch 29.6CH concealed five-way development listen, then decide
-the source-studied architecture as a whole at Batch 29.6CI. Keep the source
+Run the Batch 29.6CJ exact-input comparator confirmation. Keep the source
 provenance boundary attached to every transferred invariant.

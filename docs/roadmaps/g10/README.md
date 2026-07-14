@@ -1,7 +1,7 @@
 # g10 Milestones
 
 Status: active
-Updated: 2026-07-13
+Updated: 2026-07-14
 
 ## Why this generation matters now
 
@@ -330,20 +330,24 @@ Current stretch status:
   time-selected full-band resolution. Its full-band H/P/R classification guides
   crossover and phase state; it is not additive component synthesis.
   Signalsmith supplies the contrasting fixed-grid weighted multi-predictor
-  control. Batch 29.6CH now passes structure, determinism, and all nine
+  control. Batch 29.6CH passes structure, determinism, and all nine
   development integrity rows for both paths. The fixed-grid control passes the
   synthetic quality gate. The partitioned path retains a marginal `3 Hz` tone
   miss against the `2 Hz` cap while passing event placement at `190` frames;
-  it is not tuned. A concealed five-way development pack is ready for operator
-  listening. Rule 30AB repair, parameter lattices, and per-metric follow-up
-  chains remain closed. Holdout, stereo, dynamic ratio, cache, and routing
-  remain closed.
+  it is not tuned. Concealed listening rejects frequency partitioning and
+  retains only the fixed-grid weighted predictor for successor research. The
+  external rankings are invalid because Signal consumed `16384`-frame mono
+  excerpts while Rubber Band and Signalsmith consumed full `220500`-frame
+  stereo sources before truncation. Batch 29.6CJ must repeat the unchanged rows
+  with exact input identity. Rule 30AB repair, parameter lattices, and per-
+  metric follow-up chains remain closed. Holdout, stereo, dynamic ratio, cache,
+  and routing remain closed.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Complete the `g10.029` Batch 29.6CH concealed five-way development listen,
-then make the Batch 29.6CI whole-architecture decision. Do not reopen Rule
-30AB or a parameter-repair sequence.
+Run `g10.029` Batch 29.6CJ: exact mono excerpt export, external re-render, and
+one unchanged-row four-way confirmation pack. Do not reopen frequency
+partitioning, Rule 30AB, or a parameter-repair sequence.

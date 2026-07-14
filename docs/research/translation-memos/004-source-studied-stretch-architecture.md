@@ -1,9 +1,9 @@
 # Source-Studied Stretch Architecture
 
-Status: promoted
+Status: partially validated; weighted predictor retained
 Memo: `g10.029` source-study reset
 Owner: dsp
-Last updated: 2026-07-13
+Last updated: 2026-07-14
 Related roadmap: `g10.029`
 
 ## Project Problem
@@ -97,6 +97,18 @@ Promoted into:
 - contract `082`, Rule 31
 - roadmap `g10.029`, Batches 29.6CG through 29.6CI
 
+## Outcome
+
+Batch 29.6CI rejects the frequency-partitioned target and retains the weighted
+predictor control as the sole successor research direction. The result points
+to weighted phase evidence, not simultaneous scale ownership, as the useful
+transfer from the source study.
+
+The five-way pack does not establish external ranking: external engines used
+full stereo sources while Signal used isolated mono excerpts. Batch 29.6CJ must
+repeat the comparator control with exact input identity before the remaining
+quality gap can be assessed.
+
 ## Sources
 
 | Source | Confidence | Transfer boundary |
@@ -111,6 +123,5 @@ Promoted into:
 
 ## Next Task
 
-Complete the concealed Batch 29.6CH five-way development listen, then make the
-Batch 29.6CI whole-architecture decision. Do not resume Rule 30AB or split the
-work into per-mechanism repair batches.
+Run the exact-input Batch 29.6CJ comparator confirmation. Do not resume the
+frequency-partitioned path, Rule 30AB, or per-mechanism repair batches.
