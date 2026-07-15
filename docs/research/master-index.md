@@ -64,5 +64,6 @@ Finch and Loophole.
 
 ## Next Task
 
-Run Batch 29.6DB exact-source coherent Signal versus Rubber Band R3 comparison.
-Keep stereo, dynamic ratio, product routing, and promotion closed.
+Complete Batch 29.6DB concealed listening over all six exact-source coherent
+Signal versus Rubber Band R3 rows. Keep the key, stereo, dynamic ratio, product
+routing, and promotion closed until the record is complete.

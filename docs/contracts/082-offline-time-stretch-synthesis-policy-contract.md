@@ -3401,8 +3401,17 @@ manifest, key, notes, and receipt evidence before concealed listening. Do not
 tune either engine from this six-row development set. Stereo, dynamic ratio,
 product routing, and promotion remain closed.
 
+Batch 29.6DB passes its export gate. Input identity repeats the Batch 29.6CZ
+aggregate hash `8ede75dbae2254b2`. Both engines have zero hard-integrity
+failures and exact repeat. Pack structure is `[0; 9]`; maximum written-pair RMS
+delta is `1.31e-9 dB`. Coherent Signal is objectively worse on two timing rows,
+five replica rows, zero static-residual rows, and all six boundary-growth rows.
+This mixed result authorizes only the frozen six-row concealed comparison.
+Keep the key closed until every row has continuity, transient, grain/ringing,
+tonal, start-boundary, end-boundary, preference, and broad-defect findings.
+
 ## Next Task
 
-Execute Batch 29.6DB exact-source coherent Signal versus Rubber Band R3
-comparison. Freeze objective and concealed evidence before listening. Keep
-stereo, dynamic ratio, product routing, and promotion closed.
+Complete Batch 29.6DB concealed listening over all six frozen rows. Keep the key
+closed until the record is complete. Keep stereo, dynamic ratio, product
+routing, and promotion closed.

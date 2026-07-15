@@ -291,6 +291,12 @@ The corrected topology is therefore the report-only source-studied baseline.
 This closes specimen-translation fidelity only; direct exact-source evidence
 against Rubber Band remains required before any broader quality claim.
 
+Batch 29.6DB now supplies that direct evidence. Both engines consume the same
+six written inputs, pass hard integrity, and repeat. Coherent Signal improves
+static residual on all six rows and timing on four, but worsens replica ratio
+on five and boundary growth on all six. Objective metrics cannot resolve the
+quality direction; the frozen two-way concealed pack must.
+
 ## Sources
 
 | Source | Revision | Use |
@@ -300,6 +306,6 @@ against Rubber Band remains required before any broader quality claim.
 
 ## Next Task
 
-Run the exact-source coherent Signal versus Rubber Band R3 comparison on the
-same six long-form rows. Keep equation changes, third mechanisms, stereo,
-dynamic ratio, and product routing closed.
+Complete the six-row exact-source coherent Signal versus Rubber Band R3
+concealed comparison. Keep equation changes, third mechanisms, stereo, dynamic
+ratio, and product routing closed.

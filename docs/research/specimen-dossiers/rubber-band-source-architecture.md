@@ -3,7 +3,7 @@
 Status: reviewed
 Specimen: Rubber Band R2 and R3
 Owner: dsp
-Last updated: 2026-07-13
+Last updated: 2026-07-15
 Scope: source topology at revision `e4296ac80b1170018a110bc326fd0d45a0eb27d6`
 
 ## Why This Specimen Matters
@@ -125,8 +125,17 @@ trajectory when both channels are inside the linked range.
 - Can one complete frequency-partitioned slice beat current Signal before
   classifier sophistication is widened?
 
+## Exact-Source Baseline Evidence
+
+Batch 29.6DB compares coherent Signal directly with Rubber Band R3 `4.0.0` on
+six exact five-second mono inputs at `1.5x` and `2.0x`. Both engines pass hard
+integrity and repeat. Coherent Signal has lower static residual on all six rows
+and lower timing error on four. Rubber Band has lower replica ratio on five and
+lower boundary growth on all six. The objective split does not establish
+audible parity or superiority; a peak-safe RMS-matched concealed pack is open.
+
 ## Next Task
 
-Build one Signal-owned complete topology around frequency-partitioned scales,
-guidance-only classification, and explicit phase states. Compare it with a
-single-grid multi-predictor control and the existing external renders.
+Complete the Batch 29.6DB six-row concealed comparison. Use the decoded result
+to decide whether the coherent single-grid baseline is already competitive or
+which Rubber Band source invariant remains audibly material.

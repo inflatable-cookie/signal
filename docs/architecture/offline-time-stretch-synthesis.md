@@ -1059,5 +1059,8 @@ resolves translation fidelity, not the product-quality target: the coherent
 engine has not yet faced Rubber Band on these exact long sources.
 
 Batch 29.6DB therefore reuses the same six exact mono inputs and corrected
-level matcher for coherent Signal versus Rubber Band R3 `4.0.0`. Stop before
-stereo, dynamic ratio, routing, or promotion.
+level matcher for coherent Signal versus Rubber Band R3 `4.0.0`. Both paths
+repeat and pass hard integrity. Signal improves static residual on all six rows
+and timing on four, while Rubber Band improves replica ratio on five and
+boundary growth on all six. The frozen concealed pack now owns the mono quality
+decision. Stop before stereo, dynamic ratio, routing, or promotion.

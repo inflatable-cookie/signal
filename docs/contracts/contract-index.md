@@ -144,5 +144,5 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Execute `g10.029` Batch 29.6DB exact-source coherent Signal versus Rubber Band
-R3 comparison. Keep stereo, dynamic ratio, routing, and promotion closed.
+Complete `g10.029` Batch 29.6DB six-row concealed coherent Signal versus Rubber
+Band R3 listening. Keep stereo, dynamic ratio, routing, and promotion closed.

@@ -1385,14 +1385,31 @@ Rubber Band-class claim.
 
 ### Batch 29.6DB - Exact-Source Rubber Band Benchmark
 
-- [ ] reuse the six exact Batch 29.6CZ source references, ratios, duration, and
+- [x] reuse the six exact Batch 29.6CZ source references, ratios, duration, and
   corrected peak-safe RMS matcher
-- [ ] render coherent Signal and Rubber Band R3 `4.0.0` from identical mono
+- [x] render coherent Signal and Rubber Band R3 `4.0.0` from identical mono
   inputs without parameter or mechanism changes
-- [ ] freeze hard-integrity, objective, receipt, assignment, and concealed-pack
+- [x] freeze hard-integrity, objective, receipt, assignment, and concealed-pack
   hashes before listening
 - [ ] complete the six-row concealed comparison before opening stereo, dynamic
   ratio, product routing, or promotion
+
+Pack state: ready for concealed operator listening at
+`target/stretch-source-studied-db-concealed-pack`. Both engines consume the
+same six exact `44.1 kHz` mono 16-bit inputs and repeat exactly. Structural
+failures are `[0; 9]`; hard-integrity failures are `0/6` for both engines;
+maximum packed-candidate RMS delta is `1.31e-9 dB`. Coherent Signal is worse
+than Rubber Band on `2/6` timing rows, `5/6` replica rows, `0/6` static-residual
+rows, and `6/6` boundary-growth rows. The mixed direction opens listening and
+does not select either engine.
+
+Freeze hashes: input `8ede75dbae2254b2`, coherent audio
+`7ec654eb414041ce`, Rubber Band audio `3ee61b19c9498523`, measurements
+`1c4b6398bf49d9bf`, objective report `eb1144f437a6ae65`, render receipt
+`4338e41ab85fe116`, packed audio `bd7dec22a565a32f`, assignment
+`c9724071b3aa2ded`, gain `d2b29e930726e10f`, manifest
+`fd1255a2fc007590`, closed key `14d5bbab2061b8fd`, notes
+`91d68633349f1944`, and audio receipt `1f80e9da6c011beb`.
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -2448,10 +2465,14 @@ Rubber Band-class claim.
   no coherent-Signal losses. Batch 29.6DA retains coherent Signal as the
   report-only source-studied baseline. Batch 29.6DB now owns an exact-source
   Rubber Band comparison; no parity or production claim is open.
+- 2026-07-15: Batch 29.6DB exports a repeat-stable exact-source Rubber Band
+  pack. Both engines pass hard integrity. Coherent Signal wins static residual
+  on all six rows and timing on four, but loses replica ratio on five and
+  boundary growth on all six. Concealed listening now owns the decision.
 
 ## Next Task
 
-Execute Batch 29.6DB. Reuse the exact six long-form mono sources and corrected
-level matcher for coherent Signal versus Rubber Band R3 `4.0.0`. Freeze the
-objective and concealed evidence before listening. Stop before stereo, dynamic
-ratio, product routing, or promotion.
+Listen to all six Batch 29.6DB rows without opening `listening-key.tsv`. Report
+continuity, transients, grain/ringing, tonal stability, both boundaries,
+preference, and broad defects. Stop before stereo, dynamic ratio, product
+routing, or promotion.

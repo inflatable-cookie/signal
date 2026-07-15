@@ -2207,6 +2207,53 @@ fn source_studied_concealed_coherent_source_comparison_exports_pack() {
 }
 
 #[test]
+#[ignore = "requires Rubber Band 4.0.0 and long-form source pack"]
+#[cfg(not(debug_assertions))]
+fn source_studied_exact_source_rubber_band_comparison_exports_pack() {
+    use super::source_studied::faithful_predictor::rubber_band_comparison::{
+        export, RubberBandComparisonDirection,
+    };
+
+    let first = export();
+    let repeated = export();
+    eprintln!("source_studied_exact_source_rubber_band_comparison {first:#?}");
+    assert_eq!(first, repeated);
+    assert_eq!(first.rows.len(), 6);
+    assert_eq!(first.candidates_per_row, 2);
+    assert_eq!(first.audio_files, 18);
+    assert_eq!(first.holdout_reads, 0);
+    assert_eq!(first.structural_failures, [0; 9], "{first:#?}");
+    assert_eq!(first.coherent_hard_failures, 0, "{first:#?}");
+    assert_eq!(first.rubber_hard_failures, 0, "{first:#?}");
+    assert!(first.maximum_candidate_rms_delta_db <= 1.0e-5);
+    assert_eq!(
+        first.hashes,
+        [
+            0x8ede_75db_ae22_54b2,
+            0x7ec6_54eb_4140_41ce,
+            0x3ee6_1b19_c949_8523,
+            0x1c4b_6398_bf49_d9bf,
+            0xeb11_44f4_37a6_ae65,
+            0x4338_e41a_b85f_e116,
+            0xbd7d_ec22_a565_a32f,
+            0xc972_4071_b3aa_2ded,
+            0xd2b2_9e93_0726_e10f,
+            0xfd12_55a2_fc00_7590,
+            0x14d5_bbab_2061_b8fd,
+            0x91d6_8633_349f_1944,
+            0x1f80_e9da_6c01_1beb,
+        ]
+    );
+    assert_eq!(first.rubber_band_version, "4.0.0");
+    assert!(first.coherent_repeated);
+    assert!(first.rubber_repeated);
+    assert_eq!(
+        first.direction,
+        RubberBandComparisonDirection::ConcealedListening
+    );
+}
+
+#[test]
 #[cfg(not(debug_assertions))]
 fn renyi_time_resolution_selection_selects_schedule_direction() {
     let first = renyi_time_resolution_selection_review();
