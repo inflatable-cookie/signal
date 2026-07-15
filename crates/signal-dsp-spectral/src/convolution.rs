@@ -233,9 +233,120 @@ impl PartitionedConvolver {
     }
 }
 
+/// A [`PartitionedConvolver`] wrapper that accepts arbitrary block sizes.
+///
+/// Real-time hosts deliver audio in callback blocks whose length rarely matches
+/// a convolver's internal partition size. `StreamingConvolver` buffers input to
+/// the fixed block boundary, so consumers can call
+/// [`process_in_place`](Self::process_in_place) with any slice length.
+///
+/// The cost is a fixed processing latency of one block: an output sample is only
+/// available once its whole block has been collected. Query it with
+/// [`latency`](Self::latency) to align against dry/parallel paths.
+///
+/// Real-time safe: the wrapped convolver and both block buffers allocate once in
+/// [`new`](Self::new); [`process_in_place`](Self::process_in_place) never
+/// allocates.
+///
+/// ```
+/// use signal_dsp_spectral::StreamingConvolver;
+///
+/// let mut conv = StreamingConvolver::new(&[1.0], 4);
+/// assert_eq!(conv.latency(), 4);
+/// // The first `latency` samples are the priming delay; input then emerges.
+/// let mut audio = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0];
+/// conv.process_in_place(&mut audio);
+/// for (got, want) in audio[4..].iter().zip([1.0, 2.0, 3.0, 4.0]) {
+///     assert!((got - want).abs() < 1e-4);
+/// }
+/// ```
+pub struct StreamingConvolver {
+    convolver: PartitionedConvolver,
+    block_size: usize,
+    /// Input samples collected toward the next full block.
+    collect: Vec<Sample>,
+    /// The most recently processed output block, drained as new input arrives.
+    ready: Vec<Sample>,
+    /// Fill position shared by `collect` (writing) and `ready` (reading).
+    position: usize,
+    bypassed: bool,
+}
+
+impl StreamingConvolver {
+    /// Build a streaming convolver for `impulse_response` with an internal
+    /// partition size of `block_size` (see [`PartitionedConvolver::new`]).
+    pub fn new(impulse_response: &[Sample], block_size: usize) -> Self {
+        let convolver = PartitionedConvolver::new(impulse_response, block_size);
+        let block_size = convolver.block_size();
+        Self {
+            convolver,
+            block_size,
+            collect: vec![0.0; block_size],
+            ready: vec![0.0; block_size],
+            position: 0,
+            bypassed: false,
+        }
+    }
+
+    /// The fixed processing latency in samples (equal to the internal block size).
+    pub fn latency(&self) -> usize {
+        self.block_size
+    }
+
+    /// The impulse-response length in samples.
+    pub fn ir_len(&self) -> usize {
+        self.convolver.ir_len()
+    }
+
+    /// Whether the impulse response is empty.
+    pub fn is_empty(&self) -> bool {
+        self.convolver.is_empty()
+    }
+
+    /// Set the bypass flag. While bypassed, [`process_in_place`](Self::process_in_place)
+    /// passes input through immediately (dropping the latency alignment); the
+    /// internal buffers are not advanced.
+    pub fn set_bypassed(&mut self, bypassed: bool) {
+        self.bypassed = bypassed;
+    }
+
+    /// Report the current bypass flag.
+    pub fn is_bypassed(&self) -> bool {
+        self.bypassed
+    }
+
+    /// Clear all running state, including the priming delay and the wrapped
+    /// convolver's frequency-domain state.
+    pub fn reset(&mut self) {
+        self.convolver.reset();
+        self.collect.fill(0.0);
+        self.ready.fill(0.0);
+        self.position = 0;
+    }
+
+    /// Convolve a block of any length in place. The output lags the input by
+    /// [`latency`](Self::latency) samples.
+    pub fn process_in_place(&mut self, block: &mut [Sample]) {
+        if self.bypassed {
+            return;
+        }
+        for sample in block {
+            let output = self.ready[self.position];
+            self.collect[self.position] = *sample;
+            self.position += 1;
+            if self.position == self.block_size {
+                self.convolver.process_block(&mut self.collect);
+                std::mem::swap(&mut self.ready, &mut self.collect);
+                self.position = 0;
+            }
+            *sample = output;
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use super::PartitionedConvolver;
+    use super::{PartitionedConvolver, StreamingConvolver};
 
     fn naive_convolution(taps: &[f32], input: &[f32]) -> Vec<f32> {
         (0..input.len())
@@ -369,5 +480,82 @@ mod tests {
         let mut conv = PartitionedConvolver::new(&[1.0], 4);
         let mut block = [0.0; 3];
         conv.process_block(&mut block);
+    }
+
+    #[test]
+    fn streaming_matches_naive_with_block_latency() {
+        // A streaming convolver over arbitrary chunk sizes reproduces the naive
+        // linear convolution, delayed by exactly one block (the latency).
+        let taps: Vec<f32> = (0..40).map(|i| ((i as f32) * 0.17).sin() * 0.3).collect();
+        let block = 8;
+        let input: Vec<f32> = (0..200)
+            .map(|i| if i % 9 == 0 { 0.6 } else { ((i as f32) * 0.07).cos() * 0.25 })
+            .collect();
+        let expected = naive_convolution(&taps, &input);
+
+        let mut conv = StreamingConvolver::new(&taps, block);
+        assert_eq!(conv.latency(), block);
+
+        // Feed in irregular chunk sizes to exercise the buffering.
+        let mut out = Vec::new();
+        let mut buffer = input.clone();
+        let mut cursor = 0;
+        for &chunk in &[3usize, 8, 1, 16, 5, 32, 7] {
+            let mut remaining = chunk;
+            while remaining > 0 && cursor < buffer.len() {
+                let take = remaining.min(buffer.len() - cursor);
+                conv.process_in_place(&mut buffer[cursor..cursor + take]);
+                out.extend_from_slice(&buffer[cursor..cursor + take]);
+                cursor += take;
+                remaining -= take;
+            }
+        }
+        // Feed the tail in one call.
+        conv.process_in_place(&mut buffer[cursor..]);
+        out.extend_from_slice(&buffer[cursor..]);
+
+        // out[n + latency] == expected[n].
+        for n in 0..(input.len() - block) {
+            assert!(
+                (out[n + block] - expected[n]).abs() < 1e-3,
+                "sample {n}: got {}, want {}",
+                out[n + block],
+                expected[n]
+            );
+        }
+    }
+
+    #[test]
+    fn streaming_primes_with_latency_of_silence() {
+        let mut conv = StreamingConvolver::new(&[1.0, 0.5], 4);
+        let mut block = [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
+        conv.process_in_place(&mut block);
+        // First `latency` (4) samples are the priming delay.
+        assert_eq!(&block[..4], &[0.0, 0.0, 0.0, 0.0]);
+        // Then the impulse response emerges: [1.0, 0.5, 0.0, 0.0].
+        assert!((block[4] - 1.0).abs() < 1e-4);
+        assert!((block[5] - 0.5).abs() < 1e-4);
+    }
+
+    #[test]
+    fn streaming_bypass_passes_through_without_latency() {
+        let mut conv = StreamingConvolver::new(&[0.5, 0.5], 4);
+        conv.set_bypassed(true);
+        let mut block = [0.1, 0.2, 0.3, 0.4, 0.5];
+        conv.process_in_place(&mut block);
+        assert_eq!(block, [0.1, 0.2, 0.3, 0.4, 0.5]);
+    }
+
+    #[test]
+    fn streaming_reset_reprimes() {
+        let taps = [0.4, 0.3, 0.2];
+        let mut conv = StreamingConvolver::new(&taps, 4);
+        let mut warmup = [1.0, 0.5, -0.5, 0.25, 0.0, 0.0, 0.0, 0.0];
+        conv.process_in_place(&mut warmup);
+        conv.reset();
+        // After reset the priming delay returns: first block is silence again.
+        let mut block = [1.0, 0.0, 0.0, 0.0];
+        conv.process_in_place(&mut block);
+        assert_eq!(block, [0.0, 0.0, 0.0, 0.0]);
     }
 }

@@ -23,7 +23,7 @@ pub mod analysis;
 mod convolution;
 pub mod mel;
 
-pub use convolution::PartitionedConvolver;
+pub use convolution::{PartitionedConvolver, StreamingConvolver};
 
 use rustfft::{num_complex::Complex32, Fft, FftPlanner};
 use signal_primitives::{FrameCount, Sample, SampleRate};
