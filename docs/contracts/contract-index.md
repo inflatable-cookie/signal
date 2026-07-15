@@ -2,7 +2,7 @@
 
 Status: active
 Owner: core-product
-Updated: 2026-07-14
+Updated: 2026-07-15
 
 ## Purpose
 
@@ -16,7 +16,7 @@ memory alone.
 - `g10.029` is the active correctness-first stretch roadmap
 - `046` governs sample-domain stretch behavior and its promotion gates
 - `082` governs the report-only successor policy and the active Rule 31
-  source-studied architecture decision and concealed coherent-source comparison
+  source-studied baseline and exact-source Rubber Band comparison
 - `g10.028` source-fill work is paused until the actual DSP kernel and source
   consumption geometry pass the `g10.029` correctness gate
 
@@ -144,6 +144,5 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Complete `g10.029` Batch 29.6DA concealed listening over all six frozen rows,
-then resolve the report-only coherent source baseline. Keep stereo, dynamic
-ratio, routing, and promotion closed.
+Execute `g10.029` Batch 29.6DB exact-source coherent Signal versus Rubber Band
+R3 comparison. Keep stereo, dynamic ratio, routing, and promotion closed.

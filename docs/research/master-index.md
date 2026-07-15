@@ -52,7 +52,7 @@ Finch and Loophole.
 | [Offline Time-Stretch Successor](./translation-memos/001-offline-time-stretch-successor.md) | Historical one-global-map successor sequence | Superseded by memo 002 |
 | [Rubber Band Behavioural Forensics](./translation-memos/002-rubber-band-behavioural-forensics.md) | Reopen local timing, transient phase treatment, and simultaneous multi-resolution synthesis from measured comparator behaviour | Promoted |
 | [Non-Duplicating Stretch Ownership](./translation-memos/003-non-duplicating-stretch-ownership.md) | Select one time-adaptive painless NSG frame after redundant full-band union rejection | Promoted |
-| [Source-Studied Stretch Architecture](./translation-memos/004-source-studied-stretch-architecture.md) | Reject frequency partitioning; retain the fixed-grid weighted predictor for exact-input comparator confirmation | Partially validated |
+| [Source-Studied Stretch Architecture](./translation-memos/004-source-studied-stretch-architecture.md) | Reject frequency partitioning; retain the coherent fixed-grid weighted predictor as the report-only source-studied baseline | Validated for mono source translation |
 | [Weighted Predictor Fidelity](./translation-memos/005-weighted-predictor-fidelity.md) | Correct scheduling, geometry, vertical twists, normalization, fallback, and update ordering as one topology | Promoted |
 
 ## Consumer Guidance
@@ -64,6 +64,5 @@ Finch and Loophole.
 
 ## Next Task
 
-Relisten to corrected Batch 29.6DA rows `M002` and `M006`, then resolve whether
-coherent Signal remains the source-studied baseline from all six valid rows.
-Keep the identity key, stereo, dynamic ratio, and promotion lanes closed.
+Run Batch 29.6DB exact-source coherent Signal versus Rubber Band R3 comparison.
+Keep stereo, dynamic ratio, product routing, and promotion closed.

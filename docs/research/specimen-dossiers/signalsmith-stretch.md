@@ -1,9 +1,9 @@
 # Signalsmith Stretch
 
-Status: reviewed; Signal fidelity gap identified
+Status: reviewed; Signal translation parity confirmed
 Specimen: Signalsmith Stretch `1.3.2`
 Owner: dsp
-Last updated: 2026-07-14
+Last updated: 2026-07-15
 Scope: time-stretch phase topology at revision `57b93f4e9206a089a45387eaa39bdc9f310d3308`
 
 ## Why This Specimen Matters
@@ -178,11 +178,13 @@ known frame-rate sideband, is the next translation gate.
   and static residual on four rows each, replica ratio on three, and boundary
   growth on none; both engines pass hard integrity
 - the corrected two-way pack contains six references and twelve repeat-stable,
-  peak-safe RMS-matched concealed trials; `M001`, `M003`, `M004`, and `M005`
-  are complete, while `M002` and `M006` require relistening
+  peak-safe RMS-matched concealed trials
+- concealed listening yields five ties and one slight coherent-Signal
+  preference on `M003`, with no coherent-Signal losses
+- coherent Signal is the report-only source-studied baseline; this is not a
+  production selection or Rubber Band-class claim
 
 ## Next Task
 
-Relisten to corrected rows `M002` and `M006`. Judge boundary behavior
-explicitly, then resolve the six-row comparison. Stop before stereo or
-production selection.
+Use the confirmed translation baseline in the exact-source Rubber Band R3
+comparison. Stop before stereo or production selection.

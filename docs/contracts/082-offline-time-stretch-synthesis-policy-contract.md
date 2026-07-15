@@ -3386,9 +3386,23 @@ lower one member after target selection. The first Batch 29.6DA export violated
 this rule on `M002` and materially changed `M006`; those two judgments are
 excluded. Corrected maximum pair delta is `2.44e-9 dB`.
 
+After the corrected `M002` and `M006` relisten, the key may open. The completed
+result is five audible ties and one slight coherent-Signal preference on
+`M003`; coherent Signal has no listening loss against pinned Signalsmith.
+Retain coherent Signal as the report-only source-studied baseline. Objective
+evidence remains mixed, including worse boundary-growth on all six rows, so
+this does not authorize product selection or a Rubber Band-class claim.
+
+Batch 29.6DB compares that baseline directly with Rubber Band R3 `4.0.0`.
+Reuse the exact Batch 29.6CZ mono sources, `1.5x` and `2.0x` ratios, target
+lengths, and corrected peak-safe RMS matching. Both engines must consume the
+same written inputs. Freeze hard-integrity, objective, assignment, gain,
+manifest, key, notes, and receipt evidence before concealed listening. Do not
+tune either engine from this six-row development set. Stereo, dynamic ratio,
+product routing, and promotion remain closed.
+
 ## Next Task
 
-Relisten to corrected Batch 29.6DA rows `M002` and `M006`, then decide whether
-coherent Signal remains the source-studied baseline. Preserve the other four
-completed judgments and keep the key closed. Keep stereo, dynamic ratio,
-product routing, and promotion closed.
+Execute Batch 29.6DB exact-source coherent Signal versus Rubber Band R3
+comparison. Freeze objective and concealed evidence before listening. Keep
+stereo, dynamic ratio, product routing, and promotion closed.

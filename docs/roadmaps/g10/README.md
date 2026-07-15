@@ -370,7 +370,6 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Relisten to corrected `g10.029` Batch 29.6DA rows `M002` and `M006`. Preserve
-the other four completed findings, keep the key closed, then resolve the
-source-studied baseline. Stop before stereo, dynamic ratio, routing, or
-promotion.
+Execute `g10.029` Batch 29.6DB. Compare the retained coherent Signal baseline
+directly with Rubber Band R3 on the same exact six long-form mono sources.
+Stop before stereo, dynamic ratio, routing, or promotion.

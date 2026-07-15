@@ -1052,6 +1052,12 @@ corrected exporter chooses a target reachable by every candidate and verifies
 written-WAV pair RMS. Findings for `M001`, `M003`, `M004`, and `M005` remain
 valid; `M002` and `M006` must be heard again.
 
-Relisten to corrected Batch 29.6DA rows `M002` and `M006`, then resolve the
-report-only source-studied baseline. Stop before stereo, dynamic ratio,
-routing, or promotion.
+The corrected record closes with five audible ties and one slight coherent-
+Signal preference on `M003`. Coherent Signal has no listening loss against
+pinned Signalsmith and remains the report-only source-studied baseline. This
+resolves translation fidelity, not the product-quality target: the coherent
+engine has not yet faced Rubber Band on these exact long sources.
+
+Batch 29.6DB therefore reuses the same six exact mono inputs and corrected
+level matcher for coherent Signal versus Rubber Band R3 `4.0.0`. Stop before
+stereo, dynamic ratio, routing, or promotion.

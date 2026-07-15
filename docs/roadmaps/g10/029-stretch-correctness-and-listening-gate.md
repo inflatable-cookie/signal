@@ -1355,11 +1355,9 @@ randomization boundary.
   coherent-Signal and pinned-Signalsmith candidates
 - [x] randomize candidate identity deterministically and freeze manifest,
   audio, mapping, duration, channel, and sample-rate hashes before listening
-- [ ] collect row-complete judgments for musical continuity, transient
+- [x] collect row-complete judgments for musical continuity, transient
   definition, grain/ringing, tonal stability, and start/end artifacts
-  - `M001`, `M003`, `M004`, and `M005` are complete
-  - `M002` and `M006` require a corrected-pack relisten
-- [ ] decide whether coherent Signal remains the source-studied baseline;
+- [x] decide whether coherent Signal remains the source-studied baseline;
   keep stereo, dynamic ratio, product routing, and promotion closed
 
 Pack state: corrected and ready for the remaining concealed operator listening at
@@ -1376,8 +1374,25 @@ The first export selected the minimum raw RMS, then applied the `0.95` peak
 ceiling independently. That left `M002` mismatched by about `4.14 dB` and
 `M006` by about `0.49 dB`. Its `M002` and `M006` judgments are invalid.
 `M001`, `M003`, `M004`, and `M005` changed by at most `0.05 dB`; preserve their
-completed findings. Keep the key closed and relisten only to corrected `M002`
-and `M006` before deciding the baseline.
+completed findings.
+
+The corrected six-row record is complete and the key is open. `M001`, `M002`,
+`M004`, `M005`, and `M006` are audible ties. On `M003`, coherent Signal is
+slightly less grainy. Coherent Signal therefore closes at one slight preference,
+five ties, and zero losses against pinned Signalsmith. Retain it as the
+report-only source-studied baseline. This is not a production selection or a
+Rubber Band-class claim.
+
+### Batch 29.6DB - Exact-Source Rubber Band Benchmark
+
+- [ ] reuse the six exact Batch 29.6CZ source references, ratios, duration, and
+  corrected peak-safe RMS matcher
+- [ ] render coherent Signal and Rubber Band R3 `4.0.0` from identical mono
+  inputs without parameter or mechanism changes
+- [ ] freeze hard-integrity, objective, receipt, assignment, and concealed-pack
+  hashes before listening
+- [ ] complete the six-row concealed comparison before opening stereo, dynamic
+  ratio, product routing, or promotion
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -2428,10 +2443,15 @@ and `M006` before deciding the baseline.
   export validation measures packed RMS directly. Corrected structure is
   `[0; 7]`; `M002` and `M006` require relistening while the other four findings
   remain valid.
+- 2026-07-15: Corrected `M002` and `M006` are audible ties. Opening the completed
+  key yields five ties and one slight coherent-Signal preference on `M003`, with
+  no coherent-Signal losses. Batch 29.6DA retains coherent Signal as the
+  report-only source-studied baseline. Batch 29.6DB now owns an exact-source
+  Rubber Band comparison; no parity or production claim is open.
 
 ## Next Task
 
-Relisten to corrected Batch 29.6DA rows `M002` and `M006` without opening
-`listening-key.tsv`. Return those two findings for the source-studied baseline
-decision. Preserve the completed `M001`, `M003`, `M004`, and `M005` findings.
-Stop before stereo, dynamic ratio, product routing, or promotion.
+Execute Batch 29.6DB. Reuse the exact six long-form mono sources and corrected
+level matcher for coherent Signal versus Rubber Band R3 `4.0.0`. Freeze the
+objective and concealed evidence before listening. Stop before stereo, dynamic
+ratio, product routing, or promotion.

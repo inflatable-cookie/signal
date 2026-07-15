@@ -3,7 +3,7 @@
 Status: promoted
 Memo: `g10.029` weighted-predictor correction
 Owner: dsp
-Last updated: 2026-07-14
+Last updated: 2026-07-15
 Related contract: `082`, Rule 31G
 
 ## Problem
@@ -285,6 +285,12 @@ invalidates `M002` and, after correction, `M006`; the other four rows moved by
 at most `0.05 dB`. The corrected pack verifies written-candidate RMS equality
 with maximum delta `2.44e-9 dB`.
 
+The corrected six-row record yields five audible ties and one slight coherent-
+Signal preference on `M003`. Signal records no loss against pinned Signalsmith.
+The corrected topology is therefore the report-only source-studied baseline.
+This closes specimen-translation fidelity only; direct exact-source evidence
+against Rubber Band remains required before any broader quality claim.
+
 ## Sources
 
 | Source | Revision | Use |
@@ -294,6 +300,6 @@ with maximum delta `2.44e-9 dB`.
 
 ## Next Task
 
-Relisten to corrected rows `M002` and `M006`, then resolve the concealed
-comparison from all six valid findings. Keep equation changes, third
-mechanisms, stereo, dynamic ratio, and product routing closed.
+Run the exact-source coherent Signal versus Rubber Band R3 comparison on the
+same six long-form rows. Keep equation changes, third mechanisms, stereo,
+dynamic ratio, and product routing closed.

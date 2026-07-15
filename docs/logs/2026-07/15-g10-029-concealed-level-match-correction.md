@@ -44,6 +44,5 @@ Valid findings so far:
 
 ## Next Task
 
-Relisten only to corrected `M002` and `M006` without opening
-`listening-key.tsv`, then resolve the source-studied baseline from all six valid
-rows. Keep stereo, dynamic ratio, routing, and promotion closed.
+Completed. Corrected `M002` and `M006` are audible ties. The complete decision
+is recorded in `15-g10-029-coherent-source-baseline-decision.md`.
