@@ -2190,17 +2190,18 @@ fn source_studied_concealed_coherent_source_comparison_exports_pack() {
     assert_eq!(first.candidates_per_row, 2);
     assert_eq!(first.audio_files, 18);
     assert_eq!(first.holdout_reads, 0);
-    assert_eq!(first.structural_failures, [0; 6], "{first:#?}");
+    assert_eq!(first.structural_failures, [0; 7], "{first:#?}");
+    assert!(first.maximum_candidate_rms_delta_db <= 1.0e-5);
     assert_eq!(
         first.hashes,
         [
-            0xcb13_5aa6_4488_7edb,
+            0x7605_7724_1605_fb24,
             0x64c2_874d_d6e4_7521,
-            0xffbb_ba5d_f08c_762c,
+            0x7bba_88c9_c701_bf1c,
             0xfd12_55a2_fc00_7590,
-            0xf732_0382_d5ba_c785,
+            0xbb19_74bb_a5a2_a8b0,
             0x91d6_8633_349f_1944,
-            0x6d1b_a75b_59a6_ad1f,
+            0xde41_7d1f_00e5_5f88,
         ]
     );
 }

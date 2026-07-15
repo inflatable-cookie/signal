@@ -4,7 +4,7 @@ use super::real_source_confirmation::{
     self, RealSourceConfirmationDirection, RealSourceConfirmationReview,
 };
 use crate::frequency_adaptive::complete_system_tuning::listening_export::{
-    audio::{level_match, write_mono},
+    audio::{level_match, read_mono, write_mono},
     manifest::assignment,
 };
 
@@ -19,7 +19,8 @@ pub(in crate::frequency_adaptive) struct ConcealedComparisonReview {
     pub(in crate::frequency_adaptive) candidates_per_row: usize,
     pub(in crate::frequency_adaptive) audio_files: usize,
     pub(in crate::frequency_adaptive) holdout_reads: usize,
-    pub(in crate::frequency_adaptive) structural_failures: [usize; 6],
+    pub(in crate::frequency_adaptive) structural_failures: [usize; 7],
+    pub(in crate::frequency_adaptive) maximum_candidate_rms_delta_db: f64,
     pub(in crate::frequency_adaptive) hashes: [u64; 7],
     pub(in crate::frequency_adaptive) confirmation: RealSourceConfirmationReview,
 }
@@ -39,11 +40,13 @@ pub(in crate::frequency_adaptive) fn export() -> ConcealedComparisonReview {
         "row\tratio\tsource\tA\tB\tcontinuity\ttransient\tgrain_ringing\ttonal_stability\tstart_boundary\tend_boundary\tpreference\tbroad_defect\tnotes\tcompleted\n",
     );
     let mut key = String::from("row\tratio\tletter\tidentity\tgain\traw_hash\tpacked_hash\n");
-    let mut receipt = String::from("row\trole\tpath\tsample_rate\tchannels\tframes\tfile_hash\n");
+    let mut receipt =
+        String::from("row\trole\tpath\tsample_rate\tchannels\tframes\trms\tpeak\tfile_hash\n");
     let mut structural_failures = [
         usize::from(
             confirmation.direction != RealSourceConfirmationDirection::ConcealedMusicalComparison,
         ),
+        0,
         0,
         0,
         0,
@@ -55,6 +58,7 @@ pub(in crate::frequency_adaptive) fn export() -> ConcealedComparisonReview {
     let mut gain_hash = HASH_OFFSET;
     let mut audio_files = 0_usize;
     let mut processed_rows = 0_usize;
+    let mut maximum_candidate_rms_delta_db = 0.0_f64;
 
     for case in long_form::cases() {
         processed_rows += 1;
@@ -109,6 +113,7 @@ pub(in crate::frequency_adaptive) fn export() -> ConcealedComparisonReview {
 
         let letters = assignment(case.id, matched.candidates.len());
         let mut trial_names = Vec::with_capacity(letters.len());
+        let mut candidate_rms = Vec::with_capacity(letters.len());
         for (letter_index, candidate_index) in letters.into_iter().enumerate() {
             let letter = char::from(b'A' + letter_index as u8);
             let candidate = &matched.candidates[candidate_index];
@@ -116,7 +121,7 @@ pub(in crate::frequency_adaptive) fn export() -> ConcealedComparisonReview {
             let relative_path = format!("trials/{trial_name}");
             let packed_path = root.join("trials").join(&trial_name);
             write_mono(&packed_path, SAMPLE_RATE, &candidate.samples);
-            let packed_hash = append_receipt(
+            let (packed_hash, packed_rms, _) = append_receipt(
                 &mut receipt,
                 &mut audio_hash,
                 case.id,
@@ -128,6 +133,7 @@ pub(in crate::frequency_adaptive) fn export() -> ConcealedComparisonReview {
             );
             audio_files += 1;
             trial_names.push(relative_path);
+            candidate_rms.push(packed_rms);
             key.push_str(&format!(
                 "{}\t{:.6}\t{letter}\t{}\t{:.9}\t{:016x}\t{packed_hash:016x}\n",
                 case.id,
@@ -141,6 +147,9 @@ pub(in crate::frequency_adaptive) fn export() -> ConcealedComparisonReview {
             hash_bytes(&mut assignment_hash, candidate.identity.as_bytes());
             hash_bytes(&mut gain_hash, &candidate.gain.to_bits().to_le_bytes());
         }
+        let rms_delta_db = 20.0 * (candidate_rms[0] / candidate_rms[1]).log10().abs();
+        maximum_candidate_rms_delta_db = maximum_candidate_rms_delta_db.max(rms_delta_db);
+        structural_failures[6] += usize::from(rms_delta_db > 1.0e-5);
         manifest.push_str(&format!(
             "{}\t{:.6}\treferences/{source_name}\t{}\t{}\t{output_frames}\n",
             case.id, case.ratio, trial_names[0], trial_names[1]
@@ -169,6 +178,7 @@ pub(in crate::frequency_adaptive) fn export() -> ConcealedComparisonReview {
         audio_files,
         holdout_reads: 0,
         structural_failures,
+        maximum_candidate_rms_delta_db,
         hashes: [
             audio_hash,
             assignment_hash,
@@ -191,8 +201,8 @@ fn append_receipt(
     relative_path: &str,
     path: &std::path::Path,
     expected_frames: usize,
-    structural_failures: &mut [usize; 6],
-) -> u64 {
+    structural_failures: &mut [usize; 7],
+) -> (u64, f64, f64) {
     let reader = hound::WavReader::open(path)
         .unwrap_or_else(|error| panic!("open {}: {error}", path.display()));
     let specification = reader.spec();
@@ -201,13 +211,20 @@ fn append_receipt(
     structural_failures[3] +=
         usize::from(specification.sample_rate != SAMPLE_RATE || specification.channels != 1);
     drop(reader);
+    let samples = read_mono(path);
+    let rms =
+        (samples.iter().map(|sample| sample * sample).sum::<f64>() / samples.len() as f64).sqrt();
+    let peak = samples
+        .iter()
+        .map(|sample| sample.abs())
+        .fold(0.0, f64::max);
     let hash = confirmation::file_hash(path);
     hash_bytes(audio_hash, &hash.to_le_bytes());
     receipt.push_str(&format!(
-        "{row}\t{role}\t{relative_path}\t{}\t{}\t{frames}\t{hash:016x}\n",
-        specification.sample_rate, specification.channels
+        "{row}\t{role}\t{relative_path}\t{}\t{}\t{frames}\t{rms:.12}\t{peak:.12}\t{hash:016x}\n",
+        specification.sample_rate, specification.channels,
     ));
-    hash
+    (hash, rms, peak)
 }
 
 fn text_hash(text: &str) -> u64 {

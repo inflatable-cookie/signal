@@ -1357,19 +1357,27 @@ randomization boundary.
   audio, mapping, duration, channel, and sample-rate hashes before listening
 - [ ] collect row-complete judgments for musical continuity, transient
   definition, grain/ringing, tonal stability, and start/end artifacts
+  - `M001`, `M003`, `M004`, and `M005` are complete
+  - `M002` and `M006` require a corrected-pack relisten
 - [ ] decide whether coherent Signal remains the source-studied baseline;
   keep stereo, dynamic ratio, product routing, and promotion closed
 
-Pack state: ready for concealed operator listening at
+Pack state: corrected and ready for the remaining concealed operator listening at
 `target/stretch-source-studied-da-concealed-pack`. Six source references and
 twelve level-matched trials pass exact frame, finite-value, `44.1 kHz` mono,
-file-count, objective-direction, and repeat gates. Freeze audio hash
-`cb135aa644887edb`, assignment hash `64c2874dd6e47521`, gain hash
-`ffbbba5df08c762c`, manifest hash `fd1255a2fc007590`, closed-key hash
-`f7320382d5bac785`, notes hash `91d68633349f1944`, and metadata-receipt hash
-`6d1ba75b59a6ad1f`. The operator must complete continuity, transient,
-grain/ringing, tonal-stability, start-boundary, end-boundary, preference, and
-broad-defect fields for all six rows before opening the key.
+file-count, objective-direction, repeat, and packed-candidate RMS-equality
+gates. Freeze audio hash `760577241605fb24`, assignment hash
+`64c2874dd6e47521`, gain hash `7bba88c9c701bf1c`, manifest hash
+`fd1255a2fc007590`, closed-key hash `bb1974bba5a2a8b0`, notes hash
+`91d68633349f1944`, and metadata-receipt hash `de417d1f00e55f88`. Maximum pair
+RMS delta is `2.44e-9 dB`.
+
+The first export selected the minimum raw RMS, then applied the `0.95` peak
+ceiling independently. That left `M002` mismatched by about `4.14 dB` and
+`M006` by about `0.49 dB`. Its `M002` and `M006` judgments are invalid.
+`M001`, `M003`, `M004`, and `M005` changed by at most `0.05 dB`; preserve their
+completed findings. Keep the key closed and relisten only to corrected `M002`
+and `M006` before deciding the baseline.
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -2415,10 +2423,15 @@ broad-defect fields for all six rows before opening the key.
   six references, twelve trials, zero structural failures, and no holdout,
   stereo, dynamic-ratio, or product audio. The baseline decision remains open
   until all six listening rows are complete.
+- 2026-07-15: Operator findings exposed a level mismatch in `M002`. The common
+  target now accounts for every candidate's peak-limited RMS reachability, and
+  export validation measures packed RMS directly. Corrected structure is
+  `[0; 7]`; `M002` and `M006` require relistening while the other four findings
+  remain valid.
 
 ## Next Task
 
-Listen to Batch 29.6DA without opening `listening-key.tsv`. Complete all six
-rows in `listening-notes.tsv`, including start and end boundary findings, then
-return the findings for the source-studied baseline decision. Stop before
-stereo, dynamic ratio, product routing, or promotion.
+Relisten to corrected Batch 29.6DA rows `M002` and `M006` without opening
+`listening-key.tsv`. Return those two findings for the source-studied baseline
+decision. Preserve the completed `M001`, `M003`, `M004`, and `M005` findings.
+Stop before stereo, dynamic ratio, product routing, or promotion.

@@ -3378,9 +3378,17 @@ repeat exactly. Listening must cover continuity, transients, grain/ringing,
 tonal stability, both boundaries, preference, and broad defects on every row.
 The key remains closed until the six-row record is complete.
 
+Level matching uses one common RMS target that every source and candidate can
+reach without exceeding the `0.95` peak ceiling. Export validation measures the
+written float-WAV candidates and requires each concealed pair to differ by no
+more than `1e-5 dB` RMS. A candidate-specific peak clamp must not silently
+lower one member after target selection. The first Batch 29.6DA export violated
+this rule on `M002` and materially changed `M006`; those two judgments are
+excluded. Corrected maximum pair delta is `2.44e-9 dB`.
+
 ## Next Task
 
-Complete Batch 29.6DA concealed listening over all six rows, then decide whether
-coherent Signal remains the source-studied baseline. Keep the key closed until
-the record is complete. Keep stereo, dynamic ratio, product routing, and
-promotion closed.
+Relisten to corrected Batch 29.6DA rows `M002` and `M006`, then decide whether
+coherent Signal remains the source-studied baseline. Preserve the other four
+completed judgments and keep the key closed. Keep stereo, dynamic ratio,
+product routing, and promotion closed.

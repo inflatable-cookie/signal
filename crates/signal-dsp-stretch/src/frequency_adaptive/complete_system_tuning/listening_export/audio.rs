@@ -47,8 +47,8 @@ pub(in crate::frequency_adaptive) fn level_match(
 ) -> MatchedGroup {
     let target = candidates
         .iter()
-        .map(|(_, samples)| rms(samples))
-        .chain(std::iter::once(rms(source)))
+        .map(|(_, samples)| maximum_safe_rms(samples))
+        .chain(std::iter::once(maximum_safe_rms(source)))
         .fold(f64::INFINITY, f64::min)
         .max(1.0e-9);
     let source_gain = safe_gain(source, target);
@@ -88,6 +88,11 @@ fn safe_gain(samples: &[f64], target_rms: f64) -> f64 {
     rms_gain.min(peak_gain)
 }
 
+fn maximum_safe_rms(samples: &[f64]) -> f64 {
+    let rms = rms(samples);
+    rms.min(rms * 0.95 / peak(samples).max(1.0e-12))
+}
+
 fn rms(samples: &[f64]) -> f64 {
     (samples.iter().map(|sample| sample * sample).sum::<f64>() / samples.len() as f64).sqrt()
 }
@@ -97,4 +102,46 @@ fn peak(samples: &[f64]) -> f64 {
         .iter()
         .map(|sample| sample.abs())
         .fold(0.0, f64::max)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn level_match_lowers_common_target_for_peak_limited_candidate() {
+        let source = vec![0.2; 100];
+        let mut high_crest = vec![0.2; 100];
+        high_crest[50] = 2.0;
+        let external = vec![0.2; 200];
+
+        let matched = level_match(
+            &source,
+            vec![
+                ("high-crest".to_string(), high_crest),
+                ("external".to_string(), external),
+            ],
+        );
+        let levels = std::iter::once(rms(&matched.source))
+            .chain(
+                matched
+                    .candidates
+                    .iter()
+                    .map(|candidate| rms(&candidate.samples)),
+            )
+            .collect::<Vec<_>>();
+        assert!(levels
+            .windows(2)
+            .all(|pair| (pair[0] - pair[1]).abs() <= 1.0e-12));
+        assert!(matched
+            .source
+            .iter()
+            .chain(
+                matched
+                    .candidates
+                    .iter()
+                    .flat_map(|candidate| &candidate.samples),
+            )
+            .all(|sample| sample.abs() <= 0.95 + 1.0e-12));
+    }
 }

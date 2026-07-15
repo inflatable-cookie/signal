@@ -279,6 +279,12 @@ or product path is present. The representation remains report-only until the
 six-row listening record resolves continuity, grain, tone, transients, and
 both boundaries.
 
+The initial pack's common target ignored whether each candidate could reach it
+under the peak ceiling. Operator detection of the `M002` loudness mismatch
+invalidates `M002` and, after correction, `M006`; the other four rows moved by
+at most `0.05 dB`. The corrected pack verifies written-candidate RMS equality
+with maximum delta `2.44e-9 dB`.
+
 ## Sources
 
 | Source | Revision | Use |
@@ -288,6 +294,6 @@ both boundaries.
 
 ## Next Task
 
-Complete the hash-frozen concealed comparison and return row-complete findings.
-Keep equation changes, third mechanisms, stereo, dynamic ratio, and product
-routing closed.
+Relisten to corrected rows `M002` and `M006`, then resolve the concealed
+comparison from all six valid findings. Keep equation changes, third
+mechanisms, stereo, dynamic ratio, and product routing closed.

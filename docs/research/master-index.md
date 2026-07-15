@@ -64,7 +64,6 @@ Finch and Loophole.
 
 ## Next Task
 
-Complete Batch 29.6DA concealed listening across all six frozen rows, then
-resolve whether coherent Signal remains the source-studied baseline. Keep the
-identity key, stereo, dynamic ratio, and promotion lanes closed until the
-row-complete findings are recorded.
+Relisten to corrected Batch 29.6DA rows `M002` and `M006`, then resolve whether
+coherent Signal remains the source-studied baseline from all six valid rows.
+Keep the identity key, stereo, dynamic ratio, and promotion lanes closed.

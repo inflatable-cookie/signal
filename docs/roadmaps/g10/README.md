@@ -370,7 +370,7 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Complete `g10.029` Batch 29.6DA concealed listening over the six frozen rows.
-Record continuity, transient, grain/ringing, tonal, and both boundary findings
-before opening the key. Stop before stereo, dynamic ratio, routing, or
+Relisten to corrected `g10.029` Batch 29.6DA rows `M002` and `M006`. Preserve
+the other four completed findings, keep the key closed, then resolve the
+source-studied baseline. Stop before stereo, dynamic ratio, routing, or
 promotion.

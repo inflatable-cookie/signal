@@ -177,11 +177,12 @@ known frame-rate sideband, is the next translation gate.
 - across six exact shared musical inputs, coherent Signal improves event timing
   and static residual on four rows each, replica ratio on three, and boundary
   growth on none; both engines pass hard integrity
-- the final two-way pack contains six references and twelve repeat-stable,
-  level-matched concealed trials; identity remains closed pending row-complete
-  listening
+- the corrected two-way pack contains six references and twelve repeat-stable,
+  peak-safe RMS-matched concealed trials; `M001`, `M003`, `M004`, and `M005`
+  are complete, while `M002` and `M006` require relistening
 
 ## Next Task
 
-Complete the six-row concealed comparison. Judge boundary behavior explicitly.
-Stop before stereo or production selection.
+Relisten to corrected rows `M002` and `M006`. Judge boundary behavior
+explicitly, then resolve the six-row comparison. Stop before stereo or
+production selection.

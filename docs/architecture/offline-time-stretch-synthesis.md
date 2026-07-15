@@ -1046,6 +1046,12 @@ evidence artifact only. The coherent representation remains report-only until
 all six rows have continuity, transient, grain/ringing, tonal, and boundary
 findings.
 
-Complete `g10.029` Batch 29.6DA concealed listening, then resolve the report-
-only source-studied baseline. Stop before stereo, dynamic ratio, routing, or
-promotion.
+The first pack applied the peak ceiling after choosing a raw-RMS target. That
+made `M002` about `4.14 dB` unequal and shifted `M006` about `0.49 dB`. The
+corrected exporter chooses a target reachable by every candidate and verifies
+written-WAV pair RMS. Findings for `M001`, `M003`, `M004`, and `M005` remain
+valid; `M002` and `M006` must be heard again.
+
+Relisten to corrected Batch 29.6DA rows `M002` and `M006`, then resolve the
+report-only source-studied baseline. Stop before stereo, dynamic ratio,
+routing, or promotion.

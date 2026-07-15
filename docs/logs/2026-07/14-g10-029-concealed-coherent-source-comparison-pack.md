@@ -4,6 +4,11 @@ Date: 2026-07-14
 Roadmap: `g10.029`, Batch 29.6DA
 Scope: report-only coherent Signal versus pinned Signalsmith listening export
 
+Superseded: the 2026-07-15 level-match correction replaces this pack's audio,
+gain, key, and receipt hashes. See
+`15-g10-029-concealed-level-match-correction.md`. Do not use this pack's
+`M002` or `M006` judgments.
+
 ## Decision
 
 Mark the two-way pack ready for concealed operator listening. Keep the
