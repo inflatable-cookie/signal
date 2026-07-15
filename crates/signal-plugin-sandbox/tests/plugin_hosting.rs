@@ -894,10 +894,7 @@ fn fixture_plugin_processes_a_chain_insert_through_the_real_engine_offline_rende
         data.push(0.5f32);
         data.push(0.5f32);
     }
-    let buffer = RenderSampleBuffer {
-        sample_rate_hz: SAMPLE_RATE_HZ,
-        frames: data.into(),
-    };
+    let buffer = RenderSampleBuffer::stereo(SAMPLE_RATE_HZ, data.into());
     let plan = |processor: Option<RenderPluginProcessor>| RenderPlanSpec {
         sample_rate_hz: SAMPLE_RATE_HZ,
         master_gain: 1.0,

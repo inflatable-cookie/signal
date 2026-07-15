@@ -81,7 +81,10 @@ pub const METER_SLOT_CAPACITY: usize = 256;
 /// duration at the plan rate counts as an xrun.
 const XRUN_INTERVAL_FACTOR: f64 = 1.5;
 
-/// Shared immutable sample data: interleaved stereo f32 at a source rate.
+/// Shared immutable sample data: interleaved f32 at a source rate. `channels`
+/// gives the interleaving stride — 1 (mono), 2 (stereo), or more. When a clip's
+/// source channel count differs from its stage's format, the render adapts it
+/// with the standard up/down-mix coefficients (`signal_dsp::default_adapter_matrix`).
 ///
 /// Equality is pointer-based so plan specs containing large buffers compare
 /// cheaply and a cached buffer keeps reinstalls idempotent.
@@ -89,20 +92,44 @@ const XRUN_INTERVAL_FACTOR: f64 = 1.5;
 pub struct RenderSampleBuffer {
     /// Source sample rate of the buffer.
     pub sample_rate_hz: u32,
-    /// Interleaved stereo frames (length is even; frame count = len / 2).
+    /// Interleaved channel count (1 = mono, 2 = stereo, …). `frames.len()` must
+    /// be a multiple of this.
+    pub channels: u16,
+    /// Interleaved frames (`frame_count = frames.len() / channels`).
     pub frames: Arc<[f32]>,
 }
 
 impl PartialEq for RenderSampleBuffer {
     fn eq(&self, other: &Self) -> bool {
-        self.sample_rate_hz == other.sample_rate_hz && Arc::ptr_eq(&self.frames, &other.frames)
+        self.sample_rate_hz == other.sample_rate_hz
+            && self.channels == other.channels
+            && Arc::ptr_eq(&self.frames, &other.frames)
     }
 }
 
 impl RenderSampleBuffer {
-    /// Number of stereo frames in the buffer.
+    /// Build a sample buffer of the given interleaved channel count.
+    pub fn new(sample_rate_hz: u32, channels: u16, frames: Arc<[f32]>) -> Self {
+        Self {
+            sample_rate_hz,
+            channels: channels.max(1),
+            frames,
+        }
+    }
+
+    /// Build a mono sample buffer.
+    pub fn mono(sample_rate_hz: u32, frames: Arc<[f32]>) -> Self {
+        Self::new(sample_rate_hz, 1, frames)
+    }
+
+    /// Build a stereo (interleaved L/R) sample buffer.
+    pub fn stereo(sample_rate_hz: u32, frames: Arc<[f32]>) -> Self {
+        Self::new(sample_rate_hz, 2, frames)
+    }
+
+    /// Number of frames in the buffer (`frames.len() / channels`).
     pub fn frame_count(&self) -> usize {
-        self.frames.len() / 2
+        self.frames.len() / self.channels.max(1) as usize
     }
 }
 
@@ -1450,6 +1477,10 @@ enum CompiledSource {
         /// Polyphase windowed-sinc table for rate-converted playback; `None`
         /// at 1:1, where samples are read directly.
         table: Option<PolyphaseInterpolationTable>,
+        /// Source→stage channel up/down-mix, row-major `source_channels ×
+        /// dest_channels`. `None` when the counts match (direct per-channel
+        /// read, byte-identical to the historical stereo path).
+        channel_adapter: Option<Vec<f32>>,
     },
     Stream {
         handle: RenderStreamHandle,
@@ -1758,11 +1789,24 @@ impl RenderPlan {
                             RenderSource::Samples(buffer) => {
                                 let step = buffer.sample_rate_hz.max(1) as f64 / stream_rate as f64
                                     * warp_rate;
+                                // Adapt the source's channels to the stage format
+                                // only when they differ; matched counts keep the
+                                // direct read (golden-hash stable).
+                                let source_channels = buffer.channels.max(1) as usize;
+                                let channel_adapter = if source_channels == dest_channels {
+                                    None
+                                } else {
+                                    Some(signal_dsp::default_adapter_matrix(
+                                        buffer.channels.max(1),
+                                        dest_channels as u16,
+                                    ))
+                                };
                                 CompiledSource::Samples {
                                     table: table_for_step(step),
                                     step,
                                     buffer: buffer.clone(),
                                     loop_source: clip.loop_source,
+                                    channel_adapter,
                                 }
                             }
                             RenderSource::Stream(handle) => {
@@ -2107,10 +2151,10 @@ fn interpolate_source_frame(
 }
 
 /// Render a lane stage's clips into its scratch at unity gain (stage and edge
-/// gains apply downstream, where the scratch is consumed). Sources write
-/// `channels.min(2)` of the stage's format: clip sources are mono/stereo
-/// today; source-format handling generalizes when sources grow formats of
-/// their own.
+/// gains apply downstream, where the scratch is consumed). A clip source whose
+/// channel count matches the stage writes directly; a mono or other-count
+/// source is up/down-mixed into the stage format through the adapter matrix
+/// precompiled on the compiled source.
 /// `loop_end_frame` is the active loop region's end while the playhead is
 /// inside the region (`None` otherwise): stream clips use it to retire held
 /// chunks past the loop end, which would otherwise sit "ahead but within the
@@ -2159,12 +2203,14 @@ fn render_clips_into_scratch(
                 step,
                 loop_source,
                 table,
+                channel_adapter,
             } => {
                 let source_frames = buffer.frame_count();
                 if source_frames == 0 {
                     continue;
                 }
                 let data = &buffer.frames;
+                let source_channels = buffer.channels.max(1) as usize;
                 let frame_total = source_frames as i64;
                 let loop_source = *loop_source;
                 // Loop folding lives in the fetch: wrapped taps and the
@@ -2179,7 +2225,7 @@ fn render_clips_into_scratch(
                     if source_frame < 0 || source_frame >= frame_total {
                         return None;
                     }
-                    Some(data[source_frame as usize * 2 + channel])
+                    Some(data[source_frame as usize * source_channels + channel])
                 };
                 for frame_index in 0..frame_count {
                     let frame = block_start_frame + frame_index as u64;
@@ -2199,15 +2245,41 @@ fn render_clips_into_scratch(
                     let fraction = source_position - source_index as f64;
                     let window_gain = clip_edge_gain(frame, clip_start, clip_end, clip_fade);
                     let base = frame_index * channels;
-                    for channel in 0..channels.min(2) {
-                        if let Some(sample) = interpolate_source_frame(
-                            &fetch,
-                            source_index as u64,
-                            fraction,
-                            table.as_ref(),
-                            channel,
-                        ) {
-                            scratch[base + channel] += sample * window_gain;
+                    match channel_adapter {
+                        // Matched channel counts: direct per-channel read (the
+                        // historical stereo path when both are 2).
+                        None => {
+                            for channel in 0..channels {
+                                if let Some(sample) = interpolate_source_frame(
+                                    &fetch,
+                                    source_index as u64,
+                                    fraction,
+                                    table.as_ref(),
+                                    channel,
+                                ) {
+                                    scratch[base + channel] += sample * window_gain;
+                                }
+                            }
+                        }
+                        // Mismatched: up/down-mix each source channel into the
+                        // stage channels via the precompiled adapter matrix.
+                        Some(matrix) => {
+                            for source_channel in 0..source_channels {
+                                let Some(sample) = interpolate_source_frame(
+                                    &fetch,
+                                    source_index as u64,
+                                    fraction,
+                                    table.as_ref(),
+                                    source_channel,
+                                ) else {
+                                    continue;
+                                };
+                                let sample = sample * window_gain;
+                                for dest_channel in 0..channels {
+                                    let coefficient = matrix[source_channel * channels + dest_channel];
+                                    scratch[base + dest_channel] += sample * coefficient;
+                                }
+                            }
                         }
                     }
                 }
@@ -3621,10 +3693,7 @@ mod tests {
                 clip_id: 1004,
                 start_frames,
                 end_frames,
-                source: RenderSource::Samples(RenderSampleBuffer {
-                    sample_rate_hz: 48_000,
-                    frames: data.into(),
-                }),
+                source: RenderSource::Samples(RenderSampleBuffer::stereo(48_000, data.into())),
                 loop_source,
             }],
         )
@@ -3658,6 +3727,36 @@ mod tests {
         let expected = 128.0 / 1024.0;
         assert!((frames[index * 2] - expected).abs() < 1e-5);
         // Same-rate playback: equality on both channels.
+        assert_eq!(frames[index * 2], frames[index * 2 + 1]);
+    }
+
+    #[test]
+    fn mono_source_upmixes_into_stereo_stage() {
+        let (mut controller, mut executor) = render_plane();
+        // A MONO source (channels = 1): value = index / 1024.
+        let values: Vec<f32> = (0..1024).map(|index| index as f32 / 1024.0).collect();
+        let spec = lane_master_spec(
+            1.0,
+            vec![RenderClipSpec {
+                clip_id: 2001,
+                start_frames: 512,
+                end_frames: 512 + 1024,
+                source: RenderSource::Samples(RenderSampleBuffer::mono(48_000, values.into())),
+                loop_source: false,
+            }],
+        );
+        controller.install_plan(&spec).unwrap();
+        controller.set_playing(true).unwrap();
+        warm_up(&mut executor, 2);
+
+        let mut frames = [0.0f32; 512];
+        executor.render_block(&mut frames);
+        // Source frame 128, up-mixed mono→stereo at the equal-power 1/√2 gain.
+        let index = 128usize;
+        let expected = (128.0 / 1024.0) * std::f32::consts::FRAC_1_SQRT_2;
+        assert!((frames[index * 2] - expected).abs() < 1e-5, "L = {}", frames[index * 2]);
+        assert!((frames[index * 2 + 1] - expected).abs() < 1e-5, "R = {}", frames[index * 2 + 1]);
+        // Mono is duplicated equally to both ears.
         assert_eq!(frames[index * 2], frames[index * 2 + 1]);
     }
 
@@ -4272,10 +4371,7 @@ mod tests {
                 clip_id: 1005,
                 start_frames: 0,
                 end_frames: u64::MAX,
-                source: RenderSource::Samples(RenderSampleBuffer {
-                    sample_rate_hz: source_rate,
-                    frames: data.into(),
-                }),
+                source: RenderSource::Samples(RenderSampleBuffer::stereo(source_rate, data.into())),
                 loop_source: false,
             }],
         );
@@ -4324,10 +4420,7 @@ mod tests {
                 start_frames: 0,
                 end_frames: u64::MAX,
                 source: RenderSource::Warped {
-                    source: Box::new(RenderSource::Samples(RenderSampleBuffer {
-                        sample_rate_hz: 48_000,
-                        frames: data.into(),
-                    })),
+                    source: Box::new(RenderSource::Samples(RenderSampleBuffer::stereo(48_000, data.into()))),
                     rate,
                 },
                 loop_source: false,
@@ -4369,10 +4462,7 @@ mod tests {
                 start_frames: 0,
                 end_frames: 96_000,
                 source: RenderSource::Warped {
-                    source: Box::new(RenderSource::Samples(RenderSampleBuffer {
-                        sample_rate_hz: 48_000,
-                        frames: data.into(),
-                    })),
+                    source: Box::new(RenderSource::Samples(RenderSampleBuffer::stereo(48_000, data.into()))),
                     rate: 2.0,
                 },
                 loop_source: false,
@@ -4447,10 +4537,7 @@ mod tests {
                     [value, value]
                 })
                 .collect();
-            let buffer = RenderSampleBuffer {
-                sample_rate_hz: 48_000,
-                frames: data.into(),
-            };
+            let buffer = RenderSampleBuffer::stereo(48_000, data.into());
             let warped = lane_master_spec(
                 1.0,
                 vec![RenderClipSpec {
@@ -4597,10 +4684,7 @@ mod tests {
                         clip_id: 2001,
                         start_frames: 0,
                         end_frames: u64::MAX,
-                        source: RenderSource::Samples(RenderSampleBuffer {
-                            sample_rate_hz: 48_000,
-                            frames: data.into(),
-                        }),
+                        source: RenderSource::Samples(RenderSampleBuffer::stereo(48_000, data.into())),
                         loop_source: true,
                     }],
                 ),
@@ -4635,10 +4719,7 @@ mod tests {
                         clip_id: 2002,
                         start_frames: 0,
                         end_frames: 512,
-                        source: RenderSource::Samples(RenderSampleBuffer {
-                            sample_rate_hz: 48_000,
-                            frames: data.into(),
-                        }),
+                        source: RenderSource::Samples(RenderSampleBuffer::stereo(48_000, data.into())),
                         loop_source: false,
                     }],
                 ),
@@ -5358,18 +5439,9 @@ mod tests {
     #[test]
     fn sample_buffers_compare_by_pointer_for_cheap_spec_equality() {
         let data: Arc<[f32]> = vec![0.0f32; 8].into();
-        let a = RenderSampleBuffer {
-            sample_rate_hz: 48_000,
-            frames: Arc::clone(&data),
-        };
-        let b = RenderSampleBuffer {
-            sample_rate_hz: 48_000,
-            frames: data,
-        };
-        let c = RenderSampleBuffer {
-            sample_rate_hz: 48_000,
-            frames: vec![0.0f32; 8].into(),
-        };
+        let a = RenderSampleBuffer::stereo(48_000, Arc::clone(&data));
+        let b = RenderSampleBuffer::stereo(48_000, data);
+        let c = RenderSampleBuffer::stereo(48_000, vec![0.0f32; 8].into());
         assert_eq!(a, b);
         assert_ne!(a, c);
     }

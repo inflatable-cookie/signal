@@ -671,10 +671,10 @@ pub fn materialize_offline_stretch_artifact_pcm_with_chunk_config(
     Ok(OfflineStretchArtifactPcm {
         plan,
         receipt,
-        buffer: RenderSampleBuffer {
-            sample_rate_hz: source.sample_rate_hz,
-            frames: Arc::from(frames.into_boxed_slice()),
-        },
+        buffer: RenderSampleBuffer::stereo(
+            source.sample_rate_hz,
+            Arc::from(frames.into_boxed_slice()),
+        ),
         chunk_plan,
         input_frame_count: source.frame_count(),
         output_frame_count,
@@ -1224,10 +1224,10 @@ mod tests {
             clip_id,
             start_frames: 0,
             end_frames: u64::MAX,
-            source: RenderSource::Samples(RenderSampleBuffer {
-                sample_rate_hz: 48_000,
-                frames: Arc::from(data.into_boxed_slice()),
-            }),
+            source: RenderSource::Samples(RenderSampleBuffer::stereo(
+                48_000,
+                Arc::from(data.into_boxed_slice()),
+            )),
             loop_source: true,
         }
     }
@@ -1273,10 +1273,7 @@ mod tests {
             frames.push(sample);
             frames.push(sample * 0.75);
         }
-        RenderSampleBuffer {
-            sample_rate_hz: 48_000,
-            frames: Arc::from(frames.into_boxed_slice()),
-        }
+        RenderSampleBuffer::stereo(48_000, Arc::from(frames.into_boxed_slice()))
     }
 
     fn cache_bridge_request<'a>(
@@ -2237,10 +2234,8 @@ mod tests {
         )
         .with_ratio_curve(vec![StretchRatioPoint::new(0, 1.25)])
         .with_pitch_curve(vec![StretchPitchPoint::new(0, 0.0)]);
-        let source = RenderSampleBuffer {
-            sample_rate_hz: 48_000,
-            frames: Arc::from(vec![0.0f32; 480].into_boxed_slice()),
-        };
+        let source =
+            RenderSampleBuffer::stereo(48_000, Arc::from(vec![0.0f32; 480].into_boxed_slice()));
         let receipt = accepted_product_quality_promotion_receipt("product-quality:mono-capability");
         let plan = plan_offline_stretch_artifact(
             OfflineStretchArtifactScope::RenderCache,
