@@ -382,12 +382,15 @@ Current stretch status:
   contributions: every class preserves relation within floating-point error,
   omitted energy is negligible, and no ablation closes the remaining gate.
   Batch 29.7J now calibrates the exact stereo invariant against ideal and
-  external-reference behavior before another topology or listening decision.
+  external-reference behavior. Its 192-row matrix rejects the `1e-9` external
+  IPD gate and finds material Signal tone/image drift against ideal and Rubber
+  Band. Batch 29.7K now owns one calibrated relation-preservation repair before
+  any listening decision.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7J stereo invariant gate calibration. Keep the renderer,
-current output, and all frozen hashes unchanged. Keep Batch 29.8 closed.
+Run `g10.029` Batch 29.7K calibrated stereo relation repair. Localize the image
+drift and test at most one report-only repair law. Keep Batch 29.8 closed.

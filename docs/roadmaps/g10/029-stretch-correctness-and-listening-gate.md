@@ -1658,15 +1658,15 @@ synthesis repair is authorized.
 
 ### Batch 29.7J - Stereo Invariant Gate Calibration
 
-- [ ] freeze ideal target-length, current Signal, pinned source-studied, and
+- [x] freeze ideal target-length, current Signal, pinned source-studied, and
   Rubber Band reference renders for the same tone and correlated-image controls
-- [ ] measure whole/interior IPD and image across record length, starting phase,
+- [x] measure whole/interior IPD and image across record length, starting phase,
   bin alignment, and boundary crop without changing any renderer
-- [ ] add one sample-domain relationship residual that does not assume a
+- [x] add one sample-domain relationship residual that does not assume a
   constant positive-frequency coefficient ratio for finite real windows
-- [ ] retain the exact gate if ideal and external references meet it; revise it
+- [x] retain the exact gate if ideal and external references meet it; revise it
   only if calibrated evidence proves it rejects accepted stereo behavior
-- [ ] if calibrated Signal remains materially worse, open one measured repair
+- [x] if calibrated Signal remains materially worse, open one measured repair
   direction; if competitive, reopen Batch 29.8 independent stereo review
 
 Evidence: one repeat-stable calibration matrix with exact input/output hashes,
@@ -1674,6 +1674,36 @@ estimator floors, external-reference provenance, and an explicit gate decision.
 No DSP, threshold, topology, listening, dynamic-ratio, cache, realtime, or
 routing change belongs in this batch. Batch 29.8 remains closed until the
 decision is frozen.
+
+Decision: revise the gate and repair Signal. The repeat-stable 192-row matrix
+covers two record lengths, two starting phases, aligned/off-bin tones, three
+ratios, two controls, and four renderers. The finite 16-bit ideal floor reaches
+`1.073e-6 rad`, proving `1e-9 rad` is not a valid external-reference gate. A
+calibrated `0.006 rad` tone gate admits ideal and Rubber Band; Signal reaches
+`0.01475 rad`. On correlated image, Rubber Band stays within `0.02863 dB` and
+`0.001463` normalized Gram residual while Signal reaches `0.54712 dB` and
+`0.01181`. Signalsmith reaches the same image drift, so source imitation does
+not close it. Collapsed and crossfed negative controls measure `0.24558` and
+`0.09651`, proving residual sensitivity. All renders are structurally valid,
+hash-complete, and repeat. The production gate remains unchanged in this
+calibration batch; Batch 29.7K owns one bounded relation-preservation repair.
+
+### Batch 29.7K - Calibrated Stereo Relation Repair
+
+- [ ] freeze the 29.7J calibrated tone-IPD and correlated-image residual gates
+  as report-only acceptance criteria; do not weaken them to admit Signal
+- [ ] localize Signal's image drift across output windows and determine whether
+  one stable real `2x2` relation transform can close it without time-varying
+  pumping
+- [ ] compare the proposed repair against ideal and Rubber Band behavior, with
+  duplicate, hard-pan, swap, polarity, mono-parity, and negative controls
+- [ ] implement at most one report-only repair law if the localization supports
+  it; reject the direction if it cannot preserve the mechanics invariants
+- [ ] reopen Batch 29.8 only when calibrated tone and image gates pass
+
+Evidence: one repeat-stable localization and differential report, followed by
+at most one bounded repair. No threshold search, listening export, dynamic
+ratio, cache, realtime, product routing, or promotion belongs in this batch.
 
 ### Batch 29.8 - Listening And Dynamic Checkpoint
 
@@ -2780,9 +2810,15 @@ decision is frozen.
   weak-bin energy is below `0.00053%`. Initial, fallback, and weak ablations do
   not close phase or image. Evidence `49bfd7c9c3bf7d21` triggers exact-gate
   calibration instead of another topology experiment. 29.8 stays closed.
+- 2026-07-16: Batch 29.7J proves the exact external IPD gate invalid and finds
+  material Signal image drift against ideal and Rubber Band. A 192-row matrix
+  repeats with complete hashes and pinned Signalsmith `57b93f4e...` `1.3.2`
+  plus Rubber Band R3 `4.0.0` provenance. Signal exceeds the calibrated tone
+  IPD gate and reaches `0.54712 dB` / `0.01181` image error. Batch 29.7K owns
+  one relation-preservation repair; 29.8 stays closed.
 
 ## Next Task
 
-Run Batch 29.7J stereo invariant gate calibration. Compare the frozen exact
-gate against ideal and external-reference behavior before another DSP repair or
-independent stereo review. Keep Batch 29.8 closed.
+Run Batch 29.7K calibrated stereo relation repair. Localize the measured image
+drift, then test at most one relation-preservation law against the frozen
+calibrated gates and mechanics invariants. Keep Batch 29.8 closed.
