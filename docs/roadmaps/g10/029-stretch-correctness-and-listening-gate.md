@@ -1581,19 +1581,44 @@ measurement. Evidence hash: `87a057697db91edd`.
 
 ### Batch 29.7G - Stereo Synthesis Closure Attribution
 
-- [ ] calibrate the whole/interior IPD estimator on ideal target-length tones
+- [x] calibrate the whole/interior IPD estimator on ideal target-length tones
   with the same output crops; separate measurement floor from render damage
-- [ ] trace the current and constant-relation oracle after inverse synthesis,
+- [x] trace the current and constant-relation oracle after inverse synthesis,
   after overlap accumulation, and after normalization without changing output
-- [ ] retain the frozen 29.7E audio and 29.7F evidence hashes; do not alter
+- [x] retain the frozen 29.7E audio and 29.7F evidence hashes; do not alter
   recurrence, windows, geometry, thresholds, or crop
-- [ ] assign the first post-spectrum divergence to inverse synthesis, overlap,
+- [x] assign the first post-spectrum divergence to inverse synthesis, overlap,
   normalization, or measurement and stop before topology work
 
 Evidence: one repeat-stable stage report and one focused
 `source_studied_linked_stereo_synthesis_closure_attribution` test. A measured
 owner opens one bounded repair contract; an estimator floor revises the proof
 measurement before any DSP change. Batch 29.8 remains closed.
+
+Decision: ideal whole records measure within `1.110223e-13 rad`; cropped ideal
+records expose a `0.000142` to `0.000489 rad` estimator floor. Calibrated
+current/oracle support-frame interior error is already `0.000604` to
+`0.010644 rad`. Overlap accumulation often reduces it. Normalization changes
+whole/interior IPD by less than `1e-9 rad` and is excluded. Frozen 29.7F audio
+hashes repeat exactly. Evidence hash: `7f8cee549977896d`. The first observable
+post-spectrum seam is real support-frame synthesis before overlap.
+
+### Batch 29.7H - Analytic Overlap Feasibility Proof
+
+- [ ] add one report-only analytic positive-frequency overlap ablation beside
+  the unchanged real support-frame path; feed both the same corrected spectra
+- [ ] retain recurrence, magnitudes, schedule, window, crop, normalization,
+  thresholds, current output, and all frozen current hashes
+- [ ] measure current and constant-relation tone IPD plus correlated image,
+  duplicate-mono parity, hard pan, swap, polarity, coverage, finiteness,
+  boundaries, crossfeed, and repeat
+- [ ] reject unless analytic overlap materially improves every failing IPD/image
+  row without mechanics damage; stop before listening or production adoption
+
+Evidence: one repeat-stable analytic/current ablation report and focused
+`source_studied_linked_stereo_analytic_overlap_feasibility` test. This tests the
+measured synthesis seam, not another phase coefficient, threshold, or window.
+Batch 29.8 remains closed.
 
 ### Batch 29.8 - Listening And Dynamic Checkpoint
 
@@ -2683,9 +2708,15 @@ measurement before any DSP change. Batch 29.8 remains closed.
   consistently improve output. Evidence `87a057697db91edd` assigns the next
   proof to synthesis/measurement closure. No DSP topology changed; 29.8 stays
   closed.
+- 2026-07-16: Batch 29.7G calibrates away the cropped-tone estimator floor and
+  locates the first post-spectrum divergence in real support-frame synthesis.
+  Overlap generally reduces that error and normalization changes it by less
+  than `1e-9 rad`. Current and oracle audio hashes remain frozen; evidence
+  `7f8cee549977896d` repeats. Batch 29.7H opens one analytic-overlap feasibility
+  proof. 29.8 stays closed.
 
 ## Next Task
 
-Run Batch 29.7G stereo synthesis-closure attribution. Calibrate the estimator
-and locate the first inverse, overlap, or normalization divergence before
-changing topology. Keep Batch 29.8 closed.
+Run Batch 29.7H analytic-overlap feasibility proof. Keep current output and
+recurrence frozen; test whether complex analytic accumulation closes the
+measured real support-frame relationship loss. Keep Batch 29.8 closed.

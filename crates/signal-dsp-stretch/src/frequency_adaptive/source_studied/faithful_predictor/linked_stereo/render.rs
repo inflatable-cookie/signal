@@ -1,5 +1,7 @@
+mod entry;
 mod recurrence;
 mod report;
+mod synthesis_trace;
 mod trace;
 
 use rustfft::{num_complex::Complex64, FftPlanner};
@@ -8,28 +10,19 @@ use super::super::{
     analyse, coherent_representation, constrain_real_edges, synthesise, TransformGrid,
     HORIZONTAL_ENERGY_FLOOR,
 };
+pub(super) use entry::{linked, linked_with_relation_oracle, linked_with_synthesis_trace};
 use recurrence::{reference_relative_bin, reference_relative_bin_with_oracle};
 use report::finish;
 pub(super) use report::StereoRender;
-
-pub(super) fn linked(inputs: [&[f64]; 2], ratio: f64, sample_rate: usize) -> StereoRender {
-    linked_inner(inputs, ratio, sample_rate, None)
-}
-
-pub(super) fn linked_with_relation_oracle(
-    inputs: [&[f64]; 2],
-    ratio: f64,
-    sample_rate: usize,
-    channel_one_phase_offset: f64,
-) -> StereoRender {
-    linked_inner(inputs, ratio, sample_rate, Some(channel_one_phase_offset))
-}
+pub(super) use synthesis_trace::SynthesisRelationTrace;
+use synthesis_trace::{SynthesisTraceSpec, SynthesisTraceState};
 
 fn linked_inner(
     inputs: [&[f64]; 2],
     ratio: f64,
     sample_rate: usize,
     channel_one_phase_offset: Option<f64>,
+    synthesis_trace_spec: Option<SynthesisTraceSpec>,
 ) -> StereoRender {
     assert_eq!(inputs[0].len(), inputs[1].len(), "linked channel lengths");
     if ratio == 1.0 {
@@ -46,6 +39,7 @@ fn linked_inner(
             0,
             0.0,
             0.0,
+            None,
         );
     }
 
@@ -74,6 +68,8 @@ fn linked_inner(
     let mut reference_switches = 0;
     let mut maximum_projected_relation_error = 0.0_f64;
     let mut maximum_constrained_relation_error = 0.0_f64;
+    let mut synthesis_trace =
+        synthesis_trace_spec.map(|spec| SynthesisTraceState::new(spec, length));
     let mut previous_reference = vec![None; bins];
     let mut output_center = -(length as isize / 2);
 
@@ -181,6 +177,9 @@ fn linked_inner(
             }
             constrain_real_edges(&mut next[channel], grid);
             let frame = synthesise(&next[channel], length, transform_length, grid, &inverse);
+            if let Some(trace) = &mut synthesis_trace {
+                trace.record_frame_channel(channel, &frame);
+            }
             for offset in 0..length {
                 let output_index = output_center - length as isize / 2 + offset as isize;
                 if (0..target_len as isize).contains(&output_index) {
@@ -192,6 +191,9 @@ fn linked_inner(
             }
             previous_output[channel] = next[channel].clone();
         }
+        if let Some(trace) = &mut synthesis_trace {
+            trace.complete_frame(output_center, target_len, length);
+        }
         previous_source_center = Some(source_center);
         output_center += hop as isize;
     }
@@ -201,6 +203,9 @@ fn linked_inner(
         .flat_map(|channel| channel.iter())
         .filter(|weight| **weight <= 0.0)
         .count();
+    if let Some(trace) = &mut synthesis_trace {
+        trace.record_accumulated(&output);
+    }
     for channel in 0..2 {
         for (sample, weight) in output[channel].iter_mut().zip(&normalization[channel]) {
             if *weight > 0.0 {
@@ -220,6 +225,10 @@ fn linked_inner(
                 + usize::from(channel.last().is_none_or(|sample| !sample.is_finite()))
         })
         .sum();
+    let synthesis_relation_trace = synthesis_trace.map(|mut trace| {
+        trace.record_normalized(&output);
+        trace.finish()
+    });
     finish(
         output,
         uncovered,
@@ -233,5 +242,6 @@ fn linked_inner(
         reference_switches,
         maximum_projected_relation_error,
         maximum_constrained_relation_error,
+        synthesis_relation_trace,
     )
 }

@@ -3594,8 +3594,29 @@ change recurrence, geometry, windows, thresholds, crop, listening state, or
 product posture. A first measured divergence may open one repair contract; a
 measurement floor must repair the proof before DSP changes.
 
+Batch 29.7G closes that attribution. Ideal target-length whole records measure
+within `1.110223e-13 rad`; cropped ideal records have a `0.000142` to
+`0.000489 rad` absolute estimator floor. The report therefore calibrates each
+render against its identically cropped ideal record. Current and oracle
+support-frame interior error is already `0.000604` to `0.010644 rad` after
+real inverse support extraction. Overlap often reduces the error. Pre/post
+normalization differs by less than `1e-9 rad`, excluding normalization. The
+29.7F audio hashes repeat and evidence `7f8cee549977896d` assigns the first
+observable post-spectrum seam to real support-frame synthesis.
+
+Batch 29.7H may test one analytic-overlap ablation. Reconstruct one complex
+positive-frequency frame per channel from the same corrected half-spectrum,
+apply the unchanged scalar synthesis window, overlap and normalization in the
+complex domain, then expose the real output for report-only comparison. The
+current renderer and hashes remain untouched. Do not change recurrence,
+magnitude, reference ownership, geometry, window, crop, thresholds, or
+fallback. Require improvement on every failing phase/image row with duplicate,
+hard-pan, transformation, structure, crossfeed, and repeat controls intact.
+Failure rejects analytic overlap. Passage opens a separate adoption contract,
+not listening or production routing.
+
 ## Next Task
 
-Run Batch 29.7G stereo synthesis-closure attribution. Separate estimator floor,
-inverse synthesis, overlap accumulation, and normalization before another
-topology change. Keep Batch 29.8 closed.
+Run Batch 29.7H analytic-overlap feasibility proof. Test only the measured real
+support-frame seam and keep current output, listening, dynamic ratio, cache,
+realtime, and routing closed.

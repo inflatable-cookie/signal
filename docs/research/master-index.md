@@ -65,7 +65,6 @@ Finch and Loophole.
 
 ## Next Task
 
-Run Batch 29.7G stereo synthesis-closure attribution. Coefficient projection
-and edge constraint are exact; calibrate ideal whole/interior measurement and
-trace inverse synthesis, overlap accumulation, and normalization before
-revising topology.
+Run Batch 29.7H analytic-overlap feasibility proof. Synthesis closure assigns
+the first observable relationship loss to real support-frame synthesis; test
+one complex analytic accumulation ablation without changing current output.

@@ -2373,6 +2373,53 @@ fn source_studied_linked_stereo_projection_residual_attribution() {
 }
 
 #[test]
+#[cfg(not(debug_assertions))]
+fn source_studied_linked_stereo_synthesis_closure_attribution() {
+    use super::source_studied::faithful_predictor::linked_stereo::quality::synthesis_closure::{
+        synthesis_closure_review, SynthesisClosureDirection,
+    };
+
+    let result = synthesis_closure_review();
+    eprintln!("source_studied_linked_stereo_synthesis_closure_attribution {result:#?}");
+    assert!(result.repeated);
+    assert_eq!(result.predecessor_evidence_hash, 0x87a0_5769_7db9_1edd);
+    assert_eq!(result.rows.len(), 3);
+    assert_eq!(result.evidence_hash, 0x7f8c_ee54_9977_896d);
+    assert_eq!(
+        result
+            .rows
+            .iter()
+            .map(|row| [row.current_audio_hash, row.oracle_audio_hash])
+            .collect::<Vec<_>>(),
+        vec![
+            [0xb902_71ab_51a0_52f9, 0x5212_45e5_d145_9e7e],
+            [0xae09_6858_dd2a_fcf6, 0xf364_ffe2_8d51_2f73],
+            [0x3c2c_378f_f8e9_12a4, 0xe06f_b9db_7d5a_c45c],
+        ]
+    );
+    assert!(result.rows.iter().all(|row| {
+        row.ideal_ipd_error[0] <= 1.2e-13
+            && row.ideal_ipd_error[1] >= 1.0e-4
+            && row.current_inverse_ipd_error[1] > 1.0e-4
+            && row.oracle_inverse_ipd_error[1] > 1.0e-4
+            && row
+                .current_accumulated_ipd_error
+                .into_iter()
+                .zip(row.current_normalized_ipd_error)
+                .all(|(before, after)| (before - after).abs() < 1.0e-9)
+            && row
+                .oracle_accumulated_ipd_error
+                .into_iter()
+                .zip(row.oracle_normalized_ipd_error)
+                .all(|(before, after)| (before - after).abs() < 1.0e-9)
+    }));
+    assert_eq!(
+        result.direction,
+        SynthesisClosureDirection::InverseSupportSynthesis
+    );
+}
+
+#[test]
 #[ignore = "requires pinned Signalsmith Stretch and long-form source pack"]
 #[cfg(not(debug_assertions))]
 fn source_studied_exact_input_real_source_confirmation() {

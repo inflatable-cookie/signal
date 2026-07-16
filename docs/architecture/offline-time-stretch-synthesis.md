@@ -1156,8 +1156,23 @@ post-spectrum: inverse synthesis, overlap accumulation, normalization, or the
 finite-record measurement. No topology change is authorized until those four
 are separated.
 
+Synthesis closure calibrates the finite-record measurement and locates the
+first remaining seam. Ideal whole records are effectively exact; cropped ideal
+records carry `0.000142` to `0.000489 rad` measurement bias. After calibration,
+real support-frame synthesis already carries relationship error, overlap often
+reduces it, and normalization is neutral within `1e-9 rad`. The current
+per-channel real-frame inverse therefore loses information needed to make a
+frame-local complex relation close across windowed overlap.
+
+The next bounded topology test accumulates positive-frequency analytic frames
+as complex values through the same window and overlap before taking real
+output. It is an ablation, not an adopted renderer. Current output and all
+recurrence, magnitude, scheduling, geometry, crop, and normalization policy
+remain frozen while mechanics and stereo quality decide whether the synthesis
+representation is viable.
+
 ## Next Task
 
-Run Batch 29.7G stereo synthesis-closure attribution. Keep the implemented
-recurrence frozen, calibrate the ideal measurement floor, and locate the first
-inverse, overlap, or normalization divergence.
+Run Batch 29.7H analytic-overlap feasibility proof. Keep current output and
+recurrence frozen; test only whether complex accumulation closes the measured
+real support-frame relationship loss.

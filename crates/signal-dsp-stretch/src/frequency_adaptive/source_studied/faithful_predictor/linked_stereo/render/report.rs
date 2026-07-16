@@ -1,3 +1,5 @@
+use super::SynthesisRelationTrace;
+
 #[derive(Clone, Debug)]
 pub(in super::super) struct StereoRender {
     pub(in super::super) channels: [Vec<f64>; 2],
@@ -12,6 +14,7 @@ pub(in super::super) struct StereoRender {
     pub(in super::super) reference_switches: usize,
     pub(in super::super) maximum_projected_relation_error: f64,
     pub(in super::super) maximum_constrained_relation_error: f64,
+    pub(in super::super) synthesis_relation_trace: Option<SynthesisRelationTrace>,
     pub(in super::super) hash: u64,
 }
 
@@ -29,6 +32,7 @@ pub(super) fn finish(
     reference_switches: usize,
     maximum_projected_relation_error: f64,
     maximum_constrained_relation_error: f64,
+    synthesis_relation_trace: Option<SynthesisRelationTrace>,
 ) -> StereoRender {
     let mut hash = super::super::super::hash_samples(&channels[0]);
     super::super::hash_values(
@@ -48,6 +52,7 @@ pub(super) fn finish(
         reference_switches,
         maximum_projected_relation_error,
         maximum_constrained_relation_error,
+        synthesis_relation_trace,
         hash,
     }
 }

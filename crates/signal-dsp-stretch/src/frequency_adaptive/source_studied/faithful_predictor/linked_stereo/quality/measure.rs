@@ -22,14 +22,8 @@ pub(super) fn maximum_ipd_error(
     frequencies
         .iter()
         .map(|frequency| {
-            let input_ipd = wrap(
-                projection(&input[1], *frequency, sample_rate).arg()
-                    - projection(&input[0], *frequency, sample_rate).arg(),
-            );
-            let output_ipd = wrap(
-                projection(&output[1], *frequency, sample_rate).arg()
-                    - projection(&output[0], *frequency, sample_rate).arg(),
-            );
+            let input_ipd = ipd(input, *frequency, sample_rate);
+            let output_ipd = ipd(output, *frequency, sample_rate);
             wrap(output_ipd - input_ipd).abs()
         })
         .fold(0.0, f64::max)
@@ -44,13 +38,17 @@ pub(super) fn maximum_expected_ipd_error(
     frequencies
         .iter()
         .map(|frequency| {
-            let output_ipd = wrap(
-                projection(&output[1], *frequency, sample_rate).arg()
-                    - projection(&output[0], *frequency, sample_rate).arg(),
-            );
+            let output_ipd = ipd(output, *frequency, sample_rate);
             wrap(output_ipd - expected_ipd).abs()
         })
         .fold(0.0, f64::max)
+}
+
+pub(super) fn ipd(channels: &[Vec<f64>; 2], frequency: f64, sample_rate: usize) -> f64 {
+    wrap(
+        projection(&channels[1], frequency, sample_rate).arg()
+            - projection(&channels[0], frequency, sample_rate).arg(),
+    )
 }
 
 pub(super) fn best_delay(left: &[f64], right: &[f64], radius: usize) -> usize {

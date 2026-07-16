@@ -2,6 +2,7 @@ pub(in crate::frequency_adaptive) mod attribution;
 mod controls;
 mod measure;
 pub(in crate::frequency_adaptive) mod projection_attribution;
+pub(in crate::frequency_adaptive) mod synthesis_closure;
 
 use super::{hash_values, mechanics_review, render, LinkedStereoMechanicsDirection, HASH_OFFSET};
 use controls::*;

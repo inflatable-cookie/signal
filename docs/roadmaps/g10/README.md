@@ -374,14 +374,15 @@ Current stretch status:
   coefficient projection and real-edge constraint at `4.440892e-16 rad`.
   Boundary cropping reduces tone IPD while interior correlated-image damage
   remains; a constant-relation oracle is not consistently better. Batch 29.7G
-  now separates measurement floor, inverse synthesis, overlap accumulation,
-  and normalization before any further topology change.
+  calibrates the cropped measurement floor and assigns the first observable
+  divergence to real support-frame synthesis. Overlap often reduces it and
+  normalization is neutral. Batch 29.7H now tests one analytic-overlap
+  representation without changing current output.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7G stereo synthesis-closure attribution. Calibrate the
-ideal whole/interior measurement floor and locate the first inverse, overlap,
-or normalization divergence. Keep Batch 29.8 closed.
+Run `g10.029` Batch 29.7H analytic-overlap feasibility proof. Keep recurrence,
+current output, and all frozen hashes unchanged. Keep Batch 29.8 closed.

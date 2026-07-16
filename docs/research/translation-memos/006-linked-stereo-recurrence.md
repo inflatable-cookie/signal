@@ -152,6 +152,8 @@ expression, guidance ranges, scaling, and constants are not transferable.
 
 ## Next Task
 
-Batch 29.7E confirms the topology as a large improvement but not a gate pass.
-Run Batch 29.7F to locate the remaining projection residual across coefficient,
-real-edge, interior-overlap, and boundary stages before revising the topology.
+Batch 29.7E confirms the recurrence as a large improvement but not a gate pass.
+29.7F excludes coefficient projection and real-edge constraint; 29.7G locates
+the first post-spectrum relationship loss in real support-frame synthesis.
+Run Batch 29.7H analytic-overlap feasibility without changing recurrence or
+current output.
