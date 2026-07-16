@@ -159,7 +159,7 @@ fn image_stats(channels: &[Vec<f64>; 2]) -> [f64; 2] {
     ]
 }
 
-fn gram_residual(input: &[Vec<f64>; 2], output: &[Vec<f64>; 2]) -> f64 {
+pub(super) fn gram_residual(input: &[Vec<f64>; 2], output: &[Vec<f64>; 2]) -> f64 {
     let normalize = |values: [f64; 3]| {
         let trace = (values[0] + values[1]).max(f64::MIN_POSITIVE);
         [values[0] / trace, values[1] / trace, values[2] / trace]
@@ -172,7 +172,7 @@ fn gram_residual(input: &[Vec<f64>; 2], output: &[Vec<f64>; 2]) -> f64 {
         .sqrt()
 }
 
-fn gram(channels: &[Vec<f64>; 2]) -> [f64; 3] {
+pub(super) fn gram(channels: &[Vec<f64>; 2]) -> [f64; 3] {
     channels[0]
         .iter()
         .zip(&channels[1])

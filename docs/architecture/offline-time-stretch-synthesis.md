@@ -1,7 +1,7 @@
 # Offline Time-Stretch Synthesis
 
-Status: coherent fixed-grid mono baseline validated; linked stereo recurrence
-revised after failed quality proof
+Status: coherent fixed-grid mono baseline validated; linked stereo source study
+active after calibrated repair rejection
 Owner: dsp
 Updated: 2026-07-16
 Contract refs: `046`, `082`
@@ -63,15 +63,19 @@ significant channel has individually degenerate prediction, both channels take
 the shared fallback mode. This keeps one audible mode decision across channels
 without fabricating energy or discarding per-channel phase evidence.
 
-Shared scheduling and mode selection are necessary but not sufficient. The
-quality gate proves that applying the coherent recurrence independently to each
-channel preserves duplicate, hard-pan, same-phase, opposite-phase, and
-decorrelated controls, but not general correlated stereo. Quadrature tones lose
-interchannel phase, expanding broadband delay moves, and unequal correlated
-mixtures collapse toward a different image. Independent mono rendering
-reproduces the same failures, so aggregate mode selection is not the primary
-cause. A successor needs an explicitly contracted cross-channel recurrence
-invariant before stereo work can continue.
+Shared scheduling and mode selection are necessary but not sufficient.
+Reference-relative recurrence now selects one per-bin channel prediction and
+derives its peer from the current input relation. It restores broadband delay
+and sharply reduces the original phase/image collapse, but calibrated evidence
+still finds material tone and correlated-image drift against ideal and Rubber
+Band behavior.
+
+Coefficient, real-edge, overlap, normalization, initial-frame, fallback, and
+weak-bin attribution do not own the residual. A render-wide real `2x2` Gram
+color transform is also rejected: it closes aggregate covariance but fails
+tone IPD and interior-image gates and is not consistently better across local
+windows. Stereo repair therefore remains inside linked analysis/phase/synthesis
+decisions. Post-render image correction is not an acceptable substitute.
 
 Dynamic ratio remains outside the successor until fixed-ratio mono and linked
 stereo pass. Its eventual path must update the same time map continuously; it
@@ -1193,13 +1197,14 @@ materially.
 
 The residual is therefore no longer assigned to a coefficient, edge,
 synthesis, overlap, normalization, or boundary implementation defect under the
-current proof. The next architecture step calibrates the exact synthetic stereo
-invariant itself. Ideal, current, and external-reference renders must establish
-whether the existing phase/image ceilings distinguish meaningful stereo damage
-from finite-window and finite-record behavior. No new DSP topology is credible
-until that measurement decision closes.
+current proof. Calibration separates finite-record measurement floors from
+material Signal drift. Render-wide normalized-Gram coloring then closes only
+the aggregate statistic: it fails calibrated tone and interior-image gates and
+local consistency. The next architecture step studies Rubber Band's verified
+linked-channel source and behavior before selecting another synthesis-time
+invariant.
 
 ## Next Task
 
-Run Batch 29.7J stereo invariant gate calibration. Compare ideal, current, and
-external-reference behavior before another repair or independent stereo review.
+Run Batch 29.7L Rubber Band linked-stereo mechanism study. Promote at most one
+license-safe synthesis-time invariant before another repair.

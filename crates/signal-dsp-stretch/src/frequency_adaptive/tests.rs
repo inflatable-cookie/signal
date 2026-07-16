@@ -2294,6 +2294,30 @@ fn source_studied_linked_stereo_invariant_gate_calibration() {
 }
 
 #[test]
+#[ignore = "requires pinned Signalsmith Stretch 1.3.2 and Rubber Band R3 4.0.0"]
+#[cfg(not(debug_assertions))]
+fn source_studied_linked_stereo_relation_repair() {
+    use super::source_studied::faithful_predictor::linked_stereo::quality::gate_calibration::relation_repair::{
+        review, RelationRepairDirection,
+    };
+
+    let result = review();
+    eprintln!("source_studied_linked_stereo_relation_repair {result:#?}");
+    assert!(result.repeated);
+    assert_eq!(result.rows.len(), 48);
+    assert!(result.rows.iter().any(|row| row.applied));
+    assert!(result
+        .mechanics_errors
+        .iter()
+        .all(|error| *error <= 1.0e-12));
+    assert_eq!(result.silent_peer_peak, 0.0);
+    assert_eq!(result.reference_failures, 0);
+    assert!(result.repaired_failures > 0);
+    assert!(result.localization_failures > 0);
+    assert_eq!(result.direction, RelationRepairDirection::Reject);
+}
+
+#[test]
 #[cfg(not(debug_assertions))]
 fn source_studied_linked_stereo_quality_attribution() {
     use super::source_studied::faithful_predictor::linked_stereo::quality::attribution::{

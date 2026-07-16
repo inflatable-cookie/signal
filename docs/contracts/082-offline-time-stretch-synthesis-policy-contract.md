@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; linked-stereo proof next
+Status: active; linked-stereo source study next
 Owner: dsp
 Updated: 2026-07-16
 Related contracts: `046`, `048`, `049`
@@ -3660,8 +3660,31 @@ Batch 29.8 independent stereo review. No renderer, recurrence, threshold,
 topology, listening, dynamic-ratio, cache, realtime, or routing change is
 authorized inside calibration.
 
+Batch 29.7J rejects the exact external IPD gate and keeps production unchanged.
+The repeat-stable `192`-row matrix covers two record lengths, two starting
+phases, aligned/off-bin tones, three ratios, two controls, and ideal, Signal,
+Signalsmith, and Rubber Band renders. The finite 16-bit ideal floor reaches
+`1.073e-6 rad`; use `0.006 rad` as the report-only tone-IPD ceiling. Use
+`0.05 dB`, `0.002` correlation delta, and `0.002` normalized Gram residual as
+report-only correlated-image ceilings. These admit ideal and Rubber Band while
+remaining sensitive to collapsed and crossfed negative controls. Signal reaches
+`0.01475 rad`, `0.54712 dB`, and `0.01181` residual. This opens one bounded
+relation repair, not listening or promotion.
+
+Batch 29.7K rejects render-wide relation coloring. The only tested law computes
+one gain-neutral real `2x2` transform from normalized source/output Gram
+matrices, applies it to the complete render, and bypasses rank-deficient
+duplicate and hard-pan inputs. It preserves total energy and passes duplicate,
+hard-pan, swap, polarity, scaled-mono parity, and silent-peer controls exactly.
+Ideal and Rubber Band have zero calibrated failures. The repaired Signal has
+`14/48` calibrated failures and `17/48` local-consistency failures; tone IPD
+reaches `0.01621 rad` and interior image reaches `0.06843 dB`. Do not add an
+activation threshold, windowed coloring, matrix smoothing, or post-render
+correction sweep. Further repair requires source and behavioral evidence for a
+linked synthesis-time mechanism.
+
 ## Next Task
 
-Run Batch 29.7J stereo invariant gate calibration. Decide whether the exact
-synthetic gate measures intended stereo quality before another topology or
-listening decision. Keep dynamic ratio, cache, realtime, and routing closed.
+Run Batch 29.7L Rubber Band linked-stereo mechanism study. Promote at most one
+license-safe synthesis-time invariant before another repair. Keep listening,
+dynamic ratio, cache, realtime, and routing closed.

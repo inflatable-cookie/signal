@@ -1,5 +1,6 @@
 mod external;
 mod metrics;
+pub(in crate::frequency_adaptive) mod relation_repair;
 mod report;
 
 use std::{fs, path::PathBuf};

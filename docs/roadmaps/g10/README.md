@@ -384,13 +384,15 @@ Current stretch status:
   Batch 29.7J now calibrates the exact stereo invariant against ideal and
   external-reference behavior. Its 192-row matrix rejects the `1e-9` external
   IPD gate and finds material Signal tone/image drift against ideal and Rubber
-  Band. Batch 29.7K now owns one calibrated relation-preservation repair before
-  any listening decision.
+  Band. Batch 29.7K rejects render-wide relation coloring despite exact
+  mechanics: repaired Signal still fails `14/48` calibrated rows and `17/48`
+  local rows. Batch 29.7L now studies Rubber Band's actual linked-stereo source
+  and behavior before another repair or listening decision.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7K calibrated stereo relation repair. Localize the image
-drift and test at most one report-only repair law. Keep Batch 29.8 closed.
+Run `g10.029` Batch 29.7L Rubber Band linked-stereo mechanism study. Promote at
+most one license-safe synthesis-time invariant. Keep Batch 29.8 closed.

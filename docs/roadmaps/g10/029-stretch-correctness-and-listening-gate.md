@@ -1690,20 +1690,52 @@ calibration batch; Batch 29.7K owns one bounded relation-preservation repair.
 
 ### Batch 29.7K - Calibrated Stereo Relation Repair
 
-- [ ] freeze the 29.7J calibrated tone-IPD and correlated-image residual gates
+- [x] freeze the 29.7J calibrated tone-IPD and correlated-image residual gates
   as report-only acceptance criteria; do not weaken them to admit Signal
-- [ ] localize Signal's image drift across output windows and determine whether
+- [x] localize Signal's image drift across output windows and determine whether
   one stable real `2x2` relation transform can close it without time-varying
   pumping
-- [ ] compare the proposed repair against ideal and Rubber Band behavior, with
+- [x] compare the proposed repair against ideal and Rubber Band behavior, with
   duplicate, hard-pan, swap, polarity, mono-parity, and negative controls
-- [ ] implement at most one report-only repair law if the localization supports
+- [x] implement at most one report-only repair law if the localization supports
   it; reject the direction if it cannot preserve the mechanics invariants
-- [ ] reopen Batch 29.8 only when calibrated tone and image gates pass
+- [x] reopen Batch 29.8 only when calibrated tone and image gates pass
 
 Evidence: one repeat-stable localization and differential report, followed by
 at most one bounded repair. No threshold search, listening export, dynamic
 ratio, cache, realtime, product routing, or promotion belongs in this batch.
+
+Decision: reject render-wide relation coloring and keep Batch 29.8 closed. One
+gain-neutral real `2x2` normalized-Gram transform closes whole-render covariance
+and preserves total energy. Rank-deficient duplicate and hard-pan controls
+bypass exactly. Duplicate, hard-pan, swap, polarity, scaled-mono parity, and
+silent-peer mechanics all pass at zero error. Ideal and Rubber Band have zero
+calibrated failures. Repaired Signal still fails `14/48` rows and local
+consistency on `17/48`; tone IPD reaches `0.01621 rad` and interior image
+reaches `0.06843 dB`. A thresholded variant was rejected during proof because
+it made scale-equivalent material take different branches. No post-render or
+windowed matrix sweep is authorized.
+
+### Batch 29.7L - Rubber Band Linked-Stereo Mechanism Study
+
+- [ ] pin the Rubber Band R3 `4.0.0` source corresponding to the installed
+  comparator; record exact revision, build identity, license, and excluded GPL
+  expression boundary
+- [ ] trace channel coupling through peak ownership, phase lamination,
+  transient reset, and synthesis; distinguish verified source behavior from
+  inference
+- [ ] run bounded stereo behavioral differentials for available public modes
+  against the frozen tone/image controls and calibrated gates
+- [ ] compare the verified mechanism with Signal's reference-relative
+  recurrence and identify the first architectural difference that explains the
+  measured residual
+- [ ] promote at most one license-safe invariant into architecture and Rule 31H,
+  or pause linked stereo if no bounded repair is justified
+
+Evidence: one provenance-complete source translation and behavioral report.
+No GPL expression or constants enter Signal. No DSP implementation, threshold
+search, listening, dynamic ratio, cache, realtime, routing, or promotion belongs
+in this batch.
 
 ### Batch 29.8 - Listening And Dynamic Checkpoint
 
@@ -2816,9 +2848,14 @@ ratio, cache, realtime, product routing, or promotion belongs in this batch.
   plus Rubber Band R3 `4.0.0` provenance. Signal exceeds the calibrated tone
   IPD gate and reaches `0.54712 dB` / `0.01181` image error. Batch 29.7K owns
   one relation-preservation repair; 29.8 stays closed.
+- 2026-07-16: Batch 29.7K rejects render-wide normalized-Gram coloring. Frozen
+  mechanics pass exactly and references have zero failures, but repaired Signal
+  fails `14/48` calibrated rows and `17/48` local rows. Tone IPD reaches
+  `0.01621 rad`; interior image reaches `0.06843 dB`. Batch 29.7L returns to
+  Rubber Band's actual linked-stereo source and behavior before another repair.
 
 ## Next Task
 
-Run Batch 29.7K calibrated stereo relation repair. Localize the measured image
-drift, then test at most one relation-preservation law against the frozen
-calibrated gates and mechanics invariants. Keep Batch 29.8 closed.
+Run Batch 29.7L Rubber Band linked-stereo mechanism study. Freeze source
+provenance and behavioral differentials, then promote at most one license-safe
+synthesis-time invariant. Keep Batch 29.8 closed.
