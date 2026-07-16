@@ -3633,8 +3633,35 @@ remain unchanged. The first class whose ablation closes whole-render phase and
 image owns one repair contract. If no class closes, stop topology work and
 reassess whether the exact invariant measures the intended stereo quality.
 
+Batch 29.7I closes without a coefficient owner. Every lifecycle and energy
+class preserves input relation within `4.440892e-16 rad`. Reference fallback
+occurs only `1`, `2`, and `1` times and carries at most `2.597671e-5`
+synthesized energy. Weak coefficients carry `0.00032%` to `0.00053%` of total
+energy. Their constant-relation ablation worsens tone IPD at all ratios;
+fallback is neutral; initial-frame forcing is inconsistent. None materially
+changes correlated image. Evidence `49bfd7c9c3bf7d21` preserves the frozen
+current hashes and selects gate-definition reassessment.
+
+Batch 29.7J is report-only stereo invariant calibration. Use exact identical
+inputs and target lengths for ideal target tones, current Signal, the pinned
+source-studied baseline, and Rubber Band. Measure whole and support-interior
+IPD and correlated image over record length, initial phase, transform-bin
+alignment, and boundary crop. Add one sample-domain relationship residual that
+does not require a constant positive-frequency coefficient ratio from finite
+real-window spectra. Freeze estimator floors, comparator provenance, output
+hashes, and repeat evidence.
+
+Retain the `1e-9 rad`, `0.25 dB`, and `0.02` gates if ideal and external
+references meet them. A gate may change only if calibrated evidence proves it
+rejects accepted reference behavior and the replacement remains sensitive to
+known stereo damage. If Signal remains materially worse under the calibrated
+gate, open one measured repair direction. If it is competitive, reopen only
+Batch 29.8 independent stereo review. No renderer, recurrence, threshold,
+topology, listening, dynamic-ratio, cache, realtime, or routing change is
+authorized inside calibration.
+
 ## Next Task
 
-Run Batch 29.7I complete coefficient-contribution attribution. Close the
-initial/fallback/weak-bin trace gap before another topology or gate decision.
-Keep listening, dynamic ratio, cache, realtime, and routing closed.
+Run Batch 29.7J stereo invariant gate calibration. Decide whether the exact
+synthetic gate measures intended stereo quality before another topology or
+listening decision. Keep dynamic ratio, cache, realtime, and routing closed.

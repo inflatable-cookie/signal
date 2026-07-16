@@ -1,4 +1,4 @@
-use super::SynthesisRelationTrace;
+use super::{CoefficientContributionTrace, SynthesisRelationTrace};
 
 #[derive(Clone, Debug)]
 pub(in super::super) struct StereoRender {
@@ -15,6 +15,7 @@ pub(in super::super) struct StereoRender {
     pub(in super::super) maximum_projected_relation_error: f64,
     pub(in super::super) maximum_constrained_relation_error: f64,
     pub(in super::super) synthesis_relation_trace: Option<SynthesisRelationTrace>,
+    pub(in super::super) coefficient_contribution_trace: Option<CoefficientContributionTrace>,
     pub(in super::super) hash: u64,
 }
 
@@ -22,8 +23,6 @@ pub(in super::super) struct StereoRender {
 pub(super) fn finish(
     channels: [Vec<f64>; 2],
     uncovered: usize,
-    non_finite: usize,
-    boundary_failures: usize,
     shared_corrected: usize,
     shared_fallback: usize,
     unilateral_non_silent_completions: usize,
@@ -33,7 +32,20 @@ pub(super) fn finish(
     maximum_projected_relation_error: f64,
     maximum_constrained_relation_error: f64,
     synthesis_relation_trace: Option<SynthesisRelationTrace>,
+    coefficient_contribution_trace: Option<CoefficientContributionTrace>,
 ) -> StereoRender {
+    let non_finite = channels
+        .iter()
+        .flat_map(|channel| channel.iter())
+        .filter(|sample| !sample.is_finite())
+        .count();
+    let boundary_failures = channels
+        .iter()
+        .map(|channel| {
+            usize::from(channel.first().is_none_or(|sample| !sample.is_finite()))
+                + usize::from(channel.last().is_none_or(|sample| !sample.is_finite()))
+        })
+        .sum();
     let mut hash = super::super::super::hash_samples(&channels[0]);
     super::super::hash_values(
         &mut hash,
@@ -53,6 +65,7 @@ pub(super) fn finish(
         maximum_projected_relation_error,
         maximum_constrained_relation_error,
         synthesis_relation_trace,
+        coefficient_contribution_trace,
         hash,
     }
 }

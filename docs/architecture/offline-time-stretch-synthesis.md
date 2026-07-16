@@ -1183,8 +1183,23 @@ contributions. Those classes can still accumulate into a measurable whole
 output. Full contribution attribution must isolate them before another phase or
 synthesis topology is credible.
 
+That attribution finds no omitted coefficient owner. Initial, corrected,
+fallback, significant, and weak classes all preserve their input relation
+within `4.440892e-16 rad`. Fallback is nearly absent and energetically
+negligible. Weak coefficients are numerous but carry below `0.00053%` of total
+energy. Constant-relation forcing of weak coefficients worsens phase; fallback
+is neutral; initial-frame forcing is inconsistent. None moves correlated image
+materially.
+
+The residual is therefore no longer assigned to a coefficient, edge,
+synthesis, overlap, normalization, or boundary implementation defect under the
+current proof. The next architecture step calibrates the exact synthetic stereo
+invariant itself. Ideal, current, and external-reference renders must establish
+whether the existing phase/image ceilings distinguish meaningful stereo damage
+from finite-window and finite-record behavior. No new DSP topology is credible
+until that measurement decision closes.
+
 ## Next Task
 
-Run Batch 29.7I complete coefficient-contribution attribution. Measure and
-ablate initial-frame, fallback, and weak-bin classes before another repair or
-gate decision.
+Run Batch 29.7J stereo invariant gate calibration. Compare ideal, current, and
+external-reference behavior before another repair or independent stereo review.

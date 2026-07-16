@@ -65,6 +65,6 @@ Finch and Loophole.
 
 ## Next Task
 
-Run Batch 29.7I complete coefficient-contribution attribution. Analytic overlap
-is linearly equivalent and rejected; close initial-frame, fallback, and weak-bin
-classes omitted by the earlier exact-relation trace.
+Run Batch 29.7J stereo invariant gate calibration. Complete contribution
+attribution excludes initial-frame, fallback, and weak-bin ownership; compare
+the frozen gate against ideal and external-reference behavior before more DSP.

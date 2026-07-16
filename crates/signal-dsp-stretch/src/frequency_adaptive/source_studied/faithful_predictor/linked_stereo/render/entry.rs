@@ -1,12 +1,25 @@
 use super::super::super::coherent_representation;
-use super::{linked_inner, overlap::SynthesisMode, StereoRender, SynthesisTraceSpec};
+use super::{
+    contribution::{CoefficientAblation, CoefficientTraceSpec},
+    linked_inner,
+    overlap::SynthesisMode,
+    StereoRender, SynthesisTraceSpec,
+};
 
 pub(in super::super) fn linked(
     inputs: [&[f64]; 2],
     ratio: f64,
     sample_rate: usize,
 ) -> StereoRender {
-    linked_inner(inputs, ratio, sample_rate, None, None, SynthesisMode::Real)
+    linked_inner(
+        inputs,
+        ratio,
+        sample_rate,
+        None,
+        None,
+        None,
+        SynthesisMode::Real,
+    )
 }
 
 pub(in super::super) fn linked_with_relation_oracle(
@@ -21,6 +34,7 @@ pub(in super::super) fn linked_with_relation_oracle(
         sample_rate,
         Some(channel_one_phase_offset),
         None,
+        None,
         SynthesisMode::Real,
     )
 }
@@ -34,6 +48,7 @@ pub(in super::super) fn linked_analytic(
         inputs,
         ratio,
         sample_rate,
+        None,
         None,
         None,
         SynthesisMode::Analytic,
@@ -51,6 +66,7 @@ pub(in super::super) fn linked_analytic_with_relation_oracle(
         ratio,
         sample_rate,
         Some(channel_one_phase_offset),
+        None,
         None,
         SynthesisMode::Analytic,
     )
@@ -77,6 +93,28 @@ pub(in super::super) fn linked_with_synthesis_trace(
             output_expected_ipd,
             sample_rate,
             interior_trim,
+        }),
+        None,
+        SynthesisMode::Real,
+    )
+}
+
+pub(in super::super) fn linked_with_coefficient_trace(
+    inputs: [&[f64]; 2],
+    ratio: f64,
+    sample_rate: usize,
+    oracle_relation: Option<f64>,
+    ablation: Option<CoefficientAblation>,
+) -> StereoRender {
+    linked_inner(
+        inputs,
+        ratio,
+        sample_rate,
+        None,
+        None,
+        Some(CoefficientTraceSpec {
+            oracle_relation,
+            ablation,
         }),
         SynthesisMode::Real,
     )

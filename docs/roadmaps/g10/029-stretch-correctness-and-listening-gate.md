@@ -1630,13 +1630,13 @@ causal representation defect.
 
 ### Batch 29.7I - Complete Coefficient Contribution Attribution
 
-- [ ] classify every frame/bin contribution as initial-frame, viable corrected,
+- [x] classify every frame/bin contribution as initial-frame, viable corrected,
   reference fallback, significant, or weak; remove the 29.7F trace blind spot
-- [ ] measure relation error and synthesized energy for every class, including
+- [x] measure relation error and synthesized energy for every class, including
   bins excluded by the existing significant-energy report threshold
-- [ ] run one-class-at-a-time constant-relation ablations for initial, fallback,
+- [x] run one-class-at-a-time constant-relation ablations for initial, fallback,
   and weak coefficients while preserving current output and frozen hashes
-- [ ] select the first class whose ablation closes whole-render IPD/image; stop
+- [x] select the first class whose ablation closes whole-render IPD/image; stop
   before threshold tuning, recurrence changes, or listening
 
 Evidence: one contribution-closed, repeat-stable report with class counts,
@@ -1645,6 +1645,35 @@ energies, relation errors, ablation measurements, and hashes. Focused test:
 class opens one bounded repair. Failure to close forces a gate-definition
 reassessment instead of another topology experiment. Batch 29.8 remains
 closed.
+
+Decision: no class closes. All initial, corrected, fallback, significant, and
+weak relations measure within `4.440892e-16 rad`. Fallback occurs only
+`1/2/1` times with at most `2.597671e-5` synthesized energy. Weak coefficients
+carry only `0.00032%` to `0.00053%` of total energy. Their oracle worsens tone
+IPD at every ratio; fallback is neutral; initial forcing improves `0.75x` by
+only `1.36e-5 rad` and regresses both expansions. Correlated-image movement is
+unchanged within `2.4e-14 dB`. Current hashes remain frozen. Evidence hash:
+`49bfd7c9c3bf7d21`. The exact gate now requires calibration; no coefficient or
+synthesis repair is authorized.
+
+### Batch 29.7J - Stereo Invariant Gate Calibration
+
+- [ ] freeze ideal target-length, current Signal, pinned source-studied, and
+  Rubber Band reference renders for the same tone and correlated-image controls
+- [ ] measure whole/interior IPD and image across record length, starting phase,
+  bin alignment, and boundary crop without changing any renderer
+- [ ] add one sample-domain relationship residual that does not assume a
+  constant positive-frequency coefficient ratio for finite real windows
+- [ ] retain the exact gate if ideal and external references meet it; revise it
+  only if calibrated evidence proves it rejects accepted stereo behavior
+- [ ] if calibrated Signal remains materially worse, open one measured repair
+  direction; if competitive, reopen Batch 29.8 independent stereo review
+
+Evidence: one repeat-stable calibration matrix with exact input/output hashes,
+estimator floors, external-reference provenance, and an explicit gate decision.
+No DSP, threshold, topology, listening, dynamic-ratio, cache, realtime, or
+routing change belongs in this batch. Batch 29.8 remains closed until the
+decision is frozen.
 
 ### Batch 29.8 - Listening And Dynamic Checkpoint
 
@@ -2746,9 +2775,14 @@ closed.
   rounding changes, breaking bit parity without quality gain. Evidence
   `db73736856099b7d` reopens the coefficient classes omitted by 29.7F rather
   than another synthesis topology. 29.8 stays closed.
+- 2026-07-16: Batch 29.7I closes every omitted coefficient class. All relation
+  errors remain within `4.440892e-16 rad`; fallback energy is negligible and
+  weak-bin energy is below `0.00053%`. Initial, fallback, and weak ablations do
+  not close phase or image. Evidence `49bfd7c9c3bf7d21` triggers exact-gate
+  calibration instead of another topology experiment. 29.8 stays closed.
 
 ## Next Task
 
-Run Batch 29.7I complete coefficient-contribution attribution. Close the
-initial/fallback/weak-bin trace gap before another repair or gate decision.
-Keep Batch 29.8 closed.
+Run Batch 29.7J stereo invariant gate calibration. Compare the frozen exact
+gate against ideal and external-reference behavior before another DSP repair or
+independent stereo review. Keep Batch 29.8 closed.

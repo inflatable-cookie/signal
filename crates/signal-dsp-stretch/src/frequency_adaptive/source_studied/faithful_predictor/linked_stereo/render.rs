@@ -1,3 +1,4 @@
+mod contribution;
 mod entry;
 mod overlap;
 mod recurrence;
@@ -11,9 +12,13 @@ use super::super::{
     analyse, coherent_representation, constrain_real_edges, synthesise, TransformGrid,
     HORIZONTAL_ENERGY_FLOOR,
 };
+pub(super) use contribution::{
+    CoefficientAblation, CoefficientClassEvidence, CoefficientContributionTrace,
+};
+use contribution::{CoefficientTraceSpec, CoefficientTraceState, ContributionFrame};
 pub(super) use entry::{
-    linked, linked_analytic, linked_analytic_with_relation_oracle, linked_with_relation_oracle,
-    linked_with_synthesis_trace,
+    linked, linked_analytic, linked_analytic_with_relation_oracle, linked_with_coefficient_trace,
+    linked_with_relation_oracle, linked_with_synthesis_trace,
 };
 use overlap::{Overlap, SynthesisMode};
 use recurrence::{reference_relative_bin, reference_relative_bin_with_oracle};
@@ -28,6 +33,7 @@ fn linked_inner(
     sample_rate: usize,
     channel_one_phase_offset: Option<f64>,
     synthesis_trace_spec: Option<SynthesisTraceSpec>,
+    coefficient_trace_spec: Option<CoefficientTraceSpec>,
     synthesis_mode: SynthesisMode,
 ) -> StereoRender {
     assert_eq!(inputs[0].len(), inputs[1].len(), "linked channel lengths");
@@ -38,13 +44,12 @@ fn linked_inner(
             0,
             0,
             0,
-            0,
-            0,
             [0; 2],
             0,
             0,
             0.0,
             0.0,
+            None,
             None,
         );
     }
@@ -75,6 +80,7 @@ fn linked_inner(
     let mut maximum_constrained_relation_error = 0.0_f64;
     let mut synthesis_trace =
         synthesis_trace_spec.map(|spec| SynthesisTraceState::new(spec, length));
+    let mut coefficient_trace = coefficient_trace_spec.map(CoefficientTraceState::new);
     let mut previous_reference = vec![None; bins];
     let mut output_center = -(length as isize / 2);
 
@@ -101,6 +107,13 @@ fn linked_inner(
             )
         });
         let mut next = current.clone();
+        let significant_energy = current
+            .iter()
+            .flat_map(|spectrum| spectrum.iter())
+            .map(Complex64::norm_sqr)
+            .fold(0.0, f64::max)
+            * 1.0e-8;
+        let mut contribution_frame = ContributionFrame::new(coefficient_trace.is_some(), bins);
 
         if let Some(previous_center) = previous_source_center {
             let mut preliminary = current.clone();
@@ -117,12 +130,6 @@ fn linked_inner(
             }
             let input_hop = (source_center - previous_center).unsigned_abs().max(1);
             let time_factor = hop as f64 / input_hop as f64;
-            let significant_energy = current
-                .iter()
-                .flat_map(|spectrum| spectrum.iter())
-                .map(Complex64::norm_sqr)
-                .fold(0.0, f64::max)
-                * 1.0e-8;
             let mut corrected = preliminary.clone();
 
             for bin in 0..bins {
@@ -161,6 +168,7 @@ fn linked_inner(
                 } else {
                     shared_fallback += 1;
                 }
+                contribution_frame.record_recurrence(bin, result.corrected);
                 unilateral_non_silent_completions +=
                     usize::from(result.unilateral_non_silent_completion);
                 for channel in 0..2 {
@@ -175,6 +183,12 @@ fn linked_inner(
                 maximum_constrained_relation_error.max(relation_errors[1]);
             next = corrected;
         }
+        contribution_frame.finish(
+            &mut coefficient_trace,
+            &current,
+            &mut next,
+            significant_energy,
+        );
 
         for channel in 0..2 {
             for bin in 0..bins {
@@ -215,27 +229,14 @@ fn linked_inner(
     }
     let uncovered = overlap.uncovered();
     let output = overlap.finish();
-    let non_finite = output
-        .iter()
-        .flat_map(|channel| channel.iter())
-        .filter(|sample| !sample.is_finite())
-        .count();
-    let boundary_failures = output
-        .iter()
-        .map(|channel| {
-            usize::from(channel.first().is_none_or(|sample| !sample.is_finite()))
-                + usize::from(channel.last().is_none_or(|sample| !sample.is_finite()))
-        })
-        .sum();
     let synthesis_relation_trace = synthesis_trace.map(|mut trace| {
         trace.record_normalized(&output);
         trace.finish()
     });
+    let coefficient_contribution_trace = coefficient_trace.map(CoefficientTraceState::finish);
     finish(
         output,
         uncovered,
-        non_finite,
-        boundary_failures,
         shared_corrected,
         shared_fallback,
         unilateral_non_silent_completions,
@@ -245,5 +246,6 @@ fn linked_inner(
         maximum_projected_relation_error,
         maximum_constrained_relation_error,
         synthesis_relation_trace,
+        coefficient_contribution_trace,
     )
 }

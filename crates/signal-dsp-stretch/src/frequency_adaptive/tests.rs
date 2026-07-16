@@ -2470,6 +2470,76 @@ fn source_studied_linked_stereo_analytic_overlap_feasibility() {
 }
 
 #[test]
+#[cfg(not(debug_assertions))]
+fn source_studied_linked_stereo_coefficient_contribution_attribution() {
+    use super::source_studied::faithful_predictor::linked_stereo::quality::coefficient_contribution::{
+        coefficient_contribution_review, CoefficientContributionDirection,
+    };
+
+    let result = coefficient_contribution_review();
+    eprintln!("source_studied_linked_stereo_coefficient_contribution_attribution {result:#?}");
+    assert!(result.repeated);
+    assert_eq!(result.rows.len(), 3);
+    assert_eq!(result.evidence_hash, 0x49bf_d7c9_c3bf_7d21);
+    assert_eq!(
+        result
+            .rows
+            .iter()
+            .map(|row| row.lifecycle.map(|class| class.count))
+            .collect::<Vec<_>>(),
+        vec![[2048, 57343, 1], [2048, 108542, 2], [2048, 143359, 1]]
+    );
+    assert_eq!(
+        result
+            .rows
+            .iter()
+            .map(|row| row.energy.map(|class| class.count))
+            .collect::<Vec<_>>(),
+        vec![[27766, 31626], [51339, 59253], [66790, 78618]]
+    );
+    assert_eq!(
+        result
+            .rows
+            .iter()
+            .map(|row| [row.current_tone_hash, row.current_image_hash])
+            .collect::<Vec<_>>(),
+        vec![
+            [0xb902_71ab_51a0_52f9, 0xdb75_e513_126b_a68e],
+            [0xae09_6858_dd2a_fcf6, 0x7ded_1ce2_0d51_c030],
+            [0x3c2c_378f_f8e9_12a4, 0xcf72_4ad3_f0f3_e32d],
+        ]
+    );
+    assert!(result.rows.iter().all(|row| {
+        let lifecycle_count = row.lifecycle.iter().map(|class| class.count).sum::<usize>();
+        let energy_count = row.energy.iter().map(|class| class.count).sum::<usize>();
+        let total_energy = row
+            .lifecycle
+            .iter()
+            .map(|class| class.synthesized_energy)
+            .sum::<f64>();
+        lifecycle_count == energy_count
+            && row.lifecycle.iter().all(|class| class.count > 0)
+            && row.energy.iter().all(|class| class.count > 0)
+            && row.lifecycle.iter().chain(&row.energy).all(|class| {
+                class.measurable_relations == class.count && class.maximum_relation_error <= 4.5e-16
+            })
+            && row.lifecycle[2].synthesized_energy <= 3.0e-5
+            && row.energy[1].synthesized_energy / total_energy <= 6.0e-6
+            && row.ablations.iter().all(|ablation| {
+                ablation.structural_failures == [0; 4] && ablation.maximum_ipd_error > 1.0e-3
+            })
+            && row.ablations[1].image_delta == row.current_image_delta
+            && row.ablations[2].image_delta == row.current_image_delta
+            && (row.ablations[0].image_delta[0] - row.current_image_delta[0]).abs() < 2.4e-14
+            && (row.ablations[0].image_delta[1] - row.current_image_delta[1]).abs() < 3.0e-15
+    }));
+    assert_eq!(
+        result.direction,
+        CoefficientContributionDirection::GateDefinitionReassessment
+    );
+}
+
+#[test]
 #[ignore = "requires pinned Signalsmith Stretch and long-form source pack"]
 #[cfg(not(debug_assertions))]
 fn source_studied_exact_input_real_source_confirmation() {

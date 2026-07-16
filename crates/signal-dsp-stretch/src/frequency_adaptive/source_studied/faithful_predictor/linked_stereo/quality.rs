@@ -1,5 +1,6 @@
 pub(in crate::frequency_adaptive) mod analytic_overlap;
 pub(in crate::frequency_adaptive) mod attribution;
+pub(in crate::frequency_adaptive) mod coefficient_contribution;
 mod controls;
 mod measure;
 pub(in crate::frequency_adaptive) mod projection_attribution;

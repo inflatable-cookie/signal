@@ -155,6 +155,7 @@ expression, guidance ranges, scaling, and constants are not transferable.
 Batch 29.7E confirms the recurrence as a large improvement but not a gate pass.
 29.7F excludes significant corrected-bin projection and real-edge constraint;
 29.7G locates the first observable loss after support synthesis. 29.7H proves
-analytic overlap is linearly equivalent and rejects it. Run Batch 29.7I to
-close initial-frame, fallback, and weak-bin coefficient contributions before
-changing recurrence or the quality gate.
+analytic overlap is linearly equivalent and rejects it. 29.7I excludes the
+remaining initial-frame, fallback, and weak-bin classes. Run Batch 29.7J to
+calibrate the exact stereo invariant against ideal and external references
+before changing recurrence or reopening listening.

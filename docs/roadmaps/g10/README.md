@@ -378,14 +378,16 @@ Current stretch status:
   divergence to real support-frame synthesis. Overlap often reduces it and
   normalization is neutral. Batch 29.7H rejects analytic overlap as linearly
   equivalent: metrics do not improve and only floating-point bit parity moves.
-  Batch 29.7I now closes initial-frame, fallback, and weak-bin coefficient
-  contributions omitted by the earlier exact-relation trace.
+  Batch 29.7I closes initial-frame, fallback, and weak-bin coefficient
+  contributions: every class preserves relation within floating-point error,
+  omitted energy is negligible, and no ablation closes the remaining gate.
+  Batch 29.7J now calibrates the exact stereo invariant against ideal and
+  external-reference behavior before another topology or listening decision.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7I complete coefficient-contribution attribution. Keep
-recurrence, current output, and all frozen hashes unchanged. Keep Batch 29.8
-closed.
+Run `g10.029` Batch 29.7J stereo invariant gate calibration. Keep the renderer,
+current output, and all frozen hashes unchanged. Keep Batch 29.8 closed.
