@@ -3577,9 +3577,25 @@ and run a known-constant-relation synthetic oracle. Select any next topology
 change from the first divergence. Keep thresholds, listening, dynamic ratio,
 cache, realtime, and routing closed.
 
+Batch 29.7F excludes both coefficient projection and real-edge constraint:
+maximum measured relation error is `4.440892e-16 rad` at both stages. Cropping
+the synthesis boundary reduces quadrature IPD substantially, but interior error
+remains. Correlated mid/side change remains `0.397904`, `0.264677`, and
+`0.178868 dB` in the interior, while a fixed `pi/2` relation oracle is not a
+consistent improvement. Evidence hash `87a057697db91edd` assigns the first
+unexcluded owner to inverse synthesis, overlap accumulation, normalization, or
+the measurement itself.
+
+Batch 29.7G is report-only synthesis closure. First calibrate whole and cropped
+IPD measurements against ideal target-length tones. Then trace current and
+constant-relation spectra after inverse synthesis, overlap accumulation, and
+normalization. Preserve the 29.7E audio and 29.7F report hashes exactly. Do not
+change recurrence, geometry, windows, thresholds, crop, listening state, or
+product posture. A first measured divergence may open one repair contract; a
+measurement floor must repair the proof before DSP changes.
+
 ## Next Task
 
-Run Batch 29.7F reference-projection residual attribution. Locate whether the
-remaining IPD/image error enters at coefficient projection, real-edge
-constraint, overlap synthesis, or boundaries before another topology change.
-Keep Batch 29.8 closed.
+Run Batch 29.7G stereo synthesis-closure attribution. Separate estimator floor,
+inverse synthesis, overlap accumulation, and normalization before another
+topology change. Keep Batch 29.8 closed.

@@ -20,6 +20,55 @@ pub(super) fn reference_relative_bin(
     corrected: &[Vec<Complex64>; 2],
     significant_energy: f64,
 ) -> BinResult {
+    reference_relative_bin_inner(
+        bin,
+        bins,
+        long_distance,
+        time_factor,
+        current,
+        preliminary,
+        corrected,
+        significant_energy,
+        None,
+    )
+}
+
+pub(super) fn reference_relative_bin_with_oracle(
+    bin: usize,
+    bins: usize,
+    long_distance: usize,
+    time_factor: f64,
+    current: &[Vec<Complex64>; 2],
+    preliminary: &[Vec<Complex64>; 2],
+    corrected: &[Vec<Complex64>; 2],
+    significant_energy: f64,
+    channel_one_phase_offset: f64,
+) -> BinResult {
+    reference_relative_bin_inner(
+        bin,
+        bins,
+        long_distance,
+        time_factor,
+        current,
+        preliminary,
+        corrected,
+        significant_energy,
+        Some(channel_one_phase_offset),
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+fn reference_relative_bin_inner(
+    bin: usize,
+    bins: usize,
+    long_distance: usize,
+    time_factor: f64,
+    current: &[Vec<Complex64>; 2],
+    preliminary: &[Vec<Complex64>; 2],
+    corrected: &[Vec<Complex64>; 2],
+    significant_energy: f64,
+    channel_one_phase_offset: Option<f64>,
+) -> BinResult {
     let target_energy = [current[0][bin].norm_sqr(), current[1][bin].norm_sqr()];
     let reference = usize::from(target_energy[1] > target_energy[0]);
     let peer = 1 - reference;
@@ -42,6 +91,7 @@ pub(super) fn reference_relative_bin(
             current[reference][bin],
             current[peer][bin],
             target_energy[peer],
+            channel_one_phase_offset.map(|offset| if reference == 0 { offset } else { -offset }),
         );
         let output = if reference == 0 {
             [reference_output, peer_output]
@@ -68,14 +118,19 @@ fn project_peer(
     reference_input: Complex64,
     peer_input: Complex64,
     peer_target_energy: f64,
+    oracle_phase_offset: Option<f64>,
 ) -> (Complex64, bool) {
     if peer_target_energy == 0.0 {
         return (Complex64::new(0.0, 0.0), false);
     }
-    if peer_input == reference_input {
+    if oracle_phase_offset.is_none() && peer_input == reference_input {
         return (reference_output, false);
     }
-    let projected = reference_output * peer_input * reference_input.conj();
+    let projected = if let Some(offset) = oracle_phase_offset {
+        reference_output * Complex64::from_polar(1.0, offset)
+    } else {
+        reference_output * peer_input * reference_input.conj()
+    };
     let projected_energy = projected.norm_sqr();
     if projected_energy > peer_target_energy * f64::EPSILON * 64.0 {
         (

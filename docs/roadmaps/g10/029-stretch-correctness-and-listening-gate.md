@@ -1556,19 +1556,44 @@ Freeze mechanics audio `28803a9f2e5bd83e`, mechanics evidence
 
 ### Batch 29.7F - Reference Projection Residual Attribution
 
-- [ ] measure peer/reference complex-ratio error immediately after projection
+- [x] measure peer/reference complex-ratio error immediately after projection
   and after real-edge constraint; prove whether coefficient-domain relation is
   already exact before inverse transform
-- [ ] compare full-render and interior-only tone/image measurements to separate
+- [x] compare full-render and interior-only tone/image measurements to separate
   boundary reflection from steady overlap behavior
-- [ ] add a synthetic known-constant-relation oracle alongside current per-bin
+- [x] add a synthetic known-constant-relation oracle alongside current per-bin
   input-ratio projection; use it only to assign residual ownership
-- [ ] choose the next topology seam from the first measured divergence; do not
+- [x] choose the next topology seam from the first measured divergence; do not
   relax thresholds, add peak regions, or open listening inside attribution
 
 Evidence: one repeat-stable stage report with coefficient relation, constrained
 relation, whole/interior output, oracle, and current-projection hashes. Focused
 test name: `source_studied_linked_stereo_projection_residual_attribution`.
+
+Decision: coefficient projection and real-edge constraint both preserve the
+measured relation to `4.440892e-16 rad`. Whole/interior quadrature IPD is
+`0.008195/0.001652`, `0.007623/0.000628`, and `0.016074/0.000071 rad`.
+Interior correlated mid/side damage remains `0.397904`, `0.264677`, and
+`0.178868 dB`, so boundary removal does not close image quality. A fixed
+`pi/2` relation oracle is better on some rows and worse on others. The first
+unexcluded seam is inverse synthesis, overlap accumulation, normalization, or
+measurement. Evidence hash: `87a057697db91edd`.
+
+### Batch 29.7G - Stereo Synthesis Closure Attribution
+
+- [ ] calibrate the whole/interior IPD estimator on ideal target-length tones
+  with the same output crops; separate measurement floor from render damage
+- [ ] trace the current and constant-relation oracle after inverse synthesis,
+  after overlap accumulation, and after normalization without changing output
+- [ ] retain the frozen 29.7E audio and 29.7F evidence hashes; do not alter
+  recurrence, windows, geometry, thresholds, or crop
+- [ ] assign the first post-spectrum divergence to inverse synthesis, overlap,
+  normalization, or measurement and stop before topology work
+
+Evidence: one repeat-stable stage report and one focused
+`source_studied_linked_stereo_synthesis_closure_attribution` test. A measured
+owner opens one bounded repair contract; an estimator floor revises the proof
+measurement before any DSP change. Batch 29.8 remains closed.
 
 ### Batch 29.8 - Listening And Dynamic Checkpoint
 
@@ -2652,9 +2677,15 @@ test name: `source_studied_linked_stereo_projection_residual_attribution`.
   mid/side ratio at `0.75x` and `1.5x`. Thresholds remain unchanged, listening
   remains closed, and Batch 29.7F attributes the projection residual before
   another topology decision.
+- 2026-07-16: Batch 29.7F excludes coefficient projection and real-edge
+  constraint at `4.440892e-16 rad`. Boundary cropping sharply reduces tone IPD
+  but does not close interior image damage, and a known `pi/2` oracle does not
+  consistently improve output. Evidence `87a057697db91edd` assigns the next
+  proof to synthesis/measurement closure. No DSP topology changed; 29.8 stays
+  closed.
 
 ## Next Task
 
-Run Batch 29.7F reference-projection residual attribution. Locate the first
-divergence between exact coefficient relation and whole-render IPD/image before
+Run Batch 29.7G stereo synthesis-closure attribution. Calibrate the estimator
+and locate the first inverse, overlap, or normalization divergence before
 changing topology. Keep Batch 29.8 closed.

@@ -35,6 +35,24 @@ pub(super) fn maximum_ipd_error(
         .fold(0.0, f64::max)
 }
 
+pub(super) fn maximum_expected_ipd_error(
+    output: &[Vec<f64>; 2],
+    expected_ipd: f64,
+    frequencies: &[f64],
+    sample_rate: usize,
+) -> f64 {
+    frequencies
+        .iter()
+        .map(|frequency| {
+            let output_ipd = wrap(
+                projection(&output[1], *frequency, sample_rate).arg()
+                    - projection(&output[0], *frequency, sample_rate).arg(),
+            );
+            wrap(output_ipd - expected_ipd).abs()
+        })
+        .fold(0.0, f64::max)
+}
+
 pub(super) fn best_delay(left: &[f64], right: &[f64], radius: usize) -> usize {
     (0..=radius)
         .max_by(|left_delay, right_delay| {

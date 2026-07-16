@@ -368,12 +368,20 @@ Current stretch status:
   chord/pad, transient, silence, boundary, coverage, duration, mechanism, and
   repeat gates are frozen before real-source audio.
 
+  Shared-decision stereo now has a reference-relative recurrence. It restores
+  broadband delay and reduces the prior quadrature/image failures by orders of
+  magnitude, but does not pass the exact gate. Residual attribution excludes
+  coefficient projection and real-edge constraint at `4.440892e-16 rad`.
+  Boundary cropping reduces tone IPD while interior correlated-image damage
+  remains; a constant-relation oracle is not consistently better. Batch 29.7G
+  now separates measurement floor, inverse synthesis, overlap accumulation,
+  and normalization before any further topology change.
+
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7F reference-projection residual attribution. Batch
-29.7E fixes delay and sharply reduces IPD/image error but does not pass the
-unchanged gate. Locate the first coefficient, edge, overlap, or boundary
-divergence before another topology change. Keep Batch 29.8 closed.
+Run `g10.029` Batch 29.7G stereo synthesis-closure attribution. Calibrate the
+ideal whole/interior measurement floor and locate the first inverse, overlap,
+or normalization divergence. Keep Batch 29.8 closed.

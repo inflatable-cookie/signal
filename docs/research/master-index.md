@@ -65,6 +65,7 @@ Finch and Loophole.
 
 ## Next Task
 
-Run Batch 29.7F reference-projection residual attribution. Compare exact
-coefficient relation, edge constraint, interior synthesis, whole synthesis, and
-a known-relation oracle before revising topology.
+Run Batch 29.7G stereo synthesis-closure attribution. Coefficient projection
+and edge constraint are exact; calibrate ideal whole/interior measurement and
+trace inverse synthesis, overlap accumulation, and normalization before
+revising topology.

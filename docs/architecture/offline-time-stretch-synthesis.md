@@ -1147,8 +1147,17 @@ interior synthesis, and use a known-constant-relation oracle to distinguish
 current per-bin relation variability from overlap or boundary effects. Do not
 infer a peak-region policy from the residual before that trace.
 
+That trace excludes the coefficient and real-edge stages at
+`4.440892e-16 rad`. Boundary removal reduces quadrature IPD by roughly one to
+two orders of magnitude, but steady interior image damage remains. A fixed
+quadrature oracle does not consistently improve the output, so current per-bin
+relation variability is not a sufficient explanation. The remaining seam is
+post-spectrum: inverse synthesis, overlap accumulation, normalization, or the
+finite-record measurement. No topology change is authorized until those four
+are separated.
+
 ## Next Task
 
-Run Batch 29.7F reference-projection residual attribution. Keep the implemented
-recurrence frozen and locate the first stage that converts exact coefficient
-relation into whole-render IPD/image error.
+Run Batch 29.7G stereo synthesis-closure attribution. Keep the implemented
+recurrence frozen, calibrate the ideal measurement floor, and locate the first
+inverse, overlap, or normalization divergence.

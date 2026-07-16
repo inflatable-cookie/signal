@@ -2314,6 +2314,65 @@ fn source_studied_linked_stereo_quality_attribution() {
 }
 
 #[test]
+#[cfg(not(debug_assertions))]
+fn source_studied_linked_stereo_projection_residual_attribution() {
+    use super::source_studied::faithful_predictor::linked_stereo::quality::projection_attribution::{
+        projection_residual_review, ProjectionResidualDirection,
+    };
+
+    let result = projection_residual_review();
+    eprintln!("source_studied_linked_stereo_projection_residual_attribution {result:#?}");
+    assert!(result.repeated);
+    assert_eq!(result.rows.len(), 3);
+    assert_eq!(result.evidence_hash, 0x87a0_5769_7db9_1edd);
+    assert!(result
+        .rows
+        .iter()
+        .all(|row| row.projected_relation_error <= 4.5e-16
+            && row.constrained_relation_error <= 4.5e-16));
+    assert_eq!(
+        result
+            .rows
+            .iter()
+            .map(|row| [row.current_audio_hash, row.oracle_audio_hash])
+            .collect::<Vec<_>>(),
+        vec![
+            [0xb902_71ab_51a0_52f9, 0x5212_45e5_d145_9e7e],
+            [0xae09_6858_dd2a_fcf6, 0xf364_ffe2_8d51_2f73],
+            [0x3c2c_378f_f8e9_12a4, 0xe06f_b9db_7d5a_c45c],
+        ]
+    );
+    assert_eq!(
+        result
+            .rows
+            .iter()
+            .map(|row| [row.current_whole_ipd_error, row.current_interior_ipd_error])
+            .collect::<Vec<_>>(),
+        vec![
+            [0.008194522266225412, 0.001651872176260838],
+            [0.007622819721511576, 0.0006281051508949531],
+            [0.016073680328180018, 0.00007092575364797682],
+        ]
+    );
+    assert_eq!(
+        result
+            .rows
+            .iter()
+            .map(|row| [row.oracle_whole_ipd_error, row.oracle_interior_ipd_error])
+            .collect::<Vec<_>>(),
+        vec![
+            [0.020384231902090377, 0.0009847187235898502],
+            [0.007752772323355472, 0.0004320134423831945],
+            [0.008543144371040867, 0.00046964729982512665],
+        ]
+    );
+    assert_eq!(
+        result.direction,
+        ProjectionResidualDirection::OverlapSynthesisOrBoundary
+    );
+}
+
+#[test]
 #[ignore = "requires pinned Signalsmith Stretch and long-form source pack"]
 #[cfg(not(debug_assertions))]
 fn source_studied_exact_input_real_source_confirmation() {

@@ -1,29 +1,36 @@
 mod recurrence;
+mod report;
+mod trace;
 
 use rustfft::{num_complex::Complex64, FftPlanner};
 
 use super::super::{
-    analyse, coherent_representation, constrain_real_edges, hash_samples, synthesise,
-    TransformGrid, HORIZONTAL_ENERGY_FLOOR,
+    analyse, coherent_representation, constrain_real_edges, synthesise, TransformGrid,
+    HORIZONTAL_ENERGY_FLOOR,
 };
-use recurrence::reference_relative_bin;
-
-#[derive(Clone, Debug)]
-pub(super) struct StereoRender {
-    pub(super) channels: [Vec<f64>; 2],
-    pub(super) uncovered: usize,
-    pub(super) non_finite: usize,
-    pub(super) boundary_failures: usize,
-    pub(super) shared_corrected: usize,
-    pub(super) shared_fallback: usize,
-    pub(super) unilateral_non_silent_completions: usize,
-    pub(super) reference_bins: [usize; 2],
-    pub(super) active_reference_ties: usize,
-    pub(super) reference_switches: usize,
-    pub(super) hash: u64,
-}
+use recurrence::{reference_relative_bin, reference_relative_bin_with_oracle};
+use report::finish;
+pub(super) use report::StereoRender;
 
 pub(super) fn linked(inputs: [&[f64]; 2], ratio: f64, sample_rate: usize) -> StereoRender {
+    linked_inner(inputs, ratio, sample_rate, None)
+}
+
+pub(super) fn linked_with_relation_oracle(
+    inputs: [&[f64]; 2],
+    ratio: f64,
+    sample_rate: usize,
+    channel_one_phase_offset: f64,
+) -> StereoRender {
+    linked_inner(inputs, ratio, sample_rate, Some(channel_one_phase_offset))
+}
+
+fn linked_inner(
+    inputs: [&[f64]; 2],
+    ratio: f64,
+    sample_rate: usize,
+    channel_one_phase_offset: Option<f64>,
+) -> StereoRender {
     assert_eq!(inputs[0].len(), inputs[1].len(), "linked channel lengths");
     if ratio == 1.0 {
         return finish(
@@ -37,6 +44,8 @@ pub(super) fn linked(inputs: [&[f64]; 2], ratio: f64, sample_rate: usize) -> Ste
             [0; 2],
             0,
             0,
+            0.0,
+            0.0,
         );
     }
 
@@ -63,6 +72,8 @@ pub(super) fn linked(inputs: [&[f64]; 2], ratio: f64, sample_rate: usize) -> Ste
     let mut reference_bins = [0; 2];
     let mut active_reference_ties = 0;
     let mut reference_switches = 0;
+    let mut maximum_projected_relation_error = 0.0_f64;
+    let mut maximum_constrained_relation_error = 0.0_f64;
     let mut previous_reference = vec![None; bins];
     let mut output_center = -(length as isize / 2);
 
@@ -114,16 +125,30 @@ pub(super) fn linked(inputs: [&[f64]; 2], ratio: f64, sample_rate: usize) -> Ste
             let mut corrected = preliminary.clone();
 
             for bin in 0..bins {
-                let result = reference_relative_bin(
-                    bin,
-                    bins,
-                    long_distance,
-                    time_factor,
-                    &current,
-                    &preliminary,
-                    &corrected,
-                    significant_energy,
-                );
+                let result = if let Some(offset) = channel_one_phase_offset {
+                    reference_relative_bin_with_oracle(
+                        bin,
+                        bins,
+                        long_distance,
+                        time_factor,
+                        &current,
+                        &preliminary,
+                        &corrected,
+                        significant_energy,
+                        offset,
+                    )
+                } else {
+                    reference_relative_bin(
+                        bin,
+                        bins,
+                        long_distance,
+                        time_factor,
+                        &current,
+                        &preliminary,
+                        &corrected,
+                        significant_energy,
+                    )
+                };
                 reference_bins[result.reference] += 1;
                 active_reference_ties += usize::from(result.active_tie);
                 reference_switches += usize::from(
@@ -141,6 +166,12 @@ pub(super) fn linked(inputs: [&[f64]; 2], ratio: f64, sample_rate: usize) -> Ste
                     corrected[channel][bin] = result.output[channel];
                 }
             }
+            let relation_errors =
+                trace::relation_errors(&current, &corrected, significant_energy, grid);
+            maximum_projected_relation_error =
+                maximum_projected_relation_error.max(relation_errors[0]);
+            maximum_constrained_relation_error =
+                maximum_constrained_relation_error.max(relation_errors[1]);
             next = corrected;
         }
 
@@ -200,35 +231,7 @@ pub(super) fn linked(inputs: [&[f64]; 2], ratio: f64, sample_rate: usize) -> Ste
         reference_bins,
         active_reference_ties,
         reference_switches,
+        maximum_projected_relation_error,
+        maximum_constrained_relation_error,
     )
-}
-
-#[allow(clippy::too_many_arguments)]
-fn finish(
-    channels: [Vec<f64>; 2],
-    uncovered: usize,
-    non_finite: usize,
-    boundary_failures: usize,
-    shared_corrected: usize,
-    shared_fallback: usize,
-    unilateral_non_silent_completions: usize,
-    reference_bins: [usize; 2],
-    active_reference_ties: usize,
-    reference_switches: usize,
-) -> StereoRender {
-    let mut hash = hash_samples(&channels[0]);
-    super::hash_values(&mut hash, &[hash_samples(&channels[1])]);
-    StereoRender {
-        channels,
-        uncovered,
-        non_finite,
-        boundary_failures,
-        shared_corrected,
-        shared_fallback,
-        unilateral_non_silent_completions,
-        reference_bins,
-        active_reference_ties,
-        reference_switches,
-        hash,
-    }
 }
