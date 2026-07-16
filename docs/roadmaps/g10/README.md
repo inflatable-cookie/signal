@@ -373,6 +373,6 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Implement `g10.029` Batch 29.7B shared-decision linked-stereo mechanics under
-Rule 31H. Stop before image-quality controls on any mono-parity, structure,
-crossfeed, or shared-mode failure.
+Implement `g10.029` Batch 29.7C linked-stereo quality controls under Rule 31H.
+Preserve the passing mechanics and stop on the first IPD, delay, image,
+correlation, transient, crossfeed, or repeat failure.

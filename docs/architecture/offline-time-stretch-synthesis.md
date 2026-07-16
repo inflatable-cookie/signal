@@ -57,12 +57,10 @@ replacement, cross-channel sample mixing, or independent channel schedule is
 allowed.
 
 Inside an aggregate corrected bin, each channel normalizes its own prediction
-to its own target energy. An exactly silent target stays zero. A non-silent
-channel whose prediction is individually degenerate may use its current input
-phase only as a reported numerical completion; the complete synthetic gate
-requires zero unilateral non-silent completions. This keeps one audible mode
-decision across channels without fabricating energy or discarding per-channel
-phase evidence.
+to its own target energy. An exactly silent target stays zero. If either
+significant channel has individually degenerate prediction, both channels take
+the shared fallback mode. This keeps one audible mode decision across channels
+without fabricating energy or discarding per-channel phase evidence.
 
 Dynamic ratio remains outside the successor until fixed-ratio mono and linked
 stereo pass. Its eventual path must update the same time map continuously; it

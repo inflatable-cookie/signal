@@ -2126,6 +2126,51 @@ fn source_studied_coherent_representation_synthetic_gate() {
 }
 
 #[test]
+#[cfg(not(debug_assertions))]
+fn source_studied_linked_stereo_mechanics() {
+    use super::source_studied::faithful_predictor::linked_stereo::{
+        mechanics_review, LinkedStereoMechanicsDirection,
+    };
+
+    let result = mechanics_review();
+    eprintln!("source_studied_linked_stereo_mechanics {result:#?}");
+    assert!(result.repeated);
+    assert_eq!(result.geometry, [960, 240, 1_024, 512]);
+    assert_eq!(result.identity_mismatches, 0);
+    assert_eq!(result.ratios.len(), 3);
+    assert_eq!(
+        result
+            .ratios
+            .iter()
+            .map(|row| row.audio_hash)
+            .collect::<Vec<_>>(),
+        [
+            0x38da_d9d7_3677_280f,
+            0xa48d_55bf_5f11_20ae,
+            0xd90c_4971_bd45_2d50,
+        ]
+    );
+    assert!(result.ratios.iter().all(|row| {
+        row.structural_failures == [0; 4]
+            && row.duplicate_mismatches == 0
+            && row.hard_pan_mismatches == 0
+            && row.silent_channel_peak == 0.0
+            && row.swap_mismatches == 0
+            && row.polarity_mismatches == 0
+            && row.gain_parity_mismatches == 0
+            && row.shared_corrected > 0
+            && row.shared_fallback > 0
+            && row.unilateral_non_silent_completions == 0
+    }));
+    assert_eq!(
+        result.direction,
+        LinkedStereoMechanicsDirection::QualityGate
+    );
+    assert_eq!(result.audio_hash, 0xf344_76f2_90ce_4f80);
+    assert_eq!(result.evidence_hash, 0x426a_f565_378e_9ce1);
+}
+
+#[test]
 #[ignore = "requires pinned Signalsmith Stretch and long-form source pack"]
 #[cfg(not(debug_assertions))]
 fn source_studied_exact_input_real_source_confirmation() {

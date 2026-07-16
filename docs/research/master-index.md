@@ -64,6 +64,6 @@ Finch and Loophole.
 
 ## Next Task
 
-Implement Batch 29.7B shared-decision linked-stereo mechanics under Rule 31H.
-Keep quality controls, independent stereo listening, dynamic ratio, product
-routing, and promotion closed until mechanics pass.
+Implement Batch 29.7C linked-stereo quality controls under Rule 31H. Keep
+independent stereo listening, dynamic ratio, product routing, and promotion
+closed.

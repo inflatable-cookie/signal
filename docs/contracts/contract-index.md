@@ -144,6 +144,6 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Implement `g10.029` Batch 29.7B shared-decision linked-stereo mechanics under
-contract `082`, Rule 31H. Keep quality controls, independent listening, dynamic
-ratio, routing, and promotion closed until mechanics pass.
+Implement `g10.029` Batch 29.7C linked-stereo quality controls under contract
+`082`, Rule 31H. Keep independent listening, dynamic ratio, routing, and
+promotion closed.

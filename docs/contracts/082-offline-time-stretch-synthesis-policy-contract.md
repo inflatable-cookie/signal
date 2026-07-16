@@ -3438,12 +3438,12 @@ Per-channel state remains separate:
 At each frame and bin, sum target energy and combined vertical-prediction energy
 across both channels. Apply the existing energy-relative floor to those sums.
 That one aggregate comparison selects corrected or fallback mode for both
-channels. In corrected mode, normalize each viable channel prediction to that
-channel's target energy. An exactly silent target remains zero. If an
-individually degenerate prediction requires current-input phase while the
-aggregate mode is corrected, report a unilateral completion; no non-silent
-unilateral completion may pass the complete gate. Horizontal energy
-denominators remain per-channel arithmetic, not separate mode decisions.
+channels. Aggregate correction also requires every significant channel's
+prediction to pass the same energy-relative viability test. If either fails,
+both channels take shared fallback. In corrected mode, normalize each channel
+prediction to that channel's target energy; an exactly silent target remains
+zero. Report unilateral completions defensively, but none may pass. Horizontal
+energy denominators remain per-channel arithmetic, not separate mode decisions.
 
 Do not transform through mid/side, copy one channel's output phase into the
 other, choose a dominant channel, mix samples across channels, or run two
@@ -3457,13 +3457,21 @@ Batch 29.7B first proves mechanics at `0.75x`, `1.5x`, and `2.0x`:
 - bit-exact duplicated-mono parity with the frozen mono renderer
 - bit-exact active-channel parity and exact silent-channel output under hard pan
 - bit-exact channel-swap and whole-input-polarity equivariance
-- gain-scale `0.25` and `4` inverse-normalized maximum sample error at most
-  `1e-9`
+- bit-exact duplicated-mono parity at gain scales `0.25` and `4`; the mono
+  predictor's fixed horizontal floor does not promise gain equivariance
 - non-zero shared corrected and fallback exercise
 - zero non-silent unilateral completions and zero cross-channel leakage
 
 Any mono hash change or mechanics failure stops before image metrics. Do not
 tune the energy floor or add a phase owner to repair the proof.
+
+Batch 29.7B passes. Identity, duplicated mono, hard pan, swap, polarity, scaled
+duplicate parity, coverage, finiteness, boundaries, silence, shared corrected
+and fallback exercise, and repeat all pass at `0.75x`, `1.5x`, and `2.0x`.
+Crossfeed and non-silent unilateral completions are zero. Freeze row audio
+hashes `38dad9d73677280f`, `a48d55bf5f1120ae`, and `d90c4971bd452d50`,
+aggregate audio hash `f34476f290ce4f80`, and evidence hash
+`426af565378e9ce1`.
 
 Batch 29.7C then measures stereo quality on constant-phase-offset tones,
 stationary broadband delay, unequal correlated mixtures, deterministic
@@ -3486,6 +3494,5 @@ independent stereo review only.
 
 ## Next Task
 
-Implement Batch 29.7B report-only shared-decision stereo mechanics and focused
-tests. Preserve every frozen mono hash and stop before image-quality controls
-if any mechanics invariant fails.
+Implement Batch 29.7C linked-stereo quality controls and frozen measurements.
+Do not alter the passing mechanics, energy floor, or phase ownership.

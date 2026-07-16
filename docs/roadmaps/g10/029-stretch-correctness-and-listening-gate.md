@@ -1437,12 +1437,12 @@ realtime use, and product selection remain closed.
 
 ### Batch 29.7B - Linked-Stereo Mechanics Proof
 
-- [ ] factor the coherent frame loop into shared geometry plus per-channel
-  predictor state without changing mono output
-- [ ] prove duplicated-mono and hard-pan mono parity, exact silent-channel
-  behavior, swap/polarity/gain equivariance, coverage, boundaries, repeat, and
-  shared-mode exercise at `0.75x`, `1.5x`, and `2.0x`
-- [ ] stop before quality controls on any mono hash change, non-silent
+- [x] add one linked frame loop with shared geometry plus per-channel predictor
+  state without changing mono output
+- [x] prove duplicated-mono and hard-pan mono parity, exact silent-channel
+  behavior, swap/polarity equivariance, scaled duplicate parity, coverage,
+  boundaries, repeat, and shared-mode exercise at `0.75x`, `1.5x`, and `2.0x`
+- [x] stop before quality controls on any mono hash change, non-silent
   unilateral completion, crossfeed, or structural failure
 
 Evidence: one repeat-stable review with per-ratio structure, mono parity,
@@ -1453,10 +1453,20 @@ crossfeed, audio hashes, and aggregate evidence hash. Focused test name:
 Validation:
 
 - `cargo fmt --check -p signal-dsp-stretch`
-- `cargo test -p signal-dsp-stretch source_studied_linked_stereo_mechanics`
+- `cargo test -p signal-dsp-stretch --release source_studied_linked_stereo_mechanics`
 - `RUSTFLAGS='-D missing-docs' cargo check -p signal-dsp-stretch --lib`
 - `effigy qa:docs`
 - broader `cargo test -p signal-dsp-stretch` before commit
+
+Decision: mechanics pass and Batch 29.7C may open. All structural, mono-parity,
+hard-pan, swap, polarity, scaled-duplicate, crossfeed, unilateral-completion,
+and repeat failures are zero. Both shared modes execute. The initial draft's
+gain-equivariance requirement was invalid because the frozen mono predictor
+uses an absolute horizontal floor; it was corrected to linked-versus-mono
+parity at gains `0.25` and `4`, which passes bit-exactly. Freeze row audio
+hashes `38dad9d73677280f`, `a48d55bf5f1120ae`, and `d90c4971bd452d50`,
+aggregate audio hash `f34476f290ce4f80`, and evidence hash
+`426af565378e9ce1`.
 
 ### Batch 29.7C - Linked-Stereo Quality Gate
 
@@ -2532,9 +2542,13 @@ audio and report hashes. Focused test name:
   shared; spectra, phase recurrence, magnitudes, and synthesis stay per-channel.
   Mechanics and quality proofs are separate stop-gated batches. Independent
   listening remains deferred.
+- 2026-07-16: Batch 29.7B passes all mechanics controls at `0.75x`, `1.5x`, and
+  `2.0x`. Mono parity, transformations, structure, silence, shared-mode
+  exercise, crossfeed, unilateral completion, and repeat pass. Batch 29.7C may
+  open without changing the stereo mechanism.
 
 ## Next Task
 
-Implement Batch 29.7B shared-decision stereo mechanics and focused invariant
-tests. Stop before Batch 29.7C on any mono hash change, structural failure,
-crossfeed, or non-silent unilateral completion.
+Implement Batch 29.7C constant-IPD, delay, image, correlation, and one-sided
+transient controls. Preserve the passing mechanics and stop on the first frozen
+quality-gate failure.
