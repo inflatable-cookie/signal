@@ -62,6 +62,16 @@ significant channel has individually degenerate prediction, both channels take
 the shared fallback mode. This keeps one audible mode decision across channels
 without fabricating energy or discarding per-channel phase evidence.
 
+Shared scheduling and mode selection are necessary but not sufficient. The
+quality gate proves that applying the coherent recurrence independently to each
+channel preserves duplicate, hard-pan, same-phase, opposite-phase, and
+decorrelated controls, but not general correlated stereo. Quadrature tones lose
+interchannel phase, expanding broadband delay moves, and unequal correlated
+mixtures collapse toward a different image. Independent mono rendering
+reproduces the same failures, so aggregate mode selection is not the primary
+cause. A successor needs an explicitly contracted cross-channel recurrence
+invariant before stereo work can continue.
+
 Dynamic ratio remains outside the successor until fixed-ratio mono and linked
 stereo pass. Its eventual path must update the same time map continuously; it
 must not concatenate independent renders.
@@ -72,7 +82,8 @@ must not concatenate independent renders.
 2. frozen nine-row mono development gate
 3. mono decision checkpoint and concealed listening only if earned
 4. shared-decision linked stereo
-5. holdout and dynamic-ratio checkpoint
+5. cross-channel recurrence research if the linked quality gate fails
+6. holdout and dynamic-ratio checkpoint
 
 Each stage stays report-only until the complete gate passes. A mechanism proof
 may authorize the next stage but cannot promote product quality alone.

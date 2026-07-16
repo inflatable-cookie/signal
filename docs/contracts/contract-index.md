@@ -144,6 +144,6 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Implement `g10.029` Batch 29.7C linked-stereo quality controls under contract
-`082`, Rule 31H. Keep independent listening, dynamic ratio, routing, and
-promotion closed.
+Research `g10.029` Batch 29.7D cross-channel recurrence after the failed stereo
+quality gate. Revise contract `082`, Rule 31H before implementation. Keep
+independent listening, dynamic ratio, routing, and promotion closed.

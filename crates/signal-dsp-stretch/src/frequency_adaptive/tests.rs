@@ -2171,6 +2171,107 @@ fn source_studied_linked_stereo_mechanics() {
 }
 
 #[test]
+#[cfg(not(debug_assertions))]
+fn source_studied_linked_stereo_quality() {
+    use super::source_studied::faithful_predictor::linked_stereo::quality::{
+        quality_review, LinkedStereoQualityDirection,
+    };
+
+    let result = quality_review();
+    eprintln!("source_studied_linked_stereo_quality {result:#?}");
+    assert!(result.repeated);
+    assert_eq!(result.mechanism_hash, 0x426a_f565_378e_9ce1);
+    assert_eq!(result.ratios.len(), 3);
+    assert!(result.ratios.iter().all(|row| {
+        row.maximum_ipd_error_radians > 1.0e-9
+            && row.ipd_errors_radians[0] == [0.0; 3]
+            && row.ipd_errors_radians[1]
+                .iter()
+                .all(|error| *error > 1.0e-9)
+            && row.ipd_errors_radians[2]
+                .iter()
+                .all(|error| *error <= 1.0e-12)
+            && row.correlated_image_delta[0] > 0.25
+            && row.correlated_image_delta[1] > 0.02
+            && row.decorrelated_image_delta[0] <= 0.25
+            && row.decorrelated_image_delta[1] <= 0.02
+            && row.maximum_attack_error_frames <= 256
+            && row.replica_failures == 0
+            && row.silent_peer_peak == 0.0
+    }));
+    assert_eq!(
+        result
+            .ratios
+            .iter()
+            .map(|row| [row.input_delay_frames, row.output_delay_frames])
+            .collect::<Vec<_>>(),
+        [[11, 11], [11, 8], [11, 23]]
+    );
+    assert_eq!(
+        result
+            .ratios
+            .iter()
+            .map(|row| row.audio_hash)
+            .collect::<Vec<_>>(),
+        [
+            0xddc8_16d4_77db_135d,
+            0x6842_967c_a6c7_984b,
+            0x9d38_e21d_580f_84ed,
+        ]
+    );
+    assert_eq!(
+        result
+            .ratios
+            .iter()
+            .map(|row| row.measurement_hash)
+            .collect::<Vec<_>>(),
+        [
+            0xe523_0b1b_c9a0_ddfa,
+            0xe531_b0f3_9f37_fe94,
+            0x8e1a_7fe4_eead_7031,
+        ]
+    );
+    assert_eq!(result.audio_hash, 0x0509_599c_b46b_0cfc);
+    assert_eq!(result.measurement_hash, 0x2d8f_8471_d88c_f383);
+    assert_eq!(
+        result.direction,
+        LinkedStereoQualityDirection::QualityAttribution
+    );
+}
+
+#[test]
+#[cfg(not(debug_assertions))]
+fn source_studied_linked_stereo_quality_attribution() {
+    use super::source_studied::faithful_predictor::linked_stereo::quality::attribution::{
+        attribution_review, LinkedStereoQualityAttributionDirection,
+    };
+
+    let result = attribution_review();
+    eprintln!("source_studied_linked_stereo_quality_attribution {result:#?}");
+    assert!(result.repeated);
+    assert!(result.rows.iter().all(|row| {
+        row.linked_failure_mask != 0 && row.linked_failure_mask & !row.independent_failure_mask == 0
+    }));
+    assert_eq!(
+        result
+            .rows
+            .iter()
+            .map(|row| row.independent_audio_hash)
+            .collect::<Vec<_>>(),
+        [
+            0x85f2_1cc0_e098_ab18,
+            0x13a3_8904_092e_e517,
+            0xa3b8_aaa5_e255_93e6,
+        ]
+    );
+    assert_eq!(result.evidence_hash, 0xd148_ae6a_7114_ef6a);
+    assert_eq!(
+        result.direction,
+        LinkedStereoQualityAttributionDirection::PerChannelRecurrencePrimary
+    );
+}
+
+#[test]
 #[ignore = "requires pinned Signalsmith Stretch and long-form source pack"]
 #[cfg(not(debug_assertions))]
 fn source_studied_exact_input_real_source_confirmation() {

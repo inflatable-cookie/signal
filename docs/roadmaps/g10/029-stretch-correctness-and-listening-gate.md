@@ -1470,16 +1470,38 @@ aggregate audio hash `f34476f290ce4f80`, and evidence hash
 
 ### Batch 29.7C - Linked-Stereo Quality Gate
 
-- [ ] measure constant interchannel phase, broadband delay, mid/side RMS ratio,
+- [x] measure constant interchannel phase, broadband delay, mid/side RMS ratio,
   correlation, and one-sided isolated/dense transient behavior
-- [ ] apply Rule 31H thresholds without tuning or adding a new phase owner
-- [ ] freeze audio, mechanism, and measurement hashes; decide whether Batch
+- [x] apply Rule 31H thresholds without tuning or adding a new phase owner
+- [x] freeze audio, mechanism, and measurement hashes; decide whether Batch
   29.8 stereo export may open
 
 Evidence: one repeat-stable quality review with per-control IPD, delay,
 mid/side-ratio, correlation, event, replica, and crossfeed measurements plus
 audio and report hashes. Focused test name:
 `source_studied_linked_stereo_quality`.
+
+Decision: fail quality; Batch 29.8 stays closed. Same/opposite-phase tones,
+decorrelated image, attacks, replicas, crossfeed, mechanics, and repeat pass.
+Quadrature IPD, expansion delay, and unequal-correlated image fail by large
+margins. Independent coherent mono paths reproduce every linked failure with
+the same per-ratio masks `13`, `15`, and `15`, assigning the primary fault to
+per-channel recurrence rather than aggregate mode selection. Freeze quality
+row audio hashes `ddc816d477db135d`, `6842967ca6c7984b`, and
+`9d38e21d580f84ed`; aggregate audio `0509599cb46b0cfc`; quality measurement
+`2d8f8471d88cf383`; attribution evidence `d148ae6a7114ef6a`.
+
+### Batch 29.7D - Cross-Channel Recurrence Reassessment
+
+- [ ] inspect how source-studied engines and canonical phase-vocoder research
+  preserve interchannel phase without collapsing decorrelated material
+- [ ] compare shared phase-increment and explicit complex-ratio preservation
+  topologies against the frozen 29.7C evidence; do not tune thresholds
+- [ ] promote one license-safe topology into architecture and Rule 31H, or
+  pause stereo if no topology is justified
+
+Status: reassessment, not implementation-ready. The next code batch must be
+compiled from the revised contract.
 
 ### Batch 29.8 - Listening And Dynamic Checkpoint
 
@@ -2546,9 +2568,14 @@ audio and report hashes. Focused test name:
   `2.0x`. Mono parity, transformations, structure, silence, shared-mode
   exercise, crossfeed, unilateral completion, and repeat pass. Batch 29.7C may
   open without changing the stereo mechanism.
+- 2026-07-16: Batch 29.7C fails quadrature IPD, expansion delay, and correlated
+  image. Transients, crossfeed, decorrelated image, mechanics, and repeat pass.
+  Independent mono paths reproduce all failure masks, assigning the primary
+  fault to per-channel recurrence. Batch 29.8 remains closed; 29.7D returns to
+  source and literature research before contract revision.
 
 ## Next Task
 
-Implement Batch 29.7C constant-IPD, delay, image, correlation, and one-sided
-transient controls. Preserve the passing mechanics and stop on the first frozen
-quality-gate failure.
+Run Batch 29.7D cross-channel recurrence research. Compare source-studied engine
+practice and canonical literature, then revise Rule 31H before any new stereo
+implementation. Keep Batch 29.8 closed.

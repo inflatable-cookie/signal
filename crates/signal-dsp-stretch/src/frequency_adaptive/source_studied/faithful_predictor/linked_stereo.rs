@@ -1,3 +1,4 @@
+pub(in crate::frequency_adaptive) mod quality;
 mod render;
 
 use super::{coherent_representation, HASH_OFFSET};

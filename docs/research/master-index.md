@@ -64,6 +64,6 @@ Finch and Loophole.
 
 ## Next Task
 
-Implement Batch 29.7C linked-stereo quality controls under Rule 31H. Keep
-independent stereo listening, dynamic ratio, product routing, and promotion
-closed.
+Research relationship-preserving cross-channel recurrence for Batch 29.7D.
+Compare source-studied engine practice and canonical literature, then promote a
+license-safe topology into Rule 31H before implementation.

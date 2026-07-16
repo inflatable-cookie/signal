@@ -3492,7 +3492,25 @@ per-channel recurrence. It does not open a threshold sweep, listening pack,
 dynamic ratio, routing, or promotion. Passage opens Batch 29.8 export and
 independent stereo review only.
 
+Batch 29.7C fails and Batch 29.8 remains closed. One-sided attack timing,
+replica, crossfeed, decorrelated-image, same-phase, opposite-phase, structure,
+mechanics, and repeat controls pass. Quadrature-tone IPD error reaches
+`0.882660845`, `1.526285478`, and `3.073635178 rad`; the `11`-frame broadband
+delay renders as `11`, `8`, and `23` frames; correlated-image mid/side change
+reaches `11.672982`, `11.990144`, and `12.728013 dB`, with correlation change
+`0.809788`, `0.847887`, and `0.937320` at `0.75x`, `1.5x`, and `2.0x`.
+
+The required attribution renders the same controls through two independent
+coherent mono paths. Every linked failure remains, with identical failure masks
+`13`, `15`, and `15`; nearly all measurements are bit-for-bit equal and the
+only observed metric difference is `1.5x` maximum IPD
+`1.526285478` linked versus `1.526050345` independent. Per-channel recurrence,
+not aggregate shared-mode selection, is therefore the primary failure seam.
+Do not tune thresholds or implement a phase owner under Rule 31H. Research and
+contract a relationship-preserving cross-channel recurrence first.
+
 ## Next Task
 
-Implement Batch 29.7C linked-stereo quality controls and frozen measurements.
-Do not alter the passing mechanics, energy floor, or phase ownership.
+Research cross-channel phase recurrence in source-studied engines and canonical
+literature. Promote one license-safe relationship-preservation contract before
+any further stereo implementation. Keep Batch 29.8 closed.

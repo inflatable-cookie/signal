@@ -373,6 +373,6 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Implement `g10.029` Batch 29.7C linked-stereo quality controls under Rule 31H.
-Preserve the passing mechanics and stop on the first IPD, delay, image,
-correlation, transient, crossfeed, or repeat failure.
+Run `g10.029` Batch 29.7D cross-channel recurrence research after the failed
+stereo quality gate. Revise Rule 31H from source and literature evidence before
+any new implementation; keep Batch 29.8 closed.
