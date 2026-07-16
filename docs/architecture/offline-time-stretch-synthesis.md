@@ -45,6 +45,25 @@ Channels retain their own native complex coefficients and interchannel phase.
 Independent per-channel event, owner, or frame-selection decisions are not an
 acceptable stereo path.
 
+For the coherent fixed-grid predictor, the shared decision surface is narrower
+and explicit. Both channels share ratio projection, frame centres, transform
+geometry, frequency traversal, neighbour availability, and one aggregate
+correct-versus-fallback mode per frame/bin. Each channel retains its current
+and auxiliary spectra, previous input energy, preliminary and corrected phase
+recurrence, target magnitude, output accumulation, and normalization. Aggregate
+mode energy is the sum of channel energies under the mono predictor's existing
+energy-relative floor. No mid/side resynthesis, dominant-channel phase
+replacement, cross-channel sample mixing, or independent channel schedule is
+allowed.
+
+Inside an aggregate corrected bin, each channel normalizes its own prediction
+to its own target energy. An exactly silent target stays zero. A non-silent
+channel whose prediction is individually degenerate may use its current input
+phase only as a reported numerical completion; the complete synthetic gate
+requires zero unilateral non-silent completions. This keeps one audible mode
+decision across channels without fabricating energy or discarding per-channel
+phase evidence.
+
 Dynamic ratio remains outside the successor until fixed-ratio mono and linked
 stereo pass. Its eventual path must update the same time map continuously; it
 must not concatenate independent renders.

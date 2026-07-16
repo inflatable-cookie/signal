@@ -373,6 +373,6 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Start `g10.029` Batch 29.7 shared-decision linked-stereo ownership and objective
-proof. Keep independent stereo listening, dynamic ratio, routing, and promotion
-closed.
+Implement `g10.029` Batch 29.7B shared-decision linked-stereo mechanics under
+Rule 31H. Stop before image-quality controls on any mono-parity, structure,
+crossfeed, or shared-mode failure.

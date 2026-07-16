@@ -64,6 +64,6 @@ Finch and Loophole.
 
 ## Next Task
 
-Carry the competitive coherent mono baseline unchanged into Batch 29.7
-shared-decision linked-stereo proof. Keep independent stereo listening, dynamic
-ratio, product routing, and promotion closed.
+Implement Batch 29.7B shared-decision linked-stereo mechanics under Rule 31H.
+Keep quality controls, independent stereo listening, dynamic ratio, product
+routing, and promotion closed until mechanics pass.

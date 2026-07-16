@@ -3418,9 +3418,74 @@ qualifies coherent Signal as the unchanged report-only mono baseline for the
 shared-decision linked-stereo proof. It does not authorize a general Rubber
 Band-parity claim, dynamic ratio, product routing, or promotion.
 
+### Rule 31H: shared-decision linked stereo
+
+Batch 29.7 extends only the coherent fixed-grid predictor. It must preserve the
+frozen mono topology and hashes. The stereo renderer accepts exactly two
+equal-length channels, one fixed ratio, and one sample rate. Ratio projection,
+output and source centres, periodic Kaiser window, modified half-bin grid,
+frequency traversal, neighbour availability, exact crop, and overlap
+normalization are shared.
+
+Per-channel state remains separate:
+
+- current and auxiliary analysis spectra
+- previous input energy and previous corrected output
+- preliminary horizontal and short/long vertical predictions
+- target magnitude and current-input fallback phase
+- synthesis accumulation and normalization
+
+At each frame and bin, sum target energy and combined vertical-prediction energy
+across both channels. Apply the existing energy-relative floor to those sums.
+That one aggregate comparison selects corrected or fallback mode for both
+channels. In corrected mode, normalize each viable channel prediction to that
+channel's target energy. An exactly silent target remains zero. If an
+individually degenerate prediction requires current-input phase while the
+aggregate mode is corrected, report a unilateral completion; no non-silent
+unilateral completion may pass the complete gate. Horizontal energy
+denominators remain per-channel arithmetic, not separate mode decisions.
+
+Do not transform through mid/side, copy one channel's output phase into the
+other, choose a dominant channel, mix samples across channels, or run two
+independent frame loops. Identity remains a direct interleaved-stereo bypass.
+Dynamic ratio, more than two channels, product routing, and realtime use remain
+closed.
+
+Batch 29.7B first proves mechanics at `0.75x`, `1.5x`, and `2.0x`:
+
+- exact length, coverage, finite values, boundaries, and deterministic repeat
+- bit-exact duplicated-mono parity with the frozen mono renderer
+- bit-exact active-channel parity and exact silent-channel output under hard pan
+- bit-exact channel-swap and whole-input-polarity equivariance
+- gain-scale `0.25` and `4` inverse-normalized maximum sample error at most
+  `1e-9`
+- non-zero shared corrected and fallback exercise
+- zero non-silent unilateral completions and zero cross-channel leakage
+
+Any mono hash change or mechanics failure stops before image metrics. Do not
+tune the energy floor or add a phase owner to repair the proof.
+
+Batch 29.7C then measures stereo quality on constant-phase-offset tones,
+stationary broadband delay, unequal correlated mixtures, deterministic
+decorrelated mixtures, and one-sided isolated/dense transients. Require:
+
+- maximum active-bin interchannel-phase error at most `1e-9 rad` for constant
+  offsets `0`, `pi/2`, and `pi`
+- broadband interchannel delay change at most one sample
+- source-relative mid/side RMS-ratio change at most `0.25 dB`
+- source-relative interchannel-correlation change at most `0.02`
+- each one-sided protected attack within `256` output frames, no louder
+  intermediate replica, and exact zero crossfeed into a silent peer
+- exact repeat of audio, mechanism, and measurement hashes
+
+These are synthetic invariant gates, not corpus-fitted quality proxies. A
+quality failure returns to attribution between aggregate mode selection and
+per-channel recurrence. It does not open a threshold sweep, listening pack,
+dynamic ratio, routing, or promotion. Passage opens Batch 29.8 export and
+independent stereo review only.
+
 ## Next Task
 
-Start Batch 29.7 by freezing shared-decision linked-stereo state ownership and
-objective mono-parity, image, interchannel-phase, and one-sided-transient gates.
-Independent stereo listening, dynamic ratio, product routing, and promotion
-remain closed.
+Implement Batch 29.7B report-only shared-decision stereo mechanics and focused
+tests. Preserve every frozen mono hash and stop before image-quality controls
+if any mechanics invariant fails.

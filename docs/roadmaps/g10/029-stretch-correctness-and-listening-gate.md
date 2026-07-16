@@ -1419,12 +1419,57 @@ to `B/A/B/A/B/A` across `M001` through `M006`. Signal is cleaner on `M002` and
 material, leaving no overall winner. This is competitive exact-source mono
 evidence, not a general Rubber Band-parity or production claim.
 
-### Batch 29.7 - Shared-Decision Linked Stereo
+### Batch 29.7A - Shared-Decision Stereo Contract
 
-- [ ] share the time map and phase-propagation decisions across channels
-- [ ] preserve per-channel complex spectra, phase gradients, and interchannel
-  phase under the shared heap topology
-- [ ] pass mono parity, image, interchannel-phase, and one-sided-transient gates
+- [x] replace inherited heap/owner language with the coherent predictor's real
+  shared seam: frame schedule, traversal, and aggregate correction mode
+- [x] keep spectra, recurrence, magnitudes, synthesis, and normalization
+  per-channel; forbid mid/side resynthesis, dominant-channel phase replacement,
+  cross-channel mixing, and independent schedules
+- [x] freeze mechanics, image, interchannel-phase, delay, transient, repeat,
+  and stop gates before implementation
+
+Decision: implement one two-channel report-only renderer under Rule 31H. The
+aggregate target/prediction energy comparison selects corrected or fallback
+mode for both channels. Channel-local numerical completion remains observable
+and must be zero for non-silent controls. Mono hashes, dynamic ratio, routing,
+realtime use, and product selection remain closed.
+
+### Batch 29.7B - Linked-Stereo Mechanics Proof
+
+- [ ] factor the coherent frame loop into shared geometry plus per-channel
+  predictor state without changing mono output
+- [ ] prove duplicated-mono and hard-pan mono parity, exact silent-channel
+  behavior, swap/polarity/gain equivariance, coverage, boundaries, repeat, and
+  shared-mode exercise at `0.75x`, `1.5x`, and `2.0x`
+- [ ] stop before quality controls on any mono hash change, non-silent
+  unilateral completion, crossfeed, or structural failure
+
+Evidence: one repeat-stable review with per-ratio structure, mono parity,
+transformation parity, shared corrected/fallback counts, unilateral completion,
+crossfeed, audio hashes, and aggregate evidence hash. Focused test name:
+`source_studied_linked_stereo_mechanics`.
+
+Validation:
+
+- `cargo fmt --check -p signal-dsp-stretch`
+- `cargo test -p signal-dsp-stretch source_studied_linked_stereo_mechanics`
+- `RUSTFLAGS='-D missing-docs' cargo check -p signal-dsp-stretch --lib`
+- `effigy qa:docs`
+- broader `cargo test -p signal-dsp-stretch` before commit
+
+### Batch 29.7C - Linked-Stereo Quality Gate
+
+- [ ] measure constant interchannel phase, broadband delay, mid/side RMS ratio,
+  correlation, and one-sided isolated/dense transient behavior
+- [ ] apply Rule 31H thresholds without tuning or adding a new phase owner
+- [ ] freeze audio, mechanism, and measurement hashes; decide whether Batch
+  29.8 stereo export may open
+
+Evidence: one repeat-stable quality review with per-control IPD, delay,
+mid/side-ratio, correlation, event, replica, and crossfeed measurements plus
+audio and report hashes. Focused test name:
+`source_studied_linked_stereo_quality`.
 
 ### Batch 29.8 - Listening And Dynamic Checkpoint
 
@@ -2482,10 +2527,14 @@ evidence, not a general Rubber Band-parity or production claim.
   for tighter timing on `M001`; Rubber Band wins `M003` and `M006`. No engine
   wins overall. Coherent Signal remains the report-only mono baseline and
   Batch 29.7 objective linked-stereo proof may open unchanged.
+- 2026-07-16: Batch 29.7A freezes the coherent predictor's actual linked-stereo
+  seam. Schedule, geometry, traversal, and aggregate corrected/fallback mode are
+  shared; spectra, phase recurrence, magnitudes, and synthesis stay per-channel.
+  Mechanics and quality proofs are separate stop-gated batches. Independent
+  listening remains deferred.
 
 ## Next Task
 
-Start Batch 29.7 by defining shared-decision linked-stereo state ownership and
-focused objective gates for mono parity, stereo image, interchannel phase, and
-one-sided transients. Keep independent stereo listening, dynamic ratio,
-product routing, and promotion closed.
+Implement Batch 29.7B shared-decision stereo mechanics and focused invariant
+tests. Stop before Batch 29.7C on any mono hash change, structural failure,
+crossfeed, or non-silent unilateral completion.
