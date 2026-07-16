@@ -1204,7 +1204,23 @@ local consistency. The next architecture step studies Rubber Band's verified
 linked-channel source and behavior before selecting another synthesis-time
 invariant.
 
+That study identifies a pre-synthesis ownership mismatch. Rubber Band R3
+standard does not link every same-frequency coefficient. It conditionally
+borrows a dominant channel's tracked peak trajectory when channel peak history
+and a bounded frequency policy agree; the peer retains local analysis-relative
+phase and magnitude. Its optional centre-focus mode adds mid/side and stronger
+coupling, but fails four calibrated `2.0x` image rows where standard R3 passes
+all `48`. Mid/side and blanket channel locking are therefore rejected.
+
+The promoted architecture invariant moves cross-channel ownership to tracked
+peak regions. Coupling is conditional and frequency-bounded. Same-bin
+reference-relative recurrence remains the frozen baseline until a Signal-owned
+report-only peak-region proof passes mechanics and calibrated quality. Rubber
+Band implementation expression, constants, peak picker, and frequency limits
+remain excluded.
+
 ## Next Task
 
-Run Batch 29.7L Rubber Band linked-stereo mechanism study. Promote at most one
-license-safe synthesis-time invariant before another repair.
+Run Batch 29.7M Signal-owned peak-region trajectory feasibility. Freeze peak
+identity, channel eligibility, and frequency ownership before rendering. Keep
+listening, dynamic ratio, realtime, routing, and production closed.

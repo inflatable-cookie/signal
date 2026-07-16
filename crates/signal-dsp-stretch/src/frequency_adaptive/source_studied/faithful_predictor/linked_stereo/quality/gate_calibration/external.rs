@@ -114,7 +114,7 @@ pub(super) fn replace_directory(path: &Path) {
     fs::create_dir_all(path).unwrap_or_else(|error| panic!("create {}: {error}", path.display()));
 }
 
-fn write_stereo(path: &Path, channels: &[Vec<f64>; 2], sample_rate: u32) {
+pub(super) fn write_stereo(path: &Path, channels: &[Vec<f64>; 2], sample_rate: u32) {
     let spec = hound::WavSpec {
         channels: 2,
         sample_rate,
@@ -132,7 +132,7 @@ fn write_stereo(path: &Path, channels: &[Vec<f64>; 2], sample_rate: u32) {
     writer.finalize().expect("finalize stereo calibration WAV");
 }
 
-fn read_stereo(path: &Path, frames: usize, sample_rate: u32) -> [Vec<f64>; 2] {
+pub(super) fn read_stereo(path: &Path, frames: usize, sample_rate: u32) -> [Vec<f64>; 2] {
     let mut reader = hound::WavReader::open(path)
         .unwrap_or_else(|error| panic!("open {}: {error}", path.display()));
     let spec = reader.spec();
@@ -160,7 +160,7 @@ fn required_path(name: &str) -> PathBuf {
         .unwrap_or_else(|| panic!("set {name}"))
 }
 
-fn run(program: &Path, args: &[OsString]) {
+pub(super) fn run(program: &Path, args: &[OsString]) {
     let status = Command::new(program)
         .args(args)
         .status()
@@ -168,7 +168,7 @@ fn run(program: &Path, args: &[OsString]) {
     assert!(status.success(), "{} failed", program.display());
 }
 
-fn command_text(program: impl AsRef<std::ffi::OsStr>, args: &[OsString]) -> String {
+pub(super) fn command_text(program: impl AsRef<std::ffi::OsStr>, args: &[OsString]) -> String {
     let output = Command::new(program)
         .args(args)
         .output()
@@ -182,7 +182,7 @@ fn command_text(program: impl AsRef<std::ffi::OsStr>, args: &[OsString]) -> Stri
     String::from_utf8_lossy(bytes).trim().to_string()
 }
 
-fn file_hash(path: &Path) -> u64 {
+pub(super) fn file_hash(path: &Path) -> u64 {
     fs::read(path)
         .expect("read calibration file")
         .into_iter()

@@ -2294,6 +2294,28 @@ fn source_studied_linked_stereo_invariant_gate_calibration() {
 }
 
 #[test]
+#[ignore = "requires Rubber Band R3 4.0.0"]
+#[cfg(not(debug_assertions))]
+fn source_studied_rubber_band_linked_stereo_mechanism() {
+    use super::source_studied::faithful_predictor::linked_stereo::quality::gate_calibration::mechanism_study::{
+        review, MechanismStudyDirection,
+    };
+
+    let result = review();
+    eprintln!("source_studied_rubber_band_linked_stereo_mechanism {result:#?}");
+    assert_eq!(result.rubber_band_version, "4.0.0");
+    assert!(result.repeated);
+    assert_eq!(result.rows.len(), 96);
+    assert_eq!(result.standard_failures, 0);
+    assert_eq!(result.centre_focus_failures, 4);
+    assert_eq!(result.changed_pairs, 48);
+    assert_eq!(
+        result.direction,
+        MechanismStudyDirection::PeakTrajectoryRepair
+    );
+}
+
+#[test]
 #[ignore = "requires pinned Signalsmith Stretch 1.3.2 and Rubber Band R3 4.0.0"]
 #[cfg(not(debug_assertions))]
 fn source_studied_linked_stereo_relation_repair() {

@@ -386,13 +386,18 @@ Current stretch status:
   IPD gate and finds material Signal tone/image drift against ideal and Rubber
   Band. Batch 29.7K rejects render-wide relation coloring despite exact
   mechanics: repaired Signal still fails `14/48` calibrated rows and `17/48`
-  local rows. Batch 29.7L now studies Rubber Band's actual linked-stereo source
-  and behavior before another repair or listening decision.
+  local rows. Batch 29.7L pins exact Rubber Band `4.0.0` source and identifies
+  conditional, frequency-bounded peak-trajectory sharing as the first
+  architectural difference from Signal's same-bin recurrence. Standard R3
+  passes all `48` calibrated rows. Centre-focus changes every render but fails
+  four `2.0x` image rows, rejecting mid/side and blanket linking as the repair.
+  Batch 29.7M now owns one Signal-specified peak-region feasibility proof.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7L Rubber Band linked-stereo mechanism study. Promote at
-most one license-safe synthesis-time invariant. Keep Batch 29.8 closed.
+Run `g10.029` Batch 29.7M peak-region shared-trajectory feasibility. Freeze
+Signal-owned peak identity, compatible-history eligibility, and frequency
+ownership before rendering. Keep Batch 29.8 closed.

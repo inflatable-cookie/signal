@@ -3683,8 +3683,29 @@ activation threshold, windowed coloring, matrix smoothing, or post-render
 correction sweep. Further repair requires source and behavioral evidence for a
 linked synthesis-time mechanism.
 
+Batch 29.7L supplies that evidence. Exact Rubber Band `4.0.0` source shows
+default R3 conditionally borrowing a dominant channel's tracked peak trajectory
+only when channel peak history and a bounded link range agree. The peer keeps
+local analysis-relative phase and magnitude. Its optional centre-focus mode
+adds mid/side and stronger coupling; it changes all `48` frozen renders but
+fails four calibrated `2.0x` image rows while standard R3 fails none.
+
+Promote one invariant: shared channel phase ownership belongs to tracked peak
+regions and must be conditional and frequency-bounded. Do not promote Rubber
+Band's expression, constants, peak picker, frequency limits, reset policy,
+mid/side transform, or centre-focus behavior. The current same-bin reference-
+relative renderer remains frozen until a separate report-only proof passes.
+
+Batch 29.7M may define one Signal-owned peak-region trajectory candidate. It
+must freeze peak identity, compatible-history eligibility, and frequency
+ownership before rendering. Within an eligible region it may share one
+trajectory while preserving peer local analysis-relative phase and magnitude;
+outside it must retain channel-owned evolution. Existing mechanics, mono
+hashes, calibrated gates, source geometry, schedule, crop, and output length
+remain unchanged. No threshold sweep, listening, dynamic ratio, realtime,
+routing, or production use is authorized.
+
 ## Next Task
 
-Run Batch 29.7L Rubber Band linked-stereo mechanism study. Promote at most one
-license-safe synthesis-time invariant before another repair. Keep listening,
-dynamic ratio, cache, realtime, and routing closed.
+Run Batch 29.7M Signal-owned peak-region trajectory feasibility under Rule 31H.
+Keep current output frozen as baseline and Batch 29.8 closed.

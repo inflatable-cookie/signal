@@ -1718,24 +1718,50 @@ windowed matrix sweep is authorized.
 
 ### Batch 29.7L - Rubber Band Linked-Stereo Mechanism Study
 
-- [ ] pin the Rubber Band R3 `4.0.0` source corresponding to the installed
+- [x] pin the Rubber Band R3 `4.0.0` source corresponding to the installed
   comparator; record exact revision, build identity, license, and excluded GPL
   expression boundary
-- [ ] trace channel coupling through peak ownership, phase lamination,
+- [x] trace channel coupling through peak ownership, phase lamination,
   transient reset, and synthesis; distinguish verified source behavior from
   inference
-- [ ] run bounded stereo behavioral differentials for available public modes
+- [x] run bounded stereo behavioral differentials for available public modes
   against the frozen tone/image controls and calibrated gates
-- [ ] compare the verified mechanism with Signal's reference-relative
+- [x] compare the verified mechanism with Signal's reference-relative
   recurrence and identify the first architectural difference that explains the
   measured residual
-- [ ] promote at most one license-safe invariant into architecture and Rule 31H,
+- [x] promote at most one license-safe invariant into architecture and Rule 31H,
   or pause linked stereo if no bounded repair is justified
 
 Evidence: one provenance-complete source translation and behavioral report.
 No GPL expression or constants enter Signal. No DSP implementation, threshold
 search, listening, dynamic ratio, cache, realtime, routing, or promotion belongs
 in this batch.
+
+Decision: promote conditional, frequency-bounded peak-region trajectory
+ownership. Exact official `4.0.0` source matches Git tag `v4.0.0` at
+`1d95888`; the GPL expression boundary stays closed. Standard R3 couples
+channels through compatible tracked peak history inside a bounded range, not
+unconditional same-bin projection. Centre-focus adds mid/side and stronger
+linking, changes all `48` public-mode pairs, and fails four calibrated `2.0x`
+image rows while standard R3 fails none. Mid/side and blanket linking are
+rejected. Translation memo 007 freezes the result.
+
+### Batch 29.7M - Peak-Region Shared-Trajectory Feasibility
+
+- [ ] define one Signal-owned peak identity using the frozen coherent
+  representation; do not translate Rubber Band's picker or constants
+- [ ] freeze compatible-history eligibility and frequency ownership before
+  rendering; no threshold or cutoff sweep
+- [ ] add one report-only candidate that shares a trajectory only inside an
+  eligible peak region, preserves peer local analysis-relative phase and
+  magnitude, and retains channel-owned evolution elsewhere
+- [ ] preserve current output as baseline plus mono hashes, mechanics,
+  geometry, schedule, crop, calibrated gates, and exact repeat
+- [ ] accept only row-complete improvement over current Signal with no new
+  structural, transformation, transient, crossfeed, or local-consistency loss
+
+No listening, dynamic ratio, cache, realtime, routing, promotion, centre-focus
+clone, mid/side transform, or production DSP change belongs in this batch.
 
 ### Batch 29.8 - Listening And Dynamic Checkpoint
 
@@ -2853,9 +2879,17 @@ in this batch.
   fails `14/48` calibrated rows and `17/48` local rows. Tone IPD reaches
   `0.01621 rad`; interior image reaches `0.06843 dB`. Batch 29.7L returns to
   Rubber Band's actual linked-stereo source and behavior before another repair.
+- 2026-07-16: Batch 29.7L pins the installed comparator to official Rubber Band
+  `4.0.0`, archive SHA-256 `af050313...`, Git tag `v4.0.0` at `1d95888`, and
+  the GPL architecture-only boundary. Source trace finds conditional,
+  frequency-bounded peak-trajectory sharing as the first difference from
+  Signal's same-bin recurrence. Standard R3 passes all `48` calibrated rows;
+  centre-focus changes every render and fails four `2.0x` image rows. Rule 31H
+  promotes peak-region ownership, rejects mid/side and blanket linking, and
+  opens one Signal-owned report-only feasibility proof.
 
 ## Next Task
 
-Run Batch 29.7L Rubber Band linked-stereo mechanism study. Freeze source
-provenance and behavioral differentials, then promote at most one license-safe
-synthesis-time invariant. Keep Batch 29.8 closed.
+Run Batch 29.7M peak-region shared-trajectory feasibility. Freeze Signal-owned
+peak identity, compatible-history eligibility, and frequency ownership before
+rendering. Keep current output as baseline and Batch 29.8 closed.

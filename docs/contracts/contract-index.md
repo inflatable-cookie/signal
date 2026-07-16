@@ -145,7 +145,7 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7F under contract `082`, Rule 31H. Attribute the residual
-between coefficient relation, edge constraint, overlap, and boundaries before
-another stereo topology change. Keep independent listening, dynamic ratio,
+Run `g10.029` Batch 29.7M under contract `082`, Rule 31H. Define one
+Signal-owned conditional, frequency-bounded peak-region trajectory proof. Keep
+current output as baseline and independent listening, dynamic ratio, realtime,
 routing, and promotion closed.

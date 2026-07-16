@@ -4,7 +4,7 @@ Status: reviewed
 Specimen: Rubber Band R2 and R3
 Owner: dsp
 Last updated: 2026-07-16
-Scope: source topology at revision `e4296ac80b1170018a110bc326fd0d45a0eb27d6`
+Scope: exact Rubber Band `4.0.0` source and linked-stereo topology
 
 ## Why This Specimen Matters
 
@@ -74,6 +74,19 @@ its current analysis-phase offset. Peak density and offset scaling vary by
 frequency and ratio. Stereo decisions can borrow the greatest channel's peak
 trajectory when both channels are inside the linked range.
 
+The exact `4.0.0` trace sharpens that statement. Default R3 links a peer only
+when both channels are inside the bounded channel-link range and their tracked
+peak histories resolve to a compatible prior owner. The peer retains a local
+analysis-relative offset from the borrowed peak. This is conditional
+peak-trajectory sharing, not unconditional same-bin phase projection.
+
+The optional centre-focus path is different. Two-channel input is transformed
+to mid/side before analysis, phase processing remains synchronized, side
+silence cannot independently force repeated resets, and synthesis returns to
+left/right. Public behavioral evidence rejects this stronger path as a general
+Signal invariant: it changes all frozen renders and fails four calibrated
+`2.0x` image rows while standard R3 fails none.
+
 ## What Signal Previously Got Wrong
 
 - Signal selected one full-band resolution per time centre. R3 selects
@@ -109,11 +122,11 @@ trajectory when both channels are inside the linked range.
 
 | Source | Type | Revision | Confidence | Notes |
 | --- | --- | --- | --- | --- |
-| [R3 guide](https://github.com/breakfastquay/rubberband/blob/e4296ac80b1170018a110bc326fd0d45a0eb27d6/src/finer/Guide.h) | GPL source | `e4296ac` | high | scale bands, crossover, reset, kick, unlock, channel policy |
-| [R3 phase advance](https://github.com/breakfastquay/rubberband/blob/e4296ac80b1170018a110bc326fd0d45a0eb27d6/src/finer/PhaseAdvance.h) | GPL source | `e4296ac` | high | peak tracking, offset scaling, channel-linked phase |
-| [R3 stretcher](https://github.com/breakfastquay/rubberband/blob/e4296ac80b1170018a110bc326fd0d45a0eb27d6/src/finer/R3Stretcher.cpp) | GPL source | `e4296ac` | high | analysis, guidance, per-scale synthesis, output sum |
-| [R3 classifier](https://github.com/breakfastquay/rubberband/blob/e4296ac80b1170018a110bc326fd0d45a0eb27d6/src/finer/BinClassifier.h) | GPL source | `e4296ac` | high | H/P/R control evidence |
-| [R2 process](https://github.com/breakfastquay/rubberband/blob/e4296ac80b1170018a110bc326fd0d45a0eb27d6/src/faster/StretcherProcess.cpp) | GPL source | `e4296ac` | high | reset, advance, lamination, overlap |
+| [R3 guide](https://github.com/breakfastquay/rubberband/blob/v4.0.0/src/finer/Guide.h) | GPL source | `v4.0.0` / `1d95888` | high | scale bands, crossover, reset, kick, unlock, channel policy |
+| [R3 phase advance](https://github.com/breakfastquay/rubberband/blob/v4.0.0/src/finer/PhaseAdvance.h) | GPL source | `v4.0.0` / `1d95888` | high | peak tracking, offset scaling, channel-linked phase |
+| [R3 stretcher](https://github.com/breakfastquay/rubberband/blob/v4.0.0/src/finer/R3Stretcher.cpp) | GPL source | `v4.0.0` / `1d95888` | high | analysis, mid/side option, synchronized phase, synthesis |
+| [R3 classifier](https://github.com/breakfastquay/rubberband/blob/v4.0.0/src/finer/BinClassifier.h) | GPL source | `v4.0.0` / `1d95888` | high | H/P/R control evidence |
+| [R2 process](https://github.com/breakfastquay/rubberband/blob/v4.0.0/src/faster/StretcherProcess.cpp) | GPL source | `v4.0.0` / `1d95888` | high | reset, advance, lamination, overlap |
 | [technical notes](https://breakfastquay.com/rubberband/technical.html) | author documentation | current | high | published R2 summary |
 
 ## Open Questions
@@ -143,7 +156,7 @@ winner is established.
 
 ## Next Task
 
-Use greatest-channel trajectory borrowing only as corroborating architecture
-for Batch 29.7E. Implement Signal's independently specified current-input
-relationship law; do not transfer Rubber Band expression, ranges, scaling, or
-constants.
+Use conditional, frequency-bounded peak-trajectory ownership as the sole
+architecture input to Batch 29.7M. Define Signal's peak identity and
+eligibility independently. Do not transfer Rubber Band expression, ranges,
+scaling, reset policy, or constants. Do not promote centre-focus or mid/side.
