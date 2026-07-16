@@ -152,6 +152,6 @@ expression, guidance ranges, scaling, and constants are not transferable.
 
 ## Next Task
 
-Implement Batch 29.7E as a report-only reference-relative recurrence ablation.
-Run the extended mechanics controls and unchanged 29.7C quality gate before
-opening any stereo listening export.
+Batch 29.7E confirms the topology as a large improvement but not a gate pass.
+Run Batch 29.7F to locate the remaining projection residual across coefficient,
+real-edge, interior-overlap, and boundary stages before revising the topology.

@@ -1,9 +1,12 @@
+mod recurrence;
+
 use rustfft::{num_complex::Complex64, FftPlanner};
 
 use super::super::{
-    analyse, coherent_representation, constrain_real_edges, hash_samples, interpolate, synthesise,
-    FrequencyBoundaryPolicy, TransformGrid, HORIZONTAL_ENERGY_FLOOR,
+    analyse, coherent_representation, constrain_real_edges, hash_samples, synthesise,
+    TransformGrid, HORIZONTAL_ENERGY_FLOOR,
 };
+use recurrence::reference_relative_bin;
 
 #[derive(Clone, Debug)]
 pub(super) struct StereoRender {
@@ -14,13 +17,27 @@ pub(super) struct StereoRender {
     pub(super) shared_corrected: usize,
     pub(super) shared_fallback: usize,
     pub(super) unilateral_non_silent_completions: usize,
+    pub(super) reference_bins: [usize; 2],
+    pub(super) active_reference_ties: usize,
+    pub(super) reference_switches: usize,
     pub(super) hash: u64,
 }
 
 pub(super) fn linked(inputs: [&[f64]; 2], ratio: f64, sample_rate: usize) -> StereoRender {
     assert_eq!(inputs[0].len(), inputs[1].len(), "linked channel lengths");
     if ratio == 1.0 {
-        return finish([inputs[0].to_vec(), inputs[1].to_vec()], 0, 0, 0, 0, 0, 0);
+        return finish(
+            [inputs[0].to_vec(), inputs[1].to_vec()],
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            [0; 2],
+            0,
+            0,
+        );
     }
 
     let target_len = (inputs[0].len() as f64 * ratio).round() as usize;
@@ -43,6 +60,10 @@ pub(super) fn linked(inputs: [&[f64]; 2], ratio: f64, sample_rate: usize) -> Ste
     let mut shared_corrected = 0;
     let mut shared_fallback = 0;
     let mut unilateral_non_silent_completions = 0;
+    let mut reference_bins = [0; 2];
+    let mut active_reference_ties = 0;
+    let mut reference_switches = 0;
+    let mut previous_reference = vec![None; bins];
     let mut output_center = -(length as isize / 2);
 
     while output_center < target_len as isize + length as isize / 2 {
@@ -93,44 +114,31 @@ pub(super) fn linked(inputs: [&[f64]; 2], ratio: f64, sample_rate: usize) -> Ste
             let mut corrected = preliminary.clone();
 
             for bin in 0..bins {
-                let prediction: [Complex64; 2] = std::array::from_fn(|channel| {
-                    vertical_prediction(
-                        bin,
-                        bins,
-                        long_distance,
-                        time_factor,
-                        &current[channel],
-                        &preliminary[channel],
-                        &corrected[channel],
-                    )
-                });
-                let target_energy = current[0][bin].norm_sqr() + current[1][bin].norm_sqr();
-                let prediction_energy = prediction[0].norm_sqr() + prediction[1].norm_sqr();
-                let unilateral_weak = (0..2).any(|channel| {
-                    let channel_target = current[channel][bin].norm_sqr();
-                    channel_target > significant_energy
-                        && prediction[channel].norm_sqr() <= channel_target * f64::EPSILON * 64.0
-                });
-                if prediction_energy > target_energy * f64::EPSILON * 64.0 && !unilateral_weak {
+                let result = reference_relative_bin(
+                    bin,
+                    bins,
+                    long_distance,
+                    time_factor,
+                    &current,
+                    &preliminary,
+                    &corrected,
+                    significant_energy,
+                );
+                reference_bins[result.reference] += 1;
+                active_reference_ties += usize::from(result.active_tie);
+                reference_switches += usize::from(
+                    previous_reference[bin].is_some_and(|before| before != result.reference),
+                );
+                previous_reference[bin] = Some(result.reference);
+                if result.corrected {
                     shared_corrected += 1;
-                    for channel in 0..2 {
-                        let channel_target = current[channel][bin].norm_sqr();
-                        let channel_prediction = prediction[channel].norm_sqr();
-                        corrected[channel][bin] = if channel_target == 0.0 {
-                            Complex64::new(0.0, 0.0)
-                        } else if channel_prediction > channel_target * f64::EPSILON * 64.0 {
-                            prediction[channel] * (channel_target / channel_prediction).sqrt()
-                        } else {
-                            unilateral_non_silent_completions +=
-                                usize::from(channel_target > significant_energy);
-                            current[channel][bin]
-                        };
-                    }
                 } else {
                     shared_fallback += 1;
-                    for channel in 0..2 {
-                        corrected[channel][bin] = current[channel][bin];
-                    }
+                }
+                unilateral_non_silent_completions +=
+                    usize::from(result.unilateral_non_silent_completion);
+                for channel in 0..2 {
+                    corrected[channel][bin] = result.output[channel];
                 }
             }
             next = corrected;
@@ -189,56 +197,10 @@ pub(super) fn linked(inputs: [&[f64]; 2], ratio: f64, sample_rate: usize) -> Ste
         shared_corrected,
         shared_fallback,
         unilateral_non_silent_completions,
+        reference_bins,
+        active_reference_ties,
+        reference_switches,
     )
-}
-
-fn vertical_prediction(
-    bin: usize,
-    bins: usize,
-    long_distance: usize,
-    time_factor: f64,
-    current: &[Complex64],
-    preliminary: &[Complex64],
-    corrected: &[Complex64],
-) -> Complex64 {
-    let mut prediction = Complex64::new(0.0, 0.0);
-    if bin >= 1 {
-        let lower = interpolate(
-            current,
-            bin as f64 - time_factor,
-            FrequencyBoundaryPolicy::Clamp,
-        );
-        let twist = current[bin] * lower.conj();
-        prediction += corrected[bin - 1] * twist;
-    }
-    if bin + 1 < bins {
-        let lower = interpolate(
-            current,
-            bin as f64 + 1.0 - time_factor,
-            FrequencyBoundaryPolicy::Clamp,
-        );
-        let twist = current[bin + 1] * lower.conj();
-        prediction += preliminary[bin + 1] * twist.conj();
-    }
-    if bin >= long_distance {
-        let lower = interpolate(
-            current,
-            bin as f64 - long_distance as f64 * time_factor,
-            FrequencyBoundaryPolicy::Clamp,
-        );
-        let twist = current[bin] * lower.conj();
-        prediction += corrected[bin - long_distance] * twist;
-    }
-    if bin + long_distance < bins {
-        let lower = interpolate(
-            current,
-            bin as f64 + long_distance as f64 - long_distance as f64 * time_factor,
-            FrequencyBoundaryPolicy::Clamp,
-        );
-        let twist = current[bin + long_distance] * lower.conj();
-        prediction += preliminary[bin + long_distance] * twist.conj();
-    }
-    prediction
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -250,6 +212,9 @@ fn finish(
     shared_corrected: usize,
     shared_fallback: usize,
     unilateral_non_silent_completions: usize,
+    reference_bins: [usize; 2],
+    active_reference_ties: usize,
+    reference_switches: usize,
 ) -> StereoRender {
     let mut hash = hash_samples(&channels[0]);
     super::hash_values(&mut hash, &[hash_samples(&channels[1])]);
@@ -261,6 +226,9 @@ fn finish(
         shared_corrected,
         shared_fallback,
         unilateral_non_silent_completions,
+        reference_bins,
+        active_reference_ties,
+        reference_switches,
         hash,
     }
 }

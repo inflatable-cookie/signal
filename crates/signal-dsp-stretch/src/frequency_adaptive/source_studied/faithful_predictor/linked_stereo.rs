@@ -1,7 +1,11 @@
+mod mechanics;
 pub(in crate::frequency_adaptive) mod quality;
 mod render;
 
 use super::{coherent_representation, HASH_OFFSET};
+use mechanics::{
+    mismatch_count, primary_control, scaled, secondary_control, signed_mismatch_count,
+};
 
 const SAMPLE_RATE: usize = 8_000;
 const RATIOS: [f64; 3] = [0.75, 1.5, 2.0];
@@ -26,6 +30,10 @@ pub(in crate::frequency_adaptive) struct LinkedStereoRatioEvidence {
     pub(in crate::frequency_adaptive) shared_corrected: usize,
     pub(in crate::frequency_adaptive) shared_fallback: usize,
     pub(in crate::frequency_adaptive) unilateral_non_silent_completions: usize,
+    pub(in crate::frequency_adaptive) reference_bins: [usize; 2],
+    pub(in crate::frequency_adaptive) active_reference_ties: usize,
+    pub(in crate::frequency_adaptive) reference_switches: usize,
+    pub(in crate::frequency_adaptive) switch_step_growth_db: f64,
     pub(in crate::frequency_adaptive) audio_hash: u64,
 }
 
@@ -57,6 +65,10 @@ pub(in crate::frequency_adaptive) fn mechanics_review() -> LinkedStereoMechanics
                 && row.shared_corrected > 0
                 && row.shared_fallback > 0
                 && row.unilateral_non_silent_completions == 0
+                && row.reference_bins.iter().all(|count| *count > 0)
+                && row.active_reference_ties > 0
+                && row.reference_switches > 0
+                && row.switch_step_growth_db <= 0.0
         });
     LinkedStereoMechanicsReview {
         geometry: first.geometry,
@@ -83,8 +95,8 @@ struct Run {
 }
 
 fn run() -> Run {
-    let primary = primary_control();
-    let secondary = secondary_control();
+    let primary = primary_control(SAMPLE_RATE);
+    let secondary = secondary_control(SAMPLE_RATE);
     let identity = render::linked([&primary, &secondary], 1.0, SAMPLE_RATE);
     let identity_mismatches = mismatch_count(&identity.channels[0], &primary)
         + mismatch_count(&identity.channels[1], &secondary);
@@ -109,6 +121,14 @@ fn run() -> Run {
         let high = render::linked([&high_primary, &high_primary], ratio, SAMPLE_RATE);
         let high_primary_mono = coherent_representation::render(&high_primary, ratio, SAMPLE_RATE);
         let silence_linked = render::linked([&silence, &silence], ratio, SAMPLE_RATE);
+        let crossing_input = mechanics::ownership_crossing_control(SAMPLE_RATE);
+        let crossing = render::linked([&crossing_input[0], &crossing_input[1]], ratio, SAMPLE_RATE);
+        let switch_step_growth_db = mechanics::switch_step_growth_db(
+            &crossing.channels,
+            ratio,
+            primary.len(),
+            coherent_representation::source_geometry(SAMPLE_RATE)[1],
+        );
 
         let target_frames = mono.samples.len();
         let structural_failures = [
@@ -167,6 +187,11 @@ fn run() -> Run {
                 ordinary.shared_corrected as u64,
                 silence_linked.shared_fallback as u64,
                 ordinary.unilateral_non_silent_completions as u64,
+                ordinary.reference_bins[0] as u64,
+                ordinary.reference_bins[1] as u64,
+                duplicate.active_reference_ties as u64,
+                crossing.reference_switches as u64,
+                switch_step_growth_db.to_bits(),
                 row_audio_hash,
             ],
         );
@@ -183,6 +208,10 @@ fn run() -> Run {
             shared_corrected: ordinary.shared_corrected,
             shared_fallback: silence_linked.shared_fallback,
             unilateral_non_silent_completions: ordinary.unilateral_non_silent_completions,
+            reference_bins: ordinary.reference_bins,
+            active_reference_ties: duplicate.active_reference_ties,
+            reference_switches: crossing.reference_switches,
+            switch_step_growth_db,
             audio_hash: row_audio_hash,
         });
     }
@@ -198,56 +227,6 @@ fn run() -> Run {
         audio_hash,
         evidence_hash,
     }
-}
-
-fn primary_control() -> Vec<f64> {
-    (0..SAMPLE_RATE)
-        .map(|index| {
-            let time = index as f64 / SAMPLE_RATE as f64;
-            let mut sample = 0.28 * (std::f64::consts::TAU * 110.0 * time).sin()
-                + 0.17 * (std::f64::consts::TAU * 523.251 * time).sin();
-            if index == SAMPLE_RATE / 3 || index == SAMPLE_RATE * 2 / 3 {
-                sample += 0.65;
-            }
-            sample
-        })
-        .collect()
-}
-
-fn secondary_control() -> Vec<f64> {
-    (0..SAMPLE_RATE)
-        .map(|index| {
-            let time = index as f64 / SAMPLE_RATE as f64;
-            let mut sample = 0.21 * (std::f64::consts::TAU * 164.8138 * time + 0.7).sin()
-                + 0.13 * (std::f64::consts::TAU * 880.0 * time - 0.4).sin();
-            if index == SAMPLE_RATE / 2 {
-                sample -= 0.55;
-            }
-            sample
-        })
-        .collect()
-}
-
-fn scaled(input: &[f64], gain: f64) -> Vec<f64> {
-    input.iter().map(|sample| sample * gain).collect()
-}
-
-fn mismatch_count(actual: &[f64], expected: &[f64]) -> usize {
-    actual
-        .iter()
-        .zip(expected)
-        .filter(|(actual, expected)| actual.to_bits() != expected.to_bits())
-        .count()
-        + actual.len().abs_diff(expected.len())
-}
-
-fn signed_mismatch_count(actual: &[f64], expected: &[f64], gain: f64) -> usize {
-    actual
-        .iter()
-        .zip(expected)
-        .filter(|(actual, expected)| actual.to_bits() != (**expected * gain).to_bits())
-        .count()
-        + actual.len().abs_diff(expected.len())
 }
 
 fn hash_values(state: &mut u64, values: &[u64]) {

@@ -11,6 +11,7 @@ use super::{
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(in crate::frequency_adaptive) enum LinkedStereoQualityAttributionDirection {
     PerChannelRecurrencePrimary,
+    ReferenceProjectionResidual,
     AggregateModeContribution,
 }
 
@@ -36,8 +37,14 @@ pub(in crate::frequency_adaptive) fn attribution_review() -> LinkedStereoQuality
     let first = run();
     let second = run();
     let repeated = first == second;
-    let recurrence_primary = first.rows.iter().all(|row| {
-        row.linked_failure_mask & !row.independent_failure_mask == 0 && row.linked_failure_mask != 0
+    let recurrence_primary = first
+        .rows
+        .iter()
+        .all(|row| row.linked_failure_mask == row.independent_failure_mask);
+    let reference_residual = first.rows.iter().all(|row| {
+        row.linked_failure_mask != 0
+            && row.linked_failure_mask & !row.independent_failure_mask == 0
+            && row.linked_failure_mask != row.independent_failure_mask
     });
     LinkedStereoQualityAttributionReview {
         rows: first.rows,
@@ -45,6 +52,8 @@ pub(in crate::frequency_adaptive) fn attribution_review() -> LinkedStereoQuality
         repeated,
         direction: if recurrence_primary {
             LinkedStereoQualityAttributionDirection::PerChannelRecurrencePrimary
+        } else if reference_residual {
+            LinkedStereoQualityAttributionDirection::ReferenceProjectionResidual
         } else {
             LinkedStereoQualityAttributionDirection::AggregateModeContribution
         },

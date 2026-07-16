@@ -373,8 +373,7 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7E reference-relative recurrence proof. Batch 29.7D
-selects one greatest-energy per-bin reference recurrence and derives the peer
-through its current input complex relation. Change only linked recurrence,
-exercise ownership switches, and rerun the unchanged 29.7C quality gate. Keep
-Batch 29.8 closed.
+Run `g10.029` Batch 29.7F reference-projection residual attribution. Batch
+29.7E fixes delay and sharply reduces IPD/image error but does not pass the
+unchanged gate. Locate the first coefficient, edge, overlap, or boundary
+divergence before another topology change. Keep Batch 29.8 closed.

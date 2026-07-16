@@ -1134,8 +1134,21 @@ transient, replica, and crossfeed gates. Switch instability is a stop condition,
 not permission to tune hysteresis. Stereo listening, dynamic ratio, realtime,
 cache, and product routing remain closed.
 
+That proof passes mechanics and materially improves stereo fidelity without
+passing the gate. Both channels own bins, owner crossings introduce no local
+step growth, delay is exact at all three ratios, and correlated-image damage
+drops from roughly `12 dB` to at most `0.434087 dB`. Residual quadrature IPD is
+`0.007623` to `0.016074 rad`, above the unchanged `1e-9 rad` ceiling. The first
+two ratios also remain slightly above the `0.25 dB` mid/side ceiling.
+
+The next architecture decision depends on stage attribution. Measure relation
+error after coefficient projection and real-edge constraint, compare whole and
+interior synthesis, and use a known-constant-relation oracle to distinguish
+current per-bin relation variability from overlap or boundary effects. Do not
+infer a peak-region policy from the residual before that trace.
+
 ## Next Task
 
-Implement Batch 29.7E as a narrow linked-stereo recurrence replacement. Prove
-reference switching mechanics, then rerun the unchanged 29.7C quality gate
-before any listening export.
+Run Batch 29.7F reference-projection residual attribution. Keep the implemented
+recurrence frozen and locate the first stage that converts exact coefficient
+relation into whole-render IPD/image error.

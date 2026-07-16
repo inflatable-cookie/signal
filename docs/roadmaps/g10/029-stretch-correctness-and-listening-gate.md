@@ -1512,15 +1512,15 @@ relationship. Translation memo 006 and revised Rule 31H freeze the result.
 
 ### Batch 29.7E - Reference-Relative Recurrence Proof
 
-- [ ] replace only the linked renderer's per-channel recurrence with the Rule
+- [x] replace only the linked renderer's per-channel recurrence with the Rule
   31H per-bin reference recurrence; preserve mono code and hashes, geometry,
   schedule, energy floor, thresholds, and report-only routing
-- [ ] extend mechanics with reference counts for both channels, exact-energy
+- [x] extend mechanics with reference counts for both channels, exact-energy
   tie exercise, controlled ownership crossing, switch-boundary growth,
   crossfeed, repeat, and frozen hashes
-- [ ] rerun every unchanged 29.7C IPD, delay, correlated/decorrelated image,
+- [x] rerun every unchanged 29.7C IPD, delay, correlated/decorrelated image,
   transient, replica, and crossfeed control at `0.75x`, `1.5x`, and `2.0x`
-- [ ] stop before listening on any mechanics or quality failure; do not add
+- [x] stop before listening on any mechanics or quality failure; do not add
   hysteresis or tune a switch threshold inside this batch
 
 Evidence: one repeat-stable mechanics and quality report. Focused test names:
@@ -1535,6 +1535,40 @@ Validation:
 - `RUSTFLAGS='-D missing-docs' cargo check -p signal-dsp-stretch --lib`
 - `effigy qa:docs`
 - broader `cargo test -p signal-dsp-stretch` before commit
+
+Decision: mechanics pass and the quality gate still fails. Both channels own
+non-zero bins; exact ties choose channel zero; the crossing control records
+`512`, `512`, and `860` owner switches with boundary-step growth `-1.080220`,
+`-0.583075`, and `-0.413230 dB`. Mono, duplicate, hard-pan, swap, polarity,
+gain, silence, coverage, boundary, crossfeed, and repeat controls pass.
+
+Reference-relative recurrence removes every delay failure and sharply reduces
+the prior image damage. Worst quadrature IPD falls from `0.882661`, `1.526285`,
+and `3.073635 rad` to `0.008195`, `0.007623`, and `0.016074 rad`. Correlated
+mid/side change falls from `11.672982`, `11.990144`, and `12.728013 dB` to
+`0.434087`, `0.267458`, and `0.173960 dB`. The unchanged `1e-9 rad` IPD gate
+still fails at every ratio; the `0.25 dB` image gate also fails at `0.75x` and
+`1.5x`. Batch 29.8 remains closed.
+
+Freeze mechanics audio `28803a9f2e5bd83e`, mechanics evidence
+`03b66c25196493c2`, quality audio `a5fb675cb0484eda`, quality measurement
+`ae77c422ea75e292`, and residual attribution `ebfb64802f96d50b`.
+
+### Batch 29.7F - Reference Projection Residual Attribution
+
+- [ ] measure peer/reference complex-ratio error immediately after projection
+  and after real-edge constraint; prove whether coefficient-domain relation is
+  already exact before inverse transform
+- [ ] compare full-render and interior-only tone/image measurements to separate
+  boundary reflection from steady overlap behavior
+- [ ] add a synthetic known-constant-relation oracle alongside current per-bin
+  input-ratio projection; use it only to assign residual ownership
+- [ ] choose the next topology seam from the first measured divergence; do not
+  relax thresholds, add peak regions, or open listening inside attribution
+
+Evidence: one repeat-stable stage report with coefficient relation, constrained
+relation, whole/interior output, oracle, and current-projection hashes. Focused
+test name: `source_studied_linked_stereo_projection_residual_attribution`.
 
 ### Batch 29.8 - Listening And Dynamic Checkpoint
 
@@ -2612,9 +2646,15 @@ Validation:
   reference recurrence and derives the peer through its current input complex
   relation while retaining peer magnitude. Shared increment is rejected.
   Batch 29.7E is implementation-ready; 29.8 remains closed.
+- 2026-07-16: Batch 29.7E proves reference-relative mechanics and fixes
+  expansion delay while reducing IPD and correlated-image errors by orders of
+  magnitude. It still fails exact quadrature IPD at all ratios and correlated
+  mid/side ratio at `0.75x` and `1.5x`. Thresholds remain unchanged, listening
+  remains closed, and Batch 29.7F attributes the projection residual before
+  another topology decision.
 
 ## Next Task
 
-Run Batch 29.7E reference-relative recurrence proof. Change only linked-stereo
-recurrence, extend mechanics for ownership switches, then rerun the unchanged
-29.7C quality gate. Keep Batch 29.8 closed.
+Run Batch 29.7F reference-projection residual attribution. Locate the first
+divergence between exact coefficient relation and whole-render IPD/image before
+changing topology. Keep Batch 29.8 closed.

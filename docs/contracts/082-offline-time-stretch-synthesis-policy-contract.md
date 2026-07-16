@@ -3561,8 +3561,25 @@ Then rerun the complete unchanged 29.7C IPD, delay, correlated/decorrelated
 image, transient, replica, and crossfeed gate. Any failure keeps Batch 29.8
 closed. Do not add hysteresis or tune a switch threshold inside this proof.
 
+Batch 29.7E passes mechanics and fails quality. Both reference owners, exact
+ties, and controlled owner switches execute without boundary-step growth.
+Mono parity, hard pan, transformations, silence, crossfeed, structure, and
+repeat remain closed. The recurrence fixes the `11`-frame delay at every ratio
+and reduces worst IPD error to `0.008195`, `0.007623`, and `0.016074 rad`.
+Correlated mid/side change falls to `0.434087`, `0.267458`, and `0.173960 dB`.
+The unchanged IPD ceiling still fails all ratios and the image ceiling fails the
+first two. This is a reference-projection residual, not permission to relax the
+gate or add an unevidenced peak-region policy.
+
+Batch 29.7F may only attribute that residual. Measure current complex-ratio
+error before and after real-edge constraint, compare whole and interior output,
+and run a known-constant-relation synthetic oracle. Select any next topology
+change from the first divergence. Keep thresholds, listening, dynamic ratio,
+cache, realtime, and routing closed.
+
 ## Next Task
 
-Implement Batch 29.7E as a report-only reference-relative recurrence ablation.
-Run extended mechanics and the unchanged 29.7C quality gate before any stereo
-listening export. Keep Batch 29.8 closed.
+Run Batch 29.7F reference-projection residual attribution. Locate whether the
+remaining IPD/image error enters at coefficient projection, real-edge
+constraint, overlap synthesis, or boundaries before another topology change.
+Keep Batch 29.8 closed.

@@ -145,7 +145,7 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Implement `g10.029` Batch 29.7E under revised contract `082`, Rule 31H. Change
-only linked recurrence, exercise reference switches, and rerun the unchanged
-stereo quality gate. Keep independent listening, dynamic ratio, routing, and
-promotion closed.
+Run `g10.029` Batch 29.7F under contract `082`, Rule 31H. Attribute the residual
+between coefficient relation, edge constraint, overlap, and boundaries before
+another stereo topology change. Keep independent listening, dynamic ratio,
+routing, and promotion closed.

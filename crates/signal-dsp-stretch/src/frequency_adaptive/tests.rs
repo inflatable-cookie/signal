@@ -2145,9 +2145,9 @@ fn source_studied_linked_stereo_mechanics() {
             .map(|row| row.audio_hash)
             .collect::<Vec<_>>(),
         [
-            0x38da_d9d7_3677_280f,
-            0xa48d_55bf_5f11_20ae,
-            0xd90c_4971_bd45_2d50,
+            0xe202_f685_832d_0e76,
+            0x3484_c060_d14b_8b41,
+            0x7a3c_78b6_51b6_8c92,
         ]
     );
     assert!(result.ratios.iter().all(|row| {
@@ -2161,13 +2161,39 @@ fn source_studied_linked_stereo_mechanics() {
             && row.shared_corrected > 0
             && row.shared_fallback > 0
             && row.unilateral_non_silent_completions == 0
+            && row.reference_bins.iter().all(|count| *count > 0)
+            && row.active_reference_ties > 0
+            && row.reference_switches > 0
+            && row.switch_step_growth_db <= 0.0
     }));
     assert_eq!(
         result.direction,
         LinkedStereoMechanicsDirection::QualityGate
     );
-    assert_eq!(result.audio_hash, 0xf344_76f2_90ce_4f80);
-    assert_eq!(result.evidence_hash, 0x426a_f565_378e_9ce1);
+    assert_eq!(result.audio_hash, 0x2880_3a9f_2e5b_d83e);
+    assert_eq!(result.evidence_hash, 0x03b6_6c25_1964_93c2);
+}
+
+#[test]
+#[cfg(not(debug_assertions))]
+fn source_studied_linked_stereo_reference_recurrence() {
+    use super::source_studied::faithful_predictor::linked_stereo::{
+        mechanics_review, LinkedStereoMechanicsDirection,
+    };
+
+    let result = mechanics_review();
+    eprintln!("source_studied_linked_stereo_reference_recurrence {result:#?}");
+    assert!(result.repeated);
+    assert!(result.ratios.iter().all(|row| {
+        row.reference_bins.iter().all(|count| *count > 0)
+            && row.active_reference_ties > 0
+            && row.reference_switches > 0
+            && row.switch_step_growth_db <= 0.0
+    }));
+    assert_eq!(
+        result.direction,
+        LinkedStereoMechanicsDirection::QualityGate
+    );
 }
 
 #[test]
@@ -2180,7 +2206,7 @@ fn source_studied_linked_stereo_quality() {
     let result = quality_review();
     eprintln!("source_studied_linked_stereo_quality {result:#?}");
     assert!(result.repeated);
-    assert_eq!(result.mechanism_hash, 0x426a_f565_378e_9ce1);
+    assert_eq!(result.mechanism_hash, 0x03b6_6c25_1964_93c2);
     assert_eq!(result.ratios.len(), 3);
     assert!(result.ratios.iter().all(|row| {
         row.maximum_ipd_error_radians > 1.0e-9
@@ -2190,9 +2216,9 @@ fn source_studied_linked_stereo_quality() {
                 .all(|error| *error > 1.0e-9)
             && row.ipd_errors_radians[2]
                 .iter()
-                .all(|error| *error <= 1.0e-12)
-            && row.correlated_image_delta[0] > 0.25
-            && row.correlated_image_delta[1] > 0.02
+                .all(|error| *error <= 1.0e-9)
+            && row.delay_change_frames <= 1
+            && row.correlated_image_delta[1] <= 0.02
             && row.decorrelated_image_delta[0] <= 0.25
             && row.decorrelated_image_delta[1] <= 0.02
             && row.maximum_attack_error_frames <= 256
@@ -2205,7 +2231,7 @@ fn source_studied_linked_stereo_quality() {
             .iter()
             .map(|row| [row.input_delay_frames, row.output_delay_frames])
             .collect::<Vec<_>>(),
-        [[11, 11], [11, 8], [11, 23]]
+        [[11, 11], [11, 11], [11, 11]]
     );
     assert_eq!(
         result
@@ -2214,9 +2240,9 @@ fn source_studied_linked_stereo_quality() {
             .map(|row| row.audio_hash)
             .collect::<Vec<_>>(),
         [
-            0xddc8_16d4_77db_135d,
-            0x6842_967c_a6c7_984b,
-            0x9d38_e21d_580f_84ed,
+            0x17ee_c832_494d_73c7,
+            0x3131_598d_7544_0606,
+            0x1ff6_90c0_ee50_46be,
         ]
     );
     assert_eq!(
@@ -2226,13 +2252,16 @@ fn source_studied_linked_stereo_quality() {
             .map(|row| row.measurement_hash)
             .collect::<Vec<_>>(),
         [
-            0xe523_0b1b_c9a0_ddfa,
-            0xe531_b0f3_9f37_fe94,
-            0x8e1a_7fe4_eead_7031,
+            0x1f55_ab2a_f714_1555,
+            0x0aef_f41d_5109_6045,
+            0xd864_8074_1de1_fd7d,
         ]
     );
-    assert_eq!(result.audio_hash, 0x0509_599c_b46b_0cfc);
-    assert_eq!(result.measurement_hash, 0x2d8f_8471_d88c_f383);
+    assert!(result.ratios[0].correlated_image_delta[0] > 0.25);
+    assert!(result.ratios[1].correlated_image_delta[0] > 0.25);
+    assert!(result.ratios[2].correlated_image_delta[0] <= 0.25);
+    assert_eq!(result.audio_hash, 0xa5fb_675c_b048_4eda);
+    assert_eq!(result.measurement_hash, 0xae77_c422_ea75_e292);
     assert_eq!(
         result.direction,
         LinkedStereoQualityDirection::QualityAttribution
@@ -2249,9 +2278,22 @@ fn source_studied_linked_stereo_quality_attribution() {
     let result = attribution_review();
     eprintln!("source_studied_linked_stereo_quality_attribution {result:#?}");
     assert!(result.repeated);
-    assert!(result.rows.iter().all(|row| {
-        row.linked_failure_mask != 0 && row.linked_failure_mask & !row.independent_failure_mask == 0
-    }));
+    assert_eq!(
+        result
+            .rows
+            .iter()
+            .map(|row| row.linked_failure_mask)
+            .collect::<Vec<_>>(),
+        [5, 5, 1]
+    );
+    assert_eq!(
+        result
+            .rows
+            .iter()
+            .map(|row| row.independent_failure_mask)
+            .collect::<Vec<_>>(),
+        [13, 15, 15]
+    );
     assert_eq!(
         result
             .rows
@@ -2264,10 +2306,10 @@ fn source_studied_linked_stereo_quality_attribution() {
             0xa3b8_aaa5_e255_93e6,
         ]
     );
-    assert_eq!(result.evidence_hash, 0xd148_ae6a_7114_ef6a);
+    assert_eq!(result.evidence_hash, 0xebfb_6480_2f96_d50b);
     assert_eq!(
         result.direction,
-        LinkedStereoQualityAttributionDirection::PerChannelRecurrencePrimary
+        LinkedStereoQualityAttributionDirection::ReferenceProjectionResidual
     );
 }
 

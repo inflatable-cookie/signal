@@ -65,6 +65,6 @@ Finch and Loophole.
 
 ## Next Task
 
-Implement Batch 29.7E as the bounded report-only reference-relative recurrence
-proof. Exercise exact ties and ownership crossings, then rerun the unchanged
-29.7C quality gate before stereo export.
+Run Batch 29.7F reference-projection residual attribution. Compare exact
+coefficient relation, edge constraint, interior synthesis, whole synthesis, and
+a known-relation oracle before revising topology.
