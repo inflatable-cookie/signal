@@ -145,7 +145,7 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7M under contract `082`, Rule 31H. Define one
-Signal-owned conditional, frequency-bounded peak-region trajectory proof. Keep
-current output as baseline and independent listening, dynamic ratio, realtime,
-routing, and promotion closed.
+Run `g10.029` Batch 29.7N under contract `082`, Rule 31H. Attribute the rejected
+peak-region candidate and triangulate a Signal-owned material-state policy.
+Keep current output as baseline and independent listening, dynamic ratio,
+realtime, routing, and promotion closed.

@@ -43,7 +43,7 @@ pub(super) fn repair(input: &[Vec<f64>; 2], output: [Vec<f64>; 2]) -> Repair {
     }
 }
 
-pub(super) fn local_evidence(
+pub(in super::super) fn local_evidence(
     input: &[Vec<f64>; 2],
     before: &[Vec<f64>; 2],
     after: &[Vec<f64>; 2],

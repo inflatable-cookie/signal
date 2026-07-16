@@ -1219,8 +1219,18 @@ report-only peak-region proof passes mechanics and calibrated quality. Rubber
 Band implementation expression, constants, peak picker, and frequency limits
 remain excluded.
 
+The first Signal-owned realization rejects. Local-maxima regions with exact
+shared previous-peak ownership are active and mechanics-safe, but calibrated
+failures rise from `20/48` to `29/48`; `35/48` rows regress and `32/48` lose
+local consistency. The result matches the source-level warning against one
+peak-region rule for every material state. Peak geometry and channel history
+are necessary architecture inputs, not a complete ownership policy. Current
+same-bin reference-relative recurrence remains frozen while ordinary, locked,
+reset, unlocked, and attack state ordering is triangulated independently.
+
 ## Next Task
 
-Run Batch 29.7M Signal-owned peak-region trajectory feasibility. Freeze peak
-identity, channel eligibility, and frequency ownership before rendering. Keep
-listening, dynamic ratio, realtime, routing, and production closed.
+Run Batch 29.7N linked-state policy triangulation. Attribute the rejected
+candidate's losses and define a license-safe state vocabulary before another
+renderer. Keep listening, dynamic ratio, realtime, routing, and production
+closed.

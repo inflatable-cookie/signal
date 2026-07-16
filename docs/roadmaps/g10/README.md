@@ -391,13 +391,16 @@ Current stretch status:
   architectural difference from Signal's same-bin recurrence. Standard R3
   passes all `48` calibrated rows. Centre-focus changes every render but fails
   four `2.0x` image rows, rejecting mid/side and blanket linking as the repair.
-  Batch 29.7M now owns one Signal-specified peak-region feasibility proof.
+  Batch 29.7M rejects one Signal-specified nearest-peak realization: failures
+  rise from `20/48` to `29/48` and local consistency fails on `32/48` rows.
+  Batch 29.7N now owns linked-state policy triangulation before another DSP
+  candidate.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7M peak-region shared-trajectory feasibility. Freeze
-Signal-owned peak identity, compatible-history eligibility, and frequency
-ownership before rendering. Keep Batch 29.8 closed.
+Run `g10.029` Batch 29.7N linked-state policy triangulation. Attribute the
+rejected peak-region losses and define a license-safe material-state ordering
+from independent sources. Keep Batch 29.8 closed.

@@ -156,7 +156,8 @@ winner is established.
 
 ## Next Task
 
-Use conditional, frequency-bounded peak-trajectory ownership as the sole
-architecture input to Batch 29.7M. Define Signal's peak identity and
-eligibility independently. Do not transfer Rubber Band expression, ranges,
-scaling, reset policy, or constants. Do not promote centre-focus or mid/side.
+Batch 29.7M rejects a Signal-owned nearest-peak realization. Use Batch 29.7N to
+triangulate ordinary, peak-locked, reset, unlocked, and attack state ownership
+against permissive implementations and published work. Do not transfer Rubber
+Band expression, ranges, scaling, reset policy, or constants. Do not promote
+centre-focus or mid/side.

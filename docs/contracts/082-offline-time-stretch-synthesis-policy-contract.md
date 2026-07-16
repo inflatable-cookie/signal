@@ -3705,7 +3705,24 @@ hashes, calibrated gates, source geometry, schedule, crop, and output length
 remain unchanged. No threshold sweep, listening, dynamic ratio, realtime,
 routing, or production use is authorized.
 
+Batch 29.7M rejects that candidate. Signal defines nonzero local maxima, assigns
+each bin to its nearest peak with lower-bin tie breaking, and permits sharing
+only when both channels' current peaks map to the same previous peak bin. The
+candidate is active (`546801` shared and `1304591` independent bins), exact on
+mechanics, and repeat-stable at evidence `31a8b2eaae086fc8`. It nevertheless
+raises calibrated failures from `20/48` to `29/48`, regresses `35/48` rows, and
+fails local consistency on `32/48`. Do not tune this peak picker, eligibility,
+or region law. Compatible peak history without explicit material-state policy
+is insufficient.
+
+Batch 29.7N must triangulate ordinary, peak-locked, reset, unlocked, and attack
+ownership from the frozen loss attribution, architecture-only GPL evidence,
+permissive implementations, and published work. It may define a Signal-owned
+state vocabulary and ordering only where independent evidence agrees. It must
+not translate implementation expression or constants, modify production DSP,
+or authorize another renderer without a bounded state-qualified law.
+
 ## Next Task
 
-Run Batch 29.7M Signal-owned peak-region trajectory feasibility under Rule 31H.
-Keep current output frozen as baseline and Batch 29.8 closed.
+Run Batch 29.7N linked-state policy triangulation under Rule 31H. Keep current
+output frozen as baseline and Batch 29.8 closed.

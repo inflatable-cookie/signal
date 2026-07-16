@@ -3,7 +3,7 @@ use super::{
     contribution::{CoefficientAblation, CoefficientTraceSpec},
     linked_inner,
     overlap::SynthesisMode,
-    StereoRender, SynthesisTraceSpec,
+    RecurrenceMode, StereoRender, SynthesisTraceSpec,
 };
 
 pub(in super::super) fn linked(
@@ -19,6 +19,34 @@ pub(in super::super) fn linked(
         None,
         None,
         SynthesisMode::Real,
+        RecurrenceMode::ReferenceRelative,
+    )
+}
+
+pub(in super::super) fn linked_peak_regions(
+    inputs: [&[f64]; 2],
+    ratio: f64,
+    sample_rate: usize,
+) -> StereoRender {
+    let duplicate = inputs[0]
+        .iter()
+        .zip(inputs[1])
+        .all(|(left, right)| left.to_bits() == right.to_bits());
+    let hard_pan = inputs
+        .iter()
+        .any(|channel| channel.iter().all(|sample| *sample == 0.0));
+    if duplicate || hard_pan {
+        return linked(inputs, ratio, sample_rate);
+    }
+    linked_inner(
+        inputs,
+        ratio,
+        sample_rate,
+        None,
+        None,
+        None,
+        SynthesisMode::Real,
+        RecurrenceMode::PeakRegion,
     )
 }
 
@@ -36,6 +64,7 @@ pub(in super::super) fn linked_with_relation_oracle(
         None,
         None,
         SynthesisMode::Real,
+        RecurrenceMode::ReferenceRelative,
     )
 }
 
@@ -52,6 +81,7 @@ pub(in super::super) fn linked_analytic(
         None,
         None,
         SynthesisMode::Analytic,
+        RecurrenceMode::ReferenceRelative,
     )
 }
 
@@ -69,6 +99,7 @@ pub(in super::super) fn linked_analytic_with_relation_oracle(
         None,
         None,
         SynthesisMode::Analytic,
+        RecurrenceMode::ReferenceRelative,
     )
 }
 
@@ -96,6 +127,7 @@ pub(in super::super) fn linked_with_synthesis_trace(
         }),
         None,
         SynthesisMode::Real,
+        RecurrenceMode::ReferenceRelative,
     )
 }
 
@@ -117,5 +149,6 @@ pub(in super::super) fn linked_with_coefficient_trace(
             ablation,
         }),
         SynthesisMode::Real,
+        RecurrenceMode::ReferenceRelative,
     )
 }

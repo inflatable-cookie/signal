@@ -1,6 +1,7 @@
 mod contribution;
 mod entry;
 mod overlap;
+mod peak_region;
 mod recurrence;
 mod report;
 mod synthesis_trace;
@@ -17,15 +18,22 @@ pub(super) use contribution::{
 };
 use contribution::{CoefficientTraceSpec, CoefficientTraceState, ContributionFrame};
 pub(super) use entry::{
-    linked, linked_analytic, linked_analytic_with_relation_oracle, linked_with_coefficient_trace,
-    linked_with_relation_oracle, linked_with_synthesis_trace,
+    linked, linked_analytic, linked_analytic_with_relation_oracle, linked_peak_regions,
+    linked_with_coefficient_trace, linked_with_relation_oracle, linked_with_synthesis_trace,
 };
 use overlap::{Overlap, SynthesisMode};
+use peak_region::PeakMap;
 use recurrence::{reference_relative_bin, reference_relative_bin_with_oracle};
 use report::finish;
 pub(super) use report::StereoRender;
 pub(super) use synthesis_trace::SynthesisRelationTrace;
 use synthesis_trace::{SynthesisTraceSpec, SynthesisTraceState};
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum RecurrenceMode {
+    ReferenceRelative,
+    PeakRegion,
+}
 
 fn linked_inner(
     inputs: [&[f64]; 2],
@@ -35,6 +43,7 @@ fn linked_inner(
     synthesis_trace_spec: Option<SynthesisTraceSpec>,
     coefficient_trace_spec: Option<CoefficientTraceSpec>,
     synthesis_mode: SynthesisMode,
+    recurrence_mode: RecurrenceMode,
 ) -> StereoRender {
     assert_eq!(inputs[0].len(), inputs[1].len(), "linked channel lengths");
     if ratio == 1.0 {
@@ -51,6 +60,7 @@ fn linked_inner(
             0.0,
             None,
             None,
+            [0; 4],
         );
     }
 
@@ -82,6 +92,8 @@ fn linked_inner(
         synthesis_trace_spec.map(|spec| SynthesisTraceState::new(spec, length));
     let mut coefficient_trace = coefficient_trace_spec.map(CoefficientTraceState::new);
     let mut previous_reference = vec![None; bins];
+    let mut previous_peak_maps: Option<[PeakMap; 2]> = None;
+    let mut peak_region_counts = [0; 4];
     let mut output_center = -(length as isize / 2);
 
     while output_center < target_len as isize + length as isize / 2 {
@@ -114,6 +126,8 @@ fn linked_inner(
             .fold(0.0, f64::max)
             * 1.0e-8;
         let mut contribution_frame = ContributionFrame::new(coefficient_trace.is_some(), bins);
+        let peak_maps = (recurrence_mode == RecurrenceMode::PeakRegion)
+            .then(|| std::array::from_fn(|channel| PeakMap::new(&current[channel])));
 
         if let Some(previous_center) = previous_source_center {
             let mut preliminary = current.clone();
@@ -132,47 +146,81 @@ fn linked_inner(
             let time_factor = hop as f64 / input_hop as f64;
             let mut corrected = preliminary.clone();
 
-            for bin in 0..bins {
-                let result = if let Some(offset) = channel_one_phase_offset {
-                    reference_relative_bin_with_oracle(
-                        bin,
-                        bins,
-                        long_distance,
-                        time_factor,
-                        &current,
-                        &preliminary,
-                        &corrected,
-                        significant_energy,
-                        offset,
-                    )
-                } else {
-                    reference_relative_bin(
-                        bin,
-                        bins,
-                        long_distance,
-                        time_factor,
-                        &current,
-                        &preliminary,
-                        &corrected,
-                        significant_energy,
-                    )
-                };
-                reference_bins[result.reference] += 1;
-                active_reference_ties += usize::from(result.active_tie);
-                reference_switches += usize::from(
-                    previous_reference[bin].is_some_and(|before| before != result.reference),
-                );
-                previous_reference[bin] = Some(result.reference);
-                if result.corrected {
-                    shared_corrected += 1;
-                } else {
-                    shared_fallback += 1;
+            match recurrence_mode {
+                RecurrenceMode::ReferenceRelative => {
+                    for bin in 0..bins {
+                        let result = if let Some(offset) = channel_one_phase_offset {
+                            reference_relative_bin_with_oracle(
+                                bin,
+                                bins,
+                                long_distance,
+                                time_factor,
+                                &current,
+                                &preliminary,
+                                &corrected,
+                                significant_energy,
+                                offset,
+                            )
+                        } else {
+                            reference_relative_bin(
+                                bin,
+                                bins,
+                                long_distance,
+                                time_factor,
+                                &current,
+                                &preliminary,
+                                &corrected,
+                                significant_energy,
+                            )
+                        };
+                        reference_bins[result.reference] += 1;
+                        active_reference_ties += usize::from(result.active_tie);
+                        reference_switches += usize::from(
+                            previous_reference[bin]
+                                .is_some_and(|before| before != result.reference),
+                        );
+                        previous_reference[bin] = Some(result.reference);
+                        if result.corrected {
+                            shared_corrected += 1;
+                        } else {
+                            shared_fallback += 1;
+                        }
+                        contribution_frame.record_recurrence(bin, result.corrected);
+                        unilateral_non_silent_completions +=
+                            usize::from(result.unilateral_non_silent_completion);
+                        for channel in 0..2 {
+                            corrected[channel][bin] = result.output[channel];
+                        }
+                    }
                 }
-                contribution_frame.record_recurrence(bin, result.corrected);
-                unilateral_non_silent_completions +=
-                    usize::from(result.unilateral_non_silent_completion);
-                for channel in 0..2 {
-                    corrected[channel][bin] = result.output[channel];
+                RecurrenceMode::PeakRegion => {
+                    let frame = peak_region::advance(
+                        peak_maps.as_ref().expect("peak maps"),
+                        previous_peak_maps.as_ref(),
+                        bins,
+                        long_distance,
+                        time_factor,
+                        &current,
+                        &preliminary,
+                    );
+                    corrected = frame.output;
+                    shared_corrected += frame.corrected;
+                    shared_fallback += frame.fallback;
+                    reference_bins[0] += frame.reference_bins[0];
+                    reference_bins[1] += frame.reference_bins[1];
+                    active_reference_ties += frame.active_ties;
+                    for (bin, reference) in frame.references.iter().copied().enumerate() {
+                        reference_switches += usize::from(
+                            reference.is_some()
+                                && previous_reference[bin].is_some()
+                                && previous_reference[bin] != reference,
+                        );
+                        previous_reference[bin] = reference;
+                        contribution_frame.record_recurrence(bin, frame.bin_corrected[bin]);
+                    }
+                    for (total, value) in peak_region_counts.iter_mut().zip(frame.counts) {
+                        *total += value;
+                    }
                 }
             }
             let relation_errors =
@@ -221,6 +269,9 @@ fn linked_inner(
             trace.complete_frame(output_center, target_len, length);
         }
         previous_source_center = Some(source_center);
+        if let Some(peak_maps) = peak_maps {
+            previous_peak_maps = Some(peak_maps);
+        }
         output_center += hop as isize;
     }
 
@@ -247,5 +298,6 @@ fn linked_inner(
         maximum_constrained_relation_error,
         synthesis_relation_trace,
         coefficient_contribution_trace,
+        peak_region_counts,
     )
 }

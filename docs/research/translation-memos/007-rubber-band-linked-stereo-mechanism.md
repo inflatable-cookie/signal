@@ -101,6 +101,19 @@ unchanged mechanics and calibrated gates. No threshold sweep, centre-focus
 clone, listening, dynamic ratio, realtime, routing, or production change is
 open.
 
+## Signal Feasibility Result
+
+Batch 29.7M tests one independent realization: local-maxima peak identity,
+nearest-peak frequency regions, and exact agreement on the previous peak owner.
+It is active, repeat-stable, and exact on stereo mechanics, but raises
+calibrated failures from `20/48` to `29/48`, regresses `35/48` rows, and loses
+local consistency on `32/48`. Evidence `31a8b2eaae086fc8` rejects the
+candidate without tuning.
+
+The promoted peak-region invariant survives, but it is incomplete alone. The
+next proof must triangulate material-state ownership and ordering rather than
+altering peak thresholds, compatibility, or frequency bounds.
+
 ## Sources
 
 - [Rubber Band v4.0.0 source tag](https://github.com/breakfastquay/rubberband/tree/v4.0.0)

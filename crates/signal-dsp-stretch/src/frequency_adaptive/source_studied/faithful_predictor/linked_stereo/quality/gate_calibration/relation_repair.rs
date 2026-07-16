@@ -1,6 +1,6 @@
 mod mechanics;
 mod report;
-mod transform;
+pub(super) mod transform;
 
 use std::{fs, path::PathBuf};
 

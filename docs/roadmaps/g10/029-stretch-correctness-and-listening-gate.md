@@ -1748,20 +1748,47 @@ rejected. Translation memo 007 freezes the result.
 
 ### Batch 29.7M - Peak-Region Shared-Trajectory Feasibility
 
-- [ ] define one Signal-owned peak identity using the frozen coherent
+- [x] define one Signal-owned peak identity using the frozen coherent
   representation; do not translate Rubber Band's picker or constants
-- [ ] freeze compatible-history eligibility and frequency ownership before
+- [x] freeze compatible-history eligibility and frequency ownership before
   rendering; no threshold or cutoff sweep
-- [ ] add one report-only candidate that shares a trajectory only inside an
+- [x] add one report-only candidate that shares a trajectory only inside an
   eligible peak region, preserves peer local analysis-relative phase and
   magnitude, and retains channel-owned evolution elsewhere
-- [ ] preserve current output as baseline plus mono hashes, mechanics,
+- [x] preserve current output as baseline plus mono hashes, mechanics,
   geometry, schedule, crop, calibrated gates, and exact repeat
-- [ ] accept only row-complete improvement over current Signal with no new
+- [x] accept only row-complete improvement over current Signal with no new
   structural, transformation, transient, crossfeed, or local-consistency loss
 
 No listening, dynamic ratio, cache, realtime, routing, promotion, centre-focus
 clone, mid/side transform, or production DSP change belongs in this batch.
+
+Decision: reject the peak-region candidate. Signal-owned local maxima and
+nearest-peak regions, with exact shared previous-peak ownership, are active and
+repeat exactly. Mechanics remain exact, but failures rise from `20/48` to
+`29/48`; only `13/48` rows improve completely, `35/48` regress on at least one
+metric, and `32/48` fail local consistency. Evidence
+`31a8b2eaae086fc8` closes tuning. Peak geometry and compatible history alone
+do not supply the material-state policy used by the reference architecture.
+
+### Batch 29.7N - Linked-State Policy Triangulation
+
+- [ ] attribute the frozen 29.7M losses by ratio, control, and trajectory state;
+  distinguish shared-region damage from independent recurrence
+- [ ] triangulate ordinary, peak-locked, reset, unlocked, and attack ownership
+  from architecture-only Rubber Band evidence, permissive implementations, and
+  published work; label verified behavior and inference separately
+- [ ] define one Signal-owned state vocabulary and ordering from independent
+  evidence, or pause linked stereo if no bounded law is justified
+- [ ] authorize at most one later report-only state-qualified candidate; do not
+  tune the rejected peak identity, eligibility, or frequency ownership
+- [ ] keep current Signal output, hashes, mechanics, calibrated gates, and
+  Batch 29.8 frozen
+
+Evidence: one loss-attribution report and one license-safe state-policy memo.
+No borrowed implementation expression or constants, parameter sweep, listening,
+dynamic ratio, cache, realtime, routing, promotion, or production DSP change
+belongs in this batch.
 
 ### Batch 29.8 - Listening And Dynamic Checkpoint
 
@@ -2887,9 +2914,14 @@ clone, mid/side transform, or production DSP change belongs in this batch.
   centre-focus changes every render and fails four `2.0x` image rows. Rule 31H
   promotes peak-region ownership, rejects mid/side and blanket linking, and
   opens one Signal-owned report-only feasibility proof.
+- 2026-07-16: Batch 29.7M rejects Signal-owned nearest-peak trajectory sharing.
+  The repeat-stable candidate preserves exact mechanics but raises calibrated
+  failures from `20/48` to `29/48`, regresses `35/48` rows, and fails local
+  consistency on `32/48`. Evidence `31a8b2eaae086fc8` blocks tuning. Batch
+  29.7N now triangulates material-state ownership before another renderer.
 
 ## Next Task
 
-Run Batch 29.7M peak-region shared-trajectory feasibility. Freeze Signal-owned
-peak identity, compatible-history eligibility, and frequency ownership before
-rendering. Keep current output as baseline and Batch 29.8 closed.
+Run Batch 29.7N linked-state policy triangulation. Attribute the frozen 29.7M
+losses, then define a license-safe state vocabulary and ordering from multiple
+independent sources. Keep current output as baseline and Batch 29.8 closed.

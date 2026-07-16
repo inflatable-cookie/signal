@@ -142,7 +142,7 @@ fn project_peer(
     }
 }
 
-fn vertical_prediction(
+pub(super) fn vertical_prediction(
     bin: usize,
     bins: usize,
     long_distance: usize,

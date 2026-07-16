@@ -16,6 +16,7 @@ pub(in super::super) struct StereoRender {
     pub(in super::super) maximum_constrained_relation_error: f64,
     pub(in super::super) synthesis_relation_trace: Option<SynthesisRelationTrace>,
     pub(in super::super) coefficient_contribution_trace: Option<CoefficientContributionTrace>,
+    pub(in super::super) peak_region_counts: [usize; 4],
     pub(in super::super) hash: u64,
 }
 
@@ -33,6 +34,7 @@ pub(super) fn finish(
     maximum_constrained_relation_error: f64,
     synthesis_relation_trace: Option<SynthesisRelationTrace>,
     coefficient_contribution_trace: Option<CoefficientContributionTrace>,
+    peak_region_counts: [usize; 4],
 ) -> StereoRender {
     let non_finite = channels
         .iter()
@@ -66,6 +68,7 @@ pub(super) fn finish(
         maximum_constrained_relation_error,
         synthesis_relation_trace,
         coefficient_contribution_trace,
+        peak_region_counts,
         hash,
     }
 }
