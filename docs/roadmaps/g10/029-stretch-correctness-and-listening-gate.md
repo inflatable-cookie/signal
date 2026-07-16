@@ -1391,7 +1391,7 @@ Rubber Band-class claim.
   inputs without parameter or mechanism changes
 - [x] freeze hard-integrity, objective, receipt, assignment, and concealed-pack
   hashes before listening
-- [ ] complete the six-row concealed comparison before opening stereo, dynamic
+- [x] complete the six-row concealed comparison before opening stereo, dynamic
   ratio, product routing, or promotion
 
 Pack state: ready for concealed operator listening at
@@ -1410,6 +1410,14 @@ Freeze hashes: input `8ede75dbae2254b2`, coherent audio
 `c9724071b3aa2ded`, gain `d2b29e930726e10f`, manifest
 `fd1255a2fc007590`, closed key `14d5bbab2061b8fd`, notes
 `91d68633349f1944`, and audio receipt `1f80e9da6c011beb`.
+
+Decision: retain coherent Signal unchanged as the report-only mono baseline
+and open Batch 29.7 objective linked-stereo work. The completed key maps Signal
+to `B/A/B/A/B/A` across `M001` through `M006`. Signal is cleaner on `M002` and
+`M004`, slightly cleaner on `M005`, and tighter but marginally grainier on
+`M001`. Rubber Band is cleaner on `M003` and `M006`. Defects change sides with
+material, leaving no overall winner. This is competitive exact-source mono
+evidence, not a general Rubber Band-parity or production claim.
 
 ### Batch 29.7 - Shared-Decision Linked Stereo
 
@@ -2469,10 +2477,15 @@ Freeze hashes: input `8ede75dbae2254b2`, coherent audio
   pack. Both engines pass hard integrity. Coherent Signal wins static residual
   on all six rows and timing on four, but loses replica ratio on five and
   boundary growth on all six. Concealed listening now owns the decision.
+- 2026-07-16: Batch 29.6DB closes with a material-dependent split. Coherent
+  Signal wins `M002` and `M004`, slightly leads `M005`, and trades slight grain
+  for tighter timing on `M001`; Rubber Band wins `M003` and `M006`. No engine
+  wins overall. Coherent Signal remains the report-only mono baseline and
+  Batch 29.7 objective linked-stereo proof may open unchanged.
 
 ## Next Task
 
-Listen to all six Batch 29.6DB rows without opening `listening-key.tsv`. Report
-continuity, transients, grain/ringing, tonal stability, both boundaries,
-preference, and broad defects. Stop before stereo, dynamic ratio, product
-routing, or promotion.
+Start Batch 29.7 by defining shared-decision linked-stereo state ownership and
+focused objective gates for mono parity, stereo image, interchannel phase, and
+one-sided transients. Keep independent stereo listening, dynamic ratio,
+product routing, and promotion closed.

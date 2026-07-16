@@ -1,45 +1,44 @@
 # Offline Time-Stretch Synthesis
 
-Status: faithful-predictor synthetic proof next
+Status: coherent fixed-grid mono baseline validated; linked stereo proof next
 Owner: dsp
-Updated: 2026-07-14
+Updated: 2026-07-16
 Contract refs: `046`, `082`
 Roadmap ref: `g10.029`
 
 ## Current Boundary
 
 The production OfflineHighQuality prototype remains the current `2048/512`
-identity-lock/reset phase vocoder. All successor work is report-only. Rule 31
-replaces the rejected time-adaptive full-band direction with a source-studied
-frequency-partitioned architecture; no successor has earned product routing,
-stereo promotion, or dynamic-ratio work.
+identity-lock/reset phase vocoder. All successor work is report-only. The
+source-studied coherent fixed-grid predictor has completed its exact-source
+mono comparison against Rubber Band R3 with a material-dependent split and no
+overall winner. It may advance to linked-stereo proof. No successor has earned
+product routing or dynamic-ratio work.
 
 ## Successor Shape
 
-The successor owns one sample-domain time map and simultaneous long, middle,
-and short transforms. They do not render redundant full-band copies.
+The successor owns one sample-domain time map and one coherent fixed-grid
+weighted predictor.
 
-- every output frequency has one active synthesis scale
-- one full-band reference spectrum supplies classification and guidance only
-- crossover movement is bounded and seeks local spectral minima
-- ordinary, peak-locked, reset, unlocked, attack, and channel-linked phase
-  states remain explicit
-- per-scale inverse outputs sum sample-aligned on one output timeline
-- a fixed-grid weighted multi-predictor renderer remains the required control
-- exact length, one output timeline, conjugate symmetry, and identity behavior
-  remain common synthesis policy
+- a `30 ms` output interval and fourfold support define the schedule
+- a periodic Kaiser window and modified half-bin transform form one inseparable
+  analysis representation
+- preliminary horizontal transport precedes ascending short/long vertical
+  re-prediction from both frequency directions
+- target-energy normalization follows combined prediction, with current-input
+  fallback for weak evidence
+- exact length, one output timeline, conjugate symmetry, identity behavior,
+  and deterministic output remain common synthesis policy
 
 ## State Ownership
 
 One fixed-ratio mono engine owns:
 
-- source and output frame cursors
-- the frozen global schedule, adaptive frame selection, and exact anchors
-- one native coefficient vector and dual weights per selected frame
-- ordered active-peak identities, physical frequencies, and synthesis phases
-- native owner-bin projection and current-frame within-region phase offsets
-- the bounded conflicted-bridge ownership decision
-- exact output-length and crop state
+- source and output frame cursors plus rounded projected input centres
+- the current and auxiliary analysis spectra
+- prior preliminary and corrected output state
+- short/long lower/upper prediction evidence and weak-evidence fallback
+- overlap normalization, exact output length, and crop state
 
 Linked stereo later shares the time map and phase-propagation decisions.
 Channels retain their own native complex coefficients and interchannel phase.
@@ -1058,9 +1057,11 @@ pinned Signalsmith and remains the report-only source-studied baseline. This
 resolves translation fidelity, not the product-quality target: the coherent
 engine has not yet faced Rubber Band on these exact long sources.
 
-Batch 29.6DB therefore reuses the same six exact mono inputs and corrected
-level matcher for coherent Signal versus Rubber Band R3 `4.0.0`. Both paths
-repeat and pass hard integrity. Signal improves static residual on all six rows
-and timing on four, while Rubber Band improves replica ratio on five and
-boundary growth on all six. The frozen concealed pack now owns the mono quality
-decision. Stop before stereo, dynamic ratio, routing, or promotion.
+Batch 29.6DB reuses the same six exact mono inputs and corrected level matcher
+for coherent Signal versus Rubber Band R3 `4.0.0`. Both paths repeat and pass
+hard integrity. Concealed listening finds Signal cleaner on `M002` and `M004`,
+slightly cleaner on `M005`, and tighter but marginally grainier on `M001`.
+Rubber Band is cleaner on `M003` and `M006`. Defects change sides with material;
+neither engine wins overall. The coherent Signal path is competitive on this
+frozen mono set and advances unchanged to shared-decision linked-stereo proof.
+Dynamic ratio, routing, and promotion remain closed.

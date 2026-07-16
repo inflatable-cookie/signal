@@ -1,8 +1,8 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; faithful-predictor synthetic proof next
+Status: active; linked-stereo proof next
 Owner: dsp
-Updated: 2026-07-14
+Updated: 2026-07-16
 Related contracts: `046`, `048`, `049`
 Related architecture: `docs/architecture/offline-time-stretch-synthesis.md`
 
@@ -3410,8 +3410,17 @@ This mixed result authorizes only the frozen six-row concealed comparison.
 Keep the key closed until every row has continuity, transient, grain/ringing,
 tonal, start-boundary, end-boundary, preference, and broad-defect findings.
 
+The completed record opens the key. Coherent Signal is cleaner on `M002` and
+`M004`, slightly cleaner on `M005`, and trades marginally greater grain for
+tighter timing and transients on `M001`. Rubber Band is cleaner on `M003` and
+`M006`. The engines therefore split by material with no overall winner. This
+qualifies coherent Signal as the unchanged report-only mono baseline for the
+shared-decision linked-stereo proof. It does not authorize a general Rubber
+Band-parity claim, dynamic ratio, product routing, or promotion.
+
 ## Next Task
 
-Complete Batch 29.6DB concealed listening over all six frozen rows. Keep the key
-closed until the record is complete. Keep stereo, dynamic ratio, product
-routing, and promotion closed.
+Start Batch 29.7 by freezing shared-decision linked-stereo state ownership and
+objective mono-parity, image, interchannel-phase, and one-sided-transient gates.
+Independent stereo listening, dynamic ratio, product routing, and promotion
+remain closed.

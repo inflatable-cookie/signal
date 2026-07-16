@@ -3,7 +3,7 @@
 Status: promoted
 Memo: `g10.029` weighted-predictor correction
 Owner: dsp
-Last updated: 2026-07-15
+Last updated: 2026-07-16
 Related contract: `082`, Rule 31G
 
 ## Problem
@@ -297,6 +297,13 @@ static residual on all six rows and timing on four, but worsens replica ratio
 on five and boundary growth on all six. Objective metrics cannot resolve the
 quality direction; the frozen two-way concealed pack must.
 
+The completed pack qualifies the coherent predictor as competitive without
+establishing broad parity. Signal is cleaner on `M002` and `M004`, slightly
+cleaner on `M005`, and tighter but marginally grainier on `M001`. Rubber Band
+is cleaner on `M003` and `M006`. Defects alternate by material, so another mono
+equation or R3-mechanism change is not evidence-backed. Preserve the coherent
+topology unchanged for linked-stereo proof.
+
 ## Sources
 
 | Source | Revision | Use |
@@ -306,6 +313,6 @@ quality direction; the frozen two-way concealed pack must.
 
 ## Next Task
 
-Complete the six-row exact-source coherent Signal versus Rubber Band R3
-concealed comparison. Keep equation changes, third mechanisms, stereo, dynamic
+Freeze Batch 29.7 shared-decision linked-stereo ownership and objective gates.
+Keep further mono equation changes, independent stereo listening, dynamic
 ratio, and product routing closed.

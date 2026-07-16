@@ -1,7 +1,7 @@
 # g10 Milestones
 
 Status: active
-Updated: 2026-07-14
+Updated: 2026-07-16
 
 ## Why this generation matters now
 
@@ -28,9 +28,12 @@ implementation remains Signal-owned.
   fixed-ratio tail discontinuity. Source, additive-zero, multiplicative-zero,
   and centroid-selected endpoint controls failed objective reach, listening, or
   cross-source prediction. Fixed-envelope work is closed and production stays
-  unchanged pending a different algorithm class. Rubber Band-class promotion
-  remains blocked on independent stereo/row-level completion and the structural
-  hybrid checkpoint.
+  unchanged pending a different algorithm class. Exact-source mono listening
+  now finds a material-dependent split between the coherent Signal predictor
+  and Rubber Band R3, with no overall winner. Signal is competitive on the
+  frozen six-row set. Rubber Band-class promotion remains blocked on shared-
+  decision stereo proof, independent stereo review, and the later dynamic
+  checkpoint.
 - Sustained/polyphonic long-window candidates produced useful evidence but no
   production route. The structural hybrid is now frozen as short transient,
   current mixed, and long tonal ownership with continuous state and shared
@@ -370,6 +373,6 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Complete `g10.029` Batch 29.6DB concealed listening over the exact six long-form
-coherent Signal versus Rubber Band R3 rows. Keep the key closed and stop before
-stereo, dynamic ratio, routing, or promotion.
+Start `g10.029` Batch 29.7 shared-decision linked-stereo ownership and objective
+proof. Keep independent stereo listening, dynamic ratio, routing, and promotion
+closed.

@@ -64,6 +64,6 @@ Finch and Loophole.
 
 ## Next Task
 
-Complete Batch 29.6DB concealed listening over all six exact-source coherent
-Signal versus Rubber Band R3 rows. Keep the key, stereo, dynamic ratio, product
-routing, and promotion closed until the record is complete.
+Carry the competitive coherent mono baseline unchanged into Batch 29.7
+shared-decision linked-stereo proof. Keep independent stereo listening, dynamic
+ratio, product routing, and promotion closed.

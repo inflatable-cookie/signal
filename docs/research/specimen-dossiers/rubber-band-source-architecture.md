@@ -3,7 +3,7 @@
 Status: reviewed
 Specimen: Rubber Band R2 and R3
 Owner: dsp
-Last updated: 2026-07-15
+Last updated: 2026-07-16
 Scope: source topology at revision `e4296ac80b1170018a110bc326fd0d45a0eb27d6`
 
 ## Why This Specimen Matters
@@ -134,8 +134,15 @@ and lower timing error on four. Rubber Band has lower replica ratio on five and
 lower boundary growth on all six. The objective split does not establish
 audible parity or superiority; a peak-safe RMS-matched concealed pack is open.
 
+The completed listening record is material-dependent. Signal is cleaner on
+`M002` and `M004`, slightly cleaner on `M005`, and tighter but marginally
+grainier on `M001`. Rubber Band is cleaner on `M003` and `M006`. Similar grain
+or encoding-like defects occur on opposite engines on different rows. No one
+R3 source invariant is justified as the next mono intervention, and no overall
+winner is established.
+
 ## Next Task
 
-Complete the Batch 29.6DB six-row concealed comparison. Use the decoded result
-to decide whether the coherent single-grid baseline is already competitive or
-which Rubber Band source invariant remains audibly material.
+Carry the competitive coherent baseline unchanged into Batch 29.7
+shared-decision linked-stereo proof. Keep further mono mechanism translation
+closed unless new evidence isolates a repeatable material class.
