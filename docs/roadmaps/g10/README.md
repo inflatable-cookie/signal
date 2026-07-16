@@ -376,13 +376,16 @@ Current stretch status:
   remains; a constant-relation oracle is not consistently better. Batch 29.7G
   calibrates the cropped measurement floor and assigns the first observable
   divergence to real support-frame synthesis. Overlap often reduces it and
-  normalization is neutral. Batch 29.7H now tests one analytic-overlap
-  representation without changing current output.
+  normalization is neutral. Batch 29.7H rejects analytic overlap as linearly
+  equivalent: metrics do not improve and only floating-point bit parity moves.
+  Batch 29.7I now closes initial-frame, fallback, and weak-bin coefficient
+  contributions omitted by the earlier exact-relation trace.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7H analytic-overlap feasibility proof. Keep recurrence,
-current output, and all frozen hashes unchanged. Keep Batch 29.8 closed.
+Run `g10.029` Batch 29.7I complete coefficient-contribution attribution. Keep
+recurrence, current output, and all frozen hashes unchanged. Keep Batch 29.8
+closed.

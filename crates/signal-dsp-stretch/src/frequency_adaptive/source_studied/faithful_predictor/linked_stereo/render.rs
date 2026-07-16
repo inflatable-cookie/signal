@@ -1,4 +1,5 @@
 mod entry;
+mod overlap;
 mod recurrence;
 mod report;
 mod synthesis_trace;
@@ -10,7 +11,11 @@ use super::super::{
     analyse, coherent_representation, constrain_real_edges, synthesise, TransformGrid,
     HORIZONTAL_ENERGY_FLOOR,
 };
-pub(super) use entry::{linked, linked_with_relation_oracle, linked_with_synthesis_trace};
+pub(super) use entry::{
+    linked, linked_analytic, linked_analytic_with_relation_oracle, linked_with_relation_oracle,
+    linked_with_synthesis_trace,
+};
+use overlap::{Overlap, SynthesisMode};
 use recurrence::{reference_relative_bin, reference_relative_bin_with_oracle};
 use report::finish;
 pub(super) use report::StereoRender;
@@ -23,6 +28,7 @@ fn linked_inner(
     sample_rate: usize,
     channel_one_phase_offset: Option<f64>,
     synthesis_trace_spec: Option<SynthesisTraceSpec>,
+    synthesis_mode: SynthesisMode,
 ) -> StereoRender {
     assert_eq!(inputs[0].len(), inputs[1].len(), "linked channel lengths");
     if ratio == 1.0 {
@@ -52,8 +58,7 @@ fn linked_inner(
     let mut planner = FftPlanner::<f64>::new();
     let forward = planner.plan_fft_forward(transform_length);
     let inverse = planner.plan_fft_inverse(transform_length);
-    let mut output = [vec![0.0; target_len], vec![0.0; target_len]];
-    let mut normalization = [vec![0.0; target_len], vec![0.0; target_len]];
+    let mut overlap = Overlap::new(target_len, synthesis_mode);
     let mut previous_output = [
         vec![Complex64::new(0.0, 0.0); bins],
         vec![Complex64::new(0.0, 0.0); bins],
@@ -176,17 +181,24 @@ fn linked_inner(
                 previous_input_energy[channel][bin] = current[channel][bin].norm_sqr();
             }
             constrain_real_edges(&mut next[channel], grid);
-            let frame = synthesise(&next[channel], length, transform_length, grid, &inverse);
-            if let Some(trace) = &mut synthesis_trace {
-                trace.record_frame_channel(channel, &frame);
-            }
-            for offset in 0..length {
-                let output_index = output_center - length as isize / 2 + offset as isize;
-                if (0..target_len as isize).contains(&output_index) {
-                    let output_index = output_index as usize;
-                    output[channel][output_index] +=
-                        frame[offset] * window[offset] / transform_length as f64;
-                    normalization[channel][output_index] += window[offset] * window[offset];
+            match synthesis_mode {
+                SynthesisMode::Real => {
+                    let frame =
+                        synthesise(&next[channel], length, transform_length, grid, &inverse);
+                    if let Some(trace) = &mut synthesis_trace {
+                        trace.record_frame_channel(channel, &frame);
+                    }
+                    overlap.add_real(channel, output_center, &frame, &window, transform_length);
+                }
+                SynthesisMode::Analytic => {
+                    let frame = overlap::synthesise_analytic(
+                        &next[channel],
+                        length,
+                        transform_length,
+                        grid,
+                        &inverse,
+                    );
+                    overlap.add_analytic(channel, output_center, &frame, &window, transform_length);
                 }
             }
             previous_output[channel] = next[channel].clone();
@@ -198,21 +210,11 @@ fn linked_inner(
         output_center += hop as isize;
     }
 
-    let uncovered = normalization
-        .iter()
-        .flat_map(|channel| channel.iter())
-        .filter(|weight| **weight <= 0.0)
-        .count();
     if let Some(trace) = &mut synthesis_trace {
-        trace.record_accumulated(&output);
+        trace.record_accumulated(overlap.real_output());
     }
-    for channel in 0..2 {
-        for (sample, weight) in output[channel].iter_mut().zip(&normalization[channel]) {
-            if *weight > 0.0 {
-                *sample /= *weight;
-            }
-        }
-    }
+    let uncovered = overlap.uncovered();
+    let output = overlap.finish();
     let non_finite = output
         .iter()
         .flat_map(|channel| channel.iter())

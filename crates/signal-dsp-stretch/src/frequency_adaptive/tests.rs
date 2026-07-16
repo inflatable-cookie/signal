@@ -2420,6 +2420,56 @@ fn source_studied_linked_stereo_synthesis_closure_attribution() {
 }
 
 #[test]
+#[cfg(not(debug_assertions))]
+fn source_studied_linked_stereo_analytic_overlap_feasibility() {
+    use super::source_studied::faithful_predictor::linked_stereo::quality::analytic_overlap::{
+        analytic_overlap_review, AnalyticOverlapDirection,
+    };
+
+    let result = analytic_overlap_review();
+    eprintln!("source_studied_linked_stereo_analytic_overlap_feasibility {result:#?}");
+    assert!(result.repeated);
+    assert_eq!(result.rows.len(), 3);
+    assert_eq!(result.evidence_hash, 0xdb73_7368_5609_9b7d);
+    assert_eq!(
+        result
+            .rows
+            .iter()
+            .map(|row| row.current_tone_hash)
+            .collect::<Vec<_>>(),
+        vec![
+            0xb902_71ab_51a0_52f9,
+            0xae09_6858_dd2a_fcf6,
+            0x3c2c_378f_f8e9_12a4,
+        ]
+    );
+    assert_eq!(
+        result
+            .rows
+            .iter()
+            .map(|row| [row.analytic_tone_hash, row.analytic_oracle_hash])
+            .collect::<Vec<_>>(),
+        vec![
+            [0x0f2e_7ed2_c55c_6bde, 0x87e3_a0ea_ec13_f7e0],
+            [0xbc5a_2529_fd92_eb6c, 0x4206_03b2_46f5_49c6],
+            [0x7e4e_70ed_1894_7063, 0x80b0_dfa7_9ac0_097c],
+        ]
+    );
+    assert!(result.rows.iter().all(|row| {
+        row.structural_failures == [0; 4]
+            && row.maximum_mono_difference <= 3.4e-16
+            && row.silent_peer_peak == 0.0
+            && row.swap_mismatches == 0
+            && row.polarity_mismatches == 0
+            && row.analytic_ipd_error == row.current_ipd_error
+            && (row.analytic_oracle_ipd_error - row.current_oracle_ipd_error).abs() < 1.0e-14
+            && (row.analytic_image_delta[0] - row.current_image_delta[0]).abs() < 2.0e-15
+            && (row.analytic_image_delta[1] - row.current_image_delta[1]).abs() < 4.0e-16
+    }));
+    assert_eq!(result.direction, AnalyticOverlapDirection::Reject);
+}
+
+#[test]
 #[ignore = "requires pinned Signalsmith Stretch and long-form source pack"]
 #[cfg(not(debug_assertions))]
 fn source_studied_exact_input_real_source_confirmation() {

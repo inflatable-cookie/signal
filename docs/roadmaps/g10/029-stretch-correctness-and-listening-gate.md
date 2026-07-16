@@ -1605,20 +1605,46 @@ post-spectrum seam is real support-frame synthesis before overlap.
 
 ### Batch 29.7H - Analytic Overlap Feasibility Proof
 
-- [ ] add one report-only analytic positive-frequency overlap ablation beside
+- [x] add one report-only analytic positive-frequency overlap ablation beside
   the unchanged real support-frame path; feed both the same corrected spectra
-- [ ] retain recurrence, magnitudes, schedule, window, crop, normalization,
+- [x] retain recurrence, magnitudes, schedule, window, crop, normalization,
   thresholds, current output, and all frozen current hashes
-- [ ] measure current and constant-relation tone IPD plus correlated image,
+- [x] measure current and constant-relation tone IPD plus correlated image,
   duplicate-mono parity, hard pan, swap, polarity, coverage, finiteness,
   boundaries, crossfeed, and repeat
-- [ ] reject unless analytic overlap materially improves every failing IPD/image
+- [x] reject unless analytic overlap materially improves every failing IPD/image
   row without mechanics damage; stop before listening or production adoption
 
 Evidence: one repeat-stable analytic/current ablation report and focused
 `source_studied_linked_stereo_analytic_overlap_feasibility` test. This tests the
 measured synthesis seam, not another phase coefficient, threshold, or window.
 Batch 29.8 remains closed.
+
+Decision: reject. Analytic and real overlap produce exactly equal IPD at all
+three ratios and image deltas equal within `2e-15`. The oracle is also equal
+within `1e-14`. Analytic reconstruction changes samples only by
+`2.220446e-16` to `3.330669e-16`, creating `9164`, `18212`, and `24148`
+duplicate-mono bit mismatches without quality gain. Evidence hash:
+`db73736856099b7d`. Real support synthesis is the observation point, not a
+causal representation defect.
+
+### Batch 29.7I - Complete Coefficient Contribution Attribution
+
+- [ ] classify every frame/bin contribution as initial-frame, viable corrected,
+  reference fallback, significant, or weak; remove the 29.7F trace blind spot
+- [ ] measure relation error and synthesized energy for every class, including
+  bins excluded by the existing significant-energy report threshold
+- [ ] run one-class-at-a-time constant-relation ablations for initial, fallback,
+  and weak coefficients while preserving current output and frozen hashes
+- [ ] select the first class whose ablation closes whole-render IPD/image; stop
+  before threshold tuning, recurrence changes, or listening
+
+Evidence: one contribution-closed, repeat-stable report with class counts,
+energies, relation errors, ablation measurements, and hashes. Focused test:
+`source_studied_linked_stereo_coefficient_contribution_attribution`. A closing
+class opens one bounded repair. Failure to close forces a gate-definition
+reassessment instead of another topology experiment. Batch 29.8 remains
+closed.
 
 ### Batch 29.8 - Listening And Dynamic Checkpoint
 
@@ -2714,9 +2740,15 @@ Batch 29.8 remains closed.
   than `1e-9 rad`. Current and oracle audio hashes remain frozen; evidence
   `7f8cee549977896d` repeats. Batch 29.7H opens one analytic-overlap feasibility
   proof. 29.8 stays closed.
+- 2026-07-16: Batch 29.7H rejects analytic overlap. Current and analytic phase
+  metrics are exactly equal; image metrics differ by at most `2e-15` and the
+  oracle by less than `1e-14`. Only `2.220446e-16` to `3.330669e-16` sample
+  rounding changes, breaking bit parity without quality gain. Evidence
+  `db73736856099b7d` reopens the coefficient classes omitted by 29.7F rather
+  than another synthesis topology. 29.8 stays closed.
 
 ## Next Task
 
-Run Batch 29.7H analytic-overlap feasibility proof. Keep current output and
-recurrence frozen; test whether complex analytic accumulation closes the
-measured real support-frame relationship loss. Keep Batch 29.8 closed.
+Run Batch 29.7I complete coefficient-contribution attribution. Close the
+initial/fallback/weak-bin trace gap before another repair or gate decision.
+Keep Batch 29.8 closed.

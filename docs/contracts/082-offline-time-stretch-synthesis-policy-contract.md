@@ -3615,8 +3615,26 @@ hard-pan, transformation, structure, crossfeed, and repeat controls intact.
 Failure rejects analytic overlap. Passage opens a separate adoption contract,
 not listening or production routing.
 
+Batch 29.7H rejects analytic overlap. Current and analytic IPD are exactly
+equal at every ratio. Image deltas differ by at most `2e-15`; constant-relation
+oracle IPD differs by less than `1e-14`. Analytic reconstruction changes mono
+samples only by `2.220446e-16` to `3.330669e-16`, but that creates thousands of
+bit mismatches without quality gain. Evidence `db73736856099b7d` proves complex
+and real accumulation are linearly equivalent for the frozen output. The
+support frame is where the residual becomes observable, not proof that the
+synthesis representation causes it.
+
+Batch 29.7I must close the earlier coefficient trace boundary. Classify every
+contribution as initial-frame, viable corrected, reference fallback,
+significant, or weak. Report class counts, energy, and relation error. Then
+apply the constant-relation oracle to initial, fallback, and weak classes one
+at a time. Current output, thresholds, recurrence, geometry, and frozen hashes
+remain unchanged. The first class whose ablation closes whole-render phase and
+image owns one repair contract. If no class closes, stop topology work and
+reassess whether the exact invariant measures the intended stereo quality.
+
 ## Next Task
 
-Run Batch 29.7H analytic-overlap feasibility proof. Test only the measured real
-support-frame seam and keep current output, listening, dynamic ratio, cache,
-realtime, and routing closed.
+Run Batch 29.7I complete coefficient-contribution attribution. Close the
+initial/fallback/weak-bin trace gap before another topology or gate decision.
+Keep listening, dynamic ratio, cache, realtime, and routing closed.

@@ -65,6 +65,6 @@ Finch and Loophole.
 
 ## Next Task
 
-Run Batch 29.7H analytic-overlap feasibility proof. Synthesis closure assigns
-the first observable relationship loss to real support-frame synthesis; test
-one complex analytic accumulation ablation without changing current output.
+Run Batch 29.7I complete coefficient-contribution attribution. Analytic overlap
+is linearly equivalent and rejected; close initial-frame, fallback, and weak-bin
+classes omitted by the earlier exact-relation trace.

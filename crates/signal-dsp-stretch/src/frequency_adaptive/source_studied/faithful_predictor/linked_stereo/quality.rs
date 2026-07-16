@@ -1,3 +1,4 @@
+pub(in crate::frequency_adaptive) mod analytic_overlap;
 pub(in crate::frequency_adaptive) mod attribution;
 mod controls;
 mod measure;

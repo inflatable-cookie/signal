@@ -1171,8 +1171,20 @@ recurrence, magnitude, scheduling, geometry, crop, and normalization policy
 remain frozen while mechanics and stereo quality decide whether the synthesis
 representation is viable.
 
+That ablation is rejected and corrects the causal interpretation. Complex and
+real overlap have exactly equal phase metrics and effectively equal image
+metrics. Their samples differ only at `2.220446e-16` to `3.330669e-16` from FFT
+rounding. Real support synthesis exposes the residual but does not cause it.
+
+The remaining evidence gap is coefficient coverage. The exact relation trace
+measured only post-initial frames where both channels exceeded a relative
+energy threshold; it did not close first-frame, recurrence-fallback, or weak-bin
+contributions. Those classes can still accumulate into a measurable whole
+output. Full contribution attribution must isolate them before another phase or
+synthesis topology is credible.
+
 ## Next Task
 
-Run Batch 29.7H analytic-overlap feasibility proof. Keep current output and
-recurrence frozen; test only whether complex accumulation closes the measured
-real support-frame relationship loss.
+Run Batch 29.7I complete coefficient-contribution attribution. Measure and
+ablate initial-frame, fallback, and weak-bin classes before another repair or
+gate decision.
