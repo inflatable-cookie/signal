@@ -1493,15 +1493,48 @@ row audio hashes `ddc816d477db135d`, `6842967ca6c7984b`, and
 
 ### Batch 29.7D - Cross-Channel Recurrence Reassessment
 
-- [ ] inspect how source-studied engines and canonical phase-vocoder research
+- [x] inspect how source-studied engines and canonical phase-vocoder research
   preserve interchannel phase without collapsing decorrelated material
-- [ ] compare shared phase-increment and explicit complex-ratio preservation
+- [x] compare shared phase-increment and explicit complex-ratio preservation
   topologies against the frozen 29.7C evidence; do not tune thresholds
-- [ ] promote one license-safe topology into architecture and Rule 31H, or
+- [x] promote one license-safe topology into architecture and Rule 31H, or
   pause stereo if no topology is justified
 
-Status: reassessment, not implementation-ready. The next code batch must be
-compiled from the revised contract.
+Decision: select reference-relative recurrence. Per frame/bin, the greatest
+current target energy owns the coherent recurrence. The peer keeps
+its own magnitude and takes the reference output plus its wrapped current input
+phase relation to that reference. Signalsmith's MIT implementation and the 2005
+AES multichannel TSM paper directly support this law. Rubber Band R3 provides
+architecture-only corroboration; its GPL expression and constants remain
+excluded. Shared output increment is rejected because it preserves a prior
+output relationship rather than explicitly restoring the current input
+relationship. Translation memo 006 and revised Rule 31H freeze the result.
+
+### Batch 29.7E - Reference-Relative Recurrence Proof
+
+- [ ] replace only the linked renderer's per-channel recurrence with the Rule
+  31H per-bin reference recurrence; preserve mono code and hashes, geometry,
+  schedule, energy floor, thresholds, and report-only routing
+- [ ] extend mechanics with reference counts for both channels, exact-energy
+  tie exercise, controlled ownership crossing, switch-boundary growth,
+  crossfeed, repeat, and frozen hashes
+- [ ] rerun every unchanged 29.7C IPD, delay, correlated/decorrelated image,
+  transient, replica, and crossfeed control at `0.75x`, `1.5x`, and `2.0x`
+- [ ] stop before listening on any mechanics or quality failure; do not add
+  hysteresis or tune a switch threshold inside this batch
+
+Evidence: one repeat-stable mechanics and quality report. Focused test names:
+`source_studied_linked_stereo_reference_recurrence` and
+`source_studied_linked_stereo_quality`.
+
+Validation:
+
+- `cargo fmt --check -p signal-dsp-stretch`
+- `cargo test -p signal-dsp-stretch --release source_studied_linked_stereo_reference_recurrence`
+- `cargo test -p signal-dsp-stretch --release source_studied_linked_stereo_quality`
+- `RUSTFLAGS='-D missing-docs' cargo check -p signal-dsp-stretch --lib`
+- `effigy qa:docs`
+- broader `cargo test -p signal-dsp-stretch` before commit
 
 ### Batch 29.8 - Listening And Dynamic Checkpoint
 
@@ -2573,9 +2606,15 @@ compiled from the revised contract.
   Independent mono paths reproduce all failure masks, assigning the primary
   fault to per-channel recurrence. Batch 29.8 remains closed; 29.7D returns to
   source and literature research before contract revision.
+- 2026-07-16: Batch 29.7D finds a consistent relationship-preserving topology
+  in Signalsmith's MIT source, the 2005 AES multichannel TSM paper, and
+  architecture-only Rubber Band R3 evidence. Rule 31H now selects one per-bin
+  reference recurrence and derives the peer through its current input complex
+  relation while retaining peer magnitude. Shared increment is rejected.
+  Batch 29.7E is implementation-ready; 29.8 remains closed.
 
 ## Next Task
 
-Run Batch 29.7D cross-channel recurrence research. Compare source-studied engine
-practice and canonical literature, then revise Rule 31H before any new stereo
-implementation. Keep Batch 29.8 closed.
+Run Batch 29.7E reference-relative recurrence proof. Change only linked-stereo
+recurrence, extend mechanics for ownership switches, then rerun the unchanged
+29.7C quality gate. Keep Batch 29.8 closed.

@@ -54,6 +54,7 @@ Finch and Loophole.
 | [Non-Duplicating Stretch Ownership](./translation-memos/003-non-duplicating-stretch-ownership.md) | Select one time-adaptive painless NSG frame after redundant full-band union rejection | Promoted |
 | [Source-Studied Stretch Architecture](./translation-memos/004-source-studied-stretch-architecture.md) | Reject frequency partitioning; retain the coherent fixed-grid weighted predictor as the report-only source-studied baseline | Validated for mono source translation |
 | [Weighted Predictor Fidelity](./translation-memos/005-weighted-predictor-fidelity.md) | Correct scheduling, geometry, vertical twists, normalization, fallback, and update ordering as one topology | Promoted |
+| [Linked-Stereo Relationship-Preserving Recurrence](./translation-memos/006-linked-stereo-recurrence.md) | Select one per-bin reference recurrence and preserve peer current-input complex relation plus magnitude | Promoted |
 
 ## Consumer Guidance
 
@@ -64,6 +65,6 @@ Finch and Loophole.
 
 ## Next Task
 
-Research relationship-preserving cross-channel recurrence for Batch 29.7D.
-Compare source-studied engine practice and canonical literature, then promote a
-license-safe topology into Rule 31H before implementation.
+Implement Batch 29.7E as the bounded report-only reference-relative recurrence
+proof. Exercise exact ties and ownership crossings, then rerun the unchanged
+29.7C quality gate before stereo export.

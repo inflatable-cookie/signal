@@ -1,6 +1,7 @@
 # Offline Time-Stretch Synthesis
 
-Status: coherent fixed-grid mono baseline validated; linked stereo proof next
+Status: coherent fixed-grid mono baseline validated; linked stereo recurrence
+revised after failed quality proof
 Owner: dsp
 Updated: 2026-07-16
 Contract refs: `046`, `082`
@@ -1093,3 +1094,48 @@ Rubber Band is cleaner on `M003` and `M006`. Defects change sides with material;
 neither engine wins overall. The coherent Signal path is competitive on this
 frozen mono set and advances unchanged to shared-decision linked-stereo proof.
 Dynamic ratio, routing, and promotion remain closed.
+
+## Relationship-Preserving Linked Stereo
+
+The first linked renderer shared timing, geometry, traversal, and aggregate
+corrected/fallback choice while retaining one phase recurrence per channel. It
+passed structural mechanics but failed quadrature phase, expansion delay, and
+unequal-correlated image controls. Independent mono recurrence reproduced every
+failure mask. Shared scheduling alone is insufficient: arbitrary interchannel
+phase must be explicit in synthesis.
+
+Primary-source research converges on reference-relative recurrence. Signalsmith
+Stretch selects the greatest-energy channel per bin, completes phase prediction
+there, and derives peer output through the peer/reference current input complex
+relation. The 2005 AES multichannel TSM paper specifies the same ownership
+shape: update the greater same-bin peak first, then preserve the original phase
+relationship in the lesser peak. Rubber Band R3 independently corroborates a
+greatest-channel tracked trajectory plus current analysis-relative offset, but
+its GPL expression, guidance, and constants remain outside Signal.
+
+Signal's fixed-ratio two-channel architecture therefore uses one per-bin
+reference recurrence. The greater current target energy selects the reference,
+with lower channel index resolving an exact tie. The peer retains
+its own magnitude and takes the reference output phase plus its wrapped current
+input phase difference from that reference. Exactly silent peers remain zero.
+If reference prediction fails the existing viability test, its current-input
+fallback makes peer projection land on peer current-input phase. No new
+threshold, hysteresis, mid/side transform, sample crossfeed, or peer-magnitude
+borrowing is introduced.
+
+This topology preserves a relationship; it does not copy a dominant phase.
+Schedule, geometry, traversal, crop, and overlap remain shared. Spectra,
+magnitudes, accumulation, and normalization remain channel-owned. Mono code and
+hashes remain frozen.
+
+The next report-only proof must exercise both reference owners, an exact tie,
+and an ownership crossing before repeating the unchanged phase, delay, image,
+transient, replica, and crossfeed gates. Switch instability is a stop condition,
+not permission to tune hysteresis. Stereo listening, dynamic ratio, realtime,
+cache, and product routing remain closed.
+
+## Next Task
+
+Implement Batch 29.7E as a narrow linked-stereo recurrence replacement. Prove
+reference switching mechanics, then rerun the unchanged 29.7C quality gate
+before any listening export.

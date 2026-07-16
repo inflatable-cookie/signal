@@ -3427,7 +3427,40 @@ output and source centres, periodic Kaiser window, modified half-bin grid,
 frequency traversal, neighbour availability, exact crop, and overlap
 normalization are shared.
 
-Per-channel state remains separate:
+Batch 29.7A's aggregate-mode/per-channel-recurrence design is rejected by the
+29.7C quality gate. Sharing a corrected/fallback decision does not preserve
+arbitrary interchannel phase when each channel advances its own recurrence.
+The replacement is reference-relative recurrence, promoted from translation
+memo 006 and supported by Signalsmith's MIT implementation, the 2005 AES
+multichannel TSM paper, and architecture-only Rubber Band R3 evidence.
+
+At each frame and bin:
+
+1. select the reference channel from current target energy; greater energy wins
+   and an exact tie chooses the lower channel index
+2. run the frozen coherent horizontal-plus-vertical recurrence once, for that
+   reference channel
+3. preserve the reference result at its own target magnitude
+4. preserve the peer target magnitude while projecting the reference output
+   through the current input complex relation
+5. keep an exactly silent peer exactly zero
+6. if reference prediction fails the existing viability test, retain the
+   coherent recurrence's current-input fallback; peer projection then lands on
+   peer current-input phase without a new threshold
+
+The peer phase is therefore:
+
+`output_peer_phase = output_ref_phase + wrap(input_peer_phase - input_ref_phase)`
+
+Shared state and policy:
+
+- fixed ratio, sample rate, source/output centres, target length, and crop
+- periodic Kaiser window and modified half-bin transform
+- ascending traversal and short/long neighbour availability
+- per-bin reference selection and corrected/fallback outcome
+
+Per-channel state remains separate where it represents channel evidence or
+output ownership:
 
 - current and auxiliary analysis spectra
 - previous input energy and previous corrected output
@@ -3435,21 +3468,12 @@ Per-channel state remains separate:
 - target magnitude and current-input fallback phase
 - synthesis accumulation and normalization
 
-At each frame and bin, sum target energy and combined vertical-prediction energy
-across both channels. Apply the existing energy-relative floor to those sums.
-That one aggregate comparison selects corrected or fallback mode for both
-channels. Aggregate correction also requires every significant channel's
-prediction to pass the same energy-relative viability test. If either fails,
-both channels take shared fallback. In corrected mode, normalize each channel
-prediction to that channel's target energy; an exactly silent target remains
-zero. Report unilateral completions defensively, but none may pass. Horizontal
-energy denominators remain per-channel arithmetic, not separate mode decisions.
-
-Do not transform through mid/side, copy one channel's output phase into the
-other, choose a dominant channel, mix samples across channels, or run two
-independent frame loops. Identity remains a direct interleaved-stereo bypass.
-Dynamic ratio, more than two channels, product routing, and realtime use remain
-closed.
+Reference-relative projection is not dominant-channel phase replacement. The
+peer retains its current input-relative phase and its own magnitude. Do not
+transform through mid/side, copy a bare reference phase, borrow peer magnitude,
+mix samples across channels, or run two independent frame loops. Identity
+remains a direct interleaved-stereo bypass. Dynamic ratio, more than two
+channels, product routing, and realtime use remain closed.
 
 Batch 29.7B first proves mechanics at `0.75x`, `1.5x`, and `2.0x`:
 
@@ -3463,7 +3487,7 @@ Batch 29.7B first proves mechanics at `0.75x`, `1.5x`, and `2.0x`:
 - zero non-silent unilateral completions and zero cross-channel leakage
 
 Any mono hash change or mechanics failure stops before image metrics. Do not
-tune the energy floor or add a phase owner to repair the proof.
+tune the energy floor to repair the proof.
 
 Batch 29.7B passes. Identity, duplicated mono, hard pan, swap, polarity, scaled
 duplicate parity, coverage, finiteness, boundaries, silence, shared corrected
@@ -3506,11 +3530,39 @@ coherent mono paths. Every linked failure remains, with identical failure masks
 only observed metric difference is `1.5x` maximum IPD
 `1.526285478` linked versus `1.526050345` independent. Per-channel recurrence,
 not aggregate shared-mode selection, is therefore the primary failure seam.
-Do not tune thresholds or implement a phase owner under Rule 31H. Research and
-contract a relationship-preserving cross-channel recurrence first.
+At the 29.7C stop, no phase owner was authorized without new research. Contract
+a relationship-preserving cross-channel recurrence first.
+
+Batch 29.7D completes that research. Explicit current-input complex-ratio
+preservation is selected over a shared output phase increment. A shared
+increment preserves the prior output relationship but does not explicitly
+restore a changing input relationship. The selected law follows three
+independent primary-source signals while remaining a Signal-owned expression:
+
+- Signalsmith selects the greatest-energy per-bin channel, completes its
+  prediction, and derives peers through their current input complex relation
+- Dorran, Lawlor, and Coyle update the greater-magnitude same-bin peak first and
+  preserve the original phase relationship in the lesser peak
+- Rubber Band R3 can borrow the greatest channel's tracked peak trajectory and
+  retain a current analysis-phase offset; its GPL expression and constants are
+  excluded
+
+Batch 29.7E is the bounded implementation proof. Change only linked-stereo
+recurrence. Preserve mono code and hashes, analysis representation, schedule,
+energy floor, quality thresholds, and export closure. Extend mechanics with:
+
+- non-zero reference ownership by both channels
+- deterministic exact-energy tie exercise
+- a controlled reference-ownership crossing
+- bounded switch-boundary growth with no new click or image discontinuity
+- repeat-stable reference counts, audio, and report hashes
+
+Then rerun the complete unchanged 29.7C IPD, delay, correlated/decorrelated
+image, transient, replica, and crossfeed gate. Any failure keeps Batch 29.8
+closed. Do not add hysteresis or tune a switch threshold inside this proof.
 
 ## Next Task
 
-Research cross-channel phase recurrence in source-studied engines and canonical
-literature. Promote one license-safe relationship-preservation contract before
-any further stereo implementation. Keep Batch 29.8 closed.
+Implement Batch 29.7E as a report-only reference-relative recurrence ablation.
+Run extended mechanics and the unchanged 29.7C quality gate before any stereo
+listening export. Keep Batch 29.8 closed.

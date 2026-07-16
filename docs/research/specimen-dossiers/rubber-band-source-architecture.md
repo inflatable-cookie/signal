@@ -143,6 +143,7 @@ winner is established.
 
 ## Next Task
 
-Carry the competitive coherent baseline unchanged into Batch 29.7
-shared-decision linked-stereo proof. Keep further mono mechanism translation
-closed unless new evidence isolates a repeatable material class.
+Use greatest-channel trajectory borrowing only as corroborating architecture
+for Batch 29.7E. Implement Signal's independently specified current-input
+relationship law; do not transfer Rubber Band expression, ranges, scaling, or
+constants.

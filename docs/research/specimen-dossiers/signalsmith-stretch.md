@@ -183,8 +183,14 @@ known frame-rate sideband, is the next translation gate.
   preference on `M003`, with no coherent-Signal losses
 - coherent Signal is the report-only source-studied baseline; this is not a
   production selection or Rubber Band-class claim
+- linked-stereo reinspection confirms that the greatest prediction-energy
+  channel owns each bin's vertical phase decision and every peer retains its
+  current input complex relation to that reference at peer target energy
+- Signal promotes that relationship law, not the specimen's source expression,
+  into report-only Batch 29.7E
 
 ## Next Task
 
-Use the confirmed translation baseline in the exact-source Rubber Band R3
-comparison. Stop before stereo or production selection.
+Use the confirmed channel-relation law in Batch 29.7E's report-only recurrence
+proof. Preserve the mono baseline and stop before stereo listening or product
+selection unless the unchanged quality gate passes.

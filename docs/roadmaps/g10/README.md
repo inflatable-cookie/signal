@@ -373,6 +373,8 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7D cross-channel recurrence research after the failed
-stereo quality gate. Revise Rule 31H from source and literature evidence before
-any new implementation; keep Batch 29.8 closed.
+Run `g10.029` Batch 29.7E reference-relative recurrence proof. Batch 29.7D
+selects one greatest-energy per-bin reference recurrence and derives the peer
+through its current input complex relation. Change only linked recurrence,
+exercise ownership switches, and rerun the unchanged 29.7C quality gate. Keep
+Batch 29.8 closed.

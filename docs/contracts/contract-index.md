@@ -16,7 +16,8 @@ memory alone.
 - `g10.029` is the active correctness-first stretch roadmap
 - `046` governs sample-domain stretch behavior and its promotion gates
 - `082` governs the report-only successor policy, the competitive Rule 31
-  coherent mono baseline, and the next shared-decision linked-stereo proof
+  coherent mono baseline, and the Rule 31H reference-relative linked-stereo
+  proof
 - `g10.028` source-fill work is paused until the actual DSP kernel and source
   consumption geometry pass the `g10.029` correctness gate
 
@@ -144,6 +145,7 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Research `g10.029` Batch 29.7D cross-channel recurrence after the failed stereo
-quality gate. Revise contract `082`, Rule 31H before implementation. Keep
-independent listening, dynamic ratio, routing, and promotion closed.
+Implement `g10.029` Batch 29.7E under revised contract `082`, Rule 31H. Change
+only linked recurrence, exercise reference switches, and rerun the unchanged
+stereo quality gate. Keep independent listening, dynamic ratio, routing, and
+promotion closed.
