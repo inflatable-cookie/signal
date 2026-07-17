@@ -161,7 +161,6 @@ reset around Signal's universal shared-rotation kernel. Ordinary advance is
 computed first; reset and unlock bypass peak lock; channel borrowing is
 conditional inside peak lock; scale ownership is separate. Shared rotation
 closes as a complete renderer but remains valid locked-state evidence. Batch
-29.7X must find independent support for material-guided unlock and
-nonoverlapping frequency-owned scales before any clean-room renderer is
-authorized. Do not transfer Rubber Band expression, ranges, thresholds, or
-constants.
+29.7X finds independent support and selects a different painless
+frequency-adaptive frame. Batch 29.7Y must not transfer Rubber Band expression,
+ranges, thresholds, crossovers, ordering, or constants.

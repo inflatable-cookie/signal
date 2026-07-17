@@ -62,6 +62,7 @@ Finch and Loophole.
 | [Linked-Stereo Current-Kernel Operator Decision](./translation-memos/010-linked-stereo-current-kernel-operator-decision.md) | Close tracked peaks inside the coherent weighted predictor; require complete kernel-family selection before another renderer | Promoted |
 | [Linked Phase-Field Kernel Family Selection](./translation-memos/011-linked-phase-field-kernel-family-selection.md) | Close PGHI for this lane; select one separate shared-rotation region-locked phase-vocoder proof | Promoted |
 | [Material-State Phase Architecture Boundary](./translation-memos/012-material-state-phase-architecture-boundary.md) | Close shared rotation as a complete kernel; require independent support for the missing material and scale seams | Promoted |
+| [Independent Material-State Frequency Frame](./translation-memos/013-independent-material-state-frequency-frame.md) | Close both seams from independent papers; select one painless frequency-adaptive material-phase proof | Promoted |
 
 ## Consumer Guidance
 
@@ -72,8 +73,8 @@ Finch and Loophole.
 
 ## Next Task
 
-Batch 29.7W closes shared rotation as a complete renderer. Common rotation
-remains valid locked-state evidence, but the full material-guided state and
-frequency-scale composition has only one source in the current record. Run
-Batch 29.7X as independent research on those two missing seams. Implement
-nothing. Keep production plus Batch 29.8 closed.
+Batch 29.7X closes both missing seams from independent published work and
+selects one clean-room `FrequencyAdaptiveMaterialPhase` proof. Run Batch 29.7Y
+Stage A on the report-only painless frequency-adaptive representation only.
+Material phase, production, and Batch 29.8 remain closed until exact identity
+reconstruction passes.

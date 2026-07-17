@@ -96,5 +96,6 @@ kernel rather than switching owners inside it.
 Batch 29.7W retains Bungee's common-region rotation as independent evidence for
 one locked state, not a complete material-state renderer. Bungee does not
 supply ordinary/unlocked material ownership or nonoverlapping frequency-scale
-selection. Batch 29.7X researches those missing seams without transferring
-Bungee expression, channel summation, constants, or transient heuristic.
+selection. Batch 29.7X closes those seams from independent papers without
+transferring Bungee expression, channel summation, constants, or transient
+heuristic. Batch 29.7Y keeps Bungee limited to locked-state evidence.

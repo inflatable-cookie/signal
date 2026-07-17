@@ -96,6 +96,6 @@ rescue.
 
 ## Next Task
 
-Run Batch 29.7X as independent material-state kernel research. Implement
-nothing. Require a second source or published basis for both missing seams
-before another renderer card can exist.
+Batch 29.7X closes both missing seams in translation memo 013. Run Batch 29.7Y
+Stage A on the report-only painless frequency-adaptive representation only.
+Keep material phase closed until exact identity reconstruction passes.

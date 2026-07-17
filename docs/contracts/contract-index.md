@@ -145,7 +145,7 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7X under contract `082`, Rule 31H. Seek independent
-support for material-guided ordinary/unlocked ownership and nonoverlapping
-frequency-owned scale synthesis. Implement nothing. Keep listening, dynamic
-ratio, realtime, routing, and promotion closed.
+Run `g10.029` Batch 29.7Y Stage A under contract `082`, Rule 31I. Implement the
+report-only painless frequency-adaptive representation and exact identity
+proof only. Keep material phase, listening, dynamic ratio, realtime, routing,
+and promotion closed until Stage A passes.

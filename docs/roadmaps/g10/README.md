@@ -422,13 +422,15 @@ Current stretch status:
   `19/48` local failures, nine new local regressions, and failed candidate
   parity with the frozen mono control. Batch 29.7W then closes shared rotation
   as a complete renderer while retaining common rotation as locked-state
-  evidence. The complete material-guided state and frequency-scale order lacks
-  independent support.
+  evidence. Batch 29.7X then closes the two missing seams from independent
+  papers and selects one painless frequency-adaptive material-phase proof. It
+  explicitly rejects the former three-STFT synthesis topology.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7X as independent material-state kernel research.
-Implement nothing and keep Batch 29.8 closed.
+Run `g10.029` Batch 29.7Y Stage A. Implement only the report-only painless
+frequency-adaptive representation and exact identity/mechanics proof. Keep
+material phase and Batch 29.8 closed until Stage A passes.

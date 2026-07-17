@@ -194,5 +194,6 @@ known frame-rate sideband, is the next translation gate.
 Batch 29.7W retains Signalsmith as independent evidence for ordinary advance
 and linked-channel ownership. Its documented high-ratio randomization is not a
 pro-quality material-guided unlock law, and it supplies no frequency-owned
-multi-scale synthesis. Batch 29.7X must close those seams elsewhere before
-another renderer. Do not transfer source expression or constants.
+multi-scale synthesis. Batch 29.7X closes those seams elsewhere. Batch 29.7Y
+does not transfer Signalsmith source expression, constants, predictor, or
+randomization.

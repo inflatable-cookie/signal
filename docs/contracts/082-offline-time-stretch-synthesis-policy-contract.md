@@ -1,7 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; shared rotation closed as complete kernel, material-state
-research next
+Status: active; independent material-state frequency-frame proof selected
 Owner: dsp
 Updated: 2026-07-17
 Related contracts: `046`, `048`, `049`
@@ -3895,7 +3894,63 @@ missing seams only. It must implement nothing. Another renderer card requires
 a second source or published basis for both seams, one frozen complete state
 and scale order, unchanged objective gates, and a one-candidate stop rule.
 
+### Rule 31I: independent material-state frequency frame
+
+Batch 29.7X closes both missing seams without implementing DSP. Damskagg and
+Valimaki provide a music-tested fuzzy tonal/noisy/transient phase law that is
+competitive with a commercial comparator. Robel independently supports
+material-dependent noise phase and warns against uncontrolled randomization.
+Bonada publishes one complete simultaneous multi-window phase vocoder with
+long low-frequency support, shorter high-frequency support, common stereo
+frame tags, and preserved interchannel peak-phase differences.
+Frequency-adaptive painless nonstationary Gabor-frame work supplies perfect
+canonical-dual reconstruction and bounded sliced execution.
+
+Rule 31I selects one report-only `FrequencyAdaptiveMaterialPhase` family. It is
+not Batch 29.6CH's three full-band STFTs, masked per-scale normalization, and
+sample-aligned sum. It is one frequency-adaptive painless frame on a common
+time lattice:
+
+- every atom has exactly one long, middle, or short scale owner
+- one global canonical dual owns reconstruction
+- one decision-only channel-joint analysis owns fuzzy material guidance
+- ordinary advance is computed before material phase selection
+- transient shoulders suppress transient energy around one analysis-phase
+  reset centre
+- non-transient atoms receive common region rotation plus a bounded
+  deterministic perturbation continuous in noisiness and stretch distance
+- every linked channel receives the same discrete state, rotation, and
+  perturbation while retaining its own coefficient magnitude and phase
+  relation
+
+The first proof freezes Signal's existing `4096/2048/1024` supports and nominal
+`750 Hz`/`6 kHz` boundaries. They are antecedent geometry, not externally
+transferred constants. Valley movement, parameter search, independent channel
+classification, mid/side, post-render linking, independent per-scale
+normalization, and a full-band residual path are forbidden.
+
+Batch 29.7Y is stop-gated. Stage A implements only the frequency-adaptive frame
+and untouched-coefficient synthesis. It must prove one coefficient owner,
+positive finite frame bounds, canonical-dual identity peak error at or below
+`1e-12` in `f64`, exact crop, coverage, conjugate closure, silence, channel
+relations, boundary reflection, and repeat hash. Any failure closes the
+candidate before time stretching.
+
+Stage B may run only after Stage A passes. It implements the complete material
+law once and evaluates `0.75x`, `1.5x`, and `2.0x` on the frozen synthetic,
+six-row mono, and `48`-row calibrated stereo gates. Passage requires exact
+mechanics, zero calibrated stereo failures, zero local-consistency failures,
+and no row-complete mono regression against coherent Signal or frozen 29.7T.
+No support, boundary, classifier, transient, diffusion, seed, crossover,
+scale, peak, or blend change follows a miss.
+
+The clean-room boundary permits papers and prior Signal evidence only. No
+external code, expression, constants, masks, or random sequence transfers.
+Paper review is not patent freedom-to-operate clearance. Product, listening,
+dynamic ratio, realtime, routing, and cache work remain closed.
+
 ## Next Task
 
-Run Batch 29.7X as independent material-state kernel research under Rule 31H.
-Implement nothing and keep Batch 29.8 closed.
+Run Batch 29.7Y Stage A under Rule 31I. Implement only the report-only painless
+frequency-adaptive representation and exact reconstruction/mechanics proof.
+Keep material phase and Batch 29.8 closed until Stage A passes.

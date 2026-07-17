@@ -2097,28 +2097,59 @@ clean-room renderer. Common rotation remains locked-state evidence; no further
 
 ### Batch 29.7X - Independent Material-State Kernel Research
 
-- [ ] freeze production, 29.7T, 29.7V, all objective rows, thresholds, hashes,
+- [x] freeze production, 29.7T, 29.7V, all objective rows, thresholds, hashes,
   and translation memo 012; implement no renderer or policy prototype
-- [ ] find at least one independent implementation or published construction
+- [x] find at least one independent implementation or published construction
   for material-guided ordinary-versus-unlocked phase ownership; distinguish a
   pro-quality law from random diffusion or one-source heuristics
-- [ ] find at least one independent implementation or published construction
+- [x] find at least one independent implementation or published construction
   for simultaneous nonoverlapping frequency-owned scale synthesis; reject
   redundant full-band unions and time-selected resolution
-- [ ] map candidate evidence to boundary handling, mono continuity, linked-
+- [x] map candidate evidence to boundary handling, mono continuity, linked-
   channel compatibility, exact scale reconstruction, deterministic offline
   bounds, and clean-room licensing
-- [ ] decide whether the two seams support one complete Signal-owned state and
+- [x] decide whether the two seams support one complete Signal-owned state and
   scale order; if not, close this source-studied successor lane rather than
   inferring missing policy
-- [ ] if supported, promote exact state ownership, scale ownership, observables,
+- [x] if supported, promote exact state ownership, scale ownership, observables,
   mechanics, objective passage, and one-candidate stop rule before preparing an
   implementation card
-- [ ] keep Batch 29.8, listening, dynamic ratio, realtime, routing, cache,
+- [x] keep Batch 29.8, listening, dynamic ratio, realtime, routing, cache,
   production, and all product-facing work closed
 
 Evidence: one independent-source matrix and one promoted architecture decision
 or explicit lane closure. No DSP experiment belongs in this batch.
+
+Decision: independent papers close both seams. Fuzzy material classification
+supports transient reset plus noise-dependent phase diffusion at commercial-
+comparator listening quality. Bonada supplies a complete simultaneous
+frequency-owned, linked-stereo phase-vocoder construction. Painless
+frequency-adaptive Gabor-frame work supplies the exact canonical-dual
+reconstruction missing from parallel masked STFTs. Translation memo 013
+selects one `FrequencyAdaptiveMaterialPhase` proof and explicitly rejects a
+revival of Batch 29.6CH.
+
+### Batch 29.7Y - Frequency-Adaptive Material-Phase Proof
+
+- [ ] Stage A: implement one report-only painless frequency-adaptive frame on
+  a common time lattice with exclusive long/middle/short atom ownership and one
+  canonical dual
+- [ ] stop before time stretch unless untouched coefficients reconstruct at or
+  below `1e-12` peak error in `f64` and pass exact crop, coverage, frame-bound,
+  channel-relation, silence, boundary, and repeat mechanics
+- [ ] Stage B, only after Stage A passes: add the complete shared fuzzy
+  material map, transient shoulder/reset law, retained common-region rotation,
+  and deterministic channel-common noise perturbation
+- [ ] run exactly one candidate at `0.75x`, `1.5x`, and `2.0x` through the
+  frozen synthetic, six-row mono, and `48`-row calibrated linked-stereo gates
+- [ ] require zero calibrated and local-consistency stereo failures, exact
+  mechanics, and no row-complete mono regression; do not tune after a miss
+- [ ] keep listening, Batch 29.8, dynamic ratio, realtime, routing, cache,
+  production, and all product-facing work closed
+
+Evidence: one Stage A exact-reconstruction report, then at most one complete
+Stage B objective report. No concealed listening pack exists before hard
+passage.
 
 ### Batch 29.8 - Listening And Dynamic Checkpoint
 
@@ -3302,8 +3333,17 @@ or explicit lane closure. No DSP experiment belongs in this batch.
   the reviewed classifier-to-state-to-scale composition; independent evidence
   does not yet close material-guided unlock or nonoverlapping frequency-owned
   scales. Batch 29.7X researches those two seams without implementation.
+- 2026-07-17: Batch 29.7X closes both seams without implementing DSP.
+  Damskagg-Valimaki and Robel independently support material-guided noise phase;
+  Bonada supplies simultaneous long-low/short-high processing plus linked
+  stereo; frequency-adaptive painless-frame papers supply exact canonical-dual
+  reconstruction. Memo 013 selects one non-duplicating
+  `FrequencyAdaptiveMaterialPhase` proof. It is not the rejected three-STFT
+  path: one frame and one global dual own synthesis. Batch 29.7Y starts with
+  representation identity and stops before phase work on any miss.
 
 ## Next Task
 
-Run Batch 29.7X as independent material-state kernel research. Implement
-nothing and keep Batch 29.8 closed.
+Run Batch 29.7Y Stage A. Implement only the report-only painless
+frequency-adaptive representation and exact reconstruction/mechanics proof.
+Do not add material phase until Stage A passes. Keep Batch 29.8 closed.

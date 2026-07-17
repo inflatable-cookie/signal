@@ -1,7 +1,6 @@
 # Offline Time-Stretch Synthesis
 
-Status: shared rotation closed as a complete kernel; independent material-state
-research next
+Status: independent material-state frequency-frame proof selected
 Owner: dsp
 Updated: 2026-07-17
 Contract refs: `046`, `082`
@@ -17,6 +16,13 @@ overall winner. Its linked-stereo repair line is closed. One separate
 `SharedRotationRegionLocked` family has completed one report-only proof. It is
 materially stronger on stereo but has not passed. No successor has earned
 product routing or dynamic-ratio work.
+
+Independent research now supports one successor to that closed family.
+`FrequencyAdaptiveMaterialPhase` uses a single painless frequency-adaptive
+frame, one canonical dual, shared fuzzy material guidance, transient reset,
+common locked-region rotation, and channel-common deterministic noise phase.
+It is authorized only as a stop-gated report proof. Representation identity
+must pass before material phase exists.
 
 This family is distinct from the production prototype. The prototype runs
 identity locking independently over mono or mid/side paths with midpoint
@@ -1368,13 +1374,37 @@ individual seams, but neither independently supports that complete
 classifier-to-state-to-scale composition.
 
 `SharedRotationRegionLocked` therefore closes as a complete renderer family.
-Its common-rotation result remains evidence for a future locked state. A new
-complete renderer is not authorized until independent evidence closes both
-material-guided ordinary/unlocked ownership and nonoverlapping frequency-owned
-scale synthesis.
+Its common-rotation result remains evidence for a future locked state.
+
+Batch 29.7X closes the two missing seams. Damskagg-Valimaki and Robel supply
+independent material phase evidence. Bonada supplies simultaneous
+frequency-owned windows and linked stereo. Painless frequency-adaptive Gabor
+frames supply exact global reconstruction without independently normalized
+full-band layers.
+
+The selected proof has one representation:
+
+- common time lattice
+- fixed long/middle/short frequency atoms
+- exclusive scale ownership
+- one global canonical dual
+- one full-band channel-joint guidance analysis that never synthesizes
+
+Every active atom computes ordinary phase advance first. Shared transient
+guidance may own shoulder suppression and one analysis-phase reset centre.
+Other atoms receive the retained common peak-region rotation plus a bounded
+deterministic perturbation continuous in noisiness and stretch distance. The
+same state, rotation, and perturbation apply to every channel, preserving the
+current interchannel relation.
+
+The first proof freezes existing `4096/2048/1024` support and `750 Hz`/`6 kHz`
+nominal boundaries. It does not use dynamic crossovers, per-scale overlap
+normalization, mid/side, channel borrowing, or a full-band residual. No value
+may be tuned after the single candidate.
 
 ## Next Task
 
-Run Batch 29.7X as independent material-state kernel research. Implement
-nothing. Require a second source or published basis for both unresolved seams
-before defining another renderer. Keep all product-facing surfaces closed.
+Run Batch 29.7Y Stage A. Implement only the report-only painless
+frequency-adaptive frame and exact reconstruction/mechanics proof. Keep
+material phase, all product-facing surfaces, and Batch 29.8 closed until Stage
+A passes.
