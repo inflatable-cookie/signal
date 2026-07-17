@@ -1,7 +1,6 @@
 # Offline Time-Stretch Synthesis
 
-Status: region-locked boundary divergence attributed; finite-support reset
-proof next
+Status: finite-support reset rejected; material-state architecture review next
 Owner: dsp
 Updated: 2026-07-17
 Contract refs: `046`, `082`
@@ -1345,13 +1344,24 @@ divergence occurs when boundary-conditioned tracked frames with different
 region rotations overlap. Exact normalization and general overlap remain
 valid; the missing owner is nonstationary finite support.
 
-One parameter-free proof may reset every active region whose analysis window
-intersects outside-domain samples. Such a frame emits current analysis phase
-and creates no trajectory; the first fully supported frame resets once before
-normal tracking resumes. No detector, threshold, geometry, or other operator
-change is authorized.
+Batch 29.7V rejects that parameter-free reset. Calibrated stereo failures rise
+from `1/48` to `4/48`, local-consistency failures rise from `11/48` to `19/48`,
+and nine of the 37 formerly passing local rows fail. Only one original local
+failure clears. The candidate also fails exact frozen mono parity despite
+passing its structural mechanics and six-row mono corpus. Resetting every
+finite-support frame therefore moves boundary error between head and tail and
+between rows; it does not reproduce Rubber Band's material-dependent state
+transitions.
+
+The reset law and all tuning around its range are closed. The remaining useful
+question is architectural: whether the source record supports one complete,
+bounded material-state machine containing ordinary, locked, reset, and
+unlocked states, or whether the shared-rotation family should close.
 
 ## Next Task
 
-Run Batch 29.7V as the finite-support reset proof. Keep the 29.7T renderer as
-control and all product-facing surfaces closed.
+Run Batch 29.7W as a material-state boundary architecture review. Implement
+nothing. Freeze the 29.7T control and rejected 29.7V candidate, classify the
+evidence against complete source-backed state families, then either promote
+one bounded architecture or close shared rotation. Keep all product-facing
+surfaces closed.

@@ -53,11 +53,12 @@ inside fully supported steady frames. One common complex rotation cannot alter
 a frame-local interchannel coefficient relation. The candidate's near-zero
 interior IPD confirms that result after synthesis.
 
-At finite support edges, zero-padded analysis frames are not stationary tone
-frames. Multiple boundary-conditioned frames carry different region rotations.
-Each frame preserves its own relation, but their overlap sum does not preserve
-the finite input's normalized Gram relation. The first measured divergence is
-therefore overlap of boundary-conditioned tracked frames, not normalization or
+At finite support edges, reflected-support analysis frames are not stationary
+tone frames. Multiple boundary-conditioned frames carry different region
+rotations. Each frame preserves its own relation, but their overlap sum does
+not preserve the finite input's normalized Gram relation. The first measured
+divergence is therefore overlap of boundary-conditioned tracked frames, not
+normalization or
 a general overlap defect. Exact per-channel normalization, mechanics, and the
 image-row improvement remain intact.
 

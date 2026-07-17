@@ -1,5 +1,6 @@
 pub(in crate::frequency_adaptive) mod complete_peak_region_feasibility;
 mod external;
+pub(in crate::frequency_adaptive) mod finite_support_reset_proof;
 pub(in crate::frequency_adaptive) mod mechanism_study;
 mod metrics;
 pub(in crate::frequency_adaptive) mod peak_region_feasibility;

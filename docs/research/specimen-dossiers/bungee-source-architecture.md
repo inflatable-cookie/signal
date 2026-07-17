@@ -96,6 +96,8 @@ kernel rather than switching owners inside it.
 Batch 29.7T proves the source-independent common-region-rotation invariant is
 materially stronger on stereo but leaves tone-local failures. Batch 29.7U
 localizes those failures to overlap of finite-support boundary frames, not the
-interior common-region rotation. Run Batch 29.7V as one deterministic boundary-
-reset proof. Keep Bungee expression, channel summation, constants, and
-transient heuristic out of Signal.
+interior common-region rotation. Batch 29.7V rejects the deterministic
+finite-support reset because it trades boundary failures across rows. Bungee
+does not justify another derived intervention here. Run Batch 29.7W as a
+complete material-state architecture review, with Bungee expression, channel
+summation, constants, and transient heuristic kept out of Signal.

@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; finite-support reset proof next
+Status: active; finite-support reset rejected, material-state review next
 Owner: dsp
 Updated: 2026-07-17
 Related contracts: `046`, `048`, `049`
@@ -3860,7 +3860,22 @@ picker, region, owner, trajectory, scale, classifier, mid/side, post-render
 repair, or comparator-derived value is authorized. Failure closes this reset
 law without tuning.
 
+Batch 29.7V rejects the law. Against the frozen 29.7T control, calibrated
+failures rise from `1/48` to `4/48`, local failures rise from `11/48` to
+`19/48`, nine previously passing local rows regress, and only one original
+local failure clears. The candidate's structural mechanics and six-row mono
+corpus pass, but exact frozen mono parity fails. The deterministic reset moves
+error between finite-support boundaries instead of supplying Rubber Band's
+conditional material-state behaviour.
+
+No reset-range, head/tail, threshold, detector, or nearby renderer tuning is
+authorized. Batch 29.7W may review complete source-backed material-state
+architectures only. It must implement nothing and must either promote the full
+state set, ordering, ownership, and evidence boundary for one bounded proof or
+close the shared-rotation family.
+
 ## Next Task
 
-Run Batch 29.7V as the finite-support reset proof under Rule 31H. Preserve the
-29.7T renderer as control and keep Batch 29.8 closed.
+Run Batch 29.7W as the material-state boundary architecture review under Rule
+31H. Freeze the 29.7T renderer and 29.7V evidence. Implement nothing and keep
+Batch 29.8 closed.

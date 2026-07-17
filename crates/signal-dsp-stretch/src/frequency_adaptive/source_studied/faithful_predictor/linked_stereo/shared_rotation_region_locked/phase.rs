@@ -1,20 +1,20 @@
 #[derive(Clone, Copy, Debug)]
-pub(super) struct Region {
-    pub(super) first: usize,
-    pub(super) end: usize,
-    pub(super) peak: usize,
+pub(in super::super) struct Region {
+    pub(in super::super) first: usize,
+    pub(in super::super) end: usize,
+    pub(in super::super) peak: usize,
 }
 
 #[derive(Clone, Debug)]
-pub(super) struct RegionState {
-    pub(super) region: Region,
-    pub(super) owner: usize,
-    pub(super) rotation: f64,
-    pub(super) analysis_phases: [f64; 2],
-    pub(super) analysis_energies: [f64; 2],
+pub(in super::super) struct RegionState {
+    pub(in super::super) region: Region,
+    pub(in super::super) owner: usize,
+    pub(in super::super) rotation: f64,
+    pub(in super::super) analysis_phases: [f64; 2],
+    pub(in super::super) analysis_energies: [f64; 2],
 }
 
-pub(super) fn regions(energy: &[f64]) -> Vec<Region> {
+pub(in super::super) fn regions(energy: &[f64]) -> Vec<Region> {
     let mut peaks = (0..energy.len())
         .filter(|bin| is_peak(energy, *bin))
         .collect::<Vec<_>>();
@@ -62,7 +62,7 @@ fn is_peak(energy: &[f64], bin: usize) -> bool {
     })
 }
 
-pub(super) fn tracked_rotation(
+pub(in super::super) fn tracked_rotation(
     prior: &RegionState,
     current_peak: usize,
     owner: usize,

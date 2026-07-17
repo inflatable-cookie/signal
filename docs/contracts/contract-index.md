@@ -145,6 +145,7 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7V under contract `082`, Rule 31H. Test only the exact
-finite-support reset law against the frozen region-locked control. Keep
-listening, dynamic ratio, realtime, routing, and promotion closed.
+Run `g10.029` Batch 29.7W under contract `082`, Rule 31H. Review complete
+source-backed material-state boundary architectures against the frozen 29.7T
+control and rejected 29.7V evidence. Implement nothing. Keep listening,
+dynamic ratio, realtime, routing, and promotion closed.

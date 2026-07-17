@@ -2023,30 +2023,61 @@ trajectory, normalization, or general overlap defect.
 
 ### Batch 29.7V - Finite-Support Reset Proof
 
-- [ ] copy the frozen 29.7T report-only kernel into one candidate path; preserve
+- [x] copy the frozen 29.7T report-only kernel into one candidate path; preserve
   its row set, thresholds, mono evidence, representation, schedule, peak map,
   regions, owner, trajectory integration, common rotation, overlap, and hashes
   as the unchanged control
-- [ ] add exactly one parameter-free `FiniteSupportReset` law: when an analysis
+- [x] add exactly one parameter-free `FiniteSupportReset` law: when an analysis
   window intersects samples outside the known input domain, reset every active
   region to current analysis phase and create no predecessor trajectory
-- [ ] reset the first fully supported frame once because no boundary trajectory
+- [x] reset the first fully supported frame once because no boundary trajectory
   may seed it; resume the unchanged predecessor-region law afterward
-- [ ] add no attack threshold, onset detector, release detector, local-time
+- [x] add no attack threshold, onset detector, release detector, local-time
   override, unlock, random phase, blend, alternate window, picker, boundary,
   scale, classifier, mid/side, post-render repair, or comparator-derived value
-- [ ] rerun exact mechanics, the unchanged six-row mono corpus, all `48`
+- [x] rerun exact mechanics, the unchanged six-row mono corpus, all `48`
   calibrated stereo rows, and the 11-row boundary-window map against current
   Signal, frozen 29.7T, and calibrated Rubber Band
-- [ ] require exact mechanics, zero calibrated stereo failures, zero local-
+- [x] require exact mechanics, zero calibrated stereo failures, zero local-
   consistency failures, no row-complete mono regression, and no regression on
   the 37 previously passing local rows; stop after this one candidate
-- [ ] keep production, Batch 29.8, listening, dynamic ratio, realtime, routing,
+- [x] keep production, Batch 29.8, listening, dynamic ratio, realtime, routing,
   cache identity, and all product-facing surfaces closed
 
 Evidence: one repeat-stable candidate report, the 11-row boundary comparison,
 state counts, mono result, and exact hashes. Failure closes finite-support reset
 without tuning and returns to complete-family review.
+
+Decision: reject finite-support reset. Calibrated failures rise from `1/48` to
+`4/48`, local failures rise from `11/48` to `19/48`, nine previously passing
+local rows regress, and only one original local failure closes. All four
+calibrated misses are short `0.75x` image rows. Dedicated structural and
+symmetry mechanics plus the six-row mono corpus pass, but candidate parity with
+the frozen mono control fails at `1.262698`, `1.262698`, and `5.050797` maximum
+sample error. The law
+improves some tone boundary windows and worsens others. No tuning follows.
+
+### Batch 29.7W - Material-State Boundary Architecture Review
+
+- [ ] freeze the 29.7T and 29.7V renderers, rows, thresholds, state laws, and
+  hashes; implement no renderer, detector, classifier, state, or scale
+- [ ] classify the four calibrated image failures, 19 local failures, nine new
+  regressions, one fixed original row, and mono-parity loss by material, ratio,
+  length, boundary side, and state transition
+- [ ] compare the direct split with the promoted source record for ordinary,
+  locked, reset, unlocked, channel-linked, and frequency-partitioned ownership;
+  transfer no source expression, constants, thresholds, or reset ranges
+- [ ] decide whether one bounded complete material-state architecture has
+  independent support and a falsifiable proof, or close the shared-rotation
+  family; do not authorize a local reset-range or head/tail variant
+- [ ] if a complete architecture is justified, promote its full state set,
+  ownership order, evidence bar, and one-candidate stop rule into architecture
+  and contract before preparing another renderer card
+- [ ] keep Batch 29.8, listening, dynamic ratio, realtime, routing, cache,
+  production, and product-facing work closed
+
+Evidence: one architecture decision record linking direct failure classes to
+source-backed state ownership. No DSP experiment belongs in this batch.
 
 ### Batch 29.8 - Listening And Dynamic Checkpoint
 
@@ -3218,8 +3249,14 @@ without tuning and returns to complete-family review.
   owner switches; fixed-ratio trajectories never break. The first divergence
   is overlap of boundary-conditioned tracked frames. One parameter-free finite-
   support reset proof opens; no threshold or second intervention is authorized.
+- 2026-07-17: Batch 29.7V rejects unconditional finite-support reset. Failures
+  rise to `4/48` calibrated and `19/48` local; nine passing rows regress, one
+  original local row closes, and candidate parity with the frozen mono control
+  fails. Evidence
+  `226737df336507e9` repeats. Batch 29.7W returns to complete material-state
+  architecture before any further renderer.
 
 ## Next Task
 
-Run Batch 29.7V as the finite-support reset proof. Change only boundary-frame
-state ownership in one report-only candidate. Keep Batch 29.8 closed.
+Run Batch 29.7W as the material-state boundary architecture review. Freeze both
+renderers and implement nothing. Keep Batch 29.8 closed.

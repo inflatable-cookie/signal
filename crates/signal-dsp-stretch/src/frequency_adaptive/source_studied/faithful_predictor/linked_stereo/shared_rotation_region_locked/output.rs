@@ -3,7 +3,7 @@ use crate::frequency_adaptive::source_studied::faithful_predictor::{
     hash_samples, linked_stereo::render::StereoRender,
 };
 
-pub(super) fn add_overlap(
+pub(in super::super) fn add_overlap(
     output: &mut [f64],
     normalization: &mut [f64],
     output_center: isize,
@@ -21,7 +21,7 @@ pub(super) fn add_overlap(
     }
 }
 
-pub(super) fn finish(
+pub(in super::super) fn finish(
     channels: [Vec<f64>; 2],
     target_length: usize,
     uncovered: usize,

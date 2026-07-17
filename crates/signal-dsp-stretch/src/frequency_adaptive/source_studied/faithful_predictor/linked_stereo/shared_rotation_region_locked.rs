@@ -1,7 +1,7 @@
 use rustfft::{num_complex::Complex64, FftPlanner};
 
-mod output;
-mod phase;
+pub(super) mod output;
+pub(super) mod phase;
 
 use super::super::{analyse, coherent_representation, constrain_real_edges, synthesise};
 use crate::frequency_adaptive::source_studied::faithful_predictor::TransformGrid;

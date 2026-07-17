@@ -71,6 +71,8 @@ Finch and Loophole.
 
 ## Next Task
 
-Batch 29.7U localizes the frozen tone failures to overlap of boundary-
-conditioned tracked frames. Run Batch 29.7V as one parameter-free finite-
-support reset proof. Keep production plus Batch 29.8 closed.
+Batch 29.7V rejects the parameter-free finite-support reset: calibrated
+failures rise to `4/48`, local failures to `19/48`, and nine previously passing
+rows regress. Run Batch 29.7W as a complete material-state boundary
+architecture review. Implement nothing. Keep production plus Batch 29.8
+closed.

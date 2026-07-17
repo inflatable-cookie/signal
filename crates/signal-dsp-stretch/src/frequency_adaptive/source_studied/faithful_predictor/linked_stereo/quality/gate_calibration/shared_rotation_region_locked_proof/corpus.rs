@@ -16,9 +16,12 @@ use crate::frequency_adaptive::{
 const SAMPLE_RATE: usize = 44_100;
 const SOURCE_FRAMES: usize = 220_500;
 
-pub(super) fn review() -> SharedRotationCorpusReview {
-    let first = run();
-    let second = run();
+pub(in super::super) fn review(
+    renderer: fn([&[f64]; 2], f64, usize) -> shared_rotation_region_locked::SharedRotationRender,
+    label: &'static str,
+) -> SharedRotationCorpusReview {
+    let first = run(renderer, label);
+    let second = run(renderer, label);
     SharedRotationCorpusReview {
         candidate_hard_failures: first.rows.iter().filter(|row| !row.hard_passes[1]).count(),
         row_complete_regressions: first
@@ -38,7 +41,10 @@ struct Run {
     hash: u64,
 }
 
-fn run() -> Run {
+fn run(
+    renderer: fn([&[f64]; 2], f64, usize) -> shared_rotation_region_locked::SharedRotationRender,
+    label: &'static str,
+) -> Run {
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("../../target/stretch-source-studied-db-exact-source");
     let mut rows = Vec::new();
@@ -57,8 +63,7 @@ fn run() -> Run {
         );
         let current = coherent_representation::render(&source, case.ratio, SAMPLE_RATE);
         let silence = vec![0.0; source.len()];
-        let candidate =
-            shared_rotation_region_locked::render([&source, &silence], case.ratio, SAMPLE_RATE);
+        let candidate = renderer([&source, &silence], case.ratio, SAMPLE_RATE);
         let source_f32 = as_f32(&source);
         let current_evidence = development_measurement::measure(
             case.id,
@@ -70,7 +75,7 @@ fn run() -> Run {
         let candidate_evidence = development_measurement::measure(
             case.id,
             case.ratio,
-            "shared-rotation-region-locked",
+            label,
             &source_f32,
             &as_f32(&candidate.channels[0]),
         );

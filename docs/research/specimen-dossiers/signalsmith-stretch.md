@@ -200,5 +200,7 @@ kernel. Batch 29.7S selects a separate region-locked phase-vocoder family and
 closes another Signalsmith-derived intervention. Batch 29.7T materially
 improves stereo but leaves 11 tone-local failures. Batch 29.7U assigns those
 failures to overlap of boundary-conditioned tracked frames, outside this
-continuous-field specimen's next-use boundary. Run Batch 29.7V as the finite-
-support reset proof. Do not transfer source expression or constants.
+continuous-field specimen's next-use boundary. Batch 29.7V rejects the
+finite-support reset and supplies no reason for another Signalsmith-derived
+intervention. Run Batch 29.7W as a complete material-state architecture review.
+Do not transfer source expression or constants.

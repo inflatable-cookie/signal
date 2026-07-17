@@ -162,6 +162,8 @@ trajectory match, owner, reset threshold, region boundary, window, or blend.
 Batch 29.7T reduces calibrated stereo failures from `20/48` to `1/48` and
 passes mechanics plus mono, but retains 11 tone-local failures. Batch 29.7U
 localizes all eleven maxima to the first or last local window and assigns the
-first divergence to overlap of boundary-conditioned tracked frames. Run Batch
-29.7V as one parameter-free finite-support reset proof. Keep current production
-and Batch 29.8 closed.
+first divergence to overlap of boundary-conditioned tracked frames. Batch
+29.7V rejects one parameter-free finite-support reset: it produces `4/48`
+calibrated failures, `19/48` local failures, and nine new local regressions.
+Run Batch 29.7W as a complete material-state boundary architecture review.
+Implement nothing. Keep current production and Batch 29.8 closed.

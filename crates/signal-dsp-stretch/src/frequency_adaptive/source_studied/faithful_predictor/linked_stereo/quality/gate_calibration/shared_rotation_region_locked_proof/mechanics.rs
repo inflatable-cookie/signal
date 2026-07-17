@@ -10,9 +10,11 @@ use crate::frequency_adaptive::{
 const SAMPLE_RATE: usize = 8_000;
 const RATIOS: [f64; 3] = [0.75, 1.5, 2.0];
 
-pub(super) fn review() -> SharedRotationMechanicsReview {
-    let first = run();
-    let second = run();
+pub(in super::super) fn review(
+    renderer: fn([&[f64]; 2], f64, usize) -> shared_rotation_region_locked::SharedRotationRender,
+) -> SharedRotationMechanicsReview {
+    let first = run(renderer);
+    let second = run(renderer);
     SharedRotationMechanicsReview {
         repeated: first == second,
         structural_failures: first.structural_failures,
@@ -36,11 +38,13 @@ struct Run {
     hash: u64,
 }
 
-fn run() -> Run {
+fn run(
+    renderer: fn([&[f64]; 2], f64, usize) -> shared_rotation_region_locked::SharedRotationRender,
+) -> Run {
     let primary = mechanics::primary_control(SAMPLE_RATE);
     let secondary = mechanics::secondary_control(SAMPLE_RATE);
     let silence = vec![0.0; SAMPLE_RATE];
-    let identity = shared_rotation_region_locked::render([&primary, &secondary], 1.0, SAMPLE_RATE);
+    let identity = renderer([&primary, &secondary], 1.0, SAMPLE_RATE);
     let identity_mismatches = mismatch(&identity.channels[0], &primary, 1.0)
         + mismatch(&identity.channels[1], &secondary, 1.0);
     let mut structural_failures = 0;
@@ -50,32 +54,18 @@ fn run() -> Run {
     let mut hash = HASH_OFFSET;
 
     for ratio in RATIOS {
-        let ordinary =
-            shared_rotation_region_locked::render([&primary, &secondary], ratio, SAMPLE_RATE);
-        let duplicate =
-            shared_rotation_region_locked::render([&primary, &primary], ratio, SAMPLE_RATE);
-        let hard_pan =
-            shared_rotation_region_locked::render([&primary, &silence], ratio, SAMPLE_RATE);
-        let swapped =
-            shared_rotation_region_locked::render([&secondary, &primary], ratio, SAMPLE_RATE);
+        let ordinary = renderer([&primary, &secondary], ratio, SAMPLE_RATE);
+        let duplicate = renderer([&primary, &primary], ratio, SAMPLE_RATE);
+        let hard_pan = renderer([&primary, &silence], ratio, SAMPLE_RATE);
+        let swapped = renderer([&secondary, &primary], ratio, SAMPLE_RATE);
         let negative_primary = mechanics::scaled(&primary, -1.0);
         let negative_secondary = mechanics::scaled(&secondary, -1.0);
-        let negative = shared_rotation_region_locked::render(
-            [&negative_primary, &negative_secondary],
-            ratio,
-            SAMPLE_RATE,
-        );
+        let negative = renderer([&negative_primary, &negative_secondary], ratio, SAMPLE_RATE);
         let gained_primary = mechanics::scaled(&primary, 4.0);
-        let gained = shared_rotation_region_locked::render(
-            [&gained_primary, &gained_primary],
-            ratio,
-            SAMPLE_RATE,
-        );
-        let silent =
-            shared_rotation_region_locked::render([&silence, &silence], ratio, SAMPLE_RATE);
+        let gained = renderer([&gained_primary, &gained_primary], ratio, SAMPLE_RATE);
+        let silent = renderer([&silence, &silence], ratio, SAMPLE_RATE);
         let crossing = mechanics::ownership_crossing_control(SAMPLE_RATE);
-        let crossing =
-            shared_rotation_region_locked::render([&crossing[0], &crossing[1]], ratio, SAMPLE_RATE);
+        let crossing = renderer([&crossing[0], &crossing[1]], ratio, SAMPLE_RATE);
 
         for render in [
             &ordinary, &duplicate, &hard_pan, &swapped, &negative, &gained, &silent, &crossing,
@@ -152,7 +142,7 @@ fn run() -> Run {
 
     let mut broken = primary.clone();
     broken[SAMPLE_RATE / 3..SAMPLE_RATE * 2 / 3].fill(0.0);
-    let break_render = shared_rotation_region_locked::render([&broken, &broken], 1.5, SAMPLE_RATE);
+    let break_render = renderer([&broken, &broken], 1.5, SAMPLE_RATE);
     add_states(&mut states, break_render.states);
     mix(&mut hash, break_render.hash);
     Run {

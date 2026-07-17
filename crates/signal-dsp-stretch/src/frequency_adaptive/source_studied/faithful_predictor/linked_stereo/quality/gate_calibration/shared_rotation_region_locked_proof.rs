@@ -1,5 +1,5 @@
-mod corpus;
-mod mechanics;
+pub(super) mod corpus;
+pub(super) mod mechanics;
 
 use std::{fs, path::PathBuf};
 
@@ -62,8 +62,11 @@ pub(in crate::frequency_adaptive) fn review() -> SharedRotationProofReview {
         "stretch-shared-rotation-region-locked",
         shared_rotation_region_locked::stereo_adapter,
     );
-    let mechanics = mechanics_review();
-    let corpus = corpus_review();
+    let mechanics = mechanics_review(shared_rotation_region_locked::render);
+    let corpus = corpus_review(
+        shared_rotation_region_locked::render,
+        "shared-rotation-region-locked",
+    );
     let mechanics_pass = mechanics.repeated
         && mechanics.structural_failures == 0
         && mechanics.identity_mismatches == 0

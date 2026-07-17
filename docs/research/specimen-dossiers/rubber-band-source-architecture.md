@@ -173,5 +173,9 @@ keeps Rubber Band at architecture-only distance. Batch 29.7T reduces calibrated
 failures to `1/48` but leaves 11 tone-local failures. Batch 29.7U localizes all
 eleven maxima to finite-support boundary windows. Rubber Band is lower in the
 same worst boundary window on every row, and its source-backed reset states
-support one operator boundary without supplying expression or constants. Run
-Batch 29.7V as the parameter-free finite-support reset proof.
+support a conditional material-state architecture without supplying expression
+or constants. Batch 29.7V proves that applying reset unconditionally to every
+finite-support frame is not equivalent: failures and regressions increase.
+Run Batch 29.7W as an architecture-only review of Rubber Band's complete
+ordinary, locked, reset, and unlocked state set. Do not transfer source
+expression, ranges, thresholds, or constants, and implement nothing.

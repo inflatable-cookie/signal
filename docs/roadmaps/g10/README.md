@@ -418,12 +418,15 @@ Current stretch status:
   passage on 11 tone-local consistency rows. Batch 29.7U localizes every miss
   to the first or last local window and assigns the first divergence to overlap
   of boundary-conditioned tracked frames. Batch 29.7V owns one parameter-free
-  finite-support reset proof.
+  finite-support reset proof. That proof rejects at `4/48` calibrated failures,
+  `19/48` local failures, nine new local regressions, and failed candidate
+  parity with the frozen mono control. Batch 29.7W returns to complete
+  material-state architecture review.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7V as the finite-support reset proof. Change no other
-operator and keep Batch 29.8 closed.
+Run `g10.029` Batch 29.7W as the material-state boundary architecture review.
+Freeze both renderers, implement nothing, and keep Batch 29.8 closed.
