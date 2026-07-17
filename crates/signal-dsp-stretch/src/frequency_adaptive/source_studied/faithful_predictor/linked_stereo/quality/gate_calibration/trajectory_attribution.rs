@@ -10,8 +10,8 @@ use crate::frequency_adaptive::source_studied::faithful_predictor::linked_stereo
     coherent_representation, render,
 };
 
-mod report;
 mod assessment;
+mod report;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(in crate::frequency_adaptive) enum TrajectoryAttributionDirection {
