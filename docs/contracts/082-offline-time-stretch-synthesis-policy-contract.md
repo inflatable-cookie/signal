@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; region-locked tone-continuity operator review next
+Status: active; finite-support reset proof next
 Owner: dsp
 Updated: 2026-07-17
 Related contracts: `046`, `048`, `049`
@@ -3843,7 +3843,24 @@ must assign the first divergence to peak trajectory integration, predecessor-
 region assignment, complete-region rotation, or overlap before proposing at
 most one source-backed operator-law proof. It may also close the family.
 
+Batch 29.7U assigns the first divergence to overlap of boundary-conditioned
+tracked frames. Every maximum failing residual occurs in the first or last of
+eight local windows. Fully supported candidate interiors remain at `5.97e-8`
+to `2.08e-6 rad` IPD despite frequent owner switches. Fixed-ratio source
+centres remain monotonic. Peak integration, predecessor matching, common
+rotation, and exact normalization are not the first failing seam.
+
+Rule 31H authorizes one report-only `FiniteSupportReset` proof. An analysis
+frame whose window intersects outside-domain samples must reset every active
+region to current analysis phase and must not create a predecessor trajectory.
+The first fully supported frame then resets once before unchanged tracking
+resumes. This condition is exact and parameter-free. No onset threshold,
+detector, local-time override, unlock, random phase, blend, alternate window,
+picker, region, owner, trajectory, scale, classifier, mid/side, post-render
+repair, or comparator-derived value is authorized. Failure closes this reset
+law without tuning.
+
 ## Next Task
 
-Run Batch 29.7U as the region-locked tone-continuity operator review under Rule
-31H. Freeze the 29.7T renderer and keep Batch 29.8 closed.
+Run Batch 29.7V as the finite-support reset proof under Rule 31H. Preserve the
+29.7T renderer as control and keep Batch 29.8 closed.

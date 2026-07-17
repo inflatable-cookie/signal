@@ -415,13 +415,15 @@ Current stretch status:
   stereo, transient, representation, MIT implementation, and MPL whole-kernel
   evidence. Batch 29.7T then reduces calibrated stereo failures from `20/48`
   to `1/48` and passes exact mechanics plus the unchanged mono gate, but misses
-  passage on 11 tone-local consistency rows. Batch 29.7U owns operator review
-  with the renderer and parameters frozen.
+  passage on 11 tone-local consistency rows. Batch 29.7U localizes every miss
+  to the first or last local window and assigns the first divergence to overlap
+  of boundary-conditioned tracked frames. Batch 29.7V owns one parameter-free
+  finite-support reset proof.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7U as the region-locked tone-continuity operator review.
-Freeze the 29.7T renderer and keep Batch 29.8 closed.
+Run `g10.029` Batch 29.7V as the finite-support reset proof. Change no other
+operator and keep Batch 29.8 closed.

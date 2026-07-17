@@ -145,6 +145,6 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7U under contract `082`, Rule 31H. Attribute the frozen
-region-locked tone-continuity failures at operator-law scale. Keep listening,
-dynamic ratio, realtime, routing, and promotion closed.
+Run `g10.029` Batch 29.7V under contract `082`, Rule 31H. Test only the exact
+finite-support reset law against the frozen region-locked control. Keep
+listening, dynamic ratio, realtime, routing, and promotion closed.

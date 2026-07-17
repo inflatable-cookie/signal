@@ -1992,23 +1992,61 @@ regressions. State counts are `58,352` tracked, `1,445` reset, `165` silent,
 
 ### Batch 29.7U - Region-Locked Tone-Continuity Operator Review
 
-- [ ] freeze the 29.7T renderer, row set, hashes, thresholds, and mono result;
+- [x] freeze the 29.7T renderer, row set, hashes, thresholds, and mono result;
   make no renderer, picker, boundary, trajectory, reset, window, or blend change
-- [ ] classify the 11 tone-local failures by ratio, length, phase, alignment,
+- [x] classify the 11 tone-local failures by ratio, length, phase, alignment,
   whole/interior scope, region transition, owner switch, and trajectory break
-- [ ] compare the frozen current, candidate, and calibrated Rubber Band tone
+- [x] compare the frozen current, candidate, and calibrated Rubber Band tone
   evidence; locate the first divergence in peak trajectory integration,
   predecessor-region assignment, complete-region rotation, or overlap
-- [ ] explain why image rows improve while steady-tone local consistency fails;
+- [x] explain why image rows improve while steady-tone local consistency fails;
   do not infer a parameter threshold from the one calibrated miss
-- [ ] decide whether one source-backed operator-law correction is bounded, a
+- [x] decide whether one source-backed operator-law correction is bounded, a
   different complete family is required, or the family closes; implement none
-- [ ] keep Batch 29.8, listening, dynamic ratio, realtime, routing, cache, and
+- [x] keep Batch 29.8, listening, dynamic ratio, realtime, routing, cache, and
   production closed
 
 Evidence: one operator decision record with the 11-row failure map, first-
 divergence attribution, comparator boundary, and at most one next proof law.
 No renderer or tuning experiment belongs in this batch.
+
+Decision: authorize one finite-support reset proof. All eleven maximum local
+residuals occur in the first or last of eight windows. Candidate interior IPD
+is `5.97e-8` to `2.08e-6 rad`; fixed-ratio centres never break trajectory;
+owner changes and reset regions remain abundant inside stable interiors.
+Frame-local common rotation preserves each current coefficient relation. The
+first measured divergence is overlap of boundary-conditioned tracked frames,
+whose differing rotations do not preserve the finite input Gram relation when
+summed. Rubber Band is lower in the same worst boundary window on all eleven
+rows. This is a missing nonstationary boundary state, not a peak threshold,
+trajectory, normalization, or general overlap defect.
+
+### Batch 29.7V - Finite-Support Reset Proof
+
+- [ ] copy the frozen 29.7T report-only kernel into one candidate path; preserve
+  its row set, thresholds, mono evidence, representation, schedule, peak map,
+  regions, owner, trajectory integration, common rotation, overlap, and hashes
+  as the unchanged control
+- [ ] add exactly one parameter-free `FiniteSupportReset` law: when an analysis
+  window intersects samples outside the known input domain, reset every active
+  region to current analysis phase and create no predecessor trajectory
+- [ ] reset the first fully supported frame once because no boundary trajectory
+  may seed it; resume the unchanged predecessor-region law afterward
+- [ ] add no attack threshold, onset detector, release detector, local-time
+  override, unlock, random phase, blend, alternate window, picker, boundary,
+  scale, classifier, mid/side, post-render repair, or comparator-derived value
+- [ ] rerun exact mechanics, the unchanged six-row mono corpus, all `48`
+  calibrated stereo rows, and the 11-row boundary-window map against current
+  Signal, frozen 29.7T, and calibrated Rubber Band
+- [ ] require exact mechanics, zero calibrated stereo failures, zero local-
+  consistency failures, no row-complete mono regression, and no regression on
+  the 37 previously passing local rows; stop after this one candidate
+- [ ] keep production, Batch 29.8, listening, dynamic ratio, realtime, routing,
+  cache identity, and all product-facing surfaces closed
+
+Evidence: one repeat-stable candidate report, the 11-row boundary comparison,
+state counts, mono result, and exact hashes. Failure closes finite-support reset
+without tuning and returns to complete-family review.
 
 ### Batch 29.8 - Listening And Dynamic Checkpoint
 
@@ -3175,8 +3213,13 @@ No renderer or tuning experiment belongs in this batch.
   failures from `20/48` to `1/48` and passes exact mechanics plus the unchanged
   six-row mono gate. Eleven tone-local consistency failures remain. Batch
   29.7U owns operator attribution without tuning or another renderer.
+- 2026-07-17: Batch 29.7U localizes all eleven tone failures to the first or
+  last local window. Fully supported interiors remain coherent despite frequent
+  owner switches; fixed-ratio trajectories never break. The first divergence
+  is overlap of boundary-conditioned tracked frames. One parameter-free finite-
+  support reset proof opens; no threshold or second intervention is authorized.
 
 ## Next Task
 
-Run Batch 29.7U as the region-locked tone-continuity operator review. Freeze
-the 29.7T renderer and evidence. Keep Batch 29.8 closed.
+Run Batch 29.7V as the finite-support reset proof. Change only boundary-frame
+state ownership in one report-only candidate. Keep Batch 29.8 closed.

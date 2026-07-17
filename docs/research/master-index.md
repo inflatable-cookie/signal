@@ -71,5 +71,6 @@ Finch and Loophole.
 
 ## Next Task
 
-Run Batch 29.7U as the region-locked tone-continuity operator review. Freeze
-the 29.7T renderer and keep production plus Batch 29.8 closed.
+Batch 29.7U localizes the frozen tone failures to overlap of boundary-
+conditioned tracked frames. Run Batch 29.7V as one parameter-free finite-
+support reset proof. Keep production plus Batch 29.8 closed.

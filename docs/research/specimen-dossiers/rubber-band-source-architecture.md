@@ -170,5 +170,8 @@ the complete Signal-owned operation at `23/48` calibrated failures versus the
 `20/48` baseline. Batch 29.7R closes the cross-family hybrid. Batch 29.7S
 selects one independently supported shared-rotation region-locked kernel and
 keeps Rubber Band at architecture-only distance. Batch 29.7T reduces calibrated
-failures to `1/48` but leaves 11 tone-local failures. Run Batch 29.7U as frozen
-operator review.
+failures to `1/48` but leaves 11 tone-local failures. Batch 29.7U localizes all
+eleven maxima to finite-support boundary windows. Rubber Band is lower in the
+same worst boundary window on every row, and its source-backed reset states
+support one operator boundary without supplying expression or constants. Run
+Batch 29.7V as the parameter-free finite-support reset proof.

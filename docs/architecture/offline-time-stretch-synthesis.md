@@ -1,7 +1,7 @@
 # Offline Time-Stretch Synthesis
 
-Status: region-locked fixed-grid proof rejected; tone-continuity operator
-review next
+Status: region-locked boundary divergence attributed; finite-support reset
+proof next
 Owner: dsp
 Updated: 2026-07-17
 Contract refs: `046`, `082`
@@ -1334,12 +1334,24 @@ mono corpus also has zero hard failures and zero row-complete regressions.
 Passage still rejects. Eleven stereo rows fail local consistency and 18 rows
 regress on at least one metric. Every local failure is a steady-tone row. The
 only calibrated failure is the short, off-bin `2.0x` tone at `0.009708 rad`
-whole-render IPD against `0.006 rad`. Image rows broadly improve. This split
-points to tone-trajectory continuity inside the complete region law, not a
-general linked-image or overlap failure. The renderer is frozen pending one
-operator review; no threshold or geometry tuning follows.
+whole-render IPD against `0.006 rad`. Image rows broadly improve.
+
+Batch 29.7U localizes every maximum tone residual to the first or last of eight
+local windows. Fully supported interiors reach `5.97e-8` to `2.08e-6 rad`
+candidate IPD on the failing rows. Frequent owner switches do not disturb those
+interiors, and fixed-ratio source centres never break trajectory. One common
+rotation preserves each frame-local coefficient relation. The first measured
+divergence occurs when boundary-conditioned tracked frames with different
+region rotations overlap. Exact normalization and general overlap remain
+valid; the missing owner is nonstationary finite support.
+
+One parameter-free proof may reset every active region whose analysis window
+intersects outside-domain samples. Such a frame emits current analysis phase
+and creates no trajectory; the first fully supported frame resets once before
+normal tracking resumes. No detector, threshold, geometry, or other operator
+change is authorized.
 
 ## Next Task
 
-Run Batch 29.7U as the region-locked tone-continuity operator review. Freeze
-the renderer and all evidence. Keep all product-facing surfaces closed.
+Run Batch 29.7V as the finite-support reset proof. Keep the 29.7T renderer as
+control and all product-facing surfaces closed.

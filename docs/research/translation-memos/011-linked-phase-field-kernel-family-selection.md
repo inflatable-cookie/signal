@@ -159,7 +159,9 @@ trajectory match, owner, reset threshold, region boundary, window, or blend.
 
 ## Next Task
 
-Batch 29.7T completes the bounded proof. It reduces calibrated stereo failures
-from `20/48` to `1/48` and passes mechanics plus mono, but retains 11 tone-local
-failures. Run Batch 29.7U as operator review with the renderer frozen. Keep
-current production and Batch 29.8 closed.
+Batch 29.7T reduces calibrated stereo failures from `20/48` to `1/48` and
+passes mechanics plus mono, but retains 11 tone-local failures. Batch 29.7U
+localizes all eleven maxima to the first or last local window and assigns the
+first divergence to overlap of boundary-conditioned tracked frames. Run Batch
+29.7V as one parameter-free finite-support reset proof. Keep current production
+and Batch 29.8 closed.

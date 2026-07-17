@@ -94,6 +94,8 @@ kernel rather than switching owners inside it.
 ## Next Task
 
 Batch 29.7T proves the source-independent common-region-rotation invariant is
-materially stronger on stereo but leaves tone-local failures. Run Batch 29.7U
-as operator review. Keep Bungee expression, channel summation, constants, and
+materially stronger on stereo but leaves tone-local failures. Batch 29.7U
+localizes those failures to overlap of finite-support boundary frames, not the
+interior common-region rotation. Run Batch 29.7V as one deterministic boundary-
+reset proof. Keep Bungee expression, channel summation, constants, and
 transient heuristic out of Signal.
