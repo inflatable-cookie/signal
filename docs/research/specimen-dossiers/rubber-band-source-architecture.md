@@ -165,4 +165,7 @@ the complete eligible field, not just boundaries, and promotes one
 implementation-independent ordering law: construct the complete peak-owned
 region before preserving the peer relation. Run Batch 29.7Q as that one bounded
 proof. Do not transfer Rubber Band expression, ranges, scaling, reset policy,
-or constants. Do not promote centre-focus or mid/side.
+or constants. Do not promote centre-focus or mid/side. Batch 29.7Q then rejects
+the complete Signal-owned operation at `23/48` calibrated failures versus the
+`20/48` baseline. Run algorithm-family operator review before any further
+source translation.

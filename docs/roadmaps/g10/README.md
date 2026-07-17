@@ -401,13 +401,17 @@ Current stretch status:
   exact mechanics. Batch 29.7P then attributes the conflict across anchors,
   interiors, and boundaries. Relation RMS rises by more than one radian in all
   three classes at evidence `e1713e619138301b`. Rule 31H forbids late tracked
-  overlays and opens one complete peak-owned eligible-region proof.
+  overlays and opens one complete peak-owned eligible-region proof. Batch
+  29.7Q rejects that proof: failures improve over the overlay but remain
+  `23/48` against the `20/48` baseline, with `46/48` rows regressing somewhere.
+  Evidence `2a52a1106fadf298` closes local peak-region variants for operator
+  review.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7Q as one report-only complete peak-owned region proof.
-Reuse 29.7O selection and advance mechanics; change only operator order and
-ownership. Keep Batch 29.8 closed.
+Run `g10.029` Batch 29.7R as a current-kernel operator review. Decide whether
+linked tracked peaks close for this kernel or require a separately contracted
+phase-field kernel family. Keep another renderer and Batch 29.8 closed.

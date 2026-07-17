@@ -194,5 +194,7 @@ known frame-rate sideband, is the next translation gate.
 Batch 29.7P confirms the relevant pinned-source ordering: horizontal prediction
 is followed by bidirectional frequency prediction, then the greatest-energy
 channel owns the output and peers are locked to its current input relation.
-Run Batch 29.7Q as one Signal-owned complete peak-region proof. Transfer the
-ordering invariant only, not source expression or constants.
+Batch 29.7Q transfers that ordering invariant once but rejects the complete
+peak-region proof. Run current-kernel operator review before another
+Signalsmith-derived intervention. Do not transfer source expression or
+constants.

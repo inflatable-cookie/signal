@@ -1262,8 +1262,22 @@ inside the same operation. Current relational recurrence owns every ineligible
 region as a complete field. Mixed relational and tracked ownership inside one
 eligible region is not permitted.
 
+The complete peak-owned realization also rejects. It selects the stronger
+channel at its existing region peak, advances that one tracked owner, derives
+the complete owner region through identity offsets, and preserves the peer's
+current same-frequency relation inside the same operation. This improves the
+late overlay from `25/48` to `23/48` calibrated failures and from `34/48` to
+`27/48` local failures, but remains worse than the `20/48` relational baseline.
+Only `2/48` rows improve completely and `46/48` regress somewhere. Evidence
+`2a52a1106fadf298` repeats with exact mechanics.
+
+Operator order was a real fault, but correcting it is insufficient for the
+current coherent kernel. Further local peak-region variants are closed pending
+an algorithm-family operator review.
+
 ## Next Task
 
-Run Batch 29.7Q as one report-only complete peak-owned region proof. Reuse the
-29.7O picker, eligibility, tracked advance, and identity offsets. Change only
-operator order and ownership. Keep all product-facing surfaces closed.
+Run Batch 29.7R as a current-kernel operator review. Decide whether linked
+tracked peaks close for this coherent kernel or require a separately contracted
+phase-field kernel family. Keep another renderer and all product-facing
+surfaces closed.

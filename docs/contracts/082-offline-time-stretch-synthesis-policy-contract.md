@@ -3767,8 +3767,21 @@ analysis relation inside that operation. The relational recurrence must own
 each ineligible region unchanged. Do not mix tracked and relational ownership
 inside one eligible region.
 
+Batch 29.7Q tests that complete operation once. The report-only candidate keeps
+the frozen picker, eligibility, tracked advance, identity offsets, and
+relational fallback. It reduces late-overlay calibrated failures from `25/48`
+to `23/48` and local failures from `34/48` to `27/48`, but does not beat the
+`20/48` current baseline. Only `2/48` rows improve completely and `46/48`
+regress somewhere. Exact structure, mechanics, mono parity, silent-peer safety,
+and repeat hold at evidence `2a52a1106fadf298`.
+
+Rule 31H closes parameter rescue and further local peak-region variants. The
+next step is operator review at algorithm-family scale. Another tracked owner,
+picker, eligibility, frequency range, phase scale, or boundary blend requires
+a new promoted kernel contract, not another feasibility variant.
+
 ## Next Task
 
-Run Batch 29.7Q as one report-only complete peak-owned region proof under Rule
-31H. Reuse 29.7O peak selection, eligibility, phase advance, and identity
-offsets. Change only operator order and ownership. Keep Batch 29.8 closed.
+Run Batch 29.7R as a current-kernel operator review under Rule 31H. Decide
+whether linked tracked peaks close for this coherent kernel or require a
+separately contracted phase-field kernel family. Keep Batch 29.8 closed.

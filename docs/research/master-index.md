@@ -68,6 +68,6 @@ Finch and Loophole.
 
 ## Next Task
 
-Run Batch 29.7Q as one report-only complete peak-owned region proof. Change
-only operator order and ownership; retain 29.7O peak selection, eligibility,
-phase advance, offsets, frozen controls, and relational fallback.
+Run Batch 29.7R as a current-kernel operator review. Consolidate the linked
+tracked-peak evidence and decide whether this coherent kernel closes or needs a
+separately contracted phase-field kernel family before another renderer.

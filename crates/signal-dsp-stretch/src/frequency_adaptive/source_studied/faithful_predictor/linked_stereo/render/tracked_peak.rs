@@ -118,7 +118,7 @@ pub(super) fn advance(
     }
 }
 
-fn tracked_anchor(
+pub(super) fn tracked_anchor(
     reference: usize,
     current_peak: usize,
     predecessor: usize,
@@ -154,7 +154,7 @@ fn wrap(phase: f64) -> f64 {
     (phase + std::f64::consts::PI).rem_euclid(std::f64::consts::TAU) - std::f64::consts::PI
 }
 
-fn regions(peak_maps: &[PeakMap; 2]) -> usize {
+pub(super) fn regions(peak_maps: &[PeakMap; 2]) -> usize {
     let mut count = 0;
     let mut previous = None;
     for bin in 0..peak_maps[0].owners.len() {

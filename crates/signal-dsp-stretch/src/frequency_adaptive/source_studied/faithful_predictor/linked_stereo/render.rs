@@ -1,6 +1,7 @@
 mod contribution;
 mod entry;
 mod overlap;
+mod peak_owned_region;
 mod peak_region;
 mod recurrence;
 mod report;
@@ -21,8 +22,8 @@ pub(super) use contribution::{
 use contribution::{CoefficientTraceSpec, CoefficientTraceState, ContributionFrame};
 pub(super) use entry::{
     linked, linked_analytic, linked_analytic_with_relation_oracle, linked_independent,
-    linked_peak_regions, linked_tracked_peaks, linked_with_coefficient_trace,
-    linked_with_relation_oracle, linked_with_synthesis_trace,
+    linked_peak_owned_regions, linked_peak_regions, linked_tracked_peaks,
+    linked_with_coefficient_trace, linked_with_relation_oracle, linked_with_synthesis_trace,
 };
 use overlap::{Overlap, SynthesisMode};
 use peak_region::PeakMap;
@@ -38,6 +39,7 @@ enum RecurrenceMode {
     ReferenceRelative,
     Independent,
     PeakRegion,
+    PeakOwnedRegion,
     TrackedPeak,
 }
 
@@ -86,7 +88,11 @@ fn linked_inner(
         vec![Complex64::new(0.0, 0.0); bins],
     ];
     let mut previous_input_energy = [vec![0.0_f64; bins], vec![0.0_f64; bins]];
-    let mut previous_input = (recurrence_mode == RecurrenceMode::TrackedPeak).then(|| {
+    let mut previous_input = matches!(
+        recurrence_mode,
+        RecurrenceMode::PeakOwnedRegion | RecurrenceMode::TrackedPeak
+    )
+    .then(|| {
         [
             vec![Complex64::new(0.0, 0.0); bins],
             vec![Complex64::new(0.0, 0.0); bins],
@@ -142,7 +148,10 @@ fn linked_inner(
         let mut contribution_frame = ContributionFrame::new(coefficient_trace.is_some(), bins);
         let peak_maps = matches!(
             recurrence_mode,
-            RecurrenceMode::Independent | RecurrenceMode::PeakRegion | RecurrenceMode::TrackedPeak
+            RecurrenceMode::Independent
+                | RecurrenceMode::PeakRegion
+                | RecurrenceMode::PeakOwnedRegion
+                | RecurrenceMode::TrackedPeak
         )
         .then(|| std::array::from_fn(|channel| PeakMap::new(&current[channel])));
 
@@ -164,7 +173,9 @@ fn linked_inner(
             let mut corrected = preliminary.clone();
 
             match recurrence_mode {
-                RecurrenceMode::ReferenceRelative | RecurrenceMode::TrackedPeak => {
+                RecurrenceMode::ReferenceRelative
+                | RecurrenceMode::PeakOwnedRegion
+                | RecurrenceMode::TrackedPeak => {
                     for bin in 0..bins {
                         let result = if let Some(offset) = channel_one_phase_offset {
                             reference_relative_bin_with_oracle(
@@ -227,6 +238,23 @@ fn linked_inner(
                             *total += value;
                         }
                         tracked_peak_phase_trace.merge(frame.trace);
+                    } else if recurrence_mode == RecurrenceMode::PeakOwnedRegion {
+                        let frame = peak_owned_region::advance(
+                            peak_maps.as_ref().expect("peak maps"),
+                            previous_peak_maps.as_ref(),
+                            &current,
+                            previous_input.as_ref().expect("previous input"),
+                            &previous_output,
+                            &previous_input_energy,
+                            &corrected,
+                            input_hop,
+                            hop,
+                            transform_length,
+                        );
+                        corrected = frame.output;
+                        for (total, value) in peak_region_counts.iter_mut().zip(frame.counts) {
+                            *total += value;
+                        }
                     }
                 }
                 RecurrenceMode::Independent | RecurrenceMode::PeakRegion => {

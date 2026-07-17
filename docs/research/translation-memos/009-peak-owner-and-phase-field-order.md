@@ -84,6 +84,17 @@ and identity offsets. The only changed variable is operator order and ownership:
 one eligible region is constructed as one unit, including exact peer relation.
 Current relational recurrence owns every ineligible region unchanged.
 
+## Proof Outcome
+
+Batch 29.7Q rejects the complete operator without parameter rescue. It improves
+on 29.7O but still fails `23/48` calibrated rows against the `20/48` relational
+baseline. Only `2/48` rows improve completely, `46/48` regress somewhere, and
+`27/48` fail local consistency. Structure, mechanics, mono parity, silent-peer
+safety, and repeat remain exact at evidence `2a52a1106fadf298`.
+
+The result confirms that operator order mattered but was not sufficient. Local
+tracked-peak variants now close for current-kernel operator review.
+
 ## Sources
 
 - [Laroche and Dolson, Improved Phase Vocoder Time-Scale Modification of Audio](https://doi.org/10.1109/89.759041)

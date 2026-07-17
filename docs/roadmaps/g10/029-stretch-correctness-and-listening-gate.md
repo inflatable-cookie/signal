@@ -1855,23 +1855,47 @@ so boundary repair and post-integration peak seeds are rejected.
 
 ### Batch 29.7Q - Complete Peak-Owned Region Proof
 
-- [ ] implement one report-only eligible-region operator that establishes one
+- [x] implement one report-only eligible-region operator that establishes one
   tracked phase owner before deriving the region field
-- [ ] preserve the peer's current same-frequency analysis relation inside that
+- [x] preserve the peer's current same-frequency analysis relation inside that
   same operator
-- [ ] reuse 29.7O peak selection, predecessor eligibility, tracked phase
+- [x] reuse 29.7O peak selection, predecessor eligibility, tracked phase
   advance, identity offsets, source geometry, and schedules unchanged
-- [ ] retain current relational recurrence for every complete ineligible region
-- [ ] prove exact length, finite output, repeat, mechanics, mono parity, frozen
+- [x] retain current relational recurrence for every complete ineligible region
+- [x] prove exact length, finite output, repeat, mechanics, mono parity, frozen
   calibrated gates, and local consistency on the unchanged `48` rows
-- [ ] stop after one candidate; do not add a parameter sweep, boundary blend,
+- [x] stop after one candidate; do not add a parameter sweep, boundary blend,
   seed-only variant, picker change, eligibility change, or offset scale
-- [ ] keep Batch 29.8, listening, dynamic ratio, realtime, routing, and
+- [x] keep Batch 29.8, listening, dynamic ratio, realtime, routing, and
   production unchanged
 
 Evidence: one candidate report and exact repeat hash. Passage requires zero
 calibrated failures, complete non-regression on every row, zero local
 consistency failures, and exact mechanics. Failure returns to operator review.
+
+Decision: reject and return to operator review. The complete owner reduces the
+late-overlay result from `25/48` to `23/48` calibrated failures and local
+failures from `34/48` to `27/48`, but still trails the `20/48` relational
+baseline. Only `2/48` rows improve completely and `46/48` regress somewhere.
+Structure, mechanics, silent-peer safety, and repeat pass exactly at evidence
+`2a52a1106fadf298`. The frozen acceptance bar is not met. No parameter or owner
+variant is authorized.
+
+### Batch 29.7R - Current-Kernel Operator Review
+
+- [ ] consolidate the 29.7M, 29.7N, 29.7O, 29.7P, and 29.7Q evidence into one
+  operator decision record
+- [ ] distinguish gains from complete owner ordering from remaining losses in
+  the current coherent predictor and overlap synthesis
+- [ ] decide whether linked tracked-peak work closes for the current coherent
+  kernel or requires a separately contracted phase-field kernel family
+- [ ] define the next research question at algorithm-family scale; do not open
+  another peak owner, picker, eligibility, range, scale, or blend variant
+- [ ] keep Batch 29.8, listening, dynamic ratio, realtime, routing, and
+  production closed
+
+Evidence: one operator decision record promoted into architecture and Rule
+31H. No renderer or parameter experiment belongs in this batch.
 
 ### Batch 29.8 - Listening And Dynamic Checkpoint
 
@@ -3017,9 +3041,15 @@ consistency failures, and exact mechanics. Failure returns to operator review.
   boundaries across every ratio and control family. Evidence
   `e1713e619138301b` repeats exactly. Rule 31H now forbids late tracked overlays
   and authorizes one complete peak-owned eligible-region proof.
+- 2026-07-17: Batch 29.7Q rejects the complete peak-owned region proof. It
+  improves on the late overlay but still raises calibrated failures from the
+  `20/48` baseline to `23/48`; only `2/48` rows improve completely, `46/48`
+  regress somewhere, and `27/48` fail local consistency. Exact mechanics and
+  repeat hold at evidence `2a52a1106fadf298`. Parameter rescue remains closed.
 
 ## Next Task
 
-Run Batch 29.7Q as one report-only complete peak-owned region proof. Change
-only operator order and ownership; reuse the 29.7O picker, eligibility, tracked
-advance, and offsets. Keep Batch 29.8 closed.
+Run Batch 29.7R as a current-kernel operator review. Consolidate the tracked
+peak evidence, decide whether this kernel family closes or needs a separately
+contracted phase-field kernel, and stop before another renderer. Keep Batch
+29.8 closed.
