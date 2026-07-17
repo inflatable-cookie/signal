@@ -2131,10 +2131,10 @@ revival of Batch 29.6CH.
 
 ### Batch 29.7Y - Frequency-Adaptive Material-Phase Proof
 
-- [ ] Stage A: implement one report-only painless frequency-adaptive frame on
+- [x] Stage A: implement one report-only painless frequency-adaptive frame on
   a common time lattice with exclusive long/middle/short atom ownership and one
   canonical dual
-- [ ] stop before time stretch unless untouched coefficients reconstruct at or
+- [x] stop before time stretch unless untouched coefficients reconstruct at or
   below `1e-12` peak error in `f64` and pass exact crop, coverage, frame-bound,
   channel-relation, silence, boundary, and repeat mechanics
 - [ ] Stage B, only after Stage A passes: add the complete shared fuzzy
@@ -3341,9 +3341,20 @@ passage.
   `FrequencyAdaptiveMaterialPhase` proof. It is not the rejected three-STFT
   path: one frame and one global dual own synthesis. Batch 29.7Y starts with
   representation identity and stops before phase work on any miss.
+- 2026-07-17: Batch 29.7Y Stage A passes the frozen representation gate. One
+  `f64` frequency-adaptive frame uses a `512`-frame common lattice, exclusive
+  long/middle/short ownership counts `127/448/769`, and one canonical dual.
+  Untouched-coefficient peak reconstruction error is `3.04e-16`; frame bounds
+  are `[0.9999999999999999, 1.0000000000000002]`; conjugate closure is
+  `6.97e-13`. Exact crop, coverage, finite bounds, channel relations, silence,
+  reflected boundaries, and repeat mechanics pass with zero failures. Evidence
+  hash `35b893204a56fcf3`. Stage B may now implement the single frozen material
+  policy. No listening, production, or product-facing lane opens.
 
 ## Next Task
 
-Run Batch 29.7Y Stage A. Implement only the report-only painless
-frequency-adaptive representation and exact reconstruction/mechanics proof.
-Do not add material phase until Stage A passes. Keep Batch 29.8 closed.
+Run Batch 29.7Y Stage B. Add the complete frozen shared fuzzy material map,
+transient shoulder/reset law, retained common-region rotation, and deterministic
+channel-common noise perturbation to the passing Stage A representation. Run
+the one authorized objective candidate without tuning. Keep listening, product
+surfaces, and Batch 29.8 closed.

@@ -35,6 +35,8 @@ mod conditioning_attribution;
 #[cfg(all(test, not(debug_assertions)))]
 mod dense_painless;
 mod hermitian_jacobi;
+#[cfg(test)]
+mod material_state_frequency_frame;
 #[cfg(all(test, not(debug_assertions)))]
 mod nyquist_alias_coupling;
 #[cfg(all(test, not(debug_assertions)))]

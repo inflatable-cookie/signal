@@ -431,6 +431,8 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7Y Stage A. Implement only the report-only painless
-frequency-adaptive representation and exact identity/mechanics proof. Keep
-material phase and Batch 29.8 closed until Stage A passes.
+Run `g10.029` Batch 29.7Y Stage B. Add the complete frozen shared fuzzy
+material map, transient shoulder/reset law, common-region rotation, and
+channel-common deterministic noise perturbation to the passing Stage A frame.
+Run one objective candidate without tuning. Keep listening, product surfaces,
+and Batch 29.8 closed.

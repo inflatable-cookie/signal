@@ -1,6 +1,6 @@
 # Offline Time-Stretch Synthesis
 
-Status: independent material-state frequency-frame proof selected
+Status: material-state frequency frame proven; material phase next
 Owner: dsp
 Updated: 2026-07-17
 Contract refs: `046`, `082`
@@ -21,8 +21,9 @@ Independent research now supports one successor to that closed family.
 `FrequencyAdaptiveMaterialPhase` uses a single painless frequency-adaptive
 frame, one canonical dual, shared fuzzy material guidance, transient reset,
 common locked-region rotation, and channel-common deterministic noise phase.
-It is authorized only as a stop-gated report proof. Representation identity
-must pass before material phase exists.
+It is authorized only as a stop-gated report proof. Stage A representation
+identity now passes. Material phase remains report-only and gets one frozen
+Stage B candidate.
 
 This family is distinct from the production prototype. The prototype runs
 identity locking independently over mono or mid/side paths with midpoint
@@ -1404,7 +1405,8 @@ may be tuned after the single candidate.
 
 ## Next Task
 
-Run Batch 29.7Y Stage A. Implement only the report-only painless
-frequency-adaptive frame and exact reconstruction/mechanics proof. Keep
-material phase, all product-facing surfaces, and Batch 29.8 closed until Stage
-A passes.
+Run Batch 29.7Y Stage B. Add the complete frozen shared fuzzy material map,
+transient shoulder/reset law, common-region rotation, and channel-common
+deterministic noise perturbation to the proven Stage A frame. Run one objective
+candidate without tuning. Keep listening, product-facing surfaces, and Batch
+29.8 closed.
