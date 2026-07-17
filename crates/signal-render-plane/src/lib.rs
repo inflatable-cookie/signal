@@ -2276,7 +2276,8 @@ fn render_clips_into_scratch(
                                 };
                                 let sample = sample * window_gain;
                                 for dest_channel in 0..channels {
-                                    let coefficient = matrix[source_channel * channels + dest_channel];
+                                    let coefficient =
+                                        matrix[source_channel * channels + dest_channel];
                                     scratch[base + dest_channel] += sample * coefficient;
                                 }
                             }
@@ -3754,8 +3755,16 @@ mod tests {
         // Source frame 128, up-mixed mono→stereo at the equal-power 1/√2 gain.
         let index = 128usize;
         let expected = (128.0 / 1024.0) * std::f32::consts::FRAC_1_SQRT_2;
-        assert!((frames[index * 2] - expected).abs() < 1e-5, "L = {}", frames[index * 2]);
-        assert!((frames[index * 2 + 1] - expected).abs() < 1e-5, "R = {}", frames[index * 2 + 1]);
+        assert!(
+            (frames[index * 2] - expected).abs() < 1e-5,
+            "L = {}",
+            frames[index * 2]
+        );
+        assert!(
+            (frames[index * 2 + 1] - expected).abs() < 1e-5,
+            "R = {}",
+            frames[index * 2 + 1]
+        );
         // Mono is duplicated equally to both ears.
         assert_eq!(frames[index * 2], frames[index * 2 + 1]);
     }
@@ -4420,7 +4429,10 @@ mod tests {
                 start_frames: 0,
                 end_frames: u64::MAX,
                 source: RenderSource::Warped {
-                    source: Box::new(RenderSource::Samples(RenderSampleBuffer::stereo(48_000, data.into()))),
+                    source: Box::new(RenderSource::Samples(RenderSampleBuffer::stereo(
+                        48_000,
+                        data.into(),
+                    ))),
                     rate,
                 },
                 loop_source: false,
@@ -4462,7 +4474,10 @@ mod tests {
                 start_frames: 0,
                 end_frames: 96_000,
                 source: RenderSource::Warped {
-                    source: Box::new(RenderSource::Samples(RenderSampleBuffer::stereo(48_000, data.into()))),
+                    source: Box::new(RenderSource::Samples(RenderSampleBuffer::stereo(
+                        48_000,
+                        data.into(),
+                    ))),
                     rate: 2.0,
                 },
                 loop_source: false,
@@ -4684,7 +4699,10 @@ mod tests {
                         clip_id: 2001,
                         start_frames: 0,
                         end_frames: u64::MAX,
-                        source: RenderSource::Samples(RenderSampleBuffer::stereo(48_000, data.into())),
+                        source: RenderSource::Samples(RenderSampleBuffer::stereo(
+                            48_000,
+                            data.into(),
+                        )),
                         loop_source: true,
                     }],
                 ),
@@ -4719,7 +4737,10 @@ mod tests {
                         clip_id: 2002,
                         start_frames: 0,
                         end_frames: 512,
-                        source: RenderSource::Samples(RenderSampleBuffer::stereo(48_000, data.into())),
+                        source: RenderSource::Samples(RenderSampleBuffer::stereo(
+                            48_000,
+                            data.into(),
+                        )),
                         loop_source: false,
                     }],
                 ),

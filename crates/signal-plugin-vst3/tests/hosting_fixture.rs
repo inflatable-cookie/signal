@@ -83,6 +83,7 @@ fn hosted_instance_loads_activates_and_processes_the_fixture() {
     assert_eq!(layout.main_input_channels, 2);
     assert_eq!(layout.main_output_channels, 2);
     assert!(layout.is_stereo_effect());
+    assert!(layout.is_supported_stereo_processor());
 
     // Sessions are only valid while active.
     assert!(instance.process_session().is_err());

@@ -117,6 +117,41 @@ mod tests {
         instance.deactivate().expect("fixture should deactivate");
     }
 
+    #[test]
+    fn process_session_supplies_declared_auxiliary_output_buses() {
+        if !crate::fixture::rustc_available() {
+            return;
+        }
+        let root = test_broker_root("clap-multi-output-instrument");
+        let library_path = crate::fixture::compile_clap_multi_output_instrument_fixture(
+            &root,
+            "com.signal.multi-output-instrument",
+            "Signal Multi Output Instrument",
+            4,
+        )
+        .expect("multi-output fixture should compile");
+        let _scan_root = TempClapScanRoot { path: root };
+
+        let mut instance =
+            ClapHostedInstance::load(&library_path, "com.signal.multi-output-instrument")
+                .expect("fixture instance should load");
+        assert!(instance.port_layout().is_stereo_instrument());
+        instance
+            .activate(48_000.0, 1, 256)
+            .expect("fixture should activate");
+        let mut session = instance
+            .process_session()
+            .expect("active instance builds a process session");
+        session.start().expect("start_processing should succeed");
+
+        let mut audio = vec![0.0; 256];
+        assert!(session.process_in_place(&mut audio, 128));
+
+        session.stop();
+        drop(session);
+        instance.deactivate().expect("fixture should deactivate");
+    }
+
     /// g12.022: full offscreen `clap.gui` lifecycle against the fixture's
     /// bookkeeping-only gui — create/parent/size/show → resize negotiation →
     /// hide → destroy, plus the host-callback queue (the fixture requests a

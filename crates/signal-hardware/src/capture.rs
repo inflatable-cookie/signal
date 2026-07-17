@@ -27,7 +27,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use crate::input_stream::{
-    InputStreamBackend, InputStreamError, InputStreamHandle, InputStreamSpec,
+    InputStreamBackend, InputStreamError, InputStreamHandle, InputStreamSpec, InputStreamState,
 };
 
 /// Lock-free SPSC sample ring; re-homed to `signal-primitives` as a shared
@@ -40,6 +40,28 @@ const WRITER_CHUNK_SAMPLES: usize = 8_192;
 
 /// Writer thread poll interval while the ring is empty.
 const WRITER_IDLE_SLEEP: Duration = Duration::from_millis(2);
+
+/// Shared start gate for a cohort of already-open capture streams.
+///
+/// Input callbacks continue feeding their monitor sinks while gated, but WAV
+/// rings receive nothing until [`Self::activate`] publishes the common start.
+/// The audio-thread check is one atomic load.
+#[derive(Clone, Debug, Default)]
+pub struct CaptureActivationGate {
+    active: Arc<AtomicBool>,
+}
+
+impl CaptureActivationGate {
+    /// Build a closed gate.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Release every capture callback sharing this gate.
+    pub fn activate(&self) {
+        self.active.store(true, Ordering::Release);
+    }
+}
 
 /// Monitor sink: consumes interleaved STEREO f32 frames on the audio thread
 /// (the capture callback converts the stream's negotiated channel count to
@@ -150,6 +172,16 @@ impl MonitorSession {
     pub fn input_latency_micros(&self) -> Option<u64> {
         self.stream.input_latency_micros()
     }
+
+    /// Current backend lifecycle, including asynchronous device loss.
+    pub fn state(&self) -> InputStreamState {
+        self.stream.state()
+    }
+
+    /// Backend detail associated with a faulted stream, when available.
+    pub fn last_error(&self) -> Option<String> {
+        self.stream.last_error()
+    }
 }
 
 /// What a finished capture produced.
@@ -227,12 +259,35 @@ impl CaptureSession {
         Self::start_internal(backend, spec, wav_path, skip_initial_frames, Some(monitor))
     }
 
+    /// Open a stream behind a shared cohort activation gate. Monitoring keeps
+    /// flowing before activation; only WAV capture waits for the gate.
+    pub fn start_gated_with_monitor(
+        backend: &dyn InputStreamBackend,
+        spec: InputStreamSpec,
+        wav_path: &Path,
+        gate: CaptureActivationGate,
+        monitor: Option<MonitorSink>,
+    ) -> Result<Self, InputStreamError> {
+        Self::start_internal_gated(backend, spec, wav_path, 0, monitor, Some(gate))
+    }
+
     fn start_internal(
         backend: &dyn InputStreamBackend,
         spec: InputStreamSpec,
         wav_path: &Path,
         skip_initial_frames: u64,
         monitor: Option<MonitorSink>,
+    ) -> Result<Self, InputStreamError> {
+        Self::start_internal_gated(backend, spec, wav_path, skip_initial_frames, monitor, None)
+    }
+
+    fn start_internal_gated(
+        backend: &dyn InputStreamBackend,
+        spec: InputStreamSpec,
+        wav_path: &Path,
+        skip_initial_frames: u64,
+        monitor: Option<MonitorSink>,
+        gate: Option<CaptureActivationGate>,
     ) -> Result<Self, InputStreamError> {
         // Open with a placeholder ring sized for the request, then resize on
         // negotiation? No — the callback closure must own its ring before the
@@ -243,6 +298,7 @@ impl CaptureSession {
             (spec.sample_rate_hz as usize).max(8_192) * spec.channels.max(1) as usize * 2;
         let ring = Arc::new(SpscRing::with_capacity(ring_capacity));
         let callback_ring = Arc::clone(&ring);
+        let capture_gate = gate.map(|gate| gate.active);
         let mut tee = monitor.map(MonitorTee::new);
         let negotiated_channels = tee.as_ref().map(|tee| Arc::clone(&tee.channels));
         let stream = backend.open_input_stream(
@@ -250,7 +306,12 @@ impl CaptureSession {
             Box::new(move |frames| {
                 // RT path: bounded copies + atomics only (see SpscRing docs);
                 // the monitor tee is a second bounded push, never a lock.
-                callback_ring.push_slice(frames);
+                if capture_gate
+                    .as_ref()
+                    .is_none_or(|active| active.load(Ordering::Acquire))
+                {
+                    callback_ring.push_slice(frames);
+                }
                 if let Some(tee) = tee.as_mut() {
                     tee.feed(frames);
                 }
@@ -505,6 +566,44 @@ mod tests {
             assert_eq!(frame[0], frame[1]);
         }
         assert!(samples.iter().any(|sample| sample.abs() > 0.4));
+
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn gated_capture_waits_for_common_activation_but_keeps_monitoring() {
+        let dir = std::env::temp_dir().join(format!(
+            "signal-capture-gated-{}-{:?}",
+            std::process::id(),
+            std::thread::current().id()
+        ));
+        let wav_path = dir.join("take.wav");
+        let backend = FakeInputBackend::new();
+        let gate = CaptureActivationGate::new();
+        let received: Arc<std::sync::Mutex<Vec<f32>>> = Arc::new(std::sync::Mutex::new(Vec::new()));
+        let sink_received = Arc::clone(&received);
+        let session = CaptureSession::start_gated_with_monitor(
+            &backend,
+            InputStreamSpec {
+                sample_rate_hz: 48_000,
+                channels: 1,
+                buffer_frames: Some(128),
+            },
+            &wav_path,
+            gate.clone(),
+            Some(Box::new(move |frames| {
+                sink_received.lock().unwrap().extend_from_slice(frames);
+            })),
+        )
+        .expect("start gated capture");
+
+        std::thread::sleep(Duration::from_millis(100));
+        assert!(!received.lock().unwrap().is_empty(), "monitor stays live");
+        gate.activate();
+        std::thread::sleep(Duration::from_millis(150));
+        let report = session.stop().expect("stop gated capture");
+        assert!(report.frames > 2_400, "captured {} frames", report.frames);
+        assert!(report.frames < 12_000, "pre-gate frames were excluded");
 
         std::fs::remove_dir_all(&dir).ok();
     }

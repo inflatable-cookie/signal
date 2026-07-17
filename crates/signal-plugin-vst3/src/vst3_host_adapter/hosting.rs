@@ -401,6 +401,11 @@ const K_OUTPUT: i32 = 1;
 const K_MAIN: i32 = 0;
 const K_REALTIME: i32 = 0;
 const K_SAMPLE32: i32 = 0;
+const K_PROJECT_TIME_MUSIC_VALID: u32 = 1 << 9;
+const K_TEMPO_VALID: u32 = 1 << 10;
+const K_BAR_POSITION_VALID: u32 = 1 << 11;
+const K_TIME_SIG_VALID: u32 = 1 << 13;
+const K_CONT_TIME_VALID: u32 = 1 << 17;
 /// `kSpeakerL | kSpeakerR`.
 const STEREO_ARRANGEMENT: u64 = 0x3;
 
@@ -510,6 +515,42 @@ struct ProcessData {
     input_events: *mut c_void,
     output_events: *mut c_void,
     process_context: *mut c_void,
+}
+
+/// `Steinberg::Vst::Chord`.
+#[repr(C)]
+struct ProcessChord {
+    key_note: u8,
+    root_note: u8,
+    chord_mask: i16,
+}
+
+/// `Steinberg::Vst::FrameRate`.
+#[repr(C)]
+struct ProcessFrameRate {
+    frames_per_second: u32,
+    flags: u32,
+}
+
+/// `Steinberg::Vst::ProcessContext`.
+#[repr(C)]
+struct ProcessContext {
+    state: u32,
+    sample_rate: f64,
+    project_time_samples: i64,
+    system_time: i64,
+    continuous_time_samples: i64,
+    project_time_music: f64,
+    bar_position_music: f64,
+    cycle_start_music: f64,
+    cycle_end_music: f64,
+    tempo: f64,
+    time_sig_numerator: i32,
+    time_sig_denominator: i32,
+    chord: ProcessChord,
+    smpte_offset_subframes: i32,
+    frame_rate: ProcessFrameRate,
+    samples_to_next_clock: i32,
 }
 
 /// `IAudioProcessor`.
@@ -1092,7 +1133,6 @@ struct HostApplicationVTable {
 #[repr(C)]
 struct StaticHostApplication {
     vtable: *const HostApplicationVTable,
-    name: &'static str,
 }
 
 // Safety: the static host object is immutable and its methods are
@@ -1109,16 +1149,6 @@ static HOST_APPLICATION_VTABLE: HostApplicationVTable = HostApplicationVTable {
 
 static HOST_APPLICATION: StaticHostApplication = StaticHostApplication {
     vtable: &HOST_APPLICATION_VTABLE,
-    name: "Signal Sandbox Host",
-};
-
-// Some ARA-only products gate their editor on the companion host name even
-// after a valid ARA document binding. Keep the compatibility alias confined
-// to the isolated inspection load; ordinary Signal plugin hosting continues
-// to identify itself honestly.
-static ARA_INSPECTION_HOST_APPLICATION: StaticHostApplication = StaticHostApplication {
-    vtable: &HOST_APPLICATION_VTABLE,
-    name: "Studio One",
 };
 
 unsafe extern "C" fn host_query_interface(
@@ -1133,9 +1163,6 @@ unsafe extern "C" fn host_query_interface(
         *out = this;
         return K_RESULT_OK;
     }
-    if !iid.is_null() && (*(this.cast::<StaticHostApplication>())).name == "Studio One" {
-        eprintln!("ARA inspection host queryInterface: {:02X?}", *iid);
-    }
     *out = ptr::null_mut();
     K_NO_INTERFACE
 }
@@ -1148,11 +1175,11 @@ unsafe extern "C" fn host_release(_this: *mut c_void) -> u32 {
     1
 }
 
-unsafe extern "C" fn host_get_name(this: *mut c_void, name: *mut i16) -> Tresult {
+unsafe extern "C" fn host_get_name(_this: *mut c_void, name: *mut i16) -> Tresult {
     if name.is_null() {
         return K_NO_INTERFACE;
     }
-    let label = (*(this.cast::<StaticHostApplication>())).name;
+    let label = "Signal Sandbox Host";
     for (index, unit) in label.encode_utf16().take(127).enumerate() {
         *name.add(index) = unit as i16;
     }
@@ -1161,7 +1188,7 @@ unsafe extern "C" fn host_get_name(this: *mut c_void, name: *mut i16) -> Tresult
 }
 
 unsafe extern "C" fn host_create_instance(
-    this: *mut c_void,
+    _this: *mut c_void,
     cid: *mut u8,
     iid: *mut u8,
     out: *mut *mut c_void,
@@ -1175,9 +1202,6 @@ unsafe extern "C" fn host_create_instance(
     }
     let cid = &*cid.cast::<Tuid>();
     let iid = &*iid.cast::<Tuid>();
-    if (*(this.cast::<StaticHostApplication>())).name == "Studio One" {
-        eprintln!("ARA inspection host createInstance: cid={cid:02X?} iid={iid:02X?}");
-    }
     if *cid == IMESSAGE_IID && *iid == IMESSAGE_IID {
         *out = new_host_message();
         return K_RESULT_OK;
@@ -1191,10 +1215,6 @@ unsafe extern "C" fn host_create_instance(
 
 fn host_context() -> *mut c_void {
     &HOST_APPLICATION as *const StaticHostApplication as *mut c_void
-}
-
-fn ara_inspection_host_context() -> *mut c_void {
-    &ARA_INSPECTION_HOST_APPLICATION as *const StaticHostApplication as *mut c_void
 }
 
 #[cfg(test)]
@@ -1677,12 +1697,32 @@ unsafe extern "C" fn param_changes_get_parameter_data(
 }
 
 unsafe extern "C" fn param_changes_add_parameter_data(
-    _this: *mut c_void,
-    _id: *const u32,
-    _index: *mut i32,
+    this: *mut c_void,
+    id: *const u32,
+    index: *mut i32,
 ) -> *mut c_void {
-    // Input list: the host writes it, the plugin only reads.
-    ptr::null_mut()
+    if id.is_null() || index.is_null() {
+        return ptr::null_mut();
+    }
+    let changes = &mut *this.cast::<HostParameterChanges>();
+    if let Some((queue_index, queue)) = changes.queues[..changes.active]
+        .iter_mut()
+        .enumerate()
+        .find(|(_, queue)| queue.parameter_id == *id)
+    {
+        *index = queue_index as i32;
+        return (queue as *mut HostParamValueQueue).cast();
+    }
+    if changes.active == changes.queues.len() {
+        return ptr::null_mut();
+    }
+    let queue_index = changes.active;
+    changes.active += 1;
+    let queue = &mut changes.queues[queue_index];
+    queue.parameter_id = *id;
+    queue.point_count = 0;
+    *index = queue_index as i32;
+    (queue as *mut HostParamValueQueue).cast()
 }
 
 impl HostParameterChanges {
@@ -1892,9 +1932,17 @@ unsafe extern "C" fn event_list_get_event(
     K_RESULT_OK
 }
 
-unsafe extern "C" fn event_list_add_event(_this: *mut c_void, _event: *mut Vst3Event) -> Tresult {
-    // Input list: the host writes it, the plugin only reads.
-    K_NO_INTERFACE
+unsafe extern "C" fn event_list_add_event(this: *mut c_void, event: *mut Vst3Event) -> Tresult {
+    if event.is_null() {
+        return K_NO_INTERFACE;
+    }
+    let list = &mut *this.cast::<HostEventList>();
+    if list.active == list.events.len() {
+        return K_RESULT_FALSE;
+    }
+    list.events[list.active] = *event;
+    list.active += 1;
+    K_RESULT_OK
 }
 
 impl HostEventList {
@@ -2000,10 +2048,44 @@ pub struct Vst3HostedPortLayout {
     pub main_output_channels: u16,
 }
 
+#[derive(Clone, Debug)]
+struct Vst3AudioBusLayout {
+    input_channels: Vec<u16>,
+    output_channels: Vec<u16>,
+    main_input: Option<usize>,
+    main_output: Option<usize>,
+}
+
+impl Vst3AudioBusLayout {
+    fn port_layout(&self) -> Vst3HostedPortLayout {
+        Vst3HostedPortLayout {
+            main_input_channels: self
+                .main_input
+                .map(|index| self.input_channels[index])
+                .unwrap_or(0),
+            main_output_channels: self
+                .main_output
+                .map(|index| self.output_channels[index])
+                .unwrap_or(0),
+        }
+    }
+}
+
 impl Vst3HostedPortLayout {
     /// Phase 1 supports exactly a stereo main in + stereo main out effect.
     pub fn is_stereo_effect(&self) -> bool {
         self.main_input_channels == 2 && self.main_output_channels == 2
+    }
+
+    /// MIDI instrument layout supported by the current host: no main audio
+    /// input and one stereo main output.
+    pub fn is_stereo_instrument(&self) -> bool {
+        self.main_input_channels == 0 && self.main_output_channels == 2
+    }
+
+    /// Whether the current stereo process session can host this layout.
+    pub fn is_supported_stereo_processor(&self) -> bool {
+        self.is_stereo_effect() || self.is_stereo_instrument()
     }
 }
 
@@ -2107,7 +2189,9 @@ pub struct Vst3HostedInstance {
     component_handler: Option<Box<ComponentHandler>>,
     parameters: Vec<PluginParameterDescriptor>,
     port_layout: Vst3HostedPortLayout,
+    audio_bus_layout: Vst3AudioBusLayout,
     state: HostedInstanceState,
+    activated_sample_rate_hz: f64,
     activated_max_frames: u32,
     /// The live editor view, when open. Torn down (removed + released)
     /// BEFORE the controller in `Drop` — the mandated release ordering.
@@ -2163,11 +2247,7 @@ impl Vst3HostedInstance {
 
         let component = unsafe { module.create_instance(&cid, &ICOMPONENT_IID) }
             .ok_or_else(|| Vst3HostingError::new("create_component_failed"))?;
-        let host = if enable_ara_inspection {
-            ara_inspection_host_context()
-        } else {
-            host_context()
-        };
+        let host = host_context();
         unsafe {
             let vtable = vtable_of::<ComponentVTable>(component);
             if ((*vtable).initialize)(component, host) != K_RESULT_OK {
@@ -2228,7 +2308,8 @@ impl Vst3HostedInstance {
             .as_ref()
             .map(|handle| unsafe { parameter_inventory(handle.ptr()) })
             .unwrap_or_default();
-        let port_layout = unsafe { main_bus_layout(component) };
+        let audio_bus_layout = unsafe { audio_bus_layout(component) };
+        let port_layout = audio_bus_layout.port_layout();
         let midi_cc_params = controller
             .as_ref()
             .and_then(|handle| unsafe { midi_cc_parameter_map(handle.ptr()) });
@@ -2241,7 +2322,9 @@ impl Vst3HostedInstance {
             component_handler,
             parameters,
             port_layout,
+            audio_bus_layout,
             state: HostedInstanceState::Created,
+            activated_sample_rate_hz: 0.0,
             activated_max_frames: 0,
             gui_session: None,
             param_changes: Arc::new(PluginParamChangeQueue::new()),
@@ -2388,10 +2471,10 @@ impl Vst3HostedInstance {
             .unwrap_or(0)
     }
 
-    /// Activate for processing: stereo/stereo bus arrangement (verified via
-    /// `getBusArrangement`), 32-bit samples, `setupProcessing`, main buses
-    /// activated, `setActive(true)`. Non-stereo negotiation fails with the
-    /// stable `layout_unsupported` token, same as the CLAP path.
+    /// Activate for processing: stereo effect (2-in/2-out) or instrument
+    /// (0-in/2-out) bus arrangement, 32-bit samples, `setupProcessing`, main
+    /// buses activated, `setActive(true)`. Unsupported negotiation fails with
+    /// the stable `layout_unsupported` token, same as the CLAP path.
     pub fn activate(
         &mut self,
         sample_rate_hz: f64,
@@ -2401,33 +2484,57 @@ impl Vst3HostedInstance {
         if self.state == HostedInstanceState::Active {
             return Err(Vst3HostingError::new("already_active"));
         }
+        if !self.port_layout.is_supported_stereo_processor() {
+            return Err(Vst3HostingError::new("layout_unsupported"));
+        }
         unsafe {
             let processor = vtable_of::<AudioProcessorVTable>(self.processor);
+            let has_audio_input = self.port_layout.main_input_channels > 0;
 
-            // Negotiate stereo/stereo BEFORE setActive; a plugin may reject
-            // the call yet still report stereo, so trust getBusArrangement.
-            let mut input_arrangement = STEREO_ARRANGEMENT;
-            let mut output_arrangement = STEREO_ARRANGEMENT;
+            // VST3 requires the arrangement array to cover every declared bus,
+            // including inactive auxiliaries. Preserve each auxiliary layout
+            // and negotiate only the main bus to stereo.
+            let mut input_arrangements = bus_arrangements(
+                self.processor,
+                K_INPUT,
+                &self.audio_bus_layout.input_channels,
+            );
+            let mut output_arrangements = bus_arrangements(
+                self.processor,
+                K_OUTPUT,
+                &self.audio_bus_layout.output_channels,
+            );
+            if let Some(index) = self.audio_bus_layout.main_input {
+                input_arrangements[index] = STEREO_ARRANGEMENT;
+            }
+            if let Some(index) = self.audio_bus_layout.main_output {
+                output_arrangements[index] = STEREO_ARRANGEMENT;
+            }
             let _ = ((*processor).set_bus_arrangements)(
                 self.processor,
-                &mut input_arrangement,
-                1,
-                &mut output_arrangement,
-                1,
+                pointer_or_null(&mut input_arrangements),
+                input_arrangements.len() as i32,
+                pointer_or_null(&mut output_arrangements),
+                output_arrangements.len() as i32,
             );
             let mut verified_input = 0u64;
             let mut verified_output = 0u64;
-            let input_result =
-                ((*processor).get_bus_arrangement)(self.processor, K_INPUT, 0, &mut verified_input);
+            let input_verified = !has_audio_input
+                || (((*processor).get_bus_arrangement)(
+                    self.processor,
+                    K_INPUT,
+                    self.audio_bus_layout.main_input.unwrap_or(0) as i32,
+                    &mut verified_input,
+                ) == K_RESULT_OK
+                    && verified_input == STEREO_ARRANGEMENT);
             let output_result = ((*processor).get_bus_arrangement)(
                 self.processor,
                 K_OUTPUT,
-                0,
+                self.audio_bus_layout.main_output.unwrap_or(0) as i32,
                 &mut verified_output,
             );
-            if input_result != K_RESULT_OK
+            if !input_verified
                 || output_result != K_RESULT_OK
-                || verified_input != STEREO_ARRANGEMENT
                 || verified_output != STEREO_ARRANGEMENT
             {
                 return Err(Vst3HostingError::new("layout_unsupported"));
@@ -2448,13 +2555,20 @@ impl Vst3HostedInstance {
             }
 
             let component = vtable_of::<ComponentVTable>(self.component);
-            let _ = ((*component).activate_bus)(self.component, K_AUDIO, K_INPUT, 0, 1);
-            let _ = ((*component).activate_bus)(self.component, K_AUDIO, K_OUTPUT, 0, 1);
+            if let Some(index) = self.audio_bus_layout.main_input {
+                let _ =
+                    ((*component).activate_bus)(self.component, K_AUDIO, K_INPUT, index as i32, 1);
+            }
+            if let Some(index) = self.audio_bus_layout.main_output {
+                let _ =
+                    ((*component).activate_bus)(self.component, K_AUDIO, K_OUTPUT, index as i32, 1);
+            }
             if ((*component).set_active)(self.component, 1) != K_RESULT_OK {
                 return Err(Vst3HostingError::new("set_active_failed"));
             }
         }
         self.state = HostedInstanceState::Active;
+        self.activated_sample_rate_hz = sample_rate_hz;
         self.activated_max_frames = max_frames;
         Ok(())
     }
@@ -2550,7 +2664,9 @@ impl Vst3HostedInstance {
         }
         Ok(Vst3ProcessSession::new(
             self.processor,
+            self.activated_sample_rate_hz,
             self.activated_max_frames as usize,
+            self.audio_bus_layout.clone(),
             Arc::clone(&self.param_changes),
             self.midi_cc_params.clone(),
         ))
@@ -2700,42 +2816,78 @@ unsafe fn parameter_inventory(controller: *mut c_void) -> Vec<PluginParameterDes
     parameters
 }
 
-/// Read the main audio bus channel counts (bus 0 per direction, preferring
-/// an explicit `kMain` bus when one exists).
-unsafe fn main_bus_layout(component: *mut c_void) -> Vst3HostedPortLayout {
+/// Read every declared audio bus while identifying the main bus in each
+/// direction. ProcessData must retain this complete topology even when only
+/// the main buses are active.
+unsafe fn audio_bus_layout(component: *mut c_void) -> Vst3AudioBusLayout {
     let vtable = vtable_of::<ComponentVTable>(component);
-    let mut layout = Vst3HostedPortLayout {
-        main_input_channels: 0,
-        main_output_channels: 0,
+    let mut layout = Vst3AudioBusLayout {
+        input_channels: Vec::new(),
+        output_channels: Vec::new(),
+        main_input: None,
+        main_output: None,
     };
-    for (direction, slot) in [
-        (K_INPUT, &mut layout.main_input_channels),
-        (K_OUTPUT, &mut layout.main_output_channels),
+    for (direction, channels, main) in [
+        (K_INPUT, &mut layout.input_channels, &mut layout.main_input),
+        (
+            K_OUTPUT,
+            &mut layout.output_channels,
+            &mut layout.main_output,
+        ),
     ] {
         let count = ((*vtable).get_bus_count)(component, K_AUDIO, direction).max(0);
-        let mut fallback: Option<u16> = None;
         for index in 0..count {
             let mut info = BusInfo::zeroed();
             if ((*vtable).get_bus_info)(component, K_AUDIO, direction, index, &mut info)
                 != K_RESULT_OK
             {
+                channels.push(0);
                 continue;
             }
-            let channels = info.channel_count.clamp(0, u16::MAX as i32) as u16;
-            if info.bus_type == K_MAIN {
-                *slot = channels;
-                fallback = None;
-                break;
-            }
-            if fallback.is_none() {
-                fallback = Some(channels);
-            }
+            channels.push(info.channel_count.clamp(0, u16::MAX as i32) as u16);
+            *main = select_main_bus(*main, info.bus_type, index as usize);
         }
-        if let Some(channels) = fallback {
-            *slot = channels;
+        if main.is_none() && !channels.is_empty() {
+            *main = Some(0);
         }
     }
     layout
+}
+
+fn select_main_bus(current: Option<usize>, bus_type: i32, index: usize) -> Option<usize> {
+    current.or_else(|| (bus_type == K_MAIN).then_some(index))
+}
+
+unsafe fn bus_arrangements(
+    processor: *mut c_void,
+    direction: i32,
+    channel_counts: &[u16],
+) -> Vec<u64> {
+    let vtable = vtable_of::<AudioProcessorVTable>(processor);
+    channel_counts
+        .iter()
+        .enumerate()
+        .map(|(index, channels)| {
+            let mut arrangement = 0;
+            if ((*vtable).get_bus_arrangement)(processor, direction, index as i32, &mut arrangement)
+                == K_RESULT_OK
+            {
+                arrangement
+            } else if *channels == 2 {
+                STEREO_ARRANGEMENT
+            } else {
+                0
+            }
+        })
+        .collect()
+}
+
+fn pointer_or_null(values: &mut [u64]) -> *mut u64 {
+    if values.is_empty() {
+        ptr::null_mut()
+    } else {
+        values.as_mut_ptr()
+    }
 }
 
 fn utf16_field_to_string(field: &[i16]) -> Option<String> {
@@ -2754,6 +2906,112 @@ fn utf16_field_to_string(field: &[i16]) -> Option<String> {
 
 // ── Raw process session (audio thread) ──────────────────────────────────────
 
+struct Vst3AudioBusBuffers {
+    _channel_samples: Vec<Vec<Box<[f32]>>>,
+    _channel_pointers: Vec<Box<[*mut f32]>>,
+    descriptors: Vec<AudioBusBuffers>,
+    main_index: Option<usize>,
+}
+
+impl Vst3AudioBusBuffers {
+    fn new(channel_counts: &[u16], main_index: Option<usize>, max_frames: usize) -> Self {
+        // The SDK permits null sample addresses for inactive buses, but some
+        // multi-output frameworks still render every declared bus. Back all
+        // channels with discardable scratch so those plugins remain safe.
+        let mut channel_samples = channel_counts
+            .iter()
+            .map(|channels| {
+                (0..usize::from(*channels))
+                    .map(|_| vec![0.0; max_frames].into_boxed_slice())
+                    .collect::<Vec<_>>()
+            })
+            .collect::<Vec<_>>();
+        let flat_pointers = channel_samples
+            .iter_mut()
+            .flat_map(|channels| channels.iter_mut().map(|samples| samples.as_mut_ptr()))
+            .collect::<Vec<_>>();
+        let mut channel_offset = 0;
+        let mut channel_pointers = channel_counts
+            .iter()
+            .map(|channels| {
+                let own_start = channel_offset;
+                let own_end = own_start + usize::from(*channels);
+                channel_offset = own_end;
+                flat_pointers[own_start..own_end]
+                    .iter()
+                    .chain(flat_pointers[..own_start].iter())
+                    .chain(flat_pointers[own_end..].iter())
+                    .copied()
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice()
+            })
+            .collect::<Vec<_>>();
+        let descriptors = channel_pointers
+            .iter_mut()
+            .zip(channel_counts)
+            .map(|(channels, channel_count)| AudioBusBuffers {
+                // `channel_pointers` deliberately carries fallback pointers
+                // after this bus's own channels, but the VST3 descriptor must
+                // still advertise this bus's declared channel count. Using
+                // the backing slice length here makes every bus appear to
+                // contain the total channels across the plugin, which breaks
+                // multi-output instruments such as Kontakt.
+                num_channels: i32::from(*channel_count),
+                silence_flags: 0,
+                channel_buffers32: channels.as_mut_ptr(),
+            })
+            .collect();
+        Self {
+            _channel_samples: channel_samples,
+            _channel_pointers: channel_pointers,
+            descriptors,
+            main_index,
+        }
+    }
+
+    fn copy_main_from(&mut self, left: &[f32], right: &[f32], frames: usize) {
+        let Some(index) = self.main_index else {
+            return;
+        };
+        let channels = &mut self._channel_samples[index];
+        if channels.len() >= 2 {
+            channels[0][..frames].copy_from_slice(&left[..frames]);
+            channels[1][..frames].copy_from_slice(&right[..frames]);
+        }
+    }
+
+    fn copy_main_to(&self, left: &mut [f32], right: &mut [f32], frames: usize) {
+        let Some(index) = self.main_index else {
+            return;
+        };
+        let channels = &self._channel_samples[index];
+        if channels.len() >= 2 {
+            left[..frames].copy_from_slice(&channels[0][..frames]);
+            right[..frames].copy_from_slice(&channels[1][..frames]);
+        }
+    }
+
+    fn clear(&mut self, frames: usize) {
+        for bus in &mut self._channel_samples {
+            for channel in bus {
+                channel[..frames].fill(0.0);
+            }
+        }
+    }
+
+    fn as_mut_ptr(&mut self) -> *mut AudioBusBuffers {
+        if self.descriptors.is_empty() {
+            ptr::null_mut()
+        } else {
+            self.descriptors.as_mut_ptr()
+        }
+    }
+
+    fn len(&self) -> i32 {
+        self.descriptors.len() as i32
+    }
+}
+
 /// Raw, movable process handle for one activated VST3 instance: the
 /// `IAudioProcessor` pointer plus planar stereo buffers preallocated at the
 /// activated max block size. The sandbox moves this onto its audio thread;
@@ -2763,10 +3021,14 @@ fn utf16_field_to_string(field: &[i16]) -> Option<String> {
 /// preallocated buffers, so processing never allocates.
 pub struct Vst3ProcessSession {
     processor: *mut c_void,
+    sample_rate_hz: f64,
+    project_time_samples: i64,
     input_left: Vec<f32>,
     input_right: Vec<f32>,
     output_left: Vec<f32>,
     output_right: Vec<f32>,
+    input_buses: Vst3AudioBusBuffers,
+    output_buses: Vst3AudioBusBuffers,
     processing: bool,
     /// Pending param writes shared with the owning instance (g12.023).
     param_changes: Arc<PluginParamChangeQueue>,
@@ -2777,6 +3039,10 @@ pub struct Vst3ProcessSession {
     input_changes: Box<HostParameterChanges>,
     /// The host-side input `IEventList` rebuilt per block (note events).
     input_events: Box<HostEventList>,
+    /// Writable sinks for plugin-originated parameter changes and events.
+    /// They are cleared each block; inspection does not consume them yet.
+    output_changes: Box<HostParameterChanges>,
+    output_events: Box<HostEventList>,
     /// CC → parameter assignments (`IMidiMapping`, queried at load); `None`
     /// drops CC events.
     midi_cc_params: Option<Arc<[Option<u32>; VST3_MIDI_CONTROLLER_COUNT]>>,
@@ -2790,21 +3056,37 @@ unsafe impl Send for Vst3ProcessSession {}
 impl Vst3ProcessSession {
     fn new(
         processor: *mut c_void,
+        sample_rate_hz: f64,
         max_frames: usize,
+        audio_bus_layout: Vst3AudioBusLayout,
         param_changes: Arc<PluginParamChangeQueue>,
         midi_cc_params: Option<Arc<[Option<u32>; VST3_MIDI_CONTROLLER_COUNT]>>,
     ) -> Self {
         Self {
             processor,
+            sample_rate_hz,
+            project_time_samples: 0,
             input_left: vec![0.0; max_frames],
             input_right: vec![0.0; max_frames],
             output_left: vec![0.0; max_frames],
             output_right: vec![0.0; max_frames],
+            input_buses: Vst3AudioBusBuffers::new(
+                &audio_bus_layout.input_channels,
+                audio_bus_layout.main_input,
+                max_frames,
+            ),
+            output_buses: Vst3AudioBusBuffers::new(
+                &audio_bus_layout.output_channels,
+                audio_bus_layout.main_output,
+                max_frames,
+            ),
             processing: false,
             param_changes,
             param_scratch: Vec::with_capacity(PLUGIN_PARAM_CHANGE_CAPACITY),
             input_changes: HostParameterChanges::new(),
             input_events: HostEventList::new(),
+            output_changes: HostParameterChanges::new(),
+            output_events: HostEventList::new(),
             midi_cc_params,
         }
     }
@@ -2903,47 +3185,72 @@ impl Vst3ProcessSession {
                 _ => {}
             }
         }
-        let input_parameter_changes: *mut c_void = if self.input_changes.active > 0 {
-            (&mut *self.input_changes as *mut HostParameterChanges).cast()
-        } else {
-            ptr::null_mut()
-        };
-        let input_events: *mut c_void = if self.input_events.active > 0 {
-            (&mut *self.input_events as *mut HostEventList).cast()
-        } else {
-            ptr::null_mut()
-        };
-        let mut input_channels = [self.input_left.as_mut_ptr(), self.input_right.as_mut_ptr()];
-        let mut output_channels = [
-            self.output_left.as_mut_ptr(),
-            self.output_right.as_mut_ptr(),
-        ];
-        let mut input_bus = AudioBusBuffers {
-            num_channels: 2,
-            silence_flags: 0,
-            channel_buffers32: input_channels.as_mut_ptr(),
-        };
-        let mut output_bus = AudioBusBuffers {
-            num_channels: 2,
-            silence_flags: 0,
-            channel_buffers32: output_channels.as_mut_ptr(),
+        self.output_changes.clear();
+        self.output_events.clear();
+        let input_parameter_changes =
+            (&mut *self.input_changes as *mut HostParameterChanges).cast();
+        let input_events = (&mut *self.input_events as *mut HostEventList).cast();
+        let output_parameter_changes =
+            (&mut *self.output_changes as *mut HostParameterChanges).cast();
+        let output_events = (&mut *self.output_events as *mut HostEventList).cast();
+        self.input_buses.clear(frames);
+        self.input_buses
+            .copy_main_from(&self.input_left, &self.input_right, frames);
+        self.output_buses.clear(frames);
+        let num_inputs = self.input_buses.len();
+        let num_outputs = self.output_buses.len();
+        let inputs = self.input_buses.as_mut_ptr();
+        let outputs = self.output_buses.as_mut_ptr();
+        let project_time_music = self.project_time_samples as f64 / self.sample_rate_hz * 2.0;
+        let mut process_context = ProcessContext {
+            state: K_PROJECT_TIME_MUSIC_VALID
+                | K_TEMPO_VALID
+                | K_BAR_POSITION_VALID
+                | K_TIME_SIG_VALID
+                | K_CONT_TIME_VALID,
+            sample_rate: self.sample_rate_hz,
+            project_time_samples: self.project_time_samples,
+            system_time: 0,
+            continuous_time_samples: self.project_time_samples,
+            project_time_music,
+            bar_position_music: (project_time_music / 4.0).floor() * 4.0,
+            cycle_start_music: 0.0,
+            cycle_end_music: 0.0,
+            tempo: 120.0,
+            time_sig_numerator: 4,
+            time_sig_denominator: 4,
+            chord: ProcessChord {
+                key_note: 0,
+                root_note: 0,
+                chord_mask: 0,
+            },
+            smpte_offset_subframes: 0,
+            frame_rate: ProcessFrameRate {
+                frames_per_second: 0,
+                flags: 0,
+            },
+            samples_to_next_clock: 0,
         };
         let mut data = ProcessData {
             process_mode: K_REALTIME,
             symbolic_sample_size: K_SAMPLE32,
             num_samples: frames as i32,
-            num_inputs: 1,
-            num_outputs: 1,
-            inputs: &mut input_bus,
-            outputs: &mut output_bus,
+            num_inputs,
+            num_outputs,
+            inputs,
+            outputs,
             input_parameter_changes,
-            output_parameter_changes: ptr::null_mut(),
+            output_parameter_changes,
             input_events,
-            output_events: ptr::null_mut(),
-            process_context: ptr::null_mut(),
+            output_events,
+            process_context: (&mut process_context as *mut ProcessContext).cast(),
         };
         let vtable = vtable_of::<AudioProcessorVTable>(self.processor);
-        ((*vtable).process)(self.processor, &mut data) == K_RESULT_OK
+        let result = ((*vtable).process)(self.processor, &mut data) == K_RESULT_OK;
+        self.output_buses
+            .copy_main_to(&mut self.output_left, &mut self.output_right, frames);
+        self.project_time_samples += frames as i64;
+        result
     }
 
     /// Process one block: interleaved stereo in, interleaved stereo out.
@@ -3012,6 +3319,57 @@ impl Vst3ProcessSession {
 #[cfg(test)]
 mod tuid_tests {
     use super::*;
+
+    #[test]
+    fn first_declared_main_bus_wins_for_multi_output_instruments() {
+        let first = select_main_bus(None, K_MAIN, 0);
+        let second = select_main_bus(first, K_MAIN, 1);
+
+        assert_eq!(second, Some(0));
+    }
+
+    #[test]
+    fn multi_output_buffers_report_each_bus_declared_channel_count() {
+        let buffers = Vst3AudioBusBuffers::new(&[2, 2, 1], Some(0), 64);
+
+        assert_eq!(
+            buffers
+                .descriptors
+                .iter()
+                .map(|descriptor| descriptor.num_channels)
+                .collect::<Vec<_>>(),
+            vec![2, 2, 1]
+        );
+    }
+
+    #[test]
+    fn stereo_processor_layout_accepts_effects_and_instruments_only() {
+        let effect = Vst3HostedPortLayout {
+            main_input_channels: 2,
+            main_output_channels: 2,
+        };
+        let instrument = Vst3HostedPortLayout {
+            main_input_channels: 0,
+            main_output_channels: 2,
+        };
+        let mono_output = Vst3HostedPortLayout {
+            main_input_channels: 0,
+            main_output_channels: 1,
+        };
+        let surround = Vst3HostedPortLayout {
+            main_input_channels: 2,
+            main_output_channels: 6,
+        };
+
+        assert!(effect.is_stereo_effect());
+        assert!(!effect.is_stereo_instrument());
+        assert!(effect.is_supported_stereo_processor());
+        assert!(!instrument.is_stereo_effect());
+        assert!(instrument.is_stereo_instrument());
+        assert!(instrument.is_supported_stereo_processor());
+        assert!(!mono_output.is_supported_stereo_processor());
+        assert!(!surround.is_supported_stereo_processor());
+    }
 
     #[test]
     fn tuid_layout_matches_platform_expectations() {

@@ -99,7 +99,44 @@ pub fn compile_clap_instrument_fixture(
     ));
     std::fs::write(
         &source_path,
-        clap_fixture_source_for_layout(plugin_type_id, plugin_name, 0, true),
+        clap_fixture_source_for_layout(plugin_type_id, plugin_name, 0, true, 1),
+    )
+    .map_err(|error| format!("fixture source write failed: {error}"))?;
+    let output = Command::new("rustc")
+        .arg("--crate-type=cdylib")
+        .arg("--edition=2021")
+        .arg(&source_path)
+        .arg("-o")
+        .arg(&library_path)
+        .output()
+        .map_err(|error| format!("rustc invocation failed: {error}"))?;
+    if !output.status.success() {
+        return Err(format!(
+            "clap fixture compilation failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        ));
+    }
+    Ok(library_path)
+}
+
+/// Compile an instrument fixture which requires the host to provide every
+/// declared stereo output bus while rendering only its main output.
+pub fn compile_clap_multi_output_instrument_fixture(
+    directory: &Path,
+    plugin_type_id: &str,
+    plugin_name: &str,
+    output_bus_count: u32,
+) -> Result<PathBuf, String> {
+    std::fs::create_dir_all(directory)
+        .map_err(|error| format!("fixture directory create failed: {error}"))?;
+    let source_path = directory.join("multi-output-instrument-fixture.rs");
+    let library_path = directory.join(format!(
+        "{}.clap",
+        plugin_name.to_lowercase().replace(' ', "-")
+    ));
+    std::fs::write(
+        &source_path,
+        clap_fixture_source_for_layout(plugin_type_id, plugin_name, 0, true, output_bus_count),
     )
     .map_err(|error| format!("fixture source write failed: {error}"))?;
     let output = Command::new("rustc")
@@ -121,7 +158,7 @@ pub fn compile_clap_instrument_fixture(
 
 /// Full Rust source of the fixture cdylib.
 pub fn clap_fixture_source(plugin_type_id: &str, plugin_name: &str, midi_outputs: u16) -> String {
-    clap_fixture_source_for_layout(plugin_type_id, plugin_name, midi_outputs, false)
+    clap_fixture_source_for_layout(plugin_type_id, plugin_name, midi_outputs, false, 1)
 }
 
 fn clap_fixture_source_for_layout(
@@ -129,6 +166,7 @@ fn clap_fixture_source_for_layout(
     plugin_name: &str,
     midi_outputs: u16,
     instrument: bool,
+    audio_output_count: u32,
 ) -> String {
     format!(
         r#"
@@ -737,6 +775,12 @@ unsafe extern "C" fn plugin_process(
         return 0;
     }}
     let process = &*process;
+    // Exercise the host's compatibility contract: even though CLAP permits
+    // this pointer to be null, real plugins such as Spire assume a transport
+    // snapshot is always present.
+    if process.transport.is_null() {{
+        return 0;
+    }}
     let mut gain_steps = [(0u32, 0f32, false); GAIN_STEP_CAPACITY];
     let step_count = apply_param_events(process.in_events, &mut gain_steps);
     if PENDING_PARAM_OUT.swap(false, std::sync::atomic::Ordering::SeqCst)
@@ -770,7 +814,7 @@ unsafe extern "C" fn plugin_process(
             );
         }}
     }}
-    if process.audio_outputs_count < 1 || process.audio_outputs.is_null() {{
+    if process.audio_outputs_count < {audio_output_count} || process.audio_outputs.is_null() {{
         return 0;
     }}
     let output = &*process.audio_outputs;
@@ -1045,7 +1089,7 @@ unsafe extern "C" fn gui_hide(_plugin: *const clap_plugin) -> bool {{
 }}
 
 unsafe extern "C" fn audio_port_count(_plugin: *const clap_plugin, is_input: bool) -> u32 {{
-    if is_input {{ {audio_input_count} }} else {{ 1 }}
+    if is_input {{ {audio_input_count} }} else {{ {audio_output_count} }}
 }}
 unsafe extern "C" fn latency_get(_plugin: *const clap_plugin) -> u32 {{ 0 }}
 unsafe extern "C" fn audio_port_get(
@@ -1054,13 +1098,13 @@ unsafe extern "C" fn audio_port_get(
     is_input: bool,
     info: *mut clap_audio_port_info,
 ) -> bool {{
-    if index != 0 {{ return false; }}
+    if (is_input && index != 0) || (!is_input && index >= {audio_output_count}) {{ return false; }}
     let name: &[u8] = if is_input {{ b"Main Input\0".as_slice() }} else {{ b"Main Output\0".as_slice() }};
     let channel_count = 2;
     let mut port = clap_audio_port_info {{
-        id: if is_input {{ 1 }} else {{ 2 }},
+        id: if is_input {{ 1 }} else {{ 2 + index }},
         name: [0; 256],
-        flags: CLAP_AUDIO_PORT_IS_MAIN,
+        flags: if index == 0 {{ CLAP_AUDIO_PORT_IS_MAIN }} else {{ 0 }},
         channel_count,
         port_type: ptr::null(),
         in_place_pair: u32::MAX,
@@ -1145,6 +1189,7 @@ unsafe extern "C" fn param_get_value(
         midi_outputs = midi_outputs,
         instrument = instrument,
         audio_input_count = if instrument { 0 } else { 1 },
+        audio_output_count = audio_output_count,
         primary_feature_symbol = if instrument {
             "FEATURE_INSTRUMENT"
         } else {

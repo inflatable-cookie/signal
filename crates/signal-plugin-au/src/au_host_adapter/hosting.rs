@@ -453,8 +453,11 @@ pub(crate) mod ffi {
 
 // ── Hosted instance ─────────────────────────────────────────────────────────
 
-/// Main-element stereo port layout summary for a hosted AU instance
-/// (mirrors `Vst3HostedPortLayout`).
+/// Default main-element port layout reported by a hosted AU instance.
+///
+/// This is descriptive, not a declaration of every layout the unit supports:
+/// Audio Units may report a mono default while accepting stereo during stream
+/// format negotiation.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct AuHostedPortLayout {
     /// Channel count of input element 0 (0 = none, e.g. instruments).
@@ -464,17 +467,9 @@ pub struct AuHostedPortLayout {
 }
 
 impl AuHostedPortLayout {
-    /// Phase 1 supports exactly a stereo main in + stereo main out effect.
+    /// Whether the default main elements are stereo input + stereo output.
     pub fn is_stereo_effect(&self) -> bool {
         self.main_input_channels == 2 && self.main_output_channels == 2
-    }
-
-    /// Supported stereo processors are effects (2x2) or instruments (0x2).
-    pub fn is_supported_stereo_processor(&self) -> bool {
-        matches!(
-            (self.main_input_channels, self.main_output_channels),
-            (0 | 2, 2)
-        )
     }
 }
 
@@ -520,10 +515,10 @@ impl AuHostedInstance {
     /// through the system AudioComponent registry and create the instance.
     ///
     /// `_bundle_root` keeps the (path, key) call shape of the CLAP/VST3
-    /// hosting FFIs but is never opened: registry entries carry the
-    /// [`AU_REGISTRY_COMPONENT_PATH`] sentinel and the component is resolved
-    /// from the load key alone. Off macOS this fails with the stable
-    /// `unsupported_platform` token.
+    /// hosting FFIs but is never opened: the component is resolved from the
+    /// load key alone, whether discovery retained its bundle path or used the
+    /// [`AU_REGISTRY_COMPONENT_PATH`] fallback. Off macOS this fails with the
+    /// stable `unsupported_platform` token.
     pub fn load(_bundle_root: &Path, load_key: &str) -> Result<Self, AuHostingError> {
         let (component_type, component_subtype, manufacturer) =
             parse_load_key(load_key).ok_or_else(|| AuHostingError::new("load_key_invalid"))?;

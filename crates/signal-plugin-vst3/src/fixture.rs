@@ -883,6 +883,17 @@ unsafe extern "C" fn processor_process(_this: *mut c_void, data: *mut ProcessDat
         return K_RESULT_FALSE;
     }}
     let data = &*data;
+    // Real instruments such as Softube's assume the standard per-block
+    // process context is present. Keep the fixture strict enough to catch a
+    // host regression back to a null context.
+    if data.process_context.is_null()
+        || data.input_parameter_changes.is_null()
+        || data.output_parameter_changes.is_null()
+        || data.input_events.is_null()
+        || data.output_events.is_null()
+    {{
+        return K_RESULT_FALSE;
+    }}
     let mut gain_steps = [(0i32, 0f32); GAIN_STEP_CAPACITY];
     let mut step_count = 0usize;
     gather_parameter_steps(data.input_parameter_changes, &mut gain_steps, &mut step_count);

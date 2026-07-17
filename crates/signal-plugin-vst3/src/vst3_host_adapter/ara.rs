@@ -215,13 +215,12 @@ impl AraInspectionSession {
                 com_release(entry2);
             }
             com_release(entry);
-            return Err(Vst3HostingError::new("ara_factory_missing"));
+            return Ok(None);
         }
 
         let lowest = ptr::addr_of!((*factory).lowest_supported_api_generation).read_unaligned();
         let highest = ptr::addr_of!((*factory).highest_supported_api_generation).read_unaligned();
         let generation = highest.min(ARA_HIGHEST_SUPPORTED_GENERATION);
-        eprintln!("ARA inspection factory generations: lowest={lowest} highest={highest} selected={generation}");
         if generation < lowest {
             if let Some(entry2) = entry2 {
                 com_release(entry2);
@@ -273,7 +272,7 @@ impl AraInspectionSession {
                 entry2,
                 document_ref,
                 ARA_KNOWN_ROLES,
-                ARA_KNOWN_ROLES,
+                ARA_EDITOR_VIEW_ROLE,
             );
             com_release(entry2);
             result
@@ -362,4 +361,68 @@ unsafe extern "C" fn ara_archive_progress(_host: AraRef, _progress: f32) {}
 
 unsafe extern "C" fn ara_get_document_archive_id(_host: AraRef, _reader: AraRef) -> *const c_char {
     ptr::null()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[repr(C)]
+    struct FakeAraEntry {
+        vtable: *const AraPluginEntryPointVTable,
+    }
+
+    unsafe extern "C" fn query_interface(
+        object: *mut c_void,
+        iid: *const Tuid,
+        result: *mut *mut c_void,
+    ) -> Tresult {
+        if !iid.is_null() && *iid == ARA_PLUGIN_ENTRY_POINT_IID {
+            *result = object;
+            0
+        } else {
+            *result = ptr::null_mut();
+            1
+        }
+    }
+
+    unsafe extern "C" fn add_ref(_object: *mut c_void) -> u32 {
+        1
+    }
+
+    unsafe extern "C" fn release(_object: *mut c_void) -> u32 {
+        1
+    }
+
+    unsafe extern "C" fn missing_factory(_object: *mut c_void) -> *const AraFactory {
+        ptr::null()
+    }
+
+    unsafe extern "C" fn bind(
+        _object: *mut c_void,
+        _document: AraRef,
+    ) -> *const AraPluginExtensionInstance {
+        ptr::null()
+    }
+
+    static FAKE_ENTRY_VTABLE: AraPluginEntryPointVTable = AraPluginEntryPointVTable {
+        query_interface,
+        add_ref,
+        release,
+        get_factory: missing_factory,
+        bind_to_document_controller: bind,
+    };
+
+    #[test]
+    fn ara_entry_without_factory_falls_back_to_ordinary_vst3_loading() {
+        let mut entry = FakeAraEntry {
+            vtable: &FAKE_ENTRY_VTABLE,
+        };
+
+        let session =
+            unsafe { AraInspectionSession::try_bind((&mut entry as *mut FakeAraEntry).cast()) }
+                .expect("optional ARA probe");
+
+        assert!(session.is_none());
+    }
 }

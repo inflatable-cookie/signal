@@ -282,7 +282,7 @@ mod tests {
         // A swap must not clear the running convolution's history.
         let mut conv = FirConvolver::new(&[1.0, 1.0]);
         assert_eq!(conv.process_sample(1.0), 1.0); // taps[0]*1
-        // Swap to a response that reads the previous sample; history retained.
+                                                   // Swap to a response that reads the previous sample; history retained.
         conv.set_impulse_response(&[0.0, 1.0]);
         // y = 0*x[n] + 1*x[n-1] = previous input (1.0).
         assert_eq!(conv.process_sample(0.0), 1.0);

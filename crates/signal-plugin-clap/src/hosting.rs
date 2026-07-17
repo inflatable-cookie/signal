@@ -22,10 +22,13 @@ use clap_sys::{
     entry::clap_plugin_entry,
     events::{
         clap_event_header, clap_event_midi, clap_event_note, clap_event_note_expression,
-        clap_event_param_value, clap_input_events, clap_output_events, CLAP_CORE_EVENT_SPACE_ID,
-        CLAP_EVENT_MIDI, CLAP_EVENT_NOTE_EXPRESSION, CLAP_EVENT_NOTE_OFF, CLAP_EVENT_NOTE_ON,
-        CLAP_EVENT_PARAM_VALUE, CLAP_NOTE_EXPRESSION_BRIGHTNESS, CLAP_NOTE_EXPRESSION_PRESSURE,
-        CLAP_NOTE_EXPRESSION_TUNING,
+        clap_event_param_value, clap_event_transport, clap_input_events, clap_output_events,
+        CLAP_CORE_EVENT_SPACE_ID, CLAP_EVENT_MIDI, CLAP_EVENT_NOTE_EXPRESSION, CLAP_EVENT_NOTE_OFF,
+        CLAP_EVENT_NOTE_ON, CLAP_EVENT_PARAM_VALUE, CLAP_EVENT_TRANSPORT,
+        CLAP_NOTE_EXPRESSION_BRIGHTNESS, CLAP_NOTE_EXPRESSION_PRESSURE,
+        CLAP_NOTE_EXPRESSION_TUNING, CLAP_TRANSPORT_HAS_BEATS_TIMELINE,
+        CLAP_TRANSPORT_HAS_SECONDS_TIMELINE, CLAP_TRANSPORT_HAS_TEMPO,
+        CLAP_TRANSPORT_HAS_TIME_SIGNATURE,
     },
     ext::audio_ports::{clap_plugin_audio_ports, CLAP_EXT_AUDIO_PORTS},
     ext::gui::{clap_host_gui, clap_plugin_gui, CLAP_EXT_GUI},
@@ -36,6 +39,7 @@ use clap_sys::{
     },
     ext::state::{clap_host_state, clap_plugin_state, CLAP_EXT_STATE},
     factory::plugin_factory::{clap_plugin_factory, CLAP_PLUGIN_FACTORY_ID},
+    fixedpoint::{CLAP_BEATTIME_FACTOR, CLAP_SECTIME_FACTOR},
     host::clap_host,
     plugin::clap_plugin,
     process::{clap_process, CLAP_PROCESS_ERROR},
@@ -258,6 +262,8 @@ pub struct ClapHostedInstance {
     state: HostedInstanceState,
     parameters: Vec<PluginParameterDescriptor>,
     port_layout: ClapHostedPortLayout,
+    audio_buses: PluginAudioBusDescriptorList,
+    activated_sample_rate_hz: f64,
     activated_max_frames: u32,
     /// The plugin's `clap.gui` extension, queried once at load (null when
     /// the plugin has no gui).
@@ -316,7 +322,7 @@ impl ClapHostedInstance {
             return Err(ClapHostingError::new("plugin_init_failed"));
         }
 
-        let (parameters, port_layout) = unsafe { instance_shape(plugin) };
+        let (parameters, port_layout, audio_buses) = unsafe { instance_shape(plugin) };
         let (gui_extension, gui_api_supported) = unsafe { gui_shape(plugin) };
         Ok(Self {
             _entry: entry,
@@ -325,6 +331,8 @@ impl ClapHostedInstance {
             state: HostedInstanceState::Created,
             parameters,
             port_layout,
+            audio_buses,
+            activated_sample_rate_hz: 0.0,
             activated_max_frames: 0,
             gui_extension,
             gui_api_supported,
@@ -534,6 +542,7 @@ impl ClapHostedInstance {
             return Err(ClapHostingError::new("activate_failed"));
         }
         self.state = HostedInstanceState::Active;
+        self.activated_sample_rate_hz = sample_rate_hz;
         self.activated_max_frames = max_frames;
         Ok(())
     }
@@ -668,8 +677,9 @@ impl ClapHostedInstance {
         }
         Ok(ClapProcessSession::new(
             self.plugin,
+            self.activated_sample_rate_hz,
             self.activated_max_frames as usize,
-            self.port_layout.main_input_channels > 0,
+            &self.audio_buses,
             Arc::clone(&self.param_changes),
             Arc::clone(&self.param_out),
         ))
@@ -739,14 +749,19 @@ impl Drop for ClapHostedInstance {
 /// Enumerate a live instance's parameters and main-bus port layout.
 unsafe fn instance_shape(
     plugin: *const clap_plugin,
-) -> (Vec<PluginParameterDescriptor>, ClapHostedPortLayout) {
+) -> (
+    Vec<PluginParameterDescriptor>,
+    ClapHostedPortLayout,
+    PluginAudioBusDescriptorList,
+) {
     let mut parameters = Vec::new();
+    let mut buses = Vec::new();
     let mut layout = ClapHostedPortLayout {
         main_input_channels: 0,
         main_output_channels: 0,
     };
     let Some(get_extension) = (*plugin).get_extension else {
-        return (parameters, layout);
+        return (parameters, layout, buses);
     };
 
     let params_extension = get_extension(plugin, clap_sys::ext::params::CLAP_EXT_PARAMS.as_ptr());
@@ -759,8 +774,7 @@ unsafe fn instance_shape(
 
     let audio_ports = get_extension(plugin, CLAP_EXT_AUDIO_PORTS.as_ptr());
     if !audio_ports.is_null() {
-        let buses: PluginAudioBusDescriptorList =
-            audio_buses_from_extension(plugin, audio_ports.cast::<clap_plugin_audio_ports>());
+        buses = audio_buses_from_extension(plugin, audio_ports.cast::<clap_plugin_audio_ports>());
         for bus in &buses {
             if !bus.is_main {
                 continue;
@@ -771,7 +785,7 @@ unsafe fn instance_shape(
             }
         }
     }
-    (parameters, layout)
+    (parameters, layout, buses)
 }
 
 /// Query the plugin's `clap.gui` extension and whether it supports this
@@ -1073,18 +1087,116 @@ unsafe extern "C" fn param_in_events_get(
     }
 }
 
+struct ClapAudioBusBuffers {
+    samples: Vec<Vec<Vec<f32>>>,
+    _channel_pointers: Vec<Vec<*mut f32>>,
+    descriptors: Vec<clap_audio_buffer>,
+}
+
+impl ClapAudioBusBuffers {
+    fn new(channel_counts: &[usize], max_frames: usize) -> Self {
+        let mut samples = channel_counts
+            .iter()
+            .map(|&channel_count| vec![vec![0.0; max_frames]; channel_count])
+            .collect::<Vec<_>>();
+        let mut channel_pointers = samples
+            .iter_mut()
+            .map(|channels| {
+                channels
+                    .iter_mut()
+                    .map(|channel| channel.as_mut_ptr())
+                    .collect::<Vec<_>>()
+            })
+            .collect::<Vec<_>>();
+        let descriptors = channel_pointers
+            .iter_mut()
+            .map(|channels| clap_audio_buffer {
+                data32: if channels.is_empty() {
+                    ptr::null_mut()
+                } else {
+                    channels.as_mut_ptr()
+                },
+                data64: ptr::null_mut(),
+                channel_count: channels.len() as u32,
+                latency: 0,
+                constant_mask: 0,
+            })
+            .collect();
+        Self {
+            samples,
+            _channel_pointers: channel_pointers,
+            descriptors,
+        }
+    }
+
+    fn clear(&mut self, frames: usize) {
+        for bus in &mut self.samples {
+            for channel in bus {
+                channel[..frames].fill(0.0);
+            }
+        }
+    }
+
+    fn copy_interleaved_stereo_into(&mut self, bus_index: usize, input: &[f32], frames: usize) {
+        let Some(bus) = self.samples.get_mut(bus_index) else {
+            return;
+        };
+        let [left, right, ..] = bus.as_mut_slice() else {
+            return;
+        };
+        for frame in 0..frames {
+            left[frame] = input[frame * 2];
+            right[frame] = input[frame * 2 + 1];
+        }
+    }
+
+    fn copy_interleaved_stereo_from(&self, bus_index: usize, output: &mut [f32], frames: usize) {
+        let Some(bus) = self.samples.get(bus_index) else {
+            return;
+        };
+        let [left, right, ..] = bus.as_slice() else {
+            return;
+        };
+        for frame in 0..frames {
+            output[frame * 2] = left[frame];
+            output[frame * 2 + 1] = right[frame];
+        }
+    }
+
+    fn as_ptr(&self) -> *const clap_audio_buffer {
+        if self.descriptors.is_empty() {
+            ptr::null()
+        } else {
+            self.descriptors.as_ptr()
+        }
+    }
+
+    fn as_mut_ptr(&mut self) -> *mut clap_audio_buffer {
+        if self.descriptors.is_empty() {
+            ptr::null_mut()
+        } else {
+            self.descriptors.as_mut_ptr()
+        }
+    }
+
+    fn len(&self) -> u32 {
+        self.descriptors.len() as u32
+    }
+}
+
 /// Raw, movable process handle for one activated instance: the plugin
-/// pointer plus preallocated planar stereo buffers. The sandbox moves this
+/// pointer plus preallocated planar audio-bus buffers. The sandbox moves this
 /// onto its audio thread; the owning [`ClapHostedInstance`] must outlive it
 /// and must not run lifecycle transitions while the session is live.
 pub struct ClapProcessSession {
     plugin: *const clap_plugin,
-    input_left: Vec<f32>,
-    input_right: Vec<f32>,
-    output_left: Vec<f32>,
-    output_right: Vec<f32>,
+    sample_rate_hz: f64,
+    input_buses: ClapAudioBusBuffers,
+    output_buses: ClapAudioBusBuffers,
+    main_input_bus: Option<usize>,
+    main_output_bus: usize,
+    max_frames: usize,
     steady_time: AtomicI64,
-    has_audio_input: bool,
     processing: bool,
     /// Pending param writes shared with the owning instance (g12.023).
     param_changes: Arc<PluginParamChangeQueue>,
@@ -1104,11 +1216,33 @@ unsafe impl Send for ClapProcessSession {}
 impl ClapProcessSession {
     fn new(
         plugin: *const clap_plugin,
+        sample_rate_hz: f64,
         max_frames: usize,
-        has_audio_input: bool,
+        audio_buses: &PluginAudioBusDescriptorList,
         param_changes: Arc<PluginParamChangeQueue>,
         param_out_queue: Arc<PluginParamChangeQueue>,
     ) -> Self {
+        let input_buses = audio_buses
+            .iter()
+            .filter(|bus| bus.direction == PluginAudioBusDirection::Input)
+            .collect::<Vec<_>>();
+        let output_buses = audio_buses
+            .iter()
+            .filter(|bus| bus.direction == PluginAudioBusDirection::Output)
+            .collect::<Vec<_>>();
+        let main_input_bus = input_buses.iter().position(|bus| bus.is_main);
+        let main_output_bus = output_buses
+            .iter()
+            .position(|bus| bus.is_main)
+            .expect("supported CLAP layouts always have a main output bus");
+        let input_channel_counts = input_buses
+            .iter()
+            .map(|bus| usize::from(bus.channels))
+            .collect::<Vec<_>>();
+        let output_channel_counts = output_buses
+            .iter()
+            .map(|bus| usize::from(bus.channels))
+            .collect::<Vec<_>>();
         let mut param_events = Box::new(ParamEventList {
             params: Vec::with_capacity(PLUGIN_PARAM_CHANGE_CAPACITY),
             notes: Vec::with_capacity(IN_EVENT_CAPACITY),
@@ -1134,17 +1268,59 @@ impl ClapProcessSession {
         param_out.list.ctx = (&mut *param_out as *mut ParamOutCapture).cast();
         Self {
             plugin,
-            input_left: vec![0.0; max_frames],
-            input_right: vec![0.0; max_frames],
-            output_left: vec![0.0; max_frames],
-            output_right: vec![0.0; max_frames],
+            sample_rate_hz,
+            input_buses: ClapAudioBusBuffers::new(&input_channel_counts, max_frames),
+            output_buses: ClapAudioBusBuffers::new(&output_channel_counts, max_frames),
+            main_input_bus,
+            main_output_bus,
+            max_frames,
             steady_time: AtomicI64::new(0),
-            has_audio_input,
             processing: false,
             param_changes,
             param_scratch: Vec::with_capacity(PLUGIN_PARAM_CHANGE_CAPACITY),
             param_events,
             param_out,
+        }
+    }
+
+    /// Build a valid stopped transport snapshot for the current block.
+    ///
+    /// CLAP permits a null `process.transport`, but a number of otherwise
+    /// conforming plugins assume the pointer is always present. Supplying a
+    /// conservative stopped timeline is harmless to plugins that honour the
+    /// optional contract and avoids crashing those that do not.
+    fn transport(&self, steady_time: i64) -> clap_event_transport {
+        let seconds = steady_time as f64 / self.sample_rate_hz;
+        let beats = seconds * (120.0 / 60.0);
+        let beats_fixed = (beats * CLAP_BEATTIME_FACTOR as f64) as i64;
+        let seconds_fixed = (seconds * CLAP_SECTIME_FACTOR as f64) as i64;
+        let beats_per_bar = 4_i64 * CLAP_BEATTIME_FACTOR;
+        let bar_number = beats_fixed.div_euclid(beats_per_bar) as i32;
+
+        clap_event_transport {
+            header: clap_event_header {
+                size: std::mem::size_of::<clap_event_transport>() as u32,
+                time: 0,
+                space_id: CLAP_CORE_EVENT_SPACE_ID,
+                type_: CLAP_EVENT_TRANSPORT,
+                flags: 0,
+            },
+            flags: CLAP_TRANSPORT_HAS_TEMPO
+                | CLAP_TRANSPORT_HAS_BEATS_TIMELINE
+                | CLAP_TRANSPORT_HAS_SECONDS_TIMELINE
+                | CLAP_TRANSPORT_HAS_TIME_SIGNATURE,
+            song_pos_beats: beats_fixed,
+            song_pos_seconds: seconds_fixed,
+            tempo: 120.0,
+            tempo_inc: 0.0,
+            loop_start_beats: 0,
+            loop_end_beats: 0,
+            loop_start_seconds: 0,
+            loop_end_seconds: 0,
+            bar_start: i64::from(bar_number) * beats_per_bar,
+            bar_number,
+            tsig_num: 4,
+            tsig_denom: 4,
         }
     }
 
@@ -1339,47 +1515,30 @@ impl ClapProcessSession {
         frame_count: usize,
     ) -> bool {
         let frames = frame_count
-            .min(self.input_left.len())
+            .min(self.max_frames)
             .min(input.len() / 2)
             .min(output.len() / 2);
         let in_events = self.prepare_in_events(&[]);
-        for frame in 0..frames {
-            self.input_left[frame] = input[frame * 2];
-            self.input_right[frame] = input[frame * 2 + 1];
+        self.input_buses.clear(frames);
+        self.output_buses.clear(frames);
+        if let Some(main_input_bus) = self.main_input_bus {
+            self.input_buses
+                .copy_interleaved_stereo_into(main_input_bus, input, frames);
         }
-
-        let mut input_channels = [self.input_left.as_mut_ptr(), self.input_right.as_mut_ptr()];
-        let mut output_channels = [
-            self.output_left.as_mut_ptr(),
-            self.output_right.as_mut_ptr(),
-        ];
-        let input_buffer = clap_audio_buffer {
-            data32: input_channels.as_mut_ptr(),
-            data64: ptr::null_mut(),
-            channel_count: 2,
-            latency: 0,
-            constant_mask: 0,
-        };
-        let mut output_buffer = clap_audio_buffer {
-            data32: output_channels.as_mut_ptr(),
-            data64: ptr::null_mut(),
-            channel_count: 2,
-            latency: 0,
-            constant_mask: 0,
-        };
         let steady_time = self.steady_time.load(Ordering::Relaxed);
+        let audio_inputs = self.input_buses.as_ptr();
+        let audio_inputs_count = self.input_buses.len();
+        let audio_outputs = self.output_buses.as_mut_ptr();
+        let audio_outputs_count = self.output_buses.len();
+        let transport = self.transport(steady_time);
         let process = clap_process {
             steady_time,
             frames_count: frames as u32,
-            transport: ptr::null(),
-            audio_inputs: if self.has_audio_input {
-                &input_buffer
-            } else {
-                ptr::null()
-            },
-            audio_outputs: &mut output_buffer,
-            audio_inputs_count: u32::from(self.has_audio_input),
-            audio_outputs_count: 1,
+            transport: &transport,
+            audio_inputs,
+            audio_outputs,
+            audio_inputs_count,
+            audio_outputs_count,
             in_events,
             out_events: &self.param_out.list,
         };
@@ -1396,10 +1555,8 @@ impl ClapProcessSession {
             output[..frames * 2].copy_from_slice(&input[..frames * 2]);
             return false;
         }
-        for frame in 0..frames {
-            output[frame * 2] = self.output_left[frame];
-            output[frame * 2 + 1] = self.output_right[frame];
-        }
+        self.output_buses
+            .copy_interleaved_stereo_from(self.main_output_bus, output, frames);
         true
     }
 
@@ -1421,45 +1578,28 @@ impl ClapProcessSession {
         frame_count: usize,
         events: &[PluginEvent],
     ) -> bool {
-        let frames = frame_count.min(self.input_left.len()).min(io.len() / 2);
+        let frames = frame_count.min(self.max_frames).min(io.len() / 2);
         let in_events = self.prepare_in_events(events);
-        for frame in 0..frames {
-            self.input_left[frame] = io[frame * 2];
-            self.input_right[frame] = io[frame * 2 + 1];
+        self.input_buses.clear(frames);
+        self.output_buses.clear(frames);
+        if let Some(main_input_bus) = self.main_input_bus {
+            self.input_buses
+                .copy_interleaved_stereo_into(main_input_bus, io, frames);
         }
-
-        let mut input_channels = [self.input_left.as_mut_ptr(), self.input_right.as_mut_ptr()];
-        let mut output_channels = [
-            self.output_left.as_mut_ptr(),
-            self.output_right.as_mut_ptr(),
-        ];
-        let input_buffer = clap_audio_buffer {
-            data32: input_channels.as_mut_ptr(),
-            data64: ptr::null_mut(),
-            channel_count: 2,
-            latency: 0,
-            constant_mask: 0,
-        };
-        let mut output_buffer = clap_audio_buffer {
-            data32: output_channels.as_mut_ptr(),
-            data64: ptr::null_mut(),
-            channel_count: 2,
-            latency: 0,
-            constant_mask: 0,
-        };
         let steady_time = self.steady_time.load(Ordering::Relaxed);
+        let audio_inputs = self.input_buses.as_ptr();
+        let audio_inputs_count = self.input_buses.len();
+        let audio_outputs = self.output_buses.as_mut_ptr();
+        let audio_outputs_count = self.output_buses.len();
+        let transport = self.transport(steady_time);
         let process = clap_process {
             steady_time,
             frames_count: frames as u32,
-            transport: ptr::null(),
-            audio_inputs: if self.has_audio_input {
-                &input_buffer
-            } else {
-                ptr::null()
-            },
-            audio_outputs: &mut output_buffer,
-            audio_inputs_count: u32::from(self.has_audio_input),
-            audio_outputs_count: 1,
+            transport: &transport,
+            audio_inputs,
+            audio_outputs,
+            audio_inputs_count,
+            audio_outputs_count,
             in_events,
             out_events: &self.param_out.list,
         };
@@ -1475,10 +1615,8 @@ impl ClapProcessSession {
         if status == CLAP_PROCESS_ERROR {
             return false;
         }
-        for frame in 0..frames {
-            io[frame * 2] = self.output_left[frame];
-            io[frame * 2 + 1] = self.output_right[frame];
-        }
+        self.output_buses
+            .copy_interleaved_stereo_from(self.main_output_bus, io, frames);
         true
     }
 

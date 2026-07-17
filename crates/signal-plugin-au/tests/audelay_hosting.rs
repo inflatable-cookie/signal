@@ -43,7 +43,27 @@ fn registry_discovery_finds_stock_audelay() {
     assert_eq!(delay.manufacturer_code, "appl");
     assert_eq!(delay.load_key(), AUDELAY_LOAD_KEY);
     assert_eq!(delay.descriptor.vendor, "Apple");
-    assert_eq!(delay.bundle_root, AU_REGISTRY_COMPONENT_PATH);
+    let adapter = AuHostAdapter::default();
+    let platform = signal_plugin_au::current_au_platform();
+    let roots = adapter
+        .default_scan_roots(platform)
+        .into_iter()
+        .map(|root| root.root)
+        .collect::<Vec<_>>();
+    let filesystem = adapter.discover_plugins_for_roots(platform, &roots);
+    if let Some(bundle_delay) = filesystem
+        .iter()
+        .find(|plugin| plugin.load_key() == AUDELAY_LOAD_KEY)
+    {
+        assert_eq!(delay.bundle_root, bundle_delay.bundle_root);
+        assert!(Path::new(&delay.bundle_root).exists());
+        assert_eq!(
+            delay.descriptor.version, bundle_delay.descriptor.version,
+            "registry discovery should prefer the installed bundle version",
+        );
+    } else {
+        assert_eq!(delay.bundle_root, AU_REGISTRY_COMPONENT_PATH);
+    }
     assert!(
         delay.descriptor.parameters.is_empty(),
         "scan-time AU inventory must be empty (real inventory at load)",

@@ -14,8 +14,9 @@
 //!
 //! Plugin-initiated resizes arrive through the host's `IPlugFrame` object
 //! (`resizeView`), which queues a [`Vst3GuiEvent`] for the owner to drain
-//! and apply to its window (then grant via [`Vst3GuiSession::set_size`],
-//! which runs the spec's `checkSizeConstraint` → `onSize` sequence).
+//! and apply to its window (then grant via
+//! [`Vst3GuiSession::accept_plugin_resize`], which calls `onSize` without
+//! applying the host-only `checkSizeConstraint` step).
 
 #![allow(unsafe_op_in_unsafe_fn)]
 
@@ -297,10 +298,10 @@ impl Vst3GuiSession {
         }
     }
 
-    /// Propose `width`×`height` (host window resized, or granting a
-    /// `RequestResize`): `checkSizeConstraint` negotiation first (the
-    /// plugin may adjust the rect), then `onSize`. Returns the accepted
-    /// size on success. MAIN THREAD ONLY.
+    /// Propose `width`×`height` after a host/user-initiated window resize:
+    /// `checkSizeConstraint` negotiation first (the plugin may adjust the
+    /// rect), then `onSize`. Returns the accepted size on success. MAIN
+    /// THREAD ONLY.
     pub fn set_size(&mut self, width: u32, height: u32) -> Option<(u32, u32)> {
         let mut rect = ViewRect::from_size(width, height);
         unsafe {
@@ -322,9 +323,32 @@ impl Vst3GuiSession {
         }
     }
 
+    /// Accept a size requested through `IPlugFrame::resizeView`. Unlike a
+    /// host/user-initiated resize, this path must not call
+    /// `checkSizeConstraint`; the plugin has already chosen its size.
+    /// MAIN THREAD ONLY.
+    pub fn accept_plugin_resize(&mut self, width: u32, height: u32) -> Option<(u32, u32)> {
+        if width == 0 || height == 0 {
+            return None;
+        }
+        if (width, height) == self.size() {
+            return Some((width, height));
+        }
+        let mut apply = ViewRect::from_size(width, height);
+        unsafe {
+            let vtable = vtable_of::<PlugViewVTable>(self.view);
+            if ((*vtable).on_size)(self.view, &mut apply) != K_RESULT_OK {
+                return None;
+            }
+        }
+        self.width = width;
+        self.height = height;
+        Some((width, height))
+    }
+
     /// Drain host-side view callbacks queued since the last call
     /// (`resizeView` requests). The embedding host applies them to its
-    /// window and grants via [`Self::set_size`].
+    /// window and grants via [`Self::accept_plugin_resize`].
     pub fn take_events(&self) -> Vec<Vst3GuiEvent> {
         self.events
             .lock()
@@ -367,6 +391,10 @@ mod tests {
         attached: bool,
         removed: bool,
         get_size_calls: u32,
+        width: u32,
+        height: u32,
+        on_size_calls: u32,
+        constraint_calls: u32,
     }
 
     unsafe extern "C" fn query_interface(
@@ -430,11 +458,19 @@ mod tests {
         if !view.attached {
             return K_NO_INTERFACE;
         }
-        *rect = ViewRect::from_size(800, 600);
+        *rect = ViewRect::from_size(view.width, view.height);
         K_RESULT_OK
     }
 
-    unsafe extern "C" fn rect_no_op(_this: *mut c_void, _rect: *mut ViewRect) -> Tresult {
+    unsafe extern "C" fn on_size(this: *mut c_void, rect: *mut ViewRect) -> Tresult {
+        let view = &mut *this.cast::<AttachSizedView>();
+        (view.width, view.height) = (*rect).size();
+        view.on_size_calls += 1;
+        K_RESULT_OK
+    }
+
+    unsafe extern "C" fn check_size_constraint(this: *mut c_void, _rect: *mut ViewRect) -> Tresult {
+        (*this.cast::<AttachSizedView>()).constraint_calls += 1;
         K_RESULT_OK
     }
 
@@ -457,11 +493,11 @@ mod tests {
         on_key_down: no_op_key,
         on_key_up: no_op_key,
         get_size,
-        on_size: rect_no_op,
+        on_size,
         on_focus: focus_no_op,
         set_frame: set_frame_no_op,
         can_resize: no_op,
-        check_size_constraint: rect_no_op,
+        check_size_constraint,
     };
 
     #[test]
@@ -471,6 +507,10 @@ mod tests {
             attached: false,
             removed: false,
             get_size_calls: 0,
+            width: 800,
+            height: 600,
+            on_size_calls: 0,
+            constraint_calls: 0,
         });
         let view_ptr = (&mut *view as *mut AttachSizedView).cast();
         let parent = std::ptr::NonNull::<u8>::dangling().as_ptr().cast();
@@ -483,5 +523,35 @@ mod tests {
 
         drop(session);
         assert!(view.removed);
+    }
+
+    #[test]
+    fn plugin_resize_requests_bypass_host_constraints() {
+        let mut view = Box::new(AttachSizedView {
+            vtable: &ATTACH_SIZED_VIEW_VTABLE,
+            attached: false,
+            removed: false,
+            get_size_calls: 0,
+            width: 800,
+            height: 600,
+            on_size_calls: 0,
+            constraint_calls: 0,
+        });
+        let view_ptr = (&mut *view as *mut AttachSizedView).cast();
+        let parent = std::ptr::NonNull::<u8>::dangling().as_ptr().cast();
+        let mut session =
+            unsafe { Vst3GuiSession::open_embedded(view_ptr, parent) }.expect("view should open");
+
+        assert_eq!(session.accept_plugin_resize(900, 700), Some((900, 700)));
+        assert_eq!(view.constraint_calls, 0);
+        assert_eq!(view.on_size_calls, 1);
+
+        // A repeated request for the current size is already satisfied.
+        assert_eq!(session.accept_plugin_resize(900, 700), Some((900, 700)));
+        assert_eq!(view.on_size_calls, 1);
+
+        assert_eq!(session.set_size(1000, 750), Some((1000, 750)));
+        assert_eq!(view.constraint_calls, 1);
+        assert_eq!(view.on_size_calls, 2);
     }
 }

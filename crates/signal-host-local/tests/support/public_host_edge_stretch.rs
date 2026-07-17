@@ -32,7 +32,10 @@ pub fn host_stretch_identity_input(
 }
 
 pub fn host_stretch_source(value: f32, frame_count: usize) -> RenderSampleBuffer {
-    RenderSampleBuffer::stereo(48_000, Arc::from(vec![value; frame_count * 2].into_boxed_slice()))
+    RenderSampleBuffer::stereo(
+        48_000,
+        Arc::from(vec![value; frame_count * 2].into_boxed_slice()),
+    )
 }
 
 pub fn accepted_stretch_promotion_receipt(evidence_id: &str) -> StretchPromotionReceipt {

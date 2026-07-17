@@ -141,7 +141,10 @@ fn tone_plan(
                         start_frames: 0,
                         end_frames: u64::MAX,
                         source: RenderSource::Warped {
-                            source: Box::new(RenderSource::Samples(RenderSampleBuffer::stereo(SAMPLE_RATE_HZ, warped_data.into()))),
+                            source: Box::new(RenderSource::Samples(RenderSampleBuffer::stereo(
+                                SAMPLE_RATE_HZ,
+                                warped_data.into(),
+                            ))),
                             rate: 1.5,
                         },
                         loop_source: true,

@@ -5,6 +5,7 @@ use super::*;
 #[cfg(target_os = "macos")]
 use signal_plugin::PluginFeature;
 use std::{
+    collections::HashMap,
     env, fs,
     path::{Path, PathBuf},
 };
@@ -40,9 +41,10 @@ impl AuHostAdapter {
     /// descriptor-only posture. AUv3 components
     /// (`kAudioComponentFlag_IsV3AudioUnit`) are filtered out —
     /// `AudioComponentInstanceNew` cannot instantiate them. Discovered
-    /// entries carry the [`AU_REGISTRY_COMPONENT_PATH`] sentinel as their
-    /// bundle root (never opened; the load key alone re-resolves the
-    /// component). Off macOS this returns an empty list.
+    /// entries retain the matching filesystem bundle when its plist can be
+    /// found, falling back to [`AU_REGISTRY_COMPONENT_PATH`] for registry-only
+    /// components. The load key still re-resolves the component at runtime.
+    /// Off macOS this returns an empty list.
     pub fn discover_plugins_from_registry(&self) -> Vec<AuDiscoveredPluginType> {
         #[cfg(target_os = "macos")]
         {
@@ -150,6 +152,7 @@ const REGISTRY_TYPES_OF_INTEREST: [&str; 3] = ["aufx", "aumf", "aumu"];
 fn registry_discovery() -> Vec<AuDiscoveredPluginType> {
     use super::hosting::ffi;
 
+    let bundle_metadata = registry_bundle_metadata();
     let mut discovered = Vec::new();
     for type_code in REGISTRY_TYPES_OF_INTEREST {
         let Some(component_type) = super::hosting::fourcc_from_str(type_code) else {
@@ -168,13 +171,45 @@ fn registry_discovery() -> Vec<AuDiscoveredPluginType> {
             if component.is_null() {
                 break;
             }
-            let Some(metadata) = (unsafe { registry_component_metadata(component) }) else {
+            let Some(mut metadata) = (unsafe { registry_component_metadata(component) }) else {
                 continue;
             };
-            push_discovered_plugin(&mut discovered, &metadata, AU_REGISTRY_COMPONENT_PATH);
+            let load_key = format!(
+                "{}:{}:{}",
+                metadata.component_type, metadata.component_subtype, metadata.manufacturer_code,
+            );
+            let bundle = bundle_metadata.get(&load_key);
+            if let Some(version) = bundle.and_then(|(_, version)| version.as_ref()) {
+                metadata.version.clone_from(version);
+            }
+            let bundle_root = bundle
+                .map(|(root, _)| root.as_str())
+                .unwrap_or(AU_REGISTRY_COMPONENT_PATH);
+            push_discovered_plugin(&mut discovered, &metadata, bundle_root);
         }
     }
     discovered
+}
+
+#[cfg(target_os = "macos")]
+fn registry_bundle_metadata() -> HashMap<String, (String, Option<String>)> {
+    let adapter = AuHostAdapter::default();
+    let platform = current_au_platform();
+    let roots = adapter
+        .default_scan_roots(platform)
+        .into_iter()
+        .map(|root| root.root)
+        .collect::<Vec<_>>();
+    adapter
+        .discover_plugins_for_roots(platform, &roots)
+        .into_iter()
+        .map(|plugin| {
+            (
+                plugin.load_key(),
+                (plugin.bundle_root, plugin.descriptor.version),
+            )
+        })
+        .collect()
 }
 
 /// Build scan-time metadata for one registry component: identity from its

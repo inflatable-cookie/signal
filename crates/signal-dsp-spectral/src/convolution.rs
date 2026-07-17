@@ -185,7 +185,10 @@ impl PartitionedConvolver {
         let fft_size = self.fft_size;
 
         // Overlap-save input window: [previous block | current block].
-        for (slot, &sample) in self.window[..block_size].iter_mut().zip(self.prev_block.iter()) {
+        for (slot, &sample) in self.window[..block_size]
+            .iter_mut()
+            .zip(self.prev_block.iter())
+        {
             *slot = Complex32::new(sample, 0.0);
         }
         for (slot, &sample) in self.window[block_size..].iter_mut().zip(block.iter()) {
@@ -199,7 +202,8 @@ impl PartitionedConvolver {
         {
             let slot = &mut self.fdl[head * fft_size..head * fft_size + fft_size];
             slot.copy_from_slice(&self.window);
-            self.forward.process_with_scratch(slot, &mut self.fft_scratch);
+            self.forward
+                .process_with_scratch(slot, &mut self.fft_scratch);
         }
 
         // Y = Σ_p H[p] · X[head − p]: partition p multiplies the input spectrum
@@ -370,7 +374,10 @@ mod tests {
         let mut buffer = vec![0.0f32; block];
         let mut index = 0;
         while index < input.len() {
-            for (slot, src) in buffer.iter_mut().zip(input[index..].iter().chain(std::iter::repeat(&0.0))) {
+            for (slot, src) in buffer
+                .iter_mut()
+                .zip(input[index..].iter().chain(std::iter::repeat(&0.0)))
+            {
                 *slot = *src;
             }
             conv.process_block(&mut buffer);
@@ -411,7 +418,13 @@ mod tests {
         // IR spanning several partitions; verify sample-aligned (no added latency).
         let taps: Vec<f32> = (0..37).map(|i| ((i as f32) * 0.21).cos() * 0.4).collect();
         let input: Vec<f32> = (0..96)
-            .map(|i| if i % 5 == 0 { 0.7 } else { ((i as f32) * 0.11).sin() * 0.3 })
+            .map(|i| {
+                if i % 5 == 0 {
+                    0.7
+                } else {
+                    ((i as f32) * 0.11).sin() * 0.3
+                }
+            })
             .collect();
         let expected = naive_convolution(&taps, &input);
 
@@ -420,7 +433,11 @@ mod tests {
         assert_eq!(conv.partitions(), 37usize.div_ceil(block));
         let out = run_blocked(&mut conv, &input);
         for (n, want) in expected.iter().enumerate() {
-            assert!((out[n] - want).abs() < 1e-3, "sample {n}: got {}, want {want}", out[n]);
+            assert!(
+                (out[n] - want).abs() < 1e-3,
+                "sample {n}: got {}, want {want}",
+                out[n]
+            );
         }
     }
 
@@ -489,7 +506,13 @@ mod tests {
         let taps: Vec<f32> = (0..40).map(|i| ((i as f32) * 0.17).sin() * 0.3).collect();
         let block = 8;
         let input: Vec<f32> = (0..200)
-            .map(|i| if i % 9 == 0 { 0.6 } else { ((i as f32) * 0.07).cos() * 0.25 })
+            .map(|i| {
+                if i % 9 == 0 {
+                    0.6
+                } else {
+                    ((i as f32) * 0.07).cos() * 0.25
+                }
+            })
             .collect();
         let expected = naive_convolution(&taps, &input);
 

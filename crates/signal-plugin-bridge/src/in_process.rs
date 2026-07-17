@@ -404,8 +404,8 @@ impl InProcessClapProcessor {
             .unwrap_or(false)
     }
 
-    /// Propose a new editor content size (user drag or a granted
-    /// `RequestResize`); returns the accepted size. MAIN THREAD ONLY.
+    /// Propose a new editor content size from a host/user resize; returns the
+    /// accepted size. MAIN THREAD ONLY.
     pub fn gui_set_size(&self, width: u32, height: u32) -> Option<(u32, u32)> {
         self.instance.lock().ok().and_then(|mut instance| {
             instance
@@ -595,9 +595,9 @@ unsafe impl Sync for InProcessVst3Processor {}
 impl InProcessVst3Processor {
     /// Load the component class `class_id_hex` from the bundle at
     /// `bundle_root` in the host process, activate it at `sample_rate_hz` /
-    /// `max_frames`, negotiate the v1 stereo-effect layout, and build the
-    /// processing session. Plugins that reject stereo fail with the stable
-    /// `layout_unsupported` token.
+    /// `max_frames`, negotiate a stereo effect (2-in/2-out) or instrument
+    /// (0-in/2-out) layout, and build the processing session. Other layouts
+    /// fail with the stable `layout_unsupported` token.
     pub fn load_and_activate(
         bundle_root: &std::path::Path,
         class_id_hex: &str,
@@ -844,6 +844,17 @@ impl InProcessVst3Processor {
         })
     }
 
+    /// Grant a plugin-initiated `IPlugFrame::resizeView` request without
+    /// applying the constraint negotiation reserved for host/user resizes.
+    /// MAIN THREAD ONLY.
+    pub fn gui_accept_plugin_resize(&self, width: u32, height: u32) -> Option<(u32, u32)> {
+        self.instance.lock().ok().and_then(|mut instance| {
+            instance
+                .gui_session_mut()
+                .and_then(|session| session.accept_plugin_resize(width, height))
+        })
+    }
+
     /// Destroy the open editor (idempotent; processing continues). MAIN
     /// THREAD ONLY.
     pub fn gui_close(&self) {
@@ -989,8 +1000,8 @@ impl PluginBlockProcessor for InProcessVst3Processor {
 /// (teardown racing a callback) bypasses that block.
 ///
 /// The load path takes the same (path, key) pair as the other backends;
-/// for AU the path is the registry sentinel (`au-registry.component`) and
-/// the key is the fourcc triple resolved through the system registry.
+/// for AU the path identifies the discovered bundle when available and the
+/// key is the fourcc triple resolved through the system registry.
 pub struct InProcessAuProcessor {
     /// Field order matters: the session must drop before the instance (the
     /// session's drop uninstalls the render callback from the live unit).
@@ -1017,10 +1028,10 @@ unsafe impl Sync for InProcessAuProcessor {}
 
 impl InProcessAuProcessor {
     /// Resolve the fourcc `load_key` through the system AudioComponent
-    /// registry (`library_path` is the never-opened sentinel), activate the
+    /// registry, negotiate the stereo processing format while activating the
     /// unit at `sample_rate_hz` / `max_frames`, and build the processing
-    /// session. Rejects units outside the v1 stereo-effect layout with a
-    /// stable token (`layout_unsupported`); off macOS the load fails with
+    /// session. Units that reject the negotiated format fail with the stable
+    /// `layout_unsupported` token; off macOS the load fails with
     /// `unsupported_platform`.
     pub fn load_and_activate(
         library_path: &std::path::Path,
@@ -1030,9 +1041,6 @@ impl InProcessAuProcessor {
     ) -> Result<Self, String> {
         let mut instance =
             AuHostedInstance::load(library_path, load_key).map_err(|error| error.token)?;
-        if !instance.port_layout().is_supported_stereo_processor() {
-            return Err("layout_unsupported".to_string());
-        }
         instance
             .activate(f64::from(sample_rate_hz), 1, max_frames)
             .map_err(|error| error.token)?;
@@ -2707,10 +2715,10 @@ mod tests {
             height: VST3_FIXTURE_VIEW_REQUESTED_SIZE.1,
         }));
 
-        // Granting the request through set_size (checkSizeConstraint →
-        // onSize) sticks.
+        // Plugin-requested sizes bypass the host/user constraint pass and are
+        // granted directly through onSize.
         assert_eq!(
-            backend.gui_set_size(
+            backend.gui_accept_plugin_resize(
                 VST3_FIXTURE_VIEW_REQUESTED_SIZE.0,
                 VST3_FIXTURE_VIEW_REQUESTED_SIZE.1
             ),
