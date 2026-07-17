@@ -71,5 +71,5 @@ Finch and Loophole.
 
 ## Next Task
 
-Run Batch 29.7T as the one bounded fixed-grid
-`SharedRotationRegionLocked` proof. Keep production and Batch 29.8 closed.
+Run Batch 29.7U as the region-locked tone-continuity operator review. Freeze
+the 29.7T renderer and keep production plus Batch 29.8 closed.

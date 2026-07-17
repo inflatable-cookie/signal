@@ -197,5 +197,6 @@ channel owns the output and peers are locked to its current input relation.
 Batch 29.7Q transfers that ordering invariant once but rejects the complete
 peak-region proof. Batch 29.7R closes tracked peaks inside this continuous-field
 kernel. Batch 29.7S selects a separate region-locked phase-vocoder family and
-closes another Signalsmith-derived intervention. Run Batch 29.7T as the one
-bounded proof. Do not transfer source expression or constants.
+closes another Signalsmith-derived intervention. Batch 29.7T materially
+improves stereo but leaves 11 tone-local failures. Run Batch 29.7U as frozen
+operator review. Do not transfer source expression or constants.

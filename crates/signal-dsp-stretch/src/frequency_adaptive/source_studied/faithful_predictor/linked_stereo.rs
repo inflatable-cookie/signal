@@ -1,6 +1,7 @@
 mod mechanics;
 pub(in crate::frequency_adaptive) mod quality;
 mod render;
+pub(in crate::frequency_adaptive) mod shared_rotation_region_locked;
 
 use super::{coherent_representation, HASH_OFFSET};
 use mechanics::{

@@ -2453,6 +2453,71 @@ fn source_studied_linked_stereo_complete_peak_region_feasibility() {
 }
 
 #[test]
+#[ignore = "requires frozen exact-source and Rubber Band corpus pack"]
+#[cfg(not(debug_assertions))]
+fn source_studied_shared_rotation_region_locked_proof() {
+    use super::source_studied::faithful_predictor::linked_stereo::quality::gate_calibration::shared_rotation_region_locked_proof::{
+        review, SharedRotationProofDirection,
+    };
+
+    let result = review();
+    assert!(result.stereo.repeated);
+    assert_eq!(result.stereo.rows.len(), 48);
+    assert!(result
+        .stereo
+        .rows
+        .iter()
+        .all(|row| row.structural_failures == 0));
+    assert_eq!(result.stereo.current_failures, 20);
+    assert_eq!(result.stereo.candidate_failures, 1);
+    assert_eq!(result.stereo.row_complete_improvements, 30);
+    assert_eq!(result.stereo.metric_regressions, 18);
+    assert_eq!(result.stereo.local_consistency_failures, 11);
+    assert_eq!(result.stereo.evidence_hash, 0xeff5_2feb_ad8c_0fb8);
+    assert!(result.mechanics.repeated);
+    assert_eq!(result.mechanics.structural_failures, 0);
+    assert_eq!(result.mechanics.identity_mismatches, 0);
+    assert!(result
+        .mechanics
+        .errors
+        .iter()
+        .all(|error| *error <= 1.0e-12));
+    assert_eq!(result.mechanics.silent_peer_peak, 0.0);
+    assert_eq!(result.mechanics.states.tracked, 58_352);
+    assert_eq!(result.mechanics.states.reset, 1_445);
+    assert_eq!(result.mechanics.states.silent, 165);
+    assert_eq!(result.mechanics.states.regions, 59_797);
+    assert_eq!(result.mechanics.states.owner_switches, 7_710);
+    assert_eq!(result.mechanics.trajectory_break_resets, 117);
+    assert_eq!(result.mechanics.hash, 0xad90_7a31_d6ae_940a);
+    assert!(result.corpus.repeated);
+    assert_eq!(result.corpus.rows.len(), 6);
+    assert_eq!(result.corpus.candidate_hard_failures, 0);
+    assert_eq!(result.corpus.row_complete_regressions, 0);
+    assert_eq!(result.corpus.hash, 0xc062_525d_fa1d_a3ff);
+    assert_eq!(
+        result
+            .corpus
+            .rows
+            .iter()
+            .map(|row| row.hashes[1])
+            .collect::<Vec<_>>(),
+        [
+            0x63fa_4451_27ef_00c2,
+            0x2764_aaeb_dfa9_2aa9,
+            0xa7a0_497d_8d0c_2b6a,
+            0x62ec_5315_d7ea_0be3,
+            0xdc34_e955_406e_4e00,
+            0xcc36_c6a4_d0be_ee29,
+        ]
+    );
+    assert_eq!(
+        result.direction,
+        SharedRotationProofDirection::OperatorReview
+    );
+}
+
+#[test]
 #[ignore = "requires pinned Signalsmith Stretch 1.3.2 and Rubber Band R3 4.0.0"]
 #[cfg(not(debug_assertions))]
 fn source_studied_linked_stereo_relation_repair() {

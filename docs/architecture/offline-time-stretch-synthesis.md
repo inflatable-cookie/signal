@@ -1,7 +1,7 @@
 # Offline Time-Stretch Synthesis
 
-Status: coherent fixed-grid mono baseline validated; separate region-locked
-kernel proof next
+Status: region-locked fixed-grid proof rejected; tone-continuity operator
+review next
 Owner: dsp
 Updated: 2026-07-17
 Contract refs: `046`, `082`
@@ -14,8 +14,9 @@ identity-lock/reset phase vocoder. All successor work is report-only. The
 source-studied coherent fixed-grid predictor has completed its exact-source
 mono comparison against Rubber Band R3 with a material-dependent split and no
 overall winner. Its linked-stereo repair line is closed. One separate
-`SharedRotationRegionLocked` family is contracted for a report-only proof. No
-successor has earned product routing or dynamic-ratio work.
+`SharedRotationRegionLocked` family has completed one report-only proof. It is
+materially stronger on stereo but has not passed. No successor has earned
+product routing or dynamic-ratio work.
 
 This family is distinct from the production prototype. The prototype runs
 identity locking independently over mono or mid/side paths with midpoint
@@ -1324,8 +1325,21 @@ Later multiresolution work may assign each frequency to one scale and apply the
 same complete region law within that scale. It may not render overlapping
 full-band phase owners.
 
+Batch 29.7T implements that complete kernel once. It reduces calibrated stereo
+failures from `20/48` to `1/48`, with 30 complete improvements. Exact length,
+coverage, finiteness, identity, silence, mono parity, hard pan, swap, polarity,
+gain, owner changes, trajectory breaks, and repeat pass. The unchanged six-row
+mono corpus also has zero hard failures and zero row-complete regressions.
+
+Passage still rejects. Eleven stereo rows fail local consistency and 18 rows
+regress on at least one metric. Every local failure is a steady-tone row. The
+only calibrated failure is the short, off-bin `2.0x` tone at `0.009708 rad`
+whole-render IPD against `0.006 rad`. Image rows broadly improve. This split
+points to tone-trajectory continuity inside the complete region law, not a
+general linked-image or overlap failure. The renderer is frozen pending one
+operator review; no threshold or geometry tuning follows.
+
 ## Next Task
 
-Run Batch 29.7T as one report-only fixed-grid
-`SharedRotationRegionLocked` proof at `0.75x`, `1.5x`, and `2.0x`. Stop after
-one candidate. Keep all product-facing surfaces closed.
+Run Batch 29.7U as the region-locked tone-continuity operator review. Freeze
+the renderer and all evidence. Keep all product-facing surfaces closed.

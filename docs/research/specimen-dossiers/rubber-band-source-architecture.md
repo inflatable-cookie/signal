@@ -169,5 +169,6 @@ or constants. Do not promote centre-focus or mid/side. Batch 29.7Q then rejects
 the complete Signal-owned operation at `23/48` calibrated failures versus the
 `20/48` baseline. Batch 29.7R closes the cross-family hybrid. Batch 29.7S
 selects one independently supported shared-rotation region-locked kernel and
-keeps Rubber Band at architecture-only distance. Run Batch 29.7T as its one
-bounded proof.
+keeps Rubber Band at architecture-only distance. Batch 29.7T reduces calibrated
+failures to `1/48` but leaves 11 tone-local failures. Run Batch 29.7U as frozen
+operator review.

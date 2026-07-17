@@ -1937,46 +1937,78 @@ dominant-channel peak advance, coordinated reset, and exact overlap ownership.
 
 ### Batch 29.7T - Shared-Rotation Region-Locked Kernel Proof
 
-- [ ] add one report-only `SharedRotationRegionLocked` renderer beside the
+- [x] add one report-only `SharedRotationRegionLocked` renderer beside the
   unchanged coherent control; do not call the weighted predictor from it
-- [ ] reuse the coupled periodic-Kaiser/modified-half-bin representation,
+- [x] reuse the coupled periodic-Kaiser/modified-half-bin representation,
   exact absolute analysis centres, `30 ms` output interval, fourfold support,
   boundary handling, inverse transform, overlap accounting, and target length
-- [ ] form joint peak energy as the maximum per-channel energy at each bin; a
+- [x] form joint peak energy as the maximum per-channel energy at each bin; a
   peak is a nonzero local maximum against the two available neighbours on each
   side, with stable lower-bin plateau ties
-- [ ] place each region boundary at the lowest-energy bin between adjacent
+- [x] place each region boundary at the lowest-energy bin between adjacent
   peaks, with stable lower-bin ties; an active frame with no peak is one
   `ResetRegion`
-- [ ] match a current peak to the prior region containing its frequency; use
+- [x] match a current peak to the prior region containing its frequency; use
   `ResetRegion` on the first frame, discontinuity, silent predecessor, or
   missing predecessor, otherwise use `TrackedRegion`
-- [ ] select the greatest-energy current channel at the peak with stable
+- [x] select the greatest-energy current channel at the peak with stable
   lower-channel ties; retain the predecessor common rotation and every
   channel's predecessor-peak analysis phase across owner changes
-- [ ] estimate the owner trajectory over the actual adjacent analysis-centre
+- [x] estimate the owner trajectory over the actual adjacent analysis-centre
   interval, advance it over the fixed synthesis interval, calculate one common
   rotation, and apply that rotation to every current channel coefficient in
   the complete region
-- [ ] keep exact-zero `Silent` regions zero; add no attack detector, local-time
+- [x] keep exact-zero `Silent` regions zero; add no attack detector, local-time
   override, `Relational`, `Unlocked`, random-phase, mid/side, post-render,
   blended, classifier, or multiresolution state
-- [ ] prove `TrackedRegion`, `ResetRegion`, and `Silent` exercise plus exact
+- [x] prove `TrackedRegion`, `ResetRegion`, and `Silent` exercise plus exact
   length, coverage, finiteness, identity, silence, mono parity, hard pan, swap,
   polarity, scaled duplicate, owner changes, trajectory breaks, and repeat
-- [ ] run the unchanged mono integrity/corpus gates and `48` calibrated stereo
+- [x] run the unchanged mono integrity/corpus gates and `48` calibrated stereo
   rows at `0.75x`, `1.5x`, and `2.0x` against current Signal and Rubber Band
-- [ ] require zero calibrated stereo failures, zero local-consistency failures,
+- [x] require zero calibrated stereo failures, zero local-consistency failures,
   exact mechanics, and no row-complete mono regression; stop after one
   candidate without tuning any owner, picker, predecessor, reset, boundary,
   window, scale, threshold, or blend
-- [ ] keep current output, production identity, Batch 29.8, listening, dynamic
+- [x] keep current output, production identity, Batch 29.8, listening, dynamic
   ratio, realtime, routing, and cache identity unchanged
 
 Evidence: one complete candidate report, state/mechanics counts, per-row
 comparison, audio hashes, and exact repeat hash. Failure returns to
 algorithm-family operator review. Passage opens Batch 29.8 only after a
 separate roadmap checkpoint.
+
+Decision: reject passage and open operator review. The complete kernel reduces
+calibrated stereo failures from `20/48` to `1/48`, produces `30/48` complete
+improvements, and preserves exact mechanics. It still has `11/48` local-
+consistency failures and 18 rows regress on at least one metric. All local
+failures are tone rows. The sole calibrated failure is the short, off-bin
+`2.0x` tone at `0.009708 rad` whole-render IPD against the `0.006 rad` gate.
+The unchanged six-row mono corpus has zero hard failures and zero row-complete
+regressions. State counts are `58,352` tracked, `1,445` reset, `165` silent,
+`59,797` regions, and `7,710` owner switches. Stereo evidence
+`eff52febad8c0fb8`, mechanics `ad907a31d6ae940a`, and corpus
+`c062525dfa1da3ff` repeat exactly. No tuning rescue is authorized.
+
+### Batch 29.7U - Region-Locked Tone-Continuity Operator Review
+
+- [ ] freeze the 29.7T renderer, row set, hashes, thresholds, and mono result;
+  make no renderer, picker, boundary, trajectory, reset, window, or blend change
+- [ ] classify the 11 tone-local failures by ratio, length, phase, alignment,
+  whole/interior scope, region transition, owner switch, and trajectory break
+- [ ] compare the frozen current, candidate, and calibrated Rubber Band tone
+  evidence; locate the first divergence in peak trajectory integration,
+  predecessor-region assignment, complete-region rotation, or overlap
+- [ ] explain why image rows improve while steady-tone local consistency fails;
+  do not infer a parameter threshold from the one calibrated miss
+- [ ] decide whether one source-backed operator-law correction is bounded, a
+  different complete family is required, or the family closes; implement none
+- [ ] keep Batch 29.8, listening, dynamic ratio, realtime, routing, cache, and
+  production closed
+
+Evidence: one operator decision record with the 11-row failure map, first-
+divergence attribution, comparator boundary, and at most one next proof law.
+No renderer or tuning experiment belongs in this batch.
 
 ### Batch 29.8 - Listening And Dynamic Checkpoint
 
@@ -3138,9 +3170,13 @@ separate roadmap checkpoint.
   Primary papers plus MIT AudioTSM and MPL Bungee cover the independent phase,
   stereo, and whole-kernel seams without Rubber Band expression. Translation
   memo 011 freezes one fixed-grid proof and forbids parameter rescue.
+- 2026-07-17: Batch 29.7T rejects objective passage but materially improves the
+  linked result. The complete shared-rotation kernel reduces calibrated stereo
+  failures from `20/48` to `1/48` and passes exact mechanics plus the unchanged
+  six-row mono gate. Eleven tone-local consistency failures remain. Batch
+  29.7U owns operator attribution without tuning or another renderer.
 
 ## Next Task
 
-Run Batch 29.7T as the one bounded fixed-grid
-`SharedRotationRegionLocked` proof. Stop after one candidate and keep Batch
-29.8 closed.
+Run Batch 29.7U as the region-locked tone-continuity operator review. Freeze
+the 29.7T renderer and evidence. Keep Batch 29.8 closed.

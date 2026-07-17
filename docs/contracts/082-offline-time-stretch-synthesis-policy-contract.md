@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; separate region-locked kernel proof next
+Status: active; region-locked tone-continuity operator review next
 Owner: dsp
 Updated: 2026-07-17
 Related contracts: `046`, `048`, `049`
@@ -3829,7 +3829,21 @@ complete mono regression against the coherent control. Any failure stops
 without tuning peak selection, predecessor matching, ownership, reset,
 boundaries, windows, scales, or blends.
 
+Batch 29.7T rejects passage. The candidate reduces calibrated stereo failures
+from `20/48` to `1/48` and passes exact mechanics plus the unchanged six-row
+mono gate. It retains `11/48` local-consistency failures, all on steady-tone
+rows, and 18 rows regress on at least one metric. The only calibrated miss is
+the short, off-bin `2.0x` tone at `0.009708 rad` whole-render IPD against the
+`0.006 rad` gate.
+
+Rule 31H freezes this renderer and its evidence. No peak, predecessor, owner,
+reset, boundary, window, scale, threshold, or blend change is authorized.
+Batch 29.7U may inspect the frozen tone rows and phase-state traces only. It
+must assign the first divergence to peak trajectory integration, predecessor-
+region assignment, complete-region rotation, or overlap before proposing at
+most one source-backed operator-law proof. It may also close the family.
+
 ## Next Task
 
-Run Batch 29.7T as the one bounded fixed-grid
-`SharedRotationRegionLocked` proof under Rule 31H. Keep Batch 29.8 closed.
+Run Batch 29.7U as the region-locked tone-continuity operator review under Rule
+31H. Freeze the 29.7T renderer and keep Batch 29.8 closed.
