@@ -3,7 +3,7 @@
 Status: reviewed
 Specimen: Rubber Band R2 and R3
 Owner: dsp
-Last updated: 2026-07-16
+Last updated: 2026-07-17
 Scope: exact Rubber Band `4.0.0` source and linked-stereo topology
 
 ## Why This Specimen Matters
@@ -156,26 +156,12 @@ winner is established.
 
 ## Next Task
 
-Batch 29.7N shows that 29.7M's dominant loss came from channel-independent
-recurrence outside shared regions. It also corrects channel ownership to remain
-frequency-aligned at the requesting channel's peak location. Batch 29.7O then
-rejects one reference-safe tracked identity overlay: `25/48` calibrated rows
-fail and every row regresses somewhere. Batch 29.7P attributes relation loss to
-the complete eligible field, not just boundaries, and promotes one
-implementation-independent ordering law: construct the complete peak-owned
-region before preserving the peer relation. Run Batch 29.7Q as that one bounded
-proof. Do not transfer Rubber Band expression, ranges, scaling, reset policy,
-or constants. Do not promote centre-focus or mid/side. Batch 29.7Q then rejects
-the complete Signal-owned operation at `23/48` calibrated failures versus the
-`20/48` baseline. Batch 29.7R closes the cross-family hybrid. Batch 29.7S
-selects one independently supported shared-rotation region-locked kernel and
-keeps Rubber Band at architecture-only distance. Batch 29.7T reduces calibrated
-failures to `1/48` but leaves 11 tone-local failures. Batch 29.7U localizes all
-eleven maxima to finite-support boundary windows. Rubber Band is lower in the
-same worst boundary window on every row, and its source-backed reset states
-support a conditional material-state architecture without supplying expression
-or constants. Batch 29.7V proves that applying reset unconditionally to every
-finite-support frame is not equivalent: failures and regressions increase.
-Run Batch 29.7W as an architecture-only review of Rubber Band's complete
-ordinary, locked, reset, and unlocked state set. Do not transfer source
-expression, ranges, thresholds, or constants, and implement nothing.
+Batch 29.7W confirms that R3's state decisions cannot be reduced to a boundary
+reset around Signal's universal shared-rotation kernel. Ordinary advance is
+computed first; reset and unlock bypass peak lock; channel borrowing is
+conditional inside peak lock; scale ownership is separate. Shared rotation
+closes as a complete renderer but remains valid locked-state evidence. Batch
+29.7X must find independent support for material-guided unlock and
+nonoverlapping frequency-owned scales before any clean-room renderer is
+authorized. Do not transfer Rubber Band expression, ranges, thresholds, or
+constants.

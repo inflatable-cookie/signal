@@ -1,6 +1,7 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; finite-support reset rejected, material-state review next
+Status: active; shared rotation closed as complete kernel, material-state
+research next
 Owner: dsp
 Updated: 2026-07-17
 Related contracts: `046`, `048`, `049`
@@ -3874,8 +3875,27 @@ architectures only. It must implement nothing and must either promote the full
 state set, ordering, ownership, and evidence boundary for one bounded proof or
 close the shared-rotation family.
 
+Batch 29.7W closes `SharedRotationRegionLocked` as a complete renderer family.
+Common region rotation remains admissible only as evidence for a future
+harmonic/locked state. The direct record proves that universal tracking and
+universal boundary reset both fail: 29.7V produces 15 tone and four image local
+failures, four separate short-image calibrated failures, and mono-parity loss.
+Head and tail both improve and regress.
+
+Rule 31H does not authorize a complete material-state renderer. The current
+source record independently supports ordinary advance, peak lock, transient
+reset, and linked-channel ownership, but not the complete material-guided
+ordinary/unlocked policy or simultaneous nonoverlapping frequency-scale
+ownership. Rubber Band alone supplies the full classifier-to-state-to-scale
+composition in the reviewed record. Source expression, constants, thresholds,
+ranges, and ordering may not be transferred.
+
+Batch 29.7X may perform independent source and literature research on those two
+missing seams only. It must implement nothing. Another renderer card requires
+a second source or published basis for both seams, one frozen complete state
+and scale order, unchanged objective gates, and a one-candidate stop rule.
+
 ## Next Task
 
-Run Batch 29.7W as the material-state boundary architecture review under Rule
-31H. Freeze the 29.7T renderer and 29.7V evidence. Implement nothing and keep
-Batch 29.8 closed.
+Run Batch 29.7X as independent material-state kernel research under Rule 31H.
+Implement nothing and keep Batch 29.8 closed.

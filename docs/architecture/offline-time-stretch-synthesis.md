@@ -1,6 +1,7 @@
 # Offline Time-Stretch Synthesis
 
-Status: finite-support reset rejected; material-state architecture review next
+Status: shared rotation closed as a complete kernel; independent material-state
+research next
 Owner: dsp
 Updated: 2026-07-17
 Contract refs: `046`, `082`
@@ -1353,15 +1354,27 @@ finite-support frame therefore moves boundary error between head and tail and
 between rows; it does not reproduce Rubber Band's material-dependent state
 transitions.
 
-The reset law and all tuning around its range are closed. The remaining useful
-question is architectural: whether the source record supports one complete,
-bounded material-state machine containing ordinary, locked, reset, and
-unlocked states, or whether the shared-rotation family should close.
+The reset law and all tuning around its range are closed. Batch 29.7W confirms
+that common region rotation is a valid harmonic/locked state, not a complete
+phase kernel. The 29.7V local failures split into 15 tone and four image rows;
+its four separate calibrated failures are all short `0.75x` image rows. Both
+head and tail improve and regress. Boundary position does not select a law.
+
+Rubber Band's complete order computes ordinary advance first, then uses
+material guidance to choose reset, unlocked, or peak-locked phase by frequency.
+Channel borrowing is conditional inside peak lock, and each frequency is
+synthesized by one separately selected scale. Bungee and Signalsmith support
+individual seams, but neither independently supports that complete
+classifier-to-state-to-scale composition.
+
+`SharedRotationRegionLocked` therefore closes as a complete renderer family.
+Its common-rotation result remains evidence for a future locked state. A new
+complete renderer is not authorized until independent evidence closes both
+material-guided ordinary/unlocked ownership and nonoverlapping frequency-owned
+scale synthesis.
 
 ## Next Task
 
-Run Batch 29.7W as a material-state boundary architecture review. Implement
-nothing. Freeze the 29.7T control and rejected 29.7V candidate, classify the
-evidence against complete source-backed state families, then either promote
-one bounded architecture or close shared rotation. Keep all product-facing
-surfaces closed.
+Run Batch 29.7X as independent material-state kernel research. Implement
+nothing. Require a second source or published basis for both unresolved seams
+before defining another renderer. Keep all product-facing surfaces closed.

@@ -61,6 +61,7 @@ Finch and Loophole.
 | [Peak Owner And Phase-Field Order](./translation-memos/009-peak-owner-and-phase-field-order.md) | Reject late tracked overlays; require one complete peak-owned eligible-region operation with peer relation preserved inside it | Valid ordering law; current-kernel realization rejected |
 | [Linked-Stereo Current-Kernel Operator Decision](./translation-memos/010-linked-stereo-current-kernel-operator-decision.md) | Close tracked peaks inside the coherent weighted predictor; require complete kernel-family selection before another renderer | Promoted |
 | [Linked Phase-Field Kernel Family Selection](./translation-memos/011-linked-phase-field-kernel-family-selection.md) | Close PGHI for this lane; select one separate shared-rotation region-locked phase-vocoder proof | Promoted |
+| [Material-State Phase Architecture Boundary](./translation-memos/012-material-state-phase-architecture-boundary.md) | Close shared rotation as a complete kernel; require independent support for the missing material and scale seams | Promoted |
 
 ## Consumer Guidance
 
@@ -71,8 +72,8 @@ Finch and Loophole.
 
 ## Next Task
 
-Batch 29.7V rejects the parameter-free finite-support reset: calibrated
-failures rise to `4/48`, local failures to `19/48`, and nine previously passing
-rows regress. Run Batch 29.7W as a complete material-state boundary
-architecture review. Implement nothing. Keep production plus Batch 29.8
-closed.
+Batch 29.7W closes shared rotation as a complete renderer. Common rotation
+remains valid locked-state evidence, but the full material-guided state and
+frequency-scale composition has only one source in the current record. Run
+Batch 29.7X as independent research on those two missing seams. Implement
+nothing. Keep production plus Batch 29.8 closed.

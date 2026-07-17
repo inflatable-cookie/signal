@@ -2054,30 +2054,71 @@ local rows regress, and only one original local failure closes. All four
 calibrated misses are short `0.75x` image rows. Dedicated structural and
 symmetry mechanics plus the six-row mono corpus pass, but candidate parity with
 the frozen mono control fails at `1.262698`, `1.262698`, and `5.050797` maximum
-sample error. The law
-improves some tone boundary windows and worsens others. No tuning follows.
+sample error. The law improves some tone boundary windows and worsens others.
+No tuning follows.
 
 ### Batch 29.7W - Material-State Boundary Architecture Review
 
-- [ ] freeze the 29.7T and 29.7V renderers, rows, thresholds, state laws, and
+- [x] freeze the 29.7T and 29.7V renderers, rows, thresholds, state laws, and
   hashes; implement no renderer, detector, classifier, state, or scale
-- [ ] classify the four calibrated image failures, 19 local failures, nine new
+- [x] classify the four calibrated image failures, 19 local failures, nine new
   regressions, one fixed original row, and mono-parity loss by material, ratio,
   length, boundary side, and state transition
-- [ ] compare the direct split with the promoted source record for ordinary,
+- [x] compare the direct split with the promoted source record for ordinary,
   locked, reset, unlocked, channel-linked, and frequency-partitioned ownership;
   transfer no source expression, constants, thresholds, or reset ranges
-- [ ] decide whether one bounded complete material-state architecture has
+- [x] decide whether one bounded complete material-state architecture has
   independent support and a falsifiable proof, or close the shared-rotation
   family; do not authorize a local reset-range or head/tail variant
-- [ ] if a complete architecture is justified, promote its full state set,
-  ownership order, evidence bar, and one-candidate stop rule into architecture
-  and contract before preparing another renderer card
-- [ ] keep Batch 29.8, listening, dynamic ratio, realtime, routing, cache,
+- [x] record why the complete architecture is not yet independently justified,
+  retain common rotation only as locked-state evidence, and require the missing
+  seams to close before another renderer card
+- [x] keep Batch 29.8, listening, dynamic ratio, realtime, routing, cache,
   production, and product-facing work closed
 
 Evidence: one architecture decision record linking direct failure classes to
 source-backed state ownership. No DSP experiment belongs in this batch.
+
+Decision: close shared rotation as a complete renderer. The 29.7V failures
+split into 15 tone and four image local rows; its four separate calibrated
+misses are every short `0.75x` image row. Five retained original failures peak
+at the head and five at the tail. Universal tracking and universal reset are
+both wrong.
+
+Pinned R3 computes ordinary advance before selecting reset, unlocked, or
+peak-locked output by frequency. Channel borrowing is conditional inside the
+locked branch, and frequency-scale ownership is separate. Bungee, Signalsmith,
+and papers independently support ordinary advance, peak lock, reset, common
+rotation, and linked-channel ownership. Only Rubber Band in the current record
+supplies explicit material-guided unlock plus simultaneous nonoverlapping
+frequency-owned scales and their complete ordering. That is not enough for a
+clean-room renderer. Common rotation remains locked-state evidence; no further
+29.7T/29.7V variant is authorized.
+
+### Batch 29.7X - Independent Material-State Kernel Research
+
+- [ ] freeze production, 29.7T, 29.7V, all objective rows, thresholds, hashes,
+  and translation memo 012; implement no renderer or policy prototype
+- [ ] find at least one independent implementation or published construction
+  for material-guided ordinary-versus-unlocked phase ownership; distinguish a
+  pro-quality law from random diffusion or one-source heuristics
+- [ ] find at least one independent implementation or published construction
+  for simultaneous nonoverlapping frequency-owned scale synthesis; reject
+  redundant full-band unions and time-selected resolution
+- [ ] map candidate evidence to boundary handling, mono continuity, linked-
+  channel compatibility, exact scale reconstruction, deterministic offline
+  bounds, and clean-room licensing
+- [ ] decide whether the two seams support one complete Signal-owned state and
+  scale order; if not, close this source-studied successor lane rather than
+  inferring missing policy
+- [ ] if supported, promote exact state ownership, scale ownership, observables,
+  mechanics, objective passage, and one-candidate stop rule before preparing an
+  implementation card
+- [ ] keep Batch 29.8, listening, dynamic ratio, realtime, routing, cache,
+  production, and all product-facing work closed
+
+Evidence: one independent-source matrix and one promoted architecture decision
+or explicit lane closure. No DSP experiment belongs in this batch.
 
 ### Batch 29.8 - Listening And Dynamic Checkpoint
 
@@ -3255,8 +3296,14 @@ source-backed state ownership. No DSP experiment belongs in this batch.
   fails. Evidence
   `226737df336507e9` repeats. Batch 29.7W returns to complete material-state
   architecture before any further renderer.
+- 2026-07-17: Batch 29.7W closes shared rotation as a complete renderer but
+  retains it as harmonic/locked-state evidence. The direct failures split
+  tracking and reset by material, not boundary side. Rubber Band alone supplies
+  the reviewed classifier-to-state-to-scale composition; independent evidence
+  does not yet close material-guided unlock or nonoverlapping frequency-owned
+  scales. Batch 29.7X researches those two seams without implementation.
 
 ## Next Task
 
-Run Batch 29.7W as the material-state boundary architecture review. Freeze both
-renderers and implement nothing. Keep Batch 29.8 closed.
+Run Batch 29.7X as independent material-state kernel research. Implement
+nothing and keep Batch 29.8 closed.

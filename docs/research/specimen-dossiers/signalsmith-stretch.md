@@ -3,7 +3,7 @@
 Status: reviewed; Signal translation parity confirmed
 Specimen: Signalsmith Stretch `1.3.2`
 Owner: dsp
-Last updated: 2026-07-15
+Last updated: 2026-07-17
 Scope: time-stretch phase topology at revision `57b93f4e9206a089a45387eaa39bdc9f310d3308`
 
 ## Why This Specimen Matters
@@ -191,16 +191,8 @@ known frame-rate sideband, is the next translation gate.
 
 ## Next Task
 
-Batch 29.7P confirms the relevant pinned-source ordering: horizontal prediction
-is followed by bidirectional frequency prediction, then the greatest-energy
-channel owns the output and peers are locked to its current input relation.
-Batch 29.7Q transfers that ordering invariant once but rejects the complete
-peak-region proof. Batch 29.7R closes tracked peaks inside this continuous-field
-kernel. Batch 29.7S selects a separate region-locked phase-vocoder family and
-closes another Signalsmith-derived intervention. Batch 29.7T materially
-improves stereo but leaves 11 tone-local failures. Batch 29.7U assigns those
-failures to overlap of boundary-conditioned tracked frames, outside this
-continuous-field specimen's next-use boundary. Batch 29.7V rejects the
-finite-support reset and supplies no reason for another Signalsmith-derived
-intervention. Run Batch 29.7W as a complete material-state architecture review.
-Do not transfer source expression or constants.
+Batch 29.7W retains Signalsmith as independent evidence for ordinary advance
+and linked-channel ownership. Its documented high-ratio randomization is not a
+pro-quality material-guided unlock law, and it supplies no frequency-owned
+multi-scale synthesis. Batch 29.7X must close those seams elsewhere before
+another renderer. Do not transfer source expression or constants.
