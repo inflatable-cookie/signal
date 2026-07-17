@@ -1,9 +1,9 @@
 # Offline Time-Stretch Synthesis
 
-Status: coherent fixed-grid mono baseline validated; linked stereo source study
+Status: coherent fixed-grid mono baseline validated; linked phase-field family selection
 active after calibrated repair rejection
 Owner: dsp
-Updated: 2026-07-16
+Updated: 2026-07-17
 Contract refs: `046`, `082`
 Roadmap ref: `g10.029`
 
@@ -1275,9 +1275,23 @@ Operator order was a real fault, but correcting it is insufficient for the
 current coherent kernel. Further local peak-region variants are closed pending
 an algorithm-family operator review.
 
+That review closes linked tracked peaks inside the current coherent kernel.
+The kernel's defining pure-stretch topology is one continuous weighted phase
+field; its source architecture does not use peak mapping for identity-frequency
+time stretch. Rubber Band's linked trajectory instead belongs to a complete
+phase-vocoder state machine containing ordinary advance, tracked advance,
+reset, unlocked, material-guided, scale, and synthesis policies. Transferring
+only its peak state creates a cross-family hybrid.
+
+The current kernel therefore retains `Relational` as its sole linked-stereo
+phase owner. Further tracked peak work requires a separately contracted kernel
+family that owns representation, all phase states, channel linking, and overlap
+synthesis together. This is a kernel boundary, not a claim that tracked peaks
+are generally ineffective.
+
 ## Next Task
 
-Run Batch 29.7R as a current-kernel operator review. Decide whether linked
-tracked peaks close for this coherent kernel or require a separately contracted
-phase-field kernel family. Keep another renderer and all product-facing
-surfaces closed.
+Run Batch 29.7S as linked phase-field kernel-family selection. Compare one
+joint multichannel phase-gradient family with one state-complete peak-locked
+phase-vocoder family. Contract at most one complete system before another
+renderer. Keep all product-facing surfaces closed.

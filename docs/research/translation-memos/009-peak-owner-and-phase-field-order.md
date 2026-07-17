@@ -1,6 +1,6 @@
 # Peak Owner And Phase-Field Order
 
-Status: promoted
+Status: promoted ordering law; current-kernel application closed by memo 010
 Date: 2026-07-17
 Roadmap: `g10.029`, Batch 29.7P
 Contract: `082`, Rule 31H
@@ -93,7 +93,9 @@ baseline. Only `2/48` rows improve completely, `46/48` regress somewhere, and
 safety, and repeat remain exact at evidence `2a52a1106fadf298`.
 
 The result confirms that operator order mattered but was not sufficient. Local
-tracked-peak variants now close for current-kernel operator review.
+tracked-peak variants now close for current-kernel operator review. Translation
+memo 010 closes `TrackedPeak` inside the current continuous weighted predictor
+and retains this ordering law only for future complete-kernel evaluation.
 
 ## Sources
 

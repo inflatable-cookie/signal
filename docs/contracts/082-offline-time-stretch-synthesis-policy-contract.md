@@ -1,8 +1,8 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; linked-stereo source study next
+Status: active; linked phase-field kernel-family selection next
 Owner: dsp
-Updated: 2026-07-16
+Updated: 2026-07-17
 Related contracts: `046`, `048`, `049`
 Related architecture: `docs/architecture/offline-time-stretch-synthesis.md`
 
@@ -3780,8 +3780,22 @@ next step is operator review at algorithm-family scale. Another tracked owner,
 picker, eligibility, frequency range, phase scale, or boundary blend requires
 a new promoted kernel contract, not another feasibility variant.
 
+Batch 29.7R closes that review. The current coherent weighted predictor is a
+continuous-field kernel and pure time stretch does not use peak mapping in its
+source architecture. A linked tracked peak is one state from a different,
+state-complete phase-vocoder family. The `29 -> 25 -> 23` failure progression
+proves ownership corrections help, while failure to beat the `20/48` relational
+baseline proves that another local variant is not a bounded continuation.
+
+Rule 31H now authorizes only `Relational` linked-stereo ownership inside the
+current coherent kernel. `TrackedPeak` is closed as an overlay, replacement,
+seed, or local state in that kernel. A future tracked implementation requires a
+separate contract covering ordinary, tracked, reset, unlocked, linked-channel,
+representation, scale, and overlap-synthesis ownership as one system.
+
 ## Next Task
 
-Run Batch 29.7R as a current-kernel operator review under Rule 31H. Decide
-whether linked tracked peaks close for this coherent kernel or require a
-separately contracted phase-field kernel family. Keep Batch 29.8 closed.
+Run Batch 29.7S as linked phase-field kernel-family selection under Rule 31H.
+Compare joint multichannel phase-gradient integration with a state-complete
+peak-locked phase vocoder. Contract at most one family before another renderer.
+Keep Batch 29.8 closed.

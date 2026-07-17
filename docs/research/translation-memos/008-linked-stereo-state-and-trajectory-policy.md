@@ -1,6 +1,6 @@
 # Linked-Stereo State And Trajectory Policy
 
-Status: promoted
+Status: superseded for the current coherent kernel by memo 010
 Date: 2026-07-17
 Roadmap: `g10.029`, Batch 29.7N
 Contract: `082`, Rule 31H
@@ -89,7 +89,7 @@ ablation proves that a channel-independent `Unlocked` default is unsafe for
 linked stereo. No separate kick law has enough independent evidence for
 promotion.
 
-## Signal Policy
+## Historical Signal Policy
 
 Use three states with strict precedence:
 
@@ -101,6 +101,12 @@ Use three states with strict precedence:
 `Attack` is evidence that may trigger `Reset`, not a fourth phase law.
 `Unlocked` and `Kick` are not promoted. Linked stereo must never fall back to
 fully channel-independent recurrence merely because peak sharing is ineligible.
+
+Batch 29.7R supersedes `TrackedPeak` for the current coherent kernel after both
+the late overlay and complete-region realization reject. The state ordering
+remains research evidence for a future separately contracted phase-vocoder
+kernel, not authorization to add those states to the continuous weighted
+predictor.
 
 Within `TrackedPeak`, channel ownership remains frequency-aligned. Each channel
 keeps its own region peak location. A compatible dominant peer may own the

@@ -1883,19 +1883,50 @@ variant is authorized.
 
 ### Batch 29.7R - Current-Kernel Operator Review
 
-- [ ] consolidate the 29.7M, 29.7N, 29.7O, 29.7P, and 29.7Q evidence into one
+- [x] consolidate the 29.7M, 29.7N, 29.7O, 29.7P, and 29.7Q evidence into one
   operator decision record
-- [ ] distinguish gains from complete owner ordering from remaining losses in
+- [x] distinguish gains from complete owner ordering from remaining losses in
   the current coherent predictor and overlap synthesis
-- [ ] decide whether linked tracked-peak work closes for the current coherent
+- [x] decide whether linked tracked-peak work closes for the current coherent
   kernel or requires a separately contracted phase-field kernel family
-- [ ] define the next research question at algorithm-family scale; do not open
+- [x] define the next research question at algorithm-family scale; do not open
   another peak owner, picker, eligibility, range, scale, or blend variant
-- [ ] keep Batch 29.8, listening, dynamic ratio, realtime, routing, and
+- [x] keep Batch 29.8, listening, dynamic ratio, realtime, routing, and
   production closed
 
 Evidence: one operator decision record promoted into architecture and Rule
 31H. No renderer or parameter experiment belongs in this batch.
+
+Decision: close linked tracked peaks inside the current coherent kernel. The
+kernel is one continuous weighted phase field and its pure-stretch source
+architecture does not use peak mapping. Rubber Band's linked peak trajectory
+belongs to a different, state-complete phase-vocoder kernel. The progression
+from `29` to `25` to `23` failures proves ownership corrections matter, but
+failure to beat the `20/48` relational baseline closes another local variant.
+Translation memo 010 promotes the kernel boundary.
+
+### Batch 29.7S - Linked Phase-Field Kernel Family Selection
+
+- [ ] compare one joint multichannel phase-gradient integration family with one
+  state-complete peak-locked phase-vocoder family
+- [ ] use primary literature and permissive implementations where available;
+  keep Rubber Band GPL source at architecture-only distance
+- [ ] define representation, horizontal and vertical phase ownership,
+  transient/reset policy, linked-channel policy, and overlap synthesis for each
+  family as one system
+- [ ] assess compatibility with the proven coherent mono baseline, later
+  multi-resolution work, deterministic offline rendering, and realtime-safe
+  state projection without implementing any family
+- [ ] select at most one family and promote its clean-room boundary into
+  architecture and Rule 31H, or close both with an explicit research gap
+- [ ] define one bounded fixed-ratio proof only if the selected family has no
+  unresolved ownership or licensing gap
+- [ ] keep Batch 29.8, listening, dynamic ratio, realtime, routing, and
+  production closed
+
+Evidence: one source-backed family decision matrix and one promoted kernel
+contract. No renderer, parameter sweep, picker, classifier, scale crossover,
+or reset implementation belongs in this batch.
 
 ### Batch 29.8 - Listening And Dynamic Checkpoint
 
@@ -3046,10 +3077,16 @@ Evidence: one operator decision record promoted into architecture and Rule
   `20/48` baseline to `23/48`; only `2/48` rows improve completely, `46/48`
   regress somewhere, and `27/48` fail local consistency. Exact mechanics and
   repeat hold at evidence `2a52a1106fadf298`. Parameter rescue remains closed.
+- 2026-07-17: Batch 29.7R closes linked tracked peaks inside the current
+  coherent kernel. Signalsmith-style pure stretch is one continuous weighted
+  field without peak mapping; Rubber Band's linked peak is one state in a
+  complete phase-vocoder kernel. The failed hybrids justify kernel-family
+  selection, not another local variant. Translation memo 010 freezes the
+  boundary.
 
 ## Next Task
 
-Run Batch 29.7R as a current-kernel operator review. Consolidate the tracked
-peak evidence, decide whether this kernel family closes or needs a separately
-contracted phase-field kernel, and stop before another renderer. Keep Batch
-29.8 closed.
+Run Batch 29.7S as linked phase-field kernel-family selection. Compare joint
+multichannel phase-gradient integration with a state-complete peak-locked phase
+vocoder, promote at most one complete clean-room boundary, and stop before a
+renderer. Keep Batch 29.8 closed.

@@ -1,7 +1,7 @@
 # g10 Milestones
 
 Status: active
-Updated: 2026-07-16
+Updated: 2026-07-17
 
 ## Why this generation matters now
 
@@ -405,13 +405,17 @@ Current stretch status:
   29.7Q rejects that proof: failures improve over the overlay but remain
   `23/48` against the `20/48` baseline, with `46/48` rows regressing somewhere.
   Evidence `2a52a1106fadf298` closes local peak-region variants for operator
-  review.
+  review. Batch 29.7R identifies a cross-family hybrid: the coherent
+  pure-stretch kernel is a continuous field without peak mapping, while the
+  comparator's linked peak belongs to a complete phase-vocoder state machine.
+  Current-kernel tracked peaks close; complete kernel-family selection opens.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7R as a current-kernel operator review. Decide whether
-linked tracked peaks close for this kernel or require a separately contracted
-phase-field kernel family. Keep another renderer and Batch 29.8 closed.
+Run `g10.029` Batch 29.7S as linked phase-field kernel-family selection. Compare
+joint multichannel phase-gradient integration with a state-complete peak-locked
+phase vocoder and contract at most one complete family before another renderer.
+Keep Batch 29.8 closed.

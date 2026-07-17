@@ -195,6 +195,7 @@ Batch 29.7P confirms the relevant pinned-source ordering: horizontal prediction
 is followed by bidirectional frequency prediction, then the greatest-energy
 channel owns the output and peers are locked to its current input relation.
 Batch 29.7Q transfers that ordering invariant once but rejects the complete
-peak-region proof. Run current-kernel operator review before another
+peak-region proof. Batch 29.7R closes tracked peaks inside this continuous-field
+kernel. Run Batch 29.7S as complete kernel-family selection before another
 Signalsmith-derived intervention. Do not transfer source expression or
 constants.

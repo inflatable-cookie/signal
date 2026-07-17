@@ -145,7 +145,7 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7R under contract `082`, Rule 31H. Review the current
-coherent kernel at algorithm-family scale after the complete peak-owned region
-rejection. Keep another renderer, listening, dynamic ratio, realtime, routing,
-and promotion closed.
+Run `g10.029` Batch 29.7S under contract `082`, Rule 31H. Select between joint
+multichannel phase-gradient integration and a state-complete peak-locked phase
+vocoder. Contract at most one complete family before another renderer; keep
+listening, dynamic ratio, realtime, routing, and promotion closed.

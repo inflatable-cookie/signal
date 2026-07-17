@@ -56,8 +56,9 @@ Finch and Loophole.
 | [Weighted Predictor Fidelity](./translation-memos/005-weighted-predictor-fidelity.md) | Correct scheduling, geometry, vertical twists, normalization, fallback, and update ordering as one topology | Promoted |
 | [Linked-Stereo Relationship-Preserving Recurrence](./translation-memos/006-linked-stereo-recurrence.md) | Select one per-bin reference recurrence and preserve peer current-input complex relation plus magnitude | Promoted |
 | [Rubber Band Linked-Stereo Mechanism](./translation-memos/007-rubber-band-linked-stereo-mechanism.md) | Move conditional, frequency-bounded channel ownership from same-bin projection to tracked peak regions | Promoted |
-| [Linked-Stereo State And Trajectory Policy](./translation-memos/008-linked-stereo-state-and-trajectory-policy.md) | Keep reference-relative recurrence as the stereo default and make tracked peak ownership a frequency-aligned overlay | Promoted |
-| [Peak Owner And Phase-Field Order](./translation-memos/009-peak-owner-and-phase-field-order.md) | Reject late tracked overlays; require one complete peak-owned eligible-region operation with peer relation preserved inside it | Promoted |
+| [Linked-Stereo State And Trajectory Policy](./translation-memos/008-linked-stereo-state-and-trajectory-policy.md) | Keep reference-relative recurrence as the stereo default and make tracked peak ownership a frequency-aligned overlay | Superseded for current kernel by memo 010 |
+| [Peak Owner And Phase-Field Order](./translation-memos/009-peak-owner-and-phase-field-order.md) | Reject late tracked overlays; require one complete peak-owned eligible-region operation with peer relation preserved inside it | Valid ordering law; current-kernel realization rejected |
+| [Linked-Stereo Current-Kernel Operator Decision](./translation-memos/010-linked-stereo-current-kernel-operator-decision.md) | Close tracked peaks inside the coherent weighted predictor; require complete kernel-family selection before another renderer | Promoted |
 
 ## Consumer Guidance
 
@@ -68,6 +69,6 @@ Finch and Loophole.
 
 ## Next Task
 
-Run Batch 29.7R as a current-kernel operator review. Consolidate the linked
-tracked-peak evidence and decide whether this coherent kernel closes or needs a
-separately contracted phase-field kernel family before another renderer.
+Run Batch 29.7S as linked phase-field kernel-family selection. Compare joint
+multichannel phase-gradient integration with a state-complete peak-locked phase
+vocoder and contract at most one complete family before another renderer.
