@@ -1250,11 +1250,20 @@ and `34/48` lose local consistency. Evidence `ec1f63ad4bae9fc8` blocks tuning.
 Tracked peak phase is unsafe as this late overlay on the current broad
 phase-gradient field. Published successful peak-locked systems estimate peak
 phases first and derive the surrounding region from those owners. Operator
-ordering is the next attribution target, not yet the proven cause.
+ordering is the cause. Report-only tracing over the unchanged `48` rows shows
+relation error rising from `0.057562` to `1.485181` radians RMS at anchors,
+`0.038310` to `1.197048` in region interiors, and `0.129766` to `1.182947` at
+boundaries. Evidence `e1713e619138301b` repeats exactly.
+
+The promoted operator law forbids a tracked peak as a late overlay. A later
+proof must establish one tracked owner, derive the complete eligible region
+from it, and preserve the peer's current same-frequency analysis relation
+inside the same operation. Current relational recurrence owns every ineligible
+region as a complete field. Mixed relational and tracked ownership inside one
+eligible region is not permitted.
 
 ## Next Task
 
-Run Batch 29.7P peak-owner and phase-field integration research. Determine
-whether tracked peaks can seed or constrain Signal's predictor before broad
-phase integration, require a complete peak-owned region operator, or are
-incompatible with the current kernel. Keep another renderer closed.
+Run Batch 29.7Q as one report-only complete peak-owned region proof. Reuse the
+29.7O picker, eligibility, tracked advance, and identity offsets. Change only
+operator order and ownership. Keep all product-facing surfaces closed.

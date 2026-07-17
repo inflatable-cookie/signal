@@ -1,11 +1,13 @@
 use rustfft::num_complex::Complex64;
 
 use super::super::super::HORIZONTAL_ENERGY_FLOOR;
+use super::tracked_peak_trace::{record_phase_field, TrackedPeakPhaseTrace};
 use super::PeakMap;
 
 pub(super) struct FrameResult {
     pub(super) output: [Vec<Complex64>; 2],
     pub(super) counts: [usize; 4],
+    pub(super) trace: TrackedPeakPhaseTrace,
 }
 
 pub(super) fn advance(
@@ -25,11 +27,23 @@ pub(super) fn advance(
         return FrameResult {
             counts: [regions(peak_maps), 0, 0, current[0].len()],
             output,
+            trace: TrackedPeakPhaseTrace::default(),
         };
     };
+    let region_states: Vec<_> = (0..current[0].len())
+        .map(|bin| {
+            let pair = [peak_maps[0].owner(bin), peak_maps[1].owner(bin)];
+            let predecessors = [
+                pair[0].and_then(|peak| previous_peak_maps[0].owner(peak)),
+                pair[1].and_then(|peak| previous_peak_maps[1].owner(peak)),
+            ];
+            (predecessors[0].is_some() && predecessors[0] == predecessors[1]).then_some(pair)
+        })
+        .collect();
     let mut eligible_regions = 0;
     let mut overlaid_bins = 0;
     let mut previous_eligible_pair = None;
+    let mut trace = TrackedPeakPhaseTrace::default();
     for bin in 0..current[0].len() {
         let pair = [peak_maps[0].owner(bin), peak_maps[1].owner(bin)];
         let predecessors = [
@@ -46,6 +60,7 @@ pub(super) fn advance(
         }
         let predecessor = predecessors[0].expect("eligible predecessor");
         let mut changed = false;
+        let mut applied = [false; 2];
         for channel in 0..2 {
             let Some(peak) = pair[channel] else {
                 continue;
@@ -75,8 +90,19 @@ pub(super) fn advance(
             if projected_energy > target_energy * f64::EPSILON * 64.0 {
                 output[channel][bin] = projected * (target_energy / projected_energy).sqrt();
                 changed = true;
+                applied[channel] = true;
             }
         }
+        record_phase_field(
+            &mut trace,
+            bin,
+            pair,
+            &region_states,
+            applied,
+            current,
+            relational,
+            &output,
+        );
         overlaid_bins += usize::from(changed);
     }
     let bins = current[0].len();
@@ -88,6 +114,7 @@ pub(super) fn advance(
             overlaid_bins,
             bins.saturating_sub(overlaid_bins),
         ],
+        trace,
     }
 }
 

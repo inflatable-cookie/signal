@@ -1827,24 +1827,51 @@ comes from operator ordering or a deeper kernel mismatch remains unproven.
 
 ### Batch 29.7P - Peak-Owner And Phase-Field Integration Research
 
-- [ ] attribute 29.7O phase error by peak anchor, region interior, overlay
+- [x] attribute 29.7O phase error by peak anchor, region interior, overlay
   boundary, ratio, and control without rendering a new candidate
-- [ ] compare Signal's integration order with primary peak-locked phase-vocoder,
+- [x] compare Signal's integration order with primary peak-locked phase-vocoder,
   nonstationary Gabor, and real-time phase-gradient integration literature
-- [ ] inspect permissive implementations where available; keep GPL material at
+- [x] inspect permissive implementations where available; keep GPL material at
   architecture-only distance
-- [ ] decide whether tracked peaks may seed or constrain the predictor before
+- [x] decide whether tracked peaks may seed or constrain the predictor before
   integration, require one complete peak-owned region operator, or must close
   for the current coherent kernel
-- [ ] promote at most one bounded operator-ordering law into architecture and
+- [x] promote at most one bounded operator-ordering law into architecture and
   Rule 31H before authorizing another proof
-- [ ] keep the current renderer, frozen gates, Batch 29.8, listening, dynamic
+- [x] keep the current renderer, frozen gates, Batch 29.8, listening, dynamic
   ratio, realtime, routing, and production unchanged
 
 Evidence: one phase-field attribution report and one source-backed translation
 memo. No renderer, parameter sweep, peak-picker change, eligibility change,
 frequency-range change, phase-offset scale, or reset implementation belongs in
 this batch.
+
+Decision: require one complete peak-owned eligible-region operator. The
+unchanged 29.7O renderer raises relation RMS from `0.057562` to `1.485181` at
+anchors, `0.038310` to `1.197048` in interiors, and `0.129766` to `1.182947`
+at boundaries. Every ratio and both control families regress in the same
+direction. Evidence `e1713e619138301b` repeats exactly. The fault is field-wide,
+so boundary repair and post-integration peak seeds are rejected.
+
+### Batch 29.7Q - Complete Peak-Owned Region Proof
+
+- [ ] implement one report-only eligible-region operator that establishes one
+  tracked phase owner before deriving the region field
+- [ ] preserve the peer's current same-frequency analysis relation inside that
+  same operator
+- [ ] reuse 29.7O peak selection, predecessor eligibility, tracked phase
+  advance, identity offsets, source geometry, and schedules unchanged
+- [ ] retain current relational recurrence for every complete ineligible region
+- [ ] prove exact length, finite output, repeat, mechanics, mono parity, frozen
+  calibrated gates, and local consistency on the unchanged `48` rows
+- [ ] stop after one candidate; do not add a parameter sweep, boundary blend,
+  seed-only variant, picker change, eligibility change, or offset scale
+- [ ] keep Batch 29.8, listening, dynamic ratio, realtime, routing, and
+  production unchanged
+
+Evidence: one candidate report and exact repeat hash. Passage requires zero
+calibrated failures, complete non-regression on every row, zero local
+consistency failures, and exact mechanics. Failure returns to operator review.
 
 ### Batch 29.8 - Listening And Dynamic Checkpoint
 
@@ -2985,9 +3012,14 @@ this batch.
   regresses somewhere, and `34/48` lose local consistency. Mechanics and repeat
   remain exact at evidence `ec1f63ad4bae9fc8`. Batch 29.7P returns to
   operator-ordering research before another renderer.
+- 2026-07-17: Batch 29.7P locates a field-wide ownership conflict in 29.7O.
+  Relation RMS rises by more than one radian at anchors, interiors, and
+  boundaries across every ratio and control family. Evidence
+  `e1713e619138301b` repeats exactly. Rule 31H now forbids late tracked overlays
+  and authorizes one complete peak-owned eligible-region proof.
 
 ## Next Task
 
-Run Batch 29.7P peak-owner and phase-field integration research. Attribute the
-overlay conflict and promote at most one operator-ordering law before another
-renderer. Keep Batch 29.8 closed.
+Run Batch 29.7Q as one report-only complete peak-owned region proof. Change
+only operator order and ownership; reuse the 29.7O picker, eligibility, tracked
+advance, and offsets. Keep Batch 29.8 closed.

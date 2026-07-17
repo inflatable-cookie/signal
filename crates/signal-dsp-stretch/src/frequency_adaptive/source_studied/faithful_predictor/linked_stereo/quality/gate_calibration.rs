@@ -2,6 +2,7 @@ mod external;
 pub(in crate::frequency_adaptive) mod mechanism_study;
 mod metrics;
 pub(in crate::frequency_adaptive) mod peak_region_feasibility;
+pub(in crate::frequency_adaptive) mod phase_field_attribution;
 pub(in crate::frequency_adaptive) mod relation_repair;
 mod report;
 pub(in crate::frequency_adaptive) mod tracked_peak_feasibility;

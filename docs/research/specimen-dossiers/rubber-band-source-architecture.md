@@ -160,7 +160,9 @@ Batch 29.7N shows that 29.7M's dominant loss came from channel-independent
 recurrence outside shared regions. It also corrects channel ownership to remain
 frequency-aligned at the requesting channel's peak location. Batch 29.7O then
 rejects one reference-safe tracked identity overlay: `25/48` calibrated rows
-fail and every row regresses somewhere. Run Batch 29.7P as operator-ordering
-research before another renderer. Do not transfer Rubber Band expression,
-ranges, scaling, reset policy, or constants. Do not promote centre-focus or
-mid/side.
+fail and every row regresses somewhere. Batch 29.7P attributes relation loss to
+the complete eligible field, not just boundaries, and promotes one
+implementation-independent ordering law: construct the complete peak-owned
+region before preserving the peer relation. Run Batch 29.7Q as that one bounded
+proof. Do not transfer Rubber Band expression, ranges, scaling, reset policy,
+or constants. Do not promote centre-focus or mid/side.

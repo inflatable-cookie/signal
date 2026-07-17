@@ -145,6 +145,7 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7P under contract `082`, Rule 31H. Attribute peak-owner
-and phase-field integration order before another renderer. Keep independent
-listening, dynamic ratio, realtime, routing, and promotion closed.
+Run `g10.029` Batch 29.7Q under contract `082`, Rule 31H. Test one report-only
+complete peak-owned eligible-region operator while retaining the frozen
+29.7O selection and advance mechanics. Keep listening, dynamic ratio,
+realtime, routing, and promotion closed.

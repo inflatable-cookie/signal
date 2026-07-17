@@ -57,6 +57,7 @@ Finch and Loophole.
 | [Linked-Stereo Relationship-Preserving Recurrence](./translation-memos/006-linked-stereo-recurrence.md) | Select one per-bin reference recurrence and preserve peer current-input complex relation plus magnitude | Promoted |
 | [Rubber Band Linked-Stereo Mechanism](./translation-memos/007-rubber-band-linked-stereo-mechanism.md) | Move conditional, frequency-bounded channel ownership from same-bin projection to tracked peak regions | Promoted |
 | [Linked-Stereo State And Trajectory Policy](./translation-memos/008-linked-stereo-state-and-trajectory-policy.md) | Keep reference-relative recurrence as the stereo default and make tracked peak ownership a frequency-aligned overlay | Promoted |
+| [Peak Owner And Phase-Field Order](./translation-memos/009-peak-owner-and-phase-field-order.md) | Reject late tracked overlays; require one complete peak-owned eligible-region operation with peer relation preserved inside it | Promoted |
 
 ## Consumer Guidance
 
@@ -67,6 +68,6 @@ Finch and Loophole.
 
 ## Next Task
 
-Run Batch 29.7P peak-owner and phase-field integration research. Determine
-whether tracked peaks can constrain Signal's predictor before integration,
-require a complete peak-owned region operator, or must close for this kernel.
+Run Batch 29.7Q as one report-only complete peak-owned region proof. Change
+only operator order and ownership; retain 29.7O peak selection, eligibility,
+phase advance, offsets, frozen controls, and relational fallback.

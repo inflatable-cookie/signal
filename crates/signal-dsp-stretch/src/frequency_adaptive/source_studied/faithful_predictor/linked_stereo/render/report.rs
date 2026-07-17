@@ -1,4 +1,4 @@
-use super::{CoefficientContributionTrace, SynthesisRelationTrace};
+use super::{CoefficientContributionTrace, SynthesisRelationTrace, TrackedPeakPhaseTrace};
 
 #[derive(Clone, Debug)]
 pub(in super::super) struct StereoRender {
@@ -17,6 +17,7 @@ pub(in super::super) struct StereoRender {
     pub(in super::super) synthesis_relation_trace: Option<SynthesisRelationTrace>,
     pub(in super::super) coefficient_contribution_trace: Option<CoefficientContributionTrace>,
     pub(in super::super) peak_region_counts: [usize; 4],
+    pub(in super::super) tracked_peak_phase_trace: TrackedPeakPhaseTrace,
     pub(in super::super) hash: u64,
 }
 
@@ -35,6 +36,7 @@ pub(super) fn finish(
     synthesis_relation_trace: Option<SynthesisRelationTrace>,
     coefficient_contribution_trace: Option<CoefficientContributionTrace>,
     peak_region_counts: [usize; 4],
+    tracked_peak_phase_trace: TrackedPeakPhaseTrace,
 ) -> StereoRender {
     let non_finite = channels
         .iter()
@@ -69,6 +71,7 @@ pub(super) fn finish(
         synthesis_relation_trace,
         coefficient_contribution_trace,
         peak_region_counts,
+        tracked_peak_phase_trace,
         hash,
     }
 }

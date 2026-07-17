@@ -3753,7 +3753,22 @@ promoted. Peak picker, compatibility, frequency ownership, local offset scale,
 thresholds, listening, dynamic ratio, realtime, routing, and production remain
 frozen.
 
+Batch 29.7P closes the operator-order question. The unchanged 29.7O renderer
+shows relation RMS growing from `0.057562` to `1.485181` at tracked anchors,
+`0.038310` to `1.197048` in eligible-region interiors, and `0.129766` to
+`1.182947` at overlay boundaries. Every ratio and control family has the same
+direction. Evidence `e1713e619138301b` repeats exactly. The fault is field-wide,
+not a seam.
+
+Rule 31H therefore forbids tracked peaks as a late overlay or post-integration
+seed. Any later proof must construct the complete eligible region under one
+tracked phase-owner operation and preserve the peer's current same-frequency
+analysis relation inside that operation. The relational recurrence must own
+each ineligible region unchanged. Do not mix tracked and relational ownership
+inside one eligible region.
+
 ## Next Task
 
-Run Batch 29.7P peak-owner and phase-field integration research under Rule 31H.
-Keep current output frozen and Batch 29.8 closed.
+Run Batch 29.7Q as one report-only complete peak-owned region proof under Rule
+31H. Reuse 29.7O peak selection, eligibility, phase advance, and identity
+offsets. Change only operator order and ownership. Keep Batch 29.8 closed.

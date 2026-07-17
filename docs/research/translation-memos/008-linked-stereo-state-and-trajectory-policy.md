@@ -133,8 +133,9 @@ consistency. Evidence is `ec1f63ad4bae9fc8`.
 The result rejects a late tracked-peak overlay on Signal's completed
 phase-gradient field. It does not reject peak ownership before or during phase
 integration. Published peak-locked systems estimate peak phases first and use
-them to derive phases for the surrounding region. Batch 29.7P must attribute
-that operator-ordering boundary before another renderer.
+them to derive phases for the surrounding region. Batch 29.7P attributes the
+loss across anchors, interiors, and boundaries and promotes a complete
+peak-owned eligible-region operation in translation memo 009.
 
 ## Sources
 

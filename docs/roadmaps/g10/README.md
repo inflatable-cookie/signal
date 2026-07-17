@@ -398,13 +398,16 @@ Current stretch status:
   image rows. Current relational recurrence remains the default. Batch 29.7O
   rejects its frequency-aligned tracked identity overlay: failures rise to
   `25/48`, no row improves completely, and all `48` regress somewhere despite
-  exact mechanics. Batch 29.7P owns peak-owner and phase-field operator-order
-  research before another renderer.
+  exact mechanics. Batch 29.7P then attributes the conflict across anchors,
+  interiors, and boundaries. Relation RMS rises by more than one radian in all
+  three classes at evidence `e1713e619138301b`. Rule 31H forbids late tracked
+  overlays and opens one complete peak-owned eligible-region proof.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7P peak-owner and phase-field integration research. Keep
-the current renderer and Batch 29.8 closed.
+Run `g10.029` Batch 29.7Q as one report-only complete peak-owned region proof.
+Reuse 29.7O selection and advance mechanics; change only operator order and
+ownership. Keep Batch 29.8 closed.

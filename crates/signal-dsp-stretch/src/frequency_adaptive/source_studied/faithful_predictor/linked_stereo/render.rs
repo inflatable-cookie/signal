@@ -7,6 +7,7 @@ mod report;
 mod synthesis_trace;
 mod trace;
 mod tracked_peak;
+mod tracked_peak_trace;
 
 use rustfft::{num_complex::Complex64, FftPlanner};
 
@@ -30,6 +31,7 @@ use report::finish;
 pub(super) use report::StereoRender;
 pub(super) use synthesis_trace::SynthesisRelationTrace;
 use synthesis_trace::{SynthesisTraceSpec, SynthesisTraceState};
+pub(super) use tracked_peak_trace::{PhaseFieldClassTrace, TrackedPeakPhaseTrace};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum RecurrenceMode {
@@ -65,6 +67,7 @@ fn linked_inner(
             None,
             None,
             [0; 4],
+            TrackedPeakPhaseTrace::default(),
         );
     }
 
@@ -104,6 +107,7 @@ fn linked_inner(
     let mut previous_reference = vec![None; bins];
     let mut previous_peak_maps: Option<[PeakMap; 2]> = None;
     let mut peak_region_counts = [0; 4];
+    let mut tracked_peak_phase_trace = TrackedPeakPhaseTrace::default();
     let mut output_center = -(length as isize / 2);
 
     while output_center < target_len as isize + length as isize / 2 {
@@ -222,6 +226,7 @@ fn linked_inner(
                         for (total, value) in peak_region_counts.iter_mut().zip(frame.counts) {
                             *total += value;
                         }
+                        tracked_peak_phase_trace.merge(frame.trace);
                     }
                 }
                 RecurrenceMode::Independent | RecurrenceMode::PeakRegion => {
@@ -334,5 +339,6 @@ fn linked_inner(
         synthesis_relation_trace,
         coefficient_contribution_trace,
         peak_region_counts,
+        tracked_peak_phase_trace,
     )
 }

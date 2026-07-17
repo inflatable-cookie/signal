@@ -191,6 +191,8 @@ known frame-rate sideband, is the next translation gate.
 
 ## Next Task
 
-Use the confirmed channel-relation law in Batch 29.7E's report-only recurrence
-proof. Preserve the mono baseline and stop before stereo listening or product
-selection unless the unchanged quality gate passes.
+Batch 29.7P confirms the relevant pinned-source ordering: horizontal prediction
+is followed by bidirectional frequency prediction, then the greatest-energy
+channel owns the output and peers are locked to its current input relation.
+Run Batch 29.7Q as one Signal-owned complete peak-region proof. Transfer the
+ordering invariant only, not source expression or constants.

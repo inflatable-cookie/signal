@@ -2397,6 +2397,36 @@ fn source_studied_linked_stereo_tracked_peak_feasibility() {
 }
 
 #[test]
+#[cfg(not(debug_assertions))]
+fn source_studied_linked_stereo_phase_field_attribution() {
+    use super::source_studied::faithful_predictor::linked_stereo::quality::gate_calibration::phase_field_attribution::{
+        review, PhaseFieldDirection,
+    };
+
+    let result = review();
+    assert!(result.repeated);
+    assert_eq!(result.rows, 48);
+    assert_eq!(result.groups.len(), 6);
+    assert_eq!(
+        result.classes.map(|class| class.coefficients),
+        [200_123, 527_131, 365_548]
+    );
+    assert_eq!(
+        result.classes.map(|class| class.relation_bins),
+        [138_894, 248_946, 158_829]
+    );
+    assert!(result
+        .classes
+        .iter()
+        .all(|class| class.relation_after_rms > class.relation_before_rms));
+    assert_eq!(result.evidence_hash, 0xe171_3e61_9138_301b);
+    assert_eq!(
+        result.direction,
+        PhaseFieldDirection::CompletePeakOwnedRegion
+    );
+}
+
+#[test]
 #[ignore = "requires pinned Signalsmith Stretch 1.3.2 and Rubber Band R3 4.0.0"]
 #[cfg(not(debug_assertions))]
 fn source_studied_linked_stereo_relation_repair() {
