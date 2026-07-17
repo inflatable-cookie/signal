@@ -4,13 +4,14 @@ use super::{
     external::{read_stereo, replace_directory, write_stereo},
     metrics::{self, control, evaluate, ControlKind, Metrics},
     relation_repair::transform::local_evidence,
-    ALIGNMENTS, CALIBRATED_IMAGE_CORRELATION, CALIBRATED_IMAGE_MID_SIDE_DB,
-    CALIBRATED_IMAGE_RELATION_RESIDUAL, CALIBRATED_TONE_IPD_RADIANS, LENGTHS, PHASES, RATIOS,
-    SAMPLE_RATE,
+    ALIGNMENTS, LENGTHS, PHASES, RATIOS, SAMPLE_RATE,
 };
 use crate::frequency_adaptive::source_studied::faithful_predictor::linked_stereo::{
     coherent_representation, render,
 };
+
+mod report;
+mod assessment;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(in crate::frequency_adaptive) enum TrajectoryAttributionDirection {
@@ -58,11 +59,11 @@ pub(in crate::frequency_adaptive) fn review() -> TrajectoryAttributionReview {
         first
             .rows
             .iter()
-            .filter(|row| !gate(row.control, row.metrics[stage]))
+            .filter(|row| !assessment::gate(row.control, row.metrics[stage]))
             .count()
     });
-    let baseline_to_independent = comparisons(&first.rows, 0, 1);
-    let independent_to_shared = comparisons(&first.rows, 1, 2);
+    let baseline_to_independent = assessment::comparisons(&first.rows, 0, 1);
+    let independent_to_shared = assessment::comparisons(&first.rows, 1, 2);
     let local_regressions = std::array::from_fn(|stage| {
         first
             .rows
@@ -87,7 +88,7 @@ pub(in crate::frequency_adaptive) fn review() -> TrajectoryAttributionReview {
     } else {
         TrajectoryAttributionDirection::Mixed
     };
-    write_report(
+    report::write(
         &root,
         &first,
         repeated,
@@ -236,99 +237,4 @@ fn measure(
         peak_region_counts: renders[2].peak_region_counts,
         hashes: renders.map(|render| render.hash),
     }
-}
-
-fn comparisons(rows: &[TrajectoryAttributionRow], before: usize, after: usize) -> [usize; 2] {
-    let improved = rows
-        .iter()
-        .filter(|row| comparison(row, before, after).0 && comparison(row, before, after).1)
-        .count();
-    let regressed = rows
-        .iter()
-        .filter(|row| !comparison(row, before, after).0)
-        .count();
-    [improved, regressed]
-}
-
-fn comparison(row: &TrajectoryAttributionRow, before: usize, after: usize) -> (bool, bool) {
-    let pairs = row.metrics[before].into_iter().zip(row.metrics[after]);
-    let values = if row.control == "tone" {
-        pairs
-            .map(|(before, after)| (before.ipd_error_radians, after.ipd_error_radians))
-            .collect::<Vec<_>>()
-    } else {
-        pairs
-            .flat_map(|(before, after)| {
-                [
-                    (before.mid_side_delta_db, after.mid_side_delta_db),
-                    (before.correlation_delta, after.correlation_delta),
-                    (before.relation_residual, after.relation_residual),
-                ]
-            })
-            .collect::<Vec<_>>()
-    };
-    (
-        values
-            .iter()
-            .all(|(before, after)| *after <= *before + 1.0e-12),
-        values.iter().any(|(before, after)| *after < *before),
-    )
-}
-
-fn gate(control: &str, metrics: [Metrics; 2]) -> bool {
-    metrics.into_iter().all(|metrics| {
-        if control == "tone" {
-            metrics.ipd_error_radians <= CALIBRATED_TONE_IPD_RADIANS
-        } else {
-            metrics.mid_side_delta_db <= CALIBRATED_IMAGE_MID_SIDE_DB
-                && metrics.correlation_delta <= CALIBRATED_IMAGE_CORRELATION
-                && metrics.relation_residual <= CALIBRATED_IMAGE_RELATION_RESIDUAL
-        }
-    })
-}
-
-#[allow(clippy::too_many_arguments)]
-fn write_report(
-    root: &std::path::Path,
-    run: &Run,
-    repeated: bool,
-    failures: [usize; 3],
-    baseline_to_independent: [usize; 2],
-    independent_to_shared: [usize; 2],
-    local_regressions: [usize; 2],
-    direction: TrajectoryAttributionDirection,
-) {
-    let mut report = format!(
-        "repeated\t{repeated}\nfailures\t{},{},{}\nbaseline_to_independent\t{},{}\nindependent_to_shared\t{},{}\nlocal_regressions\t{},{}\npeak_region_counts\t{},{},{},{}\nevidence_hash\t{:016x}\ndirection\t{direction:?}\nratio\tframes\tphase\tbin_aligned\tcontrol\tscope\tbaseline_ipd\tindependent_ipd\tshared_ipd\tbaseline_mid_side\tindependent_mid_side\tshared_mid_side\tbaseline_correlation\tindependent_correlation\tshared_correlation\tbaseline_relation\tindependent_relation\tshared_relation\tindependent_structural\tshared_structural\tbaseline_to_independent_local\tindependent_to_shared_local\tbaseline_local\tindependent_local\tshared_local\tregions\teligible\tshared_bins\tindependent_bins\tbaseline_hash\tindependent_hash\tshared_hash\n",
-        failures[0], failures[1], failures[2],
-        baseline_to_independent[0], baseline_to_independent[1],
-        independent_to_shared[0], independent_to_shared[1],
-        local_regressions[0], local_regressions[1],
-        run.peak_region_counts[0], run.peak_region_counts[1],
-        run.peak_region_counts[2], run.peak_region_counts[3], run.evidence_hash,
-    );
-    for row in &run.rows {
-        for scope in 0..2 {
-            let metrics = row.metrics.map(|stage| stage[scope]);
-            report.push_str(&format!(
-                "{:.2}\t{}\t{:.2}\t{}\t{}\t{}\t{:.12e}\t{:.12e}\t{:.12e}\t{:.12e}\t{:.12e}\t{:.12e}\t{:.12e}\t{:.12e}\t{:.12e}\t{:.12e}\t{:.12e}\t{:.12e}\t{}\t{}\t{}\t{}\t{:.12e}\t{:.12e}\t{:.12e}\t{}\t{}\t{}\t{}\t{:016x}\t{:016x}\t{:016x}\n",
-                row.ratio, row.source_frames, row.phase, row.bin_aligned, row.control,
-                ["whole", "interior"][scope], metrics[0].ipd_error_radians,
-                metrics[1].ipd_error_radians, metrics[2].ipd_error_radians,
-                metrics[0].mid_side_delta_db, metrics[1].mid_side_delta_db,
-                metrics[2].mid_side_delta_db, metrics[0].correlation_delta,
-                metrics[1].correlation_delta, metrics[2].correlation_delta,
-                metrics[0].relation_residual, metrics[1].relation_residual,
-                metrics[2].relation_residual, row.structural_failures[0],
-                row.structural_failures[1], row.local_windows_improved[0],
-                row.local_windows_improved[1], row.maximum_local_residuals[0],
-                row.maximum_local_residuals[1], row.maximum_local_residuals[2],
-                row.peak_region_counts[0], row.peak_region_counts[1],
-                row.peak_region_counts[2], row.peak_region_counts[3], row.hashes[0],
-                row.hashes[1], row.hashes[2],
-            ));
-        }
-    }
-    fs::write(root.join("trajectory-attribution.tsv"), report)
-        .expect("write trajectory attribution report");
 }

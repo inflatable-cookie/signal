@@ -67,6 +67,6 @@ Finch and Loophole.
 
 ## Next Task
 
-Run Batch 29.7O reference-safe tracked-peak overlay feasibility. Keep current
-reference-relative recurrence as the default and isolate one frequency-aligned
-tracked identity overlay without parameter or state-policy tuning.
+Run Batch 29.7P peak-owner and phase-field integration research. Determine
+whether tracked peaks can constrain Signal's predictor before integration,
+require a complete peak-owned region operator, or must close for this kernel.

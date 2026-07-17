@@ -51,11 +51,22 @@ pub(in crate::frequency_adaptive) struct PeakRegionReview {
 }
 
 pub(in crate::frequency_adaptive) fn review() -> PeakRegionReview {
+    review_candidate(
+        "stretch-linked-stereo-peak-region",
+        render::linked_peak_regions,
+    )
+}
+
+pub(super) fn review_candidate(
+    directory: &str,
+    candidate: fn([&[f64]; 2], f64, usize) -> render::StereoRender,
+) -> PeakRegionReview {
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../target/stretch-linked-stereo-peak-region");
+        .join("../../target")
+        .join(directory);
     replace_directory(&root);
-    let first = run(&root.join("first"));
-    let second = run(&root.join("second"));
+    let first = run(&root.join("first"), candidate);
+    let second = run(&root.join("second"), candidate);
     let repeated = first == second;
     let current_failures = first
         .rows
@@ -130,7 +141,10 @@ struct Run {
     evidence_hash: u64,
 }
 
-fn run(root: &std::path::Path) -> Run {
+fn run(
+    root: &std::path::Path,
+    candidate: fn([&[f64]; 2], f64, usize) -> render::StereoRender,
+) -> Run {
     fs::create_dir_all(root).unwrap_or_else(|error| panic!("create {}: {error}", root.display()));
     let geometry = coherent_representation::source_geometry(SAMPLE_RATE);
     let trim = geometry[0];
@@ -153,8 +167,7 @@ fn run(root: &std::path::Path) -> Run {
                         write_stereo(&input_path, &source, SAMPLE_RATE as u32);
                         let input = read_stereo(&input_path, source_frames, SAMPLE_RATE as u32);
                         let current = render::linked([&input[0], &input[1]], ratio, SAMPLE_RATE);
-                        let candidate =
-                            render::linked_peak_regions([&input[0], &input[1]], ratio, SAMPLE_RATE);
+                        let candidate = candidate([&input[0], &input[1]], ratio, SAMPLE_RATE);
                         let row = measure(
                             kind,
                             ratio,
@@ -185,7 +198,7 @@ fn run(root: &std::path::Path) -> Run {
             }
         }
     }
-    let (mechanics_errors, silent_peer_peak) = mechanics_review();
+    let (mechanics_errors, silent_peer_peak) = mechanics_review(candidate);
     for value in mechanics_errors
         .map(f64::to_bits)
         .into_iter()
@@ -296,19 +309,21 @@ fn improvement(row: &PeakRegionRow) -> (bool, bool) {
     }
 }
 
-fn mechanics_review() -> ([f64; 5], f64) {
+fn mechanics_review(
+    candidate: fn([&[f64]; 2], f64, usize) -> render::StereoRender,
+) -> ([f64; 5], f64) {
     let primary = mechanics::primary_control(SAMPLE_RATE);
     let secondary = mechanics::secondary_control(SAMPLE_RATE);
     let silence = vec![0.0; primary.len()];
     let mut errors = [0.0_f64; 5];
     let mut silent_peer_peak = 0.0_f64;
     for ratio in RATIOS {
-        let ordinary = candidate([&primary, &secondary], ratio);
-        let duplicate = candidate([&primary, &primary], ratio);
+        let ordinary = candidate([&primary, &secondary], ratio, SAMPLE_RATE).channels;
+        let duplicate = candidate([&primary, &primary], ratio, SAMPLE_RATE).channels;
         let duplicate_expected = render::linked([&primary, &primary], ratio, SAMPLE_RATE).channels;
         errors[0] = errors[0].max(maximum_error(&duplicate, &duplicate_expected, 1.0));
 
-        let hard_pan = candidate([&primary, &silence], ratio);
+        let hard_pan = candidate([&primary, &silence], ratio, SAMPLE_RATE).channels;
         let hard_pan_expected = render::linked([&primary, &silence], ratio, SAMPLE_RATE).channels;
         errors[1] = errors[1].max(maximum_error(&hard_pan, &hard_pan_expected, 1.0));
         silent_peer_peak = silent_peer_peak.max(
@@ -318,7 +333,7 @@ fn mechanics_review() -> ([f64; 5], f64) {
                 .fold(0.0, f64::max),
         );
 
-        let swapped = candidate([&secondary, &primary], ratio);
+        let swapped = candidate([&secondary, &primary], ratio, SAMPLE_RATE).channels;
         errors[2] = errors[2].max(maximum_error(
             &swapped,
             &[ordinary[1].clone(), ordinary[0].clone()],
@@ -327,21 +342,18 @@ fn mechanics_review() -> ([f64; 5], f64) {
 
         let negative_primary = mechanics::scaled(&primary, -1.0);
         let negative_secondary = mechanics::scaled(&secondary, -1.0);
-        let negative = candidate([&negative_primary, &negative_secondary], ratio);
+        let negative =
+            candidate([&negative_primary, &negative_secondary], ratio, SAMPLE_RATE).channels;
         errors[3] = errors[3].max(maximum_error(&negative, &ordinary, -1.0));
 
         for gain in [0.25, 4.0] {
             let gained = mechanics::scaled(&primary, gain);
-            let actual = candidate([&gained, &gained], ratio);
+            let actual = candidate([&gained, &gained], ratio, SAMPLE_RATE).channels;
             let expected = render::linked([&gained, &gained], ratio, SAMPLE_RATE).channels;
             errors[4] = errors[4].max(maximum_error(&actual, &expected, 1.0));
         }
     }
     (errors, silent_peer_peak)
-}
-
-fn candidate(inputs: [&[f64]; 2], ratio: f64) -> [Vec<f64>; 2] {
-    render::linked_peak_regions(inputs, ratio, SAMPLE_RATE).channels
 }
 
 fn maximum_error(actual: &[Vec<f64>; 2], expected: &[Vec<f64>; 2], gain: f64) -> f64 {

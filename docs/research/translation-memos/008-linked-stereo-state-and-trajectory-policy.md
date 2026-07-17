@@ -122,12 +122,19 @@ synthesis state. Current-peak identity locking is not a tracked trajectory.
 
 ## Next Proof
 
-Batch 29.7O may add one report-only reference-safe tracked-peak overlay. It must
-start from current reference-relative output for every bin. Only a compatible
-eligible region may change. The overlay must keep each channel's peak location,
-advance from its matched predecessor synthesis state, and use identity local
-phase offset. No scale, peak-resolution, predecessor-distance, frequency-range,
-or state threshold sweep belongs in that proof.
+Batch 29.7O rejects the report-only reference-safe tracked-peak overlay. It
+retains requesting-channel peak location, advances from matched predecessor
+synthesis state with instantaneous-frequency unwrapping, and uses identity
+analysis-relative offsets. It is active, repeat-stable, and mechanics-exact.
+Failures rise from `20/48` to `25/48`; there are no row-complete improvements,
+all `48` rows regress on at least one metric, and `34/48` lose local
+consistency. Evidence is `ec1f63ad4bae9fc8`.
+
+The result rejects a late tracked-peak overlay on Signal's completed
+phase-gradient field. It does not reject peak ownership before or during phase
+integration. Published peak-locked systems estimate peak phases first and use
+them to derive phases for the surrounding region. Batch 29.7P must attribute
+that operator-ordering boundary before another renderer.
 
 ## Sources
 
@@ -137,5 +144,6 @@ or state threshold sweep belongs in that proof.
 - [Ravelli, Sandler, and Bello, Fast Implementation for Non-Linear Time-Scaling of Stereo Signals](https://dafx.de/paper-archive/2005/P_182.pdf)
 - [Röbel, A New Approach to Transient Processing in the Phase Vocoder](https://www.dafx.de/paper-archive/2003/pdfs/dafx32.pdf)
 - [Průša and Holighaus, Phase Vocoder Done Right](https://ltfat.org/notes/ltfatnote050.pdf)
+- [Ottosen and Dörfler, A Phase Vocoder based on Nonstationary Gabor Frames](https://arxiv.org/abs/1612.05156)
 - [Signalsmith Stretch design](https://signalsmith-audio.co.uk/writing/2023/stretch-design/)
 - [Rubber Band R3 phase advance, GPL architecture evidence only](https://github.com/breakfastquay/rubberband/blob/v4.0.0/src/finer/PhaseAdvance.h)

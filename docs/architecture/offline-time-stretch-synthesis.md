@@ -1239,9 +1239,22 @@ frequency-local `Reset` may later override it for attacks. `Unlocked` and
 material-specific kick laws are not promoted. The ordered architecture is
 `Reset`, then `TrackedPeak`, then default `Relational` ownership.
 
+The reference-safe tracked identity overlay also rejects. It starts from the
+relational frame, keeps each channel's current peak location, unwraps the
+matched predecessor phase advance over the actual analysis hop, integrates it
+over the synthesis hop, and preserves current analysis-relative offsets. It is
+active and exact on mechanics, but calibrated failures rise from `20/48` to
+`25/48`. No row improves completely, all `48` regress on at least one metric,
+and `34/48` lose local consistency. Evidence `ec1f63ad4bae9fc8` blocks tuning.
+
+Tracked peak phase is unsafe as this late overlay on the current broad
+phase-gradient field. Published successful peak-locked systems estimate peak
+phases first and derive the surrounding region from those owners. Operator
+ordering is the next attribution target, not yet the proven cause.
+
 ## Next Task
 
-Run Batch 29.7O reference-safe tracked-peak overlay. Start from the current
-reference-relative result for every bin, retain each channel's peak location,
-and advance only eligible trajectories from matched predecessor synthesis
-state. Keep listening, dynamic ratio, realtime, routing, and production closed.
+Run Batch 29.7P peak-owner and phase-field integration research. Determine
+whether tracked peaks can seed or constrain Signal's predictor before broad
+phase integration, require a complete peak-owned region operator, or are
+incompatible with the current kernel. Keep another renderer closed.

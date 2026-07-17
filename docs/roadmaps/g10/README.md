@@ -396,14 +396,15 @@ Current stretch status:
   Batch 29.7N isolates the loss: independent recurrence fails `40/48`, while
   peak sharing repairs all tone rows but a single peer anchor regresses `22/24`
   image rows. Current relational recurrence remains the default. Batch 29.7O
-  owns one frequency-aligned tracked identity overlay from predecessor
-  synthesis state.
+  rejects its frequency-aligned tracked identity overlay: failures rise to
+  `25/48`, no row improves completely, and all `48` regress somewhere despite
+  exact mechanics. Batch 29.7P owns peak-owner and phase-field operator-order
+  research before another renderer.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7O reference-safe tracked-peak overlay. Start from the
-current relational result and alter eligible peak regions only. Keep Batch 29.8
-closed.
+Run `g10.029` Batch 29.7P peak-owner and phase-field integration research. Keep
+the current renderer and Batch 29.8 closed.

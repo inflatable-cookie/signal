@@ -4,7 +4,7 @@ use super::recurrence::vertical_prediction;
 
 #[derive(Clone)]
 pub(super) struct PeakMap {
-    owners: Vec<Option<usize>>,
+    pub(super) owners: Vec<Option<usize>>,
 }
 
 impl PeakMap {
@@ -40,7 +40,7 @@ impl PeakMap {
         Self { owners }
     }
 
-    fn owner(&self, bin: usize) -> Option<usize> {
+    pub(super) fn owner(&self, bin: usize) -> Option<usize> {
         self.owners.get(bin).copied().flatten()
     }
 }

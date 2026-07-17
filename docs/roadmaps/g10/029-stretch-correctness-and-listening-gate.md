@@ -1801,22 +1801,50 @@ peak location and advance from matched predecessor synthesis state.
 
 ### Batch 29.7O - Reference-Safe Tracked-Peak Overlay
 
-- [ ] freeze current reference-relative recurrence as the initial and fallback
+- [x] freeze current reference-relative recurrence as the initial and fallback
   result for every bin
-- [ ] retain each requesting channel's current peak location; borrow only a
+- [x] retain each requesting channel's current peak location; borrow only a
   compatible peer trajectory evaluated at that frequency
-- [ ] advance the overlay from the matched predecessor's synthesis state and
+- [x] advance the overlay from the matched predecessor's synthesis state and
   use identity local phase offset only
-- [ ] alter eligible peak regions only; preserve current output everywhere else
-- [ ] preserve hashes, mechanics, geometry, schedule, crop, calibrated gates,
+- [x] alter eligible peak regions only; preserve current output everywhere else
+- [x] preserve hashes, mechanics, geometry, schedule, crop, calibrated gates,
   exact repeat, and the frozen comparison matrix
-- [ ] accept only row-complete improvement over current Signal with no new
+- [x] accept only row-complete improvement over current Signal with no new
   structural, transformation, transient, crossfeed, or local-consistency loss
 
 No phase scale, peak-resolution, predecessor-distance, activation-threshold,
 or frequency-range sweep belongs in this batch. Reset implementation, listening,
 dynamic ratio, cache, realtime, routing, promotion, and production DSP remain
 closed.
+
+Decision: reject. The candidate is active, repeat-stable, structurally exact,
+mechanics-exact, and silent-peer safe. Calibrated failures rise from `20/48` to
+`25/48`; row-complete improvements are `0/48`, all `48` regress on at least one
+metric, and `34/48` fail local consistency. Evidence `ec1f63ad4bae9fc8` closes
+parameter rescue. This late tracked phase overlay is unsafe. Whether the loss
+comes from operator ordering or a deeper kernel mismatch remains unproven.
+
+### Batch 29.7P - Peak-Owner And Phase-Field Integration Research
+
+- [ ] attribute 29.7O phase error by peak anchor, region interior, overlay
+  boundary, ratio, and control without rendering a new candidate
+- [ ] compare Signal's integration order with primary peak-locked phase-vocoder,
+  nonstationary Gabor, and real-time phase-gradient integration literature
+- [ ] inspect permissive implementations where available; keep GPL material at
+  architecture-only distance
+- [ ] decide whether tracked peaks may seed or constrain the predictor before
+  integration, require one complete peak-owned region operator, or must close
+  for the current coherent kernel
+- [ ] promote at most one bounded operator-ordering law into architecture and
+  Rule 31H before authorizing another proof
+- [ ] keep the current renderer, frozen gates, Batch 29.8, listening, dynamic
+  ratio, realtime, routing, and production unchanged
+
+Evidence: one phase-field attribution report and one source-backed translation
+memo. No renderer, parameter sweep, peak-picker change, eligibility change,
+frequency-range change, phase-offset scale, or reset implementation belongs in
+this batch.
 
 ### Batch 29.8 - Listening And Dynamic Checkpoint
 
@@ -2952,9 +2980,14 @@ closed.
   `22/24` image rows. Evidence `d2de8ca4df6330f6` repeats exactly. Current
   relational recurrence remains the default. Batch 29.7O may test one
   frequency-aligned tracked identity overlay from predecessor synthesis state.
+- 2026-07-17: Batch 29.7O rejects the reference-safe tracked identity overlay.
+  Failures rise from `20/48` to `25/48`; no row improves completely, every row
+  regresses somewhere, and `34/48` lose local consistency. Mechanics and repeat
+  remain exact at evidence `ec1f63ad4bae9fc8`. Batch 29.7P returns to
+  operator-ordering research before another renderer.
 
 ## Next Task
 
-Run Batch 29.7O reference-safe tracked-peak overlay. Start from current output,
-retain each channel's peak location, and advance eligible regions from matched
-predecessor synthesis state. Keep Batch 29.8 closed.
+Run Batch 29.7P peak-owner and phase-field integration research. Attribute the
+overlay conflict and promote at most one operator-ordering law before another
+renderer. Keep Batch 29.8 closed.

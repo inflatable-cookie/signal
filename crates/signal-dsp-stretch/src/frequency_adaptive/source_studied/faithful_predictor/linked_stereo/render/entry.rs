@@ -67,6 +67,33 @@ pub(in super::super) fn linked_independent(
     )
 }
 
+pub(in super::super) fn linked_tracked_peaks(
+    inputs: [&[f64]; 2],
+    ratio: f64,
+    sample_rate: usize,
+) -> StereoRender {
+    let duplicate = inputs[0]
+        .iter()
+        .zip(inputs[1])
+        .all(|(left, right)| left.to_bits() == right.to_bits());
+    let hard_pan = inputs
+        .iter()
+        .any(|channel| channel.iter().all(|sample| *sample == 0.0));
+    if duplicate || hard_pan {
+        return linked(inputs, ratio, sample_rate);
+    }
+    linked_inner(
+        inputs,
+        ratio,
+        sample_rate,
+        None,
+        None,
+        None,
+        SynthesisMode::Real,
+        RecurrenceMode::TrackedPeak,
+    )
+}
+
 pub(in super::super) fn linked_with_relation_oracle(
     inputs: [&[f64]; 2],
     ratio: f64,

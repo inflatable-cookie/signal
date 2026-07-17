@@ -3735,7 +3735,25 @@ Phase-offset scaling, peak-resolution changes, predecessor-distance tuning,
 frequency-range tuning, state-threshold tuning, listening, dynamic ratio,
 realtime, routing, and production use remain closed.
 
+Batch 29.7O rejects that overlay. The candidate preserves requesting-channel
+peak location, advances from matched predecessor synthesis phase using
+parameter-free instantaneous-frequency unwrapping, and applies identity local
+phase offsets over the relational baseline. It is active, repeat-stable, and
+exact on mechanics. Calibrated failures nevertheless rise from `20/48` to
+`25/48`; no row improves completely, all `48` regress somewhere, and `34/48`
+lose local consistency. Evidence `ec1f63ad4bae9fc8` closes parameter rescue.
+
+Batch 29.7P is research and attribution only. It must compare Signal's
+phase-gradient integration order with independently published peak-first phase
+estimation and region-locking operators. It must decide whether a later proof
+may seed or constrain the predictor at tracked peaks, must replace a complete
+eligible region with one peak-owned operator, or must close tracked peaks for
+the current kernel. No renderer is authorized until that ownership boundary is
+promoted. Peak picker, compatibility, frequency ownership, local offset scale,
+thresholds, listening, dynamic ratio, realtime, routing, and production remain
+frozen.
+
 ## Next Task
 
-Run Batch 29.7O reference-safe tracked-peak overlay under Rule 31H. Keep current
-output frozen as baseline and Batch 29.8 closed.
+Run Batch 29.7P peak-owner and phase-field integration research under Rule 31H.
+Keep current output frozen and Batch 29.8 closed.

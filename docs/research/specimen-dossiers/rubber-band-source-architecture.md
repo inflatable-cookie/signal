@@ -158,7 +158,9 @@ winner is established.
 
 Batch 29.7N shows that 29.7M's dominant loss came from channel-independent
 recurrence outside shared regions. It also corrects channel ownership to remain
-frequency-aligned at the requesting channel's peak location. Run Batch 29.7O as
-one reference-safe tracked identity overlay. Do not transfer Rubber Band
-expression, ranges, scaling, reset policy, or constants. Do not promote
-centre-focus or mid/side.
+frequency-aligned at the requesting channel's peak location. Batch 29.7O then
+rejects one reference-safe tracked identity overlay: `25/48` calibrated rows
+fail and every row regresses somewhere. Run Batch 29.7P as operator-ordering
+research before another renderer. Do not transfer Rubber Band expression,
+ranges, scaling, reset policy, or constants. Do not promote centre-focus or
+mid/side.
