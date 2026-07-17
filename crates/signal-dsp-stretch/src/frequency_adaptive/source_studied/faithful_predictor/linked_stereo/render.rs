@@ -18,8 +18,9 @@ pub(super) use contribution::{
 };
 use contribution::{CoefficientTraceSpec, CoefficientTraceState, ContributionFrame};
 pub(super) use entry::{
-    linked, linked_analytic, linked_analytic_with_relation_oracle, linked_peak_regions,
-    linked_with_coefficient_trace, linked_with_relation_oracle, linked_with_synthesis_trace,
+    linked, linked_analytic, linked_analytic_with_relation_oracle, linked_independent,
+    linked_peak_regions, linked_with_coefficient_trace, linked_with_relation_oracle,
+    linked_with_synthesis_trace,
 };
 use overlap::{Overlap, SynthesisMode};
 use peak_region::PeakMap;
@@ -32,6 +33,7 @@ use synthesis_trace::{SynthesisTraceSpec, SynthesisTraceState};
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum RecurrenceMode {
     ReferenceRelative,
+    Independent,
     PeakRegion,
 }
 
@@ -126,7 +128,7 @@ fn linked_inner(
             .fold(0.0, f64::max)
             * 1.0e-8;
         let mut contribution_frame = ContributionFrame::new(coefficient_trace.is_some(), bins);
-        let peak_maps = (recurrence_mode == RecurrenceMode::PeakRegion)
+        let peak_maps = (recurrence_mode != RecurrenceMode::ReferenceRelative)
             .then(|| std::array::from_fn(|channel| PeakMap::new(&current[channel])));
 
         if let Some(previous_center) = previous_source_center {
@@ -193,7 +195,7 @@ fn linked_inner(
                         }
                     }
                 }
-                RecurrenceMode::PeakRegion => {
+                RecurrenceMode::Independent | RecurrenceMode::PeakRegion => {
                     let frame = peak_region::advance(
                         peak_maps.as_ref().expect("peak maps"),
                         previous_peak_maps.as_ref(),
@@ -202,6 +204,7 @@ fn linked_inner(
                         time_factor,
                         &current,
                         &preliminary,
+                        recurrence_mode == RecurrenceMode::PeakRegion,
                     );
                     corrected = frame.output;
                     shared_corrected += frame.corrected;

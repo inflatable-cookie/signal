@@ -2342,6 +2342,35 @@ fn source_studied_linked_stereo_peak_region_feasibility() {
 }
 
 #[test]
+#[cfg(not(debug_assertions))]
+fn source_studied_linked_stereo_trajectory_attribution() {
+    use super::source_studied::faithful_predictor::linked_stereo::quality::gate_calibration::trajectory_attribution::{
+        review, TrajectoryAttributionDirection,
+    };
+
+    let result = review();
+    assert!(result.repeated);
+    assert_eq!(result.rows.len(), 48);
+    assert!(result
+        .rows
+        .iter()
+        .all(|row| row.structural_failures == [0; 2]));
+    assert_eq!(result.failures, [20, 40, 29]);
+    assert_eq!(result.baseline_to_independent, [8, 40]);
+    assert_eq!(result.independent_to_shared, [26, 22]);
+    assert_eq!(result.local_regressions, [34, 4]);
+    assert_eq!(
+        result.peak_region_counts,
+        [538_213, 124_583, 546_801, 1_304_591]
+    );
+    assert_eq!(result.evidence_hash, 0xd2de_8ca4_df63_30f6);
+    assert_eq!(
+        result.direction,
+        TrajectoryAttributionDirection::IndependentRecurrenceDominatesLoss
+    );
+}
+
+#[test]
 #[ignore = "requires pinned Signalsmith Stretch 1.3.2 and Rubber Band R3 4.0.0"]
 #[cfg(not(debug_assertions))]
 fn source_studied_linked_stereo_relation_repair() {

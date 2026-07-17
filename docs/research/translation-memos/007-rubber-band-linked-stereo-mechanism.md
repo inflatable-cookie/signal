@@ -111,8 +111,19 @@ local consistency on `32/48`. Evidence `31a8b2eaae086fc8` rejects the
 candidate without tuning.
 
 The promoted peak-region invariant survives, but it is incomplete alone. The
-next proof must triangulate material-state ownership and ordering rather than
-altering peak thresholds, compatibility, or frequency bounds.
+next proof must distinguish shared-region behavior from the recurrence used
+outside it before altering peak thresholds, compatibility, or frequency bounds.
+
+Batch 29.7N supplies that attribution. Fully channel-independent recurrence
+fails `40/48` rows. Adding 29.7M sharing repairs this to `29/48`, with all
+`24/24` tone rows improving against independent recurrence. The dominant loss
+was the independent default, not missing transient state. Complex image rows
+also expose a second translation error: channel ownership is frequency-aligned.
+The requesting channel keeps its region peak location when borrowing a peer
+trajectory; one peer-region peak must not anchor both channels.
+
+Translation memo 008 supersedes this memo's next-proof wording with the
+reference-safe tracked-trajectory policy.
 
 ## Sources
 

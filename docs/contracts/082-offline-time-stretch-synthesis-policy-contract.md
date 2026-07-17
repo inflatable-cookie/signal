@@ -3712,17 +3712,30 @@ candidate is active (`546801` shared and `1304591` independent bins), exact on
 mechanics, and repeat-stable at evidence `31a8b2eaae086fc8`. It nevertheless
 raises calibrated failures from `20/48` to `29/48`, regresses `35/48` rows, and
 fails local consistency on `32/48`. Do not tune this peak picker, eligibility,
-or region law. Compatible peak history without explicit material-state policy
-is insufficient.
+or region law.
 
-Batch 29.7N must triangulate ordinary, peak-locked, reset, unlocked, and attack
-ownership from the frozen loss attribution, architecture-only GPL evidence,
-permissive implementations, and published work. It may define a Signal-owned
-state vocabulary and ordering only where independent evidence agrees. It must
-not translate implementation expression or constants, modify production DSP,
-or authorize another renderer without a bounded state-qualified law.
+Batch 29.7N corrects the loss attribution with a frozen three-stage ablation.
+Fully channel-independent recurrence fails `40/48` rows. The 29.7M shared
+regions then improve all `24` tone rows, but regress `22/24` image rows and
+still fail `29/48`. Evidence `d2de8ca4df6330f6` repeats with zero structural
+failures. The reference-relative renderer remains the required default.
+
+Rule 31H now orders later state ownership as `Reset`, `TrackedPeak`, then
+`Relational`. `Reset` is a channel-coordinated, frequency-local attack
+override. `TrackedPeak` is a bounded overlay: retain the requesting channel's
+current peak location, borrow only a compatible trajectory at that frequency,
+and advance from the matched predecessor's synthesis state. `Relational` is
+the current reference-relative recurrence and owns every unclaimed bin.
+`Attack` is a reset trigger, not a separate phase law. Fully independent
+`Unlocked` recurrence and material-specific kick laws are not authorized.
+
+Batch 29.7O may implement one report-only tracked identity overlay. It must
+start from current output for every bin and alter eligible peak regions only.
+Phase-offset scaling, peak-resolution changes, predecessor-distance tuning,
+frequency-range tuning, state-threshold tuning, listening, dynamic ratio,
+realtime, routing, and production use remain closed.
 
 ## Next Task
 
-Run Batch 29.7N linked-state policy triangulation under Rule 31H. Keep current
+Run Batch 29.7O reference-safe tracked-peak overlay under Rule 31H. Keep current
 output frozen as baseline and Batch 29.8 closed.

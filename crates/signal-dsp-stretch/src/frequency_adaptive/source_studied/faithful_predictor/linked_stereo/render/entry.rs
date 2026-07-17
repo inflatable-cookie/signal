@@ -50,6 +50,23 @@ pub(in super::super) fn linked_peak_regions(
     )
 }
 
+pub(in super::super) fn linked_independent(
+    inputs: [&[f64]; 2],
+    ratio: f64,
+    sample_rate: usize,
+) -> StereoRender {
+    linked_inner(
+        inputs,
+        ratio,
+        sample_rate,
+        None,
+        None,
+        None,
+        SynthesisMode::Real,
+        RecurrenceMode::Independent,
+    )
+}
+
 pub(in super::super) fn linked_with_relation_oracle(
     inputs: [&[f64]; 2],
     ratio: f64,

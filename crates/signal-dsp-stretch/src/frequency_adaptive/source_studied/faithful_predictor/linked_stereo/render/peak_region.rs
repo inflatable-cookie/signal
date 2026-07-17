@@ -65,6 +65,7 @@ pub(super) fn advance(
     time_factor: f64,
     current: &[Vec<Complex64>; 2],
     preliminary: &[Vec<Complex64>; 2],
+    share_regions: bool,
 ) -> FrameResult {
     let mut output = preliminary.clone();
     let mut corrected = 0;
@@ -102,6 +103,18 @@ pub(super) fn advance(
     let mut shared_bins = 0;
     let mut previous_pair = None;
     let mut previous_eligible_pair = None;
+    if !share_regions {
+        return FrameResult {
+            output,
+            corrected,
+            fallback,
+            reference_bins,
+            active_ties,
+            references,
+            bin_corrected,
+            counts: [0, 0, 0, bins],
+        };
+    }
     for bin in 0..bins {
         let pair = [peak_maps[0].owner(bin), peak_maps[1].owner(bin)];
         if previous_pair != Some(pair) {

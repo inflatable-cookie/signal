@@ -1222,15 +1222,26 @@ remain excluded.
 The first Signal-owned realization rejects. Local-maxima regions with exact
 shared previous-peak ownership are active and mechanics-safe, but calibrated
 failures rise from `20/48` to `29/48`; `35/48` rows regress and `32/48` lose
-local consistency. The result matches the source-level warning against one
-peak-region rule for every material state. Peak geometry and channel history
-are necessary architecture inputs, not a complete ownership policy. Current
-same-bin reference-relative recurrence remains frozen while ordinary, locked,
-reset, unlocked, and attack state ordering is triangulated independently.
+local consistency.
+
+A frozen three-stage ablation corrects the initial attribution. Fully
+channel-independent recurrence fails `40/48` rows. Adding the rejected shared
+regions repairs all `24` tone rows relative to that stage, but regresses
+`22/24` image rows and still fails `29/48`. Peak sharing is useful; the unsafe
+parts are the independent default and one dominant peer peak used as the
+anchor for both channels.
+
+Current reference-relative recurrence therefore remains the default. A later
+`TrackedPeak` overlay must retain the requesting channel's current peak
+location, borrow only a compatible trajectory at that frequency, and advance
+from the matched predecessor's synthesis state. A channel-coordinated,
+frequency-local `Reset` may later override it for attacks. `Unlocked` and
+material-specific kick laws are not promoted. The ordered architecture is
+`Reset`, then `TrackedPeak`, then default `Relational` ownership.
 
 ## Next Task
 
-Run Batch 29.7N linked-state policy triangulation. Attribute the rejected
-candidate's losses and define a license-safe state vocabulary before another
-renderer. Keep listening, dynamic ratio, realtime, routing, and production
-closed.
+Run Batch 29.7O reference-safe tracked-peak overlay. Start from the current
+reference-relative result for every bin, retain each channel's peak location,
+and advance only eligible trajectories from matched predecessor synthesis
+state. Keep listening, dynamic ratio, realtime, routing, and production closed.

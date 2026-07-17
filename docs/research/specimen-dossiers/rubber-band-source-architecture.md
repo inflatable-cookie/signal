@@ -156,8 +156,9 @@ winner is established.
 
 ## Next Task
 
-Batch 29.7M rejects a Signal-owned nearest-peak realization. Use Batch 29.7N to
-triangulate ordinary, peak-locked, reset, unlocked, and attack state ownership
-against permissive implementations and published work. Do not transfer Rubber
-Band expression, ranges, scaling, reset policy, or constants. Do not promote
+Batch 29.7N shows that 29.7M's dominant loss came from channel-independent
+recurrence outside shared regions. It also corrects channel ownership to remain
+frequency-aligned at the requesting channel's peak location. Run Batch 29.7O as
+one reference-safe tracked identity overlay. Do not transfer Rubber Band
+expression, ranges, scaling, reset policy, or constants. Do not promote
 centre-focus or mid/side.

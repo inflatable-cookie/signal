@@ -145,7 +145,6 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7N under contract `082`, Rule 31H. Attribute the rejected
-peak-region candidate and triangulate a Signal-owned material-state policy.
-Keep current output as baseline and independent listening, dynamic ratio,
-realtime, routing, and promotion closed.
+Run `g10.029` Batch 29.7O under contract `082`, Rule 31H. Test one reference-safe
+tracked-peak overlay while current relational output remains the default. Keep
+independent listening, dynamic ratio, realtime, routing, and promotion closed.

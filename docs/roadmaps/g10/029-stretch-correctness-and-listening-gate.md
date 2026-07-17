@@ -1773,22 +1773,50 @@ do not supply the material-state policy used by the reference architecture.
 
 ### Batch 29.7N - Linked-State Policy Triangulation
 
-- [ ] attribute the frozen 29.7M losses by ratio, control, and trajectory state;
+- [x] attribute the frozen 29.7M losses by ratio, control, and trajectory state;
   distinguish shared-region damage from independent recurrence
-- [ ] triangulate ordinary, peak-locked, reset, unlocked, and attack ownership
+- [x] triangulate ordinary, peak-locked, reset, unlocked, and attack ownership
   from architecture-only Rubber Band evidence, permissive implementations, and
   published work; label verified behavior and inference separately
-- [ ] define one Signal-owned state vocabulary and ordering from independent
+- [x] define one Signal-owned state vocabulary and ordering from independent
   evidence, or pause linked stereo if no bounded law is justified
-- [ ] authorize at most one later report-only state-qualified candidate; do not
+- [x] authorize at most one later report-only state-qualified candidate; do not
   tune the rejected peak identity, eligibility, or frequency ownership
-- [ ] keep current Signal output, hashes, mechanics, calibrated gates, and
+- [x] keep current Signal output, hashes, mechanics, calibrated gates, and
   Batch 29.8 frozen
 
 Evidence: one loss-attribution report and one license-safe state-policy memo.
 No borrowed implementation expression or constants, parameter sweep, listening,
 dynamic ratio, cache, realtime, routing, promotion, or production DSP change
 belongs in this batch.
+
+Decision: the original material-state attribution was incomplete. Independent
+recurrence fails `40/48` rows. Adding 29.7M sharing repairs all `24` tone rows
+relative to that stage, but regresses `22/24` image rows and still fails
+`29/48`. Evidence `d2de8ca4df6330f6` repeats with zero structural failures.
+Current reference-relative recurrence remains the default. Later ownership is
+ordered `Reset`, `TrackedPeak`, `Relational`; independent `Unlocked` and kick
+laws are not promoted. A tracked overlay must keep the requesting channel's
+peak location and advance from matched predecessor synthesis state.
+
+### Batch 29.7O - Reference-Safe Tracked-Peak Overlay
+
+- [ ] freeze current reference-relative recurrence as the initial and fallback
+  result for every bin
+- [ ] retain each requesting channel's current peak location; borrow only a
+  compatible peer trajectory evaluated at that frequency
+- [ ] advance the overlay from the matched predecessor's synthesis state and
+  use identity local phase offset only
+- [ ] alter eligible peak regions only; preserve current output everywhere else
+- [ ] preserve hashes, mechanics, geometry, schedule, crop, calibrated gates,
+  exact repeat, and the frozen comparison matrix
+- [ ] accept only row-complete improvement over current Signal with no new
+  structural, transformation, transient, crossfeed, or local-consistency loss
+
+No phase scale, peak-resolution, predecessor-distance, activation-threshold,
+or frequency-range sweep belongs in this batch. Reset implementation, listening,
+dynamic ratio, cache, realtime, routing, promotion, and production DSP remain
+closed.
 
 ### Batch 29.8 - Listening And Dynamic Checkpoint
 
@@ -2919,9 +2947,14 @@ belongs in this batch.
   failures from `20/48` to `29/48`, regresses `35/48` rows, and fails local
   consistency on `32/48`. Evidence `31a8b2eaae086fc8` blocks tuning. Batch
   29.7N now triangulates material-state ownership before another renderer.
+- 2026-07-17: Batch 29.7N isolates two faults in 29.7M. Independent recurrence
+  fails `40/48`; peak sharing repairs all tone rows but one peer anchor regresses
+  `22/24` image rows. Evidence `d2de8ca4df6330f6` repeats exactly. Current
+  relational recurrence remains the default. Batch 29.7O may test one
+  frequency-aligned tracked identity overlay from predecessor synthesis state.
 
 ## Next Task
 
-Run Batch 29.7N linked-state policy triangulation. Attribute the frozen 29.7M
-losses, then define a license-safe state vocabulary and ordering from multiple
-independent sources. Keep current output as baseline and Batch 29.8 closed.
+Run Batch 29.7O reference-safe tracked-peak overlay. Start from current output,
+retain each channel's peak location, and advance eligible regions from matched
+predecessor synthesis state. Keep Batch 29.8 closed.

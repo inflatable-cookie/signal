@@ -393,14 +393,17 @@ Current stretch status:
   four `2.0x` image rows, rejecting mid/side and blanket linking as the repair.
   Batch 29.7M rejects one Signal-specified nearest-peak realization: failures
   rise from `20/48` to `29/48` and local consistency fails on `32/48` rows.
-  Batch 29.7N now owns linked-state policy triangulation before another DSP
-  candidate.
+  Batch 29.7N isolates the loss: independent recurrence fails `40/48`, while
+  peak sharing repairs all tone rows but a single peer anchor regresses `22/24`
+  image rows. Current relational recurrence remains the default. Batch 29.7O
+  owns one frequency-aligned tracked identity overlay from predecessor
+  synthesis state.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7N linked-state policy triangulation. Attribute the
-rejected peak-region losses and define a license-safe material-state ordering
-from independent sources. Keep Batch 29.8 closed.
+Run `g10.029` Batch 29.7O reference-safe tracked-peak overlay. Start from the
+current relational result and alter eligible peak regions only. Keep Batch 29.8
+closed.

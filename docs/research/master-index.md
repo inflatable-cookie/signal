@@ -56,6 +56,7 @@ Finch and Loophole.
 | [Weighted Predictor Fidelity](./translation-memos/005-weighted-predictor-fidelity.md) | Correct scheduling, geometry, vertical twists, normalization, fallback, and update ordering as one topology | Promoted |
 | [Linked-Stereo Relationship-Preserving Recurrence](./translation-memos/006-linked-stereo-recurrence.md) | Select one per-bin reference recurrence and preserve peer current-input complex relation plus magnitude | Promoted |
 | [Rubber Band Linked-Stereo Mechanism](./translation-memos/007-rubber-band-linked-stereo-mechanism.md) | Move conditional, frequency-bounded channel ownership from same-bin projection to tracked peak regions | Promoted |
+| [Linked-Stereo State And Trajectory Policy](./translation-memos/008-linked-stereo-state-and-trajectory-policy.md) | Keep reference-relative recurrence as the stereo default and make tracked peak ownership a frequency-aligned overlay | Promoted |
 
 ## Consumer Guidance
 
@@ -66,6 +67,6 @@ Finch and Loophole.
 
 ## Next Task
 
-Run Batch 29.7J stereo invariant gate calibration. Complete contribution
-attribution excludes initial-frame, fallback, and weak-bin ownership; compare
-the frozen gate against ideal and external-reference behavior before more DSP.
+Run Batch 29.7O reference-safe tracked-peak overlay feasibility. Keep current
+reference-relative recurrence as the default and isolate one frequency-aligned
+tracked identity overlay without parameter or state-policy tuning.
