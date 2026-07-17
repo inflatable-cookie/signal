@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; linked phase-field kernel-family selection next
+Status: active; separate region-locked kernel proof next
 Owner: dsp
 Updated: 2026-07-17
 Related contracts: `046`, `048`, `049`
@@ -3793,9 +3793,43 @@ seed, or local state in that kernel. A future tracked implementation requires a
 separate contract covering ordinary, tracked, reset, unlocked, linked-channel,
 representation, scale, and overlap-synthesis ownership as one system.
 
+Batch 29.7S closes joint phase-gradient integration for the next renderer. Its
+published mono evidence remains valid, but Signal's fixed-grid kernel and exact-
+lattice repair already failed the active mono gate. No published source closes
+joint multichannel heap ownership. Do not combine PGHI with a new stereo
+constraint in this lane.
+
+Rule 31H selects one separate report-only kernel family named
+`SharedRotationRegionLocked`. It must not call the coherent weighted predictor.
+Its complete operator order is:
+
+1. analyze every channel with the proven periodic-Kaiser, modified-half-bin
+   representation on one exact shared lattice
+2. form cancellation-safe joint energy from the maximum channel energy per bin
+3. partition the complete active spectrum into joint peak regions
+4. match each peak to its predecessor region
+5. choose the greatest-energy current channel at the peak with stable ties
+6. advance the tracked peak from that channel's prior analysis phase, the
+   trajectory's prior common rotation, and the actual centre interval
+7. apply one common peak rotation to all channels and bins in the region
+8. inverse-transform and overlap-add with no later phase owner
+
+Only `TrackedRegion`, `ResetRegion`, and `Silent` are authorized.
+`ResetRegion` owns first frames, discontinuities, and unmatched trajectories.
+It uses current analysis phase for the complete region and does not alter the
+global map. `Silent` emits exact zero and creates no trajectory. The first
+proof has no attack detector, local-time override, `Relational`, `Unlocked`,
+random-phase, mid/side, post-render, or blended state.
+
+Batch 29.7T may render exactly one fixed-grid candidate at `0.75x`, `1.5x`, and
+`2.0x` using the frozen coherent representation and exact schedule. Preserve
+the current renderer and production identity. Passage requires exact mechanics,
+zero calibrated stereo failures, zero local-consistency failures, and no row-
+complete mono regression against the coherent control. Any failure stops
+without tuning peak selection, predecessor matching, ownership, reset,
+boundaries, windows, scales, or blends.
+
 ## Next Task
 
-Run Batch 29.7S as linked phase-field kernel-family selection under Rule 31H.
-Compare joint multichannel phase-gradient integration with a state-complete
-peak-locked phase vocoder. Contract at most one family before another renderer.
-Keep Batch 29.8 closed.
+Run Batch 29.7T as the one bounded fixed-grid
+`SharedRotationRegionLocked` proof under Rule 31H. Keep Batch 29.8 closed.

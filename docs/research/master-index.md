@@ -44,6 +44,7 @@ Finch and Loophole.
 | [Essentia](./specimen-dossiers/essentia.md) | Reference algorithms, quality targets, migration cues | In progress |
 | [Signalsmith Stretch](./specimen-dossiers/signalsmith-stretch.md) | Single-grid weighted phase-prediction control and Signal fidelity gap | Reviewed |
 | [Rubber Band Source Architecture](./specimen-dossiers/rubber-band-source-architecture.md) | R2/R3 scheduling, scale ownership, guidance, and phase topology | Reviewed |
+| [Bungee Source Architecture](./specimen-dossiers/bungee-source-architecture.md) | Whole-kernel common-region rotation and dynamic multichannel feasibility | Reviewed |
 
 ## Translation Memos
 
@@ -59,6 +60,7 @@ Finch and Loophole.
 | [Linked-Stereo State And Trajectory Policy](./translation-memos/008-linked-stereo-state-and-trajectory-policy.md) | Keep reference-relative recurrence as the stereo default and make tracked peak ownership a frequency-aligned overlay | Superseded for current kernel by memo 010 |
 | [Peak Owner And Phase-Field Order](./translation-memos/009-peak-owner-and-phase-field-order.md) | Reject late tracked overlays; require one complete peak-owned eligible-region operation with peer relation preserved inside it | Valid ordering law; current-kernel realization rejected |
 | [Linked-Stereo Current-Kernel Operator Decision](./translation-memos/010-linked-stereo-current-kernel-operator-decision.md) | Close tracked peaks inside the coherent weighted predictor; require complete kernel-family selection before another renderer | Promoted |
+| [Linked Phase-Field Kernel Family Selection](./translation-memos/011-linked-phase-field-kernel-family-selection.md) | Close PGHI for this lane; select one separate shared-rotation region-locked phase-vocoder proof | Promoted |
 
 ## Consumer Guidance
 
@@ -69,6 +71,5 @@ Finch and Loophole.
 
 ## Next Task
 
-Run Batch 29.7S as linked phase-field kernel-family selection. Compare joint
-multichannel phase-gradient integration with a state-complete peak-locked phase
-vocoder and contract at most one complete family before another renderer.
+Run Batch 29.7T as the one bounded fixed-grid
+`SharedRotationRegionLocked` proof. Keep production and Batch 29.8 closed.

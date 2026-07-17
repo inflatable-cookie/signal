@@ -1,7 +1,7 @@
 # Offline Time-Stretch Synthesis
 
-Status: coherent fixed-grid mono baseline validated; linked phase-field family selection
-active after calibrated repair rejection
+Status: coherent fixed-grid mono baseline validated; separate region-locked
+kernel proof next
 Owner: dsp
 Updated: 2026-07-17
 Contract refs: `046`, `082`
@@ -13,10 +13,16 @@ The production OfflineHighQuality prototype remains the current `2048/512`
 identity-lock/reset phase vocoder. All successor work is report-only. The
 source-studied coherent fixed-grid predictor has completed its exact-source
 mono comparison against Rubber Band R3 with a material-dependent split and no
-overall winner. It may advance to linked-stereo proof. No successor has earned
-product routing or dynamic-ratio work.
+overall winner. Its linked-stereo repair line is closed. One separate
+`SharedRotationRegionLocked` family is contracted for a report-only proof. No
+successor has earned product routing or dynamic-ratio work.
 
-## Successor Shape
+This family is distinct from the production prototype. The prototype runs
+identity locking independently over mono or mid/side paths with midpoint
+regions. The selected proof uses one native-channel joint peak map, tracked
+predecessor regions, and a common rotation across every channel in a region.
+
+## Coherent Control Shape
 
 The successor owns one sample-domain time map and one coherent fixed-grid
 weighted predictor.
@@ -960,7 +966,7 @@ control flow, or random diffusion. The complete synthetic gate directly covers
 bass pitch, chord sidebands, transient replicas, silence/fallback, boundaries,
 coverage, determinism, finiteness, and exact duration before real sources.
 
-## Next Task
+## Development Record
 
 The complete report-only predictor fails the steady chord/pad sideband gate at
 `-30.200611 dB` against `-60 dB`. Trace attribution places the first failure in
@@ -1289,9 +1295,37 @@ family that owns representation, all phase states, channel linking, and overlap
 synthesis together. This is a kernel boundary, not a claim that tracked peaks
 are generally ineffective.
 
+Batch 29.7S selects one such family. Joint phase-gradient integration closes
+for this lane: Signal already rejected its fixed-grid mono kernel and exact-
+lattice repair, and published work provides no complete multichannel heap law.
+Adding stereo ownership would place a new operator on a family that already
+failed attack, timing, replica, formant, boundary, and combined gates.
+
+The selected separate family is `SharedRotationRegionLocked`. A cancellation-
+safe maximum-channel energy field defines joint peaks and complete regions. A
+deterministic greatest-energy channel advances each tracked peak from prior
+synthesis state. One common rotation is then applied to every current analysis
+coefficient in every channel across that region. This preserves current
+vertical structure and current interchannel complex relation in the same
+operation.
+
+`TrackedRegion`, `ResetRegion`, and `Silent` own the complete state space.
+Reset uses current analysis phase for the whole region on first frames,
+discontinuities, and unmatched trajectories. It never alters the global time
+map. No separate attack detector is active in the first proof. The weighted
+predictor, `Relational` recurrence, late overlay, independent peer recurrence,
+random weak-bin phase, mid/side, and post-render repair are absent. A separate
+`Unlocked` state is also closed.
+
+This kernel reuses the coupled periodic-Kaiser/modified-half-bin
+representation plus Signal's exact scheduling, boundary, inverse-transform,
+and overlap infrastructure, but it cannot call the current phase predictor.
+Later multiresolution work may assign each frequency to one scale and apply the
+same complete region law within that scale. It may not render overlapping
+full-band phase owners.
+
 ## Next Task
 
-Run Batch 29.7S as linked phase-field kernel-family selection. Compare one
-joint multichannel phase-gradient family with one state-complete peak-locked
-phase-vocoder family. Contract at most one complete system before another
-renderer. Keep all product-facing surfaces closed.
+Run Batch 29.7T as one report-only fixed-grid
+`SharedRotationRegionLocked` proof at `0.75x`, `1.5x`, and `2.0x`. Stop after
+one candidate. Keep all product-facing surfaces closed.

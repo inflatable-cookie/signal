@@ -167,6 +167,7 @@ region before preserving the peer relation. Run Batch 29.7Q as that one bounded
 proof. Do not transfer Rubber Band expression, ranges, scaling, reset policy,
 or constants. Do not promote centre-focus or mid/side. Batch 29.7Q then rejects
 the complete Signal-owned operation at `23/48` calibrated failures versus the
-`20/48` baseline. Batch 29.7R closes the cross-family hybrid. Run Batch 29.7S
-to compare complete clean-room kernel families before any further source
-translation.
+`20/48` baseline. Batch 29.7R closes the cross-family hybrid. Batch 29.7S
+selects one independently supported shared-rotation region-locked kernel and
+keeps Rubber Band at architecture-only distance. Run Batch 29.7T as its one
+bounded proof.

@@ -408,14 +408,18 @@ Current stretch status:
   review. Batch 29.7R identifies a cross-family hybrid: the coherent
   pure-stretch kernel is a continuous field without peak mapping, while the
   comparator's linked peak belongs to a complete phase-vocoder state machine.
-  Current-kernel tracked peaks close; complete kernel-family selection opens.
+  Current-kernel tracked peaks close. Batch 29.7S then closes joint PGHI for
+  the next renderer: its Signal mono kernel already failed and no published
+  source supplies joint multichannel heap ownership. One separate
+  `SharedRotationRegionLocked` family is selected from independent peak-region,
+  stereo, transient, representation, MIT implementation, and MPL whole-kernel
+  evidence. Batch 29.7T owns one fixed-grid proof with no parameter rescue.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7S as linked phase-field kernel-family selection. Compare
-joint multichannel phase-gradient integration with a state-complete peak-locked
-phase vocoder and contract at most one complete family before another renderer.
-Keep Batch 29.8 closed.
+Run `g10.029` Batch 29.7T as one fixed-grid
+`SharedRotationRegionLocked` proof. Stop after one candidate and keep Batch
+29.8 closed.

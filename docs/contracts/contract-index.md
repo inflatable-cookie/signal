@@ -2,7 +2,7 @@
 
 Status: active
 Owner: core-product
-Updated: 2026-07-16
+Updated: 2026-07-17
 
 ## Purpose
 
@@ -145,7 +145,6 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7S under contract `082`, Rule 31H. Select between joint
-multichannel phase-gradient integration and a state-complete peak-locked phase
-vocoder. Contract at most one complete family before another renderer; keep
-listening, dynamic ratio, realtime, routing, and promotion closed.
+Run `g10.029` Batch 29.7T under contract `082`, Rule 31H. Prove one fixed-grid
+`SharedRotationRegionLocked` candidate and stop. Keep listening, dynamic ratio,
+realtime, routing, and promotion closed.

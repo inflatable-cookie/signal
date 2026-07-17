@@ -1907,26 +1907,76 @@ Translation memo 010 promotes the kernel boundary.
 
 ### Batch 29.7S - Linked Phase-Field Kernel Family Selection
 
-- [ ] compare one joint multichannel phase-gradient integration family with one
+- [x] compare one joint multichannel phase-gradient integration family with one
   state-complete peak-locked phase-vocoder family
-- [ ] use primary literature and permissive implementations where available;
+- [x] use primary literature and permissive implementations where available;
   keep Rubber Band GPL source at architecture-only distance
-- [ ] define representation, horizontal and vertical phase ownership,
+- [x] define representation, horizontal and vertical phase ownership,
   transient/reset policy, linked-channel policy, and overlap synthesis for each
   family as one system
-- [ ] assess compatibility with the proven coherent mono baseline, later
+- [x] assess compatibility with the proven coherent mono baseline, later
   multi-resolution work, deterministic offline rendering, and realtime-safe
   state projection without implementing any family
-- [ ] select at most one family and promote its clean-room boundary into
+- [x] select at most one family and promote its clean-room boundary into
   architecture and Rule 31H, or close both with an explicit research gap
-- [ ] define one bounded fixed-ratio proof only if the selected family has no
+- [x] define one bounded fixed-ratio proof only if the selected family has no
   unresolved ownership or licensing gap
-- [ ] keep Batch 29.8, listening, dynamic ratio, realtime, routing, and
+- [x] keep Batch 29.8, listening, dynamic ratio, realtime, routing, and
   production closed
 
 Evidence: one source-backed family decision matrix and one promoted kernel
 contract. No renderer, parameter sweep, picker, classifier, scale crossover,
 or reset implementation belongs in this batch.
+
+Decision: close joint phase-gradient integration for the next renderer. Signal
+already rejected its mono fixed-grid kernel and exact-lattice repair, and no
+published source closes joint multichannel heap ownership. Select one separate
+`SharedRotationRegionLocked` phase-vocoder family. Translation memo 011 and
+Rule 31H freeze complete-region common rotation, cancellation-safe energy,
+dominant-channel peak advance, coordinated reset, and exact overlap ownership.
+
+### Batch 29.7T - Shared-Rotation Region-Locked Kernel Proof
+
+- [ ] add one report-only `SharedRotationRegionLocked` renderer beside the
+  unchanged coherent control; do not call the weighted predictor from it
+- [ ] reuse the coupled periodic-Kaiser/modified-half-bin representation,
+  exact absolute analysis centres, `30 ms` output interval, fourfold support,
+  boundary handling, inverse transform, overlap accounting, and target length
+- [ ] form joint peak energy as the maximum per-channel energy at each bin; a
+  peak is a nonzero local maximum against the two available neighbours on each
+  side, with stable lower-bin plateau ties
+- [ ] place each region boundary at the lowest-energy bin between adjacent
+  peaks, with stable lower-bin ties; an active frame with no peak is one
+  `ResetRegion`
+- [ ] match a current peak to the prior region containing its frequency; use
+  `ResetRegion` on the first frame, discontinuity, silent predecessor, or
+  missing predecessor, otherwise use `TrackedRegion`
+- [ ] select the greatest-energy current channel at the peak with stable
+  lower-channel ties; retain the predecessor common rotation and every
+  channel's predecessor-peak analysis phase across owner changes
+- [ ] estimate the owner trajectory over the actual adjacent analysis-centre
+  interval, advance it over the fixed synthesis interval, calculate one common
+  rotation, and apply that rotation to every current channel coefficient in
+  the complete region
+- [ ] keep exact-zero `Silent` regions zero; add no attack detector, local-time
+  override, `Relational`, `Unlocked`, random-phase, mid/side, post-render,
+  blended, classifier, or multiresolution state
+- [ ] prove `TrackedRegion`, `ResetRegion`, and `Silent` exercise plus exact
+  length, coverage, finiteness, identity, silence, mono parity, hard pan, swap,
+  polarity, scaled duplicate, owner changes, trajectory breaks, and repeat
+- [ ] run the unchanged mono integrity/corpus gates and `48` calibrated stereo
+  rows at `0.75x`, `1.5x`, and `2.0x` against current Signal and Rubber Band
+- [ ] require zero calibrated stereo failures, zero local-consistency failures,
+  exact mechanics, and no row-complete mono regression; stop after one
+  candidate without tuning any owner, picker, predecessor, reset, boundary,
+  window, scale, threshold, or blend
+- [ ] keep current output, production identity, Batch 29.8, listening, dynamic
+  ratio, realtime, routing, and cache identity unchanged
+
+Evidence: one complete candidate report, state/mechanics counts, per-row
+comparison, audio hashes, and exact repeat hash. Failure returns to
+algorithm-family operator review. Passage opens Batch 29.8 only after a
+separate roadmap checkpoint.
 
 ### Batch 29.8 - Listening And Dynamic Checkpoint
 
@@ -3083,10 +3133,14 @@ or reset implementation belongs in this batch.
   complete phase-vocoder kernel. The failed hybrids justify kernel-family
   selection, not another local variant. Translation memo 010 freezes the
   boundary.
+- 2026-07-17: Batch 29.7S closes joint phase-gradient integration for the next
+  renderer and selects one separate `SharedRotationRegionLocked` family.
+  Primary papers plus MIT AudioTSM and MPL Bungee cover the independent phase,
+  stereo, and whole-kernel seams without Rubber Band expression. Translation
+  memo 011 freezes one fixed-grid proof and forbids parameter rescue.
 
 ## Next Task
 
-Run Batch 29.7S as linked phase-field kernel-family selection. Compare joint
-multichannel phase-gradient integration with a state-complete peak-locked phase
-vocoder, promote at most one complete clean-room boundary, and stop before a
-renderer. Keep Batch 29.8 closed.
+Run Batch 29.7T as the one bounded fixed-grid
+`SharedRotationRegionLocked` proof. Stop after one candidate and keep Batch
+29.8 closed.
