@@ -1756,9 +1756,27 @@ ordinary recurrence, synchronized state commit, output-layer projection,
 inverse-slice synthesis, or the final outer overlap. This is architecture
 attribution, not another policy experiment.
 
+Batch 29.7AP completes that trace once at evidence hash
+`24cdad83bf3ddeeb`. Source outer layers are distinct coefficient fields, but
+the first relation-changing operator is the terminal state commit. All `96`
+retained first/worst events are interior `Unlocked` commits across both
+controls and every ratio; `90/96` have no owner switch. Layer projection adds
+exactly zero residual beyond the state commit. Inverse synthesis exposes the
+damage and overlap changes it in both directions, so neither synthesis stage
+owns the first break.
+
+The selected correction is reference-relative unlocked commit. Each channel
+still computes ordinary recurrence. At an ordinary or unlocked atom, the
+greatest-current-energy channel supplies one phase rotation and every peer
+applies that rotation to its own current coefficient. This preserves current
+interchannel relation and channel magnitude before both outer layers are
+projected. Reset, attack, locked trajectories, material guidance, geometry,
+inverse synthesis, and overlap do not change. Rule 31X permits one proof of
+that integration law only.
+
 ## Next Task
 
-Run Batch 29.7AP under Rule 31W. Attribute the first stereo-relation divergence
-across coefficient and waveform ownership before another candidate. Keep
-tuning, objective retry, concealed holdout, listening, dynamic ratio,
+Run Batch 29.7AQ under Rule 31X. Implement the reference-relative unlocked
+commit and execute its exact mechanics plus failure-first objective sequence
+once. Keep all other tuning, concealed holdout, listening, dynamic ratio,
 realtime, and product-facing work closed.

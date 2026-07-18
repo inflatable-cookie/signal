@@ -127,6 +127,9 @@ sound quality.
 
 Rule 31V freezes the unchanged Rule 31R material policy and complete objective
 matrix on this representation. Batch 29.7AO passes synthetic mechanics and
-stops at `46/48` calibrated stereo failures. Run Batch 29.7AP under Rule 31W
-to locate the first coefficient-to-waveform relation divergence before another
-candidate.
+stops at `46/48` calibrated stereo failures. Batch 29.7AP proves that the
+outer-layer projection adds no relation residual beyond the preceding
+`Unlocked` state commit; slice inversion and overlap are downstream. The
+bounded representation remains valid. Rule 31X changes only the unlocked
+commit ordering before both layers receive the shared result. Run Batch
+29.7AQ once under that rule.

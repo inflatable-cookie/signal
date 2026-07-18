@@ -68,6 +68,49 @@ pub(in crate::frequency_adaptive) fn review_candidate(
     review_candidate_inner(directory, candidate, false)
 }
 
+pub(in crate::frequency_adaptive) fn replay_development_rows(
+    directory: &str,
+    mut visit: impl FnMut(&str, usize, f64, bool, f64, [&[f64]; 2]),
+) -> usize {
+    let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../../target")
+        .join(directory);
+    replace_directory(&root);
+    let geometry = coherent_representation::source_geometry(SAMPLE_RATE);
+    let spacing = SAMPLE_RATE as f64 / geometry[2] as f64;
+    let mut rows = 0;
+    for source_frames in LENGTHS {
+        for phase in PHASES {
+            for bin_aligned in ALIGNMENTS {
+                let frequency = (31.5 + if bin_aligned { 0.0 } else { 0.37 }) * spacing;
+                for kind in [ControlKind::Tone, ControlKind::Image] {
+                    let source = control(kind, source_frames, frequency, phase);
+                    for ratio in RATIOS {
+                        let stem = format!(
+                            "{}-{source_frames}-{phase:.2}-{bin_aligned}-{ratio:.2}",
+                            kind.name()
+                        );
+                        let input_path = root.join(format!("{stem}-input.wav"));
+                        write_stereo(&input_path, &source, SAMPLE_RATE as u32);
+                        let input = read_stereo(&input_path, source_frames, SAMPLE_RATE as u32);
+                        visit(
+                            kind.name(),
+                            source_frames,
+                            phase,
+                            bin_aligned,
+                            ratio,
+                            [&input[0], &input[1]],
+                        );
+                        rows += 1;
+                    }
+                }
+            }
+        }
+    }
+    assert_eq!(rows, 48);
+    rows
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub(in crate::frequency_adaptive) struct PeakRegionScreen {
     pub(in crate::frequency_adaptive) rows: usize,

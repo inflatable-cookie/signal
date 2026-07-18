@@ -498,14 +498,18 @@ Current stretch status:
   `46/48` calibrated stereo failures, `110/384` improved windows, `44/48`
   local failures, and maximum residual `0.86973539821584`. Mono and long-
   development do not run. Rule 31W opens one coefficient-to-waveform stereo
-  failure attribution before any new candidate.
+  failure attribution before any new candidate. Batch 29.7AP completes that
+  replay at hash `24cdad83bf3ddeeb`. Every retained first/worst operator event
+  is an interior `Unlocked` state commit; projected-layer residuals match the
+  state residuals exactly. Rule 31X freezes one reference-relative unlocked
+  commit for a single failure-first proof.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7AP under Rule 31W. Trace the first stereo-relation
-divergence from source layers through state commit and overlap assembly. Keep
-tuning, objective retry, listening, holdout, product surfaces, and Batch 29.8
-closed.
+Run `g10.029` Batch 29.7AQ under Rule 31X. Implement the one reference-relative
+unlocked commit and run its exact mechanics plus failure-first objective
+sequence once. Keep all other tuning, listening, holdout, product surfaces,
+and Batch 29.8 closed.

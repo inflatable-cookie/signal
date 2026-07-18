@@ -2663,21 +2663,40 @@ implementation without retry, tuning, listening, or holdout access.
 
 ### Batch 29.7AP - Normalized Stereo Failure Attribution
 
-- [ ] freeze Rule 31T/31U/31V hashes, the exact failed implementation, and all
+- [x] freeze Rule 31T/31U/31V hashes, the exact failed implementation, and all
   completed 29.7AO rows; change no renderer or threshold
-- [ ] trace one deterministic replay of all `48` development rows from source
+- [x] trace one deterministic replay of all `48` development rows from source
   outer-layer coefficients through ordinary recurrence, synchronized state,
   linked/local lock, output-layer projection, inverse slice, and outer overlap
-- [ ] aggregate the first stereo-relation divergence by control, ratio, scale,
+- [x] aggregate the first stereo-relation divergence by control, ratio, scale,
   state, source/output layer, and boundary context; do not select row repairs
-- [ ] compare the ownership order with the pinned Rubber Band, Signalsmith,
+- [x] compare the ownership order with the pinned Rubber Band, Signalsmith,
   and Bungee topology records; transfer no external expression or constants
-- [ ] promote at most one complete integration-law correction with a frozen
+- [x] promote at most one complete integration-law correction with a frozen
   proof, or close the topology; keep tuning, objective retry, listening,
   holdout, Batch 29.8, and product work closed
 
-Evidence: one coefficient-to-waveform first-divergence report and one
-architecture decision under Rule 31W. This card is ready.
+Evidence: one coefficient-to-waveform replay at hash `24cdad83bf3ddeeb`.
+All `96` retained first/worst operator events are interior `Unlocked` state
+commits; `90/96` have no owner switch. State-commit and projected-layer
+residuals match exactly. Inverse and overlap expose but do not first create the
+loss. Rule 31X promotes one reference-relative unlocked commit.
+
+### Batch 29.7AQ - Reference-Relative Unlocked Commit
+
+- [ ] freeze the Rule 31W report and implement only the per-atom
+  greatest-energy reference rotation for `Ordinary` and `Unlocked`
+- [ ] retain every ordinary precursor, channel magnitude, reset, attack,
+  locked path, classifier, geometry, projection, inverse, and overlap law
+- [ ] prove observer parity, Rule 31Q mechanics, and unlocked interchannel
+  relation preservation at or below `1e-12`
+- [ ] run the unchanged Rule 31V synthetic stage and corrected `48`-row stereo
+  gate once; stop at the first miss and do not repair rows
+- [ ] run mono and long-development only after complete stereo passage; keep
+  listening, holdout, dynamic ratio, product work, and Batch 29.8 closed
+
+Evidence: at most one mechanics report and one failure-first objective report
+under Rule 31X. This card is ready.
 
 ### Batch 29.8 - Listening And Dynamic Checkpoint
 
@@ -4025,10 +4044,16 @@ architecture decision under Rule 31W. This card is ready.
   failures, `110/384` improved windows, `44/48` local-row failures, and maximum
   residual `0.86973539821584`; hash `ff4603accdb456e6`. Mono and long-
   development evidence do not run. Rule 31W opens attribution, not repair.
+- 2026-07-18: Batch 29.7AP traces the frozen renderer once at evidence hash
+  `24cdad83bf3ddeeb`. All retained first/worst operator events are interior
+  `Unlocked` state commits across both controls and every ratio; `90/96` have
+  no owner switch. Projection transports exactly the same residual. Inverse
+  and overlap expose it but are not the first owner. Rule 31X freezes one
+  reference-relative unlocked commit for Batch 29.7AQ.
 
 ## Next Task
 
-Run Batch 29.7AP under Rule 31W. Trace the first stereo-relation divergence
-from source layers through state and overlap ownership before another
-candidate. Keep tuning, objective retry, listening, holdout, product surfaces,
-and Batch 29.8 closed.
+Run Batch 29.7AQ under Rule 31X. Implement the one reference-relative unlocked
+commit and run its exact mechanics plus failure-first objective sequence once.
+Keep all other policy, listening, holdout, product surfaces, and Batch 29.8
+closed.

@@ -11,15 +11,18 @@ use crate::frequency_adaptive::material_state_frequency_frame::{
 struct OutputSlice {
     start: isize,
     coefficients: [Vec<Vec<Complex64>>; CHANNEL_CAPACITY],
+    reference: Option<[Vec<Vec<Complex64>>; CHANNEL_CAPACITY]>,
 }
 
 impl OutputSlice {
-    fn new(start: isize, bands: usize) -> Self {
+    fn new(start: isize, bands: usize, attributed: bool) -> Self {
+        let coefficients = || {
+            std::array::from_fn(|_| vec![vec![Complex64::default(); COEFFICIENT_CAPACITY]; bands])
+        };
         Self {
             start,
-            coefficients: std::array::from_fn(|_| {
-                vec![vec![Complex64::default(); COEFFICIENT_CAPACITY]; bands]
-            }),
+            coefficients: coefficients(),
+            reference: attributed.then(coefficients),
         }
     }
 }
@@ -53,8 +56,15 @@ impl<'a> Synthesis<'a> {
         mut slice: OutputSlice,
         output: &mut [Vec<f64>; CHANNEL_CAPACITY],
         coverage: &mut [usize],
+        trace: Option<&mut attribution::TraceCollector>,
     ) -> usize {
         mirror_coefficients(self.geometry, self.positive, &mut slice.coefficients);
+        if let Some(reference) = &mut slice.reference {
+            mirror_coefficients(self.geometry, self.positive, reference);
+        }
+        let mut actual_contribution = trace
+            .as_ref()
+            .map(|_| std::array::from_fn(|_| vec![0.0; self.geometry.fft_frames]));
         let mut non_finite = 0;
         for channel in 0..CHANNEL_CAPACITY {
             let mut spectrum = vec![Complex64::default(); self.geometry.fft_frames];
@@ -83,6 +93,9 @@ impl<'a> Synthesis<'a> {
                 let logical = slice.start + local as isize;
                 if (0..output[channel].len() as isize).contains(&logical) {
                     let sample = sample / self.geometry.fft_frames as f64 * self.window[local];
+                    if let Some(contribution) = &mut actual_contribution {
+                        contribution[channel][local] = sample.re;
+                    }
                     output[channel][logical as usize] += sample.re;
                     non_finite +=
                         usize::from(!sample.re.is_finite()) + usize::from(!sample.im.is_finite());
@@ -92,7 +105,50 @@ impl<'a> Synthesis<'a> {
                 }
             }
         }
+        if let (Some(trace), Some(reference), Some(actual)) =
+            (trace, slice.reference, actual_contribution)
+        {
+            let reference = self.contribution(reference);
+            trace.observe_slice(slice.start, &reference, &actual, output);
+        }
         non_finite
+    }
+
+    fn contribution(
+        &self,
+        coefficients: [Vec<Vec<Complex64>>; CHANNEL_CAPACITY],
+    ) -> [Vec<f64>; CHANNEL_CAPACITY] {
+        std::array::from_fn(|channel| {
+            let mut spectrum = vec![Complex64::default(); self.geometry.fft_frames];
+            for (band, mut values) in self
+                .geometry
+                .representation
+                .bands
+                .iter()
+                .zip(coefficients[channel].clone())
+            {
+                self.forward_band.process(&mut values);
+                for &(bin, weight) in &band.taps {
+                    let local = local_coefficient(
+                        bin,
+                        band.center,
+                        COEFFICIENT_CAPACITY,
+                        self.geometry.fft_frames,
+                    );
+                    spectrum[bin] +=
+                        values[local] * weight / self.geometry.representation.frame_operator[bin];
+                }
+            }
+            close_conjugate_spectrum(&mut spectrum);
+            self.inverse_full.process(&mut spectrum);
+            spectrum
+                .into_iter()
+                .enumerate()
+                .map(|(local, sample)| {
+                    sample.re / self.geometry.fft_frames as f64 * self.window[local]
+                })
+                .collect()
+        })
     }
 }
 
@@ -100,6 +156,26 @@ pub(super) fn render(
     inputs: [&[f64]; CHANNEL_CAPACITY],
     ratio: f64,
     sample_rate: usize,
+) -> CandidateRender {
+    render_inner(inputs, ratio, sample_rate, None)
+}
+
+pub(super) fn render_attributed(
+    inputs: [&[f64]; CHANNEL_CAPACITY],
+    ratio: f64,
+    sample_rate: usize,
+) -> (CandidateRender, attribution::RenderAttribution) {
+    let target_length = (inputs[0].len() as f64 * ratio).round() as usize;
+    let mut trace = attribution::TraceCollector::new(target_length);
+    let rendered = render_inner(inputs, ratio, sample_rate, Some(&mut trace));
+    (rendered, trace.finish())
+}
+
+fn render_inner(
+    inputs: [&[f64]; CHANNEL_CAPACITY],
+    ratio: f64,
+    sample_rate: usize,
+    mut trace: Option<&mut attribution::TraceCollector>,
 ) -> CandidateRender {
     assert_eq!(inputs[0].len(), inputs[1].len(), "linked channel lengths");
     assert!(!inputs[0].is_empty(), "non-empty linked input");
@@ -169,6 +245,19 @@ pub(super) fn render(
         let projected = std::array::from_fn::<_, OUTPUT_SLICE_CAPACITY, _>(|layer| {
             project_layer(&analysis.layers[layer], &analysis.current, &decided)
         });
+        if let Some(observer) = trace.as_deref_mut() {
+            observer.observe_frame(
+                &analysis,
+                &decisions,
+                &decided,
+                &projected,
+                &geometry,
+                &positive,
+                source_position,
+                output_frame,
+                output_frame < 0 || output_frame >= target_length as isize,
+            );
+        }
         previous_source = Some(source_position);
 
         let current = output_frame.div_euclid(geometry.outer_advance as isize)
@@ -181,7 +270,11 @@ pub(super) fn render(
                 continue;
             }
             if active.iter().all(|slice| slice.start != start) {
-                active.push(OutputSlice::new(start, geometry.representation.bands.len()));
+                active.push(OutputSlice::new(
+                    start,
+                    geometry.representation.bands.len(),
+                    trace.is_some(),
+                ));
             }
             let slice = active
                 .iter_mut()
@@ -192,6 +285,10 @@ pub(super) fn render(
                 for channel in 0..CHANNEL_CAPACITY {
                     slice.coefficients[channel][band][local_time] =
                         projected[layer][channel][local_band];
+                    if let Some(reference) = &mut slice.reference {
+                        reference[channel][band][local_time] =
+                            analysis.layers[layer][channel][local_band];
+                    }
                 }
             }
         }
@@ -202,7 +299,8 @@ pub(super) fn render(
                 active[index].start / geometry.hop as isize + COEFFICIENT_CAPACITY as isize - 1;
             if time == complete_time {
                 let slice = active.remove(index);
-                non_finite += synthesis.add_slice(slice, &mut output, &mut coverage);
+                non_finite +=
+                    synthesis.add_slice(slice, &mut output, &mut coverage, trace.as_deref_mut());
             } else {
                 index += 1;
             }

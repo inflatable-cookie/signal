@@ -22,7 +22,8 @@ memory alone.
   mechanics proof. Rule 31U validates guided state mechanics across that
   frozen slice boundary; Rule 31V freezes the normalized material policy and
   one failure-first objective matrix. That candidate rejects at the stereo
-  gate; Rule 31W now governs coefficient-to-waveform failure attribution
+  gate; Rule 31W attributes the first operator break to independent unlocked
+  channel commits. Rule 31X governs one reference-relative unlocked correction
 - `g10.028` source-fill work is paused until the actual DSP kernel and source
   consumption geometry pass the `g10.029` correctness gate
 

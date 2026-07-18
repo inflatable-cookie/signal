@@ -4708,9 +4708,63 @@ crossover, link range, peak picker, state law, factor sweep, objective retry,
 quality export, listening, holdout, dynamic ratio, realtime, routing, cache,
 production, or product work may open.
 
+Batch 29.7AP completes one replay at evidence hash `24cdad83bf3ddeeb`.
+Every row first diverges at the source/current comparison because the two
+windowed outer layers are distinct fields; that comparison is not a state
+mutation. The first actual operator divergence is the terminal state commit.
+Across all `48` rows, all `96` retained first/worst state events are
+`Unlocked`, interior events. `90/96` have no owner switch. They cover tone and
+image controls, all three ratios, long and middle scales, and both output
+layers. State-commit and layer-projection residuals are exactly equal for all
+`96` paired events. Projection therefore transports the committed error but
+adds none. Per-slice inverse synthesis exposes normalized-Gram residual up to
+`0.6423375599950403`; outer overlap reaches `0.6205436585782236` and changes
+the error in both directions. Neither synthesis stage is the first owner.
+
+Pinned ownership order agrees on the missing invariant. Signalsmith commits a
+greatest-energy reference prediction before peers recover their current
+complex relation. Bungee applies one common region rotation to every channel.
+Rubber Band retains channel-local ordinary recurrences but reconstructs a
+borrowing peer from one compatible trajectory and its analysis-relative
+offset. Signal instead commits two independent ordinary rotations whenever
+the synchronized material decision is `Unlocked`; small current-relation
+differences accumulate before either outer layer is projected.
+
+### Rule 31X: reference-relative unlocked commit preregistration
+
+Freeze the Rule 31T/31U/31V hashes, the failed Rule 31V renderer, every Rule
+31W row, and evidence hash `24cdad83bf3ddeeb`. Batch 29.7AQ may change one
+integration law only. Every channel still computes the unchanged ratio-aware
+ordinary recurrence. For an `Ordinary` or `Unlocked` atom `b`, select the
+greatest-current-energy channel `q` at that atom, with the lower channel
+winning a tie. Let `o[q,b]` be its ordinary synthesis phase and `a[q,b]` its
+current analysis phase. Commit the common rotation
+
+`delta[b] = wrap(o[q,b] - a[q,b])`
+
+and reconstruct every channel as
+
+`y[c,b] = magnitude(x[c,b]) * exp(i * (phase(x[c,b]) + delta[b]))`.
+
+This retains the current interchannel complex relation exactly while keeping
+the owner recurrence, channel magnitudes, material decision, and later
+outer-layer projection. Reset, attack, locked-region construction, compatible
+trajectory borrowing, channel-local locked fallback, classifier, medians,
+thresholds, geometry, scale ownership, source schedule, inverse synthesis,
+and overlap remain bit-for-bit unchanged. This is one reference-relative state
+commit, not post-hoc image repair.
+
+Batch 29.7AQ first proves observer-inert baseline parity, exact duplicate,
+mono-parity, silent-peer, swap, and per-atom unlocked relation preservation at
+or below `1e-12`. It then runs the unchanged Rule 31V synthetic stage and the
+corrected `48`-row stereo gate once. Stop at the first miss. Only stereo
+passage may run the unchanged six mono and long-development rows. No alternate
+owner, state, threshold, factor, row repair, retry, listening, holdout,
+dynamic-ratio, realtime, product, or Batch 29.8 work may open.
+
 ## Next Task
 
-Run Batch 29.7AP under Rule 31W. Attribute the first stereo-relation divergence
-across source layers, state commit, projected output layers, and overlap
-assembly before another candidate. Keep tuning, objective retry, listening,
-holdout, Batch 29.8, and product work closed.
+Run Batch 29.7AQ under Rule 31X. Implement the one reference-relative unlocked
+commit, prove exact mechanics and relation preservation, then execute the
+failure-first synthetic and corrected stereo gates once. Keep all other policy,
+listening, holdout, Batch 29.8, and product work closed.

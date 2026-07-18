@@ -33,6 +33,31 @@ struct StereoReview {
     evidence_hash: u64,
 }
 
+#[derive(Clone, Debug, PartialEq)]
+struct AttributionRow {
+    control: String,
+    source_frames: usize,
+    phase: f64,
+    bin_aligned: bool,
+    ratio: f64,
+    render_hash: u64,
+    trace: attribution::RenderAttribution,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+struct AttributionReview {
+    rows: Vec<AttributionRow>,
+    stage_divergences: [usize; 5],
+    stage_maxima: [f64; 5],
+    first_stage_rows: [usize; 5],
+    by_state: [usize; 5],
+    by_scale: [usize; 3],
+    by_layer: [usize; 2],
+    boundary_divergences: usize,
+    owner_switch_divergences: usize,
+    evidence_hash: u64,
+}
+
 fn stereo_review() -> StereoReview {
     let review = peak_region_feasibility::review_candidate(
         "stretch-normalized-material-policy-stereo",
@@ -56,6 +81,66 @@ fn stereo_review() -> StereoReview {
         repeated: review.repeated,
         evidence_hash: review.evidence_hash,
     }
+}
+
+fn attribution_review() -> AttributionReview {
+    let mut rows = Vec::with_capacity(48);
+    let count = peak_region_feasibility::replay_development_rows(
+        "stretch-normalized-material-attribution",
+        |control, source_frames, phase, bin_aligned, ratio, inputs| {
+            let (rendered, trace) = render::render_attributed(inputs, ratio, 8_000);
+            rows.push(AttributionRow {
+                control: control.to_owned(),
+                source_frames,
+                phase,
+                bin_aligned,
+                ratio,
+                render_hash: rendered.hash,
+                trace,
+            });
+        },
+    );
+    assert_eq!(count, rows.len());
+    let mut review = AttributionReview {
+        rows,
+        stage_divergences: [0; 5],
+        stage_maxima: [0.0; 5],
+        first_stage_rows: [0; 5],
+        by_state: [0; 5],
+        by_scale: [0; 3],
+        by_layer: [0; 2],
+        boundary_divergences: 0,
+        owner_switch_divergences: 0,
+        evidence_hash: HASH_OFFSET,
+    };
+    for row in &review.rows {
+        for stage in attribution::Stage::ALL {
+            let summary = &row.trace.stages[stage.index()];
+            review.stage_divergences[stage.index()] += summary.divergent;
+            review.stage_maxima[stage.index()] =
+                review.stage_maxima[stage.index()].max(summary.maximum_residual);
+        }
+        if let Some(stage) = attribution::Stage::ALL
+            .into_iter()
+            .find(|stage| row.trace.stages[stage.index()].divergent > 0)
+        {
+            review.first_stage_rows[stage.index()] += 1;
+        }
+        for (total, value) in review.by_state.iter_mut().zip(row.trace.by_state) {
+            *total += value;
+        }
+        for (total, value) in review.by_scale.iter_mut().zip(row.trace.by_scale) {
+            *total += value;
+        }
+        for (total, value) in review.by_layer.iter_mut().zip(row.trace.by_layer) {
+            *total += value;
+        }
+        review.boundary_divergences += row.trace.boundary_divergences;
+        review.owner_switch_divergences += row.trace.owner_switch_divergences;
+        hash_u64(&mut review.evidence_hash, row.render_hash);
+        hash_u64(&mut review.evidence_hash, row.trace.hash);
+    }
+    review
 }
 
 fn synthetic_review() -> SyntheticReview {
@@ -242,6 +327,68 @@ fn write_stereo(review: &StereoReview) {
     fs::write(root.join("stereo.tsv"), text).expect("write normalized material stereo report");
 }
 
+fn write_attribution(review: &AttributionReview) {
+    let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../../target/stretch-normalized-material-attribution");
+    fs::create_dir_all(&root).expect("create normalized material attribution directory");
+    let mut text = format!(
+        "rows\t{}\nstage_divergences\t{:?}\nstage_maxima\t{:?}\nfirst_stage_rows\t{:?}\nby_state\t{:?}\nby_scale\t{:?}\nby_layer\t{:?}\nboundary_divergences\t{}\nowner_switch_divergences\t{}\nevidence_hash\t{:016x}\ncontrol\tratio\tframes\tphase\tbin_aligned\tstage\tobservations\tdivergent\tmaximum\tkind\tresidual\tmagnitude_residual\tphase_residual\tsource_position\toutput_position\tslice_start\tlayer\tscale\tstate\tregion\towner_channel\towner_switched\tboundary\tbefore_magnitudes\tafter_magnitudes\tbefore_phase_relation\tafter_phase_relation\trender_hash\ttrace_hash\n",
+        review.rows.len(),
+        review.stage_divergences,
+        review.stage_maxima,
+        review.first_stage_rows,
+        review.by_state,
+        review.by_scale,
+        review.by_layer,
+        review.boundary_divergences,
+        review.owner_switch_divergences,
+        review.evidence_hash,
+    );
+    for row in &review.rows {
+        for stage in attribution::Stage::ALL {
+            let summary = &row.trace.stages[stage.index()];
+            for (kind, event) in [("first", &summary.first), ("worst", &summary.worst)] {
+                if let Some(event) = event {
+                    text.push_str(&format!(
+                        "{}\t{:.2}\t{}\t{:.2}\t{}\t{}\t{}\t{}\t{:.12e}\t{}\t{:.12e}\t{:.12e}\t{:.12e}\t{:.6}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{:?}\t{:?}\t{:.12e}\t{:.12e}\t{:016x}\t{:016x}\n",
+                        row.control,
+                        row.ratio,
+                        row.source_frames,
+                        row.phase,
+                        row.bin_aligned,
+                        stage.name(),
+                        summary.observations,
+                        summary.divergent,
+                        summary.maximum_residual,
+                        kind,
+                        event.residual,
+                        event.magnitude_residual,
+                        event.phase_residual,
+                        event.source_position,
+                        event.output_position,
+                        event.slice_start,
+                        event.layer,
+                        event.scale,
+                        event.state,
+                        event.region,
+                        event.owner_channel,
+                        event.owner_switched,
+                        event.boundary,
+                        event.before_magnitudes,
+                        event.after_magnitudes,
+                        event.before_phase_relation,
+                        event.after_phase_relation,
+                        row.render_hash,
+                        row.trace.hash,
+                    ));
+                }
+            }
+        }
+    }
+    fs::write(root.join("first-divergence.tsv"), text)
+        .expect("write normalized material attribution report");
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -262,6 +409,23 @@ mod tests {
         assert_eq!(silence.tonalness, 0.0);
         assert!(tone.tonalness > tone.noisiness);
         assert!(noise.noisiness > noise.tonalness);
+    }
+
+    #[test]
+    fn normalized_material_policy_rule_31w_observer_is_audio_inert() {
+        let source = (0..4_096)
+            .map(|index| (std::f64::consts::TAU * 317.0 * index as f64 / 8_000.0).sin() * 0.2)
+            .collect::<Vec<_>>();
+        let peer = source
+            .iter()
+            .enumerate()
+            .map(|(index, sample)| sample * 0.7 + deterministic_noise(index) * 0.01)
+            .collect::<Vec<_>>();
+        let ordinary = render::render([&source, &peer], 1.5, 8_000);
+        let (attributed, trace) = render::render_attributed([&source, &peer], 1.5, 8_000);
+        assert_eq!(ordinary.hash, attributed.hash);
+        assert_eq!(ordinary.channels, attributed.channels);
+        assert!(trace.stages.iter().all(|stage| stage.observations > 0));
     }
 
     #[test]
@@ -298,5 +462,28 @@ mod tests {
         assert!(review.improved_windows >= 245);
         assert!(review.signal_relative_local_failures <= 13);
         assert!(review.maximum_normalized_gram_residual <= 0.017_446_938_152_60);
+    }
+
+    #[test]
+    #[ignore = "requires one release-only Rule 31W 48-row attribution replay"]
+    fn normalized_material_policy_rule_31w_failure_attribution() {
+        let review = attribution_review();
+        write_attribution(&review);
+        eprintln!(
+            "normalized_material_policy_attribution rows={} stages={:?} maxima={:?} first={:?} hash={:016x}",
+            review.rows.len(),
+            review.stage_divergences,
+            review.stage_maxima,
+            review.first_stage_rows,
+            review.evidence_hash,
+        );
+        assert_eq!(review.rows.len(), 48);
+        assert!(review.rows.iter().all(|row| row
+            .trace
+            .stages
+            .iter()
+            .all(|stage| stage.observations > 0)));
+        assert!(review.stage_divergences.iter().any(|count| *count > 0));
+        assert_eq!(review.evidence_hash, 0x24cd_ad83_bf3d_deeb);
     }
 }

@@ -148,6 +148,13 @@ two-slice representation at hash `0407f765c7d84375`; Batch 29.7AN then passes
 synchronized state mechanics at hash `90c10cd2e66d4faf`. Rule 31V now freezes
 the unchanged material policy and complete failure-first evidence matrix.
 Batch 29.7AO passes synthetic mechanics but rejects at `46/48` calibrated
-stereo failures. Rule 31W now requires first-divergence attribution before any
-successor. Keep concealed listening, the holdout, Batch 29.8, and product work
+stereo failures. Batch 29.7AP then locates the first operator break at the
+interior `Unlocked` state commit in every row. Both active layers receive
+exactly that residual; inverse and overlap are downstream. Rule 31X retains
+the complete topology but replaces independent unlocked channel commits with
+one greatest-energy reference rotation applied to every peer's current
+coefficient. This is the relationship-preserving ordering shared by the
+Signalsmith control and Bungee's common-rotation evidence, without importing
+their expression or numeric policy. Batch 29.7AQ proves that one integration
+law. Keep concealed listening, the holdout, Batch 29.8, and product work
 closed.

@@ -13,6 +13,7 @@ use crate::frequency_adaptive::{
 };
 
 mod analysis;
+mod attribution;
 mod guidance;
 mod render;
 mod report;
