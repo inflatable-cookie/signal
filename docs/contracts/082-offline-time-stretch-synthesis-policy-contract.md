@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; professional-comparator gate validation next
+Status: active; shared-decision waveform topology research next
 Owner: dsp
 Updated: 2026-07-18
 Related contracts: `046`, `048`, `049`
@@ -4285,9 +4285,51 @@ Batch 29.7AI is report-only. No Signal renderer, parameter sweep, listening,
 holdout access, dynamic ratio, realtime, routing, cache, production, or product
 work may open.
 
+Batch 29.7AI rejects both questioned vetoes. Rubber Band repeats with zero
+calibrated failures, but fails the Signal-relative local rule on `13/48` rows.
+It improves `245/384` local windows and has a lower global maximum local
+relation residual than current Signal: `0.01744693815260` versus
+`0.02522090848652`. It passes duplicate equality, mono/stereo duplicate parity,
+silent-peer isolation, and channel swap exactly, but reaches
+`0.950164794921875` polarity error and `0.04590606689453125` quarter-gain
+error. Evidence hash: `b9331f0858326f19`.
+
+### Rule 31Q: corrected professional-comparator boundary
+
+Retain the calibrated `48`-row whole/interior gate unchanged. Retain duplicate
+channel equality, mono/stereo duplicate parity, silent-peer isolation, and
+channel-swap equivariance as hard mechanics at `1e-6`; Rubber Band passes all
+four exactly. Polarity inversion and uniform gain scaling remain reported
+diagnostics, not acceptance vetoes.
+
+Replace the old per-row local-improvement veto with one professional-
+comparator-bounded envelope. Across the same `384` windows, require a future
+candidate to:
+
+- improve on current Signal in at least `245/384` windows
+- produce at most `13/48` failures under the retained Signal-relative row
+  diagnostic
+- keep the global maximum normalized-Gram residual at or below
+  `0.01744693815260`
+
+Retain the exact Rubber Band local-cell envelope under hash
+`9574e5e2e53d1a63` for attribution only. Do not optimize candidate waveforms or
+policy against individual Rubber Band cells.
+
+This correction does not reopen SBSMS or a prior Signal candidate. Their
+calibrated, genuine structural-mechanics, mono, long-development, or bounded-
+state failures remain independently disqualifying.
+
+Batch 29.7AJ is research-only. Trace how source-backed professional renderers
+separate shared channel decisions and channel-equivariant synthesis from
+nonlinear material classification. Select at most one complete topology that
+can own the four hard mechanics and corrected local envelope, or stop. No
+renderer, parameter experiment, listening, holdout read, or product work may
+open.
+
 ## Next Task
 
-Run Batch 29.7AI under Rule 31P. Test pinned Rubber Band R3 against the exact
-rules that rejected SBSMS and Signal candidates. Determine whether the gate
-distinguishes the professional target before another topology. Keep the
-holdout, listening, Batch 29.8, and all product-facing work closed.
+Run Batch 29.7AJ under Rule 31Q. Research the shared-decision and channel-
+equivariant synthesis boundary in source-backed professional renderers. Select
+at most one complete topology or stop. Keep the holdout, listening, Batch 29.8,
+and all product-facing work closed.

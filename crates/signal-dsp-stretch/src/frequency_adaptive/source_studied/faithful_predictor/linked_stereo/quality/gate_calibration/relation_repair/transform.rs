@@ -48,8 +48,22 @@ pub(in super::super) fn local_evidence(
     before: &[Vec<f64>; 2],
     after: &[Vec<f64>; 2],
 ) -> (usize, usize, [f64; 2]) {
-    let mut improved = 0;
-    let mut maximum = [0.0_f64; 2];
+    let residuals = local_residuals(input, before, after);
+    let improved = residuals[0]
+        .iter()
+        .zip(residuals[1])
+        .filter(|(before, after)| *after < **before)
+        .count();
+    let maximum = residuals.map(|values| values.into_iter().fold(0.0_f64, f64::max));
+    (improved, 8, maximum)
+}
+
+pub(in super::super) fn local_residuals(
+    input: &[Vec<f64>; 2],
+    before: &[Vec<f64>; 2],
+    after: &[Vec<f64>; 2],
+) -> [[f64; 8]; 2] {
+    let mut residuals = [[0.0; 8]; 2];
     for window in 0..8 {
         let section = |channels: &[Vec<f64>; 2]| {
             std::array::from_fn(|channel| {
@@ -59,13 +73,10 @@ pub(in super::super) fn local_evidence(
             })
         };
         let source = section(input);
-        let before = super::super::metrics::gram_residual(&source, &section(before));
-        let after = super::super::metrics::gram_residual(&source, &section(after));
-        improved += usize::from(after < before);
-        maximum[0] = maximum[0].max(before);
-        maximum[1] = maximum[1].max(after);
+        residuals[0][window] = super::super::metrics::gram_residual(&source, &section(before));
+        residuals[1][window] = super::super::metrics::gram_residual(&source, &section(after));
     }
-    (improved, 8, maximum)
+    residuals
 }
 
 fn normalized_gram(channels: &[Vec<f64>; 2]) -> [[f64; 2]; 2] {

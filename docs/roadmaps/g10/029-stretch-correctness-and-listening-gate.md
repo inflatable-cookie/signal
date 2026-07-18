@@ -2417,21 +2417,48 @@ clean-room Signal renderer opens.
 
 ### Batch 29.7AI - Professional-Comparator Gate Validity
 
-- [ ] freeze the existing `48` stereo rows, thresholds, whole/interior metrics,
+- [x] freeze the existing `48` stereo rows, thresholds, whole/interior metrics,
   eight-window local rule, and exact mechanics before the first comparator run
-- [ ] run pinned Rubber Band R3 `4.0.0` through duplicate, mono parity, hard
+- [x] run pinned Rubber Band R3 `4.0.0` through duplicate, mono parity, hard
   pan, swap, polarity, gain, calibrated stereo, and local-consistency evidence
-- [ ] repeat every render and calculation; retain exact input, output, version,
+- [x] repeat every render and calculation; retain exact input, output, version,
   command, and measurement hashes
-- [ ] if Rubber Band passes, retain the rules and record a confirmed topology
+- [x] if Rubber Band passes, retain the rules and record a confirmed topology
   gap; if it fails, separate comparator-bounded acceptance from exact
   diagnostics and revise only the invalidated rule
-- [ ] do not implement or tune a renderer, optimize against comparator
+- [x] do not implement or tune a renderer, optimize against comparator
   waveforms, listen, access the holdout, or open dynamic ratio, realtime,
   routing, cache, production, or product-facing work
 
 Evidence: one professional-comparator gate-validity report under Rule 31P. No
 renderer or parameter experiment.
+
+Decision: revise the local and exact-mechanics rules. Rubber Band repeats with
+zero calibrated failures but fails `13/48` Signal-relative local rows. It
+improves `245/384` windows and has a lower global maximum local residual than
+Signal, `0.01744693815260` versus `0.02522090848652`. Duplicate equality, mono
+parity, silent-peer isolation, and swap pass exactly. Polarity and quarter-gain
+errors reach `0.950164794921875` and `0.04590606689453125`, so those become
+diagnostics. Rule 31Q freezes the corrected professional envelope. Evidence
+hash `b9331f0858326f19`.
+
+### Batch 29.7AJ - Shared-Decision Waveform Topology Research
+
+- [ ] freeze Rule 31Q and reclassify completed candidates without reopening a
+  renderer or changing retained evidence
+- [ ] trace how pinned source-backed professional renderers separate nonlinear
+  material classification from duplicate-, mono-, pan-, and swap-equivariant
+  channel synthesis
+- [ ] compare at most three complete topology families; reject partial repair,
+  post-hoc image projection, independent-channel synthesis, and unbounded state
+- [ ] select at most one topology with a testable waveform owner, fixed work
+  and memory bounds, mono/polyphonic/transient coverage, and a direct path to
+  the corrected professional envelope; otherwise stop the active stretch lane
+- [ ] do not implement or tune a renderer, listen, access the holdout, or open
+  dynamic ratio, realtime, routing, cache, production, or product-facing work
+
+Evidence: one source-backed architecture decision promoted into contract
+`082`. No renderer or parameter experiment.
 
 ### Batch 29.8 - Listening And Dynamic Checkpoint
 
@@ -3720,11 +3747,17 @@ renderer or parameter experiment.
   worse than both controls. Direct oscillators avoid inverse-frame loss but do
   not make the final model sum invariant or competitive. Rule 31P next tests
   the rejected rules against Rubber Band before another topology.
+- 2026-07-18: Batch 29.7AI proves the surrogate over-tight. Pinned Rubber Band
+  R3 repeats with zero calibrated failures but fails `13/48` old local rows.
+  It improves `245/384` windows and lowers the global maximum local residual.
+  Duplicate, mono parity, silent peer, and swap are exact; polarity and gain
+  are not. Rule 31Q retains the genuine hard mechanics, makes polarity/gain
+  diagnostic, and replaces the local veto with the professional envelope.
+  Evidence hash `b9331f0858326f19`. No closed renderer reopens.
 
 ## Next Task
 
-Run Batch 29.7AI under Rule 31P. Test pinned Rubber Band R3 against the same
-local-consistency and exact-mechanics rules that rejected SBSMS and Signal
-candidates. Determine whether the gate distinguishes the professional target
-before another topology. Keep the holdout, listening, product surfaces, and
-Batch 29.8 closed.
+Run Batch 29.7AJ under Rule 31Q. Research how source-backed professional
+renderers separate shared nonlinear material decisions from channel-
+equivariant waveform synthesis. Select at most one complete topology or stop.
+Keep the holdout, listening, product surfaces, and Batch 29.8 closed.

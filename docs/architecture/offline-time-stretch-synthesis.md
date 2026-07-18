@@ -1,6 +1,6 @@
 # Offline Time-Stretch Synthesis
 
-Status: professional-comparator gate validation next
+Status: shared-decision waveform topology research next
 Owner: dsp
 Updated: 2026-07-18
 Contract refs: `046`, `082`
@@ -1590,9 +1590,40 @@ exact-mechanics rules to pinned Rubber Band R3. A professional target failure
 means the surrogate is over-tight; professional-target passage confirms a real
 topology gap.
 
+## Professional-Comparator Gate Correction
+
+Batch 29.7AI proves both questioned rules over-tight. Pinned Rubber Band R3
+`4.0.0` repeats, passes all `48` calibrated stereo rows, and preserves
+duplicate channels, mono/stereo duplicate parity, a silent peer, and channel
+swap exactly. It still fails the Signal-relative local rule on `13/48` rows.
+Only `245/384` local windows improve on current Signal, although its global
+maximum local relation residual is lower: `0.01744693815260` versus
+`0.02522090848652`.
+
+Polarity and gain are not exact renderer invariants. Rubber Band reaches
+`0.950164794921875` polarity error and `0.04590606689453125` quarter-gain
+error. These fields remain diagnostics. Duplicate equality, mono parity,
+silent-peer isolation, and swap remain hard because the professional target
+passes all four exactly.
+
+Local acceptance is now comparator-bounded rather than required to beat
+current Signal in every row. A future candidate must pass the unchanged
+calibrated gate, improve at least `245/384` windows, have at most `13/48`
+Signal-relative local failures, and keep its global maximum local relation
+residual at or below `0.01744693815260`. The exact `384`-cell Rubber Band
+envelope remains diagnostic evidence, hash `9574e5e2e53d1a63`; it is not a
+waveform optimization target.
+
+This correction does not reopen a closed renderer. SBSMS still fails three of
+the four genuine structural mechanics, mono integrity, long-development
+quality, and bounded-state requirements. Prior Signal candidates retain
+calibrated or structural failures independent of the retired vetoes.
+
 ## Next Task
 
-Run Batch 29.7AI under Rule 31P. Validate pinned Rubber Band R3 against the
-same `48` rows, local windows, duplicate, mono-parity, pan, swap, polarity, and
-gain rules. Do not implement another renderer. Keep the concealed holdout,
-listening, dynamic ratio, realtime, and product-facing work closed.
+Run Batch 29.7AJ under Rule 31Q. Research how professional source-backed
+renderers separate channel-equivariant synthesis from nonlinear material
+decisions. Select at most one complete topology that can preserve the four
+genuine structural mechanics and meet the corrected local envelope, or stop.
+Do not implement another renderer. Keep the concealed holdout, listening,
+dynamic ratio, realtime, and product-facing work closed.

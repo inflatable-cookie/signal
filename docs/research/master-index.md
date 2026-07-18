@@ -68,7 +68,7 @@ Finch and Loophole.
 | [Joint-Synthesis Consistency Boundary](./translation-memos/015-joint-synthesis-consistency-boundary.md) | Attribute post-coefficient loss to inconsistent redundant fields; require joint post-projection ownership | Promoted |
 | [Paired-Channel Consistency Operator Boundary](./translation-memos/016-paired-channel-consistency-operator-boundary.md) | Close transform-domain post-projection; require one complete waveform-owning topology | Promoted |
 | [Whole-Family Waveform-Ownership Decision](./translation-memos/017-whole-family-waveform-ownership-decision.md) | Close the failed single-grid proof; require waveform-domain linked-stereo ownership | Promoted |
-| [Waveform-Domain Linked-Stereo Re-entry](./translation-memos/018-waveform-domain-linked-stereo-re-entry.md) | Close linked subband sinusoidal source feasibility; validate the rejected gates against Rubber Band | Validated |
+| [Waveform-Domain Linked-Stereo Re-entry](./translation-memos/018-waveform-domain-linked-stereo-re-entry.md) | Close linked subband sinusoidal source feasibility; replace invalid local and exact-mechanics vetoes with a professional-comparator boundary | Validated |
 
 ## Consumer Guidance
 
@@ -79,6 +79,7 @@ Finch and Loophole.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7AI under Rule 31P. Test pinned Rubber Band R3 against
-the same local-consistency and exact-mechanics rules that rejected the SBSMS
-specimen. Keep the holdout, listening, Batch 29.8, and product work closed.
+Run `g10.029` Batch 29.7AJ under Rule 31Q. Research how professional source-
+backed renderers separate shared material decisions from channel-equivariant
+synthesis. Select at most one complete topology or stop. Keep the holdout,
+listening, Batch 29.8, and product work closed.

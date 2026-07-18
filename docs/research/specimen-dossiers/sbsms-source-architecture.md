@@ -127,6 +127,7 @@ implementation opens.
 
 ## Next Task
 
-Retain this dossier as causal evidence. Batch 29.7AI validates the rejected
-local and exact-mechanics gates against pinned Rubber Band before another
-topology is considered.
+Retain this dossier as causal evidence. Batch 29.7AI proves the old local and
+polarity/gain vetoes invalid, but SBSMS remains closed on genuine structural
+mechanics, mono quality, long-development quality, and bounded state. Batch
+29.7AJ returns to shared-decision waveform topology research under Rule 31Q.

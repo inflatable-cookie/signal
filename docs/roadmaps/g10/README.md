@@ -460,15 +460,17 @@ Current stretch status:
   exact-source quality and boundedness evidence before any clean-room Signal
   renderer. Batch 29.7AH closes that candidate: aggregate stereo passes, but
   six local rows, exact mechanics, seven mono hard rows, two row-complete mono
-  comparisons, and `21` long-development metrics reject. Rule 31P now validates
-  those local and exact rules against Rubber Band before another topology.
+  comparisons, and `21` long-development metrics reject. Batch 29.7AI then
+  proves the old local and polarity/gain vetoes over-tight against Rubber Band.
+  Rule 31Q retains calibrated stereo plus four genuine structural mechanics
+  and freezes a professional-comparator local envelope.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7AI under Rule 31P. Test pinned Rubber Band R3 against
-the same local-consistency and exact-mechanics rules that rejected SBSMS and
-Signal candidates. Keep the holdout, listening, product surfaces, and Batch
-29.8 closed.
+Run `g10.029` Batch 29.7AJ under Rule 31Q. Research how source-backed
+professional renderers separate shared nonlinear material decisions from
+channel-equivariant waveform synthesis. Select at most one complete topology
+or stop. Keep the holdout, listening, product surfaces, and Batch 29.8 closed.

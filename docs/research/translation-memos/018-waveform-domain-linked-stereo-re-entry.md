@@ -1,9 +1,9 @@
 # Waveform-Domain Linked-Stereo Re-entry
 
-Status: validated; selected candidate closed
+Status: validated; candidate closed and gate corrected
 Date: 2026-07-18
 Roadmap: `g10.029`, Batch 29.7AG
-Contract: `082`, Rules 31N-31O
+Contract: `082`, Rules 31N-31Q
 
 ## Question
 
@@ -113,6 +113,24 @@ The result separates causal topology from quality. Direct partial oscillators
 remove inverse-frame and support-crop loss, but track modeling and component
 summation still alter the aggregate waveform. No clean-room renderer opens.
 
+## Professional-Comparator Gate Result
+
+Batch 29.7AI runs pinned Rubber Band R3 `4.0.0` through the same frozen `48`
+rows, whole/interior metrics, `384` local windows, and six mechanics. It
+repeats with zero calibrated failures. The old local veto still rejects
+`13/48` rows: Rubber Band improves `245/384` windows, while its global maximum
+local relation residual is `0.01744693815260` against current Signal's
+`0.02522090848652`.
+
+Rubber Band preserves duplicate channels, duplicate-stereo/mono parity, a
+silent peer, and channel swap exactly. It does not preserve polarity or uniform
+gain exactly. Errors reach `0.950164794921875` and `0.04590606689453125`.
+
+Rule 31Q therefore retains calibrated stereo and the four genuine structural
+mechanics. It replaces the per-row local veto with the measured professional
+envelope and makes polarity/gain diagnostic. This narrows the surrogate; it
+does not rescue the SBSMS source specimen or a prior Signal renderer.
+
 ## Clean-Room Boundary
 
 SBSMS is GPL-2.0. Batch 29.7AH may build and execute the pinned source outside
@@ -136,7 +154,7 @@ This is technical provenance control, not a patent or legal opinion.
 
 ## Next Task
 
-Run Batch 29.7AI. Test pinned Rubber Band R3 against the same local-consistency
-and exact-mechanics rules that reject SBSMS and Signal candidates. Decide
-whether the gate distinguishes the professional target before another
-topology. Keep the holdout and product surfaces closed.
+Run Batch 29.7AJ. Research how source-backed professional renderers separate
+shared nonlinear material decisions from channel-equivariant synthesis.
+Select at most one complete topology that can own Rule 31Q, or stop. Keep the
+holdout and product surfaces closed.
