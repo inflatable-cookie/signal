@@ -9,6 +9,7 @@ use crate::frequency_adaptive::material_state_frequency_frame::{
 
 mod schedule;
 use schedule::coverage_failures;
+pub(super) use schedule::{active_slices, schedule_range};
 
 pub(super) fn required_slice_count(length: usize, advance: usize) -> usize {
     schedule::required_slice_count(length, advance)

@@ -1,6 +1,6 @@
 # Offline Time-Stretch Synthesis
 
-Status: guided slice-boundary mechanics next
+Status: normalized material-policy preregistration next
 Owner: dsp
 Updated: 2026-07-18
 Contract refs: `046`, `082`
@@ -1727,9 +1727,20 @@ once and feeds both active layers without moving peer magnitude or analysis-
 relative phase. Scripted guidance exercises mechanics; material classification,
 policy tuning, and quality audio remain closed.
 
+Batch 29.7AN passes at evidence hash `90c10cd2e66d4faf`. One rate-aware state
+workspace advances once per global tick and supplies both active layers. All
+five state branches cross interior and before/at/after boundary contexts;
+channel mechanics are exact; local magnitude and analysis-relative phase stay
+within `4.45e-16`. Region high-water is `32/100/107`; all boundedness and
+failure checks pass.
+
+The remaining seam is policy, not mechanics. Batch 29.7ANR must preregister or
+reject the unchanged Rule 31R classifier/state policy and complete evidence
+matrix on this geometry before a quality renderer exists.
+
 ## Next Task
 
-Run Batch 29.7AN under Rule 31U. Prove all guided state branches and channel
-mechanics across the frozen normalized slice boundary. Keep material policy,
-stretched quality audio, the concealed holdout, listening, dynamic ratio,
-realtime, and product-facing work closed.
+Run Batch 29.7ANR. Freeze or reject material-policy and objective-evidence
+mapping on the normalized lattice. Keep implementation, quality audio, the
+concealed holdout, listening, dynamic ratio, realtime, and product-facing work
+closed.

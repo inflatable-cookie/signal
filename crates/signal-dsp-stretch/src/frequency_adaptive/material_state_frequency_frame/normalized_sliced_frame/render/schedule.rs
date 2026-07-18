@@ -8,6 +8,31 @@ pub(super) fn required_slice_count(length: usize, advance: usize) -> usize {
     }
 }
 
+pub(in super::super) fn schedule_range(
+    length: usize,
+    geometry: &Geometry,
+) -> Option<(isize, isize)> {
+    let slices = required_slice_count(length, geometry.outer_advance);
+    (slices > 0).then(|| (-16, 16 * (slices as isize - 2) + 31))
+}
+
+pub(in super::super) fn active_slices(time: isize, slice_count: usize) -> [Option<usize>; 2] {
+    let newest = (time + 16).div_euclid(16);
+    let mut active = [None; OUTPUT_SLICE_CAPACITY];
+    for candidate in [newest - 1, newest] {
+        if candidate < 0 || candidate >= slice_count as isize {
+            continue;
+        }
+        let start = (candidate - 1) * 16;
+        if (start..start + 32).contains(&time) {
+            if let Some(slot) = active.iter_mut().find(|slot| slot.is_none()) {
+                *slot = Some(candidate as usize);
+            }
+        }
+    }
+    active
+}
+
 pub(super) fn boundary_token_review(length: usize, geometry: &Geometry) -> TokenReview {
     let slices = required_slice_count(length, geometry.outer_advance);
     let expected_updates = if slices == 0 { 0 } else { 16 * slices + 16 };

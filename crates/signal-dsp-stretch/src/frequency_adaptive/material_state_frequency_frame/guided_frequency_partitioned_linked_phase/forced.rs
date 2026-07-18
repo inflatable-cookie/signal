@@ -38,7 +38,7 @@ fn forced_transport(
             representation.bands.len()
         ]
     });
-    let mut workspace = Workspace::new();
+    let mut workspace = Workspace::new(SAMPLE_RATE_HZ, COMMON_HOP);
     let decisions = [
         Decision::Reset,
         Decision::Attack,

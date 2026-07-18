@@ -19,8 +19,8 @@ memory alone.
   coherent mono baseline, corrected Rule 31Q professional-comparator boundary,
   Rule 31R guided frequency-partitioned linked-phase proof, Rule 31S bounded
   multiscale slice compatibility study, and Rule 31T normalized sliced-frame
-  mechanics proof. Rule 31U now governs guided state mechanics across that
-  frozen slice boundary
+  mechanics proof. Rule 31U validates guided state mechanics across that
+  frozen slice boundary; Rule 31V remains pending policy preregistration
 - `g10.028` source-fill work is paused until the actual DSP kernel and source
   consumption geometry pass the `g10.029` correctness gate
 
@@ -148,7 +148,7 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7AN under contract `082`, Rule 31U. Prove every guided
-state branch and four channel mechanics across the frozen normalized slice
-boundary. Keep material policy, stretched quality audio, objective evidence,
-holdout, listening, Batch 29.7AO, Batch 29.8, and product work closed.
+Run `g10.029` Batch 29.7ANR under contract `082`. Freeze or reject the Rule 31R
+material policy and complete objective evidence matrix on the normalized
+lattice. Keep implementation, quality audio, objective execution, holdout,
+listening, Batch 29.7AO, Batch 29.8, and product work closed.

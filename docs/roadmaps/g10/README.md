@@ -487,13 +487,18 @@ Current stretch status:
   conjugacy is exact, active-layer high-water is two, and every structural,
   mechanics, finite, token, and overflow check passes. Rule 31U opens only
   synchronized guided-state mechanics across the frozen slice boundary.
+  Batch 29.7AN passes at evidence hash `90c10cd2e66d4faf`: all state branches
+  cross interior and boundary contexts, channel mechanics are exact, layer
+  ownership error stays below `4.45e-16`, and region high-water is
+  `32/100/107`. Batch 29.7ANR must preregister or reject material policy and
+  the complete evidence gate before any quality renderer opens.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7AN under Rule 31U. Prove every guided state branch and
-the four channel mechanics across the frozen normalized slice boundary. Keep
-material policy, stretched quality audio, objective evidence, holdout,
-listening, product surfaces, Batch 29.7AO, and Batch 29.8 closed.
+Run `g10.029` Batch 29.7ANR. Freeze or reject the unchanged Rule 31R material
+policy and complete objective evidence matrix on the normalized lattice. Keep
+implementation, quality audio, objective execution, holdout, listening,
+product surfaces, Batch 29.7AO, and Batch 29.8 closed.

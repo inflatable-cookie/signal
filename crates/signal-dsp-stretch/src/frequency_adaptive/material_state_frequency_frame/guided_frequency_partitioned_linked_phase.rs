@@ -14,7 +14,7 @@ mod regions;
 use coefficients::mirror_coefficients;
 use evidence::{deterministic_probe, hash_channels, review_hash};
 use forced::forced_render;
-use kernel::Workspace;
+pub(super) use kernel::Workspace;
 use regions::{peak_regions, validate_request};
 
 const CHANNEL_CAPACITY: usize = 2;
@@ -24,10 +24,10 @@ const COEFFICIENT_CAPACITY: usize = 32;
 const REGION_CAPACITY: usize = 673;
 const COMMON_HOP: usize = 512;
 const LINK_LIMIT_HZ: f64 = 6_000.0;
-const ENERGY_FLOOR: f64 = 1.0e-24;
+pub(super) const ENERGY_FLOOR: f64 = 1.0e-24;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-enum CapacityExceeded {
+pub(super) enum CapacityExceeded {
     Channels,
     SignedAtoms,
     PositiveAtoms,
@@ -36,7 +36,7 @@ enum CapacityExceeded {
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-enum Decision {
+pub(super) enum Decision {
     Reset,
     Attack,
     Ordinary,
@@ -45,7 +45,7 @@ enum Decision {
 }
 
 impl Decision {
-    fn index(self) -> usize {
+    pub(super) fn index(self) -> usize {
         match self {
             Self::Reset => 0,
             Self::Attack => 1,
@@ -57,11 +57,11 @@ impl Decision {
 }
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
-struct StateCounts {
-    states: [usize; 5],
-    linked_regions: usize,
-    unlinked_regions: usize,
-    owner_switches: usize,
+pub(super) struct StateCounts {
+    pub(super) states: [usize; 5],
+    pub(super) linked_regions: usize,
+    pub(super) unlinked_regions: usize,
+    pub(super) owner_switches: usize,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -221,7 +221,7 @@ fn stage_a_review() -> StageAReview {
     review
 }
 
-fn wrap(value: f64) -> f64 {
+pub(super) fn wrap(value: f64) -> f64 {
     (value + std::f64::consts::PI).rem_euclid(std::f64::consts::TAU) - std::f64::consts::PI
 }
 

@@ -81,7 +81,7 @@ Finch and Loophole.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7AN under Rule 31U. Prove guided state branches and
-channel mechanics across the frozen normalized slice boundary. Keep material
-policy, stretched quality audio, objective evidence, holdout, listening,
-product surfaces, Batch 29.7AO, and Batch 29.8 closed.
+Run `g10.029` Batch 29.7ANR. Freeze or reject material policy and the complete
+objective evidence matrix on the normalized lattice. Keep implementation,
+quality audio, objective execution, holdout, listening, product surfaces,
+Batch 29.7AO, and Batch 29.8 closed.

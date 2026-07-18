@@ -2600,21 +2600,47 @@ storage is `645120 Complex64` slots. No guided or quality result exists.
 
 - [x] open only after 29.7AM passes; freeze its geometry, hashes, work/memory
   ceilings, and overflow behavior
-- [ ] adapt the passing 29.7AK synchronized channel state to one global sliced
+- [x] adapt the passing 29.7AK synchronized channel state to one global sliced
   lattice without relation projection, independent overlap normalization, or
   state reset
-- [ ] prove all Rule 31R state branches and duplicate, mono parity, silent peer,
+- [x] prove all Rule 31R state branches and duplicate, mono parity, silent peer,
   and swap mechanics across interior and slice-boundary frames before quality
   policy work
-- [ ] keep material tuning, objective rows, listening, holdout, and product
+- [x] keep material tuning, objective rows, listening, holdout, and product
   work closed
 
-Evidence: one boundary-complete guided mechanics report. This card is ready
+Evidence: one boundary-complete guided mechanics report. This card passes
 under Rule 31U.
+
+Decision: freeze evidence hash `90c10cd2e66d4faf`. The `3/6/14`-slice rows
+run exactly `64/112/240` state updates with `32/80/208` dual-layer updates.
+Every state branch executes in interior and before/at/after boundary contexts
+at every proof rate. Duplicate, mono parity, silent peer, and swap errors are
+zero. Layer magnitude and analysis-relative phase errors are at most
+`1.1102230246251565e-16` and `4.440892098500626e-16`. Region high-water is
+`32/100/107` of `191/592/631`; all continuity, capacity, update, finite, layer,
+overflow, and repeat checks pass. No material or quality result exists.
+
+### Batch 29.7ANR - Normalized Material Policy Preregistration
+
+- [ ] freeze the passing Rule 31T representation and Rule 31U mechanics hashes,
+  geometry, state law, memory/work ceilings, and overflow behavior unchanged
+- [ ] map every unchanged Rule 31R material-policy term onto the normalized
+  physical-time lattice, including scale-local medians, adjacent-frequency
+  medians, strict transient maxima, state ordering, link/reset limits, and tie
+  rules; stop on any ambiguous or geometry-dependent term
+- [ ] freeze one complete objective evidence matrix, unchanged hard thresholds,
+  fixed work/capacity, failure ordering, and no-sweep/no-row-repair rule before
+  implementation
+- [ ] either promote one Rule 31V preregistration that makes 29.7AO ready or
+  close the integration; do not implement, render, listen, or access holdout
+
+Evidence: one implementation-free policy and evidence preregistration. This
+card is ready as the required checkpoint before 29.7AO.
 
 ### Batch 29.7AO - One Complete Objective Gate
 
-- [ ] open only after 29.7AN passes and a separate preregistration freezes the
+- [ ] open only after 29.7ANR passes and Rule 31V freezes the
   unchanged Rule 31R material policy on the normalized sliced representation
 - [ ] run one complete synthetic, mono, long-development, and corrected
   professional-comparator result with no factor sweep or row repair
@@ -2622,7 +2648,7 @@ under Rule 31U.
   Batch 29.8 listening and holdout work
 
 Evidence: at most one complete objective report. This card is blocked on
-29.7AM, 29.7AN, and policy preregistration.
+29.7ANR and Rule 31V policy preregistration.
 
 ### Batch 29.8 - Listening And Dynamic Checkpoint
 
@@ -3948,11 +3974,18 @@ Evidence: at most one complete objective report. This card is blocked on
   high-water is two and the maximum coefficient term remains `645120`
   `Complex64` slots. Rule 31U opens only guided state mechanics across this
   frozen boundary; no quality policy or audio gate opens.
+- 2026-07-18: Batch 29.7AN passes guided slice-boundary mechanics at evidence
+  hash `90c10cd2e66d4faf`. All five state branches execute in interior and
+  before/at/after boundary contexts across `3/6/14` slices. Channel mechanics
+  are exact; layer magnitude and phase ownership errors remain below
+  `4.45e-16`; region high-water is `32/100/107`. No continuity, capacity,
+  update, finite, layer, overflow, or repeat failure occurs. Material policy
+  and objective audio remain closed pending Batch 29.7ANR preregistration.
 
 ## Next Task
 
-Run Batch 29.7AN under Rule 31U. Adapt the passing synchronized channel-state
-mechanics to the frozen normalized slice lattice and prove every state branch
-plus the four channel mechanics across slice creation and retirement. Keep
-material tuning, stretched quality audio, objective evidence, holdout,
-listening, product surfaces, and Batch 29.8 closed.
+Run Batch 29.7ANR. Freeze or reject the unchanged Rule 31R material policy and
+complete objective evidence matrix on the normalized lattice before any
+renderer opens. Keep implementation, stretched quality audio, objective
+execution, holdout, listening, product surfaces, Batch 29.7AO, and Batch 29.8
+closed.

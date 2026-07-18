@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; guided slice-boundary mechanics next
+Status: active; normalized material-policy preregistration next
 Owner: dsp
 Updated: 2026-07-18
 Related contracts: `046`, `048`, `049`
@@ -4565,10 +4565,25 @@ miss closes the integration before policy work. Do not render stretched
 quality audio, run objective rows, listen, access the holdout, or open dynamic
 ratio, realtime, product work, Batch 29.7AO, or Batch 29.8.
 
+Batch 29.7AN passes. The `3/6/14`-slice rows run exactly `64/112/240`
+state updates and `32/80/208` dual-layer updates. Reset, attack, ordinary,
+unlocked, and compatible locked decisions all execute in interior and
+before/at/after boundary contexts. Duplicate, mono parity, silent peer, and
+swap errors are zero. Maximum layer-magnitude and analysis-relative-phase
+errors are `1.1102230246251565e-16` and `4.440892098500626e-16`. Region
+high-water is `32/100/107` at the three rates. Continuity, capacity, update,
+finite, layer, overflow, and repeat failures are zero. Evidence hash:
+`90c10cd2e66d4faf`.
+
+This passage does not open Batch 29.7AO. Batch 29.7ANR must first map every
+unchanged Rule 31R material-policy term and the complete objective evidence
+matrix onto the frozen normalized geometry. It either promotes one Rule 31V
+preregistration or closes the integration. No implementation or render belongs
+in that checkpoint.
+
 ## Next Task
 
-Run Batch 29.7AN under Rule 31U. Adapt the passing Rule 31R synchronized state
-mechanics to the frozen Rule 31T lattice and prove every state branch and four
-channel mechanics across slice boundaries. Keep material policy, stretched
-quality audio, objective evidence, holdout, listening, Batch 29.7AO, Batch
-29.8, and product work closed.
+Run Batch 29.7ANR. Freeze or reject the unchanged Rule 31R material policy and
+complete objective evidence matrix on the normalized lattice. Keep
+implementation, stretched quality audio, objective execution, holdout,
+listening, Batch 29.7AO, Batch 29.8, and product work closed.

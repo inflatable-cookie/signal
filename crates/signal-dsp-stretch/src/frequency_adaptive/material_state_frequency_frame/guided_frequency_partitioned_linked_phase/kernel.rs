@@ -1,19 +1,25 @@
 use super::*;
 
 #[derive(Clone, Debug)]
-pub(super) struct Workspace {
+pub(in super::super) struct Workspace {
+    sample_rate_hz: usize,
+    common_hop: usize,
     previous_analysis: [Vec<f64>; CHANNEL_CAPACITY],
     previous_synthesis: [Vec<f64>; CHANNEL_CAPACITY],
     previous_energy: [Vec<f64>; CHANNEL_CAPACITY],
     previous_regions: Vec<Region>,
     has_previous: bool,
-    pub(super) region_high_water: usize,
-    pub(super) counts: StateCounts,
+    pub(in super::super) region_high_water: usize,
+    pub(in super::super) counts: StateCounts,
+    pub(in super::super) updates: usize,
+    pub(in super::super) region_visits: usize,
 }
 
 impl Workspace {
-    pub(super) fn new() -> Self {
+    pub(in super::super) fn new(sample_rate_hz: usize, common_hop: usize) -> Self {
         Self {
+            sample_rate_hz,
+            common_hop,
             previous_analysis: std::array::from_fn(|_| Vec::with_capacity(POSITIVE_ATOM_CAPACITY)),
             previous_synthesis: std::array::from_fn(|_| Vec::with_capacity(POSITIVE_ATOM_CAPACITY)),
             previous_energy: std::array::from_fn(|_| Vec::with_capacity(POSITIVE_ATOM_CAPACITY)),
@@ -21,10 +27,12 @@ impl Workspace {
             has_previous: false,
             region_high_water: 0,
             counts: StateCounts::default(),
+            updates: 0,
+            region_visits: 0,
         }
     }
 
-    pub(super) fn process(
+    pub(in super::super) fn process(
         &mut self,
         current: &[Vec<Complex64>; CHANNEL_CAPACITY],
         frequencies_hz: &[f64],
@@ -59,6 +67,7 @@ impl Workspace {
             region.owner = usize::from(energy[1][region.peak] > energy[0][region.peak]);
         }
         self.region_high_water = self.region_high_water.max(regions.len());
+        self.region_visits += regions.len();
         let ordinary = self.ordinary(current, &energy, frequencies_hz);
         let mut output = current.clone();
 
@@ -101,6 +110,7 @@ impl Workspace {
             self.counts.states[decision.index()] += 1;
         }
         self.store(current, &output, &energy, regions);
+        self.updates += 1;
         Ok(output)
     }
 
@@ -121,8 +131,8 @@ impl Workspace {
                         analysis
                     } else {
                         let expected = std::f64::consts::TAU * frequencies_hz[band]
-                            / SAMPLE_RATE_HZ as f64
-                            * COMMON_HOP as f64;
+                            / self.sample_rate_hz as f64
+                            * self.common_hop as f64;
                         let observed = expected
                             + wrap(analysis - self.previous_analysis[channel][band] - expected);
                         self.previous_synthesis[channel][band] + observed

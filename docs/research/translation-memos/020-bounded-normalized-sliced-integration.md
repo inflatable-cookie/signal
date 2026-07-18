@@ -117,8 +117,14 @@ memory/work, boundary-token, finite, repeat, and overflow checks all pass.
 Active-layer high-water is two and maximum coefficient storage remains
 `645120 Complex64` slots. No guided or sound-quality claim follows.
 
+Batch 29.7AN validates synchronized guided-state mechanics on that frame at
+evidence hash `90c10cd2e66d4faf`. All state and boundary contexts pass; channel
+mechanics are exact; local magnitude and analysis-relative phase remain within
+`4.45e-16`. This validates the mechanics integration, not material policy or
+sound quality.
+
 ## Next Task
 
-Run Batch 29.7AN under Rule 31U. Apply only the synchronized state mechanics to
-this frozen representation and prove every state branch and four channel
-mechanics across slice creation and retirement.
+Run Batch 29.7ANR. Freeze or reject the unchanged Rule 31R material policy and
+complete objective evidence matrix on this frozen representation before any
+quality renderer opens.
