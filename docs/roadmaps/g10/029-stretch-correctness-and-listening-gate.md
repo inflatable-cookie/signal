@@ -2237,20 +2237,44 @@ mechanics also outside gate. Mono does not run. Evidence hash:
 
 ### Batch 29.7AB - Joint-Synthesis Architecture Reassessment
 
-- [ ] attribute the first divergence between the passing shared coefficient
+- [x] attribute the first divergence between the passing shared coefficient
   relation and the failing synthesized sample-domain relation; separate inner
   band overlap, outer slice overlap, band-varying relation, and material phase
-- [ ] review primary literature and clean-room source evidence for linked
+- [x] review primary literature and clean-room source evidence for linked
   multichannel relation preservation through redundant or overlapping
   synthesis, including post-atom summation ownership
-- [ ] define one independently supported joint-synthesis invariant compatible
+- [x] define one independently supported joint-synthesis invariant compatible
   with bounded execution, or close the current frequency-frame direction
-- [ ] implement no renderer, parameter change, listening export, dynamic ratio,
+- [x] implement no renderer, parameter change, listening export, dynamic ratio,
   realtime, routing, cache, production, or product-facing work
 
 Evidence: one post-coefficient attribution and one source-backed architecture
 decision. Another DSP candidate requires a promoted contract; Batch 29.8 stays
 closed.
+
+Decision: inner synthesis is the first causal sum. Exact relations on atoms
+with varying peer/reference phase and magnitude ratios do not define a relation
+for their sum. Common material phase changes cross-atom interference; outer
+slice overlap adds another sum but is not the first cause. In frame notation,
+identity proves `D A = I`, while modified fields also require `A D C = C`.
+Rule 31K and memo 015 promote that consistency condition plus post-projection
+waveform stereo ownership. The current frequency-adaptive direction closes.
+
+### Batch 29.7AC - Paired-Channel Joint-Consistency Operator Study
+
+- [ ] review primary multichannel consistency, spatial covariance, and
+  alternating-projection evidence for one paired-channel constraint compatible
+  with `A D C = C`
+- [ ] define the order of transform consistency, channel relation or covariance,
+  magnitude ownership, and waveform validation as one complete operator
+- [ ] require fixed finite work, deterministic state, explicit non-convergence,
+  and a clean-room boundary before promoting any proof
+- [ ] implement no renderer, parameter sweep, listening export, dynamic ratio,
+  realtime, routing, cache, production, or product-facing work
+
+Evidence: one source-backed operator decision. If no complete bounded operator
+is supported, close transform-domain joint projection and assess a waveform-
+domain family. Batch 29.8 stays closed.
 
 ### Batch 29.8 - Listening And Dynamic Checkpoint
 
@@ -3486,10 +3510,17 @@ closed.
   also miss, so the long mono corpus does not run. Evidence hash
   `225ab337875b3962`. Batch 29.7AB owns a no-renderer joint-synthesis
   architecture reassessment.
+- 2026-07-18: Batch 29.7AB attributes the failure to transform consistency.
+  `D A = I` reconstructs analysis coefficients, but the modified redundant
+  field does not satisfy `A D C = C`. Inner atom synthesis is the first causal
+  sum; band-varying relation, magnitude ratio, and material phase change its
+  cross terms. Outer slicing is secondary. Rule 31K and memo 015 promote joint
+  post-projection ownership and close the current frequency-adaptive direction.
+  Batch 29.7AC remains no-renderer research.
 
 ## Next Task
 
-Run Batch 29.7AB. Attribute the first divergence after the passing shared
-coefficient relation and research primary multichannel redundant-synthesis
-evidence. Implement no renderer or tuning candidate. Keep listening, product
+Run Batch 29.7AC. Find one independently supported paired-channel consistency
+operator compatible with `A D C = C` and bounded execution, or close transform-
+domain joint projection. Implement no renderer. Keep listening, product
 surfaces, and Batch 29.8 closed.

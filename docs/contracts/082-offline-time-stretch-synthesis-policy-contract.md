@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; relation-owned sliced material family closed
+Status: active; joint-synthesis consistency boundary promoted
 Owner: dsp
 Updated: 2026-07-18
 Related contracts: `046`, `048`, `049`
@@ -4066,9 +4066,49 @@ external code, expression, constants, masks, or random sequence transfers.
 Paper review is not patent freedom-to-operate clearance. Product, listening,
 dynamic ratio, realtime, routing, and cache work remain closed.
 
+### Rule 31K: synthesis-consistent joint field
+
+Batch 29.7AB attributes the 29.7AA result without implementing DSP. For frame
+analysis `A`, canonical-dual synthesis `D`, and a modified coefficient field
+`C`, identity reconstruction proves only `D A = I`. A coefficient field that
+survives synthesis and re-analysis must also satisfy:
+
+`A D C = C`.
+
+The relation-owned candidate gates before `D`. Inner synthesis then sums atoms
+whose peer/reference phase and magnitude ratios differ. A common material
+operator preserves each atom's relation but changes cross-atom interference.
+Outer slice overlap adds a second sum with the same closure problem. It is not
+the first causal seam. Forcing one relation or magnitude ratio across all atoms
+is forbidden because it removes real stereo structure.
+
+Any future redundant-transform candidate must satisfy all of the following:
+
+- each channel coefficient field is in `range(A)` within a frozen tolerance
+- linked-channel constraints are applied to and measured on the same joint
+  projected field, never accepted only before independent channel synthesis
+- reconstructed waveform IPD, correlation, mid/side balance, and normalized
+  Gram residual remain authoritative
+- iterative projection, if used, has fixed finite work, deterministic state,
+  and an explicit non-convergence outcome
+- coefficient-local relation remains diagnostic evidence, not a sufficient
+  promotion gate
+
+This closes the current frequency-adaptive sliced material direction. No
+overlap repair, material parameter, relation variant, scale change, or adjacent
+renderer is authorized. The exact frame, material classifier, and relation law
+remain mechanism evidence only.
+
+Batch 29.7AC may research one paired-channel joint consistency operator. It
+must implement nothing and may promote a later proof only when independent
+primary evidence defines both the spatial constraint and its order relative to
+`A D` projection. A waveform-domain topology remains an admissible alternative.
+Listening, dynamic ratio, realtime, routing, cache, production, Batch 29.8,
+and all product-facing work remain closed.
+
 ## Next Task
 
-Run Batch 29.7AB as a no-renderer joint-synthesis architecture reassessment.
-Attribute the first post-coefficient relation divergence and research primary
-multichannel redundant-frame synthesis evidence. Do not implement or tune a
-candidate. Keep Batch 29.8 and all product-facing work closed.
+Run Batch 29.7AC as a no-renderer paired-channel joint-consistency operator
+study under Rule 31K. Promote one independently supported bounded operator or
+close transform-domain joint projection before implementing DSP. Keep Batch
+29.8 and all product-facing work closed.

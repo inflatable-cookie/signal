@@ -175,6 +175,7 @@ new source-backed joint-synthesis law, not a parameter change to this memo.
 
 ## Next Task
 
-Run Batch 29.7AB as a no-renderer joint-synthesis reassessment. Attribute the
-first post-coefficient relation divergence and review primary multichannel
-redundant-synthesis evidence before authorizing any new DSP family.
+Batch 29.7AB completes this reassessment in memo 015. Modified redundant fields
+do not generally satisfy `A D C = C`; inner atom synthesis is the first causal
+sum. Run Batch 29.7AC as a no-renderer paired-channel consistency-operator
+study before authorizing any new DSP family.

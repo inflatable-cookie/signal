@@ -434,15 +434,17 @@ Current stretch status:
   A then passes sliced identity and boundedness with `4.44e-16` peak error,
   two live slices, and duration-independent coefficient memory. Stage B then
   preserves the shared coefficient relation but rejects at `44/48` calibrated
-  and `46/48` local stereo failures. The family closes. Batch 29.7AB owns a
-  no-renderer joint-synthesis architecture reassessment.
+  and `46/48` local stereo failures. Batch 29.7AB attributes the loss to
+  synthesis inconsistency: modified redundant fields do not satisfy
+  `A D C = C`. The frequency-adaptive family closes. Batch 29.7AC owns a
+  no-renderer paired-channel consistency-operator study.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7AB. Attribute the post-coefficient sample-domain
-relation divergence and review primary multichannel redundant-synthesis
-evidence. Implement no renderer or tuning candidate. Keep listening, product
-surfaces, and Batch 29.8 closed.
+Run `g10.029` Batch 29.7AC. Find one independently supported paired-channel
+consistency operator compatible with `A D C = C` and bounded execution, or
+close transform-domain joint projection. Implement no renderer. Keep
+listening, product surfaces, and Batch 29.8 closed.

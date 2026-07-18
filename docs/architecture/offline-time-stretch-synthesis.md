@@ -1,6 +1,6 @@
 # Offline Time-Stretch Synthesis
 
-Status: relation-owned sliced material family closed; joint-synthesis research next
+Status: frequency-adaptive family closed; joint-consistency research next
 Owner: dsp
 Updated: 2026-07-18
 Contract refs: `046`, `082`
@@ -1471,10 +1471,36 @@ Exact coefficient relation is therefore necessary but not sufficient through
 the redundant inner-band and outer-slice synthesis sum. Evidence hash:
 `225ab337875b3962`.
 
+## Joint-Synthesis Consistency Boundary
+
+Batch 29.7AB locates the missing owner. Let `A` be frame analysis and `D` its
+canonical-dual synthesis. Identity proves `D A = I`. A modified redundant
+coefficient field also needs `A D C = C`; otherwise synthesis projects it into
+waveform space and re-analysis returns a different field.
+
+The relation-owned candidate proves its constraint before this projection.
+Inner synthesis then sums atoms whose peer/reference phase and magnitude ratios
+vary. Exact relations on each term do not define an exact relation on their
+sum. Common material phase preserves each atom's relation but changes cross-
+atom interference and therefore waveform IPD, correlation, mid/side balance,
+and Gram structure. Outer slice overlap adds another sum but is not the first
+cause.
+
+Future redundant-transform work must own one synthesis-consistent joint field:
+every channel satisfies `A D C_c = C_c`, linked constraints are applied and
+measured after the joint projection, waveform stereo metrics remain
+authoritative, and any iteration has fixed finite work plus explicit failure.
+Per-atom relation is a constraint, not an acceptance proof.
+
+The current frequency-adaptive sliced material direction is closed. Its exact
+frame, relation interpolation, and material mechanics remain reusable evidence.
+Another renderer requires a source-backed paired-channel consistency operator
+or a waveform-domain topology that avoids independently projected redundant
+fields.
+
 ## Next Task
 
-Run Batch 29.7AB as a no-renderer joint-synthesis architecture reassessment.
-Attribute the first divergence between exact per-atom relation and synthesized
-sample-domain relation, then research primary multichannel redundant-frame
-synthesis evidence. Do not implement another candidate. Keep listening,
+Run Batch 29.7AC as a no-renderer paired-channel joint-consistency study. Find
+an independently supported spatial projection compatible with `A D`
+consistency and fixed bounded execution. Implement nothing. Keep listening,
 product-facing surfaces, and Batch 29.8 closed.

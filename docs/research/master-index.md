@@ -64,6 +64,7 @@ Finch and Loophole.
 | [Material-State Phase Architecture Boundary](./translation-memos/012-material-state-phase-architecture-boundary.md) | Close shared rotation as a complete kernel; require independent support for the missing material and scale seams | Promoted |
 | [Independent Material-State Frequency Frame](./translation-memos/013-independent-material-state-frequency-frame.md) | Close both seams from independent papers; select one painless frequency-adaptive material-phase proof | Promoted |
 | [Relation-Owned Sliced Material Transport](./translation-memos/014-relation-owned-sliced-material-transport.md) | Attribute independent polar interpolation; select explicit peer/reference relation transport and a fixed sliced frame | Promoted |
+| [Joint-Synthesis Consistency Boundary](./translation-memos/015-joint-synthesis-consistency-boundary.md) | Attribute post-coefficient loss to inconsistent redundant fields; require joint post-projection ownership | Promoted |
 
 ## Consumer Guidance
 
@@ -74,8 +75,7 @@ Finch and Loophole.
 
 ## Next Task
 
-Batch 29.7AA closes the relation-owned sliced material family. Exact shared
-coefficient relation does not survive as acceptable sample-domain stereo after
-redundant synthesis. Run Batch 29.7AB as a no-renderer attribution and primary
-research pass on joint multichannel synthesis ownership. Keep production and
-Batch 29.8 closed.
+Batch 29.7AB closes the current frequency-adaptive direction and promotes
+`A D C = C` plus post-projection spatial ownership as the missing invariant.
+Run Batch 29.7AC as a no-renderer study of an independently supported bounded
+paired-channel consistency operator. Keep production and Batch 29.8 closed.
