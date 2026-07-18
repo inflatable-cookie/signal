@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; bounded multiscale slice compatibility research next
+Status: active; normalized sliced-frame Stage A next
 Owner: dsp
 Updated: 2026-07-18
 Related contracts: `046`, `048`, `049`
@@ -4451,8 +4451,84 @@ stop the active topology lane. Do not implement DSP, expand capacity, render
 stretched audio, tune policy, run objective rows, listen, read the holdout, or
 open product work in Batch 29.7AL.
 
+Batch 29.7AL rejects the fixed-sample geometry as the integration boundary.
+`16384/8192/512` is exact at `48 kHz`, but its physical duration changes with
+sample rate and its `8 kHz` atom layout exceeds Rule 31R capacity. Keeping it
+would require either rate-specific policy or a capacity expansion.
+
+The one selected proof geometry uses a `10 ms` common lattice. For supported
+proof rate `F` in `{8000, 44100, 48000}`:
+
+- `H = F / 100`
+- transform span `N = 32H`; outer advance `A = 16H`
+- long/middle/short supports are `8H`, `4H`, and `2H`
+- every atom has `K = N/H = 32` coefficients
+- crossover bins are exactly `240` and `1920`; the latter is clipped only by
+  Nyquist ownership, not by a new crossover policy
+- centre spacing is `4`, `8`, and `16` bins by owned scale
+
+The resulting `(N, A, H)` rows are `(2560,1280,80)`,
+`(14112,7056,441)`, and `(15360,7680,480)`. Signed/nonnegative atom counts are
+`380/191`, `1182/592`, and `1260/631`. They remain inside the frozen
+`1344/673` capacities without expansion.
+
+### Rule 31T: normalized sliced-frame mechanics proof
+
+Batch 29.7AM may implement only the selected representation and a mechanics
+adapter. The outer window is
+`h_F[n] = sin(pi (n + 0.5) / N)` and must prove
+`h_F[n]^2 + h_F[n + A]^2 = 1`. Each slice uses the one painless inner
+canonical dual. Synthesis is the single combined law
+`sum_s h_s D_F(C_F(h_s x))`; no slice, scale, or channel owns an independent
+normalizer.
+
+One global output-lattice index owns each state update. For nonempty output
+length `L`, required slices are `S(L) = floor((L - 1) / A) + 2` and global
+state updates are `Q(L) = 16 S(L) + 16`. Each of those `Q(L)` decisions runs
+once, updates one persistent all-channel predecessor state, then writes the
+result into the at-most-two active output layers. Slice creation or retirement
+must not reset phase, duplicate frequency ownership, interpolate a channel
+relation, or alter the current peer magnitude/analysis-relative phase law.
+
+Let `C <= 2`, signed atoms `B <= 1260`, nonnegative atoms and peak regions
+`P <= 631`, `K = 32`, and tap records `T = 2N - B`. The prepared live-memory
+budget is exactly:
+
+- `8 C B K` `Complex64` coefficient slots: six source-slice slabs and two
+  output-slice slabs; the maximum row is `645120` slots
+- `2N + K + max(s_N, s_K)` `Complex64` transform slots, where `s_N` and `s_K`
+  are the prepared FFT plans' reported in-place scratch lengths
+- `2 C N` `f64` outer-overlap samples
+- `19 P (C + 3)` `f64` magnitude/material halo slots
+- `6 C P` `f64` current/prior analysis, synthesis, energy, and ordinary-phase
+  slots plus `2P` current/prior region records
+- static `2N` `f64` window/frame-operator slots, `T` tap records, and `B` band
+  records
+
+None of those terms depends on `L`. A rate outside the three proof rows, a rate
+not divisible by `100`, a capacity above any declared bound, a seventh source
+slab, a third output slab, or FFT scratch above its prepared capacity returns
+`UnsupportedGeometry` or the matching `CapacityExceeded` before processing.
+No resize, eviction/recompute loop, alternate geometry, or whole-source store
+is allowed.
+
+Per slice and channel, the exact structural work meter records two `N`-point
+transforms, `2B` `K`-point transforms, `2T` tap visits, `2BK` coefficient
+visits, `4N` sample/window visits, and `N/2 + 1` conjugate-closure visits.
+Guided work records `Q(L)` bounded updates of at most `P` atoms and `P` regions
+separately. This is an execution-count contract, not a claim that arbitrary-
+length FFTs use a power-of-two butterfly count.
+
+Stage A must prove the three geometry rows, exhaustive ownership, inner/outer
+identity at `1e-12`, crop, coverage, conjugacy, boundaries, silence, repeat,
+duration-independent memory, exact work counts, and every overflow result.
+It must also show that one state token crosses an outer-slice boundary without
+reset or double update. Do not run the material policy, stretch audio, objective
+rows, listening, holdout, or product work. A miss closes the integration.
+
 ## Next Task
 
-Run Batch 29.7AL under Rule 31S. Resolve bounded multiscale slice compatibility
-without another renderer. Keep the holdout, listening, Batch 29.8, and all
-product-facing work closed.
+Run Batch 29.7AM Stage A under Rule 31T. Prove only the normalized sliced frame,
+fixed memory/work bounds, and one state token crossing slice boundaries. Keep
+material policy, stretched audio, objective evidence, holdout, listening,
+Batch 29.8, and product work closed.

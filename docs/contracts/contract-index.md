@@ -17,8 +17,9 @@ memory alone.
 - `046` governs sample-domain stretch behavior and its promotion gates
 - `082` governs the report-only successor policy, the competitive Rule 31
   coherent mono baseline, corrected Rule 31Q professional-comparator boundary,
-  Rule 31R guided frequency-partitioned linked-phase proof, and Rule 31S
-  bounded multiscale slice compatibility study
+  Rule 31R guided frequency-partitioned linked-phase proof, Rule 31S bounded
+  multiscale slice compatibility study, and Rule 31T normalized sliced-frame
+  mechanics proof
 - `g10.028` source-fill work is paused until the actual DSP kernel and source
   consumption geometry pass the `g10.029` correctness gate
 
@@ -146,6 +147,7 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7AL under contract `082`, Rule 31S. Resolve bounded
-multiscale slice compatibility without another renderer. Keep the holdout,
-listening, Batch 29.8, and product work closed.
+Run `g10.029` Batch 29.7AM Stage A under contract `082`, Rule 31T. Prove the
+normalized sliced frame, fixed memory/work and overflow results, and one inert
+state token crossing slice boundaries. Keep guided material policy, stretched
+audio, holdout, listening, Batch 29.8, and product work closed.

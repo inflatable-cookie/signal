@@ -143,7 +143,8 @@ Signal tree.
 ## Next Task
 
 Batch 29.7AK validates the fixed `48 kHz` mechanics kernel, then closes its
-whole-source integration: the `8 kHz` gate exceeds the frozen atom capacity and
-coefficient storage grows with duration. Run Batch 29.7AL under Rule 31S to
-resolve bounded multiscale slice compatibility without another renderer. Keep
-concealed listening, the holdout, Batch 29.8, and product work closed.
+whole-source integration. Batch 29.7AL and memo 020 select one normalized
+two-slice integration: `H=F/100`, `N=32H`, fixed live storage, and one global
+state update shared by both active layers. Run Batch 29.7AM Stage A under Rule
+31T. Keep guided material policy, stretched audio, concealed listening, the
+holdout, Batch 29.8, and product work closed.

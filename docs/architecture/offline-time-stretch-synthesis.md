@@ -1,6 +1,6 @@
 # Offline Time-Stretch Synthesis
 
-Status: bounded multiscale slice compatibility research next
+Status: normalized sliced-frame Stage A next
 Owner: dsp
 Updated: 2026-07-18
 Contract refs: `046`, `082`
@@ -1681,8 +1681,43 @@ question is whether the selected synchronized channel kernel can cross a fixed
 two-slice exact frame without reopening the relation projection and overlap
 ownership failures already measured. No renderer is authorized.
 
+That compatibility study selects a different execution geometry, not a new
+sound policy. The prior fixed `16384/8192/512` sliced frame remains a valid
+`48 kHz` identity proof but is rejected as the cross-rate integration: its
+physical spans change with rate and its `8 kHz` layout exceeds frozen atom
+capacity.
+
+The selected proof uses a physical-time lattice. At proof rate `F`, common hop
+`H=F/100`, transform span `N=32H`, outer advance `16H`, and atom supports
+`8H/4H/2H`. This yields exact `10/320/160 ms` hop/span/advance and
+`80/40/20 ms` supports. The `750 Hz` and `6000 Hz` boundaries become exact bins
+`240` and `1920`; owned-scale spacing remains `4/8/16` bins. At
+`8/44.1/48 kHz`, signed/nonnegative atom counts are respectively `380/191`,
+`1182/592`, and `1260/631`, below the existing `1344/673` bounds.
+
+The representation has one synthesis owner. Identical sine outer windows form
+the exact two-slice square partition; each slice uses the painless inner
+canonical dual; their composition is the only synthesis law. A global output-
+lattice index updates synchronized channel state once and distributes that
+result to both active layers. Slice lifetime does not own phase lifetime.
+Current peer magnitude and analysis-relative phase remain channel-owned; no
+relation projection returns.
+
+Prepared memory is duration-independent. Six source and two output coefficient
+slabs use `8CBK` complex slots, capped at `645120` for the proof. A `19`-frame
+material halo, current/prior phase and region records, two-layer output ring,
+static frame data, and planner-reported FFT scratch have separate fixed terms.
+Per-slice work counts transforms, tap, coefficient, sample, and conjugate
+visits; global state work counts one bounded atom/region update per common-
+lattice index. Unsupported geometry or any exceeded term fails before work.
+
+Rule 31T opens only the normalized representation identity and an inert state-
+token boundary proof. Guided mechanics and objective audio remain later,
+separate stop gates.
+
 ## Next Task
 
-Run Batch 29.7AL under Rule 31S. Resolve bounded multiscale slice compatibility
-without another renderer. Keep the concealed holdout, listening, dynamic
-ratio, realtime, and product-facing work closed.
+Run Batch 29.7AM Stage A under Rule 31T. Prove normalized sliced identity,
+fixed memory/work bounds, overflow behavior, and one inert state token across
+slice boundaries. Keep guided material policy, stretched audio, the concealed
+holdout, listening, dynamic ratio, realtime, and product-facing work closed.

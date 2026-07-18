@@ -2529,22 +2529,92 @@ listening, or holdout result exists.
 
 ### Batch 29.7AL - Bounded Multiscale Slice Compatibility Research
 
-- [ ] freeze 29.7AK code, hashes, capacity failure, and Rule 31R; implement no
+- [x] freeze 29.7AK code, hashes, capacity failure, and Rule 31R; implement no
   renderer, phase policy, capacity expansion, or quality candidate
-- [ ] compare the already-proven fixed two-slice frame with at most one sample-
+- [x] compare the already-proven fixed two-slice frame with at most one sample-
   rate-normalized painless alternative; require duration-independent live
   memory and one formula across `8`, `44.1`, and `48 kHz`
-- [ ] trace whether one synchronized all-channel phase state can cross slice
+- [x] trace whether one synchronized all-channel phase state can cross slice
   boundaries without duplicate frequency ownership, independent overlap
   normalization, relation projection, or state reset
-- [ ] select at most one representation integration with exact identity,
+- [x] select at most one representation integration with exact identity,
   explicit work/memory formulas, fixed overflow behavior, and a direct Stage A
   mechanics proof; otherwise stop the active topology lane
-- [ ] do not render stretched audio, tune policy, run objective rows, listen,
+- [x] do not render stretched audio, tune policy, run objective rows, listen,
   access the holdout, or open Batch 29.8 or product work
 
 Evidence: one bounded-representation compatibility decision. No DSP experiment
 or audio artifact belongs in this batch.
+
+Decision: select one normalized sliced representation for a Stage A proof.
+The fixed `16384/8192/512` frame remains exact at `48 kHz`, but its duration
+changes by sample rate and its `8 kHz` atom layout exceeds frozen capacity.
+The selected formula uses `H = F/100`, `N = 32H`, outer advance `16H`, and
+supports `8H/4H/2H`. Crossover bins remain exactly `240/1920`; atom spacing is
+`4/8/16` bins. The `8/44.1/48 kHz` rows contain `380/191`, `1182/592`, and
+`1260/631` signed/nonnegative atoms, all inside `1344/673`.
+
+The outer sine square partition and inner painless canonical dual form one
+synthesis law. One global common-lattice decision updates persistent channel
+state once, then populates both active output layers. Six source and two output
+coefficient slabs cap storage at `8 C B K`, or `645120 Complex64` slots for
+`C=2`, `B=1260`, and `K=32`. Material halo, phase, region, overlap, transform,
+and static representation terms are separately fixed by Rule 31T. No term
+depends on render duration. Memo 020 records the complete comparison and work
+formula.
+
+### Batch 29.7AM - Normalized Sliced Frame Stage A
+
+- [ ] implement only Rule 31T geometry preparation for `8`, `44.1`, and
+  `48 kHz`; return `UnsupportedGeometry` or `CapacityExceeded` before work on
+  every declared miss
+- [ ] prove the three exact geometry and atom-count rows, exhaustive frequency
+  ownership, `K=32`, tap bound, positive frame operator, and canonical inner
+  dual
+- [ ] prove the outer sine square partition and combined sliced identity at or
+  below `1e-12` across short, nonaligned, boundary-impulse, and multislice
+  lengths at every proof rate
+- [ ] prove crop, two-layer coverage, conjugacy, silence, hard pan, swap,
+  polarity, scaled duplicate, whole-render reflection, finite values, and
+  repeat hashes
+- [ ] report `S(L)` slice counts, `Q(L)` state-token counts, every Rule 31T
+  memory term, exact structural work counts, and duration-independent high-
+  water across at least three lengths
+- [ ] advance one inert state token once per global common-lattice index and
+  prove it crosses slice creation/retirement without reset or duplicate update
+- [ ] stop on any miss; do not add guided material policy, stretch audio, run
+  objective rows, listen, access the holdout, or open product work
+
+Evidence: one normalized sliced identity, mechanics, work, memory, boundary-
+token, and overflow report. This card is ready under Rule 31T.
+
+### Batch 29.7AN - Guided State Slice-Boundary Mechanics
+
+- [ ] open only after 29.7AM passes; freeze its geometry, hashes, work/memory
+  ceilings, and overflow behavior
+- [ ] adapt the passing 29.7AK synchronized channel state to one global sliced
+  lattice without relation projection, independent overlap normalization, or
+  state reset
+- [ ] prove all Rule 31R state branches and duplicate, mono parity, silent peer,
+  and swap mechanics across interior and slice-boundary frames before quality
+  policy work
+- [ ] keep material tuning, objective rows, listening, holdout, and product
+  work closed
+
+Evidence: one boundary-complete guided mechanics report. This card is pending
+29.7AM passage.
+
+### Batch 29.7AO - One Complete Objective Gate
+
+- [ ] open only after 29.7AN passes and a separate preregistration freezes the
+  unchanged Rule 31R material policy on the normalized sliced representation
+- [ ] run one complete synthetic, mono, long-development, and corrected
+  professional-comparator result with no factor sweep or row repair
+- [ ] stop on the first existing hard-gate miss; only complete passage may open
+  Batch 29.8 listening and holdout work
+
+Evidence: at most one complete objective report. This card is blocked on
+29.7AM, 29.7AN, and policy preregistration.
 
 ### Batch 29.8 - Listening And Dynamic Checkpoint
 
@@ -3856,9 +3926,17 @@ or audio artifact belongs in this batch.
   exceeding the `1344/673` proof capacity, and whole-source coefficient memory
   grows with duration. No capacity expansion, renderer result, or holdout read
   follows. Rule 31S returns to bounded representation compatibility only.
+- 2026-07-18: Batch 29.7AL rejects fixed-sample slice geometry and selects one
+  normalized Stage A proof. `H=F/100`, `N=32H`, outer advance `16H`, and
+  `8H/4H/2H` supports keep the three proof rates inside the existing atom
+  capacities. One global state update populates both active layers; fixed
+  source/output slabs, guidance halo, phase/region state, overlap, and FFT
+  scratch replace duration-sized storage. Rule 31T opens representation and
+  inert boundary-token mechanics only. No renderer or audio result exists.
 
 ## Next Task
 
-Run Batch 29.7AL under Rule 31S. Resolve bounded multiscale slice compatibility
-without rendering another candidate. Keep the holdout, listening, product
-surfaces, and Batch 29.8 closed.
+Run Batch 29.7AM Stage A under Rule 31T. Prove the normalized sliced identity,
+fixed memory/work bounds, overflow results, and one inert state token crossing
+slice boundaries. Keep guided material policy, stretched audio, objective
+evidence, holdout, listening, product surfaces, and Batch 29.8 closed.

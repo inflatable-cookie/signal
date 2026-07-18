@@ -476,12 +476,19 @@ Current stretch status:
   `2432/1217` signed/nonnegative atoms instead of `1344/673`, while the attempted
   whole-source coefficient store grows with duration. Rule 31S permits only a
   bounded two-slice representation compatibility study before another renderer.
+  Batch 29.7AL selects one sample-rate-normalized exact sliced representation
+  for proof. `H=F/100`, `N=32H`, outer advance `16H`, and `8H/4H/2H` supports
+  keep `8/44.1/48 kHz` inside frozen atom capacity. Fixed source/output slabs
+  and state rings remove duration-sized storage; one global state update owns
+  both active layers. Rule 31T opens identity and inert boundary-token
+  mechanics only.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7AL under Rule 31S. Resolve bounded multiscale slice
-compatibility without another renderer. Keep the holdout, listening, product
-surfaces, and Batch 29.8 closed.
+Run `g10.029` Batch 29.7AM Stage A under Rule 31T. Prove normalized sliced
+identity, fixed memory/work and overflow results, and one inert state token
+crossing slice boundaries. Keep guided material policy, stretched audio,
+holdout, listening, product surfaces, and Batch 29.8 closed.
