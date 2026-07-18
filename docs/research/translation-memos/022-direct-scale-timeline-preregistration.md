@@ -94,3 +94,10 @@ stereo gate at `40/48` calibrated failures, `118/384` improved windows,
 windows. Run Batch 29.7AV attribution against compatible borrowed-peak phase
 ownership before another candidate. Tuning, retry, listening, and holdout
 remain closed.
+
+Batch 29.7AV confirms the collapse at hash `346e329081adf701`. A compatible
+borrowed peak loses its full `0.95 rad` inter-channel relation and exits at
+zero, while reset/attack remain exact and unlocked/exact-`6000 Hz` local lock
+remain channel-local. Rule 31AA freezes one correction: borrowed atoms measure
+their current phase offset from the owner peak; local atoms retain their own-
+channel peak. Batch 29.7AW is mechanics-only. Objective audio remains closed.

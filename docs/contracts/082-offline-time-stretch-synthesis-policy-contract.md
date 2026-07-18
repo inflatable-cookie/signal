@@ -5081,7 +5081,46 @@ Batch 29.7AV must prove or refute that inter-channel peak-relation collapse
 with an analytic state fixture and the retained AU row report before any
 correction or candidate rerun.
 
+### Rule 31AA: direct locked-peak relation attribution and correction boundary
+
+Batch 29.7AV confirms the first-owner defect without changing or rerunning the
+AU candidate. One analytic `48 kHz` state sequence executes reset, attack,
+unlocked, and locked decisions with a compatible sub-`6000 Hz` borrowed peak
+and an exact-`6000 Hz` local peak. Reset and attack relation error are exactly
+zero. Unlocked channel-rotation separation is `0.03333333333333233`; local-
+lock separation is `0.1666666666667198`. Those nonzero separations prove both
+paths remain channel-local.
+
+The borrowed peak enters with inter-channel phase relation
+`-0.9500000000000002 radians` and exits at exactly zero, losing the complete
+`0.9500000000000002 radians`. Exactly one borrowed and one local locked region
+execute. Attribution hash: `346e329081adf701`.
+
+The cause is exact. For a compatible borrowed region, the frozen implementation
+uses
+
+`borrowed_trajectory + wrap(atom_phase[channel] - peak_phase[channel])`.
+
+At the peak, the subtraction is zero for every channel. Batch 29.7AW may make
+one mechanics-only correction:
+
+`borrowed_trajectory + wrap(atom_phase[channel] - peak_phase[owner])`.
+
+Equivalently, the current phase reference is the same `trajectory_channel`
+used by ordinary recurrence: borrowed regions reference the owner peak; local
+regions reference the same channel's peak. This retains each peer atom's
+current analysis-relative phase from the borrowed owner peak. It changes no
+magnitude, peak selection, region boundary, owner selection, compatibility,
+state classification, recurrence, scale geometry, mask, window, schedule,
+threshold, capacity, or output overlap.
+
+Batch 29.7AW must prove borrowed peak relation, peer within-region offsets,
+magnitudes, reset, attack, ordinary, unlocked, local lock, exact `6000 Hz`
+exclusion, silence recovery, repeat, and the unchanged Rule 31Z representation
+hashes. It generates no corpus audio. Only complete mechanics passage may
+open one separately preregistered Batch 29.7AX failure-first objective run.
+
 ## Next Task
 
-Run Batch 29.7AV as attribution-only. Prove or refute compatible locked-peak
-inter-channel relation collapse without changing or rerunning the candidate.
+Run Batch 29.7AW under Rule 31AA. Apply only the frozen borrowed-owner peak
+phase reference and prove complete mechanics without corpus audio.

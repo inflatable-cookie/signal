@@ -2809,15 +2809,43 @@ maximum residual `0.7611955347641768`, zero structural failures, and hash
 
 ### Batch 29.7AV - Direct Locked-Peak Relation Attribution
 
-Status: ready
+Status: complete
 
-- [ ] freeze AU code, hashes, thresholds, and retained row evidence; do not
+- [x] freeze AU code, hashes, thresholds, and retained row evidence; do not
   rerun the objective candidate
-- [ ] use one analytic state fixture to prove or refute whether compatible
+- [x] use one analytic state fixture to prove or refute whether compatible
   locked borrowing collapses inter-channel phase at the borrowed peak while
   local, reset, attack, and unlocked paths retain their contracted ownership
-- [ ] if confirmed, freeze one exact relation-preserving correction for a
+- [x] if confirmed, freeze one exact relation-preserving correction for a
   later failure-first card; generate no corpus audio and do not tune
+
+Evidence: confirmed at hash `346e329081adf701`. Reset and attack relation
+error are zero. Unlocked and exact-`6000 Hz` local-lock channel-rotation
+separation are `0.03333333333333233` and `0.1666666666667198`. The compatible
+borrowed peak enters at `-0.9500000000000002 radians`, exits at zero, and loses
+the full `0.9500000000000002 radians`. One borrowed and one local region
+execute. No renderer code or objective audio changed.
+
+### Batch 29.7AW - Direct Borrowed-Peak Relation Mechanics
+
+Status: ready
+
+- [ ] change only the compatible borrowed atom phase reference from the same-
+  channel peak to the current owner peak; keep every other Rule 31Z field fixed
+- [ ] prove borrowed inter-channel peak relation, peer within-region offsets,
+  magnitude, local/reset/attack/ordinary/unlocked ownership, exact-`6000 Hz`
+  exclusion, silence recovery, finiteness, and repeat
+- [ ] preserve representation and capacity evidence; generate no corpus audio
+  and promote only the separately gated objective card after mechanics pass
+
+### Batch 29.7AX - Corrected Direct Failure-First Objective Gate
+
+Status: conditional on 29.7AW
+
+- [ ] freeze the full evidence order and all unchanged thresholds before audio
+- [ ] run mechanics, synthetic, corrected stereo, mono, and long-development
+  through the first hard miss with no sweep, repair, retry, or listening
+- [ ] open Batch 29.8 only after complete passage
 
 ### Batch 29.8 - Listening And Dynamic Checkpoint
 
@@ -4208,7 +4236,6 @@ Status: ready
 
 ## Next Task
 
-Run Batch 29.7AV as attribution-only. Freeze AU evidence and prove or refute
-the compatible locked-peak inter-channel relation collapse. Do not rerun or
-change the candidate. Keep listening, holdout, product surfaces, and Batch
-29.8 closed.
+Run Batch 29.7AW under Rule 31AA. Apply only the frozen borrowed-owner peak
+phase reference and prove complete mechanics without corpus audio. Keep
+listening, holdout, product surfaces, and Batch 29.8 closed.

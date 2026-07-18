@@ -535,15 +535,18 @@ Current stretch status:
   `af461c9576729c4e`. All gains are on image controls; tone improves `0/192`
   windows. Mono and long-development do not run. The frozen compatible-lock
   code makes every channel's peak-relative offset zero at the borrowed peak,
-  so Batch 29.7AV is ready to prove or refute that relation collapse before
-  another candidate.
+  so Batch 29.7AV proves that relation collapse at hash `346e329081adf701`.
+  Reset and attack retain exact relation; unlocked and exact-`6000 Hz` local
+  lock remain channel-local. A borrowed peak loses its complete `0.95 rad`
+  input relation and exits at zero. Rule 31AA freezes one mechanics-only owner-
+  peak reference correction for ready Batch 29.7AW; Batch 29.7AX remains the
+  separately preregistered objective rerun.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7AV as attribution-only. Freeze AU evidence and prove or
-refute compatible locked-peak inter-channel relation collapse without a
-candidate rerun. Keep tuning, listening, holdout, product surfaces, and Batch
-29.8 closed.
+Run `g10.029` Batch 29.7AW under Rule 31AA. Apply only the frozen borrowed-
+owner peak phase reference and prove mechanics without corpus audio. Keep
+tuning, listening, holdout, product surfaces, and Batch 29.8 closed.

@@ -1839,6 +1839,18 @@ the peak, every channel's offset is zero and the borrowed trajectory becomes a
 common phase. Attribution must distinguish that peak-relation collapse from
 local locked, reset, attack, and unlocked ownership before correction.
 
+Batch 29.7AV confirms the distinction. Its analytic borrowed peak loses a
+complete `0.95 rad` inter-channel relation and exits at zero. Reset and attack
+preserve relation exactly; unlocked and exact-`6000 Hz` local lock retain
+distinct channel rotations. The defect is therefore the borrowed offset
+reference, not ordinary recurrence or the global terminal decision.
+
+The correction boundary is one reference substitution. A borrowed atom keeps
+the owner trajectory but measures current analysis-relative phase from the
+owner's current peak, not its own channel's peak. Local lock retains the same-
+channel peak. No magnitude, region, classification, geometry, or synthesis
+field moves.
+
 The preregistration corrects one proof claim before code. Independently
 windowed masked scale operators do not generally sum to perfect
 reconstruction. The public unity path remains bit-exact bypass. Batch 29.7AS
