@@ -458,14 +458,17 @@ Current stretch status:
   partial trajectories and direct oscillator synthesis. Pinned SBSMS `2.3.0`
   supplies the architecture specimen, not a dependency. Rule 31O requires
   exact-source quality and boundedness evidence before any clean-room Signal
-  renderer.
+  renderer. Batch 29.7AH closes that candidate: aggregate stereo passes, but
+  six local rows, exact mechanics, seven mono hard rows, two row-complete mono
+  comparisons, and `21` long-development metrics reject. Rule 31P now validates
+  those local and exact rules against Rubber Band before another topology.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7AH under Rule 31O. Establish source-attainable
-synthetic, mono, stereo, boundary, repeat, runtime, memory, and active-state
-behavior for pinned SBSMS `2.3.0` before clean-room implementation. Keep the
-holdout, listening, product surfaces, and Batch 29.8 closed.
+Run `g10.029` Batch 29.7AI under Rule 31P. Test pinned Rubber Band R3 against
+the same local-consistency and exact-mechanics rules that rejected SBSMS and
+Signal candidates. Keep the holdout, listening, product surfaces, and Batch
+29.8 closed.

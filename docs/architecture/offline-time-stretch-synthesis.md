@@ -1,6 +1,6 @@
 # Offline Time-Stretch Synthesis
 
-Status: linked subband sinusoidal source validation next
+Status: professional-comparator gate validation next
 Owner: dsp
 Updated: 2026-07-18
 Contract refs: `046`, `082`
@@ -1568,9 +1568,31 @@ No Signal renderer is authorized yet. First establish that the exact source
 topology itself reaches the declared development envelope and admits fixed
 active-track, event, work, memory, and overflow bounds.
 
+## Linked-Subband Source Closure
+
+Batch 29.7AH closes `LinkedSubbandSinusoidalModel`. Pinned SBSMS repeats and
+clears all `48` aggregate stereo rows, showing that paired partial trajectories
+can avoid the broad image failures. It still fails six local-consistency rows
+and exact duplicate, mono-parity, swap, and polarity mechanics. Seven mono
+rows fail hard integrity, including noise at identity. Two identity rows
+regress on every quality field against coherent Signal. The six five-second
+development rows contain `21` metrics worse than both Signal and Rubber Band.
+Evidence hash: `79b5f7c14692b8f5`.
+
+Direct oscillator synthesis removes the inverse-frame and support-crop losses.
+It does not make the final tracked-component sum waveform-invariant or
+competitive. No clean-room implementation opens.
+
+The aggregate stereo result also exposes a gate question. SBSMS passes the
+absolute calibrated gate while failing a local rule defined relative to
+current Signal. Before selecting another topology, apply the same local and
+exact-mechanics rules to pinned Rubber Band R3. A professional target failure
+means the surrogate is over-tight; professional-target passage confirms a real
+topology gap.
+
 ## Next Task
 
-Run Batch 29.7AH under Rule 31O. Validate source-attainable synthetic, mono,
-stereo, boundary, repeat, runtime, and active-state behavior for the pinned
-SBSMS topology. Keep the concealed holdout, listening, dynamic ratio,
-realtime, and product-facing work closed.
+Run Batch 29.7AI under Rule 31P. Validate pinned Rubber Band R3 against the
+same `48` rows, local windows, duplicate, mono-parity, pan, swap, polarity, and
+gain rules. Do not implement another renderer. Keep the concealed holdout,
+listening, dynamic ratio, realtime, and product-facing work closed.

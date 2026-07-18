@@ -45,7 +45,7 @@ Finch and Loophole.
 | [Signalsmith Stretch](./specimen-dossiers/signalsmith-stretch.md) | Single-grid weighted phase-prediction control and Signal fidelity gap | Reviewed |
 | [Rubber Band Source Architecture](./specimen-dossiers/rubber-band-source-architecture.md) | R2/R3 scheduling, scale ownership, guidance, and phase topology | Reviewed |
 | [Bungee Source Architecture](./specimen-dossiers/bungee-source-architecture.md) | Whole-kernel common-region rotation and dynamic multichannel feasibility | Reviewed |
-| [SBSMS Source Architecture](./specimen-dossiers/sbsms-source-architecture.md) | Linked subband partial tracking, paired stereo trajectories, and direct oscillator synthesis | Reviewed |
+| [SBSMS Source Architecture](./specimen-dossiers/sbsms-source-architecture.md) | Linked subband partial tracking, paired stereo trajectories, and direct oscillator synthesis | Source feasibility rejected |
 
 ## Translation Memos
 
@@ -68,7 +68,7 @@ Finch and Loophole.
 | [Joint-Synthesis Consistency Boundary](./translation-memos/015-joint-synthesis-consistency-boundary.md) | Attribute post-coefficient loss to inconsistent redundant fields; require joint post-projection ownership | Promoted |
 | [Paired-Channel Consistency Operator Boundary](./translation-memos/016-paired-channel-consistency-operator-boundary.md) | Close transform-domain post-projection; require one complete waveform-owning topology | Promoted |
 | [Whole-Family Waveform-Ownership Decision](./translation-memos/017-whole-family-waveform-ownership-decision.md) | Close the failed single-grid proof; require waveform-domain linked-stereo ownership | Promoted |
-| [Waveform-Domain Linked-Stereo Re-entry](./translation-memos/018-waveform-domain-linked-stereo-re-entry.md) | Select one linked subband sinusoidal source-feasibility proof before clean-room implementation | Promoted |
+| [Waveform-Domain Linked-Stereo Re-entry](./translation-memos/018-waveform-domain-linked-stereo-re-entry.md) | Close linked subband sinusoidal source feasibility; validate the rejected gates against Rubber Band | Validated |
 
 ## Consumer Guidance
 
@@ -79,6 +79,6 @@ Finch and Loophole.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7AH under Rule 31O. Establish source-attainable
-feasibility for the pinned SBSMS topology before clean-room implementation.
-Keep the holdout, listening, Batch 29.8, and product work closed.
+Run `g10.029` Batch 29.7AI under Rule 31P. Test pinned Rubber Band R3 against
+the same local-consistency and exact-mechanics rules that rejected the SBSMS
+specimen. Keep the holdout, listening, Batch 29.8, and product work closed.

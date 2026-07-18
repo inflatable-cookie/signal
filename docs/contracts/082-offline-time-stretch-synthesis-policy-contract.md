@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; linked subband sinusoidal source validation next
+Status: active; professional-comparator gate validation next
 Owner: dsp
 Updated: 2026-07-18
 Related contracts: `046`, `048`, `049`
@@ -4260,8 +4260,34 @@ for active tracks, events, work, memory, and overflow. Otherwise close the
 candidate. Do not tune the specimen, combine renderers, listen, or access the
 holdout.
 
+Batch 29.7AH closes the candidate. The exact source repeats with evidence hash
+`79b5f7c14692b8f5`. It has zero aggregate stereo failures but six local-
+consistency failures, material exact-mechanics errors, seven mono hard
+failures, two row-complete mono regressions, and `21` long-development metrics
+worse than both coherent Signal and Rubber Band. Dynamic containers also
+supply no fixed capacity or overflow result. No clean-room Signal proof opens.
+
+### Rule 31P: professional-comparator gate validity
+
+Do not select another topology until the rejected local-consistency and exact-
+mechanics rules are tested against pinned Rubber Band R3 `4.0.0`. Use the same
+frozen `48` stereo rows and the same duplicate, mono-parity, pan, swap,
+polarity, gain, whole-render, interior, and eight-window calculations. No
+threshold or metric may change before the comparator run.
+
+If Rubber Band passes, retain the rules and record a confirmed topology gap.
+If Rubber Band fails, separate professional-comparator-bounded acceptance from
+exact diagnostic controls; revise only the invalidated rule before another
+renderer. Do not optimize to Rubber Band waveforms or copy GPL implementation
+policy.
+
+Batch 29.7AI is report-only. No Signal renderer, parameter sweep, listening,
+holdout access, dynamic ratio, realtime, routing, cache, production, or product
+work may open.
+
 ## Next Task
 
-Run Batch 29.7AH under Rule 31O. Establish source-attainable feasibility for
-the pinned linked-subband sinusoidal topology before clean-room implementation.
-Keep the holdout, listening, Batch 29.8, and all product-facing work closed.
+Run Batch 29.7AI under Rule 31P. Test pinned Rubber Band R3 against the exact
+rules that rejected SBSMS and Signal candidates. Determine whether the gate
+distinguishes the professional target before another topology. Keep the
+holdout, listening, Batch 29.8, and all product-facing work closed.

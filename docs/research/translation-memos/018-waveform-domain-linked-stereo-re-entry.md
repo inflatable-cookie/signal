@@ -1,6 +1,6 @@
 # Waveform-Domain Linked-Stereo Re-entry
 
-Status: promoted
+Status: validated; selected candidate closed
 Date: 2026-07-18
 Roadmap: `g10.029`, Batch 29.7AG
 Contract: `082`, Rules 31N-31O
@@ -99,6 +99,20 @@ Authorize a clean-room Signal proof only if the exact source topology:
 Otherwise close `LinkedSubbandSinusoidalModel`. Do not tune SBSMS, combine it
 with another renderer, use it as a dependency or fallback, or read the holdout.
 
+## Validation Result
+
+Batch 29.7AH closes `LinkedSubbandSinusoidalModel`. Pinned SBSMS repeats and
+passes the aggregate stereo gate at `0/48` failures, but has six local-
+consistency failures and material duplicate, mono-parity, swap, and polarity
+errors. Seven mono rows fail hard integrity, two identity rows regress on every
+quality field against coherent Signal, and the six long development rows
+contain `21` metrics worse than both Signal and Rubber Band. Evidence hash:
+`79b5f7c14692b8f5`.
+
+The result separates causal topology from quality. Direct partial oscillators
+remove inverse-frame and support-crop loss, but track modeling and component
+summation still alter the aggregate waveform. No clean-room renderer opens.
+
 ## Clean-Room Boundary
 
 SBSMS is GPL-2.0. Batch 29.7AH may build and execute the pinned source outside
@@ -122,6 +136,7 @@ This is technical provenance control, not a patent or legal opinion.
 
 ## Next Task
 
-Run Batch 29.7AH. Establish source-attainable feasibility for the pinned SBSMS
-topology before any clean-room Signal implementation. Keep the concealed
-holdout, listening, dynamic ratio, realtime, and product surfaces closed.
+Run Batch 29.7AI. Test pinned Rubber Band R3 against the same local-consistency
+and exact-mechanics rules that reject SBSMS and Signal candidates. Decide
+whether the gate distinguishes the professional target before another
+topology. Keep the holdout and product surfaces closed.

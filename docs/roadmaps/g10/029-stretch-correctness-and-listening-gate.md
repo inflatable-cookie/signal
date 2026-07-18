@@ -2382,30 +2382,56 @@ sample-domain stereo gates remain authoritative. No Signal renderer opens yet.
 
 ### Batch 29.7AH - Pinned Linked-Subband Sinusoidal Feasibility
 
-- [ ] pin SBSMS `2.3.0` at
+- [x] pin SBSMS `2.3.0` at
   `e99cd7e6c6367e476577be34d2fdbe2023904d7e`; build and run it only as an
   external GPL research specimen under `target/`
-- [ ] freeze the existing synthetic mechanics, exact shared-mono control, mono
+- [x] freeze the existing synthetic mechanics, exact shared-mono control, mono
   development material, and `48`-row stereo development matrix before the
   first specimen render; keep the concealed holdout unread
-- [ ] capture repeatable source behavior for identity/model residual, tones,
+- [x] capture repeatable source behavior for identity/model residual, tones,
   chords, partial crossings, long decays, isolated and dense transients,
   noise, boundaries, exact length, and mono objective position
-- [ ] trace matched stereo tracks through direct oscillator samples and the
+- [x] trace matched stereo tracks through direct oscillator samples and the
   subband sum; run waveform IPD, correlation, mid/side, Gram, pan, swap,
   polarity, and local-consistency gates
-- [ ] measure runtime scaling, memory behavior, active-track counts, and event
+- [x] measure runtime scaling, memory behavior, active-track counts, and event
   counts; state the finite capacities and overflow result a Signal proof would
   require
-- [ ] authorize a clean-room Signal proof only if the exact source topology
+- [x] authorize a clean-room Signal proof only if the exact source topology
   avoids the Rule 31M failures, reaches the declared development envelope,
   shows no broad material or boundary defect, and admits fixed execution bounds
-- [ ] do not copy GPL source, tune the specimen, assemble another renderer,
+- [x] do not copy GPL source, tune the specimen, assemble another renderer,
   listen, access the holdout, or open dynamic ratio, realtime, routing, cache,
   production, or product-facing work
 
 Evidence: one pinned exact-source feasibility report under Rule 31O. No Signal
 renderer or product integration.
+
+Decision: close `LinkedSubbandSinusoidalModel`. The pinned source repeats and
+passes the aggregate stereo gate at `0/48`, but fails six local-consistency
+rows, exact linked mechanics, seven mono hard rows, and two row-complete mono
+comparisons. All six long development rows contain metrics worse than both
+coherent Signal and Rubber Band, `21` in total. Dynamic track state has no
+fixed capacity or overflow result. Evidence hash `79b5f7c14692b8f5`. No
+clean-room Signal renderer opens.
+
+### Batch 29.7AI - Professional-Comparator Gate Validity
+
+- [ ] freeze the existing `48` stereo rows, thresholds, whole/interior metrics,
+  eight-window local rule, and exact mechanics before the first comparator run
+- [ ] run pinned Rubber Band R3 `4.0.0` through duplicate, mono parity, hard
+  pan, swap, polarity, gain, calibrated stereo, and local-consistency evidence
+- [ ] repeat every render and calculation; retain exact input, output, version,
+  command, and measurement hashes
+- [ ] if Rubber Band passes, retain the rules and record a confirmed topology
+  gap; if it fails, separate comparator-bounded acceptance from exact
+  diagnostics and revise only the invalidated rule
+- [ ] do not implement or tune a renderer, optimize against comparator
+  waveforms, listen, access the holdout, or open dynamic ratio, realtime,
+  routing, cache, production, or product-facing work
+
+Evidence: one professional-comparator gate-validity report under Rule 31P. No
+renderer or parameter experiment.
 
 ### Batch 29.8 - Listening And Dynamic Checkpoint
 
@@ -3687,10 +3713,18 @@ renderer or product integration.
   identity, transients, noise, boundaries, and boundedness unproved. Memo 018,
   the SBSMS dossier, and Rule 31O require exact-source validation before any
   clean-room Signal renderer. The holdout remains unread.
+- 2026-07-18: Batch 29.7AH closes the linked-subband candidate. Pinned SBSMS
+  repeats at evidence hash `79b5f7c14692b8f5` and passes all aggregate stereo
+  rows, but fails six local rows, exact mechanics, seven mono hard rows, and
+  two row-complete mono comparisons. The six long rows contain `21` metrics
+  worse than both controls. Direct oscillators avoid inverse-frame loss but do
+  not make the final model sum invariant or competitive. Rule 31P next tests
+  the rejected rules against Rubber Band before another topology.
 
 ## Next Task
 
-Run Batch 29.7AH under Rule 31O. Establish source-attainable synthetic, mono,
-stereo, boundary, repeat, runtime, memory, and active-state behavior for pinned
-SBSMS `2.3.0` before clean-room implementation. Keep the holdout, listening,
-product surfaces, and Batch 29.8 closed.
+Run Batch 29.7AI under Rule 31P. Test pinned Rubber Band R3 against the same
+local-consistency and exact-mechanics rules that rejected SBSMS and Signal
+candidates. Determine whether the gate distinguishes the professional target
+before another topology. Keep the holdout, listening, product surfaces, and
+Batch 29.8 closed.

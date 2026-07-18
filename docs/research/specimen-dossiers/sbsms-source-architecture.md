@@ -1,6 +1,6 @@
 # SBSMS Source Architecture
 
-Status: reviewed
+Status: reviewed; source feasibility rejected
 Specimen: SBSMS `2.3.0`
 Owner: dsp
 Last updated: 2026-07-18
@@ -101,6 +101,20 @@ SBSMS specimen must first demonstrate that the source topology itself reaches
 the declared Signal objective envelope on frozen synthetic, mono, stereo, and
 boundary material. Failure closes the candidate before clean-room work.
 
+## Source-Feasibility Result
+
+Batch 29.7AH closes the candidate. The exact specimen repeats and clears all
+`48` aggregate stereo rows, but fails six local-consistency rows and exact
+duplicate, mono-parity, swap, and polarity mechanics. It has seven mono hard
+failures, two row-complete regressions against coherent Signal, and `21`
+five-second development metrics worse than both coherent Signal and Rubber
+Band. Evidence hash: `79b5f7c14692b8f5`.
+
+Direct oscillator synthesis avoids inverse-frame and finite-support loss. It
+does not prevent model error, track decisions, and the final component sum from
+changing aggregate waveform relations and mono quality. No clean-room Signal
+implementation opens.
+
 ## Pinned Source Inventory
 
 | Source | Revision or hash | Use |
@@ -113,7 +127,6 @@ boundary material. Failure closes the candidate before clean-room work.
 
 ## Next Task
 
-Batch 29.7AH may build and run this exact revision only as an external research
-specimen under `target/`. Freeze the existing development material first, then
-measure source-attainable identity, mono, stereo, boundary, repeat, runtime,
-and active-state behavior. Do not copy source or implement a Signal renderer.
+Retain this dossier as causal evidence. Batch 29.7AI validates the rejected
+local and exact-mechanics gates against pinned Rubber Band before another
+topology is considered.
