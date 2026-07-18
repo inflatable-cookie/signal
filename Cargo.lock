@@ -962,6 +962,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "signal-hardware-coremidi"
+version = "0.1.0"
+dependencies = [
+ "signal-hardware",
+]
+
+[[package]]
 name = "signal-hardware-cpal"
 version = "0.1.0"
 dependencies = [

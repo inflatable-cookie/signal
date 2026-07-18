@@ -21,6 +21,7 @@ mod diagnostics;
 pub mod fake_clocked;
 pub mod fake_input;
 mod input_stream;
+pub mod midi_input;
 mod output_stream;
 
 pub mod simulated;
@@ -47,6 +48,10 @@ pub use fake_input::FakeInputBackend;
 pub use input_stream::{
     InputCaptureFn, InputStreamBackend, InputStreamError, InputStreamHandle, InputStreamSpec,
     InputStreamState,
+};
+pub use midi_input::{
+    FakeMidiInputBackend, MidiEventRing, MidiInputBackend, MidiInputError, MidiInputErrorKind,
+    MidiInputEvent, MidiPortDescription, MidiSubscription, MidiSubscriptionState,
 };
 pub use output_stream::{
     OutputRenderFn, OutputStreamBackend, OutputStreamError, OutputStreamHandle, OutputStreamSpec,

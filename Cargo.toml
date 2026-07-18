@@ -25,6 +25,7 @@ members = [
   "crates/signal-plugin-bridge",
   "crates/signal-hardware",
   "crates/signal-hardware-cpal",
+  "crates/signal-hardware-coremidi",
   "crates/signal-render-plane",
   "crates/signal-host-local",
 ]
@@ -61,6 +62,7 @@ signal-plugin-sandbox = { path = "crates/signal-plugin-sandbox" }
 signal-plugin-bridge = { path = "crates/signal-plugin-bridge" }
 signal-hardware = { path = "crates/signal-hardware" }
 signal-hardware-cpal = { path = "crates/signal-hardware-cpal" }
+signal-hardware-coremidi = { path = "crates/signal-hardware-coremidi" }
 signal-render-plane = { path = "crates/signal-render-plane" }
 signal-host-local = { path = "crates/signal-host-local" }
 
