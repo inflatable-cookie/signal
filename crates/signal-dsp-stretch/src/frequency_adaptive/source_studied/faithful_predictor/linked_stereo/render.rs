@@ -29,8 +29,9 @@ use peak_region::PeakMap;
 use recurrence::{reference_relative_bin, reference_relative_bin_with_oracle};
 use report::finish;
 pub(in crate::frequency_adaptive) use report::StereoRender;
-pub(in crate::frequency_adaptive) use synthesis_trace::SynthesisRelationTrace;
-use synthesis_trace::{SynthesisTraceSpec, SynthesisTraceState};
+pub(in crate::frequency_adaptive) use synthesis_trace::{
+    SynthesisRelationTrace, SynthesisTraceSpec, SynthesisTraceState,
+};
 pub(super) use tracked_peak_trace::PhaseFieldClassTrace;
 pub(in crate::frequency_adaptive) use tracked_peak_trace::TrackedPeakPhaseTrace;
 
@@ -108,7 +109,7 @@ fn linked_inner(
     let mut maximum_projected_relation_error = 0.0_f64;
     let mut maximum_constrained_relation_error = 0.0_f64;
     let mut synthesis_trace =
-        synthesis_trace_spec.map(|spec| SynthesisTraceState::new(spec, length));
+        synthesis_trace_spec.map(|spec| SynthesisTraceState::new(spec, length, transform_length));
     let mut coefficient_trace = coefficient_trace_spec.map(CoefficientTraceState::new);
     let mut previous_reference = vec![None; bins];
     let mut previous_peak_maps: Option<[PeakMap; 2]> = None;
@@ -310,10 +311,23 @@ fn linked_inner(
             constrain_real_edges(&mut next[channel], grid);
             match synthesis_mode {
                 SynthesisMode::Real => {
+                    let full_support_frame = synthesis_trace.as_ref().map(|_| {
+                        synthesise(
+                            &next[channel],
+                            transform_length,
+                            transform_length,
+                            grid,
+                            &inverse,
+                        )
+                    });
                     let frame =
                         synthesise(&next[channel], length, transform_length, grid, &inverse);
                     if let Some(trace) = &mut synthesis_trace {
-                        trace.record_frame_channel(channel, &frame);
+                        trace.record_frame_channel(
+                            channel,
+                            &frame,
+                            full_support_frame.as_deref().expect("full-support trace"),
+                        );
                     }
                     overlap.add_real(channel, output_center, &frame, &window, transform_length);
                 }

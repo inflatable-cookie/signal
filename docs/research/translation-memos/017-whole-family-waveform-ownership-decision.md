@@ -178,9 +178,11 @@ from patent freedom-to-operate review.
 
 ## Next Task
 
-Batch 29.7AE closes without a frozen candidate. Candidate `0` retains the
-29.7T boundary at `1/48` calibrated and `11/48` local failures; three
-state-changing finalists retain the calibrated miss and worsen local results.
-Run Batch 29.7AF. Trace that persistent off-bin `2.0x` tone and the eleven local
-misses to one coefficient, inverse-frame, or overlap operation. Do not change
-policy values or open the untouched holdout.
+Batch 29.7AF closes the selected proof. All per-bin linked relations remain
+exact, but four misses first occur in the full inverse frame and seven at
+finite-support restriction. Candidate `17` preserves the same split. No single
+equation correction is authorized; the concealed holdout remains unread.
+
+Run Batch 29.7AG under Rule 31N. Research a complete waveform-domain
+linked-stereo topology whose invariant survives inverse synthesis, support
+restriction, and overlap. Select at most one proof before another renderer.

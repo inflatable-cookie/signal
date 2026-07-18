@@ -4195,9 +4195,40 @@ unread. Batch 29.7AF may trace the persistent off-bin `2.0x` tone and local
 boundary failures, but may not change the six policy values or run another
 candidate sweep.
 
+Batch 29.7AF closes the selected family. Candidate `0` preserves every per-bin
+linked coefficient relation within `1.78e-15`, but reconstructed waveform
+relation fails at two synthesis operations. Seven of eleven local misses first
+appear when the full `1024`-sample inverse frame is restricted to the
+`960`-sample synthesis support. Four, including the sole calibrated off-bin
+`2.0x` miss, already diverge in the full inverse frame. Candidate `17`
+preserves the same `7/4` split. Overlap accumulation and normalization are not
+first. Evidence hash: `fc10cd6442d55e4a`.
+
+Rule 31M authorizes no equation correction. No single operation explains all
+failures, and neither state classification nor predecessor policy repairs the
+two synthesis losses. The concealed holdout remains unread. The selected
+single-grid state-complete proof is closed.
+
+### Rule 31N: waveform-domain linked-stereo re-entry
+
+Research may reopen only a complete topology with a testable linked-channel
+waveform invariant across full inverse synthesis, finite-support restriction,
+and overlap. A per-bin relation is insufficient. The same topology must own
+polyphonic tone, transients, mono quality, arbitrary linked stereo, and fixed
+bounded execution.
+
+Batch 29.7AG is research-only. Use primary literature, official architecture
+material, and clean-room source dossiers. Select at most one complete proof or
+stop the active stretch lane. Do not assemble a renderer from partial phase,
+support, image, or overlap mechanisms. Do not run a parameter experiment or
+read the concealed holdout.
+
+Listening, dynamic ratio, realtime, routing, cache, production, Batch 29.8,
+and all product-facing work remain closed.
+
 ## Next Task
 
-Run Batch 29.7AF under Rule 31M. Attribute the persistent off-bin `2.0x` tone
-and eleven local failures to one coefficient, inverse-frame, or overlap
-operation before authorizing any equation correction. Keep policy changes, the
-holdout, Batch 29.8, and all product-facing work closed.
+Run Batch 29.7AG under Rule 31N. Find one complete source-backed topology whose
+linked-channel waveform invariant survives inverse synthesis, support
+restriction, and overlap. Select at most one proof before implementation. Keep
+the holdout, Batch 29.8, and all product-facing work closed.

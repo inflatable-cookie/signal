@@ -66,7 +66,7 @@ Finch and Loophole.
 | [Relation-Owned Sliced Material Transport](./translation-memos/014-relation-owned-sliced-material-transport.md) | Attribute independent polar interpolation; select explicit peer/reference relation transport and a fixed sliced frame | Promoted |
 | [Joint-Synthesis Consistency Boundary](./translation-memos/015-joint-synthesis-consistency-boundary.md) | Attribute post-coefficient loss to inconsistent redundant fields; require joint post-projection ownership | Promoted |
 | [Paired-Channel Consistency Operator Boundary](./translation-memos/016-paired-channel-consistency-operator-boundary.md) | Close transform-domain post-projection; require one complete waveform-owning topology | Promoted |
-| [Whole-Family Waveform-Ownership Decision](./translation-memos/017-whole-family-waveform-ownership-decision.md) | Select one calibrated single-grid state-complete linked phase-vocoder proof | Promoted |
+| [Whole-Family Waveform-Ownership Decision](./translation-memos/017-whole-family-waveform-ownership-decision.md) | Close the failed single-grid proof; require waveform-domain linked-stereo ownership | Promoted |
 
 ## Consumer Guidance
 
@@ -77,7 +77,7 @@ Finch and Loophole.
 
 ## Next Task
 
-Batch 29.7AD closes WSOLA as the universal engine, retains explicit sinusoidal
-models as research reserve, and selects one calibrated single-grid state-
-complete linked phase-vocoder proof. Run Batch 29.7AE. Keep production and
-Batch 29.8 closed until one candidate passes the complete development gate.
+Run `g10.029` Batch 29.7AG under Rule 31N. Research one complete topology whose
+linked-channel invariant survives inverse synthesis, finite support, and
+overlap. Select at most one proof before implementation. Keep the holdout,
+Batch 29.8, and product work closed.

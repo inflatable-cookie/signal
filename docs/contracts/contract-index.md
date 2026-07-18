@@ -144,7 +144,7 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7AE under contract `082`, Rule 31M. Implement one report-
-only state-complete linked phase vocoder and bounded development calibration.
-Freeze one candidate after the complete development gate. Keep the existing
-holdout, listening, dynamic ratio, realtime, routing, and promotion closed.
+Run `g10.029` Batch 29.7AG under contract `082`, Rule 31N. Research one complete
+topology whose linked-channel invariant survives inverse synthesis, finite
+support, and overlap. Select at most one proof before implementation. Keep the
+holdout, Batch 29.8, and product work closed.

@@ -449,14 +449,19 @@ Current stretch status:
   retains the 29.7T boundary at `1/48` calibrated and `11/48` local failures,
   while three state-changing finalists worsen local consistency. All retain
   exact mechanics and mono passage. The concealed holdout remains unread;
-  Batch 29.7AF owns one equation-level failure attribution without tuning.
+  Batch 29.7AF then finds two synthesis losses. Four misses, including the sole
+  calibrated failure, start in the full inverse frame; seven start when the
+  `1024`-sample inverse is restricted to `960` samples. Candidate `17`
+  preserves the split. Rule 31M closes the single-grid family without a
+  correction or holdout access. Batch 29.7AG returns to source-backed
+  waveform-domain linked-stereo research.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7AF. Trace the retained candidate and best state-changing
-finalist through the off-bin `2.0x` tone and eleven local failures. Name one
-causal phase or overlap operation before any correction. Keep policy changes,
-the holdout, listening, product surfaces, and Batch 29.8 closed.
+Run `g10.029` Batch 29.7AG under Rule 31N. Find one complete topology whose
+linked-channel invariant survives inverse synthesis, finite support, and
+overlap. Select at most one proof before implementation. Keep the holdout,
+listening, product surfaces, and Batch 29.8 closed.

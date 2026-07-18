@@ -120,7 +120,7 @@ pub(super) fn negative_control_residuals() -> [f64; 2] {
     ]
 }
 
-fn ipd(channels: &[Vec<f64>; 2], frequency: f64, sample_rate: usize) -> f64 {
+pub(super) fn ipd(channels: &[Vec<f64>; 2], frequency: f64, sample_rate: usize) -> f64 {
     wrap(
         fitted_phase(&channels[1], frequency, sample_rate)
             - fitted_phase(&channels[0], frequency, sample_rate),

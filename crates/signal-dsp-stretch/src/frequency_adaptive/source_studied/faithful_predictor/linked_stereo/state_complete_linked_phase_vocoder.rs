@@ -2,7 +2,7 @@ use rustfft::{num_complex::Complex64, FftPlanner};
 
 use super::{
     super::{analyse, coherent_representation, constrain_real_edges, synthesise},
-    render::StereoRender,
+    render::{StereoRender, SynthesisRelationTrace, SynthesisTraceSpec, SynthesisTraceState},
     shared_rotation_region_locked::{
         output::{add_overlap, finish},
         phase::{regions, tracked_rotation, Region, RegionState},
@@ -66,22 +66,59 @@ struct Memory {
     reset_remaining: usize,
 }
 
+#[derive(Clone, Debug)]
+pub(in crate::frequency_adaptive) struct TraceRender {
+    pub(in crate::frequency_adaptive) render: SharedRotationRender,
+    pub(in crate::frequency_adaptive) synthesis: SynthesisRelationTrace,
+    pub(in crate::frequency_adaptive) maximum_coefficient_relation_error: f64,
+}
+
 pub(in crate::frequency_adaptive) fn render(
     inputs: [&[f64]; 2],
     ratio: f64,
     sample_rate: usize,
     policy: Policy,
 ) -> SharedRotationRender {
+    render_inner(inputs, ratio, sample_rate, policy, None).0
+}
+
+pub(in crate::frequency_adaptive) fn render_with_trace(
+    inputs: [&[f64]; 2],
+    ratio: f64,
+    sample_rate: usize,
+    policy: Policy,
+    trace_spec: SynthesisTraceSpec,
+) -> TraceRender {
+    let (render, synthesis, maximum_coefficient_relation_error) =
+        render_inner(inputs, ratio, sample_rate, policy, Some(trace_spec));
+    TraceRender {
+        render,
+        synthesis: synthesis.expect("non-identity trace"),
+        maximum_coefficient_relation_error,
+    }
+}
+
+fn render_inner(
+    inputs: [&[f64]; 2],
+    ratio: f64,
+    sample_rate: usize,
+    policy: Policy,
+    trace_spec: Option<SynthesisTraceSpec>,
+) -> (SharedRotationRender, Option<SynthesisRelationTrace>, f64) {
     assert_eq!(inputs[0].len(), inputs[1].len(), "linked channel lengths");
     assert!(!inputs[0].is_empty(), "non-empty linked input");
     assert!(ratio.is_finite() && ratio > 0.0, "positive finite ratio");
     validate(policy);
     if ratio == 1.0 {
-        return finish(
-            [inputs[0].to_vec(), inputs[1].to_vec()],
-            inputs[0].len(),
-            0,
-            StateCounts::default(),
+        return (
+            finish(
+                [inputs[0].to_vec(), inputs[1].to_vec()],
+                inputs[0].len(),
+                0,
+                StateCounts::default(),
+            ),
+            None,
+            0.0,
         );
     }
 
@@ -100,6 +137,9 @@ pub(in crate::frequency_adaptive) fn render(
     let mut previous_rotations: Option<[Vec<f64>; 2]> = None;
     let mut previous_source_center = None;
     let mut states = StateCounts::default();
+    let mut trace =
+        trace_spec.map(|spec| SynthesisTraceState::new(spec, support_length, transform_length));
+    let mut maximum_coefficient_relation_error = 0.0_f64;
     let mut output_center = -(support_length as isize / 2);
 
     while output_center < target_length as isize + support_length as isize / 2 {
@@ -224,8 +264,20 @@ pub(in crate::frequency_adaptive) fn render(
             }
         }
 
+        maximum_coefficient_relation_error =
+            maximum_coefficient_relation_error.max(coefficient_relation_error(&current, &next));
+
         for channel in 0..2 {
             constrain_real_edges(&mut next[channel], grid);
+            let full_support_frame = trace.as_ref().map(|_| {
+                synthesise(
+                    &next[channel],
+                    transform_length,
+                    transform_length,
+                    grid,
+                    &inverse,
+                )
+            });
             let frame = synthesise(
                 &next[channel],
                 support_length,
@@ -233,6 +285,13 @@ pub(in crate::frequency_adaptive) fn render(
                 grid,
                 &inverse,
             );
+            if let Some(trace) = &mut trace {
+                trace.record_frame_channel(
+                    channel,
+                    &frame,
+                    full_support_frame.as_deref().expect("full-support trace"),
+                );
+            }
             add_overlap(
                 &mut output[channel],
                 &mut normalization[channel],
@@ -241,6 +300,9 @@ pub(in crate::frequency_adaptive) fn render(
                 &window,
                 transform_length,
             );
+        }
+        if let Some(trace) = &mut trace {
+            trace.complete_frame(output_center, target_length, support_length);
         }
         previous_regions = next_regions;
         previous_spectra = Some(current);
@@ -254,6 +316,9 @@ pub(in crate::frequency_adaptive) fn render(
         .flatten()
         .filter(|weight| **weight <= 0.0)
         .count();
+    if let Some(trace) = &mut trace {
+        trace.record_accumulated(&output);
+    }
     for channel in 0..2 {
         for (sample, weight) in output[channel].iter_mut().zip(&normalization[channel]) {
             if *weight > 0.0 {
@@ -261,7 +326,14 @@ pub(in crate::frequency_adaptive) fn render(
             }
         }
     }
-    finish(output, target_length, uncovered, states)
+    if let Some(trace) = &mut trace {
+        trace.record_normalized(&output);
+    }
+    (
+        finish(output, target_length, uncovered, states),
+        trace.map(SynthesisTraceState::finish),
+        maximum_coefficient_relation_error,
+    )
 }
 
 pub(in crate::frequency_adaptive) fn stereo_adapter(
@@ -331,6 +403,22 @@ fn classify(
     } else {
         Ownership::Unlocked
     }
+}
+
+fn coefficient_relation_error(current: &[Vec<Complex64>; 2], next: &[Vec<Complex64>; 2]) -> f64 {
+    (0..current[0].len())
+        .filter(|bin| {
+            current[0][*bin].norm_sqr() > ENERGY_FLOOR
+                && current[1][*bin].norm_sqr() > ENERGY_FLOOR
+                && next[0][*bin].norm_sqr() > ENERGY_FLOOR
+                && next[1][*bin].norm_sqr() > ENERGY_FLOOR
+        })
+        .map(|bin| {
+            let before = wrap(current[1][bin].arg() - current[0][bin].arg());
+            let after = wrap(next[1][bin].arg() - next[0][bin].arg());
+            wrap(after - before).abs()
+        })
+        .fold(0.0, f64::max)
 }
 
 fn nearest_predecessor<'a>(
@@ -450,7 +538,7 @@ mod tests {
 
     #[test]
     fn state_complete_classifier_covers_reset_locked_and_unlocked() {
-        let policy = candidates()[0];
+        let policy = candidates()[1];
         let spectrum = [
             vec![Complex64::new(1.0, 0.0), Complex64::new(4.0, 0.0)],
             vec![Complex64::new(1.0, 0.0), Complex64::new(4.0, 0.0)],
@@ -506,7 +594,7 @@ mod tests {
                 &spectrum,
                 Some(&memory),
                 17.0,
-                Some(1.0),
+                Some(2.0),
                 policy,
                 true
             ),
