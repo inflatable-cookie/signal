@@ -271,6 +271,32 @@ impl CaptureSession {
         Self::start_internal_gated(backend, spec, wav_path, 0, monitor, Some(gate))
     }
 
+    /// [`CaptureSession::start_gated_with_monitor`] with a count-in pre-roll
+    /// discard. Composition order is gate THEN skip: while the gate is
+    /// closed the callback pushes nothing into the WAV ring, so
+    /// `skip_initial_frames` counts against the first frames captured AFTER
+    /// activation — a gate released anywhere in the skip window can never
+    /// leak pre-activation frames into the file. The skip is interpreted at
+    /// the requested `spec.sample_rate_hz` and rescaled to the negotiated
+    /// stream rate (the [`CaptureSession::start_with_skip`] contract).
+    pub fn start_gated_with_monitor_and_skip(
+        backend: &dyn InputStreamBackend,
+        spec: InputStreamSpec,
+        wav_path: &Path,
+        skip_initial_frames: u64,
+        gate: CaptureActivationGate,
+        monitor: Option<MonitorSink>,
+    ) -> Result<Self, InputStreamError> {
+        Self::start_internal_gated(
+            backend,
+            spec,
+            wav_path,
+            skip_initial_frames,
+            monitor,
+            Some(gate),
+        )
+    }
+
     fn start_internal(
         backend: &dyn InputStreamBackend,
         spec: InputStreamSpec,
@@ -604,6 +630,110 @@ mod tests {
         let report = session.stop().expect("stop gated capture");
         assert!(report.frames > 2_400, "captured {} frames", report.frames);
         assert!(report.frames < 12_000, "pre-gate frames were excluded");
+
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    /// Test-only backend whose callback the TEST drives synchronously, so
+    /// gate/skip interleavings are frame-deterministic (no clocked thread).
+    struct ManualInputBackend {
+        capture: Arc<std::sync::Mutex<Option<crate::input_stream::InputCaptureFn>>>,
+    }
+
+    struct ManualInputStream {
+        sample_rate_hz: u32,
+        channels: u16,
+    }
+
+    impl InputStreamHandle for ManualInputStream {
+        fn state(&self) -> InputStreamState {
+            InputStreamState::Running
+        }
+        fn sample_rate_hz(&self) -> u32 {
+            self.sample_rate_hz
+        }
+        fn channels(&self) -> u16 {
+            self.channels
+        }
+    }
+
+    impl InputStreamBackend for ManualInputBackend {
+        fn open_input_stream(
+            &self,
+            spec: InputStreamSpec,
+            capture: crate::input_stream::InputCaptureFn,
+        ) -> Result<Box<dyn InputStreamHandle>, InputStreamError> {
+            *self.capture.lock().unwrap() = Some(capture);
+            Ok(Box::new(ManualInputStream {
+                sample_rate_hz: spec.sample_rate_hz,
+                channels: spec.channels,
+            }))
+        }
+    }
+
+    #[test]
+    fn gate_released_inside_the_skip_window_leaks_no_pre_roll_frames() {
+        // Composition ordering proof: samples encode their absolute stream
+        // frame index, the gate opens mid-stream, and the skip must count
+        // against POST-gate frames only — the first written sample is the
+        // frame at (gate-open index + skip), never a pre-gate frame and
+        // never (gate-open index) alone.
+        let dir = std::env::temp_dir().join(format!(
+            "signal-capture-gate-skip-{}-{:?}",
+            std::process::id(),
+            std::thread::current().id()
+        ));
+        let wav_path = dir.join("take.wav");
+        let capture: Arc<std::sync::Mutex<Option<crate::input_stream::InputCaptureFn>>> =
+            Arc::new(std::sync::Mutex::new(None));
+        let backend = ManualInputBackend {
+            capture: Arc::clone(&capture),
+        };
+        let gate = CaptureActivationGate::new();
+        const SKIP_FRAMES: u64 = 480;
+        let session = CaptureSession::start_gated_with_monitor_and_skip(
+            &backend,
+            InputStreamSpec {
+                sample_rate_hz: 48_000,
+                channels: 1,
+                buffer_frames: Some(256),
+            },
+            &wav_path,
+            SKIP_FRAMES,
+            gate.clone(),
+            None,
+        )
+        .expect("start gated capture with skip");
+
+        let mut callback = capture.lock().unwrap().take().expect("callback installed");
+        let feed = |callback: &mut crate::input_stream::InputCaptureFn,
+                    range: std::ops::Range<u64>| {
+            let frames: Vec<f32> = range.map(|index| index as f32).collect();
+            callback(&frames);
+        };
+        // Pre-roll: 960 frames while the gate is closed — the WAV ring
+        // receives nothing (the skip counter must NOT consume these).
+        feed(&mut callback, 0..960);
+        // Gate opens INSIDE what would be the skip window, then more frames
+        // arrive than the skip discards.
+        gate.activate();
+        feed(&mut callback, 960..2_400);
+        drop(callback);
+
+        let report = session.stop().expect("stop capture");
+        // Post-gate frames: 1_440; minus the 480-frame skip = 960 written.
+        assert_eq!(report.frames, 960, "skip consumed post-gate frames only");
+        let mut reader = hound::WavReader::open(&wav_path).expect("open captured wav");
+        let samples: Vec<f32> = reader
+            .samples::<f32>()
+            .map(|sample| sample.expect("read sample"))
+            .collect();
+        assert_eq!(samples.len(), 960);
+        // First written frame = gate-open index (960) + skip (480) = 1_440:
+        // the skip applied AFTER the gate, so no pre-roll frame leaked and
+        // the count-in discard was not satisfied by gated-out frames.
+        assert_eq!(samples[0], 1_440.0);
+        assert_eq!(*samples.last().unwrap(), 2_399.0);
 
         std::fs::remove_dir_all(&dir).ok();
     }
