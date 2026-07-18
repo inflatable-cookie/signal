@@ -1888,9 +1888,18 @@ state hash `52d6b8b2bb6edff0`; the representation hash remains
 `fdf90f6127749341`. No geometry, classification, magnitude, recurrence,
 capacity, or synthesis field moved, and no corpus audio ran.
 
+Batch 29.7AX shows the correction is measurable but not architectural closure.
+Mechanics and synthetic evidence pass; the single corrected stereo run improves
+AU from `40` to `38` calibrated failures and from `118` to `157` improved local
+windows. Signal-relative local-row failures remain `36/48`, and the worst
+normalized-Gram residual remains exactly `0.7611955347641768`. The unchanged
+worst case and row-complete count rule out treating owner-peak reference alone
+as the missing stereo mechanism. Mono and long-development remain unopened.
+
 ## Next Task
 
-Run the frozen Batch 29.7AX sequence under Rule 31AA: corrected mechanics,
-unchanged synthetic evidence, then one corrected stereo corpus run. Stop at the
-first hard-gate miss. Mono and long-development require complete prior passage;
-tuning, retry, listening, holdout, product work, and Batch 29.8 remain closed.
+Run Batch 29.7AY under Rule 31AB. Audit the frozen direct topology against the
+source-studied ownership model without audio. Require one causal missing
+mechanism with source support and a no-audio falsifier before another candidate;
+otherwise close the topology. Keep tuning, retry, listening, holdout, product
+work, and Batch 29.8 closed.

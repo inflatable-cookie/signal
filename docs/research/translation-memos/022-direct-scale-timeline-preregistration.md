@@ -109,8 +109,16 @@ pass `9/9` at corrected state hash `52d6b8b2bb6edff0`, while representation
 remains `fdf90f6127749341`. The old `430543f8e1dce721` state hash is the
 pre-correction baseline. No corpus audio ran.
 
+Batch 29.7AX passes corrected mechanics and the unchanged synthetic matrix,
+then rejects at stereo hash `397128c177d3033e`. Calibrated failures improve
+from `40/48` to `38/48`; improved local windows rise from `118/384` to
+`157/384`. Signal-relative local-row failures stay `36/48`, and maximum
+normalized-Gram residual stays exactly `0.7611955347641768`. The correction
+therefore has local effect but does not explain the remaining topology-wide
+stereo failure. Mono and long-development do not run.
+
 ## Next Task
 
-Run the frozen Batch 29.7AX sequence. Prove corrected mechanics, run the
-unchanged synthetic matrix, then run the corrected stereo corpus once. Stop at
-the first hard miss; mono and long-development require complete prior passage.
+Run Batch 29.7AY as a no-audio source-to-code reassessment. Name one causal
+missing mechanism with source support and a bounded falsifier, or close the
+direct topology before another candidate.

@@ -2849,10 +2849,10 @@ representation hash remains `fdf90f6127749341`. No corpus audio ran.
 
 ### Batch 29.7AX - Corrected Direct Failure-First Objective Gate
 
-Status: active, sequence frozen before audio
+Status: rejected at stereo gate
 
 - [x] freeze the full evidence order and all unchanged thresholds before audio
-- [ ] run mechanics, synthetic, corrected stereo, mono, and long-development
+- [x] run mechanics, synthetic, corrected stereo, mono, and long-development
   through the first hard miss with no sweep, repair, retry, or listening
 - [ ] open Batch 29.8 only after complete passage
 
@@ -2864,6 +2864,29 @@ long-development measurements. Representation must remain
 `fdf90f6127749341`; corrected state and relation receipts must remain
 `52d6b8b2bb6edff0` and `425400ebb580b3e1`. All AU synthetic and corpus
 thresholds remain exact. Stop at the first miss.
+
+Evidence: corrected mechanics pass at the three frozen hashes. Synthetic
+passes unchanged at `00e522a01b817bb6` with zero structural, nonfinite, and
+hard channel-mechanics errors. The single stereo run rejects at hash
+`397128c177d3033e`: `38/48` calibrated failures, `157/384` improved local
+windows, `36/48` Signal-relative local-row failures, maximum normalized-Gram
+residual `0.7611955347641768`, zero structural failures, and exact repeat.
+Against AU, calibrated failures improve by `2` and local windows by `39`, but
+row-complete local failures and the worst residual do not move. Mono and long-
+development do not run.
+
+### Batch 29.7AY - Corrected Direct Stereo Reassessment
+
+Status: ready
+
+- [ ] freeze AU and AX code, aggregates, hashes, and stop state; do not rerun
+  either objective candidate or generate new corpus audio
+- [ ] audit the remaining direct topology against the source-studied locked,
+  ordinary, unlocked, scale, and synthesis ownership model using retained code
+  and evidence only
+- [ ] name one causal missing mechanism with source support and a falsifiable
+  no-audio proof, or close the direct topology before compiling another
+  candidate; do not tune parameters or repair rows
 
 ### Batch 29.8 - Listening And Dynamic Checkpoint
 
@@ -4257,10 +4280,18 @@ thresholds remain exact. Stop at the first miss.
   hash `52d6b8b2bb6edff0`; representation remains `fdf90f6127749341`. No corpus
   audio ran. Batch 29.7AX is ready but its complete failure-first order must be
   frozen before any audio generation.
+- 2026-07-19: Batch 29.7AX passes corrected mechanics and unchanged synthetic
+  evidence, then rejects its single stereo run at hash `397128c177d3033e`:
+  `38/48` calibrated failures, `157/384` improved windows, `36/48` local-row
+  failures, and maximum residual `0.7611955347641768`. The correction improves
+  `2` calibrated rows and `39` windows over AU but does not change the local-
+  row count or worst residual. Mono and long-development do not run. Batch
+  29.7AY opens no-audio architecture reassessment.
 
 ## Next Task
 
-Run the preregistered Batch 29.7AX sequence under Rule 31AA. Rerun mechanics,
-then synthetic, then the corrected stereo corpus, stopping at the first hard
-miss. Enter mono and long-development only after complete prior passage. Keep
-tuning, retry, listening, holdout, product surfaces, and Batch 29.8 closed.
+Run Batch 29.7AY under Rule 31AB. Freeze AU/AX evidence and audit the remaining
+direct topology against the source-studied ownership model without rerunning
+audio. Require one source-supported causal mechanism and no-audio falsifier
+before another candidate. Keep tuning, retry, listening, holdout, product
+surfaces, and Batch 29.8 closed.

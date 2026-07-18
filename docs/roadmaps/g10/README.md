@@ -544,15 +544,21 @@ Current stretch status:
   `425400ebb580b3e1`, all `9/9` direct mechanics pass at corrected state hash
   `52d6b8b2bb6edff0`, and representation stays `fdf90f6127749341`. No corpus
   audio ran. Batch 29.7AX is ready as the separately preregistered objective
-  rerun.
+  rerun. AX then passes mechanics and unchanged synthetic evidence but rejects
+  its one stereo run at hash `397128c177d3033e`: `38/48` calibrated failures,
+  `157/384` improved windows, `36/48` local-row failures, and unchanged maximum
+  residual `0.7611955347641768`. This improves AU by `2` calibrated rows and
+  `39` windows without moving row-complete failures or the worst case. Mono and
+  long-development do not run. Batch 29.7AY opens no-audio architecture
+  reassessment.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Run the frozen `g10.029` Batch 29.7AX sequence under Rule 31AA: corrected
-mechanics, unchanged synthetic matrix, then one corrected stereo corpus run.
-Stop at the first hard miss; enter mono and long-development only after prior
-passage. Keep tuning, retry, listening, holdout, product surfaces, and Batch
+Run `g10.029` Batch 29.7AY under Rule 31AB. Freeze AU/AX and audit the remaining
+direct topology against the source-studied ownership model without audio. Name
+one source-supported causal mechanism and no-audio falsifier, or close the
+topology. Keep tuning, retry, listening, holdout, product surfaces, and Batch
 29.8 closed.

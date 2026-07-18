@@ -5153,7 +5153,34 @@ Stop at the first miss. No sweep, repair, retry, fallback, listening, export,
 concealed read, holdout access, or threshold change is permitted. Only full
 passage may open Batch 29.8.
 
+Batch 29.7AX stops at stereo. Corrected mechanics retain the three frozen
+hashes. Synthetic evidence passes unchanged at `00e522a01b817bb6` with zero
+structural, nonfinite, and hard channel-mechanics errors. The one corrected
+stereo run rejects at hash `397128c177d3033e`: `38/48` calibrated failures,
+`157/384` improved local windows, `36/48` Signal-relative local-row failures,
+maximum normalized-Gram residual `0.7611955347641768`, zero structural
+failures, and deterministic repeat. Relative to AU, the relation correction
+recovers `2` calibrated rows and `39` local windows but changes neither the
+row-complete local-failure count nor the worst residual. Mono and long-
+development do not run.
+
+### Rule 31AB: corrected direct stereo reassessment boundary
+
+The Rule 31AA correction is real but insufficient. Batch 29.7AY is no-audio
+reassessment. Freeze AU and AX code, aggregates, hashes, and stop state. Audit
+the direct renderer against the source-studied ownership model for locked,
+ordinary, unlocked, scale, and synthesis behavior using retained code and
+evidence only. Do not rerun either objective candidate, regenerate corpus
+audio, tune parameters, repair rows, or infer row-level causes absent retained
+evidence.
+
+Another candidate requires one source-supported missing mechanism, a bounded
+no-audio falsifier, explicit invariants, and a separately preregistered failure-
+first objective card. If that causal boundary cannot be established, close the
+direct topology rather than sweep it.
+
 ## Next Task
 
-Run the frozen Batch 29.7AX sequence under Rule 31AA through the first hard
-miss. Enter mono and long-development only after complete prior passage.
+Run Batch 29.7AY under Rule 31AB. Reassess the frozen direct topology without
+audio and require one source-supported causal mechanism plus a no-audio
+falsifier before another candidate.

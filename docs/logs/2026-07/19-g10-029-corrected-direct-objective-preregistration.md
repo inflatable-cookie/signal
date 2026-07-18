@@ -2,7 +2,7 @@
 
 Date: 2026-07-19
 Batch: 29.7AX
-Status: active, sequence frozen before audio
+Status: complete, rejected at stereo gate
 
 ## Immutable Inputs
 
@@ -44,4 +44,4 @@ threshold. Only complete passage may open Batch 29.8.
 
 ## Next Task
 
-Execute this sequence through the first hard miss.
+Run Batch 29.7AY as no-audio architecture reassessment.
