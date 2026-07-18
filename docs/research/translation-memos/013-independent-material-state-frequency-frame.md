@@ -198,6 +198,7 @@ realtime, routing, cache, and product work closed.
 
 ## Next Task
 
-Run Batch 29.7Y Stage A. Implement only the report-only painless
-frequency-adaptive representation and its identity/mechanics proof. Do not add
-material phase until Stage A passes.
+Batch 29.7Y proves whole-frame identity, then rejects material transport at
+`36/48` calibrated and `46/48` local stereo failures. Memo 014 attributes the
+pre-operator relation break and replaces whole-source execution with a fixed
+sliced frame. Run Batch 29.7AA Stage A on sliced identity and boundedness only.

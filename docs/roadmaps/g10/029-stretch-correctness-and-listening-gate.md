@@ -2160,19 +2160,65 @@ the runaway mono repeat is stopped. No DSP value changes after the miss.
 
 ### Batch 29.7Z - Material Transport Architecture Reassessment
 
-- [ ] attribute the first linked-channel relation divergence before the common
+- [x] attribute the first linked-channel relation divergence before the common
   material operator; test whether independent per-channel polar interpolation
   breaks retained interchannel phase
-- [ ] define one relation-preserving coefficient-resampling law with a shared
+- [x] define one relation-preserving coefficient-resampling law with a shared
   source trajectory and explicit retained channel relation, or close this
   transport family
-- [ ] replace the whole-source report execution shape with a bounded sliced
+- [x] replace the whole-source report execution shape with a bounded sliced
   proof design that preserves Stage A ownership and canonical-dual identity
-- [ ] use primary-source and prior Signal evidence only; implement no renderer,
+- [x] use primary-source and prior Signal evidence only; implement no renderer,
   tuning candidate, listening export, dynamic ratio, or product work
 
 Evidence: one architecture attribution and one bounded execution decision. No
 DSP experiment belongs in this batch.
+
+Decision: retain the family for one final architecture-corrected proof.
+Independent polar interpolation can differ from interpolation of the channel
+relation by `180` degrees in a two-frame counterexample; the later common
+operator cancels from that error. Memo 014 selects one reference coefficient,
+one explicitly interpolated peer/reference relation, and peer-owned magnitude.
+It also selects a fixed `16384`-frame sliced transform, `8192`-frame advance,
+`512`-frame coefficient lattice, identical sine analysis/synthesis outer
+windows, and at most two active slices. The squared overlapping windows sum to
+one. This is a new exact sliced frame, not an optimization claimed equivalent
+to the rejected full-length coefficients.
+
+### Batch 29.7AA - Relation-Owned Sliced Material Proof
+
+- [ ] Stage A: implement only the fixed `16384/8192/512` sliced frame with the
+  frozen `4096/2048/1024` atom supports and `750 Hz`/`6 kHz` ownership
+  boundaries
+- [ ] prove identical outer windows
+  `h[n] = sin(pi (n + 0.5) / 16384)` satisfy exact two-slice square partition,
+  the inner painless dual reconstructs each slice, and combined identity stays
+  at or below `1e-12` peak error
+- [ ] require exact crop, coverage, conjugate closure, silence, hard pan, swap,
+  polarity, scaled duplicate, reflected boundaries, and repeat across short,
+  non-aligned, and multi-slice lengths `[1, 4095, 8192, 12289, 220500]`
+- [ ] prove at most two active slices, peak live coefficient memory independent
+  of source duration across `[8192, 65536, 220500]`, and counted
+  analysis/synthesis work equals fixed per-slice cost times slice count; stop
+  before transport on any Stage A miss
+- [ ] Stage B, only after Stage A passes: restore each peer from one sampled
+  reference phase, peer-owned magnitude, and one directly interpolated current
+  peer/reference relation before applying the frozen 29.7Y material operator
+- [ ] exercise two-defined, one-defined, undefined, zero-peer, and joint-silent
+  relation states; require zero undefined states on active calibrated rows
+- [ ] freeze supports, crossovers, material classifier, median spans, transient
+  law, diffusion, seed, peak map, relation law, slice geometry, and gates before
+  the first candidate; do not tune after a miss
+- [ ] run synthetic and exact mechanics, then the `48`-row calibrated stereo
+  gate; stop before the long mono corpus on any calibrated, local-consistency,
+  mechanics, or explicit relation failure
+- [ ] only after complete stereo passage, run the repeated six-row mono gate;
+  require zero hard failures and zero row-complete regressions
+- [ ] keep listening, Batch 29.8, dynamic ratio, realtime, routing, cache,
+  production, and all product-facing work closed
+
+Evidence: one Stage A sliced identity/boundedness report, then at most one Stage
+B objective report. Any miss closes this family.
 
 ### Batch 29.8 - Listening And Dynamic Checkpoint
 
@@ -3384,10 +3430,20 @@ DSP experiment belongs in this batch.
   corpus remains CPU-bound after more than five hours and is stopped because
   stereo has already made passage impossible. No listening or product lane
   opens. Batch 29.7Z owns a no-DSP transport and execution-shape reassessment.
+- 2026-07-18: Batch 29.7Z completes without DSP. Independent polar channel
+  interpolation is disproven by an exact two-frame branch counterexample: it
+  produces a `-170` degree midpoint relation where the endpoint relation path
+  gives `+10` degrees. Dorran-Lawlor-Coyle and pinned Signalsmith evidence make
+  peer/reference relation explicit. Holighaus et al. supply exact fixed-size
+  sliced reconstruction and linear total work. Memo 014 and Rule 31J select a
+  `16384/8192/512` sliced frame with a two-window square partition, explicit
+  relation interpolation, and one final stop-gated proof. No listening or
+  product lane opens.
 
 ## Next Task
 
-Run Batch 29.7Z. Attribute the linked-channel relation break before the common
-material operator, then define a relation-preserving coefficient-resampling law
-and a bounded sliced proof shape or close the family. Implement no renderer.
-Keep listening, product surfaces, and Batch 29.8 closed.
+Run Batch 29.7AA Stage A. Implement only the fixed `16384/8192/512` sliced
+frame and prove exact identity, channel relations, boundaries,
+duration-independent peak working memory, linear counted work, and repeat.
+Keep material transport, listening, product surfaces, and Batch 29.8 closed
+until Stage A passes.

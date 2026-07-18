@@ -1,6 +1,6 @@
 # Offline Time-Stretch Synthesis
 
-Status: material-state frequency frame proven; material phase rejected
+Status: relation-owned sliced material proof selected
 Owner: dsp
 Updated: 2026-07-18
 Contract refs: `046`, `082`
@@ -26,8 +26,15 @@ identity passes. The one frozen Stage B material-phase candidate rejects at
 `36/48` calibrated and `46/48` local linked-stereo failures. Its common later
 operator does not repair channel relations already changed by independent
 polar source interpolation. Its whole-source repeated mono report also remains
-CPU-bound after more than five hours. Material-phase implementation is closed
-pending a no-DSP transport and execution-shape reassessment.
+CPU-bound after more than five hours.
+
+Batch 29.7Z closes both architecture gaps. Channel relation becomes a
+first-class coefficient trajectory: sample one reference phase, interpolate
+the peer/reference relation once, retain peer magnitude, then apply the common
+material operator. Whole-source transforms are replaced by one fixed sliced
+frequency-adaptive frame with an inner painless dual and outer slicing dual.
+The sliced frame is its own exact representation; it is not claimed equivalent
+to the whole-source coefficients.
 
 This family is distinct from the production prototype. The prototype runs
 identity locking independently over mono or mid/side paths with midpoint
@@ -1407,9 +1414,51 @@ nominal boundaries. It does not use dynamic crossovers, per-scale overlap
 normalization, mid/side, channel borrowing, or a full-band residual. No value
 may be tuned after the single candidate.
 
+## Relation-Owned Sliced Successor
+
+Batch 29.7Y applied one common material operator after independently
+polar-interpolating each channel. That order cannot preserve linked phase in
+general. If the two channel phase paths select different unwrap branches, the
+operator cancels from their difference and the error survives synthesis.
+
+The corrected transport owns relation explicitly:
+
+- one source position and reference channel apply to every linked channel
+- the reference coefficient supplies base phase once
+- each peer keeps its own interpolated magnitude
+- peer/reference unit relations are formed at the two enclosing source lattice
+  points and interpolated once on the circle
+- every peer base coefficient is rebuilt from reference phase, that relation,
+  and peer magnitude
+- the frozen material gain, common rotation, and perturbation apply after
+  relation reconstruction
+- exact silence remains exact; no peer magnitude or prior-output relation is
+  borrowed
+
+The execution representation is fixed-size slicing, not a faster
+whole-source FFT:
+
+- transform span is `16384`, outer advance is `8192`, and the common
+  coefficient lattice remains `512`
+- identical outer windows use `h[n] = sin(pi (n + 0.5) / 16384)` and form an
+  exact two-slice square partition; at most two slices overlap
+- each slice retains exclusive long/middle/short ownership and the painless
+  inner canonical dual
+- one outer partition and dual own slice overlap
+- overlapping layers share global frame, source, material, reference,
+  relation, region-state, and perturbation identity
+- phase state and classifier halo cross slice boundaries
+- peak live coefficient memory stays duration-independent and work stays
+  linear for fixed geometry
+
+The sliced frame must pass its own exact identity proof. Published sliced
+coefficients only approximate the full-length transform, so coefficient parity
+with 29.7Y is neither promised nor gated. Supports, crossovers, material law,
+transient law, diffusion, seed, peak map, and quality thresholds remain frozen.
+
 ## Next Task
 
-Run Batch 29.7Z. Attribute the pre-operator channel-relation break, then define
-a relation-preserving coefficient-resampling law and bounded sliced proof shape
-or close the family. Implement no renderer. Keep listening, product-facing
-surfaces, and Batch 29.8 closed.
+Run Batch 29.7AA Stage A. Implement only the fixed sliced representation and
+prove identity, channel relations, boundaries, duration-independent working
+memory, linear work, and repeat. Keep relation-owned material transport,
+listening, product-facing surfaces, and Batch 29.8 closed until Stage A passes.

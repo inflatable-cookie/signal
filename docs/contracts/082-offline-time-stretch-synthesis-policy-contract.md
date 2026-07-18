@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; material-phase proof rejected; transport reassessment next
+Status: active; relation-owned sliced material proof selected
 Owner: dsp
 Updated: 2026-07-18
 Related contracts: `046`, `048`, `049`
@@ -3957,6 +3957,88 @@ shape that retains Stage A's exclusive atom ownership and global canonical
 dual. It may instead close the family. It may not implement, retune, export
 listening artifacts, or open dynamic-ratio or product work.
 
+### Rule 31J: relation-owned sliced material transport
+
+Batch 29.7Z closes the two 29.7Y architecture failures without implementing
+DSP. Independent polar interpolation is not relation-preserving: channel-local
+unwrap branches may differ, and the later common operator cancels from the
+interchannel difference. Dorran-Lawlor-Coyle and pinned Signalsmith evidence
+instead make the current peer/reference relation an explicit synthesis input.
+Holighaus et al. supply a fixed sliced frequency-adaptive frame with exact
+sliced reconstruction, duration-independent transform size, and linear total
+work for fixed geometry.
+
+The next transport must construct every active linked coefficient in this
+order:
+
+1. choose one shared source position, atom, material state, and deterministic
+   reference channel
+2. sample reference magnitude and phase once
+3. retain each peer's own interpolated magnitude
+4. form the peer/reference unit relation at both enclosing source lattice
+   points using the selected reference
+5. interpolate that relation once on the unit circle
+6. form each peer base coefficient from reference phase, the interpolated
+   relation, and peer magnitude
+7. apply the same frozen material gain, common-region rotation, and
+   deterministic perturbation to every channel
+
+The required invariant is
+`unit(Y_peer conj(Y_ref)) = interpolated_source_relation` before silence
+handling. Exact silence stays exact. Reference changes reconstruct the current
+relation and inherit no peer phase accumulator. Same-increment recurrence,
+post-synthesis repair, independent phase interpolation, peer magnitude
+borrowing, and mid/side remain forbidden.
+
+Two defined endpoint relations use shortest-arc interpolation. One defined
+endpoint is held. If neither endpoint has nonzero reference and peer magnitude,
+`UndefinedRelation` uses the current sampled pair and is counted. An
+interpolated zero-magnitude peer remains exact zero; jointly zero energy is
+`Silent`. No magnitude floor or new threshold exists. Calibrated rows with both
+channels active require zero `UndefinedRelation` states.
+
+The execution representation is one fixed sliced frame:
+
+- transform span is `16384`, outer advance is `8192`, and the common
+  coefficient lattice remains `512`
+- identical analysis and synthesis outer windows use
+  `h[n] = sin(pi (n + 0.5) / 16384)` and satisfy
+  `h[n]^2 + h[n + 8192]^2 = 1`; at most two slices overlap
+- each slice retains Rule 31I atom ownership and painless inner dual
+- one outer partition and dual own slice overlap
+- the combined sliced dual is the only synthesis normalization
+- overlapping layers share global frame, source, material, reference,
+  relation, region-state, and perturbation identity
+- predecessor state and material halo cross slice boundaries
+- reflection and final crop occur only at whole-render boundaries
+- peak live coefficient memory is duration-independent; counted analysis and
+  synthesis work is linear in rendered frames for fixed geometry
+
+The sliced transform is a new exact representation. It must not claim
+coefficient or bit equivalence with the full-length frame, because the
+published sliced coefficients only approximate the full transform.
+
+Batch 29.7AA is one final stop-gated proof. Stage A implements only sliced
+identity and must pass `1e-12` peak reconstruction, exact crop, coverage,
+conjugate closure, silence, channel relations, boundaries, repeat,
+duration-independent peak working memory, and linear counted work. Stage B may
+run only after Stage A passes. It adds the frozen 29.7Y material policy with the
+relation law above. The `48`-row stereo gate runs before the long mono corpus
+and stops on any calibrated, local-consistency, mechanics, or relation miss.
+Only a complete stereo pass may run the repeated six-row mono gate.
+
+Stage A identity lengths are `[1, 4095, 8192, 12289, 220500]`. Boundedness uses
+`8192`, `65536`, and `220500` frames. The report records slice count, maximum
+simultaneously live slices, peak live coefficient count, and counted analysis
+plus synthesis operations. Live slices must equal at most two, peak live
+coefficients must not grow with duration, and counted work must equal a fixed
+per-slice cost times the required slice count.
+
+No support, crossover, material classifier, median span, transient law,
+diffusion curve, seed, scale, peak map, relation law, slice geometry, or gate
+changes after the candidate starts. Any Stage A or Stage B miss closes this
+family. Passage alone opens Batch 29.8 listening.
+
 The clean-room boundary permits papers and prior Signal evidence only. No
 external code, expression, constants, masks, or random sequence transfers.
 Paper review is not patent freedom-to-operate clearance. Product, listening,
@@ -3964,7 +4046,7 @@ dynamic ratio, realtime, routing, and cache work remain closed.
 
 ## Next Task
 
-Run Batch 29.7Z under Rule 31I. Attribute the pre-operator channel-relation
-break and define a relation-preserving coefficient-resampling law plus bounded
-sliced proof shape, or close the family. Implement no DSP. Keep Batch 29.8 and
-all product-facing work closed.
+Run Batch 29.7AA Stage A under Rule 31J. Implement only the fixed sliced frame
+and its identity, relation, boundary, bounded-memory, linear-work, and repeat
+proof. Keep material transport, Batch 29.8, and all product-facing work closed
+until Stage A passes.

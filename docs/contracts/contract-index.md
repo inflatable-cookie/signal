@@ -2,7 +2,7 @@
 
 Status: active
 Owner: core-product
-Updated: 2026-07-17
+Updated: 2026-07-18
 
 ## Purpose
 
@@ -16,8 +16,7 @@ memory alone.
 - `g10.029` is the active correctness-first stretch roadmap
 - `046` governs sample-domain stretch behavior and its promotion gates
 - `082` governs the report-only successor policy, the competitive Rule 31
-  coherent mono baseline, and the Rule 31H reference-relative linked-stereo
-  proof
+  coherent mono baseline, and the Rule 31J relation-owned sliced material proof
 - `g10.028` source-fill work is paused until the actual DSP kernel and source
   consumption geometry pass the `g10.029` correctness gate
 
@@ -145,7 +144,8 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7Y Stage A under contract `082`, Rule 31I. Implement the
-report-only painless frequency-adaptive representation and exact identity
-proof only. Keep material phase, listening, dynamic ratio, realtime, routing,
-and promotion closed until Stage A passes.
+Run `g10.029` Batch 29.7AA Stage A under contract `082`, Rule 31J. Implement
+only the fixed sliced frame and its identity, relation, boundary,
+bounded-memory, linear-work, and repeat proof. Keep material transport,
+listening, dynamic ratio, realtime, routing, and promotion closed until Stage A
+passes.

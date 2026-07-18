@@ -63,6 +63,7 @@ Finch and Loophole.
 | [Linked Phase-Field Kernel Family Selection](./translation-memos/011-linked-phase-field-kernel-family-selection.md) | Close PGHI for this lane; select one separate shared-rotation region-locked phase-vocoder proof | Promoted |
 | [Material-State Phase Architecture Boundary](./translation-memos/012-material-state-phase-architecture-boundary.md) | Close shared rotation as a complete kernel; require independent support for the missing material and scale seams | Promoted |
 | [Independent Material-State Frequency Frame](./translation-memos/013-independent-material-state-frequency-frame.md) | Close both seams from independent papers; select one painless frequency-adaptive material-phase proof | Promoted |
+| [Relation-Owned Sliced Material Transport](./translation-memos/014-relation-owned-sliced-material-transport.md) | Attribute independent polar interpolation; select explicit peer/reference relation transport and a fixed sliced frame | Promoted |
 
 ## Consumer Guidance
 
@@ -73,8 +74,7 @@ Finch and Loophole.
 
 ## Next Task
 
-Batch 29.7X closes both missing seams from independent published work and
-selects one clean-room `FrequencyAdaptiveMaterialPhase` proof. Run Batch 29.7Y
-Stage A on the report-only painless frequency-adaptive representation only.
-Material phase, production, and Batch 29.8 remain closed until exact identity
-reconstruction passes.
+Run Batch 29.7AA Stage A. Implement only the fixed sliced frequency-adaptive
+representation selected by memo 014. Prove identity, channel relations,
+boundaries, duration-independent working memory, linear work, and repeat before
+relation-owned material transport. Keep production and Batch 29.8 closed.

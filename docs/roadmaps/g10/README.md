@@ -1,7 +1,7 @@
 # g10 Milestones
 
 Status: active
-Updated: 2026-07-17
+Updated: 2026-07-18
 
 ## Why this generation matters now
 
@@ -428,15 +428,17 @@ Current stretch status:
   proves the new frame exactly, then rejects the frozen material-phase
   candidate at `36/48` calibrated and `46/48` local stereo failures. Its
   monolithic repeated mono report is also stopped after more than five hours.
-  Batch 29.7Z now reassesses relation-preserving source interpolation and a
-  bounded sliced proof shape without implementing DSP.
+  Batch 29.7Z then proves independent polar interpolation is the first
+  relation break and selects explicit peer/reference relation transport plus a
+  fixed `16384/8192/512` sliced frame from primary evidence. Batch 29.7AA Stage
+  A now owns sliced identity and boundedness only.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7Z. Attribute the pre-operator linked-channel relation
-break and define a relation-preserving coefficient-resampling law plus bounded
-sliced proof shape, or close the family. Implement no renderer. Keep listening,
-product surfaces, and Batch 29.8 closed.
+Run `g10.029` Batch 29.7AA Stage A. Implement only the fixed sliced frame and
+prove exact identity, channel relations, boundaries, duration-independent peak
+working memory, linear counted work, and repeat. Keep material transport,
+listening, product surfaces, and Batch 29.8 closed until Stage A passes.
