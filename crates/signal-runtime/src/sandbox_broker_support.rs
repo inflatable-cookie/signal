@@ -73,6 +73,13 @@ pub enum SandboxBrokerReceiptState {
     /// A parameter write batch was applied to the loaded instance
     /// (g12.023).
     ParamSet,
+    /// A child-owned editor window opened for the loaded instance
+    /// (g13.027).
+    EditorOpened,
+    /// A child-owned editor window closed — as a command receipt
+    /// (`reason=host_requested` / `reason=not_open`) or as a spontaneous
+    /// child→parent notification (`reason=user_closed`).
+    EditorClosed,
     /// Any state token this client does not recognise.
     Other(String),
 }
@@ -95,6 +102,8 @@ impl SandboxBrokerReceiptState {
             "plugin_deactivated" => Self::PluginDeactivated,
             "plugin_unloaded" => Self::PluginUnloaded,
             "param_set" => Self::ParamSet,
+            "editor_opened" => Self::EditorOpened,
+            "editor_closed" => Self::EditorClosed,
             other => Self::Other(other.to_string()),
         }
     }
@@ -118,6 +127,8 @@ impl std::fmt::Display for SandboxBrokerReceiptState {
             Self::PluginDeactivated => "plugin_deactivated",
             Self::PluginUnloaded => "plugin_unloaded",
             Self::ParamSet => "param_set",
+            Self::EditorOpened => "editor_opened",
+            Self::EditorClosed => "editor_closed",
             Self::Other(other) => other.as_str(),
         };
         f.write_str(token)
@@ -277,6 +288,46 @@ fn parse_parameter_inventory(blob: &str) -> Vec<SandboxPluginParameter> {
         .collect()
 }
 
+/// Receipt of a successful `open-editor` (g13.027): the child-owned
+/// editor window is up, sized to the plugin's initial content size.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SandboxEditorOpened {
+    /// Initial editor content width (logical units).
+    pub width: u32,
+    /// Initial editor content height (logical units).
+    pub height: u32,
+    /// Human-readable detail from the receipt.
+    pub detail: String,
+}
+
+/// Receipt of a `close-editor` (g13.027). Tolerant wire: `closed` is
+/// `false` when no editor with that instance was open (the user closed it
+/// first, or it never opened).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SandboxEditorClosed {
+    /// Whether an open editor was actually closed by this command.
+    pub closed: bool,
+    /// Human-readable detail from the receipt.
+    pub detail: String,
+}
+
+/// The decoded editor instance of a spontaneous user-close notification,
+/// or `None` for ordinary command receipts.
+fn user_closed_editor_instance(receipt: &SandboxBrokerReceiptLine) -> Option<String> {
+    if receipt.state != SandboxBrokerReceiptState::EditorClosed {
+        return None;
+    }
+    if receipt.extra_value("reason") != Some("user_closed") {
+        return None;
+    }
+    Some(
+        receipt
+            .extra_value("editor_instance")
+            .map(decode_wire_token)
+            .unwrap_or_default(),
+    )
+}
+
 /// Receipt returned by a broker teardown request.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SandboxBrokerTeardownReceipt {
@@ -320,6 +371,14 @@ pub struct SandboxBrokerClientSession {
     stderr_tail: Arc<Mutex<VecDeque<String>>>,
     read_timeout: Duration,
     failed: bool,
+    /// Receipt lines pulled off the channel while polling for spontaneous
+    /// notifications that turned out to be command receipts; consumed
+    /// before the channel on the next read.
+    pushback: VecDeque<String>,
+    /// Editor instances reported closed by the child on its own
+    /// (`reason=user_closed`), drained via
+    /// [`Self::take_editor_closed_notifications`].
+    editor_closed_notifications: VecDeque<String>,
 }
 
 /// Environment variable overrides for spawning a sandbox broker process.
@@ -537,6 +596,8 @@ impl SandboxBrokerClientSession {
             stderr_tail,
             read_timeout,
             failed: false,
+            pushback: VecDeque::new(),
+            editor_closed_notifications: VecDeque::new(),
         })
     }
 
@@ -853,6 +914,83 @@ impl SandboxBrokerClientSession {
         )
     }
 
+    /// Sends `open-editor <instance>` (g13.027): the child opens a
+    /// child-owned floating editor window titled by `instance` on its main
+    /// thread, hosting the plugin's editor via the format's gui adapter.
+    /// The RT audio path is untouched. `instance` is an opaque parent
+    /// token; the v1 wire format forbids whitespace in it.
+    pub fn open_editor(&mut self, instance: &str) -> std::io::Result<SandboxEditorOpened> {
+        if instance.is_empty() || instance.chars().any(char::is_whitespace) {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                "editor instance tokens must be non-empty and whitespace-free on the v1 wire",
+            ));
+        }
+        self.write_command(&format!("open-editor {instance}"))?;
+        let receipt = self.read_receipt()?;
+        if receipt.state != SandboxBrokerReceiptState::EditorOpened {
+            return Err(std::io::Error::other(format!(
+                "unexpected broker open-editor state: {} ({})",
+                receipt.state, receipt.detail
+            )));
+        }
+        let width = receipt
+            .extra_value("width")
+            .and_then(|value| value.parse::<u32>().ok())
+            .unwrap_or(0);
+        let height = receipt
+            .extra_value("height")
+            .and_then(|value| value.parse::<u32>().ok())
+            .unwrap_or(0);
+        Ok(SandboxEditorOpened {
+            width,
+            height,
+            detail: receipt.detail,
+        })
+    }
+
+    /// Sends `close-editor <instance>` (g13.027): the child destroys the
+    /// editor window. Tolerant of an already-closed editor — see
+    /// [`SandboxEditorClosed::closed`].
+    pub fn close_editor(&mut self, instance: &str) -> std::io::Result<SandboxEditorClosed> {
+        if instance.is_empty() || instance.chars().any(char::is_whitespace) {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                "editor instance tokens must be non-empty and whitespace-free on the v1 wire",
+            ));
+        }
+        self.write_command(&format!("close-editor {instance}"))?;
+        let receipt = self.read_receipt()?;
+        if receipt.state != SandboxBrokerReceiptState::EditorClosed {
+            return Err(std::io::Error::other(format!(
+                "unexpected broker close-editor state: {} ({})",
+                receipt.state, receipt.detail
+            )));
+        }
+        Ok(SandboxEditorClosed {
+            closed: receipt.extra_value("reason") == Some("host_requested"),
+            detail: receipt.detail,
+        })
+    }
+
+    /// Drain the editor instances the child reported closed on its own
+    /// (the user clicked the window's close button — `reason=user_closed`
+    /// notifications, g13.027). Polls pending receipt lines without
+    /// blocking; lines that are not user-close notifications are kept for
+    /// the next command read.
+    pub fn take_editor_closed_notifications(&mut self) -> Vec<String> {
+        while let Ok(Ok(line)) = self.receipts.try_recv() {
+            match parse_broker_receipt_line(&line) {
+                Ok(receipt) => match user_closed_editor_instance(&receipt) {
+                    Some(instance) => self.editor_closed_notifications.push_back(instance),
+                    None => self.pushback.push_back(line),
+                },
+                Err(_) => self.pushback.push_back(line),
+            }
+        }
+        self.editor_closed_notifications.drain(..).collect()
+    }
+
     /// Sends `start-processing`: the child spawns its audio thread.
     pub fn start_processing(&mut self) -> std::io::Result<String> {
         self.simple_plugin_command(
@@ -898,11 +1036,29 @@ impl SandboxBrokerClientSession {
         Ok(())
     }
 
+    /// Read the next COMMAND receipt. Spontaneous child→parent
+    /// notifications (`editor_closed` with `reason=user_closed`, g13.027)
+    /// may arrive interleaved with command receipts; they are recorded for
+    /// [`Self::take_editor_closed_notifications`] and never satisfy a
+    /// command wait.
     fn read_receipt(&mut self) -> std::io::Result<SandboxBrokerReceiptLine> {
+        loop {
+            let receipt = self.read_receipt_line()?;
+            match user_closed_editor_instance(&receipt) {
+                Some(instance) => self.editor_closed_notifications.push_back(instance),
+                None => return Ok(receipt),
+            }
+        }
+    }
+
+    fn read_receipt_line(&mut self) -> std::io::Result<SandboxBrokerReceiptLine> {
         if self.failed {
             return Err(std::io::Error::other(
                 "sandbox broker session already failed",
             ));
+        }
+        if let Some(line) = self.pushback.pop_front() {
+            return parse_broker_receipt_line(&line);
         }
         match self.receipts.recv_timeout(self.read_timeout) {
             Ok(Ok(line)) => parse_broker_receipt_line(&line),
@@ -1432,7 +1588,7 @@ fn record_broker_failure_and_convert(
 mod tests {
     use super::{
         parse_broker_receipt_line, parse_parameter_inventory, split_broker_args,
-        SandboxBrokerReceiptState,
+        user_closed_editor_instance, SandboxBrokerReceiptState,
     };
 
     #[test]
@@ -1516,6 +1672,37 @@ mod tests {
         assert_eq!(
             split_broker_args(r#"--mix pre"fix mid"post"#),
             vec!["--mix", "prefix midpost"]
+        );
+    }
+
+    #[test]
+    fn classifies_editor_receipts_and_user_close_notifications() {
+        // Command receipt: editor_opened with size extras.
+        let opened = parse_broker_receipt_line(
+            "signal-plugin-sandbox state=editor_opened sandbox_id=plugin-sandbox-broker instance_id=- epoch=- lease_id=- region_id=- editor_instance=inst%3A1 width=400 height=300 detail=editor_opened|width=400|height=300\n",
+        )
+        .expect("editor_opened receipt should parse");
+        assert_eq!(opened.state, SandboxBrokerReceiptState::EditorOpened);
+        assert_eq!(opened.extra_value("width"), Some("400"));
+        assert_eq!(user_closed_editor_instance(&opened), None);
+
+        // Command receipt: host-requested close is NOT a notification.
+        let closed = parse_broker_receipt_line(
+            "signal-plugin-sandbox state=editor_closed sandbox_id=plugin-sandbox-broker instance_id=- epoch=- lease_id=- region_id=- editor_instance=inst%3A1 reason=host_requested detail=editor_closed|reason=host_requested\n",
+        )
+        .expect("editor_closed receipt should parse");
+        assert_eq!(closed.state, SandboxBrokerReceiptState::EditorClosed);
+        assert_eq!(user_closed_editor_instance(&closed), None);
+
+        // Spontaneous notification: user_closed decodes the wire-encoded
+        // instance token and never satisfies a command wait.
+        let notification = parse_broker_receipt_line(
+            "signal-plugin-sandbox state=editor_closed sandbox_id=plugin-sandbox-broker instance_id=- epoch=- lease_id=- region_id=- editor_instance=inst%3A1 reason=user_closed detail=editor_closed|reason=user_closed\n",
+        )
+        .expect("notification line should parse");
+        assert_eq!(
+            user_closed_editor_instance(&notification).as_deref(),
+            Some("inst:1"),
         );
     }
 

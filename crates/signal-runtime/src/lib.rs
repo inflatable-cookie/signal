@@ -84,8 +84,9 @@ pub use sandbox_broker_support::{
     record_broker_sandbox_prepared, record_protocol_violation_prepare_failure,
     teardown_broker_sandbox_session, PreparedBrokerSandboxSpec, PreparedSandboxSessionRecord,
     SandboxBrokerAttachedSession, SandboxBrokerClientSession, SandboxBrokerReceiptState,
-    SandboxBrokerSession, SandboxBrokerSpawnConfig, SandboxPluginActivateOutcome,
-    SandboxPluginAudioLease, SandboxPluginInventory, SandboxPluginParameter,
+    SandboxBrokerSession, SandboxBrokerSpawnConfig, SandboxEditorClosed, SandboxEditorOpened,
+    SandboxPluginActivateOutcome, SandboxPluginAudioLease, SandboxPluginInventory,
+    SandboxPluginParameter,
 };
 pub use signal_dsp_stretch::{
     current_synthetic_offline_high_quality_promotion_receipt, OfflineHighQualityPath,

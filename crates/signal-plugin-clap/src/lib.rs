@@ -20,7 +20,7 @@ mod gui;
 mod hosting;
 
 pub use adapter::{ClapDiscoveredPluginType, ClapHostExtension, ClapPluginHostAdapter};
-pub use gui::{ClapGuiEvent, ClapGuiSession};
+pub use gui::{ClapGuiEvent, ClapGuiRawParts, ClapGuiSession};
 pub use hosting::{
     ClapHostParamsEvent, ClapHostedInstance, ClapHostedPortLayout, ClapHostingError,
     ClapProcessSession, LoadedClapEntry,

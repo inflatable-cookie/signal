@@ -1,4 +1,5 @@
 mod broker;
+mod child_gui;
 
 use std::io;
 
@@ -34,9 +35,29 @@ fn main() {
         serde_json::to_writer(io::stdout().lock(), &receipts).expect("serialize probe receipts");
         return;
     }
-    let stdin = io::stdin();
-    let mut broker = SandboxBrokerProcess::default();
-    broker
-        .serve(stdin.lock(), io::stdout().lock())
-        .expect("sandbox broker serve");
+
+    // g13.027 child thread posture: the MAIN thread is reserved for the
+    // GUI service loop (macOS requires AppKit on the main thread; AppKit
+    // initializes lazily on the first `open-editor`), the stdio protocol
+    // moves to a dedicated CONTROL thread, and the RT audio loop stays on
+    // its own thread spawned by `start-processing` — the audio path never
+    // touches AppKit.
+    let (gui_handle, gui_requests) = child_gui::channel();
+    let writer = child_gui::SharedLineWriter::new(Box::new(io::stdout()));
+    let control_writer = writer.clone();
+    let control = std::thread::Builder::new()
+        .name("sandbox-control".into())
+        .spawn(move || {
+            let mut broker = SandboxBrokerProcess::default();
+            broker.set_gui_handle(gui_handle);
+            let stdin = io::stdin();
+            broker
+                .serve(stdin.lock(), control_writer)
+                .expect("sandbox broker serve");
+        })
+        .expect("sandbox control thread should spawn");
+
+    // Runs until the control thread drops its GUI handle (serve returned).
+    child_gui::run_gui_service(gui_requests, writer, "plugin-sandbox-broker");
+    control.join().expect("sandbox control thread panicked");
 }

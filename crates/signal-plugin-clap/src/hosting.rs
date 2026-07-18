@@ -236,6 +236,15 @@ impl ClapHostedPortLayout {
     pub fn is_supported_stereo_processor(&self) -> bool {
         self.is_stereo_effect() || self.is_stereo_instrument()
     }
+
+    /// Whether stereo inspection can safely drive this layout. The first
+    /// input/output pair carries the inspection signal; extra input channels
+    /// remain silent and extra outputs are ignored. Runtime hosting keeps the
+    /// stricter exact-layout gate above.
+    pub fn is_supported_stereo_inspection_processor(&self) -> bool {
+        self.main_output_channels >= 2
+            && (self.main_input_channels == 0 || self.main_input_channels >= 2)
+    }
 }
 
 /// Lifecycle state of a hosted instance.
@@ -597,6 +606,22 @@ impl ClapHostedInstance {
         let size = session.size();
         self.gui_session = Some(session);
         Ok(size)
+    }
+
+    /// The raw `clap.gui` pair for CHILD-PROCESS (sandbox) editor hosting
+    /// (g13.027): the sandbox child's main thread opens and owns the
+    /// session itself (see [`crate::ClapGuiRawParts`]). `None` when the
+    /// plugin has no gui or the platform window API is unsupported. The
+    /// caller assumes the main-thread contract and must drop any session
+    /// opened from these parts before this instance is destroyed.
+    pub fn gui_raw_parts(&self) -> Option<crate::ClapGuiRawParts> {
+        if !self.gui_supported() {
+            return None;
+        }
+        Some(crate::ClapGuiRawParts {
+            plugin: self.plugin,
+            gui: self.gui_extension,
+        })
     }
 
     /// The open editor, for size/show/hide interaction.

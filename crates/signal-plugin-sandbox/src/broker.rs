@@ -33,6 +33,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::thread::JoinHandle;
 
+use crate::child_gui::{ChildEditorSpec, ChildGuiHandle};
 use signal_ipc::{
     MappedSharedMemoryRegion, PluginAudioBlockLayout, PluginAudioBlockView, SharedMemoryBroker,
     PLUGIN_AUDIO_BLOCK_EVENT_CAPACITY,
@@ -68,6 +69,8 @@ pub enum SandboxBrokerState {
     PluginDeactivated,
     PluginUnloaded,
     ParamSet,
+    EditorOpened,
+    EditorClosed,
 }
 
 impl SandboxBrokerState {
@@ -89,6 +92,8 @@ impl SandboxBrokerState {
             Self::PluginDeactivated => "plugin_deactivated",
             Self::PluginUnloaded => "plugin_unloaded",
             Self::ParamSet => "param_set",
+            Self::EditorOpened => "editor_opened",
+            Self::EditorClosed => "editor_closed",
         }
     }
 }
@@ -180,6 +185,16 @@ enum SandboxBrokerCommand {
     SetParameters {
         changes: Vec<(u32, f32)>,
     },
+    /// Open the child-owned editor window for the loaded plugin (g13.027):
+    /// `open-editor <instance>` — `instance` is the parent's opaque editor
+    /// token (window title; echoed in receipts).
+    OpenEditor {
+        instance: String,
+    },
+    /// Close the child-owned editor window: `close-editor <instance>`.
+    CloseEditor {
+        instance: String,
+    },
 }
 
 impl SandboxBrokerCommand {
@@ -261,6 +276,22 @@ impl SandboxBrokerCommand {
                     return Err("set_params_missing_changes".to_string());
                 }
                 Ok(Self::SetParameters { changes })
+            }
+            "open-editor" => {
+                let instance = tokens
+                    .next()
+                    .ok_or_else(|| "open_editor_missing_instance".to_string())?;
+                Ok(Self::OpenEditor {
+                    instance: instance.to_string(),
+                })
+            }
+            "close-editor" => {
+                let instance = tokens
+                    .next()
+                    .ok_or_else(|| "close_editor_missing_instance".to_string())?;
+                Ok(Self::CloseEditor {
+                    instance: instance.to_string(),
+                })
             }
             "start-processing" => Ok(Self::StartProcessing),
             "stop-processing" => Ok(Self::StopProcessing),
@@ -441,6 +472,23 @@ impl HostedPluginInstance {
         }
     }
 
+    /// Editor open spec for the child-owned window path (g13.027 Batch 1).
+    /// CLAP is first-class; VST3/AU child editors are recorded follow-up
+    /// state (their adapters still assume in-process host services), LV2
+    /// native GUIs are excluded by packet posture. Errors are stable
+    /// tokens.
+    fn child_editor_spec(&self) -> Result<ChildEditorSpec, String> {
+        match self {
+            Self::Clap(instance) => instance
+                .gui_raw_parts()
+                .map(ChildEditorSpec::Clap)
+                .ok_or_else(|| "gui_unsupported".to_string()),
+            Self::Vst3(_) => Err("editor_format_unported:vst3".to_string()),
+            Self::Au(_) => Err("editor_format_unported:au".to_string()),
+            Self::Lv2(_) => Err("editor_format_excluded:lv2".to_string()),
+        }
+    }
+
     fn process_session(&self) -> Result<HostedProcessSession, String> {
         match self {
             Self::Clap(instance) => instance
@@ -519,6 +567,10 @@ pub struct SandboxBrokerProcess {
     attached: Option<AttachedRegion>,
     plugin: Option<LoadedPlugin>,
     last_state: SandboxBrokerState,
+    /// Marshals editor lifecycle onto the child's main thread (g13.027).
+    /// `None` outside the real child process (unit tests, non-GUI serves):
+    /// editor commands then fail with the typed `gui_unavailable` token.
+    gui: Option<ChildGuiHandle>,
 }
 
 impl Default for SandboxBrokerProcess {
@@ -531,11 +583,18 @@ impl Default for SandboxBrokerProcess {
             attached: None,
             plugin: None,
             last_state: SandboxBrokerState::Starting,
+            gui: None,
         }
     }
 }
 
 impl SandboxBrokerProcess {
+    /// Attach the main-thread GUI handle (the real child process wires
+    /// this before `serve`; test serves stay GUI-less).
+    pub fn set_gui_handle(&mut self, gui: ChildGuiHandle) {
+        self.gui = Some(gui);
+    }
+
     pub fn startup_receipts(&mut self) -> [SandboxBrokerReceipt; 2] {
         self.last_state = SandboxBrokerState::Ready;
         [
@@ -594,6 +653,14 @@ impl SandboxBrokerProcess {
                 }
                 Ok(SandboxBrokerCommand::SetParameters { changes }) => {
                     let receipt = self.set_parameters(&changes);
+                    writeln!(output, "{}", receipt.render_line())?;
+                }
+                Ok(SandboxBrokerCommand::OpenEditor { instance }) => {
+                    let receipt = self.open_editor(&instance);
+                    writeln!(output, "{}", receipt.render_line())?;
+                }
+                Ok(SandboxBrokerCommand::CloseEditor { instance }) => {
+                    let receipt = self.close_editor(&instance);
                     writeln!(output, "{}", receipt.render_line())?;
                 }
                 Ok(SandboxBrokerCommand::StartProcessing) => {
@@ -805,6 +872,66 @@ impl SandboxBrokerProcess {
         )
     }
 
+    // ── Child-owned editor windows (g13.027 batch 1) ───────────────────────
+
+    /// Open the child-owned editor window for the loaded plugin: the
+    /// per-format spec is extracted here (control thread), the window +
+    /// gui session are created on the child's MAIN thread via the GUI
+    /// handle (blocking marshal — this thread waits, so instance access
+    /// never overlaps). Preserves `last_state` (an editor open is not a
+    /// lifecycle transition, matching `param_set`).
+    fn open_editor(&mut self, instance: &str) -> SandboxBrokerReceipt {
+        let Some(plugin) = self.plugin.as_ref() else {
+            return self.crashed_receipt("missing_loaded_plugin");
+        };
+        let Some(gui) = self.gui.as_ref() else {
+            return self.crashed_receipt("open_editor:gui_unavailable");
+        };
+        let spec = match plugin.instance.child_editor_spec() {
+            Ok(spec) => spec,
+            Err(token) => return self.crashed_receipt(&format!("open_editor:{token}")),
+        };
+        match gui.open_editor(instance, spec) {
+            Ok((width, height)) => {
+                let mut receipt = self.receipt(
+                    SandboxBrokerState::EditorOpened,
+                    &format!("editor_opened|width={width}|height={height}"),
+                );
+                receipt
+                    .extra
+                    .push(("editor_instance".into(), encode_wire_token(instance)));
+                receipt.extra.push(("width".into(), width.to_string()));
+                receipt.extra.push(("height".into(), height.to_string()));
+                receipt
+            }
+            Err(token) => self.crashed_receipt(&format!("open_editor:{token}")),
+        }
+    }
+
+    /// Close the child-owned editor window. Tolerant of an already-closed
+    /// editor (the user may have closed the window first): the receipt's
+    /// `reason` token distinguishes `host_requested` from `not_open`.
+    fn close_editor(&mut self, instance: &str) -> SandboxBrokerReceipt {
+        let Some(gui) = self.gui.as_ref() else {
+            return self.crashed_receipt("close_editor:gui_unavailable");
+        };
+        match gui.close_editor(instance) {
+            Ok(closed) => {
+                let reason = if closed { "host_requested" } else { "not_open" };
+                let mut receipt = self.receipt(
+                    SandboxBrokerState::EditorClosed,
+                    &format!("editor_closed|reason={reason}"),
+                );
+                receipt
+                    .extra
+                    .push(("editor_instance".into(), encode_wire_token(instance)));
+                receipt.extra.push(("reason".into(), reason.into()));
+                receipt
+            }
+            Err(token) => self.crashed_receipt(&format!("close_editor:{token}")),
+        }
+    }
+
     /// Spawn the audio thread: `start_processing` runs there (CLAP audio
     /// thread contract), then the thread spin/yield-waits on the request
     /// stamp and processes every posted block. No allocation in the loop —
@@ -956,6 +1083,11 @@ impl SandboxBrokerProcess {
         let Some(mut plugin) = self.plugin.take() else {
             return self.crashed_receipt("missing_loaded_plugin");
         };
+        // Editors hold gui sessions pointing into this instance: close
+        // them on the main thread BEFORE the instance is destroyed.
+        if let Some(gui) = self.gui.as_ref() {
+            gui.close_all();
+        }
         Self::stop_audio_thread(&mut plugin);
         let mut detail = format!("plugin_unloaded|plugin_id={}", plugin.plugin_id);
         if let Some(audio) = plugin.audio.take() {
@@ -1320,6 +1452,30 @@ mod tests {
         assert!(lines
             .iter()
             .any(|line| line.contains("set_params_malformed_entry")));
+    }
+
+    #[test]
+    fn broker_rejects_editor_commands_without_plugin_or_gui_and_malformed_commands() {
+        // No plugin loaded: open-editor fails on the missing plugin before
+        // the gui check; close-editor is plugin-independent and fails on
+        // the missing gui service (unit serves are GUI-less). Missing
+        // instance tokens are typed parse failures.
+        let lines = serve_lines(
+            "open-editor instance:sandbox:a\nclose-editor instance:sandbox:a\nopen-editor\nclose-editor\nshutdown\n",
+        );
+        assert!(lines
+            .iter()
+            .any(|line| line.contains("state=crashed") && line.contains("missing_loaded_plugin")));
+        assert!(lines
+            .iter()
+            .any(|line| line.contains("state=crashed")
+                && line.contains("close_editor:gui_unavailable")));
+        assert!(lines
+            .iter()
+            .any(|line| line.contains("open_editor_missing_instance")));
+        assert!(lines
+            .iter()
+            .any(|line| line.contains("close_editor_missing_instance")));
     }
 
     #[test]

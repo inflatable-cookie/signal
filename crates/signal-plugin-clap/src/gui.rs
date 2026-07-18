@@ -204,6 +204,43 @@ impl Drop for ClapGuiSession {
     }
 }
 
+/// The raw `clap.gui` pair of a hosted instance, for CHILD-PROCESS (sandbox)
+/// editor hosting (g13.027): the sandbox child's main thread owns the editor
+/// window and the [`ClapGuiSession`], while the instance itself stays with
+/// the child's control thread. Obtained via
+/// [`crate::ClapHostedInstance::gui_raw_parts`]; only handed out when the
+/// plugin supports this platform's embedded window API.
+///
+/// Not `Send` by itself (raw pointers); the sandbox child wraps it and takes
+/// responsibility for the CLAP main-thread contract plus keeping the
+/// instance alive for as long as any session opened from these parts exists.
+#[derive(Clone, Copy, Debug)]
+pub struct ClapGuiRawParts {
+    pub(crate) plugin: *const clap_plugin,
+    pub(crate) gui: *const clap_plugin_gui,
+}
+
+impl ClapGuiRawParts {
+    /// Open an embedded editor session from the raw parts — the same
+    /// `create` → `get_size` → `set_parent` → `show` sequence as
+    /// [`crate::ClapHostedInstance::gui_open_embedded`], but with the
+    /// session returned to (and owned by) the caller instead of the
+    /// instance.
+    ///
+    /// # Safety
+    /// The instance these parts came from must still be loaded, no other
+    /// editor may be open on it, the call must run on the application main
+    /// thread, and the returned session must be dropped before the
+    /// instance is destroyed.
+    pub unsafe fn open_embedded(
+        &self,
+        parent: *mut c_void,
+        scale: Option<f64>,
+    ) -> Result<ClapGuiSession, ClapHostingError> {
+        ClapGuiSession::open_embedded(self.plugin, self.gui, parent, scale)
+    }
+}
+
 #[cfg(target_os = "macos")]
 fn parent_handle(parent: *mut c_void) -> clap_window_handle {
     clap_window_handle { cocoa: parent }

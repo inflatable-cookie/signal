@@ -2,7 +2,9 @@
 #[allow(clippy::module_inception)]
 mod tests {
     use crate::fixture::CLAP_FIXTURE_GAIN;
-    use crate::{ClapHostExtension, ClapHostedInstance, ClapPluginHostAdapter};
+    use crate::{
+        ClapHostExtension, ClapHostedInstance, ClapHostedPortLayout, ClapPluginHostAdapter,
+    };
     use signal_plugin::PluginFormat;
     use std::{
         fs,
@@ -25,6 +27,35 @@ mod tests {
             "signal-plugin-clap-tests-{}-{name}-{timestamp}-{sequence}",
             process::id()
         ))
+    }
+
+    #[test]
+    fn inspection_accepts_extra_main_channels_without_relaxing_runtime_layout() {
+        let sidechain_style_layout = ClapHostedPortLayout {
+            main_input_channels: 4,
+            main_output_channels: 2,
+        };
+        assert!(!sidechain_style_layout.is_supported_stereo_processor());
+        assert!(sidechain_style_layout.is_supported_stereo_inspection_processor());
+
+        let reaktor_style_layout = ClapHostedPortLayout {
+            main_input_channels: 16,
+            main_output_channels: 16,
+        };
+        assert!(!reaktor_style_layout.is_supported_stereo_processor());
+        assert!(reaktor_style_layout.is_supported_stereo_inspection_processor());
+
+        let mono_input = ClapHostedPortLayout {
+            main_input_channels: 1,
+            main_output_channels: 2,
+        };
+        assert!(!mono_input.is_supported_stereo_inspection_processor());
+
+        let mono_output = ClapHostedPortLayout {
+            main_input_channels: 2,
+            main_output_channels: 1,
+        };
+        assert!(!mono_output.is_supported_stereo_inspection_processor());
     }
 
     pub(super) struct TempClapScanRoot {

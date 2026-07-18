@@ -226,9 +226,38 @@ impl InProcessClapProcessor {
         sample_rate_hz: u32,
         max_frames: u32,
     ) -> Result<Self, String> {
+        Self::load_and_activate_internal(library_path, plugin_id, sample_rate_hz, max_frames, false)
+    }
+
+    /// Inspection may open a plugin whose main buses have extra channels (for
+    /// example a bridged VST2 sidechain pair or Reaktor's 16-channel buses).
+    /// The first input/output pair carries stereo; remaining inputs stay
+    /// silent and remaining outputs are ignored.
+    pub fn load_and_activate_for_inspection(
+        library_path: &std::path::Path,
+        plugin_id: &str,
+        sample_rate_hz: u32,
+        max_frames: u32,
+    ) -> Result<Self, String> {
+        Self::load_and_activate_internal(library_path, plugin_id, sample_rate_hz, max_frames, true)
+    }
+
+    fn load_and_activate_internal(
+        library_path: &std::path::Path,
+        plugin_id: &str,
+        sample_rate_hz: u32,
+        max_frames: u32,
+        inspection: bool,
+    ) -> Result<Self, String> {
         let mut instance =
             ClapHostedInstance::load(library_path, plugin_id).map_err(|error| error.token)?;
-        if !instance.port_layout().is_supported_stereo_processor() {
+        let layout = instance.port_layout();
+        let layout_supported = if inspection {
+            layout.is_supported_stereo_inspection_processor()
+        } else {
+            layout.is_supported_stereo_processor()
+        };
+        if !layout_supported {
             return Err("layout_unsupported".to_string());
         }
         instance
