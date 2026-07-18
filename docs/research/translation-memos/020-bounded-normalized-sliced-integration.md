@@ -131,5 +131,9 @@ stops at `46/48` calibrated stereo failures. Batch 29.7AP proves that the
 outer-layer projection adds no relation residual beyond the preceding
 `Unlocked` state commit; slice inversion and overlap are downstream. The
 bounded representation remains valid. Rule 31X changes only the unlocked
-commit ordering before both layers receive the shared result. Run Batch
-29.7AQ once under that rule.
+commit ordering before both layers receive the shared result. Batch 29.7AQ
+passes mechanics and synthetic evidence, then rejects its single corrected
+stereo run at `40/48` calibrated failures and `44/48` local-row failures; hash
+`88d9c0f68ea2954b`. The representation remains mechanically valid, but its
+current waveform-ownership topology is closed. Reassess joint ownership of
+both outer layers before another renderer.

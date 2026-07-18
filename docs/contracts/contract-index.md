@@ -23,7 +23,9 @@ memory alone.
   frozen slice boundary; Rule 31V freezes the normalized material policy and
   one failure-first objective matrix. That candidate rejects at the stereo
   gate; Rule 31W attributes the first operator break to independent unlocked
-  channel commits. Rule 31X governs one reference-relative unlocked correction
+  channel commits. Rule 31X proves one reference-relative unlocked correction,
+  records a local improvement without row-level passage, and closes that
+  topology
 - `g10.028` source-fill work is paused until the actual DSP kernel and source
   consumption geometry pass the `g10.029` correctness gate
 
@@ -151,6 +153,7 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7AP under contract `082` Rule 31W. Attribute the first
-normalized stereo-relation divergence before another candidate. Keep tuning,
-objective retry, listening, holdout, Batch 29.8, and product work closed.
+Re-enter `g10.029` architecture planning from contract `082` Rule 31X. Resolve
+joint waveform ownership of the two windowed outer layers before another
+renderer. Keep tuning, objective retry, listening, holdout, Batch 29.8, and
+product work closed.

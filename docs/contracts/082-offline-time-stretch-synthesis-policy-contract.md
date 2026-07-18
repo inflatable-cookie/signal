@@ -4762,9 +4762,30 @@ passage may run the unchanged six mono and long-development rows. No alternate
 owner, state, threshold, factor, row repair, retry, listening, holdout,
 dynamic-ratio, realtime, product, or Batch 29.8 work may open.
 
+Batch 29.7AQ implements the correction and stops at the corrected stereo gate.
+The unchanged synthetic stage passes with zero structural, mechanics, or
+nonfinite failures; all five state counters execute, bounded high-water remains
+`5/2/19`, repeat is exact, and the evidence hash is `875b0768ba2066bf`.
+Focused mechanics preserve magnitude and the current interchannel relation at
+ordinary and unlocked atoms within `1e-12`; frozen Rule 31R, 31T, and 31U
+regressions pass.
+
+The single corrected `48`-row stereo run has `40/48` calibrated failures,
+`125/384` improved local windows, `44/48` Signal-relative local-row failures,
+maximum normalized-Gram residual `0.8700034314389535`, zero structural
+failures, exact repeat, and evidence hash `88d9c0f68ea2954b`. Relative to Rule
+31V, the correction moves six calibrated rows and fifteen local windows but
+does not move the row-level failure count. The missing invariant is therefore
+not independent unlocked commit alone. Rule 31X closes this topology without
+promotion. Mono, long-development, retry, tuning, listening, and holdout do
+not run.
+
 ## Next Task
 
-Run Batch 29.7AQ under Rule 31X. Implement the one reference-relative unlocked
-commit, prove exact mechanics and relation preservation, then execute the
-failure-first synthetic and corrected stereo gates once. Keep all other policy,
-listening, holdout, Batch 29.8, and product work closed.
+Re-enter architecture planning from the failed Rule 31X result. Explain why
+exact per-atom relation preservation improves local evidence but leaves
+`44/48` row failures, with specific attention to the two independently
+windowed outer layers and their waveform-domain sum. Select no renderer until
+that ownership gap has a complete, source-supported integration law. Keep
+tuning, objective retry, listening, holdout, Batch 29.8, and product work
+closed.

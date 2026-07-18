@@ -155,6 +155,11 @@ the complete topology but replaces independent unlocked channel commits with
 one greatest-energy reference rotation applied to every peer's current
 coefficient. This is the relationship-preserving ordering shared by the
 Signalsmith control and Bungee's common-rotation evidence, without importing
-their expression or numeric policy. Batch 29.7AQ proves that one integration
-law. Keep concealed listening, the holdout, Batch 29.8, and product work
-closed.
+their expression or numeric policy. Batch 29.7AQ proves the isolated law but
+rejects the complete topology. Mechanics and synthetic evidence pass at hash
+`875b0768ba2066bf`; the single corrected stereo run records `40/48` calibrated
+failures, `125/384` improved windows, `44/48` local-row failures, and hash
+`88d9c0f68ea2954b`. The correction is locally effective but insufficient.
+Re-enter architecture planning at ownership of the two windowed outer-layer
+fields and their waveform-domain sum. Keep concealed listening, the holdout,
+Batch 29.8, and product work closed.

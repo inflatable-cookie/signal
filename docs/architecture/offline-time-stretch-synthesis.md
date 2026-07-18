@@ -1774,9 +1774,19 @@ projected. Reset, attack, locked trajectories, material guidance, geometry,
 inverse synthesis, and overlap do not change. Rule 31X permits one proof of
 that integration law only.
 
+Batch 29.7AQ proves the isolated integration law and stops at its single
+corrected stereo run. Synthetic mechanics, boundedness, and repeat pass at
+hash `875b0768ba2066bf`. The corrected run reduces calibrated failures from
+`46/48` to `40/48` and increases improved windows from `110/384` to `125/384`,
+but retains `44/48` Signal-relative local-row failures; hash
+`88d9c0f68ea2954b`. Exact per-atom relation preservation is a local correction,
+not the complete waveform invariant. The topology is not promoted. The next
+architecture question is joint ownership of the two independently windowed
+outer-layer fields through their waveform-domain sum.
+
 ## Next Task
 
-Run Batch 29.7AQ under Rule 31X. Implement the reference-relative unlocked
-commit and execute its exact mechanics plus failure-first objective sequence
-once. Keep all other tuning, concealed holdout, listening, dynamic ratio,
-realtime, and product-facing work closed.
+Re-enter architecture planning from Rule 31X. Resolve the two outer layers'
+joint waveform ownership before authorizing another renderer. Keep objective
+retry, tuning, concealed holdout, listening, dynamic ratio, realtime, and
+product-facing work closed.

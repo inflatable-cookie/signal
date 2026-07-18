@@ -53,6 +53,39 @@ impl Workspace {
         decisions: &[Decision],
         analysis_advance_frames: f64,
     ) -> Result<[Vec<Complex64>; CHANNEL_CAPACITY], CapacityExceeded> {
+        self.process_decisions_inner(
+            current,
+            frequencies_hz,
+            decisions,
+            analysis_advance_frames,
+            false,
+        )
+    }
+
+    pub(in crate::frequency_adaptive::material_state_frequency_frame) fn process_decisions_reference_unlocked(
+        &mut self,
+        current: &[Vec<Complex64>; CHANNEL_CAPACITY],
+        frequencies_hz: &[f64],
+        decisions: &[Decision],
+        analysis_advance_frames: f64,
+    ) -> Result<[Vec<Complex64>; CHANNEL_CAPACITY], CapacityExceeded> {
+        self.process_decisions_inner(
+            current,
+            frequencies_hz,
+            decisions,
+            analysis_advance_frames,
+            true,
+        )
+    }
+
+    fn process_decisions_inner(
+        &mut self,
+        current: &[Vec<Complex64>; CHANNEL_CAPACITY],
+        frequencies_hz: &[f64],
+        decisions: &[Decision],
+        analysis_advance_frames: f64,
+        reference_unlocked: bool,
+    ) -> Result<[Vec<Complex64>; CHANNEL_CAPACITY], CapacityExceeded> {
         let bands = current[0].len();
         validate_request(CHANNEL_CAPACITY, SIGNED_ATOM_CAPACITY, bands, 1)?;
         if current[1].len() != bands || frequencies_hz.len() != bands || decisions.len() != bands {
@@ -102,6 +135,12 @@ impl Workspace {
                 for band in region.first..region.end {
                     let phase = match decisions[band] {
                         Decision::Reset | Decision::Attack => current[channel][band].arg(),
+                        Decision::Ordinary | Decision::Unlocked if reference_unlocked => {
+                            let reference = usize::from(energy[1][band] > energy[0][band]);
+                            let rotation =
+                                wrap(ordinary[reference][band] - current[reference][band].arg());
+                            current[channel][band].arg() + rotation
+                        }
                         Decision::Ordinary | Decision::Unlocked => ordinary[channel][band],
                         Decision::Locked => {
                             trajectory + wrap(current[channel][band].arg() - reference_analysis)
@@ -176,5 +215,54 @@ impl Workspace {
         self.previous_regions.clear();
         self.previous_regions.extend(regions);
         self.has_previous = true;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn reference_unlocked_commit_preserves_current_channel_relation() {
+        let frequencies = [437.0, 1_213.0];
+        let decisions = [Decision::Ordinary, Decision::Unlocked];
+        let first = [
+            vec![
+                Complex64::from_polar(0.8, 0.2),
+                Complex64::from_polar(0.3, -0.7),
+            ],
+            vec![
+                Complex64::from_polar(0.4, -0.5),
+                Complex64::from_polar(0.9, 0.6),
+            ],
+        ];
+        let second = [
+            vec![
+                Complex64::from_polar(0.7, 1.1),
+                Complex64::from_polar(0.2, -1.2),
+            ],
+            vec![
+                Complex64::from_polar(0.5, 0.1),
+                Complex64::from_polar(0.8, 1.4),
+            ],
+        ];
+        let mut workspace = Workspace::new(48_000, 480);
+        workspace
+            .process_decisions_reference_unlocked(&first, &frequencies, &decisions, 320.0)
+            .expect("first reference-relative commit");
+        let output = workspace
+            .process_decisions_reference_unlocked(&second, &frequencies, &decisions, 320.0)
+            .expect("second reference-relative commit");
+
+        for band in 0..frequencies.len() {
+            let input_relation = wrap(second[1][band].arg() - second[0][band].arg());
+            let output_relation = wrap(output[1][band].arg() - output[0][band].arg());
+            assert!(wrap(output_relation - input_relation).abs() <= 1.0e-12);
+            for channel in 0..CHANNEL_CAPACITY {
+                assert!(
+                    (output[channel][band].norm() - second[channel][band].norm()).abs() <= 1.0e-12
+                );
+            }
+        }
     }
 }

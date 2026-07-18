@@ -2684,19 +2684,24 @@ loss. Rule 31X promotes one reference-relative unlocked commit.
 
 ### Batch 29.7AQ - Reference-Relative Unlocked Commit
 
-- [ ] freeze the Rule 31W report and implement only the per-atom
+- [x] freeze the Rule 31W report and implement only the per-atom
   greatest-energy reference rotation for `Ordinary` and `Unlocked`
-- [ ] retain every ordinary precursor, channel magnitude, reset, attack,
+- [x] retain every ordinary precursor, channel magnitude, reset, attack,
   locked path, classifier, geometry, projection, inverse, and overlap law
-- [ ] prove observer parity, Rule 31Q mechanics, and unlocked interchannel
+- [x] prove observer parity, Rule 31Q mechanics, and unlocked interchannel
   relation preservation at or below `1e-12`
-- [ ] run the unchanged Rule 31V synthetic stage and corrected `48`-row stereo
+- [x] run the unchanged Rule 31V synthetic stage and corrected `48`-row stereo
   gate once; stop at the first miss and do not repair rows
-- [ ] run mono and long-development only after complete stereo passage; keep
+- [x] run mono and long-development only after complete stereo passage; keep
   listening, holdout, dynamic ratio, product work, and Batch 29.8 closed
 
-Evidence: at most one mechanics report and one failure-first objective report
-under Rule 31X. This card is ready.
+Evidence: synthetic mechanics pass at hash `875b0768ba2066bf`. The one corrected
+stereo run rejects at `40/48` calibrated failures, `125/384` improved windows,
+`44/48` local-row failures, maximum residual `0.8700034314389535`, and hash
+`88d9c0f68ea2954b`. Structure and repeat pass. The correction improves six
+calibrated rows and fifteen windows over Rule 31V but leaves the row-level
+failure count unchanged. Mono and long-development do not run. Rule 31X closes
+the topology without promotion, retry, tuning, listening, or holdout access.
 
 ### Batch 29.8 - Listening And Dynamic Checkpoint
 
@@ -4050,10 +4055,19 @@ under Rule 31X. This card is ready.
   no owner switch. Projection transports exactly the same residual. Inverse
   and overlap expose it but are not the first owner. Rule 31X freezes one
   reference-relative unlocked commit for Batch 29.7AQ.
+- 2026-07-18: Batch 29.7AQ proves exact ordinary/unlocked relation-preserving
+  mechanics and passes the frozen synthetic stage at hash `875b0768ba2066bf`.
+  Its single corrected stereo run rejects at `40/48` calibrated failures,
+  `125/384` improved windows, `44/48` local-row failures, and maximum residual
+  `0.8700034314389535`; hash `88d9c0f68ea2954b`. This is a measurable local
+  improvement over Rule 31V, not gate passage. Mono and long-development do
+  not run. The topology closes without promotion.
 
 ## Next Task
 
-Run Batch 29.7AQ under Rule 31X. Implement the one reference-relative unlocked
-commit and run its exact mechanics plus failure-first objective sequence once.
-Keep all other policy, listening, holdout, product surfaces, and Batch 29.8
-closed.
+Re-enter architecture planning from the failed Rule 31X result. Account for
+the unchanged `44/48` row failures despite exact per-atom relation preservation
+and improved local evidence. Focus on ownership of the two windowed outer-layer
+fields and their waveform-domain sum; do not authorize another renderer until
+a complete source-supported integration law exists. Keep objective retry,
+tuning, listening, holdout, product surfaces, and Batch 29.8 closed.

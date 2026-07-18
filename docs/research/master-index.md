@@ -69,7 +69,7 @@ Finch and Loophole.
 | [Paired-Channel Consistency Operator Boundary](./translation-memos/016-paired-channel-consistency-operator-boundary.md) | Close transform-domain post-projection; require one complete waveform-owning topology | Promoted |
 | [Whole-Family Waveform-Ownership Decision](./translation-memos/017-whole-family-waveform-ownership-decision.md) | Close the failed single-grid proof; require waveform-domain linked-stereo ownership | Promoted |
 | [Waveform-Domain Linked-Stereo Re-entry](./translation-memos/018-waveform-domain-linked-stereo-re-entry.md) | Close linked subband sinusoidal source feasibility; replace invalid local and exact-mechanics vetoes with a professional-comparator boundary | Validated |
-| [Shared-Decision Waveform Topology](./translation-memos/019-shared-decision-waveform-topology.md) | Select one clean-room guided frequency-partitioned linked-phase proof; Rule 31W attributes its first relation break to independent unlocked commits and Rule 31X freezes one reference-relative correction | Promoted |
+| [Shared-Decision Waveform Topology](./translation-memos/019-shared-decision-waveform-topology.md) | Select one clean-room guided frequency-partitioned linked-phase proof; Rule 31X validates a local unlocked-state correction but rejects the topology at the stereo gate | Rejected |
 | [Bounded Normalized Sliced Integration](./translation-memos/020-bounded-normalized-sliced-integration.md) | Reject fixed-sample cross-rate slicing; validate one 10 ms-lattice exact sliced frame with fixed memory and persistent channel state | Validated |
 
 ## Consumer Guidance
@@ -81,7 +81,7 @@ Finch and Loophole.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7AQ under Rule 31X. Implement the one reference-relative
-unlocked commit and execute its exact mechanics plus failure-first objective
-sequence once. Keep all other tuning, listening, holdout, product surfaces,
-and Batch 29.8 closed.
+Re-enter `g10.029` architecture planning from Rule 31X. Resolve ownership of
+the two independently windowed outer layers and their waveform-domain sum
+before selecting another renderer. Keep objective retry, tuning, listening,
+holdout, product surfaces, and Batch 29.8 closed.

@@ -235,7 +235,7 @@ fn render_inner(
         let discontinuity = analysis_advance <= 0.0;
         let decisions = guidance.decisions(&analysis, &frequencies_hz, discontinuity);
         let decided = workspace
-            .process_decisions(
+            .process_decisions_reference_unlocked(
                 &analysis.current,
                 &frequencies_hz,
                 &decisions,

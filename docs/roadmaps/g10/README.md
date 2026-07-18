@@ -502,14 +502,19 @@ Current stretch status:
   replay at hash `24cdad83bf3ddeeb`. Every retained first/worst operator event
   is an interior `Unlocked` state commit; projected-layer residuals match the
   state residuals exactly. Rule 31X freezes one reference-relative unlocked
-  commit for a single failure-first proof.
+  commit for a single failure-first proof. Batch 29.7AQ passes exact mechanics
+  and synthetic evidence at hash `875b0768ba2066bf`, then rejects its one
+  corrected stereo run at `40/48` calibrated failures, `125/384` improved
+  windows, `44/48` local-row failures, and hash `88d9c0f68ea2954b`. The local
+  gain does not cross the row-level gate. This topology is closed.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7AQ under Rule 31X. Implement the one reference-relative
-unlocked commit and run its exact mechanics plus failure-first objective
-sequence once. Keep all other tuning, listening, holdout, product surfaces,
-and Batch 29.8 closed.
+Re-enter `g10.029` architecture planning from the failed Rule 31X result.
+Explain the remaining `44/48` row failures across the two windowed outer-layer
+fields and their waveform-domain sum before selecting another renderer. Keep
+objective retry, tuning, listening, holdout, product surfaces, and Batch 29.8
+closed.
