@@ -27,9 +27,12 @@
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 
-use signal_dsp::BinauralConvolver;
+use signal_dsp::{BinauralConvolver, DspKernel as _, OnePoleLowPass};
+use signal_primitives::{FrequencyHz, SampleRate};
 
-use crate::{PluginBlockProcessor, RenderBlockPluginEvent, RenderPluginEventKind, RenderVoiceParam};
+use crate::{
+    PluginBlockProcessor, RenderBlockPluginEvent, RenderPluginEventKind, RenderVoiceParam,
+};
 
 /// One preloaded mono sound.
 pub type BankSound = Arc<Vec<f32>>;
@@ -37,8 +40,13 @@ pub type BankSound = Arc<Vec<f32>>;
 /// One HRIR ear pair (left taps, right taps).
 pub type BankHrir = (Vec<f32>, Vec<f32>);
 
+/// Cutoffs at/above this disable the occlusion filter entirely.
+const OCCLUSION_OPEN_HZ: f32 = 20_000.0;
+
 struct VoiceSlot {
     convolver: BinauralConvolver,
+    occlusion: OnePoleLowPass,
+    occluded: bool,
     sound: Option<BankSound>,
     playhead: usize,
     gain: f32,
@@ -80,6 +88,7 @@ impl BinauralVoiceBank {
         hrirs: Vec<BankHrir>,
         max_voices: usize,
         crossfade_samples: usize,
+        sample_rate: SampleRate,
     ) -> Self {
         let max_taps = hrirs
             .iter()
@@ -89,6 +98,8 @@ impl BinauralVoiceBank {
         let slots = (0..max_voices)
             .map(|_| VoiceSlot {
                 convolver: BinauralConvolver::with_capacity(max_taps, crossfade_samples),
+                occlusion: OnePoleLowPass::new(sample_rate, FrequencyHz(OCCLUSION_OPEN_HZ)),
+                occluded: false,
                 sound: None,
                 playhead: 0,
                 gain: 1.0,
@@ -118,6 +129,8 @@ impl BinauralVoiceBank {
                 slot.stop();
                 slot.convolver.reset();
                 slot.hrir_index = None;
+                slot.occluded = false;
+                slot.occlusion.reset();
             }
         }
     }
@@ -136,8 +149,11 @@ impl BinauralVoiceBank {
                 slot.playhead = 0;
                 slot.gain = gain.max(0.0);
                 // A restarted slot must open on its next selected direction,
-                // not fade from the previous voice's response.
+                // not fade from the previous voice's response — and start
+                // unoccluded.
                 slot.hrir_index = None;
+                slot.occluded = false;
+                slot.occlusion.reset();
             }
             RenderPluginEventKind::VoiceStop { voice } => {
                 match state.slots.get_mut(voice as usize) {
@@ -154,6 +170,14 @@ impl BinauralVoiceBank {
                 };
                 match param {
                     RenderVoiceParam::Gain => slot.gain = value.max(0.0),
+                    RenderVoiceParam::OcclusionCutoffHz => {
+                        if value >= OCCLUSION_OPEN_HZ {
+                            slot.occluded = false;
+                        } else {
+                            slot.occluded = true;
+                            slot.occlusion.set_cutoff_hz(FrequencyHz(value.max(20.0)));
+                        }
+                    }
                     RenderVoiceParam::HrirIndex => {
                         let index = value as usize;
                         let Some((left, right)) = self.hrirs.get(index) else {
@@ -206,7 +230,11 @@ impl BinauralVoiceBank {
             let samples = &sound[slot.playhead..];
             let take = samples.len().min(frame_count);
             for (frame, &sample) in samples[..take].iter().enumerate() {
-                let (l, r) = slot.convolver.process_sample(sample * slot.gain);
+                let mut sample = sample * slot.gain;
+                if slot.occluded {
+                    sample = slot.occlusion.process_sample(sample);
+                }
+                let (l, r) = slot.convolver.process_sample(sample);
                 scratch[frame * 2] += l;
                 scratch[frame * 2 + 1] += r;
             }
@@ -260,6 +288,7 @@ mod tests {
             vec![(vec![1.0], vec![1.0]), (vec![0.5], vec![0.25])],
             max_voices,
             4,
+            SampleRate(48_000),
         )
     }
 
@@ -386,6 +415,49 @@ mod tests {
         ];
         assert!(bank.process_with_events(&mut scratch, 2, 2, &events));
         assert_eq!(bank.unsupported_event_count(), 4);
+    }
+
+    #[test]
+    fn occlusion_lowpass_attenuates_high_frequencies() {
+        // Nyquist-rate content through a 200 Hz one-pole must lose most of
+        // its energy; the unoccluded path keeps it.
+        let nyquist: Vec<f32> = (0..64).map(|i| if i % 2 == 0 { 1.0 } else { -1.0 }).collect();
+        let bank = BinauralVoiceBank::new(
+            vec![Arc::new(nyquist)],
+            vec![(vec![1.0], vec![1.0])],
+            1,
+            4,
+            SampleRate(48_000),
+        );
+
+        let energy = |bank: &BinauralVoiceBank, occlude: bool| -> f32 {
+            bank.reset();
+            let mut events = vec![
+                event(RenderPluginEventKind::VoiceStart { voice: 0, sound: 0, gain: 1.0 }),
+                event(RenderPluginEventKind::VoiceParam {
+                    voice: 0,
+                    param: RenderVoiceParam::HrirIndex,
+                    value: 0.0,
+                }),
+            ];
+            if occlude {
+                events.push(event(RenderPluginEventKind::VoiceParam {
+                    voice: 0,
+                    param: RenderVoiceParam::OcclusionCutoffHz,
+                    value: 200.0,
+                }));
+            }
+            let mut scratch = vec![0.0f32; 64 * 2];
+            assert!(bank.process_with_events(&mut scratch, 64, 2, &events));
+            scratch.iter().map(|s| s * s).sum()
+        };
+
+        let open = energy(&bank, false);
+        let occluded = energy(&bank, true);
+        assert!(
+            occluded < open * 0.05,
+            "occluded energy {occluded} should be far below open {open}"
+        );
     }
 
     #[test]

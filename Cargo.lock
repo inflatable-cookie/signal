@@ -1096,6 +1096,7 @@ version = "0.1.0"
 dependencies = [
  "hound",
  "signal-dsp",
+ "signal-dsp-spectral",
  "signal-dsp-stretch",
  "signal-hardware",
  "signal-hardware-cpal",

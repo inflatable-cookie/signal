@@ -33,6 +33,8 @@
 
 mod binaural_bank;
 pub use binaural_bank::{BankHrir, BankSound, BinauralVoiceBank};
+mod convolution_reverb;
+pub use convolution_reverb::ConvolutionReverbProcessor;
 mod offline;
 
 pub use offline::{
@@ -308,6 +310,9 @@ pub enum RenderVoiceParam {
     HrirIndex,
     /// Linear voice gain (`0..` — typically `0..=1`).
     Gain,
+    /// Occlusion low-pass cutoff in Hz. Values at/above ~20 kHz disable the
+    /// filter (fully unoccluded).
+    OcclusionCutoffHz,
 }
 
 /// Format-neutral per-note expression dimensions supported by the render plane.

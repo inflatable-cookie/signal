@@ -1,6 +1,6 @@
 # Binaural / HRTF Render-Plane Integration — v1
 
-Status: **Rungs 1-4 landed; per-voice decision taken (option B, VoiceBank)**
+Status: **Complete upstream — all rungs + reverb/occlusion promotion landed; open: Jetstream adoption + block-offset events**
 Date: 2026-07-18
 Downstream driver: Jetstream (game engine, `../jetstream/crates/jetstream-audio`)
 Landed alongside this memo: `signal_dsp::BinauralConvolver` (item 1 below).
@@ -73,10 +73,16 @@ lookup, mirroring) deliberately stays with callers.
 5. **Fire-and-forget source ergonomics** — LANDED via the bank's voice
    slots (a voice frees itself at end of sound; start/stop are events).
 
-Remaining open: reverb/occlusion stage promotion; block-offset-accurate
-event application inside the bank (currently block-granular — fine for
-direction/SFX, revisit if musical timing ever routes here); downstream
-(Jetstream) adoption of the bank behind its voice-pool facade.
+Reverb/occlusion promotion LANDED in the same wave:
+`ConvolutionReverbProcessor` (per-channel StreamingConvolver, dry undelayed +
+wet at reported latency, try-lock posture) and per-voice occlusion inside the
+bank (`VoiceParam::OcclusionCutoffHz` → per-slot OnePoleLowPass before the
+convolver; >=20 kHz disables).
+
+Remaining open: block-offset-accurate event application inside the bank
+(currently block-granular — fine for direction/SFX, revisit if musical
+timing ever routes here); downstream (Jetstream) adoption of bank + reverb
+behind its voice-pool facade.
 
 ## Division of labor (unchanged)
 
