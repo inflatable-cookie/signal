@@ -14,9 +14,9 @@
 //!
 //! The bank **adds** its stereo output into the stage scratch (composes with
 //! whatever the Sum stage already carries). Stereo stages only; any other
-//! channel count bypasses. Events apply at block granularity — HRIR
-//! selection at block rate is far below audible for direction changes, and
-//! start/stop quantization to one block (~5 ms) matches game-SFX needs.
+//! channel count bypasses. Events apply **sample-accurately**: the block is
+//! rendered in segments split at each event's `offset_frames`, so a
+//! `VoiceStart` at offset 96 begins exactly there.
 //!
 //! Real-time safety: sounds and HRIR tables are `Arc`-shared and immutable;
 //! all per-voice state is preallocated at construction. `process` takes the
@@ -219,28 +219,56 @@ impl BinauralVoiceBank {
             return false;
         };
 
-        for event in events {
-            self.apply_event(&mut state, event);
+        // Sample-accurate event application: walk the block in segments split
+        // at event offsets (the executor delivers events sorted by
+        // `offset_frames`, all `< frame_count`).
+        let mut cursor = 0usize;
+        let mut next_event = 0usize;
+        while cursor < frame_count {
+            while next_event < events.len()
+                && (events[next_event].offset_frames as usize) <= cursor
+            {
+                self.apply_event(&mut state, &events[next_event]);
+                next_event += 1;
+            }
+            let segment_end = events
+                .get(next_event)
+                .map(|event| (event.offset_frames as usize).min(frame_count))
+                .unwrap_or(frame_count)
+                .max(cursor + 1);
+            Self::render_segment(&mut state, scratch, cursor, segment_end);
+            cursor = segment_end;
         }
+        // Contract says offsets < frame_count, but drain defensively so a
+        // misbehaving sender cannot wedge events forever.
+        while next_event < events.len() {
+            self.apply_event(&mut state, &events[next_event]);
+            next_event += 1;
+        }
+        true
+    }
 
+    /// Render frames `[start, end)` of the current block for every slot.
+    fn render_segment(state: &mut BankState, scratch: &mut [f32], start: usize, end: usize) {
         for slot in &mut state.slots {
             let Some(sound) = slot.sound.as_ref().map(Arc::clone) else {
                 continue;
             };
-            let samples = &sound[slot.playhead..];
-            let take = samples.len().min(frame_count);
-            for (frame, &sample) in samples[..take].iter().enumerate() {
+            let samples = &sound[slot.playhead.min(sound.len())..];
+            let take = samples.len().min(end - start);
+            for (offset, &sample) in samples[..take].iter().enumerate() {
                 let mut sample = sample * slot.gain;
                 if slot.occluded {
                     sample = slot.occlusion.process_sample(sample);
                 }
                 let (l, r) = slot.convolver.process_sample(sample);
+                let frame = start + offset;
                 scratch[frame * 2] += l;
                 scratch[frame * 2 + 1] += r;
             }
             // Let the convolver tail ring out past the sound's end within
-            // this block (silence input keeps the FIR draining).
-            for frame in take..frame_count {
+            // this segment (silence input keeps the FIR draining).
+            for frame in (start + take)..end {
                 let (l, r) = slot.convolver.process_sample(0.0);
                 scratch[frame * 2] += l;
                 scratch[frame * 2 + 1] += r;
@@ -250,7 +278,6 @@ impl BinauralVoiceBank {
                 slot.stop(); // fire-and-forget: the voice frees itself
             }
         }
-        true
     }
 }
 
@@ -458,6 +485,44 @@ mod tests {
             occluded < open * 0.05,
             "occluded energy {occluded} should be far below open {open}"
         );
+    }
+
+    #[test]
+    fn events_apply_at_their_frame_offset() {
+        let bank = identity_bank(1);
+        let mut scratch = vec![0.0f32; 16 * 2];
+        // Start at frame 6; stop at frame 9 -> exactly three sounding frames.
+        let events = [
+            RenderBlockPluginEvent {
+                offset_frames: 6,
+                channel: 0,
+                kind: RenderPluginEventKind::VoiceStart { voice: 0, sound: 0, gain: 1.0 },
+            },
+            RenderBlockPluginEvent {
+                offset_frames: 6,
+                channel: 0,
+                kind: RenderPluginEventKind::VoiceParam {
+                    voice: 0,
+                    param: RenderVoiceParam::HrirIndex,
+                    value: 0.0,
+                },
+            },
+            RenderBlockPluginEvent {
+                offset_frames: 9,
+                channel: 0,
+                kind: RenderPluginEventKind::VoiceStop { voice: 0 },
+            },
+        ];
+        assert!(bank.process_with_events(&mut scratch, 16, 2, &events));
+        for frame in 0..6 {
+            assert!(scratch[frame * 2].abs() < 1e-6, "pre-start frame {frame} sounded");
+        }
+        for frame in 6..9 {
+            assert!((scratch[frame * 2] - 1.0).abs() < 1e-6, "frame {frame} should sound");
+        }
+        for frame in 9..16 {
+            assert!(scratch[frame * 2].abs() < 1e-6, "post-stop frame {frame} sounded");
+        }
     }
 
     #[test]
