@@ -246,7 +246,12 @@ impl PluginBlockProcessor for ShmPluginProcessor {
             Ordering::Relaxed,
         );
         for (index, event) in events.iter().take(event_count).enumerate() {
-            let plugin_event: PluginEvent = crate::in_process::convert_block_event(event);
+            let Some(plugin_event): Option<PluginEvent> =
+                crate::in_process::convert_block_event(event)
+            else {
+                self.unsupported_events.fetch_add(1, Ordering::Relaxed);
+                continue;
+            };
             let mut encoded = [0u8; PluginEvent::ENCODED_BYTES];
             if write_event_to_slice(&plugin_event, &mut encoded).is_err() {
                 self.unsupported_events.fetch_add(1, Ordering::Relaxed);

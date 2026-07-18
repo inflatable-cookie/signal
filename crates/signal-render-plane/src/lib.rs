@@ -31,6 +31,8 @@
 
 #![warn(missing_docs)]
 
+mod binaural_bank;
+pub use binaural_bank::{BankHrir, BankSound, BinauralVoiceBank};
 mod offline;
 
 pub use offline::{
@@ -269,6 +271,43 @@ pub enum RenderPluginEventKind {
         /// Pressure/timbre use `0..=1`; tuning uses cents.
         value: f32,
     },
+    /// Start a voice-bank slot playing a preloaded sound (voice-bank
+    /// processors only; plugin-format bridges cannot represent this and drop
+    /// it). Slot allocation/stealing policy belongs to the sender.
+    VoiceStart {
+        /// Bank slot to (re)start.
+        voice: u16,
+        /// Index into the bank's preloaded sound table.
+        sound: u16,
+        /// Linear gain applied to the voice.
+        gain: f32,
+    },
+    /// Stop a voice-bank slot immediately.
+    VoiceStop {
+        /// Bank slot to silence.
+        voice: u16,
+    },
+    /// Update one continuous parameter on a voice-bank slot (e.g. select a
+    /// new HRIR as a source moves, or retarget gain).
+    VoiceParam {
+        /// Bank slot addressed.
+        voice: u16,
+        /// Which parameter `value` carries.
+        param: RenderVoiceParam,
+        /// Parameter payload (see [`RenderVoiceParam`] for units).
+        value: f32,
+    },
+}
+
+/// Continuous per-voice parameters for voice-bank processors.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RenderVoiceParam {
+    /// Index into the bank's HRIR table (value is a non-negative integer
+    /// carried in f32; exact for any real table size). The bank crossfades
+    /// to the newly selected response.
+    HrirIndex,
+    /// Linear voice gain (`0..` — typically `0..=1`).
+    Gain,
 }
 
 /// Format-neutral per-note expression dimensions supported by the render plane.
@@ -4974,7 +5013,10 @@ mod tests {
                         RenderPluginEventKind::ControlChange { .. }
                         | RenderPluginEventKind::PitchBend { .. }
                         | RenderPluginEventKind::ChannelPressure { .. }
-                        | RenderPluginEventKind::NoteExpression { .. } => amplitude,
+                        | RenderPluginEventKind::NoteExpression { .. }
+                        | RenderPluginEventKind::VoiceStart { .. }
+                        | RenderPluginEventKind::VoiceStop { .. }
+                        | RenderPluginEventKind::VoiceParam { .. } => amplitude,
                     };
                     event_index += 1;
                 }

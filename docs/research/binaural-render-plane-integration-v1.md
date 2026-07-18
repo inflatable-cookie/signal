@@ -1,6 +1,6 @@
 # Binaural / HRTF Render-Plane Integration — v1
 
-Status: **Draft — design decision needed (per-voice model)**
+Status: **Rungs 1-4 landed; per-voice decision taken (option B, VoiceBank)**
 Date: 2026-07-18
 Downstream driver: Jetstream (game engine, `../jetstream/crates/jetstream-audio`)
 Landed alongside this memo: `signal_dsp::BinauralConvolver` (item 1 below).
@@ -35,10 +35,14 @@ retargeting, snap-set for a voice's first direction. RT-safe after
 construction. Dataset policy (which HRIR for which azimuth/elevation, grid
 lookup, mirroring) deliberately stays with callers.
 
-## The ladder (remaining, ordered)
+## The ladder
 
-2. **Per-voice model in the render plane** — the design decision this memo
-   exists to force. `PluginBlockProcessor` is one-per-`Sum`-stage; binaural
+2. **Per-voice model** — DECIDED + LANDED: option B, `BinauralVoiceBank`
+   (`signal-render-plane/src/binaural_bank.rs`) — a `PluginBlockProcessor`
+   hosting N one-shot voice slots (preloaded sounds + per-slot crossfading
+   convolver), additive into stage scratch, stereo-only bypass, try-lock RT
+   posture, unsupported-event counting. Voice spawn = live event, zero plan
+   recompile. Original framing kept below for the record. `PluginBlockProcessor` is one-per-`Sum`-stage; binaural
    needs N per-voice convolvers *before* the mix sum, and voice spawn today
    implies a full-plan recompile — wrong shape for fire-and-forget game SFX.
    Options (from Jetstream's assessment, decision belongs here):
@@ -57,18 +61,22 @@ lookup, mirroring) deliberately stays with callers.
    machinery, keeps plan compilation untouched, and A's downside (signal
    never learns about voices) is exactly what blocks the rest of this
    ladder. C can still come later; B does not foreclose it.
-3. **Binaural stage processor** — ship the `VoiceBank`/binaural processor in
-   signal-render-plane (or signal-dsp behind a feature) so downstreams stop
-   hand-rolling mixers. Same move promotes reverb/occlusion from CPU
-   post-processes into real stages.
-4. **Direction/pose event vocabulary** — `RenderPluginEventKind` is
-   MIDI-shaped (NoteOn/CC/expression); nothing carries per-voice
-   azimuth/elevation/HRIR-select or listener pose. Extend the enum (or add a
-   per-voice parameter ring). The transport exists; the payload type does
-   not. Wire format must stay `Copy` + bounded for the mailbox.
-5. **Fire-and-forget source ergonomics** — mono one-shot sources that fit
-   game SFX without timeline clips or plan recompile (falls out of B's
-   voice slots if that's the chosen shape).
+3. **Binaural stage processor** — LANDED with rung 2 (same type). Reverb/
+   occlusion promotion for downstreams remains open.
+4. **Voice event vocabulary** — LANDED: `VoiceStart { voice, sound, gain }`,
+   `VoiceStop { voice }`, `VoiceParam { voice, param: HrirIndex|Gain, value }`.
+   Direction→HRIR resolution deliberately stays with the sender (the event
+   carries a table INDEX, not azimuth/elevation — dataset policy remains
+   downstream). Plugin-format bridges cannot represent the family: the
+   in-process converter returns `None` and the SHM tier counts it
+   unsupported.
+5. **Fire-and-forget source ergonomics** — LANDED via the bank's voice
+   slots (a voice frees itself at end of sound; start/stop are events).
+
+Remaining open: reverb/occlusion stage promotion; block-offset-accurate
+event application inside the bank (currently block-granular — fine for
+direction/SFX, revisit if musical timing ever routes here); downstream
+(Jetstream) adoption of the bank behind its voice-pool facade.
 
 ## Division of labor (unchanged)
 

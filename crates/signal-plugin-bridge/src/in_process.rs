@@ -45,9 +45,10 @@ const AU_EVENT_SUPPORT: RenderPluginEventSupport = RenderPluginEventSupport {
 /// handed to the per-format process sessions. Values stay normalized f32
 /// here; each session downconverts (or maps) at its own format boundary.
 /// Alloc-free within the scratch's preallocated capacity (overflow drops,
-/// earliest wins).
-pub(crate) fn convert_block_event(event: &RenderBlockPluginEvent) -> PluginEvent {
-    match event.kind {
+/// earliest wins). Returns `None` for event kinds no plugin format can
+/// represent (the voice-bank family — those target native processors).
+pub(crate) fn convert_block_event(event: &RenderBlockPluginEvent) -> Option<PluginEvent> {
+    Some(match event.kind {
         RenderPluginEventKind::NoteOn { key, velocity } => PluginEvent::Note(NoteEvent {
             offset_frames: event.offset_frames,
             note_id: -1,
@@ -107,13 +108,18 @@ pub(crate) fn convert_block_event(event: &RenderBlockPluginEvent) -> PluginEvent
             },
             value,
         }),
-    }
+        RenderPluginEventKind::VoiceStart { .. }
+        | RenderPluginEventKind::VoiceStop { .. }
+        | RenderPluginEventKind::VoiceParam { .. } => return None,
+    })
 }
 
 fn convert_block_events(events: &[RenderBlockPluginEvent], scratch: &mut Vec<PluginEvent>) {
     scratch.clear();
     for event in events.iter().take(EVENT_SCRATCH_CAPACITY) {
-        scratch.push(convert_block_event(event));
+        if let Some(converted) = convert_block_event(event) {
+            scratch.push(converted);
+        }
     }
 }
 
@@ -951,6 +957,9 @@ impl PluginBlockProcessor for InProcessVst3Processor {
                 RenderPluginEventKind::PitchBend { .. } => !self.pitch_bend_mapping,
                 RenderPluginEventKind::ChannelPressure { .. } => !self.channel_pressure_mapping,
                 RenderPluginEventKind::NoteExpression { .. } => true,
+                RenderPluginEventKind::VoiceStart { .. }
+                | RenderPluginEventKind::VoiceStop { .. }
+                | RenderPluginEventKind::VoiceParam { .. } => true,
             })
             .count() as u64;
         self.unsupported_events
