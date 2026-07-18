@@ -8,6 +8,7 @@ pub(in crate::frequency_adaptive) mod phase_field_attribution;
 pub(in crate::frequency_adaptive) mod relation_repair;
 mod report;
 pub(in crate::frequency_adaptive) mod shared_rotation_region_locked_proof;
+pub(in crate::frequency_adaptive) mod state_complete_linked_phase_vocoder_calibration;
 pub(in crate::frequency_adaptive) mod tracked_peak_feasibility;
 pub(in crate::frequency_adaptive) mod trajectory_attribution;
 

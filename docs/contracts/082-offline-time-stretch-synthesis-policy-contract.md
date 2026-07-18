@@ -4187,9 +4187,17 @@ development evidence.
 Batch 29.8 listening opens only after complete objective passage. Dynamic
 ratio, realtime, routing, cache, production, and product work remain closed.
 
+Batch 29.7AE closes without passage. The bounded `64`-candidate screen advances
+four frequency/history-diverse finalists. Their calibrated/local failure counts
+are `1/11`, `1/17`, `1/15`, and `1/13`; all retain exact mechanics and zero
+row-complete mono regression. No candidate freezes. The existing holdout stays
+unread. Batch 29.7AF may trace the persistent off-bin `2.0x` tone and local
+boundary failures, but may not change the six policy values or run another
+candidate sweep.
+
 ## Next Task
 
-Run Batch 29.7AE under Rule 31M. Implement one report-only state-complete linked
-phase vocoder and bounded development calibration. Freeze one candidate after
-the complete development gate. Keep the holdout, Batch 29.8, and all product-
-facing work closed.
+Run Batch 29.7AF under Rule 31M. Attribute the persistent off-bin `2.0x` tone
+and eleven local failures to one coefficient, inverse-frame, or overlap
+operation before authorizing any equation correction. Keep policy changes, the
+holdout, Batch 29.8, and all product-facing work closed.

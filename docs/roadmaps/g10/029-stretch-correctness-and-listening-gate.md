@@ -2307,22 +2307,44 @@ calibration followed by one frozen concealed holdout.
 
 ### Batch 29.7AE - State-Complete Linked Phase-Vocoder Calibration
 
-- [ ] implement one report-only single-grid state machine with `Reset`,
+- [x] implement one report-only single-grid state machine with `Reset`,
   `Locked`, `Unlocked`, and `Silent` ownership; do not call the coherent
   weighted predictor or any rejected renderer
-- [ ] freeze physical bounds, quantization, ordering, and at most 64
+- [x] freeze physical bounds, quantization, ordering, and at most 64
   deterministic candidates over the six Rule 31M controls before rendering
-- [ ] use short development rows first; advance at most four candidates to the
+- [x] use short development rows first; advance at most four candidates to the
   complete synthetic, mono, and `48`-row stereo development matrix
-- [ ] require exact mechanics, zero calibrated and local stereo failures, and
-  no row-complete mono regression; freeze exactly one candidate
-- [ ] keep the existing six-row family-balanced holdout unread; Batch 29.8 may
+- [x] enforce exact mechanics, zero calibrated and local stereo failures, and
+  no row-complete mono regression; freeze no candidate when all four miss
+- [x] keep the existing six-row family-balanced holdout unread; Batch 29.8 may
   open it only after one candidate freezes
-- [ ] keep listening export, dynamic ratio, realtime, routing, cache,
+- [x] keep listening export, dynamic ratio, realtime, routing, cache,
   production, and product-facing work closed
 
 Evidence: bounded calibration ledger and one frozen development report.
 Complete development passage alone opens Batch 29.8 and its concealed holdout.
+
+Decision: close without a frozen candidate. Candidate `0` reproduces the
+retained 29.7T boundary at `1/48` calibrated and `11/48` local failures.
+Candidates `1`, `16`, and `17` retain the one calibrated miss and worsen local
+failures to `17`, `15`, and `13`. All four have exact mechanics, zero mono hard
+failures, and zero row-complete mono regressions. Policy changes do not address
+the persistent off-bin `2.0x` tone or the boundary-local failures.
+
+### Batch 29.7AF - State-Decision Failure Attribution
+
+- [ ] trace candidate `0` and the best state-changing finalist at the single
+  calibrated off-bin `2.0x` tone miss and all eleven retained local misses
+- [ ] identify the first coefficient, inverse-frame, or overlap window where
+  candidate relation error exceeds the coherent control
+- [ ] prove whether the miss is caused by state classification, predecessor
+  continuity, or overlap interaction; do not change policy values
+- [ ] authorize at most one equation-level correction only when the trace names
+  one causal operation; otherwise close the selected single-grid family
+- [ ] keep the concealed holdout, listening, dynamic ratio, realtime, routing,
+  cache, production, and product-facing work closed
+
+Evidence: one causal attribution report. No renderer sweep or policy rescue.
 
 ### Batch 29.8 - Listening And Dynamic Checkpoint
 
@@ -3577,10 +3599,20 @@ Complete development passage alone opens Batch 29.8 and its concealed holdout.
   Signal support. Rule 31M selects one calibrated proof. Six state-policy
   controls may use at most 64 deterministic development candidates; one frozen
   result may open the existing concealed holdout in Batch 29.8.
+- 2026-07-18: Batch 29.7AE implements the complete four-state single-grid
+  topology and closes without a frozen candidate. A `64`-candidate short-row
+  screen advances four frequency/history-diverse finalists. Candidate `0`
+  exactly retains the 29.7T objective boundary at `1/48` calibrated and
+  `11/48` local failures; candidates `1`, `16`, and `17` retain the calibrated
+  miss and worsen local failures to `17`, `15`, and `13`. Every finalist has
+  zero structural or mono hard failures, exact mechanics within `3.72e-14`,
+  and zero row-complete mono regressions. The only calibrated miss remains the
+  short, off-bin, `2.0x` tone. The concealed holdout remains unread. Batch
+  29.7AF owns equation-level attribution without policy changes or a sweep.
 
 ## Next Task
 
-Run Batch 29.7AE. Implement the report-only state-complete linked phase vocoder
-and bounded calibration. Freeze one candidate after the complete development
-gate. Keep the existing holdout, listening, product surfaces, and Batch 29.8
-closed.
+Run Batch 29.7AF. Trace the retained candidate and best state-changing finalist
+through the off-bin `2.0x` tone and eleven local misses. Name one causal phase
+or overlap operation before authorizing any correction. Keep policy changes,
+the holdout, listening, product surfaces, and Batch 29.8 closed.

@@ -445,13 +445,18 @@ Current stretch status:
   retains explicit sinusoidal models as research reserve, and selects one
   single-grid state-complete linked phase-vocoder proof. Rule 31M permits
   bounded development calibration before one candidate freezes for holdout.
+  Batch 29.7AE runs that calibration but freezes no candidate: the best result
+  retains the 29.7T boundary at `1/48` calibrated and `11/48` local failures,
+  while three state-changing finalists worsen local consistency. All retain
+  exact mechanics and mono passage. The concealed holdout remains unread;
+  Batch 29.7AF owns one equation-level failure attribution without tuning.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7AE. Implement the report-only state-complete linked
-phase vocoder and bounded development calibration. Freeze one candidate after
-the complete development gate. Keep the existing holdout, listening, product
-surfaces, and Batch 29.8 closed.
+Run `g10.029` Batch 29.7AF. Trace the retained candidate and best state-changing
+finalist through the off-bin `2.0x` tone and eleven local failures. Name one
+causal phase or overlap operation before any correction. Keep policy changes,
+the holdout, listening, product surfaces, and Batch 29.8 closed.

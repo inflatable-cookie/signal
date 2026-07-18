@@ -178,6 +178,9 @@ from patent freedom-to-operate review.
 
 ## Next Task
 
-Run Batch 29.7AE. Implement one report-only `StateCompleteLinkedPhaseVocoder`
-and its bounded development calibration. Freeze one candidate after the
-complete development gate. Open the untouched holdout only in Batch 29.8.
+Batch 29.7AE closes without a frozen candidate. Candidate `0` retains the
+29.7T boundary at `1/48` calibrated and `11/48` local failures; three
+state-changing finalists retain the calibrated miss and worsen local results.
+Run Batch 29.7AF. Trace that persistent off-bin `2.0x` tone and the eleven local
+misses to one coefficient, inverse-frame, or overlap operation. Do not change
+policy values or open the untouched holdout.

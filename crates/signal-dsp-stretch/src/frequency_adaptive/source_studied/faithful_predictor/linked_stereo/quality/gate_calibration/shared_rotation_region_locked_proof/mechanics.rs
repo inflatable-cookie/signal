@@ -11,7 +11,8 @@ const SAMPLE_RATE: usize = 8_000;
 const RATIOS: [f64; 3] = [0.75, 1.5, 2.0];
 
 pub(in crate::frequency_adaptive) fn review(
-    renderer: fn([&[f64]; 2], f64, usize) -> shared_rotation_region_locked::SharedRotationRender,
+    renderer: impl Fn([&[f64]; 2], f64, usize) -> shared_rotation_region_locked::SharedRotationRender
+        + Copy,
 ) -> SharedRotationMechanicsReview {
     let first = run(renderer);
     let second = run(renderer);
@@ -39,7 +40,8 @@ struct Run {
 }
 
 fn run(
-    renderer: fn([&[f64]; 2], f64, usize) -> shared_rotation_region_locked::SharedRotationRender,
+    renderer: impl Fn([&[f64]; 2], f64, usize) -> shared_rotation_region_locked::SharedRotationRender
+        + Copy,
 ) -> Run {
     let primary = mechanics::primary_control(SAMPLE_RATE);
     let secondary = mechanics::secondary_control(SAMPLE_RATE);

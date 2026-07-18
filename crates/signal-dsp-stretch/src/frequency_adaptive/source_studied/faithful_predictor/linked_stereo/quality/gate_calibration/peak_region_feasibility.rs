@@ -63,14 +63,45 @@ pub(in crate::frequency_adaptive) fn review() -> PeakRegionReview {
 
 pub(in crate::frequency_adaptive) fn review_candidate(
     directory: &str,
-    candidate: fn([&[f64]; 2], f64, usize) -> render::StereoRender,
+    candidate: impl Fn([&[f64]; 2], f64, usize) -> render::StereoRender + Copy,
+) -> PeakRegionReview {
+    review_candidate_inner(directory, candidate, false)
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub(in crate::frequency_adaptive) struct PeakRegionScreen {
+    pub(in crate::frequency_adaptive) rows: usize,
+    pub(in crate::frequency_adaptive) structural_failures: usize,
+    pub(in crate::frequency_adaptive) candidate_failures: usize,
+    pub(in crate::frequency_adaptive) metric_regressions: usize,
+    pub(in crate::frequency_adaptive) local_consistency_failures: usize,
+    pub(in crate::frequency_adaptive) peak_region_counts: [usize; 4],
+    pub(in crate::frequency_adaptive) evidence_hash: u64,
+}
+
+pub(in crate::frequency_adaptive) fn screen_candidate(
+    directory: &str,
+    candidate: impl Fn([&[f64]; 2], f64, usize) -> render::StereoRender + Copy,
+) -> PeakRegionScreen {
+    let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../../target")
+        .join(directory);
+    replace_directory(&root);
+    let run = run(&root, candidate, true, false);
+    summarize_screen(&run)
+}
+
+fn review_candidate_inner(
+    directory: &str,
+    candidate: impl Fn([&[f64]; 2], f64, usize) -> render::StereoRender + Copy,
+    short: bool,
 ) -> PeakRegionReview {
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("../../target")
         .join(directory);
     replace_directory(&root);
-    let first = run(&root.join("first"), candidate);
-    let second = run(&root.join("second"), candidate);
+    let first = run(&root.join("first"), candidate, short, true);
+    let second = run(&root.join("second"), candidate, short, true);
     let repeated = first == second;
     let current_failures = first
         .rows
@@ -151,6 +182,29 @@ pub(in crate::frequency_adaptive) fn review_candidate(
     }
 }
 
+fn summarize_screen(run: &Run) -> PeakRegionScreen {
+    PeakRegionScreen {
+        rows: run.rows.len(),
+        structural_failures: run.rows.iter().map(|row| row.structural_failures).sum(),
+        candidate_failures: run
+            .rows
+            .iter()
+            .filter(|row| !gate(row.control, row.candidate))
+            .count(),
+        metric_regressions: run.rows.iter().filter(|row| !improvement(row).0).count(),
+        local_consistency_failures: run
+            .rows
+            .iter()
+            .filter(|row| {
+                row.maximum_local_residuals[1] > row.maximum_local_residuals[0] + 1.0e-12
+                    || row.local_windows_improved < 4
+            })
+            .count(),
+        peak_region_counts: run.peak_region_counts,
+        evidence_hash: run.evidence_hash,
+    }
+}
+
 #[derive(Clone, Debug, PartialEq)]
 struct Run {
     rows: Vec<PeakRegionRow>,
@@ -162,7 +216,9 @@ struct Run {
 
 fn run(
     root: &std::path::Path,
-    candidate: fn([&[f64]; 2], f64, usize) -> render::StereoRender,
+    candidate: impl Fn([&[f64]; 2], f64, usize) -> render::StereoRender + Copy,
+    short: bool,
+    include_mechanics: bool,
 ) -> Run {
     fs::create_dir_all(root).unwrap_or_else(|error| panic!("create {}: {error}", root.display()));
     let geometry = coherent_representation::source_geometry(SAMPLE_RATE);
@@ -173,6 +229,9 @@ fn run(
     let mut peak_region_counts = [0; 4];
     for source_frames in LENGTHS {
         for phase in PHASES {
+            if short && (source_frames != LENGTHS[0] || phase != PHASES[0]) {
+                continue;
+            }
             for bin_aligned in ALIGNMENTS {
                 let frequency = (31.5 + if bin_aligned { 0.0 } else { 0.37 }) * spacing;
                 for kind in [ControlKind::Tone, ControlKind::Image] {
@@ -228,7 +287,11 @@ fn run(
             }
         }
     }
-    let (mechanics_errors, silent_peer_peak) = mechanics_review(candidate);
+    let (mechanics_errors, silent_peer_peak) = if include_mechanics {
+        mechanics_review(candidate)
+    } else {
+        ([0.0; 5], 0.0)
+    };
     for value in mechanics_errors
         .map(f64::to_bits)
         .into_iter()
@@ -350,7 +413,7 @@ fn improvement(row: &PeakRegionRow) -> (bool, bool) {
 }
 
 fn mechanics_review(
-    candidate: fn([&[f64]; 2], f64, usize) -> render::StereoRender,
+    candidate: impl Fn([&[f64]; 2], f64, usize) -> render::StereoRender + Copy,
 ) -> ([f64; 5], f64) {
     let primary = mechanics::primary_control(SAMPLE_RATE);
     let secondary = mechanics::secondary_control(SAMPLE_RATE);

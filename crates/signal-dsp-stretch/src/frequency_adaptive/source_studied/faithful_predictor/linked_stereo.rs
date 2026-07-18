@@ -3,6 +3,7 @@ pub(in crate::frequency_adaptive) mod quality;
 pub(in crate::frequency_adaptive) mod render;
 pub(in crate::frequency_adaptive) mod shared_rotation_finite_support_reset;
 pub(in crate::frequency_adaptive) mod shared_rotation_region_locked;
+pub(in crate::frequency_adaptive) mod state_complete_linked_phase_vocoder;
 
 use super::{coherent_representation, HASH_OFFSET};
 use mechanics::{

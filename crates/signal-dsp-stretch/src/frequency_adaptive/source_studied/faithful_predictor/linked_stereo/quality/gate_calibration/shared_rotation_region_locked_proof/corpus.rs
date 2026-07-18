@@ -17,7 +17,8 @@ const SAMPLE_RATE: usize = 44_100;
 const SOURCE_FRAMES: usize = 220_500;
 
 pub(in crate::frequency_adaptive) fn review(
-    renderer: fn([&[f64]; 2], f64, usize) -> shared_rotation_region_locked::SharedRotationRender,
+    renderer: impl Fn([&[f64]; 2], f64, usize) -> shared_rotation_region_locked::SharedRotationRender
+        + Copy,
     label: &'static str,
 ) -> SharedRotationCorpusReview {
     let first = run(renderer, label);
@@ -42,7 +43,8 @@ struct Run {
 }
 
 fn run(
-    renderer: fn([&[f64]; 2], f64, usize) -> shared_rotation_region_locked::SharedRotationRender,
+    renderer: impl Fn([&[f64]; 2], f64, usize) -> shared_rotation_region_locked::SharedRotationRender
+        + Copy,
     label: &'static str,
 ) -> Run {
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
