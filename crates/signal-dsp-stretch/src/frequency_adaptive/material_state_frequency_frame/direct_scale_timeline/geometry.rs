@@ -42,6 +42,8 @@ pub(super) struct Prepared {
     pub output_ring: Vec<f64>,
     pub transform: Vec<Complex64>,
     pub scratch: Vec<Complex64>,
+    pub has_state: bool,
+    pub region_slot: usize,
 }
 
 pub(super) fn prepare(
@@ -114,6 +116,8 @@ pub(super) fn prepare(
         output_ring: vec![0.0; memory.output_samples],
         transform: vec![Complex64::default(); memory.transform_complex],
         scratch: vec![Complex64::default(); memory.scratch_complex],
+        has_state: false,
+        region_slot: 0,
     })
 }
 
@@ -169,6 +173,15 @@ pub(super) fn owns_frequency(scale: Scale, frequency: f64, nyquist: f64) -> bool
         Scale::Middle => frequency >= 750.0 && (frequency < 6_000.0 || nyquist < 6_000.0),
         Scale::Short => nyquist >= 6_000.0 && frequency >= 6_000.0,
     }
+}
+
+pub(super) fn owned_start_bin(sample_rate: usize, length: usize, scale: Scale) -> usize {
+    let threshold = match scale {
+        Scale::Long => return 0,
+        Scale::Middle => 750,
+        Scale::Short => 6_000,
+    };
+    (threshold * length).div_ceil(sample_rate)
 }
 
 fn count_owned_bins(sample_rate: usize, lengths: [usize; 3], scale: Scale) -> usize {

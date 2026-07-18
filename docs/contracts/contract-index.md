@@ -155,6 +155,7 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7AT under contract `082` Rule 31Z. Integrate and prove
-the frozen direct state mechanics only. Keep objective audio, tuning,
-listening, holdout, Batch 29.8, and product work closed.
+Run `g10.029` Batch 29.7AU under contract `082` Rule 31Z. Freeze and execute
+the complete failure-first objective sequence. Stop at the first existing hard
+gate; keep tuning, retry, listening, holdout, Batch 29.8, and product work
+closed.

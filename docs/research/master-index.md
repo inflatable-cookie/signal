@@ -83,6 +83,6 @@ Finch and Loophole.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7AT under Rule 31Z. Integrate and prove the frozen direct
-state mechanics only. Keep objective audio, tuning, listening, holdout,
-product surfaces, and Batch 29.8 closed.
+Run `g10.029` Batch 29.7AU under Rule 31Z. Freeze and execute the complete
+failure-first objective sequence. Stop at the first existing hard gate; keep
+tuning, retry, listening, holdout, product surfaces, and Batch 29.8 closed.

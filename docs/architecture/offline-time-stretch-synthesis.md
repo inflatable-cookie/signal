@@ -1846,9 +1846,16 @@ flat, while fixed crossover tones reach `0.451615 dB` gain movement,
 diagnostics, not a failed representation invariant and not permission to tune
 the masks before a complete objective result.
 
+Batch 29.7AT now closes direct state mechanics at hash `430543f8e1dce721`.
+Every terminal state executes on the direct scale owner. Ordinary and unlocked
+remain channel-local. Compatible borrowing occurs only for locked regions
+below `6000 Hz`; exact `6000 Hz` remains local. Peer magnitude and current
+peer peak-relative offset survive borrowing, while reset, attack, silence
+recovery, exact scale ties, fixed slabs, and repeat pass without changing the
+representation or its masked diagnostic.
+
 ## Next Task
 
-Run Batch 29.7AT under Rule 31Z. Add only the preregistered direct per-scale
-state mechanics. Prove reset, attack, unlocked, local lock, compatible locked
-borrowing, peer ownership, boundaries, capacity, and repeat. Keep objective
-and listening audio closed.
+Run Batch 29.7AU under Rule 31Z. Freeze and execute the failure-first objective
+sequence. Stop at the first existing hard-gate miss; keep tuning, retry,
+listening, holdout, product work, and Batch 29.8 closed.

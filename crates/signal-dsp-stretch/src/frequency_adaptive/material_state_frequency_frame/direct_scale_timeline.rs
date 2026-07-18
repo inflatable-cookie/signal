@@ -5,6 +5,9 @@ use super::{hash::*, HASH_OFFSET};
 mod geometry;
 mod render;
 mod report;
+mod state;
+mod state_types;
+use state_types::*;
 
 const PROOF_RATES: [usize; 3] = [8_000, 44_100, 48_000];
 const CHANNEL_CAPACITY: usize = 2;
@@ -51,13 +54,6 @@ struct WorkCounts {
     window_visits: usize,
     coefficient_visits: usize,
     conjugate_visits: usize,
-}
-
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
-struct RegionRecord {
-    peak: usize,
-    owner: usize,
-    supported: bool,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

@@ -4998,9 +4998,27 @@ only. It must not change geometry, windows, crossover masks, schedule,
 capacities, diagnostics, or evidence controls. Objective audio, listening, and
 policy tuning remain closed.
 
+Batch 29.7AT passes at evidence hash `430543f8e1dce721`. The direct timeline
+uses the existing `2CP` phase and `2CP` region slabs plus caller-owned current,
+output, guidance, and terminal-state buffers. Reset, attack, scripted ordinary,
+unlocked, and locked states all execute. The frozen `48 kHz` sequence records
+`631` resets, `270` attacks plus `361` above-limit unlocked atoms, `631`
+explicit unlocked atoms, `631` ordinary bypass atoms, and `631` locked atoms.
+The final locked tick contains `56` compatible borrowed regions and `74` local
+regions with zero nonfinite values.
+
+Channel-local unlocked rotations remain distinct. A sparse ownership fixture
+proves one compatible sub-`6000 Hz` borrow and one exact-`6000 Hz` local lock,
+including owner changes, bit-stable repeat, peer magnitude preservation, and
+current peer peak-relative offset preservation at `1e-12`. Silence stays exact
+zero; first state and silence recovery reset; exact `750/6000 Hz` scale ties,
+all three rates, fixed storage, shape rejection before mutation, and repeat
+pass. No geometry, mask, schedule, threshold, capacity, diagnostic, objective,
+or audio surface moved.
+
 ## Next Task
 
-Run Batch 29.7AT under Rule 31Z. Integrate the frozen per-scale state order and
-prove every terminal state, channel-local unlocked behavior, compatible
-locked-only borrowing, peer magnitude/offset ownership, fixed capacity,
-boundaries, and repeat. Render no objective or listening audio.
+Run Batch 29.7AU under Rule 31Z. Freeze the complete failure-first objective
+sequence before audio generation, then run synthetic, corrected stereo, mono,
+and long-development stages in that order. Stop at the first existing hard-
+gate miss. Do not tune, retry, listen, or access holdout material.

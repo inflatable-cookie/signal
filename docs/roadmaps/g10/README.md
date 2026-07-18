@@ -524,14 +524,18 @@ Current stretch status:
   per-scale reconstruction, boundaries, and repeat are exact. The
   masked diagnostic keeps zero bounded-lag timing but reaches `0.451615 dB`
   gain movement and `0.056339` peak residual at fixed crossovers. Those values
-  are frozen without tuning. Batch 29.7AT direct state mechanics is ready;
-  the objective batch remains conditional.
+  are frozen without tuning. Batch 29.7AT now passes direct state mechanics at
+  hash `430543f8e1dce721`: every terminal state, channel-local unlocked
+  recurrence, compatible locked-only borrowing, peer ownership, recovery,
+  boundaries, fixed slabs, and repeat pass. Batch 29.7AU is ready as one
+  failure-first objective sequence.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7AT under Rule 31Z. Integrate and prove the frozen
-direct per-scale state mechanics only. Keep objective audio, tuning, listening,
-holdout, product surfaces, and Batch 29.8 closed.
+Run `g10.029` Batch 29.7AU under Rule 31Z. Freeze the complete failure-first
+objective sequence before audio generation, then stop at the first existing
+hard-gate miss. Keep tuning, retry, listening, holdout, product surfaces, and
+Batch 29.8 closed.

@@ -2760,18 +2760,26 @@ not a tuning surface.
 
 ### Batch 29.7AT - Direct Scale State Mechanics
 
-Status: ready
+Status: complete
 
-- [ ] integrate the complete preregistered per-scale state order without
+- [x] integrate the complete preregistered per-scale state order without
   changing geometry, crossovers, windows, capacities, or thresholds
-- [ ] prove every terminal state, channel-local unlocked behavior, compatible
+- [x] prove every terminal state, channel-local unlocked behavior, compatible
   locked borrowing, peer magnitude/offset preservation, boundaries, and repeat
-- [ ] render no corpus or listening artifact; promote one objective card only
+- [x] render no corpus or listening artifact; promote one objective card only
   after the complete mechanics contract passes
+
+Evidence: pass at hash `430543f8e1dce721`. Reset, attack, scripted ordinary,
+unlocked, and locked states execute. The final dense locked tick contains `56`
+compatible borrowed and `74` local regions. A sparse fixture proves one
+sub-`6000 Hz` borrow and one exact-`6000 Hz` local lock with peer magnitude and
+peak-relative offset preserved at `1e-12`. Channel-local unlocked rotations,
+owner changes, exact silence and recovery, `750/6000 Hz` ties, all proof rates,
+fixed slabs, shape rejection before mutation, finiteness, and repeat pass.
 
 ### Batch 29.7AU - Direct Scale Failure-First Objective Gate
 
-Status: conditional on Batch 29.7AT
+Status: ready
 
 - [ ] freeze one complete objective sequence before audio generation
 - [ ] run synthetic, corrected stereo, mono, and long-development stages in
@@ -4160,11 +4168,16 @@ Status: conditional on Batch 29.7AT
   keeps zero bounded-lag timing but exposes up to `0.451615 dB` gain movement
   and `0.056339` peak residual at fixed crossovers. Freeze those diagnostics;
   Batch 29.7AT is ready without mask tuning or objective audio.
+- 2026-07-18: Batch 29.7AT passes direct state mechanics at hash
+  `430543f8e1dce721`. Every terminal state, channel-local unlocked recurrence,
+  compatible locked-only borrowing, peer magnitude/offset ownership, silence
+  recovery, exact scale ties, fixed slabs, boundaries, and repeat pass. No
+  representation or diagnostic moved. Batch 29.7AU is ready.
 
 ## Next Task
 
-Run Batch 29.7AT under Rule 31Z. Integrate the frozen direct per-scale state
-mechanics and prove every terminal state, channel-local unlocked behavior,
-compatible locked borrowing, peer magnitude/offset ownership, capacity,
-boundaries, and repeat. Keep objective audio, tuning, listening, holdout,
-product surfaces, and Batch 29.8 closed.
+Run Batch 29.7AU under Rule 31Z. Freeze the complete failure-first objective
+sequence before audio generation, then run synthetic, corrected stereo, mono,
+and long-development stages in that order. Stop at the first existing hard
+gate. Keep tuning, retry, listening, holdout, product surfaces, and Batch 29.8
+closed.

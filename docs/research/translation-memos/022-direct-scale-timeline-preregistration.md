@@ -86,6 +86,7 @@ unconditional peer projection, hard locks, and code types.
 
 ## Next Task
 
-Batch 29.7AS now passes representation mechanics at hash
-`fdf90f6127749341`. Run Batch 29.7AT under Rule 31Z to integrate the frozen
-direct state mechanics only. Objective and listening audio remain closed.
+Batch 29.7AS passes representation mechanics at hash `fdf90f6127749341` and
+Batch 29.7AT passes direct state mechanics at hash `430543f8e1dce721`. Run
+Batch 29.7AU under Rule 31Z as one failure-first objective sequence. Tuning,
+retry, listening, and holdout remain closed.
