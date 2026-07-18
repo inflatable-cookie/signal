@@ -5120,7 +5120,16 @@ exclusion, silence recovery, repeat, and the unchanged Rule 31Z representation
 hashes. It generates no corpus audio. Only complete mechanics passage may
 open one separately preregistered Batch 29.7AX failure-first objective run.
 
+Batch 29.7AW passes that boundary. The corrected analytic fixture retains
+`-0.9500000000000002 radians` before and after borrowing with zero relation
+error and repeats at hash `425400ebb580b3e1`. The complete direct mechanics
+suite passes `9/9` at corrected state hash `52d6b8b2bb6edff0`; Rule 31Z
+representation remains `fdf90f6127749341`. The former state hash
+`430543f8e1dce721` remains the pre-correction baseline, not the corrected
+mechanics receipt. No corpus audio ran.
+
 ## Next Task
 
-Run Batch 29.7AW under Rule 31AA. Apply only the frozen borrowed-owner peak
-phase reference and prove complete mechanics without corpus audio.
+Run Batch 29.7AX under Rule 31AA. Freeze and commit the complete unchanged
+failure-first order and thresholds before generating audio, then execute only
+through the first hard miss.

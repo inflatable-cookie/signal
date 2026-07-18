@@ -10,7 +10,7 @@ struct LockedPeakRelationAttribution {
     unlocked_rotation_separation: f64,
     borrowed_input_relation: f64,
     borrowed_output_relation: f64,
-    borrowed_relation_loss: f64,
+    borrowed_relation_error: f64,
     local_rotation_separation: f64,
     borrowed_regions: usize,
     local_regions: usize,
@@ -23,7 +23,7 @@ fn direct_scale_timeline_rule_31z_state_terminal_order_and_repeat_pass() {
     let second = terminal_sequence();
     assert_eq!(first, second);
     let (hash, [reset, attack, unlocked, ordinary, locked]) = first;
-    assert_eq!(hash, 0x4305_43f8_e1dc_e721);
+    assert_eq!(hash, 0x52d6_b8b2_bb6e_dff0);
     assert_eq!(reset.states, [631, 0, 0, 0, 0]);
     assert_eq!(attack.states, [0, 270, 0, 361, 0]);
     assert_eq!(unlocked.states, [0, 0, 0, 631, 0]);
@@ -96,22 +96,23 @@ fn direct_scale_timeline_rule_31z_state_borrowing_preserves_peer_ownership() {
 }
 
 #[test]
-fn direct_scale_timeline_rule_31z_locked_peak_relation_attribution_confirms_collapse() {
+fn direct_scale_timeline_rule_31aa_locked_peak_correction_preserves_relation() {
     let review = locked_peak_relation_attribution();
+    assert_eq!(review, locked_peak_relation_attribution());
     eprintln!("direct_scale_timeline_rule_31z_locked_peak_relation {review:#?}");
     assert!(review.reset_relation_error <= 1.0e-12, "{review:#?}");
     assert!(review.attack_relation_error <= 1.0e-12, "{review:#?}");
     assert!(review.unlocked_rotation_separation > 1.0e-6, "{review:#?}");
     assert!(review.borrowed_input_relation.abs() > 1.0e-6, "{review:#?}");
     assert!(
-        review.borrowed_output_relation.abs() <= 1.0e-12,
+        wrap(review.borrowed_output_relation - review.borrowed_input_relation).abs() <= 1.0e-12,
         "{review:#?}"
     );
-    assert!(review.borrowed_relation_loss > 1.0e-6, "{review:#?}");
+    assert!(review.borrowed_relation_error <= 1.0e-12, "{review:#?}");
+    assert_eq!(review.hash, 0x4254_00eb_b580_b3e1, "{review:#?}");
     assert!(review.local_rotation_separation > 1.0e-6, "{review:#?}");
     assert_eq!(review.borrowed_regions, 1, "{review:#?}");
     assert_eq!(review.local_regions, 1, "{review:#?}");
-    assert_eq!(review.hash, 0x346e_3290_81ad_f701, "{review:#?}");
 }
 
 fn locked_peak_relation_attribution() -> LockedPeakRelationAttribution {
@@ -176,7 +177,7 @@ fn locked_peak_relation_attribution() -> LockedPeakRelationAttribution {
     assert_eq!(locked_states[high_peak], TerminalState::Locked);
     let borrowed_input_relation = relation(&locked_input, atoms, low_peak);
     let borrowed_output_relation = relation(&locked_output, atoms, low_peak);
-    let borrowed_relation_loss = wrap(borrowed_output_relation - borrowed_input_relation).abs();
+    let borrowed_relation_error = wrap(borrowed_output_relation - borrowed_input_relation).abs();
     let local_rotation_separation =
         rotation_separation(&locked_input, &locked_output, atoms, high_peak);
 
@@ -187,7 +188,7 @@ fn locked_peak_relation_attribution() -> LockedPeakRelationAttribution {
         unlocked_rotation_separation,
         borrowed_input_relation,
         borrowed_output_relation,
-        borrowed_relation_loss,
+        borrowed_relation_error,
         local_rotation_separation,
     ] {
         hash_u64(&mut hash, value.to_bits());
@@ -201,7 +202,7 @@ fn locked_peak_relation_attribution() -> LockedPeakRelationAttribution {
         unlocked_rotation_separation,
         borrowed_input_relation,
         borrowed_output_relation,
-        borrowed_relation_loss,
+        borrowed_relation_error,
         local_rotation_separation,
         borrowed_regions: locked_report.borrowed_regions,
         local_regions: locked_report.local_regions,

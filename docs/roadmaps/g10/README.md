@@ -539,14 +539,19 @@ Current stretch status:
   Reset and attack retain exact relation; unlocked and exact-`6000 Hz` local
   lock remain channel-local. A borrowed peak loses its complete `0.95 rad`
   input relation and exits at zero. Rule 31AA freezes one mechanics-only owner-
-  peak reference correction for ready Batch 29.7AW; Batch 29.7AX remains the
-  separately preregistered objective rerun.
+  peak reference correction. Batch 29.7AW now applies only that substitution:
+  the analytic borrowed relation is preserved exactly at hash
+  `425400ebb580b3e1`, all `9/9` direct mechanics pass at corrected state hash
+  `52d6b8b2bb6edff0`, and representation stays `fdf90f6127749341`. No corpus
+  audio ran. Batch 29.7AX is ready as the separately preregistered objective
+  rerun.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7AW under Rule 31AA. Apply only the frozen borrowed-
-owner peak phase reference and prove mechanics without corpus audio. Keep
-tuning, listening, holdout, product surfaces, and Batch 29.8 closed.
+Run `g10.029` Batch 29.7AX under Rule 31AA. Commit the complete unchanged
+failure-first order and thresholds before generating audio, then execute only
+through the first hard miss. Keep tuning, retry, listening, holdout, product
+surfaces, and Batch 29.8 closed.

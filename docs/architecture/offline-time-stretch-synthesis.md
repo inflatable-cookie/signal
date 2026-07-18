@@ -1879,8 +1879,18 @@ peer peak-relative offset survive borrowing, while reset, attack, silence
 recovery, exact scale ties, fixed slabs, and repeat pass without changing the
 representation or its masked diagnostic.
 
+Batch 29.7AW corrects only the compatible borrowed-region peak reference.
+Borrowed atoms now measure their current phase offset from the owner peak;
+local locked atoms still reference their own channel peak. The analytic
+borrowed relation remains `-0.9500000000000002 radians` with zero error and
+repeats at hash `425400ebb580b3e1`. All `9/9` direct mechanics pass at the new
+state hash `52d6b8b2bb6edff0`; the representation hash remains
+`fdf90f6127749341`. No geometry, classification, magnitude, recurrence,
+capacity, or synthesis field moved, and no corpus audio ran.
+
 ## Next Task
 
-Run Batch 29.7AU under Rule 31Z. Freeze and execute the failure-first objective
-sequence. Stop at the first existing hard-gate miss; keep tuning, retry,
-listening, holdout, product work, and Batch 29.8 closed.
+Run Batch 29.7AX under Rule 31AA. Freeze and commit the full unchanged failure-
+first evidence sequence before audio generation, then stop at the first hard-
+gate miss. Keep tuning, retry, listening, holdout, product work, and Batch 29.8
+closed.

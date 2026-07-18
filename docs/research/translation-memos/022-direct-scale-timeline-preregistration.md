@@ -84,16 +84,16 @@ same-channel sum as proof concepts. Reject its fixed `128` hop, dynamic
 crossovers/valleys, duration-sized buffers, per-scale dynamic normalization,
 unconditional peer projection, hard locks, and code types.
 
-## Next Task
+## Current State
 
 Batch 29.7AS passes representation mechanics at hash `fdf90f6127749341` and
 Batch 29.7AT passes direct state mechanics at hash `430543f8e1dce721`. Batch
 29.7AU passes synthetic evidence at hash `00e522a01b817bb6`, then rejects the
 stereo gate at `40/48` calibrated failures, `118/384` improved windows,
 `36/48` local failures, and hash `af461c9576729c4e`. Tone improves `0/192`
-windows. Run Batch 29.7AV attribution against compatible borrowed-peak phase
-ownership before another candidate. Tuning, retry, listening, and holdout
-remain closed.
+windows. That result opened Batch 29.7AV attribution against compatible
+borrowed-peak phase ownership before another candidate. Tuning, retry,
+listening, and holdout remained closed.
 
 Batch 29.7AV confirms the collapse at hash `346e329081adf701`. A compatible
 borrowed peak loses its full `0.95 rad` inter-channel relation and exits at
@@ -101,3 +101,16 @@ zero, while reset/attack remain exact and unlocked/exact-`6000 Hz` local lock
 remain channel-local. Rule 31AA freezes one correction: borrowed atoms measure
 their current phase offset from the owner peak; local atoms retain their own-
 channel peak. Batch 29.7AW is mechanics-only. Objective audio remains closed.
+
+Batch 29.7AW now applies exactly that correction. The borrowed peak retains
+its complete `-0.9500000000000002 rad` input relation with zero error; the
+focused fixture repeats at hash `425400ebb580b3e1`. Complete direct mechanics
+pass `9/9` at corrected state hash `52d6b8b2bb6edff0`, while representation
+remains `fdf90f6127749341`. The old `430543f8e1dce721` state hash is the
+pre-correction baseline. No corpus audio ran.
+
+## Next Task
+
+Run Batch 29.7AX. Freeze and commit its full unchanged failure-first evidence
+order and thresholds before generating corrected candidate audio, then stop at
+the first hard miss.

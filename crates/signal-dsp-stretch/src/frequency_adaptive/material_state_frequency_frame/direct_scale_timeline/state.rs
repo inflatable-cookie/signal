@@ -161,7 +161,10 @@ impl Prepared {
                                     trajectory_supported,
                                 );
                                 trajectory
-                                    + wrap(value.arg() - current[channel * atoms + peak].arg())
+                                    + wrap(
+                                        value.arg()
+                                            - current[trajectory_channel * atoms + peak].arg(),
+                                    )
                             }
                         };
                         output[index] = if value.norm_sqr() == 0.0 {

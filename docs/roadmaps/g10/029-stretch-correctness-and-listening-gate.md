@@ -2828,19 +2828,28 @@ execute. No renderer code or objective audio changed.
 
 ### Batch 29.7AW - Direct Borrowed-Peak Relation Mechanics
 
-Status: ready
+Status: complete
 
-- [ ] change only the compatible borrowed atom phase reference from the same-
+- [x] change only the compatible borrowed atom phase reference from the same-
   channel peak to the current owner peak; keep every other Rule 31Z field fixed
-- [ ] prove borrowed inter-channel peak relation, peer within-region offsets,
+- [x] prove borrowed inter-channel peak relation, peer within-region offsets,
   magnitude, local/reset/attack/ordinary/unlocked ownership, exact-`6000 Hz`
   exclusion, silence recovery, finiteness, and repeat
-- [ ] preserve representation and capacity evidence; generate no corpus audio
+- [x] preserve representation and capacity evidence; generate no corpus audio
   and promote only the separately gated objective card after mechanics pass
+
+Evidence: the one frozen reference substitution preserves the analytic
+borrowed peak relation exactly: `-0.9500000000000002 radians` in and out with
+zero error. The focused correction fixture repeats at hash
+`425400ebb580b3e1`. The complete direct mechanics suite passes `9/9` at the
+corrected state hash `52d6b8b2bb6edff0`; reset, attack, ordinary, unlocked,
+local lock, exact-`6000 Hz` exclusion, peer magnitude/offset ownership,
+silence recovery, finiteness, capacity, and repeat remain intact. The Rule 31Z
+representation hash remains `fdf90f6127749341`. No corpus audio ran.
 
 ### Batch 29.7AX - Corrected Direct Failure-First Objective Gate
 
-Status: conditional on 29.7AW
+Status: ready
 
 - [ ] freeze the full evidence order and all unchanged thresholds before audio
 - [ ] run mechanics, synthetic, corrected stereo, mono, and long-development
@@ -4233,9 +4242,16 @@ Status: conditional on 29.7AW
   compatible locked-only borrowing, peer magnitude/offset ownership, silence
   recovery, exact scale ties, fixed slabs, boundaries, and repeat pass. No
   representation or diagnostic moved. Batch 29.7AU is ready.
+- 2026-07-19: Batch 29.7AW applies only the Rule 31AA borrowed-owner peak
+  reference correction. The analytic relation is preserved exactly at hash
+  `425400ebb580b3e1`; complete direct mechanics pass `9/9` at corrected state
+  hash `52d6b8b2bb6edff0`; representation remains `fdf90f6127749341`. No corpus
+  audio ran. Batch 29.7AX is ready but its complete failure-first order must be
+  frozen before any audio generation.
 
 ## Next Task
 
-Run Batch 29.7AW under Rule 31AA. Apply only the frozen borrowed-owner peak
-phase reference and prove complete mechanics without corpus audio. Keep
-listening, holdout, product surfaces, and Batch 29.8 closed.
+Run Batch 29.7AX under Rule 31AA. First freeze the complete unchanged failure-
+first evidence order and thresholds in a separate preregistration change. Then
+run the corrected candidate only through the first hard miss. Keep tuning,
+retry, listening, holdout, product surfaces, and Batch 29.8 closed.
