@@ -2779,13 +2779,24 @@ fixed slabs, shape rejection before mutation, finiteness, and repeat pass.
 
 ### Batch 29.7AU - Direct Scale Failure-First Objective Gate
 
-Status: ready
+Status: active
 
-- [ ] freeze one complete objective sequence before audio generation
+- [x] freeze one complete objective sequence before audio generation
 - [ ] run synthetic, corrected stereo, mono, and long-development stages in
   that order, stopping at the first existing hard-gate miss
 - [ ] forbid factor sweeps, row repair, tuning, concealed listening, and
   holdout access; only complete passage may open Batch 29.8
+
+Preregistered 2026-07-19 before candidate audio. Rule 31Z representation and
+state suites are the no-audio entry gate. The frozen objective order is the
+six-source synthetic matrix at `0.75/1.5/2.0`, one corrected `48`-row stereo
+run, six exact-source mono rows, then their long-development measurements.
+Each later stage is conditional on complete prior passage. Stereo retains the
+zero calibrated-failure gate, `245/384` improved-window floor, `13/48` local-
+failure ceiling, and `0.01744693815260` residual ceiling. Mono and long-
+development retain zero hard failures and no row-complete regression. No
+sweep, repair, retry, listening, export, concealed read, or holdout read is
+authorized.
 
 ### Batch 29.8 - Listening And Dynamic Checkpoint
 
@@ -4176,8 +4187,6 @@ Status: ready
 
 ## Next Task
 
-Run Batch 29.7AU under Rule 31Z. Freeze the complete failure-first objective
-sequence before audio generation, then run synthetic, corrected stereo, mono,
-and long-development stages in that order. Stop at the first existing hard
-gate. Keep tuning, retry, listening, holdout, product surfaces, and Batch 29.8
-closed.
+Implement and run the single preregistered Batch 29.7AU sequence under Rule
+31Z. Stop at its first hard gate. Keep tuning, retry, listening, holdout,
+product surfaces, and Batch 29.8 closed.

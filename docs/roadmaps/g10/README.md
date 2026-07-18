@@ -535,7 +535,6 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7AU under Rule 31Z. Freeze the complete failure-first
-objective sequence before audio generation, then stop at the first existing
-hard-gate miss. Keep tuning, retry, listening, holdout, product surfaces, and
-Batch 29.8 closed.
+Run the single preregistered `g10.029` Batch 29.7AU objective sequence under
+Rule 31Z. Stop at the first existing hard-gate miss. Keep tuning, retry,
+listening, holdout, product surfaces, and Batch 29.8 closed.

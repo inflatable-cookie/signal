@@ -5016,9 +5016,49 @@ all three rates, fixed storage, shape rejection before mutation, and repeat
 pass. No geometry, mask, schedule, threshold, capacity, diagnostic, objective,
 or audio surface moved.
 
+Batch 29.7AU is one preregistered failure-first objective run. Representation
+hash `fdf90f6127749341`, state hash `430543f8e1dce721`, all Rule 31Z geometry,
+windows, masks, thresholds, ties, capacities, and the Rule 31V corpus gates are
+immutable. Before any candidate sample is generated, freeze this sequence:
+
+1. rerun the complete release-only Rule 31Z representation and direct-state
+   suites; any geometry, capacity, unity, crop, coverage, conjugacy, finite,
+   repeat, work, overflow, terminal-state, duplicate, mono-parity,
+   silent-peer, or swap failure closes the batch before objective audio
+2. render the frozen silence, tone, noise, impulse, mixed, and transient
+   synthetic sources at `0.75`, `1.5`, and `2.0`; require exact target crop,
+   complete coverage, zero structural and nonfinite failures, deterministic
+   repeat, every non-scripted terminal state, zero duplicate, mono-parity,
+   silent-peer, and swap error above `1e-6`, exactly `19` guidance ticks, and
+   prepared storage at or below every Rule 31Z cap
+3. only after synthetic passage, run the corrected `48`-row stereo corpus
+   once through the existing calibrated adapter; require zero calibrated and
+   structural failures, deterministic repeat, at least `245/384` local windows
+   improved over current Signal, at most `13/48` Signal-relative local-row
+   failures, and maximum normalized-Gram residual at or below
+   `0.01744693815260`
+4. only after stereo passage, run the unchanged six exact-source mono rows;
+   require zero hard failures and no row-complete regression against current
+   Signal
+5. only after mono passage, run those rows' unchanged long-development
+   measurements; require zero hard failures and no row-complete regression
+   against current Signal
+
+The renderer maps each output tick to the absolute Rule 31Z source centre,
+analyzes each channel's three exclusive scales directly, retains only the ten
+current/future coefficient ticks and nineteen joint-magnitude guidance ticks,
+commits one state tick, inverse-synthesizes each scale into the same-channel
+`8HC` output ring, and emits the exact `[0,T)` crop. The returned candidate
+buffer is caller-owned output, not duration-growing processing state. Initial
+guidance priming and final drain do not change the per-tick transform bound or
+create output outside synthesis ticks.
+
+Stop at the first miss. Do not sweep factors, repair rows, tune, retry, fall
+back, export audio, listen, read concealed or holdout material, or enter mono
+or long-development after a stereo miss. Only complete passage may make Batch
+29.8 ready.
+
 ## Next Task
 
-Run Batch 29.7AU under Rule 31Z. Freeze the complete failure-first objective
-sequence before audio generation, then run synthetic, corrected stereo, mono,
-and long-development stages in that order. Stop at the first existing hard-
-gate miss. Do not tune, retry, listen, or access holdout material.
+Implement and run the single frozen Batch 29.7AU sequence. Stop at its first
+hard-gate miss. Do not tune, retry, listen, or access holdout material.
