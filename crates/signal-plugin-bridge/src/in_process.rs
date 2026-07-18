@@ -1864,6 +1864,7 @@ mod tests {
             master_limiter: None,
             stages: vec![
                 RenderStageSpec {
+                    accepts_live_events: false,
                     stage_id: 1,
                     format: ChannelFormat::stereo(),
                     gain: 1.0,
@@ -1874,6 +1875,7 @@ mod tests {
                     events: None,
                 },
                 RenderStageSpec {
+                    accepts_live_events: false,
                     stage_id: 2,
                     format: ChannelFormat::stereo(),
                     gain: 1.0,
@@ -1884,6 +1886,7 @@ mod tests {
                     events: Some(events),
                 },
                 RenderStageSpec {
+                    accepts_live_events: false,
                     stage_id: 3,
                     format: ChannelFormat::stereo(),
                     gain: 1.0,

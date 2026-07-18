@@ -346,6 +346,19 @@ pub struct RenderBlockPluginEvent {
 /// the cap in one block are dropped, earliest-first wins.
 pub const PLUGIN_EVENTS_PER_BLOCK_CAPACITY: usize = 1024;
 
+/// Inline event capacity of one [`RenderCommand`]-borne live-event push.
+/// The command must stay `Send` + fixed-size (no allocation once the
+/// controller has copied the caller's slice), so batches larger than this
+/// chunk across multiple commands control-side.
+pub const LIVE_EVENT_PUSH_CAPACITY: usize = 32;
+
+/// Per-stage live-event ring capacity (g13.018). The ring is preallocated
+/// at install for stages with [`RenderStageSpec::accepts_live_events`] and
+/// drains fully every rendered block; events pushed past the capacity
+/// between blocks are dropped and counted
+/// ([`RenderPlaneController::live_event_drop_count`]).
+pub const LIVE_EVENT_RING_CAPACITY: usize = 256;
+
 /// Reconcile plugin note, controller, and expression state across a non-
 /// contiguous transport jump. Fixed bounded state and the caller's
 /// preallocated scratch keep this audio-thread safe. Note IDs are not yet
@@ -1271,6 +1284,14 @@ pub struct RenderStageSpec {
     /// compile rejects events without one. `None` keeps the pre-event
     /// behavior bit-identical.
     pub events: Option<RenderPluginEventBuffer>,
+    /// When true, the executor allocates a per-stage live-event ring at
+    /// install and accepts [`RenderPlaneController::push_live_events`] for
+    /// this stage (g13.018): host-pushed events (hardware MIDI live-thru)
+    /// deliver to `processor` every block regardless of transport. Same
+    /// placement rule as compiled events: valid only on a Sum stage with a
+    /// processor — compile rejects it elsewhere. `false` keeps behavior
+    /// bit-identical.
+    pub accepts_live_events: bool,
 }
 
 /// Optional soft limiter guarding the hardware boundary. Mechanism only —
@@ -1324,6 +1345,7 @@ impl RenderPlanSpec {
                 || old.inputs != new.inputs
                 || old.processor != new.processor
                 || old.events != new.events
+                || old.accepts_live_events != new.accepts_live_events
             {
                 return None;
             }
@@ -1378,6 +1400,9 @@ pub enum RenderPlanCompileError {
     EventsWithoutProcessor(u64),
     /// A plugin event buffer is not sorted by `frame`.
     UnsortedEvents(u64),
+    /// `accepts_live_events` was set on a stage without a plugin processor
+    /// (live events require a processor, which itself requires a Sum stage).
+    LiveEventsWithoutProcessor(u64),
     /// A `Warped` source wraps something other than `Samples` or `Stream`.
     WarpedSourceUnsupported {
         /// Stage owning the clip.
@@ -1436,6 +1461,10 @@ impl std::fmt::Display for RenderPlanCompileError {
             RenderPlanCompileError::UnsortedEvents(stage_id) => write!(
                 formatter,
                 "stage {stage_id} plugin events are not sorted by frame",
+            ),
+            RenderPlanCompileError::LiveEventsWithoutProcessor(stage_id) => write!(
+                formatter,
+                "stage {stage_id} accepts live events without a plugin processor",
             ),
             RenderPlanCompileError::WarpedSourceUnsupported { stage_id, clip_id } => write!(
                 formatter,
@@ -1570,6 +1599,14 @@ struct CompiledNode {
     /// ([`PLUGIN_EVENTS_PER_BLOCK_CAPACITY`]); the audio thread only ever
     /// clears and pushes within capacity.
     event_scratch: Vec<RenderBlockPluginEvent>,
+    /// Whether this stage accepts host-pushed live events (g13.018).
+    accepts_live_events: bool,
+    /// Live-event ring: preallocated at compile
+    /// ([`LIVE_EVENT_RING_CAPACITY`]) for accepting stages, empty otherwise.
+    /// `PushLiveEvents` appends within capacity (overflow drops and counts);
+    /// every rendered block drains and clears it. The audio thread only ever
+    /// pushes within capacity and clears — never allocates.
+    live_events: Vec<RenderPluginEvent>,
     /// Interleaved fixed-size delay ring plus its next sample position.
     /// Empty for non-delay stages and zero-frame delays.
     delay_ring: Vec<f32>,
@@ -1642,6 +1679,14 @@ impl RenderPlan {
         for stage in &spec.stages {
             if stage.processor.is_some() && !matches!(stage.kind, RenderStageKind::Sum) {
                 return Err(RenderPlanCompileError::ProcessorOnNonSumStage(
+                    stage.stage_id,
+                ));
+            }
+            if stage.accepts_live_events && stage.processor.is_none() {
+                // Same placement rule as compiled events: a processor is
+                // required, and the processor check above already pins
+                // processors to Sum stages.
+                return Err(RenderPlanCompileError::LiveEventsWithoutProcessor(
                     stage.stage_id,
                 ));
             }
@@ -1947,8 +1992,14 @@ impl RenderPlan {
                     .as_ref()
                     .map(|buffer| Arc::clone(&buffer.events))
                     .unwrap_or_else(|| Arc::from([])),
-                event_scratch: if stage.events.is_some() {
+                event_scratch: if stage.events.is_some() || stage.accepts_live_events {
                     Vec::with_capacity(PLUGIN_EVENTS_PER_BLOCK_CAPACITY)
+                } else {
+                    Vec::new()
+                },
+                accepts_live_events: stage.accepts_live_events,
+                live_events: if stage.accepts_live_events {
+                    Vec::with_capacity(LIVE_EVENT_RING_CAPACITY)
                 } else {
                     Vec::new()
                 },
@@ -2094,6 +2145,22 @@ fn sample_envelope(points: &[(u64, f32)], frame: u64) -> f32 {
     }
 }
 
+/// Stable in-place insertion sort of a per-block event slice by
+/// `offset_frames`. Used after live events append to a (sorted) compiled
+/// prefix: near-linear on the mostly-sorted input, allocation-free, and
+/// stability preserves compiled-before-live plus push order on equal
+/// offsets — audio-thread safe.
+#[inline]
+fn insertion_sort_events_by_offset(events: &mut [RenderBlockPluginEvent]) {
+    for index in 1..events.len() {
+        let mut position = index;
+        while position > 0 && events[position - 1].offset_frames > events[position].offset_frames {
+            events.swap(position - 1, position);
+            position -= 1;
+        }
+    }
+}
+
 /// Declick gain for a frame inside a clip window: linear fade over
 /// `fade_frames` at each edge, unity in between.
 #[inline]
@@ -2166,9 +2233,17 @@ fn render_clips_into_scratch(
     block_start_frame: u64,
     frame_count: usize,
     loop_end_frame: Option<u64>,
+    timeline_active: bool,
 ) {
     let block_end_frame = block_start_frame + frame_count as u64;
     for clip in clips.iter_mut() {
+        // Timeline-positioned content is silent while the transport is not
+        // advancing (g13.018 live render posture: a stopped-but-rendering
+        // block must not replay the frozen position every callback). Live
+        // input is position-independent — it always drains "now".
+        if !timeline_active && !matches!(clip.source, CompiledSource::LiveInput { .. }) {
+            continue;
+        }
         // Skip clips entirely outside this block.
         if clip.end_frames <= block_start_frame || clip.start_frames >= block_end_frame {
             continue;
@@ -2569,6 +2644,11 @@ fn render_clips_into_scratch(
     }
 }
 
+// `PushLiveEvents` carries its batch INLINE by design: boxing it would move
+// the deallocation of every consumed batch onto the audio thread, which the
+// render plane forbids. The mailbox is bounded and shallow, so the size
+// spread costs a few tens of kilobytes once, at construction.
+#[allow(clippy::large_enum_variant)]
 enum RenderCommand {
     InstallPlan(Box<RenderPlan>),
     SetPlaying(bool),
@@ -2585,6 +2665,23 @@ enum RenderCommand {
     SetStageGain {
         stage_index: usize,
         target: f32,
+    },
+    /// Live render posture (g13.018): while active the executor renders
+    /// stages even when the transport is stopped — live-input monitoring and
+    /// live-pushed events stay audible. Compiled timeline content stays
+    /// `playing`-gated and the transport position does not advance.
+    SetLiveRender {
+        active: bool,
+    },
+    /// Live-event fast path (g13.018), mirror of the gain fast path:
+    /// `stage_index` addresses the ACTIVE plan's topological stage list
+    /// (resolved control-side against `last_topology`). The batch is inline
+    /// and fixed-size so the command allocates nothing after the
+    /// controller-side copy; only `events[..len]` is meaningful.
+    PushLiveEvents {
+        stage_index: usize,
+        events: [RenderPluginEvent; LIVE_EVENT_PUSH_CAPACITY],
+        len: usize,
     },
 }
 
@@ -2641,6 +2738,13 @@ struct SharedState {
     /// previous callback exceeded [`XRUN_INTERVAL_FACTOR`] × the block
     /// duration at the plan rate.
     xrun_count: AtomicU64,
+    /// Live render posture as last applied by the executor (g13.018).
+    live_render: AtomicBool,
+    /// Live events dropped instead of delivered (g13.018): ring overflow,
+    /// per-block scratch overflow, pushes addressing a stage that no longer
+    /// accepts them, or pushes with no plan installed. Monotonic; surfaces
+    /// on the controller like the xrun counter.
+    live_event_drop_count: AtomicU64,
 }
 
 impl Default for SharedState {
@@ -2655,8 +2759,20 @@ impl Default for SharedState {
             last_callback_duration_micros: AtomicU64::new(0),
             max_callback_duration_micros: AtomicU64::new(0),
             xrun_count: AtomicU64::new(0),
+            live_render: AtomicBool::new(false),
+            live_event_drop_count: AtomicU64::new(0),
         }
     }
+}
+
+/// Identity snapshot of one installed stage in topological order: enough for
+/// the controller to resolve fast-path commands (`set_stage_gain`,
+/// `push_live_events`) and label meter slots without recompiling.
+#[derive(Debug, Clone)]
+struct TopologyStage {
+    stage_id: u64,
+    clip_ids: Vec<u64>,
+    accepts_live_events: bool,
 }
 
 /// Control-side handle: compiles and installs plans, drives transport, and
@@ -2670,10 +2786,10 @@ pub struct RenderPlaneController {
     /// assume the stream matches their master format.
     stream_channels: Option<u16>,
     /// Identity snapshot of the last successfully installed plan, in its
-    /// topological stage order: (stage_id, clip ids). Used to precompute the
-    /// state-inheritance maps for the next install so the executor does pure
-    /// index copies.
-    last_topology: Option<Vec<(u64, Vec<u64>)>>,
+    /// topological stage order. Used to precompute the state-inheritance
+    /// maps for the next install so the executor does pure index copies, and
+    /// to resolve fast-path commands (stage gains, live-event pushes).
+    last_topology: Option<Vec<TopologyStage>>,
     /// Generation stamp of the most recent successful install; compared
     /// against the shared meter generation when resolving meter slots.
     plan_generation: u64,
@@ -2720,35 +2836,35 @@ impl RenderPlaneController {
             })?;
 
         // Topology of the freshly compiled plan (topo order).
-        let topology: Vec<(u64, Vec<u64>)> = plan
+        let topology: Vec<TopologyStage> = plan
             .stages
             .iter()
-            .map(|stage| {
-                (
-                    stage.stage_id,
-                    stage.clips.iter().map(|clip| clip.clip_id).collect(),
-                )
+            .map(|stage| TopologyStage {
+                stage_id: stage.stage_id,
+                clip_ids: stage.clips.iter().map(|clip| clip.clip_id).collect(),
+                accepts_live_events: stage.accepts_live_events,
             })
             .collect();
 
         if let Some(previous) = self.last_topology.as_ref() {
             plan.inherit_stage_map = topology
                 .iter()
-                .map(|(stage_id, _)| {
+                .map(|stage| {
                     previous
                         .iter()
-                        .position(|(previous_id, _)| previous_id == stage_id)
+                        .position(|previous_stage| previous_stage.stage_id == stage.stage_id)
                 })
                 .collect();
             plan.inherit_clip_maps = topology
                 .iter()
                 .enumerate()
-                .map(|(index, (_, clip_ids))| {
+                .map(|(index, stage)| {
                     let Some(previous_index) = plan.inherit_stage_map[index] else {
                         return Vec::new();
                     };
-                    let previous_clips = &previous[previous_index].1;
-                    clip_ids
+                    let previous_clips = &previous[previous_index].clip_ids;
+                    stage
+                        .clip_ids
                         .iter()
                         .map(|clip_id| {
                             previous_clips
@@ -2782,7 +2898,7 @@ impl RenderPlaneController {
                 message: "no plan installed; cannot set stage gain".to_string(),
             });
         };
-        let Some(stage_index) = topology.iter().position(|(id, _)| *id == stage_id) else {
+        let Some(stage_index) = topology.iter().position(|stage| stage.stage_id == stage_id) else {
             return Err(RenderPlaneError {
                 message: format!("stage {stage_id} not present in the installed plan"),
             });
@@ -2795,6 +2911,98 @@ impl RenderPlaneController {
             .map_err(|error| RenderPlaneError {
                 message: format!("command mailbox rejected stage gain: {error}"),
             })
+    }
+
+    /// Live render posture (g13.018): while active, the executor renders
+    /// stages even when the transport is stopped, so live-input monitoring
+    /// and live-pushed events are audible without the transport rolling.
+    /// Compiled timeline content (clips and compiled plugin events) stays
+    /// gated on `playing`, and the transport position does not advance while
+    /// stopped.
+    pub fn set_live_render(&self, active: bool) -> Result<(), RenderPlaneError> {
+        self.commands
+            .try_send(RenderCommand::SetLiveRender { active })
+            .map_err(|error| RenderPlaneError {
+                message: format!("command mailbox rejected live render posture: {error}"),
+            })
+    }
+
+    /// Live-event fast path (g13.018), mirror of [`Self::set_stage_gain`]:
+    /// push `events` (absolute stream-clock frames) at the stage's live-event
+    /// ring. Resolves `stage_id` against the topology of the most recent
+    /// successful install and validates that the stage compiled with
+    /// [`RenderStageSpec::accepts_live_events`]. Batches larger than
+    /// [`LIVE_EVENT_PUSH_CAPACITY`] chunk across multiple commands; events
+    /// are sorted by frame control-side when needed so ring order stays
+    /// chronological. Never blocks: a full command FIFO returns an error
+    /// (events past that point are not delivered — push smaller batches or
+    /// retry next pump).
+    pub fn push_live_events(
+        &self,
+        stage_id: u64,
+        events: &[RenderPluginEvent],
+    ) -> Result<(), RenderPlaneError> {
+        let Some(topology) = self.last_topology.as_ref() else {
+            return Err(RenderPlaneError {
+                message: "no plan installed; cannot push live events".to_string(),
+            });
+        };
+        let Some(stage_index) = topology.iter().position(|stage| stage.stage_id == stage_id) else {
+            return Err(RenderPlaneError {
+                message: format!("stage {stage_id} not present in the installed plan"),
+            });
+        };
+        if !topology[stage_index].accepts_live_events {
+            return Err(RenderPlaneError {
+                message: format!("stage {stage_id} does not accept live events"),
+            });
+        }
+        if events.is_empty() {
+            return Ok(());
+        }
+        // Chronological ring order without touching the caller's slice:
+        // sort a copy only when the batch arrives unsorted (control side —
+        // allocation is fine here).
+        let sorted;
+        let events = if events.windows(2).any(|pair| pair[0].frame > pair[1].frame) {
+            let mut copy = events.to_vec();
+            copy.sort_by_key(|event| event.frame);
+            sorted = copy;
+            sorted.as_slice()
+        } else {
+            events
+        };
+        const FILL: RenderPluginEvent = RenderPluginEvent {
+            frame: 0,
+            channel: 0,
+            kind: RenderPluginEventKind::NoteOff { key: 0 },
+        };
+        for chunk in events.chunks(LIVE_EVENT_PUSH_CAPACITY) {
+            let mut batch = [FILL; LIVE_EVENT_PUSH_CAPACITY];
+            batch[..chunk.len()].copy_from_slice(chunk);
+            self.commands
+                .try_send(RenderCommand::PushLiveEvents {
+                    stage_index,
+                    events: batch,
+                    len: chunk.len(),
+                })
+                .map_err(|error| RenderPlaneError {
+                    message: format!("command mailbox rejected live events: {error}"),
+                })?;
+        }
+        Ok(())
+    }
+
+    /// Live render posture as last applied by the executor.
+    pub fn live_render(&self) -> bool {
+        self.shared.live_render.load(Ordering::Relaxed)
+    }
+
+    /// Cumulative live events dropped instead of delivered (ring overflow,
+    /// per-block scratch overflow, or pushes that no longer resolve on the
+    /// executor). Monotonic, like [`Self::xrun_count`].
+    pub fn live_event_drop_count(&self) -> u64 {
+        self.shared.live_event_drop_count.load(Ordering::Relaxed)
     }
 
     /// Gate rendering on or off (transport play/stop).
@@ -2886,10 +3094,10 @@ impl RenderPlaneController {
             .iter()
             .take(METER_SLOT_CAPACITY)
             .enumerate()
-            .map(|(index, (stage_id, _))| {
+            .map(|(index, stage)| {
                 let slot = &self.shared.meter_slots[index];
                 (
-                    *stage_id,
+                    stage.stage_id,
                     f32::from_bits(slot.peak_bits.load(Ordering::Relaxed)),
                     f32::from_bits(slot.rms_bits.load(Ordering::Relaxed)),
                 )
@@ -2944,6 +3152,19 @@ pub struct RenderPlaneExecutor {
     stream_channels: Option<u16>,
     /// Transport gate target. Audio follows through `edge_gain`.
     playing: bool,
+    /// Live render posture (g13.018): while set, stages render even when the
+    /// transport is stopped (live monitoring and live events stay audible);
+    /// compiled timeline content stays `playing`-gated and the position does
+    /// not advance while stopped.
+    live_render: bool,
+    /// True while timeline content is still winding down after a stop: set
+    /// while playing and held through the stop edge ramp-out, cleared once
+    /// the edge envelope closes (or immediately under the live render
+    /// posture, whose stop cuts timeline content at the block boundary).
+    /// Distinguishes "ramping out after playback" from "edge held open by
+    /// the live render posture" — only the former renders clips and
+    /// advances the position while `playing` is false.
+    timeline_tail: bool,
     /// Transport edge envelope: ramps toward 1 when playing, 0 when stopped
     /// or before an in-flight seek, so transport actions never step audio.
     edge_gain: f32,
@@ -3046,6 +3267,39 @@ impl RenderPlaneExecutor {
                 }
                 Ok(RenderCommand::SetLoopRegion(region)) => {
                     self.loop_region = region;
+                }
+                Ok(RenderCommand::SetLiveRender { active }) => {
+                    self.live_render = active;
+                    self.shared.live_render.store(active, Ordering::Relaxed);
+                }
+                Ok(RenderCommand::PushLiveEvents {
+                    stage_index,
+                    events,
+                    len,
+                }) => {
+                    // Append into the stage's preallocated ring; anything
+                    // that cannot land (no plan, stage gone or no longer
+                    // accepting after a reinstall raced the push, ring full)
+                    // drops and counts — never blocks, never allocates.
+                    let len = len.min(LIVE_EVENT_PUSH_CAPACITY);
+                    let mut accepted = 0usize;
+                    if let Some(plan) = self.plan.as_mut() {
+                        if let Some(stage) = plan.stages.get_mut(stage_index) {
+                            if stage.accepts_live_events {
+                                for event in events.iter().take(len) {
+                                    if stage.live_events.len() < stage.live_events.capacity() {
+                                        stage.live_events.push(*event);
+                                        accepted += 1;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if accepted < len {
+                        self.shared
+                            .live_event_drop_count
+                            .fetch_add((len - accepted) as u64, Ordering::Relaxed);
+                    }
                 }
                 Ok(RenderCommand::SetStreamChannels(channels)) => {
                     self.stream_channels = Some(channels.max(1));
@@ -3170,9 +3424,11 @@ impl RenderPlaneExecutor {
         let Some(plan) = self.plan.as_mut() else {
             return;
         };
-        // Audible while the gate is open, while ramping out after a stop, or
-        // while ramping around an in-flight seek.
-        if !self.playing && self.edge_gain <= 0.0 {
+        // Audible while the gate is open, while ramping out after a stop,
+        // while ramping around an in-flight seek, or whenever the live
+        // render posture is active (g13.018: live monitoring and live
+        // events do not require the transport to roll).
+        if !self.playing && self.edge_gain <= 0.0 && !self.live_render {
             // Silent block: meters read zero rather than holding the last
             // audible level.
             Self::publish_silent_meters(&self.shared, plan);
@@ -3192,6 +3448,16 @@ impl RenderPlaneExecutor {
         let frame_count = frame_count.min(MAX_BLOCK_FRAMES);
         let block_start_frame = self.position_frames;
         let playing = self.playing;
+        let live_render = self.live_render;
+        // Timeline content (clips, position advance, discontinuity
+        // consumption) renders while playing, and — exactly as before this
+        // flag existed — through the stop edge ramp-out (`timeline_tail`).
+        // Under the live render posture a stopped transport renders the
+        // stage GRAPH (live input drains, live events deliver, processors
+        // run, meters publish) but timeline content is silent and the
+        // position holds.
+        let timeline_active =
+            playing || (self.timeline_tail && !live_render && self.edge_gain > 0.0);
 
         // Loop-region segmentation: while playing with a region set, a block
         // whose span crosses `loop_end` renders as (up to) TWO timeline
@@ -3261,6 +3527,7 @@ impl RenderPlaneExecutor {
                 processor,
                 events,
                 event_scratch,
+                live_events,
                 delay_ring,
                 delay_cursor,
                 scratch,
@@ -3288,6 +3555,7 @@ impl RenderPlaneExecutor {
                     *segment_start,
                     *segment_frames,
                     loop_end_frame,
+                    timeline_active,
                 );
             }
 
@@ -3341,12 +3609,19 @@ impl RenderPlaneExecutor {
             // Delivery is playback-gated: while stopped (edge ramp-out) the
             // position does not advance, so re-firing the same events every
             // block would double-trigger notes.
+            // Live-event delivery (g13.018): the stage's ring drains into
+            // the same per-block scratch REGARDLESS of transport — a live-
+            // played instrument sounds while stopped. Events at or past the
+            // block start map to their in-block offset; events already in
+            // the past clamp to offset 0 ("now"); events past the block end
+            // clamp to the last frame (delivered once, this block). Compiled
+            // events stay `playing`-gated exactly as before.
             if let Some(processor) = processor {
-                if events.is_empty() {
+                if events.is_empty() && live_events.is_empty() {
                     let _ = processor.process(scratch, frame_count, channels);
                 } else {
                     event_scratch.clear();
-                    if playing {
+                    if playing && !events.is_empty() {
                         for (segment_index, (segment_start, segment_offset, segment_frames)) in
                             segments.iter().take(segment_count).enumerate()
                         {
@@ -3386,6 +3661,37 @@ impl RenderPlaneExecutor {
                                 });
                             }
                         }
+                    }
+                    if !live_events.is_empty() {
+                        let last_offset = frame_count.saturating_sub(1) as u64;
+                        let mut dropped = 0u64;
+                        for event in live_events.iter() {
+                            if event_scratch.len() == PLUGIN_EVENTS_PER_BLOCK_CAPACITY {
+                                dropped += 1;
+                                continue;
+                            }
+                            let offset = event
+                                .frame
+                                .saturating_sub(block_start_frame)
+                                .min(last_offset);
+                            event_scratch.push(RenderBlockPluginEvent {
+                                offset_frames: offset as u32,
+                                channel: event.channel,
+                                kind: event.kind,
+                            });
+                        }
+                        live_events.clear();
+                        if dropped > 0 {
+                            self.shared
+                                .live_event_drop_count
+                                .fetch_add(dropped, Ordering::Relaxed);
+                        }
+                        // Restore the sorted-by-offset contract after the
+                        // append: stable in-place insertion sort (alloc-free;
+                        // the compiled prefix is already sorted, so this is
+                        // near-linear, and ties keep compiled-before-live and
+                        // push order).
+                        insertion_sort_events_by_offset(event_scratch);
                     }
                     let _ = processor.process_with_events(
                         scratch,
@@ -3474,9 +3780,13 @@ impl RenderPlaneExecutor {
 
         // Transport edge envelope over the mixed block: ramps toward the
         // gate target (zero while a seek is in flight) and never steps.
+        // Under the live render posture the envelope holds open while
+        // stopped — monitoring and live-played notes must stay audible, so
+        // the stop ramp-out does not apply (timeline content is gated at
+        // the clip level instead). The seek ramp-out/in is unchanged.
         let edge_target = if self.pending_seek.is_some() {
             0.0
-        } else if self.playing {
+        } else if self.playing || live_render {
             1.0
         } else {
             0.0
@@ -3492,18 +3802,30 @@ impl RenderPlaneExecutor {
             }
         }
 
-        // After a wrap block the clock reads `loop_start + remainder`;
-        // otherwise it advances linearly by the block.
-        self.position_frames = end_position;
-        self.shared
-            .position_frames
-            .store(self.position_frames, Ordering::Relaxed);
+        // Timeline tail: latched while playing, held through the stop
+        // ramp-out (edge still open, posture off), cleared once the edge
+        // closes or the posture cuts timeline content at the stop.
+        self.timeline_tail =
+            self.playing || (self.timeline_tail && !live_render && self.edge_gain > 0.0);
 
-        // Seek lands at the envelope's zero crossing; the next block ramps
-        // back in from the new position.
-        // Any discontinuity consumed by this block is complete. A pending
-        // seek applied below installs the source for the NEXT block.
-        self.event_discontinuity_from = None;
+        // After a wrap block the clock reads `loop_start + remainder`;
+        // otherwise it advances linearly by the block. Stopped live-render
+        // blocks hold the position (the transport does not advance while
+        // stopped) and preserve any pending discontinuity for the next
+        // timeline-active block.
+        if timeline_active {
+            self.position_frames = end_position;
+            self.shared
+                .position_frames
+                .store(self.position_frames, Ordering::Relaxed);
+
+            // Seek lands at the envelope's zero crossing; the next block
+            // ramps back in from the new position.
+            // Any discontinuity consumed by this block is complete. A
+            // pending seek applied below installs the source for the NEXT
+            // block.
+            self.event_discontinuity_from = None;
+        }
         if self.edge_gain <= 0.0 {
             if let Some(position) = self.pending_seek.take() {
                 self.apply_seek(position);
@@ -3534,6 +3856,8 @@ pub fn render_plane() -> (RenderPlaneController, RenderPlaneExecutor) {
             parked_retired: None,
             stream_channels: None,
             playing: false,
+            live_render: false,
+            timeline_tail: false,
             edge_gain: 0.0,
             pending_seek: None,
             event_discontinuity_from: None,
@@ -3554,6 +3878,7 @@ mod tests {
 
     fn lane_node(stage_id: u64, gain: f32, clips: Vec<RenderClipSpec>) -> RenderStageSpec {
         RenderStageSpec {
+            accepts_live_events: false,
             processor: None,
             events: None,
             stage_id,
@@ -3567,6 +3892,7 @@ mod tests {
 
     fn master_node(inputs: Vec<RenderEdgeSpec>) -> RenderStageSpec {
         RenderStageSpec {
+            accepts_live_events: false,
             processor: None,
             events: None,
             stage_id: MASTER_ID,
@@ -4463,8 +4789,7 @@ mod tests {
         // A 1 s buffer at rate 2.0 runs out of source after 0.5 s of stream
         // time: the second half of the clip window renders silence.
         let (mut controller, mut executor) = render_plane();
-        let data: Vec<f32> = std::iter::repeat([0.5f32, 0.5f32])
-            .take(48_000)
+        let data: Vec<f32> = std::iter::repeat_n([0.5f32, 0.5f32], 48_000)
             .flatten()
             .collect();
         let spec = lane_master_spec(
@@ -4707,6 +5032,7 @@ mod tests {
                     }],
                 ),
                 RenderStageSpec {
+                    accepts_live_events: false,
                     processor,
                     events: None,
                     stage_id: 77,
@@ -4745,6 +5071,7 @@ mod tests {
                     }],
                 ),
                 RenderStageSpec {
+                    accepts_live_events: false,
                     processor: None,
                     events: None,
                     stage_id: 78,
@@ -5870,6 +6197,368 @@ mod tests {
         assert_ne!(live_input_spec(&a, 1.0), live_input_spec(&c, 1.0));
     }
 
+    // ── Live render posture + live event injection (g13.018) ───────────────
+
+    const LIVE_INSERT_ID: u64 = 77;
+
+    /// Silent lane into a Sum instrument stage that accepts live events.
+    fn live_instrument_spec(handle: RenderPluginProcessor) -> RenderPlanSpec {
+        RenderPlanSpec {
+            sample_rate_hz: 48_000,
+            master_gain: 1.0,
+            master_limiter: None,
+            stages: vec![
+                lane_node(LANE_ID, 1.0, Vec::new()),
+                RenderStageSpec {
+                    accepts_live_events: true,
+                    processor: Some(handle),
+                    events: None,
+                    stage_id: LIVE_INSERT_ID,
+                    format: ChannelFormat::stereo(),
+                    gain: 1.0,
+                    gain_automation: None,
+                    kind: RenderStageKind::Sum,
+                    inputs: vec![identity_edge(LANE_ID)],
+                },
+                master_node(vec![identity_edge(LIVE_INSERT_ID)]),
+            ],
+        }
+    }
+
+    fn live_note_on(frame: u64, key: u8, velocity: f32) -> RenderPluginEvent {
+        RenderPluginEvent {
+            frame,
+            channel: 0,
+            kind: RenderPluginEventKind::NoteOn { key, velocity },
+        }
+    }
+
+    fn live_note_off(frame: u64, key: u8) -> RenderPluginEvent {
+        RenderPluginEvent {
+            frame,
+            channel: 0,
+            kind: RenderPluginEventKind::NoteOff { key },
+        }
+    }
+
+    #[test]
+    fn compile_rejects_live_event_flag_without_processor_and_gain_fast_path_treats_it_structural() {
+        let (mut controller, _executor) = render_plane();
+        let backend = RecordingEventProcessor::new();
+        let handle = RenderPluginProcessor::new(Arc::clone(&backend) as Arc<_>);
+        let mut spec = live_instrument_spec(handle);
+        spec.stages[1].processor = None;
+        let error = controller.install_plan(&spec).unwrap_err();
+        assert!(
+            error
+                .message
+                .contains("accepts live events without a plugin processor"),
+            "{error}",
+        );
+
+        // Non-Sum stages cannot accept live events either (no processor is
+        // even representable there).
+        let mut lane_flagged = tone_spec(440.0);
+        lane_flagged.stages[0].accepts_live_events = true;
+        assert!(controller.install_plan(&lane_flagged).is_err());
+
+        // Flipping the flag is a structural change, never a gain fast path.
+        let with_flag = tone_spec(440.0);
+        let mut without_flag = with_flag.clone();
+        without_flag.stages[0].accepts_live_events = false;
+        let mut flagged = with_flag.clone();
+        flagged.stages[0].accepts_live_events = true;
+        assert_eq!(without_flag.differs_only_in_gains(&flagged), None);
+    }
+
+    #[test]
+    fn push_live_events_validates_stage_identity_and_flag() {
+        let (mut controller, _executor) = render_plane();
+        let events = [live_note_on(0, 60, 0.5)];
+        assert!(
+            controller
+                .push_live_events(LIVE_INSERT_ID, &events)
+                .is_err(),
+            "push without an installed plan must error",
+        );
+
+        let backend = RecordingEventProcessor::new();
+        let handle = RenderPluginProcessor::new(Arc::clone(&backend) as Arc<_>);
+        controller
+            .install_plan(&live_instrument_spec(handle))
+            .unwrap();
+        assert!(
+            controller.push_live_events(9_999, &events).is_err(),
+            "unknown stage must error",
+        );
+        assert!(
+            controller.push_live_events(LANE_ID, &events).is_err(),
+            "stage without accepts_live_events must error",
+        );
+        controller
+            .push_live_events(LIVE_INSERT_ID, &events)
+            .expect("accepting stage takes the push");
+        controller
+            .push_live_events(LIVE_INSERT_ID, &[])
+            .expect("empty push is a no-op");
+    }
+
+    #[test]
+    fn live_events_sound_through_a_hosted_instrument_while_transport_is_stopped() {
+        let (mut controller, mut executor) = render_plane();
+        let backend = Arc::new(EventInstrumentProcessor {
+            amplitude_bits: AtomicU32::new(0.0f32.to_bits()),
+        });
+        let handle = RenderPluginProcessor::new(backend as Arc<_>);
+        controller
+            .install_plan(&live_instrument_spec(handle))
+            .unwrap();
+
+        // Stopped, posture off: the render gate silences everything.
+        let mut frames = [0.0f32; 512];
+        executor.render_block(&mut frames);
+        assert!(frames.iter().all(|sample| *sample == 0.0));
+
+        // Posture on, still stopped: a pushed note sounds.
+        controller.set_live_render(true).unwrap();
+        controller
+            .push_live_events(LIVE_INSERT_ID, &[live_note_on(0, 60, 0.5)])
+            .unwrap();
+        executor.render_block(&mut frames); // Edge envelope ramps in.
+        assert!(controller.live_render());
+        executor.render_block(&mut frames);
+        assert!(
+            frames.iter().all(|sample| (*sample - 0.5).abs() < 1e-3),
+            "held live note renders at its velocity while stopped",
+        );
+        // Meters publish as normal under the posture.
+        assert!(
+            controller
+                .meters()
+                .iter()
+                .any(|(id, peak, _)| *id == LIVE_INSERT_ID && *peak > 0.4),
+            "instrument stage meters while stopped: {:?}",
+            controller.meters(),
+        );
+        // The transport position never advanced.
+        assert_eq!(controller.position_frames(), 0);
+
+        // A note-off with a stale (past) frame clamps to "now" and stops
+        // the voice.
+        controller
+            .push_live_events(LIVE_INSERT_ID, &[live_note_off(0, 60)])
+            .unwrap();
+        executor.render_block(&mut frames);
+        executor.render_block(&mut frames);
+        assert!(frames.iter().all(|sample| *sample == 0.0));
+
+        // Posture off again: back to the silent early return.
+        controller.set_live_render(false).unwrap();
+        executor.render_block(&mut frames);
+        assert!(frames.iter().all(|sample| *sample == 0.0));
+        assert!(!controller.live_render());
+        assert_eq!(controller.position_frames(), 0);
+    }
+
+    #[test]
+    fn live_and_compiled_events_merge_ordered_by_offset_while_playing() {
+        let (mut controller, mut executor) = render_plane();
+        let backend = RecordingEventProcessor::new();
+        let handle = RenderPluginProcessor::new(Arc::clone(&backend) as Arc<_>);
+        let buffer = event_buffer(vec![
+            RenderPluginEvent {
+                frame: 519,
+                channel: 0,
+                kind: RenderPluginEventKind::ControlChange {
+                    controller: 74,
+                    value: 0.33,
+                },
+            },
+            RenderPluginEvent {
+                frame: 700,
+                channel: 0,
+                kind: RenderPluginEventKind::NoteOff { key: 64 },
+            },
+        ]);
+        let mut spec = events_spec(handle, buffer);
+        spec.stages[1].accepts_live_events = true;
+        controller.install_plan(&spec).unwrap();
+        controller.set_playing(true).unwrap();
+
+        let mut frames = vec![0.0f32; 1024];
+        executor.render_block(&mut frames); // Block 1: frames 0..512.
+
+        // Before block 2 (frames 512..1024): one live event already in the
+        // past (clamps to offset 0) and one inside the block (offset 88).
+        controller
+            .push_live_events(
+                LIVE_INSERT_ID,
+                &[live_note_on(200, 1, 0.9), live_note_on(600, 2, 0.8)],
+            )
+            .unwrap();
+        executor.render_block(&mut frames);
+
+        let calls = backend.calls();
+        assert_eq!(calls.len(), 2);
+        let offsets: Vec<u32> = calls[1].iter().map(|event| event.offset_frames).collect();
+        assert_eq!(
+            offsets,
+            vec![0, 7, 88, 188],
+            "live + compiled events interleave sorted by in-block offset",
+        );
+        assert_eq!(
+            calls[1][0].kind,
+            RenderPluginEventKind::NoteOn {
+                key: 1,
+                velocity: 0.9,
+            },
+            "past live event clamps to offset 0",
+        );
+        assert_eq!(
+            calls[1][2].kind,
+            RenderPluginEventKind::NoteOn {
+                key: 2,
+                velocity: 0.8,
+            },
+        );
+    }
+
+    #[test]
+    fn live_event_ring_overflow_drops_and_counts() {
+        let (mut controller, mut executor) = render_plane();
+        let backend = RecordingEventProcessor::new();
+        let handle = RenderPluginProcessor::new(Arc::clone(&backend) as Arc<_>);
+        controller
+            .install_plan(&live_instrument_spec(handle))
+            .unwrap();
+        controller.set_live_render(true).unwrap();
+
+        let flood: Vec<RenderPluginEvent> = (0..(LIVE_EVENT_RING_CAPACITY as u64 + 32))
+            .map(|index| live_note_on(index, (index % 128) as u8, 0.5))
+            .collect();
+        controller.push_live_events(LIVE_INSERT_ID, &flood).unwrap();
+        assert_eq!(controller.live_event_drop_count(), 0);
+
+        let mut frames = [0.0f32; 512];
+        executor.render_block(&mut frames);
+        assert_eq!(
+            controller.live_event_drop_count(),
+            32,
+            "events past the ring capacity drop and count",
+        );
+        let calls = backend.calls();
+        assert_eq!(
+            calls.last().unwrap().len(),
+            LIVE_EVENT_RING_CAPACITY,
+            "the ring's worth of events delivers this block",
+        );
+
+        // The ring drained: the next block has no pending live events, so
+        // the stage takes the plain (event-less) processing path — the
+        // recording backend marks that with its sentinel entry.
+        executor.render_block(&mut frames);
+        assert_eq!(
+            backend.calls().last().unwrap().as_slice(),
+            &[RenderBlockPluginEvent {
+                offset_frames: u32::MAX,
+                channel: 0,
+                kind: RenderPluginEventKind::NoteOff { key: 0 },
+            }],
+        );
+        assert_eq!(controller.live_event_drop_count(), 32);
+    }
+
+    #[test]
+    fn live_input_monitoring_passes_while_stopped_under_live_render() {
+        let (mut controller, mut executor) = render_plane();
+        let (feeder, handle) = render_live_input(LIVE_INPUT_DEFAULT_CAPACITY_FRAMES);
+        controller
+            .install_plan(&live_input_spec(&handle, 1.0))
+            .unwrap();
+
+        // Stopped, posture off (the g11.010 limit): silence.
+        let mut base = push_ramp(&feeder, 0, 256);
+        let mut frames = [0.0f32; 512];
+        executor.render_block(&mut frames);
+        assert!(frames.iter().all(|sample| *sample == 0.0));
+
+        // Posture on, still stopped: the input monitors through the chain.
+        controller.set_live_render(true).unwrap();
+        base = push_ramp(&feeder, base, 256);
+        executor.render_block(&mut frames); // Edge envelope ramps in.
+        base = push_ramp(&feeder, base, 256);
+        executor.render_block(&mut frames);
+        assert!(
+            frames.iter().any(|sample| sample.abs() > 0.01),
+            "monitored input must be audible while stopped",
+        );
+        assert_eq!(controller.position_frames(), 0);
+
+        // Posture off: one block rides the edge ramp-out (declick), then
+        // the render gate silences and the position still never moved.
+        controller.set_live_render(false).unwrap();
+        base = push_ramp(&feeder, base, 256);
+        executor.render_block(&mut frames);
+        executor.render_block(&mut frames);
+        assert!(frames.iter().all(|sample| *sample == 0.0));
+        assert_eq!(controller.position_frames(), 0);
+        let _ = base;
+    }
+
+    #[test]
+    fn compiled_events_and_timeline_clips_stay_gated_while_stopped_under_live_render() {
+        // Compiled plugin events must not fire while stopped (frozen
+        // position would re-trigger them every block).
+        let (mut controller, mut executor) = render_plane();
+        let backend = RecordingEventProcessor::new();
+        let handle = RenderPluginProcessor::new(Arc::clone(&backend) as Arc<_>);
+        let buffer = event_buffer(vec![RenderPluginEvent {
+            frame: 100,
+            channel: 0,
+            kind: RenderPluginEventKind::NoteOn {
+                key: 64,
+                velocity: 0.75,
+            },
+        }]);
+        controller
+            .install_plan(&events_spec(handle, buffer))
+            .unwrap();
+        controller.set_live_render(true).unwrap();
+
+        let mut frames = vec![0.0f32; 1024];
+        executor.render_block(&mut frames);
+        executor.render_block(&mut frames);
+        let calls = backend.calls();
+        assert_eq!(calls.len(), 2, "the stage renders while stopped");
+        assert!(
+            calls.iter().all(|events| events.is_empty()),
+            "compiled events stay playing-gated: {calls:?}",
+        );
+        assert_eq!(controller.position_frames(), 0);
+
+        // Rolling delivers the compiled stream from the held position.
+        controller.set_playing(true).unwrap();
+        executor.render_block(&mut frames);
+        let calls = backend.calls();
+        assert_eq!(calls[2].len(), 1);
+        assert_eq!(calls[2][0].offset_frames, 100);
+
+        // Timeline clip content is silent while stopped under the posture.
+        let (mut controller, mut executor) = render_plane();
+        controller.install_plan(&tone_spec(440.0)).unwrap();
+        controller.set_live_render(true).unwrap();
+        let mut frames = [0.0f32; 512];
+        executor.render_block(&mut frames);
+        executor.render_block(&mut frames);
+        assert!(
+            frames.iter().all(|sample| *sample == 0.0),
+            "a stopped transport must not replay frozen clip content",
+        );
+        controller.set_playing(true).unwrap();
+        executor.render_block(&mut frames);
+        assert!(frames.iter().any(|sample| sample.abs() > 0.01));
+    }
+
     #[test]
     fn stream_handles_compare_by_pointer_for_cheap_spec_equality() {
         let (_feeder_a, a) = render_stream(48_000, 1_000);
@@ -6188,6 +6877,7 @@ mod tests {
             master_limiter: None,
             stages: vec![
                 RenderStageSpec {
+                    accepts_live_events: false,
                     processor: None,
                     events: None,
                     stage_id: 1,
@@ -6198,6 +6888,7 @@ mod tests {
                     inputs: vec![identity_edge(2)],
                 },
                 RenderStageSpec {
+                    accepts_live_events: false,
                     processor: None,
                     events: None,
                     stage_id: 2,
@@ -6310,6 +7001,7 @@ mod tests {
             stages: vec![
                 master_node(vec![identity_edge(20)]),
                 RenderStageSpec {
+                    accepts_live_events: false,
                     processor: None,
                     events: None,
                     stage_id: 20,
@@ -6320,6 +7012,7 @@ mod tests {
                     inputs: vec![identity_edge(10)],
                 },
                 RenderStageSpec {
+                    accepts_live_events: false,
                     processor: None,
                     events: None,
                     stage_id: 10,
@@ -6417,6 +7110,7 @@ mod tests {
             master_limiter: None,
             stages: vec![
                 RenderStageSpec {
+                    accepts_live_events: false,
                     processor: None,
                     events: None,
                     stage_id: LANE_ID,
@@ -6457,6 +7151,7 @@ mod tests {
         // output must be exactly double the single-path render.
         let (mut controller, mut executor) = render_plane();
         let sum_stage = |stage_id: u64| RenderStageSpec {
+            accepts_live_events: false,
             processor: None,
             events: None,
             stage_id,
@@ -6513,6 +7208,7 @@ mod tests {
             master_limiter: None,
             stages: vec![
                 RenderStageSpec {
+                    accepts_live_events: false,
                     processor: None,
                     events: None,
                     stage_id: LANE_ID,
@@ -6525,6 +7221,7 @@ mod tests {
                     inputs: Vec::new(),
                 },
                 RenderStageSpec {
+                    accepts_live_events: false,
                     processor: None,
                     events: None,
                     stage_id: MASTER_ID,
@@ -6583,6 +7280,7 @@ mod tests {
             master_limiter: None,
             stages: vec![
                 RenderStageSpec {
+                    accepts_live_events: false,
                     processor: None,
                     events: None,
                     stage_id: LANE_ID,
@@ -6595,6 +7293,7 @@ mod tests {
                     inputs: Vec::new(),
                 },
                 RenderStageSpec {
+                    accepts_live_events: false,
                     processor: None,
                     events: None,
                     stage_id: MASTER_ID,
@@ -6705,6 +7404,7 @@ mod tests {
                 lane_node(1, 0.5, vec![tone_clip(440.0)]),
                 lane_node(2, 0.4, vec![tone_clip(660.0)]),
                 RenderStageSpec {
+                    accepts_live_events: false,
                     processor: None,
                     events: None,
                     stage_id: 3,
@@ -6717,6 +7417,7 @@ mod tests {
                     inputs: Vec::new(),
                 },
                 RenderStageSpec {
+                    accepts_live_events: false,
                     processor: None,
                     events: None,
                     stage_id: 10,

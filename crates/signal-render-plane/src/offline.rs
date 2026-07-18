@@ -1171,6 +1171,7 @@ mod tests {
 
     fn lane(stage_id: u64, gain: f32, clips: Vec<RenderClipSpec>) -> RenderStageSpec {
         RenderStageSpec {
+            accepts_live_events: false,
             processor: None,
             events: None,
             stage_id,
@@ -1184,6 +1185,7 @@ mod tests {
 
     fn master(inputs: Vec<u64>) -> RenderStageSpec {
         RenderStageSpec {
+            accepts_live_events: false,
             processor: None,
             events: None,
             stage_id: MASTER_ID,

@@ -111,6 +111,7 @@ pub fn cache_consumption_spec(source: RenderSource, output_frames: u64) -> Rende
         master_limiter: None,
         stages: vec![
             RenderStageSpec {
+                accepts_live_events: false,
                 stage_id: CACHE_CONSUMPTION_STAGE_ID,
                 kind: RenderStageKind::Source {
                     clips: vec![RenderClipSpec {
@@ -129,6 +130,7 @@ pub fn cache_consumption_spec(source: RenderSource, output_frames: u64) -> Rende
                 inputs: Vec::new(),
             },
             RenderStageSpec {
+                accepts_live_events: false,
                 stage_id: 62,
                 kind: RenderStageKind::Output,
                 format: ChannelFormat::stereo(),

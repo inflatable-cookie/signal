@@ -89,6 +89,7 @@ fn tone_plan(
         master_limiter: None,
         stages: vec![
             RenderStageSpec {
+                accepts_live_events: false,
                 processor: None,
                 events: None,
                 stage_id: LANE_ID,
@@ -109,6 +110,7 @@ fn tone_plan(
                 inputs: Vec::new(),
             },
             RenderStageSpec {
+                accepts_live_events: false,
                 processor: None,
                 events: None,
                 stage_id: NOTES_LANE_ID,
@@ -129,6 +131,7 @@ fn tone_plan(
                 inputs: Vec::new(),
             },
             RenderStageSpec {
+                accepts_live_events: false,
                 processor: None,
                 events: None,
                 stage_id: WARPED_LANE_ID,
@@ -157,6 +160,7 @@ fn tone_plan(
             // stream, so per-block event slicing and delivery run under the
             // same sustained clocked load.
             RenderStageSpec {
+                accepts_live_events: false,
                 processor: Some(insert),
                 events: Some(insert_events),
                 stage_id: INSERT_ID,
@@ -171,6 +175,7 @@ fn tone_plan(
                 }],
             },
             RenderStageSpec {
+                accepts_live_events: false,
                 processor: None,
                 events: None,
                 stage_id: MASTER_ID,

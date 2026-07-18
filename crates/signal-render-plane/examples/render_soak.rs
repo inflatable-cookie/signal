@@ -70,6 +70,7 @@ static ALLOCATOR: CountingAllocator = CountingAllocator;
 
 fn tone_lane(stage_id: u64, gain: f32, frequency_hz: f32) -> RenderStageSpec {
     RenderStageSpec {
+        accepts_live_events: false,
         processor: None,
         events: None,
         stage_id,
@@ -103,6 +104,7 @@ fn notes_lane(stage_id: u64, gain: f32) -> RenderStageSpec {
         })
         .collect();
     RenderStageSpec {
+        accepts_live_events: false,
         processor: None,
         events: None,
         stage_id,
@@ -202,6 +204,7 @@ fn main() {
             // Live monitor lane: drains the input feeder's ring inside the
             // measured callback (must stay alloc-free like every source).
             RenderStageSpec {
+                accepts_live_events: false,
                 processor: None,
                 events: None,
                 stage_id: 4,
@@ -220,6 +223,7 @@ fn main() {
                 inputs: Vec::new(),
             },
             RenderStageSpec {
+                accepts_live_events: false,
                 processor: Some(soak_processor_handle),
                 events: None,
                 stage_id: 10,
@@ -241,6 +245,7 @@ fn main() {
                 ],
             },
             RenderStageSpec {
+                accepts_live_events: false,
                 processor: None,
                 events: None,
                 stage_id: 100,
@@ -293,6 +298,7 @@ fn main() {
             stages: vec![
                 tone_lane(3, 0.5, 220.0),
                 RenderStageSpec {
+                    accepts_live_events: false,
                     processor: None,
                     events: None,
                     stage_id: 100,
