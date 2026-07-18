@@ -138,5 +138,6 @@ cache, production, and product work remain closed.
 
 ## Next Task
 
-Run Batch 29.7AR under Rule 31Y. Preregister the direct scale-timeline
-representation and state order without implementing or rendering audio.
+Batch 29.7AR now passes under Rule 31Z and memo 022. Run Batch 29.7AS to
+implement direct representation and fixed-storage mechanics only. Keep guided
+phase state and objective audio closed.

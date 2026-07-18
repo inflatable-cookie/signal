@@ -1803,8 +1803,40 @@ scale/time/bin, channel-local ordinary/unlocked state, compatible locked-only
 borrowing, per-channel inverse overlap-add, and fixed rings. Memo 021 and Rule
 31Y require complete representation preregistration before code.
 
+Batch 29.7AR completes that preregistration under Rule 31Z. The direct frame
+uses `H=F/100`, one shared `10 ms` output lattice, and direct `8H/4H/2H`
+(`80/40/20 ms`) transforms. Fixed `750 Hz` and `6000 Hz` crossover ties move
+upward. This produces exact owned nonnegative-bin totals `191/592/631` at
+`8/44.1/48 kHz`. At `8 kHz`, middle owns Nyquist and short is inactive.
+
+Absolute output centre `nH` maps to `round(nH/q)` for effective fixed ratio
+`q=round(L*r)/L`. Even reflection supplies source boundaries; only long-window
+intersecting synthesis ticks are emitted, with nine guidance-only ticks on
+each side. Exact target crop replaces tail fill. The centred long support and
+guidance future imply `13H`, or `130 ms`, offline lookahead.
+
+Each scale uses one statically normalized periodic square-root Hann pair and
+one coefficient/state owner per scale/time/bin. The existing Rule 31V
+`4/2/1` material radii and `19`-tick halo remain. Ordinary and unlocked are
+channel-local. Compatible predecessor borrowing exists only in locked regions
+below `6000 Hz`, preserving peer magnitude and current peak-relative offset.
+
+Prepared stereo maxima at `48 kHz` are `11520` source samples, `12620`
+pending complex coefficients, `11989` joint guidance magnitudes, `2524` prior
+phase values, `2524` region records, `7680` output samples, `13440` transform
+values, and `7680` planner-scratch values. No term grows with duration.
+
+The preregistration corrects one proof claim before code. Independently
+windowed masked scale operators do not generally sum to perfect
+reconstruction. The public unity path remains bit-exact bypass. Batch 29.7AS
+must prove each unmasked scale separately and report the inert masked sum as a
+diagnostic, never as identity. Batch 29.6CH remains hazard evidence, not a code
+base.
+
 ## Next Task
 
-Run Batch 29.7AR under Rule 31Y. Freeze direct scale geometry, ownership,
-overlap, state order, capacities, boundaries, and failure behavior without
-implementing or rendering audio.
+Run Batch 29.7AS under Rule 31Z. Implement direct scale representation and
+fixed-storage mechanics only. Prove unity bypass, per-scale overlap and
+reconstruction, structural ownership, boundaries, capacity, and repeat;
+measure the inert masked sum. Keep guided phase state and objective audio
+closed.

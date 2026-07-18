@@ -4829,9 +4829,151 @@ product work, or Batch 29.8 may open in 29.7AR. Promote a later mechanics card
 only if the direct representation has complete fixed geometry, ownership,
 capacity, and failure contracts.
 
+Batch 29.7AR passes as implementation-free Rule 31Z preregistration. It
+retains the Signal-owned `80/40/20 ms`, `10 ms`, `750 Hz`, and `6000 Hz`
+physical invariants, removes the outer sliced frame, restores channel-local
+ordinary/unlocked recurrence, and calculates fixed stereo capacities. No code
+or audio exists.
+
+### Rule 31Z: direct scale-timeline representation preregistration
+
+Batch 29.7AS may implement one `DirectFrequencyPartitionedScaleTimeline`
+mechanics proof. Supported proof rates are exactly `8000`, `44100`, and
+`48000 Hz`; channel count is one or two; fixed ratio is finite and inside
+`[0.25, 4.0]`. Any other request returns `UnsupportedGeometry` before scratch
+or audio work.
+
+For sample rate `F`, define `H=F/100`. Long, middle, and short transform and
+window lengths are `8H`, `4H`, and `2H`. Every scale uses a centered complex
+STFT on the same output lattice. Its periodic analysis and synthesis window is
+
+`w_s[j] = sqrt((2H/N_s) * (0.5 - 0.5*cos(2*pi*j/N_s)))`.
+
+Thus each unmasked scale has a static square overlap partition at hop `H`.
+There is no output-dependent denominator, independent scale gain tracker, or
+outer slice. FFT sizes need not be powers of two.
+
+Frequency ownership is fixed and exhaustive over active nonnegative bins:
+
+- long owns `0 <= f < 750 Hz`
+- middle owns `750 <= f < min(6000 Hz, F/2)` and owns Nyquist when
+  `F/2 < 6000 Hz`
+- short owns `6000 <= f <= F/2` and is inactive when Nyquist is below
+  `6000 Hz`
+
+Exact crossover ties move upward: `750 Hz` belongs to middle and `6000 Hz`
+belongs to short. DC belongs to long. The highest active scale owns Nyquist.
+Negative bins are conjugate mirrors and never separate state owners. Bins
+outside a scale's owned interval are zero before inverse synthesis. At the
+three proof rates the exact geometry is:
+
+| `F` | `H` | long/middle/short `N_s` | owned nonnegative bins | total |
+| --- | --- | --- | --- | --- |
+| `8000` | `80` | `640/320/160` | `60/131/0` | `191` |
+| `44100` | `441` | `3528/1764/882` | `60/210/322` | `592` |
+| `48000` | `480` | `3840/1920/960` | `60/210/361` | `631` |
+
+One scale/time/bin owns one coefficient, magnitude, analysis phase, synthesis
+phase, material decision, and peak-region record. Scale boundaries never
+share coefficients, peaks, medians, or state. The three inverse results add
+only into the same channel's common output ring.
+
+For source length `L`, requested ratio `r`, and target `T=round(L*r)`, define
+the effective ratio `q=T/L` when `L>0` and `T>0`. Output centre `o_n=nH` maps
+directly to analysis centre `a_n=round(o_n/q)`. Positions are evaluated from
+the absolute integer lattice; no accumulated fractional position or repeated
+rounded hop exists. The actual analysis hop `a_n-a_(n-1)` and output hop `H`
+drive ordinary recurrence. Synthesis ticks are exactly the integer `n` whose
+long window intersects `[0,T)`. Guidance-only ticks extend that range by nine
+ticks on each side. Empty input produces empty output. A nonempty request that
+rounds to zero target frames returns `UnsupportedGeometry`.
+
+Source reads use even reflection: `x[-1]=x[0]` and `x[L]=x[L-1]`, repeated as
+needed; a one-frame source repeats that frame. Output is the exact crop
+`[0,T)` after all intersecting frames complete. No post-render zero fill,
+fixed tail envelope, or hidden length repair is allowed. The centred long
+window plus the `+9` guidance dependency makes output ready only after
+`13H` future output-lattice frames; report that `130 ms` offline lookahead.
+The renderer accepts no discontinuity token in this proof. Such a request
+returns `UnsupportedDiscontinuity`; silence recovery remains a state event,
+not a segment boundary.
+
+Guidance and terminal state reuse Rule 31V without Rule 31X. Joint magnitude
+uses the maximum channel magnitude. Temporal median radii are `4/2/1` ticks;
+frequency medians use immediate same-scale neighbours; the complete guidance
+dependency is `-9..=+9` ticks. At each owned atom:
+
+1. analyze every channel and compute its ordinary recurrence
+2. reset on first state or joint-region recovery from the `1e-24` support
+   floor; only the channel lacking prior support falls back to current phase
+3. attack at the frozen transient centre below `6000 Hz`
+4. unlock when noisiness exceeds tonalness, retaining each channel's ordinary
+   recurrence
+5. otherwise peak-lock locally; below `6000 Hz` only, borrow the greatest-
+   energy channel's predecessor peak trajectory when the prior peak lies in
+   the current region and current/prior owner support exceed `1e-24`
+6. when borrowing, retain peer magnitude and current peer analysis-relative
+   offset from the borrowed peak; otherwise retain local tracked locking
+7. commit current analysis phase, output phase, peak, owner, and support state
+   once, then inverse-synthesize that scale per channel
+
+Lower frequency and then lower channel win exact ties. Exactly silent input
+must remain exact zero. Recovery from silence resets the affected joint region
+on its first supported tick. No common rotation is applied to ordinary,
+attack, reset, or unlocked atoms. No cross-scale trajectory exists.
+
+All processing storage is allocated at prepare time. Let `P` be the owned
+nonnegative-bin total and `C<=2`. Fixed rings and records are:
+
+- source samples: `12HC` `f64` values, covering `8H` support plus the maximum
+  `4H` source advance at ratio `0.25`
+- pending analyzed coefficients: `10CP` `Complex64` values, the decision tick
+  plus nine future guidance ticks
+- joint guidance magnitudes: `19P` `f64` values
+- prior analysis and synthesis phase: `2CP` `f64` values
+- current and predecessor peak/region records: `2CP` records
+- same-channel output overlap: `8HC` `f64` values
+- transform work: one reusable `C*(8H+4H+2H)` complex frame set plus planner-
+  reported scratch bounded by `16H` `Complex64` values
+
+At `48 kHz` stereo these caps are respectively `11520 f64`, `12620
+Complex64`, `11989 f64`, `2524 f64`, `2524` records, `7680 f64`, `13440
+Complex64`, and `7680 Complex64`. Any calculated term or planner scratch above
+its cap returns `CapacityExceeded` before processing. No vector, map, heap,
+search, or history grows with duration. Per lattice tick is bounded by three
+forward and three inverse transforms per channel, fixed window/sample visits,
+at most `19P` guidance observations, and finite `CP` state/peak scans.
+
+Batch 29.7AS is representation mechanics only. It must prove:
+
+- exact geometry, crossover ties, owned-bin counts, conjugacy, crop, coverage,
+  finiteness, repeat, work counts, every capacity boundary, and overflow
+- each unmasked scale's static overlap partition and inert full-band
+  reconstruction at or below `1e-12` peak error in `f64`
+- bit-exact public unity bypass; this is the only unity-render guarantee
+- a measured, explicitly non-perfect-reconstruction inert masked scale sum on
+  silence, impulse, noise, and crossover/interior tones; report gain, residual,
+  timing, boundary, and hash without relabelling it identity
+- zero state or coefficient projection between scales or outer fields
+
+The masked sum is not assumed perfect reconstruction: different scale windows
+make that claim false in general. It is a frozen diagnostic for the later
+objective gate. Any structural, per-scale reconstruction, capacity, finite,
+repeat, crop, coverage, or unity-bypass miss closes the implementation. Batch
+29.7AS must not add guided state, stretched corpus audio, factor tuning,
+listening, holdout, dynamic ratio, realtime, routing, cache, production, or
+product work.
+
+Batch 29.6CH contributes only centred frame extraction, even reflection,
+absolute crop, and same-channel scale summation as proof material. Reject its
+`128`-frame schedule, dynamic valleys/crossovers, unnormalized square-root
+Hann, duration-sized output arrays, per-scale dynamic normalization,
+unconditional peer projection, hard peak locking, and implementation types.
+No old renderer code is a base for Batch 29.7AS.
+
 ## Next Task
 
-Run Batch 29.7AR under Rule 31Y. Preregister one direct scale-timeline
-representation and complete state order. Implement nothing and render no
-audio. Keep objective retry, tuning, listening, holdout, Batch 29.8, and
-product work closed.
+Run Batch 29.7AS under Rule 31Z. Implement only direct scale representation,
+fixed storage, unity bypass, per-scale reconstruction, masked-sum diagnostics,
+and structural mechanics. Keep guided phase state, objective audio, tuning,
+listening, holdout, Batch 29.8, and product work closed.

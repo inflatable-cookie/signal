@@ -163,6 +163,6 @@ failures, `125/384` improved windows, `44/48` local-row failures, and hash
 Memo 021 then corrects the source interpretation: ordinary and unlocked R3
 recurrence is channel-local, while cross-channel borrowing is restricted to
 compatible locked peak regions. It also closes the extra outer meta-slice as a
-quality topology. Run implementation-free Batch 29.7AR to restore the direct
-scale timeline selected here. Keep concealed listening, the holdout, Batch
-29.8, and product work closed.
+quality topology. Batch 29.7AR now restores the direct scale timeline on paper
+under Rule 31Z. Run representation-only Batch 29.7AS next. Keep concealed
+listening, the holdout, Batch 29.8, and product work closed.

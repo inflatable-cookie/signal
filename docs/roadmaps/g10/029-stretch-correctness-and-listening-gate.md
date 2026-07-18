@@ -2705,41 +2705,48 @@ the topology without promotion, retry, tuning, listening, or holdout access.
 
 ### Batch 29.7AR - Direct Scale-Timeline Preregistration
 
-Status: ready
+Status: complete
 
-- [ ] freeze physical low, middle, and high analysis/synthesis durations and
+- [x] freeze physical low, middle, and high analysis/synthesis durations and
   output advances at every proof rate
-- [ ] freeze exhaustive nonoverlapping physical-frequency ownership,
+- [x] freeze exhaustive nonoverlapping physical-frequency ownership,
   crossover ties, and one source/output centre schedule shared by all scales
   and channels
-- [ ] define one coefficient and phase-state owner per scale/time/bin, with no
+- [x] define one coefficient and phase-state owner per scale/time/bin, with no
   outer meta-slice, dominant-layer selection, or layer projection
-- [ ] freeze complete state order: channel-local ordinary, reset, attack, and
+- [x] freeze complete state order: channel-local ordinary, reset, attack, and
   unlocked recurrence; predecessor-compatible cross-channel borrowing only in
   locked peak regions
-- [ ] freeze per-channel inverse overlap-add, same-channel scale summation,
-  source reflection, crop, latency, tail, silence, and discontinuity reset
-- [ ] calculate fixed input, output, guidance, phase, and peak capacities;
+- [x] freeze per-channel inverse overlap-add, same-channel scale summation,
+  source reflection, crop, latency, tail, silence, and discontinuity behavior
+- [x] calculate fixed input, output, guidance, phase, and peak capacities;
   define bounded work and explicit capacity failure
-- [ ] classify every Batch 29.6CH mechanic as reusable proof material or a
+- [x] classify every Batch 29.6CH mechanic as reusable proof material or a
   rejected hazard; implement nothing and render no audio
-- [ ] promote Batch 29.7AS only when Rule 31Y geometry, ownership, capacity,
+- [x] promote Batch 29.7AS only when Rule 31Z geometry, ownership, capacity,
   boundary, and failure contracts are complete
 
-Evidence: memo 021 corrects the source interpretation behind Rule 31X. Pinned
-Rubber Band R3 keeps ordinary and unlocked recurrence channel-local and borrows
-across channels only in compatible locked peak regions. The normalized sliced
-candidate also adds an outer ownership seam absent from the selected direct
-scale topology. Batch 29.7AR restores source conformance on paper before code.
+Evidence: Rule 31Z and memo 022 freeze one `10 ms` direct lattice with
+`80/40/20 ms` scales, `750/6000 Hz` upward crossover ties, exact
+`191/592/631` owned-bin totals, absolute source projection, even reflection,
+`130 ms` lookahead, complete state order, and fixed stereo capacities. Unity
+is bit-exact bypass; each scale must reconstruct independently, while the
+masked multi-scale sum is measured rather than falsely called identity. No
+code or audio exists.
 
 ### Batch 29.7AS - Direct Scale Representation Mechanics
 
-Status: conditional on Batch 29.7AR
+Status: ready
 
 - [ ] implement only the preregistered direct multi-scale analysis, exclusive
   frequency ownership, per-scale inverse overlap-add, and fixed storage
-- [ ] prove identity, conjugacy, exact ownership, coverage, boundary schedule,
-  capacity, finiteness, repeat, and explicit overflow behavior
+- [ ] prove bit-exact unity bypass plus each unmasked scale's overlap and
+  full-band reconstruction at `1e-12`; do not call the masked sum identity
+- [ ] prove conjugacy, exact ownership, crop, coverage, boundary schedule,
+  capacity, finiteness, repeat, work counts, and explicit overflow behavior
+- [ ] report inert masked-sum gain, residual, timing, boundaries, and hashes on
+  frozen silence, impulse, noise, crossover, and interior-tone controls
+- [ ] prove no state/coefficient projection between scales or outer fields
 - [ ] keep guided phase state, stretched audio, objectives, listening, and
   production closed; stop on the first representation-contract miss
 
@@ -4130,11 +4137,19 @@ Status: conditional on Batch 29.7AT
   independently windowed outer fields, unlike the selected direct scale
   topology. Rule 31Y closes that quality topology and opens implementation-free
   Batch 29.7AR. Batches 29.7AS through 29.7AU remain conditional.
+- 2026-07-18: Batch 29.7AR passes implementation-free under Rule 31Z. It
+  freezes direct `80/40/20 ms` scales on one `10 ms` lattice, exact upward
+  `750/6000 Hz` crossover ties, absolute target-to-source projection, even
+  reflection, `130 ms` lookahead, Rule 31V state order, and duration-independent
+  stereo capacities. It also corrects the mechanics gate: three differently
+  windowed masked STFTs are not assumed perfect reconstruction. Unity remains
+  bit-exact bypass; per-scale reconstruction is hard and the inert masked sum
+  is diagnostic. Batch 29.7AS is ready. No code or audio exists.
 
 ## Next Task
 
-Run Batch 29.7AR under Rule 31Y. Preregister direct physical scale geometry,
-exclusive frequency ownership, one shared schedule, complete state order,
-boundary behavior, and fixed capacities. Implement nothing and render no
-audio. Keep Batch 29.7AS onward, objective retry, tuning, listening, holdout,
-product surfaces, and Batch 29.8 closed.
+Run Batch 29.7AS under Rule 31Z. Implement direct scale representation and
+fixed-storage mechanics only. Prove unity bypass, per-scale reconstruction,
+ownership, boundaries, capacity, and repeat; measure the inert masked sum.
+Keep guided state, objectives, tuning, listening, holdout, product surfaces,
+and Batch 29.8 closed.

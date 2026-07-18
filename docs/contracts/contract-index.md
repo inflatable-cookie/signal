@@ -26,7 +26,8 @@ memory alone.
   channel commits. Rule 31X proves one reference-relative unlocked correction,
   records a local improvement without row-level passage, and closes that
   topology. Rule 31Y rejects unlocked over-linking and the extra outer
-  meta-slice owner, then governs direct scale-timeline preregistration
+  meta-slice owner. Rule 31Z freezes direct scale geometry, schedule, state
+  order, boundaries, fixed capacities, and the honest unity/diagnostic split
 - `g10.028` source-fill work is paused until the actual DSP kernel and source
   consumption geometry pass the `g10.029` correctness gate
 
@@ -154,7 +155,7 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7AR under contract `082` Rule 31Y. Preregister direct
-scale-timeline geometry and state ownership without implementation or audio.
-Keep tuning, objective retry, listening, holdout, Batch 29.8, and product work
+Run `g10.029` Batch 29.7AS under contract `082` Rule 31Z. Implement direct
+scale representation and fixed-storage mechanics only. Keep guided state,
+objective audio, tuning, listening, holdout, Batch 29.8, and product work
 closed.

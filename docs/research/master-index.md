@@ -72,6 +72,7 @@ Finch and Loophole.
 | [Shared-Decision Waveform Topology](./translation-memos/019-shared-decision-waveform-topology.md) | Select one clean-room guided frequency-partitioned linked-phase proof; Rule 31X validates a local unlocked-state correction but rejects the topology at the stereo gate | Rejected |
 | [Bounded Normalized Sliced Integration](./translation-memos/020-bounded-normalized-sliced-integration.md) | Reject fixed-sample cross-rate slicing; validate one 10 ms-lattice exact sliced frame with fixed memory and persistent channel state | Validated |
 | [Direct Scale-Timeline Ownership](./translation-memos/021-direct-scale-timeline-ownership.md) | Reject unlocked over-linking and outer meta-slice projection; restore one direct coefficient timeline per exclusive scale | Promoted |
+| [Direct Scale-Timeline Preregistration](./translation-memos/022-direct-scale-timeline-preregistration.md) | Freeze direct physical geometry, absolute schedule, state ownership, boundaries, and fixed capacities; correct the multi-scale identity claim | Promoted |
 
 ## Consumer Guidance
 
@@ -82,6 +83,6 @@ Finch and Loophole.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7AR under Rule 31Y. Preregister the direct scale-timeline
-representation and state order without implementation or audio. Keep objective
-retry, tuning, listening, holdout, product surfaces, and Batch 29.8 closed.
+Run `g10.029` Batch 29.7AS under Rule 31Z. Implement direct scale
+representation mechanics and fixed storage only. Keep guided state, objective
+audio, tuning, listening, holdout, product surfaces, and Batch 29.8 closed.

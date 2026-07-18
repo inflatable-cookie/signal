@@ -514,15 +514,21 @@ Current stretch status:
   from the selected direct scale topology. Rule 31Y opens implementation-free
   Batch 29.7AR to preregister one direct frequency-partitioned scale timeline.
   Later representation mechanics, state mechanics, and one failure-first
-  objective gate remain conditional Batches 29.7AS through 29.7AU.
+  objective gate were compiled as Batches 29.7AS through 29.7AU. Batch 29.7AR
+  now passes implementation-free under Rule 31Z. It freezes the direct
+  `10 ms` lattice, `80/40/20 ms` scales, `750/6000 Hz` ownership, absolute
+  schedule, boundaries, state order, and fixed capacities. It also corrects
+  the identity claim: unity is bit-exact bypass, per-scale reconstruction is
+  hard, and the inert masked scale sum is diagnostic. Batch 29.7AS is ready;
+  later state and objective batches remain conditional.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7AR under Rule 31Y. Preregister the direct scale
-timeline's physical geometry, exclusive frequency ownership, schedule, state
-order, boundary behavior, and fixed capacities without implementation or
-audio. Keep later mechanics, objectives, tuning, listening, holdout, product
-surfaces, and Batch 29.8 closed.
+Run `g10.029` Batch 29.7AS under Rule 31Z. Implement direct scale
+representation and fixed-storage mechanics only. Prove unity bypass,
+per-scale reconstruction, ownership, boundaries, capacity, and repeat;
+measure the inert masked sum. Keep guided state, objectives, tuning,
+listening, holdout, product surfaces, and Batch 29.8 closed.
