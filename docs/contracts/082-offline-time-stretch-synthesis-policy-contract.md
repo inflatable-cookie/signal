@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; state-complete single-grid proof selected
+Status: active; linked subband sinusoidal source validation next
 Owner: dsp
 Updated: 2026-07-18
 Related contracts: `046`, `048`, `049`
@@ -4226,9 +4226,42 @@ read the concealed holdout.
 Listening, dynamic ratio, realtime, routing, cache, production, Batch 29.8,
 and all product-facing work remain closed.
 
+Batch 29.7AG selects one source-feasibility candidate:
+`LinkedSubbandSinusoidalModel`. Compatible stereo partials share one output
+oscillator trajectory while each channel retains current partial magnitude and
+analysis-relative phase. Direct oscillator samples precede the subband sum, so
+no inverse frame, finite-support crop, or overlap normalization follows the
+linked relation.
+
+The component invariant does not guarantee aggregate waveform preservation.
+Sample-domain stereo gates remain authoritative. Source inspection also does
+not prove identity, transient, noise, boundary, or long-stretch quality. No
+Signal implementation is authorized by Rule 31N.
+
+### Rule 31O: pinned linked-subband source feasibility
+
+Batch 29.7AH must test SBSMS `2.3.0` at
+`e99cd7e6c6367e476577be34d2fdbe2023904d7e` before any clean-room Signal
+renderer. The specimen is an external GPL comparator and architecture control,
+not a dependency, fallback, or source of expression, constants, thresholds,
+tables, equations, or file structure.
+
+Freeze the existing synthetic mechanics, exact shared-mono control, mono
+development material, and `48`-row stereo development matrix before the first
+specimen render. The existing concealed holdout stays unread. Capture identity
+model residual, tonal and polyphonic continuity, isolated and dense transients,
+noise, boundaries, exact length, repeatability, waveform stereo relations,
+runtime scaling, memory behavior, and active-track counts.
+
+A clean-room Signal proof may open only if the pinned source materially avoids
+the Rule 31M failures, reaches the declared development objective envelope,
+shows no broad material or boundary defect, and admits explicit fixed bounds
+for active tracks, events, work, memory, and overflow. Otherwise close the
+candidate. Do not tune the specimen, combine renderers, listen, or access the
+holdout.
+
 ## Next Task
 
-Run Batch 29.7AG under Rule 31N. Find one complete source-backed topology whose
-linked-channel waveform invariant survives inverse synthesis, support
-restriction, and overlap. Select at most one proof before implementation. Keep
-the holdout, Batch 29.8, and all product-facing work closed.
+Run Batch 29.7AH under Rule 31O. Establish source-attainable feasibility for
+the pinned linked-subband sinusoidal topology before clean-room implementation.
+Keep the holdout, listening, Batch 29.8, and all product-facing work closed.

@@ -16,7 +16,8 @@ memory alone.
 - `g10.029` is the active correctness-first stretch roadmap
 - `046` governs sample-domain stretch behavior and its promotion gates
 - `082` governs the report-only successor policy, the competitive Rule 31
-  coherent mono baseline, and the Rule 31M state-complete single-grid proof
+  coherent mono baseline, and the Rule 31O linked-subband source-feasibility
+  gate
 - `g10.028` source-fill work is paused until the actual DSP kernel and source
   consumption geometry pass the `g10.029` correctness gate
 
@@ -144,7 +145,7 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7AG under contract `082`, Rule 31N. Research one complete
-topology whose linked-channel invariant survives inverse synthesis, finite
-support, and overlap. Select at most one proof before implementation. Keep the
-holdout, Batch 29.8, and product work closed.
+Run `g10.029` Batch 29.7AH under contract `082`, Rule 31O. Establish
+source-attainable feasibility for the pinned SBSMS topology before clean-room
+implementation. Keep the holdout, listening, Batch 29.8, and product work
+closed.

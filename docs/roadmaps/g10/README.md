@@ -453,15 +453,19 @@ Current stretch status:
   calibrated failure, start in the full inverse frame; seven start when the
   `1024`-sample inverse is restricted to `960` samples. Candidate `17`
   preserves the split. Rule 31M closes the single-grid family without a
-  correction or holdout access. Batch 29.7AG returns to source-backed
-  waveform-domain linked-stereo research.
+  correction or holdout access. Batch 29.7AG then selects one source-feasibility
+  direction: linked subband sinusoidal tracking with explicit stereo-paired
+  partial trajectories and direct oscillator synthesis. Pinned SBSMS `2.3.0`
+  supplies the architecture specimen, not a dependency. Rule 31O requires
+  exact-source quality and boundedness evidence before any clean-room Signal
+  renderer.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7AG under Rule 31N. Find one complete topology whose
-linked-channel invariant survives inverse synthesis, finite support, and
-overlap. Select at most one proof before implementation. Keep the holdout,
-listening, product surfaces, and Batch 29.8 closed.
+Run `g10.029` Batch 29.7AH under Rule 31O. Establish source-attainable
+synthetic, mono, stereo, boundary, repeat, runtime, memory, and active-state
+behavior for pinned SBSMS `2.3.0` before clean-room implementation. Keep the
+holdout, listening, product surfaces, and Batch 29.8 closed.

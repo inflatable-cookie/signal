@@ -2357,20 +2357,55 @@ correction under Rule 31M.
 
 ### Batch 29.7AG - Waveform-Domain Linked-Stereo Re-entry
 
-- [ ] research complete source-backed topologies that preserve arbitrary
+- [x] research complete source-backed topologies that preserve arbitrary
   linked-channel waveform relations through inverse synthesis and finite
   support, not only per-bin phase relations
-- [ ] state one testable waveform-domain invariant covering full inverse,
+- [x] state one testable waveform-domain invariant covering full inverse,
   support restriction, and overlap synthesis
-- [ ] require the same topology to own polyphonic tone, transients, mono
+- [x] require the same topology to own polyphonic tone, transients, mono
   quality, linked stereo, and fixed bounded execution
-- [ ] select at most one complete proof or stop the active stretch lane; do not
+- [x] select at most one complete proof or stop the active stretch lane; do not
   assemble another renderer from partial mechanisms
-- [ ] keep the concealed holdout, listening, dynamic ratio, realtime, routing,
+- [x] keep the concealed holdout, listening, dynamic ratio, realtime, routing,
   cache, production, and product-facing work closed
 
 Evidence: one research-backed architecture decision under Rule 31N. No
 renderer or parameter experiment.
+
+Decision: select `LinkedSubbandSinusoidalModel` for source feasibility only.
+Pinned SBSMS `2.3.0` demonstrates one complete topology with recursive octave
+subbands, explicit compatible stereo-track pairing, jointly evolved partial
+trajectories, and direct oscillator synthesis. Each matched partial owns one
+output waveform relation before the subband sum; no inverse STFT, support crop,
+or overlap normalization follows it. The invariant is component-local, so
+sample-domain stereo gates remain authoritative. No Signal renderer opens yet.
+
+### Batch 29.7AH - Pinned Linked-Subband Sinusoidal Feasibility
+
+- [ ] pin SBSMS `2.3.0` at
+  `e99cd7e6c6367e476577be34d2fdbe2023904d7e`; build and run it only as an
+  external GPL research specimen under `target/`
+- [ ] freeze the existing synthetic mechanics, exact shared-mono control, mono
+  development material, and `48`-row stereo development matrix before the
+  first specimen render; keep the concealed holdout unread
+- [ ] capture repeatable source behavior for identity/model residual, tones,
+  chords, partial crossings, long decays, isolated and dense transients,
+  noise, boundaries, exact length, and mono objective position
+- [ ] trace matched stereo tracks through direct oscillator samples and the
+  subband sum; run waveform IPD, correlation, mid/side, Gram, pan, swap,
+  polarity, and local-consistency gates
+- [ ] measure runtime scaling, memory behavior, active-track counts, and event
+  counts; state the finite capacities and overflow result a Signal proof would
+  require
+- [ ] authorize a clean-room Signal proof only if the exact source topology
+  avoids the Rule 31M failures, reaches the declared development envelope,
+  shows no broad material or boundary defect, and admits fixed execution bounds
+- [ ] do not copy GPL source, tune the specimen, assemble another renderer,
+  listen, access the holdout, or open dynamic ratio, realtime, routing, cache,
+  production, or product-facing work
+
+Evidence: one pinned exact-source feasibility report under Rule 31O. No Signal
+renderer or product integration.
 
 ### Batch 29.8 - Listening And Dynamic Checkpoint
 
@@ -3644,10 +3679,18 @@ renderer or parameter experiment.
   `fc10cd6442d55e4a`. Rule 31M closes the selected single-grid family without
   an equation correction or holdout access. Batch 29.7AG returns to complete
   waveform-domain linked-stereo research before another renderer.
+- 2026-07-18: Batch 29.7AG selects one linked-subband sinusoidal source-
+  feasibility candidate. Pinned SBSMS `2.3.0` pairs compatible stereo tracks,
+  evolves their partial trajectories jointly, and synthesizes oscillator
+  samples directly before one subband sum. This avoids the inverse-frame and
+  support-crop losses by topology, while leaving aggregate waveform relations,
+  identity, transients, noise, boundaries, and boundedness unproved. Memo 018,
+  the SBSMS dossier, and Rule 31O require exact-source validation before any
+  clean-room Signal renderer. The holdout remains unread.
 
 ## Next Task
 
-Run Batch 29.7AG. Find a complete source-backed topology whose linked-channel
-invariant survives full inverse synthesis, finite-support restriction, and
-overlap. Select at most one proof before implementation. Keep the holdout,
-listening, product surfaces, and Batch 29.8 closed.
+Run Batch 29.7AH under Rule 31O. Establish source-attainable synthetic, mono,
+stereo, boundary, repeat, runtime, memory, and active-state behavior for pinned
+SBSMS `2.3.0` before clean-room implementation. Keep the holdout, listening,
+product surfaces, and Batch 29.8 closed.

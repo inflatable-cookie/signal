@@ -1,6 +1,6 @@
 # Offline Time-Stretch Synthesis
 
-Status: frequency-adaptive family closed; joint-consistency research next
+Status: linked subband sinusoidal source validation next
 Owner: dsp
 Updated: 2026-07-18
 Contract refs: `046`, `082`
@@ -1538,9 +1538,39 @@ then frozen. The existing six-row family-balanced holdout remains unread until
 Batch 29.8 concealed listening. This replaces one-shot guessed-policy rejection
 without permitting architecture search or holdout tuning.
 
+## Waveform-Domain Linked-Stereo Re-entry
+
+Batch 29.7AF proves the selected single-grid family loses linked waveform
+relations in two synthesis operations. Four failures already exist in the full
+inverse frame. Seven first appear when that frame is reduced to finite
+synthesis support. Exact per-bin relations cannot repair either loss.
+
+Batch 29.7AG therefore selects one different causal topology for source
+feasibility: `LinkedSubbandSinusoidalModel`. Recursive octave subbands track
+partial identities, including births, deaths, splits, and merges. Compatible
+stereo tracks share one output oscillator trajectory while each channel retains
+its current magnitude and analysis-relative phase. Direct oscillator samples
+exist before the final subband sum. No inverse STFT, finite inverse-frame crop,
+overlap normalization, additive H/P/R plane, or post-hoc stereo repair follows
+the linked relation.
+
+The invariant applies to each matched component, not an arbitrary aggregate
+stereo scene. Sample-domain IPD, correlation, mid/side, Gram, and local
+consistency remain acceptance gates. The model must also prove identity,
+transient, noise, boundary, and long-decay quality.
+
+SBSMS `2.3.0` at `e99cd7e6c6367e476577be34d2fdbe2023904d7e` supplies the
+pinned architecture specimen. Its GPL source is evidence only. It may be built
+and run as an external comparator under `target/`; no source expression,
+constant, dependency, or fallback enters Signal.
+
+No Signal renderer is authorized yet. First establish that the exact source
+topology itself reaches the declared development envelope and admits fixed
+active-track, event, work, memory, and overflow bounds.
+
 ## Next Task
 
-Run Batch 29.7AE. Implement the report-only state-complete linked phase vocoder
-and bounded development calibration. Freeze one candidate after the complete
-development gate. Keep listening, product-facing surfaces, and the untouched
-holdout closed until Batch 29.8.
+Run Batch 29.7AH under Rule 31O. Validate source-attainable synthetic, mono,
+stereo, boundary, repeat, runtime, and active-state behavior for the pinned
+SBSMS topology. Keep the concealed holdout, listening, dynamic ratio,
+realtime, and product-facing work closed.
