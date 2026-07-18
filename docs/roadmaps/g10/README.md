@@ -441,14 +441,17 @@ Current stretch status:
   transferable complete operator: additive-mixture projection requires a known
   source sum, while covariance matching is a spatial renderer rather than a
   unique source-preservation constraint. Rule 31L closes transform-domain
-  post-projection. Batch 29.7AD returns to complete waveform-owning families.
+  post-projection. Batch 29.7AD then closes WSOLA as the universal engine,
+  retains explicit sinusoidal models as research reserve, and selects one
+  single-grid state-complete linked phase-vocoder proof. Rule 31M permits
+  bounded development calibration before one candidate freezes for holdout.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7AD. Compare complete waveform-owning stretch
-architectures and select at most one source-backed proof with shared stereo
-timeline, transient ownership, tonal continuity, and fixed bounded work.
-Implement no renderer. Keep listening, product surfaces, and Batch 29.8 closed.
+Run `g10.029` Batch 29.7AE. Implement the report-only state-complete linked
+phase vocoder and bounded development calibration. Freeze one candidate after
+the complete development gate. Keep the existing holdout, listening, product
+surfaces, and Batch 29.8 closed.

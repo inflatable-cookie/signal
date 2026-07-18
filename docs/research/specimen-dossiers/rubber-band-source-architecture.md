@@ -156,11 +156,8 @@ winner is established.
 
 ## Next Task
 
-Batch 29.7W confirms that R3's state decisions cannot be reduced to a boundary
-reset around Signal's universal shared-rotation kernel. Ordinary advance is
-computed first; reset and unlock bypass peak lock; channel borrowing is
-conditional inside peak lock; scale ownership is separate. Shared rotation
-closes as a complete renderer but remains valid locked-state evidence. Batch
-29.7X finds independent support and selects a different painless
-frequency-adaptive frame. Batch 29.7Y must not transfer Rubber Band expression,
-ranges, thresholds, crossovers, ordering, or constants.
+Batch 29.7AD uses the state ordering and tuning requirement as architecture
+evidence for one Signal-owned single-grid proof. Batch 29.7AE may calibrate only
+its six declared policy controls from Signal development evidence. Rubber Band
+expression, ranges, thresholds, crossovers, masks, tables, and constants remain
+excluded.

@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; transform-domain joint projection closed
+Status: active; state-complete single-grid proof selected
 Owner: dsp
 Updated: 2026-07-18
 Related contracts: `046`, `048`, `049`
@@ -4136,9 +4136,60 @@ must select at most one source-backed proof or close the studied families.
 Listening, dynamic ratio, realtime, routing, cache, production, Batch 29.8,
 and all product-facing work remain closed.
 
+### Rule 31M: calibrated state-complete single-grid proof
+
+Batch 29.7AD closes WSOLA as the universal engine. One waveform-similarity lag
+cannot preserve simultaneous polyphonic periods, and transient-safe variants
+reallocate local time. Explicit sinusoidal and sines+transients+noise models
+remain research reserves. Their separately modified components have no
+reviewed paired-channel synthesis law and reopen the rejected H/R/P seam.
+
+Select one `StateCompleteLinkedPhaseVocoder` proof. Its topology is fixed:
+
+1. one periodic-Kaiser, modified-half-bin STFT grid and absolute fixed-ratio
+   source schedule
+2. ordinary instantaneous-frequency advance for every active bin
+3. one cancellation-safe joint channel decision field
+4. mutually exclusive `Reset`, `Locked`, `Unlocked`, and `Silent` states
+5. predecessor-compatible locked regions share one current-analysis-relative
+   rotation across linked channels
+6. reset copies current analysis phase, unlock retains ordinary advance, and
+   silence remains exact
+7. one inverse transform and normalized overlap synthesis per channel
+
+Do not add coefficient projection, component synthesis, waveform splicing,
+mid/side, image repair, redundant scales, adaptive windows, or random phase.
+
+The topology, representation, phase equations, state inventory, channel owner,
+synthesis, metrics, and development rows are not tunable. Batch 29.7AE may
+calibrate only peak prominence, predecessor frequency tolerance, transient
+energy-rise threshold, reset support, unlock coherence threshold, and linked-
+history compatibility tolerance.
+
+Freeze physical bounds, quantization, candidate ordering, and a maximum of 64
+deterministic development candidates before the first render. At most four may
+run the complete development matrix. Development passage requires exact
+mechanics, zero calibrated and local stereo failures on the existing `48` rows,
+and no row-complete mono regression against coherent Signal or frozen 29.7T.
+
+Freeze exactly one candidate after the complete development gate. The existing
+six-row family-balanced holdout remains unread until Batch 29.8 concealed
+listening. Holdout passage requires at least `4/6` preference over coherent
+Signal, no repeatable new broad defect, and retained hard mechanics. Holdout
+failure permits no policy change. Comparator output may set development metric
+envelopes but is not a waveform optimization target.
+
+Rubber Band source may define architecture and failure cases only. GPL
+expression, constants, thresholds, ranges, masks, and tables do not transfer.
+Signal policy values must come from declared physical bounds and Signal-owned
+development evidence.
+
+Batch 29.8 listening opens only after complete objective passage. Dynamic
+ratio, realtime, routing, cache, production, and product work remain closed.
+
 ## Next Task
 
-Run Batch 29.7AD as a no-renderer whole-family study under Rule 31L. Compare
-complete waveform-owning architectures and select at most one source-backed
-proof with shared stereo timeline, transient ownership, tonal continuity, and
-fixed bounded work. Keep Batch 29.8 and all product-facing work closed.
+Run Batch 29.7AE under Rule 31M. Implement one report-only state-complete linked
+phase vocoder and bounded development calibration. Freeze one candidate after
+the complete development gate. Keep the holdout, Batch 29.8, and all product-
+facing work closed.

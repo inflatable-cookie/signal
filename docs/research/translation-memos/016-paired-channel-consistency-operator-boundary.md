@@ -116,7 +116,6 @@ or close each with explicit evidence before another renderer.
 
 ## Next Task
 
-Run Batch 29.7AD as a no-renderer whole-family study. Compare complete
-waveform-owning architectures and select at most one source-backed Signal-native
-proof with shared stereo timeline, transient ownership, tonal continuity, and
-fixed bounded work. Keep Batch 29.8 and product work closed.
+Batch 29.7AD selects one calibrated single-grid state-complete linked phase-
+vocoder proof in memo 017. Run Batch 29.7AE. Keep Batch 29.8 and product work
+closed until the frozen candidate passes objective validation.

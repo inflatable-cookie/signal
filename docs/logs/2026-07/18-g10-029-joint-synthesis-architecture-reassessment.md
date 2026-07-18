@@ -49,5 +49,5 @@ remain closed.
 
 ## Next Task
 
-Batch 29.7AC closes transform-domain joint projection. Run Batch 29.7AD as a
-no-renderer whole-family selection before another DSP candidate.
+Batch 29.7AD selects one calibrated single-grid state-complete linked phase-
+vocoder proof. Run Batch 29.7AE before another DSP candidate.

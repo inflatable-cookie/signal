@@ -1512,9 +1512,35 @@ inside a complete renderer. The next family must own one stereo timeline and
 channel linkage through synthesis, then pass waveform gates without a post-hoc
 relation or covariance repair.
 
+## Selected Whole-Family Architecture
+
+Batch 29.7AD compares complete waveform-owning families. WSOLA closes as a
+universal polyphonic engine because one waveform lag preserves only the
+dominant periodicity and admits transient doubling or skipping. Explicit
+sines+transients+noise remains a research reserve; its separate component
+synthesis has no reviewed paired-channel owner and reopens Signal's rejected
+H/R/P recombination seam.
+
+The next proof is one single-grid `StateCompleteLinkedPhaseVocoder`. Ordinary
+instantaneous-frequency advance, peak-region locking, reset, unlock, silence,
+linked-channel decisions, and overlap synthesis form one state machine on one
+timeline. No post-hoc coefficient, image, or component repair exists.
+
+This selection uses the closest direct Signal result: complete shared-region
+rotation reduced calibrated stereo failures from `20/48` to `1/48` while
+preserving mono parity. Universal locking was incomplete, so the selected
+family makes reset and unlock peer states rather than boundary patches.
+
+The architecture is fixed but its numeric state policy is calibrated. Six
+declared controls may vary across at most 64 deterministic development
+candidates; at most four reach the complete development matrix. One result is
+then frozen. The existing six-row family-balanced holdout remains unread until
+Batch 29.8 concealed listening. This replaces one-shot guessed-policy rejection
+without permitting architecture search or holdout tuning.
+
 ## Next Task
 
-Run Batch 29.7AD as a no-renderer whole-family study. Compare complete
-waveform-owning architectures and select at most one source-backed proof with
-shared stereo timeline, transient ownership, tonal continuity, and fixed
-bounded work. Keep listening, product-facing surfaces, and Batch 29.8 closed.
+Run Batch 29.7AE. Implement the report-only state-complete linked phase vocoder
+and bounded development calibration. Freeze one candidate after the complete
+development gate. Keep listening, product-facing surfaces, and the untouched
+holdout closed until Batch 29.8.

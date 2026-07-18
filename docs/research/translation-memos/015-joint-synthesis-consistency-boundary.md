@@ -128,6 +128,6 @@ constraint and a bounded projection order.
 
 ## Next Task
 
-Batch 29.7AC closes transform-domain joint projection in memo 016. Continue
-with Batch 29.7AD as a no-renderer whole-family selection. Require one complete
-waveform-owning topology before implementing DSP.
+Batch 29.7AD selects one calibrated single-grid state-complete linked phase-
+vocoder proof in memo 017. Run Batch 29.7AE before implementing another DSP
+candidate.

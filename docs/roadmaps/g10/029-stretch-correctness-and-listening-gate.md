@@ -2285,18 +2285,44 @@ memo 016 close transform-domain post-projection.
 
 ### Batch 29.7AD - Whole-Family Waveform-Ownership Study
 
-- [ ] compare complete source-synchronous, sinusoidal, and single-grid transform
+- [x] compare complete source-synchronous, sinusoidal, and single-grid transform
   topologies using primary literature and existing clean-room source dossiers
-- [ ] require one shared stereo timeline, explicit transient and tonal ownership,
+- [x] require one shared stereo timeline, explicit transient and tonal ownership,
   valid waveform synthesis by construction, and fixed bounded execution
-- [ ] define objective rejection gates and one exact proof scope before
+- [x] define objective rejection gates and one exact proof scope before
   authorizing at most one renderer; close every underspecified family
-- [ ] implement no renderer, parameter sweep, listening export, dynamic ratio,
+- [x] implement no renderer, parameter sweep, listening export, dynamic ratio,
   realtime, routing, cache, production, or product-facing work
 
 Evidence: one whole-family architecture decision. No hybrid assembly from
 partial mechanisms and no implementation without a complete promoted topology.
 Batch 29.8 stays closed.
+
+Decision: close WSOLA as the universal polyphonic engine and retain explicit
+sinusoidal models as research reserve. Select one single-grid
+`StateCompleteLinkedPhaseVocoder` proof. It combines ordinary advance, reset,
+lock, unlock, linked-channel decisions, and synthesis inside one topology.
+Rule 31M replaces one-shot guessed-policy rejection with bounded development
+calibration followed by one frozen concealed holdout.
+
+### Batch 29.7AE - State-Complete Linked Phase-Vocoder Calibration
+
+- [ ] implement one report-only single-grid state machine with `Reset`,
+  `Locked`, `Unlocked`, and `Silent` ownership; do not call the coherent
+  weighted predictor or any rejected renderer
+- [ ] freeze physical bounds, quantization, ordering, and at most 64
+  deterministic candidates over the six Rule 31M controls before rendering
+- [ ] use short development rows first; advance at most four candidates to the
+  complete synthetic, mono, and `48`-row stereo development matrix
+- [ ] require exact mechanics, zero calibrated and local stereo failures, and
+  no row-complete mono regression; freeze exactly one candidate
+- [ ] keep the existing six-row family-balanced holdout unread; Batch 29.8 may
+  open it only after one candidate freezes
+- [ ] keep listening export, dynamic ratio, realtime, routing, cache,
+  production, and product-facing work closed
+
+Evidence: bounded calibration ledger and one frozen development report.
+Complete development passage alone opens Batch 29.8 and its concealed holdout.
 
 ### Batch 29.8 - Listening And Dynamic Checkpoint
 
@@ -3545,10 +3571,16 @@ Batch 29.8 stays closed.
   source constraint, and may add decorrelated energy. No reviewed source
   supplies the feasible set, order, finite iteration count, and failure result
   needed for alternation with `A D`. Rule 31L and memo 016 promote the closure.
+- 2026-07-18: Batch 29.7AD closes WSOLA as the universal polyphonic engine and
+  retains sines+transients+noise as research reserve. The single-grid state-
+  complete linked phase vocoder is the only family with full external and
+  Signal support. Rule 31M selects one calibrated proof. Six state-policy
+  controls may use at most 64 deterministic development candidates; one frozen
+  result may open the existing concealed holdout in Batch 29.8.
 
 ## Next Task
 
-Run Batch 29.7AD. Compare complete waveform-owning stretch architectures and
-select at most one source-backed proof with shared stereo timeline, transient
-ownership, tonal continuity, and fixed bounded work. Implement no renderer.
-Keep listening, product surfaces, and Batch 29.8 closed.
+Run Batch 29.7AE. Implement the report-only state-complete linked phase vocoder
+and bounded calibration. Freeze one candidate after the complete development
+gate. Keep the existing holdout, listening, product surfaces, and Batch 29.8
+closed.

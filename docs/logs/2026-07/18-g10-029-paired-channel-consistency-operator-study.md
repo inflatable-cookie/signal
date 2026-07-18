@@ -32,7 +32,6 @@ repairing an independently modified coefficient field.
 
 ## Next Task
 
-Run Batch 29.7AD as a no-renderer whole-family selection. Compare complete
-source-synchronous, sinusoidal, and single-grid transform topologies against
-shared stereo timeline, transient, tonal, and bounded-execution requirements.
-Select at most one proof. Keep Batch 29.8 and product work closed.
+Batch 29.7AD selects one calibrated single-grid state-complete linked phase-
+vocoder proof. Run Batch 29.7AE. Keep Batch 29.8 and product work closed until
+one candidate passes the complete development gate.

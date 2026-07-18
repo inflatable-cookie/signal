@@ -66,6 +66,7 @@ Finch and Loophole.
 | [Relation-Owned Sliced Material Transport](./translation-memos/014-relation-owned-sliced-material-transport.md) | Attribute independent polar interpolation; select explicit peer/reference relation transport and a fixed sliced frame | Promoted |
 | [Joint-Synthesis Consistency Boundary](./translation-memos/015-joint-synthesis-consistency-boundary.md) | Attribute post-coefficient loss to inconsistent redundant fields; require joint post-projection ownership | Promoted |
 | [Paired-Channel Consistency Operator Boundary](./translation-memos/016-paired-channel-consistency-operator-boundary.md) | Close transform-domain post-projection; require one complete waveform-owning topology | Promoted |
+| [Whole-Family Waveform-Ownership Decision](./translation-memos/017-whole-family-waveform-ownership-decision.md) | Select one calibrated single-grid state-complete linked phase-vocoder proof | Promoted |
 
 ## Consumer Guidance
 
@@ -76,8 +77,7 @@ Finch and Loophole.
 
 ## Next Task
 
-Batch 29.7AC closes transform-domain joint projection: additive-mixture and
-covariance-matching operators do not define transparent arbitrary-stereo
-preservation. Run Batch 29.7AD as a no-renderer whole-family study. Select at
-most one complete waveform-owning topology. Keep production and Batch 29.8
-closed.
+Batch 29.7AD closes WSOLA as the universal engine, retains explicit sinusoidal
+models as research reserve, and selects one calibrated single-grid state-
+complete linked phase-vocoder proof. Run Batch 29.7AE. Keep production and
+Batch 29.8 closed until one candidate passes the complete development gate.
