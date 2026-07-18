@@ -1826,6 +1826,19 @@ pending complex coefficients, `11989` joint guidance magnitudes, `2524` prior
 phase values, `2524` region records, `7680` output samples, `13440` transform
 values, and `7680` planner-scratch values. No term grows with duration.
 
+The first direct objective run passes synthetic structure but rejects the
+stereo gate. It records `40/48` calibrated failures, `118/384` improved local
+windows, `36/48` Signal-relative local-row failures, and maximum normalized-
+Gram residual `0.7611955347641768`. All improved windows are image controls;
+tone improves `0/192`. The direct topology therefore moves local stereo
+consistency without preserving tonal inter-channel phase.
+
+The first source-level suspect is bounded and testable. Compatible locked
+borrowing currently measures each channel's atom offset from its own peak. At
+the peak, every channel's offset is zero and the borrowed trajectory becomes a
+common phase. Attribution must distinguish that peak-relation collapse from
+local locked, reset, attack, and unlocked ownership before correction.
+
 The preregistration corrects one proof claim before code. Independently
 windowed masked scale operators do not generally sum to perfect
 reconstruction. The public unity path remains bit-exact bypass. Batch 29.7AS

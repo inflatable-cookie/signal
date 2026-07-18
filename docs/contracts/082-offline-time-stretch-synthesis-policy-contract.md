@@ -5058,7 +5058,30 @@ back, export audio, listen, read concealed or holdout material, or enter mono
 or long-development after a stereo miss. Only complete passage may make Batch
 29.8 ready.
 
+Batch 29.7AU stops at the corrected stereo gate. The no-audio Rule 31Z entry
+suite passes with representation hash `fdf90f6127749341` and state hash
+`430543f8e1dce721`. Synthetic structure passes at hash `00e522a01b817bb6`:
+all four non-scripted terminal states execute, hard channel-mechanics errors
+are zero, pending/guidance/output storage high-water is `10/19/7680`, no
+structural or nonfinite failure occurs, and the complete report repeats.
+
+The one corrected `48`-row stereo run rejects with `40/48` calibrated
+failures, `118/384` improved local windows, `36/48` Signal-relative local-row
+failures, maximum normalized-Gram residual `0.7611955347641768`, zero
+structural failures, deterministic repeat, and evidence hash
+`af461c9576729c4e`. All `118` improved windows are image-control windows;
+tone controls improve `0/192` windows and reach the global maximum. Mono and
+long-development do not run.
+
+This signature opens failure attribution, not tuning. In the frozen state
+implementation, compatible locked borrowing computes each channel's atom
+offset from that same channel's current peak. At the peak itself every offset
+is therefore zero, so all channels receive the borrowed trajectory phase.
+Batch 29.7AV must prove or refute that inter-channel peak-relation collapse
+with an analytic state fixture and the retained AU row report before any
+correction or candidate rerun.
+
 ## Next Task
 
-Implement and run the single frozen Batch 29.7AU sequence. Stop at its first
-hard-gate miss. Do not tune, retry, listen, or access holdout material.
+Run Batch 29.7AV as attribution-only. Prove or refute compatible locked-peak
+inter-channel relation collapse without changing or rerunning the candidate.

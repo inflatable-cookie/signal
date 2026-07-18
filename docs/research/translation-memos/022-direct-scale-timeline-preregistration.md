@@ -87,6 +87,10 @@ unconditional peer projection, hard locks, and code types.
 ## Next Task
 
 Batch 29.7AS passes representation mechanics at hash `fdf90f6127749341` and
-Batch 29.7AT passes direct state mechanics at hash `430543f8e1dce721`. Run
-Batch 29.7AU under Rule 31Z as one failure-first objective sequence. Tuning,
-retry, listening, and holdout remain closed.
+Batch 29.7AT passes direct state mechanics at hash `430543f8e1dce721`. Batch
+29.7AU passes synthetic evidence at hash `00e522a01b817bb6`, then rejects the
+stereo gate at `40/48` calibrated failures, `118/384` improved windows,
+`36/48` local failures, and hash `af461c9576729c4e`. Tone improves `0/192`
+windows. Run Batch 29.7AV attribution against compatible borrowed-peak phase
+ownership before another candidate. Tuning, retry, listening, and holdout
+remain closed.

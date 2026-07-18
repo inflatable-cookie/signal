@@ -3,6 +3,8 @@ use rustfft::num_complex::Complex64;
 use super::{hash::*, HASH_OFFSET};
 
 mod geometry;
+mod guidance;
+mod objective;
 mod render;
 mod report;
 mod state;
@@ -131,6 +133,23 @@ struct StageReview {
     rates: Vec<RateReview>,
     overflow_failures: usize,
     unsupported_failures: usize,
+    hash: u64,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+struct CandidateRender {
+    channels: [Vec<f64>; CHANNEL_CAPACITY],
+    target_length: usize,
+    uncovered: usize,
+    non_finite: usize,
+    boundary_failures: usize,
+    states: [usize; 5],
+    borrowed_regions: usize,
+    local_regions: usize,
+    owner_switches: usize,
+    maximum_pending_ticks: usize,
+    maximum_guidance_ticks: usize,
+    maximum_output_samples: usize,
     hash: u64,
 }
 

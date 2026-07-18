@@ -528,13 +528,22 @@ Current stretch status:
   hash `430543f8e1dce721`: every terminal state, channel-local unlocked
   recurrence, compatible locked-only borrowing, peer ownership, recovery,
   boundaries, fixed slabs, and repeat pass. Batch 29.7AU is ready as one
-  failure-first objective sequence.
+  failure-first objective sequence. Batch 29.7AU then passes its no-audio and
+  synthetic gates at hash `00e522a01b817bb6` before the single stereo run
+  rejects: `40/48` calibrated failures, `118/384` improved windows, `36/48`
+  local failures, maximum residual `0.7611955347641768`, and hash
+  `af461c9576729c4e`. All gains are on image controls; tone improves `0/192`
+  windows. Mono and long-development do not run. The frozen compatible-lock
+  code makes every channel's peak-relative offset zero at the borrowed peak,
+  so Batch 29.7AV is ready to prove or refute that relation collapse before
+  another candidate.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Run the single preregistered `g10.029` Batch 29.7AU objective sequence under
-Rule 31Z. Stop at the first existing hard-gate miss. Keep tuning, retry,
-listening, holdout, product surfaces, and Batch 29.8 closed.
+Run `g10.029` Batch 29.7AV as attribution-only. Freeze AU evidence and prove or
+refute compatible locked-peak inter-channel relation collapse without a
+candidate rerun. Keep tuning, listening, holdout, product surfaces, and Batch
+29.8 closed.

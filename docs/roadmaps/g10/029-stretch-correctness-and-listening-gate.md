@@ -1,6 +1,6 @@
 # 029 - Stretch Correctness And Listening Gate
 
-Status: active
+Status: complete, rejected at stereo gate
 Owner: dsp
 Created: 2026-07-09
 Depends on: g10.021, g10.022, g10.024, g10.027
@@ -2782,9 +2782,9 @@ fixed slabs, shape rejection before mutation, finiteness, and repeat pass.
 Status: active
 
 - [x] freeze one complete objective sequence before audio generation
-- [ ] run synthetic, corrected stereo, mono, and long-development stages in
+- [x] run synthetic, corrected stereo, mono, and long-development stages in
   that order, stopping at the first existing hard-gate miss
-- [ ] forbid factor sweeps, row repair, tuning, concealed listening, and
+- [x] forbid factor sweeps, row repair, tuning, concealed listening, and
   holdout access; only complete passage may open Batch 29.8
 
 Preregistered 2026-07-19 before candidate audio. Rule 31Z representation and
@@ -2797,6 +2797,27 @@ failure ceiling, and `0.01744693815260` residual ceiling. Mono and long-
 development retain zero hard failures and no row-complete regression. No
 sweep, repair, retry, listening, export, concealed read, or holdout read is
 authorized.
+
+Evidence: the Rule 31Z no-audio entry gate passes unchanged. Synthetic passes
+at hash `00e522a01b817bb6` with zero structural, nonfinite, and hard channel-
+mechanics errors; all four classifier states execute; fixed storage high-water
+is `10/19/7680`; repeat is exact. The single stereo run rejects at `40/48`
+calibrated failures, `118/384` improved windows, `36/48` local-row failures,
+maximum residual `0.7611955347641768`, zero structural failures, and hash
+`af461c9576729c4e`. All improved windows are image controls; tone improves
+`0/192`. Mono and long-development do not run.
+
+### Batch 29.7AV - Direct Locked-Peak Relation Attribution
+
+Status: ready
+
+- [ ] freeze AU code, hashes, thresholds, and retained row evidence; do not
+  rerun the objective candidate
+- [ ] use one analytic state fixture to prove or refute whether compatible
+  locked borrowing collapses inter-channel phase at the borrowed peak while
+  local, reset, attack, and unlocked paths retain their contracted ownership
+- [ ] if confirmed, freeze one exact relation-preserving correction for a
+  later failure-first card; generate no corpus audio and do not tune
 
 ### Batch 29.8 - Listening And Dynamic Checkpoint
 
@@ -4187,6 +4208,7 @@ authorized.
 
 ## Next Task
 
-Implement and run the single preregistered Batch 29.7AU sequence under Rule
-31Z. Stop at its first hard gate. Keep tuning, retry, listening, holdout,
-product surfaces, and Batch 29.8 closed.
+Run Batch 29.7AV as attribution-only. Freeze AU evidence and prove or refute
+the compatible locked-peak inter-channel relation collapse. Do not rerun or
+change the candidate. Keep listening, holdout, product surfaces, and Batch
+29.8 closed.
