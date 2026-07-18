@@ -490,15 +490,18 @@ Current stretch status:
   Batch 29.7AN passes at evidence hash `90c10cd2e66d4faf`: all state branches
   cross interior and boundary contexts, channel mechanics are exact, layer
   ownership error stays below `4.45e-16`, and region high-water is
-  `32/100/107`. Batch 29.7ANR must preregister or reject material policy and
-  the complete evidence gate before any quality renderer opens.
+  `32/100/107`. Batch 29.7ANR now passes implementation-free Rule 31V
+  preregistration. Exact `4/2/1`-tick material radii, same-scale frequency
+  medians, the `19`-tick halo, state order, link limits, fixed bounds, and one
+  failure-first evidence matrix are frozen. Batch 29.7AO may implement and run
+  that one policy once; no quality result exists yet.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7ANR. Freeze or reject the unchanged Rule 31R material
-policy and complete objective evidence matrix on the normalized lattice. Keep
-implementation, quality audio, objective execution, holdout, listening,
-product surfaces, Batch 29.7AO, and Batch 29.8 closed.
+Run `g10.029` Batch 29.7AO once under Rule 31V. Implement the frozen normalized
+material policy, execute the evidence stages in order, and stop at the first
+miss. Keep policy changes, row repair, listening, holdout, product surfaces,
+and Batch 29.8 closed.

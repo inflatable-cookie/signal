@@ -125,6 +125,6 @@ sound quality.
 
 ## Next Task
 
-Run Batch 29.7ANR. Freeze or reject the unchanged Rule 31R material policy and
-complete objective evidence matrix on this frozen representation before any
-quality renderer opens.
+Rule 31V freezes the unchanged Rule 31R material policy and complete objective
+matrix on this representation. Run Batch 29.7AO once and stop at the first
+evidence miss.

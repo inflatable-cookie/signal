@@ -150,6 +150,6 @@ complete kernel in which exclusive scale ownership, synchronized all-channel
 phase-state selection, conditional linked trajectories, and per-channel
 synthesis are indivisible. Batch 29.7AK passes fixed mechanics and closes at
 the sample-rate/duration capacity boundary. Batches 29.7AM and 29.7AN validate
-the normalized sliced frame and guided boundary mechanics. Run Batch 29.7ANR
-for policy preregistration only; do not resume this memo's implementation or
-Rule 30AB.
+the normalized sliced frame and guided boundary mechanics. Rule 31V now freezes
+the material policy and objective order. Run Batch 29.7AO once; do not resume
+this memo's implementation or Rule 30AB.

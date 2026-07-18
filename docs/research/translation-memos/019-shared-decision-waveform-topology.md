@@ -145,7 +145,7 @@ Signal tree.
 Batch 29.7AK validates the fixed `48 kHz` mechanics kernel, then closes its
 whole-source integration. Batch 29.7AM validates memo 020's normalized
 two-slice representation at hash `0407f765c7d84375`; Batch 29.7AN then passes
-synchronized state mechanics at hash `90c10cd2e66d4faf`. Run Batch 29.7ANR to
-preregister or reject the unchanged material policy and complete evidence
-matrix. Keep implementation, quality audio, objective execution, concealed
-listening, the holdout, Batch 29.7AO, Batch 29.8, and product work closed.
+synchronized state mechanics at hash `90c10cd2e66d4faf`. Rule 31V now freezes
+the unchanged material policy and complete failure-first evidence matrix. Run
+Batch 29.7AO once. Keep concealed listening, the holdout, Batch 29.8, and
+product work closed.

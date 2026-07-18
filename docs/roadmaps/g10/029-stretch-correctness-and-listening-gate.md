@@ -2623,32 +2623,37 @@ overflow, and repeat checks pass. No material or quality result exists.
 
 ### Batch 29.7ANR - Normalized Material Policy Preregistration
 
-- [ ] freeze the passing Rule 31T representation and Rule 31U mechanics hashes,
+- [x] freeze the passing Rule 31T representation and Rule 31U mechanics hashes,
   geometry, state law, memory/work ceilings, and overflow behavior unchanged
-- [ ] map every unchanged Rule 31R material-policy term onto the normalized
+- [x] map every unchanged Rule 31R material-policy term onto the normalized
   physical-time lattice, including scale-local medians, adjacent-frequency
   medians, strict transient maxima, state ordering, link/reset limits, and tie
   rules; stop on any ambiguous or geometry-dependent term
-- [ ] freeze one complete objective evidence matrix, unchanged hard thresholds,
+- [x] freeze one complete objective evidence matrix, unchanged hard thresholds,
   fixed work/capacity, failure ordering, and no-sweep/no-row-repair rule before
   implementation
-- [ ] either promote one Rule 31V preregistration that makes 29.7AO ready or
+- [x] either promote one Rule 31V preregistration that makes 29.7AO ready or
   close the integration; do not implement, render, listen, or access holdout
 
 Evidence: one implementation-free policy and evidence preregistration. This
-card is ready as the required checkpoint before 29.7AO.
+card passes under Rule 31V. The exact `4/2/1`-tick temporal radii,
+same-scale adjacent-frequency medians, `19`-tick guidance dependency, strict
+centre rule, material normalization, state order, linkage limits, tie rules,
+fixed bounds, and failure-first objective matrix are frozen. `Ordinary` is the
+mandatory recurrence precursor; reset, attack, unlocked, and locked are the
+terminal material choices. No implementation or quality result exists.
 
 ### Batch 29.7AO - One Complete Objective Gate
 
-- [ ] open only after 29.7ANR passes and Rule 31V freezes the
+- [x] open only after 29.7ANR passes and Rule 31V freezes the
   unchanged Rule 31R material policy on the normalized sliced representation
 - [ ] run one complete synthetic, mono, long-development, and corrected
   professional-comparator result with no factor sweep or row repair
 - [ ] stop on the first existing hard-gate miss; only complete passage may open
   Batch 29.8 listening and holdout work
 
-Evidence: at most one complete objective report. This card is blocked on
-29.7ANR and Rule 31V policy preregistration.
+Evidence: at most one complete objective report. This card is ready under Rule
+31V.
 
 ### Batch 29.8 - Listening And Dynamic Checkpoint
 
@@ -3981,11 +3986,18 @@ Evidence: at most one complete objective report. This card is blocked on
   `4.45e-16`; region high-water is `32/100/107`. No continuity, capacity,
   update, finite, layer, overflow, or repeat failure occurs. Material policy
   and objective audio remain closed pending Batch 29.7ANR preregistration.
+- 2026-07-18: Batch 29.7ANR passes implementation-free preregistration under
+  Rule 31V. The normalized material map uses exact `4/2/1`-tick temporal
+  radii, immediate same-scale frequency neighbours, and the existing
+  `19`-tick halo. Ordinary recurrence is the mandatory precursor; terminal
+  guidance is reset, attack, unlocked, or locked. Link limits, ties, bounds,
+  thresholds, and one failure-first synthetic, mono, long-development, and
+  corrected stereo matrix are frozen. No renderer, audio, objective result,
+  listening artifact, or holdout read exists.
 
 ## Next Task
 
-Run Batch 29.7ANR. Freeze or reject the unchanged Rule 31R material policy and
-complete objective evidence matrix on the normalized lattice before any
-renderer opens. Keep implementation, stretched quality audio, objective
-execution, holdout, listening, product surfaces, Batch 29.7AO, and Batch 29.8
-closed.
+Run Batch 29.7AO once under Rule 31V. Implement the frozen normalized material
+policy, execute the evidence stages in order, and stop at the first miss. Keep
+policy changes, row repair, listening, holdout, product surfaces, and Batch
+29.8 closed.

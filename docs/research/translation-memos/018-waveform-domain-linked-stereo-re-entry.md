@@ -157,7 +157,6 @@ This is technical provenance control, not a patent or legal opinion.
 Memo 019 completes Batch 29.7AJ and selects one guided frequency-partitioned
 linked-phase proof. Batch 29.7AK passes fixed `48 kHz` mechanics and closes at
 the sample-rate/duration capacity boundary. Batches 29.7AM and 29.7AN validate
-memo 020's normalized frame and guided boundary mechanics. Run Batch 29.7ANR
-to preregister or reject material policy and the complete evidence matrix.
-Keep implementation, quality audio, objective execution, the holdout, and
-product surfaces closed.
+memo 020's normalized frame and guided boundary mechanics. Rule 31V now freezes
+the normalized material policy and complete evidence matrix. Run Batch 29.7AO
+once. Keep listening, the holdout, and product surfaces closed.

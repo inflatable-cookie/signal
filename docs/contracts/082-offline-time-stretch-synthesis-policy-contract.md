@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; normalized material-policy preregistration next
+Status: active; one normalized objective gate next
 Owner: dsp
 Updated: 2026-07-18
 Related contracts: `046`, `048`, `049`
@@ -4581,9 +4581,92 @@ matrix onto the frozen normalized geometry. It either promotes one Rule 31V
 preregistration or closes the integration. No implementation or render belongs
 in that checkpoint.
 
+### Rule 31V: normalized material-policy and objective preregistration
+
+Batch 29.7ANR promotes the unchanged Rule 31R material policy onto the frozen
+Rule 31T physical-time lattice. Representation hash `0407f765c7d84375` and
+guided-mechanics hash `90c10cd2e66d4faf` are immutable. Geometry, frequency
+ownership, state law, memory/work ceilings, overflow behavior, peer magnitude,
+and current analysis-relative-phase ownership do not move.
+
+At supported rate `F`, guidance runs once per global `H=F/100` lattice tick,
+before either active output layer is written. Form the channel-joint magnitude
+of each nonnegative atom as the maximum channel magnitude; unequal values move
+with channel swap and exact ties select the lower channel. Long, middle, and
+short atoms retain exclusive scale ownership and exact `8H`, `4H`, and `2H`
+supports. Their scale-local temporal median radii are therefore exactly `4`,
+`2`, and `1` lattice ticks. The frequency median uses the current atom plus its
+immediate lower and upper same-scale neighbours; at a scale edge it uses only
+the existing neighbours. Median selection is the upper middle under even
+cardinality, matching the frozen Signal policy.
+
+Let `h` be the scale-local temporal median and `p` the adjacent-frequency
+median. If `h+p=0`, all three guidance fields are zero.
+Otherwise tonalness is `h/(h+p)`, transientness is `p/(h+p)`, and noisiness is
+`1-|tonalness-transientness|`. The full-band transient trace is the joint-
+magnitude-weighted mean of per-atom transientness. A transient centre is
+strictly greater than its preceding tick and greater than or equal to its
+following tick. The first and last available ticks are not centres. Lower-time
+and lower-frequency ties win through those inequalities and the existing peak
+rule.
+
+The complete dependency for one decision is `-9..=+9` global ticks: the
+largest `4`-tick material radius, one tick on each side for the strict centre,
+and another `4`-tick magnitude radius. This is exactly the frozen `19P(C+3)`
+guidance halo. Slice creation and retirement do not truncate, reset, or repeat
+that halo. Source-boundary reads retain Rule 31T reflection; scale crossings do
+not enter either median.
+
+Every channel computes ordinary instantaneous-frequency recurrence first.
+`Ordinary` names that mandatory precursor, not a fifth material threshold.
+Terminal guidance is ordered once for all channels at each atom:
+
+1. reset on the first state tick or joint-region recovery from silence;
+   per-channel ordinary recurrence still falls back to current analysis phase
+   when only that channel lacks prior support
+2. attack when transientness is strictly greater than tonalness at a transient
+   centre below `6000 Hz`
+3. unlock when noisiness exceeds tonalness, retaining ordinary recurrence
+4. otherwise peak-lock; below `6000 Hz` borrow the greatest-energy channel's
+   predecessor trajectory only when the prior peak lies inside the current
+   region and current/prior owner energy both exceed the frozen `1e-24` floor
+5. when borrowing is ineligible, retain channel-local tracked peak locking;
+   no alternate reset, unlock, or search is allowed
+
+Attack and reset use current analysis phase. Ties retain the lower frequency
+atom and then lower channel. No shoulder gain, valley movement, diffusion,
+random phase, factor, threshold, crossover, median, range, or state-law change
+is authorized. The separately scripted `Decision::Ordinary` case remains a
+mechanics bypass proof; the classifier does not need a new condition to emit
+it.
+
+Batch 29.7AO may implement and execute this policy once. Its evidence order is
+fixed and failure-first:
+
+1. prepared geometry/capacity, identity, crop, coverage, conjugacy, finite,
+   repeat, exact work/memory, overflow, and Rule 31Q duplicate, mono-parity,
+   silent-peer, and swap mechanics
+2. the frozen silence, tone, noise, impulse, mixed, and transient synthetic
+   set at `0.75`, `1.5`, and `2.0`, including every terminal guidance state and
+   bounded halo/state high-water
+3. the corrected `48`-row stereo set and unchanged calibrated whole/interior
+   gate; require at least `245/384` improved local windows, at most `13/48`
+   Signal-relative local-row failures, and maximum normalized-Gram residual at
+   or below `0.01744693815260`
+4. only after stereo passage, the unchanged six exact-source mono rows and
+   their long-development metrics; require zero hard failures and no row-
+   complete regression against current Signal
+
+Stop at the first failed stage and do not execute later rows. The Rubber Band
+cell envelope `9574e5e2e53d1a63` remains attribution-only. No factor sweep,
+per-row repair, retry, policy fallback, listening, holdout access, dynamic
+ratio, realtime, routing, cache, production, or product work is allowed.
+
+Batch 29.7ANR is implementation-free. It promotes this rule and makes exactly
+one Batch 29.7AO objective run ready; it provides no sound-quality result.
+
 ## Next Task
 
-Run Batch 29.7ANR. Freeze or reject the unchanged Rule 31R material policy and
-complete objective evidence matrix on the normalized lattice. Keep
-implementation, stretched quality audio, objective execution, holdout,
-listening, Batch 29.7AO, Batch 29.8, and product work closed.
+Run Batch 29.7AO once under Rule 31V. Implement the frozen normalized material
+policy and stop at the first failed evidence stage. Keep parameter changes,
+row repair, listening, holdout, Batch 29.8, and product work closed.

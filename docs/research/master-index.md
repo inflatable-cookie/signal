@@ -81,7 +81,7 @@ Finch and Loophole.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7ANR. Freeze or reject material policy and the complete
-objective evidence matrix on the normalized lattice. Keep implementation,
-quality audio, objective execution, holdout, listening, product surfaces,
-Batch 29.7AO, and Batch 29.8 closed.
+Run `g10.029` Batch 29.7AO once under Rule 31V. Implement the frozen normalized
+material policy and execute its failure-first objective matrix without a
+sweep or row repair. Keep listening, holdout, product surfaces, and Batch 29.8
+closed.

@@ -1,6 +1,6 @@
 # Offline Time-Stretch Synthesis
 
-Status: normalized material-policy preregistration next
+Status: one normalized objective gate next
 Owner: dsp
 Updated: 2026-07-18
 Contract refs: `046`, `082`
@@ -1734,13 +1734,16 @@ channel mechanics are exact; local magnitude and analysis-relative phase stay
 within `4.45e-16`. Region high-water is `32/100/107`; all boundedness and
 failure checks pass.
 
-The remaining seam is policy, not mechanics. Batch 29.7ANR must preregister or
-reject the unchanged Rule 31R classifier/state policy and complete evidence
-matrix on this geometry before a quality renderer exists.
+Rule 31V now closes the remaining policy seam without implementation. The
+unchanged material map has exact `4/2/1`-tick temporal radii, immediate
+same-scale frequency neighbours, and one `19`-tick dependency halo. Ordinary
+recurrence remains the precursor to synchronized reset, attack, unlock, or
+lock selection. The complete synthetic, mono, long-development, and corrected
+stereo evidence order is frozen failure-first. No quality renderer or result
+exists yet.
 
 ## Next Task
 
-Run Batch 29.7ANR. Freeze or reject material-policy and objective-evidence
-mapping on the normalized lattice. Keep implementation, quality audio, the
-concealed holdout, listening, dynamic ratio, realtime, and product-facing work
-closed.
+Run Batch 29.7AO once under Rule 31V. Implement the frozen policy and stop at
+the first evidence miss. Keep policy changes, row repair, concealed holdout,
+listening, dynamic ratio, realtime, and product-facing work closed.
