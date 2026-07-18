@@ -120,6 +120,8 @@ pub fn cache_consumption_spec(source: RenderSource, output_frames: u64) -> Rende
                         end_frames: output_frames,
                         source,
                         loop_source: false,
+                        fade_in_frames: 0,
+                        fade_out_frames: 0,
                     }],
                 },
                 format: ChannelFormat::stereo(),

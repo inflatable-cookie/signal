@@ -915,6 +915,8 @@ fn fixture_plugin_processes_a_chain_insert_through_the_real_engine_offline_rende
                         end_frames: u64::MAX,
                         source: RenderSource::Samples(buffer.clone()),
                         loop_source: true,
+                        fade_in_frames: 0,
+                        fade_out_frames: 0,
                     }],
                 },
                 inputs: Vec::new(),

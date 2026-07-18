@@ -1211,6 +1211,8 @@ mod tests {
             end_frames: u64::MAX,
             source: RenderSource::TestTone { frequency_hz },
             loop_source: false,
+            fade_in_frames: 0,
+            fade_out_frames: 0,
         }
     }
 
@@ -1231,6 +1233,8 @@ mod tests {
                 Arc::from(data.into_boxed_slice()),
             )),
             loop_source: true,
+            fade_in_frames: 0,
+            fade_out_frames: 0,
         }
     }
 
@@ -1509,6 +1513,8 @@ mod tests {
                         end_frames: artifact.output_frame_count as u64,
                         source: RenderSource::Samples(artifact.buffer.clone()),
                         loop_source: false,
+                        fade_in_frames: 0,
+                        fade_out_frames: 0,
                     }],
                 ),
                 master(vec![44]),
@@ -2125,6 +2131,8 @@ mod tests {
                         end_frames: artifact.output_frame_count as u64,
                         source: RenderSource::Samples(artifact.buffer.clone()),
                         loop_source: false,
+                        fade_in_frames: 0,
+                        fade_out_frames: 0,
                     }],
                 ),
                 master(vec![48]),

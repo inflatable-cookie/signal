@@ -1253,6 +1253,19 @@ pub struct RenderClipSpec {
     /// When true, a `Samples` source repeats from its start once exhausted
     /// instead of going silent; ignored for other sources.
     pub loop_source: bool,
+    /// Equal-power fade-in length in stream frames, measured from
+    /// `start_frames`. Zero (the default) keeps the fixed edge declick on
+    /// that side — today's behavior byte-for-byte. Non-zero REPLACES the
+    /// declick on the start side with a `sin(π/2·t)` quarter-wave, so two
+    /// overlapping clips (one fading out, one fading in over the same span)
+    /// form a true equal-power crossfade. Clamped to the window length at
+    /// compile.
+    pub fade_in_frames: u32,
+    /// Equal-power fade-out length in stream frames, ending at `end_frames`.
+    /// Zero keeps the edge declick on the end side; non-zero replaces it
+    /// with the complementary quarter-wave. Clamped to the window length at
+    /// compile.
+    pub fade_out_frames: u32,
 }
 
 /// What a stage does with its inputs (and whether it generates content).
@@ -1600,6 +1613,11 @@ struct CompiledClip {
     end_frames: u64,
     /// Declick fade length at each window edge, shortened for tiny windows.
     edge_fade_frames: u64,
+    /// Equal-power fade-in span from `start_frames` (0 = declick only on
+    /// that side). Clamped to the window length at compile.
+    fade_in_frames: u64,
+    /// Equal-power fade-out span ending at `end_frames` (0 = declick only).
+    fade_out_frames: u64,
     /// Stable identity, read control-side when building inheritance maps.
     clip_id: u64,
     source: CompiledSource,
@@ -1952,12 +1970,14 @@ impl RenderPlan {
                                 }
                             }
                         };
+                        let window_frames = clip.end_frames.saturating_sub(clip.start_frames);
                         Ok(CompiledClip {
                             clip_id: clip.clip_id,
                             start_frames: clip.start_frames,
                             end_frames: clip.end_frames,
-                            edge_fade_frames: CLIP_EDGE_FADE_FRAMES
-                                .min(clip.end_frames.saturating_sub(clip.start_frames).max(2) / 2),
+                            edge_fade_frames: CLIP_EDGE_FADE_FRAMES.min(window_frames.max(2) / 2),
+                            fade_in_frames: (clip.fade_in_frames as u64).min(window_frames),
+                            fade_out_frames: (clip.fade_out_frames as u64).min(window_frames),
                             source,
                         })
                     })
@@ -2205,17 +2225,56 @@ fn insertion_sort_events_by_offset(events: &mut [RenderBlockPluginEvent]) {
     }
 }
 
-/// Declick gain for a frame inside a clip window: linear fade over
-/// `fade_frames` at each edge, unity in between.
+/// Window gain for a frame inside a clip: per side, an explicit equal-power
+/// fade when requested, otherwise the linear edge declick.
+///
+/// Start side with `fade_in_frames > 0`: `sin(π/2 · p/F)` over positions
+/// `p = frame - start_frames ∈ [0, F)` (the first frame is exactly 0 — that
+/// exactness is what makes an overlapped fade-out/fade-in pair sum to unity
+/// POWER at every frame: the two quarter-wave arguments are complementary).
+/// End side with `fade_out_frames > 0`: the mirror, `sin(π/2 · r/F)` over
+/// `r = end_frames - frame ∈ (0, F]`. A requested fade REPLACES the declick
+/// on its side; a zero-fade side keeps the declick ramp, byte-identical to
+/// the historical behavior. The sides combine via `min`, which reproduces
+/// the historical declick-only expression exactly and is inert wherever the
+/// spans do not overlap.
+///
+/// Pure function of the frame position — stateless, so fades are correct
+/// across block boundaries, seeks into the middle of a fade, and plan swaps.
 #[inline]
-fn clip_edge_gain(frame: u64, start_frames: u64, end_frames: u64, fade_frames: u64) -> f32 {
-    if fade_frames == 0 {
-        return 1.0;
-    }
-    let fade = fade_frames as f32;
-    let from_start = (frame - start_frames + 1) as f32;
-    let to_end = (end_frames - frame) as f32;
-    (from_start / fade).min(to_end / fade).min(1.0)
+fn clip_window_gain(
+    frame: u64,
+    start_frames: u64,
+    end_frames: u64,
+    edge_fade_frames: u64,
+    fade_in_frames: u64,
+    fade_out_frames: u64,
+) -> f32 {
+    let in_gain = if fade_in_frames > 0 {
+        let position = frame - start_frames;
+        if position < fade_in_frames {
+            (std::f32::consts::FRAC_PI_2 * position as f32 / fade_in_frames as f32).sin()
+        } else {
+            1.0
+        }
+    } else if edge_fade_frames > 0 {
+        ((frame - start_frames + 1) as f32 / edge_fade_frames as f32).min(1.0)
+    } else {
+        1.0
+    };
+    let out_gain = if fade_out_frames > 0 {
+        let remaining = end_frames - frame;
+        if remaining < fade_out_frames {
+            (std::f32::consts::FRAC_PI_2 * remaining as f32 / fade_out_frames as f32).sin()
+        } else {
+            1.0
+        }
+    } else if edge_fade_frames > 0 {
+        ((end_frames - frame) as f32 / edge_fade_frames as f32).min(1.0)
+    } else {
+        1.0
+    };
+    in_gain.min(out_gain)
 }
 
 /// Per-frame interpolated source read shared by the `Samples` and `Stream`
@@ -2295,6 +2354,8 @@ fn render_clips_into_scratch(
         let clip_start = clip.start_frames;
         let clip_end = clip.end_frames;
         let clip_fade = clip.edge_fade_frames;
+        let fade_in = clip.fade_in_frames;
+        let fade_out = clip.fade_out_frames;
         match &mut clip.source {
             CompiledSource::Silence => {}
             CompiledSource::Tone { phase, step } => {
@@ -2307,8 +2368,10 @@ fn render_clips_into_scratch(
                         local_phase -= std::f32::consts::TAU;
                     }
                     if frame >= clip_start && frame < clip_end {
-                        let sample =
-                            sample * clip_edge_gain(frame, clip_start, clip_end, clip_fade);
+                        let sample = sample
+                            * clip_window_gain(
+                                frame, clip_start, clip_end, clip_fade, fade_in, fade_out,
+                            );
                         let base = frame_index * channels;
                         for channel in 0..channels.min(2) {
                             scratch[base + channel] += sample;
@@ -2362,7 +2425,8 @@ fn render_clips_into_scratch(
                         continue;
                     }
                     let fraction = source_position - source_index as f64;
-                    let window_gain = clip_edge_gain(frame, clip_start, clip_end, clip_fade);
+                    let window_gain =
+                        clip_window_gain(frame, clip_start, clip_end, clip_fade, fade_in, fade_out);
                     let base = frame_index * channels;
                     match channel_adapter {
                         // Matched channel counts: direct per-channel read (the
@@ -2520,7 +2584,8 @@ fn render_clips_into_scratch(
                         continue;
                     }
                     let fraction = source_position - source_index as f64;
-                    let window_gain = clip_edge_gain(frame, clip_start, clip_end, clip_fade);
+                    let window_gain =
+                        clip_window_gain(frame, clip_start, clip_end, clip_fade, fade_in, fade_out);
                     let base = frame_index * channels;
                     let mut missing = false;
                     for channel in 0..channels.min(2) {
@@ -2612,7 +2677,9 @@ fn render_clips_into_scratch(
                             1.0
                         };
                         let frame = clip_start + local_frame;
-                        let window_gain = clip_edge_gain(frame, clip_start, clip_end, clip_fade);
+                        let window_gain = clip_window_gain(
+                            frame, clip_start, clip_end, clip_fade, fade_in, fade_out,
+                        );
                         let sample = phase.sin() as f32
                             * amplitude
                             * attack_gain
@@ -2665,7 +2732,9 @@ fn render_clips_into_scratch(
                     let popped = ring.pop_slice(&mut chunk[..take * 2]) / 2;
                     for index in 0..popped {
                         let frame = block_start_frame + (frame_offset + index) as u64;
-                        let window_gain = clip_edge_gain(frame, clip_start, clip_end, clip_fade);
+                        let window_gain = clip_window_gain(
+                            frame, clip_start, clip_end, clip_fade, fade_in, fade_out,
+                        );
                         let base = (frame_offset + index) * channels;
                         for channel in 0..channels.min(2) {
                             scratch[base + channel] += chunk[index * 2 + channel] * window_gain;
@@ -3976,6 +4045,8 @@ mod tests {
             end_frames: u64::MAX,
             source: RenderSource::TestTone { frequency_hz },
             loop_source: false,
+            fade_in_frames: 0,
+            fade_out_frames: 0,
         }
     }
 
@@ -4066,6 +4137,8 @@ mod tests {
                 end_frames,
                 source: RenderSource::Samples(RenderSampleBuffer::stereo(48_000, data.into())),
                 loop_source,
+                fade_in_frames: 0,
+                fade_out_frames: 0,
             }],
         )
     }
@@ -4114,6 +4187,8 @@ mod tests {
                 end_frames: 512 + 1024,
                 source: RenderSource::Samples(RenderSampleBuffer::mono(48_000, values.into())),
                 loop_source: false,
+                fade_in_frames: 0,
+                fade_out_frames: 0,
             }],
         );
         controller.install_plan(&spec).unwrap();
@@ -4163,6 +4238,246 @@ mod tests {
         executor.render_block(&mut frames);
         // Frame 255 is the final source frame; with the clamp it plays.
         assert!(frames[255 * 2].abs() > 0.1);
+    }
+
+    // ── Per-clip equal-power fades (g13.024) ────────────────────────────────
+
+    /// DC-1.0 stereo samples clip filling its window exactly, with fades.
+    fn dc_clip(
+        clip_id: u64,
+        start_frames: u64,
+        end_frames: u64,
+        fade_in_frames: u32,
+        fade_out_frames: u32,
+    ) -> RenderClipSpec {
+        let frames = (end_frames - start_frames) as usize;
+        RenderClipSpec {
+            clip_id,
+            start_frames,
+            end_frames,
+            source: RenderSource::Samples(RenderSampleBuffer::stereo(
+                48_000,
+                vec![1.0f32; frames * 2].into(),
+            )),
+            loop_source: false,
+            fade_in_frames,
+            fade_out_frames,
+        }
+    }
+
+    #[test]
+    fn clip_window_gain_known_answers() {
+        // Declick-only (both fades 0) reproduces the historical expression
+        // byte-for-byte: linear ramps over the edge fade, min-combined.
+        for fade in [1u64, 5, 32] {
+            for frame in 100u64..200 {
+                let historical = (((frame - 100 + 1) as f32) / fade as f32)
+                    .min(((200 - frame) as f32) / fade as f32)
+                    .min(1.0);
+                assert_eq!(
+                    clip_window_gain(frame, 100, 200, fade, 0, 0),
+                    historical,
+                    "declick divergence at frame {frame}, fade {fade}"
+                );
+            }
+        }
+        // Equal-power midpoints: sin(π/4) = √0.5 on each side.
+        let mid_in = clip_window_gain(1_128, 1_000, 10_000, 32, 256, 0);
+        assert!(
+            (mid_in - 0.5f32.sqrt()).abs() < 1e-6,
+            "fade-in mid {mid_in}"
+        );
+        let mid_out = clip_window_gain(9_872, 1_000, 10_000, 32, 0, 256);
+        assert!(
+            (mid_out - 0.5f32.sqrt()).abs() < 1e-6,
+            "fade-out mid {mid_out}"
+        );
+        // A fade-out/fade-in pair overlapped by the fade length is equal
+        // power: gains are complementary quarter-waves, a² + b² = 1 at every
+        // frame of the overlap.
+        let fade = 256u64;
+        for frame in 744u64..1_000 {
+            let a = clip_window_gain(frame, 0, 1_000, 32, 0, fade);
+            let b = clip_window_gain(frame, 744, 1_744, 32, fade, 0);
+            let power = a * a + b * b;
+            assert!(
+                (power - 1.0).abs() < 1e-6,
+                "power {power} at frame {frame} (a {a}, b {b})"
+            );
+        }
+        // A requested fade replaces the declick on its side only: the
+        // fade-0 side keeps the declick ramp.
+        let first = clip_window_gain(0, 0, 1_000, 32, 0, 256);
+        assert_eq!(first, 1.0 / 32.0, "declick retained on fade-0 side");
+        let faded_first = clip_window_gain(0, 0, 1_000, 32, 256, 0);
+        assert_eq!(faded_first, 0.0, "equal-power fade-in starts at exact 0");
+    }
+
+    #[test]
+    fn overlapping_clips_crossfade_at_equal_power() {
+        // A fades out over [1280, 1536); B overlaps that exact span with its
+        // fade-in. Same lane stage: clips sum additively into the scratch.
+        // For correlated (DC) content the sum is the analytic sin+cos curve —
+        // never below unity through the crossfade (no dip, unlike the
+        // declick butt joint), and the gains themselves are equal power.
+        let (mut controller, mut executor) = render_plane();
+        let spec = lane_master_spec(
+            1.0,
+            vec![
+                dc_clip(9001, 512, 1_536, 0, 256),
+                dc_clip(9002, 1_280, 2_304, 256, 0),
+            ],
+        );
+        controller.install_plan(&spec).unwrap();
+        controller.set_playing(true).unwrap();
+        warm_up(&mut executor, 2);
+
+        // Blocks 512..1280: A alone at unity (past its start declick).
+        let mut frames = [0.0f32; 512];
+        for _ in 0..3 {
+            executor.render_block(&mut frames);
+        }
+        assert!((frames[255 * 2] - 1.0).abs() < 1e-5, "pre-overlap unity");
+
+        // Block 1280..1536: the crossfade region.
+        let mut frames = [0.0f32; 512];
+        executor.render_block(&mut frames);
+        for index in 0..256usize {
+            let position = index as f32 / 256.0;
+            let a = (std::f32::consts::FRAC_PI_2 * (1.0 - position)).sin();
+            let b = (std::f32::consts::FRAC_PI_2 * position).sin();
+            let rendered = frames[index * 2];
+            assert!(
+                (rendered - (a + b)).abs() < 1e-4,
+                "crossfade frame {index}: {rendered} vs {}",
+                a + b
+            );
+            assert!(
+                rendered >= 1.0 - 1e-4,
+                "crossfade dipped below unity at frame {index}: {rendered}"
+            );
+        }
+
+        // Block 1536..1792: B alone at unity.
+        let mut frames = [0.0f32; 512];
+        executor.render_block(&mut frames);
+        assert!((frames[128 * 2] - 1.0).abs() < 1e-5, "post-overlap unity");
+    }
+
+    #[test]
+    fn fade_envelope_is_continuous_across_block_boundaries() {
+        // A fade-in longer than a block and not block-aligned (600 frames
+        // from 512): every rendered frame must sit on the analytic curve —
+        // the envelope is a pure function of position, so block boundaries
+        // (768, 1024) cannot introduce steps.
+        let (mut controller, mut executor) = render_plane();
+        let spec = lane_master_spec(1.0, vec![dc_clip(9003, 512, 4_096, 600, 0)]);
+        controller.install_plan(&spec).unwrap();
+        controller.set_playing(true).unwrap();
+        warm_up(&mut executor, 2);
+
+        let mut position = 0u64;
+        for _ in 0..3 {
+            let mut frames = [0.0f32; 512];
+            executor.render_block(&mut frames);
+            for index in 0..256usize {
+                let expected = if position + index as u64 >= 600 {
+                    1.0
+                } else {
+                    (std::f32::consts::FRAC_PI_2 * (position + index as u64) as f32 / 600.0).sin()
+                };
+                let rendered = frames[index * 2];
+                assert!(
+                    (rendered - expected).abs() < 1e-4,
+                    "fade frame {}: {rendered} vs {expected}",
+                    position + index as u64
+                );
+            }
+            position += 256;
+        }
+    }
+
+    #[test]
+    fn seek_into_the_middle_of_a_fade_renders_the_correct_envelope() {
+        // The envelope is stateless: seeking into a fade-out span must
+        // reproduce the exact curve values with no ramp history.
+        let (mut controller, mut executor) = render_plane();
+        let spec = lane_master_spec(1.0, vec![dc_clip(9004, 0, 20_000, 0, 8_192)]);
+        controller.install_plan(&spec).unwrap();
+        controller.set_playing(true).unwrap();
+        // Fade-out spans [11808, 20000). Seek well inside it.
+        controller.seek(12_288).unwrap();
+        // Two blocks open the transport edge ramp (240 frames at 48 kHz).
+        warm_up(&mut executor, 2);
+
+        // Block 12800..13056, deep inside the fade-out.
+        let mut frames = [0.0f32; 512];
+        executor.render_block(&mut frames);
+        for index in 0..256usize {
+            let frame = 12_800 + index as u64;
+            let expected = (std::f32::consts::FRAC_PI_2 * (20_000 - frame) as f32 / 8_192.0).sin();
+            let rendered = frames[index * 2];
+            assert!(
+                (rendered - expected).abs() < 1e-4,
+                "post-seek fade frame {frame}: {rendered} vs {expected}"
+            );
+        }
+    }
+
+    #[test]
+    fn streamed_sources_honor_clip_fades() {
+        // The envelope applies to produced frames regardless of source kind:
+        // a streamed clip fades in on the same analytic curve.
+        let (mut controller, mut executor) = render_plane();
+        let total = 4_096u64;
+        let (feeder, handle) = render_stream(48_000, total);
+        let spec = lane_master_spec(
+            1.0,
+            vec![RenderClipSpec {
+                clip_id: 9005,
+                start_frames: 512,
+                end_frames: 512 + total,
+                source: RenderSource::Stream(handle.clone()),
+                loop_source: false,
+                fade_in_frames: 512,
+                fade_out_frames: 0,
+            }],
+        );
+        controller.install_plan(&spec).unwrap();
+        controller.set_playing(true).unwrap();
+        // Feed constant 1.0 for the whole fade span.
+        let mut start = 0u64;
+        while start < 1_024 {
+            let count = 256u64;
+            let data = vec![1.0f32; count as usize * 2];
+            feeder
+                .try_send_chunk(StreamChunk {
+                    start_frame: start,
+                    frames: data.into(),
+                })
+                .unwrap();
+            start += count;
+        }
+        warm_up(&mut executor, 2);
+
+        // Blocks 512..768 and 768..1024 cover the 512-frame fade-in.
+        let mut position = 0u64;
+        for _ in 0..2 {
+            let mut frames = [0.0f32; 512];
+            executor.render_block(&mut frames);
+            for index in 0..256usize {
+                let expected =
+                    (std::f32::consts::FRAC_PI_2 * (position + index as u64) as f32 / 512.0).sin();
+                let rendered = frames[index * 2];
+                assert!(
+                    (rendered - expected).abs() < 1e-4,
+                    "streamed fade frame {}: {rendered} vs {expected}",
+                    position + index as u64
+                );
+            }
+            position += 256;
+        }
+        assert_eq!(handle.underrun_frames(), 0);
     }
 
     #[test]
@@ -4563,6 +4878,8 @@ mod tests {
                 frequency_hz: 440.0,
             },
             loop_source: false,
+            fade_in_frames: 0,
+            fade_out_frames: 0,
         };
         controller
             .install_plan(&lane_master_spec(0.5, vec![survivor.clone()]))
@@ -4577,6 +4894,8 @@ mod tests {
             end_frames: u64::MAX,
             source: RenderSource::Silence,
             loop_source: false,
+            fade_in_frames: 0,
+            fade_out_frames: 0,
         };
         controller
             .install_plan(&lane_master_spec(0.5, vec![inserted, survivor]))
@@ -4639,6 +4958,8 @@ mod tests {
                 frequency_hz: 440.0,
             },
             loop_source: false,
+            fade_in_frames: 0,
+            fade_out_frames: 0,
         };
         let mut seed: u64 = 0x5EED_CAFE;
         let mut next = move || {
@@ -4656,6 +4977,8 @@ mod tests {
                     end_frames: u64::MAX,
                     source: RenderSource::Silence,
                     loop_source: false,
+                    fade_in_frames: 0,
+                    fade_out_frames: 0,
                 });
             }
             clips.push(survivor_clip.clone());
@@ -4752,6 +5075,8 @@ mod tests {
                 end_frames: u64::MAX,
                 source: RenderSource::Samples(RenderSampleBuffer::stereo(source_rate, data.into())),
                 loop_source: false,
+                fade_in_frames: 0,
+                fade_out_frames: 0,
             }],
         );
         controller.install_plan(&spec).unwrap();
@@ -4806,6 +5131,8 @@ mod tests {
                     rate,
                 },
                 loop_source: false,
+                fade_in_frames: 0,
+                fade_out_frames: 0,
             }],
         );
         controller.install_plan(&spec).unwrap();
@@ -4850,6 +5177,8 @@ mod tests {
                     rate: 2.0,
                 },
                 loop_source: false,
+                fade_in_frames: 0,
+                fade_out_frames: 0,
             }],
         );
         controller.install_plan(&spec).unwrap();
@@ -4895,6 +5224,8 @@ mod tests {
                     rate: 1.5,
                 },
                 loop_source: false,
+                fade_in_frames: 0,
+                fade_out_frames: 0,
             }],
         );
         let error = controller.install_plan(&spec).unwrap_err();
@@ -4933,6 +5264,8 @@ mod tests {
                         rate,
                     },
                     loop_source: false,
+                    fade_in_frames: 0,
+                    fade_out_frames: 0,
                 }],
             );
             controller.install_plan(&warped).unwrap();
@@ -4949,6 +5282,8 @@ mod tests {
                     end_frames: u64::MAX,
                     source: RenderSource::Samples(buffer),
                     loop_source: false,
+                    fade_in_frames: 0,
+                    fade_out_frames: 0,
                 }],
             );
             controller.install_plan(&plain).unwrap();
@@ -5076,6 +5411,8 @@ mod tests {
                             data.into(),
                         )),
                         loop_source: true,
+                        fade_in_frames: 0,
+                        fade_out_frames: 0,
                     }],
                 ),
                 RenderStageSpec {
@@ -5115,6 +5452,8 @@ mod tests {
                             data.into(),
                         )),
                         loop_source: false,
+                        fade_in_frames: 0,
+                        fade_out_frames: 0,
                     }],
                 ),
                 RenderStageSpec {
@@ -5857,6 +6196,8 @@ mod tests {
                 end_frames,
                 source: RenderSource::Stream(handle.clone()),
                 loop_source: false,
+                fade_in_frames: 0,
+                fade_out_frames: 0,
             }],
         )
     }
@@ -6086,6 +6427,8 @@ mod tests {
                 end_frames: u64::MAX,
                 source: RenderSource::LiveInput(handle.clone()),
                 loop_source: false,
+                fade_in_frames: 0,
+                fade_out_frames: 0,
             }],
         )
     }
@@ -6672,6 +7015,8 @@ mod tests {
                 end_frames,
                 source: RenderSource::Notes(buffer.clone()),
                 loop_source: false,
+                fade_in_frames: 0,
+                fade_out_frames: 0,
             }],
         )
     }

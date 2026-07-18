@@ -52,6 +52,8 @@ fn plan_with_processor(processor: RenderPluginProcessor) -> RenderPlanSpec {
                             frequency_hz: 440.0,
                         },
                         loop_source: false,
+                        fade_in_frames: 0,
+                        fade_out_frames: 0,
                     }],
                 },
                 inputs: Vec::new(),
