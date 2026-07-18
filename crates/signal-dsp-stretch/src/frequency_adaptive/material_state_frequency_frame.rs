@@ -1,6 +1,8 @@
 use rustfft::{num_complex::Complex64, FftPlanner};
 
 #[cfg(not(debug_assertions))]
+mod direct_scale_timeline;
+#[cfg(not(debug_assertions))]
 mod guided_frequency_partitioned_linked_phase;
 mod hash;
 #[cfg(not(debug_assertions))]

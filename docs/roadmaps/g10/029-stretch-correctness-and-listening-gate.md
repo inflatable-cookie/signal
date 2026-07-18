@@ -2736,23 +2736,31 @@ code or audio exists.
 
 ### Batch 29.7AS - Direct Scale Representation Mechanics
 
-Status: ready
+Status: complete
 
-- [ ] implement only the preregistered direct multi-scale analysis, exclusive
+- [x] implement only the preregistered direct multi-scale analysis, exclusive
   frequency ownership, per-scale inverse overlap-add, and fixed storage
-- [ ] prove bit-exact unity bypass plus each unmasked scale's overlap and
+- [x] prove bit-exact unity bypass plus each unmasked scale's overlap and
   full-band reconstruction at `1e-12`; do not call the masked sum identity
-- [ ] prove conjugacy, exact ownership, crop, coverage, boundary schedule,
+- [x] prove conjugacy, exact ownership, crop, coverage, boundary schedule,
   capacity, finiteness, repeat, work counts, and explicit overflow behavior
-- [ ] report inert masked-sum gain, residual, timing, boundaries, and hashes on
+- [x] report inert masked-sum gain, residual, timing, boundaries, and hashes on
   frozen silence, impulse, noise, crossover, and interior-tone controls
-- [ ] prove no state/coefficient projection between scales or outer fields
-- [ ] keep guided phase state, stretched audio, objectives, listening, and
+- [x] prove no state/coefficient projection between scales or outer fields
+- [x] keep guided phase state, stretched audio, objectives, listening, and
   production closed; stop on the first representation-contract miss
+
+Evidence: pass at hash `fdf90f6127749341`. All structural, storage,
+capacity, unsupported-request, unity, crop, coverage, finite, work-count, and
+repeat checks pass. Unmasked scale reconstruction peaks at `3.34e-16` and
+conjugacy at `7.80e-14`. The `22` masked diagnostic rows have zero bounded-lag
+timing. Fixed crossover rows reach `0.451615 dB` gain movement, `0.056339`
+peak residual, and `0.055519` boundary error; these are frozen diagnostics,
+not a tuning surface.
 
 ### Batch 29.7AT - Direct Scale State Mechanics
 
-Status: conditional on Batch 29.7AS
+Status: ready
 
 - [ ] integrate the complete preregistered per-scale state order without
   changing geometry, crossovers, windows, capacities, or thresholds
@@ -4145,11 +4153,18 @@ Status: conditional on Batch 29.7AT
   windowed masked STFTs are not assumed perfect reconstruction. Unity remains
   bit-exact bypass; per-scale reconstruction is hard and the inert masked sum
   is diagnostic. Batch 29.7AS is ready. No code or audio exists.
+- 2026-07-18: Batch 29.7AS passes Rule 31Z representation mechanics at hash
+  `fdf90f6127749341`. Geometry, ownership, fixed storage, exact and overflow
+  capacities, unsupported requests, unity copy, per-scale reconstruction,
+  crop, coverage, finite, work counts, and repeat pass. The inert masked sum
+  keeps zero bounded-lag timing but exposes up to `0.451615 dB` gain movement
+  and `0.056339` peak residual at fixed crossovers. Freeze those diagnostics;
+  Batch 29.7AT is ready without mask tuning or objective audio.
 
 ## Next Task
 
-Run Batch 29.7AS under Rule 31Z. Implement direct scale representation and
-fixed-storage mechanics only. Prove unity bypass, per-scale reconstruction,
-ownership, boundaries, capacity, and repeat; measure the inert masked sum.
-Keep guided state, objectives, tuning, listening, holdout, product surfaces,
-and Batch 29.8 closed.
+Run Batch 29.7AT under Rule 31Z. Integrate the frozen direct per-scale state
+mechanics and prove every terminal state, channel-local unlocked behavior,
+compatible locked borrowing, peer magnitude/offset ownership, capacity,
+boundaries, and repeat. Keep objective audio, tuning, listening, holdout,
+product surfaces, and Batch 29.8 closed.

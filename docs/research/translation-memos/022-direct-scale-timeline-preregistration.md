@@ -86,5 +86,6 @@ unconditional peer projection, hard locks, and code types.
 
 ## Next Task
 
-Run Batch 29.7AS under Rule 31Z. Implement representation mechanics and fixed
-storage only. Guided phase state and objective audio remain closed.
+Batch 29.7AS now passes representation mechanics at hash
+`fdf90f6127749341`. Run Batch 29.7AT under Rule 31Z to integrate the frozen
+direct state mechanics only. Objective and listening audio remain closed.

@@ -1833,10 +1833,22 @@ must prove each unmasked scale separately and report the inert masked sum as a
 diagnostic, never as identity. Batch 29.6CH remains hazard evidence, not a code
 base.
 
+Batch 29.7AS passes those mechanics at hash `fdf90f6127749341`. Geometry,
+owned-bin totals, fixed storage, all exact/one-past capacity cases, unsupported
+requests, unity copy, crop, coverage, finite, work counts, and repeat pass.
+Unmasked per-scale reconstruction peaks at `3.34e-16`; conjugacy stays below
+`7.80e-14`.
+
+The measured masked sum confirms the expected crossover seam without a timing
+fault. All `22` bounded-lag rows land at zero. Interior tones are effectively
+flat, while fixed crossover tones reach `0.451615 dB` gain movement,
+`0.056339` peak residual, and `0.055519` boundary error. Those are frozen
+diagnostics, not a failed representation invariant and not permission to tune
+the masks before a complete objective result.
+
 ## Next Task
 
-Run Batch 29.7AS under Rule 31Z. Implement direct scale representation and
-fixed-storage mechanics only. Prove unity bypass, per-scale overlap and
-reconstruction, structural ownership, boundaries, capacity, and repeat;
-measure the inert masked sum. Keep guided phase state and objective audio
-closed.
+Run Batch 29.7AT under Rule 31Z. Add only the preregistered direct per-scale
+state mechanics. Prove reset, attack, unlocked, local lock, compatible locked
+borrowing, peer ownership, boundaries, capacity, and repeat. Keep objective
+and listening audio closed.

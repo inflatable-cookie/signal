@@ -519,16 +519,19 @@ Current stretch status:
   `10 ms` lattice, `80/40/20 ms` scales, `750/6000 Hz` ownership, absolute
   schedule, boundaries, state order, and fixed capacities. It also corrects
   the identity claim: unity is bit-exact bypass, per-scale reconstruction is
-  hard, and the inert masked scale sum is diagnostic. Batch 29.7AS is ready;
-  later state and objective batches remain conditional.
+  hard, and the inert masked scale sum is diagnostic. Batch 29.7AS now passes
+  at hash `fdf90f6127749341`: representation, fixed storage, capacity, unity,
+  per-scale reconstruction, boundaries, and repeat are exact. The
+  masked diagnostic keeps zero bounded-lag timing but reaches `0.451615 dB`
+  gain movement and `0.056339` peak residual at fixed crossovers. Those values
+  are frozen without tuning. Batch 29.7AT direct state mechanics is ready;
+  the objective batch remains conditional.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7AS under Rule 31Z. Implement direct scale
-representation and fixed-storage mechanics only. Prove unity bypass,
-per-scale reconstruction, ownership, boundaries, capacity, and repeat;
-measure the inert masked sum. Keep guided state, objectives, tuning,
-listening, holdout, product surfaces, and Batch 29.8 closed.
+Run `g10.029` Batch 29.7AT under Rule 31Z. Integrate and prove the frozen
+direct per-scale state mechanics only. Keep objective audio, tuning, listening,
+holdout, product surfaces, and Batch 29.8 closed.

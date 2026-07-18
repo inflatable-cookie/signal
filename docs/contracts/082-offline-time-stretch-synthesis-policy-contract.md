@@ -4971,9 +4971,36 @@ Hann, duration-sized output arrays, per-scale dynamic normalization,
 unconditional peer projection, hard peak locking, and implementation types.
 No old renderer code is a base for Batch 29.7AS.
 
+Batch 29.7AS passes Rule 31Z representation mechanics at evidence hash
+`fdf90f6127749341`. All three proof rates have exact geometry and owned-bin
+counts. Every prepared storage term matches its formula; planner scratch peaks
+at `3840` inside the `7680` cap. Every exact boundary and one-past-capacity
+request returns the specified result. Unsupported rates, channels, ratios,
+targets, and discontinuities reject before work.
+
+The public unity copy is bit-exact. Every unmasked scale reconstructs with
+maximum peak error `3.3306690738754696e-16`; maximum square-partition error is
+`4.440892098500626e-16`, imaginary residue
+`2.5760361165042217e-16`, and conjugacy error
+`7.791709393054201e-14`. Crop, coverage, finite, work-count, and repeat checks
+pass. No outer field or cross-scale projection exists.
+
+The inert masked sum remains diagnostic as preregistered. Silence is exact and
+bounded-lag timing is zero on all `22` rows. Maximum peak residual is
+`0.05633852196771144`; maximum RMS residual is `0.02153483778719231`; maximum
+gain movement is `0.4516143396004201 dB`; maximum boundary error is
+`0.055518269305318085`. Maxima occur at the fixed `750 Hz` or `6000 Hz`
+crossovers, not interior tones. Freeze these values without treating them as
+identity, passage, or a tuning invitation.
+
+Batch 29.7AT may now integrate the already-preregistered direct state mechanics
+only. It must not change geometry, windows, crossover masks, schedule,
+capacities, diagnostics, or evidence controls. Objective audio, listening, and
+policy tuning remain closed.
+
 ## Next Task
 
-Run Batch 29.7AS under Rule 31Z. Implement only direct scale representation,
-fixed storage, unity bypass, per-scale reconstruction, masked-sum diagnostics,
-and structural mechanics. Keep guided phase state, objective audio, tuning,
-listening, holdout, Batch 29.8, and product work closed.
+Run Batch 29.7AT under Rule 31Z. Integrate the frozen per-scale state order and
+prove every terminal state, channel-local unlocked behavior, compatible
+locked-only borrowing, peer magnitude/offset ownership, fixed capacity,
+boundaries, and repeat. Render no objective or listening audio.
