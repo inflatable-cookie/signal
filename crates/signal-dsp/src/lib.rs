@@ -34,6 +34,7 @@
 
 #![warn(missing_docs)]
 
+mod binaural;
 mod biquad;
 mod block;
 mod control;
@@ -49,6 +50,7 @@ mod mix_matrix;
 mod polyphase;
 pub mod ramp;
 
+pub use binaural::{BinauralConvolver, DEFAULT_HRIR_CROSSFADE_SAMPLES};
 pub use biquad::{BiquadCoefficients, BiquadState};
 pub use block::{
     apply_gain_control, process_delay_with_feedback_control, process_low_pass_with_cutoff_control,
