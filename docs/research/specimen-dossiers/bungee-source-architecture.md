@@ -3,7 +3,7 @@
 Status: reviewed
 Specimen: Bungee `2.4.24`
 Owner: dsp
-Last updated: 2026-07-17
+Last updated: 2026-07-18
 Scope: exact source at `746833f68a574d997ec50443e7cfd2d37b026302`
 
 ## Why This Specimen Matters
@@ -93,9 +93,9 @@ kernel rather than switching owners inside it.
 
 ## Next Task
 
-Batch 29.7W retains Bungee's common-region rotation as independent evidence for
-one locked state, not a complete material-state renderer. Bungee does not
-supply ordinary/unlocked material ownership or nonoverlapping frequency-scale
-selection. Batch 29.7X closes those seams from independent papers without
-transferring Bungee expression, channel summation, constants, or transient
-heuristic. Batch 29.7Y keeps Bungee limited to locked-state evidence.
+Batch 29.7AJ retains Bungee's shared region rotation as independent locked-
+state and channel-equivariant-synthesis evidence. It is not the selected
+complete topology: channel summation can cancel, and Bungee supplies neither
+ordinary/unlocked material ownership nor nonoverlapping frequency scales.
+Batch 29.7AK transfers no Bungee expression, channel summation, constants, or
+transient heuristic.

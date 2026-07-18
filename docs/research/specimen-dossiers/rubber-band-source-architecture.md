@@ -3,7 +3,7 @@
 Status: reviewed
 Specimen: Rubber Band R2 and R3
 Owner: dsp
-Last updated: 2026-07-17
+Last updated: 2026-07-18
 Scope: exact Rubber Band `4.0.0` source and linked-stereo topology
 
 ## Why This Specimen Matters
@@ -156,8 +156,9 @@ winner is established.
 
 ## Next Task
 
-Batch 29.7AD uses the state ordering and tuning requirement as architecture
-evidence for one Signal-owned single-grid proof. Batch 29.7AE may calibrate only
-its six declared policy controls from Signal development evidence. Rubber Band
-expression, ranges, thresholds, crossovers, masks, tables, and constants remain
-excluded.
+Batch 29.7AJ selects R3's complete topology shape for one clean-room proof:
+exclusive frequency-owned scales, synchronized all-channel phase-state update,
+conditional compatible peak borrowing, and per-channel synthesis. It does not
+select Rubber Band expression, ranges, thresholds, crossovers, masks, tables,
+or constants. Batch 29.7AK derives every numeric policy from Signal-owned
+physical invariants and frozen development evidence under Rule 31R.

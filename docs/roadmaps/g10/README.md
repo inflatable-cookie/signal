@@ -463,14 +463,20 @@ Current stretch status:
   comparisons, and `21` long-development metrics reject. Batch 29.7AI then
   proves the old local and polarity/gain vetoes over-tight against Rubber Band.
   Rule 31Q retains calibrated stereo plus four genuine structural mechanics
-  and freezes a professional-comparator local envelope.
+  and freezes a professional-comparator local envelope. Batch 29.7AJ then
+  traces pinned Rubber Band R3, Signalsmith Stretch, and Bungee. It selects one
+  clean-room `GuidedFrequencyPartitionedLinkedPhaseVocoder` proof. Unlike the
+  rejected 29.6CH and 29.7Y paths, exclusive scale ownership, synchronized
+  all-channel phase-state selection, conditional linked peak borrowing, and
+  per-channel synthesis form one indivisible waveform owner. Rule 31R permits
+  one stop-gated mechanics and objective proof with fixed declared bounds and
+  no external numeric-policy transfer.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7AJ under Rule 31Q. Research how source-backed
-professional renderers separate shared nonlinear material decisions from
-channel-equivariant waveform synthesis. Select at most one complete topology
-or stop. Keep the holdout, listening, product surfaces, and Batch 29.8 closed.
+Run `g10.029` Batch 29.7AK under Rule 31R. Implement the one stop-gated
+`GuidedFrequencyPartitionedLinkedPhaseVocoder` proof. Keep the holdout,
+listening, product surfaces, and Batch 29.8 closed.

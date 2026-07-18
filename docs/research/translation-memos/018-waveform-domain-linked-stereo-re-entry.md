@@ -154,7 +154,6 @@ This is technical provenance control, not a patent or legal opinion.
 
 ## Next Task
 
-Run Batch 29.7AJ. Research how source-backed professional renderers separate
-shared nonlinear material decisions from channel-equivariant synthesis.
-Select at most one complete topology that can own Rule 31Q, or stop. Keep the
-holdout and product surfaces closed.
+Memo 019 completes Batch 29.7AJ and selects one guided frequency-partitioned
+linked-phase proof. Run Batch 29.7AK under Rule 31R. Keep the holdout and
+product surfaces closed.

@@ -16,8 +16,8 @@ memory alone.
 - `g10.029` is the active correctness-first stretch roadmap
 - `046` governs sample-domain stretch behavior and its promotion gates
 - `082` governs the report-only successor policy, the competitive Rule 31
-  coherent mono baseline, and the corrected Rule 31Q professional-comparator
-  boundary
+  coherent mono baseline, corrected Rule 31Q professional-comparator boundary,
+  and Rule 31R guided frequency-partitioned linked-phase proof
 - `g10.028` source-fill work is paused until the actual DSP kernel and source
   consumption geometry pass the `g10.029` correctness gate
 
@@ -145,7 +145,6 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7AJ under contract `082`, Rule 31Q. Research the shared-
-decision and channel-equivariant synthesis boundary in source-backed
-professional renderers. Select at most one complete topology or stop. Keep the
+Run `g10.029` Batch 29.7AK under contract `082`, Rule 31R. Implement the one
+stop-gated `GuidedFrequencyPartitionedLinkedPhaseVocoder` proof. Keep the
 holdout, listening, Batch 29.8, and product work closed.

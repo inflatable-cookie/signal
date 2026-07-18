@@ -3,7 +3,7 @@
 Status: reviewed; Signal translation parity confirmed
 Specimen: Signalsmith Stretch `1.3.2`
 Owner: dsp
-Last updated: 2026-07-17
+Last updated: 2026-07-18
 Scope: time-stretch phase topology at revision `57b93f4e9206a089a45387eaa39bdc9f310d3308`
 
 ## Why This Specimen Matters
@@ -191,9 +191,9 @@ known frame-rate sideband, is the next translation gate.
 
 ## Next Task
 
-Batch 29.7W retains Signalsmith as independent evidence for ordinary advance
-and linked-channel ownership. Its documented high-ratio randomization is not a
-pro-quality material-guided unlock law, and it supplies no frequency-owned
-multi-scale synthesis. Batch 29.7X closes those seams elsewhere. Batch 29.7Y
-does not transfer Signalsmith source expression, constants, predictor, or
+Batch 29.7AJ retains Signalsmith as the independent single-grid equivariance
+control: greatest-energy reference decisions are followed by peer-relative
+synthesis. It is not the selected professional topology because it supplies no
+complete material-state or frequency-owned scale system. Batch 29.7AK does not
+transfer Signalsmith expression, constants, predictor, or high-ratio
 randomization.

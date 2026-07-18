@@ -1,6 +1,6 @@
 # Offline Time-Stretch Synthesis
 
-Status: shared-decision waveform topology research next
+Status: guided frequency-partitioned linked-phase proof next
 Owner: dsp
 Updated: 2026-07-18
 Contract refs: `046`, `082`
@@ -1619,11 +1619,47 @@ the four genuine structural mechanics, mono integrity, long-development
 quality, and bounded-state requirements. Prior Signal candidates retain
 calibrated or structural failures independent of the retired vetoes.
 
+## Shared-Decision Waveform Topology
+
+Batch 29.7AJ traces three pinned source families and selects one clean-room
+`GuidedFrequencyPartitionedLinkedPhaseVocoder` proof. Rubber Band R3 provides
+the only reviewed complete composition: per-channel material guidance,
+simultaneous nonoverlapping frequency-owned scales, one synchronized all-
+channel phase-state update, conditional compatible peak-trajectory borrowing,
+and per-channel inverse synthesis. Signalsmith independently supports a
+greatest-energy channel decision followed by peer-relative synthesis. Bungee
+independently supports applying one shared locked-region rotation before per-
+channel inverse synthesis, but its channel sum can cancel and its state/scale
+system is incomplete.
+
+The architecture separates decisions from waveform ownership:
+
+1. a global bounded schedule and identical scale geometry apply to all channels
+2. full-band material classification produces guidance, not audio components
+3. low, middle, and high scales own exhaustive nonoverlapping frequencies
+4. each channel first computes its ordinary recurrence
+5. one synchronized branch order selects reset/attack, ordinary/unlocked, or a
+   compatible tracked-peak locked state across channels
+6. a linked peer retains peer magnitude and current analysis-relative phase
+7. every scale inverse-synthesizes each channel separately; scales sum only
+   within that channel
+
+This is materially different from both prior partitioned failures. Batch
+29.6CH tested frequency bands around an incomplete phase/channel translation.
+`FrequencyAdaptiveMaterialPhase` later proved exact representation but placed
+independent polar channel transport before a shared material operation. The
+selected kernel makes scale ownership, phase-state selection, linked
+trajectory ownership, and synthesis indivisible.
+
+Rule 31R requires fixed declared capacities and overflow behavior. Stage A
+must prove identity, exhaustive scale ownership, finite and repeat mechanics,
+all state branches, and the four genuine channel mechanics before one complete
+material policy can run. Stage B gets one frozen objective result against the
+corrected professional envelope. External source expression and numeric policy
+remain excluded.
+
 ## Next Task
 
-Run Batch 29.7AJ under Rule 31Q. Research how professional source-backed
-renderers separate channel-equivariant synthesis from nonlinear material
-decisions. Select at most one complete topology that can preserve the four
-genuine structural mechanics and meet the corrected local envelope, or stop.
-Do not implement another renderer. Keep the concealed holdout, listening,
-dynamic ratio, realtime, and product-facing work closed.
+Run Batch 29.7AK under Rule 31R. Implement the one stop-gated
+`GuidedFrequencyPartitionedLinkedPhaseVocoder` proof. Keep the concealed
+holdout, listening, dynamic ratio, realtime, and product-facing work closed.

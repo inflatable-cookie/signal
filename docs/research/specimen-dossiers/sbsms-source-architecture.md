@@ -130,4 +130,6 @@ implementation opens.
 Retain this dossier as causal evidence. Batch 29.7AI proves the old local and
 polarity/gain vetoes invalid, but SBSMS remains closed on genuine structural
 mechanics, mono quality, long-development quality, and bounded state. Batch
-29.7AJ returns to shared-decision waveform topology research under Rule 31Q.
+Batch 29.7AJ completes the shared-decision study and does not reopen SBSMS.
+Batch 29.7AK runs the separately selected guided frequency-partitioned linked-
+phase proof under Rule 31R.

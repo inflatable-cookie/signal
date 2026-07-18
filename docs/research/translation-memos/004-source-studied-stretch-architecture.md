@@ -1,6 +1,6 @@
 # Source-Studied Stretch Architecture
 
-Status: partially validated; weighted predictor retained
+Status: historical prototype rejected; topology distinction superseded by memo 019
 Memo: `g10.029` source-study reset
 Owner: dsp
 Last updated: 2026-07-14
@@ -145,5 +145,8 @@ weighted prediction as the selected family.
 
 ## Next Task
 
-Implement memo 005's report-only predictor and synthetic gate. Do not resume
-frequency partitioning, Rule 30AB, or per-row repair batches.
+Memo 019 does not reopen this rejected prototype. It selects a different
+complete kernel in which exclusive scale ownership, synchronized all-channel
+phase-state selection, conditional linked trajectories, and per-channel
+synthesis are indivisible. Run Batch 29.7AK under Rule 31R; do not resume this
+memo's implementation or Rule 30AB.

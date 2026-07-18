@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; shared-decision waveform topology research next
+Status: active; guided frequency-partitioned linked-phase proof next
 Owner: dsp
 Updated: 2026-07-18
 Related contracts: `046`, `048`, `049`
@@ -4327,9 +4327,67 @@ can own the four hard mechanics and corrected local envelope, or stop. No
 renderer, parameter experiment, listening, holdout read, or product work may
 open.
 
+### Rule 31R: guided frequency-partitioned linked-phase waveform owner
+
+Batch 29.7AJ selects one clean-room
+`GuidedFrequencyPartitionedLinkedPhaseVocoder` proof. Its waveform owner is the
+complete synchronized phase update and per-channel inverse synthesis, not the
+material classifier, a scale mask in isolation, or a later image repair.
+
+The kernel must have:
+
+- one bounded source/output schedule shared by every channel and scale
+- one full-band material-control pass whose outputs are guidance only
+- simultaneous low, middle, and high transforms with exhaustive,
+  nonoverlapping frequency ownership and identical geometry across channels
+- one synchronized all-channel state decision per scale, ordered as reset or
+  attack, ordinary or unlocked, then compatible tracked-peak lock
+- an ordinary recurrence for every channel before any linked decision
+- deterministic greatest-energy reference selection and conditional peak-
+  trajectory borrowing only inside compatible linked locked regions
+- peer magnitude and current analysis-relative phase retained through linked
+  synthesis; owner magnitude must never replace peer magnitude
+- per-channel inverse/window synthesis with scale sums confined to that same
+  channel; each frequency must be synthesized exactly once
+- fixed declared work and memory capacities plus an explicit overflow result
+
+For `C` channels and fixed scale sizes `N_s`, each synthesis step is bounded by
+three forward and inverse transforms per channel plus finite classifier,
+crossover, peak, and state scans: `O(C * sum(N_s log N_s))` work and
+`O(C * sum(N_s))` coefficient/state memory. Declared source/output rings are
+the only additional frame storage. No collection or search may grow with
+render duration.
+
+External source may identify topology and failure cases only. Signal must
+declare its own scale durations, crossover bounds, classification policy,
+state ranges, capacities, and numeric controls before the first render. Rubber
+Band GPL expression, constants, thresholds, masks, tables, and ranges are not
+inputs to implementation or calibration.
+
+This rule does not reopen Batch 29.6CH. That prototype combined frequency
+partitioning with an incomplete phase and channel translation. It also does
+not reopen Batch 29.7Y, whose exact frame preceded a shared operator with
+independent per-channel polar interpolation. Exclusive scale ownership,
+synchronized state selection, conditional linked trajectories, and per-channel
+synthesis are one indivisible kernel here.
+
+Batch 29.7AK is one two-stage proof. Stage A must pass identity reconstruction
+at or below `1e-12` peak error in `f64`, exact crop, coverage, finite, repeat,
+fixed-capacity, and overflow mechanics, exercise every scale and state branch,
+and pass Rule 31Q duplicate, mono-parity, silent-peer, and channel-swap
+mechanics at `1e-6`. Any miss closes the topology before material policy work.
+
+After Stage A passage, Stage B may run exactly one preregistered complete policy
+through the frozen synthetic, six-row mono, long-development, and corrected
+`48`-row stereo evidence. Require the unchanged calibrated gate, at least
+`245/384` improved local windows, at most `13/48` retained local-row failures,
+maximum normalized-Gram residual at or below `0.01744693815260`, and no row-
+complete mono regression. A miss closes the implementation. No factor sweep,
+per-row repair, listening, holdout access, dynamic ratio, realtime, routing,
+cache, production, or product-facing work may open.
+
 ## Next Task
 
-Run Batch 29.7AJ under Rule 31Q. Research the shared-decision and channel-
-equivariant synthesis boundary in source-backed professional renderers. Select
-at most one complete topology or stop. Keep the holdout, listening, Batch 29.8,
-and all product-facing work closed.
+Run Batch 29.7AK under Rule 31R. Implement the one stop-gated
+`GuidedFrequencyPartitionedLinkedPhaseVocoder` proof. Keep the holdout,
+listening, Batch 29.8, and all product-facing work closed.

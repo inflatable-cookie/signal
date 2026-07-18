@@ -2444,21 +2444,62 @@ hash `b9331f0858326f19`.
 
 ### Batch 29.7AJ - Shared-Decision Waveform Topology Research
 
-- [ ] freeze Rule 31Q and reclassify completed candidates without reopening a
+- [x] freeze Rule 31Q and reclassify completed candidates without reopening a
   renderer or changing retained evidence
-- [ ] trace how pinned source-backed professional renderers separate nonlinear
+- [x] trace how pinned source-backed professional renderers separate nonlinear
   material classification from duplicate-, mono-, pan-, and swap-equivariant
   channel synthesis
-- [ ] compare at most three complete topology families; reject partial repair,
+- [x] compare at most three complete topology families; reject partial repair,
   post-hoc image projection, independent-channel synthesis, and unbounded state
-- [ ] select at most one topology with a testable waveform owner, fixed work
+- [x] select at most one topology with a testable waveform owner, fixed work
   and memory bounds, mono/polyphonic/transient coverage, and a direct path to
   the corrected professional envelope; otherwise stop the active stretch lane
-- [ ] do not implement or tune a renderer, listen, access the holdout, or open
+- [x] do not implement or tune a renderer, listen, access the holdout, or open
   dynamic ratio, realtime, routing, cache, production, or product-facing work
 
 Evidence: one source-backed architecture decision promoted into contract
 `082`. No renderer or parameter experiment.
+
+Decision: select one clean-room
+`GuidedFrequencyPartitionedLinkedPhaseVocoder` proof. Pinned Rubber Band R3
+separates per-channel material guidance from one synchronized all-channel phase
+update and per-channel synthesis. Signalsmith independently supports a
+greatest-energy reference with peer-relative synthesis. Bungee independently
+supports common locked-region rotation before per-channel synthesis. Only R3
+composes those invariants with complete material states and nonoverlapping
+frequency-owned scales.
+
+This does not reopen Batch 29.6CH. That prototype combined frequency bands with
+an incomplete phase/channel translation. Batch 29.7Y proved exact multiscale
+reconstruction but placed independent polar channel interpolation before the
+shared operator. Rule 31R instead makes exclusive scale ownership,
+synchronized phase-state selection, conditional linked trajectory borrowing,
+and per-channel synthesis one indivisible waveform owner. External expression,
+constants, masks, thresholds, and ranges remain excluded.
+
+### Batch 29.7AK - Guided Frequency-Partitioned Linked-Phase Proof
+
+- [ ] freeze memo 019 and Rule 31R before implementation; declare all Signal-
+  owned scale, crossover, classifier, state, capacity, and overflow policy
+  before the first render
+- [ ] Stage A: implement one report-only fixed-capacity kernel with exhaustive
+  nonoverlapping scale ownership, one synchronized all-channel phase-state
+  update, conditional compatible peak borrowing, and per-channel synthesis
+- [ ] stop unless Stage A passes `1e-12` `f64` identity reconstruction, exact
+  crop/coverage/finite/repeat/bounded-state mechanics, all scale/state branch
+  coverage, and the four Rule 31Q channel mechanics at `1e-6`
+- [ ] Stage B, only after Stage A passage: run one preregistered complete policy
+  through the frozen synthetic, six-row mono, long-development, and corrected
+  `48`-row professional-comparator gates
+- [ ] require the unchanged calibrated gate, at least `245/384` improved local
+  windows, at most `13/48` local-row failures, maximum local residual at or
+  below `0.01744693815260`, and no row-complete mono regression; stop on a miss
+- [ ] do not sweep factors, repair individual rows, listen, access the holdout,
+  or open Batch 29.8, dynamic ratio, realtime, routing, cache, production, or
+  product-facing work
+
+Evidence: one Stage A mechanics report and, only after passage, one complete
+Stage B objective report. No concealed listening pack exists before passage.
 
 ### Batch 29.8 - Listening And Dynamic Checkpoint
 
@@ -3754,10 +3795,17 @@ Evidence: one source-backed architecture decision promoted into contract
   are not. Rule 31Q retains the genuine hard mechanics, makes polarity/gain
   diagnostic, and replaces the local veto with the professional envelope.
   Evidence hash `b9331f0858326f19`. No closed renderer reopens.
+- 2026-07-18: Batch 29.7AJ selects one clean-room
+  `GuidedFrequencyPartitionedLinkedPhaseVocoder` proof after tracing pinned
+  Rubber Band R3, Signalsmith Stretch, and Bungee. The selected kernel makes
+  exclusive scale ownership, synchronized all-channel phase-state selection,
+  conditional linked peak borrowing, and per-channel synthesis one waveform
+  owner. It is not the rejected 29.6CH partitioned translation or 29.7Y
+  independent polar transport. Memo 019 and Rule 31R freeze a two-stage,
+  one-result proof with fixed bounds and no external numeric policy transfer.
 
 ## Next Task
 
-Run Batch 29.7AJ under Rule 31Q. Research how source-backed professional
-renderers separate shared nonlinear material decisions from channel-
-equivariant waveform synthesis. Select at most one complete topology or stop.
-Keep the holdout, listening, product surfaces, and Batch 29.8 closed.
+Run Batch 29.7AK under Rule 31R. Implement the one stop-gated
+`GuidedFrequencyPartitionedLinkedPhaseVocoder` proof. Keep the holdout,
+listening, product surfaces, and Batch 29.8 closed.

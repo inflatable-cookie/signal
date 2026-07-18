@@ -69,6 +69,7 @@ Finch and Loophole.
 | [Paired-Channel Consistency Operator Boundary](./translation-memos/016-paired-channel-consistency-operator-boundary.md) | Close transform-domain post-projection; require one complete waveform-owning topology | Promoted |
 | [Whole-Family Waveform-Ownership Decision](./translation-memos/017-whole-family-waveform-ownership-decision.md) | Close the failed single-grid proof; require waveform-domain linked-stereo ownership | Promoted |
 | [Waveform-Domain Linked-Stereo Re-entry](./translation-memos/018-waveform-domain-linked-stereo-re-entry.md) | Close linked subband sinusoidal source feasibility; replace invalid local and exact-mechanics vetoes with a professional-comparator boundary | Validated |
+| [Shared-Decision Waveform Topology](./translation-memos/019-shared-decision-waveform-topology.md) | Select one clean-room guided frequency-partitioned linked-phase proof with synchronized channel state and per-channel synthesis | Promoted |
 
 ## Consumer Guidance
 
@@ -79,7 +80,6 @@ Finch and Loophole.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7AJ under Rule 31Q. Research how professional source-
-backed renderers separate shared material decisions from channel-equivariant
-synthesis. Select at most one complete topology or stop. Keep the holdout,
+Run `g10.029` Batch 29.7AK under Rule 31R. Implement the one stop-gated
+`GuidedFrequencyPartitionedLinkedPhaseVocoder` proof. Keep the holdout,
 listening, Batch 29.8, and product work closed.
