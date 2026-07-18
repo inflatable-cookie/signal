@@ -33,7 +33,7 @@ pub(in crate::frequency_adaptive) struct CoefficientClassEvidence {
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
-pub(in super::super) struct CoefficientContributionTrace {
+pub(in crate::frequency_adaptive) struct CoefficientContributionTrace {
     pub(in super::super) lifecycle: [CoefficientClassEvidence; 3],
     pub(in super::super) energy: [CoefficientClassEvidence; 2],
 }

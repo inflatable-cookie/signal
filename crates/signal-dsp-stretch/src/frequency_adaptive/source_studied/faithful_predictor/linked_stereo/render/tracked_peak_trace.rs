@@ -13,7 +13,7 @@ pub(in super::super) struct PhaseFieldClassTrace {
 }
 
 #[derive(Clone, Debug, Default, PartialEq)]
-pub(in super::super) struct TrackedPeakPhaseTrace {
+pub(in crate::frequency_adaptive) struct TrackedPeakPhaseTrace {
     pub(in super::super) classes: [PhaseFieldClassTrace; 3],
 }
 

@@ -10,7 +10,7 @@ use crate::frequency_adaptive::{
 const SAMPLE_RATE: usize = 8_000;
 const RATIOS: [f64; 3] = [0.75, 1.5, 2.0];
 
-pub(in super::super) fn review(
+pub(in crate::frequency_adaptive) fn review(
     renderer: fn([&[f64]; 2], f64, usize) -> shared_rotation_region_locked::SharedRotationRender,
 ) -> SharedRotationMechanicsReview {
     let first = run(renderer);
@@ -162,6 +162,9 @@ fn add_states(target: &mut StateCounts, source: StateCounts) {
     target.silent += source.silent;
     target.regions += source.regions;
     target.owner_switches += source.owner_switches;
+    target.shoulder += source.shoulder;
+    target.locked += source.locked;
+    target.diffuse += source.diffuse;
 }
 
 fn mismatch(actual: &[f64], expected: &[f64], gain: f64) -> usize {

@@ -2137,19 +2137,42 @@ revival of Batch 29.6CH.
 - [x] stop before time stretch unless untouched coefficients reconstruct at or
   below `1e-12` peak error in `f64` and pass exact crop, coverage, frame-bound,
   channel-relation, silence, boundary, and repeat mechanics
-- [ ] Stage B, only after Stage A passes: add the complete shared fuzzy
+- [x] Stage B, only after Stage A passes: add the complete shared fuzzy
   material map, transient shoulder/reset law, retained common-region rotation,
   and deterministic channel-common noise perturbation
 - [ ] run exactly one candidate at `0.75x`, `1.5x`, and `2.0x` through the
   frozen synthetic, six-row mono, and `48`-row calibrated linked-stereo gates
 - [ ] require zero calibrated and local-consistency stereo failures, exact
   mechanics, and no row-complete mono regression; do not tune after a miss
-- [ ] keep listening, Batch 29.8, dynamic ratio, realtime, routing, cache,
+- [x] keep listening, Batch 29.8, dynamic ratio, realtime, routing, cache,
   production, and all product-facing work closed
 
 Evidence: one Stage A exact-reconstruction report, then at most one complete
 Stage B objective report. No concealed listening pack exists before hard
 passage.
+
+Stage B stops as an architecture miss. The frozen candidate completes the
+synthetic, calibrated stereo, and mechanics phases, then remains inside the
+repeated six-row mono corpus after more than five hours. Its already-complete
+stereo report rejects at `36/48` calibrated failures and `46/48`
+local-consistency failures. Continuing the report cannot change passage, so
+the runaway mono repeat is stopped. No DSP value changes after the miss.
+
+### Batch 29.7Z - Material Transport Architecture Reassessment
+
+- [ ] attribute the first linked-channel relation divergence before the common
+  material operator; test whether independent per-channel polar interpolation
+  breaks retained interchannel phase
+- [ ] define one relation-preserving coefficient-resampling law with a shared
+  source trajectory and explicit retained channel relation, or close this
+  transport family
+- [ ] replace the whole-source report execution shape with a bounded sliced
+  proof design that preserves Stage A ownership and canonical-dual identity
+- [ ] use primary-source and prior Signal evidence only; implement no renderer,
+  tuning candidate, listening export, dynamic ratio, or product work
+
+Evidence: one architecture attribution and one bounded execution decision. No
+DSP experiment belongs in this batch.
 
 ### Batch 29.8 - Listening And Dynamic Checkpoint
 
@@ -3350,11 +3373,21 @@ passage.
   reflected boundaries, and repeat mechanics pass with zero failures. Evidence
   hash `35b893204a56fcf3`. Stage B may now implement the single frozen material
   policy. No listening, production, or product-facing lane opens.
+- 2026-07-18: Batch 29.7Y Stage B implements the one frozen complete material
+  policy without post-result tuning, then closes as an architecture miss. The
+  completed stereo report has zero structural failures but rejects at `36/48`
+  calibrated and `46/48` local-consistency failures; evidence hash
+  `b986ed62e2cadefe`. Candidate IPD, mid/side, correlation, and aggregate
+  relation errors rise together even though every channel receives the same
+  later material operator. Independent per-channel polar source interpolation
+  is the leading pre-operator attribution. The monolithic repeated six-row
+  corpus remains CPU-bound after more than five hours and is stopped because
+  stereo has already made passage impossible. No listening or product lane
+  opens. Batch 29.7Z owns a no-DSP transport and execution-shape reassessment.
 
 ## Next Task
 
-Run Batch 29.7Y Stage B. Add the complete frozen shared fuzzy material map,
-transient shoulder/reset law, retained common-region rotation, and deterministic
-channel-common noise perturbation to the passing Stage A representation. Run
-the one authorized objective candidate without tuning. Keep listening, product
-surfaces, and Batch 29.8 closed.
+Run Batch 29.7Z. Attribute the linked-channel relation break before the common
+material operator, then define a relation-preserving coefficient-resampling law
+and a bounded sliced proof shape or close the family. Implement no renderer.
+Keep listening, product surfaces, and Batch 29.8 closed.

@@ -57,7 +57,7 @@ pub(in crate::frequency_adaptive) fn review() -> PeakRegionReview {
     )
 }
 
-pub(super) fn review_candidate(
+pub(in crate::frequency_adaptive) fn review_candidate(
     directory: &str,
     candidate: fn([&[f64]; 2], f64, usize) -> render::StereoRender,
 ) -> PeakRegionReview {

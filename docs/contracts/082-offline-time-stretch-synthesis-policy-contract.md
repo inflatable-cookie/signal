@@ -1,8 +1,8 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; independent material-state frequency-frame proof selected
+Status: active; material-phase proof rejected; transport reassessment next
 Owner: dsp
-Updated: 2026-07-17
+Updated: 2026-07-18
 Related contracts: `046`, `048`, `049`
 Related architecture: `docs/architecture/offline-time-stretch-synthesis.md`
 
@@ -3944,6 +3944,19 @@ and no row-complete mono regression against coherent Signal or frozen 29.7T.
 No support, boundary, classifier, transient, diffusion, seed, crossover,
 scale, peak, or blend change follows a miss.
 
+Stage A passes. Stage B then rejects before passage at `36/48` calibrated and
+`46/48` local-consistency stereo failures. Giving both channels one common
+material operator does not preserve their relation when source coefficients
+are polar-interpolated independently first. The whole-source report shape also
+remains CPU-bound inside its mono repeat after more than five hours. These are
+architecture findings, not authorization to tune the frozen candidate.
+
+Batch 29.7Z is a no-DSP reassessment. It may identify one source-backed
+relation-preserving coefficient-resampling law and one bounded sliced proof
+shape that retains Stage A's exclusive atom ownership and global canonical
+dual. It may instead close the family. It may not implement, retune, export
+listening artifacts, or open dynamic-ratio or product work.
+
 The clean-room boundary permits papers and prior Signal evidence only. No
 external code, expression, constants, masks, or random sequence transfers.
 Paper review is not patent freedom-to-operate clearance. Product, listening,
@@ -3951,6 +3964,7 @@ dynamic ratio, realtime, routing, and cache work remain closed.
 
 ## Next Task
 
-Run Batch 29.7Y Stage A under Rule 31I. Implement only the report-only painless
-frequency-adaptive representation and exact reconstruction/mechanics proof.
-Keep material phase and Batch 29.8 closed until Stage A passes.
+Run Batch 29.7Z under Rule 31I. Attribute the pre-operator channel-relation
+break and define a relation-preserving coefficient-resampling law plus bounded
+sliced proof shape, or close the family. Implement no DSP. Keep Batch 29.8 and
+all product-facing work closed.

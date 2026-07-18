@@ -1,7 +1,7 @@
 use rustfft::num_complex::Complex64;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub(in super::super) struct SynthesisRelationTrace {
+pub(in crate::frequency_adaptive) struct SynthesisRelationTrace {
     pub(in super::super) inverse_ipd_error: [f64; 2],
     pub(in super::super) accumulated_ipd_error: [f64; 2],
     pub(in super::super) normalized_ipd_error: [f64; 2],

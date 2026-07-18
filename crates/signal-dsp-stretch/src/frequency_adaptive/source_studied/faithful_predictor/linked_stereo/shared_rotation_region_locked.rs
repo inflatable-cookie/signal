@@ -1,7 +1,7 @@
 use rustfft::{num_complex::Complex64, FftPlanner};
 
-pub(super) mod output;
-pub(super) mod phase;
+pub(in crate::frequency_adaptive) mod output;
+pub(in crate::frequency_adaptive) mod phase;
 
 use super::super::{analyse, coherent_representation, constrain_real_edges, synthesise};
 use crate::frequency_adaptive::source_studied::faithful_predictor::TransformGrid;
@@ -16,6 +16,9 @@ pub(in crate::frequency_adaptive) struct StateCounts {
     pub(in crate::frequency_adaptive) silent: usize,
     pub(in crate::frequency_adaptive) regions: usize,
     pub(in crate::frequency_adaptive) owner_switches: usize,
+    pub(in crate::frequency_adaptive) shoulder: usize,
+    pub(in crate::frequency_adaptive) locked: usize,
+    pub(in crate::frequency_adaptive) diffuse: usize,
 }
 
 #[derive(Clone, Debug)]

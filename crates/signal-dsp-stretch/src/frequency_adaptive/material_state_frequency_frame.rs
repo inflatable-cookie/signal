@@ -1,5 +1,8 @@
 use rustfft::{num_complex::Complex64, FftPlanner};
 
+#[cfg(not(debug_assertions))]
+mod material_phase;
+
 const SAMPLE_RATE_HZ: usize = 48_000;
 const FFT_FRAMES: usize = 16_384;
 const SOURCE_FRAMES: usize = 8_192;
@@ -32,7 +35,9 @@ struct Band {
     taps: Vec<(usize, f64)>,
 }
 
+#[derive(Clone)]
 struct Representation {
+    fft_frames: usize,
     bands: Vec<Band>,
     frame_operator: Vec<f64>,
     common_coefficients: usize,
@@ -214,9 +219,19 @@ fn stage_a_review() -> StageAReview {
 }
 
 fn build_representation() -> Representation {
-    let centers = frequency_centers();
+    build_representation_for(FFT_FRAMES, SAMPLE_RATE_HZ, 512)
+}
+
+fn build_representation_for(
+    fft_frames: usize,
+    sample_rate_hz: usize,
+    common_hop: usize,
+) -> Representation {
+    assert_eq!(fft_frames % SUPPORT_FRAMES[0], 0);
+    assert_eq!(fft_frames % common_hop, 0);
+    let centers = frequency_centers(fft_frames, sample_rate_hz);
     let mut taps = vec![Vec::<(usize, f64)>::new(); centers.len()];
-    for bin in 0..FFT_FRAMES {
+    for bin in 0..fft_frames {
         let right_index = centers.partition_point(|center| *center <= bin) % centers.len();
         let left_index = (right_index + centers.len() - 1) % centers.len();
         let left = centers[left_index];
@@ -224,12 +239,12 @@ fn build_representation() -> Representation {
         let span = if right > left {
             right - left
         } else {
-            FFT_FRAMES - left + right
+            fft_frames - left + right
         };
         let offset = if bin >= left {
             bin - left
         } else {
-            FFT_FRAMES - left + bin
+            fft_frames - left + bin
         };
         let phase = std::f64::consts::FRAC_PI_2 * offset as f64 / span as f64;
         let left_weight = phase.cos();
@@ -247,18 +262,13 @@ fn build_representation() -> Representation {
         .zip(taps)
         .map(|(center, taps)| Band {
             center,
-            scale: scale_for_bin(absolute_bin(center)),
+            scale: scale_for_bin(absolute_bin(center, fft_frames), fft_frames, sample_rate_hz),
             taps,
         })
         .collect::<Vec<_>>();
-    let common_coefficients = bands
-        .iter()
-        .map(|band| band.taps.len().max(1).next_power_of_two())
-        .max()
-        .unwrap_or(1);
-    let common_hop = FFT_FRAMES / common_coefficients;
-    let mut frame_operator = vec![0.0_f64; FFT_FRAMES];
-    let mut coverage = vec![0_usize; FFT_FRAMES];
+    let common_coefficients = fft_frames / common_hop;
+    let mut frame_operator = vec![0.0_f64; fft_frames];
+    let mut coverage = vec![0_usize; fft_frames];
     let mut owner_counts = [0_usize; 3];
     let mut local_collisions = 0;
     for band in &bands {
@@ -267,7 +277,7 @@ fn build_representation() -> Representation {
         for &(bin, weight) in &band.taps {
             frame_operator[bin] += weight * weight;
             coverage[bin] += 1;
-            let local = local_coefficient(bin, band.center, common_coefficients);
+            let local = local_coefficient(bin, band.center, common_coefficients, fft_frames);
             local_collisions += usize::from(locals[local]);
             locals[local] = true;
         }
@@ -287,6 +297,7 @@ fn build_representation() -> Representation {
     let dual_hash = dual_hash(&bands, &frame_operator);
 
     Representation {
+        fft_frames,
         bands,
         frame_operator,
         common_coefficients,
@@ -299,14 +310,14 @@ fn build_representation() -> Representation {
     }
 }
 
-fn frequency_centers() -> Vec<usize> {
-    let nyquist = FFT_FRAMES / 2;
-    let crossover_bins = CROSSOVER_HZ.map(|hz| hz * FFT_FRAMES / SAMPLE_RATE_HZ);
-    let spacing = SUPPORT_FRAMES.map(|support| FFT_FRAMES / support);
+fn frequency_centers(fft_frames: usize, sample_rate_hz: usize) -> Vec<usize> {
+    let nyquist = fft_frames / 2;
+    let crossover_bins = CROSSOVER_HZ.map(|hz| (hz * fft_frames / sample_rate_hz).min(nyquist));
+    let spacing = SUPPORT_FRAMES.map(|support| fft_frames / support);
     let mut positive = vec![0_usize];
     let mut center = 0;
     while center < nyquist {
-        let scale = scale_for_bin(center);
+        let scale = scale_for_bin(center, fft_frames, sample_rate_hz);
         let boundary = match scale {
             Scale::Long => crossover_bins[0],
             Scale::Middle => crossover_bins[1],
@@ -322,14 +333,14 @@ fn frequency_centers() -> Vec<usize> {
         positive[1..positive.len() - 1]
             .iter()
             .rev()
-            .map(|bin| FFT_FRAMES - bin),
+            .map(|bin| fft_frames - bin),
     );
     centers.sort_unstable();
     centers
 }
 
-fn scale_for_bin(bin: usize) -> Scale {
-    let frequency_hz = bin * SAMPLE_RATE_HZ / FFT_FRAMES;
+fn scale_for_bin(bin: usize, fft_frames: usize, sample_rate_hz: usize) -> Scale {
+    let frequency_hz = bin * sample_rate_hz / fft_frames;
     if frequency_hz < CROSSOVER_HZ[0] {
         Scale::Long
     } else if frequency_hz < CROSSOVER_HZ[1] {
@@ -341,11 +352,11 @@ fn scale_for_bin(bin: usize) -> Scale {
 
 fn reconstruct_channel(input: &[f64], representation: &Representation) -> ChannelResult {
     let mut planner = FftPlanner::<f64>::new();
-    let forward_full = planner.plan_fft_forward(FFT_FRAMES);
-    let inverse_full = planner.plan_fft_inverse(FFT_FRAMES);
+    let forward_full = planner.plan_fft_forward(representation.fft_frames);
+    let inverse_full = planner.plan_fft_inverse(representation.fft_frames);
     let forward_band = planner.plan_fft_forward(representation.common_coefficients);
     let inverse_band = planner.plan_fft_inverse(representation.common_coefficients);
-    let mut spectrum = (0..FFT_FRAMES)
+    let mut spectrum = (0..representation.fft_frames)
         .map(|index| {
             let logical = index as isize - PAD_FRAMES as isize;
             Complex64::new(reflected_sample(input, logical), 0.0)
@@ -353,13 +364,17 @@ fn reconstruct_channel(input: &[f64], representation: &Representation) -> Channe
         .collect::<Vec<_>>();
     forward_full.process(&mut spectrum);
 
-    let mut reconstructed = vec![Complex64::new(0.0, 0.0); FFT_FRAMES];
+    let mut reconstructed = vec![Complex64::new(0.0, 0.0); representation.fft_frames];
     let mut non_finite_values = 0;
     for band in &representation.bands {
         let mut coefficients = vec![Complex64::new(0.0, 0.0); representation.common_coefficients];
         for &(bin, weight) in &band.taps {
-            coefficients[local_coefficient(bin, band.center, representation.common_coefficients)] =
-                spectrum[bin] * weight;
+            coefficients[local_coefficient(
+                bin,
+                band.center,
+                representation.common_coefficients,
+                representation.fft_frames,
+            )] = spectrum[bin] * weight;
         }
         inverse_band.process(&mut coefficients);
         let scale = 1.0 / representation.common_coefficients as f64;
@@ -371,20 +386,27 @@ fn reconstruct_channel(input: &[f64], representation: &Representation) -> Channe
         forward_band.process(&mut coefficients);
         for &(bin, weight) in &band.taps {
             let dual = weight / representation.frame_operator[bin];
-            reconstructed[bin] += coefficients
-                [local_coefficient(bin, band.center, representation.common_coefficients)]
-                * dual;
+            reconstructed[bin] += coefficients[local_coefficient(
+                bin,
+                band.center,
+                representation.common_coefficients,
+                representation.fft_frames,
+            )] * dual;
         }
     }
 
     let mut conjugate_error = 0.0_f64;
-    for bin in 0..FFT_FRAMES {
-        let mirror = if bin == 0 { 0 } else { FFT_FRAMES - bin };
+    for bin in 0..representation.fft_frames {
+        let mirror = if bin == 0 {
+            0
+        } else {
+            representation.fft_frames - bin
+        };
         conjugate_error =
             conjugate_error.max((reconstructed[bin] - reconstructed[mirror].conj()).norm());
     }
     inverse_full.process(&mut reconstructed);
-    let inverse_scale = 1.0 / FFT_FRAMES as f64;
+    let inverse_scale = 1.0 / representation.fft_frames as f64;
     let crop = &reconstructed[PAD_FRAMES..PAD_FRAMES + input.len()];
     let mut samples = Vec::with_capacity(input.len());
     let mut errors = Vec::with_capacity(input.len());
@@ -416,26 +438,31 @@ fn reconstruct_channel(input: &[f64], representation: &Representation) -> Channe
     }
 }
 
-fn local_coefficient(bin: usize, center: usize, coefficient_count: usize) -> usize {
-    circular_delta(bin, center).rem_euclid(coefficient_count as isize) as usize
+fn local_coefficient(
+    bin: usize,
+    center: usize,
+    coefficient_count: usize,
+    fft_frames: usize,
+) -> usize {
+    circular_delta(bin, center, fft_frames).rem_euclid(coefficient_count as isize) as usize
 }
 
-fn circular_delta(bin: usize, center: usize) -> isize {
+fn circular_delta(bin: usize, center: usize, fft_frames: usize) -> isize {
     let raw = bin as isize - center as isize;
-    if raw > FFT_FRAMES as isize / 2 {
-        raw - FFT_FRAMES as isize
-    } else if raw < -(FFT_FRAMES as isize / 2) {
-        raw + FFT_FRAMES as isize
+    if raw > fft_frames as isize / 2 {
+        raw - fft_frames as isize
+    } else if raw < -(fft_frames as isize / 2) {
+        raw + fft_frames as isize
     } else {
         raw
     }
 }
 
-fn absolute_bin(bin: usize) -> usize {
-    if bin <= FFT_FRAMES / 2 {
+fn absolute_bin(bin: usize, fft_frames: usize) -> usize {
+    if bin <= fft_frames / 2 {
         bin
     } else {
-        FFT_FRAMES - bin
+        fft_frames - bin
     }
 }
 

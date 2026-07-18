@@ -424,15 +424,19 @@ Current stretch status:
   as a complete renderer while retaining common rotation as locked-state
   evidence. Batch 29.7X then closes the two missing seams from independent
   papers and selects one painless frequency-adaptive material-phase proof. It
-  explicitly rejects the former three-STFT synthesis topology.
+  explicitly rejects the former three-STFT synthesis topology. Batch 29.7Y
+  proves the new frame exactly, then rejects the frozen material-phase
+  candidate at `36/48` calibrated and `46/48` local stereo failures. Its
+  monolithic repeated mono report is also stopped after more than five hours.
+  Batch 29.7Z now reassesses relation-preserving source interpolation and a
+  bounded sliced proof shape without implementing DSP.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7Y Stage B. Add the complete frozen shared fuzzy
-material map, transient shoulder/reset law, common-region rotation, and
-channel-common deterministic noise perturbation to the passing Stage A frame.
-Run one objective candidate without tuning. Keep listening, product surfaces,
-and Batch 29.8 closed.
+Run `g10.029` Batch 29.7Z. Attribute the pre-operator linked-channel relation
+break and define a relation-preserving coefficient-resampling law plus bounded
+sliced proof shape, or close the family. Implement no renderer. Keep listening,
+product surfaces, and Batch 29.8 closed.

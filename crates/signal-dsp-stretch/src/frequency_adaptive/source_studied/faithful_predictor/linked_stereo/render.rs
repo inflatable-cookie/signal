@@ -16,9 +16,8 @@ use super::super::{
     analyse, coherent_representation, constrain_real_edges, synthesise, TransformGrid,
     HORIZONTAL_ENERGY_FLOOR,
 };
-pub(super) use contribution::{
-    CoefficientAblation, CoefficientClassEvidence, CoefficientContributionTrace,
-};
+pub(in crate::frequency_adaptive) use contribution::CoefficientContributionTrace;
+pub(super) use contribution::{CoefficientAblation, CoefficientClassEvidence};
 use contribution::{CoefficientTraceSpec, CoefficientTraceState, ContributionFrame};
 pub(super) use entry::{
     linked, linked_analytic, linked_analytic_with_relation_oracle, linked_independent,
@@ -29,10 +28,11 @@ use overlap::{Overlap, SynthesisMode};
 use peak_region::PeakMap;
 use recurrence::{reference_relative_bin, reference_relative_bin_with_oracle};
 use report::finish;
-pub(super) use report::StereoRender;
-pub(super) use synthesis_trace::SynthesisRelationTrace;
+pub(in crate::frequency_adaptive) use report::StereoRender;
+pub(in crate::frequency_adaptive) use synthesis_trace::SynthesisRelationTrace;
 use synthesis_trace::{SynthesisTraceSpec, SynthesisTraceState};
-pub(super) use tracked_peak_trace::{PhaseFieldClassTrace, TrackedPeakPhaseTrace};
+pub(super) use tracked_peak_trace::PhaseFieldClassTrace;
+pub(in crate::frequency_adaptive) use tracked_peak_trace::TrackedPeakPhaseTrace;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum RecurrenceMode {

@@ -1,8 +1,8 @@
 #[derive(Clone, Copy, Debug)]
-pub(in super::super) struct Region {
-    pub(in super::super) first: usize,
-    pub(in super::super) end: usize,
-    pub(in super::super) peak: usize,
+pub(in crate::frequency_adaptive) struct Region {
+    pub(in crate::frequency_adaptive) first: usize,
+    pub(in crate::frequency_adaptive) end: usize,
+    pub(in crate::frequency_adaptive) peak: usize,
 }
 
 #[derive(Clone, Debug)]
@@ -14,7 +14,7 @@ pub(in super::super) struct RegionState {
     pub(in super::super) analysis_energies: [f64; 2],
 }
 
-pub(in super::super) fn regions(energy: &[f64]) -> Vec<Region> {
+pub(in crate::frequency_adaptive) fn regions(energy: &[f64]) -> Vec<Region> {
     let mut peaks = (0..energy.len())
         .filter(|bin| is_peak(energy, *bin))
         .collect::<Vec<_>>();

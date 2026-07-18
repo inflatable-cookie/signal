@@ -1,8 +1,8 @@
 # Offline Time-Stretch Synthesis
 
-Status: material-state frequency frame proven; material phase next
+Status: material-state frequency frame proven; material phase rejected
 Owner: dsp
-Updated: 2026-07-17
+Updated: 2026-07-18
 Contract refs: `046`, `082`
 Roadmap ref: `g10.029`
 
@@ -22,8 +22,12 @@ Independent research now supports one successor to that closed family.
 frame, one canonical dual, shared fuzzy material guidance, transient reset,
 common locked-region rotation, and channel-common deterministic noise phase.
 It is authorized only as a stop-gated report proof. Stage A representation
-identity now passes. Material phase remains report-only and gets one frozen
-Stage B candidate.
+identity passes. The one frozen Stage B material-phase candidate rejects at
+`36/48` calibrated and `46/48` local linked-stereo failures. Its common later
+operator does not repair channel relations already changed by independent
+polar source interpolation. Its whole-source repeated mono report also remains
+CPU-bound after more than five hours. Material-phase implementation is closed
+pending a no-DSP transport and execution-shape reassessment.
 
 This family is distinct from the production prototype. The prototype runs
 identity locking independently over mono or mid/side paths with midpoint
@@ -1405,8 +1409,7 @@ may be tuned after the single candidate.
 
 ## Next Task
 
-Run Batch 29.7Y Stage B. Add the complete frozen shared fuzzy material map,
-transient shoulder/reset law, common-region rotation, and channel-common
-deterministic noise perturbation to the proven Stage A frame. Run one objective
-candidate without tuning. Keep listening, product-facing surfaces, and Batch
-29.8 closed.
+Run Batch 29.7Z. Attribute the pre-operator channel-relation break, then define
+a relation-preserving coefficient-resampling law and bounded sliced proof shape
+or close the family. Implement no renderer. Keep listening, product-facing
+surfaces, and Batch 29.8 closed.

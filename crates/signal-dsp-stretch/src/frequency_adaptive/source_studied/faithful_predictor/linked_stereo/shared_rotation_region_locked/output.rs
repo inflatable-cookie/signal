@@ -21,7 +21,7 @@ pub(in super::super) fn add_overlap(
     }
 }
 
-pub(in super::super) fn finish(
+pub(in crate::frequency_adaptive) fn finish(
     channels: [Vec<f64>; 2],
     target_length: usize,
     uncovered: usize,

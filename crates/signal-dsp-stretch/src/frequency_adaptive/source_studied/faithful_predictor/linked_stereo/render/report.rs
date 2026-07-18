@@ -1,24 +1,25 @@
 use super::{CoefficientContributionTrace, SynthesisRelationTrace, TrackedPeakPhaseTrace};
 
 #[derive(Clone, Debug)]
-pub(in super::super) struct StereoRender {
-    pub(in super::super) channels: [Vec<f64>; 2],
-    pub(in super::super) uncovered: usize,
-    pub(in super::super) non_finite: usize,
-    pub(in super::super) boundary_failures: usize,
-    pub(in super::super) shared_corrected: usize,
-    pub(in super::super) shared_fallback: usize,
-    pub(in super::super) unilateral_non_silent_completions: usize,
-    pub(in super::super) reference_bins: [usize; 2],
-    pub(in super::super) active_reference_ties: usize,
-    pub(in super::super) reference_switches: usize,
-    pub(in super::super) maximum_projected_relation_error: f64,
-    pub(in super::super) maximum_constrained_relation_error: f64,
-    pub(in super::super) synthesis_relation_trace: Option<SynthesisRelationTrace>,
-    pub(in super::super) coefficient_contribution_trace: Option<CoefficientContributionTrace>,
-    pub(in super::super) peak_region_counts: [usize; 4],
-    pub(in super::super) tracked_peak_phase_trace: TrackedPeakPhaseTrace,
-    pub(in super::super) hash: u64,
+pub(in crate::frequency_adaptive) struct StereoRender {
+    pub(in crate::frequency_adaptive) channels: [Vec<f64>; 2],
+    pub(in crate::frequency_adaptive) uncovered: usize,
+    pub(in crate::frequency_adaptive) non_finite: usize,
+    pub(in crate::frequency_adaptive) boundary_failures: usize,
+    pub(in crate::frequency_adaptive) shared_corrected: usize,
+    pub(in crate::frequency_adaptive) shared_fallback: usize,
+    pub(in crate::frequency_adaptive) unilateral_non_silent_completions: usize,
+    pub(in crate::frequency_adaptive) reference_bins: [usize; 2],
+    pub(in crate::frequency_adaptive) active_reference_ties: usize,
+    pub(in crate::frequency_adaptive) reference_switches: usize,
+    pub(in crate::frequency_adaptive) maximum_projected_relation_error: f64,
+    pub(in crate::frequency_adaptive) maximum_constrained_relation_error: f64,
+    pub(in crate::frequency_adaptive) synthesis_relation_trace: Option<SynthesisRelationTrace>,
+    pub(in crate::frequency_adaptive) coefficient_contribution_trace:
+        Option<CoefficientContributionTrace>,
+    pub(in crate::frequency_adaptive) peak_region_counts: [usize; 4],
+    pub(in crate::frequency_adaptive) tracked_peak_phase_trace: TrackedPeakPhaseTrace,
+    pub(in crate::frequency_adaptive) hash: u64,
 }
 
 #[allow(clippy::too_many_arguments)]

@@ -1,5 +1,5 @@
-pub(super) mod corpus;
-pub(super) mod mechanics;
+pub(in crate::frequency_adaptive) mod corpus;
+pub(in crate::frequency_adaptive) mod mechanics;
 
 use std::{fs, path::PathBuf};
 

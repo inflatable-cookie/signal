@@ -16,7 +16,7 @@ use crate::frequency_adaptive::{
 const SAMPLE_RATE: usize = 44_100;
 const SOURCE_FRAMES: usize = 220_500;
 
-pub(in super::super) fn review(
+pub(in crate::frequency_adaptive) fn review(
     renderer: fn([&[f64]; 2], f64, usize) -> shared_rotation_region_locked::SharedRotationRender,
     label: &'static str,
 ) -> SharedRotationCorpusReview {
