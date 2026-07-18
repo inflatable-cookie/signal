@@ -2,6 +2,7 @@ use super::{hash_u64, hash_usize, paired_max_error, HASH_OFFSET};
 
 mod geometry;
 mod guided_state;
+mod material_policy;
 mod render;
 mod report;
 

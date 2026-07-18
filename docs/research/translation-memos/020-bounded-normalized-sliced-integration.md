@@ -126,5 +126,7 @@ sound quality.
 ## Next Task
 
 Rule 31V freezes the unchanged Rule 31R material policy and complete objective
-matrix on this representation. Run Batch 29.7AO once and stop at the first
-evidence miss.
+matrix on this representation. Batch 29.7AO passes synthetic mechanics and
+stops at `46/48` calibrated stereo failures. Run Batch 29.7AP under Rule 31W
+to locate the first coefficient-to-waveform relation divergence before another
+candidate.

@@ -81,7 +81,7 @@ Finch and Loophole.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7AO once under Rule 31V. Implement the frozen normalized
-material policy and execute its failure-first objective matrix without a
-sweep or row repair. Keep listening, holdout, product surfaces, and Batch 29.8
-closed.
+Run `g10.029` Batch 29.7AP under Rule 31W. Trace the first normalized stereo-
+relation divergence through source layers, state commit, projected layers, and
+overlap assembly. Keep tuning, objective retry, listening, holdout, product
+surfaces, and Batch 29.8 closed.

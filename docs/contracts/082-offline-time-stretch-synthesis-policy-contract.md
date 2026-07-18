@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; one normalized objective gate next
+Status: active; normalized stereo failure attribution next
 Owner: dsp
 Updated: 2026-07-18
 Related contracts: `046`, `048`, `049`
@@ -4665,8 +4665,52 @@ ratio, realtime, routing, cache, production, or product work is allowed.
 Batch 29.7ANR is implementation-free. It promotes this rule and makes exactly
 one Batch 29.7AO objective run ready; it provides no sound-quality result.
 
+Batch 29.7AO implements the frozen policy and stops at the corrected stereo
+gate. Synthetic structure and mechanics pass: all four terminal material
+states execute, duplicate, mono-parity, silent-peer, and swap errors are zero,
+source/output slab high-water is `5/2`, the guidance halo is exactly `19`, and
+there are no structural or nonfinite failures. Synthetic evidence hash:
+`0edf7cc256282813`.
+
+The repeated `48`-row stereo gate then rejects decisively. The candidate has
+`46/48` calibrated failures, improves `110/384` local windows, retains `44/48`
+Signal-relative local-row failures, and reaches maximum normalized-Gram
+residual `0.86973539821584`. Structural failures remain zero. Evidence hash:
+`ff4603accdb456e6`. Rule 31V therefore stops before the six-row mono and long-
+development stage. No retry, policy change, listening, or holdout read occurs.
+
+### Rule 31W: normalized stereo failure attribution before another candidate
+
+Freeze the Rule 31T, 31U, and 31V hashes, the exact Batch 29.7AO implementation,
+and every completed threshold/result. Batch 29.7AP is attribution-only. It may
+instrument one deterministic replay of the same `48` development rows to name
+the first stereo-relation divergence across:
+
+1. the two source outer layers and dominant current coefficient
+2. ratio-aware ordinary recurrence and synchronized material decision
+3. compatible linked or channel-local locked trajectory
+4. projection back into each active output layer
+5. per-channel inverse slice and final outer overlap sum
+
+The trace must retain coefficient magnitude, current analysis-relative phase,
+channel swap, slice identity, scale owner, state, region, and source/output
+positions. It must distinguish a classifier failure from a source-layer,
+state-commit, or overlap-assembly ownership failure. Aggregate by control,
+ratio, scale, state, layer, and boundary context; do not select or repair
+individual rows.
+
+Recheck only the topology and ownership ordering against the already pinned
+Rubber Band R3, Signalsmith Stretch, and Bungee source records. External
+expression, constants, masks, ranges, and numeric policy remain excluded.
+Promote at most one complete integration-law correction with its own
+preregistration, or close this topology. No alternate median, threshold,
+crossover, link range, peak picker, state law, factor sweep, objective retry,
+quality export, listening, holdout, dynamic ratio, realtime, routing, cache,
+production, or product work may open.
+
 ## Next Task
 
-Run Batch 29.7AO once under Rule 31V. Implement the frozen normalized material
-policy and stop at the first failed evidence stage. Keep parameter changes,
-row repair, listening, holdout, Batch 29.8, and product work closed.
+Run Batch 29.7AP under Rule 31W. Attribute the first stereo-relation divergence
+across source layers, state commit, projected output layers, and overlap
+assembly before another candidate. Keep tuning, objective retry, listening,
+holdout, Batch 29.8, and product work closed.

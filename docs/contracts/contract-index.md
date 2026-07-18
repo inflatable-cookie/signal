@@ -21,7 +21,8 @@ memory alone.
   multiscale slice compatibility study, and Rule 31T normalized sliced-frame
   mechanics proof. Rule 31U validates guided state mechanics across that
   frozen slice boundary; Rule 31V freezes the normalized material policy and
-  one failure-first objective matrix
+  one failure-first objective matrix. That candidate rejects at the stereo
+  gate; Rule 31W now governs coefficient-to-waveform failure attribution
 - `g10.028` source-fill work is paused until the actual DSP kernel and source
   consumption geometry pass the `g10.029` correctness gate
 
@@ -149,7 +150,6 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7AO once under contract `082` Rule 31V. Implement the
-frozen normalized material policy and stop at the first evidence miss. Keep
-policy changes, row repair, listening, holdout, Batch 29.8, and product work
-closed.
+Run `g10.029` Batch 29.7AP under contract `082` Rule 31W. Attribute the first
+normalized stereo-relation divergence before another candidate. Keep tuning,
+objective retry, listening, holdout, Batch 29.8, and product work closed.

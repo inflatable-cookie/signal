@@ -493,15 +493,19 @@ Current stretch status:
   `32/100/107`. Batch 29.7ANR now passes implementation-free Rule 31V
   preregistration. Exact `4/2/1`-tick material radii, same-scale frequency
   medians, the `19`-tick halo, state order, link limits, fixed bounds, and one
-  failure-first evidence matrix are frozen. Batch 29.7AO may implement and run
-  that one policy once; no quality result exists yet.
+  failure-first evidence matrix are frozen. Batch 29.7AO implements that policy
+  and passes synthetic structure plus exact channel mechanics, then rejects at
+  `46/48` calibrated stereo failures, `110/384` improved windows, `44/48`
+  local failures, and maximum residual `0.86973539821584`. Mono and long-
+  development do not run. Rule 31W opens one coefficient-to-waveform stereo
+  failure attribution before any new candidate.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7AO once under Rule 31V. Implement the frozen normalized
-material policy, execute the evidence stages in order, and stop at the first
-miss. Keep policy changes, row repair, listening, holdout, product surfaces,
-and Batch 29.8 closed.
+Run `g10.029` Batch 29.7AP under Rule 31W. Trace the first stereo-relation
+divergence from source layers through state commit and overlap assembly. Keep
+tuning, objective retry, listening, holdout, product surfaces, and Batch 29.8
+closed.

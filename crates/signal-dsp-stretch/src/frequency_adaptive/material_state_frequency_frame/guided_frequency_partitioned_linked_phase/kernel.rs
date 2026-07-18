@@ -38,14 +38,20 @@ impl Workspace {
         frequencies_hz: &[f64],
         decision: Decision,
     ) -> Result<[Vec<Complex64>; CHANNEL_CAPACITY], CapacityExceeded> {
-        self.process_decisions(current, frequencies_hz, &vec![decision; current[0].len()])
+        self.process_decisions(
+            current,
+            frequencies_hz,
+            &vec![decision; current[0].len()],
+            self.common_hop as f64,
+        )
     }
 
-    fn process_decisions(
+    pub(in crate::frequency_adaptive::material_state_frequency_frame) fn process_decisions(
         &mut self,
         current: &[Vec<Complex64>; CHANNEL_CAPACITY],
         frequencies_hz: &[f64],
         decisions: &[Decision],
+        analysis_advance_frames: f64,
     ) -> Result<[Vec<Complex64>; CHANNEL_CAPACITY], CapacityExceeded> {
         let bands = current[0].len();
         validate_request(CHANNEL_CAPACITY, SIGNED_ATOM_CAPACITY, bands, 1)?;
@@ -68,7 +74,7 @@ impl Workspace {
         }
         self.region_high_water = self.region_high_water.max(regions.len());
         self.region_visits += regions.len();
-        let ordinary = self.ordinary(current, &energy, frequencies_hz);
+        let ordinary = self.ordinary(current, &energy, frequencies_hz, analysis_advance_frames);
         let mut output = current.clone();
 
         for region in &regions {
@@ -119,12 +125,15 @@ impl Workspace {
         current: &[Vec<Complex64>; CHANNEL_CAPACITY],
         energy: &[Vec<f64>; CHANNEL_CAPACITY],
         frequencies_hz: &[f64],
+        analysis_advance_frames: f64,
     ) -> [Vec<f64>; CHANNEL_CAPACITY] {
         std::array::from_fn(|channel| {
             (0..current[channel].len())
                 .map(|band| {
                     let analysis = current[channel][band].arg();
                     if !self.has_previous
+                        || !analysis_advance_frames.is_finite()
+                        || analysis_advance_frames <= 0.0
                         || energy[channel][band] <= ENERGY_FLOOR
                         || self.previous_energy[channel][band] <= ENERGY_FLOOR
                     {
@@ -132,10 +141,15 @@ impl Workspace {
                     } else {
                         let expected = std::f64::consts::TAU * frequencies_hz[band]
                             / self.sample_rate_hz as f64
-                            * self.common_hop as f64;
+                            * analysis_advance_frames;
                         let observed = expected
                             + wrap(analysis - self.previous_analysis[channel][band] - expected);
-                        self.previous_synthesis[channel][band] + observed
+                        if analysis_advance_frames == self.common_hop as f64 {
+                            self.previous_synthesis[channel][band] + observed
+                        } else {
+                            self.previous_synthesis[channel][band]
+                                + observed * self.common_hop as f64 / analysis_advance_frames
+                        }
                     }
                 })
                 .collect()

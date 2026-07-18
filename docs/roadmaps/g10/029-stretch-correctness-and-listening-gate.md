@@ -2647,13 +2647,37 @@ terminal material choices. No implementation or quality result exists.
 
 - [x] open only after 29.7ANR passes and Rule 31V freezes the
   unchanged Rule 31R material policy on the normalized sliced representation
-- [ ] run one complete synthetic, mono, long-development, and corrected
-  professional-comparator result with no factor sweep or row repair
-- [ ] stop on the first existing hard-gate miss; only complete passage may open
+- [x] run the failure-first synthetic, corrected professional-comparator,
+  mono, and long-development sequence through its first miss, with no factor
+  sweep or row repair
+- [x] stop on the first existing hard-gate miss; only complete passage may open
   Batch 29.8 listening and holdout work
 
-Evidence: at most one complete objective report. This card is ready under Rule
-31V.
+Evidence: at most one complete objective report. Synthetic structure,
+boundedness, repeat, all terminal states, and the four hard channel mechanics
+pass at hash `0edf7cc256282813`. The repeated stereo gate rejects at `46/48`
+calibrated failures, `110/384` improved windows, `44/48` local-row failures,
+and maximum residual `0.86973539821584`; hash `ff4603accdb456e6`.
+The six-row mono and long-development stage does not run. Rule 31V closes this
+implementation without retry, tuning, listening, or holdout access.
+
+### Batch 29.7AP - Normalized Stereo Failure Attribution
+
+- [ ] freeze Rule 31T/31U/31V hashes, the exact failed implementation, and all
+  completed 29.7AO rows; change no renderer or threshold
+- [ ] trace one deterministic replay of all `48` development rows from source
+  outer-layer coefficients through ordinary recurrence, synchronized state,
+  linked/local lock, output-layer projection, inverse slice, and outer overlap
+- [ ] aggregate the first stereo-relation divergence by control, ratio, scale,
+  state, source/output layer, and boundary context; do not select row repairs
+- [ ] compare the ownership order with the pinned Rubber Band, Signalsmith,
+  and Bungee topology records; transfer no external expression or constants
+- [ ] promote at most one complete integration-law correction with a frozen
+  proof, or close the topology; keep tuning, objective retry, listening,
+  holdout, Batch 29.8, and product work closed
+
+Evidence: one coefficient-to-waveform first-divergence report and one
+architecture decision under Rule 31W. This card is ready.
 
 ### Batch 29.8 - Listening And Dynamic Checkpoint
 
@@ -3994,10 +4018,17 @@ Evidence: at most one complete objective report. This card is ready under Rule
   thresholds, and one failure-first synthetic, mono, long-development, and
   corrected stereo matrix are frozen. No renderer, audio, objective result,
   listening artifact, or holdout read exists.
+- 2026-07-18: Batch 29.7AO implements Rule 31V and stops at the stereo gate.
+  Synthetic structure and repeat pass; all four terminal states execute; hard
+  channel mechanics are exact; source/output slab high-water is `5/2`; hash
+  `0edf7cc256282813`. The repeated stereo result has `46/48` calibrated
+  failures, `110/384` improved windows, `44/48` local-row failures, and maximum
+  residual `0.86973539821584`; hash `ff4603accdb456e6`. Mono and long-
+  development evidence do not run. Rule 31W opens attribution, not repair.
 
 ## Next Task
 
-Run Batch 29.7AO once under Rule 31V. Implement the frozen normalized material
-policy, execute the evidence stages in order, and stop at the first miss. Keep
-policy changes, row repair, listening, holdout, product surfaces, and Batch
-29.8 closed.
+Run Batch 29.7AP under Rule 31W. Trace the first stereo-relation divergence
+from source layers through state and overlap ownership before another
+candidate. Keep tuning, objective retry, listening, holdout, product surfaces,
+and Batch 29.8 closed.

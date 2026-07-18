@@ -151,5 +151,6 @@ phase-state selection, conditional linked trajectories, and per-channel
 synthesis are indivisible. Batch 29.7AK passes fixed mechanics and closes at
 the sample-rate/duration capacity boundary. Batches 29.7AM and 29.7AN validate
 the normalized sliced frame and guided boundary mechanics. Rule 31V now freezes
-the material policy and objective order. Run Batch 29.7AO once; do not resume
-this memo's implementation or Rule 30AB.
+the material policy and objective order. Batch 29.7AO rejects at the normalized
+stereo gate; Rule 31W now owns first-divergence attribution. Do not resume this
+memo's implementation or Rule 30AB.

@@ -1,6 +1,6 @@
 # Offline Time-Stretch Synthesis
 
-Status: one normalized objective gate next
+Status: normalized stereo failure attribution next
 Owner: dsp
 Updated: 2026-07-18
 Contract refs: `046`, `082`
@@ -1742,8 +1742,23 @@ lock selection. The complete synthetic, mono, long-development, and corrected
 stereo evidence order is frozen failure-first. No quality renderer or result
 exists yet.
 
+Batch 29.7AO implements that policy. Synthetic structure, boundedness, repeat,
+all four terminal states, and duplicate/mono/silent/swap mechanics pass at
+hash `0edf7cc256282813`. The corrected stereo gate then rejects at `46/48`
+calibrated failures, `110/384` improved windows, `44/48` local-row failures,
+and maximum normalized-Gram residual `0.86973539821584`; hash
+`ff4603accdb456e6`. Structural failures remain zero. The mono and long-
+development stage does not run.
+
+Rule 31W keeps the topology closed while one first-divergence trace determines
+whether stereo relation first moves in source-layer selection, ratio-aware
+ordinary recurrence, synchronized state commit, output-layer projection,
+inverse-slice synthesis, or the final outer overlap. This is architecture
+attribution, not another policy experiment.
+
 ## Next Task
 
-Run Batch 29.7AO once under Rule 31V. Implement the frozen policy and stop at
-the first evidence miss. Keep policy changes, row repair, concealed holdout,
-listening, dynamic ratio, realtime, and product-facing work closed.
+Run Batch 29.7AP under Rule 31W. Attribute the first stereo-relation divergence
+across coefficient and waveform ownership before another candidate. Keep
+tuning, objective retry, concealed holdout, listening, dynamic ratio,
+realtime, and product-facing work closed.
