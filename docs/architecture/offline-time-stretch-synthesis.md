@@ -1498,9 +1498,23 @@ Another renderer requires a source-backed paired-channel consistency operator
 or a waveform-domain topology that avoids independently projected redundant
 fields.
 
+## Paired-Channel Projection Boundary
+
+Batch 29.7AC finds no complete projection to add after transform modification.
+MISI-style methods have a known additive mixture target; arbitrary stereo left
+and right do not. Covariance matching is a spatial rendering operation that may
+require decorrelated energy, not a unique source-preserving waveform
+constraint. Alternating either with per-channel `A D` therefore leaves the
+feasible set, order, convergence, and finite stopping rule undefined.
+
+Transform-domain post-projection closes. This does not exclude a transform
+inside a complete renderer. The next family must own one stereo timeline and
+channel linkage through synthesis, then pass waveform gates without a post-hoc
+relation or covariance repair.
+
 ## Next Task
 
-Run Batch 29.7AC as a no-renderer paired-channel joint-consistency study. Find
-an independently supported spatial projection compatible with `A D`
-consistency and fixed bounded execution. Implement nothing. Keep listening,
-product-facing surfaces, and Batch 29.8 closed.
+Run Batch 29.7AD as a no-renderer whole-family study. Compare complete
+waveform-owning architectures and select at most one source-backed proof with
+shared stereo timeline, transient ownership, tonal continuity, and fixed
+bounded work. Keep listening, product-facing surfaces, and Batch 29.8 closed.

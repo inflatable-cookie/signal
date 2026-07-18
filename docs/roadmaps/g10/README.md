@@ -437,14 +437,18 @@ Current stretch status:
   and `46/48` local stereo failures. Batch 29.7AB attributes the loss to
   synthesis inconsistency: modified redundant fields do not satisfy
   `A D C = C`. The frequency-adaptive family closes. Batch 29.7AC owns a
-  no-renderer paired-channel consistency-operator study.
+  no-renderer paired-channel consistency-operator study. That study finds no
+  transferable complete operator: additive-mixture projection requires a known
+  source sum, while covariance matching is a spatial renderer rather than a
+  unique source-preservation constraint. Rule 31L closes transform-domain
+  post-projection. Batch 29.7AD returns to complete waveform-owning families.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7AC. Find one independently supported paired-channel
-consistency operator compatible with `A D C = C` and bounded execution, or
-close transform-domain joint projection. Implement no renderer. Keep
-listening, product surfaces, and Batch 29.8 closed.
+Run `g10.029` Batch 29.7AD. Compare complete waveform-owning stretch
+architectures and select at most one source-backed proof with shared stereo
+timeline, transient ownership, tonal continuity, and fixed bounded work.
+Implement no renderer. Keep listening, product surfaces, and Batch 29.8 closed.

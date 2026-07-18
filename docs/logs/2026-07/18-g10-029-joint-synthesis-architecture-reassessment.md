@@ -49,6 +49,5 @@ remain closed.
 
 ## Next Task
 
-Run Batch 29.7AC as a no-renderer study of paired-channel joint consistency.
-Promote one complete bounded operator or close transform-domain projection
-before another DSP candidate.
+Batch 29.7AC closes transform-domain joint projection. Run Batch 29.7AD as a
+no-renderer whole-family selection before another DSP candidate.

@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; joint-synthesis consistency boundary promoted
+Status: active; transform-domain joint projection closed
 Owner: dsp
 Updated: 2026-07-18
 Related contracts: `046`, `048`, `049`
@@ -4106,9 +4106,39 @@ primary evidence defines both the spatial constraint and its order relative to
 Listening, dynamic ratio, realtime, routing, cache, production, Batch 29.8,
 and all product-facing work remain closed.
 
+### Rule 31L: no post-hoc paired-channel projection
+
+Batch 29.7AC reviews multichannel consistency, additive mixing, alternating
+projection, and spatial covariance evidence without implementing DSP.
+
+Per-channel consistency projection `A D` is defined but supplies no spatial
+target. MISI-style joint inversion has a complete additive constraint because
+separated sources must sum to one known mixture. Left and right stereo channels
+are observations, not latent sources with a known target sum. A chosen downmix
+would discard side information and introduce policy.
+
+Covariance matching is also not the missing constraint. It renders a selected
+target covariance from available components and may add decorrelated energy.
+Local covariance does not uniquely determine the source waveform, phase, or
+image. It cannot serve as transparent arbitrary-stereo preservation.
+
+Do not alternate `A D` with coefficient-local relation repair, a mono downmix,
+or covariance matching. The reviewed sources establish no feasible
+intersection, complete ordering, finite iteration count, or non-convergence
+rule for that operator. Freezing those details would be unsupported invention.
+
+Transform-domain post-projection is closed. A transform remains admissible only
+inside a complete topology that owns channel linkage through synthesis and is
+accepted on reconstructed waveform stereo and mono quality. Batch 29.7AD may
+compare complete waveform-owning families without implementing a renderer. It
+must select at most one source-backed proof or close the studied families.
+
+Listening, dynamic ratio, realtime, routing, cache, production, Batch 29.8,
+and all product-facing work remain closed.
+
 ## Next Task
 
-Run Batch 29.7AC as a no-renderer paired-channel joint-consistency operator
-study under Rule 31K. Promote one independently supported bounded operator or
-close transform-domain joint projection before implementing DSP. Keep Batch
-29.8 and all product-facing work closed.
+Run Batch 29.7AD as a no-renderer whole-family study under Rule 31L. Compare
+complete waveform-owning architectures and select at most one source-backed
+proof with shared stereo timeline, transient ownership, tonal continuity, and
+fixed bounded work. Keep Batch 29.8 and all product-facing work closed.

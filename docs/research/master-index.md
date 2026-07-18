@@ -65,6 +65,7 @@ Finch and Loophole.
 | [Independent Material-State Frequency Frame](./translation-memos/013-independent-material-state-frequency-frame.md) | Close both seams from independent papers; select one painless frequency-adaptive material-phase proof | Promoted |
 | [Relation-Owned Sliced Material Transport](./translation-memos/014-relation-owned-sliced-material-transport.md) | Attribute independent polar interpolation; select explicit peer/reference relation transport and a fixed sliced frame | Promoted |
 | [Joint-Synthesis Consistency Boundary](./translation-memos/015-joint-synthesis-consistency-boundary.md) | Attribute post-coefficient loss to inconsistent redundant fields; require joint post-projection ownership | Promoted |
+| [Paired-Channel Consistency Operator Boundary](./translation-memos/016-paired-channel-consistency-operator-boundary.md) | Close transform-domain post-projection; require one complete waveform-owning topology | Promoted |
 
 ## Consumer Guidance
 
@@ -75,7 +76,8 @@ Finch and Loophole.
 
 ## Next Task
 
-Batch 29.7AB closes the current frequency-adaptive direction and promotes
-`A D C = C` plus post-projection spatial ownership as the missing invariant.
-Run Batch 29.7AC as a no-renderer study of an independently supported bounded
-paired-channel consistency operator. Keep production and Batch 29.8 closed.
+Batch 29.7AC closes transform-domain joint projection: additive-mixture and
+covariance-matching operators do not define transparent arbitrary-stereo
+preservation. Run Batch 29.7AD as a no-renderer whole-family study. Select at
+most one complete waveform-owning topology. Keep production and Batch 29.8
+closed.

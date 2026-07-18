@@ -128,7 +128,6 @@ constraint and a bounded projection order.
 
 ## Next Task
 
-Run Batch 29.7AC as a no-renderer joint-consistency operator study. Find an
-independently supported paired-channel spatial projection compatible with
-`A D` consistency and bounded execution. Promote one complete operator or
-close transform-domain joint projection before implementing DSP.
+Batch 29.7AC closes transform-domain joint projection in memo 016. Continue
+with Batch 29.7AD as a no-renderer whole-family selection. Require one complete
+waveform-owning topology before implementing DSP.

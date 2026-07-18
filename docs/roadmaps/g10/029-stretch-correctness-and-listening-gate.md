@@ -2262,19 +2262,41 @@ waveform stereo ownership. The current frequency-adaptive direction closes.
 
 ### Batch 29.7AC - Paired-Channel Joint-Consistency Operator Study
 
-- [ ] review primary multichannel consistency, spatial covariance, and
+- [x] review primary multichannel consistency, spatial covariance, and
   alternating-projection evidence for one paired-channel constraint compatible
   with `A D C = C`
-- [ ] define the order of transform consistency, channel relation or covariance,
+- [x] define the order of transform consistency, channel relation or covariance,
   magnitude ownership, and waveform validation as one complete operator
-- [ ] require fixed finite work, deterministic state, explicit non-convergence,
+- [x] require fixed finite work, deterministic state, explicit non-convergence,
   and a clean-room boundary before promoting any proof
-- [ ] implement no renderer, parameter sweep, listening export, dynamic ratio,
+- [x] implement no renderer, parameter sweep, listening export, dynamic ratio,
   realtime, routing, cache, production, or product-facing work
 
 Evidence: one source-backed operator decision. If no complete bounded operator
 is supported, close transform-domain joint projection and assess a waveform-
 domain family. Batch 29.8 stays closed.
+
+Decision: no complete operator is supported. Additive-mixture projection owns a
+known sum that arbitrary stereo does not have. Covariance matching is a spatial
+renderer and may add decorrelated energy; it does not uniquely preserve source
+waveform or image. Alternation with `A D` has no supported feasible
+intersection, order, finite iteration count, or failure result. Rule 31L and
+memo 016 close transform-domain post-projection.
+
+### Batch 29.7AD - Whole-Family Waveform-Ownership Study
+
+- [ ] compare complete source-synchronous, sinusoidal, and single-grid transform
+  topologies using primary literature and existing clean-room source dossiers
+- [ ] require one shared stereo timeline, explicit transient and tonal ownership,
+  valid waveform synthesis by construction, and fixed bounded execution
+- [ ] define objective rejection gates and one exact proof scope before
+  authorizing at most one renderer; close every underspecified family
+- [ ] implement no renderer, parameter sweep, listening export, dynamic ratio,
+  realtime, routing, cache, production, or product-facing work
+
+Evidence: one whole-family architecture decision. No hybrid assembly from
+partial mechanisms and no implementation without a complete promoted topology.
+Batch 29.8 stays closed.
 
 ### Batch 29.8 - Listening And Dynamic Checkpoint
 
@@ -3517,10 +3539,16 @@ domain family. Batch 29.8 stays closed.
   cross terms. Outer slicing is secondary. Rule 31K and memo 015 promote joint
   post-projection ownership and close the current frequency-adaptive direction.
   Batch 29.7AC remains no-renderer research.
+- 2026-07-18: Batch 29.7AC closes transform-domain joint projection. MISI-style
+  methods require a known additive mixture; arbitrary stereo does not provide
+  one. Covariance matching is a spatial renderer, not a unique transparent
+  source constraint, and may add decorrelated energy. No reviewed source
+  supplies the feasible set, order, finite iteration count, and failure result
+  needed for alternation with `A D`. Rule 31L and memo 016 promote the closure.
 
 ## Next Task
 
-Run Batch 29.7AC. Find one independently supported paired-channel consistency
-operator compatible with `A D C = C` and bounded execution, or close transform-
-domain joint projection. Implement no renderer. Keep listening, product
-surfaces, and Batch 29.8 closed.
+Run Batch 29.7AD. Compare complete waveform-owning stretch architectures and
+select at most one source-backed proof with shared stereo timeline, transient
+ownership, tonal continuity, and fixed bounded work. Implement no renderer.
+Keep listening, product surfaces, and Batch 29.8 closed.

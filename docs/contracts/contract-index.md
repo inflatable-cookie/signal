@@ -16,7 +16,7 @@ memory alone.
 - `g10.029` is the active correctness-first stretch roadmap
 - `046` governs sample-domain stretch behavior and its promotion gates
 - `082` governs the report-only successor policy, the competitive Rule 31
-  coherent mono baseline, and the Rule 31K joint-synthesis consistency boundary
+  coherent mono baseline, and the Rule 31L post-projection closure boundary
 - `g10.028` source-fill work is paused until the actual DSP kernel and source
   consumption geometry pass the `g10.029` correctness gate
 
@@ -144,8 +144,7 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7AC under contract `082`, Rule 31K. Research one
-independently supported paired-channel consistency operator compatible with
-`A D C = C` and fixed bounded execution, or close transform-domain joint
-projection. Implement no renderer. Keep listening, dynamic ratio, realtime,
-routing, and promotion closed.
+Run `g10.029` Batch 29.7AD under contract `082`, Rule 31L. Compare complete
+waveform-owning stretch architectures and select at most one source-backed
+proof. Implement no renderer. Keep listening, dynamic ratio, realtime, routing,
+and promotion closed.
