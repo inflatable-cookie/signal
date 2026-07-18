@@ -126,14 +126,14 @@ pub(super) fn transport(
 }
 
 #[derive(Clone, Copy)]
-enum MaterialState {
+pub(in super::super) enum MaterialState {
     Shoulder,
     Reset,
     Locked,
     Diffuse,
 }
 
-fn material_operator(
+pub(in super::super) fn material_operator(
     material: Material,
     centers: &[bool],
     source_time: f64,

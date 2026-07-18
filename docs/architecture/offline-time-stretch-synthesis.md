@@ -1,6 +1,6 @@
 # Offline Time-Stretch Synthesis
 
-Status: sliced identity passed; relation-owned material proof ready
+Status: relation-owned sliced material family closed; joint-synthesis research next
 Owner: dsp
 Updated: 2026-07-18
 Contract refs: `046`, `082`
@@ -1462,9 +1462,19 @@ at most two live slices, and a duration-independent `86016`-coefficient bound.
 Counted work is exactly `1111425` units per slice. Evidence hash:
 `0830ec12fa0bcde7`.
 
+Stage B closes the family. The candidate preserves one shared relation across
+both slice layers, reaches `1.78e-15` maximum coefficient relation error, and
+uses zero undefined relations on active calibrated rows. Sample-domain stereo
+still rejects at `44/48` calibrated and `46/48` local-consistency failures;
+frozen mono-parity mechanics also miss. The long mono corpus does not run.
+Exact coefficient relation is therefore necessary but not sufficient through
+the redundant inner-band and outer-slice synthesis sum. Evidence hash:
+`225ab337875b3962`.
+
 ## Next Task
 
-Run Batch 29.7AA Stage B once. Add the frozen relation-owned material transport
-to the passing sliced frame, then run synthetic and mechanics gates followed by
-the `48`-row stereo gate. Stop before the long mono corpus on any miss. Keep
-listening, product-facing surfaces, and Batch 29.8 closed until full passage.
+Run Batch 29.7AB as a no-renderer joint-synthesis architecture reassessment.
+Attribute the first divergence between exact per-atom relation and synthesized
+sample-domain relation, then research primary multichannel redundant-frame
+synthesis evidence. Do not implement another candidate. Keep listening,
+product-facing surfaces, and Batch 29.8 closed.

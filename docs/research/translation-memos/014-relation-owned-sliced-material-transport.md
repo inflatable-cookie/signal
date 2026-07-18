@@ -152,6 +152,19 @@ identity, boundedness, stereo, mechanics, or mono miss closes this family.
 Listening, dynamic ratio, realtime, routing, cache, production, and Batch 29.8
 remain closed.
 
+## Outcome
+
+Stage A passes. Stage B then closes the selected family. One relation identity
+is shared across both overlapping layers, active calibrated rows use zero
+undefined states, and maximum coefficient relation error is `1.78e-15`.
+Sample-domain stereo still rejects at `44/48` calibrated and `46/48` local
+failures; mono-parity mechanics also miss. The long mono corpus does not run.
+Evidence hash: `225ab337875b3962`.
+
+The selected law fixes the independent-interpolation error but is not
+sufficient through the redundant synthesis sum. Another renderer requires a
+new source-backed joint-synthesis law, not a parameter change to this memo.
+
 ## Sources
 
 - [Dorran, Lawlor, and Coyle, Multi-Channel Audio Time-Scale Modification](https://mural.maynoothuniversity.ie/id/eprint/8793/1/BL-Multi-channel-2005.pdf)
@@ -162,7 +175,6 @@ remain closed.
 
 ## Next Task
 
-Stage A has passed the fixed sliced representation and boundedness proof. Run
-Batch 29.7AA Stage B once. Add the frozen relation law and material operator,
-then run synthetic and exact mechanics followed by the `48`-row calibrated
-stereo gate. Stop before the long mono corpus on any miss.
+Run Batch 29.7AB as a no-renderer joint-synthesis reassessment. Attribute the
+first post-coefficient relation divergence and review primary multichannel
+redundant-synthesis evidence before authorizing any new DSP family.

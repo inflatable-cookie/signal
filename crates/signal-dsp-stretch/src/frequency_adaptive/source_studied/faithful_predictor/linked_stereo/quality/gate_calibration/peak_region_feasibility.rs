@@ -31,6 +31,8 @@ pub(in crate::frequency_adaptive) struct PeakRegionRow {
     pub local_windows_improved: usize,
     pub maximum_local_residuals: [f64; 2],
     pub peak_region_counts: [usize; 4],
+    pub relation_states: [usize; 5],
+    pub maximum_relation_error: f64,
     pub hashes: [u64; 2],
 }
 
@@ -45,6 +47,8 @@ pub(in crate::frequency_adaptive) struct PeakRegionReview {
     pub mechanics_errors: [f64; 5],
     pub silent_peer_peak: f64,
     pub peak_region_counts: [usize; 4],
+    pub relation_states: [usize; 5],
+    pub maximum_relation_error: f64,
     pub evidence_hash: u64,
     pub repeated: bool,
     pub direction: PeakRegionDirection,
@@ -92,6 +96,17 @@ pub(in crate::frequency_adaptive) fn review_candidate(
                 || row.local_windows_improved < 4
         })
         .count();
+    let relation_states = first.rows.iter().fold([0_usize; 5], |mut total, row| {
+        for (slot, count) in total.iter_mut().zip(row.relation_states) {
+            *slot += count;
+        }
+        total
+    });
+    let maximum_relation_error = first
+        .rows
+        .iter()
+        .map(|row| row.maximum_relation_error)
+        .fold(0.0_f64, f64::max);
     let direction = if repeated
         && candidate_failures == 0
         && row_complete_improvements == first.rows.len()
@@ -100,6 +115,8 @@ pub(in crate::frequency_adaptive) fn review_candidate(
         && first.mechanics_errors.iter().all(|error| *error <= 1.0e-12)
         && first.silent_peer_peak == 0.0
         && first.peak_region_counts.iter().all(|count| *count > 0)
+        && relation_states[2] == 0
+        && maximum_relation_error <= 1.0e-12
     {
         PeakRegionDirection::Accept
     } else {
@@ -126,6 +143,8 @@ pub(in crate::frequency_adaptive) fn review_candidate(
         mechanics_errors: first.mechanics_errors,
         silent_peer_peak: first.silent_peer_peak,
         peak_region_counts: first.peak_region_counts,
+        relation_states,
+        maximum_relation_error,
         evidence_hash: first.evidence_hash,
         repeated,
         direction,
@@ -187,6 +206,17 @@ fn run(
                         {
                             evidence_hash = (evidence_hash ^ value).wrapping_mul(0x100_0000_01b3);
                         }
+                        if row.relation_states != [0; 5] || row.maximum_relation_error != 0.0 {
+                            for value in row
+                                .relation_states
+                                .map(|count| count as u64)
+                                .into_iter()
+                                .chain([row.maximum_relation_error.to_bits()])
+                            {
+                                evidence_hash =
+                                    (evidence_hash ^ value).wrapping_mul(0x100_0000_01b3);
+                            }
+                        }
                         for (total, count) in
                             peak_region_counts.iter_mut().zip(row.peak_region_counts)
                         {
@@ -243,6 +273,14 @@ fn measure(
     };
     let (local_windows_improved, _, maximum_local_residuals) =
         local_evidence(input, &current.channels, &candidate.channels);
+    let relation_states = [
+        candidate.shared_corrected,
+        candidate.shared_fallback,
+        candidate.unilateral_non_silent_completions,
+        candidate.reference_bins[0],
+        candidate.reference_bins[1],
+    ];
+    let maximum_relation_error = candidate.maximum_constrained_relation_error;
     PeakRegionRow {
         ratio,
         source_frames,
@@ -262,6 +300,8 @@ fn measure(
         local_windows_improved,
         maximum_local_residuals,
         peak_region_counts: candidate.peak_region_counts,
+        relation_states,
+        maximum_relation_error,
         hashes: [current.hash, candidate.hash],
     }
 }
@@ -378,7 +418,7 @@ fn write_report(
     direction: PeakRegionDirection,
 ) {
     let mut report = format!(
-        "repeated\t{repeated}\ncurrent_failures\t{current_failures}\ncandidate_failures\t{candidate_failures}\nrow_complete_improvements\t{row_complete_improvements}\nmetric_regressions\t{metric_regressions}\nlocal_consistency_failures\t{local_consistency_failures}\nmechanics_errors\t{:e},{:e},{:e},{:e},{:e}\nsilent_peer_peak\t{:e}\npeak_region_counts\t{},{},{},{}\nevidence_hash\t{:016x}\ndirection\t{direction:?}\nratio\tframes\tphase\tbin_aligned\tcontrol\tscope\tcurrent_ipd\tcandidate_ipd\tcurrent_mid_side\tcandidate_mid_side\tcurrent_correlation\tcandidate_correlation\tcurrent_relation\tcandidate_relation\tstructural_failures\tlocal_improved\tlocal_before\tlocal_after\tregions\teligible\tshared_bins\tindependent_bins\tcurrent_hash\tcandidate_hash\n",
+        "repeated\t{repeated}\ncurrent_failures\t{current_failures}\ncandidate_failures\t{candidate_failures}\nrow_complete_improvements\t{row_complete_improvements}\nmetric_regressions\t{metric_regressions}\nlocal_consistency_failures\t{local_consistency_failures}\nmechanics_errors\t{:e},{:e},{:e},{:e},{:e}\nsilent_peer_peak\t{:e}\npeak_region_counts\t{},{},{},{}\nevidence_hash\t{:016x}\ndirection\t{direction:?}\nratio\tframes\tphase\tbin_aligned\tcontrol\tscope\tcurrent_ipd\tcandidate_ipd\tcurrent_mid_side\tcandidate_mid_side\tcurrent_correlation\tcandidate_correlation\tcurrent_relation\tcandidate_relation\tstructural_failures\tlocal_improved\tlocal_before\tlocal_after\tregions\teligible\tshared_bins\tindependent_bins\ttwo_defined\tone_defined\tundefined\tzero_peer\tsilent\tmaximum_relation_error\tcurrent_hash\tcandidate_hash\n",
         run.mechanics_errors[0],
         run.mechanics_errors[1],
         run.mechanics_errors[2],
@@ -395,7 +435,7 @@ fn write_report(
         for scope in 0..2 {
             let current = row.current[scope];
             let candidate = row.candidate[scope];
-            report.push_str(&format!("{:.2}\t{}\t{:.2}\t{}\t{}\t{}\t{:.12e}\t{:.12e}\t{:.12e}\t{:.12e}\t{:.12e}\t{:.12e}\t{:.12e}\t{:.12e}\t{}\t{}\t{:.12e}\t{:.12e}\t{}\t{}\t{}\t{}\t{:016x}\t{:016x}\n", row.ratio, row.source_frames, row.phase, row.bin_aligned, row.control, ["whole", "interior"][scope], current.ipd_error_radians, candidate.ipd_error_radians, current.mid_side_delta_db, candidate.mid_side_delta_db, current.correlation_delta, candidate.correlation_delta, current.relation_residual, candidate.relation_residual, row.structural_failures, row.local_windows_improved, row.maximum_local_residuals[0], row.maximum_local_residuals[1], row.peak_region_counts[0], row.peak_region_counts[1], row.peak_region_counts[2], row.peak_region_counts[3], row.hashes[0], row.hashes[1]));
+            report.push_str(&format!("{:.2}\t{}\t{:.2}\t{}\t{}\t{}\t{:.12e}\t{:.12e}\t{:.12e}\t{:.12e}\t{:.12e}\t{:.12e}\t{:.12e}\t{:.12e}\t{}\t{}\t{:.12e}\t{:.12e}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{:.12e}\t{:016x}\t{:016x}\n", row.ratio, row.source_frames, row.phase, row.bin_aligned, row.control, ["whole", "interior"][scope], current.ipd_error_radians, candidate.ipd_error_radians, current.mid_side_delta_db, candidate.mid_side_delta_db, current.correlation_delta, candidate.correlation_delta, current.relation_residual, candidate.relation_residual, row.structural_failures, row.local_windows_improved, row.maximum_local_residuals[0], row.maximum_local_residuals[1], row.peak_region_counts[0], row.peak_region_counts[1], row.peak_region_counts[2], row.peak_region_counts[3], row.relation_states[0], row.relation_states[1], row.relation_states[2], row.relation_states[3], row.relation_states[4], row.maximum_relation_error, row.hashes[0], row.hashes[1]));
         }
     }
     fs::write(root.join("peak-region-feasibility.tsv"), report)

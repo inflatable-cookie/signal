@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; sliced identity passed, relation-owned material proof ready
+Status: active; relation-owned sliced material family closed
 Owner: dsp
 Updated: 2026-07-18
 Related contracts: `046`, `048`, `049`
@@ -4046,6 +4046,21 @@ construction. At most two slices are live. Peak live coefficient count remains
 `86016` across the frozen boundedness lengths. Counted work is exactly
 `1111425` units per required slice. Evidence hash: `0830ec12fa0bcde7`.
 
+Stage B closes this family. The one frozen candidate has zero synthetic,
+structural, finite-value, and coefficient-relation failures. Both overlapping
+layers share one relation identity; active calibrated rows use zero
+`UndefinedRelation` states and reach `1.78e-15` maximum relation error. The
+sample-domain gate nevertheless rejects at `44/48` calibrated and `46/48`
+local-consistency failures. Frozen mono-parity mechanics also miss. The long
+mono corpus is correctly skipped. Evidence hash: `225ab337875b3962`.
+
+This result closes relation-owned material transport on the current
+frequency-adaptive sliced synthesis family. It does not authorize parameter
+rescue, a new overlap repair, or another renderer. Further work must first
+attribute why exact per-atom and per-layer relations do not survive the
+redundant synthesis sum and promote a new joint-synthesis law from independent
+primary evidence.
+
 The clean-room boundary permits papers and prior Signal evidence only. No
 external code, expression, constants, masks, or random sequence transfers.
 Paper review is not patent freedom-to-operate clearance. Product, listening,
@@ -4053,7 +4068,7 @@ dynamic ratio, realtime, routing, and cache work remain closed.
 
 ## Next Task
 
-Run Batch 29.7AA Stage B once under Rule 31J. Add the frozen relation law and
-29.7Y material operator to the passing sliced frame. Run synthetic and exact
-mechanics first, then the `48`-row calibrated stereo gate. Stop before the long
-mono corpus on any miss. Keep Batch 29.8 and all product-facing work closed.
+Run Batch 29.7AB as a no-renderer joint-synthesis architecture reassessment.
+Attribute the first post-coefficient relation divergence and research primary
+multichannel redundant-frame synthesis evidence. Do not implement or tune a
+candidate. Keep Batch 29.8 and all product-facing work closed.

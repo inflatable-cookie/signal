@@ -4,6 +4,8 @@ use rustfft::{num_complex::Complex64, FftPlanner};
 mod material_phase;
 #[cfg(not(debug_assertions))]
 mod sliced_frame;
+#[cfg(not(debug_assertions))]
+mod sliced_material;
 
 const SAMPLE_RATE_HZ: usize = 48_000;
 const FFT_FRAMES: usize = 16_384;

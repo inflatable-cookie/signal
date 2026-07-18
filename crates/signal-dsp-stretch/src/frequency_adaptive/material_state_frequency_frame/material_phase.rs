@@ -23,10 +23,10 @@ const COMMON_HOP: usize = 512;
 const RATIOS: [f64; 3] = [0.75, 1.5, 2.0];
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
-struct Material {
-    tonalness: f64,
-    noisiness: f64,
-    transientness: f64,
+pub(super) struct Material {
+    pub(super) tonalness: f64,
+    pub(super) noisiness: f64,
+    pub(super) transientness: f64,
 }
 
 #[derive(Clone)]
@@ -49,7 +49,7 @@ struct RegionMemory {
 }
 
 mod analysis;
-mod phase;
+pub(super) mod phase;
 mod report;
 mod synthesis;
 

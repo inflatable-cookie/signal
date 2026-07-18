@@ -432,15 +432,17 @@ Current stretch status:
   relation break and selects explicit peer/reference relation transport plus a
   fixed `16384/8192/512` sliced frame from primary evidence. Batch 29.7AA Stage
   A then passes sliced identity and boundedness with `4.44e-16` peak error,
-  two live slices, and duration-independent coefficient memory. Stage B now
-  owns the one frozen relation-owned material candidate.
+  two live slices, and duration-independent coefficient memory. Stage B then
+  preserves the shared coefficient relation but rejects at `44/48` calibrated
+  and `46/48` local stereo failures. The family closes. Batch 29.7AB owns a
+  no-renderer joint-synthesis architecture reassessment.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7AA Stage B once. Add the frozen relation-owned material
-transport to the passing sliced frame. Run synthetic and exact mechanics first,
-then the `48`-row calibrated stereo gate. Stop before the long mono corpus on
-any miss. Keep listening, product surfaces, and Batch 29.8 closed.
+Run `g10.029` Batch 29.7AB. Attribute the post-coefficient sample-domain
+relation divergence and review primary multichannel redundant-synthesis
+evidence. Implement no renderer or tuning candidate. Keep listening, product
+surfaces, and Batch 29.8 closed.

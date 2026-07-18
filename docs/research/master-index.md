@@ -74,8 +74,8 @@ Finch and Loophole.
 
 ## Next Task
 
-Batch 29.7AA Stage A has passed the fixed sliced representation selected by
-memo 014. Run Stage B once with the frozen relation-owned material transport.
-Run synthetic and exact mechanics first, then the `48`-row calibrated stereo
-gate. Stop before the long mono corpus on any miss. Keep production and Batch
-29.8 closed.
+Batch 29.7AA closes the relation-owned sliced material family. Exact shared
+coefficient relation does not survive as acceptable sample-domain stereo after
+redundant synthesis. Run Batch 29.7AB as a no-renderer attribution and primary
+research pass on joint multichannel synthesis ownership. Keep production and
+Batch 29.8 closed.

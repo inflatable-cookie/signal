@@ -2201,20 +2201,20 @@ to the rejected full-length coefficients.
   of source duration across `[8192, 65536, 220500]`, and counted
   analysis/synthesis work equals fixed per-slice cost times slice count; stop
   before transport on any Stage A miss
-- [ ] Stage B, only after Stage A passes: restore each peer from one sampled
+- [x] Stage B, only after Stage A passes: restore each peer from one sampled
   reference phase, peer-owned magnitude, and one directly interpolated current
   peer/reference relation before applying the frozen 29.7Y material operator
-- [ ] exercise two-defined, one-defined, undefined, zero-peer, and joint-silent
+- [x] exercise two-defined, one-defined, undefined, zero-peer, and joint-silent
   relation states; require zero undefined states on active calibrated rows
-- [ ] freeze supports, crossovers, material classifier, median spans, transient
+- [x] freeze supports, crossovers, material classifier, median spans, transient
   law, diffusion, seed, peak map, relation law, slice geometry, and gates before
   the first candidate; do not tune after a miss
-- [ ] run synthetic and exact mechanics, then the `48`-row calibrated stereo
+- [x] run synthetic and exact mechanics, then the `48`-row calibrated stereo
   gate; stop before the long mono corpus on any calibrated, local-consistency,
   mechanics, or explicit relation failure
-- [ ] only after complete stereo passage, run the repeated six-row mono gate;
-  require zero hard failures and zero row-complete regressions
-- [ ] keep listening, Batch 29.8, dynamic ratio, realtime, routing, cache,
+- [x] enforce the mono stop gate: the stereo miss prevents the repeated six-row
+  mono gate from running
+- [x] keep listening, Batch 29.8, dynamic ratio, realtime, routing, cache,
   production, and all product-facing work closed
 
 Evidence: one Stage A sliced identity/boundedness report, then at most one Stage
@@ -2226,6 +2226,31 @@ mechanics categories have zero failures. The five identity lengths require
 peak live coefficients while counted work remains exactly `1111425` units per
 slice. Evidence hash: `0830ec12fa0bcde7`. Stage B is now open once; listening
 and product work remain closed.
+
+Stage B closes the family. Synthetic structure, repeat, bounded slice state,
+and explicit relation mechanics pass. Both output layers use one shared
+relation; active calibrated rows have zero undefined states and `1.78e-15`
+maximum relation error. The sample-domain result still rejects at `44/48`
+calibrated and `46/48` local-consistency failures, with frozen mono-parity
+mechanics also outside gate. Mono does not run. Evidence hash:
+`225ab337875b3962`. No parameter rescue or listening pack is authorized.
+
+### Batch 29.7AB - Joint-Synthesis Architecture Reassessment
+
+- [ ] attribute the first divergence between the passing shared coefficient
+  relation and the failing synthesized sample-domain relation; separate inner
+  band overlap, outer slice overlap, band-varying relation, and material phase
+- [ ] review primary literature and clean-room source evidence for linked
+  multichannel relation preservation through redundant or overlapping
+  synthesis, including post-atom summation ownership
+- [ ] define one independently supported joint-synthesis invariant compatible
+  with bounded execution, or close the current frequency-frame direction
+- [ ] implement no renderer, parameter change, listening export, dynamic ratio,
+  realtime, routing, cache, production, or product-facing work
+
+Evidence: one post-coefficient attribution and one source-backed architecture
+decision. Another DSP candidate requires a promoted contract; Batch 29.8 stays
+closed.
 
 ### Batch 29.8 - Listening And Dynamic Checkpoint
 
@@ -3453,10 +3478,18 @@ and product work remain closed.
   and counted work is exactly `1111425` units per slice. Evidence hash
   `0830ec12fa0bcde7`. Stage B may run once; listening and product work remain
   closed.
+- 2026-07-18: Batch 29.7AA Stage B closes the relation-owned sliced material
+  family. Synthetic, structure, repeat, bounded slice state, and explicit
+  relation mechanics pass. Shared layer relation error is `1.78e-15` with zero
+  undefined active calibrated states, but sample-domain stereo rejects at
+  `44/48` calibrated and `46/48` local failures. Frozen mono-parity mechanics
+  also miss, so the long mono corpus does not run. Evidence hash
+  `225ab337875b3962`. Batch 29.7AB owns a no-renderer joint-synthesis
+  architecture reassessment.
 
 ## Next Task
 
-Run Batch 29.7AA Stage B once. Add the frozen relation-owned material transport
-to the passing sliced frame. Run synthetic and exact mechanics first, then the
-`48`-row calibrated stereo gate. Stop before the long mono corpus on any miss.
-Keep listening, product surfaces, and Batch 29.8 closed until full passage.
+Run Batch 29.7AB. Attribute the first divergence after the passing shared
+coefficient relation and research primary multichannel redundant-synthesis
+evidence. Implement no renderer or tuning candidate. Keep listening, product
+surfaces, and Batch 29.8 closed.
