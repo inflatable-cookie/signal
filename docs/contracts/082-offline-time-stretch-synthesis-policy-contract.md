@@ -4780,12 +4780,58 @@ not independent unlocked commit alone. Rule 31X closes this topology without
 promotion. Mono, long-development, retry, tuning, listening, and holdout do
 not run.
 
+### Rule 31Y: direct scale-timeline conformance before another renderer
+
+Rule 31X closes the normalized sliced material topology. Its exact local
+relation observer was not a valid universal state invariant. Pinned Rubber
+Band R3 computes ordinary and unlocked recurrence independently per channel;
+cross-channel borrowing exists only inside the compatible locked peak branch.
+Signalsmith's all-bin reference projection and Bungee's common-region rotation
+belong to their separate complete kernels. Do not combine those laws with the
+Rubber Band-style state machine.
+
+The normalized bounded representation also adds an ownership layer absent from
+the selected Rule 31R topology. One global decision is projected into two
+independently windowed outer coefficient fields before two inverse slices sum.
+Identity and same-rotation mechanics remain valid, but arbitrary phase-state
+modification is not closed under that meta-sliced sum. Treat Rule 31T through
+31X as exact representation and rejection evidence, not a renderer base.
+
+Batch 29.7AR is implementation-free preregistration. It may select one direct
+frequency-partitioned scale-timeline representation only if all of these are
+explicit before code:
+
+1. physical low, middle, and high analysis/synthesis durations and output
+   advances at every supported proof rate
+2. exhaustive nonoverlapping physical-frequency ownership and crossover tie
+   rules
+3. one source/output centre schedule shared by every channel and scale
+4. one coefficient and phase-state owner for each scale/time/bin, with no outer
+   meta-slice, dominant-layer selection, or layer projection
+5. channel-local ordinary, reset, attack, and unlocked recurrence
+6. deterministic cross-channel borrowing only inside predecessor-compatible
+   locked peak regions
+7. per-channel inverse/window overlap-add and same-channel scale summation
+8. fixed input/output/guidance/phase/peak rings, bounded work, and explicit
+   capacity failure
+9. source reflection, crop, latency, tail, silence, and discontinuity reset
+   behavior
+
+Batch 29.6CH is rejection evidence, not an implementation base. The
+preregistration must identify its incomplete phase/channel state,
+unconditional peer projection, per-scale normalization, and crossover hazards,
+then state what is reused or rejected. Rubber Band expression, constants,
+thresholds, ranges, masks, and tables remain excluded.
+
+No renderer, synthetic/objective run, parameter candidate, tuning, retry,
+listening, holdout, dynamic ratio, realtime, routing, cache, production,
+product work, or Batch 29.8 may open in 29.7AR. Promote a later mechanics card
+only if the direct representation has complete fixed geometry, ownership,
+capacity, and failure contracts.
+
 ## Next Task
 
-Re-enter architecture planning from the failed Rule 31X result. Explain why
-exact per-atom relation preservation improves local evidence but leaves
-`44/48` row failures, with specific attention to the two independently
-windowed outer layers and their waveform-domain sum. Select no renderer until
-that ownership gap has a complete, source-supported integration law. Keep
-tuning, objective retry, listening, holdout, Batch 29.8, and product work
-closed.
+Run Batch 29.7AR under Rule 31Y. Preregister one direct scale-timeline
+representation and complete state order. Implement nothing and render no
+audio. Keep objective retry, tuning, listening, holdout, Batch 29.8, and
+product work closed.

@@ -135,5 +135,7 @@ commit ordering before both layers receive the shared result. Batch 29.7AQ
 passes mechanics and synthetic evidence, then rejects its single corrected
 stereo run at `40/48` calibrated failures and `44/48` local-row failures; hash
 `88d9c0f68ea2954b`. The representation remains mechanically valid, but its
-current waveform-ownership topology is closed. Reassess joint ownership of
-both outer layers before another renderer.
+current waveform-ownership topology is closed. Memo 021 retains this work as
+mechanical representation evidence but closes its extra outer meta-slice as a
+quality topology. Run implementation-free Batch 29.7AR to preregister the
+direct scale timeline before another renderer.

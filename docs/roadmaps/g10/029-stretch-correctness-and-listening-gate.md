@@ -2703,6 +2703,67 @@ calibrated rows and fifteen windows over Rule 31V but leaves the row-level
 failure count unchanged. Mono and long-development do not run. Rule 31X closes
 the topology without promotion, retry, tuning, listening, or holdout access.
 
+### Batch 29.7AR - Direct Scale-Timeline Preregistration
+
+Status: ready
+
+- [ ] freeze physical low, middle, and high analysis/synthesis durations and
+  output advances at every proof rate
+- [ ] freeze exhaustive nonoverlapping physical-frequency ownership,
+  crossover ties, and one source/output centre schedule shared by all scales
+  and channels
+- [ ] define one coefficient and phase-state owner per scale/time/bin, with no
+  outer meta-slice, dominant-layer selection, or layer projection
+- [ ] freeze complete state order: channel-local ordinary, reset, attack, and
+  unlocked recurrence; predecessor-compatible cross-channel borrowing only in
+  locked peak regions
+- [ ] freeze per-channel inverse overlap-add, same-channel scale summation,
+  source reflection, crop, latency, tail, silence, and discontinuity reset
+- [ ] calculate fixed input, output, guidance, phase, and peak capacities;
+  define bounded work and explicit capacity failure
+- [ ] classify every Batch 29.6CH mechanic as reusable proof material or a
+  rejected hazard; implement nothing and render no audio
+- [ ] promote Batch 29.7AS only when Rule 31Y geometry, ownership, capacity,
+  boundary, and failure contracts are complete
+
+Evidence: memo 021 corrects the source interpretation behind Rule 31X. Pinned
+Rubber Band R3 keeps ordinary and unlocked recurrence channel-local and borrows
+across channels only in compatible locked peak regions. The normalized sliced
+candidate also adds an outer ownership seam absent from the selected direct
+scale topology. Batch 29.7AR restores source conformance on paper before code.
+
+### Batch 29.7AS - Direct Scale Representation Mechanics
+
+Status: conditional on Batch 29.7AR
+
+- [ ] implement only the preregistered direct multi-scale analysis, exclusive
+  frequency ownership, per-scale inverse overlap-add, and fixed storage
+- [ ] prove identity, conjugacy, exact ownership, coverage, boundary schedule,
+  capacity, finiteness, repeat, and explicit overflow behavior
+- [ ] keep guided phase state, stretched audio, objectives, listening, and
+  production closed; stop on the first representation-contract miss
+
+### Batch 29.7AT - Direct Scale State Mechanics
+
+Status: conditional on Batch 29.7AS
+
+- [ ] integrate the complete preregistered per-scale state order without
+  changing geometry, crossovers, windows, capacities, or thresholds
+- [ ] prove every terminal state, channel-local unlocked behavior, compatible
+  locked borrowing, peer magnitude/offset preservation, boundaries, and repeat
+- [ ] render no corpus or listening artifact; promote one objective card only
+  after the complete mechanics contract passes
+
+### Batch 29.7AU - Direct Scale Failure-First Objective Gate
+
+Status: conditional on Batch 29.7AT
+
+- [ ] freeze one complete objective sequence before audio generation
+- [ ] run synthetic, corrected stereo, mono, and long-development stages in
+  that order, stopping at the first existing hard-gate miss
+- [ ] forbid factor sweeps, row repair, tuning, concealed listening, and
+  holdout access; only complete passage may open Batch 29.8
+
 ### Batch 29.8 - Listening And Dynamic Checkpoint
 
 - [ ] export concealed mono and stereo artifacts only after objective gates pass
@@ -4062,12 +4123,18 @@ the topology without promotion, retry, tuning, listening, or holdout access.
   `0.8700034314389535`; hash `88d9c0f68ea2954b`. This is a measurable local
   improvement over Rule 31V, not gate passage. Mono and long-development do
   not run. The topology closes without promotion.
+- 2026-07-18: source reinspection rejects the Rule 31X observer as a universal
+  state invariant. Rubber Band R3 keeps ordinary and unlocked recurrence
+  channel-local; peer borrowing belongs only to compatible locked peaks. The
+  normalized sliced candidate also duplicates one global state tick into two
+  independently windowed outer fields, unlike the selected direct scale
+  topology. Rule 31Y closes that quality topology and opens implementation-free
+  Batch 29.7AR. Batches 29.7AS through 29.7AU remain conditional.
 
 ## Next Task
 
-Re-enter architecture planning from the failed Rule 31X result. Account for
-the unchanged `44/48` row failures despite exact per-atom relation preservation
-and improved local evidence. Focus on ownership of the two windowed outer-layer
-fields and their waveform-domain sum; do not authorize another renderer until
-a complete source-supported integration law exists. Keep objective retry,
-tuning, listening, holdout, product surfaces, and Batch 29.8 closed.
+Run Batch 29.7AR under Rule 31Y. Preregister direct physical scale geometry,
+exclusive frequency ownership, one shared schedule, complete state order,
+boundary behavior, and fixed capacities. Implement nothing and render no
+audio. Keep Batch 29.7AS onward, objective retry, tuning, listening, holdout,
+product surfaces, and Batch 29.8 closed.

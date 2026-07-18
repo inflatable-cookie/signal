@@ -507,14 +507,22 @@ Current stretch status:
   corrected stereo run at `40/48` calibrated failures, `125/384` improved
   windows, `44/48` local-row failures, and hash `88d9c0f68ea2954b`. The local
   gain does not cross the row-level gate. This topology is closed.
+  Source reinspection then corrects the underlying observer: Rubber Band R3
+  keeps ordinary and unlocked recurrence channel-local and borrows across
+  channels only in compatible locked peak regions. The bounded normalized
+  renderer also added an independently windowed outer meta-slice layer absent
+  from the selected direct scale topology. Rule 31Y opens implementation-free
+  Batch 29.7AR to preregister one direct frequency-partitioned scale timeline.
+  Later representation mechanics, state mechanics, and one failure-first
+  objective gate remain conditional Batches 29.7AS through 29.7AU.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Re-enter `g10.029` architecture planning from the failed Rule 31X result.
-Explain the remaining `44/48` row failures across the two windowed outer-layer
-fields and their waveform-domain sum before selecting another renderer. Keep
-objective retry, tuning, listening, holdout, product surfaces, and Batch 29.8
-closed.
+Run `g10.029` Batch 29.7AR under Rule 31Y. Preregister the direct scale
+timeline's physical geometry, exclusive frequency ownership, schedule, state
+order, boundary behavior, and fixed capacities without implementation or
+audio. Keep later mechanics, objectives, tuning, listening, holdout, product
+surfaces, and Batch 29.8 closed.

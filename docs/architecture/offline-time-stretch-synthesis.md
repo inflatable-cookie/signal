@@ -1784,9 +1784,27 @@ not the complete waveform invariant. The topology is not promoted. The next
 architecture question is joint ownership of the two independently windowed
 outer-layer fields through their waveform-domain sum.
 
+Source reinspection closes that question without another renderer. Rule 31W's
+exact current-relation observer was not Rubber Band's unlocked-state contract.
+R3 keeps ordinary and high-unlocked recurrence channel-local. It considers a
+greatest-channel trajectory only inside the compatible locked peak branch.
+Rule 31X mixed Signalsmith/Bungee whole-kernel relation laws into a different
+state machine.
+
+The bounded implementation also drifted from Rule 31R's direct scale topology.
+It duplicates each global coefficient tick across two independently windowed
+outer meta-slices, then projects one dominant-field decision into both. R3,
+Signalsmith, and Bungee keep normal overlap inside one coefficient timeline per
+active scale or kernel. They do not add this second transform ownership layer.
+
+The next admissible architecture is direct scale-timeline synthesis: one
+streaming STFT sequence per exclusive low/middle/high scale, one state owner per
+scale/time/bin, channel-local ordinary/unlocked state, compatible locked-only
+borrowing, per-channel inverse overlap-add, and fixed rings. Memo 021 and Rule
+31Y require complete representation preregistration before code.
+
 ## Next Task
 
-Re-enter architecture planning from Rule 31X. Resolve the two outer layers'
-joint waveform ownership before authorizing another renderer. Keep objective
-retry, tuning, concealed holdout, listening, dynamic ratio, realtime, and
-product-facing work closed.
+Run Batch 29.7AR under Rule 31Y. Freeze direct scale geometry, ownership,
+overlap, state order, capacities, boundaries, and failure behavior without
+implementing or rendering audio.

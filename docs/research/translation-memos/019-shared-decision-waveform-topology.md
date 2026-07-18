@@ -160,6 +160,9 @@ rejects the complete topology. Mechanics and synthetic evidence pass at hash
 `875b0768ba2066bf`; the single corrected stereo run records `40/48` calibrated
 failures, `125/384` improved windows, `44/48` local-row failures, and hash
 `88d9c0f68ea2954b`. The correction is locally effective but insufficient.
-Re-enter architecture planning at ownership of the two windowed outer-layer
-fields and their waveform-domain sum. Keep concealed listening, the holdout,
-Batch 29.8, and product work closed.
+Memo 021 then corrects the source interpretation: ordinary and unlocked R3
+recurrence is channel-local, while cross-channel borrowing is restricted to
+compatible locked peak regions. It also closes the extra outer meta-slice as a
+quality topology. Run implementation-free Batch 29.7AR to restore the direct
+scale timeline selected here. Keep concealed listening, the holdout, Batch
+29.8, and product work closed.
