@@ -142,6 +142,8 @@ Signal tree.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7AK under Rule 31R. Implement the single stop-gated
-`GuidedFrequencyPartitionedLinkedPhaseVocoder` proof. Keep concealed listening,
-the holdout, Batch 29.8, and every product-facing surface closed.
+Batch 29.7AK validates the fixed `48 kHz` mechanics kernel, then closes its
+whole-source integration: the `8 kHz` gate exceeds the frozen atom capacity and
+coefficient storage grows with duration. Run Batch 29.7AL under Rule 31S to
+resolve bounded multiscale slice compatibility without another renderer. Keep
+concealed listening, the holdout, Batch 29.8, and product work closed.

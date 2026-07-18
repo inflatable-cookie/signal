@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; guided frequency-partitioned linked-phase proof next
+Status: active; bounded multiscale slice compatibility research next
 Owner: dsp
 Updated: 2026-07-18
 Related contracts: `046`, `048`, `049`
@@ -4364,6 +4364,37 @@ state ranges, capacities, and numeric controls before the first render. Rubber
 Band GPL expression, constants, thresholds, masks, tables, and ranges are not
 inputs to implementation or calibration.
 
+Batch 29.7AK freezes those values before code executes. Reuse Signal's proven
+29.7Y painless representation at `48 kHz`: `16384` padded transform frames,
+`8192` source frames, `4096/2048/1024` atom supports, one `512`-frame common
+lattice, and fixed `750 Hz` and `6000 Hz` ownership boundaries. The proof
+capacity is exactly two channels, `1344` signed atoms, `673` nonnegative-
+frequency atoms, `32` coefficients per atom, and at most `673` current or
+predecessor peak regions. Any larger channel, atom, coefficient, or region
+request returns `CapacityExceeded`; no resize or fallback is allowed.
+
+Stage B policy is also preregistered now. Reuse the 29.7Y channel-joint maximum-
+energy map, scale-local time median over half the atom support, adjacent-atom
+frequency median, normalized tonalness/transientness/noisiness fields, and
+strict local transient maxima. At every coefficient time:
+
+1. compute per-channel ordinary instantaneous-frequency recurrence
+2. use current analysis phase for the first frame, silence recovery, or a
+   transient-owned strict local maximum below `6000 Hz`
+3. use ordinary per-channel recurrence where noisiness exceeds tonalness
+4. otherwise use tracked peak locking
+5. borrow the greatest-energy channel's compatible predecessor trajectory only
+   below `6000 Hz`; compatibility requires the prior peak inside the current
+   region and nonzero current/prior owner support
+6. retain each peer's magnitude and current analysis-relative phase around the
+   borrowed peak
+
+Ties select the lower frequency atom, then the lower channel index. Channel
+swap still commutes because unequal energies move ownership with the channel;
+exact ties produce identical decisions. No valley movement, shoulder gain,
+diffusion, random phase, policy calibration, or alternate state law is
+authorized.
+
 This rule does not reopen Batch 29.6CH. That prototype combined frequency
 partitioning with an incomplete phase and channel translation. It also does
 not reopen Batch 29.7Y, whose exact frame preceded a shared operator with
@@ -4386,8 +4417,42 @@ complete mono regression. A miss closes the implementation. No factor sweep,
 per-row repair, listening, holdout access, dynamic ratio, realtime, routing,
 cache, production, or product-facing work may open.
 
+Batch 29.7AK passes Stage A and closes at the Stage B capacity boundary. The
+`48 kHz` proof reports `2.914335439641036e-16` peak identity error, exact Rule
+31Q mechanics, all scale/state branches, `156/673` peak-region high-water, and
+zero structural, finite, repeat, or overflow failures. Evidence hash:
+`79b0cc2047f563b6`.
+
+The frozen capacity is not sample-rate invariant. The same `16384/512` frame
+and fixed-Hz boundaries require `2432` signed and `1217` nonnegative-frequency
+atoms at the `8 kHz` mechanics gate, above `1344/673`. Whole-source output
+coefficient count also grows with padded render duration. `CapacityExceeded`
+fires before the `48` objective rows. Increasing the capacity or allowing the
+duration-sized representation would violate this rule. No objective, mono,
+long-development, listening, or holdout evidence exists.
+
+### Rule 31S: bounded multiscale slice compatibility before another renderer
+
+Freeze the 29.7AK topology, Stage A evidence, and capacity miss. Batch 29.7AL
+is research-only. Compare the already-proven fixed two-slice frame with at most
+one sample-rate-normalized painless alternative. A selectable integration must:
+
+- use one geometry formula across `8`, `44.1`, and `48 kHz`
+- keep live coefficient, peak, guidance, and overlap memory independent of
+  render duration
+- carry one synchronized all-channel phase state across slice boundaries
+- preserve exhaustive single frequency ownership and one exact synthesis law
+- avoid independent overlap normalization, relation projection, state reset,
+  or hidden full-source storage
+- declare exact work/memory formulas and an overflow result before code
+
+Select at most one integration with a direct identity and mechanics proof, or
+stop the active topology lane. Do not implement DSP, expand capacity, render
+stretched audio, tune policy, run objective rows, listen, read the holdout, or
+open product work in Batch 29.7AL.
+
 ## Next Task
 
-Run Batch 29.7AK under Rule 31R. Implement the one stop-gated
-`GuidedFrequencyPartitionedLinkedPhaseVocoder` proof. Keep the holdout,
-listening, Batch 29.8, and all product-facing work closed.
+Run Batch 29.7AL under Rule 31S. Resolve bounded multiscale slice compatibility
+without another renderer. Keep the holdout, listening, Batch 29.8, and all
+product-facing work closed.

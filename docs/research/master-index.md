@@ -80,6 +80,6 @@ Finch and Loophole.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7AK under Rule 31R. Implement the one stop-gated
-`GuidedFrequencyPartitionedLinkedPhaseVocoder` proof. Keep the holdout,
-listening, Batch 29.8, and product work closed.
+Run `g10.029` Batch 29.7AL under Rule 31S. Resolve bounded multiscale slice
+compatibility without another renderer. Keep the holdout, listening, Batch
+29.8, and product work closed.

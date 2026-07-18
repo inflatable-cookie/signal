@@ -30,11 +30,11 @@ pub(super) struct Material {
 }
 
 #[derive(Clone)]
-struct Analysis {
-    representation: Representation,
-    coefficients: [Vec<Vec<Complex64>>; 2],
-    material: Vec<Vec<Material>>,
-    transient_centers: Vec<bool>,
+pub(super) struct Analysis {
+    pub(super) representation: Representation,
+    pub(super) coefficients: [Vec<Vec<Complex64>>; 2],
+    pub(super) material: Vec<Vec<Material>>,
+    pub(super) transient_centers: Vec<bool>,
 }
 
 #[derive(Clone)]
@@ -56,6 +56,18 @@ mod synthesis;
 use analysis::analyse;
 use phase::{analysis_state_counts, transport};
 use synthesis::synthesise;
+
+pub(super) fn analyse_for_stage_a(inputs: [&[f64]; 2], sample_rate: usize) -> Analysis {
+    analyse(inputs, sample_rate)
+}
+
+pub(super) fn synthesise_for_stage_a(
+    representation: &Representation,
+    coefficients: [Vec<Vec<Complex64>>; 2],
+    target_length: usize,
+) -> ([Vec<f64>; 2], usize) {
+    synthesise(representation, coefficients, target_length)
+}
 
 fn render(inputs: [&[f64]; 2], ratio: f64, sample_rate: usize) -> SharedRotationRender {
     assert_eq!(inputs[0].len(), inputs[1].len(), "linked channel lengths");

@@ -148,5 +148,6 @@ weighted prediction as the selected family.
 Memo 019 does not reopen this rejected prototype. It selects a different
 complete kernel in which exclusive scale ownership, synchronized all-channel
 phase-state selection, conditional linked trajectories, and per-channel
-synthesis are indivisible. Run Batch 29.7AK under Rule 31R; do not resume this
-memo's implementation or Rule 30AB.
+synthesis are indivisible. Batch 29.7AK passes fixed mechanics and closes at
+the sample-rate/duration capacity boundary. Run Batch 29.7AL under Rule 31S;
+do not resume this memo's implementation or Rule 30AB.

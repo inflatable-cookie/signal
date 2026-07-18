@@ -470,13 +470,18 @@ Current stretch status:
   all-channel phase-state selection, conditional linked peak borrowing, and
   per-channel synthesis form one indivisible waveform owner. Rule 31R permits
   one stop-gated mechanics and objective proof with fixed declared bounds and
-  no external numeric-policy transfer.
+  no external numeric-policy transfer. Batch 29.7AK passes its fixed `48 kHz`
+  mechanics proof at `2.91e-16` identity error with exact channel mechanics,
+  then closes before objective rows. The frozen `8 kHz` gate requires
+  `2432/1217` signed/nonnegative atoms instead of `1344/673`, while the attempted
+  whole-source coefficient store grows with duration. Rule 31S permits only a
+  bounded two-slice representation compatibility study before another renderer.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7AK under Rule 31R. Implement the one stop-gated
-`GuidedFrequencyPartitionedLinkedPhaseVocoder` proof. Keep the holdout,
-listening, product surfaces, and Batch 29.8 closed.
+Run `g10.029` Batch 29.7AL under Rule 31S. Resolve bounded multiscale slice
+compatibility without another renderer. Keep the holdout, listening, product
+surfaces, and Batch 29.8 closed.

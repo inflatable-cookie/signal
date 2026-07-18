@@ -2479,27 +2479,72 @@ constants, masks, thresholds, and ranges remain excluded.
 
 ### Batch 29.7AK - Guided Frequency-Partitioned Linked-Phase Proof
 
-- [ ] freeze memo 019 and Rule 31R before implementation; declare all Signal-
+- [x] freeze memo 019 and Rule 31R before implementation; declare all Signal-
   owned scale, crossover, classifier, state, capacity, and overflow policy
   before the first render
-- [ ] Stage A: implement one report-only fixed-capacity kernel with exhaustive
+- [x] Stage A: implement one report-only fixed-capacity kernel with exhaustive
   nonoverlapping scale ownership, one synchronized all-channel phase-state
   update, conditional compatible peak borrowing, and per-channel synthesis
-- [ ] stop unless Stage A passes `1e-12` `f64` identity reconstruction, exact
+- [x] stop unless Stage A passes `1e-12` `f64` identity reconstruction, exact
   crop/coverage/finite/repeat/bounded-state mechanics, all scale/state branch
   coverage, and the four Rule 31Q channel mechanics at `1e-6`
-- [ ] Stage B, only after Stage A passage: run one preregistered complete policy
-  through the frozen synthetic, six-row mono, long-development, and corrected
-  `48`-row professional-comparator gates
+- [x] Stage B, only after Stage A passage: start one preregistered complete
+  policy; stop before the objective rows when the frozen capacity rejects the
+  `8 kHz` gate representation
 - [ ] require the unchanged calibrated gate, at least `245/384` improved local
   windows, at most `13/48` local-row failures, maximum local residual at or
   below `0.01744693815260`, and no row-complete mono regression; stop on a miss
-- [ ] do not sweep factors, repair individual rows, listen, access the holdout,
+- [x] do not sweep factors, repair individual rows, listen, access the holdout,
   or open Batch 29.8, dynamic ratio, realtime, routing, cache, production, or
   product-facing work
 
 Evidence: one Stage A mechanics report and, only after passage, one complete
 Stage B objective report. No concealed listening pack exists before passage.
+
+Frozen policy: reuse the Signal-owned 29.7Y `16384/8192/512` painless frame,
+`4096/2048/1024` supports, and `750 Hz`/`6000 Hz` ownership. Capacity is two
+channels, `1344` signed atoms, `673` nonnegative-frequency atoms, `32`
+coefficients per atom, and `673` current/prior regions; excess returns
+`CapacityExceeded`. Reuse the 29.7Y channel-joint fuzzy material map. Strict
+transient maxima below `6000 Hz` reset, noise-owned coefficients remain on
+ordinary recurrence, and all other coefficients use tracked peak lock.
+Greatest-energy trajectory borrowing is conditional below `6000 Hz` and keeps
+peer magnitude plus current analysis-relative phase. No valley movement,
+shoulder gain, diffusion, random phase, calibration, or alternate law exists.
+
+Decision: close this implementation before objective quality evidence. Stage A
+passes at `48 kHz`: peak identity error is `2.914335439641036e-16`; all four
+Rule 31Q mechanics are exact; every scale and state branch executes; compatible
+linked/unlinked region counts are `1540/2673`; peak region high-water is
+`156/673`; finite, repeat, and overflow checks pass. Evidence hash:
+`79b0cc2047f563b6`.
+
+The frozen Stage B workspace is not valid for the frozen gate. The same
+`16384/512` frame with `750 Hz`/`6000 Hz` boundaries at `8 kHz` requires `2432`
+signed and `1217` nonnegative-frequency atoms, above the frozen `1344/673`
+capacity. The attempted whole-source output representation also grows its
+coefficient lattice with render duration. Expanding either bound would violate
+the preregistered capacity and Rule 31R. No `48`-row, mono, long-development,
+listening, or holdout result exists.
+
+### Batch 29.7AL - Bounded Multiscale Slice Compatibility Research
+
+- [ ] freeze 29.7AK code, hashes, capacity failure, and Rule 31R; implement no
+  renderer, phase policy, capacity expansion, or quality candidate
+- [ ] compare the already-proven fixed two-slice frame with at most one sample-
+  rate-normalized painless alternative; require duration-independent live
+  memory and one formula across `8`, `44.1`, and `48 kHz`
+- [ ] trace whether one synchronized all-channel phase state can cross slice
+  boundaries without duplicate frequency ownership, independent overlap
+  normalization, relation projection, or state reset
+- [ ] select at most one representation integration with exact identity,
+  explicit work/memory formulas, fixed overflow behavior, and a direct Stage A
+  mechanics proof; otherwise stop the active topology lane
+- [ ] do not render stretched audio, tune policy, run objective rows, listen,
+  access the holdout, or open Batch 29.8 or product work
+
+Evidence: one bounded-representation compatibility decision. No DSP experiment
+or audio artifact belongs in this batch.
 
 ### Batch 29.8 - Listening And Dynamic Checkpoint
 
@@ -3803,9 +3848,17 @@ Stage B objective report. No concealed listening pack exists before passage.
   owner. It is not the rejected 29.6CH partitioned translation or 29.7Y
   independent polar transport. Memo 019 and Rule 31R freeze a two-stage,
   one-result proof with fixed bounds and no external numeric policy transfer.
+- 2026-07-18: Batch 29.7AK Stage A passes at evidence hash
+  `79b0cc2047f563b6`: `2.91e-16` peak identity error, exact Rule 31Q mechanics,
+  all scale/state branches, `156/673` region high-water, and zero structural,
+  finite, repeat, or overflow failures. Stage B then closes before objective
+  rows. The frozen `8 kHz` gate needs `2432/1217` signed/nonnegative atoms,
+  exceeding the `1344/673` proof capacity, and whole-source coefficient memory
+  grows with duration. No capacity expansion, renderer result, or holdout read
+  follows. Rule 31S returns to bounded representation compatibility only.
 
 ## Next Task
 
-Run Batch 29.7AK under Rule 31R. Implement the one stop-gated
-`GuidedFrequencyPartitionedLinkedPhaseVocoder` proof. Keep the holdout,
-listening, product surfaces, and Batch 29.8 closed.
+Run Batch 29.7AL under Rule 31S. Resolve bounded multiscale slice compatibility
+without rendering another candidate. Keep the holdout, listening, product
+surfaces, and Batch 29.8 closed.

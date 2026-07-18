@@ -1,6 +1,6 @@
 # Offline Time-Stretch Synthesis
 
-Status: guided frequency-partitioned linked-phase proof next
+Status: bounded multiscale slice compatibility research next
 Owner: dsp
 Updated: 2026-07-18
 Contract refs: `046`, `082`
@@ -1658,8 +1658,31 @@ material policy can run. Stage B gets one frozen objective result against the
 corrected professional envelope. External source expression and numeric policy
 remain excluded.
 
+The first proof reuses Signal's exact 29.7Y frame: `16384/8192/512`,
+`4096/2048/1024` supports, and `750 Hz`/`6000 Hz` ownership. Its fixed stereo
+workspace holds `1344` signed atoms, `673` nonnegative-frequency atoms, `32`
+coefficients per atom, and `673` current/prior regions. Excess returns
+`CapacityExceeded`. The preregistered material policy reuses the 29.7Y fuzzy
+map: strict transient maxima below `6000 Hz` reset, noise-owned coefficients
+remain ordinary, and all others use peak lock. Compatible greatest-energy
+trajectory borrowing is limited below `6000 Hz`; peer magnitude and current
+analysis-relative phase remain peer-owned.
+
+Batch 29.7AK validates the fixed `48 kHz` Stage A kernel, then closes the
+whole-source integration. Identity peaks at `2.914335439641036e-16`; the four
+genuine channel mechanics are exact; every scale/state branch executes; region
+high-water is `156/673`. At the frozen `8 kHz` gate, the same fixed-Hz layout
+requires `2432/1217` signed/nonnegative atoms instead of `1344/673`.
+Whole-source coefficient storage also grows with duration. Both violate the
+selected fixed bound before objective audio can run.
+
+Rule 31S permits only a bounded-representation compatibility study. The open
+question is whether the selected synchronized channel kernel can cross a fixed
+two-slice exact frame without reopening the relation projection and overlap
+ownership failures already measured. No renderer is authorized.
+
 ## Next Task
 
-Run Batch 29.7AK under Rule 31R. Implement the one stop-gated
-`GuidedFrequencyPartitionedLinkedPhaseVocoder` proof. Keep the concealed
-holdout, listening, dynamic ratio, realtime, and product-facing work closed.
+Run Batch 29.7AL under Rule 31S. Resolve bounded multiscale slice compatibility
+without another renderer. Keep the concealed holdout, listening, dynamic
+ratio, realtime, and product-facing work closed.
