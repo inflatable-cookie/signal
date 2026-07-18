@@ -67,6 +67,18 @@ pub fn compile_vst3_fixture(
     plugin_type_id: &str,
     plugin_name: &str,
 ) -> Result<PathBuf, String> {
+    compile_vst3_fixture_with_default_bus_channels(directory, plugin_type_id, plugin_name, 2)
+}
+
+/// Compile the fixture with a configurable default main-bus channel count.
+/// The processor still accepts stereo negotiation, allowing hosts to prove
+/// dynamic layout handling for plugins that initialize as mono.
+pub fn compile_vst3_fixture_with_default_bus_channels(
+    directory: &Path,
+    plugin_type_id: &str,
+    plugin_name: &str,
+    default_bus_channels: u16,
+) -> Result<PathBuf, String> {
     let module_name = plugin_name.to_lowercase().replace(' ', "-");
     let bundle_root = directory.join(format!("{module_name}.vst3"));
     let contents = bundle_root.join("Contents");
@@ -98,8 +110,11 @@ pub fn compile_vst3_fixture(
         .map_err(|error| format!("fixture resources dir create failed: {error}"))?;
 
     let source_path = directory.join(format!("{module_name}-fixture.rs"));
-    std::fs::write(&source_path, vst3_fixture_source(plugin_name))
-        .map_err(|error| format!("fixture source write failed: {error}"))?;
+    std::fs::write(
+        &source_path,
+        vst3_fixture_source_with_default_bus_channels(plugin_name, default_bus_channels),
+    )
+    .map_err(|error| format!("fixture source write failed: {error}"))?;
     let output = Command::new("rustc")
         .arg("--crate-type=cdylib")
         .arg("--edition=2021")
@@ -172,6 +187,13 @@ fn fixture_moduleinfo(plugin_name: &str) -> String {
 
 /// Full Rust source of the fixture cdylib.
 pub fn vst3_fixture_source(plugin_name: &str) -> String {
+    vst3_fixture_source_with_default_bus_channels(plugin_name, 2)
+}
+
+fn vst3_fixture_source_with_default_bus_channels(
+    plugin_name: &str,
+    default_bus_channels: u16,
+) -> String {
     format!(
         r#"
 //! rustc-compiled VST3 fixture module: single-component stereo gain effect.
@@ -645,7 +667,7 @@ unsafe extern "C" fn component_get_bus_info(
     let info = &mut *info;
     info.media_type = K_AUDIO;
     info.direction = direction;
-    info.channel_count = 2;
+    info.channel_count = {default_bus_channels};
     info.bus_type = 0; // kMain
     info.flags = 1; // kDefaultActive
     let mut name = [0i16; 128];

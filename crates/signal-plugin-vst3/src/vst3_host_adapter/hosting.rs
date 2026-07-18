@@ -2450,7 +2450,8 @@ impl Vst3HostedInstance {
         Ok(())
     }
 
-    /// Main-bus port layout enumerated at load.
+    /// Current main-bus port layout, including successful activation-time
+    /// negotiation.
     pub fn port_layout(&self) -> Vst3HostedPortLayout {
         self.port_layout
     }
@@ -2471,10 +2472,11 @@ impl Vst3HostedInstance {
             .unwrap_or(0)
     }
 
-    /// Activate for processing: stereo effect (2-in/2-out) or instrument
-    /// (0-in/2-out) bus arrangement, 32-bit samples, `setupProcessing`, main
-    /// buses activated, `setActive(true)`. Unsupported negotiation fails with
-    /// the stable `layout_unsupported` token, same as the CLAP path.
+    /// Activate for processing by negotiating the available main buses to a
+    /// stereo effect (2-in/2-out) or instrument (0-in/2-out), then selecting
+    /// 32-bit samples, calling `setupProcessing`, activating the main buses,
+    /// and calling `setActive(true)`. Unsupported negotiation fails with the
+    /// stable `layout_unsupported` token, same as the CLAP path.
     pub fn activate(
         &mut self,
         sample_rate_hz: f64,
@@ -2484,12 +2486,12 @@ impl Vst3HostedInstance {
         if self.state == HostedInstanceState::Active {
             return Err(Vst3HostingError::new("already_active"));
         }
-        if !self.port_layout.is_supported_stereo_processor() {
+        if self.audio_bus_layout.main_output.is_none() {
             return Err(Vst3HostingError::new("layout_unsupported"));
         }
         unsafe {
             let processor = vtable_of::<AudioProcessorVTable>(self.processor);
-            let has_audio_input = self.port_layout.main_input_channels > 0;
+            let has_audio_input = self.audio_bus_layout.main_input.is_some();
 
             // VST3 requires the arrangement array to cover every declared bus,
             // including inactive auxiliaries. Preserve each auxiliary layout
@@ -2539,6 +2541,13 @@ impl Vst3HostedInstance {
             {
                 return Err(Vst3HostingError::new("layout_unsupported"));
             }
+            if let Some(index) = self.audio_bus_layout.main_input {
+                self.audio_bus_layout.input_channels[index] = 2;
+            }
+            if let Some(index) = self.audio_bus_layout.main_output {
+                self.audio_bus_layout.output_channels[index] = 2;
+            }
+            self.port_layout = self.audio_bus_layout.port_layout();
 
             if ((*processor).can_process_sample_size)(self.processor, K_SAMPLE32) != K_RESULT_OK {
                 return Err(Vst3HostingError::new("sample_size_unsupported"));

@@ -5,7 +5,8 @@
 //! Skips gracefully when `rustc` is unavailable (the fixture pattern).
 
 use signal_plugin_vst3::fixture::{
-    compile_vst3_fixture, rustc_available, VST3_FIXTURE_CLASS_ID_HEX, VST3_FIXTURE_GAIN,
+    compile_vst3_fixture, compile_vst3_fixture_with_default_bus_channels, rustc_available,
+    VST3_FIXTURE_CLASS_ID_HEX, VST3_FIXTURE_GAIN,
 };
 use signal_plugin_vst3::{current_vst3_platform, Vst3HostAdapter, Vst3HostedInstance};
 
@@ -125,6 +126,35 @@ fn hosted_instance_loads_activates_and_processes_the_fixture() {
     drop(session);
     instance.deactivate().expect("deactivate");
     assert!(instance.deactivate().is_err(), "double deactivate rejected");
+}
+
+#[test]
+fn hosted_instance_negotiates_a_mono_default_layout_to_stereo() {
+    if !rustc_available() {
+        eprintln!("skipping: rustc unavailable for the VST3 fixture");
+        return;
+    }
+    let directory = unique_fixture_dir("mono-default");
+    let bundle = compile_vst3_fixture_with_default_bus_channels(
+        &directory.path,
+        "plugin:vst3:signal-fixture-mono-default",
+        "Signal VST3 Mono Default Fixture",
+        1,
+    )
+    .expect("mono-default fixture should compile");
+
+    let mut instance = Vst3HostedInstance::load(&bundle, VST3_FIXTURE_CLASS_ID_HEX)
+        .expect("mono-default fixture should load");
+    assert_eq!(instance.port_layout().main_input_channels, 1);
+    assert_eq!(instance.port_layout().main_output_channels, 1);
+
+    instance
+        .activate(48_000.0, 1, 256)
+        .expect("mono-default fixture should negotiate stereo");
+    assert!(instance.port_layout().is_stereo_effect());
+    instance
+        .process_session()
+        .expect("negotiated stereo layout should build a process session");
 }
 
 #[test]

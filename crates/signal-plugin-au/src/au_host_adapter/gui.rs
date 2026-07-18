@@ -155,6 +155,7 @@ mod macos {
     type MsgSendVoid = unsafe extern "C" fn(*mut c_void, *mut c_void);
     type MsgSendVoidId = unsafe extern "C" fn(*mut c_void, *mut c_void, *mut c_void);
     type MsgSendVoidPoint = unsafe extern "C" fn(*mut c_void, *mut c_void, NSPoint);
+    type MsgSendVoidUsize = unsafe extern "C" fn(*mut c_void, *mut c_void, usize);
     type MsgSendUiView =
         unsafe extern "C" fn(*mut c_void, *mut c_void, *mut c_void, NSSize) -> *mut c_void;
     #[cfg(target_arch = "aarch64")]
@@ -184,6 +185,11 @@ mod macos {
 
     unsafe fn msg_void_point(receiver: *mut c_void, selector: *mut c_void, argument: NSPoint) {
         let send: MsgSendVoidPoint = std::mem::transmute(objc_msgSend as unsafe extern "C" fn());
+        send(receiver, selector, argument)
+    }
+
+    unsafe fn msg_void_usize(receiver: *mut c_void, selector: *mut c_void, argument: usize) {
+        let send: MsgSendVoidUsize = std::mem::transmute(objc_msgSend as unsafe extern "C" fn());
         send(receiver, selector, argument)
     }
 
@@ -374,6 +380,13 @@ mod macos {
         // the title bar or clip one edge. Anchor every embedded editor to the
         // host content origin while retaining the factory-provided size.
         msg_void_point(view, sel("setFrameOrigin:"), NSPoint { x: 0.0, y: 0.0 });
+
+        // The plugin owns changes to its outer frame. Do not let AppKit grow
+        // that frame merely because Soundcheck resizes the bootstrap parent
+        // around it: the AU host polls the live frame as the plugin's desired
+        // size, so a width/height-sizable mask creates an unbounded feedback
+        // loop. This does not affect autoresizing inside the plugin view.
+        msg_void_usize(view, sel("setAutoresizingMask:"), 0);
 
         // [parent addSubview:view]
         msg_void_id(parent, sel("addSubview:"), view);
