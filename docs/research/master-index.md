@@ -74,7 +74,8 @@ Finch and Loophole.
 
 ## Next Task
 
-Run Batch 29.7AA Stage A. Implement only the fixed sliced frequency-adaptive
-representation selected by memo 014. Prove identity, channel relations,
-boundaries, duration-independent working memory, linear work, and repeat before
-relation-owned material transport. Keep production and Batch 29.8 closed.
+Batch 29.7AA Stage A has passed the fixed sliced representation selected by
+memo 014. Run Stage B once with the frozen relation-owned material transport.
+Run synthetic and exact mechanics first, then the `48`-row calibrated stereo
+gate. Stop before the long mono corpus on any miss. Keep production and Batch
+29.8 closed.

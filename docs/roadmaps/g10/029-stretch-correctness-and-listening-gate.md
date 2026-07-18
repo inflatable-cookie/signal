@@ -2187,17 +2187,17 @@ to the rejected full-length coefficients.
 
 ### Batch 29.7AA - Relation-Owned Sliced Material Proof
 
-- [ ] Stage A: implement only the fixed `16384/8192/512` sliced frame with the
+- [x] Stage A: implement only the fixed `16384/8192/512` sliced frame with the
   frozen `4096/2048/1024` atom supports and `750 Hz`/`6 kHz` ownership
   boundaries
-- [ ] prove identical outer windows
+- [x] prove identical outer windows
   `h[n] = sin(pi (n + 0.5) / 16384)` satisfy exact two-slice square partition,
   the inner painless dual reconstructs each slice, and combined identity stays
   at or below `1e-12` peak error
-- [ ] require exact crop, coverage, conjugate closure, silence, hard pan, swap,
+- [x] require exact crop, coverage, conjugate closure, silence, hard pan, swap,
   polarity, scaled duplicate, reflected boundaries, and repeat across short,
   non-aligned, and multi-slice lengths `[1, 4095, 8192, 12289, 220500]`
-- [ ] prove at most two active slices, peak live coefficient memory independent
+- [x] prove at most two active slices, peak live coefficient memory independent
   of source duration across `[8192, 65536, 220500]`, and counted
   analysis/synthesis work equals fixed per-slice cost times slice count; stop
   before transport on any Stage A miss
@@ -2219,6 +2219,13 @@ to the rejected full-length coefficients.
 
 Evidence: one Stage A sliced identity/boundedness report, then at most one Stage
 B objective report. Any miss closes this family.
+
+Stage A passes. Peak identity error is `4.44e-16`; conjugate closure and all six
+mechanics categories have zero failures. The five identity lengths require
+`[2, 2, 2, 3, 28]` slices. Boundedness rows hold at two live slices and `86016`
+peak live coefficients while counted work remains exactly `1111425` units per
+slice. Evidence hash: `0830ec12fa0bcde7`. Stage B is now open once; listening
+and product work remain closed.
 
 ### Batch 29.8 - Listening And Dynamic Checkpoint
 
@@ -3439,11 +3446,17 @@ B objective report. Any miss closes this family.
   `16384/8192/512` sliced frame with a two-window square partition, explicit
   relation interpolation, and one final stop-gated proof. No listening or
   product lane opens.
+- 2026-07-18: Batch 29.7AA Stage A passes the frozen sliced-frame gate. All
+  five identity lengths reconstruct at `4.44e-16` peak error with zero
+  conjugate, crop, coverage, silence, relation, boundary, repeat, or finite
+  failures. Two slices are live, peak live coefficient count stays `86016`,
+  and counted work is exactly `1111425` units per slice. Evidence hash
+  `0830ec12fa0bcde7`. Stage B may run once; listening and product work remain
+  closed.
 
 ## Next Task
 
-Run Batch 29.7AA Stage A. Implement only the fixed `16384/8192/512` sliced
-frame and prove exact identity, channel relations, boundaries,
-duration-independent peak working memory, linear counted work, and repeat.
-Keep material transport, listening, product surfaces, and Batch 29.8 closed
-until Stage A passes.
+Run Batch 29.7AA Stage B once. Add the frozen relation-owned material transport
+to the passing sliced frame. Run synthetic and exact mechanics first, then the
+`48`-row calibrated stereo gate. Stop before the long mono corpus on any miss.
+Keep listening, product surfaces, and Batch 29.8 closed until full passage.

@@ -1,6 +1,6 @@
 # Offline Time-Stretch Synthesis
 
-Status: relation-owned sliced material proof selected
+Status: sliced identity passed; relation-owned material proof ready
 Owner: dsp
 Updated: 2026-07-18
 Contract refs: `046`, `082`
@@ -1456,9 +1456,15 @@ coefficients only approximate the full-length transform, so coefficient parity
 with 29.7Y is neither promised nor gated. Supports, crossovers, material law,
 transient law, diffusion, seed, peak map, and quality thresholds remain frozen.
 
+Stage A passes. The fixed frame reconstructs all five frozen lengths with
+`4.44e-16` peak error, zero conjugate-closure error, zero mechanics failures,
+at most two live slices, and a duration-independent `86016`-coefficient bound.
+Counted work is exactly `1111425` units per slice. Evidence hash:
+`0830ec12fa0bcde7`.
+
 ## Next Task
 
-Run Batch 29.7AA Stage A. Implement only the fixed sliced representation and
-prove identity, channel relations, boundaries, duration-independent working
-memory, linear work, and repeat. Keep relation-owned material transport,
-listening, product-facing surfaces, and Batch 29.8 closed until Stage A passes.
+Run Batch 29.7AA Stage B once. Add the frozen relation-owned material transport
+to the passing sliced frame, then run synthetic and mechanics gates followed by
+the `48`-row stereo gate. Stop before the long mono corpus on any miss. Keep
+listening, product-facing surfaces, and Batch 29.8 closed until full passage.

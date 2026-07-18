@@ -162,6 +162,7 @@ remain closed.
 
 ## Next Task
 
-Run Batch 29.7AA Stage A. Implement only the fixed sliced representation and
-its identity, relation, boundary, bounded-memory, linear-work, and repeat proof.
-Keep material transport closed until Stage A passes.
+Stage A has passed the fixed sliced representation and boundedness proof. Run
+Batch 29.7AA Stage B once. Add the frozen relation law and material operator,
+then run synthetic and exact mechanics followed by the `48`-row calibrated
+stereo gate. Stop before the long mono corpus on any miss.

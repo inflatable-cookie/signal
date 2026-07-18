@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; relation-owned sliced material proof selected
+Status: active; sliced identity passed, relation-owned material proof ready
 Owner: dsp
 Updated: 2026-07-18
 Related contracts: `046`, `048`, `049`
@@ -4039,6 +4039,13 @@ diffusion curve, seed, scale, peak map, relation law, slice geometry, or gate
 changes after the candidate starts. Any Stage A or Stage B miss closes this
 family. Passage alone opens Batch 29.8 listening.
 
+Stage A passes with zero structural, crop, coverage, silence, relation,
+boundary, repeat, and finite-value failures. Peak reconstruction error is
+`4.44e-16`; conjugate closure is exact after explicit real-spectrum pair
+construction. At most two slices are live. Peak live coefficient count remains
+`86016` across the frozen boundedness lengths. Counted work is exactly
+`1111425` units per required slice. Evidence hash: `0830ec12fa0bcde7`.
+
 The clean-room boundary permits papers and prior Signal evidence only. No
 external code, expression, constants, masks, or random sequence transfers.
 Paper review is not patent freedom-to-operate clearance. Product, listening,
@@ -4046,7 +4053,7 @@ dynamic ratio, realtime, routing, and cache work remain closed.
 
 ## Next Task
 
-Run Batch 29.7AA Stage A under Rule 31J. Implement only the fixed sliced frame
-and its identity, relation, boundary, bounded-memory, linear-work, and repeat
-proof. Keep material transport, Batch 29.8, and all product-facing work closed
-until Stage A passes.
+Run Batch 29.7AA Stage B once under Rule 31J. Add the frozen relation law and
+29.7Y material operator to the passing sliced frame. Run synthetic and exact
+mechanics first, then the `48`-row calibrated stereo gate. Stop before the long
+mono corpus on any miss. Keep Batch 29.8 and all product-facing work closed.
