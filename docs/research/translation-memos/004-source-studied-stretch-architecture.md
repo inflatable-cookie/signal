@@ -149,6 +149,6 @@ Memo 019 does not reopen this rejected prototype. It selects a different
 complete kernel in which exclusive scale ownership, synchronized all-channel
 phase-state selection, conditional linked trajectories, and per-channel
 synthesis are indivisible. Batch 29.7AK passes fixed mechanics and closes at
-the sample-rate/duration capacity boundary. Batch 29.7AL and memo 020 select a
-normalized sliced Stage A. Run Batch 29.7AM under Rule 31T; do not resume this
-memo's implementation or Rule 30AB.
+the sample-rate/duration capacity boundary. Batch 29.7AM validates memo 020's
+normalized sliced frame. Run Batch 29.7AN under Rule 31U for guided boundary
+mechanics only; do not resume this memo's implementation or Rule 30AB.

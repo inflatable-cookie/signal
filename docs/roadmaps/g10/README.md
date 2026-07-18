@@ -482,13 +482,18 @@ Current stretch status:
   and state rings remove duration-sized storage; one global state update owns
   both active layers. Rule 31T opens identity and inert boundary-token
   mechanics only.
+  Batch 29.7AM passes at evidence hash `0407f765c7d84375`: peak combined
+  identity error is `4.44e-16`, outer partition error is `6.66e-16`,
+  conjugacy is exact, active-layer high-water is two, and every structural,
+  mechanics, finite, token, and overflow check passes. Rule 31U opens only
+  synchronized guided-state mechanics across the frozen slice boundary.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7AM Stage A under Rule 31T. Prove normalized sliced
-identity, fixed memory/work and overflow results, and one inert state token
-crossing slice boundaries. Keep guided material policy, stretched audio,
-holdout, listening, product surfaces, and Batch 29.8 closed.
+Run `g10.029` Batch 29.7AN under Rule 31U. Prove every guided state branch and
+the four channel mechanics across the frozen normalized slice boundary. Keep
+material policy, stretched quality audio, objective evidence, holdout,
+listening, product surfaces, Batch 29.7AO, and Batch 29.8 closed.

@@ -143,8 +143,8 @@ Signal tree.
 ## Next Task
 
 Batch 29.7AK validates the fixed `48 kHz` mechanics kernel, then closes its
-whole-source integration. Batch 29.7AL and memo 020 select one normalized
-two-slice integration: `H=F/100`, `N=32H`, fixed live storage, and one global
-state update shared by both active layers. Run Batch 29.7AM Stage A under Rule
-31T. Keep guided material policy, stretched audio, concealed listening, the
-holdout, Batch 29.8, and product work closed.
+whole-source integration. Batch 29.7AM validates memo 020's normalized
+two-slice representation at hash `0407f765c7d84375`. Run Batch 29.7AN under
+Rule 31U to carry the synchronized state across the frozen slice boundary.
+Keep material policy, stretched quality audio, objective evidence, concealed
+listening, the holdout, Batch 29.7AO, Batch 29.8, and product work closed.

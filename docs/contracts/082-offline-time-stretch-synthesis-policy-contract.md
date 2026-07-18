@@ -1,6 +1,6 @@
 # 082 Offline Time-Stretch Synthesis Policy Contract
 
-Status: active; normalized sliced-frame Stage A next
+Status: active; guided slice-boundary mechanics next
 Owner: dsp
 Updated: 2026-07-18
 Related contracts: `046`, `048`, `049`
@@ -4526,9 +4526,49 @@ It must also show that one state token crosses an outer-slice boundary without
 reset or double update. Do not run the material policy, stretch audio, objective
 rows, listening, holdout, or product work. A miss closes the integration.
 
+Batch 29.7AM passes. The exact geometry, memory, work, and overflow rows match
+this rule. Peak combined identity error is `4.440892098500626e-16`; outer
+partition error is `6.661338147750939e-16`; conjugacy is exact. Structural,
+mechanics, nonfinite, token reset/duplicate/capacity, and overflow failures are
+zero. Active token high-water is two and maximum coefficient storage is
+`645120 Complex64` slots. Evidence hash: `0407f765c7d84375`. No guided policy,
+stretched audio, objective, listening, or holdout result exists.
+
+### Rule 31U: guided state mechanics across normalized slices
+
+Batch 29.7AN may adapt only the passing Rule 31R synchronized channel-state
+mechanics to the frozen Rule 31T representation. Geometry, atom ownership,
+outer and inner synthesis laws, evidence hash, work/memory ceilings, capacity
+errors, and overflow behavior do not move.
+
+One global common-lattice index owns each state decision. Exactly one
+persistent all-channel predecessor state crosses slice creation and
+retirement. A decision runs once, then supplies both active layers while each
+layer and channel retains its own magnitude and current analysis-relative
+phase. A slice may not own, reset, duplicate, interpolate, or independently
+normalize state. Relation projection and post-synthesis image repair remain
+closed.
+
+Use deterministic scripted guidance only to exercise the five Rule 31R state
+branches: reset, attack, ordinary, unlocked, and compatible locked borrowing.
+Do not run the material classifier or tune any material threshold. Prove each
+branch plus duplicate equality, mono parity, silent-peer isolation, and channel
+swap at `1e-6` or better on interior frames and immediately before, at, and
+after slice creation and retirement. State-update count must equal `Q(L)`;
+reset, duplicate-update, missed-update, third-layer, capacity, nonfinite, and
+repeat failures must be zero. Peak-region high-water remains at most `P` and
+active-layer high-water remains two.
+
+Report guided atom and region visits separately from Rule 31T structural work.
+No storage or scan may grow with render duration. Any mechanics or capacity
+miss closes the integration before policy work. Do not render stretched
+quality audio, run objective rows, listen, access the holdout, or open dynamic
+ratio, realtime, product work, Batch 29.7AO, or Batch 29.8.
+
 ## Next Task
 
-Run Batch 29.7AM Stage A under Rule 31T. Prove only the normalized sliced frame,
-fixed memory/work bounds, and one state token crossing slice boundaries. Keep
-material policy, stretched audio, objective evidence, holdout, listening,
-Batch 29.8, and product work closed.
+Run Batch 29.7AN under Rule 31U. Adapt the passing Rule 31R synchronized state
+mechanics to the frozen Rule 31T lattice and prove every state branch and four
+channel mechanics across slice boundaries. Keep material policy, stretched
+quality audio, objective evidence, holdout, listening, Batch 29.7AO, Batch
+29.8, and product work closed.

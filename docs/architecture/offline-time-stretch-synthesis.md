@@ -1,6 +1,6 @@
 # Offline Time-Stretch Synthesis
 
-Status: normalized sliced-frame Stage A next
+Status: guided slice-boundary mechanics next
 Owner: dsp
 Updated: 2026-07-18
 Contract refs: `046`, `082`
@@ -1715,9 +1715,21 @@ Rule 31T opens only the normalized representation identity and an inert state-
 token boundary proof. Guided mechanics and objective audio remain later,
 separate stop gates.
 
+Batch 29.7AM passes at evidence hash `0407f765c7d84375`. Combined identity is
+exact within `4.44e-16`, outer partition error is `6.66e-16`, conjugacy is
+exact, and every structural, mechanics, finite, token, and overflow check
+passes. Prepared coefficient high-water remains `645120 Complex64` slots and
+active-layer high-water is two. The representation is now frozen.
+
+Rule 31U opens the next seam only: one persistent synchronized all-channel
+state crossing slice creation and retirement. A common-lattice decision runs
+once and feeds both active layers without moving peer magnitude or analysis-
+relative phase. Scripted guidance exercises mechanics; material classification,
+policy tuning, and quality audio remain closed.
+
 ## Next Task
 
-Run Batch 29.7AM Stage A under Rule 31T. Prove normalized sliced identity,
-fixed memory/work bounds, overflow behavior, and one inert state token across
-slice boundaries. Keep guided material policy, stretched audio, the concealed
-holdout, listening, dynamic ratio, realtime, and product-facing work closed.
+Run Batch 29.7AN under Rule 31U. Prove all guided state branches and channel
+mechanics across the frozen normalized slice boundary. Keep material policy,
+stretched quality audio, the concealed holdout, listening, dynamic ratio,
+realtime, and product-facing work closed.

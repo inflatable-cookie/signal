@@ -6,6 +6,8 @@ mod hash;
 #[cfg(not(debug_assertions))]
 mod material_phase;
 #[cfg(not(debug_assertions))]
+mod normalized_sliced_frame;
+#[cfg(not(debug_assertions))]
 mod sliced_frame;
 #[cfg(not(debug_assertions))]
 mod sliced_material;
@@ -236,9 +238,25 @@ fn build_representation_for(
     sample_rate_hz: usize,
     common_hop: usize,
 ) -> Representation {
-    assert_eq!(fft_frames % SUPPORT_FRAMES[0], 0);
+    build_representation_for_geometry(
+        fft_frames,
+        sample_rate_hz,
+        common_hop,
+        SUPPORT_FRAMES,
+        CROSSOVER_HZ,
+    )
+}
+
+fn build_representation_for_geometry(
+    fft_frames: usize,
+    sample_rate_hz: usize,
+    common_hop: usize,
+    support_frames: [usize; 3],
+    crossover_hz: [usize; 2],
+) -> Representation {
+    assert_eq!(fft_frames % support_frames[0], 0);
     assert_eq!(fft_frames % common_hop, 0);
-    let centers = frequency_centers(fft_frames, sample_rate_hz);
+    let centers = frequency_centers(fft_frames, sample_rate_hz, support_frames, crossover_hz);
     let mut taps = vec![Vec::<(usize, f64)>::new(); centers.len()];
     for bin in 0..fft_frames {
         let right_index = centers.partition_point(|center| *center <= bin) % centers.len();
@@ -271,7 +289,12 @@ fn build_representation_for(
         .zip(taps)
         .map(|(center, taps)| Band {
             center,
-            scale: scale_for_bin(absolute_bin(center, fft_frames), fft_frames, sample_rate_hz),
+            scale: scale_for_bin(
+                absolute_bin(center, fft_frames),
+                fft_frames,
+                sample_rate_hz,
+                crossover_hz,
+            ),
             taps,
         })
         .collect::<Vec<_>>();
@@ -319,14 +342,19 @@ fn build_representation_for(
     }
 }
 
-fn frequency_centers(fft_frames: usize, sample_rate_hz: usize) -> Vec<usize> {
+fn frequency_centers(
+    fft_frames: usize,
+    sample_rate_hz: usize,
+    support_frames: [usize; 3],
+    crossover_hz: [usize; 2],
+) -> Vec<usize> {
     let nyquist = fft_frames / 2;
-    let crossover_bins = CROSSOVER_HZ.map(|hz| (hz * fft_frames / sample_rate_hz).min(nyquist));
-    let spacing = SUPPORT_FRAMES.map(|support| fft_frames / support);
+    let crossover_bins = crossover_hz.map(|hz| (hz * fft_frames / sample_rate_hz).min(nyquist));
+    let spacing = support_frames.map(|support| fft_frames / support);
     let mut positive = vec![0_usize];
     let mut center = 0;
     while center < nyquist {
-        let scale = scale_for_bin(center, fft_frames, sample_rate_hz);
+        let scale = scale_for_bin(center, fft_frames, sample_rate_hz, crossover_hz);
         let boundary = match scale {
             Scale::Long => crossover_bins[0],
             Scale::Middle => crossover_bins[1],
@@ -348,11 +376,16 @@ fn frequency_centers(fft_frames: usize, sample_rate_hz: usize) -> Vec<usize> {
     centers
 }
 
-fn scale_for_bin(bin: usize, fft_frames: usize, sample_rate_hz: usize) -> Scale {
+fn scale_for_bin(
+    bin: usize,
+    fft_frames: usize,
+    sample_rate_hz: usize,
+    crossover_hz: [usize; 2],
+) -> Scale {
     let frequency_hz = bin * sample_rate_hz / fft_frames;
-    if frequency_hz < CROSSOVER_HZ[0] {
+    if frequency_hz < crossover_hz[0] {
         Scale::Long
-    } else if frequency_hz < CROSSOVER_HZ[1] {
+    } else if frequency_hz < crossover_hz[1] {
         Scale::Middle
     } else {
         Scale::Short

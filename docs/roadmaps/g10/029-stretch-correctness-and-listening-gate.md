@@ -2565,32 +2565,40 @@ formula.
 
 ### Batch 29.7AM - Normalized Sliced Frame Stage A
 
-- [ ] implement only Rule 31T geometry preparation for `8`, `44.1`, and
+- [x] implement only Rule 31T geometry preparation for `8`, `44.1`, and
   `48 kHz`; return `UnsupportedGeometry` or `CapacityExceeded` before work on
   every declared miss
-- [ ] prove the three exact geometry and atom-count rows, exhaustive frequency
+- [x] prove the three exact geometry and atom-count rows, exhaustive frequency
   ownership, `K=32`, tap bound, positive frame operator, and canonical inner
   dual
-- [ ] prove the outer sine square partition and combined sliced identity at or
+- [x] prove the outer sine square partition and combined sliced identity at or
   below `1e-12` across short, nonaligned, boundary-impulse, and multislice
   lengths at every proof rate
-- [ ] prove crop, two-layer coverage, conjugacy, silence, hard pan, swap,
+- [x] prove crop, two-layer coverage, conjugacy, silence, hard pan, swap,
   polarity, scaled duplicate, whole-render reflection, finite values, and
   repeat hashes
-- [ ] report `S(L)` slice counts, `Q(L)` state-token counts, every Rule 31T
+- [x] report `S(L)` slice counts, `Q(L)` state-token counts, every Rule 31T
   memory term, exact structural work counts, and duration-independent high-
   water across at least three lengths
-- [ ] advance one inert state token once per global common-lattice index and
+- [x] advance one inert state token once per global common-lattice index and
   prove it crosses slice creation/retirement without reset or duplicate update
-- [ ] stop on any miss; do not add guided material policy, stretch audio, run
+- [x] stop on any miss; do not add guided material policy, stretch audio, run
   objective rows, listen, access the holdout, or open product work
 
 Evidence: one normalized sliced identity, mechanics, work, memory, boundary-
-token, and overflow report. This card is ready under Rule 31T.
+token, and overflow report. This card passes under Rule 31T.
+
+Decision: freeze evidence hash `0407f765c7d84375`. Peak combined identity
+error is `4.440892098500626e-16`; outer partition error is
+`6.661338147750939e-16`; conjugacy is exact. All structural and mechanics
+failure counters, nonfinite counts, token reset/duplicate/capacity failures,
+and overflow failures are zero. Active token high-water is two. The exact
+three-rate geometry, memory, and work rows match Rule 31T; maximum coefficient
+storage is `645120 Complex64` slots. No guided or quality result exists.
 
 ### Batch 29.7AN - Guided State Slice-Boundary Mechanics
 
-- [ ] open only after 29.7AM passes; freeze its geometry, hashes, work/memory
+- [x] open only after 29.7AM passes; freeze its geometry, hashes, work/memory
   ceilings, and overflow behavior
 - [ ] adapt the passing 29.7AK synchronized channel state to one global sliced
   lattice without relation projection, independent overlap normalization, or
@@ -2601,8 +2609,8 @@ token, and overflow report. This card is ready under Rule 31T.
 - [ ] keep material tuning, objective rows, listening, holdout, and product
   work closed
 
-Evidence: one boundary-complete guided mechanics report. This card is pending
-29.7AM passage.
+Evidence: one boundary-complete guided mechanics report. This card is ready
+under Rule 31U.
 
 ### Batch 29.7AO - One Complete Objective Gate
 
@@ -3933,10 +3941,18 @@ Evidence: at most one complete objective report. This card is blocked on
   source/output slabs, guidance halo, phase/region state, overlap, and FFT
   scratch replace duration-sized storage. Rule 31T opens representation and
   inert boundary-token mechanics only. No renderer or audio result exists.
+- 2026-07-18: Batch 29.7AM passes normalized sliced-frame Stage A at evidence
+  hash `0407f765c7d84375`. Peak combined identity error is `4.44e-16`; outer
+  partition error is `6.66e-16`; conjugacy is exact. All structural,
+  mechanics, finite, token, and overflow failures are zero. Active-slice
+  high-water is two and the maximum coefficient term remains `645120`
+  `Complex64` slots. Rule 31U opens only guided state mechanics across this
+  frozen boundary; no quality policy or audio gate opens.
 
 ## Next Task
 
-Run Batch 29.7AM Stage A under Rule 31T. Prove the normalized sliced identity,
-fixed memory/work bounds, overflow results, and one inert state token crossing
-slice boundaries. Keep guided material policy, stretched audio, objective
-evidence, holdout, listening, product surfaces, and Batch 29.8 closed.
+Run Batch 29.7AN under Rule 31U. Adapt the passing synchronized channel-state
+mechanics to the frozen normalized slice lattice and prove every state branch
+plus the four channel mechanics across slice creation and retirement. Keep
+material tuning, stretched quality audio, objective evidence, holdout,
+listening, product surfaces, and Batch 29.8 closed.

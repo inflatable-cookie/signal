@@ -1,6 +1,6 @@
 # Bounded Normalized Sliced Integration
 
-Status: promoted
+Status: validated
 Date: 2026-07-18
 Roadmap: `g10.029`, Batch 29.7AL
 Contract: `082`, Rules 31S and 31T
@@ -110,8 +110,15 @@ cross-rate integration.
 Do not add material policy, stretch audio, objective rows, listening, holdout,
 dynamic ratio, realtime, routing, cache, or product work in the first proof.
 
+Batch 29.7AM validates the selection at evidence hash `0407f765c7d84375`.
+Peak combined identity error is `4.440892098500626e-16`; outer partition error
+is `6.661338147750939e-16`; conjugacy is exact. Geometry, ownership, fixed
+memory/work, boundary-token, finite, repeat, and overflow checks all pass.
+Active-layer high-water is two and maximum coefficient storage remains
+`645120 Complex64` slots. No guided or sound-quality claim follows.
+
 ## Next Task
 
-Run Batch 29.7AM Stage A under Rule 31T. Prove all three geometry rows, combined
-identity, fixed work/memory and overflow results, and one inert state token
-crossing slice boundaries.
+Run Batch 29.7AN under Rule 31U. Apply only the synchronized state mechanics to
+this frozen representation and prove every state branch and four channel
+mechanics across slice creation and retirement.
