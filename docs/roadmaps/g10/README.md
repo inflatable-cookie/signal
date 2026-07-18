@@ -551,7 +551,8 @@ when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7AX under Rule 31AA. Commit the complete unchanged
-failure-first order and thresholds before generating audio, then execute only
-through the first hard miss. Keep tuning, retry, listening, holdout, product
-surfaces, and Batch 29.8 closed.
+Run the frozen `g10.029` Batch 29.7AX sequence under Rule 31AA: corrected
+mechanics, unchanged synthetic matrix, then one corrected stereo corpus run.
+Stop at the first hard miss; enter mono and long-development only after prior
+passage. Keep tuning, retry, listening, holdout, product surfaces, and Batch
+29.8 closed.

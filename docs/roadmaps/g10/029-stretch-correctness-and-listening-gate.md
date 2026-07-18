@@ -2849,12 +2849,21 @@ representation hash remains `fdf90f6127749341`. No corpus audio ran.
 
 ### Batch 29.7AX - Corrected Direct Failure-First Objective Gate
 
-Status: ready
+Status: active, sequence frozen before audio
 
-- [ ] freeze the full evidence order and all unchanged thresholds before audio
+- [x] freeze the full evidence order and all unchanged thresholds before audio
 - [ ] run mechanics, synthetic, corrected stereo, mono, and long-development
   through the first hard miss with no sweep, repair, retry, or listening
 - [ ] open Batch 29.8 only after complete passage
+
+Frozen order: rerun all release direct representation, state, and Rule 31AA
+relation mechanics; run the unchanged six-source by three-ratio synthetic
+matrix; run the corrected `48`-row stereo corpus once; only after stereo
+passage run the six unchanged exact-source mono rows, then their unchanged
+long-development measurements. Representation must remain
+`fdf90f6127749341`; corrected state and relation receipts must remain
+`52d6b8b2bb6edff0` and `425400ebb580b3e1`. All AU synthetic and corpus
+thresholds remain exact. Stop at the first miss.
 
 ### Batch 29.8 - Listening And Dynamic Checkpoint
 
@@ -4251,7 +4260,7 @@ Status: ready
 
 ## Next Task
 
-Run Batch 29.7AX under Rule 31AA. First freeze the complete unchanged failure-
-first evidence order and thresholds in a separate preregistration change. Then
-run the corrected candidate only through the first hard miss. Keep tuning,
-retry, listening, holdout, product surfaces, and Batch 29.8 closed.
+Run the preregistered Batch 29.7AX sequence under Rule 31AA. Rerun mechanics,
+then synthetic, then the corrected stereo corpus, stopping at the first hard
+miss. Enter mono and long-development only after complete prior passage. Keep
+tuning, retry, listening, holdout, product surfaces, and Batch 29.8 closed.

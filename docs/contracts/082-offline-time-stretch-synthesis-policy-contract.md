@@ -5128,8 +5128,32 @@ representation remains `fdf90f6127749341`. The former state hash
 `430543f8e1dce721` remains the pre-correction baseline, not the corrected
 mechanics receipt. No corpus audio ran.
 
+Batch 29.7AX carries AU's objective gates forward unchanged. Before corrected
+candidate audio, freeze this failure-first order:
+
+1. rerun all release direct representation, state, and Rule 31AA relation
+   mechanics; require hashes `fdf90f6127749341`, `52d6b8b2bb6edff0`, and
+   `425400ebb580b3e1`
+2. run the unchanged silence, tone, noise, impulse, mixed, and transient
+   synthetic sources at `0.75`, `1.5`, and `2.0`; retain every AU structural,
+   finiteness, repeat, terminal-state, channel-mechanics, guidance, and fixed-
+   capacity requirement
+3. after synthetic passage, run the corrected `48`-row stereo corpus once;
+   require zero calibrated and structural failures, exact repeat, at least
+   `245/384` improved local windows, at most `13/48` Signal-relative local-row
+   failures, and maximum normalized-Gram residual at or below
+   `0.01744693815260`
+4. after stereo passage, run the unchanged six exact-source mono rows; require
+   zero hard failures and no row-complete regression against current Signal
+5. after mono passage, run those rows' unchanged long-development metrics;
+   require zero hard failures and no row-complete regression against current
+   Signal
+
+Stop at the first miss. No sweep, repair, retry, fallback, listening, export,
+concealed read, holdout access, or threshold change is permitted. Only full
+passage may open Batch 29.8.
+
 ## Next Task
 
-Run Batch 29.7AX under Rule 31AA. Freeze and commit the complete unchanged
-failure-first order and thresholds before generating audio, then execute only
-through the first hard miss.
+Run the frozen Batch 29.7AX sequence under Rule 31AA through the first hard
+miss. Enter mono and long-development only after complete prior passage.

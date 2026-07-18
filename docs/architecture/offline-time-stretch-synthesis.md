@@ -1890,7 +1890,7 @@ capacity, or synthesis field moved, and no corpus audio ran.
 
 ## Next Task
 
-Run Batch 29.7AX under Rule 31AA. Freeze and commit the full unchanged failure-
-first evidence sequence before audio generation, then stop at the first hard-
-gate miss. Keep tuning, retry, listening, holdout, product work, and Batch 29.8
-closed.
+Run the frozen Batch 29.7AX sequence under Rule 31AA: corrected mechanics,
+unchanged synthetic evidence, then one corrected stereo corpus run. Stop at the
+first hard-gate miss. Mono and long-development require complete prior passage;
+tuning, retry, listening, holdout, product work, and Batch 29.8 remain closed.

@@ -111,6 +111,6 @@ pre-correction baseline. No corpus audio ran.
 
 ## Next Task
 
-Run Batch 29.7AX. Freeze and commit its full unchanged failure-first evidence
-order and thresholds before generating corrected candidate audio, then stop at
-the first hard miss.
+Run the frozen Batch 29.7AX sequence. Prove corrected mechanics, run the
+unchanged synthetic matrix, then run the corrected stereo corpus once. Stop at
+the first hard miss; mono and long-development require complete prior passage.
