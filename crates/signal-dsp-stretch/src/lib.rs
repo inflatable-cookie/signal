@@ -47,7 +47,6 @@ mod benchmark;
 mod cache_identity;
 mod corpus_report;
 mod formant_boundary;
-mod frequency_adaptive;
 mod hpr_separation;
 mod hybrid_trace;
 mod phase_gradient;
@@ -103,20 +102,6 @@ pub use corpus_report::{
     StretchExternalBenchmarkComparison, StretchExternalBenchmarkRender,
 };
 pub use formant_boundary::{measure_formant_boundary, StretchFormantBoundaryMeasurement};
-pub use frequency_adaptive::{
-    StretchCommonGridBoundaryReview, StretchCommonGridConditioningBank,
-    StretchCommonGridConditioningBinEvidence, StretchCommonGridConditioningChannelEvidence,
-    StretchCommonGridConditioningDirection, StretchCommonGridConditioningModeEvidence,
-    StretchCommonGridConditioningResidueEvidence, StretchCommonGridConditioningReview,
-    StretchCommonGridDualGuardEvidence, StretchCommonGridJacobiEvidence,
-    StretchCommonGridJacobiReview, StretchCommonGridPreconditionedReview,
-    StretchCommonGridProjectedPhaseEvidence, StretchCommonGridTailAtomEvidence,
-    StretchCommonGridTailAttributionEvidence, StretchCommonGridTailForm,
-    StretchCommonGridTailStage, StretchCommonGridTonePhaseEvidence,
-    StretchCommonGridWaveletEvidence, StretchCommonGridWaveletReview,
-    StretchFrequencyAdaptiveBandEvidence, StretchFrequencyAdaptiveEvidence,
-    StretchFrequencyAdaptiveReview,
-};
 pub use hpr_separation::{
     StretchHprAdditiveRender, StretchHprComponentEvidence, StretchHprSeparationEvidence,
     StretchHprSeparationReview,
@@ -2344,122 +2329,6 @@ impl OfflineHighQualityStretcher {
         input: &[Sample],
     ) -> StretchPhaseGradientRender {
         phase_gradient::stretch_phase_gradient_review_mono(input, self.ratio)
-    }
-
-    /// Run the report-only frequency-adaptive painless-frame reconstruction proof.
-    ///
-    /// This path performs analysis and canonical-dual synthesis without time
-    /// stretching or phase modification. Product routing and cache identity
-    /// never select it.
-    #[doc(hidden)]
-    pub fn frequency_adaptive_reconstruction_review_mono(
-        &self,
-        input: &[Sample],
-        sample_rate: SampleRate,
-    ) -> StretchFrequencyAdaptiveReview {
-        frequency_adaptive::frequency_adaptive_reconstruction_review_mono(input, sample_rate)
-    }
-
-    /// Run the report-only common-grid wavelet reconstruction proof.
-    #[doc(hidden)]
-    pub fn common_grid_wavelet_reconstruction_review_mono(
-        &self,
-        input: &[Sample],
-        sample_rate: SampleRate,
-    ) -> StretchCommonGridWaveletReview {
-        frequency_adaptive::common_grid_wavelet_reconstruction_review_mono(input, sample_rate)
-    }
-
-    /// Review identity reconstruction through the boundary-completion candidate.
-    #[doc(hidden)]
-    pub fn common_grid_boundary_reconstruction_review_mono(
-        &self,
-        input: &[Sample],
-        sample_rate: SampleRate,
-    ) -> StretchCommonGridBoundaryReview {
-        frequency_adaptive::common_grid_boundary_reconstruction_review_mono(input, sample_rate)
-    }
-
-    /// Review identity reconstruction through the endpoint-even preconditioned frame.
-    #[doc(hidden)]
-    pub fn common_grid_preconditioned_reconstruction_review_mono(
-        &self,
-        input: &[Sample],
-        sample_rate: SampleRate,
-    ) -> StretchCommonGridPreconditionedReview {
-        frequency_adaptive::common_grid_preconditioned_reconstruction_review_mono(
-            input,
-            sample_rate,
-        )
-    }
-
-    /// Attribute complete alias-block conditioning across the three frozen banks.
-    #[doc(hidden)]
-    pub fn common_grid_conditioning_attribution_review(
-        &self,
-    ) -> StretchCommonGridConditioningReview {
-        frequency_adaptive::common_grid_conditioning_attribution_review()
-    }
-
-    /// Prove the bounded cyclic Hermitian Jacobi eigensolver.
-    #[doc(hidden)]
-    pub fn common_grid_hermitian_jacobi_review(&self) -> StretchCommonGridJacobiReview {
-        frequency_adaptive::common_grid_hermitian_jacobi_review()
-    }
-
-    /// Measure common-grid phase scale and channel-delay compensation on a steady tone.
-    #[doc(hidden)]
-    pub fn common_grid_tone_phase_review_mono(
-        &self,
-        input: &[Sample],
-        sample_rate: SampleRate,
-        expected_frequency_hz: f64,
-    ) -> StretchCommonGridTonePhaseEvidence {
-        frequency_adaptive::common_grid_tone_phase_review_mono(
-            input,
-            sample_rate,
-            expected_frequency_hz,
-        )
-    }
-
-    /// Measure the same-column auxiliary derivative-filter frequency estimator.
-    #[doc(hidden)]
-    pub fn common_grid_derivative_tone_review_mono(
-        &self,
-        input: &[Sample],
-        sample_rate: SampleRate,
-        expected_frequency_hz: f64,
-    ) -> StretchCommonGridTonePhaseEvidence {
-        frequency_adaptive::common_grid_derivative_tone_review_mono(
-            input,
-            sample_rate,
-            expected_frequency_hz,
-        )
-    }
-
-    /// Review exact common-grid field projection and bounded phase assignment.
-    #[doc(hidden)]
-    pub fn common_grid_projected_phase_review_mono(
-        &self,
-        input: &[Sample],
-        ratio: f64,
-    ) -> StretchCommonGridProjectedPhaseEvidence {
-        frequency_adaptive::common_grid_projected_phase_review_mono(input, ratio)
-    }
-
-    /// Measure the complete canonical-dual synthesis-guard stop gate.
-    #[doc(hidden)]
-    pub fn common_grid_dual_guard_review(
-        &self,
-        source_frames: usize,
-    ) -> StretchCommonGridDualGuardEvidence {
-        frequency_adaptive::common_grid_dual_guard_review(source_frames)
-    }
-
-    /// Measure the fixed common-grid dual-atom tail-attribution matrix.
-    #[doc(hidden)]
-    pub fn common_grid_tail_attribution_review(&self) -> StretchCommonGridTailAttributionEvidence {
-        frequency_adaptive::common_grid_tail_attribution_review()
     }
 }
 
