@@ -70,18 +70,19 @@ clean-room and external engines remain comparators.
 
 The complete successor is frozen in
 `docs/architecture/offline-time-stretch-successor-brief.md` as
-`SourceAnchoredMultiresolutionPhaseField`. It uses three simultaneous,
-non-overlapping frequency-owned STFT scales on one absolute map, one-shot
-attack reassignment, coherent tracked tonal phase, dormant/reactivation state,
-and native-channel linked synthesis. That brief is the implementation
-authority; historical translation memos are evidence only.
+`EventSealedMultiresolutionPhaseField`. It finalizes sample-domain events ahead
+of synthesis, inserts them into one absolute source lattice, gives each event
+sample one non-zero analysis-window owner, and retains simultaneous exclusive
+STFT scales, coherent tracked tonal phase, dormant/reactivation state, and
+native-channel linked synthesis. That brief is the implementation authority;
+historical translation memos are evidence only.
 
 ## Candidate Isolation
 
 Successor work happens in a disposable branch or worktree. It does not add
 modules, hidden review methods, report modes, or test scaffolding to `main`
 before admission. One complete renderer runs the fixed structural gate, then
-the long-form mono pack, then independent linked-stereo review.
+the synthetic gate, long-form mono pack, and independent linked-stereo review.
 
 Failed candidate branches are removed. Their dominant failure is logged once.
 Repeated narrow variants require architecture reassessment.
@@ -95,5 +96,5 @@ ledger remains in git history at `1d1b02f1`.
 
 ## Next Task
 
-Run `g10.030` Batch 30.3 in one disposable branch or worktree. Implement the
-frozen successor without adding candidate surfaces to `main`.
+Run `g10.030` Batch 30.5 in one disposable worktree. Implement the frozen
+event-sealed successor without adding candidate surfaces to `main`.

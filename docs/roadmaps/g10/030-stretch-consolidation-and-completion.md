@@ -132,22 +132,68 @@ Dominant failure:
 - same-centre one-tick short reassignment cannot repair that early detector
   commit without changing the frozen architecture
 
-## Batch 30.4 - Admission Or Closure
+## Batch 30.4 - Reassess Candidate Architecture
 
-Status: ready for architectural reassessment
+Status: complete
 
-If the candidate passes:
+- [x] retained the Batch 30.3 failure as one complete-system rejection
+- [x] rejected a detector-radius, threshold, reset-tick, or row repair
+- [x] replaced the canonical brief with
+  `EventSealedMultiresolutionPhaseField`
+- [x] moved event detection ahead of synthesis through fixed lookahead
+- [x] inserted finalized event samples into the absolute source lattice
+- [x] gave every event sample one non-zero analysis-window owner and one mapped
+  synthesis-window owner
+- [x] froze detector, scheduler, transient, tonal, stereo, boundary, memory,
+  gate, rejection, cleanup, and admission behavior
+- [x] changed documentation only; production DSP and harness behavior remain
+  frozen
 
-- complete mono and independent linked-stereo review
-- merge the minimal renderer and regression surface
-- remove the displaced baseline or retain it only as an explicit fallback
-- update cache identity, promotion receipts, contract `046`, and product status
+Authority:
 
-If it fails:
+- `docs/architecture/offline-time-stretch-successor-brief.md`
+
+## Batch 30.5 - Event-Sealed Candidate Worktree
+
+Status: ready
+
+- create one disposable worktree from the Batch 30.4 commit
+- implement the complete brief without changing production routing
+- keep renderer, fixtures, diagnostics, and reports private to the worktree
+- run structural controls, including exact event-token and one-owner window
+  invariants
+- run the complete synthetic gate only after structural admission
+- stop before generating long-form audio
+- reject and delete the candidate on any miss
+- close the multiresolution phase-vocoder family if event placement or replicas
+  fail again
+
+## Batch 30.6 - Fixed-Ratio Admission Or Family Closure
+
+Status: blocked on Batch 30.5
+
+If Batch 30.5 passes:
+
+- generate and complete the fifteen-row long-form mono blind pack
+- complete linked-stereo structural evidence and independent listening
+- merge only the minimal admitted renderer and regression surface
+- update cache identity and promotion receipts deliberately
+
+If Batch 30.5 fails:
 
 - record the dominant complete-system failure once
-- remove the candidate branch
-- reassess the architecture under Contract 084 before another implementation
+- delete the candidate worktree and branch
+- retain the production baseline
+- close the multiresolution phase-vocoder family when Rule 7 applies
+
+## Batch 30.7 - Product Review
+
+Status: blocked on fixed-ratio promotion
+
+- review dynamic ratio and independent pitch composition
+- decide explicit fallback behavior for unreviewed paths
+- update Contract `046`, artifact/cache posture, and product status
+- keep RealtimePreview source fill in `g10.028`
 
 ## Completion Gate
 
@@ -160,7 +206,6 @@ If it fails:
 
 ## Next Task
 
-Run Batch 30.4 as an architecture reassessment under Contract `084`. Resolve
-the centered detector, fixed refinement interval, and same-centre short-scale
-ownership contradiction in one complete brief, or close the successor lane.
-Do not implement a second candidate in the reassessment batch.
+Run Batch 30.5 from the Batch 30.4 commit in one disposable worktree. Implement
+`EventSealedMultiresolutionPhaseField` exactly. Stop after structural and
+synthetic gates decide whether long-form listening audio may be generated.

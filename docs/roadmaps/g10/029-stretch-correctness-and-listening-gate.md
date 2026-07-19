@@ -81,5 +81,5 @@ worktree. Failed candidates do not accumulate in `main`.
 
 ## Next Task
 
-Treat this roadmap as evidence only. Run `g10.030` Batch 30.3 from the frozen
-successor brief in one disposable branch or worktree.
+Treat this roadmap as evidence only. Run `g10.030` Batch 30.5 from the frozen
+event-sealed successor brief in one disposable worktree.

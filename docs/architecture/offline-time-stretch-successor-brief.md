@@ -1,445 +1,467 @@
 # Offline Time-Stretch Successor Brief
 
-Status: rejected at Batch 30.3 synthetic gate
+Status: frozen for isolated Batch 30.5 implementation
 Owner: dsp
 Updated: 2026-07-19
 Contract: `084`
-Roadmap: `g10.030`, Batch 30.3
+Roadmap: `g10.030`, Batch 30.5
 
 ## Decision
 
-Build one `SourceAnchoredMultiresolutionPhaseField` renderer. It is a fixed-
-ratio, offline-only, native-channel phase vocoder with three simultaneous STFT
-scales, one absolute source/output map, one shared material state map, and one
-atomic all-channel phase commit.
+Build one `EventSealedMultiresolutionPhaseField` renderer. It is fixed-ratio,
+offline-only, native-channel, and Signal-owned. It combines:
 
-This is the only Batch 30.3 candidate. It is not a menu and does not authorize
-separate detector, window, phase, stereo, crossover, or tail variants.
+- one sample-domain event guide finalized ahead of synthesis
+- one event-conforming source lattice and absolute source/output map
+- three simultaneous, frequency-exclusive STFT scales
+- event-sealed nonstationary windows with one source owner per event sample
+- one coherent tonal phase field with dormant track state
+- one atomic linked-channel phase commit
 
-## Batch 30.3 Outcome
+This replaces the rejected `SourceAnchoredMultiresolutionPhaseField` brief.
+The Batch 30.3 failure remains in
+`docs/logs/2026-07/19-g10-030-stretch-candidate-rejection.md` and Git history.
+No part of that implementation survives as code or hidden review surface.
 
-The isolated implementation passed the structural gate and isolated-tone
-pitch rows. It failed the first anti-replica row at `0.75x`.
+The architecture uses public specimens only for broad structure: simultaneous
+frequency ownership, preliminary horizontal phase followed by coherent
+vertical correction, and native-channel relationship ownership. Signal does
+not copy external constants, tables, masks, thresholds, or control flow.
 
-The centered middle-scale detector committed an impulse onset `896` source
-samples early: source centre `7424`, refined event `7296`, actual event `8192`.
-The fixed `H/2` refinement interval and same-centre short-scale reassignment
-could not reach the actual event. The rendered primary landed `128` output
-samples late and a second peak landed `257` samples after the projection at
-amplitude `0.17113242`; the `-24 dB` ceiling was `0.063095726`.
+## Why The First Candidate Failed
 
-This is an architecture-level detector/scheduler alignment failure. Contract
-`084` rejects the candidate. The implementation, tests, and instrumentation
-were deleted with the disposable worktree. This brief remains rejection
-evidence, not implementation authority.
+The first guide used centered `2048`-sample spectra to trigger an event, then
+searched only `[x_k-H/2,x_k+H/2)`. An impulse entered the centered spectrum
+hundreds of samples before it entered that search interval or the same-centre
+short window. The one-shot token committed a silent location and disarmed.
 
-The candidate combines three supported architecture lessons:
+The replacement changes three connected owners together:
 
-- Rubber Band: simultaneous frequency-owned scales and material guidance
-  control one renderer; they are not independent full-band outputs.
-- Signalsmith: horizontal prediction precedes vertical correction, and one
-  content-selected channel phase decision preserves each peer's current
-  analysis-relative relation.
-- Signal's rejected work: full-band layer sums, post-hoc stereo projection,
-  independent branch crossfades, raw per-bin material switching, and segmented
-  event timelines do not return.
+1. boundary-aligned detector blocks locate the event inside the complete block
+   that produced novelty
+2. the scheduler inserts that exact event sample as an analysis centre before
+   synthesis reaches it
+3. every non-anchor analysis window is zero at that event sample, so the
+   source attack cannot enter several inverse frames
 
-No external implementation, constants, tables, masks, or control flow enter
-Signal. The candidate is Signal-owned and uses no production dependency.
+Changing only a detector threshold, refinement radius, or reset tick is not
+authorized.
 
-## Supported Candidate Domain
+## Supported Domain
 
 - mono or linked stereo; one or two channels
-- fixed output/input ratios from `0.5` through `2.0`, inclusive
-- finite `f32` input; empty input returns empty output without entering the
-  renderer
-- identity is a byte-exact copy
-- whole-buffer offline output with duration-independent working state apart
-  from the required output buffer
+- fixed output/input ratio from `0.5` through `2.0`, inclusive
+- finite `f32` input
+- empty input returns empty output
+- identity returns the input byte-exact
+- whole-buffer offline execution
+- borrowed input and required output buffer excluded from working-memory caps
 
-Requests outside that domain fail before rendering in the candidate worktree.
-They do not silently clamp, switch topology, or widen Batch 30.3. Dynamic
-ratio, pitch composition, RealtimePreview, cache routing, and product routing
-remain on the frozen production behavior until the fixed-ratio candidate is
-promoted and reviewed.
+Dynamic ratio, pitch composition, cache routing, RealtimePreview, and product
+routing remain on the frozen production behavior until fixed-ratio admission
+and product review. Unsupported requests fail before rendering; they do not
+clamp or select another candidate topology.
 
-## Transform And Frequency Ownership
+## Event Guide
 
-All scales use centered periodic square-root Hann analysis and synthesis
-windows:
+The event guide runs ahead of synthesis with fixed lookahead. It never derives
+event time from a centered synthesis spectrum.
 
-| Scale | FFT/window | Base ownership |
-| --- | ---: | --- |
-| long | `4096` | low frequencies |
-| middle | `2048` | middle frequencies and full-band guidance |
-| short | `1024` | high frequencies and one-shot attack reassignment |
+Constants are frozen:
 
-The common source analysis lattice is `H=256` samples. Every scale analyzes
-the same source centres. No scale runs an independent scheduler.
+- detector boundary interval `D=64` source samples
+- adjacent pre/post block length `A=256`
+- detector FFT length `512`
+- energy-rise refinement span `16`
+- flux history `32` detector boundaries
+- candidate merge distance `D`
+- log-magnitude floor `2^-80`
 
-Base crossover centres are `1/16` and `1/3` of Nyquist and initialize at the
-nearest middle-scale bins. For each control tick:
+At detector boundary `n_j=jD`, each native channel analyzes adjacent blocks
+`[n_j-A,n_j)` and `[n_j,n_j+A)`. Evaluate every integer `j` whose post block
+intersects `[0,L)`, plus the final `A`-sample guard needed to finalize the last
+token. Exterior samples are zero. Both blocks use a periodic square-root Hann
+and zero-pad to `512` before transformation.
 
-1. form a three-frame temporal median of the joint middle-scale magnitude,
-   zero-filling missing earlier guard frames
-2. choose the lowest-energy local minimum in `[1/32, 3/32]` of Nyquist for the
-   low crossover
-3. choose the lowest-energy local minimum in `[1/4, 5/12]` of Nyquist for the
-   high crossover
-4. retain the previous crossover if no local minimum exists
-5. require the new bin for three consecutive ticks before committing it
-6. move a committed crossover by at most one middle-scale bin per tick
+Per-bin joint magnitude is the square root of summed channel energy. Four fixed
+detector bands cover `[0,1/16)`, `[1/16,1/4)`, `[1/4,1/2)`, and
+`[1/2,Nyquist]`. For each band, positive log-magnitude flux is the sum of:
 
-Ties choose the lower-frequency bin. The lower scale owns bins below a
-crossover; the upper scale owns the crossover bin and bins above it. Ownership
-is evaluated in normalized frequency, then sampled on each scale. It is
-exhaustive and non-overlapping: one normalized frequency has one synthesis
-owner.
+`max(0, log(max(M_post,2^-80))-log(max(M_pre,2^-80)))`
 
-An `Attack` bin is reassigned to the short scale for its single event-commit
-tick, regardless of base band. The same bin is removed from its base owner for
-that tick. This is the only time-dependent resolution change. There is no
-full-band short render, layer blend, waveform crossfade, or duplicated attack.
+A band produces a candidate when flux exceeds `median+3*MAD` of its preceding
+`32` detector values and post-block energy exceeds pre-block energy. Missing
+history is zero. Ties use the lower frequency band.
 
-Each scale inverse-transforms only its owned coefficients. Scale outputs sum
-inside the same channel after per-scale overlap normalization.
+The candidate sample is not `n_j`. Search the source-supported part of the
+full post block, `[n_j,n_j+A) intersect [0,L)`, for the maximum positive
+joint-energy rise:
 
-## Source/Output Map And Scheduler
+`mean(E[n..n+16))-mean(E[n-16..n))`
 
-For input length `L`, requested ratio `r`, and exact target `T=round(L*r)`, the
-effective ratio is `q=T/L`. This `q`, not the caller's unrounded ratio, owns the
-render.
+Ties choose the earlier sample. This search interval must contain the future
+content that caused the adjacent-block novelty; it may not be clipped to a
+synthesis hop.
 
-Analysis centres are `x_k=kH` for every integer `k` whose long window intersects
-the source. Synthesis centres are calculated from the absolute map:
+Candidates within `D` samples form one token. The candidate with greatest
+summed excess above its band thresholds owns the token; ties choose the earlier
+sample. Band masks union. A token finalizes only after the detector cursor is
+at least `A` samples beyond it, so later observations cannot move it. Separate
+tokens are at least `D` samples apart. Detector histories continue through
+silence; exact joint silence emits no token and clears candidate state.
 
-`y_k=round(q*x_k)`
+The guide cursor stays at least `4096/2+A` source samples ahead of the next
+synthesis centre. Finalized tokens live in a fixed ring and expire after every
+analysis window that can intersect them has been synthesized.
 
-Negative centres are valid guard centres. Source reads outside `[0,L)` are
-zero. Output accumulation uses signed guarded coordinates and crops `[0,T)`.
-The scheduler processes all centres whose long synthesis window intersects the
-crop, then stops. It never pads the requested crop to satisfy coverage.
+## Source Map And Event-Conforming Scheduler
 
-The phase engine receives the actual source increment `H` and actual synthesis
-increment `y_k-y_(k-1)`. It never reconstructs a constant rounded hop. The map
-is monotonic; a source event at sample `e` owns output sample `round(q*e)` with
-at most `0.5` sample of projection error.
+For input length `L`, requested ratio `r`, and target `T=round(L*r)`, the
+effective ratio is `q=T/L`. Only `q` owns mapping.
 
-Ownership is explicit:
+Start with regular centres `kH`, `H=256`, inside `[0,L)`. Form one sorted source
+lattice from:
 
-- the planner owns `L`, `T`, `q`, guarded centre bounds, and scale capacities
-- the analyzer owns native-channel spectra at one source centre
-- the guide owns crossover, event, and terminal material decisions
-- the phase field owns all channel phases and track state for that tick
-- the synthesizer owns masks, inverse transforms, overlap rings, normalization,
+- regular centres
+- boundary anchors `0` and `L-1`
+- every finalized event sample `e`
+
+Remove a regular centre strictly nearer than `H/2` to an event anchor. Retain
+all event anchors, then sort and deduplicate. Equal boundary and event anchors
+are one centre. Event merging guarantees a minimum event/event increment of
+`D`; retained regular centres are at least `H/2` from an event. The lattice is
+strictly increasing.
+
+Each source centre `x_i` maps independently:
+
+`y_i=round(q*x_i)`
+
+The phase engine receives actual source increment `x_i-x_(i-1)` and actual
+synthesis increment `y_i-y_(i-1)`. It never reconstructs a constant hop.
+Boundary anchors and event anchors therefore own exact projected samples with
+at most `0.5` sample rounding error.
+
+Ownership is fixed:
+
+- detector owns finalized event samples and event bands
+- planner owns `L`, `T`, `q`, lattice construction, lookahead, and capacities
+- analyzer owns native-channel spectra at one lattice centre
+- material guide owns scale crossover and terminal atom state
+- phase field owns track continuity and all channel phases
+- synthesizer owns exclusive masks, inverse transforms, normalization rings,
   and exact crop emission
 
-No later stage may move an event, choose another scale, or repair a channel
-relationship.
+No downstream stage may move an event, create another token, repair a crest,
+or project stereo after synthesis.
 
-## Material Guide And Transient State Machine
+## Event-Sealed Analysis And Synthesis Windows
 
-Guidance is computed from native-channel middle-scale spectra. Joint magnitude
-is the square root of summed channel energy, so opposite-polarity content
-cannot cancel.
+Three scales share every source and synthesis centre:
 
-The guide maintains eight preceding ticks of joint magnitude and positive log-
-magnitude flux. A band onset occurs when both conditions hold:
+| Scale | FFT/window | Base frequency owner |
+| --- | ---: | --- |
+| long | `4096` | low |
+| middle | `2048` | middle and crossover guidance |
+| short | `1024` | high and event bands at anchors |
 
-- current band flux is greater than `median + 3*MAD` of those eight ticks
-- current band energy is greater than the preceding tick
+Each scale starts with matching centered periodic square-root Hann shapes.
+Boundary and event anchors then create deterministic source- and output-domain
+seals. Let `H_y=max(1,round(qH))` and
+`seal(d,R)=sin^2((pi/2)*clamp(d/R,0,1))`.
 
-The first eight ticks compare against zero history. Four bands are used:
-`[0, low)`, `[low, Nyquist/4)`, `[Nyquist/4, high)`, and
-`[high, Nyquist]`, using the committed crossovers. A band cannot re-arm until
-its flux falls to or below its rolling median.
+For source anchor `a` and non-anchor source centre `x_i`, multiply the analysis
+window by:
 
-For an armed onset, the event sample is the maximum positive rise in summed
-channel sample energy inside `[x_k-H/2, x_k+H/2)`. Ties choose the earlier
-sample. The event token is shared by every scale and channel.
+- `seal(a-n,H)` for `n<=a`, and zero for `n>a`, when `x_i<a`
+- `seal(n-a,H)` for `n>=a`, and zero for `n<a`, when `x_i>a`
 
-The attack spectrum applies the analysis-time linear phase ramp for `e-x_k`
-and the inverse synthesis-time ramp for `round(q*e)-y_k`. This reassigns the
-short-scale attack to the mapped event sample rather than merely resetting the
-nearest frame centre. Both ramps are common to all channels.
+For mapped anchor `z=round(q*a)` and synthesis centre `y_i`, apply the same
+rule to the synthesis window in output coordinates with radius `H_y`.
 
-Each owned atom commits exactly one terminal state in this order:
+Each multiplier is zero on the far side of its anchor, zero at the anchor, and
+one at its domain radius on the frame's own side. If several seals intersect a
+window, multiply them in increasing anchor order. The analysis frame centred
+at `a` and synthesis frame centred at `z` are unsealed relative to that anchor,
+but remain sealed against other anchors.
 
-1. `Silence`: joint magnitude is exactly zero; emit zero and clear active
-   synthesis ownership.
-2. `Attack`: the atom's positive log-magnitude flux exceeds its frame median
-   plus `3*MAD` and its band has an armed event; reassign it to the short scale
-   and reset the linked phase at the event tick.
-3. `TonalLocked`: the atom belongs to a qualified current peak track; use the
-   tracked coherent phase field.
-4. `ResidualUnlocked`: use ordinary instantaneous-frequency recurrence.
+Consequences are structural:
 
-An event token commits once. Overlapping frames after the event use
-`TonalLocked` or `ResidualUnlocked`; they cannot reset again from the same
-onset. The detector must re-arm before another `Attack`. This is the replica
-policy. There are no unity-ratio islands, duplicated source reads, attack
-layers, or post-render crest repair.
+- the anchor frame has weight `1` at its source event sample
+- every other analysis frame has weight `0` at that source sample
+- every other synthesis frame has weight `0` at its mapped output sample
+- the event sample enters one analysis frame, not several overlapping frames
+- dense events remain separate anchors and seal each other
+- overlap normalization, not a waveform crossfade, restores surrounding
+  non-event content
+
+This is the anti-replica owner. No attack layer, duplicated read, unity island,
+post-render suppression, crest repair, or tail repair is allowed.
+
+## Frequency Ownership And Material States
+
+Base crossover state comes from the joint middle-scale magnitude at the current
+event-conforming centre.
+
+- initialize low and high crossovers at `1/16` and `1/3` of Nyquist
+- search `[1/32,3/32]` and `[1/4,5/12]` for the lowest-energy local minimum
+- retain the prior bin when no minimum exists
+- require the desired bin continuously for at least `3H` source samples
+- move a committed crossover at most `ceil(delta_x/H)` middle-scale bins
+- break energy ties toward the lower bin
+
+Long owns below low, middle owns `[low,high)`, and short owns high and above.
+Ownership is sampled in normalized frequency and remains exhaustive and
+non-overlapping.
+
+At an event anchor, every normalized frequency inside a token's event bands is
+removed from its base owner and assigned to short for that anchor only. The
+same source event cannot occur in another frame because of the window seal.
+All scales still analyze and update phase state at every centre, including
+unowned frequencies.
+
+Each atom commits one state in this order:
+
+1. `Silence`: exact joint zero; emit zero and clear its active phase state.
+2. `AttackAnchor`: current centre owns a token and its band; short-scale phase
+   resets from current native-channel analysis at `round(q*e)`.
+3. `TonalLocked`: a qualified local peak track owns the atom.
+4. `ResidualUnlocked`: ordinary instantaneous-frequency recurrence.
+
+After an anchor, ordinary and tonal recurrence continue from the committed
+anchor phase. The token cannot reset again. Another attack requires another
+finalized event sample at least `D` samples away.
 
 ## Tonal Tracks And Coherent Phase
 
-Every scale and channel detects strict local magnitude maxima. A peak is
-qualified when it is non-zero and has existed for two consecutive ticks.
-Tracks are assigned monotonically by smallest predicted-bin distance, with a
-maximum move of two bins per tick. Ties choose the lower current bin, then the
-lower predecessor bin. Assignment is linear in bin count; no all-pairs search
-is allowed.
+Every scale and channel keeps its own peak topology. DC and Nyquist use
+one-sided maxima and remain explicitly real. Interior peaks use strict local
+maxima. A non-zero peak qualifies after two consecutive centres and at least
+`H` accumulated source age.
 
-Every scale updates its analysis and track state even when it does not own
-synthesis at that frequency. Crossover movement and one-tick attack
-reassignment therefore reveal already-current state; they never copy phase
-between scales or initialize a new branch at the ownership boundary.
+Track assignment is monotonic by smallest predicted-bin distance. Maximum
+movement is `ceil(2*delta_x/H)` bins, minimum one. Ties choose the lower current
+bin, then the lower predecessor bin. Assignment is linear in bin count.
 
-Each track stores current bin, preceding bin, instantaneous frequency, output
-phase, age, dormant age, and active state. A missing peak becomes `Dormant` for
-one scale-window span, `N_s/H` ticks. Its phase continues to advance at the
-last instantaneous frequency but it emits no magnitude. A peak within two bins
-may reactivate that state. A later or farther peak is a new track initialized
-from current analysis phase. Track storage is one fixed slot per non-negative
-frequency bin; overflow is impossible inside the declared domain.
+Each track stores current and preceding bin, instantaneous frequency, output
+phase, age in source samples, dormant source age, and active state. A missing
+peak remains dormant until source age exceeds that scale's window length. Its
+phase advances at its last instantaneous frequency but emits no magnitude. A
+peak inside the allowed movement bound may reactivate it; otherwise a new
+track starts from current analysis phase. Storage is one fixed slot per
+non-negative bin.
 
-For `TonalLocked`, build three complex phase predictions for the selected
-reference channel:
+Horizontal prediction uses actual source and synthesis increments. For a
+qualified reference-channel peak, coherent correction combines three complex
+predictions read from the same preliminary horizontal field:
 
-- ordinary horizontal tracked-peak recurrence
-- a low-to-high prediction from the first qualified peak found one, then four,
-  bins below
-- a high-to-low prediction from the first qualified peak found one, then four,
-  bins above
+- the peak's horizontal recurrence
+- the first qualified peak one, then four bins below
+- the first qualified peak one, then four bins above
 
-Neighbour predictions transport the neighbour's predicted phase by the
-current analysis-phase difference. Each prediction is weighted by its joint
-current magnitude. Missing observations contribute zero. The output phase is
-the argument of their complex sum. If the sum magnitude is below one quarter
-of total prediction weight, use horizontal recurrence. Current peak-relative
-analysis offsets then place the remaining region atoms.
-
-The two directional passes read the same preliminary horizontal field and
-commit together. Neither pass feeds the other. This prevents traversal order
-from becoming hidden phase state. `ResidualUnlocked` bypasses vertical
-prediction and keeps its ordinary recurrence. No random high-ratio diffusion
-is allowed.
+Neighbour predictions transport current analysis-phase difference and use
+joint current magnitude as weight. Missing observations contribute zero. If
+the complex sum magnitude is below one quarter of total weight, horizontal
+recurrence wins. Otherwise its argument owns the peak. Current peak-relative
+analysis offsets place the rest of the peak region. The two directional reads
+commit together; traversal order cannot feed itself. Residual atoms never use
+vertical correction. No random diffusion is allowed.
 
 ## Linked-Channel Ownership
 
-Stereo is analyzed and synthesized in native left/right channels. There is no
-mid/side transform and no independent mono renderer.
+Stereo remains native left/right. There is no mid/side transform, independent
+mono pair, channel sum, or post-render image projection.
 
-Scale ownership, crossovers, event tokens, terminal material state, traversal,
-and synthesis centres are shared. At every active atom, select the reference
-channel by greatest current magnitude. Equal magnitudes select the
-lexicographically greater `(real, imaginary)` analysis coefficient; identical
-coefficients are equivalent.
+Detector tokens, seals, lattice centres, crossovers, frequency ownership,
+terminal material state, and traversal order are shared. Per-channel spectra,
+magnitudes, and peak tracks remain native.
 
-The reference channel computes the selected terminal phase. Every peer keeps
-its own magnitude and current same-atom analysis relation:
+For each active atom, greatest current magnitude selects the reference
+channel. Equal magnitudes select lexicographically greater `(real,imaginary)`
+analysis coefficient. Identical coefficients are equivalent. The reference
+computes terminal phase. Every non-silent peer keeps its own magnitude and
+current same-atom relation:
 
-`phase_peer_out = phase_reference_out + wrap(phase_peer_in-phase_reference_in)`
+`phase_peer_out=phase_reference_out+wrap(phase_peer_in-phase_reference_in)`
 
-An exactly silent peer remains zero. The phase commit for all channels is
-atomic. No peer magnitude, channel sum, post-hoc image projection, or
-channel-local branch decision is allowed. Duplicate, mono-parity, silent-peer,
-and channel-swap mechanics are hard gates. Polarity and gain equivariance are
-reported diagnostics, not exact professional-renderer invariants.
+An exactly silent peer emits zero. Exact joint silence clears every channel's
+atom phase together. The all-channel commit is atomic. Duplicate, mono-parity,
+silent-peer, and channel-swap mechanics remain hard gates at `1e-6`.
 
-## Windowing, Boundaries, And Exact Length
+## Boundaries, Normalization, And Exact Length
 
-- periodic square-root Hann analysis and synthesis at all scales
-- real DC and Nyquist bins; explicit conjugate symmetry before inverse FFT
-- zero exterior support; no reflection, wrap, source-tail anchor, or hidden
-  content extension
-- one normalization ring per scale and channel accumulating analysis-window
-  times synthesis-window weight
-- divide only where the scale normalization exceeds `1e-12`; otherwise emit
-  zero for that scale
-- sum normalized scale samples once inside each channel
-- crop exactly `[0,T)`; no resize fill, tail fade, endpoint envelope, limiter,
-  loudness correction, or boundary repair
+- boundary anchors are always present at `0` and `L-1`
+- source support outside `[0,L)` is zero
+- every scale uses the matching source/output sealed window pair
+- DC and Nyquist are real; negative frequencies use explicit conjugate symmetry
+- one output and one normalization ring exist per scale and channel
+- normalization accumulates paired analysis-window times synthesis-window
+  weight
+- divide only above `1e-12`; otherwise emit zero for that scale
+- sum normalized scale samples once per channel
+- crop signed accumulation exactly to `[0,T)`
+- no resize fill, reflection, wrap, hidden extension, fade, limiter, loudness
+  correction, endpoint envelope, or boundary repair
 
-Any uncovered active crop sample is a structural failure. Identity bypasses
-the transform and returns the input byte-exact.
+Any uncovered active crop sample, non-finite normalization value, or event
+sample without exactly one non-zero analysis and mapped synthesis anchor owner
+is a structural failure.
 
 ## Memory, Determinism, And Cost
 
-Let `C<=2`, `S=4096+2048+1024`, and
-`B=(4096/2+1)+(2048/2+1)+(1024/2+1)`.
-Candidate working allocation, excluding the borrowed input and required
-`C*T` output samples, may not exceed:
+All storage allocates before the first detector boundary.
 
-- `2*C*S` complex transform/spectrum values
-- `6*C*B` scalar magnitude/phase/history values
-- `4*C*B` fixed peak-track records
-- `4*B` joint guidance/state values
-- `6*C*(4096+2H)` scalar overlap and normalization-ring values
-- `16H` scalar planner and event scratch values
+Main transform state keeps the prior candidate bounds for `C<=2`, three scale
+supports, per-channel spectra and phase histories, fixed per-bin tracks, and
+per-scale/channel overlap rings. Added fixed state is:
 
-All slabs allocate before the first frame. No allocation occurs in the frame
-loop. No collection or history grows with duration. A request that exceeds the
-declared channel, ratio, length-arithmetic, or slab bounds fails before audio
-is rendered.
+- `2*C*512` complex detector spectra
+- `4*32` scalar band-flux history values
+- `2*(4096+A)` scalar detector/sample-energy ring values
+- at most `76` event-token records, derived from
+  `ceil((4096+2A)/D)+4`
+- at most `96` pending source/synthesis-centre records
 
-Each tick performs three forward and three inverse FFTs per channel plus linear
-guidance, track, phase, mask, and overlap scans. Work is
-`O(C*sum(N_s log N_s))` per tick and `O(C*S)` state. Peak assignment must remain
-monotonic and linear.
+No frame, detector, token, or history collection grows with source duration.
+No allocation occurs in detector, frame, FFT, track, mask, inverse, overlap,
+or flush loops. Capacity overflow, length arithmetic overflow, unsupported
+channel count, or unsupported ratio fails before affected audio is emitted.
 
-Execution uses fixed traversal order, explicit tie rules, finite guards, and
-no random state. Two runs on the same supported target must be sample-bit
-identical. CPU and peak working heap are reported, not promotion proxies.
+The regular path performs one detector FFT pair per channel every `D` samples
+and three forward/inverse scale pairs per retained centre. Event insertion can
+add at most one centre per `D` source samples. Worst-case work is bounded and
+linear in duration with FFT factors; typical event density is reported, never
+used as an acceptance proxy.
+
+Fixed traversal, explicit tie rules, real-bin rules, finite guards, and no
+random state make repeated output sample-bit identical on the same supported
+target.
 
 ## Fixed Admission Sequence
 
-Failure at any step stops the sequence.
+Failure stops the sequence.
 
 ### 1. Structural Gate
 
 Run mono and stereo at `0.5`, `0.75`, `1.0`, `1.5`, and `2.0` over empty,
-one-sample, shorter-than-short-window, exact-window, silence, impulse, boundary-
-active, tone, deterministic-noise, and mixed inputs.
+one-sample, sub-window, exact-window, silence, isolated and dense impulses at
+every `H` phase, boundary-active, tone, deterministic-noise, and mixed inputs.
 
 Pass requires:
 
 - identity sample-bit equality
 - exact `round(L*r)` output length
 - finite output and normalization state
-- monotonic map and event projection error at most `0.5` sample
-- no uncovered active crop samples
-- OfflineHighQuality integrity: at most `0.5` frame length drift, `7 dB`
-  active-endpoint RMS change, `0` added silence frames, and `6 dB` positive
-  peak growth
+- strictly monotonic source lattice and map error at most `0.5` sample
+- every declared impulse token at its source sample; soft-onset refinement
+  within `D`
+- exactly one non-zero analysis-window owner at every event sample and one
+  non-zero synthesis-window owner at its mapped output sample
+- no uncovered active crop sample
+- OfflineHighQuality integrity: `0.5` frame length, `7 dB` active endpoints,
+  `0` added silence, and `6 dB` positive peak-growth limits
 - sample-bit equality across two runs
-- working allocation within the formula above and identical working-slab
-  counts and capacities for matched five-second and sixty-second renders
+- working slabs within the frozen caps and identical capacities for matched
+  five-second and sixty-second renders
 - duplicate stereo equals mono duplication, silent peer remains silent, and
   channel swap swaps output, each within `1e-6`
 
 ### 2. Synthetic Quality Gate
 
-Use the retained pitch, event-placement, dense-replica, transient-detail,
-tonal-texture, and linked-stereo measurements at `0.75`, `1.5`, and `2.0`.
+Use retained pitch, event-placement, dense-replica, transient-detail,
+tonal-texture, and linked-stereo rows at `0.75`, `1.5`, and `2.0`.
 
 Pass requires:
 
 - pitch error at most `5` cents on every isolated tone and chord partial
-- every declared source event matched once within `256` samples of
-  `round(q*event)`
+- every declared source event matched once within `256` samples of projection
 - no unmatched secondary event above `-24 dB` of its source event inside one
   long-window projected guard
 - transient crest growth at most `3 dB` and no event worse than the frozen
-  baseline at either the baseline's worst event or the candidate's worst event
-- no tone, chord, or pad row worse than the frozen baseline for unsupported-
-  bin energy, spectral residual, fast spectral movement, or short-time
-  envelope movement
-- at least half of the `1.5x` and `2.0x` tonal rows strictly improve both
+  baseline at either renderer's worst event
+- no tone, chord, or pad row worse than baseline for unsupported-bin energy,
+  spectral residual, fast spectral movement, or short-time envelope movement
+- at least half of `1.5x` and `2.0x` tonal rows strictly improve both
   unsupported-bin energy and fast spectral movement
-- all linked-stereo structural mechanics pass and every calibrated image,
-  interchannel-phase, delay, and local-relation row is no worse than the
-  frozen baseline
+- all stereo mechanics pass; every calibrated image, interchannel-phase,
+  delay, and local-relation row is no worse than baseline
 
-Moving a crest, replica, or tonal defect to another row fails. Aggregate wins
-cannot hide a row-complete regression.
+Moving a defect to another row fails. Aggregate wins do not hide a row.
 
 ### 3. Long-Form Mono Blind Gate
 
-Use one at-least-five-second mono source for each retained family: percussion,
-bass, vocals, pads/sustains, and full mix. Use ratios `0.75`, `1.5`, and `2.0`:
-fifteen source/ratio rows. For every row create two concealed, RMS-matched
-pairs with the existing `0.95` peak ceiling:
+Use one at-least-five-second mono source from percussion, bass, vocals,
+pads/sustains, and full mix at `0.75`, `1.5`, and `2.0`: fifteen rows. Create
+concealed, RMS-matched pairs under the retained `0.95` peak ceiling for:
 
 - candidate versus frozen Signal baseline
-- candidate versus the pinned external reference
+- candidate versus pinned external reference
 
-The current production note checker names historical ratios
-`0.75/1.25/1.5`. Contract `084` supersedes `1.25` with `2.0` for candidate
-admission because long expansion is the audible gap. Batch 30.2 changes no
-harness code; the disposable worktree owns this private pack. Admission may
-update the retained checker only if the candidate passes.
-
-Notes must cover transient definition and placement, tonal stability,
+Freeze notes on transient definition and placement, tonal stability,
 grain/ringing, blur/replicas, boundaries, loudness, and preference before the
 key opens.
 
-Pass requires:
-
-- no row marked unusable for blur, doubled attack, micro-echo, stutter, tonal
-  loss, pre-ringing, crest pop, boundary discontinuity, or arbitrary loudness
-- candidate preferred or tied against baseline on all fifteen rows, with a
-  preference on at least five and at least one preference at each ratio
-- candidate preferred or tied against the external reference on at least ten
-  rows, with no family losing at both `1.5x` and `2.0x`
-
-Listening is the authority. Objective results do not override a failed blind
-gate.
+Pass requires no unusable row; candidate preferred or tied against baseline on
+all rows with at least five preferences and one per ratio; candidate preferred
+or tied against external on at least ten rows with no family losing at both
+long-expansion ratios. Listening remains promotion authority.
 
 ### 4. Linked-Stereo Admission
 
-After mono passes, render the same families and ratios from linked-stereo
-sources. Repeat the structural stereo measurements, then require concealed
-listening by an eligible listener independent of the mono operator. The current
-operator's one-ear hearing does not satisfy this gate.
-
-Pass requires no image pull, width pumping, centre shift, channel echo, or
-one-sided transient damage judged worse than baseline, plus the same
-preferred-or-tied rule against baseline on all fifteen rows. If no eligible
-listener is available, promotion remains blocked; the gate is not waived.
+After mono passes, repeat the families and ratios in linked stereo. Require
+structural evidence and concealed listening by an eligible listener independent
+of the mono operator. The current operator's one-ear hearing does not satisfy
+this gate. No image pull, width pumping, centre shift, channel echo, or one-
+sided transient damage may be worse than baseline. Missing an eligible listener
+blocks promotion; it never waives the gate.
 
 ### 5. Product Review
 
-Only after fixed-ratio mono and linked stereo pass may work review dynamic
-ratio, pitch composition, cache identity, artifacts, and product routing.
+Only fixed-ratio mono and stereo promotion may open dynamic ratio, pitch
+composition, cache identity, artifact, and product routing review.
 RealtimePreview and render-plane source fill remain separate and paused.
 
 ## Rejection And Cleanup
 
 Any structural, synthetic, mono-listening, or stereo-listening miss rejects the
-complete candidate. Record one dominant cause and the stopped gate in the
-current-month log. Do not repair a row, sweep a threshold, add a selector, or
-retain the implementation as a review mode.
+whole candidate. Record the dominant cause and stopped gate once. Delete the
+disposable worktree and branch, including renderer, fixtures, reports, renders,
+and instrumentation. Do not repair a row, sweep detector constants, add a
+selector, or retain a review mode.
 
-Delete the disposable worktree and branch, including private fixtures, report
-modes, renders, and instrumentation. `main` remains on the frozen baseline.
-Two complete candidates failing for the same dominant cause force an
-architecture reassessment under Contract `084`.
+If this second complete candidate fails event placement or replicas, Contract
+`084` Rule 7 closes this multiresolution phase-vocoder family. Reassessment must
+choose another renderer family or retain the frozen baseline.
 
 ## Minimal Admission Surface
 
 If every fixed-ratio gate passes, merge only:
 
-- one private renderer module behind existing `OfflineHighQuality` fixed-ratio
+- one private renderer module behind existing fixed-ratio OfflineHighQuality
   mono and linked-stereo calls
 - structural and promoted synthetic regression tests
-- the minimum comparator/listening ratio update needed to guard promotion
-- the deliberate cache engine-version and promotion-receipt change
+- the minimum comparator/listening ratio update
+- deliberate cache engine-version and promotion-receipt changes
 
-The candidate does not become a public review path. Temporary diagnostics,
-generated audio, candidate names, and worktree-only fixtures are deleted.
-The displaced phase vocoder may remain only as an explicit internal fallback
-for unsupported ratios and unreviewed dynamic/pitch product paths. The product
-review must either promote those paths onto the successor or keep the fallback
-explicit; it may not silently mix engines.
+Temporary diagnostics, generated audio, candidate names, and worktree-only
+fixtures are deleted. The displaced renderer may remain only as an explicit
+fallback for unsupported ratios and unreviewed dynamic/pitch paths.
 
 ## Remaining Risks
 
-- hard exclusive crossovers may color or modulate material despite valley and
-  hysteresis control
-- one-tick short-scale attack reassignment may still soften low-frequency
-  attacks or create a scale-transition crest
-- the coherent vertical phase field may trade grain for tonal mutation
-- same-atom peer relation may not preserve every local stereo waveform
-  relationship after inverse overlap-add
-- the fixed `0.5..2.0` candidate domain may prove too narrow for later product
-  requirements
+- event seals may color sustained content or produce modulation around false
+  event tokens
+- inserted event centres may create variable-lattice sidebands
+- hard frequency crossovers may color polyphonic material
+- coherent vertical correction may trade grain for tonal mutation
+- same-atom peer relation may still lose local stereo relationships after
+  inverse overlap-add
+- detector FFT cost and worst-case event-centre density may exceed practical
+  offline targets despite bounded execution
 
-These are complete-renderer risks. They are judged through the fixed gates,
-not split into advance experiments.
+These are whole-renderer risks. The fixed gates judge them together.
 
 ## Next Task
 
-Create one disposable Batch 30.3 branch or worktree from the Batch 30.2 commit.
-Implement this renderer exactly, keep all candidate-only surfaces there, and
-stop after the structural and synthetic gates decide whether listening audio
-may be generated.
+Create one disposable Batch 30.5 worktree from the Batch 30.4 commit. Implement
+this renderer exactly. Stop after structural and synthetic gates decide whether
+long-form listening audio may be generated.

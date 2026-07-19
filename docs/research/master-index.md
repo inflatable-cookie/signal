@@ -91,5 +91,5 @@ current stretch execution authority.
 ## Next Task
 
 Treat the retained source studies as provenance for the frozen
-`SourceAnchoredMultiresolutionPhaseField` brief. Run `g10.030` Batch 30.3 from
-that brief; do not reopen a translation-memo or Batch 29.7BE sequence.
+`EventSealedMultiresolutionPhaseField` brief. Run `g10.030` Batch 30.5 from that
+brief; do not reopen a translation-memo or Batch 29.7BE sequence.
