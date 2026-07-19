@@ -5379,8 +5379,69 @@ direct peak-ownership topology and return to architecture selection. No
 renderer/corpus rerun, parameter sweep, tuning, repair, listening, export,
 holdout access, or production change is permitted.
 
+### Rule 31AF: direct material-state frequency-completion boundary
+
+Batch 29.7BD freezes AX at corrected DSP `f680947a`, preregistration
+`255427a5`, execution closeout `dad51432`, and stereo evidence
+`397128c177d3033e`; BC is frozen at mechanics `4d668379`, behavior-neutral
+proof split `552b3892`, preregistration `8098a652`, execution closeout
+`eadbe9a6`, synthetic evidence `ce696ab8cb37b17f`, and stereo evidence
+`b13c37cff1b58afa`. All prior thresholds and stereo-first stop states remain
+exact. No renderer or corpus command runs.
+
+BC changes all `48` candidate hashes, proving channel-local peak mechanics are
+active. It changes only four row outcomes: two `0.75x`, `16384`-frame,
+phase-`0.37` image rows gain one improved window; two corresponding
+phase-`0.00` image rows regress across the calibrated mid/side limit. No local-
+failure classification changes. AX and BC both retain `36/48` local failures
+and maximum normalized-Gram residual `0.7611955347641768`. Further peak-map,
+predecessor, borrowing, relation, or offset repair is closed as the active
+causal branch.
+
+All `24/24` BC tone rows fail local consistency. The `12` comparison-aligned
+rows have candidate interior IPD `1.153146..2.343541` radians, zero improved
+local windows, and maximum local residual `0.761196`; the `12` comparison-
+unaligned rows have interior IPD `0.00000298..0.00037522` and `39` improved
+windows. The comparison label is relative to a `1024`-point grid. On Signal's
+direct `8 kHz`, `640`-point long scale, the aligned `246.09375 Hz` tone is
+`0.3125` bin from the nearest bin, while the unaligned `248.984375 Hz` tone is
+only `0.08125` bin away. Both are below `750 Hz` and use one scale, excluding
+crossover and scale summation as causes of this split.
+
+The direct code computes fuzzy tonalness, noisiness, and transientness per atom
+and commits those raw ratios directly to atom-local terminal state. It has no
+material labels, modal frequency completion, or contiguous material-owned
+state ranges. Pinned R3 instead classifies H/P/R evidence, completes labels
+through a modal frequency filter, then uses bounded ranges to select reset,
+kick, unlock, and locked processing. Damskagg and Valimaki independently
+support fuzzy material evidence controlling different phase laws. The
+admissible missing seam is therefore `MaterialStateFrequencyCompletion` between
+fuzzy evidence and terminal state, not another peak-policy correction.
+
+Batch 29.7BE is implementation-free. It must freeze one Signal-owned label
+law, tie order, modal completion, contiguous range construction, and
+coefficient-only falsifier. The proof domain is the direct `8 kHz`, `640`-
+point long scale; frequencies `246.09375` and `248.984375 Hz`; phase relations
+`0.00` and `0.37`; and analysis advances for `0.75x`, `1.5x`, and `2.0x`.
+After the existing `19`-tick guidance halo and one predecessor priming step,
+the eventual mechanics report must include raw guidance, raw winner, completed
+label/range, terminal state, peak region, and deterministic hash.
+
+The no-audio proof must show the present fractional-bin-dependent state split,
+then require one stationary lobe to receive one stable completed range while
+transient and residual controls remain distinguishable. Phase relation,
+channel swap, magnitude, peak identity, scale ownership, state precedence,
+fixed capacity, finiteness, and repeat must not move. Failure closes this seam.
+Passage opens mechanics implementation only. Any objective audio requires a
+later, separately preregistered failure-first card.
+
+No Rubber Band expression, width, range, threshold, table, or constant may
+transfer. No sweep, tuning, renderer/corpus run, listening, export, holdout,
+mono, long-development, production, dynamic-ratio, realtime, routing, or Batch
+29.8 work is permitted.
+
 ## Next Task
 
-Run Batch 29.7BD under Rule 31AE. Use only retained AX/BC evidence and code to
-decide whether one causally adequate direct mechanism remains or the direct
-peak-ownership topology must close.
+Run Batch 29.7BE under Rule 31AF. Freeze the Signal-owned material label, modal
+completion, contiguous range, tie, and coefficient-only falsifier contract.
+Do not implement it or run audio in that batch.

@@ -74,6 +74,7 @@ Finch and Loophole.
 | [Direct Scale-Timeline Ownership](./translation-memos/021-direct-scale-timeline-ownership.md) | Reject unlocked over-linking and outer meta-slice projection; restore one direct coefficient timeline per exclusive scale | Promoted |
 | [Direct Scale-Timeline Preregistration](./translation-memos/022-direct-scale-timeline-preregistration.md) | Freeze direct physical geometry, absolute schedule, state ownership, boundaries, and fixed capacities; correct the multi-scale identity claim | Promoted |
 | [Direct Channel-Local Peak Topology](./translation-memos/023-direct-channel-local-peak-topology.md) | Reject the joint peak map; retain each requesting channel's peak location and borrow only a compatible frequency-aligned trajectory | Promoted for mechanics contract |
+| [Direct Material-State Frequency Completion](./translation-memos/024-direct-material-state-frequency-completion.md) | Close further peak-ownership repair; require modal frequency completion between fuzzy evidence and terminal phase state | Promoted for no-audio contract |
 
 ## Consumer Guidance
 
@@ -84,6 +85,6 @@ Finch and Loophole.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7BD under Rule 31AE. Compare retained AX/BC evidence and
-the direct phase/synthesis path without new audio, then identify one causally
-adequate mechanism or close the direct peak-ownership topology.
+Run `g10.029` Batch 29.7BE under Rule 31AF. Freeze one Signal-owned material
+label, modal completion, frequency-range, tie, and coefficient-only proof.
+Keep implementation and audio closed.

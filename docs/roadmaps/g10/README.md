@@ -567,13 +567,22 @@ Current stretch status:
   receipt and passes synthetic evidence, then rejects stereo at `40/48`
   calibrated failures, `159/384` improved windows, `36/48` local failures, and
   unchanged residual `0.7611955347641768`. Mono and long-development stay
-  closed. Batch 29.7BD is ready for retained-evidence convergence reassessment.
+  closed. Batch 29.7BD then closes retained-evidence convergence reassessment
+  without new audio. BC changes every candidate hash but moves neither the
+  dominant local-failure count nor the worst residual. All `24` tone rows fail
+  locally; the group `0.3125` bin from Signal's direct long grid has
+  `1.153146..2.343541` radian interior IPD and zero improved windows, while the
+  group only `0.08125` bin away stays below `0.000376` radians and improves
+  `39` windows. Signal commits raw atom-local fuzzy guidance directly to state;
+  the source-studied architecture completes material labels into frequency
+  ranges first. Rule 31AF closes further peak repair and opens implementation-
+  free Batch 29.7BE for that no-audio contract only.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7BD under Rule 31AE. Use retained AX/BC evidence and
-direct phase/synthesis code only to identify one causally adequate missing
-mechanism or close the direct peak-ownership topology.
+Run `g10.029` Batch 29.7BE under Rule 31AF. Freeze the Signal-owned material
+label, modal completion, contiguous range, tie, and coefficient-only falsifier
+contract. Keep implementation and audio closed.

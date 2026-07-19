@@ -1953,8 +1953,29 @@ either dominant failure signature. This closes objective execution before mono
 or long-development and reopens architecture-level causal assessment, not
 another local peak-policy experiment.
 
+Batch 29.7BD closes that assessment without new audio. BC changes all `48`
+candidate hashes, but only four image-row outcomes move; no local-failure
+classification changes. AX and BC both retain `36/48` local failures and the
+same `0.7611955347641768` worst residual. Channel-local peak mechanics remain
+valid, but peak ownership is closed as the active correction branch.
+
+The retained tone rows expose a different structural seam. All `24` fail
+locally. The comparison-aligned group has `1.153146..2.343541` radians of
+interior IPD and zero improved windows; the comparison-unaligned group stays
+below `0.000376` radians and improves `39` windows. The label refers to a
+`1024`-point comparison grid. Relative to Signal's `640`-point long scale, the
+bad `246.09375 Hz` group is `0.3125` bin from the nearest bin, while the good
+`248.984375 Hz` group is only `0.08125` bin away. Both are long-scale only.
+
+Signal currently maps atom-local fuzzy material ratios directly to terminal
+state. It has no label completion or contiguous material-owned frequency
+ranges. The source-studied architecture inserts a modal label-to-range layer
+before locked, unlocked, reset, and attack policy. Rule 31AF selects only that
+missing ownership seam for an implementation-free contract and bounded
+coefficient proof. It does not authorize another renderer or objective run.
+
 ## Next Task
 
-Run Batch 29.7BD under Rule 31AE. Compare retained AX/BC row evidence and audit
-the direct phase/synthesis path. Require one mechanism with causal reach over
-the unchanged hard signature or close this direct topology.
+Run Batch 29.7BE under Rule 31AF. Freeze one Signal-owned material label, modal
+completion, contiguous frequency-range, tie, and coefficient-only falsifier
+contract. Keep implementation and audio closed.

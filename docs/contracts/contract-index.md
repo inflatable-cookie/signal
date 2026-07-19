@@ -158,6 +158,6 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7BD under contract `082` Rule 31AE. Use retained AX/BC
-evidence and code only to identify one causally adequate direct mechanism or
-close the direct peak-ownership topology.
+Run `g10.029` Batch 29.7BE under contract `082` Rule 31AF. Freeze the
+Signal-owned material label, modal completion, contiguous range, tie, and
+coefficient-only falsifier contract. Keep implementation and audio closed.

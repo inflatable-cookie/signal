@@ -171,11 +171,11 @@ winner is established.
 
 ## Next Task
 
-Batch 29.7BA implements the clean-room mechanics contract and passes the full
-no-audio matrix. Batch 29.7BB freezes Signal-owned candidate
-`signal-direct-channel-local-peak-v1` and the unchanged failure-first evidence
-order. Batch 29.7BC passes mechanics and synthetic evidence but rejects stereo
-at `40/48` calibrated failures, `36/48` local failures, and unchanged worst
-residual `0.7611955347641768`. Run Batch 29.7BD as retained-evidence causal
-reassessment. Do not transfer Rubber Band expression, ranges, thresholds,
-tables, or constants.
+Batch 29.7BD closes channel-local peak ownership as the active correction
+branch. Retained tone evidence instead isolates a direct-grid split: the tones
+farther from Signal's `640`-point long-grid bins have `1.153146..2.343541`
+radian interior IPD, while the nearer group stays below `0.000376`. Signal
+commits raw per-atom fuzzy ratios directly to terminal state; R3 completes
+classifier labels into modal frequency ranges first. Batch 29.7BE may freeze
+one Signal-owned no-audio boundary proof for that seam. Do not transfer Rubber
+Band expression, widths, ranges, thresholds, tables, or constants.

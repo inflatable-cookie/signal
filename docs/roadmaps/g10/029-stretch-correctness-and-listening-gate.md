@@ -2985,18 +2985,42 @@ development did not run.
 
 ### Batch 29.7BD - Direct Topology Convergence Reassessment
 
-Status: ready
+Status: complete
 
-- [ ] freeze AX and BC code, retained reports, hashes, thresholds, and stop
+- [x] freeze AX and BC code, retained reports, hashes, thresholds, and stop
   states; generate no new renderer or corpus evidence
-- [ ] compare retained AX/BC rows by control, ratio, length, phase, and
+- [x] compare retained AX/BC rows by control, ratio, length, phase, and
   alignment, then audit direct phase and synthesis code for causal reach over
   the unchanged local-failure and worst-residual signature
-- [ ] name one source-supported missing mechanism with a bounded no-audio
+- [x] name one source-supported missing mechanism with a bounded no-audio
   falsifier and separately preregistered objective boundary, or close the
   direct peak-ownership topology and return to architecture selection; do not
   sweep, tune, repair, retry, listen, export, inspect holdout material, or open
   Batch 29.8
+
+Evidence: BC changes every candidate row hash but moves neither `36/48` local
+failures nor residual `0.7611955347641768`; only four image-row outcomes move.
+All `24` tone rows fail locally. The comparison-aligned group, which is
+`0.3125` bin off Signal's direct long grid, has `1.153146..2.343541` radian
+interior IPD and zero improved windows. The nominally unaligned group is only
+`0.08125` direct bin off and stays below `0.000376` radian interior IPD with
+`39` improved windows. Direct guidance commits raw per-atom fuzzy ratios
+straight to state, while the source-studied architecture completes labels into
+frequency ranges first. Rule 31AF closes further peak repair and selects only
+a no-audio material-state frequency-completion contract.
+
+### Batch 29.7BE - Material-State Frequency-Completion Contract
+
+Status: ready
+
+- [ ] freeze one clean-room label law, tie order, modal frequency completion,
+  and contiguous state-range construction without implementation
+- [ ] freeze the `8 kHz`, `640`-point coefficient-only fractional-bin
+  falsifier, raw/completed trace, analytic material controls, invariants,
+  capacity, and deterministic receipts
+- [ ] compile a mechanics-only implementation card after complete contract
+  closure; keep renderer/corpus audio and objective preregistration separate
+  and closed
 
 ### Batch 29.8 - Listening And Dynamic Checkpoint
 
@@ -4426,9 +4450,15 @@ Status: ready
   `159/384` improved windows, `36/48` local failures, and unchanged worst
   residual `0.7611955347641768`. Mono and long-development do not run. Batch
   29.7BD is ready for no-audio convergence reassessment.
+- 2026-07-19: Batch 29.7BD compares retained AX/BC evidence without rerunning
+  audio. Channel-local peak ownership changes every output hash but leaves the
+  dominant local count and worst residual exact. All tone rows fail locally,
+  with catastrophic interior IPD isolated to tones farther from Signal's own
+  long-grid bins. Rule 31AF closes further peak repair and selects one no-audio
+  material-state frequency-completion contract. Batch 29.7BE is ready.
 
 ## Next Task
 
-Run Batch 29.7BD under Rule 31AE. Use retained AX/BC rows and code only to
-identify one causally adequate missing direct mechanism or close the direct
-peak-ownership topology and return to architecture selection.
+Run Batch 29.7BE under Rule 31AF. Freeze the Signal-owned material label, modal
+completion, contiguous range, tie, and coefficient-only falsifier contract.
+Do not implement it or run audio.

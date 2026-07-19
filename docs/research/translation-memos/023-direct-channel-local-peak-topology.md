@@ -120,6 +120,8 @@ the dominant objective failure.
 
 ## Next Task
 
-Run Batch 29.7BD under Rule 31AE. Use retained evidence and code only to test
-whether one remaining direct mechanism can reach the unchanged failure
-signature; otherwise close this topology and return to architecture selection.
+Batch 29.7BD closes further peak-ownership repair. BC changes every candidate
+hash but leaves `36/48` local failures and residual `0.7611955347641768`
+unchanged. Memo 024 identifies atom-local material-state fragmentation as the
+remaining direct seam. Run Batch 29.7BE under Rule 31AF without implementation
+or audio.
