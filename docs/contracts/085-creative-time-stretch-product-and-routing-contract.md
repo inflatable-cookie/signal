@@ -220,6 +220,6 @@ harness mode, fixture, artifact schema, runtime route, or product-facing claim.
 
 ## Next Task
 
-Run `g10.031` Batch 31.3. Freeze one complete `DiffuseSpectral` brief for the
-`Dream` centre and controlled `Spectral`/`Rough` span. Preserve later `Cloud`
-and `Cyclic` seams. Do not implement DSP in that batch.
+Run `g10.031` Batch 31.4 in one disposable worktree under the frozen
+`DiffuseSpectral` brief. Stop on the first failed gate and delete rejected
+candidate state. Keep `Cloud`, `Cyclic`, and product routing closed.

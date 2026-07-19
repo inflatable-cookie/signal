@@ -263,6 +263,6 @@ and own a controlled `Spectral`/`Rough` span before a DSP branch opens.
 
 ## Next Task
 
-Execute `g10.031` Batch 31.3 only. Write one complete `DiffuseSpectral` brief
-for the frozen `Dream` centre and controlled `Spectral`/`Rough` span. Preserve
-the later `Cloud` and `Cyclic` seams. Do not implement DSP in that batch.
+Execute `g10.031` Batch 31.4 in one disposable worktree under
+`offline-creative-diffuse-spectral-brief.md`. Run structural admission before
+long-form audio. Keep `Cloud`, `Cyclic`, and product routing closed.

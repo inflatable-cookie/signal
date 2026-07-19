@@ -17,8 +17,8 @@ Updated: 2026-07-19
   production baseline remains active. `g10.029` is superseded after its
   rejected research code was removed. `g10.028` source-fill work remains
   paused. `g10.031` opens a separate creative `8x` architecture lane; Batch
-  31.2 froze its comparator-backed parameter space and Batch 31.3 is ready for
-  one complete diffusive brief.
+  31.2 froze its comparator-backed parameter space, Batch 31.3 froze one
+  complete diffusive brief, and isolated Batch 31.4 is ready.
 - audit evidence: `chorus/research/2026-06-11-signal-deep-audit.md` (phase
   one) and `docs/research/2026-06-11-post-demolition-assessment.md` (phase
   two)
@@ -58,5 +58,5 @@ If that cleanup has not happened, stay in the current generation and finish the 
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the current active-generation front door.
-Run `g10.031` Batch 31.3 for the complete diffusive brief. Keep the transparent
-successor program closed.
+Run isolated `g10.031` Batch 31.4 under the frozen diffusive brief. Keep the
+transparent successor program closed.

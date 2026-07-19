@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: active; Batch 31.3 ready
+Status: active; Batch 31.4 ready
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -140,17 +140,27 @@ No DSP, candidate harness, fixture, report mode, or public API enters `main`.
 
 ## Batch 31.3 - Diffusive Candidate Brief
 
-Status: ready
+Status: complete
 
-Freeze one buildable renderer: transform geometry, source map, phase-diffusion
-state, magnitude evolution, the `Dream` centre and controlled
-`Spectral`/`Rough` span, control mapping, later-owner seams, linked stereo,
-boundaries, exact length, memory, determinism, tests, rejection, and cleanup.
-Do not implement it in the same batch.
+- [x] freeze one long-window STFT topology and fractional source map
+- [x] freeze correlated phase diffusion, instantaneous-frequency carrier, and
+  dormant/reactivation state
+- [x] freeze magnitude evolution and exact `Dream`/`Spectral`/`Rough` laws
+- [x] freeze symmetric linked-stereo analysis, relation, and `space` ownership
+- [x] freeze boundaries, rolling normalization, exact length, determinism,
+  `32 MiB` working-state cap, and computational shape
+- [x] freeze structural, creative synthetic, mono, and independent stereo gates
+- [x] freeze isolated file shape, minimal admission, rejection, and deletion
+- [x] preserve unsupported `Cloud` and `Cyclic` owner seams
+- [x] change documentation only
+
+Authority:
+
+- `docs/architecture/offline-creative-diffuse-spectral-brief.md`
 
 ## Batch 31.4 - Isolated Diffusive Candidate
 
-Status: blocked on Batch 31.3
+Status: ready
 
 Implement one complete candidate in a disposable worktree. Admit structural
 and synthetic controls before long-form listening. Delete the worktree and
@@ -173,7 +183,7 @@ Closed until the diffusive owner passes:
 
 - [x] one product architecture and governing contract exist
 - [x] comparator target character is frozen
-- [ ] one complete diffusive brief exists
+- [x] one complete diffusive brief exists
 - [ ] one isolated diffusive candidate passes structural and synthetic gates
 - [ ] long-form mono listening passes at `4x`, `8x`, and `16x`
 - [ ] linked-stereo mechanics and independent listening pass
@@ -182,7 +192,7 @@ Closed until the diffusive owner passes:
 
 ## Next Task
 
-Execute Batch 31.3 only. Write one complete `DiffuseSpectral` implementation
-brief for the frozen `Dream` centre and controlled `Spectral`/`Rough` span.
-Preserve later `Cloud` and `Cyclic` owner seams. Stop before candidate DSP or
-harness implementation.
+Execute Batch 31.4 in one disposable worktree. Implement only the frozen
+`DiffuseSpectral` brief, then run its structural gate before producing
+long-form audio. Delete the worktree on failure. Do not open `Cloud`, `Cyclic`,
+overlap routing, dynamic ratio, cache, or product API work.

@@ -61,6 +61,9 @@ Current creative-stretch decision:
 It targets intentional `4x`-`16x` sound design and does not reopen the
 transparent successor lane.
 
+Frozen first-owner brief:
+[Offline Creative DiffuseSpectral Renderer Brief](../architecture/offline-creative-diffuse-spectral-brief.md).
+
 ## Translation Memos
 
 | Memo | Decision | Status |
@@ -100,6 +103,6 @@ transparent successor lane.
 ## Next Task
 
 Treat the retained source studies and rejected successor briefs as historical
-evidence. Use the frozen `g10.031` creative character anchors for Batch 31.3
+evidence. Run isolated `g10.031` Batch 31.4 under the frozen creative brief
 without reopening a translation memo, Batch 29.7BE, or the transparent
 successor family.

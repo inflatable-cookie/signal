@@ -466,5 +466,5 @@ no runtime or public Rust surface until separately promoted.
 
 ## Next Task
 
-Keep the existing tier behavior frozen. Run `g10.031` Batch 31.3 under Contract
-`085` to freeze the creative-stretch renderer brief before any new DSP path.
+Keep the existing tier behavior frozen. Run isolated `g10.031` Batch 31.4 under
+Contract `085`; do not change the existing public tier surface.

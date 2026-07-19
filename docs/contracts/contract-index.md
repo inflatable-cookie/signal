@@ -148,5 +148,5 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Keep Contract `084` closed. Run `g10.031` Batch 31.3 under Contract `085` to
-freeze the complete diffusive brief before a DSP candidate.
+Keep Contract `084` closed. Run isolated `g10.031` Batch 31.4 under Contract
+`085` and the frozen complete diffusive brief. Keep later owners closed.

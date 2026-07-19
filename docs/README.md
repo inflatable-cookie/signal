@@ -31,6 +31,7 @@ strict lane.
 - Rejected offline stretch successor: [architecture/offline-time-stretch-successor-brief.md](./architecture/offline-time-stretch-successor-brief.md)
 - Non-phase-vocoder feasibility: [architecture/offline-time-stretch-non-phase-vocoder-feasibility.md](./architecture/offline-time-stretch-non-phase-vocoder-feasibility.md)
 - Creative time-stretch study: [architecture/offline-creative-time-stretch-study.md](./architecture/offline-creative-time-stretch-study.md)
+- Creative DiffuseSpectral brief: [architecture/offline-creative-diffuse-spectral-brief.md](./architecture/offline-creative-diffuse-spectral-brief.md)
 - Graph and runtime feature reference: [architecture/graph-runtime-feature-reference.md](./architecture/graph-runtime-feature-reference.md)
 - Working rules: [contracts/001-working-rules.md](./contracts/001-working-rules.md)
 - Shared DSP boundary: [contracts/001-shared-dsp-and-host-boundary.md](./contracts/001-shared-dsp-and-host-boundary.md)
@@ -67,7 +68,6 @@ strict lane.
 
 ## Next Task
 
-Execute `g10.031` Batch 31.3 only. Freeze one complete `DiffuseSpectral` brief
-for the PaulX-centred `Dream` target and controlled `Spectral`/`Rough` span. Do
-not implement candidate DSP in that batch. Only drop into `specs/` when a
-strict lane is explicitly reopened.
+Execute `g10.031` Batch 31.4 in one disposable worktree under the frozen
+`DiffuseSpectral` brief. Run structural admission first and delete the worktree
+on failure. Only drop into `specs/` when a strict lane is explicitly reopened.

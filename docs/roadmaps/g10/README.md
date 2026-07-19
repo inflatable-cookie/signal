@@ -37,6 +37,8 @@ The 2026-07-19 consolidation reset is authoritative.
   comparator study without reopening the transparent successor lane. Batch
   31.2 captured the accessible comparator pack and froze a PaulX-centred
   parameter space with explicit spectral, rough, and cyclic character anchors.
+  Batch 31.3 froze one complete `DiffuseSpectral` renderer brief without adding
+  DSP or candidate surfaces to `main`.
 - `g10.028` RealtimePreview source-fill and all render-plane integration remain
   paused.
 
@@ -105,7 +107,7 @@ Do not start Loophole or Chorus planning from Signal internals.
 - `g10.030` `complete`
   - stretch consolidated; candidate families closed; frozen baseline retained
 - `g10.031` `active`
-  - creative target frozen; complete diffusive brief ready
+  - creative target and diffusive brief frozen; isolated candidate ready
 
 ## Stretch Boundary
 
@@ -131,6 +133,6 @@ renderer, public API, harness surface, or product route on `main`.
 
 ## Next Task
 
-Execute `g10.031` Batch 31.3 only. Freeze one complete `DiffuseSpectral` brief
-for the PaulX-centred `Dream` target and controlled `Spectral`/`Rough` span.
-Keep `g10.028` and render-plane integration paused.
+Execute `g10.031` Batch 31.4 in one disposable worktree under the frozen
+`DiffuseSpectral` brief. Run structural admission first. Keep `g10.028`, later
+creative owners, and render-plane integration paused.
