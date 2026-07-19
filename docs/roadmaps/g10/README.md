@@ -38,7 +38,11 @@ The 2026-07-19 consolidation reset is authoritative.
   31.2 captured the accessible comparator pack and froze a PaulX-centred
   parameter space with explicit spectral, rough, and cyclic character anchors.
   Batch 31.3 froze one complete `DiffuseSpectral` renderer brief without adding
-  DSP or candidate surfaces to `main`.
+  DSP or candidate surfaces to `main`. Batch 31.4 implemented that brief in a
+  disposable worktree. Structural controls passed, but neutral `Dream` at
+  `4x` raised deterministic-noise crest factor by `7.08 dB` against the frozen
+  `6 dB` ceiling. The candidate was deleted before listening. Batch 31.5 now
+  requires architecture-level crest-ownership reassessment.
 - `g10.028` RealtimePreview source-fill and all render-plane integration remain
   paused.
 
@@ -107,7 +111,7 @@ Do not start Loophole or Chorus planning from Signal internals.
 - `g10.030` `complete`
   - stretch consolidated; candidate families closed; frozen baseline retained
 - `g10.031` `active`
-  - creative target and diffusive brief frozen; isolated candidate ready
+  - first diffusive candidate rejected on synthetic crest growth; reassessment ready
 
 ## Stretch Boundary
 
@@ -133,6 +137,6 @@ renderer, public API, harness surface, or product route on `main`.
 
 ## Next Task
 
-Execute `g10.031` Batch 31.4 in one disposable worktree under the frozen
-`DiffuseSpectral` brief. Run structural admission first. Keep `g10.028`, later
-creative owners, and render-plane integration paused.
+Execute `g10.031` Batch 31.5 only. Reassess crest ownership at topology level
+before authorizing another diffusive candidate. Keep `g10.028`, later creative
+owners, and render-plane integration paused.

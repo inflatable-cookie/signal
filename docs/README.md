@@ -68,6 +68,6 @@ strict lane.
 
 ## Next Task
 
-Execute `g10.031` Batch 31.4 in one disposable worktree under the frozen
-`DiffuseSpectral` brief. Run structural admission first and delete the worktree
-on failure. Only drop into `specs/` when a strict lane is explicitly reopened.
+Execute `g10.031` Batch 31.5 only. Reassess the rejected `DiffuseSpectral`
+topology's stochastic crest ownership before authorizing another candidate.
+Only drop into `specs/` when a strict lane is explicitly reopened.

@@ -1,6 +1,6 @@
 # Offline Creative DiffuseSpectral Renderer Brief
 
-Status: frozen; implementation unopened
+Status: frozen historical brief; first candidate rejected
 Owner: dsp
 Updated: 2026-07-19
 Contract: `085`
@@ -27,6 +27,18 @@ later owners remain separate.
 This brief is clean-room architecture. External tools define audible regions
 only. Signal does not copy their source expression, constants, tables,
 thresholds, masks, or control flow.
+
+## Candidate Outcome
+
+Batch 31.4 implemented this brief once in a disposable worktree. Its structural
+controls passed. Creative synthetic admission stopped when neutral `Dream` at
+`4x` produced `7.08 dB` deterministic-noise crest-factor growth against the
+frozen `6 dB` limit. No limiter or crest-repair stage is authorized here, so
+the candidate was rejected and deleted before long-form listening.
+
+This file remains the exact record of the rejected topology. It is not
+authority for a parameter sweep or second implementation. Batch 31.5 must
+replace the topology-level crest decision or close the family.
 
 ## Supported Request
 
@@ -453,7 +465,7 @@ phase, smoothing, seed, or scalar sweeps.
 
 ## Next Task
 
-Create one disposable worktree and implement this brief as the sole Batch 31.4
-candidate. Run the structural gate before producing long-form audio. Do not
-open `Cloud`, `Cyclic`, overlap routing, dynamic ratio, cache, or product API
-work.
+Run Batch 31.5 architecture reassessment. Resolve stochastic crest ownership
+without tuning this rejected brief, adding a limiter, or opening another
+candidate. Keep `Cloud`, `Cyclic`, overlap routing, dynamic ratio, cache, and
+product API work closed.

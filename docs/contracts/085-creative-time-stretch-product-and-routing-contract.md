@@ -214,12 +214,16 @@ experiments.
 
 ## Current State
 
-This contract changes documentation only. It adds no public Rust enum, renderer,
-harness mode, fixture, artifact schema, runtime route, or product-facing claim.
-`OfflineHighQuality` remains byte-exact and Contract `084` remains closed.
+The first isolated `DiffuseSpectral` candidate passed its structural controls
+but failed creative synthetic admission: neutral `Dream` at `4x` exceeded the
+deterministic-noise crest-growth ceiling by `1.08 dB`. The rejected worktree
+and branch were deleted before listening. No public Rust enum, renderer,
+harness mode, fixture, artifact schema, runtime route, or product-facing claim
+entered `main`. `OfflineHighQuality` remains byte-exact and Contract `084`
+remains closed.
 
 ## Next Task
 
-Run `g10.031` Batch 31.4 in one disposable worktree under the frozen
-`DiffuseSpectral` brief. Stop on the first failed gate and delete rejected
-candidate state. Keep `Cloud`, `Cyclic`, and product routing closed.
+Run `g10.031` Batch 31.5 only. Reassess crest ownership at topology level and
+freeze one replacement decision before any second candidate. Keep `Cloud`,
+`Cyclic`, and product routing closed.

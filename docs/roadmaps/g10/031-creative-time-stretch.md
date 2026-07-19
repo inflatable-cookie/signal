@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: active; Batch 31.4 ready
+Status: active; Batch 31.5 ready
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -160,15 +160,45 @@ Authority:
 
 ## Batch 31.4 - Isolated Diffusive Candidate
 
+Status: complete; candidate rejected at creative synthetic gate
+
+One complete candidate was implemented on
+`candidate/g10-031-diffuse-spectral` in the disposable
+`signal-candidate-31-4` worktree.
+
+- [x] implemented only the private six-file `creative_diffuse` family
+- [x] preserved one fractional source map, linked carrier and phase field,
+  deterministic diffusion, magnitude state, spectral `space`, and rolling OLA
+- [x] kept production tiers, public APIs, cache, routing, `Cloud`, and `Cyclic`
+  unchanged
+- [x] passed the implemented structural controls for exact length, finiteness,
+  normalization coverage, exact silence, repeatability, seed effect, bounded
+  duration-independent state, invalid requests, and linked-stereo mechanics
+- [x] opened creative synthetic admission only after structural controls passed
+- [x] passed completed pitch, replica, and non-periodicity rows
+- [x] stopped on neutral `Dream` at `4x`: deterministic-noise crest-factor
+  growth was `7.08 dB`, above the frozen `6 dB` ceiling
+- [x] produced no long-form or stereo-listening audio
+- [x] deleted the rejected worktree, branch, module, tests, and generated state
+
+The dominant cause is uncontrolled stochastic crest growth from the diffusive
+spectral field. The frozen brief permits neither limiter nor crest-repair
+stage. No candidate code entered `main`.
+
+## Batch 31.5 - Diffusive Crest Ownership Reassessment
+
 Status: ready
 
-Implement one complete candidate in a disposable worktree. Admit structural
-and synthetic controls before long-form listening. Delete the worktree and
-candidate scaffolding on failure.
+Reassess the rejected topology at architecture level. Use the frozen
+measurement law and retained comparator evidence to decide whether one
+spectral-field topology can own the crest bound without a limiter, arbitrary
+gain change, or coefficient sweep. Freeze one complete topology-level remedy
+and replacement brief, or close `DiffuseSpectral`. Do not implement a second
+candidate in this batch.
 
 ## Later Batches
 
-Closed until the diffusive owner passes:
+Closed until a diffusive owner passes:
 
 - minimal production admission
 - coherent/diffusive overlap
@@ -192,7 +222,8 @@ Closed until the diffusive owner passes:
 
 ## Next Task
 
-Execute Batch 31.4 in one disposable worktree. Implement only the frozen
-`DiffuseSpectral` brief, then run its structural gate before producing
-long-form audio. Delete the worktree on failure. Do not open `Cloud`, `Cyclic`,
-overlap routing, dynamic ratio, cache, or product API work.
+Execute Batch 31.5 only. Reassess stochastic crest ownership in the complete
+diffusive topology and freeze one replacement decision. Do not tune the
+rejected constants, implement another candidate, produce long-form audio, or
+open `Cloud`, `Cyclic`, overlap routing, dynamic ratio, cache, or product API
+work.
