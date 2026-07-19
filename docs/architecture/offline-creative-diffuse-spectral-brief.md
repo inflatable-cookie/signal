@@ -37,8 +37,9 @@ frozen `6 dB` limit. No limiter or crest-repair stage is authorized here, so
 the candidate was rejected and deleted before long-form listening.
 
 This file remains the exact record of the rejected topology. It is not
-authority for a parameter sweep or second implementation. Batch 31.5 must
-replace the topology-level crest decision or close the family.
+authority for a parameter sweep or second implementation. Batch 31.5 closed
+independent-bin diffusion and replaced its implementation authority with
+`offline-creative-continuous-excitation-spectral-brief.md`.
 
 ## Supported Request
 
@@ -465,7 +466,5 @@ phase, smoothing, seed, or scalar sweeps.
 
 ## Next Task
 
-Run Batch 31.5 architecture reassessment. Resolve stochastic crest ownership
-without tuning this rejected brief, adding a limiter, or opening another
-candidate. Keep `Cloud`, `Cyclic`, overlap routing, dynamic ratio, cache, and
-product API work closed.
+Use `offline-creative-continuous-excitation-spectral-brief.md` as the sole
+current candidate authority. Do not tune or reimplement this historical brief.

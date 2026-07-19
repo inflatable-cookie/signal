@@ -31,7 +31,8 @@ strict lane.
 - Rejected offline stretch successor: [architecture/offline-time-stretch-successor-brief.md](./architecture/offline-time-stretch-successor-brief.md)
 - Non-phase-vocoder feasibility: [architecture/offline-time-stretch-non-phase-vocoder-feasibility.md](./architecture/offline-time-stretch-non-phase-vocoder-feasibility.md)
 - Creative time-stretch study: [architecture/offline-creative-time-stretch-study.md](./architecture/offline-creative-time-stretch-study.md)
-- Creative DiffuseSpectral brief: [architecture/offline-creative-diffuse-spectral-brief.md](./architecture/offline-creative-diffuse-spectral-brief.md)
+- Creative replacement brief: [architecture/offline-creative-continuous-excitation-spectral-brief.md](./architecture/offline-creative-continuous-excitation-spectral-brief.md)
+- Rejected DiffuseSpectral brief: [architecture/offline-creative-diffuse-spectral-brief.md](./architecture/offline-creative-diffuse-spectral-brief.md)
 - Graph and runtime feature reference: [architecture/graph-runtime-feature-reference.md](./architecture/graph-runtime-feature-reference.md)
 - Working rules: [contracts/001-working-rules.md](./contracts/001-working-rules.md)
 - Shared DSP boundary: [contracts/001-shared-dsp-and-host-boundary.md](./contracts/001-shared-dsp-and-host-boundary.md)
@@ -68,6 +69,7 @@ strict lane.
 
 ## Next Task
 
-Execute `g10.031` Batch 31.5 only. Reassess the rejected `DiffuseSpectral`
-topology's stochastic crest ownership before authorizing another candidate.
-Only drop into `specs/` when a strict lane is explicitly reopened.
+Execute `g10.031` Batch 31.6 only. Implement the frozen
+`ContinuousExcitationSpectral` brief once in a disposable worktree. Run
+structural admission and the prior failing crest row first. Only drop into
+`specs/` when a strict lane is explicitly reopened.

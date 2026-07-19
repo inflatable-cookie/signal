@@ -28,6 +28,7 @@ Keep milestone sequencing in `roadmaps/`.
 - `offline-time-stretch-synthesis.md`
 - `offline-time-stretch-non-phase-vocoder-feasibility.md`
 - `offline-creative-time-stretch-study.md`
+- `offline-creative-continuous-excitation-spectral-brief.md`
 - `offline-creative-diffuse-spectral-brief.md`
 - `offline-time-stretch-successor-brief.md`
 - `graph-runtime-feature-reference.md`
@@ -36,6 +37,6 @@ Keep milestone sequencing in `roadmaps/`.
 ## Next Task
 
 Keep the `g10.030` transparent successor program closed. Run `g10.031` Batch
-31.4 in one disposable worktree under
-`offline-creative-diffuse-spectral-brief.md`; keep later owners and product
-routing closed.
+31.6 in one disposable worktree under
+`offline-creative-continuous-excitation-spectral-brief.md`; keep later owners
+and product routing closed.

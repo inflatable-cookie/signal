@@ -1,6 +1,6 @@
 # Offline Creative Time-Stretch Study
 
-Status: complete; product architecture selected, implementation unopened
+Status: complete; replacement fixed-ratio topology frozen, implementation unopened
 Owner: dsp
 Updated: 2026-07-19
 Contract: `085`
@@ -90,11 +90,14 @@ The coherent lower owner begins from the retained `OfflineHighQuality`
 renderer. That reuse does not widen its transparent-quality claim beyond its
 admitted range; inside Creative mode it is one source-readable contribution.
 
-The first new renderer family is `DiffuseSpectral`. It should use long,
-overlapping spectral analysis, interpolated spectral evolution, deterministic
-temporally correlated phase diffusion, linked-channel decisions, and exact
-normalized synthesis. It intentionally relaxes transient placement and crisp
-phase reconstruction in exchange for smooth, evolving, dreamy output.
+The first independent-bin `DiffuseSpectral` topology was implemented once and
+rejected for uncontrolled stochastic crest growth. That mechanism is closed.
+The replacement family is `ContinuousExcitationSpectral`: long overlapping
+spectral analysis, interpolated source envelopes, one bounded continuous
+output-synchronous excitation, a linked coherent carrier, and exact normalized
+synthesis. It intentionally relaxes transient placement and crisp phase
+reconstruction in exchange for smooth, evolving, dreamy output without
+constructing unrelated random phase in every bin.
 
 Its neutral `Dream` setting owns the PaulXStretch-like centre. The same complete
 candidate must expose a useful, controlled path toward the `Spectral` and
@@ -241,10 +244,11 @@ success criteria: controlled smear, diffusion, and loss of transient precision
 can be features. This study does not reopen the failed phase-vocoder successor
 or relax `OfflineHighQuality` promotion rules.
 
-The evidence supports a range router and a `DiffuseSpectral` first candidate.
-It freezes the audible parameter space but not transform constants. The first
-brief must centre `Dream`, preserve extension seams for all five characters,
-and own a controlled `Spectral`/`Rough` span before a DSP branch opens.
+The evidence supports the range router and one replacement
+`ContinuousExcitationSpectral` candidate. Its complete brief centres `Dream`,
+preserves extension seams for all five characters, and owns a controlled
+`Spectral`/`Rough` span. The rejected independent-bin topology remains
+historical evidence, not implementation authority.
 
 ## Sources
 
@@ -259,10 +263,12 @@ and own a controlled `Spectral`/`Rough` span before a DSP branch opens.
 - [Photosounder](https://www.photosounder.com/)
 - [ARSS](https://arss.sourceforge.net/)
 - [Noise Morphing for Audio Time Stretching](https://arxiv.org/abs/2312.14586)
+- [PaulXStretch official repository](https://github.com/essej/paulxstretch)
 - [Extreme Audio Time Stretching Using Neural Synthesis](https://arxiv.org/abs/2211.16992)
 
 ## Next Task
 
-Execute `g10.031` Batch 31.4 in one disposable worktree under
-`offline-creative-diffuse-spectral-brief.md`. Run structural admission before
-long-form audio. Keep `Cloud`, `Cyclic`, and product routing closed.
+Execute `g10.031` Batch 31.6 in one disposable worktree under
+`offline-creative-continuous-excitation-spectral-brief.md`. Run structural
+admission and the prior failing crest row before other creative metrics. Keep
+`Cloud`, `Cyclic`, and product routing closed.

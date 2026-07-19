@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: active; Batch 31.5 ready
+Status: active; Batch 31.6 ready
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -187,14 +187,38 @@ stage. No candidate code entered `main`.
 
 ## Batch 31.5 - Diffusive Crest Ownership Reassessment
 
+Status: complete
+
+The rejected topology was reassessed at architecture level under the frozen
+measurement law.
+
+- [x] retained the `6 dB` crest-growth ceiling; PaulXStretch and `Rrreeeaaa`
+  stay below it across all `15` retained musical rows
+- [x] attributed the failure to independent per-bin random phase destroying
+  bounded cross-bin waveform relationships
+- [x] closed the independent-bin `DiffuseSpectral` mechanism without a scalar,
+  window, distribution, or coefficient sweep
+- [x] selected one output-synchronous bounded stochastic excitation whose full
+  complex transform owns phase and realized magnitude together
+- [x] froze the source map, transform, excitation, carrier, magnitude,
+  character, linked-channel, boundary, memory, determinism, gate, cleanup, and
+  minimal-admission laws in one complete replacement brief
+- [x] changed documentation only; no candidate, harness, fixture, report mode,
+  public API, or product route entered `main`
+
+Authority:
+
+- `docs/architecture/offline-creative-continuous-excitation-spectral-brief.md`
+
+## Batch 31.6 - Isolated Continuous-Excitation Candidate
+
 Status: ready
 
-Reassess the rejected topology at architecture level. Use the frozen
-measurement law and retained comparator evidence to decide whether one
-spectral-field topology can own the crest bound without a limiter, arbitrary
-gain change, or coefficient sweep. Freeze one complete topology-level remedy
-and replacement brief, or close `DiffuseSpectral`. Do not implement a second
-candidate in this batch.
+Implement the frozen `ContinuousExcitationSpectral` brief exactly once in a
+disposable worktree. Run structural admission first. The first rendered crest
+row is the exact neutral `Dream`, `4x`, deterministic uniform-noise failure from
+Batch 31.4. Stop and delete on any miss. Do not produce long-form audio until
+all fixed synthetic gates pass.
 
 ## Later Batches
 
@@ -213,7 +237,7 @@ Closed until a diffusive owner passes:
 
 - [x] one product architecture and governing contract exist
 - [x] comparator target character is frozen
-- [x] one complete diffusive brief exists
+- [x] one rejected diffusive brief and one complete replacement brief exist
 - [ ] one isolated diffusive candidate passes structural and synthetic gates
 - [ ] long-form mono listening passes at `4x`, `8x`, and `16x`
 - [ ] linked-stereo mechanics and independent listening pass
@@ -222,8 +246,8 @@ Closed until a diffusive owner passes:
 
 ## Next Task
 
-Execute Batch 31.5 only. Reassess stochastic crest ownership in the complete
-diffusive topology and freeze one replacement decision. Do not tune the
-rejected constants, implement another candidate, produce long-form audio, or
-open `Cloud`, `Cyclic`, overlap routing, dynamic ratio, cache, or product API
-work.
+Execute Batch 31.6 only. Create one disposable candidate worktree and implement
+the frozen `ContinuousExcitationSpectral` brief without changing `main`. Run
+structural admission and the prior failing crest row first. Do not produce
+long-form audio or open `Cloud`, `Cyclic`, overlap routing, dynamic ratio,
+cache, or product API work before every synthetic gate passes.

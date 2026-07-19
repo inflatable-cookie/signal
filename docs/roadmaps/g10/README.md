@@ -41,8 +41,10 @@ The 2026-07-19 consolidation reset is authoritative.
   DSP or candidate surfaces to `main`. Batch 31.4 implemented that brief in a
   disposable worktree. Structural controls passed, but neutral `Dream` at
   `4x` raised deterministic-noise crest factor by `7.08 dB` against the frozen
-  `6 dB` ceiling. The candidate was deleted before listening. Batch 31.5 now
-  requires architecture-level crest-ownership reassessment.
+  `6 dB` ceiling. The candidate was deleted before listening. Batch 31.5 kept
+  the ceiling, closed independent-bin diffusion, and froze one complete
+  continuous full-complex excitation replacement without changing DSP. Batch
+  31.6 is ready for one isolated candidate.
 - `g10.028` RealtimePreview source-fill and all render-plane integration remain
   paused.
 
@@ -137,6 +139,7 @@ renderer, public API, harness surface, or product route on `main`.
 
 ## Next Task
 
-Execute `g10.031` Batch 31.5 only. Reassess crest ownership at topology level
-before authorizing another diffusive candidate. Keep `g10.028`, later creative
-owners, and render-plane integration paused.
+Execute `g10.031` Batch 31.6 only. Implement the frozen continuous-excitation
+candidate in a disposable worktree and run structural admission plus the prior
+failing crest row first. Keep `g10.028`, later creative owners, and render-plane
+integration paused.

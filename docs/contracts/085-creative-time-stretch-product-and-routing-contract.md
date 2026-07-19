@@ -184,16 +184,19 @@ consistently.
 
 ### Rule 10: one complete candidate at a time
 
-The first new owner is one complete `DiffuseSpectral` renderer. Its neutral
-centre owns `Dream`; its parameter space must demonstrate a controlled path
-toward `Spectral` and `Rough` without damaging the centre. It is developed in
-an isolated worktree after comparator target freeze and a complete brief.
-Candidate-only modules, fixtures, report modes, and controls do not enter
-`main` before admission.
+The first independent-bin `DiffuseSpectral` candidate was rejected and deleted
+for crest growth. That topology is closed. Its one allowed replacement is a
+complete `ContinuousExcitationSpectral` renderer whose stochastic field comes
+from one bounded continuous output waveform. Its neutral centre owns `Dream`;
+its parameter space must demonstrate a controlled path toward `Spectral` and
+`Rough` without damaging the centre. It is developed in one isolated worktree
+under the frozen replacement brief. Candidate-only modules, fixtures, report
+modes, and controls do not enter `main` before admission.
 
-Failure removes the candidate branch and its scaffolding. Two complete
-candidates failing for the same dominant cause trigger architecture
-reassessment, not parameter sweeps.
+Failure removes the candidate branch and its scaffolding. If the replacement
+also fails for uncontrolled stochastic crest growth, the current diffusive
+owner family closes and owner boundaries are reassessed. No distribution,
+window, coefficient, phase, smoothing, seed, or scalar sweep follows.
 
 The `LayeredCloud` and cyclic owners remain closed until the diffusive owner
 passes its own fixed-ratio range. Their product obligations remain frozen;
@@ -203,27 +206,30 @@ experiments.
 ## Initial Promotion Sequence
 
 1. Comparator capture and target-character freeze. Complete.
-2. Complete `DiffuseSpectral` implementation brief.
-3. Isolated fixed-ratio mono structural and creative synthetic controls.
-4. Long-form mono listening at `4x`, `8x`, and `16x`.
-5. Linked-stereo mechanics and independent listening.
-6. Minimal diffusive owner admission.
-7. Coherent/diffusive overlap admission.
-8. Only then study `LayeredCloud`, the upper overlap, dynamic ratios, cache,
+2. Rejected independent-bin brief and architecture reassessment. Complete.
+3. Complete `ContinuousExcitationSpectral` replacement brief. Complete.
+4. Isolated fixed-ratio mono structural and creative synthetic controls.
+5. Long-form mono listening at `4x`, `8x`, and `16x`.
+6. Linked-stereo mechanics and independent listening.
+7. Minimal diffusive owner admission.
+8. Coherent/diffusive overlap admission.
+9. Only then study `LayeredCloud`, the upper overlap, dynamic ratios, cache,
    and consuming-product integration.
 
 ## Current State
 
-The first isolated `DiffuseSpectral` candidate passed its structural controls
-but failed creative synthetic admission: neutral `Dream` at `4x` exceeded the
-deterministic-noise crest-growth ceiling by `1.08 dB`. The rejected worktree
-and branch were deleted before listening. No public Rust enum, renderer,
-harness mode, fixture, artifact schema, runtime route, or product-facing claim
-entered `main`. `OfflineHighQuality` remains byte-exact and Contract `084`
-remains closed.
+The first isolated `DiffuseSpectral` candidate passed structural controls but
+failed creative synthetic admission: neutral `Dream` at `4x` exceeded the
+deterministic-noise crest-growth ceiling by `1.08 dB`. Comparator evidence
+supports retaining that ceiling. Independent-bin diffusion is closed; one
+continuous full-complex excitation replacement is frozen but unimplemented.
+No public Rust enum, renderer, harness mode, fixture, artifact schema, runtime
+route, or product-facing claim entered `main`. `OfflineHighQuality` remains
+byte-exact and Contract `084` remains closed.
 
 ## Next Task
 
-Run `g10.031` Batch 31.5 only. Reassess crest ownership at topology level and
-freeze one replacement decision before any second candidate. Keep `Cloud`,
+Run `g10.031` Batch 31.6 only. Implement the frozen
+`ContinuousExcitationSpectral` brief once in a disposable worktree. Run the
+prior failing crest row immediately after structural admission. Keep `Cloud`,
 `Cyclic`, and product routing closed.
