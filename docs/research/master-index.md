@@ -59,8 +59,11 @@ Current stretch feasibility decision:
 Current creative-stretch decision:
 [Offline Creative Time-Stretch Study](../architecture/offline-creative-time-stretch-study.md).
 Its automatic `4x`-`16x` spectral route is paused. Explicit cyclic expansion
-through `8x` is the only next owner study and does not reopen the transparent
+through `8x` is the only next owner and does not reopen the transparent
 successor lane.
+
+Frozen cyclic-owner brief:
+[Offline Creative CyclicGrain Renderer Brief](../architecture/offline-creative-cyclic-grain-brief.md).
 
 Rejected final-candidate brief:
 [Offline Creative ContinuousExcitationComplexRelation Renderer Brief](../architecture/offline-creative-continuous-excitation-complex-relation-brief.md).
@@ -110,6 +113,6 @@ Rejected first-owner brief:
 ## Next Task
 
 Treat the retained source studies and rejected briefs as historical evidence.
-Run docs-only `g10.031` Batch 31.10 to freeze the clean-room cyclic-owner brief
-without reopening a translation memo, Batch 29.7BE, the diffusive families, or
-the transparent successor family.
+Run `g10.031` Batch 31.11 once in a disposable worktree from the frozen cyclic
+brief. Do not reopen a translation memo, Batch 29.7BE, the diffusive families,
+or the transparent successor family.

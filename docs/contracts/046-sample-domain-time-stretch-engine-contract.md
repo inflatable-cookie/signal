@@ -466,5 +466,6 @@ no runtime or public Rust surface until separately promoted.
 
 ## Next Task
 
-Keep the existing tier behavior frozen. Run isolated `g10.031` Batch 31.4 under
-Contract `085`; do not change the existing public tier surface.
+Keep the existing tier behavior frozen. Run isolated `g10.031` Batch 31.11
+under the frozen Contract `085` cyclic brief; do not change the existing public
+tier surface.

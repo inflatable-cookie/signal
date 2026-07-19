@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: active; Batch 31.10 cyclic brief ready
+Status: active; Batch 31.11 isolated cyclic candidate ready
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -309,30 +309,39 @@ routing, cache, public APIs, or product integration in this batch.
 
 ## Batch 31.10 - Cyclic Owner Brief
 
-Status: ready; docs and architecture only
+Status: complete; docs and architecture only
 
-Freeze one complete clean-room Signal-owned cyclic renderer for fixed expansion
-above `1x` through `8x`. The brief must resolve without “decide later” gaps:
+Froze one complete clean-room Signal-owned `CyclicGrain` renderer for fixed
+expansion above `1x` through `8x`:
 
-- one monotonic source/output map and exact target length
-- sample-domain grain ownership, scheduling, crossfade, and boundary rules
-- pitch compensation and requested-duration ownership
-- deterministic linked-channel reads and preservation of channel relations
-- semantic `motion`, `detail`, and `space` mapping without raw grain controls
-- bounded duration-independent state and offline computational shape
-- structural and synthetic gates at identity, `2x`, `4x`, and `8x`
-- retained long-form mono pack at `2x`, `4x`, and `8x`, plus a `16x` rejection
-  probe
-- independent stereo listening, explicit rejection, cleanup, and minimal
-  admission rules
+- [x] froze one sample-centred monotonic map and exact target-length crop
+- [x] froze one deterministic lattice with at most two overlapping unit-rate
+  source reads and normalized raised-cosine crossfades
+- [x] made unit-rate reads own pitch and mapped anchor advance own duration
+- [x] froze channel-shared positions, normalization, and seed phase plus a
+  bounded mid/side `space` law
+- [x] mapped `detail` to logarithmic cycle support and `motion` to launch
+  density without exposing grain controls
+- [x] capped duration-independent state at `8 MiB` and cost at `O(C*T)`
+- [x] froze structural and synthetic gates at identity, `2x`, `4x`, and `8x`
+- [x] froze the five-source mono pack at `2x`, `4x`, and `8x`, including a
+  required missing `2x` ReaReaRea capture under the retained level policy
+- [x] froze exact `16x` request rejection before allocation
+- [x] froze independent stereo listening, whole-candidate rejection, cleanup,
+  and minimal private admission
+- [x] changed documentation only
 
 Use public Potenza source only for clean-room architecture. Do not copy GPL
 expression, constants, thresholds, or control flow. Do not implement the
 candidate in this batch.
 
+Authority:
+
+- `docs/architecture/offline-creative-cyclic-grain-brief.md`
+
 ## Batch 31.11 - Isolated Cyclic Candidate
 
-Status: pending Batch 31.10
+Status: ready
 
 Implement the frozen cyclic brief once in a disposable worktree. Run gates in
 the brief's fixed order. Stop and delete on any miss. No candidate code enters
@@ -359,7 +368,7 @@ Closed pending a cyclic candidate decision and separate reopening evidence:
   decision without entering `main`
 - [x] the range promise is narrowed honestly to explicit cyclic expansion
   through `8x`
-- [ ] one complete cyclic owner brief is frozen
+- [x] one complete cyclic owner brief is frozen
 - [ ] one isolated cyclic candidate passes structural and synthetic gates
 - [ ] long-form mono cyclic listening passes at `2x`, `4x`, and `8x`
 - [ ] linked-stereo mechanics and independent listening pass
@@ -368,7 +377,7 @@ Closed pending a cyclic candidate decision and separate reopening evidence:
 
 ## Next Task
 
-Execute Batch 31.10 only. Freeze one complete clean-room cyclic-owner brief for
-fixed expansion above `1x` through `8x`. Stop before implementation. Keep core
-spectral characters, Cloud, automatic routing, dynamic ratio, cache, and public
-APIs closed.
+Execute Batch 31.11 only. Implement the frozen `CyclicGrain` brief once in a
+disposable worktree. Stop at the first failed gate. Keep core spectral
+characters, Cloud, automatic routing, dynamic ratio, cache, and public APIs
+closed.

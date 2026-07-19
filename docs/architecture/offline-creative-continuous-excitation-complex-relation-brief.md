@@ -433,6 +433,6 @@ relation, excitation, window, coefficient, smoothing, seed, or scalar variant.
 
 ## Next Task
 
-Run `g10.031` Batch 31.10 only. Freeze the separate clean-room cyclic-owner
-brief and stop before implementation. Do not repair this relation proof,
-reopen a diffusive variant, or begin Cloud, routing, or product implementation.
+Run `g10.031` Batch 31.11 only under the separate frozen clean-room cyclic
+brief. Do not repair this relation proof, reopen a diffusive variant, or begin
+Cloud, routing, or product implementation.

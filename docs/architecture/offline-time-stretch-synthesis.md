@@ -88,9 +88,10 @@ brief opens.
 ## Separate Creative Path
 
 Intentional creative expansion is governed separately by Contract `085` and
-`docs/architecture/offline-creative-time-stretch-study.md`. Its `4x`, `8x`,
-and `16x` target ratios, controlled smear, and range routing do not replace this
-renderer or reopen Contract `084`.
+`docs/architecture/offline-creative-time-stretch-study.md`. Its automatic
+spectral route is paused. The frozen `CyclicGrain` brief targets explicit
+expansion above `1x` through `8x`; it does not replace this renderer or reopen
+Contract `084`.
 
 ## Candidate Isolation
 
@@ -112,5 +113,5 @@ ledger remains in git history at `1d1b02f1`.
 ## Next Task
 
 Retain this frozen baseline and keep its successor lane closed. Run `g10.031`
-Batch 31.10 only: freeze the separate cyclic-owner brief without changing the
-production renderer.
+Batch 31.11 only: implement the separate frozen cyclic owner once in a
+disposable worktree without changing the production renderer on `main`.

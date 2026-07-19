@@ -1,11 +1,11 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: active cyclic-brief boundary; no implementation admitted
+Status: active cyclic-candidate boundary; no implementation admitted
 Owner: core-product
 Updated: 2026-07-19
 Related contracts: `046`, `048`, `084`
 Related architecture: `docs/architecture/offline-creative-time-stretch-study.md`,
-`docs/architecture/offline-creative-continuous-excitation-complex-relation-brief.md`
+`docs/architecture/offline-creative-cyclic-grain-brief.md`
 Roadmap: `g10.031`
 
 ## Purpose
@@ -229,8 +229,8 @@ simultaneous experiments.
 6. Final complete brief and isolated candidate. Rejected at relation proof.
 7. Creative range-owner reassessment. Complete; automatic router paused and
    cyclic-first promise selected.
-8. Freeze one complete clean-room cyclic-owner brief. Docs only.
-9. Implement one isolated cyclic candidate.
+8. Freeze one complete clean-room cyclic-owner brief. Complete.
+9. Implement one isolated cyclic candidate. Next.
 10. Run structural and synthetic gates, then retained mono listening at `2x`,
     `4x`, and `8x`.
 11. Run linked-stereo mechanics and independent listening.
@@ -245,13 +245,15 @@ decision backed by new complete-system evidence.
 
 Three isolated spectral candidates are rejected and deleted. The core
 `4x`-`16x` owner and automatic router are paused. Explicit `Cyclic` above `1x`
-through `8x` is the only next candidate, but it has no brief or implementation
-yet. No public Rust enum, renderer, harness mode, fixture, artifact schema,
-runtime route, or product-facing claim entered `main`. `OfflineHighQuality`
-remains byte-exact and Contract `084` remains closed.
+through `8x` is the only next candidate. It has no implementation. Its complete
+`CyclicGrain` brief freezes the map, unit-rate two-grain
+synthesis, macro laws, linked stereo, exact length, bounded state, gate order,
+and cleanup. No public Rust enum, renderer, harness mode, fixture, artifact
+schema, runtime route, or product-facing claim entered `main`.
+`OfflineHighQuality` remains byte-exact and Contract `084` remains closed.
 
 ## Next Task
 
-Run `g10.031` Batch 31.10 only. Freeze one complete clean-room cyclic-owner
-brief for fixed expansion above `1x` through `8x`. Keep implementation, core
-spectral characters, Cloud, automatic routing, cache, and public APIs closed.
+Run `g10.031` Batch 31.11 only. Implement the frozen `CyclicGrain` brief once
+in a disposable worktree. Stop at the first failed gate. Keep core spectral
+characters, Cloud, automatic routing, cache, and public APIs closed.

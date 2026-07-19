@@ -1,6 +1,6 @@
 # Offline Creative Time-Stretch Study
 
-Status: complete; spectral range paused; cyclic owner brief next
+Status: complete; spectral range paused; cyclic owner brief frozen
 Owner: dsp
 Updated: 2026-07-19
 Contract: `085`
@@ -67,12 +67,12 @@ expression, constants, or control flow. Akaizer 2.5 is now paid and provides
 no public source backing; it is optional behavioral context, not implementation
 backing or a required comparator.
 
-Batch 31.10 must freeze one clean-room Signal-owned cyclic renderer before any
-candidate work. The brief must own the sample-domain map, grain scheduling,
-crossfade and boundary law, pitch compensation, linked channels, exact length,
-determinism, bounded state, semantic macro mapping, structural gates, listening
-pack, rejection, and cleanup. No raw grain size or implementation algorithm is
-promised to consumers.
+Batch 31.10 froze one clean-room Signal-owned `CyclicGrain` renderer before any
+candidate work. It owns the sample-domain map, deterministic two-grain
+scheduling, normalized crossfade and boundary law, unit-rate pitch
+preservation, linked channels, exact length, bounded state, semantic macro
+mapping, gate order, listening pack, rejection, and cleanup. No raw grain size
+or implementation algorithm is promised to consumers.
 
 ## Product Surface
 
@@ -325,7 +325,6 @@ claim PaulX-like `Dream`, reopen the automatic router, or authorize Cloud.
 
 ## Next Task
 
-Execute `g10.031` Batch 31.10 only. Freeze one complete clean-room cyclic-owner
-brief for expansion above `1x` through `8x`. Stop before implementation. Keep
-`Dream`, `Spectral`, `Rough`, `Cloud`, automatic routing, cache, and public APIs
-closed.
+Execute `g10.031` Batch 31.11 only. Implement the frozen `CyclicGrain` brief
+once in a disposable worktree and stop at the first failed gate. Keep `Dream`,
+`Spectral`, `Rough`, `Cloud`, automatic routing, cache, and public APIs closed.

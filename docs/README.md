@@ -31,6 +31,7 @@ strict lane.
 - Rejected offline stretch successor: [architecture/offline-time-stretch-successor-brief.md](./architecture/offline-time-stretch-successor-brief.md)
 - Non-phase-vocoder feasibility: [architecture/offline-time-stretch-non-phase-vocoder-feasibility.md](./architecture/offline-time-stretch-non-phase-vocoder-feasibility.md)
 - Creative time-stretch study: [architecture/offline-creative-time-stretch-study.md](./architecture/offline-creative-time-stretch-study.md)
+- Frozen creative CyclicGrain brief: [architecture/offline-creative-cyclic-grain-brief.md](./architecture/offline-creative-cyclic-grain-brief.md)
 - Rejected creative complex-relation brief: [architecture/offline-creative-continuous-excitation-complex-relation-brief.md](./architecture/offline-creative-continuous-excitation-complex-relation-brief.md)
 - Rejected continuous-excitation brief: [architecture/offline-creative-continuous-excitation-spectral-brief.md](./architecture/offline-creative-continuous-excitation-spectral-brief.md)
 - Rejected DiffuseSpectral brief: [architecture/offline-creative-diffuse-spectral-brief.md](./architecture/offline-creative-diffuse-spectral-brief.md)
@@ -70,6 +71,6 @@ strict lane.
 
 ## Next Task
 
-Execute `g10.031` Batch 31.10 only. Freeze one complete clean-room cyclic-owner
-brief through `8x` and stop before implementation. Only drop into `specs/`
-when a strict lane is explicitly reopened.
+Execute `g10.031` Batch 31.11 only. Implement the frozen `CyclicGrain` brief
+once in a disposable worktree and stop at the first failed gate. Only drop into
+`specs/` when a strict lane is explicitly reopened.
