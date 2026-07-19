@@ -18,6 +18,7 @@ memory alone.
 - `084` is closed without successor promotion; it remains the reopening and
   complete-system admission authority
 - `085` governs the separate offline creative-stretch product and range router
+  with `Dream`, `Spectral`, `Rough`, `Cloud`, and `Cyclic` character anchors
 - `082` and `g10.029` are historical evidence, not active execution authority
 - `g10.028` source-fill work remains paused
 
@@ -147,5 +148,5 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Keep Contract `084` closed. Run `g10.031` Batch 31.2 under Contract `085` to
-freeze the creative comparator target before a renderer brief or DSP candidate.
+Keep Contract `084` closed. Run `g10.031` Batch 31.3 under Contract `085` to
+freeze the complete diffusive brief before a DSP candidate.

@@ -113,5 +113,4 @@ Add a new contract only when the boundary needs stronger guarantees than
 Use `docs/contracts/contract-index.md` and `001-working-rules.md` as the
 contract front doors. Contract `084` and roadmap `g10.030` keep the transparent
 successor program closed. Contract `085` governs the separate creative path;
-finish the concealed `g10.031` Batch 31.2 review before candidate DSP. No
-strict spec lane is open.
+run `g10.031` Batch 31.3 before candidate DSP. No strict spec lane is open.

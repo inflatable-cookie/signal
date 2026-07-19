@@ -100,5 +100,6 @@ transparent successor lane.
 ## Next Task
 
 Treat the retained source studies and rejected successor briefs as historical
-evidence. Run the `g10.031` creative comparator study without reopening a
-translation memo, Batch 29.7BE, or the transparent successor family.
+evidence. Use the frozen `g10.031` creative character anchors for Batch 31.3
+without reopening a translation memo, Batch 29.7BE, or the transparent
+successor family.

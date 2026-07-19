@@ -34,6 +34,6 @@ Keep milestone sequencing in `roadmaps/`.
 
 ## Next Task
 
-Keep the `g10.030` transparent successor program closed. Finish the concealed
-`g10.031` Batch 31.2 review against `offline-creative-time-stretch-study.md`;
-freeze the creative target before a candidate brief or implementation.
+Keep the `g10.030` transparent successor program closed. Run `g10.031` Batch
+31.3 against `offline-creative-time-stretch-study.md`; freeze the complete
+diffusive brief before candidate implementation.

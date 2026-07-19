@@ -67,7 +67,7 @@ strict lane.
 
 ## Next Task
 
-Finish the concealed `g10.031` Batch 31.2 comparator review at `4x`, `8x`, and
-`16x`, then freeze one creative target and its rejection thresholds. Do not
-implement candidate DSP in that batch. Only drop into `specs/` when a strict
-lane is explicitly reopened.
+Execute `g10.031` Batch 31.3 only. Freeze one complete `DiffuseSpectral` brief
+for the PaulX-centred `Dream` target and controlled `Spectral`/`Rough` span. Do
+not implement candidate DSP in that batch. Only drop into `specs/` when a
+strict lane is explicitly reopened.

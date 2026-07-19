@@ -42,7 +42,7 @@ Creative mode exposes:
 | Control | Meaning | Primary UI |
 | --- | --- | --- |
 | `duration` | exact target duration or output/input ratio | yes |
-| `character` | `Dream` or `Cloud`; coherent atmosphere versus dispersed texture | yes |
+| `character` | named creative intent: `Dream`, `Spectral`, `Rough`, `Cloud`, or `Cyclic` | yes |
 | `motion` | stable spectral body to actively evolving detail | yes |
 | `detail` | smeared attacks to more source-readable articulation | yes |
 | `space` | preserve source image to widen/diffuse it under linked-channel rules | advanced |
@@ -52,13 +52,26 @@ Do not expose FFT size, window shape, grain size, overlap count, phase policy,
 transient thresholds, renderer name, or transition weight. Those are engine
 implementation details.
 
-`character` is a stable macro inside the active owner, not a renderer selector.
-`Dream` biases toward coherence and smooth spectral body. `Cloud` biases toward
-dispersion, motion, and space. The range router still owns the renderer family.
+`character` names audible intent, not an algorithm. Signal may select or blend
+internal owners to realize it without exposing that choice to consumers:
 
-`Cyclic` is a credible later character for Akai-style metallic stretch. It is
-not part of automatic routing because its repetitions are an explicit musical
-choice, not a seamless continuation of `Dream` or `Cloud`.
+- `Dream`: smooth, fused, musical spectral smear; the default and primary
+  PaulXStretch-backed target
+- `Spectral`: deliberately exposed, vocoder-like spectral separation and
+  decoherence, anchored by CDP `SPECTSTR`
+- `Rough`: less smoothed, conspicuously processed polyphase texture, anchored
+  by REAPER `Rrreeeaaa`; useful novelty rather than the default
+- `Cloud`: dispersed, evolving upper-range texture; later owner
+- `Cyclic`: explicit Akai-style repetition, anchored by REAPER `ReaReaRea`
+
+`motion`, `detail`, and `space` refine every character with the same semantic
+direction. A consumer gets one clean character selector and shared macro
+controls, not an algorithm menu.
+
+`Cyclic` bypasses automatic coherent/diffusive/cloud selection because its
+repetitions are an explicit musical choice. Initial cyclic admission targets
+creative expansion through `8x`; higher ratios require separate listening
+before support is claimed.
 
 ## Range-Routed Architecture
 
@@ -82,6 +95,13 @@ overlapping spectral analysis, interpolated spectral evolution, deterministic
 temporally correlated phase diffusion, linked-channel decisions, and exact
 normalized synthesis. It intentionally relaxes transient placement and crisp
 phase reconstruction in exchange for smooth, evolving, dreamy output.
+
+Its neutral `Dream` setting owns the PaulXStretch-like centre. The same complete
+candidate must expose a useful, controlled path toward the `Spectral` and
+`Rough` anchors. This is a parameter-space obligation, not permission to queue
+independent detector, window, phase, or coefficient experiments. If one
+topology cannot span those anchors without damaging `Dream`, reassess owner
+boundaries before admission instead of averaging the references.
 
 The upper `LayeredCloud` owner is a later spectral/granular renderer. It may
 layer bounded voices around the common source cursor, but every voice remains
@@ -160,7 +180,19 @@ REAPER `ReaReaRea` as the cyclic control. The CDP comparator uses `d-ratio=1`
 and `d-rand=0.5`; those values define this external reference only. Its source
 feed is reduced `18 dB` to avoid legacy synthesis clipping before all references
 are cropped to exact length and RMS matched under a shared `0.95` peak ceiling.
-Target character remains open until the concealed 15-case review is complete.
+Operator review froze the target as a controllable family, not a single winner:
+
+- PaulXStretch is the default centre across all source families and ratios
+  because its smoother output is the most consistently musical and useful
+- CDP is a valid `Spectral` endpoint, but its vocoder-like character must never
+  leak into neutral `Dream`
+- `Rrreeeaaa` is a valid `Rough` endpoint and comparison anchor, but its novelty
+  character must remain intentional rather than becoming the default
+- `ReaReaRea` establishes a valuable `Cyclic` character through about `8x`
+
+The goal is not sample-identical emulation or one compromised average. The
+semantic controls must reach recognizably similar regions while preserving
+Signal's structural rules.
 
 ## Admission
 
@@ -184,6 +216,19 @@ Listening is the quality authority. Review records:
 - level and stereo-image stability
 - preference and intended use
 
+Creative character admission additionally requires:
+
+- neutral `Dream` remains smooth and musically useful on every retained family
+  at `4x`, `8x`, and `16x`, without exposed vocoder colour or rough periodicity
+- `Spectral` and `Rough` are recognizably distinct, useful destinations rather
+  than accidental degradation, and do not cause clicks, dropouts, or arbitrary
+  level changes
+- movement from `Dream` toward either endpoint is stable and directionally
+  consistent; a hard internal owner change cannot create an audible seam
+- later `Cyclic` review treats commanded repetition as character, while still
+  rejecting unstable timing, discontinuities, unbounded peaks, and unrelated
+  channel motion
+
 The operator may perform mono and character review. Linked-stereo promotion
 still requires an independent eligible listener because the operator has
 hearing in one ear.
@@ -197,9 +242,9 @@ can be features. This study does not reopen the failed phase-vocoder successor
 or relax `OfflineHighQuality` promotion rules.
 
 The evidence supports a range router and a `DiffuseSpectral` first candidate.
-It does not yet freeze transform constants. Comparator capture and listening
-must freeze the target character before an implementation brief or DSP branch
-opens.
+It freezes the audible parameter space but not transform constants. The first
+brief must centre `Dream`, preserve extension seams for all five characters,
+and own a controlled `Spectral`/`Rough` span before a DSP branch opens.
 
 ## Sources
 
@@ -218,6 +263,6 @@ opens.
 
 ## Next Task
 
-Finish the concealed Batch 31.2 character review at `4x`, `8x`, and `16x`.
-Freeze the `DiffuseSpectral` target character and candidate pass/fail thresholds
-before writing an implementation brief or code.
+Execute `g10.031` Batch 31.3 only. Write one complete `DiffuseSpectral` brief
+for the frozen `Dream` centre and controlled `Spectral`/`Rough` span. Preserve
+the later `Cloud` and `Cyclic` seams. Do not implement DSP in that batch.

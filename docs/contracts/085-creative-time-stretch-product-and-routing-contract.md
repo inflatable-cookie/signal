@@ -36,7 +36,7 @@ The stable semantic request contains:
 
 - exact target frame count
 - output/input duration ratio
-- `character`: `Dream` or `Cloud`
+- `character`: `Dream`, `Spectral`, `Rough`, `Cloud`, or `Cyclic`
 - normalized `motion`
 - normalized `detail`
 - normalized `space`
@@ -45,6 +45,12 @@ The stable semantic request contains:
 Target frames are authoritative. Ratio is derived or validated against that
 target; inconsistent values are rejected rather than rounded into different
 routing decisions.
+
+`Dream` is the default. It means smooth, fused, musical spectral smear.
+`Spectral` intentionally exposes vocoder-like separation and decoherence.
+`Rough` intentionally exposes a less smoothed polyphase texture. `Cloud` means
+dispersed upper-range evolution. `Cyclic` means commanded Akai-style
+repetition and initially admits only ratios through `8x`.
 
 These fields are intent, not transform controls. Public consumers must not
 select FFT size, window, grain size, overlap, phase mode, internal renderer,
@@ -84,6 +90,17 @@ cache identity.
 direction across every range. An internal renderer may implement the macro
 differently, but increasing a control must not reverse its semantic meaning at
 a routing boundary.
+
+Character values are semantic anchor regions, not external algorithm names.
+The required initial anchors are:
+
+- `Dream`: PaulXStretch-like smoothness and musical usefulness
+- `Spectral`: CDP-like vocoder/decoherence character
+- `Rough`: `Rrreeeaaa`-like conspicuous polyphase texture
+- `Cyclic`: `ReaReaRea`-like repetition through `8x`
+
+Signal may use different internal owners or blends to reach those regions.
+Consumers still receive one character selector and the shared macros.
 
 `seed` is advanced variation identity, not a continuous quality knob.
 
@@ -152,15 +169,25 @@ Promotion requires concealed long-form listening at `4x`, `8x`, and `16x`,
 with `8x` the primary design point. The pack covers percussion, bass, vocals,
 pads/sustains, and full mix. Independent stereo review remains mandatory.
 
+The default `Dream` setting must remain the smoothest and most generally
+musical centre across that matrix. Exposed vocoder colour, rough periodicity,
+or cyclic repetition in neutral `Dream` is rejection. `Spectral` and `Rough`
+must remain deliberate, recognizable, stable destinations rather than one
+degraded compromise. Moving between anchor regions must not introduce a hard
+seam, arbitrary loudness step, click, or unrelated channel motion.
+
 Transparent transient-placement, replica, and tonal-fidelity limits are not
 silently reused. Creative gates instead reject uncontrolled clicks, dropouts,
-level changes, periodic flutter, unintended metallic repetition, static freeze,
-stereo instability, and failure to map the semantic controls consistently.
+level changes, periodic flutter, metallic repetition outside `Cyclic`, static
+freeze, stereo instability, and failure to map the semantic controls
+consistently.
 
 ### Rule 10: one complete candidate at a time
 
-The first new owner is one complete `DiffuseSpectral` renderer. It is developed
-in an isolated worktree after comparator target freeze and a complete brief.
+The first new owner is one complete `DiffuseSpectral` renderer. Its neutral
+centre owns `Dream`; its parameter space must demonstrate a controlled path
+toward `Spectral` and `Rough` without damaging the centre. It is developed in
+an isolated worktree after comparator target freeze and a complete brief.
 Candidate-only modules, fixtures, report modes, and controls do not enter
 `main` before admission.
 
@@ -168,13 +195,14 @@ Failure removes the candidate branch and its scaffolding. Two complete
 candidates failing for the same dominant cause trigger architecture
 reassessment, not parameter sweeps.
 
-The `LayeredCloud` owner and cyclic character remain closed until the
-diffusive owner passes its own fixed-ratio range. Do not build the full router
-as three simultaneous experiments.
+The `LayeredCloud` and cyclic owners remain closed until the diffusive owner
+passes its own fixed-ratio range. Their product obligations remain frozen;
+sequencing does not remove them. Do not build the full router as simultaneous
+experiments.
 
 ## Initial Promotion Sequence
 
-1. Comparator capture and target-character freeze.
+1. Comparator capture and target-character freeze. Complete.
 2. Complete `DiffuseSpectral` implementation brief.
 3. Isolated fixed-ratio mono structural and creative synthetic controls.
 4. Long-form mono listening at `4x`, `8x`, and `16x`.
@@ -192,6 +220,6 @@ harness mode, fixture, artifact schema, runtime route, or product-facing claim.
 
 ## Next Task
 
-Run `g10.031` Batch 31.2. Freeze the comparator-backed `DiffuseSpectral`
-character and numerical integrity thresholds. Do not implement DSP in that
-batch.
+Run `g10.031` Batch 31.3. Freeze one complete `DiffuseSpectral` brief for the
+`Dream` centre and controlled `Spectral`/`Rough` span. Preserve later `Cloud`
+and `Cyclic` seams. Do not implement DSP in that batch.

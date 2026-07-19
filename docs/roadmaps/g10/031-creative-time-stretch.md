@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: active; Batch 31.2 listening active
+Status: active; Batch 31.3 ready
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -59,18 +59,19 @@ Authority:
 
 ## Batch 31.2 - Comparator Target Freeze
 
-Status: active; accessible comparator capture complete, operator listening pending
+Status: complete
 
 - [x] capture the accessible primary references at `4x`, `8x`, and `16x`
 - [x] use the retained percussion, bass, vocal, pad/sustain, and full-mix sources
 - [x] level-match under one documented policy
-- record character, motion, detail, stereo, periodicity, ringing, level, and
-  preference notes
-- probe fixed ratios around `2x`/`4x` and `16x`/`32x` transition bands where
-  the comparator permits useful evidence
-- choose the target diffusive character; do not average incompatible winners
-- freeze explicit structural and listening rejection thresholds
-- write one complete `DiffuseSpectral` brief only after the target is frozen
+- [x] record the operator's cross-matrix character, usefulness, and preference
+  decision; stereo remains separately unassessed
+- [x] resolve transition probes: external comparators cannot validate Signal's
+  owner blends, so continuity probes remain mandatory at overlap admission
+- [x] freeze a parameter space with distinct anchors rather than averaging
+  incompatible winners
+- [x] freeze explicit structural and listening rejection thresholds
+- [x] keep the complete `DiffuseSpectral` brief after this target freeze
 
 Required accessible references:
 
@@ -117,16 +118,35 @@ Sloom's full product is paid and its demo cannot save. SoundHack
 useful later references but are not honest prerequisites for this no-purchase
 target freeze.
 
+Operator decision:
+
+- `Dream` defaults to the smooth, musical PaulXStretch region across the
+  complete `4x`/`8x`/`16x` matrix
+- `Spectral` preserves the CDP-like vocoder/decoherence region as an intentional
+  destination, never neutral colour
+- `Rough` preserves the interesting but novelty-led `Rrreeeaaa` region as an
+  intentional destination, never neutral colour
+- `Cyclic` preserves the useful `ReaReaRea` / Akai-style region through about
+  `8x` as an explicit later character
+- `motion`, `detail`, and `space` refine these characters under one stable UI
+  vocabulary; Signal may switch or blend owners internally
+
+Reject a one-sound compromise. Neutral `Dream` must stay smooth and musical;
+the other anchors must be recognizable, useful, level-stable, and free of
+uncommanded clicks or seams. Commanded cyclic repetition and deliberate
+spectral exposure are not classified as faults inside their own characters.
+
 No DSP, candidate harness, fixture, report mode, or public API enters `main`.
 
 ## Batch 31.3 - Diffusive Candidate Brief
 
-Status: blocked on Batch 31.2
+Status: ready
 
 Freeze one buildable renderer: transform geometry, source map, phase-diffusion
-state, magnitude evolution, control mapping, linked stereo, boundaries, exact
-length, memory, determinism, tests, rejection, and cleanup. Do not implement it
-in the same batch.
+state, magnitude evolution, the `Dream` centre and controlled
+`Spectral`/`Rough` span, control mapping, later-owner seams, linked stereo,
+boundaries, exact length, memory, determinism, tests, rejection, and cleanup.
+Do not implement it in the same batch.
 
 ## Batch 31.4 - Isolated Diffusive Candidate
 
@@ -152,7 +172,7 @@ Closed until the diffusive owner passes:
 ## Completion Gate
 
 - [x] one product architecture and governing contract exist
-- [ ] comparator target character is frozen
+- [x] comparator target character is frozen
 - [ ] one complete diffusive brief exists
 - [ ] one isolated diffusive candidate passes structural and synthetic gates
 - [ ] long-form mono listening passes at `4x`, `8x`, and `16x`
@@ -162,8 +182,7 @@ Closed until the diffusive owner passes:
 
 ## Next Task
 
-Complete the concealed 15-case A/B/C/D character review in
-`target/creative-stretch-comparator-31-2/listening-pack/listening-notes.tsv`
-without opening the key. Then freeze one comparator-backed target and explicit
-rejection thresholds. Stereo remains unassessed until an independent eligible
-listener is available. Stop before candidate DSP or harness implementation.
+Execute Batch 31.3 only. Write one complete `DiffuseSpectral` implementation
+brief for the frozen `Dream` centre and controlled `Spectral`/`Rough` span.
+Preserve later `Cloud` and `Cyclic` owner seams. Stop before candidate DSP or
+harness implementation.
