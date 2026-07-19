@@ -61,8 +61,11 @@ Current creative-stretch decision:
 Its automatic `4x`-`16x` spectral route is paused. Explicit cyclic expansion
 through `8x` has no implementation after its first candidate failed synthetic
 pitch admission. Batch 31.12 selected correlation-aligned waveform overlap as
-one materially different family for a new complete brief. This does not reopen
-the transparent successor lane.
+one materially different family. Batch 31.13 froze its complete candidate
+brief. This does not reopen the transparent successor lane.
+
+Current similarity-aligned cyclic brief:
+[Offline Creative SimilarityAlignedCyclic Renderer Brief](../architecture/offline-creative-similarity-aligned-cyclic-brief.md).
 
 Rejected cyclic-owner brief:
 [Offline Creative CyclicGrain Renderer Brief](../architecture/offline-creative-cyclic-grain-brief.md).
@@ -115,7 +118,7 @@ Rejected first-owner brief:
 ## Next Task
 
 Treat the retained source studies and rejected briefs as historical evidence.
-Run docs-only `g10.031` Batch 31.13 to freeze one complete
-`SimilarityAlignedCyclic` brief. Do not implement it, tune `CyclicGrain`, or
-reopen a translation memo, Batch 29.7BE, the diffusive families, or the
-transparent successor family.
+Run `g10.031` Batch 31.14 in one disposable worktree. Implement the frozen
+`SimilarityAlignedCyclic` brief once and stop at the first failed gate. Do not
+tune `CyclicGrain` or reopen a translation memo, Batch 29.7BE, the diffusive
+families, or the transparent successor family.

@@ -1,6 +1,6 @@
 # Offline Creative Time-Stretch Study
 
-Status: complete; similarity-aligned cyclic brief selected
+Status: complete; similarity-aligned cyclic candidate brief frozen
 Owner: dsp
 Updated: 2026-07-19
 Contract: `085`
@@ -125,13 +125,12 @@ not add a stronger source-backed path than waveform-similarity selection.
 Fixed chunk repetition and another unaligned grain lattice retain the rejected
 join problem. Spectral correction would reopen the closed spectral families.
 
-Batch 31.13 must freeze one complete `SimilarityAlignedCyclic` brief before
-candidate code. It must own the ideal and realized monotonic map, fixed output
-lattice, search domain, similarity score and ties, silence fallback, segment
-and overlap geometry, semantic macros, anti-replica law, linked-channel score
-and synthesis, boundaries, exact length, bounded state and cost, determinism,
-gate order, retained comparator pack, cleanup, and minimal admission. No item
-may remain a candidate-time choice.
+Batch 31.13 freezes that complete brief. It owns the exact rational ideal map,
+strict realized path, fixed output lattice, bounded two-stage correlation
+search, score and ties, `0.25` low-confidence fallback, segment and overlap
+geometry, semantic macros, anti-replica law, linked synthesis, exact length,
+`4 MiB` state cap, deterministic cost, gate order, retained comparator pack,
+cleanup, and minimal admission. No item remains a candidate-time choice.
 
 ## Product Surface
 
@@ -184,7 +183,7 @@ same exact target frame count.
 
 | Ratio | Current owner state | Product intent |
 | --- | --- | --- |
-| above `1x` to `8x` | similarity-aligned cyclic brief selected; no implementation | commanded Akai-style repetition |
+| above `1x` to `8x` | similarity-aligned cyclic brief frozen; no implementation | commanded Akai-style repetition |
 | `1x` to `2x` | coherent contribution retained, not creatively admitted | future source-readable lower range |
 | `2x` to `4x` | overlap paused | no automatic route |
 | `4x` to `16x` | no owner | `Dream`/`Spectral`/`Rough` research targets only |
@@ -363,10 +362,11 @@ complete-system evidence changes the bet.
 
 The explicit cyclic reserve still has separate operator value and a retained
 comparator. Its first complete owner is rejected for synthetic pitch
-displacement. Batch 31.12 selects correlation-aligned waveform overlap as a
-materially different, source-backed family for one new complete brief. Passing
-any future owner would admit one intentional character through `8x`; it would
-not claim PaulX-like `Dream`, reopen the automatic router, or authorize Cloud.
+displacement. Batch 31.12 selected correlation-aligned waveform overlap as a
+materially different, source-backed family. Batch 31.13 freezes its complete
+candidate brief. Passing it would admit one intentional character through
+`8x`; it would not claim PaulX-like `Dream`, reopen the automatic router, or
+authorize Cloud.
 
 ## Sources
 
@@ -390,7 +390,7 @@ not claim PaulX-like `Dream`, reopen the automatic router, or authorize Cloud.
 
 ## Next Task
 
-Execute `g10.031` Batch 31.13 only. Freeze one complete
-`SimilarityAlignedCyclic` implementation brief. Do not implement it, tune or
-reimplement `CyclicGrain`, or reopen `Dream`, `Spectral`, `Rough`, `Cloud`,
-automatic routing, cache, or public APIs.
+Execute `g10.031` Batch 31.14 only. Implement the frozen
+`SimilarityAlignedCyclic` brief once in a disposable worktree and stop at the
+first failed gate. Do not tune or reimplement `CyclicGrain`, or reopen `Dream`,
+`Spectral`, `Rough`, `Cloud`, automatic routing, cache, or public APIs.

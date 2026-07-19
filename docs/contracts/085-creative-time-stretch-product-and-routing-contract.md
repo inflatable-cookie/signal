@@ -1,10 +1,11 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: active similarity-aligned cyclic-brief boundary; no implementation admitted
+Status: active isolated similarity-aligned cyclic-candidate boundary
 Owner: core-product
 Updated: 2026-07-19
 Related contracts: `046`, `048`, `084`
 Related architecture: `docs/architecture/offline-creative-time-stretch-study.md`,
+`docs/architecture/offline-creative-similarity-aligned-cyclic-brief.md`,
 `docs/architecture/offline-creative-cyclic-grain-brief.md`
 Roadmap: `g10.031`
 
@@ -221,15 +222,15 @@ family. `Dream`, `Spectral`, `Rough`, `Cloud`, and automatic routing stay
 closed.
 
 The separate cyclic reserve has operator value, a retained ReaReaRea target,
-and public two-grain Akai-style architecture evidence. It becomes the only
-next owner study. Its first `CyclicGrain` candidate passed structural admission
+and public two-grain Akai-style architecture evidence. It became the next
+owner study. Its first `CyclicGrain` candidate passed structural admission
 but failed the first synthetic pitch row: `110 Hz` at `2x` measured
 `111.328 Hz`, or `20.778` cents against the frozen `15`-cent ceiling. It was
 deleted without correction or rerun. GPL source informs clean-room architecture
 only; no expression, constant, or control flow enters Signal. Do not build the
 full router as simultaneous experiments.
 
-Cyclic ownership reassessment selects `SimilarityAlignedCyclic` for one new
+Cyclic ownership reassessment selected `SimilarityAlignedCyclic` for one new
 complete brief. Unlike the rejected fixed lattice, it chooses each source
 segment inside a bounded ideal-map neighbourhood by waveform similarity to the
 prior segment's natural continuation. One strictly increasing selected path
@@ -239,6 +240,14 @@ of transparent or arbitrary-polyphonic quality. Echoing, drift, one-lag
 polyphonic compromise, event replicas, and linked-image motion remain explicit
 rejection risks. No source expression, constants, search schedule, or tuning
 transfers to Signal.
+
+The frozen brief now owns one exact rational nominal map, one regular output
+lattice, one bounded two-stage zero-mean correlation search, one strictly
+increasing source-anchor path, one low-confidence fallback, unit-rate native
+reads, complementary overlap synthesis, shared linked-channel decisions,
+exact length, `4 MiB` state, deterministic cost, fixed gates, and complete
+cleanup. Candidate implementation may not choose another WSOLA variant or
+alter those laws.
 
 ## Initial Promotion Sequence
 
@@ -257,9 +266,9 @@ transfers to Signal.
 10. Reassess cyclic ownership at architecture level or close the character.
     Complete; similarity-aligned waveform overlap selected.
 11. Freeze one complete `SimilarityAlignedCyclic` brief without candidate DSP.
-    Next.
+    Complete.
 12. Implement one isolated candidate and stop at the first failed structural
-    or synthetic gate.
+    or synthetic gate. Next.
 13. Run retained mono and independent stereo listening only if that candidate
     clears structural and synthetic admission.
 14. Admit only the minimal cyclic owner if every gate passes.
@@ -274,16 +283,17 @@ decision backed by new complete-system evidence.
 Three isolated spectral candidates and the first cyclic candidate are rejected
 and deleted. The core `4x`-`16x` owner and automatic router are paused.
 `CyclicGrain` passed structural admission but missed the first synthetic pitch
-limit by `5.778` cents. `SimilarityAlignedCyclic` is selected for one complete
-brief because its adaptive waveform alignment changes the failed join
-mechanism. Explicit `Cyclic` still has no implementation. No public Rust enum,
-renderer, harness mode, fixture, artifact schema, runtime route, or
-product-facing claim entered `main`. `OfflineHighQuality` remains byte-exact
-and Contract `084` remains closed.
+limit by `5.778` cents. `SimilarityAlignedCyclic` was selected because its
+adaptive waveform alignment changes the failed join mechanism. Its complete
+brief is frozen and one isolated candidate is ready. Explicit
+`Cyclic` still has no implementation. No public Rust enum, renderer, harness
+mode, fixture, artifact schema, runtime route, or product-facing claim entered
+`main`. `OfflineHighQuality` remains byte-exact and Contract `084` remains
+closed.
 
 ## Next Task
 
-Run `g10.031` Batch 31.13 only. Freeze one complete
-`SimilarityAlignedCyclic` implementation brief. Do not implement it, tune or
-reimplement `CyclicGrain`, or reopen core spectral characters, Cloud,
-automatic routing, cache, or public APIs.
+Run `g10.031` Batch 31.14 only. Implement the frozen
+`SimilarityAlignedCyclic` brief once in a disposable worktree and stop at the
+first failed gate. Do not tune or reimplement `CyclicGrain`, or reopen core
+spectral characters, Cloud, automatic routing, cache, or public APIs.

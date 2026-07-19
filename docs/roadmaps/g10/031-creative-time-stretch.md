@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: active; Batch 31.13 similarity-aligned cyclic brief ready
+Status: active; Batch 31.14 isolated similarity-aligned candidate ready
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -396,31 +396,56 @@ ratios, polyphonic pack, and linked-stereo gate.
 
 ## Batch 31.13 - Similarity-Aligned Cyclic Brief
 
-Status: ready; docs and architecture only
+Status: complete; docs and architecture only
 
 Freeze one complete clean-room `SimilarityAlignedCyclic` renderer before any
 candidate implementation.
 
-- freeze the ideal map, realized strictly monotonic source path, output launch
+- [x] froze the ideal map, realized strictly monotonic source path, output launch
   lattice, bounded non-accumulating search domain, score, and deterministic
   ties
-- freeze silence and low-confidence fallback without adding a second timeline
-- freeze segment, overlap, window, normalization, boundaries, exact length,
+- [x] froze silence and low-confidence fallback without adding a second
+  timeline
+- [x] froze segment, overlap, window, normalization, boundaries, exact length,
   anti-replica behavior, memory bound, determinism, and computational shape
-- freeze one linked-channel score and native-channel synthesis law
-- map `motion`, `detail`, `space`, and seed without exposing algorithm controls
-- retain structural, synthetic, mono, `16x` rejection, and independent stereo
-  gate order
-- freeze whole-candidate rejection, deletion, and minimal private admission
-- do not implement DSP, add harness surfaces, capture comparator audio, or
+- [x] froze one linked-channel score and native-channel synthesis law
+- [x] mapped `motion`, `detail`, `space`, and seed without exposing algorithm
+  controls
+- [x] retained structural, synthetic, mono, `16x` rejection, and independent
+  stereo gate order
+- [x] froze whole-candidate rejection, deletion, and minimal private admission
+- [x] did not implement DSP, add harness surfaces, capture comparator audio, or
   reopen any other creative owner or product surface
+
+Authority:
+
+- `docs/architecture/offline-creative-similarity-aligned-cyclic-brief.md`
+
+## Batch 31.14 - Isolated Similarity-Aligned Cyclic Candidate
+
+Status: ready; disposable worktree only
+
+Create sibling worktree `/Users/tom/Dev/projects/signal-candidate-31-14` on
+branch `candidate/g10-031-similarity-aligned-cyclic` from the Batch 31.13 docs
+commit. Implement the frozen brief once.
+
+- add only the private six-file `creative_similarity_cyclic` family and one
+  private `lib.rs` declaration
+- run compile-only validation before admission
+- run the complete structural gate
+- run retained neutral `110 Hz` at `2x` first after structural admission
+- stop on the first failure without correction or rerun
+- open remaining synthetic rows, comparator capture, mono listening, `16x`
+  rejection, and independent stereo only in the frozen order
+- delete the entire worktree, branch, candidate code, tests, build state, and
+  generated audio after any failure
+- admit nothing to `main` unless every gate passes
 
 ## Later Batches
 
-Closed pending the complete similarity-aligned brief and separate reopening
+Closed pending the isolated similarity-aligned decision and separate reopening
 evidence:
 
-- isolated similarity-aligned cyclic candidate
 - minimal production admission
 - coherent/diffusive overlap
 - `LayeredCloud` study and candidate
@@ -441,7 +466,7 @@ evidence:
 - [x] one complete cyclic owner brief is frozen
 - [x] one isolated cyclic candidate reached a recorded terminal decision
 - [x] one materially different source-backed cyclic family is selected
-- [ ] one complete similarity-aligned cyclic brief is frozen
+- [x] one complete similarity-aligned cyclic brief is frozen
 - [ ] one isolated cyclic candidate passes structural and synthetic gates
 - [ ] long-form mono cyclic listening passes at `2x`, `4x`, and `8x`
 - [ ] linked-stereo mechanics and independent listening pass
@@ -450,7 +475,9 @@ evidence:
 
 ## Next Task
 
-Execute Batch 31.13 only. Freeze one complete `SimilarityAlignedCyclic`
-implementation brief. Do not write candidate DSP in the same batch. Keep core
-spectral characters, Cloud, automatic routing, dynamic ratio, cache, and
-public APIs closed.
+Execute Batch 31.14 only. Create
+`/Users/tom/Dev/projects/signal-candidate-31-14` on
+`candidate/g10-031-similarity-aligned-cyclic` from the Batch 31.13 docs commit,
+implement the frozen `SimilarityAlignedCyclic` brief once, and stop at the
+first failed gate. Keep core spectral characters, Cloud, automatic routing,
+dynamic ratio, cache, and public APIs closed.

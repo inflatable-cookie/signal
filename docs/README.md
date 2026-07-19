@@ -31,6 +31,7 @@ strict lane.
 - Rejected offline stretch successor: [architecture/offline-time-stretch-successor-brief.md](./architecture/offline-time-stretch-successor-brief.md)
 - Non-phase-vocoder feasibility: [architecture/offline-time-stretch-non-phase-vocoder-feasibility.md](./architecture/offline-time-stretch-non-phase-vocoder-feasibility.md)
 - Creative time-stretch study: [architecture/offline-creative-time-stretch-study.md](./architecture/offline-creative-time-stretch-study.md)
+- Creative SimilarityAlignedCyclic brief: [architecture/offline-creative-similarity-aligned-cyclic-brief.md](./architecture/offline-creative-similarity-aligned-cyclic-brief.md)
 - Rejected creative CyclicGrain brief: [architecture/offline-creative-cyclic-grain-brief.md](./architecture/offline-creative-cyclic-grain-brief.md)
 - Rejected creative complex-relation brief: [architecture/offline-creative-continuous-excitation-complex-relation-brief.md](./architecture/offline-creative-continuous-excitation-complex-relation-brief.md)
 - Rejected continuous-excitation brief: [architecture/offline-creative-continuous-excitation-spectral-brief.md](./architecture/offline-creative-continuous-excitation-spectral-brief.md)
@@ -71,6 +72,7 @@ strict lane.
 
 ## Next Task
 
-Execute `g10.031` Batch 31.13 only. Freeze one complete
-`SimilarityAlignedCyclic` implementation brief without DSP or harness work.
-Only drop into `specs/` when a strict lane is explicitly reopened.
+Execute `g10.031` Batch 31.14 only. Implement the frozen
+`SimilarityAlignedCyclic` brief once in a disposable worktree and stop at the
+first failed gate. Only drop into `specs/` when a strict lane is explicitly
+reopened.

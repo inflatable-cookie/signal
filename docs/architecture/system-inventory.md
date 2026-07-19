@@ -51,7 +51,9 @@ Signal's active implementation surface is the Rust workspace under `crates/`
 - `signal-dsp-stretch`
   - frozen Signal-owned offline and preview time-stretch baselines, cache
     identity, callback-state proof, compact external comparator, and long-form
-    blind listening pack; successor admission is governed by `g10.030`
+    blind listening pack; transparent successor admission is closed under
+    `g10.030`, while the separate creative candidate is governed by `g10.031`
+    and Contract `085`
 
 ### Analysis substrate
 

@@ -58,8 +58,9 @@ The 2026-07-19 consolidation reset is authoritative.
   the first synthetic row measured `20.778` cents of pitch error against the
   `15`-cent ceiling. The candidate was deleted without correction or rerun.
   Batch 31.12 then selected one materially different correlation-aligned
-  waveform family for a clean-room cyclic brief. Batch 31.13 is ready; no
-  candidate implementation is admitted.
+  waveform family for a clean-room cyclic brief. Batch 31.13 froze its exact
+  map, search, overlap, stereo, bounds, and gates without changing DSP. Batch
+  31.14 isolated candidate work is ready; no implementation is admitted.
 - `g10.028` RealtimePreview source-fill and all render-plane integration remain
   paused.
 
@@ -129,7 +130,7 @@ Do not start Loophole or Chorus planning from Signal internals.
   - stretch consolidated; candidate families closed; frozen baseline retained
 - `g10.031` `active`
   - spectral router paused; cyclic candidate rejected at synthetic pitch;
-    similarity-aligned cyclic brief ready
+    similarity-aligned cyclic candidate ready
 
 ## Stretch Boundary
 
@@ -153,12 +154,12 @@ The separate `CreativeStretch` path remains unimplemented. Its automatic
 spectral route is paused after three rejected and deleted candidates. The first
 explicit cyclic candidate is also rejected and deleted after structural
 admission and a first-row synthetic pitch miss. Correlation-aligned waveform
-overlap is selected for one new complete cyclic brief, but Creative stretch has
-no renderer, public API, harness surface, or product route on `main`.
+overlap now has one frozen complete cyclic brief, but Creative stretch has no
+renderer, public API, harness surface, or product route on `main`.
 
 ## Next Task
 
-Execute `g10.031` Batch 31.13 only. Freeze one complete
-`SimilarityAlignedCyclic` implementation brief without writing candidate DSP.
-Keep rejected families, the automatic router, `g10.028`, later creative
-owners, and render-plane integration paused.
+Execute `g10.031` Batch 31.14 only. Implement the frozen
+`SimilarityAlignedCyclic` brief once in a disposable worktree and stop at the
+first failed gate. Keep rejected families, the automatic router, `g10.028`,
+later creative owners, and render-plane integration paused.

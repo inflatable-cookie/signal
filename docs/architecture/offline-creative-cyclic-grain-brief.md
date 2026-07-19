@@ -417,6 +417,7 @@ brief before another implementation.
 
 ## Next Task
 
-Execute `g10.031` Batch 31.13 only. Freeze the materially different
-`SimilarityAlignedCyclic` brief. Do not tune or reimplement this historical
-brief, and do not start product admission, cache, routing, or public API work.
+Execute `g10.031` Batch 31.14 only. Implement the materially different frozen
+`SimilarityAlignedCyclic` brief once in a disposable worktree. Do not tune or
+reimplement this historical brief, and do not start product admission, cache,
+routing, or public API work.
