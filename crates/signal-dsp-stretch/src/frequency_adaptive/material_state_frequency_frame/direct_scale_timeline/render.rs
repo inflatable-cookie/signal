@@ -268,9 +268,10 @@ pub(super) fn render(
         for (target, value) in total.states.iter_mut().zip(report.states) {
             *target += value;
         }
-        total.borrowed_regions += report.borrowed_regions;
-        total.local_regions += report.local_regions;
-        total.owner_switches += report.owner_switches;
+        total.borrowed_locked_atoms += report.borrowed_locked_atoms;
+        total.local_locked_atoms += report.local_locked_atoms;
+        total.trajectory_channel_switches += report.trajectory_channel_switches;
+        total.channel_peak_disagreements += report.channel_peak_disagreements;
         total.non_finite_values += report.non_finite_values;
         prepared.synthesise_tick(&decided, tick, target_frames, &mut non_finite);
 
@@ -337,9 +338,9 @@ fn finish_candidate(
         non_finite,
         boundary_failures,
         states,
-        borrowed_regions: report.borrowed_regions,
-        local_regions: report.local_regions,
-        owner_switches: report.owner_switches,
+        borrowed_regions: report.borrowed_locked_atoms,
+        local_regions: report.local_locked_atoms,
+        owner_switches: report.trajectory_channel_switches,
         maximum_pending_ticks: PENDING_TICKS,
         maximum_guidance_ticks: GUIDANCE_TICKS,
         maximum_output_samples,

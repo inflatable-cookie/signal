@@ -2918,17 +2918,39 @@ audio changed.
 
 ### Batch 29.7BA - Direct Channel-Local Peak Mechanics
 
-Status: ready
+Status: complete
 
-- [ ] replace only private joint region construction and locked trajectory
+- [x] replace only private joint region construction and locked trajectory
   mechanics with the frozen Rule 31AC channel-local topology
-- [ ] implement focused no-audio tests for joint-map attribution, staggered
+- [x] implement focused no-audio tests for joint-map attribution, staggered
   compatible peaks, incompatible/unsupported fallback, ties, exact `6000 Hz`,
   swap, silence/recovery, terminal states, all proof rates, storage, shape,
   finiteness, and repeat
-- [ ] preserve Rule 31Z representation and every non-locked phase law; generate
+- [x] preserve Rule 31Z representation and every non-locked phase law; generate
   no renderer/objective audio and compile a separate objective card only after
   complete mechanics passage
+
+Evidence: channel-local peak construction and predecessor-anchored locked
+trajectory are implemented with unchanged `2CP` records and `2CP` phase state.
+The frozen joint baseline collapses the primary fixture onto peak `11`; the
+corrected records retain peaks `9` and `11`, borrow without peak replacement,
+and preserve magnitude/offset at `1e-12`. The fixture repeats at
+`fcbdfd991bd04db1`; terminal, relation, and representation receipts are
+`5ae654162d4ed279`, `2b8104525bad0418`, and `fdf90f6127749341`. The complete
+no-audio matrix passes. No objective or corpus audio ran.
+
+### Batch 29.7BB - Channel-Local Peak Objective Preregistration
+
+Status: ready
+
+- [ ] freeze the Rule 31AC candidate identity and require the BA representation,
+  terminal, relation, and staggered receipts before any objective work
+- [ ] carry AX's mechanics, synthetic, stereo, mono, and long-development order
+  and hard thresholds forward unchanged; define the private channel-atom report
+  mapping without using it to relax a gate
+- [ ] stop implementation-free after compiling one failure-first execution
+  card; permit no renderer/corpus audio, tuning, repair, retry, listening, or
+  Batch 29.8 work
 
 ### Batch 29.8 - Listening And Dynamic Checkpoint
 
@@ -4339,10 +4361,16 @@ Status: ready
   predecessor-anchored advance, requesting-peak retention, existing fixed
   storage, channel-atom reporting, and a complete no-audio proof matrix. Batch
   29.7BA is ready; state code and audio remain unchanged.
+- 2026-07-19: Batch 29.7BA implements Rule 31AC. The old joint baseline maps
+  the staggered fixture to peak `11`; Signal now retains channel peaks `9` and
+  `11`, borrows only the compatible predecessor-anchored trajectory, and
+  repeats at `fcbdfd991bd04db1`. Terminal, relation, and representation receipts
+  are `5ae654162d4ed279`, `2b8104525bad0418`, and `fdf90f6127749341`. All
+  no-audio mechanics pass; objective audio remains unopened. Batch 29.7BB is
+  ready as implementation-free preregistration.
 
 ## Next Task
 
-Run Batch 29.7BA under Rule 31AC. Implement only the frozen private channel-
-local peak/state mechanics and focused no-audio proofs. Keep offset scaling,
-renderer/objective audio, tuning, listening, holdout, product surfaces, and
-Batch 29.8 closed.
+Run Batch 29.7BB. Freeze one Rule 31AC failure-first objective candidate and
+its unchanged AX evidence order. Run no renderer/corpus audio; keep offset
+scaling, tuning, listening, holdout, product surfaces, and Batch 29.8 closed.

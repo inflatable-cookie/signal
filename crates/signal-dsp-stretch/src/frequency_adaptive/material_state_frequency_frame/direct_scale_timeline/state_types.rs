@@ -1,7 +1,7 @@
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub(super) struct RegionRecord {
     pub peak: usize,
-    pub owner: usize,
+    pub trajectory_channel: usize,
     pub supported: bool,
 }
 
@@ -44,9 +44,10 @@ impl TerminalState {
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub(super) struct StateTickReport {
     pub states: [usize; 5],
-    pub borrowed_regions: usize,
-    pub local_regions: usize,
-    pub owner_switches: usize,
+    pub borrowed_locked_atoms: usize,
+    pub local_locked_atoms: usize,
+    pub trajectory_channel_switches: usize,
+    pub channel_peak_disagreements: usize,
     pub non_finite_values: usize,
     pub hash: u64,
 }

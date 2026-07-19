@@ -125,6 +125,6 @@ for implementation-free mechanics design.
 
 ## Next Task
 
-Run Batch 29.7BA under Rule 31AC. Implement only the frozen private channel-
-local peak/state mechanics and no-audio proof matrix; keep renderer and
-objective execution closed.
+Run Batch 29.7BB under Rule 31AC. Freeze one failure-first objective candidate
+from the passed channel-local mechanics receipts and unchanged AX evidence
+order. Run no renderer or corpus audio.

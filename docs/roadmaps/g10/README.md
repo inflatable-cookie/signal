@@ -557,15 +557,18 @@ Current stretch status:
   staggered-peak analytic falsifier. AZ now freezes channel-local current and
   predecessor maps, per-atom trajectory selection, predecessor-anchored advance,
   requesting-peak retention, unchanged fixed storage, channel-atom reporting,
-  and the full no-audio proof matrix. Batch 29.7BA is ready. No code or audio
-  changed.
+  and the full no-audio proof matrix. Batch 29.7BA now implements that seam:
+  the staggered fixture retains peaks `9` and `11` and repeats at
+  `fcbdfd991bd04db1`; all no-audio mechanics pass with unchanged capacity and
+  no objective audio. Batch 29.7BB is ready as implementation-free objective
+  preregistration.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7BA under Rule 31AC. Implement only the frozen private
-channel-local peak/state mechanics and focused no-audio proof matrix. Keep
-renderer/objective audio, offset scaling, tuning, listening, holdout, product
-surfaces, and Batch 29.8 closed.
+Run `g10.029` Batch 29.7BB. Freeze one Rule 31AC failure-first objective
+candidate and the unchanged AX evidence order. Run no renderer/corpus audio;
+keep offset scaling, tuning, listening, holdout, product surfaces, and Batch
+29.8 closed.

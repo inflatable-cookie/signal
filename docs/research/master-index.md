@@ -84,6 +84,6 @@ Finch and Loophole.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7BA under Rule 31AC. Implement the frozen private
-channel-local peak maps, predecessor-anchored locked trajectory, and no-audio
-proof matrix. Keep renderer and objective execution closed.
+Run `g10.029` Batch 29.7BB under Rule 31AC. Freeze one failure-first objective
+candidate from the passed channel-local mechanics receipts and unchanged AX
+evidence order. Run no renderer or corpus audio.

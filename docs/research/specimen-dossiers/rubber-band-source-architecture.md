@@ -171,7 +171,7 @@ winner is established.
 
 ## Next Task
 
-Batch 29.7AZ freezes the clean-room mechanics contract. Run Batch 29.7BA to
-implement only Signal-owned channel-local peak maps, compatible frequency-
-aligned predecessor trajectories, and no-audio proofs. Do not transfer Rubber
-Band expression, ranges, thresholds, tables, or constants.
+Batch 29.7BA implements the clean-room mechanics contract and passes the full
+no-audio matrix. Run Batch 29.7BB to preregister one failure-first objective
+candidate from Signal's passed receipts. Do not transfer Rubber Band
+expression, ranges, thresholds, tables, or constants, and run no audio yet.

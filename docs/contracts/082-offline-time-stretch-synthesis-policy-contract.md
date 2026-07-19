@@ -5266,7 +5266,27 @@ row repair remain closed. Batch 29.7BA may implement only these private
 mechanics and tests. Another objective candidate requires separate failure-
 first preregistration after complete mechanics passage.
 
+Batch 29.7BA passes the Rule 31AC mechanics boundary. Region construction now
+uses independent channel/scale magnitudes, valleys, fallback maxima, and peak
+maps. Locked processing retains each requesting peak, selects a possible
+trajectory channel at the requesting atom, requires equal predecessor identity
+and supported history, and re-anchors the selected ordinary advance to the
+common predecessor. Reports now count locked channel-atoms, committed
+trajectory-channel switches, and channel-peak disagreements.
+
+The primary staggered fixture proves the former joint map collapses onto peak
+`11`, while the corrected records retain peaks `9` and `11`; compatible
+borrowing leaves the requesting peak unchanged and preserves magnitude and
+within-region offset at `1e-12`. It repeats at hash `fcbdfd991bd04db1`.
+Terminal sequencing repeats at `5ae654162d4ed279`, the corrected relation
+fixture at `2b8104525bad0418`, and representation remains
+`fdf90f6127749341`. Incompatible and unsupported histories, unsupported
+current owner, lower-bin/channel ties, exact `6000 Hz`, swap, silence/recovery,
+every terminal state, all proof rates, fixed storage, pre-mutation rejection,
+finiteness, and repeat pass. No objective or corpus audio ran.
+
 ## Next Task
 
-Run Batch 29.7BA under Rule 31AC. Implement only the frozen private peak/state
-mechanics and no-audio proofs; keep renderer and objective execution closed.
+Run Batch 29.7BB. Freeze one failure-first objective candidate from the passed
+Rule 31AC receipts and unchanged AX evidence order before any renderer or
+corpus execution.

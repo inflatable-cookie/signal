@@ -1925,9 +1925,15 @@ No capacity changes. Diagnostics count locked channel-atom borrowing, local
 fallback, committed trajectory switches, and channel-peak disagreements rather
 than pretending both channels share one region topology.
 
+Batch 29.7BA implements that seam. The old maximum-channel region builder is
+gone from the direct candidate; each channel now retains its own peak and
+predecessor map. A compatible peer lends only its predecessor-anchored
+trajectory. Shared terminal classification, non-locked phase laws, exact scale
+ownership, magnitudes, schedules, and fixed storage do not move. The staggered
+analytic proof repeats at `fcbdfd991bd04db1`; no objective audio ran.
+
 ## Next Task
 
-Run Batch 29.7BA under Rule 31AC. Implement only the frozen channel-local peak
-maps, predecessor-anchored locked trajectory, private reporting, and no-audio
-mechanics proofs. Keep renderer audio, tuning, listening, holdout, product work,
-and Batch 29.8 closed.
+Run Batch 29.7BB. Preregister one failure-first objective candidate using the
+passed Rule 31AC mechanics receipts and unchanged AX gate order. Keep audio,
+tuning, listening, holdout, product work, and Batch 29.8 closed.

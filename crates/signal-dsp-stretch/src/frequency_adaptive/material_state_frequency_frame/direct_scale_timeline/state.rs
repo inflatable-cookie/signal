@@ -55,134 +55,146 @@ impl Prepared {
 
         for scale in Scale::ALL {
             let scale_end = first + self.owned_bins[scale.index()];
-            let mut region_first = first;
-            while region_first < scale_end {
-                let record = self.regions[current_base + region_first];
-                let peak = record.peak;
-                let mut region_end = region_first + 1;
-                while region_end < scale_end && self.regions[current_base + region_end].peak == peak
-                {
-                    region_end += 1;
-                }
-                let frequency = self.atom_frequency(scale, peak - first);
-                let owner_record = self.regions[current_base + record.owner * atoms + peak];
-                let previous = self
-                    .has_state
-                    .then(|| self.regions[previous_base + record.owner * atoms + peak]);
-                let compatible = previous.is_some_and(|prior| {
-                    (region_first..region_end).contains(&prior.peak)
-                        && owner_record.supported
-                        && prior.supported
-                });
-                let borrowed = compatible && frequency < LINK_LIMIT_HZ;
-                let owner_switch = previous.is_some_and(|prior| prior.owner != record.owner);
+            for atom in first..scale_end {
                 let previous_joint_support = self.has_state
                     && (0..self.channels).any(|channel| {
+                        let peak = self.regions[current_base + channel * atoms + atom].peak;
                         self.regions[previous_base + channel * atoms + peak].supported
                     });
-                let current_joint_support = (0..self.channels)
-                    .any(|channel| self.regions[current_base + channel * atoms + peak].supported);
+                let current_joint_support = (0..self.channels).any(|channel| {
+                    let peak = self.regions[current_base + channel * atoms + atom].peak;
+                    self.regions[current_base + channel * atoms + peak].supported
+                });
+                let material = guidance[atom];
+                let atom_frequency = self.atom_frequency(scale, atom - first);
+                let state = if control.ordinary_bypass {
+                    TerminalState::Ordinary
+                } else if !self.has_state || !current_joint_support || !previous_joint_support {
+                    TerminalState::Reset
+                } else if material.transientness > material.tonalness
+                    && control.transient_center
+                    && atom_frequency < LINK_LIMIT_HZ
+                {
+                    TerminalState::Attack
+                } else if material.noisiness > material.tonalness {
+                    TerminalState::Unlocked
+                } else {
+                    TerminalState::Locked
+                };
+                states[atom] = state;
+                report.states[state.index()] += 1;
+                report.channel_peak_disagreements += usize::from(
+                    self.channels == 2
+                        && self.regions[current_base + atom].peak
+                            != self.regions[current_base + atoms + atom].peak,
+                );
 
-                let mut region_locked = false;
-                for atom in region_first..region_end {
-                    let material = guidance[atom];
-                    let state = if control.ordinary_bypass {
-                        TerminalState::Ordinary
-                    } else if !self.has_state || !current_joint_support || !previous_joint_support {
-                        TerminalState::Reset
-                    } else if material.transientness > material.tonalness
-                        && control.transient_center
-                        && self.atom_frequency(scale, atom - first) < LINK_LIMIT_HZ
-                    {
-                        TerminalState::Attack
-                    } else if material.noisiness > material.tonalness {
-                        TerminalState::Unlocked
-                    } else {
-                        TerminalState::Locked
-                    };
-                    states[atom] = state;
-                    report.states[state.index()] += 1;
-                    region_locked |= state == TerminalState::Locked;
-
-                    for channel in 0..self.channels {
-                        let index = channel * atoms + atom;
-                        let value = current[index];
-                        let prior_supported = self.has_state
-                            && self.regions[previous_base + channel * atoms + atom].supported;
-                        let phase = match state {
-                            TerminalState::Reset => {
-                                if prior_supported {
-                                    ordinary_phase(
-                                        current,
-                                        &self.phase,
-                                        self.sample_rate,
-                                        self.hop,
-                                        atoms,
-                                        channel,
-                                        atom,
-                                        self.atom_frequency(scale, atom - first),
-                                        control.analysis_advance,
-                                        true,
-                                    )
-                                } else {
-                                    value.arg()
-                                }
-                            }
-                            TerminalState::Attack => value.arg(),
-                            TerminalState::Ordinary | TerminalState::Unlocked => ordinary_phase(
-                                current,
-                                &self.phase,
-                                self.sample_rate,
-                                self.hop,
-                                atoms,
-                                channel,
-                                atom,
-                                self.atom_frequency(scale, atom - first),
-                                control.analysis_advance,
-                                prior_supported,
-                            ),
-                            TerminalState::Locked => {
-                                let trajectory_channel =
-                                    if borrowed { record.owner } else { channel };
-                                let trajectory_supported = self.has_state
-                                    && self.regions
-                                        [previous_base + trajectory_channel * atoms + peak]
-                                        .supported;
-                                let trajectory = ordinary_phase(
+                for channel in 0..self.channels {
+                    let index = channel * atoms + atom;
+                    let value = current[index];
+                    let prior_supported = self.has_state
+                        && self.regions[previous_base + channel * atoms + atom].supported;
+                    let phase = match state {
+                        TerminalState::Reset => {
+                            if prior_supported {
+                                ordinary_phase(
                                     current,
                                     &self.phase,
                                     self.sample_rate,
                                     self.hop,
                                     atoms,
-                                    trajectory_channel,
-                                    peak,
-                                    frequency,
+                                    channel,
+                                    atom,
+                                    atom_frequency,
                                     control.analysis_advance,
-                                    trajectory_supported,
-                                );
-                                trajectory
-                                    + wrap(
-                                        value.arg()
-                                            - current[trajectory_channel * atoms + peak].arg(),
-                                    )
+                                    true,
+                                )
+                            } else {
+                                value.arg()
                             }
-                        };
-                        output[index] = if value.norm_sqr() == 0.0 {
-                            Complex64::default()
-                        } else {
-                            Complex64::from_polar(value.norm(), phase)
-                        };
-                        report.non_finite_values += usize::from(
-                            !output[index].re.is_finite() || !output[index].im.is_finite(),
-                        );
-                    }
+                        }
+                        TerminalState::Attack => value.arg(),
+                        TerminalState::Ordinary | TerminalState::Unlocked => ordinary_phase(
+                            current,
+                            &self.phase,
+                            self.sample_rate,
+                            self.hop,
+                            atoms,
+                            channel,
+                            atom,
+                            atom_frequency,
+                            control.analysis_advance,
+                            prior_supported,
+                        ),
+                        TerminalState::Locked => {
+                            let record = self.regions[current_base + index];
+                            let peak = record.peak;
+                            let candidate = dominant_channel(current, self.channels, atoms, atom);
+                            let candidate_peak =
+                                self.regions[current_base + candidate * atoms + atom].peak;
+                            let requester_predecessor = self
+                                .has_state
+                                .then(|| self.regions[previous_base + channel * atoms + peak]);
+                            let candidate_predecessor = self.has_state.then(|| {
+                                self.regions[previous_base + candidate * atoms + candidate_peak]
+                            });
+                            let common_predecessor = requester_predecessor
+                                .zip(candidate_predecessor)
+                                .and_then(|(requester, candidate)| {
+                                    (requester.peak == candidate.peak).then_some(requester.peak)
+                                });
+                            let peak_frequency = self.atom_frequency(scale, peak - first);
+                            let borrowed = candidate != channel
+                                && peak_frequency < LINK_LIMIT_HZ
+                                && self.regions[current_base + candidate * atoms + atom].supported
+                                && current[candidate * atoms + peak].norm_sqr() > SUPPORT_FLOOR
+                                && common_predecessor.is_some_and(|predecessor| {
+                                    self.regions[previous_base + candidate * atoms + predecessor]
+                                        .supported
+                                });
+                            let trajectory_channel = if borrowed { candidate } else { channel };
+                            let predecessor = if borrowed {
+                                common_predecessor
+                            } else {
+                                requester_predecessor.map(|record| record.peak)
+                            };
+                            let trajectory = predecessor_anchored_phase(
+                                current,
+                                &self.phase,
+                                &self.regions,
+                                self.sample_rate,
+                                self.hop,
+                                atoms,
+                                previous_base,
+                                trajectory_channel,
+                                peak,
+                                predecessor,
+                                peak_frequency,
+                                control.analysis_advance,
+                            );
+                            report.borrowed_locked_atoms += usize::from(borrowed);
+                            report.local_locked_atoms += usize::from(!borrowed);
+                            report.trajectory_channel_switches += usize::from(
+                                self.has_state
+                                    && self.regions[previous_base + index].trajectory_channel
+                                        != trajectory_channel,
+                            );
+                            self.regions[current_base + index].trajectory_channel =
+                                trajectory_channel;
+                            trajectory
+                                + wrap(
+                                    value.arg() - current[trajectory_channel * atoms + peak].arg(),
+                                )
+                        }
+                    };
+                    output[index] = if value.norm_sqr() == 0.0 {
+                        Complex64::default()
+                    } else {
+                        Complex64::from_polar(value.norm(), phase)
+                    };
+                    report.non_finite_values +=
+                        usize::from(!output[index].re.is_finite() || !output[index].im.is_finite());
                 }
-                if region_locked {
-                    report.borrowed_regions += usize::from(borrowed);
-                    report.local_regions += usize::from(!borrowed);
-                    report.owner_switches += usize::from(owner_switch);
-                }
-                region_first = region_end;
             }
             first = scale_end;
         }
@@ -218,13 +230,54 @@ impl Prepared {
 
 fn hash_workless_report(hash: &mut u64, report: StateTickReport) {
     for value in report.states.into_iter().chain([
-        report.borrowed_regions,
-        report.local_regions,
-        report.owner_switches,
+        report.borrowed_locked_atoms,
+        report.local_locked_atoms,
+        report.trajectory_channel_switches,
+        report.channel_peak_disagreements,
         report.non_finite_values,
     ]) {
         hash_usize(hash, value);
     }
+}
+
+#[allow(clippy::too_many_arguments)]
+fn predecessor_anchored_phase(
+    current: &[Complex64],
+    phase: &[f64],
+    regions: &[RegionRecord],
+    sample_rate: usize,
+    hop: usize,
+    atoms: usize,
+    previous_base: usize,
+    channel: usize,
+    peak: usize,
+    predecessor: Option<usize>,
+    frequency: f64,
+    analysis_advance: f64,
+) -> f64 {
+    let coefficients = phase.len() / 2;
+    let index = channel * atoms + peak;
+    let prior_supported = regions[previous_base + index].supported;
+    let ordinary = ordinary_phase(
+        current,
+        phase,
+        sample_rate,
+        hop,
+        atoms,
+        channel,
+        peak,
+        frequency,
+        analysis_advance,
+        prior_supported,
+    );
+    predecessor
+        .filter(|predecessor| {
+            prior_supported && regions[previous_base + channel * atoms + predecessor].supported
+        })
+        .map_or(ordinary, |predecessor| {
+            let advance = wrap(ordinary - phase[coefficients + index]);
+            phase[coefficients + channel * atoms + predecessor] + advance
+        })
 }
 
 #[cfg(test)]

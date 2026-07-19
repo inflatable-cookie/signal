@@ -82,6 +82,13 @@ finiteness, fixed capacity, and exact repeat.
 
 No corpus render is needed to distinguish the topologies.
 
+Batch 29.7BA implements the promoted boundary. The former joint builder maps
+the staggered fixture to peak `11`; corrected channel records retain peaks `9`
+and `11`, borrow a compatible predecessor-anchored trajectory without moving
+the requesting peak, and repeat at `fcbdfd991bd04db1`. The full fallback,
+tie, boundary, swap, recovery, terminal, proof-rate, storage, shape, finite,
+and repeat matrix passes. No objective audio ran.
+
 ## Rejected Alternatives
 
 - no parameter sweep or peak-density tuning
@@ -99,5 +106,6 @@ No corpus render is needed to distinguish the topologies.
 
 ## Next Task
 
-Run Batch 29.7BA. Implement the frozen private mechanics and focused no-audio
-proofs without opening renderer or objective execution.
+Run Batch 29.7BB. Preregister one failure-first objective candidate from the
+passed mechanics receipts and unchanged AX evidence order. Run no renderer or
+corpus audio.
