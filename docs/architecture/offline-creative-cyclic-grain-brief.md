@@ -417,7 +417,6 @@ brief before another implementation.
 
 ## Next Task
 
-Execute `g10.031` Batch 31.12 only. Reassess cyclic ownership at architecture
-level or close the explicit character. Do not tune or reimplement this
-historical brief, and do not start product admission, cache, routing, or public
-API work.
+Execute `g10.031` Batch 31.13 only. Freeze the materially different
+`SimilarityAlignedCyclic` brief. Do not tune or reimplement this historical
+brief, and do not start product admission, cache, routing, or public API work.

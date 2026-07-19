@@ -1,6 +1,6 @@
 # Offline Creative Time-Stretch Study
 
-Status: complete; all candidate owners rejected; cyclic reassessment next
+Status: complete; similarity-aligned cyclic brief selected
 Owner: dsp
 Updated: 2026-07-19
 Contract: `085`
@@ -77,8 +77,61 @@ or implementation algorithm is promised to consumers.
 Batch 31.11 implemented that brief once. All structural controls passed, then
 neutral `110 Hz` at `2x` measured `111.328 Hz`, or `20.778` cents against the
 frozen `15`-cent synthetic pitch ceiling. The candidate was deleted without
-correction or rerun. Explicit `Cyclic` now has no owner and requires
+correction or rerun. At that stop, explicit `Cyclic` had no owner and required
 architecture reassessment before another complete candidate.
+
+## Cyclic Ownership Reassessment
+
+Batch 31.12 selects one materially different family for a new complete brief:
+`SimilarityAlignedCyclic`. It is a clean-room, waveform-domain,
+correlation-aligned overlap-add renderer. This selection does not admit an
+implementation.
+
+The architecture changes the failed owner, not a constant inside it:
+
+- rejected `CyclicGrain` used fixed ideal-map anchors, then crossfaded
+  source-offset unit-rate reads whether their waveforms agreed or not
+- `SimilarityAlignedCyclic` keeps a regular output launch lattice but selects
+  each source segment inside one bounded neighbourhood of the ideal map by
+  similarity to the prior segment's natural continuation
+- selected source anchors form one strictly increasing path; every correction
+  is relative to the ideal map and cannot accumulate into a free-running
+  cursor
+- one channel-symmetric score, anchor, window, and normalization law is shared
+  across linked channels; synthesis still reads each native channel
+- all segment reads remain forward and unit-rate; correlation alignment, not a
+  spectral or pitch-shift stage, owns join continuity and pitch preservation
+
+This directly addresses the rejected pitch mechanism. The WSOLA literature
+derives local segment displacement as the means of restoring natural waveform
+continuity at overlap joins. SoundTouch independently demonstrates a maintained
+time-domain implementation shape with one overlap search, one selected offset,
+and shared multichannel processing. Signal may use those sources for
+architecture and validation only. Their expression, constants, search order,
+tables, and tuning do not transfer.
+
+The historical WSOLA closure remains valid for transparent replacement. One
+waveform lag cannot guarantee arbitrary-polyphonic transparency, and published
+or maintained implementations warn about echoing and drift as sequence and
+search support grow. Those faults are risks here, but intentional cyclic
+repetition is the target rather than a transparent failure. The complete
+candidate must still clear the frozen tone and chord pitch ceiling, integrity
+controls, five-family mono pack, exact `16x` rejection, linked mechanics, and
+independent stereo listening.
+
+Pitch-synchronous OLA is not selected: it requires a credible dominant-period
+owner that does not generalize to the retained full-mix pack. Plain SOLA does
+not add a stronger source-backed path than waveform-similarity selection.
+Fixed chunk repetition and another unaligned grain lattice retain the rejected
+join problem. Spectral correction would reopen the closed spectral families.
+
+Batch 31.13 must freeze one complete `SimilarityAlignedCyclic` brief before
+candidate code. It must own the ideal and realized monotonic map, fixed output
+lattice, search domain, similarity score and ties, silence fallback, segment
+and overlap geometry, semantic macros, anti-replica law, linked-channel score
+and synthesis, boundaries, exact length, bounded state and cost, determinism,
+gate order, retained comparator pack, cleanup, and minimal admission. No item
+may remain a candidate-time choice.
 
 ## Product Surface
 
@@ -131,7 +184,7 @@ same exact target frame count.
 
 | Ratio | Current owner state | Product intent |
 | --- | --- | --- |
-| above `1x` to `8x` | cyclic candidate rejected; no owner | commanded Akai-style repetition |
+| above `1x` to `8x` | similarity-aligned cyclic brief selected; no implementation | commanded Akai-style repetition |
 | `1x` to `2x` | coherent contribution retained, not creatively admitted | future source-readable lower range |
 | `2x` to `4x` | overlap paused | no automatic route |
 | `4x` to `16x` | no owner | `Dream`/`Spectral`/`Rough` research targets only |
@@ -309,11 +362,11 @@ and deleted. Core `Dream`/`Spectral`/`Rough` ownership is paused until new
 complete-system evidence changes the bet.
 
 The explicit cyclic reserve still has separate operator value and a retained
-comparator, but its first complete owner is rejected for synthetic pitch
-displacement. Batch 31.12 must decide whether materially different
-source-backed architecture exists or close the character. Passing any future
-owner would admit one intentional character through `8x`; it would not claim
-PaulX-like `Dream`, reopen the automatic router, or authorize Cloud.
+comparator. Its first complete owner is rejected for synthetic pitch
+displacement. Batch 31.12 selects correlation-aligned waveform overlap as a
+materially different, source-backed family for one new complete brief. Passing
+any future owner would admit one intentional character through `8x`; it would
+not claim PaulX-like `Dream`, reopen the automatic router, or authorize Cloud.
 
 ## Sources
 
@@ -331,10 +384,13 @@ PaulX-like `Dream`, reopen the automatic router, or authorize Cloud.
 - [Noise Morphing for Audio Time Stretching](https://arxiv.org/abs/2312.14586)
 - [PaulXStretch official repository](https://github.com/essej/paulxstretch)
 - [Extreme Audio Time Stretching Using Neural Synthesis](https://arxiv.org/abs/2211.16992)
+- [Verhelst and Roelands, WSOLA](https://doi.org/10.21437/Eurospeech.1993-59)
+- [SoundTouch algorithm notes](https://soundtouch.surina.net/README.html)
+- [SoundTouch source, studied revision `f738b113`](https://codeberg.org/soundtouch/soundtouch/commit/f738b1132ec1fd56efc90367898244cf52d9e6a5)
 
 ## Next Task
 
-Execute `g10.031` Batch 31.12 only. Reassess cyclic ownership at architecture
-level or close the explicit character. Do not tune or reimplement
-`CyclicGrain`. Keep `Dream`, `Spectral`, `Rough`, `Cloud`, automatic routing,
-cache, and public APIs closed.
+Execute `g10.031` Batch 31.13 only. Freeze one complete
+`SimilarityAlignedCyclic` implementation brief. Do not implement it, tune or
+reimplement `CyclicGrain`, or reopen `Dream`, `Spectral`, `Rough`, `Cloud`,
+automatic routing, cache, or public APIs.

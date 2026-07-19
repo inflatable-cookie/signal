@@ -21,7 +21,9 @@ Updated: 2026-07-19
   candidates were rejected and deleted, Batch 31.9 paused the automatic
   router, and Batch 31.10 froze one complete explicit cyclic-owner brief.
   Batch 31.11 passed structural admission but failed its first synthetic pitch
-  row and was deleted. Batch 31.12 cyclic ownership reassessment is ready.
+  row and was deleted. Batch 31.12 selected correlation-aligned waveform
+  overlap as a materially different cyclic family. Batch 31.13 complete-brief
+  work is ready; no implementation is admitted.
 - audit evidence: `chorus/research/2026-06-11-signal-deep-audit.md` (phase
   one) and `docs/research/2026-06-11-post-demolition-assessment.md` (phase
   two)
@@ -61,6 +63,6 @@ If that cleanup has not happened, stay in the current generation and finish the 
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the current active-generation front door.
-Run docs-only `g10.031` Batch 31.12 to reassess cyclic ownership or close the
-character. Keep the transparent successor program and automatic creative
-router closed.
+Run docs-only `g10.031` Batch 31.13 to freeze one complete
+`SimilarityAlignedCyclic` brief. Keep the transparent successor program and
+automatic creative router closed.

@@ -71,7 +71,6 @@ strict lane.
 
 ## Next Task
 
-Execute `g10.031` Batch 31.12 only. Reassess cyclic ownership at architecture
-level or close the explicit character. Do not tune or reimplement
-`CyclicGrain`. Only drop into `specs/` when a strict lane is explicitly
-reopened.
+Execute `g10.031` Batch 31.13 only. Freeze one complete
+`SimilarityAlignedCyclic` implementation brief without DSP or harness work.
+Only drop into `specs/` when a strict lane is explicitly reopened.

@@ -59,8 +59,10 @@ Current stretch feasibility decision:
 Current creative-stretch decision:
 [Offline Creative Time-Stretch Study](../architecture/offline-creative-time-stretch-study.md).
 Its automatic `4x`-`16x` spectral route is paused. Explicit cyclic expansion
-through `8x` also has no owner after its first candidate failed synthetic pitch
-admission. This does not reopen the transparent successor lane.
+through `8x` has no implementation after its first candidate failed synthetic
+pitch admission. Batch 31.12 selected correlation-aligned waveform overlap as
+one materially different family for a new complete brief. This does not reopen
+the transparent successor lane.
 
 Rejected cyclic-owner brief:
 [Offline Creative CyclicGrain Renderer Brief](../architecture/offline-creative-cyclic-grain-brief.md).
@@ -113,6 +115,7 @@ Rejected first-owner brief:
 ## Next Task
 
 Treat the retained source studies and rejected briefs as historical evidence.
-Run docs-only `g10.031` Batch 31.12 to reassess cyclic ownership or close the
-character. Do not tune `CyclicGrain` or reopen a translation memo, Batch
-29.7BE, the diffusive families, or the transparent successor family.
+Run docs-only `g10.031` Batch 31.13 to freeze one complete
+`SimilarityAlignedCyclic` brief. Do not implement it, tune `CyclicGrain`, or
+reopen a translation memo, Batch 29.7BE, the diffusive families, or the
+transparent successor family.

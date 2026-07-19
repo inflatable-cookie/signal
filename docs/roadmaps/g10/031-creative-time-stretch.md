@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: active; Batch 31.12 cyclic ownership reassessment ready
+Status: active; Batch 31.13 similarity-aligned cyclic brief ready
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -367,24 +367,60 @@ unit-rate grains. No candidate code entered `main`.
 
 ## Batch 31.12 - Cyclic Ownership Reassessment
 
-Status: ready; docs and architecture only
+Status: complete; docs and architecture only
 
 Reassess whether explicit `Cyclic` still has one complete Signal-owned path
 through the frozen pitch, integrity, mono, and linked-stereo gates.
 
-- do not tune or reimplement `CyclicGrain`
-- do not sweep grain length, hop, window, interpolation, seed, threshold, or
-  test tones
-- decide whether a materially different source-backed cyclic topology exists
-  or close the explicit character
-- keep `Dream`, `Spectral`, `Rough`, `Cloud`, automatic routing, cache, public
-  APIs, and product integration closed
-- change documentation only
+- [x] did not tune or reimplement `CyclicGrain`
+- [x] did not sweep grain length, hop, window, interpolation, seed, threshold,
+  or test tones
+- [x] reconciled the earlier transparent WSOLA closure with the narrower
+  intentional cyclic target
+- [x] selected `SimilarityAlignedCyclic`: one output lattice, one ideal map,
+  one bounded correlation-selected source path, and native linked-channel
+  synthesis
+- [x] required strict monotonic selected anchors and non-accumulating
+  ideal-map displacement before a candidate may exist
+- [x] rejected pitch-synchronous OLA, fixed repetition, unaligned grains, and
+  spectral correction as alternatives
+- [x] kept `Dream`, `Spectral`, `Rough`, `Cloud`, automatic routing, cache,
+  public APIs, and product integration closed
+- [x] changed documentation only
+
+The family is materially different from rejected `CyclicGrain`: waveform
+similarity chooses segment placement before synthesis instead of crossfading
+fixed source offsets. It is source-backed by the original WSOLA work and a
+maintained SoundTouch implementation shape. It remains unproven at Signal's
+ratios, polyphonic pack, and linked-stereo gate.
+
+## Batch 31.13 - Similarity-Aligned Cyclic Brief
+
+Status: ready; docs and architecture only
+
+Freeze one complete clean-room `SimilarityAlignedCyclic` renderer before any
+candidate implementation.
+
+- freeze the ideal map, realized strictly monotonic source path, output launch
+  lattice, bounded non-accumulating search domain, score, and deterministic
+  ties
+- freeze silence and low-confidence fallback without adding a second timeline
+- freeze segment, overlap, window, normalization, boundaries, exact length,
+  anti-replica behavior, memory bound, determinism, and computational shape
+- freeze one linked-channel score and native-channel synthesis law
+- map `motion`, `detail`, `space`, and seed without exposing algorithm controls
+- retain structural, synthetic, mono, `16x` rejection, and independent stereo
+  gate order
+- freeze whole-candidate rejection, deletion, and minimal private admission
+- do not implement DSP, add harness surfaces, capture comparator audio, or
+  reopen any other creative owner or product surface
 
 ## Later Batches
 
-Closed pending a cyclic candidate decision and separate reopening evidence:
+Closed pending the complete similarity-aligned brief and separate reopening
+evidence:
 
+- isolated similarity-aligned cyclic candidate
 - minimal production admission
 - coherent/diffusive overlap
 - `LayeredCloud` study and candidate
@@ -404,6 +440,8 @@ Closed pending a cyclic candidate decision and separate reopening evidence:
   through `8x`
 - [x] one complete cyclic owner brief is frozen
 - [x] one isolated cyclic candidate reached a recorded terminal decision
+- [x] one materially different source-backed cyclic family is selected
+- [ ] one complete similarity-aligned cyclic brief is frozen
 - [ ] one isolated cyclic candidate passes structural and synthetic gates
 - [ ] long-form mono cyclic listening passes at `2x`, `4x`, and `8x`
 - [ ] linked-stereo mechanics and independent listening pass
@@ -412,7 +450,7 @@ Closed pending a cyclic candidate decision and separate reopening evidence:
 
 ## Next Task
 
-Execute Batch 31.12 only. Reassess cyclic ownership at architecture level or
-close the explicit character. Do not tune or reimplement `CyclicGrain`. Keep
-core spectral characters, Cloud, automatic routing, dynamic ratio, cache, and
+Execute Batch 31.13 only. Freeze one complete `SimilarityAlignedCyclic`
+implementation brief. Do not write candidate DSP in the same batch. Keep core
+spectral characters, Cloud, automatic routing, dynamic ratio, cache, and
 public APIs closed.

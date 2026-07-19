@@ -433,6 +433,7 @@ relation, excitation, window, coefficient, smoothing, seed, or scalar variant.
 
 ## Next Task
 
-Run `g10.031` Batch 31.12 only to reassess the separately rejected cyclic
-owner. Do not repair this relation proof, reopen a diffusive variant, tune
-`CyclicGrain`, or begin Cloud, routing, or product implementation.
+Run `g10.031` Batch 31.13 only to freeze the separately selected
+`SimilarityAlignedCyclic` brief. Do not repair this relation proof, reopen a
+diffusive variant, tune `CyclicGrain`, or begin Cloud, routing, or product
+implementation.
