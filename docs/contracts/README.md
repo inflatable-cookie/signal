@@ -1,7 +1,7 @@
 # Contracts
 
 Status: active
-Updated: 2026-04-08
+Updated: 2026-07-19
 
 ## Why this section matters now
 
@@ -101,6 +101,7 @@ Use this section for:
 - `080-production-readiness-grade-and-generation-release-gate-contract.md`
 - `083-vst3-discovery-diagnostic-outcome-contract.md`
 - `084-stretch-candidate-isolation-and-promotion-contract.md`
+- `085-creative-time-stretch-product-and-routing-contract.md`
 
 ## Rule
 
@@ -110,6 +111,6 @@ Add a new contract only when the boundary needs stronger guarantees than
 ## Next Task
 
 Use `docs/contracts/contract-index.md` and `001-working-rules.md` as the
-contract front doors. Contract `084` and roadmap `g10.030` closed the stretch
-successor program without promotion; Contract `046` continues to govern the
-frozen production renderer. No strict spec lane is open.
+contract front doors. Contract `084` and roadmap `g10.030` keep the transparent
+successor program closed. Contract `085` governs the separate creative path;
+run `g10.031` Batch 31.2 before candidate DSP. No strict spec lane is open.

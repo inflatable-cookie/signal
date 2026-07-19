@@ -30,6 +30,14 @@ these jointly plausible:
 
 No family passes.
 
+## Scope Boundary
+
+This gate applies to transparent music and mixed-program replacement across
+the production target ratios. It does not reject a separate creative renderer
+whose `4x`-`16x` goal is controlled smear, diffusion, and texture rather than
+exact transient reconstruction. That path is governed by Contract `085` and
+`offline-creative-time-stretch-study.md`; it does not reopen this decision.
+
 ## Family Assessment
 
 | Family | Useful property | Blocking evidence | Decision |
@@ -126,4 +134,5 @@ Contract `084` is closed without promotion. `g10.030` is complete.
 ## Next Task
 
 None in the OfflineHighQuality successor lane. Retain the baseline and reopen
-only when a listed whole-system trigger exists.
+only when a listed whole-system trigger exists. Creative work proceeds
+separately through `g10.031`.

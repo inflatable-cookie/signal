@@ -2,8 +2,8 @@
 
 Status: complete; amended for first-party quality-depth program
 Owner: core-product
-Updated: 2026-07-09
-Related contracts: `docs/contracts/028-media-indexing-waveform-analysis-and-preview-service-contract.md`, `docs/contracts/029-analysis-metadata-extraction-and-library-service-contract.md`, `docs/contracts/034-multi-bus-graph-execution-and-auxiliary-topology-contract.md`, `docs/contracts/084-stretch-candidate-isolation-and-promotion-contract.md`; historical proof policy `082`
+Updated: 2026-07-19
+Related contracts: `docs/contracts/028-media-indexing-waveform-analysis-and-preview-service-contract.md`, `docs/contracts/029-analysis-metadata-extraction-and-library-service-contract.md`, `docs/contracts/034-multi-bus-graph-execution-and-auxiliary-topology-contract.md`, `docs/contracts/084-stretch-candidate-isolation-and-promotion-contract.md`, `docs/contracts/085-creative-time-stretch-product-and-routing-contract.md`; historical proof policy `082`
 Related architecture: `docs/architecture/graph-runtime-feature-reference.md`
 
 ## Purpose
@@ -457,9 +457,14 @@ This closes `g07.015` as the bounded sample-domain time-stretch contract.
 Marker-analysis, artifact-cache, low-latency audition, and broader algorithm
 support remain later work.
 
+## 2026-07-19 Creative Stretch Separation
+
+Contract `085` adds an offline creative-expansion intent beside this tier
+vocabulary. It does not change `Repitch`, `RealtimePreview`, or
+`OfflineHighQuality`; it does not widen transparent quality claims; and it adds
+no runtime or public Rust surface until separately promoted.
+
 ## Next Task
 
-Continue `g07.016` with Batch 16.2 by materializing the first runtime-owned
-warp-marker, transient-anchor, tempo-assist, readiness, and invalidation
-receipt family across runtime, supervisor, and stable host-edge surfaces
-without reopening host-local stretch-analysis ownership.
+Keep the existing tier behavior frozen. Run `g10.031` Batch 31.2 under Contract
+`085` to freeze creative-stretch comparator evidence before any new DSP path.

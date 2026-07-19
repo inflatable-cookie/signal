@@ -27,12 +27,13 @@ Keep milestone sequencing in `roadmaps/`.
 - `dsp-analysis-feature-reference.md`
 - `offline-time-stretch-synthesis.md`
 - `offline-time-stretch-non-phase-vocoder-feasibility.md`
+- `offline-creative-time-stretch-study.md`
 - `offline-time-stretch-successor-brief.md`
 - `graph-runtime-feature-reference.md`
 - related contracts under `docs/contracts/`
 
 ## Next Task
 
-The `g10.030` successor program is closed on the retained OfflineHighQuality
-baseline. Reopen only through the whole-system triggers in
-`offline-time-stretch-non-phase-vocoder-feasibility.md`.
+Keep the `g10.030` transparent successor program closed. Run `g10.031` Batch
+31.2 against `offline-creative-time-stretch-study.md`; freeze the creative
+comparator target before a candidate brief or implementation.

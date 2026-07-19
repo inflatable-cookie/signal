@@ -3,8 +3,8 @@
 Status: active frozen baseline; successor program closed
 Owner: dsp
 Updated: 2026-07-19
-Contract refs: `046`, `084`; historical evidence `082`
-Roadmap ref: `g10.030`
+Contract refs: `046`, `084`, separate creative path `085`; historical evidence `082`
+Roadmap refs: transparent closeout `g10.030`; separate creative path `g10.031`
 
 ## Current Architecture
 
@@ -85,6 +85,13 @@ linked-channel recombination law; and reviewed neural synthesis does not meet
 the target ratio, determinism, or first-party operating boundary. No successor
 brief opens.
 
+## Separate Creative Path
+
+Intentional creative expansion is governed separately by Contract `085` and
+`docs/architecture/offline-creative-time-stretch-study.md`. Its `4x`, `8x`,
+and `16x` target ratios, controlled smear, and range routing do not replace this
+renderer or reopen Contract `084`.
+
 ## Candidate Isolation
 
 Successor work happens in a disposable branch or worktree. It does not add
@@ -104,6 +111,5 @@ ledger remains in git history at `1d1b02f1`.
 
 ## Next Task
 
-No OfflineHighQuality successor task remains. Retain the frozen baseline and
-reopen only through the whole-system triggers in the non-phase-vocoder
-feasibility decision.
+Retain this frozen baseline and keep its successor lane closed. Run `g10.031`
+Batch 31.2 only for the separate creative-stretch target.

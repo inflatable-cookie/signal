@@ -32,6 +32,9 @@ The 2026-07-19 consolidation reset is authoritative.
   candidate code entered `main`. A final non-phase-vocoder study found no
   family with a source-backed path through all whole-renderer gates. The
   program closed on the frozen production baseline.
+- `g10.031` and Contract `085` open a separate offline creative-stretch path
+  centered on `8x`. Batch 31.1 froze the product controls, range router, and
+  comparator study without reopening the transparent successor lane.
 - `g10.028` RealtimePreview source-fill and all render-plane integration remain
   paused.
 
@@ -99,6 +102,8 @@ Do not start Loophole or Chorus planning from Signal internals.
   - historical correctness, listening, and rejected-successor ledger
 - `g10.030` `complete`
   - stretch consolidated; candidate families closed; frozen baseline retained
+- `g10.031` `active`
+  - creative stretch architecture frozen; comparator target freeze ready
 
 ## Stretch Boundary
 
@@ -118,8 +123,12 @@ The retained OfflineHighQuality baseline is the only active renderer. Contract
 `084` and `g10.030` are closed without promotion. A new successor requires the
 whole-system evidence listed in the non-phase-vocoder feasibility decision.
 
+The separate `CreativeStretch` path is architecture-only. It targets
+intentional `4x`, `8x`, and `16x` expansion under Contract `085`; it has no
+renderer, public API, harness surface, or product route on `main`.
+
 ## Next Task
 
-No stretch-successor task is active. Use this roadmap to choose the next
-remaining `g10` priority deliberately. Keep `g10.028` and render-plane
-integration paused until separately authorized.
+Run `g10.031` Batch 31.2 only. Capture and level-match the creative comparator
+pack, then freeze the `DiffuseSpectral` target and rejection thresholds. Keep
+`g10.028` and render-plane integration paused.

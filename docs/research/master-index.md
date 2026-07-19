@@ -56,6 +56,11 @@ decision controls any future reopening.
 Current stretch feasibility decision:
 [Offline Time-Stretch Non-Phase-Vocoder Feasibility](../architecture/offline-time-stretch-non-phase-vocoder-feasibility.md).
 
+Current creative-stretch decision:
+[Offline Creative Time-Stretch Study](../architecture/offline-creative-time-stretch-study.md).
+It targets intentional `4x`-`16x` sound design and does not reopen the
+transparent successor lane.
+
 ## Translation Memos
 
 | Memo | Decision | Status |
@@ -95,5 +100,5 @@ Current stretch feasibility decision:
 ## Next Task
 
 Treat the retained source studies and rejected successor briefs as historical
-evidence. Do not reopen a translation memo, Batch 29.7BE, or a successor family
-without new whole-system evidence meeting the feasibility decision's triggers.
+evidence. Run the `g10.031` creative comparator study without reopening a
+translation memo, Batch 29.7BE, or the transparent successor family.

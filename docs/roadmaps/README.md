@@ -34,7 +34,7 @@ stable identity, parameter fast path + automation, DSP kit, RT observability,
 WYSIWYG bounce, output-time honesty, recording capture, disk streaming,
 transport regions, and runtime endgame.
 
-Phase three (021-030) established first-party stretch evidence and contracts.
+Phase three (021-031) established first-party stretch evidence and contracts.
 `g10.029` is historical after consolidation removed rejected research and
 stopped the narrow-proof queue. `g10.030` completed the OfflineHighQuality
 successor decision. Its first isolated end-to-end candidate failed
@@ -43,7 +43,9 @@ failed structural feasibility before implementation because the frozen impulse
 rule is always `15` samples early. A final non-phase-vocoder feasibility study
 found no family with a source-backed path through every whole-renderer gate.
 The OfflineHighQuality successor program is closed on the frozen competitive
-baseline. Offline artifacts still need a streaming artifact writer/cache target
+baseline. `g10.031` now owns a separate architecture-only creative-stretch
+path centered on `8x`; its next batch freezes comparator-backed target
+character without candidate DSP. Offline artifacts still need a streaming artifact writer/cache target
 for full peak-memory closure. Mono callback-state DSP has a
 no-allocation proof, linked stereo is implemented, ratio scheduling has
 source-frame alignment proof, and dynamic source projection is tracked. Render
@@ -168,6 +170,6 @@ Before rollover:
 
 ## Next Task
 
-Use `docs/roadmaps/g10/README.md` as the active generation front door. No
-stretch-successor task is active. Keep `g10.028` and render-plane integration
-paused until separately authorized.
+Use `docs/roadmaps/g10/README.md` as the active generation front door. Run
+`g10.031` Batch 31.2; keep the transparent successor lane, `g10.028`, and
+render-plane integration closed.

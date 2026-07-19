@@ -1,0 +1,197 @@
+# 085 Creative Time-Stretch Product And Routing Contract
+
+Status: active planning boundary; no implementation admitted
+Owner: core-product
+Updated: 2026-07-19
+Related contracts: `046`, `048`, `084`
+Related architecture: `docs/architecture/offline-creative-time-stretch-study.md`
+Roadmap: `g10.031`
+
+## Purpose
+
+Freeze one reusable Signal boundary for intentional long-form creative stretch
+without weakening the transparent `OfflineHighQuality` contract or forcing a
+consumer to expose renderer-specific controls.
+
+## Authority
+
+- Contract `046` remains authoritative for `Repitch`, `RealtimePreview`, and
+  `OfflineHighQuality`.
+- Contract `084` remains closed for transparent successor work. Its rejected
+  candidate families do not become active through this contract.
+- Contract `085` owns creative intent, range routing, transition behavior,
+  deterministic variation, and creative admission.
+- Signal owns the engine and its semantic parameter vocabulary. A consumer
+  owns layout, labels, percent-versus-duration display, and workflow placement.
+- External software is comparator evidence only. No external production
+  dependency or copied implementation expression enters Signal.
+
+## Product Vocabulary
+
+`CreativeStretch` means offline pitch-preserving expansion whose goal is useful
+dreamy, smeared, or cloud-like synthesis rather than transparent event
+reconstruction.
+
+The stable semantic request contains:
+
+- exact target frame count
+- output/input duration ratio
+- `character`: `Dream` or `Cloud`
+- normalized `motion`
+- normalized `detail`
+- normalized `space`
+- deterministic seed or request for the identity-derived default
+
+Target frames are authoritative. Ratio is derived or validated against that
+target; inconsistent values are rejected rather than rounded into different
+routing decisions.
+
+These fields are intent, not transform controls. Public consumers must not
+select FFT size, window, grain size, overlap, phase mode, internal renderer,
+or transition weight.
+
+`Transparent` and `CreativeStretch` are separate product choices. Creative
+admission does not upgrade `OfflineHighQuality`, and transparent admission does
+not authorize creative output.
+
+## Rules
+
+### Rule 1: one source/output map
+
+Every internal owner uses the same monotonic source/output map and exact target
+output lattice. Range selection may change synthesis character, not duration or
+event-order truth.
+
+### Rule 2: routing is versioned and deterministic
+
+Initial routed bands are:
+
+- coherent: `1x` through `2x`
+- coherent/diffusive overlap: `2x` through `4x`
+- diffusive: `4x` through `16x`
+- diffusive/cloud overlap: `16x` through `32x`
+- cloud: `32x` through `100x`
+
+Overlap weights use smoothstep interpolation over `log2(ratio)`. A fixed-ratio
+request uses one constant channel-shared weight for the whole render.
+
+Changing the band map or blend law changes the creative routing version and
+cache identity.
+
+### Rule 3: the UI vocabulary stays stable across renderer changes
+
+`duration`, `character`, `motion`, `detail`, and `space` retain their audible
+direction across every range. An internal renderer may implement the macro
+differently, but increasing a control must not reverse its semantic meaning at
+a routing boundary.
+
+`seed` is advanced variation identity, not a continuous quality knob.
+
+### Rule 4: seamless means measured continuity
+
+A transition is not seamless merely because it crossfades. Both owners must
+share target length, source cursor, boundary alignment, linked-channel weight,
+and deterministic state.
+
+Boundary probes must cover values immediately below, inside, and above each
+overlap. Reject audible level steps, image jumps, timing discontinuity, new
+clicks, or abrupt changes in motion density.
+
+Dynamic-ratio routing remains unsupported until fixed-ratio owners and overlap
+bands pass. A later dynamic path must carry state and slew weights; independent
+segment concatenation is forbidden.
+
+### Rule 5: stereo variation stays linked
+
+Analysis decisions, source-position variation, routing weights, and
+normalization are shared across linked channels. Per-channel synthesis may
+preserve source-relative detail, but left and right must not draw unrelated
+random trajectories.
+
+Neutral `space` preserves mono. Duplicate stereo, swap, and polarity mechanics
+must remain explicit structural gates. Independent linked-stereo listening is
+required before promotion.
+
+### Rule 6: variation is reproducible
+
+The same complete request and engine version produce byte-identical output on
+the supported deterministic platform contract. Default variation derives from
+the artifact identity. Rerolling produces a new explicit seed and artifact.
+
+### Rule 7: exact boundaries and bounded state remain mandatory
+
+Creative intent does not waive:
+
+- exact target frame count
+- finite output
+- deterministic exterior padding and cropping
+- bounded duration-independent working state, excluding source and output
+- explicit chunk or artifact-writer bounds for long renders
+- no audio-thread allocation, blocking, I/O, or execution
+
+### Rule 8: cache identity includes creative intent
+
+Before product-facing caching, identity includes at least:
+
+- creative engine version
+- routing version
+- source content and channel layout
+- exact target frames and ratio/map identity
+- character, motion, detail, and space
+- deterministic seed
+- projection epoch and any pitch/warp inputs that affect output
+
+Creative and transparent artifacts cannot collide.
+
+### Rule 9: listening defines creative quality
+
+Objective controls reject integrity and continuity failures. They do not decide
+whether output is dreamy, evolving, musical, or useful.
+
+Promotion requires concealed long-form listening at `4x`, `8x`, and `16x`,
+with `8x` the primary design point. The pack covers percussion, bass, vocals,
+pads/sustains, and full mix. Independent stereo review remains mandatory.
+
+Transparent transient-placement, replica, and tonal-fidelity limits are not
+silently reused. Creative gates instead reject uncontrolled clicks, dropouts,
+level changes, periodic flutter, unintended metallic repetition, static freeze,
+stereo instability, and failure to map the semantic controls consistently.
+
+### Rule 10: one complete candidate at a time
+
+The first new owner is one complete `DiffuseSpectral` renderer. It is developed
+in an isolated worktree after comparator target freeze and a complete brief.
+Candidate-only modules, fixtures, report modes, and controls do not enter
+`main` before admission.
+
+Failure removes the candidate branch and its scaffolding. Two complete
+candidates failing for the same dominant cause trigger architecture
+reassessment, not parameter sweeps.
+
+The `LayeredCloud` owner and cyclic character remain closed until the
+diffusive owner passes its own fixed-ratio range. Do not build the full router
+as three simultaneous experiments.
+
+## Initial Promotion Sequence
+
+1. Comparator capture and target-character freeze.
+2. Complete `DiffuseSpectral` implementation brief.
+3. Isolated fixed-ratio mono structural and creative synthetic controls.
+4. Long-form mono listening at `4x`, `8x`, and `16x`.
+5. Linked-stereo mechanics and independent listening.
+6. Minimal diffusive owner admission.
+7. Coherent/diffusive overlap admission.
+8. Only then study `LayeredCloud`, the upper overlap, dynamic ratios, cache,
+   and consuming-product integration.
+
+## Current State
+
+This contract changes documentation only. It adds no public Rust enum, renderer,
+harness mode, fixture, artifact schema, runtime route, or product-facing claim.
+`OfflineHighQuality` remains byte-exact and Contract `084` remains closed.
+
+## Next Task
+
+Run `g10.031` Batch 31.2. Freeze the comparator-backed `DiffuseSpectral`
+character and numerical integrity thresholds. Do not implement DSP in that
+batch.

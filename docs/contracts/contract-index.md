@@ -17,6 +17,7 @@ memory alone.
 - `046` governs sample-domain stretch behavior and its promotion gates
 - `084` is closed without successor promotion; it remains the reopening and
   complete-system admission authority
+- `085` governs the separate offline creative-stretch product and range router
 - `082` and `g10.029` are historical evidence, not active execution authority
 - `g10.028` source-fill work remains paused
 
@@ -111,6 +112,7 @@ memory alone.
   policy
 - `082` offline time-stretch synthesis policy
 - `084` stretch candidate isolation and promotion
+- `085` creative time-stretch product and routing
 
 ## Packaging, conformance, and generation closure
 
@@ -145,5 +147,5 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-No OfflineHighQuality successor task is active. Keep Contract `084` closed
-unless the non-phase-vocoder feasibility reopen triggers are met.
+Keep Contract `084` closed. Run `g10.031` Batch 31.2 under Contract `085` to
+freeze the creative comparator target before a renderer brief or DSP candidate.

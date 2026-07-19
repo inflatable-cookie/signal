@@ -30,15 +30,18 @@ strict lane.
 - Offline time-stretch synthesis: [architecture/offline-time-stretch-synthesis.md](./architecture/offline-time-stretch-synthesis.md)
 - Rejected offline stretch successor: [architecture/offline-time-stretch-successor-brief.md](./architecture/offline-time-stretch-successor-brief.md)
 - Non-phase-vocoder feasibility: [architecture/offline-time-stretch-non-phase-vocoder-feasibility.md](./architecture/offline-time-stretch-non-phase-vocoder-feasibility.md)
+- Creative time-stretch study: [architecture/offline-creative-time-stretch-study.md](./architecture/offline-creative-time-stretch-study.md)
 - Graph and runtime feature reference: [architecture/graph-runtime-feature-reference.md](./architecture/graph-runtime-feature-reference.md)
 - Working rules: [contracts/001-working-rules.md](./contracts/001-working-rules.md)
 - Shared DSP boundary: [contracts/001-shared-dsp-and-host-boundary.md](./contracts/001-shared-dsp-and-host-boundary.md)
 - Stretch candidate isolation and promotion: [contracts/084-stretch-candidate-isolation-and-promotion-contract.md](./contracts/084-stretch-candidate-isolation-and-promotion-contract.md)
+- Creative stretch product and routing: [contracts/085-creative-time-stretch-product-and-routing-contract.md](./contracts/085-creative-time-stretch-product-and-routing-contract.md)
 - Historical offline stretch synthesis policy: [contracts/082-offline-time-stretch-synthesis-policy-contract.md](./contracts/082-offline-time-stretch-synthesis-policy-contract.md)
 - Supervisor export boundary: [contracts/002-supervisor-export-schema-and-report-boundary.md](./contracts/002-supervisor-export-schema-and-report-boundary.md)
 - Roadmap index: [roadmaps/README.md](./roadmaps/README.md)
 - Generation index: [roadmaps/generation-index.md](./roadmaps/generation-index.md)
 - Stretch closeout roadmap: [roadmaps/g10/030-stretch-consolidation-and-completion.md](./roadmaps/g10/030-stretch-consolidation-and-completion.md)
+- Active creative stretch roadmap: [roadmaps/g10/031-creative-time-stretch.md](./roadmaps/g10/031-creative-time-stretch.md)
 - Strict-lane reference: [specs/001-g09-lane-first-strict-adoption.md](./specs/001-g09-lane-first-strict-adoption.md)
 - Active strict-lane card: none
 - Research index: [research/master-index.md](./research/master-index.md)
@@ -64,6 +67,6 @@ strict lane.
 
 ## Next Task
 
-No stretch-successor task is active. Use the `g10` front door for the next
-deliberate generation priority. Only drop into `specs/` when a new strict lane
-is explicitly reopened.
+Run `g10.031` Batch 31.2. Freeze the comparator-backed creative target at
+`4x`, `8x`, and `16x`; do not implement candidate DSP in that batch. Only drop
+into `specs/` when a strict lane is explicitly reopened.
