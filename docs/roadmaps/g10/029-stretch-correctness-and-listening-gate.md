@@ -2960,17 +2960,43 @@ fresh report root preserves AX evidence. No code or audio changed.
 
 ### Batch 29.7BC - Channel-Local Peak Failure-First Objective Run
 
-Status: ready
+Status: rejected at stereo gate
 
-- [ ] change only private direct report names/aggregation and set foreign
+- [x] change only private direct report names/aggregation and set foreign
   source-studied adapter diagnostics to not-applicable zeros; preserve output
   samples and every Rule 31AC mechanics receipt
-- [ ] run the complete release mechanics and unchanged synthetic matrix, then
+- [x] run the complete release mechanics and unchanged synthetic matrix, then
   run the `48`-row stereo matrix once only after complete passage
-- [ ] stop at the first miss; run unchanged mono and long-development stages
+- [x] stop at the first miss; run unchanged mono and long-development stages
   only after each prior gate passes, record the complete result, and open no
   tuning, listening, export, holdout, production, or Batch 29.8 work unless all
   gates pass
+
+Evidence: release mechanics pass `12` tests with `2` objective tests
+intentionally ignored and all four Rule 31AC hashes unchanged. Synthetic
+passes at `ce696ab8cb37b17f` with zero structural, nonfinite, and mechanics
+failures, exact repeat, complete state coverage, truthful direct diagnostics,
+and fixed `10/19/7680` high-water. Stereo rejects at `b13c37cff1b58afa`:
+`40/48`
+calibrated failures, `159/384` improved windows, `36/48` local failures,
+residual `0.7611955347641768`, zero structural failures, and exact repeat. AX
+had `38/48`, `157/384`, `36/48`, and the same residual. Mono and long-
+development did not run.
+
+### Batch 29.7BD - Direct Topology Convergence Reassessment
+
+Status: ready
+
+- [ ] freeze AX and BC code, retained reports, hashes, thresholds, and stop
+  states; generate no new renderer or corpus evidence
+- [ ] compare retained AX/BC rows by control, ratio, length, phase, and
+  alignment, then audit direct phase and synthesis code for causal reach over
+  the unchanged local-failure and worst-residual signature
+- [ ] name one source-supported missing mechanism with a bounded no-audio
+  falsifier and separately preregistered objective boundary, or close the
+  direct peak-ownership topology and return to architecture selection; do not
+  sweep, tune, repair, retry, listen, export, inspect holdout material, or open
+  Batch 29.8
 
 ### Batch 29.8 - Listening And Dynamic Checkpoint
 
@@ -4394,9 +4420,15 @@ Status: ready
   fields are not applicable. AX's mechanics, synthetic, stereo, mono, and long-
   development thresholds and stop order remain unchanged. No code or audio
   changed. Batch 29.7BC is ready for one failure-first run.
+- 2026-07-19: Batch 29.7BC corrects the private diagnostic bridge and preserves
+  every Rule 31AC mechanics receipt. Synthetic passes at `ce696ab8cb37b17f`.
+  Stereo rejects at `b13c37cff1b58afa` with `40/48` calibrated failures,
+  `159/384` improved windows, `36/48` local failures, and unchanged worst
+  residual `0.7611955347641768`. Mono and long-development do not run. Batch
+  29.7BD is ready for no-audio convergence reassessment.
 
 ## Next Task
 
-Run Batch 29.7BC under Rule 31AD. Correct only the private diagnostic bridge,
-then execute mechanics, synthetic, stereo, mono, and long-development once in
-the frozen stop-on-first-miss order.
+Run Batch 29.7BD under Rule 31AE. Use retained AX/BC rows and code only to
+identify one causally adequate missing direct mechanism or close the direct
+peak-ownership topology and return to architecture selection.

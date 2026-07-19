@@ -84,6 +84,6 @@ Finch and Loophole.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7BC under Rule 31AD. Correct only the private diagnostic
-bridge, then execute the frozen failure-first objective order once through its
-first miss.
+Run `g10.029` Batch 29.7BD under Rule 31AE. Compare retained AX/BC evidence and
+the direct phase/synthesis path without new audio, then identify one causally
+adequate mechanism or close the direct peak-ownership topology.

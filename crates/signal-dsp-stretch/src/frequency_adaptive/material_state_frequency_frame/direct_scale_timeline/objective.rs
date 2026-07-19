@@ -14,8 +14,10 @@ struct SyntheticReview {
     structural_failures: usize,
     mechanics_errors: [f64; 4],
     state_counts: [usize; 5],
-    borrowed_regions: usize,
-    local_regions: usize,
+    borrowed_locked_channel_atoms: usize,
+    local_locked_channel_atoms: usize,
+    trajectory_channel_switches: usize,
+    channel_peak_disagreements: usize,
     maximum_pending_ticks: usize,
     maximum_guidance_ticks: usize,
     maximum_output_samples: usize,
@@ -41,8 +43,10 @@ struct SyntheticRun {
     structural_failures: usize,
     mechanics_errors: [f64; 4],
     state_counts: [usize; 5],
-    borrowed_regions: usize,
-    local_regions: usize,
+    borrowed_locked_channel_atoms: usize,
+    local_locked_channel_atoms: usize,
+    trajectory_channel_switches: usize,
+    channel_peak_disagreements: usize,
     maximum_pending_ticks: usize,
     maximum_guidance_ticks: usize,
     maximum_output_samples: usize,
@@ -57,8 +61,10 @@ fn synthetic_review() -> SyntheticReview {
         structural_failures: first.structural_failures,
         mechanics_errors: first.mechanics_errors,
         state_counts: first.state_counts,
-        borrowed_regions: first.borrowed_regions,
-        local_regions: first.local_regions,
+        borrowed_locked_channel_atoms: first.borrowed_locked_channel_atoms,
+        local_locked_channel_atoms: first.local_locked_channel_atoms,
+        trajectory_channel_switches: first.trajectory_channel_switches,
+        channel_peak_disagreements: first.channel_peak_disagreements,
         maximum_pending_ticks: first.maximum_pending_ticks,
         maximum_guidance_ticks: first.maximum_guidance_ticks,
         maximum_output_samples: first.maximum_output_samples,
@@ -88,8 +94,10 @@ fn synthetic_run() -> SyntheticRun {
         structural_failures: 0,
         mechanics_errors: [0.0; 4],
         state_counts: [0; 5],
-        borrowed_regions: 0,
-        local_regions: 0,
+        borrowed_locked_channel_atoms: 0,
+        local_locked_channel_atoms: 0,
+        trajectory_channel_switches: 0,
+        channel_peak_disagreements: 0,
         maximum_pending_ticks: 0,
         maximum_guidance_ticks: 0,
         maximum_output_samples: 0,
@@ -110,8 +118,10 @@ fn synthetic_run() -> SyntheticRun {
             for (target, count) in result.state_counts.iter_mut().zip(rendered.states) {
                 *target += count;
             }
-            result.borrowed_regions += rendered.borrowed_regions;
-            result.local_regions += rendered.local_regions;
+            result.borrowed_locked_channel_atoms += rendered.borrowed_locked_channel_atoms;
+            result.local_locked_channel_atoms += rendered.local_locked_channel_atoms;
+            result.trajectory_channel_switches += rendered.trajectory_channel_switches;
+            result.channel_peak_disagreements += rendered.channel_peak_disagreements;
             result.maximum_pending_ticks = result
                 .maximum_pending_ticks
                 .max(rendered.maximum_pending_ticks);
@@ -133,7 +143,7 @@ fn synthetic_run() -> SyntheticRun {
 
 fn stereo_review() -> StereoReview {
     let review = peak_region_feasibility::review_candidate(
-        "stretch-direct-scale-timeline-stereo",
+        "stretch-direct-channel-local-peak-v1/stereo",
         stereo_adapter,
     );
     StereoReview {
@@ -163,23 +173,17 @@ fn stereo_adapter(inputs: [&[f64]; 2], ratio: f64, sample_rate: usize) -> Stereo
         uncovered: rendered.uncovered,
         non_finite: rendered.non_finite,
         boundary_failures: rendered.boundary_failures,
-        shared_corrected: rendered.borrowed_regions,
-        shared_fallback: rendered.local_regions,
+        shared_corrected: 0,
+        shared_fallback: 0,
         unilateral_non_silent_completions: 0,
         reference_bins: [0; 2],
         active_reference_ties: 0,
-        reference_switches: rendered.owner_switches,
+        reference_switches: 0,
         maximum_projected_relation_error: 0.0,
         maximum_constrained_relation_error: 0.0,
         synthesis_relation_trace: None,
         coefficient_contribution_trace: None,
-        peak_region_counts: [
-            rendered.borrowed_regions + rendered.local_regions,
-            rendered.states[TerminalState::Locked.index()],
-            rendered.states[TerminalState::Reset.index()]
-                + rendered.states[TerminalState::Attack.index()],
-            0,
-        ],
+        peak_region_counts: [0; 4],
         tracked_peak_phase_trace: TrackedPeakPhaseTrace::default(),
         hash: rendered.hash,
     }
@@ -232,22 +236,25 @@ fn maximum_norm(samples: &[f64]) -> f64 {
 }
 
 fn report_root() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../target/stretch-direct-scale-timeline")
+    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../../target/stretch-direct-channel-local-peak-v1")
 }
 
 fn write_synthetic(review: &SyntheticReview) {
     let root = report_root();
     fs::create_dir_all(&root).expect("create direct objective report directory");
     let text = format!(
-        "stage\tsynthetic\nstructural_failures\t{}\nmechanics_errors\t{:e},{:e},{:e},{:e}\nstate_counts\t{:?}\nregions\t{},{}\nmaximum_live\t{},{},{}\nnon_finite\t{}\nrepeated\t{}\nhash\t{:016x}\n",
+        "stage\tsynthetic\nstructural_failures\t{}\nmechanics_errors\t{:e},{:e},{:e},{:e}\nstate_counts\t{:?}\nborrowed_locked_channel_atoms\t{}\nlocal_locked_channel_atoms\t{}\ntrajectory_channel_switches\t{}\nchannel_peak_disagreements\t{}\nmaximum_live\t{},{},{}\nnon_finite\t{}\nrepeated\t{}\nhash\t{:016x}\n",
         review.structural_failures,
         review.mechanics_errors[0],
         review.mechanics_errors[1],
         review.mechanics_errors[2],
         review.mechanics_errors[3],
         review.state_counts,
-        review.borrowed_regions,
-        review.local_regions,
+        review.borrowed_locked_channel_atoms,
+        review.local_locked_channel_atoms,
+        review.trajectory_channel_switches,
+        review.channel_peak_disagreements,
         review.maximum_pending_ticks,
         review.maximum_guidance_ticks,
         review.maximum_output_samples,
@@ -308,8 +315,8 @@ mod tests {
             review.state_counts[TerminalState::Locked.index()] > 0,
             "{review:#?}"
         );
-        assert!(review.borrowed_regions > 0, "{review:#?}");
-        assert!(review.local_regions > 0, "{review:#?}");
+        assert!(review.borrowed_locked_channel_atoms > 0, "{review:#?}");
+        assert!(review.local_locked_channel_atoms > 0, "{review:#?}");
         assert_eq!(review.maximum_pending_ticks, PENDING_TICKS, "{review:#?}");
         assert_eq!(review.maximum_guidance_ticks, GUIDANCE_TICKS, "{review:#?}");
         assert!(
@@ -319,7 +326,7 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "requires one release-only corrected 48-row direct stereo run"]
+    #[ignore = "requires one release-only direct 48-row stereo objective run"]
     fn direct_scale_timeline_rule_31z_objective_stereo_gate() {
         let review = stereo_review();
         write_stereo(&review);

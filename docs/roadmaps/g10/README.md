@@ -563,14 +563,17 @@ Current stretch status:
   no objective audio. Batch 29.7BB then freezes candidate
   `signal-direct-channel-local-peak-v1`, keeps direct channel-atom diagnostics
   out of incompatible source-studied report fields, and carries AX's complete
-  failure-first order forward unchanged. Batch 29.7BC is ready; no code or
-  audio changed in BB.
+  failure-first order forward unchanged. Batch 29.7BC preserves every mechanics
+  receipt and passes synthetic evidence, then rejects stereo at `40/48`
+  calibrated failures, `159/384` improved windows, `36/48` local failures, and
+  unchanged residual `0.7611955347641768`. Mono and long-development stay
+  closed. Batch 29.7BD is ready for retained-evidence convergence reassessment.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7BC under Rule 31AD. Correct only the private diagnostic
-bridge, then execute the frozen failure-first objective order once through its
-first miss.
+Run `g10.029` Batch 29.7BD under Rule 31AE. Use retained AX/BC evidence and
+direct phase/synthesis code only to identify one causally adequate missing
+mechanism or close the direct peak-ownership topology.

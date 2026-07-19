@@ -158,6 +158,6 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7BC under contract `082` Rule 31AD. Correct only the
-private diagnostic bridge, then execute the frozen failure-first objective
-order once through its first miss.
+Run `g10.029` Batch 29.7BD under contract `082` Rule 31AE. Use retained AX/BC
+evidence and code only to identify one causally adequate direct mechanism or
+close the direct peak-ownership topology.

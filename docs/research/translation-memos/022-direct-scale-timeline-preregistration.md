@@ -125,6 +125,6 @@ for implementation-free mechanics design.
 
 ## Next Task
 
-Run Batch 29.7BC under Rule 31AD. Correct only the private diagnostic bridge,
-then execute the frozen failure-first objective order once through its first
-miss.
+Run Batch 29.7BD under Rule 31AE. Compare retained AX/BC row evidence and audit
+the direct phase/synthesis path without generating new audio. Require causal
+reach over the unchanged hard signature before another candidate.

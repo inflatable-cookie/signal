@@ -1944,8 +1944,17 @@ The candidate is `signal-direct-channel-local-peak-v1`. Its DSP is frozen at
 the BA receipts; only private report and adapter plumbing may change before one
 failure-first run. A fresh target root preserves AX evidence.
 
+Batch 29.7BC keeps those mechanics receipts exact and passes synthetic evidence
+at `ce696ab8cb37b17f`. Stereo remains far outside the professional gate:
+`40/48` calibrated failures, `159/384` improved windows, `36/48` local
+failures, and residual `0.7611955347641768`. Relative to AX, the channel-local
+peak topology gains two windows, loses two calibrated rows, and does not move
+either dominant failure signature. This closes objective execution before mono
+or long-development and reopens architecture-level causal assessment, not
+another local peak-policy experiment.
+
 ## Next Task
 
-Run Batch 29.7BC under Rule 31AD. Correct only the private diagnostic bridge,
-then run mechanics, synthetic, stereo, mono, and long-development in the frozen
-stop-on-first-miss order.
+Run Batch 29.7BD under Rule 31AE. Compare retained AX/BC row evidence and audit
+the direct phase/synthesis path. Require one mechanism with causal reach over
+the unchanged hard signature or close this direct topology.

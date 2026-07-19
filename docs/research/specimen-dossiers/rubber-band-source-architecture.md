@@ -174,5 +174,8 @@ winner is established.
 Batch 29.7BA implements the clean-room mechanics contract and passes the full
 no-audio matrix. Batch 29.7BB freezes Signal-owned candidate
 `signal-direct-channel-local-peak-v1` and the unchanged failure-first evidence
-order. Run Batch 29.7BC once through its first miss. Do not transfer Rubber
-Band expression, ranges, thresholds, tables, or constants.
+order. Batch 29.7BC passes mechanics and synthetic evidence but rejects stereo
+at `40/48` calibrated failures, `36/48` local failures, and unchanged worst
+residual `0.7611955347641768`. Run Batch 29.7BD as retained-evidence causal
+reassessment. Do not transfer Rubber Band expression, ranges, thresholds,
+tables, or constants.

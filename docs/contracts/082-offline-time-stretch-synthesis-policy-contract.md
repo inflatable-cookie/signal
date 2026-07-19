@@ -5342,8 +5342,45 @@ concealed read, holdout access, offset scaling, or production change is
 permitted. A miss records the complete result and opens reassessment only. Full
 passage is required before Batch 29.8.
 
+### Rule 31AE: channel-local peak objective rejection boundary
+
+Batch 29.7BC makes only the Rule 31AD private report correction. Direct reports
+now name borrowed/local locked channel-atoms, trajectory-channel switches, and
+channel-peak disagreements in their actual units. The source-studied adapter's
+foreign shared-region, reference-switch, and peak-region fields are zero. The
+candidate report root is `target/stretch-direct-channel-local-peak-v1`; AX
+evidence remains untouched.
+
+The release entry gate passes `12` tests with `2` intentionally ignored.
+Representation remains `fdf90f6127749341`, terminal sequencing
+`5ae654162d4ed279`, corrected relation `2b8104525bad0418`, and staggered peaks
+`fcbdfd991bd04db1`. Synthetic evidence passes at `ce696ab8cb37b17f` with zero
+structural, nonfinite, or channel-mechanics failures; exact repeat; all required
+states; `11322` borrowed and `54388` local locked channel-atoms; `9772`
+trajectory-channel switches; zero channel-peak disagreements; and fixed
+`10/19/7680` pending, guidance, and output high-water.
+
+Stereo is the first miss. The one `48`-row invocation is structurally clean and
+repeats at `b13c37cff1b58afa`, but has `40/48` calibrated failures, `159/384`
+improved local windows, `36/48` Signal-relative local failures, and maximum
+normalized-Gram residual `0.7611955347641768`. Against AX, channel-local peak
+ownership gains `2` improved windows, loses `2` calibrated rows, and moves
+neither the local-failure count nor the worst residual. Mono and long-
+development do not run.
+
+Batch 29.7BD is no-audio convergence reassessment. Freeze AX and BC code,
+reports, hashes, thresholds, and stop states. Compare their retained row
+evidence by control, ratio, length, phase, and alignment, then audit the direct
+phase laws and synthesis path for causal reach over the unchanged `36/48`
+local failures and `0.7611955347641768` residual. Open no further direct
+candidate unless one source-supported missing mechanism addresses that
+unchanged signature and has a bounded no-audio falsifier. Otherwise close the
+direct peak-ownership topology and return to architecture selection. No
+renderer/corpus rerun, parameter sweep, tuning, repair, listening, export,
+holdout access, or production change is permitted.
+
 ## Next Task
 
-Run Batch 29.7BC under Rule 31AD. Apply only the frozen private report/adapter
-correction, then execute the failure-first objective order once through its
-first miss.
+Run Batch 29.7BD under Rule 31AE. Use only retained AX/BC evidence and code to
+decide whether one causally adequate direct mechanism remains or the direct
+peak-ownership topology must close.

@@ -95,6 +95,14 @@ into the source-studied harness's shared-region or reference fields. Candidate
 `signal-direct-channel-local-peak-v1` must retain every BA mechanics receipt
 before the unchanged AX evidence order runs once.
 
+Batch 29.7BC preserves those receipts and passes synthetic evidence at
+`ce696ab8cb37b17f`. The stereo gate rejects at `b13c37cff1b58afa` with `40/48`
+calibrated failures, `159/384` improved windows, `36/48` local failures, and
+residual `0.7611955347641768`. Against AX this is two more improved windows but
+two more calibrated failures, with no movement in the row-complete local count
+or worst residual. The channel-local peak mechanism is real but does not reach
+the dominant objective failure.
+
 ## Rejected Alternatives
 
 - no parameter sweep or peak-density tuning
@@ -112,5 +120,6 @@ before the unchanged AX evidence order runs once.
 
 ## Next Task
 
-Run Batch 29.7BC under Rule 31AD. Apply only the private diagnostic correction,
-then execute the frozen objective order once through its first miss.
+Run Batch 29.7BD under Rule 31AE. Use retained evidence and code only to test
+whether one remaining direct mechanism can reach the unchanged failure
+signature; otherwise close this topology and return to architecture selection.
