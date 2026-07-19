@@ -5209,12 +5209,64 @@ collapse them; the contracted topology must preserve both locations plus swap
 symmetry, local offset and magnitude, unsupported-peer fallback, finiteness,
 fixed capacity, and repeat.
 
+Batch 29.7AZ freezes the mechanics as follows. For each scale and channel,
+reuse Signal's existing local peak predicate and lower-bin tie but evaluate
+magnitude, valleys, and fallback maxima from that channel only. Every current
+channel-atom record stores its requesting-channel peak, current support, and
+the trajectory channel actually selected at commit. The previous slot remains
+the predecessor map. No cross-scale peak exists.
+
+Terminal classification remains one shared `P`-atom decision from the frozen
+joint guidance and Rule 31Z precedence. Locked phase is then evaluated for
+each channel-atom:
+
+1. retain the requesting channel's current peak `p`
+2. choose the greatest-magnitude channel at the requesting atom, with lower
+   channel winning an exact tie
+3. obtain the requesting predecessor by querying its previous peak map at `p`;
+   obtain the candidate predecessor by querying the candidate's previous peak
+   map at that candidate channel's current peak for the requesting atom
+4. borrow only below `6000 Hz` when the candidate differs, both predecessor
+   identities are equal, and current owner plus common-predecessor support
+   exceed the existing `1e-24` floor; otherwise remain local
+5. evaluate the selected channel's ordinary recurrence at requesting peak `p`;
+   take its wrapped advance from that channel's prior synthesis phase at `p`,
+   then apply that advance to the selected channel's prior synthesis phase at
+   the common predecessor
+6. derive the requesting atom from that tracked trajectory plus its current
+   analysis-phase offset from the selected channel at `p`; retain requesting
+   magnitude exactly
+
+If local predecessor support is absent, the existing ordinary/current-phase
+fallback applies. Reset, attack, ordinary, and unlocked phase laws do not read
+the peak trajectory. Exact `6000 Hz` remains ineligible. Lower bin and then
+lower channel win exact ties.
+
+No storage cap moves. Current/predecessor records remain `2CP`; analysis and
+synthesis phase remain `2CP`; terminal states remain `P`. Peak construction and
+trajectory selection scan at most fixed `CP` records per tick. Private reports
+replace shared `borrowed_regions`, `local_regions`, and `owner_switches` with
+borrowed locked channel-atoms, local locked channel-atoms, and committed
+trajectory-channel switches; also report channel-peak disagreements. All four
+counts and the decided coefficients enter the deterministic state hash.
+
+The frozen `48 kHz` staggered fixture uses distinct current peaks for the two
+channels and one compatible common predecessor. It must first prove the frozen
+joint-map baseline assigns both channels one peak. Corrected mechanics must
+retain both current peak locations, borrow a compatible trajectory without
+moving the requesting peak, preserve requesting magnitude and within-region
+offset at `1e-12`, and record a nonzero peak-disagreement count. Companion
+cases cover incompatible predecessors, unsupported owner/current predecessor,
+exact owner ties, exact `6000 Hz`, channel swap, silence/recovery, all terminal
+states, all three proof rates, shape rejection before mutation, fixed storage,
+finiteness, and repeat.
+
 Phase-offset scaling, peak-density tuning, renderer code, objective audio, and
-row repair remain closed. A later mechanics implementation requires complete
-31AC preregistration; another objective candidate requires separate failure-
-first preregistration after mechanics passage.
+row repair remain closed. Batch 29.7BA may implement only these private
+mechanics and tests. Another objective candidate requires separate failure-
+first preregistration after complete mechanics passage.
 
 ## Next Task
 
-Run Batch 29.7AZ under Rule 31AC. Freeze the implementation-free channel-local
-peak topology and staggered-peak analytic falsifier before changing state code.
+Run Batch 29.7BA under Rule 31AC. Implement only the frozen private peak/state
+mechanics and no-audio proofs; keep renderer and objective execution closed.

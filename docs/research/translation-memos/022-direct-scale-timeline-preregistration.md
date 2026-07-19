@@ -125,6 +125,6 @@ for implementation-free mechanics design.
 
 ## Next Task
 
-Run Batch 29.7AZ under Rule 31AC. Freeze the channel-local peak-map mechanics,
-fixed storage, reporting, and staggered-peak analytic falsifier before state
-implementation or objective audio.
+Run Batch 29.7BA under Rule 31AC. Implement only the frozen private channel-
+local peak/state mechanics and no-audio proof matrix; keep renderer and
+objective execution closed.

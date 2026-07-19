@@ -158,6 +158,6 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7AZ under contract `082` Rule 31AC. Freeze the complete
-implementation-free channel-local peak topology and staggered-peak analytic
-falsifier. Keep renderer code, objective audio, tuning, and Batch 29.8 closed.
+Run `g10.029` Batch 29.7BA under contract `082` Rule 31AC. Implement only the
+frozen private channel-local peak/state mechanics and focused no-audio proof
+matrix. Keep renderer/objective audio, tuning, and Batch 29.8 closed.

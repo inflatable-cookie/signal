@@ -1,7 +1,7 @@
 # g10 Milestones
 
 Status: active
-Updated: 2026-07-18
+Updated: 2026-07-19
 
 ## Why this generation matters now
 
@@ -554,14 +554,18 @@ Current stretch status:
   are channel-local and trajectory borrowing is frequency-aligned, while
   Signal collapses both channels onto one joint peak map before Rule 31AA phase
   correction. Rule 31AC opens ready implementation-free Batch 29.7AZ with a
-  staggered-peak analytic falsifier. No audio reran.
+  staggered-peak analytic falsifier. AZ now freezes channel-local current and
+  predecessor maps, per-atom trajectory selection, predecessor-anchored advance,
+  requesting-peak retention, unchanged fixed storage, channel-atom reporting,
+  and the full no-audio proof matrix. Batch 29.7BA is ready. No code or audio
+  changed.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7AZ under Rule 31AC. Freeze the implementation-free
-channel-local peak topology, compatibility, storage, reporting, and staggered-
-peak analytic falsifier. Keep state implementation, renderer audio, offset
-scaling, tuning, listening, holdout, product surfaces, and Batch 29.8 closed.
+Run `g10.029` Batch 29.7BA under Rule 31AC. Implement only the frozen private
+channel-local peak/state mechanics and focused no-audio proof matrix. Keep
+renderer/objective audio, offset scaling, tuning, listening, holdout, product
+surfaces, and Batch 29.8 closed.

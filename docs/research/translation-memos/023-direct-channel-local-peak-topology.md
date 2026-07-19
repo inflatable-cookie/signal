@@ -51,6 +51,25 @@ synthesis, and fixed-storage boundary. Replace only the joint peak topology:
 The exact region iteration, compatibility record, counts, ties, and fixed
 storage must be frozen implementation-free before code changes.
 
+## Frozen Mechanics
+
+Batch 29.7AZ keeps the existing shared material guidance and one terminal-state
+decision per atom. Peak maps, valleys, fallback maxima, and predecessor maps
+become channel-local within each scale. The possible trajectory channel is the
+greatest channel at the requesting atom; an exact tie selects the lower
+channel. Borrowing is below `6000 Hz`, requires equal predecessor peak identity
+and supported owner history, and never replaces the requesting peak index.
+
+The selected channel's ordinary advance at the requesting peak is re-anchored
+to the common predecessor's prior synthesis phase. The requesting atom then
+keeps its current analysis-relative offset from the selected channel at that
+requesting peak and keeps its own magnitude. This makes predecessor identity
+part of trajectory construction rather than an eligibility flag only.
+
+Current/predecessor region storage remains `2CP`; phase storage remains `2CP`;
+terminal state remains `P`. Reports count locked channel-atoms and channel-peak
+disagreements. No duration-growing storage or new parameter exists.
+
 ## No-Audio Falsifier
 
 Use analytic two-channel spectra within one scale. Give the channels distinct
@@ -80,5 +99,5 @@ No corpus render is needed to distinguish the topologies.
 
 ## Next Task
 
-Run Batch 29.7AZ. Freeze the complete implementation-free mechanics contract
-and analytic falsifier before changing the state implementation.
+Run Batch 29.7BA. Implement the frozen private mechanics and focused no-audio
+proofs without opening renderer or objective execution.

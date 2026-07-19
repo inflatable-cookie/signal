@@ -84,6 +84,6 @@ Finch and Loophole.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7AZ under Rule 31AC. Freeze an implementation-free
-channel-local peak-map and frequency-aligned trajectory-borrowing contract with
-a staggered-peak analytic falsifier. Keep renderer code and audio closed.
+Run `g10.029` Batch 29.7BA under Rule 31AC. Implement the frozen private
+channel-local peak maps, predecessor-anchored locked trajectory, and no-audio
+proof matrix. Keep renderer and objective execution closed.

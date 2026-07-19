@@ -171,7 +171,7 @@ winner is established.
 
 ## Next Task
 
-Run Batch 29.7AZ as an implementation-free clean-room mechanics contract for
-channel-local peak maps and frequency-aligned compatible trajectory borrowing.
-Do not transfer Rubber Band expression, ranges, thresholds, tables, or
-constants, and do not generate candidate audio.
+Batch 29.7AZ freezes the clean-room mechanics contract. Run Batch 29.7BA to
+implement only Signal-owned channel-local peak maps, compatible frequency-
+aligned predecessor trajectories, and no-audio proofs. Do not transfer Rubber
+Band expression, ranges, thresholds, tables, or constants.

@@ -2898,15 +2898,37 @@ nearby peaks and compatible predecessor histories. No audio ran.
 
 ### Batch 29.7AZ - Direct Channel-Local Peak Topology Contract
 
-Status: ready
+Status: complete
 
-- [ ] freeze channel-local current/predecessor peak maps, frequency-aligned
+- [x] freeze channel-local current/predecessor peak maps, frequency-aligned
   trajectory ownership, compatibility, region iteration, ties, and reporting
-- [ ] freeze fixed-storage impact and the staggered-peak analytic falsifier,
+- [x] freeze fixed-storage impact and the staggered-peak analytic falsifier,
   including swap symmetry, local magnitude/offset, unsupported fallback,
   finiteness, and repeat
-- [ ] compile a mechanics-only implementation card after complete passage;
+- [x] compile a mechanics-only implementation card after complete passage;
   keep renderer code, offset scaling, objective audio, and tuning closed
+
+Evidence: Rule 31AC now freezes per-channel/per-scale peak maps using the
+existing Signal peak predicate, per-atom greatest-channel trajectory selection,
+equal predecessor identity, predecessor-anchored tracked advance, requesting-
+peak retention, exact local magnitude/offset, lower-bin/channel ties, shared
+terminal classification, `2CP` region and phase storage, bounded work, private
+channel-atom reporting, and the complete staggered-peak matrix. No code or
+audio changed.
+
+### Batch 29.7BA - Direct Channel-Local Peak Mechanics
+
+Status: ready
+
+- [ ] replace only private joint region construction and locked trajectory
+  mechanics with the frozen Rule 31AC channel-local topology
+- [ ] implement focused no-audio tests for joint-map attribution, staggered
+  compatible peaks, incompatible/unsupported fallback, ties, exact `6000 Hz`,
+  swap, silence/recovery, terminal states, all proof rates, storage, shape,
+  finiteness, and repeat
+- [ ] preserve Rule 31Z representation and every non-locked phase law; generate
+  no renderer/objective audio and compile a separate objective card only after
+  complete mechanics passage
 
 ### Batch 29.8 - Listening And Dynamic Checkpoint
 
@@ -4312,10 +4334,15 @@ Status: ready
   is frequency-aligned; Signal's direct builder collapses both channels onto
   one joint peak map before Rule 31AA phase correction. Rule 31AC opens ready
   implementation-free Batch 29.7AZ with a staggered-peak analytic falsifier.
+- 2026-07-19: Batch 29.7AZ freezes the full Rule 31AC clean-room mechanics:
+  channel-local peak/predecessor maps, frequency-aligned trajectory selection,
+  predecessor-anchored advance, requesting-peak retention, existing fixed
+  storage, channel-atom reporting, and a complete no-audio proof matrix. Batch
+  29.7BA is ready; state code and audio remain unchanged.
 
 ## Next Task
 
-Run Batch 29.7AZ under Rule 31AC. Freeze the complete implementation-free
-channel-local peak topology, storage boundary, and staggered-peak falsifier
-before state code changes. Keep offset scaling, renderer audio, tuning,
-listening, holdout, product surfaces, and Batch 29.8 closed.
+Run Batch 29.7BA under Rule 31AC. Implement only the frozen private channel-
+local peak/state mechanics and focused no-audio proofs. Keep offset scaling,
+renderer/objective audio, tuning, listening, holdout, product surfaces, and
+Batch 29.8 closed.

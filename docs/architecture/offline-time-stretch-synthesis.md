@@ -1911,9 +1911,23 @@ ordinary/unlocked recurrence, magnitudes, per-channel inverse synthesis, and
 fixed capacity stay frozen. Offset scaling remains deferred because it is an
 empirical policy, not needed to falsify the peak-topology mismatch.
 
+Batch 29.7AZ fixes the remaining ownership shape on paper. Peak and valley
+maps are per channel and per scale. Terminal classification remains the shared
+joint-guidance decision. At a locked channel-atom, possible trajectory ownership
+is selected at that atom, but the requesting channel's peak index remains the
+anchor. Compatible borrowing requires equal predecessor peak identity. The
+selected ordinary peak advance is re-anchored to that common predecessor's
+prior synthesis phase before the requesting channel's current local offset is
+applied.
+
+This uses the existing `2CP` current/predecessor records and `2CP` phase state.
+No capacity changes. Diagnostics count locked channel-atom borrowing, local
+fallback, committed trajectory switches, and channel-peak disagreements rather
+than pretending both channels share one region topology.
+
 ## Next Task
 
-Run Batch 29.7AZ under Rule 31AC. Freeze region iteration, compatibility,
-storage, reporting, and a staggered-peak analytic falsifier for channel-local
-peak maps before state code changes. Keep renderer audio, tuning, listening,
-holdout, product work, and Batch 29.8 closed.
+Run Batch 29.7BA under Rule 31AC. Implement only the frozen channel-local peak
+maps, predecessor-anchored locked trajectory, private reporting, and no-audio
+mechanics proofs. Keep renderer audio, tuning, listening, holdout, product work,
+and Batch 29.8 closed.
