@@ -5179,8 +5179,42 @@ no-audio falsifier, explicit invariants, and a separately preregistered failure-
 first objective card. If that causal boundary cannot be established, close the
 direct topology rather than sweep it.
 
+Batch 29.7AY identifies that mechanism without rerunning audio. Pinned R3
+source keeps current and previous peak maps per channel. A requesting channel
+retains its current peak index; a frequency-aligned greatest-channel decision
+may lend only the trajectory when predecessor peak identities are compatible.
+Signal instead finds peaks and valleys from joint maximum channel energy and
+writes one peak and owner into every channel record. Rule 31AA corrects phase
+relation after that collapse but does not restore the discarded peak topology.
+
+### Rule 31AC: direct channel-local peak topology boundary
+
+Retain Rule 31Z direct scales, schedule, exclusive frequency ownership,
+terminal-state precedence, channel-local ordinary/unlocked recurrence,
+magnitude, per-channel synthesis, and fixed capacities. Any successor locked-
+region mechanics must satisfy:
+
+1. each channel owns current and predecessor peak identities
+2. the requesting channel's current peak location survives trajectory borrowing
+3. possible trajectory ownership is selected at the requesting frequency atom
+4. borrowing requires compatible predecessor peak identity at that frequency
+5. the owner trajectory is evaluated at the requesting peak index
+6. the requesting channel retains local analysis-relative phase and magnitude
+
+Batch 29.7AZ is implementation-free. It must freeze region iteration,
+compatibility records, ties, reporting, storage, and an analytic staggered-peak
+falsifier. That fixture gives the two channels distinct nearby peak locations
+and compatible predecessor histories. The current joint map must be shown to
+collapse them; the contracted topology must preserve both locations plus swap
+symmetry, local offset and magnitude, unsupported-peer fallback, finiteness,
+fixed capacity, and repeat.
+
+Phase-offset scaling, peak-density tuning, renderer code, objective audio, and
+row repair remain closed. A later mechanics implementation requires complete
+31AC preregistration; another objective candidate requires separate failure-
+first preregistration after mechanics passage.
+
 ## Next Task
 
-Run Batch 29.7AY under Rule 31AB. Reassess the frozen direct topology without
-audio and require one source-supported causal mechanism plus a no-audio
-falsifier before another candidate.
+Run Batch 29.7AZ under Rule 31AC. Freeze the implementation-free channel-local
+peak topology and staggered-peak analytic falsifier before changing state code.

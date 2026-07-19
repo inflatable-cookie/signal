@@ -117,8 +117,14 @@ normalized-Gram residual stays exactly `0.7611955347641768`. The correction
 therefore has local effect but does not explain the remaining topology-wide
 stereo failure. Mono and long-development do not run.
 
+Batch 29.7AY identifies the upstream mismatch without rerunning audio. The
+direct builder collapses both channels onto one joint peak map, while pinned R3
+retains channel-local peak locations and borrows only a compatible frequency-
+aligned trajectory. Memo 023 and Rule 31AC promote that parameter-free boundary
+for implementation-free mechanics design.
+
 ## Next Task
 
-Run Batch 29.7AY as a no-audio source-to-code reassessment. Name one causal
-missing mechanism with source support and a bounded falsifier, or close the
-direct topology before another candidate.
+Run Batch 29.7AZ under Rule 31AC. Freeze the channel-local peak-map mechanics,
+fixed storage, reporting, and staggered-peak analytic falsifier before state
+implementation or objective audio.

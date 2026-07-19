@@ -3,7 +3,7 @@
 Status: reviewed
 Specimen: Rubber Band R2 and R3
 Owner: dsp
-Last updated: 2026-07-18
+Last updated: 2026-07-19
 Scope: exact Rubber Band `4.0.0` source and linked-stereo topology
 
 ## Why This Specimen Matters
@@ -79,6 +79,21 @@ when both channels are inside the bounded channel-link range and their tracked
 peak histories resolve to a compatible prior owner. The peer retains a local
 analysis-relative offset from the borrowed peak. This is conditional
 peak-trajectory sharing, not unconditional same-bin phase projection.
+
+Reinspection after Signal Batch 29.7AX sharpens peak-location ownership too.
+R3 constructs current and previous peak maps separately for every channel.
+For each requesting channel and frequency bin, it keeps that channel's current
+peak index. A frequency-aligned greatest-channel lookup may supply the peak
+trajectory only when the two channels' predecessor peak identities agree. The
+borrowed trajectory does not replace the requesting channel's peak location.
+
+Signal's direct timeline does the opposite upstream of its corrected phase
+reference: it finds peaks and valleys from joint maximum channel energy, then
+writes one peak index and one owner into every channel record. Rule 31AA fixes
+phase relation at that shared peak but cannot recover channel-local peak
+topology already erased by region construction. This is a source-backed,
+parameter-free mismatch. Frequency/ratio-dependent offset scaling remains a
+separate empirical policy and is not promoted by this finding.
 
 The optional centre-focus path is different. Two-channel input is transformed
 to mid/side before analysis, phase processing remains synchronized, side
@@ -156,9 +171,7 @@ winner is established.
 
 ## Next Task
 
-Batch 29.7AJ selects R3's complete topology shape for one clean-room proof:
-exclusive frequency-owned scales, synchronized all-channel phase-state update,
-conditional compatible peak borrowing, and per-channel synthesis. It does not
-select Rubber Band expression, ranges, thresholds, crossovers, masks, tables,
-or constants. Batch 29.7AK derives every numeric policy from Signal-owned
-physical invariants and frozen development evidence under Rule 31R.
+Run Batch 29.7AZ as an implementation-free clean-room mechanics contract for
+channel-local peak maps and frequency-aligned compatible trajectory borrowing.
+Do not transfer Rubber Band expression, ranges, thresholds, tables, or
+constants, and do not generate candidate audio.

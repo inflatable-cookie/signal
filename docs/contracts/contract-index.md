@@ -2,7 +2,7 @@
 
 Status: active
 Owner: core-product
-Updated: 2026-07-18
+Updated: 2026-07-19
 
 ## Purpose
 
@@ -27,7 +27,10 @@ memory alone.
   records a local improvement without row-level passage, and closes that
   topology. Rule 31Y rejects unlocked over-linking and the extra outer
   meta-slice owner. Rule 31Z freezes direct scale geometry, schedule, state
-  order, boundaries, fixed capacities, and the honest unity/diagnostic split
+  order, boundaries, fixed capacities, and the honest unity/diagnostic split.
+  Rule 31AA corrects the borrowed peak phase reference; Rule 31AB rejects the
+  corrected objective candidate; Rule 31AC replaces the remaining joint peak
+  map with a channel-local, frequency-aligned mechanics contract
 - `g10.028` source-fill work is paused until the actual DSP kernel and source
   consumption geometry pass the `g10.029` correctness gate
 
@@ -155,7 +158,6 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7AU under contract `082` Rule 31Z. Freeze and execute
-the complete failure-first objective sequence. Stop at the first existing hard
-gate; keep tuning, retry, listening, holdout, Batch 29.8, and product work
-closed.
+Run `g10.029` Batch 29.7AZ under contract `082` Rule 31AC. Freeze the complete
+implementation-free channel-local peak topology and staggered-peak analytic
+falsifier. Keep renderer code, objective audio, tuning, and Batch 29.8 closed.

@@ -550,15 +550,18 @@ Current stretch status:
   residual `0.7611955347641768`. This improves AU by `2` calibrated rows and
   `39` windows without moving row-complete failures or the worst case. Mono and
   long-development do not run. Batch 29.7AY opens no-audio architecture
-  reassessment.
+  reassessment. AY finds a parameter-free source mismatch: R3 peak histories
+  are channel-local and trajectory borrowing is frequency-aligned, while
+  Signal collapses both channels onto one joint peak map before Rule 31AA phase
+  correction. Rule 31AC opens ready implementation-free Batch 29.7AZ with a
+  staggered-peak analytic falsifier. No audio reran.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7AY under Rule 31AB. Freeze AU/AX and audit the remaining
-direct topology against the source-studied ownership model without audio. Name
-one source-supported causal mechanism and no-audio falsifier, or close the
-topology. Keep tuning, retry, listening, holdout, product surfaces, and Batch
-29.8 closed.
+Run `g10.029` Batch 29.7AZ under Rule 31AC. Freeze the implementation-free
+channel-local peak topology, compatibility, storage, reporting, and staggered-
+peak analytic falsifier. Keep state implementation, renderer audio, offset
+scaling, tuning, listening, holdout, product surfaces, and Batch 29.8 closed.

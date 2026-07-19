@@ -73,6 +73,7 @@ Finch and Loophole.
 | [Bounded Normalized Sliced Integration](./translation-memos/020-bounded-normalized-sliced-integration.md) | Reject fixed-sample cross-rate slicing; validate one 10 ms-lattice exact sliced frame with fixed memory and persistent channel state | Validated |
 | [Direct Scale-Timeline Ownership](./translation-memos/021-direct-scale-timeline-ownership.md) | Reject unlocked over-linking and outer meta-slice projection; restore one direct coefficient timeline per exclusive scale | Promoted |
 | [Direct Scale-Timeline Preregistration](./translation-memos/022-direct-scale-timeline-preregistration.md) | Freeze direct physical geometry, absolute schedule, state ownership, boundaries, and fixed capacities; correct the multi-scale identity claim | Promoted |
+| [Direct Channel-Local Peak Topology](./translation-memos/023-direct-channel-local-peak-topology.md) | Reject the joint peak map; retain each requesting channel's peak location and borrow only a compatible frequency-aligned trajectory | Promoted for mechanics contract |
 
 ## Consumer Guidance
 
@@ -83,6 +84,6 @@ Finch and Loophole.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7AU under Rule 31Z. Freeze and execute the complete
-failure-first objective sequence. Stop at the first existing hard gate; keep
-tuning, retry, listening, holdout, product surfaces, and Batch 29.8 closed.
+Run `g10.029` Batch 29.7AZ under Rule 31AC. Freeze an implementation-free
+channel-local peak-map and frequency-aligned trajectory-borrowing contract with
+a staggered-peak analytic falsifier. Keep renderer code and audio closed.

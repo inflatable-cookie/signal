@@ -1896,10 +1896,24 @@ normalized-Gram residual remains exactly `0.7611955347641768`. The unchanged
 worst case and row-complete count rule out treating owner-peak reference alone
 as the missing stereo mechanism. Mono and long-development remain unopened.
 
+Batch 29.7AY finds the upstream mismatch. The direct state builder discovers
+peaks and valleys from joint maximum channel energy and assigns the same peak
+index to both channels. Pinned R3 instead keeps peak histories per channel and
+borrows only a compatible trajectory at the requesting frequency location.
+The requesting channel does not surrender its peak index. Rule 31AA repaired
+relation at Signal's shared peak after region construction; it could not
+recover peak identity already erased by that construction.
+
+The retained direct architecture therefore changes at one seam: peak maps and
+predecessor identities become channel-local, while trajectory ownership remains
+conditionally frequency-aligned. Direct scales, schedule, state precedence,
+ordinary/unlocked recurrence, magnitudes, per-channel inverse synthesis, and
+fixed capacity stay frozen. Offset scaling remains deferred because it is an
+empirical policy, not needed to falsify the peak-topology mismatch.
+
 ## Next Task
 
-Run Batch 29.7AY under Rule 31AB. Audit the frozen direct topology against the
-source-studied ownership model without audio. Require one causal missing
-mechanism with source support and a no-audio falsifier before another candidate;
-otherwise close the topology. Keep tuning, retry, listening, holdout, product
-work, and Batch 29.8 closed.
+Run Batch 29.7AZ under Rule 31AC. Freeze region iteration, compatibility,
+storage, reporting, and a staggered-peak analytic falsifier for channel-local
+peak maps before state code changes. Keep renderer audio, tuning, listening,
+holdout, product work, and Batch 29.8 closed.

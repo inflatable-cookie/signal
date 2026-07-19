@@ -2877,16 +2877,36 @@ development do not run.
 
 ### Batch 29.7AY - Corrected Direct Stereo Reassessment
 
-Status: ready
+Status: complete
 
-- [ ] freeze AU and AX code, aggregates, hashes, and stop state; do not rerun
+- [x] freeze AU and AX code, aggregates, hashes, and stop state; do not rerun
   either objective candidate or generate new corpus audio
-- [ ] audit the remaining direct topology against the source-studied locked,
+- [x] audit the remaining direct topology against the source-studied locked,
   ordinary, unlocked, scale, and synthesis ownership model using retained code
   and evidence only
-- [ ] name one causal missing mechanism with source support and a falsifiable
+- [x] name one causal missing mechanism with source support and a falsifiable
   no-audio proof, or close the direct topology before compiling another
   candidate; do not tune parameters or repair rows
+
+Evidence: pinned R3 keeps current and previous peak maps per channel, retains
+the requesting channel's peak index, and conditionally borrows only a
+frequency-aligned compatible trajectory. Signal's `build_regions` finds peaks
+and valleys from joint maximum channel energy and assigns the same peak and
+owner to every channel record. Rule 31AA repaired relation after this collapse.
+The parameter-free falsifier is a two-channel analytic spectrum with staggered
+nearby peaks and compatible predecessor histories. No audio ran.
+
+### Batch 29.7AZ - Direct Channel-Local Peak Topology Contract
+
+Status: ready
+
+- [ ] freeze channel-local current/predecessor peak maps, frequency-aligned
+  trajectory ownership, compatibility, region iteration, ties, and reporting
+- [ ] freeze fixed-storage impact and the staggered-peak analytic falsifier,
+  including swap symmetry, local magnitude/offset, unsupported fallback,
+  finiteness, and repeat
+- [ ] compile a mechanics-only implementation card after complete passage;
+  keep renderer code, offset scaling, objective audio, and tuning closed
 
 ### Batch 29.8 - Listening And Dynamic Checkpoint
 
@@ -4287,11 +4307,15 @@ Status: ready
   `2` calibrated rows and `39` windows over AU but does not change the local-
   row count or worst residual. Mono and long-development do not run. Batch
   29.7AY opens no-audio architecture reassessment.
+- 2026-07-19: Batch 29.7AY finds one parameter-free source mismatch without
+  rerunning audio. R3 peak histories are channel-local and trajectory borrowing
+  is frequency-aligned; Signal's direct builder collapses both channels onto
+  one joint peak map before Rule 31AA phase correction. Rule 31AC opens ready
+  implementation-free Batch 29.7AZ with a staggered-peak analytic falsifier.
 
 ## Next Task
 
-Run Batch 29.7AY under Rule 31AB. Freeze AU/AX evidence and audit the remaining
-direct topology against the source-studied ownership model without rerunning
-audio. Require one source-supported causal mechanism and no-audio falsifier
-before another candidate. Keep tuning, retry, listening, holdout, product
-surfaces, and Batch 29.8 closed.
+Run Batch 29.7AZ under Rule 31AC. Freeze the complete implementation-free
+channel-local peak topology, storage boundary, and staggered-peak falsifier
+before state code changes. Keep offset scaling, renderer audio, tuning,
+listening, holdout, product surfaces, and Batch 29.8 closed.
