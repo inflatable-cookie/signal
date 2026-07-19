@@ -65,7 +65,12 @@ The 2026-07-19 consolidation reset is authoritative.
   `6432` instead of the exact continuation at `6352`. The frozen coarse
   shortlist can hide an exact between-grid match from full refinement. The
   candidate was deleted without correction or rerun. Batch 31.15 docs-only
-  cyclic ownership reassessment is ready; no implementation is admitted.
+  cyclic ownership reassessment found no third materially different,
+  source-backed whole-renderer path. SOLA/WSOLA variants repair the rejected
+  search owner; pitch-/epoch-synchronous methods lack a full-mix linked period
+  owner and `8x` evidence; other hybrids reopen closed seams or separate
+  programs. Explicit `Cyclic` is closed and `g10.031` is paused without
+  promotion.
 - `g10.028` RealtimePreview source-fill and all render-plane integration remain
   paused.
 
@@ -133,9 +138,9 @@ Do not start Loophole or Chorus planning from Signal internals.
   - historical correctness, listening, and rejected-successor ledger
 - `g10.030` `complete`
   - stretch consolidated; candidate families closed; frozen baseline retained
-- `g10.031` `active`
-  - spectral router paused; cyclic candidates rejected at synthetic pitch and
-    structural search reachability; ownership reassessment ready
+- `g10.031` `paused`
+  - no creative owner admitted; spectral router and explicit cyclic closed or
+    paused without a ready implementation batch
 
 ## Stretch Boundary
 
@@ -160,11 +165,12 @@ spectral route is paused after three rejected and deleted candidates. The first
 explicit cyclic candidate is also rejected and deleted after structural
 admission and a first-row synthetic pitch miss. Correlation-aligned waveform
 overlap also failed structural admission and was deleted. Creative stretch has
-no renderer, public API, harness surface, or product route on `main`.
+no renderer, public API, harness surface, or product route on `main`. Final
+ownership reassessment found no third complete cyclic path.
 
 ## Next Task
 
-Execute `g10.031` Batch 31.15 only. Reassess explicit cyclic ownership at docs
-level after the two rejected candidates. Keep implementation, rejected
-families, the automatic router, `g10.028`, later creative owners, and
-render-plane integration paused.
+No autonomous creative-stretch task is ready. Keep `g10.031`, `g10.028`, later
+creative owners, and render-plane integration paused. Reopen creative work only
+from new complete-system owner evidence or an explicit operator decision for a
+separate research program.

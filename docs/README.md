@@ -46,7 +46,7 @@ strict lane.
 - Roadmap index: [roadmaps/README.md](./roadmaps/README.md)
 - Generation index: [roadmaps/generation-index.md](./roadmaps/generation-index.md)
 - Stretch closeout roadmap: [roadmaps/g10/030-stretch-consolidation-and-completion.md](./roadmaps/g10/030-stretch-consolidation-and-completion.md)
-- Active creative stretch roadmap: [roadmaps/g10/031-creative-time-stretch.md](./roadmaps/g10/031-creative-time-stretch.md)
+- Paused creative stretch roadmap: [roadmaps/g10/031-creative-time-stretch.md](./roadmaps/g10/031-creative-time-stretch.md)
 - Strict-lane reference: [specs/001-g09-lane-first-strict-adoption.md](./specs/001-g09-lane-first-strict-adoption.md)
 - Active strict-lane card: none
 - Research index: [research/master-index.md](./research/master-index.md)
@@ -72,6 +72,7 @@ strict lane.
 
 ## Next Task
 
-Execute `g10.031` Batch 31.15 only. Reassess explicit cyclic ownership at docs
-level; select one genuinely different complete path or close the character.
-Only drop into `specs/` when a strict lane is explicitly reopened.
+No autonomous creative-stretch task is ready. Keep `g10.031` paused. Reopen
+only from new complete-system owner evidence or an explicit operator decision
+for a separate creative research program. Only drop into `specs/` when a
+strict lane is explicitly reopened.

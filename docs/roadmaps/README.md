@@ -52,7 +52,9 @@ Its complete `CyclicGrain` candidate passed structural admission but failed the
 first synthetic pitch row and was deleted. Batch 31.12 selected a materially
 different correlation-aligned waveform family for a complete cyclic brief.
 Batch 31.13 froze that brief without changing DSP. Batch 31.14 isolated
-candidate work is next. No candidate DSP is admitted on `main`.
+implementation failed structural search reachability and was deleted. Batch
+31.15 found no third complete cyclic path and closed explicit `Cyclic`.
+`g10.031` is paused. No candidate DSP is admitted on `main`.
 Offline artifacts still need a streaming artifact writer/cache target for full
 peak-memory closure. Mono callback-state DSP has a
 no-allocation proof, linked stereo is implemented, ratio scheduling has
@@ -178,8 +180,8 @@ Before rollover:
 
 ## Next Task
 
-Use `docs/roadmaps/g10/README.md` as the active generation front door. Execute
-`g10.031` Batch 31.14 in one disposable worktree; implement the frozen
-`SimilarityAlignedCyclic` brief once while keeping rejected candidate
-families, the transparent successor lane, `g10.028`, automatic routing, later
-creative owners, and render-plane integration closed.
+Use `docs/roadmaps/g10/README.md` as the active generation front door. No
+autonomous creative-stretch work is ready: `g10.031` is paused without an
+admitted owner. Keep rejected candidate families, the transparent successor
+lane, `g10.028`, automatic routing, later creative owners, and render-plane
+integration closed until new authority exists.

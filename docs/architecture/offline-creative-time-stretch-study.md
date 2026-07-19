@@ -1,6 +1,6 @@
 # Offline Creative Time-Stretch Study
 
-Status: complete; similarity-aligned cyclic candidate brief frozen
+Status: complete; no creative owner admitted; implementation lane paused
 Owner: dsp
 Updated: 2026-07-19
 Contract: `085`
@@ -131,6 +131,30 @@ search, score and ties, `0.25` low-confidence fallback, segment and overlap
 geometry, semantic macros, anti-replica law, linked synthesis, exact length,
 `4 MiB` state cap, deterministic cost, gate order, retained comparator pack,
 cleanup, and minimal admission. No item remains a candidate-time choice.
+
+## Final Cyclic Ownership Reassessment
+
+Batch 31.14 implemented `SimilarityAlignedCyclic` once. Compile-only
+validation passed, but structural admission failed: the exact continuation at
+source frame `6352` lay between coarse samples and never reached full
+refinement, which selected frame `6432`. The candidate was deleted without
+correction or rerun.
+
+Batch 31.15 closes explicit `Cyclic`. No remaining family supplies a genuinely
+different, source-backed path through the complete Signal gate set:
+
+| Family | Evidence | Blocking boundary | Decision |
+| --- | --- | --- | --- |
+| fixed or unaligned cyclic overlap-add | Potenza demonstrates the Akai-style two-grain shape | `CyclicGrain` already failed pitch; another lattice, window, or hop repairs the rejected owner | closed |
+| SOLA, WSOLA, SoundTouch-style search | one selected waveform lag and overlap join | exhaustive search, denser coarse sampling, a larger shortlist, or another score repairs `SimilarityAlignedCyclic`; SoundTouch documents the same sequence/search/overlap trade between echo and drift | closed |
+| TD-PSOLA, ESOLA, FESOLA | pitch- or epoch-synchronous speech and strong-fundamental processing | no channel-shared full-mix epoch owner; ESOLA evidence covers speech at `0.5x` through `2x`, not the retained mixed-program `8x` target | specialist only |
+| transient-managed or component overlap-add | can protect selected attacks or tonal components | reopens detector timing or separately modified component recombination without one complete linked-stereo law | closed for this lane |
+| spectral, sinusoidal, or learned hybrid | other representations can own different material classes | reopens closed spectral/component families or requires a separate trained-model product program; no retained cyclic whole-system path | separate research only |
+
+The two candidate failures are different, but every remaining waveform option
+is either a direct repair of one of them or requires an unowned period,
+component, stereo, or model boundary. A third implementation is not ready.
+`Cyclic` remains useful comparator vocabulary, not an available character.
 
 ## Product Surface
 
@@ -360,13 +384,11 @@ automatic range router. All three spectral fixed-ratio candidates are rejected
 and deleted. Core `Dream`/`Spectral`/`Rough` ownership is paused until new
 complete-system evidence changes the bet.
 
-The explicit cyclic reserve still has separate operator value and a retained
-comparator. Its first complete owner is rejected for synthetic pitch
-displacement. Batch 31.12 selected correlation-aligned waveform overlap as a
-materially different, source-backed family. Batch 31.13 freezes its complete
-candidate brief. Passing it would admit one intentional character through
-`8x`; it would not claim PaulX-like `Dream`, reopen the automatic router, or
-authorize Cloud.
+The explicit cyclic reserve still has operator value and a retained comparator,
+but both complete owners are rejected and deleted. Batch 31.15 found no third
+materially different, source-backed whole-renderer path. `Cyclic` is closed
+with no promotion. `Dream`, `Spectral`, `Rough`, `Cloud`, automatic routing,
+dynamic ratio, cache, and product integration remain paused.
 
 ## Sources
 
@@ -387,10 +409,12 @@ authorize Cloud.
 - [Verhelst and Roelands, WSOLA](https://doi.org/10.21437/Eurospeech.1993-59)
 - [SoundTouch algorithm notes](https://soundtouch.surina.net/README.html)
 - [SoundTouch source, studied revision `f738b113`](https://codeberg.org/soundtouch/soundtouch/commit/f738b1132ec1fd56efc90367898244cf52d9e6a5)
+- [Moulines and Charpentier, PSOLA](https://doi.org/10.1016/0167-6393(90)90021-Z)
+- [Rudresh et al., ESOLA](https://arxiv.org/abs/1801.06492)
+- [Roberts and Paliwal, FESOLA](https://doi.org/10.1109/WASPAA.2019.8937258)
 
 ## Next Task
 
-Execute `g10.031` Batch 31.14 only. Implement the frozen
-`SimilarityAlignedCyclic` brief once in a disposable worktree and stop at the
-first failed gate. Do not tune or reimplement `CyclicGrain`, or reopen `Dream`,
-`Spectral`, `Rough`, `Cloud`, automatic routing, cache, or public APIs.
+No creative implementation batch is ready. Keep `g10.031` paused. Reopen only
+from new complete-system evidence for one owner or an explicit operator decision
+to start a separate creative research program.

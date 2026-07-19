@@ -552,6 +552,12 @@ reachability failure, not a pitch or listening result. The gate was not
 corrected or rerun. The worktree, branch, private module, tests, and build state
 were deleted. No candidate surface entered `main`.
 
+Batch 31.15 found no third materially different, source-backed cyclic topology.
+SOLA/WSOLA variants repair this search owner; pitch-/epoch-synchronous methods
+lack one full-mix linked period owner and retained `8x` evidence; other hybrids
+reopen closed seams or separate programs. Explicit `Cyclic` is closed without
+promotion.
+
 ## Sources
 
 - [Verhelst and Roelands, WSOLA](https://doi.org/10.21437/Eurospeech.1993-59)
@@ -561,6 +567,6 @@ were deleted. No candidate surface entered `main`.
 
 ## Next Task
 
-Execute `g10.031` Batch 31.15 only. Reassess explicit cyclic ownership at docs
-level after the frozen search-reachability failure. Do not repair or reimplement
-`SimilarityAlignedCyclic`.
+No implementation follows this brief. Explicit `Cyclic` is closed. Reopen only
+from new complete-system owner evidence or an explicit operator decision for a
+separate creative research program.

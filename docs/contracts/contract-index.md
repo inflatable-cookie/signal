@@ -17,10 +17,10 @@ memory alone.
 - `046` governs sample-domain stretch behavior and its promotion gates
 - `084` is closed without successor promotion; it remains the reopening and
   complete-system admission authority
-- `085` governs the separate offline creative-stretch product and range router
-  and freezes correlation-aligned waveform overlap for its next cyclic candidate
-  with `Dream`, `Spectral`, `Rough`, `Cloud`, and `Cyclic` character anchors;
-  automatic routing is paused and no creative implementation is admitted
+- `085` governs the separate offline creative-stretch product vocabulary;
+  `Dream`, `Spectral`, `Rough`, `Cloud`, automatic routing, and explicit
+  `Cyclic` have no admitted owner, no creative implementation is ready, and the
+  milestone is paused
 - `082` and `g10.029` are historical evidence, not active execution authority
 - `g10.028` source-fill work remains paused
 
@@ -150,7 +150,6 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Keep Contract `084` closed. Run `g10.031` Batch 31.14 under Contract `085` in
-one disposable worktree. Implement the frozen `SimilarityAlignedCyclic` brief
-once and stop at the first failed gate. Keep automatic routing and later owners
-closed.
+Keep Contracts `084` and `085` closed to implementation. No creative batch is
+ready. Reopen `g10.031` only from new complete-system owner evidence or an
+explicit operator decision for a separate creative research program.

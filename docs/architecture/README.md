@@ -37,6 +37,6 @@ Keep milestone sequencing in `roadmaps/`.
 
 ## Next Task
 
-Keep the `g10.030` transparent successor program closed. Run `g10.031` Batch
-31.8 once in a disposable worktree under the final complex-relation brief;
-keep later owners and product routing closed.
+Keep the `g10.030` transparent successor program closed. `g10.031` Batch 31.15
+also closed explicit `Cyclic` without promotion. No creative implementation
+batch is ready; keep later owners and product routing closed.

@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: active; Batch 31.15 cyclic ownership reassessment ready
+Status: paused; no admitted owner or ready implementation batch
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -452,27 +452,35 @@ entered `main`.
 
 ## Batch 31.15 - Cyclic Ownership Reassessment
 
-Status: ready; docs and architecture only
+Status: complete; explicit cyclic closed without promotion
 
 Reassess whether explicit `Cyclic` has one remaining materially different,
 source-backed whole-renderer path or must close.
 
-- reconcile the Batch 31.11 pitch failure and Batch 31.14 search-reachability
+- [x] reconciled the Batch 31.11 pitch failure and Batch 31.14 search-reachability
   failure without repairing either rejected candidate
-- distinguish a genuinely different ownership topology from a wider search,
+- [x] distinguished a genuinely different ownership topology from a wider search,
   denser coarse grid, larger shortlist, score variant, or threshold change
-- require one source-backed path through pitch, scheduled-replica, exact-length,
+- [x] required one source-backed path through pitch, scheduled-replica, exact-length,
   bounded-state, linked-stereo, and retained musical gates
-- select and bound one complete architecture-brief batch only if that path
-  exists; otherwise close explicit `Cyclic`
-- keep all implementation, candidate harness, comparator capture, public API,
+- [x] rejected SOLA/WSOLA variants as direct alignment repairs; rejected
+  pitch-/epoch-synchronous OLA because it lacks one full-mix linked period
+  owner and retained `8x` evidence
+- [x] rejected fixed grains, transient/component hybrids, spectral/sinusoidal
+  reopening, and learned synthesis as repaired, closed, or separate programs
+- [x] found no third materially different complete path and closed explicit
+  `Cyclic`
+- [x] kept all implementation, candidate harness, comparator capture, public API,
   cache, routing, other creative owners, Loophole, and Chorus out of scope
-- change documentation only
+- [x] changed documentation only
+
+`Cyclic` remains useful comparator and future intent vocabulary, not an
+available character. No new brief or implementation batch is ready.
 
 ## Later Batches
 
-Closed pending the isolated similarity-aligned decision and separate reopening
-evidence:
+Closed without promotion. Reopening requires new complete-system owner evidence
+or an explicit operator decision for a separate creative research program:
 
 - minimal production admission
 - coherent/diffusive overlap
@@ -497,6 +505,8 @@ evidence:
 - [x] one complete similarity-aligned cyclic brief is frozen
 - [x] one isolated similarity-aligned cyclic candidate reached a recorded
   terminal decision
+- [x] final ownership reassessment found no third complete cyclic path
+- [x] explicit `Cyclic` closed without implementation or product exposure
 - [ ] one isolated cyclic candidate passes structural and synthetic gates
 - [ ] long-form mono cyclic listening passes at `2x`, `4x`, and `8x`
 - [ ] linked-stereo mechanics and independent listening pass
@@ -505,7 +515,7 @@ evidence:
 
 ## Next Task
 
-Execute Batch 31.15 only. Reassess explicit cyclic ownership at docs level.
-Either select one genuinely different, source-backed whole-renderer path for a
-later complete brief or close explicit `Cyclic`. Do not repair or reimplement
+No autonomous creative-stretch task is ready. Keep `g10.031` paused. Reopen
+only from new complete-system owner evidence or an explicit operator decision
+to start a separate creative research program. Do not repair or reimplement
 either rejected cyclic candidate.

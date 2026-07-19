@@ -417,7 +417,7 @@ brief before another implementation.
 
 ## Next Task
 
-Execute `g10.031` Batch 31.14 only. Implement the materially different frozen
-`SimilarityAlignedCyclic` brief once in a disposable worktree. Do not tune or
-reimplement this historical brief, and do not start product admission, cache,
-routing, or public API work.
+No implementation follows this brief. The materially different
+`SimilarityAlignedCyclic` replacement also failed and final ownership
+reassessment closed explicit `Cyclic`. Do not tune or reimplement either
+candidate.

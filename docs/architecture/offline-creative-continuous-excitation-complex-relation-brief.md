@@ -433,7 +433,7 @@ relation, excitation, window, coefficient, smoothing, seed, or scalar variant.
 
 ## Next Task
 
-Run `g10.031` Batch 31.14 only to implement the separately frozen
-`SimilarityAlignedCyclic` brief once in a disposable worktree. Do not repair
-this relation proof, reopen a diffusive variant, tune `CyclicGrain`, or begin
-Cloud, routing, or product implementation.
+No implementation follows this brief. Both later cyclic candidates also failed
+and final ownership reassessment closed explicit `Cyclic`. Do not repair this
+relation proof, reopen a diffusive variant, tune either cyclic candidate, or
+begin Cloud, routing, or product implementation.

@@ -58,13 +58,14 @@ Current stretch feasibility decision:
 
 Current creative-stretch decision:
 [Offline Creative Time-Stretch Study](../architecture/offline-creative-time-stretch-study.md).
-Its automatic `4x`-`16x` spectral route is paused. Explicit cyclic expansion
-through `8x` has no implementation after its first candidate failed synthetic
-pitch admission. Batch 31.12 selected correlation-aligned waveform overlap as
-one materially different family. Batch 31.13 froze its complete candidate
-brief. This does not reopen the transparent successor lane.
+Its automatic `4x`-`16x` spectral route is paused. Both explicit cyclic
+candidates are rejected and deleted: the first failed synthetic pitch, and the
+similarity-aligned replacement failed structural search reachability. Final
+ownership reassessment found no third materially different, source-backed
+whole-renderer path. Explicit `Cyclic` is closed. This does not reopen the
+transparent successor lane.
 
-Current similarity-aligned cyclic brief:
+Rejected similarity-aligned cyclic brief:
 [Offline Creative SimilarityAlignedCyclic Renderer Brief](../architecture/offline-creative-similarity-aligned-cyclic-brief.md).
 
 Rejected cyclic-owner brief:
@@ -118,7 +119,7 @@ Rejected first-owner brief:
 ## Next Task
 
 Treat the retained source studies and rejected briefs as historical evidence.
-Run `g10.031` Batch 31.14 in one disposable worktree. Implement the frozen
-`SimilarityAlignedCyclic` brief once and stop at the first failed gate. Do not
-tune `CyclicGrain` or reopen a translation memo, Batch 29.7BE, the diffusive
-families, or the transparent successor family.
+No creative implementation batch is ready. Reopen `g10.031` only from new
+complete-system owner evidence or an explicit operator decision to start a
+separate creative research program. Do not tune either cyclic candidate or
+reopen Batch 29.7BE, the diffusive families, or the transparent successor.

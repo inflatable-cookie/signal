@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: active isolated similarity-aligned cyclic-candidate boundary
+Status: active product boundary; all renderer ownership paused
 Owner: core-product
 Updated: 2026-07-19
 Related contracts: `046`, `048`, `084`
@@ -53,9 +53,9 @@ smooth, fused, musical spectral smear.
 `Spectral` intentionally exposes vocoder-like separation and decoherence.
 `Rough` intentionally exposes a less smoothed polyphase texture. `Cloud` means
 dispersed upper-range evolution. `Cyclic` means commanded Akai-style
-repetition. Its first complete candidate targeted expansion above `1x` through
-`8x` and is rejected. One materially different correlation-aligned waveform
-family is selected for a new brief; the character remains unavailable.
+repetition. Both complete cyclic candidates are rejected and deleted. Final
+ownership reassessment found no third materially different, source-backed
+whole-renderer path. The character is closed and unavailable.
 
 No character is public today. A cyclic-only admission must not expose
 unimplemented `Dream`, `Spectral`, `Rough`, or `Cloud` values, or imply that an
@@ -95,9 +95,9 @@ The automatic routed bands are paused:
 - cloud: `32x` through `100x`
 
 These bands remain future product intent, not implementation authority. The
-explicit `Cyclic` character bypasses them. Its first candidate accepts only
-fixed expansion above `1x` through `8x`; a future similarity-aligned candidate
-must preserve that range. `2x`, `4x`, and `8x` are mandatory admission points.
+closed explicit `Cyclic` character bypassed them and targeted fixed expansion
+above `1x` through `8x`. Any future reopening must preserve `2x`, `4x`, and
+`8x` as mandatory admission points.
 
 If automatic routing reopens, overlap weights use smoothstep interpolation over
 `log2(ratio)`. A fixed-ratio request uses one constant channel-shared weight for
@@ -249,6 +249,23 @@ exact length, `4 MiB` state, deterministic cost, fixed gates, and complete
 cleanup. Candidate implementation may not choose another WSOLA variant or
 alter those laws.
 
+That candidate passed compile-only validation but failed structural
+known-offset recovery. Its coarse shortlist excluded the exact continuation at
+source frame `6352`; full refinement selected frame `6432`. It was deleted
+without correction or rerun.
+
+Final ownership reassessment closes explicit `Cyclic`:
+
+- fixed or unaligned overlap-add is the rejected `CyclicGrain` owner
+- SOLA/WSOLA search changes are repairs to the rejected similarity-aligned owner
+- pitch- and epoch-synchronous methods lack one full-mix, linked-channel period
+  owner and retained `8x` evidence
+- transient-managed, component, spectral, sinusoidal, and learned hybrids
+  reopen a closed seam or require a separate research program
+
+No third cyclic implementation is authorized. New complete-system evidence or
+an explicit operator decision is required before any creative owner reopens.
+
 ## Initial Promotion Sequence
 
 1. Comparator capture and target-character freeze. Complete.
@@ -268,11 +285,12 @@ alter those laws.
 11. Freeze one complete `SimilarityAlignedCyclic` brief without candidate DSP.
     Complete.
 12. Implement one isolated candidate and stop at the first failed structural
-    or synthetic gate. Next.
-13. Run retained mono and independent stereo listening only if that candidate
-    clears structural and synthetic admission.
-14. Admit only the minimal cyclic owner if every gate passes.
-15. Reassess product exposure and cache identity after admission.
+    or synthetic gate. Complete; rejected at structural known-offset recovery.
+13. Reassess cyclic ownership and select a genuinely different complete path
+    or close the character. Complete; no third path found, character closed.
+14. Retained mono and independent stereo listening. Closed without admission.
+15. Minimal cyclic admission, product exposure, and cache review. Closed
+    without admission.
 
 Core `Dream`/`Spectral`/`Rough`, coherent overlap, `LayeredCloud`, the upper
 overlap, dynamic ratios, and automatic routing require a separate reopening
@@ -280,20 +298,17 @@ decision backed by new complete-system evidence.
 
 ## Current State
 
-Three isolated spectral candidates and the first cyclic candidate are rejected
-and deleted. The core `4x`-`16x` owner and automatic router are paused.
-`CyclicGrain` passed structural admission but missed the first synthetic pitch
-limit by `5.778` cents. `SimilarityAlignedCyclic` was selected because its
-adaptive waveform alignment changes the failed join mechanism. Its complete
-brief is frozen and one isolated candidate is ready. Explicit
-`Cyclic` still has no implementation. No public Rust enum, renderer, harness
-mode, fixture, artifact schema, runtime route, or product-facing claim entered
-`main`. `OfflineHighQuality` remains byte-exact and Contract `084` remains
-closed.
+Three isolated spectral candidates and both cyclic candidates are rejected and
+deleted. The core `4x`-`16x` owner, explicit `Cyclic`, and automatic router are
+closed or paused without promotion. `CyclicGrain` missed the first synthetic
+pitch limit by `5.778` cents. `SimilarityAlignedCyclic` then failed structural
+search reachability before synthetic admission. No third complete path is
+authorized. No public Rust enum, renderer, harness mode, fixture, artifact
+schema, runtime route, or product-facing claim entered `main`.
+`OfflineHighQuality` remains byte-exact and Contract `084` remains closed.
 
 ## Next Task
 
-Run `g10.031` Batch 31.14 only. Implement the frozen
-`SimilarityAlignedCyclic` brief once in a disposable worktree and stop at the
-first failed gate. Do not tune or reimplement `CyclicGrain`, or reopen core
-spectral characters, Cloud, automatic routing, cache, or public APIs.
+No creative implementation batch is ready. Keep `g10.031` paused. Reopen only
+from new complete-system owner evidence or an explicit operator decision to
+start a separate creative research program.

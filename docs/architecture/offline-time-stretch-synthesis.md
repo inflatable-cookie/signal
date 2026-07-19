@@ -113,7 +113,6 @@ ledger remains in git history at `1d1b02f1`.
 
 ## Next Task
 
-Retain this frozen baseline and keep its successor lane closed. Run `g10.031`
-Batch 31.14 only in a disposable worktree: implement the separate frozen
-`SimilarityAlignedCyclic` brief without changing the production renderer on
-`main`.
+Retain this frozen baseline and keep its successor lane closed. `g10.031` also
+closed explicit `Cyclic` without promotion. No creative implementation batch
+is ready, and the production renderer remains unchanged on `main`.

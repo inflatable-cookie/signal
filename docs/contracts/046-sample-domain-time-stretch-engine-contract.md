@@ -466,7 +466,6 @@ no runtime or public Rust surface until separately promoted.
 
 ## Next Task
 
-Keep the existing tier behavior frozen. Run `g10.031` Batch 31.14 under
-Contract `085` in one disposable worktree; implement the frozen
-`SimilarityAlignedCyclic` brief without changing the existing public tier
-surface.
+Keep the existing tier behavior frozen. Contract `085` has no admitted creative
+owner after `g10.031` closed explicit `Cyclic`; no creative implementation may
+change this public tier surface without new authority.
