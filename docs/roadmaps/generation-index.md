@@ -53,5 +53,6 @@ If that cleanup has not happened, stay in the current generation and finish the 
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the current active-generation front door.
-Continue `g10.030` Batch 30.2 with one complete successor brief. Do not add
-candidate DSP to `main` before Contract 084 admission.
+Run `g10.030` Batch 30.3 from the frozen successor brief in one disposable
+branch or worktree. Do not add candidate DSP to `main` before Contract 084
+admission.

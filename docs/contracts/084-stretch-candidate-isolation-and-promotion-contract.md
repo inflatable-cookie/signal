@@ -120,6 +120,6 @@ RealtimePreview.
 
 ## Next Task
 
-Freeze one end-to-end successor brief under `g10.030` before writing DSP code.
-The brief must name the complete timing, transient, tonal, multiresolution, and
-stereo topology plus the fixed long-form admission pack.
+Implement `docs/architecture/offline-time-stretch-successor-brief.md` in one
+disposable `g10.030` Batch 30.3 branch or worktree. Keep candidate code and
+evidence surfaces outside `main` until admission.

@@ -1,7 +1,7 @@
 # Architecture
 
 Status: active
-Updated: 2026-03-11
+Updated: 2026-07-19
 
 ## Why this section matters now
 
@@ -26,11 +26,11 @@ Keep milestone sequencing in `roadmaps/`.
 - `package-map.md`
 - `dsp-analysis-feature-reference.md`
 - `offline-time-stretch-synthesis.md`
+- `offline-time-stretch-successor-brief.md`
 - `graph-runtime-feature-reference.md`
 - related contracts under `docs/contracts/`
 
 ## Next Task
 
-Keep the current-state architecture references and product guardrails aligned
-with the live runtime and host work instead of letting those details drift back
-into roadmap-only prose.
+Implement the frozen offline stretch successor only in the isolated `g10.030`
+Batch 30.3 worktree. Keep `main` on the retained baseline until admission.

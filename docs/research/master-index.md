@@ -90,6 +90,6 @@ current stretch execution authority.
 
 ## Next Task
 
-Use the retained Rubber Band, Signalsmith, and operator evidence to write the
-single end-to-end successor brief required by `g10.030` Batch 30.2. Do not
-resume the historical Batch 29.7BE sequence.
+Treat the retained source studies as provenance for the frozen
+`SourceAnchoredMultiresolutionPhaseField` brief. Run `g10.030` Batch 30.3 from
+that brief; do not reopen a translation-memo or Batch 29.7BE sequence.

@@ -81,5 +81,5 @@ worktree. Failed candidates do not accumulate in `main`.
 
 ## Next Task
 
-Use `g10.030` Batch 30.2 to freeze one end-to-end successor brief before new
-DSP implementation.
+Treat this roadmap as evidence only. Run `g10.030` Batch 30.3 from the frozen
+successor brief in one disposable branch or worktree.

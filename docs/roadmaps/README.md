@@ -166,5 +166,6 @@ Before rollover:
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the active generation front door.
-`g10.030` Batch 30.2 is ready. Freeze one complete successor brief before any
-new DSP implementation. Keep `g10.028` and render-plane integration paused.
+`g10.030` Batch 30.3 is ready. Implement the frozen complete successor in one
+disposable branch or worktree and stop at the structural/synthetic gate. Keep
+`g10.028` and render-plane integration paused.

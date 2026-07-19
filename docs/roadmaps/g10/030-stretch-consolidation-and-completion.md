@@ -65,7 +65,7 @@ Result:
 
 ## Batch 30.2 - Freeze One Complete Successor
 
-Status: ready
+Status: complete
 
 Write one implementation brief. It must use the retained source studies and
 operator evidence, but it must describe a complete renderer rather than
@@ -84,9 +84,25 @@ The brief must freeze:
 
 No DSP implementation lands in `main` in this batch.
 
+Result:
+
+- [x] froze `SourceAnchoredMultiresolutionPhaseField` as the only successor
+- [x] assigned transform, map, scheduler, transient, tonal, stereo, boundary,
+  memory, determinism, rejection, cleanup, and admission ownership
+- [x] froze structural, synthetic, long-form mono, and independent stereo
+  gates
+- [x] resolved the historical `1.25x` note-checker ratio against Contract
+  `084`: candidate admission uses `0.75x`, `1.5x`, and `2.0x`
+- [x] changed documentation only; production DSP and harness behavior remain
+  frozen
+
+Authority:
+
+- `docs/architecture/offline-time-stretch-successor-brief.md`
+
 ## Batch 30.3 - Candidate Worktree
 
-Status: blocked on Batch 30.2
+Status: ready
 
 - implement the complete candidate in one disposable branch or worktree
 - keep instrumentation private to that worktree
@@ -113,7 +129,7 @@ If it fails:
 
 ## Completion Gate
 
-- [ ] one complete candidate brief exists
+- [x] one complete candidate brief exists
 - [ ] one complete candidate passes structural and synthetic gates
 - [ ] long-form mono listening is competitive with the external reference
 - [ ] linked-stereo evidence passes objective and independent listening review
@@ -122,6 +138,6 @@ If it fails:
 
 ## Next Task
 
-Run Batch 30.2. Produce one end-to-end successor brief from the retained Rubber
-Band, Signalsmith, and operator evidence. Do not reopen Batch 29.7BE or add DSP
-code to `main`.
+Run Batch 30.3 from the Batch 30.2 commit in one disposable branch or worktree.
+Implement the frozen successor exactly. Stop after structural and synthetic
+gates decide whether long-form listening audio may be generated.

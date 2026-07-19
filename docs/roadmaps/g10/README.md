@@ -112,6 +112,6 @@ Remaining work is one complete successor under `g10.030`, developed outside
 
 ## Next Task
 
-Run `g10.030` Batch 30.2. Freeze one end-to-end successor brief from the
-retained source studies and operator evidence. Do not reopen Batch 29.7BE or
-add candidate DSP to `main`.
+Run `g10.030` Batch 30.3 from the frozen
+`SourceAnchoredMultiresolutionPhaseField` brief. Use one disposable branch or
+worktree and keep all candidate code, fixtures, and report surfaces off `main`.
