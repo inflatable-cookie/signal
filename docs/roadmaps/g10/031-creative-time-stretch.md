@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: active; Batch 31.14 isolated similarity-aligned candidate ready
+Status: active; Batch 31.15 cyclic ownership reassessment ready
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -423,23 +423,51 @@ Authority:
 
 ## Batch 31.14 - Isolated Similarity-Aligned Cyclic Candidate
 
-Status: ready; disposable worktree only
+Status: complete; candidate rejected at structural gate
 
-Create sibling worktree `/Users/tom/Dev/projects/signal-candidate-31-14` on
-branch `candidate/g10-031-similarity-aligned-cyclic` from the Batch 31.13 docs
-commit. Implement the frozen brief once.
+One complete candidate was implemented on
+`candidate/g10-031-similarity-aligned-cyclic` in the disposable
+`signal-candidate-31-14` worktree.
 
-- add only the private six-file `creative_similarity_cyclic` family and one
+- [x] added only the private six-file `creative_similarity_cyclic` family and one
   private `lib.rs` declaration
-- run compile-only validation before admission
-- run the complete structural gate
-- run retained neutral `110 Hz` at `2x` first after structural admission
-- stop on the first failure without correction or rerun
-- open remaining synthetic rows, comparator capture, mono listening, `16x`
-  rejection, and independent stereo only in the frozen order
-- delete the entire worktree, branch, candidate code, tests, build state, and
-  generated audio after any failure
-- admit nothing to `main` unless every gate passes
+- [x] passed compile-only validation before admission
+- [x] ran the complete seven-test structural gate once
+- [x] passed six structural cases covering request and identity, length and
+  determinism, geometry and strict path, impulse support, linked stereo, and
+  peak/capacity bounds
+- [x] stopped when the known-offset recovery case selected source frame `6432`
+  instead of the exact natural continuation at `6352`
+- [x] attributed the miss to coarse-shortlist reachability: an exact match
+  between coarse samples is unavailable to the full search when neighbouring
+  coarse correlations do not reach the top three
+- [x] did not correct or rerun the gate, run the `110 Hz` row, open later
+  synthetic or listening gates, or capture comparator audio
+- [x] deleted the worktree, branch, private module, tests, and build state
+
+This is a different dominant cause from the Batch 31.11 pitch displacement.
+Contracted policy returns explicit `Cyclic` to docs-level ownership
+reassessment; it does not authorize direct implementation. No candidate code
+entered `main`.
+
+## Batch 31.15 - Cyclic Ownership Reassessment
+
+Status: ready; docs and architecture only
+
+Reassess whether explicit `Cyclic` has one remaining materially different,
+source-backed whole-renderer path or must close.
+
+- reconcile the Batch 31.11 pitch failure and Batch 31.14 search-reachability
+  failure without repairing either rejected candidate
+- distinguish a genuinely different ownership topology from a wider search,
+  denser coarse grid, larger shortlist, score variant, or threshold change
+- require one source-backed path through pitch, scheduled-replica, exact-length,
+  bounded-state, linked-stereo, and retained musical gates
+- select and bound one complete architecture-brief batch only if that path
+  exists; otherwise close explicit `Cyclic`
+- keep all implementation, candidate harness, comparator capture, public API,
+  cache, routing, other creative owners, Loophole, and Chorus out of scope
+- change documentation only
 
 ## Later Batches
 
@@ -467,6 +495,8 @@ evidence:
 - [x] one isolated cyclic candidate reached a recorded terminal decision
 - [x] one materially different source-backed cyclic family is selected
 - [x] one complete similarity-aligned cyclic brief is frozen
+- [x] one isolated similarity-aligned cyclic candidate reached a recorded
+  terminal decision
 - [ ] one isolated cyclic candidate passes structural and synthetic gates
 - [ ] long-form mono cyclic listening passes at `2x`, `4x`, and `8x`
 - [ ] linked-stereo mechanics and independent listening pass
@@ -475,9 +505,7 @@ evidence:
 
 ## Next Task
 
-Execute Batch 31.14 only. Create
-`/Users/tom/Dev/projects/signal-candidate-31-14` on
-`candidate/g10-031-similarity-aligned-cyclic` from the Batch 31.13 docs commit,
-implement the frozen `SimilarityAlignedCyclic` brief once, and stop at the
-first failed gate. Keep core spectral characters, Cloud, automatic routing,
-dynamic ratio, cache, and public APIs closed.
+Execute Batch 31.15 only. Reassess explicit cyclic ownership at docs level.
+Either select one genuinely different, source-backed whole-renderer path for a
+later complete brief or close explicit `Cyclic`. Do not repair or reimplement
+either rejected cyclic candidate.

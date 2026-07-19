@@ -1,10 +1,10 @@
 # Offline Creative SimilarityAlignedCyclic Renderer Brief
 
-Status: frozen candidate brief; implementation not started
+Status: rejected at structural admission; candidate deleted
 Owner: dsp
 Updated: 2026-07-19
 Contract: `085`
-Roadmap: `g10.031`, Batch 31.13
+Roadmap: `g10.031`, Batches 31.13-31.14
 
 ## Decision
 
@@ -537,6 +537,21 @@ complete cyclic architectures have failed for the same reason and explicit
 `Cyclic` closes. A different dominant cause returns only to docs-level owner
 reassessment; it does not authorize a third implementation directly.
 
+## Candidate Decision
+
+Batch 31.14 implemented this brief once in the isolated
+`signal-candidate-31-14` worktree. Compile-only validation passed. Structural
+admission then failed its frozen known-offset recovery case: with an exact
+natural-continuation anchor at source frame `6352`, the two-stage search chose
+frame `6432`.
+
+The coarse shortlist can exclude an exact match that lies between coarse
+samples when neighbouring noise correlations do not rank in the top three.
+The full search then cannot recover that anchor. This is a structural search-
+reachability failure, not a pitch or listening result. The gate was not
+corrected or rerun. The worktree, branch, private module, tests, and build state
+were deleted. No candidate surface entered `main`.
+
 ## Sources
 
 - [Verhelst and Roelands, WSOLA](https://doi.org/10.21437/Eurospeech.1993-59)
@@ -546,8 +561,6 @@ reassessment; it does not authorize a third implementation directly.
 
 ## Next Task
 
-Execute `g10.031` Batch 31.14 only. Create sibling worktree
-`/Users/tom/Dev/projects/signal-candidate-31-14` on branch
-`candidate/g10-031-similarity-aligned-cyclic` from the Batch 31.13 docs commit,
-implement this frozen brief once, and stop at the first failed gate. Do not
-change production DSP or product surfaces on `main`.
+Execute `g10.031` Batch 31.15 only. Reassess explicit cyclic ownership at docs
+level after the frozen search-reachability failure. Do not repair or reimplement
+`SimilarityAlignedCyclic`.

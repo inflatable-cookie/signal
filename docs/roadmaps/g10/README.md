@@ -60,7 +60,12 @@ The 2026-07-19 consolidation reset is authoritative.
   Batch 31.12 then selected one materially different correlation-aligned
   waveform family for a clean-room cyclic brief. Batch 31.13 froze its exact
   map, search, overlap, stereo, bounds, and gates without changing DSP. Batch
-  31.14 isolated candidate work is ready; no implementation is admitted.
+  31.14 implemented the similarity-aligned candidate once. Compile-only
+  validation passed, but structural known-offset recovery chose source frame
+  `6432` instead of the exact continuation at `6352`. The frozen coarse
+  shortlist can hide an exact between-grid match from full refinement. The
+  candidate was deleted without correction or rerun. Batch 31.15 docs-only
+  cyclic ownership reassessment is ready; no implementation is admitted.
 - `g10.028` RealtimePreview source-fill and all render-plane integration remain
   paused.
 
@@ -129,8 +134,8 @@ Do not start Loophole or Chorus planning from Signal internals.
 - `g10.030` `complete`
   - stretch consolidated; candidate families closed; frozen baseline retained
 - `g10.031` `active`
-  - spectral router paused; cyclic candidate rejected at synthetic pitch;
-    similarity-aligned cyclic candidate ready
+  - spectral router paused; cyclic candidates rejected at synthetic pitch and
+    structural search reachability; ownership reassessment ready
 
 ## Stretch Boundary
 
@@ -154,12 +159,12 @@ The separate `CreativeStretch` path remains unimplemented. Its automatic
 spectral route is paused after three rejected and deleted candidates. The first
 explicit cyclic candidate is also rejected and deleted after structural
 admission and a first-row synthetic pitch miss. Correlation-aligned waveform
-overlap now has one frozen complete cyclic brief, but Creative stretch has no
-renderer, public API, harness surface, or product route on `main`.
+overlap also failed structural admission and was deleted. Creative stretch has
+no renderer, public API, harness surface, or product route on `main`.
 
 ## Next Task
 
-Execute `g10.031` Batch 31.14 only. Implement the frozen
-`SimilarityAlignedCyclic` brief once in a disposable worktree and stop at the
-first failed gate. Keep rejected families, the automatic router, `g10.028`,
-later creative owners, and render-plane integration paused.
+Execute `g10.031` Batch 31.15 only. Reassess explicit cyclic ownership at docs
+level after the two rejected candidates. Keep implementation, rejected
+families, the automatic router, `g10.028`, later creative owners, and
+render-plane integration paused.
