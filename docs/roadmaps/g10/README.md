@@ -47,8 +47,11 @@ The 2026-07-19 consolidation reset is authoritative.
   31.6 implemented it once. Twelve of thirteen structural controls passed, but
   common-polarity covariance missed by `0.0013287`; the candidate was deleted
   before crest admission. Batch 31.7 closed native angle subtraction and froze
-  one final direct-complex relation brief. Batch 31.8 is ready for its single
-  isolated candidate.
+  one final direct-complex relation brief. Batch 31.8 implemented it once, but
+  coefficient proof exposed incompatible exact anti-phase negation/swap
+  expectations and stopped before any renderer row. The candidate was deleted,
+  the current diffusive owner is closed, and Batch 31.9 range-owner
+  reassessment is ready.
 - `g10.028` RealtimePreview source-fill and all render-plane integration remain
   paused.
 
@@ -117,7 +120,7 @@ Do not start Loophole or Chorus planning from Signal internals.
 - `g10.030` `complete`
   - stretch consolidated; candidate families closed; frozen baseline retained
 - `g10.031` `active`
-  - first diffusive candidate rejected on synthetic crest growth; reassessment ready
+  - three diffusive-owner candidates rejected and deleted; range-owner reassessment ready
 
 ## Stretch Boundary
 
@@ -138,11 +141,12 @@ The retained OfflineHighQuality baseline is the only active renderer. Contract
 whole-system evidence listed in the non-phase-vocoder feasibility decision.
 
 The separate `CreativeStretch` path is architecture-only. It targets
-intentional `4x`, `8x`, and `16x` expansion under Contract `085`; it has no
-renderer, public API, harness surface, or product route on `main`.
+intentional `4x`, `8x`, and `16x` expansion under Contract `085`; all three
+admitted diffusive candidates are rejected and deleted, and it has no renderer,
+public API, harness surface, or product route on `main`.
 
 ## Next Task
 
-Execute `g10.031` Batch 31.8 only. Implement the final brief in a disposable
-worktree and run relation proof plus the prior polarity row first. Keep
-`g10.028`, later creative owners, and render-plane integration paused.
+Execute `g10.031` Batch 31.9 only. Reassess creative range ownership without
+implementation. Keep rejected diffusive families, `g10.028`, later creative
+owners, and render-plane integration paused.

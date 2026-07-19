@@ -61,7 +61,7 @@ Current creative-stretch decision:
 It targets intentional `4x`-`16x` sound design and does not reopen the
 transparent successor lane.
 
-Frozen final-candidate brief:
+Rejected final-candidate brief:
 [Offline Creative ContinuousExcitationComplexRelation Renderer Brief](../architecture/offline-creative-continuous-excitation-complex-relation-brief.md).
 
 Rejected replacement brief:

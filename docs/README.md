@@ -31,7 +31,7 @@ strict lane.
 - Rejected offline stretch successor: [architecture/offline-time-stretch-successor-brief.md](./architecture/offline-time-stretch-successor-brief.md)
 - Non-phase-vocoder feasibility: [architecture/offline-time-stretch-non-phase-vocoder-feasibility.md](./architecture/offline-time-stretch-non-phase-vocoder-feasibility.md)
 - Creative time-stretch study: [architecture/offline-creative-time-stretch-study.md](./architecture/offline-creative-time-stretch-study.md)
-- Creative final-candidate brief: [architecture/offline-creative-continuous-excitation-complex-relation-brief.md](./architecture/offline-creative-continuous-excitation-complex-relation-brief.md)
+- Rejected creative complex-relation brief: [architecture/offline-creative-continuous-excitation-complex-relation-brief.md](./architecture/offline-creative-continuous-excitation-complex-relation-brief.md)
 - Rejected continuous-excitation brief: [architecture/offline-creative-continuous-excitation-spectral-brief.md](./architecture/offline-creative-continuous-excitation-spectral-brief.md)
 - Rejected DiffuseSpectral brief: [architecture/offline-creative-diffuse-spectral-brief.md](./architecture/offline-creative-diffuse-spectral-brief.md)
 - Graph and runtime feature reference: [architecture/graph-runtime-feature-reference.md](./architecture/graph-runtime-feature-reference.md)
@@ -70,6 +70,6 @@ strict lane.
 
 ## Next Task
 
-Execute `g10.031` Batch 31.8 only. Implement the final frozen relation brief in
-one disposable worktree and run relation proof plus the prior polarity row
-first. Only drop into `specs/` when a strict lane is explicitly reopened.
+Execute `g10.031` Batch 31.9 only. Reassess creative range ownership after the
+final diffusive candidate closed at relation proof. Only drop into `specs/`
+when a strict lane is explicitly reopened.

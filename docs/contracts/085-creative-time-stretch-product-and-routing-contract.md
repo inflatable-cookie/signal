@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: active planning boundary; no implementation admitted
+Status: active reassessment boundary; no implementation admitted
 Owner: core-product
 Updated: 2026-07-19
 Related contracts: `046`, `048`, `084`
@@ -185,19 +185,17 @@ consistently.
 
 ### Rule 10: one complete candidate at a time
 
-The independent-bin candidate was rejected for crest growth. Its
+The independent-bin candidate was rejected for crest growth. Its first
 continuous-excitation replacement was rejected at linked-relation admission.
-Both branches and their scaffolding were deleted. Architecture now owns one
-final `ContinuousExcitationComplexRelation` brief. It uses scaled direct
-complex products, an exact-cancellation axis, and source orientation as one
-complete linked law. Candidate-only modules, fixtures, report modes, and
-controls do not enter `main` before admission. No distribution, window,
-coefficient, phase, smoothing, seed, or scalar sweep follows a rejection.
+The final direct-complex replacement then stopped at coefficient proof because
+its exact anti-phase test required incompatible negation and swap outcomes.
+Every branch and its scaffolding was deleted. No distribution, window,
+coefficient, phase, smoothing, seed, assertion repair, or scalar sweep follows
+these rejections. The current diffusive owner is closed.
 
-The `LayeredCloud` and cyclic owners remain closed until the diffusive owner
-passes its own fixed-ratio range. Their product obligations remain frozen;
-sequencing does not remove them. Do not build the full router as simultaneous
-experiments.
+The `LayeredCloud` and cyclic owners remain closed pending range-owner
+reassessment. Their product obligations remain frozen; sequencing does not
+remove them. Do not build the full router as simultaneous experiments.
 
 ## Initial Promotion Sequence
 
@@ -207,26 +205,27 @@ experiments.
 4. Isolated fixed-ratio structural candidate. Rejected on common-polarity
    covariance before creative synthetic controls.
 5. Linked-relation architecture reassessment. Complete.
-6. Final complete brief and isolated candidate.
-7. Long-form mono listening at `4x`, `8x`, and `16x`.
-8. Linked-stereo mechanics and independent listening.
-9. Minimal diffusive owner admission.
-10. Coherent/diffusive overlap admission.
-11. Only then study `LayeredCloud`, the upper overlap, dynamic ratios, cache,
+6. Final complete brief and isolated candidate. Rejected at relation proof.
+7. Creative range-owner reassessment.
+8. Long-form mono listening at `4x`, `8x`, and `16x` only after a new owner is
+   admitted.
+9. Linked-stereo mechanics and independent listening.
+10. Minimal range-owner admission.
+11. Coherent/range-owner overlap admission.
+12. Only then study `LayeredCloud`, the upper overlap, dynamic ratios, cache,
    and consuming-product integration.
 
 ## Current State
 
-Two isolated candidates are rejected and deleted. The final replacement brief
-removes native angle subtraction, freezes direct complex relation algebra for
-normal and exact-cancellation states, and places exhaustive coefficient
-symmetry before renderer admission. It is unimplemented. No public Rust enum,
+Three isolated candidates are rejected and deleted. The final replacement was
+implemented privately but failed its first coefficient proof before any
+renderer row. The current diffusive owner is closed. No public Rust enum,
 renderer, harness mode, fixture, artifact schema, runtime route, or
 product-facing claim entered `main`. `OfflineHighQuality` remains byte-exact
 and Contract `084` remains closed.
 
 ## Next Task
 
-Run `g10.031` Batch 31.8 only. Implement the final frozen brief once in a
-disposable worktree. Run relation proof and the prior common-polarity row
-before crest admission. Keep `Cloud`, `Cyclic`, and product routing closed.
+Run `g10.031` Batch 31.9 only. Reassess the `4x` through `16x` creative range
+owner without implementation. Keep rejected diffusive families, `Cloud`,
+`Cyclic`, and product routing closed.

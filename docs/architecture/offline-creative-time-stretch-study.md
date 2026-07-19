@@ -250,9 +250,10 @@ success criteria: controlled smear, diffusion, and loss of transient precision
 can be features. This study does not reopen the failed phase-vocoder successor
 or relax `OfflineHighQuality` promotion rules.
 
-The evidence still supports the range router. The first two fixed-ratio briefs
-are historical. One final complete value-symmetric relation brief is frozen;
-failure closes the current diffusive owner rather than opening another variant.
+The evidence still supports the product intent, but the range router has no
+admitted diffusive owner. All three fixed-ratio candidates are rejected and
+deleted. The final value-symmetric relation candidate stopped at coefficient
+proof, closing the current diffusive owner rather than opening another variant.
 
 ## Sources
 
@@ -272,7 +273,6 @@ failure closes the current diffusive owner rather than opening another variant.
 
 ## Next Task
 
-Execute `g10.031` Batch 31.8 only in a disposable worktree under
-`offline-creative-continuous-excitation-complex-relation-brief.md`. Run the
-relation proof and prior polarity row before crest admission. Keep `Cloud`,
-`Cyclic`, and product routing closed.
+Execute `g10.031` Batch 31.9 only. Reassess ownership of the creative `4x`
+through `16x` range without implementation. Keep rejected diffusive families,
+`Cloud`, `Cyclic`, and product routing closed.

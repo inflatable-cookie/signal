@@ -1,10 +1,27 @@
 # Offline Creative ContinuousExcitationComplexRelation Renderer Brief
 
-Status: frozen; final current-owner candidate unopened
+Status: rejected at relation proof; current diffusive owner closed
 Owner: dsp
 Updated: 2026-07-19
 Contract: `085`
 Roadmap: `g10.031`, Batch 31.7
+
+## Outcome
+
+Batch 31.8 implemented this brief once in the disposable
+`signal-candidate-31-8` worktree. Compile-only completion passed. The first
+admitted coefficient proof then failed exact anti-phase enumeration: the
+renderer produced `-1+0i` where the proof expected `+1-0i`.
+
+The miss exposed an incompatible proof expectation. Common polarity on exact
+anti-phase stereo is also a channel swap, so componentwise negation equals a
+plain swap; it cannot also equal a negated swap. The frozen stop rule still
+rejects the candidate on any relation-proof miss. No test correction, rerun,
+renderer row, crest row, synthetic row, or listening row followed. The
+worktree, branch, six-file module, tests, and build state were deleted.
+
+This closes `ContinuousExcitationComplexRelation` and the current diffusive
+owner. The brief remains rejection evidence, not implementation authority.
 
 ## Decision
 
@@ -416,7 +433,6 @@ relation, excitation, window, coefficient, smoothing, seed, or scalar variant.
 
 ## Next Task
 
-Run Batch 31.8 only. Implement this exact private family once in a disposable
-worktree. Run the relation proof and prior common-polarity row first. Stop and
-delete on failure. Do not run the crest row until every structural control
-passes, and do not open later owners or product routing.
+Run `g10.031` Batch 31.9 only. Reassess creative range ownership after closure
+of the final diffusive candidate. Do not repair this relation proof, reopen a
+diffusive variant, or begin Cloud, Cyclic, routing, or product implementation.

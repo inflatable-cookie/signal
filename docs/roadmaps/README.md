@@ -44,9 +44,10 @@ rule is always `15` samples early. A final non-phase-vocoder feasibility study
 found no family with a source-backed path through every whole-renderer gate.
 The OfflineHighQuality successor program is closed on the frozen competitive
 baseline. `g10.031` now owns a separate architecture-only creative-stretch
-path centered on `8x`; its parameter space and complete diffusive brief are
-frozen. Isolated candidate work is next. No candidate DSP is admitted on
-`main`.
+path centered on `8x`. Three isolated diffusive-owner candidates were rejected
+and deleted; the final candidate stopped at coefficient proof before renderer
+admission. Creative range-owner reassessment is next. No candidate DSP is
+admitted on `main`.
 Offline artifacts still need a streaming artifact writer/cache target for full
 peak-memory closure. Mono callback-state DSP has a
 no-allocation proof, linked stereo is implemented, ratio scheduling has
@@ -173,6 +174,6 @@ Before rollover:
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the active generation front door. Execute
-isolated `g10.031` Batch 31.8 under the final complex-relation brief; keep the
-transparent successor lane, `g10.028`, later creative owners, and render-plane
-integration closed.
+docs-only `g10.031` Batch 31.9 range-owner reassessment; keep rejected
+diffusive families, the transparent successor lane, `g10.028`, later creative
+owners, and render-plane integration closed.

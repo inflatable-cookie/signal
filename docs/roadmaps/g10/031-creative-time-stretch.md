@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: active; Batch 31.8 ready
+Status: active; Batch 31.9 reassessment ready
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -254,16 +254,44 @@ Authority:
 
 ## Batch 31.8 - Final Isolated Diffusive-Owner Candidate
 
-Status: ready
+Status: complete; candidate rejected at relation proof
 
-Implement the frozen `ContinuousExcitationComplexRelation` brief exactly once
-in a disposable worktree. Run the coefficient-level relation proof first, then
-the exact failed common-polarity renderer row. Stop and delete on any miss. The
-crest row remains closed until every structural control passes.
+One complete candidate was implemented in the disposable
+`signal-candidate-31-8` worktree.
+
+- [x] added only the private six-file `creative_excitation_relation` family
+  and one private `lib.rs` declaration
+- [x] completed compile-only validation before gate admission
+- [x] ran coefficient relation proof first
+- [x] stopped on exact anti-phase enumeration: actual `-1+0i`, expected
+  `+1-0i`
+- [x] attributed the miss to a mutually incompatible proof expectation:
+  exact anti-phase common polarity is itself channel swap, so componentwise
+  negation equals swap and cannot also equal negated swap
+- [x] did not correct or rerun the proof under the frozen stop rule
+- [x] did not open the prior polarity renderer row, structural gate, crest
+  gate, remaining synthetic gates, or listening
+- [x] deleted the worktree, branch, private module, tests, and build state
+
+No candidate code entered `main`. The final admitted candidate and the current
+diffusive owner are closed.
+
+## Batch 31.9 - Creative Range-Owner Reassessment
+
+Status: ready; docs and architecture only
+
+Reassess the `4x` through `16x` ownership map after all admitted diffusive
+candidates closed. Resolve whether the range should be owned by an existing
+coherent mechanism, a materially different complete family with independent
+source backing, or a narrower/changed product promise.
+
+Do not repair the Batch 31.8 proof, reopen continuous excitation, start a new
+diffusion/window/coefficient/scalar variant, or implement `Cloud`, `Cyclic`,
+routing, cache, public APIs, or product integration in this batch.
 
 ## Later Batches
 
-Closed until a diffusive owner passes:
+Closed pending Batch 31.9 range-owner reassessment:
 
 - minimal production admission
 - coherent/diffusive overlap
@@ -278,8 +306,11 @@ Closed until a diffusive owner passes:
 
 - [x] one product architecture and governing contract exist
 - [x] comparator target character is frozen
-- [x] two candidate briefs were rejected and one final complete brief is frozen
-- [ ] one isolated diffusive candidate passes structural and synthetic gates
+- [x] three complete candidate briefs reached recorded rejection decisions
+- [x] all admitted diffusive-owner candidates reached a recorded terminal
+  decision without entering `main`
+- [ ] one viable creative range-owner path is selected or the range promise is
+  narrowed/closed honestly
 - [ ] long-form mono listening passes at `4x`, `8x`, and `16x`
 - [ ] linked-stereo mechanics and independent listening pass
 - [ ] one overlap band is audibly continuous
@@ -287,7 +318,7 @@ Closed until a diffusive owner passes:
 
 ## Next Task
 
-Execute Batch 31.8 only. Create one disposable worktree and implement the final
-frozen brief without changing `main`. Run the relation proof and prior
-common-polarity row first. Do not open the crest row before structural success,
-or open `Cloud`, `Cyclic`, routing, dynamic ratio, cache, or product APIs.
+Execute Batch 31.9 only. Reassess the creative `4x` through `16x` range owner
+at architecture level after diffusive closure. Do not repair Batch 31.8 or
+open implementation, later owners, routing, dynamic ratio, cache, or product
+APIs.

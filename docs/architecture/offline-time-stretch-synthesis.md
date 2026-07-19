@@ -112,5 +112,5 @@ ledger remains in git history at `1d1b02f1`.
 ## Next Task
 
 Retain this frozen baseline and keep its successor lane closed. Run `g10.031`
-Batch 31.8 only in an isolated creative candidate worktree under the final
-complex-relation brief.
+Batch 31.9 only: reassess creative range ownership after all diffusive-owner
+candidates closed without admission.
