@@ -61,6 +61,9 @@ Current creative-stretch decision:
 It targets intentional `4x`-`16x` sound design and does not reopen the
 transparent successor lane.
 
+Frozen final-candidate brief:
+[Offline Creative ContinuousExcitationComplexRelation Renderer Brief](../architecture/offline-creative-continuous-excitation-complex-relation-brief.md).
+
 Rejected replacement brief:
 [Offline Creative ContinuousExcitationSpectral Renderer Brief](../architecture/offline-creative-continuous-excitation-spectral-brief.md).
 
@@ -106,6 +109,6 @@ Rejected first-owner brief:
 ## Next Task
 
 Treat the retained source studies and rejected briefs as historical evidence.
-Run `g10.031` Batch 31.7 linked-relation architecture reassessment without
-reopening a translation memo, Batch 29.7BE, or the transparent successor
-family.
+Run isolated `g10.031` Batch 31.8 under the final complex-relation brief
+without reopening a translation memo, Batch 29.7BE, or the transparent
+successor family.

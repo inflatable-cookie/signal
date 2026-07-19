@@ -46,7 +46,9 @@ The 2026-07-19 consolidation reset is authoritative.
   continuous full-complex excitation replacement without changing DSP. Batch
   31.6 implemented it once. Twelve of thirteen structural controls passed, but
   common-polarity covariance missed by `0.0013287`; the candidate was deleted
-  before crest admission. Batch 31.7 now owns linked-relation reassessment.
+  before crest admission. Batch 31.7 closed native angle subtraction and froze
+  one final direct-complex relation brief. Batch 31.8 is ready for its single
+  isolated candidate.
 - `g10.028` RealtimePreview source-fill and all render-plane integration remain
   paused.
 
@@ -141,6 +143,6 @@ renderer, public API, harness surface, or product route on `main`.
 
 ## Next Task
 
-Execute `g10.031` Batch 31.7 only. Reassess linked-relation ownership at
-architecture level. Keep candidate DSP, `g10.028`, later creative owners, and
-render-plane integration paused.
+Execute `g10.031` Batch 31.8 only. Implement the final brief in a disposable
+worktree and run relation proof plus the prior polarity row first. Keep
+`g10.028`, later creative owners, and render-plane integration paused.

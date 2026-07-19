@@ -4,7 +4,8 @@ Status: active planning boundary; no implementation admitted
 Owner: core-product
 Updated: 2026-07-19
 Related contracts: `046`, `048`, `084`
-Related architecture: `docs/architecture/offline-creative-time-stretch-study.md`
+Related architecture: `docs/architecture/offline-creative-time-stretch-study.md`,
+`docs/architecture/offline-creative-continuous-excitation-complex-relation-brief.md`
 Roadmap: `g10.031`
 
 ## Purpose
@@ -184,14 +185,14 @@ consistently.
 
 ### Rule 10: one complete candidate at a time
 
-The independent-bin `DiffuseSpectral` candidate was rejected for crest growth.
-Its `ContinuousExcitationSpectral` replacement was rejected at structural
-linked-relation admission. Both branches and their scaffolding were deleted.
-No third candidate opens until architecture owns one complete value-symmetric
-complex relation law or closes the current diffusive owner. Candidate-only
-modules, fixtures, report modes, and controls do not enter `main` before
-admission. No distribution, window, coefficient, phase, smoothing, seed, or
-scalar sweep follows either rejection.
+The independent-bin candidate was rejected for crest growth. Its
+continuous-excitation replacement was rejected at linked-relation admission.
+Both branches and their scaffolding were deleted. Architecture now owns one
+final `ContinuousExcitationComplexRelation` brief. It uses scaled direct
+complex products, an exact-cancellation axis, and source orientation as one
+complete linked law. Candidate-only modules, fixtures, report modes, and
+controls do not enter `main` before admission. No distribution, window,
+coefficient, phase, smoothing, seed, or scalar sweep follows a rejection.
 
 The `LayeredCloud` and cyclic owners remain closed until the diffusive owner
 passes its own fixed-ratio range. Their product obligations remain frozen;
@@ -205,8 +206,8 @@ experiments.
 3. Complete `ContinuousExcitationSpectral` replacement brief. Complete.
 4. Isolated fixed-ratio structural candidate. Rejected on common-polarity
    covariance before creative synthetic controls.
-5. Linked-relation architecture reassessment.
-6. Any replacement brief and isolated candidate only after reassessment.
+5. Linked-relation architecture reassessment. Complete.
+6. Final complete brief and isolated candidate.
 7. Long-form mono listening at `4x`, `8x`, and `16x`.
 8. Linked-stereo mechanics and independent listening.
 9. Minimal diffusive owner admission.
@@ -216,17 +217,16 @@ experiments.
 
 ## Current State
 
-The independent-bin candidate failed creative crest admission. Its
-continuous-excitation replacement then passed `12/13` structural controls but
-missed common-polarity covariance by `0.0013287` against the `1e-6` bound.
-Channel swap was exact; the polar per-bin relation reconstruction was not.
-The replacement was deleted before its crest row. No public Rust enum,
+Two isolated candidates are rejected and deleted. The final replacement brief
+removes native angle subtraction, freezes direct complex relation algebra for
+normal and exact-cancellation states, and places exhaustive coefficient
+symmetry before renderer admission. It is unimplemented. No public Rust enum,
 renderer, harness mode, fixture, artifact schema, runtime route, or
 product-facing claim entered `main`. `OfflineHighQuality` remains byte-exact
 and Contract `084` remains closed.
 
 ## Next Task
 
-Run `g10.031` Batch 31.7 only. Reassess linked-relation ownership and freeze one
-complete representation decision or close the current diffusive owner. Keep
-candidate implementation, `Cloud`, `Cyclic`, and product routing closed.
+Run `g10.031` Batch 31.8 only. Implement the final frozen brief once in a
+disposable worktree. Run relation proof and the prior common-polarity row
+before crest admission. Keep `Cloud`, `Cyclic`, and product routing closed.

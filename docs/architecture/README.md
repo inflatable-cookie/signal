@@ -28,6 +28,7 @@ Keep milestone sequencing in `roadmaps/`.
 - `offline-time-stretch-synthesis.md`
 - `offline-time-stretch-non-phase-vocoder-feasibility.md`
 - `offline-creative-time-stretch-study.md`
+- `offline-creative-continuous-excitation-complex-relation-brief.md`
 - `offline-creative-continuous-excitation-spectral-brief.md`
 - `offline-creative-diffuse-spectral-brief.md`
 - `offline-time-stretch-successor-brief.md`
@@ -37,5 +38,5 @@ Keep milestone sequencing in `roadmaps/`.
 ## Next Task
 
 Keep the `g10.030` transparent successor program closed. Run `g10.031` Batch
-31.7 as linked-relation architecture reassessment only; keep candidate DSP,
-later owners, and product routing closed.
+31.8 once in a disposable worktree under the final complex-relation brief;
+keep later owners and product routing closed.

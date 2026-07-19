@@ -1,6 +1,6 @@
 # Offline Creative Time-Stretch Study
 
-Status: complete; two fixed-ratio candidates rejected, architecture reassessment ready
+Status: complete; final fixed-ratio candidate brief frozen
 Owner: dsp
 Updated: 2026-07-19
 Contract: `085`
@@ -102,7 +102,8 @@ constructing unrelated random phase in every bin.
 That replacement was implemented once and rejected before its crest row.
 Common-polarity covariance missed the structural bound because the per-bin
 polar relation reconstruction was not value-stable enough. The waveform-level
-excitation decision remains evidence; the frozen renderer brief does not.
+excitation decision remains. The final brief replaces native angle subtraction
+with a direct complex relation and explicit exact-cancellation law.
 
 Its neutral `Dream` setting owns the PaulXStretch-like centre. The same complete
 candidate must expose a useful, controlled path toward the `Spectral` and
@@ -249,9 +250,9 @@ success criteria: controlled smear, diffusion, and loss of transient precision
 can be features. This study does not reopen the failed phase-vocoder successor
 or relax `OfflineHighQuality` promotion rules.
 
-The evidence still supports the range router. Both fixed-ratio candidate briefs
-are now historical evidence. No third candidate opens until linked-relation
-ownership is reassessed as a complete representation boundary.
+The evidence still supports the range router. The first two fixed-ratio briefs
+are historical. One final complete value-symmetric relation brief is frozen;
+failure closes the current diffusive owner rather than opening another variant.
 
 ## Sources
 
@@ -271,5 +272,7 @@ ownership is reassessed as a complete representation boundary.
 
 ## Next Task
 
-Execute `g10.031` Batch 31.7 only. Reassess linked-relation ownership without
-changing DSP. Keep the crest row, `Cloud`, `Cyclic`, and product routing closed.
+Execute `g10.031` Batch 31.8 only in a disposable worktree under
+`offline-creative-continuous-excitation-complex-relation-brief.md`. Run the
+relation proof and prior polarity row before crest admission. Keep `Cloud`,
+`Cyclic`, and product routing closed.

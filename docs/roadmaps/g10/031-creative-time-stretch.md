@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: active; Batch 31.7 ready
+Status: active; Batch 31.8 ready
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -233,14 +233,33 @@ No candidate code entered `main`.
 
 ## Batch 31.7 - Linked-Relation Ownership Reassessment
 
+Status: complete
+
+The failed linked relation was reassessed at representation level.
+
+- [x] closed polar native-relation reconstruction and wrapped angle subtraction
+- [x] selected scaled direct complex products against the exact linked sum
+- [x] froze a channel-symmetric unoriented axis for exact cancellation
+- [x] joined incidental cancellation to the source-orientation state while
+  preserving exact whole-source anti-phase behavior
+- [x] froze signed-zero, silence, carrier-reference, DC, Nyquist, dormant,
+  character, stereo, boundary, memory, determinism, and cleanup laws
+- [x] made relation enumeration and the prior common-polarity failure the first
+  two gates before the unopened crest row
+- [x] froze one complete final-candidate brief without changing DSP
+
+Authority:
+
+- `docs/architecture/offline-creative-continuous-excitation-complex-relation-brief.md`
+
+## Batch 31.8 - Final Isolated Diffusive-Owner Candidate
+
 Status: ready
 
-Reassess the failed linked-relation representation at architecture level.
-Decide whether one direct value-symmetric complex relation law can preserve the
-continuous-excitation topology and every duplicate, swap, polarity, and
-anti-phase invariant without a repair queue. Freeze one complete replacement
-brief or close the current diffusive owner. Do not implement another candidate
-in this batch.
+Implement the frozen `ContinuousExcitationComplexRelation` brief exactly once
+in a disposable worktree. Run the coefficient-level relation proof first, then
+the exact failed common-polarity renderer row. Stop and delete on any miss. The
+crest row remains closed until every structural control passes.
 
 ## Later Batches
 
@@ -259,7 +278,7 @@ Closed until a diffusive owner passes:
 
 - [x] one product architecture and governing contract exist
 - [x] comparator target character is frozen
-- [x] two complete candidate briefs were implemented once and rejected
+- [x] two candidate briefs were rejected and one final complete brief is frozen
 - [ ] one isolated diffusive candidate passes structural and synthetic gates
 - [ ] long-form mono listening passes at `4x`, `8x`, and `16x`
 - [ ] linked-stereo mechanics and independent listening pass
@@ -268,7 +287,7 @@ Closed until a diffusive owner passes:
 
 ## Next Task
 
-Execute Batch 31.7 only. Reassess linked-relation ownership and freeze one
-complete architecture decision. Do not alter candidate DSP, rerun the crest
-row, produce audio, or open `Cloud`, `Cyclic`, overlap routing, dynamic ratio,
-cache, or product API work.
+Execute Batch 31.8 only. Create one disposable worktree and implement the final
+frozen brief without changing `main`. Run the relation proof and prior
+common-polarity row first. Do not open the crest row before structural success,
+or open `Cloud`, `Cyclic`, routing, dynamic ratio, cache, or product APIs.

@@ -440,6 +440,6 @@ window, coefficient, smoothing, seed, or scalar sweeps.
 
 ## Next Task
 
-Run Batch 31.7 only. Reassess linked-relation ownership at architecture level.
-Freeze one complete value-symmetric representation law or close the current
-diffusive owner. Do not implement another candidate or open the crest row.
+Use `offline-creative-continuous-excitation-complex-relation-brief.md` as the
+sole current candidate authority. Do not repair or reimplement this historical
+brief.
