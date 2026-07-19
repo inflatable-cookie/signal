@@ -49,9 +49,11 @@ The 2026-07-19 consolidation reset is authoritative.
   before crest admission. Batch 31.7 closed native angle subtraction and froze
   one final direct-complex relation brief. Batch 31.8 implemented it once, but
   coefficient proof exposed incompatible exact anti-phase negation/swap
-  expectations and stopped before any renderer row. The candidate was deleted,
-  the current diffusive owner is closed, and Batch 31.9 range-owner
-  reassessment is ready.
+  expectations and stopped before any renderer row. The candidate was deleted
+  and the current diffusive owner closed. Batch 31.9 then paused the automatic
+  spectral router, rejected the coherent baseline as a substitute core owner,
+  and selected explicit cyclic expansion through `8x` as the narrower next
+  promise. Batch 31.10 cyclic-owner brief is ready.
 - `g10.028` RealtimePreview source-fill and all render-plane integration remain
   paused.
 
@@ -120,7 +122,7 @@ Do not start Loophole or Chorus planning from Signal internals.
 - `g10.030` `complete`
   - stretch consolidated; candidate families closed; frozen baseline retained
 - `g10.031` `active`
-  - three diffusive-owner candidates rejected and deleted; range-owner reassessment ready
+  - spectral router paused; cyclic-owner brief through `8x` ready
 
 ## Stretch Boundary
 
@@ -140,13 +142,13 @@ The retained OfflineHighQuality baseline is the only active renderer. Contract
 `084` and `g10.030` are closed without promotion. A new successor requires the
 whole-system evidence listed in the non-phase-vocoder feasibility decision.
 
-The separate `CreativeStretch` path is architecture-only. It targets
-intentional `4x`, `8x`, and `16x` expansion under Contract `085`; all three
-admitted diffusive candidates are rejected and deleted, and it has no renderer,
-public API, harness surface, or product route on `main`.
+The separate `CreativeStretch` path is architecture-only. Its automatic
+spectral route is paused after three rejected and deleted candidates. Explicit
+cyclic expansion above `1x` through `8x` is the only next owner, but it has no
+brief, renderer, public API, harness surface, or product route on `main`.
 
 ## Next Task
 
-Execute `g10.031` Batch 31.9 only. Reassess creative range ownership without
-implementation. Keep rejected diffusive families, `g10.028`, later creative
-owners, and render-plane integration paused.
+Execute `g10.031` Batch 31.10 only. Freeze one complete cyclic-owner brief and
+stop before implementation. Keep rejected diffusive families, the automatic
+router, `g10.028`, later creative owners, and render-plane integration paused.

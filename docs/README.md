@@ -70,6 +70,6 @@ strict lane.
 
 ## Next Task
 
-Execute `g10.031` Batch 31.9 only. Reassess creative range ownership after the
-final diffusive candidate closed at relation proof. Only drop into `specs/`
+Execute `g10.031` Batch 31.10 only. Freeze one complete clean-room cyclic-owner
+brief through `8x` and stop before implementation. Only drop into `specs/`
 when a strict lane is explicitly reopened.

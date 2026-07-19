@@ -433,6 +433,6 @@ relation, excitation, window, coefficient, smoothing, seed, or scalar variant.
 
 ## Next Task
 
-Run `g10.031` Batch 31.9 only. Reassess creative range ownership after closure
-of the final diffusive candidate. Do not repair this relation proof, reopen a
-diffusive variant, or begin Cloud, Cyclic, routing, or product implementation.
+Run `g10.031` Batch 31.10 only. Freeze the separate clean-room cyclic-owner
+brief and stop before implementation. Do not repair this relation proof,
+reopen a diffusive variant, or begin Cloud, routing, or product implementation.

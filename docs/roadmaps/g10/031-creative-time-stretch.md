@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: active; Batch 31.9 reassessment ready
+Status: active; Batch 31.10 cyclic brief ready
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -21,9 +21,12 @@ into every consumer. A hard ratio switch would create audible and UI seams.
 
 Build one offline creative-stretch product surface that:
 
-- centers `8x` and studies `4x`, `8x`, and `16x`
+- centers `8x`; the current cyclic lane studies `2x`, `4x`, and `8x` with
+  `16x` as a rejection boundary
 - presents stable intent controls rather than algorithm parameters
-- routes smoothly from coherent slow motion to spectral dream and later cloud
+- preserves a future route from coherent slow motion to spectral dream and
+  later cloud without claiming unavailable owners
+- first admits only an explicit cyclic character through `8x`
 - preserves exact duration, determinism, linked stereo, and bounded memory
 - stays separate from `OfflineHighQuality` and RealtimePreview
 
@@ -33,7 +36,7 @@ Build one offline creative-stretch product surface that:
 - no RealtimePreview or audio-thread work
 - no Loophole or Chorus UI implementation
 - no external production dependency
-- no cyclic renderer in the first candidate
+- no spectral-router or cloud implementation while their owners are paused
 - no `100x+` texture/freeze implementation in the first lane
 - no simultaneous diffusive, cloud, and cyclic experiment queue
 
@@ -278,20 +281,66 @@ diffusive owner are closed.
 
 ## Batch 31.9 - Creative Range-Owner Reassessment
 
-Status: ready; docs and architecture only
+Status: complete
 
-Reassess the `4x` through `16x` ownership map after all admitted diffusive
-candidates closed. Resolve whether the range should be owned by an existing
-coherent mechanism, a materially different complete family with independent
-source backing, or a narrower/changed product promise.
+Reassessed the `4x` through `16x` ownership map after all admitted diffusive
+candidates closed.
+
+- [x] rejected `OfflineHighQuality` as a substitute core owner because it has
+  no PaulX-centred evidence at the target ratios and does not span the frozen
+  character space
+- [x] rejected a smear layer or spectral wet stack because it would reopen the
+  closed diffusive family under another boundary
+- [x] found no granular cloud, image, STN, sinusoidal, or learned family with
+  one source-backed path through core quality, linked stereo, exact length,
+  deterministic state, and retained musical targets
+- [x] paused `Dream`, `Spectral`, `Rough`, `Cloud`, both overlap bands, and the
+  automatic router
+- [x] selected a narrower explicit `Cyclic` promise above `1x` through `8x`
+- [x] retained ReaReaRea as the behavioral target and pinned public Potenza
+  revision `ddb44a8f949b3f49320932e1d2e997b3a02149bb` as GPL architecture
+  evidence only
+- [x] kept Akaizer as optional paid behavioral context, not source backing
+- [x] changed documentation only
 
 Do not repair the Batch 31.8 proof, reopen continuous excitation, start a new
 diffusion/window/coefficient/scalar variant, or implement `Cloud`, `Cyclic`,
 routing, cache, public APIs, or product integration in this batch.
 
+## Batch 31.10 - Cyclic Owner Brief
+
+Status: ready; docs and architecture only
+
+Freeze one complete clean-room Signal-owned cyclic renderer for fixed expansion
+above `1x` through `8x`. The brief must resolve without “decide later” gaps:
+
+- one monotonic source/output map and exact target length
+- sample-domain grain ownership, scheduling, crossfade, and boundary rules
+- pitch compensation and requested-duration ownership
+- deterministic linked-channel reads and preservation of channel relations
+- semantic `motion`, `detail`, and `space` mapping without raw grain controls
+- bounded duration-independent state and offline computational shape
+- structural and synthetic gates at identity, `2x`, `4x`, and `8x`
+- retained long-form mono pack at `2x`, `4x`, and `8x`, plus a `16x` rejection
+  probe
+- independent stereo listening, explicit rejection, cleanup, and minimal
+  admission rules
+
+Use public Potenza source only for clean-room architecture. Do not copy GPL
+expression, constants, thresholds, or control flow. Do not implement the
+candidate in this batch.
+
+## Batch 31.11 - Isolated Cyclic Candidate
+
+Status: pending Batch 31.10
+
+Implement the frozen cyclic brief once in a disposable worktree. Run gates in
+the brief's fixed order. Stop and delete on any miss. No candidate code enters
+`main` before complete admission.
+
 ## Later Batches
 
-Closed pending Batch 31.9 range-owner reassessment:
+Closed pending a cyclic candidate decision and separate reopening evidence:
 
 - minimal production admission
 - coherent/diffusive overlap
@@ -299,7 +348,6 @@ Closed pending Batch 31.9 range-owner reassessment:
 - diffusive/cloud overlap
 - dynamic-ratio state continuity
 - cache and product-path review
-- optional cyclic character
 - `100x+` texture/freeze range
 
 ## Completion Gate
@@ -309,16 +357,18 @@ Closed pending Batch 31.9 range-owner reassessment:
 - [x] three complete candidate briefs reached recorded rejection decisions
 - [x] all admitted diffusive-owner candidates reached a recorded terminal
   decision without entering `main`
-- [ ] one viable creative range-owner path is selected or the range promise is
-  narrowed/closed honestly
-- [ ] long-form mono listening passes at `4x`, `8x`, and `16x`
+- [x] the range promise is narrowed honestly to explicit cyclic expansion
+  through `8x`
+- [ ] one complete cyclic owner brief is frozen
+- [ ] one isolated cyclic candidate passes structural and synthetic gates
+- [ ] long-form mono cyclic listening passes at `2x`, `4x`, and `8x`
 - [ ] linked-stereo mechanics and independent listening pass
-- [ ] one overlap band is audibly continuous
-- [ ] only minimal admitted product surface enters `main`
+- [ ] `16x` remains unsupported unless separate evidence passes
+- [ ] only the minimal cyclic product surface enters `main`
 
 ## Next Task
 
-Execute Batch 31.9 only. Reassess the creative `4x` through `16x` range owner
-at architecture level after diffusive closure. Do not repair Batch 31.8 or
-open implementation, later owners, routing, dynamic ratio, cache, or product
-APIs.
+Execute Batch 31.10 only. Freeze one complete clean-room cyclic-owner brief for
+fixed expansion above `1x` through `8x`. Stop before implementation. Keep core
+spectral characters, Cloud, automatic routing, dynamic ratio, cache, and public
+APIs closed.

@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: active reassessment boundary; no implementation admitted
+Status: active cyclic-brief boundary; no implementation admitted
 Owner: core-product
 Updated: 2026-07-19
 Related contracts: `046`, `048`, `084`
@@ -30,7 +30,7 @@ consumer to expose renderer-specific controls.
 ## Product Vocabulary
 
 `CreativeStretch` means offline pitch-preserving expansion whose goal is useful
-dreamy, smeared, or cloud-like synthesis rather than transparent event
+dreamy, smeared, cyclic, or cloud-like synthesis rather than transparent event
 reconstruction.
 
 The stable semantic request contains:
@@ -47,11 +47,17 @@ Target frames are authoritative. Ratio is derived or validated against that
 target; inconsistent values are rejected rather than rounded into different
 routing decisions.
 
-`Dream` is the default. It means smooth, fused, musical spectral smear.
+`Dream` remains the intended default if the automatic router reopens. It means
+smooth, fused, musical spectral smear.
 `Spectral` intentionally exposes vocoder-like separation and decoherence.
 `Rough` intentionally exposes a less smoothed polyphase texture. `Cloud` means
 dispersed upper-range evolution. `Cyclic` means commanded Akai-style
-repetition and initially admits only ratios through `8x`.
+repetition. It is the only next candidate and targets expansion above `1x`
+through `8x`.
+
+No character is public today. A cyclic-only admission must not expose
+unimplemented `Dream`, `Spectral`, `Rough`, or `Cloud` values, or imply that an
+automatic range router exists.
 
 These fields are intent, not transform controls. Public consumers must not
 select FFT size, window, grain size, overlap, phase mode, internal renderer,
@@ -71,7 +77,7 @@ event-order truth.
 
 ### Rule 2: routing is versioned and deterministic
 
-Initial routed bands are:
+The automatic routed bands are paused:
 
 - coherent: `1x` through `2x`
 - coherent/diffusive overlap: `2x` through `4x`
@@ -79,8 +85,14 @@ Initial routed bands are:
 - diffusive/cloud overlap: `16x` through `32x`
 - cloud: `32x` through `100x`
 
-Overlap weights use smoothstep interpolation over `log2(ratio)`. A fixed-ratio
-request uses one constant channel-shared weight for the whole render.
+These bands remain future product intent, not implementation authority. The
+explicit `Cyclic` character bypasses them. Its first candidate accepts only
+fixed expansion above `1x` through `8x`; `2x`, `4x`, and `8x` are mandatory
+admission points.
+
+If automatic routing reopens, overlap weights use smoothstep interpolation over
+`log2(ratio)`. A fixed-ratio request uses one constant channel-shared weight for
+the whole render.
 
 Changing the band map or blend law changes the creative routing version and
 cache identity.
@@ -101,7 +113,8 @@ The required initial anchors are:
 - `Cyclic`: `ReaReaRea`-like repetition through `8x`
 
 Signal may use different internal owners or blends to reach those regions.
-Consumers still receive one character selector and the shared macros.
+Until more than one character is admitted, a consumer receives only the
+available character and the shared macros, not disabled or fictional choices.
 
 `seed` is advanced variation identity, not a continuous quality knob.
 
@@ -166,16 +179,17 @@ Creative and transparent artifacts cannot collide.
 Objective controls reject integrity and continuity failures. They do not decide
 whether output is dreamy, evolving, musical, or useful.
 
-Promotion requires concealed long-form listening at `4x`, `8x`, and `16x`,
-with `8x` the primary design point. The pack covers percussion, bass, vocals,
-pads/sustains, and full mix. Independent stereo review remains mandatory.
+The current cyclic lane requires concealed long-form listening at `2x`, `4x`,
+and `8x`, with `4x` and `8x` primary. The pack covers percussion, bass, vocals,
+pads/sustains, and full mix. `16x` remains a rejection-boundary probe, not a
+supported target. Independent stereo review remains mandatory.
 
-The default `Dream` setting must remain the smoothest and most generally
-musical centre across that matrix. Exposed vocoder colour, rough periodicity,
+If the automatic router later reopens, its `Dream`, `Spectral`, and `Rough`
+lane still requires `4x`, `8x`, and `16x`. `Dream` must remain the smoothest
+and most generally musical centre. Exposed vocoder colour, rough periodicity,
 or cyclic repetition in neutral `Dream` is rejection. `Spectral` and `Rough`
 must remain deliberate, recognizable, stable destinations rather than one
-degraded compromise. Moving between anchor regions must not introduce a hard
-seam, arbitrary loudness step, click, or unrelated channel motion.
+degraded compromise.
 
 Transparent transient-placement, replica, and tonal-fidelity limits are not
 silently reused. Creative gates instead reject uncontrolled clicks, dropouts,
@@ -193,9 +207,16 @@ Every branch and its scaffolding was deleted. No distribution, window,
 coefficient, phase, smoothing, seed, assertion repair, or scalar sweep follows
 these rejections. The current diffusive owner is closed.
 
-The `LayeredCloud` and cyclic owners remain closed pending range-owner
-reassessment. Their product obligations remain frozen; sequencing does not
-remove them. Do not build the full router as simultaneous experiments.
+Range-owner reassessment rejects the retained coherent renderer as a substitute
+for the PaulX-centred core and finds no new complete source-backed spectral
+family. `Dream`, `Spectral`, `Rough`, `Cloud`, and automatic routing stay
+closed.
+
+The separate cyclic reserve has operator value, a retained ReaReaRea target,
+and public two-grain Akai-style architecture evidence. It becomes the only
+next owner. GPL source informs clean-room architecture only; no expression,
+constant, or control flow enters Signal. Do not build the full router as
+simultaneous experiments.
 
 ## Initial Promotion Sequence
 
@@ -206,26 +227,31 @@ remove them. Do not build the full router as simultaneous experiments.
    covariance before creative synthetic controls.
 5. Linked-relation architecture reassessment. Complete.
 6. Final complete brief and isolated candidate. Rejected at relation proof.
-7. Creative range-owner reassessment.
-8. Long-form mono listening at `4x`, `8x`, and `16x` only after a new owner is
-   admitted.
-9. Linked-stereo mechanics and independent listening.
-10. Minimal range-owner admission.
-11. Coherent/range-owner overlap admission.
-12. Only then study `LayeredCloud`, the upper overlap, dynamic ratios, cache,
-   and consuming-product integration.
+7. Creative range-owner reassessment. Complete; automatic router paused and
+   cyclic-first promise selected.
+8. Freeze one complete clean-room cyclic-owner brief. Docs only.
+9. Implement one isolated cyclic candidate.
+10. Run structural and synthetic gates, then retained mono listening at `2x`,
+    `4x`, and `8x`.
+11. Run linked-stereo mechanics and independent listening.
+12. Admit only the minimal cyclic owner if every gate passes.
+13. Reassess product exposure and cache identity after admission.
+
+Core `Dream`/`Spectral`/`Rough`, coherent overlap, `LayeredCloud`, the upper
+overlap, dynamic ratios, and automatic routing require a separate reopening
+decision backed by new complete-system evidence.
 
 ## Current State
 
-Three isolated candidates are rejected and deleted. The final replacement was
-implemented privately but failed its first coefficient proof before any
-renderer row. The current diffusive owner is closed. No public Rust enum,
-renderer, harness mode, fixture, artifact schema, runtime route, or
-product-facing claim entered `main`. `OfflineHighQuality` remains byte-exact
-and Contract `084` remains closed.
+Three isolated spectral candidates are rejected and deleted. The core
+`4x`-`16x` owner and automatic router are paused. Explicit `Cyclic` above `1x`
+through `8x` is the only next candidate, but it has no brief or implementation
+yet. No public Rust enum, renderer, harness mode, fixture, artifact schema,
+runtime route, or product-facing claim entered `main`. `OfflineHighQuality`
+remains byte-exact and Contract `084` remains closed.
 
 ## Next Task
 
-Run `g10.031` Batch 31.9 only. Reassess the `4x` through `16x` creative range
-owner without implementation. Keep rejected diffusive families, `Cloud`,
-`Cyclic`, and product routing closed.
+Run `g10.031` Batch 31.10 only. Freeze one complete clean-room cyclic-owner
+brief for fixed expansion above `1x` through `8x`. Keep implementation, core
+spectral characters, Cloud, automatic routing, cache, and public APIs closed.

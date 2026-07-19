@@ -1,6 +1,6 @@
 # Offline Creative Time-Stretch Study
 
-Status: complete; final fixed-ratio candidate brief frozen
+Status: complete; spectral range paused; cyclic owner brief next
 Owner: dsp
 Updated: 2026-07-19
 Contract: `085`
@@ -20,8 +20,10 @@ controls stay internal.
 Initial product range:
 
 - creative expansion only
-- comparator and first-candidate ratios: `4x`, `8x`, and `16x`
-- planned routed range: `1x` through `100x`
+- core spectral comparator ratios: `4x`, `8x`, and `16x`
+- next cyclic candidate ratios: identity, `2x`, `4x`, and `8x`; `16x` is a
+  rejection-boundary probe
+- planned routed range: `1x` through `100x`, currently paused
 - primary design point: `8x`
 - ratios above `100x`: future texture/freeze work, not initial scope
 
@@ -30,9 +32,51 @@ output/input ratio and explicit target frame count; a consuming UI may display
 percent or resulting duration. Target frames are authoritative; the ratio is
 derived or validated against them, and a mismatch is an invalid request.
 
+## Range-Owner Reassessment
+
+Batch 31.9 narrows the first deliverable. Do not assign `4x` through `16x` to
+the retained coherent renderer or another spectral-diffusion variant.
+
+- `OfflineHighQuality` has no PaulX-centred listening evidence at these ratios.
+  Reusing it as the core owner would provide source-readable phase-vocoder
+  expansion, not the frozen `Dream`, `Spectral`, and `Rough` character space.
+- Adding smear, stochastic excitation, or a spectral wet layer would recreate
+  the closed diffusive owner under another boundary.
+- Granular cloud, image resynthesis, STN, and learned synthesis do not have one
+  complete source-backed path through the core range, linked stereo, exact
+  length, deterministic state, and retained musical targets.
+
+The automatic coherent/diffusive/cloud router is paused. `Dream`, `Spectral`,
+`Rough`, and `Cloud` remain useful target vocabulary and comparator evidence,
+but no implementation or public availability is claimed.
+
+The next bounded path is explicit `Cyclic` expansion above `1x` through `8x`.
+It is a narrower product promise, not the replacement core owner:
+
+- the operator found the ReaReaRea/Akai-style result useful through about `8x`
+- the retained comparator pack contains ReaReaRea at `4x`, `8x`, and `16x`,
+  with `16x` retained as a rejection boundary rather than a target
+- public Potenza source independently demonstrates a two-overlapping-grain,
+  moving-source, crossfaded Akai-style topology
+- cyclic waveform grains are materially separate from the rejected spectral
+  diffusion and continuous-excitation families
+
+Potenza is GPL-3.0 architecture evidence at revision
+`ddb44a8f949b3f49320932e1d2e997b3a02149bb`. Signal must not copy its
+expression, constants, or control flow. Akaizer 2.5 is now paid and provides
+no public source backing; it is optional behavioral context, not implementation
+backing or a required comparator.
+
+Batch 31.10 must freeze one clean-room Signal-owned cyclic renderer before any
+candidate work. The brief must own the sample-domain map, grain scheduling,
+crossfade and boundary law, pitch compensation, linked channels, exact length,
+determinism, bounded state, semantic macro mapping, structural gates, listening
+pack, rejection, and cleanup. No raw grain size or implementation algorithm is
+promised to consumers.
+
 ## Product Surface
 
-The consumer-facing model has two peers:
+The planned consumer-facing model has two peers:
 
 - `Transparent`: the existing `OfflineHighQuality` contract
 - `Creative`: the new range-routed sound-design contract
@@ -69,22 +113,23 @@ direction. A consumer gets one clean character selector and shared macro
 controls, not an algorithm menu.
 
 `Cyclic` bypasses automatic coherent/diffusive/cloud selection because its
-repetitions are an explicit musical choice. Initial cyclic admission targets
-creative expansion through `8x`; higher ratios require separate listening
-before support is claimed.
+repetitions are an explicit musical choice. It is now the only next candidate
+character. Initial cyclic admission targets expansion above `1x` through `8x`;
+higher ratios require separate listening before support is claimed.
 
 ## Range-Routed Architecture
 
 All participating renderers consume one monotonic source/output map and the
 same exact target frame count.
 
-| Ratio | Internal owner | Product intent |
+| Ratio | Current owner state | Product intent |
 | --- | --- | --- |
-| `1x` to `2x` | coherent slow-motion owner | source-readable lower range |
-| `2x` to `4x` | coherent/diffusive overlap | continuous entry into creative smear |
-| `4x` to `16x` | diffusive spectral owner | core `Dream` range; `8x` design point |
-| `16x` to `32x` | diffusive/cloud overlap | continuous move from smear to texture |
-| `32x` to `100x` | layered cloud owner | evolving spectral/granular soundscape |
+| above `1x` to `8x` | explicit cyclic candidate next | commanded Akai-style repetition |
+| `1x` to `2x` | coherent contribution retained, not creatively admitted | future source-readable lower range |
+| `2x` to `4x` | overlap paused | no automatic route |
+| `4x` to `16x` | no owner | `Dream`/`Spectral`/`Rough` research targets only |
+| `16x` to `32x` | overlap closed | no automatic route |
+| `32x` to `100x` | cloud owner closed | future texture research only |
 
 The coherent lower owner begins from the retained `OfflineHighQuality`
 renderer. That reuse does not widen its transparent-quality claim beyond its
@@ -92,7 +137,7 @@ admitted range; inside Creative mode it is one source-readable contribution.
 
 The first independent-bin `DiffuseSpectral` topology was implemented once and
 rejected for uncontrolled stochastic crest growth. That mechanism is closed.
-The replacement family is `ContinuousExcitationSpectral`: long overlapping
+The replacement family was `ContinuousExcitationSpectral`: long overlapping
 spectral analysis, interpolated source envelopes, one bounded continuous
 output-synchronous excitation, a linked coherent carrier, and exact normalized
 synthesis. It intentionally relaxes transient placement and crisp phase
@@ -102,15 +147,15 @@ constructing unrelated random phase in every bin.
 That replacement was implemented once and rejected before its crest row.
 Common-polarity covariance missed the structural bound because the per-bin
 polar relation reconstruction was not value-stable enough. The waveform-level
-excitation decision remains. The final brief replaces native angle subtraction
-with a direct complex relation and explicit exact-cancellation law.
+excitation decision remained. The final direct-complex replacement then
+stopped at coefficient proof because its test required incompatible exact
+anti-phase negation and negated-swap outcomes. The frozen stop rule closed the
+candidate and current diffusive owner.
 
-Its neutral `Dream` setting owns the PaulXStretch-like centre. The same complete
-candidate must expose a useful, controlled path toward the `Spectral` and
-`Rough` anchors. This is a parameter-space obligation, not permission to queue
-independent detector, window, phase, or coefficient experiments. If one
-topology cannot span those anchors without damaging `Dream`, reassess owner
-boundaries before admission instead of averaging the references.
+No neutral `Dream` implementation now exists. A future reopening must still
+span `Dream`, `Spectral`, and `Rough` without averaging their distinct targets,
+but it requires new complete-system evidence rather than another local
+spectral variant.
 
 The upper `LayeredCloud` owner is a later spectral/granular renderer. It may
 layer bounded voices around the common source cursor, but every voice remains
@@ -119,6 +164,7 @@ linked-channel policy. It is not an arbitrary wet-effect stack.
 
 ## Seamless Selection
 
+The following remains a future router law, not an admitted implementation.
 Fixed-ratio rendering comes first. Inside each overlap band, renderer weights
 are constant for the whole render and follow a smoothstep curve over
 `log2(ratio)`:
@@ -250,10 +296,15 @@ success criteria: controlled smear, diffusion, and loss of transient precision
 can be features. This study does not reopen the failed phase-vocoder successor
 or relax `OfflineHighQuality` promotion rules.
 
-The evidence still supports the product intent, but the range router has no
-admitted diffusive owner. All three fixed-ratio candidates are rejected and
-deleted. The final value-symmetric relation candidate stopped at coefficient
-proof, closing the current diffusive owner rather than opening another variant.
+The evidence still supports the creative product intent, but not the original
+automatic range router. All three spectral fixed-ratio candidates are rejected
+and deleted. Core `Dream`/`Spectral`/`Rough` ownership is paused until new
+complete-system evidence changes the bet.
+
+The explicit cyclic reserve has separate operator value, a retained comparator,
+and public source-backed architecture. It becomes the only next owner study.
+Passing it would admit one intentional character through `8x`; it would not
+claim PaulX-like `Dream`, reopen the automatic router, or authorize Cloud.
 
 ## Sources
 
@@ -265,6 +316,7 @@ proof, closing the current diffusive owner rather than opening another variant.
 - [CDP SPECTSTR](https://www.composersdesktop.com/docs/html/cstretch.htm)
 - [Sloom](https://anemond.net/sloom/)
 - [Akaizer](https://the-akaizer-project.blogspot.com/)
+- [Potenza Akai-style time-stretch source](https://github.com/dar-io-p/potenza-time-stretch/tree/ddb44a8f949b3f49320932e1d2e997b3a02149bb)
 - [Photosounder](https://www.photosounder.com/)
 - [ARSS](https://arss.sourceforge.net/)
 - [Noise Morphing for Audio Time Stretching](https://arxiv.org/abs/2312.14586)
@@ -273,6 +325,7 @@ proof, closing the current diffusive owner rather than opening another variant.
 
 ## Next Task
 
-Execute `g10.031` Batch 31.9 only. Reassess ownership of the creative `4x`
-through `16x` range without implementation. Keep rejected diffusive families,
-`Cloud`, `Cyclic`, and product routing closed.
+Execute `g10.031` Batch 31.10 only. Freeze one complete clean-room cyclic-owner
+brief for expansion above `1x` through `8x`. Stop before implementation. Keep
+`Dream`, `Spectral`, `Rough`, `Cloud`, automatic routing, cache, and public APIs
+closed.
