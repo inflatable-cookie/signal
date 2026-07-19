@@ -1,6 +1,6 @@
 # Offline Time-Stretch Successor Brief
 
-Status: frozen for isolated implementation
+Status: rejected at Batch 30.3 synthetic gate
 Owner: dsp
 Updated: 2026-07-19
 Contract: `084`
@@ -15,6 +15,23 @@ atomic all-channel phase commit.
 
 This is the only Batch 30.3 candidate. It is not a menu and does not authorize
 separate detector, window, phase, stereo, crossover, or tail variants.
+
+## Batch 30.3 Outcome
+
+The isolated implementation passed the structural gate and isolated-tone
+pitch rows. It failed the first anti-replica row at `0.75x`.
+
+The centered middle-scale detector committed an impulse onset `896` source
+samples early: source centre `7424`, refined event `7296`, actual event `8192`.
+The fixed `H/2` refinement interval and same-centre short-scale reassignment
+could not reach the actual event. The rendered primary landed `128` output
+samples late and a second peak landed `257` samples after the projection at
+amplitude `0.17113242`; the `-24 dB` ceiling was `0.063095726`.
+
+This is an architecture-level detector/scheduler alignment failure. Contract
+`084` rejects the candidate. The implementation, tests, and instrumentation
+were deleted with the disposable worktree. This brief remains rejection
+evidence, not implementation authority.
 
 The candidate combines three supported architecture lessons:
 

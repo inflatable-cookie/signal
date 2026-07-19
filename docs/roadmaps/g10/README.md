@@ -23,8 +23,9 @@ The 2026-07-19 consolidation reset is authoritative.
 - Rejected research implementations and candidate report surfaces were removed.
 - `g10.029`, Contract `082`, and the detailed architecture ledger remain
   historical evidence. Batch 29.7BE is cancelled.
-- `g10.030` and Contract `084` own completion through one isolated end-to-end
-  successor. No candidate code enters `main` before admission.
+- `g10.030` and Contract `084` own completion. The first isolated end-to-end
+  successor passed structural controls but failed anti-replica admission and
+  was deleted. No candidate code entered `main`.
 - `g10.028` RealtimePreview source-fill and all render-plane integration remain
   paused.
 
@@ -107,11 +108,13 @@ Current status:
 - Rejected hybrid, H/R/P, phase-gradient, frequency-adaptive, tail, timeline,
   peak, and local phase variants are not active code or planning authority.
 
-Remaining work is one complete successor under `g10.030`, developed outside
-`main` and admitted under Contract `084`.
+Remaining work is the Batch 30.4 architecture reassessment under Contract
+`084`. The failed detector/scheduler topology cannot be repaired by a row fix
+or parameter sweep.
 
 ## Next Task
 
-Run `g10.030` Batch 30.3 from the frozen
-`SourceAnchoredMultiresolutionPhaseField` brief. Use one disposable branch or
-worktree and keep all candidate code, fixtures, and report surfaces off `main`.
+Run `g10.030` Batch 30.4 as an architecture reassessment. Resolve the early
+middle-scale onset against fixed event refinement and same-centre short-scale
+ownership in one complete brief, or close the successor lane. Do not start a
+second implementation in that batch.

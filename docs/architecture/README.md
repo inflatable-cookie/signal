@@ -32,5 +32,6 @@ Keep milestone sequencing in `roadmaps/`.
 
 ## Next Task
 
-Implement the frozen offline stretch successor only in the isolated `g10.030`
-Batch 30.3 worktree. Keep `main` on the retained baseline until admission.
+Reassess the rejected offline stretch successor under `g10.030` Batch 30.4.
+Keep `main` on the retained baseline and do not start a second implementation
+until one complete replacement brief resolves the detector/scheduler failure.

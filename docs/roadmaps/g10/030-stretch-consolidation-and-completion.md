@@ -102,7 +102,7 @@ Authority:
 
 ## Batch 30.3 - Candidate Worktree
 
-Status: ready
+Status: complete - rejected
 
 - implement the complete candidate in one disposable branch or worktree
 - keep instrumentation private to that worktree
@@ -110,9 +110,31 @@ Status: ready
 - generate the full long-form comparison pack only after those gates pass
 - reject and delete the branch on failure; do not merge its scaffolding
 
+Result:
+
+- [x] created one disposable worktree from `13539f27`
+- [x] implemented the complete fixed-ratio mono and linked-stereo candidate
+- [x] passed identity, length, finiteness, map, coverage, boundary,
+  determinism, fixed-memory, and linked-stereo structural controls
+- [x] passed isolated-tone pitch at `0.75x`, `1.5x`, and `2.0x`
+- [x] stopped on the first anti-replica failure before tonal, long-form, or
+  listening work
+- [x] removed the disposable candidate branch, implementation, tests, and
+  instrumentation
+
+Dominant failure:
+
+- centered middle-scale flux committed an isolated impulse `896` source
+  samples before the actual event entered the fixed `H/2` refinement interval
+- the `0.75x` render placed the primary `128` samples late and produced a
+  `0.17113242` secondary peak at projection offset `+257`; the `-24 dB`
+  ceiling was `0.063095726`
+- same-centre one-tick short reassignment cannot repair that early detector
+  commit without changing the frozen architecture
+
 ## Batch 30.4 - Admission Or Closure
 
-Status: blocked on Batch 30.3
+Status: ready for architectural reassessment
 
 If the candidate passes:
 
@@ -138,6 +160,7 @@ If it fails:
 
 ## Next Task
 
-Run Batch 30.3 from the Batch 30.2 commit in one disposable branch or worktree.
-Implement the frozen successor exactly. Stop after structural and synthetic
-gates decide whether long-form listening audio may be generated.
+Run Batch 30.4 as an architecture reassessment under Contract `084`. Resolve
+the centered detector, fixed refinement interval, and same-centre short-scale
+ownership contradiction in one complete brief, or close the successor lane.
+Do not implement a second candidate in the reassessment batch.

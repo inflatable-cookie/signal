@@ -37,8 +37,9 @@ transport regions, and runtime endgame.
 Phase three (021-030) is the first-party high-quality stretch program. The
 Signal-owned stretch tiers now have evidence and contracts. `g10.029` is
 historical after the consolidation pass removed rejected research and stopped
-the narrow-proof queue. `g10.030` owns completion through one isolated,
-end-to-end OfflineHighQuality successor;
+the narrow-proof queue. `g10.030` owns completion; its first isolated,
+end-to-end OfflineHighQuality successor failed anti-replica admission and was
+deleted, so Batch 30.4 now owns architecture reassessment;
 offline artifacts need a streaming artifact writer/cache target for full peak
 memory closure; RealtimePreview needs a proven callback-safe state object
 before render-plane integration. Mono callback-state DSP now has a
@@ -166,6 +167,7 @@ Before rollover:
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the active generation front door.
-`g10.030` Batch 30.3 is ready. Implement the frozen complete successor in one
-disposable branch or worktree and stop at the structural/synthetic gate. Keep
-`g10.028` and render-plane integration paused.
+`g10.030` Batch 30.4 is ready. Reassess the failed detector/scheduler topology
+in one complete brief or close the successor lane. Do not start a second
+candidate in the reassessment batch. Keep `g10.028` and render-plane
+integration paused.
