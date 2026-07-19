@@ -5285,8 +5285,65 @@ current owner, lower-bin/channel ties, exact `6000 Hz`, swap, silence/recovery,
 every terminal state, all proof rates, fixed storage, pre-mutation rejection,
 finiteness, and repeat pass. No objective or corpus audio ran.
 
+### Rule 31AD: channel-local peak failure-first objective gate
+
+Batch 29.7BB is implementation-free. It freezes one candidate named
+`signal-direct-channel-local-peak-v1`. Its DSP identity is exactly Rule 31AC at
+commit `4d668379`, plus the behavior-neutral proof split at `552b3892`. The
+execution batch may change only private report names, aggregation, report
+output, and objective-adapter plumbing needed to represent the new diagnostics.
+It may not change region construction, phase, guidance, geometry, windows,
+masks, schedule, synthesis, thresholds, or output samples before evidence.
+
+The private report boundary is exact. Rename objective-facing
+`borrowed_regions`, `local_regions`, and `owner_switches` to borrowed locked
+channel-atoms, local locked channel-atoms, and trajectory-channel switches;
+carry channel-peak disagreements as the fourth direct diagnostic. Synthetic
+aggregation and text reports use those names and units. They may require
+borrowed and local locked channel-atoms to be nonzero, as AX did for its old
+diagnostics, but no direct count becomes a sound-quality threshold.
+
+The source-studied `StereoRender` fields `shared_corrected`, `shared_fallback`,
+`reference_switches`, and `peak_region_counts` describe a different topology.
+The direct adapter must set them to their existing not-applicable zero values;
+it must not coerce channel-atom counts into shared-region units. Consequently
+the generic peak-region `direction` is not a gate for this adapter. The frozen
+AX custom measurements—calibrated failures, local-window improvements,
+Signal-relative local consistency, normalized-Gram residual, structure, and
+repeat—remain the stereo authority. This removes a semantic falsehood without
+relaxing or replacing an audio threshold.
+
+Batch 29.7BC must execute once in this order and stop at the first miss:
+
+1. make only the report/adapter changes above; use a fresh report root
+   `target/stretch-direct-channel-local-peak-v1` so AX evidence is untouched
+2. run the complete release direct mechanics suite; require `12` passed and
+   `2` intentionally ignored, representation `fdf90f6127749341`, terminal
+   `5ae654162d4ed279`, relation `2b8104525bad0418`, and staggered
+   `fcbdfd991bd04db1`
+3. run the unchanged six-source by three-ratio synthetic matrix once; require
+   zero structural/nonfinite failures, exact repeat, every mechanics error at
+   or below `1e-6`, nonzero reset/attack/unlocked/locked state counts, nonzero
+   borrowed/local locked channel-atoms, maximum pending/guidance ticks of
+   `10/19`, and output storage at or below the Rule 31Z cap
+4. only after synthetic passage, run the `48`-row stereo matrix once; require
+   zero calibrated and structural failures, exact repeat, at least `245/384`
+   improved local windows, at most `13/48` Signal-relative local failures, and
+   maximum normalized-Gram residual at or below `0.01744693815260`
+5. only after stereo passage, run the unchanged six exact-source mono rows;
+   require zero hard failures and no row-complete regression against current
+   Signal
+6. only after mono passage, run the unchanged long-development measurements;
+   require zero hard failures and no row-complete regression against current
+   Signal
+
+No sweep, retry, repair, fallback, threshold change, listening, export,
+concealed read, holdout access, offset scaling, or production change is
+permitted. A miss records the complete result and opens reassessment only. Full
+passage is required before Batch 29.8.
+
 ## Next Task
 
-Run Batch 29.7BB. Freeze one failure-first objective candidate from the passed
-Rule 31AC receipts and unchanged AX evidence order before any renderer or
-corpus execution.
+Run Batch 29.7BC under Rule 31AD. Apply only the frozen private report/adapter
+correction, then execute the failure-first objective order once through its
+first miss.

@@ -125,6 +125,6 @@ for implementation-free mechanics design.
 
 ## Next Task
 
-Run Batch 29.7BB under Rule 31AC. Freeze one failure-first objective candidate
-from the passed channel-local mechanics receipts and unchanged AX evidence
-order. Run no renderer or corpus audio.
+Run Batch 29.7BC under Rule 31AD. Correct only the private diagnostic bridge,
+then execute the frozen failure-first objective order once through its first
+miss.

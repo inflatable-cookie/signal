@@ -2941,16 +2941,36 @@ no-audio matrix passes. No objective or corpus audio ran.
 
 ### Batch 29.7BB - Channel-Local Peak Objective Preregistration
 
-Status: ready
+Status: complete
 
-- [ ] freeze the Rule 31AC candidate identity and require the BA representation,
+- [x] freeze the Rule 31AC candidate identity and require the BA representation,
   terminal, relation, and staggered receipts before any objective work
-- [ ] carry AX's mechanics, synthetic, stereo, mono, and long-development order
+- [x] carry AX's mechanics, synthetic, stereo, mono, and long-development order
   and hard thresholds forward unchanged; define the private channel-atom report
   mapping without using it to relax a gate
-- [ ] stop implementation-free after compiling one failure-first execution
+- [x] stop implementation-free after compiling one failure-first execution
   card; permit no renderer/corpus audio, tuning, repair, retry, listening, or
   Batch 29.8 work
+
+Evidence: Rule 31AD freezes candidate `signal-direct-channel-local-peak-v1` at
+the BA DSP receipts. Direct channel-atom counts keep their own names and units;
+the adapter may not relabel them as source-studied shared-region, reference, or
+peak-region fields. AX's acoustic thresholds and stop order remain exact. A
+fresh report root preserves AX evidence. No code or audio changed.
+
+### Batch 29.7BC - Channel-Local Peak Failure-First Objective Run
+
+Status: ready
+
+- [ ] change only private direct report names/aggregation and set foreign
+  source-studied adapter diagnostics to not-applicable zeros; preserve output
+  samples and every Rule 31AC mechanics receipt
+- [ ] run the complete release mechanics and unchanged synthetic matrix, then
+  run the `48`-row stereo matrix once only after complete passage
+- [ ] stop at the first miss; run unchanged mono and long-development stages
+  only after each prior gate passes, record the complete result, and open no
+  tuning, listening, export, holdout, production, or Batch 29.8 work unless all
+  gates pass
 
 ### Batch 29.8 - Listening And Dynamic Checkpoint
 
@@ -4368,9 +4388,15 @@ Status: ready
   are `5ae654162d4ed279`, `2b8104525bad0418`, and `fdf90f6127749341`. All
   no-audio mechanics pass; objective audio remains unopened. Batch 29.7BB is
   ready as implementation-free preregistration.
+- 2026-07-19: Batch 29.7BB freezes Rule 31AD and candidate
+  `signal-direct-channel-local-peak-v1`. Direct locked channel-atom diagnostics
+  no longer masquerade as source-studied shared-region fields; those adapter
+  fields are not applicable. AX's mechanics, synthetic, stereo, mono, and long-
+  development thresholds and stop order remain unchanged. No code or audio
+  changed. Batch 29.7BC is ready for one failure-first run.
 
 ## Next Task
 
-Run Batch 29.7BB. Freeze one Rule 31AC failure-first objective candidate and
-its unchanged AX evidence order. Run no renderer/corpus audio; keep offset
-scaling, tuning, listening, holdout, product surfaces, and Batch 29.8 closed.
+Run Batch 29.7BC under Rule 31AD. Correct only the private diagnostic bridge,
+then execute mechanics, synthetic, stereo, mono, and long-development once in
+the frozen stop-on-first-miss order.

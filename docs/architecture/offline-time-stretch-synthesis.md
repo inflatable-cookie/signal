@@ -1932,8 +1932,20 @@ trajectory. Shared terminal classification, non-locked phase laws, exact scale
 ownership, magnitudes, schedules, and fixed storage do not move. The staggered
 analytic proof repeats at `fcbdfd991bd04db1`; no objective audio ran.
 
+Batch 29.7BB separates mechanics diagnostics from comparison-harness
+vocabulary before objective evidence. Borrowed/local locked channel-atoms,
+trajectory-channel switches, and channel-peak disagreements remain direct
+diagnostics. They are not shared-region corrections, reference switches, or
+the source-studied harness's four peak-region classes. The direct adapter marks
+those foreign fields not applicable with zeros and keeps AX's custom acoustic
+measurements as the unchanged gate.
+
+The candidate is `signal-direct-channel-local-peak-v1`. Its DSP is frozen at
+the BA receipts; only private report and adapter plumbing may change before one
+failure-first run. A fresh target root preserves AX evidence.
+
 ## Next Task
 
-Run Batch 29.7BB. Preregister one failure-first objective candidate using the
-passed Rule 31AC mechanics receipts and unchanged AX gate order. Keep audio,
-tuning, listening, holdout, product work, and Batch 29.8 closed.
+Run Batch 29.7BC under Rule 31AD. Correct only the private diagnostic bridge,
+then run mechanics, synthetic, stereo, mono, and long-development in the frozen
+stop-on-first-miss order.

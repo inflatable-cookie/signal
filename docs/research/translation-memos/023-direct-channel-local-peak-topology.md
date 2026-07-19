@@ -89,6 +89,12 @@ the requesting peak, and repeat at `fcbdfd991bd04db1`. The full fallback,
 tie, boundary, swap, recovery, terminal, proof-rate, storage, shape, finite,
 and repeat matrix passes. No objective audio ran.
 
+Batch 29.7BB freezes the only permitted objective candidate. Direct
+channel-atom diagnostics retain their own semantics; they are not translated
+into the source-studied harness's shared-region or reference fields. Candidate
+`signal-direct-channel-local-peak-v1` must retain every BA mechanics receipt
+before the unchanged AX evidence order runs once.
+
 ## Rejected Alternatives
 
 - no parameter sweep or peak-density tuning
@@ -106,6 +112,5 @@ and repeat matrix passes. No objective audio ran.
 
 ## Next Task
 
-Run Batch 29.7BB. Preregister one failure-first objective candidate from the
-passed mechanics receipts and unchanged AX evidence order. Run no renderer or
-corpus audio.
+Run Batch 29.7BC under Rule 31AD. Apply only the private diagnostic correction,
+then execute the frozen objective order once through its first miss.

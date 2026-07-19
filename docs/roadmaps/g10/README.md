@@ -560,15 +560,17 @@ Current stretch status:
   and the full no-audio proof matrix. Batch 29.7BA now implements that seam:
   the staggered fixture retains peaks `9` and `11` and repeats at
   `fcbdfd991bd04db1`; all no-audio mechanics pass with unchanged capacity and
-  no objective audio. Batch 29.7BB is ready as implementation-free objective
-  preregistration.
+  no objective audio. Batch 29.7BB then freezes candidate
+  `signal-direct-channel-local-peak-v1`, keeps direct channel-atom diagnostics
+  out of incompatible source-studied report fields, and carries AX's complete
+  failure-first order forward unchanged. Batch 29.7BC is ready; no code or
+  audio changed in BB.
 
 Remaining stretch work is not blocked by Chorus. Chorus only becomes relevant
 when Loophole integration needs a product workflow plan.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7BB. Freeze one Rule 31AC failure-first objective
-candidate and the unchanged AX evidence order. Run no renderer/corpus audio;
-keep offset scaling, tuning, listening, holdout, product surfaces, and Batch
-29.8 closed.
+Run `g10.029` Batch 29.7BC under Rule 31AD. Correct only the private diagnostic
+bridge, then execute the frozen failure-first objective order once through its
+first miss.

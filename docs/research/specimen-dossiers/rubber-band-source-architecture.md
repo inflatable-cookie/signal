@@ -172,6 +172,7 @@ winner is established.
 ## Next Task
 
 Batch 29.7BA implements the clean-room mechanics contract and passes the full
-no-audio matrix. Run Batch 29.7BB to preregister one failure-first objective
-candidate from Signal's passed receipts. Do not transfer Rubber Band
-expression, ranges, thresholds, tables, or constants, and run no audio yet.
+no-audio matrix. Batch 29.7BB freezes Signal-owned candidate
+`signal-direct-channel-local-peak-v1` and the unchanged failure-first evidence
+order. Run Batch 29.7BC once through its first miss. Do not transfer Rubber
+Band expression, ranges, thresholds, tables, or constants.

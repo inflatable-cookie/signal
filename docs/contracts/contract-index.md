@@ -158,6 +158,6 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7BB under contract `082` Rule 31AC. Freeze one failure-
-first objective candidate from the passed mechanics receipts and unchanged AX
-evidence order. Run no renderer/corpus audio; keep tuning and Batch 29.8 closed.
+Run `g10.029` Batch 29.7BC under contract `082` Rule 31AD. Correct only the
+private diagnostic bridge, then execute the frozen failure-first objective
+order once through its first miss.
