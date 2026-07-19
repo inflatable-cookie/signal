@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: active cyclic-candidate boundary; no implementation admitted
+Status: active cyclic-reassessment boundary; no implementation admitted
 Owner: core-product
 Updated: 2026-07-19
 Related contracts: `046`, `048`, `084`
@@ -52,8 +52,8 @@ smooth, fused, musical spectral smear.
 `Spectral` intentionally exposes vocoder-like separation and decoherence.
 `Rough` intentionally exposes a less smoothed polyphase texture. `Cloud` means
 dispersed upper-range evolution. `Cyclic` means commanded Akai-style
-repetition. It is the only next candidate and targets expansion above `1x`
-through `8x`.
+repetition. Its first complete candidate targeted expansion above `1x` through
+`8x` and is rejected. The character now requires architecture reassessment.
 
 No character is public today. A cyclic-only admission must not expose
 unimplemented `Dream`, `Spectral`, `Rough`, or `Cloud` values, or imply that an
@@ -214,9 +214,12 @@ closed.
 
 The separate cyclic reserve has operator value, a retained ReaReaRea target,
 and public two-grain Akai-style architecture evidence. It becomes the only
-next owner. GPL source informs clean-room architecture only; no expression,
-constant, or control flow enters Signal. Do not build the full router as
-simultaneous experiments.
+next owner study. Its first `CyclicGrain` candidate passed structural admission
+but failed the first synthetic pitch row: `110 Hz` at `2x` measured
+`111.328 Hz`, or `20.778` cents against the frozen `15`-cent ceiling. It was
+deleted without correction or rerun. GPL source informs clean-room architecture
+only; no expression, constant, or control flow enters Signal. Do not build the
+full router as simultaneous experiments.
 
 ## Initial Promotion Sequence
 
@@ -230,10 +233,12 @@ simultaneous experiments.
 7. Creative range-owner reassessment. Complete; automatic router paused and
    cyclic-first promise selected.
 8. Freeze one complete clean-room cyclic-owner brief. Complete.
-9. Implement one isolated cyclic candidate. Next.
-10. Run structural and synthetic gates, then retained mono listening at `2x`,
-    `4x`, and `8x`.
-11. Run linked-stereo mechanics and independent listening.
+9. Implement one isolated cyclic candidate. Rejected at the first creative
+   synthetic pitch row after structural admission.
+10. Reassess cyclic ownership at architecture level or close the character.
+    Next.
+11. Run retained mono and independent stereo listening only if a future
+    complete candidate clears structural and synthetic admission.
 12. Admit only the minimal cyclic owner if every gate passes.
 13. Reassess product exposure and cache identity after admission.
 
@@ -243,17 +248,16 @@ decision backed by new complete-system evidence.
 
 ## Current State
 
-Three isolated spectral candidates are rejected and deleted. The core
-`4x`-`16x` owner and automatic router are paused. Explicit `Cyclic` above `1x`
-through `8x` is the only next candidate. It has no implementation. Its complete
-`CyclicGrain` brief freezes the map, unit-rate two-grain
-synthesis, macro laws, linked stereo, exact length, bounded state, gate order,
-and cleanup. No public Rust enum, renderer, harness mode, fixture, artifact
-schema, runtime route, or product-facing claim entered `main`.
+Three isolated spectral candidates and the first cyclic candidate are rejected
+and deleted. The core `4x`-`16x` owner and automatic router are paused.
+`CyclicGrain` passed structural admission but missed the first synthetic pitch
+limit by `5.778` cents. Explicit `Cyclic` has no implementation and returns to
+architecture reassessment. No public Rust enum, renderer, harness mode,
+fixture, artifact schema, runtime route, or product-facing claim entered `main`.
 `OfflineHighQuality` remains byte-exact and Contract `084` remains closed.
 
 ## Next Task
 
-Run `g10.031` Batch 31.11 only. Implement the frozen `CyclicGrain` brief once
-in a disposable worktree. Stop at the first failed gate. Keep core spectral
-characters, Cloud, automatic routing, cache, and public APIs closed.
+Run `g10.031` Batch 31.12 only. Reassess cyclic ownership at architecture level
+or close the character. Do not tune or reimplement `CyclicGrain`. Keep core
+spectral characters, Cloud, automatic routing, cache, and public APIs closed.

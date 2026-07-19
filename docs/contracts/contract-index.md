@@ -19,7 +19,8 @@ memory alone.
   complete-system admission authority
 - `085` governs the separate offline creative-stretch product and range router
   with `Dream`, `Spectral`, `Rough`, `Cloud`, and `Cyclic` character anchors;
-  automatic routing is paused and the frozen explicit cyclic owner is next
+  automatic routing is paused and the rejected explicit cyclic owner requires
+  architecture reassessment
 - `082` and `g10.029` are historical evidence, not active execution authority
 - `g10.028` source-fill work remains paused
 
@@ -149,6 +150,6 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Keep Contract `084` closed. Run isolated `g10.031` Batch 31.11 under Contract
-`085` and the frozen `CyclicGrain` brief. Keep automatic routing and later
-owners closed.
+Keep Contract `084` closed. Run docs-only `g10.031` Batch 31.12 under Contract
+`085`. Reassess cyclic ownership or close the character. Keep automatic routing
+and later owners closed.

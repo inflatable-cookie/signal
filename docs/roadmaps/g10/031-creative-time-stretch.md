@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: active; Batch 31.11 isolated cyclic candidate ready
+Status: active; Batch 31.12 cyclic ownership reassessment ready
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -341,11 +341,45 @@ Authority:
 
 ## Batch 31.11 - Isolated Cyclic Candidate
 
-Status: ready
+Status: complete; candidate rejected at creative synthetic gate
 
-Implement the frozen cyclic brief once in a disposable worktree. Run gates in
-the brief's fixed order. Stop and delete on any miss. No candidate code enters
-`main` before complete admission.
+One complete candidate was implemented on
+`candidate/g10-031-cyclic-grain` in the disposable
+`signal-candidate-31-11` worktree.
+
+- [x] implemented only the private six-file `creative_cyclic` family and one
+  private `lib.rs` declaration
+- [x] preserved the sample-centred map, unit-rate two-grain reads, normalized
+  crossfade, linked scheduling, semantic macros, exact length, and bounded
+  rolling state
+- [x] passed all seven structural tests, including identity, length,
+  finiteness, silence, determinism, mapping, scheduled replicas, stereo
+  covariance, peak bounds, and duration-independent capacity
+- [x] opened creative synthetic admission only after structural controls passed
+- [x] stopped on the first neutral row: `110 Hz` at `2x` measured
+  `111.328 Hz`, or `20.778` cents against the frozen `15`-cent ceiling
+- [x] did not run later synthetic rows, capture the missing `2x` comparator,
+  render long-form audio, open the `16x` probe, or begin stereo listening
+- [x] deleted the worktree, branch, private module, tests, and build state
+
+The dominant cause is pitch displacement from crossfading source-offset
+unit-rate grains. No candidate code entered `main`.
+
+## Batch 31.12 - Cyclic Ownership Reassessment
+
+Status: ready; docs and architecture only
+
+Reassess whether explicit `Cyclic` still has one complete Signal-owned path
+through the frozen pitch, integrity, mono, and linked-stereo gates.
+
+- do not tune or reimplement `CyclicGrain`
+- do not sweep grain length, hop, window, interpolation, seed, threshold, or
+  test tones
+- decide whether a materially different source-backed cyclic topology exists
+  or close the explicit character
+- keep `Dream`, `Spectral`, `Rough`, `Cloud`, automatic routing, cache, public
+  APIs, and product integration closed
+- change documentation only
 
 ## Later Batches
 
@@ -369,6 +403,7 @@ Closed pending a cyclic candidate decision and separate reopening evidence:
 - [x] the range promise is narrowed honestly to explicit cyclic expansion
   through `8x`
 - [x] one complete cyclic owner brief is frozen
+- [x] one isolated cyclic candidate reached a recorded terminal decision
 - [ ] one isolated cyclic candidate passes structural and synthetic gates
 - [ ] long-form mono cyclic listening passes at `2x`, `4x`, and `8x`
 - [ ] linked-stereo mechanics and independent listening pass
@@ -377,7 +412,7 @@ Closed pending a cyclic candidate decision and separate reopening evidence:
 
 ## Next Task
 
-Execute Batch 31.11 only. Implement the frozen `CyclicGrain` brief once in a
-disposable worktree. Stop at the first failed gate. Keep core spectral
-characters, Cloud, automatic routing, dynamic ratio, cache, and public APIs
-closed.
+Execute Batch 31.12 only. Reassess cyclic ownership at architecture level or
+close the explicit character. Do not tune or reimplement `CyclicGrain`. Keep
+core spectral characters, Cloud, automatic routing, dynamic ratio, cache, and
+public APIs closed.

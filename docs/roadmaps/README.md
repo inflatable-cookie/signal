@@ -48,8 +48,9 @@ path centered on `8x`. Three isolated diffusive-owner candidates were rejected
 and deleted; the final candidate stopped at coefficient proof before renderer
 admission. Range-owner reassessment paused the automatic spectral router and
 selected explicit cyclic expansion through `8x` as the narrower next promise.
-Its complete `CyclicGrain` brief is frozen; one isolated candidate is next. No
-candidate DSP is admitted on `main`.
+Its complete `CyclicGrain` candidate passed structural admission but failed the
+first synthetic pitch row and was deleted. Cyclic ownership reassessment is
+next. No candidate DSP is admitted on `main`.
 Offline artifacts still need a streaming artifact writer/cache target for full
 peak-memory closure. Mono callback-state DSP has a
 no-allocation proof, linked stereo is implemented, ratio scheduling has
@@ -176,6 +177,6 @@ Before rollover:
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the active generation front door. Execute
-`g10.031` Batch 31.11 once in a disposable worktree; keep rejected diffusive
-families, the transparent successor lane, `g10.028`, automatic routing, later
-creative owners, and render-plane integration closed.
+docs-only `g10.031` Batch 31.12; keep rejected candidate families, the
+transparent successor lane, `g10.028`, automatic routing, later creative
+owners, and render-plane integration closed.

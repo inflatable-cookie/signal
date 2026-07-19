@@ -1,6 +1,6 @@
 # Offline Creative CyclicGrain Renderer Brief
 
-Status: frozen candidate brief; implementation not started
+Status: frozen historical brief; candidate rejected
 Owner: dsp
 Updated: 2026-07-19
 Contract: `085`
@@ -29,6 +29,26 @@ This is a clean-room Signal architecture. Public Potenza source supports only
 the high-level feasibility of overlapping moving grains with crossfaded
 output. Signal does not copy GPL expression, constants, thresholds, tables,
 or control flow. ReaReaRea and Akaizer remain behavioral references only.
+
+## Candidate Outcome
+
+Batch 31.11 implemented this brief once in the disposable
+`signal-candidate-31-11` worktree. All seven structural tests passed: request
+validation, byte-exact identity, exact length, finiteness, silence,
+determinism, monotonic mapping, bounded two-grain scheduling, scheduled-only
+impulse energy, linked-stereo covariance, peak bounds, and duration-independent
+state.
+
+Creative synthetic admission then stopped on its first neutral row. A `110 Hz`
+tone at `2x` measured `111.328 Hz`: `20.778` cents of error against the frozen
+`15`-cent ceiling. The stop rule forbade correction or rerun. No later
+synthetic row, comparator capture, long-form mono render, `16x` probe, or
+stereo listening followed. The worktree, branch, module, tests, and build state
+were deleted. No candidate code entered `main`.
+
+This brief remains the exact record of the rejected topology. It is not
+authority for a grain-length, hop, window, interpolation, seed, threshold, or
+scalar sweep.
 
 ## Supported Request
 
@@ -397,6 +417,7 @@ brief before another implementation.
 
 ## Next Task
 
-Execute `g10.031` Batch 31.11 only in a disposable worktree. Implement this
-brief once and stop at the first failed gate. Do not start product admission,
-cache, routing, or public API work.
+Execute `g10.031` Batch 31.12 only. Reassess cyclic ownership at architecture
+level or close the explicit character. Do not tune or reimplement this
+historical brief, and do not start product admission, cache, routing, or public
+API work.

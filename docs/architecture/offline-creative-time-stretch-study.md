@@ -1,6 +1,6 @@
 # Offline Creative Time-Stretch Study
 
-Status: complete; spectral range paused; cyclic owner brief frozen
+Status: complete; all candidate owners rejected; cyclic reassessment next
 Owner: dsp
 Updated: 2026-07-19
 Contract: `085`
@@ -50,8 +50,8 @@ The automatic coherent/diffusive/cloud router is paused. `Dream`, `Spectral`,
 `Rough`, and `Cloud` remain useful target vocabulary and comparator evidence,
 but no implementation or public availability is claimed.
 
-The next bounded path is explicit `Cyclic` expansion above `1x` through `8x`.
-It is a narrower product promise, not the replacement core owner:
+The last bounded path studied explicit `Cyclic` expansion above `1x` through
+`8x`. It is a narrower product promise, not the replacement core owner:
 
 - the operator found the ReaReaRea/Akai-style result useful through about `8x`
 - the retained comparator pack contains ReaReaRea at `4x`, `8x`, and `16x`,
@@ -73,6 +73,12 @@ scheduling, normalized crossfade and boundary law, unit-rate pitch
 preservation, linked channels, exact length, bounded state, semantic macro
 mapping, gate order, listening pack, rejection, and cleanup. No raw grain size
 or implementation algorithm is promised to consumers.
+
+Batch 31.11 implemented that brief once. All structural controls passed, then
+neutral `110 Hz` at `2x` measured `111.328 Hz`, or `20.778` cents against the
+frozen `15`-cent synthetic pitch ceiling. The candidate was deleted without
+correction or rerun. Explicit `Cyclic` now has no owner and requires
+architecture reassessment before another complete candidate.
 
 ## Product Surface
 
@@ -113,9 +119,10 @@ direction. A consumer gets one clean character selector and shared macro
 controls, not an algorithm menu.
 
 `Cyclic` bypasses automatic coherent/diffusive/cloud selection because its
-repetitions are an explicit musical choice. It is now the only next candidate
-character. Initial cyclic admission targets expansion above `1x` through `8x`;
-higher ratios require separate listening before support is claimed.
+repetitions are an explicit musical choice. Its first candidate is rejected;
+the character remains unavailable. Any reopening still targets expansion above
+`1x` through `8x`; higher ratios require separate listening before support is
+claimed.
 
 ## Range-Routed Architecture
 
@@ -124,7 +131,7 @@ same exact target frame count.
 
 | Ratio | Current owner state | Product intent |
 | --- | --- | --- |
-| above `1x` to `8x` | explicit cyclic candidate next | commanded Akai-style repetition |
+| above `1x` to `8x` | cyclic candidate rejected; no owner | commanded Akai-style repetition |
 | `1x` to `2x` | coherent contribution retained, not creatively admitted | future source-readable lower range |
 | `2x` to `4x` | overlap paused | no automatic route |
 | `4x` to `16x` | no owner | `Dream`/`Spectral`/`Rough` research targets only |
@@ -301,10 +308,12 @@ automatic range router. All three spectral fixed-ratio candidates are rejected
 and deleted. Core `Dream`/`Spectral`/`Rough` ownership is paused until new
 complete-system evidence changes the bet.
 
-The explicit cyclic reserve has separate operator value, a retained comparator,
-and public source-backed architecture. It becomes the only next owner study.
-Passing it would admit one intentional character through `8x`; it would not
-claim PaulX-like `Dream`, reopen the automatic router, or authorize Cloud.
+The explicit cyclic reserve still has separate operator value and a retained
+comparator, but its first complete owner is rejected for synthetic pitch
+displacement. Batch 31.12 must decide whether materially different
+source-backed architecture exists or close the character. Passing any future
+owner would admit one intentional character through `8x`; it would not claim
+PaulX-like `Dream`, reopen the automatic router, or authorize Cloud.
 
 ## Sources
 
@@ -325,6 +334,7 @@ claim PaulX-like `Dream`, reopen the automatic router, or authorize Cloud.
 
 ## Next Task
 
-Execute `g10.031` Batch 31.11 only. Implement the frozen `CyclicGrain` brief
-once in a disposable worktree and stop at the first failed gate. Keep `Dream`,
-`Spectral`, `Rough`, `Cloud`, automatic routing, cache, and public APIs closed.
+Execute `g10.031` Batch 31.12 only. Reassess cyclic ownership at architecture
+level or close the explicit character. Do not tune or reimplement
+`CyclicGrain`. Keep `Dream`, `Spectral`, `Rough`, `Cloud`, automatic routing,
+cache, and public APIs closed.

@@ -54,7 +54,10 @@ The 2026-07-19 consolidation reset is authoritative.
   spectral router, rejected the coherent baseline as a substitute core owner,
   and selected explicit cyclic expansion through `8x` as the narrower next
   promise. Batch 31.10 froze one complete `CyclicGrain` brief without changing
-  DSP. Batch 31.11 isolated candidate is ready.
+  DSP. Batch 31.11 implemented it once. All structural controls passed, but
+  the first synthetic row measured `20.778` cents of pitch error against the
+  `15`-cent ceiling. The candidate was deleted without correction or rerun.
+  Batch 31.12 cyclic ownership reassessment is ready.
 - `g10.028` RealtimePreview source-fill and all render-plane integration remain
   paused.
 
@@ -123,8 +126,8 @@ Do not start Loophole or Chorus planning from Signal internals.
 - `g10.030` `complete`
   - stretch consolidated; candidate families closed; frozen baseline retained
 - `g10.031` `active`
-  - spectral router paused; frozen cyclic owner through `8x` ready for one
-    isolated candidate
+  - spectral router paused; cyclic candidate rejected at synthetic pitch;
+    ownership reassessment ready
 
 ## Stretch Boundary
 
@@ -145,14 +148,14 @@ The retained OfflineHighQuality baseline is the only active renderer. Contract
 whole-system evidence listed in the non-phase-vocoder feasibility decision.
 
 The separate `CreativeStretch` path remains unimplemented. Its automatic
-spectral route is paused after three rejected and deleted candidates. Explicit
-cyclic expansion above `1x` through `8x` is the only next owner. Its complete
-brief is frozen, but it has no renderer, public API, harness surface, or
-product route on `main`.
+spectral route is paused after three rejected and deleted candidates. The first
+explicit cyclic candidate is also rejected and deleted after structural
+admission and a first-row synthetic pitch miss. Creative stretch has no owner,
+renderer, public API, harness surface, or product route on `main`.
 
 ## Next Task
 
-Execute `g10.031` Batch 31.11 only. Implement the frozen cyclic owner once in
-a disposable worktree and stop at the first failed gate. Keep rejected
-diffusive families, the automatic router, `g10.028`, later creative owners,
-and render-plane integration paused.
+Execute `g10.031` Batch 31.12 only. Reassess cyclic ownership at architecture
+level or close the character. Do not tune or reimplement `CyclicGrain`. Keep
+rejected diffusive families, the automatic router, `g10.028`, later creative
+owners, and render-plane integration paused.
