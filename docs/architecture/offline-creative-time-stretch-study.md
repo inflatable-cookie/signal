@@ -1,6 +1,6 @@
 # Offline Creative Time-Stretch Study
 
-Status: complete; replacement fixed-ratio topology frozen, implementation unopened
+Status: complete; two fixed-ratio candidates rejected, architecture reassessment ready
 Owner: dsp
 Updated: 2026-07-19
 Contract: `085`
@@ -98,6 +98,11 @@ output-synchronous excitation, a linked coherent carrier, and exact normalized
 synthesis. It intentionally relaxes transient placement and crisp phase
 reconstruction in exchange for smooth, evolving, dreamy output without
 constructing unrelated random phase in every bin.
+
+That replacement was implemented once and rejected before its crest row.
+Common-polarity covariance missed the structural bound because the per-bin
+polar relation reconstruction was not value-stable enough. The waveform-level
+excitation decision remains evidence; the frozen renderer brief does not.
 
 Its neutral `Dream` setting owns the PaulXStretch-like centre. The same complete
 candidate must expose a useful, controlled path toward the `Spectral` and
@@ -244,11 +249,9 @@ success criteria: controlled smear, diffusion, and loss of transient precision
 can be features. This study does not reopen the failed phase-vocoder successor
 or relax `OfflineHighQuality` promotion rules.
 
-The evidence supports the range router and one replacement
-`ContinuousExcitationSpectral` candidate. Its complete brief centres `Dream`,
-preserves extension seams for all five characters, and owns a controlled
-`Spectral`/`Rough` span. The rejected independent-bin topology remains
-historical evidence, not implementation authority.
+The evidence still supports the range router. Both fixed-ratio candidate briefs
+are now historical evidence. No third candidate opens until linked-relation
+ownership is reassessed as a complete representation boundary.
 
 ## Sources
 
@@ -268,7 +271,5 @@ historical evidence, not implementation authority.
 
 ## Next Task
 
-Execute `g10.031` Batch 31.6 in one disposable worktree under
-`offline-creative-continuous-excitation-spectral-brief.md`. Run structural
-admission and the prior failing crest row before other creative metrics. Keep
-`Cloud`, `Cyclic`, and product routing closed.
+Execute `g10.031` Batch 31.7 only. Reassess linked-relation ownership without
+changing DSP. Keep the crest row, `Cloud`, `Cyclic`, and product routing closed.

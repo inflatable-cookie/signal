@@ -173,6 +173,6 @@ Before rollover:
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the active generation front door. Execute
-isolated `g10.031` Batch 31.6 only under the frozen continuous-excitation brief;
-keep the transparent successor lane, `g10.028`, later creative owners, and
-render-plane integration closed.
+`g10.031` Batch 31.7 linked-relation architecture reassessment only; keep the
+transparent successor lane, `g10.028`, later creative owners, and render-plane
+integration closed.

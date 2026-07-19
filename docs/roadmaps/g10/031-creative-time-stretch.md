@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: active; Batch 31.6 ready
+Status: active; Batch 31.7 ready
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -212,13 +212,35 @@ Authority:
 
 ## Batch 31.6 - Isolated Continuous-Excitation Candidate
 
+Status: complete; candidate rejected at structural gate
+
+One complete candidate was implemented in the disposable
+`signal-candidate-31-6` worktree.
+
+- [x] added only the private six-file `creative_excitation` family and one
+  private `lib.rs` module declaration
+- [x] passed `12/13` structural controls, including full-complex excitation
+  reconstruction, exact length, finiteness, silence, determinism, bounded
+  state, no processing allocation, duplicate, swap, anti-phase, and `space`
+- [x] stopped when common-polarity covariance differed by `0.0013287` against
+  the frozen `1e-6` bound
+- [x] confirmed channel swap was exact and attributed the remaining miss to
+  polar per-bin relation reconstruction, not the shared orientation bit
+- [x] did not open the prior crest row, remaining synthetic gates, or listening
+- [x] deleted the candidate worktree, branch, module, tests, and build state
+
+No candidate code entered `main`.
+
+## Batch 31.7 - Linked-Relation Ownership Reassessment
+
 Status: ready
 
-Implement the frozen `ContinuousExcitationSpectral` brief exactly once in a
-disposable worktree. Run structural admission first. The first rendered crest
-row is the exact neutral `Dream`, `4x`, deterministic uniform-noise failure from
-Batch 31.4. Stop and delete on any miss. Do not produce long-form audio until
-all fixed synthetic gates pass.
+Reassess the failed linked-relation representation at architecture level.
+Decide whether one direct value-symmetric complex relation law can preserve the
+continuous-excitation topology and every duplicate, swap, polarity, and
+anti-phase invariant without a repair queue. Freeze one complete replacement
+brief or close the current diffusive owner. Do not implement another candidate
+in this batch.
 
 ## Later Batches
 
@@ -237,7 +259,7 @@ Closed until a diffusive owner passes:
 
 - [x] one product architecture and governing contract exist
 - [x] comparator target character is frozen
-- [x] one rejected diffusive brief and one complete replacement brief exist
+- [x] two complete candidate briefs were implemented once and rejected
 - [ ] one isolated diffusive candidate passes structural and synthetic gates
 - [ ] long-form mono listening passes at `4x`, `8x`, and `16x`
 - [ ] linked-stereo mechanics and independent listening pass
@@ -246,8 +268,7 @@ Closed until a diffusive owner passes:
 
 ## Next Task
 
-Execute Batch 31.6 only. Create one disposable candidate worktree and implement
-the frozen `ContinuousExcitationSpectral` brief without changing `main`. Run
-structural admission and the prior failing crest row first. Do not produce
-long-form audio or open `Cloud`, `Cyclic`, overlap routing, dynamic ratio,
-cache, or product API work before every synthetic gate passes.
+Execute Batch 31.7 only. Reassess linked-relation ownership and freeze one
+complete architecture decision. Do not alter candidate DSP, rerun the crest
+row, produce audio, or open `Cloud`, `Cyclic`, overlap routing, dynamic ratio,
+cache, or product API work.

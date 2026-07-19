@@ -37,6 +37,5 @@ Keep milestone sequencing in `roadmaps/`.
 ## Next Task
 
 Keep the `g10.030` transparent successor program closed. Run `g10.031` Batch
-31.6 in one disposable worktree under
-`offline-creative-continuous-excitation-spectral-brief.md`; keep later owners
-and product routing closed.
+31.7 as linked-relation architecture reassessment only; keep candidate DSP,
+later owners, and product routing closed.

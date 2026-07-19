@@ -112,5 +112,4 @@ ledger remains in git history at `1d1b02f1`.
 ## Next Task
 
 Retain this frozen baseline and keep its successor lane closed. Run `g10.031`
-Batch 31.6 only in an isolated creative-stretch candidate worktree under the
-frozen continuous-excitation brief.
+Batch 31.7 only as creative linked-relation architecture reassessment.

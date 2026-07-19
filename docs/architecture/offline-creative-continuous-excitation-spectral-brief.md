@@ -1,6 +1,6 @@
 # Offline Creative ContinuousExcitationSpectral Renderer Brief
 
-Status: frozen; candidate implementation unopened
+Status: frozen historical brief; candidate rejected at structural gate
 Owner: dsp
 Updated: 2026-07-19
 Contract: `085`
@@ -32,6 +32,24 @@ an audible target, not implementation authority. Moliner et al.'s noise
 morphing paper supports continuous full-complex stochastic excitation as a
 general technique; Signal owns the geometry, controls, linked-channel law,
 boundaries, constants, validation, and Rust expression.
+
+## Candidate Outcome
+
+Batch 31.6 implemented this brief once in a disposable worktree. Twelve of
+thirteen structural controls passed, including the full-complex excitation
+reconstruction, exact length, finiteness, exact silence, determinism, seed
+effect, bounded state, processing allocation, duplicate stereo, channel swap,
+exact anti-phase fallback, and `space` mechanics.
+
+The general common-polarity row missed its `1e-6` covariance bound by
+`0.0013287`. The source orientation bit changed sign correctly and channel
+swap was exact. The remaining miss was the per-bin polar relation
+reconstruction. Structural admission stopped there, before the frozen crest
+row or any listening. The candidate worktree, branch, module, tests, and build
+state were deleted.
+
+This brief is no longer implementation authority. It does not authorize a
+direct-complex relation repair inside another candidate.
 
 ## Why The First Topology Closed
 
@@ -422,8 +440,6 @@ window, coefficient, smoothing, seed, or scalar sweeps.
 
 ## Next Task
 
-Run Batch 31.6 only. Implement this exact private family once in a disposable
-worktree. Run structural admission and the prior failing crest row first. Stop
-and delete on failure. Do not produce long-form audio or open `Cloud`,
-`Cyclic`, routing, cache, dynamic ratio, or product API work before the fixed
-gates pass.
+Run Batch 31.7 only. Reassess linked-relation ownership at architecture level.
+Freeze one complete value-symmetric representation law or close the current
+diffusive owner. Do not implement another candidate or open the crest row.

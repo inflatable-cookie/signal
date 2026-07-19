@@ -44,7 +44,9 @@ The 2026-07-19 consolidation reset is authoritative.
   `6 dB` ceiling. The candidate was deleted before listening. Batch 31.5 kept
   the ceiling, closed independent-bin diffusion, and froze one complete
   continuous full-complex excitation replacement without changing DSP. Batch
-  31.6 is ready for one isolated candidate.
+  31.6 implemented it once. Twelve of thirteen structural controls passed, but
+  common-polarity covariance missed by `0.0013287`; the candidate was deleted
+  before crest admission. Batch 31.7 now owns linked-relation reassessment.
 - `g10.028` RealtimePreview source-fill and all render-plane integration remain
   paused.
 
@@ -139,7 +141,6 @@ renderer, public API, harness surface, or product route on `main`.
 
 ## Next Task
 
-Execute `g10.031` Batch 31.6 only. Implement the frozen continuous-excitation
-candidate in a disposable worktree and run structural admission plus the prior
-failing crest row first. Keep `g10.028`, later creative owners, and render-plane
-integration paused.
+Execute `g10.031` Batch 31.7 only. Reassess linked-relation ownership at
+architecture level. Keep candidate DSP, `g10.028`, later creative owners, and
+render-plane integration paused.
