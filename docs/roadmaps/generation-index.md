@@ -17,7 +17,8 @@ Updated: 2026-07-19
   production baseline remains active. `g10.029` is superseded after its
   rejected research code was removed. `g10.028` source-fill work remains
   paused. `g10.031` opens a separate creative `8x` architecture lane; Batch
-  31.2 is ready for comparator target freeze only.
+  31.2 has captured its accessible comparator set and awaits concealed
+  character review before target freeze.
 - audit evidence: `chorus/research/2026-06-11-signal-deep-audit.md` (phase
   one) and `docs/research/2026-06-11-post-demolition-assessment.md` (phase
   two)
@@ -57,5 +58,5 @@ If that cleanup has not happened, stay in the current generation and finish the 
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the current active-generation front door.
-Run `g10.031` Batch 31.2 for creative comparator target freeze. Keep the
-transparent successor program closed.
+Finish the concealed `g10.031` Batch 31.2 review for creative comparator target
+freeze. Keep the transparent successor program closed.

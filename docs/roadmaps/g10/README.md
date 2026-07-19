@@ -34,7 +34,9 @@ The 2026-07-19 consolidation reset is authoritative.
   program closed on the frozen production baseline.
 - `g10.031` and Contract `085` open a separate offline creative-stretch path
   centered on `8x`. Batch 31.1 froze the product controls, range router, and
-  comparator study without reopening the transparent successor lane.
+  comparator study without reopening the transparent successor lane. Batch
+  31.2 has captured and level-matched the accessible four-way comparator pack;
+  concealed operator listening remains open.
 - `g10.028` RealtimePreview source-fill and all render-plane integration remain
   paused.
 
@@ -103,7 +105,7 @@ Do not start Loophole or Chorus planning from Signal internals.
 - `g10.030` `complete`
   - stretch consolidated; candidate families closed; frozen baseline retained
 - `g10.031` `active`
-  - creative stretch architecture frozen; comparator target freeze ready
+  - creative architecture frozen; accessible comparator captured; listening active
 
 ## Stretch Boundary
 
@@ -129,6 +131,6 @@ renderer, public API, harness surface, or product route on `main`.
 
 ## Next Task
 
-Run `g10.031` Batch 31.2 only. Capture and level-match the creative comparator
-pack, then freeze the `DiffuseSpectral` target and rejection thresholds. Keep
-`g10.028` and render-plane integration paused.
+Finish the concealed `g10.031` Batch 31.2 comparator listening, then freeze one
+`DiffuseSpectral` target and its rejection thresholds. Keep `g10.028` and
+render-plane integration paused.

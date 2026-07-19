@@ -128,16 +128,19 @@ does not satisfy this architecture.
 
 ## Comparator Synthesis
 
-Primary references:
+The required no-purchase capture set is:
 
 | Reference | Evidence sought |
 | --- | --- |
 | PaulXStretch | canonical static-to-evolving spectral dream behavior |
 | REAPER `Rrreeeaaa` | polyphase big-stretch behavior without transient preservation |
 | CDP `SPECTSTR` | spectral expansion with controlled decoherence and randomization |
-| Sloom `Wide`/`Narrow` | extreme spectral character, motion, and stereo policy |
-| SoundHack `++spiralstretch` | layered PV/granular ambience and voice density |
-| Ableton `Texture` | granular grain-size and fluctuation behavior |
+
+Optional supplementary references are Sloom `Wide`/`Narrow` for extreme
+spectral character, SoundHack `++spiralstretch` for layered PV/granular
+ambience, and Ableton `Texture` for granular fluctuation. They do not block the
+target freeze: the full Sloom product and SoundHack are paid, while Ableton is
+unavailable to the operator.
 
 Secondary references:
 
@@ -150,6 +153,14 @@ The first study uses the retained long-form musical source families: percussion,
 bass, vocals, pads/sustains, and full mix. Render `4x`, `8x`, and `16x`.
 Short attacks remain diagnostic only; long musical excerpts decide target
 character.
+
+The accessible capture is complete under ignored `target/`: PaulXStretch 1.6.0
+default / FFT `16384`, REAPER 7.69 `Rrreeeaaa`, pinned CDP 8.0 `SPECTSTR`, and
+REAPER `ReaReaRea` as the cyclic control. The CDP comparator uses `d-ratio=1`
+and `d-rand=0.5`; those values define this external reference only. Its source
+feed is reduced `18 dB` to avoid legacy synthesis clipping before all references
+are cropped to exact length and RMS matched under a shared `0.95` peak ceiling.
+Target character remains open until the concealed 15-case review is complete.
 
 ## Admission
 
@@ -207,6 +218,6 @@ opens.
 
 ## Next Task
 
-Run `g10.031` Batch 31.2. Capture and level-match the primary references at
-`4x`, `8x`, and `16x`; freeze the `DiffuseSpectral` target character and
-candidate pass/fail thresholds before writing implementation code.
+Finish the concealed Batch 31.2 character review at `4x`, `8x`, and `16x`.
+Freeze the `DiffuseSpectral` target character and candidate pass/fail thresholds
+before writing an implementation brief or code.

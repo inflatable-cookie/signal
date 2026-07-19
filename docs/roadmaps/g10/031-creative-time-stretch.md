@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: active; Batch 31.2 ready
+Status: active; Batch 31.2 listening active
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -59,11 +59,11 @@ Authority:
 
 ## Batch 31.2 - Comparator Target Freeze
 
-Status: ready; docs and listening evidence only
+Status: active; accessible comparator capture complete, operator listening pending
 
-- capture primary references at `4x`, `8x`, and `16x`
-- use the retained percussion, bass, vocal, pad/sustain, and full-mix sources
-- level-match under one documented policy
+- [x] capture the accessible primary references at `4x`, `8x`, and `16x`
+- [x] use the retained percussion, bass, vocal, pad/sustain, and full-mix sources
+- [x] level-match under one documented policy
 - record character, motion, detail, stereo, periodicity, ringing, level, and
   preference notes
 - probe fixed ratios around `2x`/`4x` and `16x`/`32x` transition bands where
@@ -72,19 +72,50 @@ Status: ready; docs and listening evidence only
 - freeze explicit structural and listening rejection thresholds
 - write one complete `DiffuseSpectral` brief only after the target is frozen
 
-Primary references:
+Required accessible references:
 
 - PaulXStretch
 - REAPER `Rrreeeaaa`
 - CDP `SPECTSTR`
+
+Optional supplementary references; absence does not block this batch:
+
 - Sloom `Wide` and `Narrow`
 - SoundHack `++spiralstretch`
 - Ableton `Texture`
 
 Secondary character controls:
 
-- Akaizer or REAPER `ReaReaRea`
+- REAPER `ReaReaRea`
+- Akaizer
 - Photosounder or ARSS
+
+Captured evidence:
+
+- ignored workspace: `target/creative-stretch-comparator-31-2/`
+- matrix: five retained mono sources by `4x`, `8x`, and `16x`
+- primary captures: PaulXStretch 1.6.0 default / FFT `16384`, REAPER 7.69
+  `Rrreeeaaa`, and pinned CDP 8.0 `SPECTSTR`
+- secondary cyclic control: REAPER 7.69 `ReaReaRea`
+- CDP profile: full channel decoherence (`d-ratio=1`) with moderate frequency
+  randomization (`d-rand=0.5`); this is comparator evidence, not a Signal
+  implementation constant
+- CDP source feed: fixed `-18 dB` gain to avoid its legacy synthesis clipper;
+  common pack normalization removes the capture offset
+- exact-length policy: crop PaulXStretch and CDP synthesis extensions from the
+  end; REAPER outputs already match the requested length
+- concealment: deterministic A/B/C/D assignment recorded only in
+  `listening-key.tsv`
+- normalization: one common RMS per source/ratio group, bounded so every peak
+  is at most `0.95`
+- pack validation: 15 cases, 60 stereo float candidate files, `44.1 kHz`, exact
+  target frames, finite samples, maximum inter-candidate RMS span below
+  `1e-9`, maximum peak below `0.95`
+
+Sloom's full product is paid and its demo cannot save. SoundHack
+`++spiralstretch` is paid. Ableton is unavailable to the operator. They remain
+useful later references but are not honest prerequisites for this no-purchase
+target freeze.
 
 No DSP, candidate harness, fixture, report mode, or public API enters `main`.
 
@@ -131,5 +162,8 @@ Closed until the diffusive owner passes:
 
 ## Next Task
 
-Execute Batch 31.2 only. Freeze the comparator-backed target and rejection
-thresholds. Stop before candidate DSP or harness implementation.
+Complete the concealed 15-case A/B/C/D character review in
+`target/creative-stretch-comparator-31-2/listening-pack/listening-notes.tsv`
+without opening the key. Then freeze one comparator-backed target and explicit
+rejection thresholds. Stereo remains unassessed until an independent eligible
+listener is available. Stop before candidate DSP or harness implementation.
