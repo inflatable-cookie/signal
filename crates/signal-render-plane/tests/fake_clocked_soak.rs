@@ -89,6 +89,7 @@ fn tone_plan(
         master_limiter: None,
         stages: vec![
             RenderStageSpec {
+                parameter_envelopes: Vec::new(),
                 accepts_live_events: false,
                 processor: None,
                 events: None,
@@ -112,6 +113,7 @@ fn tone_plan(
                 inputs: Vec::new(),
             },
             RenderStageSpec {
+                parameter_envelopes: Vec::new(),
                 accepts_live_events: false,
                 processor: None,
                 events: None,
@@ -135,6 +137,7 @@ fn tone_plan(
                 inputs: Vec::new(),
             },
             RenderStageSpec {
+                parameter_envelopes: Vec::new(),
                 accepts_live_events: false,
                 processor: None,
                 events: None,
@@ -166,6 +169,7 @@ fn tone_plan(
             // stream, so per-block event slicing and delivery run under the
             // same sustained clocked load.
             RenderStageSpec {
+                parameter_envelopes: Vec::new(),
                 accepts_live_events: false,
                 processor: Some(insert),
                 events: Some(insert_events),
@@ -181,6 +185,7 @@ fn tone_plan(
                 }],
             },
             RenderStageSpec {
+                parameter_envelopes: Vec::new(),
                 accepts_live_events: false,
                 processor: None,
                 events: None,

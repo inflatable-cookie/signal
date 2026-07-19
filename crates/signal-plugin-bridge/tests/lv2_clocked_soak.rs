@@ -35,6 +35,7 @@ fn plan_with_processor(processor: RenderPluginProcessor) -> RenderPlanSpec {
         master_limiter: None,
         stages: vec![
             RenderStageSpec {
+                parameter_envelopes: Vec::new(),
                 accepts_live_events: false,
                 processor: None,
                 events: None,
@@ -59,6 +60,7 @@ fn plan_with_processor(processor: RenderPluginProcessor) -> RenderPlanSpec {
             },
             // The LV2 fixture processes every block of this Sum stage.
             RenderStageSpec {
+                parameter_envelopes: Vec::new(),
                 accepts_live_events: false,
                 processor: Some(processor),
                 events: None,
@@ -74,6 +76,7 @@ fn plan_with_processor(processor: RenderPluginProcessor) -> RenderPlanSpec {
                 }],
             },
             RenderStageSpec {
+                parameter_envelopes: Vec::new(),
                 accepts_live_events: false,
                 processor: None,
                 events: None,

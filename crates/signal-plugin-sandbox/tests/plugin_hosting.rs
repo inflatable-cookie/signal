@@ -1047,6 +1047,7 @@ fn fixture_plugin_processes_a_chain_insert_through_the_real_engine_offline_rende
         master_limiter: None,
         stages: vec![
             RenderStageSpec {
+                parameter_envelopes: Vec::new(),
                 accepts_live_events: false,
                 processor: None,
                 events: None,
@@ -1068,6 +1069,7 @@ fn fixture_plugin_processes_a_chain_insert_through_the_real_engine_offline_rende
                 inputs: Vec::new(),
             },
             RenderStageSpec {
+                parameter_envelopes: Vec::new(),
                 accepts_live_events: false,
                 processor,
                 events: None,
@@ -1083,6 +1085,7 @@ fn fixture_plugin_processes_a_chain_insert_through_the_real_engine_offline_rende
                 }],
             },
             RenderStageSpec {
+                parameter_envelopes: Vec::new(),
                 accepts_live_events: false,
                 processor: None,
                 events: None,

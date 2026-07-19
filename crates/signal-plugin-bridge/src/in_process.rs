@@ -1902,6 +1902,7 @@ mod tests {
             master_limiter: None,
             stages: vec![
                 RenderStageSpec {
+                    parameter_envelopes: Vec::new(),
                     accepts_live_events: false,
                     stage_id: 1,
                     format: ChannelFormat::stereo(),
@@ -1913,6 +1914,7 @@ mod tests {
                     events: None,
                 },
                 RenderStageSpec {
+                    parameter_envelopes: Vec::new(),
                     accepts_live_events: false,
                     stage_id: 2,
                     format: ChannelFormat::stereo(),
@@ -1924,6 +1926,7 @@ mod tests {
                     events: Some(events),
                 },
                 RenderStageSpec {
+                    parameter_envelopes: Vec::new(),
                     accepts_live_events: false,
                     stage_id: 3,
                     format: ChannelFormat::stereo(),

@@ -38,7 +38,7 @@ pub use convolution_reverb::ConvolutionReverbProcessor;
 mod offline;
 
 pub use offline::{
-    build_offline_stretch_artifact_cache_handoff_with_synthetic_policy,
+    apply_soft_limiter_to_pcm, build_offline_stretch_artifact_cache_handoff_with_synthetic_policy,
     build_offline_stretch_artifact_pcm_with_synthetic_policy,
     build_offline_stretch_artifact_render_source_with_synthetic_policy,
     materialize_offline_stretch_artifact_pcm, plan_offline_stretch_artifact,
@@ -1044,6 +1044,20 @@ pub trait PluginBlockProcessor: Send + Sync {
         0
     }
 
+    /// Set one plugin parameter to a normalized `0..=1` value, returning
+    /// `true` when the backend accepted it. This is the OFFLINE mirror of
+    /// the host's live parameter forwarding (the same block-boundary
+    /// set-parameter cadence, driven by the offline renderer instead of the
+    /// host's playback poll). The default rejects the write (`false`), so
+    /// backends without parameter transport stay honest: the envelope is
+    /// simply not applied and the audio path is untouched. Never called on
+    /// the realtime audio thread — only the offline driver uses it, between
+    /// blocks.
+    fn set_parameter_normalized(&self, parameter_id: u32, normalized: f32) -> bool {
+        let _ = (parameter_id, normalized);
+        false
+    }
+
     /// Process one block in place, delivering `events` (sorted by
     /// `offset_frames`, all offsets `< frame_count`) alongside the audio.
     /// Backends convert to their plugin format's native event lists here —
@@ -1099,6 +1113,14 @@ impl RenderPluginProcessor {
     ) -> bool {
         self.inner
             .process_with_events(scratch, frame_count, channels, events)
+    }
+
+    /// Set one plugin parameter to a normalized `0..=1` value; `true` when
+    /// the backend accepted it. Offline-driver seam only (see
+    /// [`PluginBlockProcessor::set_parameter_normalized`]).
+    pub fn set_parameter_normalized(&self, parameter_id: u32, normalized: f32) -> bool {
+        self.inner
+            .set_parameter_normalized(parameter_id, normalized)
     }
 
     /// Native event families supported by this live backend.
@@ -1307,6 +1329,56 @@ pub struct RenderEdgeSpec {
     pub matrix: Option<Vec<f32>>,
 }
 
+/// One compiled parameter automation envelope for a processor stage:
+/// sorted `(absolute stream-clock frame, normalized value)` breakpoints for
+/// one plugin parameter (g13.029 offline param bake).
+///
+/// OFFLINE ONLY in v1: the offline driver samples each envelope at every
+/// block boundary (linear interpolation between points, end values held
+/// outside the point range) and applies the value through the processor's
+/// [`PluginBlockProcessor::set_parameter_normalized`] seam before the block
+/// renders — the offline mirror of the host's live block-boundary parameter
+/// forwarding. Block-boundary resolution is the honest fidelity bound: a
+/// sweep steps once per offline block (default 1024 frames), exactly like
+/// the live playback-poll cadence it mirrors. The realtime executor ignores
+/// this field entirely (live parameter playback stays host-driven).
+#[derive(Debug, Clone, PartialEq)]
+pub struct RenderParamEnvelope {
+    /// Plugin-format-native parameter id (u32 fits CLAP param ids and VST3
+    /// ParamIDs — the same id space the host's live set-parameter path uses).
+    pub parameter_id: u32,
+    /// Breakpoints `(absolute stream-clock frame, normalized 0..=1 value)`,
+    /// sorted by frame (compile rejects unsorted envelopes).
+    pub points: Vec<(u64, f32)>,
+}
+
+impl RenderParamEnvelope {
+    /// Envelope value at `frame`: linear interpolation between the
+    /// surrounding breakpoints, first/last value held outside the point
+    /// range (the same boundary-hold rule gain automation uses). `None`
+    /// when the envelope has no points.
+    pub fn value_at(&self, frame: u64) -> Option<f32> {
+        let first = self.points.first()?;
+        if frame <= first.0 {
+            return Some(first.1);
+        }
+        let last = self.points.last()?;
+        if frame >= last.0 {
+            return Some(last.1);
+        }
+        // First breakpoint strictly past `frame`; the guards above ensure
+        // both neighbours exist.
+        let next = self.points.partition_point(|(point, _)| *point <= frame);
+        let (frame_a, value_a) = self.points[next - 1];
+        let (frame_b, value_b) = self.points[next];
+        if frame_b == frame_a {
+            return Some(value_b);
+        }
+        let t = (frame - frame_a) as f64 / (frame_b - frame_a) as f64;
+        Some(value_a + (value_b - value_a) * t as f32)
+    }
+}
+
 /// One stage in a render plan graph.
 #[derive(Debug, Clone, PartialEq)]
 pub struct RenderStageSpec {
@@ -1349,6 +1421,13 @@ pub struct RenderStageSpec {
     /// processor — compile rejects it elsewhere. `false` keeps behavior
     /// bit-identical.
     pub accepts_live_events: bool,
+    /// Offline-only parameter automation envelopes for `processor`
+    /// (g13.029): sampled at block boundaries by the OFFLINE driver and
+    /// applied through the processor set-parameter seam; the realtime
+    /// executor ignores them (live parameter playback stays host-driven).
+    /// Valid only alongside a processor — compile rejects envelopes without
+    /// one. Empty (the default) keeps every render byte-identical.
+    pub parameter_envelopes: Vec<RenderParamEnvelope>,
 }
 
 /// Optional soft limiter guarding the hardware boundary. Mechanism only —
@@ -1403,6 +1482,7 @@ impl RenderPlanSpec {
                 || old.processor != new.processor
                 || old.events != new.events
                 || old.accepts_live_events != new.accepts_live_events
+                || old.parameter_envelopes != new.parameter_envelopes
             {
                 return None;
             }
@@ -1460,6 +1540,10 @@ pub enum RenderPlanCompileError {
     /// `accepts_live_events` was set on a stage without a plugin processor
     /// (live events require a processor, which itself requires a Sum stage).
     LiveEventsWithoutProcessor(u64),
+    /// A parameter envelope was attached to a stage without a processor.
+    ParameterEnvelopeWithoutProcessor(u64),
+    /// A parameter envelope's breakpoints are not sorted by frame.
+    UnsortedParameterEnvelope(u64),
     /// A `Warped` source wraps something other than `Samples` or `Stream`.
     WarpedSourceUnsupported {
         /// Stage owning the clip.
@@ -1522,6 +1606,14 @@ impl std::fmt::Display for RenderPlanCompileError {
             RenderPlanCompileError::LiveEventsWithoutProcessor(stage_id) => write!(
                 formatter,
                 "stage {stage_id} accepts live events without a plugin processor",
+            ),
+            RenderPlanCompileError::ParameterEnvelopeWithoutProcessor(stage_id) => write!(
+                formatter,
+                "stage {stage_id} attaches parameter envelopes without a plugin processor",
+            ),
+            RenderPlanCompileError::UnsortedParameterEnvelope(stage_id) => write!(
+                formatter,
+                "stage {stage_id} parameter envelope breakpoints are not sorted by frame",
             ),
             RenderPlanCompileError::WarpedSourceUnsupported { stage_id, clip_id } => write!(
                 formatter,
@@ -1764,6 +1856,18 @@ impl RenderPlan {
                     .any(|pair| pair[0].frame > pair[1].frame)
                 {
                     return Err(RenderPlanCompileError::UnsortedEvents(stage.stage_id));
+                }
+            }
+            if !stage.parameter_envelopes.is_empty() && stage.processor.is_none() {
+                return Err(RenderPlanCompileError::ParameterEnvelopeWithoutProcessor(
+                    stage.stage_id,
+                ));
+            }
+            for envelope in &stage.parameter_envelopes {
+                if envelope.points.windows(2).any(|pair| pair[0].0 > pair[1].0) {
+                    return Err(RenderPlanCompileError::UnsortedParameterEnvelope(
+                        stage.stage_id,
+                    ));
                 }
             }
         }
@@ -3991,6 +4095,7 @@ mod tests {
 
     fn lane_node(stage_id: u64, gain: f32, clips: Vec<RenderClipSpec>) -> RenderStageSpec {
         RenderStageSpec {
+            parameter_envelopes: Vec::new(),
             accepts_live_events: false,
             processor: None,
             events: None,
@@ -4005,6 +4110,7 @@ mod tests {
 
     fn master_node(inputs: Vec<RenderEdgeSpec>) -> RenderStageSpec {
         RenderStageSpec {
+            parameter_envelopes: Vec::new(),
             accepts_live_events: false,
             processor: None,
             events: None,
@@ -5416,6 +5522,7 @@ mod tests {
                     }],
                 ),
                 RenderStageSpec {
+                    parameter_envelopes: Vec::new(),
                     accepts_live_events: false,
                     processor,
                     events: None,
@@ -5457,6 +5564,7 @@ mod tests {
                     }],
                 ),
                 RenderStageSpec {
+                    parameter_envelopes: Vec::new(),
                     accepts_live_events: false,
                     processor: None,
                     events: None,
@@ -6600,6 +6708,7 @@ mod tests {
             stages: vec![
                 lane_node(LANE_ID, 1.0, Vec::new()),
                 RenderStageSpec {
+                    parameter_envelopes: Vec::new(),
                     accepts_live_events: true,
                     processor: Some(handle),
                     events: None,
@@ -7269,6 +7378,7 @@ mod tests {
             master_limiter: None,
             stages: vec![
                 RenderStageSpec {
+                    parameter_envelopes: Vec::new(),
                     accepts_live_events: false,
                     processor: None,
                     events: None,
@@ -7280,6 +7390,7 @@ mod tests {
                     inputs: vec![identity_edge(2)],
                 },
                 RenderStageSpec {
+                    parameter_envelopes: Vec::new(),
                     accepts_live_events: false,
                     processor: None,
                     events: None,
@@ -7393,6 +7504,7 @@ mod tests {
             stages: vec![
                 master_node(vec![identity_edge(20)]),
                 RenderStageSpec {
+                    parameter_envelopes: Vec::new(),
                     accepts_live_events: false,
                     processor: None,
                     events: None,
@@ -7404,6 +7516,7 @@ mod tests {
                     inputs: vec![identity_edge(10)],
                 },
                 RenderStageSpec {
+                    parameter_envelopes: Vec::new(),
                     accepts_live_events: false,
                     processor: None,
                     events: None,
@@ -7502,6 +7615,7 @@ mod tests {
             master_limiter: None,
             stages: vec![
                 RenderStageSpec {
+                    parameter_envelopes: Vec::new(),
                     accepts_live_events: false,
                     processor: None,
                     events: None,
@@ -7543,6 +7657,7 @@ mod tests {
         // output must be exactly double the single-path render.
         let (mut controller, mut executor) = render_plane();
         let sum_stage = |stage_id: u64| RenderStageSpec {
+            parameter_envelopes: Vec::new(),
             accepts_live_events: false,
             processor: None,
             events: None,
@@ -7600,6 +7715,7 @@ mod tests {
             master_limiter: None,
             stages: vec![
                 RenderStageSpec {
+                    parameter_envelopes: Vec::new(),
                     accepts_live_events: false,
                     processor: None,
                     events: None,
@@ -7613,6 +7729,7 @@ mod tests {
                     inputs: Vec::new(),
                 },
                 RenderStageSpec {
+                    parameter_envelopes: Vec::new(),
                     accepts_live_events: false,
                     processor: None,
                     events: None,
@@ -7672,6 +7789,7 @@ mod tests {
             master_limiter: None,
             stages: vec![
                 RenderStageSpec {
+                    parameter_envelopes: Vec::new(),
                     accepts_live_events: false,
                     processor: None,
                     events: None,
@@ -7685,6 +7803,7 @@ mod tests {
                     inputs: Vec::new(),
                 },
                 RenderStageSpec {
+                    parameter_envelopes: Vec::new(),
                     accepts_live_events: false,
                     processor: None,
                     events: None,
@@ -7796,6 +7915,7 @@ mod tests {
                 lane_node(1, 0.5, vec![tone_clip(440.0)]),
                 lane_node(2, 0.4, vec![tone_clip(660.0)]),
                 RenderStageSpec {
+                    parameter_envelopes: Vec::new(),
                     accepts_live_events: false,
                     processor: None,
                     events: None,
@@ -7809,6 +7929,7 @@ mod tests {
                     inputs: Vec::new(),
                 },
                 RenderStageSpec {
+                    parameter_envelopes: Vec::new(),
                     accepts_live_events: false,
                     processor: None,
                     events: None,

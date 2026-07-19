@@ -124,6 +124,7 @@ fn live_instrument_plan(instrument: RenderPluginProcessor) -> RenderPlanSpec {
         master_limiter: None,
         stages: vec![
             RenderStageSpec {
+                parameter_envelopes: Vec::new(),
                 accepts_live_events: false,
                 processor: None,
                 events: None,
@@ -135,6 +136,7 @@ fn live_instrument_plan(instrument: RenderPluginProcessor) -> RenderPlanSpec {
                 inputs: Vec::new(),
             },
             RenderStageSpec {
+                parameter_envelopes: Vec::new(),
                 accepts_live_events: true,
                 processor: Some(instrument),
                 events: None,
@@ -150,6 +152,7 @@ fn live_instrument_plan(instrument: RenderPluginProcessor) -> RenderPlanSpec {
                 }],
             },
             RenderStageSpec {
+                parameter_envelopes: Vec::new(),
                 accepts_live_events: false,
                 processor: None,
                 events: None,
