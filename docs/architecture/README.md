@@ -26,13 +26,13 @@ Keep milestone sequencing in `roadmaps/`.
 - `package-map.md`
 - `dsp-analysis-feature-reference.md`
 - `offline-time-stretch-synthesis.md`
+- `offline-time-stretch-non-phase-vocoder-feasibility.md`
 - `offline-time-stretch-successor-brief.md`
 - `graph-runtime-feature-reference.md`
 - related contracts under `docs/contracts/`
 
 ## Next Task
 
-Resolve the paused `g10.030` architecture checkpoint. The event-sealed brief
-and its multiresolution phase-vocoder family are rejected; keep the retained
-baseline frozen until the operator either closes the program or commissions a
-different renderer family.
+The `g10.030` successor program is closed on the retained OfflineHighQuality
+baseline. Reopen only through the whole-system triggers in
+`offline-time-stretch-non-phase-vocoder-feasibility.md`.

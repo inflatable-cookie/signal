@@ -34,18 +34,17 @@ stable identity, parameter fast path + automation, DSP kit, RT observability,
 WYSIWYG bounce, output-time honesty, recording capture, disk streaming,
 transport regions, and runtime endgame.
 
-Phase three (021-030) is the first-party high-quality stretch program. The
-Signal-owned stretch tiers now have evidence and contracts. `g10.029` is
-historical after the consolidation pass removed rejected research and stopped
-the narrow-proof queue. `g10.030` owns completion; its first isolated,
-end-to-end OfflineHighQuality successor failed anti-replica admission and was
-deleted. Its event-sealed replacement then failed structural feasibility
-before implementation because the frozen impulse rule is always `15` samples
-early. The phase-vocoder successor family is closed and the lane is paused at
-an architecture intent checkpoint;
-offline artifacts need a streaming artifact writer/cache target for full peak
-memory closure; RealtimePreview needs a proven callback-safe state object
-before render-plane integration. Mono callback-state DSP now has a
+Phase three (021-030) established first-party stretch evidence and contracts.
+`g10.029` is historical after consolidation removed rejected research and
+stopped the narrow-proof queue. `g10.030` completed the OfflineHighQuality
+successor decision. Its first isolated end-to-end candidate failed
+anti-replica admission and was deleted. Its event-sealed replacement then
+failed structural feasibility before implementation because the frozen impulse
+rule is always `15` samples early. A final non-phase-vocoder feasibility study
+found no family with a source-backed path through every whole-renderer gate.
+The OfflineHighQuality successor program is closed on the frozen competitive
+baseline. Offline artifacts still need a streaming artifact writer/cache target
+for full peak-memory closure. Mono callback-state DSP has a
 no-allocation proof, linked stereo is implemented, ratio scheduling has
 source-frame alignment proof, and dynamic source projection is tracked. Render
 plane use still needs an explicit source-fill and underrun contract, now
@@ -169,7 +168,6 @@ Before rollover:
 
 ## Next Task
 
-Use `docs/roadmaps/g10/README.md` as the active generation front door.
-Resolve the paused `g10.030` architecture checkpoint: close on the frozen
-baseline or commission one complete non-phase-vocoder successor. Keep
-`g10.028` and render-plane integration paused.
+Use `docs/roadmaps/g10/README.md` as the active generation front door. No
+stretch-successor task is active. Keep `g10.028` and render-plane integration
+paused until separately authorized.

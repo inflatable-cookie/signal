@@ -1,6 +1,6 @@
 # 030 - Stretch Consolidation And Completion
 
-Status: paused at successor-family intent checkpoint
+Status: complete - frozen baseline retained
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.029
@@ -15,18 +15,19 @@ into hundreds of narrow proofs. Most were rejected, but their code and active
 planning state remained in Signal. The production renderer barely changed
 while the crate and roadmap grew dramatically.
 
-Signal needs one stable competitive baseline and one complete successor lane,
-not a library of failed experiments.
+Signal needed one stable competitive baseline and a bounded path to assess one
+complete successor, not a library of failed experiments.
 
 ## Goal
 
-Finish the Signal-native stretch program by:
+Finish the Signal-native OfflineHighQuality successor program by:
 
 - freezing the current production behavior as the fallback baseline
 - removing rejected renderers and experiment-only report surfaces
 - retaining a compact Signal/external comparator and long-form listening pack
-- developing one complete successor outside the production branch
-- admitting only a successor that wins the fixed evidence sequence
+- developing any complete successor outside the production branch
+- admitting a successor only if it wins the fixed evidence sequence
+- closing on the baseline when reassessment finds no qualifying renderer family
 
 ## Non-Goals
 
@@ -201,40 +202,67 @@ If Batch 30.5 fails:
 - [x] retained the production baseline byte-exact
 - [x] closed the multiresolution phase-vocoder successor family under Rule 7
 
-## Batch 30.7 - Product Review
+## Batch 30.7 - Non-Phase-Vocoder Feasibility Study
 
-Status: blocked on fixed-ratio promotion
+Status: complete - no candidate promoted
 
-- review dynamic ratio and independent pitch composition
-- decide explicit fallback behavior for unreviewed paths
-- update Contract `046`, artifact/cache posture, and product status
-- keep RealtimePreview source fill in `g10.028`
+- [x] tested WSOLA and source-synchronous overlap-add against polyphonic,
+  replica, timing, and linked-stereo ownership
+- [x] reconciled the direct subband sinusoidal option with Signal's pinned
+  SBSMS source-feasibility results
+- [x] tested deterministic sines/transients/noise decomposition against joint
+  timing, recombination, boundary, and stereo ownership
+- [x] tested learned waveform synthesis against target ratios, determinism,
+  memory, channel ownership, training, and dependency constraints
+- [x] found no family with a source-backed reason to clear every Contract `084`
+  gate
+- [x] changed documentation only; no candidate, harness, fixture, or report
+  surface entered `main`
+
+Authority:
+
+- `docs/architecture/offline-time-stretch-non-phase-vocoder-feasibility.md`
+
+## Batch 30.8 - Product Review
+
+Status: cancelled - no fixed-ratio promotion
+
+Dynamic ratio, independent pitch, cache, artifact, and product paths retain
+their frozen production behavior. RealtimePreview source fill remains paused
+in `g10.028`. No successor product review is authorized without a future
+fixed-ratio promotion.
 
 ## Architecture Checkpoint
 
-Status: operator intent required
+Status: resolved - baseline closure
 
-Two contract-valid paths remain:
-
-- close `g10.030` on the frozen competitive production baseline
-- commission one complete successor from a non-phase-vocoder renderer family
-
-Do not infer that decision, reopen the rejected brief, or start another local
-DSP experiment.
+The non-phase-vocoder study found no family that plausibly owns the full
+source map, polyphonic coherence, transient, linked-stereo, boundary, exact
+length, determinism, and bounded-memory problem. `g10.030` closes on the
+competitive frozen production baseline.
 
 ## Completion Gate
+
+Promotion path, not reached:
 
 - [x] one complete candidate brief exists
 - [ ] one complete candidate passes structural and synthetic gates
 - [ ] long-form mono listening is competitive with the external reference
 - [ ] linked-stereo evidence passes objective and independent listening review
 - [ ] admitted production code contains no rejected-candidate scaffolding
-- [ ] dynamic-ratio and RealtimePreview follow-on decisions are explicit
+
+Closure path, complete:
+
+- [x] dynamic-ratio and RealtimePreview follow-on decisions are explicit
 - [x] rejected candidate surfaces are absent from `main`
 - [x] repeated event-placement failure closed the phase-vocoder successor family
+- [x] non-phase-vocoder feasibility covered every Contract `084` ownership
+  boundary
+- [x] no reviewed family justified a new complete candidate
+- [x] the frozen baseline remains the only production renderer
 
 ## Next Task
 
-Choose the architecture checkpoint: close the program on the frozen baseline,
-or authorize planning for one complete non-phase-vocoder successor. No DSP
-work is ready until that intent is explicit and a new brief is frozen.
+None in the OfflineHighQuality successor lane. Retain the frozen baseline.
+Reopen only when the feasibility decision records new whole-system evidence
+that satisfies its explicit triggers. `g10.028` remains paused.

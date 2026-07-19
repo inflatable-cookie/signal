@@ -110,5 +110,6 @@ Add a new contract only when the boundary needs stronger guarantees than
 ## Next Task
 
 Use `docs/contracts/contract-index.md` and `001-working-rules.md` as the
-contract front doors. Active stretch completion work is governed by contracts
-`046` and `084` plus roadmap `g10.030`; no strict spec lane is open.
+contract front doors. Contract `084` and roadmap `g10.030` closed the stretch
+successor program without promotion; Contract `046` continues to govern the
+frozen production renderer. No strict spec lane is open.

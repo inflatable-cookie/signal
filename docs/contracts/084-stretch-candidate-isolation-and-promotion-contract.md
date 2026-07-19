@@ -1,6 +1,6 @@
 # 084 Stretch Candidate Isolation And Promotion Contract
 
-Status: active
+Status: closed without promotion; frozen baseline retained
 Owner: dsp
 Created: 2026-07-19
 Related contracts: `046`, `048`, `049`
@@ -113,10 +113,11 @@ libraries remain comparators, not production dependencies.
 
 ## Completion
 
-This contract closes when one successor passes fixed-ratio mono and linked
-stereo promotion, replaces the frozen baseline without residual research
-scaffolding, and has an explicit follow-on decision for dynamic ratios and
-RealtimePreview.
+The preferred close is a successor passing fixed-ratio mono and linked-stereo
+promotion and replacing the frozen baseline without research scaffolding. The
+contract may also close without promotion after the required architecture
+reassessment finds no different family that plausibly owns every gate. That
+closure retains the baseline and requires explicit evidence before reopening.
 
 ## Current State
 
@@ -132,9 +133,16 @@ harness changes. Rule 7 closes this multiresolution phase-vocoder family. No
 current successor candidate exists, and another detector, window, scheduler,
 or phase-vocoder variant is unauthorized.
 
+Batch 30.7 completed the authorized non-phase-vocoder feasibility study.
+WSOLA, direct subband sinusoidal synthesis, deterministic
+sines/transients/noise, and learned waveform synthesis each fail at least one
+complete-system boundary. The strongest source-backed topology, pinned SBSMS,
+already failed Signal's mono, long-form objective, linked-stereo, and exact
+mechanics evidence. No successor brief opens. The frozen production baseline
+closes this contract.
+
 ## Next Task
 
-At the `g10.030` architecture checkpoint, choose between closing the stretch
-program on the frozen production baseline and commissioning one complete
-successor from a different renderer family. Freeze a new end-to-end brief
-before any implementation.
+No successor task remains. Reopen only when
+`docs/architecture/offline-time-stretch-non-phase-vocoder-feasibility.md`
+records new whole-system evidence satisfying its triggers.

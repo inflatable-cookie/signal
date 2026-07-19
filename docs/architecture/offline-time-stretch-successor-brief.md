@@ -483,7 +483,7 @@ These are whole-renderer risks. The fixed gates judge them together.
 
 ## Next Task
 
-Use the `g10.030` architecture checkpoint to decide whether to close the
-stretch program on the competitive frozen baseline or commission one complete
-successor from a different renderer family. Do not modify this rejected brief
-or start another phase-vocoder variant.
+The architecture checkpoint closed on the competitive frozen baseline after
+`offline-time-stretch-non-phase-vocoder-feasibility.md` found no qualifying
+different-family candidate. Do not modify this rejected brief or start another
+phase-vocoder variant.

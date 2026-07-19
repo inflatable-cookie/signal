@@ -13,10 +13,10 @@ memory alone.
 ## Current Lane
 
 - Signal is baseline-routed with no active strict spec lane
-- `g10.030` is the active stretch consolidation and completion roadmap
+- `g10.030` is complete; the frozen OfflineHighQuality baseline is retained
 - `046` governs sample-domain stretch behavior and its promotion gates
-- `084` isolates successor work from `main` and defines complete-system
-  admission
+- `084` is closed without successor promotion; it remains the reopening and
+  complete-system admission authority
 - `082` and `g10.029` are historical evidence, not active execution authority
 - `g10.028` source-fill work remains paused
 
@@ -145,5 +145,5 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Run `g10.030` Batch 30.2 under contracts `046` and `084`. Freeze one complete
-successor brief before any candidate DSP enters `main`.
+No OfflineHighQuality successor task is active. Keep Contract `084` closed
+unless the non-phase-vocoder feasibility reopen triggers are met.

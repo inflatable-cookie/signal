@@ -29,6 +29,7 @@ strict lane.
 - DSP and analysis feature reference: [architecture/dsp-analysis-feature-reference.md](./architecture/dsp-analysis-feature-reference.md)
 - Offline time-stretch synthesis: [architecture/offline-time-stretch-synthesis.md](./architecture/offline-time-stretch-synthesis.md)
 - Rejected offline stretch successor: [architecture/offline-time-stretch-successor-brief.md](./architecture/offline-time-stretch-successor-brief.md)
+- Non-phase-vocoder feasibility: [architecture/offline-time-stretch-non-phase-vocoder-feasibility.md](./architecture/offline-time-stretch-non-phase-vocoder-feasibility.md)
 - Graph and runtime feature reference: [architecture/graph-runtime-feature-reference.md](./architecture/graph-runtime-feature-reference.md)
 - Working rules: [contracts/001-working-rules.md](./contracts/001-working-rules.md)
 - Shared DSP boundary: [contracts/001-shared-dsp-and-host-boundary.md](./contracts/001-shared-dsp-and-host-boundary.md)
@@ -37,7 +38,7 @@ strict lane.
 - Supervisor export boundary: [contracts/002-supervisor-export-schema-and-report-boundary.md](./contracts/002-supervisor-export-schema-and-report-boundary.md)
 - Roadmap index: [roadmaps/README.md](./roadmaps/README.md)
 - Generation index: [roadmaps/generation-index.md](./roadmaps/generation-index.md)
-- Active roadmap: [roadmaps/g10/030-stretch-consolidation-and-completion.md](./roadmaps/g10/030-stretch-consolidation-and-completion.md)
+- Stretch closeout roadmap: [roadmaps/g10/030-stretch-consolidation-and-completion.md](./roadmaps/g10/030-stretch-consolidation-and-completion.md)
 - Strict-lane reference: [specs/001-g09-lane-first-strict-adoption.md](./specs/001-g09-lane-first-strict-adoption.md)
 - Active strict-lane card: none
 - Research index: [research/master-index.md](./research/master-index.md)
@@ -63,7 +64,6 @@ strict lane.
 
 ## Next Task
 
-Resolve the paused `g10.030` architecture checkpoint: close on the frozen
-baseline or authorize one complete non-phase-vocoder successor brief.
-Candidate code stays outside `main`. Only drop into `specs/` when a new strict
-lane is explicitly reopened.
+No stretch-successor task is active. Use the `g10` front door for the next
+deliberate generation priority. Only drop into `specs/` when a new strict lane
+is explicitly reopened.

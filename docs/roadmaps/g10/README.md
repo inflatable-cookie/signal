@@ -23,12 +23,15 @@ The 2026-07-19 consolidation reset is authoritative.
 - Rejected research implementations and candidate report surfaces were removed.
 - `g10.029`, Contract `082`, and the detailed architecture ledger remain
   historical evidence. Batch 29.7BE is cancelled.
-- `g10.030` and Contract `084` own completion. The first isolated end-to-end
-  successor passed structural controls but failed anti-replica admission and
-  was deleted. The event-sealed replacement then failed structural feasibility
-  before implementation: its frozen impulse refinement is always `15` samples
-  early. Its untouched worktree was deleted, the multiresolution phase-vocoder
-  successor family is closed, and no candidate code entered `main`.
+- `g10.030` and Contract `084` completed the successor decision. The first
+  isolated end-to-end successor passed structural controls but failed
+  anti-replica admission and was deleted. The event-sealed replacement then
+  failed structural feasibility before implementation: its frozen impulse
+  refinement is always `15` samples early. Its untouched worktree was deleted,
+  the multiresolution phase-vocoder successor family is closed, and no
+  candidate code entered `main`. A final non-phase-vocoder study found no
+  family with a source-backed path through all whole-renderer gates. The
+  program closed on the frozen production baseline.
 - `g10.028` RealtimePreview source-fill and all render-plane integration remain
   paused.
 
@@ -94,8 +97,8 @@ Do not start Loophole or Chorus planning from Signal internals.
   - RealtimePreview source fill contract
 - `g10.029` `superseded`
   - historical correctness, listening, and rejected-successor ledger
-- `g10.030` `paused`
-  - stretch consolidation complete; successor-family intent checkpoint
+- `g10.030` `complete`
+  - stretch consolidated; candidate families closed; frozen baseline retained
 
 ## Stretch Boundary
 
@@ -112,12 +115,11 @@ Current status:
   peak, and local phase variants are not active code or planning authority.
 
 The retained OfflineHighQuality baseline is the only active renderer. Contract
-`084` has no current candidate. Further work requires an explicit choice:
-close the stretch program on that baseline or plan one complete successor from
-a different renderer family.
+`084` and `g10.030` are closed without promotion. A new successor requires the
+whole-system evidence listed in the non-phase-vocoder feasibility decision.
 
 ## Next Task
 
-Resolve the `g10.030` architecture checkpoint. Choose baseline closure or one
-complete non-phase-vocoder successor planning pass. Keep `g10.028` and
-render-plane integration paused.
+No stretch-successor task is active. Use this roadmap to choose the next
+remaining `g10` priority deliberately. Keep `g10.028` and render-plane
+integration paused until separately authorized.

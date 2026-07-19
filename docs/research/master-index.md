@@ -6,8 +6,9 @@ Finch and Loophole.
 
 Stretch translation memos are retained research evidence. Their historical
 `Promoted` labels mean promoted into the old proof sequence, not authorized for
-production or new implementation. Contract `084` and `g10.030` are the only
-current stretch execution authority.
+production or new implementation. Contract `084` and `g10.030` closed the
+successor program without promotion. The non-phase-vocoder feasibility
+decision controls any future reopening.
 
 ## Start Here
 
@@ -52,6 +53,9 @@ current stretch execution authority.
 | [Bungee Source Architecture](./specimen-dossiers/bungee-source-architecture.md) | Whole-kernel common-region rotation and dynamic multichannel feasibility | Reviewed |
 | [SBSMS Source Architecture](./specimen-dossiers/sbsms-source-architecture.md) | Linked subband partial tracking, paired stereo trajectories, and direct oscillator synthesis | Source feasibility rejected |
 
+Current stretch feasibility decision:
+[Offline Time-Stretch Non-Phase-Vocoder Feasibility](../architecture/offline-time-stretch-non-phase-vocoder-feasibility.md).
+
 ## Translation Memos
 
 | Memo | Decision | Status |
@@ -91,5 +95,5 @@ current stretch execution authority.
 ## Next Task
 
 Treat the retained source studies and rejected successor briefs as historical
-evidence. Resolve the `g10.030` architecture checkpoint; do not reopen a
-translation memo, Batch 29.7BE, or another phase-vocoder variant.
+evidence. Do not reopen a translation memo, Batch 29.7BE, or a successor family
+without new whole-system evidence meeting the feasibility decision's triggers.

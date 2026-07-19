@@ -76,11 +76,13 @@ not implementation candidates.
 ## Authority
 
 Do not execute old Batch 29.x instructions from git history. Contract `084`
-and roadmap `g10.030` require one complete successor in an isolated branch or
-worktree. Failed candidates do not accumulate in `main`.
+and roadmap `g10.030` closed the successor program without promotion after
+isolated candidate rejection and whole-family feasibility review. Failed
+candidates do not accumulate in `main`.
 
 ## Next Task
 
 Treat this roadmap as evidence only. The two successor attempts and the
-multiresolution phase-vocoder family are closed in `g10.030`; use its paused
-architecture checkpoint for any further stretch work.
+multiresolution phase-vocoder family are closed in `g10.030`. Its final
+whole-family study also closed the non-phase-vocoder route without promotion.
+Reopen only through the feasibility decision's evidence triggers.

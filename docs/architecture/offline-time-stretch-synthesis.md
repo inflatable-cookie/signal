@@ -1,6 +1,6 @@
 # Offline Time-Stretch Synthesis
 
-Status: active frozen baseline; successor family closed
+Status: active frozen baseline; successor program closed
 Owner: dsp
 Updated: 2026-07-19
 Contract refs: `046`, `084`; historical evidence `082`
@@ -76,6 +76,15 @@ impulse token `15` samples early while its gate requires the exact impulse
 sample. Contract `084` Rule 7 closes this multiresolution phase-vocoder family.
 Historical translation memos and the rejected brief are evidence only.
 
+The non-phase-vocoder feasibility decision is
+`docs/architecture/offline-time-stretch-non-phase-vocoder-feasibility.md`.
+WSOLA cannot own arbitrary polyphony; the pinned direct-subband sinusoidal
+specimen failed Signal's mono, long-form objective, linked-stereo, and exact
+mechanics gates; deterministic sines/transients/noise lacks one complete
+linked-channel recombination law; and reviewed neural synthesis does not meet
+the target ratio, determinism, or first-party operating boundary. No successor
+brief opens.
+
 ## Candidate Isolation
 
 Successor work happens in a disposable branch or worktree. It does not add
@@ -95,5 +104,6 @@ ledger remains in git history at `1d1b02f1`.
 
 ## Next Task
 
-Resolve the `g10.030` architecture checkpoint: retain the frozen baseline as
-the program close or commission one complete non-phase-vocoder successor.
+No OfflineHighQuality successor task remains. Retain the frozen baseline and
+reopen only through the whole-system triggers in the non-phase-vocoder
+feasibility decision.
