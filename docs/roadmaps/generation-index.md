@@ -1,7 +1,7 @@
 # Roadmap Generation Index
 
 Status: active
-Updated: 2026-07-09
+Updated: 2026-07-19
 
 ## Current generation posture
 
@@ -11,8 +11,10 @@ Updated: 2026-07-09
   build-out on the surviving seed. Phase three (021-025) established
   first-party stretch evidence, OfflineHighQuality DSP depth, offline artifact
   scale, RealtimePreview, and a deferred product-workflow checkpoint. The
-  active stretch lane is `g10.030`, consolidation and completion through one
-  isolated end-to-end successor. `g10.029` is superseded after its rejected
+  stretch lane `g10.030` is paused after two event-placement failures closed
+  the multiresolution phase-vocoder successor family. The frozen production
+  baseline remains active while the operator chooses baseline closure or a
+  different renderer family. `g10.029` is superseded after its rejected
   research code was removed. `g10.028` source-fill work remains paused.
 - audit evidence: `chorus/research/2026-06-11-signal-deep-audit.md` (phase
   one) and `docs/research/2026-06-11-post-demolition-assessment.md` (phase
@@ -33,7 +35,7 @@ Updated: 2026-07-09
 | `g06` | 2026-03-13 | Continue beyond reusable-boundary closeout with runtime recovery depth, instrumentation, feature breadth, and Loophole-facing runtime evidence | Closed on 2026-03-16 after recovery/resumability, profiling, VST3/AU, MIDI/event depth, hardware/external-I/O, media services, integrated acceptance, bounded soak, and generation-closeout promotion work landed |
 | `g07` | 2026-03-13 | Seed the post-`g06` feature-expansion queue around routing or multichannel depth, Linux-native breadth, control-surface substrate, and fuller time-stretch capability | Closed on 2026-03-19 after multichannel or spatial execution, LV2 and Linux backends, external MIDI/control surfaces, sample-domain stretch, integrated acceptance, and generation-closeout promotion work landed |
 | `g08` | 2026-03-19 | Continue beyond bounded feature-expansion closure with live Linux backend ownership, richer plugin or device protocol depth, immersive routing, and workflow-adjacent runtime services | Closed on 2026-03-22 after live Linux ownership, LV2 or plugin protocol depth, immersive render breadth, device-protocol substrate, preview workflows, grouped acceptance lanes, integrated acceptance, and final generation-closeout work landed |
-| `g10` | 2026-06-11 | Turn the 2026-06-11 deep audit into a remediation program: fix the real audio path, demolish simulated/narration mass (~70-80k LoC), consolidate hygiene, defer rebuilds to demand | Active; `g10.030` is the stretch consolidation and completion lane |
+| `g10` | 2026-06-11 | Turn the 2026-06-11 deep audit into a remediation program: fix the real audio path, demolish simulated/narration mass (~70-80k LoC), consolidate hygiene, defer rebuilds to demand | Active; `g10.030` is paused at a stretch architecture checkpoint |
 | `g09` | 2026-04-08 | Turn the audit findings into a contract-backed realization, hardening, and interactive-proof program | Closed on 2026-04-11 after plugin and backend realization, production-readiness gating, and operator-visible demo proof landed |
 
 ## Rollover policy
@@ -53,6 +55,6 @@ If that cleanup has not happened, stay in the current generation and finish the 
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the current active-generation front door.
-Run `g10.030` Batch 30.5 from the frozen event-sealed successor brief in one
-disposable worktree. Do not add candidate DSP to `main` before Contract 084
-admission.
+Resolve the `g10.030` architecture checkpoint. Do not add candidate DSP to
+`main`; no implementation is ready until a non-phase-vocoder brief is
+authorized and frozen.

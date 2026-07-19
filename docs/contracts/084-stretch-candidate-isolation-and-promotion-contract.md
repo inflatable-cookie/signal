@@ -118,21 +118,23 @@ stereo promotion, replaces the frozen baseline without residual research
 scaffolding, and has an explicit follow-on decision for dynamic ratios and
 RealtimePreview.
 
-## Current Candidate
+## Current State
 
 Batch 30.3 rejected `SourceAnchoredMultiresolutionPhaseField` after its centered
 detector committed an impulse before event refinement or short-window support
-could reach the source event. Batch 30.4 replaces that topology with the
-event-first scheduler and source/output one-owner window invariant frozen in
-`docs/architecture/offline-time-stretch-successor-brief.md`.
+could reach the source event. Batch 30.5 then rejected the frozen event-sealed
+replacement before implementation: its required 16-sample energy-rise score
+and earlier-sample tie break place every isolated impulse token at `e-15`, but
+its structural gate requires `e` exactly.
 
-If the replacement fails event placement or replicas, Rule 7 closes this
-multiresolution phase-vocoder family. It does not authorize another detector or
-window variant.
+The disposable Batch 30.5 worktree and branch were deleted without DSP or
+harness changes. Rule 7 closes this multiresolution phase-vocoder family. No
+current successor candidate exists, and another detector, window, scheduler,
+or phase-vocoder variant is unauthorized.
 
 ## Next Task
 
-Implement `docs/architecture/offline-time-stretch-successor-brief.md` in one
-disposable `g10.030` Batch 30.5 worktree. Stop after structural and synthetic
-gates. Keep candidate code and evidence surfaces outside `main` until
-admission.
+At the `g10.030` architecture checkpoint, choose between closing the stretch
+program on the frozen production baseline and commissioning one complete
+successor from a different renderer family. Freeze a new end-to-end brief
+before any implementation.

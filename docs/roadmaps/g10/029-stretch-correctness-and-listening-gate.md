@@ -81,5 +81,6 @@ worktree. Failed candidates do not accumulate in `main`.
 
 ## Next Task
 
-Treat this roadmap as evidence only. Run `g10.030` Batch 30.5 from the frozen
-event-sealed successor brief in one disposable worktree.
+Treat this roadmap as evidence only. The two successor attempts and the
+multiresolution phase-vocoder family are closed in `g10.030`; use its paused
+architecture checkpoint for any further stretch work.

@@ -1,6 +1,6 @@
 # 030 - Stretch Consolidation And Completion
 
-Status: active
+Status: paused at successor-family intent checkpoint
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.029
@@ -155,7 +155,7 @@ Authority:
 
 ## Batch 30.5 - Event-Sealed Candidate Worktree
 
-Status: ready
+Status: complete - rejected before implementation
 
 - create one disposable worktree from the Batch 30.4 commit
 - implement the complete brief without changing production routing
@@ -168,9 +168,24 @@ Status: ready
 - close the multiresolution phase-vocoder family if event placement or replicas
   fail again
 
+Result:
+
+- [x] created one disposable worktree from `358ec19e`
+- [x] checked the frozen event refinement against the first structural gate
+- [x] proved all `256` `H=256` impulse phases commit at `e-15`, not `e`
+- [x] stopped before renderer, fixture, report, or listening-pack work
+- [x] deleted the untouched candidate worktree and branch
+
+Dominant failure:
+
+- the frozen 16-sample energy-rise metric has a 16-sample maximum plateau for
+  an isolated impulse
+- the frozen earlier-sample tie break selects the first plateau sample
+- exact event placement therefore fails by `15` source samples by construction
+
 ## Batch 30.6 - Fixed-Ratio Admission Or Family Closure
 
-Status: blocked on Batch 30.5
+Status: complete - family closed
 
 If Batch 30.5 passes:
 
@@ -181,10 +196,10 @@ If Batch 30.5 passes:
 
 If Batch 30.5 fails:
 
-- record the dominant complete-system failure once
-- delete the candidate worktree and branch
-- retain the production baseline
-- close the multiresolution phase-vocoder family when Rule 7 applies
+- [x] recorded the dominant structural contradiction once
+- [x] deleted the candidate worktree and branch
+- [x] retained the production baseline byte-exact
+- [x] closed the multiresolution phase-vocoder successor family under Rule 7
 
 ## Batch 30.7 - Product Review
 
@@ -195,6 +210,18 @@ Status: blocked on fixed-ratio promotion
 - update Contract `046`, artifact/cache posture, and product status
 - keep RealtimePreview source fill in `g10.028`
 
+## Architecture Checkpoint
+
+Status: operator intent required
+
+Two contract-valid paths remain:
+
+- close `g10.030` on the frozen competitive production baseline
+- commission one complete successor from a non-phase-vocoder renderer family
+
+Do not infer that decision, reopen the rejected brief, or start another local
+DSP experiment.
+
 ## Completion Gate
 
 - [x] one complete candidate brief exists
@@ -203,9 +230,11 @@ Status: blocked on fixed-ratio promotion
 - [ ] linked-stereo evidence passes objective and independent listening review
 - [ ] admitted production code contains no rejected-candidate scaffolding
 - [ ] dynamic-ratio and RealtimePreview follow-on decisions are explicit
+- [x] rejected candidate surfaces are absent from `main`
+- [x] repeated event-placement failure closed the phase-vocoder successor family
 
 ## Next Task
 
-Run Batch 30.5 from the Batch 30.4 commit in one disposable worktree. Implement
-`EventSealedMultiresolutionPhaseField` exactly. Stop after structural and
-synthetic gates decide whether long-form listening audio may be generated.
+Choose the architecture checkpoint: close the program on the frozen baseline,
+or authorize planning for one complete non-phase-vocoder successor. No DSP
+work is ready until that intent is explicit and a new brief is frozen.

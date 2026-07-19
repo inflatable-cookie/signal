@@ -28,7 +28,7 @@ strict lane.
 - Package map: [architecture/package-map.md](./architecture/package-map.md)
 - DSP and analysis feature reference: [architecture/dsp-analysis-feature-reference.md](./architecture/dsp-analysis-feature-reference.md)
 - Offline time-stretch synthesis: [architecture/offline-time-stretch-synthesis.md](./architecture/offline-time-stretch-synthesis.md)
-- Frozen offline stretch successor: [architecture/offline-time-stretch-successor-brief.md](./architecture/offline-time-stretch-successor-brief.md)
+- Rejected offline stretch successor: [architecture/offline-time-stretch-successor-brief.md](./architecture/offline-time-stretch-successor-brief.md)
 - Graph and runtime feature reference: [architecture/graph-runtime-feature-reference.md](./architecture/graph-runtime-feature-reference.md)
 - Working rules: [contracts/001-working-rules.md](./contracts/001-working-rules.md)
 - Shared DSP boundary: [contracts/001-shared-dsp-and-host-boundary.md](./contracts/001-shared-dsp-and-host-boundary.md)
@@ -63,6 +63,7 @@ strict lane.
 
 ## Next Task
 
-Use the frozen event-sealed successor brief and `g10.030` Batch 30.5 for the
-next stretch work. Candidate code stays outside `main`. Only drop into `specs/`
-when a new strict lane is explicitly reopened.
+Resolve the paused `g10.030` architecture checkpoint: close on the frozen
+baseline or authorize one complete non-phase-vocoder successor brief.
+Candidate code stays outside `main`. Only drop into `specs/` when a new strict
+lane is explicitly reopened.

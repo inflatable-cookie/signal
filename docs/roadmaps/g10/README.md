@@ -25,8 +25,10 @@ The 2026-07-19 consolidation reset is authoritative.
   historical evidence. Batch 29.7BE is cancelled.
 - `g10.030` and Contract `084` own completion. The first isolated end-to-end
   successor passed structural controls but failed anti-replica admission and
-  was deleted. Batch 30.4 froze one event-sealed replacement architecture. No
-  candidate code entered `main`.
+  was deleted. The event-sealed replacement then failed structural feasibility
+  before implementation: its frozen impulse refinement is always `15` samples
+  early. Its untouched worktree was deleted, the multiresolution phase-vocoder
+  successor family is closed, and no candidate code entered `main`.
 - `g10.028` RealtimePreview source-fill and all render-plane integration remain
   paused.
 
@@ -92,8 +94,8 @@ Do not start Loophole or Chorus planning from Signal internals.
   - RealtimePreview source fill contract
 - `g10.029` `superseded`
   - historical correctness, listening, and rejected-successor ledger
-- `g10.030` `active`
-  - stretch consolidation and completion
+- `g10.030` `paused`
+  - stretch consolidation complete; successor-family intent checkpoint
 
 ## Stretch Boundary
 
@@ -109,13 +111,13 @@ Current status:
 - Rejected hybrid, H/R/P, phase-gradient, frequency-adaptive, tail, timeline,
   peak, and local phase variants are not active code or planning authority.
 
-Remaining work is the isolated Batch 30.5 implementation under Contract `084`.
-Its event-first scheduler and one-owner window invariant replace the failed
-centered detector; they are not a row fix or parameter sweep.
+The retained OfflineHighQuality baseline is the only active renderer. Contract
+`084` has no current candidate. Further work requires an explicit choice:
+close the stretch program on that baseline or plan one complete successor from
+a different renderer family.
 
 ## Next Task
 
-Run `g10.030` Batch 30.5 from the frozen
-`EventSealedMultiresolutionPhaseField` brief. Use one disposable worktree and
-stop after structural and synthetic gates. Keep `g10.028` and render-plane
-integration paused.
+Resolve the `g10.030` architecture checkpoint. Choose baseline closure or one
+complete non-phase-vocoder successor planning pass. Keep `g10.028` and
+render-plane integration paused.

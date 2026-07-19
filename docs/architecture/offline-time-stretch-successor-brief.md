@@ -1,6 +1,6 @@
 # Offline Time-Stretch Successor Brief
 
-Status: frozen for isolated Batch 30.5 implementation
+Status: rejected in Batch 30.5; multiresolution phase-vocoder family closed
 Owner: dsp
 Updated: 2026-07-19
 Contract: `084`
@@ -27,6 +27,27 @@ The architecture uses public specimens only for broad structure: simultaneous
 frequency ownership, preliminary horizontal phase followed by coherent
 vertical correction, and native-channel relationship ownership. Signal does
 not copy external constants, tables, masks, thresholds, or control flow.
+
+## Batch 30.5 Outcome
+
+The brief is retained as rejected architecture evidence. No renderer was
+implemented.
+
+Its frozen refinement rule cannot satisfy its frozen structural gate. For an
+isolated impulse at source sample `e`,
+
+`mean(E[n..n+16))-mean(E[n-16..n))`
+
+has the same positive maximum for every `n` from `e-15` through `e`. The
+required earlier-sample tie break therefore commits `e-15`. The structural
+gate requires the token at `e` exactly. All `256` phases of the `H=256`
+lattice fail with the same `-15` offset.
+
+Changing the refinement span, tie break, token sample, or gate would create
+the prohibited third detector/window variant. Batch 30.5 stopped before DSP
+implementation, deleted its untouched worktree and branch, retained the
+production baseline, and closed this multiresolution phase-vocoder successor
+family under Contract `084` Rule 7.
 
 ## Why The First Candidate Failed
 
@@ -462,6 +483,7 @@ These are whole-renderer risks. The fixed gates judge them together.
 
 ## Next Task
 
-Create one disposable Batch 30.5 worktree from the Batch 30.4 commit. Implement
-this renderer exactly. Stop after structural and synthetic gates decide whether
-long-form listening audio may be generated.
+Use the `g10.030` architecture checkpoint to decide whether to close the
+stretch program on the competitive frozen baseline or commission one complete
+successor from a different renderer family. Do not modify this rejected brief
+or start another phase-vocoder variant.

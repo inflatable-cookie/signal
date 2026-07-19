@@ -1,6 +1,6 @@
 # Offline Time-Stretch Synthesis
 
-Status: active baseline; successor architecture frozen
+Status: active frozen baseline; successor family closed
 Owner: dsp
 Updated: 2026-07-19
 Contract refs: `046`, `084`; historical evidence `082`
@@ -68,14 +68,13 @@ Source studies of Rubber Band and Signalsmith remain useful for state ownership,
 scheduling, guidance, and validation ideas. Signal implementation stays
 clean-room and external engines remain comparators.
 
-The complete successor is frozen in
-`docs/architecture/offline-time-stretch-successor-brief.md` as
-`EventSealedMultiresolutionPhaseField`. It finalizes sample-domain events ahead
-of synthesis, inserts them into one absolute source lattice, gives each event
-sample one non-zero analysis-window owner, and retains simultaneous exclusive
-STFT scales, coherent tracked tonal phase, dormant/reactivation state, and
-native-channel linked synthesis. That brief is the implementation authority;
-historical translation memos are evidence only.
+The rejected successor record is
+`docs/architecture/offline-time-stretch-successor-brief.md`.
+`EventSealedMultiresolutionPhaseField` failed pre-implementation structural
+feasibility: its frozen 16-sample energy-rise tie rule places an isolated
+impulse token `15` samples early while its gate requires the exact impulse
+sample. Contract `084` Rule 7 closes this multiresolution phase-vocoder family.
+Historical translation memos and the rejected brief are evidence only.
 
 ## Candidate Isolation
 
@@ -96,5 +95,5 @@ ledger remains in git history at `1d1b02f1`.
 
 ## Next Task
 
-Run `g10.030` Batch 30.5 in one disposable worktree. Implement the frozen
-event-sealed successor without adding candidate surfaces to `main`.
+Resolve the `g10.030` architecture checkpoint: retain the frozen baseline as
+the program close or commission one complete non-phase-vocoder successor.

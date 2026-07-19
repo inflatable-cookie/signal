@@ -32,6 +32,7 @@ Keep milestone sequencing in `roadmaps/`.
 
 ## Next Task
 
-Implement the frozen event-sealed offline stretch successor only in the
-isolated `g10.030` Batch 30.5 worktree. Keep `main` on the retained baseline
-until admission.
+Resolve the paused `g10.030` architecture checkpoint. The event-sealed brief
+and its multiresolution phase-vocoder family are rejected; keep the retained
+baseline frozen until the operator either closes the program or commissions a
+different renderer family.

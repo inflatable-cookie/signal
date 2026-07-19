@@ -1,7 +1,7 @@
 # Roadmaps
 
 Status: active
-Updated: 2026-07-09
+Updated: 2026-07-19
 
 ## Why this section matters now
 
@@ -39,8 +39,10 @@ Signal-owned stretch tiers now have evidence and contracts. `g10.029` is
 historical after the consolidation pass removed rejected research and stopped
 the narrow-proof queue. `g10.030` owns completion; its first isolated,
 end-to-end OfflineHighQuality successor failed anti-replica admission and was
-deleted, and Batch 30.4 froze one event-sealed replacement architecture for
-isolated Batch 30.5 implementation;
+deleted. Its event-sealed replacement then failed structural feasibility
+before implementation because the frozen impulse rule is always `15` samples
+early. The phase-vocoder successor family is closed and the lane is paused at
+an architecture intent checkpoint;
 offline artifacts need a streaming artifact writer/cache target for full peak
 memory closure; RealtimePreview needs a proven callback-safe state object
 before render-plane integration. Mono callback-state DSP now has a
@@ -168,6 +170,6 @@ Before rollover:
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the active generation front door.
-`g10.030` Batch 30.5 is ready. Implement the frozen event-sealed successor in
-one disposable worktree and stop after structural and synthetic gates. Keep
+Resolve the paused `g10.030` architecture checkpoint: close on the frozen
+baseline or commission one complete non-phase-vocoder successor. Keep
 `g10.028` and render-plane integration paused.
