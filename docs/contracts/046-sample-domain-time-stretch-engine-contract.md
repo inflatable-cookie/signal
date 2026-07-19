@@ -3,7 +3,7 @@
 Status: complete; amended for first-party quality-depth program
 Owner: core-product
 Updated: 2026-07-09
-Related contracts: `docs/contracts/028-media-indexing-waveform-analysis-and-preview-service-contract.md`, `docs/contracts/029-analysis-metadata-extraction-and-library-service-contract.md`, `docs/contracts/034-multi-bus-graph-execution-and-auxiliary-topology-contract.md`, `docs/contracts/082-offline-time-stretch-synthesis-policy-contract.md`
+Related contracts: `docs/contracts/028-media-indexing-waveform-analysis-and-preview-service-contract.md`, `docs/contracts/029-analysis-metadata-extraction-and-library-service-contract.md`, `docs/contracts/034-multi-bus-graph-execution-and-auxiliary-topology-contract.md`, `docs/contracts/084-stretch-candidate-isolation-and-promotion-contract.md`; historical proof policy `082`
 Related architecture: `docs/architecture/graph-runtime-feature-reference.md`
 
 ## Purpose
@@ -359,9 +359,9 @@ remains unmodified pending a different algorithm class. Any selector must later
 share its decision across linked stereo.
 
 Planning authority:
-`docs/roadmaps/g10/029-stretch-correctness-and-listening-gate.md`.
+`docs/roadmaps/g10/030-stretch-consolidation-and-completion.md`.
 
-## 2026-07-10 OfflineHighQuality Structural Hybrid Addendum
+## Historical 2026-07-10 OfflineHighQuality Structural Hybrid Addendum
 
 The next OfflineHighQuality candidate is a fixed-ratio, report-only structural
 hybrid. It has three local owners:
@@ -409,11 +409,9 @@ contract gates pass.
 Detailed design and stop conditions:
 `docs/logs/2026-07/10-g10-029-structural-hybrid-design.md`.
 
-The independent-output hybrid was rejected by its mono gate. Contract `082`
-now governs successor proof work: one monotonic synthesis timeline, transient-
-local time mapping, then adaptive/nonstationary resolution. The first hybrid
-remains diagnostic evidence and does not authorize delay alignment or relaxed
-transition gates.
+The independent-output hybrid and its successors were rejected and removed in
+the 2026-07-19 consolidation. Contract `082` preserves that proof history.
+Contract `084` now governs isolated complete-system successor work.
 
 ## Batch 15.1 outcome
 

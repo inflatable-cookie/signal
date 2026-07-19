@@ -34,10 +34,11 @@ stable identity, parameter fast path + automation, DSP kit, RT observability,
 WYSIWYG bounce, output-time honesty, recording capture, disk streaming,
 transport regions, and runtime endgame.
 
-Phase three (021-028) is the first-party high-quality stretch program. The
-Signal-owned stretch tiers now have evidence and contracts, but the remaining
-work is structural rather than a ready micro-batch: OfflineHighQuality needs a
-new hybrid design before another sustained/polyphonic quality jump;
+Phase three (021-030) is the first-party high-quality stretch program. The
+Signal-owned stretch tiers now have evidence and contracts. `g10.029` is
+historical after the consolidation pass removed rejected research and stopped
+the narrow-proof queue. `g10.030` owns completion through one isolated,
+end-to-end OfflineHighQuality successor;
 offline artifacts need a streaming artifact writer/cache target for full peak
 memory closure; RealtimePreview needs a proven callback-safe state object
 before render-plane integration. Mono callback-state DSP now has a
@@ -165,6 +166,5 @@ Before rollover:
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the active generation front door.
-`g10.028` Batch 28.1 is active; the next task is the source-fill readiness
-report and focused ready/partial/underrun tests in `signal-dsp-stretch`. Keep
-render-plane integration blocked.
+`g10.030` Batch 30.2 is ready. Freeze one complete successor brief before any
+new DSP implementation. Keep `g10.028` and render-plane integration paused.

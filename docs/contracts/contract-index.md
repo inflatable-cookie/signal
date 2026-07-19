@@ -13,26 +13,12 @@ memory alone.
 ## Current Lane
 
 - Signal is baseline-routed with no active strict spec lane
-- `g10.029` is the active correctness-first stretch roadmap
+- `g10.030` is the active stretch consolidation and completion roadmap
 - `046` governs sample-domain stretch behavior and its promotion gates
-- `082` governs the report-only successor policy, the competitive Rule 31
-  coherent mono baseline, corrected Rule 31Q professional-comparator boundary,
-  Rule 31R guided frequency-partitioned linked-phase proof, Rule 31S bounded
-  multiscale slice compatibility study, and Rule 31T normalized sliced-frame
-  mechanics proof. Rule 31U validates guided state mechanics across that
-  frozen slice boundary; Rule 31V freezes the normalized material policy and
-  one failure-first objective matrix. That candidate rejects at the stereo
-  gate; Rule 31W attributes the first operator break to independent unlocked
-  channel commits. Rule 31X proves one reference-relative unlocked correction,
-  records a local improvement without row-level passage, and closes that
-  topology. Rule 31Y rejects unlocked over-linking and the extra outer
-  meta-slice owner. Rule 31Z freezes direct scale geometry, schedule, state
-  order, boundaries, fixed capacities, and the honest unity/diagnostic split.
-  Rule 31AA corrects the borrowed peak phase reference; Rule 31AB rejects the
-  corrected objective candidate; Rule 31AC replaces the remaining joint peak
-  map with a channel-local, frequency-aligned mechanics contract
-- `g10.028` source-fill work is paused until the actual DSP kernel and source
-  consumption geometry pass the `g10.029` correctness gate
+- `084` isolates successor work from `main` and defines complete-system
+  admission
+- `082` and `g10.029` are historical evidence, not active execution authority
+- `g10.028` source-fill work remains paused
 
 ## Working Rule
 
@@ -124,6 +110,7 @@ memory alone.
 - `064` asset/session transform persistence, retention, and cache placement
   policy
 - `082` offline time-stretch synthesis policy
+- `084` stretch candidate isolation and promotion
 
 ## Packaging, conformance, and generation closure
 
@@ -158,6 +145,5 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7BE under contract `082` Rule 31AF. Freeze the
-Signal-owned material label, modal completion, contiguous range, tie, and
-coefficient-only falsifier contract. Keep implementation and audio closed.
+Run `g10.030` Batch 30.2 under contracts `046` and `084`. Freeze one complete
+successor brief before any candidate DSP enters `main`.

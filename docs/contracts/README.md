@@ -100,6 +100,7 @@ Use this section for:
 - `079-interactive-demo-binary-and-crate-capability-proof-contract.md`
 - `080-production-readiness-grade-and-generation-release-gate-contract.md`
 - `083-vst3-discovery-diagnostic-outcome-contract.md`
+- `084-stretch-candidate-isolation-and-promotion-contract.md`
 
 ## Rule
 
@@ -109,5 +110,5 @@ Add a new contract only when the boundary needs stronger guarantees than
 ## Next Task
 
 Use `docs/contracts/contract-index.md` and `001-working-rules.md` as the
-contract front doors. Active stretch correctness work is governed by contract
-`046` and roadmap `g10.029`; no strict spec lane is open.
+contract front doors. Active stretch completion work is governed by contracts
+`046` and `084` plus roadmap `g10.030`; no strict spec lane is open.

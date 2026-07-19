@@ -4,6 +4,11 @@ Purpose: provide one implementation-facing map from Signal research outputs to
 crate planning, algorithm work, validation, and downstream consumers such as
 Finch and Loophole.
 
+Stretch translation memos are retained research evidence. Their historical
+`Promoted` labels mean promoted into the old proof sequence, not authorized for
+production or new implementation. Contract `084` and `g10.030` are the only
+current stretch execution authority.
+
 ## Start Here
 
 1. Read the relevant source hub for ecosystem and dependency context.
@@ -85,6 +90,6 @@ Finch and Loophole.
 
 ## Next Task
 
-Run `g10.029` Batch 29.7BE under Rule 31AF. Freeze one Signal-owned material
-label, modal completion, frequency-range, tie, and coefficient-only proof.
-Keep implementation and audio closed.
+Use the retained Rubber Band, Signalsmith, and operator evidence to write the
+single end-to-end successor brief required by `g10.030` Batch 30.2. Do not
+resume the historical Batch 29.7BE sequence.

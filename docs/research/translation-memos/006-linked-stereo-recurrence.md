@@ -121,7 +121,7 @@ Promote into the offline synthesis architecture, contract `082` Rule 31H, and
 | [Signalsmith Stretch implementation](https://github.com/Signalsmith-Audio/signalsmith-stretch/blob/57b93f4e9206a089a45387eaa39bdc9f310d3308/signalsmith-stretch.h) | high | MIT source; greatest-energy per-bin reference and explicit current-input complex relation |
 | [Multi-Channel Audio Time-scale Modification](https://mural.maynoothuniversity.ie/8793/1/BL-Multi-channel-2005.pdf) | high | AES paper; stronger same-bin peak first, weaker peak preserves original phase relationship |
 | [Rubber Band R3 phase advance](https://github.com/breakfastquay/rubberband/blob/e4296ac80b1170018a110bc326fd0d45a0eb27d6/src/finer/PhaseAdvance.h) | high | GPL architecture evidence only; greatest-channel trajectory and analysis-relative offset |
-| [Signal frequency-partitioned research prototype](../../../crates/signal-dsp-stretch/src/frequency_adaptive/source_studied.rs) | high | Local antecedent for the relation law; surrounding architecture remains rejected |
+| Signal frequency-partitioned research prototype, removed in `43e9a96a` and retained in git history | high | Local antecedent for the relation law; surrounding architecture remains rejected |
 
 ## Rejected Alternatives
 
