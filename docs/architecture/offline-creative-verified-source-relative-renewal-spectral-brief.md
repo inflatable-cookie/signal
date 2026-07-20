@@ -1,16 +1,16 @@
-# Offline Creative ListeningLedSourceRelativeRenewalSpectral Renderer Brief
+# Offline Creative SupportAuditedListeningLedSourceRelativeRenewalSpectral Renderer Brief
 
-Status: rejected at synthetic `Y08`; candidate deleted
+Status: frozen; Batch 31.36 candidate ready
 Owner: dsp
 Updated: 2026-07-20
 Contract: `085`
-Roadmap: `g10.031`, Batches 31.28-31.35
+Roadmap: `g10.031`, Batches 31.28-31.36
 
 ## Decision
 
-Batch 31.33 freezes one fresh Signal-owned
-`ListeningLedSourceRelativeRenewalSpectral` candidate for neutral `Dream` at
-`4x`, `8x`, and `16x`.
+Batch 31.35 freezes one fresh Signal-owned
+`SupportAuditedListeningLedSourceRelativeRenewalSpectral` candidate for
+neutral `Dream` at `4x`, `8x`, and `16x`.
 
 Retain the complete source-relative renderer, audited seed, request, transform,
 map, native-channel relation law, synthesis, boundaries, state, and terminal
@@ -19,22 +19,30 @@ PaulX-relative pitch row, but its old reference-plus-`2`-cent ceiling is a
 diagnostic rather than a terminal assertion. Concealed listening owns whether
 the measured tonal deviation is objectionable.
 
-This is an operator-authorized Contract `085` boundary change, not a seed,
-window, hop, transform, phase, threshold, or scalar repair. Checkpoints
-`d94612dd` and `790119b7` remain rejected and deleted. Batch 31.34 must build
-fresh source under the new identity and may not recover either implementation.
+This retains the operator-authorized Contract `085` listening boundary and
+corrects executable ownership of the already frozen `Y08` support rule. It is
+not a seed, window, hop, transform, phase, threshold, scalar, or renderer
+repair. Checkpoints `d94612dd`, `790119b7`, and `f76d5bb7` remain rejected and
+deleted. Batch 31.36 must build fresh source under the new identity and may not
+recover any rejected implementation or test.
 
-The correction follows the product evidence. Batch 31.25 passed concealed mono
-as `15/15` ties against PaulXStretch. Operator speaker review found its stereo
-output solid apart from the source-relative balance inversion. The later
-native left/right law was designed to remove that defect, but its fresh
-checkpoints stopped before listening on pitch deltas of about `1.55`, `6.50`,
-and `2.02` cents beyond their reference-relative ceilings. Those deltas remain
-mandatory diagnostics. They no longer outrank the creative listening authority.
+The listening correction follows the product evidence. Batch 31.25 passed
+concealed mono as `15/15` ties against PaulXStretch. Operator speaker review
+found its stereo output solid apart from the source-relative balance inversion.
+The later native left/right law was designed to remove that defect, but its
+fresh checkpoints stopped before listening on pitch deltas of about `1.55`,
+`6.50`, and `2.02` cents beyond their reference-relative ceilings. Those
+deltas remain mandatory diagnostics. They no longer outrank the creative
+listening authority.
 
 No mid/side magnitude synthesis, per-component orientation, post-render gain,
 limiter, compressor, phase propagation, magnitude recurrence, transient
 detector, onset reset, component layer, or range switch is present.
+
+The only new construction boundary is one immutable authored-support table
+shared by `Y08` range assembly and its construction proof. Discontinuity and
+dropout ranges are separate typed values. The renderer formulas, sources,
+thresholds, seed, gates, listening packs, and promotion order are unchanged.
 
 ## Batch 31.34 Outcome
 
@@ -53,12 +61,35 @@ support. Batch 31.25's otherwise matching mono topology also passed `Y08`.
 The checkpoint is rejected under its frozen assertion. This receipt does not
 yet establish whether the dominant cause is renderer support or an
 over-broad executable interpretation of mapped non-zero support. Do not repair
-or rerun it. Batch 31.35 must resolve that evidence boundary from retained
-briefs and receipts before another candidate can exist.
+or rerun it. Batch 31.35 resolves that evidence boundary below from retained
+briefs and receipts.
 
 Listening did not open. Cleanup deleted the worktree, branch, checkpoint,
 module, tests, local build state, and candidate artifacts. The disposable
 nextest cache was moved to Trash. No candidate DSP entered `main`.
+
+## Batch 31.35 Decision
+
+Batch 31.34 is an executable-evidence construction failure, not renderer
+support evidence. Its test used complete impulse output for both
+first-difference crest and dropout. The audited authority uses complete output
+only for impulse first-difference crest; dropout is limited to mapped authored
+support.
+
+For the isolated source impulse, authored support is `[48000,48001)`. Under
+the exact `4x`, `8x`, and `16x` maps, it becomes respectively
+`[192000,192004)`, `[384000,384008)`, and `[768000,768016)`. Each hull is
+shorter than `H=16384`, so no complete dropout window exists. `Y03` still owns
+impulse width and placement. `Y04` still owns replicas. The complete-output
+discontinuity scan remains terminal and unchanged.
+
+Batch 31.25 passed `Y08` under the otherwise matching mono topology. That
+receipt and the normative range text agree. They do not prove the native
+stereo successor, waive fresh admission, or revive deleted code. They do show
+that Batch 31.34 over-broadened the gate it claimed to implement.
+
+Freeze the fresh identity and exact construction below. Do not repair, rerun,
+reinterpret, or recover checkpoint `f76d5bb7`.
 
 ## Batch 31.29 Predecessor Outcome
 
@@ -288,10 +319,10 @@ ties, and no parallel reduction require byte-identical repeats. Offline only.
 
 Use exactly:
 
-- worktree: `signal-candidate-31-34`
-- branch: `candidate/g10-031-listening-led-source-relative-renewal`
+- worktree: `signal-candidate-31-36`
+- branch: `candidate/g10-031-support-audited-listening-led-renewal`
 - module:
-  `crates/signal-dsp-stretch/src/creative_listening_led_source_relative_renewal/`
+  `crates/signal-dsp-stretch/src/creative_support_audited_listening_led_renewal/`
 - files: `mod.rs`, `plan.rs`, `analysis.rs`, `relation.rs`, `synthesis.rs`,
   `tests.rs`
 
@@ -302,16 +333,23 @@ ignored under `target/`.
 
 Test prefixes are only:
 
-- `listening_led_source_relative_renewal_construction_`
-- `listening_led_source_relative_renewal_structural_`
-- `listening_led_source_relative_renewal_synthetic_`
+- `support_audited_listening_led_renewal_construction_`
+- `support_audited_listening_led_renewal_structural_`
+- `support_audited_listening_led_renewal_synthetic_`
 
 `tests.rs` owns one compile-linked `GATE_OWNERS` table with exactly `24` unique
-IDs, names, and function pointers: `15` structural and `9` synthetic. The sole
-construction owner validates that manifest and every `COUNTER_VECTORS` field.
-It also validates that the address seed is the sole `ADMISSION_SEED` used by
-synthetic and listening request assembly. No required test is ignored. Every
-accumulator has an explicit type.
+IDs, names, and function pointers: `15` structural and `9` synthetic. It also
+owns exactly one immutable `SYNTHETIC_SUPPORTS` table with all ten mono source
+IDs and their half-open source intervals. No measurement helper may contain a
+second handwritten support endpoint.
+
+The sole construction owner validates the manifest, every `COUNTER_VECTORS`
+field, every `SYNTHETIC_SUPPORTS` entry, and the mapped intervals at `4x`,
+`8x`, and `16x`. It proves discontinuity and dropout ranges are distinct types
+and that only dropout consumes `SYNTHETIC_SUPPORTS`. It also validates that the
+address seed is the sole `ADMISSION_SEED` used by synthetic and listening
+request assembly. No required test is ignored. Every accumulator has an
+explicit type.
 
 Construction order:
 
@@ -348,15 +386,45 @@ Structural owners are:
 | S15 | `forbidden_mechanisms` | forbidden token and type inventory |
 
 Each exact owner name is
-`listening_led_source_relative_renewal_structural_<suffix>`. `S04` contains no
+`support_audited_listening_led_renewal_structural_<suffix>`. `S04` contains no
 independent handwritten counter literal. Run structural admission once and
 require exactly `15/15`.
 
 Synthetic owners are the audited predecessor's `Y01` through `Y09` meanings,
-renamed with the listening-led prefix. Its `Frozen Synthetic Sources` and
-`Exact Measurements` sections remain normative unchanged except for `Y02`.
-`Y09` additionally exercises source relation, channel magnitude,
-whole/band/window balance, and all ratios at `space=0`, `0.5`, and `1`.
+renamed with the support-audited prefix. Its `Frozen Synthetic Sources` and
+`Exact Measurements` sections remain normative unchanged except for `Y02` and
+the explicit `Y08` range construction below. `Y09` additionally exercises
+source relation, channel magnitude, whole/band/window balance, and all ratios
+at `space=0`, `0.5`, and `1`.
+
+`SYNTHETIC_SUPPORTS` contains exactly:
+
+| Source ID | Authored source support `[a,b)` |
+| --- | --- |
+| low tone | `[24000,72000)` |
+| mid tone | `[24000,72000)` |
+| chord | `[24000,72000)` |
+| harmonic pad | `[24000,72000)` |
+| impulse | `[48000,48001)` |
+| impulse train | `[19200,77798)` |
+| silence gap | `[24000,72000)` |
+| uniform noise | `[24000,72000)` |
+| Rademacher noise | `[24000,72000)` |
+| amplitude-modulated noise | `[24000,72000)` |
+
+The silence-gap hull deliberately includes its authored interior silence.
+For source support `[a,b)`, source length `L`, and target length `T`, form the
+dropout range from the renderer's induced source-frame boundary map as
+`[floor(a*T/L),ceil(b*T/L))` using checked `u128`, then clip both endpoints to
+`[0,T]`. Exact admission ratios reduce this to `[ratio*a,ratio*b)`.
+
+The dropout scan evaluates only complete `H`-sample windows wholly contained
+in that mapped range. If its length is less than `H`, it contains zero eligible
+windows and the dropout assertion passes vacuously. It must not scan exterior
+padding or complete output. The first-difference discontinuity range remains
+the predecessor's crest support, with complete output for impulse. `Y03` owns
+isolated-impulse spread and placement; `Y04` owns impulse and impulse-train
+replicas. No threshold changes.
 
 `Y02` renders the low tone, mid tone, and every chord partial at every ratio.
 It must complete the frozen estimator, require a finite detected peak for each
@@ -416,11 +484,15 @@ single-seed admission receipt.
 - [Batch 31.32 tonal-coherence closure](../logs/2026-07/20-g10-031-renewal-tonal-coherence-closure.md)
 - [Batch 31.33 listening-led reopening](../logs/2026-07/20-g10-031-listening-led-renewal-reopening.md)
 - [Batch 31.34 listening-led rejection](../logs/2026-07/20-g10-031-listening-led-renewal-rejection.md)
+- [Batch 31.35 impulse-support reconciliation](../logs/2026-07/20-g10-031-impulse-support-evidence-reconciliation.md)
 - [Creative product contract](../contracts/085-creative-time-stretch-product-and-routing-contract.md)
 
 ## Next Task
 
-Run Batch 31.35 only. Reconcile the `Y08` complete-impulse measurement range
-with its mapped-non-zero-support dropout boundary and the passed Batch 31.25
-receipt. Decide whether the miss is renderer evidence or gate-construction
-evidence. Do not implement DSP, repair or rerun the checkpoint, or push.
+Run Batch 31.36 only. Implement
+`SupportAuditedListeningLedSourceRelativeRenewalSpectral` once from fresh
+source in `signal-candidate-31-36`. Complete compile and exactly `1/1`
+construction, freeze one checkpoint, then run exactly `15/15` structural and
+`9/9` synthetic owners in order. Stop at the first terminal miss. Do not
+recover rejected source, alter the frozen renderer or gates, admit product
+surfaces, or push.

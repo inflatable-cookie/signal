@@ -114,6 +114,7 @@ Use `docs/contracts/contract-index.md` and `001-working-rules.md` as the
 contract front doors. Contract `084` and roadmap `g10.030` keep the transparent
 successor program closed. Contract `085` governs the separate creative path;
 source triangulation selected one materially different neutral `Dream` family.
-Its complete `RenewalSpectral` brief is frozen. Roadmap `g10.031` Batch 31.18
-is ready for one isolated candidate. No public creative implementation or
-strict spec lane is open.
+Batch 31.35 reconciled the latest `Y08` evidence-construction failure and froze
+one complete support-audited listening-led authority. Roadmap `g10.031` Batch
+31.36 is ready for one isolated candidate. No public creative implementation
+or strict spec lane is open.

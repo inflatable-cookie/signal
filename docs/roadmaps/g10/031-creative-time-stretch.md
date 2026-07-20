@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: active; Batch 31.34 rejected, Batch 31.35 ready
+Status: active; Batch 31.35 complete, Batch 31.36 ready
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -1114,25 +1114,67 @@ Decision:
 
 ## Batch 31.35 - Impulse Support Evidence Reconciliation
 
-Status: ready; docs and evidence only
+Status: complete; fresh candidate authority frozen
 
-- [ ] reconcile the audited brief's complete-output impulse discontinuity
+- [x] reconcile the audited brief's complete-output impulse discontinuity
   range with its mapped-non-zero-support dropout rule
-- [ ] compare the Batch 31.25 passed `Y08` receipt and Batch 31.34 failure
+- [x] compare the Batch 31.25 passed `Y08` receipt and Batch 31.34 failure
   without recovering either rejected implementation
-- [ ] freeze one exact definition of impulse mapped non-zero support and show
+- [x] freeze one exact definition of impulse mapped non-zero support and show
   how every ratio derives it from the source/output map
-- [ ] classify Batch 31.34 as renderer-support failure or executable-evidence
+- [x] classify Batch 31.34 as renderer-support failure or executable-evidence
   construction failure
-- [ ] if the renderer failed, close or reassess the complete topology; if the
+- [x] if the renderer failed, close or reassess the complete topology; if the
   gate was over-broad, freeze a new complete candidate identity without DSP
-- [ ] keep thresholds, sources, renderer formulas, product surfaces, routing,
+- [x] keep thresholds, sources, renderer formulas, product surfaces, routing,
+  Loophole, and Chorus unchanged
+
+Decision:
+
+- `Y08` first-difference crest and dropout own separate ranges
+- impulse discontinuity still scans complete output
+- dropout scans only complete `H` windows wholly inside mapped authored
+  support; the isolated impulse maps to `4`, `8`, or `16` frames and therefore
+  has no eligible dropout window
+- Batch 31.34 over-broadened the executable dropout range; its receipt is an
+  evidence-construction failure, not renderer-support evidence
+- checkpoint `f76d5bb7` remains rejected and deleted; no receipt is reinterpreted
+- one fresh `SupportAuditedListeningLedSourceRelativeRenewalSpectral` authority
+  is frozen with a named support table and unchanged renderer, sources,
+  thresholds, seed, admission order, and listening packs
+
+Authority:
+
+- `docs/architecture/offline-creative-verified-source-relative-renewal-spectral-brief.md`
+- `docs/contracts/085-creative-time-stretch-product-and-routing-contract.md`
+
+## Batch 31.36 - Isolated Support-Audited Listening-Led Candidate
+
+Status: ready
+
+- [ ] create `signal-candidate-31-36` on
+  `candidate/g10-031-support-audited-listening-led-renewal`
+- [ ] implement only the fresh private six-file
+  `creative_support_audited_listening_led_renewal` family and one private
+  `lib.rs` declaration; recover no rejected implementation or test source
+- [ ] use the named `SYNTHETIC_SUPPORTS` table as the sole dropout-support
+  authority and prove it in the construction owner
+- [ ] complete `effigy test compile` and exactly `1/1` construction owner
+- [ ] freeze one local checkpoint without pushing it
+- [ ] run exactly `15/15` structural owners once
+- [ ] run all nine synthetic owners once under `ADMISSION_SEED`; require the
+  complete listening-led `Y02` diagnostic and support-audited `Y08`
+- [ ] open retained concealed mono and stereo admission only after objective
+  admission passes
+- [ ] stop at the first terminal miss; delete the complete candidate on
+  rejection without tuning, repair, or rerun
+- [ ] keep public APIs, reports, fixtures, cache, routing, other characters,
   Loophole, and Chorus unchanged
 
 ## Later Batches
 
-Closed or paused without promotion. Work after Batch 31.35 requires its exact
-evidence decision:
+Closed or paused without promotion. Work after Batch 31.36 requires its exact
+admission decision:
 
 - minimal production admission
 - coherent/diffusive overlap
@@ -1195,11 +1237,15 @@ evidence decision:
   structural `15/15`, then reached a terminal synthetic `Y08` rejection
 - [x] the rejected checkpoint, implementation, tests, worktree, branch, and
   build state were deleted without repair or rerun
+- [x] the `Y08` impulse-support contradiction was reconciled as executable
+  evidence-construction failure
+- [x] one fresh support-audited listening-led authority is frozen with an exact
+  support table and separate discontinuity/dropout ranges
 - [x] no private renderer or product surface entered `main`
 
 ## Next Task
 
-Run Batch 31.35 only. Reconcile the frozen `Y08` impulse measurement range
-against mapped non-zero support and the passed Batch 31.25 receipt. Classify
-the miss before any new authority exists. Do not implement DSP, repair or
-rerun the rejected checkpoint, change thresholds, or push.
+Run Batch 31.36 only. Implement the frozen support-audited listening-led
+candidate once from fresh source. Complete compile and construction `1/1`,
+freeze one checkpoint, then run structural and synthetic admission in order.
+Do not recover rejected source, change gates, admit product surfaces, or push.

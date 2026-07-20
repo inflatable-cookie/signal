@@ -1,6 +1,6 @@
 # Offline Creative Time-Stretch Study
 
-Status: active PaulX-like `Dream`; impulse-support evidence audit ready
+Status: active PaulX-like `Dream`; support-audited candidate ready
 Owner: dsp
 Updated: 2026-07-20
 Contract: `085`
@@ -578,9 +578,9 @@ The correction follows the strongest product evidence:
 - its fresh checkpoints stopped before listening on finite comparator deltas,
   not a heard tonal failure
 
-`ListeningLedSourceRelativeRenewalSpectral` retains the complete seed-audited
-renderer and terminal controls. `Y02` must measure every tone and chord row and
-record candidate error, PaulX error, and signed delta. It rejects missing or
+`ListeningLedSourceRelativeRenewalSpectral` retained the complete seed-audited
+renderer and terminal controls. `Y02` measures every tone and chord row and
+records candidate error, PaulX error, and signed delta. It rejects missing or
 non-finite evidence, not a finite pitch delta. Hard integrity, replica, level,
 discontinuity, dropout, boundary, deterministic-state, and linked-stereo gates
 remain terminal. Concealed mono, operator speaker pre-screen, and eligible
@@ -590,7 +590,15 @@ This was one fresh candidate authority. Batch 31.34 passed construction `1/1`
 and structural `15/15`, then synthetic `Y08` rejected exact-zero impulse hops
 at every ratio. Its executable range used complete impulse output where the
 normative dropout text names mapped non-zero support. The candidate was
-deleted. Batch 31.35 must resolve that evidence boundary before new authority.
+deleted. Batch 31.35 classified the complete-output dropout scan as executable
+evidence-construction failure. The isolated impulse's mapped authored support
+is only `4`, `8`, or `16` frames, shorter than `H=16384`; impulse spread and
+replicas remain owned by `Y03` and `Y04`.
+
+Fresh `SupportAuditedListeningLedSourceRelativeRenewalSpectral` authority
+freezes one exact source-support table and separate discontinuity/dropout range
+types. It changes no renderer formula, source, threshold, seed, listening pack,
+or product surface. Batch 31.36 is ready for one fresh implementation.
 
 ## Sources
 
@@ -627,6 +635,6 @@ deleted. Batch 31.35 must resolve that evidence boundary before new authority.
 
 ## Next Task
 
-Run Batch 31.35 only. Reconcile the rejected candidate's complete-output
-impulse dropout assertion with mapped non-zero support and prior passed `Y08`
-evidence. Do not implement DSP or rerun the checkpoint.
+Run Batch 31.36 only. Implement the frozen support-audited listening-led
+candidate once from fresh source. Do not recover rejected code, change gates,
+or expose product surfaces.

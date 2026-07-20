@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: creative impulse-support evidence audit ready
+Status: support-audited creative candidate ready
 Updated: 2026-07-20
 
 ## Why this generation matters now
@@ -140,8 +140,9 @@ The 2026-07-19 consolidation reset is authoritative.
   concealed listening remains creative authority. Batch 31.33 froze one fresh
   listening-led source-relative candidate without changing DSP. Batch 31.34
   passed construction `1/1` and structural `15/15`, then synthetic `Y08`
-  rejected exact-zero impulse hops at all ratios. The candidate was deleted;
-  Batch 31.35 owns the evidence-boundary audit.
+  rejected exact-zero impulse hops at all ratios. The candidate was deleted.
+  Batch 31.35 classified the complete-output dropout scan as executable
+  evidence-construction failure and froze fresh support-audited authority.
 - The 2026-07-20 lifecycle reconciliation closes stale `g10.001` and
   `g10.003` active markers. It also records that Signal's `g10.017` capture and
   live-monitor implementation landed; that roadmap is paused only on explicit
@@ -216,9 +217,9 @@ Do not start Loophole or Chorus planning from Signal internals.
 - `g10.030` `complete`
   - stretch consolidated; candidate families closed; frozen baseline retained
 - `g10.031` `active`
-  - PaulX-like neutral `Dream` remains product intent; Batch 31.34 rejected the
-    listening-led candidate at synthetic `Y08`; Batch 31.35 is a docs-only
-    impulse-support evidence audit; explicit `Cyclic` stays closed
+  - PaulX-like neutral `Dream` remains product intent; Batch 31.35 reconciled
+    the `Y08` support boundary and froze one fresh support-audited candidate;
+    Batch 31.36 is ready; explicit `Cyclic` stays closed
 
 ## Stretch Boundary
 
@@ -277,7 +278,7 @@ route on `main`.
 
 ## Next Task
 
-Run `g10.031` Batch 31.35 only. Reconcile complete impulse output with mapped
-non-zero support in `Y08` and classify the rejected receipt. Do not implement
-DSP. Keep `g10.028`, routing, product exposure, and cross-repo work paused. Do
-not push.
+Run `g10.031` Batch 31.36 only. Implement the frozen support-audited
+listening-led candidate once from fresh source. Complete compile and
+construction before checkpointing, then run admission in order. Keep
+`g10.028`, routing, product exposure, and cross-repo work paused. Do not push.

@@ -83,10 +83,13 @@ closed under that terminal comparator gate without closing the PaulX-like
 product target. The operator then made finite PaulX-relative pitch delta a
 mandatory diagnostic rather than a rejection threshold. Batch 31.33 froze one
 fresh listening-led source-relative candidate. Batch 31.34 rejected it at
-synthetic `Y08`; candidate DSP and product exposure remain absent from `main`.
+synthetic `Y08`. Batch 31.35 classified the over-broad complete-output dropout
+scan as executable evidence-construction failure and froze one fresh
+support-audited authority. Candidate DSP and product exposure remain absent
+from `main`.
 
-Rejected listening-led neutral `Dream` candidate brief:
-[Offline Creative ListeningLedSourceRelativeRenewalSpectral Renderer Brief](../architecture/offline-creative-verified-source-relative-renewal-spectral-brief.md).
+Fresh support-audited neutral `Dream` candidate brief:
+[Offline Creative SupportAuditedListeningLedSourceRelativeRenewalSpectral Renderer Brief](../architecture/offline-creative-verified-source-relative-renewal-spectral-brief.md).
 
 Rejected-at-compile neutral `Dream` successor brief:
 [Offline Creative CompensatedRenewalSpectral Renderer Brief](../architecture/offline-creative-compensated-renewal-spectral-brief.md).
@@ -147,6 +150,6 @@ Rejected first-owner brief:
 
 ## Next Task
 
-Run `g10.031` Batch 31.35 only. Reconcile the `Y08` complete-impulse range
-with mapped non-zero support and prior passed evidence. Do not implement DSP,
-recover rejected code, or reopen the transparent successor.
+Run `g10.031` Batch 31.36 only. Implement the frozen support-audited
+listening-led candidate once from fresh source. Do not recover rejected code
+or reopen the transparent successor.

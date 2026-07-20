@@ -29,7 +29,7 @@ Keep milestone sequencing in `roadmaps/`.
 - `offline-time-stretch-non-phase-vocoder-feasibility.md`
 - `offline-creative-time-stretch-study.md`
 - `offline-creative-verified-source-relative-renewal-spectral-brief.md`
-  - rejected `ListeningLedSourceRelativeRenewalSpectral` evidence
+  - frozen `SupportAuditedListeningLedSourceRelativeRenewalSpectral` authority
 - `offline-creative-renewal-spectral-brief.md`
 - `offline-creative-continuous-excitation-complex-relation-brief.md`
 - `offline-creative-continuous-excitation-spectral-brief.md`
@@ -41,5 +41,5 @@ Keep milestone sequencing in `roadmaps/`.
 ## Next Task
 
 Keep the `g10.030` transparent successor program closed. Run `g10.031` Batch
-31.35 only: reconcile the frozen `Y08` impulse-support boundary without DSP.
-Keep product routing and public exposure closed.
+31.36 only: implement the frozen support-audited listening-led candidate once
+from fresh source. Keep product routing and public exposure closed.

@@ -1,9 +1,9 @@
 # Creative Stretch Source Triangulation
 
-Status: reviewed; listening-led candidate rejected at `Y08`
+Status: reviewed; support-audited listening-led candidate ready
 Owner: dsp
 Updated: 2026-07-20
-Roadmap: `g10.031`, Batches 31.16 and 31.30-31.35
+Roadmap: `g10.031`, Batches 31.16 and 31.30-31.36
 
 ## Question
 
@@ -356,10 +356,12 @@ Batch 31.34 passed construction `1/1` and structural `15/15`, then failed
 synthetic `Y08` on exact-zero impulse hops at every ratio. The frozen
 executable assertion used complete impulse output while the normative dropout
 boundary names mapped non-zero support. The candidate was rejected and
-deleted. Source triangulation remains unchanged; Batch 31.35 audits evidence
-construction only.
+deleted. Batch 31.35 classified that mismatch as executable evidence-
+construction failure and froze a fresh support-audited identity. Source
+triangulation, renderer formulas, and terminal thresholds remain unchanged.
 
 ## Next Task
 
-Run `g10.031` Batch 31.35 only. Reconcile the `Y08` impulse-support evidence
-boundary without changing source translation, seed, or terminal gates.
+Run `g10.031` Batch 31.36 only. Implement the support-audited listening-led
+candidate once from fresh source without changing source translation, seed,
+or terminal gates.

@@ -111,7 +111,9 @@ closed under its terminal comparator gate without closing the PaulX-like
 product target. The operator then made finite PaulX-relative pitch delta a
 mandatory diagnostic rather than a rejection threshold. Batch 31.33 froze one
 fresh listening-led source-relative candidate. Batch 31.34 rejected it at
-synthetic `Y08`; Batch 31.35 is a docs-only impulse-support evidence audit.
+synthetic `Y08`. Batch 31.35 classified the over-broad dropout scan as
+executable evidence-construction failure and froze fresh support-audited
+authority; Batch 31.36 is ready.
 Offline artifacts still need a streaming artifact writer/cache target for full
 peak-memory closure. Mono callback-state DSP has a
 no-allocation proof, linked stereo is implemented, ratio scheduling has
@@ -238,6 +240,7 @@ Before rollover:
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the active generation front door. Run
-`g10.031` Batch 31.35 only. Reconcile the `Y08` impulse-support boundary
-without DSP. Keep the transparent successor lane, `g10.028`, other creative
-owners, routing, product exposure, and cross-repo work closed.
+`g10.031` Batch 31.36 only. Implement the frozen support-audited listening-led
+candidate once from fresh source. Keep the transparent successor lane,
+`g10.028`, other creative owners, routing, product exposure, and cross-repo
+work closed.

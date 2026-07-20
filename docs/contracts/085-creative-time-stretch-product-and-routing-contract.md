@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: active PaulX-like `Dream`; impulse-support evidence audit ready
+Status: active PaulX-like `Dream`; support-audited candidate ready
 Owner: core-product
 Updated: 2026-07-20
 Related contracts: `046`, `048`, `084`
@@ -236,6 +236,29 @@ their delta. Concealed long-form listening decides whether finite measured
 tonal deviation is objectionable. A missing or non-finite measurement remains
 an evidence failure. This exception does not weaken transparent Contract `046`
 or `084` tonal admission.
+
+`Y08` owns separate discontinuity and dropout ranges. First-difference crest
+uses the frozen comparator range, including complete output for the isolated
+impulse. Dropout uses the mapped authored-support hull only. With source length
+`L`, target length `T`, and source half-open support `[a,b)`, map that hull to
+`[floor(a*T/L),ceil(b*T/L))` with checked `u128` arithmetic and clip it to
+endpoint domain `[0,T]`. The frozen synthetic supports are:
+
+| Source | Source support `[a,b)` |
+| --- | --- |
+| low tone, mid tone, chord, harmonic pad | `[24000,72000)` |
+| silence gap | `[24000,72000)` including its intentional interior gap |
+| uniform, Rademacher, amplitude-modulated noise | `[24000,72000)` |
+| impulse | `[48000,48001)` |
+| impulse train | `[19200,77798)` |
+
+At exact `4x`, `8x`, and `16x`, those endpoints are integer multiples of the
+source endpoints. Dropout examines only complete `H`-sample windows wholly
+contained in the mapped hull. A hull shorter than `H` has no eligible dropout
+window; the assertion passes vacuously. `Y03` owns isolated-impulse spread and
+placement, while `Y04` owns impulse and impulse-train replicas. Expanding the
+dropout scan to complete impulse output changes the gate and invalidates that
+receipt; it is not renderer evidence.
 
 ### Rule 10: one complete candidate at a time
 
@@ -529,6 +552,20 @@ finite row for exceeding PaulX error plus `2` cents. This authorized one fresh
 candidate only; it did not revive deleted source, waive listening, admit
 product controls, or claim tonal parity.
 
+Batch 31.34 implemented that authority once. Checkpoint `f76d5bb7` passed
+compile, construction `1/1`, and structural `15/15`; synthetic admission
+finished `8/9`. `Y02` completed its diagnostic. `Y08` failed because the test
+scanned complete impulse output for dropout. The candidate was rejected and
+deleted before listening.
+
+Batch 31.35 reconciles that receipt against the audited brief and Batch
+31.25's passed `Y08`. Complete impulse output belongs only to discontinuity
+crest. Dropout belongs to the mapped authored-support hull. The isolated
+impulse hull is shorter than `H` at every admitted ratio, so no dropout window
+exists. The failed executable broadened the gate; it did not demonstrate
+renderer dropout. Fresh support-audited authority is frozen without changing
+DSP or any terminal threshold.
+
 ## Initial Promotion Sequence
 
 1. Comparator capture and target-character freeze. Complete.
@@ -615,9 +652,12 @@ product controls, or claim tonal parity.
     source. Complete; checkpoint `f76d5bb7` passed construction `1/1` and
     structural `15/15`, then synthetic `Y08` rejected exact-zero impulse hops
     at every ratio. The candidate was deleted before listening.
-35. Reconcile the `Y08` impulse measurement range. Ready; decide whether the
-    complete-output dropout assertion represented mapped non-zero support or
-    over-broadened the gate. Docs and evidence only.
+35. Reconcile the `Y08` impulse measurement range. Complete; the
+    complete-output dropout assertion over-broadened the frozen gate and is an
+    executable-evidence construction failure.
+36. Implement `SupportAuditedListeningLedSourceRelativeRenewalSpectral` once
+    from fresh source under the frozen support table. Ready; no rejected
+    implementation or test source may be recovered.
 
 `Spectral`/`Rough`, coherent overlap, `LayeredCloud`, the upper overlap, dynamic
 ratios, and automatic routing still require separate reopening decisions backed
@@ -652,10 +692,18 @@ Batch 31.33 superseded that future-execution closure under the explicit
 operator gate change. Batch 31.34 then passed compile, construction `1/1`, and
 structural `15/15`. Synthetic admission finished `8/9`: `Y02` passed its
 complete diagnostic, while `Y08` found an exact-zero `H` block in the impulse
-row at `4x`, `8x`, and `16x`. Its executable assertion used the complete
-impulse output although the normative dropout boundary says mapped non-zero
-support. The checkpoint remains rejected and deleted. Batch 31.35 must resolve
-that evidence boundary before any new candidate authority exists.
+row at `4x`, `8x`, and `16x`. Its executable assertion used complete impulse
+output for dropout, contrary to the frozen mapped-support boundary. The
+checkpoint remains rejected and deleted.
+
+Batch 31.35 classifies that result as executable-evidence construction
+failure. The one-sample impulse support maps to `4`, `8`, or `16` output
+samples, all shorter than `H=16384`, so it has no eligible dropout window.
+Batch 31.25's otherwise matching mono renderer passed the intended `Y08`.
+This does not reinterpret or revive Batch 31.34. Fresh
+`SupportAuditedListeningLedSourceRelativeRenewalSpectral` authority now owns
+one immutable support table, distinct discontinuity and dropout ranges, and
+the unchanged renderer and admission system.
 
 No public Rust enum, renderer, harness mode, fixture, artifact schema, runtime
 route, or product-facing claim entered `main`. `OfflineHighQuality` remains
@@ -663,7 +711,9 @@ byte-exact and Contract `084` remains closed. No creative renderer is admitted.
 
 ## Next Task
 
-Run Batch 31.35 only. Reconcile the frozen `Y08` complete-impulse measurement
-range with mapped non-zero support and the passed Batch 31.25 receipt. Do not
-implement DSP, repair or rerun the rejected checkpoint, change thresholds,
-admit product surfaces, or push.
+Run Batch 31.36 only. Implement the frozen
+`SupportAuditedListeningLedSourceRelativeRenewalSpectral` brief once from
+fresh source in its named disposable worktree. Freeze one checkpoint after
+compile and construction `1/1`, then run structural and synthetic admission in
+order. Do not recover rejected source, change gates, admit product surfaces,
+or push.
