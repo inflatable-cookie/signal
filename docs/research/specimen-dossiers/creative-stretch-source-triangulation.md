@@ -1,9 +1,9 @@
 # Creative Stretch Source Triangulation
 
-Status: reviewed; seed-audited PaulX-like `Dream` authority active
+Status: reviewed; renewal tonal-coherence reassessment required
 Owner: dsp
 Updated: 2026-07-20
-Roadmap: `g10.031`, Batches 31.16 and 31.30
+Roadmap: `g10.031`, Batches 31.16, 31.30, and 31.31
 
 ## Question
 
@@ -326,8 +326,19 @@ path and freezes the existing audited address seed as `ADMISSION_SEED` for
 every synthetic and listening candidate render. Public seed/reroll exposure
 still requires later multi-seed character review.
 
+Batch 31.31 tested the audited address seed once. Construction and all `15`
+structural owners passed. `Y04` passed both impulse sources at all ratios, but
+`Y02` failed the `8x` chord at `13.351828347` cents against an
+`11.331375778`-cent ceiling. This resolves the seed-authority contradiction:
+the replica miss was seed-sensitive, while tonal pitch remains unreliable.
+
+Batch 31.29 and Batch 31.31 now fail the same tonal-pitch class across two
+seeds and different ratios/material. Another seed or scalar variant is not new
+research. The next study must find a materially different whole-renderer owner
+for tonal coherence or close the renewal family.
+
 ## Next Task
 
-Run `g10.031` Batch 31.31 only. Implement the frozen seed-audited brief once in
-its named disposable worktree. Complete construction before structural
-admission and keep `ADMISSION_SEED` immutable.
+Run `g10.031` Batch 31.32 only. Reassess the renewal family at architecture
+level against the repeated tonal-pitch failure. Do not implement another
+candidate or sweep seeds and parameters.

@@ -153,8 +153,7 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Keep Contract `084` closed. Under Contract `085`, run `g10.031` Batch 31.31
-only: implement the frozen `SeedAuditedSourceRelativeRenewalSpectral` brief
-once in its named disposable worktree. Do not recover rejected source, alter
-the admission seed, or admit candidate surfaces to `main` before complete
-promotion.
+Keep Contract `084` closed. Under Contract `085`, run `g10.031` Batch 31.32
+only: reassess the renewal family after two complete tonal-pitch failures.
+Either identify one materially different source-backed complete renderer or
+close the family. Do not implement candidate DSP or admit surfaces to `main`.

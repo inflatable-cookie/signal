@@ -40,6 +40,6 @@ Keep milestone sequencing in `roadmaps/`.
 ## Next Task
 
 Keep the `g10.030` transparent successor program closed. Run `g10.031` Batch
-31.31 only: implement the frozen seed-audited renewal candidate once in its
-named disposable worktree. Keep other creative owners, product routing, and
-seed/reroll exposure closed.
+31.32 only: reassess the renewal family after repeated tonal-pitch rejection.
+Keep candidate DSP, other creative owners, product routing, and seed/reroll
+exposure closed.

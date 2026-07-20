@@ -102,8 +102,11 @@ authority. Batch 31.29 passed construction `1/1` and structural `15/15`, then
 failed synthetic admission at `7/9`: one `16x` replica row and two `4x` pitch
 rows missed. Batch 31.30 found no frozen candidate seed across that receipt and
 Batch 31.25's otherwise matching passing mono evidence. It withdrew the range
-diagnosis and froze `SeedAuditedSourceRelativeRenewalSpectral`; Batch 31.31 is
-ready for one isolated implementation.
+diagnosis and froze `SeedAuditedSourceRelativeRenewalSpectral`. Batch 31.31
+passed construction `1/1` and structural `15/15`, then failed `Y02` on the
+`8x` chord at `13.351828347` cents against an `11.331375778`-cent ceiling.
+`Y04` passed. The candidate was deleted before listening. Batch 31.32 renewal
+architecture reassessment is ready.
 Offline artifacts still need a streaming artifact writer/cache target for full
 peak-memory closure. Mono callback-state DSP has a
 no-allocation proof, linked stereo is implemented, ratio scheduling has
@@ -230,8 +233,8 @@ Before rollover:
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the active generation front door. Run
-`g10.031` Batch 31.31 only: implement the frozen seed-audited candidate once in
-its named disposable worktree. Complete construction, freeze one checkpoint,
-then run structural and synthetic admission once in order. Keep the transparent
-successor lane, `g10.028`, other creative owners, routing, product exposure,
-cross-repo work, and candidate DSP on `main` closed. Do not push.
+`g10.031` Batch 31.32 only: reassess the renewal family after repeated
+tonal-pitch rejection. Either identify one materially different source-backed
+complete renderer or close the family. Keep the transparent successor lane,
+`g10.028`, other creative owners, routing, product exposure, cross-repo work,
+and candidate DSP on `main` closed. Do not push.

@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: verified source-relative candidate rejected; range reassessment ready
+Status: seed-audited renewal rejected; architecture reassessment ready
 Updated: 2026-07-20
 
 ## Why this generation matters now
@@ -127,8 +127,12 @@ The 2026-07-19 consolidation reset is authoritative.
   ceilings. The candidate was deleted before listening. Batch 31.30 found that
   neither that brief nor Batch 31.25's passing mono brief froze the candidate
   seed. It withdrew the unsupported range diagnosis and froze
-  `SeedAuditedSourceRelativeRenewalSpectral`; Batch 31.31 is ready for one
-  isolated implementation. Other characters, routing, product exposure, and
+  `SeedAuditedSourceRelativeRenewalSpectral`. Batch 31.31 passed compile,
+  construction `1/1`, and structural `15/15`, then failed `Y02` on the `8x`
+  chord at `13.351828347` cents against an `11.331375778`-cent ceiling. `Y04`
+  passed at all ratios. The candidate was deleted before listening. Two
+  checkpoints now fail the same tonal-pitch class, so Batch 31.32 architecture
+  reassessment is ready. Other characters, routing, product exposure, and
   rejected branches remain closed or paused.
 - The 2026-07-20 lifecycle reconciliation closes stale `g10.001` and
   `g10.003` active markers. It also records that Signal's `g10.017` capture and
@@ -204,10 +208,9 @@ Do not start Loophole or Chorus planning from Signal internals.
 - `g10.030` `complete`
   - stretch consolidated; candidate families closed; frozen baseline retained
 - `g10.031` `active`
-  - PaulX-like neutral `Dream` remains the product goal; Batch 31.30 corrected
-    unfrozen seed authority, found no source-backed range switch, and froze a
-    seed-audited source-relative candidate for Batch 31.31; explicit `Cyclic`
-    stays closed
+  - PaulX-like neutral `Dream` remains the product goal; Batch 31.31 rejected
+    the seed-audited renewal candidate on repeated tonal-pitch failure; Batch
+    31.32 architecture reassessment is ready and explicit `Cyclic` stays closed
 
 ## Stretch Boundary
 
@@ -251,15 +254,16 @@ frozen `mix64(1)` assertion transposed the normative result. No synthetic or
 listening result exists. The candidate was deleted.
 Batch 31.28 independently reproduced the complete counter table in Python and
 Ruby and froze fresh verified authority. Batch 31.29 passed construction and
-all `15` structural owners, then failed two of nine synthetic owners at
-opposite ratio ends. The isolated candidate was deleted before listening.
+all `15` structural owners, then failed two synthetic owners. Batch 31.30
+corrected unfrozen seed authority. Batch 31.31 passed construction and all
+structural owners under the audited seed, cleared the replica row, then failed
+the `8x` chord pitch row. The isolated candidate was deleted before listening.
 Creative stretch still has no renderer, public API, harness surface, or product
 route on `main`.
 
 ## Next Task
 
-Run `g10.031` Batch 31.31 only. Implement the frozen seed-audited candidate
-once in `signal-candidate-31-31`. Complete construction `1/1`, freeze one
-checkpoint, then run structural `15/15` and synthetic `9/9` once in order.
-Keep `g10.028`, routing, product exposure, cross-repo work, and candidate DSP
-on `main` paused. Do not push.
+Run `g10.031` Batch 31.32 only. Reassess the renewal family after repeated
+tonal-pitch rejection. Either identify one materially different source-backed
+complete renderer or close the family. Keep `g10.028`, routing, product
+exposure, cross-repo work, and candidate DSP on `main` paused. Do not push.

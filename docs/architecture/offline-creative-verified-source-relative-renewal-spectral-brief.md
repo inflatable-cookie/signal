@@ -1,15 +1,16 @@
 # Offline Creative SeedAuditedSourceRelativeRenewalSpectral Renderer Brief
 
-Status: frozen; fresh candidate batch ready
+Status: rejected at synthetic admission; architecture reassessment required
 Owner: dsp
 Updated: 2026-07-20
 Contract: `085`
-Roadmap: `g10.031`, Batches 31.28-31.30
+Roadmap: `g10.031`, Batches 31.28-31.31
 
 ## Decision
 
-Build one fresh Signal-owned `SeedAuditedSourceRelativeRenewalSpectral`
-candidate for neutral `Dream` at `4x`, `8x`, and `16x`.
+Batch 31.30 froze one fresh Signal-owned
+`SeedAuditedSourceRelativeRenewalSpectral` candidate for neutral `Dream` at
+`4x`, `8x`, and `16x`.
 
 Retain the source-relative architecture frozen in Batch 31.26. Batch 31.27
 produced no synthetic, mono-listening, or stereo result. Its sole miss was an
@@ -34,7 +35,7 @@ No mid/side magnitude synthesis, per-component orientation, post-render gain,
 limiter, compressor, phase propagation, magnitude recurrence, transient
 detector, onset reset, component layer, or range switch is present.
 
-## Rejected Predecessor Outcome
+## Batch 31.29 Predecessor Outcome
 
 Fresh checkpoint `d94612dd9f4ca9ba51724c826cac1d9375c27ff8`
 passed compile, construction `1/1`, and structural admission `15/15` without
@@ -54,6 +55,30 @@ transform, map, or ratio range. Do not turn it into a seed, window, hop,
 threshold, or range sweep.
 
 No listening gate ran. Cleanup deleted the worktree, branch, checkpoint,
+module, tests, build state, and candidate artifacts. No candidate DSP entered
+`main`.
+
+## Batch 31.31 Outcome
+
+Fresh checkpoint `790119b7936d5166ffb814f9401ba1398d2d5db9`
+passed compile, construction `1/1`, and structural admission `15/15`. The
+single synthetic command selected all nine owners. Six passed before `Y02`
+failed the complete pitch matrix; `Y08` and `Y09` were then cancelled by the
+test runner.
+
+The failed row was the `8x` chord: maximum partial error
+`13.351828347` cents against an `11.331375778`-cent PaulX-relative ceiling.
+`Y04` passed both impulse sources at all ratios, so the audited seed removed
+the predecessor's replica miss. It did not supply robust tonal coherence.
+
+Batch 31.29 failed two `4x` pitch rows under seed `17`; Batch 31.31 failed an
+`8x` chord pitch row under `ADMISSION_SEED`. Two complete checkpoints now fail
+the same tonal-pitch class across different seeds, material, and ratios.
+Contract `084` Rule 7 requires architecture reassessment. This does not
+authorize another seed, transform, phase, window, hop, threshold, or assertion
+attempt.
+
+Listening did not open. Cleanup deleted the worktree, branch, checkpoint,
 module, tests, build state, and candidate artifacts. No candidate DSP entered
 `main`.
 
@@ -339,12 +364,13 @@ single-seed admission receipt.
 - [Audited synthetic authority](./offline-creative-audited-variance-compensated-renewal-spectral-brief.md)
 - [Batch 31.27 vector rejection](../logs/2026-07/20-g10-031-source-relative-vector-rejection.md)
 - [Batch 31.30 seed-authority reassessment](../logs/2026-07/20-g10-031-seed-authority-reassessment.md)
+- [Batch 31.31 seed-audited rejection](../logs/2026-07/20-g10-031-seed-audited-renewal-rejection.md)
 - [Creative product contract](../contracts/085-creative-time-stretch-product-and-routing-contract.md)
 
 ## Next Task
 
-Run Batch 31.31 only. Implement this seed-audited brief once in the named
-disposable worktree. Complete compile and construction `1/1`, freeze one
-checkpoint, then run structural `15/15` and synthetic `9/9` once in order.
-Stop on the first miss. Do not recover either rejected candidate, alter the
-admission seed, implement a range switch, or push.
+Run Batch 31.32 only. Reassess the renewal family at architecture level against
+the repeated tonal-pitch failure and pinned source. Either identify one
+materially different, source-backed complete renderer with intrinsic tonal
+coherence or close the renewal family. Do not implement DSP, recover rejected
+source, sweep seeds or parameters, reopen routing, or push.

@@ -1,6 +1,6 @@
 # Offline Creative Time-Stretch Study
 
-Status: active PaulX-like `Dream`; seed-audited source-relative authority frozen
+Status: active PaulX-like `Dream`; renewal architecture reassessment required
 Owner: dsp
 Updated: 2026-07-20
 Contract: `085`
@@ -519,8 +519,20 @@ nor Batch 31.25's passing mono brief froze the candidate seed. Batch 31.30
 therefore withdrew the range diagnosis: the failed checkpoint stays rejected,
 but stochastic rows with differing or unknown request identity cannot select a
 range switch. Pinned PaulX also retains one renewal path across all ratios.
-Fresh authority is `SeedAuditedSourceRelativeRenewalSpectral`, with the audited
-address seed frozen for every synthetic and listening candidate render.
+Batch 31.30 froze `SeedAuditedSourceRelativeRenewalSpectral`, with the audited
+address seed fixed for every synthetic and listening candidate render.
+
+Batch 31.31 implemented that authority once. Checkpoint `790119b7` passed
+compile, construction `1/1`, and structural `15/15`. The synthetic command
+selected all nine owners. Six passed before `Y02` failed the `8x` chord at
+`13.351828347` cents against its `11.331375778`-cent ceiling; `Y08` and `Y09`
+were cancelled. `Y04` passed both impulse sources at all ratios. The candidate
+was deleted before listening.
+
+The seed audit therefore resolves the earlier contradiction without rescuing
+the topology. Replica behavior changed with seed, but tonal pitch failed under
+both tested seeds at different material and ratios. Contract `084` Rule 7 now
+requires architecture reassessment before any further candidate.
 
 ## Sources
 
@@ -550,7 +562,8 @@ address seed frozen for every synthetic and listening candidate render.
 
 ## Next Task
 
-Run Batch 31.31 only. Implement the seed-audited authority once in its named
-disposable worktree. Complete construction `1/1`, freeze one checkpoint, then
-run structural `15/15` and synthetic `9/9` once in order. Stop on the first
-miss. Do not alter `ADMISSION_SEED`, implement routing, or push.
+Run Batch 31.32 only. Reassess the renewal family at architecture level against
+the repeated tonal-pitch failure and pinned source. Either identify one
+materially different, source-backed complete renderer with intrinsic tonal
+coherence or close the family. Do not implement DSP, sweep parameters, or
+push.

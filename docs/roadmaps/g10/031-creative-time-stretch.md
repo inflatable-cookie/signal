@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: active; Batch 31.30 complete, Batch 31.31 ready
+Status: active; Batch 31.31 complete, Batch 31.32 reassessment ready
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -984,27 +984,59 @@ Evidence:
 
 ## Batch 31.31 - Isolated Seed-Audited Source-Relative Candidate
 
-Status: ready; isolated implementation only
+Status: complete; candidate rejected and deleted
 
-- [ ] create `signal-candidate-31-31` on
+- [x] created `signal-candidate-31-31` on
   `candidate/g10-031-seed-audited-source-relative-renewal`
-- [ ] implement only the fresh private six-file
+- [x] implemented only the fresh private six-file
   `creative_seed_audited_source_relative_renewal` family and one private
   `lib.rs` declaration; do not recover Batch 31.27 or Batch 31.29 source
-- [ ] use the address vector's named seed field as the sole `ADMISSION_SEED`
+- [x] used the address vector's named seed field as the sole `ADMISSION_SEED`
   for every synthetic and listening candidate render
-- [ ] complete `effigy test compile` and exactly `1/1` construction owner
-- [ ] freeze and record one immutable local checkpoint; do not push it
-- [ ] run exactly `15/15` structural then `9/9` synthetic owners once
-- [ ] open mono and stereo listening only after complete objective admission
-- [ ] stop on the first miss and delete the complete candidate without tuning,
+- [x] completed `effigy test compile` and exactly `1/1` construction owner
+- [x] froze checkpoint `790119b7936d5166ffb814f9401ba1398d2d5db9`
+  without pushing it
+- [x] passed exactly `15/15` structural owners once
+- [x] selected all nine synthetic owners once; six passed before `Y02` failed
+  the `8x` chord pitch row and the runner cancelled `Y08` and `Y09`
+- [x] kept mono and stereo listening closed after objective rejection
+- [x] stopped on the first miss and deleted the complete candidate without tuning,
   repair, or rerun
-- [ ] keep public APIs, reports, fixtures, cache, routing, seed/reroll product
+- [x] kept public APIs, reports, fixtures, cache, routing, seed/reroll product
   exposure, other characters, Loophole, and Chorus unchanged
+
+Evidence:
+
+- compile: pass
+- construction: `1/1`
+- checkpoint: `790119b7936d5166ffb814f9401ba1398d2d5db9`
+- structural: `15/15`
+- synthetic: nine selected; six passed, `Y02` failed, `Y08` and `Y09`
+  cancelled
+- failed row: `8x` chord maximum partial error `13.351828347` cents against
+  an `11.331375778`-cent ceiling
+- `Y04`: pass for both impulse sources at all ratios
+- listening: not run
+- cleanup: complete; candidate worktree, branch, checkpoint, module, tests,
+  build state, and artifacts deleted
+
+## Batch 31.32 - Renewal Tonal-Coherence Architecture Reassessment
+
+Status: ready; docs and architecture only
+
+- [ ] reconcile Batch 31.29's `4x` tone failures and Batch 31.31's `8x` chord
+  failure as one repeated tonal-coherence class
+- [ ] study whether pinned source or retained research supports one materially
+  different whole-renderer owner with intrinsic tonal coherence
+- [ ] either freeze one complete source-backed architecture or close the
+  renewal family; do not choose another seed, transform, phase, hop, window,
+  threshold, or scalar variant
+- [ ] keep candidate DSP, tests, harnesses, fixtures, APIs, routing, cache,
+  product exposure, Loophole, and Chorus unchanged
 
 ## Later Batches
 
-Closed or paused without promotion. Work after Batch 31.30 requires a valid
+Closed or paused without promotion. Work after Batch 31.31 requires a valid
 candidate-admission decision:
 
 - minimal production admission
@@ -1056,11 +1088,15 @@ candidate-admission decision:
 - [x] evidence reassessment found its candidate seed was not frozen and the
   paired failures cannot support a range-topology conclusion
 - [x] one complete seed-audited source-relative authority is frozen
+- [x] one seed-audited source-relative candidate passed construction and
+  structural admission, then reached a terminal `Y02` pitch rejection
+- [x] repeated tonal-pitch failure now requires architecture reassessment
 - [x] no private renderer or product surface entered `main`
 
 ## Next Task
 
-Run Batch 31.31 only. Implement the seed-audited authority once in
-`signal-candidate-31-31`, complete construction `1/1`, freeze one checkpoint,
-then run structural `15/15` and synthetic `9/9` once in order. Do not recover
-rejected source, alter `ADMISSION_SEED`, implement routing, or push.
+Run Batch 31.32 only. Reassess the renewal family at architecture level against
+the repeated tonal-pitch failure. Either identify one materially different,
+source-backed complete renderer with intrinsic tonal coherence or close the
+family. Do not implement DSP, recover rejected source, sweep parameters, or
+push.

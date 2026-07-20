@@ -74,11 +74,14 @@ ownership. Batch 31.29 passed construction and structural admission, then
 failed one `16x` replica row and two `4x` pitch rows. Batch 31.30 found that
 candidate seed was not frozen across the otherwise matching mono evidence.
 Pinned PaulX uses one renewal path across the retained ratios, so the failed
-receipt cannot select a range switch or reject the topology. Fresh authority
-is `SeedAuditedSourceRelativeRenewalSpectral`; all candidate DSP and product
-exposure remain absent from `main`.
+receipt could not select a range switch. Batch 31.31 then tested the audited
+seed: construction and structural admission passed, `Y04` cleared, but `Y02`
+failed the `8x` chord pitch row. Two complete checkpoints now fail tonal pitch
+across different seeds, material, and ratios. The renewal family requires
+architecture reassessment; all candidate DSP and product exposure remain
+absent from `main`.
 
-Frozen neutral `Dream` candidate brief:
+Rejected neutral `Dream` candidate brief:
 [Offline Creative SeedAuditedSourceRelativeRenewalSpectral Renderer Brief](../architecture/offline-creative-verified-source-relative-renewal-spectral-brief.md).
 
 Rejected-at-compile neutral `Dream` successor brief:
@@ -140,7 +143,7 @@ Rejected first-owner brief:
 
 ## Next Task
 
-Run `g10.031` Batch 31.31 only. Implement the frozen seed-audited brief once in
-its named disposable worktree. Complete construction before one-shot
-structural and synthetic admission. Do not recover rejected source, alter
-`ADMISSION_SEED`, reopen Batch 29.7BE, or reopen the transparent successor.
+Run `g10.031` Batch 31.32 only. Reassess the renewal family at architecture
+level against the repeated tonal-pitch failure. Either identify one materially
+different source-backed complete renderer or close the family. Do not
+implement DSP, reopen Batch 29.7BE, or reopen the transparent successor.

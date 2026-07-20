@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: active PaulX-like `Dream`; seed-audited source-relative authority frozen
+Status: active PaulX-like `Dream`; renewal architecture reassessment required
 Owner: core-product
 Updated: 2026-07-20
 Related contracts: `046`, `048`, `084`
@@ -467,11 +467,23 @@ renewal path across all retained ratios. The failed checkpoint remains
 rejected, but its stochastic rows cannot select a range switch or reject the
 source-relative topology.
 
-Fresh authority is `SeedAuditedSourceRelativeRenewalSpectral`. It retains the
+Batch 31.30 froze `SeedAuditedSourceRelativeRenewalSpectral`. It retained the
 complete verified topology and gates under a new worktree, branch, module, and
-prefix identity. The existing audited address vector's seed is the sole named
+prefix identity. The existing audited address vector's seed was the sole named
 `ADMISSION_SEED` for every synthetic and listening candidate render. Candidate
-DSP, routing, public seed control, and product exposure remain absent.
+DSP, routing, public seed control, and product exposure remained absent.
+
+Batch 31.31 implemented that authority once. Checkpoint `790119b7` passed
+compile, construction `1/1`, and structural `15/15`. Synthetic admission
+selected all nine owners. Six passed before `Y02` failed the `8x` chord at
+`13.351828347` cents against its `11.331375778`-cent ceiling; `Y08` and `Y09`
+were cancelled. `Y04` passed at every ratio. The candidate was deleted before
+listening without correction or rerun.
+
+The audited seed resolves the predecessor's replica miss but not tonal pitch.
+Batch 31.29 and Batch 31.31 now fail the same pitch class across different
+seeds, material, and ratios. Contract `084` Rule 7 requires an architecture
+reassessment. No source-relative renewal candidate remains active.
 
 ## Initial Promotion Sequence
 
@@ -547,7 +559,11 @@ DSP, routing, public seed control, and product exposure remain absent.
     source-backed, and fresh seed-audited authority is frozen.
 31. Implement the seed-audited brief once, freeze one checkpoint after
     construction `1/1`, then run structural and synthetic owners in order.
-    Ready.
+    Complete; construction and structural admission passed, `Y02` failed one
+    `8x` chord row, and the candidate was deleted before listening.
+32. Reassess the renewal family against the repeated tonal-pitch failure.
+    Either select one materially different, source-backed complete renderer or
+    close the family. Ready; docs and architecture only.
 
 `Spectral`/`Rough`, coherent overlap, `LayeredCloud`, the upper overlap, dynamic
 ratios, and automatic routing still require separate reopening decisions backed
@@ -573,8 +589,11 @@ admission at `14/15`. The verified replacement passed native-left/right
 structural admission, then failed two stochastic synthetic owners under a
 locally selected seed. That checkpoint remains rejected, but its receipt
 cannot support the discarded fixed-resolution range diagnosis because
-candidate seed was not frozen. `SeedAuditedSourceRelativeRenewalSpectral` is
-now the sole complete candidate authority.
+candidate seed was not frozen. The seed-audited replacement passed construction
+and structural admission and cleared the previous replica failure, but failed
+`Y02` on the `8x` chord. Two complete checkpoints now fail the same tonal-pitch
+class. No renewal candidate authority remains; architecture reassessment is
+mandatory before another implementation.
 
 No public Rust enum, renderer, harness mode, fixture, artifact schema, runtime
 route, or product-facing claim entered `main`. `OfflineHighQuality` remains
@@ -582,8 +601,8 @@ byte-exact and Contract `084` remains closed. No creative renderer is admitted.
 
 ## Next Task
 
-Run Batch 31.31 only. Create `signal-candidate-31-31` on
-`candidate/g10-031-seed-audited-source-relative-renewal`, implement the
-seed-audited brief fresh, complete construction `1/1`, freeze one checkpoint,
-then run `15` structural and `9` synthetic owners once in order. Stop on the
-first miss. Do not push.
+Run Batch 31.32 only. Reassess the renewal family at architecture level against
+the repeated tonal-pitch failure and pinned source. Either select one
+materially different, source-backed complete renderer with intrinsic tonal
+coherence or close the family. Do not implement DSP, sweep parameters, or
+push.
