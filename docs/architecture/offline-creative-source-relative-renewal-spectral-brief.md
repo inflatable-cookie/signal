@@ -1,6 +1,6 @@
 # Offline Creative SourceRelativeRenewalSpectral Renderer Brief
 
-Status: frozen; implementation batch ready
+Status: rejected at structural exact-vector proof
 Owner: dsp
 Updated: 2026-07-20
 Contract: `085`
@@ -25,6 +25,25 @@ No mid/side magnitude synthesis, per-component first-sample orientation,
 post-render channel gain, limiter, compressor, instantaneous-frequency
 carrier, phase propagation, magnitude recurrence, transient detector, onset
 reset, or component layer is present.
+
+## Outcome
+
+Checkpoint `1f05cc33dcc57b5714f02bf71f05a44d4ff98f09` passed compile and
+construction `1/1`. Structural admission selected exactly `15` owners. Fourteen
+passed. `source_relative_renewal_structural_mono_renewal` failed its frozen
+`mix64(1)` vector before synthetic execution.
+
+The implementation of the normative wrapping finalizer returned
+`0x5692161d100b05e5`. The frozen assertion expected
+`0x569216d1009b05e5`: the assertion transposed the middle `1d10` into
+`d100`. The formula and returned value agree; the executable evidence vector
+does not. This is an evidence-construction failure, not a stereo or audible
+renderer result.
+
+The checkpoint is rejected without assertion repair or rerun. Synthetic,
+mono-listening, and stereo gates did not open. The disposable worktree,
+branch, checkpoint, module, tests, and build state were deleted. No candidate
+DSP entered `main`.
 
 ## Supported Request
 
@@ -344,6 +363,7 @@ other character, router, Loophole, or Chorus integration.
 
 ## Next Task
 
-Run Batch 31.27 only. Create the named isolated worktree, implement this brief
-once without recovering deleted candidate code, complete construction, freeze
-one checkpoint, and run gates in order. Do not push.
+Run Batch 31.28 only. Reconcile the incorrect frozen vector with the normative
+formula, audit every exact construction vector, and either freeze fresh
+complete candidate authority under a new identity or close the topology. Do
+not implement candidate DSP in the same batch.

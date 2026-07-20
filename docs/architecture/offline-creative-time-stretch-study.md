@@ -1,6 +1,6 @@
 # Offline Creative Time-Stretch Study
 
-Status: active PaulX-like `Dream`; source-relative successor frozen
+Status: active PaulX-like `Dream`; source-relative candidate rejected at vector proof
 Owner: dsp
 Updated: 2026-07-20
 Contract: `085`
@@ -489,8 +489,8 @@ can be features. This study does not reopen the failed phase-vocoder successor
 or relax `OfflineHighQuality` promotion rules.
 
 The evidence still supports the creative product intent, but not an admitted
-renderer or the original automatic range router. All four spectral fixed-ratio
-candidates are rejected and deleted. Batch 31.16 supplied source-backed
+renderer or the original automatic range router. All isolated spectral
+fixed-ratio candidates are rejected and deleted. Batch 31.16 supplied source-backed
 evidence for one materially different neutral `Dream` family. Batch 31.18
 rejected its first translation at crest. Batch 31.19's family closure is
 superseded by the operator correction above.
@@ -500,10 +500,16 @@ but both complete owners are rejected and deleted. Batch 31.15 found no third
 materially different, source-backed whole-renderer path. `Cyclic` is closed
 with no promotion. `Spectral`, `Rough`, `Cloud`, automatic routing, dynamic
 ratio, cache, and product integration remain paused. `Cyclic` stays closed.
-Neutral `Dream` has one frozen complete `SourceRelativeRenewalSpectral`
-candidate brief without implementation or product exposure. It retains the
-passed mono renewal renderer and replaces mid/side magnitude synthesis with
-native left/right complex analysis and an explicit source-relative phase law.
+The rejected `SourceRelativeRenewalSpectral` brief retains the passed mono
+renewal renderer and replaces mid/side magnitude synthesis with native
+left/right complex analysis and an explicit source-relative phase law. No
+product surface was exposed.
+
+Batch 31.27 implemented that brief once. Compile and construction passed, but
+structural admission stopped at `14/15` because the frozen `mix64(1)` assertion
+contained a transposed hexadecimal vector. The implementation matched the
+normative formula. No synthetic or listening result exists. The candidate was
+deleted without assertion repair or rerun.
 
 ## Sources
 
@@ -533,6 +539,6 @@ native left/right complex analysis and an explicit source-relative phase law.
 
 ## Next Task
 
-Run Batch 31.27 only. Implement the frozen source-relative renewal brief once
-in `signal-candidate-31-27`, complete construction, freeze one checkpoint, and
-run gates in order. Keep candidate DSP off `main`; do not push.
+Run Batch 31.28 only. Audit exact construction-vector ownership and either
+freeze fresh complete source-relative candidate authority under a new identity
+or close the topology. Do not implement candidate DSP in the same batch.

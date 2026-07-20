@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: active PaulX-like `Dream`; source-relative successor frozen
+Status: active PaulX-like `Dream`; source-relative candidate rejected at vector proof
 Owner: core-product
 Updated: 2026-07-20
 Related contracts: `046`, `048`, `084`
@@ -428,6 +428,15 @@ swap relationships, whole/band/window balance, exact boundaries, bounded
 state, determinism, and independent stereo listening are explicit gates. No
 candidate DSP entered `main`.
 
+Batch 31.27 implemented that authority once from fresh source. Compile and
+construction `1/1` passed at checkpoint `1f05cc33`. Structural admission
+selected `15` owners; `14` passed. The mono-renewal owner then exposed a frozen
+evidence-vector defect: the normative `mix64(1)` formula returned
+`0x5692161d100b05e5`, while the assertion expected the transposed value
+`0x569216d1009b05e5`. No assertion repair or rerun is permitted after the
+checkpoint. The candidate was rejected and deleted before synthetic or
+listening gates. This is no acoustic or stereo result.
+
 ## Initial Promotion Sequence
 
 1. Comparator capture and target-character freeze. Complete.
@@ -487,7 +496,11 @@ candidate DSP entered `main`.
     candidate DSP. Complete; `SourceRelativeRenewalSpectral` frozen.
 27. Implement the brief once in its named disposable worktree, complete
     construction `1/1`, freeze one checkpoint, and run `15` structural then
-    `9` synthetic owners. Ready.
+    `9` synthetic owners. Complete; rejected at structural exact-vector proof
+    after `14/15` passes.
+28. Reconcile executable vector ownership, audit every exact construction
+    vector, and either freeze fresh complete candidate authority or close the
+    topology. Ready; docs and architecture only.
 
 `Spectral`/`Rough`, coherent overlap, `LayeredCloud`, the upper overlap, dynamic
 ratios, and automatic routing still require separate reopening decisions backed
@@ -507,9 +520,11 @@ construction, structural, synthetic, and concealed mono gates without repair
 or rerun. It was rejected at linked-stereo image preservation because its
 first-sample component orientation inverted source-relative channel balance.
 The passed mono renewal core remains active architectural evidence; the failed
-stereo law does not. `SourceRelativeRenewalSpectral` is now the sole complete
-candidate authority. Its native left/right relation law and fixed stereo gates
-make isolated implementation ready, not admitted.
+stereo law does not. The first `SourceRelativeRenewalSpectral` checkpoint is
+also rejected and deleted after a frozen `mix64` vector typo stopped structural
+admission at `14/15`. Its renderer never reached synthetic or listening
+evidence. Native left/right relation ownership remains untested architecture,
+not candidate authority.
 
 No public Rust enum, renderer, harness mode, fixture, artifact schema, runtime
 route, or product-facing claim entered `main`. `OfflineHighQuality` remains
@@ -517,7 +532,7 @@ byte-exact and Contract `084` remains closed. No creative renderer is admitted.
 
 ## Next Task
 
-Run Batch 31.27 only. Create `signal-candidate-31-27` on
-`candidate/g10-031-source-relative-renewal`, implement the frozen brief once,
-complete construction `1/1`, freeze one checkpoint, then run `15` structural
-and `9` synthetic owners in order. Stop on the first miss. Do not push.
+Run Batch 31.28 only. Reconcile the incorrect executable vector with the
+normative formula, audit every exact construction vector, and either freeze
+fresh complete authority under a new candidate identity or close the topology.
+Do not implement candidate DSP in the same batch.

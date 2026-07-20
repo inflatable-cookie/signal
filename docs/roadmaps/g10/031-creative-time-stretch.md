@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: active; Batch 31.26 complete, Batch 31.27 ready
+Status: active; Batch 31.27 rejected at structural exact-vector proof
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -853,28 +853,61 @@ Authority:
 
 ## Batch 31.27 - Isolated Source-Relative Renewal Candidate
 
-Status: ready; isolated implementation only
+Status: complete; candidate rejected at structural exact-vector proof
 
-- [ ] create `signal-candidate-31-27` on
+- [x] create `signal-candidate-31-27` on
   `candidate/g10-031-source-relative-renewal`
-- [ ] implement only the fresh private six-file
+- [x] implement only the fresh private six-file
   `creative_source_relative_renewal` family and one private `lib.rs`
   declaration; do not recover Batch 31.25 source
-- [ ] complete `effigy test compile` and exactly `1/1` construction owner
-- [ ] create and record one local immutable checkpoint; do not push it
-- [ ] run exactly `15/15` structural owners once from that checkpoint
+- [x] complete `effigy test compile` and exactly `1/1` construction owner
+- [x] create and record one local immutable checkpoint; do not push it
+- [x] run exactly `15` structural owners once from that checkpoint; `14`
+  passed and one frozen exact-vector assertion failed
 - [ ] run exactly `9/9` full synthetic owners only after structural admission
 - [ ] repeat the concealed `15`-row mono pack only after objective admission
 - [ ] capture same-source PaulX stereo references, then run objective stereo,
   operator speaker pre-screen, and eligible independent listening in order
-- [ ] stop on the first miss and delete the complete candidate without tuning,
+- [x] stop on the first miss and delete the complete candidate without tuning,
   repair, or rerun
-- [ ] keep public APIs, reports, fixtures, cache, routing, other characters,
+- [x] keep public APIs, reports, fixtures, cache, routing, other characters,
   Loophole, and Chorus unchanged
+
+Evidence:
+
+- compile: pass
+- construction: exactly `1/1` passed
+- immutable checkpoint: `1f05cc33dcc57b5714f02bf71f05a44d4ff98f09`
+- structural admission: exactly `15` selected; `14` passed, `S04` failed
+- actual normative `mix64(1)` result: `0x5692161d100b05e5`
+- frozen assertion: `0x569216d1009b05e5`
+- dominant cause: the assertion transposed the middle `1d10` into `d100`
+- stopped gate: structural mono-renewal exact-vector proof
+- synthetic, mono-listening, and stereo gates: not run
+- cleanup: disposable worktree, branch, checkpoint, module, tests, build state,
+  and candidate artifacts deleted; no DSP entered `main`
+
+## Batch 31.28 - Exact-Vector Evidence Reassessment
+
+Status: ready; docs and architecture only
+
+- [ ] derive the `mix64(1)` vector independently from the normative wrapping
+  expression and record one authoritative value
+- [ ] audit every frozen literal exact-vector assertion against its owning
+  formula before another implementation is authorized
+- [ ] classify the Batch 31.27 result as evidence-construction failure without
+  claiming a DSP, synthetic, mono, or stereo outcome
+- [ ] either freeze one fresh complete source-relative candidate brief under a
+  new worktree, branch, module, prefix, and checkpoint identity or close the
+  topology
+- [ ] preserve terminal construction, structural, synthetic, listening,
+  cleanup, and minimal-admission order
+- [ ] change documentation only; do not recover Batch 31.27 source or add DSP,
+  tests, harness, fixture, API, route, cache, Loophole, or Chorus surfaces
 
 ## Later Batches
 
-Closed or paused without promotion. Work after Batch 31.26 requires a valid
+Closed or paused without promotion. Work after Batch 31.27 requires a valid
 candidate-admission decision:
 
 - minimal production admission
@@ -918,11 +951,13 @@ candidate-admission decision:
 - [x] long-form mono `Dream` listening reaches a promotion decision
 - [x] linked-stereo evidence reaches a terminal rejection decision
 - [x] one complete source-relative stereo successor brief is frozen
+- [x] one isolated source-relative candidate reached a terminal structural
+  evidence decision without entering `main`
 - [x] no private renderer or product surface entered `main`
 
 ## Next Task
 
-Run Batch 31.27 only. Create `signal-candidate-31-27` on
-`candidate/g10-031-source-relative-renewal`, implement the frozen
-`SourceRelativeRenewalSpectral` brief once, complete construction `1/1`, freeze
-one checkpoint, and run gates in order. Stop on the first miss; do not push.
+Run Batch 31.28 only. Reconcile the incorrect `mix64(1)` assertion with the
+normative formula, audit every exact construction vector, and either freeze
+fresh complete candidate authority under a new identity or close the topology.
+Do not implement candidate DSP in the same batch.

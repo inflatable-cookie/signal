@@ -49,7 +49,10 @@ Updated: 2026-07-20
   source-relative linked-stereo image preservation and was deleted. Batch
   31.26 froze `SourceRelativeRenewalSpectral` with native left/right analysis,
   source-owned channel magnitudes, and one explicit interchannel relation law.
-  Batch 31.27 isolated implementation is ready.
+  Batch 31.27 compiled and passed construction `1/1`, then failed structural
+  admission at `14/15` because the frozen `mix64(1)` vector was transposed.
+  The candidate was deleted before synthetic or listening gates. Batch 31.28
+  exact-vector reassessment is ready.
 - Lifecycle reconciliation then closed stale `g10.001` and `g10.003` active
   markers and paused `g10.017` on its remaining hardware evidence. Signal's
   capture and live-monitor implementation is present. That lifecycle
@@ -74,7 +77,7 @@ Updated: 2026-07-20
 | `g06` | 2026-03-13 | Continue beyond reusable-boundary closeout with runtime recovery depth, instrumentation, feature breadth, and Loophole-facing runtime evidence | Closed on 2026-03-16 after recovery/resumability, profiling, VST3/AU, MIDI/event depth, hardware/external-I/O, media services, integrated acceptance, bounded soak, and generation-closeout promotion work landed |
 | `g07` | 2026-03-13 | Seed the post-`g06` feature-expansion queue around routing or multichannel depth, Linux-native breadth, control-surface substrate, and fuller time-stretch capability | Closed on 2026-03-19 after multichannel or spatial execution, LV2 and Linux backends, external MIDI/control surfaces, sample-domain stretch, integrated acceptance, and generation-closeout promotion work landed |
 | `g08` | 2026-03-19 | Continue beyond bounded feature-expansion closure with live Linux backend ownership, richer plugin or device protocol depth, immersive routing, and workflow-adjacent runtime services | Closed on 2026-03-22 after live Linux ownership, LV2 or plugin protocol depth, immersive render breadth, device-protocol substrate, preview workflows, grouped acceptance lanes, integrated acceptance, and final generation-closeout work landed |
-| `g10` | 2026-06-11 | Turn the 2026-06-11 deep audit into a remediation program: fix the real audio path, demolish simulated/narration mass (~70-80k LoC), consolidate hygiene, defer rebuilds to demand | Active; `g10.030` retained the frozen stretch baseline and `g10.031` has one frozen source-relative stereo renewal successor ready for isolated implementation after its audited predecessor passed mono and failed stereo image preservation |
+| `g10` | 2026-06-11 | Turn the 2026-06-11 deep audit into a remediation program: fix the real audio path, demolish simulated/narration mass (~70-80k LoC), consolidate hygiene, defer rebuilds to demand | Active; `g10.030` retained the frozen stretch baseline and `g10.031` is ready for exact-vector reassessment after its first source-relative checkpoint stopped at structural `14/15` on an incorrect frozen vector |
 | `g09` | 2026-04-08 | Turn the audit findings into a contract-backed realization, hardening, and interactive-proof program | Closed on 2026-04-11 after plugin and backend realization, production-readiness gating, and operator-visible demo proof landed |
 
 ## Rollover policy
@@ -94,8 +97,8 @@ If that cleanup has not happened, stay in the current generation and finish the 
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the current active-generation front door.
-Run `g10.031` Batch 31.27 only. Implement the frozen
-`SourceRelativeRenewalSpectral` brief once in `signal-candidate-31-27`,
-complete construction, freeze one checkpoint, and run gates in order. Keep
+Run `g10.031` Batch 31.28 only. Reconcile the incorrect frozen `mix64(1)`
+vector, audit every exact construction vector, and either freeze fresh complete
+candidate authority under a new identity or close the topology. Keep
 transparent stretch, other creative owners, and candidate DSP on `main`
-closed. Do not push.
+closed.

@@ -93,10 +93,11 @@ was deleted; no DSP entered `main`.
 Lifecycle reconciliation closes stale `g10.001` and `g10.003` active markers.
 Signal's `g10.017` capture and live-monitor implementation is present; that
 roadmap is paused only on explicit hardware alignment and consumer evidence.
-Batch 31.26 froze `SourceRelativeRenewalSpectral` without DSP. The passed mono
-renderer remains intact; native left/right complex analysis now preserves
-per-channel magnitude and owns source-relative phase directly. Batch 31.27 is
-ready for one isolated implementation.
+Batch 31.26 froze `SourceRelativeRenewalSpectral` without DSP. Batch 31.27
+implemented it once, passed compile and construction `1/1`, then stopped at
+structural `14/15`: its frozen `mix64(1)` vector transposed the normative
+result. The candidate was deleted without repair or rerun. Batch 31.28
+exact-vector evidence reassessment is ready.
 Offline artifacts still need a streaming artifact writer/cache target for full
 peak-memory closure. Mono callback-state DSP has a
 no-allocation proof, linked stereo is implemented, ratio scheduling has
@@ -223,8 +224,8 @@ Before rollover:
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the active generation front door. Run
-`g10.031` Batch 31.27 only: implement the frozen
-`SourceRelativeRenewalSpectral` brief once in `signal-candidate-31-27`,
-complete construction, freeze one checkpoint, and run gates in order. Keep the
+`g10.031` Batch 31.28 only: reconcile the incorrect frozen `mix64(1)` vector,
+audit every exact construction vector, and either freeze fresh complete
+candidate authority under a new identity or close the topology. Keep the
 transparent successor lane, `g10.028`, other creative owners, routing, product
-exposure, cross-repo work, and candidate DSP on `main` closed. Do not push.
+exposure, cross-repo work, and candidate DSP on `main` closed.
