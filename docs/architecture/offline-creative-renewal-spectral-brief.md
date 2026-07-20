@@ -474,7 +474,8 @@ implementation authority.
 
 ## Next Task
 
-This brief remains rejection evidence. Batch 31.20 must compare the same
-synthetic sources against PaulXStretch and derive a clean-room frame-blend
-compensation law before freezing a successor. Do not restore or tune this
-candidate.
+This brief remains rejection evidence. Batch 31.20 completed the matching
+PaulX comparison and froze
+[CompensatedRenewalSpectral](./offline-creative-compensated-renewal-spectral-brief.md)
+as a separate complete successor. Run Batch 31.21 from that brief. Do not
+restore or tune this candidate.

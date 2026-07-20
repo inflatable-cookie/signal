@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: active recovery; Batch 31.20 ready
+Status: active; Batch 31.21 ready
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -603,32 +603,68 @@ Correction:
 
 ## Batch 31.20 - PaulX Reference And Gate Recovery
 
-Status: ready; comparator and architecture only
+Status: complete; comparator and architecture only
 
-- [ ] render the frozen synthetic noise, harmonic-pad, impulse-train, tone,
+- [x] render the frozen synthetic noise, harmonic-pad, impulse-train, tone,
   chord, impulse, and silence-gap inventory through pinned PaulXStretch 1.6.0
   at `4x`, `8x`, and `16x`
-- [ ] measure PaulXStretch and the rejected Signal result under the same active
+- [x] measure PaulXStretch and the rejected Signal result under the same active
   support, RMS matching, crop, and crest law
-- [ ] separate hard integrity limits from reference-relative character
+- [x] separate hard integrity limits from reference-relative character
   diagnostics; an unmatched synthetic metric cannot close the target
-- [ ] trace the whole frame-combination path, including raised-cosine blend,
+- [x] trace the whole frame-combination path, including raised-cosine blend,
   position-dependent amplitude-modulation compensation, source accumulation,
   window endpoint convention, exterior support, and exact crop
-- [ ] derive Signal's compensation law from overlap statistics without copying
+- [x] derive Signal's compensation law from overlap statistics without copying
   upstream constants, expressions, tables, thresholds, or control flow
-- [ ] freeze one complete clean-room successor brief covering map, transform,
+- [x] freeze one complete clean-room successor brief covering map, transform,
   phase renewal, frame blend and compensation, linked stereo, exact length,
   bounded state, determinism, gates, listening, rejection, and cleanup
-- [ ] require long-form concealed mono listening for character authority after
+- [x] require long-form concealed mono listening for character authority after
   hard integrity; independent stereo remains a later promotion gate
-- [ ] keep candidate DSP, public APIs, report modes, fixtures, cache, routing,
+- [x] keep candidate DSP, public APIs, report modes, fixtures, cache, routing,
   other creative owners, Loophole, and Chorus unchanged
+
+Decision:
+
+- pinned PaulX worst-channel uniform-noise crest growth is `9.932`, `11.899`,
+  and `10.432 dB` at `4x`, `8x`, and `16x`
+- the old `6 dB` ceiling was not PaulX-calibrated; rejected Signal's
+  `8.263162 dB` row was below the matching PaulX `4x` result
+- hard integrity remains absolute; creative synthetic rows are now compared
+  with their matching reference and listening remains promotion authority
+- `CompensatedRenewalSpectral` derives position compensation as
+  `1/sqrt(a^2+b^2)` for complementary raised-cosine frame weights
+- no candidate or production DSP entered `main`
+
+Authority:
+
+- `docs/architecture/offline-creative-compensated-renewal-spectral-brief.md`
+
+## Batch 31.21 - Isolated Compensated Renewal Candidate
+
+Status: ready; isolated candidate only
+
+- [ ] create `signal-candidate-31-21` on
+  `candidate/g10-031-compensated-renewal`
+- [ ] implement only the private six-file
+  `creative_compensated_renewal` family and one private `lib.rs` declaration
+- [ ] complete compile-only validation before gate admission
+- [ ] run structural and hard-integrity admission first
+- [ ] run the full reference-relative synthetic matrix only after structural
+  admission
+- [ ] assemble and run concealed long-form mono listening only after synthetic
+  admission
+- [ ] stop on the first miss; record one dominant cause and delete the complete
+  candidate without correction or rerun
+- [ ] leave independent stereo blocked until an eligible listener is available
+- [ ] keep public APIs, report modes, fixtures, cache, routing, other creative
+  owners, Loophole, and Chorus unchanged
 
 ## Later Batches
 
-Closed or paused without promotion. Work after Batch 31.20 requires its frozen
-complete brief and a separate implementation decision:
+Closed or paused without promotion. Work after Batch 31.21 requires a complete
+candidate admission decision:
 
 - minimal production admission
 - coherent/diffusive overlap
@@ -659,13 +695,14 @@ complete brief and a separate implementation decision:
 - [x] one complete `RenewalSpectral` brief is frozen
 - [x] one isolated `RenewalSpectral` candidate reached a terminal decision;
   structural admission passed and the first crest row failed
-- [ ] matching PaulXStretch synthetic reference and gate recovery complete
-- [ ] one complete clean-room frame-blend-compensated brief frozen
+- [x] matching PaulXStretch synthetic reference and gate recovery complete
+- [x] one complete clean-room frame-blend-compensated brief frozen
 - [ ] long-form mono `Dream` listening reaches a promotion decision
 - [ ] linked-stereo listening reaches a promotion decision
 - [x] no private renderer or product surface entered `main`
 
 ## Next Task
 
-Run Batch 31.20 only. Repair the reference mismatch and freeze one complete
-PaulX-like successor brief. Do not implement candidate DSP in the same batch.
+Run Batch 31.21 only. Implement the frozen `CompensatedRenewalSpectral` brief
+once in its named disposable worktree. Do not change the brief during
+candidate work or place candidate surfaces on `main` before complete admission.

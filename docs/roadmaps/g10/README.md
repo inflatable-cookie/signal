@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: active planning gate; no ready execution batch
+Status: active creative candidate; Batch 31.21 ready
 Updated: 2026-07-20
 
 ## Why this generation matters now
@@ -89,9 +89,13 @@ The 2026-07-19 consolidation reset is authoritative.
   renderer remained. Batch 31.19 closed neutral `Dream`, but the operator
   superseded that closure: its PaulX crest calibration used long-form musical
   rows against a synthetic Signal stop row, and the matching PaulX synthetic
-  suite had not run. Batch 31.20 reference and gate recovery is ready. Other
-  characters, routing, product exposure, and rejected branches remain closed
-  or paused.
+  suite had not run. Batch 31.20 then captured the matching pinned-core
+  synthetics. PaulX uniform-noise crest growth is `9.932 dB` at `4x`, above
+  Signal's rejected `8.263162 dB` row. The old `6 dB` ceiling was not
+  target-relative. Batch 31.20 froze one complete
+  `CompensatedRenewalSpectral` brief with Signal-derived overlap-statistics
+  compensation and no candidate DSP. Batch 31.21 is ready. Other characters,
+  routing, product exposure, and rejected branches remain closed or paused.
 - The 2026-07-20 lifecycle reconciliation closes stale `g10.001` and
   `g10.003` active markers. It also records that Signal's `g10.017` capture and
   live-monitor implementation landed; that roadmap is paused only on explicit
@@ -165,9 +169,10 @@ Do not start Loophole or Chorus planning from Signal internals.
   - historical correctness, listening, and rejected-successor ledger
 - `g10.030` `complete`
   - stretch consolidated; candidate families closed; frozen baseline retained
-- `g10.031` `active-recovery`
-  - PaulX-like neutral `Dream` remains the product goal; matching-reference
-    gate recovery is ready, while explicit `Cyclic` stays closed
+- `g10.031` `active`
+  - PaulX-like neutral `Dream` remains the product goal; one complete
+    compensated-renewal candidate brief is frozen, while explicit `Cyclic`
+    stays closed
 
 ## Stretch Boundary
 
@@ -193,13 +198,13 @@ explicit cyclic candidate is also rejected and deleted after structural
 admission and a first-row synthetic pitch miss. Correlation-aligned waveform
 overlap also failed structural admission and was deleted. `RenewalSpectral`
 passed structural admission but failed its first crest row and was deleted.
-Creative stretch has no renderer, public API, harness surface, or product route
-on `main`. Final ownership reassessment found no third complete cyclic path;
-the crest-ownership reassessment also closed neutral `Dream`.
+Matching PaulX synthetics later showed that the old absolute crest ceiling did
+not describe the preferred reference. One complete compensated-renewal brief
+is now frozen. Creative stretch still has no renderer, public API, harness
+surface, or product route on `main`.
 
 ## Next Task
 
-Run `g10.031` Batch 31.20 only. Capture matching PaulXStretch synthetic rows,
-repair the crest gate, and freeze one complete clean-room successor brief.
-Keep candidate DSP, `g10.028`, routing, product exposure, and cross-repo work
-paused in this batch.
+Run `g10.031` Batch 31.21 only. Implement the frozen
+`CompensatedRenewalSpectral` brief once in its named disposable worktree. Keep
+`g10.028`, routing, product exposure, and cross-repo work paused.

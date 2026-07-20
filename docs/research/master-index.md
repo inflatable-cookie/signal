@@ -72,9 +72,14 @@ isolated candidate passed structural admission but failed the first crest row
 at `8.263162 dB` against the frozen `6 dB` ceiling and was deleted. The
 operator superseded Batch 31.19's family closure because the `3.88 dB`
 PaulXStretch calibration used musical rows against a synthetic Signal stop
-row; matching PaulX synthetics had not run. `Dream` recovery is active;
-`Cyclic` stays closed, while `Spectral`, `Rough`, `Cloud`, routing, and product
-exposure remain paused.
+row. Matching PaulX synthetics now measure `9.932 dB` at `4x` uniform noise,
+above Signal's rejected `8.263162 dB` row. Batch 31.20 froze one clean-room
+`CompensatedRenewalSpectral` brief with overlap-statistics compensation.
+`Dream` candidate work is ready; `Cyclic` stays closed, while `Spectral`,
+`Rough`, `Cloud`, routing, and product exposure remain paused.
+
+Frozen neutral `Dream` successor brief:
+[Offline Creative CompensatedRenewalSpectral Renderer Brief](../architecture/offline-creative-compensated-renewal-spectral-brief.md).
 
 Rejected neutral `Dream` brief:
 [Offline Creative RenewalSpectral Renderer Brief](../architecture/offline-creative-renewal-spectral-brief.md).
@@ -132,7 +137,7 @@ Rejected first-owner brief:
 
 ## Next Task
 
-Run `g10.031` Batch 31.20 only. Capture matching PaulXStretch synthetics,
-repair the crest gate, and freeze one complete clean-room successor brief. Do
+Run `g10.031` Batch 31.21 only. Implement the frozen
+`CompensatedRenewalSpectral` brief once in its named disposable worktree. Do
 not tune a rejected candidate or reopen Batch 29.7BE or the transparent
 successor.

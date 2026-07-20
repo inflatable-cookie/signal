@@ -118,6 +118,27 @@ candidate failure does not close the PaulX-like target. Metrics diagnose and
 protect integrity. Long-form concealed listening remains the character
 authority.
 
+## PaulX Reference Recovery
+
+Batch 31.20 rendered the frozen synthetics through the pinned PaulXStretch
+`1.6.0` core at `4x`, `8x`, and `16x`. Worst-channel uniform-noise crest growth
+was `9.932`, `11.899`, and `10.432 dB`. The rejected Signal candidate's
+`8.263162 dB` `4x` row was below the matching PaulX value. The `6 dB` stop was
+valid only for its frozen brief, not as a target-relative quality finding.
+
+The recovered path separates two amplitude owners:
+
+- a complementary raised-cosine adjacent-frame blend
+- position-dependent compensation for the blend's energy modulation
+
+Signal's clean-room law is derived independently. With frame weights `a` and
+`b=1-a`, use `c=1/sqrt(a^2+b^2)`. It holds equal expected variance for two
+equal-energy uncorrelated frames and stays in `[1,sqrt(2)]`. It does not cap
+crest; matching-reference diagnostics and listening own that risk.
+
+[Offline Creative CompensatedRenewalSpectral Renderer Brief](./offline-creative-compensated-renewal-spectral-brief.md)
+freezes one complete candidate. No DSP is admitted.
+
 ## Range-Owner Reassessment
 
 Batch 31.9 narrows the first deliverable. Do not assign `4x` through `16x` to
@@ -477,7 +498,8 @@ but both complete owners are rejected and deleted. Batch 31.15 found no third
 materially different, source-backed whole-renderer path. `Cyclic` is closed
 with no promotion. `Spectral`, `Rough`, `Cloud`, automatic routing, dynamic
 ratio, cache, and product integration remain paused. `Cyclic` stays closed.
-Neutral `Dream` is active research without implementation or product exposure.
+Neutral `Dream` has one frozen complete candidate brief without implementation
+or product exposure.
 
 ## Sources
 
@@ -507,7 +529,6 @@ Neutral `Dream` is active research without implementation or product exposure.
 
 ## Next Task
 
-Run Batch 31.20 only. Capture the matching PaulXStretch synthetic reference,
-repair the mismatched gate, derive the frame-blend compensation architecture,
-and freeze one complete clean-room brief. Do not implement the candidate in
-the same batch.
+Run Batch 31.21 only. Implement the frozen `CompensatedRenewalSpectral` brief
+once in its named disposable worktree. Do not alter the brief during candidate
+work.

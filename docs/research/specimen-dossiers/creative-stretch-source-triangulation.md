@@ -257,11 +257,23 @@ never rendered through PaulXStretch. It also treated Signal's substituted
 equal-power frame blend as a conclusive test of a source path that uses a
 raised-cosine blend plus position-dependent amplitude-modulation compensation.
 
-The candidate rejection stands; the family closure does not. Neutral `Dream`
-is active again. Signal must capture matching PaulX synthetic rows and derive a
-clean-room overlap-statistics compensation law before freezing the next
-complete candidate. It may not copy upstream constants, thresholds, or control
-flow.
+The candidate rejection stands; the family closure does not.
+
+Batch 31.20 completed the missing comparison. Pinned PaulXStretch
+worst-channel uniform-noise crest growth measured `9.932`, `11.899`, and
+`10.432 dB` at `4x`, `8x`, and `16x`. The rejected Signal row was
+`8.263162 dB` at `4x`. The old `6 dB` ceiling was not a PaulX-relative
+character gate.
+
+The whole-path compensation distinction remains useful, but not as a promise
+of low crest. Signal derives `c=1/sqrt(a^2+b^2)` from the variance of two
+equal-energy uncorrelated frames under complementary raised-cosine weights.
+This removes deterministic blend-position energy modulation. It does not
+bound stochastic waveform peaks.
+
+The complete clean-room decision is frozen in
+[Offline Creative CompensatedRenewalSpectral Renderer Brief](../../architecture/offline-creative-compensated-renewal-spectral-brief.md).
+No upstream constant, threshold, random generator, or control flow transfers.
 
 Primary evidence:
 
@@ -289,5 +301,5 @@ boundary before implementation.
 
 ## Next Task
 
-Run `g10.031` Batch 31.20 only. Repair the reference mismatch and freeze the
-next complete PaulX-like renderer brief without candidate DSP.
+Run `g10.031` Batch 31.21 only. Implement the frozen
+`CompensatedRenewalSpectral` brief once in its named disposable worktree.

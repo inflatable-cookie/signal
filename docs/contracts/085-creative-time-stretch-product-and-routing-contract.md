@@ -1,10 +1,11 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: active PaulX-like `Dream` research boundary; no renderer admitted
+Status: active PaulX-like `Dream`; compensated candidate brief frozen
 Owner: core-product
 Updated: 2026-07-20
 Related contracts: `046`, `048`, `084`
 Related architecture: `docs/architecture/offline-creative-time-stretch-study.md`,
+`docs/architecture/offline-creative-compensated-renewal-spectral-brief.md`,
 `docs/architecture/offline-creative-renewal-spectral-brief.md`,
 `docs/architecture/offline-creative-similarity-aligned-cyclic-brief.md`,
 `docs/architecture/offline-creative-cyclic-grain-brief.md`
@@ -318,10 +319,11 @@ STN noise morphing is a residual component, not a complete first-party owner.
 Signal's complete continuous-excitation translation already failed linked
 relation ownership.
 
-No neutral-`Dream` implementation is authorized. Do not reopen it through a
-limiter, post-gain stage, phase or window substitution, scalar sweep, or fusion
-of rejected owners. Reopening requires an explicit operator decision and new
-source-backed complete-system evidence.
+Batch 31.19 authorized no neutral-`Dream` implementation and prohibited
+reopening through a limiter, post-gain stage, phase or window substitution,
+scalar sweep, or fusion of rejected owners. The following operator correction
+and matching-reference evidence supersede that target closure without
+restoring either rejected candidate.
 
 The operator superseded that target closure. The `3.88 dB` PaulXStretch
 calibration came from retained musical rows, while `RenewalSpectral` stopped on
@@ -340,6 +342,25 @@ candidate at a time. Candidate failure requires diagnosis and a new complete
 brief, but does not close the product target unless the operator explicitly
 does so. Hard integrity can stop a render. Character promotion or rejection
 must include reference-matched evidence and long-form listening.
+
+Batch 31.20 rendered the same frozen synthetics through the pinned
+PaulXStretch `1.6.0` core. Its worst-channel uniform-noise crest growth is
+`9.932`, `11.899`, and `10.432 dB` at `4x`, `8x`, and `16x`. The old `6 dB`
+ceiling is not reference-calibrated; the rejected Signal `8.263162 dB` row is
+below the matching PaulX `4x` row.
+
+The frozen `CompensatedRenewalSpectral` brief now owns one complete clean-room
+candidate. It retains Signal's exact map, long magnitude analysis, phase
+renewal, and linked mid/side law. It replaces equal-power frame blending with
+one raised-cosine adjacent-frame blend and compensation derived from
+`1/sqrt(a^2+b^2)`, the variance of two equal-energy uncorrelated frames. The
+law is bounded from `1` through `sqrt(2)` and copies no upstream coefficient or
+control flow.
+
+Hard integrity remains absolute. Crest, pitch, replica, modulation, and gap
+character are compared row-for-row with the matching PaulX synthetic.
+Concealed long-form listening remains promotion authority. One isolated
+candidate is ready; no renderer is admitted.
 
 ## Initial Promotion Sequence
 
@@ -377,8 +398,10 @@ must include reference-matched evidence and long-form listening.
     owner. Superseded; closure used unmatched musical-versus-synthetic crest
     evidence and exceeded the operator decision.
 20. Capture matching PaulXStretch synthetic rows, repair the gate, and freeze
-    one complete clean-room frame-blend-compensated brief. Ready; no candidate
-    DSP in this batch.
+    one complete clean-room frame-blend-compensated brief. Complete; no
+    candidate DSP entered `main`.
+21. Implement `CompensatedRenewalSpectral` once in the frozen disposable
+    worktree and run gates in order. Ready.
 
 `Spectral`/`Rough`, coherent overlap, `LayeredCloud`, the upper overlap, dynamic
 ratios, and automatic routing still require separate reopening decisions backed
@@ -387,19 +410,17 @@ by new complete-system evidence.
 ## Current State
 
 Four isolated spectral candidates and both cyclic candidates are rejected and
-deleted. Explicit `Cyclic` and the automatic router remain closed or paused
-without promotion. Neutral `Dream` is active research. `CyclicGrain` missed the first synthetic
-pitch limit by `5.778` cents. `SimilarityAlignedCyclic` then failed structural
-search reachability before synthetic admission. No third cyclic path is
-authorized. `RenewalSpectral` passed structural admission but failed its first
-crest row by `2.263162 dB` and was deleted. No public Rust enum, renderer,
-harness mode, fixture, artifact schema, runtime route, or product-facing claim
-entered `main`. `OfflineHighQuality` remains byte-exact and Contract `084`
-remains closed. No candidate implementation is admitted or ready before Batch
-31.20 freezes its complete successor brief.
+deleted. Explicit `Cyclic` and the automatic router remain closed or paused.
+Neutral `Dream` is active. Matching PaulX synthetics invalidate the old crest
+calibration, and one complete `CompensatedRenewalSpectral` brief is frozen.
+No public Rust enum, renderer, harness mode, fixture, artifact schema, runtime
+route, or product-facing claim entered `main`. `OfflineHighQuality` remains
+byte-exact and Contract `084` remains closed. Batch 31.21 is ready for one
+isolated private candidate.
 
 ## Next Task
 
-Run `g10.031` Batch 31.20 only. Capture reference-matched PaulXStretch
-synthetics, repair the crest gate, and freeze one clean-room complete brief.
-Do not implement it in the same batch or restore a rejected candidate.
+Run `g10.031` Batch 31.21 only. Implement the frozen
+`CompensatedRenewalSpectral` brief once in its named disposable worktree. Do
+not alter the brief, restore a rejected candidate, or add candidate surfaces to
+`main` before complete admission.
