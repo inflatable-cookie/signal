@@ -23,7 +23,8 @@ memory alone.
   complete checkpoints then failed the same tonal-pitch class, and Batch 31.32
   closed renewal under its terminal comparator gate. The operator then made
   finite PaulX-relative pitch delta diagnostic and kept concealed listening as
-  creative authority. Batch 31.33 froze one fresh listening-led candidate.
+  creative authority. Batch 31.34 rejected that candidate at synthetic `Y08`;
+  Batch 31.35 owns the impulse-support evidence audit.
   Every renderer remains unadmitted; other characters and the router stay
   closed or paused
 - `082` and `g10.029` are historical evidence, not active execution authority
@@ -155,6 +156,6 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Keep Contract `084` closed. Under Contract `085`, run `g10.031` Batch 31.34
-only. Implement the frozen listening-led source-relative candidate from fresh
-source. Keep terminal gates, product routes, and public surfaces unchanged.
+Keep Contract `084` closed. Under Contract `085`, run `g10.031` Batch 31.35
+only. Reconcile complete impulse output with mapped non-zero support in `Y08`.
+Do not implement DSP; keep product routes and public surfaces unchanged.

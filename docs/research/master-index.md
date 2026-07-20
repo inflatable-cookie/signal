@@ -82,10 +82,10 @@ complete source-backed replacement with intrinsic tonal coherence. Renewal is
 closed under that terminal comparator gate without closing the PaulX-like
 product target. The operator then made finite PaulX-relative pitch delta a
 mandatory diagnostic rather than a rejection threshold. Batch 31.33 froze one
-fresh listening-led source-relative candidate. Candidate DSP and product
-exposure remain absent from `main`.
+fresh listening-led source-relative candidate. Batch 31.34 rejected it at
+synthetic `Y08`; candidate DSP and product exposure remain absent from `main`.
 
-Frozen listening-led neutral `Dream` candidate brief:
+Rejected listening-led neutral `Dream` candidate brief:
 [Offline Creative ListeningLedSourceRelativeRenewalSpectral Renderer Brief](../architecture/offline-creative-verified-source-relative-renewal-spectral-brief.md).
 
 Rejected-at-compile neutral `Dream` successor brief:
@@ -147,7 +147,6 @@ Rejected first-owner brief:
 
 ## Next Task
 
-Run `g10.031` Batch 31.34 only. Implement the frozen listening-led
-source-relative candidate from fresh source. Preserve every terminal gate and
-the complete pitch diagnostic; do not recover rejected code or reopen the
-transparent successor.
+Run `g10.031` Batch 31.35 only. Reconcile the `Y08` complete-impulse range
+with mapped non-zero support and prior passed evidence. Do not implement DSP,
+recover rejected code, or reopen the transparent successor.

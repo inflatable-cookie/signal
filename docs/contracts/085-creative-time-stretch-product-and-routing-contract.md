@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: active PaulX-like `Dream`; listening-led renewal candidate ready
+Status: active PaulX-like `Dream`; impulse-support evidence audit ready
 Owner: core-product
 Updated: 2026-07-20
 Related contracts: `046`, `048`, `084`
@@ -522,12 +522,12 @@ Batch 31.25 already passed concealed mono as `15/15` ties, and operator speaker
 review found solid stereo character apart from the balance inversion that the
 later native-channel law was designed to remove.
 
-Fresh authority is `ListeningLedSourceRelativeRenewalSpectral`. It retains the
-seed-audited source-relative renderer and every terminal gate. `Y02` must render
-and report the complete pitch matrix but cannot reject a finite row for
-exceeding PaulX error plus `2` cents. This authorizes one fresh candidate only;
-it does not revive deleted source, waive listening, admit product controls, or
-claim tonal parity.
+Batch 31.33 authority was `ListeningLedSourceRelativeRenewalSpectral`. It
+retains the seed-audited source-relative renderer and every terminal gate.
+`Y02` must render and report the complete pitch matrix but cannot reject a
+finite row for exceeding PaulX error plus `2` cents. This authorized one fresh
+candidate only; it did not revive deleted source, waive listening, admit
+product controls, or claim tonal parity.
 
 ## Initial Promotion Sequence
 
@@ -612,8 +612,12 @@ claim tonal parity.
     fresh complete source-relative authority. Complete; docs and architecture
     only.
 34. Implement `ListeningLedSourceRelativeRenewalSpectral` once from fresh
-    source. Ready; preserve every terminal gate, require the complete `Y02`
-    diagnostic matrix, then open concealed mono and stereo listening in order.
+    source. Complete; checkpoint `f76d5bb7` passed construction `1/1` and
+    structural `15/15`, then synthetic `Y08` rejected exact-zero impulse hops
+    at every ratio. The candidate was deleted before listening.
+35. Reconcile the `Y08` impulse measurement range. Ready; decide whether the
+    complete-output dropout assertion represented mapped non-zero support or
+    over-broadened the gate. Docs and evidence only.
 
 `Spectral`/`Rough`, coherent overlap, `LayeredCloud`, the upper overlap, dynamic
 ratios, and automatic routing still require separate reopening decisions backed
@@ -644,9 +648,14 @@ candidate seed was not frozen. The seed-audited replacement passed construction
 and structural admission and cleared the previous replica failure, but failed
 `Y02` on the `8x` chord. Two complete checkpoints fail the same tonal-pitch
 class. Batch 31.32 found no eligible complete replacement and closed renewal.
-Batch 31.33 supersedes that future-execution closure under the explicit
-operator gate change. Both rejected checkpoints remain closed. One fresh
-listening-led candidate authority now exists; no candidate code exists.
+Batch 31.33 superseded that future-execution closure under the explicit
+operator gate change. Batch 31.34 then passed compile, construction `1/1`, and
+structural `15/15`. Synthetic admission finished `8/9`: `Y02` passed its
+complete diagnostic, while `Y08` found an exact-zero `H` block in the impulse
+row at `4x`, `8x`, and `16x`. Its executable assertion used the complete
+impulse output although the normative dropout boundary says mapped non-zero
+support. The checkpoint remains rejected and deleted. Batch 31.35 must resolve
+that evidence boundary before any new candidate authority exists.
 
 No public Rust enum, renderer, harness mode, fixture, artifact schema, runtime
 route, or product-facing claim entered `main`. `OfflineHighQuality` remains
@@ -654,7 +663,7 @@ byte-exact and Contract `084` remains closed. No creative renderer is admitted.
 
 ## Next Task
 
-Run Batch 31.34 only. Implement the frozen
-`ListeningLedSourceRelativeRenewalSpectral` brief from fresh source in its
-named disposable worktree. Do not recover rejected code, tune DSP, change
-terminal gates, admit product surfaces, or push.
+Run Batch 31.35 only. Reconcile the frozen `Y08` complete-impulse measurement
+range with mapped non-zero support and the passed Batch 31.25 receipt. Do not
+implement DSP, repair or rerun the rejected checkpoint, change thresholds,
+admit product surfaces, or push.

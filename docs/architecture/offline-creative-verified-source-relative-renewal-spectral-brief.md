@@ -1,10 +1,10 @@
 # Offline Creative ListeningLedSourceRelativeRenewalSpectral Renderer Brief
 
-Status: frozen fresh authority; candidate not started
+Status: rejected at synthetic `Y08`; candidate deleted
 Owner: dsp
 Updated: 2026-07-20
 Contract: `085`
-Roadmap: `g10.031`, Batches 31.28-31.34
+Roadmap: `g10.031`, Batches 31.28-31.35
 
 ## Decision
 
@@ -35,6 +35,30 @@ mandatory diagnostics. They no longer outrank the creative listening authority.
 No mid/side magnitude synthesis, per-component orientation, post-render gain,
 limiter, compressor, phase propagation, magnitude recurrence, transient
 detector, onset reset, component layer, or range switch is present.
+
+## Batch 31.34 Outcome
+
+Fresh checkpoint `f76d5bb7241cd27f3a897ff9cf1b8c7e678cc91c`
+passed compile, construction `1/1`, and structural admission `15/15` without
+post-checkpoint repair or rerun. Synthetic admission selected all nine owners:
+eight passed and `Y08` failed.
+
+`Y02` passed its complete listening-led pitch diagnostic. `Y08` found an
+exact-zero run of at least one `H` block in the impulse row at `4x`, `8x`, and
+`16x`. The frozen test applied that dropout assertion over the complete
+impulse output. The normative text separately says first-difference crest uses
+the complete impulse output and the dropout assertion uses mapped non-zero
+support. Batch 31.25's otherwise matching mono topology also passed `Y08`.
+
+The checkpoint is rejected under its frozen assertion. This receipt does not
+yet establish whether the dominant cause is renderer support or an
+over-broad executable interpretation of mapped non-zero support. Do not repair
+or rerun it. Batch 31.35 must resolve that evidence boundary from retained
+briefs and receipts before another candidate can exist.
+
+Listening did not open. Cleanup deleted the worktree, branch, checkpoint,
+module, tests, local build state, and candidate artifacts. The disposable
+nextest cache was moved to Trash. No candidate DSP entered `main`.
 
 ## Batch 31.29 Predecessor Outcome
 
@@ -391,11 +415,12 @@ single-seed admission receipt.
 - [Batch 31.31 seed-audited rejection](../logs/2026-07/20-g10-031-seed-audited-renewal-rejection.md)
 - [Batch 31.32 tonal-coherence closure](../logs/2026-07/20-g10-031-renewal-tonal-coherence-closure.md)
 - [Batch 31.33 listening-led reopening](../logs/2026-07/20-g10-031-listening-led-renewal-reopening.md)
+- [Batch 31.34 listening-led rejection](../logs/2026-07/20-g10-031-listening-led-renewal-rejection.md)
 - [Creative product contract](../contracts/085-creative-time-stretch-product-and-routing-contract.md)
 
 ## Next Task
 
-Run Batch 31.34 only. Implement the fresh listening-led candidate under the
-exact identity above. Keep the former pitch ceilings diagnostic, preserve every
-terminal gate, and stop at the first terminal miss. Do not recover rejected
-source, tune DSP, change thresholds, add product surfaces, or push.
+Run Batch 31.35 only. Reconcile the `Y08` complete-impulse measurement range
+with its mapped-non-zero-support dropout boundary and the passed Batch 31.25
+receipt. Decide whether the miss is renderer evidence or gate-construction
+evidence. Do not implement DSP, repair or rerun the checkpoint, or push.

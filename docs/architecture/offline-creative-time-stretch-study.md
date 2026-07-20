@@ -1,6 +1,6 @@
 # Offline Creative Time-Stretch Study
 
-Status: active PaulX-like `Dream`; listening-led renewal candidate ready
+Status: active PaulX-like `Dream`; impulse-support evidence audit ready
 Owner: dsp
 Updated: 2026-07-20
 Contract: `085`
@@ -586,9 +586,11 @@ discontinuity, dropout, boundary, deterministic-state, and linked-stereo gates
 remain terminal. Concealed mono, operator speaker pre-screen, and eligible
 independent stereo listening remain mandatory.
 
-This is one fresh candidate authority. It does not restore deleted code,
-change DSP, weaken transparent stretch, expose a product surface, or claim
-PaulX parity.
+This was one fresh candidate authority. Batch 31.34 passed construction `1/1`
+and structural `15/15`, then synthetic `Y08` rejected exact-zero impulse hops
+at every ratio. Its executable range used complete impulse output where the
+normative dropout text names mapped non-zero support. The candidate was
+deleted. Batch 31.35 must resolve that evidence boundary before new authority.
 
 ## Sources
 
@@ -625,6 +627,6 @@ PaulX parity.
 
 ## Next Task
 
-Run Batch 31.34 only. Implement the frozen listening-led source-relative
-candidate from fresh source. Preserve every terminal gate, require the complete
-pitch diagnostic, and open listening only after terminal objective admission.
+Run Batch 31.35 only. Reconcile the rejected candidate's complete-output
+impulse dropout assertion with mapped non-zero support and prior passed `Y08`
+evidence. Do not implement DSP or rerun the checkpoint.

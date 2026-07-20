@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: active; Batch 31.33 complete, Batch 31.34 ready
+Status: active; Batch 31.34 rejected, Batch 31.35 ready
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -1081,31 +1081,58 @@ Authority:
 
 ## Batch 31.34 - Isolated Listening-Led Source-Relative Candidate
 
-Status: ready
+Status: complete; rejected at synthetic `Y08`
 
-- [ ] create `signal-candidate-31-34` on
+- [x] create `signal-candidate-31-34` on
   `candidate/g10-031-listening-led-source-relative-renewal`
-- [ ] implement only the fresh private six-file
+- [x] implement only the fresh private six-file
   `creative_listening_led_source_relative_renewal` family and one private
   `lib.rs` declaration; do not recover rejected candidate source
-- [ ] complete `effigy test compile` and exactly `1/1` construction owner
-- [ ] freeze one local immutable checkpoint; do not push it
-- [ ] run exactly `15/15` structural owners once
-- [ ] run exactly `9/9` synthetic owners once; `Y02` must emit every finite
-  candidate, PaulX, and delta value without a comparator ceiling assertion
-- [ ] repeat the concealed `15`-row mono pack only after terminal objective
-  admission
-- [ ] capture same-source PaulX stereo references, then run objective stereo,
-  operator speaker pre-screen, and eligible independent listening in order
-- [ ] stop on the first terminal miss and delete the complete candidate without
+- [x] complete `effigy test compile` and exactly `1/1` construction owner
+- [x] freeze local checkpoint `f76d5bb7`; it was not pushed
+- [x] run exactly `15/15` structural owners once
+- [x] run all nine synthetic owners once; `Y02` emitted and passed its complete
+  matrix of candidate, PaulX, and delta values without a comparator ceiling
+  assertion
+- [x] stop before listening after `Y08` found an exact-zero `H` block in the
+  impulse row at `4x`, `8x`, and `16x`
+- [x] record synthetic `8/9`; listening did not open
+- [x] delete the complete candidate without
   tuning, repair, or rerun
-- [ ] keep public APIs, reports, fixtures, cache, routing, other characters,
+- [x] keep public APIs, reports, fixtures, cache, routing, other characters,
+  Loophole, and Chorus unchanged
+
+Decision:
+
+- the checkpoint is rejected under its frozen `Y08` assertion
+- its executable dropout range used the complete impulse output, while the
+  brief reserves complete output for impulse first-difference crest and names
+  mapped non-zero support for dropout
+- Batch 31.25 passed `Y08` under the otherwise matching mono topology, so the
+  receipt cannot yet distinguish renderer loss from over-broad gate assembly
+- no candidate code entered `main`
+
+## Batch 31.35 - Impulse Support Evidence Reconciliation
+
+Status: ready; docs and evidence only
+
+- [ ] reconcile the audited brief's complete-output impulse discontinuity
+  range with its mapped-non-zero-support dropout rule
+- [ ] compare the Batch 31.25 passed `Y08` receipt and Batch 31.34 failure
+  without recovering either rejected implementation
+- [ ] freeze one exact definition of impulse mapped non-zero support and show
+  how every ratio derives it from the source/output map
+- [ ] classify Batch 31.34 as renderer-support failure or executable-evidence
+  construction failure
+- [ ] if the renderer failed, close or reassess the complete topology; if the
+  gate was over-broad, freeze a new complete candidate identity without DSP
+- [ ] keep thresholds, sources, renderer formulas, product surfaces, routing,
   Loophole, and Chorus unchanged
 
 ## Later Batches
 
-Closed or paused without promotion. Work after Batch 31.34 requires a complete
-candidate admission result:
+Closed or paused without promotion. Work after Batch 31.35 requires its exact
+evidence decision:
 
 - minimal production admission
 - coherent/diffusive overlap
@@ -1164,12 +1191,15 @@ candidate admission result:
 - [x] operator changed the creative pitch gate from comparator rejection to a
   mandatory listening-led diagnostic
 - [x] one fresh complete listening-led source-relative authority is frozen
+- [x] one fresh listening-led candidate passed construction `1/1` and
+  structural `15/15`, then reached a terminal synthetic `Y08` rejection
+- [x] the rejected checkpoint, implementation, tests, worktree, branch, and
+  build state were deleted without repair or rerun
 - [x] no private renderer or product surface entered `main`
 
 ## Next Task
 
-Run Batch 31.34 only. Implement the frozen listening-led source-relative
-candidate from fresh source in its named disposable worktree. Preserve every
-terminal gate, require the complete pitch diagnostic, and stop at the first
-terminal miss. Do not tune, recover rejected code, admit product surfaces, or
-push.
+Run Batch 31.35 only. Reconcile the frozen `Y08` impulse measurement range
+against mapped non-zero support and the passed Batch 31.25 receipt. Classify
+the miss before any new authority exists. Do not implement DSP, repair or
+rerun the rejected checkpoint, change thresholds, or push.

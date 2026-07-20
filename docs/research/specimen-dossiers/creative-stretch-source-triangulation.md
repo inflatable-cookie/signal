@@ -1,9 +1,9 @@
 # Creative Stretch Source Triangulation
 
-Status: reviewed; listening-led renewal candidate ready
+Status: reviewed; listening-led candidate rejected at `Y08`
 Owner: dsp
 Updated: 2026-07-20
-Roadmap: `g10.031`, Batches 31.16 and 31.30-31.34
+Roadmap: `g10.031`, Batches 31.16 and 31.30-31.35
 
 ## Question
 
@@ -352,7 +352,14 @@ source conclusion that PaulX uses one renewal path across all retained ratios.
 It authorizes one fresh source-relative candidate without changing the source
 translation, seed, or any terminal integrity and stereo boundary.
 
+Batch 31.34 passed construction `1/1` and structural `15/15`, then failed
+synthetic `Y08` on exact-zero impulse hops at every ratio. The frozen
+executable assertion used complete impulse output while the normative dropout
+boundary names mapped non-zero support. The candidate was rejected and
+deleted. Source triangulation remains unchanged; Batch 31.35 audits evidence
+construction only.
+
 ## Next Task
 
-Run `g10.031` Batch 31.34 only under the frozen listening-led brief. Do not
-change source translation, seed, or terminal gates.
+Run `g10.031` Batch 31.35 only. Reconcile the `Y08` impulse-support evidence
+boundary without changing source translation, seed, or terminal gates.
