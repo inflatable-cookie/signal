@@ -79,11 +79,14 @@ seed: construction and structural admission passed, `Y04` cleared, but `Y02`
 failed the `8x` chord pitch row. Two complete checkpoints now fail tonal pitch
 across different seeds, material, and ratios. Batch 31.32 found no eligible
 complete source-backed replacement with intrinsic tonal coherence. Renewal is
-closed without closing the PaulX-like product target; all candidate DSP and
-product exposure remain absent from `main`.
+closed under that terminal comparator gate without closing the PaulX-like
+product target. The operator then made finite PaulX-relative pitch delta a
+mandatory diagnostic rather than a rejection threshold. Batch 31.33 froze one
+fresh listening-led source-relative candidate. Candidate DSP and product
+exposure remain absent from `main`.
 
-Rejected neutral `Dream` candidate brief:
-[Offline Creative SeedAuditedSourceRelativeRenewalSpectral Renderer Brief](../architecture/offline-creative-verified-source-relative-renewal-spectral-brief.md).
+Frozen listening-led neutral `Dream` candidate brief:
+[Offline Creative ListeningLedSourceRelativeRenewalSpectral Renderer Brief](../architecture/offline-creative-verified-source-relative-renewal-spectral-brief.md).
 
 Rejected-at-compile neutral `Dream` successor brief:
 [Offline Creative CompensatedRenewalSpectral Renderer Brief](../architecture/offline-creative-compensated-renewal-spectral-brief.md).
@@ -144,7 +147,7 @@ Rejected first-owner brief:
 
 ## Next Task
 
-No creative candidate batch is ready. Retain the PaulX-like target and source
-evidence. Reopen only when new complete-system evidence supplies tonal
-coherence, high-ratio creative diffusion, linked-channel ownership, exact
-length, determinism, and bounded state without reviving a rejected family.
+Run `g10.031` Batch 31.34 only. Implement the frozen listening-led
+source-relative candidate from fresh source. Preserve every terminal gate and
+the complete pitch diagnostic; do not recover rejected code or reopen the
+transparent successor.

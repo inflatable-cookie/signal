@@ -1,9 +1,9 @@
 # Creative Stretch Source Triangulation
 
-Status: reviewed; renewal family closed without promotion
+Status: reviewed; listening-led renewal candidate ready
 Owner: dsp
 Updated: 2026-07-20
-Roadmap: `g10.031`, Batches 31.16, 31.30, 31.31, and 31.32
+Roadmap: `g10.031`, Batches 31.16 and 31.30-31.34
 
 ## Question
 
@@ -345,7 +345,14 @@ but not a released training path, usable repository licence, or intrinsic
 linked pitch law. Renewal is closed. PaulXStretch remains the target reference;
 the target itself is not closed.
 
+The operator then changed the product gate rather than the renderer. Finite
+PaulX-relative pitch delta is now mandatory diagnostic evidence; concealed
+listening decides whether it harms neutral `Dream`. This preserves the pinned
+source conclusion that PaulX uses one renewal path across all retained ratios.
+It authorizes one fresh source-relative candidate without changing the source
+translation, seed, or any terminal integrity and stereo boundary.
+
 ## Next Task
 
-No candidate batch is ready. Reopen only on new complete-system evidence or an
-explicit operator change to a governing product boundary.
+Run `g10.031` Batch 31.34 only under the frozen listening-led brief. Do not
+change source translation, seed, or terminal gates.

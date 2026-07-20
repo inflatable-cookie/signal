@@ -31,7 +31,7 @@ strict lane.
 - Rejected offline stretch successor: [architecture/offline-time-stretch-successor-brief.md](./architecture/offline-time-stretch-successor-brief.md)
 - Non-phase-vocoder feasibility: [architecture/offline-time-stretch-non-phase-vocoder-feasibility.md](./architecture/offline-time-stretch-non-phase-vocoder-feasibility.md)
 - Creative time-stretch study: [architecture/offline-creative-time-stretch-study.md](./architecture/offline-creative-time-stretch-study.md)
-- Rejected creative SeedAuditedSourceRelativeRenewalSpectral brief: [architecture/offline-creative-verified-source-relative-renewal-spectral-brief.md](./architecture/offline-creative-verified-source-relative-renewal-spectral-brief.md)
+- Frozen creative ListeningLedSourceRelativeRenewalSpectral brief: [architecture/offline-creative-verified-source-relative-renewal-spectral-brief.md](./architecture/offline-creative-verified-source-relative-renewal-spectral-brief.md)
 - Rejected-at-vector-proof creative SourceRelativeRenewalSpectral brief: [architecture/offline-creative-source-relative-renewal-spectral-brief.md](./architecture/offline-creative-source-relative-renewal-spectral-brief.md)
 - Rejected creative AuditedVarianceCompensatedRenewalSpectral brief: [architecture/offline-creative-audited-variance-compensated-renewal-spectral-brief.md](./architecture/offline-creative-audited-variance-compensated-renewal-spectral-brief.md)
 - Evidence-rejected creative VarianceCompensatedRenewalSpectral brief: [architecture/offline-creative-variance-compensated-renewal-spectral-brief.md](./architecture/offline-creative-variance-compensated-renewal-spectral-brief.md)
@@ -79,7 +79,7 @@ strict lane.
 
 ## Next Task
 
-No creative candidate batch is ready. Keep the PaulX-like target and retained
-comparators, but reopen implementation only on new complete-system evidence or
-an explicit operator change to a governing product boundary. Only drop into
-`specs/` when a strict lane is explicitly reopened.
+Run `g10.031` Batch 31.34 only. Implement the frozen listening-led
+source-relative candidate from fresh source in its named disposable worktree.
+Keep terminal gates and the mandatory pitch diagnostic unchanged. Only drop
+into `specs/` when a strict lane is explicitly reopened.

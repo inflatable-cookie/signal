@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: creative renewal closed; no candidate ready
+Status: listening-led creative renewal candidate ready
 Updated: 2026-07-20
 
 ## Why this generation matters now
@@ -135,7 +135,10 @@ The 2026-07-19 consolidation reset is authoritative.
   has no persistent tonal phase owner and no eligible complete source-backed
   replacement remains. Renewal is closed without closing the PaulX-like
   product target. Other characters, routing, product exposure, and rejected
-  branches remain closed or paused.
+  branches remain closed or paused. The operator then changed the Contract
+  `085` pitch gate: finite PaulX-relative pitch delta is diagnostic and
+  concealed listening remains creative authority. Batch 31.33 froze one fresh
+  listening-led source-relative candidate without changing DSP.
 - The 2026-07-20 lifecycle reconciliation closes stale `g10.001` and
   `g10.003` active markers. It also records that Signal's `g10.017` capture and
   live-monitor implementation landed; that roadmap is paused only on explicit
@@ -209,10 +212,10 @@ Do not start Loophole or Chorus planning from Signal internals.
   - historical correctness, listening, and rejected-successor ledger
 - `g10.030` `complete`
   - stretch consolidated; candidate families closed; frozen baseline retained
-- `g10.031` `evidence hold`
-  - PaulX-like neutral `Dream` remains product intent; Batch 31.32 closed the
-    renewal family without promotion, no candidate is ready, and explicit
-    `Cyclic` stays closed
+- `g10.031` `active`
+  - PaulX-like neutral `Dream` remains product intent; Batch 31.33 froze the
+    listening-led gate correction and Batch 31.34 is ready; explicit `Cyclic`
+    stays closed
 
 ## Stretch Boundary
 
@@ -263,13 +266,16 @@ the `8x` chord pitch row. The isolated candidate was deleted before listening.
 Batch 31.32 found no eligible complete renderer with both intrinsic tonal
 coherence and the retained high-ratio diffusive character. Renewal is closed;
 the PaulX-like target and comparator evidence remain.
+The operator then made finite PaulX-relative pitch delta diagnostic rather than
+terminal for creative `Dream`. Batch 31.33 froze a fresh source-relative
+candidate with every hard, replica, level, boundary, and stereo gate retained.
 Creative stretch still has no renderer, public API, harness surface, or product
 route on `main`.
 
 ## Next Task
 
-No creative candidate batch is ready. Preserve the PaulX-like target and
-comparator pack. Reopen `g10.031` implementation only on new complete-system
-evidence or an explicit operator change to a governing product boundary. Keep
-`g10.028`, routing, product exposure, cross-repo work, and candidate DSP on
-`main` paused.
+Run `g10.031` Batch 31.34 only. Implement the fresh listening-led
+source-relative candidate in its named disposable worktree. Preserve every
+terminal gate, require the complete pitch diagnostic, and stop at the first
+terminal miss. Keep `g10.028`, routing, product exposure, and cross-repo work
+paused. Do not push.

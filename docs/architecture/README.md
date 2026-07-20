@@ -29,6 +29,7 @@ Keep milestone sequencing in `roadmaps/`.
 - `offline-time-stretch-non-phase-vocoder-feasibility.md`
 - `offline-creative-time-stretch-study.md`
 - `offline-creative-verified-source-relative-renewal-spectral-brief.md`
+  - current frozen `ListeningLedSourceRelativeRenewalSpectral` authority
 - `offline-creative-renewal-spectral-brief.md`
 - `offline-creative-continuous-excitation-complex-relation-brief.md`
 - `offline-creative-continuous-excitation-spectral-brief.md`
@@ -39,7 +40,6 @@ Keep milestone sequencing in `roadmaps/`.
 
 ## Next Task
 
-Keep the `g10.030` transparent successor program and the `g10.031` renewal
-family closed. No creative candidate is ready. Preserve the PaulX-like target
-until new complete-system evidence or an explicit operator boundary change
-supports another architecture.
+Keep the `g10.030` transparent successor program closed. Run `g10.031` Batch
+31.34 only under the frozen listening-led source-relative brief. Keep all
+terminal controls, product routing, and public exposure closed.

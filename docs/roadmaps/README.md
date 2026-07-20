@@ -107,7 +107,10 @@ passed construction `1/1` and structural `15/15`, then failed `Y02` on the
 `8x` chord at `13.351828347` cents against an `11.331375778`-cent ceiling.
 `Y04` passed. The candidate was deleted before listening. Batch 31.32 renewal
 architecture reassessment found no eligible complete replacement. Renewal is
-closed without closing the PaulX-like product target; no candidate is ready.
+closed under its terminal comparator gate without closing the PaulX-like
+product target. The operator then made finite PaulX-relative pitch delta a
+mandatory diagnostic rather than a rejection threshold. Batch 31.33 froze one
+fresh listening-led source-relative candidate; Batch 31.34 is ready.
 Offline artifacts still need a streaming artifact writer/cache target for full
 peak-memory closure. Mono callback-state DSP has a
 no-allocation proof, linked stereo is implemented, ratio scheduling has
@@ -233,9 +236,7 @@ Before rollover:
 
 ## Next Task
 
-Use `docs/roadmaps/g10/README.md` as the active generation front door. No
-creative candidate batch is ready. Preserve the PaulX-like target and reopen
-only on new complete-system evidence or an explicit operator change to a
-governing product boundary. Keep the transparent successor lane, `g10.028`,
-other creative owners, routing, product exposure, cross-repo work, and
-candidate DSP on `main` closed.
+Use `docs/roadmaps/g10/README.md` as the active generation front door. Run
+`g10.031` Batch 31.34 only under the frozen listening-led source-relative
+brief. Keep the transparent successor lane, `g10.028`, other creative owners,
+routing, product exposure, and cross-repo work closed.

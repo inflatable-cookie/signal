@@ -21,9 +21,11 @@ memory alone.
   matching PaulX synthetics invalidate the old absolute crest calibration,
   later renewal candidates reached mono and linked-stereo evidence, two fresh
   complete checkpoints then failed the same tonal-pitch class, and Batch 31.32
-  closed renewal after finding no eligible complete replacement. Every
-  renderer remains unadmitted; the PaulX-like target remains product intent,
-  while other characters and the router stay closed or paused
+  closed renewal under its terminal comparator gate. The operator then made
+  finite PaulX-relative pitch delta diagnostic and kept concealed listening as
+  creative authority. Batch 31.33 froze one fresh listening-led candidate.
+  Every renderer remains unadmitted; other characters and the router stay
+  closed or paused
 - `082` and `g10.029` are historical evidence, not active execution authority
 - `g10.028` source-fill work remains paused
 
@@ -153,7 +155,6 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Keep Contract `084` and the Contract `085` renewal family closed. No creative
-candidate is ready. Reopen only on new complete-system evidence or an explicit
-operator change to a governing product boundary. Do not admit candidate or
-product surfaces to `main`.
+Keep Contract `084` closed. Under Contract `085`, run `g10.031` Batch 31.34
+only. Implement the frozen listening-led source-relative candidate from fresh
+source. Keep terminal gates, product routes, and public surfaces unchanged.

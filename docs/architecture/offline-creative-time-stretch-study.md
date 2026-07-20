@@ -1,6 +1,6 @@
 # Offline Creative Time-Stretch Study
 
-Status: active PaulX-like `Dream`; renewal family closed without promotion
+Status: active PaulX-like `Dream`; listening-led renewal candidate ready
 Owner: dsp
 Updated: 2026-07-20
 Contract: `085`
@@ -562,6 +562,34 @@ operator evidence that supplies intrinsic tonal coherence, diffusive musical
 character at `4x`, `8x`, and `16x`, one linked-channel law, exact length,
 determinism, and bounded state without reviving a rejected family.
 
+## Listening-Led Gate Correction
+
+The operator explicitly changed the governing Contract `085` boundary after
+Batch 31.32. The old closure remains the correct result under its frozen gate,
+and both rejected checkpoints stay rejected. Future creative admission no
+longer treats the PaulX pitch error plus `2` cents as a terminal threshold.
+
+The correction follows the strongest product evidence:
+
+- Batch 31.25 passed concealed mono as `15/15` ties against PaulXStretch
+- operator speaker review found the stereo output solid apart from the
+  source-relative balance inversion
+- the later native-channel relation law directly owns that balance defect
+- its fresh checkpoints stopped before listening on finite comparator deltas,
+  not a heard tonal failure
+
+`ListeningLedSourceRelativeRenewalSpectral` retains the complete seed-audited
+renderer and terminal controls. `Y02` must measure every tone and chord row and
+record candidate error, PaulX error, and signed delta. It rejects missing or
+non-finite evidence, not a finite pitch delta. Hard integrity, replica, level,
+discontinuity, dropout, boundary, deterministic-state, and linked-stereo gates
+remain terminal. Concealed mono, operator speaker pre-screen, and eligible
+independent stereo listening remain mandatory.
+
+This is one fresh candidate authority. It does not restore deleted code,
+change DSP, weaken transparent stretch, expose a product surface, or claim
+PaulX parity.
+
 ## Sources
 
 - [REAPER time-stretch engines](https://www.reaper.fm/about.php)
@@ -597,6 +625,6 @@ determinism, and bounded state without reviving a rejected family.
 
 ## Next Task
 
-No candidate batch is ready. Keep the PaulX-like `Dream` target and comparator
-pack, but reopen implementation only when the complete-system evidence above
-exists or the operator explicitly changes a governing product boundary.
+Run Batch 31.34 only. Implement the frozen listening-led source-relative
+candidate from fresh source. Preserve every terminal gate, require the complete
+pitch diagnostic, and open listening only after terminal objective admission.

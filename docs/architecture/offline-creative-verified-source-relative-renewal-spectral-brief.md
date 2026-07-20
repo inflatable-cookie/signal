@@ -1,35 +1,36 @@
-# Offline Creative SeedAuditedSourceRelativeRenewalSpectral Renderer Brief
+# Offline Creative ListeningLedSourceRelativeRenewalSpectral Renderer Brief
 
-Status: rejected at synthetic admission; renewal family closed
+Status: frozen fresh authority; candidate not started
 Owner: dsp
 Updated: 2026-07-20
 Contract: `085`
-Roadmap: `g10.031`, Batches 31.28-31.31
+Roadmap: `g10.031`, Batches 31.28-31.34
 
 ## Decision
 
-Batch 31.30 froze one fresh Signal-owned
-`SeedAuditedSourceRelativeRenewalSpectral` candidate for neutral `Dream` at
+Batch 31.33 freezes one fresh Signal-owned
+`ListeningLedSourceRelativeRenewalSpectral` candidate for neutral `Dream` at
 `4x`, `8x`, and `16x`.
 
-Retain the source-relative architecture frozen in Batch 31.26. Batch 31.27
-produced no synthetic, mono-listening, or stereo result. Its sole miss was an
-incorrect handwritten `mix64(1)` assertion. This brief replaces that evidence
-construction under a new identity. It does not recover, patch, or rerun
-checkpoint `1f05cc33`.
+Retain the complete source-relative renderer, audited seed, request, transform,
+map, native-channel relation law, synthesis, boundaries, state, and terminal
+gates below. Change one admission rule: `Y02` must measure and record every
+PaulX-relative pitch row, but its old reference-plus-`2`-cent ceiling is a
+diagnostic rather than a terminal assertion. Concealed listening owns whether
+the measured tonal deviation is objectionable.
 
-Batch 31.29 remains rejected. Its synthetic helpers selected candidate seed
-`17`, but this brief and its audited predecessor never froze a synthetic
-candidate seed. Batch 31.25 passed the same normative mono DSP, sources, and
-metrics at an unrecorded seed. The two receipts therefore cannot support a
-ratio-range or transform-topology conclusion.
+This is an operator-authorized Contract `085` boundary change, not a seed,
+window, hop, transform, phase, threshold, or scalar repair. Checkpoints
+`d94612dd` and `790119b7` remain rejected and deleted. Batch 31.34 must build
+fresh source under the new identity and may not recover either implementation.
 
-Pinned PaulXStretch uses one buffer geometry, source accumulator,
-magnitude-renewal path, and adjacent-frame blend across the retained ratios.
-There is no source-backed basis for a `4x`/`16x` algorithm or resolution switch.
-Retain the source-relative topology under a fresh identity and make the exact
-admission seed part of evidence authority. This is not a repair or rerun of
-checkpoint `d94612dd`.
+The correction follows the product evidence. Batch 31.25 passed concealed mono
+as `15/15` ties against PaulXStretch. Operator speaker review found its stereo
+output solid apart from the source-relative balance inversion. The later
+native left/right law was designed to remove that defect, but its fresh
+checkpoints stopped before listening on pitch deltas of about `1.55`, `6.50`,
+and `2.02` cents beyond their reference-relative ceilings. Those deltas remain
+mandatory diagnostics. They no longer outrank the creative listening authority.
 
 No mid/side magnitude synthesis, per-component orientation, post-render gain,
 limiter, compressor, phase propagation, magnitude recurrence, transient
@@ -83,6 +84,12 @@ source-backed renderer satisfied the retained tonal, diffusive, linked-stereo,
 exact-length, deterministic, and bounded-state boundaries without reopening a
 rejected family. Renewal is closed without promotion. The PaulX-like product
 target remains active evidence.
+
+Batch 31.33 supersedes that closure for future Contract `085` execution after
+the operator explicitly changed the governing gate. The repeated comparator
+delta is no longer a terminal failure class. This does not alter either prior
+receipt, revive deleted code, or claim tonal parity. It authorizes one fresh
+listening-led candidate only.
 
 Listening did not open. Cleanup deleted the worktree, branch, checkpoint,
 module, tests, build state, and candidate artifacts. No candidate DSP entered
@@ -257,10 +264,10 @@ ties, and no parallel reduction require byte-identical repeats. Offline only.
 
 Use exactly:
 
-- worktree: `signal-candidate-31-31`
-- branch: `candidate/g10-031-seed-audited-source-relative-renewal`
+- worktree: `signal-candidate-31-34`
+- branch: `candidate/g10-031-listening-led-source-relative-renewal`
 - module:
-  `crates/signal-dsp-stretch/src/creative_seed_audited_source_relative_renewal/`
+  `crates/signal-dsp-stretch/src/creative_listening_led_source_relative_renewal/`
 - files: `mod.rs`, `plan.rs`, `analysis.rs`, `relation.rs`, `synthesis.rs`,
   `tests.rs`
 
@@ -271,9 +278,9 @@ ignored under `target/`.
 
 Test prefixes are only:
 
-- `seed_audited_source_relative_renewal_construction_`
-- `seed_audited_source_relative_renewal_structural_`
-- `seed_audited_source_relative_renewal_synthetic_`
+- `listening_led_source_relative_renewal_construction_`
+- `listening_led_source_relative_renewal_structural_`
+- `listening_led_source_relative_renewal_synthetic_`
 
 `tests.rs` owns one compile-linked `GATE_OWNERS` table with exactly `24` unique
 IDs, names, and function pointers: `15` structural and `9` synthetic. The sole
@@ -317,22 +324,31 @@ Structural owners are:
 | S15 | `forbidden_mechanisms` | forbidden token and type inventory |
 
 Each exact owner name is
-`seed_audited_source_relative_renewal_structural_<suffix>`. `S04` contains no
+`listening_led_source_relative_renewal_structural_<suffix>`. `S04` contains no
 independent handwritten counter literal. Run structural admission once and
 require exactly `15/15`.
 
 Synthetic owners are the audited predecessor's `Y01` through `Y09` meanings,
-renamed with the seed-audited prefix. Its `Frozen Synthetic Sources` and
-`Exact Measurements` sections remain normative unchanged. `Y09` additionally
-exercises source relation, channel magnitude, whole/band/window balance, and
-all ratios at `space=0`, `0.5`, and `1`. Every owner renders all rows before
-one final assertion. Every candidate row uses `ADMISSION_SEED`; test helpers
-cannot supply another seed. Run synthetic admission once and require exactly
-`9/9`.
+renamed with the listening-led prefix. Its `Frozen Synthetic Sources` and
+`Exact Measurements` sections remain normative unchanged except for `Y02`.
+`Y09` additionally exercises source relation, channel magnitude,
+whole/band/window balance, and all ratios at `space=0`, `0.5`, and `1`.
+
+`Y02` renders the low tone, mid tone, and every chord partial at every ratio.
+It must complete the frozen estimator, require a finite detected peak for each
+partial, and record candidate absolute error, PaulX error, and signed delta in
+cents. It has no pitch-error ceiling and cannot reject a finite measured row.
+Every other synthetic threshold remains terminal and unchanged.
+
+Every owner renders all rows before one final assertion. Every candidate row
+uses `ADMISSION_SEED`; test helpers cannot supply another seed. Run synthetic
+admission once and require exactly `9/9`. `Y02` passes only when its complete
+diagnostic matrix was produced under the frozen estimator.
 
 ## Listening And Stereo Admission
 
-Only after objective admission, repeat the retained concealed mono pack:
+Only after terminal objective admission and complete `Y02` diagnostics, repeat
+the retained concealed mono pack:
 percussion, bass, vocals, pads/sustains, and full mix at `4x`, `8x`, and `16x`
 against PaulXStretch 1.6.0 default / FFT `16384`. Use `ADMISSION_SEED`,
 `space=0.5`, exact crop, common row RMS, and `0.95` peak ceiling. Pass requires
@@ -352,9 +368,11 @@ blocks admission.
 
 ## Rejection, Cleanup, And Minimal Admission
 
-Any miss rejects the complete candidate. Record one dominant cause and stopped
-gate. Delete worktree, branch, checkpoint, module, tests, build state, and
-listening assembly. Do not tune, repair, or rerun a failed checkpoint.
+Any terminal objective or listening miss rejects the complete candidate.
+Exceeding the former `Y02` reference-relative ceiling does not. Record one
+dominant cause and stopped gate. Delete worktree, branch, checkpoint, module,
+tests, build state, and listening assembly. Do not tune, repair, or rerun a
+failed checkpoint.
 
 Only a complete pass may admit the private module, fixed-ratio neutral-`Dream`
 request and renderer, structural/synthetic regressions, and one internal
@@ -372,10 +390,12 @@ single-seed admission receipt.
 - [Batch 31.30 seed-authority reassessment](../logs/2026-07/20-g10-031-seed-authority-reassessment.md)
 - [Batch 31.31 seed-audited rejection](../logs/2026-07/20-g10-031-seed-audited-renewal-rejection.md)
 - [Batch 31.32 tonal-coherence closure](../logs/2026-07/20-g10-031-renewal-tonal-coherence-closure.md)
+- [Batch 31.33 listening-led reopening](../logs/2026-07/20-g10-031-listening-led-renewal-reopening.md)
 - [Creative product contract](../contracts/085-creative-time-stretch-product-and-routing-contract.md)
 
 ## Next Task
 
-None for this rejected brief. Reopen the product study only on new
-complete-system evidence or an explicit operator change to a governing product
-boundary.
+Run Batch 31.34 only. Implement the fresh listening-led candidate under the
+exact identity above. Keep the former pitch ceilings diagnostic, preserve every
+terminal gate, and stop at the first terminal miss. Do not recover rejected
+source, tune DSP, change thresholds, add product surfaces, or push.

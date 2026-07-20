@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: active PaulX-like `Dream`; renewal family closed without promotion
+Status: active PaulX-like `Dream`; listening-led renewal candidate ready
 Owner: core-product
 Updated: 2026-07-20
 Related contracts: `046`, `048`, `084`
@@ -225,8 +225,17 @@ freeze, stereo instability, and failure to map the semantic controls
 consistently.
 
 Every numeric creative-character gate must be calibrated against the retained
-comparator row or identify a hard integrity boundary. Comparator metrics still
-diagnose and reject; concealed long-form listening remains promotion authority.
+comparator row or identify a hard integrity boundary. Hard integrity,
+replica-region, level, discontinuity, dropout, deterministic-state, boundary,
+and linked-stereo gates remain terminal.
+
+For neutral `Dream`, sustained pitch error versus the matching PaulX row is a
+mandatory diagnostic, not a terminal comparator threshold. The frozen
+estimator must complete every tone and chord row and record both errors and
+their delta. Concealed long-form listening decides whether finite measured
+tonal deviation is objectionable. A missing or non-finite measurement remains
+an evidence failure. This exception does not weaken transparent Contract `046`
+or `084` tonal admission.
 
 ### Rule 10: one complete candidate at a time
 
@@ -506,6 +515,20 @@ coherence, creative diffusion at `4x`, `8x`, and `16x`, linked channels, exact
 length, determinism, and bounded state, or an explicit operator change to a
 governing product boundary.
 
+The operator made that boundary change after Batch 31.32. Prior renewal
+checkpoints remain rejected under their frozen gates, but the repeated finite
+PaulX-relative pitch delta no longer defines a terminal creative failure class.
+Batch 31.25 already passed concealed mono as `15/15` ties, and operator speaker
+review found solid stereo character apart from the balance inversion that the
+later native-channel law was designed to remove.
+
+Fresh authority is `ListeningLedSourceRelativeRenewalSpectral`. It retains the
+seed-audited source-relative renderer and every terminal gate. `Y02` must render
+and report the complete pitch matrix but cannot reject a finite row for
+exceeding PaulX error plus `2` cents. This authorizes one fresh candidate only;
+it does not revive deleted source, waive listening, admit product controls, or
+claim tonal parity.
+
 ## Initial Promotion Sequence
 
 1. Comparator capture and target-character freeze. Complete.
@@ -585,6 +608,12 @@ governing product boundary.
 32. Reassess the renewal family against the repeated tonal-pitch failure.
     Either select one materially different, source-backed complete renderer or
     close the family. Complete; no eligible replacement found, renewal closed.
+33. Apply the operator-authorized listening-led gate correction and freeze one
+    fresh complete source-relative authority. Complete; docs and architecture
+    only.
+34. Implement `ListeningLedSourceRelativeRenewalSpectral` once from fresh
+    source. Ready; preserve every terminal gate, require the complete `Y02`
+    diagnostic matrix, then open concealed mono and stereo listening in order.
 
 `Spectral`/`Rough`, coherent overlap, `LayeredCloud`, the upper overlap, dynamic
 ratios, and automatic routing still require separate reopening decisions backed
@@ -615,7 +644,9 @@ candidate seed was not frozen. The seed-audited replacement passed construction
 and structural admission and cleared the previous replica failure, but failed
 `Y02` on the `8x` chord. Two complete checkpoints fail the same tonal-pitch
 class. Batch 31.32 found no eligible complete replacement and closed renewal.
-No creative candidate authority remains.
+Batch 31.33 supersedes that future-execution closure under the explicit
+operator gate change. Both rejected checkpoints remain closed. One fresh
+listening-led candidate authority now exists; no candidate code exists.
 
 No public Rust enum, renderer, harness mode, fixture, artifact schema, runtime
 route, or product-facing claim entered `main`. `OfflineHighQuality` remains
@@ -623,6 +654,7 @@ byte-exact and Contract `084` remains closed. No creative renderer is admitted.
 
 ## Next Task
 
-No candidate batch is ready. Preserve the PaulX-like target and comparator
-evidence. Reopen only on the complete-system evidence listed above or an
-explicit operator change to a governing product boundary.
+Run Batch 31.34 only. Implement the frozen
+`ListeningLedSourceRelativeRenewalSpectral` brief from fresh source in its
+named disposable worktree. Do not recover rejected code, tune DSP, change
+terminal gates, admit product surfaces, or push.

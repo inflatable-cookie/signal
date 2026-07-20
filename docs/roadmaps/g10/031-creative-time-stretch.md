@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: evidence hold; Batch 31.32 complete, no candidate ready
+Status: active; Batch 31.33 complete, Batch 31.34 ready
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -1049,11 +1049,63 @@ Decision:
 - renewal is closed; `Dream` remains active comparator-backed product intent
 - no successor brief or candidate implementation is authorized
 
+## Batch 31.33 - Listening-Led Renewal Gate Correction
+
+Status: complete; docs and architecture only
+
+- [x] record the operator's explicit Contract `085` boundary change
+- [x] retain hard integrity, replica, level, discontinuity, dropout, boundary,
+  deterministic-state, and linked-stereo gates as terminal
+- [x] change `Y02` from PaulX-error-plus-`2`-cent rejection to a mandatory
+  complete diagnostic matrix
+- [x] keep missing or non-finite pitch evidence terminal while letting
+  concealed listening judge finite tonal deviation
+- [x] freeze `ListeningLedSourceRelativeRenewalSpectral` under a fresh
+  worktree, branch, module, prefix, and checkpoint identity
+- [x] keep both prior checkpoints rejected and deleted
+- [x] keep candidate DSP, tests, harnesses, fixtures, APIs, routing, cache,
+  product exposure, Loophole, and Chorus unchanged
+
+Decision:
+
+- Batch 31.25's `15/15` concealed mono ties and the operator's solid stereo
+  assessment outweigh a finite unheard comparator overrun as creative quality
+  evidence
+- the source-relative balance defect remains a terminal stereo boundary and
+  the native-channel successor law remains the frozen correction
+- no DSP or other threshold changed; one fresh implementation is authorized
+
+Authority:
+
+- `docs/architecture/offline-creative-verified-source-relative-renewal-spectral-brief.md`
+
+## Batch 31.34 - Isolated Listening-Led Source-Relative Candidate
+
+Status: ready
+
+- [ ] create `signal-candidate-31-34` on
+  `candidate/g10-031-listening-led-source-relative-renewal`
+- [ ] implement only the fresh private six-file
+  `creative_listening_led_source_relative_renewal` family and one private
+  `lib.rs` declaration; do not recover rejected candidate source
+- [ ] complete `effigy test compile` and exactly `1/1` construction owner
+- [ ] freeze one local immutable checkpoint; do not push it
+- [ ] run exactly `15/15` structural owners once
+- [ ] run exactly `9/9` synthetic owners once; `Y02` must emit every finite
+  candidate, PaulX, and delta value without a comparator ceiling assertion
+- [ ] repeat the concealed `15`-row mono pack only after terminal objective
+  admission
+- [ ] capture same-source PaulX stereo references, then run objective stereo,
+  operator speaker pre-screen, and eligible independent listening in order
+- [ ] stop on the first terminal miss and delete the complete candidate without
+  tuning, repair, or rerun
+- [ ] keep public APIs, reports, fixtures, cache, routing, other characters,
+  Loophole, and Chorus unchanged
+
 ## Later Batches
 
-Closed or paused without promotion. Work after Batch 31.32 requires new
-complete-system evidence or an explicit operator change to a governing product
-boundary:
+Closed or paused without promotion. Work after Batch 31.34 requires a complete
+candidate admission result:
 
 - minimal production admission
 - coherent/diffusive overlap
@@ -1109,12 +1161,15 @@ boundary:
 - [x] repeated tonal-pitch failure triggered architecture reassessment
 - [x] architecture reassessment found no eligible complete replacement and
   closed renewal without closing the PaulX-like target
+- [x] operator changed the creative pitch gate from comparator rejection to a
+  mandatory listening-led diagnostic
+- [x] one fresh complete listening-led source-relative authority is frozen
 - [x] no private renderer or product surface entered `main`
 
 ## Next Task
 
-No candidate batch is ready. Keep the PaulX-like `Dream` target and retained
-comparator pack. Reopen only when one public complete renderer jointly owns
-tonal coherence, creative diffusion at `4x`, `8x`, and `16x`, linked channels,
-exact length, determinism, and bounded state, or when the operator explicitly
-changes a governing product boundary.
+Run Batch 31.34 only. Implement the frozen listening-led source-relative
+candidate from fresh source in its named disposable worktree. Preserve every
+terminal gate, require the complete pitch diagnostic, and stop at the first
+terminal miss. Do not tune, recover rejected code, admit product surfaces, or
+push.
