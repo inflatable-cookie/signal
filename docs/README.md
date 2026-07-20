@@ -48,7 +48,7 @@ strict lane.
 - Roadmap index: [roadmaps/README.md](./roadmaps/README.md)
 - Generation index: [roadmaps/generation-index.md](./roadmaps/generation-index.md)
 - Stretch closeout roadmap: [roadmaps/g10/030-stretch-consolidation-and-completion.md](./roadmaps/g10/030-stretch-consolidation-and-completion.md)
-- Active creative stretch candidate roadmap: [roadmaps/g10/031-creative-time-stretch.md](./roadmaps/g10/031-creative-time-stretch.md)
+- Closed creative stretch roadmap: [roadmaps/g10/031-creative-time-stretch.md](./roadmaps/g10/031-creative-time-stretch.md)
 - Strict-lane reference: [specs/001-g09-lane-first-strict-adoption.md](./specs/001-g09-lane-first-strict-adoption.md)
 - Active strict-lane card: none
 - Research index: [research/master-index.md](./research/master-index.md)
@@ -74,7 +74,7 @@ strict lane.
 
 ## Next Task
 
-Run `g10.031` Batch 31.19 only. Reassess neutral-`Dream` crest ownership at
-architecture level or close the owner. Do not repair `RenewalSpectral` or add
-candidate code to `main`. Only drop into `specs/` when a strict lane is
-explicitly reopened.
+No stretch batch is ready. Use the `g10` front door to select the next Signal
+priority explicitly. Keep rejected stretch owners and `g10.028` closed unless
+separately reopened. Only drop into `specs/` when a strict lane is explicitly
+reopened.

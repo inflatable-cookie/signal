@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: active product boundary; `RenewalSpectral` rejected; no renderer admitted
+Status: paused product boundary; `Dream` and `Cyclic` closed; no renderer admitted
 Owner: core-product
 Updated: 2026-07-20
 Related contracts: `046`, `048`, `084`
@@ -309,6 +309,20 @@ ceiling. Complete independent phase renewal still leaves cross-bin waveform
 summation uncontrolled. The candidate stopped without correction or rerun and
 was deleted before later synthetic or listening gates.
 
+Batch 31.19 closes neutral `Dream`. Its two independent-phase candidates both
+failed the same crest boundary despite materially different carriers, envelope
+evolution, and synthesis overlap. Public low-crest multisine and IAAFT methods
+jointly optimize synthetic phase but do not provide one nonstationary musical
+time map, linked-stereo law, fixed bounded cost, and retained long-form target.
+STN noise morphing is a residual component, not a complete first-party owner.
+Signal's complete continuous-excitation translation already failed linked
+relation ownership.
+
+No neutral-`Dream` implementation is authorized. Do not reopen it through a
+limiter, post-gain stage, phase or window substitution, scalar sweep, or fusion
+of rejected owners. Reopening requires an explicit operator decision and new
+source-backed complete-system evidence.
+
 ## Initial Promotion Sequence
 
 1. Comparator capture and target-character freeze. Complete.
@@ -342,7 +356,7 @@ was deleted before later synthetic or listening gates.
     first failed gate. Complete; rejected on the first crest row after
     structural admission.
 19. Reassess neutral-`Dream` crest ownership at architecture level or close the
-    owner. Ready; docs and architecture only.
+    owner. Complete; no qualifying whole-renderer path found, owner closed.
 
 `Spectral`/`Rough`, coherent overlap, `LayeredCloud`, the upper overlap, dynamic
 ratios, and automatic routing still require separate reopening decisions backed
@@ -351,18 +365,18 @@ by new complete-system evidence.
 ## Current State
 
 Four isolated spectral candidates and both cyclic candidates are rejected and
-deleted. Explicit `Cyclic` and the automatic router remain closed or paused
-without promotion. `CyclicGrain` missed the first synthetic
+deleted. Explicit `Dream`, `Cyclic`, and the automatic router remain closed or
+paused without promotion. `CyclicGrain` missed the first synthetic
 pitch limit by `5.778` cents. `SimilarityAlignedCyclic` then failed structural
 search reachability before synthetic admission. No third cyclic path is
 authorized. `RenewalSpectral` passed structural admission but failed its first
 crest row by `2.263162 dB` and was deleted. No public Rust enum, renderer,
 harness mode, fixture, artifact schema, runtime route, or product-facing claim
 entered `main`. `OfflineHighQuality` remains byte-exact and Contract `084`
-remains closed.
+remains closed. No `g10.031` implementation batch is ready.
 
 ## Next Task
 
-Run Batch 31.19 only. Reassess neutral-`Dream` crest ownership at architecture
-level or close the owner. Do not repair `RenewalSpectral`, sweep phase/window/
-gain choices, or start another candidate.
+Keep Contract `085` closed to implementation. Reopen only through an explicit
+operator decision backed by new complete-system evidence; do not repair a
+rejected owner or infer another candidate.

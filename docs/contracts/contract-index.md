@@ -150,6 +150,7 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Keep Contract `084` closed and Contract `085` closed to implementation. Run
-`g10.031` Batch 31.19 only: reassess neutral-`Dream` crest ownership at
-architecture level or close the owner. Do not reimplement `RenewalSpectral`.
+Keep Contracts `084` and `085` closed to implementation. `g10.031` completed
+without a creative renderer after Batch 31.19 closed neutral `Dream`. Re-enter
+planning only from an explicit operator priority or new complete-system
+evidence; do not reimplement a rejected owner.

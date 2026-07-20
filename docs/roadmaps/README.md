@@ -58,14 +58,16 @@ Batch 31.16 then reopened docs-only research by explicit operator decision.
 Pinned PaulXStretch, CDP, and Potenza whole-path study found that the preferred
 PaulXStretch default uses magnitude-only frame renewal and crossfade rather
 than the recurrence tested by Signal's rejected spectral briefs. One
-materially different neutral `Dream` family, `RenewalSpectral`, is selected
+materially different neutral `Dream` family, `RenewalSpectral`, was selected
 for one complete renderer brief. Batch 31.17 froze its exact map, transform,
 phase renewal, linked stereo, pairwise synthesis, bounds, and gates without
 changing DSP. Batch 31.18 implemented it once. Compile-only and structural
 admission passed, but the first crest row measured `8.263162 dB` growth against
 the frozen `6 dB` ceiling. The candidate was deleted before later synthetic or
-listening gates. No candidate DSP is admitted on `main`; Batch 31.19 docs-only
-crest-ownership reassessment is ready.
+listening gates. Batch 31.19 found the same unowned cross-bin crest mechanism
+as the earlier `DiffuseSpectral` failure and no qualifying source-backed
+complete replacement. Neutral `Dream` closed. No candidate DSP is admitted on
+`main`, and `g10.031` is complete without a renderer.
 Offline artifacts still need a streaming artifact writer/cache target for full
 peak-memory closure. Mono callback-state DSP has a
 no-allocation proof, linked stereo is implemented, ratio scheduling has
@@ -191,8 +193,7 @@ Before rollover:
 
 ## Next Task
 
-Use `docs/roadmaps/g10/README.md` as the active generation front door. Run
-`g10.031` Batch 31.19 only. Reassess neutral-`Dream` crest ownership at
-architecture level or close the owner. Keep rejected candidates, the
-transparent successor lane, `g10.028`, other creative owners, routing, product
-exposure, and render-plane integration closed.
+Use `docs/roadmaps/g10/README.md` as the active generation front door. No
+stretch batch is ready. Select the next Signal priority explicitly. Keep
+rejected candidates, the transparent successor lane, `g10.028`, creative
+owners, routing, product exposure, and render-plane integration closed.

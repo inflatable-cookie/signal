@@ -474,6 +474,6 @@ implementation authority.
 
 ## Next Task
 
-Run Batch 31.19 only. Reassess neutral-`Dream` crest ownership at architecture
-level, including whether a materially different source-backed whole-renderer
-path remains. Do not tune or reimplement `RenewalSpectral`.
+Batch 31.19 found no materially different source-backed whole-renderer path and
+closed neutral `Dream` without admission. This brief remains rejection
+evidence. Do not tune or reimplement `RenewalSpectral`.

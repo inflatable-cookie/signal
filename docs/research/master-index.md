@@ -52,7 +52,7 @@ decision controls any future reopening.
 | [Rubber Band Source Architecture](./specimen-dossiers/rubber-band-source-architecture.md) | R2/R3 scheduling, scale ownership, guidance, and phase topology | Reviewed |
 | [Bungee Source Architecture](./specimen-dossiers/bungee-source-architecture.md) | Whole-kernel common-region rotation and dynamic multichannel feasibility | Reviewed |
 | [SBSMS Source Architecture](./specimen-dossiers/sbsms-source-architecture.md) | Linked subband partial tracking, paired stereo trajectories, and direct oscillator synthesis | Source feasibility rejected |
-| [Creative Stretch Source Triangulation](./specimen-dossiers/creative-stretch-source-triangulation.md) | PaulXStretch, CDP, and Potenza whole-path ownership behind retained creative targets | Reviewed; `RenewalSpectral` rejected at crest gate |
+| [Creative Stretch Source Triangulation](./specimen-dossiers/creative-stretch-source-triangulation.md) | PaulXStretch, CDP, and Potenza whole-path ownership behind retained creative targets | Reviewed; no qualifying neutral `Dream` owner |
 
 Current stretch feasibility decision:
 [Offline Time-Stretch Non-Phase-Vocoder Feasibility](../architecture/offline-time-stretch-non-phase-vocoder-feasibility.md).
@@ -66,11 +66,12 @@ ownership reassessment found no third materially different, source-backed
 whole-renderer path. Explicit `Cyclic` is closed. This does not reopen the
 transparent successor lane.
 
-Explicit operator research reopening and pinned source triangulation now select
+Explicit operator research reopening and pinned source triangulation selected
 one materially different neutral `Dream` family: `RenewalSpectral`. Its
 isolated candidate passed structural admission but failed the first crest row
-at `8.263162 dB` against the frozen `6 dB` ceiling and was deleted. `Spectral`,
-`Rough`, `Cyclic`, `Cloud`, routing, and product exposure remain closed or
+at `8.263162 dB` against the frozen `6 dB` ceiling and was deleted. Batch 31.19
+found no qualifying complete crest-owning replacement. `Dream` and `Cyclic`
+are closed; `Spectral`, `Rough`, `Cloud`, routing, and product exposure remain
 paused.
 
 Rejected neutral `Dream` brief:
@@ -129,6 +130,6 @@ Rejected first-owner brief:
 
 ## Next Task
 
-Run `g10.031` Batch 31.19 only. Reassess neutral-`Dream` crest ownership at
-architecture level or close the owner. Do not tune a rejected candidate or
-reopen Batch 29.7BE, another character, or the transparent successor.
+No creative-stretch implementation task is ready. Reopen research only through
+an explicit operator priority and new complete-system evidence. Do not tune a
+rejected candidate or reopen Batch 29.7BE or the transparent successor.

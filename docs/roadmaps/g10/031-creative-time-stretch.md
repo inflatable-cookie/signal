@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: active reassessment lane; Batch 31.19 docs-only reassessment ready
+Status: complete; closed without renderer admission
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -565,23 +565,35 @@ Implement the frozen brief once. Failure stops the sequence.
 
 ## Batch 31.19 - RenewalSpectral Crest Ownership Reassessment
 
-Status: ready; docs and architecture only
+Status: complete; neutral `Dream` closed
 
-- [ ] reconcile the Batch 31.4 and Batch 31.18 crest failures without repairing
+- [x] reconcile the Batch 31.4 and Batch 31.18 crest failures without repairing
   either rejected candidate
-- [ ] determine whether any materially different, source-backed neutral-`Dream`
+- [x] determine whether any materially different, source-backed neutral-`Dream`
   whole-renderer path intrinsically owns crest without a limiter, post-gain,
   scalar sweep, or renamed phase/window variant
-- [ ] freeze one complete replacement direction only if it has a credible path
+- [x] freeze one complete replacement direction only if it has a credible path
   through crest, linked stereo, exact length, bounded state, and retained
-  musical targets; otherwise close neutral `Dream`
-- [ ] keep DSP, candidate harnesses, comparator capture, public APIs, cache,
+  musical targets; no qualifying path remained, so neutral `Dream` closed
+- [x] keep DSP, candidate harnesses, comparator capture, public APIs, cache,
   routing, other creative owners, Loophole, and Chorus unchanged
+
+Decision:
+
+- both independent-phase candidates failed the same `6 dB` crest boundary:
+  `DiffuseSpectral` at `7.08 dB`, then `RenewalSpectral` at `8.263162 dB`
+- low-crest multisine and IAAFT methods do not provide a source-mapped,
+  nonstationary, linked-stereo stretcher with bounded fixed cost
+- STN noise morphing is a component path; Signal's complete bounded-excitation
+  translation already failed linked-channel ownership
+- no source-backed complete neutral-`Dream` renderer remains ready to freeze
+- `Dream` stays as unavailable intent vocabulary; reopening requires explicit
+  operator direction plus new complete-system evidence
 
 ## Later Batches
 
-Closed or paused without promotion. Work after Batch 31.18 requires a complete
-candidate decision and a separate continuation decision:
+Closed or paused without promotion. Work after Batch 31.19 requires explicit
+roadmap reopening backed by new complete-system evidence:
 
 - minimal production admission
 - coherent/diffusive overlap
@@ -612,12 +624,15 @@ candidate decision and a separate continuation decision:
 - [x] one complete `RenewalSpectral` brief is frozen
 - [x] one isolated `RenewalSpectral` candidate reached a terminal decision;
   structural admission passed and the first crest row failed
+- [x] final crest-ownership reassessment found no qualifying complete neutral
+  `Dream` path
+- [x] neutral `Dream` closed without implementation or product exposure
 - [x] long-form mono `Dream` listening closed without admission
 - [x] linked-stereo listening closed without admission
 - [x] no private renderer or product surface entered `main`
 
 ## Next Task
 
-Run Batch 31.19 only. Reassess neutral-`Dream` crest ownership at architecture
-level or close the owner. Do not repair or reimplement `RenewalSpectral`, open
-another character, or resume routing and product work.
+No `g10.031` batch is ready. Return to the `g10` front door and select the next
+Signal priority explicitly. Do not repair a rejected owner or infer creative
+routing, product exposure, or `g10.028` work from this closure.

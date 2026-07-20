@@ -1,17 +1,17 @@
 # Offline Creative Time-Stretch Study
 
-Status: `RenewalSpectral` rejected; crest-ownership reassessment ready
+Status: closed without renderer admission
 Owner: dsp
 Updated: 2026-07-20
 Contract: `085`
 Roadmap: `g10.031`
 
-## Decision
+## Product Intent
 
-Add a separate Signal-owned `CreativeStretch` product path centered on `8x`
-output duration. It is an offline sound-design renderer, not a replacement for
-`OfflineHighQuality`, not a reopened Contract `084` successor, and not a
-RealtimePreview path.
+Retain the boundary for a possible Signal-owned `CreativeStretch` path centered
+on `8x` output duration. No renderer or product surface is admitted. If
+reopened, it is an offline sound-design renderer, not a replacement for
+`OfflineHighQuality`, a Contract `084` successor, or a RealtimePreview path.
 
 The product presents one stable intent surface while Signal routes between
 renderer families by stretch range. Algorithm names and low-level transform
@@ -75,6 +75,22 @@ Batch 31.18 implemented that brief once. Compile-only and structural admission
 passed, but the first crest row measured `8.263162 dB` growth against the
 frozen `6 dB` ceiling. The candidate was deleted before later synthetic or
 listening gates. No DSP was admitted.
+
+Batch 31.19 closes neutral `Dream`. Both complete independent-phase renderers
+failed crest before listening: `DiffuseSpectral` at `7.08 dB` growth and
+`RenewalSpectral` at `8.263162 dB`, against the same `6 dB` ceiling. Removing
+the carrier, magnitude recurrence, and rolling overlap-add did not remove the
+fault. Independent stochastic bin phase has no intrinsic bound on the crest of
+the reconstructed waveform.
+
+Joint low-crest multisine solvers and IAAFT can constrain periodic synthetic
+waveforms, but they do not supply a source-mapped, nonstationary, linked-stereo,
+bounded-cost musical stretcher. STN noise morphing owns a separated residual,
+not the complete first-party renderer. Signal's bounded continuous-excitation
+translation already failed linked-channel ownership. No materially different,
+source-backed whole renderer clears the complete boundary. A limiter,
+post-gain stage, phase/window choice, scalar sweep, or fusion of rejected
+owners is not a replacement architecture.
 
 ## Range-Owner Reassessment
 
@@ -254,7 +270,7 @@ same exact target frame count.
 | above `1x` to `8x` | cyclic owner closed; no implementation | commanded Akai-style repetition |
 | `1x` to `2x` | coherent contribution retained, not creatively admitted | future source-readable lower range |
 | `2x` to `4x` | overlap paused | no automatic route |
-| `4x` to `16x` | `RenewalSpectral` rejected; no implementation | neutral `Dream` owner under reassessment |
+| `4x` to `16x` | neutral `Dream` closed; no implementation | unavailable pending new complete-system evidence |
 | `16x` to `32x` | overlap closed | no automatic route |
 | `32x` to `100x` | cloud owner closed | future texture research only |
 
@@ -423,18 +439,18 @@ success criteria: controlled smear, diffusion, and loss of transient precision
 can be features. This study does not reopen the failed phase-vocoder successor
 or relax `OfflineHighQuality` promotion rules.
 
-The evidence still supports the creative product intent, but not the original
-automatic range router. All three prior spectral fixed-ratio candidates are
-rejected and deleted. Batch 31.16 supplies new source-backed evidence for one
-materially different neutral `Dream` family. It does not reopen the deleted
-branches or admit candidate DSP.
+The evidence still supports the creative product intent, but not an admitted
+renderer or the original automatic range router. All four spectral fixed-ratio
+candidates are rejected and deleted. Batch 31.16 supplied source-backed
+evidence for one materially different neutral `Dream` family. Batch 31.18
+rejected it at crest, and Batch 31.19 found no qualifying complete replacement.
 
 The explicit cyclic reserve still has operator value and a retained comparator,
 but both complete owners are rejected and deleted. Batch 31.15 found no third
 materially different, source-backed whole-renderer path. `Cyclic` is closed
 with no promotion. `Spectral`, `Rough`, `Cloud`, automatic routing, dynamic
-ratio, cache, and product integration remain paused. `Dream` is open only for
-docs-level crest-ownership reassessment after the `RenewalSpectral` rejection.
+ratio, cache, and product integration remain paused. `Dream` and `Cyclic` are
+closed without implementation or product exposure.
 
 ## Sources
 
@@ -450,6 +466,9 @@ docs-level crest-ownership reassessment after the `RenewalSpectral` rejection.
 - [Photosounder](https://www.photosounder.com/)
 - [ARSS](https://arss.sourceforge.net/)
 - [Noise Morphing for Audio Time Stretching](https://arxiv.org/abs/2312.14586)
+- [Schroeder, low-peak-factor phase selection](https://doi.org/10.1109/TIT.1970.1054411)
+- [Yang et al., arbitrary-spectrum crest minimization](https://pubmed.ncbi.nlm.nih.gov/25832418/)
+- [Schreiber and Schmitz, IAAFT surrogate data](https://doi.org/10.1103/PhysRevLett.77.635)
 - [PaulXStretch official repository](https://github.com/essej/paulxstretch)
 - [Extreme Audio Time Stretching Using Neural Synthesis](https://arxiv.org/abs/2211.16992)
 - [Verhelst and Roelands, WSOLA](https://doi.org/10.21437/Eurospeech.1993-59)
@@ -461,6 +480,6 @@ docs-level crest-ownership reassessment after the `RenewalSpectral` rejection.
 
 ## Next Task
 
-Run Batch 31.19 only. Reassess neutral-`Dream` crest ownership at architecture
-level or close the owner. Do not restore a rejected branch or reopen another
-character or product surface.
+No `g10.031` batch is ready. Keep creative renderers, routing, and product
+exposure closed. Re-enter roadmap planning only after an explicit operator
+priority or new complete-system evidence.

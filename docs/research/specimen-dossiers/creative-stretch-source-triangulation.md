@@ -1,6 +1,6 @@
 # Creative Stretch Source Triangulation
 
-Status: reviewed; promoted into frozen `RenewalSpectral` brief
+Status: reviewed; neutral `Dream` closed without renderer admission
 Owner: dsp
 Updated: 2026-07-20
 Roadmap: `g10.031`, Batch 31.16
@@ -178,7 +178,7 @@ The briefs did not first match the simplest complete source path behind the
 preferred `Dream` target. This study supplies new architecture evidence; it
 does not authorize tuning or restoring any rejected branch.
 
-## Signal Decision
+## Batch 31.16 Signal Decision
 
 Reopen `Dream` research around one source-backed family:
 `RenewalSpectral`.
@@ -216,6 +216,53 @@ The stable `duration`, `character`, `motion`, `detail`, `space`, and `seed` UI
 vocabulary remains valid. Internal owners may change or blend later without
 exposing algorithm names.
 
+## Crest Ownership Reassessment
+
+Batch 31.19 reconciles the two neutral-`Dream` crest failures:
+
+- `DiffuseSpectral` measured `7.08 dB` crest growth after independently
+  diffusing bin phase.
+- `RenewalSpectral` removed the carrier, magnitude recurrence, and normalized
+  overlap-add, yet measured `8.263162 dB` after complete independent phase
+  renewal.
+
+The second result isolates the shared cause. Independent stochastic bin phase
+does not own the crest of their waveform sum. PaulXStretch demonstrates a
+musically useful member of that family, but its pinned implementation and seed
+do not establish a portable crest bound for a clean-room Signal renderer.
+Changing Signal's phase distribution, window, hop, gain, crossfade, or seed
+would repair the rejected family rather than select a new owner.
+
+The remaining public techniques do not supply a build-ready whole renderer:
+
+| Technique | Crest mechanism | Missing neutral-`Dream` ownership |
+| --- | --- | --- |
+| low-crest multisine phase design | jointly selects phase to reduce periodic peak factor | source-mapped, nonstationary musical stretch; linked stereo; bounded fixed cost |
+| iterative arbitrary-spectrum phase optimization | numerically minimizes crest for a prescribed spectrum | deterministic iteration bound, evolving source map, retained musical evidence |
+| IAAFT surrogate synthesis | iterates between a target spectrum and amplitude distribution | local time map, exact event order, linked stereo, long-form stretch evidence |
+| STN noise morphing | resynthesizes a separated residual from a moving magnitude envelope | complete first-party separator and whole-mix renderer; tonal and stereo ownership |
+| bounded continuous excitation | owns one full-complex waveform rather than independent bins | already rejected in Signal on linked-channel relation ownership |
+
+Low-crest phase design and IAAFT are valid separate research programs, not
+candidate-ready replacements. Noise Morphing is a component inside an STN
+system, and Signal already tested the bounded continuous-excitation translation
+without finding a linked-stereo owner. None supplies one source-backed path
+through crest, linked stereo, exact length, bounded state, and the retained
+PaulX-centred musical target.
+
+Neutral `Dream` is therefore closed without promotion. `Dream` remains useful
+intent and comparator vocabulary, but it is unavailable. Reopening requires an
+explicit operator decision plus new complete-system evidence; it cannot begin
+with another independent-phase variant, limiter, post-gain stage, scalar sweep,
+or fusion of rejected owners.
+
+Primary evidence:
+
+- [Schroeder, low-peak-factor phase selection](https://doi.org/10.1109/TIT.1970.1054411)
+- [Yang et al., arbitrary-spectrum crest minimization](https://pubmed.ncbi.nlm.nih.gov/25832418/)
+- [Schreiber and Schmitz, IAAFT surrogate data](https://doi.org/10.1103/PhysRevLett.77.635)
+- [Noise Morphing for Audio Time Stretching](https://arxiv.org/abs/2312.14586)
+
 ## Admission Correction
 
 Future creative briefs must separate three classes of evidence:
@@ -235,6 +282,5 @@ boundary before implementation.
 
 ## Next Task
 
-Implement the frozen
-[RenewalSpectral brief](../../architecture/offline-creative-renewal-spectral-brief.md)
-once in its named disposable worktree. Stop at the first failed gate.
+No `g10.031` implementation task is ready. Reopen neutral `Dream` only after an
+explicit operator decision and new source-backed whole-renderer evidence.

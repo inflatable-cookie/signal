@@ -83,7 +83,10 @@ The 2026-07-19 consolidation reset is authoritative.
   crest row measured `8.263162 dB` growth against the frozen `6 dB` ceiling.
   Complete independent phase renewal still left cross-bin waveform summation
   uncontrolled. The candidate was deleted before later synthetic or listening
-  gates. Batch 31.19 docs-only crest-ownership reassessment is ready. Other
+  gates. Batch 31.19 reconciled that failure with the earlier `7.08 dB`
+  `DiffuseSpectral` miss. Independent stochastic bin phase still has no
+  intrinsic crest owner, and no materially different source-backed complete
+  renderer remained. Neutral `Dream` closed without admission. Other
   characters, routing, product exposure, and rejected branches remain closed
   or paused.
 - `g10.028` RealtimePreview source-fill and all render-plane integration remain
@@ -153,9 +156,9 @@ Do not start Loophole or Chorus planning from Signal internals.
   - historical correctness, listening, and rejected-successor ledger
 - `g10.030` `complete`
   - stretch consolidated; candidate families closed; frozen baseline retained
-- `g10.031` `active-reassessment`
-  - `RenewalSpectral` rejected after structural admission and a first-row crest
-    miss; no renderer admitted; docs-only ownership reassessment ready
+- `g10.031` `complete`
+  - creative stretch closed without renderer admission; neutral `Dream` and
+    explicit `Cyclic` have no qualifying complete owner
 
 ## Stretch Boundary
 
@@ -182,11 +185,11 @@ admission and a first-row synthetic pitch miss. Correlation-aligned waveform
 overlap also failed structural admission and was deleted. `RenewalSpectral`
 passed structural admission but failed its first crest row and was deleted.
 Creative stretch has no renderer, public API, harness surface, or product route
-on `main`. Final ownership reassessment found no third complete cyclic path.
+on `main`. Final ownership reassessment found no third complete cyclic path;
+the crest-ownership reassessment also closed neutral `Dream`.
 
 ## Next Task
 
-Run `g10.031` Batch 31.19 only. Reassess neutral-`Dream` crest ownership at
-architecture level or close the owner. Keep `g10.028`, candidate DSP, other
-creative owners, routing, product exposure, and render-plane integration
-paused.
+No stretch batch is ready. Select the next Signal priority explicitly from this
+generation front door. Keep `g10.028`, creative DSP, routing, product exposure,
+and render-plane integration paused unless separately reopened.
