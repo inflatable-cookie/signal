@@ -52,7 +52,7 @@ decision controls any future reopening.
 | [Rubber Band Source Architecture](./specimen-dossiers/rubber-band-source-architecture.md) | R2/R3 scheduling, scale ownership, guidance, and phase topology | Reviewed |
 | [Bungee Source Architecture](./specimen-dossiers/bungee-source-architecture.md) | Whole-kernel common-region rotation and dynamic multichannel feasibility | Reviewed |
 | [SBSMS Source Architecture](./specimen-dossiers/sbsms-source-architecture.md) | Linked subband partial tracking, paired stereo trajectories, and direct oscillator synthesis | Source feasibility rejected |
-| [Creative Stretch Source Triangulation](./specimen-dossiers/creative-stretch-source-triangulation.md) | PaulXStretch, CDP, and Potenza whole-path ownership behind retained creative targets | Reviewed; no qualifying neutral `Dream` owner |
+| [Creative Stretch Source Triangulation](./specimen-dossiers/creative-stretch-source-triangulation.md) | PaulXStretch, CDP, and Potenza whole-path ownership behind retained creative targets | Reviewed; PaulX-like `Dream` recovery active |
 
 Current stretch feasibility decision:
 [Offline Time-Stretch Non-Phase-Vocoder Feasibility](../architecture/offline-time-stretch-non-phase-vocoder-feasibility.md).
@@ -69,10 +69,12 @@ transparent successor lane.
 Explicit operator research reopening and pinned source triangulation selected
 one materially different neutral `Dream` family: `RenewalSpectral`. Its
 isolated candidate passed structural admission but failed the first crest row
-at `8.263162 dB` against the frozen `6 dB` ceiling and was deleted. Batch 31.19
-found no qualifying complete crest-owning replacement. `Dream` and `Cyclic`
-are closed; `Spectral`, `Rough`, `Cloud`, routing, and product exposure remain
-paused.
+at `8.263162 dB` against the frozen `6 dB` ceiling and was deleted. The
+operator superseded Batch 31.19's family closure because the `3.88 dB`
+PaulXStretch calibration used musical rows against a synthetic Signal stop
+row; matching PaulX synthetics had not run. `Dream` recovery is active;
+`Cyclic` stays closed, while `Spectral`, `Rough`, `Cloud`, routing, and product
+exposure remain paused.
 
 Rejected neutral `Dream` brief:
 [Offline Creative RenewalSpectral Renderer Brief](../architecture/offline-creative-renewal-spectral-brief.md).
@@ -130,6 +132,7 @@ Rejected first-owner brief:
 
 ## Next Task
 
-No creative-stretch implementation task is ready. Reopen research only through
-an explicit operator priority and new complete-system evidence. Do not tune a
-rejected candidate or reopen Batch 29.7BE or the transparent successor.
+Run `g10.031` Batch 31.20 only. Capture matching PaulXStretch synthetics,
+repair the crest gate, and freeze one complete clean-room successor brief. Do
+not tune a rejected candidate or reopen Batch 29.7BE or the transparent
+successor.

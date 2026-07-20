@@ -150,7 +150,7 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Keep Contracts `084` and `085` closed to implementation. `g10.031` completed
-without a creative renderer after Batch 31.19 closed neutral `Dream`. Re-enter
-planning only from an explicit operator priority or new complete-system
-evidence; do not reimplement a rejected owner.
+Keep Contract `084` closed. Under Contract `085`, run `g10.031` Batch 31.20
+only: capture matching PaulXStretch synthetics, repair the mismatched crest
+gate, and freeze one complete clean-room successor brief. Do not implement it
+in the same batch or restore a rejected owner.

@@ -86,7 +86,10 @@ The 2026-07-19 consolidation reset is authoritative.
   gates. Batch 31.19 reconciled that failure with the earlier `7.08 dB`
   `DiffuseSpectral` miss. Independent stochastic bin phase still has no
   intrinsic crest owner, and no materially different source-backed complete
-  renderer remained. Neutral `Dream` closed without admission. Other
+  renderer remained. Batch 31.19 closed neutral `Dream`, but the operator
+  superseded that closure: its PaulX crest calibration used long-form musical
+  rows against a synthetic Signal stop row, and the matching PaulX synthetic
+  suite had not run. Batch 31.20 reference and gate recovery is ready. Other
   characters, routing, product exposure, and rejected branches remain closed
   or paused.
 - The 2026-07-20 lifecycle reconciliation closes stale `g10.001` and
@@ -162,9 +165,9 @@ Do not start Loophole or Chorus planning from Signal internals.
   - historical correctness, listening, and rejected-successor ledger
 - `g10.030` `complete`
   - stretch consolidated; candidate families closed; frozen baseline retained
-- `g10.031` `complete`
-  - creative stretch closed without renderer admission; neutral `Dream` and
-    explicit `Cyclic` have no qualifying complete owner
+- `g10.031` `active-recovery`
+  - PaulX-like neutral `Dream` remains the product goal; matching-reference
+    gate recovery is ready, while explicit `Cyclic` stays closed
 
 ## Stretch Boundary
 
@@ -196,8 +199,7 @@ the crest-ownership reassessment also closed neutral `Dream`.
 
 ## Next Task
 
-No execution batch is ready. The operator must explicitly choose the next
-Signal priority: finish `g10.017` hardware evidence, reopen `g10.023` around a
-streaming artifact writer/cache contract, or pull a concrete demand from the
-post-`g10` backlog. Keep `g10.028`, creative DSP, routing, product exposure,
-and cross-repo work paused unless separately reopened.
+Run `g10.031` Batch 31.20 only. Capture matching PaulXStretch synthetic rows,
+repair the crest gate, and freeze one complete clean-room successor brief.
+Keep candidate DSP, `g10.028`, routing, product exposure, and cross-repo work
+paused in this batch.

@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: paused product boundary; `Dream` and `Cyclic` closed; no renderer admitted
+Status: active PaulX-like `Dream` research boundary; no renderer admitted
 Owner: core-product
 Updated: 2026-07-20
 Related contracts: `046`, `048`, `084`
@@ -309,7 +309,7 @@ ceiling. Complete independent phase renewal still leaves cross-bin waveform
 summation uncontrolled. The candidate stopped without correction or rerun and
 was deleted before later synthetic or listening gates.
 
-Batch 31.19 closes neutral `Dream`. Its two independent-phase candidates both
+Batch 31.19 closed neutral `Dream`. Its two independent-phase candidates both
 failed the same crest boundary despite materially different carriers, envelope
 evolution, and synthesis overlap. Public low-crest multisine and IAAFT methods
 jointly optimize synthetic phase but do not provide one nonstationary musical
@@ -322,6 +322,24 @@ No neutral-`Dream` implementation is authorized. Do not reopen it through a
 limiter, post-gain stage, phase or window substitution, scalar sweep, or fusion
 of rejected owners. Reopening requires an explicit operator decision and new
 source-backed complete-system evidence.
+
+The operator superseded that target closure. The `3.88 dB` PaulXStretch
+calibration came from retained musical rows, while `RenewalSpectral` stopped on
+synthetic uniform noise before the matching PaulXStretch synthetic suite ran.
+Candidate rejection remains valid under its frozen brief; family closure does
+not follow from that unmatched row.
+
+PaulXStretch's whole path also includes position-dependent compensation around
+its adjacent-frame blend. Signal's rejected translation substituted an
+equal-power blend and fixed gain. A new clean-room brief may derive a bounded
+overlap-statistics compensation law and matching-reference gates. It may not
+copy upstream constants, expressions, or control flow.
+
+Neutral `Dream` remains an active product goal. Work stays one complete
+candidate at a time. Candidate failure requires diagnosis and a new complete
+brief, but does not close the product target unless the operator explicitly
+does so. Hard integrity can stop a render. Character promotion or rejection
+must include reference-matched evidence and long-form listening.
 
 ## Initial Promotion Sequence
 
@@ -356,7 +374,11 @@ source-backed complete-system evidence.
     first failed gate. Complete; rejected on the first crest row after
     structural admission.
 19. Reassess neutral-`Dream` crest ownership at architecture level or close the
-    owner. Complete; no qualifying whole-renderer path found, owner closed.
+    owner. Superseded; closure used unmatched musical-versus-synthetic crest
+    evidence and exceeded the operator decision.
+20. Capture matching PaulXStretch synthetic rows, repair the gate, and freeze
+    one complete clean-room frame-blend-compensated brief. Ready; no candidate
+    DSP in this batch.
 
 `Spectral`/`Rough`, coherent overlap, `LayeredCloud`, the upper overlap, dynamic
 ratios, and automatic routing still require separate reopening decisions backed
@@ -365,18 +387,19 @@ by new complete-system evidence.
 ## Current State
 
 Four isolated spectral candidates and both cyclic candidates are rejected and
-deleted. Explicit `Dream`, `Cyclic`, and the automatic router remain closed or
-paused without promotion. `CyclicGrain` missed the first synthetic
+deleted. Explicit `Cyclic` and the automatic router remain closed or paused
+without promotion. Neutral `Dream` is active research. `CyclicGrain` missed the first synthetic
 pitch limit by `5.778` cents. `SimilarityAlignedCyclic` then failed structural
 search reachability before synthetic admission. No third cyclic path is
 authorized. `RenewalSpectral` passed structural admission but failed its first
 crest row by `2.263162 dB` and was deleted. No public Rust enum, renderer,
 harness mode, fixture, artifact schema, runtime route, or product-facing claim
 entered `main`. `OfflineHighQuality` remains byte-exact and Contract `084`
-remains closed. No `g10.031` implementation batch is ready.
+remains closed. No candidate implementation is admitted or ready before Batch
+31.20 freezes its complete successor brief.
 
 ## Next Task
 
-Keep Contract `085` closed to implementation. Reopen only through an explicit
-operator decision backed by new complete-system evidence; do not repair a
-rejected owner or infer another candidate.
+Run `g10.031` Batch 31.20 only. Capture reference-matched PaulXStretch
+synthetics, repair the crest gate, and freeze one clean-room complete brief.
+Do not implement it in the same batch or restore a rejected candidate.

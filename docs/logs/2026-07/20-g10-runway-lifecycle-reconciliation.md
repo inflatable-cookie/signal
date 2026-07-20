@@ -1,7 +1,7 @@
 # g10 Runway Lifecycle Reconciliation
 
 Date: 2026-07-20
-Status: complete; no execution batch opened
+Status: complete; routing conclusion superseded by later operator correction
 Generation: `g10`
 
 ## Result
@@ -41,3 +41,6 @@ edits remained untouched.
 
 Operator selects one listed Signal priority. Do not infer an implementation
 batch from another bare continuation while this gate remains unresolved.
+
+Later correction: the operator explicitly reopened the PaulXStretch-like
+`Dream` goal. `g10.031` Batch 31.20 is now the only ready batch.

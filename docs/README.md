@@ -48,7 +48,7 @@ strict lane.
 - Roadmap index: [roadmaps/README.md](./roadmaps/README.md)
 - Generation index: [roadmaps/generation-index.md](./roadmaps/generation-index.md)
 - Stretch closeout roadmap: [roadmaps/g10/030-stretch-consolidation-and-completion.md](./roadmaps/g10/030-stretch-consolidation-and-completion.md)
-- Closed creative stretch roadmap: [roadmaps/g10/031-creative-time-stretch.md](./roadmaps/g10/031-creative-time-stretch.md)
+- Active PaulX-like creative stretch roadmap: [roadmaps/g10/031-creative-time-stretch.md](./roadmaps/g10/031-creative-time-stretch.md)
 - Strict-lane reference: [specs/001-g09-lane-first-strict-adoption.md](./specs/001-g09-lane-first-strict-adoption.md)
 - Active strict-lane card: none
 - Research index: [research/master-index.md](./research/master-index.md)
@@ -74,8 +74,7 @@ strict lane.
 
 ## Next Task
 
-No execution batch is ready. Use the `g10` front door to choose explicitly
-between recording hardware evidence, streaming artifact architecture, or a
-concrete rebuild-on-demand item. Keep rejected stretch owners, `g10.028`, and
-cross-repo work closed unless separately reopened. Only drop into `specs/` when
-a strict lane is explicitly reopened.
+Run `g10.031` Batch 31.20 only. Capture matching PaulXStretch synthetics, repair
+the mismatched crest gate, and freeze one complete clean-room successor brief.
+Do not add candidate DSP in the same batch. Keep `g10.028` and cross-repo work
+closed. Only drop into `specs/` when a strict lane is explicitly reopened.

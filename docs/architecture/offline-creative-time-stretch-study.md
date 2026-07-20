@@ -1,6 +1,6 @@
 # Offline Creative Time-Stretch Study
 
-Status: closed without renderer admission
+Status: active PaulX-like `Dream` recovery; no renderer admitted
 Owner: dsp
 Updated: 2026-07-20
 Contract: `085`
@@ -8,9 +8,9 @@ Roadmap: `g10.031`
 
 ## Product Intent
 
-Retain the boundary for a possible Signal-owned `CreativeStretch` path centered
-on `8x` output duration. No renderer or product surface is admitted. If
-reopened, it is an offline sound-design renderer, not a replacement for
+Build a Signal-owned `CreativeStretch` path centered on `8x` output duration.
+No renderer or product surface is admitted yet. It is an offline sound-design
+renderer, not a replacement for
 `OfflineHighQuality`, a Contract `084` successor, or a RealtimePreview path.
 
 The product presents one stable intent surface while Signal routes between
@@ -76,7 +76,7 @@ passed, but the first crest row measured `8.263162 dB` growth against the
 frozen `6 dB` ceiling. The candidate was deleted before later synthetic or
 listening gates. No DSP was admitted.
 
-Batch 31.19 closes neutral `Dream`. Both complete independent-phase renderers
+Batch 31.19 attempted to close neutral `Dream`. Both independent-phase renderers
 failed crest before listening: `DiffuseSpectral` at `7.08 dB` growth and
 `RenewalSpectral` at `8.263162 dB`, against the same `6 dB` ceiling. Removing
 the carrier, magnitude recurrence, and rolling overlap-add did not remove the
@@ -91,6 +91,32 @@ translation already failed linked-channel ownership. No materially different,
 source-backed whole renderer clears the complete boundary. A limiter,
 post-gain stage, phase/window choice, scalar sweep, or fusion of rejected
 owners is not a replacement architecture.
+
+## Operator Correction
+
+The Batch 31.19 target closure is superseded. It promoted two candidate
+failures into abandonment of the operator's stated PaulXStretch-like product
+goal.
+
+The decisive gate was also mismatched. PaulXStretch's `3.88 dB` figure came
+from the 15 retained long-form musical rows. `RenewalSpectral` was stopped on a
+synthetic uniform-noise row before the matching PaulXStretch synthetic suite
+was rendered. That comparison can reject the candidate against an absolute
+safety policy, but it cannot establish that the PaulX-like family missed its
+reference.
+
+The whole-path translation was incomplete as well. Pinned PaulXStretch uses a
+raised-cosine blend between adjacent random-phase frames and an explicit
+position-dependent compensation for blend interference and amplitude
+modulation. `RenewalSpectral` substituted an equal-power blend and fixed gain.
+Signal must derive its own bounded compensation law from overlap statistics;
+it must not copy upstream constants or control flow.
+
+`Dream` is active again. Rejected candidates stay deleted and remain useful
+failure evidence. Work proceeds one complete candidate at a time, but a
+candidate failure does not close the PaulX-like target. Metrics diagnose and
+protect integrity. Long-form concealed listening remains the character
+authority.
 
 ## Range-Owner Reassessment
 
@@ -270,7 +296,7 @@ same exact target frame count.
 | above `1x` to `8x` | cyclic owner closed; no implementation | commanded Akai-style repetition |
 | `1x` to `2x` | coherent contribution retained, not creatively admitted | future source-readable lower range |
 | `2x` to `4x` | overlap paused | no automatic route |
-| `4x` to `16x` | neutral `Dream` closed; no implementation | unavailable pending new complete-system evidence |
+| `4x` to `16x` | PaulX-like `Dream` active; no implementation | reference and gate recovery |
 | `16x` to `32x` | overlap closed | no automatic route |
 | `32x` to `100x` | cloud owner closed | future texture research only |
 
@@ -443,14 +469,15 @@ The evidence still supports the creative product intent, but not an admitted
 renderer or the original automatic range router. All four spectral fixed-ratio
 candidates are rejected and deleted. Batch 31.16 supplied source-backed
 evidence for one materially different neutral `Dream` family. Batch 31.18
-rejected it at crest, and Batch 31.19 found no qualifying complete replacement.
+rejected its first translation at crest. Batch 31.19's family closure is
+superseded by the operator correction above.
 
 The explicit cyclic reserve still has operator value and a retained comparator,
 but both complete owners are rejected and deleted. Batch 31.15 found no third
 materially different, source-backed whole-renderer path. `Cyclic` is closed
 with no promotion. `Spectral`, `Rough`, `Cloud`, automatic routing, dynamic
-ratio, cache, and product integration remain paused. `Dream` and `Cyclic` are
-closed without implementation or product exposure.
+ratio, cache, and product integration remain paused. `Cyclic` stays closed.
+Neutral `Dream` is active research without implementation or product exposure.
 
 ## Sources
 
@@ -480,6 +507,7 @@ closed without implementation or product exposure.
 
 ## Next Task
 
-No `g10.031` batch is ready. Keep creative renderers, routing, and product
-exposure closed. Re-enter roadmap planning only after an explicit operator
-priority or new complete-system evidence.
+Run Batch 31.20 only. Capture the matching PaulXStretch synthetic reference,
+repair the mismatched gate, derive the frame-blend compensation architecture,
+and freeze one complete clean-room brief. Do not implement the candidate in
+the same batch.

@@ -1,6 +1,6 @@
 # Creative Stretch Source Triangulation
 
-Status: reviewed; neutral `Dream` closed without renderer admission
+Status: reviewed; PaulX-like `Dream` active after operator correction
 Owner: dsp
 Updated: 2026-07-20
 Roadmap: `g10.031`, Batch 31.16
@@ -250,11 +250,18 @@ without finding a linked-stereo owner. None supplies one source-backed path
 through crest, linked stereo, exact length, bounded state, and the retained
 PaulX-centred musical target.
 
-Neutral `Dream` is therefore closed without promotion. `Dream` remains useful
-intent and comparator vocabulary, but it is unavailable. Reopening requires an
-explicit operator decision plus new complete-system evidence; it cannot begin
-with another independent-phase variant, limiter, post-gain stage, scalar sweep,
-or fusion of rejected owners.
+Batch 31.19 therefore closed neutral `Dream` without promotion. The operator
+rejected that closure. It had treated `3.88 dB` from long-form PaulXStretch
+musical rows as calibration for a synthetic uniform-noise stop row that was
+never rendered through PaulXStretch. It also treated Signal's substituted
+equal-power frame blend as a conclusive test of a source path that uses a
+raised-cosine blend plus position-dependent amplitude-modulation compensation.
+
+The candidate rejection stands; the family closure does not. Neutral `Dream`
+is active again. Signal must capture matching PaulX synthetic rows and derive a
+clean-room overlap-statistics compensation law before freezing the next
+complete candidate. It may not copy upstream constants, thresholds, or control
+flow.
 
 Primary evidence:
 
@@ -282,5 +289,5 @@ boundary before implementation.
 
 ## Next Task
 
-No `g10.031` implementation task is ready. Reopen neutral `Dream` only after an
-explicit operator decision and new source-backed whole-renderer evidence.
+Run `g10.031` Batch 31.20 only. Repair the reference mismatch and freeze the
+next complete PaulX-like renderer brief without candidate DSP.

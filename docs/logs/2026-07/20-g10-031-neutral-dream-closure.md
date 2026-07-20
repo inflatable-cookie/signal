@@ -1,7 +1,7 @@
 # g10.031 Neutral Dream Ownership Closure
 
 Date: 2026-07-20
-Status: Batch 31.19 complete; `g10.031` closed without renderer admission
+Status: Batch 31.19 complete; target closure superseded by operator correction
 Roadmap: `g10.031`
 Contract: `085`
 
@@ -38,6 +38,14 @@ ready to freeze. `Dream` remains unavailable intent and comparator vocabulary.
 Reopening requires an explicit operator decision plus new complete-system
 evidence.
 
+## Correction
+
+The operator rejected abandonment of the PaulXStretch-like target. The
+`3.88 dB` PaulXStretch calibration used retained long-form musical rows, while
+the Signal candidate stopped on synthetic uniform noise before the matching
+PaulXStretch synthetic suite ran. The candidate rejection stands. The family
+closure does not.
+
 ## Scope
 
 Documentation only. No DSP, candidate harness, comparator capture, public API,
@@ -46,6 +54,5 @@ binaural/reverb edits remained untouched.
 
 ## Next Task
 
-No `g10.031` batch is ready. Return to the `g10` front door and select the next
-Signal priority explicitly. Do not infer `g10.028` or another stretch candidate
-from this closure.
+Run Batch 31.20 only. Repair the reference mismatch and freeze a complete
+clean-room PaulX-like successor brief without candidate DSP.

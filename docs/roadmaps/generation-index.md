@@ -33,12 +33,15 @@ Updated: 2026-07-20
   failed the first crest row at `8.263162 dB` against the frozen `6 dB`
   ceiling. The candidate was deleted before later gates. Batch 31.19 found the
   same unowned independent-phase crest mechanism as the first diffusive
-  candidate and no qualifying complete replacement. Neutral `Dream` and
-  `g10.031` closed without renderer admission.
+  candidate and recorded target closure. The operator superseded that closure:
+  the PaulX crest calibration used musical rows against a synthetic Signal
+  stop row, and matching PaulX synthetics had not run. `g10.031` is active
+  again through Batch 31.20 reference and gate recovery.
 - Lifecycle reconciliation then closed stale `g10.001` and `g10.003` active
   markers and paused `g10.017` on its remaining hardware evidence. Signal's
-  capture and live-monitor implementation is present. No execution batch is
-  ready.
+  capture and live-monitor implementation is present. That lifecycle
+  reconciliation opened no feature batch; the later operator correction opens
+  only `g10.031` Batch 31.20.
 - audit evidence: `chorus/research/2026-06-11-signal-deep-audit.md` (phase
   one) and `docs/research/2026-06-11-post-demolition-assessment.md` (phase
   two)
@@ -78,6 +81,5 @@ If that cleanup has not happened, stay in the current generation and finish the 
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the current active-generation front door.
-No execution batch is ready after lifecycle reconciliation. Select the next
-Signal priority explicitly; keep transparent and creative stretch
-implementation closed.
+Run `g10.031` Batch 31.20 only. Keep transparent stretch implementation and
+all creative candidate DSP closed during this comparator/architecture batch.

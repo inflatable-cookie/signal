@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: complete; closed without renderer admission
+Status: active recovery; Batch 31.20 ready
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -565,7 +565,7 @@ Implement the frozen brief once. Failure stops the sequence.
 
 ## Batch 31.19 - RenewalSpectral Crest Ownership Reassessment
 
-Status: complete; neutral `Dream` closed
+Status: complete; target closure superseded by operator correction
 
 - [x] reconcile the Batch 31.4 and Batch 31.18 crest failures without repairing
   either rejected candidate
@@ -574,7 +574,8 @@ Status: complete; neutral `Dream` closed
   scalar sweep, or renamed phase/window variant
 - [x] freeze one complete replacement direction only if it has a credible path
   through crest, linked stereo, exact length, bounded state, and retained
-  musical targets; no qualifying path remained, so neutral `Dream` closed
+  musical targets; the batch recorded closure, later superseded by operator
+  correction
 - [x] keep DSP, candidate harnesses, comparator capture, public APIs, cache,
   routing, other creative owners, Loophole, and Chorus unchanged
 
@@ -590,10 +591,44 @@ Decision:
 - `Dream` stays as unavailable intent vocabulary; reopening requires explicit
   operator direction plus new complete-system evidence
 
+Correction:
+
+- the operator rejected abandonment of the PaulXStretch-like target
+- PaulXStretch's `3.88 dB` maximum came from retained musical rows, while the
+  Signal stop row was synthetic uniform noise
+- the matching PaulX synthetic suite had not run when the candidate stopped
+- `RenewalSpectral` substituted equal-power frame blending and fixed gain for
+  the source-backed raised-cosine blend plus position-dependent compensation
+- the candidate remains rejected; the neutral-`Dream` family closure does not
+
+## Batch 31.20 - PaulX Reference And Gate Recovery
+
+Status: ready; comparator and architecture only
+
+- [ ] render the frozen synthetic noise, harmonic-pad, impulse-train, tone,
+  chord, impulse, and silence-gap inventory through pinned PaulXStretch 1.6.0
+  at `4x`, `8x`, and `16x`
+- [ ] measure PaulXStretch and the rejected Signal result under the same active
+  support, RMS matching, crop, and crest law
+- [ ] separate hard integrity limits from reference-relative character
+  diagnostics; an unmatched synthetic metric cannot close the target
+- [ ] trace the whole frame-combination path, including raised-cosine blend,
+  position-dependent amplitude-modulation compensation, source accumulation,
+  window endpoint convention, exterior support, and exact crop
+- [ ] derive Signal's compensation law from overlap statistics without copying
+  upstream constants, expressions, tables, thresholds, or control flow
+- [ ] freeze one complete clean-room successor brief covering map, transform,
+  phase renewal, frame blend and compensation, linked stereo, exact length,
+  bounded state, determinism, gates, listening, rejection, and cleanup
+- [ ] require long-form concealed mono listening for character authority after
+  hard integrity; independent stereo remains a later promotion gate
+- [ ] keep candidate DSP, public APIs, report modes, fixtures, cache, routing,
+  other creative owners, Loophole, and Chorus unchanged
+
 ## Later Batches
 
-Closed or paused without promotion. Work after Batch 31.19 requires explicit
-roadmap reopening backed by new complete-system evidence:
+Closed or paused without promotion. Work after Batch 31.20 requires its frozen
+complete brief and a separate implementation decision:
 
 - minimal production admission
 - coherent/diffusive overlap
@@ -624,15 +659,13 @@ roadmap reopening backed by new complete-system evidence:
 - [x] one complete `RenewalSpectral` brief is frozen
 - [x] one isolated `RenewalSpectral` candidate reached a terminal decision;
   structural admission passed and the first crest row failed
-- [x] final crest-ownership reassessment found no qualifying complete neutral
-  `Dream` path
-- [x] neutral `Dream` closed without implementation or product exposure
-- [x] long-form mono `Dream` listening closed without admission
-- [x] linked-stereo listening closed without admission
+- [ ] matching PaulXStretch synthetic reference and gate recovery complete
+- [ ] one complete clean-room frame-blend-compensated brief frozen
+- [ ] long-form mono `Dream` listening reaches a promotion decision
+- [ ] linked-stereo listening reaches a promotion decision
 - [x] no private renderer or product surface entered `main`
 
 ## Next Task
 
-No `g10.031` batch is ready. Return to the `g10` front door and select the next
-Signal priority explicitly. Do not repair a rejected owner or infer creative
-routing, product exposure, or `g10.028` work from this closure.
+Run Batch 31.20 only. Repair the reference mismatch and freeze one complete
+PaulX-like successor brief. Do not implement candidate DSP in the same batch.

@@ -474,6 +474,7 @@ implementation authority.
 
 ## Next Task
 
-Batch 31.19 found no materially different source-backed whole-renderer path and
-closed neutral `Dream` without admission. This brief remains rejection
-evidence. Do not tune or reimplement `RenewalSpectral`.
+This brief remains rejection evidence. Batch 31.20 must compare the same
+synthetic sources against PaulXStretch and derive a clean-room frame-blend
+compensation law before freezing a successor. Do not restore or tune this
+candidate.
