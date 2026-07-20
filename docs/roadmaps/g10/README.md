@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: audited creative candidate rejected; successor briefing ready
+Status: source-relative creative successor frozen; implementation ready
 Updated: 2026-07-20
 
 ## Why this generation matters now
@@ -113,9 +113,12 @@ The 2026-07-19 consolidation reset is authoritative.
   immutable checkpoint `97ee7056`. Linked-stereo review then rejected it: a
   source at `-0.4516 dB` right-minus-left became `+3.3660 dB` at neutral
   `space` because first-sample component orientation discarded the source
-  mid/side relationship. The candidate was deleted. Batch 31.26 is ready to
-  freeze one source-relative stereo successor brief. Other characters,
-  routing, product exposure, and rejected branches remain closed or paused.
+  mid/side relationship. The candidate was deleted. Batch 31.26 froze
+  `SourceRelativeRenewalSpectral`: the passed mono renderer remains, while
+  native left/right complex analysis and one explicit interchannel relation
+  law own stereo. Batch 31.27 isolated implementation is ready. Other
+  characters, routing, product exposure, and rejected branches remain closed
+  or paused.
 - The 2026-07-20 lifecycle reconciliation closes stale `g10.001` and
   `g10.003` active markers. It also records that Signal's `g10.017` capture and
   live-monitor implementation landed; that roadmap is paused only on explicit
@@ -190,9 +193,10 @@ Do not start Loophole or Chorus planning from Signal internals.
 - `g10.030` `complete`
   - stretch consolidated; candidate families closed; frozen baseline retained
 - `g10.031` `active`
-  - PaulX-like neutral `Dream` remains the product goal; the audited candidate
-    passed all mono gates but failed source-relative stereo image preservation;
-    Batch 31.26 successor briefing is ready and explicit `Cyclic` stays closed
+  - PaulX-like neutral `Dream` remains the product goal; Batch 31.26 froze a
+    native-left/right source-relative successor after the audited candidate
+    passed all mono gates but failed stereo image preservation; Batch 31.27
+    isolated implementation is ready and explicit `Cyclic` stays closed
 
 ## Stretch Boundary
 
@@ -227,12 +231,17 @@ assertions were absent. It was deleted before listening. The compensated-
 renewal topology now has valid structural, synthetic, and mono listening
 evidence. `AuditedVarianceCompensatedRenewalSpectral` was rejected and deleted
 after its first-sample mid/side orientation law inverted source-relative
-channel balance.
+channel balance. Batch 31.26 froze the complete
+`SourceRelativeRenewalSpectral` successor without adding DSP. Its native
+left/right analysis preserves channel magnitudes and owns the interchannel
+phase relation directly.
 Creative stretch still has no renderer, public API, harness surface, or product
 route on `main`.
 
 ## Next Task
 
-Run `g10.031` Batch 31.26 only. Freeze one complete source-relative stereo
-renewal successor brief without candidate DSP. Keep `g10.028`, routing,
-product exposure, cross-repo work, and candidate surfaces on `main` paused.
+Run `g10.031` Batch 31.27 only. Implement
+`SourceRelativeRenewalSpectral` once in `signal-candidate-31-27`, complete
+construction `1/1`, freeze one checkpoint, and run the frozen gates in order.
+Keep `g10.028`, routing, product exposure, cross-repo work, and candidate DSP
+on `main` paused. Do not push.

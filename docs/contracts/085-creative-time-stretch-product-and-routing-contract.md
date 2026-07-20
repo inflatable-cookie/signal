@@ -1,10 +1,11 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: active PaulX-like `Dream`; audited candidate rejected at stereo image
+Status: active PaulX-like `Dream`; source-relative successor frozen
 Owner: core-product
 Updated: 2026-07-20
 Related contracts: `046`, `048`, `084`
 Related architecture: `docs/architecture/offline-creative-time-stretch-study.md`,
+`docs/architecture/offline-creative-source-relative-renewal-spectral-brief.md`,
 `docs/architecture/offline-creative-audited-variance-compensated-renewal-spectral-brief.md`,
 `docs/architecture/offline-creative-variance-compensated-renewal-spectral-brief.md`,
 `docs/architecture/offline-creative-compensated-renewal-spectral-brief.md`,
@@ -417,6 +418,16 @@ the failed stereo orientation law with one explicit source-relative relation
 owner and add source-relative channel-balance admission. It may not apply
 post-render channel gain, threshold the first sample, or patch this checkpoint.
 
+Batch 31.26 freezes that successor as `SourceRelativeRenewalSpectral`. It keeps
+the passed mono path, but analyzes native left/right complex spectra. One
+counter phase renews each linked pair while per-channel magnitudes remain
+source-owned. Neutral `space` preserves the analyzed interchannel relation;
+increasing `space` widens only non-zero coherent relations toward quadrature
+above the protected low band. Duplicate mono, anti-phase, common polarity,
+swap relationships, whole/band/window balance, exact boundaries, bounded
+state, determinism, and independent stereo listening are explicit gates. No
+candidate DSP entered `main`.
+
 ## Initial Promotion Sequence
 
 1. Comparator capture and target-character freeze. Complete.
@@ -473,7 +484,10 @@ post-render channel gain, threshold the first sample, or patch this checkpoint.
     mono listening passed `15/15`. Rejected at linked-stereo image preservation
     after a persistent rightward balance inversion.
 26. Freeze one complete source-relative stereo renewal successor brief without
-    candidate DSP. Ready after Batch 31.25 cleanup.
+    candidate DSP. Complete; `SourceRelativeRenewalSpectral` frozen.
+27. Implement the brief once in its named disposable worktree, complete
+    construction `1/1`, freeze one checkpoint, and run `15` structural then
+    `9` synthetic owners. Ready.
 
 `Spectral`/`Rough`, coherent overlap, `LayeredCloud`, the upper overlap, dynamic
 ratios, and automatic routing still require separate reopening decisions backed
@@ -493,7 +507,9 @@ construction, structural, synthetic, and concealed mono gates without repair
 or rerun. It was rejected at linked-stereo image preservation because its
 first-sample component orientation inverted source-relative channel balance.
 The passed mono renewal core remains active architectural evidence; the failed
-stereo law does not.
+stereo law does not. `SourceRelativeRenewalSpectral` is now the sole complete
+candidate authority. Its native left/right relation law and fixed stereo gates
+make isolated implementation ready, not admitted.
 
 No public Rust enum, renderer, harness mode, fixture, artifact schema, runtime
 route, or product-facing claim entered `main`. `OfflineHighQuality` remains
@@ -501,7 +517,7 @@ byte-exact and Contract `084` remains closed. No creative renderer is admitted.
 
 ## Next Task
 
-Run Batch 31.26 only. Freeze one complete successor that retains the passed
-mono renewal core and owns source-relative stereo relationships without
-first-sample orientation or post-render channel gain. Do not implement it in
-the same batch.
+Run Batch 31.27 only. Create `signal-candidate-31-27` on
+`candidate/g10-031-source-relative-renewal`, implement the frozen brief once,
+complete construction `1/1`, freeze one checkpoint, then run `15` structural
+and `9` synthetic owners in order. Stop on the first miss. Do not push.

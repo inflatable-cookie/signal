@@ -1,6 +1,6 @@
 # Offline Creative Time-Stretch Study
 
-Status: active PaulX-like `Dream`; audited candidate rejected at stereo image
+Status: active PaulX-like `Dream`; source-relative successor frozen
 Owner: dsp
 Updated: 2026-07-20
 Contract: `085`
@@ -500,8 +500,10 @@ but both complete owners are rejected and deleted. Batch 31.15 found no third
 materially different, source-backed whole-renderer path. `Cyclic` is closed
 with no promotion. `Spectral`, `Rough`, `Cloud`, automatic routing, dynamic
 ratio, cache, and product integration remain paused. `Cyclic` stays closed.
-Neutral `Dream` has one frozen complete candidate brief without implementation
-or product exposure.
+Neutral `Dream` has one frozen complete `SourceRelativeRenewalSpectral`
+candidate brief without implementation or product exposure. It retains the
+passed mono renewal renderer and replaces mid/side magnitude synthesis with
+native left/right complex analysis and an explicit source-relative phase law.
 
 ## Sources
 
@@ -531,5 +533,6 @@ or product exposure.
 
 ## Next Task
 
-Run Batch 31.26 only. Freeze one complete source-relative stereo renewal
-successor brief without candidate DSP.
+Run Batch 31.27 only. Implement the frozen source-relative renewal brief once
+in `signal-candidate-31-27`, complete construction, freeze one checkpoint, and
+run gates in order. Keep candidate DSP off `main`; do not push.

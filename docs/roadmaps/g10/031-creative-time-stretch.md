@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: active; Batch 31.25 rejected at linked-stereo image preservation
+Status: active; Batch 31.26 complete, Batch 31.27 ready
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -826,30 +826,55 @@ state, and candidate listening assembly. No candidate code entered `main`.
 
 ## Batch 31.26 - Source-Relative Stereo Renewal Brief
 
-Status: ready; docs and architecture only
+Status: complete; `SourceRelativeRenewalSpectral` frozen
 
-- [ ] retain the passed source/output map, long magnitude analysis, phase
+- [x] retain the passed source/output map, long magnitude analysis, phase
   renewal, adjacent-frame blend, variance compensation, boundaries, memory,
   determinism, mono synthetic gates, and mono listening pack
-- [ ] replace first-sample mid/side orientation with one explicit
+- [x] replace first-sample mid/side orientation with one explicit
   source-relative interchannel relationship representation
-- [ ] freeze how neutral `space`, increasing `space`, DC, Nyquist, silence,
+- [x] freeze how neutral `space`, increasing `space`, DC, Nyquist, silence,
   dormancy, channel swap, common polarity, anti-phase, and duplicate stereo
   compose under that representation
-- [ ] freeze source-relative channel-balance, centre, width, low-band image,
+- [x] freeze source-relative channel-balance, centre, width, low-band image,
   and time-local balance gates before implementation
-- [ ] preserve one complete candidate, one immutable checkpoint, terminal gate
+- [x] preserve one complete candidate, one immutable checkpoint, terminal gate
   order, cleanup, and minimal private admission
-- [ ] change documentation only; do not recover Batch 31.25 code or add DSP,
+- [x] change documentation only; do not recover Batch 31.25 code or add DSP,
   harness, fixture, API, route, cache, Loophole, or Chorus surfaces to `main`
 
 The brief must describe one buildable renderer. A first-sample threshold,
 post-render channel gain, scalar blend sweep, or repair of checkpoint
 `97ee7056` is not a successor.
 
+Authority:
+
+- `docs/architecture/offline-creative-source-relative-renewal-spectral-brief.md`
+
+## Batch 31.27 - Isolated Source-Relative Renewal Candidate
+
+Status: ready; isolated implementation only
+
+- [ ] create `signal-candidate-31-27` on
+  `candidate/g10-031-source-relative-renewal`
+- [ ] implement only the fresh private six-file
+  `creative_source_relative_renewal` family and one private `lib.rs`
+  declaration; do not recover Batch 31.25 source
+- [ ] complete `effigy test compile` and exactly `1/1` construction owner
+- [ ] create and record one local immutable checkpoint; do not push it
+- [ ] run exactly `15/15` structural owners once from that checkpoint
+- [ ] run exactly `9/9` full synthetic owners only after structural admission
+- [ ] repeat the concealed `15`-row mono pack only after objective admission
+- [ ] capture same-source PaulX stereo references, then run objective stereo,
+  operator speaker pre-screen, and eligible independent listening in order
+- [ ] stop on the first miss and delete the complete candidate without tuning,
+  repair, or rerun
+- [ ] keep public APIs, reports, fixtures, cache, routing, other characters,
+  Loophole, and Chorus unchanged
+
 ## Later Batches
 
-Closed or paused without promotion. Work after Batch 31.25 requires a valid
+Closed or paused without promotion. Work after Batch 31.26 requires a valid
 candidate-admission decision:
 
 - minimal production admission
@@ -892,10 +917,12 @@ candidate-admission decision:
   executable gate ownership
 - [x] long-form mono `Dream` listening reaches a promotion decision
 - [x] linked-stereo evidence reaches a terminal rejection decision
+- [x] one complete source-relative stereo successor brief is frozen
 - [x] no private renderer or product surface entered `main`
 
 ## Next Task
 
-Run Batch 31.26 only. Freeze one complete source-relative stereo renewal brief
-without candidate DSP. Stop after docs validation and commit; implementation
-belongs to a later isolated batch.
+Run Batch 31.27 only. Create `signal-candidate-31-27` on
+`candidate/g10-031-source-relative-renewal`, implement the frozen
+`SourceRelativeRenewalSpectral` brief once, complete construction `1/1`, freeze
+one checkpoint, and run gates in order. Stop on the first miss; do not push.
