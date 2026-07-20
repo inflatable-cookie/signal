@@ -28,6 +28,7 @@ Keep milestone sequencing in `roadmaps/`.
 - `offline-time-stretch-synthesis.md`
 - `offline-time-stretch-non-phase-vocoder-feasibility.md`
 - `offline-creative-time-stretch-study.md`
+- `offline-creative-verified-source-relative-renewal-spectral-brief.md`
 - `offline-creative-renewal-spectral-brief.md`
 - `offline-creative-continuous-excitation-complex-relation-brief.md`
 - `offline-creative-continuous-excitation-spectral-brief.md`
@@ -39,6 +40,6 @@ Keep milestone sequencing in `roadmaps/`.
 ## Next Task
 
 Keep the `g10.030` transparent successor program closed. Run `g10.031` Batch
-31.18 only: implement the frozen `RenewalSpectral` brief once in its named
-disposable worktree. Stop at the first failed gate. Keep other creative owners
-and product routing closed.
+31.30 only: reassess ratio-range ownership after the verified renewal
+candidate's opposite-end synthetic failures. Keep candidate implementation,
+other creative owners, and product routing closed.

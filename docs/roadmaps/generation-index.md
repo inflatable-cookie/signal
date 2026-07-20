@@ -53,8 +53,10 @@ Updated: 2026-07-20
   admission at `14/15` because the frozen `mix64(1)` vector was transposed.
   The candidate was deleted before synthetic or listening gates. Batch 31.28
   exact-vector reassessment independently reproduced the complete counter
-  table and froze `VerifiedSourceRelativeRenewalSpectral`. Batch 31.29 isolated
-  implementation is ready.
+  table and froze `VerifiedSourceRelativeRenewalSpectral`. Batch 31.29 passed
+  construction `1/1` and structural `15/15`, then failed synthetic admission
+  at `7/9` on one `16x` replica row and two `4x` pitch rows. The candidate was
+  deleted before listening. Batch 31.30 range ownership reassessment is ready.
 - Lifecycle reconciliation then closed stale `g10.001` and `g10.003` active
   markers and paused `g10.017` on its remaining hardware evidence. Signal's
   capture and live-monitor implementation is present. That lifecycle
@@ -99,7 +101,6 @@ If that cleanup has not happened, stay in the current generation and finish the 
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the current active-generation front door.
-Run `g10.031` Batch 31.29 only. Implement the verified source-relative brief
-once in `signal-candidate-31-29`, complete construction, freeze one checkpoint,
-and run gates in order. Keep transparent stretch, other creative owners, and
-candidate DSP on `main` closed. Do not push.
+Run `g10.031` Batch 31.30 only. Reassess ratio-range ownership against pinned
+PaulXStretch and the complete Batch 31.29 receipt. Keep transparent stretch,
+other creative owners, and candidate DSP on `main` closed. Do not push.

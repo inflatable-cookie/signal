@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: active; Batch 31.28 complete, Batch 31.29 ready
+Status: active; Batch 31.29 complete, Batch 31.30 ready
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -924,29 +924,55 @@ Authority:
 
 ## Batch 31.29 - Isolated Verified Source-Relative Candidate
 
-Status: ready; isolated implementation only
+Status: complete; candidate rejected and deleted
 
-- [ ] create `signal-candidate-31-29` on
+- [x] created `signal-candidate-31-29` on
   `candidate/g10-031-verified-source-relative-renewal`
-- [ ] implement only the fresh private six-file
+- [x] implemented only the fresh private six-file
   `creative_verified_source_relative_renewal` family and one private `lib.rs`
-  declaration; do not recover Batch 31.27 source
-- [ ] define the audited counter literals once in `COUNTER_VECTORS`; prohibit
+  declaration without recovering Batch 31.27 source
+- [x] defined the audited counter literals once in `COUNTER_VECTORS`; prohibited
   duplicate handwritten counter values
-- [ ] complete `effigy test compile` and exactly `1/1` construction owner
-- [ ] create and record one immutable local checkpoint; do not push it
-- [ ] run exactly `15/15` structural owners once from that checkpoint
-- [ ] run exactly `9/9` synthetic owners only after structural admission
-- [ ] repeat concealed mono and same-source stereo admission only after all
-  objective owners pass
-- [ ] stop on the first miss and delete the complete candidate without tuning,
+- [x] completed `effigy test compile` and exactly `1/1` construction owner
+- [x] froze checkpoint `d94612dd9f4ca9ba51724c826cac1d9375c27ff8`
+  without pushing it
+- [x] passed exactly `15/15` structural owners once from that checkpoint
+- [x] ran all nine synthetic owners once; seven passed, while `Y04` failed one
+  `16x` replica row and `Y02` failed two `4x` pitch rows
+- [x] stopped before concealed mono and stereo admission because objective
+  admission failed
+- [x] deleted the complete candidate without tuning,
   repair, or rerun
-- [ ] keep public APIs, reports, fixtures, cache, routing, other characters,
+- [x] kept public APIs, reports, fixtures, cache, routing, other characters,
   Loophole, and Chorus unchanged
+
+Evidence:
+
+- compile: pass
+- construction: `1/1`
+- structural: `15/15`
+- synthetic: `7/9`; `Y04` and `Y02` failed
+- listening: not run
+- cleanup: complete; no candidate code entered `main`
+
+## Batch 31.30 - Ratio-Range Ownership Reassessment
+
+Status: ready; docs and architecture only
+
+- [ ] reconcile the paired `4x` pitch and `16x` replica failures with the
+  pinned PaulXStretch render path and Batch 31.25's passed mono evidence
+- [ ] decide whether one source-backed range-aware topology can own `4x`, `8x`,
+  and `16x` without a hard switch, local coefficient experiment, or seam gap
+- [ ] either freeze one materially different complete successor brief or close
+  the source-relative renewal topology
+- [ ] keep candidate DSP, tests, harnesses, fixtures, APIs, routing, cache,
+  Loophole, and Chorus unchanged
+- [ ] do not close the PaulX-like product target without explicit operator
+  direction
 
 ## Later Batches
 
-Closed or paused without promotion. Work after Batch 31.28 requires a valid
+Closed or paused without promotion. Work after Batch 31.29 requires a valid
 candidate-admission decision:
 
 - minimal production admission
@@ -993,11 +1019,14 @@ candidate-admission decision:
 - [x] one isolated source-relative candidate reached a terminal structural
   evidence decision without entering `main`
 - [x] one verified fresh source-relative candidate brief is frozen
+- [x] one verified source-relative candidate passed construction and structural
+  admission, then reached a terminal `7/9` synthetic rejection
 - [x] no private renderer or product surface entered `main`
 
 ## Next Task
 
-Run Batch 31.29 only. Create `signal-candidate-31-29` on
-`candidate/g10-031-verified-source-relative-renewal`, implement the verified
-brief fresh, complete construction `1/1`, freeze one checkpoint, and run gates
-in order. Stop on the first miss; do not push.
+Run Batch 31.30 only. Reassess ratio-range ownership from the complete Batch
+31.29 receipt and pinned PaulXStretch architecture. Freeze one materially
+different complete successor brief only if it jointly owns `4x` pitch, `16x`
+anti-replica behavior, passed stereo preservation, and seamless range
+continuity. Do not implement candidate DSP in the same batch or push.

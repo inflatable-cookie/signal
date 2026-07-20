@@ -1,10 +1,10 @@
 # Offline Creative VerifiedSourceRelativeRenewalSpectral Renderer Brief
 
-Status: frozen; implementation batch ready
+Status: frozen; candidate rejected at synthetic admission
 Owner: dsp
 Updated: 2026-07-20
 Contract: `085`
-Roadmap: `g10.031`, Batch 31.28
+Roadmap: `g10.031`, Batches 31.28-31.29
 
 ## Decision
 
@@ -20,6 +20,29 @@ checkpoint `1f05cc33`.
 No mid/side magnitude synthesis, per-component orientation, post-render gain,
 limiter, compressor, phase propagation, magnitude recurrence, transient
 detector, onset reset, or component layer is present.
+
+## Outcome
+
+Fresh checkpoint `d94612dd9f4ca9ba51724c826cac1d9375c27ff8`
+passed compile, construction `1/1`, and structural admission `15/15` without
+post-checkpoint repair or rerun. Synthetic admission completed all nine owners:
+seven passed and two failed.
+
+`Y04` found two active replica regions instead of one in one `16x` row. Its
+failure message did not distinguish impulse from impulse train. `Y02` also
+missed two `4x` pitch rows: `10.960881380` and `10.960712818` cents against
+PaulX-relative ceilings of `9.410431632` and `4.461974128` cents.
+
+The dominant cause is incomplete range ownership in one fixed-resolution
+renewal topology: its frozen `32768/16384` transform and source-relative map
+do not jointly retain the low-ratio tonal estimate and single-region
+high-ratio transient distribution. This is an architectural diagnosis from
+the paired ratio-end failures, not proof that transform size alone is causal.
+Do not turn it into a window, hop, or threshold sweep.
+
+No listening gate ran. Cleanup deleted the worktree, branch, checkpoint,
+module, tests, build state, and candidate artifacts. No candidate DSP entered
+`main`.
 
 ## Supported Request
 
@@ -296,7 +319,9 @@ Loophole, or Chorus integration.
 
 ## Next Task
 
-Run Batch 31.29 only. Create the named isolated worktree, implement this brief
-fresh without recovering deleted candidate source, complete construction
-`1/1`, freeze one checkpoint, and run `15` structural then `9` synthetic gates
-in order. Stop on the first miss. Do not push.
+Run Batch 31.30 only. Reassess ratio-range ownership against the pinned
+PaulXStretch render path and the complete Batch 31.29 receipt. Either freeze
+one materially different, range-aware complete successor brief or close this
+source-relative topology. Do not implement DSP in the same batch, reopen a
+parameter sweep, or close the PaulX-like product target without explicit
+operator direction.

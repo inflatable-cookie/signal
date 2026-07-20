@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: verified source-relative authority frozen; implementation ready
+Status: verified source-relative candidate rejected; range reassessment ready
 Updated: 2026-07-20
 
 ## Why this generation matters now
@@ -121,8 +121,13 @@ The 2026-07-19 consolidation reset is authoritative.
   was transposed. The candidate was deleted without repair or rerun. Batch
   31.28 reproduced every counter vector independently and froze
   `VerifiedSourceRelativeRenewalSpectral` with one named literal owner. Batch
-  31.29 isolated implementation is ready. Other characters, routing, product
-  exposure, and rejected branches remain closed or paused.
+  31.29 then passed compile, construction `1/1`, and structural `15/15` from
+  immutable checkpoint `d94612dd`. Synthetic admission finished `7/9`: one
+  `16x` row split into two replica regions, and two `4x` pitch rows measured
+  about `10.96` cents outside their PaulX-relative ceilings. The candidate was
+  deleted before listening. Batch 31.30 is a docs-only ratio-range ownership
+  reassessment. Other characters, routing, product exposure, and rejected
+  branches remain closed or paused.
 - The 2026-07-20 lifecycle reconciliation closes stale `g10.001` and
   `g10.003` active markers. It also records that Signal's `g10.017` capture and
   live-monitor implementation landed; that roadmap is paused only on explicit
@@ -197,9 +202,9 @@ Do not start Loophole or Chorus planning from Signal internals.
 - `g10.030` `complete`
   - stretch consolidated; candidate families closed; frozen baseline retained
 - `g10.031` `active`
-  - PaulX-like neutral `Dream` remains the product goal; Batch 31.28 froze
-    verified native-left/right authority after independently reproducing the
-    failed counter vector; Batch 31.29 isolated implementation is ready and
+  - PaulX-like neutral `Dream` remains the product goal; Batch 31.29 passed
+    construction and structural admission, then failed `Y04` and `Y02` at
+    opposite ratio ends; Batch 31.30 range ownership reassessment is ready and
     explicit `Cyclic` stays closed
 
 ## Stretch Boundary
@@ -243,15 +248,16 @@ construction, then stopped at structural exact-vector proof because the
 frozen `mix64(1)` assertion transposed the normative result. No synthetic or
 listening result exists. The candidate was deleted.
 Batch 31.28 independently reproduced the complete counter table in Python and
-Ruby and froze fresh verified authority. The architecture remains acoustically
-untested.
+Ruby and froze fresh verified authority. Batch 31.29 passed construction and
+all `15` structural owners, then failed two of nine synthetic owners at
+opposite ratio ends. The isolated candidate was deleted before listening.
 Creative stretch still has no renderer, public API, harness surface, or product
 route on `main`.
 
 ## Next Task
 
-Run `g10.031` Batch 31.29 only. Implement
-`VerifiedSourceRelativeRenewalSpectral` once in `signal-candidate-31-29`,
-complete construction `1/1`, freeze one checkpoint, and run gates in order.
-Keep `g10.028`, routing, product exposure, cross-repo work, and candidate DSP
-on `main` paused. Do not push.
+Run `g10.031` Batch 31.30 only. Reassess range ownership against pinned
+PaulXStretch and the Batch 31.29 receipt. Freeze another complete architecture
+only if it jointly owns the opposite-end failures and seamless range
+continuity. Keep `g10.028`, routing, product exposure, cross-repo work, and
+candidate DSP on `main` paused. Do not push.

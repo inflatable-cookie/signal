@@ -79,8 +79,8 @@ strict lane.
 
 ## Next Task
 
-Run `g10.031` Batch 31.29 only. Create `signal-candidate-31-29` on
-`candidate/g10-031-verified-source-relative-renewal`, implement the verified
-brief fresh, complete construction `1/1`, freeze one checkpoint, and run gates
-in order. Keep candidate DSP off `main`; do not push. Only drop into `specs/`
-when a strict lane is explicitly reopened.
+Run `g10.031` Batch 31.30 only. Reassess ratio-range ownership from the
+verified candidate's `15/15` structural and `7/9` synthetic receipt against
+the pinned PaulXStretch path. Do not implement candidate DSP in the same batch
+or close the PaulX-like product target without explicit operator direction.
+Only drop into `specs/` when a strict lane is explicitly reopened.

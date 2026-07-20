@@ -99,7 +99,10 @@ structural `14/15`: its frozen `mix64(1)` vector transposed the normative
 result. The candidate was deleted without repair or rerun. Batch 31.28 then
 reproduced the complete counter table independently and froze fresh
 `VerifiedSourceRelativeRenewalSpectral` authority. Batch 31.29 isolated
-implementation is ready.
+implementation passed construction `1/1` and structural `15/15`, then failed
+synthetic admission at `7/9`: one `16x` replica row and two `4x` pitch rows
+missed. The candidate was deleted before listening. Batch 31.30 is a docs-only
+ratio-range ownership reassessment.
 Offline artifacts still need a streaming artifact writer/cache target for full
 peak-memory closure. Mono callback-state DSP has a
 no-allocation proof, linked stereo is implemented, ratio scheduling has
@@ -226,8 +229,7 @@ Before rollover:
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the active generation front door. Run
-`g10.031` Batch 31.29 only: implement the verified source-relative brief once
-in `signal-candidate-31-29`, complete construction, freeze one checkpoint, and
-run gates in order. Keep the transparent successor lane, `g10.028`, other
-creative owners, routing, product exposure, cross-repo work, and candidate DSP
-on `main` closed. Do not push.
+`g10.031` Batch 31.30 only: reassess ratio-range ownership against pinned
+PaulXStretch and the complete Batch 31.29 receipt. Keep the transparent
+successor lane, `g10.028`, other creative owners, routing, product exposure,
+cross-repo work, and candidate DSP on `main` closed. Do not push.

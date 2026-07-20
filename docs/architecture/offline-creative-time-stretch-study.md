@@ -545,6 +545,7 @@ stereo law remain acoustically untested.
 
 ## Next Task
 
-Run Batch 31.29 only. Implement the verified source-relative brief once in
-`signal-candidate-31-29`, complete construction, freeze one checkpoint, and
-run gates in order. Keep candidate DSP off `main`; do not push.
+Run Batch 31.30 only. Reassess ratio-range ownership against pinned
+PaulXStretch and the verified candidate's complete objective receipt. Do not
+implement candidate DSP in the same batch, reopen a parameter sweep, or close
+the PaulX-like product target without explicit operator direction.
