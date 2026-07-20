@@ -1,10 +1,11 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: active PaulX-like `Dream`; compensated implementation failed compile
+Status: active PaulX-like `Dream`; variance-compensated candidate brief frozen
 Owner: core-product
 Updated: 2026-07-20
 Related contracts: `046`, `048`, `084`
 Related architecture: `docs/architecture/offline-creative-time-stretch-study.md`,
+`docs/architecture/offline-creative-variance-compensated-renewal-spectral-brief.md`,
 `docs/architecture/offline-creative-compensated-renewal-spectral-brief.md`,
 `docs/architecture/offline-creative-renewal-spectral-brief.md`,
 `docs/architecture/offline-creative-similarity-aligned-cyclic-brief.md`,
@@ -349,10 +350,10 @@ PaulXStretch `1.6.0` core. Its worst-channel uniform-noise crest growth is
 ceiling is not reference-calibrated; the rejected Signal `8.263162 dB` row is
 below the matching PaulX `4x` row.
 
-The frozen `CompensatedRenewalSpectral` brief now owns one complete clean-room
-candidate. It retains Signal's exact map, long magnitude analysis, phase
-renewal, and linked mid/side law. It replaces equal-power frame blending with
-one raised-cosine adjacent-frame blend and compensation derived from
+The rejected-at-compile `CompensatedRenewalSpectral` brief froze the clean-room
+topology. Fresh `VarianceCompensatedRenewalSpectral` authority retains Signal's
+exact map, long magnitude analysis, phase renewal, and linked mid/side law. It
+uses one raised-cosine adjacent-frame blend and compensation derived from
 `1/sqrt(a^2+b^2)`, the variance of two equal-energy uncorrelated frames. The
 law is bounded from `1` through `sqrt(2)` and copies no upstream coefficient or
 control flow.
@@ -366,6 +367,14 @@ failed on an unconstrained structural-test `Option` accumulator before the
 renderer executed. The candidate was deleted without correction or rerun. The
 result is implementation evidence only: the compensated-renewal DSP remains
 untested. No renderer is admitted.
+
+Batch 31.22 freezes `VarianceCompensatedRenewalSpectral` as the fresh complete
+candidate identity. The DSP topology and all acoustic gates are unchanged.
+Construction now ends with one clean `effigy test compile` receipt and a local
+isolated checkpoint. Compiler-only type, import, visibility, ownership, and
+test-assembly repairs may occur before that receipt only when they do not
+change DSP or evidence semantics. Structural admission and every later gate
+remain one-shot and terminal from the recorded checkpoint.
 
 ## Initial Promotion Sequence
 
@@ -409,7 +418,10 @@ untested. No renderer is admitted.
     worktree and run gates in order. Complete; rejected at compile-only
     validation before renderer execution.
 22. Freeze fresh complete candidate authority for the still-untested
-    compensated-renewal topology. Ready; docs and architecture only.
+    compensated-renewal topology. Complete; no candidate DSP entered `main`.
+23. Implement `VarianceCompensatedRenewalSpectral` once, complete construction
+    and compile validation, freeze one isolated checkpoint, then run admission
+    gates in order. Ready.
 
 `Spectral`/`Rough`, coherent overlap, `LayeredCloud`, the upper overlap, dynamic
 ratios, and automatic routing still require separate reopening decisions backed
@@ -422,13 +434,17 @@ deleted. Explicit `Cyclic` and the automatic router remain closed or paused.
 Neutral `Dream` is active. Matching PaulX synthetics invalidate the old crest
 calibration. The first complete `CompensatedRenewalSpectral` implementation
 failed compile-only validation before DSP execution and was deleted.
+`VarianceCompensatedRenewalSpectral` is the fresh complete authority for the
+same still-untested DSP topology.
+
 No public Rust enum, renderer, harness mode, fixture, artifact schema, runtime
 route, or product-facing claim entered `main`. `OfflineHighQuality` remains
-byte-exact and Contract `084` remains closed. Batch 31.22 is ready to freeze
-fresh complete candidate authority without DSP.
+byte-exact and Contract `084` remains closed. Batch 31.23 is ready for one
+isolated private candidate.
 
 ## Next Task
 
-Run `g10.031` Batch 31.22 only. Freeze fresh complete candidate authority for
-the still-untested compensated-renewal topology. Do not implement DSP in the
-same batch or restore the rejected Batch 31.21 implementation.
+Run `g10.031` Batch 31.23 only. Implement the frozen
+`VarianceCompensatedRenewalSpectral` brief once in its named disposable
+worktree. Do not restore the rejected Batch 31.21 implementation or place
+candidate surfaces on `main` before complete admission.

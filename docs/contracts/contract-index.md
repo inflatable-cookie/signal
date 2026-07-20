@@ -21,8 +21,9 @@ memory alone.
   `RenewalSpectral` is rejected, matching PaulX synthetics invalidate its old
   absolute crest calibration, the first `CompensatedRenewalSpectral`
   implementation failed compile-only validation before DSP execution, every
-  renderer remains unadmitted, and the other characters and router stay closed
-  or paused
+  renderer remains unadmitted, `VarianceCompensatedRenewalSpectral` is the
+  fresh complete candidate authority, and the other characters and router stay
+  closed or paused
 - `082` and `g10.029` are historical evidence, not active execution authority
 - `g10.028` source-fill work remains paused
 
@@ -152,6 +153,7 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Keep Contract `084` closed. Under Contract `085`, run `g10.031` Batch 31.22
-only: freeze fresh complete candidate authority for the still-untested
-compensated-renewal topology. Do not implement DSP in the same batch.
+Keep Contract `084` closed. Under Contract `085`, run `g10.031` Batch 31.23
+only: implement the frozen `VarianceCompensatedRenewalSpectral` brief once in
+its named disposable worktree. Do not restore Batch 31.21 or admit candidate
+surfaces to `main` before complete promotion.

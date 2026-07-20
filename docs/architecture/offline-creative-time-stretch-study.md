@@ -136,8 +136,10 @@ Signal's clean-room law is derived independently. With frame weights `a` and
 equal-energy uncorrelated frames and stays in `[1,sqrt(2)]`. It does not cap
 crest; matching-reference diagnostics and listening own that risk.
 
-[Offline Creative CompensatedRenewalSpectral Renderer Brief](./offline-creative-compensated-renewal-spectral-brief.md)
-freezes one complete candidate. No DSP is admitted.
+[Offline Creative VarianceCompensatedRenewalSpectral Renderer Brief](./offline-creative-variance-compensated-renewal-spectral-brief.md)
+freezes the current complete candidate. The earlier
+[CompensatedRenewalSpectral brief](./offline-creative-compensated-renewal-spectral-brief.md)
+is rejected-at-compile evidence. No DSP is admitted.
 
 ## Range-Owner Reassessment
 
@@ -529,6 +531,6 @@ or product exposure.
 
 ## Next Task
 
-Run Batch 31.22 only. Freeze fresh complete candidate authority for the
-still-untested compensated-renewal topology. Do not implement DSP in the same
-batch.
+Run Batch 31.23 only. Implement the frozen
+`VarianceCompensatedRenewalSpectral` brief once in its named disposable
+worktree. Complete compile construction before opening structural admission.

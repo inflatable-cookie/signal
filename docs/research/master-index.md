@@ -76,9 +76,13 @@ row. Matching PaulX synthetics now measure `9.932 dB` at `4x` uniform noise,
 above Signal's rejected `8.263162 dB` row. Batch 31.20 froze one clean-room
 `CompensatedRenewalSpectral` brief with overlap-statistics compensation.
 The Batch 31.21 implementation failed compile-only validation before DSP
-execution and was deleted. The topology remains untested. Fresh docs-only
-candidate authority is ready; `Cyclic` stays closed, while `Spectral`, `Rough`,
-`Cloud`, routing, and product exposure remain paused.
+execution and was deleted. The topology remains untested. Batch 31.22 froze
+`VarianceCompensatedRenewalSpectral` as fresh complete candidate authority;
+`Cyclic` stays closed, while `Spectral`, `Rough`, `Cloud`, routing, and product
+exposure remain paused.
+
+Frozen neutral `Dream` candidate brief:
+[Offline Creative VarianceCompensatedRenewalSpectral Renderer Brief](../architecture/offline-creative-variance-compensated-renewal-spectral-brief.md).
 
 Rejected-at-compile neutral `Dream` successor brief:
 [Offline Creative CompensatedRenewalSpectral Renderer Brief](../architecture/offline-creative-compensated-renewal-spectral-brief.md).
@@ -139,6 +143,7 @@ Rejected first-owner brief:
 
 ## Next Task
 
-Run `g10.031` Batch 31.22 only. Freeze fresh complete candidate authority for
-the still-untested compensated-renewal topology. Do not implement DSP, tune a
-rejected candidate, or reopen Batch 29.7BE or the transparent successor.
+Run `g10.031` Batch 31.23 only. Implement the frozen
+`VarianceCompensatedRenewalSpectral` brief once in its named disposable
+worktree. Do not tune a rejected candidate or reopen Batch 29.7BE or the
+transparent successor.

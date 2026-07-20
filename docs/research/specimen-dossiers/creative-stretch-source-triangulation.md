@@ -301,6 +301,6 @@ boundary before implementation.
 
 ## Next Task
 
-Run `g10.031` Batch 31.22 only. Freeze fresh complete candidate authority for
-the still-untested compensated-renewal topology. Do not implement DSP in the
-same batch.
+Run `g10.031` Batch 31.23 only. Implement the frozen
+`VarianceCompensatedRenewalSpectral` brief once in its named disposable
+worktree. Complete compile construction before structural admission.

@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: active; Batch 31.21 rejected at compile, Batch 31.22 ready
+Status: active; Batch 31.22 complete, Batch 31.23 ready
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -672,24 +672,63 @@ Decision:
 
 ## Batch 31.22 - Fresh Compensated-Renewal Candidate Authority
 
-Status: ready; docs and architecture only
+Status: complete; docs and architecture only
 
-- [ ] retain the Batch 31.21 compile miss as terminal for that implementation
-- [ ] preserve the reference recovery and compensation derivation as valid,
+- [x] retain the Batch 31.21 compile miss as terminal for that implementation
+- [x] preserve the reference recovery and compensation derivation as valid,
   still-untested evidence
-- [ ] freeze one newly named, complete candidate brief for the same selected
+- [x] freeze one newly named, complete candidate brief for the same selected
   compensated-renewal topology, including an explicit compile-complete test
   surface and fresh worktree, branch, module, cleanup, and gate authority
-- [ ] resolve every implementation and validation type before marking the next
+- [x] resolve every implementation and validation type before marking the next
   candidate batch ready; leave no `decide later` gap
-- [ ] keep candidate DSP, harness modes, fixtures, public APIs, cache, routing,
+- [x] keep candidate DSP, harness modes, fixtures, public APIs, cache, routing,
   other creative owners, Loophole, and Chorus unchanged
-- [ ] stop after the fresh brief is validated, committed, and reported
+- [x] stop after the fresh brief is validated, committed, and reported
+
+Decision:
+
+- `VarianceCompensatedRenewalSpectral` is the fresh candidate identity
+- the DSP topology, source/output map, long transform, phase renewal,
+  raised-cosine blend, variance compensation, stereo law, reference matrix,
+  and listening authority remain unchanged
+- construction may repair compiler-only plumbing before one clean
+  compile-completion receipt; the resulting isolated checkpoint is immutable
+  for structural and later gates
+- no candidate or production DSP entered `main`
+
+Authority:
+
+- `docs/architecture/offline-creative-variance-compensated-renewal-spectral-brief.md`
+
+## Batch 31.23 - Isolated Variance-Compensated Renewal Candidate
+
+Status: ready; isolated candidate only
+
+- [ ] create `signal-candidate-31-23` on
+  `candidate/g10-031-variance-compensated-renewal`
+- [ ] implement only the private six-file
+  `creative_variance_compensated_renewal` family and one private `lib.rs`
+  declaration
+- [ ] complete construction and `effigy test compile`; allow only frozen
+  compiler-plumbing repairs before the clean receipt
+- [ ] create and record one local compile-complete checkpoint commit; do not
+  push it
+- [ ] run structural and hard-integrity admission once from that checkpoint
+- [ ] run the full reference-relative synthetic matrix only after structural
+  admission
+- [ ] assemble concealed long-form mono listening only after synthetic
+  admission
+- [ ] stop on the first admission miss; record one dominant cause and delete
+  the complete candidate without tuning or rerun
+- [ ] leave independent stereo blocked until an eligible listener is available
+- [ ] keep public APIs, report modes, fixtures, cache, routing, other creative
+  owners, Loophole, and Chorus unchanged
 
 ## Later Batches
 
-Closed or paused without promotion. Work after Batch 31.22 requires a fresh
-complete brief and then a new candidate admission decision:
+Closed or paused without promotion. Work after Batch 31.23 requires a complete
+candidate admission decision:
 
 - minimal production admission
 - coherent/diffusive overlap
@@ -724,12 +763,14 @@ complete brief and then a new candidate admission decision:
 - [x] one complete clean-room frame-blend-compensated brief frozen
 - [x] one isolated compensated-renewal implementation reached a terminal
   compile-only decision without executing DSP
+- [x] one fresh complete variance-compensated-renewal brief frozen
 - [ ] long-form mono `Dream` listening reaches a promotion decision
 - [ ] linked-stereo listening reaches a promotion decision
 - [x] no private renderer or product surface entered `main`
 
 ## Next Task
 
-Run Batch 31.22 only. Freeze fresh complete candidate authority for the
-still-untested compensated-renewal topology. Do not implement candidate DSP in
-the same batch.
+Run Batch 31.23 only. Implement the frozen
+`VarianceCompensatedRenewalSpectral` brief once in its named disposable
+worktree. Complete construction and compile validation before opening the
+one-shot structural gate.

@@ -1,14 +1,14 @@
-# Offline Creative CompensatedRenewalSpectral Renderer Brief
+# Offline Creative VarianceCompensatedRenewalSpectral Renderer Brief
 
-Status: frozen; Batch 31.21 implementation rejected at compile-only validation
+Status: frozen; isolated candidate ready
 Owner: dsp
 Updated: 2026-07-20
 Contract: `085`
-Roadmap: `g10.031`, Batch 31.20
+Roadmap: `g10.031`, Batch 31.22
 
 ## Decision
 
-Build one Signal-owned `CompensatedRenewalSpectral` candidate for neutral
+Build one Signal-owned `VarianceCompensatedRenewalSpectral` candidate for neutral
 `Dream` at `4x`, `8x`, and `16x`.
 
 It is one complete magnitude-resynthesis renderer:
@@ -263,20 +263,74 @@ separation while retaining the preferred long-form sound.
 
 Use one disposable worktree and branch:
 
-- worktree: `signal-candidate-31-21`
-- branch: `candidate/g10-031-compensated-renewal`
+- worktree: `signal-candidate-31-23`
+- branch: `candidate/g10-031-variance-compensated-renewal`
 
 Add one private family only:
 
-`crates/signal-dsp-stretch/src/creative_compensated_renewal/`
+`crates/signal-dsp-stretch/src/creative_variance_compensated_renewal/`
 
 Use `mod.rs`, `plan.rs`, `analysis.rs`, `phase.rs`, `synthesis.rs`, and
 `tests.rs`. The isolated `lib.rs` may declare the module privately. Do not
 change production tiers, public APIs, cache identity, artifact plans, reports,
 binaries, fixtures, feature flags, dependencies, or product routes.
 
+File ownership is fixed:
+
+- `mod.rs`: private request, error, and render entry point
+- `plan.rs`: request validation, transform selection, source map, component
+  orientation, block count, and memory bound
+- `analysis.rs`: component reads, cubic interpolation, analysis window, and
+  magnitude analysis
+- `phase.rs`: `mix64`, frame/bin addressing, base/side renewal, Hermitian
+  completion, DC, Nyquist, and silence rules
+- `synthesis.rs`: preallocated workspace, inverse frames, compensated blend,
+  linked decode, exterior envelope, finiteness, and exact crop
+- `tests.rs`: construction types, structural controls, frozen synthetics, and
+  reference-relative measurements
+
 Comparator and listening assembly stays ignored under `target/`. No hidden
 review API, report mode, or experimental module tree enters `main`.
+
+## Construction And Compile Completion
+
+Construction is separate from admission. The candidate is not ready for an
+evidence gate until its complete private source and tests compile.
+
+Freeze these internal signatures before implementation:
+
+- `CandidateRequest<'a>` owns `input: &'a [f32]`, `channels: usize`,
+  `sample_rate: u32`, `target_frames: usize`, `seed: u64`, and `space: f32`
+- `CandidateError` is one closed private enum covering request, size,
+  allocation-bound, and non-finite-processing failures
+- `render(CandidateRequest<'_>) -> Result<Vec<f32>, CandidateError>` is the
+  only candidate entry point
+- planning uses `usize` for allocated lengths, checked `u128` only for the
+  rational map numerator and denominator, `f64` for map and coefficient
+  evaluation, and `f32` for stored samples and spectra
+
+All test accumulators have concrete types at declaration. In particular, the
+side-power relation uses a first-render `f64` baseline followed by direct
+`f64` comparisons; it does not use an unconstrained `Option`. Empty vectors,
+empty collections, numeric folds, and `None` values crossing a helper boundary
+must name their element or accumulator type explicitly.
+
+Test names use two prefixes only:
+
+- `variance_compensated_renewal_structural_`
+- `variance_compensated_renewal_synthetic_`
+
+No required test is ignored. The compile-completion command is
+`effigy test compile`. Compiler diagnostics may be repaired during construction
+only when the edit changes types, imports, visibility, ownership plumbing, or
+test assembly without changing a DSP formula, constant, request decision,
+source, measurement, threshold, or assertion. Any diagnostic requiring such a
+semantic change stops construction and returns to a new brief.
+
+After one clean compile-completion run, create one local checkpoint commit on
+the isolated branch. Record its hash. Candidate source, tests, and assertions
+are then frozen. No edit or rebuild-as-repair follows a structural or later
+gate miss. The branch is never pushed.
 
 ## Frozen Synthetic Inventory
 
@@ -323,7 +377,8 @@ blocks and `25 ms` hop over mapped active support.
 
 ## Admission
 
-Failure stops the sequence.
+Admission begins only from the compile-complete checkpoint. Failure from the
+structural gate onward stops the sequence.
 
 ### 1. Structural And Hard-Integrity Gate
 
@@ -382,7 +437,7 @@ Use retained percussion, bass, vocals, pads/sustains, and full-mix sources at
 `4x`, `8x`, and `16x`. Review `8x` first. Conceal identities. Apply the
 retained common-RMS and `0.95` peak listening policy.
 
-Compare only neutral `CompensatedRenewalSpectral` and PaulXStretch. Record
+Compare only neutral `VarianceCompensatedRenewalSpectral` and PaulXStretch. Record
 smoothness, musical usefulness, source identity, evolution, grain, atonal
 ringing, periodicity, event stability, crest distraction, and exterior
 behavior.
@@ -413,10 +468,11 @@ neutral-`space` rows. Missing independent review blocks admission.
 
 ## Rejection, Cleanup, And Minimal Admission
 
-Any gate miss rejects the complete candidate. Record one dominant cause and
-stopped gate. Delete the disposable worktree, branch, module, tests, build
-state, and candidate listening assembly. Retain only external comparator
-evidence under ignored `target/` and the docs closeout.
+Any admission-gate miss rejects the complete candidate. Record one dominant
+cause and stopped gate. Delete the disposable worktree, branch, local
+checkpoint, module, tests, build state, and candidate listening assembly.
+Retain only external comparator evidence under ignored `target/` and the docs
+closeout.
 
 Do not tune or rerun the failed candidate. Another implementation requires a
 new complete brief. Failure does not close the PaulX-like product target unless
@@ -424,7 +480,7 @@ the operator explicitly stops it.
 
 Only a complete pass may admit:
 
-- the private `creative_compensated_renewal` family
+- the private `creative_variance_compensated_renewal` family
 - its fixed-ratio neutral-`Dream` request and renderer
 - structural and synthetic regression tests
 - one internal creative-engine version identifier
@@ -432,18 +488,6 @@ Only a complete pass may admit:
 Do not admit a public character enum, `motion`, `detail`, cache schema,
 artifact surface, report mode, runtime route, pitch path, dynamic ratio,
 another creative character, router, Loophole, or Chorus integration.
-
-## Candidate Result
-
-Batch 31.21 implemented this brief once in its named disposable worktree. The
-compile-only validation failed before renderer execution because one structural
-test left an `Option` accumulator type unresolved. No structural, synthetic,
-mono-listening, or stereo gate ran. This is an implementation failure, not DSP
-evidence for or against the compensation law.
-
-The candidate was not corrected or rerun. Its worktree, branch, private module,
-tests, and build state were deleted. This brief is now historical authority for
-that failed attempt. Another implementation requires a new complete brief.
 
 ## Sources
 
@@ -454,7 +498,6 @@ that failed attempt. Another implementation requires a new complete brief.
 
 ## Next Task
 
-This brief remains rejection evidence. Batch 31.22 froze
-[VarianceCompensatedRenewalSpectral](./offline-creative-variance-compensated-renewal-spectral-brief.md)
-as fresh complete authority. Run Batch 31.23 from that brief. Do not restore
-this implementation.
+Run `g10.031` Batch 31.23 only. Implement this brief once in the named
+disposable worktree. Complete construction and compile validation before
+opening the one-shot structural gate.

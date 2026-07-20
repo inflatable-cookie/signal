@@ -478,6 +478,8 @@ This brief remains rejection evidence. Batch 31.20 completed the matching
 PaulX comparison and froze
 [CompensatedRenewalSpectral](./offline-creative-compensated-renewal-spectral-brief.md)
 as a separate complete successor. Its Batch 31.21 implementation failed
-compile-only validation before DSP execution and was deleted. Run Batch 31.22
-to freeze fresh complete candidate authority. Do not restore or tune either
-rejected implementation.
+compile-only validation before DSP execution and was deleted. Batch 31.22 then
+froze
+[VarianceCompensatedRenewalSpectral](./offline-creative-variance-compensated-renewal-spectral-brief.md)
+as fresh complete authority. Do not restore or tune either rejected
+implementation.

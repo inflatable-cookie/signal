@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: active creative target; Batch 31.22 docs-only authority ready
+Status: active creative candidate; Batch 31.23 ready
 Updated: 2026-07-20
 
 ## Why this generation matters now
@@ -97,9 +97,11 @@ The 2026-07-19 consolidation reset is authoritative.
   compensation and no candidate DSP. Batch 31.21 implemented it once, but
   compile-only validation failed on an unconstrained structural-test `Option`
   accumulator before the renderer executed. The candidate was deleted without
-  correction or rerun. Its DSP remains untested. Batch 31.22 is ready to freeze
-  fresh complete candidate authority. Other characters, routing, product
-  exposure, and rejected branches remain closed or paused.
+  correction or rerun. Its DSP remains untested. Batch 31.22 froze
+  `VarianceCompensatedRenewalSpectral` as fresh complete authority and made
+  compile completion a construction receipt before one-shot structural
+  admission. Batch 31.23 is ready. Other characters, routing, product exposure,
+  and rejected branches remain closed or paused.
 - The 2026-07-20 lifecycle reconciliation closes stale `g10.001` and
   `g10.003` active markers. It also records that Signal's `g10.017` capture and
   live-monitor implementation landed; that roadmap is paused only on explicit
@@ -175,8 +177,9 @@ Do not start Loophole or Chorus planning from Signal internals.
   - stretch consolidated; candidate families closed; frozen baseline retained
 - `g10.031` `active`
   - PaulX-like neutral `Dream` remains the product goal; the first
-    compensated-renewal implementation failed before DSP execution, fresh
-    candidate authority is next, and explicit `Cyclic` stays closed
+    compensated-renewal implementation failed before DSP execution,
+    variance-compensated-renewal candidate authority is frozen, and explicit
+    `Cyclic` stays closed
 
 ## Stretch Boundary
 
@@ -206,12 +209,14 @@ Matching PaulX synthetics later showed that the old absolute crest ceiling did
 not describe the preferred reference. The complete compensated-renewal brief
 was implemented once, but its compile-only validation failed before renderer
 execution and the candidate was deleted. The DSP topology remains untested.
+`VarianceCompensatedRenewalSpectral` is now the fresh complete candidate
+authority.
 Creative stretch still has no renderer, public API, harness surface, or product
 route on `main`.
 
 ## Next Task
 
-Run `g10.031` Batch 31.22 only. Freeze fresh complete candidate authority for
-the still-untested compensated-renewal topology. Keep `g10.028`, routing,
-product exposure, and cross-repo work paused. Do not implement DSP in the same
-batch.
+Run `g10.031` Batch 31.23 only. Implement the frozen
+`VarianceCompensatedRenewalSpectral` brief once in its named disposable
+worktree. Keep `g10.028`, routing, product exposure, cross-repo work, and
+candidate surfaces on `main` paused.
