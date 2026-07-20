@@ -89,10 +89,9 @@ brief opens.
 
 Intentional creative expansion is governed separately by Contract `085` and
 `docs/architecture/offline-creative-time-stretch-study.md`. Its automatic
-spectral route is paused. The rejected `CyclicGrain` candidate targeted
-explicit expansion above `1x` through `8x`. A materially different
-correlation-aligned waveform family now has one frozen creative candidate
-brief. It does not replace this renderer or reopen Contract `084`.
+spectral route and explicit `Cyclic` character are closed or paused. The
+frozen `RenewalSpectral` brief owns one isolated neutral `Dream` candidate from
+`4x` through `16x`. It does not replace this renderer or reopen Contract `084`.
 
 ## Candidate Isolation
 
@@ -114,5 +113,6 @@ ledger remains in git history at `1d1b02f1`.
 ## Next Task
 
 Retain this frozen baseline and keep its successor lane closed. `g10.031` also
-closed explicit `Cyclic` without promotion. No creative implementation batch
-is ready, and the production renderer remains unchanged on `main`.
+closed explicit `Cyclic` without promotion. Run its Batch 31.18 isolated
+`RenewalSpectral` candidate only; the production renderer remains unchanged on
+`main` until complete admission.

@@ -52,7 +52,7 @@ decision controls any future reopening.
 | [Rubber Band Source Architecture](./specimen-dossiers/rubber-band-source-architecture.md) | R2/R3 scheduling, scale ownership, guidance, and phase topology | Reviewed |
 | [Bungee Source Architecture](./specimen-dossiers/bungee-source-architecture.md) | Whole-kernel common-region rotation and dynamic multichannel feasibility | Reviewed |
 | [SBSMS Source Architecture](./specimen-dossiers/sbsms-source-architecture.md) | Linked subband partial tracking, paired stereo trajectories, and direct oscillator synthesis | Source feasibility rejected |
-| [Creative Stretch Source Triangulation](./specimen-dossiers/creative-stretch-source-triangulation.md) | PaulXStretch, CDP, and Potenza whole-path ownership behind retained creative targets | Reviewed; `RenewalSpectral` promoted to brief |
+| [Creative Stretch Source Triangulation](./specimen-dossiers/creative-stretch-source-triangulation.md) | PaulXStretch, CDP, and Potenza whole-path ownership behind retained creative targets | Reviewed; frozen `RenewalSpectral` brief |
 
 Current stretch feasibility decision:
 [Offline Time-Stretch Non-Phase-Vocoder Feasibility](../architecture/offline-time-stretch-non-phase-vocoder-feasibility.md).
@@ -68,8 +68,12 @@ transparent successor lane.
 
 Explicit operator research reopening and pinned source triangulation now select
 one materially different neutral `Dream` family: `RenewalSpectral`. It is ready
-for a complete docs-only brief, not implementation. `Spectral`, `Rough`,
-`Cyclic`, `Cloud`, routing, and product exposure remain closed or paused.
+for one isolated candidate under its frozen complete brief. `Spectral`,
+`Rough`, `Cyclic`, `Cloud`, routing, and product exposure remain closed or
+paused.
+
+Frozen neutral `Dream` brief:
+[Offline Creative RenewalSpectral Renderer Brief](../architecture/offline-creative-renewal-spectral-brief.md).
 
 Rejected similarity-aligned cyclic brief:
 [Offline Creative SimilarityAlignedCyclic Renderer Brief](../architecture/offline-creative-similarity-aligned-cyclic-brief.md).
@@ -124,7 +128,7 @@ Rejected first-owner brief:
 
 ## Next Task
 
-Run `g10.031` Batch 31.17 only. Freeze one complete docs-only
-`RenewalSpectral` brief from the creative source triangulation. Do not tune a
-rejected candidate, add DSP, or reopen Batch 29.7BE, another character, or the
+Run `g10.031` Batch 31.18 only. Implement the frozen `RenewalSpectral` brief
+once in its named disposable worktree and stop at the first failed gate. Do not
+tune a rejected candidate or reopen Batch 29.7BE, another character, or the
 transparent successor.

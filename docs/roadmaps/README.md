@@ -1,7 +1,7 @@
 # Roadmaps
 
 Status: active
-Updated: 2026-07-19
+Updated: 2026-07-20
 
 ## Why this section matters now
 
@@ -59,8 +59,10 @@ Pinned PaulXStretch, CDP, and Potenza whole-path study found that the preferred
 PaulXStretch default uses magnitude-only frame renewal and crossfade rather
 than the recurrence tested by Signal's rejected spectral briefs. One
 materially different neutral `Dream` family, `RenewalSpectral`, is selected
-for a complete docs-only brief. `g10.031` is active for Batch 31.17 docs only.
-No candidate DSP is admitted on `main`.
+for one complete renderer brief. Batch 31.17 froze its exact map, transform,
+phase renewal, linked stereo, pairwise synthesis, bounds, and gates without
+changing DSP. `g10.031` Batch 31.18 is ready for one isolated candidate. No
+candidate DSP is admitted on `main`.
 Offline artifacts still need a streaming artifact writer/cache target for full
 peak-memory closure. Mono callback-state DSP has a
 no-allocation proof, linked stereo is implemented, ratio scheduling has
@@ -187,7 +189,7 @@ Before rollover:
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the active generation front door. Run
-`g10.031` Batch 31.17 only. Freeze one complete docs-only `RenewalSpectral`
-brief. Keep rejected candidates, the transparent successor lane, `g10.028`,
-other creative owners, automatic routing, product exposure, and render-plane
-integration closed.
+`g10.031` Batch 31.18 only. Implement the frozen `RenewalSpectral` brief once
+in its named disposable worktree and stop at the first failed gate. Keep
+rejected candidates, the transparent successor lane, `g10.028`, other creative
+owners, routing, product exposure, and render-plane integration closed.

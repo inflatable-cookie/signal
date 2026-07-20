@@ -1,6 +1,6 @@
 # Creative Stretch Source Triangulation
 
-Status: reviewed; promoted into creative-stretch architecture
+Status: reviewed; promoted into frozen `RenewalSpectral` brief
 Owner: dsp
 Updated: 2026-07-20
 Roadmap: `g10.031`, Batch 31.16
@@ -235,6 +235,6 @@ boundary before implementation.
 
 ## Next Task
 
-Freeze one complete docs-only `RenewalSpectral` brief. Resolve transform
-geometry, phase renewal, linked stereo, normalization, boundaries, memory,
-determinism, gates, listening, rejection, and cleanup before any candidate DSP.
+Implement the frozen
+[RenewalSpectral brief](../../architecture/offline-creative-renewal-spectral-brief.md)
+once in its named disposable worktree. Stop at the first failed gate.

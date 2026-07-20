@@ -1,6 +1,6 @@
 # Offline Creative Time-Stretch Study
 
-Status: source research reopened; `RenewalSpectral` brief ready; no candidate admitted
+Status: `RenewalSpectral` brief frozen; no candidate admitted
 Owner: dsp
 Updated: 2026-07-20
 Contract: `085`
@@ -57,7 +57,7 @@ continuous-excitation replacements moved farther from deliberate per-frame
 phase forgetting. Those candidates stay rejected, but they do not close the
 new source-backed family.
 
-Select `RenewalSpectral` as the next docs-only complete brief. It owns neutral
+Batch 31.16 selected `RenewalSpectral` for the next complete brief. It owns neutral
 `Dream` at `4x`, `8x`, and `16x` through one long-window magnitude view,
 deterministic frame phase renewal, bounded frame combination, exact crop, and a
 new Signal-owned linked-channel excitation law. It does not own `Spectral`,
@@ -65,6 +65,11 @@ new Signal-owned linked-channel excitation law. It does not own `Spectral`,
 
 The canonical source study is
 [Creative Stretch Source Triangulation](../research/specimen-dossiers/creative-stretch-source-triangulation.md).
+
+Batch 31.17 freezes the selected renderer in
+[Offline Creative RenewalSpectral Renderer Brief](./offline-creative-renewal-spectral-brief.md).
+The private candidate owns `space`; `motion` and `detail` remain unsupported
+until the neutral core passes. No DSP is admitted by the brief.
 
 ## Range-Owner Reassessment
 
@@ -244,7 +249,7 @@ same exact target frame count.
 | above `1x` to `8x` | cyclic owner closed; no implementation | commanded Akai-style repetition |
 | `1x` to `2x` | coherent contribution retained, not creatively admitted | future source-readable lower range |
 | `2x` to `4x` | overlap paused | no automatic route |
-| `4x` to `16x` | `RenewalSpectral` brief pending; no implementation | neutral `Dream` research only |
+| `4x` to `16x` | `RenewalSpectral` brief frozen; no implementation | neutral `Dream` candidate only |
 | `16x` to `32x` | overlap closed | no automatic route |
 | `32x` to `100x` | cloud owner closed | future texture research only |
 
@@ -424,7 +429,7 @@ but both complete owners are rejected and deleted. Batch 31.15 found no third
 materially different, source-backed whole-renderer path. `Cyclic` is closed
 with no promotion. `Spectral`, `Rough`, `Cloud`, automatic routing, dynamic
 ratio, cache, and product integration remain paused. `Dream` is open only for
-the docs-only `RenewalSpectral` brief.
+the isolated `RenewalSpectral` candidate under its frozen brief.
 
 ## Sources
 
@@ -451,6 +456,6 @@ the docs-only `RenewalSpectral` brief.
 
 ## Next Task
 
-Run Batch 31.17 only. Freeze one complete `RenewalSpectral` renderer brief from
-the source-triangulation decision. Do not implement DSP, restore a rejected
-branch, or reopen another character or product surface.
+Run Batch 31.18 only. Implement the frozen `RenewalSpectral` brief once in its
+named disposable worktree. Stop at the first failed gate. Do not restore a
+rejected branch or reopen another character or product surface.

@@ -1,7 +1,7 @@
 # g10 Milestones
 
 Status: active
-Updated: 2026-07-19
+Updated: 2026-07-20
 
 ## Why this generation matters now
 
@@ -76,9 +76,11 @@ The 2026-07-19 consolidation reset is authoritative.
   rather than the recurrence and magnitude evolution tested by Signal's
   rejected spectral briefs. This is new source-backed evidence for one
   materially different neutral `Dream` family, `RenewalSpectral`. Batch 31.17
-  is ready to freeze its complete brief without candidate DSP. Other
-  characters, routing, product exposure, and rejected branches remain closed
-  or paused.
+  froze its complete map, transform, phase renewal, linked mid/side law,
+  pairwise synthesis, state bounds, comparator-calibrated gates, cleanup, and
+  minimal admission without candidate DSP. Batch 31.18 is ready for one
+  isolated implementation. Other characters, routing, product exposure, and
+  rejected branches remain closed or paused.
 - `g10.028` RealtimePreview source-fill and all render-plane integration remain
   paused.
 
@@ -146,9 +148,9 @@ Do not start Loophole or Chorus planning from Signal internals.
   - historical correctness, listening, and rejected-successor ledger
 - `g10.030` `complete`
   - stretch consolidated; candidate families closed; frozen baseline retained
-- `g10.031` `active-research`
-  - `RenewalSpectral` complete brief ready; no renderer admitted; other
-    characters and the router closed or paused
+- `g10.031` `active-candidate`
+  - `RenewalSpectral` isolated candidate ready under a frozen complete brief;
+    no renderer admitted; other characters and the router closed or paused
 
 ## Stretch Boundary
 
@@ -174,11 +176,12 @@ explicit cyclic candidate is also rejected and deleted after structural
 admission and a first-row synthetic pitch miss. Correlation-aligned waveform
 overlap also failed structural admission and was deleted. Creative stretch has
 no renderer, public API, harness surface, or product route on `main`. Final
-ownership reassessment found no third complete cyclic path.
+ownership reassessment found no third complete cyclic path. One isolated
+neutral `Dream` candidate is ready under the frozen `RenewalSpectral` brief.
 
 ## Next Task
 
-Run `g10.031` Batch 31.17 only. Freeze the complete docs-only
-`RenewalSpectral` brief and stop before implementation. Keep `g10.028`, other
-creative owners, routing, product exposure, and render-plane integration
-paused.
+Run `g10.031` Batch 31.18 only. Implement the frozen `RenewalSpectral` brief
+once in its named disposable worktree and stop at the first failed gate. Keep
+`g10.028`, other creative owners, routing, product exposure, and render-plane
+integration paused.

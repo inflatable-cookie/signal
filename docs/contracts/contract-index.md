@@ -18,8 +18,8 @@ memory alone.
 - `084` is closed without successor promotion; it remains the reopening and
   complete-system admission authority
 - `085` governs the separate offline creative-stretch product vocabulary;
-  pinned source triangulation selects `RenewalSpectral` for one docs-only
-  neutral `Dream` brief, while every renderer remains unadmitted and the other
+  the complete `RenewalSpectral` neutral `Dream` brief is frozen for one
+  isolated candidate, while every renderer remains unadmitted and the other
   characters and router stay closed or paused
 - `082` and `g10.029` are historical evidence, not active execution authority
 - `g10.028` source-fill work remains paused
@@ -151,5 +151,5 @@ frozen elsewhere in this index.
 ## Next Task
 
 Keep Contract `084` closed and Contract `085` closed to implementation. Run
-`g10.031` Batch 31.17 only: freeze the complete docs-only `RenewalSpectral`
-brief, then stop before candidate DSP.
+`g10.031` Batch 31.18 only: implement the frozen `RenewalSpectral` brief once
+in its named disposable worktree and stop at the first failed gate.

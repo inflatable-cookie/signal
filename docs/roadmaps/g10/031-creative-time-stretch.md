@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: active research; Batch 31.17 docs-only brief ready; no candidate admitted
+Status: active candidate lane; Batch 31.18 isolated implementation ready
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -21,8 +21,8 @@ into every consumer. A hard ratio switch would create audible and UI seams.
 
 Build one offline creative-stretch product surface that:
 
-- centers `8x`; the current cyclic lane studies `2x`, `4x`, and `8x` with
-  `16x` as a rejection boundary
+- centers `8x`; the current neutral `Dream` lane admits at `4x`, `8x`, and
+  `16x`
 - presents stable intent controls rather than algorithm parameters
 - preserves a future route from coherent slow motion to spectral dream and
   later cloud without claiming unavailable owners
@@ -513,34 +513,60 @@ Authority:
 
 ## Batch 31.17 - RenewalSpectral Complete Brief
 
-Status: ready; docs and architecture only
+Status: complete; docs and architecture only
 
 Freeze one complete clean-room neutral `Dream` renderer before any candidate
 implementation.
 
-- [ ] freeze transform support, output-frame cadence, and one exact source map
-- [ ] freeze deterministic per-frame phase renewal without coherent carrier,
+- [x] freeze transform support, output-frame cadence, and one exact source map
+- [x] freeze deterministic per-frame phase renewal without coherent carrier,
   continuous excitation, magnitude slew, or transient logic
-- [ ] freeze linked-channel analysis, excitation, synthesis, and semantic
+- [x] freeze linked-channel analysis, excitation, synthesis, and semantic
   `space` ownership without inheriting the rejected relation proof
-- [ ] freeze frame combination, crest ownership, normalization, exterior
+- [x] freeze frame combination, crest ownership, normalization, exterior
   support, and exact target-length crop
-- [ ] freeze bounded memory, deterministic state, computational shape, and
+- [x] freeze bounded memory, deterministic state, computational shape, and
   offline-only execution
-- [ ] calibrate every character metric against PaulXStretch or a named hard
+- [x] calibrate every character metric against PaulXStretch or a named hard
   integrity boundary before freezing its pass/fail condition
-- [ ] retain `4x`, `8x`, and `16x` five-family concealed mono listening and
+- [x] retain `4x`, `8x`, and `16x` five-family concealed mono listening and
   independent stereo review
-- [ ] freeze whole-candidate rejection, cleanup, and minimal private admission
-- [ ] stop without DSP, harness, fixture, report mode, comparator capture,
+- [x] freeze whole-candidate rejection, cleanup, and minimal private admission
+- [x] stop without DSP, harness, fixture, report mode, comparator capture,
   public API, routing, cache, Loophole, or Chorus changes
+
+Authority:
+
+- `docs/architecture/offline-creative-renewal-spectral-brief.md`
+- `docs/contracts/085-creative-time-stretch-product-and-routing-contract.md`
+
+## Batch 31.18 - Isolated RenewalSpectral Candidate
+
+Status: ready; disposable worktree only
+
+Implement the frozen brief once. Failure stops the sequence.
+
+- [ ] create `signal-candidate-31-18` on
+  `candidate/g10-031-renewal-spectral`
+- [ ] add only the private `creative_renewal` family and private `lib.rs`
+  declaration
+- [ ] pass compile-only validation before admission
+- [ ] run the fixed structural gate once
+- [ ] run the crest gate first, then the remaining comparator-calibrated
+  synthetic gate
+- [ ] open concealed long-form mono review only after synthetic admission
+- [ ] require independent linked-stereo review after mono admission
+- [ ] admit only the frozen minimal private surface after a complete pass
+- [ ] on any miss, record one dominant cause and delete the candidate worktree,
+  branch, module, tests, build state, and candidate listening assembly
+- [ ] keep public APIs, report modes, fixtures, cache, routing, other creative
+  owners, Loophole, and Chorus unchanged
 
 ## Later Batches
 
-Closed or paused without promotion. Work after Batch 31.17 requires a complete
-brief and a separate continuation decision:
+Closed or paused without promotion. Work after Batch 31.18 requires a complete
+candidate decision and a separate continuation decision:
 
-- isolated `RenewalSpectral` candidate
 - minimal production admission
 - coherent/diffusive overlap
 - `LayeredCloud` study and candidate
@@ -556,8 +582,7 @@ brief and a separate continuation decision:
 - [x] three complete candidate briefs reached recorded rejection decisions
 - [x] all admitted diffusive-owner candidates reached a recorded terminal
   decision without entering `main`
-- [x] the range promise is narrowed honestly to explicit cyclic expansion
-  through `8x`
+- [x] the automatic router was paused before direct owner work continued
 - [x] one complete cyclic owner brief is frozen
 - [x] one isolated cyclic candidate reached a recorded terminal decision
 - [x] one materially different source-backed cyclic family is selected
@@ -568,7 +593,7 @@ brief and a separate continuation decision:
 - [x] explicit `Cyclic` closed without implementation or product exposure
 - [x] pinned creative source triangulation selected one materially different
   neutral `Dream` family
-- [ ] one complete `RenewalSpectral` brief is frozen
+- [x] one complete `RenewalSpectral` brief is frozen
 - [ ] one isolated `RenewalSpectral` candidate passes structural and synthetic
   gates
 - [ ] long-form mono `Dream` listening passes at `4x`, `8x`, and `16x`
@@ -578,6 +603,6 @@ brief and a separate continuation decision:
 
 ## Next Task
 
-Run Batch 31.17 only. Freeze the complete docs-only `RenewalSpectral` brief and
-stop. Do not implement the candidate or reopen another character, router, or
-product surface.
+Run Batch 31.18 only. Implement the frozen `RenewalSpectral` brief once in the
+named disposable worktree. Stop at the first failed gate. Do not reopen another
+character, router, or product surface.

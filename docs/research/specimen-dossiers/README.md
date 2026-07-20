@@ -16,6 +16,6 @@ Current stretch dossiers:
 
 ## Next Task
 
-Use the creative source triangulation to freeze the complete docs-only
-`RenewalSpectral` brief. Do not add another stretch dossier unless a new source
-changes an architecture decision.
+Use the creative source triangulation and frozen `RenewalSpectral` brief for
+one isolated Batch 31.18 candidate. Do not add another stretch dossier unless a
+new source changes an architecture decision.

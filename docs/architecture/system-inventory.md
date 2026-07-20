@@ -53,7 +53,8 @@ Signal's active implementation surface is the Rust workspace under `crates/`
     identity, callback-state proof, compact external comparator, and long-form
     blind listening pack; transparent successor admission is closed under
     `g10.030`; `g10.031` and Contract `085` retain creative product vocabulary
-    but have no admitted owner or ready implementation batch
+    and one frozen isolated `RenewalSpectral` candidate brief, but no admitted
+    creative owner
 
 ### Analysis substrate
 

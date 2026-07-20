@@ -1,10 +1,11 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: active product boundary; `Dream` source research open; no renderer admitted
+Status: active product boundary; `RenewalSpectral` brief frozen; no renderer admitted
 Owner: core-product
 Updated: 2026-07-20
 Related contracts: `046`, `048`, `084`
 Related architecture: `docs/architecture/offline-creative-time-stretch-study.md`,
+`docs/architecture/offline-creative-renewal-spectral-brief.md`,
 `docs/architecture/offline-creative-similarity-aligned-cyclic-brief.md`,
 `docs/architecture/offline-creative-cyclic-grain-brief.md`
 Related research:
@@ -227,10 +228,10 @@ Every branch and its scaffolding was deleted. No distribution, window,
 coefficient, phase, smoothing, seed, assertion repair, or scalar sweep follows
 these rejections. The current diffusive owner is closed.
 
-Range-owner reassessment rejects the retained coherent renderer as a substitute
-for the PaulX-centred core and finds no new complete source-backed spectral
-family. `Dream`, `Spectral`, `Rough`, `Cloud`, and automatic routing stay
-closed.
+Batch 31.9 range-owner reassessment rejected the retained coherent renderer as
+a substitute for the PaulX-centred core and found no new complete source-backed
+spectral family. At that stop, `Dream`, `Spectral`, `Rough`, `Cloud`, and
+automatic routing stayed closed.
 
 The separate cyclic reserve has operator value, a retained ReaReaRea target,
 and public two-grain Akai-style architecture evidence. It became the next
@@ -293,6 +294,14 @@ freeze exact length, bounded state, deterministic phase renewal, crest-owning
 frame synthesis, and one Signal-owned linked-channel rule before implementation
 can be considered.
 
+Batch 31.17 freezes that complete brief. It selects one sample-rate-normalized
+long transform, exact sample-centred map, magnitude-only mono or mid/side
+analysis, counter-addressed per-frame phase renewal, pairwise equal-power frame
+crossfade, fixed energy calibration, linked `space`, bounded exterior envelope,
+and exact crop. `motion` and `detail` are explicitly absent from the private
+candidate request. Every character metric is tied to PaulXStretch or a named
+hard integrity boundary. No implementation is admitted by the brief.
+
 ## Initial Promotion Sequence
 
 1. Comparator capture and target-character freeze. Complete.
@@ -320,7 +329,10 @@ can be considered.
     without admission.
 16. Pinned PaulXStretch, CDP, and Potenza whole-path source triangulation.
     Complete; one materially different neutral `Dream` family selected.
-17. Freeze one complete `RenewalSpectral` brief without candidate DSP. Ready.
+17. Freeze one complete `RenewalSpectral` brief without candidate DSP.
+    Complete.
+18. Implement the brief once in the named disposable worktree and stop at the
+    first failed gate. Ready.
 
 `Spectral`/`Rough`, coherent overlap, `LayeredCloud`, the upper overlap, dynamic
 ratios, and automatic routing still require separate reopening decisions backed
@@ -334,13 +346,14 @@ without promotion. `CyclicGrain` missed the first synthetic
 pitch limit by `5.778` cents. `SimilarityAlignedCyclic` then failed structural
 search reachability before synthetic admission. No third cyclic path is
 authorized. Source triangulation now selects `RenewalSpectral` for one
-docs-only neutral `Dream` brief. No public Rust enum, renderer, harness mode,
-fixture, artifact schema, runtime route, or product-facing claim entered
-`main`.
+neutral `Dream` candidate, and Batch 31.17 freezes its complete implementation
+and admission brief. No public Rust enum, renderer, harness mode, fixture,
+artifact schema, runtime route, or product-facing claim entered `main`.
 `OfflineHighQuality` remains byte-exact and Contract `084` remains closed.
 
 ## Next Task
 
-Run Batch 31.17 only. Freeze one complete `RenewalSpectral` brief. Do not add
-DSP, a candidate harness, comparator audio, public API, routing, or product
-integration.
+Run Batch 31.18 only. Implement the frozen `RenewalSpectral` brief once in
+`signal-candidate-31-18`. Stop and delete on the first failed gate. Do not add
+candidate code, a harness surface, public API, routing, or product integration
+to `main` before complete admission.
