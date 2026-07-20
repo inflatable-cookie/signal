@@ -529,6 +529,6 @@ or product exposure.
 
 ## Next Task
 
-Run Batch 31.21 only. Implement the frozen `CompensatedRenewalSpectral` brief
-once in its named disposable worktree. Do not alter the brief during candidate
-work.
+Run Batch 31.22 only. Freeze fresh complete candidate authority for the
+still-untested compensated-renewal topology. Do not implement DSP in the same
+batch.

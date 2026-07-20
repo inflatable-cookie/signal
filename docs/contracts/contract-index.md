@@ -19,9 +19,10 @@ memory alone.
   complete-system admission authority
 - `085` governs the separate offline creative-stretch product vocabulary;
   `RenewalSpectral` is rejected, matching PaulX synthetics invalidate its old
-  absolute crest calibration, one `CompensatedRenewalSpectral` brief is
-  frozen, every renderer remains unadmitted, and the other characters and
-  router stay closed or paused
+  absolute crest calibration, the first `CompensatedRenewalSpectral`
+  implementation failed compile-only validation before DSP execution, every
+  renderer remains unadmitted, and the other characters and router stay closed
+  or paused
 - `082` and `g10.029` are historical evidence, not active execution authority
 - `g10.028` source-fill work remains paused
 
@@ -151,6 +152,6 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Keep Contract `084` closed. Under Contract `085`, run `g10.031` Batch 31.21
-only: implement the frozen `CompensatedRenewalSpectral` brief once in its named
-disposable worktree. Do not alter the brief or restore a rejected owner.
+Keep Contract `084` closed. Under Contract `085`, run `g10.031` Batch 31.22
+only: freeze fresh complete candidate authority for the still-untested
+compensated-renewal topology. Do not implement DSP in the same batch.

@@ -31,7 +31,7 @@ strict lane.
 - Rejected offline stretch successor: [architecture/offline-time-stretch-successor-brief.md](./architecture/offline-time-stretch-successor-brief.md)
 - Non-phase-vocoder feasibility: [architecture/offline-time-stretch-non-phase-vocoder-feasibility.md](./architecture/offline-time-stretch-non-phase-vocoder-feasibility.md)
 - Creative time-stretch study: [architecture/offline-creative-time-stretch-study.md](./architecture/offline-creative-time-stretch-study.md)
-- Frozen creative CompensatedRenewalSpectral brief: [architecture/offline-creative-compensated-renewal-spectral-brief.md](./architecture/offline-creative-compensated-renewal-spectral-brief.md)
+- Rejected-at-compile creative CompensatedRenewalSpectral brief: [architecture/offline-creative-compensated-renewal-spectral-brief.md](./architecture/offline-creative-compensated-renewal-spectral-brief.md)
 - Rejected creative RenewalSpectral brief: [architecture/offline-creative-renewal-spectral-brief.md](./architecture/offline-creative-renewal-spectral-brief.md)
 - Creative source triangulation: [research/specimen-dossiers/creative-stretch-source-triangulation.md](./research/specimen-dossiers/creative-stretch-source-triangulation.md)
 - Rejected creative SimilarityAlignedCyclic brief: [architecture/offline-creative-similarity-aligned-cyclic-brief.md](./architecture/offline-creative-similarity-aligned-cyclic-brief.md)
@@ -75,7 +75,7 @@ strict lane.
 
 ## Next Task
 
-Run `g10.031` Batch 31.21 only. Implement the frozen
-`CompensatedRenewalSpectral` brief once in its named disposable worktree. Keep
-`g10.028`, product exposure, and cross-repo work closed. Only drop into
-`specs/` when a strict lane is explicitly reopened.
+Run `g10.031` Batch 31.22 only. Freeze fresh complete candidate authority for
+the still-untested compensated-renewal topology. Keep `g10.028`, product
+exposure, cross-repo work, and candidate DSP closed. Only drop into `specs/`
+when a strict lane is explicitly reopened.

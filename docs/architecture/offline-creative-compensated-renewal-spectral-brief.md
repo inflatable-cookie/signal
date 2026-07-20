@@ -1,6 +1,6 @@
 # Offline Creative CompensatedRenewalSpectral Renderer Brief
 
-Status: frozen; isolated candidate ready
+Status: frozen; Batch 31.21 implementation rejected at compile-only validation
 Owner: dsp
 Updated: 2026-07-20
 Contract: `085`
@@ -433,6 +433,18 @@ Do not admit a public character enum, `motion`, `detail`, cache schema,
 artifact surface, report mode, runtime route, pitch path, dynamic ratio,
 another creative character, router, Loophole, or Chorus integration.
 
+## Candidate Result
+
+Batch 31.21 implemented this brief once in its named disposable worktree. The
+compile-only validation failed before renderer execution because one structural
+test left an `Option` accumulator type unresolved. No structural, synthetic,
+mono-listening, or stereo gate ran. This is an implementation failure, not DSP
+evidence for or against the compensation law.
+
+The candidate was not corrected or rerun. Its worktree, branch, private module,
+tests, and build state were deleted. This brief is now historical authority for
+that failed attempt. Another implementation requires a new complete brief.
+
 ## Sources
 
 - [Creative Stretch Source Triangulation](../research/specimen-dossiers/creative-stretch-source-triangulation.md)
@@ -442,5 +454,6 @@ another creative character, router, Loophole, or Chorus integration.
 
 ## Next Task
 
-Run `g10.031` Batch 31.21 only. Implement this brief once in the named
-disposable worktree. Do not alter the brief during candidate work.
+Run `g10.031` Batch 31.22 only. Freeze fresh complete candidate authority for
+the still-untested compensated-renewal topology. Do not implement DSP in the
+same batch.

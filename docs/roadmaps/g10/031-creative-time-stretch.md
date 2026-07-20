@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: active; Batch 31.21 ready
+Status: active; Batch 31.21 rejected at compile, Batch 31.22 ready
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -643,28 +643,53 @@ Authority:
 
 ## Batch 31.21 - Isolated Compensated Renewal Candidate
 
-Status: ready; isolated candidate only
+Status: complete; candidate rejected at compile-only validation
 
-- [ ] create `signal-candidate-31-21` on
+- [x] create `signal-candidate-31-21` on
   `candidate/g10-031-compensated-renewal`
-- [ ] implement only the private six-file
+- [x] implement only the private six-file
   `creative_compensated_renewal` family and one private `lib.rs` declaration
-- [ ] complete compile-only validation before gate admission
-- [ ] run structural and hard-integrity admission first
-- [ ] run the full reference-relative synthetic matrix only after structural
-  admission
-- [ ] assemble and run concealed long-form mono listening only after synthetic
-  admission
-- [ ] stop on the first miss; record one dominant cause and delete the complete
+- [x] stop at compile-only validation after one structural-test accumulator
+  lacked a concrete `Option` type; no renderer executed
+- [x] leave structural and hard-integrity admission unopened
+- [x] leave the full reference-relative synthetic matrix unopened
+- [x] leave concealed long-form mono listening unopened
+- [x] stop on the first miss; record one dominant cause and delete the complete
   candidate without correction or rerun
-- [ ] leave independent stereo blocked until an eligible listener is available
-- [ ] keep public APIs, report modes, fixtures, cache, routing, other creative
+- [x] leave independent stereo blocked until an eligible listener is available
+- [x] keep public APIs, report modes, fixtures, cache, routing, other creative
   owners, Loophole, and Chorus unchanged
+
+Decision:
+
+- the candidate failed to compile because a structural test declared an
+  unconstrained `Option` accumulator
+- no DSP row ran, so the compensated-renewal topology remains untested rather
+  than acoustically or structurally rejected
+- the failed implementation was not corrected or rerun
+- the disposable worktree, branch, private module, tests, and build state are
+  deleted; no candidate surface entered `main`
+
+## Batch 31.22 - Fresh Compensated-Renewal Candidate Authority
+
+Status: ready; docs and architecture only
+
+- [ ] retain the Batch 31.21 compile miss as terminal for that implementation
+- [ ] preserve the reference recovery and compensation derivation as valid,
+  still-untested evidence
+- [ ] freeze one newly named, complete candidate brief for the same selected
+  compensated-renewal topology, including an explicit compile-complete test
+  surface and fresh worktree, branch, module, cleanup, and gate authority
+- [ ] resolve every implementation and validation type before marking the next
+  candidate batch ready; leave no `decide later` gap
+- [ ] keep candidate DSP, harness modes, fixtures, public APIs, cache, routing,
+  other creative owners, Loophole, and Chorus unchanged
+- [ ] stop after the fresh brief is validated, committed, and reported
 
 ## Later Batches
 
-Closed or paused without promotion. Work after Batch 31.21 requires a complete
-candidate admission decision:
+Closed or paused without promotion. Work after Batch 31.22 requires a fresh
+complete brief and then a new candidate admission decision:
 
 - minimal production admission
 - coherent/diffusive overlap
@@ -697,12 +722,14 @@ candidate admission decision:
   structural admission passed and the first crest row failed
 - [x] matching PaulXStretch synthetic reference and gate recovery complete
 - [x] one complete clean-room frame-blend-compensated brief frozen
+- [x] one isolated compensated-renewal implementation reached a terminal
+  compile-only decision without executing DSP
 - [ ] long-form mono `Dream` listening reaches a promotion decision
 - [ ] linked-stereo listening reaches a promotion decision
 - [x] no private renderer or product surface entered `main`
 
 ## Next Task
 
-Run Batch 31.21 only. Implement the frozen `CompensatedRenewalSpectral` brief
-once in its named disposable worktree. Do not change the brief during
-candidate work or place candidate surfaces on `main` before complete admission.
+Run Batch 31.22 only. Freeze fresh complete candidate authority for the
+still-untested compensated-renewal topology. Do not implement candidate DSP in
+the same batch.

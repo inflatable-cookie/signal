@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: active PaulX-like `Dream`; compensated candidate brief frozen
+Status: active PaulX-like `Dream`; compensated implementation failed compile
 Owner: core-product
 Updated: 2026-07-20
 Related contracts: `046`, `048`, `084`
@@ -359,8 +359,13 @@ control flow.
 
 Hard integrity remains absolute. Crest, pitch, replica, modulation, and gap
 character are compared row-for-row with the matching PaulX synthetic.
-Concealed long-form listening remains promotion authority. One isolated
-candidate is ready; no renderer is admitted.
+Concealed long-form listening remains promotion authority.
+
+Batch 31.21 implemented the frozen brief once, but compile-only validation
+failed on an unconstrained structural-test `Option` accumulator before the
+renderer executed. The candidate was deleted without correction or rerun. The
+result is implementation evidence only: the compensated-renewal DSP remains
+untested. No renderer is admitted.
 
 ## Initial Promotion Sequence
 
@@ -401,7 +406,10 @@ candidate is ready; no renderer is admitted.
     one complete clean-room frame-blend-compensated brief. Complete; no
     candidate DSP entered `main`.
 21. Implement `CompensatedRenewalSpectral` once in the frozen disposable
-    worktree and run gates in order. Ready.
+    worktree and run gates in order. Complete; rejected at compile-only
+    validation before renderer execution.
+22. Freeze fresh complete candidate authority for the still-untested
+    compensated-renewal topology. Ready; docs and architecture only.
 
 `Spectral`/`Rough`, coherent overlap, `LayeredCloud`, the upper overlap, dynamic
 ratios, and automatic routing still require separate reopening decisions backed
@@ -412,15 +420,15 @@ by new complete-system evidence.
 Four isolated spectral candidates and both cyclic candidates are rejected and
 deleted. Explicit `Cyclic` and the automatic router remain closed or paused.
 Neutral `Dream` is active. Matching PaulX synthetics invalidate the old crest
-calibration, and one complete `CompensatedRenewalSpectral` brief is frozen.
+calibration. The first complete `CompensatedRenewalSpectral` implementation
+failed compile-only validation before DSP execution and was deleted.
 No public Rust enum, renderer, harness mode, fixture, artifact schema, runtime
 route, or product-facing claim entered `main`. `OfflineHighQuality` remains
-byte-exact and Contract `084` remains closed. Batch 31.21 is ready for one
-isolated private candidate.
+byte-exact and Contract `084` remains closed. Batch 31.22 is ready to freeze
+fresh complete candidate authority without DSP.
 
 ## Next Task
 
-Run `g10.031` Batch 31.21 only. Implement the frozen
-`CompensatedRenewalSpectral` brief once in its named disposable worktree. Do
-not alter the brief, restore a rejected candidate, or add candidate surfaces to
-`main` before complete admission.
+Run `g10.031` Batch 31.22 only. Freeze fresh complete candidate authority for
+the still-untested compensated-renewal topology. Do not implement DSP in the
+same batch or restore the rejected Batch 31.21 implementation.

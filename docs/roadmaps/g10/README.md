@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: active creative candidate; Batch 31.21 ready
+Status: active creative target; Batch 31.22 docs-only authority ready
 Updated: 2026-07-20
 
 ## Why this generation matters now
@@ -94,8 +94,12 @@ The 2026-07-19 consolidation reset is authoritative.
   Signal's rejected `8.263162 dB` row. The old `6 dB` ceiling was not
   target-relative. Batch 31.20 froze one complete
   `CompensatedRenewalSpectral` brief with Signal-derived overlap-statistics
-  compensation and no candidate DSP. Batch 31.21 is ready. Other characters,
-  routing, product exposure, and rejected branches remain closed or paused.
+  compensation and no candidate DSP. Batch 31.21 implemented it once, but
+  compile-only validation failed on an unconstrained structural-test `Option`
+  accumulator before the renderer executed. The candidate was deleted without
+  correction or rerun. Its DSP remains untested. Batch 31.22 is ready to freeze
+  fresh complete candidate authority. Other characters, routing, product
+  exposure, and rejected branches remain closed or paused.
 - The 2026-07-20 lifecycle reconciliation closes stale `g10.001` and
   `g10.003` active markers. It also records that Signal's `g10.017` capture and
   live-monitor implementation landed; that roadmap is paused only on explicit
@@ -170,9 +174,9 @@ Do not start Loophole or Chorus planning from Signal internals.
 - `g10.030` `complete`
   - stretch consolidated; candidate families closed; frozen baseline retained
 - `g10.031` `active`
-  - PaulX-like neutral `Dream` remains the product goal; one complete
-    compensated-renewal candidate brief is frozen, while explicit `Cyclic`
-    stays closed
+  - PaulX-like neutral `Dream` remains the product goal; the first
+    compensated-renewal implementation failed before DSP execution, fresh
+    candidate authority is next, and explicit `Cyclic` stays closed
 
 ## Stretch Boundary
 
@@ -199,12 +203,15 @@ admission and a first-row synthetic pitch miss. Correlation-aligned waveform
 overlap also failed structural admission and was deleted. `RenewalSpectral`
 passed structural admission but failed its first crest row and was deleted.
 Matching PaulX synthetics later showed that the old absolute crest ceiling did
-not describe the preferred reference. One complete compensated-renewal brief
-is now frozen. Creative stretch still has no renderer, public API, harness
-surface, or product route on `main`.
+not describe the preferred reference. The complete compensated-renewal brief
+was implemented once, but its compile-only validation failed before renderer
+execution and the candidate was deleted. The DSP topology remains untested.
+Creative stretch still has no renderer, public API, harness surface, or product
+route on `main`.
 
 ## Next Task
 
-Run `g10.031` Batch 31.21 only. Implement the frozen
-`CompensatedRenewalSpectral` brief once in its named disposable worktree. Keep
-`g10.028`, routing, product exposure, and cross-repo work paused.
+Run `g10.031` Batch 31.22 only. Freeze fresh complete candidate authority for
+the still-untested compensated-renewal topology. Keep `g10.028`, routing,
+product exposure, and cross-repo work paused. Do not implement DSP in the same
+batch.

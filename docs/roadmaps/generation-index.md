@@ -37,12 +37,14 @@ Updated: 2026-07-20
   the PaulX crest calibration used musical rows against a synthetic Signal
   stop row, and matching PaulX synthetics had not run. Batch 31.20 recovered
   those rows, found `9.932 dB` PaulX uniform-noise growth at `4x`, and froze one
-  complete clean-room `CompensatedRenewalSpectral` brief. Batch 31.21 is ready.
+  complete clean-room `CompensatedRenewalSpectral` brief. Batch 31.21 failed
+  compile-only validation before DSP execution and the candidate was deleted.
+  Batch 31.22 is ready to freeze fresh complete candidate authority.
 - Lifecycle reconciliation then closed stale `g10.001` and `g10.003` active
   markers and paused `g10.017` on its remaining hardware evidence. Signal's
   capture and live-monitor implementation is present. That lifecycle
   reconciliation opened no feature batch; the later operator correction opens
-  only `g10.031` Batch 31.21.
+  only the `g10.031` compensated-renewal path.
 - audit evidence: `chorus/research/2026-06-11-signal-deep-audit.md` (phase
   one) and `docs/research/2026-06-11-post-demolition-assessment.md` (phase
   two)
@@ -82,6 +84,6 @@ If that cleanup has not happened, stay in the current generation and finish the 
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the current active-generation front door.
-Run `g10.031` Batch 31.21 only. Implement the frozen
-`CompensatedRenewalSpectral` brief once in its named disposable worktree. Keep
-transparent stretch and other creative owners closed.
+Run `g10.031` Batch 31.22 only. Freeze fresh complete candidate authority for
+the still-untested compensated-renewal topology. Keep candidate DSP,
+transparent stretch, and other creative owners closed.

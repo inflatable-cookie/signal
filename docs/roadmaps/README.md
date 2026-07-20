@@ -72,11 +72,15 @@ synthetic Signal stop row and never ran the matching PaulX synthetic suite.
 Batch 31.20 recovered that reference. PaulX uniform-noise crest growth is
 `9.932 dB` at `4x`, above Signal's rejected `8.263162 dB` row. It froze one
 complete `CompensatedRenewalSpectral` brief with clean-room overlap-statistics
-compensation. No candidate DSP is admitted on `main`.
+compensation. Batch 31.21 implemented it once, but compile-only validation
+failed on an unconstrained structural-test `Option` accumulator before the
+renderer executed. The candidate was deleted without correction or rerun. No
+candidate DSP is admitted on `main`.
 Lifecycle reconciliation closes stale `g10.001` and `g10.003` active markers.
 Signal's `g10.017` capture and live-monitor implementation is present; that
 roadmap is paused only on explicit hardware alignment and consumer evidence.
-Batch 31.21 is the only ready batch.
+Batch 31.22 is the only ready batch. It is docs and architecture only: freeze
+fresh complete authority for the still-untested compensated-renewal topology.
 Offline artifacts still need a streaming artifact writer/cache target for full
 peak-memory closure. Mono callback-state DSP has a
 no-allocation proof, linked stereo is implemented, ratio scheduling has
@@ -203,7 +207,7 @@ Before rollover:
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the active generation front door. Run
-`g10.031` Batch 31.21 only. Implement the frozen
-`CompensatedRenewalSpectral` brief once in its named disposable worktree. Keep
-rejected candidates, the transparent successor lane, `g10.028`, other creative
-owners, routing, product exposure, and cross-repo work closed.
+`g10.031` Batch 31.22 only. Freeze fresh complete candidate authority for the
+still-untested compensated-renewal topology. Keep rejected candidates, DSP,
+the transparent successor lane, `g10.028`, other creative owners, routing,
+product exposure, and cross-repo work closed.
