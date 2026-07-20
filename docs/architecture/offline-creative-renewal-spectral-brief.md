@@ -1,6 +1,6 @@
 # Offline Creative RenewalSpectral Renderer Brief
 
-Status: frozen; candidate not implemented
+Status: frozen; candidate rejected at crest gate
 Owner: dsp
 Updated: 2026-07-20
 Contract: `085`
@@ -453,6 +453,19 @@ reassessment. Another implementation requires a materially different complete
 brief; a window, hop, phase distribution, spatial coefficient, gain, or gate
 change is not a new family.
 
+## Candidate Decision
+
+Batch 31.18 implemented this brief once in its named disposable worktree.
+Compile-only validation and the complete structural gate passed. The mandated
+first crest row then measured `8.263162 dB` of crest-factor growth against the
+frozen `6 dB` ceiling.
+
+The dominant cause is uncontrolled cross-bin waveform summation after complete
+independent phase renewal. No correction, rerun, later synthetic row, listening
+gate, or admission followed. The worktree, branch, private module, tests, and
+candidate build state were removed. The frozen brief remains evidence, not
+implementation authority.
+
 ## Sources
 
 - [Creative Stretch Source Triangulation](../research/specimen-dossiers/creative-stretch-source-triangulation.md)
@@ -461,5 +474,6 @@ change is not a new family.
 
 ## Next Task
 
-Implement this brief once in the named disposable worktree. Stop at the first
-failed gate. Do not change `main`, widen the request, or begin product routing.
+Run Batch 31.19 only. Reassess neutral-`Dream` crest ownership at architecture
+level, including whether a materially different source-backed whole-renderer
+path remains. Do not tune or reimplement `RenewalSpectral`.

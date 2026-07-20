@@ -31,7 +31,7 @@ strict lane.
 - Rejected offline stretch successor: [architecture/offline-time-stretch-successor-brief.md](./architecture/offline-time-stretch-successor-brief.md)
 - Non-phase-vocoder feasibility: [architecture/offline-time-stretch-non-phase-vocoder-feasibility.md](./architecture/offline-time-stretch-non-phase-vocoder-feasibility.md)
 - Creative time-stretch study: [architecture/offline-creative-time-stretch-study.md](./architecture/offline-creative-time-stretch-study.md)
-- Frozen creative RenewalSpectral brief: [architecture/offline-creative-renewal-spectral-brief.md](./architecture/offline-creative-renewal-spectral-brief.md)
+- Rejected creative RenewalSpectral brief: [architecture/offline-creative-renewal-spectral-brief.md](./architecture/offline-creative-renewal-spectral-brief.md)
 - Creative source triangulation: [research/specimen-dossiers/creative-stretch-source-triangulation.md](./research/specimen-dossiers/creative-stretch-source-triangulation.md)
 - Rejected creative SimilarityAlignedCyclic brief: [architecture/offline-creative-similarity-aligned-cyclic-brief.md](./architecture/offline-creative-similarity-aligned-cyclic-brief.md)
 - Rejected creative CyclicGrain brief: [architecture/offline-creative-cyclic-grain-brief.md](./architecture/offline-creative-cyclic-grain-brief.md)
@@ -74,7 +74,7 @@ strict lane.
 
 ## Next Task
 
-Run `g10.031` Batch 31.18 only. Implement the frozen `RenewalSpectral` brief
-once in its named disposable worktree and stop at the first failed gate. Do
-not add candidate code to `main`. Only drop into `specs/` when a strict lane
-is explicitly reopened.
+Run `g10.031` Batch 31.19 only. Reassess neutral-`Dream` crest ownership at
+architecture level or close the owner. Do not repair `RenewalSpectral` or add
+candidate code to `main`. Only drop into `specs/` when a strict lane is
+explicitly reopened.

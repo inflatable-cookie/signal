@@ -78,9 +78,14 @@ The 2026-07-19 consolidation reset is authoritative.
   materially different neutral `Dream` family, `RenewalSpectral`. Batch 31.17
   froze its complete map, transform, phase renewal, linked mid/side law,
   pairwise synthesis, state bounds, comparator-calibrated gates, cleanup, and
-  minimal admission without candidate DSP. Batch 31.18 is ready for one
-  isolated implementation. Other characters, routing, product exposure, and
-  rejected branches remain closed or paused.
+  minimal admission without candidate DSP. Batch 31.18 implemented it once.
+  Compile-only and structural admission passed, but the first neutral-`Dream`
+  crest row measured `8.263162 dB` growth against the frozen `6 dB` ceiling.
+  Complete independent phase renewal still left cross-bin waveform summation
+  uncontrolled. The candidate was deleted before later synthetic or listening
+  gates. Batch 31.19 docs-only crest-ownership reassessment is ready. Other
+  characters, routing, product exposure, and rejected branches remain closed
+  or paused.
 - `g10.028` RealtimePreview source-fill and all render-plane integration remain
   paused.
 
@@ -148,9 +153,9 @@ Do not start Loophole or Chorus planning from Signal internals.
   - historical correctness, listening, and rejected-successor ledger
 - `g10.030` `complete`
   - stretch consolidated; candidate families closed; frozen baseline retained
-- `g10.031` `active-candidate`
-  - `RenewalSpectral` isolated candidate ready under a frozen complete brief;
-    no renderer admitted; other characters and the router closed or paused
+- `g10.031` `active-reassessment`
+  - `RenewalSpectral` rejected after structural admission and a first-row crest
+    miss; no renderer admitted; docs-only ownership reassessment ready
 
 ## Stretch Boundary
 
@@ -174,14 +179,14 @@ The separate `CreativeStretch` path remains unimplemented. Its automatic
 spectral route is paused after three rejected and deleted candidates. The first
 explicit cyclic candidate is also rejected and deleted after structural
 admission and a first-row synthetic pitch miss. Correlation-aligned waveform
-overlap also failed structural admission and was deleted. Creative stretch has
-no renderer, public API, harness surface, or product route on `main`. Final
-ownership reassessment found no third complete cyclic path. One isolated
-neutral `Dream` candidate is ready under the frozen `RenewalSpectral` brief.
+overlap also failed structural admission and was deleted. `RenewalSpectral`
+passed structural admission but failed its first crest row and was deleted.
+Creative stretch has no renderer, public API, harness surface, or product route
+on `main`. Final ownership reassessment found no third complete cyclic path.
 
 ## Next Task
 
-Run `g10.031` Batch 31.18 only. Implement the frozen `RenewalSpectral` brief
-once in its named disposable worktree and stop at the first failed gate. Keep
-`g10.028`, other creative owners, routing, product exposure, and render-plane
-integration paused.
+Run `g10.031` Batch 31.19 only. Reassess neutral-`Dream` crest ownership at
+architecture level or close the owner. Keep `g10.028`, candidate DSP, other
+creative owners, routing, product exposure, and render-plane integration
+paused.

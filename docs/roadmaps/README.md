@@ -43,7 +43,7 @@ failed structural feasibility before implementation because the frozen impulse
 rule is always `15` samples early. A final non-phase-vocoder feasibility study
 found no family with a source-backed path through every whole-renderer gate.
 The OfflineHighQuality successor program is closed on the frozen competitive
-baseline. `g10.031` now owns a separate architecture-only creative-stretch
+baseline. `g10.031` now owns a separate creative-stretch
 path centered on `8x`. Three isolated diffusive-owner candidates were rejected
 and deleted; the final candidate stopped at coefficient proof before renderer
 admission. Range-owner reassessment paused the automatic spectral router and
@@ -61,8 +61,11 @@ than the recurrence tested by Signal's rejected spectral briefs. One
 materially different neutral `Dream` family, `RenewalSpectral`, is selected
 for one complete renderer brief. Batch 31.17 froze its exact map, transform,
 phase renewal, linked stereo, pairwise synthesis, bounds, and gates without
-changing DSP. `g10.031` Batch 31.18 is ready for one isolated candidate. No
-candidate DSP is admitted on `main`.
+changing DSP. Batch 31.18 implemented it once. Compile-only and structural
+admission passed, but the first crest row measured `8.263162 dB` growth against
+the frozen `6 dB` ceiling. The candidate was deleted before later synthetic or
+listening gates. No candidate DSP is admitted on `main`; Batch 31.19 docs-only
+crest-ownership reassessment is ready.
 Offline artifacts still need a streaming artifact writer/cache target for full
 peak-memory closure. Mono callback-state DSP has a
 no-allocation proof, linked stereo is implemented, ratio scheduling has
@@ -189,7 +192,7 @@ Before rollover:
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the active generation front door. Run
-`g10.031` Batch 31.18 only. Implement the frozen `RenewalSpectral` brief once
-in its named disposable worktree and stop at the first failed gate. Keep
-rejected candidates, the transparent successor lane, `g10.028`, other creative
-owners, routing, product exposure, and render-plane integration closed.
+`g10.031` Batch 31.19 only. Reassess neutral-`Dream` crest ownership at
+architecture level or close the owner. Keep rejected candidates, the
+transparent successor lane, `g10.028`, other creative owners, routing, product
+exposure, and render-plane integration closed.

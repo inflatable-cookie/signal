@@ -1,6 +1,6 @@
 # Offline Creative Time-Stretch Study
 
-Status: `RenewalSpectral` brief frozen; no candidate admitted
+Status: `RenewalSpectral` rejected; crest-ownership reassessment ready
 Owner: dsp
 Updated: 2026-07-20
 Contract: `085`
@@ -70,6 +70,11 @@ Batch 31.17 freezes the selected renderer in
 [Offline Creative RenewalSpectral Renderer Brief](./offline-creative-renewal-spectral-brief.md).
 The private candidate owns `space`; `motion` and `detail` remain unsupported
 until the neutral core passes. No DSP is admitted by the brief.
+
+Batch 31.18 implemented that brief once. Compile-only and structural admission
+passed, but the first crest row measured `8.263162 dB` growth against the
+frozen `6 dB` ceiling. The candidate was deleted before later synthetic or
+listening gates. No DSP was admitted.
 
 ## Range-Owner Reassessment
 
@@ -249,7 +254,7 @@ same exact target frame count.
 | above `1x` to `8x` | cyclic owner closed; no implementation | commanded Akai-style repetition |
 | `1x` to `2x` | coherent contribution retained, not creatively admitted | future source-readable lower range |
 | `2x` to `4x` | overlap paused | no automatic route |
-| `4x` to `16x` | `RenewalSpectral` brief frozen; no implementation | neutral `Dream` candidate only |
+| `4x` to `16x` | `RenewalSpectral` rejected; no implementation | neutral `Dream` owner under reassessment |
 | `16x` to `32x` | overlap closed | no automatic route |
 | `32x` to `100x` | cloud owner closed | future texture research only |
 
@@ -429,7 +434,7 @@ but both complete owners are rejected and deleted. Batch 31.15 found no third
 materially different, source-backed whole-renderer path. `Cyclic` is closed
 with no promotion. `Spectral`, `Rough`, `Cloud`, automatic routing, dynamic
 ratio, cache, and product integration remain paused. `Dream` is open only for
-the isolated `RenewalSpectral` candidate under its frozen brief.
+docs-level crest-ownership reassessment after the `RenewalSpectral` rejection.
 
 ## Sources
 
@@ -456,6 +461,6 @@ the isolated `RenewalSpectral` candidate under its frozen brief.
 
 ## Next Task
 
-Run Batch 31.18 only. Implement the frozen `RenewalSpectral` brief once in its
-named disposable worktree. Stop at the first failed gate. Do not restore a
-rejected branch or reopen another character or product surface.
+Run Batch 31.19 only. Reassess neutral-`Dream` crest ownership at architecture
+level or close the owner. Do not restore a rejected branch or reopen another
+character or product surface.

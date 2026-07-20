@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: active candidate lane; Batch 31.18 isolated implementation ready
+Status: active reassessment lane; Batch 31.19 docs-only reassessment ready
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -542,25 +542,41 @@ Authority:
 
 ## Batch 31.18 - Isolated RenewalSpectral Candidate
 
-Status: ready; disposable worktree only
+Status: complete; candidate rejected at first crest row
 
 Implement the frozen brief once. Failure stops the sequence.
 
-- [ ] create `signal-candidate-31-18` on
+- [x] created `signal-candidate-31-18` on
   `candidate/g10-031-renewal-spectral`
-- [ ] add only the private `creative_renewal` family and private `lib.rs`
+- [x] added only the private `creative_renewal` family and private `lib.rs`
   declaration
-- [ ] pass compile-only validation before admission
-- [ ] run the fixed structural gate once
-- [ ] run the crest gate first, then the remaining comparator-calibrated
-  synthetic gate
-- [ ] open concealed long-form mono review only after synthetic admission
-- [ ] require independent linked-stereo review after mono admission
-- [ ] admit only the frozen minimal private surface after a complete pass
-- [ ] on any miss, record one dominant cause and delete the candidate worktree,
+- [x] passed compile-only validation before admission
+- [x] ran the fixed structural gate once; all controls passed
+- [x] ran the mandated first crest row and stopped at `8.263162 dB` growth
+  against the frozen `6 dB` ceiling
+- [x] did not open remaining synthetic, concealed mono, or independent stereo
+  gates
+- [x] admitted no candidate surface
+- [x] recorded uncontrolled cross-bin summation after independent phase renewal
+  as the dominant cause and deleted the candidate worktree,
   branch, module, tests, build state, and candidate listening assembly
-- [ ] keep public APIs, report modes, fixtures, cache, routing, other creative
+- [x] kept public APIs, report modes, fixtures, cache, routing, other creative
   owners, Loophole, and Chorus unchanged
+
+## Batch 31.19 - RenewalSpectral Crest Ownership Reassessment
+
+Status: ready; docs and architecture only
+
+- [ ] reconcile the Batch 31.4 and Batch 31.18 crest failures without repairing
+  either rejected candidate
+- [ ] determine whether any materially different, source-backed neutral-`Dream`
+  whole-renderer path intrinsically owns crest without a limiter, post-gain,
+  scalar sweep, or renamed phase/window variant
+- [ ] freeze one complete replacement direction only if it has a credible path
+  through crest, linked stereo, exact length, bounded state, and retained
+  musical targets; otherwise close neutral `Dream`
+- [ ] keep DSP, candidate harnesses, comparator capture, public APIs, cache,
+  routing, other creative owners, Loophole, and Chorus unchanged
 
 ## Later Batches
 
@@ -594,15 +610,14 @@ candidate decision and a separate continuation decision:
 - [x] pinned creative source triangulation selected one materially different
   neutral `Dream` family
 - [x] one complete `RenewalSpectral` brief is frozen
-- [ ] one isolated `RenewalSpectral` candidate passes structural and synthetic
-  gates
-- [ ] long-form mono `Dream` listening passes at `4x`, `8x`, and `16x`
-- [ ] linked-stereo mechanics and independent listening pass
-- [ ] only the minimal private `Dream` renderer and its admitted controls enter
-  `main`
+- [x] one isolated `RenewalSpectral` candidate reached a terminal decision;
+  structural admission passed and the first crest row failed
+- [x] long-form mono `Dream` listening closed without admission
+- [x] linked-stereo listening closed without admission
+- [x] no private renderer or product surface entered `main`
 
 ## Next Task
 
-Run Batch 31.18 only. Implement the frozen `RenewalSpectral` brief once in the
-named disposable worktree. Stop at the first failed gate. Do not reopen another
-character, router, or product surface.
+Run Batch 31.19 only. Reassess neutral-`Dream` crest ownership at architecture
+level or close the owner. Do not repair or reimplement `RenewalSpectral`, open
+another character, or resume routing and product work.

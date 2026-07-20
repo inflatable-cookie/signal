@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: active product boundary; `RenewalSpectral` brief frozen; no renderer admitted
+Status: active product boundary; `RenewalSpectral` rejected; no renderer admitted
 Owner: core-product
 Updated: 2026-07-20
 Related contracts: `046`, `048`, `084`
@@ -302,6 +302,13 @@ and exact crop. `motion` and `detail` are explicitly absent from the private
 candidate request. Every character metric is tied to PaulXStretch or a named
 hard integrity boundary. No implementation is admitted by the brief.
 
+Batch 31.18 implemented the frozen brief once. Compile-only validation and the
+complete structural gate passed. The mandated first neutral-`Dream` crest row
+then measured `8.263162 dB` of crest-factor growth against the frozen `6 dB`
+ceiling. Complete independent phase renewal still leaves cross-bin waveform
+summation uncontrolled. The candidate stopped without correction or rerun and
+was deleted before later synthetic or listening gates.
+
 ## Initial Promotion Sequence
 
 1. Comparator capture and target-character freeze. Complete.
@@ -332,7 +339,10 @@ hard integrity boundary. No implementation is admitted by the brief.
 17. Freeze one complete `RenewalSpectral` brief without candidate DSP.
     Complete.
 18. Implement the brief once in the named disposable worktree and stop at the
-    first failed gate. Ready.
+    first failed gate. Complete; rejected on the first crest row after
+    structural admission.
+19. Reassess neutral-`Dream` crest ownership at architecture level or close the
+    owner. Ready; docs and architecture only.
 
 `Spectral`/`Rough`, coherent overlap, `LayeredCloud`, the upper overlap, dynamic
 ratios, and automatic routing still require separate reopening decisions backed
@@ -340,20 +350,19 @@ by new complete-system evidence.
 
 ## Current State
 
-Three isolated spectral candidates and both cyclic candidates are rejected and
+Four isolated spectral candidates and both cyclic candidates are rejected and
 deleted. Explicit `Cyclic` and the automatic router remain closed or paused
 without promotion. `CyclicGrain` missed the first synthetic
 pitch limit by `5.778` cents. `SimilarityAlignedCyclic` then failed structural
 search reachability before synthetic admission. No third cyclic path is
-authorized. Source triangulation now selects `RenewalSpectral` for one
-neutral `Dream` candidate, and Batch 31.17 freezes its complete implementation
-and admission brief. No public Rust enum, renderer, harness mode, fixture,
-artifact schema, runtime route, or product-facing claim entered `main`.
-`OfflineHighQuality` remains byte-exact and Contract `084` remains closed.
+authorized. `RenewalSpectral` passed structural admission but failed its first
+crest row by `2.263162 dB` and was deleted. No public Rust enum, renderer,
+harness mode, fixture, artifact schema, runtime route, or product-facing claim
+entered `main`. `OfflineHighQuality` remains byte-exact and Contract `084`
+remains closed.
 
 ## Next Task
 
-Run Batch 31.18 only. Implement the frozen `RenewalSpectral` brief once in
-`signal-candidate-31-18`. Stop and delete on the first failed gate. Do not add
-candidate code, a harness surface, public API, routing, or product integration
-to `main` before complete admission.
+Run Batch 31.19 only. Reassess neutral-`Dream` crest ownership at architecture
+level or close the owner. Do not repair `RenewalSpectral`, sweep phase/window/
+gain choices, or start another candidate.
