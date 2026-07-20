@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: audited creative candidate; Batch 31.25 ready
+Status: audited creative candidate; concealed mono listening ready
 Updated: 2026-07-20
 
 ## Why this generation matters now
@@ -108,8 +108,10 @@ The 2026-07-19 consolidation reset is authoritative.
   topology remains untested. Batch 31.24 retained it under fresh identity
   `AuditedVarianceCompensatedRenewalSpectral` and froze `22` compile-linked
   gate owners, exact comparator measurements, allocation accounting, and one
-  clean candidate boundary. Batch 31.25 is ready. Other characters, routing,
-  product exposure, and rejected branches remain closed or paused.
+  clean candidate boundary. Batch 31.25 passed construction `1/1`, structural
+  `13/13`, and synthetic `9/9` from immutable checkpoint `97ee7056`. Its
+  concealed long-form mono pack is ready. Other characters, routing, product
+  exposure, and rejected branches remain closed or paused.
 - The 2026-07-20 lifecycle reconciliation closes stale `g10.001` and
   `g10.003` active markers. It also records that Signal's `g10.017` capture and
   live-monitor implementation landed; that roadmap is paused only on explicit
@@ -184,9 +186,9 @@ Do not start Loophole or Chorus planning from Signal internals.
 - `g10.030` `complete`
   - stretch consolidated; candidate families closed; frozen baseline retained
 - `g10.031` `active`
-  - PaulX-like neutral `Dream` remains the product goal; the audited
-    variance-compensated candidate brief is frozen, Batch 31.25 is ready, and
-    explicit `Cyclic` stays closed
+  - PaulX-like neutral `Dream` remains the product goal; the audited candidate
+    passed structural and synthetic admission, concealed mono listening is
+    ready, and explicit `Cyclic` stays closed
 
 ## Stretch Boundary
 
@@ -218,13 +220,14 @@ was implemented once, but its compile-only validation failed before renderer
 execution and the candidate was deleted. The fresh variance-compensated
 implementation later produced an invalid synthetic receipt because required
 assertions were absent. It was deleted before listening. The DSP topology
-remains untested. `AuditedVarianceCompensatedRenewalSpectral` is the fresh
-complete authority with compile-linked gate ownership.
+now has valid structural and synthetic evidence.
+`AuditedVarianceCompensatedRenewalSpectral` remains isolated at concealed mono
+listening with no production admission.
 Creative stretch still has no renderer, public API, harness surface, or product
 route on `main`.
 
 ## Next Task
 
-Run `g10.031` Batch 31.25 only. Implement the frozen audited variance-renewal
-brief once in its named fresh worktree. Keep `g10.028`, routing, product
+Complete the concealed `g10.031` Batch 31.25 mono notes without opening the
+key. Review `8x` first, then `4x` and `16x`. Keep `g10.028`, routing, product
 exposure, cross-repo work, and candidate surfaces on `main` paused.

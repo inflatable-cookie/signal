@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: active PaulX-like `Dream`; audited variance-compensated brief frozen
+Status: active PaulX-like `Dream`; audited candidate at mono listening
 Owner: core-product
 Updated: 2026-07-20
 Related contracts: `046`, `048`, `084`
@@ -446,7 +446,9 @@ deleted implementation.
     still-untested topology. Complete; no candidate DSP entered `main`.
 25. Implement `AuditedVarianceCompensatedRenewalSpectral` once, pass compile
     and construction-manifest validation, freeze one checkpoint, then run
-    structural and synthetic gates in order. Ready.
+    structural and synthetic gates in order. Active; construction passed
+    `1/1`, structural passed `13/13`, synthetic passed `9/9`, and concealed
+    mono listening is ready.
 
 `Spectral`/`Rough`, coherent overlap, `LayeredCloud`, the upper overlap, dynamic
 ratios, and automatic routing still require separate reopening decisions backed
@@ -460,17 +462,18 @@ Neutral `Dream` is active. Matching PaulX synthetics invalidate the old crest
 calibration. The first complete `CompensatedRenewalSpectral` implementation
 failed compile-only validation before DSP execution and was deleted.
 `VarianceCompensatedRenewalSpectral` later produced an invalid synthetic
-receipt and was deleted before listening. `AuditedVarianceCompensatedRenewalSpectral`
-is the fresh complete authority for the same still-untested DSP topology.
+receipt and was deleted before listening. The fresh
+`AuditedVarianceCompensatedRenewalSpectral` checkpoint passed its compile,
+construction, structural, and synthetic gates without repair or rerun. This is
+the first valid DSP evidence for the compensated-renewal topology. Concealed
+long-form mono listening is ready and remains promotion authority.
 
 No public Rust enum, renderer, harness mode, fixture, artifact schema, runtime
 route, or product-facing claim entered `main`. `OfflineHighQuality` remains
-byte-exact and Contract `084` remains closed. Batch 31.25 is ready for one
-isolated private candidate.
+byte-exact and Contract `084` remains closed. The private candidate remains
+isolated and unadmitted.
 
 ## Next Task
 
-Run `g10.031` Batch 31.25 only. Implement the frozen
-`AuditedVarianceCompensatedRenewalSpectral` brief once in its named fresh
-worktree. Do not recover rejected candidate source or place candidate surfaces
-on `main` before complete admission.
+Complete the concealed Batch 31.25 mono pack without opening
+`listening-key.tsv`. Review the five `8x` rows first, then `4x` and `16x`.

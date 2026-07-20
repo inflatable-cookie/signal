@@ -82,14 +82,15 @@ Batch 31.23 compiled and passed seven structural tests. Its synthetic command
 returned green, but pre-listening review found missing impulse-train crest,
 secondary-region, exact-lag autocorrelation, and full discontinuity assertions.
 The receipt is invalid. The unopened listening pack and isolated candidate
-were deleted without repair or rerun. The topology remains untested. Batch
-31.24 retained it under fresh audited identity and froze exact ownership for
-all structural and synthetic gates without adding DSP to `main`.
+were deleted without repair or rerun. Batch 31.24 retained the still-untested
+topology under fresh audited identity and froze exact ownership for all gates.
+Batch 31.25 then passed construction `1/1`, structural `13/13`, and synthetic
+`9/9` from one immutable checkpoint. Concealed mono listening is ready; no DSP
+entered `main`.
 Lifecycle reconciliation closes stale `g10.001` and `g10.003` active markers.
 Signal's `g10.017` capture and live-monitor implementation is present; that
 roadmap is paused only on explicit hardware alignment and consumer evidence.
-Batch 31.25 is the only ready batch. It is one isolated audited
-variance-compensated-renewal candidate.
+Batch 31.25 is active at concealed mono listening.
 Offline artifacts still need a streaming artifact writer/cache target for full
 peak-memory closure. Mono callback-state DSP has a
 no-allocation proof, linked stereo is implemented, ratio scheduling has
@@ -216,7 +217,7 @@ Before rollover:
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the active generation front door. Run
-`g10.031` Batch 31.25 only. Implement the frozen audited variance-renewal brief
-once in its named fresh worktree. Keep candidate DSP, the transparent
+Complete the concealed `g10.031` Batch 31.25 mono notes without opening the
+key. Review `8x` first, then `4x` and `16x`. Keep candidate DSP, the transparent
 successor lane, `g10.028`, other creative owners, routing, product exposure,
 cross-repo work, and candidate surfaces on `main` closed.

@@ -1,6 +1,6 @@
 # Offline Creative Time-Stretch Study
 
-Status: active PaulX-like `Dream` recovery; no renderer admitted
+Status: active PaulX-like `Dream`; isolated candidate at mono listening
 Owner: dsp
 Updated: 2026-07-20
 Contract: `085`
@@ -531,7 +531,5 @@ or product exposure.
 
 ## Next Task
 
-Run Batch 31.25 only. Implement the frozen
-`AuditedVarianceCompensatedRenewalSpectral` brief once in its named fresh
-worktree. Complete compile and construction-manifest validation before the
-immutable checkpoint or admission.
+Complete the concealed Batch 31.25 mono notes without opening the key. Review
+the five `8x` rows first, then `4x` and `16x`.

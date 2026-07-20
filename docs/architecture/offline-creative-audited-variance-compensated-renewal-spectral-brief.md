@@ -1,6 +1,6 @@
 # Offline Creative AuditedVarianceCompensatedRenewalSpectral Renderer Brief
 
-Status: frozen; isolated candidate ready
+Status: frozen; candidate admitted to concealed mono listening
 Owner: dsp
 Updated: 2026-07-20
 Contract: `085`
@@ -546,6 +546,5 @@ another character, router, Loophole, or Chorus integration.
 
 ## Next Task
 
-Run `g10.031` Batch 31.25 only. Implement this brief once in the named fresh
-worktree. Complete compile and construction-manifest validation before creating
-the immutable checkpoint or opening structural admission.
+Complete every row in the concealed Batch 31.25 mono listening pack without
+opening its key. Listen to all five `8x` rows first, then `4x` and `16x`.

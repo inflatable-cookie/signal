@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: active; Batch 31.24 complete, Batch 31.25 ready
+Status: active; Batch 31.25 concealed mono listening ready
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -775,25 +775,39 @@ Authority:
 
 ## Batch 31.25 - Isolated Audited Variance-Compensated Renewal Candidate
 
-Status: ready; isolated candidate only
+Status: active; concealed mono listening ready
 
-- [ ] create `signal-candidate-31-25` on
+- [x] create `signal-candidate-31-25` on
   `candidate/g10-031-audited-variance-renewal`
-- [ ] implement only the fresh private six-file
+- [x] implement only the fresh private six-file
   `creative_audited_variance_renewal` family and one private `lib.rs`
   declaration; do not recover deleted candidate source
-- [ ] complete `effigy test compile` and the one-test construction-manifest
+- [x] complete `effigy test compile` and the one-test construction-manifest
   gate before checkpointing
-- [ ] create and record one local immutable checkpoint; do not push it
-- [ ] run exactly `13` structural owners once from that checkpoint
-- [ ] run exactly `9` full synthetic owners only after structural admission
-- [ ] assemble concealed long-form mono listening only after valid synthetic
+- [x] create and record one local immutable checkpoint; do not push it
+- [x] run exactly `13` structural owners once from that checkpoint
+- [x] run exactly `9` full synthetic owners only after structural admission
+- [x] assemble concealed long-form mono listening only after valid synthetic
   admission
 - [ ] stop on the first admission miss; delete the complete candidate without
   tuning, repair, or rerun
-- [ ] leave independent stereo blocked until an eligible listener is available
-- [ ] keep public APIs, reports, fixtures, cache, routing, other characters,
+- [x] leave independent stereo blocked until an eligible listener is available
+- [x] keep public APIs, reports, fixtures, cache, routing, other characters,
   Loophole, and Chorus unchanged
+
+Evidence:
+
+- compile and construction: pass; exactly `1/1` construction owner
+- immutable checkpoint: `97ee70569bc2a9dd574970eefb19799873875946`
+- structural admission: exactly `13/13` owners passed
+- synthetic admission: exactly `9/9` owners passed
+- concealed pack:
+  `signal-candidate-31-25/target/creative-stretch-audited-31-25/listening-pack/`
+- pack validation: `15` rows, `30` concealed files, exact target lengths,
+  finite float audio, maximum RMS span `2.22044604925e-16`, maximum peak
+  `0.95`
+- unopened key SHA-256:
+  `7d6a91fc897327a887121df077b514d1da583c823c90ac1f3fcf7bc861c1c962`
 
 ## Later Batches
 
@@ -844,7 +858,6 @@ candidate-admission decision:
 
 ## Next Task
 
-Run Batch 31.25 only. Implement the frozen
-`AuditedVarianceCompensatedRenewalSpectral` brief once in its named fresh
-worktree. Complete compile and construction-manifest validation before the
-immutable checkpoint or any admission execution.
+Complete the concealed Batch 31.25 mono notes without opening the key. Review
+all five `8x` rows first, then the `4x` and `16x` rows. Record every required
+quality field before decoding the result.
