@@ -1,6 +1,6 @@
 # Offline Creative Time-Stretch Study
 
-Status: active PaulX-like `Dream`; isolated candidate at mono listening
+Status: active PaulX-like `Dream`; audited candidate rejected at stereo image
 Owner: dsp
 Updated: 2026-07-20
 Contract: `085`
@@ -531,5 +531,5 @@ or product exposure.
 
 ## Next Task
 
-Complete the concealed Batch 31.25 mono notes without opening the key. Review
-the five `8x` rows first, then `4x` and `16x`.
+Run Batch 31.26 only. Freeze one complete source-relative stereo renewal
+successor brief without candidate DSP.

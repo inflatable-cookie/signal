@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: active; Batch 31.25 concealed mono listening ready
+Status: active; Batch 31.25 rejected at linked-stereo image preservation
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -775,7 +775,7 @@ Authority:
 
 ## Batch 31.25 - Isolated Audited Variance-Compensated Renewal Candidate
 
-Status: active; concealed mono listening ready
+Status: complete; candidate rejected at linked-stereo image preservation
 
 - [x] create `signal-candidate-31-25` on
   `candidate/g10-031-audited-variance-renewal`
@@ -789,9 +789,10 @@ Status: active; concealed mono listening ready
 - [x] run exactly `9` full synthetic owners only after structural admission
 - [x] assemble concealed long-form mono listening only after valid synthetic
   admission
-- [ ] stop on the first admission miss; delete the complete candidate without
+- [x] stop on the first admission miss; delete the complete candidate without
   tuning, repair, or rerun
-- [x] leave independent stereo blocked until an eligible listener is available
+- [x] stop before independent stereo promotion review after operator speaker
+  listening and objective balance evidence expose a source-image failure
 - [x] keep public APIs, reports, fixtures, cache, routing, other characters,
   Loophole, and Chorus unchanged
 
@@ -808,6 +809,43 @@ Evidence:
   `0.95`
 - unopened key SHA-256:
   `7d6a91fc897327a887121df077b514d1da583c823c90ac1f3fcf7bc861c1c962`
+- decoded mono decision: `15/15` ties, no unusable row, no family loss, no
+  forbidden character; the only material distinction was exterior fade length
+- fade diagnosis: pack assembly added no fade; the candidate's fixed
+  `16384`-frame envelope is renderer-owned
+- stereo source balance, right-minus-left: `-0.4516 dB`
+- candidate `8x` balance at `space=0`, `0.5`, and `1`: `+4.2147 dB`,
+  `+3.3660 dB`, and `+1.9453 dB`
+- dominant cause: source mid/side phase was discarded and component-wide
+  polarity came from first non-zero samples more than `141 dB` below peak
+- stopped gate: linked-stereo image preservation; no independent promotion
+  review and no production admission
+
+Cleanup removed the disposable worktree, branch, private module, tests, build
+state, and candidate listening assembly. No candidate code entered `main`.
+
+## Batch 31.26 - Source-Relative Stereo Renewal Brief
+
+Status: ready; docs and architecture only
+
+- [ ] retain the passed source/output map, long magnitude analysis, phase
+  renewal, adjacent-frame blend, variance compensation, boundaries, memory,
+  determinism, mono synthetic gates, and mono listening pack
+- [ ] replace first-sample mid/side orientation with one explicit
+  source-relative interchannel relationship representation
+- [ ] freeze how neutral `space`, increasing `space`, DC, Nyquist, silence,
+  dormancy, channel swap, common polarity, anti-phase, and duplicate stereo
+  compose under that representation
+- [ ] freeze source-relative channel-balance, centre, width, low-band image,
+  and time-local balance gates before implementation
+- [ ] preserve one complete candidate, one immutable checkpoint, terminal gate
+  order, cleanup, and minimal private admission
+- [ ] change documentation only; do not recover Batch 31.25 code or add DSP,
+  harness, fixture, API, route, cache, Loophole, or Chorus surfaces to `main`
+
+The brief must describe one buildable renderer. A first-sample threshold,
+post-render channel gain, scalar blend sweep, or repair of checkpoint
+`97ee7056` is not a successor.
 
 ## Later Batches
 
@@ -852,12 +890,12 @@ candidate-admission decision:
   terminal evidence-integrity rejection without entering `main`
 - [x] one fresh audited variance-compensated-renewal brief frozen with complete
   executable gate ownership
-- [ ] long-form mono `Dream` listening reaches a promotion decision
-- [ ] linked-stereo listening reaches a promotion decision
+- [x] long-form mono `Dream` listening reaches a promotion decision
+- [x] linked-stereo evidence reaches a terminal rejection decision
 - [x] no private renderer or product surface entered `main`
 
 ## Next Task
 
-Complete the concealed Batch 31.25 mono notes without opening the key. Review
-all five `8x` rows first, then the `4x` and `16x` rows. Record every required
-quality field before decoding the result.
+Run Batch 31.26 only. Freeze one complete source-relative stereo renewal brief
+without candidate DSP. Stop after docs validation and commit; implementation
+belongs to a later isolated batch.

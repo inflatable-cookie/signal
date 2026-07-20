@@ -84,13 +84,16 @@ secondary-region, exact-lag autocorrelation, and full discontinuity assertions.
 The receipt is invalid. The unopened listening pack and isolated candidate
 were deleted without repair or rerun. Batch 31.24 retained the still-untested
 topology under fresh audited identity and froze exact ownership for all gates.
-Batch 31.25 then passed construction `1/1`, structural `13/13`, and synthetic
-`9/9` from one immutable checkpoint. Concealed mono listening is ready; no DSP
-entered `main`.
+Batch 31.25 then passed construction `1/1`, structural `13/13`, synthetic
+`9/9`, and concealed mono listening as `15/15` ties from one immutable
+checkpoint. Linked-stereo review rejected it after the source's slight left
+bias became a persistent `3.3660 dB` right bias at neutral `space`. The
+first-sample component-orientation law was the dominant cause. The candidate
+was deleted; no DSP entered `main`.
 Lifecycle reconciliation closes stale `g10.001` and `g10.003` active markers.
 Signal's `g10.017` capture and live-monitor implementation is present; that
 roadmap is paused only on explicit hardware alignment and consumer evidence.
-Batch 31.25 is active at concealed mono listening.
+Batch 31.26 is ready for one docs-only source-relative stereo successor brief.
 Offline artifacts still need a streaming artifact writer/cache target for full
 peak-memory closure. Mono callback-state DSP has a
 no-allocation proof, linked stereo is implemented, ratio scheduling has
@@ -217,7 +220,7 @@ Before rollover:
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the active generation front door. Run
-Complete the concealed `g10.031` Batch 31.25 mono notes without opening the
-key. Review `8x` first, then `4x` and `16x`. Keep candidate DSP, the transparent
-successor lane, `g10.028`, other creative owners, routing, product exposure,
-cross-repo work, and candidate surfaces on `main` closed.
+`g10.031` Batch 31.26 only: freeze one complete source-relative stereo renewal
+successor brief without candidate DSP. Keep the transparent successor lane,
+`g10.028`, other creative owners, routing, product exposure, cross-repo work,
+and candidate surfaces on `main` closed.

@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: active PaulX-like `Dream`; audited candidate at mono listening
+Status: active PaulX-like `Dream`; audited candidate rejected at stereo image
 Owner: core-product
 Updated: 2026-07-20
 Related contracts: `046`, `048`, `084`
@@ -395,6 +395,28 @@ autocorrelation, explicit replica-region semantics, and a PaulX-relative
 first-difference crest control. Candidate source may not be recovered from the
 deleted implementation.
 
+Batch 31.25 produced the first valid end-to-end evidence for the compensated
+renewal topology. Compile, construction `1/1`, structural `13/13`, and
+synthetic `9/9` passed from immutable checkpoint `97ee7056`. Concealed mono
+listening passed as `15/15` ties against PaulXStretch with no unusable row or
+family loss.
+
+Linked-stereo speaker review then exposed a persistent source-relative channel
+imbalance. A retained full-mix source measured `-0.4516 dB` right-minus-left;
+candidate `8x` output measured `+4.2147 dB`, `+3.3660 dB`, and `+1.9453 dB`
+at `space=0`, `0.5`, and `1`. The first-exactly-non-zero orientation law used
+mid and side samples more than `141 dB` below component peak to choose a
+render-wide polarity after discarding their source phase relationship. This
+violates source-image and centre-stability ownership. Objective evidence and
+operator listening reject the candidate before independent promotion review.
+
+The rejection does not invalidate the mono renewal topology or close neutral
+`Dream`. A successor may retain its map, transform, magnitude renewal, frame
+blend, variance compensation, boundaries, and passed gates. It must replace
+the failed stereo orientation law with one explicit source-relative relation
+owner and add source-relative channel-balance admission. It may not apply
+post-render channel gain, threshold the first sample, or patch this checkpoint.
+
 ## Initial Promotion Sequence
 
 1. Comparator capture and target-character freeze. Complete.
@@ -446,9 +468,12 @@ deleted implementation.
     still-untested topology. Complete; no candidate DSP entered `main`.
 25. Implement `AuditedVarianceCompensatedRenewalSpectral` once, pass compile
     and construction-manifest validation, freeze one checkpoint, then run
-    structural and synthetic gates in order. Active; construction passed
+    structural and synthetic gates in order. Complete; construction passed
     `1/1`, structural passed `13/13`, synthetic passed `9/9`, and concealed
-    mono listening is ready.
+    mono listening passed `15/15`. Rejected at linked-stereo image preservation
+    after a persistent rightward balance inversion.
+26. Freeze one complete source-relative stereo renewal successor brief without
+    candidate DSP. Ready after Batch 31.25 cleanup.
 
 `Spectral`/`Rough`, coherent overlap, `LayeredCloud`, the upper overlap, dynamic
 ratios, and automatic routing still require separate reopening decisions backed
@@ -463,17 +488,20 @@ calibration. The first complete `CompensatedRenewalSpectral` implementation
 failed compile-only validation before DSP execution and was deleted.
 `VarianceCompensatedRenewalSpectral` later produced an invalid synthetic
 receipt and was deleted before listening. The fresh
-`AuditedVarianceCompensatedRenewalSpectral` checkpoint passed its compile,
-construction, structural, and synthetic gates without repair or rerun. This is
-the first valid DSP evidence for the compensated-renewal topology. Concealed
-long-form mono listening is ready and remains promotion authority.
+`AuditedVarianceCompensatedRenewalSpectral` checkpoint passed compile,
+construction, structural, synthetic, and concealed mono gates without repair
+or rerun. It was rejected at linked-stereo image preservation because its
+first-sample component orientation inverted source-relative channel balance.
+The passed mono renewal core remains active architectural evidence; the failed
+stereo law does not.
 
 No public Rust enum, renderer, harness mode, fixture, artifact schema, runtime
 route, or product-facing claim entered `main`. `OfflineHighQuality` remains
-byte-exact and Contract `084` remains closed. The private candidate remains
-isolated and unadmitted.
+byte-exact and Contract `084` remains closed. No creative renderer is admitted.
 
 ## Next Task
 
-Complete the concealed Batch 31.25 mono pack without opening
-`listening-key.tsv`. Review the five `8x` rows first, then `4x` and `16x`.
+Run Batch 31.26 only. Freeze one complete successor that retains the passed
+mono renewal core and owns source-relative stereo relationships without
+first-sample orientation or post-render channel gain. Do not implement it in
+the same batch.

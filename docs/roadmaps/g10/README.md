@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: audited creative candidate; concealed mono listening ready
+Status: audited creative candidate rejected; successor briefing ready
 Updated: 2026-07-20
 
 ## Why this generation matters now
@@ -109,9 +109,13 @@ The 2026-07-19 consolidation reset is authoritative.
   `AuditedVarianceCompensatedRenewalSpectral` and froze `22` compile-linked
   gate owners, exact comparator measurements, allocation accounting, and one
   clean candidate boundary. Batch 31.25 passed construction `1/1`, structural
-  `13/13`, and synthetic `9/9` from immutable checkpoint `97ee7056`. Its
-  concealed long-form mono pack is ready. Other characters, routing, product
-  exposure, and rejected branches remain closed or paused.
+  `13/13`, synthetic `9/9`, and concealed mono listening as `15/15` ties from
+  immutable checkpoint `97ee7056`. Linked-stereo review then rejected it: a
+  source at `-0.4516 dB` right-minus-left became `+3.3660 dB` at neutral
+  `space` because first-sample component orientation discarded the source
+  mid/side relationship. The candidate was deleted. Batch 31.26 is ready to
+  freeze one source-relative stereo successor brief. Other characters,
+  routing, product exposure, and rejected branches remain closed or paused.
 - The 2026-07-20 lifecycle reconciliation closes stale `g10.001` and
   `g10.003` active markers. It also records that Signal's `g10.017` capture and
   live-monitor implementation landed; that roadmap is paused only on explicit
@@ -187,8 +191,8 @@ Do not start Loophole or Chorus planning from Signal internals.
   - stretch consolidated; candidate families closed; frozen baseline retained
 - `g10.031` `active`
   - PaulX-like neutral `Dream` remains the product goal; the audited candidate
-    passed structural and synthetic admission, concealed mono listening is
-    ready, and explicit `Cyclic` stays closed
+    passed all mono gates but failed source-relative stereo image preservation;
+    Batch 31.26 successor briefing is ready and explicit `Cyclic` stays closed
 
 ## Stretch Boundary
 
@@ -219,15 +223,16 @@ not describe the preferred reference. The complete compensated-renewal brief
 was implemented once, but its compile-only validation failed before renderer
 execution and the candidate was deleted. The fresh variance-compensated
 implementation later produced an invalid synthetic receipt because required
-assertions were absent. It was deleted before listening. The DSP topology
-now has valid structural and synthetic evidence.
-`AuditedVarianceCompensatedRenewalSpectral` remains isolated at concealed mono
-listening with no production admission.
+assertions were absent. It was deleted before listening. The compensated-
+renewal topology now has valid structural, synthetic, and mono listening
+evidence. `AuditedVarianceCompensatedRenewalSpectral` was rejected and deleted
+after its first-sample mid/side orientation law inverted source-relative
+channel balance.
 Creative stretch still has no renderer, public API, harness surface, or product
 route on `main`.
 
 ## Next Task
 
-Complete the concealed `g10.031` Batch 31.25 mono notes without opening the
-key. Review `8x` first, then `4x` and `16x`. Keep `g10.028`, routing, product
-exposure, cross-repo work, and candidate surfaces on `main` paused.
+Run `g10.031` Batch 31.26 only. Freeze one complete source-relative stereo
+renewal successor brief without candidate DSP. Keep `g10.028`, routing,
+product exposure, cross-repo work, and candidate surfaces on `main` paused.

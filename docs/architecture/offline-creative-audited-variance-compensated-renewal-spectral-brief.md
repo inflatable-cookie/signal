@@ -1,6 +1,6 @@
 # Offline Creative AuditedVarianceCompensatedRenewalSpectral Renderer Brief
 
-Status: frozen; candidate admitted to concealed mono listening
+Status: frozen; candidate rejected at linked-stereo image preservation
 Owner: dsp
 Updated: 2026-07-20
 Contract: `085`
@@ -30,6 +30,40 @@ Batch 31.23 candidate or system Trash. Implement this brief cleanly.
 No instantaneous-frequency carrier, phase propagation, magnitude recurrence,
 transient detector, onset reset, component layer, limiter, compressor, or
 post-render gain repair is present.
+
+## Outcome
+
+Checkpoint `97ee70569bc2a9dd574970eefb19799873875946` passed compile,
+construction `1/1`, structural `13/13`, and synthetic `9/9` without repair or
+rerun. Concealed mono listening then passed. The operator found no material
+quality distinction from PaulXStretch across the `15` rows beyond exterior
+fade length and described the result as solid. Decode therefore records
+`15/15` ties, no unusable row, no family loss, and no forbidden character.
+
+The fade distinction is renderer-owned. Listening assembly applied no fade;
+it only exact-cropped and level-matched. This candidate applies a `16384`-frame
+sine exterior envelope at `44.1 kHz`, about `371.5 ms`, while the retained
+PaulX capture has its own synthesis extension and crop behavior.
+
+The candidate then failed linked-stereo image preservation. On the retained
+full-mix stereo source corresponding to mono row `M005`, the source measured
+`-0.4516 dB` right-minus-left. Candidate `8x` renders measured `+4.2147 dB`,
+`+3.3660 dB`, and `+1.9453 dB` at `space=0`, `0.5`, and `1`. The operator
+heard the persistent rightward imbalance on speakers.
+
+The dominant cause is the frozen component-orientation law. It reduces each
+whole mid and side component to the sign of its first exactly non-zero sample,
+then discards the source mid/side phase relationship. In this row those signs
+come from samples `149.39 dB` and `141.04 dB` below component peak. They force
+renewed mid and side into render-wide anti-correlation. `space` weakens the
+upper-band bias but cannot remove the shared-phase bias below `250 Hz`.
+
+This is a whole-candidate stereo failure, not a level-matching, speaker, or
+fade artifact. The excellent mono result remains evidence for renewal
+synthesis, frame blending, compensation, mapping, and boundaries. It does not
+admit this linked-stereo law. The candidate is rejected without correction or
+rerun, and no independent stereo promotion review is needed for this
+checkpoint.
 
 ## Supported Request
 
@@ -546,5 +580,7 @@ another character, router, Loophole, or Chorus integration.
 
 ## Next Task
 
-Complete every row in the concealed Batch 31.25 mono listening pack without
-opening its key. Listen to all five `8x` rows first, then `4x` and `16x`.
+Freeze one complete successor brief that retains the passed mono renewal
+core and replaces first-sample component orientation with explicit
+source-relative stereo relationship ownership. Do not implement it in the
+same batch.

@@ -1,7 +1,7 @@
 # g10.031 Audited Renewal Admission
 
 Date: 2026-07-20
-Status: structural and synthetic admission passed; mono listening ready
+Status: superseded by linked-stereo rejection closeout
 Scope: isolated creative candidate and docs only
 
 ## Result
@@ -44,6 +44,5 @@ report, fixture, cache, route, Loophole, or Chorus surface changed.
 
 ## Next Task
 
-Complete every field in `listening-notes.tsv` without opening the key. Review
-the five `8x` rows first, then `4x` and `16x`. Decode only after all `15` rows
-are complete.
+See `2026-07/20-g10-031-audited-renewal-stereo-rejection.md`. Batch 31.25 is
+closed; run Batch 31.26 docs-only successor briefing next.
