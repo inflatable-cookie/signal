@@ -1,6 +1,6 @@
 # Offline Creative Time-Stretch Study
 
-Status: active PaulX-like `Dream`; renewal architecture reassessment required
+Status: active PaulX-like `Dream`; renewal family closed without promotion
 Owner: dsp
 Updated: 2026-07-20
 Contract: `085`
@@ -529,10 +529,38 @@ selected all nine owners. Six passed before `Y02` failed the `8x` chord at
 were cancelled. `Y04` passed both impulse sources at all ratios. The candidate
 was deleted before listening.
 
-The seed audit therefore resolves the earlier contradiction without rescuing
-the topology. Replica behavior changed with seed, but tonal pitch failed under
-both tested seeds at different material and ratios. Contract `084` Rule 7 now
-requires architecture reassessment before any further candidate.
+## Renewal Tonal-Coherence Closure
+
+Batch 31.32 closes the renewal family without closing the PaulX-like product
+goal. Batch 31.29 failed two `4x` pitch rows under seed `17`; Batch 31.31
+failed the `8x` chord under the audited seed. Different seeds, material, and
+ratios expose one repeated mechanism class: magnitude-only frame renewal has
+no phase-continuous tonal state. It preserves pitch statistically, but cannot
+own a deterministic finite-render pitch bound for sustained tones and chords.
+
+Changing seed, transform, hop, window, blend, threshold, or scalar leaves that
+ownership unchanged. Adding oscillator, peak, or phase recurrence would create
+a different renderer rather than correct renewal. Contract `084` Rule 7 and
+the one-complete-candidate rule therefore prohibit another renewal candidate.
+
+The retained and newly checked source evidence supplies no eligible complete
+replacement:
+
+| Source family | Tonal owner | Blocking boundary |
+| --- | --- | --- |
+| Signalsmith Stretch | weighted horizontal and vertical phase prediction | upstream describes best quality at modest ratios and uses a `>2x` randomized-observation fallback identified by its author as a hack; it is not a complete PaulX-like extreme-stretch owner |
+| Bungee and Rubber Band | tracked peak regions or material-state multiresolution phase | reopens explicitly rejected peak, H/R/P, frequency-adaptive, and hybrid work; neither is a clean replacement for the retained creative target |
+| SBSMS | direct tracked partial oscillators | pinned complete source already failed Signal's mono, linked-stereo, and long-form feasibility controls |
+| STN noise morphing and neural STN | oscillator, relocated-transient, and stochastic residual layers | separated hybrid owners, trained state, or unavailable complete source prevent one bounded first-party linked renderer |
+| TSM-Net | learned whole-waveform decoder | public inference requires pretrained weights; training code and a usable repository licence are absent, and no intrinsic pitch, linked-stereo, or bounded-state law is exposed |
+| public TSM toolboxes | classical PV, WSOLA, or HPSS combinations | reduce to previously assessed phase, waveform, or separated hybrid families and provide no new `4x`-`16x` whole-renderer evidence |
+
+PaulXStretch remains the preferred audible reference and `Dream` remains valid
+product vocabulary. This decision says only that Signal's clean-room renewal
+translation is exhausted. Reopening requires a public complete renderer or
+operator evidence that supplies intrinsic tonal coherence, diffusive musical
+character at `4x`, `8x`, and `16x`, one linked-channel law, exact length,
+determinism, and bounded state without reviving a rejected family.
 
 ## Sources
 
@@ -548,6 +576,13 @@ requires architecture reassessment before any further candidate.
 - [Photosounder](https://www.photosounder.com/)
 - [ARSS](https://arss.sourceforge.net/)
 - [Noise Morphing for Audio Time Stretching](https://arxiv.org/abs/2312.14586)
+- [Signalsmith Stretch source study](../research/specimen-dossiers/signalsmith-stretch.md)
+- [Bungee source study](../research/specimen-dossiers/bungee-source-architecture.md)
+- [Rubber Band source study](../research/specimen-dossiers/rubber-band-source-architecture.md)
+- [SBSMS source study](../research/specimen-dossiers/sbsms-source-architecture.md)
+- [TSM-Net paper](https://arxiv.org/abs/2210.17152)
+- [TSM-Net public inference repository](https://github.com/tsmnet-mmasia23/tsmnet)
+- [AudioLabs TSM toolbox](https://www.audiolabs-erlangen.de/resources/MIR/TSMtoolbox/)
 - [Schroeder, low-peak-factor phase selection](https://doi.org/10.1109/TIT.1970.1054411)
 - [Yang et al., arbitrary-spectrum crest minimization](https://pubmed.ncbi.nlm.nih.gov/25832418/)
 - [Schreiber and Schmitz, IAAFT surrogate data](https://doi.org/10.1103/PhysRevLett.77.635)
@@ -562,8 +597,6 @@ requires architecture reassessment before any further candidate.
 
 ## Next Task
 
-Run Batch 31.32 only. Reassess the renewal family at architecture level against
-the repeated tonal-pitch failure and pinned source. Either identify one
-materially different, source-backed complete renderer with intrinsic tonal
-coherence or close the family. Do not implement DSP, sweep parameters, or
-push.
+No candidate batch is ready. Keep the PaulX-like `Dream` target and comparator
+pack, but reopen implementation only when the complete-system evidence above
+exists or the operator explicitly changes a governing product boundary.

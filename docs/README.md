@@ -79,8 +79,7 @@ strict lane.
 
 ## Next Task
 
-Run `g10.031` Batch 31.32 only. Reassess the renewal family at architecture
-level against the repeated tonal-pitch failure. Either identify one materially
-different source-backed complete renderer or close the family. Do not
-implement DSP or push. Only drop into `specs/` when a strict lane is explicitly
-reopened.
+No creative candidate batch is ready. Keep the PaulX-like target and retained
+comparators, but reopen implementation only on new complete-system evidence or
+an explicit operator change to a governing product boundary. Only drop into
+`specs/` when a strict lane is explicitly reopened.

@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: active; Batch 31.31 complete, Batch 31.32 reassessment ready
+Status: evidence hold; Batch 31.32 complete, no candidate ready
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -1022,22 +1022,38 @@ Evidence:
 
 ## Batch 31.32 - Renewal Tonal-Coherence Architecture Reassessment
 
-Status: ready; docs and architecture only
+Status: complete; renewal family closed without promotion
 
-- [ ] reconcile Batch 31.29's `4x` tone failures and Batch 31.31's `8x` chord
+- [x] reconcile Batch 31.29's `4x` tone failures and Batch 31.31's `8x` chord
   failure as one repeated tonal-coherence class
-- [ ] study whether pinned source or retained research supports one materially
+- [x] study whether pinned source or retained research supports one materially
   different whole-renderer owner with intrinsic tonal coherence
-- [ ] either freeze one complete source-backed architecture or close the
-  renewal family; do not choose another seed, transform, phase, hop, window,
-  threshold, or scalar variant
-- [ ] keep candidate DSP, tests, harnesses, fixtures, APIs, routing, cache,
+- [x] close renewal after finding no eligible complete source-backed
+  replacement; do not close the PaulX-like product target
+- [x] reject another seed, transform, phase, hop, window, threshold, or scalar
+  variant as renewal repair
+- [x] keep candidate DSP, tests, harnesses, fixtures, APIs, routing, cache,
   product exposure, Loophole, and Chorus unchanged
+
+Decision:
+
+- magnitude-only renewal owns tonal pitch statistically, not through persistent
+  phase or oscillator state; the `4x` and `8x` failures repeat that missing
+  ownership across seeds and material
+- Signalsmith's high-ratio randomization is not a complete extreme-stretch
+  owner; Bungee, Rubber Band, SBSMS, and component hybrids reopen rejected
+  families or retain failed whole-renderer evidence
+- TSM-Net exposes pretrained inference, but no released training path, usable
+  repository licence, intrinsic linked pitch law, or first-party bounded-state
+  route
+- renewal is closed; `Dream` remains active comparator-backed product intent
+- no successor brief or candidate implementation is authorized
 
 ## Later Batches
 
-Closed or paused without promotion. Work after Batch 31.31 requires a valid
-candidate-admission decision:
+Closed or paused without promotion. Work after Batch 31.32 requires new
+complete-system evidence or an explicit operator change to a governing product
+boundary:
 
 - minimal production admission
 - coherent/diffusive overlap
@@ -1090,13 +1106,15 @@ candidate-admission decision:
 - [x] one complete seed-audited source-relative authority is frozen
 - [x] one seed-audited source-relative candidate passed construction and
   structural admission, then reached a terminal `Y02` pitch rejection
-- [x] repeated tonal-pitch failure now requires architecture reassessment
+- [x] repeated tonal-pitch failure triggered architecture reassessment
+- [x] architecture reassessment found no eligible complete replacement and
+  closed renewal without closing the PaulX-like target
 - [x] no private renderer or product surface entered `main`
 
 ## Next Task
 
-Run Batch 31.32 only. Reassess the renewal family at architecture level against
-the repeated tonal-pitch failure. Either identify one materially different,
-source-backed complete renderer with intrinsic tonal coherence or close the
-family. Do not implement DSP, recover rejected source, sweep parameters, or
-push.
+No candidate batch is ready. Keep the PaulX-like `Dream` target and retained
+comparator pack. Reopen only when one public complete renderer jointly owns
+tonal coherence, creative diffusion at `4x`, `8x`, and `16x`, linked channels,
+exact length, determinism, and bounded state, or when the operator explicitly
+changes a governing product boundary.

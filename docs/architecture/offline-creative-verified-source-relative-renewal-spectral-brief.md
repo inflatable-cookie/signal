@@ -1,6 +1,6 @@
 # Offline Creative SeedAuditedSourceRelativeRenewalSpectral Renderer Brief
 
-Status: rejected at synthetic admission; architecture reassessment required
+Status: rejected at synthetic admission; renewal family closed
 Owner: dsp
 Updated: 2026-07-20
 Contract: `085`
@@ -77,6 +77,12 @@ the same tonal-pitch class across different seeds, material, and ratios.
 Contract `084` Rule 7 requires architecture reassessment. This does not
 authorize another seed, transform, phase, window, hop, threshold, or assertion
 attempt.
+
+Batch 31.32 completed that reassessment. No materially different complete
+source-backed renderer satisfied the retained tonal, diffusive, linked-stereo,
+exact-length, deterministic, and bounded-state boundaries without reopening a
+rejected family. Renewal is closed without promotion. The PaulX-like product
+target remains active evidence.
 
 Listening did not open. Cleanup deleted the worktree, branch, checkpoint,
 module, tests, build state, and candidate artifacts. No candidate DSP entered
@@ -365,12 +371,11 @@ single-seed admission receipt.
 - [Batch 31.27 vector rejection](../logs/2026-07/20-g10-031-source-relative-vector-rejection.md)
 - [Batch 31.30 seed-authority reassessment](../logs/2026-07/20-g10-031-seed-authority-reassessment.md)
 - [Batch 31.31 seed-audited rejection](../logs/2026-07/20-g10-031-seed-audited-renewal-rejection.md)
+- [Batch 31.32 tonal-coherence closure](../logs/2026-07/20-g10-031-renewal-tonal-coherence-closure.md)
 - [Creative product contract](../contracts/085-creative-time-stretch-product-and-routing-contract.md)
 
 ## Next Task
 
-Run Batch 31.32 only. Reassess the renewal family at architecture level against
-the repeated tonal-pitch failure and pinned source. Either identify one
-materially different, source-backed complete renderer with intrinsic tonal
-coherence or close the renewal family. Do not implement DSP, recover rejected
-source, sweep seeds or parameters, reopen routing, or push.
+None for this rejected brief. Reopen the product study only on new
+complete-system evidence or an explicit operator change to a governing product
+boundary.

@@ -1,9 +1,9 @@
 # Creative Stretch Source Triangulation
 
-Status: reviewed; renewal tonal-coherence reassessment required
+Status: reviewed; renewal family closed without promotion
 Owner: dsp
 Updated: 2026-07-20
-Roadmap: `g10.031`, Batches 31.16, 31.30, and 31.31
+Roadmap: `g10.031`, Batches 31.16, 31.30, 31.31, and 31.32
 
 ## Question
 
@@ -337,8 +337,15 @@ seeds and different ratios/material. Another seed or scalar variant is not new
 research. The next study must find a materially different whole-renderer owner
 for tonal coherence or close the renewal family.
 
+Batch 31.32 found no eligible complete owner. Signalsmith's coherent predictor
+uses an author-identified randomized fallback above `2x`; the retained peak,
+material-state, sinusoidal, STN, and classical-toolbox paths reopen rejected
+families or separate output owners. TSM-Net adds public pretrained inference,
+but not a released training path, usable repository licence, or intrinsic
+linked pitch law. Renewal is closed. PaulXStretch remains the target reference;
+the target itself is not closed.
+
 ## Next Task
 
-Run `g10.031` Batch 31.32 only. Reassess the renewal family at architecture
-level against the repeated tonal-pitch failure. Do not implement another
-candidate or sweep seeds and parameters.
+No candidate batch is ready. Reopen only on new complete-system evidence or an
+explicit operator change to a governing product boundary.

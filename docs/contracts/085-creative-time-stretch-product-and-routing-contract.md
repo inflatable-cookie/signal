@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: active PaulX-like `Dream`; renewal architecture reassessment required
+Status: active PaulX-like `Dream`; renewal family closed without promotion
 Owner: core-product
 Updated: 2026-07-20
 Related contracts: `046`, `048`, `084`
@@ -485,6 +485,27 @@ Batch 31.29 and Batch 31.31 now fail the same pitch class across different
 seeds, material, and ratios. Contract `084` Rule 7 requires an architecture
 reassessment. No source-relative renewal candidate remains active.
 
+Batch 31.32 completes that reassessment and closes the renewal family. Its
+magnitude-only stochastic frames have no phase-continuous tonal state, so a
+seed, transform, hop, window, blend, threshold, or scalar change cannot own the
+repeated finite-render pitch failure. Adding recurrence, tracked peaks,
+oscillators, material separation, or learned synthesis would select a different
+family and may not be smuggled in as renewal repair.
+
+No retained or newly checked public family qualifies as the next complete
+creative owner. Signalsmith's coherent predictor explicitly falls back to
+randomized observations above `2x`; Bungee and Rubber Band reopen prohibited
+peak or material-state work; pinned SBSMS already failed whole-renderer
+feasibility; STN and public toolboxes separate independently rendered
+components; and TSM-Net depends on pretrained model state without a released
+training path, usable repository licence, or intrinsic linked pitch law.
+
+This closes an implementation family, not the operator's PaulX-like `Dream`
+goal. Reopening requires new complete-system evidence that jointly owns tonal
+coherence, creative diffusion at `4x`, `8x`, and `16x`, linked channels, exact
+length, determinism, and bounded state, or an explicit operator change to a
+governing product boundary.
+
 ## Initial Promotion Sequence
 
 1. Comparator capture and target-character freeze. Complete.
@@ -563,7 +584,7 @@ reassessment. No source-relative renewal candidate remains active.
     `8x` chord row, and the candidate was deleted before listening.
 32. Reassess the renewal family against the repeated tonal-pitch failure.
     Either select one materially different, source-backed complete renderer or
-    close the family. Ready; docs and architecture only.
+    close the family. Complete; no eligible replacement found, renewal closed.
 
 `Spectral`/`Rough`, coherent overlap, `LayeredCloud`, the upper overlap, dynamic
 ratios, and automatic routing still require separate reopening decisions backed
@@ -573,17 +594,18 @@ by new complete-system evidence.
 
 All isolated spectral candidates and both cyclic candidates are rejected and
 deleted. Explicit `Cyclic` and the automatic router remain closed or paused.
-Neutral `Dream` is active. Matching PaulX synthetics invalidate the old crest
-calibration. The first complete `CompensatedRenewalSpectral` implementation
-failed compile-only validation before DSP execution and was deleted.
+Neutral `Dream` remains active product intent. Matching PaulX synthetics
+invalidate the old crest calibration. The first complete
+`CompensatedRenewalSpectral` implementation failed compile-only validation
+before DSP execution and was deleted.
 `VarianceCompensatedRenewalSpectral` later produced an invalid synthetic
 receipt and was deleted before listening. The fresh
 `AuditedVarianceCompensatedRenewalSpectral` checkpoint passed compile,
 construction, structural, synthetic, and concealed mono gates without repair
 or rerun. It was rejected at linked-stereo image preservation because its
 first-sample component orientation inverted source-relative channel balance.
-The passed mono renewal core remains active architectural evidence; the failed
-stereo law does not. The first `SourceRelativeRenewalSpectral` checkpoint is
+The passed mono renewal core remains historical evidence; the failed stereo
+law does not. The first `SourceRelativeRenewalSpectral` checkpoint is
 also rejected and deleted after a frozen `mix64` vector typo stopped structural
 admission at `14/15`. The verified replacement passed native-left/right
 structural admission, then failed two stochastic synthetic owners under a
@@ -591,9 +613,9 @@ locally selected seed. That checkpoint remains rejected, but its receipt
 cannot support the discarded fixed-resolution range diagnosis because
 candidate seed was not frozen. The seed-audited replacement passed construction
 and structural admission and cleared the previous replica failure, but failed
-`Y02` on the `8x` chord. Two complete checkpoints now fail the same tonal-pitch
-class. No renewal candidate authority remains; architecture reassessment is
-mandatory before another implementation.
+`Y02` on the `8x` chord. Two complete checkpoints fail the same tonal-pitch
+class. Batch 31.32 found no eligible complete replacement and closed renewal.
+No creative candidate authority remains.
 
 No public Rust enum, renderer, harness mode, fixture, artifact schema, runtime
 route, or product-facing claim entered `main`. `OfflineHighQuality` remains
@@ -601,8 +623,6 @@ byte-exact and Contract `084` remains closed. No creative renderer is admitted.
 
 ## Next Task
 
-Run Batch 31.32 only. Reassess the renewal family at architecture level against
-the repeated tonal-pitch failure and pinned source. Either select one
-materially different, source-backed complete renderer with intrinsic tonal
-coherence or close the family. Do not implement DSP, sweep parameters, or
-push.
+No candidate batch is ready. Preserve the PaulX-like target and comparator
+evidence. Reopen only on the complete-system evidence listed above or an
+explicit operator change to a governing product boundary.

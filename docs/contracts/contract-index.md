@@ -18,12 +18,12 @@ memory alone.
 - `084` is closed without successor promotion; it remains the reopening and
   complete-system admission authority
 - `085` governs the separate offline creative-stretch product vocabulary;
-  `RenewalSpectral` is rejected, matching PaulX synthetics invalidate its old
-  absolute crest calibration, the first `CompensatedRenewalSpectral`
-  implementation failed compile-only validation before DSP execution, every
-  renderer remains unadmitted, `VarianceCompensatedRenewalSpectral` is the
-  fresh complete candidate authority, and the other characters and router stay
-  closed or paused
+  matching PaulX synthetics invalidate the old absolute crest calibration,
+  later renewal candidates reached mono and linked-stereo evidence, two fresh
+  complete checkpoints then failed the same tonal-pitch class, and Batch 31.32
+  closed renewal after finding no eligible complete replacement. Every
+  renderer remains unadmitted; the PaulX-like target remains product intent,
+  while other characters and the router stay closed or paused
 - `082` and `g10.029` are historical evidence, not active execution authority
 - `g10.028` source-fill work remains paused
 
@@ -153,7 +153,7 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Keep Contract `084` closed. Under Contract `085`, run `g10.031` Batch 31.32
-only: reassess the renewal family after two complete tonal-pitch failures.
-Either identify one materially different source-backed complete renderer or
-close the family. Do not implement candidate DSP or admit surfaces to `main`.
+Keep Contract `084` and the Contract `085` renewal family closed. No creative
+candidate is ready. Reopen only on new complete-system evidence or an explicit
+operator change to a governing product boundary. Do not admit candidate or
+product surfaces to `main`.

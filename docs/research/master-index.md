@@ -77,9 +77,10 @@ Pinned PaulX uses one renewal path across the retained ratios, so the failed
 receipt could not select a range switch. Batch 31.31 then tested the audited
 seed: construction and structural admission passed, `Y04` cleared, but `Y02`
 failed the `8x` chord pitch row. Two complete checkpoints now fail tonal pitch
-across different seeds, material, and ratios. The renewal family requires
-architecture reassessment; all candidate DSP and product exposure remain
-absent from `main`.
+across different seeds, material, and ratios. Batch 31.32 found no eligible
+complete source-backed replacement with intrinsic tonal coherence. Renewal is
+closed without closing the PaulX-like product target; all candidate DSP and
+product exposure remain absent from `main`.
 
 Rejected neutral `Dream` candidate brief:
 [Offline Creative SeedAuditedSourceRelativeRenewalSpectral Renderer Brief](../architecture/offline-creative-verified-source-relative-renewal-spectral-brief.md).
@@ -143,7 +144,7 @@ Rejected first-owner brief:
 
 ## Next Task
 
-Run `g10.031` Batch 31.32 only. Reassess the renewal family at architecture
-level against the repeated tonal-pitch failure. Either identify one materially
-different source-backed complete renderer or close the family. Do not
-implement DSP, reopen Batch 29.7BE, or reopen the transparent successor.
+No creative candidate batch is ready. Retain the PaulX-like target and source
+evidence. Reopen only when new complete-system evidence supplies tonal
+coherence, high-ratio creative diffusion, linked-channel ownership, exact
+length, determinism, and bounded state without reviving a rejected family.

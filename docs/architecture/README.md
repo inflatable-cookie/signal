@@ -39,7 +39,7 @@ Keep milestone sequencing in `roadmaps/`.
 
 ## Next Task
 
-Keep the `g10.030` transparent successor program closed. Run `g10.031` Batch
-31.32 only: reassess the renewal family after repeated tonal-pitch rejection.
-Keep candidate DSP, other creative owners, product routing, and seed/reroll
-exposure closed.
+Keep the `g10.030` transparent successor program and the `g10.031` renewal
+family closed. No creative candidate is ready. Preserve the PaulX-like target
+until new complete-system evidence or an explicit operator boundary change
+supports another architecture.

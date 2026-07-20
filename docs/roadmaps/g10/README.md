@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: seed-audited renewal rejected; architecture reassessment ready
+Status: creative renewal closed; no candidate ready
 Updated: 2026-07-20
 
 ## Why this generation matters now
@@ -131,9 +131,11 @@ The 2026-07-19 consolidation reset is authoritative.
   construction `1/1`, and structural `15/15`, then failed `Y02` on the `8x`
   chord at `13.351828347` cents against an `11.331375778`-cent ceiling. `Y04`
   passed at all ratios. The candidate was deleted before listening. Two
-  checkpoints now fail the same tonal-pitch class, so Batch 31.32 architecture
-  reassessment is ready. Other characters, routing, product exposure, and
-  rejected branches remain closed or paused.
+  checkpoints fail the same tonal-pitch class. Batch 31.32 found that renewal
+  has no persistent tonal phase owner and no eligible complete source-backed
+  replacement remains. Renewal is closed without closing the PaulX-like
+  product target. Other characters, routing, product exposure, and rejected
+  branches remain closed or paused.
 - The 2026-07-20 lifecycle reconciliation closes stale `g10.001` and
   `g10.003` active markers. It also records that Signal's `g10.017` capture and
   live-monitor implementation landed; that roadmap is paused only on explicit
@@ -207,10 +209,10 @@ Do not start Loophole or Chorus planning from Signal internals.
   - historical correctness, listening, and rejected-successor ledger
 - `g10.030` `complete`
   - stretch consolidated; candidate families closed; frozen baseline retained
-- `g10.031` `active`
-  - PaulX-like neutral `Dream` remains the product goal; Batch 31.31 rejected
-    the seed-audited renewal candidate on repeated tonal-pitch failure; Batch
-    31.32 architecture reassessment is ready and explicit `Cyclic` stays closed
+- `g10.031` `evidence hold`
+  - PaulX-like neutral `Dream` remains product intent; Batch 31.32 closed the
+    renewal family without promotion, no candidate is ready, and explicit
+    `Cyclic` stays closed
 
 ## Stretch Boundary
 
@@ -258,12 +260,16 @@ all `15` structural owners, then failed two synthetic owners. Batch 31.30
 corrected unfrozen seed authority. Batch 31.31 passed construction and all
 structural owners under the audited seed, cleared the replica row, then failed
 the `8x` chord pitch row. The isolated candidate was deleted before listening.
+Batch 31.32 found no eligible complete renderer with both intrinsic tonal
+coherence and the retained high-ratio diffusive character. Renewal is closed;
+the PaulX-like target and comparator evidence remain.
 Creative stretch still has no renderer, public API, harness surface, or product
 route on `main`.
 
 ## Next Task
 
-Run `g10.031` Batch 31.32 only. Reassess the renewal family after repeated
-tonal-pitch rejection. Either identify one materially different source-backed
-complete renderer or close the family. Keep `g10.028`, routing, product
-exposure, cross-repo work, and candidate DSP on `main` paused. Do not push.
+No creative candidate batch is ready. Preserve the PaulX-like target and
+comparator pack. Reopen `g10.031` implementation only on new complete-system
+evidence or an explicit operator change to a governing product boundary. Keep
+`g10.028`, routing, product exposure, cross-repo work, and candidate DSP on
+`main` paused.
