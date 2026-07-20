@@ -175,8 +175,10 @@ impl BinauralConvolver {
     ) {
         assert_eq!(input.len(), left_out.len());
         assert_eq!(input.len(), right_out.len());
-        for ((&sample, left), right) in
-            input.iter().zip(left_out.iter_mut()).zip(right_out.iter_mut())
+        for ((&sample, left), right) in input
+            .iter()
+            .zip(left_out.iter_mut())
+            .zip(right_out.iter_mut())
         {
             let (l, r) = self.process_sample(sample);
             *left = l;
@@ -245,13 +247,19 @@ mod tests {
         for _ in 0..fade {
             let (l, r) = conv.process_sample(1.0);
             assert!((l - r).abs() < 1e-6);
-            assert!(l <= last + 1e-4, "output rose during fade-down: {l} > {last}");
+            assert!(
+                l <= last + 1e-4,
+                "output rose during fade-down: {l} > {last}"
+            );
             assert!(last - l < 0.05, "step too large: {last} -> {l}");
             last = l;
         }
         assert!(!conv.is_crossfading());
         let (l, _) = conv.process_sample(1.0);
-        assert!((l - 0.5).abs() < 1e-4, "fade should settle on the new response, got {l}");
+        assert!(
+            (l - 0.5).abs() < 1e-4,
+            "fade should settle on the new response, got {l}"
+        );
     }
 
     #[test]
@@ -268,7 +276,10 @@ mod tests {
         conv.crossfade_to(&[1.0], &[1.0]);
         for _ in 0..fade {
             let (l, r) = conv.process_sample(1.0);
-            assert!((l - 1.0).abs() < 1e-5 && (r - 1.0).abs() < 1e-5, "flat fade broke: {l}");
+            assert!(
+                (l - 1.0).abs() < 1e-5 && (r - 1.0).abs() < 1e-5,
+                "flat fade broke: {l}"
+            );
         }
     }
 
@@ -290,7 +301,10 @@ mod tests {
             conv.process_sample(1.0);
         }
         let (l, _) = conv.process_sample(1.0);
-        assert!(l.abs() < 0.05, "should settle near the retargeted response, got {l}");
+        assert!(
+            l.abs() < 0.05,
+            "should settle near the retargeted response, got {l}"
+        );
     }
 
     #[test]
@@ -299,8 +313,9 @@ mod tests {
         // shape an HRIR encodes. An impulse must come out at different times.
         let mut conv = BinauralConvolver::with_capacity(8, 4);
         conv.set_response(&[1.0, 0.0, 0.0], &[0.0, 0.0, 1.0]);
-        let outs: Vec<(Sample, Sample)> =
-            (0..4).map(|i| conv.process_sample(if i == 0 { 1.0 } else { 0.0 })).collect();
+        let outs: Vec<(Sample, Sample)> = (0..4)
+            .map(|i| conv.process_sample(if i == 0 { 1.0 } else { 0.0 }))
+            .collect();
         assert_eq!(outs[0], (1.0, 0.0));
         assert_eq!(outs[2], (0.0, 1.0));
     }

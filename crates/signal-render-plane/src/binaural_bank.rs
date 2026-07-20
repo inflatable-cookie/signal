@@ -163,7 +163,11 @@ impl BinauralVoiceBank {
                     }
                 }
             }
-            RenderPluginEventKind::VoiceParam { voice, param, value } => {
+            RenderPluginEventKind::VoiceParam {
+                voice,
+                param,
+                value,
+            } => {
                 let Some(slot) = state.slots.get_mut(voice as usize) else {
                     self.unsupported_events.fetch_add(1, Ordering::Relaxed);
                     return;
@@ -225,8 +229,7 @@ impl BinauralVoiceBank {
         let mut cursor = 0usize;
         let mut next_event = 0usize;
         while cursor < frame_count {
-            while next_event < events.len()
-                && (events[next_event].offset_frames as usize) <= cursor
+            while next_event < events.len() && (events[next_event].offset_frames as usize) <= cursor
             {
                 self.apply_event(&mut state, &events[next_event]);
                 next_event += 1;
@@ -306,7 +309,11 @@ mod tests {
     use super::*;
 
     fn event(kind: RenderPluginEventKind) -> RenderBlockPluginEvent {
-        RenderBlockPluginEvent { offset_frames: 0, channel: 0, kind }
+        RenderBlockPluginEvent {
+            offset_frames: 0,
+            channel: 0,
+            kind,
+        }
     }
 
     fn identity_bank(max_voices: usize) -> BinauralVoiceBank {
@@ -324,7 +331,11 @@ mod tests {
         let bank = identity_bank(2);
         let mut scratch = vec![0.1f32; 8 * 2]; // pre-existing stage content
         let events = [
-            event(RenderPluginEventKind::VoiceStart { voice: 0, sound: 0, gain: 0.5 }),
+            event(RenderPluginEventKind::VoiceStart {
+                voice: 0,
+                sound: 0,
+                gain: 0.5,
+            }),
             event(RenderPluginEventKind::VoiceParam {
                 voice: 0,
                 param: RenderVoiceParam::HrirIndex,
@@ -350,7 +361,11 @@ mod tests {
         let bank = identity_bank(1);
         let mut scratch = vec![0.0f32; 4 * 2];
         let events = [
-            event(RenderPluginEventKind::VoiceStart { voice: 0, sound: 0, gain: 1.0 }),
+            event(RenderPluginEventKind::VoiceStart {
+                voice: 0,
+                sound: 0,
+                gain: 1.0,
+            }),
             event(RenderPluginEventKind::VoiceParam {
                 voice: 0,
                 param: RenderVoiceParam::HrirIndex,
@@ -367,7 +382,11 @@ mod tests {
         let bank = identity_bank(1);
         let mut scratch = vec![0.0f32; 2 * 2];
         let start = [
-            event(RenderPluginEventKind::VoiceStart { voice: 0, sound: 0, gain: 1.0 }),
+            event(RenderPluginEventKind::VoiceStart {
+                voice: 0,
+                sound: 0,
+                gain: 1.0,
+            }),
             event(RenderPluginEventKind::VoiceParam {
                 voice: 0,
                 param: RenderVoiceParam::HrirIndex,
@@ -389,7 +408,11 @@ mod tests {
         let bank = identity_bank(1);
         let mut scratch = vec![0.0f32; 2 * 2];
         let events = [
-            event(RenderPluginEventKind::VoiceStart { voice: 0, sound: 0, gain: 1.0 }),
+            event(RenderPluginEventKind::VoiceStart {
+                voice: 0,
+                sound: 0,
+                gain: 1.0,
+            }),
             event(RenderPluginEventKind::VoiceParam {
                 voice: 0,
                 param: RenderVoiceParam::HrirIndex,
@@ -431,14 +454,25 @@ mod tests {
         let bank = identity_bank(1);
         let mut scratch = vec![0.0f32; 2 * 2];
         let events = [
-            event(RenderPluginEventKind::VoiceStart { voice: 9, sound: 0, gain: 1.0 }),
-            event(RenderPluginEventKind::VoiceStart { voice: 0, sound: 9, gain: 1.0 }),
+            event(RenderPluginEventKind::VoiceStart {
+                voice: 9,
+                sound: 0,
+                gain: 1.0,
+            }),
+            event(RenderPluginEventKind::VoiceStart {
+                voice: 0,
+                sound: 9,
+                gain: 1.0,
+            }),
             event(RenderPluginEventKind::VoiceParam {
                 voice: 0,
                 param: RenderVoiceParam::HrirIndex,
                 value: 99.0,
             }),
-            event(RenderPluginEventKind::NoteOn { key: 60, velocity: 1.0 }),
+            event(RenderPluginEventKind::NoteOn {
+                key: 60,
+                velocity: 1.0,
+            }),
         ];
         assert!(bank.process_with_events(&mut scratch, 2, 2, &events));
         assert_eq!(bank.unsupported_event_count(), 4);
@@ -448,7 +482,9 @@ mod tests {
     fn occlusion_lowpass_attenuates_high_frequencies() {
         // Nyquist-rate content through a 200 Hz one-pole must lose most of
         // its energy; the unoccluded path keeps it.
-        let nyquist: Vec<f32> = (0..64).map(|i| if i % 2 == 0 { 1.0 } else { -1.0 }).collect();
+        let nyquist: Vec<f32> = (0..64)
+            .map(|i| if i % 2 == 0 { 1.0 } else { -1.0 })
+            .collect();
         let bank = BinauralVoiceBank::new(
             vec![Arc::new(nyquist)],
             vec![(vec![1.0], vec![1.0])],
@@ -460,7 +496,11 @@ mod tests {
         let energy = |bank: &BinauralVoiceBank, occlude: bool| -> f32 {
             bank.reset();
             let mut events = vec![
-                event(RenderPluginEventKind::VoiceStart { voice: 0, sound: 0, gain: 1.0 }),
+                event(RenderPluginEventKind::VoiceStart {
+                    voice: 0,
+                    sound: 0,
+                    gain: 1.0,
+                }),
                 event(RenderPluginEventKind::VoiceParam {
                     voice: 0,
                     param: RenderVoiceParam::HrirIndex,
@@ -496,7 +536,11 @@ mod tests {
             RenderBlockPluginEvent {
                 offset_frames: 6,
                 channel: 0,
-                kind: RenderPluginEventKind::VoiceStart { voice: 0, sound: 0, gain: 1.0 },
+                kind: RenderPluginEventKind::VoiceStart {
+                    voice: 0,
+                    sound: 0,
+                    gain: 1.0,
+                },
             },
             RenderBlockPluginEvent {
                 offset_frames: 6,
@@ -515,13 +559,22 @@ mod tests {
         ];
         assert!(bank.process_with_events(&mut scratch, 16, 2, &events));
         for frame in 0..6 {
-            assert!(scratch[frame * 2].abs() < 1e-6, "pre-start frame {frame} sounded");
+            assert!(
+                scratch[frame * 2].abs() < 1e-6,
+                "pre-start frame {frame} sounded"
+            );
         }
         for frame in 6..9 {
-            assert!((scratch[frame * 2] - 1.0).abs() < 1e-6, "frame {frame} should sound");
+            assert!(
+                (scratch[frame * 2] - 1.0).abs() < 1e-6,
+                "frame {frame} should sound"
+            );
         }
         for frame in 9..16 {
-            assert!(scratch[frame * 2].abs() < 1e-6, "post-stop frame {frame} sounded");
+            assert!(
+                scratch[frame * 2].abs() < 1e-6,
+                "post-stop frame {frame} sounded"
+            );
         }
     }
 
@@ -530,13 +583,21 @@ mod tests {
         let bank = identity_bank(2);
         let mut scratch = vec![0.0f32; 2 * 2];
         let events = [
-            event(RenderPluginEventKind::VoiceStart { voice: 0, sound: 0, gain: 1.0 }),
+            event(RenderPluginEventKind::VoiceStart {
+                voice: 0,
+                sound: 0,
+                gain: 1.0,
+            }),
             event(RenderPluginEventKind::VoiceParam {
                 voice: 0,
                 param: RenderVoiceParam::HrirIndex,
                 value: 0.0,
             }),
-            event(RenderPluginEventKind::VoiceStart { voice: 1, sound: 0, gain: 0.5 }),
+            event(RenderPluginEventKind::VoiceStart {
+                voice: 1,
+                sound: 0,
+                gain: 0.5,
+            }),
             event(RenderPluginEventKind::VoiceParam {
                 voice: 1,
                 param: RenderVoiceParam::HrirIndex,

@@ -91,8 +91,12 @@ impl PluginBlockProcessor for ConvolutionReverbProcessor {
             state.left_buf[frame] = scratch[frame * 2];
             state.right_buf[frame] = scratch[frame * 2 + 1];
         }
-        state.left.process_in_place(&mut state.left_buf[..frame_count]);
-        state.right.process_in_place(&mut state.right_buf[..frame_count]);
+        state
+            .left
+            .process_in_place(&mut state.left_buf[..frame_count]);
+        state
+            .right
+            .process_in_place(&mut state.right_buf[..frame_count]);
         for frame in 0..frame_count {
             let dry_l = scratch[frame * 2];
             let dry_r = scratch[frame * 2 + 1];
@@ -125,7 +129,10 @@ mod tests {
         assert!(reverb.process(&mut scratch, 128, 2));
 
         assert!((scratch[latency * 2] - 1.0).abs() < 1e-4, "left at latency");
-        assert!((scratch[latency * 2 + 1] - 0.5).abs() < 1e-4, "right at latency");
+        assert!(
+            (scratch[latency * 2 + 1] - 0.5).abs() < 1e-4,
+            "right at latency"
+        );
         // Nothing before the latency point.
         for frame in 0..latency {
             assert!(scratch[frame * 2].abs() < 1e-5, "pre-latency frame {frame}");
@@ -139,7 +146,11 @@ mod tests {
         scratch[0] = 1.0;
         assert!(reverb.process(&mut scratch, 64, 2));
         // Dry half arrives at frame 0.
-        assert!((scratch[0] - 0.5).abs() < 1e-4, "dry now, got {}", scratch[0]);
+        assert!(
+            (scratch[0] - 0.5).abs() < 1e-4,
+            "dry now, got {}",
+            scratch[0]
+        );
         // Wet half arrives at latency.
         let latency = reverb.latency_frames() as usize;
         assert!((scratch[latency * 2] - 0.5).abs() < 1e-4, "wet later");
@@ -162,8 +173,15 @@ mod tests {
         // Single 0.8 tap at IR offset 24 + latency 16 = frame 40 -> lands in
         // the SECOND block (frame 8 there), proving state crosses blocks.
         let first_energy: f32 = first.iter().map(|s| s.abs()).sum();
-        assert!(first_energy < 1e-4, "first block should be silent, got {first_energy}");
-        assert!((second[8 * 2] - 0.8).abs() < 1e-3, "tap at second-block frame 8: {}", second[8 * 2]);
+        assert!(
+            first_energy < 1e-4,
+            "first block should be silent, got {first_energy}"
+        );
+        assert!(
+            (second[8 * 2] - 0.8).abs() < 1e-3,
+            "tap at second-block frame 8: {}",
+            second[8 * 2]
+        );
     }
 
     #[test]
