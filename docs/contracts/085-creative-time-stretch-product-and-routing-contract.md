@@ -1,12 +1,14 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: active product boundary; all renderer ownership paused
+Status: active product boundary; `Dream` source research open; no renderer admitted
 Owner: core-product
-Updated: 2026-07-19
+Updated: 2026-07-20
 Related contracts: `046`, `048`, `084`
 Related architecture: `docs/architecture/offline-creative-time-stretch-study.md`,
 `docs/architecture/offline-creative-similarity-aligned-cyclic-brief.md`,
 `docs/architecture/offline-creative-cyclic-grain-brief.md`
+Related research:
+`docs/research/specimen-dossiers/creative-stretch-source-triangulation.md`
 Roadmap: `g10.031`
 
 ## Purpose
@@ -152,6 +154,11 @@ Neutral `space` preserves mono. Duplicate stereo, swap, and polarity mechanics
 must remain explicit structural gates. Independent linked-stereo listening is
 required before promotion.
 
+A candidate brief must state which of those gates are samplewise invariants
+and which are relationship or listening invariants. It may not inherit an
+exact algebraic tolerance from a rejected representation without showing that
+the selected representation can express it and the product requires it.
+
 ### Rule 6: variation is reproducible
 
 The same complete request and engine version produce byte-identical output on
@@ -205,6 +212,10 @@ silently reused. Creative gates instead reject uncontrolled clicks, dropouts,
 level changes, periodic flutter, metallic repetition outside `Cyclic`, static
 freeze, stereo instability, and failure to map the semantic controls
 consistently.
+
+Every numeric creative-character gate must be calibrated against the retained
+comparator row or identify a hard integrity boundary. Comparator metrics still
+diagnose and reject; concealed long-form listening remains promotion authority.
 
 ### Rule 10: one complete candidate at a time
 
@@ -266,6 +277,22 @@ Final ownership reassessment closes explicit `Cyclic`:
 No third cyclic implementation is authorized. New complete-system evidence or
 an explicit operator decision is required before any creative owner reopens.
 
+Batch 31.16 is that explicit research reopening for neutral `Dream`. Pinned
+PaulXStretch source shows one complete family not directly tested by the
+rejected briefs: long-window magnitude analysis, deliberate source-phase loss,
+per-frame stochastic phase renewal, and output-frame crossfade. The rejected
+`DiffuseSpectral` brief instead added an instantaneous-frequency carrier,
+correlated diffusion, log-magnitude evolution, and a different overlap law.
+The later continuous-excitation candidates added recurrence rather than
+testing phase renewal.
+
+This new evidence authorizes one docs-only `RenewalSpectral` brief. It does not
+restore a rejected branch, authorize candidate DSP, or reopen `Spectral`,
+`Rough`, `Cyclic`, `Cloud`, routing, cache, or product exposure. The brief must
+freeze exact length, bounded state, deterministic phase renewal, crest-owning
+frame synthesis, and one Signal-owned linked-channel rule before implementation
+can be considered.
+
 ## Initial Promotion Sequence
 
 1. Comparator capture and target-character freeze. Complete.
@@ -291,24 +318,29 @@ an explicit operator decision is required before any creative owner reopens.
 14. Retained mono and independent stereo listening. Closed without admission.
 15. Minimal cyclic admission, product exposure, and cache review. Closed
     without admission.
+16. Pinned PaulXStretch, CDP, and Potenza whole-path source triangulation.
+    Complete; one materially different neutral `Dream` family selected.
+17. Freeze one complete `RenewalSpectral` brief without candidate DSP. Ready.
 
-Core `Dream`/`Spectral`/`Rough`, coherent overlap, `LayeredCloud`, the upper
-overlap, dynamic ratios, and automatic routing require a separate reopening
-decision backed by new complete-system evidence.
+`Spectral`/`Rough`, coherent overlap, `LayeredCloud`, the upper overlap, dynamic
+ratios, and automatic routing still require separate reopening decisions backed
+by new complete-system evidence.
 
 ## Current State
 
 Three isolated spectral candidates and both cyclic candidates are rejected and
-deleted. The core `4x`-`16x` owner, explicit `Cyclic`, and automatic router are
-closed or paused without promotion. `CyclicGrain` missed the first synthetic
+deleted. Explicit `Cyclic` and the automatic router remain closed or paused
+without promotion. `CyclicGrain` missed the first synthetic
 pitch limit by `5.778` cents. `SimilarityAlignedCyclic` then failed structural
-search reachability before synthetic admission. No third complete path is
-authorized. No public Rust enum, renderer, harness mode, fixture, artifact
-schema, runtime route, or product-facing claim entered `main`.
+search reachability before synthetic admission. No third cyclic path is
+authorized. Source triangulation now selects `RenewalSpectral` for one
+docs-only neutral `Dream` brief. No public Rust enum, renderer, harness mode,
+fixture, artifact schema, runtime route, or product-facing claim entered
+`main`.
 `OfflineHighQuality` remains byte-exact and Contract `084` remains closed.
 
 ## Next Task
 
-No creative implementation batch is ready. Keep `g10.031` paused. Reopen only
-from new complete-system owner evidence or an explicit operator decision to
-start a separate creative research program.
+Run Batch 31.17 only. Freeze one complete `RenewalSpectral` brief. Do not add
+DSP, a candidate harness, comparator audio, public API, routing, or product
+integration.

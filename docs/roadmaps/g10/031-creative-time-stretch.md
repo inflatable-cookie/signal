@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: paused; no admitted owner or ready implementation batch
+Status: active research; Batch 31.17 docs-only brief ready; no candidate admitted
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -26,7 +26,7 @@ Build one offline creative-stretch product surface that:
 - presents stable intent controls rather than algorithm parameters
 - preserves a future route from coherent slow motion to spectral dream and
   later cloud without claiming unavailable owners
-- first admits only an explicit cyclic character through `8x`
+- studies one source-backed neutral `Dream` owner before any new candidate
 - preserves exact duration, determinism, linked stereo, and bounded memory
 - stays separate from `OfflineHighQuality` and RealtimePreview
 
@@ -36,7 +36,8 @@ Build one offline creative-stretch product surface that:
 - no RealtimePreview or audio-thread work
 - no Loophole or Chorus UI implementation
 - no external production dependency
-- no spectral-router or cloud implementation while their owners are paused
+- no spectral-router, non-`Dream` character, or cloud implementation while
+  their owners are paused
 - no `100x+` texture/freeze implementation in the first lane
 - no simultaneous diffusive, cloud, and cyclic experiment queue
 
@@ -475,13 +476,71 @@ source-backed whole-renderer path or must close.
 - [x] changed documentation only
 
 `Cyclic` remains useful comparator and future intent vocabulary, not an
-available character. No new brief or implementation batch is ready.
+available character. At the Batch 31.15 close, no new brief or implementation
+batch was ready.
+
+## Batch 31.16 - Creative Source Triangulation
+
+Status: complete; docs and research only
+
+Reopen one bounded research batch by explicit operator decision.
+
+- [x] pinned PaulXStretch `v1.6.0`, CDP `CDP8.0`, and the retained Potenza
+  revision
+- [x] traced each complete source clock, representation, expansion mechanism,
+  synthesis path, stereo ownership, and output boundary
+- [x] connected PaulXStretch and CDP source behavior to the retained `4x`,
+  `8x`, and `16x` comparator pack
+- [x] confirmed neutral PaulXStretch uses magnitude-only frame renewal and
+  output crossfade, not the recurrence and magnitude evolution frozen in the
+  rejected Signal spectral briefs
+- [x] retained CDP amplitude/frequency-frame interpolation as a separate later
+  `Spectral` owner
+- [x] retained Potenza as cyclic architecture evidence while keeping both
+  rejected Signal cyclic candidates closed
+- [x] selected `RenewalSpectral` as one materially different, source-backed
+  neutral `Dream` family
+- [x] separated hard integrity gates from comparator-calibrated character
+  diagnostics and listening authority
+- [x] kept DSP, candidate scaffolding, comparator audio, public APIs, routing,
+  cache, Loophole, and Chorus unchanged
+
+Authority:
+
+- `docs/research/specimen-dossiers/creative-stretch-source-triangulation.md`
+- `docs/architecture/offline-creative-time-stretch-study.md`
+- `docs/contracts/085-creative-time-stretch-product-and-routing-contract.md`
+
+## Batch 31.17 - RenewalSpectral Complete Brief
+
+Status: ready; docs and architecture only
+
+Freeze one complete clean-room neutral `Dream` renderer before any candidate
+implementation.
+
+- [ ] freeze transform support, output-frame cadence, and one exact source map
+- [ ] freeze deterministic per-frame phase renewal without coherent carrier,
+  continuous excitation, magnitude slew, or transient logic
+- [ ] freeze linked-channel analysis, excitation, synthesis, and semantic
+  `space` ownership without inheriting the rejected relation proof
+- [ ] freeze frame combination, crest ownership, normalization, exterior
+  support, and exact target-length crop
+- [ ] freeze bounded memory, deterministic state, computational shape, and
+  offline-only execution
+- [ ] calibrate every character metric against PaulXStretch or a named hard
+  integrity boundary before freezing its pass/fail condition
+- [ ] retain `4x`, `8x`, and `16x` five-family concealed mono listening and
+  independent stereo review
+- [ ] freeze whole-candidate rejection, cleanup, and minimal private admission
+- [ ] stop without DSP, harness, fixture, report mode, comparator capture,
+  public API, routing, cache, Loophole, or Chorus changes
 
 ## Later Batches
 
-Closed without promotion. Reopening requires new complete-system owner evidence
-or an explicit operator decision for a separate creative research program:
+Closed or paused without promotion. Work after Batch 31.17 requires a complete
+brief and a separate continuation decision:
 
+- isolated `RenewalSpectral` candidate
 - minimal production admission
 - coherent/diffusive overlap
 - `LayeredCloud` study and candidate
@@ -507,15 +566,18 @@ or an explicit operator decision for a separate creative research program:
   terminal decision
 - [x] final ownership reassessment found no third complete cyclic path
 - [x] explicit `Cyclic` closed without implementation or product exposure
-- [ ] one isolated cyclic candidate passes structural and synthetic gates
-- [ ] long-form mono cyclic listening passes at `2x`, `4x`, and `8x`
+- [x] pinned creative source triangulation selected one materially different
+  neutral `Dream` family
+- [ ] one complete `RenewalSpectral` brief is frozen
+- [ ] one isolated `RenewalSpectral` candidate passes structural and synthetic
+  gates
+- [ ] long-form mono `Dream` listening passes at `4x`, `8x`, and `16x`
 - [ ] linked-stereo mechanics and independent listening pass
-- [ ] `16x` remains unsupported unless separate evidence passes
-- [ ] only the minimal cyclic product surface enters `main`
+- [ ] only the minimal private `Dream` renderer and its admitted controls enter
+  `main`
 
 ## Next Task
 
-No autonomous creative-stretch task is ready. Keep `g10.031` paused. Reopen
-only from new complete-system owner evidence or an explicit operator decision
-to start a separate creative research program. Do not repair or reimplement
-either rejected cyclic candidate.
+Run Batch 31.17 only. Freeze the complete docs-only `RenewalSpectral` brief and
+stop. Do not implement the candidate or reopen another character, router, or
+product surface.

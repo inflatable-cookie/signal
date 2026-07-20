@@ -52,6 +52,7 @@ decision controls any future reopening.
 | [Rubber Band Source Architecture](./specimen-dossiers/rubber-band-source-architecture.md) | R2/R3 scheduling, scale ownership, guidance, and phase topology | Reviewed |
 | [Bungee Source Architecture](./specimen-dossiers/bungee-source-architecture.md) | Whole-kernel common-region rotation and dynamic multichannel feasibility | Reviewed |
 | [SBSMS Source Architecture](./specimen-dossiers/sbsms-source-architecture.md) | Linked subband partial tracking, paired stereo trajectories, and direct oscillator synthesis | Source feasibility rejected |
+| [Creative Stretch Source Triangulation](./specimen-dossiers/creative-stretch-source-triangulation.md) | PaulXStretch, CDP, and Potenza whole-path ownership behind retained creative targets | Reviewed; `RenewalSpectral` promoted to brief |
 
 Current stretch feasibility decision:
 [Offline Time-Stretch Non-Phase-Vocoder Feasibility](../architecture/offline-time-stretch-non-phase-vocoder-feasibility.md).
@@ -64,6 +65,11 @@ similarity-aligned replacement failed structural search reachability. Final
 ownership reassessment found no third materially different, source-backed
 whole-renderer path. Explicit `Cyclic` is closed. This does not reopen the
 transparent successor lane.
+
+Explicit operator research reopening and pinned source triangulation now select
+one materially different neutral `Dream` family: `RenewalSpectral`. It is ready
+for a complete docs-only brief, not implementation. `Spectral`, `Rough`,
+`Cyclic`, `Cloud`, routing, and product exposure remain closed or paused.
 
 Rejected similarity-aligned cyclic brief:
 [Offline Creative SimilarityAlignedCyclic Renderer Brief](../architecture/offline-creative-similarity-aligned-cyclic-brief.md).
@@ -118,8 +124,7 @@ Rejected first-owner brief:
 
 ## Next Task
 
-Treat the retained source studies and rejected briefs as historical evidence.
-No creative implementation batch is ready. Reopen `g10.031` only from new
-complete-system owner evidence or an explicit operator decision to start a
-separate creative research program. Do not tune either cyclic candidate or
-reopen Batch 29.7BE, the diffusive families, or the transparent successor.
+Run `g10.031` Batch 31.17 only. Freeze one complete docs-only
+`RenewalSpectral` brief from the creative source triangulation. Do not tune a
+rejected candidate, add DSP, or reopen Batch 29.7BE, another character, or the
+transparent successor.

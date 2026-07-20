@@ -69,8 +69,16 @@ The 2026-07-19 consolidation reset is authoritative.
   source-backed whole-renderer path. SOLA/WSOLA variants repair the rejected
   search owner; pitch-/epoch-synchronous methods lack a full-mix linked period
   owner and `8x` evidence; other hybrids reopen closed seams or separate
-  programs. Explicit `Cyclic` is closed and `g10.031` is paused without
-  promotion.
+  programs. Explicit `Cyclic` is closed without promotion. Batch 31.16 then
+  reopened docs-only research by explicit operator decision and traced pinned
+  PaulXStretch, CDP, and Potenza whole render paths. Neutral PaulXStretch uses
+  long-window magnitude analysis, per-frame phase renewal, and frame crossfade
+  rather than the recurrence and magnitude evolution tested by Signal's
+  rejected spectral briefs. This is new source-backed evidence for one
+  materially different neutral `Dream` family, `RenewalSpectral`. Batch 31.17
+  is ready to freeze its complete brief without candidate DSP. Other
+  characters, routing, product exposure, and rejected branches remain closed
+  or paused.
 - `g10.028` RealtimePreview source-fill and all render-plane integration remain
   paused.
 
@@ -138,9 +146,9 @@ Do not start Loophole or Chorus planning from Signal internals.
   - historical correctness, listening, and rejected-successor ledger
 - `g10.030` `complete`
   - stretch consolidated; candidate families closed; frozen baseline retained
-- `g10.031` `paused`
-  - no creative owner admitted; spectral router and explicit cyclic closed or
-    paused without a ready implementation batch
+- `g10.031` `active-research`
+  - `RenewalSpectral` complete brief ready; no renderer admitted; other
+    characters and the router closed or paused
 
 ## Stretch Boundary
 
@@ -170,7 +178,7 @@ ownership reassessment found no third complete cyclic path.
 
 ## Next Task
 
-No autonomous creative-stretch task is ready. Keep `g10.031`, `g10.028`, later
-creative owners, and render-plane integration paused. Reopen creative work only
-from new complete-system owner evidence or an explicit operator decision for a
-separate research program.
+Run `g10.031` Batch 31.17 only. Freeze the complete docs-only
+`RenewalSpectral` brief and stop before implementation. Keep `g10.028`, other
+creative owners, routing, product exposure, and render-plane integration
+paused.

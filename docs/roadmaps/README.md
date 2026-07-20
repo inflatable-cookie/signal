@@ -54,7 +54,13 @@ different correlation-aligned waveform family for a complete cyclic brief.
 Batch 31.13 froze that brief without changing DSP. Batch 31.14 isolated
 implementation failed structural search reachability and was deleted. Batch
 31.15 found no third complete cyclic path and closed explicit `Cyclic`.
-`g10.031` is paused. No candidate DSP is admitted on `main`.
+Batch 31.16 then reopened docs-only research by explicit operator decision.
+Pinned PaulXStretch, CDP, and Potenza whole-path study found that the preferred
+PaulXStretch default uses magnitude-only frame renewal and crossfade rather
+than the recurrence tested by Signal's rejected spectral briefs. One
+materially different neutral `Dream` family, `RenewalSpectral`, is selected
+for a complete docs-only brief. `g10.031` is active for Batch 31.17 docs only.
+No candidate DSP is admitted on `main`.
 Offline artifacts still need a streaming artifact writer/cache target for full
 peak-memory closure. Mono callback-state DSP has a
 no-allocation proof, linked stereo is implemented, ratio scheduling has
@@ -180,8 +186,8 @@ Before rollover:
 
 ## Next Task
 
-Use `docs/roadmaps/g10/README.md` as the active generation front door. No
-autonomous creative-stretch work is ready: `g10.031` is paused without an
-admitted owner. Keep rejected candidate families, the transparent successor
-lane, `g10.028`, automatic routing, later creative owners, and render-plane
-integration closed until new authority exists.
+Use `docs/roadmaps/g10/README.md` as the active generation front door. Run
+`g10.031` Batch 31.17 only. Freeze one complete docs-only `RenewalSpectral`
+brief. Keep rejected candidates, the transparent successor lane, `g10.028`,
+other creative owners, automatic routing, product exposure, and render-plane
+integration closed.

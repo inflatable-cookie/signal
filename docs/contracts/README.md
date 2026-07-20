@@ -113,5 +113,6 @@ Add a new contract only when the boundary needs stronger guarantees than
 Use `docs/contracts/contract-index.md` and `001-working-rules.md` as the
 contract front doors. Contract `084` and roadmap `g10.030` keep the transparent
 successor program closed. Contract `085` governs the separate creative path;
-all studied owners are rejected, `g10.031` is paused, and no creative
-implementation batch is ready. No strict spec lane is open.
+source triangulation selected one materially different neutral `Dream` family.
+Roadmap `g10.031` Batch 31.17 is ready for its docs-only complete brief. No
+creative implementation batch or strict spec lane is open.

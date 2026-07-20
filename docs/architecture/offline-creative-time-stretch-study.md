@@ -1,8 +1,8 @@
 # Offline Creative Time-Stretch Study
 
-Status: complete; no creative owner admitted; implementation lane paused
+Status: source research reopened; `RenewalSpectral` brief ready; no candidate admitted
 Owner: dsp
-Updated: 2026-07-19
+Updated: 2026-07-20
 Contract: `085`
 Roadmap: `g10.031`
 
@@ -21,8 +21,8 @@ Initial product range:
 
 - creative expansion only
 - core spectral comparator ratios: `4x`, `8x`, and `16x`
-- next cyclic candidate ratios: identity, `2x`, `4x`, and `8x`; `16x` is a
-  rejection-boundary probe
+- retained cyclic comparator ratios: identity, `2x`, `4x`, and `8x`; explicit
+  cyclic implementation is closed
 - planned routed range: `1x` through `100x`, currently paused
 - primary design point: `8x`
 - ratios above `100x`: future texture/freeze work, not initial scope
@@ -31,6 +31,40 @@ Initial product range:
 output/input ratio and explicit target frame count; a consuming UI may display
 percent or resulting duration. Target frames are authoritative; the ratio is
 derived or validated against them, and a mismatch is an invalid request.
+
+## Source-Triangulation Reassessment
+
+Batch 31.16 reopens docs-only `Dream` research by explicit operator decision.
+Pinned end-to-end study of PaulXStretch 1.6.0, CDP8 `SPECTSTR`, and Potenza
+changes the architecture evidence:
+
+- neutral PaulXStretch uses long-window magnitude analysis, deliberate input
+  phase loss, new stochastic phase per output frame, and frame crossfade
+- the retained PaulX default disables onset handling and optional spectral
+  processors; continuous phase recurrence and magnitude evolution do not own
+  its preferred sound
+- CDP interpolates amplitude and instantaneous-frequency analysis frames, then
+  optionally perturbs lower-energy frequency tracks before phase-vocoder
+  synthesis; this is a separate `Spectral` owner
+- Potenza confirms that Akai-style cyclic colour comes from two unit-rate
+  waveform grains with compressed anchor advance; it does not supply pitch,
+  stereo, exact-length, or similarity-search ownership
+
+The rejected `DiffuseSpectral` brief was not a direct test of the PaulX path.
+It added an instantaneous-frequency carrier, correlated diffusion,
+log-magnitude evolution, and a different overlap topology. The two
+continuous-excitation replacements moved farther from deliberate per-frame
+phase forgetting. Those candidates stay rejected, but they do not close the
+new source-backed family.
+
+Select `RenewalSpectral` as the next docs-only complete brief. It owns neutral
+`Dream` at `4x`, `8x`, and `16x` through one long-window magnitude view,
+deterministic frame phase renewal, bounded frame combination, exact crop, and a
+new Signal-owned linked-channel excitation law. It does not own `Spectral`,
+`Rough`, `Cyclic`, `Cloud`, routing, or blends.
+
+The canonical source study is
+[Creative Stretch Source Triangulation](../research/specimen-dossiers/creative-stretch-source-triangulation.md).
 
 ## Range-Owner Reassessment
 
@@ -207,10 +241,10 @@ same exact target frame count.
 
 | Ratio | Current owner state | Product intent |
 | --- | --- | --- |
-| above `1x` to `8x` | similarity-aligned cyclic brief frozen; no implementation | commanded Akai-style repetition |
+| above `1x` to `8x` | cyclic owner closed; no implementation | commanded Akai-style repetition |
 | `1x` to `2x` | coherent contribution retained, not creatively admitted | future source-readable lower range |
 | `2x` to `4x` | overlap paused | no automatic route |
-| `4x` to `16x` | no owner | `Dream`/`Spectral`/`Rough` research targets only |
+| `4x` to `16x` | `RenewalSpectral` brief pending; no implementation | neutral `Dream` research only |
 | `16x` to `32x` | overlap closed | no automatic route |
 | `32x` to `100x` | cloud owner closed | future texture research only |
 
@@ -380,15 +414,17 @@ can be features. This study does not reopen the failed phase-vocoder successor
 or relax `OfflineHighQuality` promotion rules.
 
 The evidence still supports the creative product intent, but not the original
-automatic range router. All three spectral fixed-ratio candidates are rejected
-and deleted. Core `Dream`/`Spectral`/`Rough` ownership is paused until new
-complete-system evidence changes the bet.
+automatic range router. All three prior spectral fixed-ratio candidates are
+rejected and deleted. Batch 31.16 supplies new source-backed evidence for one
+materially different neutral `Dream` family. It does not reopen the deleted
+branches or admit candidate DSP.
 
 The explicit cyclic reserve still has operator value and a retained comparator,
 but both complete owners are rejected and deleted. Batch 31.15 found no third
 materially different, source-backed whole-renderer path. `Cyclic` is closed
-with no promotion. `Dream`, `Spectral`, `Rough`, `Cloud`, automatic routing,
-dynamic ratio, cache, and product integration remain paused.
+with no promotion. `Spectral`, `Rough`, `Cloud`, automatic routing, dynamic
+ratio, cache, and product integration remain paused. `Dream` is open only for
+the docs-only `RenewalSpectral` brief.
 
 ## Sources
 
@@ -415,6 +451,6 @@ dynamic ratio, cache, and product integration remain paused.
 
 ## Next Task
 
-No creative implementation batch is ready. Keep `g10.031` paused. Reopen only
-from new complete-system evidence for one owner or an explicit operator decision
-to start a separate creative research program.
+Run Batch 31.17 only. Freeze one complete `RenewalSpectral` renderer brief from
+the source-triangulation decision. Do not implement DSP, restore a rejected
+branch, or reopen another character or product surface.

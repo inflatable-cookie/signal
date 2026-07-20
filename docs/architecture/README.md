@@ -1,7 +1,7 @@
 # Architecture
 
 Status: active
-Updated: 2026-07-19
+Updated: 2026-07-20
 
 ## Why this section matters now
 
@@ -37,6 +37,7 @@ Keep milestone sequencing in `roadmaps/`.
 
 ## Next Task
 
-Keep the `g10.030` transparent successor program closed. `g10.031` Batch 31.15
-also closed explicit `Cyclic` without promotion. No creative implementation
-batch is ready; keep later owners and product routing closed.
+Keep the `g10.030` transparent successor program closed. Run `g10.031` Batch
+31.17 only: freeze one complete docs-only `RenewalSpectral` brief from the
+pinned creative source triangulation. Keep candidate implementation, other
+creative owners, and product routing closed.
