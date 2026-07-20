@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: active creative candidate; Batch 31.23 ready
+Status: creative evidence reassessment; Batch 31.24 ready
 Updated: 2026-07-20
 
 ## Why this generation matters now
@@ -100,8 +100,14 @@ The 2026-07-19 consolidation reset is authoritative.
   correction or rerun. Its DSP remains untested. Batch 31.22 froze
   `VarianceCompensatedRenewalSpectral` as fresh complete authority and made
   compile completion a construction receipt before one-shot structural
-  admission. Batch 31.23 is ready. Other characters, routing, product exposure,
-  and rejected branches remain closed or paused.
+  admission. Batch 31.23 compiled and passed seven structural tests. Its
+  synthetic command returned green, but pre-listening review found missing
+  impulse-train crest, secondary-region, exact-lag autocorrelation, and full
+  discontinuity assertions. The receipt is invalid. The unopened listening
+  pack and isolated candidate were deleted without repair or rerun. The
+  topology remains untested. Batch 31.24 is ready for docs-only
+  evidence-integrity reassessment. Other characters, routing, product
+  exposure, and rejected branches remain closed or paused.
 - The 2026-07-20 lifecycle reconciliation closes stale `g10.001` and
   `g10.003` active markers. It also records that Signal's `g10.017` capture and
   live-monitor implementation landed; that roadmap is paused only on explicit
@@ -176,10 +182,9 @@ Do not start Loophole or Chorus planning from Signal internals.
 - `g10.030` `complete`
   - stretch consolidated; candidate families closed; frozen baseline retained
 - `g10.031` `active`
-  - PaulX-like neutral `Dream` remains the product goal; the first
-    compensated-renewal implementation failed before DSP execution,
-    variance-compensated-renewal candidate authority is frozen, and explicit
-    `Cyclic` stays closed
+  - PaulX-like neutral `Dream` remains the product goal; Batch 31.23 produced
+    no valid synthetic or listening decision, evidence reassessment is ready,
+    and explicit `Cyclic` stays closed
 
 ## Stretch Boundary
 
@@ -208,15 +213,16 @@ passed structural admission but failed its first crest row and was deleted.
 Matching PaulX synthetics later showed that the old absolute crest ceiling did
 not describe the preferred reference. The complete compensated-renewal brief
 was implemented once, but its compile-only validation failed before renderer
-execution and the candidate was deleted. The DSP topology remains untested.
-`VarianceCompensatedRenewalSpectral` is now the fresh complete candidate
-authority.
+execution and the candidate was deleted. The fresh variance-compensated
+implementation later produced an invalid synthetic receipt because required
+assertions were absent. It was deleted before listening. The DSP topology
+remains untested.
 Creative stretch still has no renderer, public API, harness surface, or product
 route on `main`.
 
 ## Next Task
 
-Run `g10.031` Batch 31.23 only. Implement the frozen
-`VarianceCompensatedRenewalSpectral` brief once in its named disposable
-worktree. Keep `g10.028`, routing, product exposure, cross-repo work, and
-candidate surfaces on `main` paused.
+Run `g10.031` Batch 31.24 only. Reconcile the invalid Batch 31.23 synthetic
+receipt and freeze complete evidence ownership before deciding whether another
+candidate brief is warranted. Keep `g10.028`, routing, product exposure,
+cross-repo work, and candidate surfaces on `main` paused.

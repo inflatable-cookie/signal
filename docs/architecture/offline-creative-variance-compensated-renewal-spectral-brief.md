@@ -1,6 +1,6 @@
 # Offline Creative VarianceCompensatedRenewalSpectral Renderer Brief
 
-Status: frozen; isolated candidate ready
+Status: frozen; isolated candidate rejected at evidence-integrity audit
 Owner: dsp
 Updated: 2026-07-20
 Contract: `085`
@@ -489,6 +489,28 @@ Do not admit a public character enum, `motion`, `detail`, cache schema,
 artifact surface, report mode, runtime route, pitch path, dynamic ratio,
 another creative character, router, Loophole, or Chorus integration.
 
+## Batch 31.23 Result
+
+The isolated implementation compiled and was frozen at local checkpoint
+`2548c27947b28a59a265cf1bb60ca2b03455b08a`. Seven structural tests then
+passed. The synthetic test command also returned green, but review before
+listening found that its frozen assertions did not implement the complete gate:
+
+- impulse-train crest growth was not measured against its PaulX row
+- separated secondary impulse regions and peak level were not measured
+- noise autocorrelation sampled every sixteenth lag instead of taking the
+  required maximum
+- the full interior-discontinuity condition was not implemented
+
+That green receipt is invalid. The checkpoint could not be repaired or rerun
+under this brief. Long-form audio was assembled but never opened, then deleted
+with the worktree, branch, checkpoint, private module, tests, and candidate
+build state.
+
+This is an evidence-construction rejection. It establishes no DSP or listening
+result for the variance-compensated renewal topology. The PaulX-like product
+target remains open.
+
 ## Sources
 
 - [Creative Stretch Source Triangulation](../research/specimen-dossiers/creative-stretch-source-triangulation.md)
@@ -498,6 +520,6 @@ another creative character, router, Loophole, or Chorus integration.
 
 ## Next Task
 
-Run `g10.031` Batch 31.23 only. Implement this brief once in the named
-disposable worktree. Complete construction and compile validation before
-opening the one-shot structural gate.
+Run `g10.031` Batch 31.24 only. Reassess evidence construction and decide
+whether the still-untested topology warrants one fresh complete brief. Do not
+implement or rerun candidate DSP in that batch.

@@ -78,11 +78,16 @@ renderer executed. The candidate was deleted without correction or rerun. No
 candidate DSP is admitted on `main`. Batch 31.22 froze
 `VarianceCompensatedRenewalSpectral` as fresh complete authority for the same
 untested topology and separated compile construction from one-shot admission.
+Batch 31.23 compiled and passed seven structural tests. Its synthetic command
+returned green, but pre-listening review found missing impulse-train crest,
+secondary-region, exact-lag autocorrelation, and full discontinuity assertions.
+The receipt is invalid. The unopened listening pack and isolated candidate
+were deleted without repair or rerun. The topology remains untested.
 Lifecycle reconciliation closes stale `g10.001` and `g10.003` active markers.
 Signal's `g10.017` capture and live-monitor implementation is present; that
 roadmap is paused only on explicit hardware alignment and consumer evidence.
-Batch 31.23 is the only ready batch. It is one isolated
-variance-compensated-renewal candidate.
+Batch 31.24 is the only ready batch. It is a docs-only evidence-integrity
+reassessment.
 Offline artifacts still need a streaming artifact writer/cache target for full
 peak-memory closure. Mono callback-state DSP has a
 no-allocation proof, linked stereo is implemented, ratio scheduling has
@@ -209,8 +214,8 @@ Before rollover:
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the active generation front door. Run
-`g10.031` Batch 31.23 only. Implement the frozen
-`VarianceCompensatedRenewalSpectral` brief once in its named disposable
-worktree. Keep rejected candidates, the transparent successor lane, `g10.028`,
-other creative owners, routing, product exposure, cross-repo work, and
-candidate surfaces on `main` closed.
+`g10.031` Batch 31.24 only. Reconcile the invalid Batch 31.23 synthetic receipt
+and freeze complete evidence ownership before deciding whether another
+candidate brief is warranted. Keep candidate DSP, the transparent successor
+lane, `g10.028`, other creative owners, routing, product exposure, cross-repo
+work, and candidate surfaces on `main` closed.

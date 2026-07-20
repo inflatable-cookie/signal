@@ -531,6 +531,6 @@ or product exposure.
 
 ## Next Task
 
-Run Batch 31.23 only. Implement the frozen
-`VarianceCompensatedRenewalSpectral` brief once in its named disposable
-worktree. Complete compile construction before opening structural admission.
+Run Batch 31.24 only. Reassess the invalid Batch 31.23 evidence surface and
+decide whether the still-untested compensated-renewal topology warrants one
+fresh complete brief. Do not implement candidate DSP in the reassessment.

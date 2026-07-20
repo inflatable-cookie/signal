@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: active; Batch 31.22 complete, Batch 31.23 ready
+Status: active; Batch 31.23 rejected, Batch 31.24 ready
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -703,32 +703,62 @@ Authority:
 
 ## Batch 31.23 - Isolated Variance-Compensated Renewal Candidate
 
-Status: ready; isolated candidate only
+Status: complete; candidate rejected at evidence-integrity audit
 
-- [ ] create `signal-candidate-31-23` on
+- [x] create `signal-candidate-31-23` on
   `candidate/g10-031-variance-compensated-renewal`
-- [ ] implement only the private six-file
+- [x] implement only the private six-file
   `creative_variance_compensated_renewal` family and one private `lib.rs`
   declaration
-- [ ] complete construction and `effigy test compile`; allow only frozen
+- [x] complete construction and `effigy test compile`; allow only frozen
   compiler-plumbing repairs before the clean receipt
-- [ ] create and record one local compile-complete checkpoint commit; do not
+- [x] create and record one local compile-complete checkpoint commit; do not
   push it
-- [ ] run structural and hard-integrity admission once from that checkpoint
-- [ ] run the full reference-relative synthetic matrix only after structural
-  admission
-- [ ] assemble concealed long-form mono listening only after synthetic
-  admission
-- [ ] stop on the first admission miss; record one dominant cause and delete
-  the complete candidate without tuning or rerun
-- [ ] leave independent stereo blocked until an eligible listener is available
-- [ ] keep public APIs, report modes, fixtures, cache, routing, other creative
+- [x] run structural and hard-integrity admission once from that checkpoint
+- [x] run the synthetic command only after structural admission; invalidate
+  its green result when required assertions are found absent
+- [x] assemble concealed long-form mono audio, discover the invalid evidence
+  surface before listening, and delete the unopened pack
+- [x] stop without test repair, tuning, or rerun
+- [x] leave independent stereo blocked until an eligible listener is available
+- [x] keep public APIs, report modes, fixtures, cache, routing, other creative
   owners, Loophole, and Chorus unchanged
+
+Evidence:
+
+- compile-complete checkpoint:
+  `2548c27947b28a59a265cf1bb60ca2b03455b08a`
+- structural execution: seven of seven tests passed
+- synthetic execution: returned green but did not measure impulse-train crest,
+  separated secondary regions, every autocorrelation lag, or the complete
+  discontinuity condition
+- dominant cause: incomplete frozen evidence construction
+- DSP and listening result: unknown; no long-form row was heard
+- cleanup: candidate worktree, branch, checkpoint, module, tests, build state,
+  and listening assembly deleted
+
+## Batch 31.24 - Evidence-Integrity Reassessment
+
+Status: ready; docs and architecture only
+
+- [ ] reconcile the Batch 31.23 invalid green receipt without treating it as
+  candidate-quality evidence
+- [ ] audit every structural and synthetic Contract `085` condition into one
+  explicit measurement, assertion owner, and exact execution stage
+- [ ] decide whether the still-untested compensated-renewal topology warrants
+  one fresh complete candidate identity and brief
+- [ ] if retained, freeze the full executable gate surface before another
+  candidate batch becomes ready; leave no sampled substitute for an exact gate
+- [ ] if closed, record the source-backed architectural reason without claiming
+  that Batch 31.23 tested the DSP
+- [ ] keep candidate DSP, long-form audio, public APIs, cache, routing,
+  Loophole, and Chorus unchanged
+- [ ] stop after the docs decision is validated, committed, and reported
 
 ## Later Batches
 
-Closed or paused without promotion. Work after Batch 31.23 requires a complete
-candidate admission decision:
+Closed or paused without promotion. Work after Batch 31.24 requires a valid
+candidate-admission decision:
 
 - minimal production admission
 - coherent/diffusive overlap
@@ -764,13 +794,14 @@ candidate admission decision:
 - [x] one isolated compensated-renewal implementation reached a terminal
   compile-only decision without executing DSP
 - [x] one fresh complete variance-compensated-renewal brief frozen
+- [x] one isolated variance-compensated-renewal implementation reached a
+  terminal evidence-integrity rejection without entering `main`
 - [ ] long-form mono `Dream` listening reaches a promotion decision
 - [ ] linked-stereo listening reaches a promotion decision
 - [x] no private renderer or product surface entered `main`
 
 ## Next Task
 
-Run Batch 31.23 only. Implement the frozen
-`VarianceCompensatedRenewalSpectral` brief once in its named disposable
-worktree. Complete construction and compile validation before opening the
-one-shot structural gate.
+Run Batch 31.24 only. Reconcile the invalid synthetic receipt and freeze a
+complete assertion-owner map before deciding whether a fresh candidate brief
+is warranted. Do not implement or rerun candidate DSP in that batch.
