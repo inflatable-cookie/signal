@@ -1,6 +1,6 @@
 # 017 - Recording V1 Input Capture To Timeline
 
-Status: in-progress (capture + Aura record flow landed; monitoring deferred)
+Status: paused; Signal implementation landed, hardware alignment evidence pending
 Owner: core-product
 Created: 2026-06-11
 Depends on: g10.016
@@ -18,7 +18,7 @@ latency discipline g10.016 provides.
 - [x] input device enumeration + negotiated input streams (mirror the output contract; dedicated owner threads)
 - [x] RT capture path: input callback → lock-free ring → non-RT writer thread → WAV (hound), no allocation in the callback
 - [x] latency-aligned placement: captured audio lands on the timeline compensated by reported input+output latency
-- [ ] monitoring: input → output passthrough through the render plane with a monitor gain node
+- [x] monitoring: input → output passthrough through the render plane with a monitor gain node
 - [x] pulse wiring: arm/record drives capture sessions; takes become media assets + clips (host-composite over ToggleTrackArm + ImportMediaAsset/PlaceMediaAssetOnTrack; deeper take/commit vocabulary stays in pulse-recording for later)
 - [x] Aura: record button works end-to-end (arm focused track, count-in optional later)
 
@@ -26,21 +26,21 @@ latency discipline g10.016 provides.
 
 ### Batch 17.1 - Input Streams
 
-- [ ] input contract + cpal input backend + enumeration
+- [x] input contract + cpal input backend + enumeration
 
 ### Batch 17.2 - Capture
 
-- [ ] ring + writer + WAV; latency-aligned placement
+- [x] ring + writer + WAV; latency-aligned placement
 
 ### Batch 17.3 - Monitoring And Product Wiring
 
-- [ ] monitor path; pulse arm/commit; Aura record flow
+- [x] monitor path; pulse arm/commit; Aura record flow
 
 ## Acceptance Criteria
 
 - [ ] recorded take plays back aligned with a reference click within a frame tolerance
-- [ ] capture callback allocation-free under the counting allocator
-- [ ] record→stop→clip-on-timeline works in Loophole
+- [x] capture callback allocation-free under the counting allocator
+- [x] record→stop→clip-on-timeline works in Loophole
 
 ## Progress (2026-06-11)
 
@@ -98,6 +98,21 @@ latency discipline g10.016 provides.
 - Deferred: live input monitoring through the render plane (named
   follow-up), count-in (g10.019), click-alignment hardware listening test.
 
+## Reconciliation (2026-07-20)
+
+The Signal monitoring follow-up landed after this progress note.
+`CaptureSession` can tee input into a monitor sink, `MonitorSession` owns
+monitor-only capture, and the render plane owns a bounded live-input ring and
+monitor source. Focused tests cover monitoring while transport is stopped,
+capture/monitor handoff, channel conversion, underrun silence, and bounded
+backlog trimming.
+
+Signal implementation is no longer in progress. The remaining acceptance seam
+is the recorded-take hardware click-alignment check and any consumer-owned
+workflow evidence. Keep the milestone paused until that evidence is explicitly
+requested; do not infer cross-repo work.
+
 ## Next Task
 
-g10.018 (disk streaming) right behind — recordings make long files routine.
+Paused on explicit hardware/product evidence. `g10.018` and `g10.019` already
+landed. No Signal implementation batch is ready from this roadmap.

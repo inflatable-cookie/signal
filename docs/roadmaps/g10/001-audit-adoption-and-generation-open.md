@@ -1,6 +1,6 @@
 # 001 - Audit Adoption And Generation Open
 
-Status: active
+Status: complete
 Owner: core-product
 Created: 2026-06-11
 Depends on: none
@@ -24,7 +24,7 @@ consolidate, and defer rebuilds until a product feature pulls them.
 
 - [x] open `g10` as the active generation
 - [x] compile one roadmap per remediation lane with explicit dependencies
-- [ ] keep the audit document referenced as the evidence base for every cut
+- [x] keep the audit document referenced as the evidence base for every cut
 
 ## Non-Goals
 
@@ -53,5 +53,5 @@ consolidate, and defer rebuilds until a product feature pulls them.
 
 ## Next Task
 
-g10.002 (production-path declick and correctness) — user-audible fixes lead
-the generation.
+Complete. The historical next milestone, `g10.002`, and the later remediation
+runway landed. Use the `g10` front door for current routing.

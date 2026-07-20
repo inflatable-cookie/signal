@@ -68,6 +68,10 @@ listening gates. Batch 31.19 found the same unowned cross-bin crest mechanism
 as the earlier `DiffuseSpectral` failure and no qualifying source-backed
 complete replacement. Neutral `Dream` closed. No candidate DSP is admitted on
 `main`, and `g10.031` is complete without a renderer.
+Lifecycle reconciliation closes stale `g10.001` and `g10.003` active markers.
+Signal's `g10.017` capture and live-monitor implementation is present; that
+roadmap is paused only on explicit hardware alignment and consumer evidence.
+No execution batch is ready.
 Offline artifacts still need a streaming artifact writer/cache target for full
 peak-memory closure. Mono callback-state DSP has a
 no-allocation proof, linked stereo is implemented, ratio scheduling has
@@ -194,6 +198,7 @@ Before rollover:
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the active generation front door. No
-stretch batch is ready. Select the next Signal priority explicitly. Keep
-rejected candidates, the transparent successor lane, `g10.028`, creative
-owners, routing, product exposure, and render-plane integration closed.
+execution batch is ready after lifecycle reconciliation. Select the next
+Signal priority explicitly. Keep rejected candidates, the transparent
+successor lane, `g10.028`, creative owners, routing, product exposure, and
+cross-repo work closed.

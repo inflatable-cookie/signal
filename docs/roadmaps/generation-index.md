@@ -35,6 +35,10 @@ Updated: 2026-07-20
   same unowned independent-phase crest mechanism as the first diffusive
   candidate and no qualifying complete replacement. Neutral `Dream` and
   `g10.031` closed without renderer admission.
+- Lifecycle reconciliation then closed stale `g10.001` and `g10.003` active
+  markers and paused `g10.017` on its remaining hardware evidence. Signal's
+  capture and live-monitor implementation is present. No execution batch is
+  ready.
 - audit evidence: `chorus/research/2026-06-11-signal-deep-audit.md` (phase
   one) and `docs/research/2026-06-11-post-demolition-assessment.md` (phase
   two)
@@ -74,5 +78,6 @@ If that cleanup has not happened, stay in the current generation and finish the 
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the current active-generation front door.
-No stretch batch is ready. Select the next Signal priority explicitly; keep the
-transparent and creative stretch implementation programs closed.
+No execution batch is ready after lifecycle reconciliation. Select the next
+Signal priority explicitly; keep transparent and creative stretch
+implementation closed.

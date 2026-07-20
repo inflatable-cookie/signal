@@ -1,6 +1,6 @@
 # 003 - Output Stream Hardening And Real Device Enumeration
 
-Status: active
+Status: complete
 Owner: core-product
 Created: 2026-06-11
 Depends on: g10.002
@@ -40,7 +40,7 @@ contract changes that make those fixes possible land here.
       platforms until one exists
 - [x] device enumeration via cpal (names, supported configs, default device)
       replacing the system_profiler path
-- [ ] retire `signal-hardware-coreaudio` once no consumer needs it
+- [x] retire `signal-hardware-coreaudio` once no consumer needs it
 - [x] smoke-test coverage for the backend (skippable when no device present)
 
 ## Non-Goals
@@ -52,27 +52,27 @@ contract changes that make those fixes possible land here.
 
 ### Batch 3.1 - Negotiation And Honest Reporting
 
-- [ ] supported-config matching with deterministic fallback order
-- [ ] negotiated config on the handle; error type for "no usable config"
-- [ ] CI-skippable open/close smoke test
+- [x] supported-config matching with deterministic fallback order
+- [x] negotiated config on the handle; error type for "no usable config"
+- [x] CI-skippable open/close smoke test
 
 ### Batch 3.2 - Send Soundness
 
-- [ ] macOS-gated `unsafe impl` with safety comment, portable path or
-      explicit unsupported-platform error
+- [x] macOS-gated `unsafe impl` with safety comment, portable path or
+  explicit unsupported-platform error
 
 ### Batch 3.3 - Enumeration Cutover
 
-- [ ] cpal-backed device inventory in `signal-hardware` (or the cpal crate)
-- [ ] migrate any consumers off `signal-hardware-coreaudio`; delete the crate
-- [ ] workspace build + full test gate
+- [x] cpal-backed device inventory in `signal-hardware` (or the cpal crate)
+- [x] migrate any consumers off `signal-hardware-coreaudio`; delete the crate
+- [x] workspace build + full test gate
 
 ## Acceptance Criteria
 
-- [ ] requesting 48k/stereo on a default device opens and reports the actual
+- [x] requesting 48k/stereo on a default device opens and reports the actual
       negotiated values
-- [ ] no `system_profiler` subprocess anywhere in the workspace
-- [ ] Loophole's Aura host can read negotiated config (verified by a
+- [x] no `system_profiler` subprocess anywhere in the workspace
+- [x] Loophole's Aura host can read negotiated config (verified by a
       host-side follow-up in chorus g11)
 
 ## Risks and Mitigations
@@ -84,7 +84,7 @@ contract changes that make those fixes possible land here.
 
 ## Evidence Requirements
 
-- [ ] smoke test output on real hardware recorded in the progress log
+- [x] smoke test output on real hardware recorded in the progress log
 
 ## Progress (2026-06-11)
 
@@ -111,7 +111,15 @@ contract changes that make those fixes possible land here.
   its only consumer is signal-host-local's boot path, which g10.005
   collapses; deleting it rides that packet.
 
+## Closeout (2026-07-20)
+
+The deferred retirement landed. The workspace contains no
+`signal-hardware-coreaudio` crate or `system_profiler` execution path.
+`signal-hardware-cpal` owns real device enumeration, and
+`signal-host-local` uses the cpal-backed hardware surface. The packet is
+complete; its old next-task pointer is historical.
+
 ## Next Task
 
-g10.004 (hosting demolition) — with the real path hardened, remove the fake
-one. g10.005 finishes this packet's coreaudio retirement.
+Complete. `g10.004` and `g10.005` landed the historical follow-on work. Use the
+`g10` front door for current routing.

@@ -74,7 +74,8 @@ strict lane.
 
 ## Next Task
 
-No stretch batch is ready. Use the `g10` front door to select the next Signal
-priority explicitly. Keep rejected stretch owners and `g10.028` closed unless
-separately reopened. Only drop into `specs/` when a strict lane is explicitly
-reopened.
+No execution batch is ready. Use the `g10` front door to choose explicitly
+between recording hardware evidence, streaming artifact architecture, or a
+concrete rebuild-on-demand item. Keep rejected stretch owners, `g10.028`, and
+cross-repo work closed unless separately reopened. Only drop into `specs/` when
+a strict lane is explicitly reopened.

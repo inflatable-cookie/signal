@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: active
+Status: active planning gate; no ready execution batch
 Updated: 2026-07-20
 
 ## Why this generation matters now
@@ -89,6 +89,11 @@ The 2026-07-19 consolidation reset is authoritative.
   renderer remained. Neutral `Dream` closed without admission. Other
   characters, routing, product exposure, and rejected branches remain closed
   or paused.
+- The 2026-07-20 lifecycle reconciliation closes stale `g10.001` and
+  `g10.003` active markers. It also records that Signal's `g10.017` capture and
+  live-monitor implementation landed; that roadmap is paused only on explicit
+  hardware alignment and consumer workflow evidence. No feature batch became
+  ready through this correction.
 - `g10.028` RealtimePreview source-fill and all render-plane integration remain
   paused.
 
@@ -96,12 +101,12 @@ Do not start Loophole or Chorus planning from Signal internals.
 
 ## Milestone Map
 
-- `g10.001` `active`
-  - audit adoption and generation open
+- `g10.001` `complete`
+  - audit adoption and generation open completed
 - `g10.002` `complete`
   - render-plane declick and playback correctness
-- `g10.003` `active`
-  - output stream hardening and real device enumeration
+- `g10.003` `complete`
+  - output stream hardening, cpal enumeration, and legacy CoreAudio retirement
 - `g10.004` `complete`
   - hosting-domain demolition
 - `g10.005` `complete`
@@ -128,8 +133,9 @@ Do not start Loophole or Chorus planning from Signal internals.
   - WYSIWYG bounce on the render plane
 - `g10.016` `complete`
   - output-time honesty and device lifecycle
-- `g10.017` `in-progress`
-  - recording v1 input capture to timeline; monitoring deferred
+- `g10.017` `paused`
+  - recording capture and live monitoring landed; hardware alignment evidence
+    remains an explicit operator gate
 - `g10.018` `complete`
   - disk-streaming clip sources
 - `g10.019` `complete`
@@ -190,6 +196,8 @@ the crest-ownership reassessment also closed neutral `Dream`.
 
 ## Next Task
 
-No stretch batch is ready. Select the next Signal priority explicitly from this
-generation front door. Keep `g10.028`, creative DSP, routing, product exposure,
-and render-plane integration paused unless separately reopened.
+No execution batch is ready. The operator must explicitly choose the next
+Signal priority: finish `g10.017` hardware evidence, reopen `g10.023` around a
+streaming artifact writer/cache contract, or pull a concrete demand from the
+post-`g10` backlog. Keep `g10.028`, creative DSP, routing, product exposure,
+and cross-repo work paused unless separately reopened.
