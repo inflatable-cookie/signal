@@ -31,6 +31,7 @@ strict lane.
 - Rejected offline stretch successor: [architecture/offline-time-stretch-successor-brief.md](./architecture/offline-time-stretch-successor-brief.md)
 - Non-phase-vocoder feasibility: [architecture/offline-time-stretch-non-phase-vocoder-feasibility.md](./architecture/offline-time-stretch-non-phase-vocoder-feasibility.md)
 - Creative time-stretch study: [architecture/offline-creative-time-stretch-study.md](./architecture/offline-creative-time-stretch-study.md)
+- Frozen creative VerifiedSourceRelativeRenewalSpectral brief: [architecture/offline-creative-verified-source-relative-renewal-spectral-brief.md](./architecture/offline-creative-verified-source-relative-renewal-spectral-brief.md)
 - Rejected-at-vector-proof creative SourceRelativeRenewalSpectral brief: [architecture/offline-creative-source-relative-renewal-spectral-brief.md](./architecture/offline-creative-source-relative-renewal-spectral-brief.md)
 - Rejected creative AuditedVarianceCompensatedRenewalSpectral brief: [architecture/offline-creative-audited-variance-compensated-renewal-spectral-brief.md](./architecture/offline-creative-audited-variance-compensated-renewal-spectral-brief.md)
 - Evidence-rejected creative VarianceCompensatedRenewalSpectral brief: [architecture/offline-creative-variance-compensated-renewal-spectral-brief.md](./architecture/offline-creative-variance-compensated-renewal-spectral-brief.md)
@@ -78,8 +79,8 @@ strict lane.
 
 ## Next Task
 
-Run `g10.031` Batch 31.28 only. Reconcile the incorrect frozen `mix64(1)`
-vector with the normative formula, audit every exact construction vector, and
-either freeze fresh complete candidate authority under a new identity or close
-the topology. Do not implement candidate DSP in the same batch. Only drop into
-`specs/` when a strict lane is explicitly reopened.
+Run `g10.031` Batch 31.29 only. Create `signal-candidate-31-29` on
+`candidate/g10-031-verified-source-relative-renewal`, implement the verified
+brief fresh, complete construction `1/1`, freeze one checkpoint, and run gates
+in order. Keep candidate DSP off `main`; do not push. Only drop into `specs/`
+when a strict lane is explicitly reopened.

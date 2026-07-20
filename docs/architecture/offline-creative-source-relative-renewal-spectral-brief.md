@@ -363,7 +363,6 @@ other character, router, Loophole, or Chorus integration.
 
 ## Next Task
 
-Run Batch 31.28 only. Reconcile the incorrect frozen vector with the normative
-formula, audit every exact construction vector, and either freeze fresh
-complete candidate authority under a new identity or close the topology. Do
-not implement candidate DSP in the same batch.
+Historical only. Batch 31.28 completed the vector audit and froze
+`VerifiedSourceRelativeRenewalSpectral` as fresh authority. Run Batch 31.29
+from that brief; do not recover or patch this rejected candidate.

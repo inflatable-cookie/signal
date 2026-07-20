@@ -1,10 +1,11 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: active PaulX-like `Dream`; source-relative candidate rejected at vector proof
+Status: active PaulX-like `Dream`; verified source-relative authority frozen
 Owner: core-product
 Updated: 2026-07-20
 Related contracts: `046`, `048`, `084`
 Related architecture: `docs/architecture/offline-creative-time-stretch-study.md`,
+`docs/architecture/offline-creative-verified-source-relative-renewal-spectral-brief.md`,
 `docs/architecture/offline-creative-source-relative-renewal-spectral-brief.md`,
 `docs/architecture/offline-creative-audited-variance-compensated-renewal-spectral-brief.md`,
 `docs/architecture/offline-creative-variance-compensated-renewal-spectral-brief.md`,
@@ -437,6 +438,17 @@ evidence-vector defect: the normative `mix64(1)` formula returned
 checkpoint. The candidate was rejected and deleted before synthetic or
 listening gates. This is no acoustic or stereo result.
 
+Batch 31.28 independently derived the counter table in Python and Ruby. Every
+tag, both `mix64(1)` intermediate rounds, finalizer control, full address
+stage, and high-53-bit numerator agreed. The rejected candidate had only one
+handwritten exact counter assertion; no second mismatch exists to reconcile.
+
+Fresh authority is `VerifiedSourceRelativeRenewalSpectral`. Its DSP,
+structural, synthetic, mono, stereo, cleanup, and admission boundaries are
+unchanged. Candidate tests must own all exact counter literals once in a named
+table; construction validates that table before checkpointing, and later tests
+may not carry duplicate handwritten values. No candidate DSP entered `main`.
+
 ## Initial Promotion Sequence
 
 1. Comparator capture and target-character freeze. Complete.
@@ -500,7 +512,10 @@ listening gates. This is no acoustic or stereo result.
     after `14/15` passes.
 28. Reconcile executable vector ownership, audit every exact construction
     vector, and either freeze fresh complete candidate authority or close the
-    topology. Ready; docs and architecture only.
+    topology. Complete; `VerifiedSourceRelativeRenewalSpectral` frozen.
+29. Implement the verified brief once in its named disposable worktree,
+    complete construction `1/1`, freeze one checkpoint, then run `15`
+    structural and `9` synthetic owners. Ready.
 
 `Spectral`/`Rough`, coherent overlap, `LayeredCloud`, the upper overlap, dynamic
 ratios, and automatic routing still require separate reopening decisions backed
@@ -523,8 +538,8 @@ The passed mono renewal core remains active architectural evidence; the failed
 stereo law does not. The first `SourceRelativeRenewalSpectral` checkpoint is
 also rejected and deleted after a frozen `mix64` vector typo stopped structural
 admission at `14/15`. Its renderer never reached synthetic or listening
-evidence. Native left/right relation ownership remains untested architecture,
-not candidate authority.
+evidence. `VerifiedSourceRelativeRenewalSpectral` is now the sole complete
+candidate authority. Native left/right relation ownership remains untested.
 
 No public Rust enum, renderer, harness mode, fixture, artifact schema, runtime
 route, or product-facing claim entered `main`. `OfflineHighQuality` remains
@@ -532,7 +547,8 @@ byte-exact and Contract `084` remains closed. No creative renderer is admitted.
 
 ## Next Task
 
-Run Batch 31.28 only. Reconcile the incorrect executable vector with the
-normative formula, audit every exact construction vector, and either freeze
-fresh complete authority under a new candidate identity or close the topology.
-Do not implement candidate DSP in the same batch.
+Run Batch 31.29 only. Create `signal-candidate-31-29` on
+`candidate/g10-031-verified-source-relative-renewal`, implement the verified
+brief fresh, complete construction `1/1`, freeze one checkpoint, then run `15`
+structural and `9` synthetic owners in order. Stop on the first miss. Do not
+push.

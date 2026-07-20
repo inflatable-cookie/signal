@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: active; Batch 31.27 rejected at structural exact-vector proof
+Status: active; Batch 31.28 complete, Batch 31.29 ready
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -889,25 +889,64 @@ Evidence:
 
 ## Batch 31.28 - Exact-Vector Evidence Reassessment
 
-Status: ready; docs and architecture only
+Status: complete; verified fresh authority frozen
 
-- [ ] derive the `mix64(1)` vector independently from the normative wrapping
+- [x] derive the `mix64(1)` vector independently from the normative wrapping
   expression and record one authoritative value
-- [ ] audit every frozen literal exact-vector assertion against its owning
+- [x] audit every frozen literal exact-vector assertion against its owning
   formula before another implementation is authorized
-- [ ] classify the Batch 31.27 result as evidence-construction failure without
+- [x] classify the Batch 31.27 result as evidence-construction failure without
   claiming a DSP, synthetic, mono, or stereo outcome
-- [ ] either freeze one fresh complete source-relative candidate brief under a
+- [x] either freeze one fresh complete source-relative candidate brief under a
   new worktree, branch, module, prefix, and checkpoint identity or close the
   topology
-- [ ] preserve terminal construction, structural, synthetic, listening,
+- [x] preserve terminal construction, structural, synthetic, listening,
   cleanup, and minimal-admission order
-- [ ] change documentation only; do not recover Batch 31.27 source or add DSP,
+- [x] change documentation only; do not recover Batch 31.27 source or add DSP,
   tests, harness, fixture, API, route, cache, Loophole, or Chorus surfaces
+
+Evidence:
+
+- independent implementations: Python integer arithmetic and Ruby integer
+  arithmetic
+- audited tags: `RNWFRAME`, `RNWBIN00`, `RNWBASE0`, `RNWTEST0`
+- audited controls: `mix64(0)`, both `mix64(1)` rounds and finalizer,
+  `mix64(u64::MAX)`
+- audited address: seed `0x0123456789abcdef`, frame `7`, bin `11`, base stream;
+  both hashes, rotation, outer input, final address, and high-53 numerator
+- exact-literal inventory: the rejected candidate contained only the failed
+  handwritten `mix64(1)` vector
+- decision: retain the architecture under fresh verified identity
+
+Authority:
+
+- `docs/architecture/offline-creative-verified-source-relative-renewal-spectral-brief.md`
+
+## Batch 31.29 - Isolated Verified Source-Relative Candidate
+
+Status: ready; isolated implementation only
+
+- [ ] create `signal-candidate-31-29` on
+  `candidate/g10-031-verified-source-relative-renewal`
+- [ ] implement only the fresh private six-file
+  `creative_verified_source_relative_renewal` family and one private `lib.rs`
+  declaration; do not recover Batch 31.27 source
+- [ ] define the audited counter literals once in `COUNTER_VECTORS`; prohibit
+  duplicate handwritten counter values
+- [ ] complete `effigy test compile` and exactly `1/1` construction owner
+- [ ] create and record one immutable local checkpoint; do not push it
+- [ ] run exactly `15/15` structural owners once from that checkpoint
+- [ ] run exactly `9/9` synthetic owners only after structural admission
+- [ ] repeat concealed mono and same-source stereo admission only after all
+  objective owners pass
+- [ ] stop on the first miss and delete the complete candidate without tuning,
+  repair, or rerun
+- [ ] keep public APIs, reports, fixtures, cache, routing, other characters,
+  Loophole, and Chorus unchanged
 
 ## Later Batches
 
-Closed or paused without promotion. Work after Batch 31.27 requires a valid
+Closed or paused without promotion. Work after Batch 31.28 requires a valid
 candidate-admission decision:
 
 - minimal production admission
@@ -953,11 +992,12 @@ candidate-admission decision:
 - [x] one complete source-relative stereo successor brief is frozen
 - [x] one isolated source-relative candidate reached a terminal structural
   evidence decision without entering `main`
+- [x] one verified fresh source-relative candidate brief is frozen
 - [x] no private renderer or product surface entered `main`
 
 ## Next Task
 
-Run Batch 31.28 only. Reconcile the incorrect `mix64(1)` assertion with the
-normative formula, audit every exact construction vector, and either freeze
-fresh complete candidate authority under a new identity or close the topology.
-Do not implement candidate DSP in the same batch.
+Run Batch 31.29 only. Create `signal-candidate-31-29` on
+`candidate/g10-031-verified-source-relative-renewal`, implement the verified
+brief fresh, complete construction `1/1`, freeze one checkpoint, and run gates
+in order. Stop on the first miss; do not push.

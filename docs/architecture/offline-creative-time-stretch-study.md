@@ -1,6 +1,6 @@
 # Offline Creative Time-Stretch Study
 
-Status: active PaulX-like `Dream`; source-relative candidate rejected at vector proof
+Status: active PaulX-like `Dream`; verified source-relative authority frozen
 Owner: dsp
 Updated: 2026-07-20
 Contract: `085`
@@ -511,6 +511,12 @@ contained a transposed hexadecimal vector. The implementation matched the
 normative formula. No synthetic or listening result exists. The candidate was
 deleted without assertion repair or rerun.
 
+Batch 31.28 independently reproduced every counter/tag/address vector in
+Python and Ruby, found no second handwritten exact counter assertion, and
+froze fresh `VerifiedSourceRelativeRenewalSpectral` authority. Exact literals
+now have one named table owner validated during construction. The renderer and
+stereo law remain acoustically untested.
+
 ## Sources
 
 - [REAPER time-stretch engines](https://www.reaper.fm/about.php)
@@ -539,6 +545,6 @@ deleted without assertion repair or rerun.
 
 ## Next Task
 
-Run Batch 31.28 only. Audit exact construction-vector ownership and either
-freeze fresh complete source-relative candidate authority under a new identity
-or close the topology. Do not implement candidate DSP in the same batch.
+Run Batch 31.29 only. Implement the verified source-relative brief once in
+`signal-candidate-31-29`, complete construction, freeze one checkpoint, and
+run gates in order. Keep candidate DSP off `main`; do not push.

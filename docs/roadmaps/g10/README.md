@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: source-relative candidate rejected; vector reassessment ready
+Status: verified source-relative authority frozen; implementation ready
 Updated: 2026-07-20
 
 ## Why this generation matters now
@@ -119,7 +119,9 @@ The 2026-07-19 consolidation reset is authoritative.
   law own stereo. Batch 31.27 compiled and passed construction `1/1`, then
   failed structural admission at `14/15` because its frozen `mix64(1)` vector
   was transposed. The candidate was deleted without repair or rerun. Batch
-  31.28 exact-vector reassessment is ready. Other characters, routing, product
+  31.28 reproduced every counter vector independently and froze
+  `VerifiedSourceRelativeRenewalSpectral` with one named literal owner. Batch
+  31.29 isolated implementation is ready. Other characters, routing, product
   exposure, and rejected branches remain closed or paused.
 - The 2026-07-20 lifecycle reconciliation closes stale `g10.001` and
   `g10.003` active markers. It also records that Signal's `g10.017` capture and
@@ -195,10 +197,10 @@ Do not start Loophole or Chorus planning from Signal internals.
 - `g10.030` `complete`
   - stretch consolidated; candidate families closed; frozen baseline retained
 - `g10.031` `active`
-  - PaulX-like neutral `Dream` remains the product goal; the first
-    native-left/right source-relative checkpoint was deleted after a frozen
-    exact-vector typo stopped structural admission at `14/15`; Batch 31.28
-    evidence reassessment is ready and explicit `Cyclic` stays closed
+  - PaulX-like neutral `Dream` remains the product goal; Batch 31.28 froze
+    verified native-left/right authority after independently reproducing the
+    failed counter vector; Batch 31.29 isolated implementation is ready and
+    explicit `Cyclic` stays closed
 
 ## Stretch Boundary
 
@@ -240,13 +242,16 @@ phase relation directly. Its first isolated checkpoint passed compile and
 construction, then stopped at structural exact-vector proof because the
 frozen `mix64(1)` assertion transposed the normative result. No synthetic or
 listening result exists. The candidate was deleted.
+Batch 31.28 independently reproduced the complete counter table in Python and
+Ruby and froze fresh verified authority. The architecture remains acoustically
+untested.
 Creative stretch still has no renderer, public API, harness surface, or product
 route on `main`.
 
 ## Next Task
 
-Run `g10.031` Batch 31.28 only. Reconcile the incorrect `mix64(1)` assertion,
-audit every exact construction vector, and either freeze fresh complete
-candidate authority under a new identity or close the topology. Keep
-`g10.028`, routing, product exposure, cross-repo work, and candidate DSP on
-`main` paused.
+Run `g10.031` Batch 31.29 only. Implement
+`VerifiedSourceRelativeRenewalSpectral` once in `signal-candidate-31-29`,
+complete construction `1/1`, freeze one checkpoint, and run gates in order.
+Keep `g10.028`, routing, product exposure, cross-repo work, and candidate DSP
+on `main` paused. Do not push.

@@ -96,8 +96,10 @@ roadmap is paused only on explicit hardware alignment and consumer evidence.
 Batch 31.26 froze `SourceRelativeRenewalSpectral` without DSP. Batch 31.27
 implemented it once, passed compile and construction `1/1`, then stopped at
 structural `14/15`: its frozen `mix64(1)` vector transposed the normative
-result. The candidate was deleted without repair or rerun. Batch 31.28
-exact-vector evidence reassessment is ready.
+result. The candidate was deleted without repair or rerun. Batch 31.28 then
+reproduced the complete counter table independently and froze fresh
+`VerifiedSourceRelativeRenewalSpectral` authority. Batch 31.29 isolated
+implementation is ready.
 Offline artifacts still need a streaming artifact writer/cache target for full
 peak-memory closure. Mono callback-state DSP has a
 no-allocation proof, linked stereo is implemented, ratio scheduling has
@@ -224,8 +226,8 @@ Before rollover:
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the active generation front door. Run
-`g10.031` Batch 31.28 only: reconcile the incorrect frozen `mix64(1)` vector,
-audit every exact construction vector, and either freeze fresh complete
-candidate authority under a new identity or close the topology. Keep the
-transparent successor lane, `g10.028`, other creative owners, routing, product
-exposure, cross-repo work, and candidate DSP on `main` closed.
+`g10.031` Batch 31.29 only: implement the verified source-relative brief once
+in `signal-candidate-31-29`, complete construction, freeze one checkpoint, and
+run gates in order. Keep the transparent successor lane, `g10.028`, other
+creative owners, routing, product exposure, cross-repo work, and candidate DSP
+on `main` closed. Do not push.
