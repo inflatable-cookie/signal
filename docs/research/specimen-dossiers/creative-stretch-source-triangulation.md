@@ -1,9 +1,9 @@
 # Creative Stretch Source Triangulation
 
-Status: reviewed; PaulX-like `Dream` active after operator correction
+Status: reviewed; seed-audited PaulX-like `Dream` authority active
 Owner: dsp
 Updated: 2026-07-20
-Roadmap: `g10.031`, Batch 31.16
+Roadmap: `g10.031`, Batches 31.16 and 31.30
 
 ## Question
 
@@ -299,8 +299,35 @@ the selected creative representation and product invariant both require them.
 Every numeric gate must cite the retained comparator row or a hard safety
 boundary before implementation.
 
+## Seed Authority Reassessment
+
+Batch 31.29 passed construction and structural admission, then failed one
+`16x` replica row and two `4x` pitch rows. That does not select a range-aware
+replacement:
+
+- pinned PaulXStretch keeps one transform geometry, fractional source
+  accumulator, magnitude-renewal path, and adjacent-frame blend across the
+  retained ratios
+- Batch 31.25 and Batch 31.29 specify the same Signal mono transform, map,
+  phase address, blend, sources, and metrics
+- both briefs expose seed as a request field but freeze no candidate seed for
+  synthetic admission
+- Batch 31.29's helpers chose seed `17`; Batch 31.25's passing receipt records
+  no seed
+
+Stochastic output cannot support a comparative architecture decision when its
+request identity differs or is unknown. The Batch 31.29 checkpoint remains
+rejected under its frozen tests. Its failure does not prove that fixed
+resolution or one renewal owner fails across `4x` through `16x`.
+
+The clean-room correction is evidence ownership, not a random-seed sweep.
+`SeedAuditedSourceRelativeRenewalSpectral` retains one source-backed renewal
+path and freezes the existing audited address seed as `ADMISSION_SEED` for
+every synthetic and listening candidate render. Public seed/reroll exposure
+still requires later multi-seed character review.
+
 ## Next Task
 
-Run `g10.031` Batch 31.23 only. Implement the frozen
-`VarianceCompensatedRenewalSpectral` brief once in its named disposable
-worktree. Complete compile construction before structural admission.
+Run `g10.031` Batch 31.31 only. Implement the frozen seed-audited brief once in
+its named disposable worktree. Complete construction before structural
+admission and keep `ADMISSION_SEED` immutable.

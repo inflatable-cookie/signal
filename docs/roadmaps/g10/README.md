@@ -119,15 +119,17 @@ The 2026-07-19 consolidation reset is authoritative.
   law own stereo. Batch 31.27 compiled and passed construction `1/1`, then
   failed structural admission at `14/15` because its frozen `mix64(1)` vector
   was transposed. The candidate was deleted without repair or rerun. Batch
-  31.28 reproduced every counter vector independently and froze
-  `VerifiedSourceRelativeRenewalSpectral` with one named literal owner. Batch
-  31.29 then passed compile, construction `1/1`, and structural `15/15` from
-  immutable checkpoint `d94612dd`. Synthetic admission finished `7/9`: one
-  `16x` row split into two replica regions, and two `4x` pitch rows measured
-  about `10.96` cents outside their PaulX-relative ceilings. The candidate was
-  deleted before listening. Batch 31.30 is a docs-only ratio-range ownership
-  reassessment. Other characters, routing, product exposure, and rejected
-  branches remain closed or paused.
+  31.28 reproduced every counter vector independently and froze fresh verified
+  authority. Batch 31.29 then passed compile, construction `1/1`, and
+  structural `15/15` from immutable checkpoint `d94612dd`. Synthetic admission
+  finished `7/9`: one `16x` row split into two replica regions, and two `4x`
+  pitch rows measured about `10.96` cents outside their PaulX-relative
+  ceilings. The candidate was deleted before listening. Batch 31.30 found that
+  neither that brief nor Batch 31.25's passing mono brief froze the candidate
+  seed. It withdrew the unsupported range diagnosis and froze
+  `SeedAuditedSourceRelativeRenewalSpectral`; Batch 31.31 is ready for one
+  isolated implementation. Other characters, routing, product exposure, and
+  rejected branches remain closed or paused.
 - The 2026-07-20 lifecycle reconciliation closes stale `g10.001` and
   `g10.003` active markers. It also records that Signal's `g10.017` capture and
   live-monitor implementation landed; that roadmap is paused only on explicit
@@ -202,10 +204,10 @@ Do not start Loophole or Chorus planning from Signal internals.
 - `g10.030` `complete`
   - stretch consolidated; candidate families closed; frozen baseline retained
 - `g10.031` `active`
-  - PaulX-like neutral `Dream` remains the product goal; Batch 31.29 passed
-    construction and structural admission, then failed `Y04` and `Y02` at
-    opposite ratio ends; Batch 31.30 range ownership reassessment is ready and
-    explicit `Cyclic` stays closed
+  - PaulX-like neutral `Dream` remains the product goal; Batch 31.30 corrected
+    unfrozen seed authority, found no source-backed range switch, and froze a
+    seed-audited source-relative candidate for Batch 31.31; explicit `Cyclic`
+    stays closed
 
 ## Stretch Boundary
 
@@ -256,8 +258,8 @@ route on `main`.
 
 ## Next Task
 
-Run `g10.031` Batch 31.30 only. Reassess range ownership against pinned
-PaulXStretch and the Batch 31.29 receipt. Freeze another complete architecture
-only if it jointly owns the opposite-end failures and seamless range
-continuity. Keep `g10.028`, routing, product exposure, cross-repo work, and
-candidate DSP on `main` paused. Do not push.
+Run `g10.031` Batch 31.31 only. Implement the frozen seed-audited candidate
+once in `signal-candidate-31-31`. Complete construction `1/1`, freeze one
+checkpoint, then run structural `15/15` and synthetic `9/9` once in order.
+Keep `g10.028`, routing, product exposure, cross-repo work, and candidate DSP
+on `main` paused. Do not push.

@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: active; Batch 31.29 complete, Batch 31.30 ready
+Status: active; Batch 31.30 complete, Batch 31.31 ready
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -957,22 +957,54 @@ Evidence:
 
 ## Batch 31.30 - Ratio-Range Ownership Reassessment
 
-Status: ready; docs and architecture only
+Status: complete; evidence authority corrected
 
-- [ ] reconcile the paired `4x` pitch and `16x` replica failures with the
+- [x] reconciled the paired `4x` pitch and `16x` replica failures with the
   pinned PaulXStretch render path and Batch 31.25's passed mono evidence
-- [ ] decide whether one source-backed range-aware topology can own `4x`, `8x`,
-  and `16x` without a hard switch, local coefficient experiment, or seam gap
-- [ ] either freeze one materially different complete successor brief or close
-  the source-relative renewal topology
-- [ ] keep candidate DSP, tests, harnesses, fixtures, APIs, routing, cache,
+- [x] found no source-backed range switch: pinned PaulX uses one renewal path,
+  while the Signal briefs left candidate seed unfrozen
+- [x] withdrew the fixed-resolution range diagnosis without repairing or
+  rerunning the rejected Batch 31.29 checkpoint
+- [x] froze `SeedAuditedSourceRelativeRenewalSpectral` as one fresh complete
+  authority with exact `ADMISSION_SEED` ownership
+- [x] kept candidate DSP, tests, harnesses, fixtures, APIs, routing, cache,
   Loophole, and Chorus unchanged
-- [ ] do not close the PaulX-like product target without explicit operator
-  direction
+- [x] kept the PaulX-like product target active
+
+Evidence:
+
+- Batch 31.25 and Batch 31.29 own the same normative mono DSP, sources, and
+  metrics but used no common frozen candidate seed
+- Batch 31.29's synthetic helpers selected seed `17`; Batch 31.25's passing
+  receipt did not record its seed
+- pinned PaulX uses one buffer geometry, fractional source accumulator,
+  magnitude renewal, and adjacent-frame blend across all retained ratios
+- a range-aware replacement is therefore not supported by the current source
+  or Signal evidence
+
+## Batch 31.31 - Isolated Seed-Audited Source-Relative Candidate
+
+Status: ready; isolated implementation only
+
+- [ ] create `signal-candidate-31-31` on
+  `candidate/g10-031-seed-audited-source-relative-renewal`
+- [ ] implement only the fresh private six-file
+  `creative_seed_audited_source_relative_renewal` family and one private
+  `lib.rs` declaration; do not recover Batch 31.27 or Batch 31.29 source
+- [ ] use the address vector's named seed field as the sole `ADMISSION_SEED`
+  for every synthetic and listening candidate render
+- [ ] complete `effigy test compile` and exactly `1/1` construction owner
+- [ ] freeze and record one immutable local checkpoint; do not push it
+- [ ] run exactly `15/15` structural then `9/9` synthetic owners once
+- [ ] open mono and stereo listening only after complete objective admission
+- [ ] stop on the first miss and delete the complete candidate without tuning,
+  repair, or rerun
+- [ ] keep public APIs, reports, fixtures, cache, routing, seed/reroll product
+  exposure, other characters, Loophole, and Chorus unchanged
 
 ## Later Batches
 
-Closed or paused without promotion. Work after Batch 31.29 requires a valid
+Closed or paused without promotion. Work after Batch 31.30 requires a valid
 candidate-admission decision:
 
 - minimal production admission
@@ -1021,12 +1053,14 @@ candidate-admission decision:
 - [x] one verified fresh source-relative candidate brief is frozen
 - [x] one verified source-relative candidate passed construction and structural
   admission, then reached a terminal `7/9` synthetic rejection
+- [x] evidence reassessment found its candidate seed was not frozen and the
+  paired failures cannot support a range-topology conclusion
+- [x] one complete seed-audited source-relative authority is frozen
 - [x] no private renderer or product surface entered `main`
 
 ## Next Task
 
-Run Batch 31.30 only. Reassess ratio-range ownership from the complete Batch
-31.29 receipt and pinned PaulXStretch architecture. Freeze one materially
-different complete successor brief only if it jointly owns `4x` pitch, `16x`
-anti-replica behavior, passed stereo preservation, and seamless range
-continuity. Do not implement candidate DSP in the same batch or push.
+Run Batch 31.31 only. Implement the seed-audited authority once in
+`signal-candidate-31-31`, complete construction `1/1`, freeze one checkpoint,
+then run structural `15/15` and synthetic `9/9` once in order. Do not recover
+rejected source, alter `ADMISSION_SEED`, implement routing, or push.

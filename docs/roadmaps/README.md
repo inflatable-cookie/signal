@@ -97,12 +97,13 @@ Batch 31.26 froze `SourceRelativeRenewalSpectral` without DSP. Batch 31.27
 implemented it once, passed compile and construction `1/1`, then stopped at
 structural `14/15`: its frozen `mix64(1)` vector transposed the normative
 result. The candidate was deleted without repair or rerun. Batch 31.28 then
-reproduced the complete counter table independently and froze fresh
-`VerifiedSourceRelativeRenewalSpectral` authority. Batch 31.29 isolated
-implementation passed construction `1/1` and structural `15/15`, then failed
-synthetic admission at `7/9`: one `16x` replica row and two `4x` pitch rows
-missed. The candidate was deleted before listening. Batch 31.30 is a docs-only
-ratio-range ownership reassessment.
+reproduced the complete counter table independently and froze fresh verified
+authority. Batch 31.29 passed construction `1/1` and structural `15/15`, then
+failed synthetic admission at `7/9`: one `16x` replica row and two `4x` pitch
+rows missed. Batch 31.30 found no frozen candidate seed across that receipt and
+Batch 31.25's otherwise matching passing mono evidence. It withdrew the range
+diagnosis and froze `SeedAuditedSourceRelativeRenewalSpectral`; Batch 31.31 is
+ready for one isolated implementation.
 Offline artifacts still need a streaming artifact writer/cache target for full
 peak-memory closure. Mono callback-state DSP has a
 no-allocation proof, linked stereo is implemented, ratio scheduling has
@@ -229,7 +230,8 @@ Before rollover:
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the active generation front door. Run
-`g10.031` Batch 31.30 only: reassess ratio-range ownership against pinned
-PaulXStretch and the complete Batch 31.29 receipt. Keep the transparent
+`g10.031` Batch 31.31 only: implement the frozen seed-audited candidate once in
+its named disposable worktree. Complete construction, freeze one checkpoint,
+then run structural and synthetic admission once in order. Keep the transparent
 successor lane, `g10.028`, other creative owners, routing, product exposure,
 cross-repo work, and candidate DSP on `main` closed. Do not push.

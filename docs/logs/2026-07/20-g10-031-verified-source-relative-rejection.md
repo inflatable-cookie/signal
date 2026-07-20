@@ -27,11 +27,15 @@ The other seven synthetic owners passed: crest, impulse distribution, noise
 periodicity, RMS modulation, silence gap, integrity/discontinuity, and the
 linked-stereo inventory.
 
-The dominant cause is incomplete ratio-range ownership in the frozen
-single-resolution renewal renderer. The paired low-ratio tonal and high-ratio
-replica misses show that the complete `32768/16384` topology does not own the
-whole `4x` through `16x` range. This diagnosis does not authorize a transform,
-hop, threshold, or assertion sweep.
+The Batch 31.29 closeout originally attributed the paired misses to incomplete
+ratio-range ownership in the frozen single-resolution renderer.
+
+Batch 31.30 supersedes that diagnosis. The synthetic helpers selected seed
+`17`, but neither the Batch 31.29 brief nor Batch 31.25's passing mono brief
+froze a candidate seed. The otherwise matching stochastic receipts cannot
+support a range or transform conclusion. The checkpoint remains rejected; its
+failure does not authorize a seed, transform, hop, threshold, or assertion
+sweep.
 
 Cleanup deleted the worktree, branch, checkpoint, module, tests, build state,
 and candidate artifacts. No DSP, harness, fixture, API, route, cache,
@@ -39,8 +43,6 @@ Loophole, or Chorus surface entered `main`.
 
 ## Next Task
 
-Run Batch 31.30 only. Reassess range ownership against pinned PaulXStretch and
-the complete Batch 31.29 receipt. Either freeze one materially different,
-range-aware complete successor brief or close the source-relative topology.
-Do not implement candidate DSP in the same batch, reopen a local sweep, or
-close the PaulX-like product target without explicit operator direction.
+See the [Batch 31.30 seed-authority reassessment](./20-g10-031-seed-authority-reassessment.md).
+Fresh authority is `SeedAuditedSourceRelativeRenewalSpectral`; Batch 31.31 is
+the next executable task.

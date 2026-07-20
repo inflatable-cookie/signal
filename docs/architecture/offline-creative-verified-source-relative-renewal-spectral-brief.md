@@ -1,15 +1,15 @@
-# Offline Creative VerifiedSourceRelativeRenewalSpectral Renderer Brief
+# Offline Creative SeedAuditedSourceRelativeRenewalSpectral Renderer Brief
 
-Status: frozen; candidate rejected at synthetic admission
+Status: frozen; fresh candidate batch ready
 Owner: dsp
 Updated: 2026-07-20
 Contract: `085`
-Roadmap: `g10.031`, Batches 31.28-31.29
+Roadmap: `g10.031`, Batches 31.28-31.30
 
 ## Decision
 
-Build one fresh Signal-owned `VerifiedSourceRelativeRenewalSpectral` candidate
-for neutral `Dream` at `4x`, `8x`, and `16x`.
+Build one fresh Signal-owned `SeedAuditedSourceRelativeRenewalSpectral`
+candidate for neutral `Dream` at `4x`, `8x`, and `16x`.
 
 Retain the source-relative architecture frozen in Batch 31.26. Batch 31.27
 produced no synthetic, mono-listening, or stereo result. Its sole miss was an
@@ -17,11 +17,24 @@ incorrect handwritten `mix64(1)` assertion. This brief replaces that evidence
 construction under a new identity. It does not recover, patch, or rerun
 checkpoint `1f05cc33`.
 
+Batch 31.29 remains rejected. Its synthetic helpers selected candidate seed
+`17`, but this brief and its audited predecessor never froze a synthetic
+candidate seed. Batch 31.25 passed the same normative mono DSP, sources, and
+metrics at an unrecorded seed. The two receipts therefore cannot support a
+ratio-range or transform-topology conclusion.
+
+Pinned PaulXStretch uses one buffer geometry, source accumulator,
+magnitude-renewal path, and adjacent-frame blend across the retained ratios.
+There is no source-backed basis for a `4x`/`16x` algorithm or resolution switch.
+Retain the source-relative topology under a fresh identity and make the exact
+admission seed part of evidence authority. This is not a repair or rerun of
+checkpoint `d94612dd`.
+
 No mid/side magnitude synthesis, per-component orientation, post-render gain,
 limiter, compressor, phase propagation, magnitude recurrence, transient
-detector, onset reset, or component layer is present.
+detector, onset reset, component layer, or range switch is present.
 
-## Outcome
+## Rejected Predecessor Outcome
 
 Fresh checkpoint `d94612dd9f4ca9ba51724c826cac1d9375c27ff8`
 passed compile, construction `1/1`, and structural admission `15/15` without
@@ -33,12 +46,12 @@ failure message did not distinguish impulse from impulse train. `Y02` also
 missed two `4x` pitch rows: `10.960881380` and `10.960712818` cents against
 PaulX-relative ceilings of `9.410431632` and `4.461974128` cents.
 
-The dominant cause is incomplete range ownership in one fixed-resolution
-renewal topology: its frozen `32768/16384` transform and source-relative map
-do not jointly retain the low-ratio tonal estimate and single-region
-high-ratio transient distribution. This is an architectural diagnosis from
-the paired ratio-end failures, not proof that transform size alone is causal.
-Do not turn it into a window, hop, or threshold sweep.
+The rejection applies to that checkpoint. The evidence contradiction's
+dominant cause is the unfrozen candidate seed: stochastic synthesis was judged
+without one authoritative request identity. Seed variation may or may not
+explain each failed row, but the receipt cannot attribute either miss to the
+transform, map, or ratio range. Do not turn it into a seed, window, hop,
+threshold, or range sweep.
 
 No listening gate ran. Cleanup deleted the worktree, branch, checkpoint,
 module, tests, build state, and candidate artifacts. No candidate DSP entered
@@ -119,8 +132,8 @@ literal owner in candidate tests:
 | `mix64(1)` final | `0x5692161d100b05e5` |
 | `mix64(u64::MAX)` final | `0xb4d055fcf2cbbd7b` |
 
-One complete address vector uses `seed=0x0123456789abcdef`, `j=7`, `b=11`,
-and `s=BASE`:
+`ADMISSION_SEED=0x0123456789abcdef`. One complete address vector uses
+`seed=ADMISSION_SEED`, `j=7`, `b=11`, and `s=BASE`:
 
 | Address stage | Exact `u64` value |
 | --- | --- |
@@ -132,8 +145,12 @@ and `s=BASE`:
 | high-`53` numerator `z>>11` | `0x0015df40c60e7abc` |
 
 `tests.rs` owns one `COUNTER_VECTORS` constant containing these values. Every
-construction and structural assertion refers to its named fields. Duplicate
-hexadecimal counter literals elsewhere in the candidate are forbidden.
+construction and structural assertion refers to its named fields. The complete
+address vector's `seed` field is also `ADMISSION_SEED`. Every candidate render
+in synthetic and listening admission uses that named field. No helper accepts
+an implicit or locally chosen admission seed. The determinism owner derives
+its changed-seed control with `mix64(ADMISSION_SEED)`. Duplicate hexadecimal
+counter or admission-seed literals elsewhere in the candidate are forbidden.
 
 For active mono bin `b`, emit `Y=o*A*exp(i*theta)`. DC is real `o*A[0]`,
 Nyquist is zero, negative bins are conjugate mirrors, and exact silence stays
@@ -209,10 +226,10 @@ ties, and no parallel reduction require byte-identical repeats. Offline only.
 
 Use exactly:
 
-- worktree: `signal-candidate-31-29`
-- branch: `candidate/g10-031-verified-source-relative-renewal`
+- worktree: `signal-candidate-31-31`
+- branch: `candidate/g10-031-seed-audited-source-relative-renewal`
 - module:
-  `crates/signal-dsp-stretch/src/creative_verified_source_relative_renewal/`
+  `crates/signal-dsp-stretch/src/creative_seed_audited_source_relative_renewal/`
 - files: `mod.rs`, `plan.rs`, `analysis.rs`, `relation.rs`, `synthesis.rs`,
   `tests.rs`
 
@@ -223,14 +240,16 @@ ignored under `target/`.
 
 Test prefixes are only:
 
-- `verified_source_relative_renewal_construction_`
-- `verified_source_relative_renewal_structural_`
-- `verified_source_relative_renewal_synthetic_`
+- `seed_audited_source_relative_renewal_construction_`
+- `seed_audited_source_relative_renewal_structural_`
+- `seed_audited_source_relative_renewal_synthetic_`
 
 `tests.rs` owns one compile-linked `GATE_OWNERS` table with exactly `24` unique
 IDs, names, and function pointers: `15` structural and `9` synthetic. The sole
 construction owner validates that manifest and every `COUNTER_VECTORS` field.
-No required test is ignored. Every accumulator has an explicit type.
+It also validates that the address seed is the sole `ADMISSION_SEED` used by
+synthetic and listening request assembly. No required test is ignored. Every
+accumulator has an explicit type.
 
 Construction order:
 
@@ -267,22 +286,24 @@ Structural owners are:
 | S15 | `forbidden_mechanisms` | forbidden token and type inventory |
 
 Each exact owner name is
-`verified_source_relative_renewal_structural_<suffix>`. `S04` contains no
+`seed_audited_source_relative_renewal_structural_<suffix>`. `S04` contains no
 independent handwritten counter literal. Run structural admission once and
 require exactly `15/15`.
 
 Synthetic owners are the audited predecessor's `Y01` through `Y09` meanings,
-renamed with the verified prefix. Its `Frozen Synthetic Sources` and
+renamed with the seed-audited prefix. Its `Frozen Synthetic Sources` and
 `Exact Measurements` sections remain normative unchanged. `Y09` additionally
 exercises source relation, channel magnitude, whole/band/window balance, and
 all ratios at `space=0`, `0.5`, and `1`. Every owner renders all rows before
-one final assertion. Run synthetic admission once and require exactly `9/9`.
+one final assertion. Every candidate row uses `ADMISSION_SEED`; test helpers
+cannot supply another seed. Run synthetic admission once and require exactly
+`9/9`.
 
 ## Listening And Stereo Admission
 
 Only after objective admission, repeat the retained concealed mono pack:
 percussion, bass, vocals, pads/sustains, and full mix at `4x`, `8x`, and `16x`
-against PaulXStretch 1.6.0 default / FFT `16384`. Use the frozen seed,
+against PaulXStretch 1.6.0 default / FFT `16384`. Use `ADMISSION_SEED`,
 `space=0.5`, exact crop, common row RMS, and `0.95` peak ceiling. Pass requires
 no unusable row, preferred or tied on at least `12/15`, no family loss, and no
 forbidden vocoder, periodic, cyclic, doubled-attack, stutter, or freeze
@@ -308,20 +329,22 @@ Only a complete pass may admit the private module, fixed-ratio neutral-`Dream`
 request and renderer, structural/synthetic regressions, and one internal
 creative-engine version. Do not admit public character, motion, detail, cache,
 artifact, report, route, pitch, dynamic ratio, other character, router,
-Loophole, or Chorus integration.
+seed/reroll control, Loophole, or Chorus integration. Product seed variation
+requires a later frozen multi-seed character review; it cannot reinterpret this
+single-seed admission receipt.
 
 ## Sources
 
 - [Rejected source-relative predecessor](./offline-creative-source-relative-renewal-spectral-brief.md)
 - [Audited synthetic authority](./offline-creative-audited-variance-compensated-renewal-spectral-brief.md)
 - [Batch 31.27 vector rejection](../logs/2026-07/20-g10-031-source-relative-vector-rejection.md)
+- [Batch 31.30 seed-authority reassessment](../logs/2026-07/20-g10-031-seed-authority-reassessment.md)
 - [Creative product contract](../contracts/085-creative-time-stretch-product-and-routing-contract.md)
 
 ## Next Task
 
-Run Batch 31.30 only. Reassess ratio-range ownership against the pinned
-PaulXStretch render path and the complete Batch 31.29 receipt. Either freeze
-one materially different, range-aware complete successor brief or close this
-source-relative topology. Do not implement DSP in the same batch, reopen a
-parameter sweep, or close the PaulX-like product target without explicit
-operator direction.
+Run Batch 31.31 only. Implement this seed-audited brief once in the named
+disposable worktree. Complete compile and construction `1/1`, freeze one
+checkpoint, then run structural `15/15` and synthetic `9/9` once in order.
+Stop on the first miss. Do not recover either rejected candidate, alter the
+admission seed, implement a range switch, or push.

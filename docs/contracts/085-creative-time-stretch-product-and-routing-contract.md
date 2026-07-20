@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: active PaulX-like `Dream`; verified source-relative authority frozen
+Status: active PaulX-like `Dream`; seed-audited source-relative authority frozen
 Owner: core-product
 Updated: 2026-07-20
 Related contracts: `046`, `048`, `084`
@@ -170,6 +170,11 @@ the selected representation can express it and the product requires it.
 The same complete request and engine version produce byte-identical output on
 the supported deterministic platform contract. Default variation derives from
 the artifact identity. Rerolling produces a new explicit seed and artifact.
+
+Every stochastic candidate brief must freeze one exact `ADMISSION_SEED` before
+implementation. Synthetic and listening helpers may not choose an implicit or
+local seed. A fixed-seed candidate pass does not admit product seed/reroll
+exposure; that requires a later frozen multi-seed character review.
 
 ### Rule 7: exact boundaries and bounded state remain mandatory
 
@@ -449,6 +454,25 @@ unchanged. Candidate tests must own all exact counter literals once in a named
 table; construction validates that table before checkpointing, and later tests
 may not carry duplicate handwritten values. No candidate DSP entered `main`.
 
+Batch 31.29 implemented that authority fresh. Checkpoint `d94612dd` passed
+compile, construction `1/1`, and structural `15/15`, then completed synthetic
+admission at `7/9`. One `16x` replica row and two `4x` pitch rows failed. The
+candidate was deleted before listening without correction or rerun.
+
+Batch 31.30 withdraws the closeout's fixed-resolution range diagnosis. Batch
+31.25 and Batch 31.29 own the same normative mono DSP, sources, and metrics,
+but their briefs froze no synthetic candidate seed. Batch 31.29 used seed `17`;
+the earlier passing receipt did not record its seed. Pinned PaulX also uses one
+renewal path across all retained ratios. The failed checkpoint remains
+rejected, but its stochastic rows cannot select a range switch or reject the
+source-relative topology.
+
+Fresh authority is `SeedAuditedSourceRelativeRenewalSpectral`. It retains the
+complete verified topology and gates under a new worktree, branch, module, and
+prefix identity. The existing audited address vector's seed is the sole named
+`ADMISSION_SEED` for every synthetic and listening candidate render. Candidate
+DSP, routing, public seed control, and product exposure remain absent.
+
 ## Initial Promotion Sequence
 
 1. Comparator capture and target-character freeze. Complete.
@@ -515,7 +539,15 @@ may not carry duplicate handwritten values. No candidate DSP entered `main`.
     topology. Complete; `VerifiedSourceRelativeRenewalSpectral` frozen.
 29. Implement the verified brief once in its named disposable worktree,
     complete construction `1/1`, freeze one checkpoint, then run `15`
-    structural and `9` synthetic owners. Ready.
+    structural and `9` synthetic owners. Complete; construction and structural
+    admission passed, synthetic finished `7/9`, and the candidate was deleted
+    before listening.
+30. Reassess the paired ratio-end failures against pinned source and prior
+    Signal evidence. Complete; candidate seed was unfrozen, no range switch is
+    source-backed, and fresh seed-audited authority is frozen.
+31. Implement the seed-audited brief once, freeze one checkpoint after
+    construction `1/1`, then run structural and synthetic owners in order.
+    Ready.
 
 `Spectral`/`Rough`, coherent overlap, `LayeredCloud`, the upper overlap, dynamic
 ratios, and automatic routing still require separate reopening decisions backed
@@ -523,7 +555,7 @@ by new complete-system evidence.
 
 ## Current State
 
-Six isolated spectral candidates and both cyclic candidates are rejected and
+All isolated spectral candidates and both cyclic candidates are rejected and
 deleted. Explicit `Cyclic` and the automatic router remain closed or paused.
 Neutral `Dream` is active. Matching PaulX synthetics invalidate the old crest
 calibration. The first complete `CompensatedRenewalSpectral` implementation
@@ -537,9 +569,12 @@ first-sample component orientation inverted source-relative channel balance.
 The passed mono renewal core remains active architectural evidence; the failed
 stereo law does not. The first `SourceRelativeRenewalSpectral` checkpoint is
 also rejected and deleted after a frozen `mix64` vector typo stopped structural
-admission at `14/15`. Its renderer never reached synthetic or listening
-evidence. `VerifiedSourceRelativeRenewalSpectral` is now the sole complete
-candidate authority. Native left/right relation ownership remains untested.
+admission at `14/15`. The verified replacement passed native-left/right
+structural admission, then failed two stochastic synthetic owners under a
+locally selected seed. That checkpoint remains rejected, but its receipt
+cannot support the discarded fixed-resolution range diagnosis because
+candidate seed was not frozen. `SeedAuditedSourceRelativeRenewalSpectral` is
+now the sole complete candidate authority.
 
 No public Rust enum, renderer, harness mode, fixture, artifact schema, runtime
 route, or product-facing claim entered `main`. `OfflineHighQuality` remains
@@ -547,8 +582,8 @@ byte-exact and Contract `084` remains closed. No creative renderer is admitted.
 
 ## Next Task
 
-Run Batch 31.29 only. Create `signal-candidate-31-29` on
-`candidate/g10-031-verified-source-relative-renewal`, implement the verified
-brief fresh, complete construction `1/1`, freeze one checkpoint, then run `15`
-structural and `9` synthetic owners in order. Stop on the first miss. Do not
-push.
+Run Batch 31.31 only. Create `signal-candidate-31-31` on
+`candidate/g10-031-seed-audited-source-relative-renewal`, implement the
+seed-audited brief fresh, complete construction `1/1`, freeze one checkpoint,
+then run `15` structural and `9` synthetic owners once in order. Stop on the
+first miss. Do not push.

@@ -67,22 +67,19 @@ whole-renderer path. Explicit `Cyclic` is closed. This does not reopen the
 transparent successor lane.
 
 Explicit operator research reopening and pinned source triangulation selected
-one materially different neutral `Dream` family: `RenewalSpectral`. Its
-isolated candidate passed structural admission but failed the first crest row
-at `8.263162 dB` against the frozen `6 dB` ceiling and was deleted. The
-operator superseded Batch 31.19's family closure because the `3.88 dB`
-PaulXStretch calibration used musical rows against a synthetic Signal stop
-row. Matching PaulX synthetics now measure `9.932 dB` at `4x` uniform noise,
-above Signal's rejected `8.263162 dB` row. Batch 31.20 froze one clean-room
-`CompensatedRenewalSpectral` brief with overlap-statistics compensation.
-The Batch 31.21 implementation failed compile-only validation before DSP
-execution and was deleted. The topology remains untested. Batch 31.22 froze
-`VarianceCompensatedRenewalSpectral` as fresh complete candidate authority;
-`Cyclic` stays closed, while `Spectral`, `Rough`, `Cloud`, routing, and product
-exposure remain paused.
+one materially different neutral `Dream` family: `RenewalSpectral`. Later
+batches corrected crest calibration, passed complete mono admission, rejected
+the first linked-stereo law, and froze native left/right source-relative
+ownership. Batch 31.29 passed construction and structural admission, then
+failed one `16x` replica row and two `4x` pitch rows. Batch 31.30 found that
+candidate seed was not frozen across the otherwise matching mono evidence.
+Pinned PaulX uses one renewal path across the retained ratios, so the failed
+receipt cannot select a range switch or reject the topology. Fresh authority
+is `SeedAuditedSourceRelativeRenewalSpectral`; all candidate DSP and product
+exposure remain absent from `main`.
 
 Frozen neutral `Dream` candidate brief:
-[Offline Creative VarianceCompensatedRenewalSpectral Renderer Brief](../architecture/offline-creative-variance-compensated-renewal-spectral-brief.md).
+[Offline Creative SeedAuditedSourceRelativeRenewalSpectral Renderer Brief](../architecture/offline-creative-verified-source-relative-renewal-spectral-brief.md).
 
 Rejected-at-compile neutral `Dream` successor brief:
 [Offline Creative CompensatedRenewalSpectral Renderer Brief](../architecture/offline-creative-compensated-renewal-spectral-brief.md).
@@ -143,7 +140,7 @@ Rejected first-owner brief:
 
 ## Next Task
 
-Run `g10.031` Batch 31.23 only. Implement the frozen
-`VarianceCompensatedRenewalSpectral` brief once in its named disposable
-worktree. Do not tune a rejected candidate or reopen Batch 29.7BE or the
-transparent successor.
+Run `g10.031` Batch 31.31 only. Implement the frozen seed-audited brief once in
+its named disposable worktree. Complete construction before one-shot
+structural and synthetic admission. Do not recover rejected source, alter
+`ADMISSION_SEED`, reopen Batch 29.7BE, or reopen the transparent successor.

@@ -153,7 +153,8 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Keep Contract `084` closed. Under Contract `085`, run `g10.031` Batch 31.23
-only: implement the frozen `VarianceCompensatedRenewalSpectral` brief once in
-its named disposable worktree. Do not restore Batch 31.21 or admit candidate
-surfaces to `main` before complete promotion.
+Keep Contract `084` closed. Under Contract `085`, run `g10.031` Batch 31.31
+only: implement the frozen `SeedAuditedSourceRelativeRenewalSpectral` brief
+once in its named disposable worktree. Do not recover rejected source, alter
+the admission seed, or admit candidate surfaces to `main` before complete
+promotion.

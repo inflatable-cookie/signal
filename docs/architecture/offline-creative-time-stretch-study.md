@@ -1,6 +1,6 @@
 # Offline Creative Time-Stretch Study
 
-Status: active PaulX-like `Dream`; verified source-relative authority frozen
+Status: active PaulX-like `Dream`; seed-audited source-relative authority frozen
 Owner: dsp
 Updated: 2026-07-20
 Contract: `085`
@@ -512,10 +512,15 @@ normative formula. No synthetic or listening result exists. The candidate was
 deleted without assertion repair or rerun.
 
 Batch 31.28 independently reproduced every counter/tag/address vector in
-Python and Ruby, found no second handwritten exact counter assertion, and
-froze fresh `VerifiedSourceRelativeRenewalSpectral` authority. Exact literals
-now have one named table owner validated during construction. The renderer and
-stereo law remain acoustically untested.
+Python and Ruby and froze fresh verified authority. Batch 31.29 passed
+construction `1/1` and structural `15/15`, then failed one `16x` replica row
+and two `4x` pitch rows. Its helpers chose seed `17`, while neither its brief
+nor Batch 31.25's passing mono brief froze the candidate seed. Batch 31.30
+therefore withdrew the range diagnosis: the failed checkpoint stays rejected,
+but stochastic rows with differing or unknown request identity cannot select a
+range switch. Pinned PaulX also retains one renewal path across all ratios.
+Fresh authority is `SeedAuditedSourceRelativeRenewalSpectral`, with the audited
+address seed frozen for every synthetic and listening candidate render.
 
 ## Sources
 
@@ -545,7 +550,7 @@ stereo law remain acoustically untested.
 
 ## Next Task
 
-Run Batch 31.30 only. Reassess ratio-range ownership against pinned
-PaulXStretch and the verified candidate's complete objective receipt. Do not
-implement candidate DSP in the same batch, reopen a parameter sweep, or close
-the PaulX-like product target without explicit operator direction.
+Run Batch 31.31 only. Implement the seed-audited authority once in its named
+disposable worktree. Complete construction `1/1`, freeze one checkpoint, then
+run structural `15/15` and synthetic `9/9` once in order. Stop on the first
+miss. Do not alter `ADMISSION_SEED`, implement routing, or push.
