@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: active; Batch 31.23 rejected, Batch 31.24 ready
+Status: active; Batch 31.24 complete, Batch 31.25 ready
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -739,25 +739,65 @@ Evidence:
 
 ## Batch 31.24 - Evidence-Integrity Reassessment
 
-Status: ready; docs and architecture only
+Status: complete; fresh audited brief frozen
 
-- [ ] reconcile the Batch 31.23 invalid green receipt without treating it as
+- [x] reconcile the Batch 31.23 invalid green receipt without treating it as
   candidate-quality evidence
-- [ ] audit every structural and synthetic Contract `085` condition into one
+- [x] audit every structural and synthetic Contract `085` condition into one
   explicit measurement, assertion owner, and exact execution stage
-- [ ] decide whether the still-untested compensated-renewal topology warrants
+- [x] decide whether the still-untested compensated-renewal topology warrants
   one fresh complete candidate identity and brief
-- [ ] if retained, freeze the full executable gate surface before another
+- [x] if retained, freeze the full executable gate surface before another
   candidate batch becomes ready; leave no sampled substitute for an exact gate
-- [ ] if closed, record the source-backed architectural reason without claiming
-  that Batch 31.23 tested the DSP
-- [ ] keep candidate DSP, long-form audio, public APIs, cache, routing,
+- [x] keep candidate DSP, long-form audio, public APIs, cache, routing,
   Loophole, and Chorus unchanged
-- [ ] stop after the docs decision is validated, committed, and reported
+- [x] stop after the docs decision is validated, committed, and reported
+
+Decision:
+
+- retain the topology because Batch 31.23 established no valid DSP or
+  listening result and the pinned PaulX path remains source-backed
+- use fresh identity `AuditedVarianceCompensatedRenewalSpectral`; do not
+  recover deleted candidate source or tests
+- freeze `22` compile-linked admission owners: `13` structural and `9`
+  synthetic
+- correct impulse width to shortest 95%-energy intervals, use the exact
+  sample-centred event map, evaluate every autocorrelation lag, make replica
+  absence explicit, and define discontinuity as PaulX-relative
+  first-difference crest
+- count actual working allocation, including FFT plans, and reject any
+  allocation after frame processing starts
+- no candidate or production DSP entered `main`
+
+Authority:
+
+- `docs/architecture/offline-creative-audited-variance-compensated-renewal-spectral-brief.md`
+
+## Batch 31.25 - Isolated Audited Variance-Compensated Renewal Candidate
+
+Status: ready; isolated candidate only
+
+- [ ] create `signal-candidate-31-25` on
+  `candidate/g10-031-audited-variance-renewal`
+- [ ] implement only the fresh private six-file
+  `creative_audited_variance_renewal` family and one private `lib.rs`
+  declaration; do not recover deleted candidate source
+- [ ] complete `effigy test compile` and the one-test construction-manifest
+  gate before checkpointing
+- [ ] create and record one local immutable checkpoint; do not push it
+- [ ] run exactly `13` structural owners once from that checkpoint
+- [ ] run exactly `9` full synthetic owners only after structural admission
+- [ ] assemble concealed long-form mono listening only after valid synthetic
+  admission
+- [ ] stop on the first admission miss; delete the complete candidate without
+  tuning, repair, or rerun
+- [ ] leave independent stereo blocked until an eligible listener is available
+- [ ] keep public APIs, reports, fixtures, cache, routing, other characters,
+  Loophole, and Chorus unchanged
 
 ## Later Batches
 
-Closed or paused without promotion. Work after Batch 31.24 requires a valid
+Closed or paused without promotion. Work after Batch 31.25 requires a valid
 candidate-admission decision:
 
 - minimal production admission
@@ -796,12 +836,15 @@ candidate-admission decision:
 - [x] one fresh complete variance-compensated-renewal brief frozen
 - [x] one isolated variance-compensated-renewal implementation reached a
   terminal evidence-integrity rejection without entering `main`
+- [x] one fresh audited variance-compensated-renewal brief frozen with complete
+  executable gate ownership
 - [ ] long-form mono `Dream` listening reaches a promotion decision
 - [ ] linked-stereo listening reaches a promotion decision
 - [x] no private renderer or product surface entered `main`
 
 ## Next Task
 
-Run Batch 31.24 only. Reconcile the invalid synthetic receipt and freeze a
-complete assertion-owner map before deciding whether a fresh candidate brief
-is warranted. Do not implement or rerun candidate DSP in that batch.
+Run Batch 31.25 only. Implement the frozen
+`AuditedVarianceCompensatedRenewalSpectral` brief once in its named fresh
+worktree. Complete compile and construction-manifest validation before the
+immutable checkpoint or any admission execution.

@@ -1,6 +1,6 @@
 # Offline Creative VarianceCompensatedRenewalSpectral Renderer Brief
 
-Status: frozen; isolated candidate rejected at evidence-integrity audit
+Status: rejected at evidence-integrity audit; superseded by audited brief
 Owner: dsp
 Updated: 2026-07-20
 Contract: `085`
@@ -520,6 +520,5 @@ target remains open.
 
 ## Next Task
 
-Run `g10.031` Batch 31.24 only. Reassess evidence construction and decide
-whether the still-untested topology warrants one fresh complete brief. Do not
-implement or rerun candidate DSP in that batch.
+Use the audited successor brief for execution authority. Run `g10.031` Batch
+31.25 only; do not recover this candidate's deleted source or tests.

@@ -1,10 +1,11 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: active PaulX-like `Dream`; variance-compensated candidate brief frozen
+Status: active PaulX-like `Dream`; audited variance-compensated brief frozen
 Owner: core-product
 Updated: 2026-07-20
 Related contracts: `046`, `048`, `084`
 Related architecture: `docs/architecture/offline-creative-time-stretch-study.md`,
+`docs/architecture/offline-creative-audited-variance-compensated-renewal-spectral-brief.md`,
 `docs/architecture/offline-creative-variance-compensated-renewal-spectral-brief.md`,
 `docs/architecture/offline-creative-compensated-renewal-spectral-brief.md`,
 `docs/architecture/offline-creative-renewal-spectral-brief.md`,
@@ -376,6 +377,24 @@ test-assembly repairs may occur before that receipt only when they do not
 change DSP or evidence semantics. Structural admission and every later gate
 remain one-shot and terminal from the recorded checkpoint.
 
+Batch 31.23 compiled that isolated implementation and passed seven structural
+tests. Its synthetic command returned green, but pre-listening review found
+that required impulse-train crest, secondary-region, exact-lag
+autocorrelation, and full discontinuity assertions were absent. Impulse width
+and silence-gap measurement expression were also not frozen tightly enough to
+guarantee reference parity. The receipt is invalid. The unopened pack and
+candidate were removed without repair or rerun. No DSP or listening decision
+exists for the topology.
+
+Batch 31.24 retains the still-untested topology under fresh identity
+`AuditedVarianceCompensatedRenewalSpectral`. Its complete brief freezes one
+compile-linked owner for every gate, actual allocation accounting including
+FFT plans, exact source and metric definitions, corrected shortest-interval
+impulse references, exact sample-centred event placement, full-lag
+autocorrelation, explicit replica-region semantics, and a PaulX-relative
+first-difference crest control. Candidate source may not be recovered from the
+deleted implementation.
+
 ## Initial Promotion Sequence
 
 1. Comparator capture and target-character freeze. Complete.
@@ -421,7 +440,13 @@ remain one-shot and terminal from the recorded checkpoint.
     compensated-renewal topology. Complete; no candidate DSP entered `main`.
 23. Implement `VarianceCompensatedRenewalSpectral` once, complete construction
     and compile validation, freeze one isolated checkpoint, then run admission
-    gates in order. Ready.
+    gates in order. Complete; synthetic receipt invalidated before listening
+    because required assertions were absent.
+24. Reconcile evidence ownership and freeze one fresh complete brief for the
+    still-untested topology. Complete; no candidate DSP entered `main`.
+25. Implement `AuditedVarianceCompensatedRenewalSpectral` once, pass compile
+    and construction-manifest validation, freeze one checkpoint, then run
+    structural and synthetic gates in order. Ready.
 
 `Spectral`/`Rough`, coherent overlap, `LayeredCloud`, the upper overlap, dynamic
 ratios, and automatic routing still require separate reopening decisions backed
@@ -429,22 +454,23 @@ by new complete-system evidence.
 
 ## Current State
 
-Four isolated spectral candidates and both cyclic candidates are rejected and
+Six isolated spectral candidates and both cyclic candidates are rejected and
 deleted. Explicit `Cyclic` and the automatic router remain closed or paused.
 Neutral `Dream` is active. Matching PaulX synthetics invalidate the old crest
 calibration. The first complete `CompensatedRenewalSpectral` implementation
 failed compile-only validation before DSP execution and was deleted.
-`VarianceCompensatedRenewalSpectral` is the fresh complete authority for the
-same still-untested DSP topology.
+`VarianceCompensatedRenewalSpectral` later produced an invalid synthetic
+receipt and was deleted before listening. `AuditedVarianceCompensatedRenewalSpectral`
+is the fresh complete authority for the same still-untested DSP topology.
 
 No public Rust enum, renderer, harness mode, fixture, artifact schema, runtime
 route, or product-facing claim entered `main`. `OfflineHighQuality` remains
-byte-exact and Contract `084` remains closed. Batch 31.23 is ready for one
+byte-exact and Contract `084` remains closed. Batch 31.25 is ready for one
 isolated private candidate.
 
 ## Next Task
 
-Run `g10.031` Batch 31.23 only. Implement the frozen
-`VarianceCompensatedRenewalSpectral` brief once in its named disposable
-worktree. Do not restore the rejected Batch 31.21 implementation or place
-candidate surfaces on `main` before complete admission.
+Run `g10.031` Batch 31.25 only. Implement the frozen
+`AuditedVarianceCompensatedRenewalSpectral` brief once in its named fresh
+worktree. Do not recover rejected candidate source or place candidate surfaces
+on `main` before complete admission.

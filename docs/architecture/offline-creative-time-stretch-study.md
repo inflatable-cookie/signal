@@ -531,6 +531,7 @@ or product exposure.
 
 ## Next Task
 
-Run Batch 31.24 only. Reassess the invalid Batch 31.23 evidence surface and
-decide whether the still-untested compensated-renewal topology warrants one
-fresh complete brief. Do not implement candidate DSP in the reassessment.
+Run Batch 31.25 only. Implement the frozen
+`AuditedVarianceCompensatedRenewalSpectral` brief once in its named fresh
+worktree. Complete compile and construction-manifest validation before the
+immutable checkpoint or admission.

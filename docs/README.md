@@ -31,6 +31,7 @@ strict lane.
 - Rejected offline stretch successor: [architecture/offline-time-stretch-successor-brief.md](./architecture/offline-time-stretch-successor-brief.md)
 - Non-phase-vocoder feasibility: [architecture/offline-time-stretch-non-phase-vocoder-feasibility.md](./architecture/offline-time-stretch-non-phase-vocoder-feasibility.md)
 - Creative time-stretch study: [architecture/offline-creative-time-stretch-study.md](./architecture/offline-creative-time-stretch-study.md)
+- Frozen creative AuditedVarianceCompensatedRenewalSpectral brief: [architecture/offline-creative-audited-variance-compensated-renewal-spectral-brief.md](./architecture/offline-creative-audited-variance-compensated-renewal-spectral-brief.md)
 - Evidence-rejected creative VarianceCompensatedRenewalSpectral brief: [architecture/offline-creative-variance-compensated-renewal-spectral-brief.md](./architecture/offline-creative-variance-compensated-renewal-spectral-brief.md)
 - Rejected-at-compile creative CompensatedRenewalSpectral brief: [architecture/offline-creative-compensated-renewal-spectral-brief.md](./architecture/offline-creative-compensated-renewal-spectral-brief.md)
 - Rejected creative RenewalSpectral brief: [architecture/offline-creative-renewal-spectral-brief.md](./architecture/offline-creative-renewal-spectral-brief.md)
@@ -76,8 +77,7 @@ strict lane.
 
 ## Next Task
 
-Run `g10.031` Batch 31.24 only. Reconcile the invalid Batch 31.23 synthetic
-receipt and freeze complete evidence ownership before deciding whether a fresh
-candidate brief is warranted. Keep `g10.028`, product exposure, cross-repo
-work, and candidate surfaces on `main` closed. Only drop into `specs/` when a
-strict lane is explicitly reopened.
+Run `g10.031` Batch 31.25 only. Implement the frozen audited variance-renewal
+brief once in its named fresh worktree. Keep `g10.028`, product exposure,
+cross-repo work, and candidate surfaces on `main` closed. Only drop into
+`specs/` when a strict lane is explicitly reopened.
