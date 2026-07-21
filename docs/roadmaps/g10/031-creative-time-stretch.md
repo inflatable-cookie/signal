@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: active; Batch 31.38 complete, Batch 31.39 ready
+Status: active; Batch 31.39 complete, Batch 31.40 ready
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -1254,26 +1254,46 @@ Decision:
 
 ## Batch 31.39 - Isolated Comparator-Audited Renewal Candidate
 
-Status: ready; isolated candidate only
+Status: complete; candidate rejected and deleted
 
-- [ ] create only `signal-candidate-31-39` on
+- [x] created only `signal-candidate-31-39` on
   `candidate/g10-031-comparator-audited-renewal`
-- [ ] implement the frozen six-file private renderer and `24`-owner gate table
+- [x] implemented the frozen six-file private renderer and `24`-owner gate table
   from fresh source without recovering a rejected checkpoint
-- [ ] run `effigy test compile`, require construction `1/1`, then freeze one
+- [x] ran `effigy test compile`, required construction `1/1`, then froze one
   immutable local checkpoint
-- [ ] run structural `15/15` and synthetic `9/9` once in that order
+- [x] passed structural `15/15`, then ran all nine synthetic owners once;
+  seven passed and `Y04` plus `Y09` failed
 - [ ] after objective admission, run the full concealed mono `15`-row pack and
   explicitly score low-frequency noise plus entry/tail energy
 - [ ] assemble valid exact-source stereo and PaulX comparator rows, enforce hard
   structural/whole/band controls, and complete mapped-window diagnostics
 - [ ] allow operator speaker pre-screen to reject, then require an eligible
   independent listener for neutral `15`-row and `space`-trio promotion
-- [ ] stop on the first terminal miss; delete the complete candidate without
+- [x] stopped on the terminal synthetic miss; deleted the complete candidate without
   repair or rerun; after a complete pass retain only the isolated checkpoint
   and receipt for a separate minimal-admission batch
-- [ ] keep public APIs, reports, fixtures, cache, routing, other characters,
+- [x] kept public APIs, reports, fixtures, cache, routing, other characters,
   Loophole, and Chorus unchanged; do not push
+
+Evidence:
+
+- compile: pass
+- construction: exactly `1/1`
+- immutable checkpoint: `c0cd943f5a5e8499540d5e759aac7a1586579d0a`
+- structural: exactly `15/15`
+- synthetic: `7/9`; `Y04` and `Y09` failed
+- `Y04`: `16x` impulse produced two active replica regions; secondary was
+  `-29.801787859 dB` against the terminal `-30 dB` ceiling
+- `Y09`: linked-stereo swap rows failed at `4x` and `8x`
+- mono and stereo listening: not run because objective admission failed
+- cleanup: complete; worktree, branch, checkpoint reference, module, tests,
+  and build state deleted; no candidate code entered `main`
+
+The rejected receipt conflicts with Batch 31.36, which passed `Y04`, `Y09`,
+and the full synthetic gate under the nominally same frozen renderer and seed.
+That divergence blocks another implementation. It must be reconciled as
+authority or evidence construction before any new candidate is considered.
 
 Stop after the complete pass/rejection receipt and cleanup. Do not merge the
 candidate to `main` in Batch 31.39. Minimal admission, product exposure,
@@ -1281,8 +1301,8 @@ multi-seed review, routing, and other characters require later batches.
 
 ## Later Batches
 
-Closed or paused without promotion. Work after Batch 31.39 depends on its
-complete candidate decision:
+Closed or paused without promotion. Batch 31.40 is docs-only reproducibility
+and evidence-authority reassessment. Later work depends on that decision:
 
 - minimal production admission
 - coherent/diffusive overlap
@@ -1360,13 +1380,16 @@ complete candidate decision:
   to mandatory diagnostics plus comparator-relative independent listening
 - [x] one fresh complete comparator-audited renewal brief is frozen without
   candidate code or product exposure
-- [ ] one fresh comparator-audited candidate reaches a terminal complete-system
+- [x] one fresh comparator-audited candidate reaches a terminal complete-system
   decision under the revised product gate
+- [ ] reconcile the contradictory Batch 31.36 and Batch 31.39 synthetic
+  receipts before authorizing any further candidate
 - [x] no private renderer or product surface entered `main`
 
 ## Next Task
 
-Run Batch 31.39 only. Implement the frozen
-`ComparatorAuditedRenewalSpectral` brief once from fresh source in its named
-disposable worktree. Do not recover rejected code, change formulas or gates,
-open other characters or routing, touch Loophole or Chorus, or push.
+Run Batch 31.40 only as docs and evidence-authority reassessment. Reconcile why
+Batch 31.36 passed `Y04` and `Y09` while Batch 31.39 failed them under the
+nominally same frozen renderer and seed. Do not recover either deleted
+checkpoint, implement DSP, change thresholds, rerun gates, open other
+characters or routing, touch Loophole or Chorus, or push.

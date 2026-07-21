@@ -1,9 +1,9 @@
 # Creative Stretch Source Triangulation
 
-Status: reviewed; comparator-audited renewal reopening authorized
+Status: reviewed; comparator-audited renewal candidate rejected
 Owner: dsp
 Updated: 2026-07-21
-Roadmap: `g10.031`, Batches 31.16 and 31.30-31.38
+Roadmap: `g10.031`, Batches 31.16 and 31.30-31.39
 
 ## Question
 
@@ -416,8 +416,16 @@ and not a stereo repair experiment. The renderer remains the tested linked
 native-channel renewal law. Its complete fresh authority is
 [ComparatorAuditedRenewalSpectral](../../architecture/offline-creative-comparator-audited-renewal-spectral-brief.md).
 
+Batch 31.39 implemented that authority once from fresh source. Construction
+and structural admission passed, but synthetic `Y04` failed one `16x` replica
+row and `Y09` failed linked-stereo swap at `4x` and `8x`. The candidate was
+deleted before listening. Batch 31.36 passed both owners under the nominally
+same formulas and seed. That receipt divergence must be reconciled before the
+source evidence can support another implementation decision.
+
 ## Next Task
 
-Run `g10.031` Batch 31.39 only from the fresh comparator-audited brief. Keep
-other characters, routing, product exposure, Loophole, and Chorus closed or
-paused. Do not recover rejected candidate code.
+Run `g10.031` Batch 31.40 only as docs and evidence-authority reassessment.
+Keep other characters, routing, product exposure, Loophole, and Chorus closed
+or paused. Do not recover rejected code, implement DSP, alter gates, or rerun
+a candidate.

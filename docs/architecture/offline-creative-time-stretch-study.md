@@ -1,6 +1,6 @@
 # Offline Creative Time-Stretch Study
 
-Status: PaulX-like `Dream` retained; comparator-audited renewal candidate ready
+Status: PaulX-like `Dream` retained; renewal evidence reassessment ready
 Owner: dsp
 Updated: 2026-07-21
 Contract: `085`
@@ -652,6 +652,18 @@ changes only the product-backed gate classification. The scorecards explicitly
 retain the reported low-frequency noise and opposite entry/tail energy risks.
 No candidate DSP or product surface enters `main` in this batch.
 
+Batch 31.39 implemented that brief once from fresh source. Its immutable
+checkpoint passed compile, construction `1/1`, and structural `15/15`, then
+synthetic admission finished `7/9`. `Y04` found a second `16x` impulse region
+at `-29.801787859 dB`, above the `-30 dB` ceiling. `Y09` failed linked-stereo
+swap at `4x` and `8x`. Objective rejection kept mono and stereo listening
+closed, and the complete candidate was deleted without repair or rerun.
+
+Batch 31.36 passed both owners under the nominally same renderer formulas and
+admission seed. The conflicting receipts are not evidence for a parameter
+change or immediate reimplementation. Their frozen authority and executable
+construction must be reconciled first without recovering deleted code.
+
 ## Sources
 
 - [REAPER time-stretch engines](https://www.reaper.fm/about.php)
@@ -687,8 +699,8 @@ No candidate DSP or product surface enters `main` in this batch.
 
 ## Next Task
 
-Run Batch 31.39 only. Implement the frozen
-`ComparatorAuditedRenewalSpectral` brief once in its named disposable
-worktree. Keep routing, product exposure, other characters, Loophole, and
-Chorus paused; do not recover a rejected checkpoint or change the renderer or
-gate policy.
+Run Batch 31.40 only as docs and evidence-authority reassessment. Reconcile
+the contradictory Batch 31.36 and Batch 31.39 synthetic receipts without
+recovering deleted code, implementing DSP, changing gates, or rerunning a
+candidate. Keep routing, product exposure, other characters, Loophole, and
+Chorus paused.

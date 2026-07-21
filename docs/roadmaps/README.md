@@ -117,8 +117,11 @@ authority. Batch 31.36 passed all objective and concealed mono gates, then
 failed mapped local stereo balance at `16x` and was deleted. Batch 31.37 found
 no different temporal owner inside renewal. The operator then made local
 mapped balance diagnostic under comparator-relative independent listening.
-Batch 31.38 froze one fresh complete `ComparatorAuditedRenewalSpectral` brief;
-Batch 31.39 is ready as isolated implementation only.
+Batch 31.38 froze one fresh complete `ComparatorAuditedRenewalSpectral` brief.
+Batch 31.39 passed construction and structural admission, then failed the
+`16x` replica row plus linked-stereo swap at `4x` and `8x`; it was deleted
+before listening. Batch 31.40 is ready to reconcile that `7/9` result with
+Batch 31.36's nominally equivalent `9/9` receipt.
 Offline artifacts still need a streaming artifact writer/cache target for full
 peak-memory closure. Mono callback-state DSP has a
 no-allocation proof, linked stereo is implemented, ratio scheduling has
@@ -245,7 +248,7 @@ Before rollover:
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the active generation front door. Run
-`g10.031` Batch 31.39 only. Implement the frozen comparator-audited candidate
-once from fresh source. Keep the transparent successor lane,
-`g10.028`, other creative owners, routing, product exposure, and cross-repo
-work closed.
+`g10.031` Batch 31.40 only as docs and evidence-authority reassessment. Do not
+recover deleted code, implement DSP, change gates, or rerun candidates. Keep
+the transparent successor lane, `g10.028`, other creative owners, routing,
+product exposure, and cross-repo work closed.

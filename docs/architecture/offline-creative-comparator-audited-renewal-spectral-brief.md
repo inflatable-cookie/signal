@@ -1,6 +1,6 @@
 # Offline Creative ComparatorAuditedRenewalSpectral Renderer Brief
 
-Status: frozen; isolated candidate ready
+Status: rejected at synthetic admission; candidate deleted
 Owner: dsp
 Updated: 2026-07-21
 Contract: `085`
@@ -308,16 +308,30 @@ artifact, report, route, pitch, dynamic ratio, other character, router,
 seed/reroll control, Loophole, or Chorus integration. Product seed variation
 requires a later frozen multi-seed character review.
 
+Batch 31.39 outcome: fresh checkpoint
+`c0cd943f5a5e8499540d5e759aac7a1586579d0a` passed compile, construction
+`1/1`, and structural `15/15`. Synthetic admission finished `7/9`. `Y04`
+failed the `16x` impulse replica row with a second region at
+`-29.801787859 dB`; `Y09` failed linked-stereo swap at `4x` and `8x`.
+Listening did not open. Cleanup deleted the candidate without repair or
+rerun, and no candidate code entered `main`.
+
+Batch 31.36 passed both failed owners under the nominally same renderer and
+seed. Do not infer a parameter fix or authorize another implementation from
+the conflicting receipts. Reconcile their evidence authority first.
+
 ## Sources
 
 - [Rejected support-audited predecessor](./offline-creative-verified-source-relative-renewal-spectral-brief.md)
 - [Creative source triangulation](../research/specimen-dossiers/creative-stretch-source-triangulation.md)
 - [Batch 31.36 stereo rejection](../logs/2026-07/21-g10-031-support-audited-renewal-stereo-rejection.md)
 - [Batch 31.37 stereo-ownership closure](../logs/2026-07/21-g10-031-renewal-stereo-ownership-closure.md)
+- [Batch 31.39 rejection](../logs/2026-07/21-g10-031-comparator-audited-renewal-rejection.md)
 - [Creative product contract](../contracts/085-creative-time-stretch-product-and-routing-contract.md)
 
 ## Next Task
 
-Run `g10.031` Batch 31.39 only. Implement this brief once from fresh source in
-the named disposable worktree. Do not recover a rejected checkpoint, change a
-formula or gate, expose product surfaces, start another character, or push.
+Run `g10.031` Batch 31.40 only as docs and evidence-authority reassessment.
+Reconcile the contradictory Batch 31.36 and Batch 31.39 synthetic receipts.
+Do not recover deleted code, implement DSP, change a formula or gate, rerun a
+candidate, expose product surfaces, start another character, or push.

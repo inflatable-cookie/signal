@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: creative comparator-audited stretch candidate ready
+Status: creative renewal evidence reassessment ready
 Updated: 2026-07-21
 
 ## Why this generation matters now
@@ -155,7 +155,12 @@ The 2026-07-19 consolidation reset is authoritative.
   structural relationships, whole/band balance, and eligible independent
   listening remain terminal. Batch 31.38 froze one fresh complete
   `ComparatorAuditedRenewalSpectral` brief without candidate DSP. Batch 31.39
-  is ready as one isolated implementation from fresh source.
+  then passed compile, construction `1/1`, and structural `15/15`, but
+  synthetic admission finished `7/9`: `Y04` missed the `16x` replica ceiling
+  by `0.198212141 dB`, and `Y09` failed linked-stereo swap at `4x` and `8x`.
+  The candidate was deleted before listening. Because Batch 31.36 passed both
+  owners under the nominally same renderer and seed, Batch 31.40 is ready as
+  docs-only reproducibility and evidence-authority reassessment.
 - The 2026-07-20 lifecycle reconciliation closes stale `g10.001` and
   `g10.003` active markers. It also records that Signal's `g10.017` capture and
   live-monitor implementation landed; that roadmap is paused only on explicit
@@ -234,8 +239,9 @@ Do not start Loophole or Chorus planning from Signal internals.
     objective and mono gates, then failed source-relative stereo admission and
     was deleted; Batch 31.37 closed renewal after finding no different complete
     owner; Batch 31.38 records the operator's comparator-relative stereo policy
-    and freezes one fresh complete candidate; Batch 31.39 is ready; explicit
-    `Cyclic` stays closed
+    and freezes one fresh complete candidate; Batch 31.39 rejected that fresh
+    candidate at synthetic `Y04` and `Y09`; Batch 31.40 is a docs-only receipt
+    divergence reassessment; explicit `Cyclic` stays closed
 
 ## Stretch Boundary
 
@@ -307,15 +313,19 @@ closed coherent/peak/oscillator families. Renewal is closed without closing
 the PaulX-like target under the old stereo policy.
 
 The operator then selected comparator-relative creative stereo promotion.
-Batch 31.38 keeps structural stereo relationships and whole/band balance hard,
-makes mapped local source balance a complete diagnostic, and requires an
-eligible independent listener for final image promotion. It freezes one fresh
-complete renewal candidate without reusing deleted code. Batch 31.39 is ready
-as isolated implementation only.
+Batch 31.38 kept structural stereo relationships and whole/band balance hard,
+made mapped local source balance a complete diagnostic, and required an
+eligible independent listener for final image promotion. Batch 31.39's fresh
+checkpoint passed construction and structural admission, then failed the
+`16x` replica row and linked-stereo swap at `4x` and `8x`. It was deleted
+before listening. Batch 31.36 passed those same owners under the nominally
+same frozen renderer and seed, so implementation is closed pending a docs-only
+reproducibility and evidence-authority decision.
 
 ## Next Task
 
-Run `g10.031` Batch 31.39 only from the frozen
-`ComparatorAuditedRenewalSpectral` brief. Keep `g10.028`, routing, product
-exposure, other creative characters, and cross-repo work paused. Do not recover
-rejected code or push.
+Run `g10.031` Batch 31.40 only as docs and evidence-authority reassessment.
+Reconcile the contradictory Batch 31.36 and Batch 31.39 synthetic receipts
+without recovering deleted code, implementing DSP, changing gates, or
+rerunning candidates. Keep `g10.028`, routing, product exposure, other
+creative characters, and cross-repo work paused. Do not push.

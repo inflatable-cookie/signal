@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: active PaulX-like `Dream`; comparator-audited candidate ready
+Status: active PaulX-like `Dream`; renewal evidence reassessment ready
 Owner: core-product
 Updated: 2026-07-21
 Related contracts: `046`, `048`, `084`
@@ -623,6 +623,13 @@ classification, and adds PaulX-source values to the mapped-window diagnostic.
 The deleted checkpoint remains rejected. Implementation must start from the
 brief in a new isolated worktree without recovering prior code.
 
+Batch 31.39 completed that implementation and rejected it at synthetic
+admission. `Y04` failed one `16x` replica row and `Y09` failed linked-stereo
+swap at `4x` and `8x`; the full result was `7/9`. The candidate was deleted
+before listening. Batch 31.36 passed both owners under the nominally same
+renderer and admission seed, so no further implementation is authorized until
+the contradictory receipts are reconciled as authority and evidence.
+
 ## Initial Promotion Sequence
 
 1. Comparator capture and target-character freeze. Complete.
@@ -724,7 +731,11 @@ brief in a new isolated worktree without recovering prior code.
     only. No rejected checkpoint is revived.
 39. Implement `ComparatorAuditedRenewalSpectral` once from fresh source and run
     its frozen construction, objective, mono, and stereo admission sequence.
-    Ready; isolated candidate only.
+    Complete; compile, construction `1/1`, and structural `15/15` passed,
+    synthetic admission failed `Y04` and `Y09`, and the candidate was deleted
+    before listening.
+40. Reconcile the contradictory Batch 31.36 and Batch 31.39 synthetic receipts.
+    Ready; docs and evidence-authority reassessment only.
 
 `Spectral`/`Rough`, coherent overlap, `LayeredCloud`, the upper overlap, dynamic
 ratios, and automatic routing still require separate reopening decisions backed
@@ -793,8 +804,11 @@ source-relative balance and dominance are diagnostic for neutral `Dream`.
 Whole-render and band balance, structural relationships, exact length,
 finiteness, determinism, bounded state, and every other hard gate remain
 terminal. Eligible independent stereo listening now owns the final creative
-image decision. `ComparatorAuditedRenewalSpectral` is frozen as one fresh
-complete candidate; no code has been implemented.
+image decision. Batch 31.39's fresh `ComparatorAuditedRenewalSpectral`
+checkpoint passed construction and structural admission, then failed
+synthetic `Y04` and `Y09` and was deleted before listening. Its `7/9` receipt
+conflicts with Batch 31.36's nominally equivalent `9/9` receipt. Candidate
+implementation is closed pending docs-only authority reassessment.
 
 No public Rust enum, renderer, harness mode, fixture, artifact schema, runtime
 route, or product-facing claim entered `main`. `OfflineHighQuality` remains
@@ -802,8 +816,8 @@ byte-exact and Contract `084` remains closed. No creative renderer is admitted.
 
 ## Next Task
 
-Run `g10.031` Batch 31.39 only. Implement
-`ComparatorAuditedRenewalSpectral` once from fresh source in its named
-disposable worktree. Keep other characters, routing, product exposure,
-Loophole, and Chorus closed or paused. Do not recover rejected code, alter the
-frozen renderer or gates, or push.
+Run `g10.031` Batch 31.40 only as docs and evidence-authority reassessment.
+Reconcile the contradictory Batch 31.36 and Batch 31.39 synthetic receipts.
+Keep other characters, routing, product exposure, Loophole, and Chorus closed
+or paused. Do not recover rejected code, implement DSP, alter gates, rerun a
+candidate, or push.

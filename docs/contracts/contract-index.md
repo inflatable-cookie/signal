@@ -31,8 +31,10 @@ memory alone.
   source-backed renewal owner and closed the family under that gate. The
   operator then made mapped local source balance diagnostic while retaining
   hard structural and whole/band controls plus eligible independent listening.
-  Batch 31.38 freezes one fresh comparator-audited candidate. Every renderer
-  remains unadmitted; other characters and the router stay closed or paused
+  Batch 31.38 froze one fresh comparator-audited candidate. Batch 31.39
+  rejected it at synthetic `Y04` and `Y09`; its `7/9` receipt conflicts with
+  Batch 31.36's nominally equivalent `9/9` result. Every renderer remains
+  unadmitted; other characters and the router stay closed or paused
 - `082` and `g10.029` are historical evidence, not active execution authority
 - `g10.028` source-fill work remains paused
 
@@ -162,6 +164,7 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Keep Contract `084` closed. Under Contract `085`, run `g10.031` Batch 31.39
-only from the frozen `ComparatorAuditedRenewalSpectral` brief. Keep product
-routes and public surfaces unchanged.
+Keep Contract `084` closed. Under Contract `085`, run `g10.031` Batch 31.40
+only as docs and evidence-authority reassessment. Do not recover deleted code,
+implement DSP, change gates, or rerun candidates. Keep product routes and
+public surfaces unchanged.
