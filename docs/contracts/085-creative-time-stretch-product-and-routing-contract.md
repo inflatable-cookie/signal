@@ -1,10 +1,11 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: active PaulX-like `Dream`; implementation paused at stereo-policy decision
+Status: active PaulX-like `Dream`; comparator-audited candidate ready
 Owner: core-product
 Updated: 2026-07-21
 Related contracts: `046`, `048`, `084`
 Related architecture: `docs/architecture/offline-creative-time-stretch-study.md`,
+`docs/architecture/offline-creative-comparator-audited-renewal-spectral-brief.md`,
 `docs/architecture/offline-creative-verified-source-relative-renewal-spectral-brief.md`,
 `docs/architecture/offline-creative-source-relative-renewal-spectral-brief.md`,
 `docs/architecture/offline-creative-audited-variance-compensated-renewal-spectral-brief.md`,
@@ -160,6 +161,16 @@ Neutral `space` preserves mono. Duplicate stereo, swap, and polarity mechanics
 must remain explicit structural gates. Independent linked-stereo listening is
 required before promotion.
 
+For creative `Dream`, finite output, exact length, deterministic repeat,
+duplicate/mono mechanics, common polarity, anti-phase, swap relationship,
+per-bin channel magnitude, whole-render balance, three-band balance, and
+declared `space` direction are hard stereo controls. Local mapped-window
+source-relative balance and dominance are mandatory diagnostics. They do not
+carry a terminal numeric threshold because the preferred PaulX target uses
+separate per-channel phase renewal and does not promise local source-relative
+waveform balance. Comparator-relative review by an eligible independent
+stereo listener is terminal and cannot be waived by objective metrics.
+
 A candidate brief must state which of those gates are samplewise invariants
 and which are relationship or listening invariants. It may not inherit an
 exact algebraic tolerance from a rejected representation without showing that
@@ -227,7 +238,16 @@ consistently.
 Every numeric creative-character gate must be calibrated against the retained
 comparator row or identify a hard integrity boundary. Hard integrity,
 replica-region, level, discontinuity, dropout, deterministic-state, boundary,
-and linked-stereo gates remain terminal.
+and the explicitly named hard linked-stereo gates remain terminal.
+
+For neutral `Dream`, whole-render and three-band candidate-source balance
+remain hard at `0.75 dB`, balance spread across `space=0`, `0.5`, and `1`
+remains hard at `0.50 dB`, and whole/band dominance reversal remains terminal
+when source balance magnitude is at least `0.50 dB`. Four-second mapped-window
+balance with two-second hops must record complete candidate-source and
+PaulX-source error and dominance. Missing or non-finite evidence rejects the
+receipt; finite local error and reversal are diagnostic for independent
+listening rather than numeric rejection.
 
 For neutral `Dream`, sustained pitch error versus the matching PaulX row is a
 mandatory diagnostic, not a terminal comparator threshold. The frozen
@@ -589,6 +609,20 @@ invariant. Changing that invariant to a diagnostic under comparator-relative
 independent listening is an explicit operator product decision. It cannot
 reinterpret or recover a rejected checkpoint.
 
+The operator made that product decision after Batch 31.37. For neutral
+creative `Dream`, mapped local source-relative balance and dominance are now
+diagnostic. Hard integrity, structural stereo relations, whole-render and
+three-band balance, `space` consistency, and complete evidence remain
+terminal. Concealed comparator-relative stereo review by an eligible
+independent listener is promotion authority. The operator may still reject a
+speaker pre-screen but cannot supply the required independent pass.
+
+Fresh authority is `ComparatorAuditedRenewalSpectral`. It retains every Batch
+31.36 renderer formula and hard control, changes only the explicit stereo gate
+classification, and adds PaulX-source values to the mapped-window diagnostic.
+The deleted checkpoint remains rejected. Implementation must start from the
+brief in a new isolated worktree without recovering prior code.
+
 ## Initial Promotion Sequence
 
 1. Comparator capture and target-character freeze. Complete.
@@ -685,6 +719,12 @@ reinterpret or recover a rejected checkpoint.
 37. Reassess renewal linked-stereo ownership across the two complete stereo
     failures. Complete; no materially different source-backed complete owner
     remains. Renewal closes without closing the PaulX-like product target.
+38. Apply the operator-authorized creative-stereo policy and freeze one fresh
+    complete comparator-audited renewal brief. Complete; docs and architecture
+    only. No rejected checkpoint is revived.
+39. Implement `ComparatorAuditedRenewalSpectral` once from fresh source and run
+    its frozen construction, objective, mono, and stereo admission sequence.
+    Ready; isolated candidate only.
 
 `Spectral`/`Rough`, coherent overlap, `LayeredCloud`, the upper overlap, dynamic
 ratios, and automatic routing still require separate reopening decisions backed
@@ -746,13 +786,15 @@ Batch 31.37 completed that reassessment. Current-frame common rotation is
 already present and insufficient after inverse synthesis and frame blending.
 Temporal recurrence, peak trajectories, and paired oscillators are different
 families with closed or failed complete-system evidence. Renewal is closed.
-No creative renderer is ready.
+No creative renderer was ready under the old stereo policy.
 
-The contract remains unchanged pending operator intent. Local source-relative
-whole, band, mapped-window, and dominance limits remain terminal unless the
-operator explicitly promotes comparator-relative independent listening above
-local image diagnostics for creative stereo. No agent may infer that change
-from PaulX's independent-channel implementation or the strong mono result.
+Batch 31.38 records the explicit operator change. Local mapped-window
+source-relative balance and dominance are diagnostic for neutral `Dream`.
+Whole-render and band balance, structural relationships, exact length,
+finiteness, determinism, bounded state, and every other hard gate remain
+terminal. Eligible independent stereo listening now owns the final creative
+image decision. `ComparatorAuditedRenewalSpectral` is frozen as one fresh
+complete candidate; no code has been implemented.
 
 No public Rust enum, renderer, harness mode, fixture, artifact schema, runtime
 route, or product-facing claim entered `main`. `OfflineHighQuality` remains
@@ -760,8 +802,8 @@ byte-exact and Contract `084` remains closed. No creative renderer is admitted.
 
 ## Next Task
 
-No batch is ready. Operator intent must decide whether local source-relative
-stereo remains terminal or becomes diagnostic under comparator-relative
-independent listening. Until then, keep renewal, other characters, routing,
-product exposure, Loophole, and Chorus closed or paused. Do not recover a
-candidate or change gates implicitly.
+Run `g10.031` Batch 31.39 only. Implement
+`ComparatorAuditedRenewalSpectral` once from fresh source in its named
+disposable worktree. Keep other characters, routing, product exposure,
+Loophole, and Chorus closed or paused. Do not recover rejected code, alter the
+frozen renderer or gates, or push.

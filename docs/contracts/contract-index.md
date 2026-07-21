@@ -28,10 +28,11 @@ memory alone.
   evidence-construction failure and froze fresh support-audited authority.
   Batch 31.36 passed all objective and concealed mono gates, then failed local
   source-relative stereo at `16x`. Batch 31.37 found no different complete
-  source-backed renewal owner and closed the family. Every renderer remains
-  unadmitted; operator intent must decide whether local creative stereo stays
-  terminal or becomes diagnostic beneath comparator-relative independent
-  listening. Other characters and the router stay closed or paused
+  source-backed renewal owner and closed the family under that gate. The
+  operator then made mapped local source balance diagnostic while retaining
+  hard structural and whole/band controls plus eligible independent listening.
+  Batch 31.38 freezes one fresh comparator-audited candidate. Every renderer
+  remains unadmitted; other characters and the router stay closed or paused
 - `082` and `g10.029` are historical evidence, not active execution authority
 - `g10.028` source-fill work remains paused
 
@@ -161,7 +162,6 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Keep Contract `084` closed. Under Contract `085`, no implementation batch is
-ready. Operator intent must decide whether local source-relative creative
-stereo remains terminal or becomes diagnostic beneath comparator-relative
-independent listening. Keep product routes and public surfaces unchanged.
+Keep Contract `084` closed. Under Contract `085`, run `g10.031` Batch 31.39
+only from the frozen `ComparatorAuditedRenewalSpectral` brief. Keep product
+routes and public surfaces unchanged.

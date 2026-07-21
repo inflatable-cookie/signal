@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: paused; Batch 31.37 complete, operator stereo-policy decision required
+Status: active; Batch 31.38 complete, Batch 31.39 ready
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -1220,10 +1220,69 @@ Decision:
   terminal or becomes diagnostic beneath comparator-relative independent
   listening
 
+## Batch 31.38 - Comparator-Relative Stereo Policy And Fresh Brief
+
+Status: complete; docs and architecture only
+
+- [x] record the operator decision that local mapped-window source-relative
+  balance and dominance are creative diagnostics rather than numeric terminal
+  gates
+- [x] retain hard structural stereo relationships, whole-render and three-band
+  balance, `space` consistency, exact length, determinism, and bounded state
+- [x] make eligible independent comparator-relative stereo listening terminal
+  and keep the operator speaker pass reject-only
+- [x] preserve the Batch 31.36 local-image failure as diagnostic evidence
+  without reviving or reinterpreting its deleted checkpoint
+- [x] freeze one fresh complete `ComparatorAuditedRenewalSpectral` brief with
+  exact renderer, gate, isolation, cleanup, and minimal-admission ownership
+- [x] keep candidate DSP, tests, harnesses, fixtures, APIs, routing, cache,
+  Loophole, and Chorus unchanged
+
+Decision:
+
+- the source-relative local-window invariant did not describe PaulX's
+  independent-channel target and is no longer a neutral-`Dream` product veto
+- the existing linked native-channel renewal law remains the selected renderer;
+  no stereo repair, temporal recurrence, channel gain, or new DSP is added
+- mapped-window Signal-source and PaulX-source rows must be complete and finite
+  but are judged through eligible independent listening
+- whole-render and three-band balance retain their frozen hard thresholds
+- low-frequency noise and opposite entry/tail energy weighting remain explicit
+  mono and stereo scorecard risks
+- the new brief starts from fresh source under a new identity; rejected code
+  and checkpoints remain deleted
+
+## Batch 31.39 - Isolated Comparator-Audited Renewal Candidate
+
+Status: ready; isolated candidate only
+
+- [ ] create only `signal-candidate-31-39` on
+  `candidate/g10-031-comparator-audited-renewal`
+- [ ] implement the frozen six-file private renderer and `24`-owner gate table
+  from fresh source without recovering a rejected checkpoint
+- [ ] run `effigy test compile`, require construction `1/1`, then freeze one
+  immutable local checkpoint
+- [ ] run structural `15/15` and synthetic `9/9` once in that order
+- [ ] after objective admission, run the full concealed mono `15`-row pack and
+  explicitly score low-frequency noise plus entry/tail energy
+- [ ] assemble valid exact-source stereo and PaulX comparator rows, enforce hard
+  structural/whole/band controls, and complete mapped-window diagnostics
+- [ ] allow operator speaker pre-screen to reject, then require an eligible
+  independent listener for neutral `15`-row and `space`-trio promotion
+- [ ] stop on the first terminal miss; delete the complete candidate without
+  repair or rerun; after a complete pass retain only the isolated checkpoint
+  and receipt for a separate minimal-admission batch
+- [ ] keep public APIs, reports, fixtures, cache, routing, other characters,
+  Loophole, and Chorus unchanged; do not push
+
+Stop after the complete pass/rejection receipt and cleanup. Do not merge the
+candidate to `main` in Batch 31.39. Minimal admission, product exposure,
+multi-seed review, routing, and other characters require later batches.
+
 ## Later Batches
 
-Closed or paused without promotion. Further work requires the operator stereo-
-policy decision:
+Closed or paused without promotion. Work after Batch 31.39 depends on its
+complete candidate decision:
 
 - minimal production admission
 - coherent/diffusive overlap
@@ -1297,12 +1356,17 @@ policy decision:
 - [x] repeated linked-stereo failure triggered architecture reassessment
 - [x] reassessment found no materially different source-backed complete
   renewal owner and closed the family without closing the product target
+- [x] operator changed the creative stereo gate from local numeric rejection
+  to mandatory diagnostics plus comparator-relative independent listening
+- [x] one fresh complete comparator-audited renewal brief is frozen without
+  candidate code or product exposure
+- [ ] one fresh comparator-audited candidate reaches a terminal complete-system
+  decision under the revised product gate
 - [x] no private renderer or product surface entered `main`
 
 ## Next Task
 
-No batch is ready. Operator intent must decide whether local source-relative
-stereo remains a terminal creative invariant or becomes diagnostic beneath
-comparator-relative independent listening. Until then, keep implementation,
-other characters, routing, product exposure, Loophole, and Chorus paused. Do
-not recover candidate source, change gates, or push.
+Run Batch 31.39 only. Implement the frozen
+`ComparatorAuditedRenewalSpectral` brief once from fresh source in its named
+disposable worktree. Do not recover rejected code, change formulas or gates,
+open other characters or routing, touch Loophole or Chorus, or push.

@@ -31,7 +31,8 @@ strict lane.
 - Rejected offline stretch successor: [architecture/offline-time-stretch-successor-brief.md](./architecture/offline-time-stretch-successor-brief.md)
 - Non-phase-vocoder feasibility: [architecture/offline-time-stretch-non-phase-vocoder-feasibility.md](./architecture/offline-time-stretch-non-phase-vocoder-feasibility.md)
 - Creative time-stretch study: [architecture/offline-creative-time-stretch-study.md](./architecture/offline-creative-time-stretch-study.md)
-- Rejected creative SupportAuditedListeningLedSourceRelativeRenewalSpectral brief; renewal closed: [architecture/offline-creative-verified-source-relative-renewal-spectral-brief.md](./architecture/offline-creative-verified-source-relative-renewal-spectral-brief.md)
+- Frozen creative ComparatorAuditedRenewalSpectral brief: [architecture/offline-creative-comparator-audited-renewal-spectral-brief.md](./architecture/offline-creative-comparator-audited-renewal-spectral-brief.md)
+- Rejected-under-old-stereo-policy SupportAuditedListeningLedSourceRelativeRenewalSpectral brief: [architecture/offline-creative-verified-source-relative-renewal-spectral-brief.md](./architecture/offline-creative-verified-source-relative-renewal-spectral-brief.md)
 - Rejected-at-vector-proof creative SourceRelativeRenewalSpectral brief: [architecture/offline-creative-source-relative-renewal-spectral-brief.md](./architecture/offline-creative-source-relative-renewal-spectral-brief.md)
 - Rejected creative AuditedVarianceCompensatedRenewalSpectral brief: [architecture/offline-creative-audited-variance-compensated-renewal-spectral-brief.md](./architecture/offline-creative-audited-variance-compensated-renewal-spectral-brief.md)
 - Evidence-rejected creative VarianceCompensatedRenewalSpectral brief: [architecture/offline-creative-variance-compensated-renewal-spectral-brief.md](./architecture/offline-creative-variance-compensated-renewal-spectral-brief.md)
@@ -79,7 +80,7 @@ strict lane.
 
 ## Next Task
 
-No implementation batch is ready. Decide whether local source-relative stereo
-remains a terminal creative invariant or becomes diagnostic under comparator-
-relative independent listening. Keep DSP, routing, and product exposure paused.
-Only drop into `specs/` when a strict lane is explicitly reopened.
+Run `g10.031` Batch 31.39 only. Implement the frozen comparator-audited
+candidate once from fresh source in its named disposable worktree. Keep
+routing, product exposure, Loophole, and Chorus paused. Only drop into `specs/`
+when a strict lane is explicitly reopened.

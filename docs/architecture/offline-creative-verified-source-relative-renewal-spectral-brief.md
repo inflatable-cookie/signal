@@ -1,6 +1,6 @@
 # Offline Creative SupportAuditedListeningLedSourceRelativeRenewalSpectral Renderer Brief
 
-Status: rejected; renewal family closed under current stereo boundary
+Status: rejected; old stereo-boundary closure superseded by explicit product policy
 Owner: dsp
 Updated: 2026-07-21
 Contract: `085`
@@ -115,6 +115,18 @@ unimplemented, or the operator may explicitly make local image diagnostics
 subordinate to comparator-relative independent listening for creative output.
 Any change requires fresh docs authority and a fresh candidate. It cannot
 reinterpret or recover checkpoint `5d8eaf45`.
+
+## Batch 31.38 Policy Reopening
+
+The operator explicitly selected comparator-relative creative stereo after
+Batch 31.37. This checkpoint remains rejected and deleted. Its mapped-window
+failure remains valid diagnostic evidence.
+
+Fresh authority is the separate
+[ComparatorAuditedRenewalSpectral brief](./offline-creative-comparator-audited-renewal-spectral-brief.md).
+It retains this renderer's formulas and hard whole/band stereo controls, makes
+finite mapped-window error and dominance diagnostic, and requires an eligible
+independent listener for promotion. No code or checkpoint transfers.
 
 ## Batch 31.34 Outcome
 
@@ -562,8 +574,5 @@ single-seed admission receipt.
 
 ## Next Task
 
-No implementation batch is ready. The operator must decide whether local
-source-relative stereo remains a terminal creative invariant or becomes a
-diagnostic beneath comparator-relative independent listening. Keep the current
-contract, deleted checkpoints, product surfaces, and routing unchanged until
-that explicit decision.
+Follow the fresh comparator-audited brief. Do not recover or reinterpret this
+rejected checkpoint.

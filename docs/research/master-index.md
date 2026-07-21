@@ -52,7 +52,7 @@ decision controls any future reopening.
 | [Rubber Band Source Architecture](./specimen-dossiers/rubber-band-source-architecture.md) | R2/R3 scheduling, scale ownership, guidance, and phase topology | Reviewed |
 | [Bungee Source Architecture](./specimen-dossiers/bungee-source-architecture.md) | Whole-kernel common-region rotation and dynamic multichannel feasibility | Reviewed |
 | [SBSMS Source Architecture](./specimen-dossiers/sbsms-source-architecture.md) | Linked subband partial tracking, paired stereo trajectories, and direct oscillator synthesis | Source feasibility rejected |
-| [Creative Stretch Source Triangulation](./specimen-dossiers/creative-stretch-source-triangulation.md) | PaulXStretch, CDP, and Potenza whole-path ownership behind retained creative targets | Reviewed; PaulX-like `Dream` recovery active |
+| [Creative Stretch Source Triangulation](./specimen-dossiers/creative-stretch-source-triangulation.md) | PaulXStretch, CDP, and Potenza whole-path ownership behind retained creative targets | Reviewed; comparator-audited `Dream` candidate ready |
 
 Current stretch feasibility decision:
 [Offline Time-Stretch Non-Phase-Vocoder Feasibility](../architecture/offline-time-stretch-non-phase-vocoder-feasibility.md).
@@ -96,8 +96,13 @@ not a missing same-frame relation formula, own the local image failure.
 Source-backed temporal corrections select already-closed coherent families;
 post-hoc gain, covariance, consistency, smoothing, phase, and `space`
 variants are unsupported repair paths. Renewal is closed under the current
-stereo hard gate. The PaulX-like product target remains open pending an
-operator stereo-policy decision.
+stereo hard gate. The operator then made mapped local source balance
+diagnostic while retaining hard structural and whole/band controls plus
+eligible independent listening. Batch 31.38 freezes one fresh complete
+candidate without reviving deleted code.
+
+Fresh comparator-audited neutral `Dream` candidate brief:
+[Offline Creative ComparatorAuditedRenewalSpectral Renderer Brief](../architecture/offline-creative-comparator-audited-renewal-spectral-brief.md).
 
 Rejected support-audited neutral `Dream` candidate brief:
 [Offline Creative SupportAuditedListeningLedSourceRelativeRenewalSpectral Renderer Brief](../architecture/offline-creative-verified-source-relative-renewal-spectral-brief.md).
@@ -161,9 +166,5 @@ Rejected first-owner brief:
 
 ## Next Task
 
-No implementation batch is ready. Operator intent must decide whether local
-source-relative stereo remains terminal for creative `Dream`, leaving renewal
-closed, or becomes a diagnostic beneath hard integrity/global-balance controls
-and comparator-relative independent listening. Any changed policy requires a
-fresh contract, brief, and candidate; do not recover rejected code or reopen
-the transparent successor.
+Run `g10.031` Batch 31.39 only from the fresh comparator-audited brief. Do not
+recover rejected code or reopen the transparent successor.

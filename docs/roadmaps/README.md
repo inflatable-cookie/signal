@@ -1,7 +1,7 @@
 # Roadmaps
 
 Status: active
-Updated: 2026-07-20
+Updated: 2026-07-21
 
 ## Why this section matters now
 
@@ -113,7 +113,12 @@ mandatory diagnostic rather than a rejection threshold. Batch 31.33 froze one
 fresh listening-led source-relative candidate. Batch 31.34 rejected it at
 synthetic `Y08`. Batch 31.35 classified the over-broad dropout scan as
 executable evidence-construction failure and froze fresh support-audited
-authority; Batch 31.36 is ready.
+authority. Batch 31.36 passed all objective and concealed mono gates, then
+failed mapped local stereo balance at `16x` and was deleted. Batch 31.37 found
+no different temporal owner inside renewal. The operator then made local
+mapped balance diagnostic under comparator-relative independent listening.
+Batch 31.38 froze one fresh complete `ComparatorAuditedRenewalSpectral` brief;
+Batch 31.39 is ready as isolated implementation only.
 Offline artifacts still need a streaming artifact writer/cache target for full
 peak-memory closure. Mono callback-state DSP has a
 no-allocation proof, linked stereo is implemented, ratio scheduling has
@@ -240,7 +245,7 @@ Before rollover:
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the active generation front door. Run
-`g10.031` Batch 31.36 only. Implement the frozen support-audited listening-led
-candidate once from fresh source. Keep the transparent successor lane,
+`g10.031` Batch 31.39 only. Implement the frozen comparator-audited candidate
+once from fresh source. Keep the transparent successor lane,
 `g10.028`, other creative owners, routing, product exposure, and cross-repo
 work closed.

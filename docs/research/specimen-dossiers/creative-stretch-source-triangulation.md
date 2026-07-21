@@ -1,9 +1,9 @@
 # Creative Stretch Source Triangulation
 
-Status: reviewed; renewal closed at repeated linked-stereo failure
+Status: reviewed; comparator-audited renewal reopening authorized
 Owner: dsp
 Updated: 2026-07-21
-Roadmap: `g10.031`, Batches 31.16 and 31.30-31.37
+Roadmap: `g10.031`, Batches 31.16 and 31.30-31.38
 
 ## Question
 
@@ -404,10 +404,20 @@ whether bounded integrity plus comparator-relative independent listening owns
 promotion. That is a Contract `085` operator decision, not an architecture
 finding and not permission to revive Batch 31.36.
 
+The operator selected the second policy after Batch 31.37. Source evidence now
+has a consistent role: PaulX defines the diffuse musical target, Signal keeps
+one shared schedule and random trajectory plus hard whole/band balance, and an
+eligible independent listener decides whether the resulting creative image is
+competitive. Local mapped-window source balance remains measured for both
+Signal and PaulX but is diagnostic.
+
+This policy reopens one fresh documented candidate, not the deleted checkpoint
+and not a stereo repair experiment. The renderer remains the tested linked
+native-channel renewal law. Its complete fresh authority is
+[ComparatorAuditedRenewalSpectral](../../architecture/offline-creative-comparator-audited-renewal-spectral-brief.md).
+
 ## Next Task
 
-No implementation batch is ready. The operator must decide whether local
-source-relative stereo remains a hard creative invariant or becomes diagnostic
-under comparator-relative independent listening. Until that decision, keep
-renewal, other characters, routing, product exposure, Loophole, and Chorus
-closed or paused.
+Run `g10.031` Batch 31.39 only from the fresh comparator-audited brief. Keep
+other characters, routing, product exposure, Loophole, and Chorus closed or
+paused. Do not recover rejected candidate code.

@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: creative stretch paused at operator stereo-policy decision
+Status: creative comparator-audited stretch candidate ready
 Updated: 2026-07-21
 
 ## Why this generation matters now
@@ -150,8 +150,12 @@ The 2026-07-19 consolidation reset is authoritative.
   reversal. The candidate was deleted. Batch 31.37 is a docs-only
   linked-stereo ownership reassessment. It found no materially different
   source-backed complete renewal owner and closed the family. The PaulX-like
-  target remains; no implementation is authorized pending operator stereo-
-  policy intent.
+  target remains. The operator then selected comparator-relative creative
+  stereo promotion: local mapped-window source balance is diagnostic, while
+  structural relationships, whole/band balance, and eligible independent
+  listening remain terminal. Batch 31.38 froze one fresh complete
+  `ComparatorAuditedRenewalSpectral` brief without candidate DSP. Batch 31.39
+  is ready as one isolated implementation from fresh source.
 - The 2026-07-20 lifecycle reconciliation closes stale `g10.001` and
   `g10.003` active markers. It also records that Signal's `g10.017` capture and
   live-monitor implementation landed; that roadmap is paused only on explicit
@@ -225,12 +229,13 @@ Do not start Loophole or Chorus planning from Signal internals.
   - historical correctness, listening, and rejected-successor ledger
 - `g10.030` `complete`
   - stretch consolidated; candidate families closed; frozen baseline retained
-- `g10.031` `paused`
+- `g10.031` `active`
   - PaulX-like neutral `Dream` remains product intent; Batch 31.36 passed all
     objective and mono gates, then failed source-relative stereo admission and
     was deleted; Batch 31.37 closed renewal after finding no different complete
-    owner; operator stereo-policy intent is required; explicit `Cyclic` stays
-    closed
+    owner; Batch 31.38 records the operator's comparator-relative stereo policy
+    and freezes one fresh complete candidate; Batch 31.39 is ready; explicit
+    `Cyclic` stays closed
 
 ## Stretch Boundary
 
@@ -299,14 +304,18 @@ Batch 31.37 completed that reassessment. The current-frame common rotation is
 already present; independent renewal between adjacent frames leaves local
 waveform interference unowned. Source-backed temporal corrections select
 closed coherent/peak/oscillator families. Renewal is closed without closing
-the PaulX-like target. No batch is ready until the operator decides whether
-local source-relative stereo remains terminal or becomes diagnostic under
-comparator-relative independent listening.
+the PaulX-like target under the old stereo policy.
+
+The operator then selected comparator-relative creative stereo promotion.
+Batch 31.38 keeps structural stereo relationships and whole/band balance hard,
+makes mapped local source balance a complete diagnostic, and requires an
+eligible independent listener for final image promotion. It freezes one fresh
+complete renewal candidate without reusing deleted code. Batch 31.39 is ready
+as isolated implementation only.
 
 ## Next Task
 
-No batch is ready. Decide whether creative stereo must retain the current local
-source-relative hard gate or may promote through bounded integrity plus
-comparator-relative independent listening with local image metrics diagnostic.
-Keep `g10.028`, implementation, routing, product exposure, and cross-repo work
-paused. Do not push.
+Run `g10.031` Batch 31.39 only from the frozen
+`ComparatorAuditedRenewalSpectral` brief. Keep `g10.028`, routing, product
+exposure, other creative characters, and cross-repo work paused. Do not recover
+rejected code or push.

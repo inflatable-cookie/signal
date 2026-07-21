@@ -1,6 +1,6 @@
 # Offline Creative Time-Stretch Study
 
-Status: PaulX-like `Dream` retained; renewal closed, stereo policy decision required
+Status: PaulX-like `Dream` retained; comparator-audited renewal candidate ready
 Owner: dsp
 Updated: 2026-07-21
 Contract: `085`
@@ -636,6 +636,22 @@ diagnostic under comparator-relative independent listening. A changed gate
 would require fresh authority and a fresh candidate; it cannot revive a
 deleted checkpoint.
 
+The operator selected the comparator-relative policy after Batch 31.37. This
+does not erase either stereo failure. For neutral `Dream`, local mapped-window
+source balance and dominance remain complete diagnostics, now paired with the
+same PaulX-source measurements. Structural stereo relationships, whole-render
+and three-band balance, deterministic integrity, exact boundaries, and bounded
+state remain hard. An eligible independent stereo listener owns final image
+promotion; the operator may reject a speaker pre-screen but cannot supply that
+independent pass.
+
+Batch 31.38 freezes one fresh complete
+`ComparatorAuditedRenewalSpectral` brief. It retains the fully tested renderer
+formulas rather than inventing a stereo repair, starts from fresh source, and
+changes only the product-backed gate classification. The scorecards explicitly
+retain the reported low-frequency noise and opposite entry/tail energy risks.
+No candidate DSP or product surface enters `main` in this batch.
+
 ## Sources
 
 - [REAPER time-stretch engines](https://www.reaper.fm/about.php)
@@ -671,7 +687,8 @@ deleted checkpoint.
 
 ## Next Task
 
-No batch is ready. Decide whether local source-relative stereo remains a hard
-creative invariant or becomes diagnostic under comparator-relative independent
-listening. Keep renewal, implementation, routing, product exposure, Loophole,
-and Chorus paused until that explicit Contract `085` decision.
+Run Batch 31.39 only. Implement the frozen
+`ComparatorAuditedRenewalSpectral` brief once in its named disposable
+worktree. Keep routing, product exposure, other characters, Loophole, and
+Chorus paused; do not recover a rejected checkpoint or change the renderer or
+gate policy.
