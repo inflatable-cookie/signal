@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: creative stretch active; linked STN isolated candidate next
+Status: creative stretch active; linked STN bounded-state reassessment next
 Updated: 2026-07-21
 
 ## Why this generation matters now
@@ -248,8 +248,10 @@ Do not start Loophole or Chorus planning from Signal internals.
     executable identity, closed renewed implementation, and retained the
     PaulX-like target; Batch 31.41 selected `LinkedStnNoiseMorph` for one
     complete docs-only brief; Batch 31.42 froze that renderer and its
-    self-contained evidence authority; Batch 31.43 isolated implementation is
-    ready; explicit `Cyclic` stays closed
+    self-contained evidence authority; Batch 31.43 rejected its isolated
+    implementation at structural `S17` for duration-derived working state;
+    Batch 31.44 bounded-state reassessment is ready; explicit `Cyclic` stays
+    closed
 
 ## Stretch Boundary
 
@@ -357,11 +359,19 @@ and a `96 MiB` duration-independent state cap. One compile-linked `28`-owner
 specification and checkpoint/tree/file/output digests prevent another
 multi-hop evidence-identity gap. No DSP or product surface entered `main`.
 
+Batch 31.43 implemented the authority once in the named disposable worktree.
+Compile and construction `1/1` passed. The immutable checkpoint then completed
+structural admission at `17/18`: `S17` rejected full-duration component and
+spectral arrays because working state must remain duration-independent under
+`96 MiB`. Synthetic and listening gates did not open. The candidate and its
+branch, checkpoint reference, tests, and worktree were deleted without repair
+or rerun. No candidate code entered `main`.
+
 ## Next Task
 
-Run `g10.031` Batch 31.43 only in `signal-candidate-31-43` on
-`candidate/g10-031-linked-stn-noise-morph`. Implement the brief once, complete
-construction, freeze one checkpoint, then run structural and synthetic gates.
-Keep `main`, `g10.028`, routing, product exposure, other creative characters,
-and cross-repo work unchanged. Do not recover deleted code, run another
-renewal candidate, merge, or push.
+Run `g10.031` Batch 31.44 as docs-only bounded-state architecture
+reassessment. Prove or reject that the frozen `LinkedStnNoiseMorph` owner graph
+can use duration-independent monotonic rings without changing its map or
+audible ownership. Freeze one complete fresh authority or close the family.
+Do not implement another candidate, change `main`, `g10.028`, routing, product
+exposure, other creative characters, or cross-repo work, and do not push.

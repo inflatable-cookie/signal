@@ -35,8 +35,12 @@ memory alone.
   rejected it at synthetic `Y04` and `Y09`; its `7/9` receipt conflicts with
   Batch 31.36's nominally equivalent `9/9` result. Batch 31.40 found no
   retained executable identity capable of comparing those deleted
-  checkpoints and closed further renewal implementation. Every renderer
-  remains unadmitted; other characters and the router stay closed or paused
+  checkpoints and closed further renewal implementation. Batch 31.41 selected
+  materially different `LinkedStnNoiseMorph`; Batch 31.42 froze one complete
+  authority. Its Batch 31.43 candidate passed construction, then failed
+  structural `S17` because duration-derived component arrays violated the
+  bounded-state contract. The candidate was deleted. Every renderer remains
+  unadmitted; other characters and the router stay closed or paused
 - `082` and `g10.029` are historical evidence, not active execution authority
 - `g10.028` source-fill work remains paused
 
@@ -166,8 +170,7 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Keep Contract `084` closed. Contract `085` retains the PaulX-like target but
-has no renderer authority or implementation batch ready. The operator must
-explicitly authorize materially different, source-backed creative-owner
-research before work resumes. Do not recover deleted code or run another
-renewal candidate. Keep product routes and public surfaces unchanged.
+Keep Contract `084` closed. Contract `085` retains the PaulX-like target but no
+renderer is admitted. Run `g10.031` Batch 31.44 as docs-only bounded-state
+reassessment of `LinkedStnNoiseMorph`. Do not implement another candidate or
+recover deleted code. Keep product routes and public surfaces unchanged.

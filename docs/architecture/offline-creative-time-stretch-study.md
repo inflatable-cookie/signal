@@ -1,6 +1,6 @@
 # Offline Creative Time-Stretch Study
 
-Status: `LinkedStnNoiseMorph` brief frozen; one isolated candidate ready
+Status: `LinkedStnNoiseMorph` candidate rejected; bounded-state reassessment ready
 Owner: dsp
 Updated: 2026-07-21
 Contract: `085`
@@ -754,6 +754,22 @@ prove component reconstruction, tonal and event behavior, residual
 non-periodicity, linked stereo, `16x`, long-form mono, and eligible independent
 stereo listening. No DSP or product surface entered `main` in Batch 31.42.
 
+## Batch 31.43 Bounded-State Rejection
+
+The isolated `LinkedStnNoiseMorph` checkpoint passed compile and construction
+`1/1`. Its one-shot structural run completed `17/18`. `S17` rejected the
+renderer because it allocated full-duration source component and spectral
+arrays rather than the frozen monotonic analysis rings. Working capacity
+therefore scaled with source duration and could not satisfy the `96 MiB`
+duration-independent bound.
+
+This is not evidence against STN sound quality: synthetic and listening gates
+never opened. It is also not a tunable miss. The candidate failed one of the
+complete architecture's ownership boundaries and was deleted without repair
+or rerun. The next work is a docs-only feasibility reassessment of bounded
+component production, consumer lookahead, eviction, event lifetime, and
+synthesis support. Another implementation is not ready.
+
 ## Sources
 
 - [REAPER time-stretch engines](https://www.reaper.fm/about.php)
@@ -791,7 +807,8 @@ stereo listening. No DSP or product surface entered `main` in Batch 31.42.
 
 ## Next Task
 
-Run Batch 31.43 only in the named disposable worktree. Implement the frozen
-`LinkedStnNoiseMorph` brief once, complete construction, freeze one checkpoint,
-then run structural and synthetic admission in order. Stop before listening on
-any miss. Do not change production code or product exposure.
+Run Batch 31.44 as docs-only bounded-state architecture reassessment. Prove or
+reject that all frozen `LinkedStnNoiseMorph` consumers can advance and evict
+through duration-independent rings without changing the renderer's map or
+material ownership. Do not implement another candidate or change product
+exposure.

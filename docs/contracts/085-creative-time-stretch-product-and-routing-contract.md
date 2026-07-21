@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: active PaulX-like `Dream`; one `LinkedStnNoiseMorph` candidate ready
+Status: active PaulX-like `Dream`; bounded-state reassessment ready
 Owner: core-product
 Updated: 2026-07-21
 Related contracts: `046`, `048`, `084`
@@ -900,10 +900,19 @@ isolated implementation, not production admission. `16x`, component leakage,
 long-form musical quality, linked residual image, cost, and exterior character
 remain terminal candidate risks.
 
+Batch 31.43 implemented that authority once in isolation. Compile and
+construction `1/1` passed. Structural admission completed `17/18`; `S17`
+rejected duration-derived component arrays because working state must be
+bounded independently of source and output duration. The checkpoint was not
+repaired or rerun. Synthetic and listening gates remained closed, and the
+candidate worktree, branch, checkpoint reference, source, tests, and build
+state were deleted. No creative renderer is admitted.
+
 ## Next Task
 
-Run Batch 31.43 only in the exact disposable worktree and branch named by the
-frozen brief. Implement it once, complete construction, freeze one checkpoint,
-then run structural and synthetic owners in order. Stop before listening on
-any miss. Do not recover rejected code, change `main`, open routing or product
+Run Batch 31.44 as docs-only bounded-state architecture reassessment. Determine
+whether the complete `LinkedStnNoiseMorph` owner graph can preserve its sole
+map and material semantics with duration-independent rings under `96 MiB`.
+Freeze one complete fresh authority or close the family. Do not implement a
+candidate, recover rejected code, change `main`, open routing or product
 exposure, touch Loophole or Chorus, or push.

@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: active; Batch 31.42 complete, Batch 31.43 ready
+Status: active; Batch 31.43 rejected, Batch 31.44 reassessment ready
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -1429,11 +1429,44 @@ Decision:
 - Batch 31.43 may implement this brief once in its named disposable worktree;
   it may not repair the architecture or enter production
 
+## Batch 31.43 - Linked STN Isolated Candidate
+
+Status: complete; candidate rejected at bounded-state structural gate
+
+- [x] created only `signal-candidate-31-43` on
+  `candidate/g10-031-linked-stn-noise-morph` from `c84bd538`
+- [x] implemented the private eight-file `LinkedStnNoiseMorph` module and its
+  compile-linked `28`-owner evidence specification without changing public or
+  production surfaces
+- [x] passed `effigy test compile` and construction `1/1`
+- [x] froze immutable checkpoint `1c383679` with tree `cf413de5`
+- [x] ran all structural owners once: `17/18` passed
+- [x] stopped at `S17`; the candidate materialized duration-derived component
+  arrays and therefore violated the frozen `96 MiB` duration-independent
+  working-state boundary
+- [x] did not repair or rerun the checkpoint; synthetic, mono, and stereo
+  admission did not open
+- [x] retained executable-identity digests in the Batch 31.43 closeout log
+- [x] deleted the worktree, branch, checkpoint reference, module, tests, and
+  worktree-local build state; no candidate code entered `main`
+
+Decision:
+
+- the miss is architectural conformance, not a metric threshold or parameter
+  choice: complete source component buffers replaced the required bounded
+  analysis rings
+- the `17` passing owners establish no creative quality result because the
+  bounded-state gate is terminal and listening remains promotion authority
+- a second implementation is not ready; Batch 31.44 must decide whether the
+  frozen STN owner graph is realizable with bounded monotonic rings without
+  changing its map, decomposition, tonal, event, residual, or evidence
+  semantics
+
 ## Later Batches
 
-Closed or paused without promotion. Batch 31.43 isolated implementation is the
-only ready work. Every later product batch still requires a separately admitted
-complete renderer:
+Closed or paused without promotion. Batch 31.44 docs-only bounded-state
+reassessment is the only ready work. Every later product batch still requires
+a separately admitted complete renderer:
 
 - minimal production admission
 - coherent/diffusive overlap
@@ -1521,12 +1554,19 @@ complete renderer:
   `LinkedStnNoiseMorph` for one complete clean-room brief
 - [x] freeze one complete self-contained `LinkedStnNoiseMorph` renderer brief
   with no candidate-time ownership choices
+- [x] one isolated `LinkedStnNoiseMorph` candidate passed construction, then
+  reached terminal structural `S17` bounded-state rejection without entering
+  `main`
+- [x] the rejected checkpoint, implementation, tests, worktree, branch, and
+  build state were deleted without repair or rerun
 - [x] no private renderer or product surface entered `main`
 
 ## Next Task
 
-Run Batch 31.43 only in `signal-candidate-31-43` on
-`candidate/g10-031-linked-stn-noise-morph`. Implement the frozen brief once,
-run compile and construction, freeze one checkpoint, then run structural and
-synthetic admission in order. Stop before listening on any miss. Do not change
-production code, merge, expose the product, touch Loophole or Chorus, or push.
+Run Batch 31.44 as docs-only bounded-state architecture reassessment. Prove or
+reject that the frozen `LinkedStnNoiseMorph` owner graph can run from bounded
+monotonic source-component, descriptor, covariance, event, and synthesis rings
+under `96 MiB` without changing its map or audible ownership. Freeze either
+one complete replacement authority or a family closure. Do not implement a
+candidate, change production code, expose the product, touch Loophole or
+Chorus, or push.

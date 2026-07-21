@@ -1,6 +1,6 @@
 # Offline Creative LinkedStnNoiseMorph Renderer Brief
 
-Status: frozen; one isolated candidate ready
+Status: candidate rejected at bounded-state gate; reassessment required
 Owner: dsp
 Updated: 2026-07-21
 Contract: `085`
@@ -715,6 +715,21 @@ artifact, report, automatic routing, range blends, pitch, dynamic ratio,
 other characters, RealtimePreview, Loophole, or Chorus. Product seed variation
 requires a later multi-seed character review.
 
+## Batch 31.43 Candidate Outcome
+
+The one admitted implementation passed compile and construction `1/1`, then
+ran all structural owners once. Seventeen passed. `S17` failed because the
+candidate materialized full-duration tonal, transient, residual, and spectral
+component arrays. Those capacities derive from `L`, contrary to this brief's
+bounded monotonic rings and `96 MiB` duration-independent working-state rule.
+
+Checkpoint `1c383679` and tree `cf413de5` were not repaired or rerun.
+Synthetic and listening admission did not open. The disposable worktree,
+branch, checkpoint reference, source, tests, and worktree-local build state
+were deleted. The brief remains historical executable authority, not authority
+for another implementation. Batch 31.44 must reassess bounded-state
+realizability before any fresh candidate can become ready.
+
 ## Sources
 
 - [Creative source triangulation](../research/specimen-dossiers/creative-stretch-source-triangulation.md)
@@ -727,7 +742,7 @@ requires a later multi-seed character review.
 
 ## Next Task
 
-Run Batch 31.43 only in the named disposable worktree. Implement this brief
-once, complete construction, freeze one checkpoint, then run structural and
-synthetic admission in order. Stop before listening on any miss. Do not change
-production code or merge a candidate in that batch.
+Run Batch 31.44 as docs-only bounded-state architecture reassessment. Determine
+whether this complete owner graph can be scheduled with the frozen monotonic
+rings and memory cap without changing its audible semantics. Freeze a fresh
+complete authority or close the family. Do not implement another candidate.
