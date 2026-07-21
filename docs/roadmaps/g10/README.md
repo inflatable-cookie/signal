@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: creative stretch active; linked-STN geometry-vector audit next
+Status: creative stretch active; construction-bound linked-STN v6 ready
 Updated: 2026-07-21
 
 ## Why this generation matters now
@@ -443,10 +443,20 @@ closed. The candidate worktree, branch, checkpoint reference, source, tests,
 build state, receipt, and outputs were deleted without repair or rerun. No DSP
 or product surface entered `main`.
 
+Batch 31.52 independently reproduced all `184001` supported-rate geometry
+rows with two exact-integer evaluators. Transform transitions, every tie class,
+extent maxima and witnesses, binary table fingerprints, and all
+geometry-derived capacity maxima and witnesses agree. One compile-linked
+`GEOMETRY_SPEC` is now the only literal geometry table; construction and
+structural `S02` call the same exhaustive authority assertion. Fresh
+`ConstructionBoundZeroPreservingLinkedStnNoiseMorph` v6 is ready for one
+isolated implementation. No DSP or product surface entered `main`.
+
 ## Next Task
 
-Run `g10.031` Batch 31.52 docs-only. Independently audit every exact geometry
-vector, witness, rounding tie, and construction assertion, then bind the
-structural table into construction authority. Keep `g10.028`, routing, product
-exposure, other creative characters, and cross-repo work unchanged. Do not
-repair or recover Batch 31.51, implement DSP, merge, or push.
+Run `g10.031` Batch 31.53 only in the fresh construction-bound v6 worktree and
+branch. Implement once, require compile and construction `1/1`, checkpoint,
+then run structural and synthetic admission in order. Stop and clean up on the
+first miss. Keep `g10.028`, routing, product exposure, other creative
+characters, and cross-repo work unchanged. Do not repair Batch 31.51, merge,
+or push.

@@ -1,15 +1,15 @@
 # Offline Creative LinkedStnNoiseMorph Renderer Brief
 
-Status: zero-preserving v5 rejected at structural geometry-vector admission
+Status: construction-bound v6 ready for one isolated implementation
 Owner: dsp
 Updated: 2026-07-21
 Contract: `085`
-Roadmap: `g10.031`, Batches 31.42, 31.44, 31.46, 31.48, 31.49, 31.50, and 31.51
+Roadmap: `g10.031`, Batches 31.42 through 31.53
 
 ## Decision
 
 Build one Signal-owned
-`ZeroPreservingGeometryAuditedBoundedLinkedStnNoiseMorph` candidate
+`ConstructionBoundZeroPreservingLinkedStnNoiseMorph` candidate
 for neutral `Dream` at fixed creative expansion from `4x` through `16x`.
 
 This is one material-separated renderer, not three optional effects. A
@@ -49,6 +49,13 @@ making exact zero an explicit residual descriptor and synthesis state. No
 positive residual interpolation, threshold, transform, mask, map, source,
 quality limit, stochastic stream, stereo law, memory ceiling, or cost class
 changes.
+
+Construction-bound v6 retains the complete v5 renderer. It replaces the
+duplicated handwritten structural geometry evidence with one compile-linked
+`GEOMETRY_SPEC`, one separately coded exhaustive oracle, and one shared
+authority assertion executed by construction before checkpoint and by `S02`
+after checkpoint. No geometry formula, renderer behavior, memory ceiling,
+source, quality limit, or gate order changes.
 
 ## Supported Request
 
@@ -94,6 +101,78 @@ Freeze:
 
 Integer division is exact for every supported geometry. At `44.1` and
 `48 kHz`, `N_t=8192`, `N_s=1024`, `N_r=4096`, and `H=512`.
+
+### Construction-owned geometry table
+
+V6 freezes one compile-linked `GEOMETRY_SPEC` in `tests.rs`. Its row order is
+`F,N_t,A_t,N_s,A_s,N_r,A_r,H,Q_h,Q_v,R_h,R_v`. These are its sole literal
+sentinel rows:
+
+| `F` | `N_t` | `A_t` | `N_s` | `A_s` | `N_r` | `A_r` | `H` | `Q_h` | `Q_v` | `R_h` | `R_v` |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 8000 | 2048 | 256 | 256 | 64 | 1024 | 256 | 128 | 9 | 97 | 9 | 59 |
+| 8001 | 2048 | 256 | 256 | 64 | 1024 | 256 | 128 | 9 | 97 | 9 | 59 |
+| 8500 | 2048 | 256 | 256 | 64 | 1024 | 256 | 128 | 9 | 91 | 9 | 55 |
+| 9213 | 2048 | 256 | 256 | 64 | 1024 | 256 | 128 | 9 | 83 | 9 | 51 |
+| 12288 | 2048 | 256 | 256 | 64 | 1024 | 256 | 128 | 13 | 63 | 13 | 39 |
+| 16534 | 2048 | 256 | 256 | 64 | 1024 | 256 | 128 | 17 | 47 | 17 | 29 |
+| 17500 | 2048 | 256 | 256 | 64 | 1024 | 256 | 128 | 17 | 45 | 19 | 27 |
+| 18428 | 2048 | 256 | 256 | 64 | 1024 | 256 | 128 | 17 | 43 | 19 | 25 |
+| 18429 | 4096 | 512 | 512 | 128 | 2048 | 512 | 256 | 9 | 83 | 9 | 51 |
+| 36860 | 4096 | 512 | 512 | 128 | 2048 | 512 | 256 | 17 | 43 | 19 | 25 |
+| 36861 | 8192 | 1024 | 1024 | 256 | 4096 | 1024 | 512 | 9 | 83 | 9 | 51 |
+| 44100 | 8192 | 1024 | 1024 | 256 | 4096 | 1024 | 512 | 11 | 71 | 11 | 43 |
+| 48000 | 8192 | 1024 | 1024 | 256 | 4096 | 1024 | 512 | 11 | 65 | 13 | 39 |
+| 73724 | 8192 | 1024 | 1024 | 256 | 4096 | 1024 | 512 | 17 | 43 | 19 | 25 |
+| 73725 | 16384 | 2048 | 2048 | 512 | 8192 | 2048 | 1024 | 9 | 83 | 9 | 51 |
+| 98304 | 16384 | 2048 | 2048 | 512 | 8192 | 2048 | 1024 | 13 | 63 | 13 | 39 |
+| 147452 | 16384 | 2048 | 2048 | 512 | 8192 | 2048 | 1024 | 17 | 43 | 19 | 25 |
+| 147453 | 32768 | 4096 | 4096 | 1024 | 16384 | 4096 | 2048 | 9 | 83 | 9 | 51 |
+| 179200 | 32768 | 4096 | 4096 | 1024 | 16384 | 4096 | 2048 | 11 | 69 | 11 | 41 |
+| 184000 | 32768 | 4096 | 4096 | 1024 | 16384 | 4096 | 2048 | 11 | 67 | 13 | 41 |
+| 192000 | 32768 | 4096 | 4096 | 1024 | 16384 | 4096 | 2048 | 11 | 65 | 13 | 39 |
+
+The exact transform transitions are `18428 -> 18429`, `36860 -> 36861`,
+`73724 -> 73725`, and `147452 -> 147453`. The lower row retains the old
+transform; the upper row selects the next power of two.
+
+The oracle uses only checked integer quotient/remainder arithmetic. It does
+not call the renderer's rounding, odd, clamp, power-of-two, or geometry
+helpers. It enumerates candidate powers directly and compares distances. For
+every integer `F=8000..192000`, construction requires the renderer row and
+oracle row to be identical.
+
+`GEOMETRY_SPEC` also owns these exhaustive receipts:
+
+- `184001` rows
+- each row serialized as the twelve unsigned `u32` fields above in
+  little-endian order, with `F` ascending
+- `8832048` serialized bytes
+- FNV-1a-64 `7ffb5aa02900893e`, checked in construction without a dependency
+- SHA-256 `22d14913f01143007a114fad7a97d44a7e2b07cf5b254b92bc59c7f805e73697`,
+  retained as the independent Batch 31.52 audit receipt
+
+Exact tie ownership is also executable authority:
+
+- `round(F/6)` chooses upward for every `F mod 6=3`: `30667` rates, first
+  `8001`, last `191997`
+- `nearest_pow2` has five six-rate midpoint sets:
+  `9213..9218 -> 2048`, `18429..18434 -> 4096`,
+  `36861..36866 -> 8192`, `73725..73730 -> 16384`, and
+  `147453..147458 -> 32768`
+- exact rational half sets are
+  `Q_h={8000,11200,14400,17600,22400,28800,35200,44800,57600,70400,89600,115200,140800,179200}`,
+  `Q_v=R_v={12288,24576,49152,98304}`, and
+  `R_h={8500,9500,10500,11500,12500,13500,14500,15500,16500,17500,19000,21000,23000,25000,27000,29000,31000,33000,35000,38000,42000,46000,50000,54000,58000,62000,66000,70000,76000,84000,92000,100000,108000,116000,124000,132000,140000,152000,168000,184000}`
+- the upward odd midpoint applies when the positive rounded value is even;
+  exhaustive counts for `Q_h,Q_v,R_h,R_v` are respectively
+  `82131,92567,98469,90925`
+
+The exhaustive maxima and first witnesses remain `Q_h=17` at `16534`,
+`Q_v=97` at `8000`, `R_h=19` at `17500`, and `R_v=59` at `8000`.
+Construction compares the complete derived tie sets, counts, transitions,
+maxima, first witnesses, sentinels, and domain fingerprint to
+`GEOMETRY_SPEC`. A mismatch blocks checkpoint creation.
 
 Every transform uses the centered periodic square-root Hann:
 
@@ -515,6 +594,26 @@ Compile-linked `MEMORY_SPEC` owns these capacities:
 | peak tracks | `N_t/2-1` | `16383` tracks |
 | persistent bin states | `N_t/2+1` | `16385` bins |
 
+V6 adds exact first and last maximum witnesses to `MEMORY_SPEC`:
+
+| State | Maximum | First `F` | Last `F` |
+| --- | ---: | ---: | ---: |
+| native long frames | 20 | 16534 | 147452 |
+| native short frames | 22 | 17500 | 147452 |
+| shared median scratch | 97 | 8000 | 8041 |
+| first-residual samples | 53248 | 184000 | 192000 |
+| each transient/residual ring | 147712 | 147453 | 192000 |
+| claimed-event arena | 98816 | 147453 | 192000 |
+| live events | 39 | 8000 | 18428 |
+| envelope state | 32772 | 147453 | 192000 |
+| output finalization | 139520 | 147453 | 192000 |
+| peak tracks | 16383 | 147453 | 192000 |
+| persistent bin states | 16385 | 147453 | 192000 |
+
+Construction derives these rows from the independent geometry oracle and
+separately coded capacity formulas. A maximum or witness mismatch blocks the
+checkpoint. The capacities themselves do not change.
+
 Conservative maximum-capacity packed-`f64` models occupy `17.502 MiB`
 for long frames, `9.700 MiB` for short/source WOLA state, `4.001 MiB` for
 residual covariance and excitation, `1.508 MiB` for claimed event samples,
@@ -564,15 +663,15 @@ be byte-identical.
 Offline only. No audio-thread source fill, execution, synchronization, I/O,
 or allocation is authorized.
 
-## Zero-Preserving V5 Candidate Isolation And Construction
+## Construction-Bound V6 Candidate Isolation And Construction
 
 Use exactly:
 
-- worktree: `signal-candidate-31-51`
+- worktree: `signal-candidate-31-53`
 - branch:
-  `candidate/g10-031-zero-preserving-geometry-audited-bounded-linked-stn-noise-morph`
+  `candidate/g10-031-construction-bound-zero-preserving-linked-stn-noise-morph`
 - module:
-  `crates/signal-dsp-stretch/src/creative_zero_preserving_geometry_audited_bounded_linked_stn_noise_morph/`
+  `crates/signal-dsp-stretch/src/creative_construction_bound_zero_preserving_linked_stn_noise_morph/`
 - files: `mod.rs`, `plan.rs`, `decomposition.rs`, `tonal.rs`, `transient.rs`,
   `noise.rs`, `synthesis.rs`, `tests.rs`
 
@@ -583,9 +682,9 @@ Generated evidence stays ignored under `target/`.
 
 Test prefixes are only:
 
-- `zero_preserving_geometry_audited_bounded_linked_stn_noise_morph_construction_`
-- `zero_preserving_geometry_audited_bounded_linked_stn_noise_morph_structural_`
-- `zero_preserving_geometry_audited_bounded_linked_stn_noise_morph_synthetic_`
+- `construction_bound_zero_preserving_linked_stn_noise_morph_construction_`
+- `construction_bound_zero_preserving_linked_stn_noise_morph_structural_`
+- `construction_bound_zero_preserving_linked_stn_noise_morph_synthetic_`
 
 `tests.rs` owns one compile-linked `GATE_OWNERS` table with exactly `28`
 unique IDs and function pointers: `18` structural and `10` synthetic. One
@@ -593,7 +692,10 @@ compile-linked `EVIDENCE_SPEC` owns every source sample, support, estimator,
 table value, threshold, seed, ratio, and assertion below. Helpers may not
 select implicit values. One compile-linked `MEMORY_SPEC` owns every frontier,
 capacity, maximum, category ceiling, duration vector, and allocation
-assertion above.
+assertion above. One compile-linked `GEOMETRY_SPEC` owns the sole literal
+sentinel table, transform transitions, tie sets and counts, extent maxima and
+first witnesses, row count, byte count, and FNV-1a domain fingerprint above.
+No gate may carry another literal geometry row.
 
 Construction order:
 
@@ -603,11 +705,15 @@ Construction order:
 4. freeze source, tests, helpers, assertions, manifest, and checkpoint
 
 The construction owner verifies file inventory, gate inventory, formulas,
-exact positive-round ties, geometry, tags, exact vectors, source tables,
-support tables, sole seed,
-two-pass state reset, every `MEMORY_SPEC` formula, the exhaustive geometry
-maxima, the `89 MiB` design sum, `zlog` truth vectors at `u=0,0.5,1`, positive
-zero bit patterns, canonical zero coherence, and non-zero preservation for the
+tags, non-geometry vectors, source tables, support tables, sole seed, two-pass
+state reset, every `MEMORY_SPEC` formula and witness, and the `89 MiB` design
+sum. It runs one shared `assert_geometry_authority` helper that compares the
+renderer and independently coded oracle at every supported rate, then checks
+every `GEOMETRY_SPEC` sentinel, transition, tie set, tie count, maximum, first
+witness, row count, byte count, and FNV-1a fingerprint. `S02` must call the
+same helper; it may add map vectors but may not restate geometry literals.
+Construction also verifies `zlog` truth vectors at `u=0,0.5,1`, positive-zero
+bit patterns, canonical zero coherence, and non-zero preservation for the
 smallest represented positive `f64` endpoint.
 Before the checkpoint, repairs may address compiler, type, visibility,
 ownership, or manifest assembly only when they change no DSP formula, literal,
@@ -628,7 +734,7 @@ Run all owners once after construction. Require exactly `18/18`.
 | ID | Owner and pass condition |
 | --- | --- |
 | `S01` | request matrix rejects every invalid case before output allocation; valid empty returns empty |
-| `S02` | geometry and signed rational map match independent integer vectors at every supported rate, boundary, and `4x`/`8x`/`16x` ratio |
+| `S02` | the construction-owned `assert_geometry_authority` passes unchanged; signed rational map vectors match independent integer vectors at every boundary and `4x`/`8x`/`16x` ratio; no second geometry table exists |
 | `S03` | every analysis and synthesis lattice has complete normalized coverage; constant WOLA reconstructs within `1e-7` |
 | `S04` | masks are finite and reconstruct mono/stereo source within the frozen peak and RMS tolerances |
 | `S05` | streaming analysis equals an independent full-buffer oracle within `1e-6`; ring wrap does not change event or descriptor ownership |
@@ -1138,6 +1244,30 @@ The candidate worktree, branch, checkpoint reference, private source, tests,
 build state, receipt, and outputs were deleted. No candidate DSP entered
 `main`. Zero-preserving v5 is rejected and no linked-STN candidate is ready.
 
+## Batch 31.52 Geometry-Vector Authority Audit
+
+Two independent exact-integer evaluators reproduced every geometry row for all
+`184001` supported integer sample rates. They agree on the complete binary
+table SHA-256, FNV-1a fingerprint, transform transitions, positive-round tie
+sets, upward odd counts, extent maxima, first witnesses, and every
+geometry-derived `MEMORY_SPEC` maximum and first/last witness.
+
+The incorrect Batch 31.51 8 kHz vector is replaced by the sole sentinel table
+above: `Q_h=9`, not `5`. No other frozen geometry or capacity contradiction
+was found. The formulas, renderer topology, exact-zero path, acoustic gates,
+memory ceilings, and gate order remain unchanged.
+
+Construction-bound v6 makes that audit executable. `GEOMETRY_SPEC` is the only
+literal geometry table. A separately coded oracle checks the renderer across
+the complete rate domain. Construction and `S02` call the same authority
+assertion, so structural admission cannot introduce a different handwritten
+row after checkpoint.
+
+This is fresh complete authority, not a repair or revival of checkpoint
+`95909451`. Batch 31.53 may implement it once in the named disposable worktree
+and branch. No candidate DSP, test, harness, dependency, API, route, product,
+Loophole, or Chorus surface entered `main` during Batch 31.52.
+
 ## Sources
 
 - [Creative source triangulation](../research/specimen-dossiers/creative-stretch-source-triangulation.md)
@@ -1150,7 +1280,8 @@ build state, receipt, and outputs were deleted. No candidate DSP entered
 
 ## Next Task
 
-Run Batch 31.52 docs-only. Independently audit every frozen geometry vector,
-witness, tie, and construction assertion, then make construction own the exact
-structural table before any fresh identity is considered. Do not recover or
-repair Batch 31.51, implement candidate DSP, or change production code.
+Run Batch 31.53 only in the fresh construction-bound v6 worktree and branch.
+Implement the complete private renderer once, run compile and construction,
+freeze one immutable checkpoint only after construction passes `1/1`, then run
+structural and synthetic admission in order. Stop, delete, and close on the
+first miss. Do not repair Batch 31.51, change production code, merge, or push.

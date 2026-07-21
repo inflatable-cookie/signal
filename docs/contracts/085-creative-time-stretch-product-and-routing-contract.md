@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: active PaulX-like `Dream`; linked-STN geometry-vector audit ready
+Status: active PaulX-like `Dream`; construction-bound linked-STN v6 ready
 Owner: core-product
 Updated: 2026-07-21
 Related contracts: `046`, `048`, `084`
@@ -785,7 +785,11 @@ no materially different source-backed renewal owner, that path is closed.
     `1/1`, structural stopped at `17/18` on an incorrect `S02` geometry vector,
     and the candidate was deleted before synthetic or listening.
 50. Independently audit every exact geometry vector and bind the structural
-    table into construction authority. Ready; docs and architecture only.
+    table into construction authority. Complete; construction-bound v6 is
+    frozen docs-only.
+51. Implement construction-bound v6 once, checkpoint after construction, then
+    run structural and synthetic admission in order. Ready; isolated private
+    candidate only.
 
 `Spectral`/`Rough`, coherent overlap, `LayeredCloud`, the upper overlap, dynamic
 ratios, and automatic routing still require separate reopening decisions backed
@@ -1013,10 +1017,26 @@ and listening stayed closed. The worktree, branch, checkpoint reference,
 source, tests, build state, receipt, and outputs were deleted. No creative
 renderer is admitted.
 
+Batch 31.52 independently evaluated all `184001` supported integer-rate
+geometry rows twice. Both evaluators agree on table SHA-256
+`22d14913f01143007a114fad7a97d44a7e2b07cf5b254b92bc59c7f805e73697`,
+FNV-1a-64 `7ffb5aa02900893e`, every transform transition and tie class, maxima
+`17,97,19,59`, their first witnesses `16534,8000,17500,8000`, and every
+geometry-derived capacity maximum and witness.
+
+Construction-bound v6 freezes one compile-linked `GEOMETRY_SPEC` as the sole
+literal geometry table. A separately coded integer oracle must equal the
+renderer for every supported rate. One shared authority assertion runs during
+construction before checkpoint and again in structural `S02`; `S02` may not
+carry another geometry row. The exact renderer, zero-preserving behavior,
+memory ceilings, quality gates, and cleanup policy do not change. Fresh
+`ConstructionBoundZeroPreservingLinkedStnNoiseMorph` authority is ready for
+one isolated implementation. No creative renderer is admitted.
+
 ## Next Task
 
-Run Batch 31.52 docs-only. Independently audit every frozen geometry vector,
-witness, rounding tie, and construction assertion, then bind the exact
-structural table into construction before any fresh candidate identity. Do not
-recover or repair Batch 31.51, implement candidate DSP, open routing or product
-exposure, touch Loophole or Chorus, or push.
+Run Batch 31.53 only in the fresh construction-bound v6 worktree and branch.
+Implement once, require compile and construction `1/1`, checkpoint, then run
+structural and synthetic admission in order. Stop, delete, and close on the
+first miss. Do not recover Batch 31.51, open routing or product exposure, touch
+Loophole or Chorus, merge, or push.

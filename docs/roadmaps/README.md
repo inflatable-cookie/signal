@@ -148,7 +148,9 @@ positive-power rule, memory bound, or quality gate. Batch 31.51 passed
 construction `1/1`, then failed structural `S02` at `17/18`: its handwritten
 8 kHz vector asserted `Q_h=5`, while the formula and renderer produce `9`.
 The candidate was deleted before synthetic or listening. Exact geometry-vector
-audit is ready.
+audit then reproduced all `184001` supported rows twice and bound the sole
+literal `GEOMETRY_SPEC` into both construction and `S02`. Fresh
+construction-bound v6 is ready for one isolated implementation.
 Offline artifacts still need a streaming artifact writer/cache target for full
 peak-memory closure. Mono callback-state DSP has a
 no-allocation proof, linked stereo is implemented, ratio scheduling has
@@ -275,7 +277,8 @@ Before rollover:
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the active generation front door.
-`g10.031` Batch 31.52 is ready for docs-only geometry-vector audit. Keep the
-transparent successor lane, `g10.028`, routing, product exposure, and
-cross-repo work closed. Do not repair or recover Batch 31.51 or implement
-candidate DSP.
+Run `g10.031` Batch 31.53 only in the fresh construction-bound v6 worktree.
+Require compile and construction `1/1`, checkpoint, then run structural and
+synthetic admission in order. Keep the transparent successor lane, `g10.028`,
+routing, product exposure, and cross-repo work closed. Do not repair Batch
+31.51, merge, or push.

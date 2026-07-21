@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: active; Batch 31.51 rejected, Batch 31.52 vector audit ready
+Status: active; Batch 31.52 complete, Batch 31.53 candidate ready
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -1727,11 +1727,73 @@ Decision:
 - Batch 31.52 must audit all exact geometry vectors and bind them into
   construction before fresh authority can be considered
 
+## Batch 31.52 - Linked STN Geometry-Vector Authority Audit
+
+Status: complete; construction-bound v6 candidate ready
+
+- [x] independently evaluated every integer sample rate `8000..192000` with
+  separately implemented Ruby and JavaScript exact-integer evaluators
+- [x] reproduced all `184001` complete geometry rows, transform transitions,
+  positive-round ties, upward odd counts, extent maxima, and first witnesses
+- [x] matched binary table SHA-256
+  `22d14913f01143007a114fad7a97d44a7e2b07cf5b254b92bc59c7f805e73697`
+  and FNV-1a-64 `7ffb5aa02900893e` in both evaluators
+- [x] corrected the sole 8 kHz sentinel to
+  `(N_t,A_t,N_s,A_s,N_r,A_r,H,Q_h,Q_v,R_h,R_v)=`
+  `(2048,256,256,64,1024,256,128,9,97,9,59)`
+- [x] independently reproduced every geometry-derived `MEMORY_SPEC` maximum
+  and froze its exact first/last sample-rate witnesses
+- [x] froze one compile-linked `GEOMETRY_SPEC` as the only literal geometry
+  table and prohibited geometry literals in individual gates
+- [x] required one independently coded exhaustive oracle and one shared
+  `assert_geometry_authority` helper in construction and `S02`
+- [x] retained every renderer, map, exact-zero, stereo, memory, quality, gate,
+  receipt, and cleanup rule
+- [x] froze fresh identity
+  `ConstructionBoundZeroPreservingLinkedStnNoiseMorph` and exact Batch 31.53
+  worktree, branch, module, prefixes, checkpoint, and cleanup boundaries
+- [x] changed documentation only; no DSP, tests, harnesses, dependencies, APIs,
+  routes, cache, artifacts, product, Loophole, or Chorus surface entered `main`
+
+Decision:
+
+- the complete geometry and capacity authority is internally consistent
+- construction now owns the exact table consumed by structural admission
+- Batch 31.53 may implement the complete renderer once under fresh identity;
+  creative quality and bounded execution remain unproved
+
+## Batch 31.53 - Isolated Construction-Bound Linked STN Candidate
+
+Status: ready
+
+- [ ] start from the exact committed Batch 31.52 `main` head and record its
+  full hash before creating any candidate file
+- [ ] create only worktree `signal-candidate-31-53` on branch
+  `candidate/g10-031-construction-bound-zero-preserving-linked-stn-noise-morph`
+- [ ] implement only the private
+  `creative_construction_bound_zero_preserving_linked_stn_noise_morph` module
+  and private `lib.rs` declaration, using existing dependencies
+- [ ] make `GEOMETRY_SPEC` the sole literal geometry table; independently code
+  the oracle and share `assert_geometry_authority` between construction and
+  `S02`
+- [ ] run compile, then construction exactly once; require `1/1` before one
+  immutable checkpoint exists
+- [ ] record checkpoint, tree, candidate-file, spec, lockfile, toolchain, and
+  platform identity before admission
+- [ ] run structural exactly once and require `18/18`; stop and clean up on any
+  miss
+- [ ] run synthetic exactly once only after structural passes and require
+  `10/10`; stop and clean up on any miss
+- [ ] open concealed mono and independent stereo listening only after all
+  objective owners pass; listening remains promotion authority
+- [ ] admit nothing to production in this batch; record pass or dominant cause,
+  delete the disposable surface on rejection, and return to `main` for docs-only
+  closeout
+
 ## Later Batches
 
-Closed or paused without promotion. Batch 31.52 geometry-vector audit is the
-sole ready work. Every later product batch still
-requires a separately admitted complete renderer:
+Closed or paused without promotion. Batch 31.53 is the sole ready work. Every
+later product batch still requires a separately admitted complete renderer:
 
 - minimal production admission
 - coherent/diffusive overlap
@@ -1854,10 +1916,16 @@ requires a separately admitted complete renderer:
 - [x] the rejected v5 checkpoint, implementation, tests, worktree, branch,
   build state, and outputs were deleted without repair or rerun
 - [x] no candidate DSP entered `main` after v5 rejection
+- [x] geometry-vector audit independently reproduced all `184001` rows and
+  every geometry-derived capacity witness
+- [x] one construction-owned `GEOMETRY_SPEC` now supplies construction and
+  structural `S02` without a second handwritten table
+- [x] no candidate DSP entered `main` during geometry-vector audit
 
 ## Next Task
 
-Run Batch 31.52 docs-only. Independently audit every geometry vector, witness,
-rounding tie, and construction assertion. Bind the exact structural table into
-construction before deciding whether fresh authority exists. Do not repair or
-recover Batch 31.51, implement DSP, touch Loophole or Chorus, merge, or push.
+Run Batch 31.53 only in the exact fresh construction-bound v6 worktree and
+branch. Implement once, pass compile and construction `1/1`, freeze one
+checkpoint, then run structural and synthetic admission in order. Stop,
+delete, and close on the first miss. Do not repair Batch 31.51, change
+production DSP, touch Loophole or Chorus, merge, or push.
