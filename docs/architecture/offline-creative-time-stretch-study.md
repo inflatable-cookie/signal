@@ -1,6 +1,6 @@
 # Offline Creative Time-Stretch Study
 
-Status: PaulX-like `Dream` retained; renewal evidence reassessment ready
+Status: PaulX-like `Dream` retained; no renderer owner ready
 Owner: dsp
 Updated: 2026-07-21
 Contract: `085`
@@ -655,14 +655,31 @@ No candidate DSP or product surface enters `main` in this batch.
 Batch 31.39 implemented that brief once from fresh source. Its immutable
 checkpoint passed compile, construction `1/1`, and structural `15/15`, then
 synthetic admission finished `7/9`. `Y04` found a second `16x` impulse region
-at `-29.801787859 dB`, above the `-30 dB` ceiling. `Y09` failed linked-stereo
-swap at `4x` and `8x`. Objective rejection kept mono and stereo listening
-closed, and the complete candidate was deleted without repair or rerun.
+at `-29.801787859 dB`. The frozen `-30 dB` activity threshold admitted that
+region, so the required one-region / `None` result failed. `Y09` reported
+linked-stereo swap failure at `4x` and `8x`. Objective rejection kept mono and
+stereo listening closed, and the complete candidate was deleted without
+repair or rerun.
 
 Batch 31.36 passed both owners under the nominally same renderer formulas and
 admission seed. The conflicting receipts are not evidence for a parameter
 change or immediate reimplementation. Their frozen authority and executable
-construction must be reconciled first without recovering deleted code.
+construction require the Batch 31.40 reconciliation below.
+
+Batch 31.40 found that reconciliation is impossible from retained evidence.
+Both candidates share exact counter, seed, source-support, and owner-inventory
+authority, but construction did not freeze helper bodies, numeric execution,
+row assembly, assertions, or output digests. `Y09` is decisive: the
+source-relative law explicitly disclaims exact time-domain swap at one branch,
+while the inherited gate prose never supplies one exact long-form swap
+fixture, estimator, tolerance, and assertion.
+
+Batch 31.36's pass and Batch 31.39's failure therefore remain decisions about
+their own deleted checkpoints. Restoring executable identity would require a
+new brief and a third renewal implementation. That is new candidate work, not
+reconciliation, and no materially different source-backed renewal owner exists.
+Close renewal again. Keep the PaulX-like target, comparator captures, and
+operator findings; no Signal creative renderer is ready.
 
 ## Sources
 
@@ -699,8 +716,8 @@ construction must be reconciled first without recovering deleted code.
 
 ## Next Task
 
-Run Batch 31.40 only as docs and evidence-authority reassessment. Reconcile
-the contradictory Batch 31.36 and Batch 31.39 synthetic receipts without
-recovering deleted code, implementing DSP, changing gates, or rerunning a
-candidate. Keep routing, product exposure, other characters, Loophole, and
-Chorus paused.
+No implementation batch is ready. The operator must explicitly choose whether
+to commission research for one materially different, source-backed complete
+creative owner or leave `g10.031` paused. Keep routing, product exposure,
+other characters, Loophole, and Chorus paused. Do not recover deleted code or
+run another renewal candidate.

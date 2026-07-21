@@ -16,7 +16,9 @@ Status: complete; candidate rejected at synthetic admission
 - mono and stereo listening: not run
 
 `Y04` found two active regions in the `16x` impulse row. The secondary was
-`-29.801787859 dB` against the terminal `-30 dB` ceiling.
+`-29.801787859 dB`. Batch 31.40 corrected the interpretation: `-30 dB` is the
+active-window threshold, not a secondary-peak ceiling. The second active
+region fails the frozen one-region / `None` requirement.
 
 `Y09` failed linked-stereo swap at `4x` and `8x`. The runner had already
 started all nine owners, so this second terminal result completed after the

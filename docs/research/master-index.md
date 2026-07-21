@@ -52,7 +52,7 @@ decision controls any future reopening.
 | [Rubber Band Source Architecture](./specimen-dossiers/rubber-band-source-architecture.md) | R2/R3 scheduling, scale ownership, guidance, and phase topology | Reviewed |
 | [Bungee Source Architecture](./specimen-dossiers/bungee-source-architecture.md) | Whole-kernel common-region rotation and dynamic multichannel feasibility | Reviewed |
 | [SBSMS Source Architecture](./specimen-dossiers/sbsms-source-architecture.md) | Linked subband partial tracking, paired stereo trajectories, and direct oscillator synthesis | Source feasibility rejected |
-| [Creative Stretch Source Triangulation](./specimen-dossiers/creative-stretch-source-triangulation.md) | PaulXStretch, CDP, and Potenza whole-path ownership behind retained creative targets | Reviewed; comparator-audited `Dream` candidate rejected |
+| [Creative Stretch Source Triangulation](./specimen-dossiers/creative-stretch-source-triangulation.md) | PaulXStretch, CDP, and Potenza whole-path ownership behind retained creative targets | Reviewed; renewal closed, PaulX-like target retained |
 
 Current stretch feasibility decision:
 [Offline Time-Stretch Non-Phase-Vocoder Feasibility](../architecture/offline-time-stretch-non-phase-vocoder-feasibility.md).
@@ -98,8 +98,11 @@ post-hoc gain, covariance, consistency, smoothing, phase, and `space`
 variants are unsupported repair paths. Renewal is closed under the current
 stereo hard gate. The operator then made mapped local source balance
 diagnostic while retaining hard structural and whole/band controls plus
-eligible independent listening. Batch 31.38 freezes one fresh complete
-candidate without reviving deleted code.
+eligible independent listening. Batch 31.38 froze one fresh complete
+candidate without reviving deleted code. Batch 31.39 rejected that candidate
+at synthetic `Y04` and `Y09`. Batch 31.40 found no retained executable
+identity capable of reconciling its `7/9` receipt with Batch 31.36's `9/9`
+receipt. Further renewal implementation is closed; the product target remains.
 
 Rejected comparator-audited neutral `Dream` candidate brief:
 [Offline Creative ComparatorAuditedRenewalSpectral Renderer Brief](../architecture/offline-creative-comparator-audited-renewal-spectral-brief.md).
@@ -166,7 +169,7 @@ Rejected first-owner brief:
 
 ## Next Task
 
-Run `g10.031` Batch 31.40 only as docs and evidence-authority reassessment.
-Reconcile the contradictory Batch 31.36 and Batch 31.39 synthetic receipts.
-Do not recover rejected code, implement DSP, alter gates, rerun a candidate,
-or reopen the transparent successor.
+No `g10.031` implementation batch is ready. The operator must explicitly
+authorize research for one materially different, source-backed complete
+creative owner or leave the roadmap paused. Do not recover rejected code, run
+another renewal candidate, or reopen the transparent successor.

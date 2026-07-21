@@ -80,8 +80,9 @@ strict lane.
 
 ## Next Task
 
-Run `g10.031` Batch 31.40 only as docs and evidence-authority reassessment.
-Reconcile the contradictory Batch 31.36 and Batch 31.39 synthetic receipts
-without recovering deleted code, implementing DSP, changing gates, or
-rerunning candidates. Keep routing, product exposure, Loophole, and Chorus
-paused. Only drop into `specs/` when a strict lane is explicitly reopened.
+No `g10.031` implementation batch is ready. The operator must explicitly
+choose whether to commission research for one materially different,
+source-backed complete creative owner or leave the roadmap paused. Keep
+routing, product exposure, Loophole, and Chorus paused. Do not recover deleted
+code or run another renewal candidate. Only drop into `specs/` when a strict
+lane is explicitly reopened.

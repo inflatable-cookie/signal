@@ -1,6 +1,6 @@
 # Offline Creative ComparatorAuditedRenewalSpectral Renderer Brief
 
-Status: rejected at synthetic admission; candidate deleted
+Status: rejected; renewed candidate path closed after evidence reconciliation
 Owner: dsp
 Updated: 2026-07-21
 Contract: `085`
@@ -312,13 +312,60 @@ Batch 31.39 outcome: fresh checkpoint
 `c0cd943f5a5e8499540d5e759aac7a1586579d0a` passed compile, construction
 `1/1`, and structural `15/15`. Synthetic admission finished `7/9`. `Y04`
 failed the `16x` impulse replica row with a second region at
-`-29.801787859 dB`; `Y09` failed linked-stereo swap at `4x` and `8x`.
+`-29.801787859 dB`; the frozen `-30 dB` activity threshold therefore admitted
+that second region and failed the required one-region / `None` result. `Y09`
+reported linked-stereo swap failure at `4x` and `8x`.
 Listening did not open. Cleanup deleted the candidate without repair or
 rerun, and no candidate code entered `main`.
 
 Batch 31.36 passed both failed owners under the nominally same renderer and
 seed. Do not infer a parameter fix or authorize another implementation from
-the conflicting receipts. Reconcile their evidence authority first.
+the conflicting receipts. Batch 31.40 reconciles their authority below.
+
+## Batch 31.40 Evidence Reconciliation
+
+The two receipts do not prove that identical executable candidates disagreed.
+They prove only that both candidates named the same formulas, seed, support
+table, owner IDs, and high-level gate meanings.
+
+Exact shared authority exists for the counter table, `ADMISSION_SEED`, source
+definitions, `SYNTHETIC_SUPPORTS`, and most scalar measurement formulas.
+Construction `1/1` verifies inventory and selected constants. It does not
+verify helper bodies, numeric evaluation order, row assembly, or assertion
+equivalence.
+
+Two decisive gaps remain:
+
+- `Y04` defines active `480`-frame RMS windows at `-30 dB`, region separation,
+  and a required one-region / `None` result. Batch 31.39's closeout initially
+  mislabeled `-30 dB` as a secondary-peak ceiling. Correctly interpreted, its
+  two-region row still rejects that checkpoint, but the deleted Batch 31.36
+  output and per-row value are unavailable for comparison.
+- the source-relative pair law explicitly declines exact time-domain swap at
+  the negative-real half-angle branch. `S12` names swapped magnitudes,
+  conjugate relation, and decoded image. `Y09` says only that it additionally
+  exercises relation and balance laws. No canonical text freezes the exact
+  long-form swap fixture, estimator, tolerance, or assertion that produced
+  Batch 31.39's `swap 4x` and `swap 8x` messages.
+
+The gate authority is also multi-hop: this brief inherits the support-audited
+brief, which inherits the source-relative brief, which inherits synthetic
+sources and measurements from the audited variance brief. Later `Y02`, `Y08`,
+and stereo-policy deltas changed parts of that chain without producing one
+self-contained executable definition.
+
+Both checkpoints remain rejected and deleted. Batch 31.36's `9/9` receipt is
+historical evidence for that checkpoint only. Batch 31.39's `7/9` receipt is
+terminal for that checkpoint only. Recovering either implementation is
+forbidden, and no retained source digest, helper digest, per-row receipt, or
+golden output can establish executable identity after deletion.
+
+Restoring authority now would require a new self-contained brief and a third
+renewal implementation. That is new work, not reconciliation. Repeated renewal
+candidates already reached mono success, stereo rejection, architecture
+closure, policy reopening, and this evidence-identity failure. With no
+materially different source-backed renewal owner, further implementation is
+closed. The PaulX-like target remains valid but has no ready renderer.
 
 ## Sources
 
@@ -327,11 +374,13 @@ the conflicting receipts. Reconcile their evidence authority first.
 - [Batch 31.36 stereo rejection](../logs/2026-07/21-g10-031-support-audited-renewal-stereo-rejection.md)
 - [Batch 31.37 stereo-ownership closure](../logs/2026-07/21-g10-031-renewal-stereo-ownership-closure.md)
 - [Batch 31.39 rejection](../logs/2026-07/21-g10-031-comparator-audited-renewal-rejection.md)
+- [Batch 31.40 evidence-authority closure](../logs/2026-07/21-g10-031-renewal-evidence-authority-closure.md)
 - [Creative product contract](../contracts/085-creative-time-stretch-product-and-routing-contract.md)
 
 ## Next Task
 
-Run `g10.031` Batch 31.40 only as docs and evidence-authority reassessment.
-Reconcile the contradictory Batch 31.36 and Batch 31.39 synthetic receipts.
-Do not recover deleted code, implement DSP, change a formula or gate, rerun a
-candidate, expose product surfaces, start another character, or push.
+No implementation batch is ready. The operator must explicitly choose whether
+to commission research for one materially different, source-backed complete
+creative owner or leave `g10.031` paused. Do not recover deleted code, run
+another renewal candidate, change gates, expose product surfaces, start
+another character, or push.

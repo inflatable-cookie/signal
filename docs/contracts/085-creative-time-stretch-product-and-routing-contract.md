@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: active PaulX-like `Dream`; renewal evidence reassessment ready
+Status: active PaulX-like `Dream`; no renderer authority ready
 Owner: core-product
 Updated: 2026-07-21
 Related contracts: `046`, `048`, `084`
@@ -617,11 +617,12 @@ terminal. Concealed comparator-relative stereo review by an eligible
 independent listener is promotion authority. The operator may still reject a
 speaker pre-screen but cannot supply the required independent pass.
 
-Fresh authority is `ComparatorAuditedRenewalSpectral`. It retains every Batch
-31.36 renderer formula and hard control, changes only the explicit stereo gate
-classification, and adds PaulX-source values to the mapped-window diagnostic.
-The deleted checkpoint remains rejected. Implementation must start from the
-brief in a new isolated worktree without recovering prior code.
+Batch 31.38's fresh authority was `ComparatorAuditedRenewalSpectral`. It
+retained every Batch 31.36 renderer formula and hard control, changed only the
+explicit stereo gate classification, and added PaulX-source values to the
+mapped-window diagnostic. The deleted checkpoint remained rejected.
+Implementation had to start from the brief in a new isolated worktree without
+recovering prior code.
 
 Batch 31.39 completed that implementation and rejected it at synthetic
 admission. `Y04` failed one `16x` replica row and `Y09` failed linked-stereo
@@ -629,6 +630,20 @@ swap at `4x` and `8x`; the full result was `7/9`. The candidate was deleted
 before listening. Batch 31.36 passed both owners under the nominally same
 renderer and admission seed, so no further implementation is authorized until
 the contradictory receipts are reconciled as authority and evidence.
+
+Batch 31.40 found no retained executable identity capable of that
+reconciliation. Construction proved owner inventory, counter vectors, seed,
+and support tables, not helper or assertion equivalence. `Y04`'s `-30 dB`
+value is an active-window threshold and its frozen result is one region with
+no secondary. `Y09` never froze one exact source-relative long-form swap
+assertion after exact time-domain swap was explicitly disclaimed. Deleted
+candidate source, helper bodies, per-row results, and output digests are not
+available and must not be recovered.
+
+Each receipt remains terminal only for its own checkpoint. Neither proves the
+other checkpoint or the complete renewal topology. A new executable authority
+would be a third renewal candidate program, not evidence reconciliation. With
+no materially different source-backed renewal owner, that path is closed.
 
 ## Initial Promotion Sequence
 
@@ -735,7 +750,9 @@ the contradictory receipts are reconciled as authority and evidence.
     synthetic admission failed `Y04` and `Y09`, and the candidate was deleted
     before listening.
 40. Reconcile the contradictory Batch 31.36 and Batch 31.39 synthetic receipts.
-    Ready; docs and evidence-authority reassessment only.
+    Complete; exact executable identity was not retained, `Y04` was
+    misdescribed in the Batch 31.39 closeout, and `Y09` lacks one canonical
+    source-relative swap assertion. Further renewal implementation is closed.
 
 `Spectral`/`Rough`, coherent overlap, `LayeredCloud`, the upper overlap, dynamic
 ratios, and automatic routing still require separate reopening decisions backed
@@ -808,7 +825,14 @@ image decision. Batch 31.39's fresh `ComparatorAuditedRenewalSpectral`
 checkpoint passed construction and structural admission, then failed
 synthetic `Y04` and `Y09` and was deleted before listening. Its `7/9` receipt
 conflicts with Batch 31.36's nominally equivalent `9/9` receipt. Candidate
-implementation is closed pending docs-only authority reassessment.
+implementation is closed.
+
+Batch 31.40 found the receipts share exact seed, counter, support, and owner
+inventory, but not a retained executable identity. The multi-hop briefs do not
+freeze helper bodies or a complete `Y09` swap assertion, and cleanup removed
+the only candidate source and outputs that could have been compared. Both
+receipts remain historical checkpoint decisions. Renewal is closed; the
+PaulX-like target remains active without a renderer owner.
 
 No public Rust enum, renderer, harness mode, fixture, artifact schema, runtime
 route, or product-facing claim entered `main`. `OfflineHighQuality` remains
@@ -816,8 +840,8 @@ byte-exact and Contract `084` remains closed. No creative renderer is admitted.
 
 ## Next Task
 
-Run `g10.031` Batch 31.40 only as docs and evidence-authority reassessment.
-Reconcile the contradictory Batch 31.36 and Batch 31.39 synthetic receipts.
-Keep other characters, routing, product exposure, Loophole, and Chorus closed
-or paused. Do not recover rejected code, implement DSP, alter gates, rerun a
-candidate, or push.
+No implementation batch is ready. The operator must explicitly choose whether
+to commission research for one materially different, source-backed complete
+creative owner or leave `g10.031` paused. Keep other characters, routing,
+product exposure, Loophole, and Chorus closed or paused. Do not recover
+rejected code, run another renewal candidate, alter gates, or push.

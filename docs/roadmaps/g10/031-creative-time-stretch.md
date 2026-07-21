@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: active; Batch 31.39 complete, Batch 31.40 ready
+Status: paused; Batch 31.40 complete, no implementation owner ready
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -1284,7 +1284,8 @@ Evidence:
 - structural: exactly `15/15`
 - synthetic: `7/9`; `Y04` and `Y09` failed
 - `Y04`: `16x` impulse produced two active replica regions; secondary was
-  `-29.801787859 dB` against the terminal `-30 dB` ceiling
+  `-29.801787859 dB`; `-30 dB` is the activity threshold, so the frozen
+  one-region / `None` requirement failed
 - `Y09`: linked-stereo swap rows failed at `4x` and `8x`
 - mono and stereo listening: not run because objective admission failed
 - cleanup: complete; worktree, branch, checkpoint reference, module, tests,
@@ -1299,10 +1300,56 @@ Stop after the complete pass/rejection receipt and cleanup. Do not merge the
 candidate to `main` in Batch 31.39. Minimal admission, product exposure,
 multi-seed review, routing, and other characters require later batches.
 
+## Batch 31.40 - Synthetic Receipt Authority Reconciliation
+
+Status: complete; renewed candidate path closed
+
+- [x] traced renderer, seed, counter, source, support, metric, threshold, and
+  assertion authority from Batch 31.25 through Batches 31.36 and 31.39
+- [x] confirmed the counter vectors, `ADMISSION_SEED`, and
+  `SYNTHETIC_SUPPORTS` table are exact shared authority
+- [x] confirmed construction `1/1` proves owner inventory and selected tables,
+  not helper-body or assertion equivalence
+- [x] corrected `Y04`: `-30 dB` selects active envelope windows; it is not a
+  secondary-region allowance or comparator ceiling
+- [x] found `Y09` never froze one executable source-relative swap assertion
+  after exact time-domain swap was explicitly disclaimed at the negative-real
+  half-angle branch
+- [x] found the comparator brief inherited multi-hop gate prose rather than
+  one self-contained executable evidence definition
+- [x] kept both deleted checkpoints rejected; neither receipt is promoted into
+  proof of the other implementation or of the complete topology
+- [x] closed further renewal implementation without closing the PaulX-like
+  product target
+- [x] changed documentation only; no DSP, test, harness, fixture, route,
+  product surface, Loophole, or Chorus work opened
+
+Decision:
+
+- Batch 31.36's `9/9` receipt remains historical evidence for its deleted
+  checkpoint; its helper bodies, assertions, per-row values, and source digest
+  are unavailable under the required cleanup policy
+- Batch 31.39's `7/9` receipt remains the terminal decision for its deleted
+  checkpoint; `Y04` records two active regions, while the meaning of its
+  `Y09` swap assertion cannot be recovered from canonical authority
+- the receipts do not establish that identical executable renderers and gates
+  disagreed; they establish that the docs did not preserve enough executable
+  identity to compare them after deletion
+- restoring authority would require inventing a new self-contained evidence
+  specification and running a third renewal candidate, not reconciling the two
+  existing receipts
+- repeated renewal work already reached mono success, stereo rejection,
+  architecture closure, policy reopening, and now unrecoverable evidence
+  divergence; another renewal candidate would be churn, not a source-backed
+  architectural advance
+- renewal remains closed; neutral `Dream` remains a valid product target with
+  no admitted or ready Signal renderer
+
 ## Later Batches
 
-Closed or paused without promotion. Batch 31.40 is docs-only reproducibility
-and evidence-authority reassessment. Later work depends on that decision:
+Closed or paused without promotion. No later batch is ready. Any reopening
+requires an explicit operator decision and one materially different,
+source-backed complete owner:
 
 - minimal production admission
 - coherent/diffusive overlap
@@ -1382,14 +1429,16 @@ and evidence-authority reassessment. Later work depends on that decision:
   candidate code or product exposure
 - [x] one fresh comparator-audited candidate reaches a terminal complete-system
   decision under the revised product gate
-- [ ] reconcile the contradictory Batch 31.36 and Batch 31.39 synthetic
+- [x] reconcile the contradictory Batch 31.36 and Batch 31.39 synthetic
   receipts before authorizing any further candidate
+- [x] close the renewed candidate path after finding no recoverable executable
+  identity and no materially different source-backed renewal owner
 - [x] no private renderer or product surface entered `main`
 
 ## Next Task
 
-Run Batch 31.40 only as docs and evidence-authority reassessment. Reconcile why
-Batch 31.36 passed `Y04` and `Y09` while Batch 31.39 failed them under the
-nominally same frozen renderer and seed. Do not recover either deleted
-checkpoint, implement DSP, change thresholds, rerun gates, open other
-characters or routing, touch Loophole or Chorus, or push.
+No implementation batch is ready. The operator must explicitly choose whether
+to commission research for one materially different, source-backed complete
+creative owner or leave `g10.031` paused. Do not recover deleted checkpoints,
+run another renewal candidate, change gates, open routing or product exposure,
+touch Loophole or Chorus, or push.

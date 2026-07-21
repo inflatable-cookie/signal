@@ -1,6 +1,6 @@
 # Creative Stretch Source Triangulation
 
-Status: reviewed; comparator-audited renewal candidate rejected
+Status: reviewed; renewal closed, PaulX-like target retained
 Owner: dsp
 Updated: 2026-07-21
 Roadmap: `g10.031`, Batches 31.16 and 31.30-31.39
@@ -421,11 +421,26 @@ and structural admission passed, but synthetic `Y04` failed one `16x` replica
 row and `Y09` failed linked-stereo swap at `4x` and `8x`. The candidate was
 deleted before listening. Batch 31.36 passed both owners under the nominally
 same formulas and seed. That receipt divergence must be reconciled before the
-source evidence can support another implementation decision.
+source evidence can support another implementation decision; Batch 31.40
+records that reconciliation below.
+
+Batch 31.40 found that the shared authority stops at formulas, counter values,
+seed, support tables, and gate inventory. Candidate source, helper bodies,
+assertions, per-row values, and output digests were deleted. `Y04` has a
+correctable prose error in the Batch 31.39 closeout: `-30 dB` is its active
+window threshold, not a secondary-peak ceiling. `Y09` has no frozen executable
+source-relative swap assertion after exact time-domain swap was disclaimed.
+
+The receipts therefore cannot be compared as identical executable evidence.
+Recreating that identity would require a new brief and a third renewal
+candidate. Source triangulation supplies no materially different complete
+renewal owner to justify that work. Renewal closes; PaulXStretch remains the
+retained behavioral target rather than an admitted Signal implementation.
 
 ## Next Task
 
-Run `g10.031` Batch 31.40 only as docs and evidence-authority reassessment.
-Keep other characters, routing, product exposure, Loophole, and Chorus closed
-or paused. Do not recover rejected code, implement DSP, alter gates, or rerun
-a candidate.
+No implementation batch is ready. The operator must explicitly authorize
+research for one materially different, source-backed complete creative owner
+or leave `g10.031` paused. Keep other characters, routing, product exposure,
+Loophole, and Chorus closed or paused. Do not recover rejected code or run
+another renewal candidate.

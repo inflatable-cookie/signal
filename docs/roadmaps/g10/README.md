@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: creative renewal evidence reassessment ready
+Status: creative stretch paused; no renderer owner ready
 Updated: 2026-07-21
 
 ## Why this generation matters now
@@ -156,11 +156,15 @@ The 2026-07-19 consolidation reset is authoritative.
   listening remain terminal. Batch 31.38 froze one fresh complete
   `ComparatorAuditedRenewalSpectral` brief without candidate DSP. Batch 31.39
   then passed compile, construction `1/1`, and structural `15/15`, but
-  synthetic admission finished `7/9`: `Y04` missed the `16x` replica ceiling
-  by `0.198212141 dB`, and `Y09` failed linked-stereo swap at `4x` and `8x`.
+  synthetic admission finished `7/9`: `Y04` produced a second `16x` active
+  replica region, and `Y09` reported linked-stereo swap failure at `4x` and `8x`.
   The candidate was deleted before listening. Because Batch 31.36 passed both
-  owners under the nominally same renderer and seed, Batch 31.40 is ready as
-  docs-only reproducibility and evidence-authority reassessment.
+  owners under the nominally same renderer and seed, Batch 31.40 audited the
+  evidence authority. It found no retained executable identity: construction
+  froze inventory and selected constants, not helper bodies or assertions,
+  and `Y09` lacks one canonical source-relative swap assertion. Both receipts
+  remain checkpoint-local. Renewal is closed without closing the product
+  target.
 - The 2026-07-20 lifecycle reconciliation closes stale `g10.001` and
   `g10.003` active markers. It also records that Signal's `g10.017` capture and
   live-monitor implementation landed; that roadmap is paused only on explicit
@@ -234,14 +238,15 @@ Do not start Loophole or Chorus planning from Signal internals.
   - historical correctness, listening, and rejected-successor ledger
 - `g10.030` `complete`
   - stretch consolidated; candidate families closed; frozen baseline retained
-- `g10.031` `active`
+- `g10.031` `paused`
   - PaulX-like neutral `Dream` remains product intent; Batch 31.36 passed all
     objective and mono gates, then failed source-relative stereo admission and
     was deleted; Batch 31.37 closed renewal after finding no different complete
     owner; Batch 31.38 records the operator's comparator-relative stereo policy
     and freezes one fresh complete candidate; Batch 31.39 rejected that fresh
-    candidate at synthetic `Y04` and `Y09`; Batch 31.40 is a docs-only receipt
-    divergence reassessment; explicit `Cyclic` stays closed
+    candidate at synthetic `Y04` and `Y09`; Batch 31.40 found no recoverable
+    executable identity, closed renewed implementation, and retained the
+    PaulX-like target; explicit `Cyclic` stays closed
 
 ## Stretch Boundary
 
@@ -319,13 +324,18 @@ eligible independent listener for final image promotion. Batch 31.39's fresh
 checkpoint passed construction and structural admission, then failed the
 `16x` replica row and linked-stereo swap at `4x` and `8x`. It was deleted
 before listening. Batch 31.36 passed those same owners under the nominally
-same frozen renderer and seed, so implementation is closed pending a docs-only
-reproducibility and evidence-authority decision.
+same frozen renderer and seed. Batch 31.40 found that the briefs retained exact
+seed, support, and inventory authority but not helper bodies, assertions,
+per-row receipts, or output digests. `Y09` has no canonical executable
+source-relative swap assertion. Neither deleted checkpoint can prove the
+other. A third renewal candidate would create new authority rather than
+reconcile evidence, so renewal is closed. The PaulX-like target remains.
 
 ## Next Task
 
-Run `g10.031` Batch 31.40 only as docs and evidence-authority reassessment.
-Reconcile the contradictory Batch 31.36 and Batch 31.39 synthetic receipts
-without recovering deleted code, implementing DSP, changing gates, or
-rerunning candidates. Keep `g10.028`, routing, product exposure, other
-creative characters, and cross-repo work paused. Do not push.
+No `g10.031` implementation batch is ready. The operator must explicitly
+choose whether to commission research for one materially different,
+source-backed complete creative owner or leave the roadmap paused. Keep
+`g10.028`, routing, product exposure, other creative characters, and cross-repo
+work paused. Do not recover deleted code, run another renewal candidate, or
+push.

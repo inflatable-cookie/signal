@@ -120,8 +120,10 @@ mapped balance diagnostic under comparator-relative independent listening.
 Batch 31.38 froze one fresh complete `ComparatorAuditedRenewalSpectral` brief.
 Batch 31.39 passed construction and structural admission, then failed the
 `16x` replica row plus linked-stereo swap at `4x` and `8x`; it was deleted
-before listening. Batch 31.40 is ready to reconcile that `7/9` result with
-Batch 31.36's nominally equivalent `9/9` receipt.
+before listening. Batch 31.40 found no retained executable identity capable of
+reconciling that `7/9` result with Batch 31.36's nominally equivalent `9/9`
+receipt. Renewal is closed; the PaulX-like product target remains without a
+ready renderer owner.
 Offline artifacts still need a streaming artifact writer/cache target for full
 peak-memory closure. Mono callback-state DSP has a
 no-allocation proof, linked stereo is implemented, ratio scheduling has
@@ -247,8 +249,9 @@ Before rollover:
 
 ## Next Task
 
-Use `docs/roadmaps/g10/README.md` as the active generation front door. Run
-`g10.031` Batch 31.40 only as docs and evidence-authority reassessment. Do not
-recover deleted code, implement DSP, change gates, or rerun candidates. Keep
-the transparent successor lane, `g10.028`, other creative owners, routing,
-product exposure, and cross-repo work closed.
+Use `docs/roadmaps/g10/README.md` as the active generation front door. No
+`g10.031` implementation batch is ready. The operator must explicitly choose
+whether to commission research for one materially different, source-backed
+complete creative owner or leave that roadmap paused. Keep the transparent
+successor lane, `g10.028`, routing, product exposure, and cross-repo work
+closed. Do not recover deleted code or run another renewal candidate.
