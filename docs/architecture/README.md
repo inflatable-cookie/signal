@@ -1,7 +1,7 @@
 # Architecture
 
 Status: active
-Updated: 2026-07-20
+Updated: 2026-07-21
 
 ## Why this section matters now
 
@@ -41,5 +41,6 @@ Keep milestone sequencing in `roadmaps/`.
 ## Next Task
 
 Keep the `g10.030` transparent successor program closed. Run `g10.031` Batch
-31.36 only: implement the frozen support-audited listening-led candidate once
-from fresh source. Keep product routing and public exposure closed.
+31.42 only: freeze one complete clean-room `LinkedStnNoiseMorph` renderer
+brief. Do not implement candidate DSP in the same batch. Keep product routing
+and public exposure closed.

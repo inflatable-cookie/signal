@@ -1,7 +1,7 @@
 # Contracts
 
 Status: active
-Updated: 2026-07-19
+Updated: 2026-07-21
 
 ## Why this section matters now
 
@@ -113,8 +113,7 @@ Add a new contract only when the boundary needs stronger guarantees than
 Use `docs/contracts/contract-index.md` and `001-working-rules.md` as the
 contract front doors. Contract `084` and roadmap `g10.030` keep the transparent
 successor program closed. Contract `085` governs the separate creative path;
-source triangulation selected one materially different neutral `Dream` family.
-Batch 31.35 reconciled the latest `Y08` evidence-construction failure and froze
-one complete support-audited listening-led authority. Roadmap `g10.031` Batch
-31.36 is ready for one isolated candidate. No public creative implementation
-or strict spec lane is open.
+renewal is closed, while Batch 31.41 selected `LinkedStnNoiseMorph` as one
+materially different complete-owner family. Roadmap `g10.031` Batch 31.42 is
+ready for one docs-only complete renderer brief. No candidate implementation,
+public creative surface, or strict spec lane is open.

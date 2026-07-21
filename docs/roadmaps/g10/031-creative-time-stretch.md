@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: paused; Batch 31.40 complete, no implementation owner ready
+Status: active; Batch 31.41 complete, Batch 31.42 ready
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -1345,11 +1345,52 @@ Decision:
 - renewal remains closed; neutral `Dream` remains a valid product target with
   no admitted or ready Signal renderer
 
+## Batch 31.41 - Complete Creative Owner Study
+
+Status: complete; `LinkedStnNoiseMorph` selected for brief-writing
+
+- [x] execute the operator-authorized search for one materially different,
+  source-backed complete creative owner
+- [x] audit pinned SiTraNoStar `v2.0.1` / `2edf7b693040b5070116299973abf83dc5ba86e5`
+  as a runnable classical STN/noise-morphing path
+- [x] reconcile the implementation with the fuzzy STN decomposition, Noise
+  Morphing, neural STN, transient-placement, and stereo source evidence
+- [x] reject direct source transfer: SiTraNoStar is GPL-3.0, mono-only,
+  nondeterministic, full-file, approximate-length, and demonstrated only
+  through a `10x` public control range
+- [x] select one complete clean-room family in which tonal peaks, transient
+  events, and stochastic residuals have separate persistent owners on one map
+- [x] require channel-symmetric decomposition, linked tonal state, shared
+  event placement, and continuous multichannel residual excitation rather
+  than unrelated channel noise
+- [x] retain `4x`, `8x`, and `16x` long-form mono plus independent stereo as
+  Signal admission authority; do not promote short upstream listening
+- [x] keep renewal, cyclic, other characters, routing, product exposure,
+  Loophole, and Chorus closed or paused
+- [x] change documentation only; no DSP, tests, candidate harnesses, fixtures,
+  APIs, routes, or product surfaces entered `main`
+
+Decision:
+
+- `LinkedStnNoiseMorph` is materially different from renewal because phase
+  forgetting is confined to the separated residual; tonal phase and transient
+  waveform events keep temporal owners
+- the family plausibly addresses the low-end noise, tonal instability,
+  replica/event-placement risk, opposite entry/tail envelope, and stereo drift
+  together
+- source evidence is sufficient to freeze one buildable brief, not to claim
+  quality or start implementation
+- `16x`, long-form music, component leakage, linked residual width, exact
+  length, deterministic bounded memory, and computational cost remain open
+  terminal risks for the brief and candidate
+- Batch 31.42 is docs-only and must freeze every implementation and evidence
+  boundary before any isolated candidate becomes ready
+
 ## Later Batches
 
-Closed or paused without promotion. No later batch is ready. Any reopening
-requires an explicit operator decision and one materially different,
-source-backed complete owner:
+Closed or paused without promotion. Batch 31.42 brief-writing is the only
+ready work. Every later product batch still requires a separately admitted
+complete renderer:
 
 - minimal production admission
 - coherent/diffusive overlap
@@ -1433,12 +1474,16 @@ source-backed complete owner:
   receipts before authorizing any further candidate
 - [x] close the renewed candidate path after finding no recoverable executable
   identity and no materially different source-backed renewal owner
+- [x] commission a materially different complete-owner study and select
+  `LinkedStnNoiseMorph` for one complete clean-room brief
 - [x] no private renderer or product surface entered `main`
 
 ## Next Task
 
-No implementation batch is ready. The operator must explicitly choose whether
-to commission research for one materially different, source-backed complete
-creative owner or leave `g10.031` paused. Do not recover deleted checkpoints,
-run another renewal candidate, change gates, open routing or product exposure,
-touch Loophole or Chorus, or push.
+Run Batch 31.42 only. Freeze one self-contained clean-room
+`LinkedStnNoiseMorph` renderer brief. Resolve transform and separation
+topology, exact map, frame ownership, tonal state, transient state and
+anti-replica behavior, residual excitation and linked stereo, envelope,
+windows, normalization, boundaries, exact length, deterministic memory and
+cost, exact gates, listening pack, rejection, cleanup, and minimal admission.
+Do not implement candidate DSP in the same batch.

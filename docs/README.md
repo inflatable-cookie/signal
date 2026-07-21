@@ -80,9 +80,8 @@ strict lane.
 
 ## Next Task
 
-No `g10.031` implementation batch is ready. The operator must explicitly
-choose whether to commission research for one materially different,
-source-backed complete creative owner or leave the roadmap paused. Keep
-routing, product exposure, Loophole, and Chorus paused. Do not recover deleted
-code or run another renewal candidate. Only drop into `specs/` when a strict
-lane is explicitly reopened.
+Run `g10.031` Batch 31.42 only. The complete-owner study selected
+`LinkedStnNoiseMorph`; freeze its one self-contained clean-room renderer brief
+before implementation. Keep routing, product exposure, Loophole, and Chorus
+paused. Do not recover deleted code or run another renewal candidate. Only
+drop into `specs/` when a strict lane is explicitly reopened.

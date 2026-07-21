@@ -52,7 +52,7 @@ decision controls any future reopening.
 | [Rubber Band Source Architecture](./specimen-dossiers/rubber-band-source-architecture.md) | R2/R3 scheduling, scale ownership, guidance, and phase topology | Reviewed |
 | [Bungee Source Architecture](./specimen-dossiers/bungee-source-architecture.md) | Whole-kernel common-region rotation and dynamic multichannel feasibility | Reviewed |
 | [SBSMS Source Architecture](./specimen-dossiers/sbsms-source-architecture.md) | Linked subband partial tracking, paired stereo trajectories, and direct oscillator synthesis | Source feasibility rejected |
-| [Creative Stretch Source Triangulation](./specimen-dossiers/creative-stretch-source-triangulation.md) | PaulXStretch, CDP, and Potenza whole-path ownership behind retained creative targets | Reviewed; renewal closed, PaulX-like target retained |
+| [Creative Stretch Source Triangulation](./specimen-dossiers/creative-stretch-source-triangulation.md) | PaulXStretch, CDP, Potenza, and pinned SiTraNoStar whole-path ownership behind retained creative targets | Reviewed; `LinkedStnNoiseMorph` selected for complete brief |
 
 Current stretch feasibility decision:
 [Offline Time-Stretch Non-Phase-Vocoder Feasibility](../architecture/offline-time-stretch-non-phase-vocoder-feasibility.md).
@@ -103,6 +103,16 @@ candidate without reviving deleted code. Batch 31.39 rejected that candidate
 at synthetic `Y04` and `Y09`. Batch 31.40 found no retained executable
 identity capable of reconciling its `7/9` receipt with Batch 31.36's `9/9`
 receipt. Further renewal implementation is closed; the product target remains.
+
+Batch 31.41 then completed the explicitly commissioned different-owner study.
+Pinned SiTraNoStar supplies executable classical STN/noise-morphing evidence,
+while the related papers own two-stage decomposition, component scheduling,
+and `4x`/`8x` listening. The source is mono-only, nondeterministic, full-file,
+approximate-length, GPL clean-room evidence, so it is not a production
+dependency or an implementation brief. `LinkedStnNoiseMorph` is selected for
+one complete Signal brief with linked tonal state, shared transient events,
+continuous multichannel residual excitation, exact boundaries, deterministic
+bounded state, and the retained long-form listening order.
 
 Rejected comparator-audited neutral `Dream` candidate brief:
 [Offline Creative ComparatorAuditedRenewalSpectral Renderer Brief](../architecture/offline-creative-comparator-audited-renewal-spectral-brief.md).
@@ -169,7 +179,7 @@ Rejected first-owner brief:
 
 ## Next Task
 
-No `g10.031` implementation batch is ready. The operator must explicitly
-authorize research for one materially different, source-backed complete
-creative owner or leave the roadmap paused. Do not recover rejected code, run
-another renewal candidate, or reopen the transparent successor.
+Run `g10.031` Batch 31.42 only. Freeze one complete clean-room
+`LinkedStnNoiseMorph` renderer brief without candidate DSP or evidence
+surfaces. Do not recover rejected code, run another renewal candidate, or
+reopen the transparent successor.

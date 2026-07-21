@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: active PaulX-like `Dream`; no renderer authority ready
+Status: active PaulX-like `Dream`; `LinkedStnNoiseMorph` brief pending
 Owner: core-product
 Updated: 2026-07-21
 Related contracts: `046`, `048`, `084`
@@ -753,6 +753,9 @@ no materially different source-backed renewal owner, that path is closed.
     Complete; exact executable identity was not retained, `Y04` was
     misdescribed in the Batch 31.39 closeout, and `Y09` lacks one canonical
     source-relative swap assertion. Further renewal implementation is closed.
+41. Study one materially different, source-backed complete creative owner.
+    Complete; `LinkedStnNoiseMorph` is selected for a clean-room whole-renderer
+    brief. No candidate implementation is authorized.
 
 `Spectral`/`Rough`, coherent overlap, `LayeredCloud`, the upper overlap, dynamic
 ratios, and automatic routing still require separate reopening decisions backed
@@ -834,14 +837,44 @@ the only candidate source and outputs that could have been compared. Both
 receipts remain historical checkpoint decisions. Renewal is closed; the
 PaulX-like target remains active without a renderer owner.
 
+Batch 31.41 selects `LinkedStnNoiseMorph` as the next whole-renderer family.
+Its source basis is the complete mono STN/noise-morphing path demonstrated by
+the pinned SiTraNoStar application plus the published STN decomposition, noise
+morphing, transient relocation, envelope, and stereo studies. This is
+architecture evidence only. GPL implementation expression, constants,
+thresholds, masks, and control flow may not enter Signal.
+
+The complete brief must jointly own:
+
+- one exact monotonic map shared by tonal, transient, and residual lanes
+- channel-symmetric two-stage material separation with native-channel
+  reconstruction
+- persistent linked tonal peak/phase state, including dormancy and
+  reactivation
+- shared transient classification, segmentation, exact placement, collision,
+  seam, and anti-replica behavior
+- continuous deterministic residual excitation, spectral-envelope morphing,
+  and explicit linked-channel spatial statistics
+- mapped source-envelope treatment, component recombination, windowing,
+  normalization, exterior continuity, and exact target crop
+- bounded duration-independent memory, deterministic offline execution, fixed
+  computational shape, terminal gates, listening order, cleanup, and minimal
+  admission
+
+No item may be deferred to candidate implementation. Source evidence does not
+establish `16x`, long-form musical quality, linked residual stereo, exact
+length, or bounded deterministic execution. Those remain terminal Signal
+risks. Comparator-relative independent stereo listening remains promotion
+authority after objective and concealed mono admission.
+
 No public Rust enum, renderer, harness mode, fixture, artifact schema, runtime
 route, or product-facing claim entered `main`. `OfflineHighQuality` remains
 byte-exact and Contract `084` remains closed. No creative renderer is admitted.
 
 ## Next Task
 
-No implementation batch is ready. The operator must explicitly choose whether
-to commission research for one materially different, source-backed complete
-creative owner or leave `g10.031` paused. Keep other characters, routing,
-product exposure, Loophole, and Chorus closed or paused. Do not recover
-rejected code, run another renewal candidate, alter gates, or push.
+Run Batch 31.42 only. Freeze one self-contained clean-room
+`LinkedStnNoiseMorph` renderer brief covering every ownership boundary above.
+Do not implement DSP, add candidate evidence surfaces, recover rejected code,
+alter prior receipts, open routing or product exposure, touch Loophole or
+Chorus, or push.

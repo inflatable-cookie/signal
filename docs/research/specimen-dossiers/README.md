@@ -16,6 +16,6 @@ Current stretch dossiers:
 
 ## Next Task
 
-Use the creative source triangulation and frozen `RenewalSpectral` brief for
-one isolated Batch 31.18 candidate. Do not add another stretch dossier unless a
-new source changes an architecture decision.
+Use the creative source triangulation to freeze the complete
+`LinkedStnNoiseMorph` brief in Batch 31.42. Do not add another stretch dossier
+unless a new source changes an architecture decision.

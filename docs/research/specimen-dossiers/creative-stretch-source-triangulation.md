@@ -1,9 +1,9 @@
 # Creative Stretch Source Triangulation
 
-Status: reviewed; renewal closed, PaulX-like target retained
+Status: reviewed; linked STN noise morphing selected for complete brief
 Owner: dsp
 Updated: 2026-07-21
-Roadmap: `g10.031`, Batches 31.16 and 31.30-31.39
+Roadmap: `g10.031`, Batches 31.16, 31.30-31.41
 
 ## Question
 
@@ -21,6 +21,7 @@ masks, or control flow.
 | PaulXStretch | `v1.6.0`, `8ec191fdd7203354c79391cbc04c9fd83fa30ea0` | GPL repository; clean-room evidence only | neutral `Dream` |
 | CDP8 | `CDP8.0`, `456ffe0687c8d8206f8bc4e22273587db4c0ee0a` | LGPL-2.1-or-later; clean-room evidence only | `Spectral` |
 | Potenza Time Stretch | `ddb44a8f949b3f49320932e1d2e997b3a02149bb` | GPL-3.0; clean-room evidence only | Akai-style `Cyclic` |
+| SiTraNoStar | `v2.0.1`, `2edf7b693040b5070116299973abf83dc5ba86e5` | GPL-3.0; clean-room evidence only | component-owned neutral `Dream` study |
 
 The existing comparator pack already contains PaulXStretch and CDP at `4x`,
 `8x`, and `16x`, plus REAPER's proprietary ReaReaRea cyclic reference at
@@ -437,10 +438,127 @@ candidate. Source triangulation supplies no materially different complete
 renewal owner to justify that work. Renewal closes; PaulXStretch remains the
 retained behavioral target rather than an admitted Signal implementation.
 
+## Batch 31.41 STN Source Reassessment
+
+The operator commissioned research for a different complete creative owner.
+One newly reviewed public implementation changes the earlier STN conclusion:
+[SiTraNoStar `v2.0.1`](https://github.com/ollpu/SiTraNoStar/tree/2edf7b693040b5070116299973abf83dc5ba86e5)
+is a runnable GPL-3.0 application, not only a component paper. It supplies an
+end-to-end mono path through two-stage sines/transients/noise decomposition,
+identity-phase-locked tonal synthesis, transient relocation, noise morphing,
+component recombination, and file export. It is clean-room evidence only.
+Signal must not copy its expression, constants, thresholds, or control flow.
+
+The implementation also makes its limits concrete:
+
+- it reads and decomposes only the first input channel, then duplicates the
+  mono mix to the second playback channel
+- its random generator is initialized from `random_device`, so repeated
+  renders are not deterministic
+- its source-frame count and synthesis extension own approximate duration,
+  then playback wraps; there is no Signal-style exact-length boundary
+- decomposition materializes full-file transforms rather than bounded
+  duration-independent working state
+- the public control range stops at `10x`; `16x` is not demonstrated
+
+Those are missing product contracts, not reasons to discard the material
+model. The source path is materially different from renewal: stochastic
+excitation owns only the separated noise residual. Tonal energy keeps a
+phase-propagating peak owner, and transient waveform segments move once on the
+same output map. Renewal instead discarded phase across the complete mixture
+and left adjacent-frame waveform interference responsible for pitch, replica,
+crest, and stereo behavior.
+
+The published evidence completes the architecture triangulation:
+
+- [Enhanced Fuzzy Decomposition](https://arxiv.org/abs/2210.14041) supplies a
+  reconstructing two-stage soft-mask separation with simultaneous long tonal
+  and short transient resolution.
+- [Noise Morphing](https://arxiv.org/abs/2312.14586) supplies continuous white
+  excitation shaped by the time-interpolated residual log spectrum. Its blind
+  test covers mono material at `2x`, `4x`, and `8x`; it explicitly leaves
+  stereo and multichannel extension as future work.
+- [Extreme Audio Time Stretching Using Neural Synthesis](https://arxiv.org/abs/2211.16992)
+  validates the same whole STN scheduling pattern at `4x` and `8x`, including
+  transient relocation, a source-envelope correction before recombination,
+  and independently processed stereo channels. Its unreleased training path,
+  weights, and expensive autoregressive inference exclude the neural residual
+  synthesizer from Signal.
+- SiTraNoStar supplies executable classical noise-morphing evidence without a
+  neural dependency. Its mono-only I/O means it does not supply Signal's
+  linked-stereo law.
+
+No single upstream artifact satisfies Contract `085`. Together they support
+one clean-room complete architecture family whose missing ownership can be
+frozen by Signal without inventing another renewal repair.
+
+## Selected Family: `LinkedStnNoiseMorph`
+
+Batch 31.41 selects `LinkedStnNoiseMorph` for one complete docs-only brief.
+The brief must define one renderer, not interchangeable component options:
+
+1. One exact monotonic output-to-source map drives every component.
+2. One channel-symmetric two-stage soft-mask analysis separates tonal,
+   transient, and residual material while retaining each native channel.
+3. Tonal peaks own persistent phase trajectories and linked-channel phase
+   relations. Stochastic renewal may not touch the tonal lane.
+4. One shared transient state machine detects, segments, places, and emits
+   each native-channel event once. It owns collisions, seams, and replica
+   prevention.
+5. One continuous deterministic multichannel excitation is shaped by the
+   interpolated residual spectrum. A time-varying stereo cross-spectrum or an
+   equivalent explicit relation law owns residual width and balance; separate
+   unrelated channel noise is forbidden.
+6. One mapped source-envelope law may shape the tonal-plus-noise bed before
+   native transient recombination. It must own the entry/tail distribution
+   observed in the operator comparison without adding an arbitrary exterior
+   fade.
+7. Windowing, component reconstruction, normalization, exact crop, boundaries,
+   bounded memory, deterministic seeding, and cleanup are one synthesis
+   system.
+
+This family plausibly addresses the retained audible gap as a system:
+
+- persistent tonal phase removes renewal's pitch instability and atonal
+  cross-bin ringing from the tonal component
+- one-shot transient relocation attacks softened attacks, visible replicas,
+  and event-placement drift directly
+- residual-only noise morphing keeps desired dream-like diffusion without
+  turning bass and pitched energy into extra low-end noise
+- shared masks, events, tonal trajectories, and residual spatial statistics
+  prevent independent channel classification and excitation from owning the
+  stereo image
+- mapped envelope correction and exact crop give start and tail energy to the
+  renderer rather than to accidental synthesis support
+
+The selection is not a quality claim. Source listening used short mono clips,
+mostly environmental material, and stopped at `8x`. The Signal target includes
+long-form music, `16x`, linked stereo, exact output length, and deterministic
+bounded execution. Those are terminal admission risks.
+
+Other paths remain ineligible:
+
+- neural STN has no released complete training/weight authority and adds a
+  production model dependency
+- Loris, SMS Tools, and SBSMS expose useful additive or residual mechanisms but
+  no newly qualified complete linked creative path; SBSMS remains source-
+  feasibility rejected
+- Signalsmith, Bungee, Rubber Band, and the frozen Signal renderer are coherent
+  stretch references, not a PaulX-like residual-morph owner
+- CDP remains the separate vocoder-like `Spectral` target; cyclic, routing,
+  product exposure, Loophole, and Chorus stay closed or paused
+
+Primary source audit:
+
+- [SiTraNoStar history and complete application](https://github.com/ollpu/SiTraNoStar/blob/2edf7b693040b5070116299973abf83dc5ba86e5/README.md)
+- [two-stage STN decomposition](https://github.com/ollpu/SiTraNoStar/blob/2edf7b693040b5070116299973abf83dc5ba86e5/Source/STNDecomposition.cpp)
+- [component synthesis and noise morphing](https://github.com/ollpu/SiTraNoStar/blob/2edf7b693040b5070116299973abf83dc5ba86e5/Source/TSM.cpp)
+- [mono input, component recombination, and export](https://github.com/ollpu/SiTraNoStar/blob/2edf7b693040b5070116299973abf83dc5ba86e5/Source/MainComponent.cpp)
+- [SiTraNoStar GPL-3.0 licence](https://github.com/ollpu/SiTraNoStar/blob/2edf7b693040b5070116299973abf83dc5ba86e5/LICENSE)
+
 ## Next Task
 
-No implementation batch is ready. The operator must explicitly authorize
-research for one materially different, source-backed complete creative owner
-or leave `g10.031` paused. Keep other characters, routing, product exposure,
-Loophole, and Chorus closed or paused. Do not recover rejected code or run
-another renewal candidate.
+Run Batch 31.42 only. Freeze one complete clean-room
+`LinkedStnNoiseMorph` renderer brief with every ownership boundary and exact
+gate fixed before implementation. Do not add candidate DSP, tests, harnesses,
+fixtures, public APIs, routes, product exposure, Loophole, or Chorus work.

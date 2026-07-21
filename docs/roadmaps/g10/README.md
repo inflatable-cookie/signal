@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: creative stretch paused; no renderer owner ready
+Status: creative stretch active; linked STN complete brief next
 Updated: 2026-07-21
 
 ## Why this generation matters now
@@ -238,7 +238,7 @@ Do not start Loophole or Chorus planning from Signal internals.
   - historical correctness, listening, and rejected-successor ledger
 - `g10.030` `complete`
   - stretch consolidated; candidate families closed; frozen baseline retained
-- `g10.031` `paused`
+- `g10.031` `active`
   - PaulX-like neutral `Dream` remains product intent; Batch 31.36 passed all
     objective and mono gates, then failed source-relative stereo admission and
     was deleted; Batch 31.37 closed renewal after finding no different complete
@@ -246,7 +246,8 @@ Do not start Loophole or Chorus planning from Signal internals.
     and freezes one fresh complete candidate; Batch 31.39 rejected that fresh
     candidate at synthetic `Y04` and `Y09`; Batch 31.40 found no recoverable
     executable identity, closed renewed implementation, and retained the
-    PaulX-like target; explicit `Cyclic` stays closed
+    PaulX-like target; Batch 31.41 selected `LinkedStnNoiseMorph` for one
+    complete docs-only brief; explicit `Cyclic` stays closed
 
 ## Stretch Boundary
 
@@ -331,11 +332,26 @@ source-relative swap assertion. Neither deleted checkpoint can prove the
 other. A third renewal candidate would create new authority rather than
 reconcile evidence, so renewal is closed. The PaulX-like target remains.
 
+Batch 31.41 executes the operator-authorized complete-owner study. Pinned
+SiTraNoStar `v2.0.1` supplies a runnable classical sines/transients/noise plus
+noise-morphing whole path, while the related papers supply reconstructing
+two-stage decomposition, `4x`/`8x` listening, transient relocation, envelope,
+and limited stereo evidence. The source is not production-ready: it is
+GPL-3.0 clean-room evidence, mono-only, nondeterministic, full-file,
+approximate-length, and not demonstrated at `16x`.
+
+The study selects `LinkedStnNoiseMorph` for one complete clean-room brief.
+Tonal peaks keep persistent linked phase, transient waveform events move once,
+and only the separated residual uses continuous deterministic noise morphing.
+One shared map, channel-symmetric decomposition, explicit residual spatial
+owner, exact crop, bounded state, and the retained long-form listening order
+remain mandatory. No candidate or product surface is ready until Batch 31.42
+freezes that complete system.
+
 ## Next Task
 
-No `g10.031` implementation batch is ready. The operator must explicitly
-choose whether to commission research for one materially different,
-source-backed complete creative owner or leave the roadmap paused. Keep
-`g10.028`, routing, product exposure, other creative characters, and cross-repo
-work paused. Do not recover deleted code, run another renewal candidate, or
-push.
+Run `g10.031` Batch 31.42 only. Freeze one complete clean-room
+`LinkedStnNoiseMorph` renderer brief without DSP or candidate evidence
+surfaces. Keep `g10.028`, routing, product exposure, other creative characters,
+and cross-repo work paused. Do not recover deleted code, run another renewal
+candidate, or push.

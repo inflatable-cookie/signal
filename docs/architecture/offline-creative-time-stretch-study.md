@@ -1,6 +1,6 @@
 # Offline Creative Time-Stretch Study
 
-Status: PaulX-like `Dream` retained; no renderer owner ready
+Status: `LinkedStnNoiseMorph` selected; complete renderer brief pending
 Owner: dsp
 Updated: 2026-07-21
 Contract: `085`
@@ -681,6 +681,50 @@ reconciliation, and no materially different source-backed renewal owner exists.
 Close renewal again. Keep the PaulX-like target, comparator captures, and
 operator findings; no Signal creative renderer is ready.
 
+## Batch 31.41 Complete-Owner Study
+
+The explicit research reopening selected one materially different family:
+`LinkedStnNoiseMorph`. The source triangulation now includes the runnable
+SiTraNoStar classical STN/noise-morphing path, its decomposition and synthesis
+papers, and the related complete neural STN architecture. This evidence owns
+the complete mono temporal topology at `4x` and `8x`; it does not transfer GPL
+expression or authorize a neural dependency.
+
+The selected Signal architecture is one renderer with three material lanes on
+one exact map:
+
+| Material | Analysis owner | Synthesis owner |
+| --- | --- | --- |
+| tonal | channel-symmetric long-resolution soft mask and persistent peak tracks | linked peak-region phase propagation with dormant/reactivation state |
+| transient | shared short-resolution mask, event detection, and segmentation | native-channel waveform segment placed once at the exact mapped event |
+| residual noise | remaining reconstructing mask plus time-varying channel spectrum | continuous deterministic multichannel excitation shaped by interpolated residual spectrum and explicit spatial relation |
+
+One mapped source-envelope owner shapes the tonal-plus-noise bed before native
+transient recombination. One normalized synthesis and exact crop own exterior
+continuity, entry/tail energy, and target length. The final brief must make
+analysis and synthesis tiling duration-independent, seed every excitation from
+the request, and permit no working allocation after rendering starts.
+
+This is not another renewal candidate. Phase-forgetting is confined to the
+separated stochastic residual. Tonal pitch, transient uniqueness, event
+placement, and stereo relations each retain a persistent owner. The design
+therefore addresses the observed low-end noise, opposite entry/tail energy,
+tonal instability, replica risk, and stereo drift together rather than through
+post-render repair.
+
+The source boundary remains strict:
+
+- SiTraNoStar is mono-only, nondeterministic, full-file, and not exact-length
+- the classical Noise Morphing listening evidence stops at short mono `8x`
+- the neural STN path has no released complete training/weight authority
+- `16x`, long-form music, deterministic bounded execution, and linked residual
+  stereo are Signal-owned risks, not upstream claims
+
+Batch 31.41 admits the family to brief-writing only. No renderer, candidate,
+test, harness, fixture, API, route, cache, product surface, Loophole, or Chorus
+work is authorized. Batch 31.42 must freeze one self-contained implementation
+brief before any isolated candidate can become ready.
+
 ## Sources
 
 - [REAPER time-stretch engines](https://www.reaper.fm/about.php)
@@ -695,6 +739,8 @@ operator findings; no Signal creative renderer is ready.
 - [Photosounder](https://www.photosounder.com/)
 - [ARSS](https://arss.sourceforge.net/)
 - [Noise Morphing for Audio Time Stretching](https://arxiv.org/abs/2312.14586)
+- [Enhanced Fuzzy Decomposition of Sound Into Sines, Transients, and Noise](https://arxiv.org/abs/2210.14041)
+- [SiTraNoStar classical STN/noise-morphing source](https://github.com/ollpu/SiTraNoStar/tree/2edf7b693040b5070116299973abf83dc5ba86e5)
 - [Signalsmith Stretch source study](../research/specimen-dossiers/signalsmith-stretch.md)
 - [Bungee source study](../research/specimen-dossiers/bungee-source-architecture.md)
 - [Rubber Band source study](../research/specimen-dossiers/rubber-band-source-architecture.md)
@@ -716,8 +762,9 @@ operator findings; no Signal creative renderer is ready.
 
 ## Next Task
 
-No implementation batch is ready. The operator must explicitly choose whether
-to commission research for one materially different, source-backed complete
-creative owner or leave `g10.031` paused. Keep routing, product exposure,
-other characters, Loophole, and Chorus paused. Do not recover deleted code or
-run another renewal candidate.
+Run Batch 31.42 only. Freeze the complete clean-room
+`LinkedStnNoiseMorph` renderer brief. Resolve the map, decomposition,
+component states, linked stereo, windows, normalization, exact boundaries,
+memory, determinism, computational shape, gates, listening pack, rejection,
+cleanup, and minimal admission with no decide-later gaps. Do not implement DSP
+in the same batch.
