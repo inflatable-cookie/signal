@@ -155,8 +155,13 @@ Batch 31.53 then passed compile and construction `1/1`, but structural
 admission stopped at `16/18` on peak-plateau ownership and private-surface
 containment. Synthetic and listening stayed closed. The rejected checkpoint,
 worktree, branch, private source, tests, and build state were deleted without
-repair or rerun. Batch 31.54 is ready as docs-only executable-authority
+repair or rerun. This opened Batch 31.54 as docs-only executable-authority
 reassessment.
+Batch 31.54 audited all structural owners and found that construction-owning
+runtime rows would duplicate structural admission or move the checkpoint. A
+locally corrected v7 is not fresh architecture. `LinkedStnNoiseMorph` is
+closed after six attempts and no acoustic evidence. Batch 31.55 is ready as a
+docs-only creative-candidate evidence-protocol reassessment.
 Offline artifacts still need a streaming artifact writer/cache target for full
 peak-memory closure. Mono callback-state DSP has a
 no-allocation proof, linked stereo is implemented, ratio scheduling has
@@ -283,8 +288,8 @@ Before rollover:
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the active generation front door.
-Run `g10.031` Batch 31.54 as docs-only executable-authority reassessment.
-Either freeze one fresh construction-owned identity or close
-`LinkedStnNoiseMorph`. Keep the transparent successor lane, `g10.028`, routing,
-product exposure, and cross-repo work closed. Do not recover checkpoint
-`366ac24b`, implement DSP, merge, or push.
+Run `g10.031` Batch 31.55 as docs-only creative-candidate evidence-protocol
+reassessment. Separate implementation conformance from immutable acoustic
+admission before any family reopens. Keep the transparent successor lane,
+`g10.028`, routing, product exposure, and cross-repo work closed. Do not
+recover candidate source, implement DSP, merge, or push.

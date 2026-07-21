@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: active; Batch 31.53 rejected, Batch 31.54 reassessment ready
+Status: active; linked-STN closed, Batch 31.55 evidence-protocol reassessment ready
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -1793,21 +1793,41 @@ peak-plateau tie law or private-surface token boundary before checkpoint.
 
 ## Batch 31.54 - Linked STN Executable-Authority Reassessment
 
-Status: ready; docs and architecture only
+Status: complete; linked-STN closed without promotion
 
-- [ ] inspect the canonical v6 authority and the Batch 31.53 receipt without
+- [x] inspected the canonical v6 authority and Batch 31.53 receipt without
   recovering deleted candidate source
-- [ ] decide whether the peak-plateau tie law and private-surface boundary can
-  both be construction-owned under one fresh complete identity
-- [ ] audit every structural owner for the same construction-coverage gap
-- [ ] either freeze one fresh complete renderer and evidence identity or close
-  `LinkedStnNoiseMorph`
-- [ ] do not implement DSP, add tests or harnesses, change production, reopen
+- [x] audited every `S01..S18` owner against honest construction coverage
+- [x] found `S18` belongs before checkpoint, while construction-owning `S06`
+  or the other runtime rows would duplicate or move structural admission
+- [x] rejected a locally corrected v7 as evidence-protocol churn rather than a
+  materially different renderer
+- [x] closed `LinkedStnNoiseMorph` under Contract `084` Rule 7 after six
+  implementation attempts produced no synthetic or listening evidence
+- [x] kept the PaulX-like neutral `Dream` product target active and unadmitted
+- [x] did not implement DSP, add tests or harnesses, change production, reopen
   routing or product exposure, touch Loophole or Chorus, merge, or push
+
+## Batch 31.55 - Creative Candidate Evidence-Protocol Reassessment
+
+Status: ready; docs and contracts only
+
+- [ ] classify compile, construction, structural conformance, acoustic
+  objective, mono listening, and independent stereo authority separately
+- [ ] permit implementation correction only before one frozen acoustic
+  checkpoint, with exact source and test identity retained for comparison
+- [ ] preserve one complete candidate, anti-sweep, stage-stop, cleanup,
+  comparator, and listening-promotion rules
+- [ ] decide whether a closed family may ever reopen after conformance-only
+  failure, and what new identity or evidence is required
+- [ ] either freeze one reusable Contract `085` candidate protocol and name a
+  later owner-selection checkpoint, or pause creative implementation
+- [ ] do not implement or recover DSP, add harnesses, change production,
+  routing, cache, product exposure, Loophole, or Chorus
 
 ## Later Batches
 
-Closed or paused without promotion. Batch 31.54 is the sole ready work. Every
+Closed or paused without promotion. Batch 31.55 is the sole ready work. Every
 later product batch still requires a separately admitted complete renderer:
 
 - minimal production admission
@@ -1942,11 +1962,18 @@ later product batch still requires a separately admitted complete renderer:
 - [x] the rejected v6 checkpoint, implementation, tests, worktree, branch, and
   build state were deleted without repair or rerun
 - [x] no candidate DSP entered `main` after v6 rejection
+- [x] all `S01..S18` owners were audited against construction coverage
+- [x] a locally corrected linked-STN v7 was rejected as gate duplication, not
+  fresh architecture
+- [x] `LinkedStnNoiseMorph` closed without promotion after six implementation
+  attempts and no synthetic or listening evidence
+- [x] the PaulX-like neutral `Dream` target remains active and unadmitted
 
 ## Next Task
 
-Run Batch 31.54 as docs-only executable-authority reassessment. Decide whether
-one fresh complete identity can construction-own the peak-plateau tie law,
-private-surface boundary, and every other structural owner, or close
-`LinkedStnNoiseMorph`. Do not recover checkpoint `366ac24b`, implement DSP,
-change production, touch Loophole or Chorus, merge, or push.
+Run Batch 31.55 as docs-only creative-candidate evidence-protocol
+reassessment. Separate iterative conformance from one immutable acoustic
+checkpoint while preserving anti-sweep, cleanup, comparator, and listening
+authority. Decide whether any creative family can reopen under that policy.
+Do not recover candidate source, implement DSP, change production, touch
+Loophole or Chorus, merge, or push.

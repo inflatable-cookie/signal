@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: creative stretch active; linked-STN reassessment ready
+Status: creative stretch active; linked-STN closed, evidence-protocol reassessment ready
 Updated: 2026-07-21
 
 ## Why this generation matters now
@@ -460,11 +460,19 @@ closed. The checkpoint was not repaired or rerun. Its worktree, branch,
 reference, private source, tests, and `3.4 GiB` build state were deleted. No
 DSP or product surface entered `main`.
 
+Batch 31.54 audited all `S01..S18` owners. Construction honestly covers only
+fixed manifest, geometry, vector, primitive, and memory facts; most rows need
+an executing renderer. Moving `S18` earlier is valid, but moving `S06` and the
+remaining runtime rows makes construction duplicate structural admission or
+moves the checkpoint. A locally corrected v7 is therefore protocol churn, not
+a different renderer. After six implementation attempts and no synthetic or
+listening evidence, `LinkedStnNoiseMorph` closes under Contract `084` Rule 7.
+The PaulX-like neutral `Dream` target remains active and unadmitted.
+
 ## Next Task
 
-Run `g10.031` Batch 31.54 as docs-only executable-authority reassessment.
-Either construction-own the peak-plateau tie law, private-surface boundary,
-and remaining structural owners under one fresh identity or close
-`LinkedStnNoiseMorph`. Keep `g10.028`, routing, product exposure, other
-creative characters, and cross-repo work unchanged. Do not recover checkpoint
-`366ac24b`, implement DSP, merge, or push.
+Run `g10.031` Batch 31.55 as docs-only creative-candidate evidence-protocol
+reassessment. Separate implementation conformance from immutable acoustic
+admission before any family reopens. Keep `g10.028`, routing, product exposure,
+other creative characters, and cross-repo work unchanged. Do not recover
+candidate source, implement DSP, merge, or push.

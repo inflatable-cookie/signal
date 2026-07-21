@@ -1,10 +1,10 @@
 # Offline Creative LinkedStnNoiseMorph Renderer Brief
 
-Status: construction-bound v6 rejected at structural admission; reassessment required
+Status: closed without promotion after executable-authority reassessment
 Owner: dsp
 Updated: 2026-07-21
 Contract: `085`
-Roadmap: `g10.031`, Batches 31.42 through 31.53
+Roadmap: `g10.031`, Batches 31.42 through 31.54
 
 ## Decision
 
@@ -1305,6 +1305,51 @@ reference, private source, tests, and `3.4 GiB` of build state were deleted.
 No candidate DSP or product surface entered `main`. Construction-bound v6 is
 rejected and no linked-STN candidate is ready.
 
+## Batch 31.54 Executable-Authority Reassessment
+
+The structural audit separates construction facts from properties that require
+an executing renderer:
+
+| ID | Construction coverage | Decision |
+| --- | --- | --- |
+| `S01` | none | request behavior remains structural |
+| `S02` | complete geometry; map vectors remain structural | current split is valid |
+| `S03` | none | WOLA behavior remains structural |
+| `S04` | none | decomposition and reconstruction remain structural |
+| `S05` | none | streaming/oracle equivalence remains structural |
+| `S06` | vectors named, not executed | construction could catch this only by running `S06` |
+| `S07` | none | track-state traces remain structural |
+| `S08` | none | rendered tonal relations remain structural |
+| `S09` | none | transient state and reassignment remain structural |
+| `S10` | none | ledger and emission behavior remain structural |
+| `S11` | counter/tag vectors only | rendered determinism remains structural |
+| `S12` | `zlog` truth vectors only | covariance and factorization remain structural |
+| `S13` | none | rendered residual relations remain structural |
+| `S14` | none | `space` behavior remains structural |
+| `S15` | zero primitives only | recombination and boundary output remain structural |
+| `S16` | none | short and edge requests remain structural |
+| `S17` | formulas and witnesses only | allocator and full-render proofs remain structural |
+| `S18` | missing | source containment belongs before checkpoint |
+
+`S18` can move into construction. `S06` already had the correct lowest-bin
+plateau law in canonical prose; the implementation did not conform. Binding
+that result into construction requires executing `S06` there. Applying the
+same rule across `S01..S18` either duplicates structural admission before and
+after checkpoint or moves the checkpoint after structural admission. Both are
+evidence-protocol changes, not a fresh renderer architecture.
+
+The linked-STN line made six implementation attempts from Batches 31.43
+through 31.53. Two stopped before structural admission; four reached
+structural admission; none reached synthetic or listening evidence. The last
+two candidates share the same dominant cause: incomplete executable authority
+allowed a frozen conformance defect past construction. Contract `084` Rule 7
+therefore blocks a locally corrected v7.
+
+`LinkedStnNoiseMorph` closes without promotion. Its material-separated design
+remains historical architecture evidence, not implementation authority. The
+PaulX-like neutral `Dream` product target remains active. No creative renderer,
+route, API, cache identity, or product claim is admitted.
+
 ## Sources
 
 - [Creative source triangulation](../research/specimen-dossiers/creative-stretch-source-triangulation.md)
@@ -1317,8 +1362,8 @@ rejected and no linked-STN candidate is ready.
 
 ## Next Task
 
-Run Batch 31.54 as docs-only executable-authority reassessment. Decide whether
-the peak-plateau tie law and private-surface boundary can both become
-construction-owned under one fresh complete identity, or close
-`LinkedStnNoiseMorph`. Do not recover or repair checkpoint `366ac24b`, write
-candidate DSP, change production code, merge, or push.
+Run Batch 31.55 as docs-only creative-candidate evidence-protocol
+reassessment. Separate iterative implementation conformance from immutable
+acoustic admission without weakening one-candidate, anti-sweep, cleanup, or
+listening authority. Decide whether any creative family can reopen under that
+policy. Do not recover linked-STN checkpoints, write DSP, merge, or push.

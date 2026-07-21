@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: active PaulX-like `Dream`; linked-STN reassessment required
+Status: active PaulX-like `Dream`; linked-STN closed, evidence protocol under reassessment
 Owner: core-product
 Updated: 2026-07-21
 Related contracts: `046`, `048`, `084`
@@ -792,9 +792,12 @@ no materially different source-backed renewal owner, that path is closed.
     passed `1/1`, structural stopped at `16/18` on peak-plateau ownership and
     private-surface containment, and the candidate was deleted before
     synthetic or listening.
-52. Reassess executable structural authority. Ready; docs and architecture
-    only. Either freeze one fresh complete construction-owned identity or
-    close `LinkedStnNoiseMorph`.
+52. Reassess executable structural authority. Complete; most structural owners
+    require renderer execution, construction-owning all of them would duplicate
+    or move the gate, and `LinkedStnNoiseMorph` is closed without promotion.
+53. Reassess creative candidate evidence protocol. Ready; docs and contracts
+    only. Separate implementation conformance from immutable acoustic evidence
+    before any family may reopen.
 
 `Spectral`/`Rough`, coherent overlap, `LayeredCloud`, the upper overlap, dynamic
 ratios, and automatic routing still require separate reopening decisions backed
@@ -1055,10 +1058,27 @@ The worktree, branch, checkpoint reference, private source, tests, and build
 state were deleted. No creative renderer is admitted and no linked-STN
 candidate is ready.
 
+Batch 31.54 audited every structural owner against construction. Geometry,
+fixed counter vectors, zero-state primitives, and memory formulas have honest
+construction subsets. Request behavior, WOLA, reconstruction, streaming,
+tracks, transients, rendered relations, boundaries, allocation, and full
+containment need executable structural proof. `S18` should have run before
+checkpoint; making `S06` construction-owned requires executing it there.
+Generalizing that correction duplicates structural admission or moves the
+checkpoint. Neither creates a different renderer.
+
+Six linked-STN implementation attempts produced no synthetic or listening
+evidence. The last two failed the same incomplete-executable-authority class.
+Contract `084` Rule 7 blocks a locally corrected seventh identity.
+`LinkedStnNoiseMorph` closes without promotion. Its brief and receipts remain
+historical evidence only. The PaulX-like neutral `Dream` target remains active,
+but no creative renderer or implementation batch is ready.
+
 ## Next Task
 
-Run Batch 31.54 as docs-only executable-authority reassessment. Either bind the
-peak-plateau tie law and private-surface boundary into one fresh complete
-construction owner or close `LinkedStnNoiseMorph`. Do not recover or repair
-checkpoint `366ac24b`, implement DSP, open routing or product exposure, touch
-Loophole or Chorus, merge, or push.
+Run Batch 31.55 as docs-only creative-candidate evidence-protocol
+reassessment. Freeze a boundary between iterative implementation conformance
+and immutable acoustic admission, or close further creative implementation
+work pending new evidence. Do not recover linked-STN checkpoints, implement
+DSP, open routing or product exposure, touch Loophole or Chorus, merge, or
+push.

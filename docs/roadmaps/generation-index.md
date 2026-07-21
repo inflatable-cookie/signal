@@ -105,8 +105,11 @@ Updated: 2026-07-21
   authoritative in construction and `S02`. Batch 31.53 passed construction
   `1/1`, then failed structural admission at `16/18` on peak-plateau ownership
   and private-surface containment. The rejected candidate was deleted before
-  synthetic or listening. Batch 31.54 is ready as docs-only executable-
-  authority reassessment.
+  synthetic or listening. Batch 31.54 found that construction-owning runtime
+  rows would duplicate structural admission or move the checkpoint. A local
+  v7 is not fresh architecture, so linked-STN closes after six attempts and no
+  acoustic evidence. Batch 31.55 is ready as docs-only creative-candidate
+  evidence-protocol reassessment.
 - Lifecycle reconciliation then closed stale `g10.001` and `g10.003` active
   markers and paused `g10.017` on its remaining hardware evidence. Signal's
   capture and live-monitor implementation is present. That lifecycle
@@ -131,7 +134,7 @@ Updated: 2026-07-21
 | `g06` | 2026-03-13 | Continue beyond reusable-boundary closeout with runtime recovery depth, instrumentation, feature breadth, and Loophole-facing runtime evidence | Closed on 2026-03-16 after recovery/resumability, profiling, VST3/AU, MIDI/event depth, hardware/external-I/O, media services, integrated acceptance, bounded soak, and generation-closeout promotion work landed |
 | `g07` | 2026-03-13 | Seed the post-`g06` feature-expansion queue around routing or multichannel depth, Linux-native breadth, control-surface substrate, and fuller time-stretch capability | Closed on 2026-03-19 after multichannel or spatial execution, LV2 and Linux backends, external MIDI/control surfaces, sample-domain stretch, integrated acceptance, and generation-closeout promotion work landed |
 | `g08` | 2026-03-19 | Continue beyond bounded feature-expansion closure with live Linux backend ownership, richer plugin or device protocol depth, immersive routing, and workflow-adjacent runtime services | Closed on 2026-03-22 after live Linux ownership, LV2 or plugin protocol depth, immersive render breadth, device-protocol substrate, preview workflows, grouped acceptance lanes, integrated acceptance, and final generation-closeout work landed |
-| `g10` | 2026-06-11 | Turn the 2026-06-11 deep audit into a remediation program: fix the real audio path, demolish simulated/narration mass (~70-80k LoC), consolidate hygiene, defer rebuilds to demand | Active; `g10.030` retained the frozen stretch baseline and `g10.031` has linked-STN executable-authority reassessment ready |
+| `g10` | 2026-06-11 | Turn the 2026-06-11 deep audit into a remediation program: fix the real audio path, demolish simulated/narration mass (~70-80k LoC), consolidate hygiene, defer rebuilds to demand | Active; `g10.030` retained the frozen stretch baseline and `g10.031` has creative evidence-protocol reassessment ready |
 | `g09` | 2026-04-08 | Turn the audit findings into a contract-backed realization, hardening, and interactive-proof program | Closed on 2026-04-11 after plugin and backend realization, production-readiness gating, and operator-visible demo proof landed |
 
 ## Rollover policy
@@ -151,7 +154,8 @@ If that cleanup has not happened, stay in the current generation and finish the 
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the current active-generation front door.
-Run `g10.031` Batch 31.54 as docs-only executable-authority reassessment.
-Either freeze one fresh construction-owned identity or close
-`LinkedStnNoiseMorph`. Keep transparent stretch, routing, and product exposure
-unchanged. Do not recover checkpoint `366ac24b`, implement DSP, merge, or push.
+Run `g10.031` Batch 31.55 as docs-only creative-candidate evidence-protocol
+reassessment. Separate implementation conformance from immutable acoustic
+admission before any family reopens. Keep transparent stretch, routing, and
+product exposure unchanged. Do not recover candidate source, implement DSP,
+merge, or push.
