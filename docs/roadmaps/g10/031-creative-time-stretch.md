@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: active; Batch 31.41 complete, Batch 31.42 ready
+Status: active; Batch 31.42 complete, Batch 31.43 ready
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -1386,10 +1386,53 @@ Decision:
 - Batch 31.42 is docs-only and must freeze every implementation and evidence
   boundary before any isolated candidate becomes ready
 
+## Batch 31.42 - Linked STN Renderer Brief
+
+Status: complete; one isolated candidate ready
+
+- [x] freeze one exact signed-rational source/output map and shared synthesis
+  lattice
+- [x] freeze sample-rate-normalized long tonal and short transient separation
+  with reconstructing channel-symmetric soft masks
+- [x] freeze persistent linked tonal peak, bin, dormant, reactivation, and axis
+  state
+- [x] freeze transient detection, refinement, classification, segmentation,
+  unit-rate placement, collision, seam, and one-emission ownership
+- [x] freeze continuous counter excitation, residual covariance morphing, and
+  linked `space` behavior without channel-local noise
+- [x] freeze mapped envelope correction, normalized component synthesis,
+  zero exterior, exact crop, and no arbitrary head/tail fade
+- [x] freeze a `96 MiB` duration-independent state cap, deterministic traversal,
+  allocation boundary, and computational shape
+- [x] freeze one self-contained `28`-owner evidence specification, retained
+  long-form mono pack, independent stereo gate, receipt identity, rejection,
+  cleanup, and minimal admission
+- [x] keep candidate DSP, tests, harnesses, fixtures, APIs, routes, cache,
+  product exposure, Loophole, and Chorus unchanged
+
+Authority:
+
+- `docs/architecture/offline-creative-linked-stn-noise-morph-brief.md`
+
+Decision:
+
+- `LinkedStnNoiseMorph` is one buildable material-separated renderer, not a
+  menu of mechanisms
+- persistent tonal phase, one-shot native transients, and residual-only noise
+  morphing plausibly address tonal ringing, event replicas, transient softness,
+  extra low-end noise, and stereo drift together
+- the mapped source envelope and absence of a renderer-owned exterior fade
+  directly own the observed entry/tail energy mismatch
+- source evidence does not prove `16x`, long-form musical quality, linked
+  residual image, or cost; construction, objective gates, mono listening, and
+  eligible independent stereo remain terminal
+- Batch 31.43 may implement this brief once in its named disposable worktree;
+  it may not repair the architecture or enter production
+
 ## Later Batches
 
-Closed or paused without promotion. Batch 31.42 brief-writing is the only
-ready work. Every later product batch still requires a separately admitted
+Closed or paused without promotion. Batch 31.43 isolated implementation is the
+only ready work. Every later product batch still requires a separately admitted
 complete renderer:
 
 - minimal production admission
@@ -1476,14 +1519,14 @@ complete renderer:
   identity and no materially different source-backed renewal owner
 - [x] commission a materially different complete-owner study and select
   `LinkedStnNoiseMorph` for one complete clean-room brief
+- [x] freeze one complete self-contained `LinkedStnNoiseMorph` renderer brief
+  with no candidate-time ownership choices
 - [x] no private renderer or product surface entered `main`
 
 ## Next Task
 
-Run Batch 31.42 only. Freeze one self-contained clean-room
-`LinkedStnNoiseMorph` renderer brief. Resolve transform and separation
-topology, exact map, frame ownership, tonal state, transient state and
-anti-replica behavior, residual excitation and linked stereo, envelope,
-windows, normalization, boundaries, exact length, deterministic memory and
-cost, exact gates, listening pack, rejection, cleanup, and minimal admission.
-Do not implement candidate DSP in the same batch.
+Run Batch 31.43 only in `signal-candidate-31-43` on
+`candidate/g10-031-linked-stn-noise-morph`. Implement the frozen brief once,
+run compile and construction, freeze one checkpoint, then run structural and
+synthetic admission in order. Stop before listening on any miss. Do not change
+production code, merge, expose the product, touch Loophole or Chorus, or push.

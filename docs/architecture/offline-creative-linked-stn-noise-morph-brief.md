@@ -1,0 +1,733 @@
+# Offline Creative LinkedStnNoiseMorph Renderer Brief
+
+Status: frozen; one isolated candidate ready
+Owner: dsp
+Updated: 2026-07-21
+Contract: `085`
+Roadmap: `g10.031`, Batch 31.42
+
+## Decision
+
+Build one Signal-owned `LinkedStnNoiseMorph` candidate for neutral `Dream` at
+fixed creative expansion from `4x` through `16x`.
+
+This is one material-separated renderer, not three optional effects. A
+reconstructing two-stage analysis assigns tonal, transient, and residual
+material on one source lattice. Persistent oscillators stretch tonal material.
+Native waveform events move once. Continuous deterministic excitation morphs
+only the residual. One linked-channel law, envelope, normalization system, and
+exact crop own the final output.
+
+The architecture is clean-room. Public SiTraNoStar and the STN papers inform
+material ownership and validation only. Their GPL expression, constants,
+thresholds, masks, tables, and control flow do not transfer. No external
+library or model enters production.
+
+## Supported Request
+
+The private `CandidateRequest<'a>` contains exactly:
+
+- finite mono or interleaved stereo `input`
+- `channels` equal to `1` or `2`
+- integer `sample_rate` from `8000` through `192000`
+- exact `target_frames`
+- explicit `seed`
+- finite `space` in `[0,1]`
+
+Let source frames be `L`, target frames be `T`, and sample rate be `F`.
+Require `4L<=T<=16L` with checked arithmetic. Reject values above `2^53-1`,
+partial stereo frames, non-finite input, unsupported rates or channels,
+overflow, range misses, and a non-empty request with `T=0` before output
+allocation. Also reject when `T*channels*sizeof(f32)>isize::MAX` or exact
+`Vec` reservation fails. Empty input with `T=0` returns empty.
+
+The sole entry is:
+
+`render(CandidateRequest<'_>) -> Result<Vec<f32>, CandidateError>`.
+
+The closed error enum owns request, size, allocation-bound, and non-finite
+processing failure. Character, motion, detail, pitch, reverse, dynamic ratio,
+cache, artifacts, reports, realtime execution, and public exposure are absent.
+`space` affects only eligible residual stereo width. Mono ignores it exactly.
+
+## Geometry And Exact Map
+
+Define `nearest_pow2(v)` by absolute integer distance; ties choose the larger
+power. Freeze:
+
+- tonal length `N_t=clamp(nearest_pow2(round(F/6)),2048,32768)`
+- tonal analysis hop `A_t=N_t/8`
+- short separation length `N_s=N_t/8`
+- short analysis hop `A_s=N_s/4`
+- residual-morph length `N_r=N_t/2`
+- residual analysis hop `A_r=N_r/4`
+- shared synthesis hop `H=N_t/16`
+
+Integer division is exact for every supported geometry. At `44.1` and
+`48 kHz`, `N_t=8192`, `N_s=1024`, `N_r=4096`, and `H=512`.
+
+Every transform uses the centered periodic square-root Hann:
+
+`w_N[n]=sqrt(0.5-0.5*cos(2*pi*(n+0.5)/N))`, `0<=n<N`.
+
+Analysis frames have integer centres `k*A`. Source reads outside `[0,L)` are
+exact zero. Frequency neighbourhoods reflect at DC and Nyquist. Time
+neighbourhoods retain exterior zero frames. Forward transforms are unscaled;
+inverse transforms use `1/N`.
+
+The sole output-to-source sample-centre map is:
+
+`x(y)=((y+0.5)*L/T)-0.5`.
+
+Evaluate it as a checked signed `i128` rational with numerator
+`(2y+1)*L-T` and denominator `2T`. Never accumulate a floating cursor.
+Tonal frames, residual frames, transient anchors, envelope samples, evidence
+windows, and exact crop all use this map.
+
+Tonal synthesis centres are every integer `y=jH` whose `N_t` support
+intersects `[0,T)`. Residual centres use the same `jH` lattice and their
+`N_r` support. Process centres in ascending order. Analysis state is produced
+only through the greatest source coordinate needed by the current synthesis
+centre plus frozen lookahead, then evicted after every consumer passes it.
+
+## Reconstructing STN Analysis
+
+Analysis decisions use channel aggregate power
+`P=(sum_c |X_c|^2)/channels`. Masks are scalar, channel-symmetric, and applied
+to each native complex coefficient. Let `eps=1e-24` and
+`smooth(u)=v*v*(3-2*v)`, where `v=clamp(u,0,1)`.
+
+### Long tonal split
+
+On the `N_t/A_t` source lattice, compute:
+
+- horizontal median `Q_h` across
+  `odd(round(0.240*F/A_t))`, clamped to `5..31` frames
+- vertical median `Q_v` across
+  `odd(round(375*N_t/F))`, clamped to `5..255` bins
+- `rho=Q_h/(Q_h+Q_v+eps)`
+- tonal mask `M_t=smooth((rho-0.55)/0.30)`
+
+`odd(v)` chooses the nearest positive odd integer; a midpoint chooses the
+larger odd integer. The masked coefficients are `X_t=M_t*X`; first residual
+coefficients are `X_r1=(1-M_t)*X`.
+
+Matched inverse WOLA reconstructs a tonal source stream and a first residual
+stream. Each sample divides by the accumulated `w_N^2` denominator when it is
+greater than `1e-12`, otherwise it is exact zero.
+
+### Short transient split
+
+Analyze the reconstructed first residual on the `N_s/A_s` lattice. Call its
+native complex coefficients `R_s`. Compute:
+
+- horizontal median `R_h` across
+  `odd(round(0.064*F/A_s))`, clamped to `5..31` frames
+- vertical median `R_v` across
+  `odd(round(1800*N_s/F))`, clamped to `5..127` bins
+- `tau=R_v/(R_h+R_v+eps)`
+- transient mask `M_s=smooth((tau-0.58)/0.28)`
+
+`X_transient=M_s*R_s` and `X_noise=(1-M_s)*R_s`. Matched WOLA reconstructs
+native-channel transient and residual streams.
+
+For finite input, source-domain reconstruction must satisfy
+`input=tonal+transient+residual` before event claiming. Maximum absolute error
+must be at most `1e-6*max(1,input_peak)` and RMS error at most
+`1e-7*max(1,input_rms)`. Masks must remain finite and in `[0,1]`.
+
+These constants are Signal-owned, sample-rate-normalized choices frozen before
+candidate implementation. There is no hard mask, binary classification,
+channel-local decomposition, or candidate-time threshold selection.
+
+## Tonal Owner
+
+The tonal lane reuses `X_t` on the long source lattice. For source frame `k`,
+channel `c`, and bin `b`, define phase `phi[k,c,b]`. Instantaneous angular
+frequency is:
+
+`omega=2*pi*b/N_t + wrap(phi[k+1]-phi[k]-2*pi*b*A_t/N_t)/A_t`,
+
+where `wrap` returns `(-pi,pi]` and the negative-real tie is `+pi`.
+At `x(jH)`, interpolate log magnitude and `omega` linearly between the two
+bracketing source frames. A zero magnitude uses `eps` for interpolation and
+returns exact zero only when both endpoints are zero.
+
+Peak candidates are aggregate-magnitude bins `1..N_t/2-1` that:
+
+- are not below `1e-4` of the frame maximum
+- are at least both immediate neighbours
+- win a plateau at its lowest bin
+
+Current peaks are visited by descending magnitude, then lower bin. Match each
+to the unmatched live track with smallest frequency distance inside
+`max(2*F/N_t,0.03*f_peak)` Hz; ties choose the lower track ID. Unmatched peaks
+create monotonically numbered tracks. Unmatched tracks become dormant.
+
+Each live track owns one output phase accumulator and last angular frequency.
+An active or dormant track advances by `omega*H` at every output centre.
+Dormant tracks may reactivate without phase reset while mapped source distance
+from their last observation is at most `6*A_t`; after that distance they are
+retired. Reactivation uses the predicted accumulator, not current analysis
+phase. A new track starts at the selected linked analysis-axis phase.
+
+Peak regions end halfway between adjacent peak bins; integer ties belong to
+the lower peak. Every non-peak bin in a region uses identity phase locking:
+the track accumulator plus its wrapped analysis phase offset from the region
+peak. A frame with no eligible peak uses persistent bin oscillators with the
+same instantaneous-frequency propagation. DC is linearly interpolated real
+content. Nyquist is real with sign from the selected source frame.
+
+### Linked tonal phase
+
+For stereo coefficient pair `(X_L,X_R)`, define `U=X_L+X_R` and `V=X_L-X_R`.
+Use axis `Z=U` when `|U|>=|V|`, otherwise `Z=V`; exact silence has no axis.
+The choice is channel-symmetric. Swapping channels preserves `U` and negates
+`V`, so its gauge change cancels in the native-channel ratios.
+
+Track and bin phase propagate on `Z`. Each channel retains its interpolated
+magnitude and wrapped native relation `arg(X_c)-arg(Z)` from the nearer source
+frame; a fractional midpoint chooses the earlier frame. Analysis-axis changes
+crossfade the old and new unit complex relations over exactly two synthesis
+centres, normalized to unit magnitude; exact antipodal ties retain the old
+axis for the first centre. Tonal `space` is always zero: the renderer never
+widens pitched partials.
+
+Stochastic renewal, phase diffusion, per-channel tracks, dormant phase reset,
+and post-render tonal correction are forbidden.
+
+## Transient Owner
+
+Transient detection runs on the reconstructed native transient stream. For
+short frame `m`, let `e[m]` be channel-mean windowed energy and:
+
+`d[m]=max(0,ln(e[m]+eps)-ln(e[m-1]+eps))`.
+
+Within `m-24..m+24`, excluding `m`, compute median `mu` and median absolute
+deviation `mad`. A candidate must:
+
+- be the earliest maximum in `m-2..m+2`
+- satisfy `d[m]>=mu+4*max(mad,1e-6)`
+- satisfy `e[m]>=1e-5*max(e[m-24..m+24])`
+
+Exterior frames are zero. Commit only after all `24` future frames exist.
+Refine inside `m*A_s-N_s/2..m*A_s+N_s/2` to the sample maximizing
+`sum_c (t_c[n]-t_c[n-1])^2`; ties choose the earliest sample.
+
+Around the refined sample, inspect `+/-2N_s`. Find the earliest shortest
+interval containing `90%` of its channel-summed transient energy. Classify the
+event `Impulse` when that interval is no longer than `N_s/2`, otherwise
+`Attack`.
+
+For `Impulse`, search left at most `N_s` and right at most `2N_s`; for
+`Attack`, search left at most `2N_s` and right at most `4N_s`. A side ends at
+the nearest run of `64` samples whose channel-summed power is at most
+`1e-4` of the event-neighbourhood peak. If no run exists, use the cap. Adjacent
+segments are clipped at the floor midpoint between refined source anchors.
+
+Each retained segment gets sine-squared edge weights of length
+`min(N_s/8,floor(segment_length/4))`. The claimed transient is the weighted
+native segment. All unclaimed transient energy, including removed edge weight,
+is added to the residual stream before residual analysis. Source-domain
+`tonal+claimed events+augmented residual` therefore preserves the same
+reconstruction tolerance.
+
+For source event sample `p`, the sole target anchor is:
+
+`q=floor((2p+1)*T/(2L))`,
+
+using checked `u128`. Emit its native samples once at unit rate:
+`output[q+(n-p)]+=claim[n]`. Crop out-of-range samples. At `T/L>=4`, source
+midpoint clipping makes target event supports disjoint. If checked arithmetic
+still finds an overlap, split at the earlier floor midpoint of target anchors;
+the earlier event owns the midpoint sample. No event gain, repetition,
+stretch, spectral phase, reset copy, wrap, or reflected tail is allowed.
+
+An event ledger keyed by monotonically increasing source event ID permits one
+commit and one emission only. Tile or ring boundaries cannot re-detect,
+re-segment, or re-emit an event.
+
+Transient phase treatment is the native time-domain waveform. There is no
+spectral reset, phase reassignment, or transient copy in either bed lane.
+
+## Residual Noise-Morph Owner
+
+Analyze the augmented residual stream on the `N_r/A_r` source lattice. For
+each source frame and bin, estimate the native-channel covariance from the
+uniform `5`-frame by `3`-bin neighbourhood. Time exterior is zero; frequency
+reflects. Divide by the exact number of samples.
+
+Mono retains scalar power. Stereo retains Hermitian:
+
+`C=[[a,c],[conj(c),b]]`, where `c=E[X_L*conj(X_R)]`.
+
+Project numerical error to positive semidefinite form by clamping `a,b` to
+zero and `|c|` to `sqrt(a*b)`. Interpolate `ln(a+eps)` and `ln(b+eps)` linearly
+at `x(jH)`. Interpolate coherence magnitude linearly and coherence phase on
+the shortest wrapped arc; a `pi` tie is positive. Reconstruct `c` from the
+interpolated diagonals, coherence, and phase.
+
+For frequency weight `h`, use zero through `250 Hz`, one from `1500 Hz`, and
+smoothstep between. When `Re(c)>0` and coherence `g>0`, replace its magnitude
+by `sqrt(a*b)*g^(1+2*space*h)`. Preserve its phase. When `Re(c)<=0`, preserve
+`c`. This keeps duplicate and anti-phase material unchanged, never changes
+channel power, never reduces side energy, and widens only partially coherent
+positive-correlation residual above the low band.
+
+### Continuous deterministic excitation
+
+Freeze `ADMISSION_SEED=0x0123456789abcdef`. Define wrapping `mix64(z)`:
+
+1. `z=(z xor (z>>30))*0xBF58476D1CE4E5B9`
+2. `z=(z xor (z>>27))*0x94D049BB133111EB`
+3. return `z xor (z>>31)`
+
+For absolute signed output sample `n`, zero-pad when it lies outside the
+representable output lattice. Otherwise stream `s` uses:
+
+`r_s[n]=mix64(seed xor mix64(n xor TAG_s))`,
+
+with little-endian tags `STNNOIS0` and `STNNOIS1`. The real excitation sample
+is `+1` when bit `63` is set and `-1` otherwise. Window each continuous stream
+on the `N_r/H` output lattice, transform it, and normalize every active
+positive-frequency coefficient to unit magnitude. A zero coefficient becomes
+`1+0i`. DC and Nyquist use its real sign; negative bins are conjugate mirrors.
+
+Exact construction vectors are:
+
+| Input | `mix64` |
+| --- | --- |
+| `0x0000000000000000` | `0x0000000000000000` |
+| `0x0000000000000001` | `0x5692161d100b05e5` |
+| `0x0123456789abcdef` | `0xb2c058e4ebb5112c` |
+| `0xffffffffffffffff` | `0xb4d055fcf2cbbd7b` |
+
+| Stream | `n` | Counter | Sign |
+| --- | ---: | --- | ---: |
+| `STNNOIS0` | `0` | `0x075918a4031b66c5` | `-1` |
+| `STNNOIS0` | `1` | `0x06735507091ccdd2` | `-1` |
+| `STNNOIS0` | `48000` | `0x9aef6e781e8c05f6` | `+1` |
+| `STNNOIS0` | `96000` | `0x9a5b0da228689115` | `+1` |
+| `STNNOIS1` | `0` | `0xd0db092e952c2515` | `+1` |
+| `STNNOIS1` | `1` | `0xce8dd5a236bb7044` | `+1` |
+| `STNNOIS1` | `48000` | `0xa9cb60461663733f` | `+1` |
+| `STNNOIS1` | `96000` | `0xd0b1541e5ee1c6e1` | `+1` |
+
+Mono multiplies `sqrt(a)*U_0` by the sign of the first exactly non-zero
+augmented-residual sample, or `+1` for silence.
+
+Stereo factors in the orthonormal mid/side basis. Convert the post-`space`
+left/right covariance to mid power `a_m`, side power `a_s`, and
+`d=E[M*conj(S)]`. Let `o_m` and `o_s` be the signs of the first exactly
+non-zero time-domain augmented-residual mid and side samples; an exactly silent
+component uses `+1`.
+
+- if `a_m>0`, emit `Y_M=o_m*sqrt(a_m)*U_0`; set
+  `alpha=conj(d)/(o_m*sqrt(a_m))`,
+  `beta=sqrt(max(0,a_s-|alpha|^2))`, and
+  `Y_S=alpha*U_0+o_s*beta*U_1`
+- if `a_m=0`, PSD projection makes `d=0`; emit `Y_M=0` and
+  `Y_S=o_s*sqrt(a_s)*U_1`
+- decode `Y_L=(Y_M+Y_S)/sqrt(2)` and
+  `Y_R=(Y_M-Y_S)/sqrt(2)`
+
+Common negation flips both orientations. Channel swap preserves `o_m`, flips
+`o_s`, and negates `d`. The same basis streams therefore produce exact common
+negation and swapped output, including the anti-phase rank-one case.
+
+This is one shared two-stream excitation basis shaped by the source covariance,
+not unrelated per-channel noise. Descriptor covariance, channel diagonals,
+swap, duplicate, common polarity, anti-phase, and `space` direction are exact
+structural owners. Rendered long-window balance remains a hard evidence gate.
+
+## Envelope, Recombination, And Boundaries
+
+From original channel-mean source power, compute a square-root-Hann weighted
+RMS envelope `e[n]` of length `N_r`. Let `m[n]` be the maximum `e` within
+`+/-N_r/2`, including zero exterior. Define `g[n]=0` when `m[n]<=1e-12`,
+otherwise `g[n]=clamp(e[n]/m[n],0,1)`. Linearly interpolate `g` at the exact
+map for every output sample.
+
+Tonal inverse frames use `N_t/H` normalized WOLA. Residual inverse frames use
+`N_r/H` normalized WOLA. Each lane divides by its own accumulated `w^2`
+denominator above `1e-12`. Apply mapped `g` once to the normalized
+tonal-plus-residual bed, then add one-shot native transient segments.
+
+Accumulate in fixed-order `f64`, verify finiteness, and convert once to `f32`.
+Emit exactly `[0,T)`. There is no renderer-owned head or tail fade, padding in
+the returned buffer, wrap, reflect, resize-fill, limiter, compressor, clipper,
+automatic gain, channel gain, DC blocker, or post-render repair. Silence is
+bit-exact zero. A non-finite intermediate or output peak above `8.0` is a hard
+processing error, not a reason to clamp.
+
+This mapped envelope suppresses bed pre-echo around source energy changes. It
+does not invent an exterior fade. Entry and tail energy remain source-mapped
+and are judged explicitly against PaulXStretch in long-form listening.
+
+## State, Determinism, And Cost
+
+Allocate output, FFT plans, scratch, windows, median rings, source-component
+rings, covariance rings, event state, peak tracks, oscillators, lane
+denominators, and conversion scratch before processing starts. No processing
+allocation is permitted.
+
+Excluding immutable input and required output, actual peak working state must
+remain at most `96 MiB` for two channels at every supported sample rate and
+duration. The counting allocator includes FFT plans, FFT scratch, vector
+capacity, median work, tracks, event lookahead, and ring slack. It subtracts
+only the returned output capacity. Ring capacities derive from the frozen
+windows, median radii, event caps, and one synthesis support; never from `L`
+or `T`.
+
+Peak-track count is at most `N_t/2-1`. Event state retains only events whose
+source or target support has not passed. Source analysis advances monotonically
+and old samples, frames, masks, and descriptors are evicted after their last
+consumer.
+
+For each consumed source frame, analysis performs one long forward transform,
+one long inverse residual reconstruction per channel, one short forward and
+two short inverse reconstructions, plus one residual forward transform.
+Each output centre performs one tonal inverse and one residual inverse per
+channel, with two excitation forward transforms shared by stereo. Cost is
+`O((L/A_s)*N_s log N_s + (L/A_t)*N_t log N_t +
+(T/H)*(N_t log N_t+N_r log N_r))`. Traversal is single-threaded, reductions
+have fixed order, and all ties are explicit. The same complete request on the
+supported platform contract must be byte-identical.
+
+Offline only. No audio-thread source fill, execution, synchronization, I/O,
+or allocation is authorized.
+
+## Candidate Isolation And Construction
+
+Use exactly:
+
+- worktree: `signal-candidate-31-43`
+- branch: `candidate/g10-031-linked-stn-noise-morph`
+- module:
+  `crates/signal-dsp-stretch/src/creative_linked_stn_noise_morph/`
+- files: `mod.rs`, `plan.rs`, `decomposition.rs`, `tonal.rs`, `transient.rs`,
+  `noise.rs`, `synthesis.rs`, `tests.rs`
+
+The isolated `lib.rs` may declare the module privately. Use existing crate
+dependencies only. No public API, production tier, feature, report, binary,
+fixture, cache, artifact schema, route, Loophole, or Chorus change is allowed.
+Generated evidence stays ignored under `target/`.
+
+Test prefixes are only:
+
+- `linked_stn_noise_morph_construction_`
+- `linked_stn_noise_morph_structural_`
+- `linked_stn_noise_morph_synthetic_`
+
+`tests.rs` owns one compile-linked `GATE_OWNERS` table with exactly `28`
+unique IDs and function pointers: `18` structural and `10` synthetic. One
+compile-linked `EVIDENCE_SPEC` owns every source sample, support, estimator,
+table value, threshold, seed, ratio, and assertion below. Helpers may not
+select implicit values.
+
+Construction order:
+
+1. `effigy test compile`
+2. run the construction prefix and require exactly `1/1`
+3. create one immutable local checkpoint and record its hash
+4. freeze source, tests, helpers, assertions, manifest, and checkpoint
+
+The construction owner verifies file inventory, gate inventory, formulas,
+geometry, tags, exact vectors, source tables, support tables, and sole seed.
+Before the checkpoint, repairs may address compiler, type, visibility,
+ownership, or manifest assembly only when they change no DSP formula, literal,
+source, metric, threshold, helper result, or assertion. Any later miss is
+terminal.
+
+The closeout receipt must record checkpoint hash, candidate Git tree ID,
+SHA-256 of every candidate file, `EVIDENCE_SPEC`, `Cargo.lock`, `rustc -vV`,
+platform, per-owner outcome, every numeric row, and SHA-256 of every rendered
+synthetic output. Receipts from different checkpoints are comparable only
+when all those executable-identity fields match. Generated receipt files do
+not enter `main`; the closeout log retains their digests and result summary.
+
+## Structural Gate
+
+Run all owners once after construction. Require exactly `18/18`.
+
+| ID | Owner and pass condition |
+| --- | --- |
+| `S01` | request matrix rejects every invalid case before output allocation; valid empty returns empty |
+| `S02` | geometry and signed rational map match independent integer vectors at every supported rate, boundary, and `4x`/`8x`/`16x` ratio |
+| `S03` | every analysis and synthesis lattice has complete normalized coverage; constant WOLA reconstructs within `1e-7` |
+| `S04` | masks are finite and reconstruct mono/stereo source within the frozen peak and RMS tolerances |
+| `S05` | streaming analysis equals an independent full-buffer oracle within `1e-6`; ring wrap does not change event or descriptor ownership |
+| `S06` | tonal peak matching, identity regions, bin fallback, frequency propagation, and track IDs match handwritten vectors |
+| `S07` | disappearance, dormancy, reactivation, expiry, new-track phase, and two-centre axis transition match exact state traces |
+| `S08` | tonal duplicate, common polarity, anti-phase, and channel swap commute samplewise within `1e-6` |
+| `S09` | transient novelty, threshold, refinement, class, segment, edge claim, and residual reassignment match impulse and attack vectors |
+| `S10` | each source event has one ledger commit, one mapped anchor, one emission, disjoint support, and no boundary duplicate |
+| `S11` | residual counter and tag vectors match exactly; repeats match bytes and changed seed changes non-silent residual output |
+| `S12` | covariance projection/factorization reproduces target matrices within `1e-10`; diagonal powers never change with `space` |
+| `S13` | residual duplicate, common polarity, anti-phase, and swap commute within `1e-6`; basis streams are shared, never channel-local |
+| `S14` | `space` preserves `0..250 Hz`, leaves tonal/events unchanged, and makes aggregate residual side energy non-decreasing within `1e-9` |
+| `S15` | mapped envelope, lane denominators, recombination, exact crop, exact silence, and no exterior fade match edge-source vectors |
+| `S16` | one-frame, shorter-than-window, odd/even, impulse-at-edge, sustained-to-edge, and all-zero inputs remain finite and exact length |
+| `S17` | counting allocator reports at most `96 MiB`, duration-independent state, and zero allocation after processing begins |
+| `S18` | source scan and call graph contain no random device, limiter, clipper, channel gain, full-duration descriptor, external DSP, second map, renewal tonal phase, public route, or hidden report path |
+
+`S08` and `S13` are samplewise relationship invariants. `S12` is a descriptor
+invariant, not a claim that one stochastic output frame has exact source
+magnitude. Long-window channel balance belongs to `Y09` and listening.
+
+## Synthetic Sources
+
+All sources use `F=48000`, `L=96000`, and exact `T=4L`, `8L`, or `16L`.
+Unless noted, authored support is `[24000,72000)` with linear fades over
+`24000..26047` and `69952..71999`.
+
+- low tone: `0.5*sin(2*pi*110*n/F)`
+- mid tone: `0.5*sin(2*pi*440*n/F)`
+- chord: amplitude `0.1` at `110`, `164.813778`, `220`, `277.182631`, and
+  `329.627557 Hz`
+- harmonic pad: `sum(k=1..8) (0.35/k)*sin(2*pi*110*k*n/F)`
+- impulse: value `1` at `48000`, support `[48000,48001)`
+- impulse train: values `1,-0.8,0.65,-0.5` at
+  `19200,38937,58103,77797`, support `[19200,77798)`
+- silence gap: harmonic pad with exact zero on `[42000,54000)`
+- uniform noise: `0.5*(2*((mix64(n xor TEST)>>11)/2^53)-1)`
+- Rademacher noise: `+0.5` for the high bit of `mix64(n xor TEST)`, else
+  `-0.5`
+- amplitude-modulated noise: Rademacher sign times
+  `0.5+0.375*sin(2*pi*1.7*n/F)`
+
+`TEST` is little-endian `RNWTEST0`. Noise uses the same authored support and
+fades. Stereo controls are:
+
+- duplicate mid tone
+- common polarity: duplicate and exact common negation
+- anti-phase: mid tone and exact negative
+- delayed pad: right is a zero-padded `37`-sample delay
+- mixed: left is chord plus `0.2` uniform noise; right is the delayed chord
+  minus the same `0.2` noise
+
+Every candidate render uses `ADMISSION_SEED` and `space=0.5` unless the owner
+names another `space` row.
+
+## Synthetic Gate
+
+Run every row in an owner before its one final assertion. Require exactly
+`10/10`. Comparator numbers below are pinned PaulXStretch `1.6.0`, default
+processing, FFT `16384`, exact-cropped.
+
+### `Y01` finite level and crest
+
+Measure crest growth in dB from authored source support to mapped output
+support. Require each candidate row no greater than matching PaulX plus
+`2 dB`. Reference values at `4x/8x/16x`:
+
+| Source | `4x` | `8x` | `16x` |
+| --- | ---: | ---: | ---: |
+| uniform | `9.931823324` | `11.898668127` | `10.432303004` |
+| Rademacher | `14.809189700` | `15.525287997` | `15.710575458` |
+| amplitude-modulated | `13.019591155` | `12.553111650` | `14.090964151` |
+| harmonic pad | `6.348431050` | `6.745264841` | `6.313515214` |
+
+All outputs must be finite, non-clipped, and have peak at most `8.0` before
+listening normalization.
+
+### `Y02` sustained pitch diagnostic
+
+Use the central half of mapped authored support, periodic Hann, zero padding
+to the next power at least eight times the measured length, search expected
+frequency `+/-4 Hz`, select maximum magnitude, then use three-bin log-parabolic
+interpolation. Record finite candidate error, PaulX error, and delta for every
+tone and chord frequency. Missing or non-finite rejects; no numeric delta does.
+
+| Source | `4x` | `8x` | `16x` |
+| --- | ---: | ---: | ---: |
+| `110 Hz` | `7.410431632` | `8.816034233` | `7.666572548` |
+| `440 Hz` | `2.461974128` | `5.373507937` | `4.838384698` |
+| chord maximum | `7.976134703` | `9.331375778` | `13.456683592` |
+
+### `Y03` event placement and crest
+
+For the isolated impulse and every impulse-train event:
+
+- event ledger anchor must equal `floor((2p+1)T/(2L))` exactly
+- full-output impulse energy centroid error must be no greater than the PaulX
+  error plus `10%` of PaulX `95%` energy width
+- shortest inclusive `95%` energy width must be no greater than `1.5` times
+  PaulX width
+- isolated-impulse absolute peak must be at most `1.25`; maximum absolute
+  first difference must be at most `1.5`
+- every transient-lane event peak must be no greater than its claimed source
+  peak plus `1e-6`
+
+PaulX widths are `79469`, `155953`, `309239`; centroid errors are
+`49188.649257221`, `114695.538853499`, `246065.455355601` at
+`4x/8x/16x`.
+
+### `Y04` replica prevention
+
+Use RMS windows of `480` frames at hop `240`. Active means at least `-30 dB`
+relative to the global window peak. A new region begins when the current
+active start is at least `2400` frames after the prior active start. The
+primary region contains the global peak. Require exactly one region and an
+explicit `None` secondary for isolated impulse and impulse train at every
+ratio. `-30 dB` is an activity threshold, not a secondary allowance.
+
+### `Y05` residual non-periodicity
+
+On uniform noise, subtract the mean and measure normalized autocorrelation at
+every exact lag `960..48000`. Maximum absolute correlation must be no greater
+than PaulX plus `0.05`: `0.017218163`, `0.017727693`, `0.017090511`.
+
+### `Y06` block-energy stability
+
+Within mapped support, use RMS windows of `2400` frames at hop `1200` and
+measure coefficient of variation. Candidate must be no greater than PaulX
+plus `0.05`:
+
+| Source | `4x` | `8x` | `16x` |
+| --- | ---: | ---: | ---: |
+| uniform | `0.387747959` | `0.460013282` | `0.492971808` |
+| mid tone | `0.617268653` | `0.679139581` | `0.708639858` |
+
+### `Y07` silence-gap ownership
+
+Map the exact source gap through the sole rational map. Gap RMS relative to
+the two equal-duration adjacent regions must be no greater than PaulX plus
+`3 dB`. PaulX values are `2.565308664`, `2.752688694`, and `3.061967868 dB`.
+
+### `Y08` discontinuity, dropout, and boundaries
+
+Require exact length, finite samples, and no sample clamp for every source.
+For dropout, map source support `[a,b)` to
+`[floor(aT/L),ceil(bT/L))` with checked `u128`, clipped to `[0,T]`. Examine
+only complete fixed `16384`-sample windows wholly inside that hull. A shorter
+hull passes vacuously. No eligible window may be exact zero except the authored
+interior silence gap. First differences are scanned across complete output;
+isolated impulse uses the hard `Y03` bound. Entry and tail quarter energy are
+recorded for every row and must be finite; their creative decision is
+listening-owned.
+
+### `Y09` linked stereo
+
+Render every stereo control at every ratio and `space=0`, `0.5`, `1`.
+Require exact length, finiteness, byte repeat, duplicate/mono within `1e-6`,
+common polarity and anti-phase within `1e-6`, and swap-commuted output within
+`1e-6` after swapping it back. Require descriptor diagonal preservation within
+`1e-10` and non-decreasing residual side energy within `1e-9`.
+
+For each render, candidate-source right-minus-left balance error must be at
+most `0.75 dB` over the whole render and bands `0..250`, `250..1500`, and
+`1500..Nyquist`. Balance spread across the three `space` renders must be at
+most `0.50 dB`. No whole or band channel-dominance reversal is allowed when
+source balance magnitude is at least `0.50 dB`.
+
+### `Y10` material ownership
+
+For every mono source and ratio, record finite tonal, claimed-transient,
+unclaimed-transient, residual, mapped-envelope, and final-output RMS and peak.
+Require source-domain component reconstruction within `S04`, one ledger event
+for the isolated impulse, four ordered events for the train, zero event commits
+for the steady tones, and exact-zero residual output for exact-zero residual
+descriptors. Lane dominance is diagnostic, not a candidate-selected pass
+threshold.
+
+## Mono Listening Gate
+
+Open listening only after construction and all objective owners pass. Use the
+retained percussion, bass, vocals, pads/sustains, and full-mix families at
+`4x`, `8x`, and `16x`. Compare against PaulXStretch `1.6.0` default / FFT
+`16384`. Candidate uses `ADMISSION_SEED` and `space=0.5`.
+
+Exact-crop every file. Within each source/ratio row, apply one common RMS
+target across source, candidate, and PaulX, reduced only enough to keep every
+peak at or below `0.95`. Conceal A/B identity.
+
+Pass requires:
+
+- no unusable candidate row
+- candidate preferred or tied on at least `12/15`
+- no source family loses every ratio
+- no uncontrolled vocoder tone, periodic flutter, cyclic repetition, doubled
+  attack, micro-echo, stutter, static freeze, arbitrary loudness, or click
+
+The scorecard must explicitly record smoothness, musical usefulness, tonal
+ringing, transient softness or spike, low-frequency noise/haze, event
+placement, entry energy, and tail energy. Objective success cannot waive this
+gate.
+
+## Independent Stereo Admission
+
+Use these exact stereo originals:
+
+- `0000-drums_percussion-000002.wav`
+- `0004-bass-000236.wav`
+- `0008-vocals-000010.wav`
+- `0012-pads_sustains-000423.wav`
+- `0016-full_mix-000144.wav`
+
+Render all five at `4x`, `8x`, and `16x`, and at `space=0`, `0.5`, and `1`.
+Capture PaulXStretch `1.6.0` default / FFT `16384` from the same originals.
+Exact-crop every file. Neutral A/B uses `space=0.5`; source, candidate, and
+PaulX share one row RMS target under peak `0.95`.
+
+Re-run the `Y09` whole and three-band hard controls. Mapped diagnostics use
+`4`-second output windows with `2`-second hops and the sole source map. Omit a
+window only when both mapped source channels are below `-60 dBFS` RMS; omit a
+final clipped window shorter than `2` seconds. Record complete
+candidate-source and PaulX-source balance error and dominance. Missing or
+non-finite evidence rejects; finite local error and reversal remain listening
+diagnostics.
+
+The operator may reject during speaker pre-screen. Promotion then requires an
+eligible independent stereo listener; the operator's one-ear hearing cannot
+satisfy the pass. Concealed neutral review covers all `15` candidate/PaulX
+rows. Pass requires no unusable candidate row, preferred or tied on at least
+`12/15`, and no family losing every ratio.
+
+The listener scores centre stability, width, pumping, one-sided texture,
+channel echo, low-frequency image/noise, entry energy, tail energy, and musical
+usefulness. Every `space=0/0.5/1` trio must move in the preserve-to-widen
+direction without an image jump, unrelated channel motion, low-frequency
+pull, or unusable setting. Unavailable or ambiguous independent review blocks
+promotion; it is not a pass.
+
+## Rejection, Cleanup, And Minimal Admission
+
+Any construction, structural, synthetic, mono-listening, speaker, or
+independent-stereo miss rejects the complete candidate. Record the stopped
+gate, every completed row, and one dominant cause. Do not tune, repair, rerun,
+or reinterpret the checkpoint.
+
+Delete the worktree, branch, checkpoint reference, private module, tests,
+build state, generated receipt, synthetic outputs, and listening assembly.
+Retain only the canonical closeout and executable-identity digests. Two
+complete candidates failing for the same dominant cause require architecture
+reassessment, not a parameter sweep.
+
+Only a complete pass may authorize a later minimal-admission batch. That batch
+may admit the private renderer, fixed-ratio neutral-`Dream` request, one
+internal creative engine version, and the minimum structural/synthetic
+regressions needed to guard it. It must delete candidate-only diagnostics and
+assembly surfaces.
+
+Do not admit public character, motion, detail, `space`, seed/reroll, cache,
+artifact, report, automatic routing, range blends, pitch, dynamic ratio,
+other characters, RealtimePreview, Loophole, or Chorus. Product seed variation
+requires a later multi-seed character review.
+
+## Sources
+
+- [Creative source triangulation](../research/specimen-dossiers/creative-stretch-source-triangulation.md)
+- [Creative stretch study](./offline-creative-time-stretch-study.md)
+- [Creative product contract](../contracts/085-creative-time-stretch-product-and-routing-contract.md)
+- [SiTraNoStar pinned source](https://github.com/ollpu/SiTraNoStar/tree/2edf7b693040b5070116299973abf83dc5ba86e5)
+- [Enhanced fuzzy STN decomposition](https://arxiv.org/abs/2210.14041)
+- [Noise Morphing](https://arxiv.org/abs/2312.14586)
+- [Extreme Audio Time Stretching Using Neural Synthesis](https://arxiv.org/abs/2211.16992)
+
+## Next Task
+
+Run Batch 31.43 only in the named disposable worktree. Implement this brief
+once, complete construction, freeze one checkpoint, then run structural and
+synthetic admission in order. Stop before listening on any miss. Do not change
+production code or merge a candidate in that batch.

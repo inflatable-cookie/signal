@@ -28,6 +28,7 @@ Keep milestone sequencing in `roadmaps/`.
 - `offline-time-stretch-synthesis.md`
 - `offline-time-stretch-non-phase-vocoder-feasibility.md`
 - `offline-creative-time-stretch-study.md`
+- `offline-creative-linked-stn-noise-morph-brief.md`
 - `offline-creative-verified-source-relative-renewal-spectral-brief.md`
   - frozen `SupportAuditedListeningLedSourceRelativeRenewalSpectral` authority
 - `offline-creative-renewal-spectral-brief.md`
@@ -41,6 +42,6 @@ Keep milestone sequencing in `roadmaps/`.
 ## Next Task
 
 Keep the `g10.030` transparent successor program closed. Run `g10.031` Batch
-31.42 only: freeze one complete clean-room `LinkedStnNoiseMorph` renderer
-brief. Do not implement candidate DSP in the same batch. Keep product routing
-and public exposure closed.
+31.43 only in the named disposable worktree. Implement the frozen
+`LinkedStnNoiseMorph` brief once and stop before listening on any objective
+miss. Keep `main`, product routing, and public exposure unchanged.

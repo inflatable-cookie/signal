@@ -1,6 +1,6 @@
 # Offline Creative Time-Stretch Study
 
-Status: `LinkedStnNoiseMorph` selected; complete renderer brief pending
+Status: `LinkedStnNoiseMorph` brief frozen; one isolated candidate ready
 Owner: dsp
 Updated: 2026-07-21
 Contract: `085`
@@ -725,6 +725,35 @@ test, harness, fixture, API, route, cache, product surface, Loophole, or Chorus
 work is authorized. Batch 31.42 must freeze one self-contained implementation
 brief before any isolated candidate can become ready.
 
+## Batch 31.42 Complete Renderer Freeze
+
+[Offline Creative LinkedStnNoiseMorph Renderer Brief](./offline-creative-linked-stn-noise-morph-brief.md)
+is now the sole candidate authority. It freezes one exact renderer:
+
+- sample-rate-normalized `8192/1024` long/short analysis at `44.1` and
+  `48 kHz`, with reconstructing channel-symmetric soft masks
+- one signed-rational map and `512`-sample synthesis hop at those rates
+- persistent linked tonal peak and bin oscillators with explicit dormancy and
+  reactivation
+- shared transient detection, class, segment, exact anchor, native unit-rate
+  emission, and replica ledger
+- continuous counter excitation shaped by interpolated native-channel residual
+  covariance, with residual-only `space`
+- mapped source-envelope correction, normalized WOLA, zero exterior, exact
+  crop, and no arbitrary renderer fade
+- `96 MiB` duration-independent working-state cap and fixed one-shot evidence
+  order
+
+The brief also repairs the evidence-authority failure without reviving renewal.
+One compile-linked `28`-owner specification owns every helper input, source,
+metric, threshold, and assertion. The closeout must retain checkpoint, tree,
+file, toolchain, row, and output digests before candidate cleanup.
+
+This is implementation authority, not admission. The candidate must still
+prove component reconstruction, tonal and event behavior, residual
+non-periodicity, linked stereo, `16x`, long-form mono, and eligible independent
+stereo listening. No DSP or product surface entered `main` in Batch 31.42.
+
 ## Sources
 
 - [REAPER time-stretch engines](https://www.reaper.fm/about.php)
@@ -762,9 +791,7 @@ brief before any isolated candidate can become ready.
 
 ## Next Task
 
-Run Batch 31.42 only. Freeze the complete clean-room
-`LinkedStnNoiseMorph` renderer brief. Resolve the map, decomposition,
-component states, linked stereo, windows, normalization, exact boundaries,
-memory, determinism, computational shape, gates, listening pack, rejection,
-cleanup, and minimal admission with no decide-later gaps. Do not implement DSP
-in the same batch.
+Run Batch 31.43 only in the named disposable worktree. Implement the frozen
+`LinkedStnNoiseMorph` brief once, complete construction, freeze one checkpoint,
+then run structural and synthetic admission in order. Stop before listening on
+any miss. Do not change production code or product exposure.

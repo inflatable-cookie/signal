@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: creative stretch active; linked STN complete brief next
+Status: creative stretch active; linked STN isolated candidate next
 Updated: 2026-07-21
 
 ## Why this generation matters now
@@ -247,7 +247,9 @@ Do not start Loophole or Chorus planning from Signal internals.
     candidate at synthetic `Y04` and `Y09`; Batch 31.40 found no recoverable
     executable identity, closed renewed implementation, and retained the
     PaulX-like target; Batch 31.41 selected `LinkedStnNoiseMorph` for one
-    complete docs-only brief; explicit `Cyclic` stays closed
+    complete docs-only brief; Batch 31.42 froze that renderer and its
+    self-contained evidence authority; Batch 31.43 isolated implementation is
+    ready; explicit `Cyclic` stays closed
 
 ## Stretch Boundary
 
@@ -345,13 +347,21 @@ Tonal peaks keep persistent linked phase, transient waveform events move once,
 and only the separated residual uses continuous deterministic noise morphing.
 One shared map, channel-symmetric decomposition, explicit residual spatial
 owner, exact crop, bounded state, and the retained long-form listening order
-remain mandatory. No candidate or product surface is ready until Batch 31.42
-freezes that complete system.
+remain mandatory.
+
+Batch 31.42 freezes that complete system. The candidate uses
+sample-rate-normalized long/short reconstructing masks, persistent linked
+tonal state, one-shot native transient events, continuous covariance-shaped
+residual excitation, mapped envelope correction, normalized WOLA, exact crop,
+and a `96 MiB` duration-independent state cap. One compile-linked `28`-owner
+specification and checkpoint/tree/file/output digests prevent another
+multi-hop evidence-identity gap. No DSP or product surface entered `main`.
 
 ## Next Task
 
-Run `g10.031` Batch 31.42 only. Freeze one complete clean-room
-`LinkedStnNoiseMorph` renderer brief without DSP or candidate evidence
-surfaces. Keep `g10.028`, routing, product exposure, other creative characters,
-and cross-repo work paused. Do not recover deleted code, run another renewal
-candidate, or push.
+Run `g10.031` Batch 31.43 only in `signal-candidate-31-43` on
+`candidate/g10-031-linked-stn-noise-morph`. Implement the brief once, complete
+construction, freeze one checkpoint, then run structural and synthetic gates.
+Keep `main`, `g10.028`, routing, product exposure, other creative characters,
+and cross-repo work unchanged. Do not recover deleted code, run another
+renewal candidate, merge, or push.

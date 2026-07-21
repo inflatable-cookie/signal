@@ -123,7 +123,10 @@ Batch 31.39 passed construction and structural admission, then failed the
 before listening. Batch 31.40 found no retained executable identity capable of
 reconciling that `7/9` result with Batch 31.36's nominally equivalent `9/9`
 receipt. Renewal is closed; the PaulX-like product target remains without a
-ready renderer owner.
+ready renewal owner. Batch 31.41 selected materially different
+`LinkedStnNoiseMorph`, and Batch 31.42 froze its complete clean-room renderer
+and evidence authority without DSP. One isolated implementation batch is
+ready; the product target remains unadmitted.
 Offline artifacts still need a streaming artifact writer/cache target for full
 peak-memory closure. Mono callback-state DSP has a
 no-allocation proof, linked stereo is implemented, ratio scheduling has
@@ -250,8 +253,7 @@ Before rollover:
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the active generation front door. No
-`g10.031` implementation batch is ready. The operator must explicitly choose
-whether to commission research for one materially different, source-backed
-complete creative owner or leave that roadmap paused. Keep the transparent
-successor lane, `g10.028`, routing, product exposure, and cross-repo work
-closed. Do not recover deleted code or run another renewal candidate.
+`g10.031` Batch 31.43 is ready only in the disposable worktree named by the
+frozen `LinkedStnNoiseMorph` brief. Keep the transparent successor lane,
+`g10.028`, `main`, routing, product exposure, and cross-repo work closed. Do
+not recover deleted code or run another renewal candidate.

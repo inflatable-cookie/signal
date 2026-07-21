@@ -1,10 +1,11 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: active PaulX-like `Dream`; `LinkedStnNoiseMorph` brief pending
+Status: active PaulX-like `Dream`; one `LinkedStnNoiseMorph` candidate ready
 Owner: core-product
 Updated: 2026-07-21
 Related contracts: `046`, `048`, `084`
 Related architecture: `docs/architecture/offline-creative-time-stretch-study.md`,
+`docs/architecture/offline-creative-linked-stn-noise-morph-brief.md`,
 `docs/architecture/offline-creative-comparator-audited-renewal-spectral-brief.md`,
 `docs/architecture/offline-creative-verified-source-relative-renewal-spectral-brief.md`,
 `docs/architecture/offline-creative-source-relative-renewal-spectral-brief.md`,
@@ -756,6 +757,12 @@ no materially different source-backed renewal owner, that path is closed.
 41. Study one materially different, source-backed complete creative owner.
     Complete; `LinkedStnNoiseMorph` is selected for a clean-room whole-renderer
     brief. No candidate implementation is authorized.
+42. Freeze one self-contained clean-room `LinkedStnNoiseMorph` renderer and
+    evidence brief. Complete; one isolated candidate is ready and no DSP
+    entered `main`.
+43. Implement that brief once in its named disposable worktree, complete
+    construction, freeze one checkpoint, then run structural and synthetic
+    admission in order. Ready; stop before listening on any miss.
 
 `Spectral`/`Rough`, coherent overlap, `LayeredCloud`, the upper overlap, dynamic
 ratios, and automatic routing still require separate reopening decisions backed
@@ -871,10 +878,32 @@ No public Rust enum, renderer, harness mode, fixture, artifact schema, runtime
 route, or product-facing claim entered `main`. `OfflineHighQuality` remains
 byte-exact and Contract `084` remains closed. No creative renderer is admitted.
 
+Batch 31.42 freezes the complete candidate authority in
+`offline-creative-linked-stn-noise-morph-brief.md`. It selects one
+sample-rate-normalized two-stage separation, exact signed-rational map,
+persistent linked tonal owner, one-shot native transient owner, deterministic
+covariance-shaped residual owner, mapped envelope, normalized synthesis,
+bounded state, exact evidence specification, receipt identity, cleanup, and
+minimal admission boundary. No component choice remains open to the isolated
+implementation.
+
+The brief deliberately does not reuse renewal's complete-mixture impulse-smear
+assumptions. Hard event gates instead require exact mapped anchors, one ledger
+commit and emission, bounded crest, comparator-relative maximum spread, and no
+secondary active region. Tonal pitch remains a complete finite diagnostic;
+concealed long-form listening remains creative authority. Hard linked-stereo
+mechanics, whole/band balance, mapped diagnostics, and eligible independent
+stereo listening retain this contract's current policy.
+
+Batch 31.42 changed documentation only. The frozen renderer is ready for one
+isolated implementation, not production admission. `16x`, component leakage,
+long-form musical quality, linked residual image, cost, and exterior character
+remain terminal candidate risks.
+
 ## Next Task
 
-Run Batch 31.42 only. Freeze one self-contained clean-room
-`LinkedStnNoiseMorph` renderer brief covering every ownership boundary above.
-Do not implement DSP, add candidate evidence surfaces, recover rejected code,
-alter prior receipts, open routing or product exposure, touch Loophole or
-Chorus, or push.
+Run Batch 31.43 only in the exact disposable worktree and branch named by the
+frozen brief. Implement it once, complete construction, freeze one checkpoint,
+then run structural and synthetic owners in order. Stop before listening on
+any miss. Do not recover rejected code, change `main`, open routing or product
+exposure, touch Loophole or Chorus, or push.

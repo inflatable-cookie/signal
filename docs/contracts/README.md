@@ -113,7 +113,7 @@ Add a new contract only when the boundary needs stronger guarantees than
 Use `docs/contracts/contract-index.md` and `001-working-rules.md` as the
 contract front doors. Contract `084` and roadmap `g10.030` keep the transparent
 successor program closed. Contract `085` governs the separate creative path;
-renewal is closed, while Batch 31.41 selected `LinkedStnNoiseMorph` as one
-materially different complete-owner family. Roadmap `g10.031` Batch 31.42 is
-ready for one docs-only complete renderer brief. No candidate implementation,
-public creative surface, or strict spec lane is open.
+renewal is closed, while Batch 31.42 froze one complete clean-room
+`LinkedStnNoiseMorph` authority. Roadmap `g10.031` Batch 31.43 is ready for one
+isolated implementation. No candidate surface may enter `main`; no public
+creative surface or strict spec lane is open.
