@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: creative stretch active; bounded linked STN capacity reassessment next
+Status: creative stretch active; capacity-audited linked STN candidate next
 Updated: 2026-07-21
 
 ## Why this generation matters now
@@ -253,8 +253,9 @@ Do not start Loophole or Chorus planning from Signal internals.
     Batch 31.44 froze a two-pass bounded schedule and fresh candidate identity;
     Batch 31.45 passed compile but failed construction because the frozen
     first-residual formula exhaustively yields `53248` while its asserted row
-    requires `59392`; the candidate was deleted and docs-only reconciliation is
-    next; explicit `Cyclic` stays closed
+    requires `59392`; the candidate was deleted; Batch 31.46 retained the
+    per-geometry formula, corrected its maximum to `53248`, and froze fresh
+    capacity-audited v3 identity; explicit `Cyclic` stays closed
 
 ## Stretch Boundary
 
@@ -385,10 +386,17 @@ frozen maximum row requires `59392`. The larger row combines the global
 was repaired and no structural, synthetic, or listening gate opened. The
 candidate worktree, branch, source, tests, and build state were deleted.
 
+Batch 31.46 retained the current-geometry formula and corrected its exhaustive
+maximum to `53248`. The conservative short/source model becomes `9.700 MiB`;
+the `12 MiB` category ceiling, `89 MiB` design sum, `7 MiB` reserve, and
+`96 MiB` actual gate remain unchanged. Fresh
+`CapacityAuditedBoundedLinkedStnNoiseMorph` identity is ready for one isolated
+implementation. No DSP or product surface entered `main`.
+
 ## Next Task
 
-Run `g10.031` Batch 31.46 as docs-only evidence-authority reconciliation.
-Align the first-residual formula, exhaustive maximum, construction row, and
-memory budget without recovering or implementing the deleted candidate. Keep
+Run `g10.031` Batch 31.47 only in `signal-candidate-31-47` on the fresh
+capacity-audited branch named by the canonical brief. Implement once, complete
+construction, checkpoint, structural, and synthetic admission in order. Keep
 `g10.028`, routing, product exposure, other creative characters, and cross-repo
-work unchanged. Do not push.
+work unchanged. Do not recover Batch 31.45, merge, or push.

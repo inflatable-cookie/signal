@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: active; Batch 31.45 rejected at construction, reassessment next
+Status: active; Batch 31.46 complete, Batch 31.47 ready
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -1532,11 +1532,44 @@ Decision:
 - no implementation retry is ready; Batch 31.46 must reconcile `MEMORY_SPEC`
   docs-only before deciding whether bounded v2 remains eligible
 
+## Batch 31.46 - Bounded Linked STN Capacity Reconciliation
+
+Status: complete; capacity-audited v3 candidate ready
+
+- [x] exhaustively recomputed every geometry and capacity row over supported
+  sample rates `8000..192000`
+- [x] retained the per-geometry first-residual formula
+  `N_t+2(h_s*A_s+N_s)`
+- [x] corrected its exhaustive maximum from the impossible cross-geometry
+  `59392` row to `53248`
+- [x] corrected the conservative short/source packed model from `9.841 MiB` to
+  `9.700 MiB`
+- [x] confirmed every other capacity maximum and the `89 MiB` category sum
+- [x] retained the `12 MiB` short/source ceiling, `7 MiB` unassigned reserve,
+  and `96 MiB` terminal actual-allocation gate
+- [x] retained every audible formula, source, metric, threshold, assertion,
+  gate, and two-pass ownership rule
+- [x] froze fresh identity `CapacityAuditedBoundedLinkedStnNoiseMorph` and
+  exact Batch 31.47 worktree, branch, module, prefixes, cleanup, and gate order
+- [x] changed documentation only; did not recover Batch 31.45 or change DSP,
+  tests, harnesses, dependencies, APIs, routes, cache, artifacts, Loophole, or
+  Chorus
+
+Decision:
+
+- `53248` is the only maximum produced by the retained formula; using `59392`
+  would require a different global-half-width allocation formula with no
+  consumer or safety need
+- the correction reduces modeled memory and does not weaken source lookahead,
+  ring eviction, or the terminal allocation gates
+- Batch 31.47 may implement the complete renderer once under fresh identity;
+  creative quality and bounded execution remain unproved
+
 ## Later Batches
 
-Closed or paused without promotion. No implementation is ready. Batch 31.46
-docs-only capacity-authority reconciliation is the sole next work. Every later
-product batch still requires a separately admitted complete renderer:
+Closed or paused without promotion. Batch 31.47 isolated capacity-audited-v3
+implementation is the sole ready work. Every later product batch still
+requires a separately admitted complete renderer:
 
 - minimal production admission
 - coherent/diffusive overlap
@@ -1637,12 +1670,15 @@ product batch still requires a separately admitted complete renderer:
   rejection on contradictory first-residual capacity authority
 - [x] the failed worktree, branch, private renderer, tests, and build state were
   deleted before structural admission
+- [x] capacity reconciliation retained the formula, corrected its exhaustive
+  maximum to `53248`, and froze fresh v3 candidate identity
+- [x] no candidate code entered `main` during capacity reconciliation
 
 ## Next Task
 
-Run Batch 31.46 as docs-only evidence-authority reconciliation. Resolve whether
-the first-residual capacity is the per-geometry formula maximum `53248` or a
-deliberately conservative cross-geometry bound `59392`, then align the formula,
-maximum row, construction owner, and memory budget. Do not recover or implement
-the deleted candidate, change audible ownership, touch Loophole or Chorus, or
-push.
+Run Batch 31.47 only in `signal-candidate-31-47` on
+`candidate/g10-031-capacity-audited-bounded-linked-stn-noise-morph`. Implement
+capacity-audited v3 once, run compile and construction, freeze one checkpoint,
+then run structural and synthetic admission in order. Stop before listening on
+any miss. Do not recover Batch 31.45, change production code, touch Loophole or
+Chorus, merge, or push.

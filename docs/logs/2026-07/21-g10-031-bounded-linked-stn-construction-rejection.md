@@ -87,6 +87,18 @@ per-geometry formula.
 This is an executable-authority contradiction. It is not evidence about tonal,
 transient, residual, stereo, boundary, or listening quality.
 
+## Batch 31.46 Resolution
+
+The retained per-geometry formula is authoritative. Exhaustive evaluation
+reaches `53248`; the `59392` row was a cross-geometry composition with no
+matching request or consumer. The conservative short/source model is
+`9.700 MiB`. Category ceilings remain `89 MiB` with `7 MiB` unassigned below
+the `96 MiB` terminal gate.
+
+Fresh `CapacityAuditedBoundedLinkedStnNoiseMorph` identity supersedes only the
+deleted candidate identity and erroneous maximum row. Batch 31.45 remains
+terminal and unrecoverable.
+
 ## Cleanup
 
 No formula, expected value, helper, assertion, DSP constant, or candidate code
@@ -109,8 +121,6 @@ moved to the user's Trash as
 
 ## Next Task
 
-Run Batch 31.46 as docs-only evidence-authority reconciliation. Decide whether
-the capacity is the current per-geometry maximum `53248` or a deliberately
-conservative cross-geometry bound `59392`, then align the formula, maximum row,
-construction owner, and memory budget. Do not recover or implement the deleted
-candidate in that batch.
+Historical next task completed in Batch 31.46. Run Batch 31.47 only under the
+fresh worktree, branch, module, and test prefixes frozen in the canonical
+brief. Do not recover Batch 31.45 source or evidence.

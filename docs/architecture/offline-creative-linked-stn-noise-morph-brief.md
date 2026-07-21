@@ -1,15 +1,15 @@
 # Offline Creative LinkedStnNoiseMorph Renderer Brief
 
-Status: bounded v2 rejected at construction; capacity authority inconsistent
+Status: capacity-audited v3 frozen; one fresh isolated candidate ready
 Owner: dsp
 Updated: 2026-07-21
 Contract: `085`
-Roadmap: `g10.031`, Batches 31.42 and 31.44
+Roadmap: `g10.031`, Batches 31.42, 31.44, and 31.46
 
 ## Decision
 
-Build one Signal-owned `BoundedLinkedStnNoiseMorph` candidate for neutral
-`Dream` at fixed creative expansion from `4x` through `16x`.
+Build one Signal-owned `CapacityAuditedBoundedLinkedStnNoiseMorph` candidate
+for neutral `Dream` at fixed creative expansion from `4x` through `16x`.
 
 This is one material-separated renderer, not three optional effects. A
 reconstructing two-stage analysis assigns tonal, transient, and residual
@@ -29,6 +29,11 @@ stereo, boundary, synthetic, and listening rule below is unchanged. The v2
 schedule adds the missing causal prepass, explicit live frontiers, fixed ring
 capacities, and category memory budgets. It does not repair or revive the
 deleted Batch 31.43 checkpoint.
+
+Capacity-audited v3 retains that complete renderer and schedule. It corrects
+one impossible cross-geometry maximum in `MEMORY_SPEC` and assigns fresh
+candidate identity after the deleted Batch 31.45 attempt. No audible formula,
+threshold, source, metric, assertion, or gate changes.
 
 ## Supported Request
 
@@ -458,7 +463,7 @@ Compile-linked `MEMORY_SPEC` owns these capacities:
 | native long frames | `Q_h+3` | `20` frames |
 | resolved tonal frames | fixed | `4` frames |
 | native short frames | `R_h+3` | `22` frames |
-| first-residual samples | `N_t+2(h_s*A_s+N_s)` | `59392` |
+| first-residual samples | `N_t+2(h_s*A_s+N_s)` | `53248` |
 | transient and augmented-residual samples, each | `2N_r+16N_s+48A_s+256` | `147712` |
 | residual spectrum/covariance frames | fixed | `7` frames |
 | claimed-event sample arena | `12N_s+48A_s+512` | `98816` |
@@ -468,8 +473,8 @@ Compile-linked `MEMORY_SPEC` owns these capacities:
 | peak tracks | `N_t/2-1` | `16383` tracks |
 | persistent bin states | `N_t/2+1` | `16385` bins |
 
-At maximum geometry, conservative packed-`f64` models occupy `17.502 MiB`
-for long frames, `9.841 MiB` for short/source WOLA state, `4.001 MiB` for
+Conservative maximum-capacity packed-`f64` models occupy `17.502 MiB`
+for long frames, `9.700 MiB` for short/source WOLA state, `4.001 MiB` for
 residual covariance and excitation, `1.508 MiB` for claimed event samples,
 `1.001 MiB` for envelope state, and `8.516 MiB` for output finalization.
 Category ceilings are:
@@ -514,14 +519,14 @@ be byte-identical.
 Offline only. No audio-thread source fill, execution, synchronization, I/O,
 or allocation is authorized.
 
-## Bounded V2 Candidate Isolation And Construction
+## Capacity-Audited V3 Candidate Isolation And Construction
 
 Use exactly:
 
-- worktree: `signal-candidate-31-45`
-- branch: `candidate/g10-031-bounded-linked-stn-noise-morph`
+- worktree: `signal-candidate-31-47`
+- branch: `candidate/g10-031-capacity-audited-bounded-linked-stn-noise-morph`
 - module:
-  `crates/signal-dsp-stretch/src/creative_bounded_linked_stn_noise_morph/`
+  `crates/signal-dsp-stretch/src/creative_capacity_audited_bounded_linked_stn_noise_morph/`
 - files: `mod.rs`, `plan.rs`, `decomposition.rs`, `tonal.rs`, `transient.rs`,
   `noise.rs`, `synthesis.rs`, `tests.rs`
 
@@ -532,9 +537,9 @@ Generated evidence stays ignored under `target/`.
 
 Test prefixes are only:
 
-- `bounded_linked_stn_noise_morph_construction_`
-- `bounded_linked_stn_noise_morph_structural_`
-- `bounded_linked_stn_noise_morph_synthetic_`
+- `capacity_audited_bounded_linked_stn_noise_morph_construction_`
+- `capacity_audited_bounded_linked_stn_noise_morph_structural_`
+- `capacity_audited_bounded_linked_stn_noise_morph_synthetic_`
 
 `tests.rs` owns one compile-linked `GATE_OWNERS` table with exactly `28`
 unique IDs and function pointers: `18` structural and `10` synthetic. One
@@ -882,6 +887,23 @@ candidate tree exists. Structural, synthetic, and listening admission did not
 open. The worktree, branch, private module, tests, and build state were deleted;
 no candidate code entered `main`.
 
+## Batch 31.46 Capacity-Authority Reconciliation
+
+Exhaustive integer evaluation over every supported sample rate confirms the
+existing per-geometry formula is correct and reaches `53248` first-residual
+samples at `F=192000`. The formula, source lookahead, eviction owner, and
+`12 MiB` short/source category ceiling remain unchanged.
+
+The conservative short/source packed model becomes `9.700 MiB`. Category
+ceilings still total `89 MiB`, leaving the same unassigned `7 MiB` below the
+terminal `96 MiB` actual-allocation gate. Every other exhaustive capacity row
+matches the frozen construction result.
+
+Capacity-audited v3 supersedes the failed candidate identity and the erroneous
+`59392` row only. It does not recover Batch 31.45 source or evidence. Batch
+31.47 may implement the complete brief once under the fresh isolation surface
+above.
+
 ## Sources
 
 - [Creative source triangulation](../research/specimen-dossiers/creative-stretch-source-triangulation.md)
@@ -894,7 +916,7 @@ no candidate code entered `main`.
 
 ## Next Task
 
-Run Batch 31.46 as docs-only evidence-authority reconciliation. Resolve the
-first-residual capacity formula and exhaustive maximum without recovering the
-deleted candidate, changing audible ownership, or authorizing implementation.
-Freeze one internally consistent `MEMORY_SPEC` or close bounded v2.
+Run Batch 31.47 only in the fresh worktree and branch named above. Implement
+capacity-audited v3 once, complete compile and construction, freeze one
+checkpoint, then run structural and synthetic admission in order. Stop before
+listening on any miss. Do not recover Batch 31.45 or change production code.

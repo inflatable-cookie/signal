@@ -53,7 +53,7 @@ At maximum transform geometry:
 | --- | ---: |
 | native long frames | `20` |
 | native short frames | `22` |
-| first-residual samples | `59392` |
+| first-residual samples | `53248` |
 | transient/residual samples per lane | `147712` |
 | claimed-event samples | `98816` |
 | live event descriptors | `39` |
@@ -61,10 +61,15 @@ At maximum transform geometry:
 | output finalization samples | `139520` |
 
 Conservative packed-`f64` model rows are `17.502 MiB` long,
-`9.841 MiB` short/source WOLA, `4.001 MiB` residual,
+`9.700 MiB` short/source WOLA, `4.001 MiB` residual,
 `1.508 MiB` event samples, `1.001 MiB` envelope, and `8.516 MiB` output
 finalization. Category ceilings total `89 MiB`. The remaining `7 MiB` is
 unassigned below the unchanged `96 MiB` terminal actual-allocation gate.
+
+Batch 31.46 correction: the original closeout combined global `R_h=19` from
+`F=18000`, `N_t=2048` with maximum transform geometry and reported `59392`.
+Exhaustive current-geometry evaluation instead reaches `53248` at `F=192000`,
+where `R_h=13`. The formula and category ceilings never changed.
 
 Only immutable input and the returned interleaved `Vec<f32>` may scale with
 duration. Full-duration components, spectra, descriptors, event history,
@@ -107,8 +112,7 @@ terminal candidate risks.
 
 ## Next Task
 
-Run Batch 31.45 only in `signal-candidate-31-45` on
-`candidate/g10-031-bounded-linked-stn-noise-morph`. Implement bounded v2 once,
-complete compile and construction, freeze one checkpoint, then run structural
-and synthetic admission in order. Stop before listening on any miss. Do not
-change production code, merge, touch Loophole or Chorus, or push.
+Historical next task completed in Batch 31.45. That candidate stopped at the
+capacity contradiction before checkpoint and was deleted. Batch 31.46
+corrected the authority under fresh v3 identity; current execution authority
+lives in the canonical brief and active roadmap.
