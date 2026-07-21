@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: creative stretch active; linked-STN exact-silence reassessment next
+Status: creative stretch active; zero-preserving linked-STN v5 candidate next
 Updated: 2026-07-21
 
 ## Why this generation matters now
@@ -260,8 +260,10 @@ Do not start Loophole or Chorus planning from Signal internals.
     or checkpoint; Batch 31.48 corrected the exhaustive bound to `59`, retained
     every memory ceiling, and froze geometry-audited v4 identity; Batch 31.49
     passed construction but failed structural `S15` exact silence at `17/18`
-    and was deleted before synthetic or listening; explicit `Cyclic` stays
-    closed
+    and was deleted before synthetic or listening; Batch 31.50 froze
+    zero-preserving v5 across covariance, excitation, recombination, and
+    output encoding without changing positive-power behavior; explicit
+    `Cyclic` stays closed
 
 ## Stretch Boundary
 
@@ -421,10 +423,19 @@ closed. The candidate worktree, branch, checkpoint reference, source, tests,
 build state, receipt, and outputs were deleted without repair or rerun. No DSP
 or product surface entered `main`.
 
+Batch 31.50 freezes the exact-zero state missing from v4. Two zero residual
+power endpoints now produce canonical positive zero through diagonal
+interpolation, coherence, mono and mid/side excitation, mapped-envelope
+recombination, and final `f32` encoding. Mixed and positive power retain the
+v4 formula. No threshold, mask, variable path, allocation, stochastic change,
+memory change, or quality-gate relaxation enters. Fresh
+`ZeroPreservingGeometryAuditedBoundedLinkedStnNoiseMorph` authority is ready
+for one isolated implementation. No DSP or product surface entered `main`.
+
 ## Next Task
 
-Run `g10.031` Batch 31.50 docs-only. Reconcile zero-power residual
-interpolation with bit-exact silence across the complete linked-STN authority.
-Either freeze one fresh complete identity or close linked STN. Keep `g10.028`,
+Run `g10.031` Batch 31.51 only in `signal-candidate-31-51` on the fresh v5
+branch named by the canonical brief. Implement once, complete construction,
+checkpoint, structural, and synthetic admission in order. Keep `g10.028`,
 routing, product exposure, other creative characters, and cross-repo work
-unchanged. Do not repair or recover Batch 31.49, implement DSP, merge, or push.
+unchanged. Do not recover Batch 31.49, merge, or push.

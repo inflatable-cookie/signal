@@ -142,7 +142,10 @@ failed structural `S15` at `17/18` because zero residual endpoints passed
 through epsilon-log interpolation and emitted deterministic samples around
 `1e-14` instead of bit-exact silence. The candidate was deleted before
 synthetic or listening. The product target remains active and unadmitted;
-exact-silence ownership reassessment is ready.
+Batch 31.50 now freezes zero-preserving v5. Exact-zero covariance,
+excitation, recombination, and output encoding are owned without changing any
+positive-power rule, memory bound, or quality gate. One fresh isolated
+implementation is ready.
 Offline artifacts still need a streaming artifact writer/cache target for full
 peak-memory closure. Mono callback-state DSP has a
 no-allocation proof, linked stereo is implemented, ratio scheduling has
@@ -269,7 +272,7 @@ Before rollover:
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the active generation front door.
-`g10.031` Batch 31.50 is ready for docs-only exact-silence ownership
-reassessment. Keep the transparent successor lane, `g10.028`, routing,
+`g10.031` Batch 31.51 is ready for one isolated zero-preserving-v5
+implementation. Keep the transparent successor lane, `g10.028`, routing,
 product exposure, and cross-repo work closed. Do not repair or recover Batch
-31.49 or implement candidate DSP.
+31.49 or merge a candidate.

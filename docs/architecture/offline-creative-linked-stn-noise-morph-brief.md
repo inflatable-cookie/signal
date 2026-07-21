@@ -1,14 +1,15 @@
 # Offline Creative LinkedStnNoiseMorph Renderer Brief
 
-Status: geometry-audited v4 rejected at structural exact-silence admission
+Status: zero-preserving v5 frozen; one fresh isolated candidate ready
 Owner: dsp
 Updated: 2026-07-21
 Contract: `085`
-Roadmap: `g10.031`, Batches 31.42, 31.44, 31.46, 31.48, and 31.49
+Roadmap: `g10.031`, Batches 31.42, 31.44, 31.46, 31.48, 31.49, and 31.50
 
 ## Decision
 
-Build one Signal-owned `GeometryAuditedBoundedLinkedStnNoiseMorph` candidate
+Build one Signal-owned
+`ZeroPreservingGeometryAuditedBoundedLinkedStnNoiseMorph` candidate
 for neutral `Dream` at fixed creative expansion from `4x` through `16x`.
 
 This is one material-separated renderer, not three optional effects. A
@@ -40,6 +41,13 @@ quality gates. It corrects the exhaustive short vertical-median maximum from
 `57` to `59`, freezes a shared `97`-scalar median-selection scratch bound, and
 assigns fresh identity after the deleted Batch 31.47 assembly. No transform,
 mask, map, threshold, source, metric, quality assertion, or audible owner
+changes.
+
+Zero-preserving v5 retains the same renderer, geometry, schedule, capacities,
+and acoustic gates. It resolves the Batch 31.49 exact-silence contradiction by
+making exact zero an explicit residual descriptor and synthesis state. No
+positive residual interpolation, threshold, transform, mask, map, source,
+quality limit, stochastic stream, stereo law, memory ceiling, or cost class
 changes.
 
 ## Supported Request
@@ -283,10 +291,23 @@ Mono retains scalar power. Stereo retains Hermitian:
 `C=[[a,c],[conj(c),b]]`, where `c=E[X_L*conj(X_R)]`.
 
 Project numerical error to positive semidefinite form by clamping `a,b` to
-zero and `|c|` to `sqrt(a*b)`. Interpolate `ln(a+eps)` and `ln(b+eps)` linearly
-at `x(jH)`. Interpolate coherence magnitude linearly and coherence phase on
-the shortest wrapped arc; a `pi` tie is positive. Reconstruct `c` from the
-interpolated diagonals, coherence, and phase.
+zero and `|c|` to `sqrt(a*b)`. After projection, canonicalize every numeric
+zero to positive zero. At a source descriptor, coherence is exact zero with
+phase zero when `a*b=0`; otherwise it is `c/sqrt(a*b)`.
+
+For non-negative endpoints `p0,p1` and interpolation weight `u` in `[0,1]`,
+define the sole zero-preserving log interpolation:
+
+`zlog(p0,p1,u)=+0` when `p0=0` and `p1=0`; otherwise
+`exp((1-u)*ln(p0+eps)+u*ln(p1+eps))`.
+
+Use `zlog` independently for `a` and `b` at `x(jH)`. This is an exact-zero
+branch, not a power threshold. One-zero/one-positive and two-positive rows are
+byte-for-byte the v4 formula. Interpolate canonical coherence magnitude
+linearly and phase on the shortest wrapped arc; a `pi` tie is positive. If
+either interpolated diagonal is zero, set `c` to exact complex positive zero
+without evaluating phase. Otherwise reconstruct `c` from the interpolated
+diagonals, coherence, and phase.
 
 For frequency weight `h`, use zero through `250 Hz`, one from `1500 Hz`, and
 smoothstep between. When `Re(c)>0` and coherence `g>0`, replace its magnitude
@@ -334,8 +355,9 @@ Exact construction vectors are:
 | `STNNOIS1` | `48000` | `0xa9cb60461663733f` | `+1` |
 | `STNNOIS1` | `96000` | `0xd0b1541e5ee1c6e1` | `+1` |
 
-Mono multiplies `sqrt(a)*U_0` by the sign of the first exactly non-zero
-augmented-residual sample, or `+1` for silence.
+Mono emits exact complex positive zero when `a=0`; it does not multiply an
+excitation coefficient by zero. Otherwise it multiplies `sqrt(a)*U_0` by the
+sign of the first exactly non-zero augmented-residual sample.
 
 Stereo factors in the orthonormal mid/side basis. Convert the post-`space`
 left/right covariance to mid power `a_m`, side power `a_s`, and
@@ -351,6 +373,12 @@ component uses `+1`.
   `Y_S=o_s*sqrt(a_s)*U_1`
 - decode `Y_L=(Y_M+Y_S)/sqrt(2)` and
   `Y_R=(Y_M-Y_S)/sqrt(2)`
+
+If `a_m=a_s=0`, set `Y_M`, `Y_S`, `Y_L`, and `Y_R` directly to exact complex
+positive zero. Any exact-zero `beta` is also canonical positive zero. Do not
+evaluate a stochastic multiply for an inactive component. The same transform
+and fixed traversal still execute; zero ownership does not create a
+data-dependent fast path.
 
 Common negation flips both orientations. Channel swap preserves `o_m`, flips
 `o_s`, and negates `d`. The same basis streams therefore produce exact common
@@ -372,7 +400,11 @@ map for every output sample.
 Tonal inverse frames use `N_t/H` normalized WOLA. Residual inverse frames use
 `N_r/H` normalized WOLA. Each lane divides by its own accumulated `w^2`
 denominator above `1e-12`. Apply mapped `g` once to the normalized
-tonal-plus-residual bed, then add one-shot native transient segments.
+tonal-plus-residual bed, then add one-shot native transient segments. When
+mapped `g` is exactly zero, contribute exact positive zero from the bed rather
+than multiplying. Initialize accumulators to positive zero. Before the sole
+`f64`-to-`f32` conversion, encode an exact numeric zero as positive `0.0f32`.
+This is representation canonicalization, not a non-zero threshold or repair.
 
 Accumulate in fixed-order `f64`, verify finiteness, and convert once to `f32`.
 Emit exactly `[0,T)`. There is no renderer-owned head or tail fade, padding in
@@ -532,14 +564,15 @@ be byte-identical.
 Offline only. No audio-thread source fill, execution, synchronization, I/O,
 or allocation is authorized.
 
-## Geometry-Audited V4 Candidate Isolation And Construction
+## Zero-Preserving V5 Candidate Isolation And Construction
 
 Use exactly:
 
-- worktree: `signal-candidate-31-49`
-- branch: `candidate/g10-031-geometry-audited-bounded-linked-stn-noise-morph`
+- worktree: `signal-candidate-31-51`
+- branch:
+  `candidate/g10-031-zero-preserving-geometry-audited-bounded-linked-stn-noise-morph`
 - module:
-  `crates/signal-dsp-stretch/src/creative_geometry_audited_bounded_linked_stn_noise_morph/`
+  `crates/signal-dsp-stretch/src/creative_zero_preserving_geometry_audited_bounded_linked_stn_noise_morph/`
 - files: `mod.rs`, `plan.rs`, `decomposition.rs`, `tonal.rs`, `transient.rs`,
   `noise.rs`, `synthesis.rs`, `tests.rs`
 
@@ -550,9 +583,9 @@ Generated evidence stays ignored under `target/`.
 
 Test prefixes are only:
 
-- `geometry_audited_bounded_linked_stn_noise_morph_construction_`
-- `geometry_audited_bounded_linked_stn_noise_morph_structural_`
-- `geometry_audited_bounded_linked_stn_noise_morph_synthetic_`
+- `zero_preserving_geometry_audited_bounded_linked_stn_noise_morph_construction_`
+- `zero_preserving_geometry_audited_bounded_linked_stn_noise_morph_structural_`
+- `zero_preserving_geometry_audited_bounded_linked_stn_noise_morph_synthetic_`
 
 `tests.rs` owns one compile-linked `GATE_OWNERS` table with exactly `28`
 unique IDs and function pointers: `18` structural and `10` synthetic. One
@@ -573,7 +606,9 @@ The construction owner verifies file inventory, gate inventory, formulas,
 exact positive-round ties, geometry, tags, exact vectors, source tables,
 support tables, sole seed,
 two-pass state reset, every `MEMORY_SPEC` formula, the exhaustive geometry
-maxima, and the `89 MiB` design sum.
+maxima, the `89 MiB` design sum, `zlog` truth vectors at `u=0,0.5,1`, positive
+zero bit patterns, canonical zero coherence, and non-zero preservation for the
+smallest represented positive `f64` endpoint.
 Before the checkpoint, repairs may address compiler, type, visibility,
 ownership, or manifest assembly only when they change no DSP formula, literal,
 source, metric, threshold, helper result, or assertion. Any later miss is
@@ -603,13 +638,13 @@ Run all owners once after construction. Require exactly `18/18`.
 | `S09` | transient novelty, threshold, refinement, class, segment, edge claim, and residual reassignment match impulse and attack vectors |
 | `S10` | each source event has one ledger commit, one mapped anchor, one emission, disjoint support, and no boundary duplicate |
 | `S11` | residual counter and tag vectors match exactly; repeats match bytes and changed seed changes non-silent residual output |
-| `S12` | covariance projection/factorization reproduces target matrices within `1e-10`; diagonal powers never change with `space` |
-| `S13` | residual duplicate, common polarity, anti-phase, and swap commute within `1e-6`; basis streams are shared, never channel-local |
+| `S12` | zero-preserving diagonal interpolation, canonical coherence, covariance projection, and factorization match exact zero/one-zero/positive handwritten vectors; target matrices reproduce within `1e-10`; diagonal powers never change with `space` |
+| `S13` | residual duplicate, common polarity, anti-phase, and swap commute within `1e-6`, including exact-zero descriptors and spectra; basis streams are shared, never channel-local |
 | `S14` | `space` preserves `0..250 Hz`, leaves tonal/events unchanged, and makes aggregate residual side energy non-decreasing within `1e-9` |
-| `S15` | mapped envelope, lane denominators, recombination, exact crop, exact silence, and no exterior fade match edge-source vectors |
-| `S16` | one-frame, shorter-than-window, odd/even, impulse-at-edge, sustained-to-edge, and all-zero inputs remain finite and exact length |
+| `S15` | mapped envelope, lane denominators, recombination, exact crop, and no exterior fade match edge-source vectors; all-zero mono/stereo and mapped exact-zero bed regions contain only positive-zero `f32` bit patterns |
+| `S16` | one-frame, shorter-than-window, odd/even, impulse-at-edge, sustained-to-edge, positive/signed-zero, and all-zero inputs remain finite and exact length; signed-zero silence returns positive zero |
 | `S17` | `MEMORY_SPEC` maxima and category sum match independent formulas; max-geometry stereo plan construction at `F=192000`, `L=N_t,4N_t,16N_t`, and every `4x/8x/16x` row reports identical working capacity, at most `89 MiB` designed and `96 MiB` actual; complete stereo renders over the same duration/ratio matrix at `F=8000` report zero allocation in either pass |
-| `S18` | source scan and call graph contain no capacity derived from `L` or `T` except returned `Vec<f32>`, full-duration component or `f64` output, all-history event set, random device, limiter, clipper, channel gain, external DSP, second map, renewal tonal phase, public route, or hidden report path |
+| `S18` | source scan and call graph contain no capacity derived from `L` or `T` except returned `Vec<f32>`, full-duration component or `f64` output, all-history event set, random device, limiter, clipper, channel gain, non-zero silence threshold, denoiser, external DSP, second map, renewal tonal phase, public route, or hidden report path |
 
 `S08` and `S13` are samplewise relationship invariants. `S12` is a descriptor
 invariant, not a claim that one stochastic output frame has exact source
@@ -1027,6 +1062,41 @@ The candidate worktree, branch, checkpoint reference, private source, tests,
 build state, receipt, and outputs were deleted. No candidate DSP entered
 `main`. Geometry-audited v4 is rejected and no linked-STN candidate is ready.
 
+## Batch 31.50 Exact-Silence Ownership Reconciliation
+
+The v4 formula had no exact-zero residual state: adding `eps` before logarithm
+turned two zero powers into positive synthesis power. The final boundary rule
+required exact silence but did not freeze how residual descriptors,
+coherence, excitation, signed zero, WOLA, and recombination preserved it.
+
+Zero-preserving v5 owns that path completely:
+
+- mono and each stereo diagonal use the sole `zlog` rule above
+- zero-power coherence and cross-power are canonical complex positive zero
+- inactive mono or mid/side components receive zero spectra directly
+- duplicate, common-negation, anti-phase, and swap laws include zero states
+- mapped zero envelope contributes no bed sample
+- exact-zero accumulation converts to positive `0.0f32`
+- every positive or mixed zero/positive power row keeps the v4 formula
+- no threshold, denoiser, silence fast path, extra state, stochastic change,
+  post-render repair, variable traversal, or quality-gate relaxation enters
+
+The audit changes no capacity. Exact zero is derived from stored covariance
+values and needs no mask or duration state. The `89 MiB` design ceiling,
+`96 MiB` actual gate, two-pass schedule, fixed transform count, deterministic
+order, and cost expression remain unchanged.
+
+The strengthened `S12`, `S13`, `S15`, `S16`, and `S18` owners prove the new
+rule without increasing the `18` structural or `10` synthetic owner count.
+All synthetic sources, thresholds, PaulX comparator rows, concealed mono pack,
+independent stereo pack, stop order, receipt identity, cleanup, and minimal
+admission boundary remain unchanged.
+
+This is fresh complete authority, not a repair or revival of checkpoint
+`e2ef62f8`. `ZeroPreservingGeometryAuditedBoundedLinkedStnNoiseMorph` may be
+implemented once from the canonical brief in the v5 worktree and branch. No
+candidate DSP or product surface entered `main` during reconciliation.
+
 ## Sources
 
 - [Creative source triangulation](../research/specimen-dossiers/creative-stretch-source-triangulation.md)
@@ -1039,8 +1109,7 @@ build state, receipt, and outputs were deleted. No candidate DSP entered
 
 ## Next Task
 
-Run Batch 31.50 docs-only. Reconcile zero-power residual interpolation with
-bit-exact silence across the complete linked-STN owner and every dependent
-invariant. Either freeze one fresh complete authority under new identity or
-close linked STN. Do not recover or repair Batch 31.49, implement candidate
-DSP, or change production code.
+Run Batch 31.51 only in the fresh v5 worktree and branch named above. Implement
+zero-preserving v5 once, complete compile and construction, freeze one
+checkpoint, then run structural and synthetic admission in order. Stop before
+listening on any miss. Do not recover Batch 31.49 or change production code.

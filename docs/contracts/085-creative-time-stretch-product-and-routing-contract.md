@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: active PaulX-like `Dream`; linked-STN exact-silence reassessment ready
+Status: active PaulX-like `Dream`; zero-preserving linked-STN v5 ready
 Owner: core-product
 Updated: 2026-07-21
 Related contracts: `046`, `048`, `084`
@@ -778,7 +778,11 @@ no materially different source-backed renewal owner, that path is closed.
     passed `1/1`, structural stopped at `17/18` on `S15` exact silence, and the
     candidate was deleted before synthetic or listening.
 48. Reconcile zero-power residual interpolation with bit-exact silence across
-    the complete linked-STN authority. Ready; docs and architecture only.
+    the complete linked-STN authority. Complete; zero-preserving v5 is frozen
+    docs-only under fresh identity.
+49. Implement zero-preserving v5 once, checkpoint after construction, then run
+    structural and synthetic admission in order. Ready; stop before listening
+    on any miss.
 
 `Spectral`/`Rough`, coherent overlap, `LayeredCloud`, the upper overlap, dynamic
 ratios, and automatic routing still require separate reopening decisions backed
@@ -975,10 +979,28 @@ permitted. Synthetic and listening stayed closed. The worktree, branch,
 checkpoint reference, source, tests, build state, receipt, and outputs were
 deleted. No creative renderer is admitted.
 
+Batch 31.50 resolves the contradiction across the complete residual and
+boundary path. The sole `zlog` rule returns canonical positive zero only when
+both power endpoints are exact zero; every one-zero/one-positive and
+two-positive row retains the v4 formula. Zero-power coherence, cross-power,
+mono and mid/side excitation, mapped-envelope contribution, and final `f32`
+encoding are also canonical positive zero.
+
+The rule is exact, not thresholded. It adds no denoiser, fast path, mask,
+duration state, allocation, variable traversal, stochastic change, or
+post-render repair. Duplicate, common-negation, anti-phase, swap, signed-zero,
+local-envelope, and exact-crop evidence now include zero states. Memory,
+determinism, fixed cost, synthetic thresholds, comparator rows, listening
+packs, and cleanup remain unchanged.
+
+Fresh `ZeroPreservingGeometryAuditedBoundedLinkedStnNoiseMorph` authority is
+ready for one isolated implementation. It does not revive checkpoint
+`e2ef62f8` or any deleted source. No creative renderer is admitted.
+
 ## Next Task
 
-Run Batch 31.50 docs-only. Reconcile zero-power residual interpolation with
-bit-exact silence across the complete linked-STN owner and every dependent
-invariant. Either freeze one fresh complete authority under new identity or
-close linked STN. Do not recover or repair Batch 31.49, implement candidate
-DSP, open routing or product exposure, touch Loophole or Chorus, or push.
+Run Batch 31.51 only in the fresh worktree and branch named by the
+zero-preserving v5 brief. Implement once, complete compile and construction,
+freeze one checkpoint, then run structural and synthetic owners in order. Stop
+before listening on any miss. Do not recover Batch 31.49, open routing or
+product exposure, touch Loophole or Chorus, or push.

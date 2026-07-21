@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: active; Batch 31.49 rejected, Batch 31.50 reassessment ready
+Status: active; Batch 31.50 complete, Batch 31.51 ready
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -1664,10 +1664,44 @@ Decision:
 - Batch 31.50 must reconcile exact-zero residual ownership docs-only before a
   fresh complete identity can be considered
 
+## Batch 31.50 - Linked STN Exact-Silence Ownership Reconciliation
+
+Status: complete; zero-preserving v5 candidate ready
+
+- [x] reconciled residual diagonal interpolation with bit-exact silence across
+  mono, native stereo, mid/side factorization, excitation, WOLA,
+  mapped-envelope recombination, and final conversion
+- [x] froze `zlog`: two exact-zero endpoints return positive zero; every
+  one-zero/one-positive or two-positive row retains the v4 formula
+- [x] froze zero-power coherence, cross-power, spectra, factorization, and
+  final samples as canonical positive zero without a threshold
+- [x] extended zero ownership through duplicate, common-negation, anti-phase,
+  channel-swap, signed-zero, local-envelope, and exact-crop controls
+- [x] strengthened `S12`, `S13`, `S15`, `S16`, and `S18` without changing the
+  `18` structural or `10` synthetic owner inventory
+- [x] retained every transform, map, positive-power formula, stochastic stream,
+  source, threshold, comparator row, listening pack, gate order, and cleanup
+  rule
+- [x] confirmed no mask, duration state, variable traversal, or allocation was
+  added; the `89 MiB` design, `96 MiB` actual, and cost bounds remain unchanged
+- [x] froze fresh identity
+  `ZeroPreservingGeometryAuditedBoundedLinkedStnNoiseMorph` and exact Batch
+  31.51 worktree, branch, module, prefixes, checkpoint, cleanup, and gate order
+- [x] changed documentation only; no DSP, tests, harnesses, dependencies, APIs,
+  routes, cache, artifacts, Loophole, or Chorus surface entered `main`
+
+Decision:
+
+- the v4 contradiction is closed without thresholding or changing non-zero
+  synthesis behavior
+- zero-preserving v5 is one complete buildable renderer authority
+- creative quality, exact implementation, synthetic character, mono
+  listening, and independent stereo remain unproved
+
 ## Later Batches
 
-Closed or paused without promotion. Batch 31.50 exact-silence ownership
-reassessment is the sole ready work. Every later product batch still
+Closed or paused without promotion. Batch 31.51 isolated zero-preserving-v5
+implementation is the sole ready work. Every later product batch still
 requires a separately admitted complete renderer:
 
 - minimal production admission
@@ -1784,12 +1818,14 @@ requires a separately admitted complete renderer:
 - [x] the rejected v4 checkpoint, implementation, tests, worktree, branch,
   build state, and outputs were deleted without repair or rerun
 - [x] no candidate DSP entered `main` after v4 rejection
+- [x] exact-silence reassessment froze one complete zero-preserving v5 authority
+  without candidate DSP or product exposure
 
 ## Next Task
 
-Run Batch 31.50 docs-only. Reconcile the linked-STN residual owner's
-zero-power interpolation with bit-exact silence and audit every affected
-stereo, determinism, boundary, evidence, and cleanup rule. Either freeze one
-fresh complete authority under new identity or close linked STN. Do not repair
-or recover Batch 31.49, implement DSP, touch Loophole or Chorus, merge, or
-push.
+Run Batch 31.51 only in `signal-candidate-31-51` on the fresh
+zero-preserving-v5 branch named by the canonical brief. Implement once, run
+compile and construction, freeze one checkpoint, then run structural and
+synthetic admission in order. Stop before listening on any miss. Do not repair
+or recover Batch 31.49, change production code, touch Loophole or Chorus,
+merge, or push.
