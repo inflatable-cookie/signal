@@ -1350,6 +1350,12 @@ remains historical architecture evidence, not implementation authority. The
 PaulX-like neutral `Dream` product target remains active. No creative renderer,
 route, API, cache identity, or product claim is admitted.
 
+Batch 31.55 changes future evidence protocol, not this closure. Contract `085`
+Rule 11 allows a conformance-only family to enter one later docs-only
+eligibility decision, but it does not reopen this brief, revive a checkpoint,
+or authorize implementation. Any selection must start from fresh source and a
+new protocol-bound brief.
+
 ## Sources
 
 - [Creative source triangulation](../research/specimen-dossiers/creative-stretch-source-triangulation.md)
@@ -1362,8 +1368,7 @@ route, API, cache identity, or product claim is admitted.
 
 ## Next Task
 
-Run Batch 31.55 as docs-only creative-candidate evidence-protocol
-reassessment. Separate iterative implementation conformance from immutable
-acoustic admission without weakening one-candidate, anti-sweep, cleanup, or
-listening authority. Decide whether any creative family can reopen under that
-policy. Do not recover linked-STN checkpoints, write DSP, merge, or push.
+Run Batch 31.56 as docs-only creative-owner eligibility and selection under
+Contract `085` Rule 11. Classify linked-STN alongside every closed family and
+select at most one complete owner or pause. Do not recover checkpoints, write
+DSP, merge, or push.

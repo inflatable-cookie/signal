@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: active; linked-STN closed, Batch 31.55 evidence-protocol reassessment ready
+Status: active; evidence protocol frozen, Batch 31.56 owner selection ready
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -1810,26 +1810,46 @@ Status: complete; linked-STN closed without promotion
 
 ## Batch 31.55 - Creative Candidate Evidence-Protocol Reassessment
 
-Status: ready; docs and contracts only
+Status: complete; reusable Contract `085` protocol frozen
 
-- [ ] classify compile, construction, structural conformance, acoustic
+- [x] classified compile, construction, structural conformance, acoustic
   objective, mono listening, and independent stereo authority separately
-- [ ] permit implementation correction only before one frozen acoustic
+- [x] permitted implementation correction only before one frozen acoustic
   checkpoint, with exact source and test identity retained for comparison
-- [ ] preserve one complete candidate, anti-sweep, stage-stop, cleanup,
+- [x] preserved one complete candidate, anti-sweep, stage-stop, cleanup,
   comparator, and listening-promotion rules
-- [ ] decide whether a closed family may ever reopen after conformance-only
-  failure, and what new identity or evidence is required
-- [ ] either freeze one reusable Contract `085` candidate protocol and name a
-  later owner-selection checkpoint, or pause creative implementation
-- [ ] do not implement or recover DSP, add harnesses, change production,
+- [x] allowed one explicit reconsideration of a conformance-only family under
+  fresh implementation and acoustic identity; acoustic failures remain closed
+- [x] retained exact checkpoint source and tests through reassessment in one
+  local-only evidence ref, never on `main`
+- [x] froze reusable Contract `085` Rule 11 and made owner selection the next
+  docs-only checkpoint
+- [x] did not implement or recover DSP, add harnesses, change production,
   routing, cache, product exposure, Loophole, or Chorus
+
+## Batch 31.56 - Creative Owner Eligibility And Selection
+
+Status: ready; docs and architecture only
+
+- [ ] inventory every closed creative family by highest valid Rule 11 stage
+- [ ] distinguish conformance-only closure from synthetic, mono, stereo, or
+  listening rejection without reinterpreting any historical receipt
+- [ ] require complete canonical architecture, retained source backing, and a
+  plausible path through every current hard and listening gate
+- [ ] select at most one eligible family for a fresh protocol-bound brief, or
+  pause creative implementation when none qualifies
+- [ ] if one family is selected, name the later brief-freeze and isolated
+  implementation batches without marking them ready prematurely
+- [ ] do not recover candidate source, implement DSP, add harnesses, change
+  production, routing, cache, product exposure, Loophole, or Chorus
 
 ## Later Batches
 
-Closed or paused without promotion. Batch 31.55 is the sole ready work. Every
+Closed or paused without promotion. Batch 31.56 is the sole ready work. Every
 later product batch still requires a separately admitted complete renderer:
 
+- selected-owner protocol binding and complete brief
+- one isolated conformance and acoustic candidate
 - minimal production admission
 - coherent/diffusive overlap
 - `LayeredCloud` study and candidate
@@ -1968,12 +1988,16 @@ later product batch still requires a separately admitted complete renderer:
 - [x] `LinkedStnNoiseMorph` closed without promotion after six implementation
   attempts and no synthetic or listening evidence
 - [x] the PaulX-like neutral `Dream` target remains active and unadmitted
+- [x] Contract `085` now separates iterative conformance from immutable
+  acoustic candidate identity
+- [x] exact checkpoint source and test identity survives through required
+  reassessment without entering `main`
+- [x] conformance-only closure has one explicit reopening path; acoustic
+  failures retain their terminal meaning
 
 ## Next Task
 
-Run Batch 31.55 as docs-only creative-candidate evidence-protocol
-reassessment. Separate iterative conformance from one immutable acoustic
-checkpoint while preserving anti-sweep, cleanup, comparator, and listening
-authority. Decide whether any creative family can reopen under that policy.
-Do not recover candidate source, implement DSP, change production, touch
-Loophole or Chorus, merge, or push.
+Run Batch 31.56 as docs-only creative-owner eligibility and selection.
+Classify every closed family under Contract `085` Rule 11, then select at most
+one complete source-backed owner or pause. Do not recover candidate source,
+implement DSP, change production, touch Loophole or Chorus, merge, or push.

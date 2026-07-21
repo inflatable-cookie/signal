@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: creative stretch active; linked-STN closed, evidence-protocol reassessment ready
+Status: creative stretch active; evidence protocol frozen, owner selection ready
 Updated: 2026-07-21
 
 ## Why this generation matters now
@@ -469,10 +469,19 @@ a different renderer. After six implementation attempts and no synthetic or
 listening evidence, `LinkedStnNoiseMorph` closes under Contract `084` Rule 7.
 The PaulX-like neutral `Dream` target remains active and unadmitted.
 
+Batch 31.55 freezes Contract `085` Rule 11. A working implementation may
+iterate on compile, construction, and structural conformance against already
+frozen authority. Only a clean tree passing all three becomes one immutable
+acoustic checkpoint. Synthetic, concealed mono, and independent stereo then
+run once in order and remain terminal. A local-only evidence ref retains exact
+source and tests through reassessment without admitting rejected code to
+`main`. Closed conformance-only families may receive one explicit docs-only
+eligibility decision; acoustically rejected families remain closed.
+
 ## Next Task
 
-Run `g10.031` Batch 31.55 as docs-only creative-candidate evidence-protocol
-reassessment. Separate implementation conformance from immutable acoustic
-admission before any family reopens. Keep `g10.028`, routing, product exposure,
-other creative characters, and cross-repo work unchanged. Do not recover
-candidate source, implement DSP, merge, or push.
+Run `g10.031` Batch 31.56 as docs-only creative-owner eligibility and
+selection. Classify every closed family under Contract `085` Rule 11 and select
+at most one complete source-backed owner or pause. Keep `g10.028`, routing,
+product exposure, other creative characters, and cross-repo work unchanged.
+Do not recover candidate source, implement DSP, merge, or push.

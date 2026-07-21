@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: active PaulX-like `Dream`; linked-STN closed, evidence protocol under reassessment
+Status: active PaulX-like `Dream`; evidence protocol frozen, owner selection ready
 Owner: core-product
 Updated: 2026-07-21
 Related contracts: `046`, `048`, `084`
@@ -646,6 +646,78 @@ other checkpoint or the complete renewal topology. A new executable authority
 would be a third renewal candidate program, not evidence reconciliation. With
 no materially different source-backed renewal owner, that path is closed.
 
+### Rule 11: conformance precedes acoustic identity
+
+This rule applies prospectively to work authorized after Batch 31.55. It does
+not change any historical checkpoint result or restore deleted source.
+
+Creative candidate work has three distinct states:
+
+1. **Working implementation.** One isolated worktree implements one frozen
+   complete architecture. Compile, manifest/construction, and structural
+   conformance may run repeatedly. This state is not an acoustic candidate
+   receipt.
+2. **Conformance-complete tree.** Compile, construction, and the complete
+   structural suite pass together. The worktree is clean and every candidate,
+   test, helper, source-table, dependency, toolchain, and platform identity is
+   recorded.
+3. **Acoustic checkpoint.** The conformance-complete tree is committed and
+   referenced immutably before any synthetic acoustic gate, rendered
+   comparator review, or listening output runs. This is the sole candidate
+   identity used by one-candidate and repeated-failure rules.
+
+Before implementation starts, the canonical brief must freeze the complete
+renderer plus every structural and acoustic source, seed, helper algorithm,
+metric, threshold, assertion, comparator row, listening pack, and gate order.
+Executable acoustic owners must compile during conformance but may not run or
+produce inspectable renders before the acoustic checkpoint.
+
+Before that checkpoint, corrections are allowed only when they make code or
+tests conform to existing canonical authority. Compiler, type, visibility,
+ownership, allocation, tie, boundary, state-machine, and exact-vector defects
+may be corrected and conformance rerun. Every round records failed owners and
+the corrective diff. A correction that requires choosing or changing a DSP
+formula, source, seed, helper algorithm, metric, threshold, assertion,
+comparator, or listening policy stops for docs-level reassessment. No acoustic
+output may guide conformance work. No parameter, coefficient, window, phase,
+seed, or scalar sweep is allowed.
+
+After the acoustic checkpoint, the order is fixed:
+
+1. synthetic acoustic and integrity admission
+2. concealed long-form mono comparison
+3. independent comparator-relative stereo admission
+4. fixed-ratio promotion decision
+5. dynamic-ratio, routing, cache, and product review only after promotion
+
+Each stage runs from the same checkpoint and stops later stages on failure.
+No source, renderer, test, helper, assertion, or threshold changes are allowed.
+Listening remains promotion authority.
+
+Create a local immutable ref under
+`refs/signal-evidence/creative/<family>/<checkpoint>` when acoustic identity is
+frozen. On failure, delete the worktree, branch, build state, and generated
+renders after the receipt is recorded, but retain that ref through the required
+reassessment so exact source and test bodies remain comparable. Delete the ref
+when reassessment closes the evidence question. Evidence refs are local-only,
+never production branches, releases, or push authority. Rejected source never
+enters `main`.
+
+A family closed only on pre-acoustic compile, construction, structural, or
+evidence-assembly failure may be considered once under this protocol when:
+
+- no synthetic or listening gate executed
+- its canonical architecture remains complete and source-backed
+- a docs-only owner-selection batch explicitly chooses it
+- implementation starts fresh without recovering deleted source
+- one new acoustic checkpoint identity owns the entire future receipt
+
+This does not revive a rejected checkpoint. A family with a synthetic,
+long-form, stereo, or listening failure remains closed until new complete
+architecture or an explicit evidence-backed product-gate change addresses that
+failure class. Two acoustic checkpoints failing the same dominant cause still
+trigger architecture reassessment under Contract `084` Rule 7.
+
 ## Initial Promotion Sequence
 
 1. Comparator capture and target-character freeze. Complete.
@@ -795,9 +867,12 @@ no materially different source-backed renewal owner, that path is closed.
 52. Reassess executable structural authority. Complete; most structural owners
     require renderer execution, construction-owning all of them would duplicate
     or move the gate, and `LinkedStnNoiseMorph` is closed without promotion.
-53. Reassess creative candidate evidence protocol. Ready; docs and contracts
-    only. Separate implementation conformance from immutable acoustic evidence
-    before any family may reopen.
+53. Reassess creative candidate evidence protocol. Complete; iterative
+    conformance now precedes one immutable acoustic checkpoint, exact
+    executable identity survives through reassessment, and acoustic failures
+    remain terminal.
+54. Classify closed creative families under the new protocol and select at
+    most one eligible complete owner. Ready; docs and architecture only.
 
 `Spectral`/`Rough`, coherent overlap, `LayeredCloud`, the upper overlap, dynamic
 ratios, and automatic routing still require separate reopening decisions backed
@@ -1074,11 +1149,23 @@ Contract `084` Rule 7 blocks a locally corrected seventh identity.
 historical evidence only. The PaulX-like neutral `Dream` target remains active,
 but no creative renderer or implementation batch is ready.
 
+Batch 31.55 freezes the reusable creative candidate protocol in Rule 11.
+Compile, construction, and structural checks are iterative conformance against
+already frozen authority. They must pass before one immutable acoustic
+checkpoint exists. Synthetic, mono, stereo, and promotion stages then run once
+from that exact identity and remain terminal.
+
+The policy keeps rejected code off `main` while retaining a bounded local
+evidence ref through reassessment, avoiding the lost-helper and incomparable-
+receipt failures seen earlier in this roadmap. It does not reopen any renderer.
+Conformance-only families become eligible for one explicit docs-only owner
+selection; acoustically rejected families remain closed absent new complete
+architecture or an evidence-backed product decision.
+
 ## Next Task
 
-Run Batch 31.55 as docs-only creative-candidate evidence-protocol
-reassessment. Freeze a boundary between iterative implementation conformance
-and immutable acoustic admission, or close further creative implementation
-work pending new evidence. Do not recover linked-STN checkpoints, implement
-DSP, open routing or product exposure, touch Loophole or Chorus, merge, or
-push.
+Run Batch 31.56 as docs-only creative-owner eligibility and selection. Classify
+every closed family by its highest valid stage under Rule 11, then select at
+most one complete source-backed owner or pause. Do not recover candidate
+source, implement DSP, open routing or product exposure, touch Loophole or
+Chorus, merge, or push.

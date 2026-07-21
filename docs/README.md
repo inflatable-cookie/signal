@@ -81,9 +81,9 @@ strict lane.
 
 ## Next Task
 
-Run `g10.031` Batch 31.55 as docs-only creative-candidate evidence-protocol
-reassessment. Separate iterative conformance from one immutable acoustic
-checkpoint without weakening anti-sweep, cleanup, comparator, or listening
-authority. Do not recover candidate source, implement DSP, change production,
-routing, product exposure, Loophole, or Chorus. Only drop into `specs/` when a
-strict lane is explicitly reopened.
+Run `g10.031` Batch 31.56 as docs-only creative-owner eligibility and
+selection. Classify every closed family under Contract `085` Rule 11, then
+select at most one complete source-backed owner or pause. Do not recover
+candidate source, implement DSP, change production, routing, product exposure,
+Loophole, or Chorus. Only drop into `specs/` when a strict lane is explicitly
+reopened.
