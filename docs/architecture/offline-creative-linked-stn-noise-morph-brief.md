@@ -1,6 +1,6 @@
 # Offline Creative LinkedStnNoiseMorph Renderer Brief
 
-Status: bounded v2 frozen; one fresh isolated candidate ready
+Status: bounded v2 rejected at construction; capacity authority inconsistent
 Owner: dsp
 Updated: 2026-07-21
 Contract: `085`
@@ -863,6 +863,25 @@ adds the exact two-pass schedule and storage proof above, and uses a new
 candidate identity. It is not a repair, retry, or reconstruction of checkpoint
 `1c383679`. Batch 31.45 may implement it once in the named disposable worktree.
 
+## Batch 31.45 Candidate Outcome
+
+The isolated implementation completed `effigy test compile`, then construction
+stopped at `0/1` before any checkpoint. Exhaustive evaluation of the frozen
+first-residual capacity formula produced `53248`, while the frozen construction
+row requires `59392`.
+
+The two values cannot both follow the current brief. At `F=192000`,
+`N_t=32768`, `N_s=4096`, `A_s=1024`, `R_h=13`, and `h_s=6`, so
+`N_t+2(h_s*A_s+N_s)=53248`. The global `R_h=19` maximum occurs separately at
+`F=18000`, `N_t=2048`; combining its `h_s=9` with maximum transform geometry
+produces the stated `59392` row but is not exhaustive evaluation of one
+supported geometry.
+
+No assertion, formula, or capacity was repaired. No immutable checkpoint or
+candidate tree exists. Structural, synthetic, and listening admission did not
+open. The worktree, branch, private module, tests, and build state were deleted;
+no candidate code entered `main`.
+
 ## Sources
 
 - [Creative source triangulation](../research/specimen-dossiers/creative-stretch-source-triangulation.md)
@@ -875,7 +894,7 @@ candidate identity. It is not a repair, retry, or reconstruction of checkpoint
 
 ## Next Task
 
-Run Batch 31.45 only in the named disposable worktree. Implement bounded v2
-once, complete compile and construction, freeze one checkpoint, then run
-structural and synthetic admission in order. Stop before listening on any
-miss. Do not change production code or merge a candidate in that batch.
+Run Batch 31.46 as docs-only evidence-authority reconciliation. Resolve the
+first-residual capacity formula and exhaustive maximum without recovering the
+deleted candidate, changing audible ownership, or authorizing implementation.
+Freeze one internally consistent `MEMORY_SPEC` or close bounded v2.

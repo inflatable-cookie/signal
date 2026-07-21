@@ -31,7 +31,7 @@ strict lane.
 - Rejected offline stretch successor: [architecture/offline-time-stretch-successor-brief.md](./architecture/offline-time-stretch-successor-brief.md)
 - Non-phase-vocoder feasibility: [architecture/offline-time-stretch-non-phase-vocoder-feasibility.md](./architecture/offline-time-stretch-non-phase-vocoder-feasibility.md)
 - Creative time-stretch study: [architecture/offline-creative-time-stretch-study.md](./architecture/offline-creative-time-stretch-study.md)
-- Frozen bounded creative LinkedStnNoiseMorph v2 brief: [architecture/offline-creative-linked-stn-noise-morph-brief.md](./architecture/offline-creative-linked-stn-noise-morph-brief.md)
+- Construction-rejected bounded creative LinkedStnNoiseMorph v2 brief: [architecture/offline-creative-linked-stn-noise-morph-brief.md](./architecture/offline-creative-linked-stn-noise-morph-brief.md)
 - Rejected creative ComparatorAuditedRenewalSpectral brief: [architecture/offline-creative-comparator-audited-renewal-spectral-brief.md](./architecture/offline-creative-comparator-audited-renewal-spectral-brief.md)
 - Rejected-under-old-stereo-policy SupportAuditedListeningLedSourceRelativeRenewalSpectral brief: [architecture/offline-creative-verified-source-relative-renewal-spectral-brief.md](./architecture/offline-creative-verified-source-relative-renewal-spectral-brief.md)
 - Rejected-at-vector-proof creative SourceRelativeRenewalSpectral brief: [architecture/offline-creative-source-relative-renewal-spectral-brief.md](./architecture/offline-creative-source-relative-renewal-spectral-brief.md)
@@ -81,8 +81,8 @@ strict lane.
 
 ## Next Task
 
-Run `g10.031` Batch 31.45 only in the disposable worktree named by bounded v2.
-Implement `BoundedLinkedStnNoiseMorph` once, complete construction, freeze one
-checkpoint, then run structural and synthetic admission. Keep `main`, routing,
-product exposure, Loophole, and Chorus unchanged. Only drop into `specs/` when
-a strict lane is explicitly reopened.
+Run `g10.031` Batch 31.46 as docs-only capacity-authority reconciliation.
+Resolve the `53248` formula maximum versus frozen `59392` row before any new
+candidate becomes eligible. Do not recover the deleted implementation or
+change routing, product exposure, Loophole, or Chorus. Only drop into `specs/`
+when a strict lane is explicitly reopened.

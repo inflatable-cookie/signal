@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: creative stretch active; bounded linked STN candidate next
+Status: creative stretch active; bounded linked STN capacity reassessment next
 Updated: 2026-07-21
 
 ## Why this generation matters now
@@ -251,7 +251,10 @@ Do not start Loophole or Chorus planning from Signal internals.
     self-contained evidence authority; Batch 31.43 rejected its isolated
     implementation at structural `S17` for duration-derived working state;
     Batch 31.44 froze a two-pass bounded schedule and fresh candidate identity;
-    Batch 31.45 isolated implementation is ready; explicit `Cyclic` stays closed
+    Batch 31.45 passed compile but failed construction because the frozen
+    first-residual formula exhaustively yields `53248` while its asserted row
+    requires `59392`; the candidate was deleted and docs-only reconciliation is
+    next; explicit `Cyclic` stays closed
 
 ## Stretch Boundary
 
@@ -375,10 +378,17 @@ consumer. The owned-state design ceiling is `89 MiB`; the terminal actual cap
 remains `96 MiB`. Fresh `BoundedLinkedStnNoiseMorph` authority is frozen. No
 DSP or product surface entered `main`.
 
+Batch 31.45 passed compile, then construction failed `0/1` before checkpoint.
+The frozen first-residual formula exhaustively reaches `53248`, while its
+frozen maximum row requires `59392`. The larger row combines the global
+`R_h=19` from a small transform with maximum transform geometry. No authority
+was repaired and no structural, synthetic, or listening gate opened. The
+candidate worktree, branch, source, tests, and build state were deleted.
+
 ## Next Task
 
-Run `g10.031` Batch 31.45 only in `signal-candidate-31-45` on
-`candidate/g10-031-bounded-linked-stn-noise-morph`. Implement bounded v2 once,
-complete construction, freeze one checkpoint, then run structural and
-synthetic gates. Keep `main`, `g10.028`, routing, product exposure, other
-creative characters, and cross-repo work unchanged. Do not merge or push.
+Run `g10.031` Batch 31.46 as docs-only evidence-authority reconciliation.
+Align the first-residual formula, exhaustive maximum, construction row, and
+memory budget without recovering or implementing the deleted candidate. Keep
+`g10.028`, routing, product exposure, other creative characters, and cross-repo
+work unchanged. Do not push.

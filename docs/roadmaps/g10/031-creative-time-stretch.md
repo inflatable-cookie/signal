@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: active; Batch 31.44 complete, Batch 31.45 ready
+Status: active; Batch 31.45 rejected at construction, reassessment next
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -1502,11 +1502,41 @@ Decision:
 - Batch 31.45 may implement bounded v2 once; quality and promotion remain
   entirely unproved
 
+## Batch 31.45 - Bounded Linked STN Isolated Candidate
+
+Status: complete; candidate rejected at construction and deleted
+
+- [x] created only `signal-candidate-31-45` on
+  `candidate/g10-031-bounded-linked-stn-noise-morph` from `8f384c09`
+- [x] kept the renderer private and changed no production, public, dependency,
+  route, cache, artifact, Loophole, or Chorus surface
+- [x] passed `effigy test compile` after permitted compiler-only assembly fixes
+- [x] ran the construction owner once; it failed `0/1` before checkpoint
+- [x] recorded the exhaustive first-residual maximum `53248` against the frozen
+  asserted row `59392`
+- [x] independently located the mismatch: current-geometry `R_h=13`, `h_s=6`
+  at maximum transform geometry, while global `R_h=19`, `h_s=9` occurs only at
+  `F=18000`, `N_t=2048`
+- [x] did not change the formula, expected row, helper, or assertion
+- [x] did not create a checkpoint or run structural, synthetic, or listening
+  admission
+- [x] deleted the worktree, branch, private source, tests, and build state; no
+  candidate code entered `main`
+
+Decision:
+
+- the stop is an executable-authority contradiction, not a renderer quality
+  result
+- the `59392` row combines maxima from different supported geometries; the
+  frozen per-geometry formula exhaustively reaches `53248`
+- no implementation retry is ready; Batch 31.46 must reconcile `MEMORY_SPEC`
+  docs-only before deciding whether bounded v2 remains eligible
+
 ## Later Batches
 
-Closed or paused without promotion. Batch 31.45 isolated bounded-v2
-implementation is the only ready work. Every later product batch still requires
-a separately admitted complete renderer:
+Closed or paused without promotion. No implementation is ready. Batch 31.46
+docs-only capacity-authority reconciliation is the sole next work. Every later
+product batch still requires a separately admitted complete renderer:
 
 - minimal production admission
 - coherent/diffusive overlap
@@ -1603,11 +1633,16 @@ a separately admitted complete renderer:
   and froze fresh `BoundedLinkedStnNoiseMorph` authority
 - [x] no candidate code entered `main` during reassessment
 - [x] no private renderer or product surface entered `main`
+- [x] one bounded-v2 implementation attempt reached terminal construction
+  rejection on contradictory first-residual capacity authority
+- [x] the failed worktree, branch, private renderer, tests, and build state were
+  deleted before structural admission
 
 ## Next Task
 
-Run Batch 31.45 only in `signal-candidate-31-45` on
-`candidate/g10-031-bounded-linked-stn-noise-morph`. Implement bounded v2 once,
-run compile and construction, freeze one checkpoint, then run structural and
-synthetic admission in order. Stop before listening on any miss. Do not change
-production code, merge, expose the product, touch Loophole or Chorus, or push.
+Run Batch 31.46 as docs-only evidence-authority reconciliation. Resolve whether
+the first-residual capacity is the per-geometry formula maximum `53248` or a
+deliberately conservative cross-geometry bound `59392`, then align the formula,
+maximum row, construction owner, and memory budget. Do not recover or implement
+the deleted candidate, change audible ownership, touch Loophole or Chorus, or
+push.
