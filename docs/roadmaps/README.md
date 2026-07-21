@@ -1,7 +1,7 @@
 # Roadmaps
 
 Status: active
-Updated: 2026-07-21
+Updated: 2026-07-22
 
 ## Why this section matters now
 
@@ -168,9 +168,12 @@ available through reassessment without entering `main`. Batch 31.56 finds every
 diffusive, cyclic, and renewal owner ineligible through acoustic rejection,
 superseded authority, or an architecture-level miss. Linked STN is the sole
 complete conformance-only lineage, remains source-backed, and was selected once
-for fresh protocol binding. Batch 31.57 freezes fresh Rule 11 identity,
+for fresh protocol binding. Batch 31.57 froze fresh Rule 11 identity,
 self-contained evidence authority, and full conformance before the acoustic
-checkpoint. Batch 31.58 is ready in one exact isolated worktree.
+checkpoint. Batch 31.58 then stopped pre-acoustic when `S09` proved exact
+floating comparison moved a reconstructed impulse one sample beyond `Y03`'s
+authored anchor. Batch 31.59 freezes a four-ULP earliest-owner comparison,
+target-ledger semantics, and retained-worktree resume. Batch 31.60 is ready.
 Offline artifacts still need a streaming artifact writer/cache target for full
 peak-memory closure. Mono callback-state DSP has a
 no-allocation proof, linked stereo is implemented, ratio scheduling has
@@ -297,9 +300,9 @@ Before rollover:
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the active generation front door.
-Run `g10.031` Batch 31.58 in isolated worktree `signal-candidate-31-58` from
-the exact Batch 31.57 closeout commit. Implement only the frozen private
-linked-STN renderer and complete compile, construction, and structural
-conformance before its acoustic ref. Keep the transparent successor lane,
-`g10.028`, routing, product exposure, and cross-repo work closed. Do not
-recover candidate source, alter `main`, merge, or push.
+Run `g10.031` Batch 31.60 in retained isolated worktree
+`signal-candidate-31-58`. Apply the Batch 31.59 docs closeout, implement only
+the frozen transient-refinement and target-ledger correction, then restart
+complete compile, construction, and structural conformance twice before its
+acoustic ref. Keep the transparent successor lane, `g10.028`, routing, product
+exposure, and cross-repo work closed. Do not alter `main`, merge, or push.

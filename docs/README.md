@@ -31,7 +31,7 @@ strict lane.
 - Rejected offline stretch successor: [architecture/offline-time-stretch-successor-brief.md](./architecture/offline-time-stretch-successor-brief.md)
 - Non-phase-vocoder feasibility: [architecture/offline-time-stretch-non-phase-vocoder-feasibility.md](./architecture/offline-time-stretch-non-phase-vocoder-feasibility.md)
 - Creative time-stretch study: [architecture/offline-creative-time-stretch-study.md](./architecture/offline-creative-time-stretch-study.md)
-- Protocol-bound creative LinkedStnNoiseMorph brief: [architecture/offline-creative-linked-stn-noise-morph-brief.md](./architecture/offline-creative-linked-stn-noise-morph-brief.md)
+- Reconciled creative LinkedStnNoiseMorph brief: [architecture/offline-creative-linked-stn-noise-morph-brief.md](./architecture/offline-creative-linked-stn-noise-morph-brief.md)
 - Rejected creative ComparatorAuditedRenewalSpectral brief: [architecture/offline-creative-comparator-audited-renewal-spectral-brief.md](./architecture/offline-creative-comparator-audited-renewal-spectral-brief.md)
 - Rejected-under-old-stereo-policy SupportAuditedListeningLedSourceRelativeRenewalSpectral brief: [architecture/offline-creative-verified-source-relative-renewal-spectral-brief.md](./architecture/offline-creative-verified-source-relative-renewal-spectral-brief.md)
 - Rejected-at-vector-proof creative SourceRelativeRenewalSpectral brief: [architecture/offline-creative-source-relative-renewal-spectral-brief.md](./architecture/offline-creative-source-relative-renewal-spectral-brief.md)
@@ -81,9 +81,9 @@ strict lane.
 
 ## Next Task
 
-Run `g10.031` Batch 31.58 in isolated worktree `signal-candidate-31-58` from
-the exact Batch 31.57 closeout commit. Implement only the frozen private
-protocol-bound linked-STN renderer, complete conformance before its acoustic
-ref, then follow the one-shot gate order. Do not recover candidate source,
-alter `main`, routing, product exposure, Loophole, or Chorus. Only drop into
-`specs/` when a strict lane is explicitly reopened.
+Run `g10.031` Batch 31.60 in retained isolated worktree
+`signal-candidate-31-58`. Apply the Batch 31.59 docs closeout, implement only
+the frozen four-ULP transient-refinement and target-ledger correction, then
+restart complete conformance twice before any acoustic ref. Do not run acoustic
+gates, alter `main`, routing, product exposure, Loophole, or Chorus. Only drop
+into `specs/` when a strict lane is explicitly reopened.

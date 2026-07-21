@@ -1,8 +1,8 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: active PaulX-like `Dream`; protocol-bound linked STN candidate ready
+Status: active PaulX-like `Dream`; linked STN pre-acoustic resume ready
 Owner: core-product
-Updated: 2026-07-21
+Updated: 2026-07-22
 Related contracts: `046`, `048`, `084`
 Related architecture: `docs/architecture/offline-creative-time-stretch-study.md`,
 `docs/architecture/offline-creative-linked-stn-noise-morph-brief.md`,
@@ -682,6 +682,25 @@ comparator, or listening policy stops for docs-level reassessment. No acoustic
 output may guide conformance work. No parameter, coefficient, window, phase,
 seed, or scalar sweep is allowed.
 
+When such a stop occurs before any acoustic checkpoint, a docs-only
+reconciliation may resume the retained working implementation without creating
+a new candidate identity only when all of these are true:
+
+- the stop commit, tree, failed owner, and complete conformance ledger remain
+  retained and immutable
+- no synthetic gate, rendered comparator, listening output, or acoustic ref
+  exists
+- canonical authority freezes one exact correction before further execution
+- the docs closeout commit is applied to the isolated worktree
+- the resumed tree starts clean and reruns the complete compile, construction,
+  and structural sequence twice before creating an acoustic ref
+
+The resumed implementation may change only the newly frozen authority and its
+direct conformance owners. It may not use prior partial passes as admission,
+inspect acoustic output, sweep the correction, or alter any unrelated renderer
+or gate rule. If executable state was deleted or cannot be proved identical,
+the resume exception does not apply.
+
 After the acoustic checkpoint, the order is fixed:
 
 1. synthetic acoustic and integrity admission
@@ -763,9 +782,10 @@ Selection was not implementation authority. Batch 31.57 bound the existing
 complete renderer and every executable gate to Rule 11 in the same canonical
 brief. It changed protocol ownership and candidate identity only. The audit
 found no missing authority requiring a DSP, source, seed, metric, threshold,
-assertion, comparator, or listening-policy choice. Batch 31.58 is ready. It
-must start from fresh source and may iterate only through conformance before
-one immutable acoustic checkpoint.
+assertion, comparator, or listening-policy choice. Batch 31.58 started from
+fresh source and later exposed the transient-refinement authority gap recorded
+below. Batch 31.59 reconciles that gap before retained pre-acoustic execution
+may resume.
 
 ## Initial Promotion Sequence
 
@@ -1242,14 +1262,38 @@ structural vectors, cleanup, and pass disposition explicit. It corrected old
 prose that called retained half-cosine edges linear and described `Y07` with an
 adjacent-region denominator; retained artifacts prove half-cosine edges and a
 full-active-support denominator. No DSP formula, source bytes, comparator
-number, threshold, assertion, or listening policy changed. Batch 31.58 is now
-ready; no creative renderer is admitted.
+number, threshold, assertion, or listening policy changed. Batch 31.58 was
+therefore opened; no creative renderer was admitted.
+
+Batch 31.58 stopped during pre-acoustic conformance at retained commit
+`ae618c90827ddd748dc224632920ee32f785cc65`, tree
+`de551fc6fa458d500239ac603ed26dee1a4458d6`. Compile, construction `1/1`,
+independent full-buffer `S05`, and bounded-allocation `S17` had passed focused
+controls. `S09` then proved a missing authority rule: the reconstructed
+isolated impulse's adjacent derivative powers differ by two non-negative
+`f64` encodings, so exact comparison chooses source sample `p+1` while frozen
+`Y03` requires authored `p`. No formal clean pass, synthetic gate, rendered
+audio, listening, or acoustic ref ran. Candidate code did not enter `main`.
+
+Batch 31.59 freezes the correction in the canonical brief. Transient
+refinement treats unsigned bit-pattern distances `0..4` between non-negative
+finite `f64` derivative-power scores as equality, with earliest-sample
+ownership; distance `5` or greater selects the larger score. Scores remain
+unchanged. `S09` owns exact boundary vectors and the observed distance-two
+impulse pair. `Y03` distinguishes the refined source anchor from the mapped
+target anchor stored in the event ledger.
+
+The retained worktree satisfies the pre-acoustic resume rule. Batch 31.60 may
+apply the docs closeout, implement only this correction and its direct owners,
+then restart full conformance twice. The identity remains
+`ConformanceBoundLinkedStnNoiseMorph`. No creative renderer is admitted.
 
 ## Next Task
 
-Run Batch 31.58 in isolated worktree `signal-candidate-31-58` from the exact
-Batch 31.57 closeout commit. Implement fresh private
-`ConformanceBoundLinkedStnNoiseMorph`, iterate only compile, construction, and
-structural conformance, then freeze one acoustic ref before any render. Do not
-recover source, alter `main`, open routing or product exposure, touch Loophole
-or Chorus, merge, or push.
+Apply the Batch 31.59 docs closeout commit to retained isolated worktree
+`signal-candidate-31-58`. Implement only the frozen four-ULP transient
+refinement, target-ledger semantics, and direct `S09`/`Y03` ownership. Commit a
+clean tree, then restart complete compile, construction `1/1`, and structural
+`18/18` conformance twice before creating any acoustic ref. Do not run acoustic
+gates, alter `main`, open routing or product exposure, touch Loophole or Chorus,
+merge, or push.

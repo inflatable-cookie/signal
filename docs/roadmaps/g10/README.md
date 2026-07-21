@@ -1,7 +1,7 @@
 # g10 Milestones
 
-Status: creative stretch active; linked STN protocol-bound, candidate ready
-Updated: 2026-07-21
+Status: creative stretch active; linked STN pre-acoustic resume ready
+Updated: 2026-07-22
 
 ## Why this generation matters now
 
@@ -488,12 +488,16 @@ attempts. Its material-separated brief and pinned source backing remain intact,
 so it was selected once for fresh protocol binding. Batch 31.57 now freezes
 `ConformanceBoundLinkedStnNoiseMorph`, exact isolated identity, complete
 evidence authority, iterative conformance, and one later immutable acoustic
-checkpoint. No DSP entered `main`. Batch 31.58 is ready.
+checkpoint. No DSP entered `main`. Batch 31.58 stopped before acoustic identity
+when reconstructed impulse refinement exposed a missing numerical tie rule.
+Batch 31.59 freezes four-ULP earliest ownership, mapped-ledger semantics, and a
+bounded retained-worktree resume. Batch 31.60 is ready; no renderer is admitted.
 
 ## Next Task
 
-Run `g10.031` Batch 31.58 in isolated worktree `signal-candidate-31-58` from
-the exact Batch 31.57 closeout commit. Implement only the frozen private
-linked-STN renderer and complete conformance before its acoustic ref. Keep
-`g10.028`, routing, product exposure, other creative characters, and cross-repo
-work unchanged. Do not recover candidate source, alter `main`, merge, or push.
+Run `g10.031` Batch 31.60 in retained isolated worktree
+`signal-candidate-31-58`. Apply the Batch 31.59 docs closeout, implement only
+the frozen transient-refinement and target-ledger correction, then restart full
+conformance twice before its acoustic ref. Keep `g10.028`, routing, product
+exposure, other creative characters, and cross-repo work unchanged. Do not
+alter `main`, merge, or push.

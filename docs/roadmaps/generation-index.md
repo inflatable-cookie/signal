@@ -1,7 +1,7 @@
 # Roadmap Generation Index
 
 Status: active
-Updated: 2026-07-21
+Updated: 2026-07-22
 
 ## Current generation posture
 
@@ -114,9 +114,11 @@ Updated: 2026-07-21
   through reassessment. Batch 31.56 finds every diffusive, cyclic, and renewal
   owner ineligible through acoustic rejection, superseded authority, or an
   architecture-level miss. Linked STN is the sole complete conformance-only
-  family and was selected once for fresh protocol binding. Batch 31.57 now
-  freezes the exact Rule 11 identity and evidence boundary. Batch 31.58 is
-  ready in one isolated worktree; no renderer is admitted.
+  family and was selected once for fresh protocol binding. Batch 31.57 froze
+  the exact Rule 11 identity and evidence boundary. Batch 31.58 stopped
+  pre-acoustic on contradictory impulse-refinement and event-anchor authority.
+  Batch 31.59 freezes one four-ULP earliest-owner rule and retained-worktree
+  resume. Batch 31.60 is ready; no renderer is admitted.
 - Lifecycle reconciliation then closed stale `g10.001` and `g10.003` active
   markers and paused `g10.017` on its remaining hardware evidence. Signal's
   capture and live-monitor implementation is present. That lifecycle
@@ -141,7 +143,7 @@ Updated: 2026-07-21
 | `g06` | 2026-03-13 | Continue beyond reusable-boundary closeout with runtime recovery depth, instrumentation, feature breadth, and Loophole-facing runtime evidence | Closed on 2026-03-16 after recovery/resumability, profiling, VST3/AU, MIDI/event depth, hardware/external-I/O, media services, integrated acceptance, bounded soak, and generation-closeout promotion work landed |
 | `g07` | 2026-03-13 | Seed the post-`g06` feature-expansion queue around routing or multichannel depth, Linux-native breadth, control-surface substrate, and fuller time-stretch capability | Closed on 2026-03-19 after multichannel or spatial execution, LV2 and Linux backends, external MIDI/control surfaces, sample-domain stretch, integrated acceptance, and generation-closeout promotion work landed |
 | `g08` | 2026-03-19 | Continue beyond bounded feature-expansion closure with live Linux backend ownership, richer plugin or device protocol depth, immersive routing, and workflow-adjacent runtime services | Closed on 2026-03-22 after live Linux ownership, LV2 or plugin protocol depth, immersive render breadth, device-protocol substrate, preview workflows, grouped acceptance lanes, integrated acceptance, and final generation-closeout work landed |
-| `g10` | 2026-06-11 | Turn the 2026-06-11 deep audit into a remediation program: fix the real audio path, demolish simulated/narration mass (~70-80k LoC), consolidate hygiene, defer rebuilds to demand | Active; `g10.030` retained the frozen stretch baseline and `g10.031` has one protocol-bound linked-STN candidate ready |
+| `g10` | 2026-06-11 | Turn the 2026-06-11 deep audit into a remediation program: fix the real audio path, demolish simulated/narration mass (~70-80k LoC), consolidate hygiene, defer rebuilds to demand | Active; `g10.030` retained the frozen stretch baseline and `g10.031` has one reconciled linked-STN pre-acoustic resume ready |
 | `g09` | 2026-04-08 | Turn the audit findings into a contract-backed realization, hardening, and interactive-proof program | Closed on 2026-04-11 after plugin and backend realization, production-readiness gating, and operator-visible demo proof landed |
 
 ## Rollover policy
@@ -161,8 +163,8 @@ If that cleanup has not happened, stay in the current generation and finish the 
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the current active-generation front door.
-Run `g10.031` Batch 31.58 in isolated worktree `signal-candidate-31-58` from
-the exact Batch 31.57 closeout commit. Implement only the frozen private
-linked-STN renderer and complete conformance before its acoustic ref. Keep
-transparent stretch, routing, and product exposure unchanged. Do not recover
-candidate source, alter `main`, merge, or push.
+Run `g10.031` Batch 31.60 in retained isolated worktree
+`signal-candidate-31-58`. Apply the Batch 31.59 docs closeout, implement only
+the frozen transient-refinement and target-ledger correction, then restart full
+conformance twice before its acoustic ref. Keep transparent stretch, routing,
+and product exposure unchanged. Do not alter `main`, merge, or push.
