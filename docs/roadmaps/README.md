@@ -144,8 +144,11 @@ through epsilon-log interpolation and emitted deterministic samples around
 synthetic or listening. The product target remains active and unadmitted;
 Batch 31.50 now freezes zero-preserving v5. Exact-zero covariance,
 excitation, recombination, and output encoding are owned without changing any
-positive-power rule, memory bound, or quality gate. One fresh isolated
-implementation is ready.
+positive-power rule, memory bound, or quality gate. Batch 31.51 passed
+construction `1/1`, then failed structural `S02` at `17/18`: its handwritten
+8 kHz vector asserted `Q_h=5`, while the formula and renderer produce `9`.
+The candidate was deleted before synthetic or listening. Exact geometry-vector
+audit is ready.
 Offline artifacts still need a streaming artifact writer/cache target for full
 peak-memory closure. Mono callback-state DSP has a
 no-allocation proof, linked stereo is implemented, ratio scheduling has
@@ -272,7 +275,7 @@ Before rollover:
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the active generation front door.
-`g10.031` Batch 31.51 is ready for one isolated zero-preserving-v5
-implementation. Keep the transparent successor lane, `g10.028`, routing,
-product exposure, and cross-repo work closed. Do not repair or recover Batch
-31.49 or merge a candidate.
+`g10.031` Batch 31.52 is ready for docs-only geometry-vector audit. Keep the
+transparent successor lane, `g10.028`, routing, product exposure, and
+cross-repo work closed. Do not repair or recover Batch 31.51 or implement
+candidate DSP.

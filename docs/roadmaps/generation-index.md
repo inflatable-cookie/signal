@@ -97,7 +97,10 @@ Updated: 2026-07-21
   `1e-14`. The candidate was deleted before synthetic or listening. Batch
   31.50 froze zero-preserving v5 across covariance, excitation,
   recombination, and output encoding without changing positive-power behavior,
-  memory, or quality gates. One fresh isolated implementation is next.
+  memory, or quality gates. Batch 31.51 passed construction `1/1`, then failed
+  structural `S02` at `17/18` because its handwritten 8 kHz vector asserted
+  `Q_h=5` while the formula and renderer produce `9`. The candidate was deleted
+  before synthetic or listening. Batch 31.52 geometry-vector audit is next.
 - Lifecycle reconciliation then closed stale `g10.001` and `g10.003` active
   markers and paused `g10.017` on its remaining hardware evidence. Signal's
   capture and live-monitor implementation is present. That lifecycle
@@ -122,7 +125,7 @@ Updated: 2026-07-21
 | `g06` | 2026-03-13 | Continue beyond reusable-boundary closeout with runtime recovery depth, instrumentation, feature breadth, and Loophole-facing runtime evidence | Closed on 2026-03-16 after recovery/resumability, profiling, VST3/AU, MIDI/event depth, hardware/external-I/O, media services, integrated acceptance, bounded soak, and generation-closeout promotion work landed |
 | `g07` | 2026-03-13 | Seed the post-`g06` feature-expansion queue around routing or multichannel depth, Linux-native breadth, control-surface substrate, and fuller time-stretch capability | Closed on 2026-03-19 after multichannel or spatial execution, LV2 and Linux backends, external MIDI/control surfaces, sample-domain stretch, integrated acceptance, and generation-closeout promotion work landed |
 | `g08` | 2026-03-19 | Continue beyond bounded feature-expansion closure with live Linux backend ownership, richer plugin or device protocol depth, immersive routing, and workflow-adjacent runtime services | Closed on 2026-03-22 after live Linux ownership, LV2 or plugin protocol depth, immersive render breadth, device-protocol substrate, preview workflows, grouped acceptance lanes, integrated acceptance, and final generation-closeout work landed |
-| `g10` | 2026-06-11 | Turn the 2026-06-11 deep audit into a remediation program: fix the real audio path, demolish simulated/narration mass (~70-80k LoC), consolidate hygiene, defer rebuilds to demand | Active; `g10.030` retained the frozen stretch baseline and `g10.031` has one zero-preserving Linked STN v5 candidate ready |
+| `g10` | 2026-06-11 | Turn the 2026-06-11 deep audit into a remediation program: fix the real audio path, demolish simulated/narration mass (~70-80k LoC), consolidate hygiene, defer rebuilds to demand | Active; `g10.030` retained the frozen stretch baseline and `g10.031` is auditing linked-STN geometry vectors |
 | `g09` | 2026-04-08 | Turn the audit findings into a contract-backed realization, hardening, and interactive-proof program | Closed on 2026-04-11 after plugin and backend realization, production-readiness gating, and operator-visible demo proof landed |
 
 ## Rollover policy
@@ -142,6 +145,7 @@ If that cleanup has not happened, stay in the current generation and finish the 
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the current active-generation front door.
-Run `g10.031` Batch 31.51 only under fresh zero-preserving v5 authority. Keep
-transparent stretch, routing, and product exposure unchanged. Do not recover
-Batch 31.49 or merge a candidate.
+Run `g10.031` Batch 31.52 docs-only. Audit every linked-STN geometry vector and
+bind the exact structural table into construction authority. Keep transparent
+stretch, routing, and product exposure unchanged. Do not repair Batch 31.51 or
+implement candidate DSP.

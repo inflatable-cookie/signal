@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: creative stretch active; zero-preserving linked-STN v5 candidate next
+Status: creative stretch active; linked-STN geometry-vector audit next
 Updated: 2026-07-21
 
 ## Why this generation matters now
@@ -262,8 +262,10 @@ Do not start Loophole or Chorus planning from Signal internals.
     passed construction but failed structural `S15` exact silence at `17/18`
     and was deleted before synthetic or listening; Batch 31.50 froze
     zero-preserving v5 across covariance, excitation, recombination, and
-    output encoding without changing positive-power behavior; explicit
-    `Cyclic` stays closed
+    output encoding without changing positive-power behavior; Batch 31.51
+    passed construction but failed structural `S02` at `17/18` on an incorrect
+    handwritten 8 kHz `Q_h` vector and was deleted before synthetic or
+    listening; explicit `Cyclic` stays closed
 
 ## Stretch Boundary
 
@@ -432,10 +434,19 @@ memory change, or quality-gate relaxation enters. Fresh
 `ZeroPreservingGeometryAuditedBoundedLinkedStnNoiseMorph` authority is ready
 for one isolated implementation. No DSP or product surface entered `main`.
 
+Batch 31.51 passed compile and construction `1/1`, freezing checkpoint
+`95909451` and tree `080bea36`. Structural admission stopped at `17/18`:
+`S02` asserted `Q_h=5` at 8 kHz, while the frozen formula and renderer produce
+`odd(round(0.240*8000/256))=9`. The construction owner checked maxima but did
+not cross-check that exact structural vector. Synthetic and listening stayed
+closed. The candidate worktree, branch, checkpoint reference, source, tests,
+build state, receipt, and outputs were deleted without repair or rerun. No DSP
+or product surface entered `main`.
+
 ## Next Task
 
-Run `g10.031` Batch 31.51 only in `signal-candidate-31-51` on the fresh v5
-branch named by the canonical brief. Implement once, complete construction,
-checkpoint, structural, and synthetic admission in order. Keep `g10.028`,
-routing, product exposure, other creative characters, and cross-repo work
-unchanged. Do not recover Batch 31.49, merge, or push.
+Run `g10.031` Batch 31.52 docs-only. Independently audit every exact geometry
+vector, witness, rounding tie, and construction assertion, then bind the
+structural table into construction authority. Keep `g10.028`, routing, product
+exposure, other creative characters, and cross-repo work unchanged. Do not
+repair or recover Batch 31.51, implement DSP, merge, or push.

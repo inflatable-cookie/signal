@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: active; Batch 31.50 complete, Batch 31.51 ready
+Status: active; Batch 31.51 rejected, Batch 31.52 vector audit ready
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -1698,10 +1698,39 @@ Decision:
 - creative quality, exact implementation, synthetic character, mono
   listening, and independent stereo remain unproved
 
+## Batch 31.51 - Isolated Zero-Preserving Linked STN Candidate
+
+Status: complete; candidate rejected at structural geometry-vector gate
+
+- [x] started the exact disposable worktree and branch from authorized `main`
+  head `570da1604ba21204c1dccfb3aed6d2980ed239ac`
+- [x] implemented only the frozen private module and declaration; no public,
+  product, report, fixture, cache, artifact, Loophole, or Chorus surface
+- [x] passed compile without repair
+- [x] passed construction `1/1` and froze checkpoint `95909451` with tree
+  `080bea36`
+- [x] ran structural admission once; `S01` and `S03..S18` passed, while `S02`
+  failed the handwritten 8 kHz `Q_h=5` vector
+- [x] confirmed the formula and renderer both produce
+  `odd(round(0.240*8000/256))=9`; the evidence vector was wrong
+- [x] diagnosed construction coverage: exhaustive maxima passed but the
+  per-rate structural vector was not independently cross-checked
+- [x] kept synthetic and listening closed; no rendered-output digest exists
+- [x] deleted the candidate worktree, branch, checkpoint reference, source,
+  tests, build state, receipt, and outputs without repair or rerun
+- [x] kept production DSP and all unrelated work unchanged
+
+Decision:
+
+- zero-preserving v5 is rejected; no creative renderer is admitted
+- this is executable-evidence failure, not a renderer-geometry result
+- Batch 31.52 must audit all exact geometry vectors and bind them into
+  construction before fresh authority can be considered
+
 ## Later Batches
 
-Closed or paused without promotion. Batch 31.51 isolated zero-preserving-v5
-implementation is the sole ready work. Every later product batch still
+Closed or paused without promotion. Batch 31.52 geometry-vector audit is the
+sole ready work. Every later product batch still
 requires a separately admitted complete renderer:
 
 - minimal production admission
@@ -1820,12 +1849,15 @@ requires a separately admitted complete renderer:
 - [x] no candidate DSP entered `main` after v4 rejection
 - [x] exact-silence reassessment froze one complete zero-preserving v5 authority
   without candidate DSP or product exposure
+- [x] one zero-preserving v5 candidate passed construction `1/1`, then failed
+  structural admission at `17/18` on an incorrect handwritten geometry vector
+- [x] the rejected v5 checkpoint, implementation, tests, worktree, branch,
+  build state, and outputs were deleted without repair or rerun
+- [x] no candidate DSP entered `main` after v5 rejection
 
 ## Next Task
 
-Run Batch 31.51 only in `signal-candidate-31-51` on the fresh
-zero-preserving-v5 branch named by the canonical brief. Implement once, run
-compile and construction, freeze one checkpoint, then run structural and
-synthetic admission in order. Stop before listening on any miss. Do not repair
-or recover Batch 31.49, change production code, touch Loophole or Chorus,
-merge, or push.
+Run Batch 31.52 docs-only. Independently audit every geometry vector, witness,
+rounding tie, and construction assertion. Bind the exact structural table into
+construction before deciding whether fresh authority exists. Do not repair or
+recover Batch 31.51, implement DSP, touch Loophole or Chorus, merge, or push.

@@ -1,10 +1,10 @@
 # Offline Creative LinkedStnNoiseMorph Renderer Brief
 
-Status: zero-preserving v5 frozen; one fresh isolated candidate ready
+Status: zero-preserving v5 rejected at structural geometry-vector admission
 Owner: dsp
 Updated: 2026-07-21
 Contract: `085`
-Roadmap: `g10.031`, Batches 31.42, 31.44, 31.46, 31.48, 31.49, and 31.50
+Roadmap: `g10.031`, Batches 31.42, 31.44, 31.46, 31.48, 31.49, 31.50, and 31.51
 
 ## Decision
 
@@ -1097,6 +1097,47 @@ This is fresh complete authority, not a repair or revival of checkpoint
 implemented once from the canonical brief in the v5 worktree and branch. No
 candidate DSP or product surface entered `main` during reconciliation.
 
+## Batch 31.51 Candidate Outcome
+
+The isolated implementation started from
+`570da1604ba21204c1dccfb3aed6d2980ed239ac`. Compile passed without repair.
+Construction passed `1/1`, freezing checkpoint
+`959094513b6847cdeb8a3c0bf424efd09ce1fb6f` and tree
+`080bea3698e5b70760edd6b38dcccb995697d2c2`.
+
+Executable identity:
+
+| File | SHA-256 |
+| --- | --- |
+| `decomposition.rs` | `2ae62457724047b32f40d93a25ab24d80779c5e9a30f89f4f52e8897e853b3a5` |
+| `mod.rs` | `2cb89b0b01596c79b3f6cd79ac7569823a3c199c16b2d3b0c1287030a61a0389` |
+| `noise.rs` | `47d5af7f3321aac33332fc5f441ad3bc145d4d405c089a6b165cee5292b49eb6` |
+| `plan.rs` | `3ca6d28e4f12acd743e778218d7cac9b4446b1f2278eb071c00b0280bcdb1e29` |
+| `synthesis.rs` | `d0ab6bc200b7d76c474c37c69024bb0fc08898888614e1f7f10237e435b3c138` |
+| `tests.rs` / `EVIDENCE_SPEC` / `MEMORY_SPEC` | `28fc64c6c48040404df446689dda13e9daf3cf062dd19a56bb688d22f627b197` |
+| `tonal.rs` | `b003284c0d4e47c7dfdfac7c13fcec9f1904bf6be07d16a4e136db41df3c06c7` |
+| `transient.rs` | `bbfd17bfc50b87cbdbae8b6ada2112b5dcc8113f107852f0713e8c484a193410` |
+| `Cargo.lock` | `e3848a40d2ea1ff88a0e036df40d1fefa56c7aca950a95262c1d8c5668fd394d` |
+
+The checkpoint used `rustc 1.96.0 (ac68faa20 2026-05-25)`, host
+`aarch64-apple-darwin`, LLVM `22.1.2`, on Darwin `25.5.0` arm64.
+
+Structural admission ran once and finished `17/18`. `S01` and `S03..S18`
+passed. `S02` failed its handwritten `F=8000` geometry vector: the checkpoint
+asserted `Q_h=5`, while the frozen formula gives
+`odd(round(0.240*8000/256))=odd(8)=9`. The renderer computed `9` correctly.
+No synthetic owner or rendered synthetic output exists, so there are no
+synthetic rows or output digests. Listening did not open.
+
+The dominant cause is incomplete executable geometry authority. Construction
+proved only exhaustive maxima and did not independently cross-check the
+per-rate structural vector. Repairing or rerunning the frozen checkpoint is
+prohibited.
+
+The candidate worktree, branch, checkpoint reference, private source, tests,
+build state, receipt, and outputs were deleted. No candidate DSP entered
+`main`. Zero-preserving v5 is rejected and no linked-STN candidate is ready.
+
 ## Sources
 
 - [Creative source triangulation](../research/specimen-dossiers/creative-stretch-source-triangulation.md)
@@ -1109,7 +1150,7 @@ candidate DSP or product surface entered `main` during reconciliation.
 
 ## Next Task
 
-Run Batch 31.51 only in the fresh v5 worktree and branch named above. Implement
-zero-preserving v5 once, complete compile and construction, freeze one
-checkpoint, then run structural and synthetic admission in order. Stop before
-listening on any miss. Do not recover Batch 31.49 or change production code.
+Run Batch 31.52 docs-only. Independently audit every frozen geometry vector,
+witness, tie, and construction assertion, then make construction own the exact
+structural table before any fresh identity is considered. Do not recover or
+repair Batch 31.51, implement candidate DSP, or change production code.

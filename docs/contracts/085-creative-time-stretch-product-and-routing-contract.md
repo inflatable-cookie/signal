@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: active PaulX-like `Dream`; zero-preserving linked-STN v5 ready
+Status: active PaulX-like `Dream`; linked-STN geometry-vector audit ready
 Owner: core-product
 Updated: 2026-07-21
 Related contracts: `046`, `048`, `084`
@@ -781,8 +781,11 @@ no materially different source-backed renewal owner, that path is closed.
     the complete linked-STN authority. Complete; zero-preserving v5 is frozen
     docs-only under fresh identity.
 49. Implement zero-preserving v5 once, checkpoint after construction, then run
-    structural and synthetic admission in order. Ready; stop before listening
-    on any miss.
+    structural and synthetic admission in order. Complete; construction passed
+    `1/1`, structural stopped at `17/18` on an incorrect `S02` geometry vector,
+    and the candidate was deleted before synthetic or listening.
+50. Independently audit every exact geometry vector and bind the structural
+    table into construction authority. Ready; docs and architecture only.
 
 `Spectral`/`Rough`, coherent overlap, `LayeredCloud`, the upper overlap, dynamic
 ratios, and automatic routing still require separate reopening decisions backed
@@ -997,10 +1000,23 @@ Fresh `ZeroPreservingGeometryAuditedBoundedLinkedStnNoiseMorph` authority is
 ready for one isolated implementation. It does not revive checkpoint
 `e2ef62f8` or any deleted source. No creative renderer is admitted.
 
+Batch 31.51 implemented that authority once from `570da160`. Compile and
+construction `1/1` passed, freezing checkpoint `95909451` and tree
+`080bea36`. Structural admission completed `17/18`. `S02` asserted `Q_h=5`
+at `F=8000`; the frozen formula and renderer both produce
+`odd(round(0.240*8000/256))=9`.
+
+The dominant cause is incomplete executable geometry authority. Construction
+checked exhaustive maxima but not the exact per-rate vector consumed by
+structural admission. No checkpoint repair or rerun is permitted. Synthetic
+and listening stayed closed. The worktree, branch, checkpoint reference,
+source, tests, build state, receipt, and outputs were deleted. No creative
+renderer is admitted.
+
 ## Next Task
 
-Run Batch 31.51 only in the fresh worktree and branch named by the
-zero-preserving v5 brief. Implement once, complete compile and construction,
-freeze one checkpoint, then run structural and synthetic owners in order. Stop
-before listening on any miss. Do not recover Batch 31.49, open routing or
-product exposure, touch Loophole or Chorus, or push.
+Run Batch 31.52 docs-only. Independently audit every frozen geometry vector,
+witness, rounding tie, and construction assertion, then bind the exact
+structural table into construction before any fresh candidate identity. Do not
+recover or repair Batch 31.51, implement candidate DSP, open routing or product
+exposure, touch Loophole or Chorus, or push.
