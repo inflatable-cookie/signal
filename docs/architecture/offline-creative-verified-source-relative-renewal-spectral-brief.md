@@ -1,8 +1,8 @@
 # Offline Creative SupportAuditedListeningLedSourceRelativeRenewalSpectral Renderer Brief
 
-Status: frozen; Batch 31.36 candidate ready
+Status: frozen; Batch 31.36 candidate rejected at source-relative stereo admission
 Owner: dsp
-Updated: 2026-07-20
+Updated: 2026-07-21
 Contract: `085`
 Roadmap: `g10.031`, Batches 31.28-31.36
 
@@ -43,6 +43,43 @@ The only new construction boundary is one immutable authored-support table
 shared by `Y08` range assembly and its construction proof. Discontinuity and
 dropout ranges are separate typed values. The renderer formulas, sources,
 thresholds, seed, gates, listening packs, and promotion order are unchanged.
+
+## Batch 31.36 Outcome
+
+Fresh checkpoint `5d8eaf4555a783ae8efee6479c972c8acca1aed4` passed compile,
+construction `1/1`, structural admission `15/15`, and synthetic admission
+`9/9` without post-checkpoint repair or rerun. `Y02` produced its complete
+listening-led diagnostic matrix. `Y08` passed under the frozen authored-support
+table.
+
+Concealed mono listening passed as `15/15` ties against PaulXStretch. The
+operator found every row broadly similar and usable. Residual observations
+were minor extra low-frequency noise and different exterior energy shape:
+Signal entered more gently and ended more abruptly, while PaulX began more
+solidly and carried a longer fade-out. Pack assembly added no fade, so this is
+renderer-owned behavior.
+
+The first attempted stereo assembly duplicated mono input and produced
+vacuous zero balance errors. Audit caught and discarded it before review. The
+valid gate used the five exact retained stereo originals and same-source
+PaulX captures. It rendered all `45` candidate rows: five sources, three
+ratios, and three `space` values.
+
+Source-relative stereo admission rejected all three `16x` bass rows at mapped
+window errors `1.998162..2.000356 dB` against the `1.50 dB` limit. All three
+`16x` full-mix rows reached `9.366481..9.418990 dB` and reversed local channel
+dominance. Their whole-render and band errors remained below `0.027 dB`; the
+failure is local image stability, not global gain or spectral balance.
+
+This is a terminal whole-candidate rejection. Speaker pre-screen and eligible
+independent stereo listening did not open. Cleanup deleted the disposable
+worktree, branch, checkpoint reference, module, tests, build state, and
+listening assembly. No candidate DSP or product surface entered `main`.
+
+Batch 31.25 and Batch 31.36 now supply two complete renewal candidates with
+terminal linked-stereo failures: first global source-balance inversion, now
+local mapped-window dominance reversal. Contract `084` requires architecture
+reassessment before any further candidate. Do not tune or rerun this renderer.
 
 ## Batch 31.34 Outcome
 
@@ -485,14 +522,13 @@ single-seed admission receipt.
 - [Batch 31.33 listening-led reopening](../logs/2026-07/20-g10-031-listening-led-renewal-reopening.md)
 - [Batch 31.34 listening-led rejection](../logs/2026-07/20-g10-031-listening-led-renewal-rejection.md)
 - [Batch 31.35 impulse-support reconciliation](../logs/2026-07/20-g10-031-impulse-support-evidence-reconciliation.md)
+- [Batch 31.36 stereo rejection](../logs/2026-07/21-g10-031-support-audited-renewal-stereo-rejection.md)
 - [Creative product contract](../contracts/085-creative-time-stretch-product-and-routing-contract.md)
 
 ## Next Task
 
-Run Batch 31.36 only. Implement
-`SupportAuditedListeningLedSourceRelativeRenewalSpectral` once from fresh
-source in `signal-candidate-31-36`. Complete compile and exactly `1/1`
-construction, freeze one checkpoint, then run exactly `15/15` structural and
-`9/9` synthetic owners in order. Stop at the first terminal miss. Do not
-recover rejected source, alter the frozen renderer or gates, admit product
-surfaces, or push.
+Run Batch 31.37 only. Reassess linked-stereo ownership across the Batch 31.25
+global balance inversion and Batch 31.36 local mapped-window reversal. Either
+identify one materially different, source-backed complete stereo owner or
+close renewal without closing the PaulX-like product target. Do not implement,
+tune, recover candidate source, or change gates in that batch.

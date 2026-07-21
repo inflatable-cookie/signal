@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: active; Batch 31.35 complete, Batch 31.36 ready
+Status: active; Batch 31.36 rejected, Batch 31.37 ready
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -1150,31 +1150,67 @@ Authority:
 
 ## Batch 31.36 - Isolated Support-Audited Listening-Led Candidate
 
-Status: ready
+Status: complete; rejected at source-relative stereo admission
 
-- [ ] create `signal-candidate-31-36` on
+- [x] create `signal-candidate-31-36` on
   `candidate/g10-031-support-audited-listening-led-renewal`
-- [ ] implement only the fresh private six-file
+- [x] implement only the fresh private six-file
   `creative_support_audited_listening_led_renewal` family and one private
   `lib.rs` declaration; recover no rejected implementation or test source
-- [ ] use the named `SYNTHETIC_SUPPORTS` table as the sole dropout-support
+- [x] use the named `SYNTHETIC_SUPPORTS` table as the sole dropout-support
   authority and prove it in the construction owner
-- [ ] complete `effigy test compile` and exactly `1/1` construction owner
-- [ ] freeze one local checkpoint without pushing it
-- [ ] run exactly `15/15` structural owners once
-- [ ] run all nine synthetic owners once under `ADMISSION_SEED`; require the
+- [x] complete `effigy test compile` and exactly `1/1` construction owner
+- [x] freeze local checkpoint `5d8eaf45` without pushing it
+- [x] run exactly `15/15` structural owners once
+- [x] run all nine synthetic owners once under `ADMISSION_SEED`; require the
   complete listening-led `Y02` diagnostic and support-audited `Y08`
-- [ ] open retained concealed mono and stereo admission only after objective
+- [x] open retained concealed mono and stereo admission only after objective
   admission passes
-- [ ] stop at the first terminal miss; delete the complete candidate on
+- [x] stop at the first terminal miss; delete the complete candidate on
   rejection without tuning, repair, or rerun
-- [ ] keep public APIs, reports, fixtures, cache, routing, other characters,
+- [x] keep public APIs, reports, fixtures, cache, routing, other characters,
   Loophole, and Chorus unchanged
+
+Decision:
+
+- compile, construction `1/1`, structural `15/15`, and synthetic `9/9` passed
+  from the immutable checkpoint
+- concealed mono passed as `15/15` ties; minor extra low-end noise and a
+  gentler entry/more abrupt ending remain audible risks
+- the first duplicated-mono stereo assembly was audited out as non-evidence
+- valid same-source stereo admission rejected `16x` bass at about `2.00 dB`
+  mapped-window error and `16x` full mix at `9.37..9.42 dB` with local channel-
+  dominance reversal
+- whole-render and band balance remained close; local image stability is the
+  dominant failure
+- speaker and independent stereo listening did not open
+- worktree, branch, checkpoint reference, source, tests, build state, and
+  listening assembly were deleted; no candidate code entered `main`
+
+## Batch 31.37 - Renewal Stereo-Ownership Reassessment
+
+Status: ready; docs and architecture only
+
+- [ ] reconcile Batch 31.25's global source-balance inversion and Batch
+  31.36's local mapped-window reversal as repeated linked-stereo failure
+- [ ] identify the exact ownership missing from the renewal topology rather
+  than proposing a channel gain, threshold, coefficient, phase, or `space`
+  adjustment
+- [ ] inspect retained complete-source evidence for one materially different
+  linked-stereo owner that preserves the passed mono character and hard gates
+- [ ] either freeze one complete source-backed successor direction or close
+  renewal without closing the PaulX-like product target
+- [ ] keep candidate DSP, tests, harnesses, fixtures, APIs, routing, cache,
+  Loophole, and Chorus unchanged
+
+Stop before implementation. A local repair or another native-channel relation
+variant is not eligible. Any successor requires a complete-system ownership
+argument and a later fresh brief.
 
 ## Later Batches
 
-Closed or paused without promotion. Work after Batch 31.36 requires its exact
-admission decision:
+Closed or paused without promotion. Work after Batch 31.37 requires its exact
+architecture decision:
 
 - minimal production admission
 - coherent/diffusive overlap
@@ -1241,11 +1277,16 @@ admission decision:
   evidence-construction failure
 - [x] one fresh support-audited listening-led authority is frozen with an exact
   support table and separate discontinuity/dropout ranges
+- [x] one support-audited candidate passed all objective and concealed mono
+  gates, then reached terminal source-relative stereo rejection
+- [x] the rejected candidate worktree, branch, checkpoint reference, source,
+  tests, build state, and listening assembly were deleted without rerun
 - [x] no private renderer or product surface entered `main`
 
 ## Next Task
 
-Run Batch 31.36 only. Implement the frozen support-audited listening-led
-candidate once from fresh source. Complete compile and construction `1/1`,
-freeze one checkpoint, then run structural and synthetic admission in order.
-Do not recover rejected source, change gates, admit product surfaces, or push.
+Run Batch 31.37 only. Reassess the repeated renewal linked-stereo failure from
+the retained Batch 31.25 and Batch 31.36 evidence. Either identify one
+materially different, source-backed complete stereo owner or close renewal
+without closing the PaulX-like product target. Do not implement, tune, recover
+candidate source, change gates, or push.

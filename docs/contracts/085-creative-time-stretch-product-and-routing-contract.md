@@ -1,8 +1,8 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: active PaulX-like `Dream`; support-audited candidate ready
+Status: active PaulX-like `Dream`; renewal stereo ownership under reassessment
 Owner: core-product
-Updated: 2026-07-20
+Updated: 2026-07-21
 Related contracts: `046`, `048`, `084`
 Related architecture: `docs/architecture/offline-creative-time-stretch-study.md`,
 `docs/architecture/offline-creative-verified-source-relative-renewal-spectral-brief.md`,
@@ -566,6 +566,14 @@ exists. The failed executable broadened the gate; it did not demonstrate
 renderer dropout. Fresh support-audited authority is frozen without changing
 DSP or any terminal threshold.
 
+Batch 31.36 implemented that authority once. Checkpoint `5d8eaf45` passed
+compile, construction `1/1`, structural `15/15`, synthetic `9/9`, and
+concealed mono as `15/15` ties. The valid exact-source stereo gate rejected
+all three `16x` full-mix rows at `9.37..9.42 dB` mapped-window balance error
+with local channel-dominance reversal; `16x` bass also missed at about
+`2.00 dB`. Whole-render and band balance remained close. The candidate was
+deleted before speaker or independent stereo listening.
+
 ## Initial Promotion Sequence
 
 1. Comparator capture and target-character freeze. Complete.
@@ -656,8 +664,13 @@ DSP or any terminal threshold.
     complete-output dropout assertion over-broadened the frozen gate and is an
     executable-evidence construction failure.
 36. Implement `SupportAuditedListeningLedSourceRelativeRenewalSpectral` once
-    from fresh source under the frozen support table. Ready; no rejected
-    implementation or test source may be recovered.
+    from fresh source under the frozen support table. Complete; all objective
+    and concealed mono gates passed, then source-relative stereo admission
+    rejected local image stability at `16x`.
+37. Reassess renewal linked-stereo ownership across the two complete stereo
+    failures. Ready; docs and architecture only. Either identify one materially
+    different, source-backed complete owner or close renewal without closing
+    the PaulX-like product target.
 
 `Spectral`/`Rough`, coherent overlap, `LayeredCloud`, the upper overlap, dynamic
 ratios, and automatic routing still require separate reopening decisions backed
@@ -705,15 +718,23 @@ This does not reinterpret or revive Batch 31.34. Fresh
 one immutable support table, distinct discontinuity and dropout ranges, and
 the unchanged renderer and admission system.
 
+Batch 31.36 passed every construction, structural, synthetic, and concealed
+mono gate. The operator heard only minor extra low-end noise and opposite
+exterior energy weighting versus PaulX. Valid same-source stereo admission
+then exposed a different terminal defect: global and band balance stayed
+close, but mapped local windows drifted by up to `9.418990 dB` and reversed
+channel dominance on the `16x` full mix. The candidate is rejected and
+deleted. Alongside Batch 31.25's global balance inversion, this is a second
+complete renewal linked-stereo failure and requires architecture reassessment,
+not another relation-law adjustment.
+
 No public Rust enum, renderer, harness mode, fixture, artifact schema, runtime
 route, or product-facing claim entered `main`. `OfflineHighQuality` remains
 byte-exact and Contract `084` remains closed. No creative renderer is admitted.
 
 ## Next Task
 
-Run Batch 31.36 only. Implement the frozen
-`SupportAuditedListeningLedSourceRelativeRenewalSpectral` brief once from
-fresh source in its named disposable worktree. Freeze one checkpoint after
-compile and construction `1/1`, then run structural and synthetic admission in
-order. Do not recover rejected source, change gates, admit product surfaces,
-or push.
+Run Batch 31.37 only. Reassess the repeated renewal linked-stereo failure.
+Either identify one materially different, source-backed complete stereo owner
+or close renewal without closing the PaulX-like product target. Do not
+implement, tune, recover candidate source, change gates, or push.

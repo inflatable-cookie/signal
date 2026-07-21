@@ -1,8 +1,8 @@
 # Offline Creative Time-Stretch Study
 
-Status: active PaulX-like `Dream`; support-audited candidate ready
+Status: active PaulX-like `Dream`; renewal stereo ownership under reassessment
 Owner: dsp
-Updated: 2026-07-20
+Updated: 2026-07-21
 Contract: `085`
 Roadmap: `g10.031`
 
@@ -598,7 +598,20 @@ replicas remain owned by `Y03` and `Y04`.
 Fresh `SupportAuditedListeningLedSourceRelativeRenewalSpectral` authority
 freezes one exact source-support table and separate discontinuity/dropout range
 types. It changes no renderer formula, source, threshold, seed, listening pack,
-or product surface. Batch 31.36 is ready for one fresh implementation.
+or product surface.
+
+Batch 31.36 passed compile, construction `1/1`, structural `15/15`, synthetic
+`9/9`, and concealed mono as `15/15` ties. The operator reported only minor
+extra low-end noise and opposite exterior energy weighting versus PaulX.
+Valid same-source stereo admission then rejected `16x` local image stability:
+bass mapped-window error was about `2.00 dB`; full mix reached
+`9.37..9.42 dB` with channel-dominance reversal despite close whole-render and
+band balance. The candidate was deleted before speaker or independent review.
+
+This is the second complete renewal candidate to fail linked stereo. Batch
+31.25 inverted global source balance; Batch 31.36 preserved global balance but
+lost mapped local dominance. Contract `084` now requires architecture
+reassessment before another implementation.
 
 ## Sources
 
@@ -635,6 +648,7 @@ or product surface. Batch 31.36 is ready for one fresh implementation.
 
 ## Next Task
 
-Run Batch 31.36 only. Implement the frozen support-audited listening-led
-candidate once from fresh source. Do not recover rejected code, change gates,
-or expose product surfaces.
+Run Batch 31.37 only. Reassess renewal linked-stereo ownership from the two
+complete failures. Either identify one materially different, source-backed
+complete owner or close renewal without closing the PaulX-like product target.
+Do not implement, tune, recover rejected code, or change gates.

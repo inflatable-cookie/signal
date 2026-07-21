@@ -1,7 +1,7 @@
 # g10 Milestones
 
-Status: support-audited creative candidate ready
-Updated: 2026-07-20
+Status: renewal stereo ownership reassessment ready
+Updated: 2026-07-21
 
 ## Why this generation matters now
 
@@ -143,6 +143,12 @@ The 2026-07-19 consolidation reset is authoritative.
   rejected exact-zero impulse hops at all ratios. The candidate was deleted.
   Batch 31.35 classified the complete-output dropout scan as executable
   evidence-construction failure and froze fresh support-audited authority.
+  Batch 31.36 passed compile, construction `1/1`, structural `15/15`,
+  synthetic `9/9`, and concealed mono as `15/15` ties. Valid same-source
+  stereo admission then rejected `16x` local image stability: full-mix mapped
+  windows reached `9.37..9.42 dB` balance error with channel-dominance
+  reversal. The candidate was deleted. Batch 31.37 is a docs-only
+  linked-stereo ownership reassessment; no implementation is authorized.
 - The 2026-07-20 lifecycle reconciliation closes stale `g10.001` and
   `g10.003` active markers. It also records that Signal's `g10.017` capture and
   live-monitor implementation landed; that roadmap is paused only on explicit
@@ -217,9 +223,10 @@ Do not start Loophole or Chorus planning from Signal internals.
 - `g10.030` `complete`
   - stretch consolidated; candidate families closed; frozen baseline retained
 - `g10.031` `active`
-  - PaulX-like neutral `Dream` remains product intent; Batch 31.35 reconciled
-    the `Y08` support boundary and froze one fresh support-audited candidate;
-    Batch 31.36 is ready; explicit `Cyclic` stays closed
+  - PaulX-like neutral `Dream` remains product intent; Batch 31.36 passed all
+    objective and mono gates, then failed source-relative stereo admission and
+    was deleted; Batch 31.37 stereo-ownership reassessment is ready; explicit
+    `Cyclic` stays closed
 
 ## Stretch Boundary
 
@@ -276,9 +283,18 @@ candidate with every hard, replica, level, boundary, and stereo gate retained.
 Creative stretch still has no renderer, public API, harness surface, or product
 route on `main`.
 
+The support-audited successor later passed every objective and concealed mono
+gate. Its valid exact-source stereo gate preserved whole and band balance but
+lost local mapped-window dominance at `16x`, reaching `9.418990 dB` error on
+full mix. It was rejected and deleted before speaker or independent stereo
+review. This repeats renewal's linked-stereo failure class at a different
+scale, so the next work is architecture reassessment rather than another
+relation-law variant.
+
 ## Next Task
 
-Run `g10.031` Batch 31.36 only. Implement the frozen support-audited
-listening-led candidate once from fresh source. Complete compile and
-construction before checkpointing, then run admission in order. Keep
-`g10.028`, routing, product exposure, and cross-repo work paused. Do not push.
+Run `g10.031` Batch 31.37 only. Reassess the repeated renewal linked-stereo
+failure and either identify one materially different, source-backed complete
+owner or close renewal without closing the PaulX-like product target. Keep
+`g10.028`, implementation, routing, product exposure, and cross-repo work
+paused. Do not push.
