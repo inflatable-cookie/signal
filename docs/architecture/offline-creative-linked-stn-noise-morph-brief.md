@@ -1,6 +1,6 @@
 # Offline Creative LinkedStnNoiseMorph Renderer Brief
 
-Status: closed without promotion after executable-authority reassessment
+Status: selected for fresh Rule 11 binding; no implementation authorized
 Owner: dsp
 Updated: 2026-07-21
 Contract: `085`
@@ -1356,6 +1356,31 @@ eligibility decision, but it does not reopen this brief, revive a checkpoint,
 or authorize implementation. Any selection must start from fresh source and a
 new protocol-bound brief.
 
+## Batch 31.56 Eligibility Selection
+
+The family is selected once for fresh Rule 11 binding. It is the only closed
+creative lineage that never executed a synthetic, comparator, or listening
+gate. Diffusive spectral, cyclic, and renewal lineages all reached acoustic
+rejection and remain closed.
+
+Eligibility rests on three retained facts:
+
+- this brief owns one complete material-separated renderer and every current
+  map, tonal, transient, residual, stereo, boundary, memory, determinism, and
+  gate seam
+- pinned SiTraNoStar plus the STN and noise-morphing papers remain sufficient
+  clean-room source backing for the architecture
+- the v6 `S06` plateau-tie and `S18` private-surface misses are correctable
+  implementation conformance defects under frozen prose, not unresolved DSP
+  or evidence choices
+
+Selection does not revive this historical authority or any deleted checkpoint.
+Batch 31.57 must update this same canonical file with one fresh identity and a
+self-contained Rule 11 boundary. Compile, construction, and all `S01..S18`
+structural owners must pass together before the acoustic checkpoint. If that
+brief audit requires any renderer formula, source, seed, metric, threshold,
+assertion, comparator, or listening-policy choice, linked STN closes instead.
+
 ## Sources
 
 - [Creative source triangulation](../research/specimen-dossiers/creative-stretch-source-triangulation.md)
@@ -1368,7 +1393,7 @@ new protocol-bound brief.
 
 ## Next Task
 
-Run Batch 31.56 as docs-only creative-owner eligibility and selection under
-Contract `085` Rule 11. Classify linked-STN alongside every closed family and
-select at most one complete owner or pause. Do not recover checkpoints, write
-DSP, merge, or push.
+Run Batch 31.57 as docs-only linked-STN protocol binding. Preserve the complete
+renderer and gates, freeze one fresh identity, and place the immutable acoustic
+checkpoint after complete conformance. Do not recover checkpoints, write DSP,
+merge, or push.

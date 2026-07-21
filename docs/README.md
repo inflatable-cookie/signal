@@ -81,9 +81,9 @@ strict lane.
 
 ## Next Task
 
-Run `g10.031` Batch 31.56 as docs-only creative-owner eligibility and
-selection. Classify every closed family under Contract `085` Rule 11, then
-select at most one complete source-backed owner or pause. Do not recover
-candidate source, implement DSP, change production, routing, product exposure,
-Loophole, or Chorus. Only drop into `specs/` when a strict lane is explicitly
-reopened.
+Run `g10.031` Batch 31.57 as docs-only linked-STN protocol binding. Preserve
+the selected complete renderer and gates, freeze one fresh identity in the
+canonical brief, and place the immutable acoustic checkpoint after full
+conformance. Do not recover candidate source, implement DSP, change production,
+routing, product exposure, Loophole, or Chorus. Only drop into `specs/` when a
+strict lane is explicitly reopened.

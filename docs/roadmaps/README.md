@@ -164,8 +164,12 @@ closed after six attempts and no acoustic evidence. This opened Batch 31.55 as
 docs-only creative-candidate evidence-protocol reassessment.
 Batch 31.55 now freezes iterative compile/construction/structural conformance
 before one immutable acoustic checkpoint. Exact source and test identity stay
-available through reassessment without entering `main`. Batch 31.56 is ready
-for docs-only creative-owner eligibility and selection.
+available through reassessment without entering `main`. Batch 31.56 finds every
+diffusive, cyclic, and renewal owner ineligible through acoustic rejection,
+superseded authority, or an architecture-level miss. Linked STN is the sole
+complete conformance-only lineage, remains source-backed, and is selected once
+for fresh protocol binding. Batch 31.57 is ready docs-only; its later
+implementation batch remains blocked.
 Offline artifacts still need a streaming artifact writer/cache target for full
 peak-memory closure. Mono callback-state DSP has a
 no-allocation proof, linked stereo is implemented, ratio scheduling has
@@ -292,8 +296,9 @@ Before rollover:
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the active generation front door.
-Run `g10.031` Batch 31.56 as docs-only creative-owner eligibility and
-selection. Classify every closed family under Contract `085` Rule 11, then
-select at most one complete source-backed owner or pause. Keep the transparent
-successor lane, `g10.028`, routing, product exposure, and cross-repo work
-closed. Do not recover candidate source, implement DSP, merge, or push.
+Run `g10.031` Batch 31.57 as docs-only linked-STN protocol binding. Update the
+one canonical brief with a fresh identity and place the immutable acoustic
+checkpoint after full compile, construction, and structural conformance. Keep
+the transparent successor lane, `g10.028`, routing, product exposure, and
+cross-repo work closed. Do not recover candidate source, implement DSP, merge,
+or push.

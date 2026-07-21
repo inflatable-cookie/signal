@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: active PaulX-like `Dream`; evidence protocol frozen, owner selection ready
+Status: active PaulX-like `Dream`; linked STN selected for protocol binding
 Owner: core-product
 Updated: 2026-07-21
 Related contracts: `046`, `048`, `084`
@@ -718,6 +718,56 @@ architecture or an explicit evidence-backed product-gate change addresses that
 failure class. Two acoustic checkpoints failing the same dominant cause still
 trigger architecture reassessment under Contract `084` Rule 7.
 
+#### Batch 31.56 owner selection
+
+Materially different renderer owners have separate rows. Identities that
+changed only evidence construction, seed ownership, gate classification, or
+candidate isolation stay with their parent DSP family. A later
+conformance-only identity does not erase an earlier acoustic result from that
+family.
+
+| Closed family | Highest valid stage | Rule 11 class | Decision |
+| --- | --- | --- | --- |
+| `DiffuseSpectral` | structural pass, then synthetic crest rejection | acoustic rejection | closed |
+| `ContinuousExcitationSpectral` | `12/13` structural; linked relation failed | conformance-only, superseded | ineligible; current brief does not own the failed relation |
+| `ContinuousExcitationComplexRelation` | coefficient relation proof exposed an impossible anti-phase negation/swap expectation | conformance-only, contradictory | ineligible; correction requires new relation authority |
+| `CyclicGrain` | structural pass, then synthetic pitch rejection | acoustic rejection | closed |
+| `SimilarityAlignedCyclic` | `6/7` structural; frozen shortlist could not reach the exact natural continuation | conformance-only, architecture miss | ineligible; correction changes the search owner |
+| `RenewalSpectral` | structural pass, then synthetic crest rejection under the superseded unmatched gate | acoustic receipt, superseded architecture | ineligible; corrected source-backed blend belongs to the compensated family |
+| compensated/variance/audited renewal | structural and synthetic pass plus concealed-mono pass, then stereo image rejection | acoustic and stereo rejection | closed |
+| source-relative/listening-led/support-audited/comparator-audited renewal | support-audited identity passed structural, synthetic, and concealed mono, then failed stereo; after stereo policy changed, comparator-audited identity failed synthetic admission | acoustic and stereo rejection | closed |
+| linked STN: `LinkedStnNoiseMorph` through construction-bound v6 | compile and construction passed; structural conformance reached `17/18` and later `16/18`; no synthetic render, comparator pack, or listening gate ran | conformance-only | selected once for protocol binding |
+
+The conformance-only continuous-excitation and similarity-aligned cyclic owners
+do not qualify: their frozen architectures contain the failed choice, so a
+plausible correction would change renderer authority. The compile-only
+`CompensatedRenewalSpectral` identity does not qualify separately because its
+same compensated DSP lineage later reached acoustic and stereo rejection under
+fresh construction and evidence identities.
+
+`LinkedStnNoiseMorph` is the only eligible family. Its canonical brief owns a
+complete renderer, exact map, material decomposition, tonal oscillators,
+single-claim transient events, residual noise morphing, linked-channel law,
+boundaries, bounded state, determinism, and the full gate sequence. Pinned
+SiTraNoStar plus the retained STN and noise-morphing papers provide clean-room
+source backing. The `S06` plateau-tie and `S18` private-surface misses are
+implementation conformance defects against already frozen authority, not
+missing architecture choices.
+
+Eligibility is not a quality claim. The renderer is large, its complete
+structural surface has never passed together, and no linked-STN acoustic output
+has been heard. Residual noise, entry/tail energy, transient replicas, tonal
+coherence, and stereo image remain live terminal risks.
+
+Selection is not implementation authority. Batch 31.57 must bind the existing
+complete renderer and every executable gate to Rule 11 in one fresh canonical
+brief. It may change protocol ownership and candidate identity only. Any need
+to change a DSP formula, source, seed, metric, threshold, assertion, comparator,
+or listening policy stops the family instead of entering implementation.
+Batch 31.58 remains blocked until that brief passes docs validation. It must
+start from fresh source and may iterate only through conformance before one
+immutable acoustic checkpoint.
+
 ## Initial Promotion Sequence
 
 1. Comparator capture and target-character freeze. Complete.
@@ -872,7 +922,12 @@ trigger architecture reassessment under Contract `084` Rule 7.
     executable identity survives through reassessment, and acoustic failures
     remain terminal.
 54. Classify closed creative families under the new protocol and select at
-    most one eligible complete owner. Ready; docs and architecture only.
+    most one eligible complete owner. Complete; linked STN is the sole
+    conformance-only family and is selected once for protocol binding.
+55. Bind the complete linked-STN brief to Rule 11 without changing renderer or
+    acoustic authority. Ready; docs and architecture only.
+56. Implement one fresh protocol-bound linked-STN candidate. Planned and
+    blocked until item 55 freezes complete executable authority.
 
 `Spectral`/`Rough`, coherent overlap, `LayeredCloud`, the upper overlap, dynamic
 ratios, and automatic routing still require separate reopening decisions backed
@@ -1162,10 +1217,23 @@ Conformance-only families become eligible for one explicit docs-only owner
 selection; acoustically rejected families remain closed absent new complete
 architecture or an evidence-backed product decision.
 
+Batch 31.56 classifies every closed owner across four lineages. Diffusive
+spectral and cyclic each reached synthetic rejection; their conformance-only
+successors are superseded or contain architecture-level misses. Renewal reached
+valid synthetic and concealed-mono admission before stereo rejection, then a
+later checkpoint also failed synthetic admission. Those families remain closed.
+
+Linked STN is the sole conformance-only lineage. Its six attempts never ran a
+synthetic, comparator, or listening gate. The complete material-separated
+architecture remains source-backed and plausibly owns the current pitch,
+replica, crest, tonal, transient, residual, stereo, boundary, memory, and
+determinism gates. It is selected once for a fresh Rule 11 binding. This does
+not revive its historical brief or authorize implementation.
+
 ## Next Task
 
-Run Batch 31.56 as docs-only creative-owner eligibility and selection. Classify
-every closed family by its highest valid stage under Rule 11, then select at
-most one complete source-backed owner or pause. Do not recover candidate
-source, implement DSP, open routing or product exposure, touch Loophole or
-Chorus, merge, or push.
+Run Batch 31.57 as docs-only linked-STN protocol binding. Freeze one fresh
+self-contained brief that preserves the selected renderer and gates while
+moving the immutable checkpoint after full conformance. Do not recover
+candidate source, implement DSP, open routing or product exposure, touch
+Loophole or Chorus, merge, or push.

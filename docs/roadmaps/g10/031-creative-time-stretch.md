@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: active; evidence protocol frozen, Batch 31.56 owner selection ready
+Status: active; linked STN selected, Batch 31.57 protocol binding ready
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -1829,27 +1829,76 @@ Status: complete; reusable Contract `085` protocol frozen
 
 ## Batch 31.56 - Creative Owner Eligibility And Selection
 
+Status: complete; linked STN selected once under Contract `085` Rule 11
+
+- [x] inventoried every closed creative family by highest valid Rule 11 stage
+- [x] distinguished conformance-only closure from synthetic, mono, stereo, or
+  listening rejection without reinterpreting any historical receipt
+- [x] required complete canonical architecture, retained source backing, and a
+  plausible path through every current hard and listening gate
+- [x] kept acoustically rejected diffusive, cyclic, and renewal families closed
+- [x] selected linked STN as the sole conformance-only eligible family for one
+  fresh protocol-bound brief
+- [x] named separate brief-freeze and implementation batches; implementation
+  remains blocked until the brief is complete
+- [x] did not recover candidate source, implement DSP, add harnesses, change
+  production, routing, cache, product exposure, Loophole, or Chorus
+
+Decision:
+
+- `DiffuseSpectral` reached synthetic crest rejection
+- both continuous-excitation owners stopped in structural conformance; one was
+  superseded and the final brief contains a contradictory relation proof
+- `CyclicGrain` reached synthetic pitch rejection; `SimilarityAlignedCyclic`
+  stopped structurally on a frozen search-reachability miss
+- renewal identities reached synthetic and mono admission, then stereo
+  rejection; a later checkpoint also failed synthetic admission
+- linked STN reached structural conformance only across six attempts; no
+  synthetic, comparator, or listening gate ran
+- the complete linked-STN architecture remains pinned-source-backed and owns
+  every current material, stereo, boundary, memory, and gate seam
+
+## Batch 31.57 - Protocol-Bound Linked STN Brief
+
 Status: ready; docs and architecture only
 
-- [ ] inventory every closed creative family by highest valid Rule 11 stage
-- [ ] distinguish conformance-only closure from synthetic, mono, stereo, or
-  listening rejection without reinterpreting any historical receipt
-- [ ] require complete canonical architecture, retained source backing, and a
-  plausible path through every current hard and listening gate
-- [ ] select at most one eligible family for a fresh protocol-bound brief, or
-  pause creative implementation when none qualifies
-- [ ] if one family is selected, name the later brief-freeze and isolated
-  implementation batches without marking them ready prematurely
-- [ ] do not recover candidate source, implement DSP, add harnesses, change
-  production, routing, cache, product exposure, Loophole, or Chorus
+- [ ] preserve the complete construction-bound v6 renderer, sources, gates,
+  thresholds, and listening packs without changing DSP authority
+- [ ] freeze one fresh family/candidate identity and one canonical brief; do
+  not add another memo or parallel architecture file
+- [ ] bind working implementation, conformance-complete tree, and immutable
+  acoustic checkpoint states to Contract `085` Rule 11
+- [ ] make compile, construction, and complete `S01..S18` structural passage
+  jointly precede the acoustic checkpoint
+- [ ] freeze exact worktree, branch, module, test, receipt, and local evidence-
+  ref ownership for the later isolated candidate
+- [ ] make every synthetic source, seed, helper, metric, threshold, assertion,
+  comparator row, listening pack, and stage order self-contained before code
+- [ ] stop and close the family if any missing authority requires a DSP,
+  evidence, threshold, comparator, or listening-policy choice
+- [ ] change documentation only; do not recover source or implement DSP
+
+## Batch 31.58 - Isolated Protocol-Bound Linked STN Candidate
+
+Status: planned; blocked until Batch 31.57 freezes complete authority
+
+- [ ] start from fresh source in the exact isolated worktree
+- [ ] iterate only compile, construction, and structural conformance against
+  frozen authority, recording every failed owner and corrective diff
+- [ ] freeze one clean conformance-complete acoustic checkpoint and local
+  evidence ref before any synthetic render
+- [ ] run synthetic, concealed mono, and independent stereo gates once in order
+- [ ] reject and clean up on the first acoustic miss, or retain only the
+  minimal private surface after complete promotion
+- [ ] keep production, routing, cache, product exposure, Loophole, and Chorus
+  closed
 
 ## Later Batches
 
-Closed or paused without promotion. Batch 31.56 is the sole ready work. Every
-later product batch still requires a separately admitted complete renderer:
+Closed or paused without promotion. Batch 31.57 is the sole ready work. Batch
+31.58 remains blocked on its brief. Every later product batch still requires a
+separately admitted complete renderer:
 
-- selected-owner protocol binding and complete brief
-- one isolated conformance and acoustic candidate
 - minimal production admission
 - coherent/diffusive overlap
 - `LayeredCloud` study and candidate
@@ -1994,10 +2043,14 @@ later product batch still requires a separately admitted complete renderer:
   reassessment without entering `main`
 - [x] conformance-only closure has one explicit reopening path; acoustic
   failures retain their terminal meaning
+- [x] every closed family classified under the new evidence protocol
+- [x] linked STN selected as the sole conformance-only eligible owner
+- [x] fresh protocol binding separated from later isolated implementation
 
 ## Next Task
 
-Run Batch 31.56 as docs-only creative-owner eligibility and selection.
-Classify every closed family under Contract `085` Rule 11, then select at most
-one complete source-backed owner or pause. Do not recover candidate source,
-implement DSP, change production, touch Loophole or Chorus, merge, or push.
+Run Batch 31.57 as docs-only linked-STN protocol binding. Update the one
+canonical brief so full compile, construction, and structural conformance
+precedes one immutable acoustic checkpoint. Preserve renderer and gate
+authority. Do not recover candidate source, implement DSP, change production,
+touch Loophole or Chorus, merge, or push.

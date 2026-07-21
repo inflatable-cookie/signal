@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: creative stretch active; evidence protocol frozen, owner selection ready
+Status: creative stretch active; linked STN selected, protocol binding ready
 Updated: 2026-07-21
 
 ## Why this generation matters now
@@ -478,10 +478,22 @@ source and tests through reassessment without admitting rejected code to
 `main`. Closed conformance-only families may receive one explicit docs-only
 eligibility decision; acoustically rejected families remain closed.
 
+Batch 31.56 classifies every closed owner under that rule. Diffusive spectral
+and cyclic lineages reached synthetic rejection; their conformance-only
+successors are superseded or contain architecture-level misses. Renewal reached
+synthetic and concealed-mono admission before stereo rejection, with a later
+checkpoint also failing synthetic admission. They remain closed. Linked STN
+alone remained pre-acoustic with complete current authority across all six
+attempts. Its material-separated brief and pinned source backing remain intact,
+so it is selected once for fresh protocol binding. Batch 31.57 is ready
+docs-only. Batch 31.58 implementation remains blocked until that brief is
+complete.
+
 ## Next Task
 
-Run `g10.031` Batch 31.56 as docs-only creative-owner eligibility and
-selection. Classify every closed family under Contract `085` Rule 11 and select
-at most one complete source-backed owner or pause. Keep `g10.028`, routing,
-product exposure, other creative characters, and cross-repo work unchanged.
-Do not recover candidate source, implement DSP, merge, or push.
+Run `g10.031` Batch 31.57 as docs-only linked-STN protocol binding. Preserve
+the complete renderer and gate authority, freeze one fresh identity in the
+canonical brief, and move the immutable acoustic checkpoint after full
+conformance. Keep `g10.028`, routing, product exposure, other creative
+characters, and cross-repo work unchanged. Do not recover candidate source,
+implement DSP, merge, or push.
