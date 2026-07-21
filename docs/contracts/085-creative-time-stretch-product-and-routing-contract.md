@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: active PaulX-like `Dream`; linked STN selected for protocol binding
+Status: active PaulX-like `Dream`; protocol-bound linked STN candidate ready
 Owner: core-product
 Updated: 2026-07-21
 Related contracts: `046`, `048`, `084`
@@ -759,14 +759,13 @@ structural surface has never passed together, and no linked-STN acoustic output
 has been heard. Residual noise, entry/tail energy, transient replicas, tonal
 coherence, and stereo image remain live terminal risks.
 
-Selection is not implementation authority. Batch 31.57 must bind the existing
-complete renderer and every executable gate to Rule 11 in one fresh canonical
-brief. It may change protocol ownership and candidate identity only. Any need
-to change a DSP formula, source, seed, metric, threshold, assertion, comparator,
-or listening policy stops the family instead of entering implementation.
-Batch 31.58 remains blocked until that brief passes docs validation. It must
-start from fresh source and may iterate only through conformance before one
-immutable acoustic checkpoint.
+Selection was not implementation authority. Batch 31.57 bound the existing
+complete renderer and every executable gate to Rule 11 in the same canonical
+brief. It changed protocol ownership and candidate identity only. The audit
+found no missing authority requiring a DSP, source, seed, metric, threshold,
+assertion, comparator, or listening-policy choice. Batch 31.58 is ready. It
+must start from fresh source and may iterate only through conformance before
+one immutable acoustic checkpoint.
 
 ## Initial Promotion Sequence
 
@@ -925,9 +924,10 @@ immutable acoustic checkpoint.
     most one eligible complete owner. Complete; linked STN is the sole
     conformance-only family and is selected once for protocol binding.
 55. Bind the complete linked-STN brief to Rule 11 without changing renderer or
-    acoustic authority. Ready; docs and architecture only.
-56. Implement one fresh protocol-bound linked-STN candidate. Planned and
-    blocked until item 55 freezes complete executable authority.
+    acoustic authority. Complete; fresh conformance and acoustic identity,
+    evidence corpus, cleanup, and pass behavior are frozen docs-only.
+56. Implement one fresh protocol-bound linked-STN candidate. Ready in the
+    exact isolated worktree under the canonical brief.
 
 `Spectral`/`Rough`, coherent overlap, `LayeredCloud`, the upper overlap, dynamic
 ratios, and automatic routing still require separate reopening decisions backed
@@ -1230,10 +1230,26 @@ replica, crest, tonal, transient, residual, stereo, boundary, memory, and
 determinism gates. It is selected once for a fresh Rule 11 binding. This does
 not revive its historical brief or authorize implementation.
 
+Batch 31.57 completed that binding in the canonical linked-STN brief. Fresh
+identity `ConformanceBoundLinkedStnNoiseMorph` owns exact isolated paths, one
+tracked conformance ledger, compile plus construction `1/1` plus structural
+`18/18` passage twice from one clean tree, and one later immutable acoustic
+ref. Synthetic, concealed mono, speaker, and independent stereo gates remain
+one-shot terminal stages from that ref.
+
+The audit made retained source bytes, long-form pack hashes, estimator rules,
+structural vectors, cleanup, and pass disposition explicit. It corrected old
+prose that called retained half-cosine edges linear and described `Y07` with an
+adjacent-region denominator; retained artifacts prove half-cosine edges and a
+full-active-support denominator. No DSP formula, source bytes, comparator
+number, threshold, assertion, or listening policy changed. Batch 31.58 is now
+ready; no creative renderer is admitted.
+
 ## Next Task
 
-Run Batch 31.57 as docs-only linked-STN protocol binding. Freeze one fresh
-self-contained brief that preserves the selected renderer and gates while
-moving the immutable checkpoint after full conformance. Do not recover
-candidate source, implement DSP, open routing or product exposure, touch
-Loophole or Chorus, merge, or push.
+Run Batch 31.58 in isolated worktree `signal-candidate-31-58` from the exact
+Batch 31.57 closeout commit. Implement fresh private
+`ConformanceBoundLinkedStnNoiseMorph`, iterate only compile, construction, and
+structural conformance, then freeze one acoustic ref before any render. Do not
+recover source, alter `main`, open routing or product exposure, touch Loophole
+or Chorus, merge, or push.

@@ -1,15 +1,15 @@
 # Offline Creative LinkedStnNoiseMorph Renderer Brief
 
-Status: selected for fresh Rule 11 binding; no implementation authorized
+Status: frozen; Batch 31.58 isolated candidate ready
 Owner: dsp
 Updated: 2026-07-21
 Contract: `085`
-Roadmap: `g10.031`, Batches 31.42 through 31.54
+Roadmap: `g10.031`, Batches 31.42 through 31.58
 
 ## Decision
 
 Build one Signal-owned
-`ConstructionBoundZeroPreservingLinkedStnNoiseMorph` candidate
+`ConformanceBoundLinkedStnNoiseMorph` candidate
 for neutral `Dream` at fixed creative expansion from `4x` through `16x`.
 
 This is one material-separated renderer, not three optional effects. A
@@ -56,6 +56,13 @@ duplicated handwritten structural geometry evidence with one compile-linked
 authority assertion executed by construction before checkpoint and by `S02`
 after checkpoint. No geometry formula, renderer behavior, memory ceiling,
 source, quality limit, or gate order changes.
+
+The conformance-bound identity retains the complete v6 renderer, geometry,
+memory, sources, metrics, thresholds, assertions, comparator rows, and
+listening policy. It changes only evidence lifecycle under Contract `085` Rule
+11: compile, construction, and the complete structural suite may iterate to
+canonical conformance before one immutable acoustic checkpoint. It is not a
+locally corrected v7 and does not recover any deleted candidate source.
 
 ## Supported Request
 
@@ -663,69 +670,140 @@ be byte-identical.
 Offline only. No audio-thread source fill, execution, synchronization, I/O,
 or allocation is authorized.
 
-## Construction-Bound V6 Candidate Isolation And Construction
+## Conformance-Bound Candidate Isolation And Checkpoint
 
-Use exactly:
+Batch 31.58 starts from the exact Batch 31.57 closeout commit and records its
+full hash before creating:
 
-- worktree: `signal-candidate-31-53`
-- branch:
-  `candidate/g10-031-construction-bound-zero-preserving-linked-stn-noise-morph`
+- worktree: `signal-candidate-31-58`
+- branch: `candidate/g10-031-conformance-bound-linked-stn-noise-morph`
 - module:
-  `crates/signal-dsp-stretch/src/creative_construction_bound_zero_preserving_linked_stn_noise_morph/`
+  `crates/signal-dsp-stretch/src/creative_conformance_bound_linked_stn_noise_morph/`
 - files: `mod.rs`, `plan.rs`, `decomposition.rs`, `tonal.rs`, `transient.rs`,
   `noise.rs`, `synthesis.rs`, `tests.rs`
+- tracked conformance ledger:
+  `candidate-evidence/g10-031/31-58/conformance.tsv`
+- ignored evidence root: `target/creative-stretch-linked-stn-31-58/`
+- acoustic ref: `refs/signal-evidence/creative/linked-stn/31-58-acoustic`
 
 The isolated `lib.rs` may declare the module privately. Use existing crate
-dependencies only. No public API, production tier, feature, report, binary,
-fixture, cache, artifact schema, route, Loophole, or Chorus change is allowed.
-Generated evidence stays ignored under `target/`.
+dependencies only. Do not copy or recover a deleted candidate file or commit.
+No public API, production tier, feature, report, binary, fixture, cache,
+artifact schema, route, Loophole, or Chorus change is allowed.
 
-Test prefixes are only:
+Test prefixes are exactly:
 
-- `construction_bound_zero_preserving_linked_stn_noise_morph_construction_`
-- `construction_bound_zero_preserving_linked_stn_noise_morph_structural_`
-- `construction_bound_zero_preserving_linked_stn_noise_morph_synthetic_`
+- `conformance_bound_linked_stn_construction_`
+- `conformance_bound_linked_stn_structural_`
+- `conformance_bound_linked_stn_synthetic_`
 
 `tests.rs` owns one compile-linked `GATE_OWNERS` table with exactly `28`
 unique IDs and function pointers: `18` structural and `10` synthetic. One
 compile-linked `EVIDENCE_SPEC` owns every source sample, support, estimator,
-table value, threshold, seed, ratio, and assertion below. Helpers may not
-select implicit values. One compile-linked `MEMORY_SPEC` owns every frontier,
-capacity, maximum, category ceiling, duration vector, and allocation
-assertion above. One compile-linked `GEOMETRY_SPEC` owns the sole literal
-sentinel table, transform transitions, tie sets and counts, extent maxima and
-first witnesses, row count, byte count, and FNV-1a domain fingerprint above.
-No gate may carry another literal geometry row.
-
-Construction order:
-
-1. `effigy test compile`
-2. run the construction prefix and require exactly `1/1`
-3. create one immutable local checkpoint and record its hash
-4. freeze source, tests, helpers, assertions, manifest, and checkpoint
+table value, threshold, seed, ratio, assertion, long-form source hash, and
+comparator configuration below. Helpers may not select implicit values. One
+compile-linked `MEMORY_SPEC` owns every frontier, capacity, maximum, category
+ceiling, duration vector, and allocation assertion above. One compile-linked
+`GEOMETRY_SPEC` owns the sole literal sentinel table, transform transitions,
+tie sets and counts, extent maxima and first witnesses, row count, byte count,
+and FNV-1a domain fingerprint above. No gate may carry another geometry row.
 
 The construction owner verifies file inventory, gate inventory, formulas,
-tags, non-geometry vectors, source tables, support tables, sole seed, two-pass
-state reset, every `MEMORY_SPEC` formula and witness, and the `89 MiB` design
-sum. It runs one shared `assert_geometry_authority` helper that compares the
-renderer and independently coded oracle at every supported rate, then checks
-every `GEOMETRY_SPEC` sentinel, transition, tie set, tie count, maximum, first
-witness, row count, byte count, and FNV-1a fingerprint. `S02` must call the
-same helper; it may add map vectors but may not restate geometry literals.
+tags, non-geometry vectors, source and support tables, sole seed, two-pass state
+reset, every `MEMORY_SPEC` formula and witness, and the `89 MiB` design sum. It
+runs one shared `assert_geometry_authority` helper that compares the renderer
+and independently coded oracle at every supported rate, then checks every
+`GEOMETRY_SPEC` sentinel, transition, tie set, tie count, maximum, first
+witness, row count, byte count, and FNV-1a fingerprint. `S02` calls the same
+helper; it may add map vectors but may not restate geometry literals.
 Construction also verifies `zlog` truth vectors at `u=0,0.5,1`, positive-zero
 bit patterns, canonical zero coherence, and non-zero preservation for the
 smallest represented positive `f64` endpoint.
-Before the checkpoint, repairs may address compiler, type, visibility,
-ownership, or manifest assembly only when they change no DSP formula, literal,
-source, metric, threshold, helper result, or assertion. Any later miss is
-terminal.
 
-The closeout receipt must record checkpoint hash, candidate Git tree ID,
-SHA-256 of every candidate file, `EVIDENCE_SPEC`, `MEMORY_SPEC`, `Cargo.lock`,
-`rustc -vV`, platform, per-owner outcome, every numeric row, and SHA-256 of
-every rendered synthetic output. Receipts from different checkpoints are comparable only
-when all those executable-identity fields match. Generated receipt files do
-not enter `main`; the closeout log retains their digests and result summary.
+### Conformance loop
+
+Acoustic owners compile but may not execute or write audio. Each round starts
+from a clean local commit and runs, in order:
+
+1. `effigy test compile`
+2. `effigy test cargo-nextest conformance_bound_linked_stn_construction_`;
+   require exactly `1/1`
+3. `effigy test cargo-nextest conformance_bound_linked_stn_structural_`;
+   require exactly `18/18`
+
+A failed round records round number, starting commit and tree, command,
+selected count, failed owner IDs, complete diagnostic, changed files, and
+SHA-256 of the corrective diff in `conformance.tsv`. The correction and ledger
+row enter the next local commit. Corrections may only conform implementation or
+tests to authority already frozen in this file: compiler, type, visibility,
+ownership, allocation, tie, boundary, state-machine, or exact-vector defects.
+No acoustic output may guide them.
+
+Any correction requiring a new or changed DSP formula, constant, source, seed,
+helper algorithm, metric, threshold, assertion, comparator row, or listening
+policy stops the batch for docs-level closure. Parameter, coefficient, window,
+phase, seed, and scalar sweeps are forbidden.
+
+When all three commands pass from one clean commit, rerun them unchanged and
+require the same counts. Record the pass in the ignored identity receipt, then
+create the acoustic ref directly at that commit. The referenced commit is the
+sole acoustic checkpoint. Record its full commit and tree hashes, every
+candidate and evidence file SHA-256, `EVIDENCE_SPEC`, `MEMORY_SPEC`,
+`GEOMETRY_SPEC`, `Cargo.lock`, `rustc -vV`, Effigy version, OS, architecture,
+and conformance-ledger SHA-256. No source, test, helper, assertion, threshold,
+manifest, or dependency changes are permitted after the ref exists.
+
+Only then run:
+
+`effigy test cargo-nextest conformance_bound_linked_stn_synthetic_`
+
+Require exactly `10/10` once. The generated receipt records every numeric row
+and SHA-256 of every input, comparator, and candidate output. Later mono and
+stereo stages use the same ref. The ref, not a branch name or worktree path, is
+the identity compared during reassessment.
+
+### Structural evidence corpus
+
+`EVIDENCE_SPEC` freezes these named non-acoustic vectors. Helpers may consume
+them but may not substitute generated examples or implicit defaults.
+
+- `REQUEST_SPEC`: valid empty input, then one row each for zero sample rate,
+  unsupported rate, zero channels, more than two channels, non-empty zero
+  target, target below `4L`, target above `16L`, non-finite input, NaN
+  `space`, partial stereo frame, and every checked `L`, `T`, byte-count, and
+  index overflow witness
+- `MAP_SPEC`: independent signed-rational results for `(L,T)` equal to
+  `(1,4)`, `(2,8)`, `(3,12)`, `(3,24)`, `(3,48)`, and
+  `(96000,384000|768000|1536000)` at both boundaries, every source event, and
+  each half-sample tie; the oracle uses checked integer arithmetic and never
+  calls renderer mapping code
+- `WOLA_SPEC`: constant-one analysis over every distinct geometry in
+  `GEOMETRY_SPEC`, including first, interior, last, short, odd, and even
+  extents
+- `STREAM_SPEC`: every exact `96000`-frame mono and stereo synthetic source
+  below, plus `EDGE_SPEC` at lengths `N_t-1`, `N_t`, `N_t+1`, and `4N_t+37`,
+  with a separately allocated full-buffer oracle
+- `PEAK_SPEC`: aggregate magnitudes `[0,4,1,5,5,1,0]`, whose lower-bin
+  plateau rule yields peaks `[1,3]`; equal-distance predecessor ties select
+  lower track ID, then lower bin
+- `TRACK_SPEC`: birth, one-frame disappearance, dormant reappearance inside
+  the frozen expiry horizon, expiry, post-expiry birth, bin-zero fallback, and
+  the two-centre axis transition, with phases and IDs calculated directly
+  from the frozen equations
+- `TRANSIENT_SPEC`: the isolated impulse and impulse train below plus
+  `attack[n]=sin(pi*n/(2*(N_t-1)))^2` for `0<=n<N_t`, followed by `N_t`
+  exact zeros; expected novelty, threshold, refinement, class, claim, and
+  reassignment rows are calculated independently from the frozen equations
+- `COVARIANCE_SPEC`: exact zero, one-zero diagonal, duplicate rank-one,
+  anti-phase rank-one, and mixed positive-semidefinite `2x2` matrices, with
+  expected canonical coherence, projected covariance, and factor values
+  calculated independently from the frozen equations
+- `EDGE_SPEC`: impulses at sample `0` and `L-1`, constant and sustained-tone
+  sources touching both edges, positive-zero, signed-zero, and all-zero mono
+  and stereo inputs, plus one-frame and shorter-than-every-window cases
+
+Structural owners inspect only scalars, states, ledgers, and bounded scratch.
+They never write audio files or expose rendered buffers for listening.
 
 ## Structural Gate
 
@@ -738,19 +816,19 @@ Run all owners once after construction. Require exactly `18/18`.
 | `S03` | every analysis and synthesis lattice has complete normalized coverage; constant WOLA reconstructs within `1e-7` |
 | `S04` | masks are finite and reconstruct mono/stereo source within the frozen peak and RMS tolerances |
 | `S05` | streaming analysis equals an independent full-buffer oracle within `1e-6`; ring wrap does not change event or descriptor ownership |
-| `S06` | tonal peak matching, identity regions, bin fallback, frequency propagation, and track IDs match handwritten vectors |
-| `S07` | disappearance, dormancy, reactivation, expiry, new-track phase, and two-centre axis transition match exact state traces |
+| `S06` | tonal peak matching, identity regions, bin fallback, frequency propagation, and track IDs match `PEAK_SPEC` |
+| `S07` | disappearance, dormancy, reactivation, expiry, new-track phase, and two-centre axis transition match `TRACK_SPEC` exactly |
 | `S08` | tonal duplicate, common polarity, anti-phase, and channel swap commute samplewise within `1e-6` |
-| `S09` | transient novelty, threshold, refinement, class, segment, edge claim, and residual reassignment match impulse and attack vectors |
+| `S09` | transient novelty, threshold, refinement, class, segment, edge claim, and residual reassignment match `TRANSIENT_SPEC` |
 | `S10` | each source event has one ledger commit, one mapped anchor, one emission, disjoint support, and no boundary duplicate |
 | `S11` | residual counter and tag vectors match exactly; repeats match bytes and changed seed changes non-silent residual output |
-| `S12` | zero-preserving diagonal interpolation, canonical coherence, covariance projection, and factorization match exact zero/one-zero/positive handwritten vectors; target matrices reproduce within `1e-10`; diagonal powers never change with `space` |
+| `S12` | zero-preserving diagonal interpolation, canonical coherence, covariance projection, and factorization match `COVARIANCE_SPEC`; target matrices reproduce within `1e-10`; diagonal powers never change with `space` |
 | `S13` | residual duplicate, common polarity, anti-phase, and swap commute within `1e-6`, including exact-zero descriptors and spectra; basis streams are shared, never channel-local |
 | `S14` | `space` preserves `0..250 Hz`, leaves tonal/events unchanged, and makes aggregate residual side energy non-decreasing within `1e-9` |
-| `S15` | mapped envelope, lane denominators, recombination, exact crop, and no exterior fade match edge-source vectors; all-zero mono/stereo and mapped exact-zero bed regions contain only positive-zero `f32` bit patterns |
+| `S15` | mapped envelope, lane denominators, recombination, exact crop, and no exterior fade match `EDGE_SPEC`; all-zero mono/stereo and mapped exact-zero bed regions contain only positive-zero `f32` bit patterns |
 | `S16` | one-frame, shorter-than-window, odd/even, impulse-at-edge, sustained-to-edge, positive/signed-zero, and all-zero inputs remain finite and exact length; signed-zero silence returns positive zero |
 | `S17` | `MEMORY_SPEC` maxima and category sum match independent formulas; max-geometry stereo plan construction at `F=192000`, `L=N_t,4N_t,16N_t`, and every `4x/8x/16x` row reports identical working capacity, at most `89 MiB` designed and `96 MiB` actual; complete stereo renders over the same duration/ratio matrix at `F=8000` report zero allocation in either pass |
-| `S18` | source scan and call graph contain no capacity derived from `L` or `T` except returned `Vec<f32>`, full-duration component or `f64` output, all-history event set, random device, limiter, clipper, channel gain, non-zero silence threshold, denoiser, external DSP, second map, renewal tonal phase, public route, or hidden report path |
+| `S18` | source scan and call graph contain no capacity derived from `L` or `T` except returned `Vec<f32>`, full-duration component or `f64` output, all-history event set, random device, limiter, clipper, channel gain, non-zero silence threshold, denoiser, external DSP, second map, renewal tonal phase, public route, or hidden report path; the module declaration is private, cross-file items are at most `pub(super)`, and no bare-public, `pub(crate)`, `pub(in ...)`, export, route, or callable item escapes the candidate subtree; ignored evidence lies outside the crate scan and its digest remains receipt-owned |
 
 `S08` and `S13` are samplewise relationship invariants. `S12` is a descriptor
 invariant, not a claim that one stochastic output frame has exact source
@@ -759,8 +837,14 @@ magnitude. Long-window channel balance belongs to `Y09` and listening.
 ## Synthetic Sources
 
 All sources use `F=48000`, `L=96000`, and exact `T=4L`, `8L`, or `16L`.
-Unless noted, authored support is `[24000,72000)` with linear fades over
-`24000..26047` and `69952..71999`.
+Unless noted, authored support is `[24000,72000)`. Its entry multiplier is
+`0.5-0.5*cos(pi*(n-24000)/2047)` for `24000<=n<=26047`; its exit multiplier
+is `0.5-0.5*cos(pi*(71999-n)/2047)` for `69952<=n<=71999`; the interior
+multiplier is one. Samples are evaluated in `f64`, cast once to `f32`, and
+stored as little-endian `f32` for candidate evidence. The pinned comparator
+uses the mono `48000 Hz` PCM16 WAV produced from that same cast. The formula and
+raw `f32` identity are candidate authority; the WAV identity binds comparator
+capture without changing candidate samples.
 
 - low tone: `0.5*sin(2*pi*110*n/F)`
 - mid tone: `0.5*sin(2*pi*440*n/F)`
@@ -790,6 +874,21 @@ fades. Stereo controls are:
 Every candidate render uses `ADMISSION_SEED` and `space=0.5` unless the owner
 names another `space` row.
 
+The ten retained input byte identities are:
+
+| Source | candidate little-endian `f32` SHA-256 | comparator WAV SHA-256 |
+| --- | --- | --- |
+| amplitude-modulated noise | `ba6b9c244618939769e7283fac92f198690238db0c96d99c280892ee358ab31b` | `6eff7290a3a823dee80136a7ae6f49fb17ffd209ea607cb6c6346d474c968f66` |
+| chord | `b7c85b6faed8d670fd7eefa66f7be6a89df0f7c5c3a4444146a2d083a70792e7` | `2b729b4f98685db8d1939102f09938caf752b5168d8f6bc6cf311c59c62e789d` |
+| harmonic pad | `732895709a05fa724d9dd76a03bc22c64865b84ba93ba351e49354b31f95e96c` | `125665cfc3f75fd31c1fa87bd15d9acef731c26301ce7454c5fcf7c58fffb1a6` |
+| impulse train | `47314d3121745479660fb0d0350b41aec987074f75a503181805e5f4545e8138` | `58f5b0850e6148e323b5390718e4812a4d7210bb1e4a308d24c0975c5e36dc22` |
+| impulse | `fc73433e0fab2786572b6a98bd0cc9f86145960581d77e3dbc7d1bfa6abca57b` | `cb8da02367921af98e9561d7dd25b5193374bde8ef17fe1c9180ae75b026ed3d` |
+| low tone | `2c6d1c766ce73ac75000f8e9cbd6238fafbf180c64baa33d62a55fb9517f32e1` | `78e7904c9330ba6a348e7a8d70254aec30f66f1d987d8cfe83a42b6c616ff48a` |
+| mid tone | `36397e016a1d00a5bf1884d049a1454ab7342965ffd3cf21179474610a218b33` | `fffee2dd8c7bc275df29893780a6eeb10a3e2b3754eebdb5085a930a50e37294` |
+| Rademacher noise | `c1ae606691767937990e38a314ceadeee6c7cb0a9da63c7ed3d3a3ef31b838b5` | `e22141318260bd6f5fa340fd6c18de6b6ae54f441c840e4a69892ccae075353d` |
+| silence gap | `1c17fdc3cecd09cfcc403c39a9c7aadb75c41239433c20863cb967fbcef0013e` | `c468b323831f914cc6314f5d22ff60d0af809ff91c8f68b5abb4e4574916b2fa` |
+| uniform noise | `cde1917d6afdfe3dfb260da2a6273a243e261032bb9fe6624e49020089ee9923` | `5d6b5b47ce54826bf864a5163312bf4367d9c99c9a7156f6300d0d05bb6bd5f8` |
+
 ## Synthetic Gate
 
 Run every row in an owner before its one final assertion. Require exactly
@@ -799,8 +898,9 @@ processing, FFT `16384`, exact-cropped.
 ### `Y01` finite level and crest
 
 Measure crest growth in dB from authored source support to mapped output
-support. Require each candidate row no greater than matching PaulX plus
-`2 dB`. Reference values at `4x/8x/16x`:
+support. Crest is `20*log10(max(abs(x))/sqrt(mean(x^2)))`; growth is output
+crest minus decoded-source crest. Require each candidate row no greater than
+matching PaulX plus `2 dB`. Reference values at `4x/8x/16x`:
 
 | Source | `4x` | `8x` | `16x` |
 | --- | ---: | ---: | ---: |
@@ -842,28 +942,34 @@ For the isolated impulse and every impulse-train event:
 
 PaulX widths are `79469`, `155953`, `309239`; centroid errors are
 `49188.649257221`, `114695.538853499`, `246065.455355601` at
-`4x/8x/16x`.
+`4x/8x/16x`. Centroid error is measured from the continuous exact-map point
+`(p+0.5)*T/L-0.5`, not the integer ledger anchor. The shortest-width search
+uses two monotonically advancing inclusive endpoints and selects the earliest
+start, then earliest end, on an equal-width tie.
 
 ### `Y04` replica prevention
 
 Use RMS windows of `480` frames at hop `240`. Active means at least `-30 dB`
 relative to the global window peak. A new region begins when the current
-active start is at least `2400` frames after the prior active start. The
+active-window start is at least `2400` frames after the previous active-window
+start. Consecutive active windows `240` frames apart remain one region. The
 primary region contains the global peak. Require exactly one region and an
 explicit `None` secondary for isolated impulse and impulse train at every
 ratio. `-30 dB` is an activity threshold, not a secondary allowance.
 
 ### `Y05` residual non-periodicity
 
-On uniform noise, subtract the mean and measure normalized autocorrelation at
-every exact lag `960..48000`. Maximum absolute correlation must be no greater
-than PaulX plus `0.05`: `0.017218163`, `0.017727693`, `0.017090511`.
+On the mapped active support of uniform noise, subtract its one global mean.
+Compute linear autocorrelation by zero-padding to the next power of two at
+least `2M-1`, and divide every lag by the lag-zero energy. Measure every exact
+lag `960..48000`. Maximum absolute correlation must be no greater than PaulX
+plus `0.05`: `0.017218163`, `0.017727693`, `0.017090511`.
 
 ### `Y06` block-energy stability
 
 Within mapped support, use RMS windows of `2400` frames at hop `1200` and
-measure coefficient of variation. Candidate must be no greater than PaulX
-plus `0.05`:
+measure population standard deviation divided by the arithmetic mean of the
+window RMS values. Candidate must be no greater than PaulX plus `0.05`:
 
 | Source | `4x` | `8x` | `16x` |
 | --- | ---: | ---: | ---: |
@@ -873,8 +979,11 @@ plus `0.05`:
 ### `Y07` silence-gap ownership
 
 Map the exact source gap through the sole rational map. Gap RMS relative to
-the two equal-duration adjacent regions must be no greater than PaulX plus
-`3 dB`. PaulX values are `2.565308664`, `2.752688694`, and `3.061967868 dB`.
+the RMS of the complete mapped active support `[24000,72000)` must be no
+greater than PaulX plus `3 dB`. The row is
+`20*log10(gap_rms/active_support_rms)`; the numerator uses only mapped gap
+`[42000,54000)`. PaulX values are `2.565308664`, `2.752688694`, and
+`3.061967868 dB`.
 
 ### `Y08` discontinuity, dropout, and boundaries
 
@@ -886,7 +995,8 @@ hull passes vacuously. No eligible window may be exact zero except the authored
 interior silence gap. First differences are scanned across complete output;
 isolated impulse uses the hard `Y03` bound. Entry and tail quarter energy are
 recorded for every row and must be finite; their creative decision is
-listening-owned.
+listening-owned. Non-impulse first-difference maxima are recorded diagnostics;
+this owner adds no unlisted hard threshold.
 
 ### `Y09` linked stereo
 
@@ -896,11 +1006,23 @@ common polarity and anti-phase within `1e-6`, and swap-commuted output within
 `1e-6` after swapping it back. Require descriptor diagonal preservation within
 `1e-10` and non-decreasing residual side energy within `1e-9`.
 
-For each render, candidate-source right-minus-left balance error must be at
-most `0.75 dB` over the whole render and bands `0..250`, `250..1500`, and
-`1500..Nyquist`. Balance spread across the three `space` renders must be at
-most `0.50 dB`. No whole or band channel-dominance reversal is allowed when
-source balance magnitude is at least `0.50 dB`.
+For each channel pair, balance is
+`10*log10(sum(right^2)/sum(left^2))`; candidate-source balance error is their
+signed difference. A row with both energies exactly zero has balance zero; a
+row with exactly one zero energy is non-finite and rejects. Candidate-source
+absolute balance error must be at most `0.75 dB` over the whole render and
+bands `0..250`, `250..1500`, and `1500..Nyquist`. Balance spread across the
+three `space` renders must be at most `0.50 dB`. No whole or band
+channel-dominance reversal is allowed when source balance magnitude is at
+least `0.50 dB`.
+
+Band energy uses the exact-length rectangular-window `f64` real DFT of each
+complete channel. Bin frequency is `k*F/M`; the first two bands are half-open
+`[0,250)` and `[250,1500)`, and the last is `[1500,F/2]`. Sum squared complex
+magnitude with weight one at DC and an even-length Nyquist bin and weight two
+elsewhere. The common DFT scale cancels in the channel ratio. No padding,
+resampling, smoothing, gating, or silence omission is allowed in these hard
+rows.
 
 ### `Y10` material ownership
 
@@ -914,10 +1036,23 @@ threshold.
 
 ## Mono Listening Gate
 
-Open listening only after construction and all objective owners pass. Use the
-retained percussion, bass, vocals, pads/sustains, and full-mix families at
-`4x`, `8x`, and `16x`. Compare against PaulXStretch `1.6.0` default / FFT
-`16384`. Candidate uses `ADMISSION_SEED` and `space=0.5`.
+Open listening only after construction and all objective owners pass. The
+source pack is exactly five stereo `44100 Hz`, `220500`-frame, interleaved
+`Float32` WAV files:
+
+| Family and file | SHA-256 |
+| --- | --- |
+| percussion: `0000-drums_percussion-000002.wav` | `89e55b28c6ed36e26bf73f2024d301aaeedd07cca30b315f5530051c28f4e1e7` |
+| bass: `0004-bass-000236.wav` | `3d587007a5d9a683e82e14a184530a9a0f953e58fbc2fe3712a42aa86ecf9ad8` |
+| vocals: `0008-vocals-000010.wav` | `3d74a686dccf6dcdfedc57e0fc2b76a0d29374ba28afa1bb497172cc441f7ee9` |
+| pads/sustains: `0012-pads_sustains-000423.wav` | `a736a0e04ade9e879db954069c8c0b68842bd4d364eec69e62dfef1447763131` |
+| full mix: `0016-full_mix-000144.wav` | `caa5d0d7c51bc7e2d537d3d13dbe32055f0c2032c69bd8e3f28a38df96fafbf1` |
+
+Mono input is the samplewise `f32` result of `(f64(L)+f64(R))/2`. Render each
+at `4x`, `8x`, and `16x`. Compare against PaulXStretch `1.6.0`, default
+processing, FFT `16384`, generated from the identical downmix. Candidate uses
+`ADMISSION_SEED` and `space=0.5`. `EVIDENCE_SPEC` and the receipt carry all
+five source hashes and the decoded-mono hashes.
 
 Exact-crop every file. Within each source/ratio row, apply one common RMS
 target across source, candidate, and PaulX, reduced only enough to keep every
@@ -938,15 +1073,8 @@ gate.
 
 ## Independent Stereo Admission
 
-Use these exact stereo originals:
-
-- `0000-drums_percussion-000002.wav`
-- `0004-bass-000236.wav`
-- `0008-vocals-000010.wav`
-- `0012-pads_sustains-000423.wav`
-- `0016-full_mix-000144.wav`
-
-Render all five at `4x`, `8x`, and `16x`, and at `space=0`, `0.5`, and `1`.
+Use the five exact stereo originals and hashes frozen in the mono gate. Render
+all five at `4x`, `8x`, and `16x`, and at `space=0`, `0.5`, and `1`.
 Capture PaulXStretch `1.6.0` default / FFT `16384` from the same originals.
 Exact-crop every file. Neutral A/B uses `space=0.5`; source, candidate, and
 PaulX share one row RMS target under peak `0.95`.
@@ -974,22 +1102,28 @@ promotion; it is not a pass.
 
 ## Rejection, Cleanup, And Minimal Admission
 
-Any construction, structural, synthetic, mono-listening, speaker, or
+Before the acoustic ref exists, compile, construction, or structural misses
+remain conformance rounds under the exact correction boundary above. A round
+that exposes missing or contradictory authority stops Batch 31.58 for
+docs-level closure; it is not repaired by choosing code locally.
+
+After the ref exists, any synthetic, mono-listening, speaker, or
 independent-stereo miss rejects the complete candidate. Record the stopped
 gate, every completed row, and one dominant cause. Do not tune, repair, rerun,
-or reinterpret the checkpoint.
+or reinterpret the checkpoint. Delete the worktree, branch, build state,
+generated renders, and listening assembly after the receipt is complete.
+Retain the local evidence ref through the required reassessment, then delete it
+when that reassessment closes the evidence question. Rejected source never
+enters `main`. Two complete acoustic checkpoints failing for the same dominant
+cause require architecture reassessment, not a parameter sweep.
 
-Delete the worktree, branch, checkpoint reference, private module, tests,
-build state, generated receipt, synthetic outputs, and listening assembly.
-Retain only the canonical closeout and executable-identity digests. Two
-complete candidates failing for the same dominant cause require architecture
-reassessment, not a parameter sweep.
-
-Only a complete pass may authorize a later minimal-admission batch. That batch
-may admit the private renderer, fixed-ratio neutral-`Dream` request, one
-internal creative engine version, and the minimum structural/synthetic
-regressions needed to guard it. It must delete candidate-only diagnostics and
-assembly surfaces.
+A complete pass ends Batch 31.58 with the worktree, local evidence ref, and
+receipt retained for review. It does not merge or admit code. Only that pass
+may make a separate minimal-admission batch ready. The later batch may admit
+the private renderer, fixed-ratio neutral-`Dream` request, one internal
+creative engine version, and the minimum structural/synthetic regressions
+needed to guard it. It must delete candidate-only diagnostics and assembly
+surfaces.
 
 Do not admit public character, motion, detail, `space`, seed/reroll, cache,
 artifact, report, automatic routing, range blends, pitch, dynamic ratio,
@@ -1381,6 +1515,34 @@ structural owners must pass together before the acoustic checkpoint. If that
 brief audit requires any renderer formula, source, seed, metric, threshold,
 assertion, comparator, or listening-policy choice, linked STN closes instead.
 
+## Batch 31.57 Protocol Binding
+
+Complete. `ConformanceBoundLinkedStnNoiseMorph` is the one fresh Rule 11
+identity. The renderer topology, formulas, constants, limits, seed, gates,
+thresholds, comparator, and listening policy remain construction-bound v6.
+This batch changes candidate lifecycle and evidence ownership only:
+
+- fresh implementation begins from the Batch 31.57 closeout commit; no deleted
+  source or checkpoint may be recovered
+- compile, construction, and all `S01..S18` owners may iterate as conformance
+  and must pass twice from one clean tree before the acoustic ref exists
+- all acoustic owners compile but cannot run or emit inspectable audio during
+  conformance
+- synthetic, concealed mono, speaker, and independent stereo decisions run
+  once, in order, from the immutable ref
+- every input identity, helper rule, measurement, threshold, receipt field,
+  cleanup action, and pass disposition is frozen above
+
+The audit corrected two prose transcriptions against retained comparator
+artifacts: synthetic edges are the already-used half-cosine fades, and `Y07`
+uses full mapped active-support RMS as its denominator. It also made existing
+estimator and corpus identities explicit. No source bytes, reference number,
+assertion, renderer behavior, or admission threshold changed.
+
+Batch 31.58 is ready as one isolated candidate. It may perform conformance and
+the frozen one-shot acoustic sequence only. It may not merge, alter `main`, or
+start minimal production admission.
+
 ## Sources
 
 - [Creative source triangulation](../research/specimen-dossiers/creative-stretch-source-triangulation.md)
@@ -1393,7 +1555,9 @@ assertion, comparator, or listening-policy choice, linked STN closes instead.
 
 ## Next Task
 
-Run Batch 31.57 as docs-only linked-STN protocol binding. Preserve the complete
-renderer and gates, freeze one fresh identity, and place the immutable acoustic
-checkpoint after complete conformance. Do not recover checkpoints, write DSP,
-merge, or push.
+Run Batch 31.58 in isolated worktree `signal-candidate-31-58` on branch
+`candidate/g10-031-conformance-bound-linked-stn-noise-morph`. Start fresh from
+the exact Batch 31.57 closeout commit, implement only the frozen private
+renderer, and iterate only compile/construction/structural conformance before
+creating the acoustic ref. Do not recover checkpoints, alter `main`, merge, or
+push.

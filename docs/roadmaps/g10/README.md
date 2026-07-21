@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: creative stretch active; linked STN selected, protocol binding ready
+Status: creative stretch active; linked STN protocol-bound, candidate ready
 Updated: 2026-07-21
 
 ## Why this generation matters now
@@ -485,15 +485,15 @@ synthetic and concealed-mono admission before stereo rejection, with a later
 checkpoint also failing synthetic admission. They remain closed. Linked STN
 alone remained pre-acoustic with complete current authority across all six
 attempts. Its material-separated brief and pinned source backing remain intact,
-so it is selected once for fresh protocol binding. Batch 31.57 is ready
-docs-only. Batch 31.58 implementation remains blocked until that brief is
-complete.
+so it was selected once for fresh protocol binding. Batch 31.57 now freezes
+`ConformanceBoundLinkedStnNoiseMorph`, exact isolated identity, complete
+evidence authority, iterative conformance, and one later immutable acoustic
+checkpoint. No DSP entered `main`. Batch 31.58 is ready.
 
 ## Next Task
 
-Run `g10.031` Batch 31.57 as docs-only linked-STN protocol binding. Preserve
-the complete renderer and gate authority, freeze one fresh identity in the
-canonical brief, and move the immutable acoustic checkpoint after full
-conformance. Keep `g10.028`, routing, product exposure, other creative
-characters, and cross-repo work unchanged. Do not recover candidate source,
-implement DSP, merge, or push.
+Run `g10.031` Batch 31.58 in isolated worktree `signal-candidate-31-58` from
+the exact Batch 31.57 closeout commit. Implement only the frozen private
+linked-STN renderer and complete conformance before its acoustic ref. Keep
+`g10.028`, routing, product exposure, other creative characters, and cross-repo
+work unchanged. Do not recover candidate source, alter `main`, merge, or push.
