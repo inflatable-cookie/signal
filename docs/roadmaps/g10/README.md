@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: creative stretch active; linked-STN geometry reconciliation next
+Status: creative stretch active; geometry-audited linked STN candidate next
 Updated: 2026-07-21
 
 ## Why this generation matters now
@@ -257,7 +257,9 @@ Do not start Loophole or Chorus planning from Signal internals.
     per-geometry formula, corrected its maximum to `53248`, and froze fresh
     capacity-audited v3 identity; Batch 31.47 then found `R_v=59` at `F=8000`
     against the frozen `R_v<=57` bound and deleted the candidate before compile
-    or checkpoint; explicit `Cyclic` stays closed
+    or checkpoint; Batch 31.48 corrected the exhaustive bound to `59`, retained
+    every memory ceiling, and froze geometry-audited v4 identity; explicit
+    `Cyclic` stays closed
 
 ## Stretch Boundary
 
@@ -392,8 +394,8 @@ Batch 31.46 retained the current-geometry formula and corrected its exhaustive
 maximum to `53248`. The conservative short/source model becomes `9.700 MiB`;
 the `12 MiB` category ceiling, `89 MiB` design sum, `7 MiB` reserve, and
 `96 MiB` actual gate remain unchanged. Fresh
-`CapacityAuditedBoundedLinkedStnNoiseMorph` identity is ready for one isolated
-implementation. No DSP or product surface entered `main`.
+`CapacityAuditedBoundedLinkedStnNoiseMorph` identity was marked ready for one
+isolated implementation. No DSP or product surface entered `main`.
 
 Batch 31.47 found that identity was not executable authority. At `F=8000`,
 the frozen short vertical formula and upward odd midpoint rule produce
@@ -401,11 +403,17 @@ the frozen short vertical formula and upward odd midpoint rule produce
 all gates stayed closed. The worktree, branch, private source, and tests were
 deleted. This is an authority failure, not renderer-quality evidence.
 
+Batch 31.48 independently reproduced `Q_h=17`, `Q_v=97`, `R_h=19`, and
+`R_v=59` over the full supported-rate range. `Q_v` already dominates the
+shared `97`-scalar median scratch, so no ring, packed model, category ceiling,
+or cost class changes. Fresh `GeometryAuditedBoundedLinkedStnNoiseMorph`
+identity is ready for one isolated implementation. No DSP or product surface
+entered `main`.
+
 ## Next Task
 
-Run `g10.031` Batch 31.48 only as docs and architecture reconciliation.
-Recompute every median extent and affected capacity row under the exact frozen
-rounding rules, then either freeze fresh consistent authority or close the
-path. Keep `g10.028`, routing, product exposure, other creative characters,
-and cross-repo work unchanged. Do not recover deleted candidates, merge, or
-push.
+Run `g10.031` Batch 31.49 only in `signal-candidate-31-49` on the fresh
+geometry-audited branch named by the canonical brief. Implement once, complete
+construction, checkpoint, structural, and synthetic admission in order. Keep
+`g10.028`, routing, product exposure, other creative characters, and cross-repo
+work unchanged. Do not recover Batch 31.47, merge, or push.

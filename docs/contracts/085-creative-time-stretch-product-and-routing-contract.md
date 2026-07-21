@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: active PaulX-like `Dream`; linked-STN geometry authority contradicted
+Status: active PaulX-like `Dream`; geometry-audited v4 candidate ready
 Owner: core-product
 Updated: 2026-07-21
 Related contracts: `046`, `048`, `084`
@@ -771,7 +771,11 @@ no materially different source-backed renewal owner, that path is closed.
     evaluation found `R_v=59` at `F=8000` against the frozen `R_v<=57` bound.
     The candidate was deleted before compile or gate execution.
 46. Reconcile every geometry-derived median extent and affected capacity row.
-    Ready; docs and architecture only.
+    Complete; `R_v=59`, shared median scratch remains `97`, and fresh
+    geometry-audited v4 authority is frozen docs-only.
+47. Implement geometry-audited v4 once, checkpoint after construction, then
+    run structural and synthetic admission in order. Ready; stop before
+    listening on any miss.
 
 `Spectral`/`Rough`, coherent overlap, `LayeredCloud`, the upper overlap, dynamic
 ratios, and automatic routing still require separate reopening decisions backed
@@ -945,11 +949,19 @@ No allowed assembly repair can make both statements true. No checkpoint or
 quality evidence exists, and the disposable candidate surface was deleted.
 No creative renderer is admitted.
 
+Batch 31.48 exhaustively recomputed all four median extents with two
+independent exact-integer evaluators. The maxima are `Q_h=17`, `Q_v=97`,
+`R_h=19`, and `R_v=59`. `Q_v` already owns the shared `97`-scalar median
+scratch, so correcting `R_v` changes no ring capacity, packed model, category
+ceiling, cost class, or audible rule. The `89 MiB` design sum and `96 MiB`
+actual gate remain unchanged. Positive rational half-rounding is frozen to the
+larger integer. Fresh `GeometryAuditedBoundedLinkedStnNoiseMorph` authority is
+ready for one isolated implementation. No creative renderer is admitted.
+
 ## Next Task
 
-Run Batch 31.48 only as docs and architecture reconciliation. Exhaustively
-recompute every STN median extent under the frozen rounding and odd rules,
-trace all affected capacity and memory rows, and either freeze fresh internally
-consistent authority or close the linked-STN path. Do not implement DSP,
-recover deleted candidate code, open routing or product exposure, touch
-Loophole or Chorus, or push.
+Run Batch 31.49 only in the exact disposable worktree and branch named by the
+geometry-audited v4 brief. Implement once, complete compile and construction,
+freeze one checkpoint, then run structural and synthetic owners in order. Stop
+before listening on any miss. Do not recover deleted candidate code, open
+routing or product exposure, touch Loophole or Chorus, or push.

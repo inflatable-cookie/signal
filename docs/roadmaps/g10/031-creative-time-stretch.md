@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: active; Batch 31.47 complete, Batch 31.48 ready
+Status: active; Batch 31.48 complete, Batch 31.49 ready
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -1595,10 +1595,49 @@ Decision:
 - Batch 31.48 must reconcile every geometry-derived median maximum docs-only
   before another implementation can be authorized
 
+## Batch 31.48 - Linked STN Geometry-Authority Reconciliation
+
+Status: complete; geometry-audited v4 candidate ready
+
+- [x] exhaustively evaluated every integer sample rate `8000..192000` under
+  the frozen positive rounding, upward odd midpoint, power-of-two, and clamp
+  rules
+- [x] froze positive rational half-rounding to the larger integer so candidate
+  code cannot choose a language-default tie rule
+- [x] independently reproduced maxima `Q_h=17`, `Q_v=97`, `R_h=19`, and
+  `R_v=59`
+- [x] recorded first witnesses `F=16534`, `8000`, `17500`, and `8000`
+- [x] corrected only the contradicted `R_v<=57` construction bound to
+  `R_v<=59`
+- [x] froze shared median-selection scratch as
+  `max(Q_h,Q_v,R_h,R_v)=97` `f64` scalars
+- [x] exhaustively rechecked every dependent capacity maximum, including
+  first residual `53248`, component rings `147712`, claim arena `98816`, live
+  events `39`, envelope `32772`, and output finalization `139520`
+- [x] confirmed the `9.700 MiB` short/source model, `89 MiB` design sum,
+  `7 MiB` unassigned reserve, and `96 MiB` actual gate remain unchanged
+- [x] retained every transform, mask, map, threshold, source, metric, quality
+  assertion, gate, two-pass rule, and cleanup rule
+- [x] froze fresh identity `GeometryAuditedBoundedLinkedStnNoiseMorph` and
+  exact Batch 31.49 worktree, branch, module, prefixes, checkpoint, cleanup,
+  and gate order
+- [x] changed documentation only; did not recover Batch 31.47 or change DSP,
+  tests, harnesses, dependencies, APIs, routes, cache, artifacts, Loophole, or
+  Chorus
+
+Decision:
+
+- `R_v=59` follows directly from the retained formula and tie rule at
+  `F=8000`; `57` was an incorrect exhaustive summary
+- `Q_v=97` already dominates median scratch, so the correction has no memory
+  or cost consequence
+- Batch 31.49 may implement the complete renderer once under fresh identity;
+  creative quality and bounded execution remain unproved
+
 ## Later Batches
 
-Closed or paused without promotion. Batch 31.48 geometry-authority
-reconciliation is the sole ready work. Every later product batch still
+Closed or paused without promotion. Batch 31.49 isolated geometry-audited-v4
+implementation is the sole ready work. Every later product batch still
 requires a separately admitted complete renderer:
 
 - minimal production admission
@@ -1707,11 +1746,15 @@ requires a separately admitted complete renderer:
   produced `R_v=59` against the frozen `R_v<=57` construction bound
 - [x] the disposable candidate surface was deleted without compile or gate
   execution; no candidate code entered `main`
+- [x] geometry reconciliation corrected `R_v` to `59`, froze shared median
+  scratch at `97`, and retained every dependent memory ceiling
+- [x] no candidate code entered `main` during geometry reconciliation
 
 ## Next Task
 
-Run Batch 31.48 only as docs and architecture reconciliation. Recompute all
-four STN median extents under the exact frozen rounding rules, trace capacity
-and memory consequences, and either freeze fresh internally consistent
-authority or close the candidate path. Do not implement DSP, recover deleted
-candidate source, touch Loophole or Chorus, merge, or push.
+Run Batch 31.49 only in `signal-candidate-31-49` on
+`candidate/g10-031-geometry-audited-bounded-linked-stn-noise-morph`. Implement
+geometry-audited v4 once, run compile and construction, freeze one checkpoint,
+then run structural and synthetic admission in order. Stop before listening on
+any miss. Do not recover Batch 31.47, change production code, touch Loophole or
+Chorus, merge, or push.

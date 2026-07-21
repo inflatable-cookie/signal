@@ -136,7 +136,9 @@ corrected its maximum to `53248`, and froze fresh capacity-audited v3 identity.
 Batch 31.47 then found that the frozen short vertical rule produces `R_v=59`
 at `F=8000` against the required exhaustive `R_v<=57` bound. The candidate was
 deleted before compile, checkpoint, or gate execution. Geometry reconciliation
-is next and the product target remains unadmitted.
+then corrected `R_v` to `59`; `Q_v=97` still owns median scratch and every
+memory ceiling remains unchanged. Fresh geometry-audited v4 identity is ready
+and the product target remains unadmitted.
 Offline artifacts still need a streaming artifact writer/cache target for full
 peak-memory closure. Mono callback-state DSP has a
 no-allocation proof, linked stereo is implemented, ratio scheduling has
@@ -263,7 +265,7 @@ Before rollover:
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the active generation front door.
-`g10.031` Batch 31.48 is ready for docs-only geometry-authority
-reconciliation. Keep the transparent successor lane, `g10.028`, routing,
-product exposure, and cross-repo work closed. Do not implement DSP, recover a
-deleted candidate, or merge a candidate.
+`g10.031` Batch 31.49 is ready for one isolated implementation of
+geometry-audited bounded v4. Keep the transparent successor lane, `g10.028`,
+routing, product exposure, and cross-repo work closed. Do not recover Batch
+31.47 or merge a candidate.

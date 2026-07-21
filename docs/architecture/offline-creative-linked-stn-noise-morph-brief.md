@@ -1,14 +1,14 @@
 # Offline Creative LinkedStnNoiseMorph Renderer Brief
 
-Status: capacity-audited v3 contradicted at construction authority; no candidate ready
+Status: geometry-audited v4 frozen; one fresh isolated candidate ready
 Owner: dsp
 Updated: 2026-07-21
 Contract: `085`
-Roadmap: `g10.031`, Batches 31.42, 31.44, and 31.46
+Roadmap: `g10.031`, Batches 31.42, 31.44, 31.46, and 31.48
 
 ## Decision
 
-Build one Signal-owned `CapacityAuditedBoundedLinkedStnNoiseMorph` candidate
+Build one Signal-owned `GeometryAuditedBoundedLinkedStnNoiseMorph` candidate
 for neutral `Dream` at fixed creative expansion from `4x` through `16x`.
 
 This is one material-separated renderer, not three optional effects. A
@@ -34,6 +34,13 @@ Capacity-audited v3 retains that complete renderer and schedule. It corrects
 one impossible cross-geometry maximum in `MEMORY_SPEC` and assigns fresh
 candidate identity after the deleted Batch 31.45 attempt. No audible formula,
 threshold, source, metric, assertion, or gate changes.
+
+Geometry-audited v4 retains the same renderer, schedule, capacities, and
+quality gates. It corrects the exhaustive short vertical-median maximum from
+`57` to `59`, freezes a shared `97`-scalar median-selection scratch bound, and
+assigns fresh identity after the deleted Batch 31.47 assembly. No transform,
+mask, map, threshold, source, metric, quality assertion, or audible owner
+changes.
 
 ## Supported Request
 
@@ -65,7 +72,9 @@ cache, artifacts, reports, realtime execution, and public exposure are absent.
 ## Geometry And Exact Map
 
 Define `nearest_pow2(v)` by absolute integer distance; ties choose the larger
-power. Freeze:
+power. Every positive `round(a/b)` below uses checked integer arithmetic,
+chooses the nearest integer, and chooses the larger integer at an exact half.
+Freeze:
 
 - tonal length `N_t=clamp(nearest_pow2(round(F/6)),2048,32768)`
 - tonal analysis hop `A_t=N_t/8`
@@ -406,7 +415,7 @@ Silence completes the pass with `+1` orientation exactly as already frozen.
 
 Let `h_t=(Q_h-1)/2` and `h_s=(R_h-1)/2`. Exhaustive integer evaluation over
 every supported sample rate gives `Q_h<=17`, `R_h<=19`, `Q_v<=97`, and
-`R_v<=57`; therefore `h_t<=8` and `h_s<=9`.
+`R_v<=59`; therefore `h_t<=8` and `h_s<=9`.
 
 The render pass owns monotonic frontiers for long analysis, first-residual
 samples, short analysis, event decisions, augmented residual, residual
@@ -463,6 +472,7 @@ Compile-linked `MEMORY_SPEC` owns these capacities:
 | native long frames | `Q_h+3` | `20` frames |
 | resolved tonal frames | fixed | `4` frames |
 | native short frames | `R_h+3` | `22` frames |
+| shared median-selection scratch | `max(Q_h,Q_v,R_h,R_v)` | `97` `f64` scalars |
 | first-residual samples | `N_t+2(h_s*A_s+N_s)` | `53248` |
 | transient and augmented-residual samples, each | `2N_r+16N_s+48A_s+256` | `147712` |
 | residual spectrum/covariance frames | fixed | `7` frames |
@@ -477,6 +487,9 @@ Conservative maximum-capacity packed-`f64` models occupy `17.502 MiB`
 for long frames, `9.700 MiB` for short/source WOLA state, `4.001 MiB` for
 residual covariance and excitation, `1.508 MiB` for claimed event samples,
 `1.001 MiB` for envelope state, and `8.516 MiB` for output finalization.
+The `R_v` correction adds no allocation: `Q_v=97` already owns the shared
+median scratch maximum. Every ring capacity and packed model remains
+unchanged.
 Category ceilings are:
 
 | Category | Ceiling |
@@ -519,14 +532,14 @@ be byte-identical.
 Offline only. No audio-thread source fill, execution, synchronization, I/O,
 or allocation is authorized.
 
-## Capacity-Audited V3 Candidate Isolation And Construction
+## Geometry-Audited V4 Candidate Isolation And Construction
 
 Use exactly:
 
-- worktree: `signal-candidate-31-47`
-- branch: `candidate/g10-031-capacity-audited-bounded-linked-stn-noise-morph`
+- worktree: `signal-candidate-31-49`
+- branch: `candidate/g10-031-geometry-audited-bounded-linked-stn-noise-morph`
 - module:
-  `crates/signal-dsp-stretch/src/creative_capacity_audited_bounded_linked_stn_noise_morph/`
+  `crates/signal-dsp-stretch/src/creative_geometry_audited_bounded_linked_stn_noise_morph/`
 - files: `mod.rs`, `plan.rs`, `decomposition.rs`, `tonal.rs`, `transient.rs`,
   `noise.rs`, `synthesis.rs`, `tests.rs`
 
@@ -537,9 +550,9 @@ Generated evidence stays ignored under `target/`.
 
 Test prefixes are only:
 
-- `capacity_audited_bounded_linked_stn_noise_morph_construction_`
-- `capacity_audited_bounded_linked_stn_noise_morph_structural_`
-- `capacity_audited_bounded_linked_stn_noise_morph_synthetic_`
+- `geometry_audited_bounded_linked_stn_noise_morph_construction_`
+- `geometry_audited_bounded_linked_stn_noise_morph_structural_`
+- `geometry_audited_bounded_linked_stn_noise_morph_synthetic_`
 
 `tests.rs` owns one compile-linked `GATE_OWNERS` table with exactly `28`
 unique IDs and function pointers: `18` structural and `10` synthetic. One
@@ -557,7 +570,8 @@ Construction order:
 4. freeze source, tests, helpers, assertions, manifest, and checkpoint
 
 The construction owner verifies file inventory, gate inventory, formulas,
-geometry, tags, exact vectors, source tables, support tables, sole seed,
+exact positive-round ties, geometry, tags, exact vectors, source tables,
+support tables, sole seed,
 two-pass state reset, every `MEMORY_SPEC` formula, the exhaustive geometry
 maxima, and the `89 MiB` design sum.
 Before the checkpoint, repairs may address compiler, type, visibility,
@@ -929,6 +943,49 @@ renderer. Capacity-audited v3 is no longer implementation-ready. A docs-only
 geometry reconciliation must audit every derived median extent before any
 fresh candidate identity is considered.
 
+## Batch 31.48 Geometry-Authority Reconciliation
+
+Two independent exact-integer evaluations over every `F=8000..192000`
+produce:
+
+| Extent | Exhaustive maximum | First witness |
+| --- | ---: | ---: |
+| `Q_h` | `17` | `F=16534` |
+| `Q_v` | `97` | `F=8000` |
+| `R_h` | `19` | `F=17500` |
+| `R_v` | `59` | `F=8000` |
+
+At the `R_v` witness, `N_t=2048`, `N_s=256`, and `A_s=64`. Positive
+nearest-integer rounding gives `58`; the frozen nearest-odd midpoint rule then
+chooses `59`. The corrected bound changes no mask formula or selected
+neighbourhood.
+
+Every dependent storage formula was re-evaluated in current geometry. The
+maxima remain:
+
+| State | Maximum |
+| --- | ---: |
+| native long frames | `20` |
+| native short frames | `22` |
+| shared median-selection scratch | `97` `f64` scalars |
+| first-residual samples | `53248` |
+| each transient or augmented-residual ring | `147712` samples |
+| claimed-event arena | `98816` samples |
+| live events | `39` |
+| envelope state | `32772` samples |
+| output finalization | `139520` samples |
+| peak tracks | `16383` |
+| persistent bin states | `16385` |
+
+`Q_v=97` already dominates the shared median scratch. Correcting `R_v` from
+`57` to `59` therefore changes no ring, packed-memory model, category ceiling,
+or cost class. The short/source model remains `9.700 MiB`; category ceilings
+remain `89 MiB`; `7 MiB` remains unassigned below the `96 MiB` actual gate.
+
+Geometry-audited v4 supersedes only the contradicted v3 identity and bound. It
+does not recover Batch 31.47 source or evidence. One fresh implementation is
+ready under the v4 isolation surface above.
+
 ## Sources
 
 - [Creative source triangulation](../research/specimen-dossiers/creative-stretch-source-triangulation.md)
@@ -941,8 +998,7 @@ fresh candidate identity is considered.
 
 ## Next Task
 
-Run Batch 31.48 only as docs and architecture reconciliation. Exhaustively
-recompute `Q_h`, `Q_v`, `R_h`, and `R_v` under the frozen rounding and odd
-rules, trace every affected capacity and memory model, and either freeze fresh
-internally consistent authority or close the linked-STN candidate path. Do not
-implement DSP, recover a deleted candidate, or change production code.
+Run Batch 31.49 only in the fresh worktree and branch named above. Implement
+geometry-audited v4 once, complete compile and construction, freeze one
+checkpoint, then run structural and synthetic admission in order. Stop before
+listening on any miss. Do not recover Batch 31.47 or change production code.
