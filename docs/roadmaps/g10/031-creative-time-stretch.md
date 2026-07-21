@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: active; Batch 31.46 complete, Batch 31.47 ready
+Status: active; Batch 31.47 complete, Batch 31.48 ready
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -1565,10 +1565,40 @@ Decision:
 - Batch 31.47 may implement the complete renderer once under fresh identity;
   creative quality and bounded execution remain unproved
 
+## Batch 31.47 - Capacity-Audited Linked STN Candidate
+
+Status: complete; stopped on contradictory construction authority
+
+- [x] started from exact main commit `4fd15e5b`
+- [x] created the exact disposable worktree and fresh capacity-audited branch
+- [x] kept all candidate work private and changed no production, public,
+  dependency, route, cache, artifact, Loophole, or Chorus surface
+- [x] independently evaluated the complete supported-rate geometry before
+  checkpoint
+- [x] found `R_v=59` at `F=8000`, where the frozen brief requires the
+  exhaustive bound `R_v<=57`
+- [x] traced the counterexample through `N_t=2048`, `N_s=256`, `A_s=64`,
+  `round(1800*N_s/F)=58`, and the frozen upward odd midpoint tie
+- [x] did not change the formula, rounding law, odd rule, bound, helper, or
+  construction assertion
+- [x] did not run compile, construction, structural, synthetic, or listening
+  admission and did not create a checkpoint
+- [x] deleted the worktree, branch, private source, tests, and candidate state;
+  no candidate code entered `main`
+
+Decision:
+
+- capacity-audited v3 is internally contradictory and is not implementation
+  authority
+- this stop is not a renderer-quality result and does not count as a complete
+  candidate failure
+- Batch 31.48 must reconcile every geometry-derived median maximum docs-only
+  before another implementation can be authorized
+
 ## Later Batches
 
-Closed or paused without promotion. Batch 31.47 isolated capacity-audited-v3
-implementation is the sole ready work. Every later product batch still
+Closed or paused without promotion. Batch 31.48 geometry-authority
+reconciliation is the sole ready work. Every later product batch still
 requires a separately admitted complete renderer:
 
 - minimal production admission
@@ -1673,12 +1703,15 @@ requires a separately admitted complete renderer:
 - [x] capacity reconciliation retained the formula, corrected its exhaustive
   maximum to `53248`, and froze fresh v3 candidate identity
 - [x] no candidate code entered `main` during capacity reconciliation
+- [x] capacity-audited v3 stopped before checkpoint when exhaustive geometry
+  produced `R_v=59` against the frozen `R_v<=57` construction bound
+- [x] the disposable candidate surface was deleted without compile or gate
+  execution; no candidate code entered `main`
 
 ## Next Task
 
-Run Batch 31.47 only in `signal-candidate-31-47` on
-`candidate/g10-031-capacity-audited-bounded-linked-stn-noise-morph`. Implement
-capacity-audited v3 once, run compile and construction, freeze one checkpoint,
-then run structural and synthetic admission in order. Stop before listening on
-any miss. Do not recover Batch 31.45, change production code, touch Loophole or
-Chorus, merge, or push.
+Run Batch 31.48 only as docs and architecture reconciliation. Recompute all
+four STN median extents under the exact frozen rounding rules, trace capacity
+and memory consequences, and either freeze fresh internally consistent
+authority or close the candidate path. Do not implement DSP, recover deleted
+candidate source, touch Loophole or Chorus, merge, or push.

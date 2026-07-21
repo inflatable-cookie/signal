@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: active PaulX-like `Dream`; bounded v2 candidate ready
+Status: active PaulX-like `Dream`; linked-STN geometry authority contradicted
 Owner: core-product
 Updated: 2026-07-21
 Related contracts: `046`, `048`, `084`
@@ -762,7 +762,16 @@ no materially different source-backed renewal owner, that path is closed.
     entered `main`.
 43. Implement that brief once in its named disposable worktree, complete
     construction, freeze one checkpoint, then run structural and synthetic
-    admission in order. Ready; stop before listening on any miss.
+    admission in order. Complete; the first implementation failed structural
+    bounded state and was deleted.
+44. Freeze a bounded two-pass schedule, implement it once, and reconcile its
+    capacity authority. Complete; bounded v2 failed contradictory construction
+    authority and capacity-audited v3 was frozen docs-only.
+45. Implement capacity-audited v3 once. Complete; pre-checkpoint geometry
+    evaluation found `R_v=59` at `F=8000` against the frozen `R_v<=57` bound.
+    The candidate was deleted before compile or gate execution.
+46. Reconcile every geometry-derived median extent and affected capacity row.
+    Ready; docs and architecture only.
 
 `Spectral`/`Rough`, coherent overlap, `LayeredCloud`, the upper overlap, dynamic
 ratios, and automatic routing still require separate reopening decisions backed
@@ -922,10 +931,25 @@ capacity and duration-independence assertion compile-linked `MEMORY_SPEC`
 authority. `BoundedLinkedStnNoiseMorph` is a fresh candidate identity. It is
 implementation authority only; no creative renderer is admitted.
 
+Batch 31.45 passed compile, then failed construction `0/1` because the frozen
+first-residual formula exhaustively reaches `53248` while its asserted maximum
+was `59392`. The candidate was deleted before checkpoint. Batch 31.46 retained
+the per-geometry formula, corrected that row and its conservative packed model,
+and froze fresh capacity-audited v3 authority.
+
+Batch 31.47 stopped that authority before compile or construction execution.
+At `F=8000`, the frozen geometry gives `N_s=256` and `A_s=64`; the short
+vertical rule evaluates to `round(57.6)=58`, and the frozen upward odd tie
+produces `R_v=59`. The same brief requires exhaustive proof that `R_v<=57`.
+No allowed assembly repair can make both statements true. No checkpoint or
+quality evidence exists, and the disposable candidate surface was deleted.
+No creative renderer is admitted.
+
 ## Next Task
 
-Run Batch 31.45 only in the exact disposable worktree and branch named by the
-bounded v2 brief. Implement it once, complete compile and construction, freeze
-one checkpoint, then run structural and synthetic owners in order. Stop before
-listening on any miss. Do not recover rejected code, change `main`, open
-routing or product exposure, touch Loophole or Chorus, or push.
+Run Batch 31.48 only as docs and architecture reconciliation. Exhaustively
+recompute every STN median extent under the frozen rounding and odd rules,
+trace all affected capacity and memory rows, and either freeze fresh internally
+consistent authority or close the linked-STN path. Do not implement DSP,
+recover deleted candidate code, open routing or product exposure, touch
+Loophole or Chorus, or push.

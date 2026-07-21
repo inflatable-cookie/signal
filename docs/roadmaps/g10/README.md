@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: creative stretch active; capacity-audited linked STN candidate next
+Status: creative stretch active; linked-STN geometry reconciliation next
 Updated: 2026-07-21
 
 ## Why this generation matters now
@@ -255,7 +255,9 @@ Do not start Loophole or Chorus planning from Signal internals.
     first-residual formula exhaustively yields `53248` while its asserted row
     requires `59392`; the candidate was deleted; Batch 31.46 retained the
     per-geometry formula, corrected its maximum to `53248`, and froze fresh
-    capacity-audited v3 identity; explicit `Cyclic` stays closed
+    capacity-audited v3 identity; Batch 31.47 then found `R_v=59` at `F=8000`
+    against the frozen `R_v<=57` bound and deleted the candidate before compile
+    or checkpoint; explicit `Cyclic` stays closed
 
 ## Stretch Boundary
 
@@ -393,10 +395,17 @@ the `12 MiB` category ceiling, `89 MiB` design sum, `7 MiB` reserve, and
 `CapacityAuditedBoundedLinkedStnNoiseMorph` identity is ready for one isolated
 implementation. No DSP or product surface entered `main`.
 
+Batch 31.47 found that identity was not executable authority. At `F=8000`,
+the frozen short vertical formula and upward odd midpoint rule produce
+`R_v=59`, contradicting the required exhaustive `R_v<=57` bound. Compile and
+all gates stayed closed. The worktree, branch, private source, and tests were
+deleted. This is an authority failure, not renderer-quality evidence.
+
 ## Next Task
 
-Run `g10.031` Batch 31.47 only in `signal-candidate-31-47` on the fresh
-capacity-audited branch named by the canonical brief. Implement once, complete
-construction, checkpoint, structural, and synthetic admission in order. Keep
-`g10.028`, routing, product exposure, other creative characters, and cross-repo
-work unchanged. Do not recover Batch 31.45, merge, or push.
+Run `g10.031` Batch 31.48 only as docs and architecture reconciliation.
+Recompute every median extent and affected capacity row under the exact frozen
+rounding rules, then either freeze fresh consistent authority or close the
+path. Keep `g10.028`, routing, product exposure, other creative characters,
+and cross-repo work unchanged. Do not recover deleted candidates, merge, or
+push.

@@ -1,6 +1,6 @@
 # Offline Creative LinkedStnNoiseMorph Renderer Brief
 
-Status: capacity-audited v3 frozen; one fresh isolated candidate ready
+Status: capacity-audited v3 contradicted at construction authority; no candidate ready
 Owner: dsp
 Updated: 2026-07-21
 Contract: `085`
@@ -904,6 +904,31 @@ Capacity-audited v3 supersedes the failed candidate identity and the erroneous
 31.47 may implement the complete brief once under the fresh isolation surface
 above.
 
+## Batch 31.47 Candidate Outcome
+
+Fresh implementation assembly stopped before compile, construction execution,
+or checkpoint. Independent exhaustive evaluation found a second frozen
+geometry contradiction:
+
+- at `F=8000`, `N_t=2048`, `N_s=256`, and `A_s=64`
+- `round(1800*N_s/F)=round(57.6)=58`
+- the frozen nearest-odd midpoint rule chooses the larger odd integer, so
+  `R_v=59`
+- the same brief requires construction to prove the exhaustive maximum
+  `R_v<=57`
+
+Both statements cannot hold. Changing the formula, odd rule, bound, or
+construction assertion was outside Batch 31.47's permitted pre-checkpoint
+repair class. No construction receipt, checkpoint, candidate tree, structural
+result, synthetic result, or quality result exists. The disposable worktree,
+branch, private source, and tests were deleted. No candidate code entered
+`main`.
+
+This is a frozen-authority failure, not evidence against the linked-STN
+renderer. Capacity-audited v3 is no longer implementation-ready. A docs-only
+geometry reconciliation must audit every derived median extent before any
+fresh candidate identity is considered.
+
 ## Sources
 
 - [Creative source triangulation](../research/specimen-dossiers/creative-stretch-source-triangulation.md)
@@ -916,7 +941,8 @@ above.
 
 ## Next Task
 
-Run Batch 31.47 only in the fresh worktree and branch named above. Implement
-capacity-audited v3 once, complete compile and construction, freeze one
-checkpoint, then run structural and synthetic admission in order. Stop before
-listening on any miss. Do not recover Batch 31.45 or change production code.
+Run Batch 31.48 only as docs and architecture reconciliation. Exhaustively
+recompute `Q_h`, `Q_v`, `R_h`, and `R_v` under the frozen rounding and odd
+rules, trace every affected capacity and memory model, and either freeze fresh
+internally consistent authority or close the linked-STN candidate path. Do not
+implement DSP, recover a deleted candidate, or change production code.

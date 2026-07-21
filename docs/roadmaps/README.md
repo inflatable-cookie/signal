@@ -133,7 +133,10 @@ failed construction `0/1`: the frozen first-residual formula reaches `53248`
 while its asserted maximum row requires `59392`. The candidate was deleted
 before checkpoint or structural admission. Batch 31.46 retained the formula,
 corrected its maximum to `53248`, and froze fresh capacity-audited v3 identity.
-One isolated implementation is next and the product target remains unadmitted.
+Batch 31.47 then found that the frozen short vertical rule produces `R_v=59`
+at `F=8000` against the required exhaustive `R_v<=57` bound. The candidate was
+deleted before compile, checkpoint, or gate execution. Geometry reconciliation
+is next and the product target remains unadmitted.
 Offline artifacts still need a streaming artifact writer/cache target for full
 peak-memory closure. Mono callback-state DSP has a
 no-allocation proof, linked stereo is implemented, ratio scheduling has
@@ -260,7 +263,7 @@ Before rollover:
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the active generation front door.
-`g10.031` Batch 31.47 is ready for one isolated implementation of
-capacity-audited bounded v3. Keep the transparent successor lane, `g10.028`,
-routing, product exposure, and cross-repo work closed. Do not recover Batch
-31.45 or merge a candidate.
+`g10.031` Batch 31.48 is ready for docs-only geometry-authority
+reconciliation. Keep the transparent successor lane, `g10.028`, routing,
+product exposure, and cross-repo work closed. Do not implement DSP, recover a
+deleted candidate, or merge a candidate.
