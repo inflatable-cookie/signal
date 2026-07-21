@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: creative stretch active; construction-bound linked-STN v6 ready
+Status: creative stretch active; linked-STN reassessment ready
 Updated: 2026-07-21
 
 ## Why this generation matters now
@@ -452,11 +452,19 @@ structural `S02` call the same exhaustive authority assertion. Fresh
 `ConstructionBoundZeroPreservingLinkedStnNoiseMorph` v6 is ready for one
 isolated implementation. No DSP or product surface entered `main`.
 
+Batch 31.53 started from exact `main` head `fdad8432`, passed compile and
+construction `1/1`, and froze checkpoint `366ac24b` with tree `68da7e43`.
+Structural admission stopped at `16/18`: `S06` returned an extra equal-plateau
+peak, and `S18` found forbidden `pub fn` source. Synthetic and listening stayed
+closed. The checkpoint was not repaired or rerun. Its worktree, branch,
+reference, private source, tests, and `3.4 GiB` build state were deleted. No
+DSP or product surface entered `main`.
+
 ## Next Task
 
-Run `g10.031` Batch 31.53 only in the fresh construction-bound v6 worktree and
-branch. Implement once, require compile and construction `1/1`, checkpoint,
-then run structural and synthetic admission in order. Stop and clean up on the
-first miss. Keep `g10.028`, routing, product exposure, other creative
-characters, and cross-repo work unchanged. Do not repair Batch 31.51, merge,
-or push.
+Run `g10.031` Batch 31.54 as docs-only executable-authority reassessment.
+Either construction-own the peak-plateau tie law, private-surface boundary,
+and remaining structural owners under one fresh identity or close
+`LinkedStnNoiseMorph`. Keep `g10.028`, routing, product exposure, other
+creative characters, and cross-repo work unchanged. Do not recover checkpoint
+`366ac24b`, implement DSP, merge, or push.

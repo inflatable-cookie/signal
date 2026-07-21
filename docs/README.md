@@ -31,7 +31,7 @@ strict lane.
 - Rejected offline stretch successor: [architecture/offline-time-stretch-successor-brief.md](./architecture/offline-time-stretch-successor-brief.md)
 - Non-phase-vocoder feasibility: [architecture/offline-time-stretch-non-phase-vocoder-feasibility.md](./architecture/offline-time-stretch-non-phase-vocoder-feasibility.md)
 - Creative time-stretch study: [architecture/offline-creative-time-stretch-study.md](./architecture/offline-creative-time-stretch-study.md)
-- Construction-bound LinkedStnNoiseMorph v6 brief: [architecture/offline-creative-linked-stn-noise-morph-brief.md](./architecture/offline-creative-linked-stn-noise-morph-brief.md)
+- Rejected construction-bound LinkedStnNoiseMorph v6 brief: [architecture/offline-creative-linked-stn-noise-morph-brief.md](./architecture/offline-creative-linked-stn-noise-morph-brief.md)
 - Rejected creative ComparatorAuditedRenewalSpectral brief: [architecture/offline-creative-comparator-audited-renewal-spectral-brief.md](./architecture/offline-creative-comparator-audited-renewal-spectral-brief.md)
 - Rejected-under-old-stereo-policy SupportAuditedListeningLedSourceRelativeRenewalSpectral brief: [architecture/offline-creative-verified-source-relative-renewal-spectral-brief.md](./architecture/offline-creative-verified-source-relative-renewal-spectral-brief.md)
 - Rejected-at-vector-proof creative SourceRelativeRenewalSpectral brief: [architecture/offline-creative-source-relative-renewal-spectral-brief.md](./architecture/offline-creative-source-relative-renewal-spectral-brief.md)
@@ -81,9 +81,8 @@ strict lane.
 
 ## Next Task
 
-Run `g10.031` Batch 31.53 only in the fresh construction-bound v6 worktree.
-Implement the private renderer once, require compile and construction `1/1`,
-checkpoint, then run structural and synthetic admission in order. Stop and
-clean up on the first miss. Do not change production, routing, product
-exposure, Loophole, or Chorus. Only drop into `specs/` when a strict lane is
-explicitly reopened.
+Run `g10.031` Batch 31.54 as docs-only executable-authority reassessment.
+Either bind every structural owner into one fresh construction authority or
+close `LinkedStnNoiseMorph`. Do not recover the rejected checkpoint, implement
+DSP, change production, routing, product exposure, Loophole, or Chorus. Only
+drop into `specs/` when a strict lane is explicitly reopened.

@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: active PaulX-like `Dream`; construction-bound linked-STN v6 ready
+Status: active PaulX-like `Dream`; linked-STN reassessment required
 Owner: core-product
 Updated: 2026-07-21
 Related contracts: `046`, `048`, `084`
@@ -788,8 +788,13 @@ no materially different source-backed renewal owner, that path is closed.
     table into construction authority. Complete; construction-bound v6 is
     frozen docs-only.
 51. Implement construction-bound v6 once, checkpoint after construction, then
-    run structural and synthetic admission in order. Ready; isolated private
-    candidate only.
+    run structural and synthetic admission in order. Complete; construction
+    passed `1/1`, structural stopped at `16/18` on peak-plateau ownership and
+    private-surface containment, and the candidate was deleted before
+    synthetic or listening.
+52. Reassess executable structural authority. Ready; docs and architecture
+    only. Either freeze one fresh complete construction-owned identity or
+    close `LinkedStnNoiseMorph`.
 
 `Spectral`/`Rough`, coherent overlap, `LayeredCloud`, the upper overlap, dynamic
 ratios, and automatic routing still require separate reopening decisions backed
@@ -1033,10 +1038,27 @@ memory ceilings, quality gates, and cleanup policy do not change. Fresh
 `ConstructionBoundZeroPreservingLinkedStnNoiseMorph` authority is ready for
 one isolated implementation. No creative renderer is admitted.
 
+Batch 31.53 implemented that authority once from exact `main` head
+`fdad84326d1d2b576f6a73e96499b77be76dcd4e`. A permitted pre-checkpoint Rust
+ownership repair followed the first compile attempt. Compile and construction
+`1/1` then passed, freezing checkpoint `366ac24b` and tree `68da7e43`.
+
+Structural admission completed `16/18`. `S06` returned peak bins `[1,3,4]`
+where the frozen equal-plateau tie law requires `[1,3]`. `S18` found the
+forbidden `pub fn` token in the private candidate source. All other structural
+owners passed. Synthetic and listening did not open.
+
+The dominant cause is incomplete construction ownership of structural
+semantics: construction proved geometry but not peak-plateau tie ownership or
+the private-surface token boundary. The checkpoint was not repaired or rerun.
+The worktree, branch, checkpoint reference, private source, tests, and build
+state were deleted. No creative renderer is admitted and no linked-STN
+candidate is ready.
+
 ## Next Task
 
-Run Batch 31.53 only in the fresh construction-bound v6 worktree and branch.
-Implement once, require compile and construction `1/1`, checkpoint, then run
-structural and synthetic admission in order. Stop, delete, and close on the
-first miss. Do not recover Batch 31.51, open routing or product exposure, touch
+Run Batch 31.54 as docs-only executable-authority reassessment. Either bind the
+peak-plateau tie law and private-surface boundary into one fresh complete
+construction owner or close `LinkedStnNoiseMorph`. Do not recover or repair
+checkpoint `366ac24b`, implement DSP, open routing or product exposure, touch
 Loophole or Chorus, merge, or push.

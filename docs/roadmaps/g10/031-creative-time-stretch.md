@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: active; Batch 31.52 complete, Batch 31.53 candidate ready
+Status: active; Batch 31.53 rejected, Batch 31.54 reassessment ready
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -1764,35 +1764,50 @@ Decision:
 
 ## Batch 31.53 - Isolated Construction-Bound Linked STN Candidate
 
-Status: ready
+Status: complete; candidate rejected at structural admission
 
-- [ ] start from the exact committed Batch 31.52 `main` head and record its
-  full hash before creating any candidate file
-- [ ] create only worktree `signal-candidate-31-53` on branch
+- [x] started from exact Batch 31.52 `main` head
+  `fdad84326d1d2b576f6a73e96499b77be76dcd4e`
+- [x] created only worktree `signal-candidate-31-53` on branch
   `candidate/g10-031-construction-bound-zero-preserving-linked-stn-noise-morph`
-- [ ] implement only the private
+- [x] implemented only the private
   `creative_construction_bound_zero_preserving_linked_stn_noise_morph` module
   and private `lib.rs` declaration, using existing dependencies
-- [ ] make `GEOMETRY_SPEC` the sole literal geometry table; independently code
-  the oracle and share `assert_geometry_authority` between construction and
-  `S02`
-- [ ] run compile, then construction exactly once; require `1/1` before one
-  immutable checkpoint exists
-- [ ] record checkpoint, tree, candidate-file, spec, lockfile, toolchain, and
-  platform identity before admission
-- [ ] run structural exactly once and require `18/18`; stop and clean up on any
-  miss
-- [ ] run synthetic exactly once only after structural passes and require
-  `10/10`; stop and clean up on any miss
-- [ ] open concealed mono and independent stereo listening only after all
-  objective owners pass; listening remains promotion authority
-- [ ] admit nothing to production in this batch; record pass or dominant cause,
-  delete the disposable surface on rejection, and return to `main` for docs-only
-  closeout
+- [x] made `GEOMETRY_SPEC` the sole literal geometry table; construction and
+  `S02` shared the complete-domain authority assertion
+- [x] passed compile after one permitted pre-checkpoint Rust ownership repair,
+  then passed construction `1/1`
+- [x] froze checkpoint `366ac24b5cec936209b3e1cbcadafce45eb06bbc`
+  and tree `68da7e43784acf8ae1a9d23e77d244153504fd76`
+- [x] ran structural exactly once; `16/18` passed
+- [x] stopped on `S06` peak-plateau ownership (`[1,3,4]` vs `[1,3]`) and
+  `S18` private-surface containment (forbidden `pub fn`)
+- [x] kept synthetic, mono, and stereo listening closed
+- [x] deleted the worktree, branch, checkpoint reference, private source,
+  tests, and `3.4 GiB` of build state without repair or rerun
+- [x] admitted no candidate or production surface to `main`
+
+The dominant cause is incomplete construction ownership of structural
+semantics. Construction proved geometry but did not prove the frozen
+peak-plateau tie law or private-surface token boundary before checkpoint.
+
+## Batch 31.54 - Linked STN Executable-Authority Reassessment
+
+Status: ready; docs and architecture only
+
+- [ ] inspect the canonical v6 authority and the Batch 31.53 receipt without
+  recovering deleted candidate source
+- [ ] decide whether the peak-plateau tie law and private-surface boundary can
+  both be construction-owned under one fresh complete identity
+- [ ] audit every structural owner for the same construction-coverage gap
+- [ ] either freeze one fresh complete renderer and evidence identity or close
+  `LinkedStnNoiseMorph`
+- [ ] do not implement DSP, add tests or harnesses, change production, reopen
+  routing or product exposure, touch Loophole or Chorus, merge, or push
 
 ## Later Batches
 
-Closed or paused without promotion. Batch 31.53 is the sole ready work. Every
+Closed or paused without promotion. Batch 31.54 is the sole ready work. Every
 later product batch still requires a separately admitted complete renderer:
 
 - minimal production admission
@@ -1921,11 +1936,17 @@ later product batch still requires a separately admitted complete renderer:
 - [x] one construction-owned `GEOMETRY_SPEC` now supplies construction and
   structural `S02` without a second handwritten table
 - [x] no candidate DSP entered `main` during geometry-vector audit
+- [x] construction-bound v6 passed construction `1/1`, then failed structural
+  admission at `16/18` on peak-plateau ownership and private-surface
+  containment
+- [x] the rejected v6 checkpoint, implementation, tests, worktree, branch, and
+  build state were deleted without repair or rerun
+- [x] no candidate DSP entered `main` after v6 rejection
 
 ## Next Task
 
-Run Batch 31.53 only in the exact fresh construction-bound v6 worktree and
-branch. Implement once, pass compile and construction `1/1`, freeze one
-checkpoint, then run structural and synthetic admission in order. Stop,
-delete, and close on the first miss. Do not repair Batch 31.51, change
-production DSP, touch Loophole or Chorus, merge, or push.
+Run Batch 31.54 as docs-only executable-authority reassessment. Decide whether
+one fresh complete identity can construction-own the peak-plateau tie law,
+private-surface boundary, and every other structural owner, or close
+`LinkedStnNoiseMorph`. Do not recover checkpoint `366ac24b`, implement DSP,
+change production, touch Loophole or Chorus, merge, or push.

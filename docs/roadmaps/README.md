@@ -151,6 +151,12 @@ The candidate was deleted before synthetic or listening. Exact geometry-vector
 audit then reproduced all `184001` supported rows twice and bound the sole
 literal `GEOMETRY_SPEC` into both construction and `S02`. Fresh
 construction-bound v6 is ready for one isolated implementation.
+Batch 31.53 then passed compile and construction `1/1`, but structural
+admission stopped at `16/18` on peak-plateau ownership and private-surface
+containment. Synthetic and listening stayed closed. The rejected checkpoint,
+worktree, branch, private source, tests, and build state were deleted without
+repair or rerun. Batch 31.54 is ready as docs-only executable-authority
+reassessment.
 Offline artifacts still need a streaming artifact writer/cache target for full
 peak-memory closure. Mono callback-state DSP has a
 no-allocation proof, linked stereo is implemented, ratio scheduling has
@@ -277,8 +283,8 @@ Before rollover:
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the active generation front door.
-Run `g10.031` Batch 31.53 only in the fresh construction-bound v6 worktree.
-Require compile and construction `1/1`, checkpoint, then run structural and
-synthetic admission in order. Keep the transparent successor lane, `g10.028`,
-routing, product exposure, and cross-repo work closed. Do not repair Batch
-31.51, merge, or push.
+Run `g10.031` Batch 31.54 as docs-only executable-authority reassessment.
+Either freeze one fresh construction-owned identity or close
+`LinkedStnNoiseMorph`. Keep the transparent successor lane, `g10.028`, routing,
+product exposure, and cross-repo work closed. Do not recover checkpoint
+`366ac24b`, implement DSP, merge, or push.

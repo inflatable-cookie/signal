@@ -1,6 +1,6 @@
 # Offline Creative LinkedStnNoiseMorph Renderer Brief
 
-Status: construction-bound v6 ready for one isolated implementation
+Status: construction-bound v6 rejected at structural admission; reassessment required
 Owner: dsp
 Updated: 2026-07-21
 Contract: `085`
@@ -1268,6 +1268,43 @@ This is fresh complete authority, not a repair or revival of checkpoint
 and branch. No candidate DSP, test, harness, dependency, API, route, product,
 Loophole, or Chorus surface entered `main` during Batch 31.52.
 
+## Batch 31.53 Construction-Bound V6 Rejection
+
+The candidate started from exact `main` head
+`fdad84326d1d2b576f6a73e96499b77be76dcd4e` in the named disposable worktree
+and branch. One pre-checkpoint compile attempt found a Rust test-assembly move
+error. The permitted ownership-only repair changed no formula, literal,
+metric, threshold, helper result, or assertion. Compile then passed.
+
+Construction passed `1/1` and froze checkpoint
+`366ac24b5cec936209b3e1cbcadafce45eb06bbc` with tree
+`68da7e43784acf8ae1a9d23e77d244153504fd76`. The candidate contained the
+private declaration plus eight private module files, `3247` inserted lines,
+and no dependency or lockfile change. It used geometry table SHA-256
+`22d14913f01143007a114fad7a97d44a7e2b07cf5b254b92bc59c7f805e73697`,
+FNV-1a-64 `7ffb5aa02900893e`, and Cargo lockfile SHA-256
+`e3848a40d2ea1ff88a0e036df40d1fefa56c7aca950a95262c1d8c5668fd394d`.
+The toolchain was Rust `1.96.0`, host `aarch64-apple-darwin`, LLVM `22.1.2`,
+on Darwin `25.5.0` arm64.
+
+Structural admission ran once and finished `16/18`:
+
+- `S06` expected deterministic left ownership of a two-bin equal-magnitude
+  peak plateau, `[1,3]`; the implementation returned `[1,3,4]`
+- `S18` found the forbidden `pub fn` token in the private candidate source
+- `S01..S05` and `S07..S17` passed
+
+The dominant cause is incomplete construction ownership of structural
+semantics. Geometry authority was exhaustive, but construction did not prove
+the frozen peak-plateau tie law or the private-surface token boundary before
+checkpoint. This is a terminal candidate failure. Synthetic and listening
+admission did not open.
+
+The checkpoint was not repaired or rerun. The worktree, branch, checkpoint
+reference, private source, tests, and `3.4 GiB` of build state were deleted.
+No candidate DSP or product surface entered `main`. Construction-bound v6 is
+rejected and no linked-STN candidate is ready.
+
 ## Sources
 
 - [Creative source triangulation](../research/specimen-dossiers/creative-stretch-source-triangulation.md)
@@ -1280,8 +1317,8 @@ Loophole, or Chorus surface entered `main` during Batch 31.52.
 
 ## Next Task
 
-Run Batch 31.53 only in the fresh construction-bound v6 worktree and branch.
-Implement the complete private renderer once, run compile and construction,
-freeze one immutable checkpoint only after construction passes `1/1`, then run
-structural and synthetic admission in order. Stop, delete, and close on the
-first miss. Do not repair Batch 31.51, change production code, merge, or push.
+Run Batch 31.54 as docs-only executable-authority reassessment. Decide whether
+the peak-plateau tie law and private-surface boundary can both become
+construction-owned under one fresh complete identity, or close
+`LinkedStnNoiseMorph`. Do not recover or repair checkpoint `366ac24b`, write
+candidate DSP, change production code, merge, or push.
