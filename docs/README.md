@@ -31,7 +31,7 @@ strict lane.
 - Rejected offline stretch successor: [architecture/offline-time-stretch-successor-brief.md](./architecture/offline-time-stretch-successor-brief.md)
 - Non-phase-vocoder feasibility: [architecture/offline-time-stretch-non-phase-vocoder-feasibility.md](./architecture/offline-time-stretch-non-phase-vocoder-feasibility.md)
 - Creative time-stretch study: [architecture/offline-creative-time-stretch-study.md](./architecture/offline-creative-time-stretch-study.md)
-- Rejected-at-bounded-state creative LinkedStnNoiseMorph brief: [architecture/offline-creative-linked-stn-noise-morph-brief.md](./architecture/offline-creative-linked-stn-noise-morph-brief.md)
+- Frozen bounded creative LinkedStnNoiseMorph v2 brief: [architecture/offline-creative-linked-stn-noise-morph-brief.md](./architecture/offline-creative-linked-stn-noise-morph-brief.md)
 - Rejected creative ComparatorAuditedRenewalSpectral brief: [architecture/offline-creative-comparator-audited-renewal-spectral-brief.md](./architecture/offline-creative-comparator-audited-renewal-spectral-brief.md)
 - Rejected-under-old-stereo-policy SupportAuditedListeningLedSourceRelativeRenewalSpectral brief: [architecture/offline-creative-verified-source-relative-renewal-spectral-brief.md](./architecture/offline-creative-verified-source-relative-renewal-spectral-brief.md)
 - Rejected-at-vector-proof creative SourceRelativeRenewalSpectral brief: [architecture/offline-creative-source-relative-renewal-spectral-brief.md](./architecture/offline-creative-source-relative-renewal-spectral-brief.md)
@@ -81,9 +81,8 @@ strict lane.
 
 ## Next Task
 
-Run `g10.031` Batch 31.44 as docs-only bounded-state architecture
-reassessment. Determine whether `LinkedStnNoiseMorph` can preserve its frozen
-owner semantics using duration-independent rings under `96 MiB`. Do not
-implement another candidate or change `main`, routing, product exposure,
-Loophole, or Chorus. Only drop into `specs/` when a strict lane is explicitly
-reopened.
+Run `g10.031` Batch 31.45 only in the disposable worktree named by bounded v2.
+Implement `BoundedLinkedStnNoiseMorph` once, complete construction, freeze one
+checkpoint, then run structural and synthetic admission. Keep `main`, routing,
+product exposure, Loophole, and Chorus unchanged. Only drop into `specs/` when
+a strict lane is explicitly reopened.

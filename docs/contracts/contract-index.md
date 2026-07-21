@@ -39,7 +39,9 @@ memory alone.
   materially different `LinkedStnNoiseMorph`; Batch 31.42 froze one complete
   authority. Its Batch 31.43 candidate passed construction, then failed
   structural `S17` because duration-derived component arrays violated the
-  bounded-state contract. The candidate was deleted. Every renderer remains
+  bounded-state contract. The candidate was deleted. Batch 31.44 then froze a
+  deterministic orientation prepass, bounded monotonic render rings, an
+  `89 MiB` design ceiling, and fresh candidate identity. Every renderer remains
   unadmitted; other characters and the router stay closed or paused
 - `082` and `g10.029` are historical evidence, not active execution authority
 - `g10.028` source-fill work remains paused
@@ -171,6 +173,6 @@ frozen elsewhere in this index.
 ## Next Task
 
 Keep Contract `084` closed. Contract `085` retains the PaulX-like target but no
-renderer is admitted. Run `g10.031` Batch 31.44 as docs-only bounded-state
-reassessment of `LinkedStnNoiseMorph`. Do not implement another candidate or
-recover deleted code. Keep product routes and public surfaces unchanged.
+renderer is admitted. Run `g10.031` Batch 31.45 once under the fresh bounded
+`LinkedStnNoiseMorph` authority. Do not recover deleted code, merge a
+candidate, or change product routes and public surfaces.

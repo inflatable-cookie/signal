@@ -127,8 +127,9 @@ ready renewal owner. Batch 31.41 selected materially different
 `LinkedStnNoiseMorph`, and Batch 31.42 froze its complete clean-room renderer
 and evidence authority without DSP. Batch 31.43 passed construction, then
 failed structural `S17` because duration-derived component arrays violated the
-bounded-state contract. The candidate was deleted; docs-only bounded-state
-reassessment is ready and the product target remains unadmitted.
+bounded-state contract. The candidate was deleted. Batch 31.44 froze a
+two-pass bounded schedule and fresh identity; one isolated implementation is
+ready and the product target remains unadmitted.
 Offline artifacts still need a streaming artifact writer/cache target for full
 peak-memory closure. Mono callback-state DSP has a
 no-allocation proof, linked stereo is implemented, ratio scheduling has
@@ -255,8 +256,7 @@ Before rollover:
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the active generation front door.
-`g10.031` Batch 31.44 is the only ready work: a docs-only bounded-state
-reassessment after the isolated `LinkedStnNoiseMorph` candidate failed
-structural `S17`. Keep the transparent successor lane, `g10.028`, `main`,
-routing, product exposure, and cross-repo work closed. Do not implement another
-candidate or recover deleted code.
+`g10.031` Batch 31.45 is ready for one isolated implementation of bounded
+`LinkedStnNoiseMorph` v2. Keep the transparent successor lane, `g10.028`,
+`main`, routing, product exposure, and cross-repo work closed. Do not recover
+deleted code or merge a candidate.

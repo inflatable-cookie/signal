@@ -42,6 +42,6 @@ Keep milestone sequencing in `roadmaps/`.
 ## Next Task
 
 Keep the `g10.030` transparent successor program closed. Run `g10.031` Batch
-31.44 as docs-only bounded-state architecture reassessment after the
-`LinkedStnNoiseMorph` structural `S17` rejection. Do not implement another
-candidate. Keep `main`, product routing, and public exposure unchanged.
+31.45 only in the disposable worktree named by the bounded
+`LinkedStnNoiseMorph` v2 brief. Stop before listening on any objective miss.
+Keep `main`, product routing, and public exposure unchanged.

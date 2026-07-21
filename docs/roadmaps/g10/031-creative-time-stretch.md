@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: active; Batch 31.43 rejected, Batch 31.44 reassessment ready
+Status: active; Batch 31.44 complete, Batch 31.45 ready
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -1462,10 +1462,50 @@ Decision:
   changing its map, decomposition, tonal, event, residual, or evidence
   semantics
 
+## Batch 31.44 - Linked STN Bounded-State Reassessment
+
+Status: complete; bounded v2 candidate ready
+
+- [x] preserved every transform, mask, map, tonal, transient, residual,
+  envelope, stereo, boundary, synthetic, and listening rule
+- [x] identified first-non-zero residual orientation as the sole non-causal
+  dependency
+- [x] froze one deterministic full-source decomposition/event orientation
+  prepass followed by a clean render-state reset
+- [x] froze monotonic producer, consumer, lookahead, finalization, and eviction
+  frontiers for every material lane
+- [x] froze packed spectral rings, source-component rings, residual covariance,
+  event claim arena and live-ledger bound, envelope moments/deque, and bounded
+  `f64` output finalization
+- [x] proved supported-rate maxima `Q_h<=17`, `R_h<=19`, `Q_v<=97`, and
+  `R_v<=57`
+- [x] froze exact capacity formulas and maximum rows in compile-linked
+  `MEMORY_SPEC`
+- [x] froze an `89 MiB` owned-state design ceiling with `7 MiB` unassigned
+  below the terminal `96 MiB` actual allocation gate
+- [x] froze fresh identity `BoundedLinkedStnNoiseMorph` and exact Batch 31.45
+  worktree, branch, module, test prefixes, construction, gate order, cleanup,
+  and receipt boundary
+- [x] changed documentation only; no candidate, production DSP, test, harness,
+  fixture, dependency, API, route, cache, artifact, Loophole, or Chorus surface
+  entered `main`
+
+Decision:
+
+- the family remains feasible; the Batch 31.43 miss came from an unbounded
+  implementation, not an unavoidable owner dependency
+- a single render pass is not feasible under the frozen orientation law;
+  buffering descriptors or synthesizing before orientation would violate the
+  contract
+- the prepass carries only one mono or two stereo signs across passes and does
+  not add a map or audible owner
+- Batch 31.45 may implement bounded v2 once; quality and promotion remain
+  entirely unproved
+
 ## Later Batches
 
-Closed or paused without promotion. Batch 31.44 docs-only bounded-state
-reassessment is the only ready work. Every later product batch still requires
+Closed or paused without promotion. Batch 31.45 isolated bounded-v2
+implementation is the only ready work. Every later product batch still requires
 a separately admitted complete renderer:
 
 - minimal production admission
@@ -1559,14 +1599,15 @@ a separately admitted complete renderer:
   `main`
 - [x] the rejected checkpoint, implementation, tests, worktree, branch, and
   build state were deleted without repair or rerun
+- [x] bounded-state reassessment found one complete two-pass monotonic schedule
+  and froze fresh `BoundedLinkedStnNoiseMorph` authority
+- [x] no candidate code entered `main` during reassessment
 - [x] no private renderer or product surface entered `main`
 
 ## Next Task
 
-Run Batch 31.44 as docs-only bounded-state architecture reassessment. Prove or
-reject that the frozen `LinkedStnNoiseMorph` owner graph can run from bounded
-monotonic source-component, descriptor, covariance, event, and synthesis rings
-under `96 MiB` without changing its map or audible ownership. Freeze either
-one complete replacement authority or a family closure. Do not implement a
-candidate, change production code, expose the product, touch Loophole or
-Chorus, or push.
+Run Batch 31.45 only in `signal-candidate-31-45` on
+`candidate/g10-031-bounded-linked-stn-noise-morph`. Implement bounded v2 once,
+run compile and construction, freeze one checkpoint, then run structural and
+synthetic admission in order. Stop before listening on any miss. Do not change
+production code, merge, expose the product, touch Loophole or Chorus, or push.

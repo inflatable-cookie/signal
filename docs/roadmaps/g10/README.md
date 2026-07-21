@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: creative stretch active; linked STN bounded-state reassessment next
+Status: creative stretch active; bounded linked STN candidate next
 Updated: 2026-07-21
 
 ## Why this generation matters now
@@ -250,8 +250,8 @@ Do not start Loophole or Chorus planning from Signal internals.
     complete docs-only brief; Batch 31.42 froze that renderer and its
     self-contained evidence authority; Batch 31.43 rejected its isolated
     implementation at structural `S17` for duration-derived working state;
-    Batch 31.44 bounded-state reassessment is ready; explicit `Cyclic` stays
-    closed
+    Batch 31.44 froze a two-pass bounded schedule and fresh candidate identity;
+    Batch 31.45 isolated implementation is ready; explicit `Cyclic` stays closed
 
 ## Stretch Boundary
 
@@ -367,11 +367,18 @@ spectral arrays because working state must remain duration-independent under
 branch, checkpoint reference, tests, and worktree were deleted without repair
 or rerun. No candidate code entered `main`.
 
+Batch 31.44 found one feasible bounded schedule. A decomposition/event prepass
+resolves the first-non-zero residual orientation scalars, then a clean render
+pass advances fixed spectral, component, event, covariance, envelope, and
+output rings. Every state has geometry-derived capacity and a monotonic last
+consumer. The owned-state design ceiling is `89 MiB`; the terminal actual cap
+remains `96 MiB`. Fresh `BoundedLinkedStnNoiseMorph` authority is frozen. No
+DSP or product surface entered `main`.
+
 ## Next Task
 
-Run `g10.031` Batch 31.44 as docs-only bounded-state architecture
-reassessment. Prove or reject that the frozen `LinkedStnNoiseMorph` owner graph
-can use duration-independent monotonic rings without changing its map or
-audible ownership. Freeze one complete fresh authority or close the family.
-Do not implement another candidate, change `main`, `g10.028`, routing, product
-exposure, other creative characters, or cross-repo work, and do not push.
+Run `g10.031` Batch 31.45 only in `signal-candidate-31-45` on
+`candidate/g10-031-bounded-linked-stn-noise-morph`. Implement bounded v2 once,
+complete construction, freeze one checkpoint, then run structural and
+synthetic gates. Keep `main`, `g10.028`, routing, product exposure, other
+creative characters, and cross-repo work unchanged. Do not merge or push.

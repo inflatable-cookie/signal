@@ -1,6 +1,6 @@
 # Offline Creative Time-Stretch Study
 
-Status: `LinkedStnNoiseMorph` candidate rejected; bounded-state reassessment ready
+Status: bounded `LinkedStnNoiseMorph` v2 frozen; one candidate ready
 Owner: dsp
 Updated: 2026-07-21
 Contract: `085`
@@ -768,7 +768,34 @@ never opened. It is also not a tunable miss. The candidate failed one of the
 complete architecture's ownership boundaries and was deleted without repair
 or rerun. The next work is a docs-only feasibility reassessment of bounded
 component production, consumer lookahead, eviction, event lifetime, and
-synthesis support. Another implementation is not ready.
+synthesis support. At that closeout, another implementation was not ready.
+
+## Batch 31.44 Bounded-State Decision
+
+The complete material-owner graph has a bounded schedule. Symmetric medians,
+WOLA support, `24`-frame event confirmation, capped segmentation, `5`-frame
+covariance, mapped interpolation, and output normalization all have finite
+geometry-derived lookahead and monotonic last consumers.
+
+Residual orientation was the one non-causal dependency. It uses the first
+exactly non-zero augmented-residual mid and side samples, which are known only
+after decomposition and event reassignment. Bounded v2 resolves those two
+scalars in a deterministic full-source orientation prepass, resets all state,
+then performs the real render. It retains no prepass components and does not
+change the map, masks, event decisions, tonal phase, residual covariance,
+envelope, or stereo law.
+
+The canonical brief now freezes packed spectral rings, component and claim
+arenas, live event bounds, output finalization, envelope moments/deque,
+eviction rules, and a compile-linked `MEMORY_SPEC`. Worst-geometry model rows
+sum under category budgets whose owned-state design ceiling is `89 MiB`; the
+terminal counting-allocator ceiling remains `96 MiB`. Only the returned
+`Vec<f32>` may derive capacity from duration.
+
+`BoundedLinkedStnNoiseMorph` is a fresh candidate identity, not a repair of the
+deleted checkpoint. Batch 31.45 may implement it once. Creative quality,
+`16x`, residual image, component leakage, entry/tail character, and cost remain
+unproved until the full gate order runs.
 
 ## Sources
 
@@ -807,8 +834,7 @@ synthesis support. Another implementation is not ready.
 
 ## Next Task
 
-Run Batch 31.44 as docs-only bounded-state architecture reassessment. Prove or
-reject that all frozen `LinkedStnNoiseMorph` consumers can advance and evict
-through duration-independent rings without changing the renderer's map or
-material ownership. Do not implement another candidate or change product
-exposure.
+Run Batch 31.45 only in the disposable worktree named by the bounded v2 brief.
+Implement it once, pass compile and construction, freeze one checkpoint, then
+run structural and synthetic gates in order. Stop before listening on any
+miss. Do not change production code or product exposure.

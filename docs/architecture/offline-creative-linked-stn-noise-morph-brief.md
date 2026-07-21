@@ -1,15 +1,15 @@
 # Offline Creative LinkedStnNoiseMorph Renderer Brief
 
-Status: candidate rejected at bounded-state gate; reassessment required
+Status: bounded v2 frozen; one fresh isolated candidate ready
 Owner: dsp
 Updated: 2026-07-21
 Contract: `085`
-Roadmap: `g10.031`, Batch 31.42
+Roadmap: `g10.031`, Batches 31.42 and 31.44
 
 ## Decision
 
-Build one Signal-owned `LinkedStnNoiseMorph` candidate for neutral `Dream` at
-fixed creative expansion from `4x` through `16x`.
+Build one Signal-owned `BoundedLinkedStnNoiseMorph` candidate for neutral
+`Dream` at fixed creative expansion from `4x` through `16x`.
 
 This is one material-separated renderer, not three optional effects. A
 reconstructing two-stage analysis assigns tonal, transient, and residual
@@ -22,6 +22,13 @@ The architecture is clean-room. Public SiTraNoStar and the STN papers inform
 material ownership and validation only. Their GPL expression, constants,
 thresholds, masks, tables, and control flow do not transfer. No external
 library or model enters production.
+
+Bounded v2 supersedes only the Batch 31.42 execution schedule and candidate
+identity. Every transform, mask, map, tonal, transient, residual, envelope,
+stereo, boundary, synthetic, and listening rule below is unchanged. The v2
+schedule adds the missing causal prepass, explicit live frontiers, fixed ring
+capacities, and category memory budgets. It does not repair or revive the
+deleted Batch 31.43 checkpoint.
 
 ## Supported Request
 
@@ -364,47 +371,157 @@ This mapped envelope suppresses bed pre-echo around source energy changes. It
 does not invent an exterior fade. Entry and tail energy remain source-mapped
 and are judged explicitly against PaulXStretch in long-form listening.
 
-## State, Determinism, And Cost
+## Bounded State, Determinism, And Cost
 
-Allocate output, FFT plans, scratch, windows, median rings, source-component
-rings, covariance rings, event state, peak tracks, oscillators, lane
-denominators, and conversion scratch before processing starts. No processing
-allocation is permitted.
+### Causal pass split
 
-Excluding immutable input and required output, actual peak working state must
-remain at most `96 MiB` for two channels at every supported sample rate and
-duration. The counting allocator includes FFT plans, FFT scratch, vector
-capacity, median work, tracks, event lookahead, and ring slack. It subtracts
-only the returned output capacity. Ring capacities derive from the frozen
-windows, median radii, event caps, and one synthesis support; never from `L`
-or `T`.
+Residual orientation depends on the first exactly non-zero augmented-residual
+mid and side samples. Those samples do not exist until long separation, short
+separation, event claiming, and residual reassignment complete. Synthesizing
+before discovering them changes the frozen stereo law; retaining every
+descriptor until end of input violates bounded state.
 
-Peak-track count is at most `N_t/2-1`. Event state retains only events whose
-source or target support has not passed. Source analysis advances monotonically
-and old samples, frames, masks, and descriptors are evicted after their last
-consumer.
+Bounded v2 therefore uses exactly two source passes:
 
-For each consumed source frame, analysis performs one long forward transform,
-one long inverse residual reconstruction per channel, one short forward and
-two short inverse reconstructions, plus one residual forward transform.
-Each output centre performs one tonal inverse and one residual inverse per
-channel, with two excitation forward transforms shared by stereo. Cost is
-`O((L/A_s)*N_s log N_s + (L/A_t)*N_t log N_t +
-(T/H)*(N_t log N_t+N_r log N_r))`. Traversal is single-threaded, reductions
-have fixed order, and all ties are explicit. The same complete request on the
-supported platform contract must be byte-identical.
+1. The orientation prepass runs long and short separation, event detection,
+   claiming, and residual reassignment in source order. It records only the
+   mono residual sign or the two stereo signs `o_m,o_s`. It consumes the full
+   source including the fixed zero flush, then discards all analysis state.
+2. The render pass resets every counter, frame, event ID, median, WOLA, and
+   descriptor state. It reproduces the same source components, computes tonal
+   and residual descriptors, synthesizes in ascending output order, and uses
+   the two prepass signs. The prepass never supplies component samples,
+   spectra, events, masks, envelopes, or output data to this pass.
+
+Both passes use the same sole map, decomposition, event state machine, tie
+rules, and traversal. The prepass adds fixed work, not a second audible owner.
+Silence completes the pass with `+1` orientation exactly as already frozen.
+
+### Live frontiers and eviction
+
+Let `h_t=(Q_h-1)/2` and `h_s=(R_h-1)/2`. Exhaustive integer evaluation over
+every supported sample rate gives `Q_h<=17`, `R_h<=19`, `Q_v<=97`, and
+`R_v<=57`; therefore `h_t<=8` and `h_s<=9`.
+
+The render pass owns monotonic frontiers for long analysis, first-residual
+samples, short analysis, event decisions, augmented residual, residual
+covariance, envelope, synthesis centres, and finalized output. For the next
+output finalization interval it first determines the greatest source
+coordinate required by:
+
+- every tonal centre whose `N_t` support intersects the interval
+- every residual centre whose `N_r` support intersects the interval
+- both source descriptor frames bracketing each mapped centre
+- both envelope samples bracketing each mapped output sample
+- every event whose capped native segment can intersect the interval
+
+It then advances source stages only through that coordinate plus their fixed
+median, detector, segmentation, covariance, and window lookahead. This is an
+inverse bound on the existing signed-rational map and event-anchor formula,
+not a second timeline or floating cursor.
+
+Eviction is exact:
+
+| State | Last consumer |
+| --- | --- |
+| native long spectrum and aggregate power | its final horizontal-median centre |
+| resolved tonal frame | the later mapped bracket and sequential track matcher |
+| first-residual sample | the last overlapping short analysis window |
+| transient and residual source sample | event right-cap decision, residual frame, and streaming reconstruction check |
+| residual covariance frame | the later mapped residual bracket |
+| envelope sample or maximum-deque node | the later mapped envelope bracket |
+| claimed event sample and descriptor | its cropped target support is finalized |
+| tonal or residual output accumulator | every overlapping synthesis centre has executed |
+
+Event candidates are separated by at least three short frames through the
+earliest-maximum rule. Claimed segments are source-ordered and midpoint
+clipped. The ledger is therefore a fixed live queue plus monotonically
+increasing `last_committed_id` and `last_emitted_id`, never a set of all past
+events. An output sample finalizes only after all bed centres are accumulated,
+its envelope bracket exists, and the event-decision frontier proves that no
+anchor through `y+2N_s` can place a capped native segment on that sample.
+
+### Fixed storage
+
+Spectral rings retain packed bins `0..N/2` in `f64` complex form. FFT work
+buffers may be full complex arrays but are reused by size and channel. Source
+components and output accumulators are `f64`. The sole duration-derived
+mutable allocation is the required returned interleaved `Vec<f32>`; each
+output sample is converted into it once after finalization. A full-duration
+`f64` output, denominator, component, spectrum, descriptor, event ledger, or
+envelope is forbidden.
+
+Compile-linked `MEMORY_SPEC` owns these capacities:
+
+| State | Capacity | Maximum |
+| --- | --- | ---: |
+| native long frames | `Q_h+3` | `20` frames |
+| resolved tonal frames | fixed | `4` frames |
+| native short frames | `R_h+3` | `22` frames |
+| first-residual samples | `N_t+2(h_s*A_s+N_s)` | `59392` |
+| transient and augmented-residual samples, each | `2N_r+16N_s+48A_s+256` | `147712` |
+| residual spectrum/covariance frames | fixed | `7` frames |
+| claimed-event sample arena | `12N_s+48A_s+512` | `98816` |
+| live event descriptors | `ceil(claim_capacity/(3A_s))+4` | `39` events |
+| envelope and maximum-deque samples | `2N_r+4` | `32772` |
+| output finalization samples | `2N_t+2N_r+8N_s+4H+256` | `139520` |
+| peak tracks | `N_t/2-1` | `16383` tracks |
+| persistent bin states | `N_t/2+1` | `16385` bins |
+
+At maximum geometry, conservative packed-`f64` models occupy `17.502 MiB`
+for long frames, `9.841 MiB` for short/source WOLA state, `4.001 MiB` for
+residual covariance and excitation, `1.508 MiB` for claimed event samples,
+`1.001 MiB` for envelope state, and `8.516 MiB` for output finalization.
+Category ceilings are:
+
+| Category | Ceiling |
+| --- | ---: |
+| long spectra, medians, and resolved tonal frames | `22 MiB` |
+| short spectra and source WOLA rings | `12 MiB` |
+| residual spectra, covariance, and excitation | `9 MiB` |
+| events, ledger, and claim arena | `4 MiB` |
+| tonal tracks, oscillators, and axis state | `5 MiB` |
+| envelope moments and deques | `2 MiB` |
+| output accumulation and finalization | `12 MiB` |
+| FFT plans, work buffers, windows, and allocator slack | `20 MiB` |
+| traversal and miscellaneous fixed state | `3 MiB` |
+| **owned-state design ceiling** | **`89 MiB`** |
+
+The remaining `7 MiB` is not assignable. The counting allocator still owns
+the terminal actual peak of `96 MiB`, including capacity, plans, scratch, and
+allocator overhead after subtracting only returned-output capacity.
+
+The square-root-Hann RMS envelope uses three fixed `f64` sliding moments for
+the Hann-weighted power sum, rebased by direct fixed-order evaluation every
+`N_r` source samples. A monotonic deque owns the centred `+/-N_r/2` maximum.
+This evaluates the frozen envelope with bounded memory and amortized `O(1)`
+work per source sample; no duration-derived envelope table exists.
+
+Allocate returned output, all arenas, FFT plans, scratch, windows, medians,
+tracks, oscillators, deques, and conversion state before the orientation
+prepass. No allocation is permitted in either pass.
+
+The prepass repeats long/short separation and event ownership once. The render
+pass adds residual analysis and all output synthesis. Cost is:
+
+`O(2*(L/A_s)*N_s log N_s + 2*(L/A_t)*N_t log N_t +
+(L/A_r)*N_r log N_r + (T/H)*(N_t log N_t+N_r log N_r))`.
+
+Traversal is single-threaded, reductions have fixed order, and all ties are
+explicit. The same complete request on the supported platform contract must
+be byte-identical.
 
 Offline only. No audio-thread source fill, execution, synchronization, I/O,
 or allocation is authorized.
 
-## Candidate Isolation And Construction
+## Bounded V2 Candidate Isolation And Construction
 
 Use exactly:
 
-- worktree: `signal-candidate-31-43`
-- branch: `candidate/g10-031-linked-stn-noise-morph`
+- worktree: `signal-candidate-31-45`
+- branch: `candidate/g10-031-bounded-linked-stn-noise-morph`
 - module:
-  `crates/signal-dsp-stretch/src/creative_linked_stn_noise_morph/`
+  `crates/signal-dsp-stretch/src/creative_bounded_linked_stn_noise_morph/`
 - files: `mod.rs`, `plan.rs`, `decomposition.rs`, `tonal.rs`, `transient.rs`,
   `noise.rs`, `synthesis.rs`, `tests.rs`
 
@@ -415,15 +532,17 @@ Generated evidence stays ignored under `target/`.
 
 Test prefixes are only:
 
-- `linked_stn_noise_morph_construction_`
-- `linked_stn_noise_morph_structural_`
-- `linked_stn_noise_morph_synthetic_`
+- `bounded_linked_stn_noise_morph_construction_`
+- `bounded_linked_stn_noise_morph_structural_`
+- `bounded_linked_stn_noise_morph_synthetic_`
 
 `tests.rs` owns one compile-linked `GATE_OWNERS` table with exactly `28`
 unique IDs and function pointers: `18` structural and `10` synthetic. One
 compile-linked `EVIDENCE_SPEC` owns every source sample, support, estimator,
 table value, threshold, seed, ratio, and assertion below. Helpers may not
-select implicit values.
+select implicit values. One compile-linked `MEMORY_SPEC` owns every frontier,
+capacity, maximum, category ceiling, duration vector, and allocation
+assertion above.
 
 Construction order:
 
@@ -433,16 +552,18 @@ Construction order:
 4. freeze source, tests, helpers, assertions, manifest, and checkpoint
 
 The construction owner verifies file inventory, gate inventory, formulas,
-geometry, tags, exact vectors, source tables, support tables, and sole seed.
+geometry, tags, exact vectors, source tables, support tables, sole seed,
+two-pass state reset, every `MEMORY_SPEC` formula, the exhaustive geometry
+maxima, and the `89 MiB` design sum.
 Before the checkpoint, repairs may address compiler, type, visibility,
 ownership, or manifest assembly only when they change no DSP formula, literal,
 source, metric, threshold, helper result, or assertion. Any later miss is
 terminal.
 
 The closeout receipt must record checkpoint hash, candidate Git tree ID,
-SHA-256 of every candidate file, `EVIDENCE_SPEC`, `Cargo.lock`, `rustc -vV`,
-platform, per-owner outcome, every numeric row, and SHA-256 of every rendered
-synthetic output. Receipts from different checkpoints are comparable only
+SHA-256 of every candidate file, `EVIDENCE_SPEC`, `MEMORY_SPEC`, `Cargo.lock`,
+`rustc -vV`, platform, per-owner outcome, every numeric row, and SHA-256 of
+every rendered synthetic output. Receipts from different checkpoints are comparable only
 when all those executable-identity fields match. Generated receipt files do
 not enter `main`; the closeout log retains their digests and result summary.
 
@@ -468,8 +589,8 @@ Run all owners once after construction. Require exactly `18/18`.
 | `S14` | `space` preserves `0..250 Hz`, leaves tonal/events unchanged, and makes aggregate residual side energy non-decreasing within `1e-9` |
 | `S15` | mapped envelope, lane denominators, recombination, exact crop, exact silence, and no exterior fade match edge-source vectors |
 | `S16` | one-frame, shorter-than-window, odd/even, impulse-at-edge, sustained-to-edge, and all-zero inputs remain finite and exact length |
-| `S17` | counting allocator reports at most `96 MiB`, duration-independent state, and zero allocation after processing begins |
-| `S18` | source scan and call graph contain no random device, limiter, clipper, channel gain, full-duration descriptor, external DSP, second map, renewal tonal phase, public route, or hidden report path |
+| `S17` | `MEMORY_SPEC` maxima and category sum match independent formulas; max-geometry stereo plan construction at `F=192000`, `L=N_t,4N_t,16N_t`, and every `4x/8x/16x` row reports identical working capacity, at most `89 MiB` designed and `96 MiB` actual; complete stereo renders over the same duration/ratio matrix at `F=8000` report zero allocation in either pass |
+| `S18` | source scan and call graph contain no capacity derived from `L` or `T` except returned `Vec<f32>`, full-duration component or `f64` output, all-history event set, random device, limiter, clipper, channel gain, external DSP, second map, renewal tonal phase, public route, or hidden report path |
 
 `S08` and `S13` are samplewise relationship invariants. `S12` is a descriptor
 invariant, not a claim that one stochastic output frame has exact source
@@ -726,9 +847,21 @@ bounded monotonic rings and `96 MiB` duration-independent working-state rule.
 Checkpoint `1c383679` and tree `cf413de5` were not repaired or rerun.
 Synthetic and listening admission did not open. The disposable worktree,
 branch, checkpoint reference, source, tests, and worktree-local build state
-were deleted. The brief remains historical executable authority, not authority
-for another implementation. Batch 31.44 must reassess bounded-state
-realizability before any fresh candidate can become ready.
+were deleted. That checkpoint remains historical evidence only.
+
+## Batch 31.44 Bounded-State Reassessment
+
+The complete owner graph is feasible under the frozen memory contract. Every
+median, WOLA, detector, segment, covariance, envelope, track, event, and output
+consumer has finite geometry-derived lookahead and a monotonic last consumer.
+The only non-causal scalar is residual orientation. The mandatory full-source
+orientation prepass resolves it without retaining component data or changing
+the audible law.
+
+Bounded v2 is fresh authority. It retains all renderer and evidence formulas,
+adds the exact two-pass schedule and storage proof above, and uses a new
+candidate identity. It is not a repair, retry, or reconstruction of checkpoint
+`1c383679`. Batch 31.45 may implement it once in the named disposable worktree.
 
 ## Sources
 
@@ -742,7 +875,7 @@ realizability before any fresh candidate can become ready.
 
 ## Next Task
 
-Run Batch 31.44 as docs-only bounded-state architecture reassessment. Determine
-whether this complete owner graph can be scheduled with the frozen monotonic
-rings and memory cap without changing its audible semantics. Freeze a fresh
-complete authority or close the family. Do not implement another candidate.
+Run Batch 31.45 only in the named disposable worktree. Implement bounded v2
+once, complete compile and construction, freeze one checkpoint, then run
+structural and synthetic admission in order. Stop before listening on any
+miss. Do not change production code or merge a candidate in that batch.
