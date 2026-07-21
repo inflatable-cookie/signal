@@ -1,9 +1,9 @@
 # Creative Stretch Source Triangulation
 
-Status: reviewed; support-audited listening-led candidate ready
+Status: reviewed; renewal closed at repeated linked-stereo failure
 Owner: dsp
-Updated: 2026-07-20
-Roadmap: `g10.031`, Batches 31.16 and 31.30-31.36
+Updated: 2026-07-21
+Roadmap: `g10.031`, Batches 31.16 and 31.30-31.37
 
 ## Question
 
@@ -360,8 +360,54 @@ deleted. Batch 31.35 classified that mismatch as executable evidence-
 construction failure and froze a fresh support-audited identity. Source
 triangulation, renderer formulas, and terminal thresholds remain unchanged.
 
+## Stereo Ownership Reassessment
+
+Batch 31.36 passed every objective and concealed mono gate, then failed the
+source-relative stereo gate at `16x`. Whole-render and band balance stayed
+close, but mapped local windows reached `9.418990 dB` balance error and
+reversed channel dominance on full mix. This follows Batch 31.25's global
+balance inversion under the earlier mid/side law.
+
+The native-channel pair law is already the strongest current-frame common-
+rotation translation available inside renewal. At `space=0`, it retains both
+channel magnitudes and their exact analyzed complex relation while replacing
+only common phase. This is algebraically the current-frame part of Bungee's
+common region rotation. The failure occurs after inverse synthesis and
+adjacent-frame blending because every frame receives a new unrelated common
+phase. Coefficient relation does not own interference between successive
+waveforms, so local channel energy can drift even when every frame is exact.
+
+Retained complete-source evidence supplies no eligible correction:
+
+| Source family | Potential stereo owner | Why it is not a renewal successor |
+| --- | --- | --- |
+| PaulXStretch | shared schedule with separate channel phase draws | defines the preferred diffuse target but no source-relative linked image |
+| Bungee | predecessor-driven common peak-region rotation | adds temporal phase and peak state; the current-frame invariant alone already failed |
+| Signalsmith | horizontal/vertical prediction with one reference channel | coherent temporal recurrence, incomplete above `2x`, not phase-forgetting renewal |
+| Rubber Band R3 | conditional compatible peak-trajectory sharing | returns to tracked peaks, material states, and multiresolution phase-vocoder ownership |
+| SBSMS | paired partial clocks and direct oscillators | pinned source already failed mono quality, local stereo, and mechanics feasibility |
+| covariance or consistency projection | iterative spatial/output constraint | post-hoc repair without a supported feasible set, bound, or transparent source target |
+
+Windowed channel gain, relation smoothing, dormant relation state, another
+phase address, or a different `space` curve would repair the rejected
+candidate without changing its missing temporal waveform owner. None is
+eligible under Contract `084` Rule 7.
+
+Close the renewal family without promotion. Keep the PaulX-like `Dream` target
+and comparator evidence. A future renderer requires new complete-system
+evidence for one temporal linked-waveform owner across mono character, stereo,
+exact length, determinism, and bounded state.
+
+PaulXStretch's independent channel engines expose a separate product question:
+whether creative stereo must remain source-relative in every local window, or
+whether bounded integrity plus comparator-relative independent listening owns
+promotion. That is a Contract `085` operator decision, not an architecture
+finding and not permission to revive Batch 31.36.
+
 ## Next Task
 
-Run `g10.031` Batch 31.36 only. Implement the support-audited listening-led
-candidate once from fresh source without changing source translation, seed,
-or terminal gates.
+No implementation batch is ready. The operator must decide whether local
+source-relative stereo remains a hard creative invariant or becomes diagnostic
+under comparator-relative independent listening. Until that decision, keep
+renewal, other characters, routing, product exposure, Loophole, and Chorus
+closed or paused.

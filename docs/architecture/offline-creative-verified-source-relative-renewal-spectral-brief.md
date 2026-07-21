@@ -1,6 +1,6 @@
 # Offline Creative SupportAuditedListeningLedSourceRelativeRenewalSpectral Renderer Brief
 
-Status: frozen; Batch 31.36 candidate rejected at source-relative stereo admission
+Status: rejected; renewal family closed under current stereo boundary
 Owner: dsp
 Updated: 2026-07-21
 Contract: `085`
@@ -80,6 +80,41 @@ Batch 31.25 and Batch 31.36 now supply two complete renewal candidates with
 terminal linked-stereo failures: first global source-balance inversion, now
 local mapped-window dominance reversal. Contract `084` requires architecture
 reassessment before any further candidate. Do not tune or rerun this renderer.
+
+## Batch 31.37 Decision
+
+Close renewal without promotion. Keep the PaulX-like `Dream` target.
+
+At `space=0`, the rejected native-channel law preserves both current-frame
+channel magnitudes and exact complex relation while replacing only their common
+phase. This is already a common rotation of the source pair. It fails at the
+waveform boundary because common phase renews independently by frame and the
+adjacent inverse frames then interfere during synthesis. Global spectral energy
+can remain exact while mapped local channel balance drifts or reverses.
+
+A temporal relation state, phase recurrence, tracked peak, shared oscillator,
+windowed channel gain, covariance constraint, or post-render correction would
+not be a missing coefficient in this renderer. The source-backed temporal
+options are different families, and each is already incomplete or closed:
+
+- Bungee and Rubber Band require predecessor peak trajectories
+- Signalsmith requires coherent horizontal and vertical prediction and has no
+  complete high-ratio owner
+- SBSMS direct paired oscillators failed source feasibility
+- PaulX uses independent channel phase draws and does not satisfy the current
+  hard source-relative gate
+- output covariance or consistency projection has no supported transparent
+  target, bounded convergence law, or complete stretch path
+
+Another relation, smoothing, phase, `space`, or gain variant is unauthorized.
+No successor brief or candidate worktree opens.
+
+The unresolved choice is product policy, not DSP detail. Contract `085` may
+retain local source-relative stereo as terminal, which leaves neutral `Dream`
+unimplemented, or the operator may explicitly make local image diagnostics
+subordinate to comparator-relative independent listening for creative output.
+Any change requires fresh docs authority and a fresh candidate. It cannot
+reinterpret or recover checkpoint `5d8eaf45`.
 
 ## Batch 31.34 Outcome
 
@@ -527,8 +562,8 @@ single-seed admission receipt.
 
 ## Next Task
 
-Run Batch 31.37 only. Reassess linked-stereo ownership across the Batch 31.25
-global balance inversion and Batch 31.36 local mapped-window reversal. Either
-identify one materially different, source-backed complete stereo owner or
-close renewal without closing the PaulX-like product target. Do not implement,
-tune, recover candidate source, or change gates in that batch.
+No implementation batch is ready. The operator must decide whether local
+source-relative stereo remains a terminal creative invariant or becomes a
+diagnostic beneath comparator-relative independent listening. Keep the current
+contract, deleted checkpoints, product surfaces, and routing unchanged until
+that explicit decision.

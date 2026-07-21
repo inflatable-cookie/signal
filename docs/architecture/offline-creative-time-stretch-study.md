@@ -1,6 +1,6 @@
 # Offline Creative Time-Stretch Study
 
-Status: active PaulX-like `Dream`; renewal stereo ownership under reassessment
+Status: PaulX-like `Dream` retained; renewal closed, stereo policy decision required
 Owner: dsp
 Updated: 2026-07-21
 Contract: `085`
@@ -613,6 +613,29 @@ This is the second complete renewal candidate to fail linked stereo. Batch
 lost mapped local dominance. Contract `084` now requires architecture
 reassessment before another implementation.
 
+Batch 31.37 closes renewal under the current Contract `085` stereo boundary.
+The native-channel law already applies one common current-frame phase rotation
+while retaining per-channel magnitudes and exact relation at `space=0`.
+Random common phase renewal then changes independently between adjacent
+synthesis frames. Their waveform interference is not source-owned, so exact
+coefficient relation and close global energy do not prevent local balance
+drift after frame blending.
+
+Every reviewed complete source-backed temporal owner changes family:
+Bungee adds predecessor peak-region rotation, Signalsmith adds coherent
+horizontal/vertical recurrence, Rubber Band adds tracked peak and material
+states, and SBSMS adds paired oscillators but failed source feasibility.
+PaulX itself uses independent per-channel phase draws and supplies no hard
+source-relative image invariant. Post-hoc covariance, window gain, relation
+smoothing, or another phase/`space` law is an unsupported repair.
+
+No complete successor brief opens. The target remains valid because mono
+listening repeatedly matched PaulX. The next move is an operator product-policy
+decision: retain local source-relative stereo as terminal, or make it
+diagnostic under comparator-relative independent listening. A changed gate
+would require fresh authority and a fresh candidate; it cannot revive a
+deleted checkpoint.
+
 ## Sources
 
 - [REAPER time-stretch engines](https://www.reaper.fm/about.php)
@@ -648,7 +671,7 @@ reassessment before another implementation.
 
 ## Next Task
 
-Run Batch 31.37 only. Reassess renewal linked-stereo ownership from the two
-complete failures. Either identify one materially different, source-backed
-complete owner or close renewal without closing the PaulX-like product target.
-Do not implement, tune, recover rejected code, or change gates.
+No batch is ready. Decide whether local source-relative stereo remains a hard
+creative invariant or becomes diagnostic under comparator-relative independent
+listening. Keep renewal, implementation, routing, product exposure, Loophole,
+and Chorus paused until that explicit Contract `085` decision.

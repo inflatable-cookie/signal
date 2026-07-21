@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: active; Batch 31.36 rejected, Batch 31.37 ready
+Status: paused; Batch 31.37 complete, operator stereo-policy decision required
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -1189,28 +1189,41 @@ Decision:
 
 ## Batch 31.37 - Renewal Stereo-Ownership Reassessment
 
-Status: ready; docs and architecture only
+Status: complete; renewal closed, product target retained
 
-- [ ] reconcile Batch 31.25's global source-balance inversion and Batch
+- [x] reconcile Batch 31.25's global source-balance inversion and Batch
   31.36's local mapped-window reversal as repeated linked-stereo failure
-- [ ] identify the exact ownership missing from the renewal topology rather
+- [x] identify the exact ownership missing from the renewal topology rather
   than proposing a channel gain, threshold, coefficient, phase, or `space`
   adjustment
-- [ ] inspect retained complete-source evidence for one materially different
+- [x] inspect retained complete-source evidence for one materially different
   linked-stereo owner that preserves the passed mono character and hard gates
-- [ ] either freeze one complete source-backed successor direction or close
+- [x] either freeze one complete source-backed successor direction or close
   renewal without closing the PaulX-like product target
-- [ ] keep candidate DSP, tests, harnesses, fixtures, APIs, routing, cache,
+- [x] keep candidate DSP, tests, harnesses, fixtures, APIs, routing, cache,
   Loophole, and Chorus unchanged
 
-Stop before implementation. A local repair or another native-channel relation
-variant is not eligible. Any successor requires a complete-system ownership
-argument and a later fresh brief.
+Decision:
+
+- the native-channel law already performs a common current-frame rotation at
+  `space=0`; exact coefficient relation does not survive independent frame
+  renewal and waveform blending as stable local image
+- Bungee, Signalsmith, and Rubber Band add temporal phase or peak state and are
+  different coherent families; SBSMS source feasibility already failed
+- PaulX's independent per-channel renewal defines target character but not the
+  current hard source-relative stereo invariant
+- post-hoc gain, covariance, consistency, smoothing, phase, and `space`
+  variants are unsupported repair paths
+- renewal closes without promotion; PaulX-like `Dream` remains product intent
+- no successor brief, candidate worktree, or implementation batch opens
+- operator intent must decide whether local source-relative stereo stays
+  terminal or becomes diagnostic beneath comparator-relative independent
+  listening
 
 ## Later Batches
 
-Closed or paused without promotion. Work after Batch 31.37 requires its exact
-architecture decision:
+Closed or paused without promotion. Further work requires the operator stereo-
+policy decision:
 
 - minimal production admission
 - coherent/diffusive overlap
@@ -1281,12 +1294,15 @@ architecture decision:
   gates, then reached terminal source-relative stereo rejection
 - [x] the rejected candidate worktree, branch, checkpoint reference, source,
   tests, build state, and listening assembly were deleted without rerun
+- [x] repeated linked-stereo failure triggered architecture reassessment
+- [x] reassessment found no materially different source-backed complete
+  renewal owner and closed the family without closing the product target
 - [x] no private renderer or product surface entered `main`
 
 ## Next Task
 
-Run Batch 31.37 only. Reassess the repeated renewal linked-stereo failure from
-the retained Batch 31.25 and Batch 31.36 evidence. Either identify one
-materially different, source-backed complete stereo owner or close renewal
-without closing the PaulX-like product target. Do not implement, tune, recover
-candidate source, change gates, or push.
+No batch is ready. Operator intent must decide whether local source-relative
+stereo remains a terminal creative invariant or becomes diagnostic beneath
+comparator-relative independent listening. Until then, keep implementation,
+other characters, routing, product exposure, Loophole, and Chorus paused. Do
+not recover candidate source, change gates, or push.

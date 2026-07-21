@@ -2,7 +2,7 @@
 
 Status: active
 Owner: core-product
-Updated: 2026-07-20
+Updated: 2026-07-21
 
 ## Purpose
 
@@ -26,8 +26,12 @@ memory alone.
   creative authority. Batch 31.34 rejected that candidate at synthetic `Y08`.
   Batch 31.35 classified its complete-output dropout scan as executable
   evidence-construction failure and froze fresh support-audited authority.
-  Every renderer remains unadmitted; other characters and the router stay
-  closed or paused
+  Batch 31.36 passed all objective and concealed mono gates, then failed local
+  source-relative stereo at `16x`. Batch 31.37 found no different complete
+  source-backed renewal owner and closed the family. Every renderer remains
+  unadmitted; operator intent must decide whether local creative stereo stays
+  terminal or becomes diagnostic beneath comparator-relative independent
+  listening. Other characters and the router stay closed or paused
 - `082` and `g10.029` are historical evidence, not active execution authority
 - `g10.028` source-fill work remains paused
 
@@ -157,6 +161,7 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Keep Contract `084` closed. Under Contract `085`, run `g10.031` Batch 31.36
-only. Implement the frozen support-audited listening-led candidate once from
-fresh source. Keep product routes and public surfaces unchanged.
+Keep Contract `084` closed. Under Contract `085`, no implementation batch is
+ready. Operator intent must decide whether local source-relative creative
+stereo remains terminal or becomes diagnostic beneath comparator-relative
+independent listening. Keep product routes and public surfaces unchanged.

@@ -86,9 +86,20 @@ fresh listening-led source-relative candidate. Batch 31.34 rejected it at
 synthetic `Y08`. Batch 31.35 classified the over-broad complete-output dropout
 scan as executable evidence-construction failure and froze one fresh
 support-audited authority. Candidate DSP and product exposure remain absent
-from `main`.
+from `main`. Batch 31.36 passed compile, construction, structural, synthetic,
+and concealed mono admission, then failed valid exact-source stereo at `16x`:
+local mapped-window balance drift reached about `2.00 dB` on bass and
+`9.37..9.42 dB` with channel-dominance reversal on the full mix. Batch 31.37
+found the native-channel law already preserves exact current-frame complex
+relation by common rotation. Independent frame renewal and waveform blending,
+not a missing same-frame relation formula, own the local image failure.
+Source-backed temporal corrections select already-closed coherent families;
+post-hoc gain, covariance, consistency, smoothing, phase, and `space`
+variants are unsupported repair paths. Renewal is closed under the current
+stereo hard gate. The PaulX-like product target remains open pending an
+operator stereo-policy decision.
 
-Fresh support-audited neutral `Dream` candidate brief:
+Rejected support-audited neutral `Dream` candidate brief:
 [Offline Creative SupportAuditedListeningLedSourceRelativeRenewalSpectral Renderer Brief](../architecture/offline-creative-verified-source-relative-renewal-spectral-brief.md).
 
 Rejected-at-compile neutral `Dream` successor brief:
@@ -150,6 +161,9 @@ Rejected first-owner brief:
 
 ## Next Task
 
-Run `g10.031` Batch 31.36 only. Implement the frozen support-audited
-listening-led candidate once from fresh source. Do not recover rejected code
-or reopen the transparent successor.
+No implementation batch is ready. Operator intent must decide whether local
+source-relative stereo remains terminal for creative `Dream`, leaving renewal
+closed, or becomes a diagnostic beneath hard integrity/global-balance controls
+and comparator-relative independent listening. Any changed policy requires a
+fresh contract, brief, and candidate; do not recover rejected code or reopen
+the transparent successor.

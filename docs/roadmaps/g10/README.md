@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: renewal stereo ownership reassessment ready
+Status: creative stretch paused at operator stereo-policy decision
 Updated: 2026-07-21
 
 ## Why this generation matters now
@@ -148,7 +148,10 @@ The 2026-07-19 consolidation reset is authoritative.
   stereo admission then rejected `16x` local image stability: full-mix mapped
   windows reached `9.37..9.42 dB` balance error with channel-dominance
   reversal. The candidate was deleted. Batch 31.37 is a docs-only
-  linked-stereo ownership reassessment; no implementation is authorized.
+  linked-stereo ownership reassessment. It found no materially different
+  source-backed complete renewal owner and closed the family. The PaulX-like
+  target remains; no implementation is authorized pending operator stereo-
+  policy intent.
 - The 2026-07-20 lifecycle reconciliation closes stale `g10.001` and
   `g10.003` active markers. It also records that Signal's `g10.017` capture and
   live-monitor implementation landed; that roadmap is paused only on explicit
@@ -222,11 +225,12 @@ Do not start Loophole or Chorus planning from Signal internals.
   - historical correctness, listening, and rejected-successor ledger
 - `g10.030` `complete`
   - stretch consolidated; candidate families closed; frozen baseline retained
-- `g10.031` `active`
+- `g10.031` `paused`
   - PaulX-like neutral `Dream` remains product intent; Batch 31.36 passed all
     objective and mono gates, then failed source-relative stereo admission and
-    was deleted; Batch 31.37 stereo-ownership reassessment is ready; explicit
-    `Cyclic` stays closed
+    was deleted; Batch 31.37 closed renewal after finding no different complete
+    owner; operator stereo-policy intent is required; explicit `Cyclic` stays
+    closed
 
 ## Stretch Boundary
 
@@ -291,10 +295,18 @@ review. This repeats renewal's linked-stereo failure class at a different
 scale, so the next work is architecture reassessment rather than another
 relation-law variant.
 
+Batch 31.37 completed that reassessment. The current-frame common rotation is
+already present; independent renewal between adjacent frames leaves local
+waveform interference unowned. Source-backed temporal corrections select
+closed coherent/peak/oscillator families. Renewal is closed without closing
+the PaulX-like target. No batch is ready until the operator decides whether
+local source-relative stereo remains terminal or becomes diagnostic under
+comparator-relative independent listening.
+
 ## Next Task
 
-Run `g10.031` Batch 31.37 only. Reassess the repeated renewal linked-stereo
-failure and either identify one materially different, source-backed complete
-owner or close renewal without closing the PaulX-like product target. Keep
-`g10.028`, implementation, routing, product exposure, and cross-repo work
+No batch is ready. Decide whether creative stereo must retain the current local
+source-relative hard gate or may promote through bounded integrity plus
+comparator-relative independent listening with local image metrics diagnostic.
+Keep `g10.028`, implementation, routing, product exposure, and cross-repo work
 paused. Do not push.
