@@ -31,7 +31,7 @@ strict lane.
 - Rejected offline stretch successor: [architecture/offline-time-stretch-successor-brief.md](./architecture/offline-time-stretch-successor-brief.md)
 - Non-phase-vocoder feasibility: [architecture/offline-time-stretch-non-phase-vocoder-feasibility.md](./architecture/offline-time-stretch-non-phase-vocoder-feasibility.md)
 - Creative time-stretch study: [architecture/offline-creative-time-stretch-study.md](./architecture/offline-creative-time-stretch-study.md)
-- Geometry-audited creative LinkedStnNoiseMorph v4 brief: [architecture/offline-creative-linked-stn-noise-morph-brief.md](./architecture/offline-creative-linked-stn-noise-morph-brief.md)
+- Structurally rejected creative LinkedStnNoiseMorph v4 brief: [architecture/offline-creative-linked-stn-noise-morph-brief.md](./architecture/offline-creative-linked-stn-noise-morph-brief.md)
 - Rejected creative ComparatorAuditedRenewalSpectral brief: [architecture/offline-creative-comparator-audited-renewal-spectral-brief.md](./architecture/offline-creative-comparator-audited-renewal-spectral-brief.md)
 - Rejected-under-old-stereo-policy SupportAuditedListeningLedSourceRelativeRenewalSpectral brief: [architecture/offline-creative-verified-source-relative-renewal-spectral-brief.md](./architecture/offline-creative-verified-source-relative-renewal-spectral-brief.md)
 - Rejected-at-vector-proof creative SourceRelativeRenewalSpectral brief: [architecture/offline-creative-source-relative-renewal-spectral-brief.md](./architecture/offline-creative-source-relative-renewal-spectral-brief.md)
@@ -81,8 +81,8 @@ strict lane.
 
 ## Next Task
 
-Run `g10.031` Batch 31.49 only under fresh geometry-audited v4 authority.
-Implement once in `signal-candidate-31-49`, then run construction, structural,
-and synthetic admission in order. Do not recover Batch 31.47 or change routing,
-product exposure, Loophole, or Chorus. Only drop into `specs/` when a strict
-lane is explicitly reopened.
+Run `g10.031` Batch 31.50 docs-only. Reconcile linked-STN zero-power residual
+interpolation with bit-exact silence across the complete owner. Either freeze
+fresh authority under new identity or close linked STN. Do not repair Batch
+31.49 or change routing, product exposure, Loophole, or Chorus. Only drop into
+`specs/` when a strict lane is explicitly reopened.

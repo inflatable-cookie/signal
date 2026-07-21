@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: active PaulX-like `Dream`; geometry-audited v4 candidate ready
+Status: active PaulX-like `Dream`; linked-STN exact-silence reassessment ready
 Owner: core-product
 Updated: 2026-07-21
 Related contracts: `046`, `048`, `084`
@@ -774,8 +774,11 @@ no materially different source-backed renewal owner, that path is closed.
     Complete; `R_v=59`, shared median scratch remains `97`, and fresh
     geometry-audited v4 authority is frozen docs-only.
 47. Implement geometry-audited v4 once, checkpoint after construction, then
-    run structural and synthetic admission in order. Ready; stop before
-    listening on any miss.
+    run structural and synthetic admission in order. Complete; construction
+    passed `1/1`, structural stopped at `17/18` on `S15` exact silence, and the
+    candidate was deleted before synthetic or listening.
+48. Reconcile zero-power residual interpolation with bit-exact silence across
+    the complete linked-STN authority. Ready; docs and architecture only.
 
 `Spectral`/`Rough`, coherent overlap, `LayeredCloud`, the upper overlap, dynamic
 ratios, and automatic routing still require separate reopening decisions backed
@@ -958,10 +961,24 @@ actual gate remain unchanged. Positive rational half-rounding is frozen to the
 larger integer. Fresh `GeometryAuditedBoundedLinkedStnNoiseMorph` authority is
 ready for one isolated implementation. No creative renderer is admitted.
 
+Batch 31.49 implemented that authority once from authorized `main` head
+`feeb76fe`. Compile and construction `1/1` passed, freezing checkpoint
+`e2ef62f8` and tree `85dc0e45`. Structural admission completed `17/18`.
+`S15` rejected exact-silence input because the residual lane emitted
+deterministic samples around `1e-14` instead of bit-exact zero. All other
+structural owners passed.
+
+The dominant cause is contradictory authority. Residual diagonal power uses
+`ln(power+eps)` interpolation even when both endpoints are zero, while the
+boundary owner requires bit-exact silence. No checkpoint repair or rerun is
+permitted. Synthetic and listening stayed closed. The worktree, branch,
+checkpoint reference, source, tests, build state, receipt, and outputs were
+deleted. No creative renderer is admitted.
+
 ## Next Task
 
-Run Batch 31.49 only in the exact disposable worktree and branch named by the
-geometry-audited v4 brief. Implement once, complete compile and construction,
-freeze one checkpoint, then run structural and synthetic owners in order. Stop
-before listening on any miss. Do not recover deleted candidate code, open
-routing or product exposure, touch Loophole or Chorus, or push.
+Run Batch 31.50 docs-only. Reconcile zero-power residual interpolation with
+bit-exact silence across the complete linked-STN owner and every dependent
+invariant. Either freeze one fresh complete authority under new identity or
+close linked STN. Do not recover or repair Batch 31.49, implement candidate
+DSP, open routing or product exposure, touch Loophole or Chorus, or push.

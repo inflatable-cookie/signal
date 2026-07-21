@@ -1,10 +1,10 @@
 # Offline Creative LinkedStnNoiseMorph Renderer Brief
 
-Status: geometry-audited v4 frozen; one fresh isolated candidate ready
+Status: geometry-audited v4 rejected at structural exact-silence admission
 Owner: dsp
 Updated: 2026-07-21
 Contract: `085`
-Roadmap: `g10.031`, Batches 31.42, 31.44, 31.46, and 31.48
+Roadmap: `g10.031`, Batches 31.42, 31.44, 31.46, 31.48, and 31.49
 
 ## Decision
 
@@ -986,6 +986,47 @@ Geometry-audited v4 supersedes only the contradicted v3 identity and bound. It
 does not recover Batch 31.47 source or evidence. One fresh implementation is
 ready under the v4 isolation surface above.
 
+## Batch 31.49 Candidate Outcome
+
+The isolated implementation started from `feeb76fe255aa56640de8f732a842942aca936d0`.
+Compile passed after permitted pre-checkpoint visibility-only assembly fixes.
+Construction passed `1/1`, freezing checkpoint
+`e2ef62f81675b5f31426161644b758097485ce0d` and tree
+`85dc0e455872957fc829439cbb61fcf54d5719a7`.
+
+Executable identity:
+
+| File | SHA-256 |
+| --- | --- |
+| `decomposition.rs` | `43049c5a0202e506ba4a8239368ace714288223ae3f75016b432643bd4b143e7` |
+| `mod.rs` | `da4ff44fb12f417fa6fc3cff2e92c90720c2d55816f61fe714fff46be84d186a` |
+| `noise.rs` | `fbab0a741dac985256c20e8566004b290d5cbecd91a2c6c3d0b98efdd24498bb` |
+| `plan.rs` | `3954451f0b44c849532f8c0e48425fdb4121aaf14a967d9f3cde84a91d554115` |
+| `synthesis.rs` | `da166e1f44680c4a2c5ea926459451e88de8b9dc5cd855b0949af8b717e47134` |
+| `tests.rs` / `EVIDENCE_SPEC` / `MEMORY_SPEC` | `f5fbe0d197c10a8e407744d8bf7d700558c1a5319d457b68855bd40d8bd7a69e` |
+| `tonal.rs` | `3796e43a52993f35c7fcea923cff890d837e41d7137426f8e658686ca0538ab5` |
+| `transient.rs` | `e244e148f276573a89d7585d6fa191fe16e4cf8e650c42c6998daa88a15a6dbb` |
+| `Cargo.lock` | `e3848a40d2ea1ff88a0e036df40d1fefa56c7aca950a95262c1d8c5668fd394d` |
+
+The checkpoint used `rustc 1.96.0 (ac68faa20 2026-05-25)`, host
+`aarch64-apple-darwin`, LLVM `22.1.2`, on Darwin `25.5.0` arm64.
+
+Structural admission ran once and finished `17/18`. `S01..S14` and
+`S16..S18` passed. `S15` failed because exact-silence input produced
+deterministic residual samples on the order of `1e-14`, not bit-exact zero.
+No synthetic owner or rendered synthetic output exists, so there are no
+synthetic rows or output digests. Listening did not open.
+
+The dominant cause is contradictory residual and boundary ownership. The
+residual rule interpolates `ln(a+eps)` and `ln(b+eps)` even when both endpoint
+powers are zero; exponentiation therefore creates tiny positive power and
+excitation. The same brief requires silence to be bit-exact zero. Repairing or
+rerunning the frozen checkpoint is prohibited.
+
+The candidate worktree, branch, checkpoint reference, private source, tests,
+build state, receipt, and outputs were deleted. No candidate DSP entered
+`main`. Geometry-audited v4 is rejected and no linked-STN candidate is ready.
+
 ## Sources
 
 - [Creative source triangulation](../research/specimen-dossiers/creative-stretch-source-triangulation.md)
@@ -998,7 +1039,8 @@ ready under the v4 isolation surface above.
 
 ## Next Task
 
-Run Batch 31.49 only in the fresh worktree and branch named above. Implement
-geometry-audited v4 once, complete compile and construction, freeze one
-checkpoint, then run structural and synthetic admission in order. Stop before
-listening on any miss. Do not recover Batch 31.47 or change production code.
+Run Batch 31.50 docs-only. Reconcile zero-power residual interpolation with
+bit-exact silence across the complete linked-STN owner and every dependent
+invariant. Either freeze one fresh complete authority under new identity or
+close linked STN. Do not recover or repair Batch 31.49, implement candidate
+DSP, or change production code.

@@ -137,8 +137,12 @@ Batch 31.47 then found that the frozen short vertical rule produces `R_v=59`
 at `F=8000` against the required exhaustive `R_v<=57` bound. The candidate was
 deleted before compile, checkpoint, or gate execution. Geometry reconciliation
 then corrected `R_v` to `59`; `Q_v=97` still owns median scratch and every
-memory ceiling remains unchanged. Fresh geometry-audited v4 identity is ready
-and the product target remains unadmitted.
+memory ceiling remains unchanged. Batch 31.49 passed construction `1/1`, then
+failed structural `S15` at `17/18` because zero residual endpoints passed
+through epsilon-log interpolation and emitted deterministic samples around
+`1e-14` instead of bit-exact silence. The candidate was deleted before
+synthetic or listening. The product target remains active and unadmitted;
+exact-silence ownership reassessment is ready.
 Offline artifacts still need a streaming artifact writer/cache target for full
 peak-memory closure. Mono callback-state DSP has a
 no-allocation proof, linked stereo is implemented, ratio scheduling has
@@ -265,7 +269,7 @@ Before rollover:
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the active generation front door.
-`g10.031` Batch 31.49 is ready for one isolated implementation of
-geometry-audited bounded v4. Keep the transparent successor lane, `g10.028`,
-routing, product exposure, and cross-repo work closed. Do not recover Batch
-31.47 or merge a candidate.
+`g10.031` Batch 31.50 is ready for docs-only exact-silence ownership
+reassessment. Keep the transparent successor lane, `g10.028`, routing,
+product exposure, and cross-repo work closed. Do not repair or recover Batch
+31.49 or implement candidate DSP.

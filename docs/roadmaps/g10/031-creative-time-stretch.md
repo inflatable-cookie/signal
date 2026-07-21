@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: active; Batch 31.48 complete, Batch 31.49 ready
+Status: active; Batch 31.49 rejected, Batch 31.50 reassessment ready
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -1634,10 +1634,40 @@ Decision:
 - Batch 31.49 may implement the complete renderer once under fresh identity;
   creative quality and bounded execution remain unproved
 
+## Batch 31.49 - Isolated Geometry-Audited Linked STN Candidate
+
+Status: complete; candidate rejected at structural exact-silence gate
+
+- [x] started the exact disposable worktree and branch from authorized `main`
+  head
+  `feeb76fe255aa56640de8f732a842942aca936d0`
+- [x] implemented only the frozen private module and declaration; no public,
+  product, report, fixture, cache, artifact, Loophole, or Chorus surface
+- [x] passed compile after permitted pre-checkpoint visibility-only assembly
+  fixes
+- [x] passed construction `1/1` and froze checkpoint `e2ef62f8` with tree
+  `85dc0e45`
+- [x] ran structural admission once; `S01..S14` and `S16..S18` passed, while
+  `S15` failed exact silence for deterministic residual output around `1e-14`
+- [x] diagnosed contradictory authority: `ln(power+eps)` creates positive
+  power for zero endpoints while the boundary requires bit-exact zero
+- [x] kept synthetic and listening closed; no rendered-output digest exists
+- [x] deleted the candidate worktree, branch, checkpoint reference, source,
+  tests, build state, receipt, and outputs without repair or rerun
+- [x] kept production DSP and all unrelated work unchanged
+
+Decision:
+
+- geometry-audited v4 is rejected; no creative renderer is admitted
+- the miss is an end-to-end ownership contradiction, not permission for an
+  epsilon, threshold, assertion, or candidate-code repair
+- Batch 31.50 must reconcile exact-zero residual ownership docs-only before a
+  fresh complete identity can be considered
+
 ## Later Batches
 
-Closed or paused without promotion. Batch 31.49 isolated geometry-audited-v4
-implementation is the sole ready work. Every later product batch still
+Closed or paused without promotion. Batch 31.50 exact-silence ownership
+reassessment is the sole ready work. Every later product batch still
 requires a separately admitted complete renderer:
 
 - minimal production admission
@@ -1749,12 +1779,17 @@ requires a separately admitted complete renderer:
 - [x] geometry reconciliation corrected `R_v` to `59`, froze shared median
   scratch at `97`, and retained every dependent memory ceiling
 - [x] no candidate code entered `main` during geometry reconciliation
+- [x] one geometry-audited v4 candidate passed construction `1/1`, then failed
+  structural admission at `17/18` on bit-exact silence
+- [x] the rejected v4 checkpoint, implementation, tests, worktree, branch,
+  build state, and outputs were deleted without repair or rerun
+- [x] no candidate DSP entered `main` after v4 rejection
 
 ## Next Task
 
-Run Batch 31.49 only in `signal-candidate-31-49` on
-`candidate/g10-031-geometry-audited-bounded-linked-stn-noise-morph`. Implement
-geometry-audited v4 once, run compile and construction, freeze one checkpoint,
-then run structural and synthetic admission in order. Stop before listening on
-any miss. Do not recover Batch 31.47, change production code, touch Loophole or
-Chorus, merge, or push.
+Run Batch 31.50 docs-only. Reconcile the linked-STN residual owner's
+zero-power interpolation with bit-exact silence and audit every affected
+stereo, determinism, boundary, evidence, and cleanup rule. Either freeze one
+fresh complete authority under new identity or close linked STN. Do not repair
+or recover Batch 31.49, implement DSP, touch Loophole or Chorus, merge, or
+push.
