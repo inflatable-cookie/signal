@@ -891,6 +891,13 @@ side of future upper-overlap probes. The upper overlap remains paused because
 admitted `DirectRenewalDream` supports exact `16x` but no interior ratio.
 Batch 31.70 may implement the Cloud brief once in its named isolated worktree.
 
+Batch 31.70's construction audit then stopped before source creation. The
+brief admitted sub-hop sources that its unit-rate, zero-padded grain geometry
+cannot cover without a zero denominator. Cloud now requires `L>=H`, where
+`H=round_half_up(F/64)`, and rejects shorter non-empty input before allocation.
+This is a request-boundary correction, not a scheduler or sound change. The
+retained isolated worktree is ready to resume under the corrected brief.
+
 ## Sources
 
 - [REAPER time-stretch engines](https://www.reaper.fm/about.php)

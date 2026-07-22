@@ -2272,7 +2272,7 @@ Canonical authority:
 
 ## Batch 31.70 - Isolated LayeredCloud Candidate
 
-Status: ready; one immutable candidate only
+Status: ready to resume after pre-code authority reconciliation
 
 - [ ] start from the Batch 31.69 closeout commit and create worktree
   `signal-candidate-31-70` on branch `candidate/g10-031-layered-cloud`
@@ -2289,6 +2289,19 @@ Status: ready; one immutable candidate only
   structural and synthetic owner passes
 - [ ] keep admitted DSP, overlaps, routing, controls, cache, dynamic ratio,
   Loophole, Chorus, and `main` unchanged
+
+Pre-conformance reconciliation:
+
+- [x] construction stopped before candidate source because the frozen `L=1`
+  and `L=H-1` success rows contradict the validity-weight floor
+- [x] no candidate DSP or acoustic output was created
+- [x] freeze `L>=H` as the minimum non-empty request and reject shorter input
+  before output allocation
+- [x] replace impossible boundary success rows with `L=2H` and `L=12H`
+- [x] correct structural authority from `100` to `101` rows while retaining
+  `51` renders
+- [ ] apply the docs closeout commit to the retained clean worktree and resume
+  the complete implementation under otherwise unchanged authority
 
 ## Later Batches
 

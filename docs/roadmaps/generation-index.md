@@ -130,7 +130,8 @@ Updated: 2026-07-22
   lower-overlap pause because Dream has no exact `2x` or interior render and
   does not share the coherent scheduler. Batch 31.69 froze one complete
   `LayeredCloud` authority for continuous fixed `16x..100x`. Batch 31.70 is
-  ready for its one isolated candidate.
+  ready to resume its isolated candidate after correcting the minimum source
+  boundary to `L>=H` before code or acoustic output.
 - Lifecycle reconciliation then closed stale `g10.001` and `g10.003` active
   markers and paused `g10.017` on its remaining hardware evidence. Signal's
   capture and live-monitor implementation is present. That lifecycle

@@ -536,6 +536,10 @@ one map, bounded unit-rate grains, linked-channel weights, validity
 normalization, exact crop, and fixed `16x..100x` coverage. No Cloud DSP entered
 `main`. The upper overlap remains paused because Dream has no interior
 `16x..32x` render.
+Batch 31.70 then stopped before candidate source when sub-hop input contradicted
+the frozen validity-weight floor. Authority now rejects non-empty `L<H` before
+allocation and owns `101` structural rows. The retained isolated worktree is
+ready to resume; no renderer or acoustic output changed.
 
 ## Next Task
 

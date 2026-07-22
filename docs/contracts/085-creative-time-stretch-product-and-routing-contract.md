@@ -1471,6 +1471,21 @@ overlap remains paused: Cloud can supply every `16x..32x` probe, but admitted
 Dream still supplies exact `16x` only. Batch 31.70 is ready for one isolated
 implementation of the frozen Cloud brief.
 
+Batch 31.70 stopped before candidate source when conformance construction
+proved that a one-frame source cannot satisfy Cloud's frozen validity-weight
+floor. With launch hop `H=round_half_up(F/64)`, unit-rate reads from the entry
+and terminal grains leave uncovered interior output frames when `L<H`. A
+clamp, reflection, denser launch lattice, or fill pass would change the frozen
+renderer.
+
+The request boundary now requires `L>=H`, about `15.6 ms` at every supported
+sample rate. Shorter non-empty input fails before output allocation. The
+structural manifest is `101` rows and `51` renders; its short-source row proves
+that rejection, while boundary success uses `L=H,H+1,2H,12H`. No acoustic
+output or candidate DSP existed before this correction. The retained isolated
+worktree may resume only after this docs commit is applied and the complete
+conformance sequence passes twice unchanged.
+
 ## Next Task
 
 Batch 31.70 only. Implement the frozen `LayeredCloud` authority once in the

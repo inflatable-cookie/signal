@@ -38,9 +38,10 @@ The private request contains exactly:
 
 Let source frames be `L`, target frames be `T`, and sample rate be `F`. Empty
 input with `T=0` returns empty. For non-empty input, require checked
-`16L <= T <= 100L`, `L<=2^53-1`, and `T<=2^53-1`. Partial frames, non-finite
-input, zero target, range misses, size overflow, and allocation overflow fail
-before output allocation. Values are rejected, never clamped.
+`H=max(1,round_half_up(F/64))`, `L>=H`, `16L <= T <= 100L`, `L<=2^53-1`,
+and `T<=2^53-1`. Partial frames, non-finite input, a non-empty source shorter
+than `H`, zero target, range misses, size overflow, and allocation overflow
+fail before output allocation. Values are rejected, never clamped.
 
 Only fixed-ratio canonical `Cloud` exists. `motion`, `detail`, `space`, pitch,
 reverse, dynamic ratio, other characters, routing, cache, artifacts, realtime
@@ -219,7 +220,7 @@ Structural owners are:
 
 | ID | Owner | Rows | Renders | Frozen boundary |
 | --- | --- | ---: | ---: | --- |
-| S01 | request and allocation | 16 | 2 | complete valid/invalid matrix; rejection before output allocation |
+| S01 | request and allocation | 17 | 2 | complete valid/invalid matrix; rejection before output allocation |
 | S02 | map and launches | 15 | 0 | checked map vectors; monotonic centres; exact endpoint launch; ratios `16`, `24`, `32`, `64`, `100` |
 | S03 | counter and geometry | 13 | 0 | exact `mix64` vectors; duration range; active-grain maximum `22` |
 | S04 | sampling and window | 22 | 0 | interpolation/mask vectors; window symmetry, positivity, and exact inactive support |
@@ -228,13 +229,14 @@ Structural owners are:
 | S07 | linked stereo | 9 | 21 | exact duplicate, swap, polarity, anti-phase, and mono-decode algebra |
 | S08 | determinism and memory | 4 | 7 | byte repeat; changed-seed activity; `4 MiB` counting-allocator ceiling; no render-time allocation |
 
-Structural totals are exactly `100` rows and `51` renders. Row slices are:
+Structural totals are exactly `101` rows and `51` renders. Row slices are:
 
 - `S01`: empty success; valid `L=4096` mono `16x` and stereo `100x`;
-  channels `0` and `3`; partial stereo frame; rates `7999` and `192001`;
-  separate NaN and infinity inputs; non-empty zero target; empty non-zero
-  target; targets `16L-1` and `100L+1`; direct dimension oracles above
-  `2^53-1` for `L` and `T`. Only the two valid materialized requests render.
+  non-empty `L=H-1`; channels `0` and `3`; partial stereo frame; rates `7999`
+  and `192001`; separate NaN and infinity inputs; non-empty zero target; empty
+  non-zero target; targets `16L-1` and `100L+1`; direct dimension oracles above
+  `2^53-1` for `L` and `T`. Only the two valid materialized requests render;
+  the short source fails before allocation.
 - `S02`: ratios `16`, `24`, `32`, `64`, and `100` crossed with sample rates
   `8000`, `48000`, and `192000`. Each row asserts checked map values at the
   first, middle, and last output frames, strict map monotonicity, exact regular
@@ -249,7 +251,7 @@ Structural totals are exactly `100` rows and `51` renders. Row slices are:
 - `S05`: exact silence, DC `0.25`, and alternating `-0.5/+0.5` crossed with
   ratios `16`, `32`, and `100` at `F=48000`, `L=4096`.
 - `S06`: ratios `16`, `32`, and `100` crossed with source lengths
-  `1,H-1,H,H+1` at `F=48000`.
+  `H,H+1,2H,12H` at `F=48000`.
 - `S07`: at each ratio, one mono/duplicate pair, one natural fixture with its
   swap and common negation, and one mono/anti-phase pair. That is three rows
   and seven renders per ratio.
@@ -284,7 +286,7 @@ final-status-level = "all"
 From one clean local commit, run compile, construction, and exact-name
 `layered_cloud_structural_s01` through `s08` in numeric order with release
 profile, `-j 1`, no fail-fast, and immediate failure output. Construction must
-pass `1/1`; structural owners must pass `8/8`, `100/100` rows, and `51/51`
+pass `1/1`; structural owners must pass `8/8`, `101/101` rows, and `51/51`
 renders. Repeat the complete sequence unchanged and require identical counts.
 Record the commit/tree, all candidate and evidence hashes, frozen specs,
 `Cargo.lock`, `rustc -vV`, Effigy/nextest versions, OS, architecture, and the
@@ -453,6 +455,21 @@ If every gate passes, later admission may copy only the private fixed-ratio
 renderer, request/error boundary, regression owners, receipt schema, and one
 new internal engine version. Product routing, macros, seed exposure, cache,
 artifacts, dynamic ratio, and cross-repo surfaces remain separate.
+
+## Batch 31.70 Pre-Conformance Reconciliation
+
+The first construction audit stopped before candidate source. The original
+request admitted every non-empty `L`, while `S06` required successful renders
+at `L=1` and `L=H-1`. Unit-rate grains on the frozen `H`-spaced lattice cannot
+cover every output frame of a source shorter than one hop; `W(y)` reaches zero
+before the exterior envelope.
+
+This brief now rejects non-empty `L<H` before output allocation and replaces
+the two impossible success geometries with `2H` and `12H`. The renderer,
+counter, launch lattice, sampling, normalization, boundary, stereo, acoustic,
+listening, cleanup, and admission laws are unchanged. Structural authority is
+now exactly `101` rows and `51` renders. No candidate DSP or acoustic output
+existed before this correction.
 
 ## Sources
 

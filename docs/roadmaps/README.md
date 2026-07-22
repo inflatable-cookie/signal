@@ -195,7 +195,9 @@ has no exact `2x` or interior render and does not share the coherent scheduler.
 Batch 31.69 froze one complete pointer-led granular `LayeredCloud` authority
 for continuous fixed `16x..100x`. The upper overlap remains paused because
 Dream has no interior `16x..32x` render. Batch 31.70 is the sole ready batch
-and may implement that authority once in isolation.
+and may implement that authority once in isolation. Its pre-code audit froze
+`L>=H` after sub-hop sources contradicted the validity-weight floor; the
+retained worktree is ready to resume under `101` structural rows.
 Offline artifacts still need a streaming artifact writer/cache target for full
 peak-memory closure. Mono callback-state DSP has a
 no-allocation proof, linked stereo is implemented, ratio scheduling has
