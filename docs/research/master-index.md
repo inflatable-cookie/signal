@@ -126,12 +126,18 @@ private fixed-ratio surface. Batch 31.68 retained the lower-overlap pause.
 Batch 31.69 selected Csound's stereo pointer-led granular family, rejected
 channel-local `Warp1` state as stereo authority, and froze one complete
 `LayeredCloud` brief for continuous fixed `16x..100x`. The upper overlap stays
-paused because admitted Dream has no interior `16x..32x` render.
+paused because admitted Dream has no interior `16x..32x` render. Batch 31.70's
+green synthetic receipt was evidence-invalid. Batch 31.71 audited and deleted
+that identity. Batch 31.72 froze one source-clean `AuditedLayeredCloud`
+replacement with complete executable evidence ownership.
 
 Admitted private renderer authority:
 [Offline Creative DirectRenewalDream Renderer Brief](../architecture/offline-creative-direct-renewal-dream-brief.md).
 
 Frozen high-range candidate authority:
+[Offline Creative AuditedLayeredCloud Renderer Brief](../architecture/offline-creative-audited-layered-cloud-brief.md).
+
+Closed evidence-invalid brief and audit ledger:
 [Offline Creative LayeredCloud Renderer Brief](../architecture/offline-creative-layered-cloud-brief.md).
 
 Rejected comparator-audited neutral `Dream` candidate brief:
@@ -199,7 +205,8 @@ Rejected first-owner brief:
 
 ## Next Task
 
-Run `g10.031` Batch 31.72 only. Freeze complete `AuditedLayeredCloud`
-authority from canonical research and the Batch 31.71 evidence gap ledger.
+Run `g10.031` Batch 31.73 only. Implement the frozen
+`AuditedLayeredCloud` authority once in its exact fresh isolated worktree.
+Pass construction and two complete structural rounds before acoustic identity.
 Do not recover Batch 31.70 source or output or change admitted renderers,
 overlaps, routing, or the transparent successor.

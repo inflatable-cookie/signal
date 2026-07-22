@@ -41,6 +41,7 @@ strict lane.
 - Rejected-at-compile creative CompensatedRenewalSpectral brief: [architecture/offline-creative-compensated-renewal-spectral-brief.md](./architecture/offline-creative-compensated-renewal-spectral-brief.md)
 - Rejected creative RenewalSpectral brief: [architecture/offline-creative-renewal-spectral-brief.md](./architecture/offline-creative-renewal-spectral-brief.md)
 - Creative source triangulation: [research/specimen-dossiers/creative-stretch-source-triangulation.md](./research/specimen-dossiers/creative-stretch-source-triangulation.md)
+- Frozen AuditedLayeredCloud authority: [architecture/offline-creative-audited-layered-cloud-brief.md](./architecture/offline-creative-audited-layered-cloud-brief.md)
 - Evidence-invalid LayeredCloud brief and audit ledger: [architecture/offline-creative-layered-cloud-brief.md](./architecture/offline-creative-layered-cloud-brief.md)
 - Rejected creative SimilarityAlignedCyclic brief: [architecture/offline-creative-similarity-aligned-cyclic-brief.md](./architecture/offline-creative-similarity-aligned-cyclic-brief.md)
 - Rejected creative CyclicGrain brief: [architecture/offline-creative-cyclic-grain-brief.md](./architecture/offline-creative-cyclic-grain-brief.md)
@@ -83,9 +84,9 @@ strict lane.
 
 ## Next Task
 
-Run `g10.031` Batch 31.72 only. Freeze one complete `AuditedLayeredCloud`
-brief from canonical architecture and the Batch 31.71 gap ledger. Close every
-executable evidence edge before implementation becomes ready. Do not recover
-Batch 31.70 source or output. Keep admitted renderers, overlaps, routing,
-controls, cache, dynamic ratio, Loophole, and Chorus unchanged. Do not push.
+Run `g10.031` Batch 31.73 only. Implement the frozen
+`AuditedLayeredCloud` brief once in its exact fresh isolated worktree. Complete
+construction and two clean structural rounds before acoustic identity. Do not
+recover Batch 31.70 source or output or change admitted renderers, overlaps,
+routing, controls, cache, dynamic ratio, Loophole, or Chorus. Do not push.
 Only drop into `specs/` when a strict lane is explicitly reopened.

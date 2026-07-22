@@ -323,8 +323,9 @@ Before rollover:
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the active generation front door.
-Run `g10.031` Batch 31.72 only. Freeze one complete `AuditedLayeredCloud`
-brief with every executable evidence edge closed before implementation becomes
-ready. Do not recover Batch 31.70 source or output. Keep the transparent
+Run `g10.031` Batch 31.73 only. Implement the frozen
+`AuditedLayeredCloud` brief once in its fresh isolated worktree. Pass
+construction and two complete structural rounds unchanged before acoustic
+identity. Do not recover Batch 31.70 source or output. Keep the transparent
 successor lane, `g10.028`, admitted renderers, overlaps, routing, controls,
 cache, dynamic ratio, and cross-repo work unchanged. Do not push.

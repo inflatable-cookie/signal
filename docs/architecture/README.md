@@ -1,7 +1,7 @@
 # Architecture
 
 Status: active
-Updated: 2026-07-21
+Updated: 2026-07-22
 
 ## Why this section matters now
 
@@ -28,6 +28,7 @@ Keep milestone sequencing in `roadmaps/`.
 - `offline-time-stretch-synthesis.md`
 - `offline-time-stretch-non-phase-vocoder-feasibility.md`
 - `offline-creative-time-stretch-study.md`
+- `offline-creative-audited-layered-cloud-brief.md`
 - `offline-creative-layered-cloud-brief.md`
 - `offline-creative-linked-stn-noise-morph-brief.md`
 - `offline-creative-verified-source-relative-renewal-spectral-brief.md`
@@ -43,6 +44,8 @@ Keep milestone sequencing in `roadmaps/`.
 ## Next Task
 
 Keep the `g10.030` transparent successor program closed. Run `g10.031` Batch
-31.72 only. Freeze one complete `AuditedLayeredCloud` brief with end-to-end
-executable evidence ownership. Do not recover Batch 31.70 source or output.
-Keep overlaps, product routing, and public exposure unchanged.
+31.73 only. Implement the frozen `AuditedLayeredCloud` authority in its fresh
+isolated worktree and stop before acoustic identity unless construction and
+two complete structural rounds pass unchanged. Do not recover Batch 31.70
+source or output. Keep overlaps, product routing, and public exposure
+unchanged.

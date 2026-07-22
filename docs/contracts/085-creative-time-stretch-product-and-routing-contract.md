@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: private Dream admitted; AuditedLayeredCloud authority next; overlaps paused
+Status: private Dream admitted; AuditedLayeredCloud candidate ready; overlaps paused
 Owner: core-product
 Updated: 2026-07-22
 Related contracts: `046`, `048`, `084`
@@ -1025,12 +1025,17 @@ may resume.
 69. Reassess the invalid `LayeredCloud` evidence. Complete; the failure is
     broader than `Y05`, no quality decision exists, and one fresh docs-first
     `AuditedLayeredCloud` identity is authorized under the bounded rule above.
+70. Freeze complete `AuditedLayeredCloud` replacement authority. Complete;
+    Batch 31.72 binds the unchanged renderer and every structural, synthetic,
+    comparator, listening, receipt, timeout, cleanup, and admission edge before
+    one fresh isolated implementation.
 
 `Spectral`/`Rough`, both overlaps, dynamic ratios, and automatic routing still
 require separate reopening decisions backed by new complete-system evidence.
 `LayeredCloud` has one evidence-invalid checkpoint and no quality claim. Its
-renderer did not enter `main`. No new candidate is ready until one complete
-`AuditedLayeredCloud` brief freezes executable evidence end to end.
+renderer did not enter `main`. The complete `AuditedLayeredCloud` replacement
+brief is now frozen; one fresh isolated implementation is ready and a second
+incomplete-evidence checkpoint closes the family.
 
 ## Current State
 
@@ -1551,11 +1556,37 @@ and evidence ref are deleted. Batch 31.72 is docs only; it cannot implement the
 renderer. Any evidence-integrity failure by the fresh identity closes this
 family without another rebinding.
 
+Batch 31.72 now freezes that replacement in
+[Offline Creative AuditedLayeredCloud Renderer Brief](../architecture/offline-creative-audited-layered-cloud-brief.md).
+The sound architecture remains one exact pointer map, deterministic launch
+lattice, bounded unit-rate grains, shared validity normalization, linked
+channel weights, Dream exterior boundary, exact crop, and duration-independent
+state. No Batch 31.70 source, output, helper body, or receipt transferred.
+
+The new executable authority has one compile-linked manifest spanning render,
+source, vector, evidence, memory, run, comparator, listening, and cleanup
+specs. Each structural or synthetic row is its own nextest process, so the
+tracked `120 s` and `900 s` deadlines are enforced rather than narrated.
+Receipts count frames separately from channels and enumerate every assertion
+and diagnostic. `Y02` owns an exact component-energy presence rule and
+persisted pitch values; `Y03` persists centroids; `Y04` scans dropout across
+block boundaries and the final remainder; `Y05` persists whole, three-band,
+and mapped-window natural-stereo values. Comparator capture, toolchain
+identity, shared level matching, concealment, all `30` listening rows and `90`
+renders, mono arithmetic, independent stereo decisions, cleanup, and minimal
+pass surface are also frozen.
+
+This is docs-only authority. No candidate DSP, test harness, fixture,
+comparator output, listening pack, product route, cache, dynamic ratio,
+Loophole, or Chorus change entered `main`. Batch 31.73 may implement it once in
+the exact fresh isolated identity. Acoustic identity remains forbidden until
+construction and two complete structural rounds pass unchanged.
+
 ## Next Task
 
-Batch 31.72 only. Freeze one complete `AuditedLayeredCloud` brief from the
-canonical pointer-led architecture and the Batch 31.71 gap ledger. Close every
-executable evidence edge before any implementation batch becomes ready. Do
-not recover Batch 31.70 source or output. Keep admitted renderers, overlaps,
+Batch 31.73 only. Implement the frozen `AuditedLayeredCloud` brief once in its
+exact fresh isolated worktree. Compile all owners, pass construction, and pass
+two complete structural rounds unchanged before creating acoustic identity.
+Do not recover Batch 31.70 source or output. Keep admitted renderers, overlaps,
 routing, controls, cache, dynamic ratio, Loophole, and Chorus unchanged. Do
 not push.

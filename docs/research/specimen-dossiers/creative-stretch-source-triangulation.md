@@ -1,6 +1,6 @@
 # Creative Stretch Source Triangulation
 
-Status: reviewed; DirectRenewalDream admitted; LayeredCloud authority frozen
+Status: reviewed; DirectRenewalDream admitted; AuditedLayeredCloud authority frozen
 Owner: dsp
 Updated: 2026-07-22
 Roadmap: `g10.031`, Batches 31.16, 31.30-31.41, 31.64-31.69
@@ -603,12 +603,19 @@ grain primitives, image inversion, and neural synthesis do not add a complete
 bounded linked-stereo renderer.
 
 The selected owner is frozen in
-[Offline Creative LayeredCloud Renderer Brief](../../architecture/offline-creative-layered-cloud-brief.md).
+[Offline Creative AuditedLayeredCloud Renderer Brief](../../architecture/offline-creative-audited-layered-cloud-brief.md).
 It covers every fixed ratio from `16x` through `100x` with one map, one launch
 lattice, bounded deterministic grain state, unit-rate reads, shared stereo
 weights, exact crop, and the admitted Dream exterior envelope. This opens one
 isolated candidate batch. It does not open the upper overlap: admitted Dream
 has no interior `16x..32x` renders.
+
+The closed original brief and Batch 31.71 gap ledger remain historical
+evidence in
+[Offline Creative LayeredCloud Renderer Brief](../../architecture/offline-creative-layered-cloud-brief.md).
+Batch 31.72 re-froze the same sound architecture under source-clean identity
+with compile-linked source/vector hashes, per-row timeouts and receipts, full
+synthetic diagnostics, and executable comparator/listening ownership.
 
 Primary source audit:
 
@@ -620,7 +627,8 @@ Primary source audit:
 
 ## Next Task
 
-Run Batch 31.72 only. Freeze complete `AuditedLayeredCloud` authority from the
-canonical pointer-led family and the Batch 31.71 evidence gap ledger. Do not
-recover Batch 31.70 source or output or change admitted renderers, overlaps,
-routing, controls, cache, Loophole, or Chorus. Do not push.
+Run Batch 31.73 only. Implement the frozen `AuditedLayeredCloud` authority
+once in its exact fresh isolated worktree. Pass construction and two complete
+structural rounds before acoustic identity. Do not recover Batch 31.70 source
+or output or change admitted renderers, overlaps, routing, controls, cache,
+Loophole, or Chorus. Do not push.

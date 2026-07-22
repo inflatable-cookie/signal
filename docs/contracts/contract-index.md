@@ -49,8 +49,11 @@ memory alone.
   retained the lower-overlap pause. Batch 31.69 froze one complete pointer-led
   granular `LayeredCloud` authority for continuous fixed `16x..100x`; its
   Batch 31.70 receipt is invalid across construction, runner, structural,
-  synthetic, and listening ownership. Batch 31.71 authorizes one fresh docs-
-  first `AuditedLayeredCloud` identity. Both overlaps and the router stay paused
+  synthetic, and listening ownership. Batch 31.71 authorized one fresh docs-
+  first `AuditedLayeredCloud` identity. Batch 31.72 froze its complete
+  renderer, executable evidence, comparator, listening, and cleanup authority;
+  one isolated Batch 31.73 implementation is ready. Both overlaps and the
+  router stay paused
 - `082` and `g10.029` are historical evidence, not active execution authority
 - `g10.028` source-fill work remains paused
 
@@ -182,6 +185,8 @@ frozen elsewhere in this index.
 
 Keep Contract `084` closed. Contract `085` admits private fixed-ratio
 `DirectRenewalDream`; the `LayeredCloud` checkpoint has no valid quality
-result. Run `g10.031` Batch 31.72 only to freeze complete
-`AuditedLayeredCloud` authority. Do not recover Batch 31.70 source or output or
-alter admitted renderers, overlaps, routing, or product exposure.
+result. Batch 31.72 froze complete `AuditedLayeredCloud` authority. Run
+`g10.031` Batch 31.73 only to implement it once in the exact fresh isolated
+worktree, with no acoustic identity before construction and two clean
+structural rounds. Do not recover Batch 31.70 source or output or alter
+admitted renderers, overlaps, routing, or product exposure.

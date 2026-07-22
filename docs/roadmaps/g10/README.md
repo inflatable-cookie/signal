@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: creative stretch active; Batch 31.72 authority freeze ready
+Status: creative stretch active; Batch 31.73 isolated candidate ready
 Updated: 2026-07-22
 
 ## Why this generation matters now
@@ -275,6 +275,8 @@ Do not start Loophole or Chorus planning from Signal internals.
     pointer-led granular `LayeredCloud` authority for fixed `16x..100x`;
     Batch 31.70 receipt is invalid across executable evidence ownership;
     Batch 31.71 authorizes one docs-first `AuditedLayeredCloud` identity;
+    Batch 31.72 freezes its complete executable authority and makes one fresh
+    isolated implementation ready;
     explicit `Cyclic` stays closed
 
 ## Stretch Boundary
@@ -552,11 +554,22 @@ renderer. One fresh `AuditedLayeredCloud` authority is justified; its brief
 must be complete before implementation and a second evidence failure closes
 the family.
 
+Batch 31.72 froze the source-clean replacement brief without candidate DSP.
+The pointer-led renderer is unchanged. Nine compile-linked specs now own every
+formula, source/vector hash, row, assertion, diagnostic, receipt, deadline,
+comparator capture, listening decision, cleanup action, and pass surface. Each
+structural or synthetic row runs as a separate nextest process under an
+enforced deadline. Component presence, centroids, cross-block dropout, final
+remainder, whole/band/window stereo evidence, truthful frame counts, and all
+`30` listening rows/`90` renders are explicit. Batch 31.73 is ready for one
+fresh isolated implementation. A second evidence-integrity failure closes
+Cloud.
+
 ## Next Task
 
-Run `g10.031` Batch 31.72 only. Freeze one complete `AuditedLayeredCloud`
-brief from canonical architecture and the Batch 31.71 gap ledger. Close every
-executable evidence edge before implementation becomes ready. Do not recover
-Batch 31.70 source or output. Keep `g10.028`, admitted renderers, overlaps,
-routing, controls, cache, dynamic ratio, Loophole, Chorus, and cross-repo work
-unchanged. Do not push.
+Run `g10.031` Batch 31.73 only. Implement the frozen
+`AuditedLayeredCloud` brief once in its exact fresh isolated worktree. Pass
+construction and two complete structural rounds unchanged before acoustic
+identity. Do not recover Batch 31.70 source or output. Keep `g10.028`, admitted
+renderers, overlaps, routing, controls, cache, dynamic ratio, Loophole, Chorus,
+and cross-repo work unchanged. Do not push.

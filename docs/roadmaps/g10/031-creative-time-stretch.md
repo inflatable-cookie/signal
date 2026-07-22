@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: active; Batch 31.71 complete, Batch 31.72 authority freeze ready
+Status: active; Batch 31.72 complete, Batch 31.73 isolated candidate ready
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -2350,25 +2350,62 @@ Decision:
 
 ## Batch 31.72 - AuditedLayeredCloud Authority Freeze
 
-Status: ready; docs only
+Status: complete; docs only
 
-- [ ] freeze one complete replacement brief around the unchanged canonical
+- [x] freeze one complete replacement brief around the unchanged canonical
   pointer-led architecture, not Batch 31.70 source or output
-- [ ] freeze compile-linked render, source, evidence, memory, run, comparator,
+- [x] freeze compile-linked render, source, vector, evidence, memory, run,
+  comparator,
   listening, and cleanup specs with exact hashes and owner mappings
-- [ ] give every structural and synthetic assertion an exact executable owner;
+- [x] give every structural and synthetic assertion an exact executable owner;
   resolve component-presence and row-timeout mechanics explicitly
-- [ ] freeze truthful frame/sample receipt semantics, specific assertion and
+- [x] freeze truthful frame/sample receipt semantics, specific assertion and
   diagnostic payloads, tracked nextest profile, incremental persistence, and
   complete comparator/listening decisions
-- [ ] make one fresh isolated implementation batch ready only if Contract `085`
+- [x] make one fresh isolated implementation batch ready only if Contract `085`
   Rule 11 is satisfied with no decide-later gap
-- [ ] keep admitted DSP and product surfaces unchanged
+- [x] keep admitted DSP and product surfaces unchanged
+
+Decision:
+
+- [Offline Creative AuditedLayeredCloud Renderer Brief](../../architecture/offline-creative-audited-layered-cloud-brief.md)
+  is the sole replacement authority
+- the renderer remains the same source-backed pointer-led system; invalid
+  Batch 31.70 audio did not guide any DSP, scalar, source, or threshold change
+- one compile-linked manifest owns every row, assertion, diagnostic, receipt,
+  comparator capture, concealment, listening decision, and cleanup boundary
+- one test process per structural or synthetic row makes `120 s` and `900 s`
+  nextest deadlines enforceable; capture rows own `7200 s`
+- `Y02` now requires at least `2^-10` of one-sided energy inside each authored
+  `+-4 Hz` band and persists the complete pitch record
+- `Y03` persists centroids, `Y04` scans cross-block dropout and the final
+  remainder, and `Y05` persists whole, three-band, and mapped-window stereo
+  diagnostics
+- a second evidence-integrity failure closes Cloud; any acoustic miss remains
+  terminal for the checkpoint
+
+## Batch 31.73 - Isolated AuditedLayeredCloud Candidate
+
+Status: ready; one fresh source-clean implementation
+
+- [ ] create only worktree `signal-candidate-31-73`, branch
+  `candidate/g10-031-audited-layered-cloud`, the frozen private module,
+  tracked manifest/profile, ignored evidence root, and local acoustic ref
+- [ ] implement the complete renderer and all nine compile-linked specs from
+  the Batch 31.72 brief without recovering Batch 31.70 source or output
+- [ ] compile every owner, pass construction `1/1`, and pass all `101`
+  structural rows and `51` renders twice unchanged from one clean tree
+- [ ] create the acoustic ref only after both clean conformance rounds, then
+  run `Y01..Y05`, concealed mono, and eligible independent stereo in order
+- [ ] stop for docs reassessment on any unanswered authority choice; stop and
+  reject on any post-checkpoint miss
+- [ ] keep admitted DSP, product surfaces, overlaps, routing, cache, dynamic
+  ratio, Loophole, and Chorus unchanged
 
 ## Later Batches
 
-Closed or paused beyond the replacement authority freeze. Batch 31.72 is the
-sole ready batch.
+Closed or paused beyond the isolated candidate. Batch 31.73 is the sole ready
+batch.
 Every later product batch still requires separate authority:
 
 - minimal `LayeredCloud` admission, only after every frozen gate passes
@@ -2579,12 +2616,16 @@ Every later product batch still requires separate authority:
   listening ownership incomplete
 - [x] one fresh docs-first `AuditedLayeredCloud` identity is justified; the
   failed checkpoint cannot be repaired or rerun and no source/output transfers
+- [x] Batch 31.72 froze one complete replacement renderer and executable
+  evidence brief with every Batch 31.71 gap closed before implementation
+- [x] no candidate DSP, harness, fixture, comparator render, listening output,
+  production surface, Loophole, or Chorus change entered `main`
 
 ## Next Task
 
-Batch 31.72 only. Freeze one complete `AuditedLayeredCloud` brief from the
-canonical pointer-led architecture and Batch 31.71 gap ledger. Close every
-executable evidence edge before any implementation batch becomes ready. Do
-not recover Batch 31.70 source or output. Keep admitted renderers, overlaps,
-routing, controls, cache, dynamic ratio, Loophole, and Chorus unchanged. Do
-not push.
+Batch 31.73 only. Create the exact fresh isolated worktree and implement the
+frozen `AuditedLayeredCloud` brief. Compile all owners, pass construction, and
+pass two complete structural rounds unchanged before creating acoustic
+identity. Do not recover Batch 31.70 source or output. Keep admitted renderers,
+overlaps, routing, controls, cache, dynamic ratio, Loophole, and Chorus
+unchanged. Do not push.
