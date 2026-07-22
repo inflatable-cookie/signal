@@ -2,7 +2,7 @@
 
 Status: active
 Owner: core-product
-Updated: 2026-07-21
+Updated: 2026-07-22
 
 ## Purpose
 
@@ -41,8 +41,13 @@ memory alone.
   structural `S17` because duration-derived component arrays violated the
   bounded-state contract. The candidate was deleted. Batch 31.44 then froze a
   deterministic orientation prepass, bounded monotonic render rings, an
-  `89 MiB` design ceiling, and fresh candidate identity. Every renderer remains
-  unadmitted; other characters and the router stay closed or paused
+  `89 MiB` design ceiling, and fresh candidate identity. Later linked-STN work
+  closed without acoustic evidence after repeated executable-authority
+  failure. Batch 31.64 found no unused fifth owner. Direct PaulX-style renewal
+  remains the smallest source-backed owner of the accepted sound, but renewal
+  stays closed unless the operator authorizes the documented product-gate
+  reset. Every renderer remains unadmitted; other characters and the router
+  stay closed or paused
 - `082` and `g10.029` are historical evidence, not active execution authority
 - `g10.028` source-fill work remains paused
 
@@ -173,6 +178,6 @@ frozen elsewhere in this index.
 ## Next Task
 
 Keep Contract `084` closed. Contract `085` retains the PaulX-like target but no
-renderer is admitted. Run `g10.031` Batch 31.45 once under the fresh bounded
-`LinkedStnNoiseMorph` authority. Do not recover deleted code, merge a
-candidate, or change product routes and public surfaces.
+renderer is admitted. Authorize the direct-renewal product-gate reset or leave
+`g10.031` paused. Any authorization opens one docs-only complete-brief batch,
+not candidate implementation or product exposure.

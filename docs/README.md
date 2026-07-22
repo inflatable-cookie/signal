@@ -31,6 +31,7 @@ strict lane.
 - Rejected offline stretch successor: [architecture/offline-time-stretch-successor-brief.md](./architecture/offline-time-stretch-successor-brief.md)
 - Non-phase-vocoder feasibility: [architecture/offline-time-stretch-non-phase-vocoder-feasibility.md](./architecture/offline-time-stretch-non-phase-vocoder-feasibility.md)
 - Creative time-stretch study: [architecture/offline-creative-time-stretch-study.md](./architecture/offline-creative-time-stretch-study.md)
+- Direct-renewal owner study: [architecture/offline-creative-direct-renewal-owner-study.md](./architecture/offline-creative-direct-renewal-owner-study.md)
 - Closed creative LinkedStnNoiseMorph brief: [architecture/offline-creative-linked-stn-noise-morph-brief.md](./architecture/offline-creative-linked-stn-noise-morph-brief.md)
 - Rejected creative ComparatorAuditedRenewalSpectral brief: [architecture/offline-creative-comparator-audited-renewal-spectral-brief.md](./architecture/offline-creative-comparator-audited-renewal-spectral-brief.md)
 - Rejected-under-old-stereo-policy SupportAuditedListeningLedSourceRelativeRenewalSpectral brief: [architecture/offline-creative-verified-source-relative-renewal-spectral-brief.md](./architecture/offline-creative-verified-source-relative-renewal-spectral-brief.md)
@@ -81,9 +82,8 @@ strict lane.
 
 ## Next Task
 
-Operator checkpoint for `g10.031`. Decide whether to commission one materially
-simpler, source-backed complete creative owner study or pause the PaulX-like
-neutral `Dream` target indefinitely. No prior candidate, evidence gate, or
-implementation batch is ready. Do not alter production or routing, touch
-Loophole or Chorus, merge, or push. Only drop into `specs/` when a strict lane
-is explicitly reopened.
+Operator checkpoint for `g10.031`. Authorize the direct-renewal product-gate
+reset or leave the PaulX-like neutral `Dream` target paused. Authorization
+opens one docs-only complete-brief batch, not candidate implementation. Do not
+alter production or routing, touch Loophole or Chorus, merge, or push. Only
+drop into `specs/` when a strict lane is explicitly reopened.

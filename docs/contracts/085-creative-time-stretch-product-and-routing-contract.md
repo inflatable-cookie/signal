@@ -1,10 +1,11 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: active PaulX-like `Dream`; no creative owner ready
+Status: active PaulX-like `Dream`; direct-renewal gate reset awaits operator
 Owner: core-product
 Updated: 2026-07-22
 Related contracts: `046`, `048`, `084`
 Related architecture: `docs/architecture/offline-creative-time-stretch-study.md`,
+`docs/architecture/offline-creative-direct-renewal-owner-study.md`,
 `docs/architecture/offline-creative-linked-stn-noise-morph-brief.md`,
 `docs/architecture/offline-creative-comparator-audited-renewal-spectral-brief.md`,
 `docs/architecture/offline-creative-verified-source-relative-renewal-spectral-brief.md`,
@@ -1340,12 +1341,24 @@ complete owner. Linked STN closes without promotion. The worktree, branch, and
 build state remain deleted; the local evidence ref was deleted when this
 reassessment closed. No creative renderer is admitted.
 
+Batch 31.64 completed the commissioned materially simpler owner study. It found
+no unused fifth family. CDP, cyclic overlap, coherent phase propagation, image
+resynthesis, learned synthesis, and STN each own another character or add
+unresolved state, model, stereo, or cost boundaries.
+
+Direct PaulX-style magnitude renewal remains the smallest source-backed owner
+of the accepted neutral `Dream` sound. It is the closed renewal family, not a
+new architecture identity. Contract `085` therefore does not authorize a
+candidate. The canonical study recommends one explicit product-gate reset:
+retain hard integrity, channel-energy, long-form mono, and eligible independent
+stereo promotion; make exact creative pitch, impulse-region, local-image, and
+sample-algebra rows complete diagnostics. The operator must authorize that
+policy before the contract or a complete renderer brief changes.
+
 ## Next Task
 
-Operator checkpoint. The PaulX-like neutral `Dream` target remains active, but
-diffusive, cyclic, renewal, and linked-STN owners are closed and no
-implementation batch is ready. Decide whether to commission one materially
-simpler source-backed owner study or pause `g10.031`. Do not resume a prior
-candidate, reopen its evidence gate, or start implementation from roadmap
-history. Keep production, routing, product exposure, Loophole, and Chorus
-unchanged. Do not push.
+Operator checkpoint. Authorize the direct-renewal product-gate reset or leave
+`g10.031` paused. If authorized, Batch 31.65 updates this contract and freezes
+one complete `DirectRenewalDream` renderer and evidence brief, docs-only. Do
+not resume a prior candidate, reopen its evidence gate, implement DSP, or
+change production, routing, product exposure, Loophole, or Chorus. Do not push.

@@ -1,9 +1,9 @@
 # Creative Stretch Source Triangulation
 
-Status: reviewed; linked STN noise morphing selected for complete brief
+Status: reviewed; no unused fifth owner, direct-renewal gate reset recommended
 Owner: dsp
-Updated: 2026-07-21
-Roadmap: `g10.031`, Batches 31.16, 31.30-31.41
+Updated: 2026-07-22
+Roadmap: `g10.031`, Batches 31.16, 31.30-31.41, 31.64
 
 ## Question
 
@@ -556,9 +556,28 @@ Primary source audit:
 - [mono input, component recombination, and export](https://github.com/ollpu/SiTraNoStar/blob/2edf7b693040b5070116299973abf83dc5ba86e5/Source/MainComponent.cpp)
 - [SiTraNoStar GPL-3.0 licence](https://github.com/ollpu/SiTraNoStar/blob/2edf7b693040b5070116299973abf83dc5ba86e5/LICENSE)
 
+## Batch 31.64 Simpler-Owner Reassessment
+
+Later linked-STN work closed without acoustic evidence. Rechecking the pinned
+whole paths found no unused, materially simpler fifth family:
+
+- CDP remains vocoder-like `Spectral`
+- Potenza and WSOLA-like paths remain cyclic waveform overlap
+- coherent PV and sinusoidal paths retain phase and own another character
+- image inversion and learned synthesis add iterative, full-file, model,
+  licence, stereo, or cost boundaries
+- STN is the already-closed complex component family
+
+The simplest path that owns the preferred sound is still the pinned PaulX
+magnitude-renewal core. Signal already matched it in concealed mono listening
+and reached solid speaker stereo with bounded balance, low-frequency-noise,
+and entry/tail differences. Reopening therefore requires an evidence-backed
+product-gate change, not a renamed new algorithm or recovered candidate.
+
+The architecture decision is
+[Offline Creative Direct-Renewal Owner Study](../../architecture/offline-creative-direct-renewal-owner-study.md).
+
 ## Next Task
 
-Run Batch 31.42 only. Freeze one complete clean-room
-`LinkedStnNoiseMorph` renderer brief with every ownership boundary and exact
-gate fixed before implementation. Do not add candidate DSP, tests, harnesses,
-fixtures, public APIs, routes, product exposure, Loophole, or Chorus work.
+Operator checkpoint. Authorize the direct-renewal product-gate reset or leave
+`g10.031` paused. Do not recover a renewal checkpoint or start implementation.

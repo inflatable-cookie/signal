@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: creative stretch paused; no complete owner ready
+Status: creative stretch paused; direct-renewal gate reset awaits operator
 Updated: 2026-07-22
 
 ## Why this generation matters now
@@ -238,7 +238,7 @@ Do not start Loophole or Chorus planning from Signal internals.
   - historical correctness, listening, and rejected-successor ledger
 - `g10.030` `complete`
   - stretch consolidated; candidate families closed; frozen baseline retained
-- `g10.031` `active`
+- `g10.031` `paused`
   - PaulX-like neutral `Dream` remains product intent; Batch 31.36 passed all
     objective and mono gates, then failed source-relative stereo admission and
     was deleted; Batch 31.37 closed renewal after finding no different complete
@@ -265,7 +265,9 @@ Do not start Loophole or Chorus planning from Signal internals.
     output encoding without changing positive-power behavior; Batch 31.51
     passed construction but failed structural `S02` at `17/18` on an incorrect
     handwritten 8 kHz `Q_h` vector and was deleted before synthetic or
-    listening; explicit `Cyclic` stays closed
+    listening; later Rule 11 work closed linked STN without acoustic evidence;
+    Batch 31.64 found no unused fifth family and recommends a direct-renewal
+    product-gate reset; explicit `Cyclic` stays closed
 
 ## Stretch Boundary
 
@@ -502,11 +504,15 @@ frozen execution envelope or incremental receipt. The result is invalid
 evidence, not an acoustic rejection or release-profile cost result. Repeated
 incomplete executable authority closes linked STN. The evidence ref is deleted;
 no renderer is admitted and no replacement owner is ready.
+Batch 31.64 then found no unused fifth family. Direct PaulX-style magnitude
+renewal remains the smallest source-backed owner of the accepted sound, but it
+is the closed renewal family. Reopening requires the operator to authorize the
+documented product-gate reset before one fresh complete brief is written.
 
 ## Next Task
 
-Operator checkpoint. Decide whether to commission one materially simpler,
-source-backed complete creative owner study or pause `g10.031` indefinitely.
-No prior candidate or implementation batch is ready. Keep `g10.028`, routing,
-product exposure, other creative characters, and cross-repo work unchanged.
-Do not merge or push.
+Operator checkpoint. Authorize the direct-renewal product-gate reset or leave
+`g10.031` paused. If authorized, Batch 31.65 is docs-only and freezes one
+complete `DirectRenewalDream` brief after updating Contract `085`. Keep
+`g10.028`, routing, product exposure, other creative characters, and cross-repo
+work unchanged. Do not merge or push.

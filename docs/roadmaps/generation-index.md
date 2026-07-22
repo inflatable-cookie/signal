@@ -118,9 +118,13 @@ Updated: 2026-07-22
   the exact Rule 11 identity and evidence boundary. Batch 31.58 stopped
   pre-acoustic on contradictory impulse-refinement and event-anchor authority.
   Batch 31.59 froze a four-ULP rule, but Batch 31.60 proved it incomplete on a
-  frozen train event and stopped pre-acoustic. Batch 31.61 replaces ULP
-  counting with one transform-bounded scale-relative rule. Batch 31.62 is
-  ready; no renderer is admitted.
+  frozen train event and stopped pre-acoustic. Batch 31.61 replaced ULP
+  counting with one transform-bounded scale-relative rule. Batch 31.62 passed
+  two conformance rounds and froze one checkpoint, but its first synthetic
+  owner did not complete. Batch 31.63 proved the executable evidence authority
+  incomplete and closed linked STN. Batch 31.64 found no unused fifth family;
+  direct PaulX-style renewal remains the smallest source-backed owner but
+  requires an explicit product-gate reset. No renderer is admitted.
 - Lifecycle reconciliation then closed stale `g10.001` and `g10.003` active
   markers and paused `g10.017` on its remaining hardware evidence. Signal's
   capture and live-monitor implementation is present. That lifecycle
@@ -145,7 +149,7 @@ Updated: 2026-07-22
 | `g06` | 2026-03-13 | Continue beyond reusable-boundary closeout with runtime recovery depth, instrumentation, feature breadth, and Loophole-facing runtime evidence | Closed on 2026-03-16 after recovery/resumability, profiling, VST3/AU, MIDI/event depth, hardware/external-I/O, media services, integrated acceptance, bounded soak, and generation-closeout promotion work landed |
 | `g07` | 2026-03-13 | Seed the post-`g06` feature-expansion queue around routing or multichannel depth, Linux-native breadth, control-surface substrate, and fuller time-stretch capability | Closed on 2026-03-19 after multichannel or spatial execution, LV2 and Linux backends, external MIDI/control surfaces, sample-domain stretch, integrated acceptance, and generation-closeout promotion work landed |
 | `g08` | 2026-03-19 | Continue beyond bounded feature-expansion closure with live Linux backend ownership, richer plugin or device protocol depth, immersive routing, and workflow-adjacent runtime services | Closed on 2026-03-22 after live Linux ownership, LV2 or plugin protocol depth, immersive render breadth, device-protocol substrate, preview workflows, grouped acceptance lanes, integrated acceptance, and final generation-closeout work landed |
-| `g10` | 2026-06-11 | Turn the 2026-06-11 deep audit into a remediation program: fix the real audio path, demolish simulated/narration mass (~70-80k LoC), consolidate hygiene, defer rebuilds to demand | Active; `g10.030` retained the frozen stretch baseline and `g10.031` is paused after linked-STN executable-evidence closure |
+| `g10` | 2026-06-11 | Turn the 2026-06-11 deep audit into a remediation program: fix the real audio path, demolish simulated/narration mass (~70-80k LoC), consolidate hygiene, defer rebuilds to demand | Active; `g10.030` retained the frozen stretch baseline and `g10.031` awaits a direct-renewal product-gate decision |
 | `g09` | 2026-04-08 | Turn the audit findings into a contract-backed realization, hardening, and interactive-proof program | Closed on 2026-04-11 after plugin and backend realization, production-readiness gating, and operator-visible demo proof landed |
 
 ## Rollover policy
@@ -165,7 +169,7 @@ If that cleanup has not happened, stay in the current generation and finish the 
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the current active-generation front door.
-Use the `g10.031` operator checkpoint. Decide whether to commission one
-materially simpler, source-backed complete creative owner study or pause the
-roadmap indefinitely. Keep transparent stretch, routing, and product exposure
+Use the `g10.031` operator checkpoint. Authorize the direct-renewal product-
+gate reset or leave the roadmap paused. Authorization opens one docs-only
+complete-brief batch. Keep transparent stretch, routing, and product exposure
 unchanged. Do not merge or push.

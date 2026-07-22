@@ -180,6 +180,9 @@ checkpoint, then stopped when the one-shot synthetic command did not complete
 its first selected owner, `Y09`. Batch 31.63 proved that owner's executable
 assertions and execution envelope incomplete against canonical authority. The
 receipt is invalid, linked STN is closed, and no renderer is admitted.
+Batch 31.64 found no unused fifth family. Direct PaulX-style renewal remains
+the smallest source-backed owner of the accepted sound, but reopening now
+requires the operator to authorize one explicit product-gate reset.
 Offline artifacts still need a streaming artifact writer/cache target for full
 peak-memory closure. Mono callback-state DSP has a
 no-allocation proof, linked stereo is implemented, ratio scheduling has
@@ -306,7 +309,7 @@ Before rollover:
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the active generation front door.
-Use the `g10.031` operator checkpoint. Decide whether to commission one
-materially simpler, source-backed complete creative owner study or pause the
-roadmap indefinitely. Keep the transparent successor lane, `g10.028`, routing,
+Use the `g10.031` operator checkpoint. Authorize the direct-renewal product-
+gate reset or leave the roadmap paused. Authorization opens one docs-only
+complete-brief batch. Keep the transparent successor lane, `g10.028`, routing,
 product exposure, and cross-repo work closed. Do not merge or push.

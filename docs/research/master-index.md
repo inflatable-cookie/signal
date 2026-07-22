@@ -52,7 +52,7 @@ decision controls any future reopening.
 | [Rubber Band Source Architecture](./specimen-dossiers/rubber-band-source-architecture.md) | R2/R3 scheduling, scale ownership, guidance, and phase topology | Reviewed |
 | [Bungee Source Architecture](./specimen-dossiers/bungee-source-architecture.md) | Whole-kernel common-region rotation and dynamic multichannel feasibility | Reviewed |
 | [SBSMS Source Architecture](./specimen-dossiers/sbsms-source-architecture.md) | Linked subband partial tracking, paired stereo trajectories, and direct oscillator synthesis | Source feasibility rejected |
-| [Creative Stretch Source Triangulation](./specimen-dossiers/creative-stretch-source-triangulation.md) | PaulXStretch, CDP, Potenza, and pinned SiTraNoStar whole-path ownership behind retained creative targets | Reviewed; `LinkedStnNoiseMorph` selected for complete brief |
+| [Creative Stretch Source Triangulation](./specimen-dossiers/creative-stretch-source-triangulation.md) | PaulXStretch, CDP, Potenza, and pinned SiTraNoStar whole-path ownership behind retained creative targets | Reviewed; no unused fifth owner, direct-renewal gate reset recommended |
 
 Current stretch feasibility decision:
 [Offline Time-Stretch Non-Phase-Vocoder Feasibility](../architecture/offline-time-stretch-non-phase-vocoder-feasibility.md).
@@ -113,6 +113,14 @@ dependency or an implementation brief. `LinkedStnNoiseMorph` is selected for
 one complete Signal brief with linked tonal state, shared transient events,
 continuous multichannel residual excitation, exact boundaries, deterministic
 bounded state, and the retained long-form listening order.
+
+Linked STN later closed without acoustic evidence after repeated executable-
+authority failure. Batch 31.64 found no unused, materially simpler fifth
+family. Direct PaulX-style magnitude renewal remains the smallest source-backed
+owner of the accepted sound, but it is the closed renewal family. The current
+architecture recommendation is an explicit product-gate reset before any new
+brief or implementation:
+[Offline Creative Direct-Renewal Owner Study](../architecture/offline-creative-direct-renewal-owner-study.md).
 
 Rejected comparator-audited neutral `Dream` candidate brief:
 [Offline Creative ComparatorAuditedRenewalSpectral Renderer Brief](../architecture/offline-creative-comparator-audited-renewal-spectral-brief.md).
@@ -179,7 +187,6 @@ Rejected first-owner brief:
 
 ## Next Task
 
-Run `g10.031` Batch 31.42 only. Freeze one complete clean-room
-`LinkedStnNoiseMorph` renderer brief without candidate DSP or evidence
-surfaces. Do not recover rejected code, run another renewal candidate, or
-reopen the transparent successor.
+Operator checkpoint. Authorize the direct-renewal product-gate reset or leave
+`g10.031` paused. Authorization opens one docs-only contract and complete-brief
+batch. Do not recover rejected code or reopen the transparent successor.

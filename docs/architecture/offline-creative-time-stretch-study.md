@@ -797,6 +797,26 @@ deleted checkpoint. Batch 31.45 may implement it once. Creative quality,
 `16x`, residual image, component leakage, entry/tail character, and cost remain
 unproved until the full gate order runs.
 
+## Batch 31.64 Simpler-Owner Decision
+
+Linked STN later closed without acoustic evidence after repeated executable-
+authority failure. The commissioned simpler-owner study found no unused fifth
+family. CDP owns the separate vocoder-like `Spectral` target, waveform overlap
+owns closed `Cyclic`, coherent phase propagation owns a different
+source-readable character, and image or learned resynthesis adds unresolved
+full-file, model, stereo, or cost ownership.
+
+Direct PaulX-style magnitude renewal remains the smallest source-backed owner
+of neutral `Dream`. It is not a new family. It is eligible only through an
+explicit product-gate reset because previous Signal renewal checkpoints are
+closed. The reset would retain hard integrity, level, long-form mono, and
+independent stereo listening while making exact creative pitch, impulse-region,
+and sample-algebra measurements diagnostic. No reset or candidate is yet
+authorized.
+
+Canonical decision:
+[Offline Creative Direct-Renewal Owner Study](./offline-creative-direct-renewal-owner-study.md).
+
 ## Sources
 
 - [REAPER time-stretch engines](https://www.reaper.fm/about.php)
@@ -834,7 +854,7 @@ unproved until the full gate order runs.
 
 ## Next Task
 
-Run Batch 31.45 only in the disposable worktree named by the bounded v2 brief.
-Implement it once, pass compile and construction, freeze one checkpoint, then
-run structural and synthetic gates in order. Stop before listening on any
-miss. Do not change production code or product exposure.
+Operator checkpoint. Authorize the direct-renewal product-gate reset or leave
+`g10.031` paused. If authorized, Batch 31.65 is docs-only and freezes one
+complete `DirectRenewalDream` brief after updating Contract `085`. Do not
+implement DSP in that batch.

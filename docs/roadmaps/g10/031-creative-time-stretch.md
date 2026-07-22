@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: paused; linked STN closed, no complete owner ready
+Status: paused; direct-renewal product reset awaits operator
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -2073,6 +2073,39 @@ Decision:
 - the local evidence ref was deleted; no candidate source or product surface
   entered `main`
 
+## Batch 31.64 - Simpler PaulX-Like Owner Study
+
+Status: complete; product-gate reset recommended, not authorized
+
+- [x] re-audit pinned PaulXStretch, CDP, Potenza, retained coherent/component
+  dossiers, and accepted Signal listening evidence
+- [x] test every remaining family against neutral `Dream`, source backing,
+  linked stereo, exact boundaries, bounded deterministic state, and whole-
+  renderer complexity
+- [x] find no unused fifth family; alternatives own another character or add
+  more state than the closed linked-STN renderer
+- [x] identify direct PaulX-style magnitude renewal as the smallest owner of
+  the accepted sound without mislabeling it as a new DSP family
+- [x] define the one evidence-backed product-gate reset required before renewal
+  can reopen under Contract `085` Rule 11
+- [x] keep the reset conditional and change documentation only; no candidate,
+  harness, fixture, public API, route, cache, Loophole, or Chorus work opened
+
+Decision:
+
+- no new implementation family is selected
+- a fresh `DirectRenewalDream` brief is the recommended path only if the
+  operator explicitly authorizes the product-gate reset
+- hard integrity, level, long-form mono, and eligible independent stereo
+  promotion remain; exact creative pitch, impulse-region, and sample-algebra
+  rows become complete diagnostics rather than automatic vetoes
+- no Batch 31.65 implementation is ready; authorization opens one docs-only
+  complete-brief batch first
+
+Authority:
+
+- `docs/architecture/offline-creative-direct-renewal-owner-study.md`
+
 ## Later Batches
 
 Closed or paused without promotion. No implementation or reassessment batch is
@@ -2255,11 +2288,13 @@ separately admitted complete renderer:
 - [x] repeated incomplete executable authority closed linked STN without
   promotion; no replacement owner was inferred
 - [x] the local evidence ref was deleted after reassessment
+- [x] one materially simpler source-backed owner study found no unused fifth
+  family and recommended one explicit direct-renewal product-gate reset
 
 ## Next Task
 
-Operator checkpoint. Decide whether to commission one materially simpler,
-source-backed complete owner study or pause `g10.031` indefinitely. No prior
-candidate, evidence gate, or implementation batch is ready. Do not recover a
-worktree, alter production or product routing, touch Loophole or Chorus, merge,
-or push.
+Operator checkpoint. Authorize the direct-renewal product-gate reset or leave
+`g10.031` paused. If authorized, run Batch 31.65 docs-only: update Contract
+`085` and freeze one complete `DirectRenewalDream` renderer and executable
+evidence brief. Do not recover prior code, implement DSP, alter production or
+product routing, touch Loophole or Chorus, merge, or push.
