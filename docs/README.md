@@ -81,10 +81,9 @@ strict lane.
 
 ## Next Task
 
-Run `g10.031` Batch 31.62 in retained isolated worktree
-`signal-candidate-31-58`. Apply the Batch 31.61 docs closeout, implement only
-the frozen scale-relative transient comparison and direct `S09`, `S10`, and
-compiled `Y03` ownership, then restart complete conformance twice before any
-acoustic ref. Do not run acoustic gates, alter `main`, routing, product
-exposure, Loophole, or Chorus. Only drop into `specs/` when a strict lane is
-explicitly reopened.
+Run `g10.031` Batch 31.63 as docs-only reassessment from the retained linked-STN
+acoustic ref. Determine whether `Y09` non-completion was candidate
+computational infeasibility or incomplete executable-evidence authority. Do
+not rerun, optimize, recover candidate source, alter production or routing,
+touch Loophole or Chorus, merge, or push. Only drop into `specs/` when a strict
+lane is explicitly reopened.

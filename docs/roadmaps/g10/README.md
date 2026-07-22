@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: creative stretch active; linked STN transform-error resume ready
+Status: creative stretch active; linked STN synthetic reassessment ready
 Updated: 2026-07-22
 
 ## Why this generation matters now
@@ -492,14 +492,18 @@ checkpoint. No DSP entered `main`. Batch 31.58 stopped before acoustic identity
 when reconstructed impulse refinement exposed a missing numerical tie rule.
 Batch 31.59 froze four-ULP earliest ownership, but Batch 31.60 proved it
 incomplete on the frozen `0.65` train event and stopped pre-acoustic. Batch
-31.61 freezes one transform-bounded scale-relative rule. Batch 31.62 is ready;
-no renderer is admitted.
+31.61 froze one transform-bounded scale-relative rule. Batch 31.62 then passed
+two complete conformance rounds and froze one exact acoustic checkpoint. Its
+one-shot synthetic command stopped in the first selected owner, `Y09`, after
+about `59` minutes of compute without a completed-owner result. Later
+synthetic and listening stages stayed closed. Rejected source and build state
+were deleted; the local evidence ref remains for Batch 31.63 docs-only
+reassessment. No renderer is admitted.
 
 ## Next Task
 
-Run `g10.031` Batch 31.62 in retained isolated worktree
-`signal-candidate-31-58`. Apply the Batch 31.61 docs closeout, implement only
-the frozen scale-relative transient comparison and direct owners, then restart
-full conformance twice before its acoustic ref. Keep `g10.028`, routing,
-product exposure, other creative characters, and cross-repo work unchanged. Do
-not alter `main`, merge, or push.
+Run `g10.031` Batch 31.63 as docs-only reassessment from the retained local
+evidence ref. Classify `Y09` non-completion without rerun, optimization, or
+candidate recovery, then close the evidence question and delete the ref. Keep
+`g10.028`, routing, product exposure, other creative characters, and cross-repo
+work unchanged. Do not merge or push.

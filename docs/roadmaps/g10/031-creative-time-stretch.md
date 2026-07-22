@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: active; Batch 31.61 reconciled, Batch 31.62 resume ready
+Status: active; Batch 31.62 rejected, Batch 31.63 reassessment ready
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -2001,21 +2001,61 @@ Decision:
 
 ## Batch 31.62 - Resume Transform-Bounded Linked STN Conformance
 
-Status: ready; retained isolated worktree, frozen correction only
+Status: complete; candidate rejected at one-shot synthetic `Y09`
 
-- [ ] apply the Batch 31.61 docs closeout commit to the retained worktree
-- [ ] replace only the ULP comparison and direct `S09`, `S10`, and compiled
+- [x] apply the Batch 31.61 docs closeout commit to the retained worktree
+- [x] replace only the ULP comparison and direct `S09`, `S10`, and compiled
   `Y03` ownership
-- [ ] commit one clean resumed tree and restart complete compile, construction
+- [x] commit one clean resumed tree and restart complete compile, construction
   `1/1`, and structural `18/18` conformance twice
-- [ ] create the immutable acoustic ref only after both complete passes
-- [ ] run no synthetic, rendered comparator, or listening work before that ref
-- [ ] keep production, routing, cache, product exposure, Loophole, and Chorus
+- [x] create the immutable acoustic ref only after both complete passes
+- [x] run no synthetic, rendered comparator, or listening work before that ref
+- [x] run the frozen synthetic command once and stop when `Y09` did not
+  complete with a passing owner result
+- [x] keep production, routing, cache, product exposure, Loophole, and Chorus
   closed
+
+Decision:
+
+- acoustic checkpoint is commit
+  `61922465b446dfce8ed086bc5dd61f4a9619a837`, tree
+  `fc57cd4c5eeb3c889293de3e8236863ca5513e7c`
+- both clean conformance rounds passed compile, construction `1/1`, and
+  structural `18/18`
+- the local evidence ref is
+  `refs/signal-evidence/creative/linked-stn/31-58-acoustic`
+- the one-shot synthetic command selected `Y09` first; its initial linked-
+  stereo render pair remained compute-bound for about `59` minutes, then
+  nextest returned exit `100` without an inner panic or completed-owner row
+- required synthetic admission was not `10/10`; no other synthetic owner,
+  comparator render, mono listening, or independent stereo listening ran
+- the exact failed assertion is unavailable and is not inferred; the recorded
+  dominant cause is non-completion of the linked-stereo owner under the frozen
+  executable gate shape
+- the candidate worktree, branch, build state, and ignored receipt were
+  deleted after closeout; the local evidence ref remains for reassessment
+- no candidate DSP or product surface entered `main`
+
+## Batch 31.63 - Linked STN Synthetic Execution Reassessment
+
+Status: ready; docs and evidence only
+
+- [ ] inspect the retained acoustic ref, frozen `Y09` owner, command result,
+  and runtime shape without executing candidate DSP
+- [ ] classify timeout/non-completion separately from an acoustic assertion
+  miss; do not invent the suppressed assertion result
+- [ ] decide whether the frozen gate was executable evidence, whether the
+  renderer's computational shape itself failed, or whether authority was
+  incomplete
+- [ ] close linked STN or freeze one evidence-backed complete next owner; no
+  local optimization, release-build substitution, split owner, or rerun
+- [ ] delete the local evidence ref when the evidence question closes
+- [ ] keep candidate implementation, production, routing, cache, product
+  exposure, Loophole, and Chorus closed
 
 ## Later Batches
 
-Closed or paused without promotion. Batch 31.62 is the sole ready work. Every
+Closed or paused without promotion. Batch 31.63 is the sole ready work. Every
 later product batch still requires a
 separately admitted complete renderer:
 
@@ -2182,14 +2222,18 @@ separately admitted complete renderer:
   scale-relative equality rule and complete boundary vectors
 - [x] Contract `085` and every active front door bind the retained Batch 31.62
   pre-acoustic resume and complete conformance restart
+- [x] Batch 31.62 passed two complete conformance rounds and froze one exact
+  acoustic checkpoint before synthetic execution
+- [x] the one-shot synthetic command stopped in `Y09` without the required
+  completed-owner result; later acoustic and listening stages remained closed
+- [x] rejected candidate source and build state were removed from the isolated
+  branch while its local evidence ref was retained for reassessment
 
 ## Next Task
 
-Apply the Batch 31.61 docs closeout commit to retained isolated worktree
-`signal-candidate-31-58` on branch
-`candidate/g10-031-conformance-bound-linked-stn-noise-morph`. Implement only
-the scale-relative transient-refinement comparison and direct `S09`, `S10`, and
-compiled `Y03` ownership. Commit the clean resumed tree, then restart complete
-compile, construction `1/1`, and structural `18/18` conformance twice before
-creating an acoustic ref. Do not run acoustic gates, alter `main`, touch
-Loophole or Chorus, merge, or push.
+Run Batch 31.63 as docs-only reassessment from the retained local evidence ref.
+Determine whether `Y09` non-completion is a candidate computational-shape
+failure or an executable-evidence authority failure. Do not rerun, optimize,
+split, or reinterpret the frozen checkpoint. Do not recover a worktree, write
+candidate DSP, alter production or product routing, touch Loophole or Chorus,
+merge, or push.

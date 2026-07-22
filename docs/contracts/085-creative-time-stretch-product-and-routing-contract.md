@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: active PaulX-like `Dream`; linked STN transform-error resume ready
+Status: active PaulX-like `Dream`; linked STN synthetic reassessment ready
 Owner: core-product
 Updated: 2026-07-22
 Related contracts: `046`, `048`, `084`
@@ -1293,17 +1293,28 @@ ULP boundary vectors at `1.0` plus both observed impulse pairs. `S10` owns exact
 mapped target-ledger anchors. Compiled `Y03` retains authored source anchors
 and exact mapped target anchors.
 
-The retained worktree again satisfies the pre-acoustic resume rule. Batch
-31.62 may apply the docs closeout, replace only the comparison and direct
-owners, then restart full conformance twice. The identity remains
-`ConformanceBoundLinkedStnNoiseMorph`. No creative renderer is admitted.
+Batch 31.62 applied the pre-acoustic resume rule. Commit
+`61922465b446dfce8ed086bc5dd61f4a9619a837`, tree
+`fc57cd4c5eeb3c889293de3e8236863ca5513e7c`, passed two unchanged complete
+compile, construction `1/1`, and structural `18/18` rounds before local
+acoustic-ref creation.
+
+The synthetic command then ran once. `Y09` was selected first, remained
+compute-bound for about `59` minutes during its first stereo render pair, and
+returned exit `100` without an inner panic or completed-owner result. Required
+synthetic `10/10` admission did not exist. No later synthetic owner, comparator
+render, or listening stage ran. The exact assertion subtype is unavailable and
+must not be inferred.
+
+Rule 11 makes this terminal for the checkpoint. The worktree, branch, build
+state, and ignored receipt were deleted after closeout. Local ref
+`refs/signal-evidence/creative/linked-stn/31-58-acoustic` remains only through
+the required Batch 31.63 reassessment. No creative renderer is admitted.
 
 ## Next Task
 
-Apply the Batch 31.61 docs closeout commit to retained isolated worktree
-`signal-candidate-31-58`. Implement only the frozen scale-relative transient
-comparison and direct `S09`, `S10`, and compiled `Y03` ownership. Commit a clean
-tree, then restart complete compile, construction `1/1`, and structural `18/18`
-conformance twice before creating any acoustic ref. Do not run acoustic gates,
-alter `main`, open routing or product exposure, touch Loophole or Chorus, merge,
-or push.
+Run Batch 31.63 as docs-only reassessment from the retained evidence ref.
+Classify `Y09` non-completion as candidate computational-shape failure or
+incomplete executable-evidence authority, without rerun or implementation.
+Close the evidence question and delete the ref. Keep production, routing,
+product exposure, Loophole, and Chorus unchanged. Do not merge or push.

@@ -174,8 +174,11 @@ checkpoint. Batch 31.58 then stopped pre-acoustic when `S09` proved exact
 floating comparison moved a reconstructed impulse one sample beyond `Y03`'s
 authored anchor. Batch 31.59 froze a four-ULP comparison, but Batch 31.60 proved
 it incomplete on the frozen `0.65` train event and stopped pre-acoustic. Batch
-31.61 replaces ULP counting with one transform-bounded scale-relative rule.
-Batch 31.62 is ready.
+31.61 replaced ULP counting with one transform-bounded scale-relative rule.
+Batch 31.62 passed two complete conformance rounds, froze one acoustic
+checkpoint, then stopped when the one-shot synthetic command did not complete
+its first selected owner, `Y09`. Later acoustic stages stayed closed. Batch
+31.63 is a docs-only execution-shape reassessment; no renderer is admitted.
 Offline artifacts still need a streaming artifact writer/cache target for full
 peak-memory closure. Mono callback-state DSP has a
 no-allocation proof, linked stereo is implemented, ratio scheduling has
@@ -302,9 +305,8 @@ Before rollover:
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the active generation front door.
-Run `g10.031` Batch 31.62 in retained isolated worktree
-`signal-candidate-31-58`. Apply the Batch 31.61 docs closeout, implement only
-the frozen scale-relative transient comparison and direct owners, then restart
-complete compile, construction, and structural conformance twice before its
-acoustic ref. Keep the transparent successor lane, `g10.028`, routing, product
-exposure, and cross-repo work closed. Do not alter `main`, merge, or push.
+Run `g10.031` Batch 31.63 as docs-only reassessment from the retained local
+evidence ref. Classify `Y09` non-completion without rerun, optimization, or
+candidate recovery, then close the evidence question and delete the ref. Keep
+the transparent successor lane, `g10.028`, routing, product exposure, and
+cross-repo work closed. Do not merge or push.

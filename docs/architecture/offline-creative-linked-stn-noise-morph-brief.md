@@ -1,10 +1,10 @@
 # Offline Creative LinkedStnNoiseMorph Renderer Brief
 
-Status: frozen; Batch 31.61 reconciliation complete, Batch 31.62 resume ready
+Status: rejected at Batch 31.62 synthetic `Y09`; reassessment pending
 Owner: dsp
 Updated: 2026-07-22
 Contract: `085`
-Roadmap: `g10.031`, Batches 31.42 through 31.62
+Roadmap: `g10.031`, Batches 31.42 through 31.63
 
 ## Decision
 
@@ -1628,10 +1628,35 @@ closeout is applied. Candidate identity remains
 partial passes remain diagnostic. Full compile, construction `1/1`, and
 structural `18/18` conformance still restart twice from one clean commit.
 
-Batch 31.62 is ready for that bounded resume. It may replace only the ULP
-comparison with the frozen scale-relative rule, update direct `S09`, `S10`, and
-compiled `Y03` ownership, then restart complete conformance. No acoustic work
-may run before both passes and immutable-ref creation.
+Batch 31.62 performed that bounded resume. It replaced only the ULP comparison
+and direct `S09`, `S10`, and compiled `Y03` ownership, then restarted complete
+conformance. No acoustic work ran before both passes and immutable-ref
+creation.
+
+## Batch 31.62 Synthetic Stop
+
+The retained implementation applied Batch 31.61 and froze acoustic checkpoint
+`61922465b446dfce8ed086bc5dd61f4a9619a837`, tree
+`fc57cd4c5eeb3c889293de3e8236863ca5513e7c`, only after two unchanged clean
+rounds passed compile, construction `1/1`, and structural `18/18`. Local ref
+`refs/signal-evidence/creative/linked-stn/31-58-acoustic` owns that identity.
+
+The synthetic command ran once. Nextest selected `Y09` first. Its initial
+linked-stereo render pair remained compute-bound at about one full CPU for
+approximately `59` minutes, then returned exit `100`. Effigy reported no inner
+panic, completed-owner row, or generated acoustic receipt. The required
+`10/10` result therefore did not exist. No other synthetic owner, comparator
+render, mono listening, speaker review, or independent stereo review ran.
+
+The exact assertion subtype is unavailable and is not inferred. The dominant
+recorded cause is non-completion of the linked-stereo owner under the frozen
+executable gate shape. Contract `085` Rule 11 makes that result terminal for
+this checkpoint: no tuning, repair, optimization, release-build substitution,
+owner split, or rerun is allowed.
+
+The candidate worktree, branch, build state, and ignored receipt were deleted
+after closeout. The local evidence ref remains through Batch 31.63 so exact
+source and tests stay inspectable. No candidate DSP entered `main`.
 
 ## Sources
 
@@ -1645,11 +1670,9 @@ may run before both passes and immutable-ref creation.
 
 ## Next Task
 
-Apply the Batch 31.61 docs closeout commit to retained isolated worktree
-`signal-candidate-31-58` on branch
-`candidate/g10-031-conformance-bound-linked-stn-noise-morph`. Implement only
-the frozen scale-relative transient-refinement comparison and direct `S09`,
-`S10`, and compiled `Y03` ownership. Commit the clean resumed tree, then
-restart complete compile, construction `1/1`, and structural `18/18`
-conformance twice before creating an acoustic ref. Do not run acoustic gates,
-alter production or `main`, merge, or push.
+Run Batch 31.63 as docs-only evidence reassessment. Inspect the retained ref,
+frozen `Y09` body, command result, and computational shape without executing
+candidate DSP. Decide whether this was candidate computational infeasibility
+or incomplete executable-evidence authority, then close the evidence question
+and delete the local ref. Do not rerun, optimize, recover a worktree, alter
+production, merge, or push.
