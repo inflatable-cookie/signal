@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: private fixed-ratio Dream admitted; LayeredCloud receipt invalid; overlaps paused
+Status: private Dream admitted; AuditedLayeredCloud authority next; overlaps paused
 Owner: core-product
 Updated: 2026-07-22
 Related contracts: `046`, `048`, `084`
@@ -710,6 +710,17 @@ timeout behavior, failure-output capture, and incremental receipt boundary.
 An owner whose worst-case row cannot complete and persist its result inside the
 declared execution envelope is not ready for checkpoint creation.
 
+A green runner result is invalid when post-run audit finds a frozen assertion,
+diagnostic, receipt field, comparator owner, listening owner, or execution
+boundary absent from the checkpoint. It is neither a quality pass nor a
+quality rejection. The checkpoint cannot be repaired or rerun. One fresh
+audited identity may be authorized only when this is the family's first such
+failure, no valid listening or quality decision exists, the renderer formula
+is not changed from acoustic output, a docs-only audit enumerates every known
+gap, old candidate state is deleted first, and a new complete brief is frozen
+before implementation. A second incomplete-evidence checkpoint closes the
+family as protocol churn.
+
 Before that checkpoint, corrections are allowed only when they make code or
 tests conform to existing canonical authority. Compiler, type, visibility,
 ownership, allocation, tie, boundary, state-machine, and exact-vector defects
@@ -1011,11 +1022,15 @@ may resume.
 68. Implement `LayeredCloud` once under Rule 11. Complete; two clean
     conformance rounds passed, but the synthetic receipt is invalid because
     frozen `Y05` three-band and mapped-window diagnostics were absent.
+69. Reassess the invalid `LayeredCloud` evidence. Complete; the failure is
+    broader than `Y05`, no quality decision exists, and one fresh docs-first
+    `AuditedLayeredCloud` identity is authorized under the bounded rule above.
 
 `Spectral`/`Rough`, both overlaps, dynamic ratios, and automatic routing still
 require separate reopening decisions backed by new complete-system evidence.
-`LayeredCloud` has one retained evidence-invalid checkpoint and no quality
-claim. Its renderer did not enter `main`.
+`LayeredCloud` has one evidence-invalid checkpoint and no quality claim. Its
+renderer did not enter `main`. No new candidate is ready until one complete
+`AuditedLayeredCloud` brief freezes executable evidence end to end.
 
 ## Current State
 
@@ -1505,11 +1520,42 @@ comparator-relative stereo, and listening did not open. No repair or rerun is
 allowed on that checkpoint. The retained isolated state exists only through a
 docs-level evidence-integrity reassessment.
 
+Batch 31.71 inspected the immutable source and receipts without executing DSP.
+The evidence failure is broader than `Y05`:
+
+- canonical `RENDER_SPEC`, `SOURCE_SPEC`, and `MEMORY_SPEC` owners were absent;
+  construction counted `13` owner labels and called three partial oracles but
+  did not bind every assertion, receipt field, comparator, or listening edge
+- the tracked `layered-cloud` nextest profile did not exist; the executed
+  profile was `default`, and `120 s`/`900 s` row deadlines were constants with
+  no enforcement
+- `S02`, `S03`, `S04`, `S05`, `S06`, `S07`, and `S08` each omitted at least
+  one frozen exact-vector, normalization, boundary, mono-decode, occupancy, or
+  planned-capacity assertion
+- stereo receipt `output_frames` values counted interleaved samples; assertion
+  arrays always contained only `frozen-owner`
+- `Y02` could return a finite peak from an absent component and persisted no
+  pitch diagnostics; `Y03` did not persist centroids; `Y04` did not scan
+  dropout windows crossing one-second block boundaries; `Y05` omitted the
+  frozen band/window analysis and all natural-stereo diagnostics
+- no compile-linked owner existed for comparator capture, concealment, level
+  matching, the `30` listening rows, `90` renders, or terminal decisions
+
+This is the first incomplete-evidence checkpoint for the small pointer-led
+Cloud family. No valid quality or listening result exists, and no acoustic
+output may guide a replacement. One fresh `AuditedLayeredCloud` authority is
+therefore justified. It must re-freeze the same source-backed architecture
+from canonical docs, make every executable edge explicit, and start from new
+source after the Batch 31.70 worktree, branch, build state, generated output,
+and evidence ref are deleted. Batch 31.72 is docs only; it cannot implement the
+renderer. Any evidence-integrity failure by the fresh identity closes this
+family without another rebinding.
+
 ## Next Task
 
-Batch 31.71 only. Audit complete executable evidence ownership and decide at
-docs level whether the still-unjudged `LayeredCloud` topology warrants one
-fresh audited identity. Do not repair or rerun checkpoint `ee42f50c`. Delete
-the retained isolated state after that decision. Keep admitted renderers,
-overlaps, routing, controls, cache, dynamic ratio, Loophole, and Chorus
-unchanged. Do not push.
+Batch 31.72 only. Freeze one complete `AuditedLayeredCloud` brief from the
+canonical pointer-led architecture and the Batch 31.71 gap ledger. Close every
+executable evidence edge before any implementation batch becomes ready. Do
+not recover Batch 31.70 source or output. Keep admitted renderers, overlaps,
+routing, controls, cache, dynamic ratio, Loophole, and Chorus unchanged. Do
+not push.

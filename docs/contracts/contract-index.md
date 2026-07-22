@@ -48,9 +48,9 @@ memory alone.
   Batch 31.67 admitted the exact private fixed-ratio renderer. Batch 31.68
   retained the lower-overlap pause. Batch 31.69 froze one complete pointer-led
   granular `LayeredCloud` authority for continuous fixed `16x..100x`; its
-  Batch 31.70 pre-code audit corrected the minimum source boundary to `L>=H`;
-  its later synthetic receipt is invalid because frozen `Y05` diagnostics were
-  absent. Both overlaps and the router stay paused
+  Batch 31.70 receipt is invalid across construction, runner, structural,
+  synthetic, and listening ownership. Batch 31.71 authorizes one fresh docs-
+  first `AuditedLayeredCloud` identity. Both overlaps and the router stay paused
 - `082` and `g10.029` are historical evidence, not active execution authority
 - `g10.028` source-fill work remains paused
 
@@ -182,6 +182,6 @@ frozen elsewhere in this index.
 
 Keep Contract `084` closed. Contract `085` admits private fixed-ratio
 `DirectRenewalDream`; the `LayeredCloud` checkpoint has no valid quality
-result. Run `g10.031` Batch 31.71 only for docs-level evidence-integrity
-reassessment. Do not repair or rerun the checkpoint or alter admitted
-renderers, overlaps, routing, or product exposure.
+result. Run `g10.031` Batch 31.72 only to freeze complete
+`AuditedLayeredCloud` authority. Do not recover Batch 31.70 source or output or
+alter admitted renderers, overlaps, routing, or product exposure.

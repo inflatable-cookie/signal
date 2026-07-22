@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: active; Batch 31.70 receipt invalid, Batch 31.71 reassessment ready
+Status: active; Batch 31.71 complete, Batch 31.72 authority freeze ready
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -2321,22 +2321,53 @@ Decision:
 
 ## Batch 31.71 - LayeredCloud Evidence-Integrity Reassessment
 
+Status: complete; one fresh docs-first identity justified
+
+- [x] record Batch 31.70 as evidence-invalid without using its output as
+  renderer-quality evidence
+- [x] audit every frozen acoustic helper, assertion, diagnostic, receipt field,
+  row, render, and construction-manifest edge against executable ownership
+- [x] decide whether the still-unjudged pointer-led topology warrants one fresh
+  audited identity or closes here
+- [x] delete the retained worktree, branch, build state, generated output, and
+  local evidence ref after the decision is committed
+- [x] keep candidate DSP, product code, routing, controls, cache, dynamic ratio,
+  Loophole, and Chorus unchanged
+
+Decision:
+
+- the checkpoint omitted canonical spec owners, full construction mapping, the
+  tracked runner profile, enforceable row deadlines, multiple structural
+  assertions, truthful stereo frame counts, required Y02-Y05 diagnostics, and
+  all comparator/listening executable ownership
+- this is invalid evidence, not a Cloud quality result; checkpoint output does
+  not authorize renderer, source, helper, or threshold changes
+- the small source-backed topology has no previous incomplete-evidence identity
+  and no valid acoustic decision, so one fresh `AuditedLayeredCloud` authority
+  is justified
+- the replacement starts docs-first and source-clean; a second evidence-
+  integrity failure closes the family without another rebinding
+
+## Batch 31.72 - AuditedLayeredCloud Authority Freeze
+
 Status: ready; docs only
 
-- [ ] record Batch 31.70 as evidence-invalid without using its output as
-  renderer-quality evidence
-- [ ] audit every frozen acoustic helper, assertion, diagnostic, receipt field,
-  row, render, and construction-manifest edge against executable ownership
-- [ ] decide whether the still-unjudged pointer-led topology warrants one fresh
-  audited identity or closes here
-- [ ] delete the retained worktree, branch, build state, generated output, and
-  local evidence ref after the decision is committed
-- [ ] keep candidate DSP, product code, routing, controls, cache, dynamic ratio,
-  Loophole, and Chorus unchanged
+- [ ] freeze one complete replacement brief around the unchanged canonical
+  pointer-led architecture, not Batch 31.70 source or output
+- [ ] freeze compile-linked render, source, evidence, memory, run, comparator,
+  listening, and cleanup specs with exact hashes and owner mappings
+- [ ] give every structural and synthetic assertion an exact executable owner;
+  resolve component-presence and row-timeout mechanics explicitly
+- [ ] freeze truthful frame/sample receipt semantics, specific assertion and
+  diagnostic payloads, tracked nextest profile, incremental persistence, and
+  complete comparator/listening decisions
+- [ ] make one fresh isolated implementation batch ready only if Contract `085`
+  Rule 11 is satisfied with no decide-later gap
+- [ ] keep admitted DSP and product surfaces unchanged
 
 ## Later Batches
 
-Closed or paused beyond the evidence-integrity decision. Batch 31.71 is the
+Closed or paused beyond the replacement authority freeze. Batch 31.72 is the
 sole ready batch.
 Every later product batch still requires separate authority:
 
@@ -2541,11 +2572,19 @@ Every later product batch still requires separate authority:
   admitted renderer
 - [x] Batch 31.69 froze one complete source-backed `LayeredCloud` renderer and
   Rule 11 evidence authority without adding candidate DSP to `main`
+- [x] Batch 31.70 passed two conformance rounds but produced an invalid green
+  synthetic receipt; no comparator, listening, or quality decision opened
+- [x] Batch 31.71 audited the complete retained checkpoint without executing
+  DSP and found construction, runner, structural, synthetic, receipt, and
+  listening ownership incomplete
+- [x] one fresh docs-first `AuditedLayeredCloud` identity is justified; the
+  failed checkpoint cannot be repaired or rerun and no source/output transfers
 
 ## Next Task
 
-Batch 31.71 only. Reconcile the invalid Batch 31.70 synthetic receipt at docs
-level. Audit complete executable evidence ownership, decide whether one fresh
-audited identity is justified, then delete the retained isolated state. Do not
-repair or rerun the checkpoint. Keep admitted renderers, overlaps, routing,
-controls, cache, dynamic ratio, Loophole, and Chorus unchanged. Do not push.
+Batch 31.72 only. Freeze one complete `AuditedLayeredCloud` brief from the
+canonical pointer-led architecture and Batch 31.71 gap ledger. Close every
+executable evidence edge before any implementation batch becomes ready. Do
+not recover Batch 31.70 source or output. Keep admitted renderers, overlaps,
+routing, controls, cache, dynamic ratio, Loophole, and Chorus unchanged. Do
+not push.

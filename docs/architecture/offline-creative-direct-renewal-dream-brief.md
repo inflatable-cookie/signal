@@ -650,5 +650,7 @@ surface was admitted.
 Batch 31.68 retained the `2x..4x` overlap pause because this exact-ratio
 renderer cannot supply the mandatory interior renders or share the coherent
 frame lattice. Batch 31.69 froze a separate `LayeredCloud` authority and kept
-the upper overlap paused. Run Batch 31.70 only: implement Cloud once in its
-named isolated worktree. Do not change this renderer or add product surface.
+the upper overlap paused. Batch 31.70 Cloud evidence was invalid; Batch 31.71
+authorized one fresh docs-first identity. Run Batch 31.72 only: freeze complete
+`AuditedLayeredCloud` authority. Do not change this renderer or add product
+surface.

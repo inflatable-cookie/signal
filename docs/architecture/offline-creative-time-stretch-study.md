@@ -1,6 +1,6 @@
 # Offline Creative Time-Stretch Study
 
-Status: `DirectRenewalDream` admitted; LayeredCloud receipt invalid; Batch 31.71 ready
+Status: `DirectRenewalDream` admitted; AuditedLayeredCloud authority next
 Owner: dsp
 Updated: 2026-07-22
 Contract: `085`
@@ -907,6 +907,20 @@ or listening stage opened, so the pointer-led Cloud topology has neither a
 quality pass nor a quality rejection. Batch 31.71 owns the docs-only evidence-
 integrity decision; the checkpoint cannot be repaired or rerun.
 
+Batch 31.71 found the executable gap broader than `Y05`: incomplete spec and
+construction manifests, no tracked runner profile or enforceable row deadline,
+missing structural vectors and algebra, false stereo frame counts, incomplete
+Y02-Y05 diagnostics, and no comparator or listening owner. None is acoustic
+evidence against the renderer.
+
+The selected pointer-led topology remains the smallest source-backed owner of
+the Cloud range and has no prior invalid-evidence identity or quality result.
+One fresh docs-first `AuditedLayeredCloud` identity is justified under Contract
+`085`. Batch 31.72 freezes that authority only. It cannot reuse checkpoint
+source or output, change renderer behavior from acoustic evidence, or open
+implementation before every executable edge is frozen. A second evidence-
+integrity failure closes the family.
+
 ## Sources
 
 - [REAPER time-stretch engines](https://www.reaper.fm/about.php)
@@ -949,8 +963,9 @@ integrity decision; the checkpoint cannot be repaired or rerun.
 
 ## Next Task
 
-Run Batch 31.71 only. Audit complete executable evidence ownership and decide
-whether the still-unjudged `LayeredCloud` topology warrants one fresh audited
-identity. Do not repair or rerun Batch 31.70. Delete its retained isolated
-state after the decision. Keep admitted renderers, overlaps, routing, controls,
-cache, dynamic ratio, Loophole, and Chorus unchanged. Do not push.
+Run Batch 31.72 only. Freeze one complete `AuditedLayeredCloud` brief from the
+canonical pointer-led architecture and Batch 31.71 gap ledger. Resolve every
+construction, runner, receipt, synthetic, comparator, listening, and cleanup
+edge before implementation becomes ready. Do not recover Batch 31.70 source
+or output. Keep admitted renderers, overlaps, routing, controls, cache, dynamic
+ratio, Loophole, and Chorus unchanged. Do not push.

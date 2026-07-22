@@ -1,6 +1,6 @@
 # Offline Creative LayeredCloud Renderer Brief
 
-Status: closed for Batch 31.70; synthetic receipt invalid
+Status: closed; AuditedLayeredCloud replacement authority next
 Owner: dsp
 Updated: 2026-07-22
 Contract: `085`
@@ -491,6 +491,43 @@ stereo, and listening did not open. Do not repair, rerun, or promote this
 checkpoint. Retain its isolated state only through Batch 31.71's docs-level
 evidence-integrity decision.
 
+## Batch 31.71 Evidence-Integrity Audit
+
+Batch 31.71 read checkpoint source and receipts without executing DSP. The
+known gaps are complete enough to reject repair of this authority:
+
+| Boundary | Retained executable state | Missing authority |
+| --- | --- | --- |
+| specification owners | `EVIDENCE_SPEC` and `RUN_SPEC`-like structs only | canonical `RENDER_SPEC`, `SOURCE_SPEC`, and `MEMORY_SPEC`; exact source/vector hashes |
+| construction | `13` labels, counts, three partial oracles | assertion/receipt mapping for every structural, synthetic, comparator, and listening edge |
+| runner | release CLI arguments under nextest `default` | tracked `profile.layered-cloud`; enforceable `120 s`/`900 s` row deadlines |
+| `S01` | invalid request outcomes | allocation proof for every pre-allocation rejection |
+| `S02` | endpoint ordering and final launch | exact map vectors, complete launch counts, terminal deduplication, source-centre equality |
+| `S03` | counter/range samples | derived exhaustive active-grain occupancy rather than a fixed `21+1` assertion |
+| `S04` | finite interpolation and active flags | exact interpolation/mask values, window values, symmetry, positivity, both inactive boundaries |
+| `S05` | finite convex outputs | denominator-floor ownership, exact DC normalization, fixed summation-order proof |
+| `S06` | exact length and zero endpoints | Dream-matched entry and release vectors |
+| `S07` | duplicate, swap, negation, anti-phase | frozen mono-decode algebra |
+| `S08` | repeat, seed activity, allocation ceiling | identical planned working-capacity assertion |
+| receipt | synced rows and hashes | truthful stereo frame counts, specific assertion inventory, required diagnostic values |
+| `Y02` | finite peak search and ordering | meaningful component-presence proof and persisted pitch diagnostics |
+| `Y03` | support, order, lobe diagnostics | persisted contribution centroids |
+| `Y04` | full-block dropout/hash scans | dropout windows crossing block boundaries and the final interior remainder |
+| `Y05` | whole-buffer balance/correlation/width | three-band and mapped-window diagnostics; persisted natural-stereo values |
+| comparison/listening | no owner | comparator capture, toolchain checks, concealment, level matching, `30` rows, `90` renders, decisions, receipts |
+
+The pointer-led renderer itself remains unjudged. This is the family's first
+incomplete-evidence checkpoint, its architecture is small and source-backed,
+and no valid acoustic output can bias a replacement. Contract `085` therefore
+allows exactly one fresh `AuditedLayeredCloud` identity. Batch 31.72 must
+freeze its complete brief before implementation. It must resolve the
+component-presence rule and row-timeout mechanism explicitly, not defer them
+to code. Any second evidence-integrity failure closes the family.
+
+The Batch 31.70 worktree, branch, build state, generated output, and local
+evidence ref are deleted after the Batch 31.71 docs commit. No source or output
+is recovered into the replacement.
+
 ## Sources
 
 - [Csound `sndwarpst` manual](https://csound.com/manual/opcodes/sndwarpst/)
@@ -502,8 +539,9 @@ evidence-integrity decision.
 
 ## Next Task
 
-Run Batch 31.71 only. Audit every executable acoustic helper, assertion,
-diagnostic, receipt field, and construction edge, then decide whether the
-still-unjudged topology warrants one fresh audited identity. Do not repair or
-rerun Batch 31.70. Keep admitted renderers, product routing, controls, cache,
-dynamic ratio, Loophole, and Chorus unchanged. Do not push.
+Run Batch 31.72 only. Freeze one complete `AuditedLayeredCloud` brief around
+the same canonical pointer-led architecture and the gap ledger above. Make no
+implementation batch ready until construction, runner, receipts, synthetic,
+comparator, and listening ownership are closed with no decide-later gaps. Do
+not recover Batch 31.70 source or output. Keep admitted renderers, routing,
+controls, cache, dynamic ratio, Loophole, and Chorus unchanged. Do not push.

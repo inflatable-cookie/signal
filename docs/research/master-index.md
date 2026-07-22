@@ -199,7 +199,7 @@ Rejected first-owner brief:
 
 ## Next Task
 
-Run `g10.031` Batch 31.70 only. Implement the frozen private `LayeredCloud`
-authority once in its named isolated worktree. Complete two unchanged
-conformance rounds before its acoustic checkpoint. Do not change the brief,
-admitted renderers, overlaps, routing, or transparent successor.
+Run `g10.031` Batch 31.72 only. Freeze complete `AuditedLayeredCloud`
+authority from canonical research and the Batch 31.71 evidence gap ledger.
+Do not recover Batch 31.70 source or output or change admitted renderers,
+overlaps, routing, or the transparent successor.

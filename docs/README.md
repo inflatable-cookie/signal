@@ -41,7 +41,7 @@ strict lane.
 - Rejected-at-compile creative CompensatedRenewalSpectral brief: [architecture/offline-creative-compensated-renewal-spectral-brief.md](./architecture/offline-creative-compensated-renewal-spectral-brief.md)
 - Rejected creative RenewalSpectral brief: [architecture/offline-creative-renewal-spectral-brief.md](./architecture/offline-creative-renewal-spectral-brief.md)
 - Creative source triangulation: [research/specimen-dossiers/creative-stretch-source-triangulation.md](./research/specimen-dossiers/creative-stretch-source-triangulation.md)
-- Frozen creative LayeredCloud brief: [architecture/offline-creative-layered-cloud-brief.md](./architecture/offline-creative-layered-cloud-brief.md)
+- Evidence-invalid LayeredCloud brief and audit ledger: [architecture/offline-creative-layered-cloud-brief.md](./architecture/offline-creative-layered-cloud-brief.md)
 - Rejected creative SimilarityAlignedCyclic brief: [architecture/offline-creative-similarity-aligned-cyclic-brief.md](./architecture/offline-creative-similarity-aligned-cyclic-brief.md)
 - Rejected creative CyclicGrain brief: [architecture/offline-creative-cyclic-grain-brief.md](./architecture/offline-creative-cyclic-grain-brief.md)
 - Rejected creative complex-relation brief: [architecture/offline-creative-continuous-excitation-complex-relation-brief.md](./architecture/offline-creative-continuous-excitation-complex-relation-brief.md)
@@ -83,9 +83,9 @@ strict lane.
 
 ## Next Task
 
-Run `g10.031` Batch 31.71 only. Reconcile the invalid Batch 31.70
-`LayeredCloud` synthetic receipt at docs level and decide whether one fresh
-audited identity is justified. Do not repair or rerun the checkpoint. Keep
-admitted renderers, overlaps, routing, controls, cache, dynamic ratio,
-Loophole, and Chorus unchanged. Do not push.
+Run `g10.031` Batch 31.72 only. Freeze one complete `AuditedLayeredCloud`
+brief from canonical architecture and the Batch 31.71 gap ledger. Close every
+executable evidence edge before implementation becomes ready. Do not recover
+Batch 31.70 source or output. Keep admitted renderers, overlaps, routing,
+controls, cache, dynamic ratio, Loophole, and Chorus unchanged. Do not push.
 Only drop into `specs/` when a strict lane is explicitly reopened.

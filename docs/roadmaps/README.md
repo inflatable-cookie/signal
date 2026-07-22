@@ -193,11 +193,10 @@ byte-identical to checkpoint `760da32d`; integrated construction, structural,
 and synthetic owners pass. Batch 31.68 retained the lower-overlap pause: Dream
 has no exact `2x` or interior render and does not share the coherent scheduler.
 Batch 31.69 froze one complete pointer-led granular `LayeredCloud` authority
-for continuous fixed `16x..100x`. The upper overlap remains paused because
-Dream has no interior `16x..32x` render. Batch 31.70 is the sole ready batch
-and may implement that authority once in isolation. Its pre-code audit froze
-`L>=H` after sub-hop sources contradicted the validity-weight floor; the
-retained worktree is ready to resume under `101` structural rows.
+for continuous fixed `16x..100x`. Batch 31.70's executable receipt proved
+invalid before listening. Batch 31.71 found broad evidence-ownership gaps and
+authorized one fresh docs-first `AuditedLayeredCloud` identity. The upper
+overlap remains paused because Dream has no interior `16x..32x` render.
 Offline artifacts still need a streaming artifact writer/cache target for full
 peak-memory closure. Mono callback-state DSP has a
 no-allocation proof, linked stereo is implemented, ratio scheduling has
@@ -324,8 +323,8 @@ Before rollover:
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the active generation front door.
-Run `g10.031` Batch 31.70 only. Implement the frozen `LayeredCloud` authority
-once in its named isolated worktree. Pass two unchanged conformance rounds
-before its acoustic checkpoint, then run `Y01..Y05`. Keep the transparent
-successor lane, `g10.028`, `main`, overlaps, routing, controls, cache, dynamic
-ratio, and cross-repo work unchanged. Do not push.
+Run `g10.031` Batch 31.72 only. Freeze one complete `AuditedLayeredCloud`
+brief with every executable evidence edge closed before implementation becomes
+ready. Do not recover Batch 31.70 source or output. Keep the transparent
+successor lane, `g10.028`, admitted renderers, overlaps, routing, controls,
+cache, dynamic ratio, and cross-repo work unchanged. Do not push.

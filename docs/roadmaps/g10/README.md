@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: creative stretch active; Batch 31.70 receipt invalid, Batch 31.71 ready
+Status: creative stretch active; Batch 31.72 authority freeze ready
 Updated: 2026-07-22
 
 ## Why this generation matters now
@@ -273,9 +273,9 @@ Do not start Loophole or Chorus planning from Signal internals.
     retained the lower-overlap pause because Dream has no mandatory interior
     renders or shared coherent scheduler; Batch 31.69 froze one complete
     pointer-led granular `LayeredCloud` authority for fixed `16x..100x`;
-    Batch 31.70 receipt is invalid because frozen `Y05` diagnostics were
-    absent; Batch 31.71 owns the docs-only reassessment; explicit `Cyclic`
-    stays closed
+    Batch 31.70 receipt is invalid across executable evidence ownership;
+    Batch 31.71 authorizes one docs-first `AuditedLayeredCloud` identity;
+    explicit `Cyclic` stays closed
 
 ## Stretch Boundary
 
@@ -544,11 +544,19 @@ candidate passed two unchanged conformance rounds and froze checkpoint
 `ee42f50c`. The apparent `Y01..Y05` green result is invalid because `Y05`
 omitted frozen three-band and mapped-window natural-stereo diagnostics. No
 comparator or listening stage opened, and no Cloud quality conclusion follows.
+Batch 31.71 then audited the complete checkpoint without executing DSP. It
+found missing spec owners, runner enforcement, structural assertions, truthful
+stereo frame counts, Y02-Y05 diagnostics, and comparator/listening ownership.
+This first evidence-integrity failure does not judge the small source-backed
+renderer. One fresh `AuditedLayeredCloud` authority is justified; its brief
+must be complete before implementation and a second evidence failure closes
+the family.
 
 ## Next Task
 
-Run `g10.031` Batch 31.71 only. Audit complete executable evidence ownership
-and decide whether the still-unjudged `LayeredCloud` topology warrants one
-fresh audited identity. Do not repair or rerun Batch 31.70. Keep `g10.028`,
-admitted renderers, overlaps, routing, controls, cache, dynamic ratio,
-Loophole, Chorus, and cross-repo work unchanged. Do not push.
+Run `g10.031` Batch 31.72 only. Freeze one complete `AuditedLayeredCloud`
+brief from canonical architecture and the Batch 31.71 gap ledger. Close every
+executable evidence edge before implementation becomes ready. Do not recover
+Batch 31.70 source or output. Keep `g10.028`, admitted renderers, overlaps,
+routing, controls, cache, dynamic ratio, Loophole, Chorus, and cross-repo work
+unchanged. Do not push.

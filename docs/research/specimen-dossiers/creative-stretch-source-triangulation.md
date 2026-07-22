@@ -620,7 +620,7 @@ Primary source audit:
 
 ## Next Task
 
-Run Batch 31.70 only. Implement the frozen `LayeredCloud` authority once in its
-named isolated worktree. Reach its acoustic checkpoint only after two clean
-complete conformance rounds. Do not change the brief, admitted renderers,
-overlaps, routing, controls, cache, Loophole, or Chorus. Do not push.
+Run Batch 31.72 only. Freeze complete `AuditedLayeredCloud` authority from the
+canonical pointer-led family and the Batch 31.71 evidence gap ledger. Do not
+recover Batch 31.70 source or output or change admitted renderers, overlaps,
+routing, controls, cache, Loophole, or Chorus. Do not push.
