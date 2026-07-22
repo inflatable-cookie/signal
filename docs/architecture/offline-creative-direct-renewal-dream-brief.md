@@ -1,10 +1,10 @@
 # Offline Creative DirectRenewalDream Renderer Brief
 
-Status: ready for one isolated candidate
+Status: candidate passed; minimal admission ready
 Owner: dsp
 Updated: 2026-07-22
 Contract: `085`
-Roadmap: `g10.031`, Batch 31.65
+Roadmap: `g10.031`, Batch 31.66
 
 ## Decision
 
@@ -594,6 +594,33 @@ Two fresh acoustic checkpoints failing the same dominant cause close this
 architecture for reassessment. No scalar, seed, window, phase, threshold, or
 assertion sweep follows a failure.
 
+## Batch 31.66 Outcome
+
+Checkpoint `760da32d2c87b2838bda48f32af90ae4ae51f8d9` implemented this brief
+without changing its renderer formulas.
+
+- two unchanged clean conformance rounds passed compile, construction `1/1`,
+  and structural `10/10`
+- `Y01..Y05` passed `88/88` synthetic rows and `76/76` renders
+- concealed mono passed as `15/15` usable ties; L001 and L006 retained a
+  non-terminal slower-entry/faster-tail caveat
+- long-form stereo passed all `45` hard rows, all `15` trio-spread rows, and
+  all `1400` mapped diagnostics
+- worst whole/three-band balance error was `0.138039758 dB`; worst `space`
+  trio spread was `0.064465954 dB`
+- the largest finite local image diagnostic was `9.253537932 dB` on the
+  `16x` full-mix tail; PaulX measured `8.219403964 dB` in the same region
+
+The operator found the stereo effect satisfactory on speakers, reported no
+detectable stereo issue, and explicitly waived eligible independent review
+for this effect. Contract `085` records this as a scoped creative-product
+decision for this checkpoint. The operator's one-ear hearing limitation is
+not erased, and no independent-listening claim is made.
+
+The candidate passes fixed-ratio admission. This outcome opens only the
+minimal private production surface below; it does not admit routing, dynamic
+ratio, public controls, other characters, cache behavior, Loophole, or Chorus.
+
 ## Sources
 
 - [Direct-renewal owner study](./offline-creative-direct-renewal-owner-study.md)
@@ -603,8 +630,7 @@ assertion sweep follows a failure.
 
 ## Next Task
 
-Run Batch 31.66 once in the named disposable worktree. Implement only this
-private renderer and compile-linked evidence authority. Complete two unchanged
-release-profile conformance rounds before creating the acoustic ref; then run
-`Y01..Y05` in order. Stop before listening on any hard miss. Do not merge or
-push.
+Run Batch 31.67 only. Admit the exact passed checkpoint as the minimal private
+fixed-ratio renderer, request, regression owners, diagnostic receipt schema,
+and internal engine version. Preserve acoustic identity and keep all broader
+product work closed. Do not push.

@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: active; Batch 31.66 isolated `DirectRenewalDream` candidate ready
+Status: active; Batch 31.66 passed, Batch 31.67 minimal admission ready
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -2139,11 +2139,66 @@ Authority:
 - `docs/architecture/offline-creative-direct-renewal-dream-brief.md`
 - `docs/contracts/085-creative-time-stretch-product-and-routing-contract.md`
 
+## Batch 31.66 - DirectRenewalDream Isolated Candidate
+
+Status: complete; fixed-ratio candidate passed
+
+- [x] started from exact Batch 31.65 closeout `a2759b39` in worktree
+  `signal-candidate-31-66` on branch
+  `candidate/g10-031-direct-renewal-dream`
+- [x] implemented one fresh private candidate without recovering rejected
+  source or changing production, routing, Loophole, or Chorus
+- [x] passed two unchanged clean conformance rounds: compile, construction
+  `1/1`, and structural `10/10`
+- [x] froze immutable acoustic checkpoint
+  `760da32d2c87b2838bda48f32af90ae4ae51f8d9` and matching local evidence ref
+- [x] passed `Y01..Y05`: `88/88` synthetic rows and `76/76` renders
+- [x] passed concealed long-form mono as `15/15` usable ties with no family
+  loss
+- [x] retained the material-dependent slower-entry/faster-tail behavior on
+  L001 and L006 as a non-terminal listening caveat
+- [x] passed `45/45` long-form stereo hard rows, `15/15` `space` trio rows,
+  and `1400/1400` finite mapped diagnostics
+- [x] recorded worst whole/three-band error `0.138039758 dB` against
+  `0.75 dB` and worst trio spread `0.064465954 dB` against `0.50 dB`
+- [x] recorded the operator's satisfactory speaker review and explicit waiver
+  of eligible independent review for this effect
+- [x] kept the candidate checkpoint and evidence isolated; no candidate code
+  entered `main`
+
+Decision:
+
+- `DirectRenewalDream` passes fixed-ratio neutral-`Dream` candidate admission
+- the stereo decision is an explicit operator-owned Contract `085` Rule 5
+  exception for this checkpoint, not an independent-listening result
+- the one-ear hearing limitation and largest local image diagnostic remain
+  recorded risks
+- no public API, route, cache, dynamic ratio, other character, Loophole, or
+  Chorus surface is admitted
+
+## Batch 31.67 - Minimal DirectRenewalDream Admission
+
+Status: ready
+
+- [ ] start from the Batch 31.66 docs closeout and retain exact checkpoint
+  `760da32d2c87b2838bda48f32af90ae4ae51f8d9` as source authority
+- [ ] admit the renderer formulas without acoustic change
+- [ ] admit only the private fixed-ratio neutral-`Dream` request and renderer,
+  structural/synthetic regression owners, diagnostic receipt schema, and one
+  internal creative-engine version
+- [ ] reproduce the checkpoint's structural and synthetic identities after
+  integration
+- [ ] keep public controls, routing, cache, artifacts/reports, dynamic ratio,
+  other characters, Loophole, and Chorus closed
+- [ ] remove disposable listening audio and build state only after admitted
+  source and retained evidence identity are secure
+- [ ] validate and commit the bounded Signal-only admission; do not push
+
 ## Later Batches
 
-Closed or paused without promotion. Batch 31.66 is the sole ready
-implementation batch. Every later product batch still requires a separately
-admitted complete renderer:
+Closed or paused beyond minimal admission. Batch 31.67 is the sole ready
+implementation batch. Every later product batch still requires the admitted
+fixed-ratio renderer and separate authority:
 
 - minimal production admission
 - coherent/diffusive overlap
@@ -2327,13 +2382,20 @@ admitted complete renderer:
   renderer and executable evidence brief now satisfies Contract `085` Rule 11
 - [x] Batch 31.65 changed documentation only and opened exactly one isolated
   candidate implementation batch
+- [x] Batch 31.66 passed two clean conformance rounds, all `88` synthetic
+  rows, concealed mono `15/15`, and all `45` stereo hard rows
+- [x] the operator accepted the fixed-ratio stereo effect and explicitly
+  waived eligible independent review for this checkpoint under scoped
+  Contract `085` Rule 5 authority
+- [x] one exact passed candidate checkpoint and local evidence ref remain
+  isolated for minimal admission
 
 ## Next Task
 
-Batch 31.66 only. Start from the Batch 31.65 closeout commit. Create worktree
-`signal-candidate-31-66` on branch
-`candidate/g10-031-direct-renewal-dream`, implement the private fixed-ratio
-candidate and complete conformance authority exactly as frozen, and follow
-Contract `085` Rule 11. Do not recover prior code, change the brief, run
-acoustic owners before the immutable checkpoint, alter production or product
-routing, touch Loophole or Chorus, merge, or push.
+Batch 31.67 only. Start from this docs closeout and admit exact checkpoint
+`760da32d2c87b2838bda48f32af90ae4ae51f8d9` as the minimal private
+fixed-ratio neutral-`Dream` renderer. Preserve renderer formulas and acoustic
+identity. Admit only the request, renderer, regressions, diagnostic receipt
+schema, and internal engine version named above. Keep public controls,
+routing, cache, dynamic ratio, other characters, Loophole, and Chorus closed.
+Do not push.

@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: creative stretch active; Batch 31.66 isolated candidate ready
+Status: creative stretch active; Batch 31.67 minimal admission ready
 Updated: 2026-07-22
 
 ## Why this generation matters now
@@ -509,12 +509,19 @@ Batch 31.64 then found no unused fifth family. Direct PaulX-style magnitude
 renewal remains the smallest source-backed owner of the accepted sound. Batch
 31.65 records the operator-authorized product-gate reset and freezes one fresh,
 complete `DirectRenewalDream` renderer and executable evidence authority.
-No renderer is admitted; Batch 31.66 may implement that authority once.
+Batch 31.66 implemented it once at checkpoint `760da32d`. Two clean
+conformance rounds, all `88` synthetic rows, concealed mono `15/15`, all `45`
+stereo hard rows, all `15` trio rows, and all `1400` mapped diagnostics
+completed. The operator accepted stereo on speakers and explicitly waived
+eligible independent review for this effect. Contract `085` records the
+one-ear limitation and scopes that product decision to this checkpoint. The
+candidate passes; no renderer has entered `main`. Batch 31.67 may now admit
+only the frozen minimal private fixed-ratio surface.
 
 ## Next Task
 
-Run `g10.031` Batch 31.66 only from the Batch 31.65 closeout commit. Create the
-named isolated `DirectRenewalDream` worktree, implement the frozen private
-candidate and complete conformance authority, and follow Contract `085` Rule
-11. Keep `g10.028`, routing, product exposure, other creative characters, and
-cross-repo work unchanged. Do not merge or push.
+Run `g10.031` Batch 31.67 only. Admit exact passed checkpoint `760da32d` as
+the minimal private fixed-ratio neutral-`Dream` renderer. Preserve acoustic
+identity. Keep `g10.028`, public controls, routing, cache, dynamic ratio, other
+creative characters, Loophole, Chorus, and cross-repo work unchanged. Do not
+push.

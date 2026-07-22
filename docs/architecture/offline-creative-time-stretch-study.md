@@ -1,8 +1,8 @@
 # Offline Creative Time-Stretch Study
 
-Status: `DirectRenewalDream` frozen; Batch 31.66 isolated candidate ready
+Status: `DirectRenewalDream` passed; Batch 31.67 minimal admission ready
 Owner: dsp
-Updated: 2026-07-21
+Updated: 2026-07-22
 Contract: `085`
 Roadmap: `g10.031`
 
@@ -584,7 +584,8 @@ records candidate error, PaulX error, and signed delta. It rejects missing or
 non-finite evidence, not a finite pitch delta. Hard integrity, replica, level,
 discontinuity, dropout, boundary, deterministic-state, and linked-stereo gates
 remain terminal. Concealed mono, operator speaker pre-screen, and eligible
-independent stereo listening remain mandatory.
+independent stereo listening remain the default. Batch 31.66 later applies
+Contract `085`'s checkpoint-scoped operator exception.
 
 This was one fresh candidate authority. Batch 31.34 passed construction `1/1`
 and structural `15/15`, then synthetic `Y08` rejected exact-zero impulse hops
@@ -820,6 +821,20 @@ Canonical decision:
 Complete candidate authority:
 [Offline Creative DirectRenewalDream Renderer Brief](./offline-creative-direct-renewal-dream-brief.md).
 
+## Batch 31.66 Candidate Decision
+
+Immutable checkpoint `760da32d` passed two clean conformance rounds, all `88`
+synthetic rows, concealed mono `15/15`, all `45` long-form stereo hard rows,
+all `15` `space` trios, and all `1400` mapped diagnostics. Mono retained a
+minor material-dependent entry/tail-envelope caveat. Stereo retained one large
+but comparator-adjacent local `16x` full-mix diagnostic.
+
+The operator accepted the stereo effect on speakers and explicitly removed
+eligible independent review as a requirement for this fixed-ratio effect.
+Contract `085` scopes that decision to checkpoint `760da32d`, records the
+operator's one-ear limitation, and makes no independent-listening claim. The
+candidate passes. Broader routing and product work remain closed.
+
 ## Sources
 
 - [REAPER time-stretch engines](https://www.reaper.fm/about.php)
@@ -857,7 +872,7 @@ Complete candidate authority:
 
 ## Next Task
 
-Run Batch 31.66 only. Implement the frozen private `DirectRenewalDream`
-candidate and conformance authority in its exact isolated worktree. Do not
-recover prior source, alter the brief, change production or routing, touch
-Loophole or Chorus, merge, or push.
+Run Batch 31.67 only. Admit exact checkpoint `760da32d` as the minimal private
+fixed-ratio neutral-`Dream` renderer. Preserve acoustic identity. Keep public
+controls, routing, cache, dynamic ratio, other characters, Loophole, and
+Chorus closed. Do not push.

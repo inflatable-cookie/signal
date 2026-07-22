@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: active PaulX-like `Dream`; `DirectRenewalDream` candidate ready
+Status: active PaulX-like `Dream`; `DirectRenewalDream` candidate passed
 Owner: core-product
 Updated: 2026-07-22
 Related contracts: `046`, `048`, `084`
@@ -162,7 +162,11 @@ random trajectories.
 
 Neutral `space` preserves mono. Duplicate stereo, swap, and polarity mechanics
 must remain explicit structural gates. Independent linked-stereo listening is
-required before promotion.
+the default promotion authority. A scoped operator product decision may
+replace it only for one explicitly named fixed-ratio creative candidate after
+all hard stereo controls complete. The closeout must record the listener
+limitation and cannot generalize the waiver to transparent stretch, another
+character, dynamic routing, or a changed renderer.
 
 For creative `Dream`, finite output, exact length, deterministic repeat,
 per-bin channel magnitude, source relation at `space=0`, whole-render balance,
@@ -174,7 +178,17 @@ carry terminal numeric thresholds because symmetric decorrelation deliberately
 changes waveform algebra and the preferred PaulX target uses separate channel
 phase renewal. Audible centre loss, image jump, one-sided pull, unrelated
 motion, or arbitrary balance change still rejects through comparator-relative
-review by an eligible independent listener.
+review by an eligible independent listener unless the scoped operator product
+exception above is explicitly applied.
+
+Batch 31.66 applies the scoped exception to checkpoint
+`760da32d2c87b2838bda48f32af90ae4ae51f8d9` only. All `45/45` long-form
+stereo objective rows and `15/15` `space` trios passed before review; all
+`1400` mapped-window diagnostics were finite and complete. The operator then
+accepted the speaker output as equally satisfactory to mono and explicitly
+waived independent review for this effect. The operator's one-ear hearing
+limitation remains recorded. This is an operator-owned creative-product pass,
+not a claim that eligible independent listening occurred.
 
 A candidate brief must state which of those gates are samplewise invariants
 and which are relationship or listening invariants. It may not inherit an
@@ -1364,24 +1378,39 @@ Direct PaulX-style magnitude renewal remains the smallest source-backed owner
 of the accepted neutral `Dream` sound. It is the closed renewal family, not a
 new architecture identity. The operator authorized its explicit product-gate
 reset after Batch 31.64. Hard integrity, channel-energy, concealed long-form
-mono, and eligible independent stereo promotion remain terminal. Exact
+mono, and eligible independent stereo promotion were frozen as terminal.
+Batch 31.66 later applies the scoped Rule 5 operator exception above. Exact
 creative pitch, impulse-region, local-image, and non-zero-`space`
-sample-algebra rows are complete diagnostics.
+sample-algebra rows remain complete diagnostics.
 
-Batch 31.65 freezes one fresh, complete `DirectRenewalDream` renderer and
+Batch 31.65 froze one fresh, complete `DirectRenewalDream` renderer and
 executable evidence authority. This is an evidence-backed Rule 11 reset, not
 recovery or repair of a rejected checkpoint. The brief owns the complete map,
 transform, renewal law, linked-channel synthesis, asymmetric boundaries,
 bounded state, exact sources, comparator identities, executable owners,
 runner envelope, receipt persistence, gate order, listening pack, cleanup,
-and minimal admission surface. One isolated Batch 31.66 candidate may now
-implement it once.
+and minimal admission surface.
+
+Batch 31.66 implemented that authority once at immutable checkpoint
+`760da32d2c87b2838bda48f32af90ae4ae51f8d9`. Two unchanged clean conformance
+rounds passed compile, construction `1/1`, and structural `10/10`. Synthetic
+admission passed `88/88` rows across `Y01..Y05`. Concealed long-form mono
+passed as `15/15` usable ties with one non-terminal material-dependent
+entry/tail-envelope caveat. Long-form stereo passed `45/45` hard rows,
+`15/15` trio controls, and `1400/1400` complete mapped diagnostics. Worst
+whole/three-band error was `0.138039758 dB` against `0.75 dB`; worst trio
+spread was `0.064465954 dB` against `0.50 dB`.
+
+The operator accepted stereo on speakers and made the scoped Rule 5 decision
+above. `DirectRenewalDream` therefore passes fixed-ratio candidate admission.
+No public API, route, cache, dynamic ratio, other character, Loophole, or
+Chorus surface is admitted by this decision.
 
 ## Next Task
 
-Batch 31.66 only. From the Batch 31.65 closeout commit, create the exact
-isolated worktree and branch named by the canonical `DirectRenewalDream` brief.
-Implement its private fixed-ratio candidate and complete conformance authority.
-Do not recover prior source, change the brief, run acoustic owners before the
-immutable checkpoint, alter production or routing, touch Loophole or Chorus,
-merge, or push.
+Batch 31.67 only. Admit the exact passed checkpoint as the minimal private
+fixed-ratio neutral-`Dream` surface frozen by the canonical brief. Preserve
+renderer formulas and acoustic identity. Admit only the private renderer,
+fixed-ratio request, regression owners, diagnostic receipt schema, and one
+internal engine version. Keep public controls, routing, cache, dynamic ratio,
+other characters, Loophole, and Chorus closed. Do not push.

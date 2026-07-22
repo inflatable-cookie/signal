@@ -183,8 +183,12 @@ receipt is invalid, linked STN is closed, and no renderer is admitted.
 Batch 31.64 found no unused fifth family. Direct PaulX-style renewal remains
 the smallest source-backed owner of the accepted sound. Batch 31.65 records
 the operator-authorized product-gate reset and freezes one complete private
-`DirectRenewalDream` authority. Batch 31.66 is the sole ready implementation
-batch.
+`DirectRenewalDream` authority. Batch 31.66 passed conformance, all synthetic
+owners, concealed mono, and hard stereo admission at checkpoint `760da32d`.
+The operator accepted stereo and explicitly waived independent review for this
+effect under a scoped Contract `085` decision. Batch 31.67 is the sole ready
+implementation batch and may admit only the minimal private fixed-ratio
+surface.
 Offline artifacts still need a streaming artifact writer/cache target for full
 peak-memory closure. Mono callback-state DSP has a
 no-allocation proof, linked stereo is implemented, ratio scheduling has
@@ -311,8 +315,7 @@ Before rollover:
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the active generation front door.
-Run `g10.031` Batch 31.66 only from the Batch 31.65 closeout commit. Implement
-the frozen private `DirectRenewalDream` authority in its named isolated
-worktree and follow Contract `085` Rule 11. Keep the transparent successor
-lane, `g10.028`, routing, product exposure, and cross-repo work closed. Do not
-merge or push.
+Run `g10.031` Batch 31.67 only. Admit exact passed checkpoint `760da32d` as
+the minimal private fixed-ratio neutral-`Dream` renderer. Keep the transparent
+successor lane, `g10.028`, public controls, routing, cache, dynamic ratio,
+other creative characters, and cross-repo work closed. Do not push.

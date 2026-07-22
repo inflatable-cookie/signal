@@ -1,6 +1,6 @@
 # Offline Creative Direct-Renewal Owner Study
 
-Status: promoted; product-gate reset authorized in Batch 31.65
+Status: promoted; `DirectRenewalDream` passed in Batch 31.66
 Owner: dsp
 Updated: 2026-07-22
 Roadmap: `g10.031`, Batch 31.64
@@ -134,7 +134,9 @@ stutter, image pull, or arbitrary level shift still rejects.
 - magnitude-only synthesis can add low-frequency noise or reduce tonal focus
 - one seed cannot prove the public `seed` range; multi-seed review remains
   post-promotion work
-- the independent stereo pass still depends on an eligible listener
+- stereo review remained a product decision; Batch 31.66 later closed it with
+  an explicit checkpoint-scoped operator waiver rather than an independent
+  listening claim
 
 ## Decision Boundary
 
@@ -144,9 +146,13 @@ adding implementation, tests, public API, route, cache behavior, or consumer
 integration. The complete authority is
 [Offline Creative DirectRenewalDream Renderer Brief](./offline-creative-direct-renewal-dream-brief.md).
 
-That brief passes Contract `085` Rule 11. Batch 31.66 may implement it once in
-the named isolated worktree. No prior candidate or evidence checkpoint may be
-recovered.
+That brief passed Contract `085` Rule 11. Batch 31.66 implemented it once at
+checkpoint `760da32d`. Conformance, all synthetic owners, concealed mono, and
+hard stereo admission passed. The operator accepted stereo on speakers and
+explicitly waived independent review for this effect. Contract `085` records
+the one-ear limitation and scopes the decision to that checkpoint. The
+candidate passes; Batch 31.67 may admit only its minimal private fixed-ratio
+surface.
 
 ## Sources
 
@@ -158,8 +164,7 @@ recovered.
 
 ## Next Task
 
-Batch 31.66 only. Create the exact isolated worktree and branch named by the
-complete `DirectRenewalDream` brief, implement its private fixed-ratio
-candidate and conformance owners, and stop before acoustic execution unless
-Rule 11's immutable checkpoint exists. Do not recover rejected source, alter
-production or routing, touch Loophole or Chorus, merge, or push.
+Batch 31.67 only. Admit exact passed checkpoint `760da32d` as the minimal
+private fixed-ratio neutral-`Dream` renderer. Preserve acoustic identity and
+keep public controls, routing, cache, dynamic ratio, other characters,
+Loophole, and Chorus closed. Do not push.

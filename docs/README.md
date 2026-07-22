@@ -82,9 +82,9 @@ strict lane.
 
 ## Next Task
 
-Run `g10.031` Batch 31.66 only. Start from the Batch 31.65 closeout commit and
-implement the complete
-[DirectRenewalDream brief](architecture/offline-creative-direct-renewal-dream-brief.md)
-in its exact isolated worktree. Follow Contract `085` Rule 11. Do not recover
-prior source, change production or routing, touch Loophole or Chorus, merge,
-or push. Only drop into `specs/` when a strict lane is explicitly reopened.
+Run `g10.031` Batch 31.67 only. Admit exact passed checkpoint `760da32d` as
+the minimal private fixed-ratio neutral-`Dream` surface defined by the
+[DirectRenewalDream brief](architecture/offline-creative-direct-renewal-dream-brief.md).
+Preserve acoustic identity. Keep public controls, routing, cache, dynamic
+ratio, other creative characters, Loophole, and Chorus closed. Do not push.
+Only drop into `specs/` when a strict lane is explicitly reopened.
