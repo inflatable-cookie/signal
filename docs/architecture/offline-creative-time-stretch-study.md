@@ -1,6 +1,6 @@
 # Offline Creative Time-Stretch Study
 
-Status: `DirectRenewalDream` privately admitted; lower overlap paused; Batch 31.69 ready
+Status: `DirectRenewalDream` admitted; LayeredCloud brief frozen; Batch 31.70 ready
 Owner: dsp
 Updated: 2026-07-22
 Contract: `085`
@@ -319,9 +319,9 @@ same exact target frame count.
 | above `1x` to `8x` | cyclic owner closed; no implementation | commanded Akai-style repetition |
 | `1x` to `2x` | coherent contribution retained, not creatively admitted | future source-readable lower range |
 | `2x` to `4x` | overlap paused | no automatic route |
-| `4x` to `16x` | PaulX-like `Dream` active; no implementation | reference and gate recovery |
-| `16x` to `32x` | overlap closed | no automatic route |
-| `32x` to `100x` | cloud owner closed | future texture research only |
+| `4x` to `16x` | private `DirectRenewalDream` admitted at exact `4x`, `8x`, and `16x` | no public route |
+| `16x` to `32x` | upper overlap paused | Cloud can render continuously; Dream cannot render interior ratios |
+| `32x` to `100x` | complete `LayeredCloud` brief frozen | isolated candidate not yet implemented |
 
 The coherent lower owner begins from the retained `OfflineHighQuality`
 renderer. That reuse does not widen its transparent-quality claim beyond its
@@ -348,10 +348,13 @@ At that checkpoint no neutral `Dream` implementation existed. The later
 `DirectRenewalDream` reset and admission supersede that implementation-state
 statement without reviving any rejected spectral candidate.
 
-The upper `LayeredCloud` owner is a later spectral/granular renderer. It may
-layer bounded voices around the common source cursor, but every voice remains
-part of one renderer with one target length, normalization law, seed, and
-linked-channel policy. It is not an arbitrary wet-effect stack.
+The selected upper `LayeredCloud` owner is one pointer-led granular renderer.
+One exact source map anchors one deterministic launch lattice. Bounded
+variable-length grains read forward at unit rate, linked channels share every
+launch and weight, validity-weight overlap normalization owns source edges,
+and the admitted Dream envelope owns output edges. It covers continuous fixed
+ratios from `16x` through `100x`. It is not a spectral layer, an arbitrary
+wet-effect stack, or an external dependency.
 
 ## Seamless Selection
 
@@ -871,6 +874,23 @@ required `2x..4x` ratio on the Contract `085` map, or a separately versioned and
 re-admitted generalized Dream renderer. An adapter, exact-`4x` blend, scalar
 sweep, or post-process is insufficient.
 
+## Batch 31.69 LayeredCloud Decision
+
+Pinned Csound `sndwarpst` supplies the complete source-backed architecture
+family: one pointer drives bounded overlapping unit-rate grains and the stereo
+path shares its schedule and windowing. SuperCollider `Warp1` confirms the
+family but owns randomized active grains per output channel, so it is not the
+linked-stereo authority. Signal freezes its own map, launch lattice, grain
+durations, counter addresses, validity normalization, exterior boundary law,
+memory ceiling, synthetic gates, comparator capture, and listening policy.
+
+The complete authority is
+[Offline Creative LayeredCloud Renderer Brief](./offline-creative-layered-cloud-brief.md).
+It supports every fixed ratio from `16x` through `100x`, including the Cloud
+side of future upper-overlap probes. The upper overlap remains paused because
+admitted `DirectRenewalDream` supports exact `16x` but no interior ratio.
+Batch 31.70 may implement the Cloud brief once in its named isolated worktree.
+
 ## Sources
 
 - [REAPER time-stretch engines](https://www.reaper.fm/about.php)
@@ -882,6 +902,11 @@ sweep, or post-process is insufficient.
 - [Sloom](https://anemond.net/sloom/)
 - [Akaizer](https://the-akaizer-project.blogspot.com/)
 - [Potenza Akai-style time-stretch source](https://github.com/dar-io-p/potenza-time-stretch/tree/ddb44a8f949b3f49320932e1d2e997b3a02149bb)
+- [Csound `sndwarpst` manual](https://csound.com/manual/opcodes/sndwarpst/)
+- [Csound pointer and balance guidance](https://csound.com/manual/opcodes/sndwarp/)
+- [Pinned Csound implementation](https://github.com/csound/csound/blob/0eaa07e3aee55f90e745f89294ddb52eec30345c/Opcodes/sndwarp.c)
+- [SuperCollider `Warp1` manual](https://docs.supercollider.online/Classes/Warp1.html)
+- [Pinned SuperCollider implementation](https://github.com/supercollider/supercollider/blob/2f0803bcd2e551564e3fef8d5075816cbb685cd4/server/plugins/GrainUGens.cpp)
 - [Photosounder](https://www.photosounder.com/)
 - [ARSS](https://arss.sourceforge.net/)
 - [Noise Morphing for Audio Time Stretching](https://arxiv.org/abs/2312.14586)
@@ -908,8 +933,9 @@ sweep, or post-process is insufficient.
 
 ## Next Task
 
-Run Batch 31.69 only. Study one complete `LayeredCloud` owner for the future
-`32x..100x` range and its exact `16x`/`32x` boundary obligations. Change
-documentation only. Freeze at most one source-backed complete owner brief or
-close the lane; do not implement DSP, overlap, routing, controls, cache,
-Loophole, or Chorus.
+Run Batch 31.70 only. Implement the frozen `LayeredCloud` authority once in
+worktree `signal-candidate-31-70` on branch
+`candidate/g10-031-layered-cloud`. Complete two unchanged conformance rounds
+before freezing its one acoustic checkpoint, then run `Y01..Y05`. Keep the
+brief, admitted renderers, overlaps, routing, controls, cache, dynamic ratio,
+Loophole, and Chorus unchanged. Do not push.

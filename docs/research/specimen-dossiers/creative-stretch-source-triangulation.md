@@ -1,9 +1,9 @@
 # Creative Stretch Source Triangulation
 
-Status: reviewed; direct-renewal reset authorized and complete brief frozen
+Status: reviewed; DirectRenewalDream admitted; LayeredCloud authority frozen
 Owner: dsp
 Updated: 2026-07-22
-Roadmap: `g10.031`, Batches 31.16, 31.30-31.41, 31.64-31.65
+Roadmap: `g10.031`, Batches 31.16, 31.30-31.41, 31.64-31.69
 
 ## Question
 
@@ -22,6 +22,8 @@ masks, or control flow.
 | CDP8 | `CDP8.0`, `456ffe0687c8d8206f8bc4e22273587db4c0ee0a` | LGPL-2.1-or-later; clean-room evidence only | `Spectral` |
 | Potenza Time Stretch | `ddb44a8f949b3f49320932e1d2e997b3a02149bb` | GPL-3.0; clean-room evidence only | Akai-style `Cyclic` |
 | SiTraNoStar | `v2.0.1`, `2edf7b693040b5070116299973abf83dc5ba86e5` | GPL-3.0; clean-room evidence only | component-owned neutral `Dream` study |
+| Csound `sndwarp`/`sndwarpst` | `0eaa07e3aee55f90e745f89294ddb52eec30345c` | LGPL-2.1-or-later; clean-room evidence only | pointer-led `Cloud` |
+| SuperCollider `Warp1` | `2f0803bcd2e551564e3fef8d5075816cbb685cd4` | GPL-3.0-or-later; clean-room evidence only | pointer-led granular cross-check |
 
 The existing comparator pack already contains PaulXStretch and CDP at `4x`,
 `8x`, and `16x`, plus REAPER's proprietary ReaReaRea cyclic reference at
@@ -581,8 +583,44 @@ Batch 31.65 records the operator-authorized reset and freezes one complete
 candidate authority:
 [Offline Creative DirectRenewalDream Renderer Brief](../../architecture/offline-creative-direct-renewal-dream-brief.md).
 
+## Batch 31.69 LayeredCloud Decision
+
+The high-range audit selects one clean-room pointer-led granular owner from
+Csound's complete stereo `sndwarpst` family. One time pointer re-anchors a
+bounded set of overlapping windows. Each grain reads the source forward at
+unit rate, and the stereo path shares the pointer, window, launch schedule,
+and normalization behavior across both channels. Upstream documents amplitude
+fluctuation and recommends external balancing; Signal does not inherit that
+repair. Its renderer owns one channel-shared validity-weight normalization law
+and a source-peak convexity bound instead.
+
+SuperCollider `Warp1` independently confirms the pointer-led granular family,
+but its complete implementation keeps active-grain and randomized launch state
+inside each output-channel unit. It therefore cannot supply Signal's linked-
+stereo authority. SoundHack, Sloom, and Ableton remain closed or proprietary
+comparators. PaulX is the already-admitted `Dream` owner. Wet stacks, free
+grain primitives, image inversion, and neural synthesis do not add a complete
+bounded linked-stereo renderer.
+
+The selected owner is frozen in
+[Offline Creative LayeredCloud Renderer Brief](../../architecture/offline-creative-layered-cloud-brief.md).
+It covers every fixed ratio from `16x` through `100x` with one map, one launch
+lattice, bounded deterministic grain state, unit-rate reads, shared stereo
+weights, exact crop, and the admitted Dream exterior envelope. This opens one
+isolated candidate batch. It does not open the upper overlap: admitted Dream
+has no interior `16x..32x` renders.
+
+Primary source audit:
+
+- [Csound `sndwarpst` manual](https://csound.com/manual/opcodes/sndwarpst/)
+- [Csound `sndwarp` guidance](https://csound.com/manual/opcodes/sndwarp/)
+- [pinned Csound implementation](https://github.com/csound/csound/blob/0eaa07e3aee55f90e745f89294ddb52eec30345c/Opcodes/sndwarp.c)
+- [SuperCollider `Warp1` manual](https://docs.supercollider.online/Classes/Warp1.html)
+- [pinned SuperCollider implementation](https://github.com/supercollider/supercollider/blob/2f0803bcd2e551564e3fef8d5075816cbb685cd4/server/plugins/GrainUGens.cpp)
+
 ## Next Task
 
-Run Batch 31.66 only. Implement the complete `DirectRenewalDream` authority in
-its exact isolated worktree. Do not recover a renewal checkpoint or alter the
-frozen brief.
+Run Batch 31.70 only. Implement the frozen `LayeredCloud` authority once in its
+named isolated worktree. Reach its acoustic checkpoint only after two clean
+complete conformance rounds. Do not change the brief, admitted renderers,
+overlaps, routing, controls, cache, Loophole, or Chorus. Do not push.

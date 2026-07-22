@@ -121,8 +121,18 @@ owner of the accepted sound. Batch 31.65 records the operator-authorized
 product-gate reset and freezes one complete implementation authority:
 [Offline Creative Direct-Renewal Owner Study](../architecture/offline-creative-direct-renewal-owner-study.md).
 
-Ready candidate brief:
+Batch 31.66 passed that complete candidate and Batch 31.67 admitted its exact
+private fixed-ratio surface. Batch 31.68 retained the lower-overlap pause.
+Batch 31.69 selected Csound's stereo pointer-led granular family, rejected
+channel-local `Warp1` state as stereo authority, and froze one complete
+`LayeredCloud` brief for continuous fixed `16x..100x`. The upper overlap stays
+paused because admitted Dream has no interior `16x..32x` render.
+
+Admitted private renderer authority:
 [Offline Creative DirectRenewalDream Renderer Brief](../architecture/offline-creative-direct-renewal-dream-brief.md).
+
+Frozen high-range candidate authority:
+[Offline Creative LayeredCloud Renderer Brief](../architecture/offline-creative-layered-cloud-brief.md).
 
 Rejected comparator-audited neutral `Dream` candidate brief:
 [Offline Creative ComparatorAuditedRenewalSpectral Renderer Brief](../architecture/offline-creative-comparator-audited-renewal-spectral-brief.md).
@@ -189,6 +199,7 @@ Rejected first-owner brief:
 
 ## Next Task
 
-Run `g10.031` Batch 31.66 only. Implement the complete private
-`DirectRenewalDream` authority once in its named isolated worktree. Do not
-recover rejected code, change the brief, or reopen the transparent successor.
+Run `g10.031` Batch 31.70 only. Implement the frozen private `LayeredCloud`
+authority once in its named isolated worktree. Complete two unchanged
+conformance rounds before its acoustic checkpoint. Do not change the brief,
+admitted renderers, overlaps, routing, or transparent successor.

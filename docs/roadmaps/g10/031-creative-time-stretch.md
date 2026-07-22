@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: active; Batch 31.68 complete, Batch 31.69 owner study ready
+Status: active; Batch 31.69 complete, Batch 31.70 isolated candidate ready
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -2235,29 +2235,68 @@ Decision:
 
 ## Batch 31.69 - LayeredCloud Owner Feasibility Study
 
-Status: ready; docs, research, and architecture only
+Status: complete; docs, research, and architecture only
 
-- [ ] audit existing source-backed cloud, spectral, and granular evidence for
+- [x] audit existing source-backed cloud, spectral, and granular evidence for
   one complete owner of the future `32x..100x` range
-- [ ] bind exact fixed-ratio evidence at the `16x` boundary, `32x`, and one
+- [x] bind exact fixed-ratio evidence at the `16x` boundary, `32x`, and one
   high-range point no lower than `100x`
-- [ ] require one monotonic source map, exact target length, bounded and
+- [x] require one monotonic source map, exact target length, bounded and
   deterministic voice/state ownership, linked stereo, one normalization law,
   and explicit exterior boundaries
-- [ ] decide whether one owner can later meet the `16x..32x` upper-overlap
+- [x] decide whether one owner can later meet the `16x..32x` upper-overlap
   obligations without treating an arbitrary wet stack as a renderer
-- [ ] freeze at most one source-backed complete owner brief or close the lane;
+- [x] freeze at most one source-backed complete owner brief or close the lane;
   do not create a menu of mechanisms
-- [ ] change documentation only; keep `DirectRenewalDream`, candidate DSP,
+- [x] change documentation only; keep `DirectRenewalDream`, candidate DSP,
   overlap implementation, routing, controls, cache, dynamic ratio, Loophole,
   and Chorus unchanged
 
+Decision:
+
+- Csound `sndwarpst` supplies the selected complete pointer-led granular
+  family: one time pointer, bounded overlapping unit-rate grains, and a shared
+  stereo schedule
+- SuperCollider `Warp1` confirms the family but keeps randomized grain state
+  per output channel, so it is not the linked-stereo authority
+- Signal freezes one clean-room `LayeredCloud` renderer covering every fixed
+  ratio from `16x` through `100x` with its own map, launch lattice, duration
+  counter, normalization, boundaries, memory ceiling, and complete gate order
+- the upper overlap remains paused because `DirectRenewalDream` has no
+  interior `16x..32x` renders
+- no DSP, candidate harness, experiment module, route, control, cache,
+  dynamic-ratio, Loophole, or Chorus surface entered `main`
+
+Canonical authority:
+[Offline Creative LayeredCloud Renderer Brief](../../architecture/offline-creative-layered-cloud-brief.md).
+
+## Batch 31.70 - Isolated LayeredCloud Candidate
+
+Status: ready; one immutable candidate only
+
+- [ ] start from the Batch 31.69 closeout commit and create worktree
+  `signal-candidate-31-70` on branch `candidate/g10-031-layered-cloud`
+- [ ] implement the frozen private `LayeredCloud` renderer and compile-linked
+  Rule 11 authority without changing one DSP, source, seed, assertion,
+  threshold, comparator, or listening choice
+- [ ] pass the complete compile, construction, and `S01..S08` conformance
+  sequence twice unchanged before freezing the acoustic checkpoint
+- [ ] create local ref
+  `refs/signal-evidence/creative/layered-cloud/31-70-acoustic`
+- [ ] run `Y01..Y05` in order with incremental receipts and stop at the first
+  terminal miss
+- [ ] open long-form mono and independent stereo listening only after every
+  structural and synthetic owner passes
+- [ ] keep admitted DSP, overlaps, routing, controls, cache, dynamic ratio,
+  Loophole, Chorus, and `main` unchanged
+
 ## Later Batches
 
-Closed or paused beyond the owner study. Batch 31.69 is the sole ready batch.
+Closed or paused beyond the isolated candidate. Batch 31.70 is the sole ready
+batch.
 Every later product batch still requires separate authority:
 
-- `LayeredCloud` candidate, only if Batch 31.69 freezes a complete owner
+- minimal `LayeredCloud` admission, only after every frozen gate passes
 - diffusive/cloud overlap
 - dynamic-ratio state continuity
 - cache and product-path review
@@ -2456,11 +2495,14 @@ Every later product batch still requires separate authority:
   the shared-map and mandatory-probe rules
 - [x] the lower overlap remains paused without rejecting or changing either
   admitted renderer
+- [x] Batch 31.69 froze one complete source-backed `LayeredCloud` renderer and
+  Rule 11 evidence authority without adding candidate DSP to `main`
 
 ## Next Task
 
-Batch 31.69 only. Study one complete `LayeredCloud` owner for the future
-`32x..100x` range and exact `16x`/`32x` boundary obligations. Change
-documentation only. Freeze at most one source-backed complete owner brief or
-close the lane. Do not implement candidate DSP, overlap, routing, controls,
-cache, dynamic ratio, Loophole, or Chorus. Do not push.
+Batch 31.70 only. Implement the frozen `LayeredCloud` authority once in
+worktree `signal-candidate-31-70` on branch
+`candidate/g10-031-layered-cloud`. Pass two unchanged conformance rounds
+before freezing the one acoustic checkpoint, then run `Y01..Y05` in order.
+Keep `main`, the brief, admitted renderers, overlaps, routing, controls, cache,
+dynamic ratio, Loophole, and Chorus unchanged. Do not push.

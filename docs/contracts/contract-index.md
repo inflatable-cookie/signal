@@ -43,11 +43,12 @@ memory alone.
   deterministic orientation prepass, bounded monotonic render rings, an
   `89 MiB` design ceiling, and fresh candidate identity. Later linked-STN work
   closed without acoustic evidence after repeated executable-authority
-  failure. Batch 31.64 found no unused fifth owner. Batch 31.65 records the
-  operator-authorized product-gate reset and freezes one complete
-  `DirectRenewalDream` renderer and evidence authority. One isolated Batch
-  31.66 candidate is ready. Every renderer remains unadmitted; other
-  characters and the router stay closed or paused
+  failure. Batch 31.64 found no unused fifth owner. Batch 31.65 froze one
+  operator-authorized `DirectRenewalDream` authority; Batch 31.66 passed it and
+  Batch 31.67 admitted the exact private fixed-ratio renderer. Batch 31.68
+  retained the lower-overlap pause. Batch 31.69 froze one complete pointer-led
+  granular `LayeredCloud` authority for continuous fixed `16x..100x`; its
+  isolated candidate is ready. Both overlaps and the router stay paused
 - `082` and `g10.029` are historical evidence, not active execution authority
 - `g10.028` source-fill work remains paused
 
@@ -177,8 +178,8 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Keep Contract `084` closed. Contract `085` retains the PaulX-like target but no
-renderer is admitted. Run `g10.031` Batch 31.66 only from the Batch 31.65
-closeout commit: implement the frozen private `DirectRenewalDream` candidate
-in its named isolated worktree and follow Rule 11. Do not alter production,
-routing, or product exposure.
+Keep Contract `084` closed. Contract `085` admits private fixed-ratio
+`DirectRenewalDream` and freezes one complete `LayeredCloud` candidate
+authority. Run `g10.031` Batch 31.70 only in its named isolated worktree and
+follow Rule 11. Do not alter `main`, admitted renderers, overlaps, routing, or
+product exposure.

@@ -1,12 +1,13 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: active PaulX-like `Dream`; private fixed-ratio renderer admitted; lower overlap paused
+Status: private fixed-ratio Dream admitted; LayeredCloud brief frozen; overlaps paused
 Owner: core-product
 Updated: 2026-07-22
 Related contracts: `046`, `048`, `084`
 Related architecture: `docs/architecture/offline-creative-time-stretch-study.md`,
 `docs/architecture/offline-creative-direct-renewal-owner-study.md`,
 `docs/architecture/offline-creative-direct-renewal-dream-brief.md`,
+`docs/architecture/offline-creative-layered-cloud-brief.md`,
 `docs/architecture/offline-creative-linked-stn-noise-morph-brief.md`,
 `docs/architecture/offline-creative-comparator-audited-renewal-spectral-brief.md`,
 `docs/architecture/offline-creative-verified-source-relative-renewal-spectral-brief.md`,
@@ -984,12 +985,34 @@ may resume.
 55. Bind the complete linked-STN brief to Rule 11 without changing renderer or
     acoustic authority. Complete; fresh conformance and acoustic identity,
     evidence corpus, cleanup, and pass behavior are frozen docs-only.
-56. Implement one fresh protocol-bound linked-STN candidate. Ready in the
-    exact isolated worktree under the canonical brief.
+56. Implement one fresh protocol-bound linked-STN candidate. Complete; it
+    stopped pre-acoustic on contradictory transient-refinement authority.
+57. Reconcile the transient-anchor authority exposed by implementation.
+    Complete; one exact correction was frozen before any acoustic execution.
+58. Resume conformance under that correction. Complete; the correction did
+    not own the complete transform error path.
+59. Freeze one transform-bounded replacement rule. Complete.
+60. Resume, pass two conformance rounds, and freeze one acoustic checkpoint.
+    Complete; the first synthetic owner did not finish under its own authority.
+61. Reassess the incomplete evidence. Complete; repeated protocol failure
+    closed linked STN and removed its retained evidence ref.
+62. Study one materially simpler source-backed owner. Complete; no unused
+    fifth family exists and direct PaulX-style renewal remained smallest.
+63. Record the operator-authorized product-gate reset and freeze one complete
+    `DirectRenewalDream` authority. Complete.
+64. Implement it once. Complete; conformance, synthetic, concealed mono, and
+    stereo gates passed under the scoped Rule 5 decision.
+65. Admit the minimal private fixed-ratio renderer. Complete; no route or
+    public product surface opened.
+66. Study the lower `2x..4x` overlap. Complete; it remains paused because the
+    admitted owners lack shared continuous-ratio and scheduler authority.
+67. Study and freeze one complete `LayeredCloud` owner. Complete; one
+    pointer-led granular candidate is ready for isolated implementation.
 
-`Spectral`/`Rough`, coherent overlap, `LayeredCloud`, the upper overlap, dynamic
-ratios, and automatic routing still require separate reopening decisions backed
-by new complete-system evidence.
+`Spectral`/`Rough`, both overlaps, dynamic ratios, and automatic routing still
+require separate reopening decisions backed by new complete-system evidence.
+`LayeredCloud` has docs-only candidate authority; it has no implementation or
+quality claim.
 
 ## Current State
 
@@ -1434,10 +1457,24 @@ probe. The lower overlap remains paused. Both admitted renderers remain
 unchanged. Reopening requires a separately admitted complete lower creative
 owner or a newly versioned and re-admitted generalized Dream renderer.
 
+Batch 31.69 selected one complete source-backed `LayeredCloud` owner. It uses
+one exact source map, a deterministic launch lattice, bounded variable-length
+unit-rate grains, channel-shared validity normalization, linked-channel sample
+ownership, the admitted Dream exterior envelope, exact crop, and duration-
+independent working state. The frozen authority covers every fixed ratio from
+`16x` through `100x` and binds structural, synthetic, long-form mono, and
+independent stereo admission before any minimal production admission.
+
+This is docs-only candidate authority. No Cloud DSP, harness, route, control,
+cache, dynamic-ratio, Loophole, or Chorus surface entered `main`. The upper
+overlap remains paused: Cloud can supply every `16x..32x` probe, but admitted
+Dream still supplies exact `16x` only. Batch 31.70 is ready for one isolated
+implementation of the frozen Cloud brief.
+
 ## Next Task
 
-Batch 31.69 only. Study one complete `LayeredCloud` owner for the future
-`32x..100x` range and exact `16x`/`32x` boundary obligations. Change
-documentation only. Freeze at most one source-backed complete owner brief or
-close the lane. Do not implement candidate DSP, overlap, routing, controls,
-cache, Loophole, or Chorus. Do not push.
+Batch 31.70 only. Implement the frozen `LayeredCloud` authority once in the
+named isolated worktree. Pass two unchanged complete conformance rounds before
+freezing its single acoustic checkpoint, then run `Y01..Y05` in order. Do not
+change the brief, admitted renderers, overlaps, routing, controls, cache,
+dynamic ratio, Loophole, or Chorus. Do not push.

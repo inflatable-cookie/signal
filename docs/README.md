@@ -41,6 +41,7 @@ strict lane.
 - Rejected-at-compile creative CompensatedRenewalSpectral brief: [architecture/offline-creative-compensated-renewal-spectral-brief.md](./architecture/offline-creative-compensated-renewal-spectral-brief.md)
 - Rejected creative RenewalSpectral brief: [architecture/offline-creative-renewal-spectral-brief.md](./architecture/offline-creative-renewal-spectral-brief.md)
 - Creative source triangulation: [research/specimen-dossiers/creative-stretch-source-triangulation.md](./research/specimen-dossiers/creative-stretch-source-triangulation.md)
+- Frozen creative LayeredCloud brief: [architecture/offline-creative-layered-cloud-brief.md](./architecture/offline-creative-layered-cloud-brief.md)
 - Rejected creative SimilarityAlignedCyclic brief: [architecture/offline-creative-similarity-aligned-cyclic-brief.md](./architecture/offline-creative-similarity-aligned-cyclic-brief.md)
 - Rejected creative CyclicGrain brief: [architecture/offline-creative-cyclic-grain-brief.md](./architecture/offline-creative-cyclic-grain-brief.md)
 - Rejected creative complex-relation brief: [architecture/offline-creative-continuous-excitation-complex-relation-brief.md](./architecture/offline-creative-continuous-excitation-complex-relation-brief.md)
@@ -82,9 +83,9 @@ strict lane.
 
 ## Next Task
 
-Run `g10.031` Batch 31.69 only. Study one complete `LayeredCloud` owner for the
-future `32x..100x` range and exact `16x`/`32x` boundary obligations. Change
-documentation only. Freeze at most one source-backed complete owner brief or
-close the lane. Keep DSP, overlap implementation, routing, controls, cache,
-dynamic ratio, Loophole, and Chorus closed. Do not push.
+Run `g10.031` Batch 31.70 only. Implement the frozen `LayeredCloud` authority
+once in its named isolated worktree. Pass two unchanged conformance rounds
+before its acoustic checkpoint, then run `Y01..Y05`. Keep `main`, admitted
+renderers, overlaps, routing, controls, cache, dynamic ratio, Loophole, and
+Chorus unchanged. Do not push.
 Only drop into `specs/` when a strict lane is explicitly reopened.

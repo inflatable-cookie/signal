@@ -28,6 +28,7 @@ Keep milestone sequencing in `roadmaps/`.
 - `offline-time-stretch-synthesis.md`
 - `offline-time-stretch-non-phase-vocoder-feasibility.md`
 - `offline-creative-time-stretch-study.md`
+- `offline-creative-layered-cloud-brief.md`
 - `offline-creative-linked-stn-noise-morph-brief.md`
 - `offline-creative-verified-source-relative-renewal-spectral-brief.md`
   - frozen `SupportAuditedListeningLedSourceRelativeRenewalSpectral` authority
@@ -42,6 +43,7 @@ Keep milestone sequencing in `roadmaps/`.
 ## Next Task
 
 Keep the `g10.030` transparent successor program closed. Run `g10.031` Batch
-31.45 only in the disposable worktree named by the bounded
-`LinkedStnNoiseMorph` v2 brief. Stop before listening on any objective miss.
-Keep `main`, product routing, and public exposure unchanged.
+31.70 only in the disposable worktree named by the frozen `LayeredCloud`
+brief. Pass two complete unchanged conformance rounds before its acoustic
+checkpoint. Keep `main`, overlaps, product routing, and public exposure
+unchanged.

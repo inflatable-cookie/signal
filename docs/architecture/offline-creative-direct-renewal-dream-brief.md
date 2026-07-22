@@ -649,5 +649,6 @@ surface was admitted.
 
 Batch 31.68 retained the `2x..4x` overlap pause because this exact-ratio
 renderer cannot supply the mandatory interior renders or share the coherent
-frame lattice. Run Batch 31.69 only: a docs-only `LayeredCloud` owner study.
-Do not change this renderer or add product surface.
+frame lattice. Batch 31.69 froze a separate `LayeredCloud` authority and kept
+the upper overlap paused. Run Batch 31.70 only: implement Cloud once in its
+named isolated worktree. Do not change this renderer or add product surface.

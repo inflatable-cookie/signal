@@ -192,8 +192,10 @@ private fixed-ratio surface under internal version
 byte-identical to checkpoint `760da32d`; integrated construction, structural,
 and synthetic owners pass. Batch 31.68 retained the lower-overlap pause: Dream
 has no exact `2x` or interior render and does not share the coherent scheduler.
-Batch 31.69 is the sole ready batch and may only study one complete
-`LayeredCloud` owner in documentation.
+Batch 31.69 froze one complete pointer-led granular `LayeredCloud` authority
+for continuous fixed `16x..100x`. The upper overlap remains paused because
+Dream has no interior `16x..32x` render. Batch 31.70 is the sole ready batch
+and may implement that authority once in isolation.
 Offline artifacts still need a streaming artifact writer/cache target for full
 peak-memory closure. Mono callback-state DSP has a
 no-allocation proof, linked stereo is implemented, ratio scheduling has
@@ -320,7 +322,8 @@ Before rollover:
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the active generation front door.
-Run `g10.031` Batch 31.69 only. Study one complete `LayeredCloud` owner for the
-future `32x..100x` range and exact `16x`/`32x` boundary obligations. Keep the
-transparent successor lane, `g10.028`, DSP, overlap implementation, routing,
-controls, cache, dynamic ratio, and cross-repo work closed. Do not push.
+Run `g10.031` Batch 31.70 only. Implement the frozen `LayeredCloud` authority
+once in its named isolated worktree. Pass two unchanged conformance rounds
+before its acoustic checkpoint, then run `Y01..Y05`. Keep the transparent
+successor lane, `g10.028`, `main`, overlaps, routing, controls, cache, dynamic
+ratio, and cross-repo work unchanged. Do not push.
