@@ -117,10 +117,12 @@ bounded state, and the retained long-form listening order.
 Linked STN later closed without acoustic evidence after repeated executable-
 authority failure. Batch 31.64 found no unused, materially simpler fifth
 family. Direct PaulX-style magnitude renewal remains the smallest source-backed
-owner of the accepted sound, but it is the closed renewal family. The current
-architecture recommendation is an explicit product-gate reset before any new
-brief or implementation:
+owner of the accepted sound. Batch 31.65 records the operator-authorized
+product-gate reset and freezes one complete implementation authority:
 [Offline Creative Direct-Renewal Owner Study](../architecture/offline-creative-direct-renewal-owner-study.md).
+
+Ready candidate brief:
+[Offline Creative DirectRenewalDream Renderer Brief](../architecture/offline-creative-direct-renewal-dream-brief.md).
 
 Rejected comparator-audited neutral `Dream` candidate brief:
 [Offline Creative ComparatorAuditedRenewalSpectral Renderer Brief](../architecture/offline-creative-comparator-audited-renewal-spectral-brief.md).
@@ -187,6 +189,6 @@ Rejected first-owner brief:
 
 ## Next Task
 
-Operator checkpoint. Authorize the direct-renewal product-gate reset or leave
-`g10.031` paused. Authorization opens one docs-only contract and complete-brief
-batch. Do not recover rejected code or reopen the transparent successor.
+Run `g10.031` Batch 31.66 only. Implement the complete private
+`DirectRenewalDream` authority once in its named isolated worktree. Do not
+recover rejected code, change the brief, or reopen the transparent successor.

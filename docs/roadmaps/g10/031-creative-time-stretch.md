@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: paused; direct-renewal product reset awaits operator
+Status: active; Batch 31.66 isolated `DirectRenewalDream` candidate ready
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -2106,11 +2106,44 @@ Authority:
 
 - `docs/architecture/offline-creative-direct-renewal-owner-study.md`
 
+## Batch 31.65 - DirectRenewalDream Authority Freeze
+
+Status: complete; one isolated candidate ready, docs only
+
+- [x] record the operator's explicit direct-renewal product-gate reset
+- [x] retain hard integrity, level, deterministic, boundary, dropout, and
+  linked-channel energy admission
+- [x] make exact creative pitch, impulse-region, local-image, and non-zero-
+  `space` sample algebra complete diagnostics under listening authority
+- [x] freeze one exact long-window direct-renewal transform, sample-centred
+  source map, linked-channel rotation law, compensated adjacent-frame blend,
+  asymmetric boundary envelope, and exact target crop
+- [x] freeze bounded state, deterministic counter addressing, exact structural
+  and synthetic sources, retained PaulX identities, executable owners, runner
+  envelope, incremental receipts, acoustic ref, gate order, cleanup, and
+  minimal admission
+- [x] change documentation only; add no DSP, candidate harness, fixture,
+  report mode, public API, route, cache, Loophole, or Chorus surface to `main`
+
+Decision:
+
+- `DirectRenewalDream` is one fresh Rule 11 candidate identity, not a repair
+  or recovery of any rejected renewal checkpoint
+- the fixed-ratio private candidate targets neutral `Dream` at exact `4x`,
+  `8x`, and `16x`; listening remains promotion authority
+- Batch 31.66 may implement the complete brief once in its named isolated
+  worktree and must stop on authority mismatch or failed gate
+
+Authority:
+
+- `docs/architecture/offline-creative-direct-renewal-dream-brief.md`
+- `docs/contracts/085-creative-time-stretch-product-and-routing-contract.md`
+
 ## Later Batches
 
-Closed or paused without promotion. No implementation or reassessment batch is
-ready. Every later product batch still requires a
-separately admitted complete renderer:
+Closed or paused without promotion. Batch 31.66 is the sole ready
+implementation batch. Every later product batch still requires a separately
+admitted complete renderer:
 
 - minimal production admission
 - coherent/diffusive overlap
@@ -2290,11 +2323,17 @@ separately admitted complete renderer:
 - [x] the local evidence ref was deleted after reassessment
 - [x] one materially simpler source-backed owner study found no unused fifth
   family and recommended one explicit direct-renewal product-gate reset
+- [x] the operator authorized that reset; one complete `DirectRenewalDream`
+  renderer and executable evidence brief now satisfies Contract `085` Rule 11
+- [x] Batch 31.65 changed documentation only and opened exactly one isolated
+  candidate implementation batch
 
 ## Next Task
 
-Operator checkpoint. Authorize the direct-renewal product-gate reset or leave
-`g10.031` paused. If authorized, run Batch 31.65 docs-only: update Contract
-`085` and freeze one complete `DirectRenewalDream` renderer and executable
-evidence brief. Do not recover prior code, implement DSP, alter production or
-product routing, touch Loophole or Chorus, merge, or push.
+Batch 31.66 only. Start from the Batch 31.65 closeout commit. Create worktree
+`signal-candidate-31-66` on branch
+`candidate/g10-031-direct-renewal-dream`, implement the private fixed-ratio
+candidate and complete conformance authority exactly as frozen, and follow
+Contract `085` Rule 11. Do not recover prior code, change the brief, run
+acoustic owners before the immutable checkpoint, alter production or product
+routing, touch Loophole or Chorus, merge, or push.

@@ -1,9 +1,9 @@
 # Creative Stretch Source Triangulation
 
-Status: reviewed; no unused fifth owner, direct-renewal gate reset recommended
+Status: reviewed; direct-renewal reset authorized and complete brief frozen
 Owner: dsp
 Updated: 2026-07-22
-Roadmap: `g10.031`, Batches 31.16, 31.30-31.41, 31.64
+Roadmap: `g10.031`, Batches 31.16, 31.30-31.41, 31.64-31.65
 
 ## Question
 
@@ -577,7 +577,12 @@ product-gate change, not a renamed new algorithm or recovered candidate.
 The architecture decision is
 [Offline Creative Direct-Renewal Owner Study](../../architecture/offline-creative-direct-renewal-owner-study.md).
 
+Batch 31.65 records the operator-authorized reset and freezes one complete
+candidate authority:
+[Offline Creative DirectRenewalDream Renderer Brief](../../architecture/offline-creative-direct-renewal-dream-brief.md).
+
 ## Next Task
 
-Operator checkpoint. Authorize the direct-renewal product-gate reset or leave
-`g10.031` paused. Do not recover a renewal checkpoint or start implementation.
+Run Batch 31.66 only. Implement the complete `DirectRenewalDream` authority in
+its exact isolated worktree. Do not recover a renewal checkpoint or alter the
+frozen brief.

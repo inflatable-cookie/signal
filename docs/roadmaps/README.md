@@ -181,8 +181,10 @@ its first selected owner, `Y09`. Batch 31.63 proved that owner's executable
 assertions and execution envelope incomplete against canonical authority. The
 receipt is invalid, linked STN is closed, and no renderer is admitted.
 Batch 31.64 found no unused fifth family. Direct PaulX-style renewal remains
-the smallest source-backed owner of the accepted sound, but reopening now
-requires the operator to authorize one explicit product-gate reset.
+the smallest source-backed owner of the accepted sound. Batch 31.65 records
+the operator-authorized product-gate reset and freezes one complete private
+`DirectRenewalDream` authority. Batch 31.66 is the sole ready implementation
+batch.
 Offline artifacts still need a streaming artifact writer/cache target for full
 peak-memory closure. Mono callback-state DSP has a
 no-allocation proof, linked stereo is implemented, ratio scheduling has
@@ -309,7 +311,8 @@ Before rollover:
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the active generation front door.
-Use the `g10.031` operator checkpoint. Authorize the direct-renewal product-
-gate reset or leave the roadmap paused. Authorization opens one docs-only
-complete-brief batch. Keep the transparent successor lane, `g10.028`, routing,
-product exposure, and cross-repo work closed. Do not merge or push.
+Run `g10.031` Batch 31.66 only from the Batch 31.65 closeout commit. Implement
+the frozen private `DirectRenewalDream` authority in its named isolated
+worktree and follow Contract `085` Rule 11. Keep the transparent successor
+lane, `g10.028`, routing, product exposure, and cross-repo work closed. Do not
+merge or push.

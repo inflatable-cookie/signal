@@ -1,6 +1,6 @@
 # Offline Creative Direct-Renewal Owner Study
 
-Status: complete; product-gate reset recommended, not authorized
+Status: promoted; product-gate reset authorized in Batch 31.65
 Owner: dsp
 Updated: 2026-07-22
 Roadmap: `g10.031`, Batch 31.64
@@ -54,9 +54,9 @@ magnitude renewal a new family would be dishonest. It is the same family that
 already reached accepted long-form sound and then closed under mismatched or
 incompletely retained objective authority.
 
-## Recommended Product Reset
+## Authorized Product Reset
 
-If the operator authorizes reopening, freeze one fresh
+The operator authorized reopening. Batch 31.65 freezes one fresh
 `DirectRenewalDream` brief. It is a clean-room product reset, not recovery of a
 deleted candidate.
 
@@ -81,9 +81,10 @@ transfers.
 
 ## Required Gate Change
 
-Another candidate is prohibited under current Contract `085` Rule 11. The
-reopening needs an explicit product-gate change addressing the prior failure
-classes before a renderer brief or code exists.
+Contract `085` Rule 11 prohibited another renewal candidate until an explicit
+product-gate change addressed the prior failure classes. Batch 31.65 makes
+that change and binds the complete renderer and evidence authority before any
+candidate code exists.
 
 Keep terminal:
 
@@ -137,15 +138,15 @@ stutter, image pull, or arbitrary level shift still rejects.
 
 ## Decision Boundary
 
-Batch 31.64 changes documentation only. It selects no candidate identity,
-worktree, implementation, test surface, public API, route, cache behavior, or
-consumer integration.
+Batch 31.64 changed documentation only. Batch 31.65 authorizes the gate reset
+and freezes one candidate identity, renderer, and evidence authority without
+adding implementation, tests, public API, route, cache behavior, or consumer
+integration. The complete authority is
+[Offline Creative DirectRenewalDream Renderer Brief](./offline-creative-direct-renewal-dream-brief.md).
 
-Operator authorization has one meaning: replace the incompatible creative
-gate policy above, then write one complete `DirectRenewalDream` brief in a
-separate docs-only batch. Candidate implementation may begin only after that
-brief passes Contract `085` Rule 11. Declining authorization leaves
-`g10.031` paused.
+That brief passes Contract `085` Rule 11. Batch 31.66 may implement it once in
+the named isolated worktree. No prior candidate or evidence checkpoint may be
+recovered.
 
 ## Sources
 
@@ -157,7 +158,8 @@ brief passes Contract `085` Rule 11. Declining authorization leaves
 
 ## Next Task
 
-Operator checkpoint. Authorize the direct-renewal product-gate reset or leave
-`g10.031` paused. If authorized, Batch 31.65 is docs-only: update Contract
-`085` and freeze one complete `DirectRenewalDream` renderer and executable
-evidence brief. Do not implement DSP in that batch.
+Batch 31.66 only. Create the exact isolated worktree and branch named by the
+complete `DirectRenewalDream` brief, implement its private fixed-ratio
+candidate and conformance owners, and stop before acoustic execution unless
+Rule 11's immutable checkpoint exists. Do not recover rejected source, alter
+production or routing, touch Loophole or Chorus, merge, or push.

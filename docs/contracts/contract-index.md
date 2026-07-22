@@ -43,11 +43,11 @@ memory alone.
   deterministic orientation prepass, bounded monotonic render rings, an
   `89 MiB` design ceiling, and fresh candidate identity. Later linked-STN work
   closed without acoustic evidence after repeated executable-authority
-  failure. Batch 31.64 found no unused fifth owner. Direct PaulX-style renewal
-  remains the smallest source-backed owner of the accepted sound, but renewal
-  stays closed unless the operator authorizes the documented product-gate
-  reset. Every renderer remains unadmitted; other characters and the router
-  stay closed or paused
+  failure. Batch 31.64 found no unused fifth owner. Batch 31.65 records the
+  operator-authorized product-gate reset and freezes one complete
+  `DirectRenewalDream` renderer and evidence authority. One isolated Batch
+  31.66 candidate is ready. Every renderer remains unadmitted; other
+  characters and the router stay closed or paused
 - `082` and `g10.029` are historical evidence, not active execution authority
 - `g10.028` source-fill work remains paused
 
@@ -178,6 +178,7 @@ frozen elsewhere in this index.
 ## Next Task
 
 Keep Contract `084` closed. Contract `085` retains the PaulX-like target but no
-renderer is admitted. Authorize the direct-renewal product-gate reset or leave
-`g10.031` paused. Any authorization opens one docs-only complete-brief batch,
-not candidate implementation or product exposure.
+renderer is admitted. Run `g10.031` Batch 31.66 only from the Batch 31.65
+closeout commit: implement the frozen private `DirectRenewalDream` candidate
+in its named isolated worktree and follow Rule 11. Do not alter production,
+routing, or product exposure.

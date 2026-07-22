@@ -1,11 +1,12 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: active PaulX-like `Dream`; direct-renewal gate reset awaits operator
+Status: active PaulX-like `Dream`; `DirectRenewalDream` candidate ready
 Owner: core-product
 Updated: 2026-07-22
 Related contracts: `046`, `048`, `084`
 Related architecture: `docs/architecture/offline-creative-time-stretch-study.md`,
 `docs/architecture/offline-creative-direct-renewal-owner-study.md`,
+`docs/architecture/offline-creative-direct-renewal-dream-brief.md`,
 `docs/architecture/offline-creative-linked-stn-noise-morph-brief.md`,
 `docs/architecture/offline-creative-comparator-audited-renewal-spectral-brief.md`,
 `docs/architecture/offline-creative-verified-source-relative-renewal-spectral-brief.md`,
@@ -164,14 +165,16 @@ must remain explicit structural gates. Independent linked-stereo listening is
 required before promotion.
 
 For creative `Dream`, finite output, exact length, deterministic repeat,
-duplicate/mono mechanics, common polarity, anti-phase, swap relationship,
-per-bin channel magnitude, whole-render balance, three-band balance, and
-declared `space` direction are hard stereo controls. Local mapped-window
-source-relative balance and dominance are mandatory diagnostics. They do not
-carry a terminal numeric threshold because the preferred PaulX target uses
-separate per-channel phase renewal and does not promise local source-relative
-waveform balance. Comparator-relative review by an eligible independent
-stereo listener is terminal and cannot be waived by objective metrics.
+per-bin channel magnitude, source relation at `space=0`, whole-render balance,
+three-band balance, and declared `space` direction are hard stereo controls.
+Exact time-domain duplicate, common-polarity, anti-phase, and swap algebra at
+non-zero `space`, plus local mapped-window source-relative balance and
+dominance, are mandatory diagnostics for `DirectRenewalDream`. They do not
+carry terminal numeric thresholds because symmetric decorrelation deliberately
+changes waveform algebra and the preferred PaulX target uses separate channel
+phase renewal. Audible centre loss, image jump, one-sided pull, unrelated
+motion, or arbitrary balance change still rejects through comparator-relative
+review by an eligible independent listener.
 
 A candidate brief must state which of those gates are samplewise invariants
 and which are relationship or listening invariants. It may not inherit an
@@ -238,9 +241,12 @@ freeze, stereo instability, and failure to map the semantic controls
 consistently.
 
 Every numeric creative-character gate must be calibrated against the retained
-comparator row or identify a hard integrity boundary. Hard integrity,
-replica-region, level, discontinuity, dropout, deterministic-state, boundary,
-and the explicitly named hard linked-stereo gates remain terminal.
+comparator row or identify a hard integrity boundary. Hard integrity, level,
+discontinuity, dropout, deterministic-state, boundary, and the explicitly
+named hard linked-stereo gates remain terminal. Exact impulse-region count and
+secondary-region level are complete diagnostics for `DirectRenewalDream`.
+Audible replicas, doubled attacks, micro-echo, or stutter remain terminal
+through concealed listening.
 
 For neutral `Dream`, whole-render and three-band candidate-source balance
 remain hard at `0.75 dB`, balance spread across `space=0`, `0.5`, and `1`
@@ -281,6 +287,14 @@ window; the assertion passes vacuously. `Y03` owns isolated-impulse spread and
 placement, while `Y04` owns impulse and impulse-train replicas. Expanding the
 dropout scan to complete impulse output changes the gate and invalidates that
 receipt; it is not renderer evidence.
+
+The fresh `DirectRenewalDream` brief is self-contained. It does not inherit
+the rejected renewal family's `Y02`, `Y04`, `Y08`, or `Y09` executable owners.
+Its `Y01` through `Y05` owners retain hard integrity, discontinuity, dropout,
+level, deterministic, boundary, and linked-energy assertions. Crest, pitch,
+impulse-region, local-image, and exact time-domain stereo algebra remain
+complete finite diagnostics. Missing or non-finite diagnostic evidence still
+rejects the receipt.
 
 ### Rule 10: one complete candidate at a time
 
@@ -1348,17 +1362,26 @@ unresolved state, model, stereo, or cost boundaries.
 
 Direct PaulX-style magnitude renewal remains the smallest source-backed owner
 of the accepted neutral `Dream` sound. It is the closed renewal family, not a
-new architecture identity. Contract `085` therefore does not authorize a
-candidate. The canonical study recommends one explicit product-gate reset:
-retain hard integrity, channel-energy, long-form mono, and eligible independent
-stereo promotion; make exact creative pitch, impulse-region, local-image, and
-sample-algebra rows complete diagnostics. The operator must authorize that
-policy before the contract or a complete renderer brief changes.
+new architecture identity. The operator authorized its explicit product-gate
+reset after Batch 31.64. Hard integrity, channel-energy, concealed long-form
+mono, and eligible independent stereo promotion remain terminal. Exact
+creative pitch, impulse-region, local-image, and non-zero-`space`
+sample-algebra rows are complete diagnostics.
+
+Batch 31.65 freezes one fresh, complete `DirectRenewalDream` renderer and
+executable evidence authority. This is an evidence-backed Rule 11 reset, not
+recovery or repair of a rejected checkpoint. The brief owns the complete map,
+transform, renewal law, linked-channel synthesis, asymmetric boundaries,
+bounded state, exact sources, comparator identities, executable owners,
+runner envelope, receipt persistence, gate order, listening pack, cleanup,
+and minimal admission surface. One isolated Batch 31.66 candidate may now
+implement it once.
 
 ## Next Task
 
-Operator checkpoint. Authorize the direct-renewal product-gate reset or leave
-`g10.031` paused. If authorized, Batch 31.65 updates this contract and freezes
-one complete `DirectRenewalDream` renderer and evidence brief, docs-only. Do
-not resume a prior candidate, reopen its evidence gate, implement DSP, or
-change production, routing, product exposure, Loophole, or Chorus. Do not push.
+Batch 31.66 only. From the Batch 31.65 closeout commit, create the exact
+isolated worktree and branch named by the canonical `DirectRenewalDream` brief.
+Implement its private fixed-ratio candidate and complete conformance authority.
+Do not recover prior source, change the brief, run acoustic owners before the
+immutable checkpoint, alter production or routing, touch Loophole or Chorus,
+merge, or push.

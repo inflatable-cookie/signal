@@ -1,6 +1,6 @@
 # Offline Creative Time-Stretch Study
 
-Status: bounded `LinkedStnNoiseMorph` v2 frozen; one candidate ready
+Status: `DirectRenewalDream` frozen; Batch 31.66 isolated candidate ready
 Owner: dsp
 Updated: 2026-07-21
 Contract: `085`
@@ -807,15 +807,18 @@ source-readable character, and image or learned resynthesis adds unresolved
 full-file, model, stereo, or cost ownership.
 
 Direct PaulX-style magnitude renewal remains the smallest source-backed owner
-of neutral `Dream`. It is not a new family. It is eligible only through an
+of neutral `Dream`. It is not a new family. Batch 31.65 records the operator's
 explicit product-gate reset because previous Signal renewal checkpoints are
-closed. The reset would retain hard integrity, level, long-form mono, and
-independent stereo listening while making exact creative pitch, impulse-region,
-and sample-algebra measurements diagnostic. No reset or candidate is yet
-authorized.
+closed. The reset retains hard integrity, level, long-form mono, and
+independent stereo listening while making exact creative pitch,
+impulse-region, local-image, and non-zero-`space` sample-algebra measurements
+diagnostic.
 
 Canonical decision:
 [Offline Creative Direct-Renewal Owner Study](./offline-creative-direct-renewal-owner-study.md).
+
+Complete candidate authority:
+[Offline Creative DirectRenewalDream Renderer Brief](./offline-creative-direct-renewal-dream-brief.md).
 
 ## Sources
 
@@ -854,7 +857,7 @@ Canonical decision:
 
 ## Next Task
 
-Operator checkpoint. Authorize the direct-renewal product-gate reset or leave
-`g10.031` paused. If authorized, Batch 31.65 is docs-only and freezes one
-complete `DirectRenewalDream` brief after updating Contract `085`. Do not
-implement DSP in that batch.
+Run Batch 31.66 only. Implement the frozen private `DirectRenewalDream`
+candidate and conformance authority in its exact isolated worktree. Do not
+recover prior source, alter the brief, change production or routing, touch
+Loophole or Chorus, merge, or push.

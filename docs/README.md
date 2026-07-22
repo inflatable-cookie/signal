@@ -82,8 +82,9 @@ strict lane.
 
 ## Next Task
 
-Operator checkpoint for `g10.031`. Authorize the direct-renewal product-gate
-reset or leave the PaulX-like neutral `Dream` target paused. Authorization
-opens one docs-only complete-brief batch, not candidate implementation. Do not
-alter production or routing, touch Loophole or Chorus, merge, or push. Only
-drop into `specs/` when a strict lane is explicitly reopened.
+Run `g10.031` Batch 31.66 only. Start from the Batch 31.65 closeout commit and
+implement the complete
+[DirectRenewalDream brief](architecture/offline-creative-direct-renewal-dream-brief.md)
+in its exact isolated worktree. Follow Contract `085` Rule 11. Do not recover
+prior source, change production or routing, touch Loophole or Chorus, merge,
+or push. Only drop into `specs/` when a strict lane is explicitly reopened.

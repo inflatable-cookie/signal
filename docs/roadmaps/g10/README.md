@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: creative stretch paused; direct-renewal gate reset awaits operator
+Status: creative stretch active; Batch 31.66 isolated candidate ready
 Updated: 2026-07-22
 
 ## Why this generation matters now
@@ -266,8 +266,9 @@ Do not start Loophole or Chorus planning from Signal internals.
     passed construction but failed structural `S02` at `17/18` on an incorrect
     handwritten 8 kHz `Q_h` vector and was deleted before synthetic or
     listening; later Rule 11 work closed linked STN without acoustic evidence;
-    Batch 31.64 found no unused fifth family and recommends a direct-renewal
-    product-gate reset; explicit `Cyclic` stays closed
+    Batch 31.64 found no unused fifth family; Batch 31.65 records the
+    direct-renewal product-gate reset and freezes one complete
+    `DirectRenewalDream` authority; explicit `Cyclic` stays closed
 
 ## Stretch Boundary
 
@@ -503,16 +504,17 @@ did not bind assertions to owners, and the unoptimized monolithic gate had no
 frozen execution envelope or incremental receipt. The result is invalid
 evidence, not an acoustic rejection or release-profile cost result. Repeated
 incomplete executable authority closes linked STN. The evidence ref is deleted;
-no renderer is admitted and no replacement owner is ready.
+no renderer was admitted and no replacement owner was ready at that closeout.
 Batch 31.64 then found no unused fifth family. Direct PaulX-style magnitude
-renewal remains the smallest source-backed owner of the accepted sound, but it
-is the closed renewal family. Reopening requires the operator to authorize the
-documented product-gate reset before one fresh complete brief is written.
+renewal remains the smallest source-backed owner of the accepted sound. Batch
+31.65 records the operator-authorized product-gate reset and freezes one fresh,
+complete `DirectRenewalDream` renderer and executable evidence authority.
+No renderer is admitted; Batch 31.66 may implement that authority once.
 
 ## Next Task
 
-Operator checkpoint. Authorize the direct-renewal product-gate reset or leave
-`g10.031` paused. If authorized, Batch 31.65 is docs-only and freezes one
-complete `DirectRenewalDream` brief after updating Contract `085`. Keep
-`g10.028`, routing, product exposure, other creative characters, and cross-repo
-work unchanged. Do not merge or push.
+Run `g10.031` Batch 31.66 only from the Batch 31.65 closeout commit. Create the
+named isolated `DirectRenewalDream` worktree, implement the frozen private
+candidate and complete conformance authority, and follow Contract `085` Rule
+11. Keep `g10.028`, routing, product exposure, other creative characters, and
+cross-repo work unchanged. Do not merge or push.
