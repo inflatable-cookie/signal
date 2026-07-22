@@ -82,9 +82,9 @@ strict lane.
 
 ## Next Task
 
-Run `g10.031` Batch 31.67 only. Admit exact passed checkpoint `760da32d` as
-the minimal private fixed-ratio neutral-`Dream` surface defined by the
-[DirectRenewalDream brief](architecture/offline-creative-direct-renewal-dream-brief.md).
-Preserve acoustic identity. Keep public controls, routing, cache, dynamic
+Run `g10.031` Batch 31.68 only. Reassess the paused `2x..4x`
+coherent/`Dream` overlap against the privately admitted
+[DirectRenewalDream renderer](architecture/offline-creative-direct-renewal-dream-brief.md).
+Change documentation only. Keep DSP, public controls, routing, cache, dynamic
 ratio, other creative characters, Loophole, and Chorus closed. Do not push.
 Only drop into `specs/` when a strict lane is explicitly reopened.

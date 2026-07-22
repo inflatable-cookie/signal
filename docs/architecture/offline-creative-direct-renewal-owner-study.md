@@ -1,6 +1,6 @@
 # Offline Creative Direct-Renewal Owner Study
 
-Status: promoted; `DirectRenewalDream` passed in Batch 31.66
+Status: promoted; `DirectRenewalDream` privately admitted in Batch 31.67
 Owner: dsp
 Updated: 2026-07-22
 Roadmap: `g10.031`, Batch 31.64
@@ -154,6 +154,12 @@ the one-ear limitation and scopes the decision to that checkpoint. The
 candidate passes; Batch 31.67 may admit only its minimal private fixed-ratio
 surface.
 
+Batch 31.67 admitted that exact surface. The four acoustic source files remain
+byte-identical to checkpoint `760da32d`; construction `1/1`, structural
+`10/10`, and synthetic `88/88` rows with `76/76` renders pass after
+integration. The module is private, production-compiled, and unrouted under
+internal version `signal-creative-direct-renewal-dream-v1`.
+
 ## Sources
 
 - [Creative Stretch Source Triangulation](../research/specimen-dossiers/creative-stretch-source-triangulation.md)
@@ -164,7 +170,6 @@ surface.
 
 ## Next Task
 
-Batch 31.67 only. Admit exact passed checkpoint `760da32d` as the minimal
-private fixed-ratio neutral-`Dream` renderer. Preserve acoustic identity and
-keep public controls, routing, cache, dynamic ratio, other characters,
-Loophole, and Chorus closed. Do not push.
+Batch 31.68 only. Reassess the paused `2x..4x` coherent/`Dream` overlap as docs
+and architecture work. Do not change the admitted renderer or add product
+surface.

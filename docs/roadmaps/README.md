@@ -186,9 +186,12 @@ the operator-authorized product-gate reset and freezes one complete private
 `DirectRenewalDream` authority. Batch 31.66 passed conformance, all synthetic
 owners, concealed mono, and hard stereo admission at checkpoint `760da32d`.
 The operator accepted stereo and explicitly waived independent review for this
-effect under a scoped Contract `085` decision. Batch 31.67 is the sole ready
-implementation batch and may admit only the minimal private fixed-ratio
-surface.
+effect under a scoped Contract `085` decision. Batch 31.67 admitted the exact
+private fixed-ratio surface under internal version
+`signal-creative-direct-renewal-dream-v1`. The acoustic source remains
+byte-identical to checkpoint `760da32d`; integrated construction, structural,
+and synthetic owners pass. Batch 31.68 is the sole ready batch and may only
+reassess the paused lower overlap in documentation.
 Offline artifacts still need a streaming artifact writer/cache target for full
 peak-memory closure. Mono callback-state DSP has a
 no-allocation proof, linked stereo is implemented, ratio scheduling has
@@ -315,7 +318,7 @@ Before rollover:
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the active generation front door.
-Run `g10.031` Batch 31.67 only. Admit exact passed checkpoint `760da32d` as
-the minimal private fixed-ratio neutral-`Dream` renderer. Keep the transparent
-successor lane, `g10.028`, public controls, routing, cache, dynamic ratio,
+Run `g10.031` Batch 31.68 only. Reassess the paused `2x..4x`
+coherent/`Dream` overlap as docs and architecture work. Keep the transparent
+successor lane, `g10.028`, DSP, public controls, routing, cache, dynamic ratio,
 other creative characters, and cross-repo work closed. Do not push.

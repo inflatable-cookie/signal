@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: creative stretch active; Batch 31.67 minimal admission ready
+Status: creative stretch active; Batch 31.68 reassessment ready
 Updated: 2026-07-22
 
 ## Why this generation matters now
@@ -238,7 +238,7 @@ Do not start Loophole or Chorus planning from Signal internals.
   - historical correctness, listening, and rejected-successor ledger
 - `g10.030` `complete`
   - stretch consolidated; candidate families closed; frozen baseline retained
-- `g10.031` `paused`
+- `g10.031` `active`
   - PaulX-like neutral `Dream` remains product intent; Batch 31.36 passed all
     objective and mono gates, then failed source-relative stereo admission and
     was deleted; Batch 31.37 closed renewal after finding no different complete
@@ -268,7 +268,10 @@ Do not start Loophole or Chorus planning from Signal internals.
     listening; later Rule 11 work closed linked STN without acoustic evidence;
     Batch 31.64 found no unused fifth family; Batch 31.65 records the
     direct-renewal product-gate reset and freezes one complete
-    `DirectRenewalDream` authority; explicit `Cyclic` stays closed
+    `DirectRenewalDream` authority; Batch 31.66 passed the complete fixed-ratio
+    candidate; Batch 31.67 admitted its private unrouted renderer; Batch 31.68
+    is ready for docs-only lower-overlap reassessment; explicit `Cyclic` stays
+    closed
 
 ## Stretch Boundary
 
@@ -515,13 +518,18 @@ stereo hard rows, all `15` trio rows, and all `1400` mapped diagnostics
 completed. The operator accepted stereo on speakers and explicitly waived
 eligible independent review for this effect. Contract `085` records the
 one-ear limitation and scopes that product decision to this checkpoint. The
-candidate passes; no renderer has entered `main`. Batch 31.67 may now admit
-only the frozen minimal private fixed-ratio surface.
+candidate passed. Batch 31.67 admitted its frozen minimal private fixed-ratio
+surface. Analysis, plan, stereo, and synthesis remain
+byte-identical to checkpoint `760da32d`; construction `1/1`, structural
+`10/10`, and synthetic `88/88` rows with `76/76` renders pass after
+integration. The module is private, production-compiled, exact-ratio only, and
+unrouted. No public control, route, cache, dynamic ratio, other character, or
+cross-repo surface opened.
 
 ## Next Task
 
-Run `g10.031` Batch 31.67 only. Admit exact passed checkpoint `760da32d` as
-the minimal private fixed-ratio neutral-`Dream` renderer. Preserve acoustic
-identity. Keep `g10.028`, public controls, routing, cache, dynamic ratio, other
-creative characters, Loophole, Chorus, and cross-repo work unchanged. Do not
-push.
+Run `g10.031` Batch 31.68 only. Reassess the paused `2x..4x`
+coherent/`Dream` overlap as docs and architecture work. Either freeze one
+complete shared-map architecture or retain the pause. Keep `g10.028`, DSP,
+public controls, routing, cache, Loophole, Chorus, and cross-repo work
+unchanged. Do not push.

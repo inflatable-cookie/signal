@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: active PaulX-like `Dream`; `DirectRenewalDream` candidate passed
+Status: active PaulX-like `Dream`; private fixed-ratio renderer admitted
 Owner: core-product
 Updated: 2026-07-22
 Related contracts: `046`, `048`, `084`
@@ -1406,11 +1406,24 @@ above. `DirectRenewalDream` therefore passes fixed-ratio candidate admission.
 No public API, route, cache, dynamic ratio, other character, Loophole, or
 Chorus surface is admitted by this decision.
 
+Batch 31.67 admitted only that frozen renderer, its private request and error
+boundary, structural/synthetic regression owners, diagnostic receipt schemas,
+and internal engine version `signal-creative-direct-renewal-dream-v1`.
+Analysis, plan, stereo, and synthesis source remain byte-identical to
+checkpoint `760da32d`. Integrated construction passed `1/1`, structural passed
+`10/10`, and synthetic passed `88/88` rows with `76/76` renders. Retained
+synthetic hashes, assertions, and diagnostics match the checkpoint row-for-row
+after identity labels are excluded.
+
+The admitted module is private, production-compiled, and unrouted. It supports
+only exact fixed `4x`, `8x`, and `16x` neutral `Dream`. No public control,
+automatic route, cache identity, dynamic ratio, other character, report or
+artifact product surface, Loophole, or Chorus authority follows.
+
 ## Next Task
 
-Batch 31.67 only. Admit the exact passed checkpoint as the minimal private
-fixed-ratio neutral-`Dream` surface frozen by the canonical brief. Preserve
-renderer formulas and acoustic identity. Admit only the private renderer,
-fixed-ratio request, regression owners, diagnostic receipt schema, and one
-internal engine version. Keep public controls, routing, cache, dynamic ratio,
-other characters, Loophole, and Chorus closed. Do not push.
+Batch 31.68 only. Reassess Contract `085`'s paused `2x..4x`
+coherent/diffusive overlap against the admitted fixed-ratio `Dream` owner.
+Change documentation only. Freeze one complete architecture or retain the
+pause; do not implement blending, ratio expansion, routing, controls, cache,
+Loophole, or Chorus. Do not push.

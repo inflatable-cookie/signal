@@ -1,6 +1,6 @@
 # Offline Creative Time-Stretch Study
 
-Status: `DirectRenewalDream` passed; Batch 31.67 minimal admission ready
+Status: `DirectRenewalDream` privately admitted; Batch 31.68 ready
 Owner: dsp
 Updated: 2026-07-22
 Contract: `085`
@@ -835,6 +835,19 @@ Contract `085` scopes that decision to checkpoint `760da32d`, records the
 operator's one-ear limitation, and makes no independent-listening claim. The
 candidate passes. Broader routing and product work remain closed.
 
+## Batch 31.67 Admission Decision
+
+Signal now contains the exact private fixed-ratio renderer, request, regression
+owners, diagnostic schemas, and internal engine version. The four acoustic
+implementation files remain byte-identical to checkpoint `760da32d`.
+Construction passed `1/1`, structural passed `10/10`, and synthetic passed
+`88/88` rows with `76/76` renders. Retained row evidence matches the checkpoint
+after identity labels are excluded.
+
+This is an unrouted internal admission, not product exposure. Exact `4x`, `8x`,
+and `16x` are the only supported ratios. The paused lower overlap, other
+characters, dynamic ratio, routing, cache, and consumer work remain separate.
+
 ## Sources
 
 - [REAPER time-stretch engines](https://www.reaper.fm/about.php)
@@ -872,7 +885,6 @@ candidate passes. Broader routing and product work remain closed.
 
 ## Next Task
 
-Run Batch 31.67 only. Admit exact checkpoint `760da32d` as the minimal private
-fixed-ratio neutral-`Dream` renderer. Preserve acoustic identity. Keep public
-controls, routing, cache, dynamic ratio, other characters, Loophole, and
-Chorus closed. Do not push.
+Run Batch 31.68 only. Reassess the paused `2x..4x` coherent/`Dream` overlap.
+Change documentation only. Freeze one complete shared-map architecture or keep
+the overlap paused; do not implement or expose it.

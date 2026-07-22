@@ -1,10 +1,10 @@
 # Offline Creative DirectRenewalDream Renderer Brief
 
-Status: candidate passed; minimal admission ready
+Status: private fixed-ratio renderer admitted
 Owner: dsp
 Updated: 2026-07-22
 Contract: `085`
-Roadmap: `g10.031`, Batch 31.66
+Roadmap: `g10.031`, Batch 31.67
 
 ## Decision
 
@@ -621,6 +621,23 @@ The candidate passes fixed-ratio admission. This outcome opens only the
 minimal private production surface below; it does not admit routing, dynamic
 ratio, public controls, other characters, cache behavior, Loophole, or Chorus.
 
+## Batch 31.67 Admission
+
+The private renderer, fixed-ratio request, closed error boundary, regression
+owners, diagnostic receipt schemas, and internal engine version
+`signal-creative-direct-renewal-dream-v1` now compile in normal Signal builds.
+The module remains private and unrouted.
+
+Analysis, plan, stereo, and synthesis source are byte-identical to checkpoint
+`760da32d`. Integrated construction passed `1/1`, structural passed `10/10`,
+and `Y01..Y05` passed `88/88` rows with `76/76` renders. Synthetic hashes,
+assertions, and diagnostics match the checkpoint row-for-row after excluding
+checkpoint, stage, and round labels.
+
+No candidate evidence directory, nextest profile, listening audio, public API,
+route, cache identity, dynamic ratio, other character, Loophole, or Chorus
+surface was admitted.
+
 ## Sources
 
 - [Direct-renewal owner study](./offline-creative-direct-renewal-owner-study.md)
@@ -630,7 +647,6 @@ ratio, public controls, other characters, cache behavior, Loophole, or Chorus.
 
 ## Next Task
 
-Run Batch 31.67 only. Admit the exact passed checkpoint as the minimal private
-fixed-ratio renderer, request, regression owners, diagnostic receipt schema,
-and internal engine version. Preserve acoustic identity and keep all broader
-product work closed. Do not push.
+Run Batch 31.68 only. Reassess the paused `2x..4x` coherent/`Dream` overlap as
+docs and architecture work. Either freeze one complete shared-map blend
+architecture or retain the pause. Do not change DSP or product surfaces.

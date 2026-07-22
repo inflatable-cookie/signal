@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: active; Batch 31.66 passed, Batch 31.67 minimal admission ready
+Status: active; Batch 31.67 complete, Batch 31.68 reassessment ready
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -2178,30 +2178,54 @@ Decision:
 
 ## Batch 31.67 - Minimal DirectRenewalDream Admission
 
-Status: ready
+Status: complete; private fixed-ratio renderer admitted
 
-- [ ] start from the Batch 31.66 docs closeout and retain exact checkpoint
+- [x] started from the Batch 31.66 docs closeout and retained exact checkpoint
   `760da32d2c87b2838bda48f32af90ae4ae51f8d9` as source authority
-- [ ] admit the renderer formulas without acoustic change
-- [ ] admit only the private fixed-ratio neutral-`Dream` request and renderer,
+- [x] admitted the renderer formulas without acoustic change; analysis, plan,
+  stereo, and synthesis source remain byte-identical to the checkpoint
+- [x] admitted only the private fixed-ratio neutral-`Dream` request and renderer,
   structural/synthetic regression owners, diagnostic receipt schema, and one
   internal creative-engine version
-- [ ] reproduce the checkpoint's structural and synthetic identities after
-  integration
-- [ ] keep public controls, routing, cache, artifacts/reports, dynamic ratio,
+- [x] reproduced construction `1/1`, structural `10/10`, and synthetic
+  `88/88` rows with `76/76` renders after integration
+- [x] proved retained synthetic hashes, assertions, and diagnostics identical
+  row-for-row after excluding checkpoint, stage, and round labels
+- [x] kept public controls, routing, cache, artifacts/reports, dynamic ratio,
   other characters, Loophole, and Chorus closed
-- [ ] remove disposable listening audio and build state only after admitted
-  source and retained evidence identity are secure
-- [ ] validate and commit the bounded Signal-only admission; do not push
+- [x] retained the isolated worktree and acoustic ref only through final
+  admission validation; cleanup follows the secured admission commit
+- [x] validated and committed the bounded Signal-only admission without push
+
+Decision:
+
+- `DirectRenewalDream` is now a private, production-compiled, unrouted Signal
+  renderer for exact `4x`, `8x`, and `16x`
+- internal engine identity is
+  `signal-creative-direct-renewal-dream-v1`
+- no public or product route is implied by private admission
+
+## Batch 31.68 - Coherent/Dream Lower-Overlap Reassessment
+
+Status: ready; docs and architecture only
+
+- [ ] re-audit the admitted exact-ratio `Dream` owner against Contract `085`'s
+  paused `2x..4x` coherent/diffusive overlap intent
+- [ ] determine whether the frozen coherent renderer and admitted `Dream`
+  owner can share one map, boundary, level, image, and deterministic blend
+  without changing either admitted renderer
+- [ ] treat exact `2x`, interior overlap probes, and exact `4x` as mandatory
+  evidence boundaries; do not infer continuous-ratio support from `4x`
+- [ ] decide whether one complete lower-overlap architecture can be frozen or
+  the overlap must remain paused
+- [ ] change documentation only; do not add adapters, blends, ratio support,
+  public controls, routing, cache, Loophole, or Chorus
 
 ## Later Batches
 
-Closed or paused beyond minimal admission. Batch 31.67 is the sole ready
-implementation batch. Every later product batch still requires the admitted
-fixed-ratio renderer and separate authority:
+Closed or paused beyond lower-overlap reassessment. Batch 31.68 is the sole
+ready batch. Every later product batch still requires separate authority:
 
-- minimal production admission
-- coherent/diffusive overlap
 - `LayeredCloud` study and candidate
 - diffusive/cloud overlap
 - dynamic-ratio state continuity
@@ -2389,13 +2413,19 @@ fixed-ratio renderer and separate authority:
   Contract `085` Rule 5 authority
 - [x] one exact passed candidate checkpoint and local evidence ref remain
   isolated for minimal admission
+- [x] Batch 31.67 admitted only the private fixed-ratio renderer, request,
+  regression owners, diagnostic schemas, and one internal engine version
+- [x] the four acoustic implementation files remain byte-identical to
+  checkpoint `760da32d`
+- [x] integrated construction `1/1`, structural `10/10`, and synthetic
+  `88/88` rows with `76/76` renders passed
+- [x] no public API, route, cache identity, dynamic ratio, other character,
+  Loophole, or Chorus surface entered the admission
 
 ## Next Task
 
-Batch 31.67 only. Start from this docs closeout and admit exact checkpoint
-`760da32d2c87b2838bda48f32af90ae4ae51f8d9` as the minimal private
-fixed-ratio neutral-`Dream` renderer. Preserve renderer formulas and acoustic
-identity. Admit only the request, renderer, regressions, diagnostic receipt
-schema, and internal engine version named above. Keep public controls,
-routing, cache, dynamic ratio, other characters, Loophole, and Chorus closed.
-Do not push.
+Batch 31.68 only. Reassess the paused `2x..4x` coherent/`Dream` overlap against
+the admitted fixed-ratio owner and Contract `085`. Change documentation only.
+Either freeze one complete lower-overlap architecture or keep the overlap
+paused. Do not implement ratio expansion, blending, routing, controls, cache,
+Loophole, or Chorus. Do not push.
