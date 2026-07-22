@@ -1,10 +1,10 @@
 # Offline Creative LinkedStnNoiseMorph Renderer Brief
 
-Status: frozen; Batch 31.59 reconciliation complete, Batch 31.60 resume ready
+Status: frozen; Batch 31.61 reconciliation complete, Batch 31.62 resume ready
 Owner: dsp
 Updated: 2026-07-22
 Contract: `085`
-Roadmap: `g10.031`, Batches 31.42 through 31.60
+Roadmap: `g10.031`, Batches 31.42 through 31.62
 
 ## Decision
 
@@ -64,12 +64,14 @@ listening policy. It changes only evidence lifecycle under Contract `085` Rule
 canonical conformance before one immutable acoustic checkpoint. It is not a
 locally corrected v7 and does not recover any deleted candidate source.
 
-The Batch 31.59 reconciliation retains that identity and renderer. It freezes
-one missing numerical comparison rule exposed by reconstructed-transient
-conformance: derivative-power scores within four adjacent non-negative finite
-`f64` encodings are one tie class, owned by the earliest sample. This changes
-neither score values nor event detection. It prevents roundoff at an otherwise
-mathematical impulse tie from moving the authored event by one sample.
+Batch 31.59 first bound reconstructed-transient refinement to a four-ULP tie.
+Batch 31.60 proved that representation-local rule incomplete: the `0.65`
+impulse-train event produced a ten-ULP difference from the same bounded
+transform roundoff. Batch 31.61 replaces ULP counting with one scale-relative
+forward-error budget for the complete short-transform analysis, inverse,
+normalized WOLA, derivative, square, and channel-sum path. This changes neither
+score values nor event detection. It prevents numerical reconstruction error
+from moving a mathematically tied impulse edge by one sample.
 
 ## Supported Request
 
@@ -335,12 +337,15 @@ deviation `mad`. A candidate must:
 Exterior frames are zero. Commit only after all `24` future frames exist.
 Refine inside `m*A_s-N_s/2..m*A_s+N_s/2` to the sample maximizing
 `sum_c (t_c[n]-t_c[n-1])^2`. Compute every score in `f64`; reject a non-finite
-score as `Processing`. Scores are non-negative, so their `to_bits()` order is
-numeric order. A challenger replaces the current maximum only when its
-unsigned bit-pattern distance above that maximum is greater than `4`.
-Distances `0..4` are one equality class and retain the earlier sample; distance
-`5` or greater selects the larger score. This is the sole refinement equality
-rule. It does not alter, floor, or silence either score and is not adjustable.
+score as `Processing`. Scores are non-negative. For current maximum `a` and
+later challenger `b`, define
+`tau=64*f64::EPSILON*max(a,b)`. The challenger replaces the current maximum
+only when `b>a` and `b-a>tau`. Otherwise the earlier sample owns the numerical
+tie. The factor `64` is the fixed next-power-of-two budget above four rounding
+sites across each of the maximum `12` short-transform stages; it covers
+analysis, inverse, normalized WOLA, and score formation as one path. There is
+no absolute floor. This is the sole refinement equality rule. It does not
+alter, quantize, floor, or silence either score and is not adjustable.
 
 Around the refined sample, inspect `+/-2N_s`. Find the earliest shortest
 interval containing `90%` of its channel-summed transient energy. Classify the
@@ -807,8 +812,10 @@ them but may not substitute generated examples or implicit defaults.
   `attack[n]=sin(pi*n/(2*(N_t-1)))^2` for `0<=n<N_t`, followed by `N_t`
   exact zeros; expected novelty, threshold, refinement, class, claim, and
   reassignment rows are calculated independently from the frozen equations;
-  comparison rows cover equal scores, distances `4` and `5`, and the isolated
-  impulse pair `0x3feffffffffffffe`/`0x3ff0000000000000`
+  comparison rows cover exact equality, zero, challengers `64` and `65` ULPs
+  above `1.0`, the isolated impulse pair
+  `0x3feffffffffffffe`/`0x3ff0000000000000`, and the `0.65` train pair
+  `0x3fdb0a3d4f5c2900`/`0x3fdb0a3d4f5c290a`
 - `COVARIANCE_SPEC`: exact zero, one-zero diagonal, duplicate rank-one,
   anti-phase rank-one, and mixed positive-semidefinite `2x2` matrices, with
   expected canonical coherence, projected covariance, and factor values
@@ -834,7 +841,7 @@ Run all owners once after construction. Require exactly `18/18`.
 | `S06` | tonal peak matching, identity regions, bin fallback, frequency propagation, and track IDs match `PEAK_SPEC` |
 | `S07` | disappearance, dormancy, reactivation, expiry, new-track phase, and two-centre axis transition match `TRACK_SPEC` exactly |
 | `S08` | tonal duplicate, common polarity, anti-phase, and channel swap commute samplewise within `1e-6` |
-| `S09` | transient novelty, threshold, refinement, class, segment, edge claim, and residual reassignment match `TRANSIENT_SPEC`; refinement proves bit distances `0`, `4`, and `5`, plus the frozen isolated impulse pair `0x3feffffffffffffe`/`0x3ff0000000000000` at distance `2`, with earliest ownership for distances through `4` and larger-score ownership at `5` |
+| `S09` | transient novelty, threshold, refinement, class, segment, edge claim, and residual reassignment match `TRANSIENT_SPEC`; refinement proves zero, exact equality, `1.0` versus challengers `64` and `65` ULPs higher, the isolated impulse pair at distance `2`, and the `0.65` train pair at distance `10`; the frozen scale-relative rule retains the earlier sample through the `64`-ULP row and selects the `65`-ULP challenger |
 | `S10` | each source event has one ledger commit, one mapped anchor, one emission, disjoint support, and no boundary duplicate |
 | `S11` | residual counter and tag vectors match exactly; repeats match bytes and changed seed changes non-silent residual output |
 | `S12` | zero-preserving diagonal interpolation, canonical coherence, covariance projection, and factorization match `COVARIANCE_SPEC`; target matrices reproduce within `1e-10`; diagonal powers never change with `space` |
@@ -946,7 +953,7 @@ tone and chord frequency. Missing or non-finite rejects; no numeric delta does.
 For the isolated impulse and every impulse-train event:
 
 - reconstructed-stream refinement must retain the authored source sample `p`
-  under the frozen four-ULP equality rule
+  under the frozen scale-relative equality rule
 - the event ledger's target anchor must equal
   `floor((2p+1)T/(2L))` exactly; a source anchor stored for segmentation is not
   the ledger value checked here
@@ -1580,11 +1587,9 @@ candidate code entered `main`.
 
 ## Batch 31.59 Transient-Anchor Reconciliation
 
-Complete. The four-ULP equality class above is the sole authority change. Four
-ULPs is below `9e-16` relative for normal positive `f64` values. It therefore
-classifies numerical equality for sample ownership without merging perceptibly
-different derivative power, changing event scores, or adding an acoustic
-parameter.
+Complete but superseded by Batch 31.61. It froze a four-ULP equality class from
+the isolated impulse evidence. Batch 31.60 proved that representation-local
+boundary did not cover the already-frozen impulse-train corpus.
 
 Contract `085` Rule 11 now permits this retained pre-acoustic worktree to
 resume only after this docs closeout commit is applied there. The candidate
@@ -1594,10 +1599,39 @@ the correction is frozen before further execution. Conformance restarts from
 one clean commit and must still pass the entire compile, construction `1/1`,
 and structural `18/18` sequence twice before any acoustic ref.
 
-Batch 31.60 is ready for that bounded resume. It may implement only the frozen
-comparison and target-ledger semantics, update the existing structural owners,
-then restart full conformance. It may not run synthetic or listening work until
-two complete clean passes succeed and the acoustic ref is created.
+## Batch 31.60 Conformance Stop
+
+Stopped before a clean resumed commit or complete structural round. The Batch
+31.59 docs closeout applied cleanly and the four-ULP comparison plus mapped
+target ledger compiled. `S09` retained the isolated impulse and first two train
+anchors, then failed at source `p=58103`. Its `0.65` reconstructed event gave
+rising/falling powers `0x3fdb0a3d4f5c2900` and
+`0x3fdb0a3d4f5c290a`, distance `10`, so the later edge still won.
+
+The retained stop is commit `4cb82a2ef7731aeaf306d3955766c75c9863aa89`,
+tree `6083e84604bb95f561fd6b7c25aef55b9a49b12a`. The conformance ledger records
+round `10A`. `S10`, full conformance, synthetic work, rendered audio,
+listening, and acoustic-ref creation did not run. No candidate code entered
+`main`.
+
+## Batch 31.61 Transform-Error Reconciliation
+
+Complete. The scale-relative `64*f64::EPSILON` rule above replaces the
+four-ULP rule. This is an architecture correction, not a threshold increment:
+ULP distance changes with exponent and describes stored representation, while
+the selected rule bounds relative error across the frozen transform and score
+path. It has no absolute floor and cannot convert exact zero into activity.
+
+Contract `085` Rule 11 permits one retained pre-acoustic resume after this docs
+closeout is applied. Candidate identity remains
+`ConformanceBoundLinkedStnNoiseMorph`; no acoustic identity exists. Earlier
+partial passes remain diagnostic. Full compile, construction `1/1`, and
+structural `18/18` conformance still restart twice from one clean commit.
+
+Batch 31.62 is ready for that bounded resume. It may replace only the ULP
+comparison with the frozen scale-relative rule, update direct `S09`, `S10`, and
+compiled `Y03` ownership, then restart complete conformance. No acoustic work
+may run before both passes and immutable-ref creation.
 
 ## Sources
 
@@ -1611,11 +1645,11 @@ two complete clean passes succeed and the acoustic ref is created.
 
 ## Next Task
 
-Apply the Batch 31.59 docs closeout commit to retained isolated worktree
+Apply the Batch 31.61 docs closeout commit to retained isolated worktree
 `signal-candidate-31-58` on branch
 `candidate/g10-031-conformance-bound-linked-stn-noise-morph`. Implement only
-the frozen four-ULP transient-refinement comparison, target-ledger semantics,
-and their `S09`/`Y03` structural ownership. Commit the clean resumed tree, then
-restart the complete compile, construction `1/1`, and structural `18/18`
-sequence twice before creating an acoustic ref. Do not run acoustic gates,
+the frozen scale-relative transient-refinement comparison and direct `S09`,
+`S10`, and compiled `Y03` ownership. Commit the clean resumed tree, then
+restart complete compile, construction `1/1`, and structural `18/18`
+conformance twice before creating an acoustic ref. Do not run acoustic gates,
 alter production or `main`, merge, or push.

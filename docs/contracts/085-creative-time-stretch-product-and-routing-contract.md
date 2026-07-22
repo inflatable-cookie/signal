@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: active PaulX-like `Dream`; linked STN pre-acoustic resume ready
+Status: active PaulX-like `Dream`; linked STN transform-error resume ready
 Owner: core-product
 Updated: 2026-07-22
 Related contracts: `046`, `048`, `084`
@@ -784,7 +784,8 @@ brief. It changed protocol ownership and candidate identity only. The audit
 found no missing authority requiring a DSP, source, seed, metric, threshold,
 assertion, comparator, or listening-policy choice. Batch 31.58 started from
 fresh source and later exposed the transient-refinement authority gap recorded
-below. Batch 31.59 reconciles that gap before retained pre-acoustic execution
+below. Batch 31.59's first correction proved incomplete in Batch 31.60. Batch
+31.61 owns the replacement authority before retained pre-acoustic execution
 may resume.
 
 ## Initial Promotion Sequence
@@ -1275,25 +1276,34 @@ isolated impulse's adjacent derivative powers differ by two non-negative
 `Y03` requires authored `p`. No formal clean pass, synthetic gate, rendered
 audio, listening, or acoustic ref ran. Candidate code did not enter `main`.
 
-Batch 31.59 freezes the correction in the canonical brief. Transient
-refinement treats unsigned bit-pattern distances `0..4` between non-negative
-finite `f64` derivative-power scores as equality, with earliest-sample
-ownership; distance `5` or greater selects the larger score. Scores remain
-unchanged. `S09` owns exact boundary vectors and the observed distance-two
-impulse pair. `Y03` distinguishes the refined source anchor from the mapped
-target anchor stored in the event ledger.
+Batch 31.59 froze a four-ULP correction from the isolated impulse evidence.
+Batch 31.60 applied it and compiled the mapped target ledger, then `S09` failed
+on the already-frozen `0.65` impulse-train event. Its reconstructed rise/fall
+powers were `0x3fdb0a3d4f5c2900` and `0x3fdb0a3d4f5c290a`, distance `10`.
+The retained stop is commit `4cb82a2ef7731aeaf306d3955766c75c9863aa89`,
+tree `6083e84604bb95f561fd6b7c25aef55b9a49b12a`. No complete structural round,
+synthetic gate, rendered audio, listening, or acoustic ref ran.
 
-The retained worktree satisfies the pre-acoustic resume rule. Batch 31.60 may
-apply the docs closeout, implement only this correction and its direct owners,
-then restart full conformance twice. The identity remains
+Batch 31.61 replaces representation-local ULP counting with one
+scale-relative forward-error rule. For non-negative finite current score `a`
+and later challenger `b`, `tau=64*f64::EPSILON*max(a,b)`; the challenger wins
+only when `b>a` and `b-a>tau`. Otherwise earliest owns the numerical tie.
+There is no absolute floor and scores remain unchanged. `S09` owns `64`/`65`
+ULP boundary vectors at `1.0` plus both observed impulse pairs. `S10` owns exact
+mapped target-ledger anchors. Compiled `Y03` retains authored source anchors
+and exact mapped target anchors.
+
+The retained worktree again satisfies the pre-acoustic resume rule. Batch
+31.62 may apply the docs closeout, replace only the comparison and direct
+owners, then restart full conformance twice. The identity remains
 `ConformanceBoundLinkedStnNoiseMorph`. No creative renderer is admitted.
 
 ## Next Task
 
-Apply the Batch 31.59 docs closeout commit to retained isolated worktree
-`signal-candidate-31-58`. Implement only the frozen four-ULP transient
-refinement, target-ledger semantics, and direct `S09`/`Y03` ownership. Commit a
-clean tree, then restart complete compile, construction `1/1`, and structural
-`18/18` conformance twice before creating any acoustic ref. Do not run acoustic
-gates, alter `main`, open routing or product exposure, touch Loophole or Chorus,
-merge, or push.
+Apply the Batch 31.61 docs closeout commit to retained isolated worktree
+`signal-candidate-31-58`. Implement only the frozen scale-relative transient
+comparison and direct `S09`, `S10`, and compiled `Y03` ownership. Commit a clean
+tree, then restart complete compile, construction `1/1`, and structural `18/18`
+conformance twice before creating any acoustic ref. Do not run acoustic gates,
+alter `main`, open routing or product exposure, touch Loophole or Chorus, merge,
+or push.

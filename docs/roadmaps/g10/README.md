@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: creative stretch active; linked STN pre-acoustic resume ready
+Status: creative stretch active; linked STN transform-error resume ready
 Updated: 2026-07-22
 
 ## Why this generation matters now
@@ -490,14 +490,16 @@ so it was selected once for fresh protocol binding. Batch 31.57 now freezes
 evidence authority, iterative conformance, and one later immutable acoustic
 checkpoint. No DSP entered `main`. Batch 31.58 stopped before acoustic identity
 when reconstructed impulse refinement exposed a missing numerical tie rule.
-Batch 31.59 freezes four-ULP earliest ownership, mapped-ledger semantics, and a
-bounded retained-worktree resume. Batch 31.60 is ready; no renderer is admitted.
+Batch 31.59 froze four-ULP earliest ownership, but Batch 31.60 proved it
+incomplete on the frozen `0.65` train event and stopped pre-acoustic. Batch
+31.61 freezes one transform-bounded scale-relative rule. Batch 31.62 is ready;
+no renderer is admitted.
 
 ## Next Task
 
-Run `g10.031` Batch 31.60 in retained isolated worktree
-`signal-candidate-31-58`. Apply the Batch 31.59 docs closeout, implement only
-the frozen transient-refinement and target-ledger correction, then restart full
-conformance twice before its acoustic ref. Keep `g10.028`, routing, product
-exposure, other creative characters, and cross-repo work unchanged. Do not
-alter `main`, merge, or push.
+Run `g10.031` Batch 31.62 in retained isolated worktree
+`signal-candidate-31-58`. Apply the Batch 31.61 docs closeout, implement only
+the frozen scale-relative transient comparison and direct owners, then restart
+full conformance twice before its acoustic ref. Keep `g10.028`, routing,
+product exposure, other creative characters, and cross-repo work unchanged. Do
+not alter `main`, merge, or push.

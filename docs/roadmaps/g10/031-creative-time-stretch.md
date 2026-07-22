@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: active; Batch 31.59 reconciled, Batch 31.60 resume ready
+Status: active; Batch 31.61 reconciled, Batch 31.62 resume ready
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -1922,7 +1922,7 @@ Decision:
 
 ## Batch 31.59 - Transient-Anchor Authority Reconciliation
 
-Status: complete; docs only
+Status: complete but superseded by Batch 31.61; docs only
 
 - [x] record the Batch 31.58 stop and retained executable identity
 - [x] freeze one exact derivative-power comparison rule with no tunable choice
@@ -1949,14 +1949,65 @@ Decision:
 
 ## Batch 31.60 - Resume Protocol-Bound Linked STN Conformance
 
-Status: ready; retained isolated worktree, frozen correction only
+Status: stopped pre-acoustic; four-ULP authority incomplete
 
-- [ ] apply the Batch 31.59 docs closeout commit to the retained candidate
+- [x] apply the Batch 31.59 docs closeout commit to the retained candidate
   worktree
-- [ ] implement only four-ULP transient refinement, target-ledger semantics,
+- [x] implement only four-ULP transient refinement, target-ledger semantics,
   and direct `S09`/`Y03` structural ownership
 - [ ] commit one clean resumed tree and restart the complete compile,
   construction `1/1`, and structural `18/18` sequence twice
+- [ ] create the immutable acoustic ref only after both complete passes
+- [x] run no synthetic, rendered comparator, or listening work before that ref
+- [x] keep production, routing, cache, product exposure, Loophole, and Chorus
+  closed
+
+Decision:
+
+- compile passed; `S09` stopped at the `0.65` impulse-train event before `S10`
+  or a complete structural round
+- reconstructed rise/fall powers were `0x3fdb0a3d4f5c2900` and
+  `0x3fdb0a3d4f5c290a`, distance `10`; four ULPs did not preserve authored `p`
+- retained stop commit is `4cb82a2ef7731aeaf306d3955766c75c9863aa89`;
+  tree is `6083e84604bb95f561fd6b7c25aef55b9a49b12a`
+- conformance ledger round `10A` records the correction and stop; no synthetic
+  execution, rendered audio, listening, or acoustic ref exists
+
+## Batch 31.61 - Transform-Error Authority Reconciliation
+
+Status: complete; docs only
+
+- [x] record the Batch 31.60 stop and retained executable identity
+- [x] reject representation-local ULP counting rather than increment its bound
+- [x] freeze one scale-relative error rule covering the complete bounded
+  short-transform and derivative-score path
+- [x] bind `S09` to zero, equality, `64`/`65` ULP boundary, isolated impulse,
+  and `0.65` train vectors
+- [x] retain exact mapped target-ledger ownership in `S10` and compiled `Y03`
+- [x] propagate the stopped/resume state through active front doors and log
+- [x] keep candidate DSP, acoustic execution, production, routing, Loophole,
+  and Chorus unchanged
+
+Decision:
+
+- for non-negative finite scores `a,b`, use
+  `tau=64*f64::EPSILON*max(a,b)`; later `b` wins only when `b>a` and `b-a>tau`
+- `64` is the next-power-of-two budget above four rounding sites across the
+  maximum `12` short-transform stages; it owns the whole reconstruction and
+  score path rather than one observed bit distance
+- there is no absolute floor and scores remain unchanged
+- retained pre-acoustic identity may resume only after this docs closeout is
+  applied; all partial passes remain diagnostic
+
+## Batch 31.62 - Resume Transform-Bounded Linked STN Conformance
+
+Status: ready; retained isolated worktree, frozen correction only
+
+- [ ] apply the Batch 31.61 docs closeout commit to the retained worktree
+- [ ] replace only the ULP comparison and direct `S09`, `S10`, and compiled
+  `Y03` ownership
+- [ ] commit one clean resumed tree and restart complete compile, construction
+  `1/1`, and structural `18/18` conformance twice
 - [ ] create the immutable acoustic ref only after both complete passes
 - [ ] run no synthetic, rendered comparator, or listening work before that ref
 - [ ] keep production, routing, cache, product exposure, Loophole, and Chorus
@@ -1964,7 +2015,7 @@ Status: ready; retained isolated worktree, frozen correction only
 
 ## Later Batches
 
-Closed or paused without promotion. Batch 31.60 is the sole ready work. Every
+Closed or paused without promotion. Batch 31.62 is the sole ready work. Every
 later product batch still requires a
 separately admitted complete renderer:
 
@@ -2125,16 +2176,20 @@ separately admitted complete renderer:
   the pre-acoustic execution state auditable
 - [x] Batch 31.59 froze one four-ULP earliest-owner rule and exact `S09`/`Y03`
   ownership without changing candidate DSP or running acoustic work
-- [x] Contract `085` and every active front door now bind the retained
+- [x] Batch 31.60 proved that ULP-local rule incomplete on the frozen `0.65`
+  train event and stopped before complete structural or acoustic execution
+- [x] Batch 31.61 replaced ULP counting with one transform-bounded
+  scale-relative equality rule and complete boundary vectors
+- [x] Contract `085` and every active front door bind the retained Batch 31.62
   pre-acoustic resume and complete conformance restart
 
 ## Next Task
 
-Apply the Batch 31.59 docs closeout commit to retained isolated worktree
+Apply the Batch 31.61 docs closeout commit to retained isolated worktree
 `signal-candidate-31-58` on branch
 `candidate/g10-031-conformance-bound-linked-stn-noise-morph`. Implement only
-the four-ULP transient-refinement comparison, target-ledger semantics, and
-direct `S09`/`Y03` ownership. Commit the clean resumed tree, then restart the
-complete compile, construction `1/1`, and structural `18/18` sequence twice
-before creating an acoustic ref. Do not run acoustic gates, alter `main`, touch
+the scale-relative transient-refinement comparison and direct `S09`, `S10`, and
+compiled `Y03` ownership. Commit the clean resumed tree, then restart complete
+compile, construction `1/1`, and structural `18/18` conformance twice before
+creating an acoustic ref. Do not run acoustic gates, alter `main`, touch
 Loophole or Chorus, merge, or push.
