@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: private fixed-ratio Dream admitted; LayeredCloud brief frozen; overlaps paused
+Status: private fixed-ratio Dream admitted; LayeredCloud receipt invalid; overlaps paused
 Owner: core-product
 Updated: 2026-07-22
 Related contracts: `046`, `048`, `084`
@@ -1008,11 +1008,14 @@ may resume.
     admitted owners lack shared continuous-ratio and scheduler authority.
 67. Study and freeze one complete `LayeredCloud` owner. Complete; one
     pointer-led granular candidate is ready for isolated implementation.
+68. Implement `LayeredCloud` once under Rule 11. Complete; two clean
+    conformance rounds passed, but the synthetic receipt is invalid because
+    frozen `Y05` three-band and mapped-window diagnostics were absent.
 
 `Spectral`/`Rough`, both overlaps, dynamic ratios, and automatic routing still
 require separate reopening decisions backed by new complete-system evidence.
-`LayeredCloud` has docs-only candidate authority; it has no implementation or
-quality claim.
+`LayeredCloud` has one retained evidence-invalid checkpoint and no quality
+claim. Its renderer did not enter `main`.
 
 ## Current State
 
@@ -1468,8 +1471,8 @@ independent stereo admission before any minimal production admission.
 This is docs-only candidate authority. No Cloud DSP, harness, route, control,
 cache, dynamic-ratio, Loophole, or Chorus surface entered `main`. The upper
 overlap remains paused: Cloud can supply every `16x..32x` probe, but admitted
-Dream still supplies exact `16x` only. Batch 31.70 is ready for one isolated
-implementation of the frozen Cloud brief.
+Dream still supplies exact `16x` only. Batch 31.70 was authorized for one
+isolated implementation of the frozen Cloud brief.
 
 Batch 31.70 stopped before candidate source when conformance construction
 proved that a one-frame source cannot satisfy Cloud's frozen validity-weight
@@ -1486,10 +1489,27 @@ output or candidate DSP existed before this correction. The retained isolated
 worktree may resume only after this docs commit is applied and the complete
 conformance sequence passes twice unchanged.
 
+Batch 31.70 then froze checkpoint
+`ee42f50c4c338db4af8a7feaa89bb8b21e8d0860`, tree
+`cfc28c8c6c4095f0c91ae95d0724962656bcec97`, after two unchanged complete
+compile, construction `1/1`, and structural `8/8` rounds. Each structural
+round completed `101/101` rows and `51/51` renders. `Y01..Y05` returned green
+with `33/33` rows and `45/45` renders.
+
+That synthetic receipt is invalid. Post-run audit found that `Y05` implemented
+only whole-buffer balance, correlation, and width. It omitted the frozen
+three-band and mapped-window diagnostics and persisted no natural-stereo
+diagnostic values. The checkpoint therefore has no complete synthetic result,
+renderer-quality pass, or renderer-quality rejection. Long-form mono,
+comparator-relative stereo, and listening did not open. No repair or rerun is
+allowed on that checkpoint. The retained isolated state exists only through a
+docs-level evidence-integrity reassessment.
+
 ## Next Task
 
-Batch 31.70 only. Implement the frozen `LayeredCloud` authority once in the
-named isolated worktree. Pass two unchanged complete conformance rounds before
-freezing its single acoustic checkpoint, then run `Y01..Y05` in order. Do not
-change the brief, admitted renderers, overlaps, routing, controls, cache,
-dynamic ratio, Loophole, or Chorus. Do not push.
+Batch 31.71 only. Audit complete executable evidence ownership and decide at
+docs level whether the still-unjudged `LayeredCloud` topology warrants one
+fresh audited identity. Do not repair or rerun checkpoint `ee42f50c`. Delete
+the retained isolated state after that decision. Keep admitted renderers,
+overlaps, routing, controls, cache, dynamic ratio, Loophole, and Chorus
+unchanged. Do not push.

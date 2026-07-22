@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: active; Batch 31.69 complete, Batch 31.70 isolated candidate ready
+Status: active; Batch 31.70 receipt invalid, Batch 31.71 reassessment ready
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -2272,22 +2272,22 @@ Canonical authority:
 
 ## Batch 31.70 - Isolated LayeredCloud Candidate
 
-Status: ready to resume after pre-code authority reconciliation
+Status: complete; synthetic receipt invalid, no quality result
 
-- [ ] start from the Batch 31.69 closeout commit and create worktree
+- [x] start from the Batch 31.69 closeout commit and create worktree
   `signal-candidate-31-70` on branch `candidate/g10-031-layered-cloud`
-- [ ] implement the frozen private `LayeredCloud` renderer and compile-linked
+- [x] implement the frozen private `LayeredCloud` renderer and compile-linked
   Rule 11 authority without changing one DSP, source, seed, assertion,
   threshold, comparator, or listening choice
-- [ ] pass the complete compile, construction, and `S01..S08` conformance
+- [x] pass the complete compile, construction, and `S01..S08` conformance
   sequence twice unchanged before freezing the acoustic checkpoint
-- [ ] create local ref
+- [x] create local ref
   `refs/signal-evidence/creative/layered-cloud/31-70-acoustic`
-- [ ] run `Y01..Y05` in order with incremental receipts and stop at the first
-  terminal miss
-- [ ] open long-form mono and independent stereo listening only after every
-  structural and synthetic owner passes
-- [ ] keep admitted DSP, overlaps, routing, controls, cache, dynamic ratio,
+- [x] run `Y01..Y05` in order; invalidate the apparent green result when the
+  post-run audit finds missing frozen `Y05` diagnostics
+- [x] keep long-form mono and independent stereo listening closed because the
+  complete synthetic receipt did not pass
+- [x] keep admitted DSP, overlaps, routing, controls, cache, dynamic ratio,
   Loophole, Chorus, and `main` unchanged
 
 Pre-conformance reconciliation:
@@ -2300,13 +2300,44 @@ Pre-conformance reconciliation:
 - [x] replace impossible boundary success rows with `L=2H` and `L=12H`
 - [x] correct structural authority from `100` to `101` rows while retaining
   `51` renders
-- [ ] apply the docs closeout commit to the retained clean worktree and resume
+- [x] apply the docs closeout commit to the retained clean worktree and resume
   the complete implementation under otherwise unchanged authority
+
+Decision:
+
+- checkpoint `ee42f50c4c338db4af8a7feaa89bb8b21e8d0860`, tree
+  `cfc28c8c6c4095f0c91ae95d0724962656bcec97`, passed two complete compile,
+  construction `1/1`, and structural `8/8` rounds; each structural receipt
+  records `101/101` rows and `51/51` renders
+- `Y01..Y04` completed and the `Y05` executable returned green; total
+  synthetic counts were `33/33` rows and `45/45` renders
+- post-run audit proved `Y05` measured only whole-buffer balance,
+  correlation, and width; it omitted the frozen three-band and mapped-window
+  diagnostics and persisted no natural-stereo diagnostic values
+- the green synthetic receipt is invalid; it is not a renderer-quality pass
+  or rejection, and no comparator or listening pack opened
+- the isolated branch, worktree, build state, receipts, and evidence ref remain
+  retained only through Batch 31.71's required evidence-integrity decision
+
+## Batch 31.71 - LayeredCloud Evidence-Integrity Reassessment
+
+Status: ready; docs only
+
+- [ ] record Batch 31.70 as evidence-invalid without using its output as
+  renderer-quality evidence
+- [ ] audit every frozen acoustic helper, assertion, diagnostic, receipt field,
+  row, render, and construction-manifest edge against executable ownership
+- [ ] decide whether the still-unjudged pointer-led topology warrants one fresh
+  audited identity or closes here
+- [ ] delete the retained worktree, branch, build state, generated output, and
+  local evidence ref after the decision is committed
+- [ ] keep candidate DSP, product code, routing, controls, cache, dynamic ratio,
+  Loophole, and Chorus unchanged
 
 ## Later Batches
 
-Closed or paused beyond the isolated candidate. Batch 31.70 is the sole ready
-batch.
+Closed or paused beyond the evidence-integrity decision. Batch 31.71 is the
+sole ready batch.
 Every later product batch still requires separate authority:
 
 - minimal `LayeredCloud` admission, only after every frozen gate passes
@@ -2513,9 +2544,8 @@ Every later product batch still requires separate authority:
 
 ## Next Task
 
-Batch 31.70 only. Implement the frozen `LayeredCloud` authority once in
-worktree `signal-candidate-31-70` on branch
-`candidate/g10-031-layered-cloud`. Pass two unchanged conformance rounds
-before freezing the one acoustic checkpoint, then run `Y01..Y05` in order.
-Keep `main`, the brief, admitted renderers, overlaps, routing, controls, cache,
-dynamic ratio, Loophole, and Chorus unchanged. Do not push.
+Batch 31.71 only. Reconcile the invalid Batch 31.70 synthetic receipt at docs
+level. Audit complete executable evidence ownership, decide whether one fresh
+audited identity is justified, then delete the retained isolated state. Do not
+repair or rerun the checkpoint. Keep admitted renderers, overlaps, routing,
+controls, cache, dynamic ratio, Loophole, and Chorus unchanged. Do not push.

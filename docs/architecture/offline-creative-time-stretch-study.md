@@ -1,6 +1,6 @@
 # Offline Creative Time-Stretch Study
 
-Status: `DirectRenewalDream` admitted; LayeredCloud brief frozen; Batch 31.70 ready
+Status: `DirectRenewalDream` admitted; LayeredCloud receipt invalid; Batch 31.71 ready
 Owner: dsp
 Updated: 2026-07-22
 Contract: `085`
@@ -321,7 +321,7 @@ same exact target frame count.
 | `2x` to `4x` | overlap paused | no automatic route |
 | `4x` to `16x` | private `DirectRenewalDream` admitted at exact `4x`, `8x`, and `16x` | no public route |
 | `16x` to `32x` | upper overlap paused | Cloud can render continuously; Dream cannot render interior ratios |
-| `32x` to `100x` | complete `LayeredCloud` brief frozen | isolated candidate not yet implemented |
+| `32x` to `100x` | `LayeredCloud` checkpoint evidence-invalid | no quality result or admitted owner |
 
 The coherent lower owner begins from the retained `OfflineHighQuality`
 renderer. That reuse does not widen its transparent-quality claim beyond its
@@ -889,14 +889,23 @@ The complete authority is
 It supports every fixed ratio from `16x` through `100x`, including the Cloud
 side of future upper-overlap probes. The upper overlap remains paused because
 admitted `DirectRenewalDream` supports exact `16x` but no interior ratio.
-Batch 31.70 may implement the Cloud brief once in its named isolated worktree.
+Batch 31.70 was authorized to implement the Cloud brief once in its named
+isolated worktree.
 
 Batch 31.70's construction audit then stopped before source creation. The
 brief admitted sub-hop sources that its unit-rate, zero-padded grain geometry
 cannot cover without a zero denominator. Cloud now requires `L>=H`, where
 `H=round_half_up(F/64)`, and rejects shorter non-empty input before allocation.
-This is a request-boundary correction, not a scheduler or sound change. The
-retained isolated worktree is ready to resume under the corrected brief.
+This was a request-boundary correction, not a scheduler or sound change. The
+isolated worktree resumed under the corrected brief.
+
+Batch 31.70 subsequently passed two unchanged complete conformance rounds and
+froze checkpoint `ee42f50c4c338db4af8a7feaa89bb8b21e8d0860`. Its apparent
+`Y01..Y05` green result is invalid: the compiled `Y05` helper omitted the
+frozen three-band and mapped-window natural-stereo diagnostics. No comparator
+or listening stage opened, so the pointer-led Cloud topology has neither a
+quality pass nor a quality rejection. Batch 31.71 owns the docs-only evidence-
+integrity decision; the checkpoint cannot be repaired or rerun.
 
 ## Sources
 
@@ -940,9 +949,8 @@ retained isolated worktree is ready to resume under the corrected brief.
 
 ## Next Task
 
-Run Batch 31.70 only. Implement the frozen `LayeredCloud` authority once in
-worktree `signal-candidate-31-70` on branch
-`candidate/g10-031-layered-cloud`. Complete two unchanged conformance rounds
-before freezing its one acoustic checkpoint, then run `Y01..Y05`. Keep the
-brief, admitted renderers, overlaps, routing, controls, cache, dynamic ratio,
-Loophole, and Chorus unchanged. Do not push.
+Run Batch 31.71 only. Audit complete executable evidence ownership and decide
+whether the still-unjudged `LayeredCloud` topology warrants one fresh audited
+identity. Do not repair or rerun Batch 31.70. Delete its retained isolated
+state after the decision. Keep admitted renderers, overlaps, routing, controls,
+cache, dynamic ratio, Loophole, and Chorus unchanged. Do not push.

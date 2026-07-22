@@ -43,7 +43,7 @@ Keep milestone sequencing in `roadmaps/`.
 ## Next Task
 
 Keep the `g10.030` transparent successor program closed. Run `g10.031` Batch
-31.70 only in the disposable worktree named by the frozen `LayeredCloud`
-brief. Pass two complete unchanged conformance rounds before its acoustic
-checkpoint. Keep `main`, overlaps, product routing, and public exposure
-unchanged.
+31.71 only. Reconcile the invalid `LayeredCloud` receipt and decide whether a
+fresh audited identity is justified before deleting retained isolated state.
+Do not repair or rerun the checkpoint. Keep overlaps, product routing, and
+public exposure unchanged.

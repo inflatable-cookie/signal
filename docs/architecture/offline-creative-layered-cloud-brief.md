@@ -1,10 +1,10 @@
 # Offline Creative LayeredCloud Renderer Brief
 
-Status: frozen; one isolated candidate ready
+Status: closed for Batch 31.70; synthetic receipt invalid
 Owner: dsp
 Updated: 2026-07-22
 Contract: `085`
-Roadmap: `g10.031`, Batch 31.69
+Roadmap: `g10.031`, Batches 31.69-31.71
 
 ## Decision
 
@@ -471,6 +471,26 @@ listening, cleanup, and admission laws are unchanged. Structural authority is
 now exactly `101` rows and `51` renders. No candidate DSP or acoustic output
 existed before this correction.
 
+## Batch 31.70 Evidence Result
+
+Checkpoint `ee42f50c4c338db4af8a7feaa89bb8b21e8d0860`, tree
+`cfc28c8c6c4095f0c91ae95d0724962656bcec97`, passed two unchanged complete
+compile, construction `1/1`, and structural `8/8` rounds. Both structural
+receipts completed `101/101` rows and `51/51` renders. The immutable checkpoint
+then returned green for `Y01..Y05`, totaling `33/33` rows and `45/45` renders.
+
+The synthetic receipt is invalid. Its compiled `Y05` helper calculated only
+whole-buffer balance, correlation, and width. It did not implement the frozen
+three-band or four-second/two-second-hop mapped-window diagnostics, and its
+receipt persisted no natural-stereo diagnostic values. Construction therefore
+failed its Rule 11 completeness duty even though it returned green before the
+checkpoint was created.
+
+No Cloud quality conclusion follows. Long-form mono, comparator-relative
+stereo, and listening did not open. Do not repair, rerun, or promote this
+checkpoint. Retain its isolated state only through Batch 31.71's docs-level
+evidence-integrity decision.
+
 ## Sources
 
 - [Csound `sndwarpst` manual](https://csound.com/manual/opcodes/sndwarpst/)
@@ -482,8 +502,8 @@ existed before this correction.
 
 ## Next Task
 
-Run Batch 31.70 only. Implement this brief once in the named isolated worktree
-under Contract `085` Rule 11. Reach one immutable acoustic checkpoint only
-after two clean complete conformance rounds, then run `Y01..Y05`. Do not change
-the brief, admitted renderers, product routing, controls, cache, dynamic ratio,
-Loophole, or Chorus. Do not push.
+Run Batch 31.71 only. Audit every executable acoustic helper, assertion,
+diagnostic, receipt field, and construction edge, then decide whether the
+still-unjudged topology warrants one fresh audited identity. Do not repair or
+rerun Batch 31.70. Keep admitted renderers, product routing, controls, cache,
+dynamic ratio, Loophole, and Chorus unchanged. Do not push.

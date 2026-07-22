@@ -83,9 +83,9 @@ strict lane.
 
 ## Next Task
 
-Run `g10.031` Batch 31.70 only. Implement the frozen `LayeredCloud` authority
-once in its named isolated worktree. Pass two unchanged conformance rounds
-before its acoustic checkpoint, then run `Y01..Y05`. Keep `main`, admitted
-renderers, overlaps, routing, controls, cache, dynamic ratio, Loophole, and
-Chorus unchanged. Do not push.
+Run `g10.031` Batch 31.71 only. Reconcile the invalid Batch 31.70
+`LayeredCloud` synthetic receipt at docs level and decide whether one fresh
+audited identity is justified. Do not repair or rerun the checkpoint. Keep
+admitted renderers, overlaps, routing, controls, cache, dynamic ratio,
+Loophole, and Chorus unchanged. Do not push.
 Only drop into `specs/` when a strict lane is explicitly reopened.

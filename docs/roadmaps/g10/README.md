@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: creative stretch active; Batch 31.70 isolated candidate ready
+Status: creative stretch active; Batch 31.70 receipt invalid, Batch 31.71 ready
 Updated: 2026-07-22
 
 ## Why this generation matters now
@@ -273,8 +273,9 @@ Do not start Loophole or Chorus planning from Signal internals.
     retained the lower-overlap pause because Dream has no mandatory interior
     renders or shared coherent scheduler; Batch 31.69 froze one complete
     pointer-led granular `LayeredCloud` authority for fixed `16x..100x`;
-    Batch 31.70 is ready for its isolated candidate; explicit `Cyclic` stays
-    closed
+    Batch 31.70 receipt is invalid because frozen `Y05` diagnostics were
+    absent; Batch 31.71 owns the docs-only reassessment; explicit `Cyclic`
+    stays closed
 
 ## Stretch Boundary
 
@@ -538,14 +539,16 @@ normalization, exact crop, and fixed `16x..100x` coverage. No Cloud DSP entered
 `16x..32x` render.
 Batch 31.70 then stopped before candidate source when sub-hop input contradicted
 the frozen validity-weight floor. Authority now rejects non-empty `L<H` before
-allocation and owns `101` structural rows. The retained isolated worktree is
-ready to resume; no renderer or acoustic output changed.
+allocation and owns `101` structural rows. After that docs correction, the
+candidate passed two unchanged conformance rounds and froze checkpoint
+`ee42f50c`. The apparent `Y01..Y05` green result is invalid because `Y05`
+omitted frozen three-band and mapped-window natural-stereo diagnostics. No
+comparator or listening stage opened, and no Cloud quality conclusion follows.
 
 ## Next Task
 
-Run `g10.031` Batch 31.70 only. Implement the frozen `LayeredCloud` authority
-once in worktree `signal-candidate-31-70` on branch
-`candidate/g10-031-layered-cloud`. Pass two unchanged conformance rounds before
-the one acoustic checkpoint, then run `Y01..Y05`. Keep `g10.028`, `main`,
-overlaps, routing, controls, cache, dynamic ratio, Loophole, Chorus, and
-cross-repo work unchanged. Do not push.
+Run `g10.031` Batch 31.71 only. Audit complete executable evidence ownership
+and decide whether the still-unjudged `LayeredCloud` topology warrants one
+fresh audited identity. Do not repair or rerun Batch 31.70. Keep `g10.028`,
+admitted renderers, overlaps, routing, controls, cache, dynamic ratio,
+Loophole, Chorus, and cross-repo work unchanged. Do not push.
