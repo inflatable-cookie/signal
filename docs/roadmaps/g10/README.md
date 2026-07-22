@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: creative stretch active; linked STN synthetic reassessment ready
+Status: creative stretch paused; no complete owner ready
 Updated: 2026-07-22
 
 ## Why this generation matters now
@@ -495,15 +495,18 @@ incomplete on the frozen `0.65` train event and stopped pre-acoustic. Batch
 31.61 froze one transform-bounded scale-relative rule. Batch 31.62 then passed
 two complete conformance rounds and froze one exact acoustic checkpoint. Its
 one-shot synthetic command stopped in the first selected owner, `Y09`, after
-about `59` minutes of compute without a completed-owner result. Later
-synthetic and listening stages stayed closed. Rejected source and build state
-were deleted; the local evidence ref remains for Batch 31.63 docs-only
-reassessment. No renderer is admitted.
+about `59` minutes of compute without a completed-owner result. Batch 31.63
+then proved executable `Y09` omitted four canonical hard paths, construction
+did not bind assertions to owners, and the unoptimized monolithic gate had no
+frozen execution envelope or incremental receipt. The result is invalid
+evidence, not an acoustic rejection or release-profile cost result. Repeated
+incomplete executable authority closes linked STN. The evidence ref is deleted;
+no renderer is admitted and no replacement owner is ready.
 
 ## Next Task
 
-Run `g10.031` Batch 31.63 as docs-only reassessment from the retained local
-evidence ref. Classify `Y09` non-completion without rerun, optimization, or
-candidate recovery, then close the evidence question and delete the ref. Keep
-`g10.028`, routing, product exposure, other creative characters, and cross-repo
-work unchanged. Do not merge or push.
+Operator checkpoint. Decide whether to commission one materially simpler,
+source-backed complete creative owner study or pause `g10.031` indefinitely.
+No prior candidate or implementation batch is ready. Keep `g10.028`, routing,
+product exposure, other creative characters, and cross-repo work unchanged.
+Do not merge or push.

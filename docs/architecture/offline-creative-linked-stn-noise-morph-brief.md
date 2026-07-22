@@ -1,6 +1,6 @@
 # Offline Creative LinkedStnNoiseMorph Renderer Brief
 
-Status: rejected at Batch 31.62 synthetic `Y09`; reassessment pending
+Status: closed; Batch 31.62 synthetic receipt invalid, no acoustic result
 Owner: dsp
 Updated: 2026-07-22
 Contract: `085`
@@ -1658,6 +1658,46 @@ The candidate worktree, branch, build state, and ignored receipt were deleted
 after closeout. The local evidence ref remains through Batch 31.63 so exact
 source and tests stay inspectable. No candidate DSP entered `main`.
 
+## Batch 31.63 Executable-Evidence Reassessment
+
+The retained ref was inspected without candidate execution. The `59`-minute
+non-completion does not prove an acoustic assertion miss or production-cost
+failure. The frozen command used Cargo's unoptimized test profile and owned no
+timeout, concurrency, order, or failure-output contract.
+
+The checkpoint was already evidence-invalid. Canonical `Y09` required four
+paths absent from executable `synthetic_y09`:
+
+- swapped-input render and swap-back commutation
+- duplicate stereo against a separately rendered mono result
+- descriptor-diagonal preservation
+- non-decreasing residual side energy across `space`
+
+The function did cover repeat, length, finiteness, peak, whole and band
+balance, dominance sign, duplicate/common-negation channel equality,
+anti-phase cancellation, and balance spread. That partial coverage cannot
+stand in for the missing hard rows.
+
+Construction asserted `28` distinct owner IDs and non-null function pointers.
+It did not map canonical assertions or receipt fields to executable code.
+`Y09` then placed `5` controls by `3` ratios by `3` spaces in one owner and
+rendered every row twice: `45` rows, `90` complete stereo renders,
+`80,640,000` output frames, plus exact-length source and output band FFTs. No
+row persisted before owner completion. The command returned no assertion,
+numeric row, output digest, or generated acoustic receipt.
+
+Classification: incomplete executable-evidence authority. The checkpoint has
+neither a synthetic pass nor a synthetic acoustic rejection. No release-profile
+performance conclusion is available.
+
+This repeats Batch 31.53's dominant incomplete-authority class after Contract
+`085` Rule 11 was added to prevent it. Another linked-STN evidence binding
+would be a third protocol repair around the same large renderer, not a
+materially new architecture. `ConformanceBoundLinkedStnNoiseMorph` and the
+linked-STN family close without promotion. The local evidence ref was deleted
+after this decision. The PaulX-like neutral `Dream` target remains active and
+unadmitted.
+
 ## Sources
 
 - [Creative source triangulation](../research/specimen-dossiers/creative-stretch-source-triangulation.md)
@@ -1670,9 +1710,7 @@ source and tests stay inspectable. No candidate DSP entered `main`.
 
 ## Next Task
 
-Run Batch 31.63 as docs-only evidence reassessment. Inspect the retained ref,
-frozen `Y09` body, command result, and computational shape without executing
-candidate DSP. Decide whether this was candidate computational infeasibility
-or incomplete executable-evidence authority, then close the evidence question
-and delete the local ref. Do not rerun, optimize, recover a worktree, alter
-production, merge, or push.
+Operator checkpoint. Decide whether to commission one materially simpler,
+source-backed complete owner study or pause `g10.031`. No prior candidate or
+evidence gate may resume. Do not recover a worktree, alter production, touch
+Loophole or Chorus, merge, or push.

@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: active PaulX-like `Dream`; linked STN synthetic reassessment ready
+Status: active PaulX-like `Dream`; no creative owner ready
 Owner: core-product
 Updated: 2026-07-22
 Related contracts: `046`, `048`, `084`
@@ -672,6 +672,14 @@ metric, threshold, assertion, comparator row, listening pack, and gate order.
 Executable acoustic owners must compile during conformance but may not run or
 produce inspectable renders before the acoustic checkpoint.
 
+Construction must prove executable evidence completeness, not only owner names
+or function pointers. Every frozen acoustic assertion and receipt field must
+map to one compile-linked owner manifest entry. The manifest also freezes row
+count, render count, build profile, test-runner concurrency and ordering,
+timeout behavior, failure-output capture, and incremental receipt boundary.
+An owner whose worst-case row cannot complete and persist its result inside the
+declared execution envelope is not ready for checkpoint creation.
+
 Before that checkpoint, corrections are allowed only when they make code or
 tests conform to existing canonical authority. Compiler, type, visibility,
 ownership, allocation, tie, boundary, state-machine, and exact-vector defects
@@ -1306,15 +1314,38 @@ synthetic `10/10` admission did not exist. No later synthetic owner, comparator
 render, or listening stage ran. The exact assertion subtype is unavailable and
 must not be inferred.
 
-Rule 11 makes this terminal for the checkpoint. The worktree, branch, build
-state, and ignored receipt were deleted after closeout. Local ref
-`refs/signal-evidence/creative/linked-stn/31-58-acoustic` remains only through
-the required Batch 31.63 reassessment. No creative renderer is admitted.
+Batch 31.63 inspected the retained source without executing it. The result is
+an executable-evidence authority failure, not an acoustic or renderer-cost
+result:
+
+- frozen `Y09` required swapped-input commutation, duplicate-versus-mono,
+  descriptor-diagonal, and residual-side-energy assertions; its executable
+  owner contained none of them
+- construction proved only `28` distinct IDs and non-null function pointers;
+  it did not bind assertions to owners
+- `Y09` combined `45` stereo rows, `90` full renders, and exact-length band
+  transforms in one owner without incremental receipt persistence
+- the frozen Effigy command used Cargo's unoptimized test profile and declared
+  no timeout, concurrency, ordering, or failure-output boundary
+- no assertion result, numeric row, output digest, or acoustic receipt exists
+
+The checkpoint cannot pass or fail a gate it did not execute completely. Its
+synthetic receipt is invalid. No linked-STN acoustic result exists and no claim
+about release-profile performance follows from the debug non-completion.
+
+This repeats Batch 31.53's incomplete-executable-authority class after Rule 11
+was introduced specifically to prevent it. A third evidence-only rebinding
+would be protocol churn around the same large candidate, not a materially new
+complete owner. Linked STN closes without promotion. The worktree, branch, and
+build state remain deleted; the local evidence ref was deleted when this
+reassessment closed. No creative renderer is admitted.
 
 ## Next Task
 
-Run Batch 31.63 as docs-only reassessment from the retained evidence ref.
-Classify `Y09` non-completion as candidate computational-shape failure or
-incomplete executable-evidence authority, without rerun or implementation.
-Close the evidence question and delete the ref. Keep production, routing,
-product exposure, Loophole, and Chorus unchanged. Do not merge or push.
+Operator checkpoint. The PaulX-like neutral `Dream` target remains active, but
+diffusive, cyclic, renewal, and linked-STN owners are closed and no
+implementation batch is ready. Decide whether to commission one materially
+simpler source-backed owner study or pause `g10.031`. Do not resume a prior
+candidate, reopen its evidence gate, or start implementation from roadmap
+history. Keep production, routing, product exposure, Loophole, and Chorus
+unchanged. Do not push.

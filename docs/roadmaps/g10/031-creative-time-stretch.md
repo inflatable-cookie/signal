@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: active; Batch 31.62 rejected, Batch 31.63 reassessment ready
+Status: paused; linked STN closed, no complete owner ready
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -2001,7 +2001,7 @@ Decision:
 
 ## Batch 31.62 - Resume Transform-Bounded Linked STN Conformance
 
-Status: complete; candidate rejected at one-shot synthetic `Y09`
+Status: complete; synthetic non-completion, receipt later invalidated
 
 - [x] apply the Batch 31.61 docs closeout commit to the retained worktree
 - [x] replace only the ULP comparison and direct `S09`, `S10`, and compiled
@@ -2038,25 +2038,45 @@ Decision:
 
 ## Batch 31.63 - Linked STN Synthetic Execution Reassessment
 
-Status: ready; docs and evidence only
+Status: complete; linked STN closed without acoustic result
 
-- [ ] inspect the retained acoustic ref, frozen `Y09` owner, command result,
+- [x] inspect the retained acoustic ref, frozen `Y09` owner, command result,
   and runtime shape without executing candidate DSP
-- [ ] classify timeout/non-completion separately from an acoustic assertion
+- [x] classify timeout/non-completion separately from an acoustic assertion
   miss; do not invent the suppressed assertion result
-- [ ] decide whether the frozen gate was executable evidence, whether the
+- [x] decide whether the frozen gate was executable evidence, whether the
   renderer's computational shape itself failed, or whether authority was
   incomplete
-- [ ] close linked STN or freeze one evidence-backed complete next owner; no
+- [x] close linked STN or freeze one evidence-backed complete next owner; no
   local optimization, release-build substitution, split owner, or rerun
-- [ ] delete the local evidence ref when the evidence question closes
-- [ ] keep candidate implementation, production, routing, cache, product
+- [x] delete the local evidence ref when the evidence question closes
+- [x] keep candidate implementation, production, routing, cache, product
   exposure, Loophole, and Chorus closed
+
+Decision:
+
+- the non-completion is not an acoustic assertion failure and does not prove
+  release-profile computational infeasibility
+- executable `Y09` omitted canonical swapped-input, duplicate-versus-mono,
+  descriptor-diagonal, and residual-side-energy hard rows
+- construction counted owner IDs and function pointers but did not bind
+  canonical assertions or receipt fields to executable owners
+- one unoptimized owner combined `45` rows, `90` full stereo renders,
+  `80,640,000` output frames, and exact-length band FFTs without incremental
+  row persistence or a frozen execution envelope
+- no valid synthetic receipt exists; linked STN has no acoustic pass or reject
+- this repeats Batch 31.53's incomplete-executable-authority class after Rule
+  11 was introduced to prevent it; another evidence-only identity is closed as
+  protocol churn
+- linked STN closes without promotion; the PaulX-like neutral `Dream` target
+  remains active and unadmitted
+- the local evidence ref was deleted; no candidate source or product surface
+  entered `main`
 
 ## Later Batches
 
-Closed or paused without promotion. Batch 31.63 is the sole ready work. Every
-later product batch still requires a
+Closed or paused without promotion. No implementation or reassessment batch is
+ready. Every later product batch still requires a
 separately admitted complete renderer:
 
 - minimal production admission
@@ -2228,12 +2248,18 @@ separately admitted complete renderer:
   completed-owner result; later acoustic and listening stages remained closed
 - [x] rejected candidate source and build state were removed from the isolated
   branch while its local evidence ref was retained for reassessment
+- [x] Batch 31.63 proved the checkpoint's `Y09` owner and receipt construction
+  incomplete against canonical authority without running candidate DSP
+- [x] the synthetic non-completion was classified as invalid evidence, not an
+  acoustic rejection or release-profile performance result
+- [x] repeated incomplete executable authority closed linked STN without
+  promotion; no replacement owner was inferred
+- [x] the local evidence ref was deleted after reassessment
 
 ## Next Task
 
-Run Batch 31.63 as docs-only reassessment from the retained local evidence ref.
-Determine whether `Y09` non-completion is a candidate computational-shape
-failure or an executable-evidence authority failure. Do not rerun, optimize,
-split, or reinterpret the frozen checkpoint. Do not recover a worktree, write
-candidate DSP, alter production or product routing, touch Loophole or Chorus,
-merge, or push.
+Operator checkpoint. Decide whether to commission one materially simpler,
+source-backed complete owner study or pause `g10.031` indefinitely. No prior
+candidate, evidence gate, or implementation batch is ready. Do not recover a
+worktree, alter production or product routing, touch Loophole or Chorus, merge,
+or push.
