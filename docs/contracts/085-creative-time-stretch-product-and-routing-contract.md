@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: active PaulX-like `Dream`; private fixed-ratio renderer admitted
+Status: active PaulX-like `Dream`; private fixed-ratio renderer admitted; lower overlap paused
 Owner: core-product
 Updated: 2026-07-22
 Related contracts: `046`, `048`, `084`
@@ -1420,10 +1420,24 @@ only exact fixed `4x`, `8x`, and `16x` neutral `Dream`. No public control,
 automatic route, cache identity, dynamic ratio, other character, report or
 artifact product surface, Loophole, or Chorus authority follows.
 
+Batch 31.68 found no complete lower-overlap architecture under the admitted
+renderer boundaries. `OfflineHighQuality` supports arbitrary positive fixed
+ratios on its centered padded STFT lattice. `DirectRenewalDream` rejects every
+ratio except exact `4x`, `8x`, and `16x` and owns a different synthesis lattice
+and asymmetric exterior envelope. It cannot render the mandatory exact `2x`
+or interior `2x..4x` probes.
+
+A hard switch at `4x`, a post-resampled Dream render, a second stretch pass,
+or an exact-`4x` output blend does not satisfy Rules 1, 2, and 4. None supplies
+both owners on one map, one boundary alignment, and every below/inside/above
+probe. The lower overlap remains paused. Both admitted renderers remain
+unchanged. Reopening requires a separately admitted complete lower creative
+owner or a newly versioned and re-admitted generalized Dream renderer.
+
 ## Next Task
 
-Batch 31.68 only. Reassess Contract `085`'s paused `2x..4x`
-coherent/diffusive overlap against the admitted fixed-ratio `Dream` owner.
-Change documentation only. Freeze one complete architecture or retain the
-pause; do not implement blending, ratio expansion, routing, controls, cache,
-Loophole, or Chorus. Do not push.
+Batch 31.69 only. Study one complete `LayeredCloud` owner for the future
+`32x..100x` range and exact `16x`/`32x` boundary obligations. Change
+documentation only. Freeze at most one source-backed complete owner brief or
+close the lane. Do not implement candidate DSP, overlap, routing, controls,
+cache, Loophole, or Chorus. Do not push.

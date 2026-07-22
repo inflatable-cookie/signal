@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: active; Batch 31.67 complete, Batch 31.68 reassessment ready
+Status: active; Batch 31.68 complete, Batch 31.69 owner study ready
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -2207,26 +2207,57 @@ Decision:
 
 ## Batch 31.68 - Coherent/Dream Lower-Overlap Reassessment
 
-Status: ready; docs and architecture only
+Status: complete; lower overlap remains paused
 
-- [ ] re-audit the admitted exact-ratio `Dream` owner against Contract `085`'s
+- [x] re-audit the admitted exact-ratio `Dream` owner against Contract `085`'s
   paused `2x..4x` coherent/diffusive overlap intent
-- [ ] determine whether the frozen coherent renderer and admitted `Dream`
+- [x] determine whether the frozen coherent renderer and admitted `Dream`
   owner can share one map, boundary, level, image, and deterministic blend
   without changing either admitted renderer
-- [ ] treat exact `2x`, interior overlap probes, and exact `4x` as mandatory
+- [x] treat exact `2x`, interior overlap probes, and exact `4x` as mandatory
   evidence boundaries; do not infer continuous-ratio support from `4x`
-- [ ] decide whether one complete lower-overlap architecture can be frozen or
+- [x] decide whether one complete lower-overlap architecture can be frozen or
   the overlap must remain paused
-- [ ] change documentation only; do not add adapters, blends, ratio support,
+- [x] change documentation only; do not add adapters, blends, ratio support,
   public controls, routing, cache, Loophole, or Chorus
+
+Decision:
+
+- `OfflineHighQuality` covers arbitrary positive fixed ratios, but
+  `DirectRenewalDream` supports only exact `4x`, `8x`, and `16x`; mandatory
+  exact `2x` and interior probes have no Dream render
+- their frame lattices, schedulers, and exterior envelopes are not shared
+- a hard switch, post-resample, second stretch pass, or exact-`4x` blend cannot
+  satisfy Contract `085` Rules 1, 2, and 4
+- the lower overlap remains paused; neither renderer changes or fails
+- reopening requires one separately admitted complete lower creative owner or
+  a newly versioned and re-admitted generalized Dream renderer
+
+## Batch 31.69 - LayeredCloud Owner Feasibility Study
+
+Status: ready; docs, research, and architecture only
+
+- [ ] audit existing source-backed cloud, spectral, and granular evidence for
+  one complete owner of the future `32x..100x` range
+- [ ] bind exact fixed-ratio evidence at the `16x` boundary, `32x`, and one
+  high-range point no lower than `100x`
+- [ ] require one monotonic source map, exact target length, bounded and
+  deterministic voice/state ownership, linked stereo, one normalization law,
+  and explicit exterior boundaries
+- [ ] decide whether one owner can later meet the `16x..32x` upper-overlap
+  obligations without treating an arbitrary wet stack as a renderer
+- [ ] freeze at most one source-backed complete owner brief or close the lane;
+  do not create a menu of mechanisms
+- [ ] change documentation only; keep `DirectRenewalDream`, candidate DSP,
+  overlap implementation, routing, controls, cache, dynamic ratio, Loophole,
+  and Chorus unchanged
 
 ## Later Batches
 
-Closed or paused beyond lower-overlap reassessment. Batch 31.68 is the sole
-ready batch. Every later product batch still requires separate authority:
+Closed or paused beyond the owner study. Batch 31.69 is the sole ready batch.
+Every later product batch still requires separate authority:
 
-- `LayeredCloud` study and candidate
+- `LayeredCloud` candidate, only if Batch 31.69 freezes a complete owner
 - diffusive/cloud overlap
 - dynamic-ratio state continuity
 - cache and product-path review
@@ -2421,11 +2452,15 @@ ready batch. Every later product batch still requires separate authority:
   `88/88` rows with `76/76` renders passed
 - [x] no public API, route, cache identity, dynamic ratio, other character,
   Loophole, or Chorus surface entered the admission
+- [x] Batch 31.68 proved no unchanged-renderer `2x..4x` overlap can satisfy
+  the shared-map and mandatory-probe rules
+- [x] the lower overlap remains paused without rejecting or changing either
+  admitted renderer
 
 ## Next Task
 
-Batch 31.68 only. Reassess the paused `2x..4x` coherent/`Dream` overlap against
-the admitted fixed-ratio owner and Contract `085`. Change documentation only.
-Either freeze one complete lower-overlap architecture or keep the overlap
-paused. Do not implement ratio expansion, blending, routing, controls, cache,
-Loophole, or Chorus. Do not push.
+Batch 31.69 only. Study one complete `LayeredCloud` owner for the future
+`32x..100x` range and exact `16x`/`32x` boundary obligations. Change
+documentation only. Freeze at most one source-backed complete owner brief or
+close the lane. Do not implement candidate DSP, overlap, routing, controls,
+cache, dynamic ratio, Loophole, or Chorus. Do not push.

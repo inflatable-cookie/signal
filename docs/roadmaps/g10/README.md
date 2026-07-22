@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: creative stretch active; Batch 31.68 reassessment ready
+Status: creative stretch active; Batch 31.69 owner study ready
 Updated: 2026-07-22
 
 ## Why this generation matters now
@@ -270,8 +270,9 @@ Do not start Loophole or Chorus planning from Signal internals.
     direct-renewal product-gate reset and freezes one complete
     `DirectRenewalDream` authority; Batch 31.66 passed the complete fixed-ratio
     candidate; Batch 31.67 admitted its private unrouted renderer; Batch 31.68
-    is ready for docs-only lower-overlap reassessment; explicit `Cyclic` stays
-    closed
+    retained the lower-overlap pause because Dream has no mandatory interior
+    renders or shared coherent scheduler; Batch 31.69 is ready for one
+    docs-only `LayeredCloud` owner study; explicit `Cyclic` stays closed
 
 ## Stretch Boundary
 
@@ -524,12 +525,14 @@ byte-identical to checkpoint `760da32d`; construction `1/1`, structural
 `10/10`, and synthetic `88/88` rows with `76/76` renders pass after
 integration. The module is private, production-compiled, exact-ratio only, and
 unrouted. No public control, route, cache, dynamic ratio, other character, or
-cross-repo surface opened.
+cross-repo surface opened. Batch 31.68 retained the `2x..4x` overlap pause:
+Dream cannot render exact `2x` or interior probes, and the admitted renderers
+do not share frame or boundary ownership. Neither renderer changed or failed.
 
 ## Next Task
 
-Run `g10.031` Batch 31.68 only. Reassess the paused `2x..4x`
-coherent/`Dream` overlap as docs and architecture work. Either freeze one
-complete shared-map architecture or retain the pause. Keep `g10.028`, DSP,
-public controls, routing, cache, Loophole, Chorus, and cross-repo work
-unchanged. Do not push.
+Run `g10.031` Batch 31.69 only. Study one complete `LayeredCloud` owner for the
+future `32x..100x` range and exact `16x`/`32x` boundary obligations. Freeze at
+most one source-backed complete owner brief or close the lane. Keep `g10.028`,
+DSP, overlap implementation, routing, controls, cache, dynamic ratio,
+Loophole, Chorus, and cross-repo work unchanged. Do not push.

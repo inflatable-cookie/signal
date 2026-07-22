@@ -82,9 +82,9 @@ strict lane.
 
 ## Next Task
 
-Run `g10.031` Batch 31.68 only. Reassess the paused `2x..4x`
-coherent/`Dream` overlap against the privately admitted
-[DirectRenewalDream renderer](architecture/offline-creative-direct-renewal-dream-brief.md).
-Change documentation only. Keep DSP, public controls, routing, cache, dynamic
-ratio, other creative characters, Loophole, and Chorus closed. Do not push.
+Run `g10.031` Batch 31.69 only. Study one complete `LayeredCloud` owner for the
+future `32x..100x` range and exact `16x`/`32x` boundary obligations. Change
+documentation only. Freeze at most one source-backed complete owner brief or
+close the lane. Keep DSP, overlap implementation, routing, controls, cache,
+dynamic ratio, Loophole, and Chorus closed. Do not push.
 Only drop into `specs/` when a strict lane is explicitly reopened.

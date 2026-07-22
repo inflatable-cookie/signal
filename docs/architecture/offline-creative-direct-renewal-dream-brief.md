@@ -647,6 +647,7 @@ surface was admitted.
 
 ## Next Task
 
-Run Batch 31.68 only. Reassess the paused `2x..4x` coherent/`Dream` overlap as
-docs and architecture work. Either freeze one complete shared-map blend
-architecture or retain the pause. Do not change DSP or product surfaces.
+Batch 31.68 retained the `2x..4x` overlap pause because this exact-ratio
+renderer cannot supply the mandatory interior renders or share the coherent
+frame lattice. Run Batch 31.69 only: a docs-only `LayeredCloud` owner study.
+Do not change this renderer or add product surface.

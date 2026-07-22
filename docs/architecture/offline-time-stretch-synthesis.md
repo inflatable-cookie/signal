@@ -2,7 +2,7 @@
 
 Status: active frozen baseline; successor program closed
 Owner: dsp
-Updated: 2026-07-19
+Updated: 2026-07-22
 Contract refs: `046`, `084`, separate creative path `085`; historical evidence `082`
 Roadmap refs: transparent closeout `g10.030`; separate creative path `g10.031`
 
@@ -89,9 +89,10 @@ brief opens.
 
 Intentional creative expansion is governed separately by Contract `085` and
 `docs/architecture/offline-creative-time-stretch-study.md`. Its automatic
-spectral route and explicit `Cyclic` character are closed or paused. The
-frozen `RenewalSpectral` brief owns one isolated neutral `Dream` candidate from
-`4x` through `16x`. It does not replace this renderer or reopen Contract `084`.
+route, explicit `Cyclic` character, and lower overlap are closed or paused.
+The private, unrouted `DirectRenewalDream` renderer owns exact fixed `4x`,
+`8x`, and `16x` neutral `Dream`. It does not replace this renderer or reopen
+Contract `084`.
 
 ## Candidate Isolation
 
@@ -113,6 +114,6 @@ ledger remains in git history at `1d1b02f1`.
 ## Next Task
 
 Retain this frozen baseline and keep its successor lane closed. `g10.031` also
-closed explicit `Cyclic` without promotion. Run its Batch 31.18 isolated
-`RenewalSpectral` candidate only; the production renderer remains unchanged on
-`main` until complete admission.
+closed explicit `Cyclic` without promotion and retained the `2x..4x` creative
+overlap pause. Run its Batch 31.69 docs-only `LayeredCloud` owner study. Keep
+both admitted renderers, product routing, and Contract `084` unchanged.

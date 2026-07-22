@@ -170,6 +170,7 @@ internal version `signal-creative-direct-renewal-dream-v1`.
 
 ## Next Task
 
-Batch 31.68 only. Reassess the paused `2x..4x` coherent/`Dream` overlap as docs
-and architecture work. Do not change the admitted renderer or add product
-surface.
+Batch 31.68 retained the lower-overlap pause without changing the admitted
+renderer. Run Batch 31.69 only: a docs-only `LayeredCloud` owner study for the
+future `32x..100x` range and `16x`/`32x` boundary obligations. Do not add DSP
+or product surface.

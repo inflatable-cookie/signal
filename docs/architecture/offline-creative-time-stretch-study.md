@@ -1,6 +1,6 @@
 # Offline Creative Time-Stretch Study
 
-Status: `DirectRenewalDream` privately admitted; Batch 31.68 ready
+Status: `DirectRenewalDream` privately admitted; lower overlap paused; Batch 31.69 ready
 Owner: dsp
 Updated: 2026-07-22
 Contract: `085`
@@ -9,8 +9,8 @@ Roadmap: `g10.031`
 ## Product Intent
 
 Build a Signal-owned `CreativeStretch` path centered on `8x` output duration.
-No renderer or product surface is admitted yet. It is an offline sound-design
-renderer, not a replacement for
+One private fixed-ratio renderer is admitted without a product route. It is an
+offline sound-design renderer, not a replacement for
 `OfflineHighQuality`, a Contract `084` successor, or a RealtimePreview path.
 
 The product presents one stable intent surface while Signal routes between
@@ -344,10 +344,9 @@ stopped at coefficient proof because its test required incompatible exact
 anti-phase negation and negated-swap outcomes. The frozen stop rule closed the
 candidate and current diffusive owner.
 
-No neutral `Dream` implementation now exists. A future reopening must still
-span `Dream`, `Spectral`, and `Rough` without averaging their distinct targets,
-but it requires new complete-system evidence rather than another local
-spectral variant.
+At that checkpoint no neutral `Dream` implementation existed. The later
+`DirectRenewalDream` reset and admission supersede that implementation-state
+statement without reviving any rejected spectral candidate.
 
 The upper `LayeredCloud` owner is a later spectral/granular renderer. It may
 layer bounded voices around the common source cursor, but every voice remains
@@ -848,6 +847,30 @@ This is an unrouted internal admission, not product exposure. Exact `4x`, `8x`,
 and `16x` are the only supported ratios. The paused lower overlap, other
 characters, dynamic ratio, routing, cache, and consumer work remain separate.
 
+## Batch 31.68 Lower-Overlap Decision
+
+No complete `2x..4x` overlap architecture exists without changing an admitted
+renderer. `OfflineHighQuality` accepts arbitrary positive fixed ratios, maps
+target length as `round(input length * ratio)`, and owns a centered padded STFT
+frame lattice with normalized overlap-add and exact crop. `DirectRenewalDream`
+accepts only exact `4x`, `8x`, and `16x`, maps each synthesis-frame center
+directly to one source position, and owns a different long-window lattice with
+short head guard, long tail release, and exact-zero endpoints.
+
+The mandatory exact `2x` and interior probes therefore have no `Dream` render.
+Exact target length and determinism at `4x` do not create a shared scheduler or
+boundary law. A hard switch at `4x` supplies no overlap band. Post-resampling a
+`4x` Dream render changes pitch or the source/event map. A second stretch pass
+introduces an unowned third timeline. An output crossfade cannot satisfy
+Contract `085` Rule 4 when one owner cannot render the interior ratios and the
+two owners do not share frame or exterior-boundary ownership.
+
+The lower overlap stays paused. Neither renderer is rejected or changed.
+Reopening requires either one complete lower creative owner that covers every
+required `2x..4x` ratio on the Contract `085` map, or a separately versioned and
+re-admitted generalized Dream renderer. An adapter, exact-`4x` blend, scalar
+sweep, or post-process is insufficient.
+
 ## Sources
 
 - [REAPER time-stretch engines](https://www.reaper.fm/about.php)
@@ -885,6 +908,8 @@ characters, dynamic ratio, routing, cache, and consumer work remain separate.
 
 ## Next Task
 
-Run Batch 31.68 only. Reassess the paused `2x..4x` coherent/`Dream` overlap.
-Change documentation only. Freeze one complete shared-map architecture or keep
-the overlap paused; do not implement or expose it.
+Run Batch 31.69 only. Study one complete `LayeredCloud` owner for the future
+`32x..100x` range and its exact `16x`/`32x` boundary obligations. Change
+documentation only. Freeze at most one source-backed complete owner brief or
+close the lane; do not implement DSP, overlap, routing, controls, cache,
+Loophole, or Chorus.
