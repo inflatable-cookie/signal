@@ -314,8 +314,9 @@ corrected the gate. Batch 32.4 froze one complete candidate and Rule 11
 evidence brief. Batch 32.5 sealed one immutable isolated checkpoint after two
 nominally clean conformance rounds. Batch 32.6 stopped at evidence-invalid
 `Y01`; Batch 32.7 authorized one fresh audited identity after static audit and
-cleanup. Batch 32.8 docs-only authority is ready. No candidate is admitted and
-no strict spec lane is open.
+cleanup. Batch 32.8 froze the complete fail-durable audited authority without
+changing the renderer. Batch 32.9 isolated conformance is ready. No candidate
+is admitted and no strict spec lane is open.
 
 ## Strict lane posture
 
@@ -344,6 +345,6 @@ Before rollover:
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the active generation front door.
-Execute `g10.032` Batch 32.8 only. Freeze one fresh complete audited authority
-for the unchanged centred compressed-anchor renderer. Do not implement or
-recover rejected source.
+Execute `g10.032` Batch 32.9 only. Create the fresh isolated audited identity,
+prepare its comparator manifest, implement the unchanged renderer and
+one-shot evidence system, and complete two structural conformance rounds.

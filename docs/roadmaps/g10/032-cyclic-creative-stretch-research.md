@@ -1,6 +1,6 @@
 # 032 - Cyclic Creative Stretch Research
 
-Status: active; Batch 32.8 ready
+Status: active; Batch 32.9 ready
 Owner: dsp
 Updated: 2026-07-23
 Contracts: `046`, `085`
@@ -208,7 +208,7 @@ The renderer formula may not change from the unreceipted output.
 
 ## Batch 32.8 - Fresh Audited Authority
 
-Status: ready
+Status: complete
 
 Freeze one docs-only `AuditedCenteredCompressedAnchorCyclic` brief from the
 canonical architecture. It must make each structural and acoustic row its own
@@ -218,6 +218,44 @@ matching, listening output, and cleanup before implementation.
 
 No candidate source, output, harness, comparator recapture, or implementation
 belongs in this batch.
+
+- [x] retain the complete renderer without using unreceipted `Y01` output
+- [x] freeze fresh worktree, branch, module, evidence root, runner, and ref
+- [x] make every structural, acoustic, exact-`16x`, and listening row a
+  separate one-shot process
+- [x] require durable `started` plus `pass`, `fail`, or `panic` receipts
+- [x] bind timeout, kill, retry, duplicate-file, schema, assertion, diagnostic,
+  source, comparator, output, and artifact behavior
+- [x] freeze construction sentinels that execute the real failure and panic
+  receipt paths
+- [x] freeze all `339` structural and `183` synthetic row expansions
+- [x] complete `Y04`, `Y05`, and `Y06` diagnostic algorithms
+- [x] freeze the five-source exact-`16x` executor
+- [x] freeze comparator recapture, level matching, terminal fade, concealment,
+  mono decisions, stereo decisions, cleanup, and minimal admission
+
+Authority:
+
+- [Offline Creative AuditedCenteredCompressedAnchorCyclic Brief](../../architecture/offline-creative-audited-centered-compressed-anchor-cyclic-brief.md)
+
+## Batch 32.9 - Fresh Isolated Candidate And Conformance
+
+Status: ready
+
+Start from the exact Batch 32.8 closeout commit. Create only the frozen fresh
+identity. Prepare and bind the comparator manifest, implement the unchanged
+renderer and one-shot row protocol, then run:
+
+1. release compile without test execution
+2. construction `1/1`
+3. all `339` structural rows as separate processes
+4. a second unchanged compile, construction, and structural round
+5. byte-identical receipt and summary comparison
+6. immutable acoustic ref creation
+
+Stop before `Y01`, exact `16x`, long-form render, or listening execution. Any
+missing authority, evidence edge, or choice stops for docs-level reassessment.
+Do not recover rejected source.
 
 ## Completion Gate
 
@@ -231,6 +269,8 @@ belongs in this batch.
 
 ## Next Task
 
-Execute Batch 32.8 only. Freeze one complete fresh audited evidence authority
-for the unchanged centred compressed-anchor renderer. Do not implement,
-recapture comparators, render candidate output, or recover checkpoint source.
+Execute Batch 32.9 only. Create the fresh isolated
+`AuditedCenteredCompressedAnchorCyclic` identity, prepare the comparator
+manifest, implement the unchanged frozen renderer and complete one-shot
+evidence system, and complete two structural conformance rounds. Stop before
+all acoustic, exact-`16x`, long-form, and listening rows.

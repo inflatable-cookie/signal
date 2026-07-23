@@ -216,9 +216,12 @@ that its only acoustic stop used a product gate the target itself fails.
 Contract `085` Rule 11 permits a fresh complete authority after an explicit
 evidence-backed gate change addresses that failure class.
 
-Batch 32.4 freezes
+Batch 32.4 froze
 [CenteredCompressedAnchorCyclic](./offline-creative-centered-compressed-anchor-cyclic-brief.md).
-It does not recover deleted source, tune the old implementation, sweep grain
+Its checkpoint became evidence-invalid. Batch 32.8 freezes the fresh
+[AuditedCenteredCompressedAnchorCyclic](./offline-creative-audited-centered-compressed-anchor-cyclic-brief.md)
+authority with the same renderer and complete one-shot evidence ownership. It
+does not recover deleted source, tune the old implementation, sweep grain
 constants, inherit Dream macros, or reuse the old absolute pitch ceiling.
 
 ## Remaining Risk
@@ -237,6 +240,7 @@ mechanism survey.
 
 ## Next Task
 
-Execute `g10.032` Batch 32.5 only. Create the isolated candidate, bind its
-comparator manifest, implement the frozen renderer and evidence owners, and
-complete Rule 11 conformance. Do not run acoustic owners before the checkpoint.
+Execute `g10.032` Batch 32.9 only. Create the fresh isolated audited identity,
+bind its comparator manifest, implement the unchanged frozen renderer and
+one-shot evidence owners, and complete two structural conformance rounds. Do
+not run acoustic owners before the checkpoint.

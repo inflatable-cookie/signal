@@ -5,6 +5,8 @@ Owner: dsp
 Updated: 2026-07-23
 Contract: `085`, Rule 11
 Roadmap: `g10.032`, Batch 32.4
+Superseded by:
+[Offline Creative AuditedCenteredCompressedAnchorCyclic Brief](./offline-creative-audited-centered-compressed-anchor-cyclic-brief.md)
 Behavior:
 [Offline Creative Cyclic Behavioral Synthesis](./offline-creative-cyclic-behavioral-synthesis.md)
 
@@ -744,7 +746,7 @@ Loophole, or Chorus.
 
 ## Next Task
 
-Execute `g10.032` Batch 32.8 only. Freeze a fresh
-`AuditedCenteredCompressedAnchorCyclic` authority for the unchanged renderer
-with complete per-row executable evidence. Do not implement or recover this
-checkpoint.
+Use the fresh
+[AuditedCenteredCompressedAnchorCyclic](./offline-creative-audited-centered-compressed-anchor-cyclic-brief.md)
+authority. This historical checkpoint remains evidence-invalid and may not be
+repaired, rerun, or recovered.

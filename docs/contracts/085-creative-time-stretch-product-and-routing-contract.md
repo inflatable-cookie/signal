@@ -1775,8 +1775,20 @@ renderer formula without using the unreceipted output, start after complete old
 state deletion, and freeze every executable edge docs-first. A second
 incomplete-evidence checkpoint closes this identity.
 
+Batch 32.8 freezes that fresh
+[AuditedCenteredCompressedAnchorCyclic authority](../architecture/offline-creative-audited-centered-compressed-anchor-cyclic-brief.md).
+The renderer formula is unchanged. Each structural, synthetic, exact-`16x`,
+long-form, and listening row is now a separate one-shot process with a durable
+`started` record before audio load or DSP and a durable terminal
+`pass`/`fail`/`panic` record before runner failure. Construction must execute
+the real failure and panic paths, prove timeout and duplicate-file behavior,
+and bind every assertion, diagnostic, source, comparator, output, level,
+concealment, decision, and cleanup field before acoustic identity. This is the
+last evidence-authority attempt for the centred compressed-anchor identity.
+
 ## Next Task
 
-Execute `g10.032` Batch 32.8 only. Freeze the complete fresh
-`AuditedCenteredCompressedAnchorCyclic` authority without candidate
-implementation or recovery of rejected source.
+Execute `g10.032` Batch 32.9 only. Create the fresh isolated audited identity,
+prepare the comparator manifest, implement the unchanged renderer and complete
+one-shot evidence system, and finish two structural conformance rounds. Stop
+before every acoustic, exact-`16x`, long-form, and listening row.

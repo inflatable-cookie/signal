@@ -32,7 +32,8 @@ strict lane.
 - Non-phase-vocoder feasibility: [architecture/offline-time-stretch-non-phase-vocoder-feasibility.md](./architecture/offline-time-stretch-non-phase-vocoder-feasibility.md)
 - Creative time-stretch study: [architecture/offline-creative-time-stretch-study.md](./architecture/offline-creative-time-stretch-study.md)
 - Cyclic behavioral synthesis: [architecture/offline-creative-cyclic-behavioral-synthesis.md](./architecture/offline-creative-cyclic-behavioral-synthesis.md)
-- Frozen Cyclic candidate brief: [architecture/offline-creative-centered-compressed-anchor-cyclic-brief.md](./architecture/offline-creative-centered-compressed-anchor-cyclic-brief.md)
+- Frozen audited Cyclic candidate brief: [architecture/offline-creative-audited-centered-compressed-anchor-cyclic-brief.md](./architecture/offline-creative-audited-centered-compressed-anchor-cyclic-brief.md)
+- Evidence-invalid historical Cyclic brief: [architecture/offline-creative-centered-compressed-anchor-cyclic-brief.md](./architecture/offline-creative-centered-compressed-anchor-cyclic-brief.md)
 - Admitted exact-ratio CreativeStretch public surface: [architecture/offline-creative-fixed-ratio-public-surface.md](./architecture/offline-creative-fixed-ratio-public-surface.md)
 - Direct-renewal owner study: [architecture/offline-creative-direct-renewal-owner-study.md](./architecture/offline-creative-direct-renewal-owner-study.md)
 - Closed creative LinkedStnNoiseMorph brief: [architecture/offline-creative-linked-stn-noise-morph-brief.md](./architecture/offline-creative-linked-stn-noise-morph-brief.md)
@@ -89,7 +90,7 @@ strict lane.
 
 ## Next Task
 
-Execute `g10.032` Batch 32.8 only. Freeze one fresh complete audited evidence
-authority for the unchanged centred compressed-anchor renderer. Do not
-implement, render candidate output, recover rejected source, or reopen a
-strict lane.
+Execute `g10.032` Batch 32.9 only. Create the fresh isolated audited Cyclic
+identity, prepare the comparator manifest, implement the unchanged renderer
+and complete one-shot evidence system, and finish two structural conformance
+rounds. Stop before acoustic or listening execution.

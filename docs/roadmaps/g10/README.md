@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: Cyclic checkpoint evidence-invalid; Batch 32.8 ready
+Status: audited Cyclic authority frozen; Batch 32.9 ready
 Updated: 2026-07-23
 
 ## Why this generation matters now
@@ -293,8 +293,8 @@ Do not start Loophole or Chorus planning from Signal internals.
     complete candidate and Rule 11 evidence brief; Batch 32.5 seals the
     isolated immutable checkpoint after two nominally clean conformance
     rounds; Batch 32.6 stops at evidence-invalid `Y01`; Batch 32.7 authorizes
-    one fresh audited evidence identity; Batch 32.8 docs-only authority is
-    ready
+    one fresh audited evidence identity; Batch 32.8 freezes its complete
+    docs-only authority; Batch 32.9 isolated conformance is ready
 
 ## Stretch Boundary
 
@@ -639,12 +639,15 @@ structural `9/9` twice. Batch 32.6 then surfaced `unexpected dropout 1` in
 pass-only, whole-owner receipt persistence plus incomplete diagnostic,
 exact-`16x`, and listening ownership. No valid acoustic decision exists.
 Batch 32.7 closes that evidence question and authorizes one fresh audited
-identity. Old isolated state is deleted. Batch 32.8 docs-only authority is
-ready.
+identity. Old isolated state is deleted. Batch 32.8 freezes
+`AuditedCenteredCompressedAnchorCyclic` without changing the renderer. Every
+row is now a one-shot process with fail-durable receipts; exact `16x`,
+comparator preparation, level policy, concealment, mono, and independent
+stereo ownership are complete. Batch 32.9 isolated conformance is ready.
 
 ## Next Task
 
-Execute `g10.032` Batch 32.8 only. Freeze one complete
-`AuditedCenteredCompressedAnchorCyclic` authority for the unchanged renderer.
-Do not implement, render candidate output, recapture comparators, or recover
-rejected source.
+Execute `g10.032` Batch 32.9 only. Create the fresh isolated audited identity,
+prepare and bind the comparator manifest, implement the unchanged renderer and
+complete one-shot evidence system, and finish two structural conformance
+rounds. Stop before acoustic, exact-`16x`, long-form, or listening execution.

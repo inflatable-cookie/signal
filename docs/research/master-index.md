@@ -226,6 +226,7 @@ Rejected first-owner brief:
 
 ## Next Task
 
-Execute `g10.032` Batch 32.8 only. Freeze the complete fresh audited authority
-for the unchanged centred compressed-anchor renderer. No candidate DSP enters
-`main`.
+Execute `g10.032` Batch 32.9 only. Create the fresh isolated audited identity,
+prepare its comparator manifest, implement the unchanged centred
+compressed-anchor renderer and one-shot evidence system, and complete two
+structural conformance rounds. No candidate DSP enters `main`.
