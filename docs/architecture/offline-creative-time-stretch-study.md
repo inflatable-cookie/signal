@@ -1,6 +1,6 @@
 # Offline Creative Time-Stretch Study
 
-Status: exact-ratio `CreativeStretch` public API admitted; broader range paused
+Status: exact-ratio `CreativeStretch` public API admitted; initial lane complete
 Owner: dsp
 Updated: 2026-07-23
 Contract: `085`
@@ -1014,6 +1014,5 @@ all retained construction, structural, and synthetic gates pass.
 
 ## Next Task
 
-Resolve the `g10.031` operator intent checkpoint. Do not open creative cache,
-artifact, routing, product integration, or renewed high-range research without
-explicit authority.
+`g10.031` is complete. Do not open creative cache, artifacts, routing, product
+integration, or renewed high-range research without explicit authority.

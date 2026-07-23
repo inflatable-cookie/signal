@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: creative fixed-ratio surface admitted; follow-on planning paused
+Status: creative fixed-ratio lane complete; next generation priority unselected
 Updated: 2026-07-23
 
 ## Why this generation matters now
@@ -238,10 +238,10 @@ Do not start Loophole or Chorus planning from Signal internals.
   - historical correctness, listening, and rejected-successor ledger
 - `g10.030` `complete`
   - stretch consolidated; candidate families closed; frozen baseline retained
-- `g10.031` `paused`
+- `g10.031` `complete`
   - exact fixed `4x`, `8x`, and `16x` neutral `Dream` is public; broader
-    range, routing, cache, and product integration require an operator intent
-    decision; historical path: Batch 31.36 passed all
+    range, routing, cache, and product integration are deferred; historical
+    path: Batch 31.36 passed all
     objective and mono gates, then failed source-relative stereo admission and
     was deleted; Batch 31.37 closed renewal after finding no different complete
     owner; Batch 31.38 records the operator's comparator-relative stereo policy
@@ -604,17 +604,13 @@ all admitted ratios and space anchors. Construction, structural, and synthetic
 gates remain green. Cache, routing, tiers, runtime, and cross-repo work remain
 closed.
 
+Batch 31.77 repaired stale planning currentness and exposed one operator intent
+checkpoint. With no named consumer or new source authority supplied, Batch
+31.78 takes the recommended freeze path and closes `g10.031` on the admitted
+public surface. Deferred scope creates no ready Batch 31.79.
+
 ## Next Task
 
-Resolve one operator intent checkpoint before creating another `g10.031`
-batch:
-
-1. freeze the admitted exact-ratio library surface and move to another `g10`
-   priority
-2. name one Signal consumer and open docs-first cache, artifact, or product
-   integration authority
-3. explicitly reopen source-backed research for a materially different owner
-   above `16x`
-
-Until then, no creative implementation, routing, cache, artifact, runtime,
-Loophole, Chorus, or cross-repo work is ready.
+No creative-stretch batch is ready. Select another Signal priority from the
+paused/deferred `g10` milestones, or explicitly reopen `g10.031` with named-
+consumer integration authority or a materially different source-backed owner.

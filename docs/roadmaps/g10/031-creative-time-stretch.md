@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: paused; fixed-ratio Dream public surface admitted
+Status: complete; fixed-ratio Dream public surface admitted
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -2539,6 +2539,27 @@ Decision:
 - current authority supports only freezing the lane, a named-consumer
   integration study, or explicitly renewed source-backed high-range research
 
+## Batch 31.78 - Creative Lane Freeze
+
+Status: complete; docs only
+
+- [x] resolve the Batch 31.77 intent checkpoint through the recommended freeze
+  path because no named consumer or new source authority was supplied
+- [x] mark `g10.031` complete on the admitted exact-ratio public surface
+- [x] retain broader range, routing, cache, artifacts, dynamic ratio, runtime,
+  product integration, Loophole, and Chorus as deferred or absent
+- [x] add no DSP, API, test, harness, fixture, or cross-repo change
+
+Decision:
+
+- the initial Signal-owned creative-stretch goal is complete at exact public
+  `4x`, `8x`, and `16x` neutral `Dream`
+- the accepted sound, fixed seed, `space`, exact target length, and offline
+  whole-buffer boundary remain frozen
+- deferred work is not an active queue and creates no ready Batch 31.79
+- reopening requires explicit named-consumer or materially different
+  source-backed authority
+
 ## Later Batches
 
 Deferred product work requires separate authority:
@@ -2782,7 +2803,7 @@ Deferred product work requires separate authority:
 
 ## Next Task
 
-Operator intent checkpoint: choose whether to freeze this lane and move to
-another `g10` priority, name one Signal consumer for docs-first integration
-authority, or explicitly reopen source-backed research above `16x`. No
-implementation batch is ready before that choice.
+No creative-stretch task is ready. `g10.031` is complete. Reopen only through
+explicit named-consumer integration authority or a materially different
+source-backed high-range owner; otherwise select another Signal priority from
+the `g10` front door.

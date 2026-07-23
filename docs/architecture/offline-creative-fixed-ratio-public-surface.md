@@ -184,6 +184,6 @@ runtime, Loophole, Chorus, or cross-repo surface changed.
 
 ## Next Task
 
-No follow-on implementation batch is ready. Resolve the `g10.031` operator
-intent checkpoint before opening named-consumer integration or renewed
-source-backed high-range research.
+`g10.031` is complete. No follow-on implementation batch is ready. Reopen only
+through named-consumer integration authority or renewed source-backed
+high-range research.

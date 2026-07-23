@@ -181,5 +181,5 @@ If that cleanup has not happened, stay in the current generation and finish the 
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the current active-generation front door.
-Resolve the `g10.031` operator intent checkpoint before opening any follow-on
-creative implementation or research.
+`g10.031` is complete; select another Signal priority or explicitly authorize
+a new creative lane.

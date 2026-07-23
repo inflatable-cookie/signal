@@ -314,6 +314,5 @@ The current package-level naming proposal is recorded in
 
 ## Next Task
 
-Resolve the `g10.031` operator intent checkpoint before opening another
-creative lane. Keep the admitted exact-ratio API and frozen transparent
-baseline unchanged.
+Keep the completed `g10.031` exact-ratio API and frozen transparent baseline
+unchanged. Reopen creative work only through separate explicit authority.

@@ -133,6 +133,5 @@ program. Discovery roots are explicit configuration defaulting empty.
 
 ## Next Task
 
-Keep this inventory aligned with `docs/roadmaps/g10/README.md`. Do not infer a
-creative integration batch before the `g10.031` operator intent checkpoint is
-resolved.
+Keep this inventory aligned with `docs/roadmaps/g10/README.md`. `g10.031` is
+complete; do not infer a creative integration or research batch.

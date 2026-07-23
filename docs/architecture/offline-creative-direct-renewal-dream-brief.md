@@ -655,6 +655,6 @@ authorized one fresh docs-first identity, and Batch 31.73 closed Cloud on its
 second evidence-integrity failure. Batch 31.74 makes exact `4x`, `8x`, and
 `16x` this renderer's complete current creative envelope. Batch 31.75 froze a
 minimal `CreativeStretch` public wrapper, and Batch 31.76 admitted it without
-changing acoustic DSP. Resolve the `g10.031` operator intent checkpoint before
-generalizing ratio support or adding routing, cache, dynamic ratio, or another
-character.
+changing acoustic DSP. `g10.031` is complete. Reopen only through explicit
+authority before generalizing ratio support or adding routing, cache, dynamic
+ratio, or another character.

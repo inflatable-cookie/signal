@@ -332,6 +332,6 @@ Before rollover:
 
 ## Next Task
 
-Use `docs/roadmaps/g10/README.md` as the active generation front door. Resolve
-the `g10.031` operator intent checkpoint before opening any follow-on creative
-implementation or research.
+Use `docs/roadmaps/g10/README.md` as the active generation front door.
+`g10.031` is complete; select another Signal priority or explicitly authorize
+a new creative lane.

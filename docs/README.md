@@ -59,7 +59,7 @@ strict lane.
 - Roadmap index: [roadmaps/README.md](./roadmaps/README.md)
 - Generation index: [roadmaps/generation-index.md](./roadmaps/generation-index.md)
 - Stretch closeout roadmap: [roadmaps/g10/030-stretch-consolidation-and-completion.md](./roadmaps/g10/030-stretch-consolidation-and-completion.md)
-- Active PaulX-like creative stretch roadmap: [roadmaps/g10/031-creative-time-stretch.md](./roadmaps/g10/031-creative-time-stretch.md)
+- Completed PaulX-like creative stretch roadmap: [roadmaps/g10/031-creative-time-stretch.md](./roadmaps/g10/031-creative-time-stretch.md)
 - Strict-lane reference: [specs/001-g09-lane-first-strict-adoption.md](./specs/001-g09-lane-first-strict-adoption.md)
 - Active strict-lane card: none
 - Research index: [research/master-index.md](./research/master-index.md)
@@ -85,8 +85,7 @@ strict lane.
 
 ## Next Task
 
-Resolve the `g10.031` operator intent checkpoint at the `g10` front door. No
-creative implementation batch is ready. Keep broader range, routing, cache,
-artifact, and product integration deferred until one direction receives
-explicit authority. Only drop into `specs/` when a strict lane is explicitly
-reopened.
+`g10.031` is complete on the admitted exact-ratio public surface. Select
+another Signal priority from the `g10` front door. Reopen creative work only
+through explicit named-consumer or materially different source-backed
+authority. Only drop into `specs/` when a strict lane is explicitly reopened.

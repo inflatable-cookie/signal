@@ -177,6 +177,6 @@ Batch 31.71 authorized one fresh docs-first identity, and Batch 31.73 closed
 Cloud on its second evidence-integrity failure. Batch 31.74 narrows current
 creative coverage to this renderer's exact `4x`, `8x`, and `16x` envelope.
 Batch 31.75 froze a minimal semantic public wrapper, and Batch 31.76 admitted
-it without changing this renderer. Resolve the `g10.031` operator intent
-checkpoint before extending range, routing, cache, dynamic ratio, or
+it without changing this renderer. `g10.031` is complete. Reopen only through
+explicit authority before extending range, routing, cache, dynamic ratio, or
 character.

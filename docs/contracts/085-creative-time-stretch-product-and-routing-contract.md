@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: exact-ratio Dream public API admitted; broader routing paused
+Status: exact-ratio Dream public API admitted; initial lane complete
 Owner: core-product
 Updated: 2026-07-23
 Related contracts: `046`, `048`, `084`
@@ -1058,6 +1058,9 @@ may resume.
 74. Implement the minimal fixed-ratio public API. Complete; Batch 31.76
     preserves byte-identical acoustic source and output, maps every frozen
     error, and leaves all deferred surfaces closed.
+75. Freeze the initial creative lane. Complete; Batch 31.78 closes `g10.031`
+    on the admitted public exact-ratio surface with no follow-on implementation
+    ready.
 
 `Spectral`/`Rough`, both overlaps, dynamic ratios, and automatic routing still
 require separate reopening decisions backed by new complete-system evidence.
@@ -1656,6 +1659,6 @@ and Chorus remain unchanged.
 
 ## Next Task
 
-No Contract `085` implementation batch is ready. Resolve the `g10.031`
-operator intent checkpoint before opening named-consumer integration or
-renewed source-backed high-range research.
+No Contract `085` implementation batch is ready. `g10.031` is complete.
+Reopening requires named-consumer integration authority or renewed
+source-backed high-range research.

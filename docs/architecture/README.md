@@ -45,6 +45,6 @@ Keep milestone sequencing in `roadmaps/`.
 ## Next Task
 
 Keep the `g10.030` transparent successor program closed. The exact-ratio
-`CreativeStretch` wrapper is admitted. Resolve the `g10.031` operator intent
-checkpoint before opening creative cache, artifact, routing, renewed
-high-range research, runtime, Loophole, or Chorus work.
+`CreativeStretch` wrapper is admitted and `g10.031` is complete. Reopen
+creative cache, artifacts, routing, high-range research, runtime, Loophole, or
+Chorus work only through separate explicit authority.
