@@ -89,6 +89,7 @@ strict lane.
 
 ## Next Task
 
-Execute `g10.032` Batch 32.5 only. Implement and conform the frozen isolated
-Cyclic candidate. Stop before acoustic execution; do not add candidate DSP to
-`main` or reopen a strict lane.
+Execute `g10.032` Batch 32.6 only from the immutable acoustic ref. Run
+`Y01..Y06` individually in numeric order, stop on the first hard failure, and
+run exact `16x` typed rejection only if all six pass. Do not change candidate
+code or reopen a strict lane.

@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: Cyclic candidate brief frozen; Batch 32.5 ready
+Status: Cyclic candidate checkpoint sealed; Batch 32.6 ready
 Updated: 2026-07-23
 
 ## Why this generation matters now
@@ -290,7 +290,9 @@ Do not start Loophole or Chorus planning from Signal internals.
     SickoCV repeat/jump schedules; Batch 32.2 completes executable forensics
     without selecting a renderer; Batch 32.3 selects centred
     compressed-anchor behavior and corrects the gate; Batch 32.4 freezes one
-    complete candidate and Rule 11 evidence brief; Batch 32.5 is ready
+    complete candidate and Rule 11 evidence brief; Batch 32.5 seals the
+    isolated immutable checkpoint after two clean conformance rounds; Batch
+    32.6 acoustic admission is ready
 
 ## Stretch Boundary
 
@@ -627,11 +629,17 @@ corrected integrity/diagnostic/listening gate. No renderer, public character,
 routing, or cache is authorized. Batch 32.4 freezes
 `CenteredCompressedAnchorCyclic`: one exact rational map, manual cycle,
 two-read crossfade, linked schedule, bounded direct crop, comparator manifest,
-and complete Rule 11 gate. Batch 32.5 isolated conformance is the sole ready
-task.
+and complete Rule 11 gate.
+
+Batch 32.5 is now complete. Candidate commit `4600d228` passed release compile,
+construction `1/1`, and structural `9/9` twice from one clean tree. Per-owner
+receipts are byte-identical across rounds. The immutable acoustic ref is
+created. No synthetic owner or candidate listening render has run. Batch 32.6
+is ready from that ref only.
 
 ## Next Task
 
-Execute `g10.032` Batch 32.5 only. Implement and conform the frozen isolated
-Cyclic candidate, bind its comparator manifest, create the acoustic ref only
-after two clean conformance rounds, and stop before acoustic execution.
+Execute `g10.032` Batch 32.6 only from the immutable acoustic ref. Run
+`Y01..Y06` individually in numeric order and stop on the first hard failure.
+Run exact `16x` typed rejection only if all six pass, then follow the frozen
+listening order without changing candidate code or evidence authority.

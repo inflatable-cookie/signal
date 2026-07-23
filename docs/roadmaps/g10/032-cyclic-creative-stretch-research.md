@@ -1,6 +1,6 @@
 # 032 - Cyclic Creative Stretch Research
 
-Status: active; Batch 32.5 ready
+Status: active; Batch 32.6 ready
 Owner: dsp
 Updated: 2026-07-23
 Contracts: `046`, `085`
@@ -137,26 +137,41 @@ Authority:
 
 ## Batch 32.5 - Isolated Candidate And Conformance
 
-Status: ready
+Status: complete
 
-- create only the frozen disposable worktree, branch, private module, ledger,
+- [x] create only the frozen disposable worktree, branch, private module, ledger,
   runner config, ignored evidence root, and local ref namespace
-- prepare and bind the exact comparator manifest before candidate acoustic work
-- implement the frozen renderer and all `15` evidence owners
-- run compile, construction `1/1`, and structural `9/9` twice from one clean
+- [x] prepare and bind the exact `63`-row comparator manifest before candidate
+  acoustic work
+- [x] implement the frozen renderer and all `15` evidence owners
+- [x] run compile, construction `1/1`, and structural `9/9` twice from one clean
   tree
-- create the immutable acoustic ref only after complete two-round conformance
-- stop before `Y01` or any candidate listening render
+- [x] require byte-identical per-owner structural receipts across both rounds
+- [x] create the immutable acoustic ref only after complete two-round
+  conformance
+- [x] stop before `Y01` or any candidate listening render
+
+Checkpoint:
+
+- commit `4600d228286797d22e4f4d5ca4efa997835fc4b2`
+- tree `fa1fc8031a4aab4302b778474702e658784d8a64`
+- ref
+  `refs/signal-evidence/creative/centered-compressed-anchor-cyclic/32-5-acoustic`
+- comparator manifest
+  `eb5384681767dfd36e8daf81809a95d51a79f6cb178f0705fe4cffce9ecccacd`
 
 No candidate source enters `main`.
 
 ## Batch 32.6 - Acoustic And Listening Admission
 
-Status: blocked on Batch 32.5
+Status: ready
 
 Run `Y01..Y06`, exact `16x` rejection, concealed mono, cycle-direction review,
 long-form stereo objectives, speaker pre-screen, and eligible independent
 stereo review from the one immutable ref. Stop on first failure.
+
+No code, source, formula, constant, metric, threshold, comparator, or helper
+change is allowed after the ref.
 
 Promotion, public exposure, routing, cache, and product integration remain
 separate later decisions.
@@ -173,7 +188,7 @@ separate later decisions.
 
 ## Next Task
 
-Execute Batch 32.5 only. Create the isolated
-`CenteredCompressedAnchorCyclic` candidate, bind its comparator manifest,
-implement the frozen renderer and evidence owners, and complete two-round
-Rule 11 conformance. Stop before acoustic execution.
+Execute Batch 32.6 only from the immutable acoustic ref. Run `Y01..Y06`
+individually in numeric order and stop on the first hard failure. Run exact
+`16x` typed rejection only if all six owners pass, then continue through the
+frozen listening order without changing candidate code or evidence authority.

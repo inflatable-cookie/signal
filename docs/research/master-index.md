@@ -74,7 +74,9 @@ placement. Batch 32.3 selects centred compressed-anchor behavior, one fixed
 manual cycle, linked scheduling, and comparator-relative diagnostics. Both
 prior Signal candidates remain rejected and deleted. Batch 32.4 freezes one
 complete `CenteredCompressedAnchorCyclic` renderer and Rule 11 evidence brief;
-DSP is not admitted. This does not reopen the transparent successor lane.
+Batch 32.5 seals its immutable isolated checkpoint after two clean conformance
+rounds. Acoustic admission remains unrun and DSP is not admitted. This does
+not reopen the transparent successor lane.
 
 Current Cyclic decision:
 [Offline Creative Cyclic Behavioral Synthesis](../architecture/offline-creative-cyclic-behavioral-synthesis.md).
@@ -221,6 +223,6 @@ Rejected first-owner brief:
 
 ## Next Task
 
-Execute `g10.032` Batch 32.5 only. Implement and conform the frozen isolated
-Cyclic candidate, bind its comparator manifest, and stop before acoustic
-execution. No candidate DSP enters `main`.
+Execute `g10.032` Batch 32.6 only from the immutable acoustic ref. Run
+`Y01..Y06` individually, stop on the first hard failure, and run exact `16x`
+typed rejection only if all six pass. No candidate DSP enters `main`.

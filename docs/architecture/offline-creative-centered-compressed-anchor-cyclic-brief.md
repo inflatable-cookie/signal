@@ -1,6 +1,6 @@
 # Offline Creative CenteredCompressedAnchorCyclic Renderer Brief
 
-Status: frozen complete candidate authority
+Status: frozen at immutable acoustic ref; acoustic admission unrun
 Owner: dsp
 Updated: 2026-07-23
 Contract: `085`, Rule 11
@@ -472,6 +472,16 @@ assertion, comparator, listening rule, or cleanup choice stops for docs-level
 reassessment. No candidate acoustic owner or candidate audio may run before
 the ref.
 
+Actual checkpoint:
+
+- commit `4600d228286797d22e4f4d5ca4efa997835fc4b2`
+- tree `fa1fc8031a4aab4302b778474702e658784d8a64`
+- ref
+  `refs/signal-evidence/creative/centered-compressed-anchor-cyclic/32-5-acoustic`
+- release compile `2/2`, construction `1/1` twice, structural `9/9` twice
+- byte-identical `S01..S09` receipt hashes across both rounds
+- no `Y01..Y06` owner or candidate listening render run
+
 ## Synthetic Source Authority
 
 Use `F=44100`, `L=88200`, and `T=2L`, `4L`, or `8L`. Sustained sources are
@@ -704,8 +714,7 @@ Loophole, or Chorus.
 
 ## Next Task
 
-Execute `g10.032` Batch 32.5 only. Create the isolated candidate worktree,
-prepare and bind the comparator manifest, implement the frozen renderer and
-all evidence owners, then complete compile, construction, and two-round
-structural conformance. Do not run candidate acoustic owners or create the
-acoustic ref until every Rule 11 conformance requirement passes.
+Execute `g10.032` Batch 32.6 only from the immutable acoustic ref. Run
+`Y01..Y06` individually in numeric order and stop on the first hard failure.
+Run exact `16x` typed rejection only after all six owners pass. Do not change
+candidate code or evidence authority.
