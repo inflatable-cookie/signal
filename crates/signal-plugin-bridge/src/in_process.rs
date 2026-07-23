@@ -6,7 +6,7 @@
 //! the host down. That is the documented tradeoff of choosing this tier.
 
 use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering};
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
 use signal_plugin::{
     ControlChangeEvent, MidiEvent, NoteEvent, NoteEventKind, NoteExpressionEvent,
@@ -15,7 +15,9 @@ use signal_plugin::{
 use signal_plugin_au::{AuHostedInstance, AuProcessSession};
 use signal_plugin_clap::{ClapHostedInstance, ClapProcessSession};
 use signal_plugin_lv2::{Lv2HostedInstance, Lv2ProcessSession};
-use signal_plugin_vst3::{Vst3HostedInstance, Vst3ProcessSession};
+use signal_plugin_vst3::{
+    Vst3HostedInstance, Vst3ProcessSession, VST3_RESTART_IO_CHANGED, VST3_RESTART_LATENCY_CHANGED,
+};
 use signal_render_plane::{
     PluginBlockProcessor, RenderBlockPluginEvent, RenderNoteExpressionKind, RenderPluginEventKind,
     RenderPluginEventSupport,
@@ -612,6 +614,7 @@ pub struct InProcessVst3Processor {
     latency_frames: AtomicU32,
     latency_revision: AtomicU64,
     observed_latency_changes: AtomicU64,
+    pending_restart_flags: Arc<AtomicU32>,
     max_frames: u32,
     /// Cleared at teardown so late callbacks bypass instead of racing the
     /// lifecycle.
@@ -687,6 +690,7 @@ impl InProcessVst3Processor {
         let parameters = instance.parameters().to_vec();
         let latency_frames = instance.latency_frames();
         let midi_cc_mapping = instance.midi_cc_mapping_available();
+        let pending_restart_flags = instance.pending_restart_flags();
         let midi_cc_mappings = std::array::from_fn(|controller| {
             instance.midi_controller_mapping_available(controller as u16)
         });
@@ -704,6 +708,7 @@ impl InProcessVst3Processor {
             latency_frames: AtomicU32::new(latency_frames),
             latency_revision: AtomicU64::new(0),
             observed_latency_changes: AtomicU64::new(0),
+            pending_restart_flags,
             max_frames,
             alive: AtomicBool::new(true),
             misses: AtomicU64::new(0),
@@ -729,6 +734,37 @@ impl InProcessVst3Processor {
         if previous != latency_frames {
             self.latency_revision.fetch_add(1, Ordering::Relaxed);
         }
+    }
+
+    /// Whether the edit controller has requested an accepted processing
+    /// lifecycle restart that the host control thread has not serviced yet.
+    pub fn processing_restart_pending(&self) -> bool {
+        self.pending_restart_flags.load(Ordering::Acquire)
+            & (VST3_RESTART_IO_CHANGED | VST3_RESTART_LATENCY_CHANGED)
+            != 0
+    }
+
+    /// Service accepted VST3 processing restart flags on the owning control
+    /// thread. Audio callbacks bypass while the session is replaced.
+    pub fn service_processing_restart(&self) -> Result<bool, String> {
+        let flags = self.pending_restart_flags.swap(0, Ordering::AcqRel);
+        if flags == 0 {
+            return Ok(false);
+        }
+        let mut session = self
+            .session
+            .lock()
+            .map_err(|_| "session_lock_poisoned".to_string())?;
+        session.stop();
+        let replacement = self
+            .instance
+            .lock()
+            .map_err(|_| "instance_lock_poisoned".to_string())?
+            .restart_processing(flags)
+            .map_err(|error| error.token)?;
+        *session = replacement;
+        self.refresh_latency();
+        Ok(true)
     }
 
     /// Parameter inventory enumerated at load.
@@ -997,6 +1033,13 @@ impl PluginBlockProcessor for InProcessVst3Processor {
             || channels != 2
             || frame_count > self.max_frames as usize
         {
+            self.misses.fetch_add(1, Ordering::Relaxed);
+            return false;
+        }
+        if self.processing_restart_pending() {
+            if let Ok(mut session) = self.session.try_lock() {
+                session.stop();
+            }
             self.misses.fetch_add(1, Ordering::Relaxed);
             return false;
         }
@@ -2611,12 +2654,30 @@ mod tests {
         }
         assert_eq!(backend.miss_count(), 0);
 
+        // A controller-requested processing restart makes the audio thread
+        // bypass at the next block boundary. The control thread can then
+        // rebuild the process session and resume without reloading the plug-in.
+        backend
+            .pending_restart_flags
+            .store(VST3_RESTART_IO_CHANGED, Ordering::Release);
+        let mut bypassed = reference.clone();
+        assert!(!handle.process(&mut bypassed, 128, 2));
+        assert_eq!(bypassed, reference);
+        assert_eq!(backend.miss_count(), 1);
+        assert!(backend.service_processing_restart().expect("restart"));
+        assert!(!backend.processing_restart_pending());
+        let mut resumed = reference.clone();
+        assert!(handle.process(&mut resumed, 128, 2));
+        for (output, input) in resumed.iter().zip(reference.iter()) {
+            assert!((output - input * VST3_FIXTURE_GAIN).abs() < 1e-7);
+        }
+
         // Shutdown: later blocks bypass and leave scratch untouched.
         backend.shutdown();
         let mut scratch = reference.clone();
         assert!(!handle.process(&mut scratch, 128, 2));
         assert_eq!(scratch, reference);
-        assert_eq!(backend.miss_count(), 1);
+        assert_eq!(backend.miss_count(), 2);
 
         drop(handle);
         drop(backend);

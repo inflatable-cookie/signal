@@ -415,7 +415,16 @@ const PARAM_IS_READ_ONLY: i32 = 1 << 1;
 const PARAM_IS_HIDDEN: i32 = 1 << 4;
 const PARAM_IS_BYPASS: i32 = 1 << 16;
 /// `RestartFlags::kLatencyChanged` from `ivsteditcontroller.h`.
-const RESTART_LATENCY_CHANGED: i32 = 1 << 3;
+pub const VST3_RESTART_LATENCY_CHANGED: u32 = 1 << 3;
+/// `RestartFlags::kIoChanged` from `ivsteditcontroller.h`.
+pub const VST3_RESTART_IO_CHANGED: u32 = 1 << 1;
+const RESTART_PROCESSING_MASK: u32 = VST3_RESTART_IO_CHANGED | VST3_RESTART_LATENCY_CHANGED;
+
+/// `kNotImplemented` (platform-dependent: COM `E_NOTIMPL` on Windows).
+#[cfg(target_os = "windows")]
+const K_NOT_IMPLEMENTED: Tresult = 0x8000_4001_u32 as i32;
+#[cfg(not(target_os = "windows"))]
+const K_NOT_IMPLEMENTED: Tresult = 3;
 
 /// `FUnknown` method prefix shared by every vtable below.
 #[repr(C)]
@@ -638,6 +647,7 @@ struct ComponentHandlerVTable {
 struct ComponentHandler {
     vtable: *const ComponentHandlerVTable,
     latency_changes: AtomicU64,
+    pending_restart_flags: Arc<AtomicU32>,
 }
 
 unsafe impl Send for ComponentHandler {}
@@ -694,11 +704,20 @@ unsafe extern "C" fn component_handler_end_edit(_this: *mut c_void, _id: u32) ->
 }
 
 unsafe extern "C" fn component_handler_restart_component(this: *mut c_void, flags: i32) -> Tresult {
-    if !this.is_null() && flags & RESTART_LATENCY_CHANGED != 0 {
-        (*(this.cast::<ComponentHandler>()))
-            .latency_changes
-            .fetch_add(1, Ordering::Relaxed);
+    if this.is_null() {
+        return K_NOT_IMPLEMENTED;
     }
+    let supported = (flags as u32) & RESTART_PROCESSING_MASK;
+    if supported == 0 || supported != flags as u32 {
+        return K_NOT_IMPLEMENTED;
+    }
+    let handler = &*(this.cast::<ComponentHandler>());
+    if supported & VST3_RESTART_LATENCY_CHANGED != 0 {
+        handler.latency_changes.fetch_add(1, Ordering::Relaxed);
+    }
+    handler
+        .pending_restart_flags
+        .fetch_or(supported, Ordering::Release);
     K_RESULT_OK
 }
 
@@ -707,19 +726,30 @@ mod component_handler_tests {
     use super::*;
 
     #[test]
-    fn only_latency_restart_flags_advance_the_revision() {
+    fn only_supported_processing_restart_flags_are_accepted_and_queued() {
+        let pending_restart_flags = Arc::new(AtomicU32::new(0));
         let mut handler = Box::new(ComponentHandler {
             vtable: &COMPONENT_HANDLER_VTABLE,
             latency_changes: AtomicU64::new(0),
+            pending_restart_flags: Arc::clone(&pending_restart_flags),
         });
         let ptr = (&mut *handler as *mut ComponentHandler).cast();
 
-        unsafe {
-            component_handler_restart_component(ptr, 1 << 1);
-            component_handler_restart_component(ptr, RESTART_LATENCY_CHANGED);
-        }
+        let io =
+            unsafe { component_handler_restart_component(ptr, VST3_RESTART_IO_CHANGED as i32) };
+        let latency = unsafe {
+            component_handler_restart_component(ptr, VST3_RESTART_LATENCY_CHANGED as i32)
+        };
+        let reload = unsafe { component_handler_restart_component(ptr, 1) };
 
+        assert_eq!(io, K_RESULT_OK);
+        assert_eq!(latency, K_RESULT_OK);
+        assert_eq!(reload, K_NOT_IMPLEMENTED);
         assert_eq!(handler.latency_changes.load(Ordering::Relaxed), 1);
+        assert_eq!(
+            pending_restart_flags.load(Ordering::Acquire),
+            RESTART_PROCESSING_MASK
+        );
     }
 }
 
@@ -2187,6 +2217,9 @@ pub struct Vst3HostedInstance {
     controller_connection: Option<ControllerConnection>,
     /// Stable host callback object installed on the edit controller.
     component_handler: Option<Box<ComponentHandler>>,
+    /// Restart requests accepted by the component handler and serviced by
+    /// the owning host control thread.
+    pending_restart_flags: Arc<AtomicU32>,
     parameters: Vec<PluginParameterDescriptor>,
     port_layout: Vst3HostedPortLayout,
     audio_bus_layout: Vst3AudioBusLayout,
@@ -2285,10 +2318,12 @@ impl Vst3HostedInstance {
         };
 
         let controller = unsafe { acquire_controller(component, &module, host) };
+        let pending_restart_flags = Arc::new(AtomicU32::new(0));
         let component_handler = controller.as_ref().and_then(|controller| unsafe {
             let mut handler = Box::new(ComponentHandler {
                 vtable: &COMPONENT_HANDLER_VTABLE,
                 latency_changes: AtomicU64::new(0),
+                pending_restart_flags: Arc::clone(&pending_restart_flags),
             });
             let vtable = vtable_of::<EditControllerVTable>(controller.ptr());
             let ptr = (&mut *handler as *mut ComponentHandler).cast();
@@ -2320,6 +2355,7 @@ impl Vst3HostedInstance {
             controller,
             controller_connection,
             component_handler,
+            pending_restart_flags,
             parameters,
             port_layout,
             audio_bus_layout,
@@ -2470,6 +2506,30 @@ impl Vst3HostedInstance {
             .as_ref()
             .map(|handler| handler.latency_changes.load(Ordering::Relaxed))
             .unwrap_or(0)
+    }
+
+    /// Shared restart flags accepted from `IComponentHandler`. Audio hosts
+    /// use this to stop at a block boundary before the control thread
+    /// services the requested lifecycle transition.
+    pub fn pending_restart_flags(&self) -> Arc<AtomicU32> {
+        Arc::clone(&self.pending_restart_flags)
+    }
+
+    /// Deactivate, refresh dynamic I/O when requested, reactivate, and build
+    /// a replacement process session on the owning control thread.
+    pub fn restart_processing(
+        &mut self,
+        flags: u32,
+    ) -> Result<Vst3ProcessSession, Vst3HostingError> {
+        let sample_rate_hz = self.activated_sample_rate_hz;
+        let max_frames = self.activated_max_frames;
+        self.deactivate()?;
+        if flags & VST3_RESTART_IO_CHANGED != 0 {
+            self.audio_bus_layout = unsafe { audio_bus_layout(self.component) };
+            self.port_layout = self.audio_bus_layout.port_layout();
+        }
+        self.activate(sample_rate_hz, 1, max_frames)?;
+        self.process_session()
     }
 
     /// Activate for processing by negotiating the available main buses to a

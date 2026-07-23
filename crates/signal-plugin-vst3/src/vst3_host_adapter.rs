@@ -17,7 +17,7 @@ pub use discovery::{Vst3DiscoveryBatch, Vst3DiscoveryDiagnostic, Vst3DiscoveryDi
 pub use gui::{Vst3GuiEvent, Vst3GuiSession};
 pub use hosting::{
     current_vst3_platform, Vst3HostedInstance, Vst3HostedPortLayout, Vst3HostingError,
-    Vst3ProcessSession,
+    Vst3ProcessSession, VST3_RESTART_IO_CHANGED, VST3_RESTART_LATENCY_CHANGED,
 };
 pub use model::*;
 #[cfg(test)]
