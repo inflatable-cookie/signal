@@ -53,7 +53,7 @@ decision controls any future reopening.
 | [Bungee Source Architecture](./specimen-dossiers/bungee-source-architecture.md) | Whole-kernel common-region rotation and dynamic multichannel feasibility | Reviewed |
 | [SBSMS Source Architecture](./specimen-dossiers/sbsms-source-architecture.md) | Linked subband partial tracking, paired stereo trajectories, and direct oscillator synthesis | Source feasibility rejected |
 | [Creative Stretch Source Triangulation](./specimen-dossiers/creative-stretch-source-triangulation.md) | PaulXStretch, CDP, Potenza, and pinned SiTraNoStar whole-path ownership behind retained creative targets | Reviewed; no unused fifth owner, direct-renewal gate reset recommended |
-| [Cyclic Time-Stretch Source Architecture](./specimen-dossiers/cyclic-time-stretch-source-architecture.md) | Akai fixed `CYCLIC` versus adaptive `INTELL`, Potenza slow-anchor grains, SickoCV repeat/jump cycles, Sonic period insertion, and ReaReaRea forensics | Executable forensics complete; behavioral synthesis ready |
+| [Cyclic Time-Stretch Source Architecture](./specimen-dossiers/cyclic-time-stretch-source-architecture.md) | Akai fixed `CYCLIC` versus adaptive `INTELL`, Potenza slow-anchor grains, SickoCV repeat/jump cycles, Sonic period insertion, and ReaReaRea forensics | Reviewed; centred compressed-anchor behavior selected |
 
 Current stretch feasibility decision:
 [Offline Time-Stretch Non-Phase-Vocoder Feasibility](../architecture/offline-time-stretch-non-phase-vocoder-feasibility.md).
@@ -68,11 +68,16 @@ whole-renderer path under the evidence available then.
 
 The operator later reopened explicit `Cyclic` as a separate research program.
 Original Akai manuals separate fixed `CYCLIC` from adaptive `INTELL`, and
-pinned SickoCV adds an unstudied repeat/jump schedule. Batch 32.2 now
-distinguishes repeat/jump from compressed-anchor behavior and records
-ReaReaRea's separate centred event placement. Both prior Signal candidates
-remain rejected and deleted; no renderer brief or DSP is ready. This does not
-reopen the transparent successor lane.
+pinned SickoCV adds a distinct repeat/jump schedule. Batch 32.2 distinguishes
+it from compressed-anchor behavior and records ReaReaRea's centred event
+placement. Batch 32.3 selects centred compressed-anchor behavior, one fixed
+manual cycle, linked scheduling, and comparator-relative diagnostics. Both
+prior Signal candidates remain rejected and deleted. One complete renderer
+brief is ready; DSP is not. This does not reopen the transparent successor
+lane.
+
+Current Cyclic decision:
+[Offline Creative Cyclic Behavioral Synthesis](../architecture/offline-creative-cyclic-behavioral-synthesis.md).
 
 Explicit operator research reopening and pinned source triangulation selected
 one materially different neutral `Dream` family: `RenewalSpectral`. Later
@@ -213,5 +218,6 @@ Rejected first-owner brief:
 
 ## Next Task
 
-Execute `g10.032` Batch 32.3 only. Synthesize the Cyclic receipt and correct
-the future behavioral gate. Do not select or implement a Signal renderer.
+Execute `g10.032` Batch 32.4 only. Freeze one complete centred
+compressed-anchor Cyclic renderer and its evidence authority. Do not implement
+Signal DSP.

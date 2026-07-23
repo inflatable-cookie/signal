@@ -1,6 +1,6 @@
 # Cyclic Time-Stretch Source Architecture
 
-Status: executable forensics complete; behavioral synthesis ready
+Status: reviewed; centred compressed-anchor behavior selected
 Owner: dsp
 Updated: 2026-07-23
 Contract: `085`
@@ -464,8 +464,29 @@ Batch 32.2 resolves only the evidence questions:
 5. The old absolute pitch ceiling is invalid for this target.
 6. One shared clock preserves the tested stereo relations.
 
-Batch 32.3 must synthesize these results and correct the future gate. It may
-not choose a renderer by metric distance.
+## Behavioral Synthesis
+
+Batch 32.3 selects centred compressed-anchor Cyclic behavior:
+
+- one monotonic ideal map owns event centres and order
+- one fixed render-wide user cycle owns metallic-to-tremolo character
+- forward native-rate waveform reads and compressed source-anchor progress own
+  duration
+- ratio-dependent replica clusters are centred around mapped events
+- one linked schedule owns every channel and the exact boundary crop
+
+Raw repeat/jump is not the primary target. Automatic cycle selection is
+optional later assistance for strong-fundamental material, not `INTELL` and
+not part of the first candidate.
+
+The old absolute pitch ceiling is removed from Cyclic admission. Exact length,
+finiteness, determinism, bounded state, boundaries, commanded-replica
+ownership, and linked mechanics remain hard. Pitch, replica spacing, cadence,
+crest, level, and tail support are complete comparator-relative diagnostics.
+Concealed musical listening decides character and usefulness.
+
+The canonical decision is
+[Offline Creative Cyclic Behavioral Synthesis](../../architecture/offline-creative-cyclic-behavioral-synthesis.md).
 
 ## Sources
 
@@ -483,6 +504,6 @@ not choose a renderer by metric distance.
 
 ## Next Task
 
-Execute `g10.032` Batch 32.3 only. Synthesize the completed receipt, correct
-the behavioral gate, and record remaining listening uncertainty. Do not write
-a Signal renderer or freeze candidate constants.
+Execute `g10.032` Batch 32.4 only. Freeze one complete centred
+compressed-anchor Cyclic renderer and Contract `085` Rule 11 evidence
+authority. Do not implement candidate DSP.

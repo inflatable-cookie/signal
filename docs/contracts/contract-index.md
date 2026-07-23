@@ -55,10 +55,12 @@ memory alone.
   Batch 31.73 closed Cloud on contradictory occupancy authority. Batch 31.74
   narrowed coverage to exact fixed Dream; Batches 31.75-31.76 froze and
   admitted its minimal public wrapper. Both overlaps and the router stay paused
-- `g10.032` reopens `Cyclic` as research only after corrected original-system
-  evidence and a second source-available cyclic schedule. Batch 32.2 completes
-  executable forensics; Batch 32.3 is ready. No complete brief, candidate
-  renderer, or DSP implementation is authorized
+- `g10.032` reopens `Cyclic` after corrected original-system evidence and a
+  second source-available cyclic schedule. Batch 32.2 completes executable
+  forensics. Batch 32.3 selects centred compressed-anchor behavior, fixed
+  manual cycle ownership, linked scheduling, and a corrected gate. Batch 32.4
+  is ready for one complete brief; no candidate renderer or DSP implementation
+  is authorized
 - `082` and `g10.029` are historical evidence, not active execution authority
 - `g10.028` source-fill work remains paused
 
@@ -191,6 +193,6 @@ frozen elsewhere in this index.
 Keep Contract `084` closed. Contract `085` publicly admits fixed-ratio `Dream`
 at exact `4x`, `8x`, and `16x`. Cloud closed without an acoustic judgment
 after its second evidence-integrity failure. The broader range and routing are
-deferred. Execute `g10.032` Batch 32.3 only: behavioral synthesis and gate
-correction under the reopened research authority. Do not add candidate DSP to
-`main`.
+deferred. Execute `g10.032` Batch 32.4 only: freeze one complete centred
+compressed-anchor Cyclic renderer and evidence authority. Do not add candidate
+DSP to `main`.

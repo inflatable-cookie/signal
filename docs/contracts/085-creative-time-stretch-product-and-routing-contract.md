@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: exact-ratio Dream admitted; Cyclic research reopened
+Status: exact-ratio Dream admitted; Cyclic behavior selected
 Owner: core-product
 Updated: 2026-07-23
 Related contracts: `046`, `048`, `084`
@@ -8,6 +8,7 @@ Related architecture: `docs/architecture/offline-creative-time-stretch-study.md`
 `docs/architecture/offline-creative-fixed-ratio-public-surface.md`,
 `docs/architecture/offline-creative-direct-renewal-owner-study.md`,
 `docs/architecture/offline-creative-direct-renewal-dream-brief.md`,
+`docs/architecture/offline-creative-cyclic-behavioral-synthesis.md`,
 `docs/architecture/offline-creative-audited-layered-cloud-brief.md`,
 `docs/architecture/offline-creative-layered-cloud-brief.md`,
 `docs/architecture/offline-creative-linked-stn-noise-morph-brief.md`,
@@ -55,9 +56,8 @@ The stable semantic request contains:
 - exact target frame count
 - output/input duration ratio
 - `character`: `Dream`, `Spectral`, `Rough`, `Cloud`, or `Cyclic`
-- normalized `motion`
-- normalized `detail`
-- normalized `space`
+- character-valid normalized controls: `motion`, `detail`, and `space`
+- one character-valid `cycle` control for future `Cyclic`
 - deterministic seed or request for the identity-derived default
 
 Target frames are authoritative. Ratio is derived or validated against that
@@ -69,17 +69,22 @@ smooth, fused, musical spectral smear.
 `Spectral` intentionally exposes vocoder-like separation and decoherence.
 `Rough` intentionally exposes a less smoothed polyphase texture. `Cloud` means
 dispersed upper-range evolution. `Cyclic` means commanded Akai-style
-repetition. Both complete cyclic candidates are rejected and deleted. Final
-ownership reassessment found no third materially different, source-backed
-whole-renderer path under the evidence available then. The character remains
-unavailable. `g10.032` now reopens research only after new hardware-mode and
-source-schedule evidence; it does not authorize DSP or product exposure.
+repetition. Both historical cyclic candidates remain rejected and deleted.
+`g10.032` forensics now select centred compressed-anchor behavior and correct
+the invalid absolute pitch gate. The character remains unavailable until a
+fresh complete brief and isolated candidate pass.
 
 Batch 31.76 admits a minimal public boundary for private
 `DirectRenewalDream` at exact fixed `4x`, `8x`, and `16x`. That boundary
 exposes only `Dream`, exact target frames, and `space`. It does not imply that
 `Spectral`, `Rough`, `Cloud`, `Cyclic`, continuous ratios, or an automatic
 range router exist.
+
+Future `Cyclic` uses `duration`, `character=Cyclic`, and one semantic `cycle`
+control from short metallic motion through long tremolo/echo motion.
+`motion`, `detail`, and `space` are not Cyclic aliases. Automatic cycle
+selection, if later admitted, proposes one fixed render-wide cycle for
+eligible material; it does not become adaptive `INTELL`.
 
 These fields are intent, not transform controls. Public consumers must not
 select FFT size, window, grain size, overlap, phase mode, internal renderer,
@@ -131,10 +136,12 @@ cache identity.
 
 ### Rule 3: the UI vocabulary stays stable across renderer changes
 
-`duration`, `character`, `motion`, `detail`, and `space` retain their audible
-direction across every range. An internal renderer may implement the macro
-differently, but increasing a control must not reverse its semantic meaning at
-a routing boundary.
+Shared controls retain their audible direction across every range. An
+internal renderer may implement a shared macro differently, but increasing it
+must not reverse its semantic meaning at a routing boundary. Character-local
+controls are permitted only when the effect has a separate stable semantic
+owner; `cycle` is the initial Cyclic-local control. Consumers receive only
+controls valid for the selected admitted character.
 
 Character values are semantic anchor regions, not external algorithm names.
 The required initial anchors are:
@@ -240,7 +247,7 @@ Before product-facing caching, identity includes at least:
 - routing version
 - source content and channel layout
 - exact target frames and ratio/map identity
-- character, motion, detail, and space
+- character and every valid character control, including `cycle` for Cyclic
 - deterministic seed
 - projection epoch and any pitch/warp inputs that affect output
 
@@ -421,11 +428,47 @@ boundary law.
 
 The comparator's strongest `110 Hz` component is about `+114` cents at `2x`
 and `+120` cents at `8x`, so the absolute `15`-cent pitch rejection cannot be
-reused unchanged. Batch 32.3 owns the correction. Exact length, finiteness,
+reused unchanged. Batch 32.3 corrects it. Exact length, finiteness,
 boundary continuity, non-zero terminal crops, uncommanded replicas, and linked
 stereo remain hard integrity gates. Comparator-relative mechanics and operator
-listening own character. Batch 32.3 must freeze that behavioral gate before
-any complete renderer brief.
+listening own character.
+
+Batch 32.3 selects one centred compressed-anchor behavior for the future
+brief:
+
+- one monotonic ideal map owns event centres and source order
+- one fixed render-wide user cycle owns metallic-to-tremolo character
+- forward native-rate local reads and compressed source-anchor progress own
+  duration
+- ratio-dependent replica clusters are centred around mapped events
+- every linked channel shares anchors, weights, ledger, boundaries, and
+  normalization
+
+Simple whole-cycle repeat/jump does not match the measured target grammar.
+Similarity search remains separate adaptive `INTELL`. Auto-cycle is deferred
+specialist assistance and cannot vary cycle during the first renderer.
+
+The corrected Cyclic gate classifies exact length, finiteness, exact silence,
+determinism, bounded state, monotonic mapping, normalized crop coverage,
+exterior continuity, terminal crop state, commanded-replica ownership, linked
+mechanics, and pre-allocation `16x` rejection as hard. Pitch, replica count and
+spacing, event-centre delta, cadence, crest, level, dropout, tail support, and
+local stereo balance are complete diagnostics. Missing or non-finite evidence
+rejects. Finite character differences do not reject without concealed
+listening.
+
+Long-form mono uses the five retained families at `2x`, `4x`, and `8x`, with
+`4x` and `8x` primary. Pass requires recognizable Cyclic behavior at every
+ratio, useful output on a majority of all rows and primary rows, no unusable
+row or wholly unusable source family, and correctly directed short/long cycle
+character. Independent linked-stereo review follows mono. The scoped Dream
+waiver does not carry into Cyclic.
+
+The historical `CyclicGrain` receipt remains rejected, but its sole acoustic
+failure class is now addressed by explicit comparator-backed product-gate
+change under Rule 11. Batch 32.4 may freeze one fresh complete centred
+compressed-anchor authority. It may not recover deleted code, sweep constants,
+or repair the historical checkpoint.
 
 Batch 31.16 is that explicit research reopening for neutral `Dream`. Pinned
 PaulXStretch source shows one complete family not directly tested by the
@@ -1699,6 +1742,6 @@ and Chorus remain unchanged.
 
 ## Next Task
 
-No Contract `085` implementation batch is ready. Execute `g10.032` Batch 32.3
-only: synthesize the completed Cyclic receipt and correct the behavioral gate.
-Do not write Signal renderer code or choose candidate constants.
+Execute `g10.032` Batch 32.4 only. Freeze one complete centred
+compressed-anchor Cyclic renderer and its full Rule 11 evidence authority.
+Do not write candidate DSP in that batch.

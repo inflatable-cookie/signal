@@ -1,6 +1,6 @@
 # Offline Creative Time-Stretch Study
 
-Status: exact-ratio `CreativeStretch` admitted; Cyclic research reopened
+Status: exact-ratio `CreativeStretch` admitted; Cyclic behavior selected
 Owner: dsp
 Updated: 2026-07-23
 Contract: `085`
@@ -297,8 +297,24 @@ events. Neither source probe owns that complete scheduler.
 
 The same receipt invalidates the old absolute `15`-cent pitch gate for this
 effect and confirms that one shared schedule preserves the tested stereo
-relations. No Signal renderer is selected. Batch 32.3 must synthesize the
-behavioral result and remaining listening uncertainty before a complete brief.
+relations.
+
+Batch 32.3 selects centred compressed-anchor Cyclic behavior. One monotonic
+ideal map owns event centres; one fixed render-wide user cycle owns the
+metallic-to-tremolo direction; forward native-rate waveform reads create
+ratio-dependent replica clusters around those centres; every linked channel
+shares the schedule and exact boundary crop. Raw whole-cycle repeat/jump does
+not match the measured target grammar. Similarity search remains adaptive
+`INTELL`.
+
+The corrected gate keeps integrity, boundaries, commanded replicas, and linked
+mechanics hard. Pitch, cadence, replica distribution, crest, level, tail, and
+local balance become complete diagnostics. Concealed listening across the five
+musical families at `2x`, `4x`, and `8x` decides character and usefulness.
+
+The canonical decision is
+[Offline Creative Cyclic Behavioral Synthesis](./offline-creative-cyclic-behavioral-synthesis.md).
+It authorizes one docs-only complete brief next, not Signal DSP.
 
 ## Product Surface
 
@@ -316,6 +332,7 @@ Creative mode exposes:
 | `motion` | stable spectral body to actively evolving detail | yes |
 | `detail` | smeared attacks to more source-readable articulation | yes |
 | `space` | preserve source image to widen/diffuse it under linked-channel rules | advanced |
+| `cycle` | short metallic Cyclic motion through long tremolo/echo motion | Cyclic only |
 | `seed` | deterministic variation identity; default derived from artifact identity | advanced reroll only |
 
 Do not expose FFT size, window shape, grain size, overlap count, phase policy,
@@ -334,15 +351,16 @@ internal owners to realize it without exposing that choice to consumers:
 - `Cloud`: dispersed, evolving upper-range texture; later owner
 - `Cyclic`: explicit Akai-style repetition, anchored by REAPER `ReaReaRea`
 
-`motion`, `detail`, and `space` refine every character with the same semantic
-direction. A consumer gets one clean character selector and shared macro
-controls, not an algorithm menu.
+Shared controls retain one semantic direction wherever valid. Cyclic instead
+uses one character-local `cycle`; `motion`, `detail`, and `space` are not
+aliases for it. A consumer receives only the controls valid for an admitted
+character, not an algorithm menu or disabled fictional controls.
 
 `Cyclic` bypasses automatic coherent/diffusive/cloud selection because its
-repetitions are an explicit musical choice. Its first candidate is rejected;
-the character remains unavailable. Any reopening still targets expansion above
-`1x` through `8x`; higher ratios require separate listening before support is
-claimed.
+repetitions are an explicit musical choice. Both historical candidates remain
+rejected; the character remains unavailable. The selected behavior targets
+expansion above `1x` through `8x`; higher ratios require separate listening
+before support is claimed.
 
 ## Range-Routed Architecture
 
@@ -1047,6 +1065,6 @@ all retained construction, structural, and synthetic gates pass.
 
 ## Next Task
 
-Execute `g10.032` Batch 32.3 only. Synthesize the completed forensic receipt,
-correct the Cyclic behavioral gate, and record remaining listening uncertainty.
-Do not implement Signal Cyclic DSP.
+Execute `g10.032` Batch 32.4 only. Freeze one complete centred
+compressed-anchor Cyclic renderer and its Contract `085` Rule 11 evidence
+authority. Do not implement candidate DSP.

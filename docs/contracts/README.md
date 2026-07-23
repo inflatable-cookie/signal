@@ -112,8 +112,7 @@ Add a new contract only when the boundary needs stronger guarantees than
 
 Use `docs/contracts/contract-index.md` and `001-working-rules.md` as the
 contract front doors. Contract `084` and roadmap `g10.030` keep the transparent
-successor program closed. Contract `085` governs the separate creative path;
-Batch 31.44 froze fresh two-pass bounded `LinkedStnNoiseMorph` authority after
-the first candidate's structural `S17` rejection. Roadmap `g10.031` Batch
-31.45 is ready for one isolated implementation. No candidate surface may enter
-`main`; no public creative surface or strict spec lane is open.
+successor program closed. Contract `085` publicly admits fixed-ratio Dream and
+governs the separate Cyclic path. Execute `g10.032` Batch 32.4 only: freeze one
+complete centred compressed-anchor Cyclic renderer and evidence authority. No
+candidate surface may enter `main`; no strict spec lane is open.

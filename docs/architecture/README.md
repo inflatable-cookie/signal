@@ -28,6 +28,7 @@ Keep milestone sequencing in `roadmaps/`.
 - `offline-time-stretch-synthesis.md`
 - `offline-time-stretch-non-phase-vocoder-feasibility.md`
 - `offline-creative-time-stretch-study.md`
+- `offline-creative-cyclic-behavioral-synthesis.md`
 - `offline-creative-fixed-ratio-public-surface.md`
 - `offline-creative-audited-layered-cloud-brief.md`
 - `offline-creative-layered-cloud-brief.md`
@@ -45,6 +46,6 @@ Keep milestone sequencing in `roadmaps/`.
 ## Next Task
 
 Keep the `g10.030` transparent successor program closed. The exact-ratio
-`CreativeStretch` wrapper is admitted and `g10.031` is complete. Reopen
-creative cache, artifacts, routing, high-range research, runtime, Loophole, or
-Chorus work only through separate explicit authority.
+`CreativeStretch` wrapper is admitted and `g10.031` is complete. Execute
+`g10.032` Batch 32.4 only: freeze the complete Cyclic renderer and evidence
+brief. Reopen no DSP, cache, routing, runtime, Loophole, or Chorus work.

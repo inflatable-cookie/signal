@@ -90,7 +90,8 @@ brief opens.
 Intentional creative expansion is governed separately by Contract `085` and
 `docs/architecture/offline-creative-time-stretch-study.md`. Its automatic
 route and lower overlap are paused. Explicit `Cyclic` remains unavailable, but
-`g10.032` has reopened its source and behavioral research.
+`g10.032` has selected centred compressed-anchor behavior and corrected its
+future gate. No complete renderer brief or implementation exists yet.
 The private, unrouted `DirectRenewalDream` renderer owns exact fixed `4x`,
 `8x`, and `16x` neutral `Dream`. It does not replace this renderer or reopen
 Contract `084`. The attempted `LayeredCloud` owner closed without promotion.
@@ -118,6 +119,7 @@ ledger remains in git history at `1d1b02f1`.
 Retain this frozen baseline and keep its successor lane closed. `g10.031` also
 closed explicit `Cyclic` without promotion and retained the `2x..4x` creative
 overlap pause. `g10.032` later reopened Cyclic research after new fixed-mode
-and repeat/jump source evidence; it has not reopened implementation. Execute
-its Batch 32.2 ignored forensics only. Keep `main`, admitted renderers, both
+and repeat/jump source evidence. Batch 32.3 selects centred compressed-anchor
+behavior without reopening implementation. Execute Batch 32.4 only: freeze the
+complete renderer and evidence brief. Keep `main`, admitted renderers, both
 overlaps, product routing, and Contract `084` unchanged.

@@ -1,6 +1,6 @@
 # 032 - Cyclic Creative Stretch Research
 
-Status: active; Batch 32.3 ready
+Status: active; Batch 32.4 ready
 Owner: dsp
 Updated: 2026-07-23
 Contracts: `046`, `085`
@@ -84,23 +84,37 @@ batch.
 
 ## Batch 32.3 - Behavioral Synthesis And Gate Correction
 
-Status: ready
+Status: complete
 
-- [ ] distinguish compressed-anchor and repeat/jump behavior
-- [ ] decide whether fixed cycle length is sufficient
-- [ ] classify automatic cycle selection as Cyclic assistance, `INTELL`, or
+- [x] distinguish compressed-anchor and repeat/jump behavior
+- [x] decide whether fixed cycle length is sufficient
+- [x] classify automatic cycle selection as Cyclic assistance, `INTELL`, or
   unsupported
-- [ ] freeze the minimum useful UI vocabulary
-- [ ] replace arbitrary absolute quality thresholds with hard integrity and
+- [x] freeze the minimum useful UI vocabulary
+- [x] replace arbitrary absolute quality thresholds with hard integrity and
   comparator-relative diagnostics
-- [ ] record remaining uncertainty explicitly
+- [x] record remaining uncertainty explicitly
 
 This batch is docs only. If evidence cannot distinguish a complete schedule,
 close or extend research. Do not choose by convenience.
 
+Decision:
+
+- centred compressed-anchor Cyclic behavior selected
+- raw whole-cycle repeat/jump rejected as the primary target
+- fixed manual cycle sufficient for the first character
+- optional automatic cycle classified as later specialist assistance
+- `duration`, `character=Cyclic`, and `cycle` frozen as the minimum UI
+- integrity remains hard; finite character metrics diagnose; listening
+  promotes
+
+Authority:
+
+- [Offline Creative Cyclic Behavioral Synthesis](../../architecture/offline-creative-cyclic-behavioral-synthesis.md)
+
 ## Batch 32.4 - Complete Renderer Brief
 
-Status: blocked on Batch 32.3
+Status: ready
 
 Freeze one buildable renderer only if the source and behavioral evidence
 select it. The brief must jointly own:
@@ -135,5 +149,6 @@ remain separate stop points.
 
 ## Next Task
 
-Execute Batch 32.3 only. Synthesize the forensic receipt and correct the
-behavioral gate. Do not implement Signal Cyclic DSP.
+Execute Batch 32.4 only. Freeze one complete centred compressed-anchor Cyclic
+renderer and its Contract `085` Rule 11 evidence authority. Do not implement
+Signal Cyclic DSP.

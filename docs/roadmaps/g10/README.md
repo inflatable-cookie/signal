@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: Cyclic research active; Batch 32.3 ready
+Status: Cyclic research active; Batch 32.4 ready
 Updated: 2026-07-23
 
 ## Why this generation matters now
@@ -288,7 +288,8 @@ Do not start Loophole or Chorus planning from Signal internals.
   - deep Cyclic research reopened by operator decision; Batch 32.1 separates
     fixed Akai `CYCLIC` from adaptive `INTELL`, pins Potenza slow-anchor and
     SickoCV repeat/jump schedules; Batch 32.2 completes executable forensics
-    without selecting a renderer; Batch 32.3 is ready
+    without selecting a renderer; Batch 32.3 selects centred
+    compressed-anchor behavior and corrects the gate; Batch 32.4 is ready
 
 ## Stretch Boundary
 
@@ -619,11 +620,13 @@ source evidence distinguishes fixed `CYCLIC`, adaptive `INTELL`, Potenza's
 slow-anchor two-grain schedule, and SickoCV's explicit repeat/jump cycle clock.
 Batch 32.2 forensic evidence distinguishes the schedules, records
 ReaReaRea's compressed-anchor-like replica scaling and separate centred map,
-and invalidates the old absolute pitch gate. No new renderer, candidate brief,
-public character, routing, or cache is authorized. Batch 32.3 is the sole
-ready task.
+and invalidates the old absolute pitch gate. Batch 32.3 selects centred
+compressed-anchor behavior, a fixed manual cycle, linked scheduling, and a
+corrected integrity/diagnostic/listening gate. No renderer, public character,
+routing, or cache is authorized. Batch 32.4 is the sole ready task.
 
 ## Next Task
 
-Execute `g10.032` Batch 32.3 only. Synthesize the completed Cyclic forensic
-receipt and correct the behavioral gate. Do not implement Signal DSP.
+Execute `g10.032` Batch 32.4 only. Freeze one complete centred
+compressed-anchor Cyclic renderer and its Contract `085` Rule 11 evidence
+authority. Do not implement Signal DSP.
