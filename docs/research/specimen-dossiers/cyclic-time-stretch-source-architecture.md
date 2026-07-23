@@ -1,6 +1,6 @@
 # Cyclic Time-Stretch Source Architecture
 
-Status: source survey complete; executable forensics ready
+Status: executable forensics complete; behavioral synthesis ready
 Owner: dsp
 Updated: 2026-07-23
 Contract: `085`
@@ -269,9 +269,9 @@ historical control before listening would erase the effect's useful range.
 
 ## Executable Forensics
 
-The next batch is evidence-only. Use ignored `target/` or disposable external
-build state. Add no Signal DSP, private module, report mode, fixture, feature,
-or public API to `main`.
+Batch 32.2 ran as evidence-only work under ignored `target/` and disposable
+external build state. It added no Signal DSP, private module, report mode,
+fixture, feature, or public API to `main`.
 
 ### Specimens
 
@@ -312,6 +312,130 @@ Do not sweep candidate constants. This matrix identifies mechanism response.
 
 Metrics diagnose the schedule. They do not rank musical quality.
 
+## Batch 32.2 Receipt
+
+### Envelope
+
+- sample rate: `44100 Hz`
+- ratios: exact `2x`, `4x`, and `8x`
+- observation cycles: `5 ms`, `48 ms`, and `90 ms`
+- inputs: eleven synthetic sources and five retained musical families
+- ReaReaRea: `48` rows, including new musical `2x` and synthetic
+  `2x`/`4x`/`8x`
+- Potenza slow-anchor: `144` rows
+- SickoCV repeat/jump: `144` rows
+- Sonic period insertion: `9` specialist rows
+
+The cycle values are short, source-default-region, and long observation
+anchors. They are not Signal candidate constants.
+
+The Potenza probe was checked directly against the pinned `TimeStretch.h`.
+Its maximum absolute difference over an `8000`-frame verifier was
+`5.9604645e-8`.
+
+### Integrity
+
+| Path | Rows | Finite | Exact requested frames | Boundary result |
+| --- | ---: | ---: | ---: | --- |
+| Potenza slow-anchor | `144` | `144` | `144` | naturally reaches zero; tail support varies with ratio and cycle |
+| SickoCV repeat/jump | `144` | `144` | `144` | exact crop can retain a non-zero final sample |
+| REAPER ReaReaRea | `48` | `48` | `48` | exact item length with its retained item fade |
+| Sonic period insertion | `9` | `9` | `0` | error spans `-1950..+17906` frames |
+
+Sonic remains useful automatic-period evidence. It is not an exact-length
+full-mix owner.
+
+### Impulse Grammar
+
+ReaReaRea produced:
+
+| Ratio | Replicas around first/second event | Median spacing | Mean mapped-centre error |
+| --- | --- | ---: | --- |
+| `2x` | `3 / 3` | `1058.5` frames | `-176.3 / -88.3` frames |
+| `4x` | `7 / 6` | `1588` frames | `-529.1 / +529.2` frames |
+| `8x` | `14 / 12` | `1852` frames | `-308.7 / +308.8` frames |
+
+The source schedules are measurably different:
+
+- SickoCV emits exactly `ratio` replicas per event. At one fixed cycle its
+  output spacing stays fixed: `220`, `2117`, or `3969` frames.
+- Potenza emits more overlapping appearances than the integer repeat count,
+  increasing approximately with ratio. At the long observation cycle its
+  spacing rises from `1191.5` to `1787` to `2084` frames across `2x`, `4x`,
+  and `8x`.
+- ReaReaRea scales replica count like compressed-anchor overlap, not simple
+  whole-cycle repetition. Unlike the raw Potenza probe, it centres the
+  replicas around the mapped event.
+
+This distinguishes the two families. It does not yet freeze Signal's map,
+centering law, or cycle.
+
+### Tail Support
+
+On `M001` and `M005`, ReaReaRea's inactive tail is stable across material:
+
+| Ratio | ReaReaRea | Potenza `48 ms` | Potenza `90 ms` | SickoCV `90 ms` |
+| --- | ---: | ---: | ---: | ---: |
+| `2x` | `30.6..30.7 ms` | `10.8 ms` | `29.5 ms` | `0 ms`, non-zero crop |
+| `4x` | `130.6..130.7 ms` | `60.5 ms` | `131.5 ms` | `0 ms`, non-zero crop |
+| `8x` | `306.9..307.1 ms` | `170.5 ms` | `355.8 ms` | `0 ms`, non-zero crop |
+
+This is further compressed-anchor evidence. It also proves that boundary
+placement and tail ownership belong in the complete scheduler, not in a final
+cosmetic fade.
+
+### Pitch Diagnostic
+
+On the `110 Hz` tone, ReaReaRea's strongest measured component was:
+
+| Ratio | Dominant component | Input-relative delta |
+| --- | ---: | ---: |
+| `2x` | `117.500 Hz` | `+114.189 cents` |
+| `4x` | `110.833 Hz` | `+13.066 cents` |
+| `8x` | `117.917 Hz` | `+120.317 cents` |
+
+The old absolute `15`-cent gate is incompatible with the comparator at `2x`
+and `8x`. Pitch remains a mandatory diagnostic, not a character rejection
+threshold.
+
+### Linked Stereo
+
+Potenza, SickoCV, and ReaReaRea all preserved duplicate, anti-phase,
+thirteen-sample-delay, and `-6 dB` right-channel probes under one shared
+schedule. Worst balance error was:
+
+- Potenza: `0.001247 dB`
+- SickoCV: `0.001183 dB`
+- ReaReaRea: `0.001508 dB`
+
+Shared cycle ownership is sufficient for these linked mechanics. Independent
+listening remains the authority for image quality after a complete candidate
+exists.
+
+### Reproducibility
+
+Commands:
+
+- ReaReaRea:
+  `/Applications/REAPER.app/Contents/MacOS/REAPER -newinst -nosplash
+  -renderproject <project.rpp>`
+- Sonic: pinned `sonic -q -s <1/ratio> <input.wav> <output.wav>`
+- disposable runner:
+  `python3 target/cyclic-forensics-32-2/run_forensics.py all`
+
+Hashes:
+
+| Receipt item | SHA-256 |
+| --- | --- |
+| disposable runner | `31aaee1006b62fcd115c321c2f3a34afb9f31b4fc3ea9a005140947cfae3f704` |
+| source manifest | `3209e4aba4828966d1cfe8bb4a7639af03b2b059c19ab1d27409194bbb7bb54d` |
+| REAPER project manifest | `84f3722b971296812cf7040f3b4a7134b76588476eab2cf1dff86971f11ee515` |
+| full measurement manifest | `33e1137747bc7bb8ffab53b595fc4ebdee31b89a7b6bca3dae90c82bf1c48684` |
+| Potenza `144`-row output-hash group | `0330def15ca8a2394a460737f955e95eacc586e4b4d1d239aa0093c0e5b33356` |
+| SickoCV `144`-row output-hash group | `238e998a98de84b325a753f318eb8f81e7ae269295bb7a6964c6fc553016da71` |
+| ReaReaRea `48`-row output-hash group | `5bb7b55456065d8f3d69c7229abc117eacb9280cf298a779b634598a19663e11` |
+| Sonic `9`-row output-hash group | `4d548321086ef8ac3d2616ee09dba728b12a4decf7d5a109460377931d85a889` |
+
 ## Decision Gate
 
 Executable forensics must answer:
@@ -330,6 +454,19 @@ Only then may architecture select one complete renderer. If the evidence
 cannot distinguish a schedule, stop at research rather than choose by
 preference.
 
+Batch 32.2 resolves only the evidence questions:
+
+1. Compressed-anchor and repeat/jump grammars are distinguishable.
+2. Fixed-cycle musical sufficiency remains a listening question.
+3. Sonic supports specialist automatic-period guidance, not a default
+   full-mix owner.
+4. Neither raw source join law owns Signal's centred exact boundary scheduler.
+5. The old absolute pitch ceiling is invalid for this target.
+6. One shared clock preserves the tested stereo relations.
+
+Batch 32.3 must synthesize these results and correct the future gate. It may
+not choose a renderer by metric distance.
+
 ## Sources
 
 - [Akai S950 operator manual](https://manualzilla.com/doc/7440972/akai-s950-operator-s-manual)
@@ -346,6 +483,6 @@ preference.
 
 ## Next Task
 
-Execute `g10.032` Batch 32.2 only. Build the ignored source-faithful forensic
-matrix and capture missing ReaReaRea `2x` plus synthetic probes. Do not write a
-Signal renderer or freeze candidate constants.
+Execute `g10.032` Batch 32.3 only. Synthesize the completed receipt, correct
+the behavioral gate, and record remaining listening uncertainty. Do not write
+a Signal renderer or freeze candidate constants.

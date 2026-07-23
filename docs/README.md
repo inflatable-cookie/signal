@@ -87,5 +87,5 @@ strict lane.
 
 ## Next Task
 
-Execute `g10.032` Batch 32.2 only. Produce ignored source-faithful Cyclic
-forensics. Do not add Signal DSP or reopen a strict lane.
+Execute `g10.032` Batch 32.3 only. Synthesize the completed Cyclic receipt and
+correct the behavioral gate. Do not add Signal DSP or reopen a strict lane.

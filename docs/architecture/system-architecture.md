@@ -311,8 +311,11 @@ The current package-level naming proposal is recorded in
   `OfflineHighQuality` baseline.
 - `g10.031` publicly admits exact-ratio creative `Dream` and pauses broader
   range, routing, cache, and product integration.
+- `g10.032` researches unavailable `Cyclic` separately. Executable source
+  forensics are complete; no renderer or candidate lane is selected.
 
 ## Next Task
 
-Keep the completed `g10.031` exact-ratio API and frozen transparent baseline
-unchanged. Reopen creative work only through separate explicit authority.
+Keep the completed `g10.031` API and frozen transparent baseline unchanged.
+Execute `g10.032` Batch 32.3 only: behavioral synthesis and gate correction,
+without Signal DSP.

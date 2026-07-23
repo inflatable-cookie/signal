@@ -290,8 +290,15 @@ adaptive `INTELL` family and failed its frozen structural search.
 
 The canonical reopening study is
 [Cyclic Time-Stretch Source Architecture](../research/specimen-dossiers/cyclic-time-stretch-source-architecture.md).
-`g10.032` authorizes ignored source-faithful forensics only. No Signal renderer
-is selected.
+Batch 32.2 completes ignored source-faithful forensics. ReaReaRea's replica
+count and tail-support scaling are consistent with compressed-anchor overlap,
+not raw whole-cycle repetition. ReaReaRea also centres replicas around mapped
+events. Neither source probe owns that complete scheduler.
+
+The same receipt invalidates the old absolute `15`-cent pitch gate for this
+effect and confirms that one shared schedule preserves the tested stereo
+relations. No Signal renderer is selected. Batch 32.3 must synthesize the
+behavioral result and remaining listening uncertainty before a complete brief.
 
 ## Product Surface
 
@@ -1040,6 +1047,6 @@ all retained construction, structural, and synthetic gates pass.
 
 ## Next Task
 
-Execute `g10.032` Batch 32.2 only. Compare pinned fixed-cycle schedules against
-ReaReaRea at `2x`, `4x`, and `8x` through ignored forensic artifacts. Do not
-implement Signal Cyclic DSP.
+Execute `g10.032` Batch 32.3 only. Synthesize the completed forensic receipt,
+correct the Cyclic behavioral gate, and record remaining listening uncertainty.
+Do not implement Signal Cyclic DSP.

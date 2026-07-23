@@ -412,6 +412,21 @@ comparator-relative gates before one complete renderer brief can be written.
 No candidate DSP, hidden harness, fixture, report mode, public API, routing,
 cache, Loophole, or Chorus change is authorized by the research reopening.
 
+Batch 32.2 completes those executable forensics without selecting a renderer.
+ReaReaRea scales impulse replicas like compressed-anchor overlap rather than
+simple whole-cycle repetition, but centres them around the mapped event.
+Its ratio-dependent tail support follows the same broad evidence. The raw
+Potenza and SickoCV schedules do not own that complete centred map or exact
+boundary law.
+
+The comparator's strongest `110 Hz` component is about `+114` cents at `2x`
+and `+120` cents at `8x`, so the absolute `15`-cent pitch rejection cannot be
+reused unchanged. Batch 32.3 owns the correction. Exact length, finiteness,
+boundary continuity, non-zero terminal crops, uncommanded replicas, and linked
+stereo remain hard integrity gates. Comparator-relative mechanics and operator
+listening own character. Batch 32.3 must freeze that behavioral gate before
+any complete renderer brief.
+
 Batch 31.16 is that explicit research reopening for neutral `Dream`. Pinned
 PaulXStretch source shows one complete family not directly tested by the
 rejected briefs: long-window magnitude analysis, deliberate source-phase loss,
@@ -1684,6 +1699,6 @@ and Chorus remain unchanged.
 
 ## Next Task
 
-No Contract `085` implementation batch is ready. Execute `g10.032` Batch 32.2
-only: ignored source-faithful Cyclic forensics. Do not write Signal renderer
-code or choose candidate constants.
+No Contract `085` implementation batch is ready. Execute `g10.032` Batch 32.3
+only: synthesize the completed Cyclic receipt and correct the behavioral gate.
+Do not write Signal renderer code or choose candidate constants.
