@@ -1,7 +1,7 @@
 # g10 Milestones
 
-Status: creative stretch active; Batch 31.73 isolated candidate ready
-Updated: 2026-07-22
+Status: creative stretch active; Cloud closed, Batch 31.74 reassessment ready
+Updated: 2026-07-23
 
 ## Why this generation matters now
 
@@ -561,15 +561,23 @@ comparator capture, listening decision, cleanup action, and pass surface. Each
 structural or synthetic row runs as a separate nextest process under an
 enforced deadline. Component presence, centroids, cross-block dropout, final
 remainder, whole/band/window stereo evidence, truthful frame counts, and all
-`30` listening rows/`90` renders are explicit. Batch 31.73 is ready for one
-fresh isolated implementation. A second evidence-integrity failure closes
-Cloud.
+`30` listening rows/`90` renders are explicit. Batch 31.73 opened one fresh
+isolated implementation. A second evidence-integrity failure closes Cloud.
+
+Batch 31.73 compiled that source-clean implementation and passed construction
+`1/1`, then stopped before structural admission. The frozen `S03` equations
+require strict `2|q|<D` with `D<=20H`, which permits at most `20` regular
+launches plus one distinct terminal. The required exhaustive result `22` is
+unreachable; the actual bound is `21`. No checkpoint, acoustic ref, synthetic
+output, comparator output, or listening pack exists. This second evidence-
+integrity failure closes Cloud without another rebinding. Batch 31.74 is a
+docs-only high-range reassessment.
 
 ## Next Task
 
-Run `g10.031` Batch 31.73 only. Implement the frozen
-`AuditedLayeredCloud` brief once in its exact fresh isolated worktree. Pass
-construction and two complete structural rounds unchanged before acoustic
-identity. Do not recover Batch 31.70 source or output. Keep `g10.028`, admitted
-renderers, overlaps, routing, controls, cache, dynamic ratio, Loophole, Chorus,
-and cross-repo work unchanged. Do not push.
+Run `g10.031` Batch 31.74 only. Reassess the creative high range docs-first
+after Cloud closure. Decide whether `16x..100x` remains active, narrows to
+admitted coverage, or warrants a materially different complete-owner study.
+Do not repair or rebind LayeredCloud. Keep admitted renderers, routing,
+controls, cache, dynamic ratio, Loophole, Chorus, and cross-repo work
+unchanged. Do not push.

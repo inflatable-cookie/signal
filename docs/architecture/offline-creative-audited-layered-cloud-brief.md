@@ -1,10 +1,29 @@
 # Offline Creative AuditedLayeredCloud Renderer Brief
 
-Status: frozen; one fresh isolated implementation ready
+Status: closed; Batch 31.73 found contradictory occupancy authority
 Owner: dsp
-Updated: 2026-07-22
+Updated: 2026-07-23
 Contract: `085`, Rule 11
 Roadmap: `g10.031`, Batches 31.72-31.73
+
+## Authority Stop
+
+Batch 31.73 compiled the source-clean candidate and passed construction `1/1`.
+Before a structural round or acoustic identity, `S03` proved the frozen
+occupancy result impossible.
+
+The same brief requires strict support `2|q|<D`, `D<=20H`, and at most one
+distinct terminal launch. The open interval has width at most `20H`, so it
+contains at most `20` regular launch centres. The terminal raises the maximum
+to `21`, not the frozen `22`. `H=125`, a non-grid output residue, and
+`D=20H` attain `20` regular launches; a coincident distinct terminal attains
+`21`.
+
+Changing the predicate, duration ceiling, capacity result, vector, or
+assertion would repair frozen authority after source existed. Contract `085`
+forbids that. This is the second Cloud evidence-integrity failure. The family
+is closed without acoustic evidence or promotion. The brief remains as the
+rejected authority record, not execution authority.
 
 ## Decision
 
@@ -618,9 +637,7 @@ letting a metric promote the result.
 
 ## Next Task
 
-Run Batch 31.73 only. Create the exact fresh isolated worktree and implement
-this brief from canonical docs. Complete compile, construction, and two clean
-structural rounds before creating the acoustic ref. Stop for docs reassessment
-on any unanswered authority choice. Do not recover Batch 31.70 source or
-output, run acoustic work before the ref, change admitted renderers or product
-surfaces, touch Loophole or Chorus, or push.
+Run Batch 31.74 only. Reassess the creative high range after Cloud closure.
+Do not repair this brief or authorize another LayeredCloud identity. Keep
+admitted renderers, routing, controls, cache, dynamic ratio, Loophole, Chorus,
+and cross-repo work unchanged.

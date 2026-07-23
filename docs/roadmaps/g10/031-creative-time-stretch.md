@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: active; Batch 31.72 complete, Batch 31.73 isolated candidate ready
+Status: active; Cloud closed, Batch 31.74 range reassessment ready
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -2386,25 +2386,54 @@ Decision:
 
 ## Batch 31.73 - Isolated AuditedLayeredCloud Candidate
 
-Status: ready; one fresh source-clean implementation
+Status: complete; stopped before structural admission, Cloud closed
 
-- [ ] create only worktree `signal-candidate-31-73`, branch
+- [x] create only worktree `signal-candidate-31-73`, branch
   `candidate/g10-031-audited-layered-cloud`, the frozen private module,
-  tracked manifest/profile, ignored evidence root, and local acoustic ref
-- [ ] implement the complete renderer and all nine compile-linked specs from
+  tracked manifest/profile, and ignored evidence root
+- [x] implement the renderer and compile-linked construction surface from
   the Batch 31.72 brief without recovering Batch 31.70 source or output
-- [ ] compile every owner, pass construction `1/1`, and pass all `101`
-  structural rows and `51` renders twice unchanged from one clean tree
-- [ ] create the acoustic ref only after both clean conformance rounds, then
-  run `Y01..Y05`, concealed mono, and eligible independent stereo in order
-- [ ] stop for docs reassessment on any unanswered authority choice; stop and
+- [x] compile every owner and pass construction `1/1`
+- [x] stop before structural execution when the frozen `S03` strict-support
+  equations prove maximum occupancy `21` against required result `22`
+- [x] create no commit, checkpoint, acoustic ref, synthetic output,
+  comparator output, or listening pack
+- [x] classify the contradiction as the second Cloud evidence-integrity
+  failure and close the family without another rebinding
+- [x] stop for docs reassessment on unanswered authority; stop and
   reject on any post-checkpoint miss
-- [ ] keep admitted DSP, product surfaces, overlaps, routing, cache, dynamic
+- [x] keep admitted DSP, product surfaces, overlaps, routing, cache, dynamic
   ratio, Loophole, and Chorus unchanged
+
+Decision:
+
+- compile passed and construction returned `1/1`
+- strict `2|q|<D` with `D<=20H` admits at most `20` regular launches; one
+  distinct terminal admits at most `21`
+- the brief's required exhaustive maximum `22` is unreachable and cannot be
+  corrected inside an implementation batch
+- no acoustic identity exists and no Cloud renderer-quality conclusion follows
+- the disposable candidate worktree, branch, source, tests, and build state
+  are deleted after this docs closeout commits
+
+## Batch 31.74 - Creative High-Range Reassessment
+
+Status: ready; docs only
+
+- [ ] reconcile Cloud closure with admitted `DirectRenewalDream` coverage and
+  the operator's accepted creative effect
+- [ ] decide whether `16x..100x` remains an active product target, narrows to
+  admitted coverage, or requires a materially different complete owner study
+- [ ] do not rebind LayeredCloud, repair Batch 31.72, or infer a replacement
+  candidate from unjudged output
+- [ ] keep admitted DSP, routing, controls, cache, dynamic ratio, Loophole,
+  Chorus, and cross-repo surfaces unchanged
+- [ ] make no implementation batch ready unless one complete, materially
+  different architecture and executable authority are frozen docs-first
 
 ## Later Batches
 
-Closed or paused beyond the isolated candidate. Batch 31.73 is the sole ready
+Closed or paused beyond the range reassessment. Batch 31.74 is the sole ready
 batch.
 Every later product batch still requires separate authority:
 
@@ -2618,14 +2647,18 @@ Every later product batch still requires separate authority:
   failed checkpoint cannot be repaired or rerun and no source/output transfers
 - [x] Batch 31.72 froze one complete replacement renderer and executable
   evidence brief with every Batch 31.71 gap closed before implementation
+- [x] Batch 31.73 compiled the source-clean candidate and passed construction
+  `1/1`, then proved the frozen occupancy result `22` unreachable under the
+  same brief's strict support and `D<=20H` rules
+- [x] the second Cloud evidence-integrity failure closed the family before
+  structural admission, acoustic identity, synthetic output, or listening
 - [x] no candidate DSP, harness, fixture, comparator render, listening output,
   production surface, Loophole, or Chorus change entered `main`
 
 ## Next Task
 
-Batch 31.73 only. Create the exact fresh isolated worktree and implement the
-frozen `AuditedLayeredCloud` brief. Compile all owners, pass construction, and
-pass two complete structural rounds unchanged before creating acoustic
-identity. Do not recover Batch 31.70 source or output. Keep admitted renderers,
-overlaps, routing, controls, cache, dynamic ratio, Loophole, and Chorus
-unchanged. Do not push.
+Batch 31.74 only. Reassess the creative high range docs-first. Decide whether
+`16x..100x` remains active, narrows to admitted coverage, or warrants a
+materially different complete-owner study. Do not repair or rebind
+LayeredCloud. Keep admitted renderers, routing, controls, cache, dynamic ratio,
+Loophole, Chorus, and cross-repo work unchanged. Do not push.

@@ -1,7 +1,7 @@
 # Roadmap Generation Index
 
 Status: active
-Updated: 2026-07-22
+Updated: 2026-07-23
 
 ## Current generation posture
 
@@ -131,8 +131,9 @@ Updated: 2026-07-22
   does not share the coherent scheduler. Batch 31.69 froze one complete
   `LayeredCloud` authority for continuous fixed `16x..100x`. Batch 31.70's
   receipt is evidence-invalid. Batch 31.71 authorizes one fresh docs-first
-  `AuditedLayeredCloud` identity; Batch 31.72 freezes its complete authority
-  and Batch 31.73 isolated implementation is ready.
+  `AuditedLayeredCloud` identity; Batch 31.72 froze its authority, Batch 31.73
+  closed Cloud at contradictory occupancy authority, and Batch 31.74
+  high-range reassessment is ready.
 - Lifecycle reconciliation then closed stale `g10.001` and `g10.003` active
   markers and paused `g10.017` on its remaining hardware evidence. Signal's
   capture and live-monitor implementation is present. That lifecycle
@@ -157,7 +158,7 @@ Updated: 2026-07-22
 | `g06` | 2026-03-13 | Continue beyond reusable-boundary closeout with runtime recovery depth, instrumentation, feature breadth, and Loophole-facing runtime evidence | Closed on 2026-03-16 after recovery/resumability, profiling, VST3/AU, MIDI/event depth, hardware/external-I/O, media services, integrated acceptance, bounded soak, and generation-closeout promotion work landed |
 | `g07` | 2026-03-13 | Seed the post-`g06` feature-expansion queue around routing or multichannel depth, Linux-native breadth, control-surface substrate, and fuller time-stretch capability | Closed on 2026-03-19 after multichannel or spatial execution, LV2 and Linux backends, external MIDI/control surfaces, sample-domain stretch, integrated acceptance, and generation-closeout promotion work landed |
 | `g08` | 2026-03-19 | Continue beyond bounded feature-expansion closure with live Linux backend ownership, richer plugin or device protocol depth, immersive routing, and workflow-adjacent runtime services | Closed on 2026-03-22 after live Linux ownership, LV2 or plugin protocol depth, immersive render breadth, device-protocol substrate, preview workflows, grouped acceptance lanes, integrated acceptance, and final generation-closeout work landed |
-| `g10` | 2026-06-11 | Turn the 2026-06-11 deep audit into a remediation program: fix the real audio path, demolish simulated/narration mass (~70-80k LoC), consolidate hygiene, defer rebuilds to demand | Active; `g10.030` retained the frozen stretch baseline and `g10.031` privately admitted fixed-ratio `DirectRenewalDream`; Batch 31.72 froze complete `AuditedLayeredCloud` authority and Batch 31.73 isolated implementation is ready |
+| `g10` | 2026-06-11 | Turn the 2026-06-11 deep audit into a remediation program: fix the real audio path, demolish simulated/narration mass (~70-80k LoC), consolidate hygiene, defer rebuilds to demand | Active; `g10.030` retained the frozen stretch baseline and `g10.031` privately admitted fixed-ratio `DirectRenewalDream`; Batch 31.73 closed Cloud on contradictory occupancy authority and Batch 31.74 high-range reassessment is ready |
 | `g09` | 2026-04-08 | Turn the audit findings into a contract-backed realization, hardening, and interactive-proof program | Closed on 2026-04-11 after plugin and backend realization, production-readiness gating, and operator-visible demo proof landed |
 
 ## Rollover policy
@@ -177,9 +178,7 @@ If that cleanup has not happened, stay in the current generation and finish the 
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the current active-generation front door.
-Run `g10.031` Batch 31.73 only. Implement the frozen
-`AuditedLayeredCloud` brief once in its exact fresh isolated worktree. Pass
-construction and two complete structural rounds unchanged before acoustic
-identity. Do not recover Batch 31.70 source or output. Keep admitted renderers,
-overlaps, routing, controls, cache, dynamic ratio, product exposure, Loophole,
-and Chorus unchanged. Do not push.
+Run `g10.031` Batch 31.74 only. Reassess the creative high range after Cloud
+closure. Do not repair or rebind LayeredCloud. Keep admitted renderers,
+routing, controls, cache, dynamic ratio, product exposure, Loophole, and
+Chorus unchanged. Do not push.
