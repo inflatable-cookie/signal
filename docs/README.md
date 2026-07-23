@@ -31,6 +31,7 @@ strict lane.
 - Rejected offline stretch successor: [architecture/offline-time-stretch-successor-brief.md](./architecture/offline-time-stretch-successor-brief.md)
 - Non-phase-vocoder feasibility: [architecture/offline-time-stretch-non-phase-vocoder-feasibility.md](./architecture/offline-time-stretch-non-phase-vocoder-feasibility.md)
 - Creative time-stretch study: [architecture/offline-creative-time-stretch-study.md](./architecture/offline-creative-time-stretch-study.md)
+- Frozen exact-ratio CreativeStretch public surface: [architecture/offline-creative-fixed-ratio-public-surface.md](./architecture/offline-creative-fixed-ratio-public-surface.md)
 - Direct-renewal owner study: [architecture/offline-creative-direct-renewal-owner-study.md](./architecture/offline-creative-direct-renewal-owner-study.md)
 - Closed creative LinkedStnNoiseMorph brief: [architecture/offline-creative-linked-stn-noise-morph-brief.md](./architecture/offline-creative-linked-stn-noise-morph-brief.md)
 - Rejected creative ComparatorAuditedRenewalSpectral brief: [architecture/offline-creative-comparator-audited-renewal-spectral-brief.md](./architecture/offline-creative-comparator-audited-renewal-spectral-brief.md)
@@ -58,7 +59,7 @@ strict lane.
 - Roadmap index: [roadmaps/README.md](./roadmaps/README.md)
 - Generation index: [roadmaps/generation-index.md](./roadmaps/generation-index.md)
 - Stretch closeout roadmap: [roadmaps/g10/030-stretch-consolidation-and-completion.md](./roadmaps/g10/030-stretch-consolidation-and-completion.md)
-- Paused PaulX-like creative stretch roadmap: [roadmaps/g10/031-creative-time-stretch.md](./roadmaps/g10/031-creative-time-stretch.md)
+- Active PaulX-like creative stretch roadmap: [roadmaps/g10/031-creative-time-stretch.md](./roadmaps/g10/031-creative-time-stretch.md)
 - Strict-lane reference: [specs/001-g09-lane-first-strict-adoption.md](./specs/001-g09-lane-first-strict-adoption.md)
 - Active strict-lane card: none
 - Research index: [research/master-index.md](./research/master-index.md)
@@ -84,9 +85,7 @@ strict lane.
 
 ## Next Task
 
-No implementation batch is ready. Re-enter planning through
-`roadmaps/g10/README.md`. Creative work may reopen only through an explicit
-docs-first decision on a minimal public surface for admitted exact
-`4x`/`8x`/`16x` neutral `Dream`, or a materially different complete owner
-above `16x`. Do not repair or rebind LayeredCloud. Only drop into `specs/`
-when a strict lane is explicitly reopened.
+Run `g10.031` Batch 31.76 only. Implement the frozen exact-ratio
+`CreativeStretch` wrapper and focused tests. Keep acoustic DSP, cache, routing,
+tiers, controls, runtime, Loophole, Chorus, and cross-repo surfaces unchanged.
+Only drop into `specs/` when a strict lane is explicitly reopened.

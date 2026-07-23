@@ -205,7 +205,7 @@ Rejected first-owner brief:
 
 ## Next Task
 
-No creative implementation batch is ready. `g10.031` retains private exact
-`4x`/`8x`/`16x` neutral `Dream` and defers the broader range after Cloud
-closed without acoustic judgment. Re-enter planning through the `g10` front
-door.
+`g10.031` retains exact `4x`/`8x`/`16x` neutral `Dream` and defers the broader
+range after Cloud closed without acoustic judgment. Batch 31.75 froze one
+minimal public wrapper; run Batch 31.76 only without widening research or
+renderer scope.

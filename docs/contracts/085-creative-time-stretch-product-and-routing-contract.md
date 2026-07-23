@@ -1,10 +1,11 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: private exact-ratio Dream admitted; broader range and routing paused
+Status: private Dream admitted; minimal exact-ratio public API frozen
 Owner: core-product
 Updated: 2026-07-23
 Related contracts: `046`, `048`, `084`
 Related architecture: `docs/architecture/offline-creative-time-stretch-study.md`,
+`docs/architecture/offline-creative-fixed-ratio-public-surface.md`,
 `docs/architecture/offline-creative-direct-renewal-owner-study.md`,
 `docs/architecture/offline-creative-direct-renewal-dream-brief.md`,
 `docs/architecture/offline-creative-audited-layered-cloud-brief.md`,
@@ -71,10 +72,12 @@ repetition. Both complete cyclic candidates are rejected and deleted. Final
 ownership reassessment found no third materially different, source-backed
 whole-renderer path. The character is closed and unavailable.
 
-No character is public today. Private `DirectRenewalDream` is admitted only at
-exact fixed `4x`, `8x`, and `16x`. Any future public admission must expose only
-implemented values and ratios; it must not imply that `Spectral`, `Rough`,
-`Cloud`, `Cyclic`, continuous ratios, or an automatic range router exist.
+No character is public today. Batch 31.75 freezes a minimal public boundary for
+private `DirectRenewalDream` at exact fixed `4x`, `8x`, and `16x`; Batch 31.76
+must implement and validate it before public admission. That boundary exposes
+only `Dream`, exact target frames, and `space`. It must not imply that
+`Spectral`, `Rough`, `Cloud`, `Cyclic`, continuous ratios, or an automatic
+range router exist.
 
 These fields are intent, not transform controls. Public consumers must not
 select FFT size, window, grain size, overlap, phase mode, internal renderer,
@@ -212,6 +215,10 @@ implementation. Synthetic and listening helpers may not choose an implicit or
 local seed. A fixed-seed candidate pass does not admit product seed/reroll
 exposure; that requires a later frozen multi-seed character review.
 
+The Batch 31.75 minimal API always uses the admitted seed. It exposes no seed
+or reroll control. The engine version and complete request therefore remain
+byte-deterministic without widening the reviewed character domain.
+
 ### Rule 7: exact boundaries and bounded state remain mandatory
 
 Creative intent does not waive:
@@ -236,6 +243,11 @@ Before product-facing caching, identity includes at least:
 - projection epoch and any pitch/warp inputs that affect output
 
 Creative and transparent artifacts cannot collide.
+
+The Batch 31.75 public render boundary does not admit caching. The existing
+`StretchCacheIdentityInput` lacks creative character, `space`, fixed creative
+seed, and creative engine identity, so consumers must not use it for creative
+output. Cache support requires a later contract and implementation batch.
 
 ### Rule 9: listening defines creative quality
 
@@ -1041,6 +1053,10 @@ may resume.
 72. Reassess the creative high range. Complete; current executable coverage
     narrows to exact `4x`, `8x`, and `16x` private neutral `Dream`.
     `16x..100x` becomes deferred research intent with no ready owner.
+73. Freeze the minimal fixed-ratio public API. Complete; Batch 31.75 exposes
+    only exact target frames, fixed `Dream`, and admitted `space`, with one
+    fixed seed and no cache, route, tier, or cross-repo widening. Batch 31.76
+    implementation is ready.
 
 `Spectral`/`Rough`, both overlaps, dynamic ratios, and automatic routing still
 require separate reopening decisions backed by new complete-system evidence.
@@ -1617,10 +1633,26 @@ explicit operator decision and one materially different, source-backed
 complete owner frozen docs-first. Cloud may not be repaired, rebound, or
 renamed into that owner.
 
+Batch 31.75 freezes the separate
+[Offline Creative Fixed-Ratio Public Surface](../architecture/offline-creative-fixed-ratio-public-surface.md).
+The API is explicit offline whole-buffer rendering, not automatic routing. It
+accepts mono or interleaved stereo, exact target frames resolving to `4x`,
+`8x`, or `16x`, fixed `Dream`, and normalized `space`. It uses the admitted
+seed and returns typed errors without clamping or transparent fallback.
+
+The current `TimeStretcher` trait is not widened: its arbitrary mutable ratio,
+infallible output, and mono-first shape do not describe the creative request.
+`StretchBackendTier`, `StretchQuality`, `OfflineHighQualityPath`, and the
+transparent cache schema also remain unchanged. `motion`, `detail`, seed,
+pitch, reverse, dynamic ratio, routing, reports, runtime DTOs, Loophole, and
+Chorus remain absent.
+
+This docs-only freeze admits no public Rust item. Batch 31.76 may add one
+wrapper and focused tests only if the admitted acoustic files remain
+byte-identical and public output matches the private renderer byte-for-byte.
+
 ## Next Task
 
-No creative implementation batch is ready. Re-enter planning from the `g10`
-front door. Creative work may reopen only through a docs-first decision on a
-minimal public surface for admitted exact `4x`/`8x`/`16x` neutral `Dream`, or
-a materially different complete owner above `16x`. Do not repair or rebind
-LayeredCloud. Do not push.
+Run Batch 31.76 only. Implement the frozen exact-ratio `CreativeStretch`
+wrapper without changing acoustic DSP or widening cache, routing, tiers,
+controls, runtime, Loophole, or Chorus. Do not push.

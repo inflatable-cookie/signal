@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: creative stretch paused; private exact-ratio Dream retained
+Status: creative stretch active; Batch 31.76 public wrapper ready
 Updated: 2026-07-23
 
 ## Why this generation matters now
@@ -238,7 +238,7 @@ Do not start Loophole or Chorus planning from Signal internals.
   - historical correctness, listening, and rejected-successor ledger
 - `g10.030` `complete`
   - stretch consolidated; candidate families closed; frozen baseline retained
-- `g10.031` `paused`
+- `g10.031` `active`
   - PaulX-like neutral `Dream` remains product intent; Batch 31.36 passed all
     objective and mono gates, then failed source-relative stereo admission and
     was deleted; Batch 31.37 closed renewal after finding no different complete
@@ -279,6 +279,8 @@ Do not start Loophole or Chorus planning from Signal internals.
     isolated implementation ready; Batch 31.73 closes Cloud on contradictory
     occupancy authority; Batch 31.74 narrows executable creative coverage to
     private exact `4x`, `8x`, and `16x` Dream and defers the broader range;
+    Batch 31.75 freezes one minimal public `CreativeStretch` wrapper and makes
+    Batch 31.76 implementation ready;
     explicit `Cyclic` stays closed
 
 ## Stretch Boundary
@@ -585,10 +587,19 @@ no unused fifth family, so no materially different high-range owner or
 implementation is ready. Automatic routing, both overlaps, dynamic ratio,
 public controls, cache, and product exposure remain paused or absent.
 
+Batch 31.75 freezes the smallest honest public crate boundary. It keeps
+`DirectRenewalDream` internal and exposes only offline mono/stereo input, exact
+target frames resolving to `4x`, `8x`, or `16x`, fixed `Dream`, and admitted
+`space`. The wrapper uses the admitted fixed seed. It does not widen
+`TimeStretcher`, tiers, cache identity, routing, dynamic ratio, pitch, motion,
+detail, runtime, Loophole, or Chorus.
+
+Batch 31.76 is ready to implement that wrapper and focused tests. The four
+acoustic renderer files and public/private output must remain byte-identical.
+
 ## Next Task
 
-No implementation batch is ready. Re-enter planning from this generation
-front door. Reopen creative work only through an explicit docs-first decision
-on a minimal public surface for admitted exact `4x`/`8x`/`16x` neutral
-`Dream`, or a materially different complete owner above `16x`. Do not repair
-or rebind LayeredCloud. Do not push.
+Run `g10.031` Batch 31.76 only. Implement the frozen exact-ratio
+`CreativeStretch` wrapper and focused tests. Keep acoustic DSP byte-identical
+and do not widen cache, routing, tiers, controls, runtime, Loophole, Chorus, or
+cross-repo surfaces. Do not push.

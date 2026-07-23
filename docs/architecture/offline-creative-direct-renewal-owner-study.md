@@ -176,4 +176,6 @@ retaining the upper-overlap pause. Batch 31.70 Cloud evidence was invalid;
 Batch 31.71 authorized one fresh docs-first identity, and Batch 31.73 closed
 Cloud on its second evidence-integrity failure. Batch 31.74 narrows current
 creative coverage to this renderer's exact `4x`, `8x`, and `16x` envelope.
-Do not extend, route, or expose it without separate docs-first authority.
+Batch 31.75 freezes a minimal semantic public wrapper under separate
+authority. Run Batch 31.76 only; do not extend the renderer or add routing,
+cache, dynamic ratio, or another character.

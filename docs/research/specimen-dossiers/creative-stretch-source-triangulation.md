@@ -626,6 +626,7 @@ Primary source audit:
 
 ## Next Task
 
-No creative implementation batch is ready. Current executable coverage is
-private exact `4x`, `8x`, and `16x` neutral `Dream`; the broader range is
-deferred. Re-enter planning through the `g10` front door.
+Current executable coverage is private exact `4x`, `8x`, and `16x` neutral
+`Dream`; the broader range is deferred. Batch 31.75 froze a separate minimal
+public wrapper. Run Batch 31.76 only; no research or renderer reopening is
+authorized.

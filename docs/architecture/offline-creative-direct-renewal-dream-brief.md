@@ -653,6 +653,7 @@ frame lattice. Batch 31.69 froze a separate `LayeredCloud` authority and kept
 the upper overlap paused. Batch 31.70 Cloud evidence was invalid; Batch 31.71
 authorized one fresh docs-first identity, and Batch 31.73 closed Cloud on its
 second evidence-integrity failure. Batch 31.74 makes exact `4x`, `8x`, and
-`16x` this renderer's complete current creative envelope. Do not generalize
-its ratio support or add routing or product surface without separate docs-first
-authority.
+`16x` this renderer's complete current creative envelope. Batch 31.75 freezes
+a minimal `CreativeStretch` public wrapper under separate authority. Run Batch
+31.76 only; do not generalize ratio support or add routing, cache, dynamic
+ratio, or another character.

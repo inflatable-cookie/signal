@@ -1,6 +1,6 @@
 # Offline Creative Time-Stretch Study
 
-Status: private exact-ratio `DirectRenewalDream` admitted; broader range paused
+Status: minimal exact-ratio `CreativeStretch` public API frozen
 Owner: dsp
 Updated: 2026-07-23
 Contract: `085`
@@ -950,6 +950,27 @@ routing, dynamic ratio, public controls, cache, and product exposure remain
 paused or absent. Reopening above `16x` requires explicit operator authority
 and one materially different complete owner frozen docs-first.
 
+## Batch 31.75 Public Surface Decision
+
+The accepted fixed-ratio effect can cross the public crate boundary without
+claiming the abandoned router. The frozen surface is
+[Offline Creative Fixed-Ratio Public Surface](./offline-creative-fixed-ratio-public-surface.md).
+
+The API is separate from `TimeStretcher`, `StretchBackendTier`, and
+`OfflineHighQualityPath`. It accepts mono or interleaved stereo, sample rate,
+exact target frames resolving to `4x`, `8x`, or `16x`, fixed `Dream`, and
+normalized `space`. It is offline, whole-buffer, allocating, fallible, and
+deterministic.
+
+The public wrapper uses the admitted fixed seed. `motion`, `detail`, seed,
+pitch, reverse, dynamic ratio, routing, cache, artifacts, runtime DTOs,
+Loophole, and Chorus stay absent. The current transparent cache identity must
+not identify creative output.
+
+Batch 31.76 may implement only that wrapper. The four acoustic renderer files
+must remain byte-identical, and public output must match the private renderer
+byte-for-byte before the surface is admitted.
+
 ## Sources
 
 - [REAPER time-stretch engines](https://www.reaper.fm/about.php)
@@ -992,8 +1013,6 @@ and one materially different complete owner frozen docs-first.
 
 ## Next Task
 
-No creative implementation batch is ready. Return to the `g10` generation
-front door. Any creative reopening must first choose, docs-only, between a
-minimal public surface for admitted exact `4x`/`8x`/`16x` neutral `Dream` and
-a materially different complete owner study above `16x`. Do not repair or
-rebind LayeredCloud.
+Run Batch 31.76 only. Implement the frozen exact-ratio `CreativeStretch`
+wrapper without changing acoustic DSP or widening cache, routing, tiers,
+controls, runtime, Loophole, or Chorus.

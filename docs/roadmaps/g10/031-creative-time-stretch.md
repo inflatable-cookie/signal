@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: paused; private exact-ratio Dream admitted, broader range unowned
+Status: active; Batch 31.76 minimal public wrapper ready
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -2449,15 +2449,70 @@ Decision:
 - reopening above `16x` requires explicit operator authority plus one
   materially different, source-backed complete owner frozen docs-first
 
+## Batch 31.75 - Fixed-Ratio Public Surface Freeze
+
+Status: complete; docs only
+
+- [x] audit the admitted private request against the existing `TimeStretcher`,
+  tier, cache, and product contracts
+- [x] freeze one semantic public API that keeps `DirectRenewalDream` internal
+- [x] expose only mono/stereo input, sample rate, exact target frames, fixed
+  `Dream`, and admitted `space`
+- [x] retain the admitted fixed seed; do not expose seed or reroll
+- [x] reject unsupported targets without transparent fallback
+- [x] keep the API offline, allocating, whole-buffer, and audio-thread
+  unsupported
+- [x] freeze public error mapping, constants, UI meaning, implementation file
+  scope, and byte-identity gates
+- [x] keep current cache identity, tiers, routing, overlaps, dynamic ratio,
+  pitch, motion, detail, runtime, Loophole, and Chorus unchanged
+- [x] change documentation only
+
+Decision:
+
+- the existing `TimeStretcher` trait is not widened because its arbitrary
+  mutable ratio, infallible result, and mono-first shape do not own the
+  creative request
+- the public product name is `CreativeStretch`; `DirectRenewalDream` remains
+  an internal renderer identity
+- exact target frames remain authoritative and must resolve to `4x`, `8x`, or
+  `16x`
+- `space` is the only adjustable creative control; its default is `0.5`
+- public seed/reroll remains blocked pending multi-seed character review
+- the existing transparent cache schema must not identify creative output
+- one wrapper-only implementation batch is ready
+
+Authority:
+
+- [Offline Creative Fixed-Ratio Public Surface](../../architecture/offline-creative-fixed-ratio-public-surface.md)
+
+## Batch 31.76 - Minimal CreativeStretch Public Wrapper
+
+Status: ready; code and focused tests
+
+- [ ] add only the frozen public `CreativeStretch` types, constants, wrapper,
+  rustdoc, and focused tests
+- [ ] map the public request onto the admitted private renderer with the exact
+  fixed seed and unmodified `space`
+- [ ] prove byte-identical public/private output for mono and stereo at `4x`,
+  `8x`, and `16x`
+- [ ] map every private failure into the frozen public error
+- [ ] keep `analysis.rs`, `plan.rs`, `stereo.rs`, and `synthesis.rs`
+  byte-identical
+- [ ] rerun integrated construction `1/1`, structural `10/10`, and synthetic
+  `88/88` with `76/76` renders
+- [ ] add no cache, route, tier, dynamic ratio, pitch, motion, detail, report,
+  runtime, Loophole, Chorus, or cross-repo surface
+
 ## Later Batches
 
-No later batch is ready. Deferred product work requires separate authority:
+Deferred product work requires separate authority:
 
-- a public surface for exact fixed `4x`, `8x`, and `16x` neutral `Dream`
+- cache identity and artifact integration for admitted creative output
 - any materially different complete owner above `16x`
 - any coherent/Dream or Dream/high-range overlap
 - dynamic-ratio state continuity
-- cache and product-path review
+- runtime or product-workflow integration
 - `100x+` texture/freeze range
 
 ## Completion Gate
@@ -2677,13 +2732,20 @@ No later batch is ready. Deferred product work requires separate authority:
   converting Cloud's invalid evidence into an acoustic judgment
 - [x] the prior complete-owner audit found no materially different replacement
   ready for another implementation brief
-- [x] no implementation, routing, public-control, cache, dynamic-ratio, or
-  cross-repo batch became ready
+- [x] Batch 31.74 made no implementation, routing, public-control, cache,
+  dynamic-ratio, or cross-repo batch ready
+- [x] Batch 31.75 froze one minimal semantic public boundary without changing
+  code
+- [x] the public boundary exposes only exact `4x`/`8x`/`16x` target length,
+  fixed `Dream`, and admitted `space`
+- [x] the public boundary fixes the admitted seed and leaves seed/reroll,
+  motion, detail, pitch, dynamic ratio, routing, cache, and tiers absent
+- [x] Batch 31.76 is ready as wrapper-only implementation with byte-identical
+  acoustic files and output required
 
 ## Next Task
 
-No `g10.031` implementation batch is ready. Re-enter planning from the `g10`
-front door. Reopen creative work only through an explicit docs-first decision:
-either assess a minimal public surface for the admitted exact `4x`/`8x`/`16x`
-neutral `Dream`, or select a materially different, source-backed complete owner
-for ratios above `16x`. Do not repair or rebind LayeredCloud. Do not push.
+Run Batch 31.76 only. Implement the frozen exact-ratio `CreativeStretch`
+wrapper and focused tests. Keep acoustic DSP byte-identical and do not widen
+cache, routing, tiers, controls, runtime, Loophole, Chorus, or cross-repo
+surfaces. Do not push.

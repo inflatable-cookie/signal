@@ -186,5 +186,6 @@ frozen elsewhere in this index.
 Keep Contract `084` closed. Contract `085` admits private fixed-ratio
 `DirectRenewalDream` at exact `4x`, `8x`, and `16x`. Cloud closed without an
 acoustic judgment after its second evidence-integrity failure. The broader
-range and routing are paused; no implementation batch is ready. Re-enter
-planning through `docs/roadmaps/g10/README.md`.
+range and routing are paused. Batch 31.75 freezes one minimal exact-ratio
+public wrapper; run Batch 31.76 only without widening cache, tiers, routing, or
+cross-repo surfaces.

@@ -202,7 +202,11 @@ admission when its occupancy rules made the required maximum unreachable; the
 second evidence-integrity failure closes Cloud without acoustic judgment.
 Batch 31.74 narrows current executable creative coverage to private exact
 `4x`, `8x`, and `16x` neutral `Dream`. The broader range is deferred, and no
-implementation batch is ready.
+high-range implementation is ready. Batch 31.75 freezes one minimal public
+crate wrapper for the admitted exact-ratio effect. It exposes fixed `Dream`,
+exact target length, and `space`, retains the admitted seed, and leaves cache,
+routing, tiers, runtime, and cross-repo work unchanged. Batch 31.76 wrapper
+implementation is ready.
 Offline artifacts still need a streaming artifact writer/cache target for full
 peak-memory closure. Mono callback-state DSP has a
 no-allocation proof, linked stereo is implemented, ratio scheduling has
@@ -328,8 +332,7 @@ Before rollover:
 
 ## Next Task
 
-Use `docs/roadmaps/g10/README.md` as the active generation front door. No
-implementation batch is ready. Reopen creative work only through an explicit
-docs-first decision on a minimal public surface for admitted exact
-`4x`/`8x`/`16x` neutral `Dream`, or a materially different complete owner
-above `16x`. Do not repair or rebind LayeredCloud. Do not push.
+Use `docs/roadmaps/g10/README.md` as the active generation front door. Run
+`g10.031` Batch 31.76 only. Implement the frozen exact-ratio
+`CreativeStretch` wrapper without widening acoustic DSP, cache, routing, tiers,
+controls, runtime, Loophole, Chorus, or cross-repo surfaces. Do not push.

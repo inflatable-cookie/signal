@@ -638,6 +638,6 @@ letting a metric promote the result.
 ## Next Task
 
 Batch 31.74 narrows current executable creative coverage to private exact
-`4x`, `8x`, and `16x` neutral `Dream` and defers the broader range. No
-creative implementation batch is ready. Do not repair this brief or authorize
-another LayeredCloud identity.
+`4x`, `8x`, and `16x` neutral `Dream` and defers the broader range. Batch
+31.75 freezes a separate minimal public wrapper for that admitted renderer.
+Do not repair this brief or authorize another LayeredCloud identity.
