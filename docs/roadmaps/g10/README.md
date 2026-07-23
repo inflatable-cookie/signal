@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: Cyclic pre-source authority stop; Batch 32.10 ready
+Status: Cyclic executable authority reconciled; Batch 32.11 ready
 Updated: 2026-07-23
 
 ## Why this generation matters now
@@ -295,7 +295,7 @@ Do not start Loophole or Chorus planning from Signal internals.
     rounds; Batch 32.6 stops at evidence-invalid `Y01`; Batch 32.7 authorizes
     one fresh audited evidence identity; Batch 32.8 freezes a docs-only
     authority; Batch 32.9 finds it non-executable before source; Batch 32.10
-    manifest reconciliation is ready
+    freezes reproducible manifests; Batch 32.11 isolated conformance is ready
 
 ## Stretch Boundary
 
@@ -651,10 +651,14 @@ Batch 32.9 instead stopped before worktree creation. The brief does not freeze
 the exact expanded row/assertion manifests, comparator table and generator,
 summary/runner/sentinel schemas, or listening decision manifests that it
 requires construction to prove. Deleted checkpoint state remains prohibited.
-Batch 32.10 docs-only reconciliation is ready.
+Batch 32.10 closes those gaps with exact canonical encodings, `588` executable
+rows, assertion/diagnostic bindings, runner and sentinel behavior, a fresh
+reproducible `63`-row comparator set, and listening/reveal schemas. Batch 32.11
+isolated conformance is ready.
 
 ## Next Task
 
-Execute `g10.032` Batch 32.10 only. Freeze the missing executable manifest
-authority without worktree creation, comparator recapture, rejected-state
-recovery, or candidate code.
+Execute `g10.032` Batch 32.11 only. Create the fresh isolated identity,
+generate and bind the new comparator set before candidate source, implement
+the unchanged renderer and complete evidence owners, then finish two
+structural conformance rounds. Stop before acoustic execution.

@@ -240,6 +240,7 @@ mechanism survey.
 
 ## Next Task
 
-Execute `g10.032` Batch 32.10 only. Freeze the missing row, assertion,
-diagnostic, summary, runner, sentinel, comparator, and listening manifest
-authority before any isolated implementation resumes.
+Execute `g10.032` Batch 32.11 only. Create the fresh isolated audited identity,
+bind the reproducible comparator set, implement the unchanged renderer and
+complete evidence owners, and finish two structural conformance rounds. Stop
+before acoustic execution.

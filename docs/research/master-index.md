@@ -226,6 +226,7 @@ Rejected first-owner brief:
 
 ## Next Task
 
-Execute `g10.032` Batch 32.10 only. Freeze the missing executable manifest
-authority for the unchanged centred compressed-anchor renderer. No candidate
-DSP, comparator recapture, or rejected-state recovery is authorized.
+Execute `g10.032` Batch 32.11 only. Create the fresh isolated Cyclic identity,
+generate and bind the reproducible comparator set, implement the unchanged
+renderer and evidence owners, and complete two structural conformance rounds.
+No candidate DSP enters `main`.

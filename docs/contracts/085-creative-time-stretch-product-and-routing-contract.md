@@ -1798,8 +1798,18 @@ checkpoint under Rule 11. One docs-only reconciliation must make every named
 surface deterministic and construction-verifiable before isolation resumes.
 No implementation may choose the missing values.
 
+Batch 32.10 completes that reconciliation in the canonical brief. It freezes
+canonical text bytes, `588` exact executable rows, assertion/diagnostic
+identity and units, summary aggregation, Effigy runner and sentinel behavior,
+and listening decision/reveal schemas. It replaces the unreachable deleted
+manifest with a reproducible fresh `63`-row comparator set: `15` native-stereo
+musical, `30` mono synthetic, and `18` stereo synthetic rows. Historical mono
+hashes remain provenance only. Renderer formula and acoustic gates do not
+change.
+
 ## Next Task
 
-Execute `g10.032` Batch 32.10 only. Freeze the missing executable manifest
-authority without candidate source, comparator recapture, or recovery of the
-deleted checkpoint.
+Execute `g10.032` Batch 32.11 only. Create the fresh isolated audited identity,
+recapture and bind the new comparator set before candidate source, implement
+the unchanged renderer and owners, and complete two structural conformance
+rounds. Stop before every acoustic row.

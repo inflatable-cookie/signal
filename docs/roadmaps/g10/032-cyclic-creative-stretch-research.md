@@ -1,6 +1,6 @@
 # 032 - Cyclic Creative Stretch Research
 
-Status: active; Batch 32.10 ready
+Status: active; Batch 32.11 ready
 Owner: dsp
 Updated: 2026-07-23
 Contracts: `046`, `085`
@@ -282,7 +282,7 @@ and not a renderer rejection.
 
 ## Batch 32.10 - Executable Manifest Reconciliation
 
-Status: ready
+Status: complete
 
 Freeze the missing authority in the same canonical brief before another
 isolation attempt:
@@ -305,6 +305,45 @@ isolation attempt:
 Docs only. Do not create a candidate worktree, recover rejected state,
 recapture comparators, or write implementation.
 
+Result:
+
+- [x] freeze canonical TSV/JSON encoding and exact manifest headers
+- [x] freeze all `588` executable rows and deterministic row-ID expansion
+- [x] freeze per-row assertion and diagnostic identities, expected-value
+  vocabulary, and units
+- [x] freeze summary schemas and receipt aggregation hashes
+- [x] freeze Effigy invocation, environment, receipt roots, timeout, stop, and
+  no-retry behavior
+- [x] freeze real child-process failure, panic, kill, ACK, and duplicate-file
+  sentinels
+- [x] replace the unreachable comparator-manifest hash with one reproducible
+  `63`-row native-stereo/mono/stereo-synthetic set
+- [x] retire old mono comparator hashes to historical provenance only
+- [x] freeze normalized REAPER project semantics and source-container bytes
+- [x] freeze listening pack, key, decision, pre-screen, reveal, and listener
+  identity schemas
+
+The renderer is unchanged. Deleted state was not inspected or recovered.
+
+## Batch 32.11 - Fresh Isolated Candidate And Conformance
+
+Status: ready
+
+Start from the exact Batch 32.10 closeout commit:
+
+1. create only the frozen fresh worktree, branch, evidence root, module, runner,
+   profile, and ref namespace
+2. implement evidence/source/project generators before candidate DSP
+3. recapture and bind the exact new `63`-row comparator manifest
+4. implement the unchanged renderer and every compile-linked owner
+5. commit one clean candidate checkpoint
+6. run release compile, construction `1/1`, and all `339` structural rows
+7. repeat unchanged and require byte-identical receipts and summaries
+8. create the immutable acoustic ref
+
+Stop before `Y01`, exact `16x`, long-form rendering, or listening. Any
+remaining manifest choice stops again before checkpoint creation.
+
 ## Completion Gate
 
 - source families are pinned and clean-room boundaries recorded
@@ -318,8 +357,7 @@ recapture comparators, or write implementation.
 
 ## Next Task
 
-Execute Batch 32.10 only. Reconcile the missing executable manifest authority
-in the canonical audited brief. Freeze exact row, assertion, diagnostic,
-summary, runner, sentinel, comparator, and listening schemas without creating
-a worktree, recapturing audio, recovering rejected state, or writing candidate
-code.
+Execute Batch 32.11 only. Create the fresh isolated identity, generate and
+bind the new `63`-row comparator set before candidate source, implement the
+unchanged renderer and complete evidence owners, then finish two structural
+conformance rounds and create the acoustic ref. Stop before all acoustic rows.
