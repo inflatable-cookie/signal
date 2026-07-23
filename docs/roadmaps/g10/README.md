@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: audited Cyclic authority frozen; Batch 32.9 ready
+Status: Cyclic pre-source authority stop; Batch 32.10 ready
 Updated: 2026-07-23
 
 ## Why this generation matters now
@@ -293,8 +293,9 @@ Do not start Loophole or Chorus planning from Signal internals.
     complete candidate and Rule 11 evidence brief; Batch 32.5 seals the
     isolated immutable checkpoint after two nominally clean conformance
     rounds; Batch 32.6 stops at evidence-invalid `Y01`; Batch 32.7 authorizes
-    one fresh audited evidence identity; Batch 32.8 freezes its complete
-    docs-only authority; Batch 32.9 isolated conformance is ready
+    one fresh audited evidence identity; Batch 32.8 freezes a docs-only
+    authority; Batch 32.9 finds it non-executable before source; Batch 32.10
+    manifest reconciliation is ready
 
 ## Stretch Boundary
 
@@ -643,11 +644,17 @@ identity. Old isolated state is deleted. Batch 32.8 freezes
 `AuditedCenteredCompressedAnchorCyclic` without changing the renderer. Every
 row is now a one-shot process with fail-durable receipts; exact `16x`,
 comparator preparation, level policy, concealment, mono, and independent
-stereo ownership are complete. Batch 32.9 isolated conformance is ready.
+stereo behavior are described, but their exact executable manifests are not
+frozen.
+
+Batch 32.9 instead stopped before worktree creation. The brief does not freeze
+the exact expanded row/assertion manifests, comparator table and generator,
+summary/runner/sentinel schemas, or listening decision manifests that it
+requires construction to prove. Deleted checkpoint state remains prohibited.
+Batch 32.10 docs-only reconciliation is ready.
 
 ## Next Task
 
-Execute `g10.032` Batch 32.9 only. Create the fresh isolated audited identity,
-prepare and bind the comparator manifest, implement the unchanged renderer and
-complete one-shot evidence system, and finish two structural conformance
-rounds. Stop before acoustic, exact-`16x`, long-form, or listening execution.
+Execute `g10.032` Batch 32.10 only. Freeze the missing executable manifest
+authority without worktree creation, comparator recapture, rejected-state
+recovery, or candidate code.

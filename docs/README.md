@@ -90,7 +90,7 @@ strict lane.
 
 ## Next Task
 
-Execute `g10.032` Batch 32.9 only. Create the fresh isolated audited Cyclic
-identity, prepare the comparator manifest, implement the unchanged renderer
-and complete one-shot evidence system, and finish two structural conformance
-rounds. Stop before acoustic or listening execution.
+Execute `g10.032` Batch 32.10 only. Reconcile the audited Cyclic executable
+manifest authority: exact rows, assertions, diagnostics, summaries, runner,
+sentinel, comparator, and listening schemas. Do not create a worktree,
+recapture audio, recover rejected state, or write candidate code.

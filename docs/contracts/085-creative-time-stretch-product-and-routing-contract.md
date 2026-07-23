@@ -1786,9 +1786,20 @@ and bind every assertion, diagnostic, source, comparator, output, level,
 concealment, decision, and cleanup field before acoustic identity. This is the
 last evidence-authority attempt for the centred compressed-anchor identity.
 
+Batch 32.9 stopped before creating that identity. The pre-source audit found
+that the brief names but does not freeze exact expanded row IDs,
+assertion/diagnostic IDs, summary and runner schemas, sentinel bytes, the
+`63`-row comparator table/generator, or listening decision manifests. The
+recorded comparator hash cannot reproduce those bytes without recovering the
+deleted checkpoint, which remains prohibited.
+
+This is a docs-authority stop before candidate state, not an incomplete
+checkpoint under Rule 11. One docs-only reconciliation must make every named
+surface deterministic and construction-verifiable before isolation resumes.
+No implementation may choose the missing values.
+
 ## Next Task
 
-Execute `g10.032` Batch 32.9 only. Create the fresh isolated audited identity,
-prepare the comparator manifest, implement the unchanged renderer and complete
-one-shot evidence system, and finish two structural conformance rounds. Stop
-before every acoustic, exact-`16x`, long-form, and listening row.
+Execute `g10.032` Batch 32.10 only. Freeze the missing executable manifest
+authority without candidate source, comparator recapture, or recovery of the
+deleted checkpoint.

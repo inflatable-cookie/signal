@@ -240,7 +240,6 @@ mechanism survey.
 
 ## Next Task
 
-Execute `g10.032` Batch 32.9 only. Create the fresh isolated audited identity,
-bind its comparator manifest, implement the unchanged frozen renderer and
-one-shot evidence owners, and complete two structural conformance rounds. Do
-not run acoustic owners before the checkpoint.
+Execute `g10.032` Batch 32.10 only. Freeze the missing row, assertion,
+diagnostic, summary, runner, sentinel, comparator, and listening manifest
+authority before any isolated implementation resumes.

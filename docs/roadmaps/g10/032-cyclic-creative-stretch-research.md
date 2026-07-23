@@ -1,6 +1,6 @@
 # 032 - Cyclic Creative Stretch Research
 
-Status: active; Batch 32.9 ready
+Status: active; Batch 32.10 ready
 Owner: dsp
 Updated: 2026-07-23
 Contracts: `046`, `085`
@@ -45,7 +45,7 @@ Target expansion remains continuous above `1x` through `8x`, with mandatory
 
 ## Batch 32.1 - Source Architecture Survey
 
-Status: complete
+Status: complete; later found non-executable
 
 - [x] re-read both rejected Signal cyclic briefs and receipts
 - [x] separate original Akai `CYCLIC` from `INTELL`
@@ -238,9 +238,13 @@ Authority:
 
 - [Offline Creative AuditedCenteredCompressedAnchorCyclic Brief](../../architecture/offline-creative-audited-centered-compressed-anchor-cyclic-brief.md)
 
+Batch 32.9 proved that the checked prose coverage did not freeze the exact
+machine-readable identities and bytes required by Rule 11. The authority is
+not implementation-ready until Batch 32.10 closes those gaps.
+
 ## Batch 32.9 - Fresh Isolated Candidate And Conformance
 
-Status: ready
+Status: stopped before isolation or source
 
 Start from the exact Batch 32.8 closeout commit. Create only the frozen fresh
 identity. Prepare and bind the comparator manifest, implement the unchanged
@@ -257,6 +261,50 @@ Stop before `Y01`, exact `16x`, long-form render, or listening execution. Any
 missing authority, evidence edge, or choice stops for docs-level reassessment.
 Do not recover rejected source.
 
+Actual result:
+
+- [x] confirm clean `main` at Batch 32.8 closeout
+  `aaa0a7913fd41020c73788d87f9e8cf41bfa197d`
+- [x] confirm fresh worktree, branch, build root, and evidence ref are absent
+- [x] inspect Effigy test shape and the private crate integration surface
+- [x] stop before creating the worktree, recapturing comparators, or writing
+  candidate source
+- [x] record that the brief does not freeze the comparator manifest bytes,
+  exact comparator row set, or project/source generator schema
+- [x] record that the brief does not freeze exact expanded row IDs,
+  per-row assertion/diagnostic IDs, summary schema, runner environment, or
+  sentinel protocol bytes
+- [x] do not recover those values from the deleted checkpoint
+
+The renderer remains selected. The executable evidence authority is not
+implementation-ready. This is a pre-source docs gap, not a second checkpoint
+and not a renderer rejection.
+
+## Batch 32.10 - Executable Manifest Reconciliation
+
+Status: ready
+
+Freeze the missing authority in the same canonical brief before another
+isolation attempt:
+
+- exact deterministic row-ID grammar and ordered expansion for every
+  structural, synthetic, exact-`16x`, long-form, and listening row
+- exact assertion and diagnostic IDs, applicability, expected values, units,
+  and terminal `not_run` representation
+- exact row-manifest and summary schemas, canonical bytes, and hash rules
+- exact runner environment names, process invocation, receipt-root grammar,
+  stop behavior, and child-sentinel handshake
+- exact `63` comparator rows, source formulas, project generator, TSV schema,
+  ordering, and fresh recapture receipt
+- explicit replacement of the unreachable deleted-checkpoint manifest hash
+  without using deleted source
+- exact long-form pack, concealment-key, decision, reveal, and stereo-review
+  manifest schemas
+- construction bindings that prove the concrete executors rather than prose
+
+Docs only. Do not create a candidate worktree, recover rejected state,
+recapture comparators, or write implementation.
+
 ## Completion Gate
 
 - source families are pinned and clean-room boundaries recorded
@@ -264,13 +312,14 @@ Do not recover rejected source.
 - operator listening owns musical character
 - integrity metrics reject clicks, invalid duration, broken stereo, and
   uncommanded replicas
-- one complete renderer brief exists before implementation
+- one complete renderer and executable-evidence brief exists before
+  implementation
 - rejected candidate code and evidence scaffolding stay out of `main`
 
 ## Next Task
 
-Execute Batch 32.9 only. Create the fresh isolated
-`AuditedCenteredCompressedAnchorCyclic` identity, prepare the comparator
-manifest, implement the unchanged frozen renderer and complete one-shot
-evidence system, and complete two structural conformance rounds. Stop before
-all acoustic, exact-`16x`, long-form, and listening rows.
+Execute Batch 32.10 only. Reconcile the missing executable manifest authority
+in the canonical audited brief. Freeze exact row, assertion, diagnostic,
+summary, runner, sentinel, comparator, and listening schemas without creating
+a worktree, recapturing audio, recovering rejected state, or writing candidate
+code.

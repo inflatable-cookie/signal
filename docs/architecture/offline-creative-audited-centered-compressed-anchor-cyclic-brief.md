@@ -1,6 +1,6 @@
 # Offline Creative AuditedCenteredCompressedAnchorCyclic Brief
 
-Status: frozen; Batch 32.9 ready
+Status: pre-source authority-incomplete; Batch 32.10 reconciliation ready
 Owner: dsp
 Updated: 2026-07-23
 Contracts: `046`, `085` Rule 11
@@ -913,10 +913,30 @@ Loophole, or Chorus.
 
 These are admission risks, not open design choices.
 
+## Pre-Source Execution Audit
+
+Batch 32.9 stopped before worktree creation, comparator recapture, or
+candidate source. The implementation audit found authority the brief requires
+construction to verify but does not itself freeze:
+
+- exact bytes and schema of the required `63`-row comparator manifest
+- exact synthetic/stereo comparator row membership and order
+- exact REAPER project and source-container generator bytes
+- exact expanded row IDs and per-row assertion/diagnostic IDs
+- exact summary schema and aggregate receipt bytes
+- exact runner environment, receipt-root, and child-sentinel handshake
+- exact long-form pack, decision, reveal, and stereo-review manifest schemas
+
+The deleted checkpoint is the only known local source for some of these
+values, and this brief prohibits recovering it. Its manifest hash is therefore
+a verifier without a reproducible generator.
+
+No candidate identity exists. This is a docs-authority stop, not an acoustic
+or structural result and not a second incomplete-evidence checkpoint.
+
 ## Next Task
 
-Execute `g10.032` Batch 32.9 only. From the exact Batch 32.8 closeout commit,
-create the fresh isolated identity, prepare and bind the comparator manifest,
-implement this unchanged renderer and complete row protocol, then run compile,
-construction, and two structural conformance rounds. Stop before every
-synthetic, exact-`16x`, long-form, or listening row.
+Execute `g10.032` Batch 32.10 only. Freeze the missing row, assertion,
+diagnostic, summary, runner, sentinel, comparator, and listening manifest
+authority in this brief. Do not create a worktree, recapture comparators,
+recover rejected state, or write candidate code.
