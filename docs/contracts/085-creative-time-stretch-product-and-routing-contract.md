@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: exact-ratio Dream public API admitted; initial lane complete
+Status: exact-ratio Dream admitted; Cyclic research reopened
 Owner: core-product
 Updated: 2026-07-23
 Related contracts: `046`, `048`, `084`
@@ -21,8 +21,9 @@ Related architecture: `docs/architecture/offline-creative-time-stretch-study.md`
 `docs/architecture/offline-creative-similarity-aligned-cyclic-brief.md`,
 `docs/architecture/offline-creative-cyclic-grain-brief.md`
 Related research:
-`docs/research/specimen-dossiers/creative-stretch-source-triangulation.md`
-Roadmap: `g10.031`
+`docs/research/specimen-dossiers/creative-stretch-source-triangulation.md`,
+`docs/research/specimen-dossiers/cyclic-time-stretch-source-architecture.md`
+Roadmaps: `g10.031`, `g10.032`
 
 ## Purpose
 
@@ -70,7 +71,9 @@ smooth, fused, musical spectral smear.
 dispersed upper-range evolution. `Cyclic` means commanded Akai-style
 repetition. Both complete cyclic candidates are rejected and deleted. Final
 ownership reassessment found no third materially different, source-backed
-whole-renderer path. The character is closed and unavailable.
+whole-renderer path under the evidence available then. The character remains
+unavailable. `g10.032` now reopens research only after new hardware-mode and
+source-schedule evidence; it does not authorize DSP or product exposure.
 
 Batch 31.76 admits a minimal public boundary for private
 `DirectRenewalDream` at exact fixed `4x`, `8x`, and `16x`. That boundary
@@ -386,6 +389,28 @@ Final ownership reassessment closes explicit `Cyclic`:
 
 No third cyclic implementation is authorized. New complete-system evidence or
 an explicit operator decision is required before any creative owner reopens.
+
+The operator supplied that decision on 2026-07-23 for a separate deep Cyclic
+research program. New evidence corrects the old ownership model:
+
+- Akai S1000/S2000 documentation separates fixed-cycle `CYCLIC` from adaptive
+  `INTELL`
+- TAL-Sampler preserves the same split
+- pinned SickoCV supplies an unstudied explicit repeat/jump cycle schedule,
+  distinct from Potenza's alternating slow-anchor grains
+- the rejected `CyclicGrain` stopped on an absolute `15`-cent threshold before
+  any ReaReaRea-relative pitch evidence or musical comparison
+
+This reopens evidence, not implementation. Both deleted candidates stay
+deleted. Search changes remain repairs to `SimilarityAlignedCyclic`; grain
+constant changes remain repairs to `CyclicGrain`.
+
+`g10.032` must first compare the pinned source schedules and ReaReaRea through
+ignored executable forensics. It must freeze the source clock, cycle owner,
+ratio accumulator, join law, linked-channel rule, control vocabulary, and
+comparator-relative gates before one complete renderer brief can be written.
+No candidate DSP, hidden harness, fixture, report mode, public API, routing,
+cache, Loophole, or Chorus change is authorized by the research reopening.
 
 Batch 31.16 is that explicit research reopening for neutral `Dream`. Pinned
 PaulXStretch source shows one complete family not directly tested by the
@@ -1659,6 +1684,6 @@ and Chorus remain unchanged.
 
 ## Next Task
 
-No Contract `085` implementation batch is ready. `g10.031` is complete.
-Reopening requires named-consumer integration authority or renewed
-source-backed high-range research.
+No Contract `085` implementation batch is ready. Execute `g10.032` Batch 32.2
+only: ignored source-faithful Cyclic forensics. Do not write Signal renderer
+code or choose candidate constants.

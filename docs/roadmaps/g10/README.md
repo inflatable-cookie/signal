@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: creative fixed-ratio lane complete; next generation priority unselected
+Status: Cyclic research active; Batch 32.2 ready
 Updated: 2026-07-23
 
 ## Why this generation matters now
@@ -284,6 +284,10 @@ Do not start Loophole or Chorus planning from Signal internals.
     Batch 31.75 freezes one minimal public `CreativeStretch` wrapper; Batch
     31.76 admits it with byte-identical acoustic output;
     explicit `Cyclic` stays closed
+- `g10.032` `active`
+  - deep Cyclic research reopened by operator decision; Batch 32.1 separates
+    fixed Akai `CYCLIC` from adaptive `INTELL`, pins Potenza slow-anchor and
+    SickoCV repeat/jump schedules, and makes ignored executable forensics ready
 
 ## Stretch Boundary
 
@@ -609,8 +613,14 @@ checkpoint. With no named consumer or new source authority supplied, Batch
 31.78 takes the recommended freeze path and closes `g10.031` on the admitted
 public surface. Deferred scope creates no ready Batch 31.79.
 
+`g10.032` now reopens Cyclic research only. New original-manual and pinned
+source evidence distinguishes fixed `CYCLIC`, adaptive `INTELL`, Potenza's
+slow-anchor two-grain schedule, and SickoCV's explicit repeat/jump cycle clock.
+No new renderer, candidate brief, public character, routing, or cache is
+authorized. Batch 32.2 is the sole ready task.
+
 ## Next Task
 
-No creative-stretch batch is ready. Select another Signal priority from the
-paused/deferred `g10` milestones, or explicitly reopen `g10.031` with named-
-consumer integration authority or a materially different source-backed owner.
+Execute `g10.032` Batch 32.2 only. Produce ignored source-faithful Cyclic
+forensics against ReaReaRea at `2x`, `4x`, and `8x`. Do not implement Signal
+DSP.

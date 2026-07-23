@@ -89,12 +89,12 @@ brief opens.
 
 Intentional creative expansion is governed separately by Contract `085` and
 `docs/architecture/offline-creative-time-stretch-study.md`. Its automatic
-route, explicit `Cyclic` character, and lower overlap are closed or paused.
+route and lower overlap are paused. Explicit `Cyclic` remains unavailable, but
+`g10.032` has reopened its source and behavioral research.
 The private, unrouted `DirectRenewalDream` renderer owns exact fixed `4x`,
 `8x`, and `16x` neutral `Dream`. It does not replace this renderer or reopen
-Contract `084`. One complete private `LayeredCloud` brief now covers continuous
-fixed `16x..100x`; its candidate is not implemented. Both creative overlaps
-remain paused.
+Contract `084`. The attempted `LayeredCloud` owner closed without promotion.
+Both creative overlaps remain paused.
 
 ## Candidate Isolation
 
@@ -117,6 +117,7 @@ ledger remains in git history at `1d1b02f1`.
 
 Retain this frozen baseline and keep its successor lane closed. `g10.031` also
 closed explicit `Cyclic` without promotion and retained the `2x..4x` creative
-overlap pause. Run its Batch 31.70 isolated `LayeredCloud` candidate only.
-Keep `main`, admitted renderers, both overlaps, product routing, and Contract
-`084` unchanged.
+overlap pause. `g10.032` later reopened Cyclic research after new fixed-mode
+and repeat/jump source evidence; it has not reopened implementation. Execute
+its Batch 32.2 ignored forensics only. Keep `main`, admitted renderers, both
+overlaps, product routing, and Contract `084` unchanged.

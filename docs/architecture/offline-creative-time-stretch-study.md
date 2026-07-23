@@ -1,6 +1,6 @@
 # Offline Creative Time-Stretch Study
 
-Status: exact-ratio `CreativeStretch` public API admitted; initial lane complete
+Status: exact-ratio `CreativeStretch` admitted; Cyclic research reopened
 Owner: dsp
 Updated: 2026-07-23
 Contract: `085`
@@ -23,7 +23,7 @@ Initial product range:
 - creative expansion only
 - core spectral comparator ratios: `4x`, `8x`, and `16x`
 - retained cyclic comparator ratios: identity, `2x`, `4x`, and `8x`; explicit
-  cyclic implementation is closed
+  cyclic implementation remains unavailable while `g10.032` researches it
 - current executable creative coverage: exact `4x`, `8x`, and `16x`
 - planned routed range: `1x` through `100x`, deferred and unowned
 - primary design point: `8x`
@@ -266,6 +266,32 @@ The two candidate failures are different, but every remaining waveform option
 is either a direct repair of one of them or requires an unowned period,
 component, stereo, or model boundary. A third implementation is not ready.
 `Cyclic` remains useful comparator vocabulary, not an available character.
+
+## Cyclic Research Reopening
+
+The operator reopened `Cyclic` research on 2026-07-23. This supersedes the
+Batch 31.15 "no third family" conclusion at research level only.
+
+The prior source set collapsed two historical Akai modes:
+
+- fixed `CYCLIC`: one user-selected cycle duration
+- adaptive `INTELL`: material-dependent decisions and correlation
+
+It also missed pinned SickoCV's repeat/jump cycle clock. Potenza alternates two
+forward grains around a slow source cursor; SickoCV repeatedly corrects one
+forward cursor at explicit cycle boundaries and crossfades the jump. These are
+different complete schedules.
+
+The rejected `CyclicGrain` candidate remains deleted. Its `20.778`-cent first
+row exceeded the frozen absolute ceiling by `5.778` cents, but no matching
+ReaReaRea pitch delta or musical comparison ran. The receipt does not establish
+target failure. `SimilarityAlignedCyclic` also stays deleted; it belongs to the
+adaptive `INTELL` family and failed its frozen structural search.
+
+The canonical reopening study is
+[Cyclic Time-Stretch Source Architecture](../research/specimen-dossiers/cyclic-time-stretch-source-architecture.md).
+`g10.032` authorizes ignored source-faithful forensics only. No Signal renderer
+is selected.
 
 ## Product Surface
 
@@ -1014,5 +1040,6 @@ all retained construction, structural, and synthetic gates pass.
 
 ## Next Task
 
-`g10.031` is complete. Do not open creative cache, artifacts, routing, product
-integration, or renewed high-range research without explicit authority.
+Execute `g10.032` Batch 32.2 only. Compare pinned fixed-cycle schedules against
+ReaReaRea at `2x`, `4x`, and `8x` through ignored forensic artifacts. Do not
+implement Signal Cyclic DSP.

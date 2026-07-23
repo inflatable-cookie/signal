@@ -53,6 +53,7 @@ decision controls any future reopening.
 | [Bungee Source Architecture](./specimen-dossiers/bungee-source-architecture.md) | Whole-kernel common-region rotation and dynamic multichannel feasibility | Reviewed |
 | [SBSMS Source Architecture](./specimen-dossiers/sbsms-source-architecture.md) | Linked subband partial tracking, paired stereo trajectories, and direct oscillator synthesis | Source feasibility rejected |
 | [Creative Stretch Source Triangulation](./specimen-dossiers/creative-stretch-source-triangulation.md) | PaulXStretch, CDP, Potenza, and pinned SiTraNoStar whole-path ownership behind retained creative targets | Reviewed; no unused fifth owner, direct-renewal gate reset recommended |
+| [Cyclic Time-Stretch Source Architecture](./specimen-dossiers/cyclic-time-stretch-source-architecture.md) | Akai fixed `CYCLIC` versus adaptive `INTELL`, Potenza slow-anchor grains, SickoCV repeat/jump cycles, Sonic period insertion, and ReaReaRea forensics | Source survey complete; executable forensics ready |
 
 Current stretch feasibility decision:
 [Offline Time-Stretch Non-Phase-Vocoder Feasibility](../architecture/offline-time-stretch-non-phase-vocoder-feasibility.md).
@@ -63,8 +64,14 @@ Its automatic `4x`-`16x` spectral route is paused. Both explicit cyclic
 candidates are rejected and deleted: the first failed synthetic pitch, and the
 similarity-aligned replacement failed structural search reachability. Final
 ownership reassessment found no third materially different, source-backed
-whole-renderer path. Explicit `Cyclic` is closed. This does not reopen the
-transparent successor lane.
+whole-renderer path under the evidence available then.
+
+The operator later reopened explicit `Cyclic` as a separate research program.
+Original Akai manuals separate fixed `CYCLIC` from adaptive `INTELL`, and
+pinned SickoCV adds an unstudied repeat/jump schedule. `g10.032` permits ignored
+executable forensics only. Both prior Signal candidates remain rejected and
+deleted; no renderer brief or DSP is ready. This does not reopen the transparent
+successor lane.
 
 Explicit operator research reopening and pinned source triangulation selected
 one materially different neutral `Dream` family: `RenewalSpectral`. Later
@@ -205,6 +212,5 @@ Rejected first-owner brief:
 
 ## Next Task
 
-`g10.031` publicly admits exact `4x`/`8x`/`16x` neutral `Dream` and defers the
-broader range after Cloud closed without acoustic judgment. No research or
-renderer reopening is authorized without new source-backed authority.
+Execute `g10.032` Batch 32.2 only. Build the ignored source-faithful Cyclic
+forensic matrix. Do not select or implement a Signal renderer.

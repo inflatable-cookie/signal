@@ -34,7 +34,7 @@ stable identity, parameter fast path + automation, DSP kit, RT observability,
 WYSIWYG bounce, output-time honesty, recording capture, disk streaming,
 transport regions, and runtime endgame.
 
-Phase three (021-031) established first-party stretch evidence and contracts.
+Phase three (021-032) established first-party stretch evidence and contracts.
 `g10.029` is historical after consolidation removed rejected research and
 stopped the narrow-proof queue. `g10.030` completed the OfflineHighQuality
 successor decision. Its first isolated end-to-end candidate failed
@@ -306,6 +306,11 @@ The deferred continuation scope after `g09` is:
 - product-local controller, browser, immersive-console, certification, and
   downstream launch workflows
 
+`g10.031` is complete. `g10.032` reopens `Cyclic` as research only after the
+original Akai mode split and a second source-available cyclic schedule changed
+the evidence base. Batch 32.1 completed the source survey. Batch 32.2 is the
+sole ready task. No renderer, candidate lane, or strict spec lane is open.
+
 ## Strict lane posture
 
 Signal is not currently running an active strict lane.
@@ -333,5 +338,5 @@ Before rollover:
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the active generation front door.
-`g10.031` is complete; select another Signal priority or explicitly authorize
-a new creative lane.
+Execute `g10.032` Batch 32.2 only: source-faithful ignored-tree Cyclic
+forensics and comparator capture. Do not add candidate DSP to `main`.

@@ -42,6 +42,7 @@ strict lane.
 - Rejected-at-compile creative CompensatedRenewalSpectral brief: [architecture/offline-creative-compensated-renewal-spectral-brief.md](./architecture/offline-creative-compensated-renewal-spectral-brief.md)
 - Rejected creative RenewalSpectral brief: [architecture/offline-creative-renewal-spectral-brief.md](./architecture/offline-creative-renewal-spectral-brief.md)
 - Creative source triangulation: [research/specimen-dossiers/creative-stretch-source-triangulation.md](./research/specimen-dossiers/creative-stretch-source-triangulation.md)
+- Cyclic source architecture: [research/specimen-dossiers/cyclic-time-stretch-source-architecture.md](./research/specimen-dossiers/cyclic-time-stretch-source-architecture.md)
 - Closed-at-occupancy-proof AuditedLayeredCloud authority: [architecture/offline-creative-audited-layered-cloud-brief.md](./architecture/offline-creative-audited-layered-cloud-brief.md)
 - Evidence-invalid LayeredCloud brief and audit ledger: [architecture/offline-creative-layered-cloud-brief.md](./architecture/offline-creative-layered-cloud-brief.md)
 - Rejected creative SimilarityAlignedCyclic brief: [architecture/offline-creative-similarity-aligned-cyclic-brief.md](./architecture/offline-creative-similarity-aligned-cyclic-brief.md)
@@ -60,6 +61,7 @@ strict lane.
 - Generation index: [roadmaps/generation-index.md](./roadmaps/generation-index.md)
 - Stretch closeout roadmap: [roadmaps/g10/030-stretch-consolidation-and-completion.md](./roadmaps/g10/030-stretch-consolidation-and-completion.md)
 - Completed PaulX-like creative stretch roadmap: [roadmaps/g10/031-creative-time-stretch.md](./roadmaps/g10/031-creative-time-stretch.md)
+- Active Cyclic research roadmap: [roadmaps/g10/032-cyclic-creative-stretch-research.md](./roadmaps/g10/032-cyclic-creative-stretch-research.md)
 - Strict-lane reference: [specs/001-g09-lane-first-strict-adoption.md](./specs/001-g09-lane-first-strict-adoption.md)
 - Active strict-lane card: none
 - Research index: [research/master-index.md](./research/master-index.md)
@@ -85,7 +87,5 @@ strict lane.
 
 ## Next Task
 
-`g10.031` is complete on the admitted exact-ratio public surface. Select
-another Signal priority from the `g10` front door. Reopen creative work only
-through explicit named-consumer or materially different source-backed
-authority. Only drop into `specs/` when a strict lane is explicitly reopened.
+Execute `g10.032` Batch 32.2 only. Produce ignored source-faithful Cyclic
+forensics. Do not add Signal DSP or reopen a strict lane.
