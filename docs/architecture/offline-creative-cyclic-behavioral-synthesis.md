@@ -1,6 +1,6 @@
 # Offline Creative Cyclic Behavioral Synthesis
 
-Status: behavioral owner selected; complete renderer brief ready
+Status: behavioral owner selected; complete renderer brief frozen
 Owner: dsp
 Updated: 2026-07-23
 Contract: `085`
@@ -216,8 +216,9 @@ that its only acoustic stop used a product gate the target itself fails.
 Contract `085` Rule 11 permits a fresh complete authority after an explicit
 evidence-backed gate change addresses that failure class.
 
-Batch 32.4 may therefore freeze one new centred compressed-anchor brief. It
-may not recover deleted source, tune the old implementation, sweep grain
+Batch 32.4 freezes
+[CenteredCompressedAnchorCyclic](./offline-creative-centered-compressed-anchor-cyclic-brief.md).
+It does not recover deleted source, tune the old implementation, sweep grain
 constants, inherit Dream macros, or reuse the old absolute pitch ceiling.
 
 ## Remaining Risk
@@ -236,6 +237,6 @@ mechanism survey.
 
 ## Next Task
 
-Execute `g10.032` Batch 32.4 only. Freeze one complete centred
-compressed-anchor Cyclic renderer and its full Contract `085` Rule 11 evidence
-authority. Do not implement candidate DSP in that batch.
+Execute `g10.032` Batch 32.5 only. Create the isolated candidate, bind its
+comparator manifest, implement the frozen renderer and evidence owners, and
+complete Rule 11 conformance. Do not run acoustic owners before the checkpoint.

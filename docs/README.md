@@ -32,6 +32,7 @@ strict lane.
 - Non-phase-vocoder feasibility: [architecture/offline-time-stretch-non-phase-vocoder-feasibility.md](./architecture/offline-time-stretch-non-phase-vocoder-feasibility.md)
 - Creative time-stretch study: [architecture/offline-creative-time-stretch-study.md](./architecture/offline-creative-time-stretch-study.md)
 - Cyclic behavioral synthesis: [architecture/offline-creative-cyclic-behavioral-synthesis.md](./architecture/offline-creative-cyclic-behavioral-synthesis.md)
+- Frozen Cyclic candidate brief: [architecture/offline-creative-centered-compressed-anchor-cyclic-brief.md](./architecture/offline-creative-centered-compressed-anchor-cyclic-brief.md)
 - Admitted exact-ratio CreativeStretch public surface: [architecture/offline-creative-fixed-ratio-public-surface.md](./architecture/offline-creative-fixed-ratio-public-surface.md)
 - Direct-renewal owner study: [architecture/offline-creative-direct-renewal-owner-study.md](./architecture/offline-creative-direct-renewal-owner-study.md)
 - Closed creative LinkedStnNoiseMorph brief: [architecture/offline-creative-linked-stn-noise-morph-brief.md](./architecture/offline-creative-linked-stn-noise-morph-brief.md)
@@ -88,6 +89,6 @@ strict lane.
 
 ## Next Task
 
-Execute `g10.032` Batch 32.4 only. Freeze one complete centred
-compressed-anchor Cyclic renderer and its evidence authority. Do not add
-Signal DSP or reopen a strict lane.
+Execute `g10.032` Batch 32.5 only. Implement and conform the frozen isolated
+Cyclic candidate. Stop before acoustic execution; do not add candidate DSP to
+`main` or reopen a strict lane.

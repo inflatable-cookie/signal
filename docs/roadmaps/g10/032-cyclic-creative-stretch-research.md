@@ -1,6 +1,6 @@
 # 032 - Cyclic Creative Stretch Research
 
-Status: active; Batch 32.4 ready
+Status: active; Batch 32.5 ready
 Owner: dsp
 Updated: 2026-07-23
 Contracts: `046`, `085`
@@ -114,28 +114,52 @@ Authority:
 
 ## Batch 32.4 - Complete Renderer Brief
 
-Status: ready
+Status: complete
 
 Freeze one buildable renderer only if the source and behavioral evidence
 select it. The brief must jointly own:
 
-- exact source/output map and cycle grammar
-- continuous fixed ratios and exact target length
-- cycle control and any automatic guidance
-- local read, interpolation, and join law
-- event placement and commanded-replica definition
-- linked stereo
-- boundaries, memory, determinism, and cost
-- structural, synthetic, comparator, and listening order
-- rejection, cleanup, and minimal admission
+- [x] exact source/output map and cycle grammar
+- [x] continuous fixed ratios and exact target length
+- [x] cycle control and any automatic guidance
+- [x] local read, interpolation, and join law
+- [x] event placement and commanded-replica definition
+- [x] linked stereo
+- [x] boundaries, memory, determinism, and cost
+- [x] structural, synthetic, comparator, and listening order
+- [x] rejection, cleanup, and minimal admission
 
 No implementation belongs in this batch.
 
-## Later Batches
+Authority:
 
-Only a complete approved brief may open one isolated candidate. Candidate
-implementation, admission, public exposure, routing, and product integration
-remain separate stop points.
+- [Offline Creative CenteredCompressedAnchorCyclic Renderer Brief](../../architecture/offline-creative-centered-compressed-anchor-cyclic-brief.md)
+
+## Batch 32.5 - Isolated Candidate And Conformance
+
+Status: ready
+
+- create only the frozen disposable worktree, branch, private module, ledger,
+  runner config, ignored evidence root, and local ref namespace
+- prepare and bind the exact comparator manifest before candidate acoustic work
+- implement the frozen renderer and all `15` evidence owners
+- run compile, construction `1/1`, and structural `9/9` twice from one clean
+  tree
+- create the immutable acoustic ref only after complete two-round conformance
+- stop before `Y01` or any candidate listening render
+
+No candidate source enters `main`.
+
+## Batch 32.6 - Acoustic And Listening Admission
+
+Status: blocked on Batch 32.5
+
+Run `Y01..Y06`, exact `16x` rejection, concealed mono, cycle-direction review,
+long-form stereo objectives, speaker pre-screen, and eligible independent
+stereo review from the one immutable ref. Stop on first failure.
+
+Promotion, public exposure, routing, cache, and product integration remain
+separate later decisions.
 
 ## Completion Gate
 
@@ -149,6 +173,7 @@ remain separate stop points.
 
 ## Next Task
 
-Execute Batch 32.4 only. Freeze one complete centred compressed-anchor Cyclic
-renderer and its Contract `085` Rule 11 evidence authority. Do not implement
-Signal Cyclic DSP.
+Execute Batch 32.5 only. Create the isolated
+`CenteredCompressedAnchorCyclic` candidate, bind its comparator manifest,
+implement the frozen renderer and evidence owners, and complete two-round
+Rule 11 conformance. Stop before acoustic execution.

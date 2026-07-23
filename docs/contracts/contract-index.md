@@ -59,8 +59,9 @@ memory alone.
   second source-available cyclic schedule. Batch 32.2 completes executable
   forensics. Batch 32.3 selects centred compressed-anchor behavior, fixed
   manual cycle ownership, linked scheduling, and a corrected gate. Batch 32.4
-  is ready for one complete brief; no candidate renderer or DSP implementation
-  is authorized
+  freezes one complete `CenteredCompressedAnchorCyclic` renderer and Rule 11
+  evidence authority. Batch 32.5 is ready for isolated implementation and
+  conformance; no candidate DSP is admitted
 - `082` and `g10.029` are historical evidence, not active execution authority
 - `g10.028` source-fill work remains paused
 
@@ -193,6 +194,6 @@ frozen elsewhere in this index.
 Keep Contract `084` closed. Contract `085` publicly admits fixed-ratio `Dream`
 at exact `4x`, `8x`, and `16x`. Cloud closed without an acoustic judgment
 after its second evidence-integrity failure. The broader range and routing are
-deferred. Execute `g10.032` Batch 32.4 only: freeze one complete centred
-compressed-anchor Cyclic renderer and evidence authority. Do not add candidate
-DSP to `main`.
+deferred. Execute `g10.032` Batch 32.5 only: implement and conform the frozen
+isolated Cyclic candidate, bind its comparator manifest, and stop before
+acoustic execution. Do not add candidate DSP to `main`.

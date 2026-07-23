@@ -488,6 +488,9 @@ Concealed musical listening decides character and usefulness.
 The canonical decision is
 [Offline Creative Cyclic Behavioral Synthesis](../../architecture/offline-creative-cyclic-behavioral-synthesis.md).
 
+Batch 32.4 freezes the selected implementation authority:
+[Offline Creative CenteredCompressedAnchorCyclic Renderer Brief](../../architecture/offline-creative-centered-compressed-anchor-cyclic-brief.md).
+
 ## Sources
 
 - [Akai S950 operator manual](https://manualzilla.com/doc/7440972/akai-s950-operator-s-manual)
@@ -504,6 +507,6 @@ The canonical decision is
 
 ## Next Task
 
-Execute `g10.032` Batch 32.4 only. Freeze one complete centred
-compressed-anchor Cyclic renderer and Contract `085` Rule 11 evidence
-authority. Do not implement candidate DSP.
+Execute `g10.032` Batch 32.5 only. Implement and conform the frozen isolated
+Cyclic candidate, bind its comparator manifest, and stop before acoustic
+execution. No candidate DSP enters `main`.

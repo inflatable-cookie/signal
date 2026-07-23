@@ -311,12 +311,12 @@ The current package-level naming proposal is recorded in
   `OfflineHighQuality` baseline.
 - `g10.031` publicly admits exact-ratio creative `Dream` and pauses broader
   range, routing, cache, and product integration.
-- `g10.032` researches unavailable `Cyclic` separately. Source forensics and
-  behavioral synthesis select centred compressed-anchor behavior; no renderer
-  brief, candidate lane, or implementation is admitted.
+- `g10.032` owns unavailable `Cyclic` separately. Source forensics and
+  behavioral synthesis select centred compressed-anchor behavior; one complete
+  isolated candidate brief is frozen, but no implementation is admitted.
 
 ## Next Task
 
 Keep the completed `g10.031` API and frozen transparent baseline unchanged.
-Execute `g10.032` Batch 32.4 only: freeze one complete centred
-compressed-anchor Cyclic renderer and evidence brief, without Signal DSP.
+Execute `g10.032` Batch 32.5 only: implement and conform the frozen isolated
+Cyclic candidate, then stop before acoustic execution.

@@ -1,6 +1,6 @@
 # Offline Creative Time-Stretch Study
 
-Status: exact-ratio `CreativeStretch` admitted; Cyclic behavior selected
+Status: exact-ratio `CreativeStretch` admitted; Cyclic brief frozen
 Owner: dsp
 Updated: 2026-07-23
 Contract: `085`
@@ -314,7 +314,13 @@ musical families at `2x`, `4x`, and `8x` decides character and usefulness.
 
 The canonical decision is
 [Offline Creative Cyclic Behavioral Synthesis](./offline-creative-cyclic-behavioral-synthesis.md).
-It authorizes one docs-only complete brief next, not Signal DSP.
+
+Batch 32.4 freezes
+[CenteredCompressedAnchorCyclic](./offline-creative-centered-compressed-anchor-cyclic-brief.md).
+One exact rational map, `5..90 ms` manual cycle, two forward unit-rate reads,
+complementary raised-cosine crossfade, independent event ledger, linked
+geometry, direct exact crop, bounded state, comparator manifest, and complete
+Rule 11 gate now own the first candidate. No DSP entered `main`.
 
 ## Product Surface
 
@@ -1065,6 +1071,6 @@ all retained construction, structural, and synthetic gates pass.
 
 ## Next Task
 
-Execute `g10.032` Batch 32.4 only. Freeze one complete centred
-compressed-anchor Cyclic renderer and its Contract `085` Rule 11 evidence
-authority. Do not implement candidate DSP.
+Execute `g10.032` Batch 32.5 only. Implement and conform the frozen isolated
+`CenteredCompressedAnchorCyclic` candidate. Create the acoustic ref only after
+two complete clean conformance rounds; stop before acoustic execution.

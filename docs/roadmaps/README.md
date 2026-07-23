@@ -310,8 +310,9 @@ The deferred continuation scope after `g09` is:
 split and a second source-available cyclic schedule changed the evidence base.
 Batch 32.1 completed the source survey. Batch 32.2 completed executable
 forensics. Batch 32.3 selected centred compressed-anchor behavior and
-corrected the gate. Batch 32.4 is the sole ready task. No renderer, candidate
-lane, or strict spec lane is open.
+corrected the gate. Batch 32.4 froze one complete candidate and Rule 11
+evidence brief. Batch 32.5 isolated conformance is the sole ready task. No
+candidate is admitted and no strict spec lane is open.
 
 ## Strict lane posture
 
@@ -340,6 +341,6 @@ Before rollover:
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the active generation front door.
-Execute `g10.032` Batch 32.4 only: freeze the complete centred
-compressed-anchor Cyclic renderer and evidence brief. Do not add candidate DSP
-to `main`.
+Execute `g10.032` Batch 32.5 only: implement and conform the frozen isolated
+Cyclic candidate, then stop before acoustic execution. Do not add candidate
+DSP to `main`.

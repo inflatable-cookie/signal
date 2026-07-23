@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: Cyclic research active; Batch 32.4 ready
+Status: Cyclic candidate brief frozen; Batch 32.5 ready
 Updated: 2026-07-23
 
 ## Why this generation matters now
@@ -289,7 +289,8 @@ Do not start Loophole or Chorus planning from Signal internals.
     fixed Akai `CYCLIC` from adaptive `INTELL`, pins Potenza slow-anchor and
     SickoCV repeat/jump schedules; Batch 32.2 completes executable forensics
     without selecting a renderer; Batch 32.3 selects centred
-    compressed-anchor behavior and corrects the gate; Batch 32.4 is ready
+    compressed-anchor behavior and corrects the gate; Batch 32.4 freezes one
+    complete candidate and Rule 11 evidence brief; Batch 32.5 is ready
 
 ## Stretch Boundary
 
@@ -623,10 +624,14 @@ ReaReaRea's compressed-anchor-like replica scaling and separate centred map,
 and invalidates the old absolute pitch gate. Batch 32.3 selects centred
 compressed-anchor behavior, a fixed manual cycle, linked scheduling, and a
 corrected integrity/diagnostic/listening gate. No renderer, public character,
-routing, or cache is authorized. Batch 32.4 is the sole ready task.
+routing, or cache is authorized. Batch 32.4 freezes
+`CenteredCompressedAnchorCyclic`: one exact rational map, manual cycle,
+two-read crossfade, linked schedule, bounded direct crop, comparator manifest,
+and complete Rule 11 gate. Batch 32.5 isolated conformance is the sole ready
+task.
 
 ## Next Task
 
-Execute `g10.032` Batch 32.4 only. Freeze one complete centred
-compressed-anchor Cyclic renderer and its Contract `085` Rule 11 evidence
-authority. Do not implement Signal DSP.
+Execute `g10.032` Batch 32.5 only. Implement and conform the frozen isolated
+Cyclic candidate, bind its comparator manifest, create the acoustic ref only
+after two clean conformance rounds, and stop before acoustic execution.

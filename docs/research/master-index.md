@@ -72,12 +72,15 @@ pinned SickoCV adds a distinct repeat/jump schedule. Batch 32.2 distinguishes
 it from compressed-anchor behavior and records ReaReaRea's centred event
 placement. Batch 32.3 selects centred compressed-anchor behavior, one fixed
 manual cycle, linked scheduling, and comparator-relative diagnostics. Both
-prior Signal candidates remain rejected and deleted. One complete renderer
-brief is ready; DSP is not. This does not reopen the transparent successor
-lane.
+prior Signal candidates remain rejected and deleted. Batch 32.4 freezes one
+complete `CenteredCompressedAnchorCyclic` renderer and Rule 11 evidence brief;
+DSP is not admitted. This does not reopen the transparent successor lane.
 
 Current Cyclic decision:
 [Offline Creative Cyclic Behavioral Synthesis](../architecture/offline-creative-cyclic-behavioral-synthesis.md).
+
+Frozen Cyclic candidate authority:
+[Offline Creative CenteredCompressedAnchorCyclic Renderer Brief](../architecture/offline-creative-centered-compressed-anchor-cyclic-brief.md).
 
 Explicit operator research reopening and pinned source triangulation selected
 one materially different neutral `Dream` family: `RenewalSpectral`. Later
@@ -218,6 +221,6 @@ Rejected first-owner brief:
 
 ## Next Task
 
-Execute `g10.032` Batch 32.4 only. Freeze one complete centred
-compressed-anchor Cyclic renderer and its evidence authority. Do not implement
-Signal DSP.
+Execute `g10.032` Batch 32.5 only. Implement and conform the frozen isolated
+Cyclic candidate, bind its comparator manifest, and stop before acoustic
+execution. No candidate DSP enters `main`.

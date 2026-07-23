@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: exact-ratio Dream admitted; Cyclic behavior selected
+Status: exact-ratio Dream admitted; Cyclic candidate brief frozen
 Owner: core-product
 Updated: 2026-07-23
 Related contracts: `046`, `048`, `084`
@@ -9,6 +9,7 @@ Related architecture: `docs/architecture/offline-creative-time-stretch-study.md`
 `docs/architecture/offline-creative-direct-renewal-owner-study.md`,
 `docs/architecture/offline-creative-direct-renewal-dream-brief.md`,
 `docs/architecture/offline-creative-cyclic-behavioral-synthesis.md`,
+`docs/architecture/offline-creative-centered-compressed-anchor-cyclic-brief.md`,
 `docs/architecture/offline-creative-audited-layered-cloud-brief.md`,
 `docs/architecture/offline-creative-layered-cloud-brief.md`,
 `docs/architecture/offline-creative-linked-stn-noise-morph-brief.md`,
@@ -466,9 +467,25 @@ waiver does not carry into Cyclic.
 
 The historical `CyclicGrain` receipt remains rejected, but its sole acoustic
 failure class is now addressed by explicit comparator-backed product-gate
-change under Rule 11. Batch 32.4 may freeze one fresh complete centred
-compressed-anchor authority. It may not recover deleted code, sweep constants,
-or repair the historical checkpoint.
+change under Rule 11. One fresh complete centred compressed-anchor authority
+is therefore eligible. It may not recover deleted code, sweep constants, or
+repair the historical checkpoint.
+
+Batch 32.4 freezes `CenteredCompressedAnchorCyclic` as that authority. One
+integer `5..90 ms` manual cycle drives a direct two-anchor waveform crossfade;
+`48 ms` is the neutral comparator-inferred value. The renderer uses the exact
+rational ideal map, forward native-rate linear reads, complementary raised
+cosine weights, an independent event ledger, shared linked-channel geometry,
+direct exact cropping, `256 KiB` bounded state, and deterministic `O(C*T)`
+cost. It owns no seed, Dream macro, Auto cycle, similarity search, spectral
+path, transient repair, post-gain, or public surface.
+
+Its Rule 11 authority freezes `339` structural rows, `183` synthetic rows,
+retained ReaReaRea `4x`/`8x` hashes, exact `2x` recapture procedure, five
+long-form source hashes, comparator-relative hard controls, complete finite
+diagnostics, mono neutral and cycle-direction listening, independent stereo,
+cleanup, and minimal private admission. Batch 32.5 is ready for isolated
+implementation and conformance only.
 
 Batch 31.16 is that explicit research reopening for neutral `Dream`. Pinned
 PaulXStretch source shows one complete family not directly tested by the
@@ -1742,6 +1759,7 @@ and Chorus remain unchanged.
 
 ## Next Task
 
-Execute `g10.032` Batch 32.4 only. Freeze one complete centred
-compressed-anchor Cyclic renderer and its full Rule 11 evidence authority.
-Do not write candidate DSP in that batch.
+Execute `g10.032` Batch 32.5 only. Create the isolated
+`CenteredCompressedAnchorCyclic` candidate, bind its comparator manifest,
+implement the frozen renderer and evidence owners, and complete two-round
+Rule 11 conformance. Do not run candidate acoustic owners before the checkpoint.

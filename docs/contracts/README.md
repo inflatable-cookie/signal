@@ -113,6 +113,6 @@ Add a new contract only when the boundary needs stronger guarantees than
 Use `docs/contracts/contract-index.md` and `001-working-rules.md` as the
 contract front doors. Contract `084` and roadmap `g10.030` keep the transparent
 successor program closed. Contract `085` publicly admits fixed-ratio Dream and
-governs the separate Cyclic path. Execute `g10.032` Batch 32.4 only: freeze one
-complete centred compressed-anchor Cyclic renderer and evidence authority. No
-candidate surface may enter `main`; no strict spec lane is open.
+governs the separate Cyclic path. Execute `g10.032` Batch 32.5 only: implement
+and conform the frozen isolated Cyclic candidate, then stop before acoustic
+execution. No candidate surface may enter `main`; no strict spec lane is open.
