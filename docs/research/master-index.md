@@ -74,9 +74,12 @@ placement. Batch 32.3 selects centred compressed-anchor behavior, one fixed
 manual cycle, linked scheduling, and comparator-relative diagnostics. Both
 prior Signal candidates remain rejected and deleted. Batch 32.4 freezes one
 complete `CenteredCompressedAnchorCyclic` renderer and Rule 11 evidence brief;
-Batch 32.5 seals its immutable isolated checkpoint after two clean conformance
-rounds. Acoustic admission remains unrun and DSP is not admitted. This does
-not reopen the transparent successor lane.
+Batch 32.5 seals its immutable isolated checkpoint after two nominally clean
+conformance rounds. Batch 32.6 surfaces `unexpected dropout 1` in `Y01`, but no
+failed or partial receipt exists. Batch 32.7 classifies the checkpoint as
+incomplete executable evidence and authorizes one fresh audited identity. No
+acoustic decision or DSP admission exists. This does not reopen the
+transparent successor lane.
 
 Current Cyclic decision:
 [Offline Creative Cyclic Behavioral Synthesis](../architecture/offline-creative-cyclic-behavioral-synthesis.md).
@@ -223,6 +226,6 @@ Rejected first-owner brief:
 
 ## Next Task
 
-Execute `g10.032` Batch 32.6 only from the immutable acoustic ref. Run
-`Y01..Y06` individually, stop on the first hard failure, and run exact `16x`
-typed rejection only if all six pass. No candidate DSP enters `main`.
+Execute `g10.032` Batch 32.8 only. Freeze the complete fresh audited authority
+for the unchanged centred compressed-anchor renderer. No candidate DSP enters
+`main`.

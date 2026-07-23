@@ -312,8 +312,10 @@ Batch 32.1 completed the source survey. Batch 32.2 completed executable
 forensics. Batch 32.3 selected centred compressed-anchor behavior and
 corrected the gate. Batch 32.4 froze one complete candidate and Rule 11
 evidence brief. Batch 32.5 sealed one immutable isolated checkpoint after two
-clean conformance rounds. Batch 32.6 acoustic admission is ready from that ref.
-No candidate is admitted and no strict spec lane is open.
+nominally clean conformance rounds. Batch 32.6 stopped at evidence-invalid
+`Y01`; Batch 32.7 authorized one fresh audited identity after static audit and
+cleanup. Batch 32.8 docs-only authority is ready. No candidate is admitted and
+no strict spec lane is open.
 
 ## Strict lane posture
 
@@ -342,7 +344,6 @@ Before rollover:
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the active generation front door.
-Execute `g10.032` Batch 32.6 only from the immutable acoustic ref. Run
-`Y01..Y06` individually, stop on the first hard failure, and run exact `16x`
-typed rejection only if all six pass. Do not change candidate code or add its
-DSP to `main`.
+Execute `g10.032` Batch 32.8 only. Freeze one fresh complete audited authority
+for the unchanged centred compressed-anchor renderer. Do not implement or
+recover rejected source.

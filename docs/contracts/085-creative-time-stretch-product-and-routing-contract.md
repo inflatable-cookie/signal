@@ -1757,9 +1757,26 @@ four acoustic files remain byte-identical; retained construction, structural,
 and synthetic gates pass. Cache, artifact, routing, tiers, runtime, Loophole,
 and Chorus remain unchanged.
 
+Batch 32.5 froze centred compressed-anchor Cyclic checkpoint `4600d228` after
+two nominally green conformance rounds. Batch 32.6 ran `Y01` once. It surfaced
+`unexpected dropout 1`, then stopped every later gate.
+
+That output is not a valid acoustic rejection receipt. The owner returned
+before its receipt writer, so no failed row, prior row, output digest, or
+summary exists. Static audit also found pass-only status, null
+input/comparator receipt hashes, generic assertion labels, incomplete
+construction binding, incomplete `Y04..Y06` diagnostics, and no complete
+exact-`16x` or listening executor.
+
+This is the first incomplete-evidence checkpoint for the centred
+compressed-anchor identity. Rule 11 permits one fresh audited identity because
+no valid quality or listening decision exists. It must retain the canonical
+renderer formula without using the unreceipted output, start after complete old
+state deletion, and freeze every executable edge docs-first. A second
+incomplete-evidence checkpoint closes this identity.
+
 ## Next Task
 
-Execute `g10.032` Batch 32.5 only. Create the isolated
-`CenteredCompressedAnchorCyclic` candidate, bind its comparator manifest,
-implement the frozen renderer and evidence owners, and complete two-round
-Rule 11 conformance. Do not run candidate acoustic owners before the checkpoint.
+Execute `g10.032` Batch 32.8 only. Freeze the complete fresh
+`AuditedCenteredCompressedAnchorCyclic` authority without candidate
+implementation or recovery of rejected source.

@@ -1,6 +1,6 @@
 # Offline Creative CenteredCompressedAnchorCyclic Renderer Brief
 
-Status: frozen at immutable acoustic ref; acoustic admission unrun
+Status: evidence-invalid checkpoint; no acoustic decision
 Owner: dsp
 Updated: 2026-07-23
 Contract: `085`, Rule 11
@@ -482,6 +482,36 @@ Actual checkpoint:
 - byte-identical `S01..S09` receipt hashes across both rounds
 - no `Y01..Y06` owner or candidate listening render run
 
+## Evidence Result
+
+Batch 32.6 ran `Y01` once from commit `4600d228`. Nextest run
+`1f64f1a3-f8c3-4201-97a3-c7e8f6dbf9dd` exited `100` with
+`unexpected dropout 1`. `Y02..Y06`, exact `16x`, and listening did not run.
+
+This is not a valid acoustic rejection. No `Y01` receipt or receipt directory
+exists. Static audit found:
+
+- rows and renders accumulate in memory before any receipt is opened
+- an owner error reaches `unwrap()` before the receipt writer
+- receipt `status` is hardcoded to `pass`
+- `input_sha256` and `comparator_sha256` are always `null`
+- assertions contain only `frozen-owner`
+- construction checks masks, pointers, and counts instead of failed-row
+  persistence and assertion-to-owner binding
+- `Y04` omits frozen modulation-peak, sideband, and autocorrelation values
+- `Y05` records the expected gap label, not measured gap support
+- `Y06` omits mapped-window balance, width, and complete comparator deltas
+- no five-source exact-`16x`, long-form candidate render, level-match,
+  concealment, or listening executor exists
+
+The surfaced dropout has no row identity, source/ratio identity, output hash,
+or persisted predecessor rows. It cannot guide a renderer change.
+
+Contract `085` Rule 11 permits one fresh audited identity because this is the
+first incomplete-evidence checkpoint for this architecture and no valid
+quality or listening decision exists. The old checkpoint remains rejected and
+may not be repaired, rerun, or recovered.
+
 ## Synthetic Source Authority
 
 Use `F=44100`, `L=88200`, and `T=2L`, `4L`, or `8L`. Sustained sources are
@@ -714,7 +744,7 @@ Loophole, or Chorus.
 
 ## Next Task
 
-Execute `g10.032` Batch 32.6 only from the immutable acoustic ref. Run
-`Y01..Y06` individually in numeric order and stop on the first hard failure.
-Run exact `16x` typed rejection only after all six owners pass. Do not change
-candidate code or evidence authority.
+Execute `g10.032` Batch 32.8 only. Freeze a fresh
+`AuditedCenteredCompressedAnchorCyclic` authority for the unchanged renderer
+with complete per-row executable evidence. Do not implement or recover this
+checkpoint.

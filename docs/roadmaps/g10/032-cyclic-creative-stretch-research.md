@@ -1,6 +1,6 @@
 # 032 - Cyclic Creative Stretch Research
 
-Status: active; Batch 32.6 ready
+Status: active; Batch 32.8 ready
 Owner: dsp
 Updated: 2026-07-23
 Contracts: `046`, `085`
@@ -137,15 +137,15 @@ Authority:
 
 ## Batch 32.5 - Isolated Candidate And Conformance
 
-Status: complete
+Status: complete; later evidence-invalid
 
 - [x] create only the frozen disposable worktree, branch, private module, ledger,
   runner config, ignored evidence root, and local ref namespace
 - [x] prepare and bind the exact `63`-row comparator manifest before candidate
   acoustic work
 - [x] implement the frozen renderer and all `15` evidence owners
-- [x] run compile, construction `1/1`, and structural `9/9` twice from one clean
-  tree
+- [x] run nominal compile, construction `1/1`, and structural `9/9` twice from
+  one clean tree
 - [x] require byte-identical per-owner structural receipts across both rounds
 - [x] create the immutable acoustic ref only after complete two-round
   conformance
@@ -164,7 +164,7 @@ No candidate source enters `main`.
 
 ## Batch 32.6 - Acoustic And Listening Admission
 
-Status: ready
+Status: stopped; evidence-invalid
 
 Run `Y01..Y06`, exact `16x` rejection, concealed mono, cycle-direction review,
 long-form stereo objectives, speaker pre-screen, and eligible independent
@@ -173,8 +173,51 @@ stereo review from the one immutable ref. Stop on first failure.
 No code, source, formula, constant, metric, threshold, comparator, or helper
 change is allowed after the ref.
 
-Promotion, public exposure, routing, cache, and product integration remain
-separate later decisions.
+Actual result:
+
+- [x] run `Y01` once from checkpoint `4600d228`
+- [x] stop on `unexpected dropout 1`
+- [x] do not run `Y02..Y06`, exact `16x`, or listening
+- [x] record that no `Y01` receipt or receipt directory exists
+- [x] classify the result as incomplete executable evidence, not an acoustic
+  pass or rejection
+
+The owner accumulated rows in memory and called its receipt writer only after
+complete success. Its early error therefore discarded the failed row, prior
+rows, hashes, and summary.
+
+## Batch 32.7 - Evidence-Integrity Reassessment
+
+Status: complete
+
+- [x] inspect the immutable source without rerunning DSP
+- [x] prove that receipt status is hardcoded to `pass`
+- [x] prove that row persistence occurs only after complete owner success
+- [x] prove that input/comparator receipt hashes and per-row assertions are not
+  owned
+- [x] record missing `Y04`, `Y05`, and `Y06` diagnostics
+- [x] record missing five-source exact-`16x` and listening executors
+- [x] retain the surfaced dropout only as unreceipted failure output
+- [x] authorize one fresh audited identity under Contract `085` Rule 11
+- [x] delete the rejected worktree, branch, build state, generated copies, and
+  local evidence ref after this docs closeout
+
+This is the first incomplete-evidence checkpoint for the centred
+compressed-anchor identity. No valid quality or listening decision exists.
+The renderer formula may not change from the unreceipted output.
+
+## Batch 32.8 - Fresh Audited Authority
+
+Status: ready
+
+Freeze one docs-only `AuditedCenteredCompressedAnchorCyclic` brief from the
+canonical architecture. It must make each structural and acoustic row its own
+enforced execution and receipt boundary, bind failed-row persistence and every
+receipt field, and own exact `16x`, comparator preparation, concealment, level
+matching, listening output, and cleanup before implementation.
+
+No candidate source, output, harness, comparator recapture, or implementation
+belongs in this batch.
 
 ## Completion Gate
 
@@ -188,7 +231,6 @@ separate later decisions.
 
 ## Next Task
 
-Execute Batch 32.6 only from the immutable acoustic ref. Run `Y01..Y06`
-individually in numeric order and stop on the first hard failure. Run exact
-`16x` typed rejection only if all six owners pass, then continue through the
-frozen listening order without changing candidate code or evidence authority.
+Execute Batch 32.8 only. Freeze one complete fresh audited evidence authority
+for the unchanged centred compressed-anchor renderer. Do not implement,
+recapture comparators, render candidate output, or recover checkpoint source.

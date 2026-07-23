@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: Cyclic candidate checkpoint sealed; Batch 32.6 ready
+Status: Cyclic checkpoint evidence-invalid; Batch 32.8 ready
 Updated: 2026-07-23
 
 ## Why this generation matters now
@@ -291,8 +291,10 @@ Do not start Loophole or Chorus planning from Signal internals.
     without selecting a renderer; Batch 32.3 selects centred
     compressed-anchor behavior and corrects the gate; Batch 32.4 freezes one
     complete candidate and Rule 11 evidence brief; Batch 32.5 seals the
-    isolated immutable checkpoint after two clean conformance rounds; Batch
-    32.6 acoustic admission is ready
+    isolated immutable checkpoint after two nominally clean conformance
+    rounds; Batch 32.6 stops at evidence-invalid `Y01`; Batch 32.7 authorizes
+    one fresh audited evidence identity; Batch 32.8 docs-only authority is
+    ready
 
 ## Stretch Boundary
 
@@ -631,15 +633,18 @@ routing, or cache is authorized. Batch 32.4 freezes
 two-read crossfade, linked schedule, bounded direct crop, comparator manifest,
 and complete Rule 11 gate.
 
-Batch 32.5 is now complete. Candidate commit `4600d228` passed release compile,
-construction `1/1`, and structural `9/9` twice from one clean tree. Per-owner
-receipts are byte-identical across rounds. The immutable acoustic ref is
-created. No synthetic owner or candidate listening render has run. Batch 32.6
-is ready from that ref only.
+Batch 32.5 candidate `4600d228` passed release compile, construction `1/1`, and
+structural `9/9` twice. Batch 32.6 then surfaced `unexpected dropout 1` in
+`Y01`, but the owner failed before writing any receipt. Static audit found
+pass-only, whole-owner receipt persistence plus incomplete diagnostic,
+exact-`16x`, and listening ownership. No valid acoustic decision exists.
+Batch 32.7 closes that evidence question and authorizes one fresh audited
+identity. Old isolated state is deleted. Batch 32.8 docs-only authority is
+ready.
 
 ## Next Task
 
-Execute `g10.032` Batch 32.6 only from the immutable acoustic ref. Run
-`Y01..Y06` individually in numeric order and stop on the first hard failure.
-Run exact `16x` typed rejection only if all six pass, then follow the frozen
-listening order without changing candidate code or evidence authority.
+Execute `g10.032` Batch 32.8 only. Freeze one complete
+`AuditedCenteredCompressedAnchorCyclic` authority for the unchanged renderer.
+Do not implement, render candidate output, recapture comparators, or recover
+rejected source.
