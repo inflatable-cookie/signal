@@ -2,7 +2,7 @@
 
 Status: active
 Owner: core-product
-Updated: 2026-03-10
+Updated: 2026-07-23
 Vision refs: `docs/vision/001-signal-vision.md`
 
 ## Top-Level Stack
@@ -57,6 +57,20 @@ The current package-level naming proposal is recorded in
   host-specific summary duplication.
 - Real-time paths avoid blocking, allocation churn, and unbounded work.
 - Research authority for DSP and analysis topics lives in `docs/research/`.
+
+## Time-Stretch Boundaries
+
+- `OfflineHighQuality` is the frozen transparent production route. Contract
+  `084` is closed without successor promotion.
+- `CreativeStretch` is a separate public offline whole-buffer API for exact
+  `4x`, `8x`, and `16x` neutral `Dream`, with `space` as its only adjustable
+  creative control.
+- `DirectRenewalDream` remains an internal renderer identity. The public API
+  fixes its admitted seed and never falls back to the transparent renderer.
+- Creative cache, artifacts, automatic routing, dynamic ratio, runtime
+  integration, Loophole, and Chorus remain outside the admitted boundary.
+- `RealtimePreview` remains separate and unsupported as a direct audio-thread
+  source until its source-fill contract reopens.
 
 ## Supervisor Export Boundary
 
@@ -293,13 +307,13 @@ The current package-level naming proposal is recorded in
 
 ## Interfaces With Roadmaps
 
-- `g01.001` establishes the Signal docs authority and migrates DSP research into
-  this repo.
-- Follow-on milestones should freeze crate names, host entrypoints, and the
-  first reusable Rust implementation slices.
+- `g10.030` closes transparent stretch successor work on the frozen
+  `OfflineHighQuality` baseline.
+- `g10.031` publicly admits exact-ratio creative `Dream` and pauses broader
+  range, routing, cache, and product integration.
 
 ## Next Task
 
-Use the package map to lock the first Signal-owned package names, then define
-the migration boundary between the current C++ runtime and the new shared Rust
-crates.
+Resolve the `g10.031` operator intent checkpoint before opening another
+creative lane. Keep the admitted exact-ratio API and frozen transparent
+baseline unchanged.

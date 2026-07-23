@@ -2,7 +2,7 @@
 
 Status: active
 Owner: core-product
-Updated: 2026-06-11
+Updated: 2026-07-23
 Vision refs: `docs/vision/001-signal-vision.md`
 
 ## Purpose
@@ -52,9 +52,10 @@ Signal's active implementation surface is the Rust workspace under `crates/`
   - frozen Signal-owned offline and preview time-stretch baselines, cache
     identity, callback-state proof, compact external comparator, and long-form
     blind listening pack; transparent successor admission is closed under
-    `g10.030`; `g10.031` and Contract `085` retain creative product vocabulary
-    and one frozen isolated `RenewalSpectral` candidate brief, but no admitted
-    creative owner
+    `g10.030`; `g10.031` and Contract `085` publicly admit exact fixed `4x`,
+    `8x`, and `16x` neutral `Dream` through an offline whole-buffer API;
+    automatic routing, creative cache/artifacts, dynamic ratio, and product
+    integration remain absent
 
 ### Analysis substrate
 
@@ -132,6 +133,6 @@ program. Discovery roots are explicit configuration defaulting empty.
 
 ## Next Task
 
-Keep this inventory aligned with the g10 continuation packets
-(`docs/roadmaps/g10/`) and any rebuild-on-demand work pulled from the
-post-g10 backlog.
+Keep this inventory aligned with `docs/roadmaps/g10/README.md`. Do not infer a
+creative integration batch before the `g10.031` operator intent checkpoint is
+resolved.

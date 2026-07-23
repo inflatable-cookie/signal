@@ -2480,7 +2480,7 @@ Decision:
 - `space` is the only adjustable creative control; its default is `0.5`
 - public seed/reroll remains blocked pending multi-seed character review
 - the existing transparent cache schema must not identify creative output
-- one wrapper-only implementation batch is ready
+- Batch 31.76 was the only wrapper implementation batch
 
 Authority:
 
@@ -2516,6 +2516,28 @@ Decision:
   did not change
 - no cache, artifact, route, tier, dynamic ratio, product integration,
   Loophole, or Chorus work is authorized
+
+## Batch 31.77 - Planning Surface Refocus
+
+Status: complete; docs only
+
+- [x] audit live architecture, inventory, contract, roadmap, and front-door
+  currentness after public admission
+- [x] correct stale claims that `g10.031` is active, the API is only frozen,
+  the renderer remains private-only, or no creative owner is admitted
+- [x] retain the exact-ratio API, acoustic DSP, routing, cache, artifacts,
+  dynamic ratio, runtime, Loophole, and Chorus unchanged
+- [x] replace the implied implementation queue with one operator intent
+  checkpoint
+
+Decision:
+
+- `g10.031` is paused with exact public `4x`, `8x`, and `16x` neutral `Dream`
+- no current architecture or contract makes another implementation batch ready
+- the next direction is a product-priority choice, not a missing technical
+  detail
+- current authority supports only freezing the lane, a named-consumer
+  integration study, or explicitly renewed source-backed high-range research
 
 ## Later Batches
 
@@ -2760,6 +2782,7 @@ Deferred product work requires separate authority:
 
 ## Next Task
 
-No Batch 31.77 is ready. Return to `docs/roadmaps/g10/README.md` for planning.
-Open creative cache, artifact, or product integration only when a named Signal
-consumer supplies the requirement; keep broader range and routing deferred.
+Operator intent checkpoint: choose whether to freeze this lane and move to
+another `g10` priority, name one Signal consumer for docs-first integration
+authority, or explicitly reopen source-backed research above `16x`. No
+implementation batch is ready before that choice.

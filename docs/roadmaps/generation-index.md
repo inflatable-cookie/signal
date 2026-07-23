@@ -181,6 +181,5 @@ If that cleanup has not happened, stay in the current generation and finish the 
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the current active-generation front door.
-No inferred `g10.031` implementation follows Batch 31.76. Require a named
-Signal consumer and separate docs-first authority before opening creative
-cache, artifact, routing, or product integration.
+Resolve the `g10.031` operator intent checkpoint before opening any follow-on
+creative implementation or research.

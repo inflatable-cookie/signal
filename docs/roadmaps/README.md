@@ -332,7 +332,6 @@ Before rollover:
 
 ## Next Task
 
-Use `docs/roadmaps/g10/README.md` as the active generation front door. Run no
-inferred follow-on implementation. Open creative cache, artifact, routing, or
-product integration only from a named Signal consumer and separate docs-first
-authority.
+Use `docs/roadmaps/g10/README.md` as the active generation front door. Resolve
+the `g10.031` operator intent checkpoint before opening any follow-on creative
+implementation or research.

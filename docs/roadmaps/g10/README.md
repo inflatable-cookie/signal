@@ -238,8 +238,10 @@ Do not start Loophole or Chorus planning from Signal internals.
   - historical correctness, listening, and rejected-successor ledger
 - `g10.030` `complete`
   - stretch consolidated; candidate families closed; frozen baseline retained
-- `g10.031` `active`
-  - PaulX-like neutral `Dream` remains product intent; Batch 31.36 passed all
+- `g10.031` `paused`
+  - exact fixed `4x`, `8x`, and `16x` neutral `Dream` is public; broader
+    range, routing, cache, and product integration require an operator intent
+    decision; historical path: Batch 31.36 passed all
     objective and mono gates, then failed source-relative stereo admission and
     was deleted; Batch 31.37 closed renewal after finding no different complete
     owner; Batch 31.38 records the operator's comparator-relative stereo policy
@@ -302,9 +304,11 @@ renderer. Contract `084` and `g10.030` are closed without promotion. A new
 successor requires the whole-system evidence listed in the non-phase-vocoder
 feasibility decision.
 
-The separate `CreativeStretch` path contains private exact fixed `4x`, `8x`,
-and `16x` `DirectRenewalDream`, but no public route. Its automatic spectral
-route is paused after three rejected and deleted candidates. The first
+The separate public `CreativeStretch` path exposes exact fixed `4x`, `8x`, and
+`16x` neutral `Dream` through the internal `DirectRenewalDream` renderer. It
+has no automatic/product route, creative cache, artifact integration, dynamic
+ratio, or wider range. Its automatic spectral route is paused after three
+rejected and deleted candidates. The first
 explicit cyclic candidate is also rejected and deleted after structural
 admission and a first-row synthetic pitch miss. Correlation-aligned waveform
 overlap also failed structural admission and was deleted. `RenewalSpectral`
@@ -602,7 +606,15 @@ closed.
 
 ## Next Task
 
-No `g10.031` implementation batch is ready. Re-enter planning from this front
-door. Open creative cache, artifact, or product integration only from a named
-Signal consumer and separate docs-first authority; keep broader range and
-routing deferred.
+Resolve one operator intent checkpoint before creating another `g10.031`
+batch:
+
+1. freeze the admitted exact-ratio library surface and move to another `g10`
+   priority
+2. name one Signal consumer and open docs-first cache, artifact, or product
+   integration authority
+3. explicitly reopen source-backed research for a materially different owner
+   above `16x`
+
+Until then, no creative implementation, routing, cache, artifact, runtime,
+Loophole, Chorus, or cross-repo work is ready.

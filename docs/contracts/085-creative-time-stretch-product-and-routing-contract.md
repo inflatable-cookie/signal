@@ -1656,6 +1656,6 @@ and Chorus remain unchanged.
 
 ## Next Task
 
-No Contract `085` implementation batch is ready. Require a named Signal
-consumer and separate docs-first authority before opening creative cache,
-artifact, routing, or product integration.
+No Contract `085` implementation batch is ready. Resolve the `g10.031`
+operator intent checkpoint before opening named-consumer integration or
+renewed source-backed high-range research.

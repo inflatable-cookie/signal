@@ -31,7 +31,7 @@ strict lane.
 - Rejected offline stretch successor: [architecture/offline-time-stretch-successor-brief.md](./architecture/offline-time-stretch-successor-brief.md)
 - Non-phase-vocoder feasibility: [architecture/offline-time-stretch-non-phase-vocoder-feasibility.md](./architecture/offline-time-stretch-non-phase-vocoder-feasibility.md)
 - Creative time-stretch study: [architecture/offline-creative-time-stretch-study.md](./architecture/offline-creative-time-stretch-study.md)
-- Frozen exact-ratio CreativeStretch public surface: [architecture/offline-creative-fixed-ratio-public-surface.md](./architecture/offline-creative-fixed-ratio-public-surface.md)
+- Admitted exact-ratio CreativeStretch public surface: [architecture/offline-creative-fixed-ratio-public-surface.md](./architecture/offline-creative-fixed-ratio-public-surface.md)
 - Direct-renewal owner study: [architecture/offline-creative-direct-renewal-owner-study.md](./architecture/offline-creative-direct-renewal-owner-study.md)
 - Closed creative LinkedStnNoiseMorph brief: [architecture/offline-creative-linked-stn-noise-morph-brief.md](./architecture/offline-creative-linked-stn-noise-morph-brief.md)
 - Rejected creative ComparatorAuditedRenewalSpectral brief: [architecture/offline-creative-comparator-audited-renewal-spectral-brief.md](./architecture/offline-creative-comparator-audited-renewal-spectral-brief.md)
@@ -85,8 +85,8 @@ strict lane.
 
 ## Next Task
 
-Return to the `g10` front door. The exact-ratio `CreativeStretch` surface is
-admitted; no follow-on implementation batch is ready. Keep broader creative
-range and routing deferred until a named Signal consumer justifies separate
-docs-first authority. Only drop into `specs/` when a strict lane is explicitly
+Resolve the `g10.031` operator intent checkpoint at the `g10` front door. No
+creative implementation batch is ready. Keep broader range, routing, cache,
+artifact, and product integration deferred until one direction receives
+explicit authority. Only drop into `specs/` when a strict lane is explicitly
 reopened.

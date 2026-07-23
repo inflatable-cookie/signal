@@ -1,6 +1,6 @@
 # Offline Creative Time-Stretch Study
 
-Status: minimal exact-ratio `CreativeStretch` public API frozen
+Status: exact-ratio `CreativeStretch` public API admitted; broader range paused
 Owner: dsp
 Updated: 2026-07-23
 Contract: `085`
@@ -8,9 +8,10 @@ Roadmap: `g10.031`
 
 ## Product Intent
 
-Build a Signal-owned `CreativeStretch` path centered on `8x` output duration.
-One private fixed-ratio renderer is admitted without a product route. It is an
-offline sound-design renderer, not a replacement for
+Signal now exposes a `CreativeStretch` path centered on `8x` output duration.
+The public offline whole-buffer API admits exact `4x`, `8x`, and `16x`
+neutral `Dream` without automatic or product routing. It is an offline
+sound-design renderer, not a replacement for
 `OfflineHighQuality`, a Contract `084` successor, or a RealtimePreview path.
 
 The product presents one stable intent surface while Signal routes between
@@ -1013,6 +1014,6 @@ all retained construction, structural, and synthetic gates pass.
 
 ## Next Task
 
-No follow-on implementation is ready. Open creative cache, artifact, routing,
-or product integration only from a named Signal consumer and separate
-docs-first authority.
+Resolve the `g10.031` operator intent checkpoint. Do not open creative cache,
+artifact, routing, product integration, or renewed high-range research without
+explicit authority.

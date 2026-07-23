@@ -187,5 +187,5 @@ frozen elsewhere in this index.
 Keep Contract `084` closed. Contract `085` publicly admits fixed-ratio `Dream`
 at exact `4x`, `8x`, and `16x`. Cloud closed without an acoustic judgment
 after its second evidence-integrity failure. The broader range and routing are
-paused. Require a named Signal consumer and separate docs-first authority
-before opening creative cache, artifact, routing, or product integration.
+paused. Resolve the `g10.031` operator intent checkpoint before opening any
+new creative authority.
