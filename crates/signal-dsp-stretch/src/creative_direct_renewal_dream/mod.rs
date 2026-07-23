@@ -21,10 +21,11 @@ pub(super) use plan::{
     fft_size, nearest_power_of_two_ties_up, round_half_up_two_thirds, validate_dimensions,
     RenderPlan, MAX_EXACT_INTEGER,
 };
+pub(super) use stereo::ADMISSION_SEED;
 #[cfg(test)]
 pub(super) use stereo::{
-    address, frequency_weight, high_53, mix64, phase, renew_mono, renew_stereo, ADMISSION_SEED,
-    BASE_TAG, BIN_TAG, FRAME_TAG, SPACE_TAG, TEST_TAG,
+    address, frequency_weight, high_53, mix64, phase, renew_mono, renew_stereo, BASE_TAG, BIN_TAG,
+    FRAME_TAG, SPACE_TAG, TEST_TAG,
 };
 #[cfg(test)]
 pub(super) use synthesis::{boundary_envelope, planned_working_bytes};

@@ -1,10 +1,10 @@
 # Offline Creative Fixed-Ratio Public Surface
 
-Status: frozen; Batch 31.76 implementation ready
+Status: admitted; Batch 31.76 complete
 Owner: core-product
 Updated: 2026-07-23
 Contract: `085`
-Roadmap: `g10.031`, Batch 31.75
+Roadmap: `g10.031`, Batches 31.75-31.76
 
 ## Decision
 
@@ -170,8 +170,20 @@ Implementation passes only when:
 No new listening round is required for a byte-identical wrapper using the
 admitted seed and control domain. Any output difference stops the batch.
 
+## Batch 31.76 Result
+
+The frozen wrapper is public through `signal-dsp-stretch`. Public and private
+mono/stereo renders are byte-identical at `4x`, `8x`, and `16x`; `space=0`,
+`0.5`, and `1` pass unchanged. All frozen errors map without clamping or
+fallback.
+
+The four acoustic files retain their Batch 31.75 hashes. Integrated
+construction `1/1`, structural `10/10`, and synthetic `88/88` with `76/76`
+renders remain green. No cache, route, tier, dynamic-ratio, report, fixture,
+runtime, Loophole, Chorus, or cross-repo surface changed.
+
 ## Next Task
 
-Run Batch 31.76 only. Implement this exact public wrapper without changing the
-four acoustic files or widening cache, routing, controls, tiers, runtime,
-Loophole, or Chorus.
+No follow-on implementation batch is ready. Return to the `g10` front door.
+Open cache, artifact, or product integration only from a named Signal consumer
+and a separate docs-first contract.

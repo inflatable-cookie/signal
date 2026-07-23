@@ -16,6 +16,6 @@ Current stretch dossiers:
 
 ## Next Task
 
-Use the creative source triangulation to freeze the complete
-`LinkedStnNoiseMorph` brief in Batch 31.42. Do not add another stretch dossier
-unless a new source changes an architecture decision.
+The source triangulation now supports the admitted exact-ratio `Dream`
+renderer. Do not add another stretch dossier unless a new source changes the
+deferred high-range or routing architecture.

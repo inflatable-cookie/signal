@@ -44,7 +44,7 @@ Keep milestone sequencing in `roadmaps/`.
 
 ## Next Task
 
-Keep the `g10.030` transparent successor program closed. Run `g10.031` Batch
-31.76 only. Implement the frozen exact-ratio `CreativeStretch` wrapper while
-keeping acoustic DSP, cache, routing, tiers, controls, runtime, Loophole, and
-Chorus unchanged.
+Keep the `g10.030` transparent successor program closed. The exact-ratio
+`CreativeStretch` wrapper is admitted. Require a named Signal consumer and
+separate docs-first authority before opening creative cache, artifact, routing,
+runtime, Loophole, or Chorus work.

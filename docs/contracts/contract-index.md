@@ -51,9 +51,10 @@ memory alone.
   Batch 31.70 receipt is invalid across construction, runner, structural,
   synthetic, and listening ownership. Batch 31.71 authorized one fresh docs-
   first `AuditedLayeredCloud` identity. Batch 31.72 froze its complete
-  renderer, executable evidence, comparator, listening, and cleanup authority;
-  one isolated Batch 31.73 implementation is ready. Both overlaps and the
-  router stay paused
+  renderer, executable evidence, comparator, listening, and cleanup authority.
+  Batch 31.73 closed Cloud on contradictory occupancy authority. Batch 31.74
+  narrowed coverage to exact fixed Dream; Batches 31.75-31.76 froze and
+  admitted its minimal public wrapper. Both overlaps and the router stay paused
 - `082` and `g10.029` are historical evidence, not active execution authority
 - `g10.028` source-fill work remains paused
 
@@ -183,9 +184,8 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Keep Contract `084` closed. Contract `085` admits private fixed-ratio
-`DirectRenewalDream` at exact `4x`, `8x`, and `16x`. Cloud closed without an
-acoustic judgment after its second evidence-integrity failure. The broader
-range and routing are paused. Batch 31.75 freezes one minimal exact-ratio
-public wrapper; run Batch 31.76 only without widening cache, tiers, routing, or
-cross-repo surfaces.
+Keep Contract `084` closed. Contract `085` publicly admits fixed-ratio `Dream`
+at exact `4x`, `8x`, and `16x`. Cloud closed without an acoustic judgment
+after its second evidence-integrity failure. The broader range and routing are
+paused. Require a named Signal consumer and separate docs-first authority
+before opening creative cache, artifact, routing, or product integration.

@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: private Dream admitted; minimal exact-ratio public API frozen
+Status: exact-ratio Dream public API admitted; broader routing paused
 Owner: core-product
 Updated: 2026-07-23
 Related contracts: `046`, `048`, `084`
@@ -72,10 +72,9 @@ repetition. Both complete cyclic candidates are rejected and deleted. Final
 ownership reassessment found no third materially different, source-backed
 whole-renderer path. The character is closed and unavailable.
 
-No character is public today. Batch 31.75 freezes a minimal public boundary for
-private `DirectRenewalDream` at exact fixed `4x`, `8x`, and `16x`; Batch 31.76
-must implement and validate it before public admission. That boundary exposes
-only `Dream`, exact target frames, and `space`. It must not imply that
+Batch 31.76 admits a minimal public boundary for private
+`DirectRenewalDream` at exact fixed `4x`, `8x`, and `16x`. That boundary
+exposes only `Dream`, exact target frames, and `space`. It does not imply that
 `Spectral`, `Rough`, `Cloud`, `Cyclic`, continuous ratios, or an automatic
 range router exist.
 
@@ -1055,8 +1054,10 @@ may resume.
     `16x..100x` becomes deferred research intent with no ready owner.
 73. Freeze the minimal fixed-ratio public API. Complete; Batch 31.75 exposes
     only exact target frames, fixed `Dream`, and admitted `space`, with one
-    fixed seed and no cache, route, tier, or cross-repo widening. Batch 31.76
-    implementation is ready.
+    fixed seed and no cache, route, tier, or cross-repo widening.
+74. Implement the minimal fixed-ratio public API. Complete; Batch 31.76
+    preserves byte-identical acoustic source and output, maps every frozen
+    error, and leaves all deferred surfaces closed.
 
 `Spectral`/`Rough`, both overlaps, dynamic ratios, and automatic routing still
 require separate reopening decisions backed by new complete-system evidence.
@@ -1647,12 +1648,14 @@ transparent cache schema also remain unchanged. `motion`, `detail`, seed,
 pitch, reverse, dynamic ratio, routing, reports, runtime DTOs, Loophole, and
 Chorus remain absent.
 
-This docs-only freeze admits no public Rust item. Batch 31.76 may add one
-wrapper and focused tests only if the admitted acoustic files remain
-byte-identical and public output matches the private renderer byte-for-byte.
+Batch 31.76 added only that public wrapper and focused tests. Public/private
+output is byte-identical at every admitted ratio and frozen space anchor. The
+four acoustic files remain byte-identical; retained construction, structural,
+and synthetic gates pass. Cache, artifact, routing, tiers, runtime, Loophole,
+and Chorus remain unchanged.
 
 ## Next Task
 
-Run Batch 31.76 only. Implement the frozen exact-ratio `CreativeStretch`
-wrapper without changing acoustic DSP or widening cache, routing, tiers,
-controls, runtime, Loophole, or Chorus. Do not push.
+No Contract `085` implementation batch is ready. Require a named Signal
+consumer and separate docs-first authority before opening creative cache,
+artifact, routing, or product integration.

@@ -205,8 +205,8 @@ Batch 31.74 narrows current executable creative coverage to private exact
 high-range implementation is ready. Batch 31.75 freezes one minimal public
 crate wrapper for the admitted exact-ratio effect. It exposes fixed `Dream`,
 exact target length, and `space`, retains the admitted seed, and leaves cache,
-routing, tiers, runtime, and cross-repo work unchanged. Batch 31.76 wrapper
-implementation is ready.
+routing, tiers, runtime, and cross-repo work unchanged. Batch 31.76 admits the
+wrapper with byte-identical acoustic output and all retained gates green.
 Offline artifacts still need a streaming artifact writer/cache target for full
 peak-memory closure. Mono callback-state DSP has a
 no-allocation proof, linked stereo is implemented, ratio scheduling has
@@ -332,7 +332,7 @@ Before rollover:
 
 ## Next Task
 
-Use `docs/roadmaps/g10/README.md` as the active generation front door. Run
-`g10.031` Batch 31.76 only. Implement the frozen exact-ratio
-`CreativeStretch` wrapper without widening acoustic DSP, cache, routing, tiers,
-controls, runtime, Loophole, Chorus, or cross-repo surfaces. Do not push.
+Use `docs/roadmaps/g10/README.md` as the active generation front door. Run no
+inferred follow-on implementation. Open creative cache, artifact, routing, or
+product integration only from a named Signal consumer and separate docs-first
+authority.

@@ -205,7 +205,6 @@ Rejected first-owner brief:
 
 ## Next Task
 
-`g10.031` retains exact `4x`/`8x`/`16x` neutral `Dream` and defers the broader
-range after Cloud closed without acoustic judgment. Batch 31.75 froze one
-minimal public wrapper; run Batch 31.76 only without widening research or
-renderer scope.
+`g10.031` publicly admits exact `4x`/`8x`/`16x` neutral `Dream` and defers the
+broader range after Cloud closed without acoustic judgment. No research or
+renderer reopening is authorized without new source-backed authority.

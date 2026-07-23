@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: creative stretch active; Batch 31.76 public wrapper ready
+Status: creative fixed-ratio surface admitted; follow-on planning paused
 Updated: 2026-07-23
 
 ## Why this generation matters now
@@ -279,8 +279,8 @@ Do not start Loophole or Chorus planning from Signal internals.
     isolated implementation ready; Batch 31.73 closes Cloud on contradictory
     occupancy authority; Batch 31.74 narrows executable creative coverage to
     private exact `4x`, `8x`, and `16x` Dream and defers the broader range;
-    Batch 31.75 freezes one minimal public `CreativeStretch` wrapper and makes
-    Batch 31.76 implementation ready;
+    Batch 31.75 freezes one minimal public `CreativeStretch` wrapper; Batch
+    31.76 admits it with byte-identical acoustic output;
     explicit `Cyclic` stays closed
 
 ## Stretch Boundary
@@ -594,12 +594,15 @@ target frames resolving to `4x`, `8x`, or `16x`, fixed `Dream`, and admitted
 `TimeStretcher`, tiers, cache identity, routing, dynamic ratio, pitch, motion,
 detail, runtime, Loophole, or Chorus.
 
-Batch 31.76 is ready to implement that wrapper and focused tests. The four
-acoustic renderer files and public/private output must remain byte-identical.
+Batch 31.76 admits that wrapper and focused tests. The four acoustic renderer
+files retain their frozen hashes; public/private output is byte-identical at
+all admitted ratios and space anchors. Construction, structural, and synthetic
+gates remain green. Cache, routing, tiers, runtime, and cross-repo work remain
+closed.
 
 ## Next Task
 
-Run `g10.031` Batch 31.76 only. Implement the frozen exact-ratio
-`CreativeStretch` wrapper and focused tests. Keep acoustic DSP byte-identical
-and do not widen cache, routing, tiers, controls, runtime, Loophole, Chorus, or
-cross-repo surfaces. Do not push.
+No `g10.031` implementation batch is ready. Re-enter planning from this front
+door. Open creative cache, artifact, or product integration only from a named
+Signal consumer and separate docs-first authority; keep broader range and
+routing deferred.

@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: active; Batch 31.76 minimal public wrapper ready
+Status: paused; fixed-ratio Dream public surface admitted
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -2488,21 +2488,34 @@ Authority:
 
 ## Batch 31.76 - Minimal CreativeStretch Public Wrapper
 
-Status: ready; code and focused tests
+Status: complete; fixed-ratio public surface admitted
 
-- [ ] add only the frozen public `CreativeStretch` types, constants, wrapper,
+- [x] add only the frozen public `CreativeStretch` types, constants, wrapper,
   rustdoc, and focused tests
-- [ ] map the public request onto the admitted private renderer with the exact
+- [x] map the public request onto the admitted private renderer with the exact
   fixed seed and unmodified `space`
-- [ ] prove byte-identical public/private output for mono and stereo at `4x`,
+- [x] prove byte-identical public/private output for mono and stereo at `4x`,
   `8x`, and `16x`
-- [ ] map every private failure into the frozen public error
-- [ ] keep `analysis.rs`, `plan.rs`, `stereo.rs`, and `synthesis.rs`
+- [x] map every private failure into the frozen public error
+- [x] keep `analysis.rs`, `plan.rs`, `stereo.rs`, and `synthesis.rs`
   byte-identical
-- [ ] rerun integrated construction `1/1`, structural `10/10`, and synthetic
+- [x] rerun integrated construction `1/1`, structural `10/10`, and synthetic
   `88/88` with `76/76` renders
-- [ ] add no cache, route, tier, dynamic ratio, pitch, motion, detail, report,
+- [x] add no cache, route, tier, dynamic ratio, pitch, motion, detail, report,
   runtime, Loophole, Chorus, or cross-repo surface
+
+Decision:
+
+- public `CreativeStretch` now exposes exact fixed `Dream` at `4x`, `8x`, and
+  `16x`, with `space` as its only adjustable creative control
+- public/private output is byte-identical at every admitted ratio and frozen
+  space anchor
+- all four acoustic-module hashes remain unchanged
+- integrated construction, structural, and synthetic admission remains green
+- no new listening was required because the admitted seed and renderer output
+  did not change
+- no cache, artifact, route, tier, dynamic ratio, product integration,
+  Loophole, or Chorus work is authorized
 
 ## Later Batches
 
@@ -2742,10 +2755,11 @@ Deferred product work requires separate authority:
   motion, detail, pitch, dynamic ratio, routing, cache, and tiers absent
 - [x] Batch 31.76 is ready as wrapper-only implementation with byte-identical
   acoustic files and output required
+- [x] Batch 31.76 admitted that wrapper with byte-identical acoustic source and
+  output, complete public error mapping, and all retained gates green
 
 ## Next Task
 
-Run Batch 31.76 only. Implement the frozen exact-ratio `CreativeStretch`
-wrapper and focused tests. Keep acoustic DSP byte-identical and do not widen
-cache, routing, tiers, controls, runtime, Loophole, Chorus, or cross-repo
-surfaces. Do not push.
+No Batch 31.77 is ready. Return to `docs/roadmaps/g10/README.md` for planning.
+Open creative cache, artifact, or product integration only when a named Signal
+consumer supplies the requirement; keep broader range and routing deferred.

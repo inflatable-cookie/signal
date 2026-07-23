@@ -967,9 +967,9 @@ pitch, reverse, dynamic ratio, routing, cache, artifacts, runtime DTOs,
 Loophole, and Chorus stay absent. The current transparent cache identity must
 not identify creative output.
 
-Batch 31.76 may implement only that wrapper. The four acoustic renderer files
-must remain byte-identical, and public output must match the private renderer
-byte-for-byte before the surface is admitted.
+Batch 31.76 admits that wrapper. The four acoustic renderer files remain
+byte-identical, public output matches the private renderer byte-for-byte, and
+all retained construction, structural, and synthetic gates pass.
 
 ## Sources
 
@@ -1013,6 +1013,6 @@ byte-for-byte before the surface is admitted.
 
 ## Next Task
 
-Run Batch 31.76 only. Implement the frozen exact-ratio `CreativeStretch`
-wrapper without changing acoustic DSP or widening cache, routing, tiers,
-controls, runtime, Loophole, or Chorus.
+No follow-on implementation is ready. Open creative cache, artifact, routing,
+or product integration only from a named Signal consumer and separate
+docs-first authority.

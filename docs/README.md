@@ -85,7 +85,8 @@ strict lane.
 
 ## Next Task
 
-Run `g10.031` Batch 31.76 only. Implement the frozen exact-ratio
-`CreativeStretch` wrapper and focused tests. Keep acoustic DSP, cache, routing,
-tiers, controls, runtime, Loophole, Chorus, and cross-repo surfaces unchanged.
-Only drop into `specs/` when a strict lane is explicitly reopened.
+Return to the `g10` front door. The exact-ratio `CreativeStretch` surface is
+admitted; no follow-on implementation batch is ready. Keep broader creative
+range and routing deferred until a named Signal consumer justifies separate
+docs-first authority. Only drop into `specs/` when a strict lane is explicitly
+reopened.

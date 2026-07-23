@@ -39,6 +39,10 @@
 //! ordinary sample buffer. [`RealtimePreviewStreamingContract`] names the
 //! callback-safe boundary that must be satisfied before direct render-plane
 //! integration is allowed.
+//!
+//! [`render_creative_stretch`] is a separate offline whole-buffer surface for
+//! the admitted exact-ratio [`CreativeStretchCharacter::Dream`] effect. It is
+//! not a backend tier, transparent fallback, cache route, or audio-thread API.
 
 #![warn(missing_docs)]
 
@@ -46,11 +50,8 @@ mod artifact_plan;
 mod benchmark;
 mod cache_identity;
 mod corpus_report;
-#[allow(
-    dead_code,
-    clippy::manual_div_ceil,
-    clippy::manual_is_multiple_of
-)]
+mod creative;
+#[allow(dead_code, clippy::manual_div_ceil, clippy::manual_is_multiple_of)]
 #[cfg_attr(test, macro_use)]
 mod creative_direct_renewal_dream;
 
@@ -106,6 +107,11 @@ pub use corpus_report::{
     StretchCorpusComparisonReport, StretchCorpusListeningNoteSlot, StretchCorpusListeningSource,
     StretchCorpusListeningSourceRecord, StretchCorpusSkippedAsset,
     StretchExternalBenchmarkComparison, StretchExternalBenchmarkRender,
+};
+pub use creative::{
+    render_creative_stretch, CreativeStretchCharacter, CreativeStretchError,
+    CreativeStretchRequest, CREATIVE_STRETCH_DEFAULT_SPACE, CREATIVE_STRETCH_ENGINE_VERSION,
+    CREATIVE_STRETCH_SUPPORTED_RATIOS,
 };
 pub use formant_boundary::{measure_formant_boundary, StretchFormantBoundaryMeasurement};
 pub use promotion::{
