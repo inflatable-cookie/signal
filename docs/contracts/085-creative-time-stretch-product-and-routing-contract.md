@@ -1,12 +1,13 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: private Dream admitted; AuditedLayeredCloud candidate ready; overlaps paused
+Status: private exact-ratio Dream admitted; broader range and routing paused
 Owner: core-product
-Updated: 2026-07-22
+Updated: 2026-07-23
 Related contracts: `046`, `048`, `084`
 Related architecture: `docs/architecture/offline-creative-time-stretch-study.md`,
 `docs/architecture/offline-creative-direct-renewal-owner-study.md`,
 `docs/architecture/offline-creative-direct-renewal-dream-brief.md`,
+`docs/architecture/offline-creative-audited-layered-cloud-brief.md`,
 `docs/architecture/offline-creative-layered-cloud-brief.md`,
 `docs/architecture/offline-creative-linked-stn-noise-morph-brief.md`,
 `docs/architecture/offline-creative-comparator-audited-renewal-spectral-brief.md`,
@@ -70,9 +71,10 @@ repetition. Both complete cyclic candidates are rejected and deleted. Final
 ownership reassessment found no third materially different, source-backed
 whole-renderer path. The character is closed and unavailable.
 
-No character is public today. A cyclic-only admission must not expose
-unimplemented `Dream`, `Spectral`, `Rough`, or `Cloud` values, or imply that an
-automatic range router exists.
+No character is public today. Private `DirectRenewalDream` is admitted only at
+exact fixed `4x`, `8x`, and `16x`. Any future public admission must expose only
+implemented values and ratios; it must not imply that `Spectral`, `Rough`,
+`Cloud`, `Cyclic`, continuous ratios, or an automatic range router exist.
 
 These fields are intent, not transform controls. Public consumers must not
 select FFT size, window, grain size, overlap, phase mode, internal renderer,
@@ -99,7 +101,7 @@ violates this rule.
 
 ### Rule 2: routing is versioned and deterministic
 
-The automatic routed bands are paused:
+The historical automatic routed bands are:
 
 - coherent: `1x` through `2x`
 - coherent/diffusive overlap: `2x` through `4x`
@@ -107,10 +109,13 @@ The automatic routed bands are paused:
 - diffusive/cloud overlap: `16x` through `32x`
 - cloud: `32x` through `100x`
 
-These bands remain future product intent, not implementation authority. The
-closed explicit `Cyclic` character bypassed them and targeted fixed expansion
-above `1x` through `8x`. Any future reopening must preserve `2x`, `4x`, and
-`8x` as mandatory admission points.
+They are deferred product intent, not an active target or implementation
+authority. Current executable creative coverage is private neutral `Dream` at
+exact fixed `4x`, `8x`, and `16x`. Exact `16x` is an endpoint; it does not
+authorize an interior overlap, a continuous band, or any ratio above `16x`.
+The closed explicit `Cyclic` character bypassed the bands and targeted fixed
+expansion above `1x` through `8x`. Any future routing reopening must preserve
+`2x`, `4x`, and `8x` as mandatory admission points.
 
 If automatic routing reopens, overlap weights use smoothstep interpolation over
 `log2(ratio)`. A fixed-ratio request uses one constant channel-shared weight for
@@ -1029,13 +1034,20 @@ may resume.
     Batch 31.72 binds the unchanged renderer and every structural, synthetic,
     comparator, listening, receipt, timeout, cleanup, and admission edge before
     one fresh isolated implementation.
+71. Implement `AuditedLayeredCloud` once. Complete; compile and construction
+    `1/1` passed, then contradictory occupancy authority stopped the candidate
+    before structural admission or acoustic identity. This second
+    evidence-integrity failure closes Cloud.
+72. Reassess the creative high range. Complete; current executable coverage
+    narrows to exact `4x`, `8x`, and `16x` private neutral `Dream`.
+    `16x..100x` becomes deferred research intent with no ready owner.
 
 `Spectral`/`Rough`, both overlaps, dynamic ratios, and automatic routing still
 require separate reopening decisions backed by new complete-system evidence.
-`LayeredCloud` has one evidence-invalid checkpoint and no quality claim. Its
-renderer did not enter `main`. The complete `AuditedLayeredCloud` replacement
-brief is now frozen; one fresh isolated implementation is ready and a second
-incomplete-evidence checkpoint closes the family.
+`LayeredCloud` has no quality claim. Its first checkpoint had invalid evidence;
+its fresh identity stopped on contradictory authority before acoustic
+identity. The second evidence-integrity failure closes Cloud without an
+acoustic judgment. No high-range replacement or implementation is ready.
 
 ## Current State
 
@@ -1582,11 +1594,33 @@ Loophole, or Chorus change entered `main`. Batch 31.73 may implement it once in
 the exact fresh isolated identity. Acoustic identity remains forbidden until
 construction and two complete structural rounds pass unchanged.
 
+Batch 31.73 compiled the fresh source-clean candidate and passed construction
+`1/1`. Before structural admission, `S03` proved the frozen occupancy result
+contradictory. Strict `2|q|<D` with `D<=20H` permits at most `20` regular
+launches plus one distinct terminal, so `21` is attainable and the required
+`22` is not.
+
+No candidate commit, checkpoint, acoustic ref, synthetic output, comparator
+output, or listening pack exists. This is the second Cloud evidence-integrity
+failure. The pointer-led family closes without another rebinding and without
+an acoustic pass or rejection.
+
+Batch 31.74 narrows current executable creative coverage to private exact
+fixed `4x`, `8x`, and `16x` neutral `Dream`. The operator accepted that effect.
+The former `16x..100x` target becomes deferred research intent. The complete-
+owner audit found no unused fifth family, and no materially different complete
+owner or implementation is ready.
+
+Automatic routing, both overlaps, dynamic ratio, public controls, cache, and
+product exposure remain paused or absent. Reopening above `16x` requires an
+explicit operator decision and one materially different, source-backed
+complete owner frozen docs-first. Cloud may not be repaired, rebound, or
+renamed into that owner.
+
 ## Next Task
 
-Batch 31.73 only. Implement the frozen `AuditedLayeredCloud` brief once in its
-exact fresh isolated worktree. Compile all owners, pass construction, and pass
-two complete structural rounds unchanged before creating acoustic identity.
-Do not recover Batch 31.70 source or output. Keep admitted renderers, overlaps,
-routing, controls, cache, dynamic ratio, Loophole, and Chorus unchanged. Do
-not push.
+No creative implementation batch is ready. Re-enter planning from the `g10`
+front door. Creative work may reopen only through a docs-first decision on a
+minimal public surface for admitted exact `4x`/`8x`/`16x` neutral `Dream`, or
+a materially different complete owner above `16x`. Do not repair or rebind
+LayeredCloud. Do not push.

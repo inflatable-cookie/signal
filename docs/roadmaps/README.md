@@ -1,7 +1,7 @@
 # Roadmaps
 
 Status: active
-Updated: 2026-07-22
+Updated: 2026-07-23
 
 ## Why this section matters now
 
@@ -196,7 +196,13 @@ Batch 31.69 froze one complete pointer-led granular `LayeredCloud` authority
 for continuous fixed `16x..100x`. Batch 31.70's executable receipt proved
 invalid before listening. Batch 31.71 found broad evidence-ownership gaps and
 authorized one fresh docs-first `AuditedLayeredCloud` identity. The upper
-overlap remains paused because Dream has no interior `16x..32x` render.
+overlap remains paused because Dream has no interior `16x..32x` render. Batch
+31.72 froze fresh executable authority. Batch 31.73 stopped before structural
+admission when its occupancy rules made the required maximum unreachable; the
+second evidence-integrity failure closes Cloud without acoustic judgment.
+Batch 31.74 narrows current executable creative coverage to private exact
+`4x`, `8x`, and `16x` neutral `Dream`. The broader range is deferred, and no
+implementation batch is ready.
 Offline artifacts still need a streaming artifact writer/cache target for full
 peak-memory closure. Mono callback-state DSP has a
 no-allocation proof, linked stereo is implemented, ratio scheduling has
@@ -322,8 +328,8 @@ Before rollover:
 
 ## Next Task
 
-Use `docs/roadmaps/g10/README.md` as the active generation front door.
-Run `g10.031` Batch 31.74 only. Reassess the creative high range after Cloud
-closure. Do not repair or rebind LayeredCloud. Keep the transparent successor
-lane, `g10.028`, admitted renderers, routing, controls, cache, dynamic ratio,
-and cross-repo work unchanged. Do not push.
+Use `docs/roadmaps/g10/README.md` as the active generation front door. No
+implementation batch is ready. Reopen creative work only through an explicit
+docs-first decision on a minimal public surface for admitted exact
+`4x`/`8x`/`16x` neutral `Dream`, or a materially different complete owner
+above `16x`. Do not repair or rebind LayeredCloud. Do not push.

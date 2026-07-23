@@ -1,8 +1,8 @@
 # Offline Creative LayeredCloud Renderer Brief
 
-Status: closed; AuditedLayeredCloud replacement authority next
+Status: closed; replacement also closed before acoustic identity
 Owner: dsp
-Updated: 2026-07-22
+Updated: 2026-07-23
 Contract: `085`
 Roadmap: `g10.031`, Batches 31.69-31.71
 
@@ -539,9 +539,7 @@ is recovered into the replacement.
 
 ## Next Task
 
-Run Batch 31.72 only. Freeze one complete `AuditedLayeredCloud` brief around
-the same canonical pointer-led architecture and the gap ledger above. Make no
-implementation batch ready until construction, runner, receipts, synthetic,
-comparator, and listening ownership are closed with no decide-later gaps. Do
-not recover Batch 31.70 source or output. Keep admitted renderers, routing,
-controls, cache, dynamic ratio, Loophole, and Chorus unchanged. Do not push.
+Batch 31.72 froze the fresh authority; Batch 31.73 found contradictory
+occupancy authority before acoustic identity and closed Cloud on its second
+evidence-integrity failure. Batch 31.74 defers the broader range. Do not repair
+or rebind this family.

@@ -1,8 +1,8 @@
 # Offline Creative Time-Stretch Study
 
-Status: `DirectRenewalDream` admitted; AuditedLayeredCloud authority next
+Status: private exact-ratio `DirectRenewalDream` admitted; broader range paused
 Owner: dsp
-Updated: 2026-07-22
+Updated: 2026-07-23
 Contract: `085`
 Roadmap: `g10.031`
 
@@ -23,7 +23,8 @@ Initial product range:
 - core spectral comparator ratios: `4x`, `8x`, and `16x`
 - retained cyclic comparator ratios: identity, `2x`, `4x`, and `8x`; explicit
   cyclic implementation is closed
-- planned routed range: `1x` through `100x`, currently paused
+- current executable creative coverage: exact `4x`, `8x`, and `16x`
+- planned routed range: `1x` through `100x`, deferred and unowned
 - primary design point: `8x`
 - ratios above `100x`: future texture/freeze work, not initial scope
 
@@ -320,8 +321,7 @@ same exact target frame count.
 | `1x` to `2x` | coherent contribution retained, not creatively admitted | future source-readable lower range |
 | `2x` to `4x` | overlap paused | no automatic route |
 | `4x` to `16x` | private `DirectRenewalDream` admitted at exact `4x`, `8x`, and `16x` | no public route |
-| `16x` to `32x` | upper overlap paused | Cloud can render continuously; Dream cannot render interior ratios |
-| `32x` to `100x` | `LayeredCloud` checkpoint evidence-invalid | no quality result or admitted owner |
+| above `16x` to `100x` | deferred; Cloud closed without acoustic judgment | no quality result, admitted owner, or active study |
 
 The coherent lower owner begins from the retained `OfflineHighQuality`
 renderer. That reuse does not widen its transparent-quality claim beyond its
@@ -348,13 +348,11 @@ At that checkpoint no neutral `Dream` implementation existed. The later
 `DirectRenewalDream` reset and admission supersede that implementation-state
 statement without reviving any rejected spectral candidate.
 
-The selected upper `LayeredCloud` owner is one pointer-led granular renderer.
-One exact source map anchors one deterministic launch lattice. Bounded
-variable-length grains read forward at unit rate, linked channels share every
-launch and weight, validity-weight overlap normalization owns source edges,
-and the admitted Dream envelope owns output edges. It covers continuous fixed
-ratios from `16x` through `100x`. It is not a spectral layer, an arbitrary
-wet-effect stack, or an external dependency.
+The studied upper `LayeredCloud` owner was one pointer-led granular renderer.
+Its second executable-authority failure closed that family before acoustic
+identity. It has no quality pass or rejection and does not own a production
+range. Exact `16x` remains the admitted Dream endpoint; it does not imply
+continuous `16x..32x` coverage or support above `16x`.
 
 ## Seamless Selection
 
@@ -921,6 +919,37 @@ source or output, change renderer behavior from acoustic evidence, or open
 implementation before every executable edge is frozen. A second evidence-
 integrity failure closes the family.
 
+## Batch 31.73 Cloud Closure
+
+The fresh source-clean candidate compiled and passed construction `1/1`, then
+stopped before structural admission. Strict `2|q|<D` with `D<=20H` permits at
+most `20` regular launches plus one distinct terminal. The frozen required
+maximum `22` is unreachable; `21` is the exact bound.
+
+No checkpoint, acoustic ref, synthetic output, comparator output, or listening
+pack exists. This is Cloud's second evidence-integrity failure, so Contract
+`085` closes the pointer-led family without another rebinding. It is not an
+acoustic judgment.
+
+## Batch 31.74 High-Range Decision
+
+Signal's current executable creative envelope narrows to the admitted exact
+fixed `4x`, `8x`, and `16x` neutral `Dream` renderer. The operator accepted
+that effect. Exact `16x` is an endpoint, not a continuous-range or routing
+claim.
+
+The former `16x..100x` target is deferred research intent, not active work.
+The complete-owner audit found no unused fifth family. Spectral, cyclic,
+coherent, STN, image, and learned alternatives either own another character,
+are closed, or lack a complete source-backed Signal boundary. Cloud cannot be
+repaired or renamed into another candidate, and its unjudged output cannot
+select one.
+
+No implementation or further owner study is ready. Both overlaps, automatic
+routing, dynamic ratio, public controls, cache, and product exposure remain
+paused or absent. Reopening above `16x` requires explicit operator authority
+and one materially different complete owner frozen docs-first.
+
 ## Sources
 
 - [REAPER time-stretch engines](https://www.reaper.fm/about.php)
@@ -963,9 +992,8 @@ integrity failure closes the family.
 
 ## Next Task
 
-Run Batch 31.72 only. Freeze one complete `AuditedLayeredCloud` brief from the
-canonical pointer-led architecture and Batch 31.71 gap ledger. Resolve every
-construction, runner, receipt, synthetic, comparator, listening, and cleanup
-edge before implementation becomes ready. Do not recover Batch 31.70 source
-or output. Keep admitted renderers, overlaps, routing, controls, cache, dynamic
-ratio, Loophole, and Chorus unchanged. Do not push.
+No creative implementation batch is ready. Return to the `g10` generation
+front door. Any creative reopening must first choose, docs-only, between a
+minimal public surface for admitted exact `4x`/`8x`/`16x` neutral `Dream` and
+a materially different complete owner study above `16x`. Do not repair or
+rebind LayeredCloud.

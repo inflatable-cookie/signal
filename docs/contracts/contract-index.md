@@ -2,7 +2,7 @@
 
 Status: active
 Owner: core-product
-Updated: 2026-07-22
+Updated: 2026-07-23
 
 ## Purpose
 
@@ -184,9 +184,7 @@ frozen elsewhere in this index.
 ## Next Task
 
 Keep Contract `084` closed. Contract `085` admits private fixed-ratio
-`DirectRenewalDream`; the `LayeredCloud` checkpoint has no valid quality
-result. Batch 31.72 froze complete `AuditedLayeredCloud` authority. Run
-`g10.031` Batch 31.73 only to implement it once in the exact fresh isolated
-worktree, with no acoustic identity before construction and two clean
-structural rounds. Do not recover Batch 31.70 source or output or alter
-admitted renderers, overlaps, routing, or product exposure.
+`DirectRenewalDream` at exact `4x`, `8x`, and `16x`. Cloud closed without an
+acoustic judgment after its second evidence-integrity failure. The broader
+range and routing are paused; no implementation batch is ready. Re-enter
+planning through `docs/roadmaps/g10/README.md`.

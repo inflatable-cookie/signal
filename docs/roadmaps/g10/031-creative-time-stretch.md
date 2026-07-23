@@ -1,6 +1,6 @@
 # 031 - Creative Time-Stretch
 
-Status: active; Cloud closed, Batch 31.74 range reassessment ready
+Status: paused; private exact-ratio Dream admitted, broader range unowned
 Owner: dsp
 Created: 2026-07-19
 Depends on: g10.030 closure
@@ -2418,27 +2418,44 @@ Decision:
 
 ## Batch 31.74 - Creative High-Range Reassessment
 
-Status: ready; docs only
+Status: complete; broader range paused, docs only
 
-- [ ] reconcile Cloud closure with admitted `DirectRenewalDream` coverage and
+- [x] reconcile Cloud closure with admitted `DirectRenewalDream` coverage and
   the operator's accepted creative effect
-- [ ] decide whether `16x..100x` remains an active product target, narrows to
+- [x] decide whether `16x..100x` remains an active product target, narrows to
   admitted coverage, or requires a materially different complete owner study
-- [ ] do not rebind LayeredCloud, repair Batch 31.72, or infer a replacement
+- [x] do not rebind LayeredCloud, repair Batch 31.72, or infer a replacement
   candidate from unjudged output
-- [ ] keep admitted DSP, routing, controls, cache, dynamic ratio, Loophole,
+- [x] keep admitted DSP, routing, controls, cache, dynamic ratio, Loophole,
   Chorus, and cross-repo surfaces unchanged
-- [ ] make no implementation batch ready unless one complete, materially
+- [x] make no implementation batch ready unless one complete, materially
   different architecture and executable authority are frozen docs-first
+
+Decision:
+
+- current executable creative coverage is exact fixed `4x`, `8x`, and `16x`
+  neutral `Dream` through private `DirectRenewalDream`
+- `16x` is an admitted endpoint, not evidence for a continuous band or any
+  ratio above it
+- `16x..100x` leaves the active queue and becomes deferred research intent
+- Cloud has no acoustic pass or rejection; its second evidence-integrity
+  failure closes only the pointer-led `LayeredCloud` family
+- the complete-owner audit found no unused fifth family; CDP-like spectral,
+  cyclic, coherent, STN, image, and learned paths either own a different
+  character, are closed, or lack a complete Signal boundary
+- no replacement study or implementation is ready
+- automatic routing, both overlaps, dynamic ratio, public controls, cache,
+  product exposure, Loophole, and Chorus remain paused or absent
+- reopening above `16x` requires explicit operator authority plus one
+  materially different, source-backed complete owner frozen docs-first
 
 ## Later Batches
 
-Closed or paused beyond the range reassessment. Batch 31.74 is the sole ready
-batch.
-Every later product batch still requires separate authority:
+No later batch is ready. Deferred product work requires separate authority:
 
-- minimal `LayeredCloud` admission, only after every frozen gate passes
-- diffusive/cloud overlap
+- a public surface for exact fixed `4x`, `8x`, and `16x` neutral `Dream`
+- any materially different complete owner above `16x`
+- any coherent/Dream or Dream/high-range overlap
 - dynamic-ratio state continuity
 - cache and product-path review
 - `100x+` texture/freeze range
@@ -2654,11 +2671,19 @@ Every later product batch still requires separate authority:
   structural admission, acoustic identity, synthetic output, or listening
 - [x] no candidate DSP, harness, fixture, comparator render, listening output,
   production surface, Loophole, or Chorus change entered `main`
+- [x] Batch 31.74 narrowed current executable creative coverage to exact
+  fixed `4x`, `8x`, and `16x` neutral `Dream`
+- [x] `16x..100x` moved from the active queue to deferred research without
+  converting Cloud's invalid evidence into an acoustic judgment
+- [x] the prior complete-owner audit found no materially different replacement
+  ready for another implementation brief
+- [x] no implementation, routing, public-control, cache, dynamic-ratio, or
+  cross-repo batch became ready
 
 ## Next Task
 
-Batch 31.74 only. Reassess the creative high range docs-first. Decide whether
-`16x..100x` remains active, narrows to admitted coverage, or warrants a
-materially different complete-owner study. Do not repair or rebind
-LayeredCloud. Keep admitted renderers, routing, controls, cache, dynamic ratio,
-Loophole, Chorus, and cross-repo work unchanged. Do not push.
+No `g10.031` implementation batch is ready. Re-enter planning from the `g10`
+front door. Reopen creative work only through an explicit docs-first decision:
+either assess a minimal public surface for the admitted exact `4x`/`8x`/`16x`
+neutral `Dream`, or select a materially different, source-backed complete owner
+for ratios above `16x`. Do not repair or rebind LayeredCloud. Do not push.

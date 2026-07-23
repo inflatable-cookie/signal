@@ -637,7 +637,7 @@ letting a metric promote the result.
 
 ## Next Task
 
-Run Batch 31.74 only. Reassess the creative high range after Cloud closure.
-Do not repair this brief or authorize another LayeredCloud identity. Keep
-admitted renderers, routing, controls, cache, dynamic ratio, Loophole, Chorus,
-and cross-repo work unchanged.
+Batch 31.74 narrows current executable creative coverage to private exact
+`4x`, `8x`, and `16x` neutral `Dream` and defers the broader range. No
+creative implementation batch is ready. Do not repair this brief or authorize
+another LayeredCloud identity.

@@ -205,8 +205,7 @@ Rejected first-owner brief:
 
 ## Next Task
 
-Run `g10.031` Batch 31.73 only. Implement the frozen
-`AuditedLayeredCloud` authority once in its exact fresh isolated worktree.
-Pass construction and two complete structural rounds before acoustic identity.
-Do not recover Batch 31.70 source or output or change admitted renderers,
-overlaps, routing, or the transparent successor.
+No creative implementation batch is ready. `g10.031` retains private exact
+`4x`/`8x`/`16x` neutral `Dream` and defers the broader range after Cloud
+closed without acoustic judgment. Re-enter planning through the `g10` front
+door.

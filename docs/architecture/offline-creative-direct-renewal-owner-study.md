@@ -2,7 +2,7 @@
 
 Status: promoted; `DirectRenewalDream` privately admitted in Batch 31.67
 Owner: dsp
-Updated: 2026-07-22
+Updated: 2026-07-23
 Roadmap: `g10.031`, Batch 31.64
 Governing contract: `085`
 
@@ -173,6 +173,7 @@ internal version `signal-creative-direct-renewal-dream-v1`.
 Batch 31.68 retained the lower-overlap pause without changing the admitted
 renderer. Batch 31.69 froze the separate `LayeredCloud` authority while
 retaining the upper-overlap pause. Batch 31.70 Cloud evidence was invalid;
-Batch 31.71 authorized one fresh docs-first identity. Run Batch 31.72 only:
-freeze complete `AuditedLayeredCloud` authority. Do not change this renderer
-or add product surface.
+Batch 31.71 authorized one fresh docs-first identity, and Batch 31.73 closed
+Cloud on its second evidence-integrity failure. Batch 31.74 narrows current
+creative coverage to this renderer's exact `4x`, `8x`, and `16x` envelope.
+Do not extend, route, or expose it without separate docs-first authority.

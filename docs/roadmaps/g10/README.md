@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: creative stretch active; Cloud closed, Batch 31.74 reassessment ready
+Status: creative stretch paused; private exact-ratio Dream retained
 Updated: 2026-07-23
 
 ## Why this generation matters now
@@ -238,7 +238,7 @@ Do not start Loophole or Chorus planning from Signal internals.
   - historical correctness, listening, and rejected-successor ledger
 - `g10.030` `complete`
   - stretch consolidated; candidate families closed; frozen baseline retained
-- `g10.031` `active`
+- `g10.031` `paused`
   - PaulX-like neutral `Dream` remains product intent; Batch 31.36 passed all
     objective and mono gates, then failed source-relative stereo admission and
     was deleted; Batch 31.37 closed renewal after finding no different complete
@@ -276,7 +276,9 @@ Do not start Loophole or Chorus planning from Signal internals.
     Batch 31.70 receipt is invalid across executable evidence ownership;
     Batch 31.71 authorizes one docs-first `AuditedLayeredCloud` identity;
     Batch 31.72 freezes its complete executable authority and makes one fresh
-    isolated implementation ready;
+    isolated implementation ready; Batch 31.73 closes Cloud on contradictory
+    occupancy authority; Batch 31.74 narrows executable creative coverage to
+    private exact `4x`, `8x`, and `16x` Dream and defers the broader range;
     explicit `Cyclic` stays closed
 
 ## Stretch Boundary
@@ -293,12 +295,14 @@ Current status:
 - Rejected hybrid, H/R/P, phase-gradient, frequency-adaptive, tail, timeline,
   peak, and local phase variants are not active code or planning authority.
 
-The retained OfflineHighQuality baseline is the only active renderer. Contract
-`084` and `g10.030` are closed without promotion. A new successor requires the
-whole-system evidence listed in the non-phase-vocoder feasibility decision.
+The retained OfflineHighQuality baseline is the only product-routed stretch
+renderer. Contract `084` and `g10.030` are closed without promotion. A new
+successor requires the whole-system evidence listed in the non-phase-vocoder
+feasibility decision.
 
-The separate `CreativeStretch` path remains unimplemented. Its automatic
-spectral route is paused after three rejected and deleted candidates. The first
+The separate `CreativeStretch` path contains private exact fixed `4x`, `8x`,
+and `16x` `DirectRenewalDream`, but no public route. Its automatic spectral
+route is paused after three rejected and deleted candidates. The first
 explicit cyclic candidate is also rejected and deleted after structural
 admission and a first-row synthetic pitch miss. Correlation-aligned waveform
 overlap also failed structural admission and was deleted. `RenewalSpectral`
@@ -331,8 +335,9 @@ the PaulX-like target and comparator evidence remain.
 The operator then made finite PaulX-relative pitch delta diagnostic rather than
 terminal for creative `Dream`. Batch 31.33 froze a fresh source-relative
 candidate with every hard, replica, level, boundary, and stereo gate retained.
-Creative stretch still has no renderer, public API, harness surface, or product
-route on `main`.
+At that checkpoint, creative stretch still had no renderer, public API,
+harness surface, or product route on `main`. Batch 31.67 later admitted only
+the private exact-ratio renderer.
 
 The support-audited successor later passed every objective and concealed mono
 gate. Its valid exact-source stereo gate preserved whole and band balance but
@@ -573,11 +578,17 @@ output, comparator output, or listening pack exists. This second evidence-
 integrity failure closes Cloud without another rebinding. Batch 31.74 is a
 docs-only high-range reassessment.
 
+Batch 31.74 retains the accepted private `DirectRenewalDream` effect at exact
+fixed `4x`, `8x`, and `16x`. Exact `16x` is not continuous-range evidence.
+`16x..100x` is deferred research intent. The prior complete-owner audit found
+no unused fifth family, so no materially different high-range owner or
+implementation is ready. Automatic routing, both overlaps, dynamic ratio,
+public controls, cache, and product exposure remain paused or absent.
+
 ## Next Task
 
-Run `g10.031` Batch 31.74 only. Reassess the creative high range docs-first
-after Cloud closure. Decide whether `16x..100x` remains active, narrows to
-admitted coverage, or warrants a materially different complete-owner study.
-Do not repair or rebind LayeredCloud. Keep admitted renderers, routing,
-controls, cache, dynamic ratio, Loophole, Chorus, and cross-repo work
-unchanged. Do not push.
+No implementation batch is ready. Re-enter planning from this generation
+front door. Reopen creative work only through an explicit docs-first decision
+on a minimal public surface for admitted exact `4x`/`8x`/`16x` neutral
+`Dream`, or a materially different complete owner above `16x`. Do not repair
+or rebind LayeredCloud. Do not push.

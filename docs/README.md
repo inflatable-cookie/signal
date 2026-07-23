@@ -58,7 +58,7 @@ strict lane.
 - Roadmap index: [roadmaps/README.md](./roadmaps/README.md)
 - Generation index: [roadmaps/generation-index.md](./roadmaps/generation-index.md)
 - Stretch closeout roadmap: [roadmaps/g10/030-stretch-consolidation-and-completion.md](./roadmaps/g10/030-stretch-consolidation-and-completion.md)
-- Active PaulX-like creative stretch roadmap: [roadmaps/g10/031-creative-time-stretch.md](./roadmaps/g10/031-creative-time-stretch.md)
+- Paused PaulX-like creative stretch roadmap: [roadmaps/g10/031-creative-time-stretch.md](./roadmaps/g10/031-creative-time-stretch.md)
 - Strict-lane reference: [specs/001-g09-lane-first-strict-adoption.md](./specs/001-g09-lane-first-strict-adoption.md)
 - Active strict-lane card: none
 - Research index: [research/master-index.md](./research/master-index.md)
@@ -84,9 +84,9 @@ strict lane.
 
 ## Next Task
 
-Run `g10.031` Batch 31.74 only. Reassess the creative high range after Cloud
-closure. Decide whether `16x..100x` remains active, narrows to admitted
-coverage, or warrants a materially different complete-owner study. Do not
-repair or rebind LayeredCloud or change admitted renderers, routing, controls,
-cache, dynamic ratio, Loophole, or Chorus. Do not push. Only drop into
-`specs/` when a strict lane is explicitly reopened.
+No implementation batch is ready. Re-enter planning through
+`roadmaps/g10/README.md`. Creative work may reopen only through an explicit
+docs-first decision on a minimal public surface for admitted exact
+`4x`/`8x`/`16x` neutral `Dream`, or a materially different complete owner
+above `16x`. Do not repair or rebind LayeredCloud. Only drop into `specs/`
+when a strict lane is explicitly reopened.

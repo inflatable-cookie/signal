@@ -1,9 +1,9 @@
 # Creative Stretch Source Triangulation
 
-Status: reviewed; DirectRenewalDream admitted; AuditedLayeredCloud authority frozen
+Status: reviewed; DirectRenewalDream admitted; broader range paused
 Owner: dsp
-Updated: 2026-07-22
-Roadmap: `g10.031`, Batches 31.16, 31.30-31.41, 31.64-31.69
+Updated: 2026-07-23
+Roadmap: `g10.031`, Batches 31.16, 31.30-31.41, 31.64-31.74
 
 ## Question
 
@@ -602,13 +602,12 @@ comparators. PaulX is the already-admitted `Dream` owner. Wet stacks, free
 grain primitives, image inversion, and neural synthesis do not add a complete
 bounded linked-stereo renderer.
 
-The selected owner is frozen in
+The selected owner was frozen in
 [Offline Creative AuditedLayeredCloud Renderer Brief](../../architecture/offline-creative-audited-layered-cloud-brief.md).
-It covers every fixed ratio from `16x` through `100x` with one map, one launch
-lattice, bounded deterministic grain state, unit-rate reads, shared stereo
-weights, exact crop, and the admitted Dream exterior envelope. This opens one
-isolated candidate batch. It does not open the upper overlap: admitted Dream
-has no interior `16x..32x` renders.
+The fresh implementation compiled and passed construction, then stopped before
+structural admission because the frozen occupancy result was unreachable. The
+second evidence-integrity failure closes the pointer-led Cloud family without
+an acoustic judgment.
 
 The closed original brief and Batch 31.71 gap ledger remain historical
 evidence in
@@ -627,8 +626,6 @@ Primary source audit:
 
 ## Next Task
 
-Run Batch 31.73 only. Implement the frozen `AuditedLayeredCloud` authority
-once in its exact fresh isolated worktree. Pass construction and two complete
-structural rounds before acoustic identity. Do not recover Batch 31.70 source
-or output or change admitted renderers, overlaps, routing, controls, cache,
-Loophole, or Chorus. Do not push.
+No creative implementation batch is ready. Current executable coverage is
+private exact `4x`, `8x`, and `16x` neutral `Dream`; the broader range is
+deferred. Re-enter planning through the `g10` front door.
