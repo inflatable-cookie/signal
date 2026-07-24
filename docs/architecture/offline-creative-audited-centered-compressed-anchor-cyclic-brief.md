@@ -1,6 +1,6 @@
 # Offline Creative AuditedCenteredCompressedAnchorCyclic Brief
 
-Status: checkpoint rejected at Y01 impulse dropout; reassessment ready
+Status: checkpoint rejected; superseded by selected event-ledger authority
 Owner: dsp
 Updated: 2026-07-24
 Contracts: `046`, `085` Rule 11
@@ -1602,6 +1602,7 @@ These are admission risks, not open design choices.
 
 ## Next Task
 
-Execute `g10.032` Batch 32.17 only. Attribute the impulse dropout at
-complete-system level. Freeze one materially different Cyclic owner or an
-evidence-backed stop; do not implement or rerun acoustic evidence.
+Execute `g10.032` Batch 32.18 only. Freeze the complete
+`EventLedgerAuditedCenteredCompressedAnchorCyclic` authority with exact
+sparse-event ownership and executable diagnostic known answers. Do not
+implement or run acoustic evidence.

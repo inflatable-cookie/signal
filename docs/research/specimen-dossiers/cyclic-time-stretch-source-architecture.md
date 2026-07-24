@@ -1,6 +1,6 @@
 # Cyclic Time-Stretch Source Architecture
 
-Status: reviewed; selected owner rejected; reassessment ready
+Status: reviewed; sparse-event gate correction selected
 Owner: dsp
 Updated: 2026-07-24
 Contract: `085`
@@ -464,6 +464,26 @@ Batch 32.2 resolves only the evidence questions:
 5. The old absolute pitch ceiling is invalid for this target.
 6. One shared clock preserves the tested stereo relations.
 
+### Batch 32.17 Sparse-Event Attribution
+
+The audited centred renderer's `2x`, `48 ms` impulse failure is not a missing
+event. Exact static reconstruction gives:
+
+- ideal mapped centre `88200.5`
+- positive replica groups at `86440..86441`, `87498..87499`,
+  `88557..88558`, and `89615..89616`
+- one exact-zero `221`-frame window `[88179,88400)` between replica groups
+- mapped source interval `[44090,44199]`, containing the impulse at `44100`
+
+The gap is commanded by the cyclic replica grammar. Its `1058.5`-frame
+spacing matches the retained ReaReaRea `2x` median. Continuous-support dropout
+measurement is inapplicable to sparse impulses. The independent event ledger
+owns sparse-event presence and replica integrity.
+
+This supports one fresh evidence authority with unchanged DSP and corrected
+material ownership. It does not support a threshold change, cycle sweep,
+window tweak, or old checkpoint rerun.
+
 ## Behavioral Synthesis
 
 Batch 32.3 selects centred compressed-anchor Cyclic behavior:
@@ -507,6 +527,6 @@ Batch 32.4 freezes the selected implementation authority:
 
 ## Next Task
 
-Execute `g10.032` Batch 32.17 only. Attribute the valid impulse dropout against
-the retained source architectures. Do not implement or rerun acoustic
-evidence.
+Execute `g10.032` Batch 32.18 only. Freeze the exact event-ledger evidence
+authority and executable diagnostic known answers. Do not implement or run
+acoustic evidence.

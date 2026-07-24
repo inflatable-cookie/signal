@@ -123,7 +123,7 @@ retained the `2x..4x` creative overlap pause. `g10.032` later reopened Cyclic
 research after new fixed-mode and repeat/jump source evidence, then closed the
 centred compressed-anchor identity after a split-root run. The operator
 superseded that closure. After exact environment recovery, the checkpoint
-passed `12` Y01 rows and failed the impulse `2x` row on one dropout. Execute
-`g10.032` Batch 32.17 docs-only architecture reassessment. Keep `main`,
-admitted renderers, both overlaps, product routing, and Contract `084`
-unchanged.
+passed `12` Y01 rows and failed the impulse `2x` row on one dropout. Batch
+32.17 proves sparse-event integrity belongs to the event ledger. Execute
+`g10.032` Batch 32.18 exact evidence-authority work. Keep `main`, admitted
+renderers, both overlaps, product routing, and Contract `084` unchanged.

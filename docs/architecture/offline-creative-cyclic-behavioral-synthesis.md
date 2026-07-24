@@ -1,6 +1,6 @@
 # Offline Creative Cyclic Behavioral Synthesis
 
-Status: selected checkpoint rejected; architecture reassessment ready
+Status: sparse-event ownership corrected; exact evidence brief pending
 Owner: dsp
 Updated: 2026-07-24
 Contract: `085`
@@ -240,6 +240,16 @@ not fail; the caller supplied a relative evidence root. Exact checkpoint
 `74a6d6d9` may replay the complete `Y01` gate once with the frozen absolute
 root. No candidate or evidence byte may change.
 
+Batch 32.16 then rejects that checkpoint at the neutral `2x` impulse row.
+Batch 32.17 proves the failure is a gate ownership inversion: the event has
+four commanded positive ledger groups, while the absolute continuous-support
+window lands between two replicas. Sparse events belong to the event ledger;
+tones, noise, pads, and intentional gaps retain mapped-window support owners.
+
+Select fresh `EventLedgerAuditedCenteredCompressedAnchorCyclic` authority with
+unchanged renderer behavior and corrected evidence ownership. The rejected
+checkpoint is not repaired or rerun.
+
 ## Remaining Risk
 
 - no Signal renderer has yet proved that the centred schedule sounds useful
@@ -256,5 +266,6 @@ identity or another mechanism survey.
 
 ## Next Task
 
-Execute `g10.032` Batch 32.17 only. Attribute the valid impulse dropout at
-complete-system level. Do not implement or rerun acoustic evidence.
+Execute `g10.032` Batch 32.18 only. Freeze the complete event-ledger evidence
+brief and executable diagnostic known answers. Do not implement or run
+acoustic evidence.

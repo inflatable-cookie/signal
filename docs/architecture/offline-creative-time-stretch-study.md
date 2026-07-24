@@ -1,6 +1,6 @@
 # Offline Creative Time-Stretch Study
 
-Status: exact-ratio `CreativeStretch` admitted; Cyclic reassessment ready
+Status: exact-ratio `CreativeStretch` admitted; Cyclic event-ledger authority selected
 Owner: dsp
 Updated: 2026-07-24
 Contract: `085`
@@ -1081,7 +1081,6 @@ all retained construction, structural, and synthetic gates pass.
 
 ## Next Task
 
-Execute `g10.032` Batch 32.17 only. Attribute the centred Cyclic impulse
-dropout and decide one materially different owner or an evidence-backed stop.
-Exact fixed `4x`, `8x`, and `16x` `Dream` remains admitted. Broader range,
-automatic routing, and both overlaps remain paused.
+Execute `g10.032` Batch 32.18 only. Freeze exact event-ledger evidence and
+diagnostic owner proofs. Exact fixed `4x`, `8x`, and `16x` `Dream` remains
+admitted. Broader range, automatic routing, and both overlaps remain paused.

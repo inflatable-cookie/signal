@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: exact-ratio Dream admitted; Cyclic acoustic failure reassessment ready
+Status: exact-ratio Dream admitted; Cyclic event-ledger correction selected
 Owner: core-product
 Updated: 2026-07-24
 Related contracts: `046`, `048`, `084`
@@ -1908,8 +1908,43 @@ source window below `-80 dBFS`, compare it with retained Cyclic source
 architectures, and either freeze one materially different complete owner or
 record that no eligible owner exists.
 
+Batch 32.17 finds a product-gate ownership error rather than a lost event. For
+the failing `2x`, `48 ms` impulse row:
+
+- `H=2117`, with commanded replica spacing `1058.5` output frames
+- the ideal mapped event centre is `88200.5`
+- positive ledger groups are `86440..86441`, `87498..87499`,
+  `88557..88558`, and `89615..89616`
+- the sole failing output window is `[88179,88400)`
+- that window maps to source frames `[44090,44199]`, contains the authored
+  impulse at `44100`, and has source RMS `-20.414 dBFS`
+- it lies between two commanded replica groups and is exact zero by design
+
+Retained ReaReaRea `2x` evidence reports the same `1058.5`-frame median
+replica spacing and a `-176.3`-frame mean mapped-centre offset. A continuous
+ideal-map activity test cannot classify intentional gaps in this sparse
+replica grammar. Sparse-event integrity already has the correct owner: the
+commanded event ledger.
+
+Use Rule 11's explicit evidence-backed product-gate exception. Select fresh
+`EventLedgerAuditedCenteredCompressedAnchorCyclic` authority with unchanged
+renderer formulas, unchanged continuous-source dropout control, no dropout
+assertion for `impulse` or `impulse-train`, and full ledger assertions and
+measured event diagnostics in every sparse-event Y01 row. This assigns
+continuous support and sparse events to non-overlapping owners; it does not
+relax a threshold.
+
+Static audit also proves the rejected checkpoint cannot supply the fresh
+evidence implementation. Its Y02 owner substitutes authored frequencies and
+zero cents for measured FFT results. Y03 substitutes placeholder event
+diagnostics and does not execute every advertised order/centre assertion. Y04
+substitutes planned cadence and RMS for the frozen envelope FFT and
+autocorrelation. Batch 32.18 must freeze exact executable owner manifests and
+known answers for every diagnostic family before isolation.
+
 ## Next Task
 
-Execute `g10.032` Batch 32.17 only. Perform docs-only complete-system
-attribution of the impulse dropout and decide one materially different Cyclic
-owner or an evidence-backed stop. Do not implement or rerun acoustic evidence.
+Execute `g10.032` Batch 32.18 only. Freeze the complete
+`EventLedgerAuditedCenteredCompressedAnchorCyclic` brief, exact sparse-event
+row changes, and executable known answers for every diagnostic owner. Do not
+implement or run acoustic evidence.

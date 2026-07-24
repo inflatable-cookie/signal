@@ -1,6 +1,6 @@
 # 032 - Cyclic Creative Stretch Research
 
-Status: active; Batch 32.16 rejected the checkpoint; Batch 32.17 ready
+Status: active; Batch 32.17 selected event-ledger correction; Batch 32.18 ready
 Owner: dsp
 Updated: 2026-07-24
 Contracts: `046`, `085`
@@ -524,7 +524,7 @@ of the operator's Cyclic target.
 
 ## Batch 32.17 - Impulse Dropout Architecture Reassessment
 
-Status: ready
+Status: complete
 
 1. preserve the checkpoint ref through reassessment and retain the receipt
    hashes in the closeout record
@@ -543,6 +543,42 @@ Status: ready
 This batch is docs and static source analysis only. Do not implement a
 candidate, change evidence, or run acoustic rows.
 
+Result:
+
+- the failing `[88179,88400)` output window maps across the authored impulse
+  but sits exactly between commanded replica groups
+- the event remains present in four positive ledger groups; it was not lost
+- the `1058.5`-frame spacing matches retained ReaReaRea replica evidence
+- continuous mapped-window activity is the wrong hard owner for sparse Cyclic
+  events
+- select fresh `EventLedgerAuditedCenteredCompressedAnchorCyclic` with
+  unchanged DSP, unchanged sustained-source dropout control, and full ledger
+  ownership for sparse events
+- static audit found placeholder Y02, Y03, and Y04 diagnostic owners in the
+  rejected checkpoint, so no implementation or harness is reusable
+
+## Batch 32.18 - Event-Ledger Evidence Authority
+
+Status: ready
+
+Freeze one complete canonical brief before isolation:
+
+1. retain every centred compressed-anchor renderer, map, linked-channel,
+   boundary, memory, and determinism formula unchanged
+2. replace sparse Y01 dropout ownership with exact event-ledger assertions and
+   measured diagnostics
+3. retain the continuous-source `221`-frame, `-40/-80 dBFS` dropout rule
+   unchanged
+4. freeze exact row IDs, assertion IDs, diagnostic IDs, counts, order,
+   summaries, and receipt schemas
+5. freeze executable known answers that prove the real FFT, ledger, cadence,
+   gap, stereo, level, and comparator owners rather than labels or
+   placeholders
+6. freeze fresh isolation names, cleanup, and evidence order
+
+Do not create a worktree, candidate source, harness, comparator render, or
+acoustic receipt in this batch.
+
 ## Completion Gate
 
 - source families are pinned and clean-room boundaries recorded
@@ -556,6 +592,5 @@ candidate, change evidence, or run acoustic rows.
 
 ## Next Task
 
-Execute Batch 32.17 only. Attribute the impulse dropout at complete-system
-level and freeze one materially different Cyclic owner or an evidence-backed
-stop. Do not implement or rerun acoustic evidence.
+Execute Batch 32.18 only. Freeze the complete event-ledger evidence authority
+and exact executable owner proofs. Do not implement or run acoustic evidence.

@@ -90,6 +90,6 @@ strict lane.
 
 ## Next Task
 
-Execute `g10.032` Batch 32.17 only. Attribute the valid impulse dropout at
-complete-system level and decide one materially different Cyclic owner or an
-evidence-backed stop. Do not implement or rerun acoustic evidence.
+Execute `g10.032` Batch 32.18 only. Freeze the complete event-ledger Cyclic
+authority and exact executable diagnostic owner proofs. Do not implement or
+run acoustic evidence.

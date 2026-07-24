@@ -36,5 +36,5 @@ The checkpoint is rejected; the Cyclic product target remains open.
 
 ## Next Task
 
-Execute Batch 32.17 only. Attribute the impulse dropout at complete-system
-level. Do not implement or rerun acoustic evidence.
+Execute Batch 32.18 only. Freeze exact event-ledger evidence authority. Do not
+implement or run acoustic evidence.

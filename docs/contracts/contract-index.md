@@ -195,4 +195,5 @@ frozen elsewhere in this index.
 Keep Contract `084` closed. Contract `085` publicly admits fixed-ratio `Dream`
 at exact `4x`, `8x`, and `16x`. Cloud remains closed. Centred
 compressed-anchor Cyclic passed `12` Y01 rows, then failed impulse `2x` on one
-dropout. Execute `g10.032` Batch 32.17 docs-only architecture reassessment.
+dropout. Batch 32.17 proves sparse-event integrity belongs to the event ledger.
+Execute `g10.032` Batch 32.18 exact evidence-authority work.

@@ -318,5 +318,5 @@ The current package-level naming proposal is recorded in
 ## Next Task
 
 Keep the completed `g10.031` API and frozen transparent baseline unchanged.
-Execute `g10.032` Batch 32.17 only: attribute the valid centred Cyclic impulse
-dropout at complete-system level. Do not implement or rerun acoustic evidence.
+Execute `g10.032` Batch 32.18 only: freeze exact event-ledger Cyclic evidence
+and diagnostic owner proofs. Do not implement or run acoustic evidence.

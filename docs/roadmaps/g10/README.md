@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: centred Cyclic checkpoint rejected; Batch 32.17 reassessment ready
+Status: Cyclic event-ledger correction selected; Batch 32.18 ready
 Updated: 2026-07-24
 
 ## Why this generation matters now
@@ -678,10 +678,14 @@ hash-verifies the exact synthetic comparator environment. The unchanged
 checkpoint passes `12` Y01 rows, then fails
 `Y01-012-impulse-r2-c048000` on one unexpected dropout. No summary or later
 gate exists. The checkpoint is rejected; the Cyclic product target remains
-open for complete-system reassessment.
+open. Batch 32.17 proves the failed window lies between commanded replicas:
+continuous mapped-window activity is not sparse-event integrity. Select fresh
+event-ledger evidence authority with unchanged DSP. Placeholder Y02, Y03, and
+Y04 diagnostic owners in the rejected checkpoint prohibit code or harness
+reuse.
 
 ## Next Task
 
-Execute `g10.032` Batch 32.17 only. Attribute the impulse dropout at
-complete-system level and decide one materially different Cyclic owner or an
-evidence-backed stop. Do not implement or rerun acoustic evidence.
+Execute `g10.032` Batch 32.18 only. Freeze the complete event-ledger Cyclic
+authority and executable diagnostic owner proofs. Do not implement or run
+acoustic evidence.

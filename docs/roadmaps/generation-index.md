@@ -194,6 +194,6 @@ If that cleanup has not happened, stay in the current generation and finish the 
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the current active-generation front door.
-Execute `g10.032` Batch 32.17 only. Attribute the centred Cyclic impulse
-dropout and decide one materially different owner or an evidence-backed stop.
-Do not implement or rerun acoustic evidence.
+Execute `g10.032` Batch 32.18 only. Freeze exact event-ledger Cyclic evidence
+and executable diagnostic owner proofs. Do not implement or run acoustic
+evidence.

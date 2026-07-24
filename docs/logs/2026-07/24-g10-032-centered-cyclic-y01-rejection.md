@@ -1,7 +1,7 @@
 # g10.032 Centred Cyclic Y01 Rejection
 
 Date: 2026-07-24
-Status: Batch 32.16 complete; Batch 32.17 ready
+Status: Batch 32.17 complete; Batch 32.18 ready
 
 ## Evidence
 
@@ -30,4 +30,5 @@ or an evidence-backed stop. Local tuning is prohibited.
 
 ## Next Task
 
-Execute Batch 32.17 only. No candidate implementation or acoustic execution.
+Execute Batch 32.18 only. Freeze exact event-ledger evidence authority. No
+candidate implementation or acoustic execution.

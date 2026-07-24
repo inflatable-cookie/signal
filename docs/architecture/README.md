@@ -49,7 +49,6 @@ Keep milestone sequencing in `roadmaps/`.
 
 Keep the `g10.030` transparent successor program closed. The exact-ratio
 `CreativeStretch` wrapper is admitted and `g10.031` is complete. `g10.032`
-Batch 32.16 rejects the centred compressed-anchor checkpoint on one valid
-impulse dropout after `12` Y01 passes. Execute Batch 32.17 docs-only
-architecture reassessment. Reopen no cache, routing, runtime, Loophole, or
-Chorus work.
+Batch 32.17 reassigns sparse-event integrity from continuous dropout to the
+commanded event ledger. Execute Batch 32.18 exact evidence-authority work.
+Reopen no cache, routing, runtime, Loophole, or Chorus work.
