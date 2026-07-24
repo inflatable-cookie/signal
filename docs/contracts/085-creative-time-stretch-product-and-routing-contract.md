@@ -2188,7 +2188,25 @@ boundaries. All `18` retained private Dream owners pass. Both private renderer
 trees remain unchanged. No routing, cache, artifact, dynamic ratio, runtime,
 UI, Loophole, or Chorus surface entered the batch.
 
+Batch 33.6 closes `g10.033`. The exact executable creative matrix is now:
+
+- Dream: every integer target `4N <= T <= 16N`, mono or linked stereo,
+  deterministic whole-buffer offline, `space` in `0..=1`
+- Cyclic: exact `2N`, `4N`, or `8N`, mono or linked stereo, deterministic
+  whole-buffer offline, cycle duration `5..90 ms`
+
+The shared `4x` and `8x` points are distinct user-selected characters, not
+router overlaps. Unsupported targets do not fall back to Transparent.
+Creative dynamic ratio, routing, cache, artifacts, runtime, UI, Loophole, and
+Chorus remain unavailable.
+
+The next planning checkpoint is continuous Cyclic feasibility. This ordering
+uses the private owner's existing general target geometry as a research lead;
+it does not admit interior ratios. Lower Dream remains paused because no
+compatible same-character owner exists. Batch 33.6 changes documentation only.
+
 ## Next Task
 
-Execute `g10.033` Batch 33.6 as docs-only lane closeout. Publish the exact
-executable coverage matrix and select the next planning checkpoint.
+Open one docs-first continuous Cyclic feasibility roadmap. Audit character
+continuity, exact target domain, and complete evidence ownership before any
+candidate is frozen. Keep lower Dream and implementation closed.

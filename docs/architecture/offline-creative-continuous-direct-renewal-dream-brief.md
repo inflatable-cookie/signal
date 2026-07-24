@@ -574,6 +574,6 @@ evidence, comparators, receipts, audio, and the nextest profile did not enter
 
 ## Next Task
 
-Execute `g10.033` Batch 33.6 as docs-only lane closeout. The
-[public surface](./offline-creative-fixed-ratio-public-surface.md) now exposes
-this owner over its full admitted range.
+Keep this owner and its full public `4x..16x` range frozen. Open continuous
+Cyclic feasibility as the next docs-first planning checkpoint; do not widen
+Dream or start implementation.

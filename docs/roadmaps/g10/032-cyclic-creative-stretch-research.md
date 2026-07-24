@@ -987,7 +987,7 @@ or that a new candidate is ready.
 
 ## Next Task
 
-Use `g10.033` as the active stretch roadmap. Batch 33.1 selected a continuous
-Dream direction while retaining Cyclic. Batch 33.2 froze the complete brief,
-and Batch 33.3 admitted the private continuous owner. Execute Batch 33.4 as the
-docs-first public Dream range and routing decision.
+`g10.033` completed continuous `4x..16x` Dream admission. Open one docs-first
+continuous Cyclic feasibility roadmap next. Keep this admitted renderer and
+its exact public ratios frozen until that checkpoint owns the complete domain,
+architecture, and evidence path.

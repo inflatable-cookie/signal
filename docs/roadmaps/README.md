@@ -333,13 +333,14 @@ explicit checkpoint-scoped stereo waiver. Batch 32.26 privately admits the
 unchanged exact `2x`/`4x`/`8x` Cyclic core. Batch 32.27 freezes its public
 character, duration control, errors, and v2 identity. Wrapper implementation
 passes in Batch 32.28. Batch 32.29 closes the lane with Dream and Cyclic as
-separate exact-ratio characters. `g10.033` is active for continuous
+separate exact-ratio characters. `g10.033` owns continuous
 fixed-ratio and same-character routing feasibility. Batch 33.1 selects an
 unchanged-mechanism Dream generalization over `4x..16x`; Batch 33.2 freezes its
 complete implementation and evidence brief; Batch 33.3 admits it privately.
 Batch 33.4 freezes direct public widening with no same-character router.
-Batch 33.5 admits that public surface. Batch 33.6 docs-only closeout is ready.
-No strict spec lane is open.
+Batch 33.5 admits that public surface. Batch 33.6 publishes the executable
+coverage matrix and closes the lane. Continuous Cyclic feasibility is the next
+planning checkpoint; lower Dream remains paused. No strict spec lane is open.
 
 ## Strict lane posture
 
@@ -367,5 +368,6 @@ Before rollover:
 
 ## Next Task
 
-Use `docs/roadmaps/g10/README.md` as the active generation front door.
-Execute `g10.033` Batch 33.6 as docs-only lane closeout.
+Use `docs/roadmaps/g10/README.md` as the active generation front door. Open
+one docs-first continuous Cyclic feasibility roadmap; do not start
+implementation.

@@ -36,6 +36,46 @@ It has no range branch, hidden router, overlap, blend, or fallback.
 The shared `4x` and `8x` targets do not route or crossfade between characters.
 `OfflineHighQuality` remains a separate Transparent product choice.
 
+## Executable Coverage
+
+Let `N` be source frames and `T` the requested output frames. This is the
+complete public creative execution matrix after Batch 33.5:
+
+| Character | Accepted target | Channels | Public control | Execution |
+| --- | --- | --- | --- | --- |
+| `Dream` | every integer `T` with `4N <= T <= 16N` | mono or linked stereo | `space` in `0..=1`, default `0.5` | deterministic whole-buffer offline |
+| `Cyclic` | exactly `T=2N`, `T=4N`, or `T=8N` | mono or linked stereo | `cycle` in `5..=90 ms`, default `48 ms` | deterministic whole-buffer offline |
+
+The matrix is target-frame exact. `Dream` is continuous over integer output
+lengths, not merely floating-point ratios. `Cyclic` is not continuous. Both
+characters reject unsupported targets before render allocation and never
+substitute the other character or Transparent.
+
+Adjacent Signal stretch owners are not hidden creative range owners:
+
+| Owner | Executable posture | Boundary |
+| --- | --- | --- |
+| `Repitch` | implemented realtime-safe varispeed with dynamic ratio | tempo and pitch remain coupled |
+| `RealtimePreview` | control-side prototype with static, pitch, and stepwise dynamic-ratio entry points | `audio_thread_processing_supported=false`; no callback product path |
+| `OfflineHighQuality` | deterministic mono and linked-stereo Transparent renderer; positive finite static ratios and stepwise dynamic ratios are accepted | callable breadth is not a blanket acoustic promotion; it never serves as creative fallback |
+| `CreativeStretch` | the Dream and Cyclic rows above | whole-buffer offline only; separate from the backend-tier enum |
+
+Current non-coverage is explicit:
+
+- Dream below `4x` or above `16x`
+- Cyclic interior targets between `2x`, `4x`, and `8x`
+- creative dynamic ratio, character automation, reverse, or pitch
+- automatic same-character or cross-character routing
+- creative cache identity, artifact writing, runtime DTOs, UI integration,
+  Loophole, or Chorus integration
+
+The quality statement is narrower than raw API acceptance.
+`OfflineHighQuality` remains the frozen competitive Transparent baseline, with
+the retained listening program concentrated on compression through long
+expansion. Dream `4x..16x` and Cyclic `2x`/`4x`/`8x` carry their own completed
+creative admission. No row claims universal professional parity from metrics
+alone.
+
 ## Public V3 Shape
 
 Batch 33.5 admits this shape:
@@ -455,5 +495,7 @@ private renderer exactly.
 
 ## Next Task
 
-Execute `g10.033` Batch 33.6. Close the lane with one exact executable coverage
-matrix and select the next planning checkpoint without reopening implementation.
+Open one docs-first continuous Cyclic feasibility roadmap. Determine whether
+interior fixed targets can preserve the admitted Cyclic character before any
+candidate, public widening, or implementation becomes ready. Keep lower Dream
+and every consumer/integration surface closed.

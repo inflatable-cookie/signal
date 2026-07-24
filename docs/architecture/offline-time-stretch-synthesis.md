@@ -88,9 +88,9 @@ brief opens.
 ## Separate Creative Path
 
 Intentional creative expansion is governed separately by Contract `085` and
-`docs/architecture/offline-creative-time-stretch-study.md`. Its automatic
-route and both overlaps are paused. Public `Dream` owns exact fixed `4x`,
-`8x`, and `16x`. Public `Cyclic` owns exact `2x`, `4x`, and `8x` with one
+`docs/architecture/offline-creative-time-stretch-study.md`. Automatic routing
+and lower Dream remain paused. Public `Dream` owns every exact target in
+`4N..=16N`. Public `Cyclic` owns exact `2N`, `4N`, and `8N` with one
 `5..90 ms` cycle duration. Neither creative character replaces this renderer
 or reopens Contract `084`. The attempted `LayeredCloud` owner closed without
 promotion.
@@ -114,11 +114,8 @@ ledger remains in git history at `1d1b02f1`.
 
 ## Next Task
 
-Retain this frozen baseline and keep its successor lane closed. `g10.031` also
-retained the `2x..4x` creative overlap pause. `g10.032` later reopened Cyclic
-research, admitted the accepted private renderer, and froze its public
-fixed-ratio surface. Batch 32.28 admits the public wrapper and Batch 32.29
-closes the Cyclic lane. Batch 33.1 selects a separately versioned continuous
-Dream generalization over `4x..16x`; Batch 33.2 freezes its complete brief.
-Execute `g10.033` Batch 33.3 only in one isolated worktree without changing
-either overlap, product routing, or Contract `084`.
+Retain this frozen baseline and keep its successor lane closed. `g10.032`
+admitted exact-ratio Cyclic. `g10.033` admitted continuous `4x..16x` Dream
+without changing Transparent. Open continuous Cyclic feasibility as a
+docs-first planning checkpoint without changing lower Dream, product routing,
+or Contract `084`.

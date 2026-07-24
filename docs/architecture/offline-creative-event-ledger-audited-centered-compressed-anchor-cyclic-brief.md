@@ -2158,6 +2158,6 @@ These are admission risks, not open design choices.
 
 ## Next Task
 
-Keep this admitted renderer and public ratios frozen. Execute `g10.033` Batch
-33.2 only. Freeze the separate continuous Dream brief without changing Cyclic
-DSP or widening Cyclic admission.
+Keep this admitted renderer and public ratios frozen. Open one docs-first
+continuous Cyclic feasibility roadmap. Treat its general target geometry as a
+research lead, not interior-ratio admission.

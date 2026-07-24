@@ -1,6 +1,6 @@
 # Offline Creative Time-Stretch Study
 
-Status: exact-ratio Dream and Cyclic public; continuous Dream brief ready
+Status: continuous Dream and exact-ratio Cyclic public; `g10.033` complete
 Owner: dsp
 Updated: 2026-07-24
 Contract: `085`
@@ -9,9 +9,9 @@ Roadmaps: `g10.031`, `g10.032`, `g10.033`
 ## Product Intent
 
 Signal now exposes a `CreativeStretch` path centered on `8x` output duration.
-The public offline whole-buffer API admits exact `4x`, `8x`, and `16x`
-neutral `Dream` without automatic or product routing. It is an offline
-sound-design renderer, not a replacement for
+The public offline whole-buffer API admits neutral `Dream` at every exact
+target from `4x` through `16x` without automatic or product routing. It is an
+offline sound-design renderer, not a replacement for
 `OfflineHighQuality`, a Contract `084` successor, or a RealtimePreview path.
 
 The product presents one stable intent surface while Signal routes between
@@ -22,9 +22,9 @@ Initial product range:
 
 - creative expansion only
 - core spectral comparator ratios: `4x`, `8x`, and `16x`
-- public Dream ratios: exact `4x`, `8x`, and `16x`
+- public Dream range: every exact target in `4N..=16N`
 - public manual Cyclic ratios: exact `2x`, `4x`, and `8x`
-- current executable creative coverage: exact-ratio Dream and Cyclic
+- current executable creative coverage: continuous Dream and exact-ratio Cyclic
 - planned routed range: `1x` through `100x`, deferred and unowned
 - primary design point: `8x`
 - ratios above `100x`: future texture/freeze work, not initial scope
@@ -1231,6 +1231,6 @@ ratio, cache, artifacts, and consumers remain unavailable.
 
 ## Next Task
 
-Execute `g10.033` Batch 33.3 only from the frozen
-`ContinuousDirectRenewalDream` brief. Do not widen the public API or begin
-routing.
+`g10.033` completed continuous `4x..16x` Dream admission. Open one docs-first
+continuous Cyclic feasibility roadmap. Keep lower Dream, routing, and
+implementation closed.

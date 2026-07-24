@@ -66,7 +66,7 @@ strict lane.
 - Stretch closeout roadmap: [roadmaps/g10/030-stretch-consolidation-and-completion.md](./roadmaps/g10/030-stretch-consolidation-and-completion.md)
 - Completed PaulX-like creative stretch roadmap: [roadmaps/g10/031-creative-time-stretch.md](./roadmaps/g10/031-creative-time-stretch.md)
 - Completed Cyclic roadmap: [roadmaps/g10/032-cyclic-creative-stretch-research.md](./roadmaps/g10/032-cyclic-creative-stretch-research.md)
-- Active continuous creative-range feasibility roadmap: [roadmaps/g10/033-creative-stretch-continuous-range-feasibility.md](./roadmaps/g10/033-creative-stretch-continuous-range-feasibility.md)
+- Completed continuous Dream range roadmap: [roadmaps/g10/033-creative-stretch-continuous-range-feasibility.md](./roadmaps/g10/033-creative-stretch-continuous-range-feasibility.md)
 - Strict-lane reference: [specs/001-g09-lane-first-strict-adoption.md](./specs/001-g09-lane-first-strict-adoption.md)
 - Active strict-lane card: none
 - Research index: [research/master-index.md](./research/master-index.md)
@@ -92,5 +92,6 @@ strict lane.
 
 ## Next Task
 
-Execute `g10.033` Batch 33.6 as docs-only lane closeout. Publish the exact
-executable coverage matrix and choose the next planning checkpoint.
+Open one docs-first continuous Cyclic feasibility roadmap. Keep lower Dream
+and implementation closed until that planning checkpoint owns a complete
+domain, architecture, and evidence path.

@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: `g10.033` active; continuous Dream public, Batch 33.6 ready
+Status: `g10.033` complete; next planning checkpoint is continuous Cyclic feasibility
 Updated: 2026-07-24
 
 ## Why this generation matters now
@@ -309,15 +309,15 @@ Do not start Loophole or Chorus planning from Signal internals.
     evidence path, and complete operator admission; Batches 32.26-32.28 admit
     the unchanged private and public exact-ratio renderer; Batch 32.29 closes
     the lane and selects continuous-range feasibility
-- `g10.033` `active`
+- `g10.033` `complete`
   - Batch 33.1 audits exact coverage and owner compatibility, then selects one
     separately versioned `ContinuousDirectRenewalDream` direction over exact
     targets `4N <= T <= 16N`; Batch 33.2 freezes its complete implementation
     and evidence authority; Batch 33.3 admits the private continuous owner
     after complete objective and listening passage; Batch 33.4 freezes direct
     public `4N..=16N` Dream coverage with no same-character router; Batch 33.5
-    admits that public surface; Batch 33.6 docs-only closeout is ready; no
-    cache, artifact, or consumer work is ready
+    admits that public surface; Batch 33.6 publishes the exact executable
+    matrix and closes the lane; no cache, artifact, or consumer work is ready
 
 ## Stretch Boundary
 
@@ -770,8 +770,8 @@ exact `2x`, `4x`, and `8x`, optional `Duration` cycle in `5..90 ms`, a
 `48 ms` default, character-specific control rejection, deterministic
 microsecond canonicalization, and creative engine version v2. Batch 32.28
 admits it in commit `e8948512` with `10/10` focused public tests and no
-acoustic-file change. Batch 32.29 closes the lane. Current creative coverage
-is two explicit fixed-ratio characters, not a continuous band.
+acoustic-file change. Batch 32.29 closes the lane. At that checkpoint,
+creative coverage was two explicit fixed-ratio characters.
 
 `g10.033` owns the current stretch decision. Batch 33.1 confirms that
 OfflineHighQuality cannot supply a hidden Dream transition and that continuous
@@ -801,7 +801,18 @@ one-frame boundaries, mono, stereo, and admitted `space` values. Cyclic stays
 exact at `2x`, `4x`, and `8x`. Private renderer trees, routing, cache,
 artifacts, dynamic ratio, runtime, UI, Loophole, and Chorus remain unchanged.
 
+Batch 33.6 closes `g10.033` without code. Current public creative coverage is
+continuous exact-target Dream over `4N..=16N` and exact-target Cyclic at
+`2N`, `4N`, or `8N`. Both are whole-buffer deterministic mono or linked
+stereo. They remain explicit characters with no route, blend, fallback,
+dynamic ratio, cache, artifact, runtime, or consumer integration.
+
+The next planning checkpoint is continuous Cyclic feasibility. Its private
+general-target geometry is a research lead only. Lower Dream remains paused
+because no compatible same-character owner exists.
+
 ## Next Task
 
-Execute `g10.033` Batch 33.6 as docs-only lane closeout. Publish the exact
-executable coverage matrix and choose the next planning checkpoint.
+Open one docs-first continuous Cyclic feasibility roadmap. Audit interior
+fixed-target character continuity and complete evidence ownership before any
+candidate becomes ready. Keep lower Dream and implementation closed.
