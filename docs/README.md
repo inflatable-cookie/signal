@@ -67,6 +67,7 @@ strict lane.
 - Completed PaulX-like creative stretch roadmap: [roadmaps/g10/031-creative-time-stretch.md](./roadmaps/g10/031-creative-time-stretch.md)
 - Completed Cyclic roadmap: [roadmaps/g10/032-cyclic-creative-stretch-research.md](./roadmaps/g10/032-cyclic-creative-stretch-research.md)
 - Completed continuous Dream range roadmap: [roadmaps/g10/033-creative-stretch-continuous-range-feasibility.md](./roadmaps/g10/033-creative-stretch-continuous-range-feasibility.md)
+- Active continuous Cyclic feasibility roadmap: [roadmaps/g10/034-continuous-cyclic-feasibility.md](./roadmaps/g10/034-continuous-cyclic-feasibility.md)
 - Strict-lane reference: [specs/001-g09-lane-first-strict-adoption.md](./specs/001-g09-lane-first-strict-adoption.md)
 - Active strict-lane card: none
 - Research index: [research/master-index.md](./research/master-index.md)
@@ -92,6 +93,6 @@ strict lane.
 
 ## Next Task
 
-Open one docs-first continuous Cyclic feasibility roadmap. Keep lower Dream
-and implementation closed until that planning checkpoint owns a complete
-domain, architecture, and evidence path.
+Execute `g10.034` Batch 34.1 only. Complete the existing-owner compatibility
+and domain audit as documentation. Keep candidate execution, lower Dream, and
+all integration work closed.

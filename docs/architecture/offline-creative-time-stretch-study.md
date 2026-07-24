@@ -1,6 +1,6 @@
 # Offline Creative Time-Stretch Study
 
-Status: continuous Dream and exact-ratio Cyclic public; `g10.033` complete
+Status: continuous Dream and exact-ratio Cyclic public; `g10.034` audit ready
 Owner: dsp
 Updated: 2026-07-24
 Contract: `085`
@@ -1231,6 +1231,6 @@ ratio, cache, artifacts, and consumers remain unavailable.
 
 ## Next Task
 
-`g10.033` completed continuous `4x..16x` Dream admission. Open one docs-first
-continuous Cyclic feasibility roadmap. Keep lower Dream, routing, and
-implementation closed.
+`g10.034` is active. Execute Batch 34.1 only: audit whether the admitted
+Cyclic owner preserves character at interior fixed targets and select an exact
+domain or close the lane. Keep lower Dream, routing, and implementation closed.

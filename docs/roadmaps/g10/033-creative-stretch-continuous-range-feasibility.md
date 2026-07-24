@@ -268,9 +268,7 @@ targets change the accepted Cyclic effect.
 
 ## Next Task
 
-Open one docs-first continuous Cyclic feasibility roadmap. Audit whether the
-accepted Cyclic character can widen from exact `2x`, `4x`, and `8x` to
-interior fixed targets without acoustic drift, and freeze no candidate until
-the complete domain, architecture, and evidence path are owned. Keep lower
-Dream, implementation, routing, cache, artifacts, dynamic ratio, runtime, UI,
-Loophole, and Chorus closed.
+Execute `g10.034` Batch 34.1 only. Audit whether the accepted Cyclic character
+can widen from exact `2x`, `4x`, and `8x` to interior fixed targets without
+acoustic drift. Keep lower Dream, implementation, routing, cache, artifacts,
+dynamic ratio, runtime, UI, Loophole, and Chorus closed.

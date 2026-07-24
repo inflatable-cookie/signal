@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: continuous Dream and exact-ratio Cyclic public
+Status: continuous Dream and exact-ratio Cyclic public; `g10.034` audit ready
 Owner: core-product
 Updated: 2026-07-24
 Related contracts: `046`, `048`, `084`
@@ -2205,8 +2205,14 @@ uses the private owner's existing general target geometry as a research lead;
 it does not admit interior ratios. Lower Dream remains paused because no
 compatible same-character owner exists. Batch 33.6 changes documentation only.
 
+`g10.034` opens continuous Cyclic feasibility without changing that matrix.
+Its Batch 34.1 audit owns the unresolved exact candidate domain, character
+continuity at interior targets, and complete evidence needs. Private
+identity-through-`8x` validation remains implementation geometry only. No
+candidate, acoustic claim, public widening, or integration is ready.
+
 ## Next Task
 
-Open one docs-first continuous Cyclic feasibility roadmap. Audit character
-continuity, exact target domain, and complete evidence ownership before any
-candidate is frozen. Keep lower Dream and implementation closed.
+Execute `g10.034` Batch 34.1 only. Complete the existing-owner compatibility
+and exact-domain audit as documentation. Keep lower Dream and implementation
+closed.

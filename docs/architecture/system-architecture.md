@@ -315,8 +315,11 @@ The current package-level naming proposal is recorded in
   exact target in `4x..16x` through one owner without a same-character router.
 - `g10.032` owns `Cyclic` separately. The accepted centred compressed-anchor
   event-ledger renderer stays internal behind its public fixed-ratio surface.
+- `g10.034` audits whether that same Cyclic owner can preserve its admitted
+  character at interior fixed targets. No candidate or public widening is
+  ready.
 
 ## Next Task
 
-Open one docs-first continuous Cyclic feasibility roadmap. Keep lower Dream
-and implementation closed.
+Execute `g10.034` Batch 34.1 only as documentation. Keep lower Dream and
+implementation closed.

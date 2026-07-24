@@ -192,5 +192,5 @@ frozen elsewhere in this index.
 
 Keep Contract `084` closed. Contract `085` admits public continuous
 `4x..16x` Dream through one owner, with no same-character router. Public
-Cyclic remains exact `2x`, `4x`, and `8x`; Cloud remains closed. Open
-continuous Cyclic feasibility as the next docs-first planning checkpoint.
+Cyclic remains exact `2x`, `4x`, and `8x`; Cloud remains closed. Execute
+`g10.034` Batch 34.1 only as a docs-first compatibility and domain audit.
