@@ -325,5 +325,6 @@ No cache, route, tier, artifact, runtime, Loophole, or Chorus surface changed.
 
 ## Next Task
 
-Execute `g10.032` Batch 32.29 only. Close the Cyclic lane and choose the next
-stretch planning direction without starting implementation.
+Keep this exact-ratio surface frozen. Execute `g10.033` Batch 33.1 only. Audit
+continuous fixed-ratio ownership and compatibility without starting
+implementation.

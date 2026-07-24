@@ -1,10 +1,10 @@
 # Offline Creative Time-Stretch Study
 
-Status: exact-ratio Dream and Cyclic public
+Status: exact-ratio Dream and Cyclic public; continuous-range feasibility active
 Owner: dsp
 Updated: 2026-07-24
 Contract: `085`
-Roadmaps: `g10.031`, `g10.032`
+Roadmaps: `g10.031`, `g10.032`, `g10.033`
 
 ## Product Intent
 
@@ -1081,6 +1081,24 @@ pass.
 Automatic cycle selection, continuous ratios, routing, cache, artifacts,
 runtime integration, Loophole, and Chorus remain unavailable.
 
+## Batch 32.29 Lane Closeout
+
+`g10.032` closes with two explicit public characters:
+
+- Dream at exact `4x`, `8x`, and `16x`
+- Cyclic at exact `2x`, `4x`, and `8x`
+
+This is not continuous `2x..16x` coverage. Cyclic's commanded repetitions
+cannot silently replace Dream's smooth smear at a ratio boundary. Character
+selection remains a user decision; hidden range-owner selection is valid only
+inside one character.
+
+`g10.033` takes the prerequisite next step. It audits whether the admitted
+mechanisms share enough map, schedule, boundary, normalization, stereo, and
+deterministic-state ownership to support interior ratios or a same-character
+overlap. It must select one complete source-backed direction or retain the
+fixed-ratio surface. No implementation is ready through this closeout.
+
 ## Sources
 
 - [REAPER time-stretch engines](https://www.reaper.fm/about.php)
@@ -1123,5 +1141,5 @@ runtime integration, Loophole, and Chorus remain unavailable.
 
 ## Next Task
 
-Execute `g10.032` Batch 32.29 only. Close the Cyclic lane and select the next
-stretch planning direction without starting implementation.
+Execute `g10.033` Batch 33.1 only. Audit continuous fixed-ratio ownership and
+compatibility without starting implementation.

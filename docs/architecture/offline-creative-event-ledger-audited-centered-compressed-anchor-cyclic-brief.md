@@ -2158,5 +2158,5 @@ These are admission risks, not open design choices.
 
 ## Next Task
 
-Execute `g10.032` Batch 32.29 only. Close the Cyclic lane without changing
-this admitted renderer.
+Keep this admitted renderer frozen. Execute `g10.033` Batch 33.1 only. Audit
+continuous creative ownership without changing Cyclic DSP.

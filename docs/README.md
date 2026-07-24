@@ -64,7 +64,8 @@ strict lane.
 - Generation index: [roadmaps/generation-index.md](./roadmaps/generation-index.md)
 - Stretch closeout roadmap: [roadmaps/g10/030-stretch-consolidation-and-completion.md](./roadmaps/g10/030-stretch-consolidation-and-completion.md)
 - Completed PaulX-like creative stretch roadmap: [roadmaps/g10/031-creative-time-stretch.md](./roadmaps/g10/031-creative-time-stretch.md)
-- Active Cyclic completion roadmap: [roadmaps/g10/032-cyclic-creative-stretch-research.md](./roadmaps/g10/032-cyclic-creative-stretch-research.md)
+- Completed Cyclic roadmap: [roadmaps/g10/032-cyclic-creative-stretch-research.md](./roadmaps/g10/032-cyclic-creative-stretch-research.md)
+- Active continuous creative-range feasibility roadmap: [roadmaps/g10/033-creative-stretch-continuous-range-feasibility.md](./roadmaps/g10/033-creative-stretch-continuous-range-feasibility.md)
 - Strict-lane reference: [specs/001-g09-lane-first-strict-adoption.md](./specs/001-g09-lane-first-strict-adoption.md)
 - Active strict-lane card: none
 - Research index: [research/master-index.md](./research/master-index.md)
@@ -90,5 +91,5 @@ strict lane.
 
 ## Next Task
 
-Execute `g10.032` Batch 32.29 only. Close the Cyclic lane and select the next
-stretch planning direction without starting implementation.
+Execute `g10.033` Batch 33.1 only. Audit continuous fixed-ratio ownership and
+compatibility without starting implementation.

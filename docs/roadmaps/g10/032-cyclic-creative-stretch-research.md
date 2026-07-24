@@ -1,6 +1,6 @@
 # 032 - Cyclic Creative Stretch Research
 
-Status: active; public fixed-ratio Cyclic admitted, closeout ready
+Status: complete; public fixed-ratio Cyclic admitted
 Owner: dsp
 Updated: 2026-07-24
 Contracts: `046`, `085`
@@ -948,13 +948,31 @@ typed rejection, deterministic repeat, empty success, and pre-dispatch
 
 ## Batch 32.29 - Cyclic Lane Closeout And Planning Checkpoint
 
-Status: ready
+Status: complete
 
 If Batch 32.28 passes, close `g10.032` with the public exact-ratio character
 and record current creative coverage. Decide the next Signal-owned stretch
 direction from the generation runway. Automatic character routing,
 continuous ratios, cache/artifact integration, and named-consumer integration
 remain separate planning choices; none becomes ready through this closeout.
+
+Result:
+
+- [x] close Cyclic with public exact `2x`, `4x`, and `8x` ownership
+- [x] retain Dream at exact `4x`, `8x`, and `16x`
+- [x] record that these are character-specific fixed-ratio islands, not one
+  continuous range
+- [x] reject automatic switching between Dream and Cyclic because it would
+  change explicit audible intent
+- [x] select continuous fixed-ratio ownership and same-character routing
+  feasibility as `g10.033`
+- [x] leave cache, artifacts, named consumers, dynamic ratio, and product
+  routing unavailable
+- [x] change documentation only
+
+The next lane starts with a compatibility audit. It does not presume that an
+admitted renderer can generalize, that the historical router remains correct,
+or that a new candidate is ready.
 
 ## Completion Gate
 
@@ -969,5 +987,6 @@ remain separate planning choices; none becomes ready through this closeout.
 
 ## Next Task
 
-Execute Batch 32.29 only. Close the Cyclic lane and select the next stretch
-planning direction without starting implementation.
+Use `g10.033` as the active stretch roadmap. Execute Batch 33.1 only. Audit
+continuous fixed-ratio ownership and compatibility without starting
+implementation.

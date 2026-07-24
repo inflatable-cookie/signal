@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: `g10.032` active; public fixed-ratio Cyclic admitted, closeout ready
+Status: `g10.033` active; continuous creative-range feasibility ready
 Updated: 2026-07-24
 
 ## Why this generation matters now
@@ -284,7 +284,7 @@ Do not start Loophole or Chorus planning from Signal internals.
     Batch 31.75 freezes one minimal public `CreativeStretch` wrapper; Batch
     31.76 admits it with byte-identical acoustic output;
     explicit `Cyclic` stays closed
-- `g10.032` `active`
+- `g10.032` `complete`
   - deep Cyclic research reopened by operator decision; Batch 32.1 separates
     fixed Akai `CYCLIC` from adaptive `INTELL`, pins Potenza slow-anchor and
     SickoCV repeat/jump schedules; Batch 32.2 completes executable forensics
@@ -304,7 +304,15 @@ Do not start Loophole or Chorus planning from Signal internals.
     sparse event-ledger ownership; Batches 32.18-32.19 freeze and implement
     fresh authority through two conformance rounds; Batches 32.20-32.21 prove
     its post-checkpoint evidence path non-executable and close the family
-    under Rule 11; Batch 32.22 deletes all retained candidate state
+    under Rule 11; Batch 32.22 deletes all retained candidate state; Batches
+    32.23-32.25 recover the acoustically unjudged implementation, repair its
+    evidence path, and complete operator admission; Batches 32.26-32.28 admit
+    the unchanged private and public exact-ratio renderer; Batch 32.29 closes
+    the lane and selects continuous-range feasibility
+- `g10.033` `active`
+  - Batch 33.1 is a docs-only audit of exact coverage, source-map and scheduler
+    compatibility, interior ratios, and same-character transition ownership;
+    no candidate, router, cache, artifact, or consumer work is ready
 
 ## Stretch Boundary
 
@@ -757,10 +765,16 @@ exact `2x`, `4x`, and `8x`, optional `Duration` cycle in `5..90 ms`, a
 `48 ms` default, character-specific control rejection, deterministic
 microsecond canonicalization, and creative engine version v2. Batch 32.28
 admits it in commit `e8948512` with `10/10` focused public tests and no
-acoustic-file change. Batch 32.29 is ready as the lane closeout and
-next-direction planning checkpoint.
+acoustic-file change. Batch 32.29 closes the lane. Current creative coverage
+is two explicit fixed-ratio characters, not a continuous band.
+
+`g10.033` now owns the next stretch decision. Batch 33.1 audits whether
+continuous fixed-ratio coverage can preserve one character with compatible
+map, schedule, boundaries, stereo, and deterministic state. Automatic
+character switching is rejected. Implementation, cache, artifacts, dynamic
+ratio, and named-consumer integration remain unavailable.
 
 ## Next Task
 
-Execute `g10.032` Batch 32.29 only. Close the Cyclic lane and select the next
-stretch planning direction without starting implementation.
+Execute `g10.033` Batch 33.1 only. Audit continuous fixed-ratio ownership and
+compatibility without starting implementation.

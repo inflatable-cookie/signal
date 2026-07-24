@@ -332,7 +332,10 @@ and valid evidence. Batch 32.25 passes acoustic and operator admission with an
 explicit checkpoint-scoped stereo waiver. Batch 32.26 privately admits the
 unchanged exact `2x`/`4x`/`8x` Cyclic core. Batch 32.27 freezes its public
 character, duration control, errors, and v2 identity. Wrapper implementation
-passes in Batch 32.28; lane closeout is ready and no strict spec lane is open.
+passes in Batch 32.28. Batch 32.29 closes the lane with Dream and Cyclic as
+separate exact-ratio characters. `g10.033` is active for continuous
+fixed-ratio and same-character routing feasibility. No strict spec lane is
+open.
 
 ## Strict lane posture
 
@@ -361,4 +364,5 @@ Before rollover:
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the active generation front door.
-Execute `g10.032` Batch 32.29.
+Execute `g10.033` Batch 33.1. Audit continuous fixed-ratio ownership and
+compatibility without starting implementation.

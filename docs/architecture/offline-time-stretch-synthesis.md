@@ -117,6 +117,7 @@ ledger remains in git history at `1d1b02f1`.
 Retain this frozen baseline and keep its successor lane closed. `g10.031` also
 retained the `2x..4x` creative overlap pause. `g10.032` later reopened Cyclic
 research, admitted the accepted private renderer, and froze its public
-fixed-ratio surface. Batch 32.28 admits the public wrapper. Execute `g10.032`
-Batch 32.29 only. Keep both acoustic renderers, both overlaps, product routing,
-and Contract `084` unchanged.
+fixed-ratio surface. Batch 32.28 admits the public wrapper and Batch 32.29
+closes the Cyclic lane. Execute `g10.033` Batch 33.1 only. Audit continuous
+creative ownership without changing either acoustic renderer, either overlap,
+product routing, or Contract `084`.

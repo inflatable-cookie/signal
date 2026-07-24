@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: exact-ratio Dream and Cyclic public
+Status: exact-ratio Dream and Cyclic public; continuous-range feasibility active
 Owner: core-product
 Updated: 2026-07-24
 Related contracts: `046`, `048`, `084`
@@ -26,7 +26,7 @@ Related architecture: `docs/architecture/offline-creative-time-stretch-study.md`
 Related research:
 `docs/research/specimen-dossiers/creative-stretch-source-triangulation.md`,
 `docs/research/specimen-dossiers/cyclic-time-stretch-source-architecture.md`
-Roadmaps: `g10.031`, `g10.032`
+Roadmaps: `g10.031`, `g10.032`, `g10.033`
 
 ## Purpose
 
@@ -74,8 +74,8 @@ dispersed upper-range evolution. `Cyclic` means commanded Akai-style
 repetition. Both historical cyclic candidates remain rejected and deleted.
 `g10.032` selected and admitted a fresh centred compressed-anchor event-ledger
 renderer after complete structural, synthetic, long-form, and listening
-admission. The renderer remains private until its public request surface is
-frozen and implemented.
+admission. Batches 32.27-32.28 froze and implemented its public exact-ratio
+request surface.
 
 Batch 31.76 admits a minimal public boundary for private
 `DirectRenewalDream` at exact fixed `4x`, `8x`, and `16x`. That boundary
@@ -2087,7 +2087,19 @@ typed pre-dispatch rejection, determinism, and empty success. Both private
 renderer trees remain unchanged. Cache, routing, artifacts, runtime
 integration, Loophole, and Chorus remain unadmitted.
 
+Batch 32.29 closes `g10.032`. Current executable coverage is Dream at exact
+`4x`, `8x`, and `16x`, plus Cyclic at exact `2x`, `4x`, and `8x`. These are
+separate character-specific islands. They do not form one continuous band.
+Automatic substitution between them would violate Rule 3 by changing audible
+user intent.
+
+`g10.033` therefore starts with continuous fixed-ratio and same-character
+routing feasibility. Batch 33.1 must audit map, scheduler, boundary,
+normalization, linked-stereo, deterministic-state, and interior-ratio
+ownership before one implementation direction can be selected. Cache,
+artifacts, named consumers, dynamic ratio, and routing remain unavailable.
+
 ## Next Task
 
-Execute `g10.032` Batch 32.29 only. Close the Cyclic lane and select the next
-stretch planning direction without starting implementation.
+Execute `g10.033` Batch 33.1 only. Audit continuous fixed-ratio ownership and
+compatibility without starting implementation.
