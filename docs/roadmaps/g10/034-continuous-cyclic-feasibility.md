@@ -1,6 +1,6 @@
 # 034 - Continuous Cyclic Feasibility
 
-Status: active; Batch 34.3 ready
+Status: active; Batch 34.3 executing
 Owner: dsp
 Created: 2026-07-24
 Depends on: `g10.032`, `g10.033`
@@ -162,7 +162,7 @@ Result:
 
 ## Batch 34.3 - Isolated Continuous Cyclic Admission
 
-Status: ready
+Status: active; pre-checkpoint evidence assembly
 
 Execute one complete candidate in a disposable worktree. Run construction and
 structural controls before synthetic evidence, then concealed long-form mono,
@@ -176,6 +176,12 @@ hard linked-stereo controls, and listening.
 - [ ] admit only the minimal private behavior if every required gate passes
 - [ ] keep runners, fixtures, receipts, audio, reports, and comparator assets
   out of `main`
+
+Execution note: the frozen release command was repaired before checkpoint
+after Effigy `v0.8.17` proved that generic task selectors do not forward
+trailing Cargo arguments. The candidate must run `effigy build`, then the
+documented narrow release fallback. This is evidence plumbing under Contract
+`085` Rule 11; it changes no renderer or gate.
 
 ## Batch 34.4 - Public Range Decision
 

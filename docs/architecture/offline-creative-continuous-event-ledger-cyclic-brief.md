@@ -240,12 +240,20 @@ Each manifest row runs in its own OS process. The runner uses manifest order,
 one thread, no retry, immediate failure output, and a `600 s` per-process
 timeout. It stops after the first terminal failure or incomplete receipt.
 
-Compile through:
+Compile after the repo-owned build selector:
 
 ```text
-SIGNAL_CONTINUOUS_CYCLIC_BUILD_ROOT=<absolute-build-root> \
-effigy build --release --bin continuous-event-ledger-cyclic-evidence
+effigy build
+
+CARGO_TARGET_DIR=<absolute-build-root> \
+cargo build --release -p signal-dsp-stretch \
+  --bin continuous-event-ledger-cyclic-evidence
 ```
+
+Effigy `v0.8.17` does not forward trailing Cargo arguments to the `build`
+selector. The second command is the required narrow fallback because no local
+Effigy selector represents a release build of one binary. Do not treat the
+plain workspace build as the release evidence binary.
 
 The runner invokes only the resulting absolute executable path. It requires a
 clean worktree, exact commit/tree, exact manifest and source hashes, and an
