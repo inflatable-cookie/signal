@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: Cyclic event-ledger Y01 stopped pre-acoustic; Batch 32.21 ready
+Status: Cyclic event-ledger family closed; Batch 32.22 cleanup ready
 Updated: 2026-07-24
 
 ## Why this generation matters now
@@ -712,8 +712,15 @@ No Y01 row or render ran. This is incomplete executable evidence, not an
 acoustic result. Keep the checkpoint and ref immutable for complete Rule 11
 reassessment.
 
+Batch 32.21 audits the whole post-checkpoint surface. Assertions auto-pass
+from row success; Y01/Y03 use the wrong ledger oracle; later synthetic
+diagnostics are absent, zero, or semantically wrong; comparator project
+identity, acoustic summaries, concealment, decisions, and reveal are
+non-executable. This repeats the incomplete-owner class the fresh identity was
+created to correct. Contract `085` Rule 11 closes the family as protocol
+churn. The event-ledger renderer has no acoustic judgment.
+
 ## Next Task
 
-Execute `g10.032` Batch 32.21 only. Audit the complete post-checkpoint evidence
-path and make the Rule 11 eligibility decision without changing or running the
-candidate.
+Execute `g10.032` Batch 32.22 only. Remove the exact retained candidate/ref
+state, verify `main` remains candidate-free, and close the roadmap.

@@ -1,6 +1,6 @@
 # 032 - Cyclic Creative Stretch Research
 
-Status: active; Batch 32.20 stopped pre-acoustic; Batch 32.21 ready
+Status: active; event-ledger family closed; Batch 32.22 cleanup ready
 Owner: dsp
 Updated: 2026-07-24
 Contracts: `046`, `085`
@@ -688,7 +688,7 @@ Result:
 
 ## Batch 32.21 - Event-Ledger Evidence-Integrity Reassessment
 
-Status: ready; docs only
+Status: complete; family closed
 
 1. audit every frozen post-checkpoint runner transition, row selector, summary
    scope, receipt boundary, decision owner, reveal owner, and stop condition
@@ -703,6 +703,68 @@ Status: ready; docs only
 Do not run a synthetic, exact-`16x`, long-form, or listening row. Do not patch
 the frozen candidate or infer a direct command around the tracked runner.
 
+Audit result:
+
+- construction checked names, counts, string presence, a small oracle subset,
+  and bound audio hashes; it did not execute the frozen runner, summary,
+  synthetic diagnostic, comparator-project, long-form pack, decision, or
+  reveal owners
+- the receipt wrapper marked every manifest assertion passed whenever a row
+  body returned success; it had no assertion-owned result map
+- the tracked runner exposed conformance only; no acoustic gate selector,
+  acoustic execution ID, staged stop chain, or later summary invocation
+  existed
+- the only summary selected conformance rows and hardcoded
+  `summary/structural.json`
+- the Y01/Y03 ledger used an approximate ideal-centre radius and active runs,
+  not the frozen independent anchor-contribution oracle
+- Y02 pitch, Y04 cadence, Y05 gap, and most Y06 linked diagnostics fell through
+  a generic measurement helper; unsupported fields became finite `0.0`, while
+  several balance and energy fields measured the wrong quantity
+- exact-`16x` checked the typed error but did not prove zero candidate
+  allocation
+- comparator parsing ignored REAPER identity, ratio denominator, normalized
+  project semantics, and project-container hashes
+- long-form rendering wrote raw candidate WAVs; it did not create level-matched
+  and faded listening copies, concealed packs, private keys, immutable
+  decisions, speaker pre-screen, reveal receipts, or listening summaries
+- zero post-conformance row receipts or renders exist
+
+Rule 11 decision:
+
+- the earlier audited centred compressed-anchor checkpoint already exposed
+  placeholder Y02, Y03, and Y04 owners after its valid Y01 rejection
+- the fresh event-ledger identity was authorized specifically to replace that
+  incomplete evidence surface with executable construction proofs
+- checkpoint `995ea516` repeats the same incomplete-executable-authority class
+  across a broader post-checkpoint surface
+- the bounded fresh-audited-identity exception is exhausted; another
+  evidence-only implementation would be prohibited protocol churn
+- close the centred compressed-anchor Cyclic family without an acoustic
+  judgment on the event-ledger renderer
+
+This does not establish that the renderer sounds poor. It establishes that
+the frozen checkpoint cannot produce trustworthy admission evidence and may
+not be repaired or rerun.
+
+## Batch 32.22 - Event-Ledger Closure Cleanup
+
+Status: ready
+
+1. re-resolve exact checkpoint `995ea516`, tree `fd42543b`, acoustic ref,
+   candidate branch, clean worktree, and zero Y01 receipts
+2. delete only local ref
+   `refs/signal-evidence/creative/event-ledger-audited-centered-compressed-anchor-cyclic/32-19-acoustic`
+3. remove only worktree `/Users/tom/Dev/projects/signal-candidate-32-19`,
+   branch
+   `candidate/g10-032-event-ledger-audited-centered-compressed-anchor-cyclic`,
+   ignored build state, comparator assets, receipts, and artifacts
+4. verify no candidate DSP or evidence surface entered `main`
+5. close `g10.032` front doors and log exact cleanup
+
+Do not start another Cyclic identity, change product routing, touch production
+DSP, or push.
+
 ## Completion Gate
 
 - source families are pinned and clean-room boundaries recorded
@@ -716,6 +778,5 @@ the frozen candidate or infer a direct command around the tracked runner.
 
 ## Next Task
 
-Execute Batch 32.21 only. Audit the complete post-checkpoint evidence path and
-make the Rule 11 eligibility decision without changing or running the
-candidate.
+Execute Batch 32.22 only. Remove the exact retained candidate/ref/build state,
+verify `main` remains candidate-free, and close `g10.032`.

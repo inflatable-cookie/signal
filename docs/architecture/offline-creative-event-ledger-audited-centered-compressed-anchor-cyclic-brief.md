@@ -1,6 +1,6 @@
 # Offline Creative EventLedgerAuditedCenteredCompressedAnchorCyclic Brief
 
-Status: frozen; Batch 32.20 stopped on incomplete execution boundary
+Status: evidence-invalid; family closed under Contract `085` Rule 11
 Owner: dsp
 Updated: 2026-07-24
 Contracts: `046`, `085` Rule 11
@@ -2047,7 +2047,36 @@ is incomplete executable evidence under Contract `085` Rule 11, not an
 acoustic result. The checkpoint and local ref remain immutable for the
 complete evidence-integrity reassessment.
 
-## Remaining Risks
+### Batch 32.21 Result
+
+The complete checkpoint audit found no bounded runner-only correction:
+
+- construction did not execute the frozen post-checkpoint owners it claimed
+- receipt assertions were synthesized as pass from row success rather than
+  evaluated by assertion owner
+- no acoustic gate runner or non-structural summary path exists
+- Y01/Y03 use an approximate event support, not the frozen independent ledger
+- Y02 pitch, Y04 cadence, Y05 gap, and most Y06 linked measurements are absent,
+  generic zero, or semantically wrong
+- exact-`16x` lacks the frozen allocation proof
+- comparator project identity and normalized project semantics are not checked
+- long-form level/fade copies, concealment, decisions, speaker pre-screen,
+  reveal, and listening summaries do not exist
+
+Evidence implementation SHA-256:
+
+`a1a7ae3d96c303652ce2f0e19f36b73c5ff7bde7b603bbfa796a25919612b1ae`
+
+This repeats the incomplete executable-owner class found in the previous
+audited centred compressed-anchor checkpoint. The fresh event-ledger authority
+was the Rule 11 correction for that exact class. A further evidence-only
+identity is therefore prohibited protocol churn.
+
+The family is closed. Checkpoint `995ea516` has no valid acoustic pass or
+rejection, and its renderer has no listening judgment. Batch 32.22 owns exact
+candidate/ref cleanup only.
+
+## Unresolved Renderer Risks
 
 - direct two-read crossfade may create audible gaps on non-sparse material
 - compressed-anchor replicas may sound too pitch-shifted, metallic, or regular
@@ -2065,6 +2094,6 @@ These are admission risks, not open design choices.
 
 ## Next Task
 
-Execute `g10.032` Batch 32.21 only. Audit every post-checkpoint evidence
-boundary and decide Rule 11 eligibility without changing or running the
-candidate.
+Execute `g10.032` Batch 32.22 only. Remove the exact retained candidate,
+acoustic ref, branch, ignored evidence, and build state; then close the
+roadmap.
