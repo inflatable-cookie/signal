@@ -85,12 +85,14 @@ Batch 32.11 generates the evidence before source and freezes fresh checkpoint
 first acoustic row because the receipt root resolves differently in the shell
 runner and nextest process. The out-of-root passing receipt is not admissible;
 no acoustic decision exists. Batch 32.13 applies Rule 11 and closes the
-identity after its second incomplete-evidence checkpoint.
+identity after its second incomplete-evidence checkpoint. Batch 32.14 records
+the operator correction: the renderer did not fail, so the exact checkpoint
+may replay `Y01` once with an absolute evidence root.
 
 Current Cyclic decision:
 [Offline Creative Cyclic Behavioral Synthesis](../architecture/offline-creative-cyclic-behavioral-synthesis.md).
 
-Closed Cyclic candidate authority:
+Recovered Cyclic candidate authority:
 [Offline Creative AuditedCenteredCompressedAnchorCyclic Brief](../architecture/offline-creative-audited-centered-compressed-anchor-cyclic-brief.md).
 
 Explicit operator research reopening and pinned source triangulation selected
@@ -232,6 +234,6 @@ Rejected first-owner brief:
 
 ## Next Task
 
-No Cyclic research or implementation batch is ready. Reopening requires
-explicit operator direction and materially different, source-backed
-complete-system evidence.
+Execute `g10.032` Batch 32.15 only. Restore the exact checkpoint and replay all
+`30` `Y01` rows once with the frozen absolute evidence root. Stop before
+`Y02`.

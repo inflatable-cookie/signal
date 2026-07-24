@@ -1,6 +1,6 @@
 # 032 - Cyclic Creative Stretch Research
 
-Status: complete; centred compressed-anchor Cyclic closed
+Status: active; Batch 32.14 complete; Batch 32.15 ready
 Owner: dsp
 Updated: 2026-07-24
 Contracts: `046`, `085`
@@ -436,6 +436,41 @@ Result:
 fixed `4x`, `8x`, and `16x` `Dream` remains the only public creative stretch
 surface.
 
+## Batch 32.14 - Operator Correction And Exact Replay Authority
+
+Status: complete
+
+The operator rejects Batch 32.13 closure. The renderer did not fail: the first
+row passed every assertion. The caller supplied a relative evidence root, and
+nextest resolved it from a different working directory than the shell runner.
+
+This is a docs-only authority correction:
+
+- restore exact checkpoint `74a6d6d9`, tree `d519e2d8`
+- change no candidate, test, runner, manifest, comparator, or dependency byte
+- recreate the same acoustic ref and isolated worktree identity
+- use the exact absolute ignored root frozen in Contract `085`
+- execute the complete `Y01` gate once
+- stop on the first valid failure or after the `Y01` summary
+
+The replay is the same checkpoint, not a third candidate. The invalid
+relative-root run cannot select a change. Do not begin execution in this batch.
+
+## Batch 32.15 - Absolute-Root Y01 Replay
+
+Status: ready
+
+1. verify commit `74a6d6d9`, tree `d519e2d8`, all manifest hashes, and an
+   absent absolute evidence root
+2. restore the exact worktree, branch, and acoustic ref
+3. invoke the unchanged runner with the frozen absolute root
+4. run all `30` `Y01` rows once, in manifest order
+5. stop on the first valid terminal failure or after the `Y01` summary
+6. close the result without changing the checkpoint
+
+Do not execute `Y02..Y06`, exact `16x`, long-form, stereo, listening, product,
+or routing work.
+
 ## Completion Gate
 
 - source families are pinned and clean-room boundaries recorded
@@ -449,6 +484,5 @@ surface.
 
 ## Next Task
 
-No Cyclic execution is ready. Keep `g10.032` closed. Reopening requires an
-explicit operator decision and materially different, source-backed
-complete-system evidence; do not infer another candidate from this roadmap.
+Execute Batch 32.15 only. Restore the exact checkpoint and replay all `30`
+`Y01` rows once with the frozen absolute evidence root. Stop before `Y02`.

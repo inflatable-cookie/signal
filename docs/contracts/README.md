@@ -113,5 +113,6 @@ Add a new contract only when the boundary needs stronger guarantees than
 Use `docs/contracts/contract-index.md` and `001-working-rules.md` as the
 contract front doors. Contract `084` and roadmap `g10.030` keep the transparent
 successor program closed. Contract `085` publicly admits fixed-ratio Dream and
-closes centred compressed-anchor Cyclic after its second incomplete-evidence
-checkpoint. No stretch batch is ready; no strict spec lane is open.
+authorizes one exact Cyclic checkpoint replay after an operator-corrected
+invocation-root mistake. Execute `g10.032` Batch 32.15 only and stop before
+`Y02`; no strict spec lane is open.

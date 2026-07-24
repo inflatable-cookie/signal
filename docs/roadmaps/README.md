@@ -319,8 +319,9 @@ the renderer. Batch 32.9 found missing executable manifest authority and
 stopped before source. Batch 32.10 froze the reproducible manifest authority.
 Batch 32.11 passed isolated conformance. Batch 32.12 split the evidence root
 at the first acoustic row. Batch 32.13 closed the identity after its second
-incomplete-evidence checkpoint. No candidate is admitted and no strict spec
-lane is open.
+incomplete-evidence checkpoint. Batch 32.14 records the operator correction
+and authorizes one exact replay of the unchanged checkpoint. No candidate is
+admitted and no strict spec lane is open.
 
 ## Strict lane posture
 
@@ -349,5 +350,5 @@ Before rollover:
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the active generation front door.
-No stretch batch is ready. Keep `g10.032` and centred compressed-anchor Cyclic
-closed pending explicit operator direction.
+Execute `g10.032` Batch 32.15 only. Restore the exact checkpoint and replay all
+`30` `Y01` rows once with the frozen absolute root. Stop before `Y02`.

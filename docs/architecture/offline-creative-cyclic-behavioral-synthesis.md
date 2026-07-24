@@ -1,6 +1,6 @@
 # Offline Creative Cyclic Behavioral Synthesis
 
-Status: closed after second incomplete-evidence checkpoint
+Status: exact checkpoint replay authorized
 Owner: dsp
 Updated: 2026-07-24
 Contract: `085`
@@ -235,6 +235,11 @@ Contract `085` Rule 11 closes centred compressed-anchor Cyclic after these two
 incomplete-evidence checkpoints. No runner repair, retry, third audited
 identity, acoustic claim, renderer promotion, or product route is authorized.
 
+Batch 32.14 supersedes that closure by operator correction. The renderer did
+not fail; the caller supplied a relative evidence root. Exact checkpoint
+`74a6d6d9` may replay the complete `Y01` gate once with the frozen absolute
+root. No candidate or evidence byte may change.
+
 ## Remaining Risk
 
 - no Signal renderer has yet proved that the centred schedule sounds useful
@@ -251,6 +256,6 @@ identity or another mechanism survey.
 
 ## Next Task
 
-None. This behavioral owner is closed. Any future Cyclic program requires
-explicit operator direction and materially different, source-backed
-complete-system evidence.
+Execute `g10.032` Batch 32.15 only. Restore the exact checkpoint and replay all
+`30` `Y01` rows once with the frozen absolute evidence root. Stop before
+`Y02`.

@@ -1,6 +1,6 @@
 # Offline Creative AuditedCenteredCompressedAnchorCyclic Brief
 
-Status: closed; second incomplete-evidence checkpoint
+Status: exact checkpoint replay authorized; Batch 32.15 ready
 Owner: dsp
 Updated: 2026-07-24
 Contracts: `046`, `085` Rule 11
@@ -1573,6 +1573,17 @@ The isolated worktree, branch, build state, and generated evidence are gone.
 The local acoustic ref is deleted after the closure commit. Candidate source
 and evidence scaffolding never entered `main`.
 
+### Batch 32.14 Operator Correction
+
+The operator rejects renderer closure on a caller-supplied relative-root
+mistake. The first row passed every assertion. No renderer, source, metric,
+threshold, owner, manifest, comparator, or dependency byte may change.
+
+Restore exact checkpoint `74a6d6d9`, tree `d519e2d8`, and invoke the unchanged
+runner once with absolute ignored root
+`/Users/tom/Dev/projects/signal-candidate-32-11/target/creative-stretch-audited-centered-compressed-anchor-cyclic-32-11`.
+Run the complete `Y01` gate and stop before `Y02`.
+
 ## Remaining Risks
 
 - direct two-read crossfade may retain the surfaced dropout on some material
@@ -1591,6 +1602,6 @@ These are admission risks, not open design choices.
 
 ## Next Task
 
-None. This authority is closed. Any future Cyclic program requires an explicit
-operator decision and materially different, source-backed complete-system
-evidence.
+Execute `g10.032` Batch 32.15 only. Restore the exact checkpoint and replay all
+`30` `Y01` rows once with the frozen absolute evidence root. Stop before
+`Y02`.

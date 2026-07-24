@@ -60,8 +60,9 @@ memory alone.
   forensics. Batch 32.3 selects centred compressed-anchor behavior, fixed
   manual cycle ownership, linked scheduling, and a corrected gate. Batch 32.4
   froze one complete `CenteredCompressedAnchorCyclic` renderer and Rule 11
-  evidence authority. Two evidence-invalid checkpoints followed. Batch 32.13
-  closes the identity; no candidate DSP is admitted
+  evidence authority. Batch 32.13 closed the identity after a split-root run;
+  Batch 32.14 records the operator correction and authorizes one replay of the
+  unchanged checkpoint. No candidate DSP is admitted
 - `082` and `g10.029` are historical evidence, not active execution authority
 - `g10.028` source-fill work remains paused
 
@@ -192,6 +193,7 @@ frozen elsewhere in this index.
 ## Next Task
 
 Keep Contract `084` closed. Contract `085` publicly admits fixed-ratio `Dream`
-at exact `4x`, `8x`, and `16x`. Cloud and centred compressed-anchor Cyclic are
-closed without valid acoustic judgments after repeated evidence failures. The
-broader range and routing remain deferred. No stretch batch is ready.
+at exact `4x`, `8x`, and `16x`. Cloud remains closed. Centred
+compressed-anchor Cyclic has one operator-authorized exact replay after an
+invocation-root mistake. Execute `g10.032` Batch 32.15 only and stop before
+`Y02`.

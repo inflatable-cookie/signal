@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: centred compressed-anchor Cyclic closed; no stretch batch ready
+Status: exact Cyclic checkpoint replay authorized; Batch 32.15 ready
 Updated: 2026-07-24
 
 ## Why this generation matters now
@@ -284,7 +284,7 @@ Do not start Loophole or Chorus planning from Signal internals.
     Batch 31.75 freezes one minimal public `CreativeStretch` wrapper; Batch
     31.76 admits it with byte-identical acoustic output;
     explicit `Cyclic` stays closed
-- `g10.032` `complete`
+- `g10.032` `active`
   - deep Cyclic research reopened by operator decision; Batch 32.1 separates
     fixed Akai `CYCLIC` from adaptive `INTELL`, pins Potenza slow-anchor and
     SickoCV repeat/jump schedules; Batch 32.2 completes executable forensics
@@ -298,7 +298,8 @@ Do not start Loophole or Chorus planning from Signal internals.
     freezes reproducible manifests; Batch 32.11 freezes a clean isolated
     checkpoint after two byte-identical structural rounds; Batch 32.12 stops
     on a split receipt root at the first acoustic row; Batch 32.13 closes the
-    identity after its second incomplete-evidence checkpoint
+    identity; Batch 32.14 records the operator correction and authorizes one
+    absolute-root replay of the unchanged checkpoint
 
 ## Stretch Boundary
 
@@ -667,11 +668,13 @@ two-line receipt below a crate-relative duplicate root, while the shell runner
 looks below the repository-relative root and exits `66` for a missing receipt.
 No valid row or summary exists, no later gate ran, and retry is prohibited.
 This is the second incomplete-evidence checkpoint for the identity. Batch
-32.13 closes the identity without an acoustic pass or rejection. The isolated
-state and local evidence ref are removed. No Cyclic renderer is admitted.
+32.13 closed the identity without an acoustic pass or rejection. Batch 32.14
+supersedes that decision: the renderer did not fail, and exact checkpoint
+`74a6d6d9` may replay `Y01` once with an absolute evidence root. No Cyclic
+renderer is admitted.
 
 ## Next Task
 
-No stretch batch is ready. Keep `g10.032` and centred compressed-anchor Cyclic
-closed. Reopening requires explicit operator direction and materially
-different, source-backed complete-system evidence.
+Execute `g10.032` Batch 32.15 only. Restore exact checkpoint `74a6d6d9` and
+replay all `30` `Y01` rows once with the frozen absolute evidence root. Stop
+before `Y02`.

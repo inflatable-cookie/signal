@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: exact-ratio Dream admitted; centred compressed-anchor Cyclic closed
+Status: exact-ratio Dream admitted; exact Cyclic evidence replay authorized
 Owner: core-product
 Updated: 2026-07-24
 Related contracts: `046`, `048`, `084`
@@ -918,7 +918,7 @@ family.
 | `ContinuousExcitationComplexRelation` | coefficient relation proof exposed an impossible anti-phase negation/swap expectation | conformance-only, contradictory | ineligible; correction requires new relation authority |
 | `CyclicGrain` | structural pass, then synthetic pitch rejection | acoustic rejection | closed |
 | `SimilarityAlignedCyclic` | `6/7` structural; frozen shortlist could not reach the exact natural continuation | conformance-only, architecture miss | ineligible; correction changes the search owner |
-| centred compressed-anchor Cyclic | two incomplete-evidence checkpoints; no valid acoustic row | conformance pass, repeated evidence invalid | closed; no retry or third audited identity |
+| centred compressed-anchor Cyclic | conformance pass; first acoustic invocation split one receipt across roots | operator-corrected invocation failure | exact checkpoint replay authorized; no DSP or evidence-owner change |
 | `RenewalSpectral` | structural pass, then synthetic crest rejection under the superseded unmatched gate | acoustic receipt, superseded architecture | ineligible; corrected source-backed blend belongs to the compensated family |
 | compensated/variance/audited renewal | structural and synthetic pass plus concealed-mono pass, then stereo image rejection | acoustic and stereo rejection | closed |
 | source-relative/listening-led/support-audited/comparator-audited renewal | support-audited identity passed structural, synthetic, and concealed mono, then failed stereo; after stereo policy changed, comparator-audited identity failed synthetic admission | acoustic and stereo rejection | closed |
@@ -1827,8 +1827,31 @@ exists. The isolated state is deleted and the retained acoustic ref is removed
 after the closure commit. Reopening requires an explicit operator decision and
 materially different, source-backed complete-system evidence.
 
+The operator rejected that closure in Batch 32.14. The first row's assertions
+passed; the failure was the caller supplying a repo-relative root that nextest
+resolved from the crate directory. Closing the renderer on that invocation
+mistake confuses harness plumbing with renderer evidence.
+
+One exact replay is authorized as a narrow operator correction to Rule 11:
+
+- restore commit `74a6d6d97abf4b5be02f8d0e7c82a5a5bc10a007`, tree
+  `d519e2d8d9ae3bb31b28ec4a0be1b55bc219845e`
+- change no candidate, test, runner, manifest, comparator, or dependency byte
+- recreate the same local acoustic ref and isolated worktree identity
+- require an absent evidence root at the absolute path
+  `/Users/tom/Dev/projects/signal-candidate-32-11/target/creative-stretch-audited-centered-compressed-anchor-cyclic-32-11`
+- pass that absolute path as the runner's fourth argument
+- execute the complete `30`-row `Y01` gate once, in manifest order
+- stop on the first valid terminal failure or after the `Y01` summary
+- do not execute `Y02`, exact `16x`, long-form, stereo, or listening rows
+
+The misplaced passing row may not select a change. This is the same acoustic
+checkpoint, not a third identity. A failure during the exact replay is final
+for that gate. This exception does not weaken the no-retry rule for renderer,
+metric, threshold, source, owner, or valid receipt failures.
+
 ## Next Task
 
-Keep centred compressed-anchor Cyclic closed. No implementation or evidence
-batch is ready. Do not repair the runner, retry `Y01`, or authorize another
-identity.
+Execute `g10.032` Batch 32.15 only. Restore the exact checkpoint and acoustic
+ref, then replay all `30` `Y01` rows once with the frozen absolute root. Stop
+before `Y02`.

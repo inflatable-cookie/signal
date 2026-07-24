@@ -311,12 +311,12 @@ The current package-level naming proposal is recorded in
   `OfflineHighQuality` baseline.
 - `g10.031` publicly admits exact-ratio creative `Dream` and pauses broader
   range, routing, cache, and product integration.
-- `g10.032` owns the closed `Cyclic` study separately. Source forensics selected
-  centred compressed-anchor behavior, but two incomplete-evidence checkpoints
-  closed that identity without admission.
+- `g10.032` owns unavailable `Cyclic` separately. Source forensics selected
+  centred compressed-anchor behavior. The operator authorized one replay of
+  the unchanged checkpoint after an invocation-root mistake.
 
 ## Next Task
 
 Keep the completed `g10.031` API and frozen transparent baseline unchanged.
-No stretch batch is ready. Keep `g10.032` and centred compressed-anchor Cyclic
-closed pending explicit operator direction.
+Execute `g10.032` Batch 32.15 only: replay `Y01` from the exact checkpoint with
+the frozen absolute evidence root, then stop before `Y02`.

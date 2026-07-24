@@ -1,6 +1,6 @@
 # Offline Creative Time-Stretch Study
 
-Status: exact-ratio `CreativeStretch` admitted; centred Cyclic closed
+Status: exact-ratio `CreativeStretch` admitted; Cyclic replay authorized
 Owner: dsp
 Updated: 2026-07-24
 Contract: `085`
@@ -327,6 +327,10 @@ audited checkpoint passed conformance but split its first acoustic receipt
 between two roots. Contract `085` Rule 11 closes that identity after the
 second incomplete-evidence checkpoint. No valid acoustic judgment or admitted
 Cyclic renderer exists.
+
+The operator supersedes that closure in Batch 32.14. The renderer did not
+fail; the caller supplied a relative evidence root. The unchanged checkpoint
+may replay `Y01` once with the exact absolute root.
 
 ## Product Surface
 
@@ -1077,6 +1081,6 @@ all retained construction, structural, and synthetic gates pass.
 
 ## Next Task
 
-No creative-stretch execution batch is ready. Exact fixed `4x`, `8x`, and
-`16x` `Dream` remains admitted. Cyclic, broader range, automatic routing, and
-both overlaps remain closed or paused pending explicit operator direction.
+Execute `g10.032` Batch 32.15 only. Exact fixed `4x`, `8x`, and `16x` `Dream`
+remains admitted. Broader range, automatic routing, and both overlaps remain
+paused.

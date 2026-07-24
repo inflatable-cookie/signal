@@ -49,6 +49,6 @@ Keep milestone sequencing in `roadmaps/`.
 
 Keep the `g10.030` transparent successor program closed. The exact-ratio
 `CreativeStretch` wrapper is admitted and `g10.031` is complete. `g10.032`
-closed centred compressed-anchor Cyclic after its second incomplete-evidence
-checkpoint. No stretch batch is ready. Reopen no cache, routing, runtime,
-Loophole, or Chorus work.
+Batch 32.14 authorizes one exact replay after an invocation-root mistake.
+Execute Batch 32.15 only and stop before `Y02`. Reopen no cache, routing,
+runtime, Loophole, or Chorus work.

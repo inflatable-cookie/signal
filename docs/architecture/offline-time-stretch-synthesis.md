@@ -91,8 +91,9 @@ Intentional creative expansion is governed separately by Contract `085` and
 `docs/architecture/offline-creative-time-stretch-study.md`. Its automatic
 route and lower overlap are paused. Explicit `Cyclic` remains unavailable.
 `g10.032` selected centred compressed-anchor behavior, but two checkpoints
-failed executable evidence ownership and the identity is closed without a
-valid acoustic judgment.
+failed to produce valid acoustic evidence. The operator corrected the second
+classification because its first row passed and only the invocation root was
+wrong. Exact checkpoint replay is pending.
 The private, unrouted `DirectRenewalDream` renderer owns exact fixed `4x`,
 `8x`, and `16x` neutral `Dream`. It does not replace this renderer or reopen
 Contract `084`. The attempted `LayeredCloud` owner closed without promotion.
@@ -120,6 +121,7 @@ ledger remains in git history at `1d1b02f1`.
 Retain this frozen baseline and keep its successor lane closed. `g10.031` also
 retained the `2x..4x` creative overlap pause. `g10.032` later reopened Cyclic
 research after new fixed-mode and repeat/jump source evidence, then closed the
-centred compressed-anchor identity after its second incomplete-evidence
-checkpoint. No stretch batch is ready. Keep `main`, admitted renderers, both
-overlaps, product routing, and Contract `084` unchanged.
+centred compressed-anchor identity after a split-root run. The operator
+superseded that closure and authorized one exact absolute-root replay. Execute
+`g10.032` Batch 32.15 only. Keep `main`, admitted renderers, both overlaps,
+product routing, and Contract `084` unchanged.

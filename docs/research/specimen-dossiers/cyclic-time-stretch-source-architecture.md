@@ -1,6 +1,6 @@
 # Cyclic Time-Stretch Source Architecture
 
-Status: reviewed; selected centred behavior closed after evidence failure
+Status: reviewed; exact selected-owner replay authorized
 Owner: dsp
 Updated: 2026-07-24
 Contract: `085`
@@ -507,6 +507,6 @@ Batch 32.4 freezes the selected implementation authority:
 
 ## Next Task
 
-None. `g10.032` closed the selected centred compressed-anchor identity after
-its second incomplete-evidence checkpoint. Any future Cyclic study requires
-explicit operator direction and materially different complete-system evidence.
+Execute `g10.032` Batch 32.15 only. Restore the exact selected-owner checkpoint
+and replay all `30` `Y01` rows once with the frozen absolute root. Stop before
+`Y02`.

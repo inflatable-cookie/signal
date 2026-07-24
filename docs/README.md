@@ -32,7 +32,7 @@ strict lane.
 - Non-phase-vocoder feasibility: [architecture/offline-time-stretch-non-phase-vocoder-feasibility.md](./architecture/offline-time-stretch-non-phase-vocoder-feasibility.md)
 - Creative time-stretch study: [architecture/offline-creative-time-stretch-study.md](./architecture/offline-creative-time-stretch-study.md)
 - Cyclic behavioral synthesis: [architecture/offline-creative-cyclic-behavioral-synthesis.md](./architecture/offline-creative-cyclic-behavioral-synthesis.md)
-- Closed audited Cyclic candidate brief: [architecture/offline-creative-audited-centered-compressed-anchor-cyclic-brief.md](./architecture/offline-creative-audited-centered-compressed-anchor-cyclic-brief.md)
+- Recovered audited Cyclic candidate brief: [architecture/offline-creative-audited-centered-compressed-anchor-cyclic-brief.md](./architecture/offline-creative-audited-centered-compressed-anchor-cyclic-brief.md)
 - Evidence-invalid historical Cyclic brief: [architecture/offline-creative-centered-compressed-anchor-cyclic-brief.md](./architecture/offline-creative-centered-compressed-anchor-cyclic-brief.md)
 - Admitted exact-ratio CreativeStretch public surface: [architecture/offline-creative-fixed-ratio-public-surface.md](./architecture/offline-creative-fixed-ratio-public-surface.md)
 - Direct-renewal owner study: [architecture/offline-creative-direct-renewal-owner-study.md](./architecture/offline-creative-direct-renewal-owner-study.md)
@@ -64,7 +64,7 @@ strict lane.
 - Generation index: [roadmaps/generation-index.md](./roadmaps/generation-index.md)
 - Stretch closeout roadmap: [roadmaps/g10/030-stretch-consolidation-and-completion.md](./roadmaps/g10/030-stretch-consolidation-and-completion.md)
 - Completed PaulX-like creative stretch roadmap: [roadmaps/g10/031-creative-time-stretch.md](./roadmaps/g10/031-creative-time-stretch.md)
-- Closed Cyclic research roadmap: [roadmaps/g10/032-cyclic-creative-stretch-research.md](./roadmaps/g10/032-cyclic-creative-stretch-research.md)
+- Active Cyclic research roadmap: [roadmaps/g10/032-cyclic-creative-stretch-research.md](./roadmaps/g10/032-cyclic-creative-stretch-research.md)
 - Strict-lane reference: [specs/001-g09-lane-first-strict-adoption.md](./specs/001-g09-lane-first-strict-adoption.md)
 - Active strict-lane card: none
 - Research index: [research/master-index.md](./research/master-index.md)
@@ -90,6 +90,6 @@ strict lane.
 
 ## Next Task
 
-No stretch batch is ready. Keep `g10.032` and centred compressed-anchor Cyclic
-closed. Reopening requires explicit operator direction and materially
-different, source-backed complete-system evidence.
+Execute `g10.032` Batch 32.15 only. Restore exact checkpoint `74a6d6d9` and
+replay all `30` `Y01` rows once with the frozen absolute evidence root. Stop
+before `Y02`.
