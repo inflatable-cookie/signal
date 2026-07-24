@@ -90,6 +90,6 @@ strict lane.
 
 ## Next Task
 
-Execute `g10.032` Batch 32.20 only. Run the frozen `30`-row Y01 gate once from
-checkpoint `995ea516`, write its summary only after `30/30`, and stop before
-`Y02`.
+Execute `g10.032` Batch 32.21 only. Audit the complete post-checkpoint evidence
+path and make the Rule 11 eligibility decision without changing or running the
+candidate.

@@ -1,6 +1,6 @@
 # Offline Creative EventLedgerAuditedCenteredCompressedAnchorCyclic Brief
 
-Status: frozen; Batch 32.19 conformance complete; Batch 32.20 ready
+Status: frozen; Batch 32.20 stopped on incomplete execution boundary
 Owner: dsp
 Updated: 2026-07-24
 Contracts: `046`, `085` Rule 11
@@ -2030,6 +2030,23 @@ receipt files and summaries are byte-identical. Structural summary SHA-256 is
 The local `32-19-acoustic` ref points to that checkpoint. No Y01 or later row
 ran.
 
+### Batch 32.20 Result
+
+Preflight resolved the exact ref, checkpoint `995ea516`, tree `fd42543b`, and
+clean candidate worktree. The checkpoint cannot execute the frozen Y01 lane:
+
+- tracked runner SHA-256
+  `ce4ca173dd3892a85ffa4eb8e5369263d3a96a62204e2f2ce41804f076596fe9`
+  accepts only the two conformance-round IDs
+- the summary owner selects only conformance rows, hardcodes scope
+  `structural`, and writes only `summary/structural.json`
+- no separately frozen acoustic runner exists
+
+No runner invocation, Y01 receipt, summary, or acoustic render occurred. This
+is incomplete executable evidence under Contract `085` Rule 11, not an
+acoustic result. The checkpoint and local ref remain immutable for the
+complete evidence-integrity reassessment.
+
 ## Remaining Risks
 
 - direct two-read crossfade may create audible gaps on non-sparse material
@@ -2048,6 +2065,6 @@ These are admission risks, not open design choices.
 
 ## Next Task
 
-Execute `g10.032` Batch 32.20 only. Run the frozen `30` Y01 rows once from
-checkpoint `995ea516`, persist the Y01 summary only after `30/30`, and stop
-before `Y02`.
+Execute `g10.032` Batch 32.21 only. Audit every post-checkpoint evidence
+boundary and decide Rule 11 eligibility without changing or running the
+candidate.

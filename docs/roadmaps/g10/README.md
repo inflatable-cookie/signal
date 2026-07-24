@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: Cyclic event-ledger conformance complete; Batch 32.20 ready
+Status: Cyclic event-ledger Y01 stopped pre-acoustic; Batch 32.21 ready
 Updated: 2026-07-24
 
 ## Why this generation matters now
@@ -705,8 +705,15 @@ release compile, construction `1/1`, and structural `339/339` twice with
 byte-identical receipts and summaries. The acoustic ref is ready. No Y01 or
 later row ran.
 
+Batch 32.20 preflight finds no executable acoustic runner at the frozen
+checkpoint. The tracked runner accepts conformance rounds only, while the
+summary owner selects conformance rows and writes only the structural summary.
+No Y01 row or render ran. This is incomplete executable evidence, not an
+acoustic result. Keep the checkpoint and ref immutable for complete Rule 11
+reassessment.
+
 ## Next Task
 
-Execute `g10.032` Batch 32.20 only. Run the frozen `30` Y01 rows once from
-checkpoint `995ea516`, write the Y01 summary only after `30/30`, and stop
-before `Y02`.
+Execute `g10.032` Batch 32.21 only. Audit the complete post-checkpoint evidence
+path and make the Rule 11 eligibility decision without changing or running the
+candidate.

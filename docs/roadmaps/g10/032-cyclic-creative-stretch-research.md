@@ -1,6 +1,6 @@
 # 032 - Cyclic Creative Stretch Research
 
-Status: active; Batch 32.19 complete; Batch 32.20 ready
+Status: active; Batch 32.20 stopped pre-acoustic; Batch 32.21 ready
 Owner: dsp
 Updated: 2026-07-24
 Contracts: `046`, `085`
@@ -655,7 +655,7 @@ Result:
 
 ## Batch 32.20 - Event-Ledger Y01 Admission
 
-Status: ready
+Status: complete; stopped before row execution
 
 1. resolve the Batch 32.19 acoustic ref to exact checkpoint `995ea516` and
    tree `fd42543b`; require a clean unchanged candidate worktree
@@ -670,6 +670,39 @@ change is authorized. A valid Y01 failure rejects this checkpoint. An
 evidence-environment stop returns to docs-level classification without
 rerunning a completed row.
 
+Result:
+
+- acoustic ref, checkpoint, tree, and clean worktree matched exactly
+- the only tracked runner accepts `conformance-round` with
+  `conformance-round-1` or `conformance-round-2`; it has no acoustic execution
+  ID or Y01 row-selection path
+- the compile-linked summary owner ignores the frozen summary scope, selects
+  only `stage == "conformance"`, and can create only
+  `summary/structural.json`
+- zero Y01 receipts, summaries, or candidate renders exist
+- no runner invocation or acoustic row occurred
+- checkpoint `995ea516` is incomplete executable evidence, not an acoustic
+  pass or rejection
+- keep the immutable ref and isolated state unchanged for docs-only
+  reassessment
+
+## Batch 32.21 - Event-Ledger Evidence-Integrity Reassessment
+
+Status: ready; docs only
+
+1. audit every frozen post-checkpoint runner transition, row selector, summary
+   scope, receipt boundary, decision owner, reveal owner, and stop condition
+   against the exact checkpoint
+2. enumerate every missing or non-executable boundary, not only Y01
+3. classify the checkpoint under Contract `085` Rule 11, including whether the
+   bounded fresh-audited-identity exception remains available
+4. freeze either one complete corrective authority or explicit family closure
+5. leave checkpoint, ref, candidate source, evidence, comparator assets, and
+   ignored receipts unchanged
+
+Do not run a synthetic, exact-`16x`, long-form, or listening row. Do not patch
+the frozen candidate or infer a direct command around the tracked runner.
+
 ## Completion Gate
 
 - source families are pinned and clean-room boundaries recorded
@@ -683,6 +716,6 @@ rerunning a completed row.
 
 ## Next Task
 
-Execute Batch 32.20 only. Run the frozen `30`-row `Y01` gate once from
-checkpoint `995ea516`, write its summary only after `30/30`, and stop before
-`Y02`.
+Execute Batch 32.21 only. Audit the complete post-checkpoint evidence path and
+make the Rule 11 eligibility decision without changing or running the
+candidate.
