@@ -325,7 +325,9 @@ and authorizes one exact replay of the unchanged checkpoint. Batches
 event-ledger ownership. Batches 32.18-32.19 freeze and implement fresh
 authority through conformance. Batches 32.20-32.21 find the post-checkpoint
 evidence path non-executable and close the family under Rule 11. Batch 32.22
-deletes the exact candidate/ref/build state. No candidate is admitted and no
+deletes the exact candidate/ref/build state. Batch 32.23 records the operator
+completion correction and reopens the acoustically unjudged implementation
+for exact recovery and evidence repair. No candidate is admitted and no
 strict spec lane is open.
 
 ## Strict lane posture
@@ -355,4 +357,4 @@ Before rollover:
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the active generation front door.
-No Cyclic execution task is ready.
+Execute `g10.032` Batch 32.24.

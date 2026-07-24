@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: `g10.032` complete; no Cyclic renderer admitted; planning pause
+Status: `g10.032` active; Batch 32.24 Cyclic evidence completion ready
 Updated: 2026-07-24
 
 ## Why this generation matters now
@@ -284,7 +284,7 @@ Do not start Loophole or Chorus planning from Signal internals.
     Batch 31.75 freezes one minimal public `CreativeStretch` wrapper; Batch
     31.76 admits it with byte-identical acoustic output;
     explicit `Cyclic` stays closed
-- `g10.032` `complete`
+- `g10.032` `active`
   - deep Cyclic research reopened by operator decision; Batch 32.1 separates
     fixed Akai `CYCLIC` from adaptive `INTELL`, pins Potenza slow-anchor and
     SickoCV repeat/jump schedules; Batch 32.2 completes executable forensics
@@ -727,10 +727,18 @@ churn. The event-ledger renderer has no acoustic judgment.
 
 Batch 32.22 deletes the exact acoustic ref, candidate branch, worktree,
 `562 MB` ignored build/evidence state, comparator assets, receipts, and
-artifacts. `main` remains candidate-free. `g10.032` is complete.
+artifacts. `main` remains candidate-free. That closeout is superseded by the
+operator correction in Batch 32.23.
+
+Batch 32.23 records the operator correction: an evidence-system failure cannot
+complete an acoustically unjudged product target. Checkpoint `995ea516`, tree
+`fd42543b`, remains available as an unreferenced Git object. Contract `085`
+now authorizes exact implementation recovery, iterative evidence repair, and
+continued execution through valid synthetic and listening judgment. Batch
+32.24 is ready.
 
 ## Next Task
 
-Pause for operator intent. No Cyclic execution batch is ready. Any reopening
-requires materially different complete-system architecture or an explicit
-contract change.
+Execute `g10.032` Batch 32.24. Restore the exact event-ledger implementation
+onto a fresh isolated branch, repair its complete evidence path, and complete
+conformance.

@@ -1,6 +1,6 @@
 # Offline Creative EventLedgerAuditedCenteredCompressedAnchorCyclic Brief
 
-Status: evidence-invalid; family closed under Contract `085` Rule 11
+Status: active; exact renderer recovery and evidence completion authorized
 Owner: dsp
 Updated: 2026-07-24
 Contracts: `046`, `085` Rule 11
@@ -2072,15 +2072,43 @@ audited centred compressed-anchor checkpoint. The fresh event-ledger authority
 was the Rule 11 correction for that exact class. A further evidence-only
 identity is therefore prohibited protocol churn.
 
-The family is closed. Checkpoint `995ea516` has no valid acoustic pass or
-rejection, and its renderer has no listening judgment. Batch 32.22 owns exact
-candidate/ref cleanup only.
+Batch 32.21 closed the family under the then-current Rule 11. Checkpoint
+`995ea516` had no valid acoustic pass or rejection, and its renderer had no
+listening judgment. Batch 32.23 supersedes that closure below.
 
 ### Batch 32.22 Result
 
 The exact local acoustic ref, candidate branch, worktree, ignored build state,
 comparator assets, receipts, and artifacts are deleted. `main` contains no
 candidate DSP or evidence implementation.
+
+### Batch 32.23 Operator Completion Correction
+
+The renderer remains acoustically unjudged. The operator explicitly rejects
+evidence-protocol exhaustion as product completion and authorizes exact
+recovery of checkpoint `995ea516`, tree `fd42543b`.
+
+Recover only the checkpoint's candidate module, tests, manifests, generators,
+runner, nextest configuration, and required `lib.rs` module binding onto a
+fresh branch from current `main`. Do not restore checkpoint-era canonical
+docs. The recovered renderer bytes are the initial acoustic subject.
+
+Evidence implementation is now repairable infrastructure. It must:
+
+- execute every frozen assertion and diagnostic rather than infer pass from
+  row success
+- expose structural, synthetic, exact-`16x`, long-form, mono, stereo,
+  decision, and reveal stages
+- write fail-durable row receipts and correctly scoped summaries
+- implement the independent event ledger, measured pitch, cadence, gap,
+  stereo, level, fade, and comparator owners frozen in this brief
+- create level-matched faded concealed packs and immutable decisions
+- keep renderer formulas, sources, comparator semantics, metrics, thresholds,
+  and assertion meaning unchanged while infrastructure is repaired
+
+Each evidence correction is committed and rerun from a clean evidence root.
+No evidence failure closes the renderer. A valid acoustic receipt may reject a
+renderer version; listening decides promotion.
 
 ## Unresolved Renderer Risks
 
@@ -2100,4 +2128,6 @@ These are admission risks, not open design choices.
 
 ## Next Task
 
-None. This evidence-invalid brief is closed historical authority.
+Execute `g10.032` Batch 32.24. Restore the exact checkpoint implementation,
+repair the complete evidence path, and carry the unchanged renderer to valid
+synthetic execution.

@@ -1,6 +1,6 @@
 # 032 - Cyclic Creative Stretch Research
 
-Status: complete; no Cyclic renderer admitted
+Status: active; Cyclic acoustic-completion lane reopened
 Owner: dsp
 Updated: 2026-07-24
 Contracts: `046`, `085`
@@ -432,9 +432,9 @@ Result:
 - [x] rejected runner repair, `Y01` retry, and a third audited identity
 - [x] scheduled deletion of the local acoustic ref after this closure commit
 
-`g10.032` is complete. Signal still has no admitted `Cyclic` renderer. Exact
-fixed `4x`, `8x`, and `16x` `Dream` remains the only public creative stretch
-surface.
+At Batch 32.13, `g10.032` was marked complete. Signal still had no admitted
+`Cyclic` renderer. Batch 32.14 superseded that closeout, and Batch 32.23 later
+superseded evidence-protocol exhaustion as a completion condition.
 
 ## Batch 32.14 - Operator Correction And Exact Replay Authority
 
@@ -779,6 +779,63 @@ Result:
   changed
 - nothing was pushed
 
+## Batch 32.23 - Operator Completion Correction
+
+Status: complete
+
+The prior closeout was not product completion. The event-ledger renderer has
+no valid acoustic or listening judgment, and evidence-system failure is not an
+acceptable substitute.
+
+1. amend Contract `085` Rule 11 for this lane so evidence infrastructure can
+   be repaired without consuming or retiring an acoustic candidate
+2. confirm checkpoint `995ea516`, tree `fd42543b`, remains recoverable as an
+   unreferenced local Git object
+3. authorize restoration of only its implementation/evidence bytes onto a
+   fresh branch from current `main`
+4. keep renderer formulas and acoustic semantics fixed while repairing runner,
+   receipt, diagnostic, comparator, concealment, decision, and reveal owners
+5. require valid synthetic and listening evidence before acceptance or
+   renderer rejection
+
+## Batch 32.24 - Recover Candidate And Complete Evidence Execution
+
+Status: ready
+
+1. create one fresh isolated worktree and branch from current `main`
+2. restore the exact checkpoint candidate module, tests, manifests,
+   generators, runner, nextest configuration, and required private module
+   binding; restore no checkpoint-era canonical docs
+3. record recovered blob identities and prove renderer bytes match checkpoint
+   `995ea516`
+4. repair every Batch 32.21 evidence gap against the canonical brief
+5. run release compile, construction, and complete structural conformance
+6. keep the worktree and evidence state; a harness failure returns to step 4
+   rather than deleting the renderer
+
+Stop only if a missing semantic choice requires docs-level authority. Do not
+change renderer formulas from acoustic output during this batch.
+
+## Batch 32.25 - Acoustic Admission And Listening
+
+Status: pending on Batch 32.24
+
+Run the complete synthetic sequence from one clean versioned renderer
+checkpoint. Fix evidence implementation defects and rerun affected scopes.
+When synthetic integrity passes, generate the concealed long-form mono and
+linked-stereo pack at `2x`, `4x`, and `8x`, with `4x` and `8x` primary. The
+operator's listening judgment decides whether the effect is satisfactory.
+
+## Batch 32.26 - Renderer Iteration Or Admission
+
+Status: pending on Batch 32.25
+
+If listening accepts the candidate, freeze and admit the minimal private
+fixed-ratio Cyclic surface before any public routing or UI work. If valid
+evidence exposes a renderer defect, preserve its receipt, revise one complete
+renderer version in isolation, and return to Batch 32.25. The Cyclic product
+target remains active until accepted or explicitly cancelled by the operator.
+
 ## Completion Gate
 
 - source families are pinned and clean-room boundaries recorded
@@ -792,6 +849,6 @@ Result:
 
 ## Next Task
 
-None. `g10.032` is complete and no Cyclic execution batch is ready. Reopening
-requires materially different complete-system architecture or an explicit
-contract change, not another evidence repair.
+Execute Batch 32.24. Recover the exact event-ledger implementation from
+checkpoint `995ea516`, repair the executable evidence path, and complete
+conformance without treating harness defects as renderer outcomes.

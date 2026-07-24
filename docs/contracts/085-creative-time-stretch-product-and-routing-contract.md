@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: exact-ratio Dream admitted; Cyclic event-ledger authority frozen
+Status: exact-ratio Dream admitted; Cyclic acoustic-completion lane active
 Owner: core-product
 Updated: 2026-07-24
 Related contracts: `046`, `048`, `084`
@@ -798,6 +798,49 @@ no materially different source-backed renewal owner, that path is closed.
 This rule applies prospectively to work authorized after Batch 31.55. It does
 not change any historical checkpoint result or restore deleted source.
 
+#### Batch 32.23 operator completion correction
+
+The operator explicitly rejects evidence-protocol exhaustion as a completion
+condition while an implemented renderer remains acoustically unjudged. For the
+centred compressed-anchor Cyclic lane, this correction supersedes Rule 11
+sentences that prohibit restoring checkpoint source, repairing evidence
+infrastructure, rerunning an invalid evidence invocation, or continuing after
+a fixed number of evidence-only failures.
+
+The corrected boundary is:
+
+- renderer quality can pass or fail only through a complete valid synthetic or
+  listening receipt
+- missing runners, false assertion plumbing, wrong diagnostic
+  implementations, incomplete summaries, comparator preparation, concealment,
+  reveal, and receipt persistence are repairable engineering defects
+- repairing those defects does not authorize an acoustic formula, source,
+  comparator, metric, threshold, or semantic assertion change
+- every repair is committed and audited; affected evidence reruns from a clean
+  root, while any reused prerequisite must be byte-identical and independently
+  hash-verified
+- the renderer remains one candidate until valid evidence identifies a
+  renderer defect; harness revisions do not create new acoustic candidates
+- a valid renderer rejection returns to complete-system architecture or
+  implementation correction, one candidate at a time; it does not
+  automatically close the product target
+- blind scalar sweeps and hidden output-guided tuning remain prohibited
+- listening remains the promotion authority
+
+Checkpoint `995ea516c4524fe5d6fc3dd983e2c32d91abc059`, tree
+`fd42543b052721c45aa1a59e9eb5042e5815bf5c`, remains available as an
+unreferenced local Git object. Batch 32.24 may restore only its candidate,
+test, evidence, manifest, runner, and nextest bytes onto a fresh branch from
+current `main`. Current canonical docs remain from `main`; checkpoint-era docs
+must not be restored. The recovered renderer bytes are the initial acoustic
+subject. Evidence code may change until it truthfully executes the canonical
+owners. Renderer changes require a new versioned acoustic checkpoint and
+preserved prior receipt.
+
+This correction is scoped to completing Cyclic. It does not revive other
+rejected creative families or weaken transparent-stretch Contracts `046` and
+`084`.
+
 Creative candidate work has three distinct states:
 
 1. **Working implementation.** One isolated worktree implements one frozen
@@ -918,7 +961,7 @@ family.
 | `ContinuousExcitationComplexRelation` | coefficient relation proof exposed an impossible anti-phase negation/swap expectation | conformance-only, contradictory | ineligible; correction requires new relation authority |
 | `CyclicGrain` | structural pass, then synthetic pitch rejection | acoustic rejection | closed |
 | `SimilarityAlignedCyclic` | `6/7` structural; frozen shortlist could not reach the exact natural continuation | conformance-only, architecture miss | ineligible; correction changes the search owner |
-| centred compressed-anchor Cyclic, including event-ledger authority | first checkpoint passed conformance and `12` Y01 rows before impulse `2x` rejection; its later owners were placeholders. Fresh event-ledger checkpoint passed conformance but had no executable acoustic runner, assertion-owned receipt evaluation, complete synthetic diagnostics, scoped summaries, or listening decision path | acoustic rejection followed by second incomplete-evidence checkpoint | family closed as protocol churn; neither checkpoint is repairable or rerunnable |
+| centred compressed-anchor Cyclic, including event-ledger authority | first checkpoint passed conformance and `12` Y01 rows before impulse `2x` rejection; its later owners were placeholders. Fresh event-ledger checkpoint passed conformance but had no executable acoustic runner, assertion-owned receipt evaluation, complete synthetic diagnostics, scoped summaries, or listening decision path | acoustic rejection followed by incomplete evidence implementation | reopened by explicit Batch 32.23 operator correction; recover the exact event-ledger renderer and repair evidence through valid acoustic and listening judgment |
 | `RenewalSpectral` | structural pass, then synthetic crest rejection under the superseded unmatched gate | acoustic receipt, superseded architecture | ineligible; corrected source-backed blend belongs to the compensated family |
 | compensated/variance/audited renewal | structural and synthetic pass plus concealed-mono pass, then stereo image rejection | acoustic and stereo rejection | closed |
 | source-relative/listening-led/support-audited/comparator-audited renewal | support-audited identity passed structural, synthetic, and concealed mono, then failed stereo; after stereo policy changed, comparator-audited identity failed synthetic admission | acoustic and stereo rejection | closed |
@@ -1173,8 +1216,9 @@ acoustic judgment. No high-range replacement or implementation is ready.
 
 ## Current State
 
-All isolated spectral candidates and both cyclic candidates are rejected and
-deleted. Explicit `Cyclic` and the automatic router remain closed or paused.
+All isolated spectral candidates and the two earlier cyclic candidates are
+rejected and deleted. Explicit `Cyclic` is active only through the Batch 32.23
+event-ledger completion lane; the automatic router remains paused.
 Neutral `Dream` remains active product intent. Matching PaulX synthetics
 invalidate the old crest calibration. The first complete
 `CompensatedRenewalSpectral` implementation failed compile-only validation
@@ -1959,9 +2003,24 @@ comparator, source, receipt, or output. The canonical brief now freezes those
 choices together. Recreate isolation from this correction before evidence
 generation; no candidate repair or retry is authorized.
 
+Batch 32.19 subsequently implemented the authority and froze checkpoint
+`995ea516`, tree `fd42543b`, after release compile, construction `1/1`, and two
+byte-identical `339/339` structural rounds. Batches 32.20 and 32.21 found that
+its post-checkpoint evidence implementation could not execute the frozen
+acoustic contract. Batch 32.22 deleted the worktree, ref, branch, and generated
+state but did not remove the unreferenced checkpoint object.
+
+Batch 32.23 records the operator completion correction above. The renderer has
+no valid acoustic or listening judgment, so the product goal is unfinished.
+Restore its exact implementation bytes and repair the evidence system until it
+can produce trustworthy synthetic and listening receipts. Evidence plumbing
+failure may pause a run for correction but may not retire the renderer or
+Cyclic target.
+
 ## Next Task
 
-Execute `g10.032` Batch 32.19 only. Create the exact fresh isolated identity,
-generate and bind its manifests and comparator set before candidate source,
-implement the frozen brief without rejected-code recovery, and complete both
-unchanged conformance rounds. Stop before `Y01`.
+Execute `g10.032` Batch 32.24. Restore the exact checkpoint implementation
+bytes onto a fresh isolated branch from current `main`, audit and repair the
+complete executable evidence path, and rerun conformance. Stop only when the
+candidate is ready for valid acoustic execution or a renderer-authority change
+is required.
