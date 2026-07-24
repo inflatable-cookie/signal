@@ -90,7 +90,7 @@ strict lane.
 
 ## Next Task
 
-Execute `g10.032` Batch 32.11 only. Create the fresh isolated audited Cyclic
-identity, generate and bind the new comparator set before candidate source,
-implement the unchanged renderer and complete owners, and finish two
-structural conformance rounds. Stop before acoustic execution.
+Execute `g10.032` Batch 32.12 only. From the immutable audited Cyclic acoustic
+ref, run the `30` frozen `Y01` rows in manifest order with one-shot durable
+receipts. Stop on the first terminal failure or after the `Y01` summary. Do
+not begin `Y02`.

@@ -79,13 +79,15 @@ conformance rounds. Batch 32.6 surfaces `unexpected dropout 1` in `Y01`, but no
 failed or partial receipt exists. Batch 32.7 classifies the checkpoint as
 incomplete executable evidence and authorizes one fresh audited identity. No
 acoustic decision or DSP admission exists. This does not reopen the
-transparent successor lane.
+transparent successor lane. Batch 32.10 freezes complete executable manifests.
+Batch 32.11 generates the evidence before source and freezes fresh checkpoint
+`74a6d6d9` after two byte-identical structural rounds. No acoustic row has run.
 
 Current Cyclic decision:
 [Offline Creative Cyclic Behavioral Synthesis](../architecture/offline-creative-cyclic-behavioral-synthesis.md).
 
 Frozen Cyclic candidate authority:
-[Offline Creative CenteredCompressedAnchorCyclic Renderer Brief](../architecture/offline-creative-centered-compressed-anchor-cyclic-brief.md).
+[Offline Creative AuditedCenteredCompressedAnchorCyclic Brief](../architecture/offline-creative-audited-centered-compressed-anchor-cyclic-brief.md).
 
 Explicit operator research reopening and pinned source triangulation selected
 one materially different neutral `Dream` family: `RenewalSpectral`. Later
@@ -226,7 +228,6 @@ Rejected first-owner brief:
 
 ## Next Task
 
-Execute `g10.032` Batch 32.11 only. Create the fresh isolated Cyclic identity,
-generate and bind the reproducible comparator set, implement the unchanged
-renderer and evidence owners, and complete two structural conformance rounds.
-No candidate DSP enters `main`.
+Execute `g10.032` Batch 32.12 only. From the immutable acoustic ref, run the
+`30` frozen `Y01` rows in manifest order with one-shot durable receipts. Stop
+on the first terminal failure or after the `Y01` summary. Do not begin `Y02`.

@@ -1,7 +1,7 @@
 # g10 Milestones
 
-Status: Cyclic executable authority reconciled; Batch 32.11 ready
-Updated: 2026-07-23
+Status: Cyclic conformance frozen; Batch 32.12 ready
+Updated: 2026-07-24
 
 ## Why this generation matters now
 
@@ -295,7 +295,9 @@ Do not start Loophole or Chorus planning from Signal internals.
     rounds; Batch 32.6 stops at evidence-invalid `Y01`; Batch 32.7 authorizes
     one fresh audited evidence identity; Batch 32.8 freezes a docs-only
     authority; Batch 32.9 finds it non-executable before source; Batch 32.10
-    freezes reproducible manifests; Batch 32.11 isolated conformance is ready
+    freezes reproducible manifests; Batch 32.11 freezes a clean isolated
+    checkpoint after two byte-identical structural rounds; Batch 32.12 first
+    acoustic gate is ready
 
 ## Stretch Boundary
 
@@ -654,11 +656,14 @@ requires construction to prove. Deleted checkpoint state remains prohibited.
 Batch 32.10 closes those gaps with exact canonical encodings, `588` executable
 rows, assertion/diagnostic bindings, runner and sentinel behavior, a fresh
 reproducible `63`-row comparator set, and listening/reveal schemas. Batch 32.11
-isolated conformance is ready.
+generates and binds that evidence before candidate source, implements every
+frozen owner, and passes release compile, construction `1/1`, and all `339`
+structural rows twice with byte-identical evidence. Clean checkpoint
+`74a6d6d9` is frozen at the acoustic ref. No acoustic row has run. Batch 32.12
+first acoustic gate is ready.
 
 ## Next Task
 
-Execute `g10.032` Batch 32.11 only. Create the fresh isolated identity,
-generate and bind the new comparator set before candidate source, implement
-the unchanged renderer and complete evidence owners, then finish two
-structural conformance rounds. Stop before acoustic execution.
+Execute `g10.032` Batch 32.12 only. From the immutable acoustic ref, run the
+`30` frozen `Y01` rows in manifest order with one-shot durable receipts. Stop
+on the first terminal failure or after the `Y01` summary. Do not begin `Y02`.

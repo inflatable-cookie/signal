@@ -1,8 +1,8 @@
 # Offline Creative AuditedCenteredCompressedAnchorCyclic Brief
 
-Status: frozen executable authority; Batch 32.11 ready
+Status: isolated conformance passed; Batch 32.12 ready
 Owner: dsp
-Updated: 2026-07-23
+Updated: 2026-07-24
 Contracts: `046`, `085` Rule 11
 Roadmap: `g10.032`, Batch 32.8
 Behavior:
@@ -1529,6 +1529,24 @@ sentinel handshake, and listening decision surface are now frozen without
 recovering deleted state. Candidate implementation has no remaining manifest
 choice.
 
+### Batch 32.11 Result
+
+The fresh evidence identity was generated before candidate source. Its frozen
+manifest contains `588` rows. Fresh REAPER capture bound `63` comparator rows:
+`15` native-stereo musical, `30` mono synthetic, and `18` stereo synthetic.
+
+Private candidate checkpoint `74a6d6d9` implements the frozen renderer and
+every compile-linked evidence owner. Release compile and construction `1/1`
+passed. Both unchanged structural rounds passed all `339` rows and `168`
+planned renders with byte-identical receipts and summaries. The structural
+summary hash is
+`75a2e5ed5c1406d9790a5ba904d7ce8d8e5c4dc459787b8e0dac6a1d761b43c2`.
+
+The clean checkpoint is frozen at
+`refs/signal-evidence/creative/audited-centered-compressed-anchor-cyclic/32-11-acoustic`.
+No acoustic, exact-`16x`, long-form, or listening row has run. No candidate
+source or evidence harness entered `main`.
+
 ## Remaining Risks
 
 - direct two-read crossfade may retain the surfaced dropout on some material
@@ -1547,9 +1565,7 @@ These are admission risks, not open design choices.
 
 ## Next Task
 
-Execute `g10.032` Batch 32.11 only. From the exact Batch 32.10 closeout commit,
-create the fresh isolated identity. Write evidence generators first, recapture
-and bind the new `63`-row comparator manifest, then implement the unchanged
-renderer and executable owners. Complete two structural conformance rounds
-and freeze the acoustic ref. Stop before every synthetic, exact-`16x`,
-long-form, or listening row.
+Execute `g10.032` Batch 32.12 only. From the immutable Batch 32.11 acoustic
+ref, run the `30` frozen `Y01` rows in manifest order with one-shot durable
+receipts. Stop on the first terminal failure or after the `Y01` summary. Do
+not begin `Y02`, exact `16x`, long-form rendering, or listening.

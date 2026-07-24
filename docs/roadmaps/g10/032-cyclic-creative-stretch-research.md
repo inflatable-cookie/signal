@@ -1,8 +1,8 @@
 # 032 - Cyclic Creative Stretch Research
 
-Status: active; Batch 32.11 ready
+Status: active; Batch 32.11 complete; Batch 32.12 ready
 Owner: dsp
-Updated: 2026-07-23
+Updated: 2026-07-24
 Contracts: `046`, `085`
 
 ## Problem
@@ -327,7 +327,7 @@ The renderer is unchanged. Deleted state was not inspected or recovered.
 
 ## Batch 32.11 - Fresh Isolated Candidate And Conformance
 
-Status: ready
+Status: complete
 
 Start from the exact Batch 32.10 closeout commit:
 
@@ -344,6 +344,40 @@ Start from the exact Batch 32.10 closeout commit:
 Stop before `Y01`, exact `16x`, long-form rendering, or listening. Any
 remaining manifest choice stops again before checkpoint creation.
 
+Result:
+
+- [x] generated the `588`-row evidence manifest before candidate source
+- [x] captured and bound all `63` comparator rows
+- [x] implemented the unchanged private renderer and every compile-linked
+  evidence owner
+- [x] passed release compile and construction `1/1`
+- [x] passed all `339` structural rows and `168` planned renders twice
+- [x] obtained byte-identical receipts and summaries across both rounds
+- [x] froze clean checkpoint `74a6d6d9` at evidence ref
+  `refs/signal-evidence/creative/audited-centered-compressed-anchor-cyclic/32-11-acoustic`
+- [x] stopped before every acoustic, exact-`16x`, long-form, and listening row
+
+The structural summary hash is
+`75a2e5ed5c1406d9790a5ba904d7ce8d8e5c4dc459787b8e0dac6a1d761b43c2`.
+The candidate remains isolated; no DSP or evidence harness entered `main`.
+
+## Batch 32.12 - First Acoustic Gate
+
+Status: ready
+
+Run only the `30` frozen `Y01` rows from the Batch 32.11 acoustic ref, in
+manifest order:
+
+1. verify the ref, checkpoint, clean tree, manifest hashes, comparator hashes,
+   and empty fresh evidence root
+2. execute each one-shot row with fail-durable receipts and no retry
+3. stop on the first terminal failure or incomplete receipt
+4. write the `Y01` summary only when all `30` rows pass
+5. close the batch in docs without changing the candidate checkpoint
+
+Stop after `Y01`. Do not execute `Y02` through `Y06`, exact `16x`, long-form
+rendering, listening, product routing, or public admission in this batch.
+
 ## Completion Gate
 
 - source families are pinned and clean-room boundaries recorded
@@ -357,7 +391,6 @@ remaining manifest choice stops again before checkpoint creation.
 
 ## Next Task
 
-Execute Batch 32.11 only. Create the fresh isolated identity, generate and
-bind the new `63`-row comparator set before candidate source, implement the
-unchanged renderer and complete evidence owners, then finish two structural
-conformance rounds and create the acoustic ref. Stop before all acoustic rows.
+Execute Batch 32.12 only. From the immutable Batch 32.11 acoustic ref, run the
+`30` frozen `Y01` rows in manifest order with one-shot durable receipts. Stop
+on the first terminal failure or after the `Y01` summary. Do not begin `Y02`.
