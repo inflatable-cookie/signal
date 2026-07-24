@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: `g10.033` active; continuous Dream candidate ready
+Status: `g10.033` active; private continuous Dream admitted, Batch 33.4 ready
 Updated: 2026-07-24
 
 ## Why this generation matters now
@@ -313,8 +313,10 @@ Do not start Loophole or Chorus planning from Signal internals.
   - Batch 33.1 audits exact coverage and owner compatibility, then selects one
     separately versioned `ContinuousDirectRenewalDream` direction over exact
     targets `4N <= T <= 16N`; Batch 33.2 freezes its complete implementation
-    and evidence authority; Batch 33.3 isolated candidate work is ready; no
-    router, cache, artifact, or consumer work is ready
+    and evidence authority; Batch 33.3 admits the private continuous owner
+    after complete objective and listening passage; Batch 33.4 public-range
+    and routing decision is ready; Batch 33.5 public admission and Batch 33.6
+    closeout remain pending; no cache, artifact, or consumer work is ready
 
 ## Stretch Boundary
 
@@ -770,18 +772,22 @@ admits it in commit `e8948512` with `10/10` focused public tests and no
 acoustic-file change. Batch 32.29 closes the lane. Current creative coverage
 is two explicit fixed-ratio characters, not a continuous band.
 
-`g10.033` now owns the next stretch decision. Batch 33.1 confirms that
+`g10.033` owns the current stretch decision. Batch 33.1 confirms that
 OfflineHighQuality cannot supply a hidden Dream transition and that continuous
 Cyclic is a separate character admission. It selects one unchanged-mechanism
 Dream generalization over exact targets `4N <= T <= 16N`. Batch 33.2 freezes
 that candidate end to end, including exact anchor parity and interior probes
-at `4.5x`, `6x`, `10x`, and `15.5x`. Batch 33.3 may now implement only the
-private target-gate change in one isolated worktree. Automatic character
-switching, public widening, cache, artifacts, dynamic ratio, and named-consumer
+at `4.5x`, `6x`, `10x`, and `15.5x`. Batch 33.3 passed two complete
+conformance rounds, `154/154` acoustic rows, `138/138` candidate renders,
+`20/20` concealed mono ties, and all stereo hard controls. The operator
+accepted stereo and waived independent review for checkpoint `0e9969ab`.
+Commit `73910aad` admits only the private `4N..=16N` target gate, internal v2
+identity, and focused regression owners. Automatic character switching,
+public widening, cache, artifacts, dynamic ratio, and named-consumer
 integration remain unavailable.
 
 ## Next Task
 
-Execute `g10.033` Batch 33.3 only from the frozen
-`ContinuousDirectRenewalDream` brief. Complete the isolated candidate through
-its fixed acoustic gates. Do not widen the public API or begin routing.
+Execute `g10.033` Batch 33.4 as the docs-first public Dream range and routing
+decision. Keep cache, artifacts, dynamic ratio, consumers, Loophole, and Chorus
+closed.

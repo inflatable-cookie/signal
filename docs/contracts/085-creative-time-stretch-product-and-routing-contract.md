@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: exact-ratio Dream and Cyclic public; continuous Dream candidate ready
+Status: exact-ratio Dream and Cyclic public; continuous Dream admitted privately
 Owner: core-product
 Updated: 2026-07-24
 Related contracts: `046`, `048`, `084`
@@ -2137,9 +2137,19 @@ explicit checkpoint-scoped Rule 5 decision after hard controls pass. Failure
 deletes the isolated candidate. Success opens only separate private admission,
 not public widening or routing.
 
+Batch 33.3 admits the continuous private owner. Checkpoint `0e9969ab`, tree
+`e5184e08`, passed two conformance rounds, `154/154` acoustic rows, `138/138`
+candidate renders, `20/20` concealed mono ties, and all `60` long-form stereo
+hard-control renders. The operator accepted the `20` neutral stereo rows and
+preserve-to-widen trios, then explicitly waived independent review for that
+checkpoint.
+
+Commit `73910aad` changes only the private target predicate, internal Dream
+identity v2, and focused continuous regression ownership. Public Dream remains
+exact `4x`, `8x`, and `16x`; Cyclic remains exact `2x`, `4x`, and `8x`.
+Public widening and any hidden same-character routing require Batch 33.4.
+
 ## Next Task
 
-Execute `g10.033` Batch 33.3 only from
-`offline-creative-continuous-direct-renewal-dream-brief.md`. Change only the
-private target gate in one isolated worktree. Do not widen the public API or
-begin routing.
+Execute `g10.033` Batch 33.4 as a public-range and routing decision. Keep
+cache, artifacts, dynamic ratio, consumers, Loophole, and Chorus closed.

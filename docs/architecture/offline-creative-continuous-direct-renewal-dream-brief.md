@@ -1,10 +1,10 @@
 # Offline Creative ContinuousDirectRenewalDream Brief
 
-Status: ready for isolated implementation
+Status: admitted privately
 Owner: dsp
 Updated: 2026-07-24
 Contract: `085`
-Roadmap: `g10.033`, Batch 33.2
+Roadmap: `g10.033`, Batch 33.3
 
 ## Decision
 
@@ -553,9 +553,27 @@ Two complete continuous candidates failing for the same dominant acoustic
 cause close this direction for architectural reassessment. No ratio, seed,
 window, phase, envelope, threshold, or assertion sweep follows failure.
 
+## Admission
+
+Checkpoint `0e9969ab68067102b46c18205ef064da4fdb71c9`, tree
+`e5184e08d5bf792db42433e5fcd1bf0b11b17b68`, passed both complete conformance
+rounds with identical normalized receipts. Acoustic admission passed
+`154/154` rows and `138/138` candidate renders. Exact `4x`, `8x`, and `16x`
+anchors remained byte-identical.
+
+Concealed mono passed as `20/20` usable ties against PaulXStretch. All `60`
+long-form stereo hard-control renders passed. The operator then accepted all
+`20` neutral stereo comparisons and preserve-to-widen trios and explicitly
+waived independent review for checkpoint `0e9969ab`.
+
+Commit `73910aad` admits only the private target predicate, internal
+`signal-creative-direct-renewal-dream-v2` identity, and focused continuous
+regression owners. The admitted acoustic files remain unchanged. Candidate
+evidence, comparators, receipts, audio, and the nextest profile did not enter
+`main`.
+
 ## Next Task
 
-Execute `g10.033` Batch 33.3 only. Create the isolated worktree, freeze
-baseline/comparator manifests, change only private target validation, pass two
-clean conformance rounds, checkpoint once, then run the fixed acoustic gates.
-Do not widen the public API or begin routing.
+Execute `g10.033` Batch 33.4 as a public-range and routing decision. Do not
+change the public request, cache, artifacts, dynamic ratio, runtime, UI,
+Loophole, or Chorus until that decision is frozen.

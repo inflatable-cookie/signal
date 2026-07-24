@@ -31,7 +31,7 @@ strict lane.
 - Rejected offline stretch successor: [architecture/offline-time-stretch-successor-brief.md](./architecture/offline-time-stretch-successor-brief.md)
 - Non-phase-vocoder feasibility: [architecture/offline-time-stretch-non-phase-vocoder-feasibility.md](./architecture/offline-time-stretch-non-phase-vocoder-feasibility.md)
 - Creative time-stretch study: [architecture/offline-creative-time-stretch-study.md](./architecture/offline-creative-time-stretch-study.md)
-- Ready continuous Dream implementation brief: [architecture/offline-creative-continuous-direct-renewal-dream-brief.md](./architecture/offline-creative-continuous-direct-renewal-dream-brief.md)
+- Admitted private continuous Dream implementation brief: [architecture/offline-creative-continuous-direct-renewal-dream-brief.md](./architecture/offline-creative-continuous-direct-renewal-dream-brief.md)
 - Cyclic behavioral synthesis: [architecture/offline-creative-cyclic-behavioral-synthesis.md](./architecture/offline-creative-cyclic-behavioral-synthesis.md)
 - Admitted private event-ledger Cyclic renderer brief: [architecture/offline-creative-event-ledger-audited-centered-compressed-anchor-cyclic-brief.md](./architecture/offline-creative-event-ledger-audited-centered-compressed-anchor-cyclic-brief.md)
 - Evidence-invalid historical Cyclic brief: [architecture/offline-creative-centered-compressed-anchor-cyclic-brief.md](./architecture/offline-creative-centered-compressed-anchor-cyclic-brief.md)
@@ -92,6 +92,6 @@ strict lane.
 
 ## Next Task
 
-Execute `g10.033` Batch 33.3 only from the frozen
-`ContinuousDirectRenewalDream` brief. Work in one isolated candidate; do not
-widen the public API or begin routing.
+Execute `g10.033` Batch 33.4 as the docs-first public Dream range and routing
+decision. Keep cache, artifacts, dynamic ratio, consumers, Loophole, and Chorus
+closed.

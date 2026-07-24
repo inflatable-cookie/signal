@@ -1,6 +1,6 @@
 # 033 - Creative Stretch Continuous-Range Feasibility
 
-Status: active; Batch 33.3 ready
+Status: active; Batch 33.4 ready
 Owner: dsp
 Created: 2026-07-24
 Depends on: `g10.031`, `g10.032`
@@ -40,7 +40,7 @@ The lane must end in one of three honest outcomes:
 - [x] audit current public, private, and admitted coverage
 - [x] select one character-preserving complete direction
 - [x] freeze that direction as one executable implementation brief
-- [ ] admit or reject one isolated fixed-ratio candidate
+- [x] admit or reject one isolated fixed-ratio candidate
 - [ ] decide public widening and routing only after acoustic admission
 
 ## Non-Goals
@@ -143,20 +143,66 @@ Result:
 
 ## Batch 33.3 - Isolated Fixed-Ratio Admission
 
-Status: ready
+Status: complete
 
 Implement one complete candidate in a disposable worktree. Admit structural
 and synthetic interior-ratio evidence before concealed long-form listening.
 Delete the candidate and its scaffolding on failure. Do not add a public router
 in this batch.
 
+Result:
+
+- checkpoint `0e9969ab`, tree `e5184e08`, passed two complete conformance
+  rounds with identical normalized receipts
+- structural admission completed `160/160` rows and `56/56` renders per round
+- acoustic admission completed `154/154` rows and `138/138` renders
+- exact `4x`, `8x`, and `16x` anchors remained byte-identical
+- concealed mono passed `20/20` usable ties against PaulXStretch
+- all `60` long-form stereo hard-control renders passed
+- the operator accepted `20/20` neutral comparisons and preserve-to-widen
+  trios, then waived independent review for checkpoint `0e9969ab`
+- commit `73910aad` admits only private `4N..=16N` validation, internal
+  renderer identity v2, and focused continuous regression owners
+- candidate runners, comparators, receipts, listening assets, public API,
+  routing, cache, artifacts, runtime, Loophole, and Chorus stayed out of
+  `main`
+
 ## Batch 33.4 - Public Range And Routing Decision
 
-Status: pending Batch 33.3
+Status: ready
 
-Only after fixed-ratio admission, decide whether the accepted owner warrants a
-continuous public range and hidden same-character routing. Freeze cache and
-consumer work separately. Dynamic ratio remains later work.
+Documentation only.
+
+- [ ] decide whether public `Dream` accepts every exact target in `4N..=16N`
+- [ ] replace exact-ratio-list semantics with one explicit continuous-range
+  contract without changing `Cyclic`
+- [ ] decide whether any hidden same-character router remains necessary now
+  that one private owner covers the complete admitted Dream range
+- [ ] freeze public errors, discovery/introspection, engine identity, and
+  focused regression ownership
+- [ ] keep lower overlap, continuous Cyclic, cache, artifacts, dynamic ratio,
+  runtime, UI, Loophole, and Chorus outside the admission
+- [ ] make one public implementation batch ready only if the complete surface
+  has no unresolved semantic choice
+
+Stop if public widening requires character substitution, a second renderer,
+dynamic-ratio state, source-dependent selection, or consumer-owned policy.
+
+## Batch 33.5 - Public Continuous Dream Admission
+
+Status: pending Batch 33.4
+
+Implement only the public surface frozen by Batch 33.4. Preserve byte-exact
+anchor behavior and the admitted private renderer. Do not add routing, cache,
+artifacts, dynamic ratio, runtime, or consumer integration.
+
+## Batch 33.6 - Continuous Creative Range Closeout
+
+Status: pending Batch 33.5
+
+Close `g10.033`, publish the exact executable coverage matrix, and choose the
+next planning checkpoint for the paused lower Dream overlap and separate
+continuous Cyclic question. Do not merge those questions into this lane.
 
 ## Acceptance Criteria
 
@@ -169,8 +215,7 @@ consumer work separately. Dynamic ratio remains later work.
 
 ## Next Task
 
-Execute Batch 33.3 only from
-`offline-creative-continuous-direct-renewal-dream-brief.md`. Create one
-isolated worktree, change only private target validation, complete two clean
-conformance rounds, checkpoint once, then run the fixed acoustic gates. Do not
-widen the public API or begin routing.
+Execute Batch 33.4 as a docs-first public-range and routing decision. Decide
+whether the admitted private `4N..=16N` owner warrants a continuous public
+Dream target range and whether any hidden same-character routing is needed.
+Keep cache, artifacts, dynamic ratio, consumers, Loophole, and Chorus closed.
