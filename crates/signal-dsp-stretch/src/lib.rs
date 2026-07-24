@@ -51,6 +51,8 @@ mod benchmark;
 mod cache_identity;
 mod corpus_report;
 mod creative;
+#[allow(dead_code)]
+mod creative_cyclic;
 #[allow(dead_code, clippy::manual_div_ceil, clippy::manual_is_multiple_of)]
 #[cfg_attr(test, macro_use)]
 mod creative_direct_renewal_dream;
