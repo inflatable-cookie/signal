@@ -49,6 +49,6 @@ Keep milestone sequencing in `roadmaps/`.
 
 Keep the `g10.030` transparent successor program closed. The exact-ratio
 `CreativeStretch` wrapper is admitted and `g10.031` is complete. `g10.032`
-Batch 32.17 reassigns sparse-event integrity from continuous dropout to the
-commanded event ledger. Execute Batch 32.18 exact evidence-authority work.
-Reopen no cache, routing, runtime, Loophole, or Chorus work.
+Batch 32.19 freezes checkpoint `995ea516` after two byte-identical structural
+rounds. Execute Batch 32.20's frozen Y01 gate only. Reopen no cache, routing,
+runtime, Loophole, or Chorus work.

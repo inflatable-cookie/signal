@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: Cyclic event-ledger authority frozen; Batch 32.19 ready
+Status: Cyclic event-ledger conformance complete; Batch 32.20 ready
 Updated: 2026-07-24
 
 ## Why this generation matters now
@@ -697,9 +697,16 @@ or candidate files. It freezes missing ramp, numeric, band, correlation,
 summary, and known-answer semantics in one correction. Recreate the unchanged
 isolation from that correction commit; this is not a candidate repair.
 
+Batch 32.19 then binds fresh evidence before source and implements the private
+candidate. A Python 3.10 runner incompatibility stops the first checkpoint
+before any row or render; one evidence-only correction creates checkpoint
+`995ea516` without changing renderer or test logic. That checkpoint passes
+release compile, construction `1/1`, and structural `339/339` twice with
+byte-identical receipts and summaries. The acoustic ref is ready. No Y01 or
+later row ran.
+
 ## Next Task
 
-Execute `g10.032` Batch 32.19 only. Create the frozen isolated identity, bind
-the exact manifests and comparator set before candidate source, implement the
-brief without rejected-code recovery, and complete both unchanged conformance
-rounds. Stop before `Y01`.
+Execute `g10.032` Batch 32.20 only. Run the frozen `30` Y01 rows once from
+checkpoint `995ea516`, write the Y01 summary only after `30/30`, and stop
+before `Y02`.

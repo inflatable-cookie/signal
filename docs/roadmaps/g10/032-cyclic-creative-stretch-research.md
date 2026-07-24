@@ -1,6 +1,6 @@
 # 032 - Cyclic Creative Stretch Research
 
-Status: active; Batch 32.18 complete; Batch 32.19 ready
+Status: active; Batch 32.19 complete; Batch 32.20 ready
 Owner: dsp
 Updated: 2026-07-24
 Contracts: `046`, `085`
@@ -597,7 +597,7 @@ Result:
 
 ## Batch 32.19 - Fresh Isolated Implementation And Conformance
 
-Status: ready after pre-source authority correction
+Status: complete
 
 1. create only the frozen worktree, branch, private module, evidence authority,
    ignored root, nextest profile, and local ref namespace
@@ -628,6 +628,48 @@ Pre-source audit result:
 - delete the empty isolation and recreate the same name from the correction
   commit before evidence generation
 
+Result:
+
+- fresh evidence commit `6a909c74` bound all `588` rows, `63` comparator
+  rows, `51` listening rows, and regenerated comparator audio before candidate
+  source
+- private candidate implementation commit `08e5c57c` added the exact
+  two-read centred compressed-anchor renderer and compile-linked evidence
+  owners without changing a public or product surface
+- checkpoint `08e5c57c` stopped before construction because the mandated
+  `/usr/bin/python3` rejected Python 3.11-only `zip(strict=True)` during
+  manifest parsing; zero row receipts and zero candidate renders exist
+- evidence-only compatibility commit `995ea516` replaced that call with an
+  explicit field-count check; renderer and test logic were unchanged
+- checkpoint `995ea516`, tree `fd42543b`, passed release compile,
+  construction `1/1`, and structural `339/339` twice with `168/168` renders
+- both complete receipt trees and summaries are byte-identical; structural
+  summary SHA-256 is
+  `f1e90cd36557d1c1b6ef3be70175b7f025cdd00f1d7405a7a7958cf8a91cb08b`
+- local acoustic ref
+  `refs/signal-evidence/creative/event-ledger-audited-centered-compressed-anchor-cyclic/32-19-acoustic`
+  points to `995ea516`
+- no `Y01`, exact `16x`, long-form, or listening row ran
+- candidate source, evidence code, comparator audio, receipts, and artifacts
+  remain isolated from `main`
+
+## Batch 32.20 - Event-Ledger Y01 Admission
+
+Status: ready
+
+1. resolve the Batch 32.19 acoustic ref to exact checkpoint `995ea516` and
+   tree `fd42543b`; require a clean unchanged candidate worktree
+2. run only the `30` frozen `Y01` rows, once, in manifest order
+3. stop on the first terminal failure, panic, timeout, missing receipt, or
+   incomplete receipt
+4. if all rows pass, write and bind the `Y01` summary
+5. stop before `Y02`, exact `16x`, long-form rendering, or listening
+
+No renderer, evidence owner, manifest, comparator asset, threshold, or runner
+change is authorized. A valid Y01 failure rejects this checkpoint. An
+evidence-environment stop returns to docs-level classification without
+rerunning a completed row.
+
 ## Completion Gate
 
 - source families are pinned and clean-room boundaries recorded
@@ -641,6 +683,6 @@ Pre-source audit result:
 
 ## Next Task
 
-Execute Batch 32.19 only. Build the exact fresh isolated identity, bind its
-evidence before candidate source, and complete the two unchanged conformance
-rounds. Stop before `Y01`.
+Execute Batch 32.20 only. Run the frozen `30`-row `Y01` gate once from
+checkpoint `995ea516`, write its summary only after `30/30`, and stop before
+`Y02`.

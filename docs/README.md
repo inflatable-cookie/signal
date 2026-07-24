@@ -90,7 +90,6 @@ strict lane.
 
 ## Next Task
 
-Execute `g10.032` Batch 32.19 only. Create the frozen isolated identity, bind
-the exact manifests and comparator set before candidate source, implement the
-brief without rejected-code recovery, and complete both unchanged conformance
-rounds. Stop before `Y01`.
+Execute `g10.032` Batch 32.20 only. Run the frozen `30`-row Y01 gate once from
+checkpoint `995ea516`, write its summary only after `30/30`, and stop before
+`Y02`.

@@ -1,6 +1,6 @@
 # Offline Creative EventLedgerAuditedCenteredCompressedAnchorCyclic Brief
 
-Status: frozen; Batch 32.19 ready
+Status: frozen; Batch 32.19 conformance complete; Batch 32.20 ready
 Owner: dsp
 Updated: 2026-07-24
 Contracts: `046`, `085` Rule 11
@@ -2011,6 +2011,25 @@ comparator render, candidate source, receipt, or DSP output existed. Delete
 the empty isolation and recreate the same name from this correction commit.
 This is an authority completion, not a candidate repair or rerun.
 
+### Batch 32.19 Result
+
+Fresh evidence commit `6a909c74` bound the complete manifests and regenerated
+comparator environment before candidate source. Private implementation commit
+`08e5c57c` added the renderer and evidence owners.
+
+The first checkpoint stopped before construction, row dispatch, or DSP because
+the mandated Python 3.10 runner rejected `zip(strict=True)`. Its execution root
+contains zero receipts. Evidence-only commit `995ea516` replaces that
+Python 3.11-only call with an explicit field-count check; renderer and test
+logic are unchanged.
+
+Checkpoint `995ea516`, tree `fd42543b`, passes release compile, construction
+`1/1`, and all `339` structural rows twice with `168/168` renders. Corresponding
+receipt files and summaries are byte-identical. Structural summary SHA-256 is
+`f1e90cd36557d1c1b6ef3be70175b7f025cdd00f1d7405a7a7958cf8a91cb08b`.
+The local `32-19-acoustic` ref points to that checkpoint. No Y01 or later row
+ran.
+
 ## Remaining Risks
 
 - direct two-read crossfade may create audible gaps on non-sparse material
@@ -2029,8 +2048,6 @@ These are admission risks, not open design choices.
 
 ## Next Task
 
-Execute `g10.032` Batch 32.19 only. Create the exact fresh isolated identity,
-generate and bind the frozen manifests and comparator set before candidate
-source, implement this brief without recovering rejected code, then run
-release compile, construction `1/1`, and both complete byte-identical
-structural rounds. Stop before `Y01`.
+Execute `g10.032` Batch 32.20 only. Run the frozen `30` Y01 rows once from
+checkpoint `995ea516`, persist the Y01 summary only after `30/30`, and stop
+before `Y02`.
