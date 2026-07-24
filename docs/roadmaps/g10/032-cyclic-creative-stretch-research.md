@@ -1,6 +1,6 @@
 # 032 - Cyclic Creative Stretch Research
 
-Status: active; Batch 32.12 stopped; Batch 32.13 ready
+Status: complete; centred compressed-anchor Cyclic closed
 Owner: dsp
 Updated: 2026-07-24
 Contracts: `046`, `085`
@@ -404,7 +404,7 @@ evidence-path ownership failure, not an acoustic quality result.
 
 ## Batch 32.13 - Second Evidence Failure Closure
 
-Status: ready
+Status: complete
 
 Docs only:
 
@@ -419,6 +419,23 @@ Docs only:
 Do not repair the runner, retry `Y01`, authorize a third identity, recover
 isolated state, implement candidate DSP, or start another Cyclic mechanism.
 
+Result:
+
+- [x] classified Batch 32.12 as the second incomplete-evidence checkpoint
+  under Contract `085` Rule 11
+- [x] closed centred compressed-anchor Cyclic without an acoustic pass or
+  rejection
+- [x] confirmed no `Y02..Y06`, exact-`16x`, long-form, stereo, or listening
+  evidence exists
+- [x] retained no worktree, branch, build state, generated evidence, candidate
+  source, or harness on `main`
+- [x] rejected runner repair, `Y01` retry, and a third audited identity
+- [x] scheduled deletion of the local acoustic ref after this closure commit
+
+`g10.032` is complete. Signal still has no admitted `Cyclic` renderer. Exact
+fixed `4x`, `8x`, and `16x` `Dream` remains the only public creative stretch
+surface.
+
 ## Completion Gate
 
 - source families are pinned and clean-room boundaries recorded
@@ -432,6 +449,6 @@ isolated state, implement candidate DSP, or start another Cyclic mechanism.
 
 ## Next Task
 
-Execute Batch 32.13 only. Close the centred compressed-anchor Cyclic identity
-as the second incomplete-evidence checkpoint under Contract `085` Rule 11,
-then delete the retained acoustic ref. Docs only. Do not repair or retry.
+No Cyclic execution is ready. Keep `g10.032` closed. Reopening requires an
+explicit operator decision and materially different, source-backed
+complete-system evidence; do not infer another candidate from this roadmap.

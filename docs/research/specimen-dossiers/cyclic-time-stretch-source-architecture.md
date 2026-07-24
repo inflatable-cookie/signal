@@ -1,8 +1,8 @@
 # Cyclic Time-Stretch Source Architecture
 
-Status: reviewed; centred compressed-anchor behavior selected
+Status: reviewed; selected centred behavior closed after evidence failure
 Owner: dsp
-Updated: 2026-07-23
+Updated: 2026-07-24
 Contract: `085`
 Roadmap: `g10.032`
 
@@ -507,6 +507,6 @@ Batch 32.4 freezes the selected implementation authority:
 
 ## Next Task
 
-Execute `g10.032` Batch 32.5 only. Implement and conform the frozen isolated
-Cyclic candidate, bind its comparator manifest, and stop before acoustic
-execution. No candidate DSP enters `main`.
+None. `g10.032` closed the selected centred compressed-anchor identity after
+its second incomplete-evidence checkpoint. Any future Cyclic study requires
+explicit operator direction and materially different complete-system evidence.

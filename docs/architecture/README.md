@@ -1,7 +1,7 @@
 # Architecture
 
 Status: active
-Updated: 2026-07-23
+Updated: 2026-07-24
 
 ## Why this section matters now
 
@@ -30,6 +30,7 @@ Keep milestone sequencing in `roadmaps/`.
 - `offline-creative-time-stretch-study.md`
 - `offline-creative-cyclic-behavioral-synthesis.md`
 - `offline-creative-centered-compressed-anchor-cyclic-brief.md`
+- `offline-creative-audited-centered-compressed-anchor-cyclic-brief.md`
 - `offline-creative-fixed-ratio-public-surface.md`
 - `offline-creative-audited-layered-cloud-brief.md`
 - `offline-creative-layered-cloud-brief.md`
@@ -47,7 +48,7 @@ Keep milestone sequencing in `roadmaps/`.
 ## Next Task
 
 Keep the `g10.030` transparent successor program closed. The exact-ratio
-`CreativeStretch` wrapper is admitted and `g10.031` is complete. Execute
-`g10.032` Batch 32.5 only: implement and conform the frozen isolated Cyclic
-candidate, then stop before acoustic execution. Reopen no cache, routing,
-runtime, Loophole, or Chorus work.
+`CreativeStretch` wrapper is admitted and `g10.031` is complete. `g10.032`
+closed centred compressed-anchor Cyclic after its second incomplete-evidence
+checkpoint. No stretch batch is ready. Reopen no cache, routing, runtime,
+Loophole, or Chorus work.

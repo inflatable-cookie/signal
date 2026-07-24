@@ -1,6 +1,6 @@
 # Offline Creative AuditedCenteredCompressedAnchorCyclic Brief
 
-Status: evidence-invalid at first Y01 row; Batch 32.13 closure ready
+Status: closed; second incomplete-evidence checkpoint
 Owner: dsp
 Updated: 2026-07-24
 Contracts: `046`, `085` Rule 11
@@ -1562,6 +1562,17 @@ exists. The misplaced receipt hash is
 The out-of-root pass does not admit the row. No retry is allowed. This is an
 evidence-path ownership failure, not an acoustic quality result.
 
+### Batch 32.13 Result
+
+Contract `085` Rule 11 classifies this as the second incomplete-evidence
+checkpoint for centred compressed-anchor Cyclic. The identity is closed
+without an acoustic pass or rejection. No runner repair, retry, third audited
+identity, candidate promotion, or product route is allowed.
+
+The isolated worktree, branch, build state, and generated evidence are gone.
+The local acoustic ref is deleted after the closure commit. Candidate source
+and evidence scaffolding never entered `main`.
+
 ## Remaining Risks
 
 - direct two-read crossfade may retain the surfaced dropout on some material
@@ -1580,7 +1591,6 @@ These are admission risks, not open design choices.
 
 ## Next Task
 
-Execute `g10.032` Batch 32.13 only. Close this identity as the second
-incomplete-evidence checkpoint under Contract `085` Rule 11, then delete the
-retained acoustic ref. Docs only. Do not repair the runner, retry `Y01`, or
-authorize a third identity.
+None. This authority is closed. Any future Cyclic program requires an explicit
+operator decision and materially different, source-backed complete-system
+evidence.

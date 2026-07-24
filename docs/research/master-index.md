@@ -84,12 +84,13 @@ Batch 32.11 generates the evidence before source and freezes fresh checkpoint
 `74a6d6d9` after two byte-identical structural rounds. Batch 32.12 stops on the
 first acoustic row because the receipt root resolves differently in the shell
 runner and nextest process. The out-of-root passing receipt is not admissible;
-no acoustic decision exists.
+no acoustic decision exists. Batch 32.13 applies Rule 11 and closes the
+identity after its second incomplete-evidence checkpoint.
 
 Current Cyclic decision:
 [Offline Creative Cyclic Behavioral Synthesis](../architecture/offline-creative-cyclic-behavioral-synthesis.md).
 
-Evidence-invalid Cyclic candidate authority:
+Closed Cyclic candidate authority:
 [Offline Creative AuditedCenteredCompressedAnchorCyclic Brief](../architecture/offline-creative-audited-centered-compressed-anchor-cyclic-brief.md).
 
 Explicit operator research reopening and pinned source triangulation selected
@@ -231,6 +232,6 @@ Rejected first-owner brief:
 
 ## Next Task
 
-Execute `g10.032` Batch 32.13 only. Close the centred compressed-anchor Cyclic
-identity under Contract `085` Rule 11, then delete the retained acoustic ref.
-Docs only. Do not repair or retry.
+No Cyclic research or implementation batch is ready. Reopening requires
+explicit operator direction and materially different, source-backed
+complete-system evidence.

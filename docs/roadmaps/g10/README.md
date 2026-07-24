@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: Cyclic acoustic evidence invalid; Batch 32.13 ready
+Status: centred compressed-anchor Cyclic closed; no stretch batch ready
 Updated: 2026-07-24
 
 ## Why this generation matters now
@@ -284,7 +284,7 @@ Do not start Loophole or Chorus planning from Signal internals.
     Batch 31.75 freezes one minimal public `CreativeStretch` wrapper; Batch
     31.76 admits it with byte-identical acoustic output;
     explicit `Cyclic` stays closed
-- `g10.032` `active`
+- `g10.032` `complete`
   - deep Cyclic research reopened by operator decision; Batch 32.1 separates
     fixed Akai `CYCLIC` from adaptive `INTELL`, pins Potenza slow-anchor and
     SickoCV repeat/jump schedules; Batch 32.2 completes executable forensics
@@ -297,8 +297,8 @@ Do not start Loophole or Chorus planning from Signal internals.
     authority; Batch 32.9 finds it non-executable before source; Batch 32.10
     freezes reproducible manifests; Batch 32.11 freezes a clean isolated
     checkpoint after two byte-identical structural rounds; Batch 32.12 stops
-    on a split receipt root at the first acoustic row; Batch 32.13 closure is
-    ready
+    on a split receipt root at the first acoustic row; Batch 32.13 closes the
+    identity after its second incomplete-evidence checkpoint
 
 ## Stretch Boundary
 
@@ -667,11 +667,11 @@ two-line receipt below a crate-relative duplicate root, while the shell runner
 looks below the repository-relative root and exits `66` for a missing receipt.
 No valid row or summary exists, no later gate ran, and retry is prohibited.
 This is the second incomplete-evidence checkpoint for the identity. Batch
-32.13 docs-only closure is ready.
+32.13 closes the identity without an acoustic pass or rejection. The isolated
+state and local evidence ref are removed. No Cyclic renderer is admitted.
 
 ## Next Task
 
-Execute `g10.032` Batch 32.13 only. Close the centred compressed-anchor Cyclic
-identity under Contract `085` Rule 11, then delete the retained acoustic ref.
-Docs only. Do not repair the runner, retry `Y01`, or authorize another
-identity.
+No stretch batch is ready. Keep `g10.032` and centred compressed-anchor Cyclic
+closed. Reopening requires explicit operator direction and materially
+different, source-backed complete-system evidence.

@@ -1,8 +1,8 @@
 # Offline Creative Cyclic Behavioral Synthesis
 
-Status: behavioral owner selected; complete renderer brief frozen
+Status: closed after second incomplete-evidence checkpoint
 Owner: dsp
-Updated: 2026-07-23
+Updated: 2026-07-24
 Contract: `085`
 Roadmap: `g10.032`
 Research:
@@ -224,6 +224,17 @@ authority with the same renderer and complete one-shot evidence ownership. It
 does not recover deleted source, tune the old implementation, sweep grain
 constants, inherit Dream macros, or reuse the old absolute pitch ceiling.
 
+## Closure
+
+The original checkpoint became evidence-invalid at `Y01`. The fresh audited
+checkpoint passed conformance, then split its first acoustic receipt between
+repository-relative and crate-relative roots. No valid acoustic row or summary
+exists.
+
+Contract `085` Rule 11 closes centred compressed-anchor Cyclic after these two
+incomplete-evidence checkpoints. No runner repair, retry, third audited
+identity, acoustic claim, renderer promotion, or product route is authorized.
+
 ## Remaining Risk
 
 - no Signal renderer has yet proved that the centred schedule sounds useful
@@ -235,12 +246,11 @@ constants, inherit Dream macros, or reuse the old absolute pitch ceiling.
 - long cycles may become echo, stutter, or arbitrary envelope pumping
 - speaker listening has not replaced Cyclic's independent stereo gate
 
-These are brief and candidate gates. They are not reasons to reopen another
-mechanism survey.
+These risks remain unmeasured. They are not reasons to reopen the closed
+identity or another mechanism survey.
 
 ## Next Task
 
-Execute `g10.032` Batch 32.11 only. Create the fresh isolated audited identity,
-bind the reproducible comparator set, implement the unchanged renderer and
-complete evidence owners, and finish two structural conformance rounds. Stop
-before acoustic execution.
+None. This behavioral owner is closed. Any future Cyclic program requires
+explicit operator direction and materially different, source-backed
+complete-system evidence.

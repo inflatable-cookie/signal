@@ -1,7 +1,7 @@
 # Roadmaps
 
 Status: active
-Updated: 2026-07-23
+Updated: 2026-07-24
 
 ## Why this section matters now
 
@@ -306,7 +306,7 @@ The deferred continuation scope after `g09` is:
 - product-local controller, browser, immersive-console, certification, and
   downstream launch workflows
 
-`g10.031` is complete. `g10.032` reopens `Cyclic` after the original Akai mode
+`g10.031` is complete. `g10.032` reopened `Cyclic` after the original Akai mode
 split and a second source-available cyclic schedule changed the evidence base.
 Batch 32.1 completed the source survey. Batch 32.2 completed executable
 forensics. Batch 32.3 selected centred compressed-anchor behavior and
@@ -317,8 +317,10 @@ nominally clean conformance rounds. Batch 32.6 stopped at evidence-invalid
 cleanup. Batch 32.8 froze the fail-durable audited direction without changing
 the renderer. Batch 32.9 found missing executable manifest authority and
 stopped before source. Batch 32.10 froze the reproducible manifest authority.
-Batch 32.11 isolated conformance is ready. No candidate is admitted and no
-strict spec lane is open.
+Batch 32.11 passed isolated conformance. Batch 32.12 split the evidence root
+at the first acoustic row. Batch 32.13 closed the identity after its second
+incomplete-evidence checkpoint. No candidate is admitted and no strict spec
+lane is open.
 
 ## Strict lane posture
 
@@ -347,7 +349,5 @@ Before rollover:
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the active generation front door.
-Execute `g10.032` Batch 32.11 only. Create the fresh isolated Cyclic identity,
-bind its new comparator set, implement the unchanged renderer and evidence
-owners, and complete two structural conformance rounds. Stop before acoustic
-execution.
+No stretch batch is ready. Keep `g10.032` and centred compressed-anchor Cyclic
+closed pending explicit operator direction.

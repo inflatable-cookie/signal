@@ -2,7 +2,7 @@
 
 Status: active
 Owner: core-product
-Updated: 2026-07-23
+Updated: 2026-07-24
 Vision refs: `docs/vision/001-signal-vision.md`
 
 ## Top-Level Stack
@@ -311,12 +311,12 @@ The current package-level naming proposal is recorded in
   `OfflineHighQuality` baseline.
 - `g10.031` publicly admits exact-ratio creative `Dream` and pauses broader
   range, routing, cache, and product integration.
-- `g10.032` owns unavailable `Cyclic` separately. Source forensics and
-  behavioral synthesis select centred compressed-anchor behavior; one complete
-  isolated candidate brief is frozen, but no implementation is admitted.
+- `g10.032` owns the closed `Cyclic` study separately. Source forensics selected
+  centred compressed-anchor behavior, but two incomplete-evidence checkpoints
+  closed that identity without admission.
 
 ## Next Task
 
 Keep the completed `g10.031` API and frozen transparent baseline unchanged.
-Execute `g10.032` Batch 32.5 only: implement and conform the frozen isolated
-Cyclic candidate, then stop before acoustic execution.
+No stretch batch is ready. Keep `g10.032` and centred compressed-anchor Cyclic
+closed pending explicit operator direction.

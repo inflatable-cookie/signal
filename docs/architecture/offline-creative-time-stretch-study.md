@@ -1,8 +1,8 @@
 # Offline Creative Time-Stretch Study
 
-Status: exact-ratio `CreativeStretch` admitted; Cyclic brief frozen
+Status: exact-ratio `CreativeStretch` admitted; centred Cyclic closed
 Owner: dsp
-Updated: 2026-07-23
+Updated: 2026-07-24
 Contract: `085`
 Roadmap: `g10.031`
 
@@ -321,6 +321,12 @@ One exact rational map, `5..90 ms` manual cycle, two forward unit-rate reads,
 complementary raised-cosine crossfade, independent event ledger, linked
 geometry, direct exact crop, bounded state, comparator manifest, and complete
 Rule 11 gate now own the first candidate. No DSP entered `main`.
+
+The first centred checkpoint later became evidence-invalid at `Y01`. A fresh
+audited checkpoint passed conformance but split its first acoustic receipt
+between two roots. Contract `085` Rule 11 closes that identity after the
+second incomplete-evidence checkpoint. No valid acoustic judgment or admitted
+Cyclic renderer exists.
 
 ## Product Surface
 
@@ -1071,6 +1077,6 @@ all retained construction, structural, and synthetic gates pass.
 
 ## Next Task
 
-Execute `g10.032` Batch 32.5 only. Implement and conform the frozen isolated
-`CenteredCompressedAnchorCyclic` candidate. Create the acoustic ref only after
-two complete clean conformance rounds; stop before acoustic execution.
+No creative-stretch execution batch is ready. Exact fixed `4x`, `8x`, and
+`16x` `Dream` remains admitted. Cyclic, broader range, automatic routing, and
+both overlaps remain closed or paused pending explicit operator direction.

@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: exact-ratio Dream admitted; Cyclic second evidence checkpoint invalid
+Status: exact-ratio Dream admitted; centred compressed-anchor Cyclic closed
 Owner: core-product
 Updated: 2026-07-24
 Related contracts: `046`, `048`, `084`
@@ -918,6 +918,7 @@ family.
 | `ContinuousExcitationComplexRelation` | coefficient relation proof exposed an impossible anti-phase negation/swap expectation | conformance-only, contradictory | ineligible; correction requires new relation authority |
 | `CyclicGrain` | structural pass, then synthetic pitch rejection | acoustic rejection | closed |
 | `SimilarityAlignedCyclic` | `6/7` structural; frozen shortlist could not reach the exact natural continuation | conformance-only, architecture miss | ineligible; correction changes the search owner |
+| centred compressed-anchor Cyclic | two incomplete-evidence checkpoints; no valid acoustic row | conformance pass, repeated evidence invalid | closed; no retry or third audited identity |
 | `RenewalSpectral` | structural pass, then synthetic crest rejection under the superseded unmatched gate | acoustic receipt, superseded architecture | ineligible; corrected source-backed blend belongs to the compensated family |
 | compensated/variance/audited renewal | structural and synthetic pass plus concealed-mono pass, then stereo image rejection | acoustic and stereo rejection | closed |
 | source-relative/listening-led/support-audited/comparator-audited renewal | support-audited identity passed structural, synthetic, and concealed mono, then failed stereo; after stereo policy changed, comparator-audited identity failed synthetic admission | acoustic and stereo rejection | closed |
@@ -1820,8 +1821,14 @@ quality decision and may not guide DSP. No retry or third audited identity is
 allowed. This is the second incomplete-evidence checkpoint for centred
 compressed-anchor Cyclic. Rule 11 requires family closure.
 
+Batch 32.13 records that closure. No acoustic pass or rejection, renderer
+promotion, public character, automatic route, cache, or product integration
+exists. The isolated state is deleted and the retained acoustic ref is removed
+after the closure commit. Reopening requires an explicit operator decision and
+materially different, source-backed complete-system evidence.
+
 ## Next Task
 
-Execute `g10.032` Batch 32.13 only. Record final centred compressed-anchor
-Cyclic closure and delete its retained acoustic ref. Docs only. Do not repair
-the runner, retry `Y01`, or authorize another identity.
+Keep centred compressed-anchor Cyclic closed. No implementation or evidence
+batch is ready. Do not repair the runner, retry `Y01`, or authorize another
+identity.

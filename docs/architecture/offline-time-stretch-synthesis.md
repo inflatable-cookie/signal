@@ -2,7 +2,7 @@
 
 Status: active frozen baseline; successor program closed
 Owner: dsp
-Updated: 2026-07-22
+Updated: 2026-07-24
 Contract refs: `046`, `084`, separate creative path `085`; historical evidence `082`
 Roadmap refs: transparent closeout `g10.030`; separate creative path `g10.031`
 
@@ -89,10 +89,10 @@ brief opens.
 
 Intentional creative expansion is governed separately by Contract `085` and
 `docs/architecture/offline-creative-time-stretch-study.md`. Its automatic
-route and lower overlap are paused. Explicit `Cyclic` remains unavailable, but
-`g10.032` has selected centred compressed-anchor behavior, corrected its gate,
-and frozen one complete isolated candidate brief. No Cyclic implementation
-exists yet.
+route and lower overlap are paused. Explicit `Cyclic` remains unavailable.
+`g10.032` selected centred compressed-anchor behavior, but two checkpoints
+failed executable evidence ownership and the identity is closed without a
+valid acoustic judgment.
 The private, unrouted `DirectRenewalDream` renderer owns exact fixed `4x`,
 `8x`, and `16x` neutral `Dream`. It does not replace this renderer or reopen
 Contract `084`. The attempted `LayeredCloud` owner closed without promotion.
@@ -118,10 +118,8 @@ ledger remains in git history at `1d1b02f1`.
 ## Next Task
 
 Retain this frozen baseline and keep its successor lane closed. `g10.031` also
-closed explicit `Cyclic` without promotion and retained the `2x..4x` creative
-overlap pause. `g10.032` later reopened Cyclic research after new fixed-mode
-and repeat/jump source evidence. Batch 32.3 selects centred compressed-anchor
-behavior and Batch 32.4 freezes the complete renderer and evidence brief.
-Execute Batch 32.5 only in isolation and stop before acoustic execution. Keep
-`main`, admitted renderers, both overlaps, product routing, and Contract `084`
-unchanged.
+retained the `2x..4x` creative overlap pause. `g10.032` later reopened Cyclic
+research after new fixed-mode and repeat/jump source evidence, then closed the
+centred compressed-anchor identity after its second incomplete-evidence
+checkpoint. No stretch batch is ready. Keep `main`, admitted renderers, both
+overlaps, product routing, and Contract `084` unchanged.
