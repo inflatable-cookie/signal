@@ -266,7 +266,8 @@ those identities plus `Cargo.lock`.
 
 ## Fresh Isolation
 
-Batch 32.19 starts from the exact Batch 32.18 closeout commit and creates only:
+Batch 32.19 starts from the exact pre-source authority-correction closeout
+commit and creates only:
 
 - worktree: `/Users/tom/Dev/projects/signal-candidate-32-19`
 - branch:
@@ -548,7 +549,17 @@ before the ref.
 
 Use `F=44100`, `L=88200`, and `T=2L`, `4L`, or `8L`. Sustained sources are
 active over `[22050,66150)`. Their first and last `2048` active samples use
-complementary half-cosine ramps; interior weight is one and exterior is zero.
+complementary half-cosine ramps. For active offset `j=n-22050`:
+
+- `0<=j<2048`: `w=0.5-0.5*cos(pi*j/2047)`
+- `2048<=j<42052`: `w=1`
+- `42052<=j<44100`: `w=0.5+0.5*cos(pi*(j-42052)/2047)`
+- otherwise: exact positive `0f32`
+
+Thus the first and last active-lattice samples are exact zero and the two
+interior ramp endpoints are exact one. Evaluate the named source formula in
+`f64`, multiply by `w` in `f64`, and cast once to `f32`. Impulse and impulse
+train bypass the sustained ramp and contain only their named non-zero samples.
 
 Use wrapping `u64` `mix64`:
 
@@ -575,7 +586,9 @@ The test tag is `0x3054534554574e52`. Sources are:
 
 Evaluate in `f64`, apply support, then cast once to little-endian `f32`.
 Construction regenerates every source and proves samples at discontinuities
-and `n=0`, `1`, `22050`, `44100`, `66149`, and `88199`.
+and `n=0`, `1`, `22050`, `22051`, `24097`, `24098`, `44100`, `64101`,
+`64102`, `66148`, `66149`, and `88199`. Outside-support and explicit gap
+samples are written as positive-zero bits.
 
 Stereo fixtures use amplitude-modulated noise:
 
@@ -631,6 +644,32 @@ Sparse-event rows instead require every event appearance inside the
 independent ledger, no output above `1e-7` outside the union ledger, a
 positive appearance for every authored event, ordered event centres, and the
 frozen centre bound for every fully interior event.
+
+### Numeric Evidence Primitives
+
+All evidence uses these functions. No gate-local alternative exists:
+
+- mono absolute peak is `max(abs(sample))`; linked peak is the maximum across
+  channels
+- RMS is `sqrt(sum(sample^2)/sample_count)` with `f64` accumulation
+- amplitude dB is
+  `20*log10(max(amplitude,f64::MIN_POSITIVE))`
+- power ratio dB is
+  `10*log10(max(numerator,f64::MIN_POSITIVE)/max(denominator,f64::MIN_POSITIVE))`
+- an exact-zero test accepts `+0f32` or `-0f32`; positive-zero-bit assertions
+  additionally require bits `0x00000000`
+- exterior first difference is the largest absolute difference across
+  exterior zero to frame `0`, every adjacent frame, and the last frame to
+  exterior zero, taking the maximum across channels before amplitude-dB
+  conversion
+- an active tail frame has any channel with absolute sample above `1e-7`;
+  `last-active-frame` is its final zero-based index and `inactive-frames` is
+  `T-1-last_active`; no active frame rejects the tail measurement
+
+Candidate-source and comparator-source balance errors are absolute dB
+differences. Candidate-comparator delta is candidate error minus comparator
+error. Frequency and support deltas are candidate minus comparator. These
+directions never vary by gate.
 
 ### Y02 Pitch
 
@@ -753,11 +792,23 @@ Every energy ratio in dB is
 this keeps exact duplicate and anti-phase fixtures finite without weakening
 their samplewise hard assertions.
 
+Whole energy is `sum(sample^2)`. Band analysis starts at frame zero and uses
+only complete `4096`-frame windows. Each sample is multiplied by
+`0.5-0.5*cos(2*pi*n/4096)`. Run an unnormalized `4096`-point real `f64` FFT.
+One-sided power is `re^2+im^2`, doubled for bins other than DC and Nyquist.
+A bin belongs to the half-open band containing `kF/4096`; Nyquist belongs to
+the high band. Sum power across bins and windows. A row without one complete
+window rejects.
+
 Local balance uses four-second output windows with two-second hops. Source
 reference bounds are the exact ideal-map endpoints for each window.
 
-Cross-correlation is normalized, uses interior active support, and searches
-integer lags `-32..=32`; ties select smallest absolute lag, then negative lag.
+Cross-correlation uses the exact candidate/comparator output hull whose ideal
+map lies in source support `[22050,66150)`. For lag `l`, pair left frame `n`
+with right frame `n+l` where both are inside the hull. Set
+`rho(l)=sum(L*R)/sqrt(sum(L^2)*sum(R^2))`. Zero denominator rejects. Search
+integer lags `-32..=32` by largest `abs(rho)`; ties select smallest absolute
+lag, then negative lag. Record the selected lag and `abs(rho)`.
 Delay rows require `12..=14` and candidate peak no more than `0.02` below the
 comparator. Gain rows require `0.01 dB`.
 
@@ -765,6 +816,11 @@ Record source, candidate, comparator, and both deltas for whole balance,
 three-band balance, every mapped window, width, correlation lag, and
 correlation peak. Hard long-form balance uses comparator `+0.50 dB`; local
 balance and width remain mandatory finite diagnostics.
+
+Local output windows are exactly `4F` frames starting at `0,2F,4F,...` while
+complete. Candidate and comparator use that output interval. Source uses
+`ceil(a(b))..=floor(a(b+4F-1))`, clipped to `[0,L)`. Empty source reference
+or zero channel energy rejects. Window order defines `wWW`.
 
 The `8x`, neutral-cycle versions of the six fixtures retain raw candidate
 PCM/WAV hashes for the later stereo listening pack. No later rerender is
@@ -794,6 +850,18 @@ container, and decoded PCM hashes. Historical mono comparator outputs are
 provenance only and do not gate this fresh native-stereo authority. Comparator
 audio stays ignored.
 
+The comparator root is exactly
+`<ignored-root>/comparator/{sources,projects,outputs}`. Copy the five retained
+musical containers byte-for-byte into `sources/musical/<frozen-filename>`.
+Generate synthetic files as
+`sources/synthetic/<source_id>.wav` and
+`sources/stereo/<fixture>.wav`. Project and output names are
+`projects/<comparator-row-id>.rpp` and
+`outputs/<comparator-row-id>.wav`. The generator requires every destination
+to be absent and never overwrites. A second source construction required by
+`common-negation` or `swap` is derived in memory by the evidence row; it does
+not add a comparator-manifest row.
+
 ## Exact `16x` Admission Control
 
 After all synthetic rows pass, run five separate exact-`16x` rows in retained
@@ -821,7 +889,7 @@ For each listening row:
 
 1. decode source, candidate, and comparator to `f32`
 2. downmix mono as `f32((f64(left)+f64(right))/2)`
-3. compute active whole-file RMS in `f64`
+3. compute whole-file RMS across every frame in `f64`
 4. set `r_ref=RMS(source)`
 5. set gains `g_source=1`, `g_candidate=r_ref/RMS(candidate)`,
    `g_comparator=r_ref/RMS(comparator)`
@@ -832,6 +900,10 @@ For each listening row:
 
 This preserves source level and RMS-matches both renders before one common
 peak-safety reduction. No per-file peak normalization exists.
+
+Source RMS uses native source frames. Candidate and comparator RMS use all
+exactly `T` output frames. Stereo level matching computes one RMS across all
+interleaved samples and applies one shared gain to both channels.
 
 Listening copies apply the comparator's terminal `10 ms` fade only after level
 matching. At `44.1 kHz`, `N=441`. Samples before `T-N` use gain one. For
@@ -1478,7 +1550,8 @@ The RMS-envelope builder receives `3072` samples of value one. Its fixed
 The cadence FFT receives the `64`-value mean-zero envelope
 `e[j]=cos(2*pi*j/8)` at envelope rate `44100/512 Hz`, with
 `N=16384`. It must select bin `2048`, frequency
-`10.7666015625 Hz`, and a finite strength in `(0,1]`. The unwindowed
+`10.7666015625 Hz`, and a strength equal within `1e-12` to an independent
+direct-DFT computation over every searched bin. The unwindowed
 autocorrelation search with planned lag `8` spans `6..=10`; it must return
 lag `8` and value `0.875`. Frequency error is at most `1e-12`;
 autocorrelation error is at most `1e-12`.
@@ -1524,12 +1597,18 @@ contains bin-centred `128`, `1024`, and `2048 Hz` left tones and the same
 right gain. Whole, low, mid, and high ratios must each match that value within
 `1e-8 dB`.
 
-For a length-`256` deterministic non-periodic sequence and a right copy
-delayed by two frames with exterior zero, normalized correlation over
+For `n=0..255`, the deterministic non-periodic sequence is
+`f32((((mix64(n xor 0x4c494e4b45444b41)>>11)/2^53)*2-1)*0.5)`.
+Use it as left and a right copy delayed by two frames with exterior zero.
+Normalized correlation over
 `-4..=4` must return lag `+2`; positive lag means right lags left. Swapping
 channels must return `-2`. Duplicate channels must return `0` and peak `1`
 within `1e-12`. These calls use the real Y06 balance, band, and correlation
 owners.
+
+The `8192`-frame band fixture is exactly
+`left[n]=f32(0.2*sin(2*pi*128*n/8192)+0.15*cos(2*pi*1024*n/8192)+0.1*sin(2*pi*2048*n/8192))`;
+right is the exact `f32` gain multiplication already frozen above.
 
 #### Level And Listening-Copy Owner
 
@@ -1563,10 +1642,13 @@ to that hash and every expected field. Changing play rate, target frames,
 stretch mode, fade, channel count, or either path must change the projection
 and fail the field comparison.
 
-Finally, the comparator manifest join receives two rows and two matching
-files. It must pass in manifest order, then separately reject a missing row,
-duplicate ID, unknown extra file, container-hash mismatch, PCM-hash mismatch,
-wrong frame count, wrong channel count, and non-finite decode. The real
+Finally, the comparator manifest join receives rows `KA-C-000` and
+`KA-C-001`. The first owns the canonical WAV above. The second owns the same
+container with samples negated before encoding; its hashes are derived by the
+independent known-answer builder. The two matching files must pass in row
+order, then separately reject a missing row, duplicate `KA-C-000`, unknown
+`KA-C-002`, container-hash mismatch, PCM-hash mismatch, wrong frame count,
+wrong channel count, and a file whose first PCM word is quiet NaN. The real
 pre-checkpoint comparator verifier owns every case.
 
 ### Summary Authority
@@ -1590,6 +1672,27 @@ all receipt assertion maps exact. `Y04` summary adds the nine ordered
 `cadence.strict-cycle-order` assertions. Other summaries add only count,
 render, manifest, and receipt-completeness assertions. A summary uses
 `create_new`, flush, and `sync_all`; an existing summary blocks rerun.
+
+Every summary's ordered assertion IDs are exactly:
+
+1. `summary.manifest-sha256`
+2. `summary.row-count`
+3. `summary.pass-count`
+4. `summary.fail-count`
+5. `summary.panic-count`
+6. `summary.incomplete-count`
+7. `summary.planned-render-count`
+8. `summary.completed-render-count`
+9. `summary.receipt-assertion-maps`
+10. `summary.terminal-concat-sha256`
+11. `summary.receipt-set-sha256`
+
+Y04 appends
+`cadence.strict-cycle-order.<source>.r<ratio>` in source order
+`uniform-noise,rademacher-noise,am-noise`, then ratio order `2,4,8`.
+Summary assertions use the row assertion object keys and status vocabulary.
+`expected` and `actual` are exact decimal counts, lowercase SHA-256, or
+`true`. A summary has no diagnostics.
 
 ### Runner And Sentinel Authority
 
@@ -1894,6 +1997,19 @@ label, pointer-presence test, or self-comparison.
 No candidate worktree, source, evidence harness, comparator render, or
 acoustic receipt was created. Batch 32.19 may begin isolated implementation
 and conformance from this exact docs closeout.
+
+### Batch 32.19 Pre-Source Authority Audit
+
+The first exact isolated worktree remained clean. Before evidence generation
+or candidate source, audit found the sustained-source ramp endpoint law,
+numeric evidence primitives, band aggregation, correlation support,
+summary-assertion IDs, and three known-answer vectors were not executable
+without new choices.
+
+This correction freezes all of them together. No manifest, comparator project,
+comparator render, candidate source, receipt, or DSP output existed. Delete
+the empty isolation and recreate the same name from this correction commit.
+This is an authority completion, not a candidate repair or rerun.
 
 ## Remaining Risks
 

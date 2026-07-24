@@ -1951,6 +1951,14 @@ cadence, gap/dropout/tail, linked-stereo, level/fade, and comparator owners.
 The fresh isolation identity is fully named. No candidate or evidence code
 entered `main`.
 
+Batch 32.19's first pre-source audit finds several evidence semantics still
+required an implementation choice: ramp endpoints, shared numeric
+conversions, band and correlation aggregation, summary assertion IDs, and
+three known-answer vectors. The empty isolation produced no manifest,
+comparator, source, receipt, or output. The canonical brief now freezes those
+choices together. Recreate isolation from this correction before evidence
+generation; no candidate repair or retry is authorized.
+
 ## Next Task
 
 Execute `g10.032` Batch 32.19 only. Create the exact fresh isolated identity,

@@ -692,6 +692,11 @@ The manifest stays at `588` rows. Construction now executes known answers
 through every FFT, ledger, cadence, gap, stereo, level, and comparator owner.
 No candidate or harness entered `main`.
 
+Batch 32.19's pre-source audit stops the first clean isolation before evidence
+or candidate files. It freezes missing ramp, numeric, band, correlation,
+summary, and known-answer semantics in one correction. Recreate the unchanged
+isolation from that correction commit; this is not a candidate repair.
+
 ## Next Task
 
 Execute `g10.032` Batch 32.19 only. Create the frozen isolated identity, bind

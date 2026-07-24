@@ -597,7 +597,7 @@ Result:
 
 ## Batch 32.19 - Fresh Isolated Implementation And Conformance
 
-Status: ready
+Status: ready after pre-source authority correction
 
 1. create only the frozen worktree, branch, private module, evidence authority,
    ignored root, nextest profile, and local ref namespace
@@ -616,6 +616,17 @@ Any choice missing from the brief, known-answer failure, manifest mismatch,
 compile failure, construction failure, structural failure, incomplete
 receipt, or non-identical round stops for docs-level reassessment. Do not
 repair or rerun an acoustic row in this batch.
+
+Pre-source audit result:
+
+- the first exact isolation remained clean
+- no manifest, comparator project/render, candidate source, receipt, or DSP
+  output existed
+- audit found unresolved ramp endpoints, numeric evidence primitives, band and
+  correlation aggregation, summary assertion IDs, and known-answer vectors
+- the canonical brief now freezes those choices together
+- delete the empty isolation and recreate the same name from the correction
+  commit before evidence generation
 
 ## Completion Gate
 
