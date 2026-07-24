@@ -336,8 +336,9 @@ passes in Batch 32.28. Batch 32.29 closes the lane with Dream and Cyclic as
 separate exact-ratio characters. `g10.033` is active for continuous
 fixed-ratio and same-character routing feasibility. Batch 33.1 selects an
 unchanged-mechanism Dream generalization over `4x..16x`; Batch 33.2 freezes its
-complete implementation and evidence brief. The isolated Batch 33.3 candidate
-is ready. No strict spec lane is open.
+complete implementation and evidence brief; Batch 33.3 admits it privately.
+Batch 33.4 freezes direct public widening with no same-character router.
+Batch 33.5 public admission is ready. No strict spec lane is open.
 
 ## Strict lane posture
 
@@ -366,6 +367,5 @@ Before rollover:
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the active generation front door.
-Execute `g10.033` Batch 33.3 from the frozen
-`ContinuousDirectRenewalDream` brief. Do not widen the public API or begin
-routing.
+Execute `g10.033` Batch 33.5 from the frozen creative public surface. Do not
+change private DSP or add routing.

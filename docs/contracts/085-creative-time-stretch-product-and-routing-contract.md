@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: exact-ratio Dream and Cyclic public; continuous Dream admitted privately
+Status: continuous Dream public widening frozen; implementation pending
 Owner: core-product
 Updated: 2026-07-24
 Related contracts: `046`, `048`, `084`
@@ -86,8 +86,9 @@ Batch 32.27 freezes the same public boundary's Cyclic extension:
 `character=Cyclic`, exact `2x`, `4x`, or `8x`, and one optional
 `std::time::Duration` cycle from `5..90 ms`, defaulting to `48 ms`.
 Batch 32.28 admits that extension without changing either renderer.
-`Spectral`, `Rough`, `Cloud`, continuous ratios, and an automatic range router
-remain unavailable.
+Batch 33.4 freezes public Dream widening to every exact target in
+`4N..=16N`. `Spectral`, `Rough`, `Cloud`, continuous Cyclic, and an automatic
+range router remain unavailable.
 
 Public `Cyclic` uses `duration`, `character=Cyclic`, and one semantic `cycle`
 control from short metallic motion through long tremolo/echo motion.
@@ -140,8 +141,9 @@ The historical automatic routed bands are:
 They are deferred product intent, not an active target or implementation
 authority. Current executable creative coverage is public neutral `Dream` at
 exact fixed `4x`, `8x`, and `16x`, plus public manual `Cyclic` at exact fixed
-`2x`, `4x`, and `8x`. Neither exact endpoint authorizes an interior overlap,
-a continuous band, or a higher ratio. Any future routing reopening must
+`2x`, `4x`, and `8x`. Batch 33.4 freezes, but does not yet implement, public
+Dream coverage for every exact target `4N <= T <= 16N`. It authorizes no
+inter-character overlap or higher ratio. Any future routing reopening must
 preserve `2x`, `4x`, and `8x` as mandatory admission points.
 
 If automatic routing reopens, overlap weights use smoothstep interpolation over
@@ -2149,7 +2151,31 @@ identity v2, and focused continuous regression ownership. Public Dream remains
 exact `4x`, `8x`, and `16x`; Cyclic remains exact `2x`, `4x`, and `8x`.
 Public widening and any hidden same-character routing require Batch 33.4.
 
+Batch 33.4 freezes the public widening. Dream accepts every exact target
+`4N <= T <= 16N` through direct dispatch to the one admitted private owner.
+There is no same-character router: no ratio-dependent owner change exists, so
+a router would add identity, transition, and failure state without adding
+behavior. Cyclic remains explicit and exact at `2x`, `4x`, and `8x`;
+Transparent remains separate.
+
+Public discovery becomes one `CreativeStretchRatioDomain`:
+
+- Dream: `Continuous { minimum: 4, maximum: 16 }`
+- Cyclic: `Exact(&[2, 4, 8])`
+
+The misleading Dream ratio list and `supported_ratios()` method are removed,
+not retained as aliases. Public behavior identity becomes
+`signal-creative-stretch-v3`. Existing request fields and typed errors remain;
+Dream targets outside the closed interval return `UnsupportedTargetFrames`
+before allocation. Exact target frames remain authoritative.
+
+Batch 33.5 may change only `creative.rs` and `lib.rs`: range discovery, Dream
+preallocation validation, rustdoc, exports, and focused public parity tests.
+Private Dream and Cyclic source, acoustic output, controls, and Cyclic
+discovery remain unchanged. Cache, artifacts, dynamic ratio, runtime, UI,
+Loophole, and Chorus remain closed.
+
 ## Next Task
 
-Execute `g10.033` Batch 33.4 as a public-range and routing decision. Keep
-cache, artifacts, dynamic ratio, consumers, Loophole, and Chorus closed.
+Execute `g10.033` Batch 33.5 as the frozen public continuous-Dream admission.
+Do not add a router or change private DSP.

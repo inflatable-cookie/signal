@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: `g10.033` active; private continuous Dream admitted, Batch 33.4 ready
+Status: `g10.033` active; continuous Dream public decision frozen, Batch 33.5 ready
 Updated: 2026-07-24
 
 ## Why this generation matters now
@@ -314,9 +314,10 @@ Do not start Loophole or Chorus planning from Signal internals.
     separately versioned `ContinuousDirectRenewalDream` direction over exact
     targets `4N <= T <= 16N`; Batch 33.2 freezes its complete implementation
     and evidence authority; Batch 33.3 admits the private continuous owner
-    after complete objective and listening passage; Batch 33.4 public-range
-    and routing decision is ready; Batch 33.5 public admission and Batch 33.6
-    closeout remain pending; no cache, artifact, or consumer work is ready
+    after complete objective and listening passage; Batch 33.4 freezes direct
+    public `4N..=16N` Dream coverage with no same-character router; Batch 33.5
+    public admission is ready and Batch 33.6 closeout remains pending; no
+    cache, artifact, or consumer work is ready
 
 ## Stretch Boundary
 
@@ -786,8 +787,15 @@ identity, and focused regression owners. Automatic character switching,
 public widening, cache, artifacts, dynamic ratio, and named-consumer
 integration remain unavailable.
 
+Batch 33.4 freezes public Dream widening to every exact target in
+`4N..=16N`. Discovery becomes a continuous Dream range or exact Cyclic list;
+the misleading Dream exact-ratio list is removed and public behavior identity
+advances to v3. Dream dispatch remains direct to one admitted owner. No hidden
+router, overlap, blend, fallback, private DSP change, or consumer surface is
+authorized.
+
 ## Next Task
 
-Execute `g10.033` Batch 33.4 as the docs-first public Dream range and routing
-decision. Keep cache, artifacts, dynamic ratio, consumers, Loophole, and Chorus
-closed.
+Execute `g10.033` Batch 33.5. Implement only the frozen public Dream range,
+ratio-domain discovery, v3 identity, rustdoc, exports, and focused parity
+tests. Do not change private DSP or add routing.

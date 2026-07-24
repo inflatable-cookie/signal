@@ -112,7 +112,6 @@ Add a new contract only when the boundary needs stronger guarantees than
 
 Use `docs/contracts/contract-index.md` and `001-working-rules.md` as the
 contract front doors. Contract `084` and roadmap `g10.030` keep the transparent
-successor program closed. Contract `085` publicly admits fixed-ratio Dream,
-and fixed-ratio Cyclic. Batch 33.1 selects a continuous Dream direction.
-Batch 33.2 freezes its complete authority. Execute `g10.033` Batch 33.3
-isolated candidate work. No strict spec lane is open.
+successor program closed. Contract `085` admits fixed-ratio Cyclic and freezes
+public continuous `4x..16x` Dream widening without a same-character router.
+Execute `g10.033` Batch 33.5 public admission. No strict spec lane is open.

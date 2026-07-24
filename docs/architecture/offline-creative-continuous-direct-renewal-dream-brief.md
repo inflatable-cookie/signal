@@ -574,6 +574,7 @@ evidence, comparators, receipts, audio, and the nextest profile did not enter
 
 ## Next Task
 
-Execute `g10.033` Batch 33.4 as a public-range and routing decision. Do not
-change the public request, cache, artifacts, dynamic ratio, runtime, UI,
-Loophole, or Chorus until that decision is frozen.
+Execute `g10.033` Batch 33.5 from the frozen
+[public surface](./offline-creative-fixed-ratio-public-surface.md). Widen only
+the public Dream target domain and discovery; do not change this private
+renderer or add routing.

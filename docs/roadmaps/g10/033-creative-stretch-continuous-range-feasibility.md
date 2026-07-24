@@ -1,6 +1,6 @@
 # 033 - Creative Stretch Continuous-Range Feasibility
 
-Status: active; Batch 33.4 ready
+Status: active; Batch 33.5 ready
 Owner: dsp
 Created: 2026-07-24
 Depends on: `g10.031`, `g10.032`
@@ -41,7 +41,7 @@ The lane must end in one of three honest outcomes:
 - [x] select one character-preserving complete direction
 - [x] freeze that direction as one executable implementation brief
 - [x] admit or reject one isolated fixed-ratio candidate
-- [ ] decide public widening and routing only after acoustic admission
+- [x] decide public widening and routing only after acoustic admission
 
 ## Non-Goals
 
@@ -169,28 +169,42 @@ Result:
 
 ## Batch 33.4 - Public Range And Routing Decision
 
-Status: ready
+Status: complete
 
 Documentation only.
 
-- [ ] decide whether public `Dream` accepts every exact target in `4N..=16N`
-- [ ] replace exact-ratio-list semantics with one explicit continuous-range
+- [x] decide whether public `Dream` accepts every exact target in `4N..=16N`
+- [x] replace exact-ratio-list semantics with one explicit continuous-range
   contract without changing `Cyclic`
-- [ ] decide whether any hidden same-character router remains necessary now
+- [x] decide whether any hidden same-character router remains necessary now
   that one private owner covers the complete admitted Dream range
-- [ ] freeze public errors, discovery/introspection, engine identity, and
+- [x] freeze public errors, discovery/introspection, engine identity, and
   focused regression ownership
-- [ ] keep lower overlap, continuous Cyclic, cache, artifacts, dynamic ratio,
+- [x] keep lower overlap, continuous Cyclic, cache, artifacts, dynamic ratio,
   runtime, UI, Loophole, and Chorus outside the admission
-- [ ] make one public implementation batch ready only if the complete surface
+- [x] make one public implementation batch ready only if the complete surface
   has no unresolved semantic choice
 
 Stop if public widening requires character substitution, a second renderer,
 dynamic-ratio state, source-dependent selection, or consumer-owned policy.
 
+Result:
+
+- public Dream will accept every exact target in `4N..=16N`
+- one `CreativeStretchRatioDomain` reports continuous Dream bounds and exact
+  Cyclic ratios
+- the discrete Dream ratio list and `supported_ratios()` are removed
+- public behavior identity advances to `signal-creative-stretch-v3`
+- existing request fields and error variants remain; out-of-range Dream
+  targets return `UnsupportedTargetFrames` before allocation
+- public Dream dispatches directly to the single admitted owner; no
+  same-character router, overlap, blend, or fallback is added
+- Batch 33.5 is frozen to `creative.rs`, `lib.rs`, rustdoc, exports, and
+  focused public parity tests
+
 ## Batch 33.5 - Public Continuous Dream Admission
 
-Status: pending Batch 33.4
+Status: ready
 
 Implement only the public surface frozen by Batch 33.4. Preserve byte-exact
 anchor behavior and the admitted private renderer. Do not add routing, cache,
@@ -208,14 +222,13 @@ continuous Cyclic question. Do not merge those questions into this lane.
 
 - [x] current exact-ratio coverage is stated without implying continuous bands
 - [x] `Dream` and `Cyclic` remain separate user-selected characters
-- [ ] any future route owns Contract `085` continuity rather than crossfading by
+- [x] any future route owns Contract `085` continuity rather than crossfading by
   assertion
 - [x] only one complete candidate can become executable
 - [x] no implementation becomes ready before a complete brief
 
 ## Next Task
 
-Execute Batch 33.4 as a docs-first public-range and routing decision. Decide
-whether the admitted private `4N..=16N` owner warrants a continuous public
-Dream target range and whether any hidden same-character routing is needed.
-Keep cache, artifacts, dynamic ratio, consumers, Loophole, and Chorus closed.
+Execute Batch 33.5. Implement only the frozen continuous Dream target domain,
+ratio discovery, v3 behavior identity, rustdoc, exports, and focused public
+parity tests. Do not change private DSP or add routing.

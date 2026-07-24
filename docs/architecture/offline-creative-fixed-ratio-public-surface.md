@@ -1,10 +1,11 @@
-# Offline Creative Fixed-Ratio Public Surface
+# Offline Creative Public Surface
 
-Status: Dream and Cyclic exact-ratio characters admitted
+Status: continuous Dream widening frozen; Batch 33.5 ready
 Owner: core-product
 Updated: 2026-07-24
 Contract: `085`
-Roadmaps: `g10.031`, Batches 31.75-31.76; `g10.032`, Batches 32.27-32.28
+Roadmaps: `g10.031`, Batches 31.75-31.76; `g10.032`, Batches 32.27-32.28;
+`g10.033`, Batches 33.4-33.5
 
 ## Decision
 
@@ -19,7 +20,109 @@ cycle duration, exact character-specific ratios, and no other Cyclic control.
 This is a public library boundary, not a Loophole or Chorus integration plan.
 It does not reopen `g10.025`.
 
-## Public Shape
+## Continuous Dream Decision
+
+Batch 33.4 widens public `Dream` to every exact target satisfying
+`4L <= T <= 16L`. `L` is source frames and `T` is authoritative target
+frames. Every integer `T` in that closed interval is valid. Ratios need not be
+integral, power-of-two, hop-divisible, or named by a floating value.
+
+One private `ContinuousDirectRenewalDream` owner already covers the complete
+interval with one map, scheduler, boundary law, linked-stereo law, and
+deterministic state. Public Dream therefore dispatches directly to that owner.
+It has no range branch, hidden router, overlap, blend, or fallback.
+
+`Cyclic` remains a separate explicit character at exact `2x`, `4x`, and `8x`.
+The shared `4x` and `8x` targets do not route or crossfade between characters.
+`OfflineHighQuality` remains a separate Transparent product choice.
+
+## Frozen V3 Public Shape
+
+Batch 33.5 implements this delta:
+
+```rust
+pub const CREATIVE_STRETCH_ENGINE_VERSION: &str = "signal-creative-stretch-v3";
+pub const CREATIVE_STRETCH_DREAM_MIN_RATIO: usize = 4;
+pub const CREATIVE_STRETCH_DREAM_MAX_RATIO: usize = 16;
+pub const CREATIVE_STRETCH_CYCLIC_SUPPORTED_RATIOS: [usize; 3] = [2, 4, 8];
+
+#[non_exhaustive]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum CreativeStretchRatioDomain {
+    Continuous {
+        minimum: usize,
+        maximum: usize,
+    },
+    Exact(&'static [usize]),
+}
+
+impl CreativeStretchCharacter {
+    pub const fn ratio_domain(self) -> CreativeStretchRatioDomain;
+}
+```
+
+`Dream::ratio_domain()` returns `Continuous { minimum: 4, maximum: 16 }`.
+`Cyclic::ratio_domain()` returns
+`Exact(&CREATIVE_STRETCH_CYCLIC_SUPPORTED_RATIOS)`.
+
+Remove `CREATIVE_STRETCH_SUPPORTED_RATIOS` and
+`CreativeStretchCharacter::supported_ratios()`. They describe Dream as a
+discrete list and become false after widening. Do not retain a compatibility
+alias or reinterpret the three old values as recommendations.
+
+The request, character enum, controls, render entry, and error variants remain
+unchanged. Update their documentation from exact-ratio wording to
+character-specific target-domain wording.
+
+The public behavior version becomes `signal-creative-stretch-v3` because the
+accepted request set and discovery surface change. Renderer-specific identity
+stays internal. This does not admit a creative cache schema.
+
+## Continuous Dream Request Contract
+
+- validate channels, framing, sample rate, input finiteness, controls, and
+  empty/target relationship in the existing order
+- reject source or target frames above `2^53-1` as `SizeOverflow`
+- compute `minimum=checked_mul(L,4)` and `maximum=checked_mul(L,16)`
+- accept Dream exactly when `minimum <= T <= maximum`
+- reject Dream outside that interval as `UnsupportedTargetFrames`
+- retain exact Cyclic multiplication against `2`, `4`, and `8`
+- reject before output allocation; never clamp, round, route, or fall back
+- preserve empty-input plus zero-target success
+- preserve exact target length, finite output, deterministic repeat, and
+  admitted-seed ownership
+
+The public wrapper performs the same checked domain decision as the private
+Dream owner. The private owner remains the final geometry authority.
+
+## Batch 33.5 Gate
+
+Only `creative.rs` and `lib.rs` may change.
+
+Required focused ownership:
+
+1. public ratio-domain constants and introspection match the frozen v3 shape
+2. preallocation validation accepts every target in `4L..=16L` for
+   representative small `L`, and rejects `4L-1` and `16L+1`
+3. public mono and stereo match the private Dream renderer byte-for-byte at
+   `4x`, `4x+1 frame`, `4.5x`, `6x`, `10x`, `15.5x`, `16x-1 frame`, and
+   `16x`
+4. existing `4x`, `8x`, and `16x` public output remains byte-identical
+5. every Dream `space` value already admitted passes unchanged
+6. Cyclic ratios, duration canonicalization, output, errors, and discovery
+   remain unchanged
+7. unsupported targets fail before render dispatch or output allocation
+8. all private Dream acoustic files and private Cyclic files remain
+   byte-identical
+9. the admitted private continuous structural and synthetic owners remain
+   green
+10. no router, cache, artifact, dynamic ratio, runtime, UI, Loophole, or
+    Chorus surface changes
+
+No listening rerun is required. The public wrapper adds no acoustic behavior.
+Any private-file or output difference stops the batch.
+
+## Admitted V2 Shape
 
 The Batch 32.28 public shape is:
 
@@ -108,14 +211,15 @@ character use `CreativeStretchCharacter::supported_ratios()` rather than
 forming a union. Exact `4x` and `8x` belong to both characters but produce
 deliberately different effects.
 
-## Request Contract
+## Public Request Contract
 
 - `input` is finite mono or interleaved stereo `Sample`
 - `channels` is exactly `1` or `2`
 - `sample_rate` is `8000..=192000`
 - `target_frames` is authoritative
 - source frame count is `input.len()/channels`
-- Dream target frames equal source frames times `4`, `8`, or `16`
+- Dream target frames satisfy `4 * source_frames <= target_frames <=
+  16 * source_frames`
 - Cyclic target frames equal source frames times `2`, `4`, or `8`
 - Dream requires `cycle=None` and finite `space` in `[0,1]`
 - Cyclic requires `space` to remain bit-exact
@@ -160,7 +264,7 @@ The wrapper validates without allocation in this order:
 3. character-control ownership
 4. active control range
 5. empty/target relationship
-6. exact character-specific ratio and checked size
+6. character-specific target domain and checked size
 
 For Dream, any `cycle=Some` returns `UnsupportedCharacterControl`. For Cyclic,
 any `space` value other than the default bit pattern returns
@@ -191,7 +295,7 @@ The honest consuming UI is small:
 | Intent | Public meaning |
 | --- | --- |
 | mode | explicit `Creative` choice separate from `Transparent` |
-| duration | Dream: exact `400%`, `800%`, or `1600%`; Cyclic: exact `200%`, `400%`, or `800%` |
+| duration | Dream: continuous `400%..=1600%`; Cyclic: exact `200%`, `400%`, or `800%` |
 | character | explicit `Dream` or `Cyclic` |
 | space | Dream only; optional preserve-to-widen control, normalized `0..1`, default `0.5` |
 | cycle | Cyclic only; `5..90 ms`, default `48 ms`; short is metallic/ring-like, long is tremolo/echo-like |
@@ -208,7 +312,8 @@ directly; no resampling, second stretch pass, limiter, level correction, or
 post-render fade is added.
 
 The Batch 31.76 Dream wrapper mapped public request and error vocabulary onto
-its admitted private renderer. Batch 32.28 may change only:
+its admitted private renderer. Batch 32.28 added Cyclic. Batch 33.5 may change
+only:
 
 - `creative.rs` public types, validation, dispatch, error mapping, and focused
   tests
@@ -231,7 +336,7 @@ does not own character, character-valid controls, fixed Dream seed, or creative
 engine version without collision risk. Cache admission requires a later
 contract and implementation batch.
 
-A future creative cache key must include `signal-creative-stretch-v2`,
+A future creative cache key must include `signal-creative-stretch-v3`,
 character, exact target frames, and the active character control: `space` bits
 for Dream or effective `cycle_us` for Cyclic. It must not include the inactive
 control. This freezes identity semantics only; it does not admit caching.
@@ -325,6 +430,6 @@ No cache, route, tier, artifact, runtime, Loophole, or Chorus surface changed.
 
 ## Next Task
 
-Keep this exact-ratio surface frozen. Execute `g10.033` Batch 33.3 only from
-the complete `ContinuousDirectRenewalDream` brief. Work in one isolated
-candidate without widening the public API.
+Execute `g10.033` Batch 33.5. Implement only the frozen v3 range discovery,
+Dream target validation, documentation, exports, and focused regression
+ownership. Do not add a router or change private DSP.
