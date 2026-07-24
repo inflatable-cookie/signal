@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: exact Cyclic checkpoint replay authorized; Batch 32.15 ready
+Status: Cyclic synthetic comparator recovery authorized; Batch 32.16 ready
 Updated: 2026-07-24
 
 ## Why this generation matters now
@@ -671,10 +671,14 @@ This is the second incomplete-evidence checkpoint for the identity. Batch
 32.13 closed the identity without an acoustic pass or rejection. Batch 32.14
 supersedes that decision: the renderer did not fail, and exact checkpoint
 `74a6d6d9` may replay `Y01` once with an absolute evidence root. No Cyclic
-renderer is admitted.
+renderer is admitted. Batch 32.15 uses that root but stops before DSP because
+Batch 32.13 cleanup removed the generated comparator assets. Every assertion
+is `not_run`; no render or summary exists. Batch 32.16 restores and
+hash-verifies the exact synthetic comparator environment before one unchanged
+`Y01` replay.
 
 ## Next Task
 
-Execute `g10.032` Batch 32.15 only. Restore exact checkpoint `74a6d6d9` and
-replay all `30` `Y01` rows once with the frozen absolute evidence root. Stop
-before `Y02`.
+Execute `g10.032` Batch 32.16 only. Preserve the invalid pre-DSP receipt,
+restore and hash-verify the frozen synthetic comparator environment, then
+replay all `30` `Y01` rows once. Stop before `Y02`.

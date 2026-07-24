@@ -1,6 +1,6 @@
 # 032 - Cyclic Creative Stretch Research
 
-Status: active; Batch 32.14 complete; Batch 32.15 ready
+Status: active; Batch 32.15 stopped before DSP; Batch 32.16 ready
 Owner: dsp
 Updated: 2026-07-24
 Contracts: `046`, `085`
@@ -458,7 +458,7 @@ relative-root run cannot select a change. Do not begin execution in this batch.
 
 ## Batch 32.15 - Absolute-Root Y01 Replay
 
-Status: ready
+Status: complete; stopped before DSP
 
 1. verify commit `74a6d6d9`, tree `d519e2d8`, all manifest hashes, and an
    absent absolute evidence root
@@ -470,6 +470,42 @@ Status: ready
 
 Do not execute `Y02..Y06`, exact `16x`, long-form, stereo, listening, product,
 or routing work.
+
+Result:
+
+- exact checkpoint, tree, ref, worktree, manifests, and absolute root passed
+  preflight
+- the first row wrote a two-line terminal receipt with every assertion
+  `not_run`
+- source loading stopped on missing canonical
+  `comparator/sources/low-tone.wav`
+- no renderer invocation, candidate render, acoustic assertion, or summary
+  occurred
+
+Batch 32.13 cleanup removed the ignored comparator assets as well as rejected
+candidate state. The recovery authority failed to restore that prerequisite.
+This is an evidence-environment stop, not a valid `Y01` failure.
+
+## Batch 32.16 - Synthetic Comparator Restoration And Y01 Replay
+
+Status: ready
+
+1. preserve the complete Batch 32.15 execution directory as
+   `Y01-invalid-missing-comparator-assets-32-15` without changing its bytes
+2. regenerate the exact `16` synthetic sources at the checkpoint's canonical
+   comparator root
+3. render only the `30` frozen `C-Y-*` ReaReaRea comparator rows required by
+   `Y01`
+4. verify source, project semantics, project container, output container, and
+   output PCM hashes against the frozen comparator manifest
+5. verify checkpoint, tree, ref, tracked hashes, and clean worktree again
+6. invoke the unchanged runner once at the same absolute root
+7. stop on the first valid terminal failure or after all `30` rows and the
+   `Y01` summary
+
+Do not change candidate, test, runner, manifest, comparator, metric, threshold,
+dependency, or DSP bytes. Do not execute `Y02..Y06`, exact `16x`, long-form,
+stereo, listening, product, or routing work.
 
 ## Completion Gate
 
@@ -484,5 +520,6 @@ or routing work.
 
 ## Next Task
 
-Execute Batch 32.15 only. Restore the exact checkpoint and replay all `30`
-`Y01` rows once with the frozen absolute evidence root. Stop before `Y02`.
+Execute Batch 32.16 only. Preserve the invalid pre-DSP receipt, restore and
+hash-verify the frozen synthetic comparator environment, then replay all `30`
+`Y01` rows once. Stop before `Y02`.

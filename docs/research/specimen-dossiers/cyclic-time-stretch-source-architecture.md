@@ -1,6 +1,6 @@
 # Cyclic Time-Stretch Source Architecture
 
-Status: reviewed; exact selected-owner replay authorized
+Status: reviewed; exact selected-owner comparator recovery authorized
 Owner: dsp
 Updated: 2026-07-24
 Contract: `085`
@@ -507,6 +507,5 @@ Batch 32.4 freezes the selected implementation authority:
 
 ## Next Task
 
-Execute `g10.032` Batch 32.15 only. Restore the exact selected-owner checkpoint
-and replay all `30` `Y01` rows once with the frozen absolute root. Stop before
-`Y02`.
+Execute `g10.032` Batch 32.16 only. Restore the exact selected-owner synthetic
+comparator environment and replay all `30` `Y01` rows once. Stop before `Y02`.

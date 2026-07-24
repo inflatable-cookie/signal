@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: exact-ratio Dream admitted; exact Cyclic evidence replay authorized
+Status: exact-ratio Dream admitted; Cyclic Y01 environment recovery authorized
 Owner: core-product
 Updated: 2026-07-24
 Related contracts: `046`, `048`, `084`
@@ -918,7 +918,7 @@ family.
 | `ContinuousExcitationComplexRelation` | coefficient relation proof exposed an impossible anti-phase negation/swap expectation | conformance-only, contradictory | ineligible; correction requires new relation authority |
 | `CyclicGrain` | structural pass, then synthetic pitch rejection | acoustic rejection | closed |
 | `SimilarityAlignedCyclic` | `6/7` structural; frozen shortlist could not reach the exact natural continuation | conformance-only, architecture miss | ineligible; correction changes the search owner |
-| centred compressed-anchor Cyclic | conformance pass; first acoustic invocation split one receipt across roots | operator-corrected invocation failure | exact checkpoint replay authorized; no DSP or evidence-owner change |
+| centred compressed-anchor Cyclic | conformance pass; first acoustic invocation split one receipt across roots; absolute-root replay then found cleaned comparator assets absent before DSP | operator-corrected evidence-environment failures | exact asset restoration and checkpoint replay authorized; no DSP or evidence-owner change |
 | `RenewalSpectral` | structural pass, then synthetic crest rejection under the superseded unmatched gate | acoustic receipt, superseded architecture | ineligible; corrected source-backed blend belongs to the compensated family |
 | compensated/variance/audited renewal | structural and synthetic pass plus concealed-mono pass, then stereo image rejection | acoustic and stereo rejection | closed |
 | source-relative/listening-led/support-audited/comparator-audited renewal | support-audited identity passed structural, synthetic, and concealed mono, then failed stereo; after stereo policy changed, comparator-audited identity failed synthetic admission | acoustic and stereo rejection | closed |
@@ -1850,8 +1850,42 @@ checkpoint, not a third identity. A failure during the exact replay is final
 for that gate. This exception does not weaken the no-retry rule for renderer,
 metric, threshold, source, owner, or valid receipt failures.
 
+Batch 32.15 restores the exact checkpoint and supplies the correct absolute
+root. The runner reaches the first test, but Batch 32.13 cleanup had deleted
+the generated comparator environment. The row stops before source decode or
+renderer execution because canonical `comparator/sources/low-tone.wav` is
+absent. Its two-line receipt records terminal `fail`, every assertion as
+`not_run`, and no render. This is not a valid acoustic row or a renderer
+failure.
+
+One exact environment recovery and replay is authorized:
+
+- preserve the Batch 32.15 receipt bytes by moving its complete `Y01`
+  execution directory beside the canonical name as
+  `Y01-invalid-missing-comparator-assets-32-15`
+- restore the canonical `16` synthetic source files at the frozen absolute
+  comparator root using the checkpoint's tracked generator
+- restore the `30` `C-Y-*` ReaReaRea projects and outputs needed by `Y01`
+  using the checkpoint's frozen generator functions and installed
+  `/Applications/REAPER.app/Contents/MacOS/REAPER`
+- require every restored source, project semantics, project container, output
+  container, and output PCM hash to match the corresponding frozen
+  `comparator.tsv` row before replay
+- require all tracked manifest hashes, checkpoint bytes, and worktree
+  cleanliness to remain exact
+- require the canonical `Y01` execution directory to be absent after the
+  invalid receipt is preserved
+- invoke the unchanged runner once at the same absolute root and stop on the
+  first valid terminal failure or after the complete `Y01` summary
+- do not execute `Y02`, exact `16x`, long-form, stereo, or listening rows
+
+Generated comparator files are evidence prerequisites, not candidate or
+harness changes. Missing musical sources do not block this recovery because
+`Y01` owns only the frozen `30` mono-synthetic comparator rows. No candidate,
+test, runner, manifest, metric, threshold, dependency, or DSP byte may change.
+
 ## Next Task
 
-Execute `g10.032` Batch 32.15 only. Restore the exact checkpoint and acoustic
-ref, then replay all `30` `Y01` rows once with the frozen absolute root. Stop
-before `Y02`.
+Execute `g10.032` Batch 32.16 only. Preserve the invalid pre-DSP receipt,
+restore and hash-verify the exact synthetic comparator environment, then
+replay all `30` `Y01` rows once. Stop before `Y02`.

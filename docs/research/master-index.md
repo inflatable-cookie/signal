@@ -234,6 +234,6 @@ Rejected first-owner brief:
 
 ## Next Task
 
-Execute `g10.032` Batch 32.15 only. Restore the exact checkpoint and replay all
-`30` `Y01` rows once with the frozen absolute evidence root. Stop before
-`Y02`.
+Execute `g10.032` Batch 32.16 only. Restore and hash-verify the frozen
+synthetic comparator environment, then replay all `30` `Y01` rows once. Stop
+before `Y02`.

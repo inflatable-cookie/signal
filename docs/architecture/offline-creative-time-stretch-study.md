@@ -1,6 +1,6 @@
 # Offline Creative Time-Stretch Study
 
-Status: exact-ratio `CreativeStretch` admitted; Cyclic replay authorized
+Status: exact-ratio `CreativeStretch` admitted; Cyclic environment recovery authorized
 Owner: dsp
 Updated: 2026-07-24
 Contract: `085`
@@ -1081,6 +1081,7 @@ all retained construction, structural, and synthetic gates pass.
 
 ## Next Task
 
-Execute `g10.032` Batch 32.15 only. Exact fixed `4x`, `8x`, and `16x` `Dream`
+Execute `g10.032` Batch 32.16 only. Restore the frozen synthetic comparator
+environment and replay `Y01` once. Exact fixed `4x`, `8x`, and `16x` `Dream`
 remains admitted. Broader range, automatic routing, and both overlaps remain
 paused.

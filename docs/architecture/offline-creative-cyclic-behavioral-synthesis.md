@@ -1,6 +1,6 @@
 # Offline Creative Cyclic Behavioral Synthesis
 
-Status: exact checkpoint replay authorized
+Status: exact synthetic comparator recovery authorized
 Owner: dsp
 Updated: 2026-07-24
 Contract: `085`
@@ -256,6 +256,6 @@ identity or another mechanism survey.
 
 ## Next Task
 
-Execute `g10.032` Batch 32.15 only. Restore the exact checkpoint and replay all
-`30` `Y01` rows once with the frozen absolute evidence root. Stop before
+Execute `g10.032` Batch 32.16 only. Restore and hash-verify the exact synthetic
+comparator environment, then replay all `30` `Y01` rows once. Stop before
 `Y02`.

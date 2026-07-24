@@ -90,6 +90,6 @@ strict lane.
 
 ## Next Task
 
-Execute `g10.032` Batch 32.15 only. Restore exact checkpoint `74a6d6d9` and
-replay all `30` `Y01` rows once with the frozen absolute evidence root. Stop
-before `Y02`.
+Execute `g10.032` Batch 32.16 only. Preserve the invalid pre-DSP receipt,
+restore and hash-verify the frozen synthetic comparator environment, then
+replay all `30` `Y01` rows once. Stop before `Y02`.

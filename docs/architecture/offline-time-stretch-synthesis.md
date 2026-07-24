@@ -122,6 +122,7 @@ Retain this frozen baseline and keep its successor lane closed. `g10.031` also
 retained the `2x..4x` creative overlap pause. `g10.032` later reopened Cyclic
 research after new fixed-mode and repeat/jump source evidence, then closed the
 centred compressed-anchor identity after a split-root run. The operator
-superseded that closure and authorized one exact absolute-root replay. Execute
-`g10.032` Batch 32.15 only. Keep `main`, admitted renderers, both overlaps,
-product routing, and Contract `084` unchanged.
+superseded that closure. Its absolute-root replay then stopped before DSP on
+cleaned comparator assets. Execute `g10.032` Batch 32.16 only to restore the
+exact synthetic comparator environment and replay `Y01`. Keep `main`, admitted
+renderers, both overlaps, product routing, and Contract `084` unchanged.

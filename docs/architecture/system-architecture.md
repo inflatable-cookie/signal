@@ -318,5 +318,5 @@ The current package-level naming proposal is recorded in
 ## Next Task
 
 Keep the completed `g10.031` API and frozen transparent baseline unchanged.
-Execute `g10.032` Batch 32.15 only: replay `Y01` from the exact checkpoint with
-the frozen absolute evidence root, then stop before `Y02`.
+Execute `g10.032` Batch 32.16 only: restore the frozen synthetic comparator
+environment, replay `Y01` from the exact checkpoint, then stop before `Y02`.
