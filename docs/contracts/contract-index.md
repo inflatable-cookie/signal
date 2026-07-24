@@ -193,5 +193,5 @@ frozen elsewhere in this index.
 Keep Contract `084` closed. Contract `085` publicly admits fixed-ratio `Dream`
 at exact `4x`, `8x`, and `16x`, plus public fixed-ratio `Cyclic` at exact
 `2x`, `4x`, and `8x`. Cloud remains closed. Batch 33.1 selects
-`ContinuousDirectRenewalDream`. Execute `g10.033` Batch 33.2 complete-brief
-work.
+`ContinuousDirectRenewalDream`; Batch 33.2 freezes its complete authority.
+Execute `g10.033` Batch 33.3 isolated candidate work.

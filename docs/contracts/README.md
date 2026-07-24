@@ -114,4 +114,5 @@ Use `docs/contracts/contract-index.md` and `001-working-rules.md` as the
 contract front doors. Contract `084` and roadmap `g10.030` keep the transparent
 successor program closed. Contract `085` publicly admits fixed-ratio Dream,
 and fixed-ratio Cyclic. Batch 33.1 selects a continuous Dream direction.
-Execute `g10.033` Batch 33.2 complete-brief work. No strict spec lane is open.
+Batch 33.2 freezes its complete authority. Execute `g10.033` Batch 33.3
+isolated candidate work. No strict spec lane is open.

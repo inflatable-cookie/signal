@@ -988,5 +988,5 @@ or that a new candidate is ready.
 ## Next Task
 
 Use `g10.033` as the active stretch roadmap. Batch 33.1 selected a continuous
-Dream direction while retaining Cyclic. Execute Batch 33.2 only. Freeze the
-complete Dream brief without starting implementation.
+Dream direction while retaining Cyclic. Batch 33.2 freezes the complete Dream
+brief. Execute Batch 33.3 only in one isolated candidate.

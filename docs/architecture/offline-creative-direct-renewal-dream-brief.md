@@ -658,6 +658,7 @@ minimal `CreativeStretch` public wrapper, and Batch 31.76 admitted it without
 changing acoustic DSP. `g10.031` is complete. `g10.033` Batch 33.1 supplies
 explicit authority for one separately versioned generalization over exact
 targets `4N <= T <= 16N`, with every acoustic equation and admitted anchor
-unchanged. Execute Batch 33.2 only: freeze its complete brief before
-implementation. Routing, cache, dynamic ratio, and other characters remain
-unavailable.
+unchanged. Batch 33.2 freezes that complete authority in
+`offline-creative-continuous-direct-renewal-dream-brief.md`. Execute Batch
+33.3 only in its isolated worktree. Routing, cache, dynamic ratio, and other
+characters remain unavailable.

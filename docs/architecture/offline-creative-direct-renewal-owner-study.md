@@ -179,6 +179,6 @@ creative coverage to this renderer's exact `4x`, `8x`, and `16x` envelope.
 Batch 31.75 froze a minimal semantic public wrapper, and Batch 31.76 admitted
 it without changing this renderer. `g10.031` is complete. `g10.033` Batch
 33.1 now selects a separately versioned `ContinuousDirectRenewalDream`
-generalization over exact targets `4N <= T <= 16N`. Execute Batch 33.2 only:
-freeze the complete brief before any candidate change. Routing, cache, dynamic
-ratio, and other characters remain unavailable.
+generalization over exact targets `4N <= T <= 16N`. Batch 33.2 freezes the
+complete brief. Execute Batch 33.3 only in its isolated worktree. Routing,
+cache, dynamic ratio, and other characters remain unavailable.

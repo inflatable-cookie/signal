@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: exact-ratio Dream and Cyclic public; continuous Dream brief ready
+Status: exact-ratio Dream and Cyclic public; continuous Dream candidate ready
 Owner: core-product
 Updated: 2026-07-24
 Related contracts: `046`, `048`, `084`
@@ -8,6 +8,7 @@ Related architecture: `docs/architecture/offline-creative-time-stretch-study.md`
 `docs/architecture/offline-creative-fixed-ratio-public-surface.md`,
 `docs/architecture/offline-creative-direct-renewal-owner-study.md`,
 `docs/architecture/offline-creative-direct-renewal-dream-brief.md`,
+`docs/architecture/offline-creative-continuous-direct-renewal-dream-brief.md`,
 `docs/architecture/offline-creative-cyclic-behavioral-synthesis.md`,
 `docs/architecture/offline-creative-centered-compressed-anchor-cyclic-brief.md`,
 `docs/architecture/offline-creative-event-ledger-audited-centered-compressed-anchor-cyclic-brief.md`,
@@ -2122,7 +2123,23 @@ Private Cyclic already accepts exact target geometry from identity through
 Continuous Cyclic widening is a separate later candidate and cannot enter the
 Dream brief.
 
+Batch 33.2 freezes the complete `ContinuousDirectRenewalDream` authority. The
+candidate accepts every integer target satisfying `4N <= T <= 16N` and changes
+only the private validation predicate. Admitted analysis, linked-stereo,
+synthesis, deterministic renewal, envelope, crop, and memory equations remain
+hash-bound. Exact `4x`, `8x`, and `16x` output must remain byte-identical.
+
+Fixed interior acoustic probes are `4.5x`, `6x`, `10x`, and `15.5x`.
+Structural, synthetic, concealed mono, and linked-stereo gates are frozen with
+explicit row/render counts. The earlier Dream stereo waiver does not
+generalize; independent review remains default unless the operator makes a new
+explicit checkpoint-scoped Rule 5 decision after hard controls pass. Failure
+deletes the isolated candidate. Success opens only separate private admission,
+not public widening or routing.
+
 ## Next Task
 
-Execute `g10.033` Batch 33.2 only. Freeze one complete
-`ContinuousDirectRenewalDream` brief without starting implementation.
+Execute `g10.033` Batch 33.3 only from
+`offline-creative-continuous-direct-renewal-dream-brief.md`. Change only the
+private target gate in one isolated worktree. Do not widen the public API or
+begin routing.

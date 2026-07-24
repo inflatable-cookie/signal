@@ -1231,5 +1231,6 @@ ratio, cache, artifacts, and consumers remain unavailable.
 
 ## Next Task
 
-Execute `g10.033` Batch 33.2 only. Freeze one complete
-`ContinuousDirectRenewalDream` brief without starting implementation.
+Execute `g10.033` Batch 33.3 only from the frozen
+`ContinuousDirectRenewalDream` brief. Do not widen the public API or begin
+routing.

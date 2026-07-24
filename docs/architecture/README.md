@@ -28,6 +28,7 @@ Keep milestone sequencing in `roadmaps/`.
 - `offline-time-stretch-synthesis.md`
 - `offline-time-stretch-non-phase-vocoder-feasibility.md`
 - `offline-creative-time-stretch-study.md`
+- `offline-creative-continuous-direct-renewal-dream-brief.md`
 - `offline-creative-cyclic-behavioral-synthesis.md`
 - `offline-creative-centered-compressed-anchor-cyclic-brief.md`
 - `offline-creative-event-ledger-audited-centered-compressed-anchor-cyclic-brief.md`
@@ -50,6 +51,7 @@ Keep milestone sequencing in `roadmaps/`.
 Keep the `g10.030` transparent successor program closed. The exact-ratio
 Dream wrapper is admitted and `g10.031` is complete. `g10.032` privately
 admits the accepted event-ledger Cyclic renderer and publicly admits its
-fixed-ratio extension; Batch 32.29 closes that lane. Execute `g10.033` Batch
-33.2 only. Freeze one complete `ContinuousDirectRenewalDream` brief without
-starting implementation.
+fixed-ratio extension; Batch 32.29 closes that lane. `g10.033` Batch 33.2
+freezes one complete `ContinuousDirectRenewalDream` authority. Execute Batch
+33.3 only in its isolated worktree. Do not widen the public API or begin
+routing.

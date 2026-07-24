@@ -1,6 +1,6 @@
 # 033 - Creative Stretch Continuous-Range Feasibility
 
-Status: active; Batch 33.2 ready
+Status: active; Batch 33.3 ready
 Owner: dsp
 Created: 2026-07-24
 Depends on: `g10.031`, `g10.032`
@@ -39,7 +39,7 @@ The lane must end in one of three honest outcomes:
 
 - [x] audit current public, private, and admitted coverage
 - [x] select one character-preserving complete direction
-- [ ] freeze that direction as one executable implementation brief
+- [x] freeze that direction as one executable implementation brief
 - [ ] admit or reject one isolated fixed-ratio candidate
 - [ ] decide public widening and routing only after acoustic admission
 
@@ -103,7 +103,7 @@ Result:
 
 ## Batch 33.2 - Complete Continuous Owner Brief
 
-Status: ready
+Status: complete
 
 Freeze one `ContinuousDirectRenewalDream` renderer end to end: exact target
 domain, unchanged map, schedule, analysis and synthesis state, boundaries,
@@ -111,26 +111,39 @@ linked stereo, determinism, bounds, fixed interior-ratio gates, concealed
 listening pack, anchor byte-parity, rejection, and cleanup. The candidate may
 change only the private ratio gate. Do not implement DSP in this batch.
 
-- [ ] freeze exact target arithmetic for every `4N <= T <= 16N`
-- [ ] bind immutable hashes for every admitted acoustic source file
-- [ ] freeze frame-adjacent endpoint, non-power-of-two, non-hop-divisible, and
+- [x] freeze exact target arithmetic for every `4N <= T <= 16N`
+- [x] bind immutable hashes for every admitted acoustic source file
+- [x] freeze frame-adjacent endpoint, non-power-of-two, non-hop-divisible, and
   representative interior ratio cases
-- [ ] retain the existing structural and synthetic owners, extended to the
+- [x] retain the existing structural and synthetic owners, extended to the
   frozen interior cases
-- [ ] freeze long-form mono and linked-stereo packs with explicit operator and
+- [x] freeze long-form mono and linked-stereo packs with explicit operator and
   eligible-listener ownership
-- [ ] require byte-exact `4x`, `8x`, and `16x` anchor parity
-- [ ] freeze bounded cost, deterministic state, rejection, cleanup, and minimal
+- [x] require byte-exact `4x`, `8x`, and `16x` anchor parity
+- [x] freeze bounded cost, deterministic state, rejection, cleanup, and minimal
   admission
-- [ ] run docs, Northstar, health, and validation gates
+- [x] run docs, Northstar, health, and validation gates
 
 Stop if the brief requires any transform, window, hop, phase, seed, `space`,
 blend, envelope, normalization, or post-process change. That would be a new
 renderer, not ratio generalization.
 
+Result:
+
+- one canonical
+  `offline-creative-continuous-direct-renewal-dream-brief.md`
+- every exact integer target in `4N..=16N`
+- fixed interior acoustic probes at `4.5x`, `6x`, `10x`, and `15.5x`
+- immutable admitted acoustic source hashes and a gate-only production diff
+- exact parent parity at `4x`, `8x`, and `16x`
+- construction, structural, synthetic, concealed mono, and linked-stereo
+  gates with explicit counts and ownership
+- failure deletes the isolated candidate; success opens only a separate
+  private minimal-admission batch
+
 ## Batch 33.3 - Isolated Fixed-Ratio Admission
 
-Status: pending Batch 33.2
+Status: ready
 
 Implement one complete candidate in a disposable worktree. Admit structural
 and synthetic interior-ratio evidence before concealed long-form listening.
@@ -156,6 +169,8 @@ consumer work separately. Dynamic ratio remains later work.
 
 ## Next Task
 
-Execute Batch 33.2 only. Freeze the complete
-`ContinuousDirectRenewalDream` implementation and evidence brief. Do not
-implement DSP, a router, cache, artifacts, or consumer integration.
+Execute Batch 33.3 only from
+`offline-creative-continuous-direct-renewal-dream-brief.md`. Create one
+isolated worktree, change only private target validation, complete two clean
+conformance rounds, checkpoint once, then run the fixed acoustic gates. Do not
+widen the public API or begin routing.

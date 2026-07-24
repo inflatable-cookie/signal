@@ -119,6 +119,6 @@ retained the `2x..4x` creative overlap pause. `g10.032` later reopened Cyclic
 research, admitted the accepted private renderer, and froze its public
 fixed-ratio surface. Batch 32.28 admits the public wrapper and Batch 32.29
 closes the Cyclic lane. Batch 33.1 selects a separately versioned continuous
-Dream generalization over `4x..16x`. Execute `g10.033` Batch 33.2 only. Freeze
-its complete brief without changing either acoustic renderer, either overlap,
-product routing, or Contract `084`.
+Dream generalization over `4x..16x`; Batch 33.2 freezes its complete brief.
+Execute `g10.033` Batch 33.3 only in one isolated worktree without changing
+either overlap, product routing, or Contract `084`.
