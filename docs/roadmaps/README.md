@@ -339,9 +339,10 @@ unchanged-mechanism Dream generalization over `4x..16x`; Batch 33.2 freezes its
 complete implementation and evidence brief; Batch 33.3 admits it privately.
 Batch 33.4 freezes direct public widening with no same-character router.
 Batch 33.5 admits that public surface. Batch 33.6 publishes the executable
-coverage matrix and closes the lane. Continuous Cyclic feasibility is the next
-planning checkpoint. `g10.034` Batch 34.1 selects one unchanged-equation
-`2N..=8N` evidence candidate; Batch 34.2 docs-only brief work is ready. Lower
+coverage matrix and closes the lane. `g10.034` Batch 34.1 selects one
+unchanged-equation `2N..=8N` evidence candidate. Batch 34.2 freezes its
+complete private entry, conformance, acoustic, listening, cleanup, and minimal
+admission authority. Batch 34.3 is ready for one isolated execution. Lower
 Dream remains paused. No strict spec lane is open.
 
 ## Strict lane posture
@@ -371,4 +372,5 @@ Before rollover:
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the active generation front door. Execute
-`g10.034` Batch 34.2 only; do not start implementation.
+`g10.034` Batch 34.3 only in one disposable worktree; keep public widening
+closed.

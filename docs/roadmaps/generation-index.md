@@ -212,4 +212,4 @@ If that cleanup has not happened, stay in the current generation and finish the 
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the current active-generation front door.
-Execute `g10.034` Batch 34.2 only.
+Execute `g10.034` Batch 34.3 only in one disposable worktree.

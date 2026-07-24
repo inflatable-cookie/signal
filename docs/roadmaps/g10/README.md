@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: `g10.034` active; continuous Cyclic Batch 34.2 ready
+Status: `g10.034` active; continuous Cyclic Batch 34.3 ready
 Updated: 2026-07-24
 
 ## Why this generation matters now
@@ -170,10 +170,11 @@ The 2026-07-19 consolidation reset is authoritative.
   live-monitor implementation landed; that roadmap is paused only on explicit
   hardware alignment and consumer workflow evidence. No feature batch became
   ready through this correction.
-- `g10.034` owns the current creative-stretch planning checkpoint. Only its
-  docs-first complete Cyclic evidence brief is ready. Batch 34.1 selected
-  `2N..=8N` through unchanged acoustic equations. Public Cyclic remains exact
-  `2x`, `4x`, and `8x`; no candidate execution or integration work is ready.
+- `g10.034` owns the current creative-stretch execution checkpoint. Batch
+  34.1 selected `2N..=8N` through unchanged acoustic equations. Batch 34.2
+  freezes the private entry, anchor parity, interior evidence, listening,
+  repair, rejection, cleanup, and minimal admission. One isolated candidate
+  is ready. Public Cyclic remains exact `2x`, `4x`, and `8x`.
 - `g10.028` RealtimePreview source-fill and all render-plane integration remain
   paused.
 
@@ -324,9 +325,9 @@ Do not start Loophole or Chorus planning from Signal internals.
     matrix and closes the lane; no cache, artifact, or consumer work is ready
 - `g10.034` `active`
   - Batch 34.1 selects `ContinuousEventLedgerCyclic` over every exact target
-    `2N <= T <= 8N` through the unchanged admitted equations; Batch 34.2 is
-    ready to freeze its complete implementation and evidence brief; candidate,
-    public decision, admission, and closeout batches remain conditional
+    `2N <= T <= 8N` through the unchanged admitted equations; Batch 34.2
+    freezes its complete implementation and evidence authority; Batch 34.3 is
+    ready for isolated execution; later batches remain conditional
 
 ## Stretch Boundary
 
@@ -824,12 +825,14 @@ because no compatible same-character owner exists.
 `2N..=8N` for one `ContinuousEventLedgerCyclic` evidence candidate. The
 admitted equations and files remain unchanged. Sub-`2x` is excluded because
 identity is a bypass and no acoustic anchor owns the effect's emergence.
-Public Cyclic stays exact at `2x`, `4x`, and `8x`. Batch 34.2 is ready as
-documentation only; no candidate execution, evidence run, or public widening
-is ready.
+Batch 34.2 freezes one private entry, two complete conformance rounds, exact
+anchor byte parity, low/middle/high interior synthetic and long-form evidence,
+linked-stereo admission, Rule 11 repair, cleanup, and minimal private
+admission. Public Cyclic stays exact at `2x`, `4x`, and `8x`. Batch 34.3 is
+ready for one isolated candidate; public widening remains blocked.
 
 ## Next Task
 
-Execute `g10.034` Batch 34.2 only. Freeze the complete
-`ContinuousEventLedgerCyclic` implementation and evidence brief. Do not write
-or run candidate DSP or widen public Cyclic.
+Execute `g10.034` Batch 34.3 only. Implement and execute the frozen
+`ContinuousEventLedgerCyclic` candidate in one disposable worktree. Do not
+widen public Cyclic.

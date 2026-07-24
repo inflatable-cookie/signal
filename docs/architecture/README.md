@@ -32,6 +32,7 @@ Keep milestone sequencing in `roadmaps/`.
 - `offline-creative-cyclic-behavioral-synthesis.md`
 - `offline-creative-centered-compressed-anchor-cyclic-brief.md`
 - `offline-creative-event-ledger-audited-centered-compressed-anchor-cyclic-brief.md`
+- `offline-creative-continuous-event-ledger-cyclic-brief.md`
 - `offline-creative-fixed-ratio-public-surface.md`
 - `offline-creative-audited-layered-cloud-brief.md`
 - `offline-creative-layered-cloud-brief.md`
@@ -54,6 +55,6 @@ admits the accepted event-ledger Cyclic renderer and publicly admits its
 fixed-ratio extension; Batch 32.29 closes that lane. `g10.033` admits one
 continuous `4x..16x` Dream owner and its direct public surface without
 routing. Batch 33.6 publishes the exact executable matrix and closes the lane.
-`g10.034` Batch 34.1 selects a static-compatible `2N..=8N` Cyclic evidence
-candidate. Execute Batch 34.2 as a docs-only complete brief; keep
-implementation closed.
+`g10.034` Batch 34.2 freezes one complete `2N..=8N` Cyclic candidate with
+exact anchor parity, interior acoustic evidence, and cleanup. Execute Batch
+34.3 in one disposable worktree; keep public widening closed.

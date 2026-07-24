@@ -1,6 +1,6 @@
 # Offline Creative Time-Stretch Study
 
-Status: continuous Dream and exact-ratio Cyclic public; `g10.034` brief ready
+Status: continuous Dream and exact-ratio Cyclic public; `g10.034` candidate ready
 Owner: dsp
 Updated: 2026-07-24
 Contract: `085`
@@ -1262,10 +1262,11 @@ Do not narrow the upper boundary. The private validation, source study, and
 accepted product target all terminate at `8x`; exact `16x` remains a typed
 pre-allocation rejection probe.
 
-### Evidence required
+### Frozen execution authority
 
-Batch 34.2 must freeze the complete executable brief. Its minimum target set
-is:
+Batch 34.2 freezes the complete executable
+[ContinuousEventLedgerCyclic brief](./offline-creative-continuous-event-ledger-cyclic-brief.md).
+Its target set is:
 
 - exact anchors: `2N`, `4N`, `8N`
 - one-frame adjacency: `2N+1`, `4N-1`, `4N+1`, `8N-1`
@@ -1322,8 +1323,12 @@ checkpoint-scoped Contract `085` Rule 5 decision.
 - Rule 10: one complete `ContinuousEventLedgerCyclic` candidate may proceed
   only after the evidence brief is frozen.
 
-This is a plausible same-character generalization, not acoustic admission.
-Batch 34.2 is ready as documentation only. No renderer or public code is ready.
+The brief fixes one private entry around the unchanged acoustic core, `334`
+conformance rows, `183` interior synthetic rows, `60` long-form renders,
+matching ReaReaRea captures, concealed mono/stereo decisions, Rule 11 evidence
+repair, rejection, cleanup, and minimal admission. This remains a plausible
+same-character generalization, not acoustic admission. Batch 34.3 is ready for
+one isolated candidate. Public widening remains blocked.
 
 ## Sources
 
@@ -1367,6 +1372,6 @@ Batch 34.2 is ready as documentation only. No renderer or public code is ready.
 
 ## Next Task
 
-Execute `g10.034` Batch 34.2 only. Freeze the complete
-`ContinuousEventLedgerCyclic` implementation and evidence brief without
-changing or running DSP. Keep lower Dream, routing, and integration closed.
+Execute `g10.034` Batch 34.3 only. Implement and execute the frozen
+`ContinuousEventLedgerCyclic` candidate in one disposable worktree. Keep
+public widening, lower Dream, routing, and integration closed.

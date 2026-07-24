@@ -495,6 +495,6 @@ private renderer exactly.
 
 ## Next Task
 
-Execute `g10.034` Batch 34.2 only. Freeze the complete interior-ratio evidence
-brief. Public Cyclic remains exact at `2x`, `4x`, and `8x`; keep every
-implementation and integration surface closed.
+Execute `g10.034` Batch 34.3 only. Implement and execute the frozen continuous
+Cyclic candidate in one disposable worktree. Public Cyclic remains exact at
+`2x`, `4x`, and `8x`; keep integration closed.

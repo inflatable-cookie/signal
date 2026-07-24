@@ -1,6 +1,6 @@
 # 034 - Continuous Cyclic Feasibility
 
-Status: active; Batch 34.2 ready
+Status: active; Batch 34.3 ready
 Owner: dsp
 Created: 2026-07-24
 Depends on: `g10.032`, `g10.033`
@@ -35,15 +35,15 @@ The visible runway is:
 5. minimal public admission, only after acoustic passage
 6. docs-only closeout and next planning checkpoint
 
-Batch 34.1 is complete. Batch 34.2 is the only ready work. Later batches
-remain conditional.
+Batches 34.1 and 34.2 are complete. Batch 34.3 is the only ready work. Later
+batches remain conditional.
 
 ## Goals
 
 - [x] decide the exact fixed-target domain, or close continuous Cyclic
 - [ ] prove whether the admitted owner can preserve Cyclic character at
   interior targets without changing acoustic equations
-- [ ] freeze one complete candidate identity and evidence path before execution
+- [x] freeze one complete candidate identity and evidence path before execution
 - [ ] retain byte-exact `2x`, `4x`, and `8x` anchors
 - [ ] admit or reject interior mono and linked-stereo behavior through listening
 - [ ] widen the public ratio domain only after private acoustic admission
@@ -123,32 +123,46 @@ Result:
 
 ## Batch 34.2 - Complete Interior-Ratio Evidence Brief
 
-Status: ready
+Status: complete
 
 Documentation only. Freeze one buildable and executable candidate with no
 open mechanism, domain, fixture, metric, comparator, listener, cleanup, or
 minimal-admission choice.
 
-- [ ] freeze exact target arithmetic and behavior identity
-- [ ] freeze immutable hashes for every admitted renderer source file
-- [ ] freeze endpoint, one-frame-adjacent, fractional, and representative
+- [x] freeze exact target arithmetic and behavior identity
+- [x] freeze immutable hashes for every admitted renderer source file
+- [x] freeze endpoint, one-frame-adjacent, fractional, and representative
   interior targets
-- [ ] require byte-exact `2x`, `4x`, and `8x` anchor parity
-- [ ] freeze cycle coverage at minimum, default, and maximum
-- [ ] freeze construction, structural, synthetic, long-form mono, and
+- [x] require byte-exact `2x`, `4x`, and `8x` anchor parity
+- [x] freeze cycle coverage at minimum, default, and maximum
+- [x] freeze construction, structural, synthetic, long-form mono, and
   linked-stereo evidence owners
-- [ ] retain the accepted ReaReaRea comparison and long-form source families
-- [ ] require eligible independent stereo review unless the operator later
+- [x] retain the accepted ReaReaRea comparison and long-form source families
+- [x] require eligible independent stereo review unless the operator later
   makes a new checkpoint-scoped Contract `085` Rule 5 decision
-- [ ] freeze deterministic cost, bounded memory, stop, rejection, cleanup, and
+- [x] freeze deterministic cost, bounded memory, stop, rejection, cleanup, and
   minimal admission
 
-No candidate implementation becomes ready until this brief has no
-`decide later` gap.
+Result:
+
+- freeze
+  [ContinuousEventLedgerCyclic](../../architecture/offline-creative-continuous-event-ledger-cyclic-brief.md)
+  as one private `2L..=8L` candidate
+- permit only a private domain entry, internal behavior identity, focused
+  tests, and candidate-only evidence; keep the four acoustic core files exact
+- freeze `334` conformance rows, including `18` byte-parity anchors
+- freeze `183` interior synthetic rows, `60` long-form renders, matching
+  ReaReaRea captures, and concealed mono/stereo decisions
+- freeze exact low/middle/high probes at `5/2`, `5`, and `15/2`
+- distinguish repairable evidence plumbing from valid renderer evidence under
+  Contract `085` Rule 11
+- keep independent stereo review as default; the Batch 32.25 waiver does not
+  transfer
+- make Batch 34.3 ready and keep public widening blocked
 
 ## Batch 34.3 - Isolated Continuous Cyclic Admission
 
-Status: planned; blocked on Batch 34.2
+Status: ready
 
 Execute one complete candidate in a disposable worktree. Run construction and
 structural controls before synthetic evidence, then concealed long-form mono,
@@ -202,11 +216,15 @@ next planning checkpoint.
   listening, and single-candidate rules remain active
 - [x] no implementation or harness surface enters the planning batch
 - [x] failure leaves current public Cyclic behavior unchanged
+- [x] the complete brief fixes implementation, evidence, stop, repair,
+  cleanup, and minimal-admission behavior without a `decide later` gap
+- [x] Batch 34.3 is bounded to one isolated candidate and immutable evidence
+  order
 
 ## Next Task
 
-Execute Batch 34.2 only. Freeze one complete
-`ContinuousEventLedgerCyclic` implementation and evidence brief for every
-integer target `2N <= T <= 8N`. Do not write or run candidate DSP, generate
-listening assets, widen public Cyclic, or begin lower Dream, routing, cache,
-artifacts, dynamic ratio, runtime, UI, Loophole, or Chorus work.
+Execute Batch 34.3 only. Create the disposable candidate worktree, implement
+the frozen private entry and complete evidence system, pass two conformance
+rounds, freeze one acoustic checkpoint, and run the gates in order. Do not
+widen public Cyclic or begin lower Dream, routing, cache, artifacts, dynamic
+ratio, runtime, UI, Loophole, or Chorus work.

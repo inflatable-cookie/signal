@@ -2160,4 +2160,5 @@ These are admission risks, not open design choices.
 
 Keep this admitted renderer and public ratios frozen. Batch 34.1 selected
 `ContinuousEventLedgerCyclic` over `2N..=8N` as a static-compatible evidence
-candidate, not acoustic admission. Execute Batch 34.2 only as documentation.
+candidate, not acoustic admission. Batch 34.2 freezes its complete authority.
+Execute Batch 34.3 only in one disposable worktree.

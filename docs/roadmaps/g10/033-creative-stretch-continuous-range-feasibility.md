@@ -268,7 +268,7 @@ targets change the accepted Cyclic effect.
 
 ## Next Task
 
-Execute `g10.034` Batch 34.2 only. Freeze the complete
-`ContinuousEventLedgerCyclic` implementation and evidence brief. Keep lower
-Dream, implementation, routing, cache, artifacts, dynamic ratio, runtime, UI,
+Execute `g10.034` Batch 34.3 only. Implement and execute the frozen
+`ContinuousEventLedgerCyclic` candidate in one disposable worktree. Keep lower
+Dream, public widening, routing, cache, artifacts, dynamic ratio, runtime, UI,
 Loophole, and Chorus closed.

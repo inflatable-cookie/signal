@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: continuous Dream and exact-ratio Cyclic public; `g10.034` brief ready
+Status: continuous Dream and exact-ratio Cyclic public; `g10.034` candidate ready
 Owner: core-product
 Updated: 2026-07-24
 Related contracts: `046`, `048`, `084`
@@ -12,6 +12,7 @@ Related architecture: `docs/architecture/offline-creative-time-stretch-study.md`
 `docs/architecture/offline-creative-cyclic-behavioral-synthesis.md`,
 `docs/architecture/offline-creative-centered-compressed-anchor-cyclic-brief.md`,
 `docs/architecture/offline-creative-event-ledger-audited-centered-compressed-anchor-cyclic-brief.md`,
+`docs/architecture/offline-creative-continuous-event-ledger-cyclic-brief.md`,
 `docs/architecture/offline-creative-audited-layered-cloud-brief.md`,
 `docs/architecture/offline-creative-layered-cloud-brief.md`,
 `docs/architecture/offline-creative-linked-stn-noise-morph-brief.md`,
@@ -27,7 +28,7 @@ Related architecture: `docs/architecture/offline-creative-time-stretch-study.md`
 Related research:
 `docs/research/specimen-dossiers/creative-stretch-source-triangulation.md`,
 `docs/research/specimen-dossiers/cyclic-time-stretch-source-architecture.md`
-Roadmaps: `g10.031`, `g10.032`, `g10.033`
+Roadmaps: `g10.031`, `g10.032`, `g10.033`, `g10.034`
 
 ## Purpose
 
@@ -2220,14 +2221,27 @@ without a ratio branch or acoustic-equation change.
 comparator, or listening anchor owns effect emergence immediately above it.
 Private acceptance remains non-promotional.
 
-Batch 34.2 must freeze exact anchor parity, frame-adjacent and fractional
-targets, interior synthetic and ReaReaRea comparison rows, concealed long-form
-mono, hard linked-stereo controls, eligible independent review, rejection,
-cleanup, and minimal admission. The Batch 32.25 waiver does not transfer.
-Candidate execution and public widening remain blocked.
+Batch 34.2 freezes
+`signal-creative-continuous-event-ledger-cyclic-v1` as one complete evidence
+candidate. Its only production mechanism change is a private `2L..=8L` entry
+around the unchanged admitted renderer. `plan.rs`, `schedule.rs`,
+`interpolate.rs`, and `synthesis.rs` remain hash-bound.
+
+Conformance contains `334` rows, including complete domain, map, boundary,
+memory, deterministic, stereo, and `18` exact anchor byte-parity owners.
+Acoustic admission contains `183` synthetic rows and `60` long-form renders at
+exact `5/2`, `5`, and `15/2`, with matching ReaReaRea evidence and concealed
+mono/stereo decisions. Evidence defects remain repairable under Rule 11 and
+cannot be misreported as renderer failures. A valid hard or listening failure
+rejects the immutable acoustic checkpoint.
+
+The Batch 32.25 waiver does not transfer. Eligible independent stereo review
+remains default unless the operator makes a new decision naming the exact
+checkpoint after every hard stereo control passes. Batch 34.3 is ready for one
+isolated candidate. Public widening remains blocked.
 
 ## Next Task
 
-Execute `g10.034` Batch 34.2 only. Freeze the complete
-`ContinuousEventLedgerCyclic` implementation and evidence brief without
-changing or running DSP.
+Execute `g10.034` Batch 34.3 only. Implement and execute the frozen
+`ContinuousEventLedgerCyclic` candidate in one disposable worktree. Keep public
+widening and integration closed.
