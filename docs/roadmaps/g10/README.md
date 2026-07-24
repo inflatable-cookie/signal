@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: `g10.032` active; Batch 32.24 Cyclic evidence completion ready
+Status: `g10.032` active; Batch 32.25 Cyclic operator listening ready
 Updated: 2026-07-24
 
 ## Why this generation matters now
@@ -735,10 +735,13 @@ complete an acoustically unjudged product target. Checkpoint `995ea516`, tree
 `fd42543b`, remains available as an unreferenced Git object. Contract `085`
 now authorizes exact implementation recovery, iterative evidence repair, and
 continued execution through valid synthetic and listening judgment. Batch
-32.24 is ready.
+32.24 recovered the exact renderer and completed two `340/340` structural
+rounds. Batch 32.25 has passed `183/183` synthetic rows, `5/5` exact-`16x`
+rejection rows, and all `45` long-form mono renders. Its concealed operator
+pack is ready.
 
 ## Next Task
 
-Execute `g10.032` Batch 32.24. Restore the exact event-ledger implementation
-onto a fresh isolated branch, repair its complete evidence path, and complete
-conformance.
+Continue `g10.032` Batch 32.25 with operator listening of the concealed
+neutral A/B rows and Signal short/neutral/long direction trios. Keep the
+candidate active until listening accepts it or identifies a renderer change.

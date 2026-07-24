@@ -800,7 +800,7 @@ acceptable substitute.
 
 ## Batch 32.24 - Recover Candidate And Complete Evidence Execution
 
-Status: ready
+Status: complete
 
 1. create one fresh isolated worktree and branch from current `main`
 2. restore the exact checkpoint candidate module, tests, manifests,
@@ -816,15 +816,32 @@ Status: ready
 Stop only if a missing semantic choice requires docs-level authority. Do not
 change renderer formulas from acoustic output during this batch.
 
+The exact checkpoint renderer was recovered byte-for-byte in
+`/Users/tom/Dev/projects/signal-candidate-32-24`. Two independent structural
+rounds passed `340/340` rows each. Evidence repair replaced placeholder pitch,
+cadence, gap, tail, event, and linked-stereo diagnostics with executable
+measurements and corrected comparator binding. No renderer formula changed.
+
 ## Batch 32.25 - Acoustic Admission And Listening
 
-Status: pending on Batch 32.24
+Status: active; operator mono pack ready
 
 Run the complete synthetic sequence from one clean versioned renderer
 checkpoint. Fix evidence implementation defects and rerun affected scopes.
 When synthetic integrity passes, generate the concealed long-form mono and
 linked-stereo pack at `2x`, `4x`, and `8x`, with `4x` and `8x` primary. The
 operator's listening judgment decides whether the effect is satisfactory.
+
+Synthetic admission passed all `183` rows and `201` planned renders. Exact
+`16x` rejection passed `5/5` with no output allocation. All `45` long-form
+mono rows rendered. The ignored operator pack contains `15` concealed
+neutral-cycle A/B comparisons against ReaReaRea and `15`
+short/neutral/long Signal direction trios at `2x`, `4x`, and `8x`.
+
+The cadence-order aggregate now tests the exact planned cycle spacing.
+Measured FFT and autocorrelation values remain diagnostics. The earlier rule
+could not distinguish sub-hop `5 ms` and `48 ms` cadence through a
+`0.1..20 Hz`, `512`-hop measurement and was not an executable acoustic veto.
 
 ## Batch 32.26 - Renderer Iteration Or Admission
 
@@ -849,6 +866,8 @@ target remains active until accepted or explicitly cancelled by the operator.
 
 ## Next Task
 
-Execute Batch 32.24. Recover the exact event-ledger implementation from
-checkpoint `995ea516`, repair the executable evidence path, and complete
-conformance without treating harness defects as renderer outcomes.
+Continue Batch 32.25. The operator listens to the concealed neutral A/B rows
+and Signal short/neutral/long direction trios, starting with `8x` percussion,
+pads, and full mix. Preserve the key until decisions are recorded. If the
+character is accepted, render the stereo pack and complete admission. If not,
+revise one complete renderer version in the isolated branch.

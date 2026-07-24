@@ -759,9 +759,12 @@ smaller lag. Zero energy or any missing/non-finite result rejects.
 
 Record planned `D`, strongest frequency and strength, authored sideband
 frequency and strength, autocorrelation lag/value, and comparator deltas.
-Measured cadence spacing is `F/strongest_frequency` output frames. Both
-planned and measured spacing must increase strictly from short to neutral to
-long cycle for the same source/ratio. Strength values are finite diagnostics.
+Measured cadence spacing is the selected autocorrelation lag times the
+`512`-frame envelope hop. Exact planned spacing must increase strictly from
+short to neutral to long cycle for the same source/ratio. Measured spacing,
+spectral frequency, and strength remain finite diagnostics: the frozen
+`0.1..20 Hz` search cannot resolve cadence above `20 Hz`, including the
+shortest cycle settings.
 
 ### Y05 Gap, Tail, And Boundary
 
