@@ -41,8 +41,9 @@
 //! integration is allowed.
 //!
 //! [`render_creative_stretch`] is a separate offline whole-buffer surface for
-//! the admitted exact-ratio [`CreativeStretchCharacter::Dream`] effect. It is
-//! not a backend tier, transparent fallback, cache route, or audio-thread API.
+//! the admitted exact-ratio [`CreativeStretchCharacter::Dream`] and
+//! [`CreativeStretchCharacter::Cyclic`] effects. It is not a backend tier,
+//! transparent fallback, cache route, or audio-thread API.
 
 #![warn(missing_docs)]
 
@@ -112,7 +113,9 @@ pub use corpus_report::{
 };
 pub use creative::{
     render_creative_stretch, CreativeStretchCharacter, CreativeStretchError,
-    CreativeStretchRequest, CREATIVE_STRETCH_DEFAULT_SPACE, CREATIVE_STRETCH_ENGINE_VERSION,
+    CreativeStretchRequest, CREATIVE_STRETCH_CYCLIC_SUPPORTED_RATIOS,
+    CREATIVE_STRETCH_DEFAULT_CYCLE, CREATIVE_STRETCH_DEFAULT_SPACE,
+    CREATIVE_STRETCH_ENGINE_VERSION, CREATIVE_STRETCH_MAX_CYCLE, CREATIVE_STRETCH_MIN_CYCLE,
     CREATIVE_STRETCH_SUPPORTED_RATIOS,
 };
 pub use formant_boundary::{measure_formant_boundary, StretchFormantBoundaryMeasurement};

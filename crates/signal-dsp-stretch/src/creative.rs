@@ -1,16 +1,35 @@
+use crate::creative_cyclic::{
+    render as render_cyclic, CandidateError as CyclicCandidateError, Request as CyclicRequest,
+};
 use crate::creative_direct_renewal_dream::{
-    render, CandidateError, CandidateRequest, ADMISSION_SEED,
+    render as render_dream, CandidateError as DreamCandidateError,
+    CandidateRequest as DreamCandidateRequest, ADMISSION_SEED,
 };
 use signal_primitives::{Sample, SampleRate};
+use std::time::Duration;
 
 /// Semantic behavior version of the public creative-stretch renderer.
-pub const CREATIVE_STRETCH_ENGINE_VERSION: &str = "signal-creative-stretch-v1";
+pub const CREATIVE_STRETCH_ENGINE_VERSION: &str = "signal-creative-stretch-v2";
 
-/// Exact output/input ratios supported by [`render_creative_stretch`].
+/// Exact output/input ratios supported by the `Dream` character.
 pub const CREATIVE_STRETCH_SUPPORTED_RATIOS: [usize; 3] = [4, 8, 16];
+
+/// Exact output/input ratios supported by the `Cyclic` character.
+pub const CREATIVE_STRETCH_CYCLIC_SUPPORTED_RATIOS: [usize; 3] = [2, 4, 8];
 
 /// Default preserve-to-widen value used by [`CreativeStretchRequest::new`].
 pub const CREATIVE_STRETCH_DEFAULT_SPACE: f32 = 0.5;
+
+/// Shortest admitted `Cyclic` cycle duration.
+pub const CREATIVE_STRETCH_MIN_CYCLE: Duration = Duration::from_millis(5);
+
+/// Default admitted `Cyclic` cycle duration.
+pub const CREATIVE_STRETCH_DEFAULT_CYCLE: Duration = Duration::from_millis(48);
+
+/// Longest admitted `Cyclic` cycle duration.
+pub const CREATIVE_STRETCH_MAX_CYCLE: Duration = Duration::from_millis(90);
+
+const MAX_EXACT_INTEGER_U128: u128 = (1_u128 << 53) - 1;
 
 /// Creative character requested from Signal's offline renderer.
 #[non_exhaustive]
@@ -18,13 +37,26 @@ pub const CREATIVE_STRETCH_DEFAULT_SPACE: f32 = 0.5;
 pub enum CreativeStretchCharacter {
     /// Smooth, fused, musical spectral smear.
     Dream,
+    /// Commanded Akai-style cyclic repetition.
+    Cyclic,
+}
+
+impl CreativeStretchCharacter {
+    /// Exact output/input ratios admitted for this character.
+    pub const fn supported_ratios(self) -> &'static [usize] {
+        match self {
+            Self::Dream => &CREATIVE_STRETCH_SUPPORTED_RATIOS,
+            Self::Cyclic => &CREATIVE_STRETCH_CYCLIC_SUPPORTED_RATIOS,
+        }
+    }
 }
 
 /// One whole-buffer offline creative-stretch request.
 ///
 /// `target_frames` is authoritative and must equal the source frame count
-/// multiplied by `4`, `8`, or `16`. This request allocates and must not be
-/// rendered on the audio thread.
+/// multiplied by a ratio returned from
+/// [`CreativeStretchCharacter::supported_ratios`]. This request allocates and
+/// must not be rendered on the audio thread.
 #[non_exhaustive]
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct CreativeStretchRequest<'a> {
@@ -36,15 +68,21 @@ pub struct CreativeStretchRequest<'a> {
     pub sample_rate: SampleRate,
     /// Exact requested output frame count.
     pub target_frames: usize,
-    /// Semantic creative character. Only [`CreativeStretchCharacter::Dream`]
-    /// is currently admitted.
+    /// Semantic creative character.
     pub character: CreativeStretchCharacter,
-    /// Preserve-to-widen control in the inclusive range `0.0..=1.0`.
+    /// Dream preserve-to-widen control in the inclusive range `0.0..=1.0`.
+    ///
+    /// Cyclic requests must retain [`CREATIVE_STRETCH_DEFAULT_SPACE`].
     pub space: f32,
+    /// Optional Cyclic cycle duration.
+    ///
+    /// `None` selects [`CREATIVE_STRETCH_DEFAULT_CYCLE`]. Dream requests must
+    /// leave this as `None`.
+    pub cycle: Option<Duration>,
 }
 
 impl<'a> CreativeStretchRequest<'a> {
-    /// Construct a request with [`CREATIVE_STRETCH_DEFAULT_SPACE`].
+    /// Construct a request with default character controls.
     pub fn new(
         input: &'a [Sample],
         channels: u16,
@@ -59,6 +97,7 @@ impl<'a> CreativeStretchRequest<'a> {
             target_frames,
             character,
             space: CREATIVE_STRETCH_DEFAULT_SPACE,
+            cycle: None,
         }
     }
 
@@ -68,6 +107,15 @@ impl<'a> CreativeStretchRequest<'a> {
     /// never clamped.
     pub fn with_space(mut self, space: f32) -> Self {
         self.space = space;
+        self
+    }
+
+    /// Set the Cyclic cycle duration.
+    ///
+    /// Dream requests reject this control. Invalid Cyclic durations are
+    /// reported by [`render_creative_stretch`]; they are never clamped.
+    pub fn with_cycle(mut self, cycle: Duration) -> Self {
+        self.cycle = Some(cycle);
         self
     }
 }
@@ -86,6 +134,10 @@ pub enum CreativeStretchError {
     NonFiniteInput,
     /// `space` was non-finite or outside `0.0..=1.0`.
     InvalidSpace,
+    /// Cyclic `cycle` was outside the inclusive `5..=90 ms` range.
+    InvalidCycle,
+    /// A character-local control was supplied to the wrong character.
+    UnsupportedCharacterControl,
     /// Non-zero output was requested from empty input.
     EmptyInput,
     /// A non-empty input requested zero output frames.
@@ -100,26 +152,123 @@ pub enum CreativeStretchError {
     NonFiniteOutput,
 }
 
-impl From<CandidateError> for CreativeStretchError {
-    fn from(error: CandidateError) -> Self {
+impl From<DreamCandidateError> for CreativeStretchError {
+    fn from(error: DreamCandidateError) -> Self {
         match error {
-            CandidateError::InvalidChannels => Self::InvalidChannelCount,
-            CandidateError::InvalidSampleRate => Self::UnsupportedSampleRate,
-            CandidateError::PartialFrame => Self::PartialFrame,
-            CandidateError::NonFiniteInput => Self::NonFiniteInput,
-            CandidateError::InvalidSpace => Self::InvalidSpace,
-            CandidateError::EmptyInput => Self::EmptyInput,
-            CandidateError::ZeroTarget => Self::ZeroTargetFrames,
-            CandidateError::UnsupportedRatio => Self::UnsupportedTargetFrames,
-            CandidateError::SizeOverflow => Self::SizeOverflow,
-            CandidateError::AllocationFailed => Self::AllocationFailed,
-            CandidateError::NonFiniteProcessing => Self::NonFiniteOutput,
+            DreamCandidateError::InvalidChannels => Self::InvalidChannelCount,
+            DreamCandidateError::InvalidSampleRate => Self::UnsupportedSampleRate,
+            DreamCandidateError::PartialFrame => Self::PartialFrame,
+            DreamCandidateError::NonFiniteInput => Self::NonFiniteInput,
+            DreamCandidateError::InvalidSpace => Self::InvalidSpace,
+            DreamCandidateError::EmptyInput => Self::EmptyInput,
+            DreamCandidateError::ZeroTarget => Self::ZeroTargetFrames,
+            DreamCandidateError::UnsupportedRatio => Self::UnsupportedTargetFrames,
+            DreamCandidateError::SizeOverflow => Self::SizeOverflow,
+            DreamCandidateError::AllocationFailed => Self::AllocationFailed,
+            DreamCandidateError::NonFiniteProcessing => Self::NonFiniteOutput,
         }
     }
 }
 
-/// Render one exact-ratio creative stretch through Signal's admitted `Dream`
-/// renderer.
+fn canonical_cycle_us(cycle: Duration) -> Result<u32, CreativeStretchError> {
+    if !(CREATIVE_STRETCH_MIN_CYCLE..=CREATIVE_STRETCH_MAX_CYCLE).contains(&cycle) {
+        return Err(CreativeStretchError::InvalidCycle);
+    }
+    u32::try_from((cycle.as_nanos() + 500) / 1_000).map_err(|_| CreativeStretchError::SizeOverflow)
+}
+
+fn validate_request(
+    request: CreativeStretchRequest<'_>,
+) -> Result<Option<u32>, CreativeStretchError> {
+    let channels = usize::from(request.channels);
+    if !matches!(channels, 1 | 2) {
+        return Err(CreativeStretchError::InvalidChannelCount);
+    }
+    if request.input.len() % channels != 0 {
+        return Err(CreativeStretchError::PartialFrame);
+    }
+    if !(8_000..=192_000).contains(&request.sample_rate.0) {
+        return Err(CreativeStretchError::UnsupportedSampleRate);
+    }
+    if request.input.iter().any(|sample| !sample.is_finite()) {
+        return Err(CreativeStretchError::NonFiniteInput);
+    }
+
+    let cycle_us = match request.character {
+        CreativeStretchCharacter::Dream => {
+            if request.cycle.is_some() {
+                return Err(CreativeStretchError::UnsupportedCharacterControl);
+            }
+            if !request.space.is_finite() || !(0.0..=1.0).contains(&request.space) {
+                return Err(CreativeStretchError::InvalidSpace);
+            }
+            None
+        }
+        CreativeStretchCharacter::Cyclic => {
+            if request.space.to_bits() != CREATIVE_STRETCH_DEFAULT_SPACE.to_bits() {
+                return Err(CreativeStretchError::UnsupportedCharacterControl);
+            }
+            Some(canonical_cycle_us(
+                request.cycle.unwrap_or(CREATIVE_STRETCH_DEFAULT_CYCLE),
+            )?)
+        }
+    };
+
+    let source_frames = request.input.len() / channels;
+    if source_frames == 0 || request.target_frames == 0 {
+        return if source_frames == 0 && request.target_frames == 0 {
+            Ok(cycle_us)
+        } else if source_frames == 0 {
+            Err(CreativeStretchError::EmptyInput)
+        } else {
+            Err(CreativeStretchError::ZeroTargetFrames)
+        };
+    }
+    if source_frames as u128 > MAX_EXACT_INTEGER_U128
+        || request.target_frames as u128 > MAX_EXACT_INTEGER_U128
+    {
+        return Err(CreativeStretchError::SizeOverflow);
+    }
+    let supported = request.character.supported_ratios().iter().any(|ratio| {
+        source_frames
+            .checked_mul(*ratio)
+            .is_some_and(|expected| expected == request.target_frames)
+    });
+    if !supported {
+        return Err(CreativeStretchError::UnsupportedTargetFrames);
+    }
+    request
+        .target_frames
+        .checked_mul(channels)
+        .and_then(|samples| samples.checked_mul(std::mem::size_of::<Sample>()))
+        .ok_or(CreativeStretchError::SizeOverflow)?;
+    Ok(cycle_us)
+}
+
+fn map_cyclic_error(
+    error: CyclicCandidateError,
+    request: CreativeStretchRequest<'_>,
+) -> CreativeStretchError {
+    match error {
+        CyclicCandidateError::InvalidChannels => CreativeStretchError::InvalidChannelCount,
+        CyclicCandidateError::PartialFrame => CreativeStretchError::PartialFrame,
+        CyclicCandidateError::InvalidSampleRate => CreativeStretchError::UnsupportedSampleRate,
+        CyclicCandidateError::NonFiniteInput => CreativeStretchError::NonFiniteInput,
+        CyclicCandidateError::InvalidCycle => CreativeStretchError::InvalidCycle,
+        CyclicCandidateError::InvalidEmptyTarget if request.input.is_empty() => {
+            CreativeStretchError::EmptyInput
+        }
+        CyclicCandidateError::InvalidEmptyTarget => CreativeStretchError::ZeroTargetFrames,
+        CyclicCandidateError::UnsupportedCompression | CyclicCandidateError::UnsupportedRatio => {
+            CreativeStretchError::UnsupportedTargetFrames
+        }
+        CyclicCandidateError::ExactIntegerLimit
+        | CyclicCandidateError::ArithmeticOverflow
+        | CyclicCandidateError::AllocationOverflow => CreativeStretchError::SizeOverflow,
+    }
+}
+
+/// Render one exact-ratio creative stretch through Signal's admitted renderer.
 ///
 /// The result contains exactly `request.target_frames * request.channels`
 /// finite interleaved samples. Unsupported requests return a typed error;
@@ -127,8 +276,9 @@ impl From<CandidateError> for CreativeStretchError {
 pub fn render_creative_stretch(
     request: CreativeStretchRequest<'_>,
 ) -> Result<Vec<Sample>, CreativeStretchError> {
+    let cycle_us = validate_request(request)?;
     match request.character {
-        CreativeStretchCharacter::Dream => render(CandidateRequest {
+        CreativeStretchCharacter::Dream => render_dream(DreamCandidateRequest {
             input: request.input,
             channels: usize::from(request.channels),
             sample_rate: request.sample_rate.0,
@@ -137,6 +287,14 @@ pub fn render_creative_stretch(
             space: request.space,
         })
         .map_err(CreativeStretchError::from),
+        CreativeStretchCharacter::Cyclic => render_cyclic(CyclicRequest {
+            input: request.input,
+            channels: usize::from(request.channels),
+            sample_rate: request.sample_rate.0,
+            target_frames: request.target_frames,
+            cycle_us: cycle_us.expect("validated Cyclic request carries cycle"),
+        })
+        .map_err(|error| map_cyclic_error(error, request)),
     }
 }
 
@@ -165,13 +323,13 @@ mod tests {
         input
     }
 
-    fn private_render(
+    fn dream_private_render(
         input: &[Sample],
         channels: usize,
         target_frames: usize,
         space: f32,
     ) -> Vec<Sample> {
-        render(CandidateRequest {
+        render_dream(DreamCandidateRequest {
             input,
             channels,
             sample_rate: SAMPLE_RATE.0,
@@ -180,6 +338,22 @@ mod tests {
             space,
         })
         .expect("private reference render")
+    }
+
+    fn cyclic_private_render(
+        input: &[Sample],
+        channels: usize,
+        target_frames: usize,
+        cycle_us: u32,
+    ) -> Vec<Sample> {
+        render_cyclic(CyclicRequest {
+            input,
+            channels,
+            sample_rate: SAMPLE_RATE.0,
+            target_frames,
+            cycle_us,
+        })
+        .expect("private Cyclic reference render")
     }
 
     #[test]
@@ -195,11 +369,24 @@ mod tests {
 
         assert_eq!(
             CREATIVE_STRETCH_ENGINE_VERSION,
-            "signal-creative-stretch-v1"
+            "signal-creative-stretch-v2"
         );
         assert_eq!(CREATIVE_STRETCH_SUPPORTED_RATIOS, [4, 8, 16]);
+        assert_eq!(CREATIVE_STRETCH_CYCLIC_SUPPORTED_RATIOS, [2, 4, 8]);
+        assert_eq!(
+            CreativeStretchCharacter::Dream.supported_ratios(),
+            &[4, 8, 16]
+        );
+        assert_eq!(
+            CreativeStretchCharacter::Cyclic.supported_ratios(),
+            &[2, 4, 8]
+        );
         assert_eq!(CREATIVE_STRETCH_DEFAULT_SPACE.to_bits(), 0.5_f32.to_bits());
+        assert_eq!(CREATIVE_STRETCH_MIN_CYCLE, Duration::from_millis(5));
+        assert_eq!(CREATIVE_STRETCH_DEFAULT_CYCLE, Duration::from_millis(48));
+        assert_eq!(CREATIVE_STRETCH_MAX_CYCLE, Duration::from_millis(90));
         assert_eq!(request.space.to_bits(), 0.5_f32.to_bits());
+        assert_eq!(request.cycle, None);
     }
 
     #[test]
@@ -215,7 +402,7 @@ mod tests {
                 CreativeStretchCharacter::Dream,
             ))
             .expect("public mono render");
-            let private = private_render(&input, 1, target_frames, 0.5);
+            let private = dream_private_render(&input, 1, target_frames, 0.5);
 
             assert_eq!(public, private);
             assert_eq!(public.len(), target_frames);
@@ -240,11 +427,116 @@ mod tests {
                     .with_space(space),
                 )
                 .expect("public stereo render");
-                let private = private_render(&input, 2, target_frames, space);
+                let private = dream_private_render(&input, 2, target_frames, space);
 
                 assert_eq!(public, private);
                 assert_eq!(public.len(), target_frames * 2);
                 assert!(public.iter().all(|sample| sample.is_finite()));
+            }
+        }
+    }
+
+    #[test]
+    fn public_cyclic_matches_private_renderer_at_every_ratio_and_cycle_anchor() {
+        let mono = mono_input(64);
+        let stereo = stereo_input(64);
+        let cycles = [
+            (Some(CREATIVE_STRETCH_MIN_CYCLE), 5_000),
+            (None, 48_000),
+            (Some(CREATIVE_STRETCH_MAX_CYCLE), 90_000),
+        ];
+
+        for ratio in CREATIVE_STRETCH_CYCLIC_SUPPORTED_RATIOS {
+            for (cycle, cycle_us) in cycles {
+                let mono_target = mono.len() * ratio;
+                let mut mono_request = CreativeStretchRequest::new(
+                    &mono,
+                    1,
+                    SAMPLE_RATE,
+                    mono_target,
+                    CreativeStretchCharacter::Cyclic,
+                );
+                if let Some(cycle) = cycle {
+                    mono_request = mono_request.with_cycle(cycle);
+                }
+                let public_mono =
+                    render_creative_stretch(mono_request).expect("public Cyclic mono render");
+                let private_mono = cyclic_private_render(&mono, 1, mono_target, cycle_us);
+                assert_eq!(public_mono, private_mono);
+                assert_eq!(public_mono.len(), mono_target);
+                assert!(public_mono.iter().all(|sample| sample.is_finite()));
+
+                let stereo_target = stereo.len() / 2 * ratio;
+                let mut stereo_request = CreativeStretchRequest::new(
+                    &stereo,
+                    2,
+                    SAMPLE_RATE,
+                    stereo_target,
+                    CreativeStretchCharacter::Cyclic,
+                );
+                if let Some(cycle) = cycle {
+                    stereo_request = stereo_request.with_cycle(cycle);
+                }
+                let public_stereo =
+                    render_creative_stretch(stereo_request).expect("public Cyclic stereo render");
+                let private_stereo = cyclic_private_render(&stereo, 2, stereo_target, cycle_us);
+                assert_eq!(public_stereo, private_stereo);
+                assert_eq!(public_stereo.len(), stereo_target * 2);
+                assert!(public_stereo.iter().all(|sample| sample.is_finite()));
+            }
+        }
+    }
+
+    #[test]
+    fn public_cyclic_cycle_canonicalization_is_integer_round_half_up() {
+        let input = mono_input(64);
+        let target_frames = input.len() * 2;
+        let cases = [
+            (Duration::from_nanos(5_000_499), 5_000),
+            (Duration::from_nanos(5_000_500), 5_001),
+        ];
+
+        for (cycle, cycle_us) in cases {
+            let public = render_creative_stretch(
+                CreativeStretchRequest::new(
+                    &input,
+                    1,
+                    SAMPLE_RATE,
+                    target_frames,
+                    CreativeStretchCharacter::Cyclic,
+                )
+                .with_cycle(cycle),
+            )
+            .expect("public Cyclic rounded-cycle render");
+            let private = cyclic_private_render(&input, 1, target_frames, cycle_us);
+            assert_eq!(public, private);
+        }
+    }
+
+    #[test]
+    fn public_cyclic_preserves_linked_stereo_relations() {
+        let mono = mono_input(64);
+        for anti_phase in [false, true] {
+            let mut input = Vec::with_capacity(mono.len() * 2);
+            for sample in &mono {
+                input.push(*sample);
+                input.push(if anti_phase { -*sample } else { *sample });
+            }
+            let output = render_creative_stretch(CreativeStretchRequest::new(
+                &input,
+                2,
+                SAMPLE_RATE,
+                mono.len() * 8,
+                CreativeStretchCharacter::Cyclic,
+            ))
+            .expect("public Cyclic linked-stereo render");
+            for frame in output.chunks_exact(2) {
+                let relation_error = if anti_phase {
+                    frame[0] + frame[1]
+                } else {
+                    frame[0] - frame[1]
+                };
+                assert!(relation_error.abs() <= 1e-6);
             }
         }
     }
@@ -272,50 +564,74 @@ mod tests {
         ))
         .expect("empty render");
         assert!(empty.is_empty());
+
+        let cyclic_request = CreativeStretchRequest::new(
+            &input,
+            1,
+            SAMPLE_RATE,
+            input.len() * 4,
+            CreativeStretchCharacter::Cyclic,
+        );
+        let first_cyclic = render_creative_stretch(cyclic_request).expect("first Cyclic render");
+        let second_cyclic = render_creative_stretch(cyclic_request).expect("second Cyclic render");
+        assert_eq!(first_cyclic, second_cyclic);
+
+        let empty_cyclic = render_creative_stretch(CreativeStretchRequest::new(
+            &[],
+            1,
+            SAMPLE_RATE,
+            0,
+            CreativeStretchCharacter::Cyclic,
+        ))
+        .expect("empty Cyclic render");
+        assert!(empty_cyclic.is_empty());
     }
 
     #[test]
     fn every_private_error_has_the_frozen_public_mapping() {
         let mappings = [
             (
-                CandidateError::InvalidChannels,
+                DreamCandidateError::InvalidChannels,
                 CreativeStretchError::InvalidChannelCount,
             ),
             (
-                CandidateError::InvalidSampleRate,
+                DreamCandidateError::InvalidSampleRate,
                 CreativeStretchError::UnsupportedSampleRate,
             ),
             (
-                CandidateError::PartialFrame,
+                DreamCandidateError::PartialFrame,
                 CreativeStretchError::PartialFrame,
             ),
             (
-                CandidateError::NonFiniteInput,
+                DreamCandidateError::NonFiniteInput,
                 CreativeStretchError::NonFiniteInput,
             ),
             (
-                CandidateError::InvalidSpace,
+                DreamCandidateError::InvalidSpace,
                 CreativeStretchError::InvalidSpace,
             ),
-            (CandidateError::EmptyInput, CreativeStretchError::EmptyInput),
             (
-                CandidateError::ZeroTarget,
+                DreamCandidateError::EmptyInput,
+                CreativeStretchError::EmptyInput,
+            ),
+            (
+                DreamCandidateError::ZeroTarget,
                 CreativeStretchError::ZeroTargetFrames,
             ),
             (
-                CandidateError::UnsupportedRatio,
+                DreamCandidateError::UnsupportedRatio,
                 CreativeStretchError::UnsupportedTargetFrames,
             ),
             (
-                CandidateError::SizeOverflow,
+                DreamCandidateError::SizeOverflow,
                 CreativeStretchError::SizeOverflow,
             ),
             (
-                CandidateError::AllocationFailed,
+                DreamCandidateError::AllocationFailed,
                 CreativeStretchError::AllocationFailed,
             ),
             (
-                CandidateError::NonFiniteProcessing,
+                DreamCandidateError::NonFiniteProcessing,
                 CreativeStretchError::NonFiniteOutput,
             ),
         ];
@@ -323,6 +639,71 @@ mod tests {
         for (private, public) in mappings {
             assert_eq!(CreativeStretchError::from(private), public);
         }
+
+        let input = mono_input(64);
+        let request = CreativeStretchRequest::new(
+            &input,
+            1,
+            SAMPLE_RATE,
+            input.len() * 2,
+            CreativeStretchCharacter::Cyclic,
+        );
+        let cyclic_mappings = [
+            (
+                CyclicCandidateError::InvalidChannels,
+                CreativeStretchError::InvalidChannelCount,
+            ),
+            (
+                CyclicCandidateError::PartialFrame,
+                CreativeStretchError::PartialFrame,
+            ),
+            (
+                CyclicCandidateError::InvalidSampleRate,
+                CreativeStretchError::UnsupportedSampleRate,
+            ),
+            (
+                CyclicCandidateError::NonFiniteInput,
+                CreativeStretchError::NonFiniteInput,
+            ),
+            (
+                CyclicCandidateError::InvalidCycle,
+                CreativeStretchError::InvalidCycle,
+            ),
+            (
+                CyclicCandidateError::InvalidEmptyTarget,
+                CreativeStretchError::ZeroTargetFrames,
+            ),
+            (
+                CyclicCandidateError::UnsupportedCompression,
+                CreativeStretchError::UnsupportedTargetFrames,
+            ),
+            (
+                CyclicCandidateError::UnsupportedRatio,
+                CreativeStretchError::UnsupportedTargetFrames,
+            ),
+            (
+                CyclicCandidateError::ExactIntegerLimit,
+                CreativeStretchError::SizeOverflow,
+            ),
+            (
+                CyclicCandidateError::ArithmeticOverflow,
+                CreativeStretchError::SizeOverflow,
+            ),
+            (
+                CyclicCandidateError::AllocationOverflow,
+                CreativeStretchError::SizeOverflow,
+            ),
+        ];
+        for (private, public) in cyclic_mappings {
+            assert_eq!(map_cyclic_error(private, request), public);
+        }
+
+        let empty_request =
+            CreativeStretchRequest::new(&[], 1, SAMPLE_RATE, 2, CreativeStretchCharacter::Cyclic);
+        assert_eq!(
+            map_cyclic_error(CyclicCandidateError::InvalidEmptyTarget, empty_request),
+            CreativeStretchError::EmptyInput
+        );
     }
 
     #[test]
@@ -410,10 +791,105 @@ mod tests {
                 ),
                 CreativeStretchError::UnsupportedTargetFrames,
             ),
+            (
+                CreativeStretchRequest::new(
+                    &mono,
+                    1,
+                    SAMPLE_RATE,
+                    mono.len() * 4,
+                    CreativeStretchCharacter::Dream,
+                )
+                .with_cycle(CREATIVE_STRETCH_DEFAULT_CYCLE),
+                CreativeStretchError::UnsupportedCharacterControl,
+            ),
+            (
+                CreativeStretchRequest::new(
+                    &mono,
+                    1,
+                    SAMPLE_RATE,
+                    mono.len() * 2,
+                    CreativeStretchCharacter::Cyclic,
+                )
+                .with_space(0.0),
+                CreativeStretchError::UnsupportedCharacterControl,
+            ),
+            (
+                CreativeStretchRequest::new(
+                    &mono,
+                    1,
+                    SAMPLE_RATE,
+                    mono.len() * 2,
+                    CreativeStretchCharacter::Cyclic,
+                )
+                .with_space(f32::NAN),
+                CreativeStretchError::UnsupportedCharacterControl,
+            ),
+            (
+                CreativeStretchRequest::new(
+                    &mono,
+                    1,
+                    SAMPLE_RATE,
+                    mono.len() * 2,
+                    CreativeStretchCharacter::Cyclic,
+                )
+                .with_cycle(Duration::from_nanos(4_999_999)),
+                CreativeStretchError::InvalidCycle,
+            ),
+            (
+                CreativeStretchRequest::new(
+                    &mono,
+                    1,
+                    SAMPLE_RATE,
+                    mono.len() * 2,
+                    CreativeStretchCharacter::Cyclic,
+                )
+                .with_cycle(Duration::from_nanos(90_000_001)),
+                CreativeStretchError::InvalidCycle,
+            ),
+            (
+                CreativeStretchRequest::new(
+                    &mono,
+                    1,
+                    SAMPLE_RATE,
+                    mono.len() * 16,
+                    CreativeStretchCharacter::Cyclic,
+                ),
+                CreativeStretchError::UnsupportedTargetFrames,
+            ),
+            (
+                CreativeStretchRequest::new(
+                    &mono,
+                    1,
+                    SAMPLE_RATE,
+                    mono.len() * 2,
+                    CreativeStretchCharacter::Dream,
+                ),
+                CreativeStretchError::UnsupportedTargetFrames,
+            ),
         ];
 
         for (request, expected) in cases {
             assert_eq!(render_creative_stretch(request), Err(expected));
         }
+    }
+
+    #[test]
+    fn cyclic_sixteen_is_rejected_by_preallocation_validation() {
+        let input = mono_input(64);
+        let request = CreativeStretchRequest::new(
+            &input,
+            1,
+            SAMPLE_RATE,
+            input.len() * 16,
+            CreativeStretchCharacter::Cyclic,
+        );
+        assert_eq!(
+            validate_request(request),
+            Err(CreativeStretchError::UnsupportedTargetFrames)
+        );
+        assert_eq!(
+            render_creative_stretch(request),
+            Err(CreativeStretchError::UnsupportedTargetFrames)
+        );
     }
 }
