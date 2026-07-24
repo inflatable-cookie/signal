@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: `g10.032` active; Batch 32.25 Cyclic mono/stereo listening ready
+Status: `g10.032` active; Cyclic operator listening passed, stereo authority pending
 Updated: 2026-07-24
 
 ## Why this generation matters now
@@ -740,9 +740,12 @@ rounds. Batch 32.25 has passed `183/183` synthetic rows, `5/5` exact-`16x`
 rejection rows, and all `45` long-form mono renders. Its concealed operator
 pack is ready. All `15` long-form linked-stereo rows also passed and their
 concealed neutral stereo pack is ready at the same renderer checkpoint.
+The operator judged the concealed outputs hard to distinguish and solid, with
+no significant mono or stereo issue. Contract `085` still requires eligible
+independent stereo review or an explicit waiver scoped to this candidate.
 
 ## Next Task
 
-Continue `g10.032` Batch 32.25 with operator listening of the concealed mono
-and stereo A/B rows and Signal short/neutral/long direction trios. Keep the
-candidate active until listening accepts it or identifies a renderer change.
+Complete `g10.032` Batch 32.25 through eligible independent stereo review or
+an explicit operator waiver scoped to checkpoint `bab6ce96`. Then execute
+minimal private admission without changing renderer output.

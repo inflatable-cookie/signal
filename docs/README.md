@@ -90,5 +90,5 @@ strict lane.
 
 ## Next Task
 
-Continue `g10.032` Batch 32.25 with operator listening of the ready concealed
-mono/stereo A/B and cycle-direction packs.
+Complete `g10.032` Batch 32.25 through eligible independent stereo review or
+an explicit operator waiver scoped to the accepted Cyclic checkpoint.

@@ -824,7 +824,7 @@ measurements and corrected comparator binding. No renderer formula changed.
 
 ## Batch 32.25 - Acoustic Admission And Listening
 
-Status: active; operator mono and neutral stereo packs ready
+Status: operator listening passed; independent stereo authority pending
 
 Run the complete synthetic sequence from one clean versioned renderer
 checkpoint. Fix evidence implementation defects and rerun affected scopes.
@@ -839,6 +839,13 @@ neutral-cycle A/B comparisons against ReaReaRea and `15`
 short/neutral/long Signal direction trios at `2x`, `4x`, and `8x`.
 All `15` long-form linked-stereo rows also passed and produced a concealed
 neutral-cycle stereo A/B pack at the same acoustic checkpoint.
+
+The operator judged the concealed renders hard to distinguish, consistently
+similar, and solid. No clicks, metallic defect, detached echo, stereo
+movement, centre pull, width pumping, or other significant issue was reported.
+This accepts the musical character. Contract `085` still requires an eligible
+independent stereo listener or an explicit scoped operator waiver for this
+fixed candidate; the earlier Dream waiver does not carry into Cyclic.
 
 The cadence-order aggregate now tests the exact planned cycle spacing.
 Measured FFT and autocorrelation values remain diagnostics. The earlier rule
@@ -868,8 +875,7 @@ target remains active until accepted or explicitly cancelled by the operator.
 
 ## Next Task
 
-Continue Batch 32.25. The operator listens to the concealed mono and stereo
-A/B rows and Signal short/neutral/long direction trios, starting with `8x`
-percussion, pads, and full mix. Preserve the keys until decisions are
-recorded. If the character is accepted, complete admission. If not, revise one
-complete renderer version in the isolated branch.
+Complete Batch 32.25 through either eligible independent stereo review or an
+explicit operator waiver scoped to checkpoint `bab6ce96`. Then reveal and
+record the concealed result. If stereo authority passes, execute Batch 32.26
+minimal private admission without changing renderer output.

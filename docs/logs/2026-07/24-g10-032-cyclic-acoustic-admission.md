@@ -23,4 +23,10 @@ at `2x`, `4x`, and `8x`. A separate concealed neutral stereo pack contains
 the `15` linked-stereo musical A/B rows. Batch 32.25 is active at listening
 authority.
 
+The operator judged the concealed outputs hard to distinguish, consistently
+similar, and solid. No significant mono or stereo issue was reported. Musical
+character therefore passes operator review. Independent stereo authority is
+not silently waived: Contract `085` requires an eligible listener or an
+explicit operator waiver scoped to checkpoint `bab6ce96` before admission.
+
 No candidate DSP entered `main`. Nothing was pushed.
