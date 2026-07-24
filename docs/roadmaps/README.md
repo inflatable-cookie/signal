@@ -350,6 +350,6 @@ Before rollover:
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the active generation front door.
-Execute `g10.032` Batch 32.18 only. Freeze exact event-ledger Cyclic evidence
-and executable diagnostic owner proofs. Do not implement or run acoustic
-evidence.
+Execute `g10.032` Batch 32.19 only. Implement the frozen event-ledger Cyclic
+authority in its exact isolated worktree and complete both unchanged
+conformance rounds. Stop before `Y01`.

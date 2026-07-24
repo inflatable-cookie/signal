@@ -32,7 +32,7 @@ strict lane.
 - Non-phase-vocoder feasibility: [architecture/offline-time-stretch-non-phase-vocoder-feasibility.md](./architecture/offline-time-stretch-non-phase-vocoder-feasibility.md)
 - Creative time-stretch study: [architecture/offline-creative-time-stretch-study.md](./architecture/offline-creative-time-stretch-study.md)
 - Cyclic behavioral synthesis: [architecture/offline-creative-cyclic-behavioral-synthesis.md](./architecture/offline-creative-cyclic-behavioral-synthesis.md)
-- Recovered audited Cyclic candidate brief: [architecture/offline-creative-audited-centered-compressed-anchor-cyclic-brief.md](./architecture/offline-creative-audited-centered-compressed-anchor-cyclic-brief.md)
+- Frozen event-ledger Cyclic brief: [architecture/offline-creative-event-ledger-audited-centered-compressed-anchor-cyclic-brief.md](./architecture/offline-creative-event-ledger-audited-centered-compressed-anchor-cyclic-brief.md)
 - Evidence-invalid historical Cyclic brief: [architecture/offline-creative-centered-compressed-anchor-cyclic-brief.md](./architecture/offline-creative-centered-compressed-anchor-cyclic-brief.md)
 - Admitted exact-ratio CreativeStretch public surface: [architecture/offline-creative-fixed-ratio-public-surface.md](./architecture/offline-creative-fixed-ratio-public-surface.md)
 - Direct-renewal owner study: [architecture/offline-creative-direct-renewal-owner-study.md](./architecture/offline-creative-direct-renewal-owner-study.md)
@@ -90,6 +90,7 @@ strict lane.
 
 ## Next Task
 
-Execute `g10.032` Batch 32.18 only. Freeze the complete event-ledger Cyclic
-authority and exact executable diagnostic owner proofs. Do not implement or
-run acoustic evidence.
+Execute `g10.032` Batch 32.19 only. Create the frozen isolated identity, bind
+the exact manifests and comparator set before candidate source, implement the
+brief without rejected-code recovery, and complete both unchanged conformance
+rounds. Stop before `Y01`.

@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: Cyclic event-ledger correction selected; Batch 32.18 ready
+Status: Cyclic event-ledger authority frozen; Batch 32.19 ready
 Updated: 2026-07-24
 
 ## Why this generation matters now
@@ -684,8 +684,17 @@ event-ledger evidence authority with unchanged DSP. Placeholder Y02, Y03, and
 Y04 diagnostic owners in the rejected checkpoint prohibit code or harness
 reuse.
 
+Batch 32.18 freezes the sole
+`EventLedgerAuditedCenteredCompressedAnchorCyclic` authority. All renderer
+formulas remain unchanged. Six sparse Y01 rows move from continuous dropout
+to the commanded event ledger; the other `24` retain the exact dropout gate.
+The manifest stays at `588` rows. Construction now executes known answers
+through every FFT, ledger, cadence, gap, stereo, level, and comparator owner.
+No candidate or harness entered `main`.
+
 ## Next Task
 
-Execute `g10.032` Batch 32.18 only. Freeze the complete event-ledger Cyclic
-authority and executable diagnostic owner proofs. Do not implement or run
-acoustic evidence.
+Execute `g10.032` Batch 32.19 only. Create the frozen isolated identity, bind
+the exact manifests and comparator set before candidate source, implement the
+brief without rejected-code recovery, and complete both unchanged conformance
+rounds. Stop before `Y01`.

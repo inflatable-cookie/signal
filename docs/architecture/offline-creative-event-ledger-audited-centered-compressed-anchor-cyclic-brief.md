@@ -1,16 +1,16 @@
-# Offline Creative AuditedCenteredCompressedAnchorCyclic Brief
+# Offline Creative EventLedgerAuditedCenteredCompressedAnchorCyclic Brief
 
-Status: checkpoint rejected; superseded by selected event-ledger authority
+Status: frozen; Batch 32.19 ready
 Owner: dsp
 Updated: 2026-07-24
 Contracts: `046`, `085` Rule 11
-Roadmap: `g10.032`, Batch 32.8
+Roadmap: `g10.032`, Batch 32.18
 Behavior:
 [Offline Creative Cyclic Behavioral Synthesis](./offline-creative-cyclic-behavioral-synthesis.md)
 
 ## Decision
 
-Build one fresh isolated `AuditedCenteredCompressedAnchorCyclic` candidate.
+Build one fresh isolated `EventLedgerAuditedCenteredCompressedAnchorCyclic` candidate.
 The renderer is byte-for-byte architectural continuity with the
 evidence-invalid `CenteredCompressedAnchorCyclic` checkpoint:
 
@@ -23,21 +23,30 @@ evidence-invalid `CenteredCompressedAnchorCyclic` checkpoint:
 - direct exact-length evaluation with exterior zero
 - duration-independent state and deterministic scalar traversal
 
-No DSP formula, scalar, source, metric, threshold, or listening policy is
-derived from the unreceipted `Y01` output. The old checkpoint is rejected and
-deleted. Its source, tests, helpers, objects, branch, worktree, build state,
-and ref may not be recovered.
+No DSP formula, scalar, source, threshold, or listening policy is derived from
+the rejected output. The evidence-ownership correction comes from the valid
+Y01 receipt and independent static reconstruction recorded in Batch 32.17.
+The old checkpoint is rejected and deleted. Its source, tests, helpers,
+objects, branch, worktree, build state, and ref may not be recovered.
 
-This fresh identity changes only executable evidence ownership. Every
-structural, synthetic, rejection, render, and listening row is its own
+This fresh identity changes only executable evidence ownership. The six
+neutral-cycle Y01 rows for `impulse` and `impulse-train` use the commanded
+event ledger, not continuous mapped-window dropout. The other `24` Y01 rows
+and every Y02, Y04, and Y05 row retain the `221`-frame, source-above-`-40`
+dBFS, output-below-`-80` dBFS dropout rule unchanged.
+
+Every structural, synthetic, rejection, render, and listening row is its own
 one-shot process and append-only receipt. A process persists `started` before
 loading audio or invoking the renderer. It persists `pass`, `fail`, or
 `panic` before nextest reports the result. A timeout or external kill leaves a
 durable incomplete receipt and rejects the checkpoint.
 
-This is the one fresh audited identity allowed by Contract `085` Rule 11. A
-second incomplete-evidence checkpoint closes the centred compressed-anchor
-identity as protocol churn.
+This is the one fresh evidence-backed product-gate identity allowed by
+Contract `085` Rule 11. No rejected candidate source, evidence helper,
+manifest generator, comparator helper, receipt writer, object, or test may be
+recovered. The implementation must be written from this brief. Any missing,
+placeholder, or non-executable owner closes the identity before acoustic
+work.
 
 ## Clean-Room And Scope Boundary
 
@@ -257,22 +266,22 @@ those identities plus `Cargo.lock`.
 
 ## Fresh Isolation
 
-Batch 32.11 starts from the exact Batch 32.10 closeout commit and creates only:
+Batch 32.19 starts from the exact Batch 32.18 closeout commit and creates only:
 
-- worktree: `/Users/tom/Dev/projects/signal-candidate-32-11`
+- worktree: `/Users/tom/Dev/projects/signal-candidate-32-19`
 - branch:
-  `candidate/g10-032-audited-centered-compressed-anchor-cyclic`
+  `candidate/g10-032-event-ledger-audited-centered-compressed-anchor-cyclic`
 - private module:
-  `crates/signal-dsp-stretch/src/creative_audited_centered_compressed_anchor_cyclic/`
+  `crates/signal-dsp-stretch/src/creative_event_ledger_audited_centered_compressed_anchor_cyclic/`
 - module files: `mod.rs`, `plan.rs`, `schedule.rs`, `interpolate.rs`,
   `synthesis.rs`, `evidence.rs`, `tests.rs`
 - tracked evidence authority:
-  `candidate-evidence/g10-032/32-11/`
+  `candidate-evidence/g10-032/32-19/`
 - tracked nextest config: `.config/nextest.toml`
 - ignored build/evidence root:
-  `target/creative-stretch-audited-centered-compressed-anchor-cyclic-32-11/`
+  `target/creative-stretch-event-ledger-audited-centered-compressed-anchor-cyclic-32-19/`
 - acoustic ref:
-  `refs/signal-evidence/creative/audited-centered-compressed-anchor-cyclic/32-11-acoustic`
+  `refs/signal-evidence/creative/event-ledger-audited-centered-compressed-anchor-cyclic/32-19-acoustic`
 
 Existing dependencies only. The isolated `lib.rs` may declare the module
 privately. No rejected file, helper, commit, branch, ref, object, output,
@@ -283,21 +292,21 @@ The tracked evidence directory contains:
 - `row-manifest.tsv`
 - `comparator.tsv`
 - `listening-manifest.tsv`
-- `run-audited-centered-cyclic.sh`
-- `generate-audited-centered-cyclic-evidence.py`
-- `generate-audited-centered-cyclic-reaper.py`
+- `run-event-ledger-audited-centered-cyclic.sh`
+- `generate-event-ledger-audited-centered-cyclic-evidence.py`
+- `generate-event-ledger-audited-centered-cyclic-reaper.py`
 
 Generated audio and receipts stay ignored. The runner is candidate-local
 evidence scaffolding, not a product surface.
 
 Test names use only:
 
-- `audited_centered_cyclic_construction_row`
-- `audited_centered_cyclic_structural_row`
-- `audited_centered_cyclic_synthetic_row`
-- `audited_centered_cyclic_exact16_row`
-- `audited_centered_cyclic_listening_row`
-- `audited_centered_cyclic_summary`
+- `event_ledger_audited_centered_cyclic_construction_row`
+- `event_ledger_audited_centered_cyclic_structural_row`
+- `event_ledger_audited_centered_cyclic_synthetic_row`
+- `event_ledger_audited_centered_cyclic_exact16_row`
+- `event_ledger_audited_centered_cyclic_listening_row`
+- `event_ledger_audited_centered_cyclic_summary`
 
 An environment row ID selects exactly one manifest row. A test process that
 would select zero or multiple rows fails before renderer execution.
@@ -331,7 +340,7 @@ are unique by checkpoint, phase, and gate; no test deletes or truncates them.
 The fresh nextest profile is:
 
 ```toml
-[profile.audited-centered-cyclic]
+[profile.event-ledger-audited-centered-cyclic]
 retries = 0
 fail-fast = true
 test-threads = 1
@@ -377,8 +386,8 @@ and the following key order:
 25. `diagnostics`
 26. `error`
 
-`schema` is `signal.audited-centered-cyclic.row.v1`; `identity` is
-`AuditedCenteredCompressedAnchorCyclic`. Excluded fields are JSON `null`.
+`schema` is `signal.event-ledger-audited-centered-cyclic.row.v1`; `identity` is
+`EventLedgerAuditedCenteredCompressedAnchorCyclic`. Excluded fields are JSON `null`.
 Hashes are lowercase hex SHA-256. PCM hashes cover little-endian interleaved
 `f32` frames after decode or before deterministic WAV encoding. Container
 hashes cover exact files.
@@ -439,6 +448,11 @@ terminal `flush` and `sync_all`.
 Construction independently calls all non-rendering oracles. It proves the
 worst-case planned output and `600 s` envelope for every row. It does not
 render candidate audio.
+
+It also executes the seven frozen owner-known-answer groups below through the
+same functions later used by synthetic and comparator rows. A label, non-null
+function pointer, authored-value substitution, self-comparison, or helper
+which bypasses the production evidence path fails construction.
 
 ## Structural Conformance
 
@@ -595,12 +609,16 @@ Hard for every applicable output:
 - exact `T`, finite samples, and complete durable receipt
 - raw peak at most input peak plus `2e-6`
 - exact-zero silence
-- no complete `5 ms` output RMS window below `-80 dBFS` while its
-  ideal-map source window exceeds `-40 dBFS`
 - exterior-inclusive first difference within the comparator `+1.50 dB` rule
-- every event appearance inside the independent ledger
 - linked mechanics within frozen bounds
 - every required diagnostic present and finite
+
+Continuous-source rows additionally require no complete `5 ms` output RMS
+window below `-80 dBFS` while its ideal-map source window exceeds `-40`
+dBFS. This applies to Y01 sources `low-tone`, `high-tone`, `chord`,
+`harmonic-pad`, `silence-gap`, `uniform-noise`, `rademacher-noise`, and
+`am-noise`, and to every Y02, Y04, and Y05 row. It does not apply to
+`impulse` or `impulse-train`.
 
 Dropout uses `221` samples at `44.1 kHz`. Candidate output windows map through
 the exact ideal-map endpoints. For output window `[b,b+221)`, the source
@@ -609,34 +627,96 @@ reference is the ascending integer range
 `f64` RMS of that exact range. An empty range or incomplete output window is
 ineligible. A non-finite RMS rejects.
 
+Sparse-event rows instead require every event appearance inside the
+independent ledger, no output above `1e-7` outside the union ledger, a
+positive appearance for every authored event, ordered event centres, and the
+frozen centre bound for every fully interior event.
+
 ### Y02 Pitch
 
-Use the mapped active hull, periodic Hann, next-power-of-two zero padding of at
-least `262144`, magnitude spectrum, and three-point log-magnitude parabolic
-interpolation. Search one octave around each authored tone; for chord/pad,
-also record the strongest component within `+-15%` of each partial.
+For each authored component, run the same estimator independently on source,
+candidate, and comparator. The source interval is `[22050,66150)`. Candidate
+and comparator use the exact output hull whose ideal-map centres fall in that
+interval.
 
-Record input-relative cents, comparator-relative cents, peak magnitude,
-interpolated bin, and estimator-bin resolution. Every value must be finite.
+For a signal of hull length `M`, multiply sample `n` by
+`0.5-0.5*cos(2*pi*n/M)`. Zero-pad to the least power of two `N` with
+`N>=max(M,262144)`. Run one unnormalized real-to-complex `f64` FFT and set
+`m[k]=hypot(re[k],im[k])`. Search bins whose centre frequencies are within
+one octave of a tone, or within `+-15%` of the named chord/pad partial. Ties
+select the lower bin.
+
+For the winning interior bin `k`, set
+`l[j]=ln(max(m[j],f64::MIN_POSITIVE))` and
+`delta=0.5*(l[k-1]-l[k+1])/(l[k-1]-2*l[k]+l[k+1])`. A zero denominator,
+non-finite value, or `delta` outside `[-0.5,0.5]` rejects. Estimated frequency
+is `(k+delta)F/N`. `input-cents` is
+`1200*log2(candidate_frequency/source_frequency)`;
+`comparator-cents` is
+`1200*log2(candidate_frequency/comparator_frequency)`.
+`resolution-cents` is
+`1200*log2((candidate_frequency+F/N)/candidate_frequency)`.
+
+Record candidate frequency, both cents values, candidate peak magnitude,
+interpolated bin, and resolution. Every value must be measured and finite.
 Pitch is diagnostic, not an absolute character veto.
 
 ### Y03 Replicas
 
-Apply the hard independent-ledger rules. Record per event the appearance
-count, spacing median/range, centre, extent, peak, energy, crop loss, and
-candidate/comparator delta.
+The independent oracle evaluates each authored event separately. For event
+`e` and anchor `k`, its positive contribution at output `y` is the matching
+positive raised-cosine weight multiplied by the positive linear-interpolation
+coefficient of source sample `e`. The oracle uses the brief's rational
+formula directly and may not call renderer schedule, position, interpolation,
+or weight helpers.
+
+An appearance is one anchor's maximal contiguous output run with positive
+oracle contribution for that event. Overlapping anchor appearances remain
+distinct, while the event ledger is their union. Measure each centre from that
+run's absolute candidate-sample weights. Aggregate event centre uses absolute
+candidate-sample weights across the union ledger.
+Spacing is the difference between adjacent measured appearance centres;
+median averages the two middle values for an even count. Extent is half-open.
+Peak is maximum absolute candidate sample and energy is its `f64` sum of
+squares inside the event ledger.
+
+For crop accounting, enumerate every anchor whose rational `x_k` lies in
+`(e-H-1,e+H+1)`, then intersect its positive weight interval
+`[(k-1)H+1,(k+1)H)` with the open interpolation interval where
+`e-1<p(k,y)<e+1`. This finite exact intersection is one unbounded appearance.
+Clip it to `[0,T)` for the measured ledger. Count an appearance as leading or
+trailing cropped when any of its positive integer support lies below `0` or
+at or above `T`; an appearance crossing both sides is invalid. Construction
+proves the enumeration bounds against a direct wider scan.
+
+Comparator event centre uses absolute mono sample weights inside the event's
+Voronoi cell. Cell boundaries are midpoints between adjacent ideal mapped
+authored centres; the first and last cells extend to `0` and `T`. A zero or
+non-finite candidate or comparator weight sum rejects. Record appearance count,
+spacing median/range, aggregate centre, extent, peak, energy, leading and
+trailing cropped appearance counts, and candidate-minus-comparator centre.
+Hard ledger assertions execute for both Y03 and sparse Y01 rows.
 
 ### Y04 Cadence And Modulation
 
-Build an RMS envelope with `2048`-sample windows and `512`-sample hops over the
-mapped active hull. Subtract its mean, apply a periodic Hann, and zero-pad its
-FFT to the next power of two at least `16384`.
+Build an RMS envelope with complete `2048`-sample windows and `512`-sample
+hops starting at the first sample of the mapped active hull. Use `f64`
+sum-of-squares. Subtract the envelope mean, multiply element `j` of length
+`M` by `0.5-0.5*cos(2*pi*j/M)`, and zero-pad to the least power of two
+`N>=max(M,16384)`. Run the same unnormalized real `f64` FFT owner as Y02.
 
-Search `0.1..=20 Hz` for the strongest non-DC envelope component. For
-amplitude-modulated noise, also search `1.45..=1.95 Hz` and record the nearest
-and strongest components around authored `1.7 Hz`. Normalize envelope
-autocorrelation by zero-lag energy and search lags
+Search `0.1..=20 Hz` for the largest magnitude non-DC envelope bin; ties
+select the lower bin. Frequency is `k*F/(512*N)`. Strength is the winning
+bin's squared magnitude divided by the sum of squared magnitudes across the
+search band. For amplitude-modulated noise, repeat the same choice within
+`1.45..=1.95 Hz`; a magnitude tie selects the bin closest to `1.7 Hz`, then
+the lower bin.
+
+Autocorrelation uses the unwindowed mean-subtracted envelope:
+`R(l)=sum(e[j]*e[j+l])/sum(e[j]^2)`. Search lags
 `round(D/512)-2..=round(D/512)+2`, clipped to positive valid lags.
+Select the largest `R`; ties select the lag closest to `D/512`, then the
+smaller lag. Zero energy or any missing/non-finite result rejects.
 
 Record planned `D`, strongest frequency and strength, authored sideband
 frequency and strength, autocorrelation lag/value, and comparator deltas.
@@ -648,13 +728,19 @@ long cycle for the same source/ratio. Strength values are finite diagnostics.
 
 The gap hull is the set of output indices whose exact rational `a(y)` lies in
 `[38588,49612]`. Inside that hull, measure the maximal contiguous exact-zero
-output support and record its inclusive start, exclusive end, and length. Do
-not substitute an expected label.
+output support. Runs are half-open; longest wins, then earliest start. Record
+its inclusive start, exclusive end, and length. No run is a measured
+`none`, not `(0,0)`. Do not substitute an expected label.
+
+The `silence-gap` row requires one measured run and records its bounds. The
+`harmonic-pad` control instead counts exact-zero runs of at least `221`
+samples and records the maximum exact-zero run length, using zero when no run
+exists. `pad.no-false-gap` requires that count to be zero. This avoids
+encoding an absent run as fictional support bounds.
 
 Record unexpected dropout count, exterior first difference, last active frame,
-inactive terminal frames, exact-zero support, and candidate/comparator deltas.
-The pad control must not report an intentional exact-zero gap. Missing support
-measurement rejects.
+inactive terminal frames, the source-valid gap fields, and
+candidate/comparator deltas. Missing required measurement rejects.
 
 ### Y06 Linked Inventory
 
@@ -662,6 +748,10 @@ Whole-render energy uses `f64` sample sums. Three-band energy uses periodic
 Hann `4096`, hop `2048`, and bands `0..250`, `250..1500`, and
 `1500..Nyquist`. Width is mid/side energy ratio with
 `M=(L+R)/2`, `S=(L-R)/2`, using the same whole/band partitions.
+Every energy ratio in dB is
+`10*log10(max(numerator,f64::MIN_POSITIVE)/max(denominator,f64::MIN_POSITIVE))`;
+this keeps exact duplicate and anti-phase fixtures finite without weakening
+their samplewise hard assertions.
 
 Local balance uses four-second output windows with two-second hops. Source
 reference bounds are the exact ideal-map endpoints for each window.
@@ -755,7 +845,7 @@ fade length, and final listening-copy hashes.
 
 For A/B row `row_id`, compute:
 
-`h=SHA256(checkpoint || "|" || row_id || "|audited-centered-cyclic-conceal-v1")`.
+`h=SHA256(checkpoint || "|" || row_id || "|event-ledger-audited-centered-cyclic-conceal-v1")`.
 
 If the low bit of `h[0]` is zero, A is candidate; otherwise B is candidate.
 Write a public pack manifest containing only row, source family, ratio, cycle,
@@ -871,7 +961,7 @@ mechanism, or threshold enters `main`.
 Only a complete pass may open a separate minimal admission batch for:
 
 - private
-  `creative_audited_centered_compressed_anchor_cyclic`
+  `creative_event_ledger_audited_centered_compressed_anchor_cyclic`
 - its private exact-target manual-cycle request, errors, and renderer
 - structural and synthetic regression owners required to preserve admission
 - one frozen Cyclic engine-version identifier
@@ -924,7 +1014,7 @@ schema	ordinal	row_id	stage	entrypoint	source_id	sample_rate	input_frames	channe
 ```
 
 Every data row uses schema
-`signal.audited-centered-cyclic.row-manifest.v2`. `ordinal` is global,
+`signal.event-ledger-audited-centered-cyclic.row-manifest.v2`. `ordinal` is global,
 zero-based, and six digits. Derived integers use checked arithmetic. A
 generator overflow is an authority failure, not a skipped row.
 
@@ -952,7 +1042,7 @@ one construction, `339` structural, `183` synthetic, five exact-`16x`, and
 
 `C00-000-construction` is the sole construction row. It uses the full test
 name
-`creative_audited_centered_compressed_anchor_cyclic::tests::audited_centered_cyclic_construction_row`.
+`creative_event_ledger_audited_centered_compressed_anchor_cyclic::tests::event_ledger_audited_centered_cyclic_construction_row`.
 Its assertion IDs are, in order:
 `construction.file-inventory`, `construction.module-inventory`,
 `construction.dependency-inventory`, `construction.renderer-spec`,
@@ -962,11 +1052,18 @@ Its assertion IDs are, in order:
 `construction.dispatch`, `construction.failure-receipt`,
 `construction.panic-receipt`, `construction.kill-receipt`,
 `construction.duplicate-block`, `construction.escape-vectors`,
-`construction.nonrendering-oracles`, `construction.worst-case-envelope`.
+`construction.fft-owner-known-answers`,
+`construction.ledger-owner-known-answers`,
+`construction.cadence-owner-known-answers`,
+`construction.gap-owner-known-answers`,
+`construction.stereo-owner-known-answers`,
+`construction.level-owner-known-answers`,
+`construction.comparator-owner-known-answers`,
+`construction.worst-case-envelope`.
 It has no diagnostics or renders.
 
 Structural entrypoint is the same path ending
-`audited_centered_cyclic_structural_row`. Structural rows are:
+`event_ledger_audited_centered_cyclic_structural_row`. Structural rows are:
 
 - `S01`: the following `22` cases in exact order:
   `empty-success`, `mono-identity`, `stereo-r2`, `mono-r8`, `channels-0`,
@@ -1086,7 +1183,7 @@ sum and convexity use the same nodes.
 | direct allocation overflow | `AllocationOverflow` |
 
 The synthetic entrypoint is the full construction path ending
-`audited_centered_cyclic_synthetic_row`. Row IDs are
+`event_ledger_audited_centered_cyclic_synthetic_row`. Row IDs are
 `<gate>-<local-index>-<source>-r<ratio>-c<cycle_us>`.
 
 - `Y01`: mono source × ratio at `c048000`
@@ -1099,10 +1196,10 @@ The synthetic entrypoint is the full construction path ending
 This yields exactly `183` rows and `201` renders. `common-negation` and `swap`
 have two renders; every other row has one.
 
-The exact-`16x` entrypoint ends `audited_centered_cyclic_exact16_row`. IDs are
+The exact-`16x` entrypoint ends `event_ledger_audited_centered_cyclic_exact16_row`. IDs are
 `E16-<local-index>-<musical-source>-r16-c048000` in musical-source order.
 
-The listening-render entrypoint ends `audited_centered_cyclic_listening_row`.
+The listening-render entrypoint ends `event_ledger_audited_centered_cyclic_listening_row`.
 Candidate render rows are:
 
 - `M01`: musical source × ratio × cycles `48000,5000,90000`, but ordered as
@@ -1187,7 +1284,8 @@ Construction expands the group; receipts contain IDs, never group names.
 | S08 repeat | `output.byte-repeat` |
 | S08 oracle | `memory.<oracle>` except `schedule.scalar-traversal` |
 | S09 | `absence.<case>` |
-| Y01 | `output.frames,output.finite,output.peak-bound,output.silence-where-unread,output.dropout,output.exterior-difference,diagnostics.complete` |
+| Y01 continuous | `output.frames,output.finite,output.peak-bound,output.silence-where-unread,output.dropout,output.exterior-difference,diagnostics.complete` |
+| Y01 sparse | `output.frames,output.finite,output.peak-bound,output.silence-where-unread,output.exterior-difference,ledger.outside-zero,ledger.event-present,ledger.order,ledger.centre,diagnostics.complete` |
 | Y02 | `output.frames,output.finite,output.peak-bound,output.dropout,output.exterior-difference,pitch.finite,diagnostics.complete` |
 | Y03 | `output.frames,output.finite,output.peak-bound,output.exterior-difference,ledger.outside-zero,ledger.event-present,ledger.order,ledger.centre,diagnostics.complete` |
 | Y04 | `output.frames,output.finite,output.peak-bound,output.dropout,output.exterior-difference,cadence.finite,diagnostics.complete` |
@@ -1222,12 +1320,24 @@ mechanics are `max:0.000001`; gain is `max:0.01` dB; delay is
 independent rational/window/interpolation result rendered with shortest
 round-trip formatting. Construction rejects any other expected vocabulary.
 
-Structural diagnostics are empty. Synthetic diagnostic IDs are:
+The Y01 sparse rows are exactly local ordinals `012..017`: `impulse` then
+`impulse-train`, each at ratios `2,4,8` and `c048000`. The other `24` Y01
+rows are continuous. Row IDs, global ordinals, render counts, and the
+`588`-row manifest total do not change.
 
-- `Y01`: `output.raw-peak`, `dropout.count`, `dropout.minimum-active-rms-db`,
+Structural diagnostics are empty. In the lists below, `both exterior values`
+expands exactly, in order, to
+`exterior.candidate-db,exterior.comparator-db`. Synthetic diagnostic IDs are:
+
+- `Y01` continuous: `output.raw-peak`, `dropout.count`, `dropout.minimum-active-rms-db`,
   `source.maximum-window-rms-db`, `exterior.candidate-db`,
   `exterior.comparator-db`
-- `Y02`: the `Y01` output/dropout/exterior values plus, for authored component
+- `Y01` sparse: `output.raw-peak`, `exterior.candidate-db`,
+  `exterior.comparator-db`, then the exact Y03 event expansion for the row's
+  authored event count
+- `Y02`: `output.raw-peak`, `dropout.count`,
+  `dropout.minimum-active-rms-db`, `source.maximum-window-rms-db`,
+  `exterior.candidate-db`, `exterior.comparator-db`, then for authored component
   index `cc` in ascending frequency order,
   `pitch.cCC.frequency-hz`, `pitch.cCC.input-cents`,
   `pitch.cCC.comparator-cents`, `pitch.cCC.magnitude`,
@@ -1239,18 +1349,25 @@ Structural diagnostics are empty. Synthetic diagnostic IDs are:
   `event.eEE.extent-end`, `event.eEE.peak`, `event.eEE.energy`,
   `event.eEE.cropped-leading`, `event.eEE.cropped-trailing`,
   `event.eEE.comparator-centre-delta`
-- `Y04`: `output.raw-peak`, both exterior values, `cadence.planned-spacing`,
+- `Y04` common: `output.raw-peak`, both exterior values, `cadence.planned-spacing`,
   `cadence.measured-spacing`, `modulation.strongest-frequency-hz`,
-  `modulation.strongest-strength`, `modulation.authored-frequency-hz`,
-  `modulation.authored-strength`, `autocorrelation.lag`,
+  `modulation.strongest-strength`, `autocorrelation.lag`,
   `autocorrelation.value`, `cadence.comparator-spacing`,
   `cadence.spacing-delta`, `modulation.comparator-frequency-hz`,
   `modulation.frequency-delta-hz`, `autocorrelation.comparator-value`,
   `autocorrelation.value-delta`
-- `Y05`: `output.raw-peak`, both exterior values, `gap.support-start`,
-  `gap.support-end`, `gap.support-length`, `dropout.count`,
-  `tail.last-active-frame`, `tail.inactive-frames`,
+- `Y04` am-noise inserts, immediately after
+  `modulation.strongest-strength`, `modulation.authored-frequency-hz` and
+  `modulation.authored-strength`; uniform and Rademacher rows omit them
+- `Y05` silence-gap: `output.raw-peak`, both exterior values,
+  `gap.support-start`, `gap.support-end`, `gap.support-length`,
+  `dropout.count`, `tail.last-active-frame`, `tail.inactive-frames`,
   `gap.comparator-support-length`, `gap.support-length-delta`,
+  `tail.comparator-inactive-frames`, `tail.inactive-frames-delta`
+- `Y05` harmonic-pad: `output.raw-peak`, both exterior values,
+  `gap.false-run-count`, `gap.maximum-zero-run`, `dropout.count`,
+  `tail.last-active-frame`, `tail.inactive-frames`,
+  `gap.comparator-maximum-zero-run`, `gap.maximum-zero-run-delta`,
   `tail.comparator-inactive-frames`, `tail.inactive-frames-delta`
 - `Y06`: `output.raw-peak`, both exterior values; source, candidate,
   comparator, candidate-source error, comparator-source error, and
@@ -1290,9 +1407,171 @@ Candidate/comparator frequency deltas use `Hz`; autocorrelation deltas use
 `linear`. Construction derives the one-to-one unit list from these rules and
 binds it beside the diagnostic-ID list.
 
+### Executable Owner Known Answers
+
+Construction calls the real evidence functions with the following vectors.
+Every listed expected value is a hard construction assertion. Integer,
+support, order, ID, and hash results are exact. Floating results use maximum
+absolute error `1e-9` unless a tighter bound is named. No known-answer oracle
+may call the function it checks.
+
+#### FFT And Pitch Owner
+
+The FFT backend first runs two independent `N=8` DFT known answers:
+
+- `[1,0,0,0,0,0,0,0]` produces `(1,0)` in every bin
+- `cos(2*pi*n/8)` produces `(4,0)` in bins `1` and `7` and zero elsewhere
+
+Real and imaginary component error is at most `1e-12`. Expected values come
+from the direct DFT definition
+`X[k]=sum(x[n]*(cos(2*pi*k*n/N)-i*sin(2*pi*k*n/N)))`; the oracle is not an
+FFT.
+
+The complete pitch estimator then receives `F=262144`, `M=4096`, and
+`x[n]=0.5*cos(2*pi*64*n/M)`, with the same vector used as source, candidate,
+and comparator. It must choose bin `4096`, return interpolated bin `4096`,
+frequency `4096 Hz`, both cents values `0`, and resolution
+`1200*log2(4097/4096)`. Bin, frequency, and cents error is at most `1e-9`;
+resolution error is at most `1e-12`. Construction also changes only the
+candidate tone to `4097 Hz` and requires non-zero input and comparator cents.
+This prevents authored-frequency or constant-zero substitution.
+
+#### Event-Ledger Owner
+
+The exact rejected-row geometry is a permanent known answer:
+
+- `F=44100`, `L=88200`, `T=176400`, `cycle_us=48000`, `H=2117`
+- one impulse at source event `44100`
+- ideal mapped centre `88200.5`
+- four positive half-open appearances:
+  `[86440,86442)`, `[87498,87500)`, `[88557,88559)`,
+  `[89615,89617)`
+- absolute-weighted appearance centres `86440.24897416269`,
+  `87498.74984046511`, `88557.25007537556`, and
+  `89615.75048508307`
+- spacing minimum `1058.500234910447`, median
+  `1058.5004097075143`, and maximum `1058.50086630242`
+- aggregate absolute-weighted centre `88217.5135681342`
+- extent `[86440,89617)`, peak contribution `0.6985939636456214`,
+  total contribution energy `0.9373787150738565`
+- zero leading and trailing cropped appearances
+
+Support and counts are exact; floating contribution values allow `1e-6` to
+cover the supported platform's `cos` implementation. The oracle must also
+prove `[88179,88400)` has no ledger support although its ideal-map source
+range is `[44090,44199]`. This is the ownership distinction which creates the
+fresh identity.
+
+A second vector uses authored events `1` and `4`, `L=6`, `T=12`, `H=3`.
+Construction derives both ledgers, requires non-empty ordered aggregate
+centres, rejects one injected sample of value `2e-7` outside their union, and
+accepts `1e-7`. Reversing the two measured centres must fail `ledger.order`.
+Replacing either event's ledger samples with zero must fail
+`ledger.event-present`. These mutations run through the real Y01/Y03
+assertion dispatcher.
+
+#### Cadence Owner
+
+The RMS-envelope builder receives `3072` samples of value one. Its fixed
+`2048/512` geometry must return exactly three values, all `1`.
+
+The cadence FFT receives the `64`-value mean-zero envelope
+`e[j]=cos(2*pi*j/8)` at envelope rate `44100/512 Hz`, with
+`N=16384`. It must select bin `2048`, frequency
+`10.7666015625 Hz`, and a finite strength in `(0,1]`. The unwindowed
+autocorrelation search with planned lag `8` spans `6..=10`; it must return
+lag `8` and value `0.875`. Frequency error is at most `1e-12`;
+autocorrelation error is at most `1e-12`.
+
+Construction repeats the analysis with periods `16`, `8`, and `4` envelope
+frames and requires measured output spacing `8192`, `4096`, and `2048`
+frames respectively. It then presents them to the cycle-order summary in
+short, neutral, long order as `2048,4096,8192`; the summary must pass.
+Swapping short and long must fail `cadence.strict-cycle-order`.
+
+#### Gap, Dropout, Tail, And Exterior Owner
+
+For hull `[3,14)`, the vector with non-zero samples only at indices
+`3,4,9,13` must return maximal exact-zero support `[5,9)` of length `4`.
+Adding a second length-four run later in the hull must retain the earlier run.
+An all-non-zero hull returns `none`; it must fail `gap.measured`. The pad
+control over the same hull must return false-run count `0` and maximum run
+length `0`, satisfying `pad.no-false-gap`. Injecting one `221`-sample zero run
+must return count `1`, maximum `221`, and fail that assertion.
+
+For identity-map source and output length `442`, source value one everywhere,
+and candidate exact zero only over `[110,331)`, the `221`-frame dropout scan
+must report exactly one eligible dropout beginning at `110`. Changing one
+sample in that run to `1e-3` must report zero. The scan must still find the
+row when an unrelated partition marker is placed at frame `221`; block
+boundaries do not reset it.
+
+For `[0,0.25,0,0.5,0,0]`, tail analysis returns last active frame `3` and two
+inactive terminal frames. Exterior first difference over `[0.25,-0.5]`
+includes `0->0.25`, `0.25->-0.5`, and `-0.5->0`; its maximum is exactly
+`0.75`.
+
+#### Linked-Stereo Owner
+
+Run linked mechanics on left `[0.25,-0.5,0.75,-1]` and right
+`[-0.125,0.375,-0.625,0.875]`. Duplicate error, anti-phase error,
+common-negation commutation error, and swap commutation error must each be
+exact zero. Mutating one right sample by `2e-6` must fail the `1e-6` bound.
+
+For right gain `0x3f004dce`, whole-render right/left ratio must be
+`-6.0000004906757844 dB`. A separate `8192`-sample fixture at `8192 Hz`
+contains bin-centred `128`, `1024`, and `2048 Hz` left tones and the same
+right gain. Whole, low, mid, and high ratios must each match that value within
+`1e-8 dB`.
+
+For a length-`256` deterministic non-periodic sequence and a right copy
+delayed by two frames with exterior zero, normalized correlation over
+`-4..=4` must return lag `+2`; positive lag means right lags left. Swapping
+channels must return `-2`. Duplicate channels must return `0` and peak `1`
+within `1e-12`. These calls use the real Y06 balance, band, and correlation
+owners.
+
+#### Level And Listening-Copy Owner
+
+Source `[1,-1]`, candidate `[0.5,-0.5]`, and comparator `[2,-2]` have RMS
+`1`, `0.5`, and `2`. The level owner must return gains `1`, `2`, and `0.5`,
+common safety `0.95`, and final peak `0.95` for every stream. Any independent
+per-stream peak normalization fails.
+
+The terminal-fade helper receives eight ones and `N=4`. It must leave the
+first four samples at one and produce tail gains `1`, `2/3`, `1/3`, `0`.
+The raw input hash must remain unchanged. Reapplying the fade to the listening
+copy must change its hash and fails the one-application owner.
+
+#### Comparator Owner
+
+The canonical mono IEEE-float WAV vector `[0,1,-1,0.5]` at `44100 Hz` has
+PCM SHA-256
+`bdc1999ac422c4823b4304d698512f70b2069ab5ea7976e4b0af9f75b4a9a3cd`
+and container SHA-256
+`4b75446080d2cbbc91dc71a44b999b274b66d92738ecd784c964b92b5f9c2478`.
+Construction must generate those exact `60` bytes, decode them, and reproduce
+both hashes.
+
+Using that source hash, `L=4`, `T=8`, ratio `2`, source path
+`/signal-known-answer/source.wav`, and render path
+`/signal-known-answer/output.wav`, the exact normalized project projection
+defined below hashes to
+`2ad07d3e5a29d08b9cf9b96f333d7af874cd9337984014f29db0c9866b068fb4`.
+The project generator must emit a project which the independent parser maps
+to that hash and every expected field. Changing play rate, target frames,
+stretch mode, fade, channel count, or either path must change the projection
+and fail the field comparison.
+
+Finally, the comparator manifest join receives two rows and two matching
+files. It must pass in manifest order, then separately reject a missing row,
+duplicate ID, unknown extra file, container-hash mismatch, PCM-hash mismatch,
+wrong frame count, wrong channel count, and non-finite decode. The real
+pre-checkpoint comparator verifier owns every case.
+
 ### Summary Authority
 
-The summary test full name ends `audited_centered_cyclic_summary`. Its compact
+The summary test full name ends `event_ledger_audited_centered_cyclic_summary`. Its compact
 JSON keys are exactly:
 
 `schema`, `identity`, `checkpoint`, `tree`, `phase`, `scope`,
@@ -1300,7 +1579,7 @@ JSON keys are exactly:
 `incomplete_count`, `planned_render_count`, `completed_render_count`,
 `terminal_concat_sha256`, `receipt_set_sha256`, `assertions`, `error`.
 
-Schema is `signal.audited-centered-cyclic.summary.v2`. `scope` is
+Schema is `signal.event-ledger-audited-centered-cyclic.summary.v2`. `scope` is
 `structural`, `Y01` through `Y06`, `exact16`, `mono-render`, or
 `stereo-render`. `terminal_concat_sha256` hashes terminal JSON lines including
 their LF in manifest order. `receipt_set_sha256` hashes, in the same order,
@@ -1316,17 +1595,17 @@ render, manifest, and receipt-completeness assertions. A summary uses
 
 The only runner environment names are:
 
-- `SIGNAL_AUDITED_CYCLIC_ROW_ID`
-- `SIGNAL_AUDITED_CYCLIC_RECEIPT_ROOT`
-- `SIGNAL_AUDITED_CYCLIC_PHASE`
-- `SIGNAL_AUDITED_CYCLIC_CHECKPOINT`
-- `SIGNAL_AUDITED_CYCLIC_TREE`
-- `SIGNAL_AUDITED_CYCLIC_MANIFEST`
-- `SIGNAL_AUDITED_CYCLIC_COMPARATOR_MANIFEST`
-- `SIGNAL_AUDITED_CYCLIC_ARTIFACT_ROOT`
-- `SIGNAL_AUDITED_CYCLIC_SUMMARY_SCOPE`
-- `SIGNAL_AUDITED_CYCLIC_SENTINEL`
-- `SIGNAL_AUDITED_CYCLIC_SENTINEL_ACK`
+- `SIGNAL_EVENT_LEDGER_AUDITED_CYCLIC_ROW_ID`
+- `SIGNAL_EVENT_LEDGER_AUDITED_CYCLIC_RECEIPT_ROOT`
+- `SIGNAL_EVENT_LEDGER_AUDITED_CYCLIC_PHASE`
+- `SIGNAL_EVENT_LEDGER_AUDITED_CYCLIC_CHECKPOINT`
+- `SIGNAL_EVENT_LEDGER_AUDITED_CYCLIC_TREE`
+- `SIGNAL_EVENT_LEDGER_AUDITED_CYCLIC_MANIFEST`
+- `SIGNAL_EVENT_LEDGER_AUDITED_CYCLIC_COMPARATOR_MANIFEST`
+- `SIGNAL_EVENT_LEDGER_AUDITED_CYCLIC_ARTIFACT_ROOT`
+- `SIGNAL_EVENT_LEDGER_AUDITED_CYCLIC_SUMMARY_SCOPE`
+- `SIGNAL_EVENT_LEDGER_AUDITED_CYCLIC_SENTINEL`
+- `SIGNAL_EVENT_LEDGER_AUDITED_CYCLIC_SENTINEL_ACK`
 
 Receipt roots are:
 
@@ -1346,7 +1625,7 @@ effigy test compile -- --release --target-dir <ignored-root>/build
 Every row runs through Effigy's configured nextest suite:
 
 ```text
-effigy test nextest -- --release --target-dir <ignored-root>/build --profile audited-centered-cyclic -E test(=<full-entrypoint>)
+effigy test nextest -- --release --target-dir <ignored-root>/build --profile event-ledger-audited-centered-cyclic -E test(=<full-entrypoint>)
 ```
 
 The tracked shell runner supplies the row environment and invokes that argv
@@ -1395,7 +1674,7 @@ The comparator header is exactly:
 schema	ordinal	row_id	source_id	source_kind	source_container_sha256	source_pcm_sha256	source_frames	channels	sample_rate	ratio_num	ratio_den	target_frames	reaper_identity	project_semantics_sha256	project_container_sha256	output_container_sha256	output_pcm_sha256
 ```
 
-Schema is `signal.audited-centered-cyclic.comparator.v2`. All hashes are
+Schema is `signal.event-ledger-audited-centered-cyclic.comparator.v2`. All hashes are
 mandatory. Long-form source containers must match the five hashes already
 frozen above. Synthetic source containers are canonical RIFF/WAVE: `RIFF`,
 size `36+data_bytes`, `WAVE`, one `fmt ` chunk of size `16`, IEEE float format
@@ -1455,7 +1734,7 @@ The listening-manifest TSV header is exactly:
 schema	ordinal	row_id	review	listener_class	source_id	ratio_num	cycle_set	artifact_a	artifact_b	artifact_c	decision_schema
 ```
 
-Schema is `signal.audited-centered-cyclic.listening-manifest.v2`. Rows are:
+Schema is `signal.event-ledger-audited-centered-cyclic.listening-manifest.v2`. Rows are:
 
 - `L01`: neutral mono A/B, ratio order `8,4,2`, then musical source = `15`
 - `L02`: short/neutral/long mono trio, musical source then ratio = `15`
@@ -1480,8 +1759,8 @@ schema	row_id	a_role	b_role	concealment_sha256
 ```
 
 Their schemas are respectively
-`signal.audited-centered-cyclic.pack.v2` and
-`signal.audited-centered-cyclic.key.v2`. File names are
+`signal.event-ledger-audited-centered-cyclic.pack.v2` and
+`signal.event-ledger-audited-centered-cyclic.key.v2`. File names are
 `<row_id>-A.wav` and `<row_id>-B.wav`; `artifact_c` is `-`. The existing
 concealment hash law owns A/B assignment. `L02` has no key row; its artifacts
 are
@@ -1497,7 +1776,7 @@ Each append-only decision JSON line has exact key order:
 `width_pumping`, `side_inversion`, `detached_echo`, `channel_local_cycle`,
 `balance_movement`, `note`, `error`.
 
-Schema is `signal.audited-centered-cyclic.decision.v2`. Started records use
+Schema is `signal.event-ledger-audited-centered-cyclic.decision.v2`. Started records use
 sequence `0`, status `started`, and null decisions. Terminal records use
 sequence `1`, status `recorded`, all applicable fields non-null, and null
 error. `listener_class` is `operator` for `L01/L02` and
@@ -1584,9 +1863,41 @@ runner once with absolute ignored root
 `/Users/tom/Dev/projects/signal-candidate-32-11/target/creative-stretch-audited-centered-compressed-anchor-cyclic-32-11`.
 Run the complete `Y01` gate and stop before `Y02`.
 
+### Batches 32.15 Through 32.17
+
+Batch 32.15 stopped before DSP because cleanup had removed generated
+comparator assets. Batch 32.16 restored and hash-verified the exact frozen
+comparator environment, then the unchanged checkpoint passed `12` Y01 rows
+and failed `Y01-012-impulse-r2-c048000` on one unexpected dropout.
+
+Batch 32.17 independently reconstructed the failing row. The impulse remained
+present in four commanded ledger groups; the zero window lay between them.
+That batch selected sparse-event ledger ownership and proved the rejected Y02,
+Y03, and Y04 helpers were placeholders. The checkpoint, harness, and evidence
+implementation remain prohibited.
+
+### Batch 32.18 Result
+
+This brief is the sole current centred compressed-anchor Cyclic authority.
+The renderer remains unchanged. Sparse Y01 event integrity now belongs to the
+independent event ledger; continuous material retains the original dropout
+gate. All `588` row IDs and counts remain fixed. Assertion ownership changes
+only for Y01 rows `012..017`. Diagnostic vectors are now exact and omit
+inapplicable authored-modulation or absent-gap fields.
+
+Construction now has executable known answers for the real FFT and pitch
+estimator, event ledger, cadence FFT and autocorrelation, gap/dropout/tail and
+exterior analysis, linked stereo, listening level/fade policy, and comparator
+generation and verification. None may be replaced by an authored value,
+label, pointer-presence test, or self-comparison.
+
+No candidate worktree, source, evidence harness, comparator render, or
+acoustic receipt was created. Batch 32.19 may begin isolated implementation
+and conformance from this exact docs closeout.
+
 ## Remaining Risks
 
-- direct two-read crossfade may retain the surfaced dropout on some material
+- direct two-read crossfade may create audible gaps on non-sparse material
 - compressed-anchor replicas may sound too pitch-shifted, metallic, or regular
 - long cycles may become detached echo; short cycles may become buzz
 - zero exterior reads may create material-dependent onset or tail energy
@@ -1602,7 +1913,8 @@ These are admission risks, not open design choices.
 
 ## Next Task
 
-Execute `g10.032` Batch 32.18 only. Freeze the complete
-`EventLedgerAuditedCenteredCompressedAnchorCyclic` authority with exact
-sparse-event ownership and executable diagnostic known answers. Do not
-implement or run acoustic evidence.
+Execute `g10.032` Batch 32.19 only. Create the exact fresh isolated identity,
+generate and bind the frozen manifests and comparator set before candidate
+source, implement this brief without recovering rejected code, then run
+release compile, construction `1/1`, and both complete byte-identical
+structural rounds. Stop before `Y01`.

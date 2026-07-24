@@ -1,6 +1,6 @@
 # 032 - Cyclic Creative Stretch Research
 
-Status: active; Batch 32.17 selected event-ledger correction; Batch 32.18 ready
+Status: active; Batch 32.18 complete; Batch 32.19 ready
 Owner: dsp
 Updated: 2026-07-24
 Contracts: `046`, `085`
@@ -236,7 +236,7 @@ belongs in this batch.
 
 Authority:
 
-- [Offline Creative AuditedCenteredCompressedAnchorCyclic Brief](../../architecture/offline-creative-audited-centered-compressed-anchor-cyclic-brief.md)
+- [Offline Creative EventLedgerAuditedCenteredCompressedAnchorCyclic Brief](../../architecture/offline-creative-event-ledger-audited-centered-compressed-anchor-cyclic-brief.md)
 
 Batch 32.9 proved that the checked prose coverage did not freeze the exact
 machine-readable identities and bytes required by Rule 11. The authority is
@@ -559,25 +559,63 @@ Result:
 
 ## Batch 32.18 - Event-Ledger Evidence Authority
 
-Status: ready
+Status: complete
 
 Freeze one complete canonical brief before isolation:
 
-1. retain every centred compressed-anchor renderer, map, linked-channel,
+- [x] retain every centred compressed-anchor renderer, map, linked-channel,
    boundary, memory, and determinism formula unchanged
-2. replace sparse Y01 dropout ownership with exact event-ledger assertions and
+- [x] replace sparse Y01 dropout ownership with exact event-ledger assertions and
    measured diagnostics
-3. retain the continuous-source `221`-frame, `-40/-80 dBFS` dropout rule
+- [x] retain the continuous-source `221`-frame, `-40/-80 dBFS` dropout rule
    unchanged
-4. freeze exact row IDs, assertion IDs, diagnostic IDs, counts, order,
+- [x] freeze exact row IDs, assertion IDs, diagnostic IDs, counts, order,
    summaries, and receipt schemas
-5. freeze executable known answers that prove the real FFT, ledger, cadence,
+- [x] freeze executable known answers that prove the real FFT, ledger, cadence,
    gap, stereo, level, and comparator owners rather than labels or
    placeholders
-6. freeze fresh isolation names, cleanup, and evidence order
+- [x] freeze fresh isolation names, cleanup, and evidence order
 
 Do not create a worktree, candidate source, harness, comparator render, or
 acoustic receipt in this batch.
+
+Result:
+
+- one canonical
+  [EventLedgerAuditedCenteredCompressedAnchorCyclic brief](../../architecture/offline-creative-event-ledger-audited-centered-compressed-anchor-cyclic-brief.md)
+  replaces the superseded audited brief
+- renderer, map, cycle, linked-channel, boundary, memory, determinism, and
+  exact-length formulas are unchanged
+- Y01 row IDs `012..017` replace continuous dropout with full ledger
+  assertions and measured event diagnostics; the other `24` rows are
+  unchanged
+- the complete manifest remains `588` rows with `339` structural and `183`
+  synthetic rows
+- construction now executes exact known answers through the real FFT, ledger,
+  cadence, gap/dropout/tail, stereo, level/fade, and comparator owners
+- no candidate or evidence implementation entered `main`
+
+## Batch 32.19 - Fresh Isolated Implementation And Conformance
+
+Status: ready
+
+1. create only the frozen worktree, branch, private module, evidence authority,
+   ignored root, nextest profile, and local ref namespace
+2. generate and bind the exact `588`-row manifest, `63`-row comparator set,
+   and listening manifest before candidate source exists
+3. implement the unchanged renderer and every evidence owner from the Batch
+   32.18 brief without recovering rejected code or harness state
+4. run release compile and construction once; require `1/1`
+5. run all `339` structural rows in manifest order, then repeat compile,
+   construction, and the complete structural round unchanged
+6. require byte-identical corresponding receipts and summaries before
+   creating the acoustic ref
+7. stop before `Y01`, exact `16x`, long-form render, or listening
+
+Any choice missing from the brief, known-answer failure, manifest mismatch,
+compile failure, construction failure, structural failure, incomplete
+receipt, or non-identical round stops for docs-level reassessment. Do not
+repair or rerun an acoustic row in this batch.
 
 ## Completion Gate
 
@@ -592,5 +630,6 @@ acoustic receipt in this batch.
 
 ## Next Task
 
-Execute Batch 32.18 only. Freeze the complete event-ledger evidence authority
-and exact executable owner proofs. Do not implement or run acoustic evidence.
+Execute Batch 32.19 only. Build the exact fresh isolated identity, bind its
+evidence before candidate source, and complete the two unchanged conformance
+rounds. Stop before `Y01`.

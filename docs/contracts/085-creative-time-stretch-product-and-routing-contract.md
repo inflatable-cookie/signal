@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: exact-ratio Dream admitted; Cyclic event-ledger correction selected
+Status: exact-ratio Dream admitted; Cyclic event-ledger authority frozen
 Owner: core-product
 Updated: 2026-07-24
 Related contracts: `046`, `048`, `084`
@@ -10,7 +10,7 @@ Related architecture: `docs/architecture/offline-creative-time-stretch-study.md`
 `docs/architecture/offline-creative-direct-renewal-dream-brief.md`,
 `docs/architecture/offline-creative-cyclic-behavioral-synthesis.md`,
 `docs/architecture/offline-creative-centered-compressed-anchor-cyclic-brief.md`,
-`docs/architecture/offline-creative-audited-centered-compressed-anchor-cyclic-brief.md`,
+`docs/architecture/offline-creative-event-ledger-audited-centered-compressed-anchor-cyclic-brief.md`,
 `docs/architecture/offline-creative-audited-layered-cloud-brief.md`,
 `docs/architecture/offline-creative-layered-cloud-brief.md`,
 `docs/architecture/offline-creative-linked-stn-noise-morph-brief.md`,
@@ -1778,7 +1778,7 @@ state deletion, and freeze every executable edge docs-first. A second
 incomplete-evidence checkpoint closes this identity.
 
 Batch 32.8 freezes that fresh
-[AuditedCenteredCompressedAnchorCyclic authority](../architecture/offline-creative-audited-centered-compressed-anchor-cyclic-brief.md).
+[EventLedgerAuditedCenteredCompressedAnchorCyclic authority](../architecture/offline-creative-event-ledger-audited-centered-compressed-anchor-cyclic-brief.md).
 The renderer formula is unchanged. Each structural, synthetic, exact-`16x`,
 long-form, and listening row is now a separate one-shot process with a durable
 `started` record before audio load or DSP and a durable terminal
@@ -1939,12 +1939,21 @@ evidence implementation. Its Y02 owner substitutes authored frequencies and
 zero cents for measured FFT results. Y03 substitutes placeholder event
 diagnostics and does not execute every advertised order/centre assertion. Y04
 substitutes planned cadence and RMS for the frozen envelope FFT and
-autocorrelation. Batch 32.18 must freeze exact executable owner manifests and
-known answers for every diagnostic family before isolation.
+autocorrelation. Batch 32.18 therefore required exact executable owner
+manifests and known answers for every diagnostic family before isolation.
+
+Batch 32.18 freezes that complete authority. The sole canonical brief keeps
+every renderer formula unchanged. Y01 rows `012..017` use full event-ledger
+assertions and measured event diagnostics; the other `24` Y01 rows retain the
+continuous-source dropout rule. All `588` row IDs and counts remain fixed.
+Construction executes hard known answers through the real FFT, ledger,
+cadence, gap/dropout/tail, linked-stereo, level/fade, and comparator owners.
+The fresh isolation identity is fully named. No candidate or evidence code
+entered `main`.
 
 ## Next Task
 
-Execute `g10.032` Batch 32.18 only. Freeze the complete
-`EventLedgerAuditedCenteredCompressedAnchorCyclic` brief, exact sparse-event
-row changes, and executable known answers for every diagnostic owner. Do not
-implement or run acoustic evidence.
+Execute `g10.032` Batch 32.19 only. Create the exact fresh isolated identity,
+generate and bind its manifests and comparator set before candidate source,
+implement the frozen brief without rejected-code recovery, and complete both
+unchanged conformance rounds. Stop before `Y01`.

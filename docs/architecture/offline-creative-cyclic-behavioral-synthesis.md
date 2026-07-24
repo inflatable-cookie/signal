@@ -1,6 +1,6 @@
 # Offline Creative Cyclic Behavioral Synthesis
 
-Status: sparse-event ownership corrected; exact evidence brief pending
+Status: sparse-event ownership corrected; exact evidence brief frozen
 Owner: dsp
 Updated: 2026-07-24
 Contract: `085`
@@ -218,10 +218,10 @@ evidence-backed gate change addresses that failure class.
 
 Batch 32.4 froze
 [CenteredCompressedAnchorCyclic](./offline-creative-centered-compressed-anchor-cyclic-brief.md).
-Its checkpoint became evidence-invalid. Batch 32.8 freezes the fresh
-[AuditedCenteredCompressedAnchorCyclic](./offline-creative-audited-centered-compressed-anchor-cyclic-brief.md)
-authority with the same renderer and complete one-shot evidence ownership. It
-does not recover deleted source, tune the old implementation, sweep grain
+Its checkpoint became evidence-invalid. The canonical
+[EventLedgerAuditedCenteredCompressedAnchorCyclic](./offline-creative-event-ledger-audited-centered-compressed-anchor-cyclic-brief.md)
+authority retains the same renderer and complete one-shot evidence ownership.
+It does not recover deleted source, tune the old implementation, sweep grain
 constants, inherit Dream macros, or reuse the old absolute pitch ceiling.
 
 ## Closure
@@ -250,6 +250,11 @@ Select fresh `EventLedgerAuditedCenteredCompressedAnchorCyclic` authority with
 unchanged renderer behavior and corrected evidence ownership. The rejected
 checkpoint is not repaired or rerun.
 
+Batch 32.18 freezes that authority. Six sparse Y01 rows use the commanded
+ledger; every continuous row retains the original dropout rule. The exact
+manifest, measured owner algorithms, construction known answers, isolation,
+cleanup, and gate order are complete. No implementation entered `main`.
+
 ## Remaining Risk
 
 - no Signal renderer has yet proved that the centred schedule sounds useful
@@ -266,6 +271,6 @@ identity or another mechanism survey.
 
 ## Next Task
 
-Execute `g10.032` Batch 32.18 only. Freeze the complete event-ledger evidence
-brief and executable diagnostic known answers. Do not implement or run
-acoustic evidence.
+Execute `g10.032` Batch 32.19 only. Implement the frozen authority in its
+fresh isolated worktree and complete both unchanged conformance rounds. Stop
+before `Y01`.

@@ -527,6 +527,9 @@ Batch 32.4 freezes the selected implementation authority:
 
 ## Next Task
 
-Execute `g10.032` Batch 32.18 only. Freeze the exact event-ledger evidence
-authority and executable diagnostic known answers. Do not implement or run
-acoustic evidence.
+Batch 32.18 freezes the exact event-ledger evidence authority and executable
+known answers without changing the selected schedule or renderer.
+
+Execute `g10.032` Batch 32.19 only. Implement the frozen authority in its
+fresh isolated worktree and complete both unchanged conformance rounds. Stop
+before `Y01`.

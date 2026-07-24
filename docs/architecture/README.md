@@ -30,7 +30,7 @@ Keep milestone sequencing in `roadmaps/`.
 - `offline-creative-time-stretch-study.md`
 - `offline-creative-cyclic-behavioral-synthesis.md`
 - `offline-creative-centered-compressed-anchor-cyclic-brief.md`
-- `offline-creative-audited-centered-compressed-anchor-cyclic-brief.md`
+- `offline-creative-event-ledger-audited-centered-compressed-anchor-cyclic-brief.md`
 - `offline-creative-fixed-ratio-public-surface.md`
 - `offline-creative-audited-layered-cloud-brief.md`
 - `offline-creative-layered-cloud-brief.md`

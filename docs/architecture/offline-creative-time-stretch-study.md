@@ -1081,6 +1081,8 @@ all retained construction, structural, and synthetic gates pass.
 
 ## Next Task
 
-Execute `g10.032` Batch 32.18 only. Freeze exact event-ledger evidence and
-diagnostic owner proofs. Exact fixed `4x`, `8x`, and `16x` `Dream` remains
-admitted. Broader range, automatic routing, and both overlaps remain paused.
+Execute `g10.032` Batch 32.19 only. Implement the frozen event-ledger
+authority in its exact isolated worktree and complete both unchanged
+conformance rounds. Stop before `Y01`. Exact fixed `4x`, `8x`, and `16x`
+`Dream` remains admitted. Broader range, automatic routing, and both overlaps
+remain paused.

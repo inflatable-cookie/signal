@@ -6,7 +6,7 @@ Updated: 2026-07-23
 Contract: `085`, Rule 11
 Roadmap: `g10.032`, Batch 32.4
 Superseded by:
-[Offline Creative AuditedCenteredCompressedAnchorCyclic Brief](./offline-creative-audited-centered-compressed-anchor-cyclic-brief.md)
+[Offline Creative EventLedgerAuditedCenteredCompressedAnchorCyclic Brief](./offline-creative-event-ledger-audited-centered-compressed-anchor-cyclic-brief.md)
 Behavior:
 [Offline Creative Cyclic Behavioral Synthesis](./offline-creative-cyclic-behavioral-synthesis.md)
 
@@ -747,6 +747,6 @@ Loophole, or Chorus.
 ## Next Task
 
 Use the fresh
-[AuditedCenteredCompressedAnchorCyclic](./offline-creative-audited-centered-compressed-anchor-cyclic-brief.md)
+[EventLedgerAuditedCenteredCompressedAnchorCyclic](./offline-creative-event-ledger-audited-centered-compressed-anchor-cyclic-brief.md)
 authority. This historical checkpoint remains evidence-invalid and may not be
 repaired, rerun, or recovered.

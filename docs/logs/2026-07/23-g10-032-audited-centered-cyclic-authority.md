@@ -10,7 +10,7 @@ Started from clean `main` at
 recovered or rerun.
 
 Frozen one complete
-[AuditedCenteredCompressedAnchorCyclic authority](../../architecture/offline-creative-audited-centered-compressed-anchor-cyclic-brief.md).
+[current EventLedgerAuditedCenteredCompressedAnchorCyclic authority](../../architecture/offline-creative-event-ledger-audited-centered-compressed-anchor-cyclic-brief.md).
 The renderer is unchanged:
 
 - exact centred rational map

@@ -92,8 +92,8 @@ may replay `Y01` once with an absolute evidence root.
 Current Cyclic decision:
 [Offline Creative Cyclic Behavioral Synthesis](../architecture/offline-creative-cyclic-behavioral-synthesis.md).
 
-Recovered Cyclic candidate authority:
-[Offline Creative AuditedCenteredCompressedAnchorCyclic Brief](../architecture/offline-creative-audited-centered-compressed-anchor-cyclic-brief.md).
+Current Cyclic candidate authority:
+[Offline Creative EventLedgerAuditedCenteredCompressedAnchorCyclic Brief](../architecture/offline-creative-event-ledger-audited-centered-compressed-anchor-cyclic-brief.md).
 
 Explicit operator research reopening and pinned source triangulation selected
 one materially different neutral `Dream` family: `RenewalSpectral`. Later
@@ -234,6 +234,6 @@ Rejected first-owner brief:
 
 ## Next Task
 
-Execute `g10.032` Batch 32.18 only. Freeze exact event-ledger Cyclic evidence
-and executable diagnostic owner proofs. Do not implement or run acoustic
-evidence.
+Execute `g10.032` Batch 32.19 only. Implement the frozen event-ledger
+authority in its exact isolated worktree and complete both unchanged
+conformance rounds. Stop before `Y01`.

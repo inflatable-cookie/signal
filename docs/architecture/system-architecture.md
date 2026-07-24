@@ -318,5 +318,6 @@ The current package-level naming proposal is recorded in
 ## Next Task
 
 Keep the completed `g10.031` API and frozen transparent baseline unchanged.
-Execute `g10.032` Batch 32.18 only: freeze exact event-ledger Cyclic evidence
-and diagnostic owner proofs. Do not implement or run acoustic evidence.
+Execute `g10.032` Batch 32.19 only: implement the frozen event-ledger Cyclic
+authority in its exact isolated worktree and complete both unchanged
+conformance rounds. Stop before `Y01`.
