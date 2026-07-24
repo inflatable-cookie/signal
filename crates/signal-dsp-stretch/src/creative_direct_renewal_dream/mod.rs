@@ -4,7 +4,7 @@ mod stereo;
 mod synthesis;
 
 pub(super) const DIRECT_RENEWAL_DREAM_ENGINE_VERSION: &str =
-    "signal-creative-direct-renewal-dream-v1";
+    "signal-creative-direct-renewal-dream-v2";
 pub(super) const DIRECT_RENEWAL_DREAM_RECEIPT_SCHEMA: &str =
     "signal.creative-direct-renewal.receipt.v1";
 pub(super) const DIRECT_RENEWAL_DREAM_SUMMARY_SCHEMA: &str =

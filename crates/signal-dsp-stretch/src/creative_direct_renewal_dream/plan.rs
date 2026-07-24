@@ -122,12 +122,13 @@ pub(crate) fn validate_dimensions(
     if target_frames == 0 {
         return Err(CandidateError::ZeroTarget);
     }
-    let supported = [4_usize, 8, 16].into_iter().any(|ratio| {
-        source_frames
-            .checked_mul(ratio)
-            .is_some_and(|expected| expected == target_frames)
-    });
-    if !supported {
+    let minimum = source_frames
+        .checked_mul(4)
+        .ok_or(CandidateError::SizeOverflow)?;
+    let maximum = source_frames
+        .checked_mul(16)
+        .ok_or(CandidateError::SizeOverflow)?;
+    if !(minimum..=maximum).contains(&target_frames) {
         return Err(CandidateError::UnsupportedRatio);
     }
     Ok(())

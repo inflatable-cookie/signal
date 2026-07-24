@@ -13,7 +13,7 @@ S01	direct_renewal_dream_structural_request_preallocation	10	space-negative-epsi
 S01	direct_renewal_dream_structural_request_preallocation	11	space-next-up-one	0	65536
 S01	direct_renewal_dream_structural_request_preallocation	12	empty-nonzero-target	0	65536
 S01	direct_renewal_dream_structural_request_preallocation	13	nonempty-zero-target	0	65536
-S01	direct_renewal_dream_structural_request_preallocation	14	unsupported-5x	0	65536
+S01	direct_renewal_dream_structural_request_preallocation	14	unsupported-3x	0	65536
 S01	direct_renewal_dream_structural_request_preallocation	15	dimension-L-2pow53	0	65536
 S02	direct_renewal_dream_structural_transform_map	0	geometry-F8000	0	0
 S02	direct_renewal_dream_structural_transform_map	1	geometry-F11025	0	0
