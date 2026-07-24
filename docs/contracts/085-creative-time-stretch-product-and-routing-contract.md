@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: continuous Dream and exact-ratio Cyclic public; `g10.034` audit ready
+Status: continuous Dream and exact-ratio Cyclic public; `g10.034` brief ready
 Owner: core-product
 Updated: 2026-07-24
 Related contracts: `046`, `048`, `084`
@@ -2206,13 +2206,28 @@ it does not admit interior ratios. Lower Dream remains paused because no
 compatible same-character owner exists. Batch 33.6 changes documentation only.
 
 `g10.034` opens continuous Cyclic feasibility without changing that matrix.
-Its Batch 34.1 audit owns the unresolved exact candidate domain, character
-continuity at interior targets, and complete evidence needs. Private
-identity-through-`8x` validation remains implementation geometry only. No
-candidate, acoustic claim, public widening, or integration is ready.
+Private identity-through-`8x` validation remains implementation geometry only.
+No candidate, acoustic claim, public widening, or integration is ready.
+
+Batch 34.1 selects one separately versioned
+`ContinuousEventLedgerCyclic` evidence candidate for every integer target
+`2N <= T <= 8N`. Static audit proves that this interval uses the admitted map,
+centred anchors, native-rate reads, complementary window, interpolation,
+exterior zero, linked schedule, deterministic state, and bounded memory
+without a ratio branch or acoustic-equation change.
+
+`N <= T < 2N` is excluded. Exact identity bypasses synthesis, and no public,
+comparator, or listening anchor owns effect emergence immediately above it.
+Private acceptance remains non-promotional.
+
+Batch 34.2 must freeze exact anchor parity, frame-adjacent and fractional
+targets, interior synthetic and ReaReaRea comparison rows, concealed long-form
+mono, hard linked-stereo controls, eligible independent review, rejection,
+cleanup, and minimal admission. The Batch 32.25 waiver does not transfer.
+Candidate execution and public widening remain blocked.
 
 ## Next Task
 
-Execute `g10.034` Batch 34.1 only. Complete the existing-owner compatibility
-and exact-domain audit as documentation. Keep lower Dream and implementation
-closed.
+Execute `g10.034` Batch 34.2 only. Freeze the complete
+`ContinuousEventLedgerCyclic` implementation and evidence brief without
+changing or running DSP.

@@ -316,10 +316,11 @@ The current package-level naming proposal is recorded in
 - `g10.032` owns `Cyclic` separately. The accepted centred compressed-anchor
   event-ledger renderer stays internal behind its public fixed-ratio surface.
 - `g10.034` audits whether that same Cyclic owner can preserve its admitted
-  character at interior fixed targets. No candidate or public widening is
-  ready.
+  character at interior fixed targets. Batch 34.1 selects `2N..=8N` for one
+  unchanged-equation evidence candidate. Candidate execution and public
+  widening remain blocked.
 
 ## Next Task
 
-Execute `g10.034` Batch 34.1 only as documentation. Keep lower Dream and
-implementation closed.
+Execute `g10.034` Batch 34.2 only as documentation. Freeze the complete
+interior-ratio implementation and evidence brief; keep implementation closed.

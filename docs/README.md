@@ -93,6 +93,6 @@ strict lane.
 
 ## Next Task
 
-Execute `g10.034` Batch 34.1 only. Complete the existing-owner compatibility
-and domain audit as documentation. Keep candidate execution, lower Dream, and
-all integration work closed.
+Execute `g10.034` Batch 34.2 only. Freeze the complete
+`ContinuousEventLedgerCyclic` implementation and evidence brief as
+documentation. Keep candidate execution and integration closed.

@@ -5,7 +5,7 @@ Owner: core-product
 Updated: 2026-07-24
 Contract: `085`
 Roadmaps: `g10.031`, Batches 31.75-31.76; `g10.032`, Batches 32.27-32.28;
-`g10.033`, Batches 33.4-33.5; `g10.034` planning only
+`g10.033`, Batches 33.4-33.5; `g10.034` audit only
 
 ## Decision
 
@@ -495,6 +495,6 @@ private renderer exactly.
 
 ## Next Task
 
-Execute `g10.034` Batch 34.1 only. Audit interior fixed-target character and
-domain compatibility as documentation. Public Cyclic remains exact at `2x`,
-`4x`, and `8x`; keep every implementation and integration surface closed.
+Execute `g10.034` Batch 34.2 only. Freeze the complete interior-ratio evidence
+brief. Public Cyclic remains exact at `2x`, `4x`, and `8x`; keep every
+implementation and integration surface closed.

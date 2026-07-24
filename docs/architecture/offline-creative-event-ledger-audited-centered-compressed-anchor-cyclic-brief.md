@@ -2158,6 +2158,6 @@ These are admission risks, not open design choices.
 
 ## Next Task
 
-Keep this admitted renderer and public ratios frozen. Execute `g10.034` Batch
-34.1 only. Treat its general target geometry as a research lead, not
-interior-ratio admission.
+Keep this admitted renderer and public ratios frozen. Batch 34.1 selected
+`ContinuousEventLedgerCyclic` over `2N..=8N` as a static-compatible evidence
+candidate, not acoustic admission. Execute Batch 34.2 only as documentation.

@@ -54,5 +54,6 @@ admits the accepted event-ledger Cyclic renderer and publicly admits its
 fixed-ratio extension; Batch 32.29 closes that lane. `g10.033` admits one
 continuous `4x..16x` Dream owner and its direct public surface without
 routing. Batch 33.6 publishes the exact executable matrix and closes the lane.
-`g10.034` opens continuous Cyclic feasibility. Execute Batch 34.1 as a
-docs-only compatibility and domain audit; keep implementation closed.
+`g10.034` Batch 34.1 selects a static-compatible `2N..=8N` Cyclic evidence
+candidate. Execute Batch 34.2 as a docs-only complete brief; keep
+implementation closed.

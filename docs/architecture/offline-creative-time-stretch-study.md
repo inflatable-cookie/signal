@@ -1,6 +1,6 @@
 # Offline Creative Time-Stretch Study
 
-Status: continuous Dream and exact-ratio Cyclic public; `g10.034` audit ready
+Status: continuous Dream and exact-ratio Cyclic public; `g10.034` brief ready
 Owner: dsp
 Updated: 2026-07-24
 Contract: `085`
@@ -1189,6 +1189,142 @@ Cyclic in the same candidate. Its private continuous geometry is a separate
 later admission choice. Cloud, ratios above `16x`, automatic routing, dynamic
 ratio, cache, artifacts, and consumers remain unavailable.
 
+## Batch 34.1 Continuous Cyclic Compatibility Audit
+
+### Current ownership
+
+`N` is source frames and `T` is authoritative target frames.
+
+| Surface | Accepted targets | Evidence |
+| --- | --- | --- |
+| public Cyclic | exactly `2N`, `4N`, or `8N` | public/private byte parity, structural, synthetic, long-form mono, linked stereo, operator admission |
+| private Cyclic validation | every integer `N <= T <= 8N` | identity test plus admitted anchor tests; no interior acoustic claim |
+| retained ReaReaRea comparator | exact `2x`, `4x`, and `8x` | synthetic and five-family musical rows |
+| selected continuous candidate | every integer `2N <= T <= 8N` | static compatibility only; evidence still required |
+
+Public validation remains unchanged until a later admission.
+
+### Target-dependent equations
+
+Let `o` be an output frame and `h` the cycle length in frames. The retained
+owner computes:
+
+```text
+ideal(o) = ((2o + 1)N - T) / (2T)
+anchor(k) = ((2kh + 1)N - T) / (2T)
+anchor_gap = hN / T
+planned_replica_spacing = h(T - N) / T
+```
+
+`ideal(o)` is the centre-aligned source position in frame units. Its increment
+is exactly `N/T`, so it is strictly monotonic for every non-empty accepted
+request. Each local read advances at exactly one source frame per output
+frame. Consecutive source anchors advance by positive `hN/T`.
+
+The two reads use the same complementary half-cosine window for every target.
+Weights remain complementary. Only their source-anchor separation changes.
+Planned replica spacing increases continuously from `h/2` at `2x` to `7h/8`
+at `8x`. Exact `2x`, `4x`, and `8x` do not enter a special renderer branch.
+
+Interpolation uses the same rational denominator `2T`. Exterior reads are
+exact zero. Synthesis allocates exactly `T * channels` samples and writes
+every output frame once. Target changes do not alter the cycle conversion,
+window, interpolation, crop, gain, or post-processing because none exists.
+
+Every channel uses the same anchors, positions, and weights. Only source
+samples differ by channel. Duplicate, anti-phase, common-negation, swap, and
+linear balance relations therefore remain representation-compatible at
+interior targets.
+
+There is no stochastic state. Working state is the `h+1` window plus the fixed
+plan, bounded by `256 KiB` independently of source and target duration.
+Execution is deterministic `O(T * channels)` plus output allocation.
+
+### Domain decision
+
+Select one separately versioned `ContinuousEventLedgerCyclic` evidence
+candidate over every integer target satisfying:
+
+```text
+2N <= T <= 8N
+```
+
+The candidate keeps the admitted renderer bytes and cycle semantics unchanged.
+It changes behavior identity and evidence scope, not acoustic equations.
+
+Do not include `N <= T < 2N`. Exact identity bypasses synthesis and returns
+the input byte-for-byte. The first frame above identity enters the cyclic
+renderer. No public, comparator, or listening anchor establishes whether that
+effect emergence is useful or continuous. Admitting it would add a lower
+product boundary rather than generalize between the three accepted anchors.
+
+Do not narrow the upper boundary. The private validation, source study, and
+accepted product target all terminate at `8x`; exact `16x` remains a typed
+pre-allocation rejection probe.
+
+### Evidence required
+
+Batch 34.2 must freeze the complete executable brief. Its minimum target set
+is:
+
+- exact anchors: `2N`, `4N`, `8N`
+- one-frame adjacency: `2N+1`, `4N-1`, `4N+1`, `8N-1`
+- fractional interiors: `5N/2`, `15N/2`
+- integer interiors: `3N`, `5N`, `6N`
+- invalid boundaries: `2N-1`, `8N+1`, and exact `16N`
+
+Choose source lengths that make every fractional target integral. Require
+byte-exact anchor parity before interior evidence.
+
+Construction and structural ownership must cover:
+
+- immutable hashes for `mod.rs`, `plan.rs`, `schedule.rs`, `interpolate.rs`,
+  `synthesis.rs`, and retained production tests
+- exact domain validation before output allocation
+- complete ideal-map and anchor monotonicity
+- rational position known answers and planned-spacing order
+- cycle half-up conversion at `5 ms`, `48 ms`, and `90 ms`
+- complementary window coverage and exterior-zero behavior
+- exact length, finiteness, determinism, silence, and bounded memory
+- duplicate, anti-phase, common-negation, swap, delay, unequal-level, and
+  band-balance linked-stereo mechanics
+
+Synthetic ownership must extend the accepted `Y01..Y06` families to low,
+middle, and high interior targets. It must retain hard length, finite, peak,
+dropout, exterior-difference, event-ledger, order, centre, level, gap, and
+linked assertions. Pitch, cadence, replica distribution, and comparator delta
+remain complete diagnostics unless Contract `085` already names a hard
+integrity invariant.
+
+Concealed listening must use the five retained musical families at fixed
+interior probes near `2.5x`, `5x`, and `7.5x`. Neutral `48 ms` runs first;
+short `5 ms` and long `90 ms` verify the existing metallic-to-echo direction.
+New matching ReaReaRea interior captures are comparator evidence, not
+implementation authority. Exact anchors inherit listening only after
+byte-exact parity is proved.
+
+Linked-stereo hard controls precede listening. The Batch 32.25 waiver does not
+cover this behavior identity or its interior ratios. Eligible independent
+review remains the default unless the operator later makes a new
+checkpoint-scoped Contract `085` Rule 5 decision.
+
+### Contract result
+
+- Rule 1: one target-driven monotonic map and one schedule remain intact.
+- Rules 2-4: character stays explicit; no router, overlap, or dynamic path
+  opens.
+- Rule 5: linked decisions remain shared; new stereo evidence is mandatory.
+- Rule 6: deterministic state remains unchanged.
+- Rule 7: exact length, exterior zero, bounded state, and offline execution
+  remain owned.
+- Rule 9: static compatibility cannot promote sound; concealed listening is
+  mandatory.
+- Rule 10: one complete `ContinuousEventLedgerCyclic` candidate may proceed
+  only after the evidence brief is frozen.
+
+This is a plausible same-character generalization, not acoustic admission.
+Batch 34.2 is ready as documentation only. No renderer or public code is ready.
+
 ## Sources
 
 - [REAPER time-stretch engines](https://www.reaper.fm/about.php)
@@ -1231,6 +1367,6 @@ ratio, cache, artifacts, and consumers remain unavailable.
 
 ## Next Task
 
-`g10.034` is active. Execute Batch 34.1 only: audit whether the admitted
-Cyclic owner preserves character at interior fixed targets and select an exact
-domain or close the lane. Keep lower Dream, routing, and implementation closed.
+Execute `g10.034` Batch 34.2 only. Freeze the complete
+`ContinuousEventLedgerCyclic` implementation and evidence brief without
+changing or running DSP. Keep lower Dream, routing, and integration closed.

@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: `g10.034` active; continuous Cyclic Batch 34.1 ready
+Status: `g10.034` active; continuous Cyclic Batch 34.2 ready
 Updated: 2026-07-24
 
 ## Why this generation matters now
@@ -171,9 +171,9 @@ The 2026-07-19 consolidation reset is authoritative.
   hardware alignment and consumer workflow evidence. No feature batch became
   ready through this correction.
 - `g10.034` owns the current creative-stretch planning checkpoint. Only its
-  docs-first Cyclic compatibility and exact-domain audit is ready. Public
-  Cyclic remains exact `2x`, `4x`, and `8x`; no candidate or integration work
-  is ready.
+  docs-first complete Cyclic evidence brief is ready. Batch 34.1 selected
+  `2N..=8N` through unchanged acoustic equations. Public Cyclic remains exact
+  `2x`, `4x`, and `8x`; no candidate execution or integration work is ready.
 - `g10.028` RealtimePreview source-fill and all render-plane integration remain
   paused.
 
@@ -323,10 +323,10 @@ Do not start Loophole or Chorus planning from Signal internals.
     admits that public surface; Batch 33.6 publishes the exact executable
     matrix and closes the lane; no cache, artifact, or consumer work is ready
 - `g10.034` `active`
-  - Batch 34.1 audits the admitted Cyclic owner's general target geometry,
-    character continuity, exact candidate domain, and complete evidence needs
-    without changing or running DSP; later brief, candidate, public decision,
-    admission, and closeout batches remain conditional
+  - Batch 34.1 selects `ContinuousEventLedgerCyclic` over every exact target
+    `2N <= T <= 8N` through the unchanged admitted equations; Batch 34.2 is
+    ready to freeze its complete implementation and evidence brief; candidate,
+    public decision, admission, and closeout batches remain conditional
 
 ## Stretch Boundary
 
@@ -820,13 +820,16 @@ The next planning checkpoint is continuous Cyclic feasibility. Its private
 general-target geometry is a research lead only. Lower Dream remains paused
 because no compatible same-character owner exists.
 
-`g10.034` opens that checkpoint. Public Cyclic stays exact at `2x`, `4x`, and
-`8x`; private acceptance from identity through `8x` remains mechanical
-geometry only. Batch 34.1 is a docs-only audit. No candidate, evidence run, or
-public widening is ready.
+`g10.034` opens that checkpoint. Batch 34.1 selects every exact target
+`2N..=8N` for one `ContinuousEventLedgerCyclic` evidence candidate. The
+admitted equations and files remain unchanged. Sub-`2x` is excluded because
+identity is a bypass and no acoustic anchor owns the effect's emergence.
+Public Cyclic stays exact at `2x`, `4x`, and `8x`. Batch 34.2 is ready as
+documentation only; no candidate execution, evidence run, or public widening
+is ready.
 
 ## Next Task
 
-Execute `g10.034` Batch 34.1 only. Complete the existing-owner compatibility
-and domain audit as documentation. Do not write or run candidate DSP or widen
-public Cyclic.
+Execute `g10.034` Batch 34.2 only. Freeze the complete
+`ContinuousEventLedgerCyclic` implementation and evidence brief. Do not write
+or run candidate DSP or widen public Cyclic.

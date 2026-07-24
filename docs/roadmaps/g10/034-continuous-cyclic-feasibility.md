@@ -1,6 +1,6 @@
 # 034 - Continuous Cyclic Feasibility
 
-Status: active; Batch 34.1 ready
+Status: active; Batch 34.2 ready
 Owner: dsp
 Created: 2026-07-24
 Depends on: `g10.032`, `g10.033`
@@ -35,11 +35,12 @@ The visible runway is:
 5. minimal public admission, only after acoustic passage
 6. docs-only closeout and next planning checkpoint
 
-Batch 34.1 is the only ready work. Later batches remain conditional.
+Batch 34.1 is complete. Batch 34.2 is the only ready work. Later batches
+remain conditional.
 
 ## Goals
 
-- [ ] decide the exact fixed-target domain, or close continuous Cyclic
+- [x] decide the exact fixed-target domain, or close continuous Cyclic
 - [ ] prove whether the admitted owner can preserve Cyclic character at
   interior targets without changing acoustic equations
 - [ ] freeze one complete candidate identity and evidence path before execution
@@ -78,35 +79,51 @@ Batch 34.1 is the only ready work. Later batches remain conditional.
 
 ## Batch 34.1 - Existing-Owner Compatibility And Domain Audit
 
-Status: ready
+Status: complete
 
 Documentation only.
 
-- [ ] publish the exact public, private, tested, and acoustically admitted
+- [x] publish the exact public, private, tested, and acoustically admitted
   target matrix
-- [ ] audit target dependence in validation, centred anchors, ideal map,
+- [x] audit target dependence in validation, centred anchors, ideal map,
   compressed spacing, windowing, interpolation, exterior padding, output
   allocation, and exact length
-- [ ] audit linked-stereo ownership, deterministic state, memory bounds, and
+- [x] audit linked-stereo ownership, deterministic state, memory bounds, and
   cost across arbitrary exact targets
-- [ ] distinguish identity passthrough, sub-`2x` expansion, `2x..8x`
+- [x] distinguish identity passthrough, sub-`2x` expansion, `2x..8x`
   interior expansion, and exact anchor behavior
-- [ ] decide whether the candidate domain is `2N..=8N`, a narrower closed
+- [x] decide whether the candidate domain is `2N..=8N`, a narrower closed
   interval, or no continuous domain
-- [ ] identify every new structural, synthetic, boundary, replica, pitch,
+- [x] identify every new structural, synthetic, boundary, replica, pitch,
   level, mono, and linked-stereo case required for interior targets
-- [ ] decide whether unchanged renderer bytes can form a separately versioned
+- [x] decide whether unchanged renderer bytes can form a separately versioned
   behavior candidate or whether materially new DSP would be required
-- [ ] test the result against Contract `085` Rules 1-7, 9, and 10
-- [ ] select one complete source-backed direction or close the lane
+- [x] test the result against Contract `085` Rules 1-7, 9, and 10
+- [x] select one complete source-backed direction or close the lane
 
 Stop if the audit requires a changed schedule, interpolation law, window,
 cycle interpretation, boundary treatment, stereo law, or post-process to
 preserve character. That is new renderer research, not continuous admission.
 
+Result:
+
+- select `ContinuousEventLedgerCyclic` over every integer target
+  `2N <= T <= 8N`
+- retain the admitted cycle, map, centred anchors, native-rate reads,
+  complementary window, interpolation, exterior zero, exact output,
+  linked-channel schedule, deterministic state, and memory bound unchanged
+- exclude `N <= T < 2N` because identity is a special bypass and no public,
+  comparator, or listening anchor owns effect emergence above it
+- retain exact `2x`, `4x`, and `8x` output as mandatory byte-parity anchors
+- require one-frame-adjacent, fractional, integer-interior, invalid-boundary,
+  full synthetic, concealed mono, and linked-stereo evidence
+- keep the Batch 32.25 stereo waiver checkpoint-local
+- make Batch 34.2 ready as documentation only
+- keep candidate execution and public widening blocked
+
 ## Batch 34.2 - Complete Interior-Ratio Evidence Brief
 
-Status: planned; blocked on Batch 34.1
+Status: ready
 
 Documentation only. Freeze one buildable and executable candidate with no
 open mechanism, domain, fixture, metric, comparator, listener, cleanup, or
@@ -178,17 +195,18 @@ next planning checkpoint.
 ## Acceptance Criteria
 
 - [x] only Batch 34.1 is ready at roadmap open
-- [ ] public and private target acceptance are never called acoustic admission
-- [ ] one exact domain is frozen before candidate work
-- [ ] exact `2x`, `4x`, and `8x` anchors cannot change
-- [ ] all Contract `085` character, map, stereo, boundary, determinism,
+- [x] public and private target acceptance are never called acoustic admission
+- [x] one exact domain is frozen before candidate work
+- [x] exact `2x`, `4x`, and `8x` anchors cannot change
+- [x] all Contract `085` character, map, stereo, boundary, determinism,
   listening, and single-candidate rules remain active
 - [x] no implementation or harness surface enters the planning batch
-- [ ] failure leaves current public Cyclic behavior unchanged
+- [x] failure leaves current public Cyclic behavior unchanged
 
 ## Next Task
 
-Execute Batch 34.1 only. Complete the existing-owner compatibility and domain
-audit as documentation. Do not write or run candidate DSP, generate listening
-assets, widen public Cyclic, or begin lower Dream, routing, cache, artifacts,
-dynamic ratio, runtime, UI, Loophole, or Chorus work.
+Execute Batch 34.2 only. Freeze one complete
+`ContinuousEventLedgerCyclic` implementation and evidence brief for every
+integer target `2N <= T <= 8N`. Do not write or run candidate DSP, generate
+listening assets, widen public Cyclic, or begin lower Dream, routing, cache,
+artifacts, dynamic ratio, runtime, UI, Loophole, or Chorus work.

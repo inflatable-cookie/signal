@@ -116,6 +116,7 @@ ledger remains in git history at `1d1b02f1`.
 
 Retain this frozen baseline and keep its successor lane closed. `g10.032`
 admitted exact-ratio Cyclic. `g10.033` admitted continuous `4x..16x` Dream
-without changing Transparent. Execute `g10.034` Batch 34.1 only as a docs-first
-continuous Cyclic compatibility and domain audit. Do not change lower Dream,
-product routing, or Contract `084`.
+without changing Transparent. `g10.034` Batch 34.1 selects a static-compatible
+continuous Cyclic evidence candidate over `2N..=8N`. Execute Batch 34.2 only
+as documentation. Do not change lower Dream, product routing, or Contract
+`084`.

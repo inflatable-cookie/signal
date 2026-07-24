@@ -268,7 +268,7 @@ targets change the accepted Cyclic effect.
 
 ## Next Task
 
-Execute `g10.034` Batch 34.1 only. Audit whether the accepted Cyclic character
-can widen from exact `2x`, `4x`, and `8x` to interior fixed targets without
-acoustic drift. Keep lower Dream, implementation, routing, cache, artifacts,
-dynamic ratio, runtime, UI, Loophole, and Chorus closed.
+Execute `g10.034` Batch 34.2 only. Freeze the complete
+`ContinuousEventLedgerCyclic` implementation and evidence brief. Keep lower
+Dream, implementation, routing, cache, artifacts, dynamic ratio, runtime, UI,
+Loophole, and Chorus closed.

@@ -115,4 +115,5 @@ contract front doors. Contract `084` and roadmap `g10.030` keep the transparent
 successor program closed. Contract `085` admits fixed-ratio Cyclic and public
 continuous `4x..16x` Dream without a same-character router. `g10.033` is
 complete. `g10.034` opens continuous Cyclic feasibility with only its docs-only
-compatibility and domain audit ready. No strict spec lane is open.
+evidence-brief batch ready after selecting `2N..=8N` through unchanged
+equations. No strict spec lane is open.
