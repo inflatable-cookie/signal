@@ -9,10 +9,13 @@ use signal_primitives::{Sample, SampleRate};
 use std::time::Duration;
 
 /// Semantic behavior version of the public creative-stretch renderer.
-pub const CREATIVE_STRETCH_ENGINE_VERSION: &str = "signal-creative-stretch-v2";
+pub const CREATIVE_STRETCH_ENGINE_VERSION: &str = "signal-creative-stretch-v3";
 
-/// Exact output/input ratios supported by the `Dream` character.
-pub const CREATIVE_STRETCH_SUPPORTED_RATIOS: [usize; 3] = [4, 8, 16];
+/// Smallest output/input ratio supported by the `Dream` character.
+pub const CREATIVE_STRETCH_DREAM_MIN_RATIO: usize = 4;
+
+/// Largest output/input ratio supported by the `Dream` character.
+pub const CREATIVE_STRETCH_DREAM_MAX_RATIO: usize = 16;
 
 /// Exact output/input ratios supported by the `Cyclic` character.
 pub const CREATIVE_STRETCH_CYCLIC_SUPPORTED_RATIOS: [usize; 3] = [2, 4, 8];
@@ -41,22 +44,41 @@ pub enum CreativeStretchCharacter {
     Cyclic,
 }
 
+/// Output/input ratio domain admitted for one creative character.
+#[non_exhaustive]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum CreativeStretchRatioDomain {
+    /// Every exact target frame count inside the inclusive ratio bounds.
+    Continuous {
+        /// Inclusive minimum output/input ratio.
+        minimum: usize,
+        /// Inclusive maximum output/input ratio.
+        maximum: usize,
+    },
+    /// Exact integer output/input ratios.
+    Exact(&'static [usize]),
+}
+
 impl CreativeStretchCharacter {
-    /// Exact output/input ratios admitted for this character.
-    pub const fn supported_ratios(self) -> &'static [usize] {
+    /// Output/input ratio domain admitted for this character.
+    pub const fn ratio_domain(self) -> CreativeStretchRatioDomain {
         match self {
-            Self::Dream => &CREATIVE_STRETCH_SUPPORTED_RATIOS,
-            Self::Cyclic => &CREATIVE_STRETCH_CYCLIC_SUPPORTED_RATIOS,
+            Self::Dream => CreativeStretchRatioDomain::Continuous {
+                minimum: CREATIVE_STRETCH_DREAM_MIN_RATIO,
+                maximum: CREATIVE_STRETCH_DREAM_MAX_RATIO,
+            },
+            Self::Cyclic => {
+                CreativeStretchRatioDomain::Exact(&CREATIVE_STRETCH_CYCLIC_SUPPORTED_RATIOS)
+            }
         }
     }
 }
 
 /// One whole-buffer offline creative-stretch request.
 ///
-/// `target_frames` is authoritative and must equal the source frame count
-/// multiplied by a ratio returned from
-/// [`CreativeStretchCharacter::supported_ratios`]. This request allocates and
-/// must not be rendered on the audio thread.
+/// `target_frames` is authoritative and must fall inside the selected
+/// character's [`CreativeStretchCharacter::ratio_domain`]. This request
+/// allocates and must not be rendered on the audio thread.
 #[non_exhaustive]
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct CreativeStretchRequest<'a> {
@@ -142,7 +164,7 @@ pub enum CreativeStretchError {
     EmptyInput,
     /// A non-empty input requested zero output frames.
     ZeroTargetFrames,
-    /// Target frames did not resolve to exact `4x`, `8x`, or `16x`.
+    /// Target frames fell outside the selected character's admitted ratio domain.
     UnsupportedTargetFrames,
     /// Request geometry or output size exceeded the supported integer range.
     SizeOverflow,
@@ -229,11 +251,25 @@ fn validate_request(
     {
         return Err(CreativeStretchError::SizeOverflow);
     }
-    let supported = request.character.supported_ratios().iter().any(|ratio| {
-        source_frames
-            .checked_mul(*ratio)
-            .is_some_and(|expected| expected == request.target_frames)
-    });
+    let supported =
+        match request.character {
+            CreativeStretchCharacter::Dream => {
+                let minimum = source_frames
+                    .checked_mul(CREATIVE_STRETCH_DREAM_MIN_RATIO)
+                    .ok_or(CreativeStretchError::SizeOverflow)?;
+                let maximum = source_frames
+                    .checked_mul(CREATIVE_STRETCH_DREAM_MAX_RATIO)
+                    .ok_or(CreativeStretchError::SizeOverflow)?;
+                (minimum..=maximum).contains(&request.target_frames)
+            }
+            CreativeStretchCharacter::Cyclic => CREATIVE_STRETCH_CYCLIC_SUPPORTED_RATIOS
+                .iter()
+                .any(|ratio| {
+                    source_frames
+                        .checked_mul(*ratio)
+                        .is_some_and(|expected| expected == request.target_frames)
+                }),
+        };
     if !supported {
         return Err(CreativeStretchError::UnsupportedTargetFrames);
     }
@@ -268,7 +304,7 @@ fn map_cyclic_error(
     }
 }
 
-/// Render one exact-ratio creative stretch through Signal's admitted renderer.
+/// Render one creative stretch through Signal's admitted character renderer.
 ///
 /// The result contains exactly `request.target_frames * request.channels`
 /// finite interleaved samples. Unsupported requests return a typed error;
@@ -323,6 +359,20 @@ mod tests {
         input
     }
 
+    fn dream_parity_targets(source_frames: usize) -> [usize; 9] {
+        [
+            source_frames * 4,
+            source_frames * 4 + 1,
+            source_frames * 9 / 2,
+            source_frames * 6,
+            source_frames * 8,
+            source_frames * 10,
+            source_frames * 31 / 2,
+            source_frames * 16 - 1,
+            source_frames * 16,
+        ]
+    }
+
     fn dream_private_render(
         input: &[Sample],
         channels: usize,
@@ -369,17 +419,21 @@ mod tests {
 
         assert_eq!(
             CREATIVE_STRETCH_ENGINE_VERSION,
-            "signal-creative-stretch-v2"
+            "signal-creative-stretch-v3"
         );
-        assert_eq!(CREATIVE_STRETCH_SUPPORTED_RATIOS, [4, 8, 16]);
+        assert_eq!(CREATIVE_STRETCH_DREAM_MIN_RATIO, 4);
+        assert_eq!(CREATIVE_STRETCH_DREAM_MAX_RATIO, 16);
         assert_eq!(CREATIVE_STRETCH_CYCLIC_SUPPORTED_RATIOS, [2, 4, 8]);
         assert_eq!(
-            CreativeStretchCharacter::Dream.supported_ratios(),
-            &[4, 8, 16]
+            CreativeStretchCharacter::Dream.ratio_domain(),
+            CreativeStretchRatioDomain::Continuous {
+                minimum: 4,
+                maximum: 16,
+            }
         );
         assert_eq!(
-            CreativeStretchCharacter::Cyclic.supported_ratios(),
-            &[2, 4, 8]
+            CreativeStretchCharacter::Cyclic.ratio_domain(),
+            CreativeStretchRatioDomain::Exact(&[2, 4, 8])
         );
         assert_eq!(CREATIVE_STRETCH_DEFAULT_SPACE.to_bits(), 0.5_f32.to_bits());
         assert_eq!(CREATIVE_STRETCH_MIN_CYCLE, Duration::from_millis(5));
@@ -390,10 +444,43 @@ mod tests {
     }
 
     #[test]
-    fn public_mono_matches_private_renderer_at_every_ratio() {
+    fn public_dream_validation_covers_every_exact_target_in_the_domain() {
+        for source_frames in [1, 2, 3, 257] {
+            let input = mono_input(source_frames);
+            let minimum = source_frames * CREATIVE_STRETCH_DREAM_MIN_RATIO;
+            let maximum = source_frames * CREATIVE_STRETCH_DREAM_MAX_RATIO;
+
+            for target_frames in minimum..=maximum {
+                let request = CreativeStretchRequest::new(
+                    &input,
+                    1,
+                    SAMPLE_RATE,
+                    target_frames,
+                    CreativeStretchCharacter::Dream,
+                );
+                assert_eq!(validate_request(request), Ok(None));
+            }
+
+            for target_frames in [minimum - 1, maximum + 1] {
+                let request = CreativeStretchRequest::new(
+                    &input,
+                    1,
+                    SAMPLE_RATE,
+                    target_frames,
+                    CreativeStretchCharacter::Dream,
+                );
+                assert_eq!(
+                    validate_request(request),
+                    Err(CreativeStretchError::UnsupportedTargetFrames)
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn public_dream_mono_matches_private_renderer_across_the_domain() {
         let input = mono_input(64);
-        for ratio in CREATIVE_STRETCH_SUPPORTED_RATIOS {
-            let target_frames = input.len() * ratio;
+        for target_frames in dream_parity_targets(input.len()) {
             let public = render_creative_stretch(CreativeStretchRequest::new(
                 &input,
                 1,
@@ -411,10 +498,10 @@ mod tests {
     }
 
     #[test]
-    fn public_stereo_matches_private_renderer_at_every_ratio_and_space() {
+    fn public_dream_stereo_matches_private_renderer_across_the_domain() {
         let input = stereo_input(64);
-        for ratio in CREATIVE_STRETCH_SUPPORTED_RATIOS {
-            let target_frames = input.len() / 2 * ratio;
+        let source_frames = input.len() / 2;
+        for target_frames in dream_parity_targets(source_frames) {
             for space in [0.0, 0.5, 1.0] {
                 let public = render_creative_stretch(
                     CreativeStretchRequest::new(
@@ -786,7 +873,7 @@ mod tests {
                     &mono,
                     1,
                     SAMPLE_RATE,
-                    mono.len() * 6,
+                    mono.len() * 17,
                     CreativeStretchCharacter::Dream,
                 ),
                 CreativeStretchError::UnsupportedTargetFrames,

@@ -190,7 +190,7 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Keep Contract `084` closed. Contract `085` freezes public continuous
-`4x..16x` Dream widening through one admitted owner, with no same-character
-router. Public Cyclic remains exact `2x`, `4x`, and `8x`; Cloud remains
-closed. Execute `g10.033` Batch 33.5 public admission.
+Keep Contract `084` closed. Contract `085` admits public continuous
+`4x..16x` Dream through one owner, with no same-character router. Public
+Cyclic remains exact `2x`, `4x`, and `8x`; Cloud remains closed. Execute
+`g10.033` Batch 33.6 docs-only closeout.

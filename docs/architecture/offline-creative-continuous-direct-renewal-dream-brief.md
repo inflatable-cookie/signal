@@ -574,7 +574,6 @@ evidence, comparators, receipts, audio, and the nextest profile did not enter
 
 ## Next Task
 
-Execute `g10.033` Batch 33.5 from the frozen
-[public surface](./offline-creative-fixed-ratio-public-surface.md). Widen only
-the public Dream target domain and discovery; do not change this private
-renderer or add routing.
+Execute `g10.033` Batch 33.6 as docs-only lane closeout. The
+[public surface](./offline-creative-fixed-ratio-public-surface.md) now exposes
+this owner over its full admitted range.

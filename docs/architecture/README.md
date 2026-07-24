@@ -52,5 +52,5 @@ Keep the `g10.030` transparent successor program closed. The exact-ratio
 Dream wrapper is admitted and `g10.031` is complete. `g10.032` privately
 admits the accepted event-ledger Cyclic renderer and publicly admits its
 fixed-ratio extension; Batch 32.29 closes that lane. `g10.033` admits one
-private continuous `4x..16x` Dream owner and freezes direct public widening
-without routing. Execute Batch 33.5 from the public surface brief.
+continuous `4x..16x` Dream owner and its direct public surface without
+routing. Execute Batch 33.6 as docs-only lane closeout.

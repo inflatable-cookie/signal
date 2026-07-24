@@ -35,7 +35,7 @@ strict lane.
 - Cyclic behavioral synthesis: [architecture/offline-creative-cyclic-behavioral-synthesis.md](./architecture/offline-creative-cyclic-behavioral-synthesis.md)
 - Admitted private event-ledger Cyclic renderer brief: [architecture/offline-creative-event-ledger-audited-centered-compressed-anchor-cyclic-brief.md](./architecture/offline-creative-event-ledger-audited-centered-compressed-anchor-cyclic-brief.md)
 - Evidence-invalid historical Cyclic brief: [architecture/offline-creative-centered-compressed-anchor-cyclic-brief.md](./architecture/offline-creative-centered-compressed-anchor-cyclic-brief.md)
-- Frozen continuous Dream and admitted exact-ratio Cyclic CreativeStretch surface: [architecture/offline-creative-fixed-ratio-public-surface.md](./architecture/offline-creative-fixed-ratio-public-surface.md)
+- Admitted continuous Dream and exact-ratio Cyclic CreativeStretch surface: [architecture/offline-creative-fixed-ratio-public-surface.md](./architecture/offline-creative-fixed-ratio-public-surface.md)
 - Direct-renewal owner study: [architecture/offline-creative-direct-renewal-owner-study.md](./architecture/offline-creative-direct-renewal-owner-study.md)
 - Closed creative LinkedStnNoiseMorph brief: [architecture/offline-creative-linked-stn-noise-morph-brief.md](./architecture/offline-creative-linked-stn-noise-morph-brief.md)
 - Rejected creative ComparatorAuditedRenewalSpectral brief: [architecture/offline-creative-comparator-audited-renewal-spectral-brief.md](./architecture/offline-creative-comparator-audited-renewal-spectral-brief.md)
@@ -92,5 +92,5 @@ strict lane.
 
 ## Next Task
 
-Execute `g10.033` Batch 33.5 as the frozen public continuous-Dream admission.
-Do not add routing or change private DSP.
+Execute `g10.033` Batch 33.6 as docs-only lane closeout. Publish the exact
+executable coverage matrix and choose the next planning checkpoint.

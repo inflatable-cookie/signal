@@ -1,6 +1,6 @@
 # Offline Creative Public Surface
 
-Status: continuous Dream widening frozen; Batch 33.5 ready
+Status: continuous Dream and exact-ratio Cyclic admitted
 Owner: core-product
 Updated: 2026-07-24
 Contract: `085`
@@ -36,9 +36,9 @@ It has no range branch, hidden router, overlap, blend, or fallback.
 The shared `4x` and `8x` targets do not route or crossfade between characters.
 `OfflineHighQuality` remains a separate Transparent product choice.
 
-## Frozen V3 Public Shape
+## Public V3 Shape
 
-Batch 33.5 implements this delta:
+Batch 33.5 admits this shape:
 
 ```rust
 pub const CREATIVE_STRETCH_ENGINE_VERSION: &str = "signal-creative-stretch-v3";
@@ -428,8 +428,32 @@ Focused public tests pass `10/10`:
 Missing-doc checks, focused nextest, Effigy health, and Effigy validation pass.
 No cache, route, tier, artifact, runtime, Loophole, or Chorus surface changed.
 
+## Batch 33.5 Result
+
+The public surface now accepts every Dream target in `4L..=16L` and reports
+that interval through `CreativeStretchRatioDomain::Continuous`. Cyclic still
+reports `Exact(&[2, 4, 8])`. Public behavior identity is
+`signal-creative-stretch-v3`.
+
+Only `creative.rs` and `lib.rs` changed. The public wrapper still dispatches
+Dream directly to the one private owner. No router, blend, fallback, or
+private DSP change entered the batch.
+
+Focused public tests pass `11/11`:
+
+- complete validation domains for source lengths `1`, `2`, `3`, and `257`
+- rejection immediately below `4L` and above `16L`
+- byte-exact public/private mono and stereo parity at `4x`, `4x+1 frame`,
+  `4.5x`, `6x`, `8x`, `10x`, `15.5x`, `16x-1 frame`, and `16x`
+- unchanged Dream `space`, Cyclic ratios, Cyclic cycle anchors, control
+  ownership, error mapping, determinism, and empty success
+
+All `18` retained private Dream construction, structural, synthetic, and
+continuous owners pass. Both private renderer trees remain byte-identical.
+No listening rerun was required because public output matches the admitted
+private renderer exactly.
+
 ## Next Task
 
-Execute `g10.033` Batch 33.5. Implement only the frozen v3 range discovery,
-Dream target validation, documentation, exports, and focused regression
-ownership. Do not add a router or change private DSP.
+Execute `g10.033` Batch 33.6. Close the lane with one exact executable coverage
+matrix and select the next planning checkpoint without reopening implementation.

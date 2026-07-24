@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: `g10.033` active; continuous Dream public decision frozen, Batch 33.5 ready
+Status: `g10.033` active; continuous Dream public, Batch 33.6 ready
 Updated: 2026-07-24
 
 ## Why this generation matters now
@@ -316,7 +316,7 @@ Do not start Loophole or Chorus planning from Signal internals.
     and evidence authority; Batch 33.3 admits the private continuous owner
     after complete objective and listening passage; Batch 33.4 freezes direct
     public `4N..=16N` Dream coverage with no same-character router; Batch 33.5
-    public admission is ready and Batch 33.6 closeout remains pending; no
+    admits that public surface; Batch 33.6 docs-only closeout is ready; no
     cache, artifact, or consumer work is ready
 
 ## Stretch Boundary
@@ -794,8 +794,14 @@ advances to v3. Dream dispatch remains direct to one admitted owner. No hidden
 router, overlap, blend, fallback, private DSP change, or consumer surface is
 authorized.
 
+Batch 33.5 admits that surface. Only `creative.rs` and `lib.rs` change.
+Focused public tests pass `11/11`; all `18` retained private Dream owners pass.
+Public/private output is byte-exact across anchors, interior targets,
+one-frame boundaries, mono, stereo, and admitted `space` values. Cyclic stays
+exact at `2x`, `4x`, and `8x`. Private renderer trees, routing, cache,
+artifacts, dynamic ratio, runtime, UI, Loophole, and Chorus remain unchanged.
+
 ## Next Task
 
-Execute `g10.033` Batch 33.5. Implement only the frozen public Dream range,
-ratio-domain discovery, v3 identity, rustdoc, exports, and focused parity
-tests. Do not change private DSP or add routing.
+Execute `g10.033` Batch 33.6 as docs-only lane closeout. Publish the exact
+executable coverage matrix and choose the next planning checkpoint.

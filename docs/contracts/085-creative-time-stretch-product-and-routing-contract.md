@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: continuous Dream public widening frozen; implementation pending
+Status: continuous Dream and exact-ratio Cyclic public
 Owner: core-product
 Updated: 2026-07-24
 Related contracts: `046`, `048`, `084`
@@ -87,8 +87,9 @@ Batch 32.27 freezes the same public boundary's Cyclic extension:
 `std::time::Duration` cycle from `5..90 ms`, defaulting to `48 ms`.
 Batch 32.28 admits that extension without changing either renderer.
 Batch 33.4 freezes public Dream widening to every exact target in
-`4N..=16N`. `Spectral`, `Rough`, `Cloud`, continuous Cyclic, and an automatic
-range router remain unavailable.
+`4N..=16N`; Batch 33.5 admits it without changing private DSP. `Spectral`,
+`Rough`, `Cloud`, continuous Cyclic, and an automatic range router remain
+unavailable.
 
 Public `Cyclic` uses `duration`, `character=Cyclic`, and one semantic `cycle`
 control from short metallic motion through long tremolo/echo motion.
@@ -140,11 +141,10 @@ The historical automatic routed bands are:
 
 They are deferred product intent, not an active target or implementation
 authority. Current executable creative coverage is public neutral `Dream` at
-exact fixed `4x`, `8x`, and `16x`, plus public manual `Cyclic` at exact fixed
-`2x`, `4x`, and `8x`. Batch 33.4 freezes, but does not yet implement, public
-Dream coverage for every exact target `4N <= T <= 16N`. It authorizes no
-inter-character overlap or higher ratio. Any future routing reopening must
-preserve `2x`, `4x`, and `8x` as mandatory admission points.
+every exact target `4N <= T <= 16N`, plus public manual `Cyclic` at exact
+fixed `2x`, `4x`, and `8x`. This authorizes no inter-character overlap or
+higher ratio. Any future routing reopening must preserve `2x`, `4x`, and `8x`
+as mandatory admission points.
 
 If automatic routing reopens, overlap weights use smoothstep interpolation over
 `log2(ratio)`. A fixed-ratio request uses one constant channel-shared weight for
@@ -2175,7 +2175,20 @@ Private Dream and Cyclic source, acoustic output, controls, and Cyclic
 discovery remain unchanged. Cache, artifacts, dynamic ratio, runtime, UI,
 Loophole, and Chorus remain closed.
 
+Batch 33.5 admits that exact surface. Public Dream validation accepts every
+integer target in `4N..=16N`; public discovery reports
+`Continuous { minimum: 4, maximum: 16 }`; and behavior identity is
+`signal-creative-stretch-v3`. Cyclic discovery and execution remain exact at
+`2x`, `4x`, and `8x`.
+
+Only `creative.rs` and `lib.rs` changed. Focused public tests pass `11/11`,
+including exhaustive small-domain validation and byte-exact public/private
+mono and stereo parity across anchors, interior targets, and one-frame
+boundaries. All `18` retained private Dream owners pass. Both private renderer
+trees remain unchanged. No routing, cache, artifact, dynamic ratio, runtime,
+UI, Loophole, or Chorus surface entered the batch.
+
 ## Next Task
 
-Execute `g10.033` Batch 33.5 as the frozen public continuous-Dream admission.
-Do not add a router or change private DSP.
+Execute `g10.033` Batch 33.6 as docs-only lane closeout. Publish the exact
+executable coverage matrix and select the next planning checkpoint.

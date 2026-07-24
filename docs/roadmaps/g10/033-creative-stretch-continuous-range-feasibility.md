@@ -1,6 +1,6 @@
 # 033 - Creative Stretch Continuous-Range Feasibility
 
-Status: active; Batch 33.5 ready
+Status: active; Batch 33.6 ready
 Owner: dsp
 Created: 2026-07-24
 Depends on: `g10.031`, `g10.032`
@@ -204,15 +204,29 @@ Result:
 
 ## Batch 33.5 - Public Continuous Dream Admission
 
-Status: ready
+Status: complete
 
 Implement only the public surface frozen by Batch 33.4. Preserve byte-exact
 anchor behavior and the admitted private renderer. Do not add routing, cache,
 artifacts, dynamic ratio, runtime, or consumer integration.
 
+Result:
+
+- public Dream accepts every exact target in `4N..=16N`
+- public discovery reports continuous Dream bounds and exact Cyclic ratios
+- behavior identity is `signal-creative-stretch-v3`
+- only `creative.rs` and `lib.rs` changed
+- focused public owners pass `11/11`
+- retained private Dream owners pass `18/18`
+- public/private parity is byte-exact across anchors, interior targets,
+  one-frame boundaries, mono, stereo, and all admitted `space` values
+- private Dream and Cyclic renderer trees remain unchanged
+- no router, cache, artifact, dynamic ratio, runtime, UI, Loophole, or Chorus
+  surface entered the batch
+
 ## Batch 33.6 - Continuous Creative Range Closeout
 
-Status: pending Batch 33.5
+Status: ready
 
 Close `g10.033`, publish the exact executable coverage matrix, and choose the
 next planning checkpoint for the paused lower Dream overlap and separate
@@ -229,6 +243,7 @@ continuous Cyclic question. Do not merge those questions into this lane.
 
 ## Next Task
 
-Execute Batch 33.5. Implement only the frozen continuous Dream target domain,
-ratio discovery, v3 behavior identity, rustdoc, exports, and focused public
-parity tests. Do not change private DSP or add routing.
+Execute Batch 33.6 as docs-only lane closeout. Publish the exact executable
+coverage matrix and select the next planning checkpoint. Do not begin lower
+Dream, continuous Cyclic, routing, cache, artifacts, dynamic ratio, runtime,
+UI, Loophole, or Chorus work.

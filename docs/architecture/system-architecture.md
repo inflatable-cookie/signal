@@ -311,14 +311,12 @@ The current package-level naming proposal is recorded in
 
 - `g10.030` closes transparent stretch successor work on the frozen
   `OfflineHighQuality` baseline.
-- `g10.031` publicly admits exact-ratio creative `Dream`; `g10.033` privately
-  admits continuous `4x..16x` Dream and freezes its public widening without a
-  same-character router.
+- `g10.031` publicly admits creative `Dream`; `g10.033` widens it to every
+  exact target in `4x..16x` through one owner without a same-character router.
 - `g10.032` owns `Cyclic` separately. The accepted centred compressed-anchor
   event-ledger renderer stays internal behind its public fixed-ratio surface.
 
 ## Next Task
 
-Execute `g10.033` Batch 33.5 from the frozen creative public surface. Change
-only Dream range discovery and public validation; keep private DSP, routing,
-cache, artifacts, dynamic ratio, and consumers closed.
+Execute `g10.033` Batch 33.6 as docs-only lane closeout. Publish the exact
+executable coverage matrix and keep implementation closed.
