@@ -2158,5 +2158,5 @@ These are admission risks, not open design choices.
 
 ## Next Task
 
-Execute `g10.032` Batch 32.27 only. Freeze the public exact-ratio Cyclic
-surface without changing code or renderer output.
+Execute `g10.032` Batch 32.28 only. Implement the frozen public Cyclic
+extension without changing this admitted renderer.

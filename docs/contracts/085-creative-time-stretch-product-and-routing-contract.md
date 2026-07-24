@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: exact-ratio Dream public; fixed-ratio Cyclic core privately admitted
+Status: exact-ratio Dream public; fixed-ratio Cyclic public surface frozen
 Owner: core-product
 Updated: 2026-07-24
 Related contracts: `046`, `048`, `084`
@@ -59,7 +59,7 @@ The stable semantic request contains:
 - output/input duration ratio
 - `character`: `Dream`, `Spectral`, `Rough`, `Cloud`, or `Cyclic`
 - character-valid normalized controls: `motion`, `detail`, and `space`
-- one character-valid `cycle` control for future `Cyclic`
+- one character-valid `cycle` control for `Cyclic`
 - deterministic seed or request for the identity-derived default
 
 Target frames are authoritative. Ratio is derived or validated against that
@@ -79,15 +79,28 @@ frozen and implemented.
 
 Batch 31.76 admits a minimal public boundary for private
 `DirectRenewalDream` at exact fixed `4x`, `8x`, and `16x`. That boundary
-exposes only `Dream`, exact target frames, and `space`. It does not imply that
-`Spectral`, `Rough`, `Cloud`, `Cyclic`, continuous ratios, or an automatic
-range router exist.
+exposes `Dream`, exact target frames, and `space`.
 
-Future `Cyclic` uses `duration`, `character=Cyclic`, and one semantic `cycle`
+Batch 32.27 freezes the same public boundary's Cyclic extension:
+`character=Cyclic`, exact `2x`, `4x`, or `8x`, and one optional
+`std::time::Duration` cycle from `5..90 ms`, defaulting to `48 ms`.
+Implementation remains pending. `Spectral`, `Rough`, `Cloud`, continuous
+ratios, and an automatic range router remain unavailable.
+
+Public `Cyclic` uses `duration`, `character=Cyclic`, and one semantic `cycle`
 control from short metallic motion through long tremolo/echo motion.
 `motion`, `detail`, and `space` are not Cyclic aliases. Automatic cycle
 selection, if later admitted, proposes one fixed render-wide cycle for
 eligible material; it does not become adaptive `INTELL`.
+
+The source-compatible request adds `cycle: Option<std::time::Duration>`.
+`None` resolves to `48 ms` only for Cyclic. Dream requires `None`; Cyclic
+requires the existing `space` field to remain bit-exact default `0.5`.
+Wrong-character controls return `UnsupportedCharacterControl`; an owned cycle
+outside `5..90 ms` returns `InvalidCycle`. The wrapper rounds valid duration
+nanoseconds to integer microseconds with `(nanos + 500) / 1000` and passes that
+value unchanged to the private renderer. No floating conversion or clamp is
+allowed.
 
 These fields are intent, not transform controls. Public consumers must not
 select FFT size, window, grain size, overlap, phase mode, internal renderer,
@@ -126,8 +139,9 @@ They are deferred product intent, not an active target or implementation
 authority. Current executable creative coverage is public neutral `Dream` at
 exact fixed `4x`, `8x`, and `16x`, plus private manual `Cyclic` at exact fixed
 `2x`, `4x`, and `8x`. Neither exact endpoint authorizes an interior overlap,
-a continuous band, or a higher ratio. Any future routing reopening must
-preserve `2x`, `4x`, and `8x` as mandatory admission points.
+a continuous band, or a higher ratio. The public Cyclic request is frozen but
+not executable until Batch 32.28. Any future routing reopening must preserve
+`2x`, `4x`, and `8x` as mandatory admission points.
 
 If automatic routing reopens, overlap weights use smoothstep interpolation over
 `log2(ratio)`. A fixed-ratio request uses one constant channel-shared weight for
@@ -154,8 +168,9 @@ The required initial anchors are:
 - `Cyclic`: `ReaReaRea`-like repetition through `8x`
 
 Signal may use different internal owners or blends to reach those regions.
-Until more than one character is admitted, a consumer receives only the
-available character and the shared macros, not disabled or fictional choices.
+Until more than one public character is implemented, a consumer receives only
+the available character and the shared macros, not disabled or fictional
+choices.
 
 `seed` is advanced variation identity, not a continuous quality knob.
 
@@ -238,9 +253,11 @@ implementation. Synthetic and listening helpers may not choose an implicit or
 local seed. A fixed-seed candidate pass does not admit product seed/reroll
 exposure; that requires a later frozen multi-seed character review.
 
-The Batch 31.75 minimal API always uses the admitted seed. It exposes no seed
-or reroll control. The engine version and complete request therefore remain
-byte-deterministic without widening the reviewed character domain.
+The Batch 31.75 minimal Dream API always uses the admitted seed. It exposes no
+seed or reroll control. Cyclic has no stochastic state. Batch 32.27 freezes the
+expanded public behavior identity as `signal-creative-stretch-v2`; Dream output
+must remain byte-identical. The complete request remains byte-deterministic
+without widening either reviewed character domain.
 
 ### Rule 7: exact boundaries and bounded state remain mandatory
 
@@ -271,6 +288,12 @@ The Batch 31.75 public render boundary does not admit caching. The existing
 `StretchCacheIdentityInput` lacks creative character, `space`, fixed creative
 seed, and creative engine identity, so consumers must not use it for creative
 output. Cache support requires a later contract and implementation batch.
+
+For the frozen v2 public surface, future creative cache identity uses only the
+active character control: exact `space` bits for Dream or the canonical Cyclic
+cycle rounded to integer microseconds. It also includes character, exact target
+frames, and `signal-creative-stretch-v2`. Inactive controls do not enter the
+key. This freezes identity semantics but does not admit caching.
 
 ### Rule 9: listening defines creative quality
 
@@ -2046,8 +2069,17 @@ report modes, and listening packs stay out of `main`. Public `Cyclic`, cache,
 routing, artifacts, UI, runtime integration, Loophole, and Chorus remain
 unadmitted.
 
+Batch 32.27 freezes the public extension in
+`offline-creative-fixed-ratio-public-surface.md`. It adds `Cyclic`, its
+character-specific exact ratio list, optional duration-valued cycle, cycle
+bounds and default, character-control rejection, deterministic
+nanosecond-to-microsecond canonicalization, and public engine version v2.
+Dream keeps its existing request and exact output. Cache identity semantics are
+named for future use, but cache, routing, artifacts, runtime integration,
+Loophole, and Chorus remain unadmitted. No code or renderer output changes in
+this batch.
+
 ## Next Task
 
-Execute `g10.032` Batch 32.27 only. Freeze the public exact-ratio Cyclic
-request, cycle-control, error, and engine-version surface without changing
-code or renderer output.
+Execute `g10.032` Batch 32.28 only. Implement the frozen public Cyclic
+extension without changing either admitted renderer.

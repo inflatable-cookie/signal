@@ -89,15 +89,11 @@ brief opens.
 
 Intentional creative expansion is governed separately by Contract `085` and
 `docs/architecture/offline-creative-time-stretch-study.md`. Its automatic
-route and lower overlap are paused. Explicit `Cyclic` remains unavailable.
-`g10.032` selected centred compressed-anchor behavior, but two checkpoints
-failed to produce valid acoustic evidence. The operator corrected the second
-classification because its first row passed and only the invocation root was
-wrong. Exact checkpoint replay is pending.
-The private, unrouted `DirectRenewalDream` renderer owns exact fixed `4x`,
-`8x`, and `16x` neutral `Dream`. It does not replace this renderer or reopen
-Contract `084`. The attempted `LayeredCloud` owner closed without promotion.
-Both creative overlaps remain paused.
+route and both overlaps are paused. Public `Dream` owns exact fixed `4x`,
+`8x`, and `16x`. The admitted private `Cyclic` renderer owns exact `2x`,
+`4x`, and `8x`; its public duration-control extension is frozen for Batch
+32.28. Neither creative character replaces this renderer or reopens Contract
+`084`. The attempted `LayeredCloud` owner closed without promotion.
 
 ## Candidate Isolation
 
@@ -120,10 +116,6 @@ ledger remains in git history at `1d1b02f1`.
 
 Retain this frozen baseline and keep its successor lane closed. `g10.031` also
 retained the `2x..4x` creative overlap pause. `g10.032` later reopened Cyclic
-research after new fixed-mode and repeat/jump source evidence, then closed the
-centred compressed-anchor identity after a split-root run. The operator
-superseded that closure. After exact environment recovery, the checkpoint
-passed `12` Y01 rows and failed the impulse `2x` row on one dropout. Batch
-32.17 proves sparse-event integrity belongs to the event ledger. Execute
-`g10.032` Batch 32.18 exact evidence-authority work. Keep `main`, admitted
+research, admitted the accepted private renderer, and froze its public
+fixed-ratio surface. Execute `g10.032` Batch 32.28 only. Keep both acoustic
 renderers, both overlaps, product routing, and Contract `084` unchanged.

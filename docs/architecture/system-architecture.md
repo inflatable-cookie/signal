@@ -65,6 +65,9 @@ The current package-level naming proposal is recorded in
 - `CreativeStretch` is a separate public offline whole-buffer API for exact
   `4x`, `8x`, and `16x` neutral `Dream`, with `space` as its only adjustable
   creative control.
+- The admitted private `Cyclic` renderer owns exact `2x`, `4x`, and `8x`.
+  Its frozen public extension adds one `5..90 ms` cycle duration; implementation
+  is pending Batch 32.28.
 - `DirectRenewalDream` remains an internal renderer identity. The public API
   fixes its admitted seed and never falls back to the transparent renderer.
 - Creative cache, artifacts, automatic routing, dynamic ratio, runtime
@@ -311,13 +314,11 @@ The current package-level naming proposal is recorded in
   `OfflineHighQuality` baseline.
 - `g10.031` publicly admits exact-ratio creative `Dream` and pauses broader
   range, routing, cache, and product integration.
-- `g10.032` owns unavailable `Cyclic` separately. Source forensics selected
-  centred compressed-anchor behavior. The operator authorized one replay of
-  the unchanged checkpoint after an invocation-root mistake.
+- `g10.032` owns `Cyclic` separately. The accepted centred compressed-anchor
+  event-ledger renderer is private; its fixed-ratio public surface is frozen.
 
 ## Next Task
 
 Keep the completed `g10.031` API and frozen transparent baseline unchanged.
-Execute `g10.032` Batch 32.19 only: implement the frozen event-ledger Cyclic
-authority in its exact isolated worktree and complete both unchanged
-conformance rounds. Stop before `Y01`.
+Execute `g10.032` Batch 32.28 only: implement the frozen public Cyclic
+extension without changing either admitted renderer.

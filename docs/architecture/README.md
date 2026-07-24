@@ -48,6 +48,6 @@ Keep milestone sequencing in `roadmaps/`.
 ## Next Task
 
 Keep the `g10.030` transparent successor program closed. The exact-ratio
-`CreativeStretch` wrapper is admitted and `g10.031` is complete. `g10.032`
-Batch 32.23 reopens the acoustically unjudged event-ledger Cyclic renderer
-under an operator completion correction. Execute Batch 32.24 only.
+Dream wrapper is admitted and `g10.031` is complete. `g10.032` privately
+admits the accepted event-ledger Cyclic renderer and freezes its public
+fixed-ratio extension. Execute Batch 32.28 only.

@@ -157,7 +157,9 @@ Updated: 2026-07-24
   the exact renderer and repaired evidence; Batch 32.25 passed synthetic,
   long-form mono, linked-stereo, and operator listening, with an explicit
   checkpoint-scoped stereo waiver. Batch 32.26 privately admitted the
-  unchanged fixed `2x`/`4x`/`8x` Cyclic core. Public exposure remains pending.
+  unchanged fixed `2x`/`4x`/`8x` Cyclic core. Batch 32.27 freezes its public
+  character, duration control, errors, and v2 identity; implementation is
+  ready.
 - Lifecycle reconciliation then closed stale `g10.001` and `g10.003` active
   markers and paused `g10.017` on its remaining hardware evidence. Signal's
   capture and live-monitor implementation is present. That lifecycle
@@ -202,4 +204,4 @@ If that cleanup has not happened, stay in the current generation and finish the 
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the current active-generation front door.
-Execute `g10.032` Batch 32.27.
+Execute `g10.032` Batch 32.28.

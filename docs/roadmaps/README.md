@@ -330,8 +330,9 @@ completion correction and reopens the acoustically unjudged implementation
 for exact recovery and evidence repair. Batch 32.24 completes that recovery
 and valid evidence. Batch 32.25 passes acoustic and operator admission with an
 explicit checkpoint-scoped stereo waiver. Batch 32.26 privately admits the
-unchanged exact `2x`/`4x`/`8x` Cyclic core. Public exposure is pending and no
-strict spec lane is open.
+unchanged exact `2x`/`4x`/`8x` Cyclic core. Batch 32.27 freezes its public
+character, duration control, errors, and v2 identity. Wrapper implementation
+is ready and no strict spec lane is open.
 
 ## Strict lane posture
 
@@ -360,4 +361,4 @@ Before rollover:
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the active generation front door.
-Execute `g10.032` Batch 32.27.
+Execute `g10.032` Batch 32.28.

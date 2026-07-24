@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: `g10.032` active; private fixed-ratio Cyclic renderer admitted
+Status: `g10.032` active; public fixed-ratio Cyclic surface frozen
 Updated: 2026-07-24
 
 ## Why this generation matters now
@@ -752,7 +752,14 @@ are byte-identical to the accepted checkpoint. Candidate evidence and
 listening scaffolding remain isolated. No public character, router, cache,
 artifact, UI, Loophole, or Chorus surface changed.
 
+Batch 32.27 freezes the public extension without changing code. Cyclic owns
+exact `2x`, `4x`, and `8x`, optional `Duration` cycle in `5..90 ms`, a
+`48 ms` default, character-specific control rejection, deterministic
+microsecond canonicalization, and creative engine version v2. Batch 32.28 is
+ready to implement only the wrapper and crate export. Batch 32.29 is the lane
+closeout and next-direction planning checkpoint.
+
 ## Next Task
 
-Execute `g10.032` Batch 32.27 only. Freeze the public exact-ratio Cyclic
-request, control, error, and engine-version surface without changing code.
+Execute `g10.032` Batch 32.28 only. Implement the frozen public Cyclic
+extension without changing either admitted renderer.

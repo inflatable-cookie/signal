@@ -1059,6 +1059,18 @@ Commit `81edaada` admits the unchanged acoustic core privately as
 reviewed neutral point. No public request, automatic cycle selection, routing,
 cache, artifact, UI, runtime, Loophole, or Chorus surface changed.
 
+## Batch 32.27 Public Cyclic Surface
+
+The existing fixed-ratio public API now freezes a source-compatible Cyclic
+extension. It adds the `Cyclic` character, a separate exact `2x`/`4x`/`8x`
+ratio list, optional `Duration` cycle in `5..90 ms`, a `48 ms` default,
+character-control rejection, and deterministic microsecond canonicalization.
+Public behavior identity advances to `signal-creative-stretch-v2` while Dream
+output remains unchanged.
+
+This is docs authority only. Public dispatch, cache, routing, artifacts,
+runtime integration, Loophole, and Chorus remain unchanged.
+
 ## Sources
 
 - [REAPER time-stretch engines](https://www.reaper.fm/about.php)
@@ -1101,6 +1113,5 @@ cache, artifact, UI, runtime, Loophole, or Chorus surface changed.
 
 ## Next Task
 
-Execute `g10.032` Batch 32.27 only. Freeze the public exact-ratio Cyclic
-request, cycle-control, error, and engine-version surface without changing
-code or renderer output.
+Execute `g10.032` Batch 32.28 only. Implement the frozen public Cyclic
+extension without changing either admitted renderer.

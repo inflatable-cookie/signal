@@ -55,14 +55,12 @@ memory alone.
   Batch 31.73 closed Cloud on contradictory occupancy authority. Batch 31.74
   narrowed coverage to exact fixed Dream; Batches 31.75-31.76 froze and
   admitted its minimal public wrapper. Both overlaps and the router stay paused
-- `g10.032` reopened `Cyclic` after corrected original-system evidence and a
-  second source-available cyclic schedule. Batch 32.2 completes executable
-  forensics. Batch 32.3 selects centred compressed-anchor behavior, fixed
-  manual cycle ownership, linked scheduling, and a corrected gate. Batch 32.4
-  froze one complete `CenteredCompressedAnchorCyclic` renderer and Rule 11
-  evidence authority. Batch 32.13 closed the identity after a split-root run;
-  Batch 32.14 records the operator correction and authorizes one replay of the
-  unchanged checkpoint. No candidate DSP is admitted
+- `g10.032` reopened `Cyclic`, selected centred compressed-anchor event-ledger
+  behavior, completed valid structural and acoustic evidence, and passed
+  operator listening. Batch 32.26 privately admits the unchanged exact
+  `2x`/`4x`/`8x` renderer. Batch 32.27 freezes its public character, optional
+  `5..90 ms` duration control, typed errors, and v2 behavior identity.
+  Implementation remains pending
 - `082` and `g10.029` are historical evidence, not active execution authority
 - `g10.028` source-fill work remains paused
 
@@ -193,7 +191,6 @@ frozen elsewhere in this index.
 ## Next Task
 
 Keep Contract `084` closed. Contract `085` publicly admits fixed-ratio `Dream`
-at exact `4x`, `8x`, and `16x`. Cloud remains closed. Centred
-compressed-anchor Cyclic passed `12` Y01 rows, then failed impulse `2x` on one
-dropout. Batch 32.17 proves sparse-event integrity belongs to the event ledger.
-Execute `g10.032` Batch 32.18 exact evidence-authority work.
+at exact `4x`, `8x`, and `16x`, privately admits fixed-ratio `Cyclic`, and
+freezes its public extension. Cloud remains closed. Execute `g10.032` Batch
+32.28.

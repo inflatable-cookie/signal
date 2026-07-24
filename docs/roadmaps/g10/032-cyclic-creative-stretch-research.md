@@ -1,16 +1,16 @@
 # 032 - Cyclic Creative Stretch Research
 
-Status: active; private fixed-ratio Cyclic renderer admitted
+Status: active; public fixed-ratio Cyclic surface frozen
 Owner: dsp
 Updated: 2026-07-24
 Contracts: `046`, `085`
 
 ## Problem
 
-Signal has no Akai-style `Cyclic` renderer. The earlier program treated fixed
-cyclic overlap and similarity-aligned overlap as one repair sequence. Original
-Akai manuals and current systems show two distinct modes: fixed `CYCLIC` and
-material-adaptive `INTELL`.
+This roadmap opened when Signal had no Akai-style `Cyclic` renderer. The
+earlier program treated fixed cyclic overlap and similarity-aligned overlap as
+one repair sequence. Original Akai manuals and current systems show two
+distinct modes: fixed `CYCLIC` and material-adaptive `INTELL`.
 
 The first Signal candidate stopped on an absolute pitch threshold before
 comparator listening. The second entered the `INTELL` family and failed its
@@ -886,7 +886,7 @@ runtime integration, Loophole, or Chorus change is admitted.
 
 ## Batch 32.27 - Freeze The Public Cyclic Surface
 
-Status: ready
+Status: complete
 
 Freeze one docs-only extension of the existing fixed-ratio creative API:
 
@@ -895,10 +895,59 @@ Freeze one docs-only extension of the existing fixed-ratio creative API:
 - a named neutral default of `48 ms`
 - typed rejection for Dream-only controls and unsupported ratios
 - engine-version and future cache-identity ownership
-- no automatic cycle selection, routing, blends, dynamic ratio, or UI design
+- no automatic cycle selection, routing, blends, dynamic ratio, or
+  consumer-specific UI layout
 
 Stop after the public-surface brief is internally complete. Do not expose the
 private renderer in the same batch.
+
+The canonical fixed-ratio public-surface brief now freezes:
+
+- `CreativeStretchCharacter::Cyclic`
+- exact Cyclic ratios `2x`, `4x`, and `8x`, separate from Dream ratios
+- `cycle: Option<std::time::Duration>`
+- inclusive `5..90 ms` bounds and a `48 ms` default
+- integer nanosecond-to-microsecond round-half-up canonicalization
+- wrong-character control and invalid-cycle errors
+- `signal-creative-stretch-v2`
+- future cache identity using only the active character control
+
+The source-compatible request keeps `space`. Cyclic accepts only its exact
+default bit pattern; any other value is
+`UnsupportedCharacterControl`. Dream requires `cycle=None`. No code,
+renderer, cache, route, artifact, runtime, Loophole, or Chorus surface changed.
+
+## Batch 32.28 - Implement The Public Cyclic Extension
+
+Status: ready
+
+- [ ] change only `creative.rs` and `lib.rs`
+- [ ] add the frozen constants, `Cyclic` character, optional cycle, ratio
+  discovery, errors, validation, and dispatch
+- [ ] preserve Dream output byte-for-byte
+- [ ] match the private Cyclic renderer byte-for-byte for mono and linked
+  stereo at `2x`, `4x`, and `8x`
+- [ ] cover `5 ms`, default `48 ms`, and `90 ms`
+- [ ] reject wrong-character controls and unsupported targets before output
+  allocation
+- [ ] keep both acoustic implementations byte-identical
+- [ ] run focused parity/error tests, `effigy check:docs`, `effigy health`,
+  and `effigy validate`
+- [ ] admit no cache, route, tier, artifact, runtime, Loophole, or Chorus
+  surface
+
+Any output mismatch, acoustic-file change, or unresolved error mapping stops
+the batch. No listening rerun is required for a byte-identical wrapper.
+
+## Batch 32.29 - Cyclic Lane Closeout And Planning Checkpoint
+
+Status: pending on Batch 32.28
+
+If Batch 32.28 passes, close `g10.032` with the public exact-ratio character
+and record current creative coverage. Decide the next Signal-owned stretch
+direction from the generation runway. Automatic character routing,
+continuous ratios, cache/artifact integration, and named-consumer integration
+remain separate planning choices; none becomes ready through this closeout.
 
 ## Completion Gate
 
@@ -913,5 +962,5 @@ private renderer in the same batch.
 
 ## Next Task
 
-Execute Batch 32.27 only. Freeze the public fixed-ratio Cyclic request and
-error surface without changing code or renderer output.
+Execute Batch 32.28 only. Implement the frozen public Cyclic extension without
+changing either admitted renderer.
