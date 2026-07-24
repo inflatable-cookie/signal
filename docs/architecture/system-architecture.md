@@ -66,8 +66,7 @@ The current package-level naming proposal is recorded in
   `4x`, `8x`, and `16x` neutral `Dream`, with `space` as its only adjustable
   creative control.
 - The admitted private `Cyclic` renderer owns exact `2x`, `4x`, and `8x`.
-  Its frozen public extension adds one `5..90 ms` cycle duration; implementation
-  is pending Batch 32.28.
+  Its public extension exposes one `5..90 ms` cycle duration.
 - `DirectRenewalDream` remains an internal renderer identity. The public API
   fixes its admitted seed and never falls back to the transparent renderer.
 - Creative cache, artifacts, automatic routing, dynamic ratio, runtime
@@ -315,10 +314,10 @@ The current package-level naming proposal is recorded in
 - `g10.031` publicly admits exact-ratio creative `Dream` and pauses broader
   range, routing, cache, and product integration.
 - `g10.032` owns `Cyclic` separately. The accepted centred compressed-anchor
-  event-ledger renderer is private; its fixed-ratio public surface is frozen.
+  event-ledger renderer stays internal behind its public fixed-ratio surface.
 
 ## Next Task
 
 Keep the completed `g10.031` API and frozen transparent baseline unchanged.
-Execute `g10.032` Batch 32.28 only: implement the frozen public Cyclic
-extension without changing either admitted renderer.
+Execute `g10.032` Batch 32.29 only: close the Cyclic lane and choose the next
+stretch planning direction without starting implementation.

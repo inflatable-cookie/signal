@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: exact-ratio Dream public; fixed-ratio Cyclic public surface frozen
+Status: exact-ratio Dream and Cyclic public
 Owner: core-product
 Updated: 2026-07-24
 Related contracts: `046`, `048`, `084`
@@ -84,8 +84,9 @@ exposes `Dream`, exact target frames, and `space`.
 Batch 32.27 freezes the same public boundary's Cyclic extension:
 `character=Cyclic`, exact `2x`, `4x`, or `8x`, and one optional
 `std::time::Duration` cycle from `5..90 ms`, defaulting to `48 ms`.
-Implementation remains pending. `Spectral`, `Rough`, `Cloud`, continuous
-ratios, and an automatic range router remain unavailable.
+Batch 32.28 admits that extension without changing either renderer.
+`Spectral`, `Rough`, `Cloud`, continuous ratios, and an automatic range router
+remain unavailable.
 
 Public `Cyclic` uses `duration`, `character=Cyclic`, and one semantic `cycle`
 control from short metallic motion through long tremolo/echo motion.
@@ -137,11 +138,10 @@ The historical automatic routed bands are:
 
 They are deferred product intent, not an active target or implementation
 authority. Current executable creative coverage is public neutral `Dream` at
-exact fixed `4x`, `8x`, and `16x`, plus private manual `Cyclic` at exact fixed
+exact fixed `4x`, `8x`, and `16x`, plus public manual `Cyclic` at exact fixed
 `2x`, `4x`, and `8x`. Neither exact endpoint authorizes an interior overlap,
-a continuous band, or a higher ratio. The public Cyclic request is frozen but
-not executable until Batch 32.28. Any future routing reopening must preserve
-`2x`, `4x`, and `8x` as mandatory admission points.
+a continuous band, or a higher ratio. Any future routing reopening must
+preserve `2x`, `4x`, and `8x` as mandatory admission points.
 
 If automatic routing reopens, overlap weights use smoothstep interpolation over
 `log2(ratio)`. A fixed-ratio request uses one constant channel-shared weight for
@@ -2079,7 +2079,15 @@ named for future use, but cache, routing, artifacts, runtime integration,
 Loophole, and Chorus remain unadmitted. No code or renderer output changes in
 this batch.
 
+Batch 32.28 admits that public extension in commit `e8948512`. Only
+`creative.rs` and `lib.rs` change. Ten focused public tests prove unchanged
+Dream output, byte-identical Cyclic parity at every admitted ratio and reviewed
+cycle anchor, integer duration canonicalization, linked-stereo relations,
+typed pre-dispatch rejection, determinism, and empty success. Both private
+renderer trees remain unchanged. Cache, routing, artifacts, runtime
+integration, Loophole, and Chorus remain unadmitted.
+
 ## Next Task
 
-Execute `g10.032` Batch 32.28 only. Implement the frozen public Cyclic
-extension without changing either admitted renderer.
+Execute `g10.032` Batch 32.29 only. Close the Cyclic lane and select the next
+stretch planning direction without starting implementation.

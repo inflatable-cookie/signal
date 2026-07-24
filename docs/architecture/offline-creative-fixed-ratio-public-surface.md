@@ -1,6 +1,6 @@
 # Offline Creative Fixed-Ratio Public Surface
 
-Status: Dream admitted; Cyclic public extension frozen for Batch 32.28
+Status: Dream and Cyclic exact-ratio characters admitted
 Owner: core-product
 Updated: 2026-07-24
 Contract: `085`
@@ -302,7 +302,28 @@ No listening rerun is required. The wrapper must be byte-identical to the
 accepted private renderer for every exposed ratio and the three reviewed cycle
 anchors. Any acoustic-file or output difference stops the batch.
 
+## Batch 32.28 Result
+
+Commit `e8948512` admits the frozen Cyclic extension through
+`signal-dsp-stretch`. Only `creative.rs` and `lib.rs` changed.
+
+Focused public tests pass `10/10`:
+
+- Dream mono and stereo remain byte-identical to the private renderer
+- Cyclic mono and stereo match the private renderer byte-for-byte at exact
+  `2x`, `4x`, and `8x`
+- explicit `5 ms`, default `48 ms`, and explicit `90 ms` match unchanged
+- sub-microsecond cycle values follow integer round-half-up
+- duplicate and anti-phase stereo relations pass through
+- wrong-character controls, invalid cycles, unsupported ratios, and Cyclic
+  `16x` return the frozen errors before render dispatch
+- both characters remain deterministic; empty/zero succeeds
+- both private renderer trees remain byte-identical
+
+Missing-doc checks, focused nextest, Effigy health, and Effigy validation pass.
+No cache, route, tier, artifact, runtime, Loophole, or Chorus surface changed.
+
 ## Next Task
 
-Execute `g10.032` Batch 32.28 only. Implement the frozen public Cyclic
-extension without changing either admitted renderer.
+Execute `g10.032` Batch 32.29 only. Close the Cyclic lane and choose the next
+stretch planning direction without starting implementation.

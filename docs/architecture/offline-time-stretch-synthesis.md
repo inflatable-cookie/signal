@@ -90,10 +90,10 @@ brief opens.
 Intentional creative expansion is governed separately by Contract `085` and
 `docs/architecture/offline-creative-time-stretch-study.md`. Its automatic
 route and both overlaps are paused. Public `Dream` owns exact fixed `4x`,
-`8x`, and `16x`. The admitted private `Cyclic` renderer owns exact `2x`,
-`4x`, and `8x`; its public duration-control extension is frozen for Batch
-32.28. Neither creative character replaces this renderer or reopens Contract
-`084`. The attempted `LayeredCloud` owner closed without promotion.
+`8x`, and `16x`. Public `Cyclic` owns exact `2x`, `4x`, and `8x` with one
+`5..90 ms` cycle duration. Neither creative character replaces this renderer
+or reopens Contract `084`. The attempted `LayeredCloud` owner closed without
+promotion.
 
 ## Candidate Isolation
 
@@ -117,5 +117,6 @@ ledger remains in git history at `1d1b02f1`.
 Retain this frozen baseline and keep its successor lane closed. `g10.031` also
 retained the `2x..4x` creative overlap pause. `g10.032` later reopened Cyclic
 research, admitted the accepted private renderer, and froze its public
-fixed-ratio surface. Execute `g10.032` Batch 32.28 only. Keep both acoustic
-renderers, both overlaps, product routing, and Contract `084` unchanged.
+fixed-ratio surface. Batch 32.28 admits the public wrapper. Execute `g10.032`
+Batch 32.29 only. Keep both acoustic renderers, both overlaps, product routing,
+and Contract `084` unchanged.

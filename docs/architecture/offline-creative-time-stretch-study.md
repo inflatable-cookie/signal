@@ -1,6 +1,6 @@
 # Offline Creative Time-Stretch Study
 
-Status: exact-ratio Dream public; fixed-ratio Cyclic core privately admitted
+Status: exact-ratio Dream and Cyclic public
 Owner: dsp
 Updated: 2026-07-24
 Contract: `085`
@@ -23,9 +23,8 @@ Initial product range:
 - creative expansion only
 - core spectral comparator ratios: `4x`, `8x`, and `16x`
 - public Dream ratios: exact `4x`, `8x`, and `16x`
-- private manual Cyclic ratios: exact `2x`, `4x`, and `8x`
-- current executable creative coverage: Dream plus the private Cyclic core;
-  public Cyclic requests remain unavailable
+- public manual Cyclic ratios: exact `2x`, `4x`, and `8x`
+- current executable creative coverage: exact-ratio Dream and Cyclic
 - planned routed range: `1x` through `100x`, deferred and unowned
 - primary design point: `8x`
 - ratios above `100x`: future texture/freeze work, not initial scope
@@ -1071,6 +1070,17 @@ output remains unchanged.
 This is docs authority only. Public dispatch, cache, routing, artifacts,
 runtime integration, Loophole, and Chorus remain unchanged.
 
+## Batch 32.28 Public Cyclic Admission
+
+Commit `e8948512` implements the frozen extension in `creative.rs` and
+`lib.rs`. Dream remains byte-identical. Public Cyclic matches the admitted
+private renderer for mono and linked stereo at every supported ratio and the
+`5 ms`, default `48 ms`, and `90 ms` cycle anchors. Ten focused public tests
+pass.
+
+Automatic cycle selection, continuous ratios, routing, cache, artifacts,
+runtime integration, Loophole, and Chorus remain unavailable.
+
 ## Sources
 
 - [REAPER time-stretch engines](https://www.reaper.fm/about.php)
@@ -1113,5 +1123,5 @@ runtime integration, Loophole, and Chorus remain unchanged.
 
 ## Next Task
 
-Execute `g10.032` Batch 32.28 only. Implement the frozen public Cyclic
-extension without changing either admitted renderer.
+Execute `g10.032` Batch 32.29 only. Close the Cyclic lane and select the next
+stretch planning direction without starting implementation.

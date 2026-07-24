@@ -1,6 +1,6 @@
 # 032 - Cyclic Creative Stretch Research
 
-Status: active; public fixed-ratio Cyclic surface frozen
+Status: active; public fixed-ratio Cyclic admitted, closeout ready
 Owner: dsp
 Updated: 2026-07-24
 Contracts: `046`, `085`
@@ -919,29 +919,36 @@ renderer, cache, route, artifact, runtime, Loophole, or Chorus surface changed.
 
 ## Batch 32.28 - Implement The Public Cyclic Extension
 
-Status: ready
+Status: complete
 
-- [ ] change only `creative.rs` and `lib.rs`
-- [ ] add the frozen constants, `Cyclic` character, optional cycle, ratio
+- [x] change only `creative.rs` and `lib.rs`
+- [x] add the frozen constants, `Cyclic` character, optional cycle, ratio
   discovery, errors, validation, and dispatch
-- [ ] preserve Dream output byte-for-byte
-- [ ] match the private Cyclic renderer byte-for-byte for mono and linked
+- [x] preserve Dream output byte-for-byte
+- [x] match the private Cyclic renderer byte-for-byte for mono and linked
   stereo at `2x`, `4x`, and `8x`
-- [ ] cover `5 ms`, default `48 ms`, and `90 ms`
-- [ ] reject wrong-character controls and unsupported targets before output
+- [x] cover `5 ms`, default `48 ms`, and `90 ms`
+- [x] reject wrong-character controls and unsupported targets before output
   allocation
-- [ ] keep both acoustic implementations byte-identical
-- [ ] run focused parity/error tests, `effigy check:docs`, `effigy health`,
+- [x] keep both acoustic implementations byte-identical
+- [x] run focused parity/error tests, `effigy check:docs`, `effigy health`,
   and `effigy validate`
-- [ ] admit no cache, route, tier, artifact, runtime, Loophole, or Chorus
+- [x] admit no cache, route, tier, artifact, runtime, Loophole, or Chorus
   surface
 
 Any output mismatch, acoustic-file change, or unresolved error mapping stops
 the batch. No listening rerun is required for a byte-identical wrapper.
 
+Commit `e8948512` changes only the frozen wrapper and crate export. All `10`
+focused public tests pass. Dream parity remains exact; Cyclic mono and stereo
+match the private renderer at every admitted ratio and the three reviewed
+cycle anchors. Integer duration canonicalization, linked-stereo relations,
+typed rejection, deterministic repeat, empty success, and pre-dispatch
+`16x` rejection pass. Both acoustic trees are unchanged.
+
 ## Batch 32.29 - Cyclic Lane Closeout And Planning Checkpoint
 
-Status: pending on Batch 32.28
+Status: ready
 
 If Batch 32.28 passes, close `g10.032` with the public exact-ratio character
 and record current creative coverage. Decide the next Signal-owned stretch
@@ -962,5 +969,5 @@ remain separate planning choices; none becomes ready through this closeout.
 
 ## Next Task
 
-Execute Batch 32.28 only. Implement the frozen public Cyclic extension without
-changing either admitted renderer.
+Execute Batch 32.29 only. Close the Cyclic lane and select the next stretch
+planning direction without starting implementation.

@@ -49,5 +49,5 @@ Keep milestone sequencing in `roadmaps/`.
 
 Keep the `g10.030` transparent successor program closed. The exact-ratio
 Dream wrapper is admitted and `g10.031` is complete. `g10.032` privately
-admits the accepted event-ledger Cyclic renderer and freezes its public
-fixed-ratio extension. Execute Batch 32.28 only.
+admits the accepted event-ledger Cyclic renderer and publicly admits its
+fixed-ratio extension. Execute Batch 32.29 only.

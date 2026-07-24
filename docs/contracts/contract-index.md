@@ -60,7 +60,7 @@ memory alone.
   operator listening. Batch 32.26 privately admits the unchanged exact
   `2x`/`4x`/`8x` renderer. Batch 32.27 freezes its public character, optional
   `5..90 ms` duration control, typed errors, and v2 behavior identity.
-  Implementation remains pending
+  Batch 32.28 admits the wrapper without changing either renderer
 - `082` and `g10.029` are historical evidence, not active execution authority
 - `g10.028` source-fill work remains paused
 
@@ -191,6 +191,6 @@ frozen elsewhere in this index.
 ## Next Task
 
 Keep Contract `084` closed. Contract `085` publicly admits fixed-ratio `Dream`
-at exact `4x`, `8x`, and `16x`, privately admits fixed-ratio `Cyclic`, and
-freezes its public extension. Cloud remains closed. Execute `g10.032` Batch
-32.28.
+at exact `4x`, `8x`, and `16x`, plus public fixed-ratio `Cyclic` at exact
+`2x`, `4x`, and `8x`. Cloud remains closed. Execute `g10.032` Batch 32.29
+closeout.

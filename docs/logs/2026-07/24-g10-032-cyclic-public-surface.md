@@ -24,5 +24,5 @@ Future creative cache identity uses character plus the active control:
 implementation remains unadmitted.
 
 No Rust, renderer, routing, cache, artifact, runtime, Loophole, or Chorus code
-changed. Batch 32.28 is ready to implement only `creative.rs` and `lib.rs`
-while preserving both admitted renderers byte-for-byte.
+changed in Batch 32.27. Batch 32.28 later admitted only `creative.rs` and
+`lib.rs` in commit `e8948512` while preserving both renderers byte-for-byte.
