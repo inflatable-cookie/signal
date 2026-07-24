@@ -319,5 +319,5 @@ The current package-level naming proposal is recorded in
 ## Next Task
 
 Keep the completed `g10.031` API and frozen transparent baseline unchanged.
-Execute `g10.033` Batch 33.1 only: audit continuous creative fixed-ratio
-ownership and compatibility without starting implementation.
+Execute `g10.033` Batch 33.2 only: freeze one complete continuous Dream brief
+without starting implementation.

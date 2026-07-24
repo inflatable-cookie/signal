@@ -1,6 +1,6 @@
 # Offline Creative Time-Stretch Study
 
-Status: exact-ratio Dream and Cyclic public; continuous-range feasibility active
+Status: exact-ratio Dream and Cyclic public; continuous Dream brief ready
 Owner: dsp
 Updated: 2026-07-24
 Contract: `085`
@@ -1099,6 +1099,96 @@ deterministic-state ownership to support interior ratios or a same-character
 overlap. It must select one complete source-backed direction or retain the
 fixed-ratio surface. No implementation is ready through this closeout.
 
+## Batch 33.1 Continuous-Range Compatibility Audit
+
+### Executable coverage
+
+`N` is the source frame count and `T` is the exact target frame count.
+
+| Owner | Semantic lane | Public acceptance | Private acceptance | Admitted acoustic evidence |
+| --- | --- | --- | --- | --- |
+| `OfflineHighQuality` | `Transparent` | any finite positive fixed ratio; `T=round(N*r)` | same | frozen competitive baseline; not creative Dream evidence |
+| `DirectRenewalDream` | `Dream` | `T` exactly `4N`, `8N`, or `16N` | same | exact `4x`, `8x`, and `16x` |
+| event-ledger Cyclic | `Cyclic` | `T` exactly `2N`, `4N`, or `8N` | any `N <= T <= 8N`; identity is exact | exact `2x`, `4x`, and `8x` only |
+
+Private acceptance is not promotion. Cyclic's current plan already has
+frame-resolution ratio geometry through `8x`, but no interior acoustic or
+public evidence exists. Dream's plan rejects every interior target before
+allocation even though its map and synthesis equations take `T` directly.
+
+### Ownership compatibility
+
+| Boundary | `OfflineHighQuality` | `DirectRenewalDream` | event-ledger Cyclic |
+| --- | --- | --- | --- |
+| source map | fixed analysis lattice plus ratio-scaled synthesis hop | half-sample rational map evaluated at synthesis-block starts | the same half-sample rational ideal map, with two unit-rate local reads |
+| scheduler | centered padded `2048/512` STFT; optional `1024/256` selector | sample-rate-scaled long FFT, fixed half-window output hop, two-frame blend | fixed user cycle, two compressed anchors, one output-sample loop |
+| phase or sample state | tracked peak regions, phase recurrence, qualified transient reset | deterministic per-frame spectral phase renewal | no stochastic or spectral state |
+| boundary | normalized overlap-add, centered crop; short input uses linear fallback | short head envelope, longer tail envelope, exact-zero endpoints | zero-valued exterior interpolation, direct exact crop, no Dream envelope |
+| linked stereo | common mid/side schedule | common phase field plus symmetric `space` rotation | identical anchors, weights, and interpolation for every channel |
+| normalization | samplewise overlap normalization | energy-compensated two-frame blend and fixed window gain | complementary raised-cosine weights |
+| deterministic state | deterministic recurrence | fixed admitted seed and address law | deterministic, no seed |
+| working bound | fixed transform state excluding source/output | `32 MiB` ceiling excluding source/output | `256 KiB` ceiling excluding source/output |
+
+Dream and Cyclic use the same ideal half-sample source coordinate:
+
+`((2o + 1)N - T) / (2T)`.
+
+They do not share a scheduler, synthesis representation, boundary envelope, or
+character. That common coordinate is useful structural evidence, not blend
+authority.
+
+### Contract 085 Rules 1-7
+
+1. Each owner has one monotonic map. Only Dream and Cyclic express the exact
+   target-frame map directly. `OfflineHighQuality` derives target length from a
+   floating ratio and owns a different lattice.
+2. Every current owner is deterministic. No routing version or overlap state
+   exists.
+3. Dream, Cyclic, and Transparent remain different user intent. Hidden
+   Dream/Cyclic or Transparent/Dream substitution would violate the stable
+   semantic vocabulary.
+4. No current two-owner transition is seamless. The `2x..4x` and `16x..32x`
+   overlaps remain paused. One Dream owner across `4x..16x` needs no internal
+   transition.
+5. All three owners make linked-channel decisions, but through incompatible
+   representations. A channel-shared mix weight alone does not create shared
+   synthesis ownership.
+6. Dream retains the admitted fixed seed. Cyclic has no stochastic state.
+   Ratio widening changes behavior identity even when anchor output stays
+   byte-exact.
+7. Every owner has exact output and bounded working state within its own
+   contract. Interior Dream ratios still need explicit structural, synthetic,
+   boundary, memory, and listening admission.
+
+### Decision
+
+Select one separately versioned `ContinuousDirectRenewalDream` candidate for
+every exact fixed target satisfying `4N <= T <= 16N`.
+
+The candidate must:
+
+- keep the admitted transform, hop, source-centre equation, phase addresses,
+  seed, `space` law, blend compensation, envelopes, memory ceiling, and
+  synthesis code unchanged
+- replace only the private exact-anchor ratio gate inside its isolated
+  candidate identity
+- keep exact `4x`, `8x`, and `16x` output byte-identical
+- prove non-power-of-two interior targets, frame-adjacent endpoint probes, and
+  target lengths not divisible by the synthesis hop
+- run complete synthetic and concealed long-form mono/stereo admission at
+  frozen interior ratios before any public widening
+- advance engine and evidence identity if promoted
+
+This is source-backed by PaulXStretch's one fractional source accumulator and
+one renewal path across ratios. It is not a claim that interior Signal output
+already passes.
+
+Do not select a coherent/Dream blend. `OfflineHighQuality` remains
+Transparent, and the `2x..4x` lower Dream gap remains open. Do not widen public
+Cyclic in the same candidate. Its private continuous geometry is a separate
+later admission choice. Cloud, ratios above `16x`, automatic routing, dynamic
+ratio, cache, artifacts, and consumers remain unavailable.
+
 ## Sources
 
 - [REAPER time-stretch engines](https://www.reaper.fm/about.php)
@@ -1141,5 +1231,5 @@ fixed-ratio surface. No implementation is ready through this closeout.
 
 ## Next Task
 
-Execute `g10.033` Batch 33.1 only. Audit continuous fixed-ratio ownership and
-compatibility without starting implementation.
+Execute `g10.033` Batch 33.2 only. Freeze one complete
+`ContinuousDirectRenewalDream` brief without starting implementation.

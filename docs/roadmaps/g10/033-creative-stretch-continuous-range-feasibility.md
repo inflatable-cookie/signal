@@ -1,6 +1,6 @@
 # 033 - Creative Stretch Continuous-Range Feasibility
 
-Status: active; Batch 33.1 ready
+Status: active; Batch 33.2 ready
 Owner: dsp
 Created: 2026-07-24
 Depends on: `g10.031`, `g10.032`
@@ -23,7 +23,7 @@ The historical automatic router cannot reopen until Signal proves continuous
 fixed-ratio ownership and compatible source-map, boundary, stereo, and
 deterministic-state behavior inside one character.
 
-## Goal
+## Goals
 
 Decide whether Signal has one source-backed path to continuous fixed-ratio
 creative coverage before any router or candidate implementation starts.
@@ -36,6 +36,12 @@ The lane must end in one of three honest outcomes:
    for a docs-first implementation brief;
 3. continuous creative routing remains unavailable and the exact-ratio public
    surface stays frozen.
+
+- [x] audit current public, private, and admitted coverage
+- [x] select one character-preserving complete direction
+- [ ] freeze that direction as one executable implementation brief
+- [ ] admit or reject one isolated fixed-ratio candidate
+- [ ] decide public widening and routing only after acoustic admission
 
 ## Non-Goals
 
@@ -57,39 +63,70 @@ The lane must end in one of three honest outcomes:
 - Fixed-ratio transition evidence precedes dynamic-ratio work.
 - Listening remains the creative quality authority.
 
+## Execution Plan
+
 ## Batch 33.1 - Coverage And Compatibility Audit
 
-Status: ready
+Status: complete
 
 Documentation only.
 
-- [ ] publish one exact matrix of public and private ratio ownership
-- [ ] distinguish character selection from hidden range-owner selection
-- [ ] audit the retained coherent, Dream, and Cyclic owners for source map,
+- [x] publish one exact matrix of public and private ratio ownership
+- [x] distinguish character selection from hidden range-owner selection
+- [x] audit the retained coherent, Dream, and Cyclic owners for source map,
   frame scheduling, boundary, normalization, linked-stereo, deterministic
   state, and target-length compatibility
-- [ ] test the architecture claims against Contract `085` Rules 1-7 without
+- [x] test the architecture claims against Contract `085` Rules 1-7 without
   changing or executing candidate DSP
-- [ ] identify every missing interior-ratio and overlap owner
-- [ ] decide whether either admitted mechanism can plausibly generalize while
+- [x] identify every missing interior-ratio and overlap owner
+- [x] decide whether either admitted mechanism can plausibly generalize while
   preserving its accepted sound
-- [ ] select one complete source-backed direction or close the lane
-- [ ] keep the decision in the canonical architecture and roadmap spine
+- [x] select one complete source-backed direction or close the lane
+- [x] keep the decision in the canonical architecture and roadmap spine
 
 Stop if the audit produces only a blend of different characters, a repair of a
 rejected family, an unowned transition, or a menu of local mechanisms.
 
+Result:
+
+- `OfflineHighQuality` accepts arbitrary positive ratios but remains a
+  structurally incompatible Transparent owner
+- private Cyclic accepts any exact target from identity through `8x`, but only
+  exact `2x`, `4x`, and `8x` have acoustic and public admission
+- Dream's target-driven map and scheduler are mechanically ratio-generic behind
+  its exact `4x`/`8x`/`16x` validation gate
+- select `ContinuousDirectRenewalDream` over exact fixed targets
+  `4N <= T <= 16N`
+- keep every admitted acoustic equation and anchor output unchanged
+- keep both historical overlaps, public Cyclic widening, routing, cache,
+  artifacts, dynamic ratio, and consumers out of scope
+
 ## Batch 33.2 - Complete Continuous Owner Brief
 
-Status: pending Batch 33.1
+Status: ready
 
-Proceed only if Batch 33.1 selects one complete source-backed direction.
-Freeze one renderer and any same-character overlap end to end: map, schedule,
-analysis and synthesis state, boundaries, linked stereo, determinism, bounds,
-interior-ratio gates, transition probes, listening pack, rejection, and
-cleanup. Do not implement DSP in this batch.
+Freeze one `ContinuousDirectRenewalDream` renderer end to end: exact target
+domain, unchanged map, schedule, analysis and synthesis state, boundaries,
+linked stereo, determinism, bounds, fixed interior-ratio gates, concealed
+listening pack, anchor byte-parity, rejection, and cleanup. The candidate may
+change only the private ratio gate. Do not implement DSP in this batch.
 
-If no direction survives Batch 33.1, close this roadmap instead.
+- [ ] freeze exact target arithmetic for every `4N <= T <= 16N`
+- [ ] bind immutable hashes for every admitted acoustic source file
+- [ ] freeze frame-adjacent endpoint, non-power-of-two, non-hop-divisible, and
+  representative interior ratio cases
+- [ ] retain the existing structural and synthetic owners, extended to the
+  frozen interior cases
+- [ ] freeze long-form mono and linked-stereo packs with explicit operator and
+  eligible-listener ownership
+- [ ] require byte-exact `4x`, `8x`, and `16x` anchor parity
+- [ ] freeze bounded cost, deterministic state, rejection, cleanup, and minimal
+  admission
+- [ ] run docs, Northstar, health, and validation gates
+
+Stop if the brief requires any transform, window, hop, phase, seed, `space`,
+blend, envelope, normalization, or post-process change. That would be a new
+renderer, not ratio generalization.
 
 ## Batch 33.3 - Isolated Fixed-Ratio Admission
 
@@ -108,17 +145,17 @@ Only after fixed-ratio admission, decide whether the accepted owner warrants a
 continuous public range and hidden same-character routing. Freeze cache and
 consumer work separately. Dynamic ratio remains later work.
 
-## Acceptance
+## Acceptance Criteria
 
-- current exact-ratio coverage is stated without implying continuous bands
-- `Dream` and `Cyclic` remain separate user-selected characters
-- any future route owns Contract `085` continuity rather than crossfading by
+- [x] current exact-ratio coverage is stated without implying continuous bands
+- [x] `Dream` and `Cyclic` remain separate user-selected characters
+- [ ] any future route owns Contract `085` continuity rather than crossfading by
   assertion
-- only one complete candidate can become executable
-- no implementation becomes ready before a complete brief
+- [x] only one complete candidate can become executable
+- [x] no implementation becomes ready before a complete brief
 
 ## Next Task
 
-Execute Batch 33.1 only. Audit continuous fixed-ratio ownership and
-compatibility. Do not implement DSP, a router, cache, artifacts, or consumer
-integration.
+Execute Batch 33.2 only. Freeze the complete
+`ContinuousDirectRenewalDream` implementation and evidence brief. Do not
+implement DSP, a router, cache, artifacts, or consumer integration.

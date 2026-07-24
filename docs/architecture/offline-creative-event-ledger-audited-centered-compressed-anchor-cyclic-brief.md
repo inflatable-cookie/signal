@@ -2158,5 +2158,6 @@ These are admission risks, not open design choices.
 
 ## Next Task
 
-Keep this admitted renderer frozen. Execute `g10.033` Batch 33.1 only. Audit
-continuous creative ownership without changing Cyclic DSP.
+Keep this admitted renderer and public ratios frozen. Execute `g10.033` Batch
+33.2 only. Freeze the separate continuous Dream brief without changing Cyclic
+DSP or widening Cyclic admission.

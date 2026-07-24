@@ -51,5 +51,5 @@ Keep the `g10.030` transparent successor program closed. The exact-ratio
 Dream wrapper is admitted and `g10.031` is complete. `g10.032` privately
 admits the accepted event-ledger Cyclic renderer and publicly admits its
 fixed-ratio extension; Batch 32.29 closes that lane. Execute `g10.033` Batch
-33.1 only. Audit continuous fixed-ratio ownership and compatibility without
+33.2 only. Freeze one complete `ContinuousDirectRenewalDream` brief without
 starting implementation.

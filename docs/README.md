@@ -91,5 +91,5 @@ strict lane.
 
 ## Next Task
 
-Execute `g10.033` Batch 33.1 only. Audit continuous fixed-ratio ownership and
-compatibility without starting implementation.
+Execute `g10.033` Batch 33.2 only. Freeze one complete
+`ContinuousDirectRenewalDream` brief without starting implementation.

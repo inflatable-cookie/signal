@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: `g10.033` active; continuous creative-range feasibility ready
+Status: `g10.033` active; continuous Dream brief ready
 Updated: 2026-07-24
 
 ## Why this generation matters now
@@ -310,9 +310,10 @@ Do not start Loophole or Chorus planning from Signal internals.
     the unchanged private and public exact-ratio renderer; Batch 32.29 closes
     the lane and selects continuous-range feasibility
 - `g10.033` `active`
-  - Batch 33.1 is a docs-only audit of exact coverage, source-map and scheduler
-    compatibility, interior ratios, and same-character transition ownership;
-    no candidate, router, cache, artifact, or consumer work is ready
+  - Batch 33.1 audits exact coverage and owner compatibility, then selects one
+    separately versioned `ContinuousDirectRenewalDream` direction over exact
+    targets `4N <= T <= 16N`; Batch 33.2 complete-brief work is ready; no
+    candidate, router, cache, artifact, or consumer work is ready
 
 ## Stretch Boundary
 
@@ -768,13 +769,15 @@ admits it in commit `e8948512` with `10/10` focused public tests and no
 acoustic-file change. Batch 32.29 closes the lane. Current creative coverage
 is two explicit fixed-ratio characters, not a continuous band.
 
-`g10.033` now owns the next stretch decision. Batch 33.1 audits whether
-continuous fixed-ratio coverage can preserve one character with compatible
-map, schedule, boundaries, stereo, and deterministic state. Automatic
-character switching is rejected. Implementation, cache, artifacts, dynamic
-ratio, and named-consumer integration remain unavailable.
+`g10.033` now owns the next stretch decision. Batch 33.1 confirms that
+OfflineHighQuality cannot supply a hidden Dream transition and that continuous
+Cyclic is a separate character admission. It selects one unchanged-mechanism
+Dream generalization over exact targets `4N <= T <= 16N`. Batch 33.2 must
+freeze that candidate and its interior-ratio evidence end to end. Automatic
+character switching, implementation, cache, artifacts, dynamic ratio, and
+named-consumer integration remain unavailable.
 
 ## Next Task
 
-Execute `g10.033` Batch 33.1 only. Audit continuous fixed-ratio ownership and
-compatibility without starting implementation.
+Execute `g10.033` Batch 33.2 only. Freeze one complete
+`ContinuousDirectRenewalDream` brief without starting implementation.

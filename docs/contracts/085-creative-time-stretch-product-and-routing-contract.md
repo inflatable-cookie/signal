@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: exact-ratio Dream and Cyclic public; continuous-range feasibility active
+Status: exact-ratio Dream and Cyclic public; continuous Dream brief ready
 Owner: core-product
 Updated: 2026-07-24
 Related contracts: `046`, `048`, `084`
@@ -2099,7 +2099,30 @@ normalization, linked-stereo, deterministic-state, and interior-ratio
 ownership before one implementation direction can be selected. Cache,
 artifacts, named consumers, dynamic ratio, and routing remain unavailable.
 
+Batch 33.1 selects one separately versioned `ContinuousDirectRenewalDream`
+candidate over every exact fixed target satisfying `4N <= T <= 16N`.
+Code inspection confirms that Dream's block count and half-sample rational
+source-centre equation already take exact `T`; only its private validation gate
+restricts targets to `4N`, `8N`, and `16N`.
+
+The selected candidate keeps the admitted transform, hop, phase-address law,
+seed, `space` synthesis, blend compensation, boundary envelopes, memory bound,
+and acoustic equations unchanged. Exact anchors must remain byte-identical.
+Interior structural, synthetic, and concealed long-form evidence is still
+mandatory. This is a new behavior identity, not automatic routing or an
+existing quality claim.
+
+`OfflineHighQuality` remains a separate Transparent owner. Its centered padded
+STFT, ratio-scaled synthesis lattice, normalized crop, and short-input fallback
+do not share Dream's scheduler or exterior boundary. The `2x..4x` lower
+overlap therefore remains paused.
+
+Private Cyclic already accepts exact target geometry from identity through
+`8x`, but only exact `2x`, `4x`, and `8x` have acoustic and public admission.
+Continuous Cyclic widening is a separate later candidate and cannot enter the
+Dream brief.
+
 ## Next Task
 
-Execute `g10.033` Batch 33.1 only. Audit continuous fixed-ratio ownership and
-compatibility without starting implementation.
+Execute `g10.033` Batch 33.2 only. Freeze one complete
+`ContinuousDirectRenewalDream` brief without starting implementation.

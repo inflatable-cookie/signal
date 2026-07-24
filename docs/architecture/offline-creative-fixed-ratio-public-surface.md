@@ -325,6 +325,6 @@ No cache, route, tier, artifact, runtime, Loophole, or Chorus surface changed.
 
 ## Next Task
 
-Keep this exact-ratio surface frozen. Execute `g10.033` Batch 33.1 only. Audit
-continuous fixed-ratio ownership and compatibility without starting
-implementation.
+Keep this exact-ratio surface frozen. Execute `g10.033` Batch 33.2 only. Freeze
+the complete `ContinuousDirectRenewalDream` candidate brief without starting
+implementation or widening the public API.
