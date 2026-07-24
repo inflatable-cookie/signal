@@ -1,6 +1,6 @@
 # 032 - Cyclic Creative Stretch Research
 
-Status: active; Batch 32.11 complete; Batch 32.12 ready
+Status: active; Batch 32.12 stopped; Batch 32.13 ready
 Owner: dsp
 Updated: 2026-07-24
 Contracts: `046`, `085`
@@ -363,7 +363,7 @@ The candidate remains isolated; no DSP or evidence harness entered `main`.
 
 ## Batch 32.12 - First Acoustic Gate
 
-Status: ready
+Status: stopped; evidence invalid
 
 Run only the `30` frozen `Y01` rows from the Batch 32.11 acoustic ref, in
 manifest order:
@@ -378,6 +378,47 @@ manifest order:
 Stop after `Y01`. Do not execute `Y02` through `Y06`, exact `16x`, long-form
 rendering, listening, product routing, or public admission in this batch.
 
+Result:
+
+- [x] verified checkpoint `74a6d6d9`, tree `d519e2d8`, all manifest hashes,
+  clean worktree, and `30` planned `Y01` rows
+- [x] invoked `Y01` once and stopped on row
+  `Y01-000-low-tone-r2-c048000`
+- [x] recorded runner exit `66`: the intended receipt was missing
+- [x] found one two-line passing receipt under a crate-relative duplicate root
+- [x] confirmed the intended root contains only environment identity files
+- [x] confirmed no `Y01` summary or later acoustic row exists
+- [x] did not retry
+
+The ignored root was supplied as the frozen repo-relative
+`target/creative-stretch-audited-centered-compressed-anchor-cyclic-32-11`.
+The shell runner resolved it from the repository root. Nextest resolved the
+same environment value from `crates/signal-dsp-stretch`, so the row receipt
+landed under that crate instead. The runner then failed its in-root receipt
+check.
+
+The misplaced receipt hash is
+`f9c12e26ca6d7e727749ae12e70e86262816715abad66850396ea6fdc4596d91`.
+Its passing assertions are out-of-root and do not admit the row. This is an
+evidence-path ownership failure, not an acoustic quality result.
+
+## Batch 32.13 - Second Evidence Failure Closure
+
+Status: ready
+
+Docs only:
+
+1. classify the split-root `Y01` stop under Contract `085` Rule 11
+2. record that the fresh audited identity is the second incomplete-evidence
+   checkpoint for centred compressed-anchor Cyclic
+3. close that identity without acoustic, long-form, stereo, or listening claim
+4. delete the retained acoustic ref after the closure commit
+5. leave admitted `Dream`, transparent stretch, routing, cache, Loophole, and
+   Chorus unchanged
+
+Do not repair the runner, retry `Y01`, authorize a third identity, recover
+isolated state, implement candidate DSP, or start another Cyclic mechanism.
+
 ## Completion Gate
 
 - source families are pinned and clean-room boundaries recorded
@@ -391,6 +432,6 @@ rendering, listening, product routing, or public admission in this batch.
 
 ## Next Task
 
-Execute Batch 32.12 only. From the immutable Batch 32.11 acoustic ref, run the
-`30` frozen `Y01` rows in manifest order with one-shot durable receipts. Stop
-on the first terminal failure or after the `Y01` summary. Do not begin `Y02`.
+Execute Batch 32.13 only. Close the centred compressed-anchor Cyclic identity
+as the second incomplete-evidence checkpoint under Contract `085` Rule 11,
+then delete the retained acoustic ref. Docs only. Do not repair or retry.

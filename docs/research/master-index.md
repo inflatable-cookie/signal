@@ -81,12 +81,15 @@ incomplete executable evidence and authorizes one fresh audited identity. No
 acoustic decision or DSP admission exists. This does not reopen the
 transparent successor lane. Batch 32.10 freezes complete executable manifests.
 Batch 32.11 generates the evidence before source and freezes fresh checkpoint
-`74a6d6d9` after two byte-identical structural rounds. No acoustic row has run.
+`74a6d6d9` after two byte-identical structural rounds. Batch 32.12 stops on the
+first acoustic row because the receipt root resolves differently in the shell
+runner and nextest process. The out-of-root passing receipt is not admissible;
+no acoustic decision exists.
 
 Current Cyclic decision:
 [Offline Creative Cyclic Behavioral Synthesis](../architecture/offline-creative-cyclic-behavioral-synthesis.md).
 
-Frozen Cyclic candidate authority:
+Evidence-invalid Cyclic candidate authority:
 [Offline Creative AuditedCenteredCompressedAnchorCyclic Brief](../architecture/offline-creative-audited-centered-compressed-anchor-cyclic-brief.md).
 
 Explicit operator research reopening and pinned source triangulation selected
@@ -228,6 +231,6 @@ Rejected first-owner brief:
 
 ## Next Task
 
-Execute `g10.032` Batch 32.12 only. From the immutable acoustic ref, run the
-`30` frozen `Y01` rows in manifest order with one-shot durable receipts. Stop
-on the first terminal failure or after the `Y01` summary. Do not begin `Y02`.
+Execute `g10.032` Batch 32.13 only. Close the centred compressed-anchor Cyclic
+identity under Contract `085` Rule 11, then delete the retained acoustic ref.
+Docs only. Do not repair or retry.

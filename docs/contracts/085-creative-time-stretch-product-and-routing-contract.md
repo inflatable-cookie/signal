@@ -1,8 +1,8 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: exact-ratio Dream admitted; Cyclic candidate brief frozen
+Status: exact-ratio Dream admitted; Cyclic second evidence checkpoint invalid
 Owner: core-product
-Updated: 2026-07-23
+Updated: 2026-07-24
 Related contracts: `046`, `048`, `084`
 Related architecture: `docs/architecture/offline-creative-time-stretch-study.md`,
 `docs/architecture/offline-creative-fixed-ratio-public-surface.md`,
@@ -10,6 +10,7 @@ Related architecture: `docs/architecture/offline-creative-time-stretch-study.md`
 `docs/architecture/offline-creative-direct-renewal-dream-brief.md`,
 `docs/architecture/offline-creative-cyclic-behavioral-synthesis.md`,
 `docs/architecture/offline-creative-centered-compressed-anchor-cyclic-brief.md`,
+`docs/architecture/offline-creative-audited-centered-compressed-anchor-cyclic-brief.md`,
 `docs/architecture/offline-creative-audited-layered-cloud-brief.md`,
 `docs/architecture/offline-creative-layered-cloud-brief.md`,
 `docs/architecture/offline-creative-linked-stn-noise-morph-brief.md`,
@@ -1807,9 +1808,20 @@ musical, `30` mono synthetic, and `18` stereo synthetic rows. Historical mono
 hashes remain provenance only. Renderer formula and acoustic gates do not
 change.
 
+Batch 32.11 creates checkpoint `74a6d6d9` after complete construction and two
+byte-identical structural rounds. Batch 32.12 invokes `Y01` once. The shell
+runner resolves its repo-relative ignored root from the repository, while
+nextest resolves the forwarded receipt root from `crates/signal-dsp-stretch`.
+The first row writes a passing receipt below that crate-relative duplicate
+root; the runner finds no receipt at the intended root and exits `66`.
+
+No valid `Y01` row or summary exists. The out-of-root pass is not an acoustic
+quality decision and may not guide DSP. No retry or third audited identity is
+allowed. This is the second incomplete-evidence checkpoint for centred
+compressed-anchor Cyclic. Rule 11 requires family closure.
+
 ## Next Task
 
-Execute `g10.032` Batch 32.11 only. Create the fresh isolated audited identity,
-recapture and bind the new comparator set before candidate source, implement
-the unchanged renderer and owners, and complete two structural conformance
-rounds. Stop before every acoustic row.
+Execute `g10.032` Batch 32.13 only. Record final centred compressed-anchor
+Cyclic closure and delete its retained acoustic ref. Docs only. Do not repair
+the runner, retry `Y01`, or authorize another identity.

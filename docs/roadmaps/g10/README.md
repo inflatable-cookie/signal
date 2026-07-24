@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: Cyclic conformance frozen; Batch 32.12 ready
+Status: Cyclic acoustic evidence invalid; Batch 32.13 ready
 Updated: 2026-07-24
 
 ## Why this generation matters now
@@ -296,8 +296,9 @@ Do not start Loophole or Chorus planning from Signal internals.
     one fresh audited evidence identity; Batch 32.8 freezes a docs-only
     authority; Batch 32.9 finds it non-executable before source; Batch 32.10
     freezes reproducible manifests; Batch 32.11 freezes a clean isolated
-    checkpoint after two byte-identical structural rounds; Batch 32.12 first
-    acoustic gate is ready
+    checkpoint after two byte-identical structural rounds; Batch 32.12 stops
+    on a split receipt root at the first acoustic row; Batch 32.13 closure is
+    ready
 
 ## Stretch Boundary
 
@@ -659,11 +660,18 @@ reproducible `63`-row comparator set, and listening/reveal schemas. Batch 32.11
 generates and binds that evidence before candidate source, implements every
 frozen owner, and passes release compile, construction `1/1`, and all `339`
 structural rows twice with byte-identical evidence. Clean checkpoint
-`74a6d6d9` is frozen at the acoustic ref. No acoustic row has run. Batch 32.12
-first acoustic gate is ready.
+`74a6d6d9` is frozen at the acoustic ref.
+
+Batch 32.12 stops at the first `Y01` row. The test process writes a passing
+two-line receipt below a crate-relative duplicate root, while the shell runner
+looks below the repository-relative root and exits `66` for a missing receipt.
+No valid row or summary exists, no later gate ran, and retry is prohibited.
+This is the second incomplete-evidence checkpoint for the identity. Batch
+32.13 docs-only closure is ready.
 
 ## Next Task
 
-Execute `g10.032` Batch 32.12 only. From the immutable acoustic ref, run the
-`30` frozen `Y01` rows in manifest order with one-shot durable receipts. Stop
-on the first terminal failure or after the `Y01` summary. Do not begin `Y02`.
+Execute `g10.032` Batch 32.13 only. Close the centred compressed-anchor Cyclic
+identity under Contract `085` Rule 11, then delete the retained acoustic ref.
+Docs only. Do not repair the runner, retry `Y01`, or authorize another
+identity.

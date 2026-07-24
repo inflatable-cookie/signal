@@ -1,6 +1,6 @@
 # Offline Creative AuditedCenteredCompressedAnchorCyclic Brief
 
-Status: isolated conformance passed; Batch 32.12 ready
+Status: evidence-invalid at first Y01 row; Batch 32.13 closure ready
 Owner: dsp
 Updated: 2026-07-24
 Contracts: `046`, `085` Rule 11
@@ -1547,6 +1547,21 @@ The clean checkpoint is frozen at
 No acoustic, exact-`16x`, long-form, or listening row has run. No candidate
 source or evidence harness entered `main`.
 
+### Batch 32.12 Result
+
+The first `Y01` invocation stopped at
+`Y01-000-low-tone-r2-c048000`. The test process wrote a passing two-line
+receipt below a crate-relative duplicate evidence root. The shell runner
+looked below the repository-relative root, found no receipt, and exited `66`.
+
+The intended root contains only environment identity files. No `Y01` summary,
+later synthetic row, exact-`16x` row, long-form render, or listening row
+exists. The misplaced receipt hash is
+`f9c12e26ca6d7e727749ae12e70e86262816715abad66850396ea6fdc4596d91`.
+
+The out-of-root pass does not admit the row. No retry is allowed. This is an
+evidence-path ownership failure, not an acoustic quality result.
+
 ## Remaining Risks
 
 - direct two-read crossfade may retain the surfaced dropout on some material
@@ -1565,7 +1580,7 @@ These are admission risks, not open design choices.
 
 ## Next Task
 
-Execute `g10.032` Batch 32.12 only. From the immutable Batch 32.11 acoustic
-ref, run the `30` frozen `Y01` rows in manifest order with one-shot durable
-receipts. Stop on the first terminal failure or after the `Y01` summary. Do
-not begin `Y02`, exact `16x`, long-form rendering, or listening.
+Execute `g10.032` Batch 32.13 only. Close this identity as the second
+incomplete-evidence checkpoint under Contract `085` Rule 11, then delete the
+retained acoustic ref. Docs only. Do not repair the runner, retry `Y01`, or
+authorize a third identity.
