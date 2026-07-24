@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: `g10.032` active; Cyclic operator listening passed, stereo authority pending
+Status: `g10.032` active; private fixed-ratio Cyclic renderer admitted
 Updated: 2026-07-24
 
 ## Why this generation matters now
@@ -741,11 +741,18 @@ rejection rows, and all `45` long-form mono renders. Its concealed operator
 pack is ready. All `15` long-form linked-stereo rows also passed and their
 concealed neutral stereo pack is ready at the same renderer checkpoint.
 The operator judged the concealed outputs hard to distinguish and solid, with
-no significant mono or stereo issue. Contract `085` still requires eligible
-independent stereo review or an explicit waiver scoped to this candidate.
+no significant mono or stereo issue. After all hard stereo controls passed,
+the operator explicitly waived independent review for exact checkpoint
+`bab6ce96` at fixed `2x`, `4x`, and `8x`. The one-ear limitation remains
+recorded and the exception does not generalize.
+
+Batch 32.26 admits the unchanged acoustic renderer privately as
+`creative_cyclic` in commit `81edaada`. Its four acoustic implementation files
+are byte-identical to the accepted checkpoint. Candidate evidence and
+listening scaffolding remain isolated. No public character, router, cache,
+artifact, UI, Loophole, or Chorus surface changed.
 
 ## Next Task
 
-Complete `g10.032` Batch 32.25 through eligible independent stereo review or
-an explicit operator waiver scoped to checkpoint `bab6ce96`. Then execute
-minimal private admission without changing renderer output.
+Execute `g10.032` Batch 32.27 only. Freeze the public exact-ratio Cyclic
+request, control, error, and engine-version surface without changing code.

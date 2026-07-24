@@ -327,7 +327,10 @@ authority through conformance. Batches 32.20-32.21 find the post-checkpoint
 evidence path non-executable and close the family under Rule 11. Batch 32.22
 deletes the exact candidate/ref/build state. Batch 32.23 records the operator
 completion correction and reopens the acoustically unjudged implementation
-for exact recovery and evidence repair. No candidate is admitted and no
+for exact recovery and evidence repair. Batch 32.24 completes that recovery
+and valid evidence. Batch 32.25 passes acoustic and operator admission with an
+explicit checkpoint-scoped stereo waiver. Batch 32.26 privately admits the
+unchanged exact `2x`/`4x`/`8x` Cyclic core. Public exposure is pending and no
 strict spec lane is open.
 
 ## Strict lane posture
@@ -357,4 +360,4 @@ Before rollover:
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the active generation front door.
-Execute `g10.032` Batch 32.24.
+Execute `g10.032` Batch 32.27.

@@ -1,6 +1,6 @@
 # 032 - Cyclic Creative Stretch Research
 
-Status: active; Cyclic acoustic-completion lane reopened
+Status: active; private fixed-ratio Cyclic renderer admitted
 Owner: dsp
 Updated: 2026-07-24
 Contracts: `046`, `085`
@@ -824,7 +824,7 @@ measurements and corrected comparator binding. No renderer formula changed.
 
 ## Batch 32.25 - Acoustic Admission And Listening
 
-Status: operator listening passed; independent stereo authority pending
+Status: complete
 
 Run the complete synthetic sequence from one clean versioned renderer
 checkpoint. Fix evidence implementation defects and rerun affected scopes.
@@ -843,9 +843,16 @@ neutral-cycle stereo A/B pack at the same acoustic checkpoint.
 The operator judged the concealed renders hard to distinguish, consistently
 similar, and solid. No clicks, metallic defect, detached echo, stereo
 movement, centre pull, width pumping, or other significant issue was reported.
-This accepts the musical character. Contract `085` still requires an eligible
-independent stereo listener or an explicit scoped operator waiver for this
-fixed candidate; the earlier Dream waiver does not carry into Cyclic.
+This accepts the musical character. After every hard stereo gate passed, the
+operator explicitly waived independent stereo review for checkpoint
+`bab6ce96b0476e025dce5c957d91eab27e375fd6` at fixed `2x`, `4x`, and
+`8x`. The one-ear hearing limitation remains recorded. This exception applies
+only to this exact creative renderer and does not generalize to transparent
+stretch, another character, dynamic routing, or a changed renderer.
+
+The concealment key was revealed only after the waiver. Candidate placement
+was mixed across A and B in both mono and stereo packs, confirming that the
+operator judgment was made without a stable side cue.
 
 The cadence-order aggregate now tests the exact planned cycle spacing.
 Measured FFT and autocorrelation values remain diagnostics. The earlier rule
@@ -854,13 +861,44 @@ could not distinguish sub-hop `5 ms` and `48 ms` cadence through a
 
 ## Batch 32.26 - Renderer Iteration Or Admission
 
-Status: pending on Batch 32.25
+Status: complete
 
 If listening accepts the candidate, freeze and admit the minimal private
 fixed-ratio Cyclic surface before any public routing or UI work. If valid
 evidence exposes a renderer defect, preserve its receipt, revise one complete
 renderer version in isolation, and return to Batch 32.25. The Cyclic product
 target remains active until accepted or explicitly cancelled by the operator.
+
+Commit `81edaada` admits the accepted renderer as private
+`creative_cyclic`. Its plan, schedule, interpolation, and synthesis files are
+byte-identical to checkpoint `bab6ce96`. The evidence runner, comparator
+capture, receipt system, listening packs, and other candidate-only scaffolding
+did not enter `main`.
+
+The admitted module retains exact `2x`, `4x`, and `8x`, manual
+`5,000..=90,000 us` cycle, mono and linked stereo, exact target length,
+determinism, bounded state, and typed rejection. Six focused production tests
+preserve identity, finite exact output, stereo algebra, request rejection,
+pre-allocation `16x` rejection, and map/window/memory bounds.
+
+No public character, cache identity, automatic router, artifact surface, UI,
+runtime integration, Loophole, or Chorus change is admitted.
+
+## Batch 32.27 - Freeze The Public Cyclic Surface
+
+Status: ready
+
+Freeze one docs-only extension of the existing fixed-ratio creative API:
+
+- public `Cyclic` character at exact `2x`, `4x`, and `8x`
+- one duration-valued `cycle` control spanning `5..90 ms`
+- a named neutral default of `48 ms`
+- typed rejection for Dream-only controls and unsupported ratios
+- engine-version and future cache-identity ownership
+- no automatic cycle selection, routing, blends, dynamic ratio, or UI design
+
+Stop after the public-surface brief is internally complete. Do not expose the
+private renderer in the same batch.
 
 ## Completion Gate
 
@@ -875,7 +913,5 @@ target remains active until accepted or explicitly cancelled by the operator.
 
 ## Next Task
 
-Complete Batch 32.25 through either eligible independent stereo review or an
-explicit operator waiver scoped to checkpoint `bab6ce96`. Then reveal and
-record the concealed result. If stereo authority passes, execute Batch 32.26
-minimal private admission without changing renderer output.
+Execute Batch 32.27 only. Freeze the public fixed-ratio Cyclic request and
+error surface without changing code or renderer output.

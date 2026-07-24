@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: exact-ratio Dream admitted; Cyclic acoustic-completion lane active
+Status: exact-ratio Dream public; fixed-ratio Cyclic core privately admitted
 Owner: core-product
 Updated: 2026-07-24
 Related contracts: `046`, `048`, `084`
@@ -72,9 +72,10 @@ smooth, fused, musical spectral smear.
 `Rough` intentionally exposes a less smoothed polyphase texture. `Cloud` means
 dispersed upper-range evolution. `Cyclic` means commanded Akai-style
 repetition. Both historical cyclic candidates remain rejected and deleted.
-`g10.032` forensics now select centred compressed-anchor behavior and correct
-the invalid absolute pitch gate. The character remains unavailable until a
-fresh complete brief and isolated candidate pass.
+`g10.032` selected and admitted a fresh centred compressed-anchor event-ledger
+renderer after complete structural, synthetic, long-form, and listening
+admission. The renderer remains private until its public request surface is
+frozen and implemented.
 
 Batch 31.76 admits a minimal public boundary for private
 `DirectRenewalDream` at exact fixed `4x`, `8x`, and `16x`. That boundary
@@ -122,12 +123,11 @@ The historical automatic routed bands are:
 - cloud: `32x` through `100x`
 
 They are deferred product intent, not an active target or implementation
-authority. Current executable creative coverage is private neutral `Dream` at
-exact fixed `4x`, `8x`, and `16x`. Exact `16x` is an endpoint; it does not
-authorize an interior overlap, a continuous band, or any ratio above `16x`.
-The closed explicit `Cyclic` character bypassed the bands and targeted fixed
-expansion above `1x` through `8x`. Any future routing reopening must preserve
-`2x`, `4x`, and `8x` as mandatory admission points.
+authority. Current executable creative coverage is public neutral `Dream` at
+exact fixed `4x`, `8x`, and `16x`, plus private manual `Cyclic` at exact fixed
+`2x`, `4x`, and `8x`. Neither exact endpoint authorizes an interior overlap,
+a continuous band, or a higher ratio. Any future routing reopening must
+preserve `2x`, `4x`, and `8x` as mandatory admission points.
 
 If automatic routing reopens, overlap weights use smoothstep interpolation over
 `log2(ratio)`. A fixed-ratio request uses one constant channel-shared weight for
@@ -210,6 +210,18 @@ waived independent review for this effect. The operator's one-ear hearing
 limitation remains recorded. This is an operator-owned creative-product pass,
 not a claim that eligible independent listening occurred.
 
+Batch 32.25 applies the same scoped rule, independently, to Cyclic checkpoint
+`bab6ce96b0476e025dce5c957d91eab27e375fd6` only. Two structural rounds
+passed `340/340`; synthetic passed `183/183`; exact-`16x` rejection passed
+`5/5` before output allocation; and all `45` mono and `15` linked-stereo
+long-form renders completed. The operator judged the concealed mono and
+speaker-stereo comparisons hard to distinguish, similar, and solid, then
+explicitly waived independent stereo review for this exact fixed `2x`, `4x`,
+and `8x` creative renderer. The operator's one-ear hearing limitation remains
+recorded. This is not a claim that eligible independent listening occurred and
+does not cover another Cyclic implementation, ratio, automatic route, dynamic
+path, character, or transparent stretch.
+
 A candidate brief must state which of those gates are samplewise invariants
 and which are relationship or listening invariants. It may not inherit an
 exact algebraic tolerance from a rejected representation without showing that
@@ -265,10 +277,12 @@ output. Cache support requires a later contract and implementation batch.
 Objective controls reject integrity and continuity failures. They do not decide
 whether output is dreamy, evolving, musical, or useful.
 
-The current cyclic lane requires concealed long-form listening at `2x`, `4x`,
-and `8x`, with `4x` and `8x` primary. The pack covers percussion, bass, vocals,
-pads/sustains, and full mix. `16x` remains a rejection-boundary probe, not a
-supported target. Independent stereo review remains mandatory.
+The admitted cyclic lane required concealed long-form listening at `2x`,
+`4x`, and `8x`, with `4x` and `8x` primary. The pack covered percussion,
+bass, vocals, pads/sustains, and full mix. `16x` remains a rejection-boundary
+probe, not a supported target. Independent stereo review remains the default;
+Rule 5 records the explicit checkpoint-scoped operator exception used for the
+admitted renderer.
 
 If the automatic router later reopens, its `Dream`, `Spectral`, and `Rough`
 lane still requires `4x`, `8x`, and `16x`. `Dream` must remain the smoothest
@@ -2017,10 +2031,23 @@ can produce trustworthy synthetic and listening receipts. Evidence plumbing
 failure may pause a run for correction but may not retire the renderer or
 Cyclic target.
 
+Batch 32.24 recovered the exact renderer and repaired the evidence system
+without changing its acoustic files. Two complete structural rounds passed
+`340/340`. Batch 32.25 then passed `183/183` synthetic rows, `5/5`
+pre-allocation exact-`16x` rejection rows, `45/45` mono long-form renders, and
+`15/15` linked-stereo long-form renders at immutable acoustic checkpoint
+`bab6ce96b0476e025dce5c957d91eab27e375fd6`.
+
+The operator accepted the concealed mono and speaker-stereo effect, then
+explicitly applied the Rule 5 scoped waiver. Batch 32.26 admits only the
+unchanged private renderer and focused production regression owners in commit
+`81edaada`. Candidate runners, fixtures, receipts, comparator assets, hidden
+report modes, and listening packs stay out of `main`. Public `Cyclic`, cache,
+routing, artifacts, UI, runtime integration, Loophole, and Chorus remain
+unadmitted.
+
 ## Next Task
 
-Execute `g10.032` Batch 32.24. Restore the exact checkpoint implementation
-bytes onto a fresh isolated branch from current `main`, audit and repair the
-complete executable evidence path, and rerun conformance. Stop only when the
-candidate is ready for valid acoustic execution or a renderer-authority change
-is required.
+Execute `g10.032` Batch 32.27 only. Freeze the public exact-ratio Cyclic
+request, cycle-control, error, and engine-version surface without changing
+code or renderer output.

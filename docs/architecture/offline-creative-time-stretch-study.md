@@ -1,10 +1,10 @@
 # Offline Creative Time-Stretch Study
 
-Status: exact-ratio `CreativeStretch` admitted; Cyclic event-ledger authority selected
+Status: exact-ratio Dream public; fixed-ratio Cyclic core privately admitted
 Owner: dsp
 Updated: 2026-07-24
 Contract: `085`
-Roadmap: `g10.031`
+Roadmaps: `g10.031`, `g10.032`
 
 ## Product Intent
 
@@ -22,9 +22,10 @@ Initial product range:
 
 - creative expansion only
 - core spectral comparator ratios: `4x`, `8x`, and `16x`
-- retained cyclic comparator ratios: identity, `2x`, `4x`, and `8x`; explicit
-  cyclic implementation remains unavailable while `g10.032` researches it
-- current executable creative coverage: exact `4x`, `8x`, and `16x`
+- public Dream ratios: exact `4x`, `8x`, and `16x`
+- private manual Cyclic ratios: exact `2x`, `4x`, and `8x`
+- current executable creative coverage: Dream plus the private Cyclic core;
+  public Cyclic requests remain unavailable
 - planned routed range: `1x` through `100x`, deferred and unowned
 - primary design point: `8x`
 - ratios above `100x`: future texture/freeze work, not initial scope
@@ -1039,6 +1040,25 @@ Batch 31.76 admits that wrapper. The four acoustic renderer files remain
 byte-identical, public output matches the private renderer byte-for-byte, and
 all retained construction, structural, and synthetic gates pass.
 
+## Batch 32.26 Cyclic Private Admission
+
+The recovered event-ledger renderer passed two `340/340` structural rounds,
+`183/183` synthetic rows, `5/5` pre-allocation exact-`16x` rejection rows,
+`45/45` long-form mono renders, and `15/15` linked-stereo renders at immutable
+checkpoint `bab6ce96b0476e025dce5c957d91eab27e375fd6`.
+
+The operator judged the concealed mono and speaker-stereo outputs hard to
+distinguish from the comparator, similar, and solid. After all hard stereo
+controls passed, the operator explicitly waived independent review for this
+exact creative renderer. The one-ear limitation and candidate-scoped nature
+of that waiver remain recorded in Contract `085`.
+
+Commit `81edaada` admits the unchanged acoustic core privately as
+`creative_cyclic`. It supports mono and linked stereo, exact `2x`, `4x`, and
+`8x`, and one fixed render-wide cycle in `5..90 ms`; `48 ms` remains the
+reviewed neutral point. No public request, automatic cycle selection, routing,
+cache, artifact, UI, runtime, Loophole, or Chorus surface changed.
+
 ## Sources
 
 - [REAPER time-stretch engines](https://www.reaper.fm/about.php)
@@ -1081,8 +1101,6 @@ all retained construction, structural, and synthetic gates pass.
 
 ## Next Task
 
-Execute `g10.032` Batch 32.19 only. Implement the frozen event-ledger
-authority in its exact isolated worktree and complete both unchanged
-conformance rounds. Stop before `Y01`. Exact fixed `4x`, `8x`, and `16x`
-`Dream` remains admitted. Broader range, automatic routing, and both overlaps
-remain paused.
+Execute `g10.032` Batch 32.27 only. Freeze the public exact-ratio Cyclic
+request, cycle-control, error, and engine-version surface without changing
+code or renderer output.

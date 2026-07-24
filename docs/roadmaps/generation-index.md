@@ -152,8 +152,12 @@ Updated: 2026-07-24
   selected event-ledger ownership; Batches 32.18-32.19 froze and implemented
   fresh authority through conformance; Batches 32.20-32.21 found the
   post-checkpoint evidence path non-executable and closed the family under
-  Rule 11; Batch 32.22 removed all candidate state. No Cyclic candidate is
-  admitted.
+  Rule 11; Batch 32.22 removed all candidate state. Batch 32.23 reopened the
+  acoustically unjudged target by operator correction. Batch 32.24 recovered
+  the exact renderer and repaired evidence; Batch 32.25 passed synthetic,
+  long-form mono, linked-stereo, and operator listening, with an explicit
+  checkpoint-scoped stereo waiver. Batch 32.26 privately admitted the
+  unchanged fixed `2x`/`4x`/`8x` Cyclic core. Public exposure remains pending.
 - Lifecycle reconciliation then closed stale `g10.001` and `g10.003` active
   markers and paused `g10.017` on its remaining hardware evidence. Signal's
   capture and live-monitor implementation is present. That lifecycle
@@ -178,7 +182,7 @@ Updated: 2026-07-24
 | `g06` | 2026-03-13 | Continue beyond reusable-boundary closeout with runtime recovery depth, instrumentation, feature breadth, and Loophole-facing runtime evidence | Closed on 2026-03-16 after recovery/resumability, profiling, VST3/AU, MIDI/event depth, hardware/external-I/O, media services, integrated acceptance, bounded soak, and generation-closeout promotion work landed |
 | `g07` | 2026-03-13 | Seed the post-`g06` feature-expansion queue around routing or multichannel depth, Linux-native breadth, control-surface substrate, and fuller time-stretch capability | Closed on 2026-03-19 after multichannel or spatial execution, LV2 and Linux backends, external MIDI/control surfaces, sample-domain stretch, integrated acceptance, and generation-closeout promotion work landed |
 | `g08` | 2026-03-19 | Continue beyond bounded feature-expansion closure with live Linux backend ownership, richer plugin or device protocol depth, immersive routing, and workflow-adjacent runtime services | Closed on 2026-03-22 after live Linux ownership, LV2 or plugin protocol depth, immersive render breadth, device-protocol substrate, preview workflows, grouped acceptance lanes, integrated acceptance, and final generation-closeout work landed |
-| `g10` | 2026-06-11 | Turn the 2026-06-11 deep audit into a remediation program: fix the real audio path, demolish simulated/narration mass (~70-80k LoC), consolidate hygiene, defer rebuilds to demand | Active; `g10.030` retained the frozen stretch baseline; `g10.031` publicly admits exact `4x`/`8x`/`16x` Dream; `g10.032` reopened the acoustically unjudged Cyclic implementation for evidence completion |
+| `g10` | 2026-06-11 | Turn the 2026-06-11 deep audit into a remediation program: fix the real audio path, demolish simulated/narration mass (~70-80k LoC), consolidate hygiene, defer rebuilds to demand | Active; `g10.030` retained the frozen stretch baseline; `g10.031` publicly admits exact `4x`/`8x`/`16x` Dream; `g10.032` privately admits exact `2x`/`4x`/`8x` Cyclic and is freezing its public surface |
 | `g09` | 2026-04-08 | Turn the audit findings into a contract-backed realization, hardening, and interactive-proof program | Closed on 2026-04-11 after plugin and backend realization, production-readiness gating, and operator-visible demo proof landed |
 
 ## Rollover policy
@@ -198,4 +202,4 @@ If that cleanup has not happened, stay in the current generation and finish the 
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the current active-generation front door.
-Execute `g10.032` Batch 32.24.
+Execute `g10.032` Batch 32.27.

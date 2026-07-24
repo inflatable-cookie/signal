@@ -25,8 +25,28 @@ authority.
 
 The operator judged the concealed outputs hard to distinguish, consistently
 similar, and solid. No significant mono or stereo issue was reported. Musical
-character therefore passes operator review. Independent stereo authority is
-not silently waived: Contract `085` requires an eligible listener or an
-explicit operator waiver scoped to checkpoint `bab6ce96` before admission.
+character therefore passes operator review.
 
-No candidate DSP entered `main`. Nothing was pushed.
+After all hard stereo controls passed, the operator explicitly waived
+independent stereo review for checkpoint
+`bab6ce96b0476e025dce5c957d91eab27e375fd6`, scoped to fixed `2x`, `4x`,
+and `8x`. The operator's one-ear hearing limitation remains recorded. This is
+an operator-owned creative-product pass, not a claim that eligible independent
+listening occurred. It does not generalize to another renderer, ratio,
+character, automatic route, dynamic path, or transparent stretch.
+
+The concealment key was revealed only after the waiver. Candidate placement
+was mixed:
+
+- mono `8x`: percussion A, pads A, full mix B
+- stereo `8x`: percussion B, pads B, full mix A
+
+Batch 32.26 then admitted only the private production core in commit
+`81edaada`. The accepted plan, schedule, interpolation, and synthesis files
+are byte-identical to the checkpoint. Six focused tests preserve identity,
+fixed-ratio output, deterministic finiteness, linked-stereo algebra, typed
+rejection, pre-allocation `16x` rejection, and bounded geometry.
+
+No candidate runner, comparator, receipt, listening pack, public character,
+router, cache, artifact, UI, runtime, Loophole, or Chorus surface entered
+`main`. Nothing was pushed.

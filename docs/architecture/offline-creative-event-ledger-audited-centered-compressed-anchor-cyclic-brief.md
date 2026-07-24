@@ -1,6 +1,6 @@
 # Offline Creative EventLedgerAuditedCenteredCompressedAnchorCyclic Brief
 
-Status: active; exact renderer recovery and evidence completion authorized
+Status: admitted privately at exact fixed `2x`, `4x`, and `8x`
 Owner: dsp
 Updated: 2026-07-24
 Contracts: `046`, `085` Rule 11
@@ -969,8 +969,10 @@ After mono passes, the `15` neutral stereo rows must first pass hard mechanics,
 whole/three-band balance, and delay/gain controls. The operator then performs
 a speaker pre-screen and may reject.
 
-Promotion still requires one eligible independent listener. The scoped Dream
-waiver does not apply to Cyclic. The listener reviews:
+Promotion defaults to one eligible independent listener. Contract `085` Rule
+5 permits one explicit operator waiver scoped to this exact fixed-ratio
+creative candidate after every hard stereo control passes. Without that
+waiver, the listener reviews:
 
 - `15` concealed candidate/comparator long-form rows
 - six concealed `8x`, neutral-cycle fixtures: stable centre, wide sustain,
@@ -998,7 +1000,7 @@ Every stage runs from the same acoustic ref and stops at first failure:
 4. short/neutral/long direction review
 5. long-form stereo hard objectives
 6. operator speaker pre-screen
-7. eligible independent stereo review
+7. eligible independent stereo review or explicit Contract `085` Rule 5 waiver
 8. fixed-ratio promotion decision
 
 No code, source, formula, constant, metric, threshold, comparator, fixture,
@@ -2113,7 +2115,31 @@ Each evidence correction is committed and rerun from a clean evidence root.
 No evidence failure closes the renderer. A valid acoustic receipt may reject a
 renderer version; listening decides promotion.
 
-## Unresolved Renderer Risks
+## Admission Result
+
+Batch 32.24 recovered the renderer exactly and repaired evidence
+infrastructure without changing the acoustic implementation. Two complete
+structural rounds passed `340/340`. Checkpoint
+`bab6ce96b0476e025dce5c957d91eab27e375fd6` then passed:
+
+- synthetic admission: `183/183`, `201` planned renders
+- exact `16x` rejection: `5/5`, before output allocation
+- long-form mono: `45/45`
+- long-form linked stereo: `15/15`
+
+The operator judged the concealed mono and speaker-stereo comparisons hard to
+distinguish, similar, and solid. After every hard stereo gate passed, the
+operator explicitly waived independent review for this exact fixed `2x`,
+`4x`, and `8x` creative renderer. The one-ear hearing limitation remains
+recorded. The waiver does not cover another implementation, ratio, character,
+automatic route, dynamic path, or transparent stretch.
+
+Batch 32.26 admits the unchanged renderer privately as `creative_cyclic` in
+commit `81edaada`. The plan, schedule, interpolation, and synthesis files are
+byte-identical to the accepted checkpoint. The candidate evidence system and
+listening assets remain isolated.
+
+## Residual Renderer Risks
 
 - direct two-read crossfade may create audible gaps on non-sparse material
 - compressed-anchor replicas may sound too pitch-shifted, metallic, or regular
@@ -2125,12 +2151,12 @@ renderer version; listening decides promotion.
   comparator behavior
 - the expanded one-row protocol has high process overhead and must still fit
   its frozen envelope
-- independent eligible stereo review remains an external availability risk
+- the scoped operator waiver does not establish an eligible independent
+  stereo judgment
 
 These are admission risks, not open design choices.
 
 ## Next Task
 
-Execute `g10.032` Batch 32.24. Restore the exact checkpoint implementation,
-repair the complete evidence path, and carry the unchanged renderer to valid
-synthetic execution.
+Execute `g10.032` Batch 32.27 only. Freeze the public exact-ratio Cyclic
+surface without changing code or renderer output.
