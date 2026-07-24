@@ -824,7 +824,7 @@ measurements and corrected comparator binding. No renderer formula changed.
 
 ## Batch 32.25 - Acoustic Admission And Listening
 
-Status: active; operator mono pack ready
+Status: active; operator mono and neutral stereo packs ready
 
 Run the complete synthetic sequence from one clean versioned renderer
 checkpoint. Fix evidence implementation defects and rerun affected scopes.
@@ -837,6 +837,8 @@ Synthetic admission passed all `183` rows and `201` planned renders. Exact
 mono rows rendered. The ignored operator pack contains `15` concealed
 neutral-cycle A/B comparisons against ReaReaRea and `15`
 short/neutral/long Signal direction trios at `2x`, `4x`, and `8x`.
+All `15` long-form linked-stereo rows also passed and produced a concealed
+neutral-cycle stereo A/B pack at the same acoustic checkpoint.
 
 The cadence-order aggregate now tests the exact planned cycle spacing.
 Measured FFT and autocorrelation values remain diagnostics. The earlier rule
@@ -866,8 +868,8 @@ target remains active until accepted or explicitly cancelled by the operator.
 
 ## Next Task
 
-Continue Batch 32.25. The operator listens to the concealed neutral A/B rows
-and Signal short/neutral/long direction trios, starting with `8x` percussion,
-pads, and full mix. Preserve the key until decisions are recorded. If the
-character is accepted, render the stereo pack and complete admission. If not,
-revise one complete renderer version in the isolated branch.
+Continue Batch 32.25. The operator listens to the concealed mono and stereo
+A/B rows and Signal short/neutral/long direction trios, starting with `8x`
+percussion, pads, and full mix. Preserve the keys until decisions are
+recorded. If the character is accepted, complete admission. If not, revise one
+complete renderer version in the isolated branch.

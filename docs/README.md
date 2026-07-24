@@ -91,4 +91,4 @@ strict lane.
 ## Next Task
 
 Continue `g10.032` Batch 32.25 with operator listening of the ready concealed
-mono A/B and cycle-direction pack.
+mono/stereo A/B and cycle-direction packs.

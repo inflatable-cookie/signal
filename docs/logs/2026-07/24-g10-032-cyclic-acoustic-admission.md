@@ -15,9 +15,12 @@ Results:
 - synthetic: `183/183`, `201` renders
 - exact `16x` rejection: `5/5`, zero output allocation
 - long-form mono: `45/45`
+- long-form linked stereo: `15/15`
 
 The operator pack has `15` concealed neutral A/B rows against ReaReaRea and
 `15` Signal short/neutral/long direction rows across the five musical sources
-at `2x`, `4x`, and `8x`. Batch 32.25 is active at listening authority.
+at `2x`, `4x`, and `8x`. A separate concealed neutral stereo pack contains
+the `15` linked-stereo musical A/B rows. Batch 32.25 is active at listening
+authority.
 
 No candidate DSP entered `main`. Nothing was pushed.
