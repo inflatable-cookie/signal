@@ -1,6 +1,6 @@
 # Offline Creative AuditedCenteredCompressedAnchorCyclic Brief
 
-Status: exact synthetic comparator recovery authorized; Batch 32.16 ready
+Status: checkpoint rejected at Y01 impulse dropout; reassessment ready
 Owner: dsp
 Updated: 2026-07-24
 Contracts: `046`, `085` Rule 11
@@ -1602,6 +1602,6 @@ These are admission risks, not open design choices.
 
 ## Next Task
 
-Execute `g10.032` Batch 32.16 only. Restore and hash-verify the exact synthetic
-comparator environment, then replay all `30` `Y01` rows once. Stop before
-`Y02`.
+Execute `g10.032` Batch 32.17 only. Attribute the impulse dropout at
+complete-system level. Freeze one materially different Cyclic owner or an
+evidence-backed stop; do not implement or rerun acoustic evidence.

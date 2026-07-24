@@ -1,6 +1,6 @@
 # Offline Creative Cyclic Behavioral Synthesis
 
-Status: exact synthetic comparator recovery authorized
+Status: selected checkpoint rejected; architecture reassessment ready
 Owner: dsp
 Updated: 2026-07-24
 Contract: `085`
@@ -256,6 +256,5 @@ identity or another mechanism survey.
 
 ## Next Task
 
-Execute `g10.032` Batch 32.16 only. Restore and hash-verify the exact synthetic
-comparator environment, then replay all `30` `Y01` rows once. Stop before
-`Y02`.
+Execute `g10.032` Batch 32.17 only. Attribute the valid impulse dropout at
+complete-system level. Do not implement or rerun acoustic evidence.

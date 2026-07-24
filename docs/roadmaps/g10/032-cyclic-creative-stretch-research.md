@@ -1,6 +1,6 @@
 # 032 - Cyclic Creative Stretch Research
 
-Status: active; Batch 32.15 stopped before DSP; Batch 32.16 ready
+Status: active; Batch 32.16 rejected the checkpoint; Batch 32.17 ready
 Owner: dsp
 Updated: 2026-07-24
 Contracts: `046`, `085`
@@ -488,7 +488,7 @@ This is an evidence-environment stop, not a valid `Y01` failure.
 
 ## Batch 32.16 - Synthetic Comparator Restoration And Y01 Replay
 
-Status: ready
+Status: complete; checkpoint rejected
 
 1. preserve the complete Batch 32.15 execution directory as
    `Y01-invalid-missing-comparator-assets-32-15` without changing its bytes
@@ -507,6 +507,42 @@ Do not change candidate, test, runner, manifest, comparator, metric, threshold,
 dependency, or DSP bytes. Do not execute `Y02..Y06`, exact `16x`, long-form,
 stereo, listening, product, or routing work.
 
+Result:
+
+- all `30` Y01 comparator source, project, container, and PCM identities
+  matched the frozen manifest
+- REAPER's wall-clock BWF field was restored to the unique original value
+  selected by each frozen container hash; PCM was already exact
+- rows `Y01-000` through `Y01-011` passed
+- `Y01-012-impulse-r2-c048000` failed with `unexpected dropout 1`
+- no Y01 summary or later gate exists
+- candidate, test, runner, manifest, comparator, metric, threshold, dependency,
+  and DSP bytes remained unchanged
+
+This is a valid acoustic rejection of checkpoint `74a6d6d9`. It is not closure
+of the operator's Cyclic target.
+
+## Batch 32.17 - Impulse Dropout Architecture Reassessment
+
+Status: ready
+
+1. preserve the checkpoint ref through reassessment and retain the receipt
+   hashes in the closeout record
+2. trace the complete ownership path that maps an active impulse source window
+   to one output window below `-80 dBFS`
+3. compare that cause with the retained Cyclic source architectures and prior
+   rejected families
+4. reject local parameter, cycle, window, gain, threshold, schedule, or
+   impulse-only repair
+5. freeze one materially different complete renderer only if it jointly owns
+   scheduling, boundaries, replica prevention, transient energy, stereo,
+   determinism, and bounded state
+6. otherwise record an evidence-backed architectural stop without claiming
+   the Cyclic product target is unimportant
+
+This batch is docs and static source analysis only. Do not implement a
+candidate, change evidence, or run acoustic rows.
+
 ## Completion Gate
 
 - source families are pinned and clean-room boundaries recorded
@@ -520,6 +556,6 @@ stereo, listening, product, or routing work.
 
 ## Next Task
 
-Execute Batch 32.16 only. Preserve the invalid pre-DSP receipt, restore and
-hash-verify the frozen synthetic comparator environment, then replay all `30`
-`Y01` rows once. Stop before `Y02`.
+Execute Batch 32.17 only. Attribute the impulse dropout at complete-system
+level and freeze one materially different Cyclic owner or an evidence-backed
+stop. Do not implement or rerun acoustic evidence.

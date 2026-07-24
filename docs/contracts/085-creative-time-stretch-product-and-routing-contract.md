@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: exact-ratio Dream admitted; Cyclic Y01 environment recovery authorized
+Status: exact-ratio Dream admitted; Cyclic acoustic failure reassessment ready
 Owner: core-product
 Updated: 2026-07-24
 Related contracts: `046`, `048`, `084`
@@ -918,7 +918,7 @@ family.
 | `ContinuousExcitationComplexRelation` | coefficient relation proof exposed an impossible anti-phase negation/swap expectation | conformance-only, contradictory | ineligible; correction requires new relation authority |
 | `CyclicGrain` | structural pass, then synthetic pitch rejection | acoustic rejection | closed |
 | `SimilarityAlignedCyclic` | `6/7` structural; frozen shortlist could not reach the exact natural continuation | conformance-only, architecture miss | ineligible; correction changes the search owner |
-| centred compressed-anchor Cyclic | conformance pass; first acoustic invocation split one receipt across roots; absolute-root replay then found cleaned comparator assets absent before DSP | operator-corrected evidence-environment failures | exact asset restoration and checkpoint replay authorized; no DSP or evidence-owner change |
+| centred compressed-anchor Cyclic | conformance pass; two operator-corrected evidence-environment stops; valid Y01 then passed 12 rows and failed impulse `2x` on one dropout | acoustic rejection | checkpoint rejected; Cyclic target remains open for complete-system reassessment |
 | `RenewalSpectral` | structural pass, then synthetic crest rejection under the superseded unmatched gate | acoustic receipt, superseded architecture | ineligible; corrected source-backed blend belongs to the compensated family |
 | compensated/variance/audited renewal | structural and synthetic pass plus concealed-mono pass, then stereo image rejection | acoustic and stereo rejection | closed |
 | source-relative/listening-led/support-audited/comparator-audited renewal | support-audited identity passed structural, synthetic, and concealed mono, then failed stereo; after stereo policy changed, comparator-audited identity failed synthetic admission | acoustic and stereo rejection | closed |
@@ -1884,8 +1884,32 @@ harness changes. Missing musical sources do not block this recovery because
 `Y01` owns only the frozen `30` mono-synthetic comparator rows. No candidate,
 test, runner, manifest, metric, threshold, dependency, or DSP byte may change.
 
+Batch 32.16 completes that recovery. REAPER `7.69` reproduces every frozen
+output PCM hash. Its BWF container embeds render wall-clock metadata, so the
+recovery restores each original `07:12:06..07:12:52` timestamp selected by the
+frozen container hash. All `30` synthetic source, project-semantics,
+project-container, output-container, and output-PCM identities then match
+`comparator.tsv` exactly.
+
+The unchanged Y01 runner produces `12` passing receipts through
+`Y01-011-harmonic-pad-r8-c048000`. It then reaches
+`Y01-012-impulse-r2-c048000` and reports `unexpected dropout 1`. The failing
+receipt SHA-256 is
+`64eec35d2fef5d7ef3c1d219020d901cff864437469c977680558972c34e7529`.
+No Y01 summary or later gate exists.
+
+This is the first valid acoustic decision for the checkpoint. The checkpoint
+is rejected and may not be repaired or rerun. It rejects this complete
+centred compressed-anchor renderer, not the operator's Cyclic product target.
+No scalar, cycle, window, gain, dropout threshold, local scheduling, or
+impulse-only patch is authorized. The next work is docs-only complete-system
+failure attribution: identify the ownership defect that can create an active
+source window below `-80 dBFS`, compare it with retained Cyclic source
+architectures, and either freeze one materially different complete owner or
+record that no eligible owner exists.
+
 ## Next Task
 
-Execute `g10.032` Batch 32.16 only. Preserve the invalid pre-DSP receipt,
-restore and hash-verify the exact synthetic comparator environment, then
-replay all `30` `Y01` rows once. Stop before `Y02`.
+Execute `g10.032` Batch 32.17 only. Perform docs-only complete-system
+attribution of the impulse dropout and decide one materially different Cyclic
+owner or an evidence-backed stop. Do not implement or rerun acoustic evidence.

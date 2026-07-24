@@ -234,6 +234,6 @@ Rejected first-owner brief:
 
 ## Next Task
 
-Execute `g10.032` Batch 32.16 only. Restore and hash-verify the frozen
-synthetic comparator environment, then replay all `30` `Y01` rows once. Stop
-before `Y02`.
+Execute `g10.032` Batch 32.17 only. Attribute the valid impulse dropout at
+complete-system level and decide one materially different Cyclic owner or an
+evidence-backed stop. Do not implement or rerun acoustic evidence.

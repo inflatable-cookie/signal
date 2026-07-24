@@ -1,7 +1,7 @@
 # g10.032 Centred Cyclic Operator Recovery
 
 Date: 2026-07-24
-Status: Batch 32.15 stopped before DSP; Batch 32.16 ready
+Status: Batch 32.16 complete; checkpoint rejected
 
 ## Correction
 
@@ -30,8 +30,11 @@ Batch 32.16 preserves that receipt, regenerates and hash-verifies the exact
 synthetic sources and `30` frozen ReaReaRea comparator outputs, then invokes
 the unchanged Y01 runner once. No candidate or evidence-owner byte changes.
 
+It passes `12` rows and fails `Y01-012-impulse-r2-c048000` with one
+unexpected dropout. This is the checkpoint's first valid acoustic decision.
+The checkpoint is rejected; the Cyclic product target remains open.
+
 ## Next Task
 
-Execute Batch 32.16 only. Restore the exact synthetic comparator environment,
-verify it against the frozen manifest, and replay all `30` `Y01` rows once.
-Stop before `Y02`.
+Execute Batch 32.17 only. Attribute the impulse dropout at complete-system
+level. Do not implement or rerun acoustic evidence.

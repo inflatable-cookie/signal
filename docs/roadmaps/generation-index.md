@@ -194,6 +194,6 @@ If that cleanup has not happened, stay in the current generation and finish the 
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the current active-generation front door.
-Execute `g10.032` Batch 32.16 only. Restore and hash-verify the frozen
-synthetic comparator environment, replay all `30` `Y01` rows once, and stop
-before `Y02`.
+Execute `g10.032` Batch 32.17 only. Attribute the centred Cyclic impulse
+dropout and decide one materially different owner or an evidence-backed stop.
+Do not implement or rerun acoustic evidence.
