@@ -320,8 +320,13 @@ stopped before source. Batch 32.10 froze the reproducible manifest authority.
 Batch 32.11 passed isolated conformance. Batch 32.12 split the evidence root
 at the first acoustic row. Batch 32.13 closed the identity after its second
 incomplete-evidence checkpoint. Batch 32.14 records the operator correction
-and authorizes one exact replay of the unchanged checkpoint. No candidate is
-admitted and no strict spec lane is open.
+and authorizes one exact replay of the unchanged checkpoint. Batches
+32.15-32.17 restore exact evidence, record one valid Y01 rejection, and select
+event-ledger ownership. Batches 32.18-32.19 freeze and implement fresh
+authority through conformance. Batches 32.20-32.21 find the post-checkpoint
+evidence path non-executable and close the family under Rule 11. Batch 32.22
+deletes the exact candidate/ref/build state. No candidate is admitted and no
+strict spec lane is open.
 
 ## Strict lane posture
 
@@ -350,6 +355,4 @@ Before rollover:
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the active generation front door.
-Execute `g10.032` Batch 32.19 only. Implement the frozen event-ledger Cyclic
-authority in its exact isolated worktree and complete both unchanged
-conformance rounds. Stop before `Y01`.
+No Cyclic execution task is ready.

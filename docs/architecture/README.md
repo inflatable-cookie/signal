@@ -48,7 +48,7 @@ Keep milestone sequencing in `roadmaps/`.
 ## Next Task
 
 Keep the `g10.030` transparent successor program closed. The exact-ratio
-`CreativeStretch` wrapper is admitted and `g10.031` is complete. `g10.032`
-Batch 32.19 freezes checkpoint `995ea516` after two byte-identical structural
-rounds. Execute Batch 32.20's frozen Y01 gate only. Reopen no cache, routing,
-runtime, Loophole, or Chorus work.
+`CreativeStretch` wrapper is admitted and `g10.031` is complete. `g10.032` is
+also complete: the centred compressed-anchor Cyclic family closed on repeated
+evidence-protocol failure without an acoustic judgment. No Cyclic execution
+task is ready.

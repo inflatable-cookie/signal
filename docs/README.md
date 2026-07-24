@@ -64,7 +64,7 @@ strict lane.
 - Generation index: [roadmaps/generation-index.md](./roadmaps/generation-index.md)
 - Stretch closeout roadmap: [roadmaps/g10/030-stretch-consolidation-and-completion.md](./roadmaps/g10/030-stretch-consolidation-and-completion.md)
 - Completed PaulX-like creative stretch roadmap: [roadmaps/g10/031-creative-time-stretch.md](./roadmaps/g10/031-creative-time-stretch.md)
-- Active Cyclic research roadmap: [roadmaps/g10/032-cyclic-creative-stretch-research.md](./roadmaps/g10/032-cyclic-creative-stretch-research.md)
+- Completed Cyclic research roadmap: [roadmaps/g10/032-cyclic-creative-stretch-research.md](./roadmaps/g10/032-cyclic-creative-stretch-research.md)
 - Strict-lane reference: [specs/001-g09-lane-first-strict-adoption.md](./specs/001-g09-lane-first-strict-adoption.md)
 - Active strict-lane card: none
 - Research index: [research/master-index.md](./research/master-index.md)
@@ -90,5 +90,5 @@ strict lane.
 
 ## Next Task
 
-Execute `g10.032` Batch 32.22 only. Remove the exact retained candidate/ref
-state, verify `main` remains candidate-free, and close the roadmap.
+No Cyclic execution task is ready. Use the active `g10` front door for the
+next operator-selected milestone.

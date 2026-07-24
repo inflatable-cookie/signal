@@ -1,6 +1,6 @@
 # 032 - Cyclic Creative Stretch Research
 
-Status: active; event-ledger family closed; Batch 32.22 cleanup ready
+Status: complete; no Cyclic renderer admitted
 Owner: dsp
 Updated: 2026-07-24
 Contracts: `046`, `085`
@@ -749,7 +749,7 @@ not be repaired or rerun.
 
 ## Batch 32.22 - Event-Ledger Closure Cleanup
 
-Status: ready
+Status: complete
 
 1. re-resolve exact checkpoint `995ea516`, tree `fd42543b`, acoustic ref,
    candidate branch, clean worktree, and zero Y01 receipts
@@ -765,6 +765,20 @@ Status: ready
 Do not start another Cyclic identity, change product routing, touch production
 DSP, or push.
 
+Result:
+
+- preflight matched checkpoint `995ea516`, tree `fd42543b`, the exact candidate
+  branch/ref/worktree, clean tracked state, and zero Y01 receipts
+- deleted the local acoustic ref and rejected candidate branch
+- removed `/Users/tom/Dev/projects/signal-candidate-32-19`, including `562 MB`
+  of ignored build state, comparator assets, conformance receipts, and
+  artifacts
+- verified `main` contains no event-ledger candidate module or candidate
+  evidence path
+- no production DSP, public API, product routing, Loophole, or Chorus state
+  changed
+- nothing was pushed
+
 ## Completion Gate
 
 - source families are pinned and clean-room boundaries recorded
@@ -778,5 +792,6 @@ DSP, or push.
 
 ## Next Task
 
-Execute Batch 32.22 only. Remove the exact retained candidate/ref/build state,
-verify `main` remains candidate-free, and close `g10.032`.
+None. `g10.032` is complete and no Cyclic execution batch is ready. Reopening
+requires materially different complete-system architecture or an explicit
+contract change, not another evidence repair.

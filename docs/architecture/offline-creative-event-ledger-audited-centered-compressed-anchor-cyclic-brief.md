@@ -2076,6 +2076,12 @@ The family is closed. Checkpoint `995ea516` has no valid acoustic pass or
 rejection, and its renderer has no listening judgment. Batch 32.22 owns exact
 candidate/ref cleanup only.
 
+### Batch 32.22 Result
+
+The exact local acoustic ref, candidate branch, worktree, ignored build state,
+comparator assets, receipts, and artifacts are deleted. `main` contains no
+candidate DSP or evidence implementation.
+
 ## Unresolved Renderer Risks
 
 - direct two-read crossfade may create audible gaps on non-sparse material
@@ -2094,6 +2100,4 @@ These are admission risks, not open design choices.
 
 ## Next Task
 
-Execute `g10.032` Batch 32.22 only. Remove the exact retained candidate,
-acoustic ref, branch, ignored evidence, and build state; then close the
-roadmap.
+None. This evidence-invalid brief is closed historical authority.

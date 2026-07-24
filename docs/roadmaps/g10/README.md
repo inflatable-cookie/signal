@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: Cyclic event-ledger family closed; Batch 32.22 cleanup ready
+Status: `g10.032` complete; no Cyclic renderer admitted; planning pause
 Updated: 2026-07-24
 
 ## Why this generation matters now
@@ -284,7 +284,7 @@ Do not start Loophole or Chorus planning from Signal internals.
     Batch 31.75 freezes one minimal public `CreativeStretch` wrapper; Batch
     31.76 admits it with byte-identical acoustic output;
     explicit `Cyclic` stays closed
-- `g10.032` `active`
+- `g10.032` `complete`
   - deep Cyclic research reopened by operator decision; Batch 32.1 separates
     fixed Akai `CYCLIC` from adaptive `INTELL`, pins Potenza slow-anchor and
     SickoCV repeat/jump schedules; Batch 32.2 completes executable forensics
@@ -299,7 +299,12 @@ Do not start Loophole or Chorus planning from Signal internals.
     checkpoint after two byte-identical structural rounds; Batch 32.12 stops
     on a split receipt root at the first acoustic row; Batch 32.13 closes the
     identity; Batch 32.14 records the operator correction and authorizes one
-    absolute-root replay of the unchanged checkpoint
+    absolute-root replay of the unchanged checkpoint; Batches 32.15-32.17
+    restore exact evidence, record a valid Y01 impulse rejection, and select
+    sparse event-ledger ownership; Batches 32.18-32.19 freeze and implement
+    fresh authority through two conformance rounds; Batches 32.20-32.21 prove
+    its post-checkpoint evidence path non-executable and close the family
+    under Rule 11; Batch 32.22 deletes all retained candidate state
 
 ## Stretch Boundary
 
@@ -720,7 +725,12 @@ non-executable. This repeats the incomplete-owner class the fresh identity was
 created to correct. Contract `085` Rule 11 closes the family as protocol
 churn. The event-ledger renderer has no acoustic judgment.
 
+Batch 32.22 deletes the exact acoustic ref, candidate branch, worktree,
+`562 MB` ignored build/evidence state, comparator assets, receipts, and
+artifacts. `main` remains candidate-free. `g10.032` is complete.
+
 ## Next Task
 
-Execute `g10.032` Batch 32.22 only. Remove the exact retained candidate/ref
-state, verify `main` remains candidate-free, and close the roadmap.
+Pause for operator intent. No Cyclic execution batch is ready. Any reopening
+requires materially different complete-system architecture or an explicit
+contract change.
