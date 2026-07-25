@@ -133,14 +133,13 @@ fn tsv_field<'a>(
 #[cfg(test)]
 mod tests {
     use std::fs;
-    use std::path::PathBuf;
 
     use super::*;
 
     #[test]
     fn listening_note_status_requires_classified_findings_for_every_family() {
-        let path = PathBuf::from(format!(
-            "target/stretch-blind-note-status-test-{}.tsv",
+        let path = std::env::temp_dir().join(format!(
+            "signal-stretch-blind-note-status-test-{}.tsv",
             std::process::id()
         ));
         let mut contents =

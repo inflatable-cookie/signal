@@ -22,6 +22,7 @@ pub(crate) fn phase_vocoder(
 }
 
 /// Run the identity phase-locked phase-vocoder prototype.
+#[cfg(any(test, feature = "evidence"))]
 pub(crate) fn phase_locked_phase_vocoder(
     input: &[Sample],
     target_len: usize,

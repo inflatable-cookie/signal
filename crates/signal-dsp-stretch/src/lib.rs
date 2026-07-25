@@ -48,6 +48,7 @@
 #![warn(missing_docs)]
 
 mod artifact_plan;
+#[cfg(any(test, feature = "evidence"))]
 mod benchmark;
 mod cache_identity;
 #[cfg(any(test, feature = "evidence"))]
@@ -70,25 +71,24 @@ mod render_integrity;
 mod tonal_texture;
 #[cfg(any(test, feature = "evidence"))]
 mod transient_detail;
+mod transient_smear;
 
 pub use artifact_plan::{
     plan_offline_stretch_chunks, StretchOfflineChunk, StretchOfflineChunkConfig,
     StretchOfflineChunkPlan, DEFAULT_OFFLINE_STRETCH_CHUNK_OVERLAP_FRAMES,
     DEFAULT_OFFLINE_STRETCH_CHUNK_SOURCE_FRAMES,
 };
+#[cfg(any(test, feature = "evidence"))]
 pub use benchmark::{
     assess_stretch_metrics, compare_sustained_material_coherence,
     compare_synthetic_realtime_preview_backends, compare_synthetic_stretch_backends,
-    detect_stretch_transients, detect_stretch_transients_with_policy,
     format_stretch_acceptance_report, format_stretch_quality_priority_report,
     format_synthetic_stretch_comparison_report, generate_synthetic_stretch_audio,
     measure_draft_loop_boundary_click, measure_draft_stereo_image_delta,
     measure_draft_transient_smear, measure_dynamic_segment_seam_click, measure_loop_boundary_click,
     measure_pitch_shift_error_cents, measure_stereo_image_delta,
     measure_transient_reset_loop_boundary_click, measure_transient_reset_stereo_image_delta,
-    measure_transient_reset_transient_smear, measure_transient_smear,
-    measure_transient_smear_with_output_recovery_policy, measure_transient_smear_with_policies,
-    measure_transient_smear_with_policy, output_length_drift_samples,
+    measure_transient_reset_transient_smear, output_length_drift_samples,
     prioritize_stretch_quality_work, synthetic_stretch_corpus_cases, StretchAcceptanceReport,
     StretchAcceptanceSeverity, StretchAcceptanceStatus, StretchBenchmarkBackend,
     StretchBenchmarkComparisonOutcome, StretchBenchmarkPath, StretchCoherenceComparison,
@@ -99,7 +99,6 @@ pub use benchmark::{
     StretchMetricValue, StretchPitchShiftMeasurement, StretchQualityPriority,
     StretchQualityWorkArea, StretchStereoImageMeasurement, StretchSyntheticAudio,
     StretchSyntheticBenchmarkComparison, StretchSyntheticBenchmarkComparisonReport,
-    StretchTransientDetectorPolicy, StretchTransientEvent, StretchTransientSmearMeasurement,
     STRETCH_BENCHMARK_CORPUS, STRETCH_CORPUS_MANIFEST, STRETCH_CORPUS_MANIFEST_ENTRIES,
     STRETCH_CORPUS_SOURCE_POLICY,
 };
@@ -146,6 +145,13 @@ pub use tonal_texture::{measure_tonal_texture, StretchTonalTextureMeasurement};
 pub use transient_detail::{
     measure_transient_detail, measure_transient_event_detail, StretchTransientDetailMeasurement,
     StretchTransientEventDetail,
+};
+#[cfg(any(test, feature = "evidence"))]
+pub use transient_smear::{
+    detect_stretch_transients, detect_stretch_transients_with_policy, measure_transient_smear,
+    measure_transient_smear_with_output_recovery_policy, measure_transient_smear_with_policies,
+    measure_transient_smear_with_policy, StretchTransientDetectorPolicy, StretchTransientEvent,
+    StretchTransientSmearMeasurement,
 };
 
 use phase_vocoder::{
@@ -2281,6 +2287,7 @@ pub(crate) fn dynamic_ratio_output_frames(
         .sum()
 }
 
+#[cfg(any(test, feature = "evidence"))]
 pub(crate) fn dynamic_ratio_output_boundaries(
     input_frames: usize,
     ratio_curve: &[StretchRatioPoint],
@@ -2507,7 +2514,7 @@ fn should_select_compression_short_window(
         return false;
     }
 
-    let current_smear = measure_transient_smear(
+    let current_smear = transient_smear::measure_selector_transient_smear(
         input,
         current_output,
         ratio,
@@ -2538,7 +2545,7 @@ fn should_select_expansion_short_window(
         return false;
     }
 
-    let current_smear = measure_transient_smear(
+    let current_smear = transient_smear::measure_selector_transient_smear(
         input,
         current_output,
         ratio,
@@ -2551,7 +2558,7 @@ fn should_select_expansion_short_window(
 
     let mut draft = PhaseVocoderStretcher::new(ratio);
     let draft_output = draft.stretch_mono(input);
-    let draft_smear = measure_transient_smear(
+    let draft_smear = transient_smear::measure_selector_transient_smear(
         input,
         &draft_output,
         ratio,

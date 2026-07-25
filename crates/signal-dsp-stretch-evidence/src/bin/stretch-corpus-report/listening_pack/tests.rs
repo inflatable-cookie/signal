@@ -23,12 +23,12 @@ fn level_matching_uses_common_rms_and_peak_ceiling() {
 
 #[test]
 fn blind_pack_exports_one_level_matched_pair_per_required_family() {
-    let root = PathBuf::from(format!(
-        "target/stretch-blind-pack-test-{}",
+    let root = std::env::temp_dir().join(format!(
+        "signal-stretch-blind-pack-test-{}",
         std::process::id()
     ));
-    let source_path = PathBuf::from(format!(
-        "target/stretch-blind-pack-source-test-{}.wav",
+    let source_path = std::env::temp_dir().join(format!(
+        "signal-stretch-blind-pack-source-test-{}.wav",
         std::process::id()
     ));
     let samples = (0..4_096)
