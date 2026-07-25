@@ -96,7 +96,7 @@ strict lane.
 
 ## Next Task
 
-Execute `g10.035` Batch 35.5 only. Create the newly named disposable worktree,
-restore and hash-prove the exact Batch 35.3 candidate source, pass conformance
-twice, freeze the new acoustic checkpoint, and restart the corrected gate at
-identity/parity.
+Execute `g10.035` Batch 35.6 only as documentation. Reject the tested
+Automatic route shape, assess whether one materially different complete
+architecture remains justified, and freeze either that direction or
+explicit-mode closure.

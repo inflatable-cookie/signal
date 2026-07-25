@@ -318,13 +318,13 @@ The current package-level naming proposal is recorded in
 - `g10.035` selects one future opt-in Automatic intent. Transparent owns
   through `4N`, Transparent and neutral Dream transition over `4N..=8N`, and
   Dream owns `8N..=16N`. Cyclic remains explicit. The complete private route
-  brief is corrected after an evidence-invalid first checkpoint; one exact
-  replay is ready.
+  brief is corrected after an evidence-invalid first checkpoint. Its exact
+  replay then rejects the fixed blend at synthetic pitch.
 
 ## Next Task
 
-Execute `g10.035` Batch 35.5 only. Restore and hash-prove the exact Batch 35.3
-`ExactTargetTransparentDreamRouter` source in its newly named disposable
-worktree, pass conformance twice, and restart the corrected gate at
-identity/parity. Keep all public, runtime, cache, artifact, UI, Loophole, and
-Chorus work blocked.
+Execute `g10.035` Batch 35.6 only as documentation. Reject the tested route
+shape, assess whether one materially different complete Automatic architecture
+remains justified, and freeze either that direction or explicit-mode closure.
+Keep all public, runtime, cache, artifact, UI, Loophole, and Chorus work
+blocked.

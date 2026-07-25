@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: `g10.035` active; Automatic exact replay Batch 35.5 ready
+Status: `g10.035` active; Automatic reassessment Batch 35.6 ready
 Updated: 2026-07-25
 
 ## Why this generation matters now
@@ -177,7 +177,8 @@ The 2026-07-19 consolidation reset is authoritative.
   conformance-complete Automatic checkpoint, then stops at its first acoustic
   owner because byte-exact Transparent and a misplaced universal peak ceiling
   conflict. Batch 35.4 corrects gate ownership without changing candidate
-  bytes. One exact replay is ready as Batch 35.5.
+  bytes. Batch 35.5 replays the exact source and rejects the route at
+  synthetic pitch. Batch 35.6 is ready as documentation.
 - `g10.028` RealtimePreview source-fill and all render-plane integration remain
   paused.
 
@@ -338,8 +339,9 @@ Do not start Loophole or Chorus planning from Signal internals.
     opt-in Transparent/Dream Automatic intent over exact `0.5N..=16N` with a
     `4N..=8N` transition; Batch 35.2 freezes the complete private route;
     Batch 35.3 produces one evidence-invalid checkpoint; Batch 35.4 corrects
-    peak-gate ownership without candidate tuning; Batch 35.5 is ready as one
-    exact replay; public work remains conditional
+    peak-gate ownership without candidate tuning; Batch 35.5 rejects the exact
+    replay at synthetic pitch; Batch 35.6 is ready for product and architecture
+    reassessment; public work remains blocked
 
 ## Stretch Boundary
 
@@ -898,14 +900,20 @@ acoustic or listening owner ran.
 
 Batch 35.4 marks the checkpoint evidence-invalid. Pure owner controls inherit
 their admitted owner integrity rules; interior route rows retain the
-sample-aligned-arm peak bound. No renderer or evidence bytes change. Batch
-35.5 is ready for one exact replay under new isolation identity. No public
-route, cache, artifact, dynamic ratio, runtime, UI, Loophole, or Chorus work is
-ready.
+sample-aligned-arm peak bound. No renderer or evidence bytes change.
+
+Batch 35.5 freezes replay checkpoint `db2a02d3`. Compile, both conformance
+rounds, non-acoustic regression `204/204`, and identity/parity `150/150` pass.
+Pitch rejects low tone at `6N`, `110 Hz`: Automatic error is
+`8.717736874188192` cents against a worse-arm error of
+`6.277316077755877` cents and the frozen `1`-cent allowance. No later
+synthetic or listening owner runs. Batch 35.6 is ready as documentation. No
+public route, cache, artifact, dynamic ratio, runtime, UI, Loophole, or Chorus
+work is ready.
 
 ## Next Task
 
-Execute `g10.035` Batch 35.5 only. Create the newly named disposable worktree,
-restore and hash-prove the exact Batch 35.3 candidate source, pass conformance
-twice, freeze the new acoustic checkpoint, and restart the corrected gate at
-identity/parity.
+Execute `g10.035` Batch 35.6 only as documentation. Reject the tested route
+shape at product authority, assess whether one materially different complete
+Automatic architecture remains justified, and freeze either that direction or
+explicit-mode closure.

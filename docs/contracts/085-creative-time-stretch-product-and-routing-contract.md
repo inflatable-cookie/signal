@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: public v4 active; Automatic exact replay ready
+Status: public v4 active; Automatic route rejected; reassessment ready
 Owner: core-product
 Updated: 2026-07-25
 Related contracts: `046`, `048`, `084`
@@ -2398,9 +2398,29 @@ The replay must reconstruct and hash-prove the frozen source before two fresh
 conformance rounds. It then restarts the corrected gate at its first owner.
 Public Automatic remains blocked.
 
+Batch 35.5 freezes replay checkpoint
+`db2a02d35f39a035e44803d0cc26861dcebe2534`, tree
+`ab8bf005fe8fe72522e3edc23b617d2ac37b5cd8`. Compile, two unchanged
+construction `1/1` and structural `8/8` rounds, and non-acoustic regression
+`204/204` pass. Identity/parity then passes `150` rows.
+
+The next owner rejects the route on low tone at `N=96000`, `T=576000=6N`,
+`110 Hz`. Transparent error is `0.16404282837539305` cents, Dream error is
+`6.277316077755877` cents, and Automatic error is
+`8.717736874188192` cents. Automatic is `2.440420796432315` cents worse
+than the worse arm, beyond the frozen `1`-cent allowance.
+
+This is valid renderer evidence, not another authority defect. No later
+synthetic owner, long-form render, mono listening, or linked-stereo review
+runs. The fixed render-wide linear-amplitude route is rejected without tuning,
+repair, or replay. Its worktree, branch, generated evidence, and build state
+are deleted after the Batch 35.5 docs closeout. The acoustic ref remains
+through the Batch 35.6 docs-only reassessment. Public Automatic remains
+unimplemented.
+
 ## Next Task
 
-Execute `g10.035` Batch 35.5 only. Reconstruct the unchanged Batch 35.3
-candidate bytes in the newly named disposable worktree, prove every frozen
-hash, pass conformance twice, freeze the new acoustic ref, and restart the
-corrected gate from identity/parity.
+Execute `g10.035` Batch 35.6 only. Reject the tested
+`ExactTargetTransparentDreamRouter` route shape at product authority, then
+decide whether Automatic retains a materially different complete architecture
+path or closes in favour of the explicit Transparent, Dream, and Cyclic modes.

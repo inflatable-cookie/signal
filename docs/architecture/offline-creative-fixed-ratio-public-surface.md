@@ -619,8 +619,7 @@ Loophole, or Chorus surface changed.
 
 ## Next Task
 
-Execute `g10.035` Batch 35.5 only. Restore and hash-prove the exact Batch 35.3
-`ExactTargetTransparentDreamRouter` source in its newly named disposable
-worktree, pass conformance twice, and restart the corrected gate at
-identity/parity. Automatic remains unimplemented on `main`; explicit
-Transparent, Dream, and Cyclic stay unchanged.
+Execute `g10.035` Batch 35.6 only as documentation. Reject the tested
+Automatic route shape and decide whether one materially different complete
+architecture remains justified. Automatic remains unimplemented on `main`;
+explicit Transparent, Dream, and Cyclic stay unchanged.

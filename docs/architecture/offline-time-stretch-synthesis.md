@@ -116,7 +116,7 @@ ledger remains in git history at `1d1b02f1`.
 ## Next Task
 
 Retain this frozen baseline and keep its successor lane closed. Execute
-`g10.035` Batch 35.5 only in its newly named disposable worktree: restore and
-hash-prove the exact Batch 35.3 Automatic candidate, then restart its corrected
-evidence order without changing this production renderer, public APIs, or
-Contract `084`.
+`g10.035` Batch 35.6 only as documentation: reject the tested Automatic route
+shape and decide whether a materially different complete architecture remains
+justified without changing this production renderer, public APIs, or Contract
+`084`.

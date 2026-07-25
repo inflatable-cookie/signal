@@ -1,6 +1,6 @@
 # 035 - Creative Stretch Product Coverage And Routing Audit
 
-Status: active; Batch 35.4 complete; Batch 35.5 ready
+Status: active; Batch 35.5 complete; Batch 35.6 ready
 Owner: core-product
 Created: 2026-07-25
 Depends on: `g10.030`, `g10.033`, `g10.034`
@@ -37,8 +37,8 @@ The visible runway is:
 6. minimal public admission only after objective and listening passage
 7. docs-only closeout
 
-Batch 35.4 is complete. Batch 35.5 is the only ready work. Public
-implementation remains conditional.
+Batch 35.5 is complete. Batch 35.6 is the only ready work. Public
+implementation remains blocked.
 
 ## Goals
 
@@ -49,7 +49,7 @@ implementation remains conditional.
 - [x] freeze one automatic target envelope and transition interval for a
   complete brief
 - [x] freeze exact route mechanics, identity, bounds, and evidence
-- [ ] admit or reject one isolated fixed-ratio route
+- [x] reject one isolated fixed-ratio route on valid synthetic evidence
 - [ ] keep public API and product integration blocked until acoustic passage
 
 ## Non-Goals
@@ -234,33 +234,51 @@ Result:
 
 ## Batch 35.5 - Exact Candidate Replay
 
-Status: ready
+Status: complete; rejected at synthetic pitch
 
 Restore only the frozen candidate source, tests, nextest profile, conformance
 ledger, and source manifest from checkpoint `50c3d028` into the newly named
 disposable worktree. Keep current canonical docs from `main`.
 
-- [ ] require all old Batch 35.3 and new Batch 35.5 isolation identities absent
-- [ ] restore and hash-prove every source named by the corrected brief
-- [ ] record current `main`, restored checkpoint/tree, toolchain, platform,
+- [x] require all old Batch 35.3 and new Batch 35.5 isolation identities absent
+- [x] restore and hash-prove every source named by the corrected brief
+- [x] record current `main`, restored checkpoint/tree, toolchain, platform,
   Effigy, and nextest identity
-- [ ] pass compile, construction, and structural conformance twice unchanged
-- [ ] freeze the new acoustic ref directly at the clean conformance commit
-- [ ] restart the complete corrected synthetic gate from identity/parity
-- [ ] continue through mono and stereo listening only in the frozen order
-- [ ] stop on the first failure or explicit listening handoff
+- [x] pass compile, construction, and structural conformance twice unchanged
+- [x] freeze the new acoustic ref directly at the clean conformance commit
+- [x] restart the complete corrected synthetic gate from identity/parity
+- [x] stop on the first failure before later synthetic or listening work
 
 No candidate equation, evidence source, comparator, seed, assertion other than
 the corrected peak ownership, public API, or product integration may change.
 
-## Batch 35.6 - Public Route Decision
+Result:
 
-Status: planned; blocked on Batch 35.5
+- checkpoint `db2a02d35f39a035e44803d0cc26861dcebe2534`,
+  tree `ab8bf005fe8fe72522e3edc23b617d2ac37b5cd8`
+- compile, two construction `1/1` and structural `8/8` rounds, and non-acoustic
+  regression `204/204` pass
+- corrected identity/parity passes `150` rows
+- pitch rejects low tone at `6N`, `110 Hz`
+- Transparent error is `0.16404282837539305` cents, Dream error is
+  `6.277316077755877` cents, and Automatic error is
+  `8.717736874188192` cents
+- Automatic is `2.440420796432315` cents worse than the worse arm against the
+  frozen `1`-cent allowance
+- no later synthetic owner, long-form render, mono listening, or linked-stereo
+  review runs
+- the worktree, branch, generated evidence, and build state are deleted after
+  this closeout; the acoustic ref remains through Batch 35.6 reassessment
+- nothing enters `main`
 
-Documentation only. Admit or reject Automatic. If admitted, freeze public
-vocabulary, discovery, validation, errors, behavior version, cache-identity
-implications, and direct-versus-routed dispatch. Explicit modes must remain
-source-compatible and byte-identical.
+## Batch 35.6 - Public Route Decision And Architecture Reassessment
+
+Status: ready
+
+Documentation only. Reject the tested route shape. Decide whether Automatic
+retains one materially different complete architecture path or closes in
+favour of explicit Transparent, Dream, and Cyclic modes. Do not reinterpret
+the pitch receipt, tune the blend, or start implementation.
 
 ## Batch 35.7 - Minimal Public Admission
 
@@ -286,7 +304,8 @@ planning checkpoint.
 - [x] no current owner is called seamless without transition evidence
 - [x] Batch 35.3 has one frozen, evidence-invalid checkpoint
 - [x] Batch 35.4 corrects gate ownership without candidate tuning
-- [x] only Batch 35.5 is ready
+- [x] Batch 35.5 produces one valid route rejection
+- [x] only Batch 35.6 is ready
 - [x] public work remains conditional
 - [x] planning changes documentation only
 - [x] the complete brief owns every map, scheduler, boundary, stereo, memory,
@@ -295,7 +314,7 @@ planning checkpoint.
 
 ## Next Task
 
-Execute Batch 35.5 only. Create the newly named disposable worktree, restore
-and hash-prove the exact Batch 35.3 candidate source, pass conformance twice,
-freeze the new acoustic checkpoint, then restart the corrected gate at
-identity/parity.
+Execute Batch 35.6 only as documentation. Reject the tested
+`ExactTargetTransparentDreamRouter` shape at product authority, assess whether
+one materially different complete Automatic architecture remains justified,
+and freeze either that direction or explicit-mode closure.

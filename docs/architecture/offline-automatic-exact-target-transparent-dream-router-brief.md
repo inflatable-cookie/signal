@@ -1,6 +1,6 @@
 # Offline Automatic ExactTargetTransparentDreamRouter Brief
 
-Status: corrected; one exact replay ready
+Status: rejected at synthetic pitch
 Owner: dsp
 Updated: 2026-07-25
 Contract: `085`
@@ -66,6 +66,36 @@ This correction changes no owner output, route equation, map, weight, source,
 seed, comparator, listening policy, or production surface. It authorizes one
 exact source replay under new isolation identity. It does not authorize
 candidate tuning or a second renderer.
+
+## Exact Replay Result
+
+Batch 35.5 freezes acoustic checkpoint
+`db2a02d35f39a035e44803d0cc26861dcebe2534`, tree
+`ab8bf005fe8fe72522e3edc23b617d2ac37b5cd8`, at
+`refs/signal-evidence/creative/exact-target-transparent-dream-router/35-5-acoustic`.
+
+Compile, two unchanged construction `1/1` and structural `8/8` rounds, and
+non-acoustic regression `204/204` pass. The corrected identity/parity owner
+passes all `150` rows. The formerly contradictory pure Transparent row
+therefore clears under the corrected authority.
+
+Pitch then rejects the checkpoint on low tone at `N=96000`,
+`T=576000=6N`, `110 Hz`:
+
+| Contribution | Error |
+| --- | ---: |
+| Transparent | `0.16404282837539305` cents |
+| Dream | `6.277316077755877` cents |
+| Automatic | `8.717736874188192` cents |
+
+Automatic is `2.440420796432315` cents worse than the worse aligned arm. The
+terminal allowance is `1` cent. No later synthetic owner, long-form render,
+mono listening, or linked-stereo review runs.
+
+This is valid renderer rejection. The fixed render-wide samplewise
+linear-amplitude blend does not preserve the owners' tonal result at this
+interior control. Do not change weight, interval, phase, alignment, gain,
+window, threshold, estimator, or source around this checkpoint.
 
 ## Immutable Inputs
 
@@ -640,12 +670,12 @@ RealtimePreview, runtime, UI, Loophole, and Chorus remain blocked for Batch
 The brief fixes every request, owner, map, schedule, weight, blend, boundary,
 stereo, identity, memory, evidence, rejection, cleanup, and admission choice.
 Batch 35.3 is evidence-invalid and closed. Batch 35.4 corrects gate ownership
-without changing the candidate. Batch 35.5 is ready for one exact replay and
-nothing else.
+without changing the candidate. Batch 35.5 completes one exact replay and
+rejects this route at synthetic pitch. No implementation or admission batch is
+ready.
 
 ## Next Task
 
-Execute `g10.035` Batch 35.5 only. Create the newly named isolated worktree,
-restore and hash-prove the frozen Batch 35.3 candidate source, run conformance
-twice, freeze the new acoustic checkpoint, and restart the corrected gate from
-identity/parity.
+Execute `g10.035` Batch 35.6 only as documentation. Reject this route shape at
+product authority and decide whether Automatic retains one materially
+different complete architecture path or closes in favour of explicit modes.
