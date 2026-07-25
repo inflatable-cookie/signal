@@ -1,8 +1,9 @@
+#[cfg(any(test, feature = "evidence"))]
 use crate::{
-    compare_synthetic_stretch_backends, prioritize_stretch_quality_work, OfflineHighQualityPath,
-    StretchBackendTier, StretchBenchmarkComparisonOutcome,
-    StretchSyntheticBenchmarkComparisonReport,
+    compare_synthetic_stretch_backends, prioritize_stretch_quality_work,
+    StretchBenchmarkComparisonOutcome, StretchSyntheticBenchmarkComparisonReport,
 };
+use crate::{OfflineHighQualityPath, StretchBackendTier};
 
 /// Promotion decision for a Signal-owned stretch tier.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -77,6 +78,7 @@ pub struct StretchProductQualityEvidence {
 ///
 /// Passing this policy is necessary but cannot open product-facing promotion
 /// without absolute integrity, comparator, and completed listening evidence.
+#[cfg(any(test, feature = "evidence"))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct StretchSyntheticPromotionPolicy {
     /// Minimum number of comparison rows required in the synthetic report.
@@ -91,6 +93,7 @@ pub struct StretchSyntheticPromotionPolicy {
 
 /// Build the current OfflineHighQuality regression-evidence receipt from
 /// Signal's synthetic comparison report and the default synthetic policy.
+#[cfg(any(test, feature = "evidence"))]
 pub fn current_synthetic_offline_high_quality_promotion_receipt(
     evidence_id: impl Into<String>,
 ) -> StretchPromotionReceipt {
@@ -101,6 +104,7 @@ pub fn current_synthetic_offline_high_quality_promotion_receipt(
     )
 }
 
+#[cfg(any(test, feature = "evidence"))]
 impl Default for StretchSyntheticPromotionPolicy {
     fn default() -> Self {
         Self {
@@ -189,6 +193,7 @@ impl StretchPromotionReceipt {
 
     /// Build an OfflineHighQuality regression receipt from the synthetic
     /// comparison report and acceptance policy.
+    #[cfg(any(test, feature = "evidence"))]
     pub fn from_synthetic_offline_high_quality_report(
         evidence_id: impl Into<String>,
         report: &StretchSyntheticBenchmarkComparisonReport,

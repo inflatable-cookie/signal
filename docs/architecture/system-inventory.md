@@ -2,7 +2,7 @@
 
 Status: active
 Owner: core-product
-Updated: 2026-07-23
+Updated: 2026-07-25
 Vision refs: `docs/vision/001-signal-vision.md`
 
 ## Purpose
@@ -49,13 +49,17 @@ Signal's active implementation surface is the Rust workspace under `crates/`
   - deterministic offline/streaming mono resampler for analysis input prep;
     not the realtime path
 - `signal-dsp-stretch`
-  - frozen Signal-owned offline and preview time-stretch baselines, cache
-    identity, callback-state proof, compact external comparator, and long-form
-    blind listening pack; transparent successor admission is closed under
+  - frozen Signal-owned offline and preview time-stretch baselines, creative
+    renderers, cache identity, promotion receipts, and callback-state proof;
+    transparent successor admission is closed under
     `g10.030`; `g10.031` and Contract `085` publicly admit exact fixed `4x`,
     `8x`, and `16x` neutral `Dream` through an offline whole-buffer API;
     automatic routing, creative cache/artifacts, dynamic ratio, and product
     integration remain absent
+- `signal-dsp-stretch-evidence`
+  - comparator, corpus-selection, behavioural-probe, and blind-listening
+    command tools; enables the stretch crate's opt-in `evidence` API without
+    entering production render or artifact-planning dependency graphs
 
 ### Analysis substrate
 

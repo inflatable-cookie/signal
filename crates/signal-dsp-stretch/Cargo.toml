@@ -7,13 +7,14 @@ repository.workspace = true
 publish = false
 description = "Time-stretching backends behind the TimeStretcher trait for Signal."
 
+[features]
+default = []
+evidence = []
+
 [lints]
 workspace = true
 
 [dependencies]
-csv = { workspace = true }
-hound = { workspace = true }
 rustfft = { workspace = true }
 signal-dsp-resample = { workspace = true }
 signal-primitives = { workspace = true }
-symphonia = { workspace = true }

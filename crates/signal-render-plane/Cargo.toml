@@ -10,6 +10,7 @@ description = "Real-time render plane: compiled preallocated plans executed allo
 [dev-dependencies]
 signal-hardware = { workspace = true }
 signal-hardware-cpal = { workspace = true }
+signal-dsp-stretch = { workspace = true, features = ["evidence"] }
 
 [[example]]
 name = "render_soak"

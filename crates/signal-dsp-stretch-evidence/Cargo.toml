@@ -1,0 +1,18 @@
+[package]
+name = "signal-dsp-stretch-evidence"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+description = "Comparator, corpus, and listening tools for Signal time stretching."
+
+[lints]
+workspace = true
+
+[dependencies]
+csv = { workspace = true }
+hound = { workspace = true }
+rustfft = { workspace = true }
+signal-dsp-stretch = { workspace = true, features = ["evidence"] }
+symphonia = { workspace = true }

@@ -8,18 +8,17 @@ use std::fs;
 use public_host_edge_media::{public_local_media_fixture_path, write_public_test_wav};
 use public_host_edge_stretch::{
     accepted_stretch_promotion_receipt, cache_consumption_options, cache_consumption_spec,
-    host_stretch_identity_input, host_stretch_source, rejected_stretch_policy_request,
+    host_stretch_identity_input, host_stretch_source, rejected_stretch_receipt,
     stretch_build_request, CACHE_CONSUMPTION_STAGE_ID,
 };
 use signal_host_local::LocalRuntimeHost;
 use signal_render_plane::{
-    build_offline_stretch_artifact_cache_handoff_with_synthetic_policy,
-    build_offline_stretch_artifact_render_source_with_synthetic_policy,
-    materialize_offline_stretch_artifact_pcm, plan_offline_stretch_artifact_with_synthetic_policy,
-    render_plan_to_pcm, OfflineStretchArtifactCacheDecision,
-    OfflineStretchArtifactCacheDecisionKind, OfflineStretchArtifactCacheHandoff,
-    OfflineStretchArtifactMaterializeError, OfflineStretchArtifactReadiness,
-    OfflineStretchArtifactRenderCacheBridge, OfflineStretchArtifactRenderSource,
+    build_offline_stretch_artifact_cache_handoff, build_offline_stretch_artifact_render_source,
+    materialize_offline_stretch_artifact_pcm, plan_offline_stretch_artifact, render_plan_to_pcm,
+    OfflineStretchArtifactCacheDecision, OfflineStretchArtifactCacheDecisionKind,
+    OfflineStretchArtifactCacheHandoff, OfflineStretchArtifactMaterializeError,
+    OfflineStretchArtifactReadiness, OfflineStretchArtifactRenderCacheBridge,
+    OfflineStretchArtifactRenderSource,
     OfflineStretchArtifactScope as RenderOfflineStretchArtifactScope, RenderSource,
 };
 use signal_runtime::{
@@ -332,34 +331,39 @@ fn local_shared_host_edge_blocks_rejected_offline_stretch_cache_artifacts() {
         "projection-host-local-rejected",
     );
     let source = host_stretch_source(0.125, 480);
-    let policy_request = rejected_stretch_policy_request(
+    let receipt = rejected_stretch_receipt("stretch-corpus:host-local-rejected-cache");
+    let rejected_plan = plan_offline_stretch_artifact(
         RenderOfflineStretchArtifactScope::RenderCache,
         &identity_input,
-        "stretch-corpus:host-local-rejected-cache",
-    );
-    let rejected_plan = plan_offline_stretch_artifact_with_synthetic_policy(policy_request)
-        .expect("rejected policy should still produce a non-ready plan");
+        receipt.clone(),
+    )
+    .expect("incomplete receipt should still produce a non-ready plan");
     assert_eq!(
         rejected_plan.readiness,
         OfflineStretchArtifactReadiness::AwaitingCorpusEvidence
     );
-    let build_request = stretch_build_request(policy_request, &source);
+    let build_request = stretch_build_request(
+        RenderOfflineStretchArtifactScope::RenderCache,
+        &identity_input,
+        receipt,
+        &source,
+    );
 
     assert_eq!(
-        build_offline_stretch_artifact_cache_handoff_with_synthetic_policy(build_request),
+        build_offline_stretch_artifact_cache_handoff(build_request.clone()),
         Err(OfflineStretchArtifactMaterializeError::NotReady(
             OfflineStretchArtifactReadiness::AwaitingCorpusEvidence
         ))
     );
     assert_eq!(
-        build_offline_stretch_artifact_render_source_with_synthetic_policy(build_request),
+        build_offline_stretch_artifact_render_source(build_request.clone()),
         Err(OfflineStretchArtifactMaterializeError::NotReady(
             OfflineStretchArtifactReadiness::AwaitingCorpusEvidence
         ))
     );
     let mut cache_bridge = OfflineStretchArtifactRenderCacheBridge::new();
     assert_eq!(
-        cache_bridge.resolve_with_synthetic_policy(build_request),
+        cache_bridge.resolve(build_request),
         Err(OfflineStretchArtifactMaterializeError::NotReady(
             OfflineStretchArtifactReadiness::AwaitingCorpusEvidence
         ))

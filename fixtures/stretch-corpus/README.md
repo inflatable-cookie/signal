@@ -8,9 +8,11 @@ Scope: `g10.021` Signal-native high-quality stretch evidence
 This tree defines the first real-audio corpus shape for Signal stretch
 evidence. It does not contain licensed source audio.
 
-Signal-generated cases stay inline in `signal-dsp-stretch`. Operator-provided
-listening material may be placed under `licensed-listening/` on a local
-machine, but those files must not be committed.
+Signal-generated cases stay behind the `signal-dsp-stretch` evidence feature.
+Runnable corpus tools live in `signal-dsp-stretch-evidence`.
+Operator-provided listening material may be placed under
+`licensed-listening/` on a local machine, but those files must not be
+committed.
 
 ## Layout
 
@@ -36,7 +38,7 @@ machine, but those files must not be committed.
 Generate the deterministic draft-vs-OfflineHighQuality report:
 
 ```bash
-cargo run -p signal-dsp-stretch --bin stretch-corpus-report -- \
+cargo run -p signal-dsp-stretch-evidence --bin stretch-corpus-report -- \
   --report-name stretch-corpus-v1-local \
   --projection-epoch projection:local \
   --listening-source-manifest target/stretch-corpus-fma-review-seed.tsv \
@@ -91,7 +93,7 @@ Add optional external rendered-output comparisons with repeated
 `--external-benchmark-render` groups:
 
 ```bash
-cargo run -p signal-dsp-stretch --bin stretch-corpus-report -- \
+cargo run -p signal-dsp-stretch-evidence --bin stretch-corpus-report -- \
   --report-name stretch-corpus-v1-local \
   --projection-epoch projection:local \
   --external-benchmark-tool rubberband-cli \
@@ -110,7 +112,7 @@ on Rubber Band.
 The FMA large bundle can seed local-only listening candidates:
 
 ```bash
-cargo run -p signal-dsp-stretch --bin fma-stretch-corpus-select -- \
+cargo run -p signal-dsp-stretch-evidence --bin fma-stretch-corpus-select -- \
   --fma-root /Users/tom/Downloads/FMA \
   --per-family 5 \
   --output target/stretch-corpus-fma-selection.md \

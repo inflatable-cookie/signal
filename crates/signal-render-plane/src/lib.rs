@@ -38,16 +38,13 @@ pub use convolution_reverb::ConvolutionReverbProcessor;
 mod offline;
 
 pub use offline::{
-    apply_soft_limiter_to_pcm, build_offline_stretch_artifact_cache_handoff_with_synthetic_policy,
-    build_offline_stretch_artifact_pcm_with_synthetic_policy,
-    build_offline_stretch_artifact_render_source_with_synthetic_policy,
-    materialize_offline_stretch_artifact_pcm, plan_offline_stretch_artifact,
-    plan_offline_stretch_artifact_with_synthetic_policy, render_plan_to_pcm, write_wav,
-    OfflineRenderOptions, OfflineRenderOutput, OfflineStretchArtifactBuildRequest,
-    OfflineStretchArtifactCacheDecision, OfflineStretchArtifactCacheDecisionKind,
-    OfflineStretchArtifactCacheHandoff, OfflineStretchArtifactMaterializationReceipt,
-    OfflineStretchArtifactMaterializeError, OfflineStretchArtifactPcm, OfflineStretchArtifactPlan,
-    OfflineStretchArtifactPlanError, OfflineStretchArtifactPolicyRequest,
+    apply_soft_limiter_to_pcm, build_offline_stretch_artifact_cache_handoff,
+    build_offline_stretch_artifact_render_source, materialize_offline_stretch_artifact_pcm,
+    plan_offline_stretch_artifact, render_plan_to_pcm, write_wav, OfflineRenderOptions,
+    OfflineRenderOutput, OfflineStretchArtifactBuildRequest, OfflineStretchArtifactCacheDecision,
+    OfflineStretchArtifactCacheDecisionKind, OfflineStretchArtifactCacheHandoff,
+    OfflineStretchArtifactMaterializationReceipt, OfflineStretchArtifactMaterializeError,
+    OfflineStretchArtifactPcm, OfflineStretchArtifactPlan, OfflineStretchArtifactPlanError,
     OfflineStretchArtifactReadiness, OfflineStretchArtifactRenderCacheBridge,
     OfflineStretchArtifactRenderSource, OfflineStretchArtifactScope, WavBitDepth,
 };

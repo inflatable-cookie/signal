@@ -937,11 +937,19 @@ dependencies = [
 name = "signal-dsp-stretch"
 version = "0.1.0"
 dependencies = [
- "csv",
- "hound",
  "rustfft",
  "signal-dsp-resample",
  "signal-primitives",
+]
+
+[[package]]
+name = "signal-dsp-stretch-evidence"
+version = "0.1.0"
+dependencies = [
+ "csv",
+ "hound",
+ "rustfft",
+ "signal-dsp-stretch",
  "symphonia",
 ]
 

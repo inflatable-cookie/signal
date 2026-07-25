@@ -58,6 +58,8 @@ crates/
   #                              interpolation table (the RT-path resampler)
   signal-dsp-spectral/         # FFT/STFT windows and spectral transforms
   signal-dsp-resample/         # Offline/streaming mono resampler for analysis input prep
+  signal-dsp-stretch/          # Production stretch renderers, cache identity, promotion receipts
+  signal-dsp-stretch-evidence/ # Comparator, corpus, and blind-listening command tools
 
   # Analysis
   signal-analysis/             # Shared analysis traits, result types, input prep

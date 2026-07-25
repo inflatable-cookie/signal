@@ -18,11 +18,10 @@ use crate::{
     RenderPlaneExecutor, RenderPluginProcessor, RenderSampleBuffer, MAX_BLOCK_FRAMES,
 };
 use signal_dsp_stretch::{
-    compare_synthetic_stretch_backends, plan_offline_stretch_chunks, stretch_backend_plan,
-    OfflineHighQualityPath, OfflineHighQualityStretcher, StretchBackendStatus, StretchBackendTier,
-    StretchCacheIdentity, StretchCacheIdentityError, StretchCacheIdentityInput,
-    StretchOfflineChunk, StretchOfflineChunkConfig, StretchOfflineChunkPlan,
-    StretchPromotionReceipt, StretchRatioPoint, StretchSyntheticPromotionPolicy,
+    plan_offline_stretch_chunks, stretch_backend_plan, OfflineHighQualityPath,
+    OfflineHighQualityStretcher, StretchBackendStatus, StretchBackendTier, StretchCacheIdentity,
+    StretchCacheIdentityError, StretchCacheIdentityInput, StretchOfflineChunk,
+    StretchOfflineChunkConfig, StretchOfflineChunkPlan, StretchPromotionReceipt, StretchRatioPoint,
 };
 use signal_primitives::SampleRate;
 
@@ -145,24 +144,15 @@ pub struct OfflineStretchArtifactPlan {
     pub product_facing_allowed: bool,
 }
 
-/// Policy-derived offline stretch artifact planning request.
-#[derive(Clone, Copy, Debug)]
-pub struct OfflineStretchArtifactPolicyRequest<'a> {
+/// Receipt-owned offline stretch artifact materialization request.
+#[derive(Clone, Debug)]
+pub struct OfflineStretchArtifactBuildRequest<'a> {
     /// Consumer scope this artifact would serve.
     pub scope: OfflineStretchArtifactScope,
     /// Cache identity input for the artifact candidate.
     pub identity_input: &'a StretchCacheIdentityInput,
-    /// Stable evidence id to attach to the derived promotion receipt.
-    pub evidence_id: &'a str,
-    /// Regression policy applied to Signal's synthetic comparison report.
-    pub promotion_policy: StretchSyntheticPromotionPolicy,
-}
-
-/// Policy-derived offline stretch artifact materialization request.
-#[derive(Clone, Copy, Debug)]
-pub struct OfflineStretchArtifactBuildRequest<'a> {
-    /// Planning and promotion policy inputs for this artifact.
-    pub policy: OfflineStretchArtifactPolicyRequest<'a>,
+    /// Explicit promotion evidence evaluated before product-facing output.
+    pub promotion_receipt: StretchPromotionReceipt,
     /// Decoded source buffer to stretch into a cacheable render source.
     pub source: &'a RenderSampleBuffer,
 }
@@ -195,7 +185,7 @@ pub struct OfflineStretchArtifactRenderSource {
     pub source: crate::RenderSource,
 }
 
-/// Cache write/read handoff for a policy-gated render-cache stretch artifact.
+/// Cache write/read handoff for a promotion-gated render-cache stretch artifact.
 #[derive(Debug, Clone, PartialEq)]
 pub struct OfflineStretchArtifactCacheHandoff {
     /// Stable cache identity hash for lookup/write decisions.
@@ -219,7 +209,7 @@ pub enum OfflineStretchArtifactCacheDecisionKind {
     Invalidated,
 }
 
-/// Render-cache bridge decision for a policy-gated stretch artifact.
+/// Render-cache bridge decision for a promotion-gated stretch artifact.
 #[derive(Debug, Clone, PartialEq)]
 pub struct OfflineStretchArtifactCacheDecision {
     /// Whether the bridge reused an existing handoff or wrote a new one.
@@ -228,7 +218,7 @@ pub struct OfflineStretchArtifactCacheDecision {
     pub handoff: OfflineStretchArtifactCacheHandoff,
 }
 
-/// Control-side render-cache bridge for policy-gated stretch artifacts.
+/// Control-side render-cache bridge for promotion-gated stretch artifacts.
 #[derive(Debug, Clone, Default)]
 pub struct OfflineStretchArtifactRenderCacheBridge {
     handoffs_by_hash: HashMap<String, OfflineStretchArtifactCacheHandoff>,
@@ -277,17 +267,16 @@ impl OfflineStretchArtifactRenderCacheBridge {
             })
     }
 
-    /// Resolve a policy-gated render-cache request against retained handoffs.
+    /// Resolve a promotion-gated render-cache request against retained handoffs.
     ///
-    /// Synthetic evidence alone cannot write a new product-facing handoff. A
-    /// miss returns [`OfflineStretchArtifactMaterializeError::NotReady`] and
-    /// writes nothing while the composite quality gate is incomplete.
-    pub fn resolve_with_synthetic_policy(
+    /// Incomplete promotion evidence cannot write a new product-facing
+    /// handoff. A miss returns
+    /// [`OfflineStretchArtifactMaterializeError::NotReady`] and writes nothing.
+    pub fn resolve(
         &mut self,
         request: OfflineStretchArtifactBuildRequest<'_>,
     ) -> Result<OfflineStretchArtifactCacheDecision, OfflineStretchArtifactMaterializeError> {
         let identity = request
-            .policy
             .identity_input
             .identity()
             .map_err(OfflineStretchArtifactPlanError::InvalidIdentity)?;
@@ -298,7 +287,7 @@ impl OfflineStretchArtifactRenderCacheBridge {
             });
         }
 
-        let handoff = build_offline_stretch_artifact_cache_handoff_with_synthetic_policy(request)?;
+        let handoff = build_offline_stretch_artifact_cache_handoff(request)?;
         self.handoffs_by_hash
             .insert(handoff.cache_identity_hash.clone(), handoff.clone());
         Ok(OfflineStretchArtifactCacheDecision {
@@ -518,20 +507,6 @@ pub fn plan_offline_stretch_artifact(
     })
 }
 
-/// Build an offline stretch artifact plan from Signal's synthetic comparison
-/// report and an explicit regression policy.
-///
-/// Synthetic evidence is regression evidence only. This helper returns an
-/// observable non-ready plan until absolute integrity, external comparator,
-/// and completed real-source listening evidence are supplied through a
-/// composite [`StretchPromotionReceipt`].
-pub fn plan_offline_stretch_artifact_with_synthetic_policy(
-    request: OfflineStretchArtifactPolicyRequest<'_>,
-) -> Result<OfflineStretchArtifactPlan, OfflineStretchArtifactPlanError> {
-    let promotion_receipt = synthetic_policy_promotion_receipt(&request);
-    plan_offline_stretch_artifact(request.scope, request.identity_input, promotion_receipt)
-}
-
 /// Materialize a ready OfflineHighQuality stretch artifact as interleaved
 /// stereo PCM.
 ///
@@ -681,56 +656,36 @@ pub fn materialize_offline_stretch_artifact_pcm_with_chunk_config(
     })
 }
 
-/// Attempt materialization from Signal's synthetic regression report.
-///
-/// Synthetic-only evidence cannot satisfy the composite product-quality gate,
-/// so this call returns [`OfflineStretchArtifactMaterializeError::NotReady`]
-/// and produces no PCM buffer.
-pub fn build_offline_stretch_artifact_pcm_with_synthetic_policy(
-    request: OfflineStretchArtifactBuildRequest<'_>,
-) -> Result<OfflineStretchArtifactPcm, OfflineStretchArtifactMaterializeError> {
-    let promotion_receipt = synthetic_policy_promotion_receipt(&request.policy);
-    materialize_offline_stretch_artifact_pcm(
-        request.policy.scope,
-        request.policy.identity_input,
-        promotion_receipt,
-        request.source,
-    )
-}
-
-/// Attempt to build a synthetic-policy OfflineHighQuality render source.
-///
-/// Synthetic-only evidence returns
-/// [`OfflineStretchArtifactMaterializeError::NotReady`] and does not produce a
-/// product-facing source.
-pub fn build_offline_stretch_artifact_render_source_with_synthetic_policy(
+/// Build a promotion-gated OfflineHighQuality render source.
+pub fn build_offline_stretch_artifact_render_source(
     request: OfflineStretchArtifactBuildRequest<'_>,
 ) -> Result<OfflineStretchArtifactRenderSource, OfflineStretchArtifactMaterializeError> {
-    let artifact = build_offline_stretch_artifact_pcm_with_synthetic_policy(request)?;
+    let artifact = materialize_offline_stretch_artifact_pcm(
+        request.scope,
+        request.identity_input,
+        request.promotion_receipt,
+        request.source,
+    )?;
     Ok(OfflineStretchArtifactRenderSource {
         source: crate::RenderSource::Samples(artifact.buffer.clone()),
         artifact,
     })
 }
 
-/// Attempt to build a synthetic-policy OfflineHighQuality cache handoff.
+/// Build a promotion-gated OfflineHighQuality cache handoff.
 ///
-/// This helper is intentionally scoped to [`OfflineStretchArtifactScope::RenderCache`].
-/// Synthetic-only evidence returns
-/// [`OfflineStretchArtifactMaterializeError::NotReady`] and produces no
-/// cacheable source.
-pub fn build_offline_stretch_artifact_cache_handoff_with_synthetic_policy(
+/// This helper is scoped to [`OfflineStretchArtifactScope::RenderCache`].
+pub fn build_offline_stretch_artifact_cache_handoff(
     request: OfflineStretchArtifactBuildRequest<'_>,
 ) -> Result<OfflineStretchArtifactCacheHandoff, OfflineStretchArtifactMaterializeError> {
-    if request.policy.scope != OfflineStretchArtifactScope::RenderCache {
+    if request.scope != OfflineStretchArtifactScope::RenderCache {
         return Err(
             OfflineStretchArtifactMaterializeError::UnsupportedCacheHandoffScope {
-                scope: request.policy.scope,
+                scope: request.scope,
             },
         );
     }
-    let artifact_source =
-        build_offline_stretch_artifact_render_source_with_synthetic_policy(request)?;
+    let artifact_source = build_offline_stretch_artifact_render_source(request)?;
     let receipt = artifact_source.artifact.receipt.clone();
     Ok(OfflineStretchArtifactCacheHandoff {
         cache_identity_hash: receipt.cache_identity_hash.clone(),
@@ -841,17 +796,6 @@ fn smooth_artifact_chunk_boundaries_interleaved(
             }
         }
     }
-}
-
-fn synthetic_policy_promotion_receipt(
-    request: &OfflineStretchArtifactPolicyRequest<'_>,
-) -> StretchPromotionReceipt {
-    let report = compare_synthetic_stretch_backends();
-    StretchPromotionReceipt::from_synthetic_offline_high_quality_report(
-        request.evidence_id,
-        &report,
-        request.promotion_policy,
-    )
 }
 
 fn static_or_initial_ratio(ratio_curve: &[StretchRatioPoint]) -> f64 {
@@ -1254,12 +1198,13 @@ mod tests {
     use signal_dsp_stretch::{
         measure_dynamic_segment_seam_click, OfflineHighQualityPath, StretchChannelLayout,
         StretchPitchPoint, StretchProductQualityEvidence, StretchPromotionReceipt,
-        StretchPromotionStatus, StretchRatioPoint, StretchSyntheticPromotionPolicy,
-        StretchWarpMarker, REQUIRED_STRETCH_LISTENING_FAMILY_COUNT,
+        StretchPromotionStatus, StretchRatioPoint, StretchWarpMarker,
+        REQUIRED_STRETCH_LISTENING_FAMILY_COUNT,
     };
     use std::sync::Arc;
 
     const MASTER_ID: u64 = 9_000;
+    const REQUIRED_SYNTHETIC_CASE_COUNT: u32 = 27;
 
     fn lane(stage_id: u64, gain: f32, clips: Vec<RenderClipSpec>) -> RenderStageSpec {
         RenderStageSpec {
@@ -1379,42 +1324,61 @@ mod tests {
     fn cache_bridge_request<'a>(
         identity_input: &'a StretchCacheIdentityInput,
         source: &'a RenderSampleBuffer,
-        promotion_policy: StretchSyntheticPromotionPolicy,
     ) -> OfflineStretchArtifactBuildRequest<'a> {
         OfflineStretchArtifactBuildRequest {
-            policy: OfflineStretchArtifactPolicyRequest {
-                scope: OfflineStretchArtifactScope::RenderCache,
-                identity_input,
-                evidence_id: "synthetic:cache-bridge-current",
-                promotion_policy,
-            },
+            scope: OfflineStretchArtifactScope::RenderCache,
+            identity_input,
+            promotion_receipt: rejected_promotion_receipt("evidence:cache-bridge-incomplete"),
             source,
         }
     }
 
-    fn current_corpus_policy_request<'a>(
+    fn rejected_promotion_receipt(evidence_id: &str) -> StretchPromotionReceipt {
+        StretchPromotionReceipt::rejected_offline_high_quality(
+            evidence_id,
+            0,
+            REQUIRED_SYNTHETIC_CASE_COUNT,
+            "composite product-quality evidence is incomplete",
+        )
+    }
+
+    fn artifact_build_request<'a>(
         scope: OfflineStretchArtifactScope,
         identity_input: &'a StretchCacheIdentityInput,
-        evidence_id: &'a str,
-    ) -> OfflineStretchArtifactPolicyRequest<'a> {
-        OfflineStretchArtifactPolicyRequest {
+        promotion_receipt: StretchPromotionReceipt,
+        source: &'a RenderSampleBuffer,
+    ) -> OfflineStretchArtifactBuildRequest<'a> {
+        OfflineStretchArtifactBuildRequest {
             scope,
             identity_input,
-            evidence_id,
-            promotion_policy: StretchSyntheticPromotionPolicy::default(),
+            promotion_receipt,
+            source,
         }
     }
 
-    fn current_corpus_build_request<'a>(
+    fn incomplete_receipt_build_request<'a>(
         scope: OfflineStretchArtifactScope,
         identity_input: &'a StretchCacheIdentityInput,
         evidence_id: &'a str,
         source: &'a RenderSampleBuffer,
     ) -> OfflineStretchArtifactBuildRequest<'a> {
-        OfflineStretchArtifactBuildRequest {
-            policy: current_corpus_policy_request(scope, identity_input, evidence_id),
+        artifact_build_request(
+            scope,
+            identity_input,
+            rejected_promotion_receipt(evidence_id),
             source,
-        }
+        )
+    }
+
+    fn build_offline_stretch_artifact_pcm(
+        request: OfflineStretchArtifactBuildRequest<'_>,
+    ) -> Result<OfflineStretchArtifactPcm, OfflineStretchArtifactMaterializeError> {
+        materialize_offline_stretch_artifact_pcm(
+            request.scope,
+            request.identity_input,
+            request.promotion_receipt,
+            request.source,
+        )
     }
 
     fn complete_product_quality_evidence(
@@ -1434,8 +1398,7 @@ mod tests {
     }
 
     fn accepted_product_quality_promotion_receipt(evidence_id: &str) -> StretchPromotionReceipt {
-        let required_case_count =
-            StretchSyntheticPromotionPolicy::default().min_comparison_count as u32;
+        let required_case_count = REQUIRED_SYNTHETIC_CASE_COUNT;
         let receipt = StretchPromotionReceipt::from_product_quality_evidence(
             evidence_id,
             OfflineHighQualityPath::Default,
@@ -1484,10 +1447,7 @@ mod tests {
         assert!(receipt.compared_to_draft_baseline);
         assert!(receipt.absolute_integrity_passed);
         assert!(receipt.comparator_row_count >= receipt.required_comparator_row_count);
-        assert_eq!(
-            receipt.required_case_count,
-            StretchSyntheticPromotionPolicy::default().min_comparison_count as u32
-        );
+        assert_eq!(receipt.required_case_count, REQUIRED_SYNTHETIC_CASE_COUNT);
         assert_eq!(receipt.offline_path, OfflineHighQualityPath::Default);
         assert!(receipt.passed_case_count >= receipt.required_case_count);
         assert_eq!(
@@ -1502,42 +1462,6 @@ mod tests {
             .zip(right.iter())
             .map(|(left, right)| (left - right).abs())
             .fold(0.0f32, f32::max)
-    }
-
-    #[test]
-    fn synthetic_only_policy_keeps_export_plan_awaiting_quality_evidence() {
-        let input = stretch_identity_input();
-        let plan =
-            plan_offline_stretch_artifact_with_synthetic_policy(current_corpus_policy_request(
-                OfflineStretchArtifactScope::Export,
-                &input,
-                "synthetic:render-plane-current",
-            ))
-            .expect("current corpus policy should produce artifact plan");
-
-        assert_eq!(plan.scope, OfflineStretchArtifactScope::Export);
-        assert_eq!(plan.tier, StretchBackendTier::OfflineHighQuality);
-        assert_eq!(plan.offline_path, OfflineHighQualityPath::Default);
-        assert_eq!(
-            plan.readiness,
-            OfflineStretchArtifactReadiness::AwaitingCorpusEvidence
-        );
-        assert_eq!(
-            plan.promotion_receipt.status,
-            StretchPromotionStatus::Accepted
-        );
-        assert_eq!(
-            plan.promotion_receipt
-                .product_facing_blocker(StretchBackendTier::OfflineHighQuality),
-            Some("promotion evidence did not pass absolute render integrity")
-        );
-        assert!(!plan.product_facing_allowed);
-        assert!(plan
-            .identity
-            .canonical_key
-            .contains("tier=OfflineHighQuality"));
-        assert!(plan.identity.canonical_key.contains("offline_path=Default"));
-        assert_eq!(plan.identity, input.identity().expect("same identity"));
     }
 
     #[test]
@@ -1815,83 +1739,6 @@ mod tests {
     }
 
     #[test]
-    fn synthetic_only_policy_blocks_pcm_artifact_builder() {
-        let input =
-            stretch_identity_input().with_ratio_curve(vec![StretchRatioPoint::new(0, 1.25)]);
-        let source = stretch_artifact_source(480);
-
-        let result = build_offline_stretch_artifact_pcm_with_synthetic_policy(
-            OfflineStretchArtifactBuildRequest {
-                policy: OfflineStretchArtifactPolicyRequest {
-                    scope: OfflineStretchArtifactScope::Export,
-                    identity_input: &input,
-                    evidence_id: "synthetic:builder-policy-current",
-                    promotion_policy: StretchSyntheticPromotionPolicy::default(),
-                },
-                source: &source,
-            },
-        );
-
-        assert_eq!(
-            result,
-            Err(OfflineStretchArtifactMaterializeError::NotReady(
-                OfflineStretchArtifactReadiness::AwaitingCorpusEvidence
-            ))
-        );
-    }
-
-    #[test]
-    fn synthetic_only_policy_blocks_render_source_builder() {
-        let input =
-            stretch_identity_input().with_ratio_curve(vec![StretchRatioPoint::new(0, 1.25)]);
-        let source = stretch_artifact_source(480);
-
-        let result = build_offline_stretch_artifact_render_source_with_synthetic_policy(
-            OfflineStretchArtifactBuildRequest {
-                policy: OfflineStretchArtifactPolicyRequest {
-                    scope: OfflineStretchArtifactScope::RenderCache,
-                    identity_input: &input,
-                    evidence_id: "synthetic:builder-render-source-current",
-                    promotion_policy: StretchSyntheticPromotionPolicy::default(),
-                },
-                source: &source,
-            },
-        );
-
-        assert_eq!(
-            result,
-            Err(OfflineStretchArtifactMaterializeError::NotReady(
-                OfflineStretchArtifactReadiness::AwaitingCorpusEvidence
-            ))
-        );
-    }
-
-    #[test]
-    fn synthetic_only_policy_blocks_freeze_render_source() {
-        let input =
-            stretch_identity_input().with_ratio_curve(vec![StretchRatioPoint::new(0, 1.25)]);
-        let source = stretch_artifact_source(480);
-        let result = build_offline_stretch_artifact_render_source_with_synthetic_policy(
-            OfflineStretchArtifactBuildRequest {
-                policy: OfflineStretchArtifactPolicyRequest {
-                    scope: OfflineStretchArtifactScope::Freeze,
-                    identity_input: &input,
-                    evidence_id: "synthetic:builder-export-freeze-current",
-                    promotion_policy: StretchSyntheticPromotionPolicy::default(),
-                },
-                source: &source,
-            },
-        );
-
-        assert_eq!(
-            result,
-            Err(OfflineStretchArtifactMaterializeError::NotReady(
-                OfflineStretchArtifactReadiness::AwaitingCorpusEvidence
-            ))
-        );
-    }
-
-    #[test]
     fn composite_quality_artifacts_preserve_cache_identity_and_change_on_inputs() {
         let input =
             stretch_identity_input().with_ratio_curve(vec![StretchRatioPoint::new(0, 1.25)]);
@@ -1960,53 +1807,18 @@ mod tests {
     }
 
     #[test]
-    fn synthetic_only_policy_blocks_render_cache_handoff() {
+    fn render_cache_handoff_rejects_non_cache_scope_and_incomplete_receipt() {
         let input =
             stretch_identity_input().with_ratio_curve(vec![StretchRatioPoint::new(0, 1.25)]);
         let source = stretch_artifact_source(480);
 
-        let result = build_offline_stretch_artifact_cache_handoff_with_synthetic_policy(
-            OfflineStretchArtifactBuildRequest {
-                policy: OfflineStretchArtifactPolicyRequest {
-                    scope: OfflineStretchArtifactScope::RenderCache,
-                    identity_input: &input,
-                    evidence_id: "synthetic:cache-handoff-current",
-                    promotion_policy: StretchSyntheticPromotionPolicy::default(),
-                },
-                source: &source,
-            },
-        );
-
         assert_eq!(
-            result,
-            Err(OfflineStretchArtifactMaterializeError::NotReady(
-                OfflineStretchArtifactReadiness::AwaitingCorpusEvidence
-            ))
-        );
-    }
-
-    #[test]
-    fn render_cache_handoff_rejects_non_cache_scope_and_rejected_policy_without_source() {
-        let input =
-            stretch_identity_input().with_ratio_curve(vec![StretchRatioPoint::new(0, 1.25)]);
-        let source = stretch_artifact_source(480);
-        let rejected_policy = StretchSyntheticPromotionPolicy {
-            min_comparison_count: usize::MAX,
-            ..StretchSyntheticPromotionPolicy::default()
-        };
-
-        assert_eq!(
-            build_offline_stretch_artifact_cache_handoff_with_synthetic_policy(
-                OfflineStretchArtifactBuildRequest {
-                    policy: OfflineStretchArtifactPolicyRequest {
-                        scope: OfflineStretchArtifactScope::Freeze,
-                        identity_input: &input,
-                        evidence_id: "synthetic:cache-handoff-wrong-scope",
-                        promotion_policy: StretchSyntheticPromotionPolicy::default(),
-                    },
-                    source: &source,
-                },
-            ),
+            build_offline_stretch_artifact_cache_handoff(artifact_build_request(
+                OfflineStretchArtifactScope::Freeze,
+                &input,
+                rejected_promotion_receipt("evidence:cache-handoff-wrong-scope"),
+                &source,
+            )),
             Err(
                 OfflineStretchArtifactMaterializeError::UnsupportedCacheHandoffScope {
                     scope: OfflineStretchArtifactScope::Freeze
@@ -2014,17 +1826,12 @@ mod tests {
             )
         );
         assert_eq!(
-            build_offline_stretch_artifact_cache_handoff_with_synthetic_policy(
-                OfflineStretchArtifactBuildRequest {
-                    policy: OfflineStretchArtifactPolicyRequest {
-                        scope: OfflineStretchArtifactScope::RenderCache,
-                        identity_input: &input,
-                        evidence_id: "synthetic:cache-handoff-rejected",
-                        promotion_policy: rejected_policy,
-                    },
-                    source: &source,
-                },
-            ),
+            build_offline_stretch_artifact_cache_handoff(artifact_build_request(
+                OfflineStretchArtifactScope::RenderCache,
+                &input,
+                rejected_promotion_receipt("evidence:cache-handoff-incomplete"),
+                &source,
+            )),
             Err(OfflineStretchArtifactMaterializeError::NotReady(
                 OfflineStretchArtifactReadiness::AwaitingCorpusEvidence
             ))
@@ -2032,7 +1839,7 @@ mod tests {
     }
 
     #[test]
-    fn synthetic_only_cache_bridge_rejects_without_writing_handoffs() {
+    fn incomplete_receipt_cache_bridge_rejects_without_writing_handoffs() {
         let input =
             stretch_identity_input().with_ratio_curve(vec![StretchRatioPoint::new(0, 1.25)]);
         let changed_projection = StretchCacheIdentityInput {
@@ -2044,21 +1851,13 @@ mod tests {
 
         assert!(bridge.is_empty());
         assert_eq!(
-            bridge.resolve_with_synthetic_policy(cache_bridge_request(
-                &input,
-                &source,
-                StretchSyntheticPromotionPolicy::default(),
-            )),
+            bridge.resolve(cache_bridge_request(&input, &source)),
             Err(OfflineStretchArtifactMaterializeError::NotReady(
                 OfflineStretchArtifactReadiness::AwaitingCorpusEvidence
             ))
         );
         assert_eq!(
-            bridge.resolve_with_synthetic_policy(cache_bridge_request(
-                &changed_projection,
-                &source,
-                StretchSyntheticPromotionPolicy::default(),
-            )),
+            bridge.resolve(cache_bridge_request(&changed_projection, &source)),
             Err(OfflineStretchArtifactMaterializeError::NotReady(
                 OfflineStretchArtifactReadiness::AwaitingCorpusEvidence
             ))
@@ -2070,6 +1869,40 @@ mod tests {
                 .expect("changed identity should validate")
                 .stable_hash
         ));
+    }
+
+    #[test]
+    fn receipt_owned_cache_bridge_writes_then_hits() {
+        let input =
+            stretch_identity_input().with_ratio_curve(vec![StretchRatioPoint::new(0, 1.25)]);
+        let source = stretch_artifact_source(480);
+        let mut bridge = OfflineStretchArtifactRenderCacheBridge::new();
+
+        let first = bridge
+            .resolve(artifact_build_request(
+                OfflineStretchArtifactScope::RenderCache,
+                &input,
+                accepted_product_quality_promotion_receipt("product-quality:cache-bridge-write"),
+                &source,
+            ))
+            .expect("accepted receipt should write cache handoff");
+        assert_eq!(first.kind, OfflineStretchArtifactCacheDecisionKind::Written);
+        assert_eq!(bridge.len(), 1);
+
+        let second = bridge
+            .resolve(artifact_build_request(
+                OfflineStretchArtifactScope::RenderCache,
+                &input,
+                accepted_product_quality_promotion_receipt("product-quality:cache-bridge-hit"),
+                &source,
+            ))
+            .expect("matching identity should reuse cache handoff");
+        assert_eq!(second.kind, OfflineStretchArtifactCacheDecisionKind::Hit);
+        assert_eq!(
+            second.handoff.cache_identity_hash,
+            first.handoff.cache_identity_hash
+        );
+        assert_eq!(bridge.len(), 1);
     }
 
     #[test]
@@ -2247,53 +2080,6 @@ mod tests {
     }
 
     #[test]
-    fn artifact_builder_gate_blocks_rejected_policy_without_product_buffer() {
-        let input =
-            stretch_identity_input().with_ratio_curve(vec![StretchRatioPoint::new(0, 1.25)]);
-        let source = stretch_artifact_source(480);
-        let rejecting_policy = StretchSyntheticPromotionPolicy {
-            min_comparison_count: usize::MAX,
-            ..StretchSyntheticPromotionPolicy::default()
-        };
-        let policy_request = OfflineStretchArtifactPolicyRequest {
-            scope: OfflineStretchArtifactScope::Freeze,
-            identity_input: &input,
-            evidence_id: "synthetic:builder-policy-rejected",
-            promotion_policy: rejecting_policy,
-        };
-        let plan = plan_offline_stretch_artifact_with_synthetic_policy(policy_request)
-            .expect("rejected policy still produces a non-ready plan");
-
-        assert_eq!(
-            plan.readiness,
-            OfflineStretchArtifactReadiness::AwaitingCorpusEvidence
-        );
-        assert!(!plan.product_facing_allowed);
-        assert_eq!(
-            build_offline_stretch_artifact_pcm_with_synthetic_policy(
-                OfflineStretchArtifactBuildRequest {
-                    policy: policy_request,
-                    source: &source,
-                },
-            ),
-            Err(OfflineStretchArtifactMaterializeError::NotReady(
-                OfflineStretchArtifactReadiness::AwaitingCorpusEvidence
-            ))
-        );
-        assert_eq!(
-            build_offline_stretch_artifact_render_source_with_synthetic_policy(
-                OfflineStretchArtifactBuildRequest {
-                    policy: policy_request,
-                    source: &source,
-                },
-            ),
-            Err(OfflineStretchArtifactMaterializeError::NotReady(
-                OfflineStretchArtifactReadiness::AwaitingCorpusEvidence
-            ))
-        );
-    }
-
-    #[test]
     fn stretch_artifact_plan_blocks_export_without_accepted_promotion() {
         let input = stretch_identity_input();
         let plan = plan_offline_stretch_artifact(
@@ -2405,7 +2191,7 @@ mod tests {
     }
 
     #[test]
-    fn synthetic_only_policy_blocks_static_pitch_with_dynamic_ratio_curve() {
+    fn incomplete_receipt_blocks_static_pitch_with_dynamic_ratio_curve() {
         let input = stretch_identity_input()
             .with_ratio_curve(vec![
                 StretchRatioPoint::new(0, 1.0),
@@ -2414,13 +2200,12 @@ mod tests {
             .with_pitch_curve(vec![StretchPitchPoint::new(0, 2.0)]);
         let source = stretch_artifact_source(480);
 
-        let result =
-            build_offline_stretch_artifact_pcm_with_synthetic_policy(current_corpus_build_request(
-                OfflineStretchArtifactScope::RenderCache,
-                &input,
-                "synthetic:static-pitch-dynamic-ratio",
-                &source,
-            ));
+        let result = build_offline_stretch_artifact_pcm(incomplete_receipt_build_request(
+            OfflineStretchArtifactScope::RenderCache,
+            &input,
+            "synthetic:static-pitch-dynamic-ratio",
+            &source,
+        ));
 
         assert_eq!(
             result,
@@ -2467,7 +2252,7 @@ mod tests {
         let source = stretch_artifact_source(480);
 
         assert_eq!(
-            build_offline_stretch_artifact_pcm_with_synthetic_policy(current_corpus_build_request(
+            build_offline_stretch_artifact_pcm(incomplete_receipt_build_request(
                 OfflineStretchArtifactScope::RenderCache,
                 &input,
                 "synthetic:pitch-automation",
@@ -2618,7 +2403,7 @@ mod tests {
             ))
         );
         assert_eq!(
-            build_offline_stretch_artifact_pcm_with_synthetic_policy(current_corpus_build_request(
+            build_offline_stretch_artifact_pcm(incomplete_receipt_build_request(
                 OfflineStretchArtifactScope::RenderCache,
                 &selector_input,
                 "synthetic:selector-default-policy",

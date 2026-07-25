@@ -6,6 +6,7 @@ members = [
   "crates/signal-dsp-resample",
   "crates/signal-dsp-spectral",
   "crates/signal-dsp-stretch",
+  "crates/signal-dsp-stretch-evidence",
   "crates/signal-analysis",
   "crates/signal-analysis-rhythm",
   "crates/signal-analysis-tonal",

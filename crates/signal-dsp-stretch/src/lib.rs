@@ -50,6 +50,7 @@
 mod artifact_plan;
 mod benchmark;
 mod cache_identity;
+#[cfg(any(test, feature = "evidence"))]
 mod corpus_report;
 mod creative;
 mod creative_cyclic;
@@ -59,11 +60,15 @@ mod creative_direct_renewal_dream;
 
 #[cfg(test)]
 direct_renewal_dream_tests!();
+#[cfg(any(test, feature = "evidence"))]
 mod formant_boundary;
 mod phase_vocoder;
 mod promotion;
+#[cfg(any(test, feature = "evidence"))]
 mod render_integrity;
+#[cfg(any(test, feature = "evidence"))]
 mod tonal_texture;
+#[cfg(any(test, feature = "evidence"))]
 mod transient_detail;
 
 pub use artifact_plan::{
@@ -103,6 +108,7 @@ pub use cache_identity::{
     StretchChannelLayout, StretchPitchPoint, StretchRatioPoint, StretchWarpMarker,
     SIGNAL_STRETCH_ENGINE_VERSION, STRETCH_CACHE_IDENTITY_SCHEMA_VERSION,
 };
+#[cfg(any(test, feature = "evidence"))]
 pub use corpus_report::{
     build_stretch_corpus_comparison_report, build_stretch_corpus_comparison_report_with_external,
     build_stretch_corpus_comparison_report_with_sources, format_stretch_corpus_comparison_report,
@@ -118,18 +124,25 @@ pub use creative::{
     CREATIVE_STRETCH_DREAM_MIN_RATIO, CREATIVE_STRETCH_ENGINE_VERSION, CREATIVE_STRETCH_MAX_CYCLE,
     CREATIVE_STRETCH_MIN_CYCLE,
 };
+#[cfg(any(test, feature = "evidence"))]
 pub use formant_boundary::{measure_formant_boundary, StretchFormantBoundaryMeasurement};
+#[cfg(any(test, feature = "evidence"))]
 pub use promotion::{
-    current_synthetic_offline_high_quality_promotion_receipt, StretchProductQualityEvidence,
-    StretchPromotionReceipt, StretchPromotionStatus, StretchSyntheticPromotionPolicy,
+    current_synthetic_offline_high_quality_promotion_receipt, StretchSyntheticPromotionPolicy,
+};
+pub use promotion::{
+    StretchProductQualityEvidence, StretchPromotionReceipt, StretchPromotionStatus,
     REQUIRED_STRETCH_LISTENING_FAMILY_COUNT,
 };
+#[cfg(any(test, feature = "evidence"))]
 pub use render_integrity::{
     assess_stretch_render_integrity, measure_stretch_render_integrity,
     StretchRenderIntegrityAssessment, StretchRenderIntegrityLimits,
     StretchRenderIntegrityMeasurement,
 };
+#[cfg(any(test, feature = "evidence"))]
 pub use tonal_texture::{measure_tonal_texture, StretchTonalTextureMeasurement};
+#[cfg(any(test, feature = "evidence"))]
 pub use transient_detail::{
     measure_transient_detail, measure_transient_event_detail, StretchTransientDetailMeasurement,
     StretchTransientEventDetail,
