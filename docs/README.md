@@ -34,7 +34,7 @@ strict lane.
 - Admitted private continuous Dream implementation brief: [architecture/offline-creative-continuous-direct-renewal-dream-brief.md](./architecture/offline-creative-continuous-direct-renewal-dream-brief.md)
 - Cyclic behavioral synthesis: [architecture/offline-creative-cyclic-behavioral-synthesis.md](./architecture/offline-creative-cyclic-behavioral-synthesis.md)
 - Admitted private event-ledger Cyclic renderer brief: [architecture/offline-creative-event-ledger-audited-centered-compressed-anchor-cyclic-brief.md](./architecture/offline-creative-event-ledger-audited-centered-compressed-anchor-cyclic-brief.md)
-- Frozen continuous Cyclic candidate brief: [architecture/offline-creative-continuous-event-ledger-cyclic-brief.md](./architecture/offline-creative-continuous-event-ledger-cyclic-brief.md)
+- Admitted private continuous Cyclic brief: [architecture/offline-creative-continuous-event-ledger-cyclic-brief.md](./architecture/offline-creative-continuous-event-ledger-cyclic-brief.md)
 - Evidence-invalid historical Cyclic brief: [architecture/offline-creative-centered-compressed-anchor-cyclic-brief.md](./architecture/offline-creative-centered-compressed-anchor-cyclic-brief.md)
 - Admitted continuous Dream and exact-ratio Cyclic CreativeStretch surface: [architecture/offline-creative-fixed-ratio-public-surface.md](./architecture/offline-creative-fixed-ratio-public-surface.md)
 - Direct-renewal owner study: [architecture/offline-creative-direct-renewal-owner-study.md](./architecture/offline-creative-direct-renewal-owner-study.md)
@@ -94,6 +94,6 @@ strict lane.
 
 ## Next Task
 
-Execute `g10.034` Batch 34.3 only. Implement and execute the frozen
-`ContinuousEventLedgerCyclic` candidate in one disposable worktree. Keep
-public widening and integration closed.
+Execute `g10.034` Batch 34.4 only as documentation. Decide and freeze the
+public continuous Cyclic range consequences. Do not implement public widening
+or integration.

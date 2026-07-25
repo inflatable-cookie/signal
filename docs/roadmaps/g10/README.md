@@ -1,7 +1,7 @@
 # g10 Milestones
 
-Status: `g10.034` active; continuous Cyclic Batch 34.3 ready
-Updated: 2026-07-24
+Status: `g10.034` active; continuous Cyclic Batch 34.4 ready
+Updated: 2026-07-25
 
 ## Why this generation matters now
 
@@ -829,10 +829,22 @@ Batch 34.2 freezes one private entry, two complete conformance rounds, exact
 anchor byte parity, low/middle/high interior synthetic and long-form evidence,
 linked-stereo admission, Rule 11 repair, cleanup, and minimal private
 admission. Public Cyclic stays exact at `2x`, `4x`, and `8x`. Batch 34.3 is
-ready for one isolated candidate; public widening remains blocked.
+one isolated candidate only.
+
+Batch 34.3 passes from acoustic checkpoint `264403b3`. Two complete
+`334/334` conformance rounds are byte-identical. All `183` synthetic rows,
+`15` long-form stereo rows, and `165` mapped stereo records pass. Concealed
+mono is tied without artifact or usability failure; direct `5..90 ms` cycle
+movement remains useful from metallic/ring motion through tremolo/echo motion.
+The operator passes the complete speaker pack and makes the Rule 5 decision
+for that exact checkpoint after all hard stereo controls pass. The hearing
+limitation remains recorded; eligible independent review is not claimed.
+Only the private `2N..=8N` entry, behavior identity, and focused regression
+owners are admitted. Public Cyclic remains exact at `2x`, `4x`, and `8x`.
+Batch 34.4 is ready as documentation only.
 
 ## Next Task
 
-Execute `g10.034` Batch 34.3 only. Implement and execute the frozen
-`ContinuousEventLedgerCyclic` candidate in one disposable worktree. Do not
-widen public Cyclic.
+Execute `g10.034` Batch 34.4 only as documentation. Decide whether public
+Cyclic should report every exact target in `2N..=8N`, and freeze the public
+contract consequences. Do not implement the widening.

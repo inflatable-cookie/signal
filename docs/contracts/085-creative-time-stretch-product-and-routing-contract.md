@@ -1,8 +1,8 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: continuous Dream and exact-ratio Cyclic public; `g10.034` candidate ready
+Status: continuous Dream and exact-ratio Cyclic public; private continuous Cyclic admitted
 Owner: core-product
-Updated: 2026-07-24
+Updated: 2026-07-25
 Related contracts: `046`, `048`, `084`
 Related architecture: `docs/architecture/offline-creative-time-stretch-study.md`,
 `docs/architecture/offline-creative-fixed-ratio-public-surface.md`,
@@ -2237,11 +2237,30 @@ rejects the immutable acoustic checkpoint.
 
 The Batch 32.25 waiver does not transfer. Eligible independent stereo review
 remains default unless the operator makes a new decision naming the exact
-checkpoint after every hard stereo control passes. Batch 34.3 is ready for one
-isolated candidate. Public widening remains blocked.
+checkpoint after every hard stereo control passes. That made Batch 34.3 ready
+for one isolated candidate. Public widening remained blocked.
+
+Batch 34.3 executes that authority at acoustic checkpoint
+`264403b3615b2dfe48606820eb31af4e869366cd`. Two complete `334/334`
+conformance rounds are byte-identical. All `183` synthetic rows pass,
+including hard cycle-direction and linked-stereo controls. Concealed mono
+passes without artifact, unusable row, or family loss. All `15` M02 long-form
+stereo rows and `165` mapped-window records pass their hard balance controls.
+
+After those controls, the operator passes the complete speaker pack and makes
+the scoped Rule 5 product decision for that exact checkpoint. The operator's
+one-ear hearing limitation remains recorded. This is not a claim that eligible
+independent listening occurred and does not cover another renderer, target
+domain, route, dynamic path, character, or transparent stretch.
+
+Only private `render_continuous`, identity
+`signal-creative-continuous-event-ledger-cyclic-v1`, and focused regression
+ownership enter `main`. The acoustic equations, exact `2x`, `4x`, and `8x`
+anchor output, direct `5..90 ms` cycle control, and public surface remain
+unchanged. Batch 34.4 is ready as a docs-only public range decision.
 
 ## Next Task
 
-Execute `g10.034` Batch 34.3 only. Implement and execute the frozen
-`ContinuousEventLedgerCyclic` candidate in one disposable worktree. Keep public
-widening and integration closed.
+Execute `g10.034` Batch 34.4 only as documentation. Decide and freeze whether
+public Cyclic exposes every exact target in `2N..=8N`. Keep implementation and
+integration closed.

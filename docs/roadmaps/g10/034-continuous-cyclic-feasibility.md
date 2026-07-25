@@ -1,6 +1,6 @@
 # 034 - Continuous Cyclic Feasibility
 
-Status: active; Batch 34.3 executing
+Status: active; Batch 34.3 complete; Batch 34.4 ready
 Owner: dsp
 Created: 2026-07-24
 Depends on: `g10.032`, `g10.033`
@@ -35,17 +35,17 @@ The visible runway is:
 5. minimal public admission, only after acoustic passage
 6. docs-only closeout and next planning checkpoint
 
-Batches 34.1 and 34.2 are complete. Batch 34.3 is the only ready work. Later
-batches remain conditional.
+Batches 34.1 through 34.3 are complete. Batch 34.4 is the only ready work.
+Later batches remain conditional.
 
 ## Goals
 
 - [x] decide the exact fixed-target domain, or close continuous Cyclic
-- [ ] prove whether the admitted owner can preserve Cyclic character at
+- [x] prove whether the admitted owner can preserve Cyclic character at
   interior targets without changing acoustic equations
 - [x] freeze one complete candidate identity and evidence path before execution
-- [ ] retain byte-exact `2x`, `4x`, and `8x` anchors
-- [ ] admit or reject interior mono and linked-stereo behavior through listening
+- [x] retain byte-exact `2x`, `4x`, and `8x` anchors
+- [x] admit or reject interior mono and linked-stereo behavior through listening
 - [ ] widen the public ratio domain only after private acoustic admission
 - [ ] close the lane without candidate or evidence scaffolding on `main`
 
@@ -162,19 +162,19 @@ Result:
 
 ## Batch 34.3 - Isolated Continuous Cyclic Admission
 
-Status: active; pre-checkpoint evidence assembly
+Status: complete
 
 Execute one complete candidate in a disposable worktree. Run construction and
 structural controls before synthetic evidence, then concealed long-form mono,
 hard linked-stereo controls, and listening.
 
-- [ ] preserve exact anchor output and admitted cycle behavior
-- [ ] prove interior target length, finiteness, determinism, map monotonicity,
+- [x] preserve exact anchor output and admitted cycle behavior
+- [x] prove interior target length, finiteness, determinism, map monotonicity,
   event placement, replica control, pitch diagnostics, level, boundaries, and
   linked-channel relations
-- [ ] reject and delete the candidate on the first valid terminal failure
-- [ ] admit only the minimal private behavior if every required gate passes
-- [ ] keep runners, fixtures, receipts, audio, reports, and comparator assets
+- [x] retain first-valid-failure stop authority; no terminal failure occurred
+- [x] admit only the minimal private behavior after every required gate passed
+- [x] keep runners, fixtures, receipts, audio, reports, and comparator assets
   out of `main`
 
 Execution note: the frozen release command was repaired before checkpoint
@@ -183,9 +183,32 @@ trailing Cargo arguments. The candidate must run `effigy build`, then the
 documented narrow release fallback. This is evidence plumbing under Contract
 `085` Rule 11; it changes no renderer or gate.
 
+Result:
+
+- checkpoint
+  `264403b3615b2dfe48606820eb31af4e869366cd` passed two byte-identical
+  `334/334` conformance rounds
+- all `183` interior synthetic rows passed; Y04 preserved hard
+  short-to-neutral-to-long cycle ordering and Y06 passed all `54` linked
+  controls
+- concealed mono passed as ties with no artifact or usability failure; cycle
+  endpoints remained directly useful from metallic/ring motion through
+  tremolo/echo motion
+- all `15` M02 long-form stereo rows and `165` mapped stereo records passed
+  their hard controls
+- the operator passed the complete speaker pack and made the Contract `085`
+  Rule 5 product decision for this exact checkpoint; the recorded hearing
+  limitation remains and no eligible independent review is claimed
+- admit only private `render_continuous`, behavior identity
+  `signal-creative-continuous-event-ledger-cyclic-v1`, and focused regression
+  owners over `2L..=8L`
+- keep the admitted `5..90 ms` direct cycle control, default `48 ms`,
+  unchanged
+- keep public Cyclic exact at `2x`, `4x`, and `8x`
+
 ## Batch 34.4 - Public Range Decision
 
-Status: planned; blocked on Batch 34.3 acoustic admission
+Status: ready
 
 Documentation only.
 
@@ -226,11 +249,14 @@ next planning checkpoint.
   cleanup, and minimal-admission behavior without a `decide later` gap
 - [x] Batch 34.3 is bounded to one isolated candidate and immutable evidence
   order
+- [x] Batch 34.3 completed every hard and listening gate from one immutable
+  checkpoint
+- [x] only the frozen minimal private surface entered `main`
 
 ## Next Task
 
-Execute Batch 34.3 only. Create the disposable candidate worktree, implement
-the frozen private entry and complete evidence system, pass two conformance
-rounds, freeze one acoustic checkpoint, and run the gates in order. Do not
-widen public Cyclic or begin lower Dream, routing, cache, artifacts, dynamic
-ratio, runtime, UI, Loophole, or Chorus work.
+Execute Batch 34.4 only as documentation. Decide whether public Cyclic should
+report every exact target in `2N..=8N`; freeze discovery, validation, error,
+behavior-version, cache-identity, and dispatch consequences. Do not implement
+public widening or begin lower Dream, routing, cache, artifacts, dynamic ratio,
+runtime, UI, Loophole, or Chorus work.

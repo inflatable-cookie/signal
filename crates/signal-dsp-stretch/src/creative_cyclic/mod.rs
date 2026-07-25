@@ -1,4 +1,4 @@
-//! Admitted fixed-ratio centred compressed-anchor Cyclic renderer.
+//! Admitted centred compressed-anchor Cyclic renderer.
 
 mod interpolate;
 mod plan;
@@ -9,6 +9,8 @@ mod synthesis;
 mod tests;
 
 use plan::Plan;
+
+pub(super) const CONTINUOUS_BEHAVIOR_ID: &str = "signal-creative-continuous-event-ledger-cyclic-v1";
 
 #[derive(Clone, Copy, Debug)]
 pub(super) struct Request<'a> {
@@ -38,6 +40,21 @@ pub(super) fn render(request: Request<'_>) -> Result<Vec<f32>, CandidateError> {
     let plan = Plan::new(request)?;
     if plan.identity {
         return Ok(request.input.to_vec());
+    }
+    synthesis::render(request, &plan)
+}
+
+pub(super) fn render_continuous(request: Request<'_>) -> Result<Vec<f32>, CandidateError> {
+    let plan = Plan::new(request)?;
+    if plan.input_frames == 0 {
+        return Ok(Vec::new());
+    }
+    let minimum = plan
+        .input_frames
+        .checked_mul(2)
+        .ok_or(CandidateError::ArithmeticOverflow)?;
+    if plan.target_frames < minimum {
+        return Err(CandidateError::UnsupportedRatio);
     }
     synthesis::render(request, &plan)
 }

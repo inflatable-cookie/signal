@@ -1,10 +1,10 @@
 # Offline Creative ContinuousEventLedgerCyclic Brief
 
-Status: frozen; isolated execution ready
+Status: admitted privately; public widening pending
 Owner: dsp
-Updated: 2026-07-24
+Updated: 2026-07-25
 Contract: `085`
-Roadmap: `g10.034`, Batch 34.2
+Roadmap: `g10.034`, Batch 34.3
 Parent:
 [EventLedgerAuditedCenteredCompressedAnchorCyclic](./offline-creative-event-ledger-audited-centered-compressed-anchor-cyclic-brief.md)
 
@@ -670,6 +670,26 @@ Public Cyclic widening, discovery, public engine identity, cache, artifacts,
 router, dynamic ratio, runtime, UI, Loophole, and Chorus remain separate
 batches.
 
+## Admission Outcome
+
+Acoustic checkpoint `264403b3615b2dfe48606820eb31af4e869366cd`
+completed two byte-identical `334/334` conformance rounds. All `183`
+synthetic rows, the full concealed mono program, all `15` M02 stereo rows, and
+all `165` mapped stereo records passed. The direct cycle endpoints remained
+useful: short produces metallic/ring motion, while long produces
+tremolo/echo motion.
+
+The operator passed the complete speaker pack and made the Contract `085`
+Rule 5 product decision for this exact checkpoint after every hard stereo
+control passed. The recorded hearing limitation remains; no eligible
+independent review is claimed.
+
+Production admission is limited to private `render_continuous`, behavior
+identity `signal-creative-continuous-event-ledger-cyclic-v1`, and focused
+continuous regression tests. `plan.rs`, `schedule.rs`, `interpolate.rs`, and
+`synthesis.rs` remain byte-identical. Public Cyclic remains exact at `2x`,
+`4x`, and `8x`.
+
 ## Readiness
 
 The candidate has one transform, one domain, one map, one schedule, one
@@ -678,12 +698,12 @@ one memory/cost bound, exact source and comparator families, fixed metrics and
 thresholds, one listening policy, explicit evidence repair, rejection,
 cleanup, and minimal admission.
 
-Batch 34.3 is ready. It may implement and execute only this isolated candidate.
+Batch 34.3 is complete. Batch 34.4 may decide the public range as
+documentation only.
 
 ## Next Task
 
-Execute `g10.034` Batch 34.3 only. Create the isolated worktree, implement the
-frozen private entry and complete evidence system, pass two conformance rounds,
-freeze one acoustic checkpoint, then run the gates in order. Do not widen the
-public API or start routing, cache, artifact, runtime, UI, Loophole, or Chorus
-work.
+Execute `g10.034` Batch 34.4 only as documentation. Freeze whether public
+Cyclic exposes every exact target in `2N..=8N`, including discovery,
+validation, error, behavior-version, cache-identity, and dispatch
+consequences. Do not implement the widening.
