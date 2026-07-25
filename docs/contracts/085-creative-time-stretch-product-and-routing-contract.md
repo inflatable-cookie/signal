@@ -1,11 +1,12 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: public v4 active; Automatic route brief ready
+Status: public v4 active; Automatic isolated candidate ready
 Owner: core-product
 Updated: 2026-07-25
 Related contracts: `046`, `048`, `084`
 Related architecture: `docs/architecture/offline-creative-time-stretch-study.md`,
 `docs/architecture/offline-creative-fixed-ratio-public-surface.md`,
+`docs/architecture/offline-automatic-exact-target-transparent-dream-router-brief.md`,
 `docs/architecture/offline-creative-direct-renewal-owner-study.md`,
 `docs/architecture/offline-creative-direct-renewal-dream-brief.md`,
 `docs/architecture/offline-creative-continuous-direct-renewal-dream-brief.md`,
@@ -2350,14 +2351,22 @@ Transparent owns through `4N`; Transparent and neutral Dream transition over
 `4N..=8N`; neutral Dream owns from `8N` through `16N`. Exact Transparent,
 Dream, and Cyclic remain available. Cyclic bypasses Automatic.
 
-The selection admits no route or API. Batch 35.2 must freeze one complete
+The selection admits no route or API. Batch 35.2 freezes one complete
 `ExactTargetTransparentDreamRouter`: exact target adaptation, map, transition
 law, level treatment, boundaries, linked stereo, deterministic identity,
 bounded output staging, fixed evidence, rejection, cleanup, and minimal
-admission. Candidate and public work remain blocked.
+admission.
+
+The canonical brief is
+`docs/architecture/offline-automatic-exact-target-transparent-dream-router-brief.md`.
+Integer dispatch owns the pure endpoints. The interior uses one render-wide
+log-ratio smoothstep and linear-amplitude blend on one exact output lattice.
+Transparent uses its promoted direction-specific selectors through a private
+exact-target entry; Dream uses admitted neutral defaults. The route admits no
+code or public surface. One isolated Batch 35.3 candidate is ready.
 
 ## Next Task
 
-Execute `g10.035` Batch 35.2 only. Write the complete
-`ExactTargetTransparentDreamRouter` brief as documentation, validate and
-commit it separately, and stop before candidate isolation or implementation.
+Execute `g10.035` Batch 35.3 only. Implement the frozen private candidate in
+the named disposable worktree, pass conformance twice, freeze one acoustic
+checkpoint, and follow the brief's terminal evidence order.

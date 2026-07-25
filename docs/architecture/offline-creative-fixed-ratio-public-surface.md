@@ -619,6 +619,7 @@ Loophole, or Chorus surface changed.
 
 ## Next Task
 
-Execute `g10.035` Batch 35.2 only. Freeze one complete
-`ExactTargetTransparentDreamRouter` brief. Automatic remains unimplemented;
-explicit Transparent, Dream, and Cyclic stay unchanged.
+Execute `g10.035` Batch 35.3 only. Evaluate the frozen private
+`ExactTargetTransparentDreamRouter` in its disposable worktree. Automatic
+remains unimplemented on `main`; explicit Transparent, Dream, and Cyclic stay
+unchanged.

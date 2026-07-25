@@ -1,6 +1,6 @@
 # Offline Creative Time-Stretch Study
 
-Status: public Dream and Cyclic admitted; Automatic route brief ready
+Status: public Dream and Cyclic admitted; Automatic isolated candidate ready
 Owner: dsp
 Updated: 2026-07-25
 Contract: `085`
@@ -408,9 +408,10 @@ output plus one output-sized contribution. A hard `4x` switch, post-stretch
 resampling, second timeline, limiter, post-fade, or adaptive loudness stage is
 not a route.
 
-Batch 35.2 must freeze those choices and every structural, synthetic,
-long-form, independent-stereo, rejection, cleanup, and minimal-admission gate
-before any candidate code exists.
+Batch 35.2 freezes those choices and every structural, synthetic, long-form,
+independent-stereo, rejection, cleanup, and minimal-admission gate in
+[the canonical route brief](./offline-automatic-exact-target-transparent-dream-router-brief.md).
+One isolated Batch 35.3 candidate is ready. No route or public surface exists.
 
 ## Historical Range-Routed Architecture
 
@@ -1406,6 +1407,6 @@ one isolated candidate. Public widening remains blocked.
 
 ## Next Task
 
-Execute `g10.035` Batch 35.2 only. Freeze one complete
-`ExactTargetTransparentDreamRouter` brief as documentation. Stop before
-candidate isolation, implementation, public API, cache, runtime, or UI work.
+Execute `g10.035` Batch 35.3 only. Implement the frozen private route in the
+named disposable worktree, pass conformance twice, freeze one acoustic
+checkpoint, and follow the brief's terminal evidence order.

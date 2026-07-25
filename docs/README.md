@@ -31,6 +31,7 @@ strict lane.
 - Rejected offline stretch successor: [architecture/offline-time-stretch-successor-brief.md](./architecture/offline-time-stretch-successor-brief.md)
 - Non-phase-vocoder feasibility: [architecture/offline-time-stretch-non-phase-vocoder-feasibility.md](./architecture/offline-time-stretch-non-phase-vocoder-feasibility.md)
 - Creative time-stretch study: [architecture/offline-creative-time-stretch-study.md](./architecture/offline-creative-time-stretch-study.md)
+- Frozen private Automatic route brief: [architecture/offline-automatic-exact-target-transparent-dream-router-brief.md](./architecture/offline-automatic-exact-target-transparent-dream-router-brief.md)
 - Admitted private continuous Dream implementation brief: [architecture/offline-creative-continuous-direct-renewal-dream-brief.md](./architecture/offline-creative-continuous-direct-renewal-dream-brief.md)
 - Cyclic behavioral synthesis: [architecture/offline-creative-cyclic-behavioral-synthesis.md](./architecture/offline-creative-cyclic-behavioral-synthesis.md)
 - Admitted private event-ledger Cyclic renderer brief: [architecture/offline-creative-event-ledger-audited-centered-compressed-anchor-cyclic-brief.md](./architecture/offline-creative-event-ledger-audited-centered-compressed-anchor-cyclic-brief.md)
@@ -95,6 +96,6 @@ strict lane.
 
 ## Next Task
 
-Execute `g10.035` Batch 35.2 only. Freeze one complete
-`ExactTargetTransparentDreamRouter` brief as documentation and stop before
-candidate isolation or implementation.
+Execute `g10.035` Batch 35.3 only. Create the named disposable worktree,
+implement the frozen private `ExactTargetTransparentDreamRouter`, pass
+conformance twice, and follow its terminal evidence order.

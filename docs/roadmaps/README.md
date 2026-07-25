@@ -350,8 +350,8 @@ continuous Dream `4N..=16N` and Cyclic `2N..=8N`, confirms isolated evidence
 removal, and closes `g10.034`. Lower Dream remains paused. No strict spec lane
 is open. `g10.035` Batch 35.1 then selects one opt-in Transparent/Dream
 Automatic direction over exact `0.5N..=16N`, with a `4N..=8N` transition and
-Cyclic kept explicit. Batch 35.2 is ready as complete-brief documentation.
-No implementation batch is ready.
+Cyclic kept explicit. Batch 35.2 freezes the complete private route. Batch
+35.3 is ready as one isolated candidate.
 
 ## Strict lane posture
 
@@ -380,5 +380,5 @@ Before rollover:
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the active generation front door. Execute
-`g10.035` Batch 35.2 only as documentation and stop before candidate
-isolation or implementation.
+`g10.035` Batch 35.3 only in the named disposable worktree and follow the
+frozen route brief's terminal evidence order.

@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: `g10.035` active; Automatic route Batch 35.2 ready
+Status: `g10.035` active; Automatic route Batch 35.3 ready
 Updated: 2026-07-25
 
 ## Why this generation matters now
@@ -173,9 +173,9 @@ The 2026-07-19 consolidation reset is authoritative.
 - `g10.034` is complete. It admits continuous exact-target Cyclic over
   `2N..=8N` through public v4 after full private acoustic admission and exact
   public/private parity. No isolated candidate state remains.
-- `g10.035` owns the current planning checkpoint. Batch 35.1 selects one
-  opt-in Transparent/Dream Automatic direction, keeps Cyclic explicit, and
-  leaves only the complete docs brief ready.
+- `g10.035` owns the current planning checkpoint. Batch 35.2 freezes the
+  complete Transparent/Dream Automatic route, keeps Cyclic explicit, and
+  leaves one isolated candidate ready.
 - `g10.028` RealtimePreview source-fill and all render-plane integration remain
   paused.
 
@@ -334,8 +334,9 @@ Do not start Loophole or Chorus planning from Signal internals.
 - `g10.035` `active`
   - Batch 35.1 audits current coverage, keeps Cyclic explicit, and selects one
     opt-in Transparent/Dream Automatic intent over exact `0.5N..=16N` with a
-    `4N..=8N` transition; Batch 35.2 is ready as complete-brief documentation;
-    candidate and public work remain conditional
+    `4N..=8N` transition; Batch 35.2 freezes the complete private route;
+    Batch 35.3 is ready as one isolated candidate; public work remains
+    conditional
 
 ## Stretch Boundary
 
@@ -882,15 +883,16 @@ explicit effect and never enters Automatic. Explicit Transparent, Dream, and
 Cyclic remain available.
 
 Automatic exposes only exact duration. Its Dream contribution uses admitted
-neutral defaults. Batch 35.2 must freeze one complete
+neutral defaults. Batch 35.2 freezes one complete
 `ExactTargetTransparentDreamRouter`, including exact-target adaptation, map,
 weight and level law, boundaries, linked stereo, deterministic identity,
 bounded output staging, evidence, rejection, cleanup, and minimal admission.
-No candidate, public route, cache, artifact, dynamic ratio, runtime, UI,
-Loophole, or Chorus work is ready.
+One isolated candidate is ready. No public route, cache, artifact, dynamic
+ratio, runtime, UI, Loophole, or Chorus work is ready.
 
 ## Next Task
 
-Execute `g10.035` Batch 35.2 only. Freeze the complete
-`ExactTargetTransparentDreamRouter` brief as documentation, validate and
-commit it separately, and stop before candidate isolation or implementation.
+Execute `g10.035` Batch 35.3 only. Create the named disposable worktree,
+implement the frozen private `ExactTargetTransparentDreamRouter`, pass
+conformance twice, freeze one acoustic checkpoint, and follow its terminal
+evidence order.

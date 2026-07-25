@@ -317,11 +317,11 @@ The current package-level naming proposal is recorded in
   domain to every target `2N..=8N` without changing the admitted renderer.
 - `g10.035` selects one future opt-in Automatic intent. Transparent owns
   through `4N`, Transparent and neutral Dream transition over `4N..=8N`, and
-  Dream owns `8N..=16N`. Cyclic remains explicit. Only the complete route
-  brief is ready.
+  Dream owns `8N..=16N`. Cyclic remains explicit. The complete private route
+  brief is frozen; one isolated candidate is ready.
 
 ## Next Task
 
-Execute `g10.035` Batch 35.2 only. Freeze the complete
-`ExactTargetTransparentDreamRouter` brief as documentation and stop before
-candidate isolation or implementation.
+Execute `g10.035` Batch 35.3 only. Evaluate the frozen private
+`ExactTargetTransparentDreamRouter` in its named disposable worktree and keep
+all public, runtime, cache, artifact, UI, Loophole, and Chorus work blocked.

@@ -1,6 +1,6 @@
 # 035 - Creative Stretch Product Coverage And Routing Audit
 
-Status: active; Batch 35.1 complete; Batch 35.2 ready
+Status: active; Batch 35.2 complete; Batch 35.3 ready
 Owner: core-product
 Created: 2026-07-25
 Depends on: `g10.030`, `g10.033`, `g10.034`
@@ -36,8 +36,8 @@ The visible runway is:
 5. minimal public admission only after objective and listening passage
 6. docs-only closeout
 
-Batch 35.1 is complete. Batch 35.2 is the only ready work. Candidate and public
-implementation remain conditional.
+Batch 35.2 is complete. Batch 35.3 is the only ready work. Public
+implementation remains conditional.
 
 ## Goals
 
@@ -47,7 +47,7 @@ implementation remain conditional.
 - [x] keep Cyclic outside automatic selection
 - [x] freeze one automatic target envelope and transition interval for a
   complete brief
-- [ ] freeze exact route mechanics, identity, bounds, and evidence
+- [x] freeze exact route mechanics, identity, bounds, and evidence
 - [ ] admit or reject one isolated fixed-ratio route
 - [ ] keep public API and product integration blocked until acoustic passage
 
@@ -123,29 +123,29 @@ Result:
 
 ## Batch 35.2 - Complete Exact-Target Route Brief
 
-Status: ready
+Status: complete
 
 Documentation only. Freeze one
 `ExactTargetTransparentDreamRouter` without changing code.
 
-- [ ] freeze exact target validation and empty/identity behavior
-- [ ] freeze the private exact-target Transparent entry and prove which
+- [x] freeze exact target validation and empty/identity behavior
+- [x] freeze the private exact-target Transparent entry and prove which
   promoted selector owns compression and expansion
-- [ ] freeze one monotonic source/output map shared by both contributions
-- [ ] freeze render-wide log-ratio weight arithmetic, endpoint ownership, and
+- [x] freeze one monotonic source/output map shared by both contributions
+- [x] freeze render-wide log-ratio weight arithmetic, endpoint ownership, and
   ties without floating routing ambiguity
-- [ ] freeze correlation/level treatment without limiter, adaptive loudness,
+- [x] freeze correlation/level treatment without limiter, adaptive loudness,
   post-fade, or unbounded gain
-- [ ] freeze head/tail alignment, exterior padding, crop, and exact target
-- [ ] freeze linked-channel analysis, weights, normalization, and synthesis
-- [ ] freeze deterministic identity and neutral Dream defaults
-- [ ] cap peak memory at final output plus one output-sized contribution and
+- [x] freeze head/tail alignment, exterior padding, crop, and exact target
+- [x] freeze linked-channel analysis, weights, normalization, and synthesis
+- [x] freeze deterministic identity and neutral Dream defaults
+- [x] cap peak memory at final output plus one output-sized contribution and
   duration-independent owner state
-- [ ] freeze structural, synthetic, boundary, long-form mono, and independent
+- [x] freeze structural, synthetic, boundary, long-form mono, and independent
   linked-stereo gates
-- [ ] freeze immutable candidate source identity, isolation, stop, repair,
+- [x] freeze immutable candidate source identity, isolation, stop, repair,
   rejection, cleanup, and minimal admission
-- [ ] keep public API, cache, artifact, runtime, UI, Loophole, and Chorus
+- [x] keep public API, cache, artifact, runtime, UI, Loophole, and Chorus
   blocked
 
 The brief must contain no `decide later` gap. Stop if exact-target Transparent
@@ -153,9 +153,26 @@ requires changed acoustic equations, if the owners cannot share one map and
 boundary lattice, or if bounded output staging requires a public or runtime
 surface.
 
+Authority:
+
+- `docs/architecture/offline-automatic-exact-target-transparent-dream-router-brief.md`
+
+Result:
+
+- exact integer dispatch owns `ceil(N/2)..=16N`
+- compression and expansion use their promoted Transparent selectors
+- both owners share one linear boundary-coordinate map and exact output lattice
+- the overlap uses one render-wide log-ratio smoothstep and a convex
+  linear-amplitude mix
+- pure `4N` and `8N` endpoints bypass the blend for byte parity
+- buffer reuse caps staging at final output plus one output-sized contribution
+- evidence, listening, rejection, cleanup, and minimal admission are complete
+- no code or candidate state entered `main`
+- Batch 35.3 is ready as one isolated candidate
+
 ## Batch 35.3 - Isolated Fixed-Ratio Route Candidate
 
-Status: planned; blocked on Batch 35.2
+Status: ready
 
 Implement one complete route in a disposable worktree. Run:
 
@@ -205,15 +222,16 @@ planning checkpoint.
 - [x] Cyclic remains outside automatic routing
 - [x] one target envelope and one transition interval are selected
 - [x] no current owner is called seamless without transition evidence
-- [x] only Batch 35.2 is ready
-- [x] candidate and public work remain conditional
+- [x] only Batch 35.3 is ready
+- [x] public work remains conditional
 - [x] planning changes documentation only
-- [ ] the complete brief owns every map, scheduler, boundary, stereo, memory,
+- [x] the complete brief owns every map, scheduler, boundary, stereo, memory,
   identity, evidence, rejection, cleanup, and admission decision
-- [ ] listening remains promotion authority
+- [x] listening remains promotion authority
 
 ## Next Task
 
-Execute Batch 35.2 only. Write one complete
-`ExactTargetTransparentDreamRouter` brief, validate the docs spine, commit the
-docs-only batch, and stop before candidate isolation or implementation.
+Execute Batch 35.3 only. Create the frozen disposable worktree, implement one
+private fixed-ratio `ExactTargetTransparentDreamRouter`, pass conformance twice,
+freeze one acoustic checkpoint, then follow the fixed gate order and stop on
+the first failure or explicit listening handoff.
