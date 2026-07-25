@@ -1,11 +1,11 @@
 # Offline Creative Public Surface
 
-Status: continuous Dream and exact-ratio Cyclic admitted
+Status: public v3 admitted; continuous Cyclic v4 frozen
 Owner: core-product
-Updated: 2026-07-24
+Updated: 2026-07-25
 Contract: `085`
 Roadmaps: `g10.031`, Batches 31.75-31.76; `g10.032`, Batches 32.27-32.28;
-`g10.033`, Batches 33.4-33.5; `g10.034` audit only
+`g10.033`, Batches 33.4-33.5; `g10.034`, Batches 34.4-34.5
 
 ## Decision
 
@@ -36,6 +36,28 @@ It has no range branch, hidden router, overlap, blend, or fallback.
 The shared `4x` and `8x` targets do not route or crossfade between characters.
 `OfflineHighQuality` remains a separate Transparent product choice.
 
+## Continuous Cyclic Decision
+
+Batch 34.4 freezes public `Cyclic` widening to every exact target satisfying
+`2L <= T <= 8L`. Every integer target frame count in that closed interval is
+valid. The target need not be an integral ratio, named anchor, cycle multiple,
+or power of two.
+
+The admitted private `ContinuousEventLedgerCyclic` owner already covers the
+complete interval with one map, schedule, cycle law, boundary law,
+linked-channel geometry, and deterministic state. Public Cyclic therefore
+dispatches directly to private `render_continuous`. It has no range branch,
+same-character router, overlap, blend, fallback, or transition identity.
+
+Exact `2x`, `4x`, and `8x` remain mandatory byte-parity anchors. The direct
+`5..90 ms` cycle control remains the sole Cyclic control and retains its
+`48 ms` default. Short values move toward metallic/ring motion; long values
+move toward tremolo/echo motion.
+
+Dream stays unchanged over `4L..=16L`. At shared targets, Dream and Cyclic
+remain explicit, distinct user choices. No automatic character selection is
+authorized.
+
 ## Executable Coverage
 
 Let `N` be source frames and `T` the requested output frames. This is the
@@ -50,6 +72,9 @@ The matrix is target-frame exact. `Dream` is continuous over integer output
 lengths, not merely floating-point ratios. `Cyclic` is not continuous. Both
 characters reject unsupported targets before render allocation and never
 substitute the other character or Transparent.
+
+This remains the executable v3 matrix until Batch 34.5 implements the frozen
+v4 Cyclic range.
 
 Adjacent Signal stretch owners are not hidden creative range owners:
 
@@ -76,7 +101,95 @@ expansion. Dream `4x..16x` and Cyclic `2x`/`4x`/`8x` carry their own completed
 creative admission. No row claims universal professional parity from metrics
 alone.
 
-## Public V3 Shape
+## Frozen Public V4 Shape
+
+Batch 34.5 may admit only this shape:
+
+```rust
+pub const CREATIVE_STRETCH_ENGINE_VERSION: &str = "signal-creative-stretch-v4";
+pub const CREATIVE_STRETCH_DREAM_MIN_RATIO: usize = 4;
+pub const CREATIVE_STRETCH_DREAM_MAX_RATIO: usize = 16;
+pub const CREATIVE_STRETCH_CYCLIC_MIN_RATIO: usize = 2;
+pub const CREATIVE_STRETCH_CYCLIC_MAX_RATIO: usize = 8;
+
+#[non_exhaustive]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum CreativeStretchRatioDomain {
+    Continuous {
+        minimum: usize,
+        maximum: usize,
+    },
+    Exact(&'static [usize]),
+}
+
+impl CreativeStretchCharacter {
+    pub const fn ratio_domain(self) -> CreativeStretchRatioDomain;
+}
+```
+
+`Dream::ratio_domain()` remains
+`Continuous { minimum: 4, maximum: 16 }`. `Cyclic::ratio_domain()` becomes
+`Continuous { minimum: 2, maximum: 8 }`.
+
+Remove `CREATIVE_STRETCH_CYCLIC_SUPPORTED_RATIOS`. It becomes false after
+widening. Do not retain a compatibility alias or reinterpret `[2, 4, 8]` as
+recommendations. `CreativeStretchRatioDomain::Exact` remains valid public
+domain vocabulary but is returned by no current character.
+
+The request, character enum, controls, render entry, and error variants remain
+unchanged. Public behavior identity becomes `signal-creative-stretch-v4`
+because discovery and the accepted Cyclic request set change. Private renderer
+identity remains internal.
+
+## Continuous Cyclic Request Contract
+
+- preserve the existing validation order through controls and empty/target
+  relationship
+- reject source or target frames above `2^53-1` as `SizeOverflow`
+- compute `minimum=checked_mul(L,2)` and `maximum=checked_mul(L,8)`
+- accept Cyclic exactly when `minimum <= T <= maximum`
+- reject Cyclic outside that interval as `UnsupportedTargetFrames`
+- reject arithmetic overflow as `SizeOverflow`
+- validate the complete public domain before render dispatch or output
+  allocation
+- call private `render_continuous` once with the exact target and canonical
+  cycle
+- preserve empty-input plus zero-target success
+- never clamp, round, route, crossfade, or fall back
+
+The public wrapper repeats the checked domain decision for stable public error
+precedence. The private continuous owner remains final geometry authority.
+
+## Batch 34.5 Gate
+
+Only `creative.rs` and `lib.rs` may change.
+
+Required focused ownership:
+
+1. v4 constants, exports, rustdoc, and ratio discovery match the frozen shape
+2. validation accepts every target in `2L..=8L` for source lengths
+   `1`, `2`, `3`, and `257`
+3. `2L-1` and `8L+1` reject as `UnsupportedTargetFrames` before dispatch or
+   output allocation
+4. public mono and stereo match private `render_continuous` byte-for-byte at
+   `2x`, `2x+1 frame`, `2.5x`, `3x`, `4x-1 frame`, `4x`, `4x+1 frame`,
+   `5x`, `6x`, `7.5x`, `8x-1 frame`, and `8x`
+5. parity covers explicit `5 ms`, default `48 ms`, and explicit `90 ms`
+6. exact `2x`, `4x`, and `8x` public output remains byte-identical
+7. Dream discovery, validation, output, `space`, seed, and errors remain
+   unchanged
+8. Cyclic cycle canonicalization, control ownership, error mapping,
+   determinism, exact length, finiteness, and linked-stereo relations remain
+   unchanged
+9. every private Dream and Cyclic file remains byte-identical
+10. no router, cache, artifact, dynamic ratio, runtime, UI, Loophole, or
+    Chorus surface changes
+
+No listening rerun is required. The public wrapper exposes output already
+admitted from the unchanged private owner. Any private-file or parity
+difference stops the batch.
+
+## Admitted Public V3 Shape
 
 Batch 33.5 admits this shape:
 
@@ -114,7 +227,7 @@ The request, character enum, controls, render entry, and error variants remain
 unchanged. Update their documentation from exact-ratio wording to
 character-specific target-domain wording.
 
-The public behavior version becomes `signal-creative-stretch-v3` because the
+The public behavior version became `signal-creative-stretch-v3` because the
 accepted request set and discovery surface change. Renderer-specific identity
 stays internal. This does not admit a creative cache schema.
 
@@ -335,7 +448,7 @@ The honest consuming UI is small:
 | Intent | Public meaning |
 | --- | --- |
 | mode | explicit `Creative` choice separate from `Transparent` |
-| duration | Dream: continuous `400%..=1600%`; Cyclic: exact `200%`, `400%`, or `800%` |
+| duration | Dream: continuous `400%..=1600%`; Cyclic v4: continuous `200%..=800%` |
 | character | explicit `Dream` or `Cyclic` |
 | space | Dream only; optional preserve-to-widen control, normalized `0..1`, default `0.5` |
 | cycle | Cyclic only; `5..90 ms`, default `48 ms`; short is metallic/ring-like, long is tremolo/echo-like |
@@ -352,18 +465,17 @@ directly; no resampling, second stretch pass, limiter, level correction, or
 post-render fade is added.
 
 The Batch 31.76 Dream wrapper mapped public request and error vocabulary onto
-its admitted private renderer. Batch 32.28 added Cyclic. Batch 33.5 may change
-only:
+its admitted private renderer. Batch 32.28 added Cyclic. Batch 33.5 widened
+Dream. Batch 34.5 may change only:
 
 - `creative.rs` public types, validation, dispatch, error mapping, and focused
   tests
 - `lib.rs` rustdoc and re-export wiring
 
 The admitted Dream acoustic files `analysis.rs`, `plan.rs`, `stereo.rs`, and
-`synthesis.rs` remain byte-identical. The admitted Cyclic acoustic files
-`plan.rs`, `schedule.rs`, `interpolate.rs`, and `synthesis.rs` also remain
-byte-identical. `creative_cyclic/mod.rs` and its production tests do not
-change.
+`synthesis.rs` remain byte-identical. The admitted Cyclic files `mod.rs`,
+`plan.rs`, `schedule.rs`, `interpolate.rs`, `synthesis.rs`, and `tests.rs`
+also remain byte-identical.
 
 ## Cache And Routing Boundary
 
@@ -376,7 +488,7 @@ does not own character, character-valid controls, fixed Dream seed, or creative
 engine version without collision risk. Cache admission requires a later
 contract and implementation batch.
 
-A future creative cache key must include `signal-creative-stretch-v3`,
+A future creative cache key must include `signal-creative-stretch-v4`,
 character, exact target frames, and the active character control: `space` bits
 for Dream or effective `cycle_us` for Cyclic. It must not include the inactive
 control. This freezes identity semantics only; it does not admit caching.
@@ -495,6 +607,6 @@ private renderer exactly.
 
 ## Next Task
 
-Execute `g10.034` Batch 34.3 only. Implement and execute the frozen continuous
-Cyclic candidate in one disposable worktree. Public Cyclic remains exact at
-`2x`, `4x`, and `8x`; keep integration closed.
+Execute `g10.034` Batch 34.5 only. Admit the frozen v4 public Cyclic range in
+`creative.rs` and `lib.rs`, run the focused parity gate, and keep every private
+renderer, integration, and inactive product surface unchanged.

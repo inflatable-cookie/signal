@@ -36,7 +36,7 @@ strict lane.
 - Admitted private event-ledger Cyclic renderer brief: [architecture/offline-creative-event-ledger-audited-centered-compressed-anchor-cyclic-brief.md](./architecture/offline-creative-event-ledger-audited-centered-compressed-anchor-cyclic-brief.md)
 - Admitted private continuous Cyclic brief: [architecture/offline-creative-continuous-event-ledger-cyclic-brief.md](./architecture/offline-creative-continuous-event-ledger-cyclic-brief.md)
 - Evidence-invalid historical Cyclic brief: [architecture/offline-creative-centered-compressed-anchor-cyclic-brief.md](./architecture/offline-creative-centered-compressed-anchor-cyclic-brief.md)
-- Admitted continuous Dream and exact-ratio Cyclic CreativeStretch surface: [architecture/offline-creative-fixed-ratio-public-surface.md](./architecture/offline-creative-fixed-ratio-public-surface.md)
+- Admitted public v3 and frozen continuous Cyclic v4 CreativeStretch surface: [architecture/offline-creative-fixed-ratio-public-surface.md](./architecture/offline-creative-fixed-ratio-public-surface.md)
 - Direct-renewal owner study: [architecture/offline-creative-direct-renewal-owner-study.md](./architecture/offline-creative-direct-renewal-owner-study.md)
 - Closed creative LinkedStnNoiseMorph brief: [architecture/offline-creative-linked-stn-noise-morph-brief.md](./architecture/offline-creative-linked-stn-noise-morph-brief.md)
 - Rejected creative ComparatorAuditedRenewalSpectral brief: [architecture/offline-creative-comparator-audited-renewal-spectral-brief.md](./architecture/offline-creative-comparator-audited-renewal-spectral-brief.md)
@@ -94,6 +94,5 @@ strict lane.
 
 ## Next Task
 
-Execute `g10.034` Batch 34.4 only as documentation. Decide and freeze the
-public continuous Cyclic range consequences. Do not implement public widening
-or integration.
+Execute `g10.034` Batch 34.5 only. Admit the frozen v4 public Cyclic range in
+`creative.rs` and `lib.rs`. Keep private renderers and integration unchanged.

@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: continuous Dream and exact-ratio Cyclic public; private continuous Cyclic admitted
+Status: public v3 active; continuous Cyclic v4 frozen
 Owner: core-product
 Updated: 2026-07-25
 Related contracts: `046`, `048`, `084`
@@ -89,8 +89,9 @@ Batch 32.27 freezes the same public boundary's Cyclic extension:
 Batch 32.28 admits that extension without changing either renderer.
 Batch 33.4 freezes public Dream widening to every exact target in
 `4N..=16N`; Batch 33.5 admits it without changing private DSP. `Spectral`,
-`Rough`, `Cloud`, continuous Cyclic, and an automatic range router remain
-unavailable.
+`Rough`, `Cloud`, and an automatic range router remain unavailable.
+Continuous public Cyclic remains unavailable until Batch 34.5; Batch 34.4
+freezes its exact v4 contract without implementation.
 
 Public `Cyclic` uses `duration`, `character=Cyclic`, and one semantic `cycle`
 control from short metallic motion through long tremolo/echo motion.
@@ -2257,10 +2258,41 @@ Only private `render_continuous`, identity
 `signal-creative-continuous-event-ledger-cyclic-v1`, and focused regression
 ownership enter `main`. The acoustic equations, exact `2x`, `4x`, and `8x`
 anchor output, direct `5..90 ms` cycle control, and public surface remain
-unchanged. Batch 34.4 is ready as a docs-only public range decision.
+unchanged. That made Batch 34.4 ready as a docs-only public range decision.
+
+Batch 34.4 selects direct public widening over every exact target
+`2N <= T <= 8N`. Discovery becomes
+`Continuous { minimum: 2, maximum: 8 }`. Public constants become
+`CREATIVE_STRETCH_CYCLIC_MIN_RATIO=2` and
+`CREATIVE_STRETCH_CYCLIC_MAX_RATIO=8`;
+`CREATIVE_STRETCH_CYCLIC_SUPPORTED_RATIOS` is removed without an alias.
+Public behavior identity becomes `signal-creative-stretch-v4`.
+
+Public validation computes checked `2N` and `8N` bounds, accepts every integer
+target inside them, and returns `UnsupportedTargetFrames` outside them before
+dispatch or output allocation. Arithmetic overflow remains `SizeOverflow`.
+Control ownership, duration canonicalization, error variants, empty success,
+exact target authority, and validation order remain unchanged.
+
+Public Cyclic dispatches directly to private `render_continuous`. No router,
+range branch, overlap, blend, fallback, or new transition identity exists.
+Dream remains continuous over `4N..=16N`; shared targets remain explicit
+character choices.
+
+No creative cache implementation or schema is admitted. A future creative
+cache identity must use public engine v4, character, exact target frames, and
+only the active control: Dream `space` bits or Cyclic effective microseconds.
+The inactive control remains absent.
+
+Batch 34.5 may change only `creative.rs` and `lib.rs`. It must prove exhaustive
+small-domain validation, one-frame boundary rejection, public/private
+byte-parity across anchors and admitted interiors, all three cycle anchors,
+unchanged Dream behavior, unchanged errors and linked relations, and
+byte-identical private renderer files. Any private-file or parity change stops
+the batch. No listening rerun is required for this unchanged admitted owner.
 
 ## Next Task
 
-Execute `g10.034` Batch 34.4 only as documentation. Decide and freeze whether
-public Cyclic exposes every exact target in `2N..=8N`. Keep implementation and
-integration closed.
+Execute `g10.034` Batch 34.5 only. Admit the frozen v4 public Cyclic range in
+`creative.rs` and `lib.rs`; keep private DSP, routing, cache, artifacts,
+dynamic ratio, runtime, UI, Loophole, and Chorus unchanged.

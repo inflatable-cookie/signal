@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: `g10.034` active; continuous Cyclic Batch 34.4 ready
+Status: `g10.034` active; continuous Cyclic Batch 34.5 ready
 Updated: 2026-07-25
 
 ## Why this generation matters now
@@ -841,10 +841,20 @@ for that exact checkpoint after all hard stereo controls pass. The hearing
 limitation remains recorded; eligible independent review is not claimed.
 Only the private `2N..=8N` entry, behavior identity, and focused regression
 owners are admitted. Public Cyclic remains exact at `2x`, `4x`, and `8x`.
-Batch 34.4 is ready as documentation only.
+That made Batch 34.4 ready as documentation only.
+
+Batch 34.4 freezes public Cyclic v4 over every exact target `2N..=8N`.
+Discovery becomes `Continuous { minimum: 2, maximum: 8 }`; public constants
+become Cyclic minimum and maximum bounds; the false `[2,4,8]` list is removed
+without an alias. Public behavior identity advances to
+`signal-creative-stretch-v4`.
+
+Dispatch remains direct to private `render_continuous`. There is no router,
+range branch, blend, fallback, cache schema, or integration. Dream, controls,
+errors, duration canonicalization, and private renderer bytes remain
+unchanged. Batch 34.5 is ready and may change only `creative.rs` and `lib.rs`.
 
 ## Next Task
 
-Execute `g10.034` Batch 34.4 only as documentation. Decide whether public
-Cyclic should report every exact target in `2N..=8N`, and freeze the public
-contract consequences. Do not implement the widening.
+Execute `g10.034` Batch 34.5 only. Admit the frozen v4 public Cyclic range in
+`creative.rs` and `lib.rs`; keep private DSP and integration unchanged.

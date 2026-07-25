@@ -1,6 +1,6 @@
 # 034 - Continuous Cyclic Feasibility
 
-Status: active; Batch 34.3 complete; Batch 34.4 ready
+Status: active; Batch 34.4 complete; Batch 34.5 ready
 Owner: dsp
 Created: 2026-07-24
 Depends on: `g10.032`, `g10.033`
@@ -35,7 +35,7 @@ The visible runway is:
 5. minimal public admission, only after acoustic passage
 6. docs-only closeout and next planning checkpoint
 
-Batches 34.1 through 34.3 are complete. Batch 34.4 is the only ready work.
+Batches 34.1 through 34.4 are complete. Batch 34.5 is the only ready work.
 Later batches remain conditional.
 
 ## Goals
@@ -208,24 +208,68 @@ Result:
 
 ## Batch 34.4 - Public Range Decision
 
-Status: ready
+Status: complete
 
 Documentation only.
 
-- [ ] decide whether public Cyclic reports one continuous target domain
-- [ ] freeze discovery, request validation, error, behavior-version, and cache
+- [x] decide whether public Cyclic reports one continuous target domain
+- [x] freeze discovery, request validation, error, behavior-version, and cache
   identity implications
-- [ ] decide whether direct dispatch remains sufficient
-- [ ] preserve Dream and all inactive controls unchanged
-- [ ] make one minimal public implementation batch ready or close the lane
+- [x] decide whether direct dispatch remains sufficient
+- [x] preserve Dream and all inactive controls unchanged
+- [x] make one minimal public implementation batch ready or close the lane
+
+Result:
+
+- select every exact target `2N <= T <= 8N`
+- report `Continuous { minimum: 2, maximum: 8 }`
+- replace the false exact-list constant with public Cyclic minimum and maximum
+  constants; retain no compatibility alias
+- advance public behavior identity to `signal-creative-stretch-v4`
+- preserve existing request fields, controls, validation order, typed errors,
+  duration canonicalization, empty success, and exact target authority
+- dispatch directly to private `render_continuous`; add no router, range
+  branch, blend, overlap, fallback, or transition identity
+- preserve Dream `4N..=16N`, `space`, seed, renderer, and public behavior
+- freeze future cache identity semantics without admitting a cache schema or
+  implementation
+- require only `creative.rs` and `lib.rs` to change in Batch 34.5
+- require byte-exact anchor and interior public/private parity; no listening
+  rerun is needed for the unchanged admitted owner
 
 ## Batch 34.5 - Minimal Public Admission
 
-Status: planned; blocked on Batch 34.4
+Status: ready
 
 Implement only the frozen public range and focused parity ownership. No
 renderer, router, cache, artifact, runtime, or consumer change enters this
 batch.
+
+- [ ] replace exact-list discovery with Cyclic `2..=8` continuous discovery
+- [ ] validate every integer target in `2N..=8N` before dispatch or allocation
+- [ ] dispatch Cyclic directly to private `render_continuous`
+- [ ] advance the public engine identity to v4
+- [ ] remove the false supported-ratios constant without an alias
+- [ ] preserve exact `2x`, `4x`, and `8x` output byte-for-byte
+- [ ] prove public/private mono and stereo parity at frozen anchors,
+  one-frame boundaries, and interior targets
+- [ ] preserve all cycle, error, determinism, length, finiteness, and linked
+  relation behavior
+- [ ] preserve Dream and every private renderer file byte-for-byte
+- [ ] change only `creative.rs` and `lib.rs`
+
+Stop on any private-file change, public/private parity difference, Dream
+difference, error-precedence change, allocation-before-validation path, or
+scope expansion.
+
+Validation:
+
+- focused public creative-stretch tests
+- retained private continuous Cyclic tests
+- `effigy check:docs`
+- `effigy health`
+- `effigy validate`
+- `git diff --check`
 
 ## Batch 34.6 - Lane Closeout
 
@@ -252,11 +296,14 @@ next planning checkpoint.
 - [x] Batch 34.3 completed every hard and listening gate from one immutable
   checkpoint
 - [x] only the frozen minimal private surface entered `main`
+- [x] Batch 34.4 freezes one exact public v4 shape with no open product,
+  validation, dispatch, cache-identity, gate, or cleanup decision
+- [x] Batch 34.5 is bounded to two public wrapper files and mechanical parity
+  proof
 
 ## Next Task
 
-Execute Batch 34.4 only as documentation. Decide whether public Cyclic should
-report every exact target in `2N..=8N`; freeze discovery, validation, error,
-behavior-version, cache-identity, and dispatch consequences. Do not implement
-public widening or begin lower Dream, routing, cache, artifacts, dynamic ratio,
+Execute Batch 34.5 only. Admit the frozen v4 public Cyclic range through
+`creative.rs` and `lib.rs`, run the focused parity gate, and stop before lane
+closeout. Do not begin lower Dream, routing, cache, artifacts, dynamic ratio,
 runtime, UI, Loophole, or Chorus work.

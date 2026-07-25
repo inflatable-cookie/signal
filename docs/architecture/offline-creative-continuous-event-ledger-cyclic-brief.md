@@ -698,12 +698,10 @@ one memory/cost bound, exact source and comparator families, fixed metrics and
 thresholds, one listening policy, explicit evidence repair, rejection,
 cleanup, and minimal admission.
 
-Batch 34.3 is complete. Batch 34.4 may decide the public range as
-documentation only.
+Batch 34.3 is complete. Batch 34.4 froze direct public widening over the same
+`2N..=8N` domain. Batch 34.5 is ready for the public wrapper only.
 
 ## Next Task
 
-Execute `g10.034` Batch 34.4 only as documentation. Freeze whether public
-Cyclic exposes every exact target in `2N..=8N`, including discovery,
-validation, error, behavior-version, cache-identity, and dispatch
-consequences. Do not implement the widening.
+Execute `g10.034` Batch 34.5 only. Admit the frozen public v4 range in
+`creative.rs` and `lib.rs`. Keep this private renderer byte-identical.
