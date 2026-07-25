@@ -6,7 +6,7 @@ use crate::transient_smear::{
     measure_transient_smear, transient_smear_nan, StretchTransientSmearMeasurement,
 };
 use crate::{
-    dynamic_ratio_output_boundaries, dynamic_ratio_output_frames, smooth_loop_boundary_interleaved,
+    dynamic_ratio_output_boundaries, dynamic_ratio_output_frames,
     stretch_dynamic_ratio_mono_with_engine, OfflineHighQualityStretcher, RealtimePreviewStretcher,
     StretchRatioPoint, TimeStretcher,
 };
@@ -2009,6 +2009,34 @@ fn amplitude_to_dbfs(amplitude: f64) -> f64 {
         -240.0
     } else {
         20.0 * amplitude.log10()
+    }
+}
+
+pub(super) fn smooth_loop_boundary_interleaved(
+    interleaved_samples: &mut [Sample],
+    channels: u16,
+    fade_frames: usize,
+) {
+    let channel_count = channels as usize;
+    if channel_count == 0 || fade_frames == 0 {
+        return;
+    }
+    let frames = interleaved_samples.len() / channel_count;
+    if frames < 2 {
+        return;
+    }
+
+    let fade_frames = fade_frames.min(frames / 2).max(1);
+    for channel in 0..channel_count {
+        let first = interleaved_samples[channel];
+        let last = interleaved_samples[(frames - 1) * channel_count + channel];
+        let correction = (first - last) * 0.5;
+        for frame in 0..fade_frames {
+            let weight = (fade_frames - frame) as f32 / fade_frames as f32;
+            interleaved_samples[frame * channel_count + channel] -= correction * weight;
+            let tail_frame = frames - 1 - frame;
+            interleaved_samples[tail_frame * channel_count + channel] += correction * weight;
+        }
     }
 }
 

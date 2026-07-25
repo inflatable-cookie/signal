@@ -1780,10 +1780,9 @@ impl OfflineHighQualityStretcher {
     /// Stretch an interleaved stereo buffer through the linked
     /// OfflineHighQuality prototype path.
     ///
-    /// Unlike [`stretch_interleaved_stereo`], this path does not process left
-    /// and right independently. It uses a mid/side linked analysis surface so
-    /// stereo image metrics can be measured against a candidate that preserves
-    /// channel relationships more directly. A trailing odd sample is ignored.
+    /// This path uses a mid/side linked analysis surface so stereo image
+    /// metrics can be measured against a candidate that preserves channel
+    /// relationships directly. A trailing odd sample is ignored.
     pub fn stretch_interleaved_stereo(&mut self, frames: &[Sample]) -> Vec<Sample> {
         let frame_count = frames.len() / 2;
         let target_frames = (frame_count as f64 * self.ratio).round() as usize;
@@ -2026,66 +2025,6 @@ impl TimeStretcher for OfflineHighQualityStretcher {
             )
         } else {
             default_output
-        }
-    }
-}
-
-/// Stretch an interleaved stereo buffer through `stretcher`, channel by
-/// channel. Output frame count follows the mono length contract; both
-/// channels are stretched with identical parameters so they stay
-/// sample-aligned.
-pub fn stretch_interleaved_stereo(
-    stretcher: &mut dyn TimeStretcher,
-    frames: &[Sample],
-) -> Vec<Sample> {
-    let frame_count = frames.len() / 2;
-    let mut left = Vec::with_capacity(frame_count);
-    let mut right = Vec::with_capacity(frame_count);
-    for frame in frames.chunks_exact(2) {
-        left.push(frame[0]);
-        right.push(frame[1]);
-    }
-    let left = stretcher.stretch_mono(&left);
-    let right = stretcher.stretch_mono(&right);
-    let out_frames = left.len().min(right.len());
-    let mut output = Vec::with_capacity(out_frames * 2);
-    for index in 0..out_frames {
-        output.push(left[index]);
-        output.push(right[index]);
-    }
-    output
-}
-
-/// Smooth an interleaved loop boundary in place.
-///
-/// This is an offline loop-context helper, not a generic stretch post-process:
-/// it distributes the final-to-first-frame discontinuity across `fade_frames`
-/// at both ends so explicit loop renders can reduce boundary clicks while
-/// preserving the interior audio.
-pub fn smooth_loop_boundary_interleaved(
-    interleaved_samples: &mut [Sample],
-    channels: u16,
-    fade_frames: usize,
-) {
-    let channel_count = channels as usize;
-    if channel_count == 0 || fade_frames == 0 {
-        return;
-    }
-    let frames = interleaved_samples.len() / channel_count;
-    if frames < 2 {
-        return;
-    }
-
-    let fade_frames = fade_frames.min(frames / 2).max(1);
-    for channel in 0..channel_count {
-        let first = interleaved_samples[channel];
-        let last = interleaved_samples[(frames - 1) * channel_count + channel];
-        let correction = (first - last) * 0.5;
-        for frame in 0..fade_frames {
-            let weight = (fade_frames - frame) as f32 / fade_frames as f32;
-            interleaved_samples[frame * channel_count + channel] -= correction * weight;
-            let tail_frame = frames - 1 - frame;
-            interleaved_samples[tail_frame * channel_count + channel] += correction * weight;
         }
     }
 }
@@ -3639,26 +3578,6 @@ mod tests {
     }
 
     #[test]
-    fn stereo_helper_keeps_channels_aligned_and_interleaved() {
-        let sample_rate = 48_000.0;
-        let left = sine(440.0, sample_rate, 24_000);
-        let right = sine(220.0, sample_rate, 24_000);
-        let mut frames = Vec::with_capacity(left.len() * 2);
-        for (l, r) in left.iter().zip(right.iter()) {
-            frames.push(*l);
-            frames.push(*r);
-        }
-        let mut stretcher = PhaseVocoderStretcher::new(1.5);
-        let output = stretch_interleaved_stereo(&mut stretcher, &frames);
-        assert_eq!(output.len() % 2, 0);
-        assert_eq!(output.len() / 2, (24_000f64 * 1.5).round() as usize);
-        let out_left: Vec<f32> = output.iter().step_by(2).copied().collect();
-        let out_right: Vec<f32> = output.iter().skip(1).step_by(2).copied().collect();
-        assert!((dominant_frequency_hz(&out_left, sample_rate) - 440.0).abs() < 15.0);
-        assert!((dominant_frequency_hz(&out_right, sample_rate) - 220.0).abs() < 10.0);
-    }
-
-    #[test]
     fn offline_high_quality_linked_stereo_honors_output_length_contract() {
         let sample_rate = 48_000.0;
         let left = sine(440.0, sample_rate, 48_000);
@@ -4810,7 +4729,7 @@ mod tests {
     fn loop_boundary_smoothing_equalizes_endpoints() {
         let mut frames = [1.0, -0.5, 0.25, 0.25, -1.0, 0.75];
 
-        smooth_loop_boundary_interleaved(&mut frames, 2, 1);
+        benchmark::smooth_loop_boundary_interleaved(&mut frames, 2, 1);
 
         assert!((frames[0] - frames[4]).abs() < 1.0e-6);
         assert!((frames[1] - frames[5]).abs() < 1.0e-6);
