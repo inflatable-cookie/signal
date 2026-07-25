@@ -10,6 +10,7 @@ mod tests;
 
 use plan::Plan;
 
+#[cfg(test)]
 pub(super) const CONTINUOUS_BEHAVIOR_ID: &str = "signal-creative-continuous-event-ledger-cyclic-v1";
 
 #[derive(Clone, Copy, Debug)]
@@ -36,6 +37,7 @@ pub(super) enum CandidateError {
     AllocationOverflow,
 }
 
+#[cfg(test)]
 pub(super) fn render(request: Request<'_>) -> Result<Vec<f32>, CandidateError> {
     let plan = Plan::new(request)?;
     if plan.identity {

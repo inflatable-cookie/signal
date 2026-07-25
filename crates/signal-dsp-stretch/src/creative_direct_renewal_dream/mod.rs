@@ -3,10 +3,13 @@ mod plan;
 mod stereo;
 mod synthesis;
 
+#[cfg(test)]
 pub(super) const DIRECT_RENEWAL_DREAM_ENGINE_VERSION: &str =
     "signal-creative-direct-renewal-dream-v2";
+#[cfg(test)]
 pub(super) const DIRECT_RENEWAL_DREAM_RECEIPT_SCHEMA: &str =
     "signal.creative-direct-renewal.receipt.v1";
+#[cfg(test)]
 pub(super) const DIRECT_RENEWAL_DREAM_SUMMARY_SCHEMA: &str =
     "signal.creative-direct-renewal.summary.v1";
 

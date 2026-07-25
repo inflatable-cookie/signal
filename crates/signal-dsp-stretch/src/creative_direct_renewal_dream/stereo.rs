@@ -4,6 +4,7 @@ pub(crate) const FRAME_TAG: u64 = 0x454d_4152_4657_4e52;
 pub(crate) const BIN_TAG: u64 = 0x3030_4e49_4257_4e52;
 pub(crate) const BASE_TAG: u64 = 0x3045_5341_4257_4e52;
 pub(crate) const SPACE_TAG: u64 = 0x4543_4150_5357_4e52;
+#[cfg(test)]
 pub(crate) const TEST_TAG: u64 = 0x3054_5345_5457_4e52;
 pub(crate) const ADMISSION_SEED: u64 = 0x0123_4567_89ab_cdef;
 

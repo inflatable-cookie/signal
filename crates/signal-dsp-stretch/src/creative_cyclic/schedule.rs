@@ -57,6 +57,7 @@ pub(super) fn output_anchors(
     Ok((anchor(plan, k0)?, anchor(plan, k0 + 1)?, remainder))
 }
 
+#[cfg(test)]
 pub(super) fn ideal_map_numerator(plan: &Plan, output: usize) -> Result<i128, CandidateError> {
     let output = i128::try_from(output).map_err(|_| CandidateError::ArithmeticOverflow)?;
     let input =
@@ -69,9 +70,4 @@ pub(super) fn ideal_map_numerator(plan: &Plan, output: usize) -> Result<i128, Ca
         .and_then(|value| value.checked_mul(input))
         .and_then(|value| value.checked_sub(target))
         .ok_or(CandidateError::ArithmeticOverflow)
-}
-
-pub(super) fn planned_spacing(plan: &Plan) -> f64 {
-    plan.cycle_frames as f64 * (plan.target_frames - plan.input_frames) as f64
-        / plan.target_frames as f64
 }
