@@ -1,10 +1,10 @@
 # Offline Automatic ExactTargetTransparentDreamRouter Brief
 
-Status: ready for one isolated candidate
+Status: corrected; one exact replay ready
 Owner: dsp
 Updated: 2026-07-25
 Contract: `085`
-Roadmap: `g10.035`, Batch 35.2
+Roadmap: `g10.035`, Batches 35.2-35.4
 
 ## Decision
 
@@ -35,6 +35,37 @@ The candidate identity is:
 `Automatic` remains private and unavailable to consumers until a later public
 decision. Explicit Transparent, Dream, and Cyclic remain unchanged. Cyclic
 never enters this route.
+
+## Checkpoint Result And Gate Correction
+
+Batch 35.3 freezes acoustic checkpoint
+`50c3d028ae1d5b0d057e74899b84a1a27c0e0038`, tree
+`0ff62f572eef222d38ac356d3874c973d78ba2d2`. Normal-profile stretch
+regression passes `204/204`. Two release conformance rounds from unchanged
+bytes pass construction `1/1` and structural `8/8`.
+
+The first acoustic owner stops on the pure Transparent
+`rademacher-noise` row at `N=96000`, `T=383999=4N-1`. Dispatch and output are
+byte-exact Transparent. Its peak is `10.370356`, above the brief's universal
+`8.0` ceiling. Byte parity and the ceiling cannot both hold for the admitted
+owner. No pitch owner, later synthetic owner, long-form render, or listening
+gate ran.
+
+Batch 35.4 therefore classifies the checkpoint as evidence-invalid, not a
+renderer pass or rejection. The corrected ownership is:
+
+- pure Transparent rows require byte parity, exact length, finiteness,
+  determinism, complete hashes, and the admitted Transparent integrity rules;
+  they gain no route-specific absolute peak ceiling
+- pure Dream rows require byte parity and the admitted Dream integrity rules,
+  including Dream's existing absolute peak ceiling
+- interior rows reject route-created overshoot above the larger
+  sample-aligned arm peak by more than two `f32` ulps
+
+This correction changes no owner output, route equation, map, weight, source,
+seed, comparator, listening policy, or production surface. It authorizes one
+exact source replay under new isolation identity. It does not authorize
+candidate tuning or a second renderer.
 
 ## Immutable Inputs
 
@@ -68,6 +99,23 @@ Permitted candidate changes are limited to:
 The exact-target entry may extract or parameterize existing code. It may not
 change a rendered sample. Public types, existing dispatch, cache and artifact
 identity, runtime, and other crates remain unchanged.
+
+The exact replay must restore and prove these Batch 35.3 checkpoint hashes
+before conformance:
+
+| Surface | SHA-256 |
+| --- | --- |
+| `signal-dsp-stretch/src/lib.rs` | `3354ee7433f9a9c3e115f2b8bfff69e19f589abecad3818611cce03d465e1549` |
+| `signal-dsp-stretch/src/phase_vocoder.rs` | `60b599c2d15f6a1d87ab54b3567fc134edbb9faa08be0246158979a2f09fb920` |
+| route module | `d7629a4c6dcf7f9ffecbef232d4bd1fe5b2b5d7a9e1bd7d4d279fab31a1f3a02` |
+| candidate nextest profile | `504cfa9780d0ee1de54d258a2de21f87b0be8eb6f42c5bc5635cf0e1e2e0efff` |
+| conformance ledger | `a0b4fef20f4f7a710d65f70b376a9ca9be0c31cb8c369ca67749cb7599c392b1` |
+| source manifest | `fc667570cad5aba4b23dc51973a5fed34c548f1b3e389d15c13c52284ab62ff3` |
+
+Restore only candidate source, test, profile, conformance, and manifest bytes
+from checkpoint `50c3d028`. Keep current canonical docs from `main`. A hash
+miss, missing object, or required reconstruction by judgment stops for
+reassessment.
 
 ## Exact Request
 
@@ -352,24 +400,27 @@ source fill, callback state, or unbounded retry exists.
 
 ## Candidate Isolation
 
-Batch 35.3 creates exactly:
+Batch 35.5 creates exactly:
 
-- worktree: `/Users/tom/Dev/projects/signal-candidate-35-3`
-- branch: `candidate/g10-035-exact-target-transparent-dream-router`
+- worktree: `/Users/tom/Dev/projects/signal-candidate-35-5`
+- branch:
+  `candidate/g10-035-exact-target-transparent-dream-router-replay`
 - tracked authority:
-  `candidate-evidence/g10-035/35-3/conformance.tsv`
+  `candidate-evidence/g10-035/35-5/conformance.tsv`
 - tracked source manifest:
-  `candidate-evidence/g10-035/35-3/source-manifest.tsv`
+  `candidate-evidence/g10-035/35-5/source-manifest.tsv`
 - candidate-only nextest profile: `automatic-route`
 - ignored evidence root:
-  `target/automatic-stretch-route-35-3/`
+  `target/automatic-stretch-route-35-5/`
 - acoustic ref:
-  `refs/signal-evidence/creative/exact-target-transparent-dream-router/35-3-acoustic`
+  `refs/signal-evidence/creative/exact-target-transparent-dream-router/35-5-acoustic`
 
-Before creation, require the worktree, branch, tracked evidence paths, ignored
-root, and ref to be absent. Record the Batch 35.2 closeout commit/tree, hashes
-above, toolchain, OS, architecture, Effigy, and nextest versions. Unknown or
-partial state stops; it is never overwritten or reused.
+Before creation, require the new worktree, branch, tracked evidence paths,
+ignored root, and ref to be absent. Require the closed Batch 35.3 worktree,
+branch, ref, and generated state to be absent. Record current `main`, restored
+checkpoint/tree, every hash above, toolchain, OS, architecture, Effigy, and
+nextest versions. Unknown or partial state stops; it is never overwritten or
+reused.
 
 No historical rejected renderer, route, test, receipt, threshold, or generated
 audio may be recovered.
@@ -424,9 +475,11 @@ admitted Dream mono/stereo sources. Targets are:
 - boundary controls: `4N-1`, `4N`, `4N+1`, `8N-1`, `8N`, `8N+1`
 - interior controls: `9N/2`, `5N`, `6N`, `7N`, `15N/2`
 
-Every output must have exact length, finite samples, absolute sample no greater
-than `8`, complete hashes, no unowned `H`-frame zero run inside mapped active
-support, and byte-identical repeat.
+Every output must have exact length, finite samples, complete hashes, no
+unowned `H`-frame zero run inside mapped active support, and byte-identical
+repeat. Pure Transparent rows have no new absolute peak ceiling and must remain
+byte-exact. Pure Dream rows retain Dream's admitted absolute peak ceiling.
+Interior rows use the aligned-arm peak comparison below.
 
 The gate is terminal on:
 
@@ -545,6 +598,14 @@ After acoustic identity, any hard objective or listening miss rejects the
 checkpoint. Do not tune, repair, or rerun it. Record the dominant cause, first
 failed gate, completed rows, exact commit/tree/ref, and comparator identities.
 
+A contradiction between two mandatory gates invalidates evidence rather than
+proving renderer quality. Stop immediately, run one docs-only ownership
+reassessment, and change no renderer or acoustic evidence bytes. One exact
+replay is allowed only when no renderer-quality or listening judgment occurred,
+the correction removes the contradiction without selecting a new threshold,
+the original identity closes, and the replay uses a fresh isolation identity
+with hash-proved source.
+
 On rejection:
 
 - delete the candidate worktree and branch
@@ -572,17 +633,19 @@ receipts, audio, and acoustic ref stay out of `main`.
 
 Public `Automatic`, cache and artifact identity, dynamic ratio, pitch,
 RealtimePreview, runtime, UI, Loophole, and Chorus remain blocked for Batch
-35.4 or later.
+35.6 or later.
 
 ## Readiness
 
 The brief fixes every request, owner, map, schedule, weight, blend, boundary,
 stereo, identity, memory, evidence, rejection, cleanup, and admission choice.
-Batch 35.3 is ready for one isolated candidate and nothing else.
+Batch 35.3 is evidence-invalid and closed. Batch 35.4 corrects gate ownership
+without changing the candidate. Batch 35.5 is ready for one exact replay and
+nothing else.
 
 ## Next Task
 
-Execute `g10.035` Batch 35.3 only. Create the frozen isolated worktree,
-implement the private fixed-ratio candidate, run conformance twice, freeze one
-acoustic checkpoint, and stop on the first failed gate or at the next explicit
-listening handoff.
+Execute `g10.035` Batch 35.5 only. Create the newly named isolated worktree,
+restore and hash-prove the frozen Batch 35.3 candidate source, run conformance
+twice, freeze the new acoustic checkpoint, and restart the corrected gate from
+identity/parity.

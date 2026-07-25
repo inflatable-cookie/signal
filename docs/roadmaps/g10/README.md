@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: `g10.035` active; Automatic route Batch 35.3 ready
+Status: `g10.035` active; Automatic exact replay Batch 35.5 ready
 Updated: 2026-07-25
 
 ## Why this generation matters now
@@ -173,9 +173,11 @@ The 2026-07-19 consolidation reset is authoritative.
 - `g10.034` is complete. It admits continuous exact-target Cyclic over
   `2N..=8N` through public v4 after full private acoustic admission and exact
   public/private parity. No isolated candidate state remains.
-- `g10.035` owns the current planning checkpoint. Batch 35.2 freezes the
-  complete Transparent/Dream Automatic route, keeps Cyclic explicit, and
-  leaves one isolated candidate ready.
+- `g10.035` owns the current planning checkpoint. Batch 35.3 freezes one
+  conformance-complete Automatic checkpoint, then stops at its first acoustic
+  owner because byte-exact Transparent and a misplaced universal peak ceiling
+  conflict. Batch 35.4 corrects gate ownership without changing candidate
+  bytes. One exact replay is ready as Batch 35.5.
 - `g10.028` RealtimePreview source-fill and all render-plane integration remain
   paused.
 
@@ -335,8 +337,9 @@ Do not start Loophole or Chorus planning from Signal internals.
   - Batch 35.1 audits current coverage, keeps Cyclic explicit, and selects one
     opt-in Transparent/Dream Automatic intent over exact `0.5N..=16N` with a
     `4N..=8N` transition; Batch 35.2 freezes the complete private route;
-    Batch 35.3 is ready as one isolated candidate; public work remains
-    conditional
+    Batch 35.3 produces one evidence-invalid checkpoint; Batch 35.4 corrects
+    peak-gate ownership without candidate tuning; Batch 35.5 is ready as one
+    exact replay; public work remains conditional
 
 ## Stretch Boundary
 
@@ -887,12 +890,22 @@ neutral defaults. Batch 35.2 freezes one complete
 `ExactTargetTransparentDreamRouter`, including exact-target adaptation, map,
 weight and level law, boundaries, linked stereo, deterministic identity,
 bounded output staging, evidence, rejection, cleanup, and minimal admission.
-One isolated candidate is ready. No public route, cache, artifact, dynamic
-ratio, runtime, UI, Loophole, or Chorus work is ready.
+Batch 35.3 passes normal-profile regression `204/204` and two unchanged
+release conformance rounds, then stops at the first acoustic owner. Pure
+Transparent `rademacher-noise` at `4N-1` is byte-exact but peaks at
+`10.370356`, contradicting the brief's universal `8.0` ceiling. No later
+acoustic or listening owner ran.
+
+Batch 35.4 marks the checkpoint evidence-invalid. Pure owner controls inherit
+their admitted owner integrity rules; interior route rows retain the
+sample-aligned-arm peak bound. No renderer or evidence bytes change. Batch
+35.5 is ready for one exact replay under new isolation identity. No public
+route, cache, artifact, dynamic ratio, runtime, UI, Loophole, or Chorus work is
+ready.
 
 ## Next Task
 
-Execute `g10.035` Batch 35.3 only. Create the named disposable worktree,
-implement the frozen private `ExactTargetTransparentDreamRouter`, pass
-conformance twice, freeze one acoustic checkpoint, and follow its terminal
-evidence order.
+Execute `g10.035` Batch 35.5 only. Create the newly named disposable worktree,
+restore and hash-prove the exact Batch 35.3 candidate source, pass conformance
+twice, freeze the new acoustic checkpoint, and restart the corrected gate at
+identity/parity.

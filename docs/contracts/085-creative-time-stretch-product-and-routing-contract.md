@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: public v4 active; Automatic isolated candidate ready
+Status: public v4 active; Automatic exact replay ready
 Owner: core-product
 Updated: 2026-07-25
 Related contracts: `046`, `048`, `084`
@@ -372,6 +372,13 @@ silently reused. Creative gates instead reject uncontrolled clicks, dropouts,
 level changes, periodic flutter, metallic repetition outside `Cyclic`, static
 freeze, stereo instability, and failure to map the semantic controls
 consistently.
+
+An Automatic route does not impose a new absolute peak ceiling on a
+byte-identical pure-owner row. Pure Transparent and Dream controls inherit
+their admitted owner integrity rules. Interior route rows remain terminal when
+their peak exceeds the larger sample-aligned arm peak by more than two `f32`
+ulps. This separates owner behavior from route-created overshoot without
+authorizing a limiter, adaptive gain, threshold sweep, or changed owner output.
 
 Every numeric creative-character gate must be calibrated against the retained
 comparator row or identify a hard integrity boundary. Hard integrity, level,
@@ -2363,10 +2370,37 @@ Integer dispatch owns the pure endpoints. The interior uses one render-wide
 log-ratio smoothstep and linear-amplitude blend on one exact output lattice.
 Transparent uses its promoted direction-specific selectors through a private
 exact-target entry; Dream uses admitted neutral defaults. The route admits no
-code or public surface. One isolated Batch 35.3 candidate is ready.
+code or public surface.
+
+Batch 35.3 implements checkpoint
+`50c3d028ae1d5b0d057e74899b84a1a27c0e0038`, tree
+`0ff62f572eef222d38ac356d3874c973d78ba2d2`. Normal-profile stretch
+regression passes `204/204`, and two unchanged release conformance rounds pass
+construction `1/1` and structural `8/8`.
+
+The first acoustic owner stops on pure Transparent `rademacher-noise`,
+`N=96000`, `T=4N-1`: byte parity is exact, but the owner peak is `10.370356`
+against the brief's misplaced universal `8.0` ceiling. The route cannot
+preserve the mandated owner bytes and also enforce that ceiling. No interior
+route row, later synthetic owner, render pack, or listening gate ran.
+
+Batch 35.4 classifies the checkpoint as evidence-invalid, not acoustically
+passed or rejected. It removes the universal cap from pure Transparent rows,
+retains Dream's admitted integrity controls, and retains the
+sample-aligned-arm peak bound for interior route rows. Architecture, owner
+bytes, route weight, blend, sources, seeds, comparators, and listening
+authority do not change.
+
+One exact replay of the unchanged checkpoint source is ready under a new
+worktree, evidence root, and acoustic ref. The closed Batch 35.3 worktree,
+branch, ref, and generated state are deleted after the Batch 35.4 docs commit.
+The replay must reconstruct and hash-prove the frozen source before two fresh
+conformance rounds. It then restarts the corrected gate at its first owner.
+Public Automatic remains blocked.
 
 ## Next Task
 
-Execute `g10.035` Batch 35.3 only. Implement the frozen private candidate in
-the named disposable worktree, pass conformance twice, freeze one acoustic
-checkpoint, and follow the brief's terminal evidence order.
+Execute `g10.035` Batch 35.5 only. Reconstruct the unchanged Batch 35.3
+candidate bytes in the newly named disposable worktree, prove every frozen
+hash, pass conformance twice, freeze the new acoustic ref, and restart the
+corrected gate from identity/parity.

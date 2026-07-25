@@ -351,7 +351,10 @@ removal, and closes `g10.034`. Lower Dream remains paused. No strict spec lane
 is open. `g10.035` Batch 35.1 then selects one opt-in Transparent/Dream
 Automatic direction over exact `0.5N..=16N`, with a `4N..=8N` transition and
 Cyclic kept explicit. Batch 35.2 freezes the complete private route. Batch
-35.3 is ready as one isolated candidate.
+35.3 produces one evidence-invalid checkpoint when a byte-exact pure
+Transparent row conflicts with a misplaced universal peak ceiling. Batch 35.4
+corrects gate ownership without candidate tuning. Batch 35.5 is ready as one
+exact replay under new isolation identity.
 
 ## Strict lane posture
 
@@ -380,5 +383,6 @@ Before rollover:
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the active generation front door. Execute
-`g10.035` Batch 35.3 only in the named disposable worktree and follow the
-frozen route brief's terminal evidence order.
+`g10.035` Batch 35.5 only in the newly named disposable worktree. Restore and
+hash-prove the exact candidate source, pass conformance twice, freeze the new
+acoustic checkpoint, and restart the corrected gate at identity/parity.

@@ -1,6 +1,6 @@
 # 035 - Creative Stretch Product Coverage And Routing Audit
 
-Status: active; Batch 35.2 complete; Batch 35.3 ready
+Status: active; Batch 35.4 complete; Batch 35.5 ready
 Owner: core-product
 Created: 2026-07-25
 Depends on: `g10.030`, `g10.033`, `g10.034`
@@ -32,11 +32,12 @@ The visible runway is:
 1. coverage, intent, and compatibility audit
 2. one complete automatic-route brief
 3. one isolated fixed-ratio route candidate
-4. public API decision
-5. minimal public admission only after objective and listening passage
-6. docs-only closeout
+4. gate-ownership reassessment and one exact replay if evidence is invalid
+5. public API decision
+6. minimal public admission only after objective and listening passage
+7. docs-only closeout
 
-Batch 35.2 is complete. Batch 35.3 is the only ready work. Public
+Batch 35.4 is complete. Batch 35.5 is the only ready work. Public
 implementation remains conditional.
 
 ## Goals
@@ -172,7 +173,7 @@ Result:
 
 ## Batch 35.3 - Isolated Fixed-Ratio Route Candidate
 
-Status: ready
+Status: complete; evidence-invalid
 
 Implement one complete route in a disposable worktree. Run:
 
@@ -191,23 +192,84 @@ Reject on audible combing, phasing, doubled attacks, micro-echo, image pull,
 level step, boundary discontinuity, arbitrary energy redistribution, loss of
 Dream smoothness, or loss of Transparent source readability.
 
-## Batch 35.4 - Public Route Decision
+Result:
 
-Status: planned; blocked on Batch 35.3
+- checkpoint `50c3d028ae1d5b0d057e74899b84a1a27c0e0038`, tree
+  `0ff62f572eef222d38ac356d3874c973d78ba2d2`
+- normal-profile stretch regression passes `204/204`
+- two unchanged release conformance rounds pass construction `1/1` and
+  structural `8/8`
+- the first acoustic owner stops on pure Transparent `rademacher-noise`,
+  `N=96000`, `T=4N-1`
+- byte parity is exact; owner peak `10.370356` conflicts with the brief's
+  universal `8.0` ceiling
+- no interior, later synthetic, long-form, or listening owner ran
+- the checkpoint is not an acoustic pass or renderer rejection
+
+## Batch 35.4 - Peak-Gate Ownership Reassessment
+
+Status: complete
+
+Documentation only.
+
+- [x] classify checkpoint `50c3d028` as evidence-invalid
+- [x] keep pure Transparent governed by byte parity and its admitted integrity
+  rules without a new absolute peak ceiling
+- [x] keep pure Dream governed by byte parity and its admitted integrity rules
+- [x] keep interior route-created overshoot terminal against the larger
+  sample-aligned arm peak plus two `f32` ulps
+- [x] change no owner, route, map, weight, source, seed, comparator, threshold
+  sweep, listening rule, code, or public surface
+- [x] authorize one exact source replay under new isolation identity
+- [x] close and remove the Batch 35.3 worktree, branch, acoustic ref, generated
+  state, and evidence root after this docs commit
+
+Result:
+
+- the gate now separates inherited owner behavior from route-created behavior
+- the correction resolves the contradiction without tuning the candidate
+- checkpoint `50c3d028` remains the sole source authority for exact restoration
+- Batch 35.5 is ready as one full replay from conformance
+- public Automatic remains blocked
+
+## Batch 35.5 - Exact Candidate Replay
+
+Status: ready
+
+Restore only the frozen candidate source, tests, nextest profile, conformance
+ledger, and source manifest from checkpoint `50c3d028` into the newly named
+disposable worktree. Keep current canonical docs from `main`.
+
+- [ ] require all old Batch 35.3 and new Batch 35.5 isolation identities absent
+- [ ] restore and hash-prove every source named by the corrected brief
+- [ ] record current `main`, restored checkpoint/tree, toolchain, platform,
+  Effigy, and nextest identity
+- [ ] pass compile, construction, and structural conformance twice unchanged
+- [ ] freeze the new acoustic ref directly at the clean conformance commit
+- [ ] restart the complete corrected synthetic gate from identity/parity
+- [ ] continue through mono and stereo listening only in the frozen order
+- [ ] stop on the first failure or explicit listening handoff
+
+No candidate equation, evidence source, comparator, seed, assertion other than
+the corrected peak ownership, public API, or product integration may change.
+
+## Batch 35.6 - Public Route Decision
+
+Status: planned; blocked on Batch 35.5
 
 Documentation only. Admit or reject Automatic. If admitted, freeze public
 vocabulary, discovery, validation, errors, behavior version, cache-identity
 implications, and direct-versus-routed dispatch. Explicit modes must remain
 source-compatible and byte-identical.
 
-## Batch 35.5 - Minimal Public Admission
+## Batch 35.7 - Minimal Public Admission
 
-Status: planned; blocked on Batch 35.4
+Status: planned; blocked on Batch 35.6
 
 Implement only the frozen public boundary and focused public/private parity.
 No cache, artifact, dynamic ratio, runtime, UI, Loophole, or Chorus work.
 
-## Batch 35.6 - Lane Closeout
+## Batch 35.8 - Lane Closeout
 
 Status: planned; blocked on the admission or rejection outcome
 
@@ -222,7 +284,9 @@ planning checkpoint.
 - [x] Cyclic remains outside automatic routing
 - [x] one target envelope and one transition interval are selected
 - [x] no current owner is called seamless without transition evidence
-- [x] only Batch 35.3 is ready
+- [x] Batch 35.3 has one frozen, evidence-invalid checkpoint
+- [x] Batch 35.4 corrects gate ownership without candidate tuning
+- [x] only Batch 35.5 is ready
 - [x] public work remains conditional
 - [x] planning changes documentation only
 - [x] the complete brief owns every map, scheduler, boundary, stereo, memory,
@@ -231,7 +295,7 @@ planning checkpoint.
 
 ## Next Task
 
-Execute Batch 35.3 only. Create the frozen disposable worktree, implement one
-private fixed-ratio `ExactTargetTransparentDreamRouter`, pass conformance twice,
-freeze one acoustic checkpoint, then follow the fixed gate order and stop on
-the first failure or explicit listening handoff.
+Execute Batch 35.5 only. Create the newly named disposable worktree, restore
+and hash-prove the exact Batch 35.3 candidate source, pass conformance twice,
+freeze the new acoustic checkpoint, then restart the corrected gate at
+identity/parity.

@@ -116,6 +116,7 @@ ledger remains in git history at `1d1b02f1`.
 ## Next Task
 
 Retain this frozen baseline and keep its successor lane closed. Execute
-`g10.035` Batch 35.3 only in its disposable worktree: evaluate the frozen
-exact-target Transparent/Dream Automatic route without changing this
-production renderer, public APIs, or Contract `084`.
+`g10.035` Batch 35.5 only in its newly named disposable worktree: restore and
+hash-prove the exact Batch 35.3 Automatic candidate, then restart its corrected
+evidence order without changing this production renderer, public APIs, or
+Contract `084`.

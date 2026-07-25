@@ -1,6 +1,6 @@
 # Offline Creative Time-Stretch Study
 
-Status: public Dream and Cyclic admitted; Automatic isolated candidate ready
+Status: public Dream and Cyclic admitted; Automatic exact replay ready
 Owner: dsp
 Updated: 2026-07-25
 Contract: `085`
@@ -1407,6 +1407,7 @@ one isolated candidate. Public widening remains blocked.
 
 ## Next Task
 
-Execute `g10.035` Batch 35.3 only. Implement the frozen private route in the
-named disposable worktree, pass conformance twice, freeze one acoustic
-checkpoint, and follow the brief's terminal evidence order.
+Execute `g10.035` Batch 35.5 only. Restore and hash-prove the exact Batch 35.3
+candidate source in the newly named disposable worktree, pass conformance
+twice, freeze the new acoustic checkpoint, and restart the corrected gate at
+identity/parity.
