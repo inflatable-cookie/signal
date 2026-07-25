@@ -2,7 +2,7 @@
 
 Status: active
 Owner: core-product
-Updated: 2026-07-24
+Updated: 2026-07-25
 Vision refs: `docs/vision/001-signal-vision.md`
 
 ## Top-Level Stack
@@ -313,14 +313,15 @@ The current package-level naming proposal is recorded in
   `OfflineHighQuality` baseline.
 - `g10.031` publicly admits creative `Dream`; `g10.033` widens it to every
   exact target in `4x..16x` through one owner without a same-character router.
-- `g10.032` owns `Cyclic` separately. The accepted centred compressed-anchor
-  event-ledger renderer stays internal behind its public fixed-ratio surface.
-- `g10.034` audits whether that same Cyclic owner can preserve its admitted
-  character at interior fixed targets. Batch 34.1 selects `2N..=8N`; Batch
-  34.2 freezes one unchanged-core evidence candidate. One isolated execution
-  is ready. Public widening remains blocked.
+- `g10.032` owns `Cyclic` separately; `g10.034` widens its public exact-target
+  domain to every target `2N..=8N` without changing the admitted renderer.
+- `g10.035` selects one future opt-in Automatic intent. Transparent owns
+  through `4N`, Transparent and neutral Dream transition over `4N..=8N`, and
+  Dream owns `8N..=16N`. Cyclic remains explicit. Only the complete route
+  brief is ready.
 
 ## Next Task
 
-Execute `g10.034` Batch 34.3 only in one disposable worktree. Keep public
-widening closed.
+Execute `g10.035` Batch 35.2 only. Freeze the complete
+`ExactTargetTransparentDreamRouter` brief as documentation and stop before
+candidate isolation or implementation.

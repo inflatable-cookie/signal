@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: public v4 active
+Status: public v4 active; Automatic route brief ready
 Owner: core-product
 Updated: 2026-07-25
 Related contracts: `046`, `048`, `084`
@@ -28,7 +28,7 @@ Related architecture: `docs/architecture/offline-creative-time-stretch-study.md`
 Related research:
 `docs/research/specimen-dossiers/creative-stretch-source-triangulation.md`,
 `docs/research/specimen-dossiers/cyclic-time-stretch-source-architecture.md`
-Roadmaps: `g10.031`, `g10.032`, `g10.033`, `g10.034`
+Roadmaps: `g10.031`, `g10.032`, `g10.033`, `g10.034`, `g10.035`
 
 ## Purpose
 
@@ -55,7 +55,7 @@ consumer to expose renderer-specific controls.
 dreamy, smeared, cyclic, or cloud-like synthesis rather than transparent event
 reconstruction.
 
-The stable semantic request contains:
+The long-horizon semantic vocabulary contains:
 
 - exact target frame count
 - output/input duration ratio
@@ -63,6 +63,11 @@ The stable semantic request contains:
 - character-valid normalized controls: `motion`, `detail`, and `space`
 - one character-valid `cycle` control for `Cyclic`
 - deterministic seed or request for the identity-derived default
+
+The current public v4 request admits only `Dream` and `Cyclic`, exact target
+frames, `space` for Dream, and `cycle` for Cyclic. `Spectral`, `Rough`,
+`Cloud`, shared `motion`/`detail`, seed/reroll, and Automatic remain
+unavailable.
 
 Target frames are authoritative. Ratio is derived or validated against that
 target; inconsistent values are rejected rather than rounded into different
@@ -96,8 +101,7 @@ Batch 34.4 freezes continuous public Cyclic over every exact target
 Public `Cyclic` uses `duration`, `character=Cyclic`, and one semantic `cycle`
 control from short metallic motion through long tremolo/echo motion.
 `motion`, `detail`, and `space` are not Cyclic aliases. Automatic cycle
-selection, if later admitted, proposes one fixed render-wide cycle for
-eligible material; it does not become adaptive `INTELL`.
+selection is not authorized; Cyclic always bypasses Automatic.
 
 The source-compatible request adds `cycle: Option<std::time::Duration>`.
 `None` resolves to `48 ms` only for Cyclic. Dream requires `None`; Cyclic
@@ -112,9 +116,14 @@ These fields are intent, not transform controls. Public consumers must not
 select FFT size, window, grain size, overlap, phase mode, internal renderer,
 or transition weight.
 
-`Transparent` and `CreativeStretch` are separate product choices. Creative
-admission does not upgrade `OfflineHighQuality`, and transparent admission does
-not authorize creative output.
+`Transparent` and `CreativeStretch` are separate current product choices.
+Creative admission does not upgrade `OfflineHighQuality`, and transparent
+admission does not authorize creative output.
+
+Batch 35.1 selects a future opt-in `Automatic` intent as a peer choice. It is
+not a creative character and is not yet a public API. Automatic may combine
+Transparent and neutral Dream only. Explicit Transparent, Dream, and Cyclic
+remain available; Cyclic never enters Automatic.
 
 ## Rules
 
@@ -133,7 +142,7 @@ violates this rule.
 
 ### Rule 2: routing is versioned and deterministic
 
-The historical automatic routed bands are:
+The historical automatic routed bands were:
 
 - coherent: `1x` through `2x`
 - coherent/diffusive overlap: `2x` through `4x`
@@ -141,16 +150,30 @@ The historical automatic routed bands are:
 - diffusive/cloud overlap: `16x` through `32x`
 - cloud: `32x` through `100x`
 
-They are deferred product intent, not an active target or implementation
-authority. Current executable creative coverage is public neutral `Dream` at
+They remain historical evidence, not current execution authority.
+
+Batch 35.1 selects one narrower fixed-ratio Automatic candidate:
+
+- Transparent only from exact `0.5x` through `4x`
+- Transparent/Dream transition from exact `4x` through `8x`
+- neutral Dream only above `8x` through `16x`
+
+At `4x`, Automatic is byte-exact Transparent. At `8x`, it is byte-exact Dream
+with admitted neutral defaults. Automatic is unsupported below `0.5x` and
+above `16x`. Cyclic bypasses the route.
+
+This selected shape authorizes only a complete documentation brief. No route,
+public request, cache identity, or product integration exists yet. Current
+executable creative coverage is public neutral `Dream` at
 every exact target `4N <= T <= 16N`, plus public manual `Cyclic` at every
 exact target `2N <= T <= 8N`. This authorizes no inter-character overlap or
 higher ratio. Any future routing reopening must preserve `2x`, `4x`, and `8x`
 as mandatory admission points.
 
-If automatic routing reopens, overlap weights use smoothstep interpolation over
-`log2(ratio)`. A fixed-ratio request uses one constant channel-shared weight for
-the whole render.
+The Batch 35.2 brief must freeze checked exact-target comparisons and one
+render-wide channel-shared weight over `log2(T/N)`. It may retain smoothstep
+only after fixing exact arithmetic, endpoints, ties, and reproducible vectors.
+No floating threshold decides the owner.
 
 Changing the band map or blend law changes the creative routing version and
 cache identity.
@@ -173,17 +196,27 @@ The required initial anchors are:
 - `Cyclic`: `ReaReaRea`-like repetition through `8x`
 
 Signal may use different internal owners or blends to reach those regions.
-Until more than one public character is implemented, a consumer receives only
-the available character and the shared macros, not disabled or fictional
-choices.
+A consumer receives only admitted characters and their valid controls, not
+disabled or fictional choices.
 
 `seed` is advanced variation identity, not a continuous quality knob.
+
+Automatic exposes only exact duration. It uses neutral Dream `space=0.5` and
+the admitted fixed seed when Dream contributes. A consumer shows `space` only
+for explicit Dream and `cycle` only for explicit Cyclic. It does not show a
+transition weight, renderer, FFT, window, grain, phase, or route control.
 
 ### Rule 4: seamless means measured continuity
 
 A transition is not seamless merely because it crossfades. Both owners must
 share target length, source cursor, boundary alignment, linked-channel weight,
 and deterministic state.
+
+The Batch 35.2 brief must also freeze a private exact-target Transparent entry,
+one monotonic map, head/tail alignment, fixed level/correlation treatment,
+exact crop, and output staging. A hard switch at `4x`, post-stretch resampling,
+second stretch pass, limiter, post-fade, adaptive loudness correction, or
+duration-scaled unbounded scratch violates this rule.
 
 Boundary probes must cover values immediately below, inside, and above each
 overlap. Reject audible level steps, image jumps, timing discontinuity, new
@@ -300,6 +333,12 @@ cycle rounded to integer microseconds. It also includes character, exact target
 frames, and `signal-creative-stretch-v4`. Inactive controls do not enter the
 key. This freezes identity semantics but does not admit caching.
 
+Future Automatic identity is separate from public creative v4. It must include
+its routing version, exact target frames, Transparent owner identity, Dream
+owner identity, neutral Dream defaults, and the exact transition law. Explicit
+and Automatic artifacts cannot collide. Batch 35.1 admits no cache schema or
+implementation.
+
 ### Rule 9: listening defines creative quality
 
 Objective controls reject integrity and continuity failures. They do not decide
@@ -312,12 +351,20 @@ probe, not a supported target. Independent stereo review remains the default;
 Rule 5 records the explicit checkpoint-scoped operator exception used for the
 admitted renderer.
 
-If the automatic router later reopens, its `Dream`, `Spectral`, and `Rough`
-lane still requires `4x`, `8x`, and `16x`. `Dream` must remain the smoothest
-and most generally musical centre. Exposed vocoder colour, rough periodicity,
-or cyclic repetition in neutral `Dream` is rejection. `Spectral` and `Rough`
-must remain deliberate, recognizable, stable destinations rather than one
-degraded compromise.
+If the historical broader router later reopens, its `Dream`, `Spectral`, and
+`Rough` lane still requires `4x`, `8x`, and `16x`. `Dream` must remain the
+smoothest and most generally musical centre. Exposed vocoder colour, rough
+periodicity, or cyclic repetition in neutral `Dream` is rejection. `Spectral`
+and `Rough` must remain deliberate, recognizable, stable destinations rather
+than one degraded compromise.
+
+The narrower Batch 35.1 Automatic candidate requires concealed long-form
+transition review immediately around `4x` and `8x`, plus representative `5x`,
+`6x`, and `7x` interiors. Reject audible combing, phasing, doubled attacks,
+micro-echo, image pull, level steps, arbitrary energy redistribution, loss of
+Transparent readability, or loss of Dream smoothness. Objective metrics
+diagnose and reject integrity failures; listening decides whether the route is
+musically continuous.
 
 Transparent transient-placement, replica, and tonal-fidelity limits are not
 silently reused. Creative gates instead reject uncontrolled clicks, dropouts,
@@ -2297,10 +2344,20 @@ tests pass `10/10`. Every private Dream and Cyclic renderer file remains
 byte-identical. No route, blend, fallback, cache, artifact, dynamic-ratio,
 runtime, UI, Loophole, or Chorus surface is admitted.
 
+Batch 35.1 completes the product coverage and routing audit. Automatic is
+selected as an opt-in fixed-ratio intent over exact targets `0.5N..=16N`.
+Transparent owns through `4N`; Transparent and neutral Dream transition over
+`4N..=8N`; neutral Dream owns from `8N` through `16N`. Exact Transparent,
+Dream, and Cyclic remain available. Cyclic bypasses Automatic.
+
+The selection admits no route or API. Batch 35.2 must freeze one complete
+`ExactTargetTransparentDreamRouter`: exact target adaptation, map, transition
+law, level treatment, boundaries, linked stereo, deterministic identity,
+bounded output staging, fixed evidence, rejection, cleanup, and minimal
+admission. Candidate and public work remain blocked.
+
 ## Next Task
 
-Plan `g10.035 Creative Stretch Product Coverage And Routing Audit` only.
-Decide whether one Signal-owned automatic mode is warranted across admitted
-Transparent, Dream, and Cyclic coverage while preserving explicit character
-selection. Do not implement routing, cache, artifacts, dynamic ratio,
-runtime, UI, Loophole, or Chorus work.
+Execute `g10.035` Batch 35.2 only. Write the complete
+`ExactTargetTransparentDreamRouter` brief as documentation, validate and
+commit it separately, and stop before candidate isolation or implementation.

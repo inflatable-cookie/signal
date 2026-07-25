@@ -5,7 +5,7 @@ Owner: core-product
 Updated: 2026-07-25
 Contract: `085`
 Roadmaps: `g10.031`, Batches 31.75-31.76; `g10.032`, Batches 32.27-32.28;
-`g10.033`, Batches 33.4-33.5; `g10.034`, Batches 34.4-34.5
+`g10.033`, Batches 33.4-33.5; `g10.034`, Batches 34.4-34.5; `g10.035`
 
 ## Decision
 
@@ -619,7 +619,6 @@ Loophole, or Chorus surface changed.
 
 ## Next Task
 
-Plan the next Signal-owned creative coverage and routing audit only. Decide
-whether an automatic mode is warranted across the admitted Transparent,
-Dream, and Cyclic ranges while preserving explicit character selection. Do
-not implement routing or integration.
+Execute `g10.035` Batch 35.2 only. Freeze one complete
+`ExactTargetTransparentDreamRouter` brief. Automatic remains unimplemented;
+explicit Transparent, Dream, and Cyclic stay unchanged.

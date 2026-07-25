@@ -69,6 +69,7 @@ strict lane.
 - Completed Cyclic roadmap: [roadmaps/g10/032-cyclic-creative-stretch-research.md](./roadmaps/g10/032-cyclic-creative-stretch-research.md)
 - Completed continuous Dream range roadmap: [roadmaps/g10/033-creative-stretch-continuous-range-feasibility.md](./roadmaps/g10/033-creative-stretch-continuous-range-feasibility.md)
 - Completed continuous Cyclic feasibility roadmap: [roadmaps/g10/034-continuous-cyclic-feasibility.md](./roadmaps/g10/034-continuous-cyclic-feasibility.md)
+- Active creative coverage and routing roadmap: [roadmaps/g10/035-creative-stretch-product-coverage-and-routing-audit.md](./roadmaps/g10/035-creative-stretch-product-coverage-and-routing-audit.md)
 - Strict-lane reference: [specs/001-g09-lane-first-strict-adoption.md](./specs/001-g09-lane-first-strict-adoption.md)
 - Active strict-lane card: none
 - Research index: [research/master-index.md](./research/master-index.md)
@@ -94,7 +95,6 @@ strict lane.
 
 ## Next Task
 
-Plan `g10.035 Creative Stretch Product Coverage And Routing Audit` only.
-Decide whether an automatic mode is warranted across admitted Transparent,
-Dream, and Cyclic coverage while preserving explicit character choice. Do not
-implement routing or integration.
+Execute `g10.035` Batch 35.2 only. Freeze one complete
+`ExactTargetTransparentDreamRouter` brief as documentation and stop before
+candidate isolation or implementation.

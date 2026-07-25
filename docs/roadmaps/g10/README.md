@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: `g10.034` complete; next planning checkpoint selected
+Status: `g10.035` active; Automatic route Batch 35.2 ready
 Updated: 2026-07-25
 
 ## Why this generation matters now
@@ -173,6 +173,9 @@ The 2026-07-19 consolidation reset is authoritative.
 - `g10.034` is complete. It admits continuous exact-target Cyclic over
   `2N..=8N` through public v4 after full private acoustic admission and exact
   public/private parity. No isolated candidate state remains.
+- `g10.035` owns the current planning checkpoint. Batch 35.1 selects one
+  opt-in Transparent/Dream Automatic direction, keeps Cyclic explicit, and
+  leaves only the complete docs brief ready.
 - `g10.028` RealtimePreview source-fill and all render-plane integration remain
   paused.
 
@@ -328,6 +331,11 @@ Do not start Loophole or Chorus planning from Signal internals.
     passes and admits the private owner; Batch 34.4 freezes public v4; Batch
     34.5 admits the two-file wrapper with `12/12` public and `10/10` private
     focused tests; Batch 34.6 publishes the matrix and closes the lane
+- `g10.035` `active`
+  - Batch 35.1 audits current coverage, keeps Cyclic explicit, and selects one
+    opt-in Transparent/Dream Automatic intent over exact `0.5N..=16N` with a
+    `4N..=8N` transition; Batch 35.2 is ready as complete-brief documentation;
+    candidate and public work remain conditional
 
 ## Stretch Boundary
 
@@ -867,10 +875,22 @@ Loophole, or Chorus integration is admitted. The isolated Batch 34.3
 worktree, branch, acoustic ref, evidence surfaces, and generated assets are
 absent.
 
+`g10.035` Batch 35.1 selects one opt-in Automatic direction without code.
+Transparent owns exact targets through `4N`; Transparent and neutral Dream
+transition over `4N..=8N`; neutral Dream owns `8N..=16N`. Cyclic remains an
+explicit effect and never enters Automatic. Explicit Transparent, Dream, and
+Cyclic remain available.
+
+Automatic exposes only exact duration. Its Dream contribution uses admitted
+neutral defaults. Batch 35.2 must freeze one complete
+`ExactTargetTransparentDreamRouter`, including exact-target adaptation, map,
+weight and level law, boundaries, linked stereo, deterministic identity,
+bounded output staging, evidence, rejection, cleanup, and minimal admission.
+No candidate, public route, cache, artifact, dynamic ratio, runtime, UI,
+Loophole, or Chorus work is ready.
+
 ## Next Task
 
-Plan `g10.035 Creative Stretch Product Coverage And Routing Audit` only.
-Reconcile Transparent, Dream, and Cyclic coverage; decide whether one
-Signal-owned automatic mode is warranted; preserve explicit character choice;
-and freeze transition, control, identity, and evidence requirements. Do not
-implement routing or integration.
+Execute `g10.035` Batch 35.2 only. Freeze the complete
+`ExactTargetTransparentDreamRouter` brief as documentation, validate and
+commit it separately, and stop before candidate isolation or implementation.

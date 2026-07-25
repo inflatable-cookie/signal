@@ -348,7 +348,10 @@ parity gates over `2N..=8N`. Batch 34.5 admits the two-file public wrapper with
 `12/12` focused public and `10/10` retained private tests. Batch 34.6 publishes
 continuous Dream `4N..=16N` and Cyclic `2N..=8N`, confirms isolated evidence
 removal, and closes `g10.034`. Lower Dream remains paused. No strict spec lane
-is open and no implementation batch is ready.
+is open. `g10.035` Batch 35.1 then selects one opt-in Transparent/Dream
+Automatic direction over exact `0.5N..=16N`, with a `4N..=8N` transition and
+Cyclic kept explicit. Batch 35.2 is ready as complete-brief documentation.
+No implementation batch is ready.
 
 ## Strict lane posture
 
@@ -376,6 +379,6 @@ Before rollover:
 
 ## Next Task
 
-Use `docs/roadmaps/g10/README.md` as the active generation front door. Plan
-`g10.035 Creative Stretch Product Coverage And Routing Audit` only. Do not
-implement routing or integration.
+Use `docs/roadmaps/g10/README.md` as the active generation front door. Execute
+`g10.035` Batch 35.2 only as documentation and stop before candidate
+isolation or implementation.

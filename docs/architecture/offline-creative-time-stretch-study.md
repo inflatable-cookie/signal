@@ -1,10 +1,10 @@
 # Offline Creative Time-Stretch Study
 
-Status: continuous Dream and exact-ratio Cyclic public; `g10.034` candidate ready
+Status: public Dream and Cyclic admitted; Automatic route brief ready
 Owner: dsp
-Updated: 2026-07-24
+Updated: 2026-07-25
 Contract: `085`
-Roadmaps: `g10.031`, `g10.032`, `g10.033`
+Roadmaps: `g10.031`, `g10.032`, `g10.033`, `g10.034`, `g10.035`
 
 ## Product Intent
 
@@ -23,11 +23,11 @@ Initial product range:
 - creative expansion only
 - core spectral comparator ratios: `4x`, `8x`, and `16x`
 - public Dream range: every exact target in `4N..=16N`
-- public manual Cyclic ratios: exact `2x`, `4x`, and `8x`
-- current executable creative coverage: continuous Dream and exact-ratio Cyclic
-- planned routed range: `1x` through `100x`, deferred and unowned
+- public manual Cyclic range: every exact target in `2N..=8N`
+- current executable creative coverage: continuous Dream and continuous Cyclic
+- selected Automatic study envelope: `0.5x..16x`, not implemented
 - primary design point: `8x`
-- ratios above `100x`: future texture/freeze work, not initial scope
+- ratios above `16x`: future texture/freeze work, not current scope
 
 `800%` means `8x` output duration. Public APIs continue to use the unambiguous
 output/input ratio and explicit target frame count; a consuming UI may display
@@ -334,10 +334,13 @@ may replay `Y01` once with the exact absolute root.
 
 ## Product Surface
 
-The planned consumer-facing model has two peers:
+The current consumer-facing model has two peers:
 
 - `Transparent`: the existing `OfflineHighQuality` contract
-- `Creative`: the new range-routed sound-design contract
+- `Creative`: the explicit-character sound-design contract
+
+Batch 35.1 selects a future third peer, `Automatic`, described below. It is not
+yet a public or consumer-facing surface.
 
 Creative mode exposes:
 
@@ -372,13 +375,44 @@ uses one character-local `cycle`; `motion`, `detail`, and `space` are not
 aliases for it. A consumer receives only the controls valid for an admitted
 character, not an algorithm menu or disabled fictional controls.
 
-`Cyclic` bypasses automatic coherent/diffusive/cloud selection because its
-repetitions are an explicit musical choice. Both historical candidates remain
-rejected; the character remains unavailable. The selected behavior targets
-expansion above `1x` through `8x`; higher ratios require separate listening
-before support is claimed.
+`Cyclic` bypasses automatic selection because its repetitions are an explicit
+musical choice. Its admitted event-ledger owner covers every exact target
+`2N..=8N`; higher ratios require separate architecture and listening before
+support is claimed.
 
-## Range-Routed Architecture
+## g10.035 Automatic Selection Decision
+
+The operator wants clean range-dependent algorithm selection without losing
+direct access to the admitted effects. Batch 35.1 selects one future opt-in
+`Automatic` intent:
+
+| Exact target | Selected contribution |
+| --- | --- |
+| `0.5N..=4N` | frozen Transparent owner |
+| `4N..=8N` | fixed-ratio Transparent/Dream transition |
+| `8N..=16N` | admitted neutral Dream owner |
+
+This is candidate direction, not executable coverage. At `4N`, Automatic must
+be byte-exact Transparent. At `8N`, it must be byte-exact Dream with admitted
+neutral `space=0.5` and the fixed seed. Interior targets use one constant
+channel-shared weight for the complete render.
+
+Automatic exposes only exact duration. Explicit Transparent remains available.
+Explicit Dream retains `space`; explicit Cyclic retains `cycle`. Cyclic never
+enters Automatic, and no Dream/Cyclic blend is authorized.
+
+The complete route must own one exact target lattice, one monotonic map,
+Transparent exact-target adaptation, transition weight and level law,
+head/tail alignment, linked stereo, deterministic identity, and at most final
+output plus one output-sized contribution. A hard `4x` switch, post-stretch
+resampling, second timeline, limiter, post-fade, or adaptive loudness stage is
+not a route.
+
+Batch 35.2 must freeze those choices and every structural, synthetic,
+long-form, independent-stereo, rejection, cleanup, and minimal-admission gate
+before any candidate code exists.
+
+## Historical Range-Routed Architecture
 
 All participating renderers consume one monotonic source/output map and the
 same exact target frame count.
@@ -422,7 +456,7 @@ identity. It has no quality pass or rejection and does not own a production
 range. Exact `16x` remains the admitted Dream endpoint; it does not imply
 continuous `16x..32x` coverage or support above `16x`.
 
-## Seamless Selection
+## Historical Seamless Selection
 
 The following remains a future router law, not an admitted implementation.
 Fixed-ratio rendering comes first. Inside each overlap band, renderer weights
@@ -1372,6 +1406,6 @@ one isolated candidate. Public widening remains blocked.
 
 ## Next Task
 
-Execute `g10.034` Batch 34.3 only. Implement and execute the frozen
-`ContinuousEventLedgerCyclic` candidate in one disposable worktree. Keep
-public widening, lower Dream, routing, and integration closed.
+Execute `g10.035` Batch 35.2 only. Freeze one complete
+`ExactTargetTransparentDreamRouter` brief as documentation. Stop before
+candidate isolation, implementation, public API, cache, runtime, or UI work.

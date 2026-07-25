@@ -706,5 +706,5 @@ the lane.
 
 ## Next Task
 
-Plan the next Signal-owned creative coverage and routing audit only. Keep this
-private renderer and its public v4 output unchanged.
+Execute `g10.035` Batch 35.2 only. Keep this private renderer and its public v4
+output unchanged; Cyclic remains outside Automatic.

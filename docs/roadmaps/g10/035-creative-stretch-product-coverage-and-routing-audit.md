@@ -1,0 +1,219 @@
+# 035 - Creative Stretch Product Coverage And Routing Audit
+
+Status: active; Batch 35.1 complete; Batch 35.2 ready
+Owner: core-product
+Created: 2026-07-25
+Depends on: `g10.030`, `g10.033`, `g10.034`
+Governing contracts: `docs/contracts/046-sample-domain-time-stretch-engine-contract.md`,
+`docs/contracts/085-creative-time-stretch-product-and-routing-contract.md`
+Vision tags: `DSP`, `STRETCH`, `CREATIVE`, `ROUTING`
+
+## Problem
+
+Signal has three useful stretch intents:
+
+- Transparent through the frozen `OfflineHighQuality` renderer
+- smooth neutral Dream over every exact target `4N..=16N`
+- commanded Cyclic repetition over every exact target `2N..=8N`
+
+The operator wants clean range-dependent algorithm selection, but the admitted
+owners are not interchangeable quality tiers. Dream and Cyclic overlap while
+expressing different musical intent. Transparent and Dream use different
+analysis, scheduling, boundary, and control laws. A ratio switch or output
+crossfade is not automatically seamless.
+
+## Generation Runway
+
+This lane advances the `g10` stretch runway from separately admitted owners to
+one bounded product-routing decision.
+
+The visible runway is:
+
+1. coverage, intent, and compatibility audit
+2. one complete automatic-route brief
+3. one isolated fixed-ratio route candidate
+4. public API decision
+5. minimal public admission only after objective and listening passage
+6. docs-only closeout
+
+Batch 35.1 is complete. Batch 35.2 is the only ready work. Candidate and public
+implementation remain conditional.
+
+## Goals
+
+- [x] publish the exact current Transparent, Dream, and Cyclic ownership matrix
+- [x] decide whether one automatic range intent is warranted
+- [x] preserve explicit Transparent, Dream, and Cyclic choices
+- [x] keep Cyclic outside automatic selection
+- [x] freeze one automatic target envelope and transition interval for a
+  complete brief
+- [ ] freeze exact route mechanics, identity, bounds, and evidence
+- [ ] admit or reject one isolated fixed-ratio route
+- [ ] keep public API and product integration blocked until acoustic passage
+
+## Non-Goals
+
+- no change to any admitted renderer
+- no automatic Cyclic selection or Dream/Cyclic blend
+- no `Spectral`, `Rough`, `Cloud`, or ratio above `16x`
+- no dynamic ratio, character automation, pitch, reverse, or RealtimePreview
+- no cache, artifact, runtime DTO, UI, Loophole, or Chorus work
+- no external production dependency
+- no candidate DSP, harness, fixture, report, or evidence asset on `main`
+
+## Selected Product Shape
+
+`Automatic` is a future opt-in intent, not a replacement for explicit modes
+and not yet a public API.
+
+Let `N` be source frames and `T` the exact requested output frames. The
+candidate envelope is `ceil(N/2) <= T <= 16N`, compared with checked integer
+arithmetic:
+
+| Target | Automatic owner |
+| --- | --- |
+| `0.5N..=4N` | frozen Transparent owner |
+| `4N..=8N` | one fixed-ratio Transparent/Dream transition |
+| `8N..=16N` | admitted neutral Dream owner |
+
+At `4N`, Automatic is byte-exact Transparent. At `8N`, it is byte-exact Dream
+with admitted neutral defaults. Interior targets use one channel-shared,
+render-wide weight frozen by Batch 35.2.
+
+Explicit modes remain:
+
+- Transparent: unchanged `OfflineHighQuality` surface and controls
+- Dream: public v4 `4N..=16N`, `space 0..=1`
+- Cyclic: public v4 `2N..=8N`, cycle `5..90 ms`
+
+Cyclic never enters Automatic. Its repetition and cycle duration are explicit
+musical choices. Automatic exposes only exact duration. Its Dream contribution
+uses neutral `space=0.5` and the admitted fixed seed. Users who want `space` or
+`cycle` select Dream or Cyclic directly.
+
+## Execution Plan
+
+## Batch 35.1 - Coverage And Routing Audit
+
+Status: complete
+
+Documentation only.
+
+- [x] distinguish callable geometry from acoustic and product admission
+- [x] audit exact target, map, scheduler, boundary, stereo, control, state, and
+  identity ownership across all three owners
+- [x] reject automatic Dream/Cyclic selection
+- [x] reject a hard Transparent/Dream switch at `4x`
+- [x] select one opt-in Transparent/Dream route over `0.5x..16x`
+- [x] select `4x..8x` as the only candidate transition interval
+- [x] preserve explicit choices and character-local controls
+- [x] define complete-brief, evidence, rejection, cleanup, and public-admission
+  boundaries
+- [x] change documentation only
+
+Result:
+
+- automatic range selection is warranted as an opt-in neutral intent
+- the admitted owners cannot be called seamless without a new complete route
+- Cyclic remains manual and bypasses the route
+- the route must use exact target frames, not floating threshold comparisons
+- the route must introduce no second source timeline or post-stretch adapter
+- Batch 35.2 is ready as documentation only
+- no candidate or public implementation is ready
+
+## Batch 35.2 - Complete Exact-Target Route Brief
+
+Status: ready
+
+Documentation only. Freeze one
+`ExactTargetTransparentDreamRouter` without changing code.
+
+- [ ] freeze exact target validation and empty/identity behavior
+- [ ] freeze the private exact-target Transparent entry and prove which
+  promoted selector owns compression and expansion
+- [ ] freeze one monotonic source/output map shared by both contributions
+- [ ] freeze render-wide log-ratio weight arithmetic, endpoint ownership, and
+  ties without floating routing ambiguity
+- [ ] freeze correlation/level treatment without limiter, adaptive loudness,
+  post-fade, or unbounded gain
+- [ ] freeze head/tail alignment, exterior padding, crop, and exact target
+- [ ] freeze linked-channel analysis, weights, normalization, and synthesis
+- [ ] freeze deterministic identity and neutral Dream defaults
+- [ ] cap peak memory at final output plus one output-sized contribution and
+  duration-independent owner state
+- [ ] freeze structural, synthetic, boundary, long-form mono, and independent
+  linked-stereo gates
+- [ ] freeze immutable candidate source identity, isolation, stop, repair,
+  rejection, cleanup, and minimal admission
+- [ ] keep public API, cache, artifact, runtime, UI, Loophole, and Chorus
+  blocked
+
+The brief must contain no `decide later` gap. Stop if exact-target Transparent
+requires changed acoustic equations, if the owners cannot share one map and
+boundary lattice, or if bounded output staging requires a public or runtime
+surface.
+
+## Batch 35.3 - Isolated Fixed-Ratio Route Candidate
+
+Status: planned; blocked on Batch 35.2
+
+Implement one complete route in a disposable worktree. Run:
+
+1. compile, identity, exact length, finiteness, determinism, map, boundary,
+   parity, memory, and linked-stereo structural controls
+2. pitch, event placement, replica, crest, tonal, level, transition, and
+   linked-stereo synthetic controls
+3. concealed long-form mono at pure-owner and transition targets
+4. eligible independent linked-stereo review unless Contract `085` records a
+   new checkpoint-scoped product decision after all hard stereo controls
+
+Mandatory transition probes include targets immediately below, at, and above
+`4N` and `8N`, plus representative `5x`, `6x`, and `7x` interiors.
+
+Reject on audible combing, phasing, doubled attacks, micro-echo, image pull,
+level step, boundary discontinuity, arbitrary energy redistribution, loss of
+Dream smoothness, or loss of Transparent source readability.
+
+## Batch 35.4 - Public Route Decision
+
+Status: planned; blocked on Batch 35.3
+
+Documentation only. Admit or reject Automatic. If admitted, freeze public
+vocabulary, discovery, validation, errors, behavior version, cache-identity
+implications, and direct-versus-routed dispatch. Explicit modes must remain
+source-compatible and byte-identical.
+
+## Batch 35.5 - Minimal Public Admission
+
+Status: planned; blocked on Batch 35.4
+
+Implement only the frozen public boundary and focused public/private parity.
+No cache, artifact, dynamic ratio, runtime, UI, Loophole, or Chorus work.
+
+## Batch 35.6 - Lane Closeout
+
+Status: planned; blocked on the admission or rejection outcome
+
+Publish the exact executable matrix, remove or confirm removal of isolated
+state, reconcile Contract `085` and all front doors, and select one next
+planning checkpoint.
+
+## Acceptance Criteria
+
+- [x] operator intent supports clean automatic range selection
+- [x] Automatic remains optional and explicit modes survive
+- [x] Cyclic remains outside automatic routing
+- [x] one target envelope and one transition interval are selected
+- [x] no current owner is called seamless without transition evidence
+- [x] only Batch 35.2 is ready
+- [x] candidate and public work remain conditional
+- [x] planning changes documentation only
+- [ ] the complete brief owns every map, scheduler, boundary, stereo, memory,
+  identity, evidence, rejection, cleanup, and admission decision
+- [ ] listening remains promotion authority
+
+## Next Task
+
+Execute Batch 35.2 only. Write one complete
+`ExactTargetTransparentDreamRouter` brief, validate the docs spine, commit the
+docs-only batch, and stop before candidate isolation or implementation.

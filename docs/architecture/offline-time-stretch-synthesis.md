@@ -89,11 +89,12 @@ brief opens.
 
 Intentional creative expansion is governed separately by Contract `085` and
 `docs/architecture/offline-creative-time-stretch-study.md`. Automatic routing
-and lower Dream remain paused. Public `Dream` owns every exact target in
-`4N..=16N`. Public `Cyclic` owns exact `2N`, `4N`, and `8N` with one
-`5..90 ms` cycle duration. Neither creative character replaces this renderer
-or reopens Contract `084`. The attempted `LayeredCloud` owner closed without
-promotion.
+is not implemented. Public `Dream` owns every exact target in `4N..=16N`.
+Public `Cyclic` owns every exact target in `2N..=8N` with one `5..90 ms`
+cycle duration. `g10.035` selects a future opt-in Transparent/Dream Automatic
+intent with a `4x..8x` transition; Cyclic remains explicit. That candidate
+direction does not replace this renderer or reopen Contract `084`. The
+attempted `LayeredCloud` owner closed without promotion.
 
 ## Candidate Isolation
 
@@ -114,9 +115,7 @@ ledger remains in git history at `1d1b02f1`.
 
 ## Next Task
 
-Retain this frozen baseline and keep its successor lane closed. `g10.032`
-admitted exact-ratio Cyclic. `g10.033` admitted continuous `4x..16x` Dream
-without changing Transparent. `g10.034` Batch 34.1 selects a static-compatible
-continuous Cyclic evidence candidate over `2N..=8N`; Batch 34.2 freezes its
-complete authority. Execute Batch 34.3 only in isolation. Do not change lower
-Dream, product routing, or Contract `084`.
+Retain this frozen baseline and keep its successor lane closed. Execute
+`g10.035` Batch 35.2 as documentation only: freeze one complete exact-target
+Transparent/Dream Automatic route without changing this renderer, creative
+DSP, public APIs, or Contract `084`.
