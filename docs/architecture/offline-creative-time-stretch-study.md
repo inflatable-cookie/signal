@@ -1,6 +1,6 @@
 # Offline Creative Time-Stretch Study
 
-Status: public Dream and Cyclic admitted; tested Automatic route rejected
+Status: public Dream and Cyclic admitted; Automatic closed for current owners
 Owner: dsp
 Updated: 2026-07-25
 Contract: `085`
@@ -383,7 +383,7 @@ support is claimed.
 ## g10.035 Automatic Selection Decision
 
 The operator wants clean range-dependent algorithm selection without losing
-direct access to the admitted effects. Batch 35.1 selects one future opt-in
+direct access to the admitted effects. Batch 35.1 selected one future opt-in
 `Automatic` intent:
 
 | Exact target | Selected contribution |
@@ -392,26 +392,31 @@ direct access to the admitted effects. Batch 35.1 selects one future opt-in
 | `4N..=8N` | fixed-ratio Transparent/Dream transition |
 | `8N..=16N` | admitted neutral Dream owner |
 
-This is candidate direction, not executable coverage. At `4N`, Automatic must
-be byte-exact Transparent. At `8N`, it must be byte-exact Dream with admitted
-neutral `space=0.5` and the fixed seed. Interior targets use one constant
-channel-shared weight for the complete render.
+Batch 35.2 froze one exact-target samplewise route. Batch 35.3 was
+evidence-invalid. Batch 35.4 corrected gate ownership. Batch 35.5 then passed
+conformance and identity/parity before valid synthetic pitch rejection at
+`6N`.
 
-Automatic exposes only exact duration. Explicit Transparent remains available.
-Explicit Dream retains `space`; explicit Cyclic retains `cycle`. Cyclic never
-enters Automatic, and no Dream/Cyclic blend is authorized.
+Batch 35.6 closes Automatic for the current owners. The source-backed
+alternatives do not supply another complete route: a hard switch is not
+seamless; another mix, alignment, mask, or selector repairs the rejected seam;
+and a coherent single synthesis field is a new renderer that reopens closed
+successor or component programs.
 
-The complete route must own one exact target lattice, one monotonic map,
-Transparent exact-target adaptation, transition weight and level law,
-head/tail alignment, linked stereo, deterministic identity, and at most final
-output plus one output-sized contribution. A hard `4x` switch, post-stretch
-resampling, second timeline, limiter, post-fade, or adaptive loudness stage is
-not a route.
+Current product ownership is explicit:
 
-Batch 35.2 freezes those choices and every structural, synthetic, long-form,
-independent-stereo, rejection, cleanup, and minimal-admission gate in
+- Transparent stays the source-readable general stretch
+- Dream stays the smooth creative `4N..=16N` owner with `space`
+- Cyclic stays the commanded `2N..=8N` effect with `cycle`
+- Automatic has no public or private executable identity
+
+A consumer may recommend an explicit mode from context. It must not hide a
+hard switch or call it seamless Automatic behavior.
+
+The rejected architecture and reopen conditions remain in
 [the canonical route brief](./offline-automatic-exact-target-transparent-dream-router-brief.md).
-One isolated Batch 35.3 candidate is ready. No route or public surface exists.
+Reopening requires one source-backed complete owner with one synthesis state,
+or an explicit operator change to the seamless or terminal-gate boundary.
 
 ## Historical Range-Routed Architecture
 
@@ -1407,7 +1412,6 @@ one isolated candidate. Public widening remains blocked.
 
 ## Next Task
 
-Execute `g10.035` Batch 35.6 only as documentation. Reject the tested
-Automatic route shape, assess whether one materially different complete
-architecture remains justified, and freeze either that direction or
-explicit-mode closure.
+Execute `g10.035` Batch 35.8 only as documentation. Confirm isolated Automatic
+state is absent, publish the final explicit stretch matrix, reconcile front
+doors, and close the roadmap.

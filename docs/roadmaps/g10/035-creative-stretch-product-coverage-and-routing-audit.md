@@ -1,6 +1,6 @@
 # 035 - Creative Stretch Product Coverage And Routing Audit
 
-Status: active; Batch 35.5 complete; Batch 35.6 ready
+Status: active; Batch 35.6 complete; Batch 35.8 ready
 Owner: core-product
 Created: 2026-07-25
 Depends on: `g10.030`, `g10.033`, `g10.034`
@@ -37,8 +37,8 @@ The visible runway is:
 6. minimal public admission only after objective and listening passage
 7. docs-only closeout
 
-Batch 35.5 is complete. Batch 35.6 is the only ready work. Public
-implementation remains blocked.
+Batch 35.6 is complete. Batch 35.8 is the only ready work. Public Automatic
+implementation is cancelled.
 
 ## Goals
 
@@ -50,7 +50,7 @@ implementation remains blocked.
   complete brief
 - [x] freeze exact route mechanics, identity, bounds, and evidence
 - [x] reject one isolated fixed-ratio route on valid synthetic evidence
-- [ ] keep public API and product integration blocked until acoustic passage
+- [x] keep public API and product integration blocked after acoustic rejection
 
 ## Non-Goals
 
@@ -62,13 +62,13 @@ implementation remains blocked.
 - no external production dependency
 - no candidate DSP, harness, fixture, report, or evidence asset on `main`
 
-## Selected Product Shape
+## Tested Product Shape
 
-`Automatic` is a future opt-in intent, not a replacement for explicit modes
-and not yet a public API.
+Batch 35.1 selected `Automatic` as a candidate opt-in intent, not a replacement
+for explicit modes. It never became a public API.
 
-Let `N` be source frames and `T` the exact requested output frames. The
-candidate envelope is `ceil(N/2) <= T <= 16N`, compared with checked integer
+Let `N` be source frames and `T` the exact requested output frames. The tested
+envelope was `ceil(N/2) <= T <= 16N`, compared with checked integer
 arithmetic:
 
 | Target | Automatic owner |
@@ -77,9 +77,9 @@ arithmetic:
 | `4N..=8N` | one fixed-ratio Transparent/Dream transition |
 | `8N..=16N` | admitted neutral Dream owner |
 
-At `4N`, Automatic is byte-exact Transparent. At `8N`, it is byte-exact Dream
-with admitted neutral defaults. Interior targets use one channel-shared,
-render-wide weight frozen by Batch 35.2.
+At `4N`, the candidate was byte-exact Transparent. At `8N`, it was byte-exact
+Dream with admitted neutral defaults. Interior targets used one
+channel-shared, render-wide weight frozen by Batch 35.2.
 
 Explicit modes remain:
 
@@ -87,10 +87,10 @@ Explicit modes remain:
 - Dream: public v4 `4N..=16N`, `space 0..=1`
 - Cyclic: public v4 `2N..=8N`, cycle `5..90 ms`
 
-Cyclic never enters Automatic. Its repetition and cycle duration are explicit
-musical choices. Automatic exposes only exact duration. Its Dream contribution
-uses neutral `space=0.5` and the admitted fixed seed. Users who want `space` or
-`cycle` select Dream or Cyclic directly.
+Cyclic never entered Automatic. Its repetition and cycle duration remain
+explicit musical choices. The rejected candidate exposed only exact duration;
+its Dream contribution used neutral `space=0.5` and the admitted fixed seed.
+Users select Transparent, Dream, or Cyclic directly.
 
 ## Execution Plan
 
@@ -273,23 +273,38 @@ Result:
 
 ## Batch 35.6 - Public Route Decision And Architecture Reassessment
 
-Status: ready
+Status: complete
 
 Documentation only. Reject the tested route shape. Decide whether Automatic
 retains one materially different complete architecture path or closes in
 favour of explicit Transparent, Dream, and Cyclic modes. Do not reinterpret
 the pitch receipt, tune the blend, or start implementation.
 
+Result:
+
+- the tested route is rejected at product authority
+- no materially different complete route is source-backed under current owner
+  and closed-program boundaries
+- hard switching fails the seamless product promise
+- alignment, correlation, masks, band splits, material selection, or changed
+  weights repair the rejected seam
+- one coherent synthesis field is a new renderer and reopens closed successor
+  or component programs
+- Automatic closes for the current owners with no API, discovery, identity,
+  cache, runtime, UI, Loophole, or Chorus surface
+- explicit Transparent, Dream, and Cyclic remain unchanged
+- the Batch 35.5 acoustic ref is deleted after this reassessment commit
+- Batch 35.8 is ready as docs-only lane closeout
+
 ## Batch 35.7 - Minimal Public Admission
 
-Status: planned; blocked on Batch 35.6
+Status: cancelled; Automatic rejected
 
-Implement only the frozen public boundary and focused public/private parity.
-No cache, artifact, dynamic ratio, runtime, UI, Loophole, or Chorus work.
+No public Automatic boundary exists. Nothing is implemented.
 
 ## Batch 35.8 - Lane Closeout
 
-Status: planned; blocked on the admission or rejection outcome
+Status: ready
 
 Publish the exact executable matrix, remove or confirm removal of isolated
 state, reconcile Contract `085` and all front doors, and select one next
@@ -305,8 +320,9 @@ planning checkpoint.
 - [x] Batch 35.3 has one frozen, evidence-invalid checkpoint
 - [x] Batch 35.4 corrects gate ownership without candidate tuning
 - [x] Batch 35.5 produces one valid route rejection
-- [x] only Batch 35.6 is ready
-- [x] public work remains conditional
+- [x] Batch 35.6 closes Automatic for the current owners
+- [x] only Batch 35.8 is ready
+- [x] public Automatic work is cancelled
 - [x] planning changes documentation only
 - [x] the complete brief owns every map, scheduler, boundary, stereo, memory,
   identity, evidence, rejection, cleanup, and admission decision
@@ -314,7 +330,7 @@ planning checkpoint.
 
 ## Next Task
 
-Execute Batch 35.6 only as documentation. Reject the tested
-`ExactTargetTransparentDreamRouter` shape at product authority, assess whether
-one materially different complete Automatic architecture remains justified,
-and freeze either that direction or explicit-mode closure.
+Execute Batch 35.8 only as documentation. Confirm every Automatic worktree,
+branch, ref, candidate source, evidence root, and generated asset is absent;
+publish the final explicit stretch matrix; reconcile front doors; and close
+`g10.035`.

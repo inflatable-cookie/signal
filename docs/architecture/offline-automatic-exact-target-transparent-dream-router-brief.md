@@ -1,10 +1,10 @@
 # Offline Automatic ExactTargetTransparentDreamRouter Brief
 
-Status: rejected at synthetic pitch
+Status: rejected and closed for current owners
 Owner: dsp
 Updated: 2026-07-25
 Contract: `085`
-Roadmap: `g10.035`, Batches 35.2-35.4
+Roadmap: `g10.035`, Batches 35.2-35.6
 
 ## Decision
 
@@ -96,6 +96,40 @@ This is valid renderer rejection. The fixed render-wide samplewise
 linear-amplitude blend does not preserve the owners' tonal result at this
 interior control. Do not change weight, interval, phase, alignment, gain,
 window, threshold, estimator, or source around this checkpoint.
+
+## Architecture Reassessment
+
+Batch 35.6 rejects this route at product authority and closes Automatic for
+the current owners.
+
+| Apparent next mechanism | Decision |
+| --- | --- |
+| hard Transparent/Dream switch | not seamless; exposes a character and boundary discontinuity |
+| another weight, interval, gain, alignment, or correlation law | repair of the rejected samplewise blend |
+| time, frequency, or material masks between rendered owners | adds selection seams and reopens prohibited hybrid routing |
+| one coherent complex or component synthesis field | a new complete renderer; reopens closed successor or component programs |
+| diagnostic pitch or wider allowance | explicit product-gate change, not architecture evidence |
+
+Rubber Band, Signalsmith, and Bungee support one internally coherent phase
+field, not crossfading two completed waveforms. PaulXStretch supports Dream's
+separate magnitude-renewal owner, not a coherent handoff to Transparent.
+Retained evidence therefore supplies no unused build-ready route between the
+admitted owners.
+
+The product result is explicit mode ownership:
+
+- Transparent remains the source-readable general stretch
+- Dream remains the smooth creative `4N..=16N` owner
+- Cyclic remains the commanded `2N..=8N` effect
+- Automatic has no engine, API, discovery, identity, or cache semantics
+
+A consumer may suggest one explicit mode from context. It must not hide a hard
+switch behind Automatic or claim seamless behavior.
+
+Reopening requires one source-backed complete owner spanning the transition
+with one synthesis state, one map, linked stereo, exact length, bounded state,
+and complete evidence, or an explicit operator change to the seamless or
+terminal-gate product boundary.
 
 ## Immutable Inputs
 
@@ -662,8 +696,7 @@ Candidate evidence runners, nextest profile, sources, comparators, manifests,
 receipts, audio, and acoustic ref stay out of `main`.
 
 Public `Automatic`, cache and artifact identity, dynamic ratio, pitch,
-RealtimePreview, runtime, UI, Loophole, and Chorus remain blocked for Batch
-35.6 or later.
+RealtimePreview, runtime, UI, Loophole, and Chorus remain unadmitted.
 
 ## Readiness
 
@@ -671,11 +704,10 @@ The brief fixes every request, owner, map, schedule, weight, blend, boundary,
 stereo, identity, memory, evidence, rejection, cleanup, and admission choice.
 Batch 35.3 is evidence-invalid and closed. Batch 35.4 corrects gate ownership
 without changing the candidate. Batch 35.5 completes one exact replay and
-rejects this route at synthetic pitch. No implementation or admission batch is
-ready.
+rejects this route at synthetic pitch. Batch 35.6 closes Automatic for the
+current owners. No implementation or admission batch is ready.
 
 ## Next Task
 
-Execute `g10.035` Batch 35.6 only as documentation. Reject this route shape at
-product authority and decide whether Automatic retains one materially
-different complete architecture path or closes in favour of explicit modes.
+Execute `g10.035` Batch 35.8 only as documentation. Confirm candidate state and
+refs are absent, publish the final explicit stretch matrix, and close the lane.

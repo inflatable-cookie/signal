@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: `g10.035` active; Automatic reassessment Batch 35.6 ready
+Status: `g10.035` active; Automatic closed; Batch 35.8 ready
 Updated: 2026-07-25
 
 ## Why this generation matters now
@@ -178,7 +178,10 @@ The 2026-07-19 consolidation reset is authoritative.
   owner because byte-exact Transparent and a misplaced universal peak ceiling
   conflict. Batch 35.4 corrects gate ownership without changing candidate
   bytes. Batch 35.5 replays the exact source and rejects the route at
-  synthetic pitch. Batch 35.6 is ready as documentation.
+  synthetic pitch. Batch 35.6 finds no materially different complete route
+  within the current owner and closed-program boundaries. Automatic closes;
+  explicit Transparent, Dream, and Cyclic remain. Batch 35.8 is ready for
+  docs-only lane closeout.
 - `g10.028` RealtimePreview source-fill and all render-plane integration remain
   paused.
 
@@ -340,8 +343,9 @@ Do not start Loophole or Chorus planning from Signal internals.
     `4N..=8N` transition; Batch 35.2 freezes the complete private route;
     Batch 35.3 produces one evidence-invalid checkpoint; Batch 35.4 corrects
     peak-gate ownership without candidate tuning; Batch 35.5 rejects the exact
-    replay at synthetic pitch; Batch 35.6 is ready for product and architecture
-    reassessment; public work remains blocked
+    replay at synthetic pitch; Batch 35.6 finds no materially different
+    complete route under current authority and closes Automatic for the
+    current owners; Batch 35.8 docs-only lane closeout is ready
 
 ## Stretch Boundary
 
@@ -907,13 +911,18 @@ rounds, non-acoustic regression `204/204`, and identity/parity `150/150` pass.
 Pitch rejects low tone at `6N`, `110 Hz`: Automatic error is
 `8.717736874188192` cents against a worse-arm error of
 `6.277316077755877` cents and the frozen `1`-cent allowance. No later
-synthetic or listening owner runs. Batch 35.6 is ready as documentation. No
-public route, cache, artifact, dynamic ratio, runtime, UI, Loophole, or Chorus
-work is ready.
+synthetic or listening owner runs.
+
+Batch 35.6 rejects the tested route at product authority. A hard switch is not
+seamless, repairs to alignment, masks, weights, or material selection remain
+variants of the rejected seam, and one coherent synthesis field would be a new
+renderer outside current authority. Automatic closes for the current owners.
+No public route, cache, artifact, dynamic ratio, runtime, UI, Loophole, or
+Chorus work is ready. Batch 35.8 is the only ready work.
 
 ## Next Task
 
-Execute `g10.035` Batch 35.6 only as documentation. Reject the tested route
-shape at product authority, assess whether one materially different complete
-Automatic architecture remains justified, and freeze either that direction or
-explicit-mode closure.
+Execute `g10.035` Batch 35.8 only as documentation. Confirm every Automatic
+worktree, branch, ref, candidate source, evidence root, and generated asset is
+absent; publish the final explicit stretch matrix; reconcile front doors; and
+close the roadmap.

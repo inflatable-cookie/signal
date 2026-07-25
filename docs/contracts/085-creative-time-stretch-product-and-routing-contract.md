@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: public v4 active; Automatic route rejected; reassessment ready
+Status: public v4 active; Automatic closed for current owners
 Owner: core-product
 Updated: 2026-07-25
 Related contracts: `046`, `048`, `084`
@@ -153,7 +153,7 @@ The historical automatic routed bands were:
 
 They remain historical evidence, not current execution authority.
 
-Batch 35.1 selects one narrower fixed-ratio Automatic candidate:
+Batch 35.1 selected one narrower fixed-ratio Automatic candidate:
 
 - Transparent only from exact `0.5x` through `4x`
 - Transparent/Dream transition from exact `4x` through `8x`
@@ -163,13 +163,14 @@ At `4x`, Automatic is byte-exact Transparent. At `8x`, it is byte-exact Dream
 with admitted neutral defaults. Automatic is unsupported below `0.5x` and
 above `16x`. Cyclic bypasses the route.
 
-This selected shape authorizes only a complete documentation brief. No route,
-public request, cache identity, or product integration exists yet. Current
-executable creative coverage is public neutral `Dream` at
-every exact target `4N <= T <= 16N`, plus public manual `Cyclic` at every
-exact target `2N <= T <= 8N`. This authorizes no inter-character overlap or
-higher ratio. Any future routing reopening must preserve `2x`, `4x`, and `8x`
-as mandatory admission points.
+That shape authorized only a complete documentation brief and one isolated
+candidate. It was rejected and is no longer execution authority. No route,
+public request, cache identity, or product integration exists. Current
+executable creative coverage is public neutral `Dream` at every exact target
+`4N <= T <= 16N`, plus public manual `Cyclic` at every exact target
+`2N <= T <= 8N`. This authorizes no inter-character overlap or higher ratio.
+Any future routing reopening must preserve `2x`, `4x`, and `8x` as mandatory
+admission points.
 
 The Batch 35.2 brief must freeze checked exact-target comparisons and one
 render-wide channel-shared weight over `log2(T/N)`. It may retain smoothstep
@@ -2418,9 +2419,31 @@ are deleted after the Batch 35.5 docs closeout. The acoustic ref remains
 through the Batch 35.6 docs-only reassessment. Public Automatic remains
 unimplemented.
 
+Batch 35.6 closes Automatic for the current Transparent and Dream owners.
+Retained source evidence supplies no materially different complete route:
+
+- a hard owner switch abandons the seamless product promise
+- alignment, correlation gain, masks, band splits, material selection, or
+  changed weights repair the rejected blend seam
+- one coherent phase or component field replaces both owners and reopens the
+  closed transparent successor or component-renderer programs
+- relaxing the pitch gate is an explicit product-boundary change, not new
+  architecture evidence
+
+Signal therefore exposes no Automatic request, discovery row, behavior
+identity, cache key, or hidden ratio router. A consumer may recommend a mode
+from context, but it must resolve that choice visibly to explicit Transparent,
+Dream, or Cyclic semantics before calling Signal. It may not label a hidden
+hard switch as seamless Automatic behavior.
+
+Automatic may reopen only through one source-backed complete owner that spans
+the transition with one synthesis state and linked-channel law, or through an
+explicit operator change to the seamless or terminal-gate product boundary.
+Neither is current execution authority. The Batch 35.5 acoustic ref is deleted
+after this reassessment commit. Public creative v4 remains unchanged.
+
 ## Next Task
 
-Execute `g10.035` Batch 35.6 only. Reject the tested
-`ExactTargetTransparentDreamRouter` route shape at product authority, then
-decide whether Automatic retains a materially different complete architecture
-path or closes in favour of the explicit Transparent, Dream, and Cyclic modes.
+Execute `g10.035` Batch 35.8 only as documentation. Publish the final explicit
+stretch matrix, confirm all Automatic candidate state and refs are absent,
+reconcile the remaining front doors, and close the lane.

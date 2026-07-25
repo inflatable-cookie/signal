@@ -315,16 +315,15 @@ The current package-level naming proposal is recorded in
   exact target in `4x..16x` through one owner without a same-character router.
 - `g10.032` owns `Cyclic` separately; `g10.034` widens its public exact-target
   domain to every target `2N..=8N` without changing the admitted renderer.
-- `g10.035` selects one future opt-in Automatic intent. Transparent owns
-  through `4N`, Transparent and neutral Dream transition over `4N..=8N`, and
-  Dream owns `8N..=16N`. Cyclic remains explicit. The complete private route
-  brief is corrected after an evidence-invalid first checkpoint. Its exact
-  replay then rejects the fixed blend at synthetic pitch.
+- `g10.035` tested one opt-in Automatic intent. Its exact fixed-blend replay
+  rejects at synthetic pitch, and the architecture reassessment finds no
+  materially different complete route within the current owner and
+  closed-program boundaries. Automatic is closed for these owners. Explicit
+  Transparent, Dream, and Cyclic remain.
 
 ## Next Task
 
-Execute `g10.035` Batch 35.6 only as documentation. Reject the tested route
-shape, assess whether one materially different complete Automatic architecture
-remains justified, and freeze either that direction or explicit-mode closure.
-Keep all public, runtime, cache, artifact, UI, Loophole, and Chorus work
-blocked.
+Execute `g10.035` Batch 35.8 only as documentation. Confirm isolated Automatic
+state is absent, publish the final explicit stretch matrix, reconcile front
+doors, and close the roadmap. Keep all public Automatic, runtime, cache,
+artifact, UI, Loophole, and Chorus work blocked.

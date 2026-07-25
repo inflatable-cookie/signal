@@ -91,10 +91,13 @@ Intentional creative expansion is governed separately by Contract `085` and
 `docs/architecture/offline-creative-time-stretch-study.md`. Automatic routing
 is not implemented. Public `Dream` owns every exact target in `4N..=16N`.
 Public `Cyclic` owns every exact target in `2N..=8N` with one `5..90 ms`
-cycle duration. `g10.035` selects a future opt-in Transparent/Dream Automatic
-intent with a `4x..8x` transition; Cyclic remains explicit. That candidate
-direction does not replace this renderer or reopen Contract `084`. The
-attempted `LayeredCloud` owner closed without promotion.
+cycle duration. `g10.035` tested an opt-in Transparent/Dream Automatic route
+with a `4x..8x` transition. The fixed blend rejected at synthetic pitch, and
+no materially different complete route remains within the current owner and
+closed-program boundaries. Automatic is closed for these owners. Explicit
+Transparent, Dream, and Cyclic remain. This result does not replace this
+renderer or reopen Contract `084`. The attempted `LayeredCloud` owner closed
+without promotion.
 
 ## Candidate Isolation
 
@@ -116,7 +119,7 @@ ledger remains in git history at `1d1b02f1`.
 ## Next Task
 
 Retain this frozen baseline and keep its successor lane closed. Execute
-`g10.035` Batch 35.6 only as documentation: reject the tested Automatic route
-shape and decide whether a materially different complete architecture remains
-justified without changing this production renderer, public APIs, or Contract
-`084`.
+`g10.035` Batch 35.8 only as documentation: confirm isolated Automatic state
+is absent, publish the final explicit stretch matrix, reconcile front doors,
+and close the roadmap without changing this production renderer, public APIs,
+or Contract `084`.

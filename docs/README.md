@@ -31,7 +31,7 @@ strict lane.
 - Rejected offline stretch successor: [architecture/offline-time-stretch-successor-brief.md](./architecture/offline-time-stretch-successor-brief.md)
 - Non-phase-vocoder feasibility: [architecture/offline-time-stretch-non-phase-vocoder-feasibility.md](./architecture/offline-time-stretch-non-phase-vocoder-feasibility.md)
 - Creative time-stretch study: [architecture/offline-creative-time-stretch-study.md](./architecture/offline-creative-time-stretch-study.md)
-- Corrected private Automatic route brief: [architecture/offline-automatic-exact-target-transparent-dream-router-brief.md](./architecture/offline-automatic-exact-target-transparent-dream-router-brief.md)
+- Rejected and closed Automatic route brief: [architecture/offline-automatic-exact-target-transparent-dream-router-brief.md](./architecture/offline-automatic-exact-target-transparent-dream-router-brief.md)
 - Admitted private continuous Dream implementation brief: [architecture/offline-creative-continuous-direct-renewal-dream-brief.md](./architecture/offline-creative-continuous-direct-renewal-dream-brief.md)
 - Cyclic behavioral synthesis: [architecture/offline-creative-cyclic-behavioral-synthesis.md](./architecture/offline-creative-cyclic-behavioral-synthesis.md)
 - Admitted private event-ledger Cyclic renderer brief: [architecture/offline-creative-event-ledger-audited-centered-compressed-anchor-cyclic-brief.md](./architecture/offline-creative-event-ledger-audited-centered-compressed-anchor-cyclic-brief.md)
@@ -96,7 +96,7 @@ strict lane.
 
 ## Next Task
 
-Execute `g10.035` Batch 35.6 only as documentation. Reject the tested
-Automatic route shape, assess whether one materially different complete
-architecture remains justified, and freeze either that direction or
-explicit-mode closure.
+Execute `g10.035` Batch 35.8 only as documentation. Confirm every Automatic
+worktree, branch, ref, candidate source, evidence root, and generated asset is
+absent; publish the final explicit stretch matrix; reconcile front doors; and
+close the roadmap.

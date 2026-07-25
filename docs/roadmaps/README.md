@@ -355,7 +355,10 @@ Cyclic kept explicit. Batch 35.2 freezes the complete private route. Batch
 Transparent row conflicts with a misplaced universal peak ceiling. Batch 35.4
 corrects gate ownership without candidate tuning. Batch 35.5 replays the exact
 source and rejects the route at synthetic pitch after identity/parity passes.
-Batch 35.6 is ready as a docs-only product and architecture reassessment.
+Batch 35.6 finds no materially different complete route within the current
+owner and closed-program boundaries. Automatic closes for the current owners;
+explicit Transparent, Dream, and Cyclic remain. Batch 35.8 is ready for
+docs-only lane closeout.
 
 ## Strict lane posture
 
@@ -384,6 +387,7 @@ Before rollover:
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the active generation front door. Execute
-`g10.035` Batch 35.6 only as documentation. Reject the tested Automatic route
-shape, decide whether one materially different complete architecture remains
-justified, and freeze either that direction or explicit-mode closure.
+`g10.035` Batch 35.8 only as documentation. Confirm every Automatic worktree,
+branch, ref, candidate source, evidence root, and generated asset is absent;
+publish the final explicit stretch matrix; reconcile front doors; and close
+the roadmap.

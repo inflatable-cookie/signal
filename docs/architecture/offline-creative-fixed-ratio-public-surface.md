@@ -619,7 +619,7 @@ Loophole, or Chorus surface changed.
 
 ## Next Task
 
-Execute `g10.035` Batch 35.6 only as documentation. Reject the tested
-Automatic route shape and decide whether one materially different complete
-architecture remains justified. Automatic remains unimplemented on `main`;
+Execute `g10.035` Batch 35.8 only as documentation. Confirm isolated Automatic
+state is absent, publish the final explicit stretch matrix, reconcile front
+doors, and close the roadmap. Automatic remains unimplemented on `main`;
 explicit Transparent, Dream, and Cyclic stay unchanged.
