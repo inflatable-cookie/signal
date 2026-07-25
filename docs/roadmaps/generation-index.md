@@ -172,8 +172,12 @@ Updated: 2026-07-25
   widening; Batch 34.5 admits the two-file wrapper; Batch 34.6 publishes the
   final matrix and closes `g10.034`. `g10.035` Batch 35.1 selects an opt-in
   Transparent/Dream Automatic direction over exact `0.5N..=16N`, keeps Cyclic
-  explicit, and Batch 35.2 freezes its complete private route. One isolated
-  Batch 35.3 candidate is ready.
+  explicit, and Batch 35.2 freezes its complete private route. Batch 35.3 is
+  evidence-invalid; Batch 35.4 corrects gate ownership; Batch 35.5 rejects the
+  exact replay at synthetic pitch; Batch 35.6 closes Automatic for the current
+  owners; and Batch 35.8 publishes the final explicit matrix, confirms all
+  isolated state is absent, and closes `g10.035`. No Signal stretch
+  implementation batch is ready.
 - Lifecycle reconciliation then closed stale `g10.001` and `g10.003` active
   markers and paused `g10.017` on its remaining hardware evidence. Signal's
   capture and live-monitor implementation is present. That lifecycle
@@ -198,7 +202,7 @@ Updated: 2026-07-25
 | `g06` | 2026-03-13 | Continue beyond reusable-boundary closeout with runtime recovery depth, instrumentation, feature breadth, and Loophole-facing runtime evidence | Closed on 2026-03-16 after recovery/resumability, profiling, VST3/AU, MIDI/event depth, hardware/external-I/O, media services, integrated acceptance, bounded soak, and generation-closeout promotion work landed |
 | `g07` | 2026-03-13 | Seed the post-`g06` feature-expansion queue around routing or multichannel depth, Linux-native breadth, control-surface substrate, and fuller time-stretch capability | Closed on 2026-03-19 after multichannel or spatial execution, LV2 and Linux backends, external MIDI/control surfaces, sample-domain stretch, integrated acceptance, and generation-closeout promotion work landed |
 | `g08` | 2026-03-19 | Continue beyond bounded feature-expansion closure with live Linux backend ownership, richer plugin or device protocol depth, immersive routing, and workflow-adjacent runtime services | Closed on 2026-03-22 after live Linux ownership, LV2 or plugin protocol depth, immersive render breadth, device-protocol substrate, preview workflows, grouped acceptance lanes, integrated acceptance, and final generation-closeout work landed |
-| `g10` | 2026-06-11 | Turn the 2026-06-11 deep audit into a remediation program: fix the real audio path, demolish simulated/narration mass (~70-80k LoC), consolidate hygiene, defer rebuilds to demand | Active; `g10.030` retained the frozen stretch baseline; `g10.033` and `g10.034` admitted continuous Dream and Cyclic; `g10.035` rejected and closed Automatic for the current owners and has one docs-only lane closeout ready |
+| `g10` | 2026-06-11 | Turn the 2026-06-11 deep audit into a remediation program: fix the real audio path, demolish simulated/narration mass (~70-80k LoC), consolidate hygiene, defer rebuilds to demand | Active generation with no ready batch; `g10.030` retained the frozen stretch baseline; `g10.033` and `g10.034` admitted continuous Dream and Cyclic; `g10.035` rejected Automatic and closed the stretch product-routing lane |
 | `g09` | 2026-04-08 | Turn the audit findings into a contract-backed realization, hardening, and interactive-proof program | Closed on 2026-04-11 after plugin and backend realization, production-readiness gating, and operator-visible demo proof landed |
 
 ## Rollover policy
@@ -218,7 +222,6 @@ If that cleanup has not happened, stay in the current generation and finish the 
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the current active-generation front door.
-Execute `g10.035` Batch 35.8 only as documentation. Confirm every Automatic
-worktree, branch, ref, candidate source, evidence root, and generated asset is
-absent; publish the final explicit stretch matrix; reconcile front doors; and
-close the roadmap.
+No batch is ready. Require an explicit operator-selected Signal-only planning
+target before opening another roadmap. Do not infer Automatic, RealtimePreview,
+integration, Loophole, or Chorus work from the completed stretch lane.

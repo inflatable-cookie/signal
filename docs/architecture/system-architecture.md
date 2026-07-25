@@ -319,11 +319,11 @@ The current package-level naming proposal is recorded in
   rejects at synthetic pitch, and the architecture reassessment finds no
   materially different complete route within the current owner and
   closed-program boundaries. Automatic is closed for these owners. Explicit
-  Transparent, Dream, and Cyclic remain.
+  Transparent, Dream, and Cyclic remain. Batch 35.8 confirms no isolated
+  candidate state remains and closes the roadmap.
 
 ## Next Task
 
-Execute `g10.035` Batch 35.8 only as documentation. Confirm isolated Automatic
-state is absent, publish the final explicit stretch matrix, reconcile front
-doors, and close the roadmap. Keep all public Automatic, runtime, cache,
-artifact, UI, Loophole, and Chorus work blocked.
+No Signal stretch implementation batch is ready. Return to the `g10` front
+door for an explicit operator-selected Signal-only planning target. Keep
+Automatic, runtime, cache, artifact, UI, Loophole, and Chorus work blocked.

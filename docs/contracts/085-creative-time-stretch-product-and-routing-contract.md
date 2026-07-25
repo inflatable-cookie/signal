@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: public v4 active; Automatic closed for current owners
+Status: public v4 active; `g10.035` complete; Automatic closed
 Owner: core-product
 Updated: 2026-07-25
 Related contracts: `046`, `048`, `084`
@@ -121,10 +121,10 @@ or transition weight.
 Creative admission does not upgrade `OfflineHighQuality`, and transparent
 admission does not authorize creative output.
 
-Batch 35.1 selects a future opt-in `Automatic` intent as a peer choice. It is
-not a creative character and is not yet a public API. Automatic may combine
-Transparent and neutral Dream only. Explicit Transparent, Dream, and Cyclic
-remain available; Cyclic never enters Automatic.
+Batch 35.1 tested an opt-in `Automatic` intent as a peer choice. It was not a
+creative character and never became a public API. The candidate combined only
+Transparent and neutral Dream; Cyclic stayed explicit. Batch 35.5 rejected the
+route, and Batch 35.6 closed Automatic for the current owners.
 
 ## Rules
 
@@ -159,9 +159,9 @@ Batch 35.1 selected one narrower fixed-ratio Automatic candidate:
 - Transparent/Dream transition from exact `4x` through `8x`
 - neutral Dream only above `8x` through `16x`
 
-At `4x`, Automatic is byte-exact Transparent. At `8x`, it is byte-exact Dream
-with admitted neutral defaults. Automatic is unsupported below `0.5x` and
-above `16x`. Cyclic bypasses the route.
+At `4x`, the candidate was byte-exact Transparent. At `8x`, it was byte-exact
+Dream with admitted neutral defaults. The candidate was unsupported below
+`0.5x` and above `16x`. Cyclic bypassed the route.
 
 That shape authorized only a complete documentation brief and one isolated
 candidate. It was rejected and is no longer execution authority. No route,
@@ -2439,11 +2439,28 @@ hard switch as seamless Automatic behavior.
 Automatic may reopen only through one source-backed complete owner that spans
 the transition with one synthesis state and linked-channel law, or through an
 explicit operator change to the seamless or terminal-gate product boundary.
-Neither is current execution authority. The Batch 35.5 acoustic ref is deleted
-after this reassessment commit. Public creative v4 remains unchanged.
+Neither is current execution authority. The Batch 35.5 acoustic ref was deleted
+after the Batch 35.6 reassessment commit. Public creative v4 remains
+unchanged.
+
+Batch 35.8 closes the roadmap. The canonical
+[final explicit stretch matrix](../architecture/offline-creative-fixed-ratio-public-surface.md#final-explicit-stretch-matrix)
+records:
+
+- Transparent as the source-readable product choice over the retained
+  `0.5x..4x` product range
+- Dream at every exact target `4N..=16N` with `space`
+- Cyclic at every exact target `2N..=8N` with `cycle`
+- no executable Automatic row
+
+All Batch 35.3 and Batch 35.5 worktrees, branches, acoustic refs, candidate
+source, nextest profile, tracked evidence, ignored evidence roots, generated
+assets, and build state are absent. No candidate or public Automatic surface
+entered `main`.
 
 ## Next Task
 
-Execute `g10.035` Batch 35.8 only as documentation. Publish the final explicit
-stretch matrix, confirm all Automatic candidate state and refs are absent,
-reconcile the remaining front doors, and close the lane.
+No Signal stretch implementation batch is ready. Preserve this contract and
+return to the `g10` front door for an explicit operator-selected Signal-only
+planning target. Do not infer Automatic, integration, cache, artifact,
+RealtimePreview, Loophole, or Chorus work.

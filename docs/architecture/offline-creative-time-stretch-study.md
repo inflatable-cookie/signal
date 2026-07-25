@@ -1,6 +1,6 @@
 # Offline Creative Time-Stretch Study
 
-Status: public Dream and Cyclic admitted; Automatic closed for current owners
+Status: explicit stretch matrix final; Automatic closed
 Owner: dsp
 Updated: 2026-07-25
 Contract: `085`
@@ -14,9 +14,9 @@ target from `4x` through `16x` without automatic or product routing. It is an
 offline sound-design renderer, not a replacement for
 `OfflineHighQuality`, a Contract `084` successor, or a RealtimePreview path.
 
-The product presents one stable intent surface while Signal routes between
-renderer families by stretch range. Algorithm names and low-level transform
-controls stay internal.
+The product presents explicit Transparent, Dream, and Cyclic intents. It does
+not route between them. Internal renderer names and low-level transform
+controls stay hidden.
 
 Initial product range:
 
@@ -25,7 +25,7 @@ Initial product range:
 - public Dream range: every exact target in `4N..=16N`
 - public manual Cyclic range: every exact target in `2N..=8N`
 - current executable creative coverage: continuous Dream and continuous Cyclic
-- selected Automatic study envelope: `0.5x..16x`, not implemented
+- rejected Automatic study envelope: `0.5x..16x`, never admitted
 - primary design point: `8x`
 - ratios above `16x`: future texture/freeze work, not current scope
 
@@ -382,8 +382,8 @@ support is claimed.
 
 ## g10.035 Automatic Selection Decision
 
-The operator wants clean range-dependent algorithm selection without losing
-direct access to the admitted effects. Batch 35.1 selected one future opt-in
+The operator wanted clean range-dependent algorithm selection without losing
+direct access to the admitted effects. Batch 35.1 selected one candidate
 `Automatic` intent:
 
 | Exact target | Selected contribution |
@@ -409,6 +409,11 @@ Current product ownership is explicit:
 - Dream stays the smooth creative `4N..=16N` owner with `space`
 - Cyclic stays the commanded `2N..=8N` effect with `cycle`
 - Automatic has no public or private executable identity
+
+The canonical
+[final explicit stretch matrix](./offline-creative-fixed-ratio-public-surface.md#final-explicit-stretch-matrix)
+separates executable acceptance, product range, controls, and adjacent
+non-product owners.
 
 A consumer may recommend an explicit mode from context. It must not hide a
 hard switch or call it seamless Automatic behavior.
@@ -1412,6 +1417,6 @@ one isolated candidate. Public widening remains blocked.
 
 ## Next Task
 
-Execute `g10.035` Batch 35.8 only as documentation. Confirm isolated Automatic
-state is absent, publish the final explicit stretch matrix, reconcile front
-doors, and close the roadmap.
+No Signal stretch implementation batch is ready. Preserve the explicit matrix
+and return to the `g10` front door for an operator-selected Signal-only
+planning target. Do not infer Automatic, integration, or RealtimePreview work.

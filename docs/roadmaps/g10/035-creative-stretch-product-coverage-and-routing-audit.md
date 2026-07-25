@@ -1,6 +1,6 @@
 # 035 - Creative Stretch Product Coverage And Routing Audit
 
-Status: active; Batch 35.6 complete; Batch 35.8 ready
+Status: complete; explicit stretch matrix retained; Automatic closed
 Owner: core-product
 Created: 2026-07-25
 Depends on: `g10.030`, `g10.033`, `g10.034`
@@ -37,8 +37,8 @@ The visible runway is:
 6. minimal public admission only after objective and listening passage
 7. docs-only closeout
 
-Batch 35.6 is complete. Batch 35.8 is the only ready work. Public Automatic
-implementation is cancelled.
+Batch 35.8 is complete. The roadmap is closed. Public Automatic implementation
+is cancelled, and no stretch implementation batch is ready.
 
 ## Goals
 
@@ -293,8 +293,8 @@ Result:
 - Automatic closes for the current owners with no API, discovery, identity,
   cache, runtime, UI, Loophole, or Chorus surface
 - explicit Transparent, Dream, and Cyclic remain unchanged
-- the Batch 35.5 acoustic ref is deleted after this reassessment commit
-- Batch 35.8 is ready as docs-only lane closeout
+- the Batch 35.5 acoustic ref was deleted after the reassessment commit
+- Batch 35.8 opened as the docs-only lane closeout
 
 ## Batch 35.7 - Minimal Public Admission
 
@@ -304,16 +304,33 @@ No public Automatic boundary exists. Nothing is implemented.
 
 ## Batch 35.8 - Lane Closeout
 
-Status: ready
+Status: complete
 
 Publish the exact executable matrix, remove or confirm removal of isolated
 state, reconcile Contract `085` and all front doors, and select one next
 planning checkpoint.
 
+Result:
+
+- the canonical public-surface architecture publishes the final explicit
+  matrix: Transparent over the retained `0.5x..4x` product range, Dream at
+  every exact target `4N..=16N`, Cyclic at every exact target `2N..=8N`, and
+  no Automatic row
+- overlap means explicit caller choice; no route, fallback, blend, discovery
+  row, identity, or cache key exists
+- all Batch 35.3 and Batch 35.5 worktrees, branches, acoustic refs, candidate
+  source, nextest profile, tracked evidence, ignored evidence roots, generated
+  assets, and build state are absent
+- admitted renderer and public API files remain unchanged
+- no DSP, harness, fixture, cache, artifact, runtime, UI, RealtimePreview,
+  Loophole, or Chorus surface enters the batch
+- the next planning checkpoint is the `g10` front door with no ready stretch
+  batch; explicit operator selection is required before another roadmap opens
+
 ## Acceptance Criteria
 
-- [x] operator intent supports clean automatic range selection
-- [x] Automatic remains optional and explicit modes survive
+- [x] the optional Automatic intent is tested without weakening explicit modes
+- [x] explicit modes survive the Automatic rejection
 - [x] Cyclic remains outside automatic routing
 - [x] one target envelope and one transition interval are selected
 - [x] no current owner is called seamless without transition evidence
@@ -321,16 +338,19 @@ planning checkpoint.
 - [x] Batch 35.4 corrects gate ownership without candidate tuning
 - [x] Batch 35.5 produces one valid route rejection
 - [x] Batch 35.6 closes Automatic for the current owners
-- [x] only Batch 35.8 is ready
+- [x] Batch 35.8 closes the roadmap
 - [x] public Automatic work is cancelled
 - [x] planning changes documentation only
 - [x] the complete brief owns every map, scheduler, boundary, stereo, memory,
   identity, evidence, rejection, cleanup, and admission decision
 - [x] listening remains promotion authority
+- [x] the final explicit stretch matrix is canonical
+- [x] no isolated Automatic state remains
+- [x] no stretch implementation batch remains ready
 
 ## Next Task
 
-Execute Batch 35.8 only as documentation. Confirm every Automatic worktree,
-branch, ref, candidate source, evidence root, and generated asset is absent;
-publish the final explicit stretch matrix; reconcile front doors; and close
-`g10.035`.
+Return to `docs/roadmaps/g10/README.md`. No Signal stretch implementation
+batch is ready. Require an explicit operator-selected Signal-only planning
+target before opening another roadmap; do not infer Automatic, integration,
+RealtimePreview, Loophole, or Chorus work from this closeout.

@@ -705,9 +705,13 @@ stereo, identity, memory, evidence, rejection, cleanup, and admission choice.
 Batch 35.3 is evidence-invalid and closed. Batch 35.4 corrects gate ownership
 without changing the candidate. Batch 35.5 completes one exact replay and
 rejects this route at synthetic pitch. Batch 35.6 closes Automatic for the
-current owners. No implementation or admission batch is ready.
+current owners. Batch 35.8 confirms every worktree, branch, acoustic ref,
+candidate source, nextest profile, tracked evidence path, ignored evidence
+root, generated asset, and build state is absent. No implementation or
+admission batch is ready.
 
 ## Next Task
 
-Execute `g10.035` Batch 35.8 only as documentation. Confirm candidate state and
-refs are absent, publish the final explicit stretch matrix, and close the lane.
+No Automatic task is ready. Preserve this rejected brief as historical
+evidence. Reopen only under the complete-owner or explicit product-boundary
+conditions above.

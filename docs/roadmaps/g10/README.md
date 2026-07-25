@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: `g10.035` active; Automatic closed; Batch 35.8 ready
+Status: active generation; `g10.035` complete; no ready batch
 Updated: 2026-07-25
 
 ## Why this generation matters now
@@ -173,15 +173,15 @@ The 2026-07-19 consolidation reset is authoritative.
 - `g10.034` is complete. It admits continuous exact-target Cyclic over
   `2N..=8N` through public v4 after full private acoustic admission and exact
   public/private parity. No isolated candidate state remains.
-- `g10.035` owns the current planning checkpoint. Batch 35.3 freezes one
+- `g10.035` is complete. Batch 35.3 freezes one
   conformance-complete Automatic checkpoint, then stops at its first acoustic
   owner because byte-exact Transparent and a misplaced universal peak ceiling
   conflict. Batch 35.4 corrects gate ownership without changing candidate
   bytes. Batch 35.5 replays the exact source and rejects the route at
   synthetic pitch. Batch 35.6 finds no materially different complete route
   within the current owner and closed-program boundaries. Automatic closes;
-  explicit Transparent, Dream, and Cyclic remain. Batch 35.8 is ready for
-  docs-only lane closeout.
+  explicit Transparent, Dream, and Cyclic remain. Batch 35.8 publishes the
+  final matrix, confirms all isolated state is absent, and closes the roadmap.
 - `g10.028` RealtimePreview source-fill and all render-plane integration remain
   paused.
 
@@ -337,7 +337,7 @@ Do not start Loophole or Chorus planning from Signal internals.
     passes and admits the private owner; Batch 34.4 freezes public v4; Batch
     34.5 admits the two-file wrapper with `12/12` public and `10/10` private
     focused tests; Batch 34.6 publishes the matrix and closes the lane
-- `g10.035` `active`
+- `g10.035` `complete`
   - Batch 35.1 audits current coverage, keeps Cyclic explicit, and selects one
     opt-in Transparent/Dream Automatic intent over exact `0.5N..=16N` with a
     `4N..=8N` transition; Batch 35.2 freezes the complete private route;
@@ -345,7 +345,8 @@ Do not start Loophole or Chorus planning from Signal internals.
     peak-gate ownership without candidate tuning; Batch 35.5 rejects the exact
     replay at synthetic pitch; Batch 35.6 finds no materially different
     complete route under current authority and closes Automatic for the
-    current owners; Batch 35.8 docs-only lane closeout is ready
+    current owners; Batch 35.8 publishes the explicit matrix, confirms all
+    isolated state is absent, and closes the roadmap
 
 ## Stretch Boundary
 
@@ -918,11 +919,16 @@ seamless, repairs to alignment, masks, weights, or material selection remain
 variants of the rejected seam, and one coherent synthesis field would be a new
 renderer outside current authority. Automatic closes for the current owners.
 No public route, cache, artifact, dynamic ratio, runtime, UI, Loophole, or
-Chorus work is ready. Batch 35.8 is the only ready work.
+Chorus work is ready.
+
+Batch 35.8 freezes the final explicit product matrix: Transparent over the
+retained `0.5x..4x` product range, Dream at every exact target `4N..=16N`,
+Cyclic at every exact target `2N..=8N`, and no Automatic row. All Batch 35.3
+and Batch 35.5 candidate state is absent. `g10.035` is complete. No Signal
+stretch implementation batch is ready.
 
 ## Next Task
 
-Execute `g10.035` Batch 35.8 only as documentation. Confirm every Automatic
-worktree, branch, ref, candidate source, evidence root, and generated asset is
-absent; publish the final explicit stretch matrix; reconcile front doors; and
-close the roadmap.
+No batch is ready. Require an explicit operator-selected Signal-only planning
+target before opening another roadmap. Do not infer Automatic, RealtimePreview,
+integration, Loophole, or Chorus work from the completed stretch lane.

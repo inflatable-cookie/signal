@@ -357,8 +357,9 @@ corrects gate ownership without candidate tuning. Batch 35.5 replays the exact
 source and rejects the route at synthetic pitch after identity/parity passes.
 Batch 35.6 finds no materially different complete route within the current
 owner and closed-program boundaries. Automatic closes for the current owners;
-explicit Transparent, Dream, and Cyclic remain. Batch 35.8 is ready for
-docs-only lane closeout.
+explicit Transparent, Dream, and Cyclic remain. Batch 35.8 publishes the final
+explicit matrix, confirms all isolated state is absent, and closes `g10.035`.
+No Signal stretch implementation batch is ready.
 
 ## Strict lane posture
 
@@ -386,8 +387,7 @@ Before rollover:
 
 ## Next Task
 
-Use `docs/roadmaps/g10/README.md` as the active generation front door. Execute
-`g10.035` Batch 35.8 only as documentation. Confirm every Automatic worktree,
-branch, ref, candidate source, evidence root, and generated asset is absent;
-publish the final explicit stretch matrix; reconcile front doors; and close
-the roadmap.
+Use `docs/roadmaps/g10/README.md` as the active generation front door. No batch
+is ready. Require an explicit operator-selected Signal-only planning target
+before opening another roadmap. Do not infer Automatic, RealtimePreview,
+integration, Loophole, or Chorus work from the completed stretch lane.

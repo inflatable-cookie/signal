@@ -1,7 +1,7 @@
 # Logs
 
 Status: active
-Updated: 2026-04-14
+Updated: 2026-07-25
 
 ## Why this section matters now
 
@@ -36,6 +36,10 @@ Use this section for:
 - current ready card: none
 - `g09` is complete; newer work should not treat the recent `g09` log chain as
   live execution state
+
+## Recent Baseline Evidence
+
+- [g10.035 creative stretch closeout](./2026-07/25-g10-035-creative-stretch-closeout.md)
 
 ## Recent strict-lane evidence
 

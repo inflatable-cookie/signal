@@ -1,6 +1,6 @@
 # Offline Creative Public Surface
 
-Status: public v4 admitted
+Status: public v4 admitted; explicit stretch matrix final
 Owner: core-product
 Updated: 2026-07-25
 Contract: `085`
@@ -60,29 +60,34 @@ Dream stays unchanged over `4L..=16L`. At shared targets, Dream and Cyclic
 remain explicit, distinct user choices. No automatic character selection is
 authorized.
 
-## Executable Coverage
+## Final Explicit Stretch Matrix
 
-Let `N` be source frames and `T` the requested output frames. This is the
-complete public creative execution matrix after Batch 34.5:
+Let `N` be source frames and `T` the requested output frames. Batch 35.8
+freezes the complete Signal stretch product matrix:
 
-| Character | Accepted target | Channels | Public control | Execution |
+| Mode | Public entry | Executable request | Channels | Product control and intent |
 | --- | --- | --- | --- | --- |
-| `Dream` | every integer `T` with `4N <= T <= 16N` | mono or linked stereo | `space` in `0..=1`, default `0.5` | deterministic whole-buffer offline |
-| `Cyclic` | every integer `T` with `2N <= T <= 8N` | mono or linked stereo | `cycle` in `5..=90 ms`, default `48 ms` | deterministic whole-buffer offline |
+| Transparent | `OfflineHighQualityStretcher` | any positive finite fixed ratio; retained product range `0.5x..4x` | mono or linked stereo | source-readable stretch; existing ratio, pitch, and stepwise dynamic-ratio contracts stay separate |
+| Dream | `render_creative_stretch`, `Dream` | every integer `T` with `4N <= T <= 16N` | mono or linked stereo | `space` in `0..=1`, default `0.5`; smooth musical smear |
+| Cyclic | `render_creative_stretch`, `Cyclic` | every integer `T` with `2N <= T <= 8N` | mono or linked stereo | `cycle` in `5..=90 ms`, default `48 ms`; commanded repetition |
+| Automatic | none | none | none | rejected and closed for the current owners |
 
-The matrix is target-frame exact. Both characters are continuous over integer
-output lengths, not merely floating-point ratios. They reject unsupported
-targets before render allocation and never substitute the other character or
-Transparent.
+Dream and Cyclic are target-frame exact and continuous over integer output
+lengths, not merely floating-point ratios. They reject unsupported targets
+before render allocation and never substitute another mode. Transparent's API
+acceptance outside `0.5x..4x` is not a broader product-quality claim.
 
-Adjacent Signal stretch owners are not hidden creative range owners:
+Overlap is choice, not routing. At shared targets the caller selects
+Transparent, Dream, or Cyclic explicitly. No public or private Automatic
+request, fallback, blend, discovery row, behavior identity, or cache key
+exists.
+
+Adjacent Signal time-domain owners are not hidden stretch modes:
 
 | Owner | Executable posture | Boundary |
 | --- | --- | --- |
 | `Repitch` | implemented realtime-safe varispeed with dynamic ratio | tempo and pitch remain coupled |
 | `RealtimePreview` | control-side prototype with static, pitch, and stepwise dynamic-ratio entry points | `audio_thread_processing_supported=false`; no callback product path |
-| `OfflineHighQuality` | deterministic mono and linked-stereo Transparent renderer; positive finite static ratios and stepwise dynamic ratios are accepted | callable breadth is not a blanket acoustic promotion; it never serves as creative fallback |
-| `CreativeStretch` | the Dream and Cyclic rows above | whole-buffer offline only; separate from the backend-tier enum |
 
 Current non-coverage is explicit:
 
@@ -619,7 +624,7 @@ Loophole, or Chorus surface changed.
 
 ## Next Task
 
-Execute `g10.035` Batch 35.8 only as documentation. Confirm isolated Automatic
-state is absent, publish the final explicit stretch matrix, reconcile front
-doors, and close the roadmap. Automatic remains unimplemented on `main`;
-explicit Transparent, Dream, and Cyclic stay unchanged.
+No Signal stretch implementation batch is ready. Keep the final explicit
+matrix unchanged and return to the `g10` front door for an operator-selected
+Signal-only planning target. Do not infer a route, integration, or
+RealtimePreview task from this closeout.
