@@ -1,6 +1,6 @@
 # 034 - Continuous Cyclic Feasibility
 
-Status: active; Batch 34.4 complete; Batch 34.5 ready
+Status: complete
 Owner: dsp
 Created: 2026-07-24
 Depends on: `g10.032`, `g10.033`
@@ -9,10 +9,10 @@ Vision tags: `DSP`, `STRETCH`, `CREATIVE`
 
 ## Problem
 
-Public `Cyclic` is admitted only at exact `2x`, `4x`, and `8x`. The private
-event-ledger renderer accepts every exact target from identity through `8x`,
-but only the three public anchors have structural, synthetic, long-form, and
-operator admission.
+At roadmap open, public `Cyclic` was admitted only at exact `2x`, `4x`, and
+`8x`. The private event-ledger renderer accepted every exact target from
+identity through `8x`, but only the three public anchors had structural,
+synthetic, long-form, and operator admission.
 
 Mechanical target acceptance does not prove that interior targets preserve the
 useful Akai-style repetition accepted at those anchors. The source schedule,
@@ -35,8 +35,7 @@ The visible runway is:
 5. minimal public admission, only after acoustic passage
 6. docs-only closeout and next planning checkpoint
 
-Batches 34.1 through 34.4 are complete. Batch 34.5 is the only ready work.
-Later batches remain conditional.
+Batches 34.1 through 34.6 are complete. No execution batch remains ready.
 
 ## Goals
 
@@ -46,8 +45,8 @@ Later batches remain conditional.
 - [x] freeze one complete candidate identity and evidence path before execution
 - [x] retain byte-exact `2x`, `4x`, and `8x` anchors
 - [x] admit or reject interior mono and linked-stereo behavior through listening
-- [ ] widen the public ratio domain only after private acoustic admission
-- [ ] close the lane without candidate or evidence scaffolding on `main`
+- [x] widen the public ratio domain only after private acoustic admission
+- [x] close the lane without candidate or evidence scaffolding on `main`
 
 ## Non-Goals
 
@@ -64,7 +63,8 @@ Later batches remain conditional.
 
 - `Cyclic` remains explicit user intent and manual character selection.
 - Exact target frames remain authoritative.
-- Public anchors remain exact `2N`, `4N`, and `8N` until a later admission.
+- Exact `2N`, `4N`, and `8N` remain byte-parity anchors inside the admitted
+  public `2N..=8N` domain.
 - The private `N <= T <= 8N` validation range is implementation geometry, not
   a product or quality claim.
 - The admitted cycle control remains `5..90 ms`, default `48 ms`.
@@ -239,24 +239,24 @@ Result:
 
 ## Batch 34.5 - Minimal Public Admission
 
-Status: ready
+Status: complete
 
 Implement only the frozen public range and focused parity ownership. No
 renderer, router, cache, artifact, runtime, or consumer change enters this
 batch.
 
-- [ ] replace exact-list discovery with Cyclic `2..=8` continuous discovery
-- [ ] validate every integer target in `2N..=8N` before dispatch or allocation
-- [ ] dispatch Cyclic directly to private `render_continuous`
-- [ ] advance the public engine identity to v4
-- [ ] remove the false supported-ratios constant without an alias
-- [ ] preserve exact `2x`, `4x`, and `8x` output byte-for-byte
-- [ ] prove public/private mono and stereo parity at frozen anchors,
+- [x] replace exact-list discovery with Cyclic `2..=8` continuous discovery
+- [x] validate every integer target in `2N..=8N` before dispatch or allocation
+- [x] dispatch Cyclic directly to private `render_continuous`
+- [x] advance the public engine identity to v4
+- [x] remove the false supported-ratios constant without an alias
+- [x] preserve exact `2x`, `4x`, and `8x` output byte-for-byte
+- [x] prove public/private mono and stereo parity at frozen anchors,
   one-frame boundaries, and interior targets
-- [ ] preserve all cycle, error, determinism, length, finiteness, and linked
+- [x] preserve all cycle, error, determinism, length, finiteness, and linked
   relation behavior
-- [ ] preserve Dream and every private renderer file byte-for-byte
-- [ ] change only `creative.rs` and `lib.rs`
+- [x] preserve Dream and every private renderer file byte-for-byte
+- [x] change only `creative.rs` and `lib.rs`
 
 Stop on any private-file change, public/private parity difference, Dream
 difference, error-precedence change, allocation-before-validation path, or
@@ -271,13 +271,36 @@ Validation:
 - `effigy validate`
 - `git diff --check`
 
+Result:
+
+- commit `93758966e1afd0809fd678fb6dc25b8ae7d17bf1` admits public
+  `signal-creative-stretch-v4`
+- public Cyclic discovery and validation now cover every exact target
+  `2N..=8N`
+- public dispatch is direct to private `render_continuous`
+- focused public tests pass `12/12`; retained private continuous Cyclic tests
+  pass `10/10`
+- only `creative.rs` and `lib.rs` changed
+- every private Dream and Cyclic renderer file remained byte-identical
+- no router, cache, artifact, runtime, UI, Loophole, or Chorus surface changed
+
 ## Batch 34.6 - Lane Closeout
 
-Status: planned; blocked on the admission or rejection outcome
+Status: complete
 
 Publish the exact executable matrix, remove or confirm removal of isolated
 candidate state, reconcile Contract `085` and all front doors, and select one
 next planning checkpoint.
+
+- [x] publish continuous Dream `4N..=16N` and continuous Cyclic `2N..=8N`
+- [x] reconcile public v4 architecture, contract, roadmap, and docs front doors
+- [x] confirm the Batch 34.3 worktree, branch, acoustic ref, evidence binary,
+  tracked evidence, and generated assets are absent
+- [x] retain explicit character selection with no automatic route or blend
+- [x] select one docs-only creative coverage and routing audit as the next
+  planning checkpoint
+- [x] add no DSP, harness, fixture, cache, runtime, UI, Loophole, or Chorus
+  surface
 
 ## Acceptance Criteria
 
@@ -300,10 +323,18 @@ next planning checkpoint.
   validation, dispatch, cache-identity, gate, or cleanup decision
 - [x] Batch 34.5 is bounded to two public wrapper files and mechanical parity
   proof
+- [x] Batch 34.5 admits v4 with `12/12` public and `10/10` private focused
+  tests
+- [x] Batch 34.6 publishes the executable matrix and leaves no isolated
+  Batch 34.3 state
+- [x] no implementation batch remains ready
 
 ## Next Task
 
-Execute Batch 34.5 only. Admit the frozen v4 public Cyclic range through
-`creative.rs` and `lib.rs`, run the focused parity gate, and stop before lane
-closeout. Do not begin lower Dream, routing, cache, artifacts, dynamic ratio,
-runtime, UI, Loophole, or Chorus work.
+Plan `g10.035 Creative Stretch Product Coverage And Routing Audit` only.
+Reconcile Transparent, Dream, and Cyclic coverage; decide whether one
+Signal-owned automatic character/range route is warranted; freeze how explicit
+character choice survives any automatic mode; and define transition,
+identity, control, and evidence requirements. Do not implement routing,
+integration, cache, artifacts, dynamic ratio, runtime, UI, Loophole, or
+Chorus work.

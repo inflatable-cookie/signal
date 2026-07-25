@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: `g10.034` active; continuous Cyclic Batch 34.5 ready
+Status: `g10.034` complete; next planning checkpoint selected
 Updated: 2026-07-25
 
 ## Why this generation matters now
@@ -170,11 +170,9 @@ The 2026-07-19 consolidation reset is authoritative.
   live-monitor implementation landed; that roadmap is paused only on explicit
   hardware alignment and consumer workflow evidence. No feature batch became
   ready through this correction.
-- `g10.034` owns the current creative-stretch execution checkpoint. Batch
-  34.1 selected `2N..=8N` through unchanged acoustic equations. Batch 34.2
-  freezes the private entry, anchor parity, interior evidence, listening,
-  repair, rejection, cleanup, and minimal admission. One isolated candidate
-  is ready. Public Cyclic remains exact `2x`, `4x`, and `8x`.
+- `g10.034` is complete. It admits continuous exact-target Cyclic over
+  `2N..=8N` through public v4 after full private acoustic admission and exact
+  public/private parity. No isolated candidate state remains.
 - `g10.028` RealtimePreview source-fill and all render-plane integration remain
   paused.
 
@@ -323,11 +321,13 @@ Do not start Loophole or Chorus planning from Signal internals.
     public `4N..=16N` Dream coverage with no same-character router; Batch 33.5
     admits that public surface; Batch 33.6 publishes the exact executable
     matrix and closes the lane; no cache, artifact, or consumer work is ready
-- `g10.034` `active`
+- `g10.034` `complete`
   - Batch 34.1 selects `ContinuousEventLedgerCyclic` over every exact target
     `2N <= T <= 8N` through the unchanged admitted equations; Batch 34.2
-    freezes its complete implementation and evidence authority; Batch 34.3 is
-    ready for isolated execution; later batches remain conditional
+    freezes its complete implementation and evidence authority; Batch 34.3
+    passes and admits the private owner; Batch 34.4 freezes public v4; Batch
+    34.5 admits the two-file wrapper with `12/12` public and `10/10` private
+    focused tests; Batch 34.6 publishes the matrix and closes the lane
 
 ## Stretch Boundary
 
@@ -852,9 +852,25 @@ without an alias. Public behavior identity advances to
 Dispatch remains direct to private `render_continuous`. There is no router,
 range branch, blend, fallback, cache schema, or integration. Dream, controls,
 errors, duration canonicalization, and private renderer bytes remain
-unchanged. Batch 34.5 is ready and may change only `creative.rs` and `lib.rs`.
+unchanged.
+
+Batch 34.5 admits that frozen surface in commit `93758966`. Only
+`creative.rs` and `lib.rs` change. Focused public tests pass `12/12`; retained
+private continuous Cyclic tests pass `10/10`; all private renderer files remain
+byte-identical.
+
+Batch 34.6 closes the lane without code. Current public creative coverage is
+continuous Dream `4N..=16N` and continuous Cyclic `2N..=8N`, both deterministic
+whole-buffer mono or linked stereo. Character choice stays explicit. No
+automatic route, blend, fallback, cache, artifact, dynamic ratio, runtime, UI,
+Loophole, or Chorus integration is admitted. The isolated Batch 34.3
+worktree, branch, acoustic ref, evidence surfaces, and generated assets are
+absent.
 
 ## Next Task
 
-Execute `g10.034` Batch 34.5 only. Admit the frozen v4 public Cyclic range in
-`creative.rs` and `lib.rs`; keep private DSP and integration unchanged.
+Plan `g10.035 Creative Stretch Product Coverage And Routing Audit` only.
+Reconcile Transparent, Dream, and Cyclic coverage; decide whether one
+Signal-owned automatic mode is warranted; preserve explicit character choice;
+and freeze transition, control, identity, and evidence requirements. Do not
+implement routing or integration.

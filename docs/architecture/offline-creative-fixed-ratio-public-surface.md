@@ -1,6 +1,6 @@
 # Offline Creative Public Surface
 
-Status: public v3 admitted; continuous Cyclic v4 frozen
+Status: public v4 admitted
 Owner: core-product
 Updated: 2026-07-25
 Contract: `085`
@@ -9,13 +9,14 @@ Roadmaps: `g10.031`, Batches 31.75-31.76; `g10.032`, Batches 32.27-32.28;
 
 ## Decision
 
-Expose the admitted exact-ratio neutral `Dream` effect through one small
+Expose the admitted exact-target neutral `Dream` effect through one small
 Signal-owned offline API. Keep `DirectRenewalDream` an internal renderer name.
 Do not expose automatic routing or unavailable creative controls.
 
-Extend the same API with the admitted fixed-ratio `Cyclic` effect. Keep the
-centred compressed-anchor event-ledger renderer internal. Expose one semantic
-cycle duration, exact character-specific ratios, and no other Cyclic control.
+Extend the same API with the admitted continuous-target `Cyclic` effect. Keep
+the centred compressed-anchor event-ledger renderer internal. Expose one
+semantic cycle duration, exact character-specific target domain, and no other
+Cyclic control.
 
 This is a public library boundary, not a Loophole or Chorus integration plan.
 It does not reopen `g10.025`.
@@ -32,7 +33,8 @@ interval with one map, scheduler, boundary law, linked-stereo law, and
 deterministic state. Public Dream therefore dispatches directly to that owner.
 It has no range branch, hidden router, overlap, blend, or fallback.
 
-`Cyclic` remains a separate explicit character at exact `2x`, `4x`, and `8x`.
+`Cyclic` remains a separate explicit character over exact targets
+`2L..=8L`.
 The shared `4x` and `8x` targets do not route or crossfade between characters.
 `OfflineHighQuality` remains a separate Transparent product choice.
 
@@ -61,20 +63,17 @@ authorized.
 ## Executable Coverage
 
 Let `N` be source frames and `T` the requested output frames. This is the
-complete public creative execution matrix after Batch 33.5:
+complete public creative execution matrix after Batch 34.5:
 
 | Character | Accepted target | Channels | Public control | Execution |
 | --- | --- | --- | --- | --- |
 | `Dream` | every integer `T` with `4N <= T <= 16N` | mono or linked stereo | `space` in `0..=1`, default `0.5` | deterministic whole-buffer offline |
-| `Cyclic` | exactly `T=2N`, `T=4N`, or `T=8N` | mono or linked stereo | `cycle` in `5..=90 ms`, default `48 ms` | deterministic whole-buffer offline |
+| `Cyclic` | every integer `T` with `2N <= T <= 8N` | mono or linked stereo | `cycle` in `5..=90 ms`, default `48 ms` | deterministic whole-buffer offline |
 
-The matrix is target-frame exact. `Dream` is continuous over integer output
-lengths, not merely floating-point ratios. `Cyclic` is not continuous. Both
-characters reject unsupported targets before render allocation and never
-substitute the other character or Transparent.
-
-This remains the executable v3 matrix until Batch 34.5 implements the frozen
-v4 Cyclic range.
+The matrix is target-frame exact. Both characters are continuous over integer
+output lengths, not merely floating-point ratios. They reject unsupported
+targets before render allocation and never substitute the other character or
+Transparent.
 
 Adjacent Signal stretch owners are not hidden creative range owners:
 
@@ -88,7 +87,6 @@ Adjacent Signal stretch owners are not hidden creative range owners:
 Current non-coverage is explicit:
 
 - Dream below `4x` or above `16x`
-- Cyclic interior targets between `2x`, `4x`, and `8x`
 - creative dynamic ratio, character automation, reverse, or pitch
 - automatic same-character or cross-character routing
 - creative cache identity, artifact writing, runtime DTOs, UI integration,
@@ -97,13 +95,13 @@ Current non-coverage is explicit:
 The quality statement is narrower than raw API acceptance.
 `OfflineHighQuality` remains the frozen competitive Transparent baseline, with
 the retained listening program concentrated on compression through long
-expansion. Dream `4x..16x` and Cyclic `2x`/`4x`/`8x` carry their own completed
+expansion. Dream `4x..16x` and Cyclic `2x..8x` carry their own completed
 creative admission. No row claims universal professional parity from metrics
 alone.
 
-## Frozen Public V4 Shape
+## Public V4 Shape
 
-Batch 34.5 may admit only this shape:
+Batch 34.5 admits this shape:
 
 ```rust
 pub const CREATIVE_STRETCH_ENGINE_VERSION: &str = "signal-creative-stretch-v4";
@@ -466,7 +464,7 @@ post-render fade is added.
 
 The Batch 31.76 Dream wrapper mapped public request and error vocabulary onto
 its admitted private renderer. Batch 32.28 added Cyclic. Batch 33.5 widened
-Dream. Batch 34.5 may change only:
+Dream. Batch 34.5 widened Cyclic and changed only:
 
 - `creative.rs` public types, validation, dispatch, error mapping, and focused
   tests
@@ -605,8 +603,23 @@ continuous owners pass. Both private renderer trees remain byte-identical.
 No listening rerun was required because public output matches the admitted
 private renderer exactly.
 
+## Batch 34.5 Result
+
+Commit `93758966e1afd0809fd678fb6dc25b8ae7d17bf1` admits the public v4
+surface. Every Cyclic target in `2L..=8L` now validates and dispatches directly
+to private `render_continuous`; discovery reports the continuous bounds and
+the false exact-list constant is gone.
+
+Only `creative.rs` and `lib.rs` changed. Focused public tests pass `12/12`;
+retained private continuous Cyclic tests pass `10/10`. Public/private mono and
+stereo output is byte-exact across anchors, interior targets, one-frame
+boundaries, and all three cycle anchors. Dream and both private renderer trees
+remain byte-identical. No router, cache, artifact, dynamic ratio, runtime, UI,
+Loophole, or Chorus surface changed.
+
 ## Next Task
 
-Execute `g10.034` Batch 34.5 only. Admit the frozen v4 public Cyclic range in
-`creative.rs` and `lib.rs`, run the focused parity gate, and keep every private
-renderer, integration, and inactive product surface unchanged.
+Plan the next Signal-owned creative coverage and routing audit only. Decide
+whether an automatic mode is warranted across the admitted Transparent,
+Dream, and Cyclic ranges while preserving explicit character selection. Do
+not implement routing or integration.

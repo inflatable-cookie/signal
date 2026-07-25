@@ -1,6 +1,6 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: public v3 active; continuous Cyclic v4 frozen
+Status: public v4 active
 Owner: core-product
 Updated: 2026-07-25
 Related contracts: `046`, `048`, `084`
@@ -90,8 +90,8 @@ Batch 32.28 admits that extension without changing either renderer.
 Batch 33.4 freezes public Dream widening to every exact target in
 `4N..=16N`; Batch 33.5 admits it without changing private DSP. `Spectral`,
 `Rough`, `Cloud`, and an automatic range router remain unavailable.
-Continuous public Cyclic remains unavailable until Batch 34.5; Batch 34.4
-freezes its exact v4 contract without implementation.
+Batch 34.4 freezes continuous public Cyclic over every exact target
+`2N..=8N`; Batch 34.5 admits that v4 contract without changing private DSP.
 
 Public `Cyclic` uses `duration`, `character=Cyclic`, and one semantic `cycle`
 control from short metallic motion through long tremolo/echo motion.
@@ -143,8 +143,8 @@ The historical automatic routed bands are:
 
 They are deferred product intent, not an active target or implementation
 authority. Current executable creative coverage is public neutral `Dream` at
-every exact target `4N <= T <= 16N`, plus public manual `Cyclic` at exact
-fixed `2x`, `4x`, and `8x`. This authorizes no inter-character overlap or
+every exact target `4N <= T <= 16N`, plus public manual `Cyclic` at every
+exact target `2N <= T <= 8N`. This authorizes no inter-character overlap or
 higher ratio. Any future routing reopening must preserve `2x`, `4x`, and `8x`
 as mandatory admission points.
 
@@ -294,10 +294,10 @@ The Batch 31.75 public render boundary does not admit caching. The existing
 seed, and creative engine identity, so consumers must not use it for creative
 output. Cache support requires a later contract and implementation batch.
 
-For the frozen v2 public surface, future creative cache identity uses only the
+For the current v4 public surface, future creative cache identity uses only the
 active character control: exact `space` bits for Dream or the canonical Cyclic
 cycle rounded to integer microseconds. It also includes character, exact target
-frames, and `signal-creative-stretch-v2`. Inactive controls do not enter the
+frames, and `signal-creative-stretch-v4`. Inactive controls do not enter the
 key. This freezes identity semantics but does not admit caching.
 
 ### Rule 9: listening defines creative quality
@@ -2284,15 +2284,23 @@ cache identity must use public engine v4, character, exact target frames, and
 only the active control: Dream `space` bits or Cyclic effective microseconds.
 The inactive control remains absent.
 
-Batch 34.5 may change only `creative.rs` and `lib.rs`. It must prove exhaustive
+Batch 34.5 changes only `creative.rs` and `lib.rs`. It proves exhaustive
 small-domain validation, one-frame boundary rejection, public/private
 byte-parity across anchors and admitted interiors, all three cycle anchors,
 unchanged Dream behavior, unchanged errors and linked relations, and
 byte-identical private renderer files. Any private-file or parity change stops
 the batch. No listening rerun is required for this unchanged admitted owner.
 
+Commit `93758966e1afd0809fd678fb6dc25b8ae7d17bf1` admits that public v4
+surface. Focused public tests pass `12/12`; retained private continuous Cyclic
+tests pass `10/10`. Every private Dream and Cyclic renderer file remains
+byte-identical. No route, blend, fallback, cache, artifact, dynamic-ratio,
+runtime, UI, Loophole, or Chorus surface is admitted.
+
 ## Next Task
 
-Execute `g10.034` Batch 34.5 only. Admit the frozen v4 public Cyclic range in
-`creative.rs` and `lib.rs`; keep private DSP, routing, cache, artifacts,
-dynamic ratio, runtime, UI, Loophole, and Chorus unchanged.
+Plan `g10.035 Creative Stretch Product Coverage And Routing Audit` only.
+Decide whether one Signal-owned automatic mode is warranted across admitted
+Transparent, Dream, and Cyclic coverage while preserving explicit character
+selection. Do not implement routing, cache, artifacts, dynamic ratio,
+runtime, UI, Loophole, or Chorus work.

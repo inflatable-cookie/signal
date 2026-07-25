@@ -36,7 +36,7 @@ strict lane.
 - Admitted private event-ledger Cyclic renderer brief: [architecture/offline-creative-event-ledger-audited-centered-compressed-anchor-cyclic-brief.md](./architecture/offline-creative-event-ledger-audited-centered-compressed-anchor-cyclic-brief.md)
 - Admitted private continuous Cyclic brief: [architecture/offline-creative-continuous-event-ledger-cyclic-brief.md](./architecture/offline-creative-continuous-event-ledger-cyclic-brief.md)
 - Evidence-invalid historical Cyclic brief: [architecture/offline-creative-centered-compressed-anchor-cyclic-brief.md](./architecture/offline-creative-centered-compressed-anchor-cyclic-brief.md)
-- Admitted public v3 and frozen continuous Cyclic v4 CreativeStretch surface: [architecture/offline-creative-fixed-ratio-public-surface.md](./architecture/offline-creative-fixed-ratio-public-surface.md)
+- Admitted public v4 CreativeStretch surface: [architecture/offline-creative-fixed-ratio-public-surface.md](./architecture/offline-creative-fixed-ratio-public-surface.md)
 - Direct-renewal owner study: [architecture/offline-creative-direct-renewal-owner-study.md](./architecture/offline-creative-direct-renewal-owner-study.md)
 - Closed creative LinkedStnNoiseMorph brief: [architecture/offline-creative-linked-stn-noise-morph-brief.md](./architecture/offline-creative-linked-stn-noise-morph-brief.md)
 - Rejected creative ComparatorAuditedRenewalSpectral brief: [architecture/offline-creative-comparator-audited-renewal-spectral-brief.md](./architecture/offline-creative-comparator-audited-renewal-spectral-brief.md)
@@ -68,7 +68,7 @@ strict lane.
 - Completed PaulX-like creative stretch roadmap: [roadmaps/g10/031-creative-time-stretch.md](./roadmaps/g10/031-creative-time-stretch.md)
 - Completed Cyclic roadmap: [roadmaps/g10/032-cyclic-creative-stretch-research.md](./roadmaps/g10/032-cyclic-creative-stretch-research.md)
 - Completed continuous Dream range roadmap: [roadmaps/g10/033-creative-stretch-continuous-range-feasibility.md](./roadmaps/g10/033-creative-stretch-continuous-range-feasibility.md)
-- Active continuous Cyclic feasibility roadmap: [roadmaps/g10/034-continuous-cyclic-feasibility.md](./roadmaps/g10/034-continuous-cyclic-feasibility.md)
+- Completed continuous Cyclic feasibility roadmap: [roadmaps/g10/034-continuous-cyclic-feasibility.md](./roadmaps/g10/034-continuous-cyclic-feasibility.md)
 - Strict-lane reference: [specs/001-g09-lane-first-strict-adoption.md](./specs/001-g09-lane-first-strict-adoption.md)
 - Active strict-lane card: none
 - Research index: [research/master-index.md](./research/master-index.md)
@@ -94,5 +94,7 @@ strict lane.
 
 ## Next Task
 
-Execute `g10.034` Batch 34.5 only. Admit the frozen v4 public Cyclic range in
-`creative.rs` and `lib.rs`. Keep private renderers and integration unchanged.
+Plan `g10.035 Creative Stretch Product Coverage And Routing Audit` only.
+Decide whether an automatic mode is warranted across admitted Transparent,
+Dream, and Cyclic coverage while preserving explicit character choice. Do not
+implement routing or integration.

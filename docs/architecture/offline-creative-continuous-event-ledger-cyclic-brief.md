@@ -1,6 +1,6 @@
 # Offline Creative ContinuousEventLedgerCyclic Brief
 
-Status: admitted privately; public widening pending
+Status: admitted privately and through public v4
 Owner: dsp
 Updated: 2026-07-25
 Contract: `085`
@@ -684,11 +684,12 @@ Rule 5 product decision for this exact checkpoint after every hard stereo
 control passed. The recorded hearing limitation remains; no eligible
 independent review is claimed.
 
-Production admission is limited to private `render_continuous`, behavior
+Private production admission is limited to `render_continuous`, behavior
 identity `signal-creative-continuous-event-ledger-cyclic-v1`, and focused
 continuous regression tests. `plan.rs`, `schedule.rs`, `interpolate.rs`, and
-`synthesis.rs` remain byte-identical. Public Cyclic remains exact at `2x`,
-`4x`, and `8x`.
+`synthesis.rs` remain byte-identical. Batch 34.5 then exposes this unchanged
+owner across every public target `2N..=8N` through
+`signal-creative-stretch-v4`.
 
 ## Readiness
 
@@ -698,10 +699,12 @@ one memory/cost bound, exact source and comparator families, fixed metrics and
 thresholds, one listening policy, explicit evidence repair, rejection,
 cleanup, and minimal admission.
 
-Batch 34.3 is complete. Batch 34.4 froze direct public widening over the same
-`2N..=8N` domain. Batch 34.5 is ready for the public wrapper only.
+Batch 34.3 admitted the private owner. Batch 34.4 froze direct public widening
+over the same `2N..=8N` domain. Batch 34.5 admitted that public wrapper with
+`12/12` focused public and `10/10` retained private tests. Batch 34.6 closes
+the lane.
 
 ## Next Task
 
-Execute `g10.034` Batch 34.5 only. Admit the frozen public v4 range in
-`creative.rs` and `lib.rs`. Keep this private renderer byte-identical.
+Plan the next Signal-owned creative coverage and routing audit only. Keep this
+private renderer and its public v4 output unchanged.

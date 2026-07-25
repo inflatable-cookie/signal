@@ -169,7 +169,8 @@ Updated: 2026-07-25
   continuous Cyclic feasibility; Batch 34.1 selects an unchanged-equation
   `2N..=8N` evidence candidate; Batch 34.2 freezes its complete brief; Batch
   34.3 admits the private continuous entry; Batch 34.4 freezes public v4
-  widening and makes the two-file wrapper batch ready.
+  widening; Batch 34.5 admits the two-file wrapper; Batch 34.6 publishes the
+  final matrix and closes `g10.034`.
 - Lifecycle reconciliation then closed stale `g10.001` and `g10.003` active
   markers and paused `g10.017` on its remaining hardware evidence. Signal's
   capture and live-monitor implementation is present. That lifecycle
@@ -194,7 +195,7 @@ Updated: 2026-07-25
 | `g06` | 2026-03-13 | Continue beyond reusable-boundary closeout with runtime recovery depth, instrumentation, feature breadth, and Loophole-facing runtime evidence | Closed on 2026-03-16 after recovery/resumability, profiling, VST3/AU, MIDI/event depth, hardware/external-I/O, media services, integrated acceptance, bounded soak, and generation-closeout promotion work landed |
 | `g07` | 2026-03-13 | Seed the post-`g06` feature-expansion queue around routing or multichannel depth, Linux-native breadth, control-surface substrate, and fuller time-stretch capability | Closed on 2026-03-19 after multichannel or spatial execution, LV2 and Linux backends, external MIDI/control surfaces, sample-domain stretch, integrated acceptance, and generation-closeout promotion work landed |
 | `g08` | 2026-03-19 | Continue beyond bounded feature-expansion closure with live Linux backend ownership, richer plugin or device protocol depth, immersive routing, and workflow-adjacent runtime services | Closed on 2026-03-22 after live Linux ownership, LV2 or plugin protocol depth, immersive render breadth, device-protocol substrate, preview workflows, grouped acceptance lanes, integrated acceptance, and final generation-closeout work landed |
-| `g10` | 2026-06-11 | Turn the 2026-06-11 deep audit into a remediation program: fix the real audio path, demolish simulated/narration mass (~70-80k LoC), consolidate hygiene, defer rebuilds to demand | Active; `g10.030` retained the frozen stretch baseline; `g10.031` admitted Dream anchors; `g10.032` publicly admits exact `2x`/`4x`/`8x` Cyclic; `g10.033` publicly admits continuous `4x..16x` Dream without routing; `g10.034` privately admits continuous `2x..8x` Cyclic and has public v4 widening ready |
+| `g10` | 2026-06-11 | Turn the 2026-06-11 deep audit into a remediation program: fix the real audio path, demolish simulated/narration mass (~70-80k LoC), consolidate hygiene, defer rebuilds to demand | Active; `g10.030` retained the frozen stretch baseline; `g10.031` admitted Dream anchors; `g10.032` publicly admitted exact-anchor Cyclic; `g10.033` publicly admitted continuous `4x..16x` Dream; `g10.034` publicly admitted continuous `2x..8x` Cyclic without routing |
 | `g09` | 2026-04-08 | Turn the audit findings into a contract-backed realization, hardening, and interactive-proof program | Closed on 2026-04-11 after plugin and backend realization, production-readiness gating, and operator-visible demo proof landed |
 
 ## Rollover policy
@@ -214,4 +215,5 @@ If that cleanup has not happened, stay in the current generation and finish the 
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the current active-generation front door.
-Execute `g10.034` Batch 34.5 only in `creative.rs` and `lib.rs`.
+Plan `g10.035 Creative Stretch Product Coverage And Routing Audit` only. Do
+not implement routing or integration.
