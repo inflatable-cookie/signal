@@ -30,7 +30,7 @@
 
 use std::io::{self, BufRead, Write};
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
+use std::sync::{mpsc, Arc};
 use std::thread::JoinHandle;
 
 use crate::child_gui::{ChildEditorSpec, ChildGuiHandle};
@@ -932,10 +932,13 @@ impl SandboxBrokerProcess {
         }
     }
 
-    /// Spawn the audio thread: `start_processing` runs there (CLAP audio
-    /// thread contract), then the thread spin/yield-waits on the request
-    /// stamp and processes every posted block. No allocation in the loop —
-    /// all buffers preallocate here.
+    /// Spawn the audio thread and wait for `start_processing` to complete
+    /// there (CLAP audio-thread contract) before acknowledging the control
+    /// command. The parent must not publish render blocks against a thread
+    /// that is still entering its processing state. Once ready, the thread
+    /// spin/yield-waits on the request stamp and processes every posted
+    /// block. No allocation occurs in that loop — all buffers preallocate
+    /// before readiness is published.
     fn start_processing(&mut self) -> SandboxBrokerReceipt {
         let Some(plugin) = self.plugin.as_mut() else {
             return self.crashed_receipt("missing_loaded_plugin");
@@ -960,6 +963,7 @@ impl SandboxBrokerProcess {
             unsafe { PluginAudioBlockView::new(audio.region.as_mut_slice().as_mut_ptr(), layout) };
         let stop = Arc::new(AtomicBool::new(false));
         let thread_stop = Arc::clone(&stop);
+        let (ready_tx, ready_rx) = mpsc::sync_channel(1);
         let join = match std::thread::Builder::new()
             .name("sandbox-plugin-audio".into())
             .spawn(move || {
@@ -967,8 +971,17 @@ impl SandboxBrokerProcess {
                 let mut input = vec![0.0f32; max_samples];
                 let mut output = vec![0.0f32; max_samples];
                 let mut events = Vec::with_capacity(PLUGIN_AUDIO_BLOCK_EVENT_CAPACITY);
-                if session.start().is_err() {
-                    return;
+                match session.start() {
+                    Ok(()) => {
+                        if ready_tx.send(Ok(())).is_err() {
+                            session.stop();
+                            return;
+                        }
+                    }
+                    Err(token) => {
+                        let _ = ready_tx.send(Err(token));
+                        return;
+                    }
                 }
                 let mut handled = view.response_seq().load(Ordering::Acquire);
                 let mut spins = 0u32;
@@ -1018,6 +1031,23 @@ impl SandboxBrokerProcess {
                 return self.crashed_receipt(&format!("audio_thread_spawn:{error}"));
             }
         };
+        // This is a control-plane wait. The parent broker client owns the
+        // ten-second receipt deadline and kills the entire child on expiry,
+        // which is the only safe way to unwind a plugin whose `start()` call
+        // itself never returns.
+        match ready_rx.recv() {
+            Ok(Ok(())) => {}
+            Ok(Err(token)) => {
+                stop.store(true, Ordering::Relaxed);
+                let _ = join.join();
+                return self.crashed_receipt(&format!("start_processing:{token}"));
+            }
+            Err(mpsc::RecvError) => {
+                stop.store(true, Ordering::Relaxed);
+                let _ = join.join();
+                return self.crashed_receipt("start_processing:audio_thread_exited");
+            }
+        }
         audio.thread = Some(AudioThread { stop, join });
         self.last_state = SandboxBrokerState::ProcessingStarted;
         self.receipt(SandboxBrokerState::ProcessingStarted, "processing_started")
