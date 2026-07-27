@@ -1,6 +1,6 @@
 # 039 - Resumable Offline Stretch Render
 
-Status: active; Batch 39.3 structural gates green; Batch 39.4 ready
+Status: active; Batch 39.4 implemented; blocked on concealed listening
 Owner: dsp
 Created: 2026-07-27
 Updated: 2026-07-27
@@ -204,14 +204,39 @@ segmented path, which Batch 39.4 replaces.
 
 ### Batch 39.4 - Render Plane Adoption
 
-Status: ready
+Status: implemented and structurally proven; blocked on concealed listening
 
-- [ ] replace per-chunk stretcher construction with the resumable renderer
-- [ ] remove `smooth_artifact_chunk_boundaries_interleaved` from the render
-  plane and the internal seam smoother from the crate, once measurement shows
-  they are no longer needed
-- [ ] prove artifact output is unchanged or improved by the frozen seam metric
-- [ ] keep the chunk plan as the memory-bounding authority
+- [x] replace per-chunk stretcher construction with the resumable renderer
+- [ ] remove both seam smoothers — measurement says they are still needed; the
+  legacy branch still creates the boundaries they patch
+- [x] prove artifact output is chunk-independent
+- [x] keep the chunk plan as the memory-bounding authority
+
+Sixty seconds of stereo at ratio `1.25` through the artifact path: a `2`-chunk
+and a `12`-chunk render are bit-identical, correlation `1.000000`. Batch 39.1
+measured `0.389976` on the shipped path.
+
+Two corrections during the batch. The first probe compared the adopted path
+against a control that took the `is_single_chunk` branch, so it compared two
+algorithms rather than two chunk policies and read as a failure at `0.028056`.
+That mistake exposed a real defect in the first wiring: routing only
+multi-chunk artifacts through the resumable renderer let **source length select
+the algorithm**, so a short and a long artifact of one source would render
+differently under one cache key. Every supported configuration now takes the
+resumable path regardless of chunk count.
+
+Adoption is partial. The resumable renderer owns the default path with no pitch
+shift; selector paths and pitch composition still use the legacy per-chunk path,
+which is why both smoothers are retained rather than deleted. Removal moves to
+Batch 39.5, conditional on adopting the remaining paths.
+
+`SIGNAL_STRETCH_BEHAVIOR_VERSION` advances to
+`signal-stretch-behavior-2026-07-27-resumable`, correctly invalidating earlier
+artifacts. The corpus report is unchanged, as expected: it measures the crate's
+renderers, not the artifact path.
+
+New finding `A21`: `fake_clocked_soak` is wall-clock dependent in the `A20`
+class, failing once under parallel load and passing three times alone.
 
 ### Batch 39.5 - Closeout
 
@@ -259,9 +284,11 @@ Status: blocked on Batch 39.4
 
 ## Next Task
 
-Execute Batch 39.4: replace per-chunk stretcher construction in
-`signal-render-plane` with the resumable renderer, remove both seam smoothers
-once measurement shows they are no longer needed, prove artifact output against
-the frozen seam metric, and keep the chunk plan as the memory-bounding
-authority. Adoption changes rendered output, so it carries a behavior version
-advance and Rule 5 listening evidence.
+Build the concealed listening pack for `g10.039`: the adopted artifact path
+against the shipped path, on material longer than one chunk, so the seam pulse
+heard in the `g10.036` rounds can be judged directly. Admission under Contract
+`084` Rule 5 waits on that judgement.
+
+Batch 39.5 then closes the lane and decides whether the remaining offline paths
+adopt the resumable renderer, which is what would let both seam smoothers be
+deleted.

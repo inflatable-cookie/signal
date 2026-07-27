@@ -238,14 +238,18 @@ impl ResumableOfflineStretch {
             let capacity = self.ring_frames.saturating_sub(pending);
             if capacity == 0 {
                 let progressed = self.drain(output, false);
-                if progressed == 0 && self.input_write_frame == self.next_analysis_frame + self.ring_frames
+                if progressed == 0
+                    && self.input_write_frame == self.next_analysis_frame + self.ring_frames
                 {
                     break;
                 }
                 continue;
             }
             let take = capacity.min(frames - consumed);
-            self.push_input(&source[consumed * channels..(consumed + take) * channels], take);
+            self.push_input(
+                &source[consumed * channels..(consumed + take) * channels],
+                take,
+            );
             consumed += take;
             self.drain(output, false);
         }

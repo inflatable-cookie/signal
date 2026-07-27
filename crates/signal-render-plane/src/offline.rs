@@ -19,9 +19,11 @@ use crate::{
 };
 use signal_dsp_stretch::{
     plan_offline_stretch_chunks, stretch_backend_plan, OfflineHighQualityPath,
-    OfflineHighQualityStretcher, StretchBackendStatus, StretchBackendTier, StretchCacheIdentity,
-    StretchCacheIdentityError, StretchCacheIdentityInput, StretchOfflineChunk,
-    StretchOfflineChunkConfig, StretchOfflineChunkPlan, StretchPromotionReceipt, StretchRatioPoint,
+    OfflineHighQualityStretcher, ResumableOfflineStretch, ResumableStretchConfig,
+    StretchBackendStatus, StretchBackendTier, StretchCacheIdentity, StretchCacheIdentityError,
+    StretchCacheIdentityInput, StretchOfflineChunk, StretchOfflineChunkConfig,
+    StretchOfflineChunkPlan, StretchPromotionReceipt, StretchRatioPoint, DEFAULT_ANALYSIS_HOP,
+    DEFAULT_WINDOW_SIZE,
 };
 use signal_primitives::SampleRate;
 
@@ -606,6 +608,24 @@ pub fn materialize_offline_stretch_artifact_pcm_with_chunk_config(
             stretcher
                 .stretch_interleaved_stereo(&source.frames)
                 .expect("render fits the offline output bound")
+        } else if resumable_render_supported(identity_input.offline_path, pitch_shift) {
+            // Length must not select the algorithm: a single-chunk artifact and
+            // a multi-chunk artifact of the same source share a cache key, so
+            // they must share a renderer.
+            materialize_resumable_offline_stretch_artifact_frames(
+                source,
+                &identity_input.ratio_curve,
+                ratio,
+                &chunk_plan,
+            )
+            .unwrap_or_else(|| {
+                materialize_chunked_offline_stretch_artifact_frames(
+                    source,
+                    identity_input.offline_path,
+                    pitch_shift,
+                    &chunk_plan,
+                )
+            })
         } else if chunk_plan.is_single_chunk() {
             if pitch_shift.abs() > 1.0e-9 {
                 stretcher
@@ -705,6 +725,50 @@ pub fn build_offline_stretch_artifact_cache_handoff(
         receipt,
         source: artifact_source.source,
     })
+}
+
+/// Whether the resumable renderer can serve this artifact.
+///
+/// It owns the default offline path with no pitch shift. Selector paths and
+/// pitch composition still route through the legacy per-chunk path, which keeps
+/// its boundary smoother because it still creates boundaries.
+fn resumable_render_supported(offline_path: OfflineHighQualityPath, pitch_shift: f64) -> bool {
+    matches!(offline_path, OfflineHighQualityPath::Default) && pitch_shift.abs() <= 1.0e-9
+}
+
+/// Render the whole artifact through one state-carrying renderer.
+///
+/// The chunk plan still bounds how much source is in flight; it no longer cuts
+/// the render into independent pieces, so there are no joins to patch.
+fn materialize_resumable_offline_stretch_artifact_frames(
+    source: &RenderSampleBuffer,
+    ratio_curve: &[StretchRatioPoint],
+    fallback_ratio: f64,
+    chunk_plan: &StretchOfflineChunkPlan,
+) -> Option<Vec<f32>> {
+    let frame_count = source.frame_count();
+    let even_source = &source.frames[..frame_count * 2];
+    let mut renderer = ResumableOfflineStretch::new(ResumableStretchConfig {
+        channels: 2,
+        window_size: DEFAULT_WINDOW_SIZE,
+        analysis_hop: DEFAULT_ANALYSIS_HOP,
+        source_frames: frame_count,
+        ratio_curve: ratio_curve.to_vec(),
+        fallback_ratio,
+    })
+    .ok()?;
+
+    let mut output = Vec::with_capacity(chunk_plan.total_output_frames * 2);
+    for chunk in &chunk_plan.chunks {
+        let start = chunk.source_start_frame * 2;
+        let end = chunk.source_end_frame * 2;
+        renderer
+            .render(&even_source[start..end], &mut output)
+            .ok()?;
+    }
+    renderer.flush(&mut output).ok()?;
+    output.resize(chunk_plan.total_output_frames * 2, 0.0);
+    Some(output)
 }
 
 fn materialize_chunked_offline_stretch_artifact_frames(
