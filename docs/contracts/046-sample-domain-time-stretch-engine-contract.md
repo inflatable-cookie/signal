@@ -790,14 +790,19 @@ clamps only to a power of two at or above `64`, with no upper limit, so the
 resumable renderer freezes a maximum window of `65536` frames. Every state item
 is then derived:
 
-| geometry | shared state | per channel | total, stereo |
-| --- | --- | --- | --- |
-| `2048` window, the retained default | `45060 B` | `102436 B` | `249932 B`, `0.238 MiB` |
-| `65536` window, the maximum | `1441796 B` | `3276836 B` | `7995468 B`, `7.625 MiB` |
+| geometry | total, stereo |
+| --- | --- |
+| `2048` window, the retained default | `266300 B`, `0.254 MiB` |
+| `65536` window, the maximum | `8519740 B`, `8.125 MiB` |
 
-The frozen ceiling is `8 MiB`, which covers the maximum supported geometry in
-stereo with `393140 B` of headroom. No term in the inventory references source
+The frozen ceiling is `9 MiB`, which covers the maximum supported geometry in
+stereo with `917444 B` of headroom. No term in the inventory references source
 or output length.
+
+The first published figure was `8 MiB` from an inventory that counted the
+overlap-add and normalization rings but omitted the input ring. Three rings of
+twice the window, not two, is the real cost. The ceiling is corrected here
+rather than the renderer squeezed to meet a number that was wrong.
 
 The whole-render overlap-add and normalization buffers are the only
 duration-dependent state today, and they are what the resumable design replaces

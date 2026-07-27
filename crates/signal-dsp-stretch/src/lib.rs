@@ -66,9 +66,9 @@ mod formant_boundary;
 mod phase_vocoder;
 mod promotion;
 mod realtime_preview;
-mod resumable;
 #[cfg(any(test, feature = "evidence"))]
 mod render_integrity;
+mod resumable;
 #[cfg(any(test, feature = "evidence"))]
 mod spectral_support;
 #[cfg(any(test, feature = "evidence"))]
@@ -130,19 +130,6 @@ pub use creative::{
 };
 #[cfg(any(test, feature = "evidence"))]
 pub use formant_boundary::{measure_formant_boundary, StretchFormantBoundaryMeasurement};
-pub use resumable::{
-    ResumableOfflineStretch, ResumableRenderReport, ResumableStretchConfig,
-    MAX_RESUMABLE_WINDOW_SIZE, MAX_RESUMABLE_WORKING_BYTES,
-};
-pub use realtime_preview::{
-    plan_realtime_preview_stream, project_realtime_preview_fixed_ratio_source_advance,
-    RealtimePreviewCallbackProcessError, RealtimePreviewCallbackProcessReport,
-    RealtimePreviewCallbackState, RealtimePreviewCallbackTimelineMode,
-    RealtimePreviewDynamicSourceProjectionReport, RealtimePreviewIntegrationMode,
-    RealtimePreviewPlanError, RealtimePreviewSourceProjectionReport,
-    RealtimePreviewStreamConfig, RealtimePreviewStreamingContract,
-    RealtimePreviewUnsupportedMode,
-};
 #[cfg(any(test, feature = "evidence"))]
 pub use promotion::{
     current_synthetic_offline_high_quality_promotion_receipt, StretchSyntheticPromotionPolicy,
@@ -151,11 +138,23 @@ pub use promotion::{
     StretchProductQualityEvidence, StretchPromotionReceipt, StretchPromotionStatus,
     REQUIRED_STRETCH_LISTENING_FAMILY_COUNT,
 };
+pub use realtime_preview::{
+    plan_realtime_preview_stream, project_realtime_preview_fixed_ratio_source_advance,
+    RealtimePreviewCallbackProcessError, RealtimePreviewCallbackProcessReport,
+    RealtimePreviewCallbackState, RealtimePreviewCallbackTimelineMode,
+    RealtimePreviewDynamicSourceProjectionReport, RealtimePreviewIntegrationMode,
+    RealtimePreviewPlanError, RealtimePreviewSourceProjectionReport, RealtimePreviewStreamConfig,
+    RealtimePreviewStreamingContract, RealtimePreviewUnsupportedMode,
+};
 #[cfg(any(test, feature = "evidence"))]
 pub use render_integrity::{
     assess_stretch_render_integrity, measure_stretch_render_integrity,
     StretchRenderIntegrityAssessment, StretchRenderIntegrityLimits,
     StretchRenderIntegrityMeasurement,
+};
+pub use resumable::{
+    ResumableOfflineStretch, ResumableRenderReport, ResumableStretchConfig,
+    MAX_RESUMABLE_WINDOW_SIZE, MAX_RESUMABLE_WORKING_BYTES,
 };
 #[cfg(any(test, feature = "evidence"))]
 pub use tonal_texture::{measure_tonal_texture, StretchTonalTextureMeasurement};
@@ -1703,26 +1702,6 @@ mod tests {
         input
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     fn add_decaying_burst(samples: &mut [Sample], start: usize, frames: usize, amplitude: f32) {
         for offset in 0..frames {
             let Some(sample) = samples.get_mut(start + offset) else {
@@ -2608,7 +2587,6 @@ mod tests {
                 && comparison.path == StretchBenchmarkPath::PhaseLocked
         }));
     }
-
 
     #[test]
     fn synthetic_backend_comparison_report_formats_deterministically() {

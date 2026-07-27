@@ -13,8 +13,8 @@ use signal_primitives::{Sample, SampleRate};
 
 use crate::{
     abs_diff_frames, align_to_next_grid, ceil_frame_to_u64, ceil_frame_to_usize,
-    floor_frame_to_u64, sanitize_ratio, usize_to_u64, wrap_phase,
-    REALTIME_PREVIEW_ANALYSIS_HOP, REALTIME_PREVIEW_WINDOW_SIZE,
+    floor_frame_to_u64, sanitize_ratio, usize_to_u64, wrap_phase, REALTIME_PREVIEW_ANALYSIS_HOP,
+    REALTIME_PREVIEW_WINDOW_SIZE,
 };
 
 /// Integration posture for a RealtimePreview stream.
@@ -1150,12 +1150,10 @@ mod tests {
     use super::*;
     use crate::benchmark::{
         compare_synthetic_realtime_preview_backends, generate_synthetic_stretch_audio,
-        measure_dynamic_segment_seam_click, StretchBenchmarkBackend,
-        StretchBenchmarkPath, StretchCorpusFamily, StretchMetric,
+        measure_dynamic_segment_seam_click, StretchBenchmarkBackend, StretchBenchmarkPath,
+        StretchCorpusFamily, StretchMetric,
     };
-    use crate::{
-        RealtimePreviewStretcher, StretchQuality, StretchRatioPoint, TimeStretcher,
-    };
+    use crate::{RealtimePreviewStretcher, StretchQuality, StretchRatioPoint, TimeStretcher};
 
     fn sine(frequency_hz: f32, sample_rate_hz: f32, len: usize) -> Vec<Sample> {
         (0..len)
@@ -1181,7 +1179,7 @@ mod tests {
         crossings as f32 * sample_rate_hz / (2.0 * interior.len() as f32)
     }
 
-        #[test]
+    #[test]
     fn realtime_preview_contract_reports_latency_and_callback_blocker() {
         let contract = plan_realtime_preview_stream(RealtimePreviewStreamConfig::new(
             SampleRate(48_000),
@@ -1213,7 +1211,7 @@ mod tests {
         );
     }
 
-        #[test]
+    #[test]
     fn realtime_preview_contract_rejects_invalid_streams() {
         assert_eq!(
             plan_realtime_preview_stream(RealtimePreviewStreamConfig::new(SampleRate(0), 2, 128,)),
@@ -1237,7 +1235,7 @@ mod tests {
         );
     }
 
-        #[test]
+    #[test]
     fn realtime_preview_fixed_ratio_source_projection_reports_required_source_span() {
         let slow = project_realtime_preview_fixed_ratio_source_advance(480, 96, 2.0);
         assert_eq!(slow.ratio, 2.0);
@@ -1263,7 +1261,7 @@ mod tests {
         assert_eq!(identity.source_frames_required, 96);
     }
 
-        #[test]
+    #[test]
     fn realtime_preview_fixed_ratio_source_projection_covers_fractional_source_bounds() {
         let projection = project_realtime_preview_fixed_ratio_source_advance(0, 256, 1.5);
 
@@ -1278,7 +1276,7 @@ mod tests {
         assert_eq!(sanitized.source_end_frame, 96.0);
     }
 
-        #[test]
+    #[test]
     fn realtime_preview_source_projection_state_advances_fractional_cursor() {
         let mut state = RealtimePreviewCallbackState::new(RealtimePreviewStreamConfig::new(
             SampleRate(48_000),
@@ -1317,7 +1315,7 @@ mod tests {
         );
     }
 
-        #[test]
+    #[test]
     fn realtime_preview_source_projection_state_bounds_input_demand() {
         let mut state = RealtimePreviewCallbackState::new(RealtimePreviewStreamConfig::new(
             SampleRate(48_000),
@@ -1355,7 +1353,7 @@ mod tests {
         );
     }
 
-        #[test]
+    #[test]
     fn realtime_preview_source_projection_state_is_deterministic_for_fixed_ratio() {
         let mut first = RealtimePreviewCallbackState::new(RealtimePreviewStreamConfig::new(
             SampleRate(48_000),
@@ -1392,7 +1390,7 @@ mod tests {
         );
     }
 
-        #[test]
+    #[test]
     fn realtime_preview_scheduled_source_projection_applies_ratio_change_on_grid() {
         let mut state = RealtimePreviewCallbackState::new(RealtimePreviewStreamConfig::new(
             SampleRate(48_000),
@@ -1450,7 +1448,7 @@ mod tests {
         assert_eq!(next.output_start_frame, changed.output_end_frame);
     }
 
-        #[test]
+    #[test]
     fn realtime_preview_scheduled_source_projection_is_continuous_across_tempo_ramp() {
         let mut state = RealtimePreviewCallbackState::new(RealtimePreviewStreamConfig::new(
             SampleRate(48_000),
@@ -1511,7 +1509,7 @@ mod tests {
         );
     }
 
-        #[test]
+    #[test]
     fn realtime_preview_callback_state_validates_stereo_geometry_without_enabling_contract() {
         let mut state = RealtimePreviewCallbackState::new(RealtimePreviewStreamConfig::new(
             SampleRate(48_000),
@@ -1557,7 +1555,7 @@ mod tests {
         assert_eq!(state.processed_frames(), 0);
     }
 
-        #[test]
+    #[test]
     fn realtime_preview_callback_state_rejects_bad_callback_blocks() {
         let mut state = RealtimePreviewCallbackState::new(RealtimePreviewStreamConfig::new(
             SampleRate(48_000),
@@ -1587,7 +1585,7 @@ mod tests {
         );
     }
 
-        #[test]
+    #[test]
     fn realtime_preview_callback_state_processes_mono_stream_without_allocation_contract_claim() {
         let mut state = RealtimePreviewCallbackState::new(RealtimePreviewStreamConfig::new(
             SampleRate(48_000),
@@ -1618,7 +1616,7 @@ mod tests {
         assert!((dominant_frequency_hz(&output[1024..], 48_000.0) - 440.0).abs() < 20.0);
     }
 
-        #[test]
+    #[test]
     fn realtime_preview_callback_state_is_deterministic_for_fixed_ratio() {
         let input = sine(330.0, 48_000.0, 128 * 48);
         let mut first = RealtimePreviewCallbackState::new(RealtimePreviewStreamConfig::new(
@@ -1660,7 +1658,7 @@ mod tests {
         assert!(rms(&first_output[1024..]) > 0.02);
     }
 
-        #[test]
+    #[test]
     fn realtime_preview_callback_state_processes_linked_stereo_stream() {
         let left = sine(330.0, 48_000.0, 128 * 64);
         let right = sine(660.0, 48_000.0, 128 * 64);
@@ -1720,7 +1718,7 @@ mod tests {
         assert!((dominant_frequency_hz(&out_right[1024..], 48_000.0) - 660.0).abs() < 25.0);
     }
 
-        #[test]
+    #[test]
     fn realtime_preview_callback_state_schedules_ratio_changes_on_analysis_grid() {
         let mut state = RealtimePreviewCallbackState::new(RealtimePreviewStreamConfig::new(
             SampleRate(48_000),
@@ -1762,7 +1760,7 @@ mod tests {
         );
     }
 
-        #[test]
+    #[test]
     fn realtime_preview_callback_state_bounds_dynamic_ratio_seams_on_tempo_ramp() {
         let input = generate_synthetic_stretch_audio(StretchCorpusFamily::TempoRamp)
             .expect("tempo ramp synthetic case should exist");
@@ -1820,7 +1818,7 @@ mod tests {
         );
     }
 
-        #[test]
+    #[test]
     fn realtime_preview_mono_is_deterministic_and_pitch_preserving() {
         let input = sine(440.0, 48_000.0, 12_000);
         let mut first = RealtimePreviewStretcher::new(1.25);
@@ -1842,7 +1840,7 @@ mod tests {
         assert!((dominant_frequency_hz(&first_output, 48_000.0) - 440.0).abs() < 20.0);
     }
 
-        #[test]
+    #[test]
     fn realtime_preview_linked_stereo_is_deterministic_and_exact_length() {
         let left = sine(330.0, 48_000.0, 16_000);
         let right = sine(660.0, 48_000.0, 16_000);
@@ -1868,7 +1866,7 @@ mod tests {
         assert_eq!(first_output, second_output);
     }
 
-        #[test]
+    #[test]
     fn realtime_preview_dynamic_ratio_curve_keeps_sample_domain_length() {
         let input = sine(220.0, 48_000.0, 16_000);
         let ratio_curve = [
@@ -1890,7 +1888,7 @@ mod tests {
         assert_eq!(output.len(), 20_000);
     }
 
-        #[test]
+    #[test]
     fn realtime_preview_pitch_shift_preserves_tempo_length_contract() {
         let input = sine(440.0, 48_000.0, 12_000);
         let mut stretcher = RealtimePreviewStretcher::new(1.25);
@@ -1903,7 +1901,7 @@ mod tests {
         assert!((dominant_frequency_hz(&output, 48_000.0) - 880.0).abs() < 35.0);
     }
 
-        #[test]
+    #[test]
     fn realtime_preview_backend_comparison_covers_preview_subset() {
         let report = compare_synthetic_realtime_preview_backends();
 

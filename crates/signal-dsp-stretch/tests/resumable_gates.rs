@@ -1,16 +1,15 @@
 //! Structural gates for the `g10.039` resumable renderer.
 //!
-//! Four of these are the candidate's acceptance targets and currently fail;
-//! they are `#[ignore]`d so `main` stays green while the owners exist, exactly
-//! as the `g10.036` pre-fix owners were. Run them with
-//! `cargo test -p signal-dsp-stretch --test resumable_gates -- --ignored`.
+//! All five pass. `G1` and `G1b` are the equivalence law: for any chunk
+//! partition, output is bit-identical to a single whole-source render. `G4` is
+//! the acceptance target inherited from `g10.036`, which measured `0.034`
+//! correlation on the segmented path this renderer replaces.
 //!
 //! The candidate lives on `main` by explicit operator decision, waiving
 //! Contract `084` Rule 2 isolation for this lane.
 
 use signal_dsp_stretch::{
-    ResumableOfflineStretch, ResumableStretchConfig, StretchRatioPoint,
-    MAX_RESUMABLE_WORKING_BYTES,
+    ResumableOfflineStretch, ResumableStretchConfig, StretchRatioPoint, MAX_RESUMABLE_WORKING_BYTES,
 };
 
 fn material(frames: usize, channels: usize) -> Vec<f32> {
@@ -68,7 +67,6 @@ fn base_config(source_frames: usize, channels: usize) -> ResumableStretchConfig 
 
 /// G1: output must be identical for any chunk partition.
 #[test]
-#[ignore = "g10.039 Batch 39.3 acceptance target: fails at chunk 1024"]
 fn chunk_size_independence_static_ratio() {
     let frames = 48_000 * 3;
     let source = material(frames, 1);
@@ -76,19 +74,17 @@ fn chunk_size_independence_static_ratio() {
     let whole = render_in_chunks(&config, &source, frames);
     for chunk in [1_024_usize, 7_777, 48_000, 100_000] {
         let chunked = render_in_chunks(&config, &source, chunk);
-        assert_eq!(
-            chunked.len(),
-            whole.len(),
-            "chunk {chunk}: length differs"
-        );
+        assert_eq!(chunked.len(), whole.len(), "chunk {chunk}: length differs");
         assert_eq!(chunked, whole, "chunk {chunk}: output differs");
     }
-    println!("G1 static ratio: identical across 4 partitions, {} frames", whole.len());
+    println!(
+        "G1 static ratio: identical across 4 partitions, {} frames",
+        whole.len()
+    );
 }
 
 /// G1b: same law with a dynamic ratio curve.
 #[test]
-#[ignore = "g10.039 Batch 39.3 acceptance target: fails at chunk 2048"]
 fn chunk_size_independence_dynamic_ratio() {
     let frames = 48_000 * 3;
     let source = material(frames, 2);
@@ -102,14 +98,19 @@ fn chunk_size_independence_dynamic_ratio() {
     let whole = render_in_chunks(&config, &source, frames);
     for chunk in [2_048_usize, 13_333, 60_000] {
         let chunked = render_in_chunks(&config, &source, chunk);
-        assert_eq!(chunked, whole, "chunk {chunk}: dynamic-ratio output differs");
+        assert_eq!(
+            chunked, whole,
+            "chunk {chunk}: dynamic-ratio output differs"
+        );
     }
-    println!("G1b dynamic ratio: identical across 3 partitions, {} frames", whole.len() / 2);
+    println!(
+        "G1b dynamic ratio: identical across 3 partitions, {} frames",
+        whole.len() / 2
+    );
 }
 
 /// G2: working state is bounded by geometry, not source duration.
 #[test]
-#[ignore = "g10.039 Batch 39.3 acceptance target: 11665468 B against the 8388608 B ceiling"]
 fn memory_ceiling_is_duration_independent() {
     let short = ResumableOfflineStretch::new(base_config(1_000, 2)).expect("short");
     let long = ResumableOfflineStretch::new(base_config(48_000 * 600, 2)).expect("long");
@@ -153,7 +154,11 @@ fn output_length_matches_the_target() {
         let renderer = ResumableOfflineStretch::new(config.clone()).expect("config");
         let target = renderer.target_output_frames();
         let out = render_in_chunks(&config, &source, 10_000);
-        assert_eq!(out.len(), target, "ratio {ratio}: length differs from target");
+        assert_eq!(
+            out.len(),
+            target,
+            "ratio {ratio}: length differs from target"
+        );
         assert_eq!(target, (frames as f64 * ratio).round() as usize);
     }
     println!("G3: output length matches target at 4 ratios");
@@ -162,7 +167,6 @@ fn output_length_matches_the_target() {
 /// G4: the acceptance target inherited from `g10.036`. A segmented render must
 /// correlate with a whole render at the same constant ratio.
 #[test]
-#[ignore = "g10.039 Batch 39.3 acceptance target: correlation -0.082711 against 0.99"]
 fn segmented_render_matches_whole_render_at_constant_ratio() {
     let frames = 48_000 * 3;
     let source = material(frames, 1);

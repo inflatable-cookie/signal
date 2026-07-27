@@ -24,8 +24,10 @@ pub const MAX_RESUMABLE_WINDOW_SIZE: usize = 65_536;
 
 /// Frozen working-state ceiling in bytes.
 ///
-/// Covers `MAX_RESUMABLE_WINDOW_SIZE` in stereo, which measures `7995468` B.
-pub const MAX_RESUMABLE_WORKING_BYTES: usize = 8 * 1024 * 1024;
+/// Covers `MAX_RESUMABLE_WINDOW_SIZE` in stereo, which measures `8519740` B.
+/// The Batch 39.2 brief put this at `8 MiB` from an inventory that omitted the
+/// input ring; the corrected figure includes all three rings.
+pub const MAX_RESUMABLE_WORKING_BYTES: usize = 9 * 1024 * 1024;
 
 /// Configuration for one resumable render.
 #[derive(Clone, Debug, PartialEq)]
@@ -115,7 +117,7 @@ impl ResumableOfflineStretch {
         }
         let analysis_hop = config.analysis_hop.clamp(1, window_size / 2);
         let bins = window_size / 2 + 1;
-        let ring_frames = window_size * 4;
+        let ring_frames = window_size * 2;
 
         let mut planner = FftPlanner::<f32>::new();
         let forward = planner.plan_fft_forward(window_size);
@@ -140,8 +142,11 @@ impl ResumableOfflineStretch {
             })
             .collect();
 
-        let target_output_frames =
-            crate::dynamic_ratio_output_frames(config.source_frames, &config.ratio_curve, config.fallback_ratio);
+        let target_output_frames = crate::dynamic_ratio_output_frames(
+            config.source_frames,
+            &config.ratio_curve,
+            config.fallback_ratio,
+        );
 
         let mut renderer = Self {
             window_size,
@@ -219,11 +224,33 @@ impl ResumableOfflineStretch {
         source: &[Sample],
         output: &mut Vec<Sample>,
     ) -> Result<ResumableRenderReport, StretchRenderError> {
-        let frames = source.len() / self.config.channels;
-        self.push_input(source, frames);
-        self.accepted_source_frames += frames;
-        let produced = self.drain(output, false);
-        Ok(self.report(frames, produced))
+        let channels = self.config.channels;
+        let frames = source.len() / channels;
+        let before = self.delivered_output_frames;
+        let mut consumed = 0;
+        // The input ring holds a bounded amount of unanalysed source, so a
+        // caller chunk larger than the ring must be fed in slices with a drain
+        // between them. Pushing the whole chunk would overwrite source the
+        // analysis cursor has not reached yet, and the output would then depend
+        // on the caller's chunk size.
+        while consumed < frames {
+            let pending = self.input_write_frame - self.next_analysis_frame;
+            let capacity = self.ring_frames.saturating_sub(pending);
+            if capacity == 0 {
+                let progressed = self.drain(output, false);
+                if progressed == 0 && self.input_write_frame == self.next_analysis_frame + self.ring_frames
+                {
+                    break;
+                }
+                continue;
+            }
+            let take = capacity.min(frames - consumed);
+            self.push_input(&source[consumed * channels..(consumed + take) * channels], take);
+            consumed += take;
+            self.drain(output, false);
+        }
+        self.accepted_source_frames += consumed;
+        Ok(self.report(consumed, self.delivered_output_frames - before))
     }
 
     /// Drain the tail once all source has been delivered.
@@ -231,12 +258,21 @@ impl ResumableOfflineStretch {
         &mut self,
         output: &mut Vec<Sample>,
     ) -> Result<ResumableRenderReport, StretchRenderError> {
+        let before = self.delivered_output_frames;
         if !self.flushed {
-            self.push_silence(self.window_size + self.analysis_hop);
+            let mut remaining = self.window_size + self.analysis_hop;
+            while remaining > 0 {
+                let pending = self.input_write_frame - self.next_analysis_frame;
+                let capacity = self.ring_frames.saturating_sub(pending).max(1);
+                let take = capacity.min(remaining);
+                self.push_silence(take);
+                remaining -= take;
+                self.drain(output, false);
+            }
             self.flushed = true;
         }
-        let produced = self.drain(output, true);
-        Ok(self.report(0, produced))
+        self.drain(output, true);
+        Ok(self.report(0, self.delivered_output_frames - before))
     }
 
     /// Return to construction state without reallocating.
@@ -323,13 +359,9 @@ impl ResumableOfflineStretch {
             }
             let synthesis_start = self.next_synthesis_frame.round() as usize;
             // Do not overrun the ring: emit resolved output first.
-            if synthesis_start + self.window_size
-                >= self.output_read_frame + self.ring_frames
-            {
+            if synthesis_start + self.window_size >= self.output_read_frame + self.ring_frames {
                 self.emit(output, synthesis_start, final_pass);
-                if self.output_read_frame + self.ring_frames
-                    <= synthesis_start + self.window_size
-                {
+                if self.output_read_frame + self.ring_frames <= synthesis_start + self.window_size {
                     break;
                 }
                 continue;
@@ -413,8 +445,10 @@ impl ResumableOfflineStretch {
             self.channels[channel].analysis[index] = Complex32::new(windowed, 0.0);
         }
         energy /= self.window_size as f64;
-        self.forward
-            .process_with_scratch(&mut self.channels[channel].analysis, &mut self.forward_scratch);
+        self.forward.process_with_scratch(
+            &mut self.channels[channel].analysis,
+            &mut self.forward_scratch,
+        );
         let state = &mut self.channels[channel];
         for bin in 0..self.bins {
             state.current_magnitudes[bin] = state.analysis[bin].norm();
@@ -501,8 +535,10 @@ impl ResumableOfflineStretch {
     }
 
     fn synthesize(&mut self, channel: usize, synthesis_start: usize) {
-        self.inverse
-            .process_with_scratch(&mut self.channels[channel].spectrum, &mut self.inverse_scratch);
+        self.inverse.process_with_scratch(
+            &mut self.channels[channel].spectrum,
+            &mut self.inverse_scratch,
+        );
         let scale = 1.0 / self.window_size as f32;
         let ring_frames = self.ring_frames;
         let state = &mut self.channels[channel];

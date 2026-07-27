@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: active generation; `g10.039` Batch 39.3 in conformance iteration
+Status: active generation; `g10.039` Batch 39.4 ready
 Updated: 2026-07-27
 
 ## Why this generation matters now

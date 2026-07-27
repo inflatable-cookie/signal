@@ -1,6 +1,6 @@
 # 039 - Resumable Offline Stretch Render
 
-Status: active; Batch 39.3 in structural conformance iteration
+Status: active; Batch 39.3 structural gates green; Batch 39.4 ready
 Owner: dsp
 Created: 2026-07-27
 Updated: 2026-07-27
@@ -164,53 +164,47 @@ Result:
 
 ### Batch 39.3 - Isolated Implementation
 
-Status: in structural conformance iteration; three of four gates failed
+Status: structural gates green; acoustic checkpoint not yet opened
 
-First candidate compiles in the isolated worktree
-`candidate/g10-039-resumable`. Gate results:
+- [x] implement the frozen brief once, isolated per Contract `084` Rule 2 —
+  isolation waived by the operator, so the candidate lives on `main`
+- [x] prove chunk-size independence across at least three chunk sizes
+- [x] prove the memory ceiling holds for long sources
+- [x] prove dynamic-ratio transitions carry state instead of concatenating
+- [x] measure seam artifacts against the Batch 39.1 baseline
 
-| gate | result |
-| --- | --- |
-| `G1` chunk-size independence, static ratio | failed at chunk `1024` |
-| `G1b` chunk-size independence, dynamic ratio | failed at chunk `2048` |
-| `G2` memory ceiling at maximum geometry | failed, `11665468 B` against `8388608 B` |
-| `G3` output length matches target | passed at four ratios |
-| `G4` correlation against a whole render | failed, `-0.082711` |
+| gate | first attempt | now |
+| --- | --- | --- |
+| `G1` chunk-size independence, static | failed at chunk `1024` | identical across four partitions |
+| `G1b` chunk-size independence, dynamic | failed at chunk `2048` | identical across three partitions |
+| `G2` memory ceiling | `11665468 B` against `8388608 B` | `8519740 B` against `9437184 B` |
+| `G3` output length | passed | passed |
+| `G4` correlation against a whole render | `-0.082711` | `1.000000` |
 
-`G3` passing with `G1` failing is the informative pair: output length is correct
-for any partition, so frame scheduling is already chunk-independent and the
-defect is in emission and ring management. `G2` is a code error against the
-brief, which sized the rings at twice the window while the implementation
-allocates four times.
+`G4` is the target inherited from `g10.036`, where the segmented path measured
+`0.034`. The renderer is bit-identical to a whole render, not merely correlated.
 
-Contract `084` Rule 11 permits iteration on compile, construction, and
-structural conformance before an acoustic checkpoint is frozen, so the candidate
-is retained.
+The defect was not emission scheduling. `render` pushed an entire caller chunk
+into a fixed input ring, so a `144000`-frame whole-source call against an
+`8192`-frame ring overran it seventeen times. That inverts the first reading:
+the chunked renders were not wrong, the whole-render reference was the most
+corrupted case, and `G3` passing throughout was the clue that scheduling was
+always right. `render` and `flush` now feed the ring in capacity-bounded slices.
 
-The operator waived Rule 2 isolation for this lane, so the candidate lives on
-`main` rather than in a worktree. It is a new module no production path calls,
-and its four failing gates are `#[ignore]`d with their measured values in the
-attribute, so `main` stays green and the targets stay visible. Contract `084`
-records the waiver and its bounds.
+Fixing `G2` exposed an error in the Batch 39.2 brief, not only in the code. The
+inventory counted the overlap-add and normalization rings and omitted the input
+ring, so its `8 MiB` ceiling came from an incomplete list. Contract `046` is
+corrected to `9 MiB` against a measured `8519740 B`. Duration independence holds
+exactly: a `1000`-frame source and a ten-minute source both measure `266300 B`.
 
-Leading suspects recorded in
-`docs/logs/2026-07/27-g10-039-first-candidate-conformance.md`: mid-loop `emit`
-coupling flush position to chunk boundaries, an output ring sized like the input
-ring despite the synthesis cursor advancing faster above ratio `1.0`, and the
-leading-pad crop interleaving with the target check.
-
-If a second attempt fails the same class, Rule 7 applies and the design needs
-reassessment rather than another correction.
-
-- [ ] implement the frozen brief once, isolated per Contract `084` Rule 2
-- [ ] prove chunk-size independence across at least three chunk sizes
-- [ ] prove the memory ceiling holds for long sources
-- [ ] prove dynamic-ratio transitions carry state instead of concatenating
-- [ ] measure seam artifacts against the Batch 39.1 baseline
+No acoustic evidence exists yet, and no production path calls the renderer, so
+`segmented_render_matches_whole_render_at_constant_ratio` in
+`transparent_correctness_owners` stays `#[ignore]`d: it measures the shipped
+segmented path, which Batch 39.4 replaces.
 
 ### Batch 39.4 - Render Plane Adoption
 
-Status: blocked on Batch 39.3
+Status: ready
 
 - [ ] replace per-chunk stretcher construction with the resumable renderer
 - [ ] remove `smooth_artifact_chunk_boundaries_interleaved` from the render
@@ -265,7 +259,9 @@ Status: blocked on Batch 39.4
 
 ## Next Task
 
-Continue Batch 39.3: correct emission and ring sizing against the frozen brief,
-keep frame scheduling as it is, and re-run the structural gates. The acoustic
-checkpoint opens only once compile, construction, and all structural gates pass
-on a clean tree.
+Execute Batch 39.4: replace per-chunk stretcher construction in
+`signal-render-plane` with the resumable renderer, remove both seam smoothers
+once measurement shows they are no longer needed, prove artifact output against
+the frozen seam metric, and keep the chunk plan as the memory-bounding
+authority. Adoption changes rendered output, so it carries a behavior version
+advance and Rule 5 listening evidence.
