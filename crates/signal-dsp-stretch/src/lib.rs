@@ -66,6 +66,7 @@ mod formant_boundary;
 mod phase_vocoder;
 mod promotion;
 mod realtime_preview;
+mod resumable;
 #[cfg(any(test, feature = "evidence"))]
 mod render_integrity;
 #[cfg(any(test, feature = "evidence"))]
@@ -129,6 +130,10 @@ pub use creative::{
 };
 #[cfg(any(test, feature = "evidence"))]
 pub use formant_boundary::{measure_formant_boundary, StretchFormantBoundaryMeasurement};
+pub use resumable::{
+    ResumableOfflineStretch, ResumableRenderReport, ResumableStretchConfig,
+    MAX_RESUMABLE_WINDOW_SIZE, MAX_RESUMABLE_WORKING_BYTES,
+};
 pub use realtime_preview::{
     plan_realtime_preview_stream, project_realtime_preview_fixed_ratio_source_advance,
     RealtimePreviewCallbackProcessError, RealtimePreviewCallbackProcessReport,
@@ -215,6 +220,8 @@ pub const MAX_OFFLINE_STRETCH_OUTPUT_SAMPLES: usize = 268_435_456;
 /// allocation.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum StretchRenderError {
+    /// The resumable renderer was configured outside its supported geometry.
+    UnsupportedResumableConfiguration,
     /// The requested output exceeds [`MAX_OFFLINE_STRETCH_OUTPUT_SAMPLES`].
     OutputTooLarge {
         /// Output samples the request would have produced, saturated.

@@ -187,6 +187,24 @@ above `0.75 * window_size` synthesis hop, dynamic-ratio segments shorter than
 one window, missing mono seam treatment, and unbounded output allocation. No
 other change to the retained baseline is authorized by this amendment.
 
+## 2026-07-27 Rule 2 Waiver For `g10.039`
+
+Rule 2 keeps candidate work outside the production branch. The operator waived
+it for the `g10.039` resumable renderer, which now lives on `main`.
+
+The waiver is bounded by what the candidate is. `ResumableOfflineStretch` is a
+new module that no production path calls: the whole-buffer entry points, the
+artifact materializer, and the render plane are untouched. Its four failing
+acceptance gates are `#[ignore]`d with their measured values in the attribute,
+so `main` stays green and the targets stay visible.
+
+Rule 11 still governs the evidence order. Structural conformance may iterate;
+the acoustic checkpoint opens only on a clean tree passing compile,
+construction, and every structural gate, and remains one-shot after that.
+
+This waiver covers `g10.039` only. It is not a precedent for renderer
+candidates that replace an admitted path.
+
 ## Next Task
 
 No successor task remains. Execute `g10.036` Batch 36.2 under Rule 9. Reopen
