@@ -1,7 +1,7 @@
 # g10 Milestones
 
-Status: active generation; `g10.035` complete; no ready batch
-Updated: 2026-07-25
+Status: active generation; `g10.036` Batch 36.1 ready
+Updated: 2026-07-27
 
 ## Why this generation matters now
 
@@ -182,8 +182,21 @@ The 2026-07-19 consolidation reset is authoritative.
   within the current owner and closed-program boundaries. Automatic closes;
   explicit Transparent, Dream, and Cyclic remain. Batch 35.8 publishes the
   final matrix, confirms all isolated state is absent, and closes the roadmap.
-- `g10.028` RealtimePreview source-fill and all render-plane integration remain
-  paused.
+- The 2026-07-27 `signal-dsp-stretch` audit is the operator-selected planning
+  target that `g10.035` required. It measured four defects in the retained
+  Transparent baseline, one flaky evidence gate, and twelve quality, surface,
+  and architecture findings. Evidence:
+  `docs/logs/2026-07/27-g10-036-stretch-audit-intake.md`.
+- `g10.036` through `g10.040` compile those findings in dependency order:
+  correctness, cache identity, surface consolidation, resumable offline render,
+  then RealtimePreview completion. Only `g10.036` Batch 36.1 is ready; every
+  later batch is explicitly blocked.
+- `g10.036` Batch 36.1 must resolve one authority question before any code
+  change: Contract `084` freezes the retained baseline's dynamic-ratio and
+  mono behavior, and two of the measured defects cannot be corrected without
+  changing audible output inside the retained `0.5x..4x` product range.
+- `g10.024` and `g10.028` are superseded by `g10.040`, which owns the whole
+  RealtimePreview question including an explicit option to close the tier.
 
 Do not start Loophole or Chorus planning from Signal internals.
 
@@ -236,16 +249,16 @@ Do not start Loophole or Chorus planning from Signal internals.
   - OfflineHighQuality DSP depth; low-risk sustained candidates evidence-complete
 - `g10.023` `paused`
   - stretch offline artifact scale and format depth
-- `g10.024` `paused`
-  - RealtimePreview stretch tier
+- `g10.024` `superseded`
+  - RealtimePreview stretch tier; remaining scope owned by `g10.040`
 - `g10.025` `deferred`
   - stretch product workflow contract checkpoint
 - `g10.026` `complete`
   - RealtimePreview callback-safe state
 - `g10.027` `complete`
   - RealtimePreview source-projected callback
-- `g10.028` `paused`
-  - RealtimePreview source fill contract
+- `g10.028` `superseded`
+  - RealtimePreview source fill contract; folded into `g10.040`
 - `g10.029` `superseded`
   - historical correctness, listening, and rejected-successor ledger
 - `g10.030` `complete`
@@ -347,6 +360,25 @@ Do not start Loophole or Chorus planning from Signal internals.
     complete route under current authority and closes Automatic for the
     current owners; Batch 35.8 publishes the explicit matrix, confirms all
     isolated state is absent, and closes the roadmap
+
+- `g10.036` `planned`
+  - Transparent stretch correctness recovery: overlap coverage above `4x`,
+    dynamic-ratio pitch preservation, mono seam parity, output bound, and
+    evidence-gate repair; Batch 36.1 ready and documentation only
+- `g10.037` `planned`
+  - stretch cache identity completeness: render geometry, stable key tokens,
+    schema advance, and the creative-cache decision; blocked on `g10.036`
+- `g10.038` `planned`
+  - stretch crate surface and evidence consolidation: single-owner promotion
+    gate, metric consolidation, `lib.rs` decomposition, and byte-exact hot-loop
+    efficiency; blocked on `g10.037`
+- `g10.039` `planned`
+  - resumable offline stretch render: state carried across chunk and
+    dynamic-ratio boundaries, both seam hacks removed; blocked on `g10.038`
+- `g10.040` `planned`
+  - RealtimePreview completion: fix the quantum-locked source-advance defect or
+    close the tier and remove its unreachable surface; blocked on `g10.039`;
+    supersedes `g10.024` and `g10.028`
 
 ## Stretch Boundary
 
@@ -929,6 +961,8 @@ stretch implementation batch is ready.
 
 ## Next Task
 
-No batch is ready. Require an explicit operator-selected Signal-only planning
-target before opening another roadmap. Do not infer Automatic, RealtimePreview,
-integration, Loophole, or Chorus work from the completed stretch lane.
+Execute `g10.036` Batch 36.1. It is documentation only: record the audit defect
+authority, amend Contracts `046` and `084` so defect correction of the frozen
+baseline is authorized, and decide the ratio-envelope, output-bound, and
+correction-class questions. No code changes in that batch, and no later batch
+in `g10.036` through `g10.040` is ready until its predecessor closes.

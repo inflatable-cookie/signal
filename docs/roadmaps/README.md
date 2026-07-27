@@ -1,7 +1,7 @@
 # Roadmaps
 
 Status: active
-Updated: 2026-07-25
+Updated: 2026-07-27
 
 ## Why this section matters now
 
@@ -359,7 +359,14 @@ Batch 35.6 finds no materially different complete route within the current
 owner and closed-program boundaries. Automatic closes for the current owners;
 explicit Transparent, Dream, and Cyclic remain. Batch 35.8 publishes the final
 explicit matrix, confirms all isolated state is absent, and closes `g10.035`.
-No Signal stretch implementation batch is ready.
+
+The 2026-07-27 `signal-dsp-stretch` audit is the operator-selected planning
+target `g10.035` required. It measured four defects in the retained Transparent
+baseline, one flaky evidence gate, and twelve quality, surface, and
+architecture findings. `g10.036` through `g10.040` compile them in dependency
+order: correctness, cache identity, surface consolidation, resumable offline
+render, then RealtimePreview completion. `g10.024` and `g10.028` are superseded
+by `g10.040`. Only `g10.036` Batch 36.1 is ready, and it is documentation only.
 
 ## Strict lane posture
 
@@ -387,7 +394,9 @@ Before rollover:
 
 ## Next Task
 
-Use `docs/roadmaps/g10/README.md` as the active generation front door. No batch
-is ready. Require an explicit operator-selected Signal-only planning target
-before opening another roadmap. Do not infer Automatic, RealtimePreview,
-integration, Loophole, or Chorus work from the completed stretch lane.
+Use `docs/roadmaps/g10/README.md` as the active generation front door. Execute
+`g10.036` Batch 36.1, which is documentation only: record the audit defect
+authority, amend Contracts `046` and `084`, and decide the ratio-envelope,
+output-bound, and correction-class questions. Do not start any later batch in
+`g10.036` through `g10.040` before its predecessor closes, and do not infer
+Automatic, integration, Loophole, or Chorus work from this suite.

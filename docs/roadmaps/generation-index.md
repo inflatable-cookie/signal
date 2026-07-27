@@ -1,7 +1,7 @@
 # Roadmap Generation Index
 
 Status: active
-Updated: 2026-07-25
+Updated: 2026-07-27
 
 ## Current generation posture
 
@@ -176,8 +176,15 @@ Updated: 2026-07-25
   evidence-invalid; Batch 35.4 corrects gate ownership; Batch 35.5 rejects the
   exact replay at synthetic pitch; Batch 35.6 closes Automatic for the current
   owners; and Batch 35.8 publishes the final explicit matrix, confirms all
-  isolated state is absent, and closes `g10.035`. No Signal stretch
-  implementation batch is ready.
+  isolated state is absent, and closes `g10.035`.
+- The 2026-07-27 `signal-dsp-stretch` audit supplies the operator-selected
+  planning target `g10.035` required. `g10.036` through `g10.040` compile its
+  findings in dependency order: Transparent correctness recovery, cache
+  identity completeness, crate surface and evidence consolidation, resumable
+  offline render, and RealtimePreview completion. `g10.024` and `g10.028` are
+  superseded by `g10.040`. Only `g10.036` Batch 36.1 is ready, and it is
+  documentation only because Contract `084`'s baseline freeze must be amended
+  before two of the measured defects can be corrected.
 - Lifecycle reconciliation then closed stale `g10.001` and `g10.003` active
   markers and paused `g10.017` on its remaining hardware evidence. Signal's
   capture and live-monitor implementation is present. That lifecycle
@@ -202,7 +209,7 @@ Updated: 2026-07-25
 | `g06` | 2026-03-13 | Continue beyond reusable-boundary closeout with runtime recovery depth, instrumentation, feature breadth, and Loophole-facing runtime evidence | Closed on 2026-03-16 after recovery/resumability, profiling, VST3/AU, MIDI/event depth, hardware/external-I/O, media services, integrated acceptance, bounded soak, and generation-closeout promotion work landed |
 | `g07` | 2026-03-13 | Seed the post-`g06` feature-expansion queue around routing or multichannel depth, Linux-native breadth, control-surface substrate, and fuller time-stretch capability | Closed on 2026-03-19 after multichannel or spatial execution, LV2 and Linux backends, external MIDI/control surfaces, sample-domain stretch, integrated acceptance, and generation-closeout promotion work landed |
 | `g08` | 2026-03-19 | Continue beyond bounded feature-expansion closure with live Linux backend ownership, richer plugin or device protocol depth, immersive routing, and workflow-adjacent runtime services | Closed on 2026-03-22 after live Linux ownership, LV2 or plugin protocol depth, immersive render breadth, device-protocol substrate, preview workflows, grouped acceptance lanes, integrated acceptance, and final generation-closeout work landed |
-| `g10` | 2026-06-11 | Turn the 2026-06-11 deep audit into a remediation program: fix the real audio path, demolish simulated/narration mass (~70-80k LoC), consolidate hygiene, defer rebuilds to demand | Active generation with no ready batch; `g10.030` retained the frozen stretch baseline; `g10.033` and `g10.034` admitted continuous Dream and Cyclic; `g10.035` rejected Automatic and closed the stretch product-routing lane |
+| `g10` | 2026-06-11 | Turn the 2026-06-11 deep audit into a remediation program: fix the real audio path, demolish simulated/narration mass (~70-80k LoC), consolidate hygiene, defer rebuilds to demand | Active generation; `g10.030` retained the frozen stretch baseline; `g10.033` and `g10.034` admitted continuous Dream and Cyclic; `g10.035` rejected Automatic and closed the stretch product-routing lane; `g10.036`-`g10.040` compile the 2026-07-27 stretch audit, with Batch 36.1 ready |
 | `g09` | 2026-04-08 | Turn the audit findings into a contract-backed realization, hardening, and interactive-proof program | Closed on 2026-04-11 after plugin and backend realization, production-readiness gating, and operator-visible demo proof landed |
 
 ## Rollover policy
@@ -222,6 +229,6 @@ If that cleanup has not happened, stay in the current generation and finish the 
 ## Next Task
 
 Use `docs/roadmaps/g10/README.md` as the current active-generation front door.
-No batch is ready. Require an explicit operator-selected Signal-only planning
-target before opening another roadmap. Do not infer Automatic, RealtimePreview,
-integration, Loophole, or Chorus work from the completed stretch lane.
+Execute `g10.036` Batch 36.1, which is documentation only. Do not start any
+later batch in `g10.036` through `g10.040` before its predecessor closes, and
+do not infer Automatic, integration, Loophole, or Chorus work from this suite.
