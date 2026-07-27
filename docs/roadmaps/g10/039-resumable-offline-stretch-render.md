@@ -284,10 +284,10 @@ Status: blocked on Batch 39.4
 
 ## Next Task
 
-Build the concealed listening pack for `g10.039`: the adopted artifact path
-against the shipped path, on material longer than one chunk, so the seam pulse
-heard in the `g10.036` rounds can be judged directly. Admission under Contract
-`084` Rule 5 waits on that judgement.
+Judge the concealed pack at `~/Downloads/signal-listening-pack-39`: three cases
+crossing a chunk boundary, `16`-second excerpts centred on the first join, A and
+B randomised per case. Fill `notes.tsv`, then open `key.tsv`. Admission under
+Contract `084` Rule 5 requires that no case prefers the shipped side.
 
 Batch 39.5 then closes the lane and decides whether the remaining offline paths
 adopt the resumable renderer, which is what would let both seam smoothers be

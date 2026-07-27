@@ -98,9 +98,34 @@ or callback health.
 - corpus report unchanged
 - `effigy qa:docs`
 
+## Concealed Listening Pack
+
+Built at `~/Downloads/signal-listening-pack-39`. The shipped side was rendered
+from a detached worktree at `bc49b191`, the commit before adoption, so both
+sides come from real renderers.
+
+Source is `90` seconds of sustained chord plus a click every `250 ms`, run
+through the production `30`-second chunk policy so every case crosses at least
+one boundary. Each file is a `16`-second excerpt centred on the first join, at
+`16`-bit to keep the pack at `18 MB` rather than `305 MB`.
+
+| case | ratio | first boundary in the output |
+| --- | --- | --- |
+| `D1` | static `1.25` | `37.5 s` |
+| `D2` | static `2.0` | `60 s` |
+| `D3` | tempo ramp `1.0` to `1.75` | around `30 s` |
+
+All three cases differ between sides, so none is a wasted comparison. A and B
+are randomised per case in `key.tsv`, and the labelled renders are held
+separately in `~/Downloads/signal-listening-pack-39-reveal`.
+
+The temporary render example and the pre-adoption worktree were deleted after
+use. Restoring the example directory also required restoring
+`render_soak.rs`, which the cleanup had removed with it.
+
 ## Next Task
 
-Build the concealed listening pack for `g10.039`: the adopted artifact path
+Judge the pack: the adopted artifact path
 against the shipped path, on material longer than one chunk, so the seam pulse
 heard in the `g10.036` rounds can be judged directly. Admission under Contract
 `084` Rule 5 waits on that judgement.
