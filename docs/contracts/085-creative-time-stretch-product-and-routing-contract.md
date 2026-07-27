@@ -1,8 +1,9 @@
 # 085 Creative Time-Stretch Product And Routing Contract
 
-Status: public v4 active; `g10.035` complete; Automatic closed
+Status: public v4 active; `g10.035` complete; Automatic closed; creative renders
+declared uncacheable 2026-07-27
 Owner: core-product
-Updated: 2026-07-25
+Updated: 2026-07-27
 Related contracts: `046`, `048`, `084`
 Related architecture: `docs/architecture/offline-creative-time-stretch-study.md`,
 `docs/architecture/offline-creative-fixed-ratio-public-surface.md`,
@@ -2457,6 +2458,53 @@ All Batch 35.3 and Batch 35.5 worktrees, branches, acoustic refs, candidate
 source, nextest profile, tracked evidence, ignored evidence roots, generated
 assets, and build state are absent. No candidate or public Automatic surface
 entered `main`.
+
+## 2026-07-27 Creative Renders Are Uncacheable
+
+Planning authority: `docs/roadmaps/g10/037-stretch-cache-identity-completeness.md`.
+Evidence: `docs/logs/2026-07/27-g10-037-creative-cache-decision.md`.
+
+`g10.037` audited every input that changes rendered output against Signal's
+stretch cache identity. Creative renders have no identity and cannot be
+described by one: `StretchCacheIdentityInput` carries a
+`StretchBackendTier`, and the three tiers are `Repitch`, `RealtimePreview`, and
+`OfflineHighQuality`. None of them describes a creative render, and character,
+`space`, `cycle`, target frames, and the admitted seed have no fields.
+
+That gap is now a decision rather than an omission. Creative renders are
+uncacheable.
+
+### What that means
+
+`render_creative_stretch` is a whole-buffer call that returns samples. It
+returns no identity, no receipt, and no artifact plan, and nothing in the
+creative surface refers to caching. Callers that want to reuse a creative
+render own that decision and its invalidation; Signal does not offer a key for
+it.
+
+### Why exclusion rather than coverage
+
+A second identity surface would have no caller. Creative has no cache route, no
+artifact path, no runtime DTO, and no consumer outside this crate:
+`render_creative_stretch` is re-exported from `signal-dsp-stretch` and imported
+by nothing. Building an identity for it would freeze a schema against zero
+usage, and the first real consumer would almost certainly need a different
+shape.
+
+Exclusion is also the honest description of today's behavior. The creative
+renderers are deterministic for a fixed input and seed, so a caller could key
+them — but Signal has not measured which of their inputs are output-affecting
+with the rigour the transparent identity now demands, and claiming a cache
+surface without that work would repeat exactly the defect `g10.037` was opened
+to fix.
+
+### Reopening
+
+Creative caching reopens only with a named consumer and the same enumeration
+the transparent identity received: every input that changes rendered output,
+checked against the proposed fields, with measured collisions for anything
+omitted. Until then, adding a cache, artifact, or identity surface to creative
+is out of contract.
 
 ## Next Task
 

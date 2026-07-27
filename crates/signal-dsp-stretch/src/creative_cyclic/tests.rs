@@ -1,5 +1,5 @@
 use super::{
-    plan, render, render_continuous, schedule, synthesis, CandidateError, Plan, Request,
+    plan, render_continuous, schedule, synthesis, CandidateError, Plan, Request,
     CONTINUOUS_BEHAVIOR_ID,
 };
 
@@ -29,14 +29,21 @@ fn request<'a>(
     }
 }
 
+/// Production serves `2N..=8N` only. An identity request is a bypass the
+/// caller owns, not a render, so `render_continuous` rejects it. This owner
+/// previously exercised a `cfg(test)`-only entry point that passed identity
+/// through, asserting behavior that never shipped.
 #[test]
-fn identity_and_empty_requests_are_exact() {
+fn identity_is_rejected_and_empty_requests_are_exact() {
     let input = mono_input(4096);
     assert_eq!(
-        render(request(&input, 1, input.len(), NEUTRAL_CYCLE_US)),
-        Ok(input)
+        render_continuous(request(&input, 1, input.len(), NEUTRAL_CYCLE_US)),
+        Err(CandidateError::UnsupportedRatio)
     );
-    assert_eq!(render(request(&[], 1, 0, NEUTRAL_CYCLE_US)), Ok(Vec::new()));
+    assert_eq!(
+        render_continuous(request(&[], 1, 0, NEUTRAL_CYCLE_US)),
+        Ok(Vec::new())
+    );
 }
 
 #[test]
@@ -44,10 +51,10 @@ fn admitted_ratios_and_cycle_extremes_are_finite_and_deterministic() {
     let input = mono_input(4096);
     for ratio in [2, 4, 8] {
         for cycle_us in [plan::MIN_CYCLE_US, NEUTRAL_CYCLE_US, plan::MAX_CYCLE_US] {
-            let first =
-                render(request(&input, 1, input.len() * ratio, cycle_us)).expect("first render");
-            let second =
-                render(request(&input, 1, input.len() * ratio, cycle_us)).expect("repeat render");
+            let first = render_continuous(request(&input, 1, input.len() * ratio, cycle_us))
+                .expect("first render");
+            let second = render_continuous(request(&input, 1, input.len() * ratio, cycle_us))
+                .expect("repeat render");
             assert_eq!(first, second);
             assert_eq!(first.len(), input.len() * ratio);
             assert!(first.iter().all(|sample| sample.is_finite()));
@@ -75,8 +82,8 @@ fn linked_stereo_preserves_duplicate_antiphase_and_common_negation() {
                 -*sample
             });
         }
-        let output =
-            render(request(&input, 2, mono.len() * 8, NEUTRAL_CYCLE_US)).expect("stereo render");
+        let output = render_continuous(request(&input, 2, mono.len() * 8, NEUTRAL_CYCLE_US))
+            .expect("stereo render");
         for frame in output.chunks_exact(2) {
             let error = if relation == "duplicate" {
                 frame[0] - frame[1]
@@ -87,8 +94,8 @@ fn linked_stereo_preserves_duplicate_antiphase_and_common_negation() {
         }
 
         let negated: Vec<_> = input.iter().map(|sample| -*sample).collect();
-        let negative =
-            render(request(&negated, 2, mono.len() * 8, NEUTRAL_CYCLE_US)).expect("negated render");
+        let negative = render_continuous(request(&negated, 2, mono.len() * 8, NEUTRAL_CYCLE_US))
+            .expect("negated render");
         for (positive, negative) in output.iter().zip(negative) {
             assert!((*positive + negative).abs() <= 1e-6);
         }
@@ -99,38 +106,38 @@ fn linked_stereo_preserves_duplicate_antiphase_and_common_negation() {
 fn invalid_requests_return_exact_errors() {
     let input = mono_input(32);
     assert_eq!(
-        render(request(&input, 0, 64, NEUTRAL_CYCLE_US)),
+        render_continuous(request(&input, 0, 64, NEUTRAL_CYCLE_US)),
         Err(CandidateError::InvalidChannels)
     );
     assert_eq!(
-        render(request(&input, 3, 64, NEUTRAL_CYCLE_US)),
+        render_continuous(request(&input, 3, 64, NEUTRAL_CYCLE_US)),
         Err(CandidateError::InvalidChannels)
     );
     assert_eq!(
-        render(request(&[0.0, 0.0, 0.0], 2, 4, NEUTRAL_CYCLE_US)),
+        render_continuous(request(&[0.0, 0.0, 0.0], 2, 4, NEUTRAL_CYCLE_US)),
         Err(CandidateError::PartialFrame)
     );
     assert_eq!(
-        render(Request {
+        render_continuous(Request {
             sample_rate: plan::MIN_RATE - 1,
             ..request(&input, 1, 64, NEUTRAL_CYCLE_US)
         }),
         Err(CandidateError::InvalidSampleRate)
     );
     assert_eq!(
-        render(request(&input, 1, 64, plan::MIN_CYCLE_US - 1)),
+        render_continuous(request(&input, 1, 64, plan::MIN_CYCLE_US - 1)),
         Err(CandidateError::InvalidCycle)
     );
     assert_eq!(
-        render(request(&input, 1, 16, NEUTRAL_CYCLE_US)),
+        render_continuous(request(&input, 1, 16, NEUTRAL_CYCLE_US)),
         Err(CandidateError::UnsupportedCompression)
     );
     assert_eq!(
-        render(request(&input, 1, 32 * 16, NEUTRAL_CYCLE_US)),
+        render_continuous(request(&input, 1, 32 * 16, NEUTRAL_CYCLE_US)),
         Err(CandidateError::UnsupportedRatio)
     );
     assert_eq!(
-        render(request(&[f32::NAN], 1, 2, NEUTRAL_CYCLE_US)),
+        render_continuous(request(&[f32::NAN], 1, 2, NEUTRAL_CYCLE_US)),
         Err(CandidateError::NonFiniteInput)
     );
 }
@@ -140,7 +147,7 @@ fn exact_sixteen_rejects_before_output_allocation() {
     let input = mono_input(32);
     synthesis::reset_output_allocation_count();
     assert_eq!(
-        render(request(&input, 1, input.len() * 16, NEUTRAL_CYCLE_US)),
+        render_continuous(request(&input, 1, input.len() * 16, NEUTRAL_CYCLE_US)),
         Err(CandidateError::UnsupportedRatio)
     );
     assert_eq!(synthesis::output_allocation_count(), 0);
@@ -189,8 +196,8 @@ fn continuous_anchor_output_is_byte_identical() {
     let input = mono_input(4096);
     for ratio in [2, 4, 8] {
         for cycle_us in [plan::MIN_CYCLE_US, NEUTRAL_CYCLE_US, plan::MAX_CYCLE_US] {
-            let admitted =
-                render(request(&input, 1, input.len() * ratio, cycle_us)).expect("anchor");
+            let admitted = render_continuous(request(&input, 1, input.len() * ratio, cycle_us))
+                .expect("anchor");
             let continuous = render_continuous(request(&input, 1, input.len() * ratio, cycle_us))
                 .expect("continuous anchor");
             assert_eq!(continuous, admitted);

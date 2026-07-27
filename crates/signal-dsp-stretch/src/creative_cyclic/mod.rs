@@ -37,15 +37,6 @@ pub(super) enum CandidateError {
     AllocationOverflow,
 }
 
-#[cfg(test)]
-pub(super) fn render(request: Request<'_>) -> Result<Vec<f32>, CandidateError> {
-    let plan = Plan::new(request)?;
-    if plan.identity {
-        return Ok(request.input.to_vec());
-    }
-    synthesis::render(request, &plan)
-}
-
 pub(super) fn render_continuous(request: Request<'_>) -> Result<Vec<f32>, CandidateError> {
     let plan = Plan::new(request)?;
     if plan.input_frames == 0 {

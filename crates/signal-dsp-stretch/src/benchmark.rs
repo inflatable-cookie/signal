@@ -4,6 +4,7 @@ use crate::phase_vocoder::{
 };
 use crate::transient_smear::{
     measure_transient_smear, transient_smear_nan, StretchTransientSmearMeasurement,
+    StretchTransientSmearPolicies,
 };
 use crate::{
     dynamic_ratio_output_boundaries, dynamic_ratio_output_frames,
@@ -639,7 +640,14 @@ pub fn measure_draft_transient_smear(ratio: f64) -> StretchTransientSmearMeasure
     let input = synthetic_extreme_ratio().samples;
     let target_len = (input.len() as f64 * ratio).round() as usize;
     let output = phase_vocoder(&input, target_len, ratio, 2_048, 512);
-    measure_transient_smear(&input, &output, ratio, WINDOW_SIZE, HOP_SIZE)
+    measure_transient_smear(
+        &input,
+        &output,
+        ratio,
+        WINDOW_SIZE,
+        HOP_SIZE,
+        StretchTransientSmearPolicies::production(),
+    )
 }
 
 /// Measure transient-reset prototype smear on the synthetic extreme-ratio
@@ -654,7 +662,14 @@ pub fn measure_transient_reset_transient_smear(ratio: f64) -> StretchTransientSm
     let input = synthetic_extreme_ratio().samples;
     let target_len = (input.len() as f64 * ratio).round() as usize;
     let output = transient_reset_phase_vocoder(&input, target_len, ratio, 2_048, 512);
-    measure_transient_smear(&input, &output, ratio, WINDOW_SIZE, HOP_SIZE)
+    measure_transient_smear(
+        &input,
+        &output,
+        ratio,
+        WINDOW_SIZE,
+        HOP_SIZE,
+        StretchTransientSmearPolicies::production(),
+    )
 }
 
 /// Measure a loop-boundary click as the final-to-first-frame discontinuity.
@@ -1404,8 +1419,17 @@ fn measure_synthetic_length_drift_realtime_preview(family: StretchCorpusFamily, 
     let input_frames = input.frame_count();
     let mut preview = RealtimePreviewStretcher::new(ratio);
     let output_frames = match input.channels {
-        1 => preview.stretch_mono(&input.samples).len(),
-        2 => preview.stretch_interleaved_stereo(&input.samples).len() / 2,
+        1 => preview
+            .stretch_mono(&input.samples)
+            .expect("corpus render fits the offline output bound")
+            .len(),
+        2 => {
+            preview
+                .stretch_interleaved_stereo(&input.samples)
+                .expect("corpus render fits the offline output bound")
+                .len()
+                / 2
+        }
         _ => return f64::NAN,
     };
 
@@ -1419,7 +1443,9 @@ fn measure_realtime_preview_loop_boundary_click(ratio: f64) -> StretchLoopBounda
 
     let input = synthetic_loop_seam();
     let mut preview = RealtimePreviewStretcher::new(ratio);
-    let mut output = preview.stretch_interleaved_stereo(&input.samples);
+    let mut output = preview
+        .stretch_interleaved_stereo(&input.samples)
+        .expect("corpus render fits the offline output bound");
     smooth_loop_boundary_interleaved(&mut output, input.channels, 128);
     measure_loop_boundary_click(&output, input.channels, ratio)
 }
@@ -1431,7 +1457,9 @@ fn measure_realtime_preview_stereo_image_delta(ratio: f64) -> StretchStereoImage
 
     let input = synthetic_loop_seam();
     let mut preview = RealtimePreviewStretcher::new(ratio);
-    let output = preview.stretch_interleaved_stereo(&input.samples);
+    let output = preview
+        .stretch_interleaved_stereo(&input.samples)
+        .expect("corpus render fits the offline output bound");
     measure_stereo_image_delta(&input.samples, &output, ratio)
 }
 
@@ -1444,8 +1472,17 @@ fn measure_realtime_preview_transient_smear(ratio: f64) -> StretchTransientSmear
     const HOP_SIZE: usize = 256;
     let input = synthetic_extreme_ratio().samples;
     let mut preview = RealtimePreviewStretcher::new(ratio);
-    let output = preview.stretch_mono(&input);
-    measure_transient_smear(&input, &output, ratio, WINDOW_SIZE, HOP_SIZE)
+    let output = preview
+        .stretch_mono(&input)
+        .expect("corpus render fits the offline output bound");
+    measure_transient_smear(
+        &input,
+        &output,
+        ratio,
+        WINDOW_SIZE,
+        HOP_SIZE,
+        StretchTransientSmearPolicies::production(),
+    )
 }
 
 fn compare_dynamic_tempo_ramp(case_id: &'static str) -> Vec<StretchSyntheticBenchmarkComparison> {
@@ -1457,8 +1494,9 @@ fn compare_dynamic_tempo_ramp(case_id: &'static str) -> Vec<StretchSyntheticBenc
     let draft_output =
         stretch_dynamic_ratio_stereo_independent(&input, &ratio_curve, phase_vocoder);
     let mut offline_high_quality = OfflineHighQualityStretcher::new(1.0);
-    let offline_high_quality_output =
-        offline_high_quality.stretch_dynamic_ratio_interleaved_stereo(&input.samples, &ratio_curve);
+    let offline_high_quality_output = offline_high_quality
+        .stretch_dynamic_ratio_interleaved_stereo(&input.samples, &ratio_curve)
+        .expect("corpus render fits the offline output bound");
 
     vec![
         compare_metric(
@@ -1505,8 +1543,9 @@ fn compare_dynamic_tempo_ramp_realtime_preview(
     let draft_output =
         stretch_dynamic_ratio_stereo_independent(&input, &ratio_curve, phase_vocoder);
     let mut preview = RealtimePreviewStretcher::new(1.0);
-    let preview_output =
-        preview.stretch_dynamic_ratio_interleaved_stereo(&input.samples, &ratio_curve);
+    let preview_output = preview
+        .stretch_dynamic_ratio_interleaved_stereo(&input.samples, &ratio_curve)
+        .expect("corpus render fits the offline output bound");
 
     vec![
         compare_metric_for_backend(
@@ -1556,11 +1595,9 @@ fn compare_pitch_shift() -> Vec<StretchSyntheticBenchmarkComparison> {
             let target_len = (input.len() as f64 * ratio).round() as usize;
             let draft_output = phase_vocoder(&input, target_len, ratio, 2_048, 512);
             let mut offline_high_quality = OfflineHighQualityStretcher::new(ratio);
-            let offline_high_quality_output = offline_high_quality.stretch_pitch_mono(
-                &input,
-                SampleRate(SAMPLE_RATE_HZ),
-                semitones,
-            );
+            let offline_high_quality_output = offline_high_quality
+                .stretch_pitch_mono(&input, SampleRate(SAMPLE_RATE_HZ), semitones)
+                .expect("corpus render fits the offline output bound");
 
             compare_metric(
                 CASE_ID,
@@ -1602,8 +1639,9 @@ fn compare_pitch_shift_realtime_preview() -> Vec<StretchSyntheticBenchmarkCompar
             let target_len = (input.len() as f64 * ratio).round() as usize;
             let draft_output = phase_vocoder(&input, target_len, ratio, 2_048, 512);
             let mut preview = RealtimePreviewStretcher::new(ratio);
-            let preview_output =
-                preview.stretch_pitch_mono(&input, SampleRate(SAMPLE_RATE_HZ), semitones);
+            let preview_output = preview
+                .stretch_pitch_mono(&input, SampleRate(SAMPLE_RATE_HZ), semitones)
+                .expect("corpus render fits the offline output bound");
 
             compare_metric_for_backend(
                 CASE_ID,
@@ -1984,14 +2022,10 @@ fn stretch_dynamic_ratio_stereo_independent(
     let mut output_channels = Vec::with_capacity(channel_count);
     for channel in 0..channel_count {
         let mono = deinterleave_channel(&input.samples, channel_count, channel);
-        output_channels.push(stretch_dynamic_ratio_mono_with_engine(
-            &mono,
-            ratio_curve,
-            1.0,
-            2_048,
-            512,
-            stretcher,
-        ));
+        output_channels.push(
+            stretch_dynamic_ratio_mono_with_engine(&mono, ratio_curve, 1.0, 2_048, 512, stretcher)
+                .expect("corpus render fits the offline output bound"),
+        );
     }
     interleave_channels(&output_channels)
 }

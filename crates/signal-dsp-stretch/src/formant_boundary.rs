@@ -1,12 +1,9 @@
-use rustfft::FftPlanner;
-
+use crate::spectral_support::plan_forward_analysis;
 use crate::Sample;
 
 mod spectral;
 
-use spectral::{
-    envelope_centroid_hz, envelope_residual, hann_window, smoothed_spectral_envelope, window_fits,
-};
+use spectral::{envelope_centroid_hz, envelope_residual, smoothed_spectral_envelope, window_fits};
 
 const SPECTRAL_WINDOW_SIZE: usize = 4_096;
 const SPECTRAL_SAMPLE_COUNT: usize = 24;
@@ -72,9 +69,7 @@ pub fn measure_formant_boundary(
         return invalid_measurement(ratio, sample_rate_hz);
     }
 
-    let mut planner = FftPlanner::<f32>::new();
-    let fft = planner.plan_fft_forward(SPECTRAL_WINDOW_SIZE);
-    let window = hann_window(SPECTRAL_WINDOW_SIZE);
+    let (fft, window) = plan_forward_analysis(SPECTRAL_WINDOW_SIZE);
     let mut residual_sum = 0.0;
     let mut residual_max = 0.0f64;
     let mut centroid_shift_sum = 0.0;

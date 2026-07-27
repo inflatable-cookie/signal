@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: active generation; `g10.036` Batch 36.1 ready
+Status: active generation; `g10.039` Batch 39.3 in conformance iteration
 Updated: 2026-07-27
 
 ## Why this generation matters now
@@ -191,10 +191,19 @@ The 2026-07-19 consolidation reset is authoritative.
   correctness, cache identity, surface consolidation, resumable offline render,
   then RealtimePreview completion. Only `g10.036` Batch 36.1 is ready; every
   later batch is explicitly blocked.
-- `g10.036` Batch 36.1 must resolve one authority question before any code
-  change: Contract `084` freezes the retained baseline's dynamic-ratio and
-  mono behavior, and two of the measured defects cannot be corrected without
-  changing audible output inside the retained `0.5x..4x` product range.
+- `g10.036` Batch 36.1 resolved that authority question. Contract `084` gains
+  Rule 9, authorizing defect correction after successor closure, and Rule 10,
+  governing re-frozen byte-exact hashes. Contract `046` gains the overlap
+  coverage, dynamic-ratio segment, seam parity, and output-bound laws.
+- Batch 36.1 also measured the correction boundary instead of assuming it.
+  Ratio `4.0` already carries a `1.396 dB` amplitude ripple, so the frozen
+  overlap law `analysis_hop * ratio <= 0.75 * window_size` leaves ratios
+  through `3.0` byte-identical and makes `3.0 < ratio <= 4.0` an audible
+  correction. Byte-exactness over `0.5x..3.0x` is the lane's standing control.
+- The operator chose to make `TimeStretcher` fallible so the
+  `268435456`-sample output ceiling can be refused rather than attempted. That
+  is a deliberate pre-1.0 break of an in-repo-only trait; `signal-render-plane`
+  and `signal-runtime` update in the same batch.
 - `g10.024` and `g10.028` are superseded by `g10.040`, which owns the whole
   RealtimePreview question including an explicit option to close the tier.
 
@@ -361,20 +370,64 @@ Do not start Loophole or Chorus planning from Signal internals.
     current owners; Batch 35.8 publishes the explicit matrix, confirms all
     isolated state is absent, and closes the roadmap
 
-- `g10.036` `planned`
+- `g10.036` `complete`
   - Transparent stretch correctness recovery: overlap coverage above `4x`,
     dynamic-ratio pitch preservation, mono seam parity, output bound, and
-    evidence-gate repair; Batch 36.1 ready and documentation only
-- `g10.037` `planned`
+    evidence-gate repair; Batch 36.1 froze the four laws and the Contract `084`
+    correction rules; Batch 36.2 repaired the thread-unsafe allocation gate and
+    landed five regression owners with recorded pre-fix failures; Batch 36.3
+    landed the overlap law and the fallible `TimeStretcher` with its
+    `268435456`-sample ceiling across `73` call sites; Batch 36.4 landed
+    segment coalescing and mono seam parity, restoring dense-curve pitch from
+    `220.0 Hz` to `440.7 Hz` and mono seam click from `-28.94` to
+    `-180.62 dBFS`, ; two concealed listening rounds
+    rejected segment-length tuning, measurement found phase restarts at every
+    join as the cause, and `A2` was admitted under Rule 5 with that residual
+    recorded and owned by `g10.039`; Batch 36.5 closed the lane on `27` corpus
+    comparisons with `0` regressed
+- `g10.037` `complete`
   - stretch cache identity completeness: render geometry, stable key tokens,
-    schema advance, and the creative-cache decision; blocked on `g10.036`
-- `g10.038` `planned`
+    schema advance, and the creative-cache decision; Batch 37.1 enumerated
+    nineteen output-affecting inputs against nine covered fields, measured a
+    chunk-policy collision at correlation `-0.296620` under one key, and found
+    that `g10.036` changed rendered output without advancing the engine
+    version; Batch 37.2 landed schema `v3`, engine `v3`, a crate-owned
+    behavior version, stable key tokens, and render geometry plus chunk policy
+    in the key; Batch 37.3 declared creative renders uncacheable by contract
+    rather than by omission; Batch 37.4 closed the lane and fixed a second
+    `A17`-class process-global test counter in `creative_cyclic`
+- `g10.038` `complete`
   - stretch crate surface and evidence consolidation: single-owner promotion
     gate, metric consolidation, `lib.rs` decomposition, and byte-exact hot-loop
-    efficiency; blocked on `g10.037`
-- `g10.039` `planned`
+    efficiency; Batch 38.1 inventoried `160` exported items against `36` with
+    an external consumer, corrected the audit's `249` count, deferred the whole
+    RealtimePreview surface to `g10.040`, and swept for process-global test
+    state; Batch 38.2 proved the three promotion encodings agreed on all `1024`
+    receipt shapes before collapsing them to one owner, removed the
+    `cfg(test)`-only cyclic paths whose owner asserted behavior production never
+    serves, and converted three integration-test allocator counters; Batch 38.3 consolidated the duplicated spectral
+    helpers and collapsed four transient-smear entry points to one, with the
+    corpus report byte-identical before and after; Batch 38.4 moved the RealtimePreview tier out of `lib.rs`,
+    taking it from `5181` to `3321` lines, and found the duplicate `wrap_phase`
+    is not byte-exact so it cannot be unified as a refactor; Batch 38.5 cut per-render
+    allocations from `789` to `31`, shared the selector's duplicated source
+    detection, and found a Batch 38.4 mis-gate that every all-features
+    validation command had hidden; Batch 38.6 closed the lane with the exported
+    surface at `158` items, unchanged in size because every deletable family is
+    owned by another lane, and `lib.rs` down from `5181` to `3343` lines; Batch
+    38.7 reopens after `g10.039`
+- `g10.039` `active`
   - resumable offline stretch render: state carried across chunk and
-    dynamic-ratio boundaries, both seam hacks removed; blocked on `g10.038`
+    dynamic-ratio boundaries, both seam hacks removed; blocked on `g10.038`;
+    now also owns the `g10.036` seam-pulse limitation and candidate finding
+    `A18`, with `segmented_render_matches_whole_render_at_constant_ratio` as
+    its acceptance target; Batch 39.1 enumerated the six pieces of state that
+    reset at every join, measured the shipped chunk policy at correlation
+    `0.389976` against a whole-buffer control, decided the renderer owns the
+    ratio curve, and froze exact chunk-size independence; Batch 39.2 froze the
+    API, the six carried state items, an `8 MiB` geometry-derived ceiling with a
+    new `65536` maximum window, and which `g10.036` controls survive; Batch 39.3
+    ready
 - `g10.040` `planned`
   - RealtimePreview completion: fix the quantum-locked source-advance defect or
     close the tier and remove its unreachable surface; blocked on `g10.039`;
@@ -961,8 +1014,10 @@ stretch implementation batch is ready.
 
 ## Next Task
 
-Execute `g10.036` Batch 36.1. It is documentation only: record the audit defect
-authority, amend Contracts `046` and `084` so defect correction of the frozen
-baseline is authorized, and decide the ratio-envelope, output-bound, and
-correction-class questions. No code changes in that batch, and no later batch
-in `g10.036` through `g10.040` is ready until its predecessor closes.
+Operator action gates `g10.036`. Audition the revision-2 pack at
+`~/Downloads/signal-listening-pack-36-4-rev2`, fill `notes.tsv`, then open
+`key.tsv`. Batch 36.4 is admitted if the `384 ms` segment minimum is preferred
+or tied on both cases. On admission,
+execute Batch 36.5: full corpus comparison and acceptance report, contract and
+front-door updates, and the corrected Transparent behavior matrix. No later
+batch in `g10.036` through `g10.040` is ready until its predecessor closes.

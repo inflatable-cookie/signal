@@ -98,6 +98,35 @@ pub struct StretchTransientSmearMeasurement {
     pub metric: StretchMetricValue,
 }
 
+/// Selector measurement that reuses already-detected source transients.
+///
+/// The expansion selector measures the current output and a draft baseline
+/// against the same source with the same policy and geometry, so detecting
+/// source transients twice was pure duplication.
+pub(crate) fn measure_selector_transient_smear_with_input_events(
+    input: &[Sample],
+    input_events: &[StretchTransientEvent],
+    output: &[Sample],
+    ratio: f64,
+    window_size: usize,
+    hop_size: usize,
+) -> SelectorTransientSmearMeasurement {
+    let measurement = measure_raw_transient_smear_with_input_events(
+        input,
+        input_events,
+        output,
+        ratio,
+        window_size,
+        hop_size,
+        StretchTransientDetectorPolicy::production(),
+        Some(StretchTransientDetectorPolicy::candidate_review()),
+    );
+    SelectorTransientSmearMeasurement {
+        missed_transients: measurement.missed_transients,
+        max_smear_frames: measurement.max_smear_frames,
+    }
+}
+
 pub(crate) fn measure_selector_transient_smear(
     input: &[Sample],
     output: &[Sample],
@@ -193,6 +222,51 @@ pub fn detect_stretch_transients_with_policy(
     merge_nearby_transients(events, hop_size * 2)
 }
 
+/// Detector policies for one transient-smear measurement.
+///
+/// One entry point replaces the four that previously wrapped the same private
+/// function: default, explicit single policy, separate input and output
+/// policies, and separate policies plus an output recovery fallback.
+#[cfg(any(test, feature = "evidence"))]
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct StretchTransientSmearPolicies {
+    /// Detector applied to the source.
+    pub input: StretchTransientDetectorPolicy,
+    /// Detector applied to the rendered output.
+    pub output: StretchTransientDetectorPolicy,
+    /// Fallback detector for outputs the primary detector misses.
+    pub output_recovery: Option<StretchTransientDetectorPolicy>,
+}
+
+#[cfg(any(test, feature = "evidence"))]
+impl StretchTransientSmearPolicies {
+    /// Production detectors with candidate-review recovery, the policy the
+    /// corpus and selector gates measure with.
+    pub const fn production() -> Self {
+        Self {
+            input: StretchTransientDetectorPolicy::production(),
+            output: StretchTransientDetectorPolicy::production(),
+            output_recovery: Some(StretchTransientDetectorPolicy::candidate_review()),
+        }
+    }
+
+    /// One detector on both sides, with no recovery pass.
+    pub const fn symmetric(policy: StretchTransientDetectorPolicy) -> Self {
+        Self {
+            input: policy,
+            output: policy,
+            output_recovery: None,
+        }
+    }
+}
+
+#[cfg(any(test, feature = "evidence"))]
+impl Default for StretchTransientSmearPolicies {
+    fn default() -> Self {
+        Self::production()
+    }
+}
+
 /// Measure transient attack widening between input and stretched output.
 #[cfg(any(test, feature = "evidence"))]
 pub fn measure_transient_smear(
@@ -201,51 +275,7 @@ pub fn measure_transient_smear(
     ratio: f64,
     window_size: usize,
     hop_size: usize,
-) -> StretchTransientSmearMeasurement {
-    measure_transient_smear_with_output_recovery_policy(
-        input,
-        output,
-        ratio,
-        window_size,
-        hop_size,
-        StretchTransientDetectorPolicy::production(),
-        StretchTransientDetectorPolicy::production(),
-        StretchTransientDetectorPolicy::candidate_review(),
-    )
-}
-
-/// Measure transient attack widening with an explicit detector policy.
-#[cfg(any(test, feature = "evidence"))]
-pub fn measure_transient_smear_with_policy(
-    input: &[Sample],
-    output: &[Sample],
-    ratio: f64,
-    window_size: usize,
-    hop_size: usize,
-    policy: StretchTransientDetectorPolicy,
-) -> StretchTransientSmearMeasurement {
-    measure_transient_smear_with_policies(
-        input,
-        output,
-        ratio,
-        window_size,
-        hop_size,
-        policy,
-        policy,
-    )
-}
-
-/// Measure transient attack widening with separate input and output detector
-/// policies.
-#[cfg(any(test, feature = "evidence"))]
-pub fn measure_transient_smear_with_policies(
-    input: &[Sample],
-    output: &[Sample],
-    ratio: f64,
-    window_size: usize,
-    hop_size: usize,
-    input_policy: StretchTransientDetectorPolicy,
-    output_policy: StretchTransientDetectorPolicy,
+    policies: StretchTransientSmearPolicies,
 ) -> StretchTransientSmearMeasurement {
     evidence_measurement(measure_raw_transient_smear(
         input,
@@ -253,34 +283,9 @@ pub fn measure_transient_smear_with_policies(
         ratio,
         window_size,
         hop_size,
-        input_policy,
-        output_policy,
-        None,
-    ))
-}
-
-/// Measure transient smear with a fallback output detector for primary misses.
-#[cfg(any(test, feature = "evidence"))]
-#[allow(clippy::too_many_arguments)]
-pub fn measure_transient_smear_with_output_recovery_policy(
-    input: &[Sample],
-    output: &[Sample],
-    ratio: f64,
-    window_size: usize,
-    hop_size: usize,
-    input_policy: StretchTransientDetectorPolicy,
-    output_policy: StretchTransientDetectorPolicy,
-    recovery_output_policy: StretchTransientDetectorPolicy,
-) -> StretchTransientSmearMeasurement {
-    evidence_measurement(measure_raw_transient_smear(
-        input,
-        output,
-        ratio,
-        window_size,
-        hop_size,
-        input_policy,
-        output_policy,
-        Some(recovery_output_policy),
+        policies.input,
+        policies.output,
+        policies.output_recovery,
     ))
 }
 
@@ -301,6 +306,33 @@ fn measure_raw_transient_smear(
 
     let input_events =
         detect_stretch_transients_with_policy(input, window_size, hop_size, input_policy);
+    measure_raw_transient_smear_with_input_events(
+        input,
+        &input_events,
+        output,
+        ratio,
+        window_size,
+        hop_size,
+        output_policy,
+        recovery_output_policy,
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+fn measure_raw_transient_smear_with_input_events(
+    input: &[Sample],
+    input_events: &[StretchTransientEvent],
+    output: &[Sample],
+    ratio: f64,
+    window_size: usize,
+    hop_size: usize,
+    output_policy: StretchTransientDetectorPolicy,
+    recovery_output_policy: Option<StretchTransientDetectorPolicy>,
+) -> RawTransientSmearMeasurement {
+    if !ratio.is_finite() || ratio <= 0.0 || input.is_empty() || output.is_empty() {
+        return raw_transient_smear_nan(ratio);
+    }
+    let input_events = input_events.to_vec();
     let output_events =
         detect_stretch_transients_with_policy(output, window_size, hop_size, output_policy);
     let recovery_output_events = recovery_output_policy

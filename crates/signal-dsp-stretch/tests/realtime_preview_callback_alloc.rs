@@ -4,28 +4,32 @@
 //! without allocating or deallocating while the callback flag is raised.
 
 use std::alloc::{GlobalAlloc, Layout, System};
-use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::cell::Cell;
 
 use signal_dsp_stretch::{RealtimePreviewCallbackState, RealtimePreviewStreamConfig};
 use signal_primitives::SampleRate;
 
-static IN_CALLBACK: AtomicBool = AtomicBool::new(false);
-static CALLBACK_ALLOCS: AtomicU64 = AtomicU64::new(0);
-static CALLBACK_DEALLOCS: AtomicU64 = AtomicU64::new(0);
+// Thread-scoped: the allocator hook is process-global, so a second test in
+// this binary would otherwise be counted against whichever test is measuring.
+thread_local! {
+    static IN_CALLBACK: Cell<bool> = const { Cell::new(false) };
+    static CALLBACK_ALLOCS: Cell<u64> = const { Cell::new(0) };
+    static CALLBACK_DEALLOCS: Cell<u64> = const { Cell::new(0) };
+}
 
 struct CountingAllocator;
 
 unsafe impl GlobalAlloc for CountingAllocator {
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
-        if IN_CALLBACK.load(Ordering::Relaxed) {
-            CALLBACK_ALLOCS.fetch_add(1, Ordering::Relaxed);
+        if IN_CALLBACK.with(Cell::get) {
+            CALLBACK_ALLOCS.with(|value| value.set(value.get().saturating_add(1)));
         }
         unsafe { System.alloc(layout) }
     }
 
     unsafe fn dealloc(&self, pointer: *mut u8, layout: Layout) {
-        if IN_CALLBACK.load(Ordering::Relaxed) {
-            CALLBACK_DEALLOCS.fetch_add(1, Ordering::Relaxed);
+        if IN_CALLBACK.with(Cell::get) {
+            CALLBACK_DEALLOCS.with(|value| value.set(value.get().saturating_add(1)));
         }
         unsafe { System.dealloc(pointer, layout) }
     }
@@ -62,7 +66,7 @@ fn realtime_preview_callback_contract_path_allocates_nothing() {
     let mut stereo_output = vec![0.0; 128 * 2];
 
     let mut last_result = Ok(());
-    IN_CALLBACK.store(true, Ordering::SeqCst);
+    IN_CALLBACK.with(|flag| flag.set(true));
     for iteration in 0..64 {
         let mono_ratio = if iteration < 32 { 1.0 } else { 1.25 };
         let stereo_ratio = if iteration < 32 { 1.0 } else { 0.75 };
@@ -92,16 +96,16 @@ fn realtime_preview_callback_contract_path_allocates_nothing() {
             .map(|_| ())
             .map_err(|error| error);
     }
-    IN_CALLBACK.store(false, Ordering::SeqCst);
+    IN_CALLBACK.with(|flag| flag.set(false));
 
     assert_eq!(last_result, Ok(()));
     assert_eq!(
-        CALLBACK_ALLOCS.load(Ordering::Relaxed),
+        CALLBACK_ALLOCS.with(Cell::get),
         0,
         "RealtimePreview callback contract path allocated"
     );
     assert_eq!(
-        CALLBACK_DEALLOCS.load(Ordering::Relaxed),
+        CALLBACK_DEALLOCS.with(Cell::get),
         0,
         "RealtimePreview callback contract path deallocated"
     );

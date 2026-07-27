@@ -1,14 +1,14 @@
 use std::sync::Arc;
 
-use rustfft::{Fft, FftPlanner};
+use rustfft::Fft;
 
+use crate::spectral_support::plan_forward_analysis;
 use crate::Sample;
 
 mod spectral;
 
 use spectral::{
-    added_sideband_ratio, hann_window, normalized_spectral_distance, normalized_spectrum,
-    window_fits,
+    added_sideband_ratio, normalized_spectral_distance, normalized_spectrum, window_fits,
 };
 
 const SPECTRAL_WINDOW_SIZE: usize = 4_096;
@@ -67,9 +67,7 @@ pub fn measure_tonal_texture(
         return invalid_measurement(ratio);
     }
 
-    let mut planner = FftPlanner::<f32>::new();
-    let fft = planner.plan_fft_forward(SPECTRAL_WINDOW_SIZE);
-    let window = hann_window(SPECTRAL_WINDOW_SIZE);
+    let (fft, window) = plan_forward_analysis(SPECTRAL_WINDOW_SIZE);
     let centers = evenly_spaced_centers(source.len(), ratio, output.len());
     let mut residual_sum = 0.0;
     let mut residual_max = 0.0f64;

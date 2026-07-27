@@ -110,9 +110,13 @@ pub(super) fn export_blind_listening_pack(
 
         let mut stretcher = OfflineHighQualityStretcher::with_path(render.ratio, signal_path);
         let signal_samples = if source_audio.channels == 1 {
-            stretcher.stretch_mono(&source_audio.samples)
+            stretcher
+                .stretch_mono(&source_audio.samples)
+                .expect("render fits the offline output bound")
         } else {
-            stretcher.stretch_interleaved_stereo(&source_audio.samples)
+            stretcher
+                .stretch_interleaved_stereo(&source_audio.samples)
+                .expect("render fits the offline output bound")
         };
         let matched = level_match_group(
             &source_audio.samples,

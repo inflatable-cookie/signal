@@ -99,6 +99,29 @@ pub(crate) fn transient_reset_phase_vocoder_linked_stereo(
     output
 }
 
+/// Largest synthesis hop, as a fraction of the window, that keeps overlap-add
+/// coverage intact. Above this the window-power normalization gate zeroes
+/// output samples. Frozen by Contract `046`, 2026-07-27 addendum.
+pub(crate) const MAX_SYNTHESIS_HOP_WINDOW_FRACTION: f64 = 0.75;
+
+/// Analysis hop that keeps `analysis_hop * ratio` inside the overlap coverage
+/// bound. Returns `analysis_hop` unchanged whenever the configured geometry
+/// already satisfies it, so ratios inside the bound stay byte-exact.
+pub(crate) fn overlap_safe_analysis_hop(
+    analysis_hop: usize,
+    ratio: f64,
+    window_size: usize,
+) -> usize {
+    if !ratio.is_finite() || ratio <= 0.0 {
+        return analysis_hop;
+    }
+    let max_synthesis_hop = MAX_SYNTHESIS_HOP_WINDOW_FRACTION * window_size as f64;
+    if analysis_hop as f64 * ratio <= max_synthesis_hop {
+        return analysis_hop;
+    }
+    ((max_synthesis_hop / ratio).floor() as usize).clamp(1, analysis_hop)
+}
+
 fn run_phase_vocoder(
     input: &[Sample],
     target_len: usize,
@@ -107,6 +130,7 @@ fn run_phase_vocoder(
     analysis_hop: usize,
     mode: PhasePropagationMode,
 ) -> Vec<Sample> {
+    let analysis_hop = overlap_safe_analysis_hop(analysis_hop, ratio, window_size);
     // Give the first and last source samples complete overlapping analysis
     // windows. The extra post-roll hop guarantees that the cropped target
     // remains inside synthesized coverage for both compression and expansion.
@@ -116,10 +140,12 @@ fn run_phase_vocoder(
     padded_input[prefix_frames..prefix_frames + input.len()].copy_from_slice(input);
 
     // Synthesis hops scale while the samples inside each synthesis window do
-    // not. Align the analysis and synthesis window centres before cropping.
-    let half_window = window_size as f64 * 0.5;
-    let output_start =
-        ((prefix_frames as f64 - half_window) * ratio + half_window).round() as usize;
+    // not, so the crop starts at the analysis window centre. The prefix is
+    // exactly half a window, so the ratio-scaled centre offset is always zero
+    // and the start is simply that half window; the earlier expression spelled
+    // this as `((prefix - half_window) * ratio + half_window)`, which reads as
+    // ratio-dependent but never was.
+    let output_start = prefix_frames;
     let output_end = output_start + target_len;
     let config =
         PhaseVocoderConfig::new(&padded_input, output_end, ratio, window_size, analysis_hop);
@@ -180,6 +206,10 @@ struct DraftPhaseVocoder {
 
 struct PhaseVocoderAnalysisState {
     forward: Arc<dyn Fft<f32>>,
+    /// Caller-owned FFT scratch. `Fft::process` allocates its own scratch on
+    /// every call, which is two heap allocations per STFT frame in the hot
+    /// loop; the RealtimePreview kernel already avoided that.
+    scratch: Vec<Complex32>,
     current_magnitudes: Vec<f32>,
     current_phases: Vec<f32>,
     current_peaks: Vec<SpectralPeak>,
@@ -198,6 +228,7 @@ struct PhaseVocoderPropagationState {
 
 struct PhaseVocoderSynthesisState {
     inverse: Arc<dyn Fft<f32>>,
+    scratch: Vec<Complex32>,
     spectrum: Vec<Complex32>,
     output: Vec<f32>,
     normalization: Vec<f32>,
@@ -226,6 +257,7 @@ impl DraftPhaseVocoder {
         let output_len = ola_len.max(config.target_len);
 
         let analysis = PhaseVocoderAnalysisState {
+            scratch: vec![Complex32::new(0.0, 0.0); forward.get_inplace_scratch_len()],
             forward,
             current_magnitudes: vec![0.0; config.bins],
             current_phases: vec![0.0; config.bins],
@@ -242,6 +274,7 @@ impl DraftPhaseVocoder {
             synthesis_phase: vec![0.0; config.bins],
         };
         let synthesis = PhaseVocoderSynthesisState {
+            scratch: vec![Complex32::new(0.0, 0.0); inverse.get_inplace_scratch_len()],
             inverse,
             spectrum: vec![Complex32::new(0.0, 0.0); config.window_size],
             output: vec![0.0; output_len],
@@ -280,7 +313,9 @@ impl DraftPhaseVocoder {
             *slot = Complex32::new(windowed, 0.0);
         }
         self.analysis.current_energy /= self.config.window_size as f64;
-        self.analysis.forward.process(&mut self.analysis.buffer);
+        self.analysis
+            .forward
+            .process_with_scratch(&mut self.analysis.buffer, &mut self.analysis.scratch);
     }
 
     fn track_spectral_peaks(&mut self, frame_index: usize) {
@@ -424,7 +459,9 @@ impl DraftPhaseVocoder {
     }
 
     fn synthesize_frame(&mut self, frame_index: usize) {
-        self.synthesis.inverse.process(&mut self.synthesis.spectrum);
+        self.synthesis
+            .inverse
+            .process_with_scratch(&mut self.synthesis.spectrum, &mut self.synthesis.scratch);
         let synthesis_start = (frame_index as f64 * self.config.synthesis_hop).round() as usize;
         let scale = 1.0 / self.config.window_size as f32;
         for (index, weight) in self.window.iter().enumerate() {
@@ -453,6 +490,11 @@ impl DraftPhaseVocoder {
     }
 }
 
+/// Wrap a phase into `-PI..PI` by rounding.
+///
+/// See the crate-root `wrap_phase` for why this second implementation is
+/// retained: the two forms are not bit-equivalent, so unifying them changes
+/// rendered output and needs its own evidence.
 fn wrap_phase(phase: f32) -> f32 {
     let tau = std::f32::consts::TAU;
     phase - tau * (phase / tau).round()
@@ -502,6 +544,51 @@ mod tests {
                     (hash ^ u64::from(byte)).wrapping_mul(0x0000_0100_0000_01b3)
                 })
         })
+    }
+
+    /// `A1` byte-exactness control. The overlap law must be a no-op wherever
+    /// the configured geometry already satisfies it, so every ratio through
+    /// `3.0` at the retained `2048/512` geometry keeps the pre-correction
+    /// analysis hop and therefore the pre-correction output.
+    ///
+    /// This is asserted structurally rather than by output hash because f32
+    /// render output differs between optimization profiles, so an absolute
+    /// hash is only valid in the profile that captured it.
+    #[test]
+    fn overlap_safe_analysis_hop_is_a_no_op_through_ratio_three() {
+        for ratio in [0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 2.5, 3.0] {
+            assert_eq!(
+                overlap_safe_analysis_hop(512, ratio, 2_048),
+                512,
+                "ratio {ratio} must keep the configured hop"
+            );
+        }
+    }
+
+    /// `A1`. Above ratio `3.0` the law reduces the hop so the synthesis hop
+    /// stays inside `0.75 * window_size`.
+    #[test]
+    fn overlap_safe_analysis_hop_bounds_the_synthesis_hop() {
+        let bound = MAX_SYNTHESIS_HOP_WINDOW_FRACTION * 2_048.0;
+        for (ratio, expected) in [(3.5, 438), (4.0, 384), (6.0, 256), (8.0, 192), (16.0, 96)] {
+            let hop = overlap_safe_analysis_hop(512, ratio, 2_048);
+            assert_eq!(hop, expected, "ratio {ratio}");
+            assert!(
+                hop as f64 * ratio <= bound,
+                "ratio {ratio}: synthesis hop {} passes the bound {bound}",
+                hop as f64 * ratio
+            );
+        }
+    }
+
+    /// The law never enlarges a caller's hop and never returns zero.
+    #[test]
+    fn overlap_safe_analysis_hop_stays_within_caller_bounds() {
+        assert_eq!(overlap_safe_analysis_hop(128, 64.0, 512), 6);
+        assert_eq!(overlap_safe_analysis_hop(1, 1_000.0, 64), 1);
+        assert_eq!(overlap_safe_analysis_hop(512, f64::NAN, 2_048), 512);
+        assert_eq!(overlap_safe_analysis_hop(512, 0.0, 2_048), 512);
+        assert_eq!(overlap_safe_analysis_hop(64, 0.5, 2_048), 64);
     }
 
     #[test]

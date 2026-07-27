@@ -1,19 +1,25 @@
 use super::{interpolate, plan::Plan, schedule, CandidateError, Request};
 
 #[cfg(test)]
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::cell::Cell;
 
+// Thread-scoped on purpose. A process-global counter is shared with every
+// other test thread, so a concurrent Cyclic render would be counted against
+// whichever test happened to be measuring. This is the same defect class the
+// creative allocation gate carried before `g10.036` Batch 36.2.
 #[cfg(test)]
-static OUTPUT_ALLOCATION_COUNT: AtomicUsize = AtomicUsize::new(0);
+thread_local! {
+    static OUTPUT_ALLOCATION_COUNT: Cell<usize> = const { Cell::new(0) };
+}
 
 #[cfg(test)]
 pub(super) fn reset_output_allocation_count() {
-    OUTPUT_ALLOCATION_COUNT.store(0, Ordering::SeqCst);
+    OUTPUT_ALLOCATION_COUNT.with(|count| count.set(0));
 }
 
 #[cfg(test)]
 pub(super) fn output_allocation_count() -> usize {
-    OUTPUT_ALLOCATION_COUNT.load(Ordering::SeqCst)
+    OUTPUT_ALLOCATION_COUNT.with(Cell::get)
 }
 
 pub(super) fn render(request: Request<'_>, plan: &Plan) -> Result<Vec<f32>, CandidateError> {
@@ -25,7 +31,7 @@ pub(super) fn render(request: Request<'_>, plan: &Plan) -> Result<Vec<f32>, Cand
         .checked_mul(plan.channels)
         .ok_or(CandidateError::AllocationOverflow)?;
     #[cfg(test)]
-    OUTPUT_ALLOCATION_COUNT.fetch_add(1, Ordering::SeqCst);
+    OUTPUT_ALLOCATION_COUNT.with(|count| count.set(count.get().saturating_add(1)));
     let mut output = vec![0.0_f32; sample_count];
     for output_frame in 0..plan.target_frames {
         let (left_anchor, right_anchor, remainder) = schedule::output_anchors(plan, output_frame)?;

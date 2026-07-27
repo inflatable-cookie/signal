@@ -785,7 +785,8 @@ fn format_external_benchmark_quality_metrics(
         let ((signal, render_seconds), heap) = measure_peak_live_heap(|| {
             let started = Instant::now();
             let output = OfflineHighQualityStretcher::with_path(render.ratio, signal_path)
-                .stretch_mono(&source_mono);
+                .stretch_mono(&source_mono)
+                .expect("render fits the offline output bound");
             (output, started.elapsed().as_secs_f64())
         });
         let signal_transient = measure_transient_detail(

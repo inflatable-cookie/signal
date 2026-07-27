@@ -547,6 +547,10 @@ pub fn materialize_offline_stretch_artifact_pcm_with_chunk_config(
     source: &RenderSampleBuffer,
     chunk_config: StretchOfflineChunkConfig,
 ) -> Result<OfflineStretchArtifactPcm, OfflineStretchArtifactMaterializeError> {
+    // Chunk boundaries move where segment renders restart phase, so the policy
+    // this call renders with is part of what the artifact is. Key by the policy
+    // actually used rather than whatever the caller left on the identity.
+    let identity_input = &identity_input.clone().with_chunk_policy(chunk_config);
     let plan = plan_offline_stretch_artifact(scope, identity_input, promotion_receipt)?;
     if let Some(error) = materialization_error_for_capability(plan.capability_status) {
         return Err(error);
@@ -599,22 +603,30 @@ pub fn materialize_offline_stretch_artifact_pcm_with_chunk_config(
     );
     let frames =
         if selector_offline_path_requires_static_materialization(identity_input.offline_path) {
-            stretcher.stretch_interleaved_stereo(&source.frames)
+            stretcher
+                .stretch_interleaved_stereo(&source.frames)
+                .expect("render fits the offline output bound")
         } else if chunk_plan.is_single_chunk() {
             if pitch_shift.abs() > 1.0e-9 {
-                stretcher.stretch_dynamic_ratio_pitch_interleaved_stereo(
-                    &source.frames,
-                    &identity_input.ratio_curve,
-                    SampleRate(source.sample_rate_hz),
-                    pitch_shift,
-                )
+                stretcher
+                    .stretch_dynamic_ratio_pitch_interleaved_stereo(
+                        &source.frames,
+                        &identity_input.ratio_curve,
+                        SampleRate(source.sample_rate_hz),
+                        pitch_shift,
+                    )
+                    .expect("render fits the offline output bound")
             } else if identity_input.ratio_curve.is_empty() {
-                stretcher.stretch_interleaved_stereo(&source.frames)
+                stretcher
+                    .stretch_interleaved_stereo(&source.frames)
+                    .expect("render fits the offline output bound")
             } else {
-                stretcher.stretch_dynamic_ratio_interleaved_stereo(
-                    &source.frames,
-                    &identity_input.ratio_curve,
-                )
+                stretcher
+                    .stretch_dynamic_ratio_interleaved_stereo(
+                        &source.frames,
+                        &identity_input.ratio_curve,
+                    )
+                    .expect("render fits the offline output bound")
             }
         } else {
             materialize_chunked_offline_stretch_artifact_frames(
@@ -741,13 +753,17 @@ fn materialize_stretch_chunk_payload(
     let render_source = &even_source[render_start..render_end];
     let mut stretcher = OfflineHighQualityStretcher::with_path(chunk.ratio, offline_path);
     let rendered = if pitch_shift.abs() > 1.0e-9 {
-        stretcher.stretch_pitch_interleaved_stereo(
-            render_source,
-            SampleRate(sample_rate_hz),
-            pitch_shift,
-        )
+        stretcher
+            .stretch_pitch_interleaved_stereo(
+                render_source,
+                SampleRate(sample_rate_hz),
+                pitch_shift,
+            )
+            .expect("render fits the offline output bound")
     } else {
-        stretcher.stretch_interleaved_stereo(render_source)
+        stretcher
+            .stretch_interleaved_stereo(render_source)
+            .expect("render fits the offline output bound")
     };
 
     let prefix_source_frames = chunk.source_start_frame - chunk.render_start_frame;
@@ -2323,7 +2339,7 @@ mod tests {
         assert!(selector_artifact
             .receipt
             .cache_identity_key
-            .contains("offline_path=CompressionShortWindowSelector"));
+            .contains("offline_path=compression-short-window-selector"));
     }
 
     #[test]
@@ -2368,7 +2384,7 @@ mod tests {
         assert!(selector_artifact
             .receipt
             .cache_identity_key
-            .contains("offline_path=ExpansionShortWindowSelector"));
+            .contains("offline_path=expansion-short-window-selector"));
     }
 
     #[test]

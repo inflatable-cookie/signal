@@ -343,8 +343,83 @@ pub fn render_creative_stretch(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::StretchBackendTier;
 
     const SAMPLE_RATE: SampleRate = SampleRate(8_000);
+
+    /// Contract `085`, 2026-07-27: creative renders are uncacheable. The
+    /// surface must not grow a key, receipt, or artifact vocabulary without
+    /// the enumeration Contract `046` requires of the transparent identity.
+    #[test]
+    fn creative_surface_carries_no_cache_or_artifact_vocabulary() {
+        // Scan the production half only: this owner names the forbidden
+        // identifiers itself, and it lives below the test marker.
+        let file = include_str!("creative.rs");
+        let source = file
+            .split_once("#[cfg(test)]")
+            .expect("creative.rs has a test module marker")
+            .0;
+        for forbidden in [
+            "CacheIdentity",
+            "cache_key",
+            "canonical_key",
+            "stable_hash",
+            "PromotionReceipt",
+            "OfflineStretchArtifact",
+            "StretchOfflineChunk",
+        ] {
+            assert!(
+                !source.contains(forbidden),
+                "creative surface mentions `{forbidden}`; Contract `085` declares \
+                 creative renders uncacheable, so a cache surface needs a contract \
+                 change and a named consumer first"
+            );
+        }
+    }
+
+    /// No stretch tier describes a creative render, so no cache identity can
+    /// name one. Adding a tier variant breaks this match and this owner.
+    #[test]
+    fn no_stretch_tier_describes_a_creative_render() {
+        fn is_transparent_tier(tier: StretchBackendTier) -> bool {
+            match tier {
+                StretchBackendTier::Repitch
+                | StretchBackendTier::RealtimePreview
+                | StretchBackendTier::OfflineHighQuality => true,
+            }
+        }
+
+        for tier in [
+            StretchBackendTier::Repitch,
+            StretchBackendTier::RealtimePreview,
+            StretchBackendTier::OfflineHighQuality,
+        ] {
+            assert!(is_transparent_tier(tier));
+            let token = tier.cache_key_token();
+            for creative_word in ["creative", "dream", "cyclic"] {
+                assert!(
+                    !token.contains(creative_word),
+                    "tier token `{token}` names a creative render"
+                );
+            }
+        }
+    }
+
+    /// `render_creative_stretch` returns samples and nothing else. A caller
+    /// gets no key, receipt, or plan it could cache against.
+    #[test]
+    fn creative_render_returns_samples_without_a_cache_handle() {
+        let input = mono_input(64);
+        let rendered: Vec<Sample> = render_creative_stretch(CreativeStretchRequest::new(
+            &input,
+            1,
+            SAMPLE_RATE,
+            input.len() * 4,
+            CreativeStretchCharacter::Dream,
+        ))
+        .expect("admitted Dream request renders");
+        assert_eq!(rendered.len(), input.len() * 4);
+    }
 
     fn mono_input(frames: usize) -> Vec<Sample> {
         (0..frames)

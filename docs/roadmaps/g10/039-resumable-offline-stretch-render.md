@@ -1,8 +1,9 @@
 # 039 - Resumable Offline Stretch Render
 
-Status: planned; blocked on `g10.038`
+Status: active; Batch 39.3 in structural conformance iteration
 Owner: dsp
 Created: 2026-07-27
+Updated: 2026-07-27
 Depends on: `g10.036`, `g10.038`
 Governing contracts: `docs/contracts/046-sample-domain-time-stretch-engine-contract.md`,
 `docs/contracts/084-stretch-candidate-isolation-and-promotion-contract.md`
@@ -77,40 +78,123 @@ closed several `g10.031` candidates.
 
 ### Batch 39.1 - State Boundary Audit And Contract Amendment
 
-Status: blocked on `g10.038` Batch 38.6
+Status: complete
 
-Documentation only.
+Documentation only. No crate source changed.
 
-- [ ] enumerate every piece of renderer state that currently resets at a chunk
+- [x] enumerate every piece of renderer state that currently resets at a chunk
   or dynamic-ratio segment boundary, and what each reset costs audibly
-- [ ] measure the current chunked artifact path against a single whole-buffer
+- [x] measure the current chunked artifact path against a single whole-buffer
   render of the same source to quantify the boundary cost
-- [ ] amend Contract `046` with the resumable offline render boundary: what
+- [x] amend Contract `046` with the resumable offline render boundary: what
   state must persist, what determinism is promised across chunk sizes, and what
   memory bound applies
-- [ ] decide whether the ratio curve is consumed by the renderer directly or
+- [x] decide whether the ratio curve is consumed by the renderer directly or
   stays a caller-side segmentation concern
-- [ ] change documentation only
+- [x] change documentation only
+
+Result:
+
+- six pieces of state reset at every join: `synthesis_phase`, `previous_phase`,
+  `previous_magnitudes`, `previous_energy`, the `frame_index == 0` branch, and
+  the overlap-add accumulation
+- the two detector baselines had not been named before. A transient landing on
+  the first frame after a join is undetectable, because flux and energy have
+  nothing to compare against. That is the leading hypothesis for `A18`: both
+  sides of the `g10.036` listening round were segmented renders, so both
+  carried it
+- measured at the shipped `30`-second chunk policy on `60` seconds of stereo
+  material at ratio `1.25`, against a single-chunk control: correlation
+  `0.389976`, peak sample difference `1.0752`, and a seam step of `-240 dBFS`
+  against the control's own `-45.14 dBFS` signal step
+- the seam is flat and the renders still diverge. Sample continuity is not
+  phase continuity, which is precisely why segment-length tuning could never
+  fix what the listening rounds heard. Every export longer than the chunk
+  policy carries this today
+- ratio-curve ownership decided: the renderer consumes the curve. Caller-side
+  segmentation is what creates the joins, and a state-carrying renderer needs
+  the active ratio per analysis frame rather than a pre-cut list of spans.
+  `plan_offline_stretch_chunks` stays the bounded-memory authority and stops
+  being a segmentation authority, which also closes the `g10.036` scope
+  boundary where a dense curve could still cut sub-window chunks
+- chunk-size independence is frozen as exact, not tolerance-bounded. A
+  tolerance would readmit the defect the lane exists to remove
+- this is not a byte-exact lane. Batch 39.2 must state which `g10.036` controls
+  survive before implementation opens, and the behavior version and cache
+  schema advance again when it lands
 
 ### Batch 39.2 - Complete Resumable Render Brief
 
-Status: blocked on Batch 39.1
+Status: complete
 
-Documentation only.
+Documentation only. No crate source changed.
 
-- [ ] freeze the API shape: construction, per-chunk render, carried state,
+- [x] freeze the API shape: construction, per-chunk render, carried state,
   flush, and reset
-- [ ] freeze the state inventory with a geometry-derived capacity for each
+- [x] freeze the state inventory with a geometry-derived capacity for each
   item and a total memory ceiling
-- [ ] prove the ceiling is duration-independent
-- [ ] freeze the equivalence law: chunked render output versus whole-buffer
-  render output, and the tolerance if it is not bit-exact
-- [ ] freeze the evidence order and the cleanup and rejection rules
-- [ ] change documentation only
+- [x] prove the ceiling is duration-independent
+- [x] freeze the equivalence law
+- [x] freeze the evidence order and the cleanup and rejection rules
+- [x] state which `g10.036` byte-exact controls survive a state-carrying
+  renderer, and which must be re-baselined
+- [x] change documentation only
+
+Result:
+
+- API is `new`, `render`, `flush`, `reset`. Output is not one-to-one with
+  input, so the renderer holds up to one window of unsynthesized source and
+  `flush` drains it. The ratio curve lives in the config, per the Batch 39.1
+  ownership decision
+- six state items persist, and the `frame_index == 0` branch becomes a
+  construction-time condition rather than a per-call one. That is what actually
+  removes the join
+- memory ceiling frozen at `8 MiB`. Derived, not asserted: `249932 B` at the
+  retained `2048` window in stereo, `7995468 B` at the frozen `65536` maximum,
+  leaving `393140 B` headroom
+- the maximum window is new. `with_window` clamps only to a power of two at or
+  above `64` with no upper limit, so "bounded by geometry" was not a number
+  until this brief froze one
+- equivalence is exact: for any chunk partition, concatenated output must be
+  bit-identical to one whole-source render plus `flush`
+- surviving controls named. Seven `g10.036` owners survive unchanged, three
+  change meaning because coalescing and seams disappear with the joins, and
+  `segmented_render_matches_whole_render_at_constant_ratio` must flip from
+  `0.034` correlation to passing at `0.99`
 
 ### Batch 39.3 - Isolated Implementation
 
-Status: blocked on Batch 39.2
+Status: in structural conformance iteration; three of four gates failed
+
+First candidate compiles in the isolated worktree
+`candidate/g10-039-resumable`. Gate results:
+
+| gate | result |
+| --- | --- |
+| `G1` chunk-size independence, static ratio | failed at chunk `1024` |
+| `G1b` chunk-size independence, dynamic ratio | failed at chunk `2048` |
+| `G2` memory ceiling at maximum geometry | failed, `11665468 B` against `8388608 B` |
+| `G3` output length matches target | passed at four ratios |
+| `G4` correlation against a whole render | failed, `-0.082711` |
+
+`G3` passing with `G1` failing is the informative pair: output length is correct
+for any partition, so frame scheduling is already chunk-independent and the
+defect is in emission and ring management. `G2` is a code error against the
+brief, which sized the rings at twice the window while the implementation
+allocates four times.
+
+Contract `084` Rule 11 permits iteration on compile, construction, and
+structural conformance before an acoustic checkpoint is frozen, so the candidate
+is retained. No candidate code entered `main`.
+
+Leading suspects recorded in
+`docs/logs/2026-07/27-g10-039-first-candidate-conformance.md`: mid-loop `emit`
+coupling flush position to chunk boundaries, an output ring sized like the input
+ring despite the synthesis cursor advancing faster above ratio `1.0`, and the
+leading-pad crop interleaving with the target check.
+
+If a second attempt fails the same class, Rule 7 applies and the design needs
+reassessment rather than another correction.
 
 - [ ] implement the frozen brief once, isolated per Contract `084` Rule 2
 - [ ] prove chunk-size independence across at least three chunk sizes
@@ -175,4 +259,7 @@ Status: blocked on Batch 39.4
 
 ## Next Task
 
-Blocked. Open Batch 39.1 after `g10.038` Batch 38.6 closes.
+Continue Batch 39.3: correct emission and ring sizing against the frozen brief,
+keep frame scheduling as it is, and re-run the structural gates. The acoustic
+checkpoint opens only once compile, construction, and all structural gates pass
+on a clean tree.

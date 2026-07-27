@@ -1,13 +1,86 @@
-use crate::{OfflineHighQualityPath, StretchBackendTier};
+use crate::{
+    OfflineHighQualityPath, StretchBackendTier, StretchOfflineChunkConfig, DEFAULT_ANALYSIS_HOP,
+    DEFAULT_WINDOW_SIZE,
+};
 
 const FNV_OFFSET_BASIS: u64 = 0xcbf2_9ce4_8422_2325;
 const FNV_PRIME: u64 = 0x0000_0100_0000_01b3;
 
 /// Current Signal-owned stretch cache identity schema.
-pub const STRETCH_CACHE_IDENTITY_SCHEMA_VERSION: &str = "signal-stretch-cache-v2";
+///
+/// `v3` adds render geometry, chunk policy, and the crate-owned behavior
+/// version. Every `v2` artifact is invalid: it was keyed without those inputs,
+/// and its renderer predates the 2026-07-27 defect correction. There is no
+/// migration, because a `v2` key cannot describe which render it holds.
+pub const STRETCH_CACHE_IDENTITY_SCHEMA_VERSION: &str = "signal-stretch-cache-v3";
 
 /// Version tag for the first-party Signal stretch engine implementation.
-pub const SIGNAL_STRETCH_ENGINE_VERSION: &str = "signal-native-stretch-v2";
+pub const SIGNAL_STRETCH_ENGINE_VERSION: &str = "signal-native-stretch-v3";
+
+/// Crate-owned renderer behavior version.
+///
+/// This is not part of [`StretchCacheIdentityInput`] on purpose. A caller can
+/// set any `engine_version` it likes, so a caller-supplied field cannot be
+/// trusted to describe renderer behavior. This constant is written into the
+/// canonical key by the crate itself.
+///
+/// Contract `046` requires it to advance in the same change that alters
+/// renderer output. It last advanced for the `g10.036` defect correction, which
+/// changed output at every ratio above `3.0` and for every dynamic-ratio curve.
+pub const SIGNAL_STRETCH_BEHAVIOR_VERSION: &str = "signal-stretch-behavior-2026-07-27";
+
+impl StretchBackendTier {
+    /// Stable key token for cache identity.
+    ///
+    /// Explicit rather than derived: `Debug` output is not a stability
+    /// contract, so a variant rename would silently rekey every artifact.
+    pub const fn cache_key_token(self) -> &'static str {
+        match self {
+            Self::Repitch => "repitch",
+            Self::RealtimePreview => "realtime-preview",
+            Self::OfflineHighQuality => "offline-high-quality",
+        }
+    }
+}
+
+impl OfflineHighQualityPath {
+    /// Stable key token for cache identity.
+    pub const fn cache_key_token(self) -> &'static str {
+        match self {
+            Self::Default => "default",
+            Self::CompressionShortWindowSelector => "compression-short-window-selector",
+            Self::ExpansionShortWindowSelector => "expansion-short-window-selector",
+        }
+    }
+}
+
+/// STFT geometry a render was produced with.
+///
+/// `OfflineHighQualityStretcher::with_window` is public, so two renders of one
+/// source at different geometries are different audio and must not share a key.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct StretchRenderGeometry {
+    /// STFT window size in sample frames.
+    pub window_size: usize,
+    /// Analysis hop in sample frames, before the overlap coverage law adapts it.
+    pub analysis_hop: usize,
+}
+
+impl StretchRenderGeometry {
+    /// Construct a render geometry.
+    pub const fn new(window_size: usize, analysis_hop: usize) -> Self {
+        Self {
+            window_size,
+            analysis_hop,
+        }
+    }
+}
+
+impl Default for StretchRenderGeometry {
+    fn default() -> Self {
+        Self::new(DEFAULT_WINDOW_SIZE, DEFAULT_ANALYSIS_HOP)
+    }
+}
 
 /// One point on an output/input stretch-ratio curve.
 #[derive(Clone, Debug, PartialEq)]
@@ -106,6 +179,15 @@ pub struct StretchCacheIdentityInput {
     pub warp_markers: Vec<StretchWarpMarker>,
     /// Projection epoch for the ADR-001 tick/sample mapping used by this render.
     pub projection_epoch: String,
+    /// STFT geometry the render used.
+    pub render_geometry: StretchRenderGeometry,
+    /// Bounded-memory chunk policy the render used.
+    ///
+    /// Chunk boundaries move where segment renders restart phase, so two
+    /// chunk policies produce different audio from one source. Measured at
+    /// correlation `-0.296620` between a single-chunk and an eight-chunk render
+    /// of the same identity.
+    pub chunk_policy: StretchOfflineChunkConfig,
 }
 
 impl StretchCacheIdentityInput {
@@ -126,12 +208,26 @@ impl StretchCacheIdentityInput {
             pitch_curve: Vec::new(),
             warp_markers: Vec::new(),
             projection_epoch: projection_epoch.into(),
+            render_geometry: StretchRenderGeometry::default(),
+            chunk_policy: StretchOfflineChunkConfig::default(),
         }
     }
 
     /// Set the offline high-quality renderer path.
     pub fn with_offline_path(mut self, offline_path: OfflineHighQualityPath) -> Self {
         self.offline_path = offline_path;
+        self
+    }
+
+    /// Set the STFT geometry the render used.
+    pub fn with_render_geometry(mut self, render_geometry: StretchRenderGeometry) -> Self {
+        self.render_geometry = render_geometry;
+        self
+    }
+
+    /// Set the bounded-memory chunk policy the render used.
+    pub fn with_chunk_policy(mut self, chunk_policy: StretchOfflineChunkConfig) -> Self {
+        self.chunk_policy = chunk_policy;
         self
     }
 
@@ -200,6 +296,8 @@ pub enum StretchCacheIdentityError {
     InvalidRatio,
     /// Pitch curve contained a non-finite value.
     InvalidPitch,
+    /// Render geometry had a zero window size or analysis hop.
+    InvalidRenderGeometry,
 }
 
 fn validate_input(input: &StretchCacheIdentityInput) -> Result<(), StretchCacheIdentityError> {
@@ -217,6 +315,9 @@ fn validate_input(input: &StretchCacheIdentityInput) -> Result<(), StretchCacheI
     }
     if input.channel_layout.sample_rate_hz == 0 {
         return Err(StretchCacheIdentityError::InvalidSampleRate);
+    }
+    if input.render_geometry.window_size == 0 || input.render_geometry.analysis_hop == 0 {
+        return Err(StretchCacheIdentityError::InvalidRenderGeometry);
     }
     if input
         .ratio_curve
@@ -242,12 +343,39 @@ fn canonical_key(input: &StretchCacheIdentityInput) -> String {
         "schema",
         STRETCH_CACHE_IDENTITY_SCHEMA_VERSION.to_string(),
     );
+    // Crate-owned, never caller-supplied: a caller can set any engine_version,
+    // so renderer behavior needs a field the caller cannot get wrong.
+    push_field(
+        &mut key,
+        "behavior",
+        SIGNAL_STRETCH_BEHAVIOR_VERSION.to_string(),
+    );
     push_field(&mut key, "engine", input.engine_version.clone());
-    push_field(&mut key, "tier", format!("{:?}", input.tier));
+    push_field(&mut key, "tier", input.tier.cache_key_token().to_string());
     push_field(
         &mut key,
         "offline_path",
-        format!("{:?}", input.offline_path),
+        input.offline_path.cache_key_token().to_string(),
+    );
+    push_field(
+        &mut key,
+        "window_size",
+        input.render_geometry.window_size.to_string(),
+    );
+    push_field(
+        &mut key,
+        "analysis_hop",
+        input.render_geometry.analysis_hop.to_string(),
+    );
+    push_field(
+        &mut key,
+        "chunk_max_source_frames",
+        input.chunk_policy.max_source_frames.to_string(),
+    );
+    push_field(
+        &mut key,
+        "chunk_overlap_frames",
+        input.chunk_policy.overlap_frames.to_string(),
     );
     push_field(
         &mut key,
@@ -364,9 +492,9 @@ mod tests {
         assert_eq!(left, right);
         assert!(left
             .canonical_key
-            .contains("schema=signal-stretch-cache-v2"));
-        assert!(left.canonical_key.contains("tier=OfflineHighQuality"));
-        assert!(left.canonical_key.contains("offline_path=Default"));
+            .contains("schema=signal-stretch-cache-v3"));
+        assert!(left.canonical_key.contains("tier=offline-high-quality"));
+        assert!(left.canonical_key.contains("offline_path=default"));
         assert_eq!(left.stable_hash.len(), 16);
     }
 
@@ -405,10 +533,119 @@ mod tests {
         );
         assert!(changed_compression_path
             .canonical_key
-            .contains("offline_path=CompressionShortWindowSelector"));
+            .contains("offline_path=compression-short-window-selector"));
         assert!(changed_expansion_path
             .canonical_key
-            .contains("offline_path=ExpansionShortWindowSelector"));
+            .contains("offline_path=expansion-short-window-selector"));
+    }
+
+    #[test]
+    fn cache_identity_covers_render_geometry() {
+        let base = base_input().identity().expect("valid identity");
+        let shorter_window = base_input()
+            .with_render_geometry(StretchRenderGeometry::new(1_024, 256))
+            .identity()
+            .expect("valid identity");
+        let same_window_finer_hop = base_input()
+            .with_render_geometry(StretchRenderGeometry::new(2_048, 256))
+            .identity()
+            .expect("valid identity");
+
+        assert_ne!(base.stable_hash, shorter_window.stable_hash);
+        assert_ne!(base.stable_hash, same_window_finer_hop.stable_hash);
+        assert_ne!(
+            shorter_window.stable_hash,
+            same_window_finer_hop.stable_hash
+        );
+        assert!(base.canonical_key.contains("window_size=2048"));
+        assert!(base.canonical_key.contains("analysis_hop=512"));
+    }
+
+    #[test]
+    fn cache_identity_covers_chunk_policy() {
+        let base = base_input().identity().expect("valid identity");
+        let small_chunks = base_input()
+            .with_chunk_policy(StretchOfflineChunkConfig::new(12_000, 2_048))
+            .identity()
+            .expect("valid identity");
+        let same_chunks_more_overlap = base_input()
+            .with_chunk_policy(StretchOfflineChunkConfig::new(12_000, 4_096))
+            .identity()
+            .expect("valid identity");
+
+        assert_ne!(base.stable_hash, small_chunks.stable_hash);
+        assert_ne!(
+            small_chunks.stable_hash,
+            same_chunks_more_overlap.stable_hash
+        );
+    }
+
+    /// Key tokens are explicit strings, not `Debug` output. A variant rename
+    /// must not silently rekey every artifact, so these literals are the
+    /// contract and this owner fails if anyone changes them.
+    #[test]
+    fn cache_identity_uses_stable_key_tokens() {
+        assert_eq!(StretchBackendTier::Repitch.cache_key_token(), "repitch");
+        assert_eq!(
+            StretchBackendTier::RealtimePreview.cache_key_token(),
+            "realtime-preview"
+        );
+        assert_eq!(
+            StretchBackendTier::OfflineHighQuality.cache_key_token(),
+            "offline-high-quality"
+        );
+        assert_eq!(OfflineHighQualityPath::Default.cache_key_token(), "default");
+        assert_eq!(
+            OfflineHighQualityPath::CompressionShortWindowSelector.cache_key_token(),
+            "compression-short-window-selector"
+        );
+        assert_eq!(
+            OfflineHighQualityPath::ExpansionShortWindowSelector.cache_key_token(),
+            "expansion-short-window-selector"
+        );
+
+        let identity = base_input().identity().expect("valid identity");
+        assert!(identity.canonical_key.contains("tier=offline-high-quality"));
+        assert!(identity.canonical_key.contains("offline_path=default"));
+        assert!(!identity.canonical_key.contains("OfflineHighQuality"));
+    }
+
+    /// The behavior version is crate-owned. A caller can set any
+    /// `engine_version`, so renderer behavior must not depend on a field the
+    /// caller controls.
+    #[test]
+    fn cache_identity_carries_a_crate_owned_behavior_version() {
+        let identity = base_input().identity().expect("valid identity");
+        assert!(identity
+            .canonical_key
+            .contains(&format!("behavior={SIGNAL_STRETCH_BEHAVIOR_VERSION}")));
+
+        let caller_overridden = StretchCacheIdentityInput {
+            engine_version: "someone-elses-engine".to_string(),
+            ..base_input()
+        }
+        .identity()
+        .expect("valid identity");
+        assert!(caller_overridden
+            .canonical_key
+            .contains(&format!("behavior={SIGNAL_STRETCH_BEHAVIOR_VERSION}")));
+        assert_ne!(identity.stable_hash, caller_overridden.stable_hash);
+    }
+
+    #[test]
+    fn cache_identity_schema_and_engine_are_v3() {
+        assert_eq!(
+            STRETCH_CACHE_IDENTITY_SCHEMA_VERSION,
+            "signal-stretch-cache-v3"
+        );
+        assert_eq!(SIGNAL_STRETCH_ENGINE_VERSION, "signal-native-stretch-v3");
+
+        // A v2 artifact cannot collide with a v3 one: both the schema line and
+        // the engine line differ, and v2 had no geometry, chunk, or behavior
+        // fields at all.
+        let v3 = base_input().identity().expect("valid identity");
+        assert!(v3.canonical_key.contains("schema=signal-stretch-cache-v3"));
+        assert!(v3.canonical_key.contains("engine=signal-native-stretch-v3"));
     }
 
     #[test]

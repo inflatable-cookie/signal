@@ -65,8 +65,11 @@ direct_renewal_dream_tests!();
 mod formant_boundary;
 mod phase_vocoder;
 mod promotion;
+mod realtime_preview;
 #[cfg(any(test, feature = "evidence"))]
 mod render_integrity;
+#[cfg(any(test, feature = "evidence"))]
+mod spectral_support;
 #[cfg(any(test, feature = "evidence"))]
 mod tonal_texture;
 #[cfg(any(test, feature = "evidence"))]
@@ -104,8 +107,9 @@ pub use benchmark::{
 };
 pub use cache_identity::{
     StretchCacheIdentity, StretchCacheIdentityError, StretchCacheIdentityInput,
-    StretchChannelLayout, StretchPitchPoint, StretchRatioPoint, StretchWarpMarker,
-    SIGNAL_STRETCH_ENGINE_VERSION, STRETCH_CACHE_IDENTITY_SCHEMA_VERSION,
+    StretchChannelLayout, StretchPitchPoint, StretchRatioPoint, StretchRenderGeometry,
+    StretchWarpMarker, SIGNAL_STRETCH_BEHAVIOR_VERSION, SIGNAL_STRETCH_ENGINE_VERSION,
+    STRETCH_CACHE_IDENTITY_SCHEMA_VERSION,
 };
 #[cfg(any(test, feature = "evidence"))]
 pub use corpus_report::{
@@ -125,6 +129,15 @@ pub use creative::{
 };
 #[cfg(any(test, feature = "evidence"))]
 pub use formant_boundary::{measure_formant_boundary, StretchFormantBoundaryMeasurement};
+pub use realtime_preview::{
+    plan_realtime_preview_stream, project_realtime_preview_fixed_ratio_source_advance,
+    RealtimePreviewCallbackProcessError, RealtimePreviewCallbackProcessReport,
+    RealtimePreviewCallbackState, RealtimePreviewCallbackTimelineMode,
+    RealtimePreviewDynamicSourceProjectionReport, RealtimePreviewIntegrationMode,
+    RealtimePreviewPlanError, RealtimePreviewSourceProjectionReport,
+    RealtimePreviewStreamConfig, RealtimePreviewStreamingContract,
+    RealtimePreviewUnsupportedMode,
+};
 #[cfg(any(test, feature = "evidence"))]
 pub use promotion::{
     current_synthetic_offline_high_quality_promotion_receipt, StretchSyntheticPromotionPolicy,
@@ -149,20 +162,102 @@ pub use transient_detail::{
 #[cfg(any(test, feature = "evidence"))]
 pub use transient_smear::{
     detect_stretch_transients, detect_stretch_transients_with_policy, measure_transient_smear,
-    measure_transient_smear_with_output_recovery_policy, measure_transient_smear_with_policies,
-    measure_transient_smear_with_policy, StretchTransientDetectorPolicy, StretchTransientEvent,
-    StretchTransientSmearMeasurement,
+    StretchTransientDetectorPolicy, StretchTransientEvent, StretchTransientSmearMeasurement,
+    StretchTransientSmearPolicies,
 };
 
 use phase_vocoder::{
     phase_vocoder, transient_reset_phase_vocoder, transient_reset_phase_vocoder_linked_stereo,
 };
-use rustfft::{num_complex::Complex32, Fft, FftPlanner};
 use signal_dsp_resample::{resample_mono, ResampleConfig, ResampleQuality};
 use signal_primitives::{Sample, SampleRate};
-use std::sync::Arc;
 
 const DYNAMIC_RATIO_SEAM_SMOOTH_FRAMES: usize = 256;
+
+/// Analysis hops of source, beyond one window, that every dynamic-ratio
+/// segment must carry so the phase vocoder has overlapping frames to track.
+///
+/// Contract `046` freezes one window as the floor. This is stricter for two
+/// measured reasons.
+///
+/// Pitch: a single-window segment gives the phase vocoder one analysis frame
+/// and tracks the source poorly. On a `440 Hz` tone through a curve sampled
+/// every `1024` frames, three extra hops leave `19.6` cents of error, eight
+/// leave `2.8`.
+///
+/// Seam-rate modulation: segments render independently, so every join leaves an
+/// envelope dip and the render modulates at the segment rate. Concealed
+/// listening heard it as a secondary rhythmic pulse. Measured envelope
+/// modulation at the segment period against a `0.04 dB` whole-render floor:
+/// `0.545 dB` at eight extra hops, `0.268` at sixteen, `0.115` at
+/// thirty-two, `0.039` at sixty-four.
+///
+/// Thirty-two is the balance point. Sixty-four reaches the floor but its
+/// `725 ms` minimum swallows realistic tempo-ramp spans. At the retained
+/// `2048/512` geometry this is `18432` source frames, `384 ms` at 48 kHz.
+///
+/// The modulation is inherent to independently rendered segments. `g10.039`
+/// removes it by carrying renderer state across the join instead of lengthening
+/// segments.
+const MIN_DYNAMIC_RATIO_SEGMENT_EXTRA_HOPS: usize = 32;
+
+/// Largest whole-buffer render, in output samples across all channels.
+///
+/// One gibibyte of [`Sample`]: roughly 93 minutes mono or 46 minutes stereo at
+/// 48 kHz in a single call. Longer material is the offline chunk plan's
+/// responsibility (see [`plan_offline_stretch_chunks`]). Frozen by Contract
+/// `046`, 2026-07-27 addendum.
+pub const MAX_OFFLINE_STRETCH_OUTPUT_SAMPLES: usize = 268_435_456;
+
+/// Whole-buffer stretch render failure.
+///
+/// A backend that cannot serve a request says so instead of attempting the
+/// allocation.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum StretchRenderError {
+    /// The requested output exceeds [`MAX_OFFLINE_STRETCH_OUTPUT_SAMPLES`].
+    OutputTooLarge {
+        /// Output samples the request would have produced, saturated.
+        requested_samples: u128,
+        /// Frozen ceiling in output samples.
+        maximum_samples: usize,
+    },
+}
+
+/// Validate the output size one whole-buffer render would produce.
+///
+/// Returns the target frame count when the render fits inside
+/// [`MAX_OFFLINE_STRETCH_OUTPUT_SAMPLES`].
+fn checked_target_frames(
+    source_frames: usize,
+    ratio: f64,
+    channels: usize,
+) -> Result<usize, StretchRenderError> {
+    let target_frames = (source_frames as f64 * ratio).round();
+    checked_output_frames(target_frames, channels)
+}
+
+fn checked_output_frames(target_frames: f64, channels: usize) -> Result<usize, StretchRenderError> {
+    let samples = target_frames * channels as f64;
+    if !samples.is_finite() || samples < 0.0 || samples > MAX_OFFLINE_STRETCH_OUTPUT_SAMPLES as f64
+    {
+        return Err(StretchRenderError::OutputTooLarge {
+            requested_samples: saturating_u128(samples),
+            maximum_samples: MAX_OFFLINE_STRETCH_OUTPUT_SAMPLES,
+        });
+    }
+    Ok(target_frames as usize)
+}
+
+fn saturating_u128(value: f64) -> u128 {
+    if !value.is_finite() || value <= 0.0 {
+        0
+    } else if value >= u128::MAX as f64 {
+        u128::MAX
+    } else {
+        value as u128
+    }
+}
 
 /// Quality tier of a stretch backend (memo 013 vocabulary). One tier exists
 /// today; real-time and offline production tiers land with the library
@@ -299,7 +394,10 @@ pub trait TimeStretcher {
     /// Stretch one mono buffer offline. Output length contract:
     /// `round(input.len() as f64 * ratio)` frames (identity ratio returns the
     /// input verbatim).
-    fn stretch_mono(&mut self, input: &[Sample]) -> Vec<Sample>;
+    ///
+    /// Renders larger than [`MAX_OFFLINE_STRETCH_OUTPUT_SAMPLES`] are refused
+    /// rather than attempted.
+    fn stretch_mono(&mut self, input: &[Sample]) -> Result<Vec<Sample>, StretchRenderError>;
 }
 
 /// Draft-quality phase vocoder time-stretcher.
@@ -385,1139 +483,6 @@ pub const EXPANSION_SHORT_WINDOW_SELECTOR_ANALYSIS_HOP: usize =
 /// many source transients before the selector may switch.
 pub const EXPANSION_SHORT_WINDOW_SELECTOR_MIN_CURRENT_MISSES: usize =
     COMPRESSION_SHORT_WINDOW_SELECTOR_MIN_CURRENT_MISSES;
-/// Integration posture for a RealtimePreview stream.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum RealtimePreviewIntegrationMode {
-    /// Preview renders are built control-side and handed to the render plane
-    /// as normal sample buffers.
-    AnticipativePreRender,
-    /// Direct render-callback processing by a proven allocation-free state
-    /// object. This mode is not implemented yet.
-    CallbackSafeStreaming,
-}
-
-/// Source/output timeline mode for a RealtimePreview callback stream.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum RealtimePreviewCallbackTimelineMode {
-    /// The caller supplies one input quantum for one output quantum. This can
-    /// prove callback-local DSP safety, but it is not a render-plane
-    /// time-stretch source-advance contract.
-    QuantumLocked,
-    /// The callback state owns ratio-projected source advancement and reports
-    /// consumed source position against produced output position.
-    SourceProjected,
-}
-
-/// Configuration used to plan a RealtimePreview stream.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct RealtimePreviewStreamConfig {
-    /// Session sample rate.
-    pub sample_rate: SampleRate,
-    /// Number of linked channels in the preview stream.
-    pub channel_count: usize,
-    /// Maximum render quantum or preview block size in sample frames.
-    pub max_block_frames: usize,
-    /// STFT window size in sample frames.
-    pub window_size: usize,
-    /// Analysis hop in sample frames.
-    pub analysis_hop: usize,
-}
-
-/// Planned latency and routing contract for a RealtimePreview stream.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct RealtimePreviewStreamingContract {
-    /// Validated stream configuration.
-    pub config: RealtimePreviewStreamConfig,
-    /// Current integration posture.
-    pub integration_mode: RealtimePreviewIntegrationMode,
-    /// Source/output timeline contract for callback processing.
-    pub callback_timeline_mode: RealtimePreviewCallbackTimelineMode,
-    /// Input-side latency in sample frames.
-    pub input_latency_frames: usize,
-    /// Output-side latency in sample frames.
-    pub output_latency_frames: usize,
-    /// Maximum source-frame alignment tolerance for an immediate ratio change.
-    pub ratio_change_alignment_tolerance_frames: usize,
-    /// Whether the planned path may run directly on the realtime callback.
-    pub audio_thread_processing_supported: bool,
-    /// Unsupported mode that keeps this contract out of direct callback use.
-    pub unsupported_mode: Option<RealtimePreviewUnsupportedMode>,
-}
-
-/// Fixed-ratio source projection for a RealtimePreview output span.
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct RealtimePreviewSourceProjectionReport {
-    /// Sanitized output/input duration ratio.
-    pub ratio: f64,
-    /// Output-domain start frame for the projected span.
-    pub output_start_frame: u64,
-    /// Output frames in this projected span.
-    pub output_frames: usize,
-    /// Exclusive output-domain end frame for the projected span.
-    pub output_end_frame: u64,
-    /// Fractional source-domain start frame.
-    pub source_start_frame: f64,
-    /// Fractional source-domain end frame.
-    pub source_end_frame: f64,
-    /// Fractional source-domain advance required for this output span.
-    pub source_advance_frames: f64,
-    /// First integer source frame needed by the projected span.
-    pub source_frame_floor: u64,
-    /// Exclusive integer source frame bound needed by the projected span.
-    pub source_frame_ceil: u64,
-    /// Integer source frame count covering the projected fractional span.
-    pub source_frames_required: usize,
-}
-
-/// Dynamic-ratio source projection for a RealtimePreview output span.
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct RealtimePreviewDynamicSourceProjectionReport {
-    /// Output-domain start frame for the projected span.
-    pub output_start_frame: u64,
-    /// Output frames in this projected span.
-    pub output_frames: usize,
-    /// Exclusive output-domain end frame for the projected span.
-    pub output_end_frame: u64,
-    /// Fractional source-domain start frame.
-    pub source_start_frame: f64,
-    /// Fractional source-domain end frame.
-    pub source_end_frame: f64,
-    /// Fractional source-domain advance required for this output span.
-    pub source_advance_frames: f64,
-    /// First integer source frame needed by the projected span.
-    pub source_frame_floor: u64,
-    /// Exclusive integer source frame bound needed by the projected span.
-    pub source_frame_ceil: u64,
-    /// Integer source frame count covering the projected fractional span.
-    pub source_frames_required: usize,
-    /// Active ratio at the start of this projection span.
-    pub start_ratio: f64,
-    /// Active ratio at the end of this projection span.
-    pub end_ratio: f64,
-    /// Whether a scheduled ratio change was applied inside this span.
-    pub ratio_change_applied: bool,
-    /// Number of scheduled source-projection ratio changes applied by this state.
-    pub ratio_change_count: u64,
-    /// Output frame where the latest source-projection ratio change was requested.
-    pub ratio_change_request_output_frame: u64,
-    /// Output frame where the latest source-projection ratio change first contributes.
-    pub ratio_change_output_frame: u64,
-    /// Fractional source frame at the latest source-projection ratio change seam.
-    pub ratio_change_source_frame: f64,
-    /// Output-frame error between latest ratio request and application.
-    pub ratio_change_alignment_error_frames: usize,
-}
-
-/// Unsupported RealtimePreview routing mode.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum RealtimePreviewUnsupportedMode {
-    /// The current path cannot run directly on the audio callback.
-    AudioThreadProcessing,
-    /// Callback DSP is locally bounded, but the public contract does not yet
-    /// own ratio-projected source advancement for render-plane playback.
-    SourceAdvanceContract,
-    /// Source projection is reported, but the callback path does not yet own
-    /// bounded source fill, underrun, or input-demand behavior.
-    SourceBufferingContract,
-    /// The requested channel layout is not part of the current linked preview
-    /// contract.
-    ChannelLayout,
-}
-
-/// RealtimePreview stream planning failure.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum RealtimePreviewPlanError {
-    /// The sample rate is zero.
-    InvalidSampleRate,
-    /// The channel count is zero or not currently supported.
-    UnsupportedChannelCount(usize),
-    /// The maximum block size is zero.
-    InvalidBlockSize,
-}
-
-/// Callback-facing RealtimePreview state.
-///
-/// This state owns the preallocated scratch required for the callback-facing
-/// RealtimePreview kernel. Batch 26.2 supports mono and linked-stereo
-/// streaming DSP; render-plane routing remains gated.
-pub struct RealtimePreviewCallbackState {
-    config: RealtimePreviewStreamConfig,
-    scratch: Vec<Sample>,
-    input_ring: Vec<Sample>,
-    output_ring: Vec<Sample>,
-    normalization_ring: Vec<f32>,
-    window: Vec<f32>,
-    omega: Vec<f32>,
-    analysis_buffer: Vec<Complex32>,
-    synthesis_spectrum: Vec<Complex32>,
-    forward_fft_scratch: Vec<Complex32>,
-    inverse_fft_scratch: Vec<Complex32>,
-    previous_phase: Vec<f32>,
-    synthesis_phase: Vec<f32>,
-    current_magnitudes: Vec<f32>,
-    current_phases: Vec<f32>,
-    previous_magnitudes: Vec<f32>,
-    current_peak_bins: Vec<usize>,
-    forward: Arc<dyn Fft<f32>>,
-    inverse: Arc<dyn Fft<f32>>,
-    current_ratio: f64,
-    active_ratio: f64,
-    pending_ratio: f64,
-    pending_ratio_request_frame: u64,
-    pending_ratio_apply_frame: u64,
-    pending_ratio_change: bool,
-    last_ratio_change_request_frame: u64,
-    last_ratio_change_applied_frame: u64,
-    last_ratio_change_output_frame: u64,
-    last_ratio_change_alignment_error_frames: usize,
-    ratio_change_count: u64,
-    input_write_frame: u64,
-    output_read_frame: u64,
-    source_projection_output_frame: u64,
-    source_projection_source_cursor: f64,
-    last_source_projection: RealtimePreviewSourceProjectionReport,
-    source_projection_current_ratio: f64,
-    source_projection_active_ratio: f64,
-    source_projection_pending_ratio: f64,
-    source_projection_pending_ratio_request_frame: u64,
-    source_projection_pending_ratio_apply_frame: u64,
-    source_projection_pending_ratio_change: bool,
-    last_source_projection_ratio_change_request_frame: u64,
-    last_source_projection_ratio_change_output_frame: u64,
-    last_source_projection_ratio_change_source_frame: f64,
-    last_source_projection_ratio_change_alignment_error_frames: usize,
-    source_projection_ratio_change_count: u64,
-    last_dynamic_source_projection: RealtimePreviewDynamicSourceProjectionReport,
-    next_analysis_frame: u64,
-    next_synthesis_frame: f64,
-    processed_frames: u64,
-    spectral_frame_index: u64,
-    current_energy: Vec<f64>,
-    previous_energy: Vec<f64>,
-}
-
-/// Report returned by a successful RealtimePreview callback process call.
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct RealtimePreviewCallbackProcessReport {
-    /// Sanitized ratio requested by this block.
-    pub ratio: f64,
-    /// Active ratio at the end of this process call.
-    pub active_ratio: f64,
-    /// Number of scheduled ratio changes applied by this state.
-    pub ratio_change_count: u64,
-    /// Alignment error, in source frames, for the last applied ratio change.
-    pub ratio_change_alignment_error_frames: usize,
-    /// Output frame where the last applied ratio change first contributes.
-    pub ratio_change_output_frame: u64,
-    /// Frames consumed from the input block.
-    pub input_frames: usize,
-    /// Frames produced into the output block.
-    pub output_frames: usize,
-    /// Cumulative source-domain frames accepted by this state.
-    pub processed_frames: u64,
-}
-
-/// RealtimePreview callback process failure.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum RealtimePreviewCallbackProcessError {
-    /// The requested frame count exceeds the state's configured maximum block.
-    FrameCountExceedsConfig {
-        /// Requested process frame count.
-        requested: usize,
-        /// Configured maximum frame count.
-        max: usize,
-    },
-    /// Input or output buffer is shorter than `frame_count * channel_count`.
-    BufferTooSmall {
-        /// Buffer samples required for this block.
-        required_samples: usize,
-        /// Available input samples.
-        input_samples: usize,
-        /// Available output samples.
-        output_samples: usize,
-    },
-    /// The callback-facing state exists, but streaming DSP is not implemented.
-    CallbackProcessingUnsupported,
-}
-
-impl RealtimePreviewStreamConfig {
-    /// Default RealtimePreview stream configuration for a session.
-    pub fn new(sample_rate: SampleRate, channel_count: usize, max_block_frames: usize) -> Self {
-        Self {
-            sample_rate,
-            channel_count,
-            max_block_frames,
-            window_size: REALTIME_PREVIEW_WINDOW_SIZE,
-            analysis_hop: REALTIME_PREVIEW_ANALYSIS_HOP,
-        }
-    }
-
-    /// Clamp window and hop sizes to the supported STFT range.
-    pub fn normalized(self) -> Self {
-        let window_size = self.window_size.next_power_of_two().max(64);
-        let analysis_hop = self.analysis_hop.clamp(1, window_size / 2);
-        Self {
-            window_size,
-            analysis_hop,
-            ..self
-        }
-    }
-}
-
-/// Build a RealtimePreview streaming contract.
-///
-/// The first Signal-owned preview implementation is intentionally
-/// anticipative: it defines latency and ratio-change tolerance, but returns an
-/// unsupported callback mode until the state object proves allocation-free
-/// bounded work.
-pub fn plan_realtime_preview_stream(
-    config: RealtimePreviewStreamConfig,
-) -> Result<RealtimePreviewStreamingContract, RealtimePreviewPlanError> {
-    if config.sample_rate.0 == 0 {
-        return Err(RealtimePreviewPlanError::InvalidSampleRate);
-    }
-    if !(1..=2).contains(&config.channel_count) {
-        return Err(RealtimePreviewPlanError::UnsupportedChannelCount(
-            config.channel_count,
-        ));
-    }
-    if config.max_block_frames == 0 {
-        return Err(RealtimePreviewPlanError::InvalidBlockSize);
-    }
-    let config = config.normalized();
-    Ok(RealtimePreviewStreamingContract {
-        input_latency_frames: config.window_size,
-        output_latency_frames: config.window_size,
-        ratio_change_alignment_tolerance_frames: config.analysis_hop + config.max_block_frames,
-        integration_mode: RealtimePreviewIntegrationMode::AnticipativePreRender,
-        callback_timeline_mode: RealtimePreviewCallbackTimelineMode::QuantumLocked,
-        audio_thread_processing_supported: false,
-        unsupported_mode: Some(RealtimePreviewUnsupportedMode::SourceBufferingContract),
-        config,
-    })
-}
-
-/// Project a fixed-ratio RealtimePreview output span into source frames.
-///
-/// `ratio` uses the crate-wide output/input duration convention: `2.0`
-/// produces twice as much output time as source time, so a 256-frame output
-/// quantum advances 128 source frames.
-pub fn project_realtime_preview_fixed_ratio_source_advance(
-    output_start_frame: u64,
-    output_frames: usize,
-    ratio: f64,
-) -> RealtimePreviewSourceProjectionReport {
-    let ratio = sanitize_ratio(ratio);
-    let output_end_frame = output_start_frame.saturating_add(usize_to_u64(output_frames));
-    let source_start_frame = output_start_frame as f64 / ratio;
-    let source_end_frame = output_end_frame as f64 / ratio;
-    build_realtime_preview_source_projection_report(
-        ratio,
-        output_start_frame,
-        output_frames,
-        output_end_frame,
-        source_start_frame,
-        source_end_frame,
-    )
-}
-
-fn build_realtime_preview_source_projection_report(
-    ratio: f64,
-    output_start_frame: u64,
-    output_frames: usize,
-    output_end_frame: u64,
-    source_start_frame: f64,
-    source_end_frame: f64,
-) -> RealtimePreviewSourceProjectionReport {
-    let source_frame_floor = floor_frame_to_u64(source_start_frame);
-    let source_frame_ceil = ceil_frame_to_u64(source_end_frame);
-    let source_frames_required = abs_diff_frames(source_frame_ceil, source_frame_floor);
-
-    RealtimePreviewSourceProjectionReport {
-        ratio,
-        output_start_frame,
-        output_frames,
-        output_end_frame,
-        source_start_frame,
-        source_end_frame,
-        source_advance_frames: source_end_frame - source_start_frame,
-        source_frame_floor,
-        source_frame_ceil,
-        source_frames_required,
-    }
-}
-
-fn build_realtime_preview_dynamic_source_projection_report(
-    output_start_frame: u64,
-    output_frames: usize,
-    output_end_frame: u64,
-    source_start_frame: f64,
-    source_end_frame: f64,
-    start_ratio: f64,
-    end_ratio: f64,
-    ratio_change_applied: bool,
-    ratio_change_count: u64,
-    ratio_change_request_output_frame: u64,
-    ratio_change_output_frame: u64,
-    ratio_change_source_frame: f64,
-    ratio_change_alignment_error_frames: usize,
-) -> RealtimePreviewDynamicSourceProjectionReport {
-    let source_frame_floor = floor_frame_to_u64(source_start_frame);
-    let source_frame_ceil = ceil_frame_to_u64(source_end_frame);
-    let source_frames_required = abs_diff_frames(source_frame_ceil, source_frame_floor);
-
-    RealtimePreviewDynamicSourceProjectionReport {
-        output_start_frame,
-        output_frames,
-        output_end_frame,
-        source_start_frame,
-        source_end_frame,
-        source_advance_frames: source_end_frame - source_start_frame,
-        source_frame_floor,
-        source_frame_ceil,
-        source_frames_required,
-        start_ratio,
-        end_ratio,
-        ratio_change_applied,
-        ratio_change_count,
-        ratio_change_request_output_frame,
-        ratio_change_output_frame,
-        ratio_change_source_frame,
-        ratio_change_alignment_error_frames,
-    }
-}
-
-impl RealtimePreviewCallbackState {
-    /// Construct callback state and allocate all state-owned scratch outside
-    /// the audio callback.
-    pub fn new(config: RealtimePreviewStreamConfig) -> Result<Self, RealtimePreviewPlanError> {
-        let contract = plan_realtime_preview_stream(config)?;
-        let config = contract.config;
-        let channel_count = config.channel_count;
-        let bins = config.window_size / 2 + 1;
-        let spectral_values = bins * channel_count;
-        let spectral_samples = config.window_size * channel_count;
-        let ring_frames =
-            (config.window_size * 4 + config.max_block_frames * 4).max(config.window_size * 2);
-        let mut planner = FftPlanner::<f32>::new();
-        let forward = planner.plan_fft_forward(config.window_size);
-        let inverse = planner.plan_fft_inverse(config.window_size);
-        let forward_fft_scratch = vec![Complex32::new(0.0, 0.0); forward.get_inplace_scratch_len()];
-        let inverse_fft_scratch = vec![Complex32::new(0.0, 0.0); inverse.get_inplace_scratch_len()];
-        Ok(Self {
-            config,
-            scratch: vec![0.0; config.max_block_frames * channel_count],
-            input_ring: vec![0.0; ring_frames * channel_count],
-            output_ring: vec![0.0; ring_frames * channel_count],
-            normalization_ring: vec![0.0; ring_frames * channel_count],
-            window: (0..config.window_size)
-                .map(|index| {
-                    0.5 - 0.5
-                        * (std::f32::consts::TAU * index as f32 / config.window_size as f32).cos()
-                })
-                .collect(),
-            omega: (0..bins)
-                .map(|bin| {
-                    std::f32::consts::TAU * bin as f32 * config.analysis_hop as f32
-                        / config.window_size as f32
-                })
-                .collect(),
-            analysis_buffer: vec![Complex32::new(0.0, 0.0); spectral_samples],
-            synthesis_spectrum: vec![Complex32::new(0.0, 0.0); spectral_samples],
-            forward_fft_scratch,
-            inverse_fft_scratch,
-            previous_phase: vec![0.0; spectral_values],
-            synthesis_phase: vec![0.0; spectral_values],
-            current_magnitudes: vec![0.0; spectral_values],
-            current_phases: vec![0.0; spectral_values],
-            previous_magnitudes: vec![0.0; spectral_values],
-            current_peak_bins: Vec::with_capacity(bins),
-            forward,
-            inverse,
-            current_ratio: 1.0,
-            active_ratio: 1.0,
-            pending_ratio: 1.0,
-            pending_ratio_request_frame: 0,
-            pending_ratio_apply_frame: 0,
-            pending_ratio_change: false,
-            last_ratio_change_request_frame: 0,
-            last_ratio_change_applied_frame: 0,
-            last_ratio_change_output_frame: 0,
-            last_ratio_change_alignment_error_frames: 0,
-            ratio_change_count: 0,
-            input_write_frame: 0,
-            output_read_frame: 0,
-            source_projection_output_frame: 0,
-            source_projection_source_cursor: 0.0,
-            last_source_projection: project_realtime_preview_fixed_ratio_source_advance(0, 0, 1.0),
-            source_projection_current_ratio: 1.0,
-            source_projection_active_ratio: 1.0,
-            source_projection_pending_ratio: 1.0,
-            source_projection_pending_ratio_request_frame: 0,
-            source_projection_pending_ratio_apply_frame: 0,
-            source_projection_pending_ratio_change: false,
-            last_source_projection_ratio_change_request_frame: 0,
-            last_source_projection_ratio_change_output_frame: 0,
-            last_source_projection_ratio_change_source_frame: 0.0,
-            last_source_projection_ratio_change_alignment_error_frames: 0,
-            source_projection_ratio_change_count: 0,
-            last_dynamic_source_projection: build_realtime_preview_dynamic_source_projection_report(
-                0, 0, 0, 0.0, 0.0, 1.0, 1.0, false, 0, 0, 0, 0.0, 0,
-            ),
-            next_analysis_frame: 0,
-            next_synthesis_frame: config.window_size as f64,
-            processed_frames: 0,
-            spectral_frame_index: 0,
-            current_energy: vec![0.0; channel_count],
-            previous_energy: vec![0.0; channel_count],
-        })
-    }
-
-    /// Validated stream configuration.
-    pub fn config(&self) -> RealtimePreviewStreamConfig {
-        self.config
-    }
-
-    /// Current callback contract. This intentionally remains unsupported for
-    /// direct audio-thread processing until streaming DSP lands.
-    pub fn contract(&self) -> RealtimePreviewStreamingContract {
-        plan_realtime_preview_stream(self.config)
-            .expect("callback state stores a validated RealtimePreview config")
-    }
-
-    /// Preallocated scratch capacity in interleaved samples.
-    pub fn scratch_capacity_samples(&self) -> usize {
-        self.scratch.len()
-    }
-
-    /// Preallocated input ring capacity in interleaved samples.
-    pub fn input_ring_capacity_samples(&self) -> usize {
-        self.input_ring.len()
-    }
-
-    /// Preallocated output ring capacity in interleaved samples.
-    pub fn output_ring_capacity_samples(&self) -> usize {
-        self.output_ring.len()
-    }
-
-    /// Preallocated normalization ring capacity in interleaved samples.
-    pub fn normalization_ring_capacity_samples(&self) -> usize {
-        self.normalization_ring.len()
-    }
-
-    /// Preallocated analysis window length in sample frames.
-    pub fn window_size(&self) -> usize {
-        self.window.len()
-    }
-
-    /// Preallocated complex analysis/synthesis buffer size in samples.
-    pub fn spectral_scratch_samples(&self) -> usize {
-        self.analysis_buffer
-            .len()
-            .min(self.synthesis_spectrum.len())
-    }
-
-    /// Preallocated per-bin phase-state size.
-    pub fn phase_state_values(&self) -> usize {
-        self.previous_phase
-            .len()
-            .min(self.synthesis_phase.len())
-            .min(self.current_phases.len())
-            .min(self.current_magnitudes.len())
-            .min(self.previous_magnitudes.len())
-    }
-
-    /// Whether FFT plans are already constructed for the callback state.
-    pub fn fft_plans_ready(&self) -> bool {
-        Arc::strong_count(&self.forward) >= 1 && Arc::strong_count(&self.inverse) >= 1
-    }
-
-    /// Current sanitized ratio remembered by the state.
-    pub fn current_ratio(&self) -> f64 {
-        self.current_ratio
-    }
-
-    /// Ratio currently applied to streaming spectral frames.
-    pub fn active_ratio(&self) -> f64 {
-        self.active_ratio
-    }
-
-    /// Number of scheduled ratio changes applied by this state.
-    pub fn ratio_change_count(&self) -> u64 {
-        self.ratio_change_count
-    }
-
-    /// Source frame where the latest applied ratio change was requested.
-    pub fn last_ratio_change_request_frame(&self) -> u64 {
-        self.last_ratio_change_request_frame
-    }
-
-    /// Source frame where the latest ratio change reached the analysis grid.
-    pub fn last_ratio_change_applied_frame(&self) -> u64 {
-        self.last_ratio_change_applied_frame
-    }
-
-    /// Output frame where the latest applied ratio change first contributes.
-    pub fn last_ratio_change_output_frame(&self) -> u64 {
-        self.last_ratio_change_output_frame
-    }
-
-    /// Source-frame error between the latest ratio request and its application.
-    pub fn last_ratio_change_alignment_error_frames(&self) -> usize {
-        self.last_ratio_change_alignment_error_frames
-    }
-
-    /// Contracted source-frame tolerance for scheduled ratio changes.
-    pub fn ratio_change_alignment_tolerance_frames(&self) -> usize {
-        self.config.analysis_hop + self.config.max_block_frames
-    }
-
-    /// Cumulative source-domain frames accepted by this state.
-    pub fn processed_frames(&self) -> u64 {
-        self.processed_frames
-    }
-
-    /// Output-domain cursor used by source-projection planning.
-    pub fn source_projection_output_frame(&self) -> u64 {
-        self.source_projection_output_frame
-    }
-
-    /// Fractional source-domain cursor used by source-projection planning.
-    pub fn source_projection_source_cursor(&self) -> f64 {
-        self.source_projection_source_cursor
-    }
-
-    /// Last source projection advanced by this callback state.
-    pub fn last_source_projection(&self) -> RealtimePreviewSourceProjectionReport {
-        self.last_source_projection
-    }
-
-    /// Ratio currently requested by source-projection planning.
-    pub fn source_projection_current_ratio(&self) -> f64 {
-        self.source_projection_current_ratio
-    }
-
-    /// Ratio currently applied to scheduled source-projection advancement.
-    pub fn source_projection_active_ratio(&self) -> f64 {
-        self.source_projection_active_ratio
-    }
-
-    /// Number of scheduled source-projection ratio changes applied by this state.
-    pub fn source_projection_ratio_change_count(&self) -> u64 {
-        self.source_projection_ratio_change_count
-    }
-
-    /// Last dynamic source projection advanced by this callback state.
-    pub fn last_dynamic_source_projection(&self) -> RealtimePreviewDynamicSourceProjectionReport {
-        self.last_dynamic_source_projection
-    }
-
-    /// Output frame where the latest projected ratio change was requested.
-    pub fn last_source_projection_ratio_change_request_frame(&self) -> u64 {
-        self.last_source_projection_ratio_change_request_frame
-    }
-
-    /// Output frame where the latest projected ratio change first contributes.
-    pub fn last_source_projection_ratio_change_output_frame(&self) -> u64 {
-        self.last_source_projection_ratio_change_output_frame
-    }
-
-    /// Fractional source frame where the latest projected ratio change applies.
-    pub fn last_source_projection_ratio_change_source_frame(&self) -> f64 {
-        self.last_source_projection_ratio_change_source_frame
-    }
-
-    /// Output-frame error between the latest projected ratio request and application.
-    pub fn last_source_projection_ratio_change_alignment_error_frames(&self) -> usize {
-        self.last_source_projection_ratio_change_alignment_error_frames
-    }
-
-    /// Conservative input-frame demand bound for one configured output block.
-    pub fn source_projection_input_demand_limit_frames(&self, ratio: f64) -> usize {
-        let ratio = sanitize_ratio(ratio);
-        ceil_frame_to_usize(self.config.max_block_frames as f64 / ratio).saturating_add(1)
-    }
-
-    /// Advance callback-owned source projection state for one output quantum.
-    pub fn advance_source_projection(
-        &mut self,
-        output_frames: usize,
-        ratio: f64,
-    ) -> Result<RealtimePreviewSourceProjectionReport, RealtimePreviewCallbackProcessError> {
-        if output_frames > self.config.max_block_frames {
-            return Err(
-                RealtimePreviewCallbackProcessError::FrameCountExceedsConfig {
-                    requested: output_frames,
-                    max: self.config.max_block_frames,
-                },
-            );
-        }
-
-        let ratio = sanitize_ratio(ratio);
-        let output_start_frame = self.source_projection_output_frame;
-        let output_end_frame = output_start_frame.saturating_add(usize_to_u64(output_frames));
-        let source_start_frame = self.source_projection_source_cursor;
-        let source_end_frame = source_start_frame + output_frames as f64 / ratio;
-        let projection = build_realtime_preview_source_projection_report(
-            ratio,
-            output_start_frame,
-            output_frames,
-            output_end_frame,
-            source_start_frame,
-            source_end_frame,
-        );
-        self.source_projection_output_frame = output_end_frame;
-        self.source_projection_source_cursor = source_end_frame;
-        self.last_source_projection = projection;
-        Ok(projection)
-    }
-
-    /// Advance scheduled source projection state for one output quantum.
-    pub fn advance_scheduled_source_projection(
-        &mut self,
-        output_frames: usize,
-        ratio: f64,
-    ) -> Result<RealtimePreviewDynamicSourceProjectionReport, RealtimePreviewCallbackProcessError>
-    {
-        if output_frames > self.config.max_block_frames {
-            return Err(
-                RealtimePreviewCallbackProcessError::FrameCountExceedsConfig {
-                    requested: output_frames,
-                    max: self.config.max_block_frames,
-                },
-            );
-        }
-
-        let ratio = sanitize_ratio(ratio);
-        self.schedule_source_projection_ratio_change(ratio);
-
-        let output_start_frame = self.source_projection_output_frame;
-        let output_end_frame = output_start_frame.saturating_add(usize_to_u64(output_frames));
-        let source_start_frame = self.source_projection_source_cursor;
-        let start_ratio = self.source_projection_active_ratio;
-        let mut source_end_frame = source_start_frame;
-        let mut active_ratio = self.source_projection_active_ratio;
-        let mut ratio_change_applied = false;
-
-        if self.source_projection_pending_ratio_change
-            && self.source_projection_pending_ratio_apply_frame <= output_start_frame
-        {
-            self.apply_source_projection_ratio_change(output_start_frame, source_end_frame);
-            active_ratio = self.source_projection_active_ratio;
-            ratio_change_applied = true;
-        }
-
-        if self.source_projection_pending_ratio_change
-            && self.source_projection_pending_ratio_apply_frame < output_end_frame
-        {
-            let ratio_change_output_frame = self.source_projection_pending_ratio_apply_frame;
-            let frames_before_change =
-                abs_diff_frames(ratio_change_output_frame, output_start_frame);
-            source_end_frame += frames_before_change as f64 / active_ratio;
-            self.apply_source_projection_ratio_change(ratio_change_output_frame, source_end_frame);
-            active_ratio = self.source_projection_active_ratio;
-            ratio_change_applied = true;
-
-            let frames_after_change = abs_diff_frames(output_end_frame, ratio_change_output_frame);
-            source_end_frame += frames_after_change as f64 / active_ratio;
-        } else {
-            source_end_frame += output_frames as f64 / active_ratio;
-        }
-
-        let projection = build_realtime_preview_dynamic_source_projection_report(
-            output_start_frame,
-            output_frames,
-            output_end_frame,
-            source_start_frame,
-            source_end_frame,
-            start_ratio,
-            active_ratio,
-            ratio_change_applied,
-            self.source_projection_ratio_change_count,
-            self.last_source_projection_ratio_change_request_frame,
-            self.last_source_projection_ratio_change_output_frame,
-            self.last_source_projection_ratio_change_source_frame,
-            self.last_source_projection_ratio_change_alignment_error_frames,
-        );
-
-        self.source_projection_output_frame = output_end_frame;
-        self.source_projection_source_cursor = source_end_frame;
-        self.last_dynamic_source_projection = projection;
-        Ok(projection)
-    }
-
-    /// Reset callback state without reallocating.
-    pub fn reset(&mut self) {
-        self.scratch.fill(0.0);
-        self.input_ring.fill(0.0);
-        self.output_ring.fill(0.0);
-        self.normalization_ring.fill(0.0);
-        self.analysis_buffer.fill(Complex32::new(0.0, 0.0));
-        self.synthesis_spectrum.fill(Complex32::new(0.0, 0.0));
-        self.forward_fft_scratch.fill(Complex32::new(0.0, 0.0));
-        self.inverse_fft_scratch.fill(Complex32::new(0.0, 0.0));
-        self.previous_phase.fill(0.0);
-        self.synthesis_phase.fill(0.0);
-        self.current_magnitudes.fill(0.0);
-        self.current_phases.fill(0.0);
-        self.previous_magnitudes.fill(0.0);
-        self.current_peak_bins.clear();
-        self.current_ratio = 1.0;
-        self.active_ratio = 1.0;
-        self.pending_ratio = 1.0;
-        self.pending_ratio_request_frame = 0;
-        self.pending_ratio_apply_frame = 0;
-        self.pending_ratio_change = false;
-        self.last_ratio_change_request_frame = 0;
-        self.last_ratio_change_applied_frame = 0;
-        self.last_ratio_change_output_frame = 0;
-        self.last_ratio_change_alignment_error_frames = 0;
-        self.ratio_change_count = 0;
-        self.input_write_frame = 0;
-        self.output_read_frame = 0;
-        self.source_projection_output_frame = 0;
-        self.source_projection_source_cursor = 0.0;
-        self.last_source_projection =
-            project_realtime_preview_fixed_ratio_source_advance(0, 0, 1.0);
-        self.source_projection_current_ratio = 1.0;
-        self.source_projection_active_ratio = 1.0;
-        self.source_projection_pending_ratio = 1.0;
-        self.source_projection_pending_ratio_request_frame = 0;
-        self.source_projection_pending_ratio_apply_frame = 0;
-        self.source_projection_pending_ratio_change = false;
-        self.last_source_projection_ratio_change_request_frame = 0;
-        self.last_source_projection_ratio_change_output_frame = 0;
-        self.last_source_projection_ratio_change_source_frame = 0.0;
-        self.last_source_projection_ratio_change_alignment_error_frames = 0;
-        self.source_projection_ratio_change_count = 0;
-        self.last_dynamic_source_projection =
-            build_realtime_preview_dynamic_source_projection_report(
-                0, 0, 0, 0.0, 0.0, 1.0, 1.0, false, 0, 0, 0, 0.0, 0,
-            );
-        self.next_analysis_frame = 0;
-        self.next_synthesis_frame = self.config.window_size as f64;
-        self.processed_frames = 0;
-        self.spectral_frame_index = 0;
-        self.current_energy.fill(0.0);
-        self.previous_energy.fill(0.0);
-    }
-
-    /// Process one callback quantum.
-    ///
-    /// Mono and linked-stereo streams run through the bounded preview kernel.
-    /// The callback contract still reports unsupported render-plane routing
-    /// until dynamic-ratio scheduling and integration proof land.
-    pub fn process(
-        &mut self,
-        input: &[Sample],
-        output: &mut [Sample],
-        frame_count: usize,
-        ratio: f64,
-    ) -> Result<RealtimePreviewCallbackProcessReport, RealtimePreviewCallbackProcessError> {
-        if frame_count > self.config.max_block_frames {
-            return Err(
-                RealtimePreviewCallbackProcessError::FrameCountExceedsConfig {
-                    requested: frame_count,
-                    max: self.config.max_block_frames,
-                },
-            );
-        }
-        let required_samples = frame_count * self.config.channel_count;
-        if input.len() < required_samples || output.len() < required_samples {
-            return Err(RealtimePreviewCallbackProcessError::BufferTooSmall {
-                required_samples,
-                input_samples: input.len(),
-                output_samples: output.len(),
-            });
-        }
-        let ratio = sanitize_ratio(ratio);
-        self.schedule_ratio_change(ratio);
-        self.push_interleaved_input(input, frame_count);
-        self.process_available_streaming_frames();
-        self.read_interleaved_output(output, frame_count);
-        self.processed_frames = self.processed_frames.saturating_add(frame_count as u64);
-        Ok(RealtimePreviewCallbackProcessReport {
-            ratio,
-            active_ratio: self.active_ratio,
-            ratio_change_count: self.ratio_change_count,
-            ratio_change_alignment_error_frames: self.last_ratio_change_alignment_error_frames,
-            ratio_change_output_frame: self.last_ratio_change_output_frame,
-            input_frames: frame_count,
-            output_frames: frame_count,
-            processed_frames: self.processed_frames,
-        })
-    }
-
-    fn schedule_source_projection_ratio_change(&mut self, ratio: f64) {
-        if (ratio - self.source_projection_current_ratio).abs() <= f64::EPSILON {
-            return;
-        }
-        self.source_projection_current_ratio = ratio;
-        self.source_projection_pending_ratio = ratio;
-        self.source_projection_pending_ratio_request_frame = self.source_projection_output_frame;
-        self.source_projection_pending_ratio_apply_frame = align_to_next_grid(
-            self.source_projection_output_frame,
-            self.config.analysis_hop as u64,
-        );
-        self.source_projection_pending_ratio_change = true;
-    }
-
-    fn apply_source_projection_ratio_change(&mut self, output_frame: u64, source_frame: f64) {
-        self.source_projection_active_ratio = self.source_projection_pending_ratio;
-        self.last_source_projection_ratio_change_request_frame =
-            self.source_projection_pending_ratio_request_frame;
-        self.last_source_projection_ratio_change_output_frame = output_frame;
-        self.last_source_projection_ratio_change_source_frame = source_frame;
-        self.last_source_projection_ratio_change_alignment_error_frames = abs_diff_frames(
-            output_frame,
-            self.source_projection_pending_ratio_request_frame,
-        );
-        self.source_projection_pending_ratio_change = false;
-        self.source_projection_ratio_change_count =
-            self.source_projection_ratio_change_count.saturating_add(1);
-    }
-
-    fn schedule_ratio_change(&mut self, ratio: f64) {
-        if (ratio - self.current_ratio).abs() <= f64::EPSILON {
-            return;
-        }
-        self.current_ratio = ratio;
-        self.pending_ratio = ratio;
-        self.pending_ratio_request_frame = self.input_write_frame;
-        self.pending_ratio_apply_frame =
-            align_to_next_grid(self.input_write_frame, self.config.analysis_hop as u64);
-        self.pending_ratio_change = true;
-    }
-
-    fn ratio_for_next_analysis_frame(&mut self, synthesis_start: u64) -> f64 {
-        if self.pending_ratio_change && self.next_analysis_frame >= self.pending_ratio_apply_frame {
-            self.active_ratio = self.pending_ratio;
-            self.last_ratio_change_request_frame = self.pending_ratio_request_frame;
-            self.last_ratio_change_applied_frame = self.next_analysis_frame;
-            self.last_ratio_change_output_frame = synthesis_start;
-            self.last_ratio_change_alignment_error_frames =
-                abs_diff_frames(self.next_analysis_frame, self.pending_ratio_request_frame);
-            self.pending_ratio_change = false;
-            self.ratio_change_count = self.ratio_change_count.saturating_add(1);
-        }
-        self.active_ratio
-    }
-
-    fn ring_frame_capacity(&self) -> usize {
-        self.input_ring.len() / self.config.channel_count
-    }
-
-    fn push_interleaved_input(&mut self, input: &[Sample], frame_count: usize) {
-        let ring_frames = self.ring_frame_capacity();
-        let channel_count = self.config.channel_count;
-        for frame_offset in 0..frame_count {
-            let ring_frame = (self.input_write_frame as usize + frame_offset) % ring_frames;
-            for channel in 0..channel_count {
-                self.input_ring[ring_frame * channel_count + channel] =
-                    input[frame_offset * channel_count + channel];
-            }
-        }
-        self.input_write_frame = self.input_write_frame.saturating_add(frame_count as u64);
-    }
-
-    fn process_available_streaming_frames(&mut self) {
-        let ring_frames = self.ring_frame_capacity() as u64;
-        while self.next_analysis_frame + self.config.window_size as u64 <= self.input_write_frame {
-            if self
-                .input_write_frame
-                .saturating_sub(self.next_analysis_frame)
-                > ring_frames
-            {
-                self.next_analysis_frame = self.input_write_frame.saturating_sub(ring_frames);
-            }
-            let synthesis_start = self.next_synthesis_frame.round() as u64;
-            if synthesis_start + self.config.window_size as u64
-                >= self.output_read_frame.saturating_add(ring_frames)
-            {
-                break;
-            }
-            let ratio = self.ratio_for_next_analysis_frame(synthesis_start);
-            for channel in 0..self.config.channel_count {
-                self.analyze_streaming_frame(channel);
-                self.propagate_streaming_phase(channel, ratio);
-                self.synthesize_streaming_frame(channel, synthesis_start);
-            }
-            self.next_analysis_frame = self
-                .next_analysis_frame
-                .saturating_add(self.config.analysis_hop as u64);
-            self.next_synthesis_frame += self.config.analysis_hop as f64 * ratio;
-            self.spectral_frame_index = self.spectral_frame_index.saturating_add(1);
-        }
-    }
-
-    fn analyze_streaming_frame(&mut self, channel: usize) {
-        let ring_frames = self.ring_frame_capacity();
-        let channel_count = self.config.channel_count;
-        let fft_offset = channel * self.config.window_size;
-        self.current_energy[channel] = 0.0;
-        for index in 0..self.config.window_size {
-            let source_index = (self.next_analysis_frame as usize + index) % ring_frames;
-            let windowed =
-                self.input_ring[source_index * channel_count + channel] * self.window[index];
-            self.current_energy[channel] += (windowed * windowed) as f64;
-            self.analysis_buffer[fft_offset + index] = Complex32::new(windowed, 0.0);
-        }
-        self.current_energy[channel] /= self.config.window_size as f64;
-        self.forward.process_with_scratch(
-            &mut self.analysis_buffer[fft_offset..fft_offset + self.config.window_size],
-            &mut self.forward_fft_scratch,
-        );
-    }
-
-    fn propagate_streaming_phase(&mut self, channel: usize, ratio: f64) {
-        let bins = self.config.window_size / 2 + 1;
-        let fft_offset = channel * self.config.window_size;
-        let bin_offset = channel * bins;
-        let is_first_frame = self.spectral_frame_index == 0;
-        let reset_at_transient =
-            self.should_reset_streaming_phase_at_transient(channel, bins, ratio);
-        self.current_peak_bins.clear();
-
-        for bin in 0..bins {
-            let spectrum = self.analysis_buffer[fft_offset + bin];
-            self.current_magnitudes[bin_offset + bin] = spectrum.norm();
-            self.current_phases[bin_offset + bin] = spectrum.arg();
-        }
-        for bin in 1..bins.saturating_sub(1) {
-            let magnitude = self.current_magnitudes[bin_offset + bin];
-            if magnitude > 1.0e-6
-                && magnitude > self.current_magnitudes[bin_offset + bin - 1]
-                && magnitude >= self.current_magnitudes[bin_offset + bin + 1]
-            {
-                self.current_peak_bins.push(bin);
-            }
-        }
-
-        for bin in 0..bins {
-            let index = bin_offset + bin;
-            let phase = self.current_phases[index];
-            if is_first_frame || reset_at_transient {
-                self.synthesis_phase[index] = phase;
-            } else {
-                let deviation = wrap_phase(phase - self.previous_phase[index] - self.omega[bin]);
-                let advance = (self.omega[bin] + deviation) * (ratio as f32);
-                self.synthesis_phase[index] = wrap_phase(self.synthesis_phase[index] + advance);
-            }
-            self.previous_phase[index] = phase;
-        }
-
-        self.lock_streaming_phase_to_peaks(channel, bins);
-        for bin in 0..bins {
-            let index = bin_offset + bin;
-            self.synthesis_spectrum[fft_offset + bin] =
-                Complex32::from_polar(self.current_magnitudes[index], self.synthesis_phase[index]);
-            self.previous_magnitudes[index] = self.current_magnitudes[index];
-        }
-        self.previous_energy[channel] = self.current_energy[channel];
-
-        for bin in 1..self.config.window_size.div_ceil(2) {
-            self.synthesis_spectrum[fft_offset + self.config.window_size - bin] =
-                self.synthesis_spectrum[fft_offset + bin].conj();
-        }
-    }
-
-    fn should_reset_streaming_phase_at_transient(
-        &self,
-        channel: usize,
-        bins: usize,
-        ratio: f64,
-    ) -> bool {
-        if self.spectral_frame_index == 0 || ratio < 1.0 {
-            return false;
-        }
-        let fft_offset = channel * self.config.window_size;
-        let bin_offset = channel * bins;
-        let mut flux = 0.0f32;
-        let mut magnitude_sum = 0.0f32;
-        for bin in 0..bins {
-            let magnitude = self.analysis_buffer[fft_offset + bin].norm();
-            flux += (magnitude - self.previous_magnitudes[bin_offset + bin]).max(0.0);
-            magnitude_sum += magnitude;
-        }
-        let flux_ratio = flux as f64 / (magnitude_sum as f64 + 1.0e-12);
-        let energy_ratio = self.current_energy[channel] / (self.previous_energy[channel] + 1.0e-12);
-        flux_ratio >= 0.30 && energy_ratio >= 1.20
-    }
-
-    fn lock_streaming_phase_to_peaks(&mut self, channel: usize, bins: usize) {
-        if self.current_peak_bins.is_empty() {
-            return;
-        }
-        let bin_offset = channel * bins;
-        for peak_index in 0..self.current_peak_bins.len() {
-            let peak_bin = self.current_peak_bins[peak_index];
-            let peak_phase = self.synthesis_phase[bin_offset + peak_bin];
-            let analysis_peak_phase = self.current_phases[bin_offset + peak_bin];
-            let (left, right) = self.streaming_peak_region_bounds(peak_index, bins);
-            for bin in left..right {
-                let index = bin_offset + bin;
-                let relative_phase = wrap_phase(self.current_phases[index] - analysis_peak_phase);
-                self.synthesis_phase[index] = wrap_phase(peak_phase + relative_phase);
-            }
-        }
-    }
-
-    fn streaming_peak_region_bounds(&self, peak_index: usize, bins: usize) -> (usize, usize) {
-        let peak = self.current_peak_bins[peak_index];
-        let left = if peak_index == 0 {
-            0
-        } else {
-            (self.current_peak_bins[peak_index - 1] + peak) / 2 + 1
-        };
-        let right = self
-            .current_peak_bins
-            .get(peak_index + 1)
-            .map(|next| (peak + *next) / 2 + 1)
-            .unwrap_or(bins);
-        (left, right)
-    }
-
-    fn synthesize_streaming_frame(&mut self, channel: usize, synthesis_start: u64) {
-        let fft_offset = channel * self.config.window_size;
-        self.inverse.process_with_scratch(
-            &mut self.synthesis_spectrum[fft_offset..fft_offset + self.config.window_size],
-            &mut self.inverse_fft_scratch,
-        );
-        let ring_frames = self.ring_frame_capacity();
-        let channel_count = self.config.channel_count;
-        let scale = 1.0 / self.config.window_size as f32;
-        for index in 0..self.config.window_size {
-            let output_index = (synthesis_start as usize + index) % ring_frames;
-            let ring_index = output_index * channel_count + channel;
-            let sample =
-                self.synthesis_spectrum[fft_offset + index].re * scale * self.window[index];
-            self.output_ring[ring_index] += sample;
-            self.normalization_ring[ring_index] += self.window[index] * self.window[index];
-        }
-    }
-
-    fn read_interleaved_output(&mut self, output: &mut [Sample], frame_count: usize) {
-        let ring_frames = self.ring_frame_capacity();
-        let channel_count = self.config.channel_count;
-        for frame_offset in 0..frame_count {
-            let ring_frame = (self.output_read_frame as usize + frame_offset) % ring_frames;
-            for channel in 0..channel_count {
-                let ring_index = ring_frame * channel_count + channel;
-                let output_index = frame_offset * channel_count + channel;
-                let weight = self.normalization_ring[ring_index];
-                output[output_index] = if weight > 1.0e-3 {
-                    self.output_ring[ring_index] / weight
-                } else {
-                    0.0
-                };
-                self.output_ring[ring_index] = 0.0;
-                self.normalization_ring[ring_index] = 0.0;
-            }
-        }
-        self.output_read_frame = self.output_read_frame.saturating_add(frame_count as u64);
-    }
-}
-
 impl PhaseVocoderStretcher {
     /// Stretcher with the default window/hop configuration.
     pub fn new(ratio: f64) -> Self {
@@ -1552,7 +517,7 @@ impl TimeStretcher for PhaseVocoderStretcher {
         self.ratio = sanitize_ratio(ratio);
     }
 
-    fn stretch_mono(&mut self, input: &[Sample]) -> Vec<Sample> {
+    fn stretch_mono(&mut self, input: &[Sample]) -> Result<Vec<Sample>, StretchRenderError> {
         stretch_mono_with_engine(
             input,
             self.ratio,
@@ -1608,26 +573,32 @@ impl RealtimePreviewStretcher {
     /// A trailing odd sample is ignored. This allocates and processes a whole
     /// control-side preview buffer, so callers must not use it on the audio
     /// callback.
-    pub fn stretch_interleaved_stereo(&mut self, frames: &[Sample]) -> Vec<Sample> {
+    pub fn stretch_interleaved_stereo(
+        &mut self,
+        frames: &[Sample],
+    ) -> Result<Vec<Sample>, StretchRenderError> {
         let frame_count = frames.len() / 2;
-        let target_frames = (frame_count as f64 * self.ratio).round() as usize;
+        let target_frames = checked_target_frames(frame_count, self.ratio, 2)?;
         if frame_count == 0 || target_frames == 0 {
-            return Vec::new();
+            return Ok(Vec::new());
         }
         let even_frames = &frames[..frame_count * 2];
         if (self.ratio - 1.0).abs() < 1.0e-9 {
-            return even_frames.to_vec();
+            return Ok(even_frames.to_vec());
         }
         if frame_count < self.window_size {
-            return linear_time_scale_interleaved_stereo(even_frames, target_frames);
+            return Ok(linear_time_scale_interleaved_stereo(
+                even_frames,
+                target_frames,
+            ));
         }
-        transient_reset_phase_vocoder_linked_stereo(
+        Ok(transient_reset_phase_vocoder_linked_stereo(
             even_frames,
             target_frames,
             self.ratio,
             self.window_size,
             self.analysis_hop,
-        )
+        ))
     }
 
     /// Apply independent pitch shift and tempo stretch to one mono preview
@@ -1637,23 +608,23 @@ impl RealtimePreviewStretcher {
         input: &[Sample],
         sample_rate: SampleRate,
         pitch_shift_semitones: f64,
-    ) -> Vec<Sample> {
-        let target_len = (input.len() as f64 * self.ratio).round() as usize;
+    ) -> Result<Vec<Sample>, StretchRenderError> {
+        let target_len = checked_target_frames(input.len(), self.ratio, 1)?;
         if input.is_empty() || target_len == 0 {
-            return Vec::new();
+            return Ok(Vec::new());
         }
         if pitch_shift_semitones.abs() < 1.0e-9 || sample_rate.0 == 0 {
             return self.stretch_mono(input);
         }
 
         let pitched = pitch_shift_mono_to_nominal_rate(input, sample_rate, pitch_shift_semitones);
-        stretch_to_exact_mono(
+        Ok(stretch_to_exact_mono(
             &pitched,
             target_len,
             self.window_size,
             self.analysis_hop,
             transient_reset_phase_vocoder,
-        )
+        ))
     }
 
     /// Apply independent pitch shift and tempo stretch to interleaved stereo
@@ -1663,11 +634,11 @@ impl RealtimePreviewStretcher {
         frames: &[Sample],
         sample_rate: SampleRate,
         pitch_shift_semitones: f64,
-    ) -> Vec<Sample> {
+    ) -> Result<Vec<Sample>, StretchRenderError> {
         let frame_count = frames.len() / 2;
-        let target_frames = (frame_count as f64 * self.ratio).round() as usize;
+        let target_frames = checked_target_frames(frame_count, self.ratio, 2)?;
         if frame_count == 0 || target_frames == 0 {
-            return Vec::new();
+            return Ok(Vec::new());
         }
         let even_frames = &frames[..frame_count * 2];
         if pitch_shift_semitones.abs() < 1.0e-9 || sample_rate.0 == 0 {
@@ -1679,7 +650,12 @@ impl RealtimePreviewStretcher {
             sample_rate,
             pitch_shift_semitones,
         );
-        stretch_to_exact_linked_stereo(&pitched, target_frames, self.window_size, self.analysis_hop)
+        Ok(stretch_to_exact_linked_stereo(
+            &pitched,
+            target_frames,
+            self.window_size,
+            self.analysis_hop,
+        ))
     }
 
     /// Stretch one mono buffer with a stepwise dynamic ratio curve.
@@ -1687,7 +663,7 @@ impl RealtimePreviewStretcher {
         &mut self,
         input: &[Sample],
         ratio_curve: &[StretchRatioPoint],
-    ) -> Vec<Sample> {
+    ) -> Result<Vec<Sample>, StretchRenderError> {
         stretch_dynamic_ratio_mono_with_engine(
             input,
             ratio_curve,
@@ -1704,7 +680,7 @@ impl RealtimePreviewStretcher {
         &mut self,
         frames: &[Sample],
         ratio_curve: &[StretchRatioPoint],
-    ) -> Vec<Sample> {
+    ) -> Result<Vec<Sample>, StretchRenderError> {
         stretch_dynamic_ratio_linked_stereo_with_engine(
             frames,
             ratio_curve,
@@ -1728,7 +704,7 @@ impl TimeStretcher for RealtimePreviewStretcher {
         self.ratio = sanitize_ratio(ratio);
     }
 
-    fn stretch_mono(&mut self, input: &[Sample]) -> Vec<Sample> {
+    fn stretch_mono(&mut self, input: &[Sample]) -> Result<Vec<Sample>, StretchRenderError> {
         stretch_mono_with_engine(
             input,
             self.ratio,
@@ -1783,18 +759,24 @@ impl OfflineHighQualityStretcher {
     /// This path uses a mid/side linked analysis surface so stereo image
     /// metrics can be measured against a candidate that preserves channel
     /// relationships directly. A trailing odd sample is ignored.
-    pub fn stretch_interleaved_stereo(&mut self, frames: &[Sample]) -> Vec<Sample> {
+    pub fn stretch_interleaved_stereo(
+        &mut self,
+        frames: &[Sample],
+    ) -> Result<Vec<Sample>, StretchRenderError> {
         let frame_count = frames.len() / 2;
-        let target_frames = (frame_count as f64 * self.ratio).round() as usize;
+        let target_frames = checked_target_frames(frame_count, self.ratio, 2)?;
         if frame_count == 0 || target_frames == 0 {
-            return Vec::new();
+            return Ok(Vec::new());
         }
         let even_frames = &frames[..frame_count * 2];
         if (self.ratio - 1.0).abs() < 1.0e-9 {
-            return even_frames.to_vec();
+            return Ok(even_frames.to_vec());
         }
         if frame_count < self.window_size {
-            return linear_time_scale_interleaved_stereo(even_frames, target_frames);
+            return Ok(linear_time_scale_interleaved_stereo(
+                even_frames,
+                target_frames,
+            ));
         }
 
         let default_output = transient_reset_phase_vocoder_linked_stereo(
@@ -1822,15 +804,15 @@ impl OfflineHighQualityStretcher {
             }
         };
         if selected_short_window {
-            transient_reset_phase_vocoder_linked_stereo(
+            Ok(transient_reset_phase_vocoder_linked_stereo(
                 even_frames,
                 target_frames,
                 self.ratio,
                 short_window_size_for_path(self.path),
                 short_window_analysis_hop_for_path(self.path),
-            )
+            ))
         } else {
-            default_output
+            Ok(default_output)
         }
     }
 
@@ -1845,23 +827,23 @@ impl OfflineHighQualityStretcher {
         input: &[Sample],
         sample_rate: SampleRate,
         pitch_shift_semitones: f64,
-    ) -> Vec<Sample> {
-        let target_len = (input.len() as f64 * self.ratio).round() as usize;
+    ) -> Result<Vec<Sample>, StretchRenderError> {
+        let target_len = checked_target_frames(input.len(), self.ratio, 1)?;
         if input.is_empty() || target_len == 0 {
-            return Vec::new();
+            return Ok(Vec::new());
         }
         if pitch_shift_semitones.abs() < 1.0e-9 || sample_rate.0 == 0 {
             return self.stretch_mono(input);
         }
 
         let pitched = pitch_shift_mono_to_nominal_rate(input, sample_rate, pitch_shift_semitones);
-        stretch_to_exact_mono(
+        Ok(stretch_to_exact_mono(
             &pitched,
             target_len,
             self.window_size,
             self.analysis_hop,
             transient_reset_phase_vocoder,
-        )
+        ))
     }
 
     /// Apply independent pitch shift and tempo stretch to interleaved stereo.
@@ -1874,11 +856,11 @@ impl OfflineHighQualityStretcher {
         frames: &[Sample],
         sample_rate: SampleRate,
         pitch_shift_semitones: f64,
-    ) -> Vec<Sample> {
+    ) -> Result<Vec<Sample>, StretchRenderError> {
         let frame_count = frames.len() / 2;
-        let target_frames = (frame_count as f64 * self.ratio).round() as usize;
+        let target_frames = checked_target_frames(frame_count, self.ratio, 2)?;
         if frame_count == 0 || target_frames == 0 {
-            return Vec::new();
+            return Ok(Vec::new());
         }
         let even_frames = &frames[..frame_count * 2];
         if pitch_shift_semitones.abs() < 1.0e-9 || sample_rate.0 == 0 {
@@ -1890,7 +872,12 @@ impl OfflineHighQualityStretcher {
             sample_rate,
             pitch_shift_semitones,
         );
-        stretch_to_exact_linked_stereo(&pitched, target_frames, self.window_size, self.analysis_hop)
+        Ok(stretch_to_exact_linked_stereo(
+            &pitched,
+            target_frames,
+            self.window_size,
+            self.analysis_hop,
+        ))
     }
 
     /// Apply one static pitch shift while following a stepwise dynamic ratio
@@ -1907,16 +894,20 @@ impl OfflineHighQualityStretcher {
         ratio_curve: &[StretchRatioPoint],
         sample_rate: SampleRate,
         pitch_shift_semitones: f64,
-    ) -> Vec<Sample> {
+    ) -> Result<Vec<Sample>, StretchRenderError> {
         if pitch_shift_semitones.abs() < 1.0e-9 || sample_rate.0 == 0 {
             return self.stretch_dynamic_ratio_interleaved_stereo(frames, ratio_curve);
         }
 
         let frame_count = frames.len() / 2;
         let even_frames = &frames[..frame_count * 2];
-        let segments = dynamic_ratio_segments(frame_count, ratio_curve, sanitize_ratio(self.ratio));
+        let segments = coalesce_short_dynamic_ratio_segments(
+            dynamic_ratio_segments(frame_count, ratio_curve, sanitize_ratio(self.ratio)),
+            min_dynamic_ratio_segment_frames(self.window_size, self.analysis_hop),
+        );
         let boundaries = dynamic_ratio_segment_boundaries(&segments);
         let target_frames: usize = segments.iter().map(|segment| segment.target_frames).sum();
+        checked_output_frames(target_frames as f64, 2)?;
         let mut output = Vec::with_capacity(target_frames * 2);
         for segment in segments {
             let start = segment.start_frame * 2;
@@ -1940,7 +931,7 @@ impl OfflineHighQualityStretcher {
             &boundaries,
             DYNAMIC_RATIO_SEAM_SMOOTH_FRAMES,
         );
-        output
+        Ok(output)
     }
 
     /// Stretch one mono buffer with a stepwise dynamic ratio curve.
@@ -1954,7 +945,7 @@ impl OfflineHighQualityStretcher {
         &mut self,
         input: &[Sample],
         ratio_curve: &[StretchRatioPoint],
-    ) -> Vec<Sample> {
+    ) -> Result<Vec<Sample>, StretchRenderError> {
         stretch_dynamic_ratio_mono_with_engine(
             input,
             ratio_curve,
@@ -1974,7 +965,7 @@ impl OfflineHighQualityStretcher {
         &mut self,
         frames: &[Sample],
         ratio_curve: &[StretchRatioPoint],
-    ) -> Vec<Sample> {
+    ) -> Result<Vec<Sample>, StretchRenderError> {
         stretch_dynamic_ratio_linked_stereo_with_engine(
             frames,
             ratio_curve,
@@ -1998,14 +989,14 @@ impl TimeStretcher for OfflineHighQualityStretcher {
         self.ratio = sanitize_ratio(ratio);
     }
 
-    fn stretch_mono(&mut self, input: &[Sample]) -> Vec<Sample> {
+    fn stretch_mono(&mut self, input: &[Sample]) -> Result<Vec<Sample>, StretchRenderError> {
         let default_output = stretch_mono_with_engine(
             input,
             self.ratio,
             self.window_size,
             self.analysis_hop,
             transient_reset_phase_vocoder,
-        );
+        )?;
         let selected_short_window = match self.path {
             OfflineHighQualityPath::Default => false,
             OfflineHighQualityPath::CompressionShortWindowSelector => {
@@ -2024,7 +1015,7 @@ impl TimeStretcher for OfflineHighQualityStretcher {
                 transient_reset_phase_vocoder,
             )
         } else {
-            default_output
+            Ok(default_output)
         }
     }
 }
@@ -2169,6 +1160,17 @@ fn ceil_frame_to_usize(frame: f64) -> usize {
     }
 }
 
+/// Wrap a phase into `-PI..PI` by remainder.
+///
+/// `phase_vocoder` carries a second implementation using
+/// `phase - TAU * (phase / TAU).round()`. The two are **not** interchangeable:
+/// over a `-50..50` sweep at `1e-4` steps, `945158` of `1005319` values differ
+/// in bits, worst delta `2.6e-6`, and at exactly `-PI` they disagree in sign,
+/// this one returning `-PI` and the round form `+PI`.
+///
+/// Unifying them is therefore an output change, not a refactor, so `g10.038`
+/// left both in place. It needs a batch that can carry a re-baseline with
+/// evidence. Audit finding `A10` is refined rather than closed.
 fn wrap_phase(phase: f32) -> f32 {
     (phase + std::f32::consts::PI).rem_euclid(std::f32::consts::TAU) - std::f32::consts::PI
 }
@@ -2179,18 +1181,18 @@ fn stretch_mono_with_engine(
     window_size: usize,
     analysis_hop: usize,
     engine: fn(&[Sample], usize, f64, usize, usize) -> Vec<Sample>,
-) -> Vec<Sample> {
-    let target_len = (input.len() as f64 * ratio).round() as usize;
+) -> Result<Vec<Sample>, StretchRenderError> {
+    let target_len = checked_target_frames(input.len(), ratio, 1)?;
     if input.is_empty() || target_len == 0 {
-        return Vec::new();
+        return Ok(Vec::new());
     }
     if (ratio - 1.0).abs() < 1.0e-9 {
-        return input.to_vec();
+        return Ok(input.to_vec());
     }
     if input.len() < window_size {
-        return linear_time_scale(input, target_len);
+        return Ok(linear_time_scale(input, target_len));
     }
-    engine(input, target_len, ratio, window_size, analysis_hop)
+    Ok(engine(input, target_len, ratio, window_size, analysis_hop))
 }
 
 fn stretch_to_exact_mono(
@@ -2226,14 +1228,18 @@ pub(crate) fn dynamic_ratio_output_frames(
         .sum()
 }
 
+/// Output-frame positions of the seams a dynamic-ratio render actually
+/// produces, after short segments are coalesced.
 #[cfg(any(test, feature = "evidence"))]
 pub(crate) fn dynamic_ratio_output_boundaries(
     input_frames: usize,
     ratio_curve: &[StretchRatioPoint],
     fallback_ratio: f64,
 ) -> Vec<usize> {
-    let segments =
-        dynamic_ratio_segments(input_frames, ratio_curve, sanitize_ratio(fallback_ratio));
+    let segments = coalesce_short_dynamic_ratio_segments(
+        dynamic_ratio_segments(input_frames, ratio_curve, sanitize_ratio(fallback_ratio)),
+        min_dynamic_ratio_segment_frames(DEFAULT_WINDOW_SIZE, DEFAULT_ANALYSIS_HOP),
+    );
     dynamic_ratio_segment_boundaries(&segments)
 }
 
@@ -2244,9 +1250,14 @@ pub(crate) fn stretch_dynamic_ratio_mono_with_engine(
     window_size: usize,
     analysis_hop: usize,
     engine: fn(&[Sample], usize, f64, usize, usize) -> Vec<Sample>,
-) -> Vec<Sample> {
-    let segments = dynamic_ratio_segments(input.len(), ratio_curve, sanitize_ratio(fallback_ratio));
+) -> Result<Vec<Sample>, StretchRenderError> {
+    let segments = coalesce_short_dynamic_ratio_segments(
+        dynamic_ratio_segments(input.len(), ratio_curve, sanitize_ratio(fallback_ratio)),
+        min_dynamic_ratio_segment_frames(window_size, analysis_hop),
+    );
+    let boundaries = dynamic_ratio_segment_boundaries(&segments);
     let target_len: usize = segments.iter().map(|segment| segment.target_frames).sum();
+    checked_output_frames(target_len as f64, 1)?;
     let mut output = Vec::with_capacity(target_len);
     for segment in segments {
         let rendered = stretch_to_exact_mono(
@@ -2258,7 +1269,13 @@ pub(crate) fn stretch_dynamic_ratio_mono_with_engine(
         );
         output.extend(rendered);
     }
-    output
+    smooth_dynamic_segment_boundaries_interleaved(
+        &mut output,
+        1,
+        &boundaries,
+        DYNAMIC_RATIO_SEAM_SMOOTH_FRAMES,
+    );
+    Ok(output)
 }
 
 fn stretch_dynamic_ratio_linked_stereo_with_engine(
@@ -2267,12 +1284,16 @@ fn stretch_dynamic_ratio_linked_stereo_with_engine(
     fallback_ratio: f64,
     window_size: usize,
     analysis_hop: usize,
-) -> Vec<Sample> {
+) -> Result<Vec<Sample>, StretchRenderError> {
     let frame_count = input.len() / 2;
     let even_input = &input[..frame_count * 2];
-    let segments = dynamic_ratio_segments(frame_count, ratio_curve, sanitize_ratio(fallback_ratio));
+    let segments = coalesce_short_dynamic_ratio_segments(
+        dynamic_ratio_segments(frame_count, ratio_curve, sanitize_ratio(fallback_ratio)),
+        min_dynamic_ratio_segment_frames(window_size, analysis_hop),
+    );
     let boundaries = dynamic_ratio_segment_boundaries(&segments);
     let target_frames: usize = segments.iter().map(|segment| segment.target_frames).sum();
+    checked_output_frames(target_frames as f64, 2)?;
     let mut output = Vec::with_capacity(target_frames * 2);
     for segment in segments {
         let start = segment.start_frame * 2;
@@ -2291,7 +1312,7 @@ fn stretch_dynamic_ratio_linked_stereo_with_engine(
         &boundaries,
         DYNAMIC_RATIO_SEAM_SMOOTH_FRAMES,
     );
-    output
+    Ok(output)
 }
 
 fn stretch_to_exact_linked_stereo(
@@ -2372,6 +1393,74 @@ fn dynamic_ratio_segment(start_frame: usize, end_frame: usize, ratio: f64) -> Dy
         target_frames: ((end_frame - start_frame) as f64 * ratio).round() as usize,
         ratio,
     }
+}
+
+/// Merge adjacent segments until every one carries at least
+/// `min_segment_frames` source frames.
+///
+/// A segment shorter than one analysis window cannot be rendered by the STFT
+/// engine and would fall through to time-domain interpolation, which
+/// pitch-shifts. Merging keeps the render pitch-preserving.
+///
+/// The merged target frame count is the sum of the counts its constituent
+/// spans would have produced, so total output length and the average tempo
+/// over the merged span are preserved exactly and the segment renders at the
+/// mean ratio of the spans it covers. Frozen by Contract `046`, 2026-07-27
+/// addendum.
+fn coalesce_short_dynamic_ratio_segments(
+    segments: Vec<DynamicRatioSegment>,
+    min_segment_frames: usize,
+) -> Vec<DynamicRatioSegment> {
+    if min_segment_frames <= 1 || segments.len() < 2 {
+        return segments;
+    }
+
+    let mut coalesced: Vec<DynamicRatioSegment> = Vec::with_capacity(segments.len());
+    for segment in segments {
+        match coalesced.last_mut() {
+            Some(previous) if previous.end_frame - previous.start_frame < min_segment_frames => {
+                previous.end_frame = segment.end_frame;
+                previous.target_frames += segment.target_frames;
+                previous.ratio = mean_segment_ratio(previous);
+            }
+            _ => coalesced.push(segment),
+        }
+    }
+
+    // The final segment can still be short when the source ends mid-span. Fold
+    // it backwards rather than leaving one sub-window render at the tail.
+    while coalesced.len() >= 2 {
+        let last = coalesced[coalesced.len() - 1];
+        if last.end_frame - last.start_frame >= min_segment_frames {
+            break;
+        }
+        coalesced.pop();
+        let previous = coalesced
+            .last_mut()
+            .expect("length checked before the pop above");
+        previous.end_frame = last.end_frame;
+        previous.target_frames += last.target_frames;
+        previous.ratio = mean_segment_ratio(previous);
+    }
+
+    coalesced
+}
+
+/// Shortest source span a dynamic-ratio segment may render.
+///
+/// One window yields a single analysis frame, which is enough to avoid the
+/// interpolation fallback but not enough for the phase vocoder to track the
+/// source. The extra hops give every segment several overlapping frames.
+pub(crate) fn min_dynamic_ratio_segment_frames(window_size: usize, analysis_hop: usize) -> usize {
+    window_size + analysis_hop.saturating_mul(MIN_DYNAMIC_RATIO_SEGMENT_EXTRA_HOPS)
+}
+
+fn mean_segment_ratio(segment: &DynamicRatioSegment) -> f64 {
+    let source_frames = segment.end_frame - segment.start_frame;
+    if source_frames == 0 {
+        return segment.ratio;
+    }
+    segment.target_frames as f64 / source_frames as f64
 }
 
 fn dynamic_ratio_segment_boundaries(segments: &[DynamicRatioSegment]) -> Vec<usize> {
@@ -2484,8 +1573,18 @@ fn should_select_expansion_short_window(
         return false;
     }
 
-    let current_smear = transient_smear::measure_selector_transient_smear(
+    // Source transients are detected once and reused for both comparisons.
+    // The current-output and draft-baseline measurements previously each
+    // re-detected them from the same input with the same policy and geometry.
+    let input_events = transient_smear::detect_stretch_transients_with_policy(
         input,
+        EXPANSION_SHORT_WINDOW_SELECTOR_WINDOW_SIZE,
+        EXPANSION_SHORT_WINDOW_SELECTOR_ANALYSIS_HOP,
+        transient_smear::StretchTransientDetectorPolicy::production(),
+    );
+    let current_smear = transient_smear::measure_selector_transient_smear_with_input_events(
+        input,
+        &input_events,
         current_output,
         ratio,
         EXPANSION_SHORT_WINDOW_SELECTOR_WINDOW_SIZE,
@@ -2496,9 +1595,15 @@ fn should_select_expansion_short_window(
     }
 
     let mut draft = PhaseVocoderStretcher::new(ratio);
-    let draft_output = draft.stretch_mono(input);
-    let draft_smear = transient_smear::measure_selector_transient_smear(
+    let Ok(draft_output) = draft.stretch_mono(input) else {
+        // The default render already succeeded at this size, so a draft render
+        // of the same input cannot exceed the bound. Stay on the current path
+        // rather than switching on missing evidence.
+        return false;
+    };
+    let draft_smear = transient_smear::measure_selector_transient_smear_with_input_events(
         input,
+        &input_events,
         &draft_output,
         ratio,
         EXPANSION_SHORT_WINDOW_SELECTOR_WINDOW_SIZE,
@@ -2591,716 +1696,25 @@ mod tests {
         input
     }
 
-    #[test]
-    fn realtime_preview_contract_reports_latency_and_callback_blocker() {
-        let contract = plan_realtime_preview_stream(RealtimePreviewStreamConfig::new(
-            SampleRate(48_000),
-            2,
-            128,
-        ))
-        .expect("default preview contract should plan");
 
-        assert_eq!(contract.config.window_size, REALTIME_PREVIEW_WINDOW_SIZE);
-        assert_eq!(contract.config.analysis_hop, REALTIME_PREVIEW_ANALYSIS_HOP);
-        assert_eq!(contract.input_latency_frames, REALTIME_PREVIEW_WINDOW_SIZE);
-        assert_eq!(contract.output_latency_frames, REALTIME_PREVIEW_WINDOW_SIZE);
-        assert_eq!(
-            contract.ratio_change_alignment_tolerance_frames,
-            REALTIME_PREVIEW_ANALYSIS_HOP + 128
-        );
-        assert_eq!(
-            contract.integration_mode,
-            RealtimePreviewIntegrationMode::AnticipativePreRender
-        );
-        assert_eq!(
-            contract.callback_timeline_mode,
-            RealtimePreviewCallbackTimelineMode::QuantumLocked
-        );
-        assert!(!contract.audio_thread_processing_supported);
-        assert_eq!(
-            contract.unsupported_mode,
-            Some(RealtimePreviewUnsupportedMode::SourceBufferingContract)
-        );
-    }
 
-    #[test]
-    fn realtime_preview_contract_rejects_invalid_streams() {
-        assert_eq!(
-            plan_realtime_preview_stream(RealtimePreviewStreamConfig::new(SampleRate(0), 2, 128,)),
-            Err(RealtimePreviewPlanError::InvalidSampleRate)
-        );
-        assert_eq!(
-            plan_realtime_preview_stream(RealtimePreviewStreamConfig::new(
-                SampleRate(48_000),
-                6,
-                128,
-            )),
-            Err(RealtimePreviewPlanError::UnsupportedChannelCount(6))
-        );
-        assert_eq!(
-            plan_realtime_preview_stream(RealtimePreviewStreamConfig::new(
-                SampleRate(48_000),
-                2,
-                0,
-            )),
-            Err(RealtimePreviewPlanError::InvalidBlockSize)
-        );
-    }
 
-    #[test]
-    fn realtime_preview_fixed_ratio_source_projection_reports_required_source_span() {
-        let slow = project_realtime_preview_fixed_ratio_source_advance(480, 96, 2.0);
-        assert_eq!(slow.ratio, 2.0);
-        assert_eq!(slow.output_start_frame, 480);
-        assert_eq!(slow.output_frames, 96);
-        assert_eq!(slow.output_end_frame, 576);
-        assert_eq!(slow.source_start_frame, 240.0);
-        assert_eq!(slow.source_end_frame, 288.0);
-        assert_eq!(slow.source_advance_frames, 48.0);
-        assert_eq!(slow.source_frame_floor, 240);
-        assert_eq!(slow.source_frame_ceil, 288);
-        assert_eq!(slow.source_frames_required, 48);
 
-        let fast = project_realtime_preview_fixed_ratio_source_advance(480, 96, 0.5);
-        assert_eq!(fast.source_start_frame, 960.0);
-        assert_eq!(fast.source_end_frame, 1152.0);
-        assert_eq!(fast.source_advance_frames, 192.0);
-        assert_eq!(fast.source_frames_required, 192);
 
-        let identity = project_realtime_preview_fixed_ratio_source_advance(480, 96, 1.0);
-        assert_eq!(identity.source_start_frame, 480.0);
-        assert_eq!(identity.source_end_frame, 576.0);
-        assert_eq!(identity.source_frames_required, 96);
-    }
 
-    #[test]
-    fn realtime_preview_fixed_ratio_source_projection_covers_fractional_source_bounds() {
-        let projection = project_realtime_preview_fixed_ratio_source_advance(0, 256, 1.5);
 
-        assert_eq!(projection.source_frame_floor, 0);
-        assert_eq!(projection.source_frame_ceil, 171);
-        assert_eq!(projection.source_frames_required, 171);
-        assert!((projection.source_advance_frames - (256.0 / 1.5)).abs() < 1.0e-9);
 
-        let sanitized = project_realtime_preview_fixed_ratio_source_advance(32, 64, f64::NAN);
-        assert_eq!(sanitized.ratio, 1.0);
-        assert_eq!(sanitized.source_start_frame, 32.0);
-        assert_eq!(sanitized.source_end_frame, 96.0);
-    }
 
-    #[test]
-    fn realtime_preview_source_projection_state_advances_fractional_cursor() {
-        let mut state = RealtimePreviewCallbackState::new(RealtimePreviewStreamConfig::new(
-            SampleRate(48_000),
-            2,
-            128,
-        ))
-        .expect("callback state config should validate");
 
-        let first = state
-            .advance_source_projection(96, 1.5)
-            .expect("projection should stay within the configured block size");
-        let second = state
-            .advance_source_projection(96, 1.5)
-            .expect("projection should stay within the configured block size");
 
-        assert_eq!(first.output_start_frame, 0);
-        assert_eq!(first.output_end_frame, 96);
-        assert_eq!(first.source_start_frame, 0.0);
-        assert_eq!(first.source_end_frame, 64.0);
-        assert_eq!(first.source_frames_required, 64);
-        assert_eq!(second.output_start_frame, 96);
-        assert_eq!(second.output_end_frame, 192);
-        assert_eq!(second.source_start_frame, 64.0);
-        assert_eq!(second.source_end_frame, 128.0);
-        assert_eq!(second.source_frames_required, 64);
-        assert_eq!(state.source_projection_output_frame(), 192);
-        assert_eq!(state.source_projection_source_cursor(), 128.0);
-        assert_eq!(state.last_source_projection(), second);
 
-        state.reset();
-        assert_eq!(state.source_projection_output_frame(), 0);
-        assert_eq!(state.source_projection_source_cursor(), 0.0);
-        assert_eq!(
-            state.last_source_projection(),
-            project_realtime_preview_fixed_ratio_source_advance(0, 0, 1.0)
-        );
-    }
 
-    #[test]
-    fn realtime_preview_source_projection_state_bounds_input_demand() {
-        let mut state = RealtimePreviewCallbackState::new(RealtimePreviewStreamConfig::new(
-            SampleRate(48_000),
-            1,
-            128,
-        ))
-        .expect("callback state config should validate");
 
-        let fast_limit = state.source_projection_input_demand_limit_frames(0.5);
-        let fast = state
-            .advance_source_projection(128, 0.5)
-            .expect("projection should stay within the configured block size");
-        assert_eq!(fast.source_advance_frames, 256.0);
-        assert_eq!(fast.source_frames_required, 256);
-        assert!(fast.source_frames_required <= fast_limit);
 
-        let fractional_limit = state.source_projection_input_demand_limit_frames(3.0);
-        let fractional = state
-            .advance_source_projection(100, 3.0)
-            .expect("projection should stay within the configured block size");
-        assert!((fractional.source_advance_frames - (100.0 / 3.0)).abs() < 1.0e-9);
-        assert_eq!(fractional.source_frame_floor, 256);
-        assert_eq!(fractional.source_frame_ceil, 290);
-        assert_eq!(fractional.source_frames_required, 34);
-        assert!(fractional.source_frames_required <= fractional_limit);
 
-        assert_eq!(
-            state.advance_source_projection(129, 1.0),
-            Err(
-                RealtimePreviewCallbackProcessError::FrameCountExceedsConfig {
-                    requested: 129,
-                    max: 128,
-                }
-            )
-        );
-    }
 
-    #[test]
-    fn realtime_preview_source_projection_state_is_deterministic_for_fixed_ratio() {
-        let mut first = RealtimePreviewCallbackState::new(RealtimePreviewStreamConfig::new(
-            SampleRate(48_000),
-            1,
-            128,
-        ))
-        .expect("callback state config should validate");
-        let mut second = RealtimePreviewCallbackState::new(RealtimePreviewStreamConfig::new(
-            SampleRate(48_000),
-            1,
-            128,
-        ))
-        .expect("callback state config should validate");
 
-        for _ in 0..16 {
-            let first_report = first
-                .advance_source_projection(100, 3.0)
-                .expect("projection should stay within the configured block size");
-            let second_report = second
-                .advance_source_projection(100, 3.0)
-                .expect("projection should stay within the configured block size");
-            assert_eq!(first_report, second_report);
-            assert!(first_report.source_frames_required <= 35);
-        }
 
-        assert_eq!(
-            first.source_projection_output_frame(),
-            second.source_projection_output_frame()
-        );
-        assert!(
-            (first.source_projection_source_cursor() - second.source_projection_source_cursor())
-                .abs()
-                < 1.0e-9
-        );
-    }
-
-    #[test]
-    fn realtime_preview_scheduled_source_projection_applies_ratio_change_on_grid() {
-        let mut state = RealtimePreviewCallbackState::new(RealtimePreviewStreamConfig::new(
-            SampleRate(48_000),
-            1,
-            96,
-        ))
-        .expect("callback state config should validate");
-
-        for _ in 0..5 {
-            let report = state
-                .advance_scheduled_source_projection(96, 1.0)
-                .expect("projection should stay within the configured block size");
-            assert!(!report.ratio_change_applied);
-            assert_eq!(report.start_ratio, 1.0);
-            assert_eq!(report.end_ratio, 1.0);
-        }
-
-        let changed = state
-            .advance_scheduled_source_projection(96, 1.5)
-            .expect("projection should stay within the configured block size");
-
-        assert!(changed.ratio_change_applied);
-        assert_eq!(changed.output_start_frame, 480);
-        assert_eq!(changed.output_end_frame, 576);
-        assert_eq!(changed.source_start_frame, 480.0);
-        assert_eq!(changed.ratio_change_request_output_frame, 480);
-        assert_eq!(changed.ratio_change_output_frame, 512);
-        assert_eq!(changed.ratio_change_source_frame, 512.0);
-        assert_eq!(changed.ratio_change_alignment_error_frames, 32);
-        assert_eq!(changed.start_ratio, 1.0);
-        assert_eq!(changed.end_ratio, 1.5);
-        assert!((changed.source_end_frame - (512.0 + 64.0 / 1.5)).abs() < 1.0e-9);
-        assert_eq!(state.source_projection_active_ratio(), 1.5);
-        assert_eq!(state.source_projection_ratio_change_count(), 1);
-        assert_eq!(
-            state.last_source_projection_ratio_change_output_frame(),
-            512
-        );
-        assert_eq!(
-            state.last_source_projection_ratio_change_source_frame(),
-            512.0
-        );
-        assert!(
-            state.last_source_projection_ratio_change_alignment_error_frames()
-                <= state.ratio_change_alignment_tolerance_frames()
-        );
-
-        let next = state
-            .advance_scheduled_source_projection(96, 1.5)
-            .expect("projection should stay within the configured block size");
-        assert!(!next.ratio_change_applied);
-        assert_eq!(next.start_ratio, 1.5);
-        assert_eq!(next.end_ratio, 1.5);
-        assert!((next.source_start_frame - changed.source_end_frame).abs() < 1.0e-9);
-        assert_eq!(next.output_start_frame, changed.output_end_frame);
-    }
-
-    #[test]
-    fn realtime_preview_scheduled_source_projection_is_continuous_across_tempo_ramp() {
-        let mut state = RealtimePreviewCallbackState::new(RealtimePreviewStreamConfig::new(
-            SampleRate(48_000),
-            2,
-            96,
-        ))
-        .expect("callback state config should validate");
-        let mut previous_output_end = 0;
-        let mut previous_source_end = 0.0;
-        let mut changes = Vec::new();
-
-        for block_index in 0..18 {
-            let ratio = if block_index < 5 {
-                0.75
-            } else if block_index < 10 {
-                1.0
-            } else {
-                1.5
-            };
-            let report = state
-                .advance_scheduled_source_projection(96, ratio)
-                .expect("projection should stay within the configured block size");
-
-            assert_eq!(report.output_start_frame, previous_output_end);
-            assert!((report.source_start_frame - previous_source_end).abs() < 1.0e-9);
-            assert!(report.source_end_frame >= report.source_start_frame);
-            assert!(report.source_frames_required <= 129);
-            if report.ratio_change_applied {
-                assert!(
-                    report.ratio_change_alignment_error_frames
-                        <= state.ratio_change_alignment_tolerance_frames()
-                );
-                assert!(
-                    report.ratio_change_source_frame >= report.source_start_frame
-                        && report.ratio_change_source_frame <= report.source_end_frame
-                );
-                changes.push((
-                    report.ratio_change_output_frame,
-                    report.ratio_change_source_frame,
-                ));
-            }
-
-            previous_output_end = report.output_end_frame;
-            previous_source_end = report.source_end_frame;
-        }
-
-        assert_eq!(changes.len(), 3);
-        assert_eq!(changes[0].0, 0);
-        assert_eq!(changes[1].0, 512);
-        assert_eq!(changes[2].0, 1024);
-        assert!(changes.windows(2).all(|pair| pair[0].1 <= pair[1].1));
-        assert_eq!(state.source_projection_ratio_change_count(), 3);
-        assert_eq!(state.source_projection_current_ratio(), 1.5);
-        assert_eq!(state.source_projection_active_ratio(), 1.5);
-        assert_eq!(
-            state.last_dynamic_source_projection().output_end_frame,
-            previous_output_end
-        );
-    }
-
-    #[test]
-    fn realtime_preview_callback_state_validates_stereo_geometry_without_enabling_contract() {
-        let mut state = RealtimePreviewCallbackState::new(RealtimePreviewStreamConfig::new(
-            SampleRate(48_000),
-            2,
-            128,
-        ))
-        .expect("callback state config should validate");
-        let input = vec![0.0; 128 * 2];
-        let mut output = vec![0.25; 128 * 2];
-
-        assert_eq!(state.config().channel_count, 2);
-        assert_eq!(state.scratch_capacity_samples(), 128 * 2);
-        assert!(state.input_ring_capacity_samples() >= REALTIME_PREVIEW_WINDOW_SIZE * 2);
-        assert_eq!(
-            state.input_ring_capacity_samples(),
-            state.output_ring_capacity_samples()
-        );
-        assert_eq!(
-            state.output_ring_capacity_samples(),
-            state.normalization_ring_capacity_samples()
-        );
-        assert_eq!(state.window_size(), REALTIME_PREVIEW_WINDOW_SIZE);
-        assert_eq!(
-            state.spectral_scratch_samples(),
-            REALTIME_PREVIEW_WINDOW_SIZE * 2
-        );
-        assert_eq!(
-            state.phase_state_values(),
-            (REALTIME_PREVIEW_WINDOW_SIZE / 2 + 1) * 2
-        );
-        assert!(state.fft_plans_ready());
-        assert!(!state.contract().audio_thread_processing_supported);
-        let report = state
-            .process(&input, &mut output, 128, 1.25)
-            .expect("linked-stereo callback kernel should process");
-        assert_eq!(report.input_frames, 128);
-        assert_eq!(report.output_frames, 128);
-        assert_eq!(report.processed_frames, 128);
-        assert_eq!(state.current_ratio(), 1.25);
-        assert!(output.iter().all(|sample| *sample == 0.0));
-
-        state.reset();
-        assert_eq!(state.current_ratio(), 1.0);
-        assert_eq!(state.processed_frames(), 0);
-    }
-
-    #[test]
-    fn realtime_preview_callback_state_rejects_bad_callback_blocks() {
-        let mut state = RealtimePreviewCallbackState::new(RealtimePreviewStreamConfig::new(
-            SampleRate(48_000),
-            2,
-            128,
-        ))
-        .expect("callback state config should validate");
-        let input = vec![0.0; 128 * 2];
-        let mut output = vec![0.0; 128 * 2];
-
-        assert_eq!(
-            state.process(&input, &mut output, 129, 1.0),
-            Err(
-                RealtimePreviewCallbackProcessError::FrameCountExceedsConfig {
-                    requested: 129,
-                    max: 128,
-                }
-            )
-        );
-        assert_eq!(
-            state.process(&input[..64], &mut output, 128, 1.0),
-            Err(RealtimePreviewCallbackProcessError::BufferTooSmall {
-                required_samples: 256,
-                input_samples: 64,
-                output_samples: 256,
-            })
-        );
-    }
-
-    #[test]
-    fn realtime_preview_callback_state_processes_mono_stream_without_allocation_contract_claim() {
-        let mut state = RealtimePreviewCallbackState::new(RealtimePreviewStreamConfig::new(
-            SampleRate(48_000),
-            1,
-            128,
-        ))
-        .expect("callback state config should validate");
-        let input = sine(440.0, 48_000.0, 128 * 48);
-        let mut output = vec![0.0; input.len()];
-
-        for block_index in 0..48 {
-            let start = block_index * 128;
-            let report = state
-                .process(
-                    &input[start..start + 128],
-                    &mut output[start..start + 128],
-                    128,
-                    1.0,
-                )
-                .expect("mono callback kernel should process");
-            assert_eq!(report.input_frames, 128);
-            assert_eq!(report.output_frames, 128);
-            assert_eq!(report.processed_frames, ((block_index + 1) * 128) as u64);
-        }
-
-        assert!(!state.contract().audio_thread_processing_supported);
-        assert!(rms(&output[1024..]) > 0.05);
-        assert!((dominant_frequency_hz(&output[1024..], 48_000.0) - 440.0).abs() < 20.0);
-    }
-
-    #[test]
-    fn realtime_preview_callback_state_is_deterministic_for_fixed_ratio() {
-        let input = sine(330.0, 48_000.0, 128 * 48);
-        let mut first = RealtimePreviewCallbackState::new(RealtimePreviewStreamConfig::new(
-            SampleRate(48_000),
-            1,
-            128,
-        ))
-        .expect("callback state config should validate");
-        let mut second = RealtimePreviewCallbackState::new(RealtimePreviewStreamConfig::new(
-            SampleRate(48_000),
-            1,
-            128,
-        ))
-        .expect("callback state config should validate");
-        let mut first_output = vec![0.0; input.len()];
-        let mut second_output = vec![0.0; input.len()];
-
-        for block_index in 0..48 {
-            let start = block_index * 128;
-            first
-                .process(
-                    &input[start..start + 128],
-                    &mut first_output[start..start + 128],
-                    128,
-                    1.25,
-                )
-                .expect("first mono callback kernel should process");
-            second
-                .process(
-                    &input[start..start + 128],
-                    &mut second_output[start..start + 128],
-                    128,
-                    1.25,
-                )
-                .expect("second mono callback kernel should process");
-        }
-
-        assert_eq!(first_output, second_output);
-        assert!(rms(&first_output[1024..]) > 0.02);
-    }
-
-    #[test]
-    fn realtime_preview_callback_state_processes_linked_stereo_stream() {
-        let left = sine(330.0, 48_000.0, 128 * 64);
-        let right = sine(660.0, 48_000.0, 128 * 64);
-        let input = left
-            .iter()
-            .zip(right.iter())
-            .flat_map(|(left, right)| [*left, *right])
-            .collect::<Vec<_>>();
-        let mut first = RealtimePreviewCallbackState::new(RealtimePreviewStreamConfig::new(
-            SampleRate(48_000),
-            2,
-            128,
-        ))
-        .expect("callback state config should validate");
-        let mut second = RealtimePreviewCallbackState::new(RealtimePreviewStreamConfig::new(
-            SampleRate(48_000),
-            2,
-            128,
-        ))
-        .expect("callback state config should validate");
-        let mut first_output = vec![0.0; input.len()];
-        let mut second_output = vec![0.0; input.len()];
-
-        for block_index in 0..64 {
-            let start = block_index * 128 * 2;
-            first
-                .process(
-                    &input[start..start + 128 * 2],
-                    &mut first_output[start..start + 128 * 2],
-                    128,
-                    1.0,
-                )
-                .expect("first linked-stereo callback kernel should process");
-            second
-                .process(
-                    &input[start..start + 128 * 2],
-                    &mut second_output[start..start + 128 * 2],
-                    128,
-                    1.0,
-                )
-                .expect("second linked-stereo callback kernel should process");
-        }
-
-        let out_left = first_output
-            .chunks_exact(2)
-            .map(|frame| frame[0])
-            .collect::<Vec<_>>();
-        let out_right = first_output
-            .chunks_exact(2)
-            .map(|frame| frame[1])
-            .collect::<Vec<_>>();
-
-        assert_eq!(first_output, second_output);
-        assert!(rms(&out_left[1024..]) > 0.05);
-        assert!(rms(&out_right[1024..]) > 0.05);
-        assert!((dominant_frequency_hz(&out_left[1024..], 48_000.0) - 330.0).abs() < 20.0);
-        assert!((dominant_frequency_hz(&out_right[1024..], 48_000.0) - 660.0).abs() < 25.0);
-    }
-
-    #[test]
-    fn realtime_preview_callback_state_schedules_ratio_changes_on_analysis_grid() {
-        let mut state = RealtimePreviewCallbackState::new(RealtimePreviewStreamConfig::new(
-            SampleRate(48_000),
-            1,
-            96,
-        ))
-        .expect("callback state config should validate");
-        let input = sine(440.0, 48_000.0, 96 * 16);
-        let mut output = vec![0.0; input.len()];
-
-        for block_index in 0..16 {
-            let start = block_index * 96;
-            let ratio = if block_index < 5 { 1.0 } else { 1.5 };
-            let report = state
-                .process(
-                    &input[start..start + 96],
-                    &mut output[start..start + 96],
-                    96,
-                    ratio,
-                )
-                .expect("callback kernel should process dynamic ratio");
-            assert_eq!(report.ratio, ratio);
-            assert!(
-                report.ratio_change_alignment_error_frames
-                    <= state.ratio_change_alignment_tolerance_frames()
-            );
-        }
-
-        assert_eq!(state.current_ratio(), 1.5);
-        assert_eq!(state.active_ratio(), 1.5);
-        assert_eq!(state.ratio_change_count(), 1);
-        assert_eq!(state.last_ratio_change_request_frame(), 480);
-        assert_eq!(state.last_ratio_change_applied_frame(), 512);
-        assert_eq!(state.last_ratio_change_output_frame(), 1024);
-        assert_eq!(state.last_ratio_change_alignment_error_frames(), 32);
-        assert!(
-            state.last_ratio_change_alignment_error_frames()
-                <= state.ratio_change_alignment_tolerance_frames()
-        );
-    }
-
-    #[test]
-    fn realtime_preview_callback_state_bounds_dynamic_ratio_seams_on_tempo_ramp() {
-        let input = generate_synthetic_stretch_audio(StretchCorpusFamily::TempoRamp)
-            .expect("tempo ramp synthetic case should exist");
-        let ratio_change_frames = [input.frame_count() / 3, input.frame_count() * 2 / 3];
-        let mut state = RealtimePreviewCallbackState::new(RealtimePreviewStreamConfig::new(
-            SampleRate(input.sample_rate_hz),
-            input.channels as usize,
-            96,
-        ))
-        .expect("callback state config should validate");
-        let mut output = vec![0.0; input.samples.len()];
-        let mut seam_frames = Vec::new();
-        let mut last_ratio_change_count = 0;
-
-        for block_start in (0..input.frame_count()).step_by(96) {
-            let frame_count = (input.frame_count() - block_start).min(96);
-            let sample_start = block_start * input.channels as usize;
-            let sample_end = sample_start + frame_count * input.channels as usize;
-            let ratio = if block_start < ratio_change_frames[0] {
-                0.75
-            } else if block_start < ratio_change_frames[1] {
-                1.0
-            } else {
-                1.5
-            };
-            let report = state
-                .process(
-                    &input.samples[sample_start..sample_end],
-                    &mut output[sample_start..sample_end],
-                    frame_count,
-                    ratio,
-                )
-                .expect("callback kernel should process tempo ramp");
-            if report.ratio_change_count > last_ratio_change_count
-                && state.last_ratio_change_request_frame() > 0
-            {
-                seam_frames.push(report.ratio_change_output_frame as usize);
-            }
-            last_ratio_change_count = report.ratio_change_count;
-        }
-
-        let seam = measure_dynamic_segment_seam_click(&output, input.channels, &seam_frames, 1.0);
-
-        assert_eq!(seam_frames.len(), 2);
-        assert_eq!(seam.seam_frames, seam_frames);
-        assert!(
-            seam.peak_seam_delta < 0.35,
-            "peak seam delta {}",
-            seam.peak_seam_delta
-        );
-        assert!(
-            seam.click_dbfs < -9.0,
-            "seam click dBFS {}",
-            seam.click_dbfs
-        );
-    }
-
-    #[test]
-    fn realtime_preview_mono_is_deterministic_and_pitch_preserving() {
-        let input = sine(440.0, 48_000.0, 12_000);
-        let mut first = RealtimePreviewStretcher::new(1.25);
-        let mut second = RealtimePreviewStretcher::new(1.25);
-
-        let first_output = first.stretch_mono(&input);
-        let second_output = second.stretch_mono(&input);
-
-        assert_eq!(first.quality(), StretchQuality::RealtimePreview);
-        assert_eq!(
-            first_output.len(),
-            (input.len() as f64 * 1.25).round() as usize
-        );
-        assert_eq!(first_output, second_output);
-        assert!((dominant_frequency_hz(&first_output, 48_000.0) - 440.0).abs() < 20.0);
-    }
-
-    #[test]
-    fn realtime_preview_linked_stereo_is_deterministic_and_exact_length() {
-        let left = sine(330.0, 48_000.0, 16_000);
-        let right = sine(660.0, 48_000.0, 16_000);
-        let input = left
-            .iter()
-            .zip(right.iter())
-            .flat_map(|(left, right)| [*left, *right])
-            .collect::<Vec<_>>();
-        let mut first = RealtimePreviewStretcher::new(0.75);
-        let mut second = RealtimePreviewStretcher::new(0.75);
-
-        let first_output = first.stretch_interleaved_stereo(&input);
-        let second_output = second.stretch_interleaved_stereo(&input);
-
-        assert_eq!(
-            first_output.len(),
-            (16_000.0_f64 * 0.75).round() as usize * 2
-        );
-        assert_eq!(first_output, second_output);
-    }
-
-    #[test]
-    fn realtime_preview_dynamic_ratio_curve_keeps_sample_domain_length() {
-        let input = sine(220.0, 48_000.0, 16_000);
-        let ratio_curve = [
-            StretchRatioPoint {
-                timeline_frame: 0,
-                ratio: 1.0,
-            },
-            StretchRatioPoint {
-                timeline_frame: 8_000,
-                ratio: 1.5,
-            },
-        ];
-        let mut stretcher = RealtimePreviewStretcher::new(1.0);
-
-        let output = stretcher.stretch_dynamic_ratio_mono(&input, &ratio_curve);
-
-        assert_eq!(output.len(), 20_000);
-    }
-
-    #[test]
-    fn realtime_preview_pitch_shift_preserves_tempo_length_contract() {
-        let input = sine(440.0, 48_000.0, 12_000);
-        let mut stretcher = RealtimePreviewStretcher::new(1.25);
-
-        let output = stretcher.stretch_pitch_mono(&input, SampleRate(48_000), 12.0);
-
-        assert_eq!(output.len(), 15_000);
-        assert!((dominant_frequency_hz(&output, 48_000.0) - 880.0).abs() < 35.0);
-    }
 
     fn add_decaying_burst(samples: &mut [Sample], start: usize, frames: usize, amplitude: f32) {
         for offset in 0..frames {
@@ -3327,7 +1741,12 @@ mod tests {
     fn identity_ratio_is_passthrough() {
         let input = sine(440.0, 48_000.0, 10_000);
         let mut stretcher = PhaseVocoderStretcher::new(1.0);
-        assert_eq!(stretcher.stretch_mono(&input), input);
+        assert_eq!(
+            stretcher
+                .stretch_mono(&input)
+                .expect("render fits the offline output bound"),
+            input
+        );
     }
 
     #[test]
@@ -3345,7 +1764,9 @@ mod tests {
         let input = sine(440.0, 48_000.0, 48_000);
         for ratio in [0.5, 0.75, 1.25, 1.5, 2.0] {
             let mut stretcher = PhaseVocoderStretcher::new(ratio);
-            let output = stretcher.stretch_mono(&input);
+            let output = stretcher
+                .stretch_mono(&input)
+                .expect("render fits the offline output bound");
             assert_eq!(
                 output.len(),
                 (input.len() as f64 * ratio).round() as usize,
@@ -3389,8 +1810,12 @@ mod tests {
         for ratio in [0.5, 0.75, 1.25, 1.5, 2.0] {
             let mut first = OfflineHighQualityStretcher::new(ratio);
             let mut repeated = OfflineHighQualityStretcher::new(ratio);
-            let first_output = first.stretch_mono(&input);
-            let repeated_output = repeated.stretch_mono(&input);
+            let first_output = first
+                .stretch_mono(&input)
+                .expect("render fits the offline output bound");
+            let repeated_output = repeated
+                .stretch_mono(&input)
+                .expect("render fits the offline output bound");
 
             assert_eq!(
                 first_output.len(),
@@ -3406,7 +1831,9 @@ mod tests {
         let input = boundary_content_probe(48_000, 384);
         for ratio in [0.5, 2.0] {
             let mut stretcher = OfflineHighQualityStretcher::new(ratio);
-            let output = stretcher.stretch_mono(&input);
+            let output = stretcher
+                .stretch_mono(&input)
+                .expect("render fits the offline output bound");
             let edge_span = 2_048.min(output.len());
 
             assert_eq!(output.len(), (input.len() as f64 * ratio).round() as usize);
@@ -3426,24 +1853,31 @@ mod tests {
         let input = masked_soft_attack_probe(0.35);
         let ratio = 0.75;
         let mut default = OfflineHighQualityStretcher::new(ratio);
-        let default_output = default.stretch_mono(&input);
+        let default_output = default
+            .stretch_mono(&input)
+            .expect("render fits the offline output bound");
         let mut short_window = OfflineHighQualityStretcher::with_window(
             ratio,
             COMPRESSION_SHORT_WINDOW_SELECTOR_WINDOW_SIZE,
             COMPRESSION_SHORT_WINDOW_SELECTOR_ANALYSIS_HOP,
         );
-        let short_window_output = short_window.stretch_mono(&input);
+        let short_window_output = short_window
+            .stretch_mono(&input)
+            .expect("render fits the offline output bound");
         let mut selector = OfflineHighQualityStretcher::with_path(
             ratio,
             OfflineHighQualityPath::CompressionShortWindowSelector,
         );
-        let selector_output = selector.stretch_mono(&input);
+        let selector_output = selector
+            .stretch_mono(&input)
+            .expect("render fits the offline output bound");
         let default_smear = measure_transient_smear(
             &input,
             &default_output,
             ratio,
             COMPRESSION_SHORT_WINDOW_SELECTOR_WINDOW_SIZE,
             COMPRESSION_SHORT_WINDOW_SELECTOR_ANALYSIS_HOP,
+            StretchTransientSmearPolicies::production(),
         );
         let accepted = default_smear.missed_transients
             >= COMPRESSION_SHORT_WINDOW_SELECTOR_MIN_CURRENT_MISSES
@@ -3467,13 +1901,20 @@ mod tests {
         let input = masked_soft_attack_probe(0.35);
         let ratio = 1.25;
         let mut default = OfflineHighQualityStretcher::new(ratio);
-        let default_output = default.stretch_mono(&input);
+        let default_output = default
+            .stretch_mono(&input)
+            .expect("render fits the offline output bound");
         let mut selector = OfflineHighQualityStretcher::with_path(
             ratio,
             OfflineHighQualityPath::CompressionShortWindowSelector,
         );
 
-        assert_eq!(selector.stretch_mono(&input), default_output);
+        assert_eq!(
+            selector
+                .stretch_mono(&input)
+                .expect("render fits the offline output bound"),
+            default_output
+        );
     }
 
     #[test]
@@ -3481,18 +1922,24 @@ mod tests {
         let input = masked_soft_attack_probe(0.35);
         let ratio = 1.25;
         let mut default = OfflineHighQualityStretcher::new(ratio);
-        let default_output = default.stretch_mono(&input);
+        let default_output = default
+            .stretch_mono(&input)
+            .expect("render fits the offline output bound");
         let mut short_window = OfflineHighQualityStretcher::with_window(
             ratio,
             EXPANSION_SHORT_WINDOW_SELECTOR_WINDOW_SIZE,
             EXPANSION_SHORT_WINDOW_SELECTOR_ANALYSIS_HOP,
         );
-        let short_window_output = short_window.stretch_mono(&input);
+        let short_window_output = short_window
+            .stretch_mono(&input)
+            .expect("render fits the offline output bound");
         let mut selector = OfflineHighQualityStretcher::with_path(
             ratio,
             OfflineHighQualityPath::ExpansionShortWindowSelector,
         );
-        let selector_output = selector.stretch_mono(&input);
+        let selector_output = selector
+            .stretch_mono(&input)
+            .expect("render fits the offline output bound");
         let accepted = should_select_expansion_short_window(&input, &default_output, ratio);
 
         let expected = if accepted {
@@ -3512,13 +1959,20 @@ mod tests {
         let input = masked_soft_attack_probe(0.35);
         let ratio = 0.75;
         let mut default = OfflineHighQualityStretcher::new(ratio);
-        let default_output = default.stretch_mono(&input);
+        let default_output = default
+            .stretch_mono(&input)
+            .expect("render fits the offline output bound");
         let mut selector = OfflineHighQualityStretcher::with_path(
             ratio,
             OfflineHighQualityPath::ExpansionShortWindowSelector,
         );
 
-        assert_eq!(selector.stretch_mono(&input), default_output);
+        assert_eq!(
+            selector
+                .stretch_mono(&input)
+                .expect("render fits the offline output bound"),
+            default_output
+        );
     }
 
     #[test]
@@ -3544,7 +1998,12 @@ mod tests {
         let input = sine(330.0, 48_000.0, 8_192);
         let mut stretcher = OfflineHighQualityStretcher::new(1.0);
 
-        assert_eq!(stretcher.stretch_mono(&input), input);
+        assert_eq!(
+            stretcher
+                .stretch_mono(&input)
+                .expect("render fits the offline output bound"),
+            input
+        );
     }
 
     #[test]
@@ -3553,7 +2012,9 @@ mod tests {
         let input = sine(440.0, sample_rate, 48_000);
         for ratio in [0.75, 1.5, 2.0] {
             let mut stretcher = PhaseVocoderStretcher::new(ratio);
-            let output = stretcher.stretch_mono(&input);
+            let output = stretcher
+                .stretch_mono(&input)
+                .expect("render fits the offline output bound");
             let frequency = dominant_frequency_hz(&output, sample_rate);
             assert!(
                 (frequency - 440.0).abs() < 15.0,
@@ -3571,7 +2032,9 @@ mod tests {
     fn sub_window_input_scales_by_linear_fallback() {
         let input: Vec<f32> = (0..100).map(|index| index as f32 / 100.0).collect();
         let mut stretcher = PhaseVocoderStretcher::new(2.0);
-        let output = stretcher.stretch_mono(&input);
+        let output = stretcher
+            .stretch_mono(&input)
+            .expect("render fits the offline output bound");
         assert_eq!(output.len(), 200);
         // Monotone ramp stays monotone under linear scaling.
         assert!(output.windows(2).all(|pair| pair[1] >= pair[0] - 1.0e-6));
@@ -3590,7 +2053,9 @@ mod tests {
 
         for ratio in [0.5, 0.75, 1.25, 1.5, 2.0] {
             let mut stretcher = OfflineHighQualityStretcher::new(ratio);
-            let output = stretcher.stretch_interleaved_stereo(&frames);
+            let output = stretcher
+                .stretch_interleaved_stereo(&frames)
+                .expect("render fits the offline output bound");
 
             assert_eq!(
                 output.len(),
@@ -3605,7 +2070,12 @@ mod tests {
         let frames = [0.0, 0.1, 0.2, 0.3, 0.4];
         let mut stretcher = OfflineHighQualityStretcher::new(1.0);
 
-        assert_eq!(stretcher.stretch_interleaved_stereo(&frames), frames[..4]);
+        assert_eq!(
+            stretcher
+                .stretch_interleaved_stereo(&frames)
+                .expect("render fits the offline output bound"),
+            frames[..4]
+        );
     }
 
     #[test]
@@ -3623,8 +2093,12 @@ mod tests {
         let mut repeated = OfflineHighQualityStretcher::new(1.5);
 
         assert_eq!(
-            first.stretch_interleaved_stereo(&frames),
-            repeated.stretch_interleaved_stereo(&frames)
+            first
+                .stretch_interleaved_stereo(&frames)
+                .expect("render fits the offline output bound"),
+            repeated
+                .stretch_interleaved_stereo(&frames)
+                .expect("render fits the offline output bound")
         );
     }
 
@@ -3633,7 +2107,9 @@ mod tests {
         let input = sine(440.0, 48_000.0, 48_000);
         for (ratio, semitones) in [(1.0, 12.0), (1.5, -7.0), (0.75, 5.0)] {
             let mut stretcher = OfflineHighQualityStretcher::new(ratio);
-            let output = stretcher.stretch_pitch_mono(&input, SampleRate(48_000), semitones);
+            let output = stretcher
+                .stretch_pitch_mono(&input, SampleRate(48_000), semitones)
+                .expect("render fits the offline output bound");
 
             assert_eq!(
                 output.len(),
@@ -3649,7 +2125,9 @@ mod tests {
         let input = sine(440.0, sample_rate, 48_000);
         let mut stretcher = OfflineHighQualityStretcher::new(1.0);
 
-        let output = stretcher.stretch_pitch_mono(&input, SampleRate(48_000), 12.0);
+        let output = stretcher
+            .stretch_pitch_mono(&input, SampleRate(48_000), 12.0)
+            .expect("render fits the offline output bound");
         let frequency = dominant_frequency_hz(&output, sample_rate);
 
         assert_eq!(output.len(), input.len());
@@ -3672,10 +2150,12 @@ mod tests {
 
         let mut first = OfflineHighQualityStretcher::new(1.25);
         let mut repeated = OfflineHighQualityStretcher::new(1.25);
-        let first_output =
-            first.stretch_pitch_interleaved_stereo(&frames, SampleRate(48_000), -5.0);
-        let repeated_output =
-            repeated.stretch_pitch_interleaved_stereo(&frames, SampleRate(48_000), -5.0);
+        let first_output = first
+            .stretch_pitch_interleaved_stereo(&frames, SampleRate(48_000), -5.0)
+            .expect("render fits the offline output bound");
+        let repeated_output = repeated
+            .stretch_pitch_interleaved_stereo(&frames, SampleRate(48_000), -5.0)
+            .expect("render fits the offline output bound");
 
         assert_eq!(first_output.len(), (48_000f64 * 1.25).round() as usize * 2);
         assert_eq!(first_output, repeated_output);
@@ -3690,7 +2170,9 @@ mod tests {
             StretchRatioPoint::new(32_000, 1.5),
         ];
         let mut stretcher = OfflineHighQualityStretcher::new(1.0);
-        let output = stretcher.stretch_dynamic_ratio_mono(&input, &ratio_curve);
+        let output = stretcher
+            .stretch_dynamic_ratio_mono(&input, &ratio_curve)
+            .expect("render fits the offline output bound");
 
         assert_eq!(
             output.len(),
@@ -3711,8 +2193,12 @@ mod tests {
         let mut fixed = OfflineHighQualityStretcher::new(1.25);
 
         assert_eq!(
-            dynamic.stretch_dynamic_ratio_mono(&input, &ratio_curve),
-            fixed.stretch_mono(&input)
+            dynamic
+                .stretch_dynamic_ratio_mono(&input, &ratio_curve)
+                .expect("render fits the offline output bound"),
+            fixed
+                .stretch_mono(&input)
+                .expect("render fits the offline output bound")
         );
     }
 
@@ -3733,9 +2219,12 @@ mod tests {
         ];
         let mut first = OfflineHighQualityStretcher::new(1.0);
         let mut repeated = OfflineHighQualityStretcher::new(1.0);
-        let first_output = first.stretch_dynamic_ratio_interleaved_stereo(&frames, &ratio_curve);
-        let repeated_output =
-            repeated.stretch_dynamic_ratio_interleaved_stereo(&frames, &ratio_curve);
+        let first_output = first
+            .stretch_dynamic_ratio_interleaved_stereo(&frames, &ratio_curve)
+            .expect("render fits the offline output bound");
+        let repeated_output = repeated
+            .stretch_dynamic_ratio_interleaved_stereo(&frames, &ratio_curve)
+            .expect("render fits the offline output bound");
 
         assert_eq!(
             first_output.len(),
@@ -3754,12 +2243,11 @@ mod tests {
             frames.push(*l);
             frames.push(*r);
         }
-        let ratio_curve = [
-            StretchRatioPoint::new(0, 0.75),
-            StretchRatioPoint::new(16_000, 1.0),
-            StretchRatioPoint::new(32_000, 1.5),
-        ];
-        let boundaries = dynamic_ratio_output_boundaries(left.len(), &ratio_curve, 1.0);
+        // Explicit boundaries: this owner tests the smoother, not the
+        // segmentation law. Deriving them from a ratio curve coupled it to the
+        // Contract `046` minimum segment length, and it broke when that
+        // minimum grew past the curve's span length.
+        let boundaries = vec![12_000, 28_000];
         let mut raw = frames.clone();
         let before = measure_dynamic_segment_seam_click(&raw, 2, &boundaries, 1.0);
         smooth_dynamic_segment_boundaries_interleaved(&mut raw, 2, &boundaries, 64);
@@ -3786,18 +2274,22 @@ mod tests {
         ];
         let mut first = OfflineHighQualityStretcher::new(1.0);
         let mut repeated = OfflineHighQualityStretcher::new(1.0);
-        let first_output = first.stretch_dynamic_ratio_pitch_interleaved_stereo(
-            &frames,
-            &ratio_curve,
-            SampleRate(48_000),
-            2.0,
-        );
-        let repeated_output = repeated.stretch_dynamic_ratio_pitch_interleaved_stereo(
-            &frames,
-            &ratio_curve,
-            SampleRate(48_000),
-            2.0,
-        );
+        let first_output = first
+            .stretch_dynamic_ratio_pitch_interleaved_stereo(
+                &frames,
+                &ratio_curve,
+                SampleRate(48_000),
+                2.0,
+            )
+            .expect("render fits the offline output bound");
+        let repeated_output = repeated
+            .stretch_dynamic_ratio_pitch_interleaved_stereo(
+                &frames,
+                &ratio_curve,
+                SampleRate(48_000),
+                2.0,
+            )
+            .expect("render fits the offline output bound");
 
         assert_eq!(
             first_output.len(),
@@ -3995,7 +2487,9 @@ mod tests {
         let sample_rate = sample_rate_hz as f32;
         let input = sine(440.0, sample_rate, sample_rate_hz as usize);
         let mut stretcher = OfflineHighQualityStretcher::new(1.0);
-        let output = stretcher.stretch_pitch_mono(&input, SampleRate(sample_rate_hz), 12.0);
+        let output = stretcher
+            .stretch_pitch_mono(&input, SampleRate(sample_rate_hz), 12.0)
+            .expect("render fits the offline output bound");
         let measurement =
             measure_pitch_shift_error_cents(&output, sample_rate_hz, 440.0, 12.0, 1.0);
 
@@ -4108,44 +2602,6 @@ mod tests {
         }));
     }
 
-    #[test]
-    fn realtime_preview_backend_comparison_covers_preview_subset() {
-        let report = compare_synthetic_realtime_preview_backends();
-
-        assert_eq!(report.comparisons.len(), 24);
-        assert_eq!(
-            report.improved_count
-                + report.regressed_count
-                + report.unchanged_count
-                + report.inconclusive_count,
-            report.comparisons.len()
-        );
-        for comparison in &report.comparisons {
-            assert_eq!(comparison.baseline_backend, StretchBenchmarkBackend::Draft);
-            assert_eq!(
-                comparison.candidate_backend,
-                StretchBenchmarkBackend::RealtimePreviewPrototype
-            );
-            assert!(comparison.ratio.is_finite());
-            assert!(comparison.ratio > 0.0);
-        }
-        assert!(report.comparisons.iter().any(|comparison| {
-            comparison.case_id == "stretch:tempo_ramp"
-                && comparison.metric == StretchMetric::DynamicSegmentSeamClickDbfs
-                && comparison.path == StretchBenchmarkPath::DynamicRatio
-        }));
-        assert!(report.comparisons.iter().any(|comparison| {
-            comparison.case_id == "stretch:loop_seam"
-                && comparison.metric == StretchMetric::StereoImageDelta
-                && comparison.path == StretchBenchmarkPath::LinkedStereo
-        }));
-        assert!(report.comparisons.iter().any(|comparison| {
-            comparison.case_id == "stretch:pitch_shift"
-                && comparison.metric == StretchMetric::PitchErrorCents
-                && comparison.path == StretchBenchmarkPath::PitchShift
-                && comparison.pitch_shift_semitones == Some(12.0)
-        }));
-    }
 
     #[test]
     fn synthetic_backend_comparison_report_formats_deterministically() {
@@ -4215,7 +2671,10 @@ mod tests {
         assert!(formatted.starts_with(
             "stretch_corpus_report name=\"stretch-corpus-v1-local\" corpus=stretch-corpus-v1"
         ));
-        assert!(formatted.contains("engine=signal-native-stretch-v2"));
+        // Assert against the constant, not a literal. The engine version
+        // advances whenever renderer output changes, and this owner should
+        // prove the report carries it, not pin a particular value.
+        assert!(formatted.contains(&format!("engine={SIGNAL_STRETCH_ENGINE_VERSION}")));
         assert!(formatted.contains("projection_epoch=\"projection:unit\""));
         assert!(formatted.contains("source_policy synthetic="));
         assert!(formatted.contains(
@@ -4559,7 +3018,14 @@ mod tests {
         input[21] = 0.5;
         input[22] = 0.25;
         let output = vec![0.0; 64];
-        let measurement = measure_transient_smear(&input, &output, 1.0, 16, 4);
+        let measurement = measure_transient_smear(
+            &input,
+            &output,
+            1.0,
+            16,
+            4,
+            StretchTransientSmearPolicies::production(),
+        );
 
         assert!(measurement.input_transients > 0);
         assert_eq!(measurement.output_transients, 0);
@@ -4578,24 +3044,33 @@ mod tests {
     fn transient_smear_entry_point_uses_promoted_output_recovery_policy() {
         let input = masked_soft_attack_probe(1.0);
         let output = masked_soft_attack_probe(0.25);
-        let promoted = measure_transient_smear(&input, &output, 1.0, 1024, 256);
-        let strict = measure_transient_smear_with_policy(
+        let promoted = measure_transient_smear(
             &input,
             &output,
             1.0,
             1024,
             256,
-            StretchTransientDetectorPolicy::production(),
+            StretchTransientSmearPolicies::production(),
         );
-        let recovery = measure_transient_smear_with_output_recovery_policy(
+        let strict = measure_transient_smear(
             &input,
             &output,
             1.0,
             1024,
             256,
-            StretchTransientDetectorPolicy::production(),
-            StretchTransientDetectorPolicy::production(),
-            StretchTransientDetectorPolicy::candidate_review(),
+            StretchTransientSmearPolicies::symmetric(StretchTransientDetectorPolicy::production()),
+        );
+        let recovery = measure_transient_smear(
+            &input,
+            &output,
+            1.0,
+            1024,
+            256,
+            StretchTransientSmearPolicies {
+                input: StretchTransientDetectorPolicy::production(),
+                output: StretchTransientDetectorPolicy::production(),
+                output_recovery: Some(StretchTransientDetectorPolicy::candidate_review()),
+            },
         );
 
         assert_eq!(promoted, recovery);
@@ -4606,21 +3081,23 @@ mod tests {
     #[test]
     fn candidate_transient_smear_counts_masked_soft_attack() {
         let input = masked_soft_attack_probe(0.25);
-        let production = measure_transient_smear_with_policy(
+        let production = measure_transient_smear(
             &input,
             &input,
             1.0,
             1024,
             256,
-            StretchTransientDetectorPolicy::production(),
+            StretchTransientSmearPolicies::symmetric(StretchTransientDetectorPolicy::production()),
         );
-        let candidate = measure_transient_smear_with_policy(
+        let candidate = measure_transient_smear(
             &input,
             &input,
             1.0,
             1024,
             256,
-            StretchTransientDetectorPolicy::candidate_review(),
+            StretchTransientSmearPolicies::symmetric(
+                StretchTransientDetectorPolicy::candidate_review(),
+            ),
         );
 
         assert!(candidate.input_transients > production.input_transients);
@@ -4633,23 +3110,29 @@ mod tests {
     fn candidate_output_policy_recovers_production_input_match() {
         let input = masked_soft_attack_probe(1.0);
         let output = masked_soft_attack_probe(0.25);
-        let production = measure_transient_smear_with_policies(
+        let production = measure_transient_smear(
             &input,
             &output,
             1.0,
             1024,
             256,
-            StretchTransientDetectorPolicy::production(),
-            StretchTransientDetectorPolicy::production(),
+            StretchTransientSmearPolicies {
+                input: StretchTransientDetectorPolicy::production(),
+                output: StretchTransientDetectorPolicy::production(),
+                output_recovery: None,
+            },
         );
-        let candidate_output = measure_transient_smear_with_policies(
+        let candidate_output = measure_transient_smear(
             &input,
             &output,
             1.0,
             1024,
             256,
-            StretchTransientDetectorPolicy::production(),
-            StretchTransientDetectorPolicy::candidate_review(),
+            StretchTransientSmearPolicies {
+                input: StretchTransientDetectorPolicy::production(),
+                output: StretchTransientDetectorPolicy::candidate_review(),
+                output_recovery: None,
+            },
         );
 
         assert_eq!(
@@ -4664,24 +3147,29 @@ mod tests {
     fn output_recovery_policy_keeps_primary_matches_before_candidate_recovery() {
         let input = masked_soft_attack_probe(1.0);
         let output = masked_soft_attack_probe(0.25);
-        let production = measure_transient_smear_with_policies(
+        let production = measure_transient_smear(
             &input,
             &output,
             1.0,
             1024,
             256,
-            StretchTransientDetectorPolicy::production(),
-            StretchTransientDetectorPolicy::production(),
+            StretchTransientSmearPolicies {
+                input: StretchTransientDetectorPolicy::production(),
+                output: StretchTransientDetectorPolicy::production(),
+                output_recovery: None,
+            },
         );
-        let recovery = measure_transient_smear_with_output_recovery_policy(
+        let recovery = measure_transient_smear(
             &input,
             &output,
             1.0,
             1024,
             256,
-            StretchTransientDetectorPolicy::production(),
-            StretchTransientDetectorPolicy::production(),
-            StretchTransientDetectorPolicy::candidate_review(),
+            StretchTransientSmearPolicies {
+                input: StretchTransientDetectorPolicy::production(),
+                output: StretchTransientDetectorPolicy::production(),
+                output_recovery: Some(StretchTransientDetectorPolicy::candidate_review()),
+            },
         );
 
         assert_eq!(recovery.input_transients, production.input_transients);

@@ -1,14 +1,14 @@
 macro_rules! direct_renewal_dream_tests {
     () => {
         use std::alloc::{GlobalAlloc, Layout, System};
+        use std::cell::Cell;
         use std::fs::{self, OpenOptions};
         use std::io::Write;
         use std::path::PathBuf;
         use std::process::Command;
-        use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
-        use std::sync::Mutex;
 
-        use rustfft::num_complex::Complex64;
+        use rustfft::num_complex::{Complex32, Complex64};
+        use rustfft::FftPlanner;
 
         use crate::creative_direct_renewal_dream::{
             address, boundary_envelope, cubic_coefficients, fft_size, frequency_weight, high_53,
@@ -24,12 +24,18 @@ macro_rules! direct_renewal_dream_tests {
         const SAMPLE_RATE: u32 = 48_000;
         const SYNTHETIC_SOURCE_FRAMES: usize = 96_000;
 
-        static ALLOCATION_MEASURING: AtomicBool = AtomicBool::new(false);
-        static PROCESSING_STARTED: AtomicBool = AtomicBool::new(false);
-        static LIVE_BYTES: AtomicUsize = AtomicUsize::new(0);
-        static PEAK_BYTES: AtomicUsize = AtomicUsize::new(0);
-        static PROCESSING_ALLOCATIONS: AtomicUsize = AtomicUsize::new(0);
-        static ALLOCATION_LOCK: Mutex<()> = Mutex::new(());
+        // The measuring state is thread-scoped on purpose. The allocator hook
+        // below is process-global, so process-global counters would attribute
+        // every other test thread's allocations to whichever thread happens to
+        // be measuring. `Cell` with const init registers no destructor, so
+        // reading it from inside the allocator cannot re-enter it.
+        thread_local! {
+            static ALLOCATION_MEASURING: Cell<bool> = const { Cell::new(false) };
+            static PROCESSING_STARTED: Cell<bool> = const { Cell::new(false) };
+            static LIVE_BYTES: Cell<usize> = const { Cell::new(0) };
+            static PEAK_BYTES: Cell<usize> = const { Cell::new(0) };
+            static PROCESSING_ALLOCATIONS: Cell<usize> = const { Cell::new(0) };
+        }
 
         struct DirectRenewalDreamAllocator;
 
@@ -78,43 +84,55 @@ macro_rules! direct_renewal_dream_tests {
             DirectRenewalDreamAllocator;
 
         fn direct_renewal_dream_record_allocation(bytes: usize) {
-            let live = LIVE_BYTES.fetch_add(bytes, Ordering::Relaxed) + bytes;
-            if !ALLOCATION_MEASURING.load(Ordering::Relaxed) {
-                return;
-            }
-            if PROCESSING_STARTED.load(Ordering::Relaxed) {
-                PROCESSING_ALLOCATIONS.fetch_add(1, Ordering::Relaxed);
-            }
-            PEAK_BYTES.fetch_max(live, Ordering::Relaxed);
+            let _ = ALLOCATION_MEASURING.try_with(|measuring| {
+                if !measuring.get() {
+                    return;
+                }
+                let live = LIVE_BYTES.with(|value| {
+                    let updated = value.get().saturating_add(bytes);
+                    value.set(updated);
+                    updated
+                });
+                PEAK_BYTES.with(|peak| peak.set(peak.get().max(live)));
+                if PROCESSING_STARTED.with(Cell::get) {
+                    PROCESSING_ALLOCATIONS.with(|count| count.set(count.get().saturating_add(1)));
+                }
+            });
         }
 
         fn direct_renewal_dream_record_deallocation(bytes: usize) {
-            LIVE_BYTES.fetch_sub(bytes, Ordering::Relaxed);
+            let _ = ALLOCATION_MEASURING.try_with(|measuring| {
+                if !measuring.get() {
+                    return;
+                }
+                LIVE_BYTES.with(|value| value.set(value.get().saturating_sub(bytes)));
+            });
         }
 
         pub(crate) fn direct_renewal_dream_processing_started() {
-            PROCESSING_STARTED.store(true, Ordering::SeqCst);
+            let _ = PROCESSING_STARTED.try_with(|started| started.set(true));
         }
 
-        struct AllocationMeasurement {
-            baseline: usize,
-        }
+        struct AllocationMeasurement;
 
         impl AllocationMeasurement {
+            /// Measure allocations on the calling thread only. Live bytes start
+            /// at zero, so the reported peak is growth attributable to the
+            /// measured region rather than a global high-water mark.
             fn begin() -> Self {
-                let baseline = LIVE_BYTES.load(Ordering::SeqCst);
-                PEAK_BYTES.store(baseline, Ordering::SeqCst);
-                PROCESSING_ALLOCATIONS.store(0, Ordering::SeqCst);
-                PROCESSING_STARTED.store(false, Ordering::SeqCst);
-                ALLOCATION_MEASURING.store(true, Ordering::SeqCst);
-                Self { baseline }
+                LIVE_BYTES.with(|value| value.set(0));
+                PEAK_BYTES.with(|peak| peak.set(0));
+                PROCESSING_ALLOCATIONS.with(|count| count.set(0));
+                PROCESSING_STARTED.with(|started| started.set(false));
+                ALLOCATION_MEASURING.with(|measuring| measuring.set(true));
+                Self
             }
 
             fn finish(self) -> (usize, usize) {
-                ALLOCATION_MEASURING.store(false, Ordering::SeqCst);
-                let peak = PEAK_BYTES.load(Ordering::SeqCst);
-                let processing_allocations = PROCESSING_ALLOCATIONS.load(Ordering::SeqCst);
-                (peak.saturating_sub(self.baseline), processing_allocations)
+                ALLOCATION_MEASURING.with(|measuring| measuring.set(false));
+                let peak = PEAK_BYTES.with(Cell::get);
+                let processing_allocations = PROCESSING_ALLOCATIONS.with(Cell::get);
+                (peak, processing_allocations)
             }
         }
 
@@ -819,7 +837,6 @@ macro_rules! direct_renewal_dream_tests {
         }
 
         fn owner_s09() -> Result<(), String> {
-            let _allocation_guard = ALLOCATION_LOCK.lock().unwrap();
             let low = tone(fft_size(8_000), 1, 440.0);
             let low_request = CandidateRequest {
                 input: &low,

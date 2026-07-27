@@ -15,8 +15,6 @@ pub(super) struct Plan {
     pub(super) cycle_frames: usize,
     pub(super) denominator: i128,
     pub(super) window: Vec<f64>,
-    #[cfg(test)]
-    pub(super) identity: bool,
 }
 
 impl Plan {
@@ -38,8 +36,6 @@ impl Plan {
         }
         let input_frames = request.input.len() / request.channels;
         validate_dimensions(input_frames, request.target_frames, request.channels)?;
-        #[cfg(test)]
-        let identity = input_frames != 0 && request.target_frames == input_frames;
         let cycle_frames = cycle_frames(request.sample_rate, request.cycle_us)?;
         let denominator = i128::try_from(request.target_frames)
             .map_err(|_| CandidateError::ArithmeticOverflow)?
@@ -66,8 +62,6 @@ impl Plan {
             cycle_frames,
             denominator,
             window,
-            #[cfg(test)]
-            identity,
         })
     }
 }

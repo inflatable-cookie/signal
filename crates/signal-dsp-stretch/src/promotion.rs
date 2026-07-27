@@ -262,18 +262,8 @@ impl StretchPromotionReceipt {
         tier: StretchBackendTier,
         offline_path: OfflineHighQualityPath,
     ) -> bool {
-        self.tier == tier
-            && self.offline_path == offline_path
-            && self.status == StretchPromotionStatus::Accepted
-            && !self.evidence_id.is_empty()
-            && self.compared_to_draft_baseline
-            && self.absolute_integrity_passed
-            && self.required_comparator_row_count > 0
-            && self.comparator_row_count >= self.required_comparator_row_count
-            && self.required_case_count > 0
-            && self.passed_case_count >= self.required_case_count
-            && self.required_listening_family_count >= REQUIRED_STRETCH_LISTENING_FAMILY_COUNT
-            && self.completed_listening_family_count >= self.required_listening_family_count
+        self.product_facing_path_blocker(tier, offline_path)
+            .is_none()
     }
 
     /// Human-readable blocking reason when product-facing use is not accepted.
@@ -297,62 +287,121 @@ impl StretchPromotionReceipt {
         if self.status != StretchPromotionStatus::Accepted {
             return Some("promotion evidence has not accepted product-facing use");
         }
-        if self.evidence_id.is_empty() {
-            return Some("promotion evidence id is empty");
+        product_facing_blocker(&self.evidence_id, self.product_quality_evidence())
+            .map(ProductFacingBlocker::promotion_receipt_reason)
+    }
+
+    /// The composite evidence this receipt carries.
+    fn product_quality_evidence(&self) -> StretchProductQualityEvidence {
+        StretchProductQualityEvidence {
+            compared_to_draft_baseline: self.compared_to_draft_baseline,
+            absolute_integrity_passed: self.absolute_integrity_passed,
+            comparator_row_count: self.comparator_row_count,
+            required_comparator_row_count: self.required_comparator_row_count,
+            passed_case_count: self.passed_case_count,
+            required_case_count: self.required_case_count,
+            completed_listening_family_count: self.completed_listening_family_count,
+            required_listening_family_count: self.required_listening_family_count,
         }
-        if !self.compared_to_draft_baseline {
-            return Some("promotion evidence did not compare against the draft baseline");
-        }
-        if !self.absolute_integrity_passed {
-            return Some("promotion evidence did not pass absolute render integrity");
-        }
-        if self.required_comparator_row_count == 0 {
-            return Some("promotion evidence has no required external comparator count");
-        }
-        if self.comparator_row_count < self.required_comparator_row_count {
-            return Some("promotion evidence did not pass the required external comparator count");
-        }
-        if self.required_case_count == 0 {
-            return Some("promotion evidence has no required corpus count");
-        }
-        if self.passed_case_count < self.required_case_count {
-            return Some("promotion evidence did not pass the required corpus count");
-        }
-        if self.required_listening_family_count < REQUIRED_STRETCH_LISTENING_FAMILY_COUNT {
-            return Some("promotion evidence does not require all real-source listening families");
-        }
-        if self.completed_listening_family_count < self.required_listening_family_count {
-            return Some("promotion evidence has incomplete real-source listening findings");
-        }
-        None
     }
 }
 
+/// One reason product-facing use is blocked.
+///
+/// This is the single owner of the product-quality gate. The boolean form,
+/// the receipt-facing reason, and the construction-time note all derive from
+/// it, so the three cannot drift apart. They disagreed on none of the `1024`
+/// receipt shapes exercised before this consolidation, and now they cannot.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum ProductFacingBlocker {
+    EmptyEvidenceId,
+    NoDraftBaselineComparison,
+    NoAbsoluteIntegrity,
+    ComparatorCoverage,
+    CorpusCoverage,
+    ListeningCoverage,
+}
+
+impl ProductFacingBlocker {
+    /// Wording used when reporting against an existing receipt.
+    fn promotion_receipt_reason(self) -> &'static str {
+        match self {
+            Self::EmptyEvidenceId => "promotion evidence id is empty",
+            Self::NoDraftBaselineComparison => {
+                "promotion evidence did not compare against the draft baseline"
+            }
+            Self::NoAbsoluteIntegrity => {
+                "promotion evidence did not pass absolute render integrity"
+            }
+            Self::ComparatorCoverage => {
+                "promotion evidence did not pass the required external comparator count"
+            }
+            Self::CorpusCoverage => "promotion evidence did not pass the required corpus count",
+            Self::ListeningCoverage => {
+                "promotion evidence has incomplete real-source listening findings"
+            }
+        }
+    }
+
+    /// Wording used when constructing a receipt from composite evidence.
+    fn product_quality_note(self) -> &'static str {
+        match self {
+            Self::EmptyEvidenceId => "product-quality evidence id is empty",
+            Self::NoDraftBaselineComparison => {
+                "product-quality evidence did not compare against the draft baseline"
+            }
+            Self::NoAbsoluteIntegrity => {
+                "product-quality evidence did not pass absolute render integrity"
+            }
+            Self::ComparatorCoverage => {
+                "product-quality evidence did not pass external comparator coverage"
+            }
+            Self::CorpusCoverage => "product-quality evidence did not pass corpus coverage",
+            Self::ListeningCoverage => {
+                "product-quality evidence has incomplete real-source listening findings"
+            }
+        }
+    }
+}
+
+/// The product-quality gate. One evaluation, rendered two ways.
+fn product_facing_blocker(
+    evidence_id: &str,
+    evidence: StretchProductQualityEvidence,
+) -> Option<ProductFacingBlocker> {
+    if evidence_id.is_empty() {
+        return Some(ProductFacingBlocker::EmptyEvidenceId);
+    }
+    if !evidence.compared_to_draft_baseline {
+        return Some(ProductFacingBlocker::NoDraftBaselineComparison);
+    }
+    if !evidence.absolute_integrity_passed {
+        return Some(ProductFacingBlocker::NoAbsoluteIntegrity);
+    }
+    if evidence.required_comparator_row_count == 0
+        || evidence.comparator_row_count < evidence.required_comparator_row_count
+    {
+        return Some(ProductFacingBlocker::ComparatorCoverage);
+    }
+    if evidence.required_case_count == 0
+        || evidence.passed_case_count < evidence.required_case_count
+    {
+        return Some(ProductFacingBlocker::CorpusCoverage);
+    }
+    if evidence.required_listening_family_count < REQUIRED_STRETCH_LISTENING_FAMILY_COUNT
+        || evidence.completed_listening_family_count < evidence.required_listening_family_count
+    {
+        return Some(ProductFacingBlocker::ListeningCoverage);
+    }
+    None
+}
+
+/// The construction-time note, derived from the one gate owner.
 fn product_quality_rejection_note(
     evidence_id: &str,
     evidence: StretchProductQualityEvidence,
 ) -> Option<&'static str> {
-    if evidence_id.is_empty() {
-        Some("product-quality evidence id is empty")
-    } else if !evidence.compared_to_draft_baseline {
-        Some("product-quality evidence did not compare against the draft baseline")
-    } else if !evidence.absolute_integrity_passed {
-        Some("product-quality evidence did not pass absolute render integrity")
-    } else if evidence.required_comparator_row_count == 0
-        || evidence.comparator_row_count < evidence.required_comparator_row_count
-    {
-        Some("product-quality evidence did not pass external comparator coverage")
-    } else if evidence.required_case_count == 0
-        || evidence.passed_case_count < evidence.required_case_count
-    {
-        Some("product-quality evidence did not pass corpus coverage")
-    } else if evidence.required_listening_family_count < REQUIRED_STRETCH_LISTENING_FAMILY_COUNT
-        || evidence.completed_listening_family_count < evidence.required_listening_family_count
-    {
-        Some("product-quality evidence has incomplete real-source listening findings")
-    } else {
-        None
-    }
+    product_facing_blocker(evidence_id, evidence).map(ProductFacingBlocker::product_quality_note)
 }
 
 impl Default for StretchPromotionReceipt {

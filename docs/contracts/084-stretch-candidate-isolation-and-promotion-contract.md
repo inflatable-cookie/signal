@@ -1,10 +1,12 @@
 # 084 Stretch Candidate Isolation And Promotion Contract
 
-Status: closed without promotion; frozen baseline retained
+Status: closed without promotion; frozen baseline retained; defect correction
+authorized 2026-07-27
 Owner: dsp
 Created: 2026-07-19
+Updated: 2026-07-27
 Related contracts: `046`, `048`, `049`
-Related roadmap: `g10.030`
+Related roadmap: `g10.030`, `g10.036`
 
 ## Purpose
 
@@ -141,8 +143,53 @@ already failed Signal's mono, long-form objective, linked-stereo, and exact
 mechanics evidence. No successor brief opens. The frozen production baseline
 closes this contract.
 
+## 2026-07-27 Defect Correction Amendment
+
+The frozen-baseline clause exists to stop successor research from drifting the
+comparison target. That research closed with this contract. The clause was
+never scoped to that purpose in its own text, so it also blocks correcting
+defects in the baseline itself.
+
+### Rule 9: defect correction is authorized after successor closure
+
+A measured defect in the retained baseline may be corrected while this contract
+is closed, under these conditions:
+
+- the defect is reproduced and recorded before any code changes
+- the correction restores a behavior the renderer already promises. It does not
+  add capability, tune a detector, change a window or selector threshold, or
+  introduce a family
+- the correction is classified under the Contract `046` correction classes, and
+  an audible correction inside the retained `0.5x..4x` product range carries
+  objective rows plus concealed listening before admission, exactly as Rule 5
+  requires of a successor
+- extension-class corrections prove byte-exact output over the range they do
+  not affect
+
+Correction work does not reopen successor research and does not authorize a new
+candidate. Rules 1 through 8 continue to govern any renderer that is not a
+defect correction.
+
+### Rule 10: re-baselining a byte-exact regression owner
+
+Byte-exact regression hashes pin the retained baseline. A correction that
+changes output invalidates them by design.
+
+A hash may be re-frozen only in the batch that changed the behavior, only for
+the range the correction affects, and only with the objective rows and
+listening evidence that justified the change recorded alongside the new value.
+A hash may never be re-frozen to make an unexplained difference pass.
+
+### Authorized correction set
+
+`g10.036` is authorized to correct four measured defects: overlap coverage
+above `0.75 * window_size` synthesis hop, dynamic-ratio segments shorter than
+one window, missing mono seam treatment, and unbounded output allocation. No
+other change to the retained baseline is authorized by this amendment.
+
 ## Next Task
 
-No successor task remains. Reopen only when
+No successor task remains. Execute `g10.036` Batch 36.2 under Rule 9. Reopen
+successor research only when
 `docs/architecture/offline-time-stretch-non-phase-vocoder-feasibility.md`
 records new whole-system evidence satisfying its triggers.

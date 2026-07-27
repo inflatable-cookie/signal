@@ -35,8 +35,12 @@ const MASTER_ID: u64 = 100;
 thread_local! {
     static IN_RENDER_CALLBACK: Cell<bool> = const { Cell::new(false) };
 }
-static CALLBACK_ALLOCS: AtomicU64 = AtomicU64::new(0);
-static CALLBACK_DEALLOCS: AtomicU64 = AtomicU64::new(0);
+// Thread-scoped: the allocator hook is process-global, so a second test in
+// this binary would otherwise be counted against whichever test is measuring.
+thread_local! {
+    static CALLBACK_ALLOCS: Cell<u64> = const { Cell::new(0) };
+    static CALLBACK_DEALLOCS: Cell<u64> = const { Cell::new(0) };
+}
 
 struct CountingAllocator;
 
@@ -46,7 +50,7 @@ unsafe impl GlobalAlloc for CountingAllocator {
             .try_with(|flag| flag.get())
             .unwrap_or(false)
         {
-            CALLBACK_ALLOCS.fetch_add(1, Ordering::Relaxed);
+            CALLBACK_ALLOCS.with(|value| value.set(value.get().saturating_add(1)));
         }
         unsafe { System.alloc(layout) }
     }
@@ -56,7 +60,7 @@ unsafe impl GlobalAlloc for CountingAllocator {
             .try_with(|flag| flag.get())
             .unwrap_or(false)
         {
-            CALLBACK_DEALLOCS.fetch_add(1, Ordering::Relaxed);
+            CALLBACK_DEALLOCS.with(|value| value.set(value.get().saturating_add(1)));
         }
         unsafe { System.dealloc(pointer, layout) }
     }
@@ -237,8 +241,8 @@ fn live_events_while_stopped_sound_and_hold_zero_alloc_under_clocked_load() {
 
     // Measured window: sustained clocked callbacks while the control side
     // keeps pushing live CC events at the held note.
-    let allocs_before = CALLBACK_ALLOCS.load(Ordering::Relaxed);
-    let deallocs_before = CALLBACK_DEALLOCS.load(Ordering::Relaxed);
+    let allocs_before = CALLBACK_ALLOCS.with(Cell::get);
+    let deallocs_before = CALLBACK_DEALLOCS.with(Cell::get);
     let callbacks_before = controller.callback_count();
     for index in 0..12u64 {
         let batch: Vec<RenderPluginEvent> = (0..8)
@@ -249,8 +253,8 @@ fn live_events_while_stopped_sound_and_hold_zero_alloc_under_clocked_load() {
             .expect("push live CC batch");
         std::thread::sleep(Duration::from_millis(50));
     }
-    let allocs_during = CALLBACK_ALLOCS.load(Ordering::Relaxed) - allocs_before;
-    let deallocs_during = CALLBACK_DEALLOCS.load(Ordering::Relaxed) - deallocs_before;
+    let allocs_during = CALLBACK_ALLOCS.with(Cell::get) - allocs_before;
+    let deallocs_during = CALLBACK_DEALLOCS.with(Cell::get) - deallocs_before;
     let callbacks_during = controller.callback_count() - callbacks_before;
 
     assert!(

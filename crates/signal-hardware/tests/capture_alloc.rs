@@ -7,29 +7,34 @@
 //! concurrently (flag down). Zero counted allocations proves the RT path.
 
 use std::alloc::{GlobalAlloc, Layout, System};
+use std::cell::Cell;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
 
 use signal_hardware::{FakeInputBackend, InputStreamBackend, InputStreamSpec, SpscRing};
 
-static IN_CALLBACK: AtomicBool = AtomicBool::new(false);
-static CALLBACK_ALLOCS: AtomicU64 = AtomicU64::new(0);
-static CALLBACK_DEALLOCS: AtomicU64 = AtomicU64::new(0);
+// Thread-scoped: the allocator hook is process-global, so a second test in
+// this binary would otherwise be counted against whichever test is measuring.
+thread_local! {
+    static IN_CALLBACK: Cell<bool> = const { Cell::new(false) };
+    static CALLBACK_ALLOCS: Cell<u64> = const { Cell::new(0) };
+    static CALLBACK_DEALLOCS: Cell<u64> = const { Cell::new(0) };
+}
 
 struct CountingAllocator;
 
 unsafe impl GlobalAlloc for CountingAllocator {
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
-        if IN_CALLBACK.load(Ordering::Relaxed) {
-            CALLBACK_ALLOCS.fetch_add(1, Ordering::Relaxed);
+        if IN_CALLBACK.with(Cell::get) {
+            CALLBACK_ALLOCS.with(|value| value.set(value.get().saturating_add(1)));
         }
         unsafe { System.alloc(layout) }
     }
 
     unsafe fn dealloc(&self, pointer: *mut u8, layout: Layout) {
-        if IN_CALLBACK.load(Ordering::Relaxed) {
-            CALLBACK_DEALLOCS.fetch_add(1, Ordering::Relaxed);
+        if IN_CALLBACK.with(Cell::get) {
+            CALLBACK_DEALLOCS.with(|value| value.set(value.get().saturating_add(1)));
         }
         unsafe { System.dealloc(pointer, layout) }
     }
@@ -69,9 +74,9 @@ fn capture_callback_path_allocates_nothing() {
             },
             Box::new(move |frames| {
                 // Exactly the CaptureSession callback body, measured.
-                IN_CALLBACK.store(true, Ordering::SeqCst);
+                IN_CALLBACK.with(|flag| flag.set(true));
                 callback_ring.push_slice(frames);
-                IN_CALLBACK.store(false, Ordering::SeqCst);
+                IN_CALLBACK.with(|flag| flag.set(false));
                 callback_blocks.fetch_add(1, Ordering::Relaxed);
             }),
         )
@@ -88,12 +93,12 @@ fn capture_callback_path_allocates_nothing() {
         "callback barely ran: {observed_blocks}"
     );
     assert_eq!(
-        CALLBACK_ALLOCS.load(Ordering::Relaxed),
+        CALLBACK_ALLOCS.with(Cell::get),
         0,
         "capture callback allocated"
     );
     assert_eq!(
-        CALLBACK_DEALLOCS.load(Ordering::Relaxed),
+        CALLBACK_DEALLOCS.with(Cell::get),
         0,
         "capture callback deallocated"
     );
