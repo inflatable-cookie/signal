@@ -164,6 +164,39 @@ fn output_length_matches_the_target() {
     println!("G3: output length matches target at 4 ratios");
 }
 
+/// G5: the renderer must deliver audio, not a zero-padded shortfall.
+///
+/// The `g10.039` listening round found the adopted artifact path emitting
+/// `3.8` seconds of audio followed by `108` seconds of silence: `render` could
+/// deadlock between the input and output rings and silently drop the rest of
+/// the chunk, and the artifact path's length `resize` padded the gap with
+/// zeros. Length alone therefore proves nothing about content.
+#[test]
+#[ignore = "g10.039 open defect: renderer pads to target length with silence from 2.5 s"]
+fn render_delivers_audio_across_the_whole_source() {
+    let frames = 48_000 * 20;
+    let source = material(frames, 2);
+    let mut config = base_config(frames, 2);
+    config.fallback_ratio = 1.25;
+    // One large call, as the artifact path makes per chunk.
+    let out = render_in_chunks(&config, &source, frames);
+    let total = out.len() / 2;
+    assert!(total > 0, "no output at all");
+
+    // Every tenth of the output must carry signal.
+    let slice = total / 10;
+    for part in 0..10 {
+        let start = part * slice;
+        let seg = &out[start * 2..(start + slice) * 2];
+        let rms = (seg.iter().map(|s| (s * s) as f64).sum::<f64>() / seg.len() as f64).sqrt();
+        assert!(
+            rms > 1.0e-4,
+            "output decile {part} is silent: rms {rms:.9} at {:.1}s",
+            start as f32 / 48_000.0
+        );
+    }
+}
+
 /// G4: the acceptance target inherited from `g10.036`. A segmented render must
 /// correlate with a whole render at the same constant ratio.
 #[test]

@@ -1,6 +1,6 @@
 # 039 - Resumable Offline Stretch Render
 
-Status: active; Batch 39.4 implemented; blocked on concealed listening
+Status: active; Batch 39.4 rejected by listening and reverted; renderer defect open
 Owner: dsp
 Created: 2026-07-27
 Updated: 2026-07-27
@@ -204,7 +204,36 @@ segmented path, which Batch 39.4 replaces.
 
 ### Batch 39.4 - Render Plane Adoption
 
-Status: implemented and structurally proven; blocked on concealed listening
+Status: rejected by listening and reverted from `main`
+
+Listening found all three adopted specimens silent. Measured RMS: `0.000000`
+against roughly `0.1457` for the shipped side. An envelope over the full render
+shows audio to `3.8 s` and silence for the remaining `108 s`.
+
+`render` feeds the input ring in capacity-bounded slices; when the output ring
+cannot advance, `drain` makes no progress, and the escape added for that case
+broke out of the loop and silently dropped the rest of the caller's chunk. The
+renderer then padded to its contracted length with zeros, so nothing downstream
+noticed.
+
+Five structural gates missed it because every one measured a *relationship*
+between renders rather than whether a render contains audio. Chunk-size
+independence holds because silence is consistently silent; output length holds
+because the renderer pads; correlation holds because both renders share the same
+short prefix and the same silence. A renderer emitting nothing but zeros would
+have passed four of the five.
+
+`G5` is new and closes that gap: every decile of the output must carry signal.
+It reproduces the defect inside the crate suite at `2.5 s`, so no listening
+round was needed to catch it. It is `#[ignore]`d with the measured reason while
+the defect is open.
+
+The artifact path is reverted to the legacy per-chunk renderer, the behavior
+version is back to `signal-stretch-behavior-2026-07-27`, and the adoption
+helpers are removed. `ResumableOfflineStretch` stays in the crate, unwired.
+
+The `g10.036` seam pulse and `A18` therefore both remain shipped, and both seam
+smoothers stay.
 
 - [x] replace per-chunk stretcher construction with the resumable renderer
 - [ ] remove both seam smoothers — measurement says they are still needed; the
@@ -284,10 +313,11 @@ Status: blocked on Batch 39.4
 
 ## Next Task
 
-Judge the concealed pack at `~/Downloads/signal-listening-pack-39`: three cases
-crossing a chunk boundary, `16`-second excerpts centred on the first join, A and
-B randomised per case. Fill `notes.tsv`, then open `key.tsv`. Admission under
-Contract `084` Rule 5 requires that no case prefers the shipped side.
+Fix the ring deadlock in `ResumableOfflineStretch` before any further adoption.
+`render` must never discard source: if the output ring cannot advance, the
+renderer must emit before accepting more input, and the ring sizes must let
+emission always progress. Activate `G5` as part of that work, and re-run the
+listening round only once `G5` passes.
 
 Batch 39.5 then closes the lane and decides whether the remaining offline paths
 adopt the resumable renderer, which is what would let both seam smoothers be

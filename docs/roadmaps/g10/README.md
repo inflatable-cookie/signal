@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: active generation; `g10.039` Batch 39.4 blocked on operator listening
+Status: active generation; `g10.039` Batch 39.4 rejected and reverted
 Updated: 2026-07-27
 
 ## Why this generation matters now
