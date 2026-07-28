@@ -1,6 +1,6 @@
 # 039 - Resumable Offline Stretch Render
 
-Status: active; Batch 39.4 rejected by listening and reverted; renderer defect open
+Status: active; ring deadlock fixed and all six gates pass; re-adoption pending
 Owner: dsp
 Created: 2026-07-27
 Updated: 2026-07-27
@@ -313,11 +313,19 @@ Status: blocked on Batch 39.4
 
 ## Next Task
 
-Fix the ring deadlock in `ResumableOfflineStretch` before any further adoption.
-`render` must never discard source: if the output ring cannot advance, the
-renderer must emit before accepting more input, and the ring sizes must let
-emission always progress. Activate `G5` as part of that work, and re-run the
-listening round only once `G5` passes.
+The ring deadlock is fixed and all six gates pass, including `G5`. Output and
+normalization rings are four times the window against an input ring of twice, so
+the write frontier and emission limit no longer touch; emission releases
+everything below `synthesis_start`; and `render` returns an error rather than
+discarding source if a drain cannot advance.
+
+The ceiling moved to `12 MiB` against a measured `10616892 B`. It has now moved
+three times, and Contract `046` records why: a memory bound is a consequence of
+a working design, not something that can be frozen ahead of one.
+
+Re-adopt the resumable renderer in the offline artifact path, with a content
+check on the rendered artifact before any listening pack is built. Then re-run
+the `g10.039` listening round.
 
 Batch 39.5 then closes the lane and decides whether the remaining offline paths
 adopt the resumable renderer, which is what would let both seam smoothers be

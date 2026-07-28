@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: active generation; `g10.039` Batch 39.4 rejected and reverted
+Status: active generation; `g10.039` renderer fixed; re-adoption pending
 Updated: 2026-07-27
 
 ## Why this generation matters now

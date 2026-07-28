@@ -24,10 +24,14 @@ pub const MAX_RESUMABLE_WINDOW_SIZE: usize = 65_536;
 
 /// Frozen working-state ceiling in bytes.
 ///
-/// Covers `MAX_RESUMABLE_WINDOW_SIZE` in stereo, which measures `8519740` B.
-/// The Batch 39.2 brief put this at `8 MiB` from an inventory that omitted the
-/// input ring; the corrected figure includes all three rings.
-pub const MAX_RESUMABLE_WORKING_BYTES: usize = 9 * 1024 * 1024;
+/// Covers `MAX_RESUMABLE_WINDOW_SIZE` in stereo, which measures `10616892` B.
+///
+/// This figure moved twice. The Batch 39.2 brief put it at `8 MiB` from an
+/// inventory that omitted the input ring. The corrected `9 MiB` assumed output
+/// rings of twice the window, which deadlocks: the write frontier meets the
+/// emission limit exactly and the render stalls. Output rings are four times
+/// the window, so the real cost is `12 MiB`.
+pub const MAX_RESUMABLE_WORKING_BYTES: usize = 12 * 1024 * 1024;
 
 /// Configuration for one resumable render.
 #[derive(Clone, Debug, PartialEq)]
@@ -81,6 +85,7 @@ pub struct ResumableOfflineStretch {
     analysis_hop: usize,
     bins: usize,
     ring_frames: usize,
+    output_ring_frames: usize,
     window: Vec<f32>,
     omega: Vec<f32>,
     forward: Arc<dyn Fft<f32>>,
@@ -117,7 +122,12 @@ impl ResumableOfflineStretch {
         }
         let analysis_hop = config.analysis_hop.clamp(1, window_size / 2);
         let bins = window_size / 2 + 1;
+        // Input holds at most one window plus a hop of unanalysed source.
         let ring_frames = window_size * 2;
+        // Output must hold [output_read, synthesis_start + window) with room to
+        // spare. At 2 * window the write frontier meets the emission limit
+        // exactly and neither side can advance: the render then stalls.
+        let output_ring_frames = window_size * 4;
 
         let mut planner = FftPlanner::<f32>::new();
         let forward = planner.plan_fft_forward(window_size);
@@ -137,8 +147,8 @@ impl ResumableOfflineStretch {
                 current_magnitudes: vec![0.0; bins],
                 current_phases: vec![0.0; bins],
                 peaks: Vec::with_capacity(bins),
-                output_ring: vec![0.0; ring_frames],
-                normalization_ring: vec![0.0; ring_frames],
+                output_ring: vec![0.0; output_ring_frames],
+                normalization_ring: vec![0.0; output_ring_frames],
             })
             .collect();
 
@@ -153,6 +163,7 @@ impl ResumableOfflineStretch {
             analysis_hop,
             bins,
             ring_frames,
+            output_ring_frames,
             window: (0..window_size)
                 .map(|index| {
                     0.5 - 0.5 * (std::f32::consts::TAU * index as f32 / window_size as f32).cos()
@@ -387,10 +398,12 @@ impl ResumableOfflineStretch {
 
     /// Emit output frames that no future analysis frame can still touch.
     fn emit(&mut self, output: &mut Vec<Sample>, synthesis_start: usize, final_pass: bool) {
+        // The frame about to be written covers [synthesis_start, +window), so
+        // everything below synthesis_start is final and can be released.
         let safe_until = if final_pass {
             synthesis_start + self.window_size
         } else {
-            synthesis_start.saturating_sub(self.window_size)
+            synthesis_start
         };
         while self.output_read_frame < safe_until {
             if self.delivered_output_frames >= self.target_output_frames
@@ -401,7 +414,7 @@ impl ResumableOfflineStretch {
                 self.output_read_frame += 1;
                 continue;
             }
-            let ring_frame = self.output_read_frame % self.ring_frames;
+            let ring_frame = self.output_read_frame % self.output_ring_frames;
             if self.pending_crop_frames > 0 {
                 self.pending_crop_frames -= 1;
             } else {
@@ -431,7 +444,7 @@ impl ResumableOfflineStretch {
     }
 
     fn clear_output_frame(&mut self, frame: usize) {
-        let ring_frame = frame % self.ring_frames;
+        let ring_frame = frame % self.output_ring_frames;
         for state in &mut self.channels {
             state.output_ring[ring_frame] = 0.0;
             state.normalization_ring[ring_frame] = 0.0;
@@ -544,7 +557,7 @@ impl ResumableOfflineStretch {
             &mut self.inverse_scratch,
         );
         let scale = 1.0 / self.window_size as f32;
-        let ring_frames = self.ring_frames;
+        let ring_frames = self.output_ring_frames;
         let state = &mut self.channels[channel];
         for index in 0..self.window_size {
             let ring_frame = (synthesis_start + index) % ring_frames;

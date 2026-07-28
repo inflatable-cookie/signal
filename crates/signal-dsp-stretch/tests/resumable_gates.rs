@@ -172,7 +172,6 @@ fn output_length_matches_the_target() {
 /// the chunk, and the artifact path's length `resize` padded the gap with
 /// zeros. Length alone therefore proves nothing about content.
 #[test]
-#[ignore = "g10.039 open defect: renderer pads to target length with silence from 2.5 s"]
 fn render_delivers_audio_across_the_whole_source() {
     let frames = 48_000 * 20;
     let source = material(frames, 2);

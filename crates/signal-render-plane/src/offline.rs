@@ -19,10 +19,9 @@ use crate::{
 };
 use signal_dsp_stretch::{
     plan_offline_stretch_chunks, stretch_backend_plan, OfflineHighQualityPath,
-    OfflineHighQualityStretcher,
-    StretchBackendStatus, StretchBackendTier, StretchCacheIdentity, StretchCacheIdentityError,
-    StretchCacheIdentityInput, StretchOfflineChunk, StretchOfflineChunkConfig,
-    StretchOfflineChunkPlan, StretchPromotionReceipt, StretchRatioPoint,
+    OfflineHighQualityStretcher, StretchBackendStatus, StretchBackendTier, StretchCacheIdentity,
+    StretchCacheIdentityError, StretchCacheIdentityInput, StretchOfflineChunk,
+    StretchOfflineChunkConfig, StretchOfflineChunkPlan, StretchPromotionReceipt, StretchRatioPoint,
 };
 use signal_primitives::SampleRate;
 

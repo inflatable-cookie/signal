@@ -792,17 +792,25 @@ is then derived:
 
 | geometry | total, stereo |
 | --- | --- |
-| `2048` window, the retained default | `266300 B`, `0.254 MiB` |
-| `65536` window, the maximum | `8519740 B`, `8.125 MiB` |
+| `2048` window, the retained default | `331836 B`, `0.316 MiB` |
+| `65536` window, the maximum | `10616892 B`, `10.125 MiB` |
 
-The frozen ceiling is `9 MiB`, which covers the maximum supported geometry in
-stereo with `917444 B` of headroom. No term in the inventory references source
+The frozen ceiling is `12 MiB`, which covers the maximum supported geometry in
+stereo with `1966020 B` of headroom. No term in the inventory references source
 or output length.
 
-The first published figure was `8 MiB` from an inventory that counted the
-overlap-add and normalization rings but omitted the input ring. Three rings of
-twice the window, not two, is the real cost. The ceiling is corrected here
-rather than the renderer squeezed to meet a number that was wrong.
+This figure moved twice, and both moves were the same mistake: deriving a bound
+before the design that has to meet it was settled.
+
+The Batch 39.2 brief published `8 MiB` from an inventory that counted the
+overlap-add and normalization rings and omitted the input ring. The correction
+to `9 MiB` added that ring but assumed output rings of twice the window, which
+cannot work: at that size the write frontier meets the emission limit exactly,
+neither side advances, and the render stalls. Output rings are four times the
+window.
+
+A memory ceiling is a consequence of a working design, not a constraint that can
+be frozen ahead of one.
 
 The whole-render overlap-add and normalization buffers are the only
 duration-dependent state today, and they are what the resumable design replaces
