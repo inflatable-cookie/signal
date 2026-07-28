@@ -27,7 +27,7 @@ pub const SIGNAL_STRETCH_ENGINE_VERSION: &str = "signal-native-stretch-v3";
 /// Contract `046` requires it to advance in the same change that alters
 /// renderer output. It last advanced for the `g10.036` defect correction, which
 /// changed output at every ratio above `3.0` and for every dynamic-ratio curve.
-pub const SIGNAL_STRETCH_BEHAVIOR_VERSION: &str = "signal-stretch-behavior-2026-07-27";
+pub const SIGNAL_STRETCH_BEHAVIOR_VERSION: &str = "signal-stretch-behavior-2026-07-27-resumable";
 
 impl StretchBackendTier {
     /// Stable key token for cache identity.

@@ -1,6 +1,6 @@
 # 039 - Resumable Offline Stretch Render
 
-Status: active; ring deadlock fixed and all six gates pass; re-adoption pending
+Status: active; re-adopted with a content guard; blocked on listening revision 2
 Owner: dsp
 Created: 2026-07-27
 Updated: 2026-07-27
@@ -323,9 +323,16 @@ The ceiling moved to `12 MiB` against a measured `10616892 B`. It has now moved
 three times, and Contract `046` records why: a memory bound is a consequence of
 a working design, not something that can be frozen ahead of one.
 
-Re-adopt the resumable renderer in the offline artifact path, with a content
-check on the rendered artifact before any listening pack is built. Then re-run
-the `g10.039` listening round.
+Judge the revision-2 pack at `~/Downloads/signal-listening-pack-39-rev2`.
+
+Re-adoption landed with the content guard first this time.
+`multi_chunk_artifact_carries_audio_across_the_whole_output` is a permanent
+render-plane owner asserting signal in every decile of a multi-chunk artifact,
+and every render in the pack was content-checked before the pack was built. All
+six files measure roughly `0.1457` RMS, so no specimen is silent.
+
+Admission under Contract `084` Rule 5 requires that no case prefers the shipped
+side.
 
 Batch 39.5 then closes the lane and decides whether the remaining offline paths
 adopt the resumable renderer, which is what would let both seam smoothers be

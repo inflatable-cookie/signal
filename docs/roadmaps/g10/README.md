@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: active generation; `g10.039` renderer fixed; re-adoption pending
+Status: active generation; `g10.039` blocked on listening revision 2
 Updated: 2026-07-27
 
 ## Why this generation matters now
