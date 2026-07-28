@@ -16,6 +16,10 @@ use std::{
 #[cfg(not(target_os = "macos"))]
 use libloading::Library;
 
+use super::hosting::{
+    clear_factory_host_context, set_factory_host_context, should_set_factory_host_context,
+};
+
 pub(crate) const VST3_MODULEINFO_FILE: &str = "moduleinfo.json";
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -909,7 +913,10 @@ fn load_vst3_factory_classes_from_module(
         let get_plugin_factory = bundle.factory().ok_or_else(|| {
             io::Error::new(io::ErrorKind::InvalidData, "VST3 GetPluginFactory missing")
         })?;
-        let snapshot = read_factory_classes(get_plugin_factory());
+        let snapshot = read_factory_classes(
+            get_plugin_factory(),
+            should_set_factory_host_context(bundle_root),
+        );
         if let Some(exit) = bundle.exit() {
             exit();
         }
@@ -936,7 +943,10 @@ fn load_vst3_factory_classes_from_module(
         let get_plugin_factory = library
             .get::<GetPluginFactoryProc>(b"GetPluginFactory\0")
             .map_err(libloading_to_io)?;
-        let snapshot = read_factory_classes(get_plugin_factory());
+        let snapshot = read_factory_classes(
+            get_plugin_factory(),
+            should_set_factory_host_context(bundle_root),
+        );
         if let Ok(exit) = library.get::<ExitProc>(exit_symbol(platform)) {
             exit();
         }
@@ -946,6 +956,7 @@ fn load_vst3_factory_classes_from_module(
 
 fn read_factory_classes(
     factory_ptr: *mut c_void,
+    set_host_context: bool,
 ) -> io::Result<(Option<String>, Vec<Vst3FactoryClass>)> {
     if factory_ptr.is_null() {
         return Err(io::Error::new(
@@ -962,6 +973,7 @@ fn read_factory_classes(
             "VST3 factory vtable was null",
         ));
     }
+    let context_set = set_host_context && unsafe { set_factory_host_context(factory_ptr) };
 
     let mut factory_info = PFactoryInfo {
         vendor: [0; 64],
@@ -975,7 +987,13 @@ fn read_factory_classes(
         None
     };
 
-    let class_count = unsafe { ((*vtable).count_classes)(factory_ptr) };
+    let mut class_count = unsafe { ((*vtable).count_classes)(factory_ptr) };
+    if class_count <= 0 && context_set {
+        unsafe {
+            clear_factory_host_context(factory_ptr);
+        }
+        class_count = unsafe { ((*vtable).count_classes)(factory_ptr) };
+    }
     if class_count <= 0 {
         return Err(io::Error::new(
             io::ErrorKind::InvalidData,

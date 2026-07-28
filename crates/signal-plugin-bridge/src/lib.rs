@@ -27,8 +27,8 @@ mod in_process;
 mod shm;
 
 pub use in_process::{
-    InProcessAuProcessor, InProcessClapProcessor, InProcessLv2Processor, InProcessVst3Processor,
-    PluginGuiEvent,
+    InProcessAuProcessor, InProcessClapProcessor, InProcessLv2Processor, InProcessVst3Editor,
+    InProcessVst3Processor, PluginGuiEvent,
 };
 pub use shm::{
     plugin_process_wait_budget, ShmPluginProcessor, PLUGIN_PROCESS_WAIT_BUDGET_MAX_MICROS,

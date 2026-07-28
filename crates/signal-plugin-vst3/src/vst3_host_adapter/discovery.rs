@@ -112,11 +112,7 @@ impl Vst3HostAdapter {
         let mut batch = Vst3DiscoveryBatch::default();
         for root in roots {
             let expanded_root = expand_scan_root(root);
-            if expanded_root
-                .extension()
-                .and_then(|extension| extension.to_str())
-                .is_some_and(|extension| extension.eq_ignore_ascii_case("vst3"))
-            {
+            if is_explicit_vst3_module_path(&expanded_root) {
                 append_vst3_bundle_outcome(&mut batch, &expanded_root, platform);
                 continue;
             }
@@ -137,6 +133,14 @@ impl Vst3HostAdapter {
         }
         batch
     }
+}
+
+fn is_explicit_vst3_module_path(path: &Path) -> bool {
+    path.extension()
+        .and_then(|extension| extension.to_str())
+        .is_some_and(|extension| {
+            extension.eq_ignore_ascii_case("vst3") || extension.eq_ignore_ascii_case("bundle")
+        })
 }
 
 fn append_vst3_bundle_outcome(
@@ -221,6 +225,19 @@ fn elapsed_ms(value: u128) -> u64 {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn accepts_cubase_private_bundle_as_an_explicit_vst3_module() {
+        assert!(is_explicit_vst3_module_path(Path::new(
+            "/Applications/Cubase.app/Contents/Components/Modulation FX.bundle"
+        )));
+        assert!(is_explicit_vst3_module_path(Path::new(
+            "/Library/Audio/Plug-Ins/VST3/Example.vst3"
+        )));
+        assert!(!is_explicit_vst3_module_path(Path::new(
+            "/Library/Audio/Plug-Ins/VST3"
+        )));
+    }
 
     #[test]
     fn discovery_errors_map_to_stable_bounded_diagnostics() {

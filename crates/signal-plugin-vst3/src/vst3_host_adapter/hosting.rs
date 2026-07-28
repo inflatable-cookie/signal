@@ -179,6 +179,7 @@ pub(crate) const FUNKNOWN_IID: Tuid = tuid_from_uid(0x00000000, 0x00000000, 0xC0
 const ICOMPONENT_IID: Tuid = tuid_from_uid(0xE831FF31, 0xF2D54301, 0x928EBBEE, 0x25697802);
 const IAUDIO_PROCESSOR_IID: Tuid = tuid_from_uid(0x42043F99, 0xB7DA453C, 0xA569E79D, 0x9AAEC33D);
 const IEDIT_CONTROLLER_IID: Tuid = tuid_from_uid(0xDCD7BBE3, 0x7742448D, 0xA874AACC, 0x979C759E);
+const IPLUGIN_FACTORY_3_IID: Tuid = tuid_from_uid(0x4555A2AB, 0xC1234E57, 0x9B122910, 0x36878931);
 const ICOMPONENT_HANDLER_IID: Tuid = tuid_from_uid(0x93A0BEA3, 0x0BD045DB, 0x8E890B0C, 0xC1E46AC6);
 const IHOST_APPLICATION_IID: Tuid = tuid_from_uid(0x58E595CC, 0xDB2D4969, 0x8B6AAF8C, 0x36A664E5);
 const IMESSAGE_IID: Tuid = tuid_from_uid(0x936F033B, 0xC6C047DB, 0xBB0882F8, 0x13C1E613);
@@ -446,6 +447,22 @@ struct PluginFactoryVTable {
     get_class_info: unsafe extern "C" fn(*mut c_void, i32, *mut c_void) -> Tresult,
     create_instance:
         unsafe extern "C" fn(*mut c_void, *const u8, *const u8, *mut *mut c_void) -> Tresult,
+}
+
+/// `IPluginFactory2` prefix needed to reach the `IPluginFactory3` extension.
+#[repr(C)]
+struct PluginFactory2VTable {
+    base: PluginFactoryVTable,
+    get_class_info_2: unsafe extern "C" fn(*mut c_void, i32, *mut c_void) -> Tresult,
+}
+
+/// `IPluginFactory3` adds Unicode class metadata and a factory-level host
+/// context supplied before class enumeration or instance creation.
+#[repr(C)]
+struct PluginFactory3VTable {
+    base: PluginFactory2VTable,
+    get_class_info_unicode: unsafe extern "C" fn(*mut c_void, i32, *mut c_void) -> Tresult,
+    set_host_context: unsafe extern "C" fn(*mut c_void, *mut c_void) -> Tresult,
 }
 
 /// `Steinberg::Vst::BusInfo`.
@@ -1247,9 +1264,55 @@ fn host_context() -> *mut c_void {
     &HOST_APPLICATION as *const StaticHostApplication as *mut c_void
 }
 
+/// Supply Signal's standard host context to factories implementing
+/// `IPluginFactory3`. Older factories remain valid and require no action.
+pub(super) unsafe fn set_factory_host_context(factory: *mut c_void) -> bool {
+    configure_factory_host_context(factory, host_context())
+}
+
+/// Clear a factory context before retrying a legacy or application-private
+/// factory that rejects ordinary VST3 creation after receiving host context.
+pub(super) unsafe fn clear_factory_host_context(factory: *mut c_void) -> bool {
+    configure_factory_host_context(factory, ptr::null_mut())
+}
+
+pub(super) fn should_set_factory_host_context(bundle_root: &Path) -> bool {
+    !bundle_root
+        .extension()
+        .and_then(|extension| extension.to_str())
+        .is_some_and(|extension| extension.eq_ignore_ascii_case("bundle"))
+}
+
+unsafe fn configure_factory_host_context(factory: *mut c_void, context: *mut c_void) -> bool {
+    if factory.is_null() {
+        return false;
+    }
+    let vtable = vtable_of::<PluginFactoryVTable>(factory);
+    let mut factory_3 = ptr::null_mut();
+    if ((*vtable).query_interface)(factory, &IPLUGIN_FACTORY_3_IID, &mut factory_3) != K_RESULT_OK
+        || factory_3.is_null()
+    {
+        return false;
+    }
+    let factory_3_vtable = vtable_of::<PluginFactory3VTable>(factory_3);
+    ((*factory_3_vtable).set_host_context)(factory_3, context);
+    com_release(factory_3);
+    true
+}
+
 #[cfg(test)]
 mod host_application_tests {
     use super::*;
+
+    #[test]
+    fn skips_factory_context_for_application_private_bundle_components() {
+        assert!(!should_set_factory_host_context(Path::new(
+            "/Applications/Cubase.app/Contents/Components/Modulation FX.bundle"
+        )));
+        assert!(should_set_factory_host_context(Path::new(
+            "/Library/Audio/Plug-Ins/VST3/Example.vst3"
+        )));
+    }
 
     #[test]
     fn creates_messages_with_writable_attributes() {
@@ -1473,6 +1536,7 @@ struct LoadedVst3Module {
     #[cfg(not(target_os = "macos"))]
     library: Library,
     factory: *mut c_void,
+    factory_context_set: bool,
     exit: Option<ExitProc>,
 }
 
@@ -1493,10 +1557,13 @@ impl LoadedVst3Module {
             if factory.is_null() {
                 return Err(Vst3HostingError::new("plugin_factory_null"));
             }
+            let factory_context_set =
+                should_set_factory_host_context(bundle_root) && set_factory_host_context(factory);
             let exit = bundle.exit();
             Ok(Self {
                 bundle,
                 factory,
+                factory_context_set,
                 exit,
             })
         }
@@ -1522,6 +1589,8 @@ impl LoadedVst3Module {
             if factory.is_null() {
                 return Err(Vst3HostingError::new("plugin_factory_null"));
             }
+            let factory_context_set =
+                should_set_factory_host_context(bundle_root) && set_factory_host_context(factory);
             let exit = library
                 .get::<ExitProc>(exit_symbol(platform))
                 .ok()
@@ -1529,6 +1598,7 @@ impl LoadedVst3Module {
             Ok(Self {
                 library,
                 factory,
+                factory_context_set,
                 exit,
             })
         }
@@ -1538,8 +1608,14 @@ impl LoadedVst3Module {
     unsafe fn create_instance(&self, cid: &Tuid, iid: &Tuid) -> Option<*mut c_void> {
         let vtable = vtable_of::<PluginFactoryVTable>(self.factory);
         let mut out: *mut c_void = ptr::null_mut();
-        let result =
+        let mut result =
             ((*vtable).create_instance)(self.factory, cid.as_ptr(), iid.as_ptr(), &mut out);
+        if self.factory_context_set && (result != K_RESULT_OK || out.is_null()) {
+            clear_factory_host_context(self.factory);
+            out = ptr::null_mut();
+            result =
+                ((*vtable).create_instance)(self.factory, cid.as_ptr(), iid.as_ptr(), &mut out);
+        }
         (result == K_RESULT_OK && !out.is_null()).then_some(out)
     }
 }
@@ -2536,7 +2612,9 @@ impl Vst3HostedInstance {
     /// stereo effect (2-in/2-out) or instrument (0-in/2-out), then selecting
     /// 32-bit samples, calling `setupProcessing`, activating the main buses,
     /// and calling `setActive(true)`. Unsupported negotiation fails with the
-    /// stable `layout_unsupported` token, same as the CLAP path.
+    /// stable `layout_unsupported` token, same as the CLAP path. Components
+    /// without any audio output fail with `no_audio_buses`; their editors may
+    /// still be hosted without creating a process session.
     pub fn activate(
         &mut self,
         sample_rate_hz: f64,
@@ -2547,7 +2625,7 @@ impl Vst3HostedInstance {
             return Err(Vst3HostingError::new("already_active"));
         }
         if self.audio_bus_layout.main_output.is_none() {
-            return Err(Vst3HostingError::new("layout_unsupported"));
+            return Err(Vst3HostingError::new("no_audio_buses"));
         }
         unsafe {
             let processor = vtable_of::<AudioProcessorVTable>(self.processor);
