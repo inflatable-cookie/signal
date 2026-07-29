@@ -14,7 +14,7 @@ fn main() -> Result<(), String> {
         .ok_or_else(|| "output directory required when HOME is unavailable".to_string())?;
     let installed = compile_clap_instrument_fixture(
         &output_dir,
-        "audio.infiniteloop.loophole.controlled-instrument",
+        "com.inflatablecookie.loophole.controlled-instrument",
         "Loophole Controlled Instrument",
     )?;
     let discovered = ClapPluginHostAdapter::default()
@@ -22,7 +22,7 @@ fn main() -> Result<(), String> {
     let plugin = discovered
         .iter()
         .find(|plugin| {
-            plugin.plugin_type_id.0 == "audio.infiniteloop.loophole.controlled-instrument"
+            plugin.plugin_type_id.0 == "com.inflatablecookie.loophole.controlled-instrument"
         })
         .ok_or_else(|| "installed fixture was not discoverable".to_string())?;
     println!("{}", installed.display());
