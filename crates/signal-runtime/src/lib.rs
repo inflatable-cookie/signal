@@ -74,7 +74,8 @@ pub use interfaces::{
     RuntimeOfflineStretchArtifactScope, RuntimePluginComplexIoSummary,
     RuntimePluginDiscoveredTypeRecord, RuntimePluginFormatPlatformCoverageRecord,
     RuntimePluginHostPlatform, RuntimePluginIsolationOutcome, RuntimePluginLifecycleState,
-    RuntimePluginParityBand, RuntimeProjectionApi, RuntimeRecordingCaptureCommitReceipt,
+    RuntimePluginParityBand, RuntimeProjectionApi, RuntimeReadiness,
+    RuntimeRecordingCaptureCommitReceipt, RuntimeRecordingCaptureKind,
     RuntimeRecordingCaptureStartRequest, RuntimeSupervisorApi, RuntimeSupervisorReport,
     RuntimeWarpClipRegistration, SandboxHandle, ScanHandle, StopReason,
 };
