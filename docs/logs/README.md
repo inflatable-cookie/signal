@@ -39,6 +39,7 @@ Use this section for:
 
 ## Recent Baseline Evidence
 
+- [Inflatable Cookie product ownership migration](./2026-07/29-220846-inflatable-cookie-product-ownership-migration.md)
 - [g10.035 creative stretch closeout](./2026-07/25-g10-035-creative-stretch-closeout.md)
 
 ## Recent strict-lane evidence

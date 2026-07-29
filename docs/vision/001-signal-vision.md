@@ -2,6 +2,7 @@
 
 Status: active
 Owner: core-product
+Product owner: Inflatable Cookie
 Purpose: define the long-horizon role of Signal as the shared audio-systems
 stack for Loophole, Finch, and future apps.
 
