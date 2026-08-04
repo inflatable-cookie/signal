@@ -21,7 +21,7 @@
 //! the second byte-swapped little-endian) on Windows. [`tuid_from_uid`]
 //! encodes that per-platform. Catalog load keys are the *raw in-memory*
 //! TUID hex exactly as the introspection module reports `PClassInfo` CIDs
-//! (and as `moduleinfo.json` carries them on non-Windows), so
+//! (and as conforming `moduleinfo.json` files carry them on non-Windows), so
 //! [`tuid_from_class_id_hex`] is a straight hex decode on macOS/Linux and
 //! applies the COM swap only on Windows.
 
@@ -447,6 +447,16 @@ struct PluginFactoryVTable {
     get_class_info: unsafe extern "C" fn(*mut c_void, i32, *mut c_void) -> Tresult,
     create_instance:
         unsafe extern "C" fn(*mut c_void, *const u8, *const u8, *mut *mut c_void) -> Tresult,
+}
+
+/// `PClassInfo` prefix used to distinguish component classes when a vendor's
+/// `moduleinfo.json` advertises a stale class ID.
+#[repr(C)]
+struct FactoryClassInfo {
+    cid: Tuid,
+    cardinality: i32,
+    category: [c_char; 32],
+    name: [c_char; 64],
 }
 
 /// `IPluginFactory2` prefix needed to reach the `IPluginFactory3` extension.
@@ -1618,6 +1628,38 @@ impl LoadedVst3Module {
         }
         (result == K_RESULT_OK && !out.is_null()).then_some(out)
     }
+
+    /// Return the factory's sole audio-module class, if it has exactly one.
+    unsafe fn unique_component_class_id(&self) -> Option<Tuid> {
+        let vtable = vtable_of::<PluginFactoryVTable>(self.factory);
+        let class_count = ((*vtable).count_classes)(self.factory);
+        let mut component = None;
+        for index in 0..class_count {
+            let mut info = FactoryClassInfo {
+                cid: [0; 16],
+                cardinality: 0,
+                category: [0; 32],
+                name: [0; 64],
+            };
+            if ((*vtable).get_class_info)(
+                self.factory,
+                index,
+                (&mut info as *mut FactoryClassInfo).cast(),
+            ) != K_RESULT_OK
+            {
+                continue;
+            }
+            let category = CStr::from_ptr(info.category.as_ptr()).to_bytes();
+            if category != b"Audio Module Class" {
+                continue;
+            }
+            if component.is_some() {
+                return None;
+            }
+            component = Some(info.cid);
+        }
+        component
+    }
 }
 
 impl Drop for LoadedVst3Module {
@@ -2355,6 +2397,18 @@ impl Vst3HostedInstance {
         let module = LoadedVst3Module::load(bundle_root)?;
 
         let component = unsafe { module.create_instance(&cid, &ICOMPONENT_IID) }
+            .or_else(|| {
+                if !super::introspection::moduleinfo_declares_component_class(
+                    bundle_root,
+                    class_id_hex,
+                ) {
+                    return None;
+                }
+                let factory_cid = unsafe { module.unique_component_class_id() }?;
+                (factory_cid != cid)
+                    .then(|| unsafe { module.create_instance(&factory_cid, &ICOMPONENT_IID) })
+                    .flatten()
+            })
             .ok_or_else(|| Vst3HostingError::new("create_component_failed"))?;
         let host = host_context();
         unsafe {

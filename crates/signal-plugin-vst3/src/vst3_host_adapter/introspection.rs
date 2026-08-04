@@ -605,6 +605,23 @@ fn read_vst3_factory_snapshot(
     }
 }
 
+/// Whether `moduleinfo.json` explicitly advertises `class_id` as a component.
+/// Hosting uses this to safely recover from vendors that ship stale generated
+/// class IDs while their binary exposes one unambiguous component class.
+pub(super) fn moduleinfo_declares_component_class(bundle_root: &Path, class_id: &str) -> bool {
+    candidate_moduleinfo_paths(bundle_root)
+        .into_iter()
+        .find(|path| path.is_file())
+        .and_then(|path| fs::read_to_string(path).ok())
+        .and_then(|contents| json5::from_str::<ModuleInfoDocument>(&contents).ok())
+        .is_some_and(|document| {
+            document.classes.into_iter().any(|class| {
+                role_from_category(&class.category) == Vst3FactoryClassRole::Component
+                    && class.cid.eq_ignore_ascii_case(class_id)
+            })
+        })
+}
+
 pub(super) fn run_vst3_scan_helper<I>(args: I) -> i32
 where
     I: IntoIterator<Item = OsString>,

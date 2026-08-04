@@ -197,6 +197,35 @@ fn load_rejects_bad_class_ids_and_missing_bundles() {
 }
 
 #[test]
+fn load_recovers_from_a_stale_moduleinfo_id_for_one_component() {
+    if !rustc_available() {
+        eprintln!("skipping: rustc unavailable for the VST3 fixture");
+        return;
+    }
+    const STALE_CLASS_ID: &str = "56535441727067626C65617373206172";
+    let directory = unique_fixture_dir("stale-moduleinfo");
+    let bundle = compile_vst3_fixture(
+        &directory.path,
+        "plugin:vst3:signal-fixture-stale-moduleinfo",
+        "Signal VST3 Stale Moduleinfo Fixture",
+    )
+    .expect("fixture should compile");
+    let moduleinfo = bundle
+        .join("Contents")
+        .join("Resources")
+        .join("moduleinfo.json");
+    let contents = std::fs::read_to_string(&moduleinfo).expect("moduleinfo should be readable");
+    std::fs::write(
+        &moduleinfo,
+        contents.replace(VST3_FIXTURE_CLASS_ID_HEX, STALE_CLASS_ID),
+    )
+    .expect("moduleinfo should accept the stale class id");
+
+    Vst3HostedInstance::load(&bundle, STALE_CLASS_ID)
+        .expect("the sole binary component should recover stale moduleinfo metadata");
+}
+
+#[test]
 fn discovery_reports_the_fixture_with_an_empty_scan_time_inventory() {
     if !rustc_available() {
         eprintln!("skipping: rustc unavailable for the VST3 fixture");
