@@ -21,6 +21,7 @@ nextest = "CARGO_TARGET_DIR=/tmp/signal-nextest-target cargo nextest run --works
 health = [{ task = "build" }]
 validate = [
   { task = "health" },
+  { task = "fmt" },
   { task = "test compile" },
   { task = "check:docs" },
 ]
@@ -30,6 +31,8 @@ qa = [
 ]
 build = "cargo build --workspace"
 "check:docs" = "RUSTFLAGS='-D missing-docs' cargo check --workspace --lib"
+fmt = "cargo fmt --all -- --check"
+lint = "cargo clippy --workspace --all-targets --all-features"
 # No `dev` task: signal-host-local is a library (its binary died in g10.005).
 # Use the runnable examples instead:
 #   cargo run -p signal-hardware-cpal --example tone

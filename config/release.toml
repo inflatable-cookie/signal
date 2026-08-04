@@ -10,3 +10,16 @@ version-path = "workspace.package.version"
 changelog = "CHANGELOG.md"
 sync-files = ["Cargo.lock"]
 tag-format = "v{version}"
+
+# Gates run before a release is prepared or executed.
+#
+# `lint` runs clippy but does not deny warnings: the workspace carries 14
+# known warnings, tracked as g10.038 follow-up work, so denying here would
+# block every release on pre-existing debt. It therefore catches new clippy
+# *errors* only. Tightening it to `-D warnings` is the follow-up.
+[release.gates]
+fmt = "cargo fmt --all -- --check"
+lint = "cargo clippy --workspace --all-targets --all-features"
+test = "cargo test --workspace"
+validate = "effigy validate"
+docs = "effigy qa:docs"

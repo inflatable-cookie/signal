@@ -170,7 +170,7 @@ the reopened gate itself to remain trustworthy:
 - `effigy validate`
 - `effigy qa:docs`
 - `effigy qa:northstar`
-- `effigy demo:coverage-matrix`
+- `effigy release gates`
 - the focused boundary, demo, and receipt families that already justify any
   crate or crate-family marked `production-ready for role`
 
@@ -187,7 +187,7 @@ not yet the hard blocking baseline for the reopened generation:
 
 - broader acceptance families under `effigy acceptance:*` that already validate
   specific runtime, host, plugin, hardware, DSP, graph, or analysis boundaries
-- live demo launch tasks beyond `effigy demo:coverage-matrix`
+- live demo launch tasks under `effigy demo:*`
 - descriptor exports from `signal-supervisor-tools` that explain the same proof
   families in machine-readable form
 
@@ -211,6 +211,23 @@ thin, but the workspace-wide validate surface is no longer itself deferred.
 This contract does not itself implement the gate or fill every readiness gap.
 It only freezes the rule that `g09` remains open until that work is completed
 or explicitly re-scoped.
+
+## 2026-07-27 Gate Baseline Reconciliation
+
+The required evidence list named `effigy demo:coverage-matrix`, which does not
+exist in this repository's task manifest. A gate baseline that names a task
+nobody can run is not a gate, so it is replaced by `effigy release gates`, the
+runnable gate set introduced for the `0.1.0` tag.
+
+`effigy release gates` runs `fmt`, `lint`, `test`, `validate`, and `docs`. Two
+of those are new: this workspace had no `cargo fmt --check` or `cargo clippy`
+task at all before the release lane, so formatting and lint drift were unguarded
+by any repo-owned command.
+
+The `lint` gate deliberately does not deny warnings. The workspace carries `14`
+known clippy warnings recorded as `g10.038` follow-up work, so denying would
+block every release on pre-existing debt. As written the gate catches new clippy
+errors only, and tightening it to `-D warnings` remains open.
 
 ## Next Task
 
