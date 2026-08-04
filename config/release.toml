@@ -1,0 +1,12 @@
+# Release configuration for the Signal workspace.
+#
+# The repository root is a virtual Cargo workspace: it has no `[package]`, so
+# effigy's default version probe (which resolves `workspace.package.version`
+# only via a root `package.version.workspace = true`) cannot find the version.
+# The field is therefore named explicitly.
+[release]
+version-file = "Cargo.toml"
+version-path = "workspace.package.version"
+changelog = "CHANGELOG.md"
+sync-files = ["Cargo.lock"]
+tag-format = "v{version}"
