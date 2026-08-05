@@ -20,15 +20,22 @@ tag-format = "v{version}"
 
 # Gates run before a release is prepared or executed.
 #
+# The heavy gates are throttled so the machine stays usable while they run:
+# `nice -n 5`, two cores left free for the build, four for the test run.
+# Unthrottled they saturate every core for minutes at a time. This is a light
+# touch on purpose -- the first attempt used `nice -n 10` and only 14 of 18
+# cores, which left obvious headroom unused and made the gates slower than they
+# needed to be. CI is unthrottled: a runner has nothing else to do.
+#
 # `lint` denies warnings. The workspace's 14 known warnings were cleared for
 # the 0.1.0 tag, so the gate now blocks on any new one. It runs twice because
 # `--all-features` alone cannot see cfg-gated code that only compiles when a
 # feature is off — a mis-gated item stays invisible until the no-feature build.
 [release.gates]
 fmt = "cargo fmt --all -- --check"
-lint = "cargo clippy --workspace --all-targets --all-features -- -D warnings"
-"lint:no-features" = "cargo clippy --workspace --all-targets --no-default-features -- -D warnings"
-test = "cargo test --workspace"
+lint = "nice -n 5 cargo clippy --workspace --all-targets --all-features --jobs $(( $(sysctl -n hw.ncpu) - 2 )) -- -D warnings"
+"lint:no-features" = "nice -n 5 cargo clippy --workspace --all-targets --no-default-features --jobs $(( $(sysctl -n hw.ncpu) - 2 )) -- -D warnings"
+test = "nice -n 5 cargo test --workspace --jobs $(( $(sysctl -n hw.ncpu) - 2 )) -- --test-threads=$(( $(sysctl -n hw.ncpu) - 4 ))"
 # The wall-clock soak lane, which the default suite deliberately skips. Runs
 # single-threaded and takes about 40s. Local only: it asserts sustained
 # real-time throughput, which no shared CI runner can honour, so CI skips it

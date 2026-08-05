@@ -436,7 +436,11 @@ mod tests {
 
         // Fake child thread: serve exactly one request by doubling samples.
         let server = std::thread::spawn(move || {
-            let deadline = Instant::now() + Duration::from_secs(2);
+            // Longer than the client's 5s bound on purpose, so the client
+            // decides the outcome. A shorter server deadline would make this
+            // thread panic first under contention and report "never saw a
+            // request" when the real answer is "the host was busy".
+            let deadline = Instant::now() + Duration::from_secs(10);
             loop {
                 let request = child_view.request_seq().load(Ordering::Acquire);
                 if request != child_view.response_seq().load(Ordering::Relaxed) {
@@ -458,22 +462,36 @@ mod tests {
         let mut scratch: Vec<f32> = (0..64).map(|index| index as f32 / 64.0).collect();
         let reference = scratch.clone();
         // The server may take a scheduler quantum to see the request; retry
-        // a few blocks like the engine would (each miss bypasses cleanly).
+        // like the engine would (each miss bypasses cleanly). Bounded by a
+        // deadline rather than an iteration count: a fixed 200 retries assumes
+        // the other thread gets scheduled within 200 of this one's iterations,
+        // which is a claim about host contention, not about the bridge.
         let mut processed = false;
-        for _ in 0..200 {
+        let deadline = Instant::now() + Duration::from_secs(5);
+        while Instant::now() < deadline {
             if handle.process(&mut scratch, 32, 2) {
                 processed = true;
                 break;
             }
         }
-        assert!(processed, "server should have answered within retries");
+
+        // Join before asserting anything. `child_view` is a raw pointer into
+        // `region`'s mapping, so if an assertion below panics while the server
+        // thread is still spinning, unwinding drops `region`, unmaps the
+        // backing memory underneath that thread, and the process dies with
+        // SIGSEGV instead of reporting the failed assertion. That is finding
+        // `A19`: it presented as an intermittent failure and an intermittent
+        // segfault because it was both, from one cause.
+        let served = server.join();
+
+        assert!(processed, "server should have answered within 5s");
+        served.expect("server thread joins");
         for (index, (output, input)) in scratch.iter().zip(reference.iter()).enumerate() {
             assert!(
                 (output - input * 2.0).abs() < 1e-7,
                 "sample {index}: {output} vs {input} * 2",
             );
         }
-        server.join().expect("server thread joins");
 
         drop(handle);
         drop(processor);

@@ -33,6 +33,39 @@ registry upload.
   tests holding callback threads hot that starved its timing budgets. With them
   gated, three consecutive workspace runs and ten consecutive runs of the binary
   are clean.
+- Closed finding `A21` by removing an assertion that could not discriminate.
+  `fake_clocked_soak` asserted the xrun counter grew by at most one after the
+  injected starvation ended. Measured over a 1500ms window on an idle machine,
+  the recovered phase accrues 2 to 8 xruns per ~281 callbacks, while the
+  injected starvation rate over the same window is ~8.8 — the noise floor and
+  the signal are the same magnitude, so it passed by luck. Removed rather than
+  loosened; the starvation and playback-advancement claims still stand.
+- Closed finding `A19`, a use-after-unmap in the shm round-trip test that had
+  been carried since `g10.038` with no mechanism. It presented as an intermittent
+  assertion failure *and* an intermittent `SIGSEGV`, and it was both from one
+  cause: the retry loop was bounded by 200 iterations of the client thread,
+  which is an assumption about host contention rather than a bound on the server
+  thread being scheduled. When it lost, the panic unwound and dropped the shared
+  region while the server thread was still dereferencing a raw pointer into it,
+  killing the binary and taking the assertion message with it. The loop is now
+  deadline-bounded and the join moved ahead of every assertion. Twelve runs
+  found it twice before; fifteen runs after are clean.
+- Removed the wall-clock throughput dependency from seven more tests in
+  `signal-hardware`, missed by the first sweep because they live in `#[cfg(test)]`
+  modules inside `src/` rather than under `tests/`. The two capture tests CI
+  failed on required 50% of real-time; the two fake-backend cadence tests
+  required 53% and were next. Cadence and allocation tests now poll for ten
+  blocks with a deadline instead of sleeping a fixed span, so a slow host waits
+  longer rather than failing; the capture tests keep their content assertions
+  (tone phase at the skip point, RMS, zero-crossing rate) and drop their floors
+  to a liveness minimum.
+- Took `capture_callback_path_allocates_nothing` back out of the soak lane.
+  Allocation-freedom on the capture callback holds at any speed and is worth
+  checking on every run; only its block count was load-dependent.
+- Throttled the heavy release gates so the machine stays usable while they run:
+  `nice -n 5`, two cores left free for builds and four for the test run.
+  Unthrottled they saturated every core for minutes at a time. CI is left
+  unthrottled, since a runner has nothing else to do.
 - Narrowed CI triggers to `workflow_dispatch`, pull requests, and `v*` tags. It
   ran on every push to `main`, building the workspace twice under clippy plus a
   full test run on `macos-latest`, which bills at ten times the Linux rate.

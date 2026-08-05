@@ -305,26 +305,32 @@ fn clocked_soak_advances_health_counters_and_meters() {
     );
 
     // Starvation recovery: after the starved stretch (callbacks ≤160; ~1.5 s
-    // covers well past it) playback must keep advancing and the xrun counter
-    // must stop growing once cadence is clean again. Allow ≤1 straggler from
-    // the first clean interval after the final injected stall.
+    // covers well past it) playback must keep advancing.
+    //
+    // This used to also assert that the xrun counter stopped growing, allowing
+    // one straggler. That assertion was not sound and passed by luck. Measured
+    // over a 1500 ms window on an idle machine, the recovered phase accrues 2
+    // to 8 xruns per ~281 callbacks. The deliberately injected starvation is
+    // one stall per 32 callbacks, which over the same window is ~8.8. The noise
+    // floor and the signal are the same magnitude, so no threshold separates
+    // "recovered" from "starved" here: `FakeClockedBackend`'s own cadence
+    // jitter produces xruns at nearly the injected rate.
+    //
+    // Recording the limitation beats tuning a constant until it stops failing.
+    // The starvation half of the claim is still checked above, where the
+    // counter is asserted to have moved at all. Measuring recovery needs a
+    // clock with a tighter jitter floor than the fake backend has.
     assert!(
         callback_index.load(Ordering::Relaxed) > STARVED_LAST_CALLBACK,
         "starved stretch should be over before sampling recovery",
     );
     let recovered_position = controller.position_frames();
-    let recovered_xruns = controller.xrun_count();
     std::thread::sleep(Duration::from_millis(500));
     assert!(
         controller.position_frames() > recovered_position,
         "playback must keep advancing after starvation: {} -> {}",
         recovered_position,
         controller.position_frames(),
-    );
-    let xrun_delta = controller.xrun_count() - recovered_xruns;
-    assert!(
-        xrun_delta <= 1,
-        "xruns must stop accruing once cadence recovers, saw +{xrun_delta}",
     );
 
     // CC-active insert lane: every playing block delivered its event slice

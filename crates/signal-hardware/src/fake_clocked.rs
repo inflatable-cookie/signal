@@ -147,11 +147,32 @@ mod tests {
         assert_eq!(stream.channels(), 2);
         assert_eq!(stream.last_error(), None);
 
-        // 128 frames at 48 kHz ≈ 2.67 ms per block; 100 ms ≈ 37 blocks.
-        std::thread::sleep(Duration::from_millis(100));
+        // 128 frames at 48 kHz ≈ 2.67 ms per block. Wait for ten blocks rather
+        // than sleeping a fixed span and asserting a count: a fixed sleep turns
+        // this into a claim about how fast the host is, which fails on a loaded
+        // machine or a shared CI runner and proves nothing when it passes. The
+        // upper bound is derived from the time actually waited, so it still
+        // catches a callback ticking faster than block cadence.
+        const BLOCK_PERIOD: Duration = Duration::from_micros(2_667);
+        const WANTED_BLOCKS: u64 = 10;
+        let started = std::time::Instant::now();
+        while calls.load(Ordering::Relaxed) < WANTED_BLOCKS
+            && started.elapsed() < Duration::from_secs(5)
+        {
+            std::thread::sleep(Duration::from_millis(2));
+        }
+        let waited = started.elapsed();
         let observed = calls.load(Ordering::Relaxed);
-        assert!(observed >= 10, "expected clocked callbacks, saw {observed}");
-        assert!(observed <= 80, "callback ticked too fast: {observed}");
+        assert!(
+            observed >= WANTED_BLOCKS,
+            "expected {WANTED_BLOCKS} clocked callbacks within 5s, saw {observed}",
+        );
+        // Two blocks of slack over the elapsed-time budget covers scheduler jitter.
+        let ceiling = (waited.as_secs_f64() / BLOCK_PERIOD.as_secs_f64()).ceil() as u64 + 2;
+        assert!(
+            observed <= ceiling,
+            "callback ticked too fast: {observed} blocks in {waited:?} (ceiling {ceiling})",
+        );
         drop(stream);
     }
 

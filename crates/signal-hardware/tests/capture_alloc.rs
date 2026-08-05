@@ -45,9 +45,6 @@ static ALLOCATOR: CountingAllocator = CountingAllocator;
 
 #[test]
 fn capture_callback_path_allocates_nothing() {
-    if !soak_tests_enabled() {
-        return;
-    }
     let ring = Arc::new(SpscRing::with_capacity(48_000));
     let callback_ring = Arc::clone(&ring);
     let blocks = Arc::new(AtomicU64::new(0));
@@ -85,15 +82,22 @@ fn capture_callback_path_allocates_nothing() {
         )
         .expect("open fake input stream");
 
-    std::thread::sleep(Duration::from_millis(500));
+    // Wait for ten blocks rather than sleeping a fixed span: the claim here is
+    // that the callback path allocates nothing, which holds at any speed. A
+    // fixed sleep would make it also assert host throughput, which is what
+    // broke the rest of this family on CI.
+    let started = std::time::Instant::now();
+    while blocks.load(Ordering::Relaxed) < 10 && started.elapsed() < Duration::from_secs(5) {
+        std::thread::sleep(Duration::from_millis(2));
+    }
     drop(stream);
     drain_stop.store(true, Ordering::Relaxed);
     drainer.join().expect("drainer joins");
 
     let observed_blocks = blocks.load(Ordering::Relaxed);
     assert!(
-        observed_blocks > 10,
-        "callback barely ran: {observed_blocks}"
+        observed_blocks >= 10,
+        "callback did not reach ten blocks within 5s: {observed_blocks}"
     );
     assert_eq!(
         CALLBACK_ALLOCS.with(Cell::get),
@@ -106,22 +110,4 @@ fn capture_callback_path_allocates_nothing() {
         "capture callback deallocated"
     );
     assert_eq!(ring.overrun_samples(), 0);
-}
-
-/// Wall-clock soak gate.
-///
-/// These tests sleep for a fixed wall-clock span and then assert a minimum
-/// callback count, which is a claim about sustained real-time throughput on the
-/// machine running them. That claim is only meaningful on a host that is not
-/// otherwise loaded. Shared CI runners cannot satisfy it, and a throughput
-/// assertion that can be retried until it passes is not a proof of anything.
-///
-/// They run when `SIGNAL_SOAK_TESTS=1`, and say why when they do not. The
-/// `test:soak` effigy task sets it and runs them single-threaded.
-fn soak_tests_enabled() -> bool {
-    if std::env::var("SIGNAL_SOAK_TESTS").as_deref() == Ok("1") {
-        return true;
-    }
-    eprintln!("SKIPPED: wall-clock soak test; set SIGNAL_SOAK_TESTS=1 (or run `effigy test:soak`)");
-    false
 }

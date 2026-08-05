@@ -36,9 +36,9 @@ fmt = "cargo fmt --all -- --check"
 # sustained real-time throughput, and running them beside the rest of the
 # suite creates the contention that makes them fail. Local only -- shared CI
 # runners cannot support a throughput claim.
-"test:soak" = "SIGNAL_SOAK_TESTS=1 cargo test -p signal-hardware -p signal-plugin-bridge -p signal-render-plane -- --test-threads=1"
-lint = "cargo clippy --workspace --all-targets --all-features -- -D warnings"
-"lint:no-features" = "cargo clippy --workspace --all-targets --no-default-features -- -D warnings"
+"test:soak" = "SIGNAL_SOAK_TESTS=1 nice -n 5 cargo test -p signal-hardware -p signal-plugin-bridge -p signal-render-plane -- --test-threads=1"
+lint = "nice -n 5 cargo clippy --workspace --all-targets --all-features --jobs $(( $(sysctl -n hw.ncpu) - 2 )) -- -D warnings"
+"lint:no-features" = "nice -n 5 cargo clippy --workspace --all-targets --no-default-features --jobs $(( $(sysctl -n hw.ncpu) - 2 )) -- -D warnings"
 # No `dev` task: signal-host-local is a library (its binary died in g10.005).
 # Use the runnable examples instead:
 #   cargo run -p signal-hardware-cpal --example tone
