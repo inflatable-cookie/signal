@@ -471,7 +471,16 @@ Do not start Loophole or Chorus planning from Signal internals.
     against itself under a half-hop grid shift at ratio `0.5`, so the `0.5153` the
     candidate scored there was never evidence of a defect and `G7` is written to
     beat the metric's own floor rather than a fixed threshold. Admission still
-    needs listening under Rule 5; Batch 40.4 ready. Still inherits
+    needs listening under Rule 5. Batch 40.4 opened `CallbackSafeStreaming` and
+    `SourceProjected` from proven properties rather than a constant, measured the
+    widest working set at `395.1 KiB` against the `1 MiB` ceiling — the Batch 40.2
+    estimate overshot by `2x` — and proved `0` deadline misses in `20000`
+    callbacks at `7.8%` of budget; its integration item could not be done because
+    `signal-render-plane/src/lib.rs` has zero occurrences of "preview" and the
+    only references reject the tier, so that work is re-scoped to Batch 40.6 and
+    gated on a consumer asking rather than on the roadmap's assumption. That is
+    the second premise in this lane that did not survive contact with the code.
+    Batch 40.5 ready. Still inherits
     the two items `g10.039` did not settle — adopting the remaining offline paths
     so both seam smoothers can go, and a direct transient probe for `A18`
 

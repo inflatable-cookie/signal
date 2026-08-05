@@ -1,6 +1,6 @@
 # 040 - RealtimePreview Completion
 
-Status: active; Batch 40.3 complete; Batch 40.4 ready
+Status: active; Batch 40.4 opened the tier; Batch 40.5 ready
 Owner: dsp
 Created: 2026-07-27
 Depends on: `g10.036`, `g10.038`, `g10.039`
@@ -528,18 +528,96 @@ render-plane integration but admission still requires a listening round.
 
 ### Batch 40.4 - Render Plane Integration
 
-Status: ready; Batch 40.3 closed 2026-08-05
+Status: tier opened and soak proven; the integration item's premise was false
+and is re-scoped below
 
-- [ ] open `CallbackSafeStreaming` and `SourceProjected` only after Batch 40.3
+- [x] open `CallbackSafeStreaming` and `SourceProjected` only after Batch 40.3
   passes every gate together
-- [ ] set `audio_thread_processing_supported` from proven behavior, not from a
+- [x] set `audio_thread_processing_supported` from proven behavior, not from a
   constant
-- [ ] integrate behind the existing render-plane preview boundary
-- [ ] prove no callback deadline miss under soak
+- [ ] ~~integrate behind the existing render-plane preview boundary~~ — there is
+  no such boundary; see below
+- [x] prove no callback deadline miss under soak
+
+#### The Tier Opens From Proven Properties
+
+`RealtimePreviewStreamState::contract` reports `CallbackSafeStreaming` and
+`SourceProjected` with `audio_thread_processing_supported` true. Each flag is
+justified by a specific gate — allocation-free (`G1`), bounded work, which holds
+only because ratios outside `[0.25, 3.0]` are rejected rather than clamped
+(`G2`), source consumption following the ratio with nothing dropped (`G3`,
+`G4`), starvation reported rather than hidden (`G5`), and changes landing within
+one analysis hop (`G6`).
+
+It is not a constant. The gates prove properties of a kernel at a geometry, so
+the contract re-checks the envelope those proofs assume — channel count, block
+size, the overlap law that bounds the maximum ratio, and the working-set
+ceiling — and reports unsupported outside it. The shipped
+`RealtimePreviewCallbackState` still reports `QuantumLocked` and unsupported,
+because it still is.
+
+`G8` also pins the reported alignment tolerance to the value `G6` proves, so the
+contract cannot advertise a looser number than the evidence supports.
+
+#### Measured
+
+Working set at the widest supported configuration — stereo, `MAX_BLOCK_FRAMES`:
+`404564` bytes, `395.1 KiB`, against the frozen `1 MiB` ceiling.
+
+Batch 40.2 predicted `804.3 KiB`. It was conservative by roughly `2x` because it
+added the source ring to the *shipped* kernel's measured allocation, and the new
+kernel's own state is leaner. The ceiling holds with `2.6x` margin. Recording
+the gap rather than quietly enjoying it: an estimate that overshoots by `2x` is
+not a good estimate, it is a lucky one.
+
+`G9`, in the soak lane because it is a wall-clock claim: `20000` callbacks
+sweeping the whole frozen ratio range, worst callback `208.8us` against a
+`2666.7us` budget — `7.8%` of the deadline — with `0` misses.
+
+#### There Is No Render-Plane Preview Boundary
+
+The checklist said to integrate behind the existing render-plane preview
+boundary. There isn't one.
+
+`signal-render-plane/src/lib.rs` contains zero occurrences of "preview". The
+only references anywhere in the crate are in `offline.rs`, and they exist to
+*reject* `StretchBackendTier::RealtimePreview` from offline artifact planning.
+The preview tier has never been wired for live rendering, so there is nothing to
+integrate behind.
+
+This is the second premise in this roadmap that did not survive contact with the
+code, after Batch 40.1 found `RealtimePreviewStretcher` was a live consumer
+rather than dead surface.
+
+Building that boundary is a new design, not an integration, and it has no
+consumer today: `loophole/pulse` pre-stretches whole buffers and caches them,
+which is what the whole-buffer prototype is for. Creating a live callback path
+speculatively is the over-engineering the original audit opened on. It is
+re-scoped to Batch 40.6 below, and gated on demand rather than on this
+roadmap's assumption.
+
+### Batch 40.6 - Live Preview Render Path
+
+Status: not opened; gated on demand, not on this roadmap
+
+The item Batch 40.4 could not do, stated honestly rather than left as a stale
+checkbox. `signal-render-plane` has no live preview path — building one is a new
+design covering the producer thread that fills the source ring, its I/O, the
+transport and seek behaviour that implies, and how a preview stage sits in the
+render graph.
+
+No consumer needs it today. `loophole/pulse` pre-stretches whole buffers and
+caches them, which is exactly what the whole-buffer prototype exists for, and no
+other consumer references the preview tier at all.
+
+Open this only when a consumer asks for live preview. The callback kernel is
+proven and waiting; building the path around it before anything needs it would
+repeat the pattern that produced the surface `g10.038` and Batch 40.5 have to
+delete.
 
 ### Batch 40.5 - Surface Reduction And Closeout
 
-Status: blocked on Batch 40.4, or on a Batch 40.1 closure decision
+Status: ready; Batch 40.4 opened the tier on 2026-08-05
 
 - [ ] remove every enum variant, getter, and scheduler the shipped design does
   not use, including the six never-constructed variants named above
@@ -586,22 +664,26 @@ Status: blocked on Batch 40.4, or on a Batch 40.1 closure decision
 
 ## Next Task
 
-Open Batch 40.4, render-plane integration. Batch 40.3 closed with seven gates
-green and no measured quality regression against the whole-buffer preview at the
-same geometry.
+Open Batch 40.5, surface reduction and closeout. Batch 40.4 opened
+`CallbackSafeStreaming` and `SourceProjected` from proven properties, measured
+the widest working set at `395.1 KiB` against the `1 MiB` ceiling, and proved
+`0` deadline misses in `20000` callbacks at `7.8%` of budget.
 
-Admission still needs listening. Contract `084` Rule 5 makes listening the
-promotion authority, and objective evidence cannot settle whether the candidate
-sounds right — only that its level and spectrum match the admitted preview DSP
-and that it beats the correlation metric's own noise floor.
+Batch 40.4 could not do its integration item, because the boundary it names does
+not exist: `signal-render-plane/src/lib.rs` has zero occurrences of "preview",
+and the only references in the crate reject the tier from offline planning. That
+work is re-scoped to Batch 40.6 and gated on a consumer asking for it, since
+`loophole/pulse` pre-stretches whole buffers and nothing else references the
+tier.
 
-Two measurement lessons from this batch are worth carrying into 40.4. A gate
-that passes immediately deserves to be run against a known-bad implementation
-before it is trusted; the first continuity gate passed the shipped
-quantum-locked kernel too. And a metric needs calibrating before it is used as
-evidence; waveform correlation scores `0.064` for identical DSP under a half-hop
-grid shift at ratio `0.5`, so a fixed threshold there would have measured frame
-phase and called it quality.
+Batch 40.5 should be careful about what it deletes. Batch 40.1 already found
+that `RealtimePreviewStretcher` is consumed by `loophole/pulse` and is not dead
+surface despite sharing the prefix; the six never-constructed variants and the
+output-side scheduler are what the lane actually set out to remove.
+
+Admission of the streaming kernel into shipped behaviour still needs listening
+under Contract `084` Rule 5, and nothing in Batch 40.4 changed shipped audio —
+the new kernel is still constructed by nothing outside its tests.
 
 Also inherited from `g10.039` and still open: adopting the remaining offline
 paths so both seam smoothers can be removed, and a direct transient probe for

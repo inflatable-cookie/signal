@@ -20,7 +20,10 @@ use std::sync::Arc;
 
 use signal_primitives::Sample;
 
-use crate::realtime_preview::{RealtimePreviewPlanError, RealtimePreviewStreamConfig};
+use crate::realtime_preview::{
+    RealtimePreviewCallbackTimelineMode, RealtimePreviewIntegrationMode, RealtimePreviewPlanError,
+    RealtimePreviewStreamConfig, RealtimePreviewStreamingContract,
+};
 use crate::{align_to_next_grid, wrap_phase};
 
 /// Slowest playback the preview kernel accepts.
@@ -243,6 +246,74 @@ impl RealtimePreviewStreamState {
     /// Validated stream configuration.
     pub fn config(&self) -> RealtimePreviewStreamConfig {
         self.config
+    }
+
+    /// Routing contract for this kernel.
+    ///
+    /// `audio_thread_processing_supported` is derived from the properties the
+    /// `g10.040` Batch 40.3 gates prove, not asserted as a constant:
+    ///
+    /// - the callback allocates nothing (`G1`)
+    /// - work per callback is bounded, which holds only because `render`
+    ///   rejects ratios outside `[0.25, 3.0]` rather than clamping them (`G2`)
+    /// - source consumption follows the ratio with nothing dropped (`G3`, `G4`)
+    /// - starvation is reported rather than hidden (`G5`)
+    /// - ratio changes land within one analysis hop (`G6`)
+    ///
+    /// Each is a property of *this* kernel. The shipped
+    /// [`crate::RealtimePreviewCallbackState`] keeps reporting `QuantumLocked`
+    /// and unsupported, because it is quantum-locked and does drop source.
+    ///
+    /// The envelope below is what the state can still get wrong at run time,
+    /// so it is checked rather than assumed: a configuration outside it means
+    /// the gates' proof does not apply and the contract says unsupported.
+    pub fn contract(&self) -> RealtimePreviewStreamingContract {
+        let within_envelope = (1..=2).contains(&self.config.channel_count)
+            && self.config.max_block_frames > 0
+            && self.config.analysis_hop > 0
+            && self.config.window_size >= self.config.analysis_hop
+            // The overlap law is what bounds the maximum ratio, so a geometry
+            // that violates it invalidates the frozen range.
+            && (self.config.analysis_hop as f64) * REALTIME_PREVIEW_STREAM_MAX_RATIO
+                <= 0.75 * self.config.window_size as f64
+            && self.working_bytes() <= REALTIME_PREVIEW_STREAM_MAX_WORKING_BYTES;
+
+        RealtimePreviewStreamingContract {
+            input_latency_frames: self.source_ring_frames,
+            output_latency_frames: self.config.window_size,
+            ratio_change_alignment_tolerance_frames: self.config.analysis_hop,
+            integration_mode: if within_envelope {
+                RealtimePreviewIntegrationMode::CallbackSafeStreaming
+            } else {
+                RealtimePreviewIntegrationMode::AnticipativePreRender
+            },
+            callback_timeline_mode: if within_envelope {
+                RealtimePreviewCallbackTimelineMode::SourceProjected
+            } else {
+                RealtimePreviewCallbackTimelineMode::QuantumLocked
+            },
+            audio_thread_processing_supported: within_envelope,
+            unsupported_mode: None,
+            config: self.config,
+        }
+    }
+
+    /// Bytes the state holds, against the frozen ceiling.
+    pub fn working_bytes(&self) -> usize {
+        let sample = std::mem::size_of::<Sample>();
+        let complex = std::mem::size_of::<Complex32>();
+        (self.source_ring.len() + self.output_ring.len() + self.normalization_ring.len()) * sample
+            + (self.window.len() + self.omega.len()) * sample
+            + (self.analysis_buffer.len() + self.synthesis_spectrum.len()) * complex
+            + (self.forward_fft_scratch.len() + self.inverse_fft_scratch.len()) * complex
+            + (self.previous_phase.len()
+                + self.synthesis_phase.len()
+                + self.current_magnitudes.len()
+                + self.current_phases.len()
+                + self.previous_magnitudes.len())
+                * sample
+            + self.current_peak_bins.capacity() * std::mem::size_of::<usize>()
+            + (self.current_energy.len() + self.previous_energy.len()) * std::mem::size_of::<f64>()
     }
 
     /// Source frames the producer must fill before playback starts, and keep

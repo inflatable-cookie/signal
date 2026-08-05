@@ -11,6 +11,21 @@ registry upload.
 
 ### Changed
 
+- Opened the RealtimePreview callback tier on the streaming kernel in `g10.040`
+  Batch 40.4. `CallbackSafeStreaming`, `SourceProjected`, and
+  `audio_thread_processing_supported` are derived from the properties the gates
+  prove and re-checked against the envelope those proofs assume, rather than
+  asserted as constants; the shipped quantum-locked state still reports
+  unsupported. Widest working set measures `395.1 KiB` against the `1 MiB`
+  ceiling, and `20000` callbacks across the whole ratio range showed `0` deadline
+  misses at `7.8%` of budget.
+
+  The batch could not integrate behind the render plane's preview boundary
+  because there is none: `signal-render-plane/src/lib.rs` has zero occurrences of
+  "preview" and every reference in the crate rejects the tier from offline
+  planning. Building that path is a new design with no consumer — `loophole/pulse`
+  pre-stretches whole buffers — so it is re-scoped and gated on demand instead of
+  built speculatively. Nothing in this batch changed shipped audio.
 - Landed the `g10.040` Batch 40.3 candidate: `RealtimePreviewStreamState`, a
   source-owning preview kernel with no input parameter — the producer pushes
   source and the callback pulls whatever the ratio demands, instead of being

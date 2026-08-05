@@ -488,3 +488,112 @@ fn correlation(a: &[f32], b: &[f32]) -> f64 {
     }
     best
 }
+
+/// `G8` the contract opens only inside the envelope the gates prove.
+#[test]
+fn g8_contract_reports_callback_safe_streaming_within_the_envelope() {
+    use signal_dsp_stretch::{
+        RealtimePreviewCallbackTimelineMode, RealtimePreviewIntegrationMode,
+        REALTIME_PREVIEW_STREAM_MAX_WORKING_BYTES,
+    };
+
+    let state = state(BLOCK);
+    let contract = state.contract();
+    assert!(
+        contract.audio_thread_processing_supported,
+        "the streaming kernel should open the callback tier"
+    );
+    assert_eq!(
+        contract.integration_mode,
+        RealtimePreviewIntegrationMode::CallbackSafeStreaming
+    );
+    assert_eq!(
+        contract.callback_timeline_mode,
+        RealtimePreviewCallbackTimelineMode::SourceProjected
+    );
+    assert_eq!(contract.unsupported_mode, None);
+    assert_eq!(
+        contract.ratio_change_alignment_tolerance_frames,
+        state.config().analysis_hop,
+        "the reported tolerance must be the one G6 proves, not a looser one"
+    );
+
+    // The frozen ceiling, checked against the real allocation rather than an
+    // estimate. Stereo at MAX_BLOCK_FRAMES is the worst case Batch 40.2 sized.
+    let widest = RealtimePreviewStreamState::new(RealtimePreviewStreamConfig::new(
+        SampleRate(RATE),
+        2,
+        4096,
+    ))
+    .expect("widest supported configuration should plan");
+    eprintln!(
+        "G8: widest supported working set {} bytes ({:.1} KiB) against a {:.1} KiB ceiling",
+        widest.working_bytes(),
+        widest.working_bytes() as f64 / 1024.0,
+        REALTIME_PREVIEW_STREAM_MAX_WORKING_BYTES as f64 / 1024.0
+    );
+    assert!(
+        widest.working_bytes() <= REALTIME_PREVIEW_STREAM_MAX_WORKING_BYTES,
+        "working set {} exceeds the frozen ceiling {}",
+        widest.working_bytes(),
+        REALTIME_PREVIEW_STREAM_MAX_WORKING_BYTES
+    );
+    assert!(widest.contract().audio_thread_processing_supported);
+}
+
+/// `G9` no callback deadline miss under sustained load.
+///
+/// Wall-clock, so it lives in the soak lane: it asserts the callback finishes
+/// inside its real-time budget, which is a claim about the host. `A20`, `A21`
+/// and `A22` were all this kind of assertion running in the default suite.
+#[test]
+fn g9_no_callback_deadline_miss_under_soak() {
+    if std::env::var("SIGNAL_SOAK_TESTS").as_deref() != Ok("1") {
+        eprintln!(
+            "SKIPPED: wall-clock soak test; set SIGNAL_SOAK_TESTS=1 (or run `effigy test:soak`)"
+        );
+        return;
+    }
+
+    let mut state = state(BLOCK);
+    let source = source(RATE as usize * 30);
+    let mut cursor = 0usize;
+    let mut output = vec![0.0f32; BLOCK * CHANNELS];
+    let budget = std::time::Duration::from_secs_f64(BLOCK as f64 / RATE as f64);
+
+    for _ in 0..256 {
+        top_up(&mut state, &source, &mut cursor);
+        let _ = state.render(&mut output, BLOCK, 1.0);
+    }
+
+    let mut worst = std::time::Duration::ZERO;
+    let mut misses = 0usize;
+    for iteration in 0..20_000 {
+        top_up(&mut state, &source, &mut cursor);
+        if cursor >= source.len() / CHANNELS {
+            cursor = 0;
+        }
+        // Sweep the whole frozen range, so the worst case is exercised.
+        let ratio = match iteration % 4 {
+            0 => REALTIME_PREVIEW_STREAM_MIN_RATIO,
+            1 => 1.0,
+            2 => 2.0,
+            _ => REALTIME_PREVIEW_STREAM_MAX_RATIO,
+        };
+        let started = std::time::Instant::now();
+        let _ = state.render(&mut output, BLOCK, ratio);
+        let elapsed = started.elapsed();
+        worst = worst.max(elapsed);
+        if elapsed > budget {
+            misses += 1;
+        }
+    }
+
+    eprintln!(
+        "G9: worst callback {:.1}us against a {:.1}us budget ({:.1}% of deadline), {misses} misses",
+        worst.as_secs_f64() * 1e6,
+        budget.as_secs_f64() * 1e6,
+        worst.as_secs_f64() / budget.as_secs_f64() * 100.0
+    );
+    assert_eq!(misses, 0, "callback missed its deadline {misses} times");
+}
