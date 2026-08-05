@@ -15,8 +15,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install stable toolchain
-        run: rustup toolchain install stable --profile minimal --component rustfmt clippy
+      # rust-toolchain.toml pins the channel and the components, so the first
+      # cargo invocation installs them. Do not re-declare them here: the two
+      # would drift, and the previous inline form (`--component rustfmt clippy`)
+      # silently parsed `clippy` as a toolchain name and failed every run.
+      - name: Show toolchain
+        run: rustc --version && cargo --version && cargo clippy --version
 
       - name: Cache cargo
         uses: actions/cache@v4
@@ -27,16 +31,33 @@ jobs:
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}
 
+      # The steps below mirror the cargo-based release gates in
+      # config/release.toml. Keep them in step: a release is gated on those
+      # commands, so CI passing while a gate would fail is a false green.
       - name: Format check
-        run: cargo fmt --all --check
+        run: cargo fmt --all -- --check
 
       - name: Build
-        run: cargo build --workspace --all-targets
+        run: cargo build --workspace --all-targets --all-features
 
       - name: Clippy
-        run: cargo clippy --workspace --all-targets -- -D warnings
+        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+
+      # Runs again with features off: --all-features cannot see cfg-gated code
+      # that only compiles when a feature is absent. A mis-gated re-export got
+      # through exactly that blind spot once already.
+      - name: Clippy (no default features)
+        run: cargo clippy --workspace --all-targets --no-default-features -- -D warnings
+
+      - name: Doc coverage
+        run: RUSTFLAGS='-D missing-docs' cargo check --workspace --lib
 
       # Audio-device-dependent smoke tests (signal-hardware-cpal)
       # self-skip when no output device is present, so no gating is needed.
       - name: Test
         run: cargo test --workspace
+
+      # Not mirrored here: the `validate` and `docs` release gates run through
+      # effigy, which is not installed on the runner. Their cargo-backed parts
+      # (fmt, doc coverage, compile) are covered above; the northstar docs
+      # checks remain local-only.

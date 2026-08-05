@@ -9,6 +9,14 @@ registry upload.
 
 ## [Unreleased]
 
+### Fixed
+
+- Repaired CI, which had failed on every push since it was added. The toolchain
+  step passed `--component rustfmt clippy`, so rustup read `clippy` as a
+  toolchain name and exited before any build ran. Components are now declared in
+  `rust-toolchain.toml`, and the workflow mirrors the cargo-based release gates
+  so a green CI and a passing gate set mean the same thing.
+
 ## [0.1.0] - 2026-08-05
 
 ### Added
