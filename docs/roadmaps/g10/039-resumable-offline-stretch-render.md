@@ -1,9 +1,9 @@
 # 039 - Resumable Offline Stretch Render
 
-Status: active; re-adopted with a content guard; blocked on listening revision 2
+Status: complete; adopted and admitted by listening revision 2
 Owner: dsp
 Created: 2026-07-27
-Updated: 2026-07-27
+Updated: 2026-08-05
 Depends on: `g10.036`, `g10.038`
 Governing contracts: `docs/contracts/046-sample-domain-time-stretch-engine-contract.md`,
 `docs/contracts/084-stretch-candidate-isolation-and-promotion-contract.md`
@@ -204,7 +204,7 @@ segmented path, which Batch 39.4 replaces.
 
 ### Batch 39.4 - Render Plane Adoption
 
-Status: rejected by listening and reverted from `main`
+Status: complete; first attempt rejected by listening, re-adopted and admitted
 
 Listening found all three adopted specimens silent. Measured RMS: `0.000000`
 against roughly `0.1457` for the shipped side. An envelope over the full render
@@ -241,6 +241,24 @@ smoothers stay.
 - [x] prove artifact output is chunk-independent
 - [x] keep the chunk plan as the memory-bounding authority
 
+#### Re-adoption
+
+The deadlock is fixed: output and normalization rings are four times the window
+against an input ring of twice, so the write frontier and the emission limit no
+longer touch; emission releases everything below `synthesis_start`; and `render`
+returns an error rather than discarding source when a drain cannot advance.
+
+The guard landed before the adoption this time.
+`multi_chunk_artifact_carries_audio_across_the_whole_output` is a permanent
+render-plane owner asserting signal in every decile of a multi-chunk artifact,
+and `G5` is unignored and live in the crate suite. Every render in the
+revision-2 pack was content-checked before the pack was built; all six files
+measure roughly `0.1457` RMS.
+
+The working-set ceiling moved to `12 MiB` against a measured `10616892 B`. It
+has now moved three times, and Contract `046` records why: a memory bound is a
+consequence of a working design, not something that can be frozen ahead of one.
+
 Sixty seconds of stereo at ratio `1.25` through the artifact path: a `2`-chunk
 and a `12`-chunk render are bit-identical, correlation `1.000000`. Batch 39.1
 measured `0.389976` on the shipped path.
@@ -269,23 +287,62 @@ class, failing once under parallel load and passing three times alone.
 
 ### Batch 39.5 - Closeout
 
-Status: blocked on Batch 39.4
+Status: complete
 
-- [ ] run `effigy validate`, the full crate suite, and the corpus report
-- [ ] update Contract `046` and the `g10` front doors
-- [ ] state explicitly whether any seam mechanism remains and why
-- [ ] name the next ready batch in `g10.040`
+- [x] run `effigy validate`, the full crate suite, and the corpus report
+- [x] update Contract `046` and the `g10` front doors
+- [x] state explicitly whether any seam mechanism remains and why
+- [x] name the next ready batch in `g10.040`
+
+#### Listening Verdict
+
+Revision 2 judged 2026-08-05: no significant difference between the sides of any
+pair. Under Contract `084` Rule 5 that admits the adopted renderer, since
+admission requires that no case prefers the shipped side.
+
+Concealment held. The adopted side was `A` in `D1` and `B` in `D2` and `D3`, so
+a positional bias would have shown as a consistent preference and did not.
+
+Read this as parity, not as a demonstrated improvement. The `g10.036` seam pulse
+was not reported on the shipped side of this pack either, so the pack did not
+reproduce the artifact it was built to discriminate on. What it establishes is
+that carrying state across chunk boundaries costs nothing audible — enough to
+adopt a structurally better renderer, not enough to claim the seam artifact is
+solved.
+
+`A18` is likewise unresolved. Revision 1 found low-mid pops on the ticks in the
+shipped `D2` and `D3`; revision 2 reports no difference between sides, which
+does not separate "gone from both" from "present in both". `A18` stays open and
+needs a probe that measures the transient directly rather than a pack that
+compares two renderers.
+
+#### Seam Mechanisms Remaining
+
+Both seam smoothers remain, and this is not deferral. Adoption is partial by
+design: the resumable renderer owns the default offline path with no pitch
+shift, while selector paths and pitch composition still take the legacy
+per-chunk path and still create the boundaries the smoothers patch. Deleting
+them requires adopting those paths, which is `g10.040` work, not closeout work.
+
+#### Closeout Evidence
+
+- `effigy release gates`: 6/6 pass — `docs`, `fmt`, `lint`, `lint:no-features`,
+  `test`, `validate`. The `test` gate is the full workspace suite.
+- `stretch-corpus-report` with `--all-features`: 27 comparisons, `14 Improved`,
+  `13 Unchanged`, zero regressed.
 
 ## Acceptance Criteria
 
-- [ ] chunked and whole-buffer renders agree within the frozen equivalence law
-- [ ] output is independent of chunk size
-- [ ] working state is bounded and duration-independent, proven for long
+- [x] chunked and whole-buffer renders agree within the frozen equivalence law
+- [x] output is independent of chunk size
+- [x] working state is bounded and duration-independent, proven for long
   sources
-- [ ] dynamic-ratio boundaries carry state rather than concatenate segments
-- [ ] no seam hack remains in either crate unless Batch 39.5 records why
-- [ ] the render plane constructs one renderer per artifact, not one per chunk
-- [ ] full crate suite and corpus report pass
+- [x] dynamic-ratio boundaries carry state rather than concatenate segments
+- [x] no seam hack remains in either crate unless Batch 39.5 records why —
+  both remain, and Batch 39.5 records that the legacy path still creates the
+  boundaries they patch
+- [x] the render plane constructs one renderer per artifact, not one per chunk
+- [x] full crate suite and corpus report pass
 
 ## Risks and Mitigations
 
@@ -304,36 +361,26 @@ Status: blocked on Batch 39.4
 
 ## Evidence Requirements
 
-- [ ] one log per completed batch under `docs/logs/`
-- [ ] the Batch 39.1 boundary-cost measurement against a whole-buffer control
-- [ ] the frozen state inventory with capacities and total ceiling
-- [ ] chunk-size independence proof across at least three sizes
-- [ ] before/after seam metric for the artifact path
-- [ ] commands actually run
+- [x] one log per completed batch under `docs/logs/`
+- [x] the Batch 39.1 boundary-cost measurement against a whole-buffer control
+- [x] the frozen state inventory with capacities and total ceiling
+- [x] chunk-size independence proof across at least three sizes
+- [x] before/after seam metric for the artifact path — `0.389976` on the
+  shipped path, `1.000000` on the adopted path
+- [x] commands actually run
 
 ## Next Task
 
-The ring deadlock is fixed and all six gates pass, including `G5`. Output and
-normalization rings are four times the window against an input ring of twice, so
-the write frontier and emission limit no longer touch; emission releases
-everything below `synthesis_start`; and `render` returns an error rather than
-discarding source if a drain cannot advance.
+This roadmap is complete. The resumable renderer is adopted on the default
+offline path with no pitch shift, admitted by listening, and guarded by `G5`
+plus a permanent render-plane content owner.
 
-The ceiling moved to `12 MiB` against a measured `10616892 B`. It has now moved
-three times, and Contract `046` records why: a memory bound is a consequence of
-a working design, not something that can be frozen ahead of one.
+Two things it did not settle, both now `g10.040` inputs:
 
-Judge the revision-2 pack at `~/Downloads/signal-listening-pack-39-rev2`.
+Selector paths and pitch composition still take the legacy per-chunk path. Until
+they adopt the resumable renderer, both seam smoothers must stay, because the
+legacy branch still creates the boundaries they patch.
 
-Re-adoption landed with the content guard first this time.
-`multi_chunk_artifact_carries_audio_across_the_whole_output` is a permanent
-render-plane owner asserting signal in every decile of a multi-chunk artifact,
-and every render in the pack was content-checked before the pack was built. All
-six files measure roughly `0.1457` RMS, so no specimen is silent.
-
-Admission under Contract `084` Rule 5 requires that no case prefers the shipped
-side.
-
-Batch 39.5 then closes the lane and decides whether the remaining offline paths
-adopt the resumable renderer, which is what would let both seam smoothers be
-deleted.
+`A18` is open. Revision 2 reported no difference between sides, which does not
+distinguish "gone from both" from "present in both", so the low-mid tick pops
+need a direct transient probe rather than another comparative pack.

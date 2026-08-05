@@ -1,6 +1,6 @@
 # 040 - RealtimePreview Completion
 
-Status: planned; blocked on `g10.039`
+Status: ready; `g10.039` closed 2026-08-05
 Owner: dsp
 Created: 2026-07-27
 Depends on: `g10.036`, `g10.038`, `g10.039`
@@ -94,7 +94,7 @@ the unreachable surface rather than carry it.
 
 ### Batch 40.1 - Feasibility And Design Reassessment
 
-Status: blocked on `g10.039` Batch 39.5
+Status: ready
 
 Documentation only.
 
@@ -203,5 +203,16 @@ Status: blocked on Batch 40.4, or on a Batch 40.1 closure decision
 
 ## Next Task
 
-Blocked. Open Batch 40.1 after `g10.039` Batch 39.5 closes. It is documentation
-only and may close the tier.
+Open Batch 40.1. `g10.039` Batch 39.5 closed on `2026-08-05`. The batch is
+documentation only and may close the tier rather than open a brief.
+
+Two items arrive from `g10.039` and are in scope for this roadmap, though not
+necessarily for Batch 40.1:
+
+Selector paths and pitch composition still take the legacy per-chunk offline
+renderer. Both seam smoothers stay until those paths adopt the resumable
+renderer, because the legacy branch still creates the boundaries they patch.
+
+`A18`, the low-mid pops on ticks, is open. The revision-2 listening pack
+reported no difference between sides, which does not distinguish gone-from-both
+from present-in-both, so it needs a probe that measures the transient directly.

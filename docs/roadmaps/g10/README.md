@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: active generation; `g10.039` blocked on listening revision 2
+Status: active generation; `g10.039` complete, `g10.040` ready
 Updated: 2026-07-27
 
 ## Why this generation matters now
@@ -416,7 +416,7 @@ Do not start Loophole or Chorus planning from Signal internals.
     surface at `158` items, unchanged in size because every deletable family is
     owned by another lane, and `lib.rs` down from `5181` to `3343` lines; Batch
     38.7 reopens after `g10.039`
-- `g10.039` `active`
+- `g10.039` `complete`
   - resumable offline stretch render: state carried across chunk and
     dynamic-ratio boundaries, both seam hacks removed; blocked on `g10.038`;
     now also owns the `g10.036` seam-pulse limitation and candidate finding
@@ -427,11 +427,26 @@ Do not start Loophole or Chorus planning from Signal internals.
     ratio curve, and froze exact chunk-size independence; Batch 39.2 froze the
     API, the six carried state items, an `8 MiB` geometry-derived ceiling with a
     new `65536` maximum window, and which `g10.036` controls survive; Batch 39.3
-    ready
-- `g10.040` `planned`
+    built the renderer behind six structural gates; Batch 39.4 adopted it in the
+    render plane, was rejected by listening when all three adopted specimens
+    measured `0.000000` RMS, and re-adopted after the ring deadlock was fixed —
+    the five original gates all passed the silent renderer because every one
+    measured a relationship between renders rather than whether a render
+    contains audio, which `G5` and a permanent render-plane decile owner now
+    close; Batch 39.5 closed the lane on listening revision 2, judged
+    `2026-08-05` as no significant difference in any pair, which admits the
+    adopted renderer under Contract `084` Rule 5. Read as parity, not
+    improvement: the pack did not reproduce the seam pulse on the shipped side
+    either. Both seam smoothers therefore remain, because selector paths and
+    pitch composition still take the legacy per-chunk path, and `A18` stays
+    open because "no difference" does not separate gone-from-both from
+    present-in-both
+- `g10.040` `ready`
   - RealtimePreview completion: fix the quantum-locked source-advance defect or
-    close the tier and remove its unreachable surface; blocked on `g10.039`;
-    supersedes `g10.024` and `g10.028`
+    close the tier and remove its unreachable surface; unblocked by `g10.039`;
+    supersedes `g10.024` and `g10.028`; Batch 40.1 ready, and it also inherits
+    the two items `g10.039` did not settle — adopting the remaining offline
+    paths so both seam smoothers can go, and a direct transient probe for `A18`
 
 ## Stretch Boundary
 

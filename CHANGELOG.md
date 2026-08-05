@@ -51,6 +51,16 @@ registry upload.
 
 ### Changed
 
+- Admitted the resumable offline stretch renderer on the default offline path
+  with no pitch shift, closing `g10.039`. It carries phase-vocoder state across
+  chunk and dynamic-ratio boundaries instead of restarting at each join, and
+  chunked output is now bit-identical across chunk policies (correlation
+  `1.000000`, against `0.389976` for the per-chunk renderer it replaces).
+  Concealed listening found no significant difference between the two, which
+  admits it as parity rather than as a demonstrated improvement. Selector paths
+  and pitch composition still take the legacy per-chunk path, so both seam
+  smoothers remain.
+
 - Cleared all 14 clippy warnings and tightened both lint gates to `-D warnings`,
   so new lint debt blocks a release instead of accumulating behind a passing
   signal.
