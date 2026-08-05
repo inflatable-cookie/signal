@@ -91,8 +91,15 @@ the patch and rebuilding reverts it.
 
 `finch` shipped exactly this in the migration commit and needed a follow-up.
 So it is checked rather than remembered: `scripts/signal-check-lock.sh` fails
-if any `signal-*` entry in a committed lockfile lacks a `source` line. It is
-verified against a genuinely patched lockfile, not just a clean one.
+if any `signal-*` entry lacks a `source` line.
+
+It inspects the **staged** content when there is any, otherwise `HEAD`. It
+deliberately ignores the working tree, because while linked a dirty lockfile is
+the normal state — flagging that would make the check noise rather than signal.
+The first version got this wrong and reported every linked working copy.
+
+Verified in both directions: it passes a clean lockfile and fails a genuinely
+patched one, naming each affected crate and exiting `1`.
 
 To commit a lockfile change: run `scripts/signal-unlink.sh`, rebuild, commit,
 then re-link.
