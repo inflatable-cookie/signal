@@ -421,18 +421,21 @@ mod tests {
             unsafe { PluginAudioBlockView::new(region.as_mut_slice().as_mut_ptr(), layout) };
         child_view.initialize();
 
-        let processor = Arc::new(
-            ShmPluginProcessor::attach(
-                &metadata.region_id,
-                &metadata.backing_path,
-                metadata.total_bytes,
-                64,
-                2,
-                48_000,
+        let attach = || {
+            Arc::new(
+                ShmPluginProcessor::attach(
+                    &metadata.region_id,
+                    &metadata.backing_path,
+                    metadata.total_bytes,
+                    64,
+                    2,
+                    48_000,
+                )
+                .expect("attach should succeed"),
             )
-            .expect("attach should succeed"),
-        );
-        let handle = RenderPluginProcessor::new(Arc::clone(&processor) as Arc<_>);
+        };
+        let mut processor = attach();
+        let mut handle = RenderPluginProcessor::new(Arc::clone(&processor) as Arc<_>);
 
         // Fake child thread: serve requests by doubling samples, until the
         // client says it is done.
@@ -492,11 +495,28 @@ mod tests {
         // the other thread gets scheduled within 200 of this one's iterations,
         // which is a claim about host contention, not about the bridge.
         let mut processed = false;
+        let mut epochs = 1u32;
         let deadline = Instant::now() + Duration::from_secs(30);
         while Instant::now() < deadline {
             if handle.process(&mut scratch, 32, 2) {
                 processed = true;
                 break;
+            }
+            // Retrying the same handle forever cannot work. After
+            // `PLUGIN_PROCESS_CONSECUTIVE_TIMEOUT_LIMIT` misses the processor
+            // retires its epoch and every later `process` returns false
+            // immediately, so a long retry loop against a retired backend is
+            // futile by construction. That is what failed on CI: the first
+            // three attempts missed the wait budget, the epoch retired, and
+            // the remaining 30s could not have succeeded however long it ran.
+            //
+            // The budget is half a block capped at 1ms, which a contended
+            // three-core runner can miss three times in a row through no fault
+            // of the protocol. Re-attach and give the round trip a fresh epoch.
+            if !processor.is_alive() {
+                processor = attach();
+                handle = RenderPluginProcessor::new(Arc::clone(&processor) as Arc<_>);
+                epochs += 1;
             }
             // Sleep between attempts, do not spin. The thread this loop is
             // waiting for may share a core with it: CI runners have a handful
@@ -516,7 +536,10 @@ mod tests {
         stop_serving.store(true, Ordering::Relaxed);
         let served = server.join();
 
-        assert!(processed, "server should have answered within 30s");
+        assert!(
+            processed,
+            "server should have answered within 30s (across {epochs} epochs)",
+        );
         assert!(
             served.expect("server thread joins") >= 1,
             "server should have served at least one request",

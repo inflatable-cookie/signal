@@ -57,8 +57,15 @@ registry upload.
   now serves until told to stop. And the client's wait budget is half a block,
   `333us`, so replacing the spin with a `1ms` server sleep polled three times
   slower than the window it had to answer within; the server is back to
-  `yield_now`. Twelve runs found the original twice; thirty runs after are
-  clean.
+  `yield_now`.
+
+  None of that was why CI failed. `PLUGIN_PROCESS_CONSECUTIVE_TIMEOUT_LIMIT` is
+  `3`: after three consecutive misses the processor clears `alive` and every
+  later `process` returns false immediately, so a retry loop against a retired
+  epoch is futile however long it runs. The three attempts have to land inside
+  `min(1ms, half a block)`, which a contended three-core runner can miss three
+  times in a row. The test now re-attaches on retirement and reports the epoch
+  count.
 - Removed the wall-clock throughput dependency from seven more tests in
   `signal-hardware`, missed by the first sweep because they live in `#[cfg(test)]`
   modules inside `src/` rather than under `tests/`. The two capture tests CI

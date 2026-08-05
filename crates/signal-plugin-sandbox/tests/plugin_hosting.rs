@@ -157,14 +157,26 @@ fn spawn_processing_session(
 /// Drive one block through the handle, retrying misses (the child audio
 /// thread may need a scheduler quantum to see the first request).
 ///
-/// The deadline is deliberately generous. It exists to catch a child that
-/// never answers at all, not to bound how quickly it answers: the first
-/// request has to wait for a real process spawn plus a plugin `dlopen`, which
-/// on cold shared CI infrastructure legitimately takes seconds. A 5s bound
-/// failed on a GitHub runner while passing everywhere locally, which measures
-/// the runner rather than the bridge. Per-block latency is asserted separately
-/// by the bypass-budget tests, and those bounds stay tight.
-const CHILD_FIRST_RESPONSE_DEADLINE: Duration = Duration::from_secs(60);
+/// The deadline is generous because the first request waits on a real process
+/// spawn plus a plugin `dlopen`, which on cold shared CI infrastructure
+/// legitimately takes seconds. It exists to catch a child that never answers,
+/// not to bound how quickly it answers. Per-block latency is asserted
+/// separately by the bypass-budget tests, and those bounds stay tight.
+///
+/// KNOWN LIMIT: retrying cannot recover from a retired epoch. After
+/// `PLUGIN_PROCESS_CONSECUTIVE_TIMEOUT_LIMIT` consecutive misses the processor
+/// clears its `alive` flag and every later `process` returns false
+/// immediately, so once that happens this loop is futile and only burns the
+/// deadline. Serialising the child-spawning tests is what keeps the misses
+/// from stacking up; the deadline is short enough that a retired epoch fails
+/// in tens of seconds rather than a minute.
+///
+/// If this recurs, the fix is the one applied to the `shm` round-trip test:
+/// re-attach the processor when `is_alive()` goes false and give the round
+/// trip a fresh epoch. It is not done here because the twelve call sites each
+/// hold their own handle and the lease needed to re-attach is not threaded
+/// through them.
+const CHILD_FIRST_RESPONSE_DEADLINE: Duration = Duration::from_secs(20);
 
 fn process_with_retries(handle: &RenderPluginProcessor, scratch: &mut [f32], frames: usize) {
     let deadline = Instant::now() + CHILD_FIRST_RESPONSE_DEADLINE;
@@ -174,7 +186,9 @@ fn process_with_retries(handle: &RenderPluginProcessor, scratch: &mut [f32], fra
         }
         assert!(
             Instant::now() < deadline,
-            "child never answered a process request within {CHILD_FIRST_RESPONSE_DEADLINE:?}",
+            "child never answered a process request within \
+             {CHILD_FIRST_RESPONSE_DEADLINE:?} (a retired epoch cannot recover \
+             by retrying -- see CHILD_FIRST_RESPONSE_DEADLINE)",
         );
         std::thread::yield_now();
     }

@@ -91,13 +91,48 @@ starves the server on a machine with few cores.
 The deadline moved from `5s` to `30s` as well, but that was never the fix — it
 only stopped a slow runner from being mistaken for a hang.
 
+## The Retry Loop Was Futile By Construction
+
+CI failed the same test again, at the full `30s`, against `30` clean local runs.
+Retrying harder could never have worked, and the reason is in production code
+rather than in the test.
+
+`PLUGIN_PROCESS_CONSECUTIVE_TIMEOUT_LIMIT` is `3`. After three consecutive
+misses `ShmPluginProcessor` clears its `alive` flag, and every later `process`
+returns `false` immediately without waiting. So on CI the first three attempts
+missed the wait budget, the epoch retired, and the remaining `30s` of retries
+could not have succeeded however long they ran. The original `200`-iteration
+loop had the same property; it just never reached three misses locally, where
+the first attempt almost always wins.
+
+The budget those three attempts had to hit is `min(1ms, half a block)` — `333us`
+at `32` frames and `48 kHz`. A contended three-core runner can miss that three
+times in a row through no fault of the protocol.
+
+The test now re-attaches the processor when `is_alive()` goes false, giving the
+round trip a fresh epoch, and reports how many epochs it needed. This is the
+first fix in this sequence that addresses why retrying failed rather than how
+long it retried for.
+
+The same flaw exists in `signal-plugin-sandbox`'s `process_with_retries`, which
+retried for `60s` against a handle with the identical retirement behaviour — so
+two of the three failures in that binary were also unrecoverable rather than
+slow. Serialising the child-spawning tests keeps the misses from stacking, and
+the deadline is cut to `20s` so a retired epoch fails in tens of seconds instead
+of a minute. The re-attach fix is not applied there: the twelve call sites each
+hold their own handle and the lease needed to re-attach is not threaded through
+them. That limit is now written at the constant.
+
 ## Measurement
 
 - Before: `2` failures in `12` runs of `signal-plugin-bridge --lib`, plus the
   gate segfault.
 - After the join fix alone: no more segfaults, but still failing — `2` in `10`
   locally and once on CI.
-- After all three: `0` failures in `30` runs.
+- After all three: `0` failures in `30` runs — but still failing on CI, because
+  none of them addressed epoch retirement.
+- After the re-attach: `0` failures in `6` runs under `2x` core oversubscription
+  (`36` busy processes on `18` cores).
 
 ## Findings State
 
