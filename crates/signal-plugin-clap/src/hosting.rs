@@ -590,7 +590,14 @@ impl ClapHostedInstance {
     /// macOS): create → get_size → set_parent → show. Returns the plugin's
     /// initial content size (logical units). Errors with stable tokens
     /// (`gui_unsupported`, `gui_already_open`, `gui_create_failed`, …).
-    pub fn gui_open_embedded(
+    ///
+    /// # Safety
+    ///
+    /// `parent` must be a live, valid `NSView*` (macOS) or platform window handle owned by the caller, and must
+    /// outlive the returned editor session. It is handed straight to the
+    /// plugin, which attaches its own view to it. Must be called on the
+    /// application main thread.
+    pub unsafe fn gui_open_embedded(
         &mut self,
         parent: *mut c_void,
         scale: Option<f64>,

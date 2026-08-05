@@ -97,7 +97,7 @@ impl Default for ReportArgs {
 
 fn main() {
     let args = match parse_args(env::args().skip(1)) {
-        Ok(ParseOutcome::Run(args)) => args,
+        Ok(ParseOutcome::Run(args)) => *args,
         Ok(ParseOutcome::Help) => {
             println!("{}", usage());
             return;
@@ -171,7 +171,9 @@ fn exit_with_error(message: &str, show_usage: bool) -> ! {
 }
 
 enum ParseOutcome {
-    Run(ReportArgs),
+    // Boxed: `ReportArgs` is ~232 bytes larger than `Help`, so an unboxed
+    // variant would make every `ParseOutcome` pay for the argument struct.
+    Run(Box<ReportArgs>),
     Help,
 }
 
@@ -251,7 +253,7 @@ where
             _ => return Err(format!("unknown argument: {argument}")),
         }
     }
-    Ok(ParseOutcome::Run(parsed))
+    Ok(ParseOutcome::Run(Box::new(parsed)))
 }
 
 fn next_value<I>(iter: &mut I, name: &str) -> Result<String, String>

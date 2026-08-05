@@ -202,20 +202,25 @@ mod tests {
         assert!(!instance.gui_is_open());
 
         // Null parent is rejected before any FFI runs.
-        let refused = instance.gui_open_embedded(std::ptr::null_mut(), None);
+        // SAFETY: null is rejected before any FFI runs; nothing is dereferenced.
+        let refused = unsafe { instance.gui_open_embedded(std::ptr::null_mut(), None) };
         assert_eq!(refused.unwrap_err().token, "gui_parent_null");
 
         // The fixture records but never dereferences the parent handle, so
         // any non-null pointer stands in for the NSView.
         let mut fake_parent = 0u8;
-        let size = instance
-            .gui_open_embedded((&mut fake_parent as *mut u8).cast(), None)
-            .expect("embedded gui open should succeed");
+        // SAFETY: `fake_parent` is a live local; the fixture records the handle
+        // without dereferencing it, and the session is destroyed below.
+        let size =
+            unsafe { instance.gui_open_embedded((&mut fake_parent as *mut u8).cast(), None) }
+                .expect("embedded gui open should succeed");
         assert_eq!(size, CLAP_FIXTURE_GUI_INITIAL_SIZE);
         assert!(instance.gui_is_open());
 
         // Double-open is a tokened error, not UB.
-        let double = instance.gui_open_embedded((&mut fake_parent as *mut u8).cast(), None);
+        // SAFETY: as above; this call is refused before reaching the fixture.
+        let double =
+            unsafe { instance.gui_open_embedded((&mut fake_parent as *mut u8).cast(), None) };
         assert_eq!(double.unwrap_err().token, "gui_already_open");
 
         // The fixture's show() requested a resize through the host gui
@@ -248,8 +253,8 @@ mod tests {
         // Reopen, then drop the instance with the editor still open: the
         // Drop fallback destroys the gui before the plugin (no panic, no
         // leak — verified by the fixture accepting a later create).
-        instance
-            .gui_open_embedded((&mut fake_parent as *mut u8).cast(), None)
+        // SAFETY: as above; `fake_parent` outlives the instance dropped below.
+        unsafe { instance.gui_open_embedded((&mut fake_parent as *mut u8).cast(), None) }
             .expect("gui reopens after destroy");
         drop(instance);
     }

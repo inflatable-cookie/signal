@@ -467,7 +467,10 @@ mod tests {
             return;
         }
         let mut fake_parent = 0u8;
-        let refused = instance.gui_open_embedded(&mut fake_parent as *mut u8 as *mut _, None);
+        // SAFETY: the unit has no Cocoa UI, so this is refused before the
+        // handle reaches any FFI call; `fake_parent` is a live local regardless.
+        let refused =
+            unsafe { instance.gui_open_embedded(&mut fake_parent as *mut u8 as *mut _, None) };
         assert_eq!(refused.unwrap_err().token, "gui_unsupported");
     }
 }

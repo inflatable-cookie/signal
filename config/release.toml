@@ -13,13 +13,14 @@ tag-format = "v{version}"
 
 # Gates run before a release is prepared or executed.
 #
-# `lint` runs clippy but does not deny warnings: the workspace carries 14
-# known warnings, tracked as g10.038 follow-up work, so denying here would
-# block every release on pre-existing debt. It therefore catches new clippy
-# *errors* only. Tightening it to `-D warnings` is the follow-up.
+# `lint` denies warnings. The workspace's 14 known warnings were cleared for
+# the 0.1.0 tag, so the gate now blocks on any new one. It runs twice because
+# `--all-features` alone cannot see cfg-gated code that only compiles when a
+# feature is off — a mis-gated item stays invisible until the no-feature build.
 [release.gates]
 fmt = "cargo fmt --all -- --check"
-lint = "cargo clippy --workspace --all-targets --all-features"
+lint = "cargo clippy --workspace --all-targets --all-features -- -D warnings"
+"lint:no-features" = "cargo clippy --workspace --all-targets --no-default-features -- -D warnings"
 test = "cargo test --workspace"
 validate = "effigy validate"
 docs = "effigy qa:docs"

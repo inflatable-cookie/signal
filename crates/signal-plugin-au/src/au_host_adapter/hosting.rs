@@ -851,7 +851,14 @@ impl AuHostedInstance {
     /// reported frame size (logical units). MAIN THREAD ONLY. Errors with
     /// stable tokens (`gui_unsupported`, `gui_already_open`,
     /// `gui_view_create_failed`, …).
-    pub fn gui_open_embedded(
+    ///
+    /// # Safety
+    ///
+    /// `parent` must be a live, valid `NSView*` owned by the caller, and must
+    /// outlive the returned editor session. It is handed straight to the
+    /// plugin, which attaches its own view to it. Must be called on the
+    /// application main thread.
+    pub unsafe fn gui_open_embedded(
         &mut self,
         parent: *mut std::ffi::c_void,
         _scale: Option<f64>,

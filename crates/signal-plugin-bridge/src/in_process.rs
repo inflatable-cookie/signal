@@ -419,8 +419,11 @@ impl InProcessClapProcessor {
             .instance
             .lock()
             .map_err(|_| "instance_lock_poisoned".to_string())?;
-        instance
-            .gui_open_embedded(parent_view as *mut std::ffi::c_void, scale)
+        // SAFETY: `parent_view` is the caller's live main-thread view handle,
+        // laundered through `usize` so this backend stays `Send`. The caller
+        // owns the window and the main-thread contract; this type can only
+        // serialize access, it cannot verify either.
+        unsafe { instance.gui_open_embedded(parent_view as *mut std::ffi::c_void, scale) }
             .map_err(|error| error.token)
     }
 
@@ -678,10 +681,15 @@ impl InProcessVst3Editor {
         if !self.alive.load(Ordering::Relaxed) {
             return Err("backend_dead".to_string());
         }
-        self.instance
+        let mut instance = self
+            .instance
             .lock()
-            .map_err(|_| "instance_lock_poisoned".to_string())?
-            .gui_open_embedded(parent_view as *mut std::ffi::c_void, scale)
+            .map_err(|_| "instance_lock_poisoned".to_string())?;
+        // SAFETY: `parent_view` is the caller's live main-thread view handle,
+        // laundered through `usize` so this backend stays `Send`. The caller
+        // owns the window and the main-thread contract; this type can only
+        // serialize access, it cannot verify either.
+        unsafe { instance.gui_open_embedded(parent_view as *mut std::ffi::c_void, scale) }
             .map_err(|error| error.token)
     }
 
@@ -1032,8 +1040,11 @@ impl InProcessVst3Processor {
             .instance
             .lock()
             .map_err(|_| "instance_lock_poisoned".to_string())?;
-        instance
-            .gui_open_embedded(parent_view as *mut std::ffi::c_void, scale)
+        // SAFETY: `parent_view` is the caller's live main-thread view handle,
+        // laundered through `usize` so this backend stays `Send`. The caller
+        // owns the window and the main-thread contract; this type can only
+        // serialize access, it cannot verify either.
+        unsafe { instance.gui_open_embedded(parent_view as *mut std::ffi::c_void, scale) }
             .map_err(|error| error.token)
     }
 
@@ -1407,8 +1418,11 @@ impl InProcessAuProcessor {
             .instance
             .lock()
             .map_err(|_| "instance_lock_poisoned".to_string())?;
-        instance
-            .gui_open_embedded(parent_view as *mut std::ffi::c_void, scale)
+        // SAFETY: `parent_view` is the caller's live main-thread view handle,
+        // laundered through `usize` so this backend stays `Send`. The caller
+        // owns the window and the main-thread contract; this type can only
+        // serialize access, it cannot verify either.
+        unsafe { instance.gui_open_embedded(parent_view as *mut std::ffi::c_void, scale) }
             .map_err(|error| error.token)
     }
 

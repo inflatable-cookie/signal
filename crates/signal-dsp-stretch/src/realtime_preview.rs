@@ -379,12 +379,12 @@ fn build_realtime_preview_source_projection_report(
     }
 }
 
-fn build_realtime_preview_dynamic_source_projection_report(
-    output_start_frame: u64,
-    output_frames: usize,
-    output_end_frame: u64,
-    source_start_frame: f64,
-    source_end_frame: f64,
+/// The ratio half of a dynamic source projection: the ratios active across the
+/// span, plus the running record of the latest scheduled ratio change. Grouped
+/// so the projection builder takes a span and its ratio state rather than
+/// thirteen positional arguments.
+#[derive(Clone, Copy, Debug)]
+struct DynamicSourceProjectionRatios {
     start_ratio: f64,
     end_ratio: f64,
     ratio_change_applied: bool,
@@ -393,7 +393,43 @@ fn build_realtime_preview_dynamic_source_projection_report(
     ratio_change_output_frame: u64,
     ratio_change_source_frame: f64,
     ratio_change_alignment_error_frames: usize,
+}
+
+impl DynamicSourceProjectionRatios {
+    /// Unity ratio, no change ever scheduled — the reset and construction state.
+    const fn idle() -> Self {
+        Self {
+            start_ratio: 1.0,
+            end_ratio: 1.0,
+            ratio_change_applied: false,
+            ratio_change_count: 0,
+            ratio_change_request_output_frame: 0,
+            ratio_change_output_frame: 0,
+            ratio_change_source_frame: 0.0,
+            ratio_change_alignment_error_frames: 0,
+        }
+    }
+}
+
+fn build_realtime_preview_dynamic_source_projection_report(
+    output_start_frame: u64,
+    output_frames: usize,
+    output_end_frame: u64,
+    source_start_frame: f64,
+    source_end_frame: f64,
+    ratios: DynamicSourceProjectionRatios,
 ) -> RealtimePreviewDynamicSourceProjectionReport {
+    let DynamicSourceProjectionRatios {
+        start_ratio,
+        end_ratio,
+        ratio_change_applied,
+        ratio_change_count,
+        ratio_change_request_output_frame,
+        ratio_change_output_frame,
+        ratio_change_source_frame,
+        ratio_change_alignment_error_frames,
+    } = ratios;
+
     let source_frame_floor = floor_frame_to_u64(source_start_frame);
     let source_frame_ceil = ceil_frame_to_u64(source_end_frame);
     let source_frames_required = abs_diff_frames(source_frame_ceil, source_frame_floor);
@@ -494,7 +530,12 @@ impl RealtimePreviewCallbackState {
             last_source_projection_ratio_change_alignment_error_frames: 0,
             source_projection_ratio_change_count: 0,
             last_dynamic_source_projection: build_realtime_preview_dynamic_source_projection_report(
-                0, 0, 0, 0.0, 0.0, 1.0, 1.0, false, 0, 0, 0, 0.0, 0,
+                0,
+                0,
+                0,
+                0.0,
+                0.0,
+                DynamicSourceProjectionRatios::idle(),
             ),
             next_analysis_frame: 0,
             next_synthesis_frame: config.window_size as f64,
@@ -757,14 +798,18 @@ impl RealtimePreviewCallbackState {
             output_end_frame,
             source_start_frame,
             source_end_frame,
-            start_ratio,
-            active_ratio,
-            ratio_change_applied,
-            self.source_projection_ratio_change_count,
-            self.last_source_projection_ratio_change_request_frame,
-            self.last_source_projection_ratio_change_output_frame,
-            self.last_source_projection_ratio_change_source_frame,
-            self.last_source_projection_ratio_change_alignment_error_frames,
+            DynamicSourceProjectionRatios {
+                start_ratio,
+                end_ratio: active_ratio,
+                ratio_change_applied,
+                ratio_change_count: self.source_projection_ratio_change_count,
+                ratio_change_request_output_frame: self
+                    .last_source_projection_ratio_change_request_frame,
+                ratio_change_output_frame: self.last_source_projection_ratio_change_output_frame,
+                ratio_change_source_frame: self.last_source_projection_ratio_change_source_frame,
+                ratio_change_alignment_error_frames: self
+                    .last_source_projection_ratio_change_alignment_error_frames,
+            },
         );
 
         self.source_projection_output_frame = output_end_frame;
@@ -819,7 +864,12 @@ impl RealtimePreviewCallbackState {
         self.source_projection_ratio_change_count = 0;
         self.last_dynamic_source_projection =
             build_realtime_preview_dynamic_source_projection_report(
-                0, 0, 0, 0.0, 0.0, 1.0, 1.0, false, 0, 0, 0, 0.0, 0,
+                0,
+                0,
+                0,
+                0.0,
+                0.0,
+                DynamicSourceProjectionRatios::idle(),
             );
         self.next_analysis_frame = 0;
         self.next_synthesis_frame = self.config.window_size as f64;

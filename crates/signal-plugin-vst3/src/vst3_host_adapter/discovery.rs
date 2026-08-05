@@ -222,6 +222,25 @@ fn elapsed_ms(value: u128) -> u64 {
     value.min(u128::from(u64::MAX)) as u64
 }
 
+fn expand_scan_root(root: &str) -> PathBuf {
+    if let Some(stripped) = root.strip_prefix("~/") {
+        if let Some(home) = env::var_os("HOME") {
+            return PathBuf::from(home).join(stripped);
+        }
+    }
+    if root.contains('%') {
+        let mut expanded = root.to_string();
+        for (key, value) in env::vars() {
+            let pattern = format!("%{key}%");
+            if expanded.contains(&pattern) {
+                expanded = expanded.replace(&pattern, &value);
+            }
+        }
+        return PathBuf::from(expanded);
+    }
+    PathBuf::from(root)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -270,23 +289,4 @@ mod tests {
             assert!(!diagnostic.detail.contains('\n'));
         }
     }
-}
-
-fn expand_scan_root(root: &str) -> PathBuf {
-    if let Some(stripped) = root.strip_prefix("~/") {
-        if let Some(home) = env::var_os("HOME") {
-            return PathBuf::from(home).join(stripped);
-        }
-    }
-    if root.contains('%') {
-        let mut expanded = root.to_string();
-        for (key, value) in env::vars() {
-            let pattern = format!("%{key}%");
-            if expanded.contains(&pattern) {
-                expanded = expanded.replace(&pattern, &value);
-            }
-        }
-        return PathBuf::from(expanded);
-    }
-    PathBuf::from(root)
 }

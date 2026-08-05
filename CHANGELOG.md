@@ -51,6 +51,13 @@ registry upload.
 
 ### Changed
 
+- Cleared all 14 clippy warnings and tightened both lint gates to `-D warnings`,
+  so new lint debt blocks a release instead of accumulating behind a passing
+  signal.
+- Grouped the RealtimePreview dynamic source projection builder's eight
+  ratio parameters into `DynamicSourceProjectionRatios`; two call sites had been
+  passing thirteen positional arguments.
+
 - `TimeStretcher` and the whole-buffer stretch entry points are now fallible and refuse renders above a `268435456`-sample ceiling. A `1.0e6` ratio previously attempted a `4096000000`-sample allocation.
 - Stretch cache identity advances to `signal-stretch-cache-v3`. Render geometry, chunk policy, and a crate-owned behaviour version join the key, and tier and offline path are stable tokens rather than `Debug` output. Every `v2` artifact is invalid: it was keyed without inputs that change rendered audio.
 - Creative stretch renders are declared uncacheable in Contract `085` rather than left undeclared.
@@ -134,6 +141,11 @@ registry upload.
 - Hardened Signal skeleton with explicit concurrency model, proper engine lifecycle states, full transport domain handling, periodic diagnostics events, and graceful shutdown support.
 
 ### Fixed
+
+- Marked `gui_open_embedded` `unsafe` on the VST3, AU, and CLAP host adapters.
+  Each takes a caller-supplied raw parent-window pointer and hands it to FFI
+  that attaches a view to it, so an invalid handle is undefined behaviour; the
+  signature now says so and carries a documented safety contract.
 
 - Time-stretch overlap coverage: the analysis hop now adapts so `analysis_hop * ratio` stays within `0.75 * window_size`. Ratios above `4.0` previously lost overlap-add coverage entirely, zeroing `183` of `547` interior blocks at ratio `6.0`; ratios through `3.0` are byte-identical to before.
 - Dynamic-ratio curves sampled finer than one analysis window no longer degrade to varispeed. Short spans coalesce and render at their mean ratio with output length preserved exactly; a dense curve previously rendered a `440 Hz` source at `220 Hz`.

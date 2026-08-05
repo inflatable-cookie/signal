@@ -847,8 +847,8 @@ pub fn measure_stereo_image_delta(
         || ratio <= 0.0
         || input_interleaved.len() < 4
         || output_interleaved.len() < 4
-        || input_interleaved.len() % 2 != 0
-        || output_interleaved.len() % 2 != 0
+        || !input_interleaved.len().is_multiple_of(2)
+        || !output_interleaved.len().is_multiple_of(2)
     {
         return stereo_image_nan(ratio);
     }

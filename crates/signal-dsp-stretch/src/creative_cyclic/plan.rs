@@ -22,7 +22,7 @@ impl Plan {
         if !matches!(request.channels, 1 | 2) {
             return Err(CandidateError::InvalidChannels);
         }
-        if request.input.len() % request.channels != 0 {
+        if !request.input.len().is_multiple_of(request.channels) {
             return Err(CandidateError::PartialFrame);
         }
         if !(MIN_RATE..=MAX_RATE).contains(&request.sample_rate) {

@@ -211,7 +211,7 @@ fn validate_request(
     if !matches!(channels, 1 | 2) {
         return Err(CreativeStretchError::InvalidChannelCount);
     }
-    if request.input.len() % channels != 0 {
+    if !request.input.len().is_multiple_of(channels) {
         return Err(CreativeStretchError::PartialFrame);
     }
     if !(8_000..=192_000).contains(&request.sample_rate.0) {

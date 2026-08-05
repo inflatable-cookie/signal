@@ -219,15 +219,19 @@ exist in this repository's task manifest. A gate baseline that names a task
 nobody can run is not a gate, so it is replaced by `effigy release gates`, the
 runnable gate set introduced for the `0.1.0` tag.
 
-`effigy release gates` runs `fmt`, `lint`, `test`, `validate`, and `docs`. Two
-of those are new: this workspace had no `cargo fmt --check` or `cargo clippy`
-task at all before the release lane, so formatting and lint drift were unguarded
-by any repo-owned command.
+`effigy release gates` runs `fmt`, `lint`, `lint:no-features`, `test`,
+`validate`, and `docs`. Three of those are new: this workspace had no
+`cargo fmt --check` or `cargo clippy` task at all before the release lane, so
+formatting and lint drift were unguarded by any repo-owned command.
 
-The `lint` gate deliberately does not deny warnings. The workspace carries `14`
-known clippy warnings recorded as `g10.038` follow-up work, so denying would
-block every release on pre-existing debt. As written the gate catches new clippy
-errors only, and tightening it to `-D warnings` remains open.
+Both lint gates deny warnings. The workspace's `14` pre-existing clippy warnings
+were cleared before the `0.1.0` tag, so the gate blocks on any new one rather
+than accumulating debt behind a passing signal.
+
+Lint runs twice because `--all-features` cannot see cfg-gated code that only
+compiles when a feature is off. This generation already lost a mis-gated
+re-export to exactly that blind spot — every validation command used
+`--all-features`, so nothing reported it. `lint:no-features` closes it.
 
 ## Next Task
 

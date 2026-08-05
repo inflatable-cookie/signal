@@ -188,8 +188,7 @@ fn read_wav(path: &Path) -> Result<Vec<f32>, Box<dyn Error>> {
 
 fn output_dir() -> PathBuf {
     env::args()
-        .skip(1)
-        .next()
+        .nth(1)
         .map(PathBuf::from)
         .unwrap_or_else(|| PathBuf::from("target/rubber-band-behavioural-probe"))
 }

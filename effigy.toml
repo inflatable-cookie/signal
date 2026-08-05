@@ -32,7 +32,8 @@ qa = [
 build = "cargo build --workspace"
 "check:docs" = "RUSTFLAGS='-D missing-docs' cargo check --workspace --lib"
 fmt = "cargo fmt --all -- --check"
-lint = "cargo clippy --workspace --all-targets --all-features"
+lint = "cargo clippy --workspace --all-targets --all-features -- -D warnings"
+"lint:no-features" = "cargo clippy --workspace --all-targets --no-default-features -- -D warnings"
 # No `dev` task: signal-host-local is a library (its binary died in g10.005).
 # Use the runnable examples instead:
 #   cargo run -p signal-hardware-cpal --example tone
