@@ -11,6 +11,19 @@ registry upload.
 
 ### Changed
 
+- Closed `g10.040` and Contract `046`'s RealtimePreview callback gate addendum.
+  The gate is satisfied by `RealtimePreviewStreamState` rather than by the kernel
+  it was written against — the original could never have passed it, because with
+  no way to ask for source, owning fill and underrun behaviour was unmeetable by
+  construction.
+- Removed four never-constructed variants from the preview surface. Two of the
+  six the audit named had become real and were kept: this lane made
+  `CallbackSafeStreaming` and `SourceProjected` true instead of deleting them.
+  `A11`'s ~`30` trivial getters measured as `1`, because `g10.038` had already
+  taken the rest; `27` of `36` public functions are test-only, which is recorded
+  rather than deleted, since they prove the still-shipped kernel's bounded
+  working set and alignment and leave with the kernel they introspect.
+- Resolved `g10.024` and `g10.028` through `g10.040`.
 - Opened the RealtimePreview callback tier on the streaming kernel in `g10.040`
   Batch 40.4. `CallbackSafeStreaming`, `SourceProjected`, and
   `audio_thread_processing_supported` are derived from the properties the gates

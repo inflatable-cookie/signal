@@ -1,6 +1,16 @@
 # 028 - RealtimePreview Source Fill Contract
 
-Status: paused
+Status: resolved through `g10.040`
+
+Resolved 2026-08-05. The source fill contract this roadmap was to define is
+frozen in `g10.040` Batch 40.2 and implemented in Batch 40.3: a non-realtime
+producer fills an SPSC ring, the callback consumes `block / ratio` frames from
+it, demand is published as one atomic frame counter, and underrun emits silence
+with a reported shortfall rather than a block indistinguishable from a healthy
+one.
+
+The prefill and latency numbers are `ceil(block / ratio_min) * 2 + window_size`
+frames, reported as `window_size + prefill`.
 Owner: dsp
 Created: 2026-07-09
 Depends on: g10.026, g10.027

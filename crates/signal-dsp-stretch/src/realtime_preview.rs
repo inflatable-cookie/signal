@@ -143,17 +143,9 @@ pub struct RealtimePreviewDynamicSourceProjectionReport {
 /// Unsupported RealtimePreview routing mode.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum RealtimePreviewUnsupportedMode {
-    /// The current path cannot run directly on the audio callback.
-    AudioThreadProcessing,
-    /// Callback DSP is locally bounded, but the public contract does not yet
-    /// own ratio-projected source advancement for render-plane playback.
-    SourceAdvanceContract,
     /// Source projection is reported, but the callback path does not yet own
     /// bounded source fill, underrun, or input-demand behavior.
     SourceBufferingContract,
-    /// The requested channel layout is not part of the current linked preview
-    /// contract.
-    ChannelLayout,
 }
 
 /// RealtimePreview stream planning failure.
@@ -268,8 +260,6 @@ pub enum RealtimePreviewCallbackProcessError {
         /// Available output samples.
         output_samples: usize,
     },
-    /// The callback-facing state exists, but streaming DSP is not implemented.
-    CallbackProcessingUnsupported,
 }
 
 impl RealtimePreviewStreamConfig {

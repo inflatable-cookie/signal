@@ -245,6 +245,47 @@ policy, latency, and no-allocation behavior together.
 
 Planning authority: `docs/roadmaps/g10/028-realtime-preview-source-fill-contract.md`.
 
+## 2026-08-05 RealtimePreview Callback Gate Satisfied
+
+The gate above is met, by `RealtimePreviewStreamState` and not by the kernel
+that gate was written against.
+
+`g10.040` traced why the original could never pass it. `process` consumed and
+produced the same frame count regardless of ratio, so the analysis and synthesis
+cursors diverged until the input-ring guard discarded unanalysed source — and it
+returned `Ok` reporting a normal block while doing so. That is why the addendum's
+requirement to own "source-buffer fill or underrun behavior" was unmeetable: the
+kernel had no way to ask for source at all.
+
+`RealtimePreviewStreamState` takes no input parameter. A non-realtime producer
+fills an SPSC ring, the callback consumes `block / ratio` frames from it, demand
+is published as one atomic, and underrun emits silence with a reported shortfall.
+It may report `CallbackSafeStreaming`/`SourceProjected` with
+`audio_thread_processing_supported` true, and the shipped
+`RealtimePreviewCallbackState` may not — it is still `QuantumLocked` and still
+drops source.
+
+The addendum required the properties be proven together. Nine gates do that:
+allocation-free execution; bounded work, which holds only because ratios outside
+`[0.25, 3.0]` are rejected rather than clamped; source consumed at the rate the
+ratio implies with no backward jump; reported consumption equalling actual;
+underrun reported rather than hidden; alignment within one analysis hop; quality
+matching the whole-buffer preview at the same geometry; the tier flags derived
+from the envelope those proofs assume; and no deadline miss in `20000` callbacks
+at `7.8%` of budget.
+
+Two limits are part of this gate, not exceptions to it.
+
+Bounded work requires a bounded ratio. Work per callback scales as `1/ratio`, so
+`audio_thread_processing_supported` may only be true where a minimum ratio is
+enforced. A kernel that clamps an out-of-range ratio instead of rejecting it does
+not satisfy this gate, because a silent clamp makes reported and actual source
+advance disagree — the same class of defect the gate exists to prevent.
+
+Admission to shipped behaviour is not granted by this gate. Contract `084` Rule 5
+makes listening the promotion authority, and nothing here has been listened to.
+The kernel is proven and unadopted, which is the correct state for it.
+
 ## 2026-07-09 Correctness And Listening Gate Addendum
 
 Audit evidence invalidates automatic continuation from callback projection into

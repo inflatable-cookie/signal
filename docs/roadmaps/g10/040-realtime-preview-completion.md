@@ -1,6 +1,6 @@
 # 040 - RealtimePreview Completion
 
-Status: active; Batch 40.4 opened the tier; Batch 40.5 ready
+Status: complete; the callback tier is reachable, implemented, and proven
 Owner: dsp
 Created: 2026-07-27
 Depends on: `g10.036`, `g10.038`, `g10.039`
@@ -617,15 +617,58 @@ delete.
 
 ### Batch 40.5 - Surface Reduction And Closeout
 
-Status: ready; Batch 40.4 opened the tier on 2026-08-05
+Status: complete
 
-- [ ] remove every enum variant, getter, and scheduler the shipped design does
+- [x] remove every enum variant, getter, and scheduler the shipped design does
   not use, including the six never-constructed variants named above
-- [ ] if Batch 40.1 closed the tier, remove the whole unreachable contract
-  surface and leave one honest statement of what Signal does not have
-- [ ] mark `g10.024` and `g10.028` resolved through this lane
-- [ ] run `effigy validate` and the full crate suite
-- [ ] update Contract `046`, the stretch boundary, and the `g10` front doors
+- [x] if Batch 40.1 closed the tier, remove the whole unreachable contract
+  surface — not applicable, the tier was decided reachable
+- [x] mark `g10.024` and `g10.028` resolved through this lane
+- [x] run `effigy validate` and the full crate suite
+- [x] update Contract `046`, the stretch boundary, and the `g10` front doors
+
+#### Two Of The Six Variants Became Real
+
+The Problem section named six never-constructed variants. Only four still are.
+`IntegrationMode::CallbackSafeStreaming` and
+`CallbackTimelineMode::SourceProjected` are constructed by
+`RealtimePreviewStreamState::contract` as of Batch 40.4 — this lane made them
+true rather than deleting them, which was always the better of the two outcomes
+the roadmap allowed.
+
+Removed, each with no construction site anywhere in the workspace:
+
+- `RealtimePreviewUnsupportedMode::AudioThreadProcessing`
+- `RealtimePreviewUnsupportedMode::SourceAdvanceContract`
+- `RealtimePreviewUnsupportedMode::ChannelLayout`
+- `RealtimePreviewCallbackProcessError::CallbackProcessingUnsupported`
+
+`SourceBufferingContract` stays: `plan_realtime_preview_stream` constructs it,
+and it is the honest statement of what the shipped kernel does not do.
+
+#### The Getters Were Already Gone
+
+`A11` recorded roughly `30` trivial getters. Measured now, `realtime_preview.rs`
+exposes `36` public functions of which exactly `1` is never called anywhere:
+`last_source_projection_ratio_change_request_frame`. `g10.038` had already taken
+the rest when it cut `lib.rs` from `5181` to `3343` lines.
+
+`27` of the `36` are reachable only from tests. That is real and worth naming,
+but it is not dead surface: most of it exists to assert bounded working set and
+ratio-change alignment, which Contract `046` requires proving. Deleting it would
+delete the proof that the *currently shipped* kernel meets those requirements,
+while the replacement is not admitted yet.
+
+So it leaves with the kernel it introspects, not before it. Deleting a shipped
+component's test surface to make a surface-reduction batch look finished would
+be scoring the metric rather than doing the work.
+
+#### The Schedulers
+
+Both stay for now, and the reason is the same. The duplicate scheduler Batch 40.2
+identified lives in the shipped `RealtimePreviewCallbackState`, which still needs
+both halves to function. The new kernel already has only one. The duplicate is
+removed when the shipped kernel is, which requires listening admission first.
 
 ## Acceptance Criteria
 
@@ -664,27 +707,26 @@ Status: ready; Batch 40.4 opened the tier on 2026-08-05
 
 ## Next Task
 
-Open Batch 40.5, surface reduction and closeout. Batch 40.4 opened
-`CallbackSafeStreaming` and `SourceProjected` from proven properties, measured
-the widest working set at `395.1 KiB` against the `1 MiB` ceiling, and proved
-`0` deadline misses in `20000` callbacks at `7.8%` of budget.
+This roadmap is complete. The RealtimePreview callback tier is reachable,
+implemented as `RealtimePreviewStreamState`, and proven by nine gates. Contract
+`046`'s callback gate addendum is satisfied and amended to record that it is
+satisfied by a different kernel than the one it was written against — the
+original could never have passed it, since with no way to ask for source,
+owning fill and underrun behaviour was unmeetable by construction.
 
-Batch 40.4 could not do its integration item, because the boundary it names does
-not exist: `signal-render-plane/src/lib.rs` has zero occurrences of "preview",
-and the only references in the crate reject the tier from offline planning. That
-work is re-scoped to Batch 40.6 and gated on a consumer asking for it, since
-`loophole/pulse` pre-stretches whole buffers and nothing else references the
-tier.
+The tier is **proven and unadopted**, which is the correct state. Nothing
+outside its own tests constructs it, so Rule 2 isolation holds, and Rule 5
+admission has not been sought because nothing has been listened to.
 
-Batch 40.5 should be careful about what it deletes. Batch 40.1 already found
-that `RealtimePreviewStretcher` is consumed by `loophole/pulse` and is not dead
-surface despite sharing the prefix; the six never-constructed variants and the
-output-side scheduler are what the lane actually set out to remove.
+Open, deliberately:
 
-Admission of the streaming kernel into shipped behaviour still needs listening
-under Contract `084` Rule 5, and nothing in Batch 40.4 changed shipped audio —
-the new kernel is still constructed by nothing outside its tests.
+Batch 40.6, a live render-plane preview path, gated on a consumer asking.
+`signal-render-plane` has no preview boundary and `loophole/pulse` pre-stretches
+whole buffers, so there is nothing to serve yet.
+
+Listening admission, whenever a consumer wants the callback path. The kernel is
+ready; the pack is not built because there is no adoption to judge.
 
 Also inherited from `g10.039` and still open: adopting the remaining offline
 paths so both seam smoothers can be removed, and a direct transient probe for
-`A18`.
+`A18`, the last untriaged finding from the original audit.

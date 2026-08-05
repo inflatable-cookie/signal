@@ -1,6 +1,16 @@
 # 024 - RealtimePreview Stretch Tier
 
-Status: paused
+Status: resolved through `g10.040`
+
+Resolved 2026-08-05. This lane's question — whether RealtimePreview can be a
+real callback tier — is answered in `g10.040`: reachable, implemented as
+`RealtimePreviewStreamState`, and proven by nine gates. The quantum-locked
+defect that paused this roadmap is traced in `g10.040` Batch 40.1 and fixed by
+the source-owning kernel in Batch 40.3.
+
+What remains open is not this roadmap's scope: admission needs listening under
+Contract `084` Rule 5, and a live render-plane preview path is `g10.040` Batch
+40.6, gated on a consumer asking for it.
 Owner: dsp
 Created: 2026-07-07
 Depends on: g10.014, g10.021, g10.022

@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: active generation; `g10.039` complete, `g10.040` active
+Status: active generation; `g10.036` through `g10.040` complete
 Updated: 2026-07-27
 
 ## Why this generation matters now
@@ -441,7 +441,7 @@ Do not start Loophole or Chorus planning from Signal internals.
     pitch composition still take the legacy per-chunk path, and `A18` stays
     open because "no difference" does not separate gone-from-both from
     present-in-both
-- `g10.040` `active`
+- `g10.040` `complete`
   - RealtimePreview completion: fix the quantum-locked source-advance defect or
     close the tier and remove its unreachable surface; unblocked by `g10.039`;
     supersedes `g10.024` and `g10.028`; Batch 40.1 measured the kernel at
@@ -480,7 +480,16 @@ Do not start Loophole or Chorus planning from Signal internals.
     only references reject the tier, so that work is re-scoped to Batch 40.6 and
     gated on a consumer asking rather than on the roadmap's assumption. That is
     the second premise in this lane that did not survive contact with the code.
-    Batch 40.5 ready. Still inherits
+    Batch 40.5 closed the lane: two of the six
+    never-constructed variants had become real and were kept rather than deleted,
+    four genuinely dead ones were removed, and `A11`'s ~`30` trivial getters
+    turned out to be `1` because `g10.038` had already taken the rest. `27` of
+    `36` public functions are test-only, which is named rather than deleted —
+    they prove the shipped kernel's bounded working set and alignment, and leave
+    with the kernel they introspect. `g10.024` and `g10.028` resolve through this
+    lane, and Contract `046`'s callback gate addendum is satisfied and amended.
+    The tier is proven and unadopted, which is correct: Rule 5 admission has not
+    been sought. Still inherits
     the two items `g10.039` did not settle — adopting the remaining offline paths
     so both seam smoothers can go, and a direct transient probe for `A18`
 
