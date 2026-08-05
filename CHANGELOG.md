@@ -11,6 +11,17 @@ registry upload.
 
 ### Changed
 
+- Froze `g10.040` Batch 40.2, the preview streaming brief. Ratio range
+  `[0.25, 3.0]` with both ends derived: the maximum is Contract `046`'s overlap
+  law at the `128`/`512` geometry, the minimum is bounded work at `2.36%` of a
+  stereo `128`-frame callback. A `1 MiB` stereo ceiling at `MAX_BLOCK_FRAMES`
+  against a measured-plus-computed `804.3 KiB`, derived after the design rather
+  than before it. One ratio scheduler: the source-projection set survives and
+  the output-side duplicate is deleted, because the projection already computes
+  the source advance the streaming model needs — it was never wrong, nothing
+  consumed it. Underrun must report a shortfall rather than return a block
+  indistinguishable from a normal one, which is how the present defect stayed
+  hidden for three roadmaps.
 - Decided `g10.040` Batch 40.1: the RealtimePreview callback tier is reachable.
   Measuring the kernel first reframed the lane — stereo at ratio `1.0` uses
   `0.6%` of a `128`-frame callback budget and one-sixteenth speed uses `9.4%`,

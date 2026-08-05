@@ -453,7 +453,13 @@ Do not start Loophole or Chorus planning from Signal internals.
     reachable, and found that bounded work needs a frozen minimum ratio because
     load scales as `1/ratio` while `sanitize_ratio` accepts any positive value;
     also found `RealtimePreviewStretcher` is consumed by `loophole/pulse` and is
-    not dead surface despite the shared prefix; Batch 40.2 ready. Still inherits
+    not dead surface despite the shared prefix; Batch 40.2 froze the brief — ratio range
+    `[0.25, 3.0]` with both ends derived rather than chosen, a `1 MiB` stereo
+    ceiling at `MAX_BLOCK_FRAMES` against a computed `804.3 KiB`, one ratio
+    scheduler where the source-projection one survives because it already
+    computes the source advance the new model needs, and underrun reported as
+    silence rather than as a normal-looking block; Batch 40.3 ready. Still
+    inherits
     the two items `g10.039` did not settle — adopting the remaining offline paths
     so both seam smoothers can go, and a direct transient probe for `A18`
 

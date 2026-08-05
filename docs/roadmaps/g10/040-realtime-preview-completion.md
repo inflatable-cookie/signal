@@ -1,6 +1,6 @@
 # 040 - RealtimePreview Completion
 
-Status: active; Batch 40.1 complete, decided reachable; Batch 40.2 ready
+Status: active; brief frozen by Batch 40.2; Batch 40.3 ready
 Owner: dsp
 Created: 2026-07-27
 Depends on: `g10.036`, `g10.038`, `g10.039`
@@ -259,23 +259,177 @@ name types, not the prefix.
 
 ### Batch 40.2 - Complete Streaming Brief
 
-Status: ready; Batch 40.1 decided reachable on 2026-08-05
+Status: complete
 
 Documentation only.
 
-- [ ] freeze the minimum ratio, without which bounded work is unsatisfiable
-- [ ] freeze the callback state inventory, its capacities, and its memory
+- [x] freeze the minimum ratio, without which bounded work is unsatisfiable
+- [x] freeze the callback state inventory, its capacities, and its memory
   ceiling
-- [ ] freeze the source fill, input demand, and underrun policy
-- [ ] freeze one ratio scheduler; the current two are redundant
-- [ ] freeze the latency report and its relationship to the stream contract
-- [ ] freeze dynamic-ratio alignment tolerance and its seam evidence
-- [ ] freeze the evidence order, rejection rules, and cleanup
-- [ ] change documentation only
+- [x] freeze the source fill, input demand, and underrun policy
+- [x] freeze one ratio scheduler; the current two are redundant
+- [x] freeze the latency report and its relationship to the stream contract
+- [x] freeze dynamic-ratio alignment tolerance and its seam evidence
+- [x] freeze the evidence order, rejection rules, and cleanup
+- [x] change documentation only
+
+Everything below is frozen. Batch 40.3 implements it once and does not
+renegotiate it; a defect in the brief is corrected here and re-frozen, not
+patched in the implementation.
+
+#### Frozen: Ratio Range `[0.25, 3.0]`
+
+Both ends are derived, not chosen.
+
+The maximum is Contract `046`'s overlap law: `analysis_hop * ratio <= 0.75 *
+window_size`. At the frozen `128`/`512` geometry that is exactly `3.0`. Going
+beyond it requires the contract's hop reduction, which changes the geometry and
+therefore the state inventory, so it is out of scope for this brief. Higher
+ratios are cheap — `0.20%` at ratio `3.0` — so the limit is coverage, not cost.
+
+The minimum is bounded work. Load scales as `1/ratio`, measured in Batch 40.1:
+
+| ratio | stereo load, `128`-frame callback |
+| --- | --- |
+| `3.0` | `0.20%` |
+| `1.0` | `0.59%` |
+| `0.5` | `1.18%` |
+| `0.25` | `2.36%` |
+| `0.125` | `4.72%` |
+
+`0.25` is four-times-faster playback at `2.36%` of budget. Widening to `0.125`
+costs `4.72%` and doubles the source ring; the headroom exists, so this is a
+product decision rather than an engineering limit, and it can be revisited
+without touching the design. What cannot be revisited is having no floor at
+all: `sanitize_ratio` currently accepts any positive value, which makes bounded
+work unsatisfiable.
+
+Ratios outside the range are rejected at plan time, not clamped silently.
+
+#### Frozen: State Inventory And Memory
+
+Measured, stereo, with an allocation-counting global allocator:
+
+| block | current state |
+| --- | --- |
+| `128` | `141.3 KiB` |
+| `512` | `180.3 KiB` |
+| `4096` (`MAX_BLOCK_FRAMES`) | `544.3 KiB` |
+
+The streaming model adds one source ring, sized
+`ceil(block / ratio_min) * 2 + window_size` frames — two callbacks of headroom
+plus one window:
+
+| block | source ring at `ratio_min = 0.25` |
+| --- | --- |
+| `128` | `12.0 KiB` |
+| `512` | `36.0 KiB` |
+| `4096` | `260.0 KiB` |
+
+Ceiling: **`1 MiB` stereo at `MAX_BLOCK_FRAMES`**, against a computed
+`544.3 + 260.0 = 804.3 KiB`. The margin is deliberate but the number is derived
+from the design rather than preceding it — `g10.039` moved its ceiling three
+times by freezing one before the design existed, and Contract `046` records
+why.
+
+Field count drops by `11`: the duplicate scheduler below is deleted. It rises
+by the source ring, its write cursor, and its demand counter. Batch 40.3 must
+state the final count and it must not exceed the current `56`.
+
+#### Frozen: One Ratio Scheduler
+
+The state carries two, field for field:
+
+```
+current_ratio                              source_projection_current_ratio
+active_ratio                               source_projection_active_ratio
+pending_ratio                              source_projection_pending_ratio
+pending_ratio_request_frame                source_projection_pending_ratio_request_frame
+pending_ratio_apply_frame                  source_projection_pending_ratio_apply_frame
+pending_ratio_change                       source_projection_pending_ratio_change
+last_ratio_change_request_frame            last_source_projection_ratio_change_request_frame
+last_ratio_change_output_frame             last_source_projection_ratio_change_output_frame
+last_ratio_change_alignment_error_frames   last_source_projection_ratio_change_alignment_error_frames
+ratio_change_count                         source_projection_ratio_change_count
+last_ratio_change_applied_frame            last_source_projection_ratio_change_source_frame
+```
+
+The **source-projection scheduler survives**; the output-side one is deleted.
+That is the direction that looks backwards and is not: the projection scheduler
+already computes the source advance a ratio implies, which is precisely the
+number the new model needs to drive source demand. The output-side scheduler
+computes synthesis advance, which the quantum-locked kernel needed only because
+it could not ask for source.
+
+The `g10.027` projection machinery was never wrong. Nothing consumed it. This
+brief makes it the single authority.
+
+#### Frozen: Source Fill, Input Demand, Underrun
+
+- A non-realtime producer owns the source reader and fills a single-producer,
+  single-consumer ring. All I/O lives there. The callback never opens, reads,
+  seeks, locks, or allocates.
+- Per callback the kernel consumes `block / active_ratio` source frames,
+  fractional, with the fractional part carried in the existing source cursor.
+- Demand is published as one atomic frame counter: the source frame index the
+  callback needs filled to. The producer reads it and fills ahead. This is the
+  projection's output, now consumed.
+- Prefill target is `ceil(block / ratio_min) * 2 + window_size` frames — the
+  ring capacity above. Playback does not start until it is met.
+- On underrun the callback emits silence for the missing span, increments an
+  underrun counter, and returns a report naming the shortfall in frames. It
+  must not stall, must not advance past unfilled source, and must not return a
+  report indistinguishable from a normal block. That last behaviour is the
+  present defect and is what let the quantum lock hide for three roadmaps.
+
+#### Frozen: Latency Report
+
+Reported latency is `window_size + prefill_frames`, constant for a given
+configuration and computed at plan time. At the frozen geometry with
+`ratio_min = 0.25` and block `512`: `512 + 2560 = 3072` frames, `64ms` at
+`48 kHz`.
+
+This is a start-up delay before preview playback begins, not a round-trip cost
+on a live signal, because preview plays back a stored asset. The stream
+contract reports it as such and `audio_thread_processing_supported` may only go
+`true` once it is honoured.
+
+#### Frozen: Dynamic-Ratio Alignment And Seam Evidence
+
+Ratio changes align to the analysis-hop grid via the existing
+`align_to_next_grid`, so alignment error is bounded by `analysis_hop` — `128`
+frames — by construction. **Tolerance: `<= 128` output frames.** A change
+reporting more than that is a defect, not a tuning miss.
+
+Seam evidence, one gate: a sustained source rendered with a ratio change
+mid-stream must correlate with a whole-buffer control at the same ratio curve
+above the threshold Contract `046` already freezes for the offline path. The
+`g10.036` seam pulse is the failure this catches.
+
+#### Frozen: Evidence Order, Rejection, Cleanup
+
+Order, each blocking the next:
+
+1. allocation-free, lock-free, I/O-free callback execution, proven by an
+   allocation-counting harness like the existing preview callback test
+2. bounded work across the frozen ratio range, measured, not asserted
+3. sustained ratios above and below `1.0` produce continuous output with no
+   dropped source — the defect Batch 40.1 traced
+4. underrun produces reported silence rather than a normal-looking block
+5. dynamic-ratio alignment within `128` frames
+6. seam correlation against the whole-buffer control
+
+Rejection: any of the six failing rejects the candidate under Contract `084`
+Rule 2 and it is reverted from `main`, not iterated in place. Structural
+conformance may iterate per Rule 11; the acoustic checkpoint is one-shot.
+
+Cleanup: a rejected candidate leaves no partial surface. `RealtimePreviewStretcher`
+is out of scope in both directions — it is consumed by `loophole/pulse` and must
+not be touched by this lane.
 
 ### Batch 40.3 - Isolated Implementation
 
-Status: blocked on Batch 40.2
+Status: ready; Batch 40.2 froze the brief on 2026-08-05
 
 - [ ] implement the frozen brief once, isolated per Contract `084` Rule 2
 - [ ] prove allocation-free, lock-free, I/O-free callback execution
@@ -345,27 +499,22 @@ Status: blocked on Batch 40.4, or on a Batch 40.1 closure decision
 
 ## Next Task
 
-Open Batch 40.2, the complete streaming brief. Batch 40.1 decided the tier is
-reachable: neither I/O nor unbounded work is required on the callback, and the
-measured cost leaves the budget almost untouched — stereo at ratio `1.0` uses
-`0.6%` of a `128`-frame callback, and one-sixteenth speed uses `9.4%`.
+Open Batch 40.3, the isolated implementation. Batch 40.2 froze the brief and it
+is not renegotiable in the implementation: a defect in the brief is corrected in
+`40.2` and re-frozen, per Contract `084`.
 
-CPU was never the blocker. What stalled the tier across three roadmaps is that
-`process` consumes and produces the same frame count regardless of ratio, so
-the analysis and synthesis cursors diverge, the output-ring guard breaks the
-loop, and the input-ring guard then discards the unanalysed source while
-returning `Ok`.
+What is frozen: ratio range `[0.25, 3.0]`, both ends derived — the maximum is
+the overlap law at the `128`/`512` geometry, the minimum is bounded work at
+`2.36%` of a stereo `128`-frame callback. A `1 MiB` stereo ceiling at
+`MAX_BLOCK_FRAMES` against a computed `804.3 KiB`. One ratio scheduler, the
+source-projection one, with the output-side duplicate deleted. Source fill by a
+non-realtime producer through an SPSC ring, demand published as one atomic,
+underrun reported as silence rather than as a normal block. Latency
+`window_size + prefill`, `3072` frames at block `512`. Alignment tolerance
+`128` output frames. Six pieces of evidence in a blocking order.
 
-Two things Batch 40.2 must freeze that were not previously on its list:
-
-A minimum ratio. Work per callback scales as `1/ratio` and `sanitize_ratio`
-accepts any positive value, so bounded work is unsatisfiable until a floor
-exists. The measured load table is the evidence for choosing it.
-
-The distinction between `RealtimePreviewStretcher` and
-`RealtimePreviewCallbackState`. The first is a whole-buffer prototype that
-`loophole/pulse` consumes today; only the second is dead surface. Batch 40.5
-must name types rather than the shared prefix.
+The implementation must land isolated per Rule 2, and must not touch
+`RealtimePreviewStretcher`, which `loophole/pulse` consumes.
 
 Also inherited from `g10.039` and still open: adopting the remaining offline
 paths so both seam smoothers can be removed, and a direct transient probe for
