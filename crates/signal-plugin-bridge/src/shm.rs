@@ -434,14 +434,29 @@ mod tests {
         );
         let handle = RenderPluginProcessor::new(Arc::clone(&processor) as Arc<_>);
 
-        // Fake child thread: serve exactly one request by doubling samples.
+        // Fake child thread: serve requests by doubling samples, until the
+        // client says it is done.
+        //
+        // It must keep serving rather than answer once and exit. The client
+        // retries on a miss, and every retry issues a *new* request sequence.
+        // A serve-once server that answers request N while the client has
+        // already moved to N+1 leaves a stale response and then exits, so no
+        // later request can ever be answered and the client spins to its
+        // deadline. That is the second half of `A19`: the original 200-retry
+        // loop had the same race but a window short enough to usually win it.
+        let stop_serving = Arc::new(AtomicBool::new(false));
+        let server_stop = Arc::clone(&stop_serving);
         let server = std::thread::spawn(move || {
-            // Longer than the client's 5s bound on purpose, so the client
+            // Longer than the client's 30s bound on purpose, so the client
             // decides the outcome. A shorter server deadline would make this
             // thread panic first under contention and report "never saw a
             // request" when the real answer is "the host was busy".
-            let deadline = Instant::now() + Duration::from_secs(10);
+            let deadline = Instant::now() + Duration::from_secs(60);
+            let mut served = 0u32;
             loop {
+                if server_stop.load(Ordering::Relaxed) {
+                    return served;
+                }
                 let request = child_view.request_seq().load(Ordering::Acquire);
                 if request != child_view.response_seq().load(Ordering::Relaxed) {
                     let frames = child_view.frame_count().load(Ordering::Relaxed) as usize;
@@ -452,9 +467,19 @@ mod tests {
                     }
                     unsafe { child_view.write_output(&samples) };
                     child_view.response_seq().store(request, Ordering::Release);
-                    return;
+                    served += 1;
+                    continue;
                 }
-                assert!(Instant::now() < deadline, "server never saw a request");
+                assert!(
+                    served > 0 || Instant::now() < deadline,
+                    "server never saw a request"
+                );
+                // Yield, do not sleep. The client's wait budget is half a
+                // block -- 333us at 32 frames and 48 kHz -- so a server that
+                // sleeps even 1ms polls three times slower than the window it
+                // has to answer within, and misses almost every request.
+                // `yield_now` stays inside that window while still giving up
+                // the CPU voluntarily, which a bare spin loop does not.
                 std::thread::yield_now();
             }
         });
@@ -467,12 +492,18 @@ mod tests {
         // the other thread gets scheduled within 200 of this one's iterations,
         // which is a claim about host contention, not about the bridge.
         let mut processed = false;
-        let deadline = Instant::now() + Duration::from_secs(5);
+        let deadline = Instant::now() + Duration::from_secs(30);
         while Instant::now() < deadline {
             if handle.process(&mut scratch, 32, 2) {
                 processed = true;
                 break;
             }
+            // Sleep between attempts, do not spin. The thread this loop is
+            // waiting for may share a core with it: CI runners have a handful
+            // of cores and `cargo test --workspace` oversubscribes them badly.
+            // Spinning hot here starves the server thread and the deadline
+            // expires having prevented the very work it was waiting on.
+            std::thread::sleep(Duration::from_millis(1));
         }
 
         // Join before asserting anything. `child_view` is a raw pointer into
@@ -482,10 +513,14 @@ mod tests {
         // SIGSEGV instead of reporting the failed assertion. That is finding
         // `A19`: it presented as an intermittent failure and an intermittent
         // segfault because it was both, from one cause.
+        stop_serving.store(true, Ordering::Relaxed);
         let served = server.join();
 
-        assert!(processed, "server should have answered within 5s");
-        served.expect("server thread joins");
+        assert!(processed, "server should have answered within 30s");
+        assert!(
+            served.expect("server thread joins") >= 1,
+            "server should have served at least one request",
+        );
         for (index, (output, input)) in scratch.iter().zip(reference.iter()).enumerate() {
             assert!(
                 (output - input * 2.0).abs() < 1e-7,

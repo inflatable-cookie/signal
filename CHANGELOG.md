@@ -48,8 +48,17 @@ registry upload.
   thread being scheduled. When it lost, the panic unwound and dropped the shared
   region while the server thread was still dereferencing a raw pointer into it,
   killing the binary and taking the assertion message with it. The loop is now
-  deadline-bounded and the join moved ahead of every assertion. Twelve runs
-  found it twice before; fifteen runs after are clean.
+  deadline-bounded and the join moved ahead of every assertion.
+
+  Two further defects sat underneath, found once the segfault stopped hiding
+  them. The fake child served exactly one request and exited, while every client
+  retry issues a new request sequence — so answering request `N` after the
+  client moved to `N+1` left a stale response and no possibility of another; it
+  now serves until told to stop. And the client's wait budget is half a block,
+  `333us`, so replacing the spin with a `1ms` server sleep polled three times
+  slower than the window it had to answer within; the server is back to
+  `yield_now`. Twelve runs found the original twice; thirty runs after are
+  clean.
 - Removed the wall-clock throughput dependency from seven more tests in
   `signal-hardware`, missed by the first sweep because they live in `#[cfg(test)]`
   modules inside `src/` rather than under `tests/`. The two capture tests CI

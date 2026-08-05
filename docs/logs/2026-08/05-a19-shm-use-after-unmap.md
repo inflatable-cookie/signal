@@ -64,11 +64,40 @@ client's `5s`, so the client decides the outcome. A shorter server deadline
 would make that thread panic first under contention and report "server never saw
 a request" when the real answer is "the host was busy".
 
+## The Second Half, Found On CI
+
+The first fix stopped the segfault — CI now failed the assertion cleanly, which
+proved the join reordering worked — but the test still failed. Two more defects
+sat underneath, and one of them was introduced by that first fix.
+
+**Serve-once against a retrying client.** The fake child served exactly one
+request and returned. Every client retry issues a *new* request sequence, so a
+server answering request `N` while the client has moved to `N+1` leaves a stale
+response and then exits. No later request can ever be answered and the client
+spins to its deadline. The original 200-retry loop had this race too; its window
+was just short enough to usually win. The server now serves until the client
+signals it is done, and the count of requests served is asserted.
+
+**A poll interval slower than the response window.** Replacing the hot spin with
+`sleep(1ms)` on both sides looked like the fix for CI contention. It was wrong on
+the server: `plugin_process_wait_budget` gives the client half a block, which at
+`32` frames and `48 kHz` is `333us`. A server sleeping `1ms` polls three times
+slower than the entire window it has to answer within, so it misses almost every
+request. The server is back to `yield_now`, which stays inside the window while
+still giving up the CPU voluntarily. The client keeps its sleep, because
+`process` already spends its whole budget spinning and looping that hot is what
+starves the server on a machine with few cores.
+
+The deadline moved from `5s` to `30s` as well, but that was never the fix — it
+only stopped a slow runner from being mistaken for a hang.
+
 ## Measurement
 
 - Before: `2` failures in `12` runs of `signal-plugin-bridge --lib`, plus the
   gate segfault.
-- After: `0` failures in `15` runs.
+- After the join fix alone: no more segfaults, but still failing — `2` in `10`
+  locally and once on CI.
+- After all three: `0` failures in `30` runs.
 
 ## Findings State
 
