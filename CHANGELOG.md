@@ -9,100 +9,10 @@ registry upload.
 
 ## [Unreleased]
 
-### Fixed
-
-- Repaired CI, which had failed on every push since it was added. The toolchain
-  step passed `--component rustfmt clippy`, so rustup read `clippy` as a
-  toolchain name and exited before any build ran. Components are now declared in
-  `rust-toolchain.toml`, and the workflow mirrors the cargo-based release gates
-  so a green CI and a passing gate set mean the same thing.
-- Pinned the toolchain to `1.97.1`. `channel = "stable"` floated, so the release
-  gates ran on a stale local `1.96.0` while CI installed `1.97.1` — "the gates
-  pass" and "CI passes" were claims about different compilers, and three clippy
-  lints only the newer one knows went unseen.
-- Removed three redundant `detail: _` patterns in `signal-runtime` transport
-  fault matching, each sitting beside a `..` that already covered it.
-- Moved seven wall-clock tests into an opt-in soak lane gated on
-  `SIGNAL_SOAK_TESTS=1` and run by `effigy test:soak` single-threaded. Each
-  sleeps for a fixed span and then asserts a minimum callback count, or asserts
-  zero xruns — claims about host speed, not correctness, which no shared runner
-  can honour. Findings `A20`, `A21` and `A22` were all this mechanism. The lane
-  is a release gate, so the claim is still required before a tag.
-- Closed finding `A22`. `signal-plugin-sandbox` `tests/plugin_hosting.rs` failed
-  `2`, `5`, `6` and `7` of `12` under concurrent cargo activity; it was the soak
-  tests holding callback threads hot that starved its timing budgets. With them
-  gated, three consecutive workspace runs and ten consecutive runs of the binary
-  are clean.
-- Closed finding `A21` by removing an assertion that could not discriminate.
-  `fake_clocked_soak` asserted the xrun counter grew by at most one after the
-  injected starvation ended. Measured over a 1500ms window on an idle machine,
-  the recovered phase accrues 2 to 8 xruns per ~281 callbacks, while the
-  injected starvation rate over the same window is ~8.8 — the noise floor and
-  the signal are the same magnitude, so it passed by luck. Removed rather than
-  loosened; the starvation and playback-advancement claims still stand.
-- Closed finding `A19`, a use-after-unmap in the shm round-trip test that had
-  been carried since `g10.038` with no mechanism. It presented as an intermittent
-  assertion failure *and* an intermittent `SIGSEGV`, and it was both from one
-  cause: the retry loop was bounded by 200 iterations of the client thread,
-  which is an assumption about host contention rather than a bound on the server
-  thread being scheduled. When it lost, the panic unwound and dropped the shared
-  region while the server thread was still dereferencing a raw pointer into it,
-  killing the binary and taking the assertion message with it. The loop is now
-  deadline-bounded and the join moved ahead of every assertion.
-
-  Two further defects sat underneath, found once the segfault stopped hiding
-  them. The fake child served exactly one request and exited, while every client
-  retry issues a new request sequence — so answering request `N` after the
-  client moved to `N+1` left a stale response and no possibility of another; it
-  now serves until told to stop. And the client's wait budget is half a block,
-  `333us`, so replacing the spin with a `1ms` server sleep polled three times
-  slower than the window it had to answer within; the server is back to
-  `yield_now`.
-
-  None of that was why CI failed. `PLUGIN_PROCESS_CONSECUTIVE_TIMEOUT_LIMIT` is
-  `3`: after three consecutive misses the processor clears `alive` and every
-  later `process` returns false immediately, so a retry loop against a retired
-  epoch is futile however long it runs. The three attempts have to land inside
-  `min(1ms, half a block)`, which a contended three-core runner can miss three
-  times in a row. The test now re-attaches on retirement and reports the epoch
-  count.
-- Removed the wall-clock throughput dependency from seven more tests in
-  `signal-hardware`, missed by the first sweep because they live in `#[cfg(test)]`
-  modules inside `src/` rather than under `tests/`. The two capture tests CI
-  failed on required 50% of real-time; the two fake-backend cadence tests
-  required 53% and were next. Cadence and allocation tests now poll for ten
-  blocks with a deadline instead of sleeping a fixed span, so a slow host waits
-  longer rather than failing; the capture tests keep their content assertions
-  (tone phase at the skip point, RMS, zero-crossing rate) and drop their floors
-  to a liveness minimum.
-- Took `capture_callback_path_allocates_nothing` back out of the soak lane.
-  Allocation-freedom on the capture callback holds at any speed and is worth
-  checking on every run; only its block count was load-dependent.
-- Serialised the eleven sandbox tests that spawn a child process. Each child
-  runs a hot-spinning audio thread, and running twelve of them in parallel meant
-  twelve spinning children plus twelve spinning parents — which fits on
-  eighteen cores and does not on a CI runner's three, where children could not
-  get enough CPU to answer inside their budget. It failed three tests, including
-  one that surfaced as wrong audio rather than a timeout, because a missed
-  response bypasses and leaves the scratch untouched. No timing budget was
-  changed to fix it.
-- Raised the sandbox child's first-response deadline from `5s` to `60s` and
-  named it. It guards "did the child ever answer", and the first request waits
-  on a real process spawn plus a plugin `dlopen`, so a `5s` bound measured the
-  CI runner rather than the bridge. The `<20ms` bypass budgets are untouched:
-  those assert that a dead child cannot block the audio thread, which is the
-  product contract rather than scaffolding.
-- Throttled the heavy release gates so the machine stays usable while they run:
-  `nice -n 5`, two cores left free for builds and four for the test run.
-  Unthrottled they saturated every core for minutes at a time. CI is left
-  unthrottled, since a runner has nothing else to do.
-- Narrowed CI triggers to `workflow_dispatch`, pull requests, and `v*` tags. It
-  ran on every push to `main`, building the workspace twice under clippy plus a
-  full test run on `macos-latest`, which bills at ten times the Linux rate.
-
 ## [0.1.0] - 2026-08-05
 
 ### Added
+
 - `ResumableOfflineStretch` carries phase, detector, and overlap-add state across chunk boundaries, so a source rendered in any number of chunks is bit-identical to one rendered whole. The offline artifact path uses it for the default path without pitch shift.
 - Promoted Signal's official demo task pack into native Effigy `[demos.*]` registry entries so the current browser, inspect, history, and live terminal surfaces can discover the repo's real demo cohort directly.
 - Added a canonical `plugin` domain handler with `plugin.list` support that returns the current scanned CLAP/VST3 catalogue as correlated events.
@@ -141,6 +51,7 @@ registry upload.
 - Initial C++20 project skeleton with CMake build system, IPC envelope structure, domain router, and test harness using Catch2.
 
 ### Changed
+
 - Admitted the resumable offline stretch renderer on the default offline path
   with no pitch shift, closing `g10.039`. It carries phase-vocoder state across
   chunk and dynamic-ratio boundaries instead of restarting at each join, and
@@ -238,15 +149,96 @@ registry upload.
 - Removed redundant DomainDispatcher and IpcRouter log messages, keeping only domain-specific logs to reduce log noise.
 - Hardened Signal skeleton with explicit concurrency model, proper engine lifecycle states, full transport domain handling, periodic diagnostics events, and graceful shutdown support.
 
-### Removed
-- g10.020 runtime endgame: shrank `signal-runtime` + `signal-host-local` to a thin control library (~52k → ~15k LoC of src). Deleted the engine-block simulation path, the anticipative prework scheduler (policy vocabulary preserved in `docs/architecture/prework-scheduler-design-note.md`), transport-session concurrency, deferred-service receipt stubs, metering/scheduler/timeline/automation narration snapshots, plugin recall/ARA/pin-matrix/spatial carve-outs, and the preview-transform/transform-artifact/stretch/marker stack with the clip-render simulation. `signal-graph` reduced to the plan model (execution engine deleted). Host-local boot no longer pumps simulated engine blocks; the reported stream state means a negotiated output stream. Pulse's consumed surface is unchanged (pulse builds and passes untouched).
-- g10 demolition programme (packets 002-008): deleted ~98k LoC of simulated and narration-only code — `signal-supervisor-tools`, `signal-host-server`, `signal-hardware-coreaudio`, `signal-plugin-library`/`-store` crates removed; `signal-runtime` stripped of simulated posture domains and its narration layer (~29.4k); rhythm continuity taxonomy and embed model-registry fiction removed (~11.7k); plugin domain pruned to real discovery foundations with sandbox broker over verified shm leases (~20.8k); discovery roots now explicit configuration defaulting empty.
-- Removed `ChannelMixService` from the audio render path now that mute/gain are owned by graph nodes.
-- Removed the unused `channelMix` IPC domain handler now that mute is expressed via node parameters.
-- Removed kind=1 JSON frames and the JSON envelope codec from the Pulse↔Signal LPF1 control-plane (binary-envelope-v2 only).
-- Removed unused JSON-string TLV decoding helper now that runtime-push commands are fully typed.
-
 ### Fixed
+
+- Repaired CI, which had failed on every push since it was added. The toolchain
+  step passed `--component rustfmt clippy`, so rustup read `clippy` as a
+  toolchain name and exited before any build ran. Components are now declared in
+  `rust-toolchain.toml`, and the workflow mirrors the cargo-based release gates
+  so a green CI and a passing gate set mean the same thing.
+- Pinned the toolchain to `1.97.1`. `channel = "stable"` floated, so the release
+  gates ran on a stale local `1.96.0` while CI installed `1.97.1` — "the gates
+  pass" and "CI passes" were claims about different compilers, and three clippy
+  lints only the newer one knows went unseen.
+- Removed three redundant `detail: _` patterns in `signal-runtime` transport
+  fault matching, each sitting beside a `..` that already covered it.
+- Moved seven wall-clock tests into an opt-in soak lane gated on
+  `SIGNAL_SOAK_TESTS=1` and run by `effigy test:soak` single-threaded. Each
+  sleeps for a fixed span and then asserts a minimum callback count, or asserts
+  zero xruns — claims about host speed, not correctness, which no shared runner
+  can honour. Findings `A20`, `A21` and `A22` were all this mechanism. The lane
+  is a release gate, so the claim is still required before a tag.
+- Closed finding `A22`. `signal-plugin-sandbox` `tests/plugin_hosting.rs` failed
+  `2`, `5`, `6` and `7` of `12` under concurrent cargo activity; it was the soak
+  tests holding callback threads hot that starved its timing budgets. With them
+  gated, three consecutive workspace runs and ten consecutive runs of the binary
+  are clean.
+- Closed finding `A21` by removing an assertion that could not discriminate.
+  `fake_clocked_soak` asserted the xrun counter grew by at most one after the
+  injected starvation ended. Measured over a 1500ms window on an idle machine,
+  the recovered phase accrues 2 to 8 xruns per ~281 callbacks, while the
+  injected starvation rate over the same window is ~8.8 — the noise floor and
+  the signal are the same magnitude, so it passed by luck. Removed rather than
+  loosened; the starvation and playback-advancement claims still stand.
+- Closed finding `A19`, a use-after-unmap in the shm round-trip test that had
+  been carried since `g10.038` with no mechanism. It presented as an intermittent
+  assertion failure *and* an intermittent `SIGSEGV`, and it was both from one
+  cause: the retry loop was bounded by 200 iterations of the client thread,
+  which is an assumption about host contention rather than a bound on the server
+  thread being scheduled. When it lost, the panic unwound and dropped the shared
+  region while the server thread was still dereferencing a raw pointer into it,
+  killing the binary and taking the assertion message with it. The loop is now
+  deadline-bounded and the join moved ahead of every assertion.
+
+  Two further defects sat underneath, found once the segfault stopped hiding
+  them. The fake child served exactly one request and exited, while every client
+  retry issues a new request sequence — so answering request `N` after the
+  client moved to `N+1` left a stale response and no possibility of another; it
+  now serves until told to stop. And the client's wait budget is half a block,
+  `333us`, so replacing the spin with a `1ms` server sleep polled three times
+  slower than the window it had to answer within; the server is back to
+  `yield_now`.
+
+  None of that was why CI failed. `PLUGIN_PROCESS_CONSECUTIVE_TIMEOUT_LIMIT` is
+  `3`: after three consecutive misses the processor clears `alive` and every
+  later `process` returns false immediately, so a retry loop against a retired
+  epoch is futile however long it runs. The three attempts have to land inside
+  `min(1ms, half a block)`, which a contended three-core runner can miss three
+  times in a row. The test now re-attaches on retirement and reports the epoch
+  count.
+- Removed the wall-clock throughput dependency from seven more tests in
+  `signal-hardware`, missed by the first sweep because they live in `#[cfg(test)]`
+  modules inside `src/` rather than under `tests/`. The two capture tests CI
+  failed on required 50% of real-time; the two fake-backend cadence tests
+  required 53% and were next. Cadence and allocation tests now poll for ten
+  blocks with a deadline instead of sleeping a fixed span, so a slow host waits
+  longer rather than failing; the capture tests keep their content assertions
+  (tone phase at the skip point, RMS, zero-crossing rate) and drop their floors
+  to a liveness minimum.
+- Took `capture_callback_path_allocates_nothing` back out of the soak lane.
+  Allocation-freedom on the capture callback holds at any speed and is worth
+  checking on every run; only its block count was load-dependent.
+- Serialised the eleven sandbox tests that spawn a child process. Each child
+  runs a hot-spinning audio thread, and running twelve of them in parallel meant
+  twelve spinning children plus twelve spinning parents — which fits on
+  eighteen cores and does not on a CI runner's three, where children could not
+  get enough CPU to answer inside their budget. It failed three tests, including
+  one that surfaced as wrong audio rather than a timeout, because a missed
+  response bypasses and leaves the scratch untouched. No timing budget was
+  changed to fix it.
+- Raised the sandbox child's first-response deadline from `5s` to `60s` and
+  named it. It guards "did the child ever answer", and the first request waits
+  on a real process spawn plus a plugin `dlopen`, so a `5s` bound measured the
+  CI runner rather than the bridge. The `<20ms` bypass budgets are untouched:
+  those assert that a dead child cannot block the audio thread, which is the
+  product contract rather than scaffolding.
+- Throttled the heavy release gates so the machine stays usable while they run:
+  `nice -n 5`, two cores left free for builds and four for the test run.
+  Unthrottled they saturated every core for minutes at a time. CI is left
+  unthrottled, since a runner has nothing else to do.
+- Narrowed CI triggers to `workflow_dispatch`, pull requests, and `v*` tags. It
+  ran on every push to `main`, building the workspace twice under clippy plus a
+  full test run on `macos-latest`, which bills at ten times the Linux rate.
 - Marked `gui_open_embedded` `unsafe` on the VST3, AU, and CLAP host adapters.
   Each takes a caller-supplied raw parent-window pointer and hands it to FFI
   that attaches a view to it, so an invalid handle is undefined behaviour; the
@@ -273,3 +265,12 @@ registry upload.
 - Added error handling to prevent Signal from crashing when encountering problematic CLAP plugins during scanning, and added exception handling in main() and SignalApp initialization to provide better error reporting.
 - Fixed CLAP plugin loading on macOS to correctly handle .clap bundles by resolving the actual library path from Contents/MacOS/ (handles files with or without extensions) and simplified ClapRegistry to delegate bundle resolution to ClapPluginLibrary.
 - Signal now emits engine.state events to newly connected clients, ensuring Aura receives notification of the current engine state when Pulse connects.
+
+### Removed
+
+- g10.020 runtime endgame: shrank `signal-runtime` + `signal-host-local` to a thin control library (~52k → ~15k LoC of src). Deleted the engine-block simulation path, the anticipative prework scheduler (policy vocabulary preserved in `docs/architecture/prework-scheduler-design-note.md`), transport-session concurrency, deferred-service receipt stubs, metering/scheduler/timeline/automation narration snapshots, plugin recall/ARA/pin-matrix/spatial carve-outs, and the preview-transform/transform-artifact/stretch/marker stack with the clip-render simulation. `signal-graph` reduced to the plan model (execution engine deleted). Host-local boot no longer pumps simulated engine blocks; the reported stream state means a negotiated output stream. Pulse's consumed surface is unchanged (pulse builds and passes untouched).
+- g10 demolition programme (packets 002-008): deleted ~98k LoC of simulated and narration-only code — `signal-supervisor-tools`, `signal-host-server`, `signal-hardware-coreaudio`, `signal-plugin-library`/`-store` crates removed; `signal-runtime` stripped of simulated posture domains and its narration layer (~29.4k); rhythm continuity taxonomy and embed model-registry fiction removed (~11.7k); plugin domain pruned to real discovery foundations with sandbox broker over verified shm leases (~20.8k); discovery roots now explicit configuration defaulting empty.
+- Removed `ChannelMixService` from the audio render path now that mute/gain are owned by graph nodes.
+- Removed the unused `channelMix` IPC domain handler now that mute is expressed via node parameters.
+- Removed kind=1 JSON frames and the JSON envelope codec from the Pulse↔Signal LPF1 control-plane (binary-envelope-v2 only).
+- Removed unused JSON-string TLV decoding helper now that runtime-push commands are fully typed.
