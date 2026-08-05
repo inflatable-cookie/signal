@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: active generation; `g10.036` through `g10.040` complete
+Status: active generation; `g10.036` through `g10.040` complete, `g10.041` open on `A18`
 Updated: 2026-07-27
 
 ## Why this generation matters now
@@ -492,6 +492,19 @@ Do not start Loophole or Chorus planning from Signal internals.
     been sought. Still inherits
     the two items `g10.039` did not settle — adopting the remaining offline paths
     so both seam smoothers can go, and a direct transient probe for `A18`
+- `g10.041` `active`
+  - `A18` transient pop triage: the last untriaged finding from the audit that
+    opened this generation, and the only one never reproduced outside a
+    listening pack. Batch 41.1 eliminated the standing hypothesis — the
+    transient phase reset makes the low-band step *smaller* at ratios `2.0` and
+    `3.0`, not larger, and every stretched value sits at or below the source's
+    own. Two process notes: the first probe material could not trip the
+    detector, so both modes produced byte-identical output and returned a
+    confident null; and the metric reported zero outliers in every condition
+    including the source, so Batch 41.2 must prove the metric fires on an
+    injected pop before trusting any null. Batch 41.2 ready, localising by layer
+    — the listeners heard this through the artifact path, not the raw vocoder
+    Batch 41.1 measured
 
 ## Stretch Boundary
 

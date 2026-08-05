@@ -11,6 +11,16 @@ registry upload.
 
 ### Changed
 
+- Opened `g10.041` on finding `A18`, the last untriaged item from the audit that
+  began this generation, and eliminated the hypothesis it had carried since
+  `g10.036`. The transient phase reset does not produce the low-mid pop: measured
+  at the offline geometry it makes the low-band step *smaller* at ratios `2.0`
+  and `3.0`, and every stretched value sits at or below the unprocessed source's.
+  Recorded with two caveats that bound the result — the first probe used a
+  16-sample click that could not trip the detector, so it compared the path
+  against itself and returned a confident null, and the replacement metric found
+  zero outliers in every condition including the source, so it has not been shown
+  capable of detecting the artifact at all.
 - Closed `g10.040` and Contract `046`'s RealtimePreview callback gate addendum.
   The gate is satisfied by `RealtimePreviewStreamState` rather than by the kernel
   it was written against — the original could never have passed it, because with
