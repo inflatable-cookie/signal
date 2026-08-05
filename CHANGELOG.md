@@ -11,6 +11,15 @@ registry upload.
 
 ### Changed
 
+- Added `a18-listening-pack`, an evidence binary that builds the concealed pack
+  for the `A18` fix. Three cases of a bass note with a percussive attack every
+  `500 ms` at the ratios where the artifact is largest, sides assigned per case
+  from a fixed seed. Verified before delivery that every file carries audio,
+  that both sides match within `0.4%` on RMS, and that the pack actually
+  discriminates — carrier phase jump separates the sides by `0.814` to
+  `2.824 rad`. The `g10.039` revision-2 pack returned "no significant
+  difference" partly because it never reproduced the artifact it was built to
+  judge.
 - Closed new finding `A23`: `signal-host-local` plugin discovery failed
   intermittently — `2` runs in `12` — with "plugin type was not discovered in the
   last local VST3 scan", and the same message had appeared for CLAP on CI.

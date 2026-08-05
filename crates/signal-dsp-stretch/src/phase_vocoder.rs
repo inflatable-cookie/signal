@@ -45,11 +45,12 @@ pub(crate) fn phase_locked_phase_vocoder(
 /// `crossover_fraction` is a fraction of Nyquist. Bins below it propagate
 /// continuously through a transient instead of being reset.
 ///
-/// Test-only until listening admits it. Contract `084` Rule 2 keeps a candidate
-/// isolated, and Rule 5 makes listening the promotion authority, so an
-/// unadopted candidate having no production caller is the intended state rather
-/// than an oversight.
-#[cfg(test)]
+/// Evidence-only until listening admits it. Contract `084` Rule 2 keeps a
+/// candidate isolated, and Rule 5 makes listening the promotion authority, so
+/// an unadopted candidate having no production caller is the intended state
+/// rather than an oversight. It is reachable under the `evidence` feature so a
+/// listening pack can render it.
+#[cfg(any(test, feature = "evidence"))]
 pub(crate) fn high_band_transient_reset_phase_vocoder(
     input: &[Sample],
     target_len: usize,

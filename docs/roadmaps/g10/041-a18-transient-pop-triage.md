@@ -244,12 +244,47 @@ measurement rather than a proxy. The first proxy tried here — a `10-90%`
 envelope rise time — disagreed with itself across ratios, which is how Batch
 41.1 went wrong and was not going to be repeated.
 
-#### What Admission Needs
+#### The Pack
 
-A concealed pack per Contract `084` Rule 5, comparing shipped against the
-candidate on material with sustained low content and transients. Objective
-evidence says the artifact is gone at no measured cost, and that is not the same
-as sounding better.
+Built at `~/Downloads/signal-listening-pack-41-a18` by
+`crates/signal-dsp-stretch-evidence/src/bin/a18-listening-pack.rs`.
+
+Three cases, six seconds each, mono. Material is a bass note with two harmonics
+plus a percussive attack every `500 ms` — sustained low content carried *through*
+the transients, which is the content the shipped reset discards the phase of.
+
+| case | fundamental | ratio | measured artifact at this ratio |
+| --- | --- | --- | --- |
+| `E1` | `55 Hz` (A1) | `1.5` | `0.478 rad` |
+| `E2` | `55 Hz` (A1) | `2.0` | `2.752 rad`, the peak |
+| `E3` | `82.4 Hz` (E2) | `2.0` | different fundamental, same ratio |
+
+Sides are assigned per case from a fixed seed, so the pack is reproducible but
+the ordering is not guessable from the case list. Unprocessed sources ship
+alongside for reference.
+
+Checked before delivery, following `g10.039` — where three adopted specimens
+shipped silent because nothing verified the renders carried audio:
+
+- every file carries audio, both sides within `0.4%` on RMS so level gives
+  nothing away
+- the pack discriminates: carrier phase jump separates the sides by `2.267`,
+  `2.824` and `0.814 rad` respectively
+
+That last check matters as much as the first. A pack whose sides measure the
+same cannot be judged, and `g10.039` revision 2 returned "no significant
+difference" partly because it did not reproduce the artifact it was built to
+discriminate on.
+
+#### One Pack Was Discarded
+
+The first build's verification printed the carrier phase jump per side. A high
+value identifies the shipped renderer, so that output revealed the assignment
+for all three cases and the pack was no longer blind.
+
+Rebuilt with a different seed, and the verification now reports separation
+magnitude only. Recorded because a concealed pack is only concealed until
+someone prints the wrong column.
 
 ## Acceptance Criteria
 
@@ -300,24 +335,13 @@ Status: blocked on Batch 41.2
 
 ## Next Task
 
-Build the listening pack. Everything objective is done and the remaining gate is
-Rule 5.
+Judge `~/Downloads/signal-listening-pack-41-a18`. Fill `notes.tsv`, then open
+`key.tsv`. The candidate is admitted only if no case prefers the shipped side.
 
-The candidate resets transient phase only above `240 Hz` at `48 kHz`, expressed
-as a fraction of Nyquist because the stretch API is sample-rate agnostic. It
-takes the carrier phase jump at ratio `2.0` from `2.752 rad` to `0.133 rad`, at
-or below the no-reset floor, and matches shipped transient smear exactly at every
-ratio on the corpus's own measurement. Removing the reset instead would regress
-smear to `8.0` at ratio `3.0`, so the reset stays and is simply applied less
-widely.
+Listen for the pop on each tick in the bass register. The attacks themselves
+should sound the same on both sides — a duller or smearier transient on one side
+is the risk the fix was designed against, and it is worth noting even though the
+corpus metric says smear is identical.
 
-The pack should use material with sustained low content under transients — the
-`A18` reports were bass-register pops on ticks — and compare shipped against the
-candidate at ratios `1.5` and `2.0`, where the artifact is largest. Randomise
-sides per case, as `g10.039` did.
-
-Objective evidence says the artifact is gone at no measured cost. That is not the
-same as sounding better, and Rule 5 exists for the difference.
-
-Nothing adopts the candidate until that pack is judged. The shipped default is
-unchanged and no production path can reach the new mode.
+Nothing adopts the candidate until this is judged. The shipped default is
+unchanged and no production path constructs the new mode.

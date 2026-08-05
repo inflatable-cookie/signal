@@ -64,6 +64,39 @@ direct_renewal_dream_tests!();
 #[cfg(any(test, feature = "evidence"))]
 mod formant_boundary;
 mod phase_vocoder;
+/// `g10.041` `A18` fix candidate, exposed for listening-pack rendering only.
+///
+/// Unadopted: no production path constructs it. Admission needs Contract `084`
+/// Rule 5 listening.
+#[cfg(any(test, feature = "evidence"))]
+pub fn a18_candidate_stretch_mono(
+    input: &[Sample],
+    ratio: f64,
+    crossover_fraction: f64,
+) -> Vec<Sample> {
+    let target_len = (input.len() as f64 * ratio).round() as usize;
+    phase_vocoder::high_band_transient_reset_phase_vocoder(
+        input,
+        target_len,
+        ratio,
+        DEFAULT_WINDOW_SIZE,
+        DEFAULT_ANALYSIS_HOP,
+        crossover_fraction,
+    )
+}
+
+/// The shipped transient-reset path at the same geometry, for A/B rendering.
+#[cfg(any(test, feature = "evidence"))]
+pub fn a18_shipped_stretch_mono(input: &[Sample], ratio: f64) -> Vec<Sample> {
+    let target_len = (input.len() as f64 * ratio).round() as usize;
+    phase_vocoder::transient_reset_phase_vocoder(
+        input,
+        target_len,
+        ratio,
+        DEFAULT_WINDOW_SIZE,
+        DEFAULT_ANALYSIS_HOP,
+    )
+}
 mod promotion;
 mod realtime_preview;
 mod realtime_preview_stream;
