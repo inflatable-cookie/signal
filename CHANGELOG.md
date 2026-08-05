@@ -11,6 +11,20 @@ registry upload.
 
 ### Changed
 
+- Found the mechanism for `A18` and retracted the previous batch's elimination
+  of it. The transient phase reset sets every bin's synthesis phase to the
+  analysis phase; low bins have long periods, so the same jump is a large
+  waveform discontinuity. Measured as carrier phase jump: `2.752 rad` at ratio
+  `2.0` against a `0.142 rad` no-reset floor — within `11%` of a deliberate
+  polarity flip — appearing from ratio `1.25` and peaking near `2.0`, which is
+  where the pop was reported. Guarded by an `#[ignore]`d reproduction plus an
+  always-on test that the metric fires on an injected pop.
+
+  The earlier elimination was wrong because its metric could not detect the
+  artifact at any threshold: a pop sits on a transient, and the percussive attack
+  there is a larger low-band step than the pop, so worst-step always reported the
+  attack. Injecting a `pi`-radian polarity flip moved it from `0.02379` to
+  `0.02360`, which is how the blindness was proven.
 - Opened `g10.041` on finding `A18`, the last untriaged item from the audit that
   began this generation, and eliminated the hypothesis it had carried since
   `g10.036`. The transient phase reset does not produce the low-mid pop: measured

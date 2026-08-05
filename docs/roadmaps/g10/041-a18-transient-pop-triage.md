@@ -1,6 +1,6 @@
 # 041 - A18 Transient Pop Triage
 
-Status: active; Batch 41.1 complete, one hypothesis eliminated
+Status: active; mechanism found, Batch 41.1's elimination retracted
 Owner: dsp
 Created: 2026-08-05
 Depends on: `g10.039`
@@ -33,16 +33,18 @@ its assertion was understood. `A18` has resisted because comparative packs
 cannot localise an artifact that may be present on both sides.
 
 The working hypothesis carried since `g10.036` — that the pops share the
-phase-restart mechanism behind the seam pulse — is eliminated by Batch 41.1.
+phase-restart mechanism behind the seam pulse — is **correct**. Batch 41.1
+eliminated it on a metric that could not detect the artifact at any threshold;
+Batch 41.2 built a metric proven to fire on an injected instance and confirmed
+the mechanism.
 
 ## Goals
 
-- [ ] reproduce the pop in a measurement, not a listening pack
-- [ ] localise which layer introduces it: raw vocoder, chunked artifact path,
-  seam smoothers, or normalization
-- [ ] state a mechanism, or state that it is not reproducible and close the
-  finding honestly
-- [ ] add a permanent guard only if a mechanism is found
+- [x] reproduce the pop in a measurement, not a listening pack
+- [x] localise which layer introduces it — the phase-vocoder transient reset,
+  not the chunked artifact path, the seam smoothers, or normalization
+- [x] state a mechanism
+- [x] add a permanent guard only if a mechanism is found
 
 ## Non-Goals
 
@@ -54,7 +56,7 @@ phase-restart mechanism behind the seam pulse — is eliminated by Batch 41.1.
 
 ### Batch 41.1 - Eliminate The Phase-Reset Hypothesis
 
-Status: complete; hypothesis eliminated
+Status: **retracted**; the conclusion was wrong and the metric was blind
 
 - [x] test whether the transient phase reset produces a low-band discontinuity
 - [x] compare the shipped `IdentityLockedTransientReset` mode against
@@ -67,7 +69,9 @@ energy ratio at least `1.20`. Low bins have long periods, so an identical phase
 jump is a much larger waveform step there than at high frequencies — exactly the
 shape of a low-frequency pop.
 
-It is not what is happening.
+It is exactly what is happening. The measurement below said otherwise and was
+wrong, because the metric could not see the artifact. Batch 41.2 proved that
+directly. What follows is kept as the record of the error.
 
 Measured on `80 Hz` plus a percussive attack every `250 ms`, `2048`/`512`
 geometry, worst step in a `375 Hz` low band:
@@ -98,7 +102,90 @@ the first without testing the second.
 
 ### Batch 41.2 - Localise The Layer
 
+Status: complete; mechanism found
+
+- [x] validate the metric on material with a deliberately injected pop, so a
+  null result means absence rather than blindness
+- [x] identify the mechanism
+- [ ] ~~render through each layer and compare~~ — unnecessary; the mechanism is
+  in the vocoder itself and reproduces without the artifact path
+
+#### The Batch 41.1 Metric Was Blind, Proven
+
+Injecting a `pi`-radian phase flip into the sustained `80 Hz` tone — a complete
+polarity inversion, unmistakable as a pop — moved Batch 41.1's worst-step metric
+from `0.02379` to `0.02360`. Nothing.
+
+The reason is structural rather than a tuning miss. A pop sits *on* a transient,
+and the percussive attack at that instant is a larger low-band step than the pop
+is. Worst-step always finds the attack. The metric could not have detected this
+artifact at any threshold.
+
+That is why Batch 41.1's null was worthless, and the roadmap's own risk entry
+called it before the batch ran: "the metric is blind rather than the artifact
+absent".
+
+#### The Metric That Works
+
+A low-mid pop *is* a phase discontinuity in the sustained low component. Measure
+that directly: quadrature-demodulate at the carrier, low-pass, and take the
+largest phase jump.
+
+| condition | carrier phase jump |
+| --- | --- |
+| unprocessed source, clean | `0.130 rad` |
+| unprocessed source, injected `pi` pop | `3.088 rad` |
+| stretched `2.0`, transient reset | `2.752 rad` |
+| stretched `2.0`, no reset | `0.142 rad` |
+
+The metric fires on the injected pop, so a null from it means absence. The
+shipped path measures `2.752 rad` — within `11%` of a deliberate polarity flip.
+
+#### The Mechanism
+
+`should_reset_phase_at_transient` sets every bin's synthesis phase to the
+analysis phase. Across ratios, clean material:
+
+| ratio | transient reset | no reset |
+| --- | --- | --- |
+| `0.75` | `0.128` | `0.128` |
+| `1.00` | `0.130` | `0.130` |
+| `1.25` | `0.164` | `0.143` |
+| `1.50` | `0.478` | `0.135` |
+| `2.00` | `2.752` | `0.142` |
+| `3.00` | `0.595` | `0.251` |
+
+`0.75` and `1.00` are identical because the reset only engages at ratio `1.0`
+and above. The artifact appears from `1.25`, peaks near `2.0` at `19x` the
+noise floor, and the no-reset column stays at the floor throughout.
+
+This corroborates the listening reports rather than merely being consistent with
+them: `D2`, where the pop was heard, was static ratio `2.0` — exactly where the
+artifact peaks. `D3` ramped to `1.75`, between the `1.5` and `2.0` rows.
+
+#### Guard
+
+`tests/a18_transient_pop_guard.rs`. Two tests: one proves the metric fires on an
+injected pop and runs always; one reproduces `A18` and is `#[ignore]`d with the
+measured value in its reason, following the `g10.039` `G5` precedent. Un-ignored
+it fails at ratio `1.5` with `0.478rad` against a `0.130rad` floor.
+
+### Batch 41.3 - Fix And Admit
+
 Status: ready
+
+The reset exists for a reason — it stops transients smearing — so removing it
+outright trades one artifact for another. The fix must keep the transient
+behaviour and stop the low-frequency discontinuity.
+
+- [ ] reset phase only above a frequency where a phase jump is not a large
+  waveform step, leaving low bins to propagate continuously
+- [ ] confirm the guard passes un-ignored across the ratio range
+- [ ] confirm transient smearing does not regress, measured against the corpus
+  report's `TransientSmearFrames`
+- [ ] listening admission under Contract `084` Rule 5 before adoption
+
+## Acceptance Criteria
 
 The listeners heard the artifact through the offline *artifact* path, not the
 raw vocoder that Batch 41.1 measured. That path adds chunking, both seam
@@ -125,10 +212,11 @@ Status: blocked on Batch 41.2
 
 ## Acceptance Criteria
 
-- [ ] the artifact is reproduced in a measurement, or its absence is established
-  with a metric proven to fire on an injected instance
-- [ ] the layer that introduces it is named, or ruled out layer by layer
-- [ ] `A18` is closed with a mechanism or closed as unreproduced
+- [x] the artifact is reproduced in a measurement, with a metric proven to fire
+  on an injected instance
+- [x] the layer that introduces it is named — the phase-vocoder transient reset,
+  not the artifact path
+- [ ] `A18` is closed with a fix admitted by listening
 
 ## Risks and Mitigations
 
@@ -146,7 +234,18 @@ Status: blocked on Batch 41.2
 
 ## Next Task
 
-Open Batch 41.2. Before anything else in it, build the injected-pop fixture and
-prove the metric fires on it — Batch 41.1's null result is only as trustworthy
-as the metric that produced it, and that metric reported zero outliers even in
-the source.
+Open Batch 41.3. The mechanism is `should_reset_phase_at_transient` setting every
+bin's synthesis phase to the analysis phase: at ratio `2.0` that produces
+`2.752 rad` of carrier phase discontinuity against a `0.142 rad` floor, within
+`11%` of a deliberate polarity flip.
+
+The fix is not to remove the reset. It exists to stop transients smearing, and
+deleting it trades one artifact for another. It should reset only above a
+frequency where a phase jump is a small waveform step, leaving low bins to
+propagate continuously.
+
+Carry the process lesson forward. Batch 41.1 eliminated this exact hypothesis on
+a metric that could not detect the artifact at any threshold, and the roadmap's
+own risk register named that failure mode before the batch ran. The rule that
+caught it is cheap: before believing a null, inject the artifact and check the
+measurement moves.

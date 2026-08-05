@@ -494,17 +494,21 @@ Do not start Loophole or Chorus planning from Signal internals.
     so both seam smoothers can go, and a direct transient probe for `A18`
 - `g10.041` `active`
   - `A18` transient pop triage: the last untriaged finding from the audit that
-    opened this generation, and the only one never reproduced outside a
-    listening pack. Batch 41.1 eliminated the standing hypothesis — the
-    transient phase reset makes the low-band step *smaller* at ratios `2.0` and
-    `3.0`, not larger, and every stretched value sits at or below the source's
-    own. Two process notes: the first probe material could not trip the
-    detector, so both modes produced byte-identical output and returned a
-    confident null; and the metric reported zero outliers in every condition
-    including the source, so Batch 41.2 must prove the metric fires on an
-    injected pop before trusting any null. Batch 41.2 ready, localising by layer
-    — the listeners heard this through the artifact path, not the raw vocoder
-    Batch 41.1 measured
+    opened this generation. Batch 41.1 eliminated the standing hypothesis and was
+    **wrong** — its worst-step metric could not detect the artifact at any
+    threshold, because a pop sits on a transient and the percussive attack there
+    is a larger low-band step than the pop is. Injecting a `pi`-radian polarity
+    flip moved that metric from `0.02379` to `0.02360`, which is how the
+    blindness was proven. Batch 41.2 measured the carrier's phase directly and
+    found the mechanism: the transient phase reset produces `2.752 rad` of
+    low-carrier discontinuity at ratio `2.0` against a `0.142 rad` no-reset
+    floor, within `11%` of a deliberate polarity flip, appearing from ratio
+    `1.25` and peaking near `2.0`. That corroborates the listening reports
+    rather than merely fitting them — `D2`, where the pop was heard, was static
+    ratio `2.0`. Guarded by an `#[ignore]`d reproduction plus an always-on test
+    that the metric fires on an injected pop. Batch 41.3 ready: reset only above
+    a frequency where a phase jump is a small waveform step, since the reset
+    stops transient smearing and removing it trades one artifact for another
 
 ## Stretch Boundary
 
