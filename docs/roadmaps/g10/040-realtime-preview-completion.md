@@ -1,6 +1,6 @@
 # 040 - RealtimePreview Completion
 
-Status: ready; `g10.039` closed 2026-08-05
+Status: active; Batch 40.1 complete, decided reachable; Batch 40.2 ready
 Owner: dsp
 Created: 2026-07-27
 Depends on: `g10.036`, `g10.038`, `g10.039`
@@ -94,34 +94,176 @@ the unreachable surface rather than carry it.
 
 ### Batch 40.1 - Feasibility And Design Reassessment
 
-Status: ready
+Status: complete; decided **reachable**
 
 Documentation only.
 
-- [ ] state the quantum-locked defect exactly, with the input-drop path traced
-- [ ] measure achievable algorithmic latency for the `512/128` preview geometry
+- [x] state the quantum-locked defect exactly, with the input-drop path traced
+- [x] measure achievable algorithmic latency for the `512/128` preview geometry
   and state what it costs against `MAX_BLOCK_FRAMES` and the render quantum
-- [ ] design the source-ownership model: who holds the source reader, how the
+- [x] design the source-ownership model: who holds the source reader, how the
   callback expresses input demand, what happens on underrun, and how latency is
   reported
-- [ ] decide whether the render plane pulls preview output or the preview state
+- [x] decide whether the render plane pulls preview output or the preview state
   pulls source frames
-- [ ] check the model against Contract `046`'s callback gate: bounded work, no
+- [x] check the model against Contract `046`'s callback gate: bounded work, no
   allocation, no locks, no I/O, deterministic latency, linked stereo,
   dynamic-ratio alignment, seam evidence
-- [ ] decide reachable or not reachable, and record the reason either way
-- [ ] change documentation only
+- [x] decide reachable or not reachable, and record the reason either way
+- [x] change documentation only
 
 Stop condition: if the model requires I/O or unbounded work on the callback,
 record that RealtimePreview cannot be a callback tier with this kernel, close
 the tier, and route Batch 40.5 to surface removal instead of integration.
 
+The stop condition is not met. Neither I/O nor unbounded work is required, and
+the tier stays open.
+
+#### The Defect, Traced
+
+`process` is quantum-locked in two lines:
+
+```rust
+self.push_interleaved_input(input, frame_count);
+self.process_available_streaming_frames();
+self.read_interleaved_output(output, frame_count);
+```
+
+`frame_count` in, `frame_count` out, whatever the ratio. A time stretcher
+cannot be rate-locked on both sides, so the two cursors diverge by
+construction: `next_analysis_frame` advances `analysis_hop` per spectral frame
+while `next_synthesis_frame` advances `analysis_hop * ratio`.
+
+The drop follows in `process_available_streaming_frames`. At ratio above `1.0`
+synthesis outruns the output ring, so this guard breaks the loop:
+
+```rust
+if synthesis_start + window_size >= output_read_frame + ring_frames { break; }
+```
+
+Nothing is analysed that callback, but `push_interleaved_input` keeps
+advancing `input_write_frame` by `frame_count` every callback. The gap widens
+until this fires:
+
+```rust
+if input_write_frame - next_analysis_frame > ring_frames {
+    next_analysis_frame = input_write_frame - ring_frames;
+}
+```
+
+That assignment discards every unanalysed source frame in the gap. `process`
+then returns `Ok` with `input_frames == output_frames == frame_count`, so the
+caller is told the block was consumed and produced normally. The
+`g10.027` projection machinery reports the correct source advance beside this,
+which is why the report and the kernel disagree: nothing consumes the report.
+
+#### Cost, Measured
+
+Steady-state cost of the existing callback path at ratio `1.0`, `48 kHz`,
+release build, `4000` iterations after a `64`-callback warmup:
+
+| channels | block | per callback | per spectral frame | budget | load |
+| --- | --- | --- | --- | --- | --- |
+| `1` | `128` | `8.0us` | `8.0us` | `2666.7us` | `0.3%` |
+| `1` | `512` | `31.8us` | `8.0us` | `10666.7us` | `0.3%` |
+| `2` | `128` | `15.6us` | `15.6us` | `2666.7us` | `0.6%` |
+| `2` | `512` | `62.7us` | `15.7us` | `10666.7us` | `0.6%` |
+
+Cost is linear in spectral frames and flat per frame across block sizes, so it
+projects cleanly. A callback producing `block` output frames needs
+`block / (analysis_hop * ratio)` spectral frames, so load scales as `1/ratio`.
+Stereo at block `128`:
+
+| ratio | spectral frames | callback cost | load |
+| --- | --- | --- | --- |
+| `1.0` | `1` | `15.7us` | `0.6%` |
+| `0.5` | `2` | `31.4us` | `1.2%` |
+| `0.25` | `4` | `62.8us` | `2.4%` |
+| `0.125` | `8` | `125.6us` | `4.7%` |
+| `0.0625` | `16` | `251.2us` | `9.4%` |
+
+**CPU was never the blocker.** Even at one-sixteenth speed the callback uses
+under a tenth of its budget. What stalled this tier was the architecture, not
+the kernel's cost, and three roadmaps of latency and reporting work were spent
+without that number being measured.
+
+#### Bounded Work Needs A Bounded Ratio
+
+`sanitize_ratio` accepts any finite positive ratio. Work per callback scales as
+`1/ratio`, so as ratio approaches zero the callback work is unbounded and
+Contract `046`'s bounded-work requirement is unsatisfiable as written. This is
+not a tuning detail; it is a gate precondition. Batch 40.2 must freeze a
+minimum ratio, and the table above is the evidence for choosing it.
+
+#### Latency
+
+Algorithmic latency is one window: `512` frames, `10.67ms` at `48 kHz`. A full
+window must be buffered before the first synthesis frame exists. Against
+`MAX_BLOCK_FRAMES` of `4096` (`85ms`) it is small; against a `128`-frame
+quantum (`2.67ms`) it is four quanta.
+
+This is affordable because of what preview *is*. RealtimePreview plays back a
+stored asset at a changed rate — it is not a live monitoring path, so the
+window latency is a start-up delay before playback begins, not a round-trip
+cost added to something the operator is playing. Ten milliseconds of start-up
+is not perceptible as latency.
+
+#### Source Ownership
+
+The render plane pulls preview output; the preview state pulls source frames.
+Both, at different boundaries — that is the answer to the batch's question,
+and treating it as one choice is what made it look unresolvable.
+
+- A non-realtime producer owns the source reader and fills a single-producer,
+  single-consumer ring with source frames. All I/O happens there.
+- The callback consumes `block / ratio` source frames per callback from that
+  ring. It never reads a file, takes a lock, or allocates.
+- Input demand is published as an atomic frame counter the producer reads: the
+  callback states how far ahead it needs the source filled, derived from the
+  ratio it is about to apply. The `g10.027` projection already computes this
+  number correctly; the change is that something finally consumes it.
+- On underrun the callback emits silence for the missing span, increments an
+  underrun counter, and returns a report saying so. It must not stall, must not
+  skip source, and must not return `Ok` as though the block were normal — that
+  last behaviour is the present defect.
+- Latency is reported as window size plus the producer's prefill target, both
+  constant for a given configuration.
+
+#### Contract 046 Callback Gate
+
+| requirement | status |
+| --- | --- |
+| bounded work | conditional — requires the frozen minimum ratio above |
+| no allocation | already proven; `capture_alloc`-style test covers the path |
+| no locks | satisfied by the SPSC ring and atomic demand counter |
+| no I/O | satisfied; the producer thread owns the reader |
+| deterministic latency | satisfied; window plus prefill, both constant |
+| linked stereo | already supported by the kernel |
+| dynamic-ratio alignment | machinery exists from `g10.027`, unconsumed |
+| seam evidence | not yet produced; Batch 40.2 must freeze it |
+
+#### A Naming Hazard Worth Recording
+
+The Problem section says no workspace consumer imports any `RealtimePreview`
+type. That is true of the callback surface and false of the name.
+
+`RealtimePreviewStretcher` is a whole-buffer control-side prototype with a
+shorter window — not a callback object at all — and `loophole/pulse` consumes
+it in `render_plan.rs` to pre-stretch and cache assets. Closing the tier and
+deleting "the RealtimePreview surface" wholesale would have broken a shipping
+consumer.
+
+What is genuinely unconsumed is `RealtimePreviewCallbackState` and the six
+never-constructed enum variants named in the Problem section. Batch 40.5 must
+name types, not the prefix.
+
 ### Batch 40.2 - Complete Streaming Brief
 
-Status: blocked on Batch 40.1, and only if Batch 40.1 decides reachable
+Status: ready; Batch 40.1 decided reachable on 2026-08-05
 
 Documentation only.
 
+- [ ] freeze the minimum ratio, without which bounded work is unsatisfiable
 - [ ] freeze the callback state inventory, its capacities, and its memory
   ceiling
 - [ ] freeze the source fill, input demand, and underrun policy
@@ -203,16 +345,28 @@ Status: blocked on Batch 40.4, or on a Batch 40.1 closure decision
 
 ## Next Task
 
-Open Batch 40.1. `g10.039` Batch 39.5 closed on `2026-08-05`. The batch is
-documentation only and may close the tier rather than open a brief.
+Open Batch 40.2, the complete streaming brief. Batch 40.1 decided the tier is
+reachable: neither I/O nor unbounded work is required on the callback, and the
+measured cost leaves the budget almost untouched — stereo at ratio `1.0` uses
+`0.6%` of a `128`-frame callback, and one-sixteenth speed uses `9.4%`.
 
-Two items arrive from `g10.039` and are in scope for this roadmap, though not
-necessarily for Batch 40.1:
+CPU was never the blocker. What stalled the tier across three roadmaps is that
+`process` consumes and produces the same frame count regardless of ratio, so
+the analysis and synthesis cursors diverge, the output-ring guard breaks the
+loop, and the input-ring guard then discards the unanalysed source while
+returning `Ok`.
 
-Selector paths and pitch composition still take the legacy per-chunk offline
-renderer. Both seam smoothers stay until those paths adopt the resumable
-renderer, because the legacy branch still creates the boundaries they patch.
+Two things Batch 40.2 must freeze that were not previously on its list:
 
-`A18`, the low-mid pops on ticks, is open. The revision-2 listening pack
-reported no difference between sides, which does not distinguish gone-from-both
-from present-in-both, so it needs a probe that measures the transient directly.
+A minimum ratio. Work per callback scales as `1/ratio` and `sanitize_ratio`
+accepts any positive value, so bounded work is unsatisfiable until a floor
+exists. The measured load table is the evidence for choosing it.
+
+The distinction between `RealtimePreviewStretcher` and
+`RealtimePreviewCallbackState`. The first is a whole-buffer prototype that
+`loophole/pulse` consumes today; only the second is dead surface. Batch 40.5
+must name types rather than the shared prefix.
+
+Also inherited from `g10.039` and still open: adopting the remaining offline
+paths so both seam smoothers can be removed, and a direct transient probe for
+`A18`.

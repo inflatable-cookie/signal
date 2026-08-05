@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: active generation; `g10.039` complete, `g10.040` ready
+Status: active generation; `g10.039` complete, `g10.040` active
 Updated: 2026-07-27
 
 ## Why this generation matters now
@@ -441,12 +441,21 @@ Do not start Loophole or Chorus planning from Signal internals.
     pitch composition still take the legacy per-chunk path, and `A18` stays
     open because "no difference" does not separate gone-from-both from
     present-in-both
-- `g10.040` `ready`
+- `g10.040` `active`
   - RealtimePreview completion: fix the quantum-locked source-advance defect or
     close the tier and remove its unreachable surface; unblocked by `g10.039`;
-    supersedes `g10.024` and `g10.028`; Batch 40.1 ready, and it also inherits
-    the two items `g10.039` did not settle — adopting the remaining offline
-    paths so both seam smoothers can go, and a direct transient probe for `A18`
+    supersedes `g10.024` and `g10.028`; Batch 40.1 measured the kernel at
+    `0.6%` of a stereo `128`-frame callback budget at ratio `1.0` and `9.4%` at
+    one-sixteenth speed, so CPU was never what stalled this tier across three
+    roadmaps — the defect is that `process` consumes and produces the same frame
+    count regardless of ratio, diverging the analysis and synthesis cursors until
+    the input-ring guard discards unanalysed source and returns `Ok`; decided
+    reachable, and found that bounded work needs a frozen minimum ratio because
+    load scales as `1/ratio` while `sanitize_ratio` accepts any positive value;
+    also found `RealtimePreviewStretcher` is consumed by `loophole/pulse` and is
+    not dead surface despite the shared prefix; Batch 40.2 ready. Still inherits
+    the two items `g10.039` did not settle — adopting the remaining offline paths
+    so both seam smoothers can go, and a direct transient probe for `A18`
 
 ## Stretch Boundary
 

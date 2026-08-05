@@ -9,6 +9,18 @@ registry upload.
 
 ## [Unreleased]
 
+### Changed
+
+- Decided `g10.040` Batch 40.1: the RealtimePreview callback tier is reachable.
+  Measuring the kernel first reframed the lane — stereo at ratio `1.0` uses
+  `0.6%` of a `128`-frame callback budget and one-sixteenth speed uses `9.4%`,
+  so CPU was never what stalled it across three roadmaps. The defect is that
+  `process` consumes and produces the same frame count regardless of ratio,
+  which diverges the analysis and synthesis cursors until the input-ring guard
+  discards unanalysed source and still returns `Ok`. Bounded work additionally
+  needs a frozen minimum ratio, since load scales as `1/ratio` while
+  `sanitize_ratio` accepts any positive value.
+
 ## [0.1.0] - 2026-08-05
 
 ### Added
