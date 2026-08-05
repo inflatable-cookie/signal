@@ -11,6 +11,17 @@ registry upload.
 
 ### Changed
 
+- Landed the `g10.040` Batch 40.3 candidate: `RealtimePreviewStreamState`, a
+  source-owning preview kernel with no input parameter — the producer pushes
+  source and the callback pulls whatever the ratio demands, instead of being
+  handed a fixed block and silently discarding the surplus. Isolated per
+  Contract `084` Rule 2; nothing constructs it yet. Six structural gates pass.
+  Its first continuity gate was worthless and had to be replaced: "every decile
+  carries signal" passes against the shipped quantum-locked kernel as well,
+  because dropping source does not make output quiet. The replacement is a
+  frequency sweep where position encodes source position, and it separates the
+  two by `1300 Hz` against a value predicted from the ratio. The acoustic
+  comparison against the offline renderer is still open.
 - Froze `g10.040` Batch 40.2, the preview streaming brief. Ratio range
   `[0.25, 3.0]` with both ends derived: the maximum is Contract `046`'s overlap
   law at the `128`/`512` geometry, the minimum is bounded work at `2.36%` of a

@@ -458,8 +458,14 @@ Do not start Loophole or Chorus planning from Signal internals.
     ceiling at `MAX_BLOCK_FRAMES` against a computed `804.3 KiB`, one ratio
     scheduler where the source-projection one survives because it already
     computes the source advance the new model needs, and underrun reported as
-    silence rather than as a normal-looking block; Batch 40.3 ready. Still
-    inherits
+    silence rather than as a normal-looking block; Batch 40.3 landed
+    `RealtimePreviewStreamState` isolated with six structural gates green, and
+    found that its first G3 — "every decile carries signal" — was satisfied by
+    the shipped quantum-locked kernel too, since dropping source does not make
+    output quiet; replaced by a frequency sweep where position encodes source
+    position, which separates the kernels by `1300 Hz` against a value predicted
+    from the ratio. The quality comparison against the offline renderer is still
+    open and Batch 40.4 must not start before it. Still inherits
     the two items `g10.039` did not settle — adopting the remaining offline paths
     so both seam smoothers can go, and a direct transient probe for `A18`
 

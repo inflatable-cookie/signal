@@ -66,6 +66,7 @@ mod formant_boundary;
 mod phase_vocoder;
 mod promotion;
 mod realtime_preview;
+mod realtime_preview_stream;
 #[cfg(any(test, feature = "evidence"))]
 mod render_integrity;
 mod resumable;
@@ -145,6 +146,11 @@ pub use realtime_preview::{
     RealtimePreviewDynamicSourceProjectionReport, RealtimePreviewIntegrationMode,
     RealtimePreviewPlanError, RealtimePreviewSourceProjectionReport, RealtimePreviewStreamConfig,
     RealtimePreviewStreamingContract, RealtimePreviewUnsupportedMode,
+};
+pub use realtime_preview_stream::{
+    RealtimePreviewStreamError, RealtimePreviewStreamRenderReport, RealtimePreviewStreamState,
+    REALTIME_PREVIEW_STREAM_MAX_RATIO, REALTIME_PREVIEW_STREAM_MAX_WORKING_BYTES,
+    REALTIME_PREVIEW_STREAM_MIN_RATIO,
 };
 #[cfg(any(test, feature = "evidence"))]
 pub use render_integrity::{

@@ -1,6 +1,6 @@
 # 040 - RealtimePreview Completion
 
-Status: active; brief frozen by Batch 40.2; Batch 40.3 ready
+Status: active; Batch 40.3 structural gates green, quality comparison open
 Owner: dsp
 Created: 2026-07-27
 Depends on: `g10.036`, `g10.038`, `g10.039`
@@ -429,15 +429,58 @@ not be touched by this lane.
 
 ### Batch 40.3 - Isolated Implementation
 
-Status: ready; Batch 40.2 froze the brief on 2026-08-05
+Status: structural gates green; quality comparison not yet run
 
-- [ ] implement the frozen brief once, isolated per Contract `084` Rule 2
-- [ ] prove allocation-free, lock-free, I/O-free callback execution
-- [ ] prove sustained ratios above and below `1.0` produce continuous output
+- [x] implement the frozen brief once, isolated per Contract `084` Rule 2
+- [x] prove allocation-free, lock-free, I/O-free callback execution
+- [x] prove sustained ratios above and below `1.0` produce continuous output
   with no dropped source frames
-- [ ] prove reported source consumption equals actual kernel consumption
-- [ ] prove dynamic-ratio changes land inside the frozen alignment tolerance
+- [x] prove reported source consumption equals actual kernel consumption
+- [x] prove dynamic-ratio changes land inside the frozen alignment tolerance
 - [ ] measure preview quality against the offline renderer on the same material
+
+`RealtimePreviewStreamState` lands in `realtime_preview_stream.rs`, isolated:
+nothing in the workspace constructs it and `realtime_preview.rs` is untouched.
+It has no input parameter. `push_source` is the non-realtime producer's entry
+point, `render` is the callback's, and the callback pulls whatever source the
+active ratio demands.
+
+Six gates in `tests/realtime_preview_stream_gates.rs`, in the frozen order.
+
+#### The First Version Of G3 Proved Nothing
+
+The gate was written as "every decile of output carries signal". It passed, and
+it was worthless. Run against the shipped quantum-locked kernel it also passes:
+`0/9` deciles silent at both ratio `0.5` and `2.0`. That kernel does not go
+quiet when it drops source — it keeps emitting, from the wrong place.
+
+This is the `g10.039` failure repeating in a new costume. There, five structural
+gates all passed a renderer emitting pure silence, because each measured a
+relationship between renders rather than content. Here the gate measured
+loudness, and dropping source preserves loudness.
+
+G3 is now a linear `200` to `3000 Hz` sweep, so position in the sweep encodes
+position in the source. Rendering `4s` of output from a `12s` source:
+
+| kernel | ratio | frequency reached | ratio implies | max backward jump |
+| --- | --- | --- | --- | --- |
+| shipped | `2.0` | `2895 Hz` | `1600 Hz` | `141 Hz` |
+| candidate | `2.0` | `1594 Hz` | `1600 Hz` | `12 Hz` |
+
+The shipped kernel consumed almost the entire source to fill an output span
+that should have taken half of it — the quantum lock, measured — and jumped
+backward `141 Hz` where the ring guard skipped ahead. The candidate lands within
+`0.4%` of the predicted frequency and stays monotone.
+
+The expected value is derived from the ratio, not fitted after the fact. The
+gate asserts both the reached frequency and monotonicity, so a kernel that
+drops source fails on the jump and one that ignores ratio fails on the
+frequency.
+
+#### Remaining
+
+The quality comparison against the offline renderer is the acoustic half and is
+not yet run. Batch 40.4 must not open until it is.
 
 ### Batch 40.4 - Render Plane Integration
 
@@ -499,22 +542,22 @@ Status: blocked on Batch 40.4, or on a Batch 40.1 closure decision
 
 ## Next Task
 
-Open Batch 40.3, the isolated implementation. Batch 40.2 froze the brief and it
-is not renegotiable in the implementation: a defect in the brief is corrected in
-`40.2` and re-frozen, per Contract `084`.
+Finish Batch 40.3: measure preview quality against the offline renderer on the
+same material. Five of six checklist items are done and the six structural gates
+pass, but the acoustic half has not been run and Batch 40.4 must not open until
+it has.
 
-What is frozen: ratio range `[0.25, 3.0]`, both ends derived — the maximum is
-the overlap law at the `128`/`512` geometry, the minimum is bounded work at
-`2.36%` of a stereo `128`-frame callback. A `1 MiB` stereo ceiling at
-`MAX_BLOCK_FRAMES` against a computed `804.3 KiB`. One ratio scheduler, the
-source-projection one, with the output-side duplicate deleted. Source fill by a
-non-realtime producer through an SPSC ring, demand published as one atomic,
-underrun reported as silence rather than as a normal block. Latency
-`window_size + prefill`, `3072` frames at block `512`. Alignment tolerance
-`128` output frames. Six pieces of evidence in a blocking order.
+The candidate is `RealtimePreviewStreamState` in `realtime_preview_stream.rs`,
+isolated per Rule 2 — nothing constructs it and `realtime_preview.rs` is
+untouched.
 
-The implementation must land isolated per Rule 2, and must not touch
-`RealtimePreviewStretcher`, which `loophole/pulse` consumes.
+Worth carrying forward: the first version of G3 asserted that every decile of
+output carries signal, passed, and proved nothing. The shipped quantum-locked
+kernel passes it too, because dropping source does not make the output quiet.
+The gate is now a frequency sweep, where position encodes source position, and
+it separates the two kernels by `1300 Hz` on a value predicted from the ratio.
+That is the second time in this generation a structural gate has been satisfied
+by the very defect it was meant to catch.
 
 Also inherited from `g10.039` and still open: adopting the remaining offline
 paths so both seam smoothers can be removed, and a direct transient probe for
