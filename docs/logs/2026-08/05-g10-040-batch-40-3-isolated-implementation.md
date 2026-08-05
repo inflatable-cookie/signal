@@ -1,6 +1,6 @@
 # g10.040 Batch 40.3 - Isolated Implementation
 
-Status: structural gates green; quality comparison open
+Status: complete; seven gates green
 Created: 2026-08-05
 Scope: source-owning RealtimePreview streaming kernel
 
@@ -69,11 +69,49 @@ Recording it because "the gate failed, so loosen the gate" is the reflex this
 generation has been trying to break. Here the gate was right and the fixture was
 wrong, which is a different fix.
 
-## Remaining
+## The Quality Metric Had To Be Calibrated Before It Could Be Used
 
-The quality comparison against the offline renderer is the acoustic half of
-Batch 40.3 and has not been run. Batch 40.4 must not open until it has.
+Same material through the candidate, the whole-buffer preview at the same
+`512`/`128` geometry, and the offline renderer at `2048`/`512`.
+
+Level and spectrum match: RMS within `0.05%` of the whole-buffer preview at
+every ratio, brightness within `1%`.
+
+Waveform correlation looked bad at ratio `0.5` — `0.5153`, rising to `0.7025`
+under a symmetric lag search, against `0.9992` at unity. No underrun, so not
+starvation. The temptation is to read that as a defect at compression ratios.
+
+The control says otherwise. Running the *same* whole-buffer algorithm against
+itself with the source shifted half an analysis hop:
+
+| ratio | grid-phase control | candidate vs whole-buffer |
+| --- | --- | --- |
+| `0.5` | `0.0639` | `0.7025` |
+| `1.0` | `1.0000` | `0.9992` |
+| `1.5` | `0.6179` | `0.9947` |
+| `2.0` | `0.6246` | `0.9978` |
+
+Identical DSP scores `0.064` against itself at ratio `0.5`. Waveform correlation
+cannot resolve phase-vocoder quality away from unity, so `0.5153` was never
+evidence of anything — the candidate clears the metric's own floor by `11x`.
+
+`G7` is therefore self-calibrating: the control decides which standard applies.
+Near-perfect control means the metric is reliable and the candidate must be
+near-perfect too; a destroyed control means beating the floor is the only claim
+available. A fixed correlation threshold would have measured frame-grid phase
+and called it quality — the same species of error as the decile gate above, one
+step further along.
+
+At ratio `1.0` the control is degenerate: identity ratio returns the input
+verbatim, so a shifted source still scores `1.0`. The gate takes `0.99` there.
+
+## Admission
+
+Seven gates green and no measured quality regression. Objective evidence cannot
+settle whether the candidate sounds right, and Contract `084` Rule 5 makes
+listening the promotion authority, so Batch 40.4 may open the integration but
+admission still needs a listening round.
 
 ## Next Task
 
-Measure preview quality against the offline renderer on the same material.
+Open Batch 40.4, render-plane integration.

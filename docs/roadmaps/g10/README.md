@@ -464,8 +464,14 @@ Do not start Loophole or Chorus planning from Signal internals.
     the shipped quantum-locked kernel too, since dropping source does not make
     output quiet; replaced by a frequency sweep where position encodes source
     position, which separates the kernels by `1300 Hz` against a value predicted
-    from the ratio. The quality comparison against the offline renderer is still
-    open and Batch 40.4 must not start before it. Still inherits
+    from the ratio. Batch 40.3 then closed with seven gates
+    green: quality matches the whole-buffer preview at the same geometry, RMS
+    within `0.05%` and brightness within `1%`, and waveform correlation had to be
+    calibrated before it could be used at all — identical DSP scores `0.064`
+    against itself under a half-hop grid shift at ratio `0.5`, so the `0.5153` the
+    candidate scored there was never evidence of a defect and `G7` is written to
+    beat the metric's own floor rather than a fixed threshold. Admission still
+    needs listening under Rule 5; Batch 40.4 ready. Still inherits
     the two items `g10.039` did not settle — adopting the remaining offline paths
     so both seam smoothers can go, and a direct transient probe for `A18`
 

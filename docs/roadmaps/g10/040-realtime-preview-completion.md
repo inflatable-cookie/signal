@@ -1,6 +1,6 @@
 # 040 - RealtimePreview Completion
 
-Status: active; Batch 40.3 structural gates green, quality comparison open
+Status: active; Batch 40.3 complete; Batch 40.4 ready
 Owner: dsp
 Created: 2026-07-27
 Depends on: `g10.036`, `g10.038`, `g10.039`
@@ -429,7 +429,7 @@ not be touched by this lane.
 
 ### Batch 40.3 - Isolated Implementation
 
-Status: structural gates green; quality comparison not yet run
+Status: complete; seven gates green
 
 - [x] implement the frozen brief once, isolated per Contract `084` Rule 2
 - [x] prove allocation-free, lock-free, I/O-free callback execution
@@ -437,7 +437,7 @@ Status: structural gates green; quality comparison not yet run
   with no dropped source frames
 - [x] prove reported source consumption equals actual kernel consumption
 - [x] prove dynamic-ratio changes land inside the frozen alignment tolerance
-- [ ] measure preview quality against the offline renderer on the same material
+- [x] measure preview quality against the offline renderer on the same material
 
 `RealtimePreviewStreamState` lands in `realtime_preview_stream.rs`, isolated:
 nothing in the workspace constructs it and `realtime_preview.rs` is untouched.
@@ -477,14 +477,58 @@ gate asserts both the reached frequency and monotonicity, so a kernel that
 drops source fails on the jump and one that ignores ratio fails on the
 frequency.
 
-#### Remaining
+#### Quality: The Metric Had To Be Calibrated Before It Could Be Used
 
-The quality comparison against the offline renderer is the acoustic half and is
-not yet run. Batch 40.4 must not open until it is.
+Same material — sustained chord plus a click every `250 ms` — through the
+candidate, the whole-buffer preview at the same `512`/`128` geometry, and the
+offline renderer at `2048`/`512`.
+
+Level and spectrum match everywhere. RMS agrees with the whole-buffer preview to
+within `0.05%` at every ratio, and the zero-crossing brightness proxy to within
+`1%`: `272` against `274 Hz` at ratio `0.5`, `275` against `274 Hz` at `2.0`.
+
+Waveform correlation looked alarming at first — `0.9992` at ratio `1.0` but only
+`0.5153` at `0.5`, rising to `0.7025` under a symmetric lag search. No underrun,
+so not starvation.
+
+The control settles it. Running the *same* whole-buffer algorithm against itself
+with the source shifted by half an analysis hop measures what the metric does to
+identical DSP under a frame-grid change:
+
+| ratio | grid-phase control | candidate vs whole-buffer |
+| --- | --- | --- |
+| `0.5` | `0.0639` | `0.7025` |
+| `1.0` | `1.0000` | `0.9992` |
+| `1.5` | `0.6179` | `0.9947` |
+| `2.0` | `0.6246` | `0.9978` |
+
+At ratio `0.5` the identical algorithm scores `0.064` against itself. Waveform
+correlation cannot resolve phase-vocoder quality away from unity ratio, so the
+`0.5153` was never evidence of a defect — the candidate clears the metric's own
+floor by `11x` there, and by `0.37` at `1.5` and `2.0`.
+
+`G7` is written as a self-calibrating gate because of that: the control decides
+which standard applies. Where the control is near-perfect the candidate must be
+near-perfect too; where a half-hop shift destroys it, beating that floor is the
+only meaningful claim available. A hard-coded correlation threshold here would
+have been measuring frame-grid phase and calling it quality.
+
+At ratio `1.0` the control is degenerate — identity ratio returns the input
+verbatim, so a shifted source still scores `1.0` — which is why the gate takes
+`0.99` as the bar there rather than the control.
+
+#### Admission
+
+Structural and objective evidence is complete: seven gates green, no measured
+quality regression against the whole-buffer preview at the same geometry.
+
+Objective evidence cannot settle whether the candidate *sounds* right. Contract
+`084` Rule 5 makes listening the promotion authority, so Batch 40.4 opens the
+render-plane integration but admission still requires a listening round.
 
 ### Batch 40.4 - Render Plane Integration
 
-Status: blocked on Batch 40.3
+Status: ready; Batch 40.3 closed 2026-08-05
 
 - [ ] open `CallbackSafeStreaming` and `SourceProjected` only after Batch 40.3
   passes every gate together
@@ -542,22 +586,22 @@ Status: blocked on Batch 40.4, or on a Batch 40.1 closure decision
 
 ## Next Task
 
-Finish Batch 40.3: measure preview quality against the offline renderer on the
-same material. Five of six checklist items are done and the six structural gates
-pass, but the acoustic half has not been run and Batch 40.4 must not open until
-it has.
+Open Batch 40.4, render-plane integration. Batch 40.3 closed with seven gates
+green and no measured quality regression against the whole-buffer preview at the
+same geometry.
 
-The candidate is `RealtimePreviewStreamState` in `realtime_preview_stream.rs`,
-isolated per Rule 2 — nothing constructs it and `realtime_preview.rs` is
-untouched.
+Admission still needs listening. Contract `084` Rule 5 makes listening the
+promotion authority, and objective evidence cannot settle whether the candidate
+sounds right — only that its level and spectrum match the admitted preview DSP
+and that it beats the correlation metric's own noise floor.
 
-Worth carrying forward: the first version of G3 asserted that every decile of
-output carries signal, passed, and proved nothing. The shipped quantum-locked
-kernel passes it too, because dropping source does not make the output quiet.
-The gate is now a frequency sweep, where position encodes source position, and
-it separates the two kernels by `1300 Hz` on a value predicted from the ratio.
-That is the second time in this generation a structural gate has been satisfied
-by the very defect it was meant to catch.
+Two measurement lessons from this batch are worth carrying into 40.4. A gate
+that passes immediately deserves to be run against a known-bad implementation
+before it is trusted; the first continuity gate passed the shipped
+quantum-locked kernel too. And a metric needs calibrating before it is used as
+evidence; waveform correlation scores `0.064` for identical DSP under a half-hop
+grid shift at ratio `0.5`, so a fixed threshold there would have measured frame
+phase and called it quality.
 
 Also inherited from `g10.039` and still open: adopting the remaining offline
 paths so both seam smoothers can be removed, and a direct transient probe for

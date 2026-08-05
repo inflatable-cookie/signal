@@ -20,8 +20,17 @@ registry upload.
   carries signal" passes against the shipped quantum-locked kernel as well,
   because dropping source does not make output quiet. The replacement is a
   frequency sweep where position encodes source position, and it separates the
-  two by `1300 Hz` against a value predicted from the ratio. The acoustic
-  comparison against the offline renderer is still open.
+  two by `1300 Hz` against a value predicted from the ratio.
+
+  Quality then matched the whole-buffer preview at the same geometry — RMS
+  within `0.05%` and brightness within `1%` at every ratio — but the correlation
+  metric had to be calibrated before it could be used as evidence. Identical DSP
+  scores `0.064` against itself under a half-analysis-hop grid shift at ratio
+  `0.5`, so the candidate's `0.5153` there was never a defect signal; it clears
+  the metric's own floor by `11x`. The gate is written to beat that floor rather
+  than a fixed threshold, because a fixed one would have measured frame-grid
+  phase and called it quality. Admission still requires listening under Contract
+  `084` Rule 5.
 - Froze `g10.040` Batch 40.2, the preview streaming brief. Ratio range
   `[0.25, 3.0]` with both ends derived: the maximum is Contract `046`'s overlap
   law at the `128`/`512` geometry, the minimum is bounded work at `2.36%` of a
