@@ -88,11 +88,14 @@ with "0.1.0 must be greater than current version 0.1.0". `0.0.0` states the true
 position and lets the lane own the bump. `prepare` still needs an explicit
 `--version 0.1.0`, since the suggested bump from `0.0.0` is `patch -> 0.0.1`.
 
-Tagging is blocked on the `g10.039` rev2 listening pack. Contract `084` Rule 5
-makes listening the promotion authority, and the pack is unjudged, so tagging now
-would ship unadmitted DSP behaviour inside the release.
+The listening block cleared on 2026-08-05: revision 2 found no significant
+difference in any pair, which admits the adopted renderer under Contract `084`
+Rule 5. `g10.039` is closed.
+
+`0.1.0` is prepared and committed but deliberately **not tagged**. CI has not
+run green on the release commit, and the local gates are not the same thing as
+a green pipeline. The tag waits for CI.
 
 ## Next Task
 
-Judge `~/Downloads/signal-listening-pack-39-rev2`, close out g10.039, then
-`effigy release prepare --version 0.1.0` and tag.
+Watch CI on the `0.1.0` commit. Once green, tag `v0.1.0` and push the tag.
