@@ -109,12 +109,44 @@ fn local_shared_host_edge_exports_bounded_clap_sandbox_lifecycle_truth() {
         formats: vec![PluginFormat::Clap],
     })
     .expect("public local clap scan should succeed");
-    host.ensure_plugin_sandbox(PluginSandboxSpec {
+    // Report what the scan actually found when the ensure fails. Discovery
+    // returns an empty list rather than an error when a fixture will not load,
+    // so the bare ensure failure ("plugin type was not discovered in the last
+    // local CLAP scan") says nothing about whether the scan saw no files, saw
+    // the files but could not load them, or loaded something unexpected. This
+    // failed once on CI and never in twenty local runs, so the next occurrence
+    // needs to carry its own evidence.
+    if let Err(error) = host.ensure_plugin_sandbox(PluginSandboxSpec {
         sandbox_id: "public-host-edge-local-clap-gap".into(),
         plugin_format: PluginFormat::Clap,
         plugin_type_id: Some("plugin:clap:default".into()),
-    })
-    .expect("public local clap sandbox ensure should succeed");
+    }) {
+        let report = host.supervisor_report();
+        let discovered: Vec<_> = report
+            .observation
+            .plugin_discovery_snapshot
+            .discovered_types
+            .iter()
+            .map(|plugin| format!("{} ({:?})", plugin.plugin_type_id, plugin.format))
+            .collect();
+        let root_entries: Vec<String> = std::fs::read_dir(clap_root.root())
+            .map(|entries| {
+                entries
+                    .filter_map(|entry| entry.ok())
+                    .map(|entry| {
+                        let length = entry.metadata().map(|meta| meta.len()).unwrap_or(0);
+                        format!("{} ({length} bytes)", entry.file_name().to_string_lossy())
+                    })
+                    .collect()
+            })
+            .unwrap_or_else(|error| vec![format!("<unreadable: {error}>")]);
+        panic!(
+            "public local clap sandbox ensure should succeed: {error:?}\n\
+             discovered types: {discovered:?}\n\
+             scan root {}: {root_entries:?}",
+            clap_root.root(),
+        );
+    }
 
     let report = host.supervisor_report();
     assert_eq!(
