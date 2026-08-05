@@ -109,6 +109,30 @@ pub struct DemoBootstrapGuard {
     old_demo_format: Option<OsString>,
     old_demo_root: Option<OsString>,
     old_demo_plugin_type_id: Option<OsString>,
+    /// Held for the guard's whole life so the environment cannot be rewritten
+    /// underneath a scan. See [`demo_plugin_env_lock`].
+    _env_lock: Option<std::sync::MutexGuard<'static, ()>>,
+}
+
+/// Serialises the `SIGNAL_HOST_DEMO_PLUGIN_*` overrides.
+///
+/// These are process-global. Without this lock, two tests running in parallel
+/// each point the variables at their own temporary scan root, and whichever
+/// scans second finds the other's directory — or a restored value — and
+/// discovers nothing. That surfaced as an intermittent
+/// "plugin type was not discovered in the last local VST3 scan" from
+/// `boot_default`, at roughly `2` runs in `12`, and as the same message for
+/// CLAP in the public host edge tests on CI.
+///
+/// `tests/support/public_host_edge_plugins.rs` already had this lock. The
+/// bootstrap path did not.
+///
+/// Anything that *reads* the variables must hold it too, not just anything that
+/// writes them: only one test installs the override, and the rest boot without
+/// one, so an unguarded boot can observe a root that is mid-teardown.
+pub(crate) fn demo_plugin_env_lock() -> std::sync::MutexGuard<'static, ()> {
+    static LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+    LOCK.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
 }
 
 impl Drop for DemoBootstrapGuard {
@@ -136,9 +160,13 @@ pub fn ensure_default_demo_plugin_override() -> DemoBootstrapGuard {
             old_demo_format: None,
             old_demo_root: None,
             old_demo_plugin_type_id: None,
+            _env_lock: None,
         };
     }
 
+    // Taken before reading or writing any of the variables, and held by the
+    // returned guard until it restores them.
+    let env_lock = demo_plugin_env_lock();
     let root = temp_demo_scan_root("local-host-demo-vst3");
     write_demo_vst3_bundle(&root, "Signal Instrument.vst3", "plugin:vst3:instrument");
     let old_demo_format = std::env::var_os("SIGNAL_HOST_DEMO_PLUGIN_FORMAT");
@@ -156,6 +184,7 @@ pub fn ensure_default_demo_plugin_override() -> DemoBootstrapGuard {
         old_demo_format,
         old_demo_root,
         old_demo_plugin_type_id,
+        _env_lock: Some(env_lock),
     }
 }
 

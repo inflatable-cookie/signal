@@ -506,9 +506,16 @@ Do not start Loophole or Chorus planning from Signal internals.
     `1.25` and peaking near `2.0`. That corroborates the listening reports
     rather than merely fitting them — `D2`, where the pop was heard, was static
     ratio `2.0`. Guarded by an `#[ignore]`d reproduction plus an always-on test
-    that the metric fires on an injected pop. Batch 41.3 ready: reset only above
-    a frequency where a phase jump is a small waveform step, since the reset
-    stops transient smearing and removing it trades one artifact for another
+    that the metric fires on an injected pop. Batch 41.3 implemented the fix and
+    measured it: resetting only above `240 Hz` at `48 kHz`, expressed as a
+    fraction of Nyquist since the stretch API is rate-agnostic, takes the jump
+    from `2.752 rad` to `0.133 rad` while matching shipped transient smear
+    exactly at every ratio on the corpus's own measurement. A `48 Hz` crossover
+    reproduces shipped exactly, which confirms the mechanism rather than fitting
+    it — the probe tone is `80 Hz`, so protection only appears once the crossover
+    rises above the content it protects. Removing the reset instead regresses
+    smear to `8.0` at ratio `3.0`, so it stays and is applied less widely. The
+    candidate has no production constructor; blocked on Rule 5 listening
 
 ## Stretch Boundary
 

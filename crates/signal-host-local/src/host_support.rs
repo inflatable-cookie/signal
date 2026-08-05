@@ -34,6 +34,8 @@ pub(crate) use clocking::{
     host_clock_fallback_state, host_duplex_mismatch_state, host_endpoint_topology,
     host_partial_availability, samples_to_ms,
 };
+#[cfg(test)]
+pub(crate) use demo::demo_plugin_env_lock;
 pub use demo::ensure_default_demo_plugin_override;
 pub(crate) use demo::local_demo_runtime_assembly;
 pub(crate) use discovery::discovered_plugins_for_scan;

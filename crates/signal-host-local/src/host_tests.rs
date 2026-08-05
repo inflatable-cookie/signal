@@ -3,6 +3,11 @@ use super::*;
 use signal_runtime::RuntimeConfig;
 
 fn booted_host() -> (LocalRuntimeHost, LocalRuntimeHostSummary) {
+    // Held across the boot. `SIGNAL_HOST_DEMO_PLUGIN_*` is process-global, and
+    // one test in this module installs an override while the rest boot without
+    // one — so an unguarded boot can otherwise scan a fixture root that is
+    // being torn down and fail with "plugin type was not discovered".
+    let _env_lock = demo_plugin_env_lock();
     let runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
     let mut host = LocalRuntimeHost::new(runtime);
     let summary = host.boot_default().expect("local host should boot");

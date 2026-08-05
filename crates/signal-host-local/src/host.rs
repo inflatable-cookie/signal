@@ -27,6 +27,8 @@ use signal_runtime::{
 mod host_api;
 #[path = "host_support.rs"]
 mod host_support;
+#[cfg(test)]
+pub(crate) use host_support::demo_plugin_env_lock;
 use host_support::{
     discovered_plugins_for_scan, ensure_discovered_sandbox_session,
     runtime_plugin_format_platform_coverage, teardown_broker_sandbox_session,

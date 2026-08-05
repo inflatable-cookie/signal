@@ -11,6 +11,31 @@ registry upload.
 
 ### Changed
 
+- Closed new finding `A23`: `signal-host-local` plugin discovery failed
+  intermittently — `2` runs in `12` — with "plugin type was not discovered in the
+  last local VST3 scan", and the same message had appeared for CLAP on CI.
+  `ensure_default_demo_plugin_override` writes three process-global environment
+  variables with no lock. The sibling test-support file already had one; the
+  bootstrap path never got it.
+
+  Locking the writers alone cut it to `1` in `25` without fixing it, because
+  only one test installs the override while every other test boots without one
+  and still *reads* the variables — so an unguarded boot could scan a root that
+  was mid-teardown. Readers hold the lock too now: `0` failures in `30` runs of
+  the lib and `0` in `12` across the crate.
+- Implemented and measured the `A18` fix as an isolated candidate: reset
+  transient phase only above a crossover, leaving lower bins to propagate
+  continuously, because low-frequency content is sustained *through* a transient
+  while high-frequency content *is* the transient. Frozen at `0.010` of Nyquist —
+  `240 Hz` at `48 kHz` — since the stretch API carries no sample rate. Carrier
+  phase jump at ratio `2.0` falls from `2.752 rad` to `0.133 rad`, at or below
+  the no-reset floor, while transient smear matches shipped exactly at every
+  ratio on the corpus's own measurement. A `48 Hz` crossover reproduces shipped
+  exactly, confirming the mechanism: the probe tone is `80 Hz`, so protection
+  only appears once the crossover rises above the content it protects. Removing
+  the reset instead regresses smear to `8.0` at ratio `3.0`, so it stays and is
+  applied less widely. No production constructor — adoption needs Rule 5
+  listening.
 - Found the mechanism for `A18` and retracted the previous batch's elimination
   of it. The transient phase reset sets every bin's synthesis phase to the
   analysis phase; low bins have long periods, so the same jump is a large

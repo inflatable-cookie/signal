@@ -1,6 +1,6 @@
 # 041 - A18 Transient Pop Triage
 
-Status: active; mechanism found, Batch 41.1's elimination retracted
+Status: active; fix implemented and measured, blocked on listening admission
 Owner: dsp
 Created: 2026-08-05
 Depends on: `g10.039`
@@ -172,18 +172,84 @@ it fails at ratio `1.5` with `0.478rad` against a `0.130rad` floor.
 
 ### Batch 41.3 - Fix And Admit
 
-Status: ready
+Status: candidate implemented and measured; listening admission outstanding
 
 The reset exists for a reason — it stops transients smearing — so removing it
 outright trades one artifact for another. The fix must keep the transient
 behaviour and stop the low-frequency discontinuity.
 
-- [ ] reset phase only above a frequency where a phase jump is not a large
+- [x] reset phase only above a frequency where a phase jump is not a large
   waveform step, leaving low bins to propagate continuously
-- [ ] confirm the guard passes un-ignored across the ratio range
-- [ ] confirm transient smearing does not regress, measured against the corpus
+- [x] confirm the guard passes un-ignored across the ratio range
+- [x] confirm transient smearing does not regress, measured against the corpus
   report's `TransientSmearFrames`
 - [ ] listening admission under Contract `084` Rule 5 before adoption
+
+#### The Candidate
+
+`PhasePropagationMode::IdentityLockedTransientResetHighBand { crossover_bin }`
+resets transient phase only above a crossover, leaving lower bins to propagate
+continuously. Low-frequency content is *sustained through* a transient — a bass
+note rings on while the attack happens — so resetting its phase destroys
+continuity in something that never restarted. High bins are the transient, and
+resetting those is what stops smearing.
+
+The crossover is a fraction of Nyquist rather than a frequency, because the
+stretch API is sample-rate agnostic all the way down. Frozen at `0.010`, which
+is `240 Hz` at `48 kHz` and `220 Hz` at `44.1 kHz`.
+
+It has no production constructor. Contract `084` Rule 2 keeps a candidate
+isolated and Rule 5 makes listening the promotion authority, so the shipped
+default is unchanged and nothing in the workspace can reach the new path.
+
+#### The Artifact Is Gone
+
+Carrier phase jump, clean material, ratio `2.0`:
+
+| path | jump |
+| --- | --- |
+| shipped, reset every bin | `2.752 rad` |
+| crossover `48 Hz` | `2.752 rad` |
+| crossover `120 Hz` | `0.133 rad` |
+| crossover `240 Hz` | `0.133 rad` |
+| no reset at all | `0.142 rad` |
+
+The `48 Hz` row is the control that confirms the mechanism rather than merely
+fitting it. The probe tone is `80 Hz`, so at a `48 Hz` crossover the tone is
+still *above* the line and still gets reset — and the result reproduces shipped
+exactly. Protection only appears once the crossover rises above the content it
+is meant to protect.
+
+#### It Does Not Trade The Pop For Smearing
+
+Measured with the corpus's own `measure_transient_smear` and production
+policies, on its own material. Lower is better:
+
+| ratio | shipped | no reset | `120 Hz` | `240 Hz` | `504 Hz` |
+| --- | --- | --- | --- | --- | --- |
+| `1.5` | `2.0` | `0.0` | `2.0` | `2.0` | `4.0` |
+| `2.0` | `1.0` | `0.0` | `1.0` | `1.0` | `7.0` |
+| `3.0` | `0.0` | `8.0` | `0.0` | `0.0` | `9.0` |
+
+The frozen crossover matches shipped smear exactly at every ratio. `504 Hz`
+regresses, because it starts protecting content that should be reset — so the
+safe window is bounded on both sides, and `240 Hz` sits inside it.
+
+Removing the reset outright is not the fix: it scores `8.0` at ratio `3.0`
+against shipped's `0.0`. The reset earns its place; it was only ever applied too
+widely.
+
+Both facts are permanent tests in `benchmark.rs`, using the established
+measurement rather than a proxy. The first proxy tried here — a `10-90%`
+envelope rise time — disagreed with itself across ratios, which is how Batch
+41.1 went wrong and was not going to be repeated.
+
+#### What Admission Needs
+
+A concealed pack per Contract `084` Rule 5, comparing shipped against the
+candidate on material with sustained low content and transients. Objective
+evidence says the artifact is gone at no measured cost, and that is not the same
+as sounding better.
 
 ## Acceptance Criteria
 
@@ -234,18 +300,24 @@ Status: blocked on Batch 41.2
 
 ## Next Task
 
-Open Batch 41.3. The mechanism is `should_reset_phase_at_transient` setting every
-bin's synthesis phase to the analysis phase: at ratio `2.0` that produces
-`2.752 rad` of carrier phase discontinuity against a `0.142 rad` floor, within
-`11%` of a deliberate polarity flip.
+Build the listening pack. Everything objective is done and the remaining gate is
+Rule 5.
 
-The fix is not to remove the reset. It exists to stop transients smearing, and
-deleting it trades one artifact for another. It should reset only above a
-frequency where a phase jump is a small waveform step, leaving low bins to
-propagate continuously.
+The candidate resets transient phase only above `240 Hz` at `48 kHz`, expressed
+as a fraction of Nyquist because the stretch API is sample-rate agnostic. It
+takes the carrier phase jump at ratio `2.0` from `2.752 rad` to `0.133 rad`, at
+or below the no-reset floor, and matches shipped transient smear exactly at every
+ratio on the corpus's own measurement. Removing the reset instead would regress
+smear to `8.0` at ratio `3.0`, so the reset stays and is simply applied less
+widely.
 
-Carry the process lesson forward. Batch 41.1 eliminated this exact hypothesis on
-a metric that could not detect the artifact at any threshold, and the roadmap's
-own risk register named that failure mode before the batch ran. The rule that
-caught it is cheap: before believing a null, inject the artifact and check the
-measurement moves.
+The pack should use material with sustained low content under transients — the
+`A18` reports were bass-register pops on ticks — and compare shipped against the
+candidate at ratios `1.5` and `2.0`, where the artifact is largest. Randomise
+sides per case, as `g10.039` did.
+
+Objective evidence says the artifact is gone at no measured cost. That is not the
+same as sounding better, and Rule 5 exists for the difference.
+
+Nothing adopts the candidate until that pack is judged. The shipped default is
+unchanged and no production path can reach the new mode.

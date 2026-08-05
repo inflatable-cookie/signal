@@ -40,6 +40,34 @@ pub(crate) fn phase_locked_phase_vocoder(
     )
 }
 
+/// `g10.041` Batch 41.3 candidate: transient reset above a crossover only.
+///
+/// `crossover_fraction` is a fraction of Nyquist. Bins below it propagate
+/// continuously through a transient instead of being reset.
+///
+/// Test-only until listening admits it. Contract `084` Rule 2 keeps a candidate
+/// isolated, and Rule 5 makes listening the promotion authority, so an
+/// unadopted candidate having no production caller is the intended state rather
+/// than an oversight.
+#[cfg(test)]
+pub(crate) fn high_band_transient_reset_phase_vocoder(
+    input: &[Sample],
+    target_len: usize,
+    ratio: f64,
+    window_size: usize,
+    analysis_hop: usize,
+    crossover_fraction: f64,
+) -> Vec<Sample> {
+    let bins = window_size / 2 + 1;
+    let crossover_bin = (crossover_fraction * bins as f64).ceil().max(0.0) as usize;
+    let mode = if ratio < 1.0 {
+        PhasePropagationMode::IdentityLocked
+    } else {
+        PhasePropagationMode::IdentityLockedTransientResetHighBand { crossover_bin }
+    };
+    run_phase_vocoder(input, target_len, ratio, window_size, analysis_hop, mode)
+}
+
 /// Run the identity phase-locked prototype with transient phase resets.
 pub(crate) fn transient_reset_phase_vocoder(
     input: &[Sample],
@@ -169,11 +197,28 @@ struct SpectralPeak {
     magnitude: f32,
 }
 
+// `IdentityLockedTransientResetHighBand` has no production constructor by
+// design: it is the unadopted `g10.041` candidate for `A18`, and Contract `084`
+// Rule 2 keeps a candidate isolated until Rule 5 listening admits it.
+#[allow(dead_code)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum PhasePropagationMode {
     IndependentBins,
     IdentityLocked,
     IdentityLockedTransientReset,
+    /// `g10.041` Batch 41.3 candidate for `A18`.
+    ///
+    /// Resets transient phase only above a crossover, leaving low bins to
+    /// propagate continuously. Low-frequency content is *sustained through* a
+    /// transient — a bass note rings on while the attack happens — so resetting
+    /// its phase destroys continuity in something that never restarted. High
+    /// bins are the transient, and resetting them is what stops smearing.
+    ///
+    /// The crossover is a fraction of Nyquist rather than a frequency, because
+    /// the stretch API is sample-rate agnostic all the way down.
+    IdentityLockedTransientResetHighBand {
+        crossover_bin: usize,
+    },
 }
 
 impl PhaseVocoderConfig {
@@ -358,7 +403,14 @@ impl DraftPhaseVocoder {
         for bin in 0..self.config.bins {
             let phase = self.analysis.buffer[bin].arg();
             self.analysis.current_phases[bin] = phase;
-            if frame_index == 0 || self.analysis.transient_reset_current_frame {
+            let reset_this_bin = self.analysis.transient_reset_current_frame
+                && match self.mode {
+                    PhasePropagationMode::IdentityLockedTransientResetHighBand {
+                        crossover_bin,
+                    } => bin >= crossover_bin,
+                    _ => true,
+                };
+            if frame_index == 0 || reset_this_bin {
                 self.propagation.synthesis_phase[bin] = phase;
             } else {
                 let deviation = wrap_phase(
@@ -408,7 +460,8 @@ impl DraftPhaseVocoder {
         let flux_ratio = flux as f64 / (magnitude_sum as f64 + 1.0e-12);
         let energy_ratio = self.analysis.current_energy / (self.analysis.previous_energy + 1.0e-12);
         match self.mode {
-            PhasePropagationMode::IdentityLockedTransientReset => {
+            PhasePropagationMode::IdentityLockedTransientReset
+            | PhasePropagationMode::IdentityLockedTransientResetHighBand { .. } => {
                 flux_ratio >= 0.30 && energy_ratio >= 1.20
             }
             PhasePropagationMode::IndependentBins | PhasePropagationMode::IdentityLocked => false,
@@ -420,6 +473,7 @@ impl DraftPhaseVocoder {
             self.mode,
             PhasePropagationMode::IdentityLocked
                 | PhasePropagationMode::IdentityLockedTransientReset
+                | PhasePropagationMode::IdentityLockedTransientResetHighBand { .. }
         )
     }
 
