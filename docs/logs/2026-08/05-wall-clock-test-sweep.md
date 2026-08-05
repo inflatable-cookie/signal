@@ -132,6 +132,44 @@ The bypass budgets did pass this run. They remain a residual risk on shared
 infrastructure and are worth watching, but they should not be pre-emptively
 weakened.
 
+## Twelve Spinning Children On Three Cores
+
+The next CI run failed three tests in `plugin_hosting.rs`, and they were one
+cause rather than three:
+
+```
+fixture_plugin_processes_a_chain_insert_through_the_real_engine_offline_render
+    sample 7168: wet 0.5 vs dry 0.5 * 0.5
+lv2_child_processes_blocks_and_killed_child_bypasses_within_budget
+    child never answered a process request within 60s
+sandboxed_fixture_editor_opens_over_the_wire_while_audio_stays_byte_exact
+    child never answered a process request within 60s
+```
+
+The first is the same failure wearing different clothes: a missed response
+bypasses and leaves the scratch untouched, so the insert never applies and wet
+equals dry.
+
+`60s` is not slowness. The `5s -> 60s` raise had already established that, and
+the child still never answered. Spawn, startup receipts and plugin load all
+succeed — the asserts covering those pass — so the child is alive and only the
+audio round trip fails.
+
+The cause is the test harness, not the bridge. The sandbox child runs a
+hot-spinning audio thread, and this binary holds twelve tests that each spawn
+one. Run in parallel that is twelve spinning children plus twelve spinning
+parents. On this laptop's eighteen cores it fit; on a GitHub runner's three or
+four it did not, and the children could not get enough CPU to answer inside
+their budget.
+
+Cargo already runs test *binaries* sequentially, so all of this contention was
+self-inflicted within the one binary. The eleven child-spawning tests now take a
+mutex and run one at a time. Serialised: `12 passed` in `1.13s` against `0.39s`
+parallel, and `0` failures in `15` consecutive runs.
+
+Nothing about the timing budgets moved for this. The bypass budgets are still
+`<20ms`.
+
 ## Next Task
 
 Dispatch CI. If green, tag `v0.1.0`.

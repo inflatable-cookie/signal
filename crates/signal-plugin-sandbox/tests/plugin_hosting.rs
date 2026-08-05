@@ -180,8 +180,28 @@ fn process_with_retries(handle: &RenderPluginProcessor, scratch: &mut [f32], fra
     }
 }
 
+/// Serialises the tests that spawn a sandbox child process.
+///
+/// Each child runs a hot-spinning audio thread — `broker.rs` spins with a
+/// periodic `yield_now` — and this binary holds twelve such tests. Run in
+/// parallel on a machine with few cores, twelve spinning children plus twelve
+/// spinning parents starve each other, and the children miss their response
+/// budget. Locally that showed up as timing flakes; on a GitHub runner with
+/// three or four cores it failed outright, including a child that never
+/// answered within `60s`.
+///
+/// One at a time. These tests take a second or two each, so the wall-clock
+/// cost is small next to the failure mode it removes.
+fn sandbox_child_slot() -> std::sync::MutexGuard<'static, ()> {
+    static SLOT: std::sync::Mutex<()> = std::sync::Mutex::new(());
+    // A panicking test poisons the mutex; the next test should still run
+    // rather than cascade into a second failure with an unrelated message.
+    SLOT.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
+}
+
 #[test]
 fn real_child_processes_blocks_through_the_shm_bridge() {
+    let _slot = sandbox_child_slot();
     if !rustc_available() {
         eprintln!("skipping: rustc unavailable for the CLAP fixture");
         return;
@@ -224,6 +244,7 @@ fn real_child_processes_blocks_through_the_shm_bridge() {
 
 #[test]
 fn real_child_instrument_accepts_zero_input_and_generates_audio_from_note_events() {
+    let _slot = sandbox_child_slot();
     if !rustc_available() {
         eprintln!("skipping: rustc unavailable for the CLAP fixture");
         return;
@@ -265,6 +286,7 @@ fn real_child_instrument_accepts_zero_input_and_generates_audio_from_note_events
 #[cfg(target_os = "macos")]
 #[test]
 fn real_child_system_midi_synth_generates_audio_from_note_events() {
+    let _slot = sandbox_child_slot();
     let mut client = SandboxBrokerClientSession::spawn_command(
         env!("CARGO_BIN_EXE_signal-plugin-sandbox"),
         &[],
@@ -333,6 +355,7 @@ fn real_child_system_midi_synth_generates_audio_from_note_events() {
 /// value the same way.
 #[test]
 fn param_set_over_the_wire_changes_the_sandboxed_output_next_block() {
+    let _slot = sandbox_child_slot();
     if !rustc_available() {
         eprintln!("skipping: rustc unavailable for the CLAP fixture");
         return;
@@ -409,6 +432,7 @@ fn param_set_over_the_wire_changes_the_sandboxed_output_next_block() {
 #[cfg(target_os = "macos")]
 #[test]
 fn au_wire_param_set_drives_audelay_to_true_identity() {
+    let _slot = sandbox_child_slot();
     const AUDELAY_WET_DRY_MIX: u32 = 0;
     let sentinel = std::path::Path::new(signal_plugin_au::AU_REGISTRY_COMPONENT_PATH);
     let mut client = SandboxBrokerClientSession::spawn_command(
@@ -495,6 +519,7 @@ fn au_wire_param_set_drives_audelay_to_true_identity() {
 #[cfg(target_os = "macos")]
 #[test]
 fn sandboxed_fixture_editor_opens_over_the_wire_while_audio_stays_byte_exact() {
+    let _slot = sandbox_child_slot();
     if !rustc_available() {
         eprintln!("skipping: rustc unavailable for the CLAP fixture");
         return;
@@ -628,6 +653,7 @@ fn sandboxed_fixture_editor_opens_over_the_wire_while_audio_stays_byte_exact() {
 
 #[test]
 fn killed_child_bypasses_within_budget_instead_of_hanging() {
+    let _slot = sandbox_child_slot();
     if !rustc_available() {
         eprintln!("skipping: rustc unavailable for the CLAP fixture");
         return;
@@ -683,6 +709,7 @@ fn killed_child_bypasses_within_budget_instead_of_hanging() {
 /// within the bounded budget.
 #[test]
 fn vst3_child_processes_blocks_and_killed_child_bypasses_within_budget() {
+    let _slot = sandbox_child_slot();
     if !rustc_available() {
         eprintln!("skipping: rustc unavailable for the VST3 fixture");
         return;
@@ -746,6 +773,7 @@ fn vst3_child_processes_blocks_and_killed_child_bypasses_within_budget() {
 /// the bounded budget, scratch untouched.
 #[test]
 fn lv2_child_processes_blocks_and_killed_child_bypasses_within_budget() {
+    let _slot = sandbox_child_slot();
     if !rustc_available() {
         eprintln!("skipping: rustc unavailable for the LV2 fixture");
         return;
@@ -883,6 +911,7 @@ fn lv2_child_processes_blocks_and_killed_child_bypasses_within_budget() {
 #[cfg(target_os = "macos")]
 #[test]
 fn au_child_processes_blocks_and_killed_child_bypasses_within_budget() {
+    let _slot = sandbox_child_slot();
     let sentinel = std::path::Path::new(signal_plugin_au::AU_REGISTRY_COMPONENT_PATH);
     let mut client = SandboxBrokerClientSession::spawn_command(
         env!("CARGO_BIN_EXE_signal-plugin-sandbox"),
@@ -1028,6 +1057,7 @@ fn broker_rejects_unknown_library_extensions_with_typed_detail() {
 /// halved by the fixture's gain.
 #[test]
 fn fixture_plugin_processes_a_chain_insert_through_the_real_engine_offline_render() {
+    let _slot = sandbox_child_slot();
     if !rustc_available() {
         eprintln!("skipping: rustc unavailable for the CLAP fixture");
         return;
