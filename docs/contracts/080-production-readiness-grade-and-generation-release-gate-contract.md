@@ -228,6 +228,16 @@ Both lint gates deny warnings. The workspace's `14` pre-existing clippy warnings
 were cleared before the `0.1.0` tag, so the gate blocks on any new one rather
 than accumulating debt behind a passing signal.
 
+The gate set excludes the wall-clock soak lane. Seven tests sleep for a fixed
+span and then assert a minimum callback count, or assert zero xruns, which are
+claims about how fast the host is rather than whether the code is correct. They
+are gated on `SIGNAL_SOAK_TESTS=1` and run by `effigy test:soak`
+single-threaded, because running them beside the rest of the suite creates the
+contention that makes them fail. Findings `A20`, `A21` and `A22` were all this
+mechanism. A throughput assertion that can be retried until it passes is not a
+gate, so it is stated as a separate lane rather than left to flake inside the
+main one. `effigy test:soak` is required evidence before a release tag.
+
 Lint runs twice because `--all-features` cannot see cfg-gated code that only
 compiles when a feature is off. This generation already lost a mis-gated
 re-export to exactly that blind spot — every validation command used

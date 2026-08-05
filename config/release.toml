@@ -29,5 +29,10 @@ fmt = "cargo fmt --all -- --check"
 lint = "cargo clippy --workspace --all-targets --all-features -- -D warnings"
 "lint:no-features" = "cargo clippy --workspace --all-targets --no-default-features -- -D warnings"
 test = "cargo test --workspace"
+# The wall-clock soak lane, which the default suite deliberately skips. Runs
+# single-threaded and takes about 40s. Local only: it asserts sustained
+# real-time throughput, which no shared CI runner can honour, so CI skips it
+# and the release gate is the only place the claim gets made.
+soak = "effigy test:soak"
 validate = "effigy validate"
 docs = "effigy qa:docs"

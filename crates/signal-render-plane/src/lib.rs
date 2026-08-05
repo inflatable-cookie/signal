@@ -7856,8 +7856,25 @@ mod tests {
             .all(|(_, peak, rms)| *peak == 0.0 && *rms == 0.0));
     }
 
+    /// Wall-clock soak gate; see the identical helper in the soak test files.
+    /// This test asserts that two back-to-back blocks produce zero xruns, which
+    /// is a claim about how fast the host is, so it belongs in the soak lane
+    /// rather than the correctness suite.
+    fn soak_tests_enabled() -> bool {
+        if std::env::var("SIGNAL_SOAK_TESTS").as_deref() == Ok("1") {
+            return true;
+        }
+        eprintln!(
+            "SKIPPED: wall-clock soak test; set SIGNAL_SOAK_TESTS=1 (or run `effigy test:soak`)"
+        );
+        false
+    }
+
     #[test]
     fn callback_health_counters_advance_and_infer_xruns() {
+        if !soak_tests_enabled() {
+            return;
+        }
         let (mut controller, mut executor) = render_plane();
         controller.install_plan(&tone_spec(440.0)).unwrap();
         controller.set_playing(true).unwrap();

@@ -102,6 +102,9 @@ fn plan_with_processor(processor: RenderPluginProcessor) -> RenderPlanSpec {
 
 #[test]
 fn au_in_process_soak_processes_every_clocked_block_without_misses() {
+    if !soak_tests_enabled() {
+        return;
+    }
     let backend = Arc::new(
         InProcessAuProcessor::load_and_activate(
             std::path::Path::new(AU_REGISTRY_COMPONENT_PATH),
@@ -185,4 +188,22 @@ fn au_in_process_soak_processes_every_clocked_block_without_misses() {
     drop(stream);
     backend.shutdown();
     drop(backend);
+}
+
+/// Wall-clock soak gate.
+///
+/// These tests sleep for a fixed wall-clock span and then assert a minimum
+/// callback count, which is a claim about sustained real-time throughput on the
+/// machine running them. That claim is only meaningful on a host that is not
+/// otherwise loaded. Shared CI runners cannot satisfy it, and a throughput
+/// assertion that can be retried until it passes is not a proof of anything.
+///
+/// They run when `SIGNAL_SOAK_TESTS=1`, and say why when they do not. The
+/// `test:soak` effigy task sets it and runs them single-threaded.
+fn soak_tests_enabled() -> bool {
+    if std::env::var("SIGNAL_SOAK_TESTS").as_deref() == Ok("1") {
+        return true;
+    }
+    eprintln!("SKIPPED: wall-clock soak test; set SIGNAL_SOAK_TESTS=1 (or run `effigy test:soak`)");
+    false
 }

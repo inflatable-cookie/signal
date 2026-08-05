@@ -1,12 +1,28 @@
 name: CI
 
+# Deliberately not on every push to main. This job builds the whole workspace
+# twice under clippy plus a full test run, on macos-latest, which GitHub bills
+# at ten times the Linux rate. It runs when the answer is actually wanted:
+#
+#   workflow_dispatch  - before cutting a release, or on demand
+#   push: tags v*      - the tagged commit itself
+#   pull_request       - before merging
+#
+# The release flow is therefore: commit to main, dispatch this workflow, wait
+# for green, then tag. macOS is not negotiable for the runner: the AU and VST3
+# host adapters and the CoreAudio hardware layer only build there.
 on:
-  push:
-    branches: [main]
+  workflow_dispatch:
   pull_request:
+  push:
+    tags: ["v*"]
 
 env:
   CARGO_TERM_COLOR: always
+  # Wall-clock soak tests assert sustained real-time throughput, which a shared
+  # runner cannot deliver. They self-skip unless this is "1". Run them locally
+  # with `effigy test:soak`.
+  SIGNAL_SOAK_TESTS: "0"
 
 jobs:
   check:

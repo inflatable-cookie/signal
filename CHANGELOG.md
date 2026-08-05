@@ -22,6 +22,20 @@ registry upload.
   lints only the newer one knows went unseen.
 - Removed three redundant `detail: _` patterns in `signal-runtime` transport
   fault matching, each sitting beside a `..` that already covered it.
+- Moved seven wall-clock tests into an opt-in soak lane gated on
+  `SIGNAL_SOAK_TESTS=1` and run by `effigy test:soak` single-threaded. Each
+  sleeps for a fixed span and then asserts a minimum callback count, or asserts
+  zero xruns — claims about host speed, not correctness, which no shared runner
+  can honour. Findings `A20`, `A21` and `A22` were all this mechanism. The lane
+  is a release gate, so the claim is still required before a tag.
+- Closed finding `A22`. `signal-plugin-sandbox` `tests/plugin_hosting.rs` failed
+  `2`, `5`, `6` and `7` of `12` under concurrent cargo activity; it was the soak
+  tests holding callback threads hot that starved its timing budgets. With them
+  gated, three consecutive workspace runs and ten consecutive runs of the binary
+  are clean.
+- Narrowed CI triggers to `workflow_dispatch`, pull requests, and `v*` tags. It
+  ran on every push to `main`, building the workspace twice under clippy plus a
+  full test run on `macos-latest`, which bills at ten times the Linux rate.
 
 ## [0.1.0] - 2026-08-05
 

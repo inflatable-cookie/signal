@@ -188,6 +188,9 @@ fn control_change(frame: u64, value: f32) -> RenderPluginEvent {
 
 #[test]
 fn live_events_while_stopped_sound_and_hold_zero_alloc_under_clocked_load() {
+    if !soak_tests_enabled() {
+        return;
+    }
     let (mut controller, mut executor) = render_plane();
     let backend = FakeClockedBackend::new();
     let stream = backend
@@ -304,4 +307,22 @@ fn live_events_while_stopped_sound_and_hold_zero_alloc_under_clocked_load() {
     );
 
     drop(stream);
+}
+
+/// Wall-clock soak gate.
+///
+/// These tests sleep for a fixed wall-clock span and then assert a minimum
+/// callback count, which is a claim about sustained real-time throughput on the
+/// machine running them. That claim is only meaningful on a host that is not
+/// otherwise loaded. Shared CI runners cannot satisfy it, and a throughput
+/// assertion that can be retried until it passes is not a proof of anything.
+///
+/// They run when `SIGNAL_SOAK_TESTS=1`, and say why when they do not. The
+/// `test:soak` effigy task sets it and runs them single-threaded.
+fn soak_tests_enabled() -> bool {
+    if std::env::var("SIGNAL_SOAK_TESTS").as_deref() == Ok("1") {
+        return true;
+    }
+    eprintln!("SKIPPED: wall-clock soak test; set SIGNAL_SOAK_TESTS=1 (or run `effigy test:soak`)");
+    false
 }
