@@ -16,6 +16,12 @@ registry upload.
   toolchain name and exited before any build ran. Components are now declared in
   `rust-toolchain.toml`, and the workflow mirrors the cargo-based release gates
   so a green CI and a passing gate set mean the same thing.
+- Pinned the toolchain to `1.97.1`. `channel = "stable"` floated, so the release
+  gates ran on a stale local `1.96.0` while CI installed `1.97.1` — "the gates
+  pass" and "CI passes" were claims about different compilers, and three clippy
+  lints only the newer one knows went unseen.
+- Removed three redundant `detail: _` patterns in `signal-runtime` transport
+  fault matching, each sitting beside a `..` that already covered it.
 
 ## [0.1.0] - 2026-08-05
 

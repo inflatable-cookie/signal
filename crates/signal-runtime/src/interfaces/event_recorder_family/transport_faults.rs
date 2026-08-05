@@ -48,7 +48,6 @@ pub(crate) fn transport_fault_record_from_event(
             lease_id,
             stage: PluginSandboxTransportStage::DetachRequested,
             processing_epoch,
-            detail: _,
             ..
         } => Some(TransportFaultRecord {
             sandbox_id,
@@ -67,7 +66,6 @@ pub(crate) fn transport_fault_record_from_event(
             lease_id,
             stage: PluginSandboxTransportStage::Detached,
             processing_epoch,
-            detail: _,
             ..
         } => Some(TransportFaultRecord {
             sandbox_id,
@@ -86,7 +84,6 @@ pub(crate) fn transport_fault_record_from_event(
             lease_id,
             stage: PluginSandboxTransportStage::DetachFault,
             processing_epoch,
-            detail: _,
             ..
         } => Some(TransportFaultRecord {
             sandbox_id,

@@ -1,3 +1,14 @@
+# Pinned, not floating. `channel = "stable"` let a local toolchain go stale
+# while CI installed whatever stable was current, so the release gates and CI
+# ran different compilers: 1.96 locally against 1.97 on the runner. The gates
+# passed and CI failed on three lints that only the newer clippy knows. Pinning
+# makes "the gates pass" and "CI passes" the same claim.
+#
+# Bumping: change the version, run `effigy release gates`, fix what the new
+# compiler finds, and push the fix with the bump.
+#
+# This is not the MSRV. `rust-version` in Cargo.toml declares the 1.90 floor,
+# and nothing currently verifies it -- CI builds only on this pinned version.
 [toolchain]
-channel = "stable"
+channel = "1.97.1"
 components = ["rustfmt", "clippy"]
