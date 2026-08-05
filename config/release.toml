@@ -8,7 +8,14 @@
 version-file = "Cargo.toml"
 version-path = "workspace.package.version"
 changelog = "CHANGELOG.md"
-sync-files = ["Cargo.lock"]
+# Cargo.lock is deliberately NOT a sync-file. Effigy syncs it with
+# `cargo generate-lockfile`, which rebuilds the lockfile from scratch and
+# resolves every dependency to its newest compatible version -- on the 0.1.0
+# prepare that silently bumped ~40 crates including syn 2 -> 3 and rustix
+# 0.38 -> 0.41. Worse, sync-files run *after* the gates, so those upgrades
+# would have entered the release commit untested. The lockfile is instead
+# updated with `cargo update -w`, which touches only workspace member
+# versions, and the release notes record it.
 tag-format = "v{version}"
 
 # Gates run before a release is prepared or executed.

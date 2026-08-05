@@ -61,6 +61,24 @@ with an `idle()` constructor for the reset path.
 `large_enum_variant` on `ParseOutcome` in the corpus report binary: `Run` is
 ~232 bytes larger than `Help`, so it is boxed.
 
+## Cargo.lock Is Not A Sync-File
+
+`config/release.toml` originally set `sync-files = ["Cargo.lock"]`, which is the
+documented shape. On the `0.1.0` prepare it turned out effigy syncs that entry
+with `cargo generate-lockfile`, which rebuilds the lockfile from scratch and
+resolves every dependency to its newest compatible version. The prepare bumped
+roughly 40 crates, including `syn` 2 to 3 and `rustix` `0.38` to `0.41`.
+
+Sync-files also run *after* the gates, so those upgrades would have entered the
+release commit having never been compiled or tested. Caught by reading the
+diffstat: 357 changed lines in a lockfile whose only legitimate change was 28
+workspace members going `0.0.0` to `0.1.0`.
+
+The entry is removed. The lockfile is updated with `cargo update -w`, which
+touches only workspace member versions. Worth reporting upstream: an effigy log
+from 2026-03 records the sync as `cargo check --quiet`, which would have been
+correct, so this changed somewhere between then and `v0.8.17`.
+
 ## Planning State
 
 `effigy release status` reports the changelog valid and the lane ready to

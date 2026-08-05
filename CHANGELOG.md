@@ -3,15 +3,15 @@
 All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 During v0.x, MINOR bumps may include breaking changes.
-
 Signal's crates are not published to crates.io. Consumers pin a tag and
 reference the crates by git, so a release is a tagged commit rather than a
 registry upload.
 
 ## [Unreleased]
 
-### Added
+## [0.1.0] - 2026-08-05
 
+### Added
 - `ResumableOfflineStretch` carries phase, detector, and overlap-add state across chunk boundaries, so a source rendered in any number of chunks is bit-identical to one rendered whole. The offline artifact path uses it for the default path without pitch shift.
 - Promoted Signal's official demo task pack into native Effigy `[demos.*]` registry entries so the current browser, inspect, history, and live terminal surfaces can discover the repo's real demo cohort directly.
 - Added a canonical `plugin` domain handler with `plugin.list` support that returns the current scanned CLAP/VST3 catalogue as correlated events.
@@ -50,7 +50,6 @@ registry upload.
 - Initial C++20 project skeleton with CMake build system, IPC envelope structure, domain router, and test harness using Catch2.
 
 ### Changed
-
 - Admitted the resumable offline stretch renderer on the default offline path
   with no pitch shift, closing `g10.039`. It carries phase-vocoder state across
   chunk and dynamic-ratio boundaries instead of restarting at each join, and
@@ -60,14 +59,12 @@ registry upload.
   admits it as parity rather than as a demonstrated improvement. Selector paths
   and pitch composition still take the legacy per-chunk path, so both seam
   smoothers remain.
-
 - Cleared all 14 clippy warnings and tightened both lint gates to `-D warnings`,
   so new lint debt blocks a release instead of accumulating behind a passing
   signal.
 - Grouped the RealtimePreview dynamic source projection builder's eight
   ratio parameters into `DynamicSourceProjectionRatios`; two call sites had been
   passing thirteen positional arguments.
-
 - `TimeStretcher` and the whole-buffer stretch entry points are now fallible and refuse renders above a `268435456`-sample ceiling. A `1.0e6` ratio previously attempted a `4096000000`-sample allocation.
 - Stretch cache identity advances to `signal-stretch-cache-v3`. Render geometry, chunk policy, and a crate-owned behaviour version join the key, and tier and offline path are stable tokens rather than `Debug` output. Every `v2` artifact is invalid: it was keyed without inputs that change rendered audio.
 - Creative stretch renders are declared uncacheable in Contract `085` rather than left undeclared.
@@ -150,13 +147,19 @@ registry upload.
 - Removed redundant DomainDispatcher and IpcRouter log messages, keeping only domain-specific logs to reduce log noise.
 - Hardened Signal skeleton with explicit concurrency model, proper engine lifecycle states, full transport domain handling, periodic diagnostics events, and graceful shutdown support.
 
-### Fixed
+### Removed
+- g10.020 runtime endgame: shrank `signal-runtime` + `signal-host-local` to a thin control library (~52k → ~15k LoC of src). Deleted the engine-block simulation path, the anticipative prework scheduler (policy vocabulary preserved in `docs/architecture/prework-scheduler-design-note.md`), transport-session concurrency, deferred-service receipt stubs, metering/scheduler/timeline/automation narration snapshots, plugin recall/ARA/pin-matrix/spatial carve-outs, and the preview-transform/transform-artifact/stretch/marker stack with the clip-render simulation. `signal-graph` reduced to the plan model (execution engine deleted). Host-local boot no longer pumps simulated engine blocks; the reported stream state means a negotiated output stream. Pulse's consumed surface is unchanged (pulse builds and passes untouched).
+- g10 demolition programme (packets 002-008): deleted ~98k LoC of simulated and narration-only code — `signal-supervisor-tools`, `signal-host-server`, `signal-hardware-coreaudio`, `signal-plugin-library`/`-store` crates removed; `signal-runtime` stripped of simulated posture domains and its narration layer (~29.4k); rhythm continuity taxonomy and embed model-registry fiction removed (~11.7k); plugin domain pruned to real discovery foundations with sandbox broker over verified shm leases (~20.8k); discovery roots now explicit configuration defaulting empty.
+- Removed `ChannelMixService` from the audio render path now that mute/gain are owned by graph nodes.
+- Removed the unused `channelMix` IPC domain handler now that mute is expressed via node parameters.
+- Removed kind=1 JSON frames and the JSON envelope codec from the Pulse↔Signal LPF1 control-plane (binary-envelope-v2 only).
+- Removed unused JSON-string TLV decoding helper now that runtime-push commands are fully typed.
 
+### Fixed
 - Marked `gui_open_embedded` `unsafe` on the VST3, AU, and CLAP host adapters.
   Each takes a caller-supplied raw parent-window pointer and hands it to FFI
   that attaches a view to it, so an invalid handle is undefined behaviour; the
   signature now says so and carries a documented safety contract.
-
 - Time-stretch overlap coverage: the analysis hop now adapts so `analysis_hop * ratio` stays within `0.75 * window_size`. Ratios above `4.0` previously lost overlap-add coverage entirely, zeroing `183` of `547` interior blocks at ratio `6.0`; ratios through `3.0` are byte-identical to before.
 - Dynamic-ratio curves sampled finer than one analysis window no longer degrade to varispeed. Short spans coalesce and render at their mean ratio with output length preserved exactly; a dense curve previously rendered a `440 Hz` source at `220 Hz`.
 - Mono dynamic-ratio renders now receive the same segment-seam treatment as linked stereo, taking seam click from `-28.94` to `-180.62 dBFS`.
@@ -179,12 +182,3 @@ registry upload.
 - Added error handling to prevent Signal from crashing when encountering problematic CLAP plugins during scanning, and added exception handling in main() and SignalApp initialization to provide better error reporting.
 - Fixed CLAP plugin loading on macOS to correctly handle .clap bundles by resolving the actual library path from Contents/MacOS/ (handles files with or without extensions) and simplified ClapRegistry to delegate bundle resolution to ClapPluginLibrary.
 - Signal now emits engine.state events to newly connected clients, ensuring Aura receives notification of the current engine state when Pulse connects.
-
-### Removed
-
-- g10.020 runtime endgame: shrank `signal-runtime` + `signal-host-local` to a thin control library (~52k → ~15k LoC of src). Deleted the engine-block simulation path, the anticipative prework scheduler (policy vocabulary preserved in `docs/architecture/prework-scheduler-design-note.md`), transport-session concurrency, deferred-service receipt stubs, metering/scheduler/timeline/automation narration snapshots, plugin recall/ARA/pin-matrix/spatial carve-outs, and the preview-transform/transform-artifact/stretch/marker stack with the clip-render simulation. `signal-graph` reduced to the plan model (execution engine deleted). Host-local boot no longer pumps simulated engine blocks; the reported stream state means a negotiated output stream. Pulse's consumed surface is unchanged (pulse builds and passes untouched).
-- g10 demolition programme (packets 002-008): deleted ~98k LoC of simulated and narration-only code — `signal-supervisor-tools`, `signal-host-server`, `signal-hardware-coreaudio`, `signal-plugin-library`/`-store` crates removed; `signal-runtime` stripped of simulated posture domains and its narration layer (~29.4k); rhythm continuity taxonomy and embed model-registry fiction removed (~11.7k); plugin domain pruned to real discovery foundations with sandbox broker over verified shm leases (~20.8k); discovery roots now explicit configuration defaulting empty.
-- Removed `ChannelMixService` from the audio render path now that mute/gain are owned by graph nodes.
-- Removed the unused `channelMix` IPC domain handler now that mute is expressed via node parameters.
-- Removed kind=1 JSON frames and the JSON envelope codec from the Pulse↔Signal LPF1 control-plane (binary-envelope-v2 only).
-- Removed unused JSON-string TLV decoding helper now that runtime-push commands are fully typed.

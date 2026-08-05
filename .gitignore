@@ -88,3 +88,6 @@ target/
 # BEGIN EFFIGY LOCAL STATE
 .effigy/
 # END EFFIGY LOCAL STATE
+
+# Effigy release state, local to a prepare run
+.release-prepared.json
