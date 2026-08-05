@@ -105,6 +105,33 @@ fake backend has.
 
 `A21` is closed as unmeasurable-by-this-harness rather than fixed.
 
+## Startup Budget Versus Latency Budget
+
+CI then failed once more, on
+`lv2_child_processes_blocks_and_killed_child_bypasses_within_budget`, at a `5s`
+deadline for a spawned sandbox child to answer its first request.
+
+Not the same defect as the rest of this sweep, and it matters that the two are
+told apart. `signal-plugin-sandbox` `tests/plugin_hosting.rs` carries two kinds
+of timing assertion:
+
+- One **startup deadline**, guarding "did the child ever answer at all". The
+  first request waits on a real process spawn plus a plugin `dlopen`, which on
+  cold shared infrastructure legitimately takes seconds. A `5s` bound there
+  measures the runner, not the bridge. Raised to `60s`, named, and documented.
+  It still catches a hang, which is all it was ever for.
+- Four **bypass budgets** at `<20ms` and one at `<2ms`, guarding "a dead child
+  must not block the audio thread". Those are the product contract, not
+  scaffolding. They are left exactly as they are.
+
+The distinction is the point. Loosening a latency budget because it might flake
+would discard the claim the test exists to make; loosening a startup deadline
+discards nothing, because the assertion's content is "not never", not "fast".
+
+The bypass budgets did pass this run. They remain a residual risk on shared
+infrastructure and are worth watching, but they should not be pre-emptively
+weakened.
+
 ## Next Task
 
 Dispatch CI. If green, tag `v0.1.0`.

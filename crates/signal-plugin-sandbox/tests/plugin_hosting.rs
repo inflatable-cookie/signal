@@ -156,15 +156,25 @@ fn spawn_processing_session(
 
 /// Drive one block through the handle, retrying misses (the child audio
 /// thread may need a scheduler quantum to see the first request).
+///
+/// The deadline is deliberately generous. It exists to catch a child that
+/// never answers at all, not to bound how quickly it answers: the first
+/// request has to wait for a real process spawn plus a plugin `dlopen`, which
+/// on cold shared CI infrastructure legitimately takes seconds. A 5s bound
+/// failed on a GitHub runner while passing everywhere locally, which measures
+/// the runner rather than the bridge. Per-block latency is asserted separately
+/// by the bypass-budget tests, and those bounds stay tight.
+const CHILD_FIRST_RESPONSE_DEADLINE: Duration = Duration::from_secs(60);
+
 fn process_with_retries(handle: &RenderPluginProcessor, scratch: &mut [f32], frames: usize) {
-    let deadline = Instant::now() + Duration::from_secs(5);
+    let deadline = Instant::now() + CHILD_FIRST_RESPONSE_DEADLINE;
     loop {
         if handle.process(scratch, frames, 2) {
             return;
         }
         assert!(
             Instant::now() < deadline,
-            "child never answered a process request",
+            "child never answered a process request within {CHILD_FIRST_RESPONSE_DEADLINE:?}",
         );
         std::thread::yield_now();
     }

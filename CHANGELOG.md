@@ -62,6 +62,12 @@ registry upload.
 - Took `capture_callback_path_allocates_nothing` back out of the soak lane.
   Allocation-freedom on the capture callback holds at any speed and is worth
   checking on every run; only its block count was load-dependent.
+- Raised the sandbox child's first-response deadline from `5s` to `60s` and
+  named it. It guards "did the child ever answer", and the first request waits
+  on a real process spawn plus a plugin `dlopen`, so a `5s` bound measured the
+  CI runner rather than the bridge. The `<20ms` bypass budgets are untouched:
+  those assert that a dead child cannot block the audio thread, which is the
+  product contract rather than scaffolding.
 - Throttled the heavy release gates so the machine stays usable while they run:
   `nice -n 5`, two cores left free for builds and four for the test run.
   Unthrottled they saturated every core for minutes at a time. CI is left
