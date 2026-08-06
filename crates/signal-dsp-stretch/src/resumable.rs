@@ -12,7 +12,8 @@
 use std::sync::Arc;
 
 use rustfft::{num_complex::Complex32, Fft, FftPlanner};
-use signal_primitives::Sample;
+use signal_dsp_resample::StreamingResampler;
+use signal_primitives::{Sample, SampleRate};
 
 use crate::{sanitize_ratio, wrap_phase, StretchRatioPoint, StretchRenderError};
 
@@ -48,6 +49,11 @@ pub struct ResumableStretchConfig {
     pub ratio_curve: Vec<StretchRatioPoint>,
     /// Ratio for spans the curve does not cover.
     pub fallback_ratio: f64,
+    /// Session sample rate. Only consulted when `pitch_shift_semitones` is
+    /// non-zero.
+    pub sample_rate: SampleRate,
+    /// Pitch shift in semitones. Zero renders the unpitched path unchanged.
+    pub pitch_shift_semitones: f64,
 }
 
 /// Frames consumed and produced by one call.
@@ -78,6 +84,110 @@ struct ChannelState {
     normalization_ring: Vec<f32>,
 }
 
+/// `2^(semitones/12)`. Resampling divides the frame count by this, so a source
+/// position divides by it and a ratio multiplies by it.
+fn pitch_shift_factor(semitones: f64) -> f64 {
+    if !semitones.is_finite() || semitones.abs() < 1.0e-9 {
+        return 1.0;
+    }
+    let factor = 2.0f64.powf(semitones / 12.0);
+    if factor.is_finite() && factor > 0.0 {
+        factor
+    } else {
+        1.0
+    }
+}
+
+fn build_pitch_stage(config: &ResumableStretchConfig, factor: f64) -> Option<PitchStage> {
+    if (factor - 1.0).abs() < 1.0e-12 || config.sample_rate.0 == 0 {
+        return None;
+    }
+    // Same virtual-rate construction the whole-buffer path uses, so the pitched
+    // material is identical: resample from `rate * factor` down to `rate`.
+    let virtual_rate =
+        ((config.sample_rate.0 as f64 * factor).round()).clamp(1.0, u32::MAX as f64) as u32;
+    let resample_config = signal_dsp_resample::ResampleConfig::new(
+        SampleRate(virtual_rate),
+        config.sample_rate,
+        signal_dsp_resample::ResampleQuality::BandLimited,
+    );
+    Some(PitchStage {
+        mid: StreamingResampler::new(resample_config),
+        side: (config.channels == 2).then(|| StreamingResampler::new(resample_config)),
+        mid_scratch: Vec::new(),
+        side_scratch: Vec::new(),
+        pitched: Vec::new(),
+        carry: Vec::new(),
+    })
+}
+
+/// Resample stage that carries its state across chunk boundaries.
+///
+/// `signal-dsp-resample` already provides the carry: `StreamingResampler` holds
+/// a pending history buffer and a fractional source cursor, which is exactly
+/// what a chunk boundary destroys. `resample_mono`, which the whole-buffer pitch
+/// path calls, is a thin wrapper over it — so this writes no resampling.
+struct PitchStage {
+    /// Mid for stereo, or the single channel for mono.
+    mid: StreamingResampler,
+    /// Side for stereo only.
+    side: Option<StreamingResampler>,
+    mid_scratch: Vec<Sample>,
+    side_scratch: Vec<Sample>,
+    pitched: Vec<Sample>,
+    /// Pitched frames produced but not yet accepted by the stretch stage.
+    ///
+    /// The ring-feed loop can exit with frames outstanding when a drain cannot
+    /// progress. Without this they would be dropped, because the pitched buffer
+    /// is rebuilt from fresh source on the next call — a source drop whose size
+    /// depends on the caller's chunking, which is exactly what chunk-count
+    /// independence forbids.
+    carry: Vec<Sample>,
+}
+
+impl PitchStage {
+    /// Resample one interleaved chunk into `self.pitched`.
+    ///
+    /// `finish` drains the resamplers' tails instead of feeding them more.
+    fn process(&mut self, source: &[Sample], channels: usize, finish: bool) -> &[Sample] {
+        self.pitched.clear();
+        self.pitched.extend_from_slice(&self.carry);
+        self.carry.clear();
+        if channels == 2 {
+            let frames = source.len() / 2;
+            self.mid_scratch.clear();
+            self.side_scratch.clear();
+            for frame in source[..frames * 2].chunks_exact(2) {
+                self.mid_scratch.push((frame[0] + frame[1]) * 0.5);
+                self.side_scratch.push((frame[0] - frame[1]) * 0.5);
+            }
+            let mid = if finish {
+                self.mid.finish()
+            } else {
+                self.mid.process_chunk(&self.mid_scratch)
+            };
+            let side = match self.side.as_mut() {
+                Some(side) if finish => side.finish(),
+                Some(side) => side.process_chunk(&self.side_scratch),
+                None => Vec::new(),
+            };
+            let count = mid.len().min(side.len());
+            for index in 0..count {
+                self.pitched.push(mid[index] + side[index]);
+                self.pitched.push(mid[index] - side[index]);
+            }
+        } else {
+            let produced = if finish {
+                self.mid.finish()
+            } else {
+                self.mid.process_chunk(source)
+            };
+            self.pitched.extend_from_slice(&produced);
+        }
+        &self.pitched
+    }
+}
+
 /// Offline stretch renderer that survives chunk boundaries.
 pub struct ResumableOfflineStretch {
     config: ResumableStretchConfig,
@@ -104,6 +214,10 @@ pub struct ResumableOfflineStretch {
     output_read_frame: usize,
     /// Source frames accepted from the caller.
     accepted_source_frames: usize,
+    /// Resample stage, upstream of the stretch stage. `g10.042` Batch 42.2
+    /// froze the order: resample then stretch, mid/side rather than left/right,
+    /// matching the whole-buffer pitch path.
+    pitch: Option<PitchStage>,
     /// Output frames delivered to the caller after cropping.
     delivered_output_frames: usize,
     /// Frames of leading pad still to be discarded from the output.
@@ -152,13 +266,48 @@ impl ResumableOfflineStretch {
             })
             .collect();
 
-        let target_output_frames = crate::dynamic_ratio_output_frames(
-            config.source_frames,
-            &config.ratio_curve,
-            config.fallback_ratio,
-        );
+        // The stretch stage runs *after* the resampler, so everything it is
+        // configured with must be in pitched-frame coordinates. `target_frames`
+        // in the whole-buffer path is computed from the original count before
+        // resampling, which is why the effective ratio is not the nominal one.
+        //
+        // Resampling changes the frame count by `1 / factor`, so a source
+        // position divides by `factor` and a ratio multiplies by it. Getting
+        // this wrong yields a render of exactly the right length with its ratio
+        // automation in the wrong places, which no length or chunk-independence
+        // check can see.
+        let pitch_factor = pitch_shift_factor(config.pitch_shift_semitones);
+        let pitch = build_pitch_stage(&config, pitch_factor);
+        let (plan_source_frames, plan_curve, plan_fallback) = if pitch.is_some() {
+            (
+                ((config.source_frames as f64) / pitch_factor).round() as usize,
+                config
+                    .ratio_curve
+                    .iter()
+                    .map(|point| StretchRatioPoint {
+                        timeline_frame: ((point.timeline_frame as f64) / pitch_factor).round()
+                            as i64,
+                        ratio: point.ratio * pitch_factor,
+                    })
+                    .collect::<Vec<_>>(),
+                config.fallback_ratio * pitch_factor,
+            )
+        } else {
+            (
+                config.source_frames,
+                config.ratio_curve.clone(),
+                config.fallback_ratio,
+            )
+        };
 
+        let target_output_frames =
+            crate::dynamic_ratio_output_frames(plan_source_frames, &plan_curve, plan_fallback);
+
+        let mut config = config;
+        config.ratio_curve = plan_curve;
+        config.fallback_ratio = plan_fallback;
         let mut renderer = Self {
+            pitch,
             window_size,
             analysis_hop,
             bins,
@@ -236,8 +385,21 @@ impl ResumableOfflineStretch {
         output: &mut Vec<Sample>,
     ) -> Result<ResumableRenderReport, StretchRenderError> {
         let channels = self.config.channels;
-        let frames = source.len() / channels;
+        let caller_frames = source.len() / channels;
         let before = self.delivered_output_frames;
+
+        // Resample first, then stretch. The stretch stage below never sees the
+        // caller's source under pitch — it sees the pitched material, which is
+        // why its plan is in pitched coordinates.
+        let pitched_owned;
+        let pitched = self.pitch.is_some();
+        let source = if let Some(pitch) = self.pitch.as_mut() {
+            pitched_owned = pitch.process(source, channels, false).to_vec();
+            &pitched_owned[..]
+        } else {
+            source
+        };
+        let frames = source.len() / channels;
         let mut consumed = 0;
         // The input ring holds a bounded amount of unanalysed source, so a
         // caller chunk larger than the ring must be fed in slices with a drain
@@ -264,8 +426,20 @@ impl ResumableOfflineStretch {
             consumed += take;
             self.drain(output, false);
         }
-        self.accepted_source_frames += consumed;
-        Ok(self.report(consumed, self.delivered_output_frames - before))
+        // Anything the stretch stage did not take is carried, not dropped.
+        if pitched && consumed < frames {
+            let leftover = source[consumed * channels..].to_vec();
+            if let Some(pitch) = self.pitch.as_mut() {
+                pitch.carry = leftover;
+            }
+        }
+
+        // Report the caller's frames, not the pitched ones: the caller sizes
+        // its chunks in source coordinates and a mismatch here would make the
+        // reported and actual source advance disagree.
+        let reported = if pitched { caller_frames } else { consumed };
+        self.accepted_source_frames += reported;
+        Ok(self.report(reported, self.delivered_output_frames - before))
     }
 
     /// Drain the tail once all source has been delivered.
@@ -274,6 +448,37 @@ impl ResumableOfflineStretch {
         output: &mut Vec<Sample>,
     ) -> Result<ResumableRenderReport, StretchRenderError> {
         let before = self.delivered_output_frames;
+
+        // Finish the resamplers before the stretcher. The other order discards
+        // the resampler tail, which is a source drop.
+        if !self.flushed {
+            if let Some(pitch) = self.pitch.as_mut() {
+                let channels = self.config.channels;
+                let tail = pitch.process(&[], channels, true).to_vec();
+                if !tail.is_empty() {
+                    let mut consumed = 0;
+                    let frames = tail.len() / channels;
+                    while consumed < frames {
+                        let pending = self.input_write_frame - self.next_analysis_frame;
+                        let capacity = self.ring_frames.saturating_sub(pending);
+                        if capacity == 0 {
+                            if self.drain(output, false) == 0 {
+                                break;
+                            }
+                            continue;
+                        }
+                        let take = capacity.min(frames - consumed);
+                        self.push_input(
+                            &tail[consumed * channels..(consumed + take) * channels],
+                            take,
+                        );
+                        consumed += take;
+                        self.drain(output, false);
+                    }
+                }
+            }
+        }
+
         if !self.flushed {
             let mut remaining = self.window_size + self.analysis_hop;
             while remaining > 0 {

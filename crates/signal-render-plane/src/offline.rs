@@ -616,6 +616,7 @@ pub fn materialize_offline_stretch_artifact_pcm_with_chunk_config(
                 source,
                 &identity_input.ratio_curve,
                 ratio,
+                pitch_shift,
                 &chunk_plan,
             )
         } else if chunk_plan.is_single_chunk() {
@@ -736,6 +737,7 @@ fn materialize_resumable_offline_stretch_artifact_frames(
     source: &RenderSampleBuffer,
     ratio_curve: &[StretchRatioPoint],
     fallback_ratio: f64,
+    pitch_shift: f64,
     chunk_plan: &StretchOfflineChunkPlan,
 ) -> Vec<f32> {
     let frame_count = source.frame_count();
@@ -753,6 +755,8 @@ fn materialize_resumable_offline_stretch_artifact_frames(
         source_frames: frame_count,
         ratio_curve: ratio_curve.to_vec(),
         fallback_ratio,
+        sample_rate: SampleRate(source.sample_rate_hz),
+        pitch_shift_semitones: pitch_shift,
     })
     .expect("the fixed resumable configuration is supported");
 

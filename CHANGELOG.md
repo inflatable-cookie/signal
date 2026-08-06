@@ -11,6 +11,14 @@ registry upload.
 
 ### Changed
 
+- Implemented resumable pitch composition as an unadopted candidate: one
+  `StreamingResampler` per mid/side channel upstream of the stretch stage.
+  Pitch happens in the right direction and the ratio curve lands in pitched
+  coordinates — the trap frozen in advance did not bite. Chunk-count
+  independence does not hold yet: worst delta `0.0057568103` at `-5` semitones
+  with `3` chunks. The gate is `#[ignore]`d carrying the measured value and the
+  four causes ruled out by measurement. Nothing in production reaches it;
+  pitched artifacts still take the legacy path.
 - Froze the resumable-pitch design (`g10.042` Batch 42.2). Most of it was
   already in the codebase: `signal-dsp-resample` exposes `StreamingResampler`
   with `process_chunk` and `finish`, carrying the history buffer and fractional

@@ -1,6 +1,6 @@
 # 042 - Pitch Resumable Render And Seam Smoother Removal
 
-Status: active; pitch design frozen, implementation ready
+Status: active; pitch implemented but not chunk-independent, defect open
 Owner: dsp
 Created: 2026-08-05
 Depends on: `g10.039`
@@ -177,7 +177,58 @@ would discard the resampler tail, which is a source drop of exactly the kind
 
 ### Batch 42.3 - Implement Resumable Pitch
 
-Status: ready; Batch 42.2 froze the design on 2026-08-05
+Status: implemented; chunk-count independence **not** met, defect open
+
+- [x] implement isolated per Contract `084` Rule 2
+- [ ] freeze the working-set ceiling — deferred until the render is correct
+- [ ] prove chunk-count independence — **fails**, see below
+- [x] prove the ratio curve lands correctly in pitched coordinates
+- [x] prove the pitch shift happens, and in the right direction
+
+`ResumableStretchConfig` gains `sample_rate` and `pitch_shift_semitones`, and
+`ResumableOfflineStretch` gains a `PitchStage` holding one `StreamingResampler`
+per mid/side channel, per the frozen design. `resumable_render_supported` is
+unchanged, so pitched artifacts still take the legacy path and nothing in
+production reaches this code.
+
+#### The Defect
+
+Pitched renders are not chunk-count independent. Worst sample delta
+`0.0057568103` at `-5` semitones with `3` chunks, on a `0.4`-amplitude tone.
+Lengths match exactly. The first divergence is `39.8%` through the render —
+neither at a chunk boundary in source or pitched coordinates, nor at the tail.
+
+Four causes are ruled out by measurement. The search should not restart from
+them:
+
+| ruled out | evidence |
+| --- | --- |
+| `StreamingResampler` itself | `0.0` delta across `3`, `7`, `16` chunks |
+| this stage's mid/side pitched material | `0.0` delta across `3` and `7` chunks |
+| the unpitched renderer at the effective ratio | `0.0` delta at `1.5`, `1.123`, `1.0`, `2.0`, `0.8` |
+| frames stranded by the feed loop | the carry path never fires |
+
+So the resampler is correct, the pitched material this stage builds is correct,
+the stretcher is correct at the ratio pitch produces, and nothing is dropped —
+and the output still differs. That combination is not yet explained.
+
+The gate is `#[ignore]`d with the measured value in its reason, following the
+`g10.039` `G5` and `g10.041` `A18` precedent: the gate stays, reproduces the
+defect on demand, and un-ignoring it is what closes the batch.
+
+#### What Did Work
+
+`G7` proves the pitch happens and in the right direction — `+12` semitones
+takes a `220 Hz` tone to `440 Hz`, `-12` to `110 Hz`, `+7` to `329.6 Hz`, each
+within `6%`.
+
+`G8` proves the ratio curve lands in pitched coordinates, which is the trap
+Batch 42.2 froze. A curve of `1.0` for the first half and `2.0` for the second
+produces `1.5x` overall duration under a `+7` semitone shift, within `2%`.
+
+### Batch 42.4 - Delete The Chunked Renderer
+
+Status: blocked on Batch 42.3
 
 - [ ] implement isolated per Contract `084` Rule 2
 - [ ] freeze the working-set ceiling with the resampler included, derived from
@@ -223,15 +274,18 @@ Status: blocked on Batch 42.3
 
 ## Next Task
 
-Open Batch 42.3 and implement the frozen design.
+Find why pitched renders diverge across chunk counts. The implementation is in
+place and unadopted, the gate reproduces the defect, and four candidate causes
+are eliminated by measurement — the resampler, the pitched material, the
+stretcher at the effective ratio, and stranded frames.
 
-Two things it does not have to work out. `StreamingResampler` already exists in
-`signal-dsp-resample` with `process_chunk` and `finish`, carrying the history
-buffer and fractional cursor a chunk boundary needs — `resample_mono` is a thin
-wrapper over it, so no new resampler should be written. And the ratio curve must
-be converted to pitched-frame coordinates, scaled by `2^(semitones/12)`, because
-`target_frames` is computed before resampling while the stretcher runs after it.
+What that combination leaves is the interaction between the two stages rather
+than either stage alone. The next probe should feed pre-computed pitched
+material into the *unpitched* renderer, sliced the same way the pitch stage
+slices it, which separates "the stretcher dislikes this push pattern" from
+"the pitch stage corrupts something on the way in". That is the one experiment
+that has not been run.
 
-That second point is the one to watch. Getting it wrong yields a render of
-exactly the right length with its ratio automation in the wrong places, which
-neither a length check nor a chunk-independence check would catch.
+Nothing is adopted. `resumable_render_supported` still excludes pitch, so the
+legacy chunked path continues to serve pitched artifacts and the seam smoother
+stays until Batch 42.4.

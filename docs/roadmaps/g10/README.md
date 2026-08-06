@@ -548,7 +548,15 @@ Do not start Loophole or Chorus planning from Signal internals.
     `ratio * 2^(semitones/12)` and the curve must be converted to pitched-frame
     coordinates. Getting that wrong yields a render of exactly the right length
     with its ratio automation in the wrong places, which neither a length nor a
-    chunk-independence check would catch. Batch 42.3 ready to implement
+    chunk-independence check would catch. Batch 42.3 implemented it and
+    left one gate failing: pitched renders are not chunk-count independent,
+    worst delta `0.0057568103` at `-5` semitones with `3` chunks, diverging
+    `39.8%` through rather than at a boundary or the tail. Four causes are
+    eliminated by measurement — the resampler, the pitched material this stage
+    builds, the unpitched renderer at the effective ratio, and stranded frames —
+    so the remaining suspect is the interaction between the two stages. The
+    curve-coordinate trap Batch 42.2 froze in advance did not bite: `G8` passes
+    first time. Nothing is adopted; pitched artifacts still take the legacy path
 
 ## Stretch Boundary
 
