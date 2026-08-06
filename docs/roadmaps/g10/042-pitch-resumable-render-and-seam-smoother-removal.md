@@ -1,6 +1,6 @@
 # 042 - Pitch Resumable Render And Seam Smoother Removal
 
-Status: active; Batch 42.1 complete, scope established and one defect closed
+Status: active; pitch design frozen, implementation ready
 Owner: dsp
 Created: 2026-08-05
 Depends on: `g10.039`
@@ -106,22 +106,91 @@ Rounding can legitimately leave the render a frame or two short, so padding is
 capped at `4` samples and asserted. The whole render-plane suite passes with
 that bound, which says the renderer was not relying on padding.
 
-### Batch 42.2 - Resumable Pitch
+### Batch 42.2 - Freeze The Pitch Design
 
-Status: ready
+Status: complete
 
-- [ ] freeze how resampler state carries across chunk boundaries, alongside the
+- [x] freeze how resampler state carries across chunk boundaries, alongside the
   phase, detector, and overlap-add state already carried
-- [ ] freeze the working-set ceiling with the resampler included, derived after
-  the design rather than before it
+- [x] freeze the ratio-coordinate relationship under pitch
+- [ ] ~~freeze the working-set ceiling~~ — deferred to Batch 42.3, after the
+  design exists rather than before it, per Contract `046`
+
+Frozen below. Batch 42.3 implements this and does not renegotiate it; a defect
+in the brief is corrected here and re-frozen.
+
+#### The State-Carrying Resampler Already Exists
+
+`signal-dsp-resample` already exposes `StreamingResampler`, with `process_chunk`
+and `finish`, carrying a `pending` history buffer and a fractional
+`next_source_index` cursor. `resample_mono` — the function the whole-buffer
+pitch path calls — is a thin wrapper that constructs one, processes the whole
+buffer, and finishes it.
+
+So the design question this batch was opened to answer is largely already
+answered in code. The resumable renderer needs one `StreamingResampler` per
+mid/side channel, fed per chunk, finished at flush. No new resampler is
+required and none should be written.
+
+#### Frozen: Stage Order
+
+Pitch composition is **resample, then stretch** — not the reverse.
+`stretch_pitch_interleaved_stereo` resamples the source to a nominal rate and
+feeds the result to the stretcher, so in the resumable renderer the resampler
+sits upstream of the existing phase-vocoder stage and its output is what the
+stretcher consumes.
+
+Mid/side, not left/right: the existing path converts to mid/side, resamples each,
+and recombines. That is what keeps the stereo image stable under pitch, so the
+resumable version does the same rather than resampling channels independently.
+
+#### Frozen: The Ratio Coordinate Shifts Under Pitch
+
+This is the part that would have been discovered painfully during
+implementation, so it is frozen first.
+
+`pitch_shift_resample_config` builds a resampler from a *virtual* input rate of
+`sample_rate * 2^(semitones/12)` to the nominal rate, so it changes the frame
+count by `2^(-semitones/12)`. But `target_frames` is computed from the
+**original** frame count times the ratio, before any resampling.
+
+The stretcher's effective ratio is therefore not the nominal ratio:
+
+```
+effective = target_frames / pitched_frames
+          = (frames * ratio) / (frames * 2^(-semitones/12))
+          = ratio * 2^(semitones/12)
+```
+
+The resumable renderer's ratio curve is expressed in source-frame coordinates.
+Under pitch it must be expressed in *pitched*-frame coordinates, with both the
+curve's positions and its ratios scaled by `2^(semitones/12)`. Getting this
+wrong produces a render of the right length whose ratio automation lands in the
+wrong places — which no length or chunk-independence check would catch.
+
+#### Frozen: Flush Order
+
+`flush` must finish the resamplers first, push their residual through the
+stretch stage, and only then flush the stretcher. Flushing the stretcher first
+would discard the resampler tail, which is a source drop of exactly the kind
+`g10.039` spent a lane on.
+
+### Batch 42.3 - Implement Resumable Pitch
+
+Status: ready; Batch 42.2 froze the design on 2026-08-05
+
 - [ ] implement isolated per Contract `084` Rule 2
-- [ ] prove chunk-count independence for pitch-shifted renders, the way
-  `g10.039` did for the default path
+- [ ] freeze the working-set ceiling with the resampler included, derived from
+  the implementation
+- [ ] prove chunk-count independence for pitch-shifted renders across at least
+  three chunk counts, as `g10.039` did for the default path
+- [ ] prove the ratio curve lands correctly in pitched coordinates, which a
+  length check cannot see
 - [ ] prove no dropped source, with a metric shown to fire on an injected drop
 
-### Batch 42.3 - Delete The Chunked Renderer
+### Batch 42.4 - Delete The Chunked Renderer
 
-Status: blocked on Batch 42.2
+Status: blocked on Batch 42.3
 
 - [ ] route pitch-shifted artifacts through the resumable renderer
 - [ ] delete `materialize_chunked_offline_stretch_artifact_frames` and
@@ -154,10 +223,15 @@ Status: blocked on Batch 42.2
 
 ## Next Task
 
-Open Batch 42.2. The design question is narrow: the resumable renderer already
-carries phase, detector, and overlap-add state across chunk boundaries, and
-pitch composition adds a resampler whose state must carry the same way.
+Open Batch 42.3 and implement the frozen design.
 
-Everything else about the lane is settled — selectors are whole-buffer and
-correct, and the only route left into the chunked renderer is pitch-shifted
-multi-chunk artifacts.
+Two things it does not have to work out. `StreamingResampler` already exists in
+`signal-dsp-resample` with `process_chunk` and `finish`, carrying the history
+buffer and fractional cursor a chunk boundary needs — `resample_mono` is a thin
+wrapper over it, so no new resampler should be written. And the ratio curve must
+be converted to pitched-frame coordinates, scaled by `2^(semitones/12)`, because
+`target_frames` is computed before resampling while the stretcher runs after it.
+
+That second point is the one to watch. Getting it wrong yields a render of
+exactly the right length with its ratio automation in the wrong places, which
+neither a length check nor a chunk-independence check would catch.

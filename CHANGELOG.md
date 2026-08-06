@@ -11,6 +11,16 @@ registry upload.
 
 ### Changed
 
+- Froze the resumable-pitch design (`g10.042` Batch 42.2). Most of it was
+  already in the codebase: `signal-dsp-resample` exposes `StreamingResampler`
+  with `process_chunk` and `finish`, carrying the history buffer and fractional
+  cursor a chunk boundary destroys, and `resample_mono` is a thin wrapper over
+  it — so no new resampler is needed. Also frozen: `target_frames` is computed
+  before resampling while the stretcher runs after it, so the effective ratio is
+  `ratio * 2^(semitones/12)` and the ratio curve must be converted to
+  pitched-frame coordinates. Getting that wrong produces a render of exactly the
+  right length, chunk-count independent, with no dropped source, and its ratio
+  automation in the wrong places — so it needs a gate of its own.
 - Removed a renderer fallback that broke the invariant its own comment asserted.
   `materialize_resumable_offline_stretch_artifact_frames` returned `Option` and
   the caller fell back to the legacy chunked renderer on any error, which would

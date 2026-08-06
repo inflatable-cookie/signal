@@ -538,7 +538,17 @@ Do not start Loophole or Chorus planning from Signal internals.
     since `g10.039` made it error rather than discard source, so the fallback
     would have hidden the error it was most likely to catch. Zero-padding to the
     contracted length is now bounded at `4` samples and asserted, since unbounded
-    padding is what let `g10.039` ship three silent specimens. Batch 42.2 ready
+    padding is what let `g10.039` ship three silent specimens. Batch 42.2 froze the pitch
+    design and found most of the answer already in the codebase:
+    `signal-dsp-resample` exposes `StreamingResampler` with `process_chunk` and
+    `finish`, carrying the history buffer and fractional cursor a chunk boundary
+    needs, and `resample_mono` is a thin wrapper over it — so no new resampler
+    should be written. It also froze the trap: `target_frames` is computed before
+    resampling while the stretcher runs after it, so the effective ratio is
+    `ratio * 2^(semitones/12)` and the curve must be converted to pitched-frame
+    coordinates. Getting that wrong yields a render of exactly the right length
+    with its ratio automation in the wrong places, which neither a length nor a
+    chunk-independence check would catch. Batch 42.3 ready to implement
 
 ## Stretch Boundary
 
