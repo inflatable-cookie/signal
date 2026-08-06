@@ -11,6 +11,16 @@ registry upload.
 
 ### Changed
 
+- Deleted the chunked artifact renderer and its seam smoother. Pitched artifacts
+  now render through the resumable renderer, admitted by listening on 2026-08-05
+  — no case preferred the legacy side, and the listener identified it blind in
+  both cases with the sides swapped. `398` lines out of `offline.rs`, including
+  the `is_single_chunk` branch, whose removal closes a latent version of a defect
+  this lane already fixed once: a single-chunk pitched artifact took a
+  whole-buffer call while a multi-chunk one took the chunked renderer, so length
+  selected the algorithm under one cache key.
+  `smooth_dynamic_segment_boundaries_interleaved` remains, serving three
+  whole-buffer callers that are now recorded rather than assumed.
 - Built the `g10.042` pitched-renderer listening pack, comparing the legacy
   per-chunk renderer against the resumable one on pitch-shifted multi-chunk
   artifacts — the only case still served by the chunked renderer, and therefore

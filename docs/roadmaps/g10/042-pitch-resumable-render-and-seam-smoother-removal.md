@@ -1,6 +1,6 @@
 # 042 - Pitch Resumable Render And Seam Smoother Removal
 
-Status: active; Batch 42.4 pack built, blocked on listening admission
+Status: complete; the chunked renderer and its seam smoother are deleted
 Owner: dsp
 Created: 2026-08-05
 Depends on: `g10.039`
@@ -45,12 +45,12 @@ it does not leave with the chunked renderer.
 
 ## Goals
 
-- [ ] teach the resumable renderer pitch composition, carrying resampler state
+- [x] teach the resumable renderer pitch composition, carrying resampler state
   across chunk boundaries the way phase state already is
 - [ ] route pitch-shifted artifacts through it
-- [ ] delete `materialize_chunked_offline_stretch_artifact_frames` and
+- [x] delete `materialize_chunked_offline_stretch_artifact_frames` and
   `smooth_artifact_chunk_boundaries_interleaved`
-- [ ] state explicitly what remains of the dynamic-segment smoother and why
+- [x] state explicitly what remains of the dynamic-segment smoother and why
 
 ## Non-Goals
 
@@ -265,15 +265,15 @@ produces `1.5x` overall duration under a `+7` semitone shift, within `2%`.
 
 ### Batch 42.4 - Delete The Chunked Renderer
 
-Status: pack built; blocked on listening admission
+Status: complete; admitted by listening 2026-08-05 and adopted
 
 - [x] prove the two renderers differ enough to judge, and that both carry audio
 - [x] build the concealed pack
-- [ ] listening admission under Contract `084` Rule 5
-- [ ] route pitch-shifted artifacts through the resumable renderer
-- [ ] delete `materialize_chunked_offline_stretch_artifact_frames` and
+- [x] listening admission under Contract `084` Rule 5
+- [x] route pitch-shifted artifacts through the resumable renderer
+- [x] delete `materialize_chunked_offline_stretch_artifact_frames` and
   `smooth_artifact_chunk_boundaries_interleaved`
-- [ ] record what remains of `smooth_dynamic_segment_boundaries_interleaved`
+- [x] record what remains of `smooth_dynamic_segment_boundaries_interleaved`
   and which callers keep it alive
 
 #### The Pack
@@ -309,14 +309,64 @@ chunked renderer, and therefore the only remaining reason both seam smoothers
 exist. Routing them through the resumable renderer changes shipped DSP, so Rule 5
 applies — as it did for the default path in `g10.039`, where listening rejected
 the first attempt.
+
+#### Admitted
+
+Judged 2026-08-05. No case preferred the legacy side, so the resumable renderer
+is admitted and adopted.
+
+| case | A | B | reported |
+| --- | --- | --- | --- |
+| `F1` | resumable | legacy | both similar, no obvious seams; `A` consistent DC, `B` varies a lot |
+| `F2` | legacy | resumable | same result, `B` consistent, `A` varies |
+
+The listener picked out the legacy renderer in both cases without knowing which
+side was which, and the sides were swapped between them. Measured per one-second
+window, legacy's DC range and worst step are `0.00150` in both cases against
+`0.00125` and `0.00142` for resumable — small in absolute terms, around `0.15%`
+of full scale, visible at zoom rather than audible, but consistent in direction
+and identified blind twice.
+
+Neither side showed the seam artifact the pack was built to look for. The
+admission therefore rests on "no case prefers legacy" rather than on the seam
+being visibly fixed, which is what Rule 5 asks for.
+
+#### Deleted
+
+`materialize_chunked_offline_stretch_artifact_frames`,
+`smooth_artifact_chunk_boundaries_interleaved`,
+`materialize_stretch_chunk_payload`, and
+`OFFLINE_STRETCH_ARTIFACT_CHUNK_CROSSFADE_FRAMES`. `398` lines out of
+`offline.rs`.
+
+The `is_single_chunk` branch went too. With `Default` on the resumable renderer
+and both selectors rendering whole-buffer, `OfflineHighQualityPath`'s three
+variants leave it unreachable — and removing it closes a latent version of the
+defect this lane already fixed once: a single-chunk pitched artifact used to take
+a whole-buffer call while a multi-chunk one took the chunked renderer, so length
+selected the algorithm under one cache key. The branch is now an `unreachable!`
+that names why rather than a silent fallback.
+
+#### The Surviving Smoother
+
+`smooth_dynamic_segment_boundaries_interleaved` stays. It patches dynamic-ratio
+*segment* joins inside the whole-buffer stretcher, not chunk joins, and three
+callers keep it alive:
+
+- `TimeStretcher::stretch_dynamic_ratio_pitch_interleaved_stereo`
+- `stretch_to_exact_mono`
+- `stretch_dynamic_ratio_linked_stereo_with_engine`
+
+None is the artifact path. It does not leave with the chunked renderer, and
+removing it is a separate question about the whole-buffer dynamic-ratio path.
 - [ ] update Contract `046` and the `g10` front doors
 
 ## Acceptance Criteria
 
 - [x] the paths that still produce chunk seams are named exactly
-- [ ] pitch-shifted artifacts render chunk-count independently
-- [ ] the chunk smoother and the chunked renderer are gone
-- [ ] the remaining smoother's callers are recorded
+- [x] pitch-shifted artifacts render chunk-count independently
+- [x] the chunk smoother and the chunked renderer are gone
+- [x] the remaining smoother's callers are recorded
 
 ## Risks and Mitigations
 
@@ -335,15 +385,14 @@ the first attempt.
 
 ## Next Task
 
-Judge `~/Downloads/signal-listening-pack-42-pitch`. Fill `notes.tsv`, then open
-`key.tsv`. The resumable renderer is admitted only if no case prefers the legacy
-side.
+This roadmap is complete. The chunked artifact renderer and its seam smoother are
+deleted, pitched artifacts render through the resumable renderer, and
+`SIGNAL_STRETCH_BEHAVIOR_VERSION` advances so artifacts cached by the old path
+invalidate.
 
-Listen for seams. The legacy side joins independently rendered chunks and patches
-the joins with a smoother; the resumable side has no joins to patch. At a
-`30`-second chunk policy the first boundary lands around `37.5s` of output. The
-`g10.036` rounds described this artifact as a secondary pulse, "like segments
-overlapping" — on the resumable side it should be absent rather than reduced.
+`smooth_dynamic_segment_boundaries_interleaved` remains, with its three callers
+recorded above. Removing it is a separate question about the whole-buffer
+dynamic-ratio path, not a continuation of this lane.
 
-Nothing is adopted until then. `resumable_render_supported` still excludes pitch,
-so pitched artifacts take the legacy path and both smoothers stay.
+Open elsewhere: `g10.040` Batch 40.6, a live preview render path, gated on a
+consumer asking for it.

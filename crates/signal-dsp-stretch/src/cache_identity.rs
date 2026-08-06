@@ -28,7 +28,7 @@ pub const SIGNAL_STRETCH_ENGINE_VERSION: &str = "signal-native-stretch-v3";
 /// renderer output. It last advanced for the `g10.036` defect correction, which
 /// changed output at every ratio above `3.0` and for every dynamic-ratio curve.
 pub const SIGNAL_STRETCH_BEHAVIOR_VERSION: &str =
-    "signal-stretch-behavior-2026-08-05-a24-resampler-seam";
+    "signal-stretch-behavior-2026-08-05-pitch-resumable";
 
 impl StretchBackendTier {
     /// Stable key token for cache identity.

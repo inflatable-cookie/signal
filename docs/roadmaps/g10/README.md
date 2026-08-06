@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: active generation; `g10.036` through `g10.041` complete, `g10.042` open; every audit finding closed or relocated
+Status: active generation; `g10.036` through `g10.042` complete; every audit finding closed or relocated
 Updated: 2026-07-27
 
 ## Why this generation matters now
@@ -523,7 +523,7 @@ Do not start Loophole or Chorus planning from Signal internals.
     the source at the same magnitude, so it is a fixture defect from a `30 ms`
     noise burst whose mean lands non-zero rather than a stretcher defect.
     `SIGNAL_STRETCH_BEHAVIOR_VERSION` advances and the guard is un-ignored
-- `g10.042` `active`
+- `g10.042` `complete`
   - pitch resumable render and seam smoother removal. `g10.039` deferred smoother
     removal to "adopting the remaining offline paths", which was too broad:
     measured against the code, the selector paths render whole-buffer and never
@@ -576,8 +576,17 @@ Do not start Loophole or Chorus planning from Signal internals.
     level gives nothing away — the difference and the levels have to be read
     together, since `1.65` on material peaking near `1.05` looks like breakage
     until the levels show the sides are equally loud and differ only in waveform.
-    Nothing is adopted; pitched artifacts still take the legacy path and both
-    smoothers stay until listening admits the change
+    Admitted by listening 2026-08-05: no case preferred
+    legacy, and the listener identified it in both cases blind with the sides
+    swapped between them — legacy's DC range and worst step measure `0.00150`
+    against `0.00125` and `0.00142`. Neither side showed the seam the pack was
+    built to look for, so the admission rests on "no case prefers legacy" rather
+    than on a visible fix. Adopted, and the chunked renderer, its seam smoother,
+    the chunk payload helper and the crossfade constant are deleted — `398` lines
+    out of `offline.rs`. The `is_single_chunk` branch went too, which closes a
+    latent version of the defect this lane already fixed once: length used to
+    select the algorithm under one cache key. `smooth_dynamic_segment_boundaries_interleaved`
+    remains with its three whole-buffer callers recorded
 
 ## Stretch Boundary
 
