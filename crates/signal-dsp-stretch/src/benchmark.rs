@@ -706,8 +706,32 @@ pub fn measure_loop_boundary_click(
     }
 }
 
-/// Measure dynamic-ratio segment seam clicks as previous-frame to next-frame
-/// discontinuities at each output seam.
+/// Frames either side of a seam that the measurement inspects.
+///
+/// Must exceed `DYNAMIC_RATIO_SEAM_SMOOTH_FRAMES` (`256`), because a seam
+/// smoother does not remove a discontinuity — it spreads it over its fade, and
+/// a window narrower than the fade would miss where it went.
+const SEAM_MEASUREMENT_WINDOW_FRAMES: usize = 384;
+
+/// Measure dynamic-ratio segment seam clicks: the worst first-difference near
+/// each output seam, in excess of the same render's own first-difference floor.
+///
+/// PREVIOUSLY, AND WRONGLY, this read exactly `|x[seam - 1] - x[seam]|`, the
+/// single pair straddling the boundary. `smooth_dynamic_segment_boundaries_
+/// interleaved` sets both of those samples to their midpoint on its first
+/// iteration, so that pair is equal *by construction* whenever the smoother
+/// ran. Measured: a full-scale `+1 -> -1` seam reads `6.0 dBFS` raw and
+/// `-240.0 dBFS` (the silence sentinel) after smoothing with a one-frame fade
+/// that leaves the step entirely intact. The metric reported whether the
+/// smoother ran, not whether there was a seam, and a perfect score on a
+/// catastrophic discontinuity is what let the seam survive being measured.
+///
+/// The window is what fixes the displacement. The floor is what stops ordinary
+/// signal motion reading as a click: adjacent samples of any non-DC material
+/// differ, so an absolute threshold cannot separate a seam from a waveform. The
+/// floor is the `p99.9` first-difference taken from frames outside every seam
+/// window — the render's own idea of a large step — and only the excess over it
+/// is reported.
 pub fn measure_dynamic_segment_seam_click(
     interleaved_samples: &[Sample],
     channels: u16,
@@ -720,25 +744,54 @@ pub fn measure_dynamic_segment_seam_click(
     }
 
     let frames = interleaved_samples.len() / channel_count;
-    let mut peak_delta = 0.0f64;
-    let mut measured_seams = Vec::new();
-    for seam_frame in seam_frames {
-        if *seam_frame == 0 || *seam_frame >= frames {
-            continue;
-        }
-        let before_start = (*seam_frame - 1) * channel_count;
-        let after_start = *seam_frame * channel_count;
-        let before = &interleaved_samples[before_start..before_start + channel_count];
-        let after = &interleaved_samples[after_start..after_start + channel_count];
-        for (left, right) in before.iter().zip(after.iter()) {
-            peak_delta = peak_delta.max((left - right).abs() as f64);
-        }
-        measured_seams.push(*seam_frame);
-    }
-
+    let measured_seams: Vec<usize> = seam_frames
+        .iter()
+        .copied()
+        .filter(|seam| *seam > 0 && *seam < frames)
+        .collect();
     if measured_seams.is_empty() {
         return dynamic_segment_seam_nan(ratio, channels);
     }
+
+    let near_a_seam = |frame: usize| {
+        measured_seams.iter().any(|seam| {
+            frame + SEAM_MEASUREMENT_WINDOW_FRAMES >= *seam
+                && *seam + SEAM_MEASUREMENT_WINDOW_FRAMES >= frame
+        })
+    };
+    let step_at = |frame: usize| {
+        (0..channel_count)
+            .map(|channel| {
+                let current = interleaved_samples[frame * channel_count + channel];
+                let previous = interleaved_samples[(frame - 1) * channel_count + channel];
+                (current - previous).abs() as f64
+            })
+            .fold(0.0f64, f64::max)
+    };
+
+    let mut background: Vec<f64> = (1..frames)
+        .filter(|frame| !near_a_seam(*frame))
+        .map(step_at)
+        .collect();
+    // A render entirely inside its own seam windows has no background, and
+    // there is then no way to tell a seam from the waveform. Unmeasurable, not
+    // zero: falling back to all steps would let the seam set its own floor and
+    // score itself perfect, which is the failure this measurement replaced.
+    if background.is_empty() {
+        return dynamic_segment_seam_nan(ratio, channels);
+    }
+    background.sort_by(|left, right| left.partial_cmp(right).expect("finite steps"));
+    let floor = background[((background.len() as f64 * 0.999) as usize).min(background.len() - 1)];
+
+    let mut peak_delta = 0.0f64;
+    for seam in &measured_seams {
+        let low = seam.saturating_sub(SEAM_MEASUREMENT_WINDOW_FRAMES).max(1);
+        let high = (*seam + SEAM_MEASUREMENT_WINDOW_FRAMES).min(frames);
+        for frame in low..high {
+            peak_delta = peak_delta.max(step_at(frame) - floor);
+        }
+    }
+    let peak_delta = peak_delta.max(0.0);
 
     let click_dbfs = amplitude_to_dbfs(peak_delta);
     StretchDynamicSegmentSeamMeasurement {

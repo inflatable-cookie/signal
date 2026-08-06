@@ -929,10 +929,11 @@ impl OfflineHighQualityStretcher {
     /// curve over interleaved stereo.
     ///
     /// Segment boundaries use the same source-frame vocabulary as
-    /// [`Self::stretch_dynamic_ratio_interleaved_stereo`]. Pitch shifting is
-    /// applied per source segment before that segment is stretched to its
-    /// target duration, so cache identity marker frames stay anchored to the
-    /// original decoded source.
+    /// [`Self::stretch_dynamic_ratio_interleaved_stereo`]. Resampling runs
+    /// ahead of the stretch over the whole stream, so the stretch plan is in
+    /// pitched coordinates — the same order the offline artifact renderer
+    /// uses, and the reason there is no per-segment resampler restart to
+    /// smooth.
     pub fn stretch_dynamic_ratio_pitch_interleaved_stereo(
         &mut self,
         frames: &[Sample],
@@ -943,40 +944,13 @@ impl OfflineHighQualityStretcher {
         if pitch_shift_semitones.abs() < 1.0e-9 || sample_rate.0 == 0 {
             return self.stretch_dynamic_ratio_interleaved_stereo(frames, ratio_curve);
         }
-
-        let frame_count = frames.len() / 2;
-        let even_frames = &frames[..frame_count * 2];
-        let segments = coalesce_short_dynamic_ratio_segments(
-            dynamic_ratio_segments(frame_count, ratio_curve, sanitize_ratio(self.ratio)),
-            min_dynamic_ratio_segment_frames(self.window_size, self.analysis_hop),
-        );
-        let boundaries = dynamic_ratio_segment_boundaries(&segments);
-        let target_frames: usize = segments.iter().map(|segment| segment.target_frames).sum();
-        checked_output_frames(target_frames as f64, 2)?;
-        let mut output = Vec::with_capacity(target_frames * 2);
-        for segment in segments {
-            let start = segment.start_frame * 2;
-            let end = segment.end_frame * 2;
-            let pitched = pitch_shift_interleaved_stereo_to_nominal_rate(
-                &even_frames[start..end],
-                sample_rate,
-                pitch_shift_semitones,
-            );
-            let rendered = stretch_to_exact_linked_stereo(
-                &pitched,
-                segment.target_frames,
-                self.window_size,
-                self.analysis_hop,
-            );
-            output.extend(rendered);
-        }
-        smooth_dynamic_segment_boundaries_interleaved(
-            &mut output,
+        self.stretch_dynamic_ratio_resumable(
+            frames,
             2,
-            &boundaries,
-            DYNAMIC_RATIO_SEAM_SMOOTH_FRAMES,
-        );
-        Ok(output)
+            ratio_curve,
+            sample_rate,
+            pitch_shift_semitones,
+        )
     }
 
     /// Stretch one mono buffer with a stepwise dynamic ratio curve.
@@ -991,14 +965,49 @@ impl OfflineHighQualityStretcher {
         input: &[Sample],
         ratio_curve: &[StretchRatioPoint],
     ) -> Result<Vec<Sample>, StretchRenderError> {
-        stretch_dynamic_ratio_mono_with_engine(
-            input,
-            ratio_curve,
-            self.ratio,
-            self.window_size,
-            self.analysis_hop,
-            transient_reset_phase_vocoder,
-        )
+        self.stretch_dynamic_ratio_resumable(input, 1, ratio_curve, SampleRate(48_000), 0.0)
+    }
+
+    /// Render a dynamic ratio curve through the resumable renderer in one call.
+    ///
+    /// The segmented predecessor rendered each ratio segment independently and
+    /// concatenated them, which restarts the phase vocoder at every segment join.
+    /// Measured on a sustained `110 Hz` tone across a `1.6 -> 0.8` boundary, that
+    /// left a first-difference step of `0.204` against a median step of `0.0051`.
+    /// [`smooth_dynamic_segment_boundaries_interleaved`] attenuated it to `0.0174`
+    /// but did not remove it — still above the render's own `p99.9` of `0.0138`.
+    ///
+    /// The resumable renderer carries phase, detector, and overlap-add state across
+    /// the boundary, so there is no join to smooth: `0.0068`, below that same
+    /// `p99.9`. Its whole-render `p99.9` is also half the segmented path's, because
+    /// every segment restart was contributing, not only the ones at a ratio change.
+    fn stretch_dynamic_ratio_resumable(
+        &self,
+        input: &[Sample],
+        channels: usize,
+        ratio_curve: &[StretchRatioPoint],
+        sample_rate: SampleRate,
+        pitch_shift_semitones: f64,
+    ) -> Result<Vec<Sample>, StretchRenderError> {
+        let frame_count = input.len() / channels;
+        let even_input = &input[..frame_count * channels];
+        let mut renderer = crate::resumable::ResumableOfflineStretch::new(
+            crate::resumable::ResumableStretchConfig {
+                channels,
+                window_size: self.window_size,
+                analysis_hop: self.analysis_hop,
+                source_frames: frame_count,
+                ratio_curve: ratio_curve.to_vec(),
+                fallback_ratio: sanitize_ratio(self.ratio),
+                sample_rate,
+                pitch_shift_semitones,
+            },
+        )?;
+        checked_output_frames(renderer.target_output_frames() as f64, channels)?;
+        let mut output = Vec::with_capacity(renderer.target_output_frames() * channels);
+        renderer.render(even_input, &mut output)?;
+        renderer.flush(&mut output)?;
+        Ok(output)
     }
 
     /// Stretch an interleaved stereo buffer with a stepwise dynamic ratio
@@ -1011,13 +1020,7 @@ impl OfflineHighQualityStretcher {
         frames: &[Sample],
         ratio_curve: &[StretchRatioPoint],
     ) -> Result<Vec<Sample>, StretchRenderError> {
-        stretch_dynamic_ratio_linked_stereo_with_engine(
-            frames,
-            ratio_curve,
-            self.ratio,
-            self.window_size,
-            self.analysis_hop,
-        )
+        self.stretch_dynamic_ratio_resumable(frames, 2, ratio_curve, SampleRate(48_000), 0.0)
     }
 }
 
@@ -2217,13 +2220,35 @@ mod tests {
         let mut dynamic = OfflineHighQualityStretcher::new(1.25);
         let mut fixed = OfflineHighQualityStretcher::new(1.25);
 
-        assert_eq!(
-            dynamic
-                .stretch_dynamic_ratio_mono(&input, &ratio_curve)
-                .expect("render fits the offline output bound"),
-            fixed
-                .stretch_mono(&input)
-                .expect("render fits the offline output bound")
+        // Invalid points are ignored, so this must render as the stretcher's
+        // own static ratio. Compared through the same renderer with an empty
+        // curve, because the invariant is about the curve, not about which
+        // renderer runs.
+        let curved = dynamic
+            .stretch_dynamic_ratio_mono(&input, &ratio_curve)
+            .expect("render fits the offline output bound");
+        let empty_curve = dynamic
+            .stretch_dynamic_ratio_mono(&input, &[])
+            .expect("render fits the offline output bound");
+        assert_eq!(curved, empty_curve);
+
+        // `stretch_dynamic_ratio_mono` renders resumably and `stretch_mono` in
+        // one shot, so they are close rather than identical at a static ratio.
+        // Recorded as a bound because it is a real consequence of the dynamic
+        // API moving to the resumable renderer: same length, same algorithm,
+        // different state handling.
+        let flat = fixed
+            .stretch_mono(&input)
+            .expect("render fits the offline output bound");
+        assert_eq!(curved.len(), flat.len());
+        let worst = curved
+            .iter()
+            .zip(flat.iter())
+            .map(|(left, right)| (left - right).abs())
+            .fold(0.0f32, f32::max);
+        assert!(
+            worst < 1.0e-4,
+            "resumable and one-shot static renders drifted apart: {worst}",
         );
     }
 
@@ -2259,7 +2284,7 @@ mod tests {
     }
 
     #[test]
-    fn offline_high_quality_dynamic_ratio_smoothing_reduces_segment_seams() {
+    fn dynamic_segment_seam_smoothing_is_not_neutral_on_continuous_material() {
         let sample_rate = 48_000.0;
         let left = sine(220.0, sample_rate, 48_000);
         let right = sine(440.0, sample_rate, 48_000);
@@ -2278,7 +2303,22 @@ mod tests {
         smooth_dynamic_segment_boundaries_interleaved(&mut raw, 2, &boundaries, 64);
         let after = measure_dynamic_segment_seam_click(&raw, 2, &boundaries, 1.0);
 
-        assert!(after.peak_seam_delta < before.peak_seam_delta);
+        // Continuous material with no join: the smoother has nothing to fix,
+        // and drags 64 frames either side of each nominated frame toward the
+        // midpoint of the pair it straddles. That is a discontinuity it
+        // introduces, not one it removes. Measured -240 dBFS (nothing) before,
+        // -70.9 dBFS after.
+        assert!(
+            before.click_dbfs <= -240.0,
+            "clean sines should show no seam, got {:.2} dBFS",
+            before.click_dbfs,
+        );
+        assert!(
+            after.click_dbfs > before.click_dbfs + 100.0,
+            "smoothing continuous material should introduce a measurable \
+             discontinuity, got {:.2} dBFS",
+            after.click_dbfs,
+        );
         assert_eq!(raw.len(), frames.len());
     }
 
@@ -2490,20 +2530,57 @@ mod tests {
     }
 
     #[test]
-    fn dynamic_segment_seam_metric_reports_direct_discontinuity() {
-        let frames = [0.0, 0.0, 0.1, 0.2, 0.9, -0.4, 1.0, -0.3];
-        let measurement = measure_dynamic_segment_seam_click(&frames, 2, &[2], 1.0);
+    fn dynamic_segment_seam_metric_reports_excess_over_the_renders_own_floor() {
+        // Too short to hold any frame outside a seam window: there is no way to
+        // tell a seam from the waveform, so the answer is "unmeasurable", not
+        // "clean". The predecessor of this measurement answered "clean".
+        let tiny = [0.0, 0.0, 0.1, 0.2, 0.9, -0.4, 1.0, -0.3];
+        assert!(measure_dynamic_segment_seam_click(&tiny, 2, &[2], 1.0)
+            .click_dbfs
+            .is_nan());
 
+        // A long, smooth ramp with one injected step. The step is 0.5 against a
+        // per-frame background of 0.0001, so it must read close to 0.5 rather
+        // than to the raw first difference.
+        let frame_count = 8_000usize;
+        let mut frames = Vec::with_capacity(frame_count * 2);
+        for index in 0..frame_count {
+            let value = index as f32 * 0.0001;
+            frames.push(value);
+            frames.push(value);
+        }
+        for sample in frames[4_000 * 2..].iter_mut() {
+            *sample += 0.5;
+        }
+        let measurement = measure_dynamic_segment_seam_click(&frames, 2, &[4_000], 1.0);
         assert_eq!(measurement.ratio, 1.0);
         assert_eq!(measurement.channels, 2);
-        assert_eq!(measurement.seam_frames, vec![2]);
-        assert!((measurement.peak_seam_delta - 0.8).abs() < 1.0e-6);
-        assert!((measurement.click_dbfs - (20.0f64 * 0.8f64.log10())).abs() < 1.0e-6);
+        assert_eq!(measurement.seam_frames, vec![4_000]);
+        assert!(
+            (measurement.peak_seam_delta - 0.5).abs() < 1.0e-3,
+            "expected the injected step less the floor, got {}",
+            measurement.peak_seam_delta,
+        );
         assert_eq!(
             measurement.metric.metric,
             StretchMetric::DynamicSegmentSeamClickDbfs
         );
         assert_eq!(measurement.metric.value, measurement.click_dbfs);
+
+        // And it stays visible through the smoother, which is the whole point:
+        // the smoother sets the straddling pair equal, so a measurement that
+        // read only that pair scored this -240 dBFS, the silence sentinel.
+        // A linear ramp is the smoother's best case -- it really does spread
+        // the 0.5 step over its 256-frame fade -- and even here the residue
+        // reads -60.2 dBFS rather than silence.
+        let mut smoothed = frames.clone();
+        smooth_dynamic_segment_boundaries_interleaved(&mut smoothed, 2, &[4_000], 256);
+        let after = measure_dynamic_segment_seam_click(&smoothed, 2, &[4_000], 1.0);
+        assert!(
+            after.click_dbfs > -120.0,
+            "the smoother must not be able to hide the step, got {:.2} dBFS",
+            after.click_dbfs,
+        );
     }
 
     #[test]
@@ -3363,5 +3440,99 @@ mod tests {
         assert_eq!(report.status, StretchAcceptanceStatus::Pass);
         assert!(formatted.contains("metric=StereoImageDelta"));
         assert!(formatted.contains("status=Pass"));
+    }
+}
+
+#[cfg(test)]
+mod dynamic_segment_seam_evidence {
+    use super::*;
+    use crate::benchmark::measure_dynamic_segment_seam_click;
+
+    /// The independently-rendered segment path leaves a seam at a hard ratio
+    /// change; the resumable renderer does not.
+    ///
+    /// The corpus case `stretch:tempo_ramp` changes ratio by `8%` and shows no
+    /// seam on either path, so it cannot support this claim. This curve steps
+    /// `1.6 -> 0.8` across a sustained `110 Hz` tone, which is where a phase
+    /// vocoder restart is audible, and it is the case the fixed
+    /// `DynamicSegmentSeamClickDbfs` measurement was built against.
+    #[test]
+    fn resumable_dynamic_ratio_has_no_seam_where_segmented_rendering_does() {
+        let frame_count = 96_000usize;
+        let mut frames = Vec::with_capacity(frame_count * 2);
+        for index in 0..frame_count {
+            let seconds = index as f32 / 48_000.0;
+            let sample = (2.0 * std::f32::consts::PI * 110.0 * seconds).sin() * 0.5;
+            frames.push(sample);
+            frames.push(sample);
+        }
+        let curve = vec![
+            StretchRatioPoint::new(0, 1.0),
+            StretchRatioPoint::new(32_000, 1.6),
+            StretchRatioPoint::new(64_000, 0.8),
+        ];
+        let seams = dynamic_ratio_output_boundaries(frame_count, &curve, 1.0);
+        assert!(!seams.is_empty(), "the curve must produce segment joins");
+
+        // Three renders: segments concatenated raw, the same with the seam
+        // smoother, and the resumable renderer that has no join at all.
+        let segments = coalesce_short_dynamic_ratio_segments(
+            dynamic_ratio_segments(frame_count, &curve, 1.0),
+            min_dynamic_ratio_segment_frames(DEFAULT_WINDOW_SIZE, DEFAULT_ANALYSIS_HOP),
+        );
+        let mut unsmoothed = Vec::new();
+        for segment in segments {
+            unsmoothed.extend(stretch_to_exact_linked_stereo(
+                &frames[segment.start_frame * 2..segment.end_frame * 2],
+                segment.target_frames,
+                DEFAULT_WINDOW_SIZE,
+                DEFAULT_ANALYSIS_HOP,
+            ));
+        }
+        let smoothed = stretch_dynamic_ratio_linked_stereo_with_engine(
+            &frames,
+            &curve,
+            1.0,
+            DEFAULT_WINDOW_SIZE,
+            DEFAULT_ANALYSIS_HOP,
+        )
+        .expect("smoothed segmented render");
+        let resumable = OfflineHighQualityStretcher::new(1.0)
+            .stretch_dynamic_ratio_interleaved_stereo(&frames, &curve)
+            .expect("resumable render");
+        assert_eq!(smoothed.len(), resumable.len());
+        assert_eq!(unsmoothed.len(), smoothed.len());
+
+        let click =
+            |data: &[Sample]| measure_dynamic_segment_seam_click(data, 2, &seams, 1.0).click_dbfs;
+        let unsmoothed_click = click(&unsmoothed);
+        let smoothed_click = click(&smoothed);
+        let resumable_click = click(&resumable);
+        println!(
+            "unsmoothed {unsmoothed_click:.2} smoothed {smoothed_click:.2} \
+             resumable {resumable_click:.2} dBFS"
+        );
+
+        // Both segmented renders leave a seam the measurement can see. This is
+        // the half of the assertion that shows the measurement works: an
+        // earlier version of this metric scored the smoothed render -240 dBFS
+        // because the smoother sets the two samples it reads to their midpoint.
+        assert!(
+            unsmoothed_click > -40.0,
+            "raw segment joins should be plainly visible, got {unsmoothed_click:.2} dBFS",
+        );
+        assert!(
+            smoothed_click > -40.0,
+            "the smoother spreads the join across its fade rather than removing \
+             it, so it should still be visible, got {smoothed_click:.2} dBFS",
+        );
+
+        // The resumable renderer carries phase, detector, and overlap-add state
+        // across the join, so there is no restart to hear.
+        assert!(
+            resumable_click < smoothed_click - 40.0,
+            "resumable should be far below the smoothed segmented render: \
+             {resumable_click:.2} vs {smoothed_click:.2} dBFS",
+        );
     }
 }
