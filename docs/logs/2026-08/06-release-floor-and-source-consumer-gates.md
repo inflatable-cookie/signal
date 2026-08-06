@@ -101,6 +101,39 @@ verifies it". Both halves were stale within a day. Now it names `1.95`, points
 at the gate that verifies it, and records that the pinned and floor toolchains
 deny different lints so code must satisfy both.
 
+## `v0.1.0` Left Its Prepared State Behind
+
+`effigy release prepare` for `0.1.1` refused to run:
+
+```
+release state file already exists: /Users/tom/Dev/projects/signal/.release-prepared.json
+```
+
+The file was the `v0.1.0` one — `previous_version: 0.0.0`, `prepared_at:
+2026-08-05`, `prepared_head: b2d6cabd`. `execute` tagged and pushed `v0.1.0` and
+did not clear it, so the first release silently blocked the second.
+
+Verified obsolete before removing rather than removing on sight: `v0.1.0` is
+tagged locally at `e52721a9`, present on `origin`, and `b2d6cabd` is an ancestor
+of `HEAD`. The file is gitignored local state describing a completed release.
+
+`effigy release resume` is the documented recovery entrypoint but is
+interactive; it hung waiting for a menu selection under a non-interactive shell
+and had to be killed. Worth knowing before reaching for it in a script.
+
+Also confirmed while there: prepare's `Files Modified` is now `Cargo.toml` and
+`CHANGELOG.md` only. The `v0.1.0` state file lists `Cargo.lock` as well, which
+is the `sync-files` behaviour removed after it bumped ~40 dependencies after the
+gates had run. The removal holds.
+
+## A Note On The Version Number
+
+`0.1.1` carries an MSRV raise from `1.90` to `1.95`, which stops the build for
+any consumer below `1.95` — conventionally a minor bump rather than a patch.
+Recorded rather than acted on: the whole portfolio is moving to `1.95` in
+lockstep, every consumer is in-tree, and the patch version was the one
+specified.
+
 ## Next Task
 
 Cut `v0.1.1` if the full gate set is green. The source-consumer gate found
