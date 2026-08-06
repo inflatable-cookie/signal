@@ -7,6 +7,11 @@
 //! miss (budget exhausted) or a dead child bypasses: the caller's scratch is
 //! left untouched and a miss counter increments — the engine callback never
 //! blocks past the budget.
+//!
+//! That budget is a realtime one. Offline drivers switch it via
+//! [`PluginBlockProcessor::set_offline_waiting`], because an offline render has
+//! no output buffer to protect and a bypass there is a wrong render rather than
+//! a late block.
 
 use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering};
 use std::time::{Duration, Instant};
@@ -32,6 +37,18 @@ pub const PLUGIN_PROCESS_WAIT_BUDGET_MAX_MICROS: u64 = 1_000;
 /// Keep bypass bounded, but require a short run of misses before retiring
 /// the backend generation.
 pub const PLUGIN_PROCESS_CONSECUTIVE_TIMEOUT_LIMIT: u32 = 3;
+
+/// Per-block wait used when the backend is driven offline
+/// ([`PluginBlockProcessor::set_offline_waiting`]).
+///
+/// Not a latency target. An offline render has no output buffer to drain, so
+/// there is nothing for a short budget to protect: a miss there does not
+/// arrive late, it drops the insert for that block and writes the wrong
+/// render. This only has to be long enough that a child which lost its
+/// scheduling slot on a loaded machine is not mistaken for a dead one, while
+/// still bounding a genuinely dead child at
+/// `PLUGIN_PROCESS_CONSECUTIVE_TIMEOUT_LIMIT` × this.
+pub const PLUGIN_PROCESS_OFFLINE_WAIT_BUDGET: Duration = Duration::from_secs(5);
 
 /// Effective bounded wait for one block: `min(1 ms, 50 % of the block
 /// duration at `sample_rate_hz`)`.
@@ -72,6 +89,9 @@ pub struct ShmPluginProcessor {
     consecutive_misses: AtomicU32,
     /// Cleared by the owning service on child death.
     alive: AtomicBool,
+    /// Set by the offline driver; swaps the realtime wait budget for
+    /// [`PLUGIN_PROCESS_OFFLINE_WAIT_BUDGET`] and the spin for a yield.
+    offline_waiting: AtomicBool,
     event_support: RenderPluginEventSupport,
 }
 
@@ -145,6 +165,7 @@ impl ShmPluginProcessor {
             timeouts: AtomicU64::new(0),
             consecutive_misses: AtomicU32::new(0),
             alive: AtomicBool::new(true),
+            offline_waiting: AtomicBool::new(false),
             event_support,
         })
     }
@@ -165,6 +186,12 @@ impl ShmPluginProcessor {
         self.alive.store(false, Ordering::Relaxed);
     }
 
+    /// See [`PluginBlockProcessor::set_offline_waiting`]. Inherent so callers
+    /// holding a concrete `ShmPluginProcessor` need not import the trait.
+    pub fn set_offline_waiting(&self, enabled: bool) -> bool {
+        self.offline_waiting.swap(enabled, Ordering::Relaxed)
+    }
+
     /// Whether the backend still considers its child alive.
     pub fn is_alive(&self) -> bool {
         self.alive.load(Ordering::Relaxed)
@@ -179,7 +206,12 @@ impl ShmPluginProcessor {
         let request = self.request_counter.fetch_add(1, Ordering::Relaxed) + 1;
         self.view.request_seq().store(request, Ordering::Release);
 
-        let budget = plugin_process_wait_budget(frame_count, self.sample_rate_hz);
+        let offline = self.offline_waiting.load(Ordering::Relaxed);
+        let budget = if offline {
+            PLUGIN_PROCESS_OFFLINE_WAIT_BUDGET
+        } else {
+            plugin_process_wait_budget(frame_count, self.sample_rate_hz)
+        };
         let deadline = Instant::now() + budget;
         loop {
             if self.view.response_seq().load(Ordering::Acquire) == request {
@@ -196,7 +228,14 @@ impl ShmPluginProcessor {
                 }
                 return false;
             }
-            std::hint::spin_loop();
+            if offline {
+                // Seconds, not microseconds, and not on the audio thread:
+                // spinning here would burn a core for the whole wait and
+                // starve the very child we are waiting on.
+                std::thread::yield_now();
+            } else {
+                std::hint::spin_loop();
+            }
         }
     }
 }
@@ -224,6 +263,10 @@ impl PluginBlockProcessor for ShmPluginProcessor {
 
     fn unsupported_event_count(&self) -> u64 {
         self.unsupported_events.load(Ordering::Relaxed)
+    }
+
+    fn set_offline_waiting(&self, enabled: bool) -> bool {
+        ShmPluginProcessor::set_offline_waiting(self, enabled)
     }
 
     fn process_with_events(
@@ -341,6 +384,91 @@ mod tests {
         );
         // Tiny blocks: budget shrinks with the block.
         assert!(plugin_process_wait_budget(16, 96_000) < Duration::from_micros(100));
+    }
+
+    /// A child that answers well past the realtime budget must still be heard
+    /// when the backend is driven offline.
+    ///
+    /// `40 ms` is 40x the realtime budget for this block, and a plausible
+    /// stall for a sandbox child that lost its scheduling slot on a loaded
+    /// machine. Realtime bypasses it, correctly — the callback cannot wait.
+    /// Offline must not: bypass there writes a render missing the insert.
+    #[test]
+    fn offline_waiting_outlasts_a_stall_the_realtime_budget_bypasses() {
+        let layout = PluginAudioBlockLayout {
+            max_frames: 256,
+            channels: 2,
+        };
+        let (broker, mut region) = test_region(layout);
+        let metadata = region.metadata().clone();
+        let child_view =
+            unsafe { PluginAudioBlockView::new(region.as_mut_slice().as_mut_ptr(), layout) };
+        child_view.initialize();
+
+        let processor = ShmPluginProcessor::attach(
+            &metadata.region_id,
+            &metadata.backing_path,
+            metadata.total_bytes,
+            256,
+            2,
+            48_000,
+        )
+        .expect("attach should succeed");
+
+        let stall = Duration::from_millis(40);
+        assert!(
+            stall > plugin_process_wait_budget(128, 48_000) * 20,
+            "the stall must be far outside the realtime budget for this to mean anything",
+        );
+
+        // A deliberately late child: one request, served after the stall.
+        let serving = std::thread::spawn(move || {
+            let deadline = Instant::now() + Duration::from_secs(10);
+            loop {
+                let request = child_view.request_seq().load(Ordering::Acquire);
+                if request != 0 && child_view.response_seq().load(Ordering::Acquire) != request {
+                    std::thread::sleep(stall);
+                    let frames = child_view.frame_count().load(Ordering::Relaxed) as usize;
+                    let mut block = vec![0.0f32; frames * 2];
+                    unsafe { child_view.read_input(&mut block) };
+                    for sample in block.iter_mut() {
+                        *sample *= 0.5;
+                    }
+                    unsafe { child_view.write_output(&block) };
+                    child_view.response_seq().store(request, Ordering::Release);
+                    return;
+                }
+                assert!(
+                    Instant::now() < deadline,
+                    "parent never published a request"
+                );
+                std::thread::yield_now();
+            }
+        });
+
+        let mut scratch = vec![1.0f32; 256];
+        assert!(
+            !processor.set_offline_waiting(true),
+            "backends attach in realtime waiting",
+        );
+        let processed = processor.process(&mut scratch, 128, 2);
+        assert!(
+            processed,
+            "offline waiting must outlast a {stall:?} stall, not bypass it",
+        );
+        assert!(scratch[..256]
+            .iter()
+            .all(|sample| (*sample - 0.5).abs() < 1e-6));
+        assert_eq!(processor.miss_count(), 0);
+        assert!(
+            processor.set_offline_waiting(false),
+            "the swap returns the previous setting so callers can restore it",
+        );
+
+        serving.join().expect("serving thread");
+        drop(processor);
+        drop(region);
+        let _ = broker.destroy_region(&metadata);
     }
 
     #[test]

@@ -1055,6 +1055,31 @@ pub trait PluginBlockProcessor: Send + Sync {
         false
     }
 
+    /// Switch the backend between realtime and offline waiting, returning the
+    /// previous setting. OFFLINE-DRIVER SEAM, never called on the audio
+    /// thread; the default is a no-op returning `false`.
+    ///
+    /// Backends that wait on another process bound that wait, and the bound is
+    /// a realtime one: the callback must return before its output buffer
+    /// drains, so a slow block is bypassed rather than waited for. Bypass is
+    /// the right answer there — a late block is worse than an unprocessed one.
+    ///
+    /// An offline render has no buffer to drain, and there bypass is the wrong
+    /// answer: it does not cost latency, it silently drops the insert for that
+    /// block and writes a render that differs from the one the host would
+    /// play. Under machine load that happens at unpredictable block
+    /// boundaries, so the damage is neither reproducible nor visible. Offline
+    /// backends should therefore wait as long as the block takes, bounded only
+    /// generously enough to still notice a genuinely dead child.
+    ///
+    /// The setting is per-backend and the protocol is single-flight
+    /// ([`RenderPluginProcessor`] is documented one-caller-at-a-time), so a
+    /// handle cannot be driven live and offline at once regardless.
+    fn set_offline_waiting(&self, enabled: bool) -> bool {
+        let _ = enabled;
+        false
+    }
+
     /// Process one block in place, delivering `events` (sorted by
     /// `offset_frames`, all offsets `< frame_count`) alongside the audio.
     /// Backends convert to their plugin format's native event lists here —
@@ -1118,6 +1143,14 @@ impl RenderPluginProcessor {
     pub fn set_parameter_normalized(&self, parameter_id: u32, normalized: f32) -> bool {
         self.inner
             .set_parameter_normalized(parameter_id, normalized)
+    }
+
+    /// Switch this backend between realtime and offline waiting, returning the
+    /// previous setting. See
+    /// [`PluginBlockProcessor::set_offline_waiting`] — offline-driver seam,
+    /// never called on the audio thread.
+    pub fn set_offline_waiting(&self, enabled: bool) -> bool {
+        self.inner.set_offline_waiting(enabled)
     }
 
     /// Native event families supported by this live backend.

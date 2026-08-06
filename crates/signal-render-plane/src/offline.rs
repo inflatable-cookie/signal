@@ -877,6 +877,43 @@ fn static_pitch_shift(
     Ok(first)
 }
 
+/// Holds every stage processor in offline waiting for the length of a render,
+/// restoring each one's previous setting on drop — including on the `?` early
+/// returns inside the render.
+///
+/// Without this a plugin insert is silently dropped for any block its backend
+/// misses. A realtime callback misses because it must return before its buffer
+/// drains; an offline render has no such deadline, so the same miss is not a
+/// late block but a wrong one, and it happens at block boundaries that depend
+/// on machine load rather than on the plan. See
+/// [`crate::PluginBlockProcessor::set_offline_waiting`].
+struct OfflineWaitingGuard {
+    restore: Vec<(RenderPluginProcessor, bool)>,
+}
+
+impl OfflineWaitingGuard {
+    fn install(spec: &RenderPlanSpec) -> Self {
+        Self {
+            restore: spec
+                .stages
+                .iter()
+                .filter_map(|stage| stage.processor.as_ref())
+                .map(|processor| (processor.clone(), processor.set_offline_waiting(true)))
+                .collect(),
+        }
+    }
+}
+
+impl Drop for OfflineWaitingGuard {
+    fn drop(&mut self) {
+        // Reverse order so one processor carried by several stages restores
+        // the setting it had before the first flip, not after it.
+        for (processor, previous) in self.restore.iter().rev() {
+            processor.set_offline_waiting(*previous);
+        }
+    }
+}
+
 /// Render `spec` offline: install it on a fresh controller/executor pair and
 /// loop [`RenderPlaneExecutor::render_block`] as fast as the CPU allows.
 ///
@@ -893,6 +930,7 @@ pub fn render_plan_to_pcm(
     spec: &RenderPlanSpec,
     options: &OfflineRenderOptions,
 ) -> Result<OfflineRenderOutput, RenderPlaneError> {
+    let _offline_waiting = OfflineWaitingGuard::install(spec);
     let channels = spec.output_channels();
     let (mut controller, mut executor) = render_plane();
     controller.set_stream_channels(channels)?;
@@ -1217,6 +1255,91 @@ mod tests {
                 })
                 .collect(),
         }
+    }
+
+    /// Halves the block, but only while it is in offline waiting — the stand-in
+    /// for a backend whose realtime budget the child misses under load.
+    #[derive(Default)]
+    struct OfflineOnlyGainProcessor {
+        offline: std::sync::atomic::AtomicBool,
+        bypassed_blocks: std::sync::atomic::AtomicU64,
+    }
+
+    impl crate::PluginBlockProcessor for OfflineOnlyGainProcessor {
+        fn process(&self, scratch: &mut [f32], frame_count: usize, channels: usize) -> bool {
+            if !self.offline.load(std::sync::atomic::Ordering::Relaxed) {
+                self.bypassed_blocks
+                    .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                return false;
+            }
+            for sample in scratch[..frame_count * channels].iter_mut() {
+                *sample *= 0.5;
+            }
+            true
+        }
+
+        fn set_offline_waiting(&self, enabled: bool) -> bool {
+            self.offline
+                .swap(enabled, std::sync::atomic::Ordering::Relaxed)
+        }
+    }
+
+    /// A bypassed block in an offline render is not a late block, it is a
+    /// wrong render: the insert silently vanishes for that block. The driver
+    /// must therefore put every stage processor into offline waiting, and put
+    /// it back afterwards so a handle shared with live playback keeps its
+    /// realtime bound.
+    #[test]
+    fn offline_render_drives_stage_processors_in_offline_waiting() {
+        let backend = Arc::new(OfflineOnlyGainProcessor::default());
+        let processor = RenderPluginProcessor::new(Arc::clone(&backend) as Arc<_>);
+        let mut sum = master(vec![1]);
+        sum.stage_id = 2;
+        sum.kind = RenderStageKind::Sum;
+        sum.processor = Some(processor.clone());
+        let spec = RenderPlanSpec {
+            sample_rate_hz: 48_000,
+            master_gain: 1.0,
+            master_limiter: None,
+            stages: vec![
+                lane(1, 1.0, vec![constant_clip(11, 1.0)]),
+                sum,
+                master(vec![2]),
+            ],
+        };
+        let options = OfflineRenderOptions {
+            start_frame: 0,
+            frame_count: 2_048,
+            block_frames: 128,
+            capture_stage_ids: Vec::new(),
+        };
+
+        let rendered = render_plan_to_pcm(&spec, &options).expect("offline render");
+
+        assert_eq!(
+            backend
+                .bypassed_blocks
+                .load(std::sync::atomic::Ordering::Relaxed),
+            0,
+            "no block may bypass the insert during an offline render",
+        );
+        // Past the clip edge fade the source is a 1.0 plateau, so the insert
+        // is audible as an exact halving on every remaining sample.
+        let guard = 256 * 2;
+        assert!(rendered.master.len() > guard);
+        for (index, sample) in rendered.master.iter().enumerate().skip(guard) {
+            assert!(
+                (sample - 0.5).abs() < 1e-6,
+                "sample {index}: {sample} (insert dropped for this block)",
+            );
+        }
+
+        // Restored, not left latched: the same handle may be live on the
+        // audio thread after the bounce, where the realtime bound is correct.
+        assert!(
+            !backend.offline.load(std::sync::atomic::Ordering::Relaxed),
+            "offline waiting must be restored when the render ends",
+        );
     }
 
     fn tone_clip(clip_id: u64, frequency_hz: f32) -> RenderClipSpec {

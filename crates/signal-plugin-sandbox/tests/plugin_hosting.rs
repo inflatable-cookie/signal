@@ -133,51 +133,29 @@ fn spawn_processing_session_for(
         .start_processing()
         .expect("child audio thread should start");
 
-    // Warm the bridge before handing it back, and re-attach if the epoch
-    // retires while doing so.
+    // Warm the bridge before handing it back: prove the child answered once,
+    // so callers do not spend their first assertion discovering it was still
+    // being scheduled.
     //
-    // `ShmPluginProcessor` clears its `alive` flag after
-    // `PLUGIN_PROCESS_CONSECUTIVE_TIMEOUT_LIMIT` consecutive misses, after which
-    // every later `process` returns false immediately. Under load the child's
-    // audio thread can easily miss its first three requests while it is still
-    // being scheduled, and the tests then fail in three different-looking ways:
-    // a bare `process_with_events` assertion, a `process_with_retries` deadline,
-    // or a render where wet equals dry because the miss bypassed the insert.
-    //
-    // The lease is in scope here and nowhere downstream, so this is the one
-    // place a retired epoch can be replaced. Returning a processor that has
-    // already answered once means callers start from a live epoch rather than
-    // spending their own budget discovering the child was not ready.
-    let attach = || {
-        Arc::new(
-            ShmPluginProcessor::attach(
-                &lease.region_id,
-                &lease.shm_path,
-                lease.shm_bytes,
-                lease.max_frames,
-                lease.channels,
-                SAMPLE_RATE_HZ,
-            )
-            .expect("parent should attach the audio block region"),
+    // The wait is the offline one. Nothing in this function is a realtime
+    // callback, so the child missing a 333 us budget while the OS gets round
+    // to its audio thread is not information -- it is noise that used to fail
+    // this binary three different-looking ways under load.
+    let processor = Arc::new(
+        ShmPluginProcessor::attach(
+            &lease.region_id,
+            &lease.shm_path,
+            lease.shm_bytes,
+            lease.max_frames,
+            lease.channels,
+            SAMPLE_RATE_HZ,
         )
-    };
-    let mut processor = attach();
+        .expect("parent should attach the audio block region"),
+    );
+    let handle = RenderPluginProcessor::new(Arc::clone(&processor) as Arc<_>);
     let mut scratch = vec![0.0f32; lease.max_frames as usize * lease.channels as usize];
-    let deadline = Instant::now() + CHILD_FIRST_RESPONSE_DEADLINE;
-    loop {
-        let handle = RenderPluginProcessor::new(Arc::clone(&processor) as Arc<_>);
-        if handle.process(&mut scratch, 64, lease.channels as usize) {
-            break;
-        }
-        if !processor.is_alive() {
-            processor = attach();
-        }
-        assert!(
-            Instant::now() < deadline,
-            "child never answered a warm-up request within {CHILD_FIRST_RESPONSE_DEADLINE:?}",
-        );
-        std::thread::sleep(Duration::from_millis(1));
-    }
+    let channels = lease.channels as usize;
+    process_offline(&handle, &mut scratch, 64, channels);
 
     (client, processor)
 }
@@ -189,65 +167,55 @@ fn spawn_processing_session(
     spawn_processing_session_for(library_path, FIXTURE_PLUGIN_ID)
 }
 
-/// Drive one block through the handle, retrying misses (the child audio
-/// thread may need a scheduler quantum to see the first request).
+/// Drive one block the way an offline render does: wait for the child rather
+/// than bypassing on the realtime budget.
 ///
-/// The deadline is generous because the first request waits on a real process
-/// spawn plus a plugin `dlopen`, which on cold shared CI infrastructure
-/// legitimately takes seconds. It exists to catch a child that never answers,
-/// not to bound how quickly it answers. Per-block latency is asserted
-/// separately by the bypass-budget tests, and those bounds stay tight.
+/// None of these tests is an audio callback. The realtime budget exists so a
+/// callback returns before its output buffer drains, and bypassing a slow
+/// block is the right answer there. Here there is no buffer: a miss is simply
+/// a wrong assertion, and under machine load it lands at an unpredictable
+/// block, which is what made this binary fail `5` of `10` runs under
+/// deliberate load on 2026-08-05 in three different-looking ways.
 ///
-/// KNOWN LIMIT: retrying cannot recover from a retired epoch. After
-/// `PLUGIN_PROCESS_CONSECUTIVE_TIMEOUT_LIMIT` consecutive misses the processor
-/// clears its `alive` flag and every later `process` returns false
-/// immediately, so once that happens this loop is futile and only burns the
-/// deadline. Serialising the child-spawning tests is what keeps the misses
-/// from stacking up; the deadline is short enough that a retired epoch fails
-/// in tens of seconds rather than a minute.
+/// Retrying is NOT the alternative. A missed request is still published, and
+/// the child may serve it after the parent gave up; for a block carrying note
+/// events the retry then delivers a second `NoteOn` and the voice is already
+/// sounding before its own offset. Measured: retrying broke
+/// `real_child_instrument_accepts_zero_input_and_generates_audio_from_note_events`
+/// under load exactly that way. Waiting is idempotent; retrying is not.
 ///
-/// MEASURED 2026-08-05, and the condition matters more than the rate. On an
-/// idle machine this binary passed `20` consecutive runs; under deliberate load
-/// it failed `5` of `10`, in three different-looking ways that were all the same
-/// cause — a bare `process_with_events` assertion, this deadline firing with its
-/// retired-epoch message, and a render where wet equalled dry because the miss
-/// bypassed the insert.
-///
-/// `spawn_processing_session_for` warms the bridge before returning and
-/// re-attaches there if the epoch retires while warming. That helps setup-time
-/// retirement and is kept, but it is **not** a fix: re-measured under verified
-/// load it still failed `5` of `6` runs.
-///
-/// The reason is visible in which assertions fail. The epoch retires *during*
-/// the test, not during setup — sustained load makes the child miss three in a
-/// row at any point, and warming only proves it answered once beforehand.
-///
-/// The fix is the `A19` one, applied at the point of use: re-attach when
-/// `is_alive` goes false inside `process_with_retries` and the bare
-/// `process_with_events` call sites. That needs the lease threaded to those
-/// twelve sites, which is real work and is not done.
-///
-/// If this recurs, the fix is the one applied to the `shm` round-trip test:
-/// re-attach the processor when `is_alive()` goes false and give the round
-/// trip a fresh epoch. It is not done here because the twelve call sites each
-/// hold their own handle and the lease needed to re-attach is not threaded
-/// through them.
-const CHILD_FIRST_RESPONSE_DEADLINE: Duration = Duration::from_secs(20);
+/// Scoped per call rather than set once at attach, because four tests in this
+/// binary assert the *realtime* bound against a dead child and must keep it.
+fn process_offline(
+    handle: &RenderPluginProcessor,
+    scratch: &mut [f32],
+    frames: usize,
+    channels: usize,
+) {
+    let previous = handle.set_offline_waiting(true);
+    let processed = handle.process(scratch, frames, channels);
+    handle.set_offline_waiting(previous);
+    assert!(
+        processed,
+        "child never answered a process request within the offline wait budget",
+    );
+}
 
-fn process_with_retries(handle: &RenderPluginProcessor, scratch: &mut [f32], frames: usize) {
-    let deadline = Instant::now() + CHILD_FIRST_RESPONSE_DEADLINE;
-    loop {
-        if handle.process(scratch, frames, 2) {
-            return;
-        }
-        assert!(
-            Instant::now() < deadline,
-            "child never answered a process request within \
-             {CHILD_FIRST_RESPONSE_DEADLINE:?} (a retired epoch cannot recover \
-             by retrying -- see CHILD_FIRST_RESPONSE_DEADLINE)",
-        );
-        std::thread::yield_now();
-    }
+/// [`process_offline`] with a per-block event slice.
+fn process_offline_with_events(
+    handle: &RenderPluginProcessor,
+    scratch: &mut [f32],
+    frames: usize,
+    channels: usize,
+    events: &[RenderBlockPluginEvent],
+) {
+    let previous = handle.set_offline_waiting(true);
+    let processed = handle.process_with_events(scratch, frames, channels, events);
+    handle.set_offline_waiting(previous);
+    assert!(
+        processed,
+        "child never answered an event process request within the offline wait budget",
+    );
 }
 
 /// Serialises the tests that spawn a sandbox child process.
@@ -295,7 +263,7 @@ fn real_child_processes_blocks_through_the_shm_bridge() {
             .map(|index| (index as f32 + block as f32) / 512.0)
             .collect();
         let reference = scratch.clone();
-        process_with_retries(&handle, &mut scratch, frames);
+        process_offline(&handle, &mut scratch, frames, 2);
         for (index, (output, input)) in scratch.iter().zip(reference.iter()).enumerate() {
             assert!(
                 (output - input * CLAP_FIXTURE_GAIN).abs() < 1e-7,
@@ -329,7 +297,8 @@ fn real_child_instrument_accepts_zero_input_and_generates_audio_from_note_events
 
     let frames = 128usize;
     let mut scratch = vec![0.0; frames * 2];
-    assert!(handle.process_with_events(
+    process_offline_with_events(
+        &handle,
         &mut scratch,
         frames,
         2,
@@ -341,7 +310,7 @@ fn real_child_instrument_accepts_zero_input_and_generates_audio_from_note_events
                 velocity: 0.75,
             },
         }],
-    ));
+    );
     assert!(scratch[..7 * 2].iter().all(|sample| sample.abs() < 1e-6));
     assert!(scratch[7 * 2..].iter().any(|sample| sample.abs() > 0.1));
 
@@ -395,7 +364,8 @@ fn real_child_system_midi_synth_generates_audio_from_note_events() {
     let handle = RenderPluginProcessor::new(Arc::clone(&processor) as Arc<_>);
     let frames = 256usize;
     let mut scratch = vec![0.0; frames * 2];
-    assert!(handle.process_with_events(
+    process_offline_with_events(
+        &handle,
         &mut scratch,
         frames,
         2,
@@ -407,7 +377,7 @@ fn real_child_system_midi_synth_generates_audio_from_note_events() {
                 velocity: 0.75,
             },
         }],
-    ));
+    );
     assert!(scratch[7 * 2..].iter().any(|sample| sample.abs() > 1e-5));
 
     client.stop_processing().expect("processing should stop");
@@ -446,7 +416,7 @@ fn param_set_over_the_wire_changes_the_sandboxed_output_next_block() {
     let frames = 128usize;
     let reference: Vec<f32> = (0..frames * 2).map(|index| index as f32 / 512.0).collect();
     let mut scratch = reference.clone();
-    process_with_retries(&handle, &mut scratch, frames);
+    process_offline(&handle, &mut scratch, frames, 2);
     for (output, input) in scratch.iter().zip(reference.iter()) {
         assert!((output - input * CLAP_FIXTURE_GAIN).abs() < 1e-7);
     }
@@ -457,7 +427,7 @@ fn param_set_over_the_wire_changes_the_sandboxed_output_next_block() {
         .expect("set-param receipt");
     assert!(detail.contains("param_set"), "typed receipt: {detail}");
     let mut scratch = reference.clone();
-    process_with_retries(&handle, &mut scratch, frames);
+    process_offline(&handle, &mut scratch, frames, 2);
     for (index, (output, input)) in scratch.iter().zip(reference.iter()).enumerate() {
         assert!(
             (output - input * 0.25).abs() < 1e-7,
@@ -472,7 +442,7 @@ fn param_set_over_the_wire_changes_the_sandboxed_output_next_block() {
     let detail = client.set_parameters(&sweep).expect("set-params receipt");
     assert!(detail.contains("count=100"), "batched receipt: {detail}");
     let mut scratch = reference.clone();
-    process_with_retries(&handle, &mut scratch, frames);
+    process_offline(&handle, &mut scratch, frames, 2);
     for (index, (output, input)) in scratch.iter().zip(reference.iter()).enumerate() {
         assert!(
             (output - input).abs() < 1e-7,
@@ -546,7 +516,7 @@ fn au_wire_param_set_drives_audelay_to_true_identity() {
     let frames = 128usize;
     let input_level = 0.25f32;
     let mut scratch = vec![input_level; frames * 2];
-    process_with_retries(&handle, &mut scratch, frames);
+    process_offline(&handle, &mut scratch, frames, 2);
     let default_gain = scratch[0] / input_level;
     assert!(
         default_gain < 0.95,
@@ -561,7 +531,7 @@ fn au_wire_param_set_drives_audelay_to_true_identity() {
 
     // The unit renders identity from the next pulled block on.
     let mut scratch = vec![input_level; frames * 2];
-    process_with_retries(&handle, &mut scratch, frames);
+    process_offline(&handle, &mut scratch, frames, 2);
     for (index, sample) in scratch.iter().enumerate() {
         assert!(
             (sample - input_level).abs() <= 1e-3,
@@ -609,7 +579,7 @@ fn sandboxed_fixture_editor_opens_over_the_wire_while_audio_stays_byte_exact() {
     let reference: Vec<f32> = (0..frames * 2).map(|index| index as f32 / 512.0).collect();
     let assert_gain = |handle: &RenderPluginProcessor, gain: f32, label: &str| {
         let mut scratch = reference.clone();
-        process_with_retries(handle, &mut scratch, frames);
+        process_offline(handle, &mut scratch, frames, 2);
         for (index, (output, input)) in scratch.iter().zip(reference.iter()).enumerate() {
             assert!(
                 (output - input * gain).abs() < 1e-7,
@@ -703,7 +673,7 @@ fn sandboxed_fixture_editor_opens_over_the_wire_while_audio_stays_byte_exact() {
     let (mut respawned, respawned_processor) = spawn_processing_session(&library);
     let respawned_handle = RenderPluginProcessor::new(Arc::clone(&respawned_processor) as Arc<_>);
     let mut scratch = reference.clone();
-    process_with_retries(&respawned_handle, &mut scratch, frames);
+    process_offline(&respawned_handle, &mut scratch, frames, 2);
     for (output, input) in scratch.iter().zip(reference.iter()) {
         assert!((output - input * CLAP_FIXTURE_GAIN).abs() < 1e-7);
     }
@@ -742,7 +712,7 @@ fn killed_child_bypasses_within_budget_instead_of_hanging() {
 
     // Prove it processes first.
     let mut scratch = vec![0.25f32; 256];
-    process_with_retries(&handle, &mut scratch, 128);
+    process_offline(&handle, &mut scratch, 128, 2);
 
     // Kill the child mid-session (the crash the sandbox tier isolates).
     client.kill();
@@ -802,7 +772,7 @@ fn vst3_child_processes_blocks_and_killed_child_bypasses_within_budget() {
             .map(|index| (index as f32 + block as f32) / 512.0)
             .collect();
         let reference = scratch.clone();
-        process_with_retries(&handle, &mut scratch, frames);
+        process_offline(&handle, &mut scratch, frames, 2);
         for (index, (output, input)) in scratch.iter().zip(reference.iter()).enumerate() {
             assert!(
                 (output - input * VST3_FIXTURE_GAIN).abs() < 1e-7,
@@ -933,7 +903,7 @@ fn lv2_child_processes_blocks_and_killed_child_bypasses_within_budget() {
             .map(|index| (index as f32 + block as f32) / 512.0)
             .collect();
         let reference = scratch.clone();
-        process_with_retries(&handle, &mut scratch, frames);
+        process_offline(&handle, &mut scratch, frames, 2);
         for (index, (output, input)) in scratch.iter().zip(reference.iter()).enumerate() {
             assert!(
                 (output - input * LV2_FIXTURE_GAIN).abs() < 1e-7,
@@ -1063,7 +1033,7 @@ fn au_child_processes_blocks_and_killed_child_bypasses_within_budget() {
     let mut dry_mix_gain: Option<f32> = None;
     for block in 0..8u32 {
         let mut scratch = vec![input_level; frames * 2];
-        process_with_retries(&handle, &mut scratch, frames);
+        process_offline(&handle, &mut scratch, frames, 2);
         let k = dry_mix_gain.get_or_insert(scratch[0] / input_level);
         for (index, sample) in scratch.iter().enumerate() {
             assert!(
@@ -1222,7 +1192,7 @@ fn fixture_plugin_processes_a_chain_insert_through_the_real_engine_offline_rende
     // Warm the child's audio thread so the offline render (faster than
     // realtime, no retries) never races its first block.
     let mut warm = vec![0.0f32; 256];
-    process_with_retries(&handle, &mut warm, 128);
+    process_offline(&handle, &mut warm, 128, 2);
 
     let dry = render_plan_to_pcm(&plan(None), &options).expect("dry render");
     let wet = render_plan_to_pcm(&plan(Some(handle)), &options).expect("wet render");

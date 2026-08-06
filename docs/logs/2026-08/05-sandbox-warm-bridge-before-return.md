@@ -1,6 +1,11 @@
 # Sandbox Bridge Warm-Up Before Return
 
-Status: warm-up landed but insufficient; the real fix is not done
+Status: superseded by `2026-08/06-offline-plugin-wait-budget.md`
+Correction: the fix prescribed below ("The Actual Fix, Not Done") was built and
+measured at `6/6` failures under load — no better than nothing. The cause was
+not epoch retirement in the harness; it was the offline renderer applying a
+realtime wait budget, so misses dropped the insert mid-render. Read the newer
+note instead.
 Created: 2026-08-05
 Scope: `signal-plugin-sandbox` `plugin_hosting`, the `A22` family residue
 
