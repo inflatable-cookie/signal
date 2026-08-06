@@ -9,8 +9,9 @@ registry upload.
 
 ## [Unreleased]
 
-### Changed
+## [0.1.1] - 2026-08-06
 
+### Changed
 - Verified the `1.95` Rust floor instead of only declaring it, and added
   `scripts/check-release-floor.sh` to keep it verified. It pins the toolchain in
   a committed `release-baselines/rust-toolchains.env`, refuses to run if that
@@ -29,7 +30,6 @@ registry upload.
   `git+file://…#<commit>`. Path-based co-development is what hides a broken tag:
   every sibling checkout is present locally, so a manifest that only resolves
   because of them looks correct until a consumer without them tries it.
-
   The reference assertion it was copied from does not work. `select(.source !=
   null)` *excludes* a path-resolved package rather than failing on it, leaving
   only a `>= expected` count — and signal has `28` crates against `23` probes,
@@ -52,7 +52,6 @@ registry upload.
   from what the host would play, at boundaries determined by machine load rather
   than by the plan. A user bouncing a mix with a sandboxed plugin on a busy
   machine got unprocessed blocks scattered through the export.
-
   `PluginBlockProcessor::set_offline_waiting` is the seam, the same shape as the
   existing `set_parameter_normalized`; the shm backend swaps its budget for `5s`
   and its spin for a yield, and `render_plan_to_pcm` restores each processor's
@@ -83,13 +82,11 @@ registry upload.
   insert. Reproduced at `5` failures in `10` runs under load beforehand. That
   function is the only place the lease is in scope, which is why the `A19`
   re-attach could not be applied at the twelve call sites.
-
   Re-measured under verified load, the warm-up is **not** a fix: still `5`
   failures in `6` runs. The epoch retires during the test rather than during
   setup, so warming only proves the child answered once beforehand. The warm-up
   is kept as harmless and documented as insufficient; the real fix is re-attach
   at the point of use, which needs the lease threaded to twelve call sites.
-
   **Superseded.** The re-attach was built and measured at `6` failures in `6`
   runs under load — no better than nothing — and introduced a defect of its own,
   since retrying a block carrying a `NoteOn` is not idempotent: a missed request
@@ -176,7 +173,6 @@ registry upload.
   `SIGNAL_STRETCH_BEHAVIOR_VERSION` advances to
   `signal-stretch-behavior-2026-08-05-a18-crossover` so cached artifacts
   invalidate, and the guard is un-ignored.
-
   Every finding from the audit that opened this generation is now closed or
   relocated: `A18` fixed, `A19`, `A22` and `A23` closed with mechanisms, `A21`
   closed as unmeasurable by its harness, `A20` relocated to the soak lane.
@@ -195,7 +191,6 @@ registry upload.
   `ensure_default_demo_plugin_override` writes three process-global environment
   variables with no lock. The sibling test-support file already had one; the
   bootstrap path never got it.
-
   Locking the writers alone cut it to `1` in `25` without fixing it, because
   only one test installs the override while every other test boots without one
   and still *reads* the variables — so an unguarded boot could scan a root that
@@ -222,7 +217,6 @@ registry upload.
   polarity flip — appearing from ratio `1.25` and peaking near `2.0`, which is
   where the pop was reported. Guarded by an `#[ignore]`d reproduction plus an
   always-on test that the metric fires on an injected pop.
-
   The earlier elimination was wrong because its metric could not detect the
   artifact at any threshold: a pop sits on a transient, and the percussive attack
   there is a larger low-band step than the pop, so worst-step always reported the
@@ -259,7 +253,6 @@ registry upload.
   unsupported. Widest working set measures `395.1 KiB` against the `1 MiB`
   ceiling, and `20000` callbacks across the whole ratio range showed `0` deadline
   misses at `7.8%` of budget.
-
   The batch could not integrate behind the render plane's preview boundary
   because there is none: `signal-render-plane/src/lib.rs` has zero occurrences of
   "preview" and every reference in the crate rejects the tier from offline
@@ -276,7 +269,6 @@ registry upload.
   because dropping source does not make output quiet. The replacement is a
   frequency sweep where position encodes source position, and it separates the
   two by `1300 Hz` against a value predicted from the ratio.
-
   Quality then matched the whole-buffer preview at the same geometry — RMS
   within `0.05%` and brightness within `1%` at every ratio — but the correlation
   metric had to be calibrated before it could be used as evidence. Identical DSP
@@ -310,7 +302,6 @@ registry upload.
 ## [0.1.0] - 2026-08-05
 
 ### Added
-
 - `ResumableOfflineStretch` carries phase, detector, and overlap-add state across chunk boundaries, so a source rendered in any number of chunks is bit-identical to one rendered whole. The offline artifact path uses it for the default path without pitch shift.
 - Promoted Signal's official demo task pack into native Effigy `[demos.*]` registry entries so the current browser, inspect, history, and live terminal surfaces can discover the repo's real demo cohort directly.
 - Added a canonical `plugin` domain handler with `plugin.list` support that returns the current scanned CLAP/VST3 catalogue as correlated events.
@@ -349,7 +340,6 @@ registry upload.
 - Initial C++20 project skeleton with CMake build system, IPC envelope structure, domain router, and test harness using Catch2.
 
 ### Changed
-
 - Admitted the resumable offline stretch renderer on the default offline path
   with no pitch shift, closing `g10.039`. It carries phase-vocoder state across
   chunk and dynamic-ratio boundaries instead of restarting at each join, and
@@ -447,8 +437,15 @@ registry upload.
 - Removed redundant DomainDispatcher and IpcRouter log messages, keeping only domain-specific logs to reduce log noise.
 - Hardened Signal skeleton with explicit concurrency model, proper engine lifecycle states, full transport domain handling, periodic diagnostics events, and graceful shutdown support.
 
-### Fixed
+### Removed
+- g10.020 runtime endgame: shrank `signal-runtime` + `signal-host-local` to a thin control library (~52k → ~15k LoC of src). Deleted the engine-block simulation path, the anticipative prework scheduler (policy vocabulary preserved in `docs/architecture/prework-scheduler-design-note.md`), transport-session concurrency, deferred-service receipt stubs, metering/scheduler/timeline/automation narration snapshots, plugin recall/ARA/pin-matrix/spatial carve-outs, and the preview-transform/transform-artifact/stretch/marker stack with the clip-render simulation. `signal-graph` reduced to the plan model (execution engine deleted). Host-local boot no longer pumps simulated engine blocks; the reported stream state means a negotiated output stream. Pulse's consumed surface is unchanged (pulse builds and passes untouched).
+- g10 demolition programme (packets 002-008): deleted ~98k LoC of simulated and narration-only code — `signal-supervisor-tools`, `signal-host-server`, `signal-hardware-coreaudio`, `signal-plugin-library`/`-store` crates removed; `signal-runtime` stripped of simulated posture domains and its narration layer (~29.4k); rhythm continuity taxonomy and embed model-registry fiction removed (~11.7k); plugin domain pruned to real discovery foundations with sandbox broker over verified shm leases (~20.8k); discovery roots now explicit configuration defaulting empty.
+- Removed `ChannelMixService` from the audio render path now that mute/gain are owned by graph nodes.
+- Removed the unused `channelMix` IPC domain handler now that mute is expressed via node parameters.
+- Removed kind=1 JSON frames and the JSON envelope codec from the Pulse↔Signal LPF1 control-plane (binary-envelope-v2 only).
+- Removed unused JSON-string TLV decoding helper now that runtime-push commands are fully typed.
 
+### Fixed
 - Repaired CI, which had failed on every push since it was added. The toolchain
   step passed `--component rustfmt clippy`, so rustup read `clippy` as a
   toolchain name and exited before any build ran. Components are now declared in
@@ -487,7 +484,6 @@ registry upload.
   region while the server thread was still dereferencing a raw pointer into it,
   killing the binary and taking the assertion message with it. The loop is now
   deadline-bounded and the join moved ahead of every assertion.
-
   Two further defects sat underneath, found once the segfault stopped hiding
   them. The fake child served exactly one request and exited, while every client
   retry issues a new request sequence — so answering request `N` after the
@@ -496,7 +492,6 @@ registry upload.
   `333us`, so replacing the spin with a `1ms` server sleep polled three times
   slower than the window it had to answer within; the server is back to
   `yield_now`.
-
   None of that was why CI failed. `PLUGIN_PROCESS_CONSECUTIVE_TIMEOUT_LIMIT` is
   `3`: after three consecutive misses the processor clears `alive` and every
   later `process` returns false immediately, so a retry loop against a retired
@@ -563,12 +558,3 @@ registry upload.
 - Added error handling to prevent Signal from crashing when encountering problematic CLAP plugins during scanning, and added exception handling in main() and SignalApp initialization to provide better error reporting.
 - Fixed CLAP plugin loading on macOS to correctly handle .clap bundles by resolving the actual library path from Contents/MacOS/ (handles files with or without extensions) and simplified ClapRegistry to delegate bundle resolution to ClapPluginLibrary.
 - Signal now emits engine.state events to newly connected clients, ensuring Aura receives notification of the current engine state when Pulse connects.
-
-### Removed
-
-- g10.020 runtime endgame: shrank `signal-runtime` + `signal-host-local` to a thin control library (~52k → ~15k LoC of src). Deleted the engine-block simulation path, the anticipative prework scheduler (policy vocabulary preserved in `docs/architecture/prework-scheduler-design-note.md`), transport-session concurrency, deferred-service receipt stubs, metering/scheduler/timeline/automation narration snapshots, plugin recall/ARA/pin-matrix/spatial carve-outs, and the preview-transform/transform-artifact/stretch/marker stack with the clip-render simulation. `signal-graph` reduced to the plan model (execution engine deleted). Host-local boot no longer pumps simulated engine blocks; the reported stream state means a negotiated output stream. Pulse's consumed surface is unchanged (pulse builds and passes untouched).
-- g10 demolition programme (packets 002-008): deleted ~98k LoC of simulated and narration-only code — `signal-supervisor-tools`, `signal-host-server`, `signal-hardware-coreaudio`, `signal-plugin-library`/`-store` crates removed; `signal-runtime` stripped of simulated posture domains and its narration layer (~29.4k); rhythm continuity taxonomy and embed model-registry fiction removed (~11.7k); plugin domain pruned to real discovery foundations with sandbox broker over verified shm leases (~20.8k); discovery roots now explicit configuration defaulting empty.
-- Removed `ChannelMixService` from the audio render path now that mute/gain are owned by graph nodes.
-- Removed the unused `channelMix` IPC domain handler now that mute is expressed via node parameters.
-- Removed kind=1 JSON frames and the JSON envelope codec from the Pulse↔Signal LPF1 control-plane (binary-envelope-v2 only).
-- Removed unused JSON-string TLV decoding helper now that runtime-push commands are fully typed.
