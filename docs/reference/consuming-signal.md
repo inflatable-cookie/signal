@@ -18,10 +18,17 @@ during the `v0.1.0` migration.
 Every consumer's manifest carries the released address:
 
 ```toml
-signal-plugin-vst3 = { git = "ssh://git@github.com/inflatable-cookie/signal.git", tag = "v0.1.0" }
+signal-plugin-vst3 = { git = "ssh://git@github.com/inflatable-cookie/signal.git", tag = "v0.1.1" }
 ```
 
 A clean checkout with no sibling repositories on disk builds from this alone.
+That is no longer taken on trust: `effigy release:source-consumer` builds exactly
+such a checkout against the release commit at every release and asserts every
+`signal-*` package resolves from a git source rather than a path.
+
+**Rust floor: `1.95` from `v0.1.1`** (`1.90` at `v0.1.0`). Verified at release
+time by `effigy release:floor`, which runs clippy and the full suite under that
+toolchain -- not `cargo check`. A consumer below `1.95` should stay on `v0.1.0`.
 Colleagues and CI have no override file, so they resolve the tag from git and
 there is nothing to coordinate.
 
