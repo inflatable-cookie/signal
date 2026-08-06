@@ -133,17 +133,52 @@ fn spawn_processing_session_for(
         .start_processing()
         .expect("child audio thread should start");
 
-    let processor = Arc::new(
-        ShmPluginProcessor::attach(
-            &lease.region_id,
-            &lease.shm_path,
-            lease.shm_bytes,
-            lease.max_frames,
-            lease.channels,
-            SAMPLE_RATE_HZ,
+    // Warm the bridge before handing it back, and re-attach if the epoch
+    // retires while doing so.
+    //
+    // `ShmPluginProcessor` clears its `alive` flag after
+    // `PLUGIN_PROCESS_CONSECUTIVE_TIMEOUT_LIMIT` consecutive misses, after which
+    // every later `process` returns false immediately. Under load the child's
+    // audio thread can easily miss its first three requests while it is still
+    // being scheduled, and the tests then fail in three different-looking ways:
+    // a bare `process_with_events` assertion, a `process_with_retries` deadline,
+    // or a render where wet equals dry because the miss bypassed the insert.
+    //
+    // The lease is in scope here and nowhere downstream, so this is the one
+    // place a retired epoch can be replaced. Returning a processor that has
+    // already answered once means callers start from a live epoch rather than
+    // spending their own budget discovering the child was not ready.
+    let attach = || {
+        Arc::new(
+            ShmPluginProcessor::attach(
+                &lease.region_id,
+                &lease.shm_path,
+                lease.shm_bytes,
+                lease.max_frames,
+                lease.channels,
+                SAMPLE_RATE_HZ,
+            )
+            .expect("parent should attach the audio block region"),
         )
-        .expect("parent should attach the audio block region"),
-    );
+    };
+    let mut processor = attach();
+    let mut scratch = vec![0.0f32; lease.max_frames as usize * lease.channels as usize];
+    let deadline = Instant::now() + CHILD_FIRST_RESPONSE_DEADLINE;
+    loop {
+        let handle = RenderPluginProcessor::new(Arc::clone(&processor) as Arc<_>);
+        if handle.process(&mut scratch, 64, lease.channels as usize) {
+            break;
+        }
+        if !processor.is_alive() {
+            processor = attach();
+        }
+        assert!(
+            Instant::now() < deadline,
+            "child never answered a warm-up request within {CHILD_FIRST_RESPONSE_DEADLINE:?}",
+        );
+        std::thread::sleep(Duration::from_millis(1));
+    }
+
     (client, processor)
 }
 
@@ -171,18 +206,20 @@ fn spawn_processing_session(
 /// from stacking up; the deadline is short enough that a retired epoch fails
 /// in tens of seconds rather than a minute.
 ///
-/// MEASURED 2026-08-05, and the condition matters more than the rate. Under
-/// concurrent load — a release gate running in another process — this binary
-/// failed `2` runs in `20`, across
-/// `fixture_plugin_processes_a_chain_insert_through_the_real_engine_offline_render`
-/// and `real_child_instrument_accepts_zero_input_and_generates_audio_from_note_events`.
-/// On an idle machine it passed `20` consecutive runs.
+/// MEASURED 2026-08-05, and the condition matters more than the rate. On an
+/// idle machine this binary passed `20` consecutive runs; under deliberate load
+/// it failed `5` of `10`, in three different-looking ways that were all the same
+/// cause — a bare `process_with_events` assertion, this deadline firing with its
+/// retired-epoch message, and a render where wet equalled dry because the miss
+/// bypassed the insert.
 ///
-/// So it is load-dependent, in the `A20`/`A22` family, rather than a fixed rate.
-/// Serialising the child-spawning tests earlier the same day cut it without
-/// removing it. Two distinct failure modes were seen: a session that fails
-/// during spawn, and a render where wet equals dry because a missed response
-/// bypassed — the latter being what epoch retirement looks like from outside.
+/// `spawn_processing_session_for` now warms the bridge before returning, and
+/// re-attaches there if the epoch retires while warming, which is the one place
+/// the lease is in scope. Callers therefore start from an epoch that has already
+/// answered rather than spending their own budget discovering the child was not
+/// ready.
+///
+/// The under-load rate after that change has not been re-measured.
 ///
 /// If this recurs, the fix is the one applied to the `shm` round-trip test:
 /// re-attach the processor when `is_alive()` goes false and give the round

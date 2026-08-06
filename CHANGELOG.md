@@ -11,6 +11,16 @@ registry upload.
 
 ### Changed
 
+- Warmed the sandbox bridge before `spawn_processing_session_for` returns, and
+  re-attached there if the epoch retires while warming. `ShmPluginProcessor`
+  retires after three consecutive misses, and under load the child's audio thread
+  can miss its first three requests while still being scheduled — which surfaced
+  three different ways: a bare `process_with_events` assertion, the retry
+  deadline, and a render where wet equalled dry because the miss bypassed the
+  insert. Reproduced at `5` failures in `10` runs under load beforehand. That
+  function is the only place the lease is in scope, which is why the `A19`
+  re-attach could not be applied at the twelve call sites. The under-load rate
+  after the change is not re-measured.
 - Recorded the `signal-plugin-sandbox` `plugin_hosting` flake with its condition
   rather than as a bare rate. It failed `2` runs in `20` while a release gate ran
   in another process, and passed `20` consecutive runs on an idle machine — so it
