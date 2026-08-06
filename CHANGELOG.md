@@ -11,6 +11,12 @@ registry upload.
 
 ### Changed
 
+- Recorded the `signal-plugin-sandbox` `plugin_hosting` flake with its condition
+  rather than as a bare rate. It failed `2` runs in `20` while a release gate ran
+  in another process, and passed `20` consecutive runs on an idle machine — so it
+  is load-dependent, in the `A20`/`A22` family, not a fixed `10%`. Unqualified,
+  that number would have sent the next attempt hunting a probabilistic defect in
+  the retry logic instead of contention.
 - Deleted the chunked artifact renderer and its seam smoother. Pitched artifacts
   now render through the resumable renderer, admitted by listening on 2026-08-05
   — no case preferred the legacy side, and the listener identified it blind in

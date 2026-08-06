@@ -47,7 +47,7 @@ it does not leave with the chunked renderer.
 
 - [x] teach the resumable renderer pitch composition, carrying resampler state
   across chunk boundaries the way phase state already is
-- [ ] route pitch-shifted artifacts through it
+- [x] route pitch-shifted artifacts through it
 - [x] delete `materialize_chunked_offline_stretch_artifact_frames` and
   `smooth_artifact_chunk_boundaries_interleaved`
 - [x] state explicitly what remains of the dynamic-segment smoother and why

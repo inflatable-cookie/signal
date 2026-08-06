@@ -171,11 +171,18 @@ fn spawn_processing_session(
 /// from stacking up; the deadline is short enough that a retired epoch fails
 /// in tens of seconds rather than a minute.
 ///
-/// MEASURED 2026-08-05: this binary fails roughly `2` runs in `20` — `10%` — on
+/// MEASURED 2026-08-05, and the condition matters more than the rate. Under
+/// concurrent load — a release gate running in another process — this binary
+/// failed `2` runs in `20`, across
 /// `fixture_plugin_processes_a_chain_insert_through_the_real_engine_offline_render`
-/// and `real_child_instrument_accepts_zero_input_and_generates_audio_from_note_events`
-/// among others. Serialising the child-spawning tests cut the rate but did not
-/// remove it, which is consistent with retirement rather than contention.
+/// and `real_child_instrument_accepts_zero_input_and_generates_audio_from_note_events`.
+/// On an idle machine it passed `20` consecutive runs.
+///
+/// So it is load-dependent, in the `A20`/`A22` family, rather than a fixed rate.
+/// Serialising the child-spawning tests earlier the same day cut it without
+/// removing it. Two distinct failure modes were seen: a session that fails
+/// during spawn, and a render where wet equals dry because a missed response
+/// bypassed — the latter being what epoch retirement looks like from outside.
 ///
 /// If this recurs, the fix is the one applied to the `shm` round-trip test:
 /// re-attach the processor when `is_alive()` goes false and give the round

@@ -57,24 +57,27 @@ None is the artifact path. It patches dynamic-ratio *segment* joins inside the
 whole-buffer stretcher, not chunk joins, so it never left with the chunked
 renderer and removing it is a separate question.
 
-## A Rate Worth Recording
+## A Rate That Needed Its Condition
 
 The `test` gate failed twice today on `signal-plugin-sandbox` `plugin_hosting`,
 which is `A22`'s binary and untouched by this lane. Measured rather than
-re-rolled: `2` failures in `20` runs, `10%`, across
-`fixture_plugin_processes_a_chain_insert_through_the_real_engine_offline_render`
-and `real_child_instrument_accepts_zero_input_and_generates_audio_from_note_events`.
+re-rolled: `2` failures in `20` runs.
 
-Serialising the child-spawning tests earlier today cut the rate without removing
-it, which is consistent with the documented limit rather than with contention:
-`process_with_retries` cannot recover once the processor retires its epoch after
-three consecutive misses. The re-attach fix that closed `A19` was not applied
-there because the twelve call sites each hold their own handle and the lease is
-not threaded through them.
+That number needed its condition attached, and nearly did not get it. The `2/20`
+was measured while a release gate was running in another process. Repeated on an
+idle machine, the same binary passed `20` consecutive runs.
 
-The measured rate is now written at that constant. A `10%` flake on a release
-gate is a gate that can be retried until green, which is the thing this
-generation keeps saying it will not accept.
+So it is load-dependent — the `A20`/`A22` family — not a fixed `10%` rate. Left
+unqualified, "fails `10%` of the time" would have sent the next attempt looking
+for a probabilistic defect in the retry logic rather than for contention.
+
+Two distinct failure modes appeared: a session failing during spawn, and a render
+where wet equalled dry because a missed response bypassed. The second is what
+epoch retirement looks like from outside, and `process_with_retries` still cannot
+recover from it — the `A19` re-attach fix was not applied there because the twelve
+call sites each hold their own handle and the lease is not threaded through them.
+
+Both the rate and its condition are now written at that constant.
 
 ## Next Task
 
