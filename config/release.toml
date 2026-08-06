@@ -41,5 +41,23 @@ test = "nice -n 5 cargo test --workspace --jobs $(( $(sysctl -n hw.ncpu) - 2 )) 
 # real-time throughput, which no shared CI runner can honour, so CI skips it
 # and the release gate is the only place the claim gets made.
 soak = "effigy test:soak"
+# The two gates proven by swallowtail v0.1.1, in the single-toolchain shape
+# longhorn adopted. Neither can run in CI: `floor` needs a second rustup
+# toolchain installed beside the pinned one, and `source-consumer` builds a
+# throwaway crate against a git source of this very tree.
+#
+# `floor` runs clippy AND the full suite at the MSRV, not `cargo check`.
+# Longhorn's floor violation appeared only under `--all-targets` -- a
+# dev-dependency pulled the feature that compiled the offending build script --
+# and a bare check passed and gave false confidence. On signal's first run it
+# immediately found a real one: 1.95's clippy denies a `collapsible_match` that
+# 1.97.1 does not.
+#
+# `source-consumer` is the gate for the failure mode that path-based
+# co-development hides: every sibling checkout is present locally, so a manifest
+# that only resolves because of them looks correct until a consumer without them
+# tries the tag.
+floor = "effigy release:floor"
+"source-consumer" = "effigy release:source-consumer"
 validate = "effigy validate"
 docs = "effigy qa:docs"

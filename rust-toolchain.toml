@@ -7,8 +7,14 @@
 # Bumping: change the version, run `effigy release gates`, fix what the new
 # compiler finds, and push the fix with the bump.
 #
-# This is not the MSRV. `rust-version` in Cargo.toml declares the 1.90 floor,
-# and nothing currently verifies it -- CI builds only on this pinned version.
+# This is not the MSRV. `rust-version` in Cargo.toml declares the floor --
+# 1.95 since 2026-08-06 -- and `effigy release:floor` verifies it by running
+# clippy and the full suite under the toolchain pinned in
+# `release-baselines/rust-toolchains.env`. CI still builds only on the version
+# below, so the floor claim is made at release time and nowhere else.
+#
+# The two are independent and both real: 1.95's clippy denies lints 1.97.1 does
+# not, and vice versa, so code has to satisfy both.
 [toolchain]
 channel = "1.97.1"
 components = ["rustfmt", "clippy"]

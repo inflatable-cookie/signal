@@ -11,6 +11,69 @@ registry upload.
 
 ### Changed
 
+- Verified the `1.95` Rust floor instead of only declaring it, and added
+  `scripts/check-release-floor.sh` to keep it verified. It pins the toolchain in
+  a committed `release-baselines/rust-toolchains.env`, refuses to run if that
+  toolchain is missing from rustup, and runs clippy plus the full suite at the
+  floor — not `cargo check`, because longhorn's floor violation appeared only
+  under `--all-targets` where a dev-dependency pulled the feature that compiled
+  the offending build script. The first run found a real violation: `1.95`'s
+  clippy denies a `collapsible_match` in `signal-dsp-stretch` that `1.97.1`'s
+  does not. Being clippy-clean at the pinned toolchain is a weaker claim than it
+  reads as; two toolchains are two different demands.
+- Added `scripts/verify-source-consumer.sh`, which proves the release commit is
+  consumable as a git dependency rather than only as a path. It builds a
+  throwaway crate depending on this tree by `git`/`rev` for the `23` crates
+  `finch`, `soundcheck`, `soundcheck-library` and `loophole` actually name, then
+  asserts via `cargo metadata` that every `signal-*` package resolves from
+  `git+file://…#<commit>`. Path-based co-development is what hides a broken tag:
+  every sibling checkout is present locally, so a manifest that only resolves
+  because of them looks correct until a consumer without them tries it.
+
+  The reference assertion it was copied from does not work. `select(.source !=
+  null)` *excludes* a path-resolved package rather than failing on it, leaving
+  only a `>= expected` count — and signal has `28` crates against `23` probes,
+  so five could leak and still clear it. Measured by pointing one probe at a
+  path: the reference filter printed "external source consumer passed"; the
+  fixed one, which selects by name and excludes only the throwaway consumer,
+  failed. `cargo check` succeeded in both, which is exactly what a consumer with
+  sibling checkouts sees.
+- Wired both as `effigy release:floor`, `effigy release:source-consumer` and the
+  aggregate `effigy release:gates`, and added them to `config/release.toml`.
+  Neither can run in CI — one needs a second rustup toolchain installed, the
+  other builds against a git source of the working tree — so they join `soak` as
+  claims made only at release time.
+- Fixed the offline renderer applying a realtime plugin wait budget.
+  `plugin_process_wait_budget` is `min(1 ms, half a block)` because a realtime
+  callback must return before its output buffer drains, so bypassing a slow
+  insert is correct there. `render_plan_to_pcm` drives the same executor and
+  inherited the same budget, but an offline render has no buffer to drain: a
+  miss silently drops the insert for that block and writes a render that differs
+  from what the host would play, at boundaries determined by machine load rather
+  than by the plan. A user bouncing a mix with a sandboxed plugin on a busy
+  machine got unprocessed blocks scattered through the export.
+
+  `PluginBlockProcessor::set_offline_waiting` is the seam, the same shape as the
+  existing `set_parameter_normalized`; the shm backend swaps its budget for `5s`
+  and its spin for a yield, and `render_plan_to_pcm` restores each processor's
+  previous setting on drop so a handle shared with live playback keeps its
+  realtime bound. Measured under `1783%` CPU load: `0` failures in `8`, against
+  `5` in `10` before.
+- Moved `OfflineHighQualityStretcher`'s three dynamic-ratio methods onto the
+  resumable renderer, and fixed the metric that had been hiding why they needed
+  it. `DynamicSegmentSeamClickDbfs` read exactly `|x[seam-1] - x[seam]|`, and
+  `smooth_dynamic_segment_boundaries_interleaved` assigns both of those samples
+  their own midpoint, so the metric was zero by construction whenever the
+  smoother ran: a full-scale `+1 -> -1` step smoothed with a one-frame fade that
+  leaves the discontinuity intact scored `-240 dBFS`, the silence sentinel. It
+  now measures the peak first-difference within `384` frames of each seam in
+  excess of the render's own `p99.9` step. On a `110 Hz` tone across a
+  `1.0 -> 1.6 -> 0.8` curve: segments concatenated raw `-14.18 dBFS`, the same
+  smoothed `-18.83`, the resumable renderer `-76.39`. The smoother also is not
+  neutral — applied to continuous material it moves the measurement from
+  `-240.00` to `-70.86 dBFS`, introducing a discontinuity where none existed.
+  `RealtimePreviewStretcher` is a different quality tier and is untouched, so
+  the smoother stays for it.
 - Warmed the sandbox bridge before `spawn_processing_session_for` returns, and
   re-attached there if the epoch retires while warming. `ShmPluginProcessor`
   retires after three consecutive misses, and under load the child's audio thread
@@ -26,6 +89,14 @@ registry upload.
   setup, so warming only proves the child answered once beforehand. The warm-up
   is kept as harmless and documented as insufficient; the real fix is re-attach
   at the point of use, which needs the lease threaded to twelve call sites.
+
+  **Superseded.** The re-attach was built and measured at `6` failures in `6`
+  runs under load — no better than nothing — and introduced a defect of its own,
+  since retrying a block carrying a `NoteOn` is not idempotent: a missed request
+  is still published and the child may serve it anyway, so the retry delivers a
+  second note to a sounding voice. It was reverted. The cause was never epoch
+  retirement in the harness; it was the offline renderer applying a realtime wait
+  budget, fixed above.
 - Recorded the `signal-plugin-sandbox` `plugin_hosting` flake with its condition
   rather than as a bare rate. It failed `2` runs in `20` while a release gate ran
   in another process, and passed `20` consecutive runs on an idle machine — so it

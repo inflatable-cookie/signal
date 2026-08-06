@@ -185,13 +185,8 @@ pub(crate) fn boundary_envelope(output_frame: usize, plan: &RenderPlan) -> f64 {
 fn envelope_factor(distance: usize, extent: usize) -> f64 {
     match extent {
         0 => 1.0,
-        1 => {
-            if distance == 0 {
-                0.0
-            } else {
-                1.0
-            }
-        }
+        1 if distance == 0 => 0.0,
+        1 => 1.0,
         _ if distance < extent => {
             (std::f64::consts::FRAC_PI_2 * distance as f64 / (extent - 1) as f64).sin()
         }

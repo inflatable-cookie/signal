@@ -45,6 +45,11 @@ each sitting beside a `..` that already covers them — are removed.
 This is not the MSRV. `rust-version` declares the `1.90` floor and nothing
 verifies it: CI builds only on the pinned version. Worth closing separately.
 
+> Closed 2026-08-06. The floor is now `1.95` and
+> `2026-08/06-release-floor-and-source-consumer-gates.md` records the gate that
+> verifies it — which found a real violation on its first run, so "nothing
+> verifies it" was not a theoretical gap.
+
 ## New Finding `A22`
 
 `signal-plugin-sandbox` `tests/plugin_hosting.rs` fails intermittently under
