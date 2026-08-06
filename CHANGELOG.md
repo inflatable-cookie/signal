@@ -11,6 +11,18 @@ registry upload.
 
 ### Changed
 
+- Closed `A18`. The high-band transient reset was admitted by listening on
+  2026-08-05 and is now the shipped path: `TRANSIENT_RESET_CROSSOVER_FRACTION`
+  of `0.010`, `240 Hz` at `48 kHz`. No case preferred the shipped side, and the
+  listener identified the pop on the shipped side at ratio `2.0` without knowing
+  which side was which — the ratio where the measurement had put the peak.
+  `SIGNAL_STRETCH_BEHAVIOR_VERSION` advances to
+  `signal-stretch-behavior-2026-08-05-a18-crossover` so cached artifacts
+  invalidate, and the guard is un-ignored.
+
+  Every finding from the audit that opened this generation is now closed or
+  relocated: `A18` fixed, `A19`, `A22` and `A23` closed with mechanisms, `A21`
+  closed as unmeasurable by its harness, `A20` relocated to the soak lane.
 - Added `a18-listening-pack`, an evidence binary that builds the concealed pack
   for the `A18` fix. Three cases of a bass note with a percussive attack every
   `500 ms` at the ratios where the artifact is largest, sides assigned per case

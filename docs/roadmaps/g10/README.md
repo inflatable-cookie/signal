@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: active generation; `g10.036` through `g10.040` complete, `g10.041` open on `A18`
+Status: active generation; `g10.036` through `g10.041` complete; every audit finding closed or relocated
 Updated: 2026-07-27
 
 ## Why this generation matters now
@@ -492,7 +492,7 @@ Do not start Loophole or Chorus planning from Signal internals.
     been sought. Still inherits
     the two items `g10.039` did not settle — adopting the remaining offline paths
     so both seam smoothers can go, and a direct transient probe for `A18`
-- `g10.041` `active`
+- `g10.041` `complete`
   - `A18` transient pop triage: the last untriaged finding from the audit that
     opened this generation. Batch 41.1 eliminated the standing hypothesis and was
     **wrong** — its worst-step metric could not detect the artifact at any
@@ -515,7 +515,14 @@ Do not start Loophole or Chorus planning from Signal internals.
     it — the probe tone is `80 Hz`, so protection only appears once the crossover
     rises above the content it protects. Removing the reset instead regresses
     smear to `8.0` at ratio `3.0`, so it stays and is applied less widely. The
-    candidate has no production constructor; blocked on Rule 5 listening
+    candidate was admitted by listening 2026-08-05 and adopted. No case
+    preferred the shipped side, and `E3` is the result that matters: the listener
+    identified the pop on the shipped side at ratio `2.0` without knowing which
+    side was which, which is where the measurement had put the peak. The listener
+    also reported zero-offset wander on both sides — measured, it is already in
+    the source at the same magnitude, so it is a fixture defect from a `30 ms`
+    noise burst whose mean lands non-zero rather than a stretcher defect.
+    `SIGNAL_STRETCH_BEHAVIOR_VERSION` advances and the guard is un-ignored
 
 ## Stretch Boundary
 

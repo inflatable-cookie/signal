@@ -111,10 +111,10 @@ fn a18_metric_detects_an_injected_pop() {
     );
 }
 
-/// `A18` itself. Ignored while the defect is open, with the measured value in
-/// the reason, following the `g10.039` `G5` precedent.
+/// `A18` itself. Un-ignored on 2026-08-05: the high-band crossover was admitted
+/// by listening, which independently identified the pop on the shipped side at
+/// ratio `2.0` without knowing which side was which.
 #[test]
-#[ignore = "A18 open: the offline path measures 2.752rad of carrier phase jump at ratio 2.0 against a 0.142rad floor"]
 fn a18_offline_stretch_does_not_break_low_carrier_phase() {
     let source = material(4.0, 0.0);
     let floor = carrier_phase_jump(&source, TONE);

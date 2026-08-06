@@ -36,7 +36,8 @@ impl AuHostAdapter {
 
     /// Discover Audio Units through the system AudioComponent registry
     /// (rootless: `AudioComponentFindNext` enumeration per type of interest
-    /// — `aufx`, `aumf`, `aumu`; converter/output types are skipped). The
+    /// — `aufx`, `aumf`, `aumu`, `augn`, `aupn`; converter/output types are
+    /// skipped). The
     /// registry executes no plugin code, matching the `moduleinfo.json`
     /// descriptor-only posture. AUv3 components
     /// (`kAudioComponentFlag_IsV3AudioUnit`) are filtered out —
@@ -142,11 +143,11 @@ fn expand_scan_root(root: &str) -> PathBuf {
 
 // ── System-registry enumeration (macOS only) ───────────────────────────────
 
-/// AudioComponent types of interest: effects, music effects, instruments.
-/// Output (`auou`) and format-converter (`aufc`) units are host plumbing,
-/// not user plugins.
+/// AudioComponent types exposed as user-selectable processors: effects,
+/// music effects, instruments, generators, and panners. Output (`auou`) and
+/// format-converter (`aufc`) units remain host plumbing rather than plugins.
 #[cfg(target_os = "macos")]
-const REGISTRY_TYPES_OF_INTEREST: [&str; 3] = ["aufx", "aumf", "aumu"];
+const REGISTRY_TYPES_OF_INTEREST: [&str; 5] = ["aufx", "aumf", "aumu", "augn", "aupn"];
 
 #[cfg(target_os = "macos")]
 fn registry_discovery() -> Vec<AuDiscoveredPluginType> {
@@ -267,9 +268,17 @@ unsafe fn registry_component_metadata(
             name
         },
         version,
-        audio_inputs: if component_type == "aumu" { 0 } else { 2 },
+        audio_inputs: if matches!(component_type.as_str(), "aumu" | "augn") {
+            0
+        } else {
+            2
+        },
         audio_outputs: 2,
-        midi_inputs: if component_type == "aufx" { 0 } else { 1 },
+        midi_inputs: if matches!(component_type.as_str(), "aumu" | "aumf") {
+            1
+        } else {
+            0
+        },
         midi_outputs: 0,
         features: if component_type == "aumu" {
             vec![PluginFeature::Instrument]
@@ -351,5 +360,36 @@ mod registry_tests {
                 "AUv3 component leaked into discovery: {v3_id}",
             );
         }
+    }
+
+    #[test]
+    fn registry_discovery_includes_user_selectable_apple_generators_and_panners() {
+        let discovered = AuHostAdapter::default().discover_plugins_from_registry();
+        for expected in [
+            "plugin:au:aumu:samp:appl",
+            "plugin:au:augn:sspl:appl",
+            "plugin:au:augn:ttsp:appl",
+            "plugin:au:aupn:ambi:appl",
+            "plugin:au:aupn:sphr:appl",
+        ] {
+            assert!(
+                discovered
+                    .iter()
+                    .any(|plugin| plugin.plugin_type_id.0 == expected),
+                "missing user-selectable Apple Audio Unit: {expected}",
+            );
+        }
+
+        let scheduled = discovered
+            .iter()
+            .find(|plugin| plugin.plugin_type_id.0 == "plugin:au:augn:sspl:appl")
+            .expect("scheduled sound player");
+        assert_eq!(scheduled.default_io_layout.audio_inputs, 0);
+        assert_eq!(scheduled.default_io_layout.audio_outputs, 2);
+        assert_eq!(scheduled.default_io_layout.midi_inputs, 0);
+        assert!(scheduled
+            .descriptor
+            .features
+            .contains(&PluginFeature::AudioEffect));
     }
 }

@@ -281,7 +281,7 @@ fn derive_plugin_type_id(
 }
 
 fn default_audio_inputs(component_type: &str) -> u16 {
-    if component_type.eq_ignore_ascii_case("aumu") {
+    if component_type.eq_ignore_ascii_case("aumu") || component_type.eq_ignore_ascii_case("augn") {
         0
     } else {
         2
@@ -293,7 +293,7 @@ fn default_audio_outputs(_component_type: &str) -> u16 {
 }
 
 fn default_midi_inputs(component_type: &str) -> u16 {
-    if component_type.eq_ignore_ascii_case("aumu") {
+    if component_type.eq_ignore_ascii_case("aumu") || component_type.eq_ignore_ascii_case("aumf") {
         1
     } else {
         0

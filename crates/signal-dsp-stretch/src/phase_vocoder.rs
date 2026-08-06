@@ -69,6 +69,22 @@ pub(crate) fn high_band_transient_reset_phase_vocoder(
     run_phase_vocoder(input, target_len, ratio, window_size, analysis_hop, mode)
 }
 
+/// Crossover for the transient phase reset, as a fraction of Nyquist.
+///
+/// `240 Hz` at `48 kHz`. Bins below it propagate continuously through a
+/// transient; bins above it reset.
+///
+/// Admitted by listening on 2026-08-05 (`g10.041`). Low-frequency content is
+/// sustained *through* a transient — a bass note rings on while the attack
+/// happens — so resetting its phase destroys continuity in something that never
+/// restarted, which is finding `A18`. High-frequency content *is* the transient,
+/// and resetting it is what stops smearing.
+///
+/// Bounded on both sides by measurement: below about `120 Hz` the artifact
+/// returns, and at `504 Hz` transient smear regresses because the reset stops
+/// reaching content that should restart.
+pub const TRANSIENT_RESET_CROSSOVER_FRACTION: f64 = 0.010;
+
 /// Run the identity phase-locked prototype with transient phase resets.
 pub(crate) fn transient_reset_phase_vocoder(
     input: &[Sample],
@@ -77,10 +93,12 @@ pub(crate) fn transient_reset_phase_vocoder(
     window_size: usize,
     analysis_hop: usize,
 ) -> Vec<Sample> {
+    let bins = window_size / 2 + 1;
+    let crossover_bin = (TRANSIENT_RESET_CROSSOVER_FRACTION * bins as f64).ceil() as usize;
     let mode = if ratio < 1.0 {
         PhasePropagationMode::IdentityLocked
     } else {
-        PhasePropagationMode::IdentityLockedTransientReset
+        PhasePropagationMode::IdentityLockedTransientResetHighBand { crossover_bin }
     };
     run_phase_vocoder(input, target_len, ratio, window_size, analysis_hop, mode)
 }
@@ -198,9 +216,9 @@ struct SpectralPeak {
     magnitude: f32,
 }
 
-// `IdentityLockedTransientResetHighBand` has no production constructor by
-// design: it is the unadopted `g10.041` candidate for `A18`, and Contract `084`
-// Rule 2 keeps a candidate isolated until Rule 5 listening admits it.
+// `IdentityLockedTransientReset` resets every bin. It is no longer the shipped
+// path — `g10.041` replaced it with the high-band variant after listening — but
+// it is retained as the control the `A18` evidence compares against.
 #[allow(dead_code)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum PhasePropagationMode {
