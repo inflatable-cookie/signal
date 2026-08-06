@@ -1,6 +1,6 @@
 # Sandbox Bridge Warm-Up Before Return
 
-Status: fix landed; under-load rate not re-measured
+Status: warm-up landed but insufficient; the real fix is not done
 Created: 2026-08-05
 Scope: `signal-plugin-sandbox` `plugin_hosting`, the `A22` family residue
 
@@ -43,23 +43,46 @@ Warming at construction means callers start from an epoch that has already
 answered, rather than spending their own budget discovering the child was not
 ready.
 
-## What Is Not Verified
+## The Warm-Up Is Not The Fix
 
-The under-load rate after the change. The re-measurement was cut short and is not
-claimed. Idle, `10` consecutive runs pass and the full gate set is green, which
-is weaker evidence than the reproduction that motivated the fix.
+Re-measured under verified load: **`5` failures in `6` runs**. The warm-up did
+not help.
 
-## A Note On How That Happened
+Two intermediate measurements said otherwise and both were worthless:
 
-The load was generated with `yes` processes whose cleanup was the last line of a
-command that hit its ten-minute timeout, so the cleanup never ran and they
-outlived the measurement. They were killed once noticed.
+- `0/8` "under load" where the load was launched as `( timeout 240 yes & )` in a
+  subshell and `pgrep` found nothing. macOS has no `timeout` — it is GNU
+  coreutils — so the load never started and the runs were idle.
+- `0/10` idle, which was never evidence about a load-dependent failure.
 
-Self-limiting load — processes that terminate on their own regardless of what
-happens to the harness — is the only safe form of this technique.
+Only the third measurement, which checked `1710%` CPU across `18` cores *before*
+running anything, is worth reading. The rule this generation keeps relearning
+again: a measurement has to be shown capable of seeing the thing, and that
+includes checking the *conditions* were applied, not just the result.
+
+## Why It Failed
+
+The failing assertions say it. `child never answered a process request within
+20s (a retired epoch cannot recover by retrying)` fires inside
+`process_with_retries`, which runs long after setup, and `wet 0.5 vs dry 0.5 *
+0.5` is a miss mid-render.
+
+The epoch retires *during* the test, not during setup. Sustained load makes the
+child miss three in a row at any point, and warming only proves it answered once
+beforehand. The warm-up addresses setup-time retirement, which was never the
+dominant mode.
+
+## The Actual Fix, Not Done
+
+The `A19` re-attach, applied at the point of use: re-attach when `is_alive` goes
+false inside `process_with_retries` and at the bare `process_with_events` call
+sites. That needs the lease threaded to twelve call sites, which is real work.
+
+The warm-up is kept because it is harmless and does close setup-time retirement,
+but it is documented as insufficient rather than as a fix.
 
 ## Next Task
 
-Re-measure under load when convenient, using self-limiting load processes. If the
-warm-up holds, the remaining `process_with_retries` limit is documentation rather
-than a defect.
+Thread the lease to the twelve call sites and re-attach on retirement at the
+point of use. Verify under load with the conditions checked before the run —
+shell busy-loops that self-terminate, since macOS has no `timeout`.

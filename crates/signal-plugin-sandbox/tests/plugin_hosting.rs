@@ -213,13 +213,19 @@ fn spawn_processing_session(
 /// retired-epoch message, and a render where wet equalled dry because the miss
 /// bypassed the insert.
 ///
-/// `spawn_processing_session_for` now warms the bridge before returning, and
-/// re-attaches there if the epoch retires while warming, which is the one place
-/// the lease is in scope. Callers therefore start from an epoch that has already
-/// answered rather than spending their own budget discovering the child was not
-/// ready.
+/// `spawn_processing_session_for` warms the bridge before returning and
+/// re-attaches there if the epoch retires while warming. That helps setup-time
+/// retirement and is kept, but it is **not** a fix: re-measured under verified
+/// load it still failed `5` of `6` runs.
 ///
-/// The under-load rate after that change has not been re-measured.
+/// The reason is visible in which assertions fail. The epoch retires *during*
+/// the test, not during setup — sustained load makes the child miss three in a
+/// row at any point, and warming only proves it answered once beforehand.
+///
+/// The fix is the `A19` one, applied at the point of use: re-attach when
+/// `is_alive` goes false inside `process_with_retries` and the bare
+/// `process_with_events` call sites. That needs the lease threaded to those
+/// twelve sites, which is real work and is not done.
 ///
 /// If this recurs, the fix is the one applied to the `shm` round-trip test:
 /// re-attach the processor when `is_alive()` goes false and give the round

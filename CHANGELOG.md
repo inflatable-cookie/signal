@@ -19,8 +19,13 @@ registry upload.
   deadline, and a render where wet equalled dry because the miss bypassed the
   insert. Reproduced at `5` failures in `10` runs under load beforehand. That
   function is the only place the lease is in scope, which is why the `A19`
-  re-attach could not be applied at the twelve call sites. The under-load rate
-  after the change is not re-measured.
+  re-attach could not be applied at the twelve call sites.
+
+  Re-measured under verified load, the warm-up is **not** a fix: still `5`
+  failures in `6` runs. The epoch retires during the test rather than during
+  setup, so warming only proves the child answered once beforehand. The warm-up
+  is kept as harmless and documented as insufficient; the real fix is re-attach
+  at the point of use, which needs the lease threaded to twelve call sites.
 - Recorded the `signal-plugin-sandbox` `plugin_hosting` flake with its condition
   rather than as a bare rate. It failed `2` runs in `20` while a release gate ran
   in another process, and passed `20` consecutive runs on an idle machine — so it
