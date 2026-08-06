@@ -166,6 +166,33 @@ The same conflict is latent in swallowtail's and longhorn's floor scripts, which
 also pass `--locked`. It only bites once a floor gate is wired into
 `[release.gates]` rather than run by hand.
 
+## `effigy release execute` Cannot Run Here At All
+
+With gates green and state written, execute blocks:
+
+```
+Missing Expected Changes
+  - .release-prepared.json
+Blockers
+  - working tree is missing 1 expected prepared file change(s)
+```
+
+It expects `.release-prepared.json` to appear as a working-tree change. Signal
+gitignores it — `.gitignore` line 93, "Effigy release state, local to a prepare
+run" — so `git status` can never report it, and the blocker is unconditional.
+Committing release state into the repository would be the wrong way to satisfy
+it.
+
+That explains the stale file from `v0.1.0`: execute never ran, so it never
+cleaned up. `v0.1.0`'s tag sits on `e52721a9`, an ordinary commit
+("Make the local CLAP discovery failure carry its own evidence"), not on a
+release commit effigy authored. It was tagged by hand.
+
+`v0.1.1` is tagged by hand for the same reason, with effigy still the authority
+for preparing and gating. Two findings for effigy, then: execute's expected-file
+check should tolerate a gitignored state file, and prepare should not leave the
+tree mutated when it reports `Prepared: no`.
+
 ## A Note On The Version Number
 
 `0.1.1` carries an MSRV raise from `1.90` to `1.95`, which stops the build for
