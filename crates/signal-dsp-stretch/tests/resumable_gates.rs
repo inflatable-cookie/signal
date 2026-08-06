@@ -270,7 +270,7 @@ fn dominant_hz(samples: &[f32], channels: usize) -> f64 {
 /// `0.0057568103` at `-5` semitones with `3` chunks, first diverging `39.8%`
 /// through the render rather than at a chunk boundary or the tail.
 ///
-/// Diagnosed: the cause is `A24`, not this renderer.
+/// Passed once `A24` was fixed. The cause was never in this renderer.
 ///
 /// `StreamingResampler` is not bit-exact across chunk boundaries — one ULP,
 /// `2.98e-8`, appearing exactly at each seam. The phase vocoder downstream
@@ -287,7 +287,6 @@ fn dominant_hz(samples: &[f32], channels: usize) -> f64 {
 /// correct. Un-ignoring this gate depends on `A24`, tracked in
 /// `signal-dsp-resample/tests/chunk_boundary_exactness.rs`.
 #[test]
-#[ignore = "blocked on A24: the resampler is not bit-exact at chunk seams, and the vocoder amplifies one ULP to 5.8e-3"]
 fn pitched_render_is_chunk_count_independent() {
     let source = tone(48_000 * 2, 220.0, 2);
     for semitones in [-5.0f64, 7.0] {

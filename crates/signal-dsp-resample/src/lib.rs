@@ -59,7 +59,22 @@ pub struct StreamingResampler {
     config: ResampleConfig,
     step: f64,
     pending: Vec<Sample>,
-    next_source_index: f64,
+    /// Output samples emitted so far.
+    ///
+    /// The read position is derived from this rather than accumulated, so it
+    /// does not depend on how the input was chunked. `A24`: the previous
+    /// implementation advanced a running `next_source_index` by `+= step` and
+    /// rebased it by `-= drain_count` whenever `pending` was trimmed. Floating
+    /// point addition is not associative, so interleaving those subtractions
+    /// produced a different value from the unchunked sequence — one ULP,
+    /// `2.98e-8`, arriving exactly at the first seam.
+    ///
+    /// One ULP is nothing on its own. A phase vocoder downstream amplifies it
+    /// by roughly `190000x`, because a magnitude change of any size can flip
+    /// which bin is a local spectral peak.
+    emitted: u64,
+    /// Input samples dropped from the front of `pending` so far.
+    drained: u64,
 }
 
 impl StreamingResampler {
@@ -75,7 +90,8 @@ impl StreamingResampler {
             config,
             step,
             pending: Vec::new(),
-            next_source_index: 0.0,
+            emitted: 0,
+            drained: 0,
         }
     }
 
@@ -87,7 +103,21 @@ impl StreamingResampler {
     /// Reset internal state, discarding any buffered samples.
     pub fn reset(&mut self) {
         self.pending.clear();
-        self.next_source_index = 0.0;
+        self.emitted = 0;
+        self.drained = 0;
+    }
+
+    /// Read position within `pending`, derived from the absolute output index.
+    ///
+    /// The integer and fractional parts are separated before rebasing so the
+    /// subtraction is exact: the fraction is carried untouched and only the
+    /// whole-sample offset moves, which makes the `(left_index, fraction)` pair
+    /// the interpolator sees identical however the input was chunked.
+    fn read_position(&self) -> f64 {
+        let absolute = self.emitted as f64 * self.step;
+        let absolute_floor = absolute.floor();
+        let fraction = absolute - absolute_floor;
+        (absolute_floor - self.drained as f64) + fraction
     }
 
     /// Feed one chunk of input samples and return all newly available output samples.
@@ -140,27 +170,31 @@ impl StreamingResampler {
         };
 
         let mut output = Vec::new();
-        while self.next_source_index < limit {
+        loop {
+            let position = self.read_position();
+            if position >= limit {
+                break;
+            }
             output.push(sample_at_with_step(
                 &self.pending,
-                self.next_source_index,
+                position,
                 self.step,
                 self.config.quality,
             ));
-            self.next_source_index += self.step;
+            self.emitted += 1;
         }
 
         if final_chunk {
             return output;
         }
 
-        let drain_up_to = self.next_source_index.floor() as usize;
+        let drain_up_to = self.read_position().floor() as usize;
         let drain_count = drain_up_to
             .saturating_sub(radius)
             .min(self.pending.len().saturating_sub(radius));
         if drain_count > 0 {
             self.pending.drain(..drain_count);
-            self.next_source_index -= drain_count as f64;
+            self.drained += drain_count as u64;
         }
 
         output

@@ -1,6 +1,6 @@
 # 042 - Pitch Resumable Render And Seam Smoother Removal
 
-Status: active; pitch implemented and correct, blocked on `A24` in the resampler
+Status: active; pitch correct and chunk-independent, Batch 42.4 ready
 Owner: dsp
 Created: 2026-08-05
 Depends on: `g10.039`
@@ -177,11 +177,11 @@ would discard the resampler tail, which is a source drop of exactly the kind
 
 ### Batch 42.3 - Implement Resumable Pitch
 
-Status: implemented and diagnosed; chunk independence blocked on `A24`
+Status: complete; `A24` fixed and every gate green
 
 - [x] implement isolated per Contract `084` Rule 2
 - [ ] freeze the working-set ceiling — deferred until the render is correct
-- [ ] prove chunk-count independence — **fails**, see below
+- [x] prove chunk-count independence — passes once `A24` was fixed
 - [x] prove the ratio curve lands correctly in pitched coordinates
 - [x] prove the pitch shift happens, and in the right direction
 
@@ -190,6 +190,15 @@ Status: implemented and diagnosed; chunk independence blocked on `A24`
 per mid/side channel, per the frozen design. `resumable_render_supported` is
 unchanged, so pitched artifacts still take the legacy path and nothing in
 production reaches this code.
+
+#### Fixed
+
+`A24` is fixed and the gate passes. `StreamingResampler` now derives its read
+position from the absolute output index instead of accumulating and rebasing it,
+with the integer and fractional parts separated so the rebase is exact. Bit-exact
+across `2`, `3` and `7` chunks, and the pitched render is chunk-count independent.
+
+What follows is the diagnosis, kept because the eliminations are the useful part.
 
 #### Diagnosed: The Renderer Is Correct, The Resampler Is Not Bit-Exact
 
@@ -302,13 +311,17 @@ Status: blocked on Batch 42.3
 
 ## Next Task
 
-Fix `A24`: make `StreamingResampler` bit-exact across chunk boundaries. The
-difference is one ULP appearing exactly at each seam, so it is seam arithmetic —
-most likely how the `pending` history and the fractional `next_source_index`
-combine on the first sample after a boundary.
+Open Batch 42.4. Pitch is implemented, chunk-count independent, and every gate is
+green with nothing ignored.
 
-The pitch implementation is finished and correct. Its chunk-independence gate is
-`#[ignore]`d pointing at `A24`, and un-ignoring it is what unblocks Batch 42.4
-and the seam smoother removal.
+Batch 42.4 routes pitched artifacts through the resumable renderer by extending
+`resumable_render_supported`, then deletes
+`materialize_chunked_offline_stretch_artifact_frames` and
+`smooth_artifact_chunk_boundaries_interleaved` — the removal this lane exists for.
 
-Nothing is adopted. `resumable_render_supported` still excludes pitch.
+That changes shipped DSP for pitched renders, so Contract `084` Rule 5 listening
+applies before adoption, as it did for the default path in `g10.039`.
+
+The dynamic-segment smoother stays and its remaining callers must be recorded; it
+patches segment joins inside the whole-buffer stretcher and does not leave with
+the chunked renderer.

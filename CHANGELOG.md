@@ -11,6 +11,15 @@ registry upload.
 
 ### Changed
 
+- Fixed `A24`. `StreamingResampler` now derives its read position from the
+  absolute output index rather than accumulating `+= step` and rebasing by
+  `-= drain_count`, which was not associative and produced a one-ULP difference
+  at the first seam. The integer and fractional parts are separated before
+  rebasing so the fraction is carried untouched. Bit-exact across `2`, `3` and
+  `7` chunks, and `g10.042`'s pitched chunk-independence gate is un-ignored and
+  green. `SIGNAL_STRETCH_BEHAVIOR_VERSION` advances, because the whole-buffer
+  pitch path also drains and its output can shift by an ULP — no test noticed,
+  which is not the same as nothing changing.
 - Found `A24`: `StreamingResampler` is not bit-exact across chunk boundaries —
   one ULP at `2.98e-8`, appearing exactly at each seam. Harmless alone, but the
   phase vocoder downstream amplifies it by roughly `190000x` into `5.8e-3`,

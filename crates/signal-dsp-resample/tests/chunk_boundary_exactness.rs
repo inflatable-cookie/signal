@@ -45,15 +45,15 @@ fn chunked_and_whole_resampling_agree_on_length() {
     }
 }
 
-/// `A24`. Ignored while the defect is open, with the measurement in the reason.
+/// `A24`, fixed 2026-08-05.
 ///
-/// The difference is one ULP and appears exactly at each chunk boundary, so it
-/// is a seam arithmetic difference rather than drift. It would be unremarkable
-/// except that a phase vocoder downstream amplifies it by roughly `190000x`:
-/// `g10.042` measured `2.98e-8` here becoming `5.8e-3` after stretching, which
-/// is what blocks bit-exact chunk independence for pitched renders.
+/// The read position is derived from the absolute output index rather than
+/// accumulated and rebased, so it cannot depend on chunking. Previously the
+/// difference was one ULP, `2.98e-8`, arriving exactly at the first seam —
+/// unremarkable alone, but a phase vocoder downstream amplifies it by roughly
+/// `190000x`, which is what blocked bit-exact chunk independence for pitched
+/// renders.
 #[test]
-#[ignore = "A24 open: chunked resampling differs from whole by 2.98e-8 at the seam"]
 fn chunked_and_whole_resampling_are_bit_exact() {
     let config = ResampleConfig::new(
         SampleRate(53_996),

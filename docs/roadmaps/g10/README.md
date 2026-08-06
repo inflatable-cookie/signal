@@ -565,8 +565,11 @@ Do not start Loophole or Chorus planning from Signal internals.
     (`0.0057568`). Three earlier measurements said the resampler was byte-exact
     and were wrong the same way: a `1.0e-6` threshold and seven-decimal printing
     cannot see one ULP. The consequence generalises — any stage upstream of the
-    vocoder must be bit-exact rather than merely accurate. Nothing is adopted;
-    pitched artifacts still take the legacy path
+    vocoder must be bit-exact rather than merely accurate. `A24` is now fixed — the read position derives
+    from the absolute output index instead of accumulating and rebasing, with the
+    integer and fractional parts separated so the rebase is exact — and both gates
+    are un-ignored and green. Nothing is adopted yet; pitched artifacts still take
+    the legacy path until Batch 42.4, which needs Rule 5 listening
 
 ## Stretch Boundary
 
