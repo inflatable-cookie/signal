@@ -301,7 +301,7 @@ fn default_midi_inputs(component_type: &str) -> u16 {
 }
 
 fn default_features(component_type: &str) -> Vec<PluginFeature> {
-    if component_type.eq_ignore_ascii_case("aumu") {
+    if component_type.eq_ignore_ascii_case("aumu") || component_type.eq_ignore_ascii_case("augn") {
         vec![PluginFeature::Instrument, PluginFeature::Analyzer]
     } else {
         vec![PluginFeature::AudioEffect, PluginFeature::Utility]

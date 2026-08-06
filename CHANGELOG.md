@@ -11,6 +11,20 @@ registry upload.
 
 ### Changed
 
+- Removed a renderer fallback that broke the invariant its own comment asserted.
+  `materialize_resumable_offline_stretch_artifact_frames` returned `Option` and
+  the caller fell back to the legacy chunked renderer on any error, which would
+  have rendered the same cache key with a different algorithm — the thing the
+  comment directly above the call forbids. `render` is genuinely fallible since
+  `g10.039` made it error rather than discard source, so the fallback would have
+  hidden the error it was most likely to catch. Zero-padding to the contracted
+  length is now capped at `4` samples and asserted, since unbounded padding is
+  what let `g10.039` ship three silent specimens.
+- Established that the only route left into the chunked artifact renderer is
+  pitch-shifted multi-chunk artifacts. `g10.039` deferred seam-smoother removal
+  to "adopting the remaining offline paths", but the selector paths render
+  whole-buffer and never chunk, so the chunk smoother was never for them. Scoped
+  as `g10.042`.
 - Closed `A18`. The high-band transient reset was admitted by listening on
   2026-08-05 and is now the shipped path: `TRANSIENT_RESET_CROSSOVER_FRACTION`
   of `0.010`, `240 Hz` at `48 kHz`. No case preferred the shipped side, and the

@@ -280,7 +280,7 @@ unsafe fn registry_component_metadata(
             0
         },
         midi_outputs: 0,
-        features: if component_type == "aumu" {
+        features: if matches!(component_type.as_str(), "aumu" | "augn") {
             vec![PluginFeature::Instrument]
         } else {
             vec![PluginFeature::AudioEffect]
@@ -390,6 +390,6 @@ mod registry_tests {
         assert!(scheduled
             .descriptor
             .features
-            .contains(&PluginFeature::AudioEffect));
+            .contains(&PluginFeature::Instrument));
     }
 }

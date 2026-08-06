@@ -1,6 +1,6 @@
 # g10 Milestones
 
-Status: active generation; `g10.036` through `g10.041` complete; every audit finding closed or relocated
+Status: active generation; `g10.036` through `g10.041` complete, `g10.042` open; every audit finding closed or relocated
 Updated: 2026-07-27
 
 ## Why this generation matters now
@@ -523,6 +523,22 @@ Do not start Loophole or Chorus planning from Signal internals.
     the source at the same magnitude, so it is a fixture defect from a `30 ms`
     noise burst whose mean lands non-zero rather than a stretcher defect.
     `SIGNAL_STRETCH_BEHAVIOR_VERSION` advances and the guard is un-ignored
+- `g10.042` `active`
+  - pitch resumable render and seam smoother removal. `g10.039` deferred smoother
+    removal to "adopting the remaining offline paths", which was too broad:
+    measured against the code, the selector paths render whole-buffer and never
+    chunk, so the chunk smoother was never for them. The one route left into
+    `materialize_chunked_offline_stretch_artifact_frames` is pitch-shifted
+    multi-chunk artifacts, so the work is teaching the resumable renderer pitch,
+    not redesigning selectors. Batch 42.1 also closed a defect found while
+    establishing that: the resumable materializer returned `Option` and the
+    caller fell back to the legacy chunked renderer on any error, which would
+    have rendered the same cache key with a different algorithm — exactly what
+    the comment directly above the call forbids. `render` is genuinely fallible
+    since `g10.039` made it error rather than discard source, so the fallback
+    would have hidden the error it was most likely to catch. Zero-padding to the
+    contracted length is now bounded at `4` samples and asserted, since unbounded
+    padding is what let `g10.039` ship three silent specimens. Batch 42.2 ready
 
 ## Stretch Boundary
 

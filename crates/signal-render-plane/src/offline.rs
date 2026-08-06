@@ -618,14 +618,6 @@ pub fn materialize_offline_stretch_artifact_pcm_with_chunk_config(
                 ratio,
                 &chunk_plan,
             )
-            .unwrap_or_else(|| {
-                materialize_chunked_offline_stretch_artifact_frames(
-                    source,
-                    identity_input.offline_path,
-                    pitch_shift,
-                    &chunk_plan,
-                )
-            })
         } else if chunk_plan.is_single_chunk() {
             if pitch_shift.abs() > 1.0e-9 {
                 stretcher
@@ -745,9 +737,15 @@ fn materialize_resumable_offline_stretch_artifact_frames(
     ratio_curve: &[StretchRatioPoint],
     fallback_ratio: f64,
     chunk_plan: &StretchOfflineChunkPlan,
-) -> Option<Vec<f32>> {
+) -> Vec<f32> {
     let frame_count = source.frame_count();
     let even_source = &source.frames[..frame_count * 2];
+    // Not fallible in practice: the configuration is fixed here and the only
+    // rejections are an over-large window or an unsupported channel count.
+    // Stated as an expectation rather than an `Option` because the previous
+    // shape fell back to the legacy chunked renderer on any error, which would
+    // have rendered the same cache key with a different algorithm — the exact
+    // invariant the caller's comment asserts, broken by its own safety net.
     let mut renderer = ResumableOfflineStretch::new(ResumableStretchConfig {
         channels: 2,
         window_size: DEFAULT_WINDOW_SIZE,
@@ -756,19 +754,38 @@ fn materialize_resumable_offline_stretch_artifact_frames(
         ratio_curve: ratio_curve.to_vec(),
         fallback_ratio,
     })
-    .ok()?;
+    .expect("the fixed resumable configuration is supported");
 
     let mut output = Vec::with_capacity(chunk_plan.total_output_frames * 2);
     for chunk in &chunk_plan.chunks {
         let start = chunk.source_start_frame * 2;
         let end = chunk.source_end_frame * 2;
+        // `render` is genuinely fallible: `g10.039` made it return an error
+        // rather than discard source when a drain cannot advance. That is a
+        // defect to surface, not a reason to switch renderers behind the
+        // caller's back.
         renderer
             .render(&even_source[start..end], &mut output)
-            .ok()?;
+            .expect("resumable render accepts the planned chunk");
     }
-    renderer.flush(&mut output).ok()?;
-    output.resize(chunk_plan.total_output_frames * 2, 0.0);
-    Some(output)
+    renderer
+        .flush(&mut output)
+        .expect("resumable render flushes its tail");
+
+    // The renderer can finish a frame or two short of the planned length
+    // through rounding. Padding beyond that would be the `g10.039` failure
+    // again, where a silent renderer was zero-filled to its contracted length
+    // and nothing downstream noticed.
+    let planned = chunk_plan.total_output_frames * 2;
+    let shortfall = planned.saturating_sub(output.len());
+    assert!(
+        shortfall <= 4,
+        "resumable render produced {} samples against a planned {planned}; \
+         padding that gap would hide a render failure",
+        output.len(),
+    );
+    output.resize(planned, 0.0);
+    output
 }
 
 fn materialize_chunked_offline_stretch_artifact_frames(
