@@ -556,7 +556,17 @@ Do not start Loophole or Chorus planning from Signal internals.
     builds, the unpitched renderer at the effective ratio, and stranded frames —
     so the remaining suspect is the interaction between the two stages. The
     curve-coordinate trap Batch 42.2 froze in advance did not bite: `G8` passes
-    first time. Nothing is adopted; pitched artifacts still take the legacy path
+    first time. Diagnosed: the renderer is
+    correct and the cause is new finding `A24` — `StreamingResampler` is not
+    bit-exact across chunk seams, one ULP at `2.98e-8`, which the phase vocoder
+    amplifies by roughly `190000x` because peak picking is a discontinuous
+    function of its input. Isolated by feeding one fixed buffer through two push
+    patterns (`0.0` delta) against one differing buffer through a fixed pattern
+    (`0.0057568`). Three earlier measurements said the resampler was byte-exact
+    and were wrong the same way: a `1.0e-6` threshold and seven-decimal printing
+    cannot see one ULP. The consequence generalises — any stage upstream of the
+    vocoder must be bit-exact rather than merely accurate. Nothing is adopted;
+    pitched artifacts still take the legacy path
 
 ## Stretch Boundary
 

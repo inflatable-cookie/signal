@@ -1,6 +1,6 @@
 # 042 - Pitch Resumable Render And Seam Smoother Removal
 
-Status: active; pitch implemented but not chunk-independent, defect open
+Status: active; pitch implemented and correct, blocked on `A24` in the resampler
 Owner: dsp
 Created: 2026-08-05
 Depends on: `g10.039`
@@ -177,7 +177,7 @@ would discard the resampler tail, which is a source drop of exactly the kind
 
 ### Batch 42.3 - Implement Resumable Pitch
 
-Status: implemented; chunk-count independence **not** met, defect open
+Status: implemented and diagnosed; chunk independence blocked on `A24`
 
 - [x] implement isolated per Contract `084` Rule 2
 - [ ] freeze the working-set ceiling — deferred until the render is correct
@@ -191,30 +191,58 @@ per mid/side channel, per the frozen design. `resumable_render_supported` is
 unchanged, so pitched artifacts still take the legacy path and nothing in
 production reaches this code.
 
-#### The Defect
+#### Diagnosed: The Renderer Is Correct, The Resampler Is Not Bit-Exact
 
-Pitched renders are not chunk-count independent. Worst sample delta
-`0.0057568103` at `-5` semitones with `3` chunks, on a `0.4`-amplitude tone.
-Lengths match exactly. The first divergence is `39.8%` through the render —
-neither at a chunk boundary in source or pitched coordinates, nor at the tail.
+Pitched renders differ across chunk counts by `0.0057568103` at `-5` semitones
+with `3` chunks. The cause is not in this renderer.
 
-Four causes are ruled out by measurement. The search should not restart from
-them:
+Isolating by feeding one fixed pitched buffer through two push patterns, and one
+differing buffer through a fixed pattern:
 
-| ruled out | evidence |
+| experiment | worst delta |
 | --- | --- |
-| `StreamingResampler` itself | `0.0` delta across `3`, `7`, `16` chunks |
-| this stage's mid/side pitched material | `0.0` delta across `3` and `7` chunks |
-| the unpitched renderer at the effective ratio | `0.0` delta at `1.5`, `1.123`, `1.0`, `2.0`, `0.8` |
-| frames stranded by the feed loop | the carry path never fires |
+| same material, different push sizes | `0.0000000` |
+| different material, same push sizes | `0.0057568` |
 
-So the resampler is correct, the pitched material this stage builds is correct,
-the stretcher is correct at the ratio pitch produces, and nothing is dropped —
-and the output still differs. That combination is not yet explained.
+The stretch stage is push-pattern independent. All of the divergence comes from
+the input material.
 
-The gate is `#[ignore]`d with the measured value in its reason, following the
-`g10.039` `G5` and `g10.041` `A18` precedent: the gate stays, reproduces the
-defect on demand, and un-ignoring it is what closes the batch.
+`StreamingResampler` is not bit-exact across chunk boundaries. Measured with
+exact comparison rather than a threshold: `2.98e-8` — one ULP — first differing
+at sample `44609` for `2` chunks, `29093` for `3`, and `13771` for `7`, which is
+the first seam in each case. Seam arithmetic, not drift. Recorded as `A24` with a
+guard in `signal-dsp-resample/tests/chunk_boundary_exactness.rs`.
+
+#### The Amplification Is The Interesting Number
+
+One ULP in, `5.8e-3` out. The phase vocoder amplifies the difference by roughly
+`190000x`.
+
+That is not a bug, it is what a phase vocoder does: a magnitude change of any
+size can flip which bin is a local spectral peak, which changes the phase-locking
+region a bin belongs to, which changes its synthesis phase by an arbitrary
+amount. Peak picking is a discontinuous function of the input.
+
+It has a consequence for every bit-exactness gate in this generation. Any stage
+placed upstream of the vocoder must be bit-exact, not merely accurate, or
+downstream byte-comparison gates cannot pass. `g10.039` got away with this only
+because nothing sat upstream of its stretcher.
+
+#### Three Measurements That Were Wrong
+
+The first pass reported `StreamingResampler` byte-exact with `0.0` delta at `3`,
+`7` and `16` chunks, and the pitched material byte-exact too. Both were wrong in
+the same way: the comparison used a `1.0e-6` threshold and printed to seven
+decimal places, so `2.98e-8` displayed as `0.0000000` and passed.
+
+Two further hypotheses were tested and eliminated correctly — a missing carry
+buffer, and ratio-dependent chunk independence — but the eliminations that
+mattered were the two false ones, and they sent the search away from the actual
+cause for several rounds.
+
+The rule this generation keeps relearning applies to precision as well as to
+detection: a measurement has to be shown capable of seeing the thing. A threshold
+of `1.0e-6` cannot see a one-ULP difference, and formatting hid it twice.
 
 #### What Did Work
 
@@ -274,18 +302,13 @@ Status: blocked on Batch 42.3
 
 ## Next Task
 
-Find why pitched renders diverge across chunk counts. The implementation is in
-place and unadopted, the gate reproduces the defect, and four candidate causes
-are eliminated by measurement — the resampler, the pitched material, the
-stretcher at the effective ratio, and stranded frames.
+Fix `A24`: make `StreamingResampler` bit-exact across chunk boundaries. The
+difference is one ULP appearing exactly at each seam, so it is seam arithmetic —
+most likely how the `pending` history and the fractional `next_source_index`
+combine on the first sample after a boundary.
 
-What that combination leaves is the interaction between the two stages rather
-than either stage alone. The next probe should feed pre-computed pitched
-material into the *unpitched* renderer, sliced the same way the pitch stage
-slices it, which separates "the stretcher dislikes this push pattern" from
-"the pitch stage corrupts something on the way in". That is the one experiment
-that has not been run.
+The pitch implementation is finished and correct. Its chunk-independence gate is
+`#[ignore]`d pointing at `A24`, and un-ignoring it is what unblocks Batch 42.4
+and the seam smoother removal.
 
-Nothing is adopted. `resumable_render_supported` still excludes pitch, so the
-legacy chunked path continues to serve pitched artifacts and the seam smoother
-stays until Batch 42.4.
+Nothing is adopted. `resumable_render_supported` still excludes pitch.

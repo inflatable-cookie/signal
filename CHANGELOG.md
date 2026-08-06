@@ -11,6 +11,13 @@ registry upload.
 
 ### Changed
 
+- Found `A24`: `StreamingResampler` is not bit-exact across chunk boundaries —
+  one ULP at `2.98e-8`, appearing exactly at each seam. Harmless alone, but the
+  phase vocoder downstream amplifies it by roughly `190000x` into `5.8e-3`,
+  because peak picking is a discontinuous function of its input. That is what
+  blocks bit-exact chunk independence for pitched renders, and it generalises:
+  any stage upstream of the vocoder must be bit-exact rather than merely
+  accurate. Guarded in `signal-dsp-resample`, `#[ignore]`d with the measurement.
 - Implemented resumable pitch composition as an unadopted candidate: one
   `StreamingResampler` per mid/side channel upstream of the stretch stage.
   Pitch happens in the right direction and the ratio curve lands in pitched

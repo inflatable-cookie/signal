@@ -270,17 +270,24 @@ fn dominant_hz(samples: &[f32], channels: usize) -> f64 {
 /// `0.0057568103` at `-5` semitones with `3` chunks, first diverging `39.8%`
 /// through the render rather than at a chunk boundary or the tail.
 ///
-/// Four causes are ruled out by measurement, so the search should not restart
-/// from them:
-/// - `StreamingResampler` is byte-exact under chunking, `0.0` delta at `3`,
-///   `7` and `16` chunks
-/// - the pitched material this stage produces is byte-exact under chunking,
-///   `0.0` delta, so the mid/side split and per-chunk resampling are correct
-/// - the unpitched renderer is byte-exact at ratios `1.5`, `1.123`, `1.0`,
-///   `2.0` and `0.8`, including the `1.123` effective ratio pitch produces here
-/// - the carry path never fires; the feed loop always consumes what it is given
+/// Diagnosed: the cause is `A24`, not this renderer.
+///
+/// `StreamingResampler` is not bit-exact across chunk boundaries — one ULP,
+/// `2.98e-8`, appearing exactly at each seam. The phase vocoder downstream
+/// amplifies that by roughly `190000x` into the `5.8e-3` seen here, because a
+/// magnitude change of any size can flip which bin is a spectral peak and
+/// therefore which phase-locking region a bin belongs to.
+///
+/// Isolated by feeding one fixed pitched buffer through two different push
+/// patterns and one differing buffer through a fixed pattern:
+/// - same material, different push sizes: `0.0000000`
+/// - different material, same push sizes: `0.0057568`
+///
+/// So the stretch stage is push-pattern independent and this renderer is
+/// correct. Un-ignoring this gate depends on `A24`, tracked in
+/// `signal-dsp-resample/tests/chunk_boundary_exactness.rs`.
 #[test]
-#[ignore = "g10.042 open: pitched render diverges by 0.0057568103 across chunk counts"]
+#[ignore = "blocked on A24: the resampler is not bit-exact at chunk seams, and the vocoder amplifies one ULP to 5.8e-3"]
 fn pitched_render_is_chunk_count_independent() {
     let source = tone(48_000 * 2, 220.0, 2);
     for semitones in [-5.0f64, 7.0] {
