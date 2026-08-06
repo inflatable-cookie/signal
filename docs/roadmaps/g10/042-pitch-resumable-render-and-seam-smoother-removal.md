@@ -1,6 +1,6 @@
 # 042 - Pitch Resumable Render And Seam Smoother Removal
 
-Status: active; pitch correct and chunk-independent, Batch 42.4 ready
+Status: active; Batch 42.4 pack built, blocked on listening admission
 Owner: dsp
 Created: 2026-08-05
 Depends on: `g10.039`
@@ -265,26 +265,50 @@ produces `1.5x` overall duration under a `+7` semitone shift, within `2%`.
 
 ### Batch 42.4 - Delete The Chunked Renderer
 
-Status: blocked on Batch 42.3
+Status: pack built; blocked on listening admission
 
-- [ ] implement isolated per Contract `084` Rule 2
-- [ ] freeze the working-set ceiling with the resampler included, derived from
-  the implementation
-- [ ] prove chunk-count independence for pitch-shifted renders across at least
-  three chunk counts, as `g10.039` did for the default path
-- [ ] prove the ratio curve lands correctly in pitched coordinates, which a
-  length check cannot see
-- [ ] prove no dropped source, with a metric shown to fire on an injected drop
-
-### Batch 42.4 - Delete The Chunked Renderer
-
-Status: blocked on Batch 42.3
-
+- [x] prove the two renderers differ enough to judge, and that both carry audio
+- [x] build the concealed pack
+- [ ] listening admission under Contract `084` Rule 5
 - [ ] route pitch-shifted artifacts through the resumable renderer
 - [ ] delete `materialize_chunked_offline_stretch_artifact_frames` and
   `smooth_artifact_chunk_boundaries_interleaved`
 - [ ] record what remains of `smooth_dynamic_segment_boundaries_interleaved`
   and which callers keep it alive
+
+#### The Pack
+
+`~/Downloads/signal-listening-pack-42-pitch`, built by an `#[ignore]`d test in
+`offline.rs` so it reaches the two private renderers directly with one shared
+chunk plan.
+
+| case | duration | pitch | chunks |
+| --- | --- | --- | --- |
+| `F1` | `90s` | `+5` semitones | `3` |
+| `F2` | `150s` | `+5` semitones | `5` |
+
+Sustained low chord with a percussive attack every `500 ms`, stereo, ratio
+`1.25`. Sides assigned from a fixed seed.
+
+Checked before delivery: both renderers honour the planned length exactly; every
+decile of both carries audio, which `g10.039` did not check before shipping three
+silent specimens; the sides differ by `1.65` peak so the pack can discriminate;
+and RMS matches within `0.2%` so level gives nothing away.
+
+Those last two need reading together. A `1.65` peak difference on material
+peaking near `1.05` looks alarming until the levels are compared: the sides are
+equally loud and differ in waveform, which is what two phase-vocoder renders of
+the same material look like. Checking only the difference would have suggested
+one side was broken; checking only the levels would have missed whether the pack
+discriminates at all.
+
+#### Why This Needs Listening
+
+Pitch-shifted multi-chunk artifacts are the only case still served by the legacy
+chunked renderer, and therefore the only remaining reason both seam smoothers
+exist. Routing them through the resumable renderer changes shipped DSP, so Rule 5
+applies — as it did for the default path in `g10.039`, where listening rejected
+the first attempt.
 - [ ] update Contract `046` and the `g10` front doors
 
 ## Acceptance Criteria
@@ -311,17 +335,15 @@ Status: blocked on Batch 42.3
 
 ## Next Task
 
-Open Batch 42.4. Pitch is implemented, chunk-count independent, and every gate is
-green with nothing ignored.
+Judge `~/Downloads/signal-listening-pack-42-pitch`. Fill `notes.tsv`, then open
+`key.tsv`. The resumable renderer is admitted only if no case prefers the legacy
+side.
 
-Batch 42.4 routes pitched artifacts through the resumable renderer by extending
-`resumable_render_supported`, then deletes
-`materialize_chunked_offline_stretch_artifact_frames` and
-`smooth_artifact_chunk_boundaries_interleaved` — the removal this lane exists for.
+Listen for seams. The legacy side joins independently rendered chunks and patches
+the joins with a smoother; the resumable side has no joins to patch. At a
+`30`-second chunk policy the first boundary lands around `37.5s` of output. The
+`g10.036` rounds described this artifact as a secondary pulse, "like segments
+overlapping" — on the resumable side it should be absent rather than reduced.
 
-That changes shipped DSP for pitched renders, so Contract `084` Rule 5 listening
-applies before adoption, as it did for the default path in `g10.039`.
-
-The dynamic-segment smoother stays and its remaining callers must be recorded; it
-patches segment joins inside the whole-buffer stretcher and does not leave with
-the chunked renderer.
+Nothing is adopted until then. `resumable_render_supported` still excludes pitch,
+so pitched artifacts take the legacy path and both smoothers stay.

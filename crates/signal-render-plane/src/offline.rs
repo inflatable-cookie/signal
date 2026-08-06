@@ -3208,3 +3208,209 @@ mod tests {
             .all(|sample| sample.to_bits() == 0.3f32.to_bits()));
     }
 }
+
+/// `g10.042` Batch 42.4 evidence: the two pitched renderers, and the pack that
+/// decides between them.
+#[cfg(test)]
+mod a42_pitched_renderer_comparison {
+    use super::*;
+
+    const RATE: u32 = 48_000;
+    const PITCH: f64 = 5.0;
+
+    /// Sustained chord with a percussive attack every `500 ms`, long enough to
+    /// cross several chunk boundaries — the only case that still reaches the
+    /// legacy chunked renderer.
+    fn material(seconds: usize) -> RenderSampleBuffer {
+        let frames = RATE as usize * seconds;
+        let mut seed = 0x5EED_1234u32;
+        let mut noise = move || {
+            seed = seed.wrapping_mul(1_664_525).wrapping_add(1_013_904_223);
+            (seed >> 8) as f32 / 8_388_608.0 - 1.0
+        };
+        let mut pcm = Vec::with_capacity(frames * 2);
+        for frame in 0..frames {
+            let t = frame as f32 / RATE as f32;
+            let chord = 0.20 * (std::f32::consts::TAU * 110.0 * t).sin()
+                + 0.16 * (std::f32::consts::TAU * 164.8 * t).sin()
+                + 0.12 * (std::f32::consts::TAU * 220.0 * t).sin();
+            let since = frame % (RATE as usize / 2);
+            let attack = if since < (RATE as f32 * 0.030) as usize {
+                0.7 * (-(since as f32) / (RATE as f32 * 0.005)).exp() * noise()
+            } else {
+                0.0
+            };
+            let value = (chord + attack).clamp(-1.0, 1.0);
+            pcm.push(value);
+            pcm.push(value * 0.9);
+        }
+        RenderSampleBuffer::stereo(RATE, Arc::from(pcm.into_boxed_slice()))
+    }
+
+    fn both_renders(seconds: usize) -> (Vec<f32>, Vec<f32>, usize) {
+        let source = material(seconds);
+        let curve = vec![StretchRatioPoint::new(0, 1.25)];
+        let plan = plan_offline_stretch_chunks(
+            source.frame_count(),
+            &curve,
+            1.25,
+            StretchOfflineChunkConfig::default(),
+        );
+        let legacy = materialize_chunked_offline_stretch_artifact_frames(
+            &source,
+            OfflineHighQualityPath::Default,
+            PITCH,
+            &plan,
+        );
+        let resumable = materialize_resumable_offline_stretch_artifact_frames(
+            &source, &curve, 1.25, PITCH, &plan,
+        );
+        (legacy, resumable, plan.chunks.len())
+    }
+
+    fn write_wav(path: &std::path::Path, frames: &[f32]) {
+        let spec = hound::WavSpec {
+            channels: 2,
+            sample_rate: RATE,
+            bits_per_sample: 32,
+            sample_format: hound::SampleFormat::Float,
+        };
+        let mut writer = hound::WavWriter::create(path, spec).expect("create wav");
+        for sample in frames {
+            writer.write_sample(*sample).expect("write sample");
+        }
+        writer.finalize().expect("finalize wav");
+    }
+
+    /// Build the `g10.042` listening pack. Run explicitly:
+    /// `cargo test -p signal-render-plane a42_build_listening_pack -- --ignored`
+    ///
+    /// Sides are assigned from a fixed seed so the pack is reproducible without
+    /// the ordering being guessable. The verification below reports separation
+    /// only — printing a per-side measurement would reveal which is which, which
+    /// is how the `g10.041` pack had to be rebuilt.
+    #[test]
+    #[ignore = "builds a listening pack into ~/Downloads; run explicitly"]
+    fn a42_build_listening_pack() {
+        let root = std::path::PathBuf::from(std::env::var("HOME").expect("HOME"))
+            .join("Downloads")
+            .join("signal-listening-pack-42-pitch");
+        let pairs = root.join("pairs");
+        std::fs::create_dir_all(&pairs).expect("create pack dir");
+
+        let mut key = String::from("case\tA\tB\tseconds\tpitch_semitones\tchunks\n");
+        let mut notes = String::from("case\tpreferred\tnote\n");
+
+        for (index, seconds) in [90usize, 150].iter().enumerate() {
+            let (legacy, resumable, chunks) = both_renders(*seconds);
+            // Fixed-seed side assignment.
+            let mut hash = 0xcbf2_9ce4_8422_2325u64;
+            for byte in b"g10-042-pitch".iter().chain(&[index as u8]) {
+                hash ^= u64::from(*byte);
+                hash = hash.wrapping_mul(0x0000_0100_0000_01b3);
+            }
+            let (a_label, b_label) = if hash.is_multiple_of(2) {
+                ("legacy", "resumable")
+            } else {
+                ("resumable", "legacy")
+            };
+            let pick = |label: &str| {
+                if label == "legacy" {
+                    &legacy
+                } else {
+                    &resumable
+                }
+            };
+            let case = format!("F{}", index + 1);
+            write_wav(&pairs.join(format!("{case}-A.wav")), pick(a_label));
+            write_wav(&pairs.join(format!("{case}-B.wav")), pick(b_label));
+            key.push_str(&format!(
+                "{case}\t{a_label}\t{b_label}\t{seconds}\t{PITCH}\t{chunks}\n"
+            ));
+            notes.push_str(&format!("{case}\t\t\n"));
+
+            let worst = legacy
+                .iter()
+                .zip(resumable.iter())
+                .map(|(x, y)| (x - y).abs())
+                .fold(0.0f32, f32::max);
+            println!("{case}: {chunks} chunks, sides differ by {worst:.5}, both carry audio");
+        }
+
+        std::fs::write(root.join("key.tsv"), key).expect("write key");
+        std::fs::write(root.join("notes.tsv"), notes).expect("write notes");
+        std::fs::write(root.join("README.md"), PACK_README).expect("write readme");
+        println!("built {}", root.display());
+    }
+
+    const PACK_README: &str = r#"# g10.042 Pitched Renderer Listening Pack
+
+One side of each pair is the legacy per-chunk renderer, one is the resumable
+renderer that carries state across chunk boundaries. Assignment is per case in
+`key.tsv`. Do not open it until `notes.tsv` is filled.
+
+Pitch-shifted multi-chunk artifacts are the only case still served by the legacy
+chunked renderer, and therefore the only remaining reason both seam smoothers
+exist. If the resumable side is no worse, the chunked renderer and its smoother
+are deleted.
+
+| case | duration | pitch | chunks |
+| --- | --- | --- | --- |
+| `F1` | `90s` | `+5` semitones | crosses a boundary |
+| `F2` | `150s` | `+5` semitones | crosses several |
+
+Material is a sustained low chord with a percussive attack every `500 ms`,
+stereo, at ratio `1.25`.
+
+## What to listen for
+
+Seams. The legacy side joins independently rendered chunks and patches the joins
+with a smoother; the resumable side has no joins to patch. A `30`-second chunk
+policy puts the first boundary around `37.5s` of output.
+
+The `g10.036` rounds described this artifact as a secondary pulse, "like segments
+overlapping". On the resumable side it should be absent rather than reduced.
+
+Also worth noting: any difference in the attacks themselves, or in the bass under
+them.
+
+## Decision
+
+Fill `notes.tsv`, then open `key.tsv`. The resumable renderer is admitted only if
+no case prefers the legacy side.
+"#;
+
+    /// The pack is only worth building if the two sides actually differ. A pack
+    /// whose sides measure the same cannot be judged — `g10.039` revision 2
+    /// returned "no significant difference" partly for that reason.
+    #[test]
+    fn the_two_pitched_renderers_differ_enough_to_judge() {
+        let (legacy, resumable, chunks) = both_renders(90);
+        assert!(chunks > 1, "case must cross a chunk boundary, saw {chunks}");
+        assert_eq!(
+            legacy.len(),
+            resumable.len(),
+            "both renderers must honour the planned length"
+        );
+        let worst = legacy
+            .iter()
+            .zip(resumable.iter())
+            .map(|(a, b)| (a - b).abs())
+            .fold(0.0f32, f32::max);
+        assert!(
+            worst > 1.0e-3,
+            "renderers differ by only {worst}; a pack could not discriminate"
+        );
+        // Both must carry audio in every decile: `g10.039` shipped three silent
+        // specimens because nothing checked this before delivery.
+        for (label, render) in [("legacy", &legacy), ("resumable", &resumable)] {
+            let total = render.len() / 2;
+            let slice = total / 10;
+            for part in 0..10 {
+                let seg = &render[part * slice * 2..(part + 1) * slice * 2];
+                let peak = seg.iter().fold(0.0f32, |acc, s| acc.max(s.abs()));
+                assert!(peak > 1.0e-3, "{label} decile {part} is silent");
+            }
+        }
+    }
+}

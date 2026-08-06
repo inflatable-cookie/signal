@@ -568,8 +568,16 @@ Do not start Loophole or Chorus planning from Signal internals.
     vocoder must be bit-exact rather than merely accurate. `A24` is now fixed — the read position derives
     from the absolute output index instead of accumulating and rebasing, with the
     integer and fractional parts separated so the rebase is exact — and both gates
-    are un-ignored and green. Nothing is adopted yet; pitched artifacts still take
-    the legacy path until Batch 42.4, which needs Rule 5 listening
+    are un-ignored and green. Batch 42.4 built the pack at
+    `~/Downloads/signal-listening-pack-42-pitch`, two cases at `90s` and `150s`
+    crossing `3` and `5` chunk boundaries. Verified before delivery that both
+    sides honour the planned length, carry audio in every decile, differ by
+    `1.65` peak so the pack can discriminate, and match within `0.2%` on RMS so
+    level gives nothing away — the difference and the levels have to be read
+    together, since `1.65` on material peaking near `1.05` looks like breakage
+    until the levels show the sides are equally loud and differ only in waveform.
+    Nothing is adopted; pitched artifacts still take the legacy path and both
+    smoothers stay until listening admits the change
 
 ## Stretch Boundary
 

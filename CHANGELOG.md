@@ -11,6 +11,13 @@ registry upload.
 
 ### Changed
 
+- Built the `g10.042` pitched-renderer listening pack, comparing the legacy
+  per-chunk renderer against the resumable one on pitch-shifted multi-chunk
+  artifacts — the only case still served by the chunked renderer, and therefore
+  the only remaining reason both seam smoothers exist. Verified before delivery
+  that both sides honour the planned length, carry audio in every decile, differ
+  enough to discriminate, and match within `0.2%` on RMS. Nothing is adopted
+  until it is judged.
 - Fixed `A24`. `StreamingResampler` now derives its read position from the
   absolute output index rather than accumulating `+= step` and rebasing by
   `-= drain_count`, which was not associative and produced a one-ULP difference
