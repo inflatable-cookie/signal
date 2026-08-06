@@ -126,6 +126,46 @@ Also confirmed while there: prepare's `Files Modified` is now `Cargo.toml` and
 is the `sync-files` behaviour removed after it bumped ~40 dependencies after the
 gates had run. The removal holds.
 
+## `--locked` Made The Floor Gate Unrunnable In The Release Flow
+
+Copied straight from the reference scripts, and it deadlocks:
+
+```
+error: cannot update the lock file .../Cargo.lock because --locked was passed
+```
+
+`effigy release prepare` bumps `workspace.package.version` and *then* runs the
+gates. At gate time the manifest says `0.1.1` and Cargo.lock still says `0.1.0`,
+so `--locked` refuses. Effigy also requires `--check-gates` when gates are
+configured, so there is no way to gate the tree at the version being released
+without resolving this.
+
+Two failure modes hid behind it. A failed prepare is not atomic — it left
+`Cargo.toml` and `CHANGELOG.md` mutated while reporting `Prepared: no` and
+`State file: not written`. And had the gate simply dropped `--locked`, the tag
+would have carried a manifest at `0.1.1` beside a lockfile at `0.1.0`, which is
+exactly what breaks a consumer building the tag with `--locked`.
+
+The floor gate now syncs the workspace lock before gating. `cargo update -w`
+touches workspace members only — not `cargo generate-lockfile`, which is the
+`sync-files` behaviour removed after it bumped ~40 third-party crates *after*
+the gates had run on the `0.1.0` prepare. Measured on this bump: `28` changed
+lines, every one a signal crate going `0.1.0 -> 0.1.1`, nothing third-party.
+
+The sync is verified, not trusted. Every changed line must be a `version` line
+and every added one must equal the workspace version, so a third-party bump —
+also a version line — is still refused. Tested in all three directions:
+
+| case | result |
+| --- | --- |
+| lock already in sync | silent, accepted |
+| workspace `0.1.0 -> 0.1.1` | accepted, reported |
+| fabricated `crossbeam-epoch 0.9.18 -> 0.9.99` | refused, offending diff printed |
+
+The same conflict is latent in swallowtail's and longhorn's floor scripts, which
+also pass `--locked`. It only bites once a floor gate is wired into
+`[release.gates]` rather than run by hand.
+
 ## A Note On The Version Number
 
 `0.1.1` carries an MSRV raise from `1.90` to `1.95`, which stops the build for
