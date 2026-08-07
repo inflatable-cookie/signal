@@ -10,7 +10,9 @@
 //! what they see.
 
 mod engine;
+mod pipeline;
 mod pitch;
+mod spectral;
 mod types;
 
 pub use engine::ResumableOfflineStretch;

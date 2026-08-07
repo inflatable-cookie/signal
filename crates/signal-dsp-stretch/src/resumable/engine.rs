@@ -3,7 +3,7 @@ use std::sync::Arc;
 use rustfft::{num_complex::Complex32, Fft, FftPlanner};
 use signal_primitives::Sample;
 
-use crate::{sanitize_ratio, wrap_phase, StretchRatioPoint, StretchRenderError};
+use crate::{StretchRatioPoint, StretchRenderError};
 
 use super::pitch::{build_pitch_stage, pitch_shift_factor, PitchStage};
 use super::types::{
@@ -12,41 +12,41 @@ use super::types::{
 
 /// Offline stretch renderer that survives chunk boundaries.
 pub struct ResumableOfflineStretch {
-    config: ResumableStretchConfig,
-    window_size: usize,
-    analysis_hop: usize,
-    bins: usize,
-    ring_frames: usize,
-    output_ring_frames: usize,
-    window: Vec<f32>,
-    omega: Vec<f32>,
-    forward: Arc<dyn Fft<f32>>,
-    inverse: Arc<dyn Fft<f32>>,
-    forward_scratch: Vec<Complex32>,
-    inverse_scratch: Vec<Complex32>,
-    channels: Vec<ChannelState>,
-    input_ring: Vec<f32>,
+    pub(in crate::resumable) config: ResumableStretchConfig,
+    pub(in crate::resumable) window_size: usize,
+    pub(in crate::resumable) analysis_hop: usize,
+    pub(in crate::resumable) bins: usize,
+    pub(in crate::resumable) ring_frames: usize,
+    pub(in crate::resumable) output_ring_frames: usize,
+    pub(in crate::resumable) window: Vec<f32>,
+    pub(in crate::resumable) omega: Vec<f32>,
+    pub(in crate::resumable) forward: Arc<dyn Fft<f32>>,
+    pub(in crate::resumable) inverse: Arc<dyn Fft<f32>>,
+    pub(in crate::resumable) forward_scratch: Vec<Complex32>,
+    pub(in crate::resumable) inverse_scratch: Vec<Complex32>,
+    pub(in crate::resumable) channels: Vec<ChannelState>,
+    pub(in crate::resumable) input_ring: Vec<f32>,
     /// Padded-source frames written so far.
-    input_write_frame: usize,
+    pub(in crate::resumable) input_write_frame: usize,
     /// Next analysis frame start, in padded-source coordinates.
-    next_analysis_frame: usize,
+    pub(in crate::resumable) next_analysis_frame: usize,
     /// Fractional synthesis cursor, in padded-output coordinates.
-    next_synthesis_frame: f64,
+    pub(in crate::resumable) next_synthesis_frame: f64,
     /// Padded-output frames already emitted.
-    output_read_frame: usize,
+    pub(in crate::resumable) output_read_frame: usize,
     /// Source frames accepted from the caller.
-    accepted_source_frames: usize,
+    pub(in crate::resumable) accepted_source_frames: usize,
     /// Resample stage, upstream of the stretch stage. `g10.042` Batch 42.2
     /// froze the order: resample then stretch, mid/side rather than left/right,
     /// matching the whole-buffer pitch path.
-    pitch: Option<PitchStage>,
+    pub(in crate::resumable) pitch: Option<PitchStage>,
     /// Output frames delivered to the caller after cropping.
-    delivered_output_frames: usize,
+    pub(in crate::resumable) delivered_output_frames: usize,
     /// Frames of leading pad still to be discarded from the output.
-    pending_crop_frames: usize,
-    target_output_frames: usize,
-    frame_index: usize,
-    flushed: bool,
+    pub(in crate::resumable) pending_crop_frames: usize,
+    pub(in crate::resumable) target_output_frames: usize,
+    pub(in crate::resumable) frame_index: usize,
+    pub(in crate::resumable) flushed: bool,
 }
 
 impl ResumableOfflineStretch {
@@ -348,249 +348,6 @@ impl ResumableOfflineStretch {
             output_frames,
             total_source_frames: self.accepted_source_frames,
             total_output_frames: self.delivered_output_frames,
-        }
-    }
-
-    fn push_silence(&mut self, frames: usize) {
-        for _ in 0..frames {
-            let ring_frame = self.input_write_frame % self.ring_frames;
-            for channel in 0..self.config.channels {
-                self.input_ring[ring_frame * self.config.channels + channel] = 0.0;
-            }
-            self.input_write_frame += 1;
-        }
-    }
-
-    fn push_input(&mut self, source: &[Sample], frames: usize) {
-        for frame in 0..frames {
-            let ring_frame = self.input_write_frame % self.ring_frames;
-            for channel in 0..self.config.channels {
-                self.input_ring[ring_frame * self.config.channels + channel] =
-                    source[frame * self.config.channels + channel];
-            }
-            self.input_write_frame += 1;
-        }
-    }
-
-    /// Active ratio at one padded-source position.
-    fn ratio_at(&self, padded_frame: usize) -> f64 {
-        let pad = self.window_size / 2;
-        let source_frame = padded_frame.saturating_sub(pad);
-        let mut ratio = sanitize_ratio(self.config.fallback_ratio);
-        let mut best: Option<i64> = None;
-        for point in &self.config.ratio_curve {
-            if point.timeline_frame < 0 || !point.ratio.is_finite() || point.ratio <= 0.0 {
-                continue;
-            }
-            if (point.timeline_frame as usize) <= source_frame
-                && best.is_none_or(|b| point.timeline_frame >= b)
-            {
-                best = Some(point.timeline_frame);
-                ratio = point.ratio;
-            }
-        }
-        ratio
-    }
-
-    fn drain(&mut self, output: &mut Vec<Sample>, final_pass: bool) -> usize {
-        let before = self.delivered_output_frames;
-        loop {
-            // A frame is computable once its whole window has arrived.
-            if self.next_analysis_frame + self.window_size > self.input_write_frame {
-                break;
-            }
-            let synthesis_start = self.next_synthesis_frame.round() as usize;
-            // Do not overrun the ring: emit resolved output first.
-            if synthesis_start + self.window_size >= self.output_read_frame + self.ring_frames {
-                self.emit(output, synthesis_start, final_pass);
-                if self.output_read_frame + self.ring_frames <= synthesis_start + self.window_size {
-                    break;
-                }
-                continue;
-            }
-            let ratio = self.ratio_at(self.next_analysis_frame);
-            for channel in 0..self.config.channels {
-                self.analyze(channel);
-                self.propagate(channel, ratio);
-                self.synthesize(channel, synthesis_start);
-            }
-            self.next_analysis_frame += self.analysis_hop;
-            self.next_synthesis_frame += self.analysis_hop as f64 * ratio;
-            self.frame_index += 1;
-        }
-        let resolved = self.next_synthesis_frame.round() as usize;
-        self.emit(output, resolved, final_pass);
-        self.delivered_output_frames - before
-    }
-
-    /// Emit output frames that no future analysis frame can still touch.
-    fn emit(&mut self, output: &mut Vec<Sample>, synthesis_start: usize, final_pass: bool) {
-        // The frame about to be written covers [synthesis_start, +window), so
-        // everything below synthesis_start is final and can be released.
-        let safe_until = if final_pass {
-            synthesis_start + self.window_size
-        } else {
-            synthesis_start
-        };
-        while self.output_read_frame < safe_until {
-            if self.delivered_output_frames >= self.target_output_frames
-                && self.pending_crop_frames == 0
-            {
-                // Target reached: keep draining the ring so it stays clean.
-                self.clear_output_frame(self.output_read_frame);
-                self.output_read_frame += 1;
-                continue;
-            }
-            let ring_frame = self.output_read_frame % self.output_ring_frames;
-            if self.pending_crop_frames > 0 {
-                self.pending_crop_frames -= 1;
-            } else {
-                for channel in 0..self.config.channels {
-                    let state = &self.channels[channel];
-                    let weight = state.normalization_ring[ring_frame];
-                    let sample = if weight > 1.0e-3 {
-                        state.output_ring[ring_frame] / weight
-                    } else {
-                        0.0
-                    };
-                    output.push(sample);
-                }
-                self.delivered_output_frames += 1;
-            }
-            self.clear_output_frame(self.output_read_frame);
-            self.output_read_frame += 1;
-        }
-        if final_pass {
-            while self.delivered_output_frames < self.target_output_frames {
-                for _ in 0..self.config.channels {
-                    output.push(0.0);
-                }
-                self.delivered_output_frames += 1;
-            }
-        }
-    }
-
-    fn clear_output_frame(&mut self, frame: usize) {
-        let ring_frame = frame % self.output_ring_frames;
-        for state in &mut self.channels {
-            state.output_ring[ring_frame] = 0.0;
-            state.normalization_ring[ring_frame] = 0.0;
-        }
-    }
-
-    fn analyze(&mut self, channel: usize) {
-        let channel_count = self.config.channels;
-        let mut energy = 0.0f64;
-        for index in 0..self.window_size {
-            let source_frame = (self.next_analysis_frame + index) % self.ring_frames;
-            let windowed =
-                self.input_ring[source_frame * channel_count + channel] * self.window[index];
-            energy += (windowed * windowed) as f64;
-            self.channels[channel].analysis[index] = Complex32::new(windowed, 0.0);
-        }
-        energy /= self.window_size as f64;
-        self.forward.process_with_scratch(
-            &mut self.channels[channel].analysis,
-            &mut self.forward_scratch,
-        );
-        let state = &mut self.channels[channel];
-        for bin in 0..self.bins {
-            state.current_magnitudes[bin] = state.analysis[bin].norm();
-            state.current_phases[bin] = state.analysis[bin].arg();
-        }
-        state.current_energy_scratch = energy;
-    }
-
-    fn propagate(&mut self, channel: usize, ratio: f64) {
-        let bins = self.bins;
-        let reset = self.should_reset(channel, ratio);
-        let first = self.frame_index == 0;
-        let state = &mut self.channels[channel];
-
-        state.peaks.clear();
-        for bin in 1..bins.saturating_sub(1) {
-            let magnitude = state.current_magnitudes[bin];
-            if magnitude > 1.0e-6
-                && magnitude > state.current_magnitudes[bin - 1]
-                && magnitude >= state.current_magnitudes[bin + 1]
-            {
-                state.peaks.push(bin);
-            }
-        }
-
-        for bin in 0..bins {
-            let phase = state.current_phases[bin];
-            if first || reset {
-                state.synthesis_phase[bin] = phase;
-            } else {
-                let deviation = wrap_phase(phase - state.previous_phase[bin] - self.omega[bin]);
-                let advance = (self.omega[bin] + deviation) * (ratio as f32);
-                state.synthesis_phase[bin] = wrap_phase(state.synthesis_phase[bin] + advance);
-            }
-            state.previous_phase[bin] = phase;
-        }
-
-        for index in 0..state.peaks.len() {
-            let peak = state.peaks[index];
-            let peak_phase = state.synthesis_phase[peak];
-            let analysis_peak_phase = state.current_phases[peak];
-            let left = if index == 0 {
-                0
-            } else {
-                (state.peaks[index - 1] + peak) / 2 + 1
-            };
-            let right = state
-                .peaks
-                .get(index + 1)
-                .map(|next| (peak + *next) / 2 + 1)
-                .unwrap_or(bins);
-            for bin in left..right {
-                let relative = wrap_phase(state.current_phases[bin] - analysis_peak_phase);
-                state.synthesis_phase[bin] = wrap_phase(peak_phase + relative);
-            }
-        }
-
-        for bin in 0..bins {
-            state.spectrum[bin] =
-                Complex32::from_polar(state.current_magnitudes[bin], state.synthesis_phase[bin]);
-            state.previous_magnitudes[bin] = state.current_magnitudes[bin];
-        }
-        state.previous_energy = state.current_energy_scratch;
-        for bin in 1..self.window_size.div_ceil(2) {
-            state.spectrum[self.window_size - bin] = state.spectrum[bin].conj();
-        }
-    }
-
-    fn should_reset(&self, channel: usize, ratio: f64) -> bool {
-        if self.frame_index == 0 || ratio < 1.0 {
-            return false;
-        }
-        let state = &self.channels[channel];
-        let mut flux = 0.0f32;
-        let mut magnitude_sum = 0.0f32;
-        for bin in 0..self.bins {
-            let magnitude = state.current_magnitudes[bin];
-            flux += (magnitude - state.previous_magnitudes[bin]).max(0.0);
-            magnitude_sum += magnitude;
-        }
-        let flux_ratio = flux as f64 / (magnitude_sum as f64 + 1.0e-12);
-        let energy_ratio = state.current_energy_scratch / (state.previous_energy + 1.0e-12);
-        flux_ratio >= 0.30 && energy_ratio >= 1.20
-    }
-
-    fn synthesize(&mut self, channel: usize, synthesis_start: usize) {
-        self.inverse.process_with_scratch(
-            &mut self.channels[channel].spectrum,
-            &mut self.inverse_scratch,
-        );
-        let scale = 1.0 / self.window_size as f32;
-        let ring_frames = self.output_ring_frames;
-        let state = &mut self.channels[channel];
-        for index in 0..self.window_size {
-            let ring_frame = (synthesis_start + index) % ring_frames;
-            let weight = self.window[index];
-            state.output_ring[ring_frame] += state.spectrum[index].re * scale * weight;
-            state.normalization_ring[ring_frame] += weight * weight;
         }
     }
 }
