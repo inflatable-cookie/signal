@@ -1,4 +1,4 @@
-#[path = "support/public_host_edge_plugins.rs"]
+#[path = "support/public_host_edge_plugins/mod.rs"]
 mod public_host_edge_plugins_support;
 
 use public_host_edge_plugins_support::{

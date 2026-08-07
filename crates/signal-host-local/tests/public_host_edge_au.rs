@@ -1,4 +1,4 @@
-#[path = "support/public_host_edge_plugins.rs"]
+#[path = "support/public_host_edge_plugins/mod.rs"]
 mod public_host_edge_plugins_support;
 #[path = "support/public_host_edge_sandbox_broker.rs"]
 mod public_host_edge_sandbox_broker_support;
