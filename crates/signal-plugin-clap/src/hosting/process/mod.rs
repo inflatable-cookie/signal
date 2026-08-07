@@ -1,7 +1,9 @@
 //! Audio-thread CLAP process session.
 
 mod buffers;
+mod dispatch;
 mod events;
+mod prepare;
 mod session;
 
 pub use session::ClapProcessSession;
