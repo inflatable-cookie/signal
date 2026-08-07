@@ -38,6 +38,13 @@ impl Vst3AudioBusLayout {
     }
 }
 
+/// Lifecycle state of a hosted instance.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum HostedInstanceState {
+    Created,
+    Active,
+}
+
 impl Vst3HostedPortLayout {
     /// Phase 1 supports exactly a stereo main in + stereo main out effect.
     pub fn is_stereo_effect(&self) -> bool {

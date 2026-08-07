@@ -1,208 +1,13 @@
-//! In-process VST3 plugin processor.
-
 use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering};
-use std::sync::{Arc, Mutex};
+use std::sync::Mutex;
 
-use signal_plugin::{PluginEvent, PluginParameterDescriptor};
+use signal_plugin::PluginParameterDescriptor;
 use signal_plugin_vst3::{
-    Vst3HostedInstance, Vst3ProcessSession, VST3_RESTART_IO_CHANGED, VST3_RESTART_LATENCY_CHANGED,
-};
-use signal_render_plane::{
-    PluginBlockProcessor, RenderBlockPluginEvent, RenderPluginEventKind, RenderPluginEventSupport,
+    Vst3HostedInstance, VST3_RESTART_IO_CHANGED, VST3_RESTART_LATENCY_CHANGED,
 };
 
-use super::common::{convert_block_events, PluginGuiEvent, EVENT_SCRATCH_CAPACITY};
-
-/// In-process VST3 processing backend (g11.031): the exact mirror of
-/// [`InProcessClapProcessor`] over the VST3 COM hosting FFI.
-///
-/// Owns the hosted instance (module, component/processor/controller,
-/// activation) for its whole lifetime. The process session sits behind a
-/// `Mutex` taken with `try_lock` only — the audio thread never blocks; a
-/// contended lock (teardown racing a callback) bypasses that block.
-///
-/// `setProcessing(true)` runs lazily on the first processed block, which is
-/// the audio thread — matching VST3's processing-thread contract.
-pub struct InProcessVst3Processor {
-    /// Field order matters: the session must drop before the instance.
-    session: Mutex<Vst3ProcessSession>,
-    instance: Mutex<Vst3HostedInstance>,
-    /// Preallocated conversion scratch for per-block note/CC delivery
-    /// (taken with `try_lock` on the audio thread, like the session).
-    events_scratch: Mutex<Vec<PluginEvent>>,
-    /// Whether the controller exposed an `IMidiMapping` at load (CC events
-    /// deliver as mapped parameter changes; without one they drop).
-    midi_cc_mapping: bool,
-    midi_cc_mappings: [bool; 128],
-    pitch_bend_mapping: bool,
-    channel_pressure_mapping: bool,
-    parameters: Vec<PluginParameterDescriptor>,
-    latency_frames: AtomicU32,
-    latency_revision: AtomicU64,
-    observed_latency_changes: AtomicU64,
-    pub(crate) pending_restart_flags: Arc<AtomicU32>,
-    max_frames: u32,
-    /// Cleared at teardown so late callbacks bypass instead of racing the
-    /// lifecycle.
-    alive: AtomicBool,
-    /// Blocks bypassed (unsupported layout, plugin error, teardown race).
-    misses: AtomicU64,
-    unsupported_events: AtomicU64,
-}
-
-/// In-process VST3 editor host for components that expose a native editor but
-/// no processable audio layout.
-///
-/// This deliberately does not implement [`PluginBlockProcessor`]. It owns the
-/// component/controller lifecycle needed for editor inspection, state capture,
-/// and state restoration without implying that the component can process
-/// audio.
-pub struct InProcessVst3Editor {
-    instance: Mutex<Vst3HostedInstance>,
-    alive: AtomicBool,
-}
-
-// Safety: raw COM pointers remain behind `instance`; every public operation is
-// serialized by that mutex and the embedding host retains the main-thread
-// contract for editor calls.
-unsafe impl Send for InProcessVst3Editor {}
-unsafe impl Sync for InProcessVst3Editor {}
-
-impl InProcessVst3Editor {
-    /// Load one exact VST3 class for isolated editor inspection without
-    /// activating an audio process session.
-    pub fn load_for_inspection(
-        bundle_root: &std::path::Path,
-        class_id_hex: &str,
-    ) -> Result<Self, String> {
-        let instance = Vst3HostedInstance::load_for_inspection(bundle_root, class_id_hex)
-            .map_err(|error| error.token)?;
-        Ok(Self {
-            instance: Mutex::new(instance),
-            alive: AtomicBool::new(true),
-        })
-    }
-
-    /// Whether this component exposes an edit controller that can create an
-    /// editor view.
-    pub fn gui_supported(&self) -> bool {
-        self.alive.load(Ordering::Relaxed)
-            && self
-                .instance
-                .lock()
-                .map(|instance| instance.gui_supported())
-                .unwrap_or(false)
-    }
-
-    /// Open the editor inside the supplied native parent view. Main thread
-    /// only.
-    pub fn gui_open_embedded(
-        &self,
-        parent_view: usize,
-        scale: Option<f64>,
-    ) -> Result<(u32, u32), String> {
-        if !self.alive.load(Ordering::Relaxed) {
-            return Err("backend_dead".to_string());
-        }
-        let mut instance = self
-            .instance
-            .lock()
-            .map_err(|_| "instance_lock_poisoned".to_string())?;
-        // SAFETY: `parent_view` is the caller's live main-thread view handle,
-        // laundered through `usize` so this backend stays `Send`. The caller
-        // owns the window and the main-thread contract; this type can only
-        // serialize access, it cannot verify either.
-        unsafe { instance.gui_open_embedded(parent_view as *mut std::ffi::c_void, scale) }
-            .map_err(|error| error.token)
-    }
-
-    /// Last observed editor content size, when open.
-    pub fn gui_size(&self) -> Option<(u32, u32)> {
-        self.instance
-            .lock()
-            .ok()
-            .and_then(|instance| instance.gui_session().map(|session| session.size()))
-    }
-
-    /// Whether the open editor accepts host/user resize proposals. Main
-    /// thread only.
-    pub fn gui_can_resize(&self) -> bool {
-        self.instance
-            .lock()
-            .ok()
-            .and_then(|instance| instance.gui_session().map(|session| session.can_resize()))
-            .unwrap_or(false)
-    }
-
-    /// Propose a host/user editor size. Main thread only.
-    pub fn gui_set_size(&self, width: u32, height: u32) -> Option<(u32, u32)> {
-        self.instance.lock().ok().and_then(|mut instance| {
-            instance
-                .gui_session_mut()
-                .and_then(|session| session.set_size(width, height))
-        })
-    }
-
-    /// Accept a plugin-initiated resize request. Main thread only.
-    pub fn gui_accept_plugin_resize(&self, width: u32, height: u32) -> Option<(u32, u32)> {
-        self.instance.lock().ok().and_then(|mut instance| {
-            instance
-                .gui_session_mut()
-                .and_then(|session| session.accept_plugin_resize(width, height))
-        })
-    }
-
-    /// Destroy the open editor while keeping the component alive. Main thread
-    /// only.
-    pub fn gui_close(&self) {
-        if let Ok(mut instance) = self.instance.lock() {
-            instance.gui_destroy();
-        }
-    }
-
-    /// Drain queued editor callbacks for the embedding host.
-    pub fn gui_take_events(&self) -> Vec<PluginGuiEvent> {
-        self.instance
-            .lock()
-            .map(|instance| {
-                instance
-                    .take_gui_events()
-                    .into_iter()
-                    .map(PluginGuiEvent::from)
-                    .collect()
-            })
-            .unwrap_or_default()
-    }
-
-    /// Capture opaque component/controller state.
-    pub fn save_state(&self) -> Result<Vec<u8>, String> {
-        if !self.alive.load(Ordering::Relaxed) {
-            return Err("backend_dead".to_string());
-        }
-        self.instance
-            .lock()
-            .map_err(|_| "instance_lock_poisoned".to_string())?
-            .save_state()
-            .map_err(|error| error.token)
-    }
-
-    /// Restore opaque component/controller state.
-    pub fn load_state(&self, bytes: &[u8]) -> Result<(), String> {
-        if !self.alive.load(Ordering::Relaxed) {
-            return Err("backend_dead".to_string());
-        }
-        self.instance
-            .lock()
-            .map_err(|_| "instance_lock_poisoned".to_string())?
-            .load_state(bytes)
-            .map_err(|error| error.token)
-    }
-
-    /// Mark the editor backend unavailable to future operations.
-    pub fn shutdown(&self) {
-        self.alive.store(false, Ordering::Relaxed);
-    }
-}
+use super::super::common::{PluginGuiEvent, EVENT_SCRATCH_CAPACITY};
+use super::InProcessVst3Processor;
 
 // Safety: the raw COM pointers inside the instance and session are only
 // dereferenced behind the two mutexes; the type's public surface serializes
@@ -216,7 +21,7 @@ impl InProcessVst3Processor {
     /// `max_frames`, negotiate a stereo effect (2-in/2-out) or instrument
     /// (0-in/2-out) layout, and build the processing session. Other layouts
     /// fail with `layout_unsupported`; components with no audio buses fail
-    /// with `no_audio_buses` and may instead use [`InProcessVst3Editor`].
+    /// with `no_audio_buses` and may instead use [`InProcessVst3Editor`](super::InProcessVst3Editor).
     pub fn load_and_activate(
         bundle_root: &std::path::Path,
         class_id_hex: &str,
@@ -299,7 +104,7 @@ impl InProcessVst3Processor {
 
     /// Refresh cached latency after `kLatencyChanged`. Observation runs on
     /// the host control thread; the audio callback never takes this lock.
-    fn refresh_latency(&self) {
+    pub(super) fn refresh_latency(&self) {
         let Ok(instance) = self.instance.lock() else {
             return;
         };
@@ -555,103 +360,5 @@ impl Drop for InProcessVst3Processor {
         // The instance's own Drop releases the COM objects and closes the
         // module after the session (holding the raw processor pointer) is
         // already inert.
-    }
-}
-
-impl PluginBlockProcessor for InProcessVst3Processor {
-    fn process(&self, scratch: &mut [f32], frame_count: usize, channels: usize) -> bool {
-        self.process_with_events(scratch, frame_count, channels, &[])
-    }
-
-    fn event_support(&self) -> RenderPluginEventSupport {
-        RenderPluginEventSupport {
-            notes: true,
-            control_change: self.midi_cc_mappings.iter().any(|mapped| *mapped),
-            pitch_bend: self.pitch_bend_mapping,
-            channel_pressure: self.channel_pressure_mapping,
-            note_expression: false,
-        }
-    }
-
-    fn unsupported_event_count(&self) -> u64 {
-        self.unsupported_events.load(Ordering::Relaxed)
-    }
-
-    fn latency_frames(&self) -> u32 {
-        self.refresh_latency();
-        self.latency_frames.load(Ordering::Relaxed)
-    }
-
-    fn latency_revision(&self) -> u64 {
-        self.refresh_latency();
-        self.latency_revision.load(Ordering::Relaxed)
-    }
-
-    fn process_with_events(
-        &self,
-        scratch: &mut [f32],
-        frame_count: usize,
-        channels: usize,
-        events: &[RenderBlockPluginEvent],
-    ) -> bool {
-        let unsupported = events
-            .iter()
-            .filter(|event| match event.kind {
-                RenderPluginEventKind::NoteOn { .. } | RenderPluginEventKind::NoteOff { .. } => {
-                    false
-                }
-                RenderPluginEventKind::ControlChange { controller, .. } => {
-                    !self.midi_cc_mappings[usize::from(controller)]
-                }
-                RenderPluginEventKind::PitchBend { .. } => !self.pitch_bend_mapping,
-                RenderPluginEventKind::ChannelPressure { .. } => !self.channel_pressure_mapping,
-                RenderPluginEventKind::NoteExpression { .. } => true,
-                RenderPluginEventKind::VoiceStart { .. }
-                | RenderPluginEventKind::VoiceStop { .. }
-                | RenderPluginEventKind::VoiceParam { .. } => true,
-            })
-            .count() as u64;
-        self.unsupported_events
-            .fetch_add(unsupported, Ordering::Relaxed);
-        if !self.alive.load(Ordering::Relaxed)
-            || channels != 2
-            || frame_count > self.max_frames as usize
-        {
-            self.misses.fetch_add(1, Ordering::Relaxed);
-            return false;
-        }
-        if self.processing_restart_pending() {
-            if let Ok(mut session) = self.session.try_lock() {
-                session.stop();
-            }
-            self.misses.fetch_add(1, Ordering::Relaxed);
-            return false;
-        }
-        // try_lock: never block the audio thread. Contention only happens
-        // against teardown, which is about to mark the backend dead anyway.
-        let Ok(mut session) = self.session.try_lock() else {
-            self.misses.fetch_add(1, Ordering::Relaxed);
-            return false;
-        };
-        let Ok(mut events_scratch) = self.events_scratch.try_lock() else {
-            self.misses.fetch_add(1, Ordering::Relaxed);
-            return false;
-        };
-        if !session.is_processing() && session.start().is_err() {
-            self.misses.fetch_add(1, Ordering::Relaxed);
-            return false;
-        }
-        convert_block_events(events, &mut events_scratch);
-        let samples = frame_count * channels;
-        if session.process_in_place_with_events(
-            &mut scratch[..samples],
-            frame_count,
-            &events_scratch,
-        ) {
-            true
-        } else {
-            self.misses.fetch_add(1, Ordering::Relaxed);
-            false
-        }
     }
 }
