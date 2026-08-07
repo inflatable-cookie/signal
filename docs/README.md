@@ -1,84 +1,116 @@
 # Signal Docs
 
-Signal uses the Northstar documentation shape as the repo-owned authority layer
-for the reusable library/runtime surface.
+Signal is a shared realtime audio library and runtime for the Loophole
+ecosystem. This docs tree is where its long-term direction, architecture,
+frozen boundaries, delivery plan, and evidence live. The docs follow the
+Northstar shape: Vision → Architecture → Contracts → Roadmaps → Logs.
 
-## Core Sections
+If a term below is unfamiliar, look it up in the
+[glossary](./reference/glossary.md) — it translates the shorthand used
+throughout these docs.
 
-- `vision/`
-- `architecture/`
-- `contracts/`
-- `roadmaps/`
-- `logs/`
+## Start here
 
-## Optional Sections In Use
+Pick the path that matches what you're doing:
 
-- `research/`
-- `specs/` for closed strict-lane references and any future reopened strict
-  lane
+- **I'm new to Signal.** Read the [Vision](./vision/001-signal-vision.md) (2
+  minutes) and [System Architecture](./architecture/system-architecture.md)
+  (10 minutes). That gives you what Signal is, what it owns, and what it
+  doesn't.
+- **I want to use Signal in another project.** Start with
+  [Consuming Signal](./reference/consuming-signal.md), the runbook for
+  depending on Signal crates, and the
+  [Quick Start](./reference/quick-start.md) for working code you can run
+  today. Then read the [package map](./architecture/package-map.md) and the
+  [DSP and analysis feature reference](./architecture/dsp-analysis-feature-reference.md)
+  to see what is actually available.
+- **I'm working on Signal.** Read the [Architecture section](./architecture/README.md),
+  find the contract that owns your seam in the [contract index](./contracts/contract-index.md),
+  and check the [active generation roadmap](./roadmaps/g10/README.md) before
+  starting anything.
+- **I need the current status in one paragraph.** Each section README below
+  opens with a short "in plain words" summary. The
+  [roadmaps README](./roadmaps/README.md) is the single best status snapshot.
+- **I need to know what stretch (time-stretch / pitch-shift) is shipped.**
+  Read the [stretch summary](./architecture/offline-time-stretch-synthesis.md)
+  and the [creative stretch surface](./architecture/offline-creative-fixed-ratio-public-surface.md).
+  Everything else in this tree about stretch is archived research.
 
-Signal is back in a baseline Northstar posture. There is currently no active
-strict lane.
+## How the docs are organized
 
-## Current Entry Points
+Each layer answers one question. Read them top to bottom for full context, or
+jump straight to the layer that matches your question.
 
-- Vision: [vision/001-signal-vision.md](./vision/001-signal-vision.md)
-- Architecture: [architecture/system-architecture.md](./architecture/system-architecture.md)
-- Product guardrails: [architecture/product-guardrails.md](./architecture/product-guardrails.md)
-- Package map: [architecture/package-map.md](./architecture/package-map.md)
-- DSP and analysis feature reference: [architecture/dsp-analysis-feature-reference.md](./architecture/dsp-analysis-feature-reference.md)
-- Offline time-stretch synthesis: [architecture/offline-time-stretch-synthesis.md](./architecture/offline-time-stretch-synthesis.md)
-- Rejected offline stretch successor: [architecture/offline-time-stretch-successor-brief.md](./architecture/offline-time-stretch-successor-brief.md)
-- Non-phase-vocoder feasibility: [architecture/offline-time-stretch-non-phase-vocoder-feasibility.md](./architecture/offline-time-stretch-non-phase-vocoder-feasibility.md)
-- Creative time-stretch study: [architecture/offline-creative-time-stretch-study.md](./architecture/offline-creative-time-stretch-study.md)
-- Rejected and closed Automatic route brief: [architecture/offline-automatic-exact-target-transparent-dream-router-brief.md](./architecture/offline-automatic-exact-target-transparent-dream-router-brief.md)
-- Admitted private continuous Dream implementation brief: [architecture/offline-creative-continuous-direct-renewal-dream-brief.md](./architecture/offline-creative-continuous-direct-renewal-dream-brief.md)
-- Cyclic behavioral synthesis: [architecture/offline-creative-cyclic-behavioral-synthesis.md](./architecture/offline-creative-cyclic-behavioral-synthesis.md)
-- Admitted private event-ledger Cyclic renderer brief: [architecture/offline-creative-event-ledger-audited-centered-compressed-anchor-cyclic-brief.md](./architecture/offline-creative-event-ledger-audited-centered-compressed-anchor-cyclic-brief.md)
-- Admitted private continuous Cyclic brief: [architecture/offline-creative-continuous-event-ledger-cyclic-brief.md](./architecture/offline-creative-continuous-event-ledger-cyclic-brief.md)
-- Evidence-invalid historical Cyclic brief: [architecture/offline-creative-centered-compressed-anchor-cyclic-brief.md](./architecture/offline-creative-centered-compressed-anchor-cyclic-brief.md)
-- Admitted public v4 CreativeStretch surface: [architecture/offline-creative-fixed-ratio-public-surface.md](./architecture/offline-creative-fixed-ratio-public-surface.md)
-- Direct-renewal owner study: [architecture/offline-creative-direct-renewal-owner-study.md](./architecture/offline-creative-direct-renewal-owner-study.md)
-- Closed creative LinkedStnNoiseMorph brief: [architecture/offline-creative-linked-stn-noise-morph-brief.md](./architecture/offline-creative-linked-stn-noise-morph-brief.md)
-- Rejected creative ComparatorAuditedRenewalSpectral brief: [architecture/offline-creative-comparator-audited-renewal-spectral-brief.md](./architecture/offline-creative-comparator-audited-renewal-spectral-brief.md)
-- Rejected-under-old-stereo-policy SupportAuditedListeningLedSourceRelativeRenewalSpectral brief: [architecture/offline-creative-verified-source-relative-renewal-spectral-brief.md](./architecture/offline-creative-verified-source-relative-renewal-spectral-brief.md)
-- Rejected-at-vector-proof creative SourceRelativeRenewalSpectral brief: [architecture/offline-creative-source-relative-renewal-spectral-brief.md](./architecture/offline-creative-source-relative-renewal-spectral-brief.md)
-- Rejected creative AuditedVarianceCompensatedRenewalSpectral brief: [architecture/offline-creative-audited-variance-compensated-renewal-spectral-brief.md](./architecture/offline-creative-audited-variance-compensated-renewal-spectral-brief.md)
-- Evidence-rejected creative VarianceCompensatedRenewalSpectral brief: [architecture/offline-creative-variance-compensated-renewal-spectral-brief.md](./architecture/offline-creative-variance-compensated-renewal-spectral-brief.md)
-- Rejected-at-compile creative CompensatedRenewalSpectral brief: [architecture/offline-creative-compensated-renewal-spectral-brief.md](./architecture/offline-creative-compensated-renewal-spectral-brief.md)
-- Rejected creative RenewalSpectral brief: [architecture/offline-creative-renewal-spectral-brief.md](./architecture/offline-creative-renewal-spectral-brief.md)
-- Creative source triangulation: [research/specimen-dossiers/creative-stretch-source-triangulation.md](./research/specimen-dossiers/creative-stretch-source-triangulation.md)
-- Cyclic source architecture: [research/specimen-dossiers/cyclic-time-stretch-source-architecture.md](./research/specimen-dossiers/cyclic-time-stretch-source-architecture.md)
-- Closed-at-occupancy-proof AuditedLayeredCloud authority: [architecture/offline-creative-audited-layered-cloud-brief.md](./architecture/offline-creative-audited-layered-cloud-brief.md)
-- Evidence-invalid LayeredCloud brief and audit ledger: [architecture/offline-creative-layered-cloud-brief.md](./architecture/offline-creative-layered-cloud-brief.md)
-- Rejected creative SimilarityAlignedCyclic brief: [architecture/offline-creative-similarity-aligned-cyclic-brief.md](./architecture/offline-creative-similarity-aligned-cyclic-brief.md)
-- Rejected creative CyclicGrain brief: [architecture/offline-creative-cyclic-grain-brief.md](./architecture/offline-creative-cyclic-grain-brief.md)
-- Rejected creative complex-relation brief: [architecture/offline-creative-continuous-excitation-complex-relation-brief.md](./architecture/offline-creative-continuous-excitation-complex-relation-brief.md)
-- Rejected continuous-excitation brief: [architecture/offline-creative-continuous-excitation-spectral-brief.md](./architecture/offline-creative-continuous-excitation-spectral-brief.md)
-- Rejected DiffuseSpectral brief: [architecture/offline-creative-diffuse-spectral-brief.md](./architecture/offline-creative-diffuse-spectral-brief.md)
-- Graph and runtime feature reference: [architecture/graph-runtime-feature-reference.md](./architecture/graph-runtime-feature-reference.md)
-- Working rules: [contracts/001-working-rules.md](./contracts/001-working-rules.md)
-- Shared DSP boundary: [contracts/001-shared-dsp-and-host-boundary.md](./contracts/001-shared-dsp-and-host-boundary.md)
-- Stretch candidate isolation and promotion: [contracts/084-stretch-candidate-isolation-and-promotion-contract.md](./contracts/084-stretch-candidate-isolation-and-promotion-contract.md)
-- Creative stretch product and routing: [contracts/085-creative-time-stretch-product-and-routing-contract.md](./contracts/085-creative-time-stretch-product-and-routing-contract.md)
-- Historical offline stretch synthesis policy: [contracts/082-offline-time-stretch-synthesis-policy-contract.md](./contracts/082-offline-time-stretch-synthesis-policy-contract.md)
-- Supervisor export boundary: [contracts/002-supervisor-export-schema-and-report-boundary.md](./contracts/002-supervisor-export-schema-and-report-boundary.md)
-- Roadmap index: [roadmaps/README.md](./roadmaps/README.md)
-- Generation index: [roadmaps/generation-index.md](./roadmaps/generation-index.md)
-- Stretch closeout roadmap: [roadmaps/g10/030-stretch-consolidation-and-completion.md](./roadmaps/g10/030-stretch-consolidation-and-completion.md)
-- Completed PaulX-like creative stretch roadmap: [roadmaps/g10/031-creative-time-stretch.md](./roadmaps/g10/031-creative-time-stretch.md)
-- Completed Cyclic roadmap: [roadmaps/g10/032-cyclic-creative-stretch-research.md](./roadmaps/g10/032-cyclic-creative-stretch-research.md)
-- Completed continuous Dream range roadmap: [roadmaps/g10/033-creative-stretch-continuous-range-feasibility.md](./roadmaps/g10/033-creative-stretch-continuous-range-feasibility.md)
-- Completed continuous Cyclic feasibility roadmap: [roadmaps/g10/034-continuous-cyclic-feasibility.md](./roadmaps/g10/034-continuous-cyclic-feasibility.md)
-- Completed creative coverage and routing roadmap: [roadmaps/g10/035-creative-stretch-product-coverage-and-routing-audit.md](./roadmaps/g10/035-creative-stretch-product-coverage-and-routing-audit.md)
-- Strict-lane reference: [specs/001-g09-lane-first-strict-adoption.md](./specs/001-g09-lane-first-strict-adoption.md)
-- Active strict-lane card: none
-- Research index: [research/master-index.md](./research/master-index.md)
+| Layer | Answers | Status |
+| --- | --- | --- |
+| [Vision](./vision/README.md) | What are we building and why? | Active |
+| [Architecture](./architecture/README.md) | How does it fit together? | Active |
+| [Contracts](./contracts/README.md) | What boundaries are frozen? | Active |
+| [Roadmaps](./roadmaps/README.md) | What is being built, and in what order? | Active (`g10`) |
+| [Logs](./logs/README.md) | What happened, with evidence? | Archive |
+| [Research](./research/master-index.md) | What did we learn before deciding? | Active |
+| [Reference](./reference/glossary.md) | Runbooks and plain-language guides | Active |
+| [Policy](./policy/internal-writing-style.md) | How the docs themselves are written | Active |
 
-## Validation
+## Key entry points
 
-- `effigy qa:docs`
-- `effigy qa:northstar`
+**Vision**
+
+- [001 Signal Vision](./vision/001-signal-vision.md) — the long-horizon
+  statement: one reusable audio stack across products.
+
+**Architecture**
+
+- [System Architecture](./architecture/system-architecture.md) — the top-level
+  stack: primitives, DSP, analysis, graph, runtime, host-edge adapters.
+- [Package Map](./architecture/package-map.md) — every workspace crate, what it
+  does, and where it sits.
+- [Product Guardrails](./architecture/product-guardrails.md) — what Signal
+  must always and never be.
+- [DSP and Analysis Feature Reference](./architecture/dsp-analysis-feature-reference.md) —
+  what the DSP and analysis crates actually expose today.
+- [Graph and Runtime Feature Reference](./architecture/graph-runtime-feature-reference.md) —
+  what the runtime and graph crates actually expose today.
+- [Offline Time-Stretch Synthesis](./architecture/offline-time-stretch-synthesis.md) —
+  how the shipped stretch renderer works.
+- [Creative Time-Stretch Study](./architecture/offline-creative-time-stretch-study.md) —
+  the decision record for the creative stretch product path.
+
+**Contracts**
+
+- [Contract Index](./contracts/contract-index.md) — the searchable front door
+  to all 85 contracts, grouped by boundary family.
+- [001 Working Rules](./contracts/001-working-rules.md) — how work is run in
+  this repository.
+- [001 Shared DSP and Host Boundary](./contracts/001-shared-dsp-and-host-boundary.md) —
+  the boundary that defines what Signal owns.
+- [084 Stretch Candidate Isolation and Promotion](./contracts/084-stretch-candidate-isolation-and-promotion-contract.md) —
+  the rules that govern stretch evidence and admission.
+- [085 Creative Time-Stretch Product and Routing](./contracts/085-creative-time-stretch-product-and-routing-contract.md) —
+  the creative stretch product vocabulary and gates.
+
+**Roadmaps**
+
+- [Roadmap Index](./roadmaps/README.md) — generation history and current
+  posture.
+- [Active Generation g10](./roadmaps/g10/README.md) — the current queue.
+- [Generation Index](./roadmaps/generation-index.md) — the history of
+  generations `g01`…`g10`.
+
+**Research**
+
+- [Master Index](./research/master-index.md) — the map from research outputs
+  to crate planning and consumers. This is also where archived stretch
+  research lives (specimen dossiers, translation memos, rejected briefs).
+
+**Reference**
+
+- [Quick Start](./reference/quick-start.md) — hear it, analyze it, stretch it:
+  complete worked examples from the repo.
+- [Consuming Signal](./reference/consuming-signal.md) — the canonical runbook
+  for depending on Signal crates from another repository.
+- [Glossary](./reference/glossary.md) — plain-English translations of the
+  shorthand used across these docs.
 
 ## Working Rule
 
@@ -93,6 +125,11 @@ strict lane.
   instead of reading old batch-card state as current authority
 - in the strict lane, treat a bare `continue` as "follow the previous closeout's
   `Next Task`" rather than as permission to infer a new batch
+
+## Validation
+
+- `effigy qa:docs`
+- `effigy qa:northstar`
 
 ## Next Task
 

@@ -3,6 +3,31 @@
 Status: active
 Updated: 2026-07-27
 
+## In plain words
+
+Roadmaps are the delivery plan: what is being built, in what order, and which
+part is next. The active generation is `g10`; its front door is
+[docs/roadmaps/g10/README.md](./g10/README.md).
+
+Current state in one breath:
+
+- The realtime audio path, DSP, analysis, graph, and runtime are built and
+  regression-tested (`g10.001`–`g10.020`).
+- Time-stretch is Signal-owned DSP. The faithful ("transparent") renderer is
+  frozen and shipped. A separate creative stretch path is also shipped for
+  exact ratios: `Dream` at `4x`/`8x`/`16x` and `Cyclic` at `2x`/`4x`/`8x`.
+- Automatic same-character routing was tried and closed; explicit characters
+  remain.
+- The July 2026 stretch audit findings are all closed: `g10.036`–`g10.042`
+  are complete — Transparent defects fixed, cache identity `v3` landed, crate
+  surface consolidated, resumable offline render admitted, and RealtimePreview
+  proven then deliberately left unadopted. No batch is currently ready.
+
+The rest of this page is the batch-by-batch history behind that summary. It is
+the working evidence spine for automation — read it if you need detail, not
+for orientation. For plain-language definitions of terms like "admitted",
+"checkpoint", or "Rule 11", see the [glossary](../reference/glossary.md).
+
 ## Why this section matters now
 
 Roadmaps turn the Signal library/runtime strategy into executable batches.
@@ -24,6 +49,11 @@ Use this section for:
 - `templates/`: roadmap authoring support
 
 ## Current posture
+
+> Everything below this heading is the batch-by-batch evidence narrative — the
+> working spine for automation and audit. Humans: the summary above is the
+> current state; the [g10 milestone map](./g10/README.md#milestone-map) is the
+> per-roadmap status; this narrative is for detail and history.
 
 `g10` is active. Its per-generation front door is
 `docs/roadmaps/g10/README.md`. Phase one (002-009) completed the audit

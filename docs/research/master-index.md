@@ -4,6 +4,18 @@ Purpose: provide one implementation-facing map from Signal research outputs to
 crate planning, algorithm work, validation, and downstream consumers such as
 Finch and Loophole.
 
+## In plain words
+
+This is where Signal's DSP and analysis research lives: studies of reference
+tools (Essentia, Rubber Band, PaulXStretch…), algorithm specs (beat tracking,
+key detection, loudness), and the full archive of time-stretch research. The
+long stretch narrative below is the archived evidence trail — hundreds of
+candidate renderers were tried and rejected. The current bottom line is short:
+the transparent renderer is frozen, creative stretch ships exact-ratio `Dream`
+and `Cyclic`, and everything else in the stretch history is archived, not
+active. See the [glossary](../reference/glossary.md) for terms like
+"admitted", "checkpoint", and "Rule 11".
+
 Stretch translation memos are retained research evidence. Their historical
 `Promoted` labels mean promoted into the old proof sequence, not authorized for
 production or new implementation. Contract `084` and `g10.030` closed the

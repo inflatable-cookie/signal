@@ -130,10 +130,15 @@ open docs/README.md
 
 Key entry points:
 
+- `docs/README.md` — start here; role-based reading paths
+- `docs/reference/glossary.md` — plain-English guide to the docs' shorthand
+- `docs/reference/quick-start.md` — hear it, analyze it, stretch it: complete
+  worked examples
 - `docs/vision/001-signal-vision.md`
 - `docs/architecture/system-architecture.md`
 - `docs/contracts/001-shared-dsp-and-host-boundary.md`
 - `docs/research/master-index.md`
+- `docs/reference/consuming-signal.md` — how other repositories depend on Signal
 
 ## Real-Time Safety
 

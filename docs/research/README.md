@@ -3,6 +3,15 @@
 Purpose: keep Signal's reusable DSP, analysis, crate-shape, and dependency
 research in one canonical place instead of scattering it across app-local repos.
 
+## In plain words
+
+Research is the "what did we learn before deciding" layer. It feeds
+architecture and contracts, and the master index is the front door. Most of
+this section is archival evidence (especially the time-stretch dossiers); the
+live entry points are the [master index](./master-index.md), the value tracks,
+and the algorithm specs. See the [glossary](../reference/glossary.md) for the
+shorthand used here.
+
 ## Authority rule
 
 Signal owns the research authority for:

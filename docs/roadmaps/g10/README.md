@@ -3,6 +3,17 @@
 Status: active generation; `g10.036` through `g10.042` complete; every audit finding closed or relocated
 Updated: 2026-07-27
 
+## At a glance
+
+- The stretch audit (`g10.036`–`g10.042`) is **complete**: four Transparent
+  defects fixed, cache identity v3 landed, surface consolidated, resumable
+  offline render admitted, RealtimePreview proven and unadopted by design.
+- Every roadmap below is `complete`, `paused`, `deferred`, or `superseded` —
+  see the [Milestone Map](#milestone-map) for one-line status. No batch is
+  currently ready.
+- The long narrative below the milestone map is the evidence trail. Read it
+  for detail, not for orientation.
+
 ## Why this generation matters now
 
 `g10` started as the 2026-06-11 audit-remediation generation: protect the real

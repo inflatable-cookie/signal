@@ -3,6 +3,21 @@
 Status: active
 Updated: 2026-07-24
 
+## In plain words
+
+A contract is a frozen boundary decision: it exists when prose architecture is
+not precise enough to rely on. Numbered `001`–`085`, each file names one seam
+and the guarantees consumers can count on. Don't read them in order — use the
+[contract index](./contract-index.md), which groups them by boundary family
+(runtime scheduling, plugin adapters, hardware portability, stretch, and so
+on). If you only read one, read
+[001: shared DSP and host boundary](./001-shared-dsp-and-host-boundary.md). If
+a term is unfamiliar, see the [glossary](../reference/glossary.md).
+
+The stretch contracts (`082`, `084`, `085`) carry extra procedural rules
+(Rules 5, 10, 11) about how stretch evidence and admission are judged — that is
+deliberate, because the stretch program has a long archived rejection history.
+
 ## Why this section matters now
 
 Contracts freeze the reusable boundaries that Signal consumers should be able to
@@ -99,6 +114,9 @@ Use this section for:
 - `078-rhythm-continuity-failure-containment-and-policy-normalization-contract.md`
 - `079-interactive-demo-binary-and-crate-capability-proof-contract.md`
 - `080-production-readiness-grade-and-generation-release-gate-contract.md`
+- `081-operator-visible-interactive-demo-and-low-dependency-ui-contract.md`
+- `082-offline-time-stretch-synthesis-policy-contract.md` (historical evidence,
+  not active execution authority)
 - `083-vst3-discovery-diagnostic-outcome-contract.md`
 - `084-stretch-candidate-isolation-and-promotion-contract.md`
 - `085-creative-time-stretch-product-and-routing-contract.md`

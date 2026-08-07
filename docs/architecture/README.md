@@ -3,6 +3,22 @@
 Status: active
 Updated: 2026-07-24
 
+## In plain words
+
+Signal is a reusable audio library, not an app. This section explains how the
+pieces fit together: the crate boundaries, the runtime shape, and the
+invariants every seam has to respect. If you want to know *what exists today*,
+read the [system architecture](./system-architecture.md) and the
+[package map](./package-map.md). If a term is unfamiliar, see the
+[glossary](../reference/glossary.md).
+
+Current headline state: the realtime render path, DSP kernels, analysis, graph,
+and runtime crates are live under `crates/`; plugin discovery exists for
+CLAP/VST3/AU/LV2 but in-process plugin hosting is future work. The stretch
+headline is covered in [roadmaps](../roadmaps/README.md) — the transparent
+renderer is frozen, and exact-ratio creative stretch (`Dream`, `Cyclic`) is
+publicly admitted.
+
 ## Why this section matters now
 
 Architecture defines Signal as a reusable library system rather than a
