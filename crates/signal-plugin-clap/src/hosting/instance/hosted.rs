@@ -1,12 +1,10 @@
-//! Hosted CLAP plugin instance lifecycle.
-
 use std::{
     ffi::{c_void, CString},
     path::Path,
     ptr,
     sync::{
         atomic::{AtomicU64, Ordering},
-        Mutex,
+        Arc, Mutex,
     },
 };
 
@@ -15,8 +13,7 @@ use clap_sys::{
         clap_event_header, clap_event_param_value, clap_input_events, clap_output_events,
         CLAP_CORE_EVENT_SPACE_ID, CLAP_EVENT_PARAM_VALUE,
     },
-    ext::audio_ports::{clap_plugin_audio_ports, CLAP_EXT_AUDIO_PORTS},
-    ext::gui::{clap_plugin_gui, CLAP_EXT_GUI},
+    ext::gui::clap_plugin_gui,
     ext::latency::{clap_plugin_latency, CLAP_EXT_LATENCY},
     ext::params::{clap_plugin_params, CLAP_EXT_PARAMS},
     ext::state::{clap_plugin_state, CLAP_EXT_STATE},
@@ -24,66 +21,22 @@ use clap_sys::{
     stream::{clap_istream, clap_ostream},
 };
 use signal_plugin::{
-    PluginAudioBusDirection, PluginParamChange, PluginParamChangeQueue, PluginParameterDescriptor,
+    PluginParamChange, PluginParamChangeQueue, PluginParameterDescriptor,
     PLUGIN_PARAM_CHANGE_CAPACITY,
 };
-use std::sync::Arc;
 
+use crate::discovery::PluginAudioBusDescriptorList;
 use crate::gui::{ClapGuiEvent, ClapGuiSession};
 
-use crate::discovery::{
-    audio_buses_from_extension, parameter_descriptors_from_extension, PluginAudioBusDescriptorList,
-};
-
-use super::entry::{ClapHostingError, LoadedClapEntry};
-use super::host::{sandbox_host, ClapHostParamsEvent, ClapHostShim};
-use super::process::{
+use super::super::entry::{ClapHostingError, LoadedClapEntry};
+use super::super::host::{sandbox_host, ClapHostParamsEvent, ClapHostShim};
+use super::super::process::{
     param_in_events_get, param_in_events_size, param_out_events_try_push, ClapProcessSession,
     InEventSlot, ParamEventList, ParamOutCapture,
 };
-
-/// Main-bus stereo port layout summary for a hosted instance.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct ClapHostedPortLayout {
-    /// Channel count of the main input bus (0 = none).
-    pub main_input_channels: u16,
-    /// Channel count of the main output bus (0 = none).
-    pub main_output_channels: u16,
-}
-
-impl ClapHostedPortLayout {
-    /// Phase 1 supports exactly a stereo main in + stereo main out effect.
-    pub fn is_stereo_effect(&self) -> bool {
-        self.main_input_channels == 2 && self.main_output_channels == 2
-    }
-
-    /// MIDI instrument layout supported by the current host: no main audio
-    /// input and one stereo main output.
-    pub fn is_stereo_instrument(&self) -> bool {
-        self.main_input_channels == 0 && self.main_output_channels == 2
-    }
-
-    /// Whether the current stereo process session can host this layout.
-    pub fn is_supported_stereo_processor(&self) -> bool {
-        self.is_stereo_effect() || self.is_stereo_instrument()
-    }
-
-    /// Whether stereo inspection can safely drive this layout. The first
-    /// input/output pair carries the inspection signal; extra input channels
-    /// remain silent and extra outputs are ignored. Runtime hosting keeps the
-    /// stricter exact-layout gate above.
-    pub fn is_supported_stereo_inspection_processor(&self) -> bool {
-        self.main_output_channels >= 2
-            && (self.main_input_channels == 0 || self.main_input_channels >= 2)
-    }
-}
-
-/// Lifecycle state of a hosted instance.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum HostedInstanceState {
-    Created,
-    Active,
-}
+use super::layout::{ClapHostedPortLayout, HostedInstanceState};
+use super::shape::{gui_shape, instance_shape};
+use super::state_io::{clap_state_read, clap_state_write, ClapStateReadCursor};
 
 /// One live CLAP plugin instance hosted in this process: owns the loaded
 /// entry, the host struct handed to the plugin, and the instance pointer.
@@ -549,47 +502,6 @@ impl ClapHostedInstance {
     }
 }
 
-unsafe extern "C" fn clap_state_write(
-    stream: *const clap_ostream,
-    buffer: *const c_void,
-    size: u64,
-) -> i64 {
-    if stream.is_null() || buffer.is_null() || size > i64::MAX as u64 {
-        return -1;
-    }
-    let bytes = &mut *((*stream).ctx as *mut Vec<u8>);
-    let input = std::slice::from_raw_parts(buffer.cast::<u8>(), size as usize);
-    bytes.extend_from_slice(input);
-    size as i64
-}
-
-struct ClapStateReadCursor<'a> {
-    bytes: &'a [u8],
-    offset: usize,
-}
-
-unsafe extern "C" fn clap_state_read(
-    stream: *const clap_istream,
-    buffer: *mut c_void,
-    size: u64,
-) -> i64 {
-    if stream.is_null() || buffer.is_null() || size > i64::MAX as u64 {
-        return -1;
-    }
-    let source = &mut *((*stream).ctx as *mut ClapStateReadCursor<'_>);
-    let remaining = source.bytes.len().saturating_sub(source.offset);
-    let count = remaining.min(size as usize);
-    if count > 0 {
-        ptr::copy_nonoverlapping(
-            source.bytes.as_ptr().add(source.offset),
-            buffer.cast(),
-            count,
-        );
-        source.offset += count;
-    }
-    count as i64
-}
-
 impl Drop for ClapHostedInstance {
     fn drop(&mut self) {
         // Gui destroy must precede plugin destroy. This is the fallback
@@ -607,64 +519,4 @@ impl Drop for ClapHostedInstance {
             }
         }
     }
-}
-
-/// Enumerate a live instance's parameters and main-bus port layout.
-unsafe fn instance_shape(
-    plugin: *const clap_plugin,
-) -> (
-    Vec<PluginParameterDescriptor>,
-    ClapHostedPortLayout,
-    PluginAudioBusDescriptorList,
-) {
-    let mut parameters = Vec::new();
-    let mut buses = Vec::new();
-    let mut layout = ClapHostedPortLayout {
-        main_input_channels: 0,
-        main_output_channels: 0,
-    };
-    let Some(get_extension) = (*plugin).get_extension else {
-        return (parameters, layout, buses);
-    };
-
-    let params_extension = get_extension(plugin, clap_sys::ext::params::CLAP_EXT_PARAMS.as_ptr());
-    if !params_extension.is_null() {
-        parameters = parameter_descriptors_from_extension(
-            plugin,
-            params_extension.cast::<clap_sys::ext::params::clap_plugin_params>(),
-        );
-    }
-
-    let audio_ports = get_extension(plugin, CLAP_EXT_AUDIO_PORTS.as_ptr());
-    if !audio_ports.is_null() {
-        buses = audio_buses_from_extension(plugin, audio_ports.cast::<clap_plugin_audio_ports>());
-        for bus in &buses {
-            if !bus.is_main {
-                continue;
-            }
-            match bus.direction {
-                PluginAudioBusDirection::Input => layout.main_input_channels = bus.channels,
-                PluginAudioBusDirection::Output => layout.main_output_channels = bus.channels,
-            }
-        }
-    }
-    (parameters, layout, buses)
-}
-
-/// Query the plugin's `clap.gui` extension and whether it supports this
-/// platform's embedded window API. Runs at load, on the lifecycle thread.
-unsafe fn gui_shape(plugin: *const clap_plugin) -> (*const clap_plugin_gui, bool) {
-    let Some(get_extension) = (*plugin).get_extension else {
-        return (ptr::null(), false);
-    };
-    let extension = get_extension(plugin, CLAP_EXT_GUI.as_ptr());
-    if extension.is_null() {
-        return (ptr::null(), false);
-    }
-    let gui = extension.cast::<clap_plugin_gui>();
-    let api_supported = (*gui)
-        .is_api_supported
-        .map(|is_api_supported| is_api_supported(plugin, crate::gui::WINDOW_API.as_ptr(), false))
-        .unwrap_or(false);
-    (gui, api_supported)
 }

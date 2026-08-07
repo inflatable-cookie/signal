@@ -1,157 +1,21 @@
-//! Compiled render plans (preallocated at compile time).
-
 use std::sync::Arc;
 
 use signal_dsp::{default_adapter_matrix, LimiterState, PolyphaseInterpolationTable};
 
 use crate::notes::{NOTE_ATTACK_SECONDS, NOTE_RELEASE_SECONDS};
 use crate::plugin_events::{LIVE_EVENT_RING_CAPACITY, PLUGIN_EVENTS_PER_BLOCK_CAPACITY};
-use crate::stream::STREAM_HELD_CHUNK_SLOTS;
 use crate::{
-    RenderBlockPluginEvent, RenderLiveInputHandle, RenderNoteBuffer, RenderPlanCompileError,
-    RenderPlanSpec, RenderPluginEvent, RenderPluginProcessor, RenderSampleBuffer, RenderSource,
-    RenderStageKind, RenderStreamHandle, StreamChunk, MAX_BLOCK_FRAMES,
+    RenderPlanCompileError, RenderPlanSpec, RenderSource, RenderStageKind, MAX_BLOCK_FRAMES,
+};
+
+use super::types::{
+    CompiledClip, CompiledInput, CompiledNode, CompiledSource, CLIP_EDGE_FADE_FRAMES,
 };
 
 /// Interpolation table shape for rate-converted media playback. 16 taps ×
 /// 512 phases ≈ 32 KB per distinct cutoff; built once per plan compile.
 const RESAMPLE_TAPS: usize = 16;
 const RESAMPLE_PHASES: usize = 512;
-
-/// Declick fade applied inside each clip window edge (shortened for tiny
-/// windows so short clips stay audible).
-pub(crate) const CLIP_EDGE_FADE_FRAMES: u64 = 32;
-
-// ── Compiled plan (render-side data, preallocated at compile time) ─────────
-
-pub(crate) enum CompiledSource {
-    Silence,
-    Tone {
-        phase: f32,
-        step: f32,
-    },
-    Samples {
-        buffer: RenderSampleBuffer,
-        /// Source frames advanced per stream frame (rate ratio).
-        step: f64,
-        /// Repeat from the source start once exhausted.
-        loop_source: bool,
-        /// Polyphase windowed-sinc table for rate-converted playback; `None`
-        /// at 1:1, where samples are read directly.
-        table: Option<PolyphaseInterpolationTable>,
-        /// Source→stage channel up/down-mix, row-major `source_channels ×
-        /// dest_channels`. `None` when the counts match (direct per-channel
-        /// read, byte-identical to the historical stereo path).
-        channel_adapter: Option<Vec<f32>>,
-    },
-    Stream {
-        handle: RenderStreamHandle,
-        /// Chunks currently held for rendering; drained from the handle's
-        /// mailbox between blocks, returned via the retired mailbox once
-        /// behind the playhead or outside the seek window. Moves across
-        /// plan swaps through the clip inheritance map so an identity
-        /// recompile never drops the read-ahead.
-        held: [Option<StreamChunk>; STREAM_HELD_CHUNK_SLOTS],
-        /// Source frames advanced per stream frame (rate ratio).
-        step: f64,
-        /// Polyphase windowed-sinc table for rate-converted playback; `None`
-        /// at 1:1.
-        table: Option<PolyphaseInterpolationTable>,
-    },
-    /// Live input monitor: drains the handle's ring each block. All state
-    /// (ring, underrun counter) lives in the Arc-shared handle, so plan
-    /// swaps carry the feed inherently — nothing to migrate or reset.
-    LiveInput {
-        handle: RenderLiveInputHandle,
-    },
-    /// Built-in instrument: stateless additive sine voices. Everything a
-    /// voice needs is a pure function of the stream position, so there is
-    /// nothing to inherit across plan swaps or seeks.
-    Notes {
-        buffer: RenderNoteBuffer,
-        /// Per-note phase step in radians per stream frame, precomputed at
-        /// compile (parallel to `buffer.notes`) — no per-sample
-        /// transcendentals beyond `sin()`.
-        steps: Arc<[f64]>,
-        /// Attack ramp length at the plan rate.
-        attack_frames: u64,
-        /// Release tail length at the plan rate.
-        release_frames: u64,
-        /// Longest note duration in the buffer: bounds the sorted-scan
-        /// lookback window (a sounding note starts at most this many frames
-        /// plus the release tail before the block).
-        max_duration_frames: u64,
-    },
-}
-
-pub(crate) struct CompiledClip {
-    pub(crate) start_frames: u64,
-    pub(crate) end_frames: u64,
-    /// Declick fade length at each window edge, shortened for tiny windows.
-    pub(crate) edge_fade_frames: u64,
-    /// Equal-power fade-in span from `start_frames` (0 = declick only on
-    /// that side). Clamped to the window length at compile.
-    pub(crate) fade_in_frames: u64,
-    /// Equal-power fade-out span ending at `end_frames` (0 = declick only).
-    pub(crate) fade_out_frames: u64,
-    /// Stable identity, read control-side when building inheritance maps.
-    pub(crate) clip_id: u64,
-    pub(crate) source: CompiledSource,
-}
-
-/// One compiled input edge. `source_index` is a position in the plan's
-/// topologically-ordered stage list and is always strictly less than the
-/// consuming stage's position, so the executor can split-borrow.
-pub(crate) struct CompiledInput {
-    pub(crate) source_index: usize,
-    pub(crate) source_channels: usize,
-    /// Row-major `source_channels × dest_channels`; edge gain folded in.
-    pub(crate) matrix: Vec<f32>,
-}
-
-pub(crate) struct CompiledNode {
-    /// Matches stage state (smoothed gain, tone phase) across plan swaps.
-    pub(crate) stage_id: u64,
-    pub(crate) channels: usize,
-    /// Gain the stage is moving toward (spec value).
-    pub(crate) gain_target: f32,
-    /// Smoothed gain as currently applied; inherited across plan swaps so
-    /// gain edits never step.
-    pub(crate) gain_current: f32,
-    /// Per-block smoothed-gain interpolation, written when the stage renders
-    /// and read wherever its output is consumed (edges, boundary).
-    pub(crate) block_gain_begin: f32,
-    pub(crate) block_gain_slope: f32,
-    /// Sorted automation breakpoints `(frame, gain)`; empty = no automation
-    /// (static `gain_target` smoothing applies).
-    pub(crate) gain_envelope: Vec<(u64, f32)>,
-    /// Clip content (Source stages; empty for Sum/Output).
-    pub(crate) clips: Vec<CompiledClip>,
-    pub(crate) inputs: Vec<CompiledInput>,
-    /// Plugin processor applied to the summed scratch (Sum stages only).
-    pub(crate) processor: Option<RenderPluginProcessor>,
-    /// Compiled plugin event stream (absolute frames, sorted); empty when
-    /// the stage carries none. Shared with the spec's Arc — no copy.
-    pub(crate) events: Arc<[RenderPluginEvent]>,
-    /// Preallocated per-block event slice handed to the processor
-    /// ([`PLUGIN_EVENTS_PER_BLOCK_CAPACITY`]); the audio thread only ever
-    /// clears and pushes within capacity.
-    pub(crate) event_scratch: Vec<RenderBlockPluginEvent>,
-    /// Whether this stage accepts host-pushed live events (g13.018).
-    pub(crate) accepts_live_events: bool,
-    /// Live-event ring: preallocated at compile
-    /// ([`LIVE_EVENT_RING_CAPACITY`]) for accepting stages, empty otherwise.
-    /// `PushLiveEvents` appends within capacity (overflow drops and counts);
-    /// every rendered block drains and clears it. The audio thread only ever
-    /// pushes within capacity and clears — never allocates.
-    pub(crate) live_events: Vec<RenderPluginEvent>,
-    /// Interleaved fixed-size delay ring plus its next sample position.
-    /// Empty for non-delay stages and zero-frame delays.
-    pub(crate) delay_ring: Vec<f32>,
-    pub(crate) delay_cursor: usize,
-    /// Interleaved scratch at the stage's format: `MAX_BLOCK_FRAMES × channels`.
-    pub(crate) scratch: Vec<f32>,
-}
 
 /// A compiled, immutable-topology render plan. Source state (tone phases,
 /// smoothed gains) mutates during rendering; structure never does. Nodes are
@@ -594,86 +458,5 @@ impl RenderPlan {
                 )
             }),
         }))
-    }
-
-    /// Carry smoothed gains and tone phases over from the plan being
-    /// replaced, so a recompile (gain tweak, clip edit) never steps audio.
-    /// Matching is precomputed by the controller into `inherit_stage_map` /
-    /// `inherit_clip_maps` at install time (by stage_id and clip_id), so this
-    /// is O(stages + clips) index copies — no identity comparisons run on
-    /// the audio thread, and inserting a clip mid-lane no longer cross-wires
-    /// its neighbours' state.
-    pub(crate) fn inherit_state(&mut self, previous: &mut RenderPlan) {
-        // Limiter recovery gain carries over so a recompile mid-limiting
-        // does not snap the gain back to unity.
-        if let (Some(limiter), Some(previous_limiter)) =
-            (self.limiter.as_mut(), previous.limiter.as_ref())
-        {
-            limiter.set_gain(previous_limiter.gain());
-        }
-        if self.inherit_stage_map.len() != self.stages.len() {
-            // No map (first install or controller skipped): nothing carries.
-            return;
-        }
-        for (index, stage) in self.stages.iter_mut().enumerate() {
-            let Some(previous_index) = self.inherit_stage_map[index] else {
-                continue;
-            };
-            let Some(previous_node) = previous.stages.get_mut(previous_index) else {
-                continue;
-            };
-            stage.gain_current = previous_node.gain_current;
-            if stage.delay_ring.len() == previous_node.delay_ring.len()
-                && !stage.delay_ring.is_empty()
-            {
-                stage.delay_ring.copy_from_slice(&previous_node.delay_ring);
-                stage.delay_cursor = previous_node.delay_cursor;
-            }
-            let clip_map = self
-                .inherit_clip_maps
-                .get(index)
-                .map(Vec::as_slice)
-                .unwrap_or(&[]);
-            for (clip_index, clip) in stage.clips.iter_mut().enumerate() {
-                let Some(previous_clip_index) = clip_map.get(clip_index).copied().flatten() else {
-                    continue;
-                };
-                let Some(previous_clip) = previous_node.clips.get_mut(previous_clip_index) else {
-                    continue;
-                };
-                match (&mut clip.source, &mut previous_clip.source) {
-                    (
-                        CompiledSource::Tone { phase, step },
-                        CompiledSource::Tone {
-                            phase: previous_phase,
-                            step: previous_step,
-                        },
-                    ) if *step == *previous_step => {
-                        *phase = *previous_phase;
-                    }
-                    // Streaming clips MOVE their held read-ahead chunks into
-                    // the new plan (same handle, same rate ratio), so an
-                    // identity recompile mid-stream never underruns. Chunks
-                    // that do not transfer ride the retired plan back to the
-                    // control side and drop there — never on this thread.
-                    (
-                        CompiledSource::Stream {
-                            handle, held, step, ..
-                        },
-                        CompiledSource::Stream {
-                            handle: previous_handle,
-                            held: previous_held,
-                            step: previous_step,
-                            ..
-                        },
-                    ) if handle == previous_handle && *step == *previous_step => {
-                        for (slot, previous_slot) in held.iter_mut().zip(previous_held.iter_mut()) {
-                            *slot = previous_slot.take();
-                        }
-                    }
-                    _ => {}
-                }
-            }
-        }
     }
 }
