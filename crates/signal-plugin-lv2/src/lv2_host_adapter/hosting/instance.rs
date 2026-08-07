@@ -1,178 +1,21 @@
-//! In-child LV2 instance hosting: bundle re-parse, dlopen +
-//! `lv2_descriptor(index)` walk, instance lifecycle (instantiate at
-//! activate / connect ports / run / deactivate / cleanup), control ports as
-//! the parameter inventory, and a raw process session for the sandbox
-//! audio thread — the LV2 mirror of the CLAP/VST3/AU hosting modules.
-//!
-//! # FFI design
-//!
-//! The LV2 C ABI is tiny and handwritten here (house precedent — no
-//! `lv2`-crate dependency): one `#[repr(C)]` descriptor struct returned by
-//! the library's `lv2_descriptor(uint32_t)` export, walked until the entry
-//! whose `URI` matches the load key. The binary self-describes nothing but
-//! that URI — the port model comes from re-parsing the bundle TTL at load
-//! (`introspection::parse_lv2_bundle`, the same functions discovery uses),
-//! paralleling AU's rebuild-description-from-load-key.
-//!
-//! LV2 is a pure push model: no COM, no pull callback, no
-//! start/stop-processing handshake. `instantiate` fixes the sample rate,
-//! so it runs at ACTIVATE (the wire delivers the rate there), not load.
-//! Activation connects every port once — audio ports to preallocated
-//! planar buffers, control ports to boxed slots holding their TTL
-//! defaults — and `run(n)` per block does the rest. Drop order is
-//! deactivate → cleanup → dlclose (the `Library` field is declared last).
-//!
-//! # Features
-//!
-//! The host provides `urid:map` ONLY (packet g11.033 decision 3): an
-//! interned string→u32 map behind a `Mutex`, handed over as a boxed
-//! feature in a NULL-terminated array kept alive for the instance's
-//! lifetime. Any other `lv2:requiredFeature` fails the load with the typed
-//! `unsupported_required_feature` token (scan pre-filters the same set).
+//! Hosted LV2 plugin instance lifecycle.
 
-use std::collections::HashMap;
-use std::ffi::{c_char, c_void, CStr, CString};
+use std::ffi::{c_void, CStr, CString};
 use std::path::Path;
 use std::ptr;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use libloading::Library;
 use signal_plugin::{
-    PluginParamChange, PluginParamChangeQueue, PluginParameterDescriptor,
-    PLUGIN_PARAM_CHANGE_CAPACITY,
+    PluginParamChangeQueue, PluginParameterDescriptor, PLUGIN_PARAM_CHANGE_CAPACITY,
 };
 
-use super::introspection::{
-    parameter_descriptors_from_model, parse_lv2_bundle, Lv2PluginModel, URID_MAP_FEATURE,
+use super::super::introspection::{
+    parameter_descriptors_from_model, parse_lv2_bundle, Lv2PluginModel,
 };
 
-/// Error surface for LV2 hosting operations; carries a stable snake_case
-/// token suitable for broker receipt details (mirrors `ClapHostingError`).
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Lv2HostingError {
-    /// Stable snake_case failure token (e.g. `library_open_failed`).
-    pub token: String,
-}
-
-impl Lv2HostingError {
-    fn new(token: impl Into<String>) -> Self {
-        Self {
-            token: token.into(),
-        }
-    }
-}
-
-impl std::fmt::Display for Lv2HostingError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(&self.token)
-    }
-}
-
-impl std::error::Error for Lv2HostingError {}
-
-// ── LV2 C ABI ───────────────────────────────────────────────────────────────
-
-/// `LV2_Feature`.
-#[repr(C)]
-pub(crate) struct Lv2Feature {
-    uri: *const c_char,
-    data: *mut c_void,
-}
-
-/// `LV2_Descriptor` (lv2core.h layout).
-#[repr(C)]
-struct Lv2DescriptorRaw {
-    uri: *const c_char,
-    instantiate: Option<
-        unsafe extern "C" fn(
-            *const Lv2DescriptorRaw,
-            f64,
-            *const c_char,
-            *const *const Lv2Feature,
-        ) -> *mut c_void,
-    >,
-    connect_port: Option<unsafe extern "C" fn(*mut c_void, u32, *mut c_void)>,
-    activate: Option<unsafe extern "C" fn(*mut c_void)>,
-    run: Option<unsafe extern "C" fn(*mut c_void, u32)>,
-    deactivate: Option<unsafe extern "C" fn(*mut c_void)>,
-    cleanup: Option<unsafe extern "C" fn(*mut c_void)>,
-    extension_data: Option<unsafe extern "C" fn(*const c_char) -> *const c_void>,
-}
-
-/// `const LV2_Descriptor* lv2_descriptor(uint32_t index)`.
-type Lv2DescriptorProc = unsafe extern "C" fn(u32) -> *const Lv2DescriptorRaw;
-
-/// `LV2_URID_Map` (urid.h layout).
-#[repr(C)]
-struct Lv2UridMap {
-    handle: *mut c_void,
-    map: unsafe extern "C" fn(*mut c_void, *const c_char) -> u32,
-}
-
-// ── urid:map feature ────────────────────────────────────────────────────────
-
-/// Interned string→u32 URID map state. URIDs start at 1 (0 is the LV2
-/// reserved "no URID" value).
-struct UridMapState {
-    interned: Mutex<HashMap<Vec<u8>, u32>>,
-}
-
-unsafe extern "C" fn urid_map_callback(handle: *mut c_void, uri: *const c_char) -> u32 {
-    if handle.is_null() || uri.is_null() {
-        return 0;
-    }
-    // Safety: `handle` is the boxed `UridMapState` owned by the hosting
-    // instance, alive for the plugin's whole lifetime; `uri` is a
-    // NUL-terminated string per the LV2 URID contract.
-    let state = unsafe { &*(handle as *const UridMapState) };
-    let key = unsafe { CStr::from_ptr(uri) }.to_bytes().to_vec();
-    let Ok(mut interned) = state.interned.lock() else {
-        return 0;
-    };
-    let next = interned.len() as u32 + 1;
-    *interned.entry(key).or_insert(next)
-}
-
-/// The urid:map feature bundle: boxed state, boxed `LV2_URID_Map`, boxed
-/// `LV2_Feature`, and the NULL-terminated features array — all owned here
-/// so every pointer the plugin may retain stays valid for the instance
-/// lifetime (boxes give stable addresses even when this struct moves).
-struct UridMapFeatureSet {
-    _state: Box<UridMapState>,
-    _map: Box<Lv2UridMap>,
-    _uri: CString,
-    _feature: Box<Lv2Feature>,
-    features: Vec<*const Lv2Feature>,
-}
-
-impl UridMapFeatureSet {
-    fn new() -> Self {
-        let state = Box::new(UridMapState {
-            interned: Mutex::new(HashMap::new()),
-        });
-        let map = Box::new(Lv2UridMap {
-            handle: (&*state as *const UridMapState) as *mut c_void,
-            map: urid_map_callback,
-        });
-        let uri = CString::new(URID_MAP_FEATURE).expect("static feature URI has no NUL");
-        let feature = Box::new(Lv2Feature {
-            uri: uri.as_ptr(),
-            data: (&*map as *const Lv2UridMap) as *mut c_void,
-        });
-        let features = vec![&*feature as *const Lv2Feature, ptr::null()];
-        Self {
-            _state: state,
-            _map: map,
-            _uri: uri,
-            _feature: feature,
-            features,
-        }
-    }
-
-    fn as_ptr(&self) -> *const *const Lv2Feature {
-        self.features.as_ptr()
-    }
-}
+use super::process::Lv2ProcessSession;
+use super::support::*;
 
 // ── Hosted instance ─────────────────────────────────────────────────────────
 
@@ -202,7 +45,7 @@ impl Lv2HostedPortLayout {
 
 /// Lifecycle state of a hosted instance.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum HostedInstanceState {
+pub(crate) enum HostedInstanceState {
     Created,
     Active,
 }
@@ -536,149 +379,5 @@ impl Drop for Lv2HostedInstance {
     fn drop(&mut self) {
         // deactivate → cleanup; `_library` (declared last) then dlcloses.
         self.teardown_instance();
-    }
-}
-
-// ── Raw process session (audio thread) ──────────────────────────────────────
-
-/// Raw, movable process handle for one activated LV2 instance: the plugin
-/// handle, its `run` entry point, and raw pointers into the planar buffers
-/// the audio ports were connected to at activate. The sandbox moves this
-/// onto its audio thread; the owning [`Lv2HostedInstance`] must outlive it
-/// and must not run lifecycle transitions while the session is live.
-/// Ports stay connected from activation, so a block is exactly: copy in,
-/// `run(n)`, copy out — alloc-free.
-pub struct Lv2ProcessSession {
-    handle: *mut c_void,
-    run: unsafe extern "C" fn(*mut c_void, u32),
-    input_left: *mut f32,
-    input_right: *mut f32,
-    output_left: *mut f32,
-    output_right: *mut f32,
-    max_frames: usize,
-    processing: bool,
-    /// Pending param writes shared with the owning instance (g12.023).
-    param_changes: Arc<PluginParamChangeQueue>,
-    /// Drain scratch (preallocated; audio thread never allocates).
-    param_scratch: Vec<PluginParamChange>,
-    /// `(port_index, slot)` for every control INPUT port; the slots live
-    /// in the owning instance until after the session stops.
-    control_inputs: Vec<(u32, *mut f32)>,
-}
-
-// Safety: the session is handed to exactly one audio thread; LV2's `run`
-// is the audio-class function, and the owner serializes lifecycle against
-// the session per the type contract above (the buffers behind the raw
-// pointers live in the owning instance until after the session stops).
-unsafe impl Send for Lv2ProcessSession {}
-
-impl Lv2ProcessSession {
-    /// Mark the session processing. LV2 has no start-processing handshake
-    /// (push model); this exists for surface parity with the other
-    /// formats' sessions and always succeeds.
-    pub fn start(&mut self) -> Result<(), Lv2HostingError> {
-        self.processing = true;
-        Ok(())
-    }
-
-    /// Mark the session stopped (no LV2 call to make — push model).
-    pub fn stop(&mut self) {
-        self.processing = false;
-    }
-
-    /// Whether `start()` has run and `stop()` has not yet.
-    pub fn is_processing(&self) -> bool {
-        self.processing
-    }
-
-    /// Drain pending param writes into the connected control-input slots
-    /// (g12.023, block-boundary application). Audio thread only —
-    /// alloc-free; the slot pointers stay valid per the session contract.
-    fn apply_param_changes(&mut self) {
-        if self.param_changes.is_empty() {
-            return;
-        }
-        self.param_changes.drain_coalesced(&mut self.param_scratch);
-        for change in &self.param_scratch {
-            if let Some((_, slot)) = self
-                .control_inputs
-                .iter()
-                .find(|(index, _)| *index == change.parameter_id)
-            {
-                // Safety: control slots are instance-owned boxes that
-                // outlive the session; only this thread writes them while
-                // processing runs.
-                unsafe { **slot = change.value as f32 };
-            }
-        }
-    }
-
-    /// Run one block through the connected planar buffers.
-    ///
-    /// # Safety
-    /// `frames` must be within the activated max block size (callers
-    /// clamp) and the owning instance must still be active.
-    unsafe fn run_block(&mut self, frames: usize) {
-        unsafe { (self.run)(self.handle, frames as u32) };
-    }
-
-    /// Process one block: interleaved stereo in, interleaved stereo out.
-    /// Alloc-free (ports stay connected to the activate-time buffers).
-    /// Returns `false` only when the handle is dead (input passes through
-    /// unchanged) — LV2 `run` itself cannot report failure.
-    pub fn process_interleaved_stereo(
-        &mut self,
-        input: &[f32],
-        output: &mut [f32],
-        frame_count: usize,
-    ) -> bool {
-        let frames = frame_count
-            .min(self.max_frames)
-            .min(input.len() / 2)
-            .min(output.len() / 2);
-        if self.handle.is_null() {
-            output[..frames * 2].copy_from_slice(&input[..frames * 2]);
-            return false;
-        }
-        self.apply_param_changes();
-        // Safety: pointers target the instance-owned boxed buffers sized
-        // at max_frames; frames is clamped above.
-        unsafe {
-            for frame in 0..frames {
-                *self.input_left.add(frame) = input[frame * 2];
-                *self.input_right.add(frame) = input[frame * 2 + 1];
-            }
-            self.run_block(frames);
-            for frame in 0..frames {
-                output[frame * 2] = *self.output_left.add(frame);
-                output[frame * 2 + 1] = *self.output_right.add(frame);
-            }
-        }
-        true
-    }
-
-    /// In-place variant for the in-process isolation tier: processes the
-    /// interleaved stereo buffer and writes the result back over it ONLY
-    /// on success; on a dead handle the buffer is left untouched (bypass
-    /// semantics). Alloc-free. `true` = buffer transformed.
-    pub fn process_in_place(&mut self, io: &mut [f32], frame_count: usize) -> bool {
-        let frames = frame_count.min(self.max_frames).min(io.len() / 2);
-        if self.handle.is_null() {
-            return false;
-        }
-        self.apply_param_changes();
-        // Safety: as in `process_interleaved_stereo`.
-        unsafe {
-            for frame in 0..frames {
-                *self.input_left.add(frame) = io[frame * 2];
-                *self.input_right.add(frame) = io[frame * 2 + 1];
-            }
-            self.run_block(frames);
-            for frame in 0..frames {
-                io[frame * 2] = *self.output_left.add(frame);
-                io[frame * 2 + 1] = *self.output_right.add(frame);
-            }
-        }
-        true
     }
 }
