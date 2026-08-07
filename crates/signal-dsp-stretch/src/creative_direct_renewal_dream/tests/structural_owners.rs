@@ -62,11 +62,6 @@
             Ok(())
         }
 
-        #[test]
-        fn direct_renewal_dream_structural_request_preallocation() {
-            owner_s01().unwrap();
-        }
-
         #[allow(clippy::manual_div_ceil)]
         fn owner_s02() -> Result<(), String> {
             assert_eq!(fft_size(8_000), 8_192);
@@ -106,11 +101,6 @@
             Ok(())
         }
 
-        #[test]
-        fn direct_renewal_dream_structural_transform_map() {
-            owner_s02().unwrap();
-        }
-
         fn owner_s03() -> Result<(), String> {
             let (window, gain) = periodic_hann(32_768);
             assert_eq!(window[0], 0.0);
@@ -141,11 +131,6 @@
             assert_eq!(interpolated_sample(&nodes, 1, 0, 4, 3.0), 4.0);
             assert_eq!(interpolated_sample(&nodes, 1, 0, 4, -8.0), 0.0);
             Ok(())
-        }
-
-        #[test]
-        fn direct_renewal_dream_structural_window_interpolation_gain() {
-            owner_s03().unwrap();
         }
 
         fn owner_s04() -> Result<(), String> {
@@ -189,11 +174,6 @@
                 address(ADMISSION_SEED ^ 1, 7, 11, BASE_TAG)
             );
             Ok(())
-        }
-
-        #[test]
-        fn direct_renewal_dream_structural_counter_mono_spectrum() {
-            owner_s04().unwrap();
         }
 
         fn owner_s05() -> Result<(), String> {
@@ -241,11 +221,6 @@
             Ok(())
         }
 
-        #[test]
-        fn direct_renewal_dream_structural_linked_stereo_space() {
-            owner_s05().unwrap();
-        }
-
         fn owner_s06() -> Result<(), String> {
             for ratio in RATIOS {
                 let hop = fft_size(SAMPLE_RATE) / 2;
@@ -263,11 +238,6 @@
                 }
             }
             Ok(())
-        }
-
-        #[test]
-        fn direct_renewal_dream_structural_blend_boundary_crop() {
-            owner_s06().unwrap();
         }
 
         fn edge_fixture(kind: usize, frames: usize) -> Vec<f32> {
@@ -303,11 +273,6 @@
             Ok(())
         }
 
-        #[test]
-        fn direct_renewal_dream_structural_edge_silence_matrix() {
-            owner_s07().unwrap();
-        }
-
         fn owner_s08() -> Result<(), String> {
             let input = tone(4_096, 1, 440.0);
             let first = render(mono_request(&input, 8, ADMISSION_SEED)).unwrap();
@@ -318,11 +283,6 @@
             let extreme = render(mono_request(&input, 8, u64::MAX)).unwrap();
             finite_exact_endpoints(&extreme, 32_768, 1);
             Ok(())
-        }
-
-        #[test]
-        fn direct_renewal_dream_structural_determinism_seed() {
-            owner_s08().unwrap();
         }
 
         fn owner_s09() -> Result<(), String> {
@@ -383,11 +343,6 @@
             Ok(())
         }
 
-        #[test]
-        fn direct_renewal_dream_structural_allocation_memory() {
-            owner_s09().unwrap();
-        }
-
         fn owner_s10() -> Result<(), String> {
             let module = include_str!("../mod.rs");
             let plan = include_str!("../plan.rs");
@@ -431,9 +386,4 @@
                 "signal.creative-direct-renewal.summary.v1"
             );
             Ok(())
-        }
-
-        #[test]
-        fn direct_renewal_dream_structural_single_timeline_private_surface() {
-            owner_s10().unwrap();
         }

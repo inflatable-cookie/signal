@@ -3,11 +3,12 @@ use std::path::{Path, PathBuf};
 
 use signal_dsp_stretch::{OfflineHighQualityPath, OfflineHighQualityStretcher, TimeStretcher};
 
-use super::{
-    decode_external_benchmark_render_audio, decode_listening_source_audio,
-    source_for_external_quality_render, ExternalBenchmarkQualityRender,
-    ExternalBenchmarkQualitySource, StretchCorpusListeningSource,
+use crate::external::{
+    decode_external_benchmark_render_audio, source_for_external_quality_render,
+    ExternalBenchmarkQualityRender, ExternalBenchmarkQualitySource,
 };
+use crate::listening::decode_listening_source_audio;
+use signal_dsp_stretch::StretchCorpusListeningSource;
 
 #[path = "listening_pack/audio.rs"]
 mod audio;
