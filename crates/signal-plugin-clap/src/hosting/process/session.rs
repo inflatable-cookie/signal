@@ -1,12 +1,12 @@
-//! Audio-thread CLAP process session.
-
 use std::{
     ptr,
-    sync::atomic::{AtomicI64, Ordering},
+    sync::{
+        atomic::{AtomicI64, Ordering},
+        Arc,
+    },
 };
 
 use clap_sys::{
-    audio_buffer::clap_audio_buffer,
     events::{
         clap_event_header, clap_event_midi, clap_event_note, clap_event_note_expression,
         clap_event_param_value, clap_event_transport, clap_input_events, clap_output_events,
@@ -25,233 +25,15 @@ use signal_plugin::{
     NoteEventKind, NoteExpressionKind, PluginAudioBusDirection, PluginEvent, PluginParamChange,
     PluginParamChangeQueue, PLUGIN_PARAM_CHANGE_CAPACITY,
 };
-use std::sync::Arc;
 
 use crate::discovery::PluginAudioBusDescriptorList;
 
-use super::entry::ClapHostingError;
-
-pub(crate) struct ParamOutCapture {
-    pub(crate) queue: Arc<PluginParamChangeQueue>,
-    /// The `clap_output_events` handed to the plugin; `ctx` points back at
-    /// this boxed struct.
-    pub(crate) list: clap_output_events,
-}
-
-pub(crate) unsafe extern "C" fn param_out_events_try_push(
-    list: *const clap_output_events,
-    event: *const clap_event_header,
-) -> bool {
-    if list.is_null() || (*list).ctx.is_null() || event.is_null() {
-        return false;
-    }
-    if (*event).space_id == CLAP_CORE_EVENT_SPACE_ID
-        && (*event).type_ == CLAP_EVENT_PARAM_VALUE
-        && (*event).size as usize >= std::mem::size_of::<clap_event_param_value>()
-    {
-        let capture = &*(*list).ctx.cast::<ParamOutCapture>();
-        let value_event = &*event.cast::<clap_event_param_value>();
-        // A full ring still reports the push accepted: the ring coalesces
-        // last-write-wins per drain, and refusing would make plugins spin.
-        let _ = capture.queue.push(value_event.param_id, value_event.value);
-    }
-    true
-}
-
-pub(crate) unsafe extern "C" fn empty_in_events_size(_list: *const clap_input_events) -> u32 {
-    0
-}
-
-pub(crate) unsafe extern "C" fn empty_in_events_get(
-    _list: *const clap_input_events,
-    _index: u32,
-) -> *const clap_event_header {
-    ptr::null()
-}
-
-/// Empty input event list, served when no param change is pending
-/// (g12.023: pending changes ride a session-owned event list instead).
-static EMPTY_IN_EVENTS: clap_input_events = clap_input_events {
-    ctx: ptr::null_mut(),
-    size: Some(empty_in_events_size),
-    get: Some(empty_in_events_get),
+use super::super::entry::ClapHostingError;
+use super::buffers::ClapAudioBusBuffers;
+use super::events::{
+    param_in_events_get, param_in_events_size, param_out_events_try_push, InEventSlot,
+    ParamEventList, ParamOutCapture, EMPTY_IN_EVENTS, IN_EVENT_CAPACITY,
 };
-
-/// Per-block cap on note/MIDI in-events forwarded to the plugin (matches
-/// the render plane's per-block event capacity; overflow drops, earliest
-/// wins — never an allocation on the audio thread).
-const IN_EVENT_CAPACITY: usize = 1024;
-
-/// Which backing array an in-event order entry points into.
-#[derive(Clone, Copy)]
-pub(crate) enum InEventSlot {
-    Param(u32),
-    Note(u32),
-    NoteExpression(u32),
-    Midi(u32),
-}
-
-/// The session-owned in-event list served to the plugin through
-/// `clap_input_events` (g12.023, widened for note/CC delivery). Boxed by
-/// the session so the `ctx` pointer inside the embedded
-/// `clap_input_events` stays stable while the session moves between
-/// threads. Rebuilt at the top of every processed block — param writes
-/// from the shared change queue land at time offset 0 (block-boundary
-/// posture), note/MIDI events keep their intra-block sample offsets. All
-/// vecs are preallocated; the audio thread never allocates.
-///
-/// This is the MIDI 1.0 downconversion boundary for CLAP CC delivery:
-/// [`PluginEvent::ControlChange`] values (normalized f32) become 3-byte
-/// `clap_event_midi` messages here (`round(value * 127)`); note events use
-/// CLAP's native `clap_event_note` and keep full float velocity.
-pub(crate) struct ParamEventList {
-    pub(crate) params: Vec<clap_event_param_value>,
-    pub(crate) notes: Vec<clap_event_note>,
-    pub(crate) note_expressions: Vec<clap_event_note_expression>,
-    pub(crate) midi: Vec<clap_event_midi>,
-    /// Delivery order (nondecreasing header time, params first at 0).
-    pub(crate) order: Vec<InEventSlot>,
-    /// The `clap_input_events` handed to the plugin; `ctx` points back at
-    /// this boxed struct.
-    pub(crate) list: clap_input_events,
-}
-
-pub(crate) unsafe extern "C" fn param_in_events_size(list: *const clap_input_events) -> u32 {
-    if list.is_null() || (*list).ctx.is_null() {
-        return 0;
-    }
-    (*(*list).ctx.cast::<ParamEventList>()).order.len() as u32
-}
-
-pub(crate) unsafe extern "C" fn param_in_events_get(
-    list: *const clap_input_events,
-    index: u32,
-) -> *const clap_event_header {
-    if list.is_null() || (*list).ctx.is_null() {
-        return ptr::null();
-    }
-    let events = &(*(*list).ctx.cast::<ParamEventList>());
-    match events.order.get(index as usize) {
-        Some(InEventSlot::Param(slot)) => events
-            .params
-            .get(*slot as usize)
-            .map(|event| (&event.header as *const clap_event_header).cast())
-            .unwrap_or(ptr::null()),
-        Some(InEventSlot::Note(slot)) => events
-            .notes
-            .get(*slot as usize)
-            .map(|event| (&event.header as *const clap_event_header).cast())
-            .unwrap_or(ptr::null()),
-        Some(InEventSlot::NoteExpression(slot)) => events
-            .note_expressions
-            .get(*slot as usize)
-            .map(|event| (&event.header as *const clap_event_header).cast())
-            .unwrap_or(ptr::null()),
-        Some(InEventSlot::Midi(slot)) => events
-            .midi
-            .get(*slot as usize)
-            .map(|event| (&event.header as *const clap_event_header).cast())
-            .unwrap_or(ptr::null()),
-        None => ptr::null(),
-    }
-}
-
-struct ClapAudioBusBuffers {
-    samples: Vec<Vec<Vec<f32>>>,
-    _channel_pointers: Vec<Vec<*mut f32>>,
-    descriptors: Vec<clap_audio_buffer>,
-}
-
-impl ClapAudioBusBuffers {
-    fn new(channel_counts: &[usize], max_frames: usize) -> Self {
-        let mut samples = channel_counts
-            .iter()
-            .map(|&channel_count| vec![vec![0.0; max_frames]; channel_count])
-            .collect::<Vec<_>>();
-        let mut channel_pointers = samples
-            .iter_mut()
-            .map(|channels| {
-                channels
-                    .iter_mut()
-                    .map(|channel| channel.as_mut_ptr())
-                    .collect::<Vec<_>>()
-            })
-            .collect::<Vec<_>>();
-        let descriptors = channel_pointers
-            .iter_mut()
-            .map(|channels| clap_audio_buffer {
-                data32: if channels.is_empty() {
-                    ptr::null_mut()
-                } else {
-                    channels.as_mut_ptr()
-                },
-                data64: ptr::null_mut(),
-                channel_count: channels.len() as u32,
-                latency: 0,
-                constant_mask: 0,
-            })
-            .collect();
-        Self {
-            samples,
-            _channel_pointers: channel_pointers,
-            descriptors,
-        }
-    }
-
-    fn clear(&mut self, frames: usize) {
-        for bus in &mut self.samples {
-            for channel in bus {
-                channel[..frames].fill(0.0);
-            }
-        }
-    }
-
-    fn copy_interleaved_stereo_into(&mut self, bus_index: usize, input: &[f32], frames: usize) {
-        let Some(bus) = self.samples.get_mut(bus_index) else {
-            return;
-        };
-        let [left, right, ..] = bus.as_mut_slice() else {
-            return;
-        };
-        for frame in 0..frames {
-            left[frame] = input[frame * 2];
-            right[frame] = input[frame * 2 + 1];
-        }
-    }
-
-    fn copy_interleaved_stereo_from(&self, bus_index: usize, output: &mut [f32], frames: usize) {
-        let Some(bus) = self.samples.get(bus_index) else {
-            return;
-        };
-        let [left, right, ..] = bus.as_slice() else {
-            return;
-        };
-        for frame in 0..frames {
-            output[frame * 2] = left[frame];
-            output[frame * 2 + 1] = right[frame];
-        }
-    }
-
-    fn as_ptr(&self) -> *const clap_audio_buffer {
-        if self.descriptors.is_empty() {
-            ptr::null()
-        } else {
-            self.descriptors.as_ptr()
-        }
-    }
-
-    fn as_mut_ptr(&mut self) -> *mut clap_audio_buffer {
-        if self.descriptors.is_empty() {
-            ptr::null_mut()
-        } else {
-            self.descriptors.as_mut_ptr()
-        }
-    }
-
-    fn len(&self) -> u32 {
-        self.descriptors.len() as u32
-    }
-}
 
 /// Raw, movable process handle for one activated instance: the plugin
 /// pointer plus preallocated planar audio-bus buffers. The sandbox moves this
