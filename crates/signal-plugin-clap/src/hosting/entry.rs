@@ -109,6 +109,14 @@ fn clap_plugin_path(library_path: &Path) -> &Path {
         .unwrap_or(library_path)
 }
 
+impl Drop for LoadedClapEntry {
+    fn drop(&mut self) {
+        if let Some(deinit) = unsafe { (*self.entry).deinit } {
+            unsafe { deinit() };
+        }
+    }
+}
+
 #[cfg(test)]
 mod plugin_path_tests {
     use super::{clap_library_binary_path, clap_plugin_path};
@@ -150,13 +158,5 @@ mod plugin_path_tests {
         );
 
         let _ = std::fs::remove_dir_all(root);
-    }
-}
-
-impl Drop for LoadedClapEntry {
-    fn drop(&mut self) {
-        if let Some(deinit) = unsafe { (*self.entry).deinit } {
-            unsafe { deinit() };
-        }
     }
 }
