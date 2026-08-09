@@ -45,5 +45,6 @@ without duplicating core signal-processing work.
 
 ## Next Task
 
-Lock the first package and host-entrypoint names for the extracted Signal
-workspace so implementation can start against stable crate boundaries.
+State the vision baseline as current: refresh this file only when Signal
+needs a materially new long-horizon constraint or milestone map. Do not fold
+delivery sequencing into vision docs.

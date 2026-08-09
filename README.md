@@ -10,39 +10,36 @@
   L O O P H O L E - S I G N A L
 </pre>
 
-# Shared audio-systems runtime and DSP workspace
+# Signal
 
-Signal is an Inflatable Cookie product and a standalone, general-purpose
-realtime audio library. The Loophole DAW is its primary consumer, but Signal
-is *for* Loophole, not *owned* by it: it provides mechanism (typed channel
-formats, graph execution, honest realtime boundaries) and leaves mixing/layout
-policy to consuming applications.
+Signal is the shared realtime audio library and runtime for the Loophole
+ecosystem: DSP kernels, audio analysis, graph execution, plugin discovery, and
+an embeddable runtime. It is a product of Inflatable Cookie and a standalone
+Rust workspace under `crates/`.
 
-
-Signal is the shared audio-systems repo for Loophole, Finch, and future apps.
-Its active surface is the Rust library/runtime workspace under `crates/`.
+The Loophole DAW is Signal's primary consumer, but Signal is *for* Loophole,
+not *owned* by it: Signal provides the mechanism (typed channel formats, graph
+execution, honest realtime boundaries) and leaves mixing and layout policy to
+the applications that consume it.
 
 Signal may run out-of-process where isolation is the right trade, but the repo
-itself is no longer defined by one mandatory standalone process topology.
+itself is not defined by any one process topology.
 
-## Responsibilities
+## What Signal owns
 
-Signal is responsible for:
+- **Real-time audio output** — alloc-free render execution on negotiated
+  device streams (the production path today)
+- **DSP kernels and offline analysis** — rhythm, tonal, loudness, character
+- **Plugin discovery and cataloguing** — CLAP / VST3 / AU / LV2
+- **Offline render orchestration and diagnostics** — the control plane
 
-- Real-time audio output: alloc-free render execution on negotiated device
-  streams (the production path today)
-- DSP kernels and offline audio analysis (rhythm, tonal, loudness, character)
-- Plugin discovery and cataloguing (CLAP/VST3/AU/LV2); in-process hosting is
-  a future rebuild program, not a current surface
-- Offline render orchestration and runtime diagnostics (control plane)
+Signal is *not* responsible for project editing and state ownership (Pulse) or
+UI behaviour (Aura / Spark / Finch UI).
 
-Signal is not responsible for project editing/state ownership (Pulse) or UI
-behavior (Aura/Spark/Finch UI).
-
-## Current Repository Layout
+## Repository Layout
 
 Production audio path first, then analysis, control plane, and plugin
-foundations. Every workspace crate is listed.
+foundations:
 
 ```
 crates/
@@ -51,6 +48,7 @@ crates/
   #                              envelopes, polyphase clip resampling on the audio thread
   signal-hardware/             # Output stream contract: specs, negotiation types, device model
   signal-hardware-cpal/        # cpal-backed negotiated input/output streams + real device enumeration
+  signal-hardware-coremidi/    # CoreMIDI-backed MIDI input on macOS
 
   # DSP substrate
   signal-primitives/           # Shared sample/frame/buffer/time primitives
@@ -79,7 +77,8 @@ crates/
   signal-host-local/           # Pulse-facing local host assembly (library; no binary)
   signal-ipc/                  # Shared-memory leases and control/message model
 
-  # Plugin foundations (discovery/catalog, no in-process hosting)
+  # Plugin foundations: discovery and cataloguing today; the processing
+  # backends behind the render-plane plugin handle (in-process and sandboxed)
   signal-plugin/               # Format-neutral plugin types and host abstractions
   signal-plugin-inventory/     # Shared plugin inventory domain for consumers
   signal-plugin-clap/          # CLAP discovery via real clap-sys/libloading FFI
@@ -87,6 +86,8 @@ crates/
   signal-plugin-au/            # Audio Unit discovery with plist pre-filter
   signal-plugin-lv2/           # LV2 manifest scanning
   signal-plugin-sandbox/       # Out-of-process plugin container shell (shm broker)
+  signal-plugin-bridge/        # Host-side plugin processing backends: in-process and
+  #                              dedicated-sandbox tiers behind one placement-agnostic handle
 docs/                          # Vision, architecture, contracts, roadmaps, logs
 ```
 
@@ -142,7 +143,14 @@ Key entry points:
 
 ## Real-Time Safety
 
-Real-time code paths must avoid allocation, blocking calls, lock contention, and unbounded work. Treat plugin code as untrusted and keep API boundaries defensive.
+Real-time code paths must:
+
+- never allocate
+- never block
+- never take locks
+- never do unbounded work
+
+Treat plugin code as untrusted and keep API boundaries defensive.
 
 ## Licence
 

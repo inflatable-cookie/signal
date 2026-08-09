@@ -21,7 +21,8 @@ Pick the path that matches what you're doing:
   [Consuming Signal](./reference/consuming-signal.md), the runbook for
   depending on Signal crates, and the
   [Quick Start](./reference/quick-start.md) for working code you can run
-  today. Then read the [package map](./architecture/package-map.md) and the
+  today. Then read the [system inventory](./architecture/system-inventory.md)
+  and the
   [DSP and analysis feature reference](./architecture/dsp-analysis-feature-reference.md)
   to see what is actually available.
 - **I'm working on Signal.** Read the [Architecture section](./architecture/README.md),
@@ -63,8 +64,8 @@ jump straight to the layer that matches your question.
 
 - [System Architecture](./architecture/system-architecture.md) — the top-level
   stack: primitives, DSP, analysis, graph, runtime, host-edge adapters.
-- [Package Map](./architecture/package-map.md) — every workspace crate, what it
-  does, and where it sits.
+- [System Inventory](./architecture/system-inventory.md) — every workspace
+  crate, what it does, and where it sits.
 - [Product Guardrails](./architecture/product-guardrails.md) — what Signal
   must always and never be.
 - [DSP and Analysis Feature Reference](./architecture/dsp-analysis-feature-reference.md) —

@@ -33,5 +33,6 @@ consumer or authority-specific layers around it.
 
 ## Next Task
 
-Freeze the first concrete package names and host-entrypoint names that satisfy
-this ownership boundary.
+Keep this ownership boundary as the front door for DSP/host seam questions.
+When a new boundary needs stronger guarantees than prose architecture alone,
+freeze a numbered contract in `docs/contracts/contract-index.md`.

@@ -14,10 +14,11 @@ read the [system architecture](./system-architecture.md) and the
 
 Current headline state: the realtime render path, DSP kernels, analysis, graph,
 and runtime crates are live under `crates/`; plugin discovery exists for
-CLAP/VST3/AU/LV2 but in-process plugin hosting is future work. The stretch
-headline is covered in [roadmaps](../roadmaps/README.md) — the transparent
-renderer is frozen, and exact-ratio creative stretch (`Dream`, `Cyclic`) is
-publicly admitted.
+CLAP/VST3/AU/LV2, with processing backends behind the render-plane plugin
+handle not yet wired into a host assembly. The stretch headline is covered in
+[roadmaps](../roadmaps/README.md) — the transparent renderer is frozen and
+corrected through `g10.042`, and exact-ratio creative stretch (`Dream`,
+`Cyclic`) is publicly admitted.
 
 ## Why this section matters now
 
@@ -38,39 +39,21 @@ Keep milestone sequencing in `roadmaps/`.
 ## Active Entry Points
 
 - `system-architecture.md`
+- `system-inventory.md` — the authoritative crate list
 - `product-guardrails.md`
-- `package-map.md`
 - `dsp-analysis-feature-reference.md`
-- `offline-time-stretch-synthesis.md`
-- `offline-time-stretch-non-phase-vocoder-feasibility.md`
-- `offline-creative-time-stretch-study.md`
-- `offline-creative-continuous-direct-renewal-dream-brief.md`
-- `offline-creative-cyclic-behavioral-synthesis.md`
-- `offline-creative-centered-compressed-anchor-cyclic-brief.md`
-- `offline-creative-event-ledger-audited-centered-compressed-anchor-cyclic-brief.md`
-- `offline-creative-continuous-event-ledger-cyclic-brief.md`
-- `offline-creative-fixed-ratio-public-surface.md`
-- `offline-creative-audited-layered-cloud-brief.md`
-- `offline-creative-layered-cloud-brief.md`
-- `offline-creative-linked-stn-noise-morph-brief.md`
-- `offline-creative-verified-source-relative-renewal-spectral-brief.md`
-  - frozen `SupportAuditedListeningLedSourceRelativeRenewalSpectral` authority
-- `offline-creative-renewal-spectral-brief.md`
-- `offline-creative-continuous-excitation-complex-relation-brief.md`
-- `offline-creative-continuous-excitation-spectral-brief.md`
-- `offline-creative-diffuse-spectral-brief.md`
-- `offline-time-stretch-successor-brief.md`
 - `graph-runtime-feature-reference.md`
+- `offline-time-stretch-synthesis.md`
+- `offline-creative-fixed-ratio-public-surface.md`
+- stretch decision and brief files: `offline-time-stretch-non-phase-vocoder-feasibility.md`,
+  `offline-creative-time-stretch-study.md`, and the `offline-creative-*`
+  briefs under this directory (admitted and rejected candidates alike —
+  rejected briefs are retained as evidence)
 - related contracts under `docs/contracts/`
 
 ## Next Task
 
-Keep the `g10.030` transparent successor program closed. The exact-ratio
-Dream wrapper is admitted and `g10.031` is complete. `g10.032` privately
-admits the accepted event-ledger Cyclic renderer and publicly admits its
-fixed-ratio extension; Batch 32.29 closes that lane. `g10.033` admits one
-continuous `4x..16x` Dream owner and its direct public surface without
-routing. Batch 33.6 publishes the exact executable matrix and closes the lane.
-`g10.034` Batch 34.2 freezes one complete `2N..=8N` Cyclic candidate with
-exact anchor parity, interior acoustic evidence, and cleanup. Execute Batch
-34.3 in one disposable worktree; keep public widening closed.
+Keep the `g10` stretch state closed: Transparent, Dream, and Cyclic are
+explicit, admitted characters; Automatic is closed; `RealtimePreview` is
+proven and unadopted. No batch is ready — return to
+`docs/roadmaps/g10/README.md` for an operator-selected Signal-only target.

@@ -20,7 +20,7 @@ inventory is in git history.
 ## Workspace Scope
 
 Signal's active implementation surface is the Rust workspace under `crates/`
-(24 crates).
+(28 crates).
 
 ## Layer Inventory
 
@@ -35,6 +35,9 @@ Signal's active implementation surface is the Rust workspace under `crates/`
 - `signal-hardware-cpal`
   - cpal-backed negotiated output streams and real device enumeration;
     thread-owned streams, zero unsafe; smoke tests self-skip without a device
+- `signal-hardware-coremidi`
+  - CoreMIDI-backed hardware MIDI input for macOS (handwritten FFI, no
+    binding crate)
 
 ### Foundation and DSP substrate
 
@@ -97,8 +100,10 @@ Signal's active implementation surface is the Rust workspace under `crates/`
 
 ### Plugin foundations
 
-Discovery and cataloguing only; in-process hosting is a future rebuild
-program. Discovery roots are explicit configuration defaulting empty.
+Discovery and cataloguing today; processing backends exist behind the
+render-plane plugin handle (`signal-plugin-bridge`) but are not yet wired
+into a host assembly. Discovery roots are explicit configuration defaulting
+empty.
 
 - `signal-plugin`
   - format-neutral plugin types and host abstractions
@@ -115,11 +120,16 @@ program. Discovery roots are explicit configuration defaulting empty.
   - LV2 manifest scanning
 - `signal-plugin-sandbox`
   - out-of-process plugin container shell over verified shm leases
+- `signal-plugin-bridge`
+  - host-side plugin processing backends: in-process and dedicated-sandbox
+    tiers behind one placement-agnostic handle (shm round-trip with bounded
+    wait and bypass-on-miss for full crash isolation)
 
 ## Current Audit Hotspots
 
-- plugin hosting (instantiate/process) does not exist yet; rebuild-on-demand
-  items live in `docs/roadmaps/backlog/post-g10-rebuild-on-demand.md`
+- plugin processing backends exist in `signal-plugin-bridge` but no host
+  assembly wires them into the render plane yet; rebuild-on-demand items live
+  in `docs/roadmaps/backlog/post-g10-rebuild-on-demand.md`
 - `signal-runtime`'s public surface is now pruned to its consumers
   (signal-host-local and pulse); anticipative rendering, when scheduled,
   re-derives against the render plane
@@ -137,5 +147,6 @@ program. Discovery roots are explicit configuration defaulting empty.
 
 ## Next Task
 
-Keep this inventory aligned with `docs/roadmaps/g10/README.md`. `g10.031` is
-complete; do not infer a creative integration or research batch.
+Keep this inventory aligned with `docs/roadmaps/g10/README.md`. `g10` is
+complete through `g10.042`; no batch is ready. Refresh the inventory when a
+crate is added, removed, or re-scoped.

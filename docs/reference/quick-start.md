@@ -262,7 +262,7 @@ The rules in one breath:
 ## Next steps
 
 - Use Signal from another repository: [Consuming Signal](./consuming-signal.md)
-- Full crate inventory: [Package Map](../architecture/package-map.md)
+- Full crate inventory: [System Inventory](../architecture/system-inventory.md)
 - What the DSP/analysis crates expose today:
   [DSP and Analysis Feature Reference](../architecture/dsp-analysis-feature-reference.md)
 - What the runtime/graph crates expose today:
