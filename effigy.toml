@@ -18,9 +18,11 @@ nextest = "CARGO_TARGET_DIR=/tmp/signal-nextest-target cargo nextest run --works
 
 [tasks]
 "bootstrap:deps" = "cargo fetch"
-health = [{ task = "build" }]
+# Cheap orientation for `effigy doctor`. Build stays in validate — never put
+# the workspace build in health.
+health = [{ task = "fmt" }]
 validate = [
-  { task = "health" },
+  { task = "build" },
   { task = "fmt" },
   { task = "test compile" },
   { task = "check:docs" },
