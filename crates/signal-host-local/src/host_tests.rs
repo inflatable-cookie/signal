@@ -18,7 +18,10 @@ fn booted_host() -> (LocalRuntimeHost, LocalRuntimeHostSummary) {
 #[test]
 fn boot_default_reports_running_stream_and_topology() {
     let (host, summary) = booted_host();
-    assert_eq!(summary.audio_pump.stream_state, LocalAudioStreamState::Running);
+    assert_eq!(
+        summary.audio_pump.stream_state,
+        LocalAudioStreamState::Running
+    );
     assert!(summary.topology.node_count > 0);
     assert!(!summary.hardware.device_id.is_empty());
     let report = host.host_supervisor_report();
@@ -56,12 +59,14 @@ fn boot_with_demo_override_discovers_fixture_plugin_and_records_sandbox() {
     assert_eq!(summary.scan_roots.len(), 1);
     assert!(!host.discovered_vst3_types.is_empty());
     let report = host.host_supervisor_report();
-    assert!(report
-        .observation
-        .observation
-        .plugin_discovery_snapshot
-        .discovered_type_count
-        > 0);
+    assert!(
+        report
+            .observation
+            .observation
+            .plugin_discovery_snapshot
+            .discovered_type_count
+            > 0
+    );
 }
 
 #[test]
@@ -78,13 +83,13 @@ fn ensure_plugin_sandbox_rejects_undiscovered_plugin_types() {
 }
 
 #[test]
-fn prepare_plugin_processor_rejects_shared_sandbox() {
+fn prepare_plugin_processor_rejects_unscanned_shared_sandbox() {
     let (mut host, _summary) = booted_host();
     let error = host
         .prepare_plugin_processor("plugin:clap:any", PluginIsolationTier::SharedSandbox)
-        .expect_err("SharedSandbox should be a typed rejection");
-    assert_eq!(error.kind, RuntimeErrorKind::UnsupportedCapability);
-    assert!(error.message.contains("shared_sandbox_unimplemented"));
+        .expect_err("unscanned SharedSandbox should fail");
+    assert_eq!(error.kind, RuntimeErrorKind::ResourceUnavailable);
+    assert!(error.message.contains("not discovered"));
 }
 
 #[test]

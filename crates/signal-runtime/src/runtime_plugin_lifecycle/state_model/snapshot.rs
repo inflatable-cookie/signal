@@ -8,18 +8,33 @@ impl RuntimePluginLifecycleStateModel {
         discovered_types: &[RuntimePluginDiscoveredTypeRecord],
         platform_coverage: &[RuntimePluginFormatPlatformCoverageRecord],
     ) -> RuntimePluginLifecycleSnapshot {
+        let mut group_counts = HashMap::new();
+        for sandbox in self.sandboxes.values() {
+            let placement = runtime_plugin_placement_decision(sandbox, policy);
+            if placement.outcome == RuntimePluginIsolationOutcome::SharedSandbox {
+                *group_counts.entry(placement.sandbox_group_key).or_insert(0) += 1;
+            }
+        }
         let sandboxes = self
             .sandboxes
             .values()
             .map(|sandbox| {
-                runtime_plugin_sandbox_snapshot(
-                    sandbox,
-                    policy,
-                    boundary_stage_counts
-                        .get(sandbox.sandbox_id.as_str())
-                        .copied()
-                        .unwrap_or(1),
-                )
+                let placement = runtime_plugin_placement_decision(sandbox, policy);
+                let graph_count = boundary_stage_counts
+                    .get(sandbox.sandbox_id.as_str())
+                    .copied()
+                    .unwrap_or(1);
+                let group_count = group_counts
+                    .get(&placement.sandbox_group_key)
+                    .copied()
+                    .unwrap_or(1);
+                let member_count =
+                    if placement.outcome == RuntimePluginIsolationOutcome::SharedSandbox {
+                        graph_count.max(group_count)
+                    } else {
+                        graph_count
+                    };
+                runtime_plugin_sandbox_snapshot(sandbox, policy, member_count)
             })
             .collect::<Vec<_>>();
         let snapshot = RuntimePluginLifecycleSnapshot {

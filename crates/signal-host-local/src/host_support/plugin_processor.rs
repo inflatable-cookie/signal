@@ -22,17 +22,17 @@ impl LocalRuntimeHost {
     /// - [`PluginIsolationTier::DedicatedSandbox`] requires a live broker
     ///   session for that type, then attaches [`ShmPluginProcessor`] from the
     ///   child's audio-block lease.
-    /// - [`PluginIsolationTier::SharedSandbox`] is rejected until `g11.002`.
+    /// - [`PluginIsolationTier::SharedSandbox`] reuses one broker child per
+    ///   `plugin:{plugin_type_id}` grouping key and attaches a member lease.
     pub fn prepare_plugin_processor(
         &mut self,
         plugin_type_id: &str,
         tier: PluginIsolationTier,
     ) -> Result<RenderPluginProcessor, RuntimeError> {
         match tier {
-            PluginIsolationTier::SharedSandbox => Err(RuntimeError::new(
-                RuntimeErrorKind::UnsupportedCapability,
-                "shared_sandbox_unimplemented",
-            )),
+            PluginIsolationTier::SharedSandbox => {
+                self.prepare_shared_sandbox_processor(plugin_type_id)
+            }
             PluginIsolationTier::InProcess => {
                 let discovered = self.require_discovered_plugin(plugin_type_id)?;
                 load_in_process_backend(
@@ -97,6 +97,7 @@ impl LocalRuntimeHost {
                 format!("sandbox broker start-processing failed: {error}"),
             )
         })?;
+        session.processing_started = true;
         wrap_backend(ShmPluginProcessor::attach(
             &lease.region_id,
             &lease.shm_path,
@@ -121,6 +122,162 @@ impl LocalRuntimeHost {
             plugin_type_id: Some(discovered.plugin_type_id().to_string()),
         })?;
         Ok(sandbox_id)
+    }
+
+    fn prepare_shared_sandbox_processor(
+        &mut self,
+        plugin_type_id: &str,
+    ) -> Result<RenderPluginProcessor, RuntimeError> {
+        let discovered = self.require_discovered_plugin(plugin_type_id)?;
+        self.runtime.ensure_shared_sandbox_placement(plugin_type_id);
+        let grouping_key = format!("plugin:{plugin_type_id}");
+        let member_n = self.shared_sandbox_member_count(&grouping_key) + 1;
+        let instance_id = format!("{grouping_key}:member:{member_n}");
+        self.ensure_shared_broker_session(&discovered, &grouping_key, &instance_id)?;
+
+        let sample_rate_hz = self.runtime.config().sample_rate.0;
+        let max_frames = self.runtime.config().graph.block_size as u32;
+        let session = self
+            .sandbox_broker_sessions
+            .get_mut(&grouping_key)
+            .ok_or_else(|| {
+                RuntimeError::new(
+                    RuntimeErrorKind::ResourceUnavailable,
+                    format!(
+                    "no broker lease is available for shared-sandbox plugin type {plugin_type_id}"
+                ),
+                )
+            })?;
+        if session.processing_started {
+            session.client.stop_processing().map_err(|error| {
+                RuntimeError::new(
+                    RuntimeErrorKind::ResourceUnavailable,
+                    format!("sandbox broker stop-processing failed: {error}"),
+                )
+            })?;
+            session.processing_started = false;
+        }
+        session
+            .client
+            .load_plugin_instance(
+                &instance_id,
+                discovered.library_path(),
+                &discovered.load_key(),
+            )
+            .map_err(|error| {
+                RuntimeError::new(
+                    RuntimeErrorKind::ResourceUnavailable,
+                    format!("sandbox broker load-plugin-instance failed: {error}"),
+                )
+            })?;
+        let lease = match session
+            .client
+            .activate_plugin_instance(&instance_id, sample_rate_hz, 1, max_frames)
+            .map_err(|error| {
+                RuntimeError::new(
+                    RuntimeErrorKind::ResourceUnavailable,
+                    format!("sandbox broker activate-instance failed: {error}"),
+                )
+            })? {
+            SandboxPluginActivateOutcome::Activated(lease) => lease,
+            SandboxPluginActivateOutcome::LayoutUnsupported { detail } => {
+                return Err(RuntimeError::new(
+                    RuntimeErrorKind::InvalidRequest,
+                    format!("layout_unsupported: {detail}"),
+                ));
+            }
+        };
+        if !session.processing_started {
+            session.client.start_processing().map_err(|error| {
+                RuntimeError::new(
+                    RuntimeErrorKind::ResourceUnavailable,
+                    format!("sandbox broker start-processing failed: {error}"),
+                )
+            })?;
+            session.processing_started = true;
+        }
+        wrap_backend(ShmPluginProcessor::attach(
+            &lease.region_id,
+            &lease.shm_path,
+            lease.shm_bytes,
+            lease.max_frames,
+            lease.channels,
+            sample_rate_hz,
+        ))
+    }
+
+    fn ensure_shared_broker_session(
+        &mut self,
+        discovered: &DiscoveredHostPlugin,
+        grouping_key: &str,
+        instance_id: &str,
+    ) -> Result<(), RuntimeError> {
+        let member_spec = PluginSandboxSpec {
+            sandbox_id: instance_id.to_string(),
+            plugin_format: discovered.format(),
+            plugin_type_id: Some(discovered.plugin_type_id().to_string()),
+        };
+        if self.sandbox_broker_sessions.contains_key(grouping_key) {
+            self.runtime.record_plugin_sandbox_spec(&member_spec);
+            self.active_sandbox_specs
+                .insert(instance_id.to_string(), member_spec);
+            self.runtime.record_plugin_sandbox_lifecycle(
+                instance_id,
+                signal_runtime::PluginSandboxLifecycleStage::SandboxEnsured,
+                None,
+            );
+            return Ok(());
+        }
+        self.ensure_plugin_sandbox(member_spec)?;
+        if let Some(session) = self.sandbox_broker_sessions.remove(instance_id) {
+            self.sandbox_broker_sessions
+                .insert(grouping_key.to_string(), session);
+        }
+        Ok(())
+    }
+
+    fn shared_sandbox_member_count(&self, grouping_key: &str) -> usize {
+        let prefix = format!("{grouping_key}:member:");
+        self.active_sandbox_specs
+            .keys()
+            .filter(|sandbox_id| sandbox_id.starts_with(&prefix))
+            .count()
+    }
+
+    /// Number of live sandbox broker children owned by this host.
+    pub fn sandbox_broker_child_count(&self) -> usize {
+        self.sandbox_broker_sessions.len()
+    }
+
+    /// Kill the SharedSandbox broker child for `plugin_type_id` and record a
+    /// boundary crash. Runtime receipts fan the fault out to every member of
+    /// the grouping key.
+    pub fn crash_shared_sandbox_broker_child(
+        &mut self,
+        plugin_type_id: &str,
+    ) -> Result<(), RuntimeError> {
+        let grouping_key = format!("plugin:{plugin_type_id}");
+        if let Some(session) = self.sandbox_broker_sessions.get_mut(&grouping_key) {
+            session.client.kill();
+        }
+        let member_id = self
+            .active_sandbox_specs
+            .keys()
+            .find(|sandbox_id| sandbox_id.starts_with(&format!("{grouping_key}:member:")))
+            .cloned()
+            .ok_or_else(|| {
+                RuntimeError::new(
+                    RuntimeErrorKind::ResourceUnavailable,
+                    format!("no shared-sandbox member recorded for {plugin_type_id}"),
+                )
+            })?;
+        self.runtime.record_plugin_sandbox_fault(
+            member_id,
+            signal_runtime::PluginFaultKind::Crash,
+            "shared_boundary_child_dead",
+            None,
+        );
+        Ok(())
     }
 
     fn existing_broker_sandbox_id(&self, plugin_type_id: &str) -> Option<String> {

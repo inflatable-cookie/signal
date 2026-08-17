@@ -1,6 +1,6 @@
 # 006 - g11.002 Host Assembly Integration
 
-Status: ready
+Status: complete
 Owner: core-product
 Updated: 2026-08-17
 Master spec refs: none (baseline-routed; no active strict spec)
@@ -45,13 +45,21 @@ Do not add a new bridge backend type. Do not grow a host-local grouping table.
 Out of scope: terminal blast-radius proof (Batch 2.3), vendor/format grouping,
 live audio-thread host pumping.
 
+## Outcome
+
+Two SharedSandbox prepares of the same type share one broker child and return
+two `ShmPluginProcessor` handles. Runtime grouping key is
+`plugin:{plugin_type_id}`; member count is `>= 2`. DedicatedSandbox and
+InProcess factory paths are unchanged. Unscanned SharedSandbox fails
+not-discovered.
+
 ## Acceptance Criteria
 
-- [ ] two SharedSandbox prepares of the same type share one broker child
-- [ ] each prepare returns a working `RenderPluginProcessor` from a real lease
-- [ ] runtime snapshot shows grouping key and member count `>= 2`
-- [ ] DedicatedSandbox / InProcess factory tests still pass
-- [ ] `PluginIsolationTier::SharedSandbox` no longer returns
+- [x] two SharedSandbox prepares of the same type share one broker child
+- [x] each prepare returns a working `RenderPluginProcessor` from a real lease
+- [x] runtime snapshot shows grouping key and member count `>= 2`
+- [x] DedicatedSandbox / InProcess factory tests still pass
+- [x] `PluginIsolationTier::SharedSandbox` no longer returns
   `shared_sandbox_unimplemented`
 
 ## Validation

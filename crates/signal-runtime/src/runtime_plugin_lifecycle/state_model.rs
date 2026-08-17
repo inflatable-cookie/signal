@@ -7,7 +7,9 @@ mod snapshot;
 #[path = "state_model/transitions.rs"]
 mod transitions;
 
-use super::placement::runtime_plugin_sandbox_snapshot;
+pub(super) use super::placement::{
+    runtime_plugin_placement_decision, runtime_plugin_sandbox_snapshot,
+};
 use sandbox_state::RuntimePluginLifecyclePolicy;
 pub(super) use sandbox_state::RuntimePluginSandboxStateModel;
 
@@ -29,6 +31,29 @@ impl RuntimePluginLifecycleStateModel {
         let sandbox = self.sandbox_mut(spec.sandbox_id.as_str());
         sandbox.plugin_format = Some(spec.plugin_format);
         sandbox.plugin_type_id = spec.plugin_type_id.clone();
+    }
+
+    pub(crate) fn shared_boundary_member_ids(
+        &self,
+        policy: &RuntimePluginPlacementPolicy,
+        sandbox_id: &str,
+    ) -> Vec<String> {
+        let Some(target) = self.sandboxes.get(sandbox_id) else {
+            return vec![sandbox_id.to_string()];
+        };
+        let placement = runtime_plugin_placement_decision(target, policy);
+        if placement.outcome != RuntimePluginIsolationOutcome::SharedSandbox {
+            return vec![sandbox_id.to_string()];
+        }
+        self.sandboxes
+            .values()
+            .filter(|sandbox| {
+                let candidate = runtime_plugin_placement_decision(sandbox, policy);
+                candidate.outcome == RuntimePluginIsolationOutcome::SharedSandbox
+                    && candidate.sandbox_group_key == placement.sandbox_group_key
+            })
+            .map(|sandbox| sandbox.sandbox_id.clone())
+            .collect()
     }
 
     pub(crate) fn set_active_sandbox_count(&mut self, count: u32) {
