@@ -142,8 +142,6 @@ jump straight to the layer that matches your question.
 
 ## Next Task
 
-Execute
-`docs/roadmaps/g11/batch-cards/001-g11-001-bridge-backend-factory.md`
-using `docs/architecture/production-host-assembly-integration.md` as authority.
-Do not infer Automatic, RealtimePreview, integration, Loophole, or Chorus work
-from the completed stretch lane.
+Stop for operator review of the `g11.001` PR. Do not start `g11.002`.
+`g11.002` SharedSandbox stays deferred until product pull. Contract `014`
+already owns the semantics.

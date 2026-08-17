@@ -40,7 +40,7 @@ fn local_shared_host_edge_exports_runtime_cross_adapter_parity_truth() {
 
     let report = host.supervisor_report();
     let discovery = &report.observation.plugin_discovery_snapshot;
-    assert_eq!(discovery.parity_coverage.len(), 3);
+    assert_eq!(discovery.parity_coverage.len(), 4);
     let clap_parity = discovery
         .parity_coverage
         .iter()
@@ -54,6 +54,23 @@ fn local_shared_host_edge_exports_runtime_cross_adapter_parity_truth() {
             RuntimePluginHostPlatform::Linux,
             RuntimePluginHostPlatform::Windows,
         ]
+    );
+    let lv2_parity = discovery
+        .parity_coverage
+        .iter()
+        .find(|record| record.format == PluginFormat::Lv2)
+        .expect("public local parity report should include lv2 parity");
+    assert_eq!(lv2_parity.parity_band, RuntimePluginParityBand::Guarded);
+    assert_eq!(
+        lv2_parity.supported_platforms,
+        vec![
+            RuntimePluginHostPlatform::MacOs,
+            RuntimePluginHostPlatform::Linux,
+        ]
+    );
+    assert_eq!(
+        lv2_parity.unsupported_platforms,
+        vec![RuntimePluginHostPlatform::Windows]
     );
     let au_parity = discovery
         .parity_coverage

@@ -22,8 +22,8 @@ Current state in one breath:
   are complete — Transparent defects fixed, cache identity `v3` landed, crate
   surface consolidated, resumable offline render admitted, and RealtimePreview
   proven then deliberately left unadopted.
-- `g11.001` Batch 1.1 closed the host-assembly integration map; Batch 1.2 is
-  ready.
+- `g11.001` Batch 1.1 closed the host-assembly integration map; Batches 1.2–1.4
+  closed the factory, offline render-plane path, and public host-edge proof.
 
 The rest of this page is the batch-by-batch history behind that summary. It is
 the working evidence spine for automation — read it if you need detail, not
@@ -431,8 +431,5 @@ Before rollover:
 
 ## Next Task
 
-Execute
-[`g11.001` card 001](./g11/batch-cards/001-g11-001-bridge-backend-factory.md)
-using [`production-host-assembly-integration.md`](../architecture/production-host-assembly-integration.md)
-as authority. Do not infer Automatic, RealtimePreview, Loophole, or Chorus work
-from completed stretch lanes.
+Stop for operator review of the `g11.001` PR. Do not start `g11.002`.
+SharedSandbox remains deferred under Contract `014` until product pull.

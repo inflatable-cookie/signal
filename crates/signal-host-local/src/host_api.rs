@@ -6,7 +6,8 @@ impl RuntimeSupervisorApi for LocalRuntimeHost {
         request: PluginScanRequest,
     ) -> Result<signal_runtime::ScanHandle, RuntimeError> {
         let handle = self.runtime.record_plugin_scan_request(&request);
-        let discoveries = discovered_plugins_for_scan(&self.clap, &self.au, &self.vst3, &request);
+        let discoveries =
+            discovered_plugins_for_scan(&self.clap, &self.au, &self.vst3, &self.lv2, &request);
         if request.formats.is_empty() || request.formats.contains(&PluginFormat::Clap) {
             self.discovered_clap_types = discoveries
                 .clap
@@ -26,6 +27,14 @@ impl RuntimeSupervisorApi for LocalRuntimeHost {
         if request.formats.is_empty() || request.formats.contains(&PluginFormat::Vst3) {
             self.discovered_vst3_types = discoveries
                 .vst3
+                .iter()
+                .cloned()
+                .map(|plugin| (plugin.plugin_type_id.0.clone(), plugin))
+                .collect();
+        }
+        if request.formats.is_empty() || request.formats.contains(&PluginFormat::Lv2) {
+            self.discovered_lv2_types = discoveries
+                .lv2
                 .iter()
                 .cloned()
                 .map(|plugin| (plugin.plugin_type_id.0.clone(), plugin))
@@ -181,83 +190,111 @@ impl LocalRuntimeHost {
         &mut self,
         request: &PluginSandboxSpec,
     ) -> Result<(), RuntimeError> {
-        let session = if request.plugin_format == PluginFormat::Clap {
-            let Some(discovered) = request
-                .plugin_type_id
-                .as_deref()
-                .and_then(|plugin_type_id| self.discovered_clap_types.get(plugin_type_id))
-                .cloned()
-            else {
+        let session = match request.plugin_format {
+            PluginFormat::Clap => {
+                let Some(discovered) = request
+                    .plugin_type_id
+                    .as_deref()
+                    .and_then(|plugin_type_id| self.discovered_clap_types.get(plugin_type_id))
+                    .cloned()
+                else {
+                    return Err(self.unsupported_or_missing_sandbox_error(
+                        request,
+                        "plugin type was not discovered in the last local CLAP scan",
+                    ));
+                };
+                ensure_discovered_sandbox_session(
+                    &mut self.runtime,
+                    request,
+                    "clap",
+                    discovered.plugin_type_id.0.as_str(),
+                    discovered.default_io_layout,
+                    vec![(
+                        "SIGNAL_PLUGIN_SANDBOX_CLAP_LIBRARY_PATH".into(),
+                        discovered.library_path.clone(),
+                    )],
+                )?
+            }
+            PluginFormat::Au => {
+                let Some(discovered) = request
+                    .plugin_type_id
+                    .as_deref()
+                    .and_then(|plugin_type_id| self.discovered_au_types.get(plugin_type_id))
+                    .cloned()
+                else {
+                    return Err(self.unsupported_or_missing_sandbox_error(
+                        request,
+                        "plugin type was not discovered in the last local AU scan",
+                    ));
+                };
+                ensure_discovered_sandbox_session(
+                    &mut self.runtime,
+                    request,
+                    "au",
+                    discovered.plugin_type_id.0.as_str(),
+                    discovered.default_io_layout,
+                    vec![(
+                        "SIGNAL_PLUGIN_SANDBOX_AU_BUNDLE_ROOT".into(),
+                        discovered.bundle_root.clone(),
+                    )],
+                )?
+            }
+            PluginFormat::Vst3 => {
+                let Some(discovered) = request
+                    .plugin_type_id
+                    .as_deref()
+                    .and_then(|plugin_type_id| self.discovered_vst3_types.get(plugin_type_id))
+                    .cloned()
+                else {
+                    return Err(self.unsupported_or_missing_sandbox_error(
+                        request,
+                        "plugin type was not discovered in the last local VST3 scan",
+                    ));
+                };
+                ensure_discovered_sandbox_session(
+                    &mut self.runtime,
+                    request,
+                    "vst3",
+                    discovered.plugin_type_id.0.as_str(),
+                    discovered.default_io_layout,
+                    vec![(
+                        "SIGNAL_PLUGIN_SANDBOX_VST3_MODULE_ROOT".into(),
+                        discovered.module_root.clone(),
+                    )],
+                )?
+            }
+            PluginFormat::Lv2 => {
+                let Some(discovered) = request
+                    .plugin_type_id
+                    .as_deref()
+                    .and_then(|plugin_type_id| self.discovered_lv2_types.get(plugin_type_id))
+                    .cloned()
+                else {
+                    return Err(self.unsupported_or_missing_sandbox_error(
+                        request,
+                        "plugin type was not discovered in the last local LV2 scan",
+                    ));
+                };
+                ensure_discovered_sandbox_session(
+                    &mut self.runtime,
+                    request,
+                    "lv2",
+                    discovered.plugin_type_id.0.as_str(),
+                    discovered.default_io_layout,
+                    vec![(
+                        "SIGNAL_PLUGIN_SANDBOX_LV2_BUNDLE_ROOT".into(),
+                        discovered.bundle_root.clone(),
+                    )],
+                )?
+            }
+            other => {
                 return Err(self.unsupported_or_missing_sandbox_error(
                     request,
-                    "plugin type was not discovered in the last local CLAP scan",
+                    &format!(
+                        "plugin format {other:?} is not supported here yet on the local host sandbox path"
+                    ),
                 ));
-            };
-            ensure_discovered_sandbox_session(
-                &mut self.runtime,
-                request,
-                "clap",
-                discovered.plugin_type_id.0.as_str(),
-                discovered.default_io_layout,
-                vec![(
-                    "SIGNAL_PLUGIN_SANDBOX_CLAP_LIBRARY_PATH".into(),
-                    discovered.library_path.clone(),
-                )],
-            )?
-        } else if request.plugin_format == PluginFormat::Au {
-            let Some(discovered) = request
-                .plugin_type_id
-                .as_deref()
-                .and_then(|plugin_type_id| self.discovered_au_types.get(plugin_type_id))
-                .cloned()
-            else {
-                return Err(self.unsupported_or_missing_sandbox_error(
-                    request,
-                    "plugin type was not discovered in the last local AU scan",
-                ));
-            };
-            ensure_discovered_sandbox_session(
-                &mut self.runtime,
-                request,
-                "au",
-                discovered.plugin_type_id.0.as_str(),
-                discovered.default_io_layout,
-                vec![(
-                    "SIGNAL_PLUGIN_SANDBOX_AU_BUNDLE_ROOT".into(),
-                    discovered.bundle_root.clone(),
-                )],
-            )?
-        } else if request.plugin_format == PluginFormat::Vst3 {
-            let Some(discovered) = request
-                .plugin_type_id
-                .as_deref()
-                .and_then(|plugin_type_id| self.discovered_vst3_types.get(plugin_type_id))
-                .cloned()
-            else {
-                return Err(self.unsupported_or_missing_sandbox_error(
-                    request,
-                    "plugin type was not discovered in the last local VST3 scan",
-                ));
-            };
-            ensure_discovered_sandbox_session(
-                &mut self.runtime,
-                request,
-                "vst3",
-                discovered.plugin_type_id.0.as_str(),
-                discovered.default_io_layout,
-                vec![(
-                    "SIGNAL_PLUGIN_SANDBOX_VST3_MODULE_ROOT".into(),
-                    discovered.module_root.clone(),
-                )],
-            )?
-        } else {
-            return Err(self.unsupported_or_missing_sandbox_error(
-                request,
-                &format!(
-                    "plugin format {:?} is not supported here yet on the local host sandbox path",
-                    request.plugin_format
-                ),
-            ));
+            }
         };
         if let Some(session) = session {
             self.sandbox_broker_sessions

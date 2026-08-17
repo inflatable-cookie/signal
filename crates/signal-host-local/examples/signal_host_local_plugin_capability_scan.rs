@@ -3,6 +3,7 @@ use signal_host_local::LocalRuntimeHost;
 use signal_plugin::{PluginDescriptor, PluginFeature, PluginFormat};
 use signal_plugin_au::{AuHostAdapter, AuHostPlatform};
 use signal_plugin_clap::ClapPluginHostAdapter;
+use signal_plugin_lv2::{current_lv2_platform, Lv2HostAdapter};
 use signal_plugin_vst3::{Vst3HostAdapter, Vst3HostPlatform};
 use signal_runtime::{PluginScanRequest, RuntimeConfig, RuntimeSupervisorApi, SignalRuntime};
 use std::collections::BTreeSet;
@@ -90,6 +91,18 @@ fn main() {
         }
     }
 
+    if formats.is_empty() || formats.contains(&PluginFormat::Lv2) {
+        let adapter = Lv2HostAdapter::default();
+        for plugin in adapter.discover_plugins_for_roots(current_lv2_platform(), &roots) {
+            assert!(
+                discovered_type_ids.contains(&plugin.plugin_type_id.0),
+                "local host discovery snapshot should include scanned LV2 type {}",
+                plugin.plugin_type_id.0
+            );
+            plugins.push(InventoryPluginRecord::from_lv2(plugin));
+        }
+    }
+
     plugins.sort_by(|left, right| {
         left.format
             .cmp(&right.format)
@@ -137,6 +150,15 @@ impl InventoryPluginRecord {
         Self::from_descriptor(
             plugin.plugin_type_id.0,
             PluginFormat::Au,
+            plugin.bundle_root,
+            plugin.descriptor,
+        )
+    }
+
+    fn from_lv2(plugin: signal_plugin_lv2::Lv2DiscoveredPluginType) -> Self {
+        Self::from_descriptor(
+            plugin.plugin_type_id.0,
+            PluginFormat::Lv2,
             plugin.bundle_root,
             plugin.descriptor,
         )
@@ -194,6 +216,7 @@ fn parse_format(value: &str) -> PluginFormat {
         "clap" => PluginFormat::Clap,
         "vst3" => PluginFormat::Vst3,
         "au" => PluginFormat::Au,
+        "lv2" => PluginFormat::Lv2,
         other => panic!("unsupported local scan format: {other}"),
     }
 }

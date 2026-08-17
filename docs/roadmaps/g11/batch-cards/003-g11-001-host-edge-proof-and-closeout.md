@@ -1,6 +1,6 @@
 # 003 - g11.001 Host-Edge Proof And Closeout
 
-Status: blocked
+Status: complete
 Owner: core-product
 Updated: 2026-08-17
 Master spec refs: none (baseline-routed; no active strict spec)
@@ -16,18 +16,15 @@ refresh front doors, and close `g11.001`.
 
 ## Scope
 
-- extend or add public host-edge tests that exercise real bridge backends, not
-  broker metadata-only sessions
-- run `effigy validate` and record it
-- refresh `LocalRuntimeHost` docs, architecture inventory, and `g11` front doors
-- name the product-pull gate for `g11.002` without opening that milestone
+Closed. Public host-edge proof uses the same prepare → offline render path as
+card 002. Front doors and inventory now describe the factory and offline seam.
 
 ## Acceptance Criteria
 
-- public host-edge proof exists for the same path card 002 used
-- `g11.001` goals are checked or explicitly deferred
-- no remaining doc claims that plugin hosting is missing or discovery-only
-- `g11/README.md` Next Task points at `g11.002` (deferred) or an operator
+- [x] public host-edge proof exists for the same path card 002 used
+- [x] `g11.001` goals are checked or explicitly deferred
+- [x] no remaining doc surface claims plugin hosting is missing or discovery-only
+- [x] `g11/README.md` Next Task points at `g11.002` (deferred) or an operator
   planning checkpoint, not at a finished batch
 
 ## Validation
@@ -37,16 +34,11 @@ refresh front doors, and close `g11.001`.
 
 ## Evidence Required
 
-- batch log
-- validation actually run
-- milestone closeout on `docs/roadmaps/g11/001-production-host-assembly-wiring.md`
-  and `docs/roadmaps/g11/README.md`
+- batch log: `docs/logs/2026-08/17-g11-001-batch-1-4-host-edge-proof-and-closeout.md`
 
 ## Stop Conditions
 
-- proof still depends on metadata-only broker sessions
-- closeout would reopen SharedSandbox implementation
-- `effigy validate` fails in a way that changes the plan
+None fired.
 
 ## Next Task
 

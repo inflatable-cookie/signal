@@ -1,6 +1,7 @@
 // Unit tests for the local runtime host (included into `host::tests`).
 use super::*;
-use signal_runtime::RuntimeConfig;
+use signal_plugin::PluginIsolationTier;
+use signal_runtime::{RuntimeConfig, RuntimeErrorKind};
 
 fn booted_host() -> (LocalRuntimeHost, LocalRuntimeHostSummary) {
     // Held across the boot. `SIGNAL_HOST_DEMO_PLUGIN_*` is process-global, and
@@ -74,4 +75,43 @@ fn ensure_plugin_sandbox_rejects_undiscovered_plugin_types() {
         })
         .expect_err("undiscovered plugin type should be rejected");
     assert!(error.message.contains("not discovered"));
+}
+
+#[test]
+fn prepare_plugin_processor_rejects_shared_sandbox() {
+    let (mut host, _summary) = booted_host();
+    let error = host
+        .prepare_plugin_processor("plugin:clap:any", PluginIsolationTier::SharedSandbox)
+        .expect_err("SharedSandbox should be a typed rejection");
+    assert_eq!(error.kind, RuntimeErrorKind::UnsupportedCapability);
+    assert!(error.message.contains("shared_sandbox_unimplemented"));
+}
+
+#[test]
+fn prepare_plugin_processor_rejects_unscanned_plugin_types() {
+    let (mut host, _summary) = booted_host();
+    let error = host
+        .prepare_plugin_processor("plugin:clap:not-discovered", PluginIsolationTier::InProcess)
+        .expect_err("unscanned plugin type should be rejected");
+    assert_eq!(error.kind, RuntimeErrorKind::ResourceUnavailable);
+    assert!(error.message.contains("not discovered"));
+}
+
+#[test]
+fn prepare_dedicated_sandbox_rejects_missing_broker_lease() {
+    let _guard = ensure_default_demo_plugin_override();
+    let runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
+    let mut host = LocalRuntimeHost::new(runtime);
+    host.boot_default().expect("local host should boot");
+    let plugin_type_id = host
+        .discovered_vst3_types
+        .keys()
+        .next()
+        .expect("demo override should discover a VST3 type")
+        .clone();
+    let error = host
+        .prepare_plugin_processor(&plugin_type_id, PluginIsolationTier::DedicatedSandbox)
+        .expect_err("DedicatedSandbox without a broker lease should fail");
+    assert_eq!(error.kind, RuntimeErrorKind::ResourceUnavailable);
+    assert!(error.message.contains("broker lease"));
 }

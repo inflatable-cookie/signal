@@ -17,10 +17,10 @@ Use this folder for ready execution cards under the active `g11` generation.
 
 ## Current cards
 
-- `001-g11-001-bridge-backend-factory.md` — `ready`
-- `002-g11-001-render-plane-consumer-wiring.md` — blocked on card 001
-- `003-g11-001-host-edge-proof-and-closeout.md` — blocked on card 002
+- `001-g11-001-bridge-backend-factory.md` — `complete`
+- `002-g11-001-render-plane-consumer-wiring.md` — `complete`
+- `003-g11-001-host-edge-proof-and-closeout.md` — `complete`
 
 ## Next Task
 
-Execute `001-g11-001-bridge-backend-factory.md`.
+Stop for operator review of the `g11.001` PR. Do not start `g11.002`.

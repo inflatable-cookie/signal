@@ -4,6 +4,7 @@ use signal_hardware::HardwareStreamConfig;
 use signal_plugin::PluginFormat;
 use signal_plugin_au::AuHostAdapter;
 use signal_plugin_clap::ClapPluginHostAdapter;
+use signal_plugin_lv2::Lv2HostAdapter;
 use signal_plugin_vst3::Vst3HostAdapter;
 use signal_render_plane::{
     OfflineStretchArtifactCacheDecision as RenderOfflineStretchArtifactCacheDecision,
@@ -42,23 +43,26 @@ pub(crate) use host_support::{LOCAL_DEMO_GRAPH_ID, LOCAL_DEMO_PLUGIN_NODE_ID};
 
 /// The local desktop runtime host.
 ///
-/// Owns the [`SignalRuntime`], the local hardware backend, CLAP/AU/VST3 plugin
-/// discovery adapters, and the audio pump. Construct with
+/// Owns the [`SignalRuntime`], the local hardware backend, CLAP/AU/VST3/LV2
+/// plugin discovery adapters, and the audio pump. Construct with
 /// [`LocalRuntimeHost::new`] and drive via the [`RuntimeSupervisorApi`] and
 /// [`RuntimeObservationApi`] traits implemented in `host_api.rs`.
 ///
 /// Plugin discovery only ever scans roots passed explicitly through
 /// [`RuntimeSupervisorApi::start_plugin_scan`]; no system plugin directory is
-/// touched by default and no plugin is instantiated in this process.
+/// touched by default. [`Self::prepare_plugin_processor`] constructs a
+/// render-plane processor from a previously scanned type.
 pub struct LocalRuntimeHost {
     runtime: SignalRuntime,
     hardware: LocalHardwareBackend,
     clap: ClapPluginHostAdapter,
     au: AuHostAdapter,
     vst3: Vst3HostAdapter,
+    lv2: Lv2HostAdapter,
     discovered_clap_types: HashMap<String, signal_plugin_clap::ClapDiscoveredPluginType>,
     discovered_au_types: HashMap<String, signal_plugin_au::AuDiscoveredPluginType>,
     discovered_vst3_types: HashMap<String, signal_plugin_vst3::Vst3DiscoveredPluginType>,
+    discovered_lv2_types: HashMap<String, signal_plugin_lv2::Lv2DiscoveredPluginType>,
     active_sandbox_specs: HashMap<String, PluginSandboxSpec>,
     sandbox_broker_sessions: HashMap<String, SandboxBrokerSession>,
     active_output_stream: Option<HardwareStreamConfig>,
@@ -72,8 +76,8 @@ impl LocalRuntimeHost {
     /// Construct a new local host wrapping the given runtime.
     ///
     /// Initialises the hardware backend and the plugin format discovery
-    /// adapters. The runtime is subscribed to an internal event recorder
-    /// immediately.
+    /// adapters (CLAP, AU, VST3, LV2). The runtime is subscribed to an internal
+    /// event recorder immediately.
     pub fn new(runtime: SignalRuntime) -> Self {
         let events = RuntimeEventRecorder::default();
         let mut runtime = runtime;
@@ -86,9 +90,11 @@ impl LocalRuntimeHost {
             clap: ClapPluginHostAdapter::default(),
             au: AuHostAdapter::default(),
             vst3: Vst3HostAdapter::default(),
+            lv2: Lv2HostAdapter::default(),
             discovered_clap_types: HashMap::new(),
             discovered_au_types: HashMap::new(),
             discovered_vst3_types: HashMap::new(),
+            discovered_lv2_types: HashMap::new(),
             active_sandbox_specs: HashMap::new(),
             sandbox_broker_sessions: HashMap::new(),
             active_output_stream: None,

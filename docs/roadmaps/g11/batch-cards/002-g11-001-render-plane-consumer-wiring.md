@@ -1,6 +1,6 @@
 # 002 - g11.001 Render-Plane Consumer Wiring
 
-Status: blocked
+Status: complete
 Owner: core-product
 Updated: 2026-08-17
 Master spec refs: none (baseline-routed; no active strict spec)
@@ -17,40 +17,30 @@ test-only construction.
 
 ## Scope
 
-- one offline proof path: host prepares a processor, a render-plane plan uses
-  that handle as a plugin stage, audio is processed
-- document which render-plane entry points are in v1 vs deferred
-- parameter/event/state handoff only as far as the existing bridge backends
-  already support on that path
-
-Do not implement SharedSandbox, product UX, or a second graph executor.
+Closed. One offline proof path: host prepares an in-process CLAP processor, a
+render-plane Sum stage uses that handle, `render_plan_to_pcm` processes audio.
 
 ## Acceptance Criteria
 
-- an offline render-plane plugin stage is driven from the host assembly
-- the processor came from `prepare_plugin_processor`
-- v1 render-plane entry points vs deferred are written down in the batch log
+- [x] an offline render-plane plugin stage is driven from the host assembly
+- [x] the processor came from `prepare_plugin_processor`
+- [x] v1 render-plane entry points vs deferred are written down in the batch log
   and, if needed, the integration map
-- focused tests cover the offline path
+- [x] focused tests cover the offline path
 
 ## Validation
 
-- targeted tests for the new offline host/render path
-- `effigy qa:docs` if the integration map changes
+- `cargo test -p signal-host-local --test public_host_edge_plugin_processor`
 
 ## Evidence Required
 
-- batch log
-- validation actually run
+- batch log: `docs/logs/2026-08/17-g11-001-batch-1-3-render-plane-consumer-wiring.md`
 
 ## Stop Conditions
 
-- the factory from card 001 cannot supply a live processor
-- wiring requires a new render-plane API beyond existing plugin-stage handles
-- scope expands into live audio-thread host pumping or Pulse workflow
+None fired.
 
 ## Next Task
 
-If this card closes cleanly, auto-start
+Execute
 `docs/roadmaps/g11/batch-cards/003-g11-001-host-edge-proof-and-closeout.md`.
-Mark `ready` only after card 001 closeout confirms the factory signature landed.

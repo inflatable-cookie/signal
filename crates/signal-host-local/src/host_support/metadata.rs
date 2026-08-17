@@ -1,9 +1,11 @@
 use signal_plugin::PluginFormat;
 use signal_plugin_au::AuDiscoveredPluginType;
 use signal_plugin_clap::ClapDiscoveredPluginType;
+use signal_plugin_lv2::Lv2DiscoveredPluginType;
 use signal_plugin_vst3::Vst3DiscoveredPluginType;
 use signal_runtime::{
-    RuntimeMultichannelIoSummary, RuntimePluginComplexIoSummary, RuntimePluginDiscoveredTypeRecord,
+    RuntimeLv2ExtensionCapabilitySummary, RuntimeMultichannelIoSummary,
+    RuntimePluginComplexIoSummary, RuntimePluginDiscoveredTypeRecord,
     RuntimePluginFormatPlatformCoverageRecord, RuntimePluginHostPlatform,
     RuntimePluginIsolationOutcome, RuntimePluginParityBand,
 };
@@ -73,6 +75,21 @@ pub(crate) fn runtime_au_discovered_type_record(
     )
 }
 
+pub(crate) fn runtime_lv2_discovered_type_record(
+    discovered: Lv2DiscoveredPluginType,
+) -> RuntimePluginDiscoveredTypeRecord {
+    let descriptor = discovered.descriptor;
+    runtime_plugin_discovered_type_record_from_descriptor(
+        discovered.plugin_type_id.0,
+        discovered.default_io_layout,
+        descriptor,
+        Some(RuntimeLv2ExtensionCapabilitySummary::from_lv2_feature_uris(
+            &discovered.required_features,
+            &discovered.optional_features,
+        )),
+    )
+}
+
 pub(crate) fn runtime_plugin_format_platform_coverage(
 ) -> Vec<RuntimePluginFormatPlatformCoverageRecord> {
     vec![
@@ -110,6 +127,17 @@ pub(crate) fn runtime_plugin_format_platform_coverage(
             linux_parity_band: RuntimePluginParityBand::Unsupported,
             linux_preferred_sandbox_outcome: None,
             linux_strict_sandbox_default: false,
+        },
+        RuntimePluginFormatPlatformCoverageRecord {
+            format: PluginFormat::Lv2,
+            supported_platforms: vec![
+                RuntimePluginHostPlatform::MacOs,
+                RuntimePluginHostPlatform::Linux,
+            ],
+            unsupported_platforms: vec![RuntimePluginHostPlatform::Windows],
+            linux_parity_band: RuntimePluginParityBand::Portable,
+            linux_preferred_sandbox_outcome: Some(RuntimePluginIsolationOutcome::IsolatedSandbox),
+            linux_strict_sandbox_default: true,
         },
     ]
 }
