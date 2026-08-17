@@ -239,5 +239,29 @@ where
 }
 
 fn map_bridge_error(error: String) -> RuntimeError {
-    RuntimeError::new(RuntimeErrorKind::InvalidRequest, error)
+    let kind = if error.contains("layout_unsupported") {
+        RuntimeErrorKind::InvalidRequest
+    } else {
+        RuntimeErrorKind::ResourceUnavailable
+    };
+    RuntimeError::new(kind, error)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn map_bridge_error_keeps_layout_unsupported_as_invalid_request() {
+        let error = map_bridge_error("layout_unsupported".into());
+        assert_eq!(error.kind, RuntimeErrorKind::InvalidRequest);
+        assert_eq!(error.message, "layout_unsupported");
+    }
+
+    #[test]
+    fn map_bridge_error_maps_load_failure_to_resource_unavailable() {
+        let error = map_bridge_error("library_open_failed".into());
+        assert_eq!(error.kind, RuntimeErrorKind::ResourceUnavailable);
+        assert_eq!(error.message, "library_open_failed");
+    }
 }

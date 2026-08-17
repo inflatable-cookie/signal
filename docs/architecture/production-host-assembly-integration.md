@@ -76,7 +76,8 @@ assembly.
    - `InProcess` → matching `InProcess*Processor::load_and_activate`
    - `DedicatedSandbox` → `ShmPluginProcessor::attach` from the broker lease
    - `SharedSandbox` → `UnsupportedCapability` / `shared_sandbox_unimplemented`
-   - unknown type or missing lease → `ResourceUnavailable`
+   - unknown type, missing lease, or load/open failure → `ResourceUnavailable`
+   - unsupported layout (`layout_unsupported`) → `InvalidRequest`
 
 2. **Render-plane wiring**
    - hand `RenderPluginProcessor` handles to render-plane stages from the host

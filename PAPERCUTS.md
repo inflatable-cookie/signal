@@ -7,14 +7,6 @@ they hit a solvable hurdle; they do not stop the current task to fix one.
 
 <!-- Keep entries short. Append newest entries at the top. Do not include secrets. -->
 
-### [ ] Host-edge parity tests hardcode platform-coverage length — 2026-08-17
-- Friction: adding LV2 to `LocalRuntimeHost` platform coverage broke
-  `parity_coverage.len() == 3` in a public host-edge test.
-- Impact: owning a fourth format looks like a product regression.
-- Possible fix: assert per-format records instead of a magic length, or derive
-  the expected count from the host coverage table.
-- Surface: `crates/signal-host-local/tests/public_host_edge_cross_adapter_parity.rs`
-
 ### [ ] Signal had no `.agents.local.env` at first orchestrator dispatch — 2026-08-17
 - Friction: worker fallback worktrees cannot be created without
   `AGENTS_WORKTREE_CONTAINER_DIR`.
@@ -40,3 +32,12 @@ they hit a solvable hurdle; they do not stop the current task to fix one.
 - Possible fix: keep generation front doors and roadmap README aligned whenever
   a milestone suite closes.
 - Surface: docs/roadmaps front doors
+
+## Closed
+
+### [x] Host-edge parity tests hardcode platform-coverage length — 2026-08-17
+- Friction: adding LV2 to `LocalRuntimeHost` platform coverage broke
+  `parity_coverage.len() == 3` in a public host-edge test.
+- Impact: owning a fourth format looks like a product regression.
+- Fix: assert owned formats by record instead of a magic length.
+- Surface: `crates/signal-host-local/tests/public_host_edge_cross_adapter_parity.rs`

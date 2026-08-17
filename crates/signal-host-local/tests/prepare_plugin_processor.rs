@@ -189,6 +189,32 @@ fn prepare_dedicated_sandbox_attaches_from_real_broker_lease() {
 }
 
 #[test]
+fn prepare_in_process_maps_layout_unsupported_to_invalid_request() {
+    if !signal_plugin_lv2::fixture::rustc_available() {
+        eprintln!("skipping: rustc unavailable for the LV2 atom fixture");
+        return;
+    }
+    let directory = unique_fixture_dir("lv2-atom");
+    let plugin_uri = "https://signal.dev/fixtures/lv2/host-factory-atom";
+    signal_plugin_lv2::fixture::compile_lv2_atom_fixture(
+        &directory.path,
+        plugin_uri,
+        "Signal Host Factory LV2 Atom",
+    )
+    .expect("lv2 atom fixture should compile");
+    let mut host = booted_host();
+    scan_root(&mut host, &directory.path, PluginFormat::Lv2);
+    let error = host
+        .prepare_plugin_processor(
+            &format!("plugin:lv2:{plugin_uri}"),
+            PluginIsolationTier::InProcess,
+        )
+        .expect_err("atom-input LV2 should reject as unsupported layout");
+    assert_eq!(error.kind, RuntimeErrorKind::InvalidRequest);
+    assert!(error.message.contains("layout_unsupported"));
+}
+
+#[test]
 fn prepare_plugin_processor_shared_sandbox_token() {
     let mut host = booted_host();
     let error = host

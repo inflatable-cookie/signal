@@ -40,7 +40,27 @@ fn local_shared_host_edge_exports_runtime_cross_adapter_parity_truth() {
 
     let report = host.supervisor_report();
     let discovery = &report.observation.plugin_discovery_snapshot;
-    assert_eq!(discovery.parity_coverage.len(), 4);
+    for format in [
+        PluginFormat::Clap,
+        PluginFormat::Vst3,
+        PluginFormat::Au,
+        PluginFormat::Lv2,
+    ] {
+        assert!(
+            discovery
+                .parity_coverage
+                .iter()
+                .any(|record| record.format == format),
+            "public local parity report should include {format:?}"
+        );
+    }
+    assert!(
+        discovery.parity_coverage.iter().all(|record| matches!(
+            record.format,
+            PluginFormat::Clap | PluginFormat::Vst3 | PluginFormat::Au | PluginFormat::Lv2
+        )),
+        "public local parity report should only include owned formats"
+    );
     let clap_parity = discovery
         .parity_coverage
         .iter()
@@ -49,6 +69,20 @@ fn local_shared_host_edge_exports_runtime_cross_adapter_parity_truth() {
     assert_eq!(clap_parity.parity_band, RuntimePluginParityBand::Portable);
     assert_eq!(
         clap_parity.supported_platforms,
+        vec![
+            RuntimePluginHostPlatform::MacOs,
+            RuntimePluginHostPlatform::Linux,
+            RuntimePluginHostPlatform::Windows,
+        ]
+    );
+    let vst3_parity = discovery
+        .parity_coverage
+        .iter()
+        .find(|record| record.format == PluginFormat::Vst3)
+        .expect("public local parity report should include vst3 parity");
+    assert_eq!(vst3_parity.parity_band, RuntimePluginParityBand::Portable);
+    assert_eq!(
+        vst3_parity.supported_platforms,
         vec![
             RuntimePluginHostPlatform::MacOs,
             RuntimePluginHostPlatform::Linux,

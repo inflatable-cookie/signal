@@ -39,8 +39,8 @@ Routing:
 Typed failures, no panics:
 
 - unknown / unscanned `plugin_type_id` → `ResourceUnavailable`
-- unsupported layout from the existing bridge constructors → `InvalidRequest` or
-  the bridge error mapped into `RuntimeError`
+- unsupported layout from the existing bridge constructors → `InvalidRequest`
+- load/open failure from the existing bridge constructors → `ResourceUnavailable`
 - missing broker lease for `DedicatedSandbox` → `ResourceUnavailable`
 
 ## Scope
