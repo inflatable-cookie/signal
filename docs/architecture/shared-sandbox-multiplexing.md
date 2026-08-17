@@ -1,6 +1,6 @@
 # SharedSandbox Multiplexing
 
-Status: active
+Status: current
 Owner: core-product
 Updated: 2026-08-17
 Roadmap: `docs/roadmaps/g11/002-shared-sandbox-tier.md`
@@ -146,7 +146,7 @@ policy table.
 | --- | --- |
 | 2.1 | two instances, same `plugin_type_id`, one child; two shm leases process; default-slot second `load-plugin` still `plugin_already_loaded`; DedicatedSandbox tests unchanged |
 | 2.2 | host factory returns a real SharedSandbox handle; runtime snapshot shows grouping key and member count |
-| 2.3 | child death / terminal is visible on both member receipts; docs stop saying unimplemented |
+| 2.3 | child death is visible on every member receipt; IsolatedSandbox does not fan out; docs stop saying unimplemented |
 
 ## Non-goals
 
@@ -159,5 +159,5 @@ policy table.
 
 ## Next Task
 
-Execute
-`docs/roadmaps/g11/batch-cards/005-g11-002-broker-multiplexing.md`.
+Stop for operator review of the `g11.002` PR. Do not start a follow-on
+generation from this note.

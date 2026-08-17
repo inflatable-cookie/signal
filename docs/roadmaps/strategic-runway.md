@@ -82,7 +82,7 @@ Loophole and other consumers without reopening fake scaffold work.
 Primary bets, in product-pull order:
 
 1. **Production host-assembly wiring** — closed in `g11.001`
-2. **SharedSandbox tier** — one broker process hosting many plugins; Batch 2.1
+2. **SharedSandbox tier** — one broker process hosting many plugins; Batch 2.2
    ready (`docs/architecture/shared-sandbox-multiplexing.md`)
 3. **Graph successor** — production node-graph execution around the render
    plane's control/render split: topological ordering, PDC via delay insertion,
@@ -163,11 +163,11 @@ Accepted uncertainty:
 
 Meaningful milestone transitions, not a task queue:
 
-1. **Now:** execute `g11.002` Batch 2.1 (broker multiplexing).
+1. **Now:** `g11.002` is complete. Stop for operator review of the PR.
 2. **After `g11.002`:** next product-pulled Horizon B item (graph successor or
    device depth), not a speculative lane.
 3. **First `g11` tranche:** host-assembly (`g11.001`, complete) then SharedSandbox
-   (`g11.002`, in flight).
+   (`g11.002`, complete).
 4. **Second `g11` tranche:** pull the next product-pulled item from backlog only
    after the current tranche closes with evidence.
 5. **Mid horizon:** promote analysis/substrate breadth (Horizon C) when a named
@@ -177,8 +177,8 @@ Meaningful milestone transitions, not a task queue:
 
 Recommended default if the operator wants a concrete starting point:
 
-- execute `g11.002` Batch 2.1 (broker multiplexing) from
-  `docs/architecture/shared-sandbox-multiplexing.md`
+- stop for operator review of the `g11.002` PR; do not open a follow-on
+  generation from this runway
 
 ## Promotion map
 
@@ -197,8 +197,9 @@ Recommended default if the operator wants a concrete starting point:
 1. Does formal `g10` generation closeout need a separate docs-only card?
 
 `g11.002` product pull landed 2026-08-17 (operator). v1 grouping is plugin
-type identity. Batch 2.0 closed.
+type identity. Batches 2.0–2.3 closed.
 
 ## Next Task
 
-Execute `docs/roadmaps/g11/batch-cards/005-g11-002-broker-multiplexing.md`.
+Stop for operator review of the `g11.002` PR. Do not start a follow-on
+generation.

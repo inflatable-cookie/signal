@@ -127,9 +127,10 @@ roots are explicit configuration defaulting empty.
 
 ## Current Audit Hotspots
 
-- SharedSandbox tier (one broker, many plugins) is in `g11.002`; Batch 2.0
-  froze multiplexing at `docs/architecture/shared-sandbox-multiplexing.md`.
-  Factory still rejects it with `shared_sandbox_unimplemented` until Batch 2.2.
+- SharedSandbox tier (one broker, many plugins) landed in `g11.002`. Grouping
+  key is `plugin:{plugin_type_id}`. Map:
+  `docs/architecture/shared-sandbox-multiplexing.md`. DedicatedSandbox stays
+  the default. Vendor/format grouping is out of v1.
 - `signal-runtime`'s public surface is now pruned to its consumers
   (signal-host-local and pulse); anticipative rendering, when scheduled,
   re-derives against the render plane

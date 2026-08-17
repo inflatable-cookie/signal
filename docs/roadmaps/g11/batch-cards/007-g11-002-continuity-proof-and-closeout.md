@@ -1,6 +1,6 @@
 # 007 - g11.002 Continuity Proof And Closeout
 
-Status: ready
+Status: complete
 Owner: core-product
 Updated: 2026-08-17
 Master spec refs: none (baseline-routed; no active strict spec)
@@ -26,16 +26,22 @@ close `g11.002`.
 Out of scope: vendor/format grouping, replacing DedicatedSandbox default,
 opening `g12`.
 
+## Outcome
+
+Shared-child death fans `PluginFaultKind::Crash` onto every member of the
+grouping key. IsolatedSandbox does not fan out. Front doors and Contract
+`072` describe the landed path. Next Task stops for operator review.
+
 ## Acceptance Criteria
 
-- [ ] killing the shared child marks all member snapshots with the same
+- [x] killing the shared child marks all member snapshots with the same
   boundary continuity class (Restartable or Terminal per Contract `014` /
   `012`)
-- [ ] `shared_boundary_member_count` stays accurate through the fault
-- [ ] DedicatedSandbox crash isolation proof is untouched
-- [ ] inventory, integration map, Contract `072`, and `g11` front doors match
+- [x] `shared_boundary_member_count` stays accurate through the fault
+- [x] DedicatedSandbox crash isolation proof is untouched
+- [x] inventory, integration map, Contract `072`, and `g11` front doors match
   the landed behavior
-- [ ] Next Task does not start a new generation by implication
+- [x] Next Task does not start a new generation by implication
 
 ## Validation
 

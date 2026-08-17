@@ -113,6 +113,7 @@ If those closeout conditions are not satisfied, repair the current generation in
 
 ## Next Task
 
-Signal is baseline-routed with `g11.002` Batch 2.1 ready. Use
-`docs/roadmaps/g11/batch-cards/005-g11-002-broker-multiplexing.md`. Reopen
-this contract when the next generation installs a new strict lane.
+Signal is baseline-routed with `g11.002` complete. No current ready card.
+Stop for operator review of the SharedSandbox PR. Do not start a follow-on
+generation. Reopen this contract when the next generation installs a new
+strict lane.

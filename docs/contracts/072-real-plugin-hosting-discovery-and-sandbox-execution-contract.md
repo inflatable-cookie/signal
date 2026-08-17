@@ -93,9 +93,9 @@ matrix below as historical evidence only — it described pre-`g09` posture.
   - long-lived broker child with shared-memory block transport and crash
     isolation proofs for CLAP, VST3, AU, and LV2
 - `signal-plugin-bridge`
-  - **InProcess** and **DedicatedSandbox** tiers behind
-    `RenderPluginProcessor`; **SharedSandbox** multiplex map is frozen in
-    `g11.002` Batch 2.0, broker implementation in Batch 2.1
+  - **InProcess**, **DedicatedSandbox**, and **SharedSandbox** tiers behind
+    `RenderPluginProcessor`. SharedSandbox reuses `ShmPluginProcessor` per
+    member lease; grouping key is `plugin:{plugin_type_id}` (`g11.002`)
 
 ### Current matrix
 
@@ -110,17 +110,17 @@ matrix below as historical evidence only — it described pre-`g09` posture.
 
 | Gap | Meaning |
 | --- | --- |
-| SharedSandbox tier | one broker, many plugins — `g11.002` Batch 2.1 ready |
 | Product browser/workflow shells | downstream-app UX remains outside Signal unless promoted |
+| Vendor/format SharedSandbox grouping | v1 grouping is plugin type identity only (`g11.002`) |
 
 Fixture catalogs and compile-time test fixtures remain valid proof tools. They
 must not be described as the production hosting implementation.
 
 ## Deferred scope
 
-- SharedSandbox multi-plugin broker tier (in implementation: `g11.002`)
 - product-local browser shells and workflow UX
 - vendor certification matrices
+- vendor/format SharedSandbox grouping (v1 is plugin type identity)
 - unsupported backend-private extension depth that has not yet been promoted
   into shared DTOs
 
@@ -158,7 +158,7 @@ but the canonical hosting story is the adapter + bridge + sandbox stack above.
 
 ## Next Task
 
-Use this contract when extending hosting depth — SharedSandbox tier
-(`g11.002`) or promoted product workflow — not when deciding whether Signal
-can host CLAP/VST3/AU/LV2 at all. That baseline is already shipped. Host
-assembly wiring closed in `g11.001`.
+Use this contract when extending hosting depth — promoted product workflow
+or vendor/format grouping — not when deciding whether Signal can host
+CLAP/VST3/AU/LV2 at all. That baseline is already shipped. Host assembly
+wiring closed in `g11.001`. SharedSandbox closed in `g11.002`.

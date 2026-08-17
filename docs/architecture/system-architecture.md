@@ -2,7 +2,7 @@
 
 Status: active
 Owner: core-product
-Updated: 2026-08-09
+Updated: 2026-08-17
 Vision refs: `docs/vision/001-signal-vision.md`
 
 ## Top-Level Stack
@@ -105,10 +105,11 @@ and transport-session concurrency were removed in g10.020.
 - CLAP, VST3, AU, and LV2 hosting is implemented through adapter crates,
   `signal-plugin-sandbox`, and `signal-plugin-bridge`. `g11.001` wired those
   backends through `signal-host-local`.
-- Remaining plugin integration work is SharedSandbox multiplexing (`g11.002`)
-  and any product-pulled workflow depth listed in
+- SharedSandbox multiplexing closed in `g11.002`. Remaining plugin
+  integration work is product-pulled workflow depth listed in
   `docs/roadmaps/backlog/post-g10-rebuild-on-demand.md`.
 
 ## Next Task
 
-Execute `docs/roadmaps/g11/batch-cards/005-g11-002-broker-multiplexing.md`.
+Stop for operator review of the `g11.002` PR. Do not start a follow-on
+generation.

@@ -21,10 +21,11 @@ Use this folder for ready execution cards under the active `g11` generation.
 - `002-g11-001-render-plane-consumer-wiring.md` — `complete`
 - `003-g11-001-host-edge-proof-and-closeout.md` — `complete`
 - `004-g11-002-multiplexing-design-note.md` — `complete`
-- `005-g11-002-broker-multiplexing.md` — `ready`
-- `006-g11-002-host-assembly-integration.md` — `ready` (auto-start after 005)
-- `007-g11-002-continuity-proof-and-closeout.md` — `ready` (auto-start after 006)
+- `005-g11-002-broker-multiplexing.md` — `complete`
+- `006-g11-002-host-assembly-integration.md` — `complete`
+- `007-g11-002-continuity-proof-and-closeout.md` — `complete`
 
 ## Next Task
 
-Execute `docs/roadmaps/g11/batch-cards/005-g11-002-broker-multiplexing.md`.
+Stop for operator review of the `g11.002` PR. Do not start a follow-on
+generation. No current ready card.
