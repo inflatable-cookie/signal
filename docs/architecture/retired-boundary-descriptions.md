@@ -21,11 +21,11 @@ What was worth keeping:
   `effigy validate` / `effigy qa`. Per-boundary "validation step" listings
   duplicated this per domain.
 - **Platform split** — macOS (AU/CoreAudio) and Linux (LV2/PipeWire/ALSA)
-  boundary work was descriptive only; no live backend existed behind the
-  Linux descriptions. The real platform story starts at
-  `signal-hardware-output-cpal` (negotiated output streams + device
-  enumeration, g10.003) and grows on product demand
-  (`docs/roadmaps/backlog/post-g10-rebuild-on-demand.md`).
+  boundary work was descriptive only in the deleted supervisor prose; the live
+  platform story starts at `signal-hardware-cpal` (negotiated output streams +
+  device enumeration, `g10.003`) and continues through the shipped plugin-hosting
+  adapters. Remaining deferred platform/device depth lives in
+  `docs/roadmaps/backlog/post-g10-rebuild-on-demand.md`.
 
 `signal-host-server` (deleted in the same packet) contained no serving
 machinery — it was an in-process copy of `signal-host-local` plus the LV2

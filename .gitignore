@@ -69,6 +69,7 @@ $RECYCLE.BIN/
 # Environment variables
 .env
 .env.local
+.agents.local.env
 
 # Temporary files
 *.tmp

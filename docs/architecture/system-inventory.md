@@ -2,7 +2,7 @@
 
 Status: active
 Owner: core-product
-Updated: 2026-07-25
+Updated: 2026-08-17
 Vision refs: `docs/vision/001-signal-vision.md`
 
 ## Purpose
@@ -100,26 +100,26 @@ Signal's active implementation surface is the Rust workspace under `crates/`
 
 ### Plugin foundations
 
-Discovery and cataloguing today; processing backends exist behind the
-render-plane plugin handle (`signal-plugin-bridge`) but are not yet wired
-into a host assembly. Discovery roots are explicit configuration defaulting
-empty.
+Real hosting for CLAP, VST3, AU, and LV2 through adapter crates,
+`signal-plugin-sandbox`, and `signal-plugin-bridge`. Processing backends sit
+behind the render-plane plugin handle (`RenderPluginProcessor`). Discovery
+roots are explicit configuration defaulting empty.
 
 - `signal-plugin`
   - format-neutral plugin types and host abstractions
 - `signal-plugin-inventory`
   - shared plugin inventory domain for cross-product consumers
 - `signal-plugin-clap`
-  - CLAP discovery via real `clap-sys`/`libloading` FFI;
-    factory-descriptor-only by default, instance probing opt-in
+  - CLAP discovery, lifecycle, `process()`, events, state, and GUI hosting
 - `signal-plugin-vst3`
-  - VST3 discovery and COM introspection
+  - VST3 discovery, scan helper, lifecycle, `process()`, and GUI hosting
 - `signal-plugin-au`
-  - Audio Unit discovery with plist pre-filter
+  - Audio Unit discovery (registry/plist), lifecycle, render pull, and GUI
+    hosting
 - `signal-plugin-lv2`
-  - LV2 manifest scanning
+  - LV2 manifest scanning and lifecycle hosting
 - `signal-plugin-sandbox`
-  - out-of-process plugin container shell over verified shm leases
+  - out-of-process broker child over verified shm leases
 - `signal-plugin-bridge`
   - host-side plugin processing backends: in-process and dedicated-sandbox
     tiers behind one placement-agnostic handle (shm round-trip with bounded
@@ -127,17 +127,15 @@ empty.
 
 ## Current Audit Hotspots
 
-- plugin processing backends exist in `signal-plugin-bridge` but no host
-  assembly wires them into the render plane yet; rebuild-on-demand items live
-  in `docs/roadmaps/backlog/post-g10-rebuild-on-demand.md`
+- production host assembly (`signal-host-local`) does not yet wire
+  `signal-plugin-bridge` backends into the Pulse-facing consumer path end to
+  end; bridge/sandbox/render-plane tests carry the proof today
+- SharedSandbox tier (one broker, many plugins) remains unimplemented in v1
 - `signal-runtime`'s public surface is now pruned to its consumers
   (signal-host-local and pulse); anticipative rendering, when scheduled,
   re-derives against the render plane
   (`docs/architecture/prework-scheduler-design-note.md`)
 - shared-memory broker permissions/cleanup hardening remains minimal
-- `signal-plugin-clap` discovery FFI defers per-operation unsafe blocks to
-  the CLAP hosting rebuild (`unsafe_op_in_unsafe_fn` allowed crate-wide
-  with reason)
 
 ## Deferred Scope
 
@@ -147,6 +145,5 @@ empty.
 
 ## Next Task
 
-Keep this inventory aligned with `docs/roadmaps/g10/README.md`. `g10` is
-complete through `g10.042`; no batch is ready. Refresh the inventory when a
-crate is added, removed, or re-scoped.
+Keep inventory aligned with `docs/roadmaps/g11/README.md`. Refresh when
+`g11.001` changes the host-assembly integration surface.

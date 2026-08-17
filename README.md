@@ -30,7 +30,9 @@ itself is not defined by any one process topology.
 - **Real-time audio output** — alloc-free render execution on negotiated
   device streams (the production path today)
 - **DSP kernels and offline analysis** — rhythm, tonal, loudness, character
-- **Plugin discovery and cataloguing** — CLAP / VST3 / AU / LV2
+- **Plugin discovery, hosting, and cataloguing** — CLAP / VST3 / AU / LV2
+  discovery plus real hosting through `signal-plugin-bridge` (in-process and
+  dedicated-sandbox tiers)
 - **Offline render orchestration and diagnostics** — the control plane
 
 Signal is *not* responsible for project editing and state ownership (Pulse) or
@@ -77,17 +79,16 @@ crates/
   signal-host-local/           # Pulse-facing local host assembly (library; no binary)
   signal-ipc/                  # Shared-memory leases and control/message model
 
-  # Plugin foundations: discovery and cataloguing today; the processing
-  # backends behind the render-plane plugin handle (in-process and sandboxed)
+  # Plugin foundations: real CLAP/VST3/AU/LV2 hosting through adapter crates,
+  # sandbox broker, and bridge backends (in-process and dedicated-sandbox)
   signal-plugin/               # Format-neutral plugin types and host abstractions
   signal-plugin-inventory/     # Shared plugin inventory domain for consumers
-  signal-plugin-clap/          # CLAP discovery via real clap-sys/libloading FFI
-  signal-plugin-vst3/          # VST3 discovery and COM introspection
-  signal-plugin-au/            # Audio Unit discovery with plist pre-filter
-  signal-plugin-lv2/           # LV2 manifest scanning
-  signal-plugin-sandbox/       # Out-of-process plugin container shell (shm broker)
-  signal-plugin-bridge/        # Host-side plugin processing backends: in-process and
-  #                              dedicated-sandbox tiers behind one placement-agnostic handle
+  signal-plugin-clap/          # CLAP discovery and hosting
+  signal-plugin-vst3/          # VST3 discovery and hosting
+  signal-plugin-au/            # Audio Unit discovery and hosting
+  signal-plugin-lv2/           # LV2 manifest scanning and hosting
+  signal-plugin-sandbox/       # Out-of-process plugin broker child (shm transport)
+  signal-plugin-bridge/        # Render-plane backends: in-process and dedicated-sandbox
 docs/                          # Vision, architecture, contracts, roadmaps, logs
 ```
 

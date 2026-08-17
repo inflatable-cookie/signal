@@ -13,9 +13,11 @@ read the [system architecture](./system-architecture.md) and the
 [glossary](../reference/glossary.md).
 
 Current headline state: the realtime render path, DSP kernels, analysis, graph,
-and runtime crates are live under `crates/`; plugin discovery exists for
-CLAP/VST3/AU/LV2, with processing backends behind the render-plane plugin
-handle not yet wired into a host assembly. The stretch headline is covered in
+and runtime crates are live under `crates/`; CLAP, VST3, AU, and LV2 hosting
+is implemented through `signal-plugin-bridge` (in-process and dedicated-sandbox
+tiers) with offline render-plane integration, while production host-assembly
+wiring into `signal-host-local` remains the main open integration seam. The
+stretch headline is covered in
 [roadmaps](../roadmaps/README.md) — the transparent renderer is frozen and
 corrected through `g10.042`, and exact-ratio creative stretch (`Dream`,
 `Cyclic`) is publicly admitted.
@@ -45,6 +47,7 @@ Keep milestone sequencing in `roadmaps/`.
 - `graph-runtime-feature-reference.md`
 - `offline-time-stretch-synthesis.md`
 - `offline-creative-fixed-ratio-public-surface.md`
+- [Production Host-Assembly Integration](./production-host-assembly-integration.md)
 - stretch decision and brief files: `offline-time-stretch-non-phase-vocoder-feasibility.md`,
   `offline-creative-time-stretch-study.md`, and the `offline-creative-*`
   briefs under this directory (admitted and rejected candidates alike —

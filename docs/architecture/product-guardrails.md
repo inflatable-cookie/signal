@@ -2,7 +2,7 @@
 
 Status: active
 Owner: core-product
-Updated: 2026-04-09
+Updated: 2026-08-17
 Vision refs: `docs/vision/001-signal-vision.md`
 
 ## Purpose
@@ -42,5 +42,6 @@ host-local duplication, or unsafe shortcuts.
 
 ## Next Task
 
-Use these guardrails with the lane-first strict `g09` surface so active batch
-cards stay focused on real runtime and host behavior.
+Use these guardrails with the active generation front door and
+`docs/roadmaps/strategic-runway.md` so new batch cards stay focused on real
+runtime and host behavior rather than scaffolded or downstream-app scope.

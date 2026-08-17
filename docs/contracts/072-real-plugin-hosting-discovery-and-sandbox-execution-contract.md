@@ -1,16 +1,17 @@
 # 072 Real Plugin Hosting, Discovery, And Sandbox Execution Contract
 
-Status: draft
+Status: active
 Owner: core-product
-Updated: 2026-04-08
+Updated: 2026-08-17
 Related contracts: `docs/contracts/007-plugin-backend-and-host-neutral-delegation-contract.md`, `docs/contracts/008-backend-neutral-plugin-capability-and-adapter-breadth-contract.md`, `docs/contracts/014-plugin-isolation-policy-transport-rebind-and-shared-sandbox-continuity-contract.md`, `docs/contracts/020-vst3-adapter-baseline-and-runtime-owned-lifecycle-contract.md`, `docs/contracts/021-au-adapter-baseline-and-runtime-owned-lifecycle-contract.md`, `docs/contracts/038-lv2-adapter-baseline-and-linux-native-plugin-lifecycle-contract.md`
-Related architecture: `docs/architecture/system-architecture.md`, `docs/architecture/graph-runtime-feature-reference.md`
+Related architecture: `docs/architecture/system-architecture.md`, `docs/architecture/graph-runtime-feature-reference.md`, `docs/architecture/system-inventory.md`
 
 ## Purpose
 
-Freeze the post-audit contract for turning Signal's plugin-hosting stack from
-fixture-backed scaffolding into real filesystem-backed discovery, plugin
-instantiation, sandbox execution, and runtime-owned lifecycle truth.
+Freeze the post-audit contract for real filesystem-backed discovery, plugin
+instantiation, sandbox execution, and runtime-owned lifecycle truth. This
+contract drove the `g09` plugin-hosting program and remains the authority for
+what "real hosting" means in Signal.
 
 ## Authority hierarchy
 
@@ -18,15 +19,17 @@ instantiation, sandbox execution, and runtime-owned lifecycle truth.
    transport contracts, placement semantics, and consumer-visible fault meaning.
 2. `signal-runtime` owns discovery receipts, runtime lifecycle interpretation,
    chain continuity, and supervisor/export proof.
-3. `signal-plugin-vst3`, `signal-plugin-au`, and `signal-plugin-lv2` own
-   format-specific realization:
+3. `signal-plugin-clap`, `signal-plugin-vst3`, `signal-plugin-au`, and
+   `signal-plugin-lv2` own format-specific realization:
    - scan roots and traversal
    - descriptor and capability extraction
    - plugin process bring-up and teardown
    - host bridge and backend-native callback adaptation
-4. `signal-plugin-sandbox` owns the long-lived sandbox process, not a demo-only
-   harness.
-5. host crates may orchestrate scans and broker sandbox transport, but they do
+4. `signal-plugin-sandbox` owns the long-lived sandbox broker process, not a
+   demo-only harness.
+5. `signal-plugin-bridge` owns the render-plane-facing processing backends
+   behind one placement-agnostic handle.
+6. host crates may orchestrate scans and broker sandbox transport, but they do
    not own plugin capability meaning, lifecycle classification, or recovery
    semantics.
 
@@ -39,8 +42,9 @@ modules, bundles, manifests, or components in runtime-owned receipts.
 
 ### Guarantee 2: adapter realization must end in one shared lifecycle model
 
-Format-specific bring-up detail may differ, but VST3, AU, and LV2 instances
-must collapse into one Signal-owned lifecycle and continuity vocabulary.
+Format-specific bring-up detail may differ, but CLAP, VST3, AU, and LV2
+instances must collapse into one Signal-owned lifecycle and continuity
+vocabulary.
 
 ### Guarantee 3: sandbox execution must be a hardened process boundary
 
@@ -60,68 +64,74 @@ internals.
 
 ## Current repo mapping
 
-The current implementation posture is narrower than the contract surface and
-must be treated explicitly.
+The baseline hosting program is implemented. Treat the April 2026 scaffold
+matrix below as historical evidence only — it described pre-`g09` posture.
 
 ### Shared runtime and host posture
 
-- `signal-runtime` already owns scan request recording, discovered-type
-  snapshots, parity summaries, and consumer-visible discovery receipts.
-- `signal-host-local` and `signal-host-server` already route plugin scan
-  requests into runtime-owned receipts, but they currently feed those receipts
-  from adapter and demo helpers rather than real platform discovery.
-- both host crates still carry demo runtime assemblies and discovery helpers
-  intended for bounded proof, not for production plugin-hosting truth.
+- `signal-runtime` owns scan request recording, discovered-type snapshots,
+  parity summaries, and consumer-visible discovery receipts.
+- `signal-host-local` routes plugin scan requests into runtime-owned receipts
+  and carries bounded demo assemblies for proof paths.
+- demo helpers and fixture catalogs may remain for stable automation, but they
+  must not be mistaken for the only hosting path.
 
-### Adapter posture today
+### Adapter and bridge posture today
 
+- `signal-plugin-clap`
+  - real library loading, factory entry, lifecycle, `process()`, events,
+    state, and GUI hosting
 - `signal-plugin-vst3`
-  - exposes default scan roots per platform
-  - discovery still returns fixture-backed plugin records from
-    `src/fixtures.rs`
-  - session planning still only wraps discovered fixture metadata
+  - real scan roots, out-of-process scan helper, lifecycle, `process()`,
+    parameter/event translation, and GUI hosting
 - `signal-plugin-au`
-  - exposes default macOS scan roots
-  - discovery still returns fixture-backed AudioUnit records from
-    `src/fixtures.rs`
-  - session planning still only wraps discovered fixture metadata
+  - macOS registry and plist discovery, lifecycle, `AudioUnitRender` pull,
+    parameter inventory, and GUI hosting
 - `signal-plugin-lv2`
-  - exposes default Linux scan roots
-  - discovery still returns fixture-backed bundle and manifest records from
-    `src/fixtures.rs`
-  - session planning still only wraps discovered fixture metadata
+  - manifest scanning, lifecycle, `run`, and parameter hosting
 - `signal-plugin-sandbox`
-  - current `main.rs` is still a synthetic CLAP lifecycle and block-processing
-    shell, not a long-lived request-serving broker
+  - long-lived broker child with shared-memory block transport and crash
+    isolation proofs for CLAP, VST3, AU, and LV2
+- `signal-plugin-bridge`
+  - **InProcess** and **DedicatedSandbox** tiers behind
+    `RenderPluginProcessor`; **SharedSandbox** tier is modeled but unimplemented
+    in v1
 
-### Audit matrix
+### Current matrix
 
-| Surface | Real scan roots | Real filesystem traversal | Real instantiation | Real sandbox broker | Runtime-owned proof |
+| Surface | Real discovery | Real instantiation | In-process `process()` | Dedicated sandbox | Render-plane handle |
 | --- | --- | --- | --- | --- | --- |
-| `signal-plugin-vst3` | yes | no | no | shared scaffold only | bounded |
-| `signal-plugin-au` | yes | no | no | shared scaffold only | bounded |
-| `signal-plugin-lv2` | yes | no | no | shared scaffold only | bounded |
-| `signal-plugin-sandbox` | n/a | n/a | CLAP-only synthetic | no | no |
-| host-local scan path | request routing only | no | no | demo-driven | bounded |
-| host-server scan path | request routing only | no | no | demo-driven | bounded |
+| CLAP | yes | yes | yes | yes | yes |
+| VST3 | yes | yes | yes | yes | yes |
+| AU | yes | yes | yes | yes | yes |
+| LV2 | yes | yes | yes | yes | yes |
 
-This contract exists to replace that matrix with real discovery and execution,
-not to restate the scaffold as a finished implementation.
+### Remaining gaps (not "hosting missing")
+
+| Gap | Meaning |
+| --- | --- |
+| SharedSandbox tier | one broker, many plugins — deferred |
+| Production host-assembly wiring | `signal-host-local` does not yet wire bridge backends into the Pulse-facing consumer path end to end |
+| Product browser/workflow shells | downstream-app UX remains outside Signal unless promoted |
+
+Fixture catalogs and compile-time test fixtures remain valid proof tools. They
+must not be described as the production hosting implementation.
 
 ## Deferred scope
 
-- plugin-editor UI embedding
-- product-local browser shells
+- SharedSandbox multi-plugin broker tier
+- product-local browser shells and workflow UX
 - vendor certification matrices
 - unsupported backend-private extension depth that has not yet been promoted
   into shared DTOs
 
 ## Rules
 
-### Rule 1: fixture discovery may remain only as test fixtures
+### Rule 1: fixture catalogs are test and proof tools only
 
-Fixture catalogs and synthetic scan responses may still support tests, but they
-must not remain the implementation path for production discovery.
+Fixture catalogs and synthetic scan responses may support tests and bounded
+demos, but docs must not describe them as the production hosting path when
+real adapters and bridge backends exist.
 
 ### Rule 2: sandbox faults must resolve to typed runtime receipts
 
@@ -137,18 +147,18 @@ shared DTOs.
 ### Rule 4: demo assemblies cannot remain the production authority
 
 Host demo assemblies and demo-only discovery helpers may stay as proof tools,
-but they must not continue to answer the canonical plugin-hosting path once real
-discovery and sandbox execution land.
+but the canonical hosting story is the adapter + bridge + sandbox stack above.
 
 ## Required proof surfaces
 
 - focused adapter discovery tests per format
-- focused sandbox lifecycle tests per format
+- focused sandbox lifecycle tests per format (`crates/signal-plugin-sandbox/tests/plugin_hosting/`)
+- bridge in-process and shm tests per format (`crates/signal-plugin-bridge/`)
 - stable host-edge receipts showing runtime-owned discovery and execution truth
-- at least one interactive demo path per major plugin family under contract
-  `079`
+- render-plane offline/plugin-stage proofs where applicable
 
 ## Next Task
 
-Use this contract to drive the `g09` plugin-hosting milestones: shared sandbox
-substrate first, then VST3, AU, and LV2 realization roadmaps on top.
+Use this contract when extending hosting depth — SharedSandbox tier, production
+host-assembly wiring, or promoted product workflow — not when deciding whether
+Signal can host CLAP/VST3/AU/LV2 at all. That baseline is already shipped.

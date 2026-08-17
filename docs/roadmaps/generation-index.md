@@ -1,25 +1,19 @@
 # Roadmap Generation Index
 
 Status: active
-Updated: 2026-07-27
+Updated: 2026-08-17
 
 ## Current generation posture
 
-- `g10` is the active generation. Its front door is
-  `docs/roadmaps/g10/README.md`. Phase one (001-009) completed the
-  deep-audit remediation program. Phase two (010-020) completed the engine
-  build-out on the surviving seed. Phase three (021-025) established
-  first-party stretch evidence, OfflineHighQuality DSP depth, offline artifact
-  scale, RealtimePreview, and a deferred product-workflow checkpoint. The
-  stretch lane `g10.030` is complete after two event-placement failures closed
-  the multiresolution phase-vocoder successor family and a final
-  non-phase-vocoder study found no qualifying replacement family. The frozen
-  production baseline remains active. `g10.029` is superseded after its
-  rejected research code was removed. `g10.028` source-fill work remains
-  paused. `g10.031` opened a separate creative `8x` architecture lane; Batch
-  31.2 froze its comparator-backed parameter space, three isolated spectral
-  candidates were rejected and deleted, Batch 31.9 paused the automatic
-  router, and Batch 31.10 froze one complete explicit cyclic-owner brief.
+- `g10` is the closing generation. Its stretch audit is complete. Integration
+  work opens in `g11`.
+- `g11` is the active generation. Its front door is
+  `docs/roadmaps/g11/README.md`. `g11.001` owns production host-assembly wiring
+  (Batch 1.2 ready). `g11.002` owns SharedSandbox tier under Contract `014`
+  (deferred).
+
+Historical `g10` stretch-lane narrative:
+
   Batch 31.11 passed structural admission but failed its first synthetic pitch
   row and was deleted. Batch 31.12 selected correlation-aligned waveform
   overlap as a materially different cyclic family. Batch 31.13 froze its
@@ -209,7 +203,8 @@ Updated: 2026-07-27
 | `g06` | 2026-03-13 | Continue beyond reusable-boundary closeout with runtime recovery depth, instrumentation, feature breadth, and Loophole-facing runtime evidence | Closed on 2026-03-16 after recovery/resumability, profiling, VST3/AU, MIDI/event depth, hardware/external-I/O, media services, integrated acceptance, bounded soak, and generation-closeout promotion work landed |
 | `g07` | 2026-03-13 | Seed the post-`g06` feature-expansion queue around routing or multichannel depth, Linux-native breadth, control-surface substrate, and fuller time-stretch capability | Closed on 2026-03-19 after multichannel or spatial execution, LV2 and Linux backends, external MIDI/control surfaces, sample-domain stretch, integrated acceptance, and generation-closeout promotion work landed |
 | `g08` | 2026-03-19 | Continue beyond bounded feature-expansion closure with live Linux backend ownership, richer plugin or device protocol depth, immersive routing, and workflow-adjacent runtime services | Closed on 2026-03-22 after live Linux ownership, LV2 or plugin protocol depth, immersive render breadth, device-protocol substrate, preview workflows, grouped acceptance lanes, integrated acceptance, and final generation-closeout work landed |
-| `g10` | 2026-06-11 | Turn the 2026-06-11 deep audit into a remediation program: fix the real audio path, demolish simulated/narration mass (~70-80k LoC), consolidate hygiene, defer rebuilds to demand | Active generation; `g10.030` retained the frozen stretch baseline; `g10.033` and `g10.034` admitted continuous Dream and Cyclic; `g10.035` rejected Automatic and closed the stretch product-routing lane; `g10.036`-`g10.040` compile the 2026-07-27 stretch audit, with Batch 36.1 ready |
+| `g10` | 2026-06-11 | Turn the 2026-06-11 deep audit into a remediation program: fix the real audio path, demolish simulated/narration mass (~70-80k LoC), consolidate hygiene, defer rebuilds to demand | Stretch audit complete; generation closeout in progress; integration work moves to `g11` |
+| `g11` | 2026-08-17 | Post-stretch integration generation: production host-assembly wiring and deferred SharedSandbox tier | Active generation; `g11.001` Batch 1.1 complete; Batch 1.2 ready |
 | `g09` | 2026-04-08 | Turn the audit findings into a contract-backed realization, hardening, and interactive-proof program | Closed on 2026-04-11 after plugin and backend realization, production-readiness gating, and operator-visible demo proof landed |
 
 ## Rollover policy
@@ -226,9 +221,15 @@ Rollover is a closeout event, not a convenience move. Before opening the next ge
 
 If that cleanup has not happened, stay in the current generation and finish the closeout there first.
 
+## Strategic runway
+
+Long-horizon sequencing after the `g10` stretch audit lives in
+[`strategic-runway.md`](./strategic-runway.md). Use it for generation rollover
+planning and operator target selection; do not treat it as a ready card.
+
 ## Next Task
 
-Use `docs/roadmaps/g10/README.md` as the current active-generation front door.
-Execute `g10.036` Batch 36.1, which is documentation only. Do not start any
-later batch in `g10.036` through `g10.040` before its predecessor closes, and
-do not infer Automatic, integration, Loophole, or Chorus work from this suite.
+Use `docs/roadmaps/g11/README.md` as the current active-generation front door.
+Execute
+`docs/roadmaps/g11/batch-cards/001-g11-001-bridge-backend-factory.md`
+using `docs/architecture/production-host-assembly-integration.md` as authority.

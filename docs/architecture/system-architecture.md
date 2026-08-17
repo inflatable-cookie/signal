@@ -103,9 +103,13 @@ and transport-session concurrency were removed in g10.020.
 - `g10` is the active generation and is complete through `g10.042`: the
   production audio path, DSP, analysis, graph, runtime, and stretch audit
   lanes all closed. No batch is currently ready.
-- Plugin discovery exists for CLAP/VST3/AU/LV2; in-process hosting and plugin
-  processing wiring remain behind a placement-agnostic handle and are not yet
-  a wired production surface. Rebuild-on-demand items live in
+- CLAP, VST3, AU, and LV2 hosting is implemented through adapter crates,
+  `signal-plugin-sandbox`, and `signal-plugin-bridge` (in-process and
+  dedicated-sandbox tiers). Offline render-plane stages can drive real plugin
+  backends in tests and proofs.
+- Remaining plugin integration work is narrower: SharedSandbox tier,
+  production host-assembly wiring through `signal-host-local`, and any
+  product-pulled workflow depth listed in
   `docs/roadmaps/backlog/post-g10-rebuild-on-demand.md`.
 
 ## Next Task

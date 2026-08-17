@@ -47,7 +47,7 @@ jump straight to the layer that matches your question.
 | [Vision](./vision/README.md) | What are we building and why? | Active |
 | [Architecture](./architecture/README.md) | How does it fit together? | Active |
 | [Contracts](./contracts/README.md) | What boundaries are frozen? | Active |
-| [Roadmaps](./roadmaps/README.md) | What is being built, and in what order? | Active (`g10`) |
+| [Roadmaps](./roadmaps/README.md) | What is being built, and in what order? | Active (`g11`) |
 | [Logs](./logs/README.md) | What happened, with evidence? | Archive |
 | [Research](./research/master-index.md) | What did we learn before deciding? | Active |
 | [Reference](./reference/glossary.md) | Runbooks and plain-language guides | Active |
@@ -72,6 +72,8 @@ jump straight to the layer that matches your question.
   what the DSP and analysis crates actually expose today.
 - [Graph and Runtime Feature Reference](./architecture/graph-runtime-feature-reference.md) —
   what the runtime and graph crates actually expose today.
+- [Production Host-Assembly Integration](./architecture/production-host-assembly-integration.md) —
+  the `g11.001` authority map from host assembly to bridge backends
 - [Offline Time-Stretch Synthesis](./architecture/offline-time-stretch-synthesis.md) —
   how the shipped stretch renderer works.
 - [Creative Time-Stretch Study](./architecture/offline-creative-time-stretch-study.md) —
@@ -85,6 +87,8 @@ jump straight to the layer that matches your question.
   this repository.
 - [001 Shared DSP and Host Boundary](./contracts/001-shared-dsp-and-host-boundary.md) —
   the boundary that defines what Signal owns.
+- [072 Real Plugin Hosting, Discovery, and Sandbox Execution](./contracts/072-real-plugin-hosting-discovery-and-sandbox-execution-contract.md) —
+  the authority for shipped CLAP/VST3/AU/LV2 hosting and remaining integration seams.
 - [084 Stretch Candidate Isolation and Promotion](./contracts/084-stretch-candidate-isolation-and-promotion-contract.md) —
   the rules that govern stretch evidence and admission.
 - [085 Creative Time-Stretch Product and Routing](./contracts/085-creative-time-stretch-product-and-routing-contract.md) —
@@ -94,9 +98,13 @@ jump straight to the layer that matches your question.
 
 - [Roadmap Index](./roadmaps/README.md) — generation history and current
   posture.
-- [Active Generation g10](./roadmaps/g10/README.md) — the current queue.
+- [Strategic Runway](./roadmaps/strategic-runway.md) — long-horizon sequencing
+  after the `g10` stretch audit.
+- [Active Generation g11](./roadmaps/g11/README.md) — current queue.
+- [Generation g10](./roadmaps/g10/README.md) — closing generation; stretch audit
+  complete.
 - [Generation Index](./roadmaps/generation-index.md) — the history of
-  generations `g01`…`g10`.
+  generations `g01`…`g11`.
 
 **Research**
 
@@ -134,7 +142,8 @@ jump straight to the layer that matches your question.
 
 ## Next Task
 
-No batch is ready. Re-enter planning through
-`docs/roadmaps/g10/README.md` only after the operator selects a new
-Signal-only target. Do not infer Automatic, RealtimePreview, integration,
-Loophole, or Chorus work from the completed stretch lane.
+Execute
+`docs/roadmaps/g11/batch-cards/001-g11-001-bridge-backend-factory.md`
+using `docs/architecture/production-host-assembly-integration.md` as authority.
+Do not infer Automatic, RealtimePreview, integration, Loophole, or Chorus work
+from the completed stretch lane.

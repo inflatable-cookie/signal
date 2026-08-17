@@ -1,13 +1,13 @@
 # Roadmaps
 
-Status: active
-Updated: 2026-07-27
+Status: active (`g11`); `g10` stretch audit complete
+Updated: 2026-08-17
 
 ## In plain words
 
 Roadmaps are the delivery plan: what is being built, in what order, and which
-part is next. The active generation is `g10`; its front door is
-[docs/roadmaps/g10/README.md](./g10/README.md).
+part is next. The active generation is `g11`; its front door is
+[docs/roadmaps/g11/README.md](./g11/README.md). `g10` stretch audit is complete.
 
 Current state in one breath:
 
@@ -21,7 +21,9 @@ Current state in one breath:
 - The July 2026 stretch audit findings are all closed: `g10.036`–`g10.042`
   are complete — Transparent defects fixed, cache identity `v3` landed, crate
   surface consolidated, resumable offline render admitted, and RealtimePreview
-  proven then deliberately left unadopted. No batch is currently ready.
+  proven then deliberately left unadopted.
+- `g11.001` Batch 1.1 closed the host-assembly integration map; Batch 1.2 is
+  ready.
 
 The rest of this page is the batch-by-batch history behind that summary. It is
 the working evidence spine for automation — read it if you need detail, not
@@ -42,6 +44,9 @@ Use this section for:
 
 ## Layout
 
+- `strategic-runway.md`: long-horizon sequencing after the active generation
+- `g11/`: active generation milestones
+- `g10/`: closing generation; stretch audit complete
 - `gNN/batch-cards/` optional per-generation execution cards
 - `g*/`: generation roadmaps and closure records
 - `generation-index.md`: generation history and rollover notes
@@ -246,9 +251,11 @@ tracked in `g10.028`.
 Product workflow planning remains deferred in `g10.025` until a real consumer
 needs the Signal-owned contract.
 Assessment driving phase two:
-`docs/research/2026-06-11-post-demolition-assessment.md`. Plugin hosting,
-MIDI, higher-quality SRC, and PDC stay in
-`backlog/post-g10-rebuild-on-demand.md` until their prerequisites land.
+`docs/research/2026-06-11-post-demolition-assessment.md`. Higher-quality SRC,
+graph successor, device depth, and PDC remain in
+`backlog/post-g10-rebuild-on-demand.md` until a product feature pulls them.
+Plugin hosting baseline work is shipped — see Contract `072` and
+`docs/architecture/system-inventory.md` for the current integration seams.
 
 `g06`, `g07`, `g08`, and `g09` are complete. The earlier post-`g08` backlog
 note remains in
@@ -424,9 +431,8 @@ Before rollover:
 
 ## Next Task
 
-Use `docs/roadmaps/g10/README.md` as the active generation front door. Execute
-`g10.036` Batch 36.1, which is documentation only: record the audit defect
-authority, amend Contracts `046` and `084`, and decide the ratio-envelope,
-output-bound, and correction-class questions. Do not start any later batch in
-`g10.036` through `g10.040` before its predecessor closes, and do not infer
-Automatic, integration, Loophole, or Chorus work from this suite.
+Execute
+[`g11.001` card 001](./g11/batch-cards/001-g11-001-bridge-backend-factory.md)
+using [`production-host-assembly-integration.md`](../architecture/production-host-assembly-integration.md)
+as authority. Do not infer Automatic, RealtimePreview, Loophole, or Chorus work
+from completed stretch lanes.

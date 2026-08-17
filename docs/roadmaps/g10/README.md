@@ -1180,10 +1180,8 @@ stretch implementation batch is ready.
 
 ## Next Task
 
-Operator action gates `g10.036`. Audition the revision-2 pack at
-`~/Downloads/signal-listening-pack-36-4-rev2`, fill `notes.tsv`, then open
-`key.tsv`. Batch 36.4 is admitted if the `384 ms` segment minimum is preferred
-or tied on both cases. On admission,
-execute Batch 36.5: full corpus comparison and acceptance report, contract and
-front-door updates, and the corrected Transparent behavior matrix. No later
-batch in `g10.036` through `g10.040` is ready until its predecessor closes.
+The stretch audit (`g10.036`–`g10.042`) is complete. No Signal stretch
+implementation batch is ready. Operator action gates the next lane: select one
+Signal-only target from `docs/roadmaps/strategic-runway.md`. Do not reopen
+Automatic, RealtimePreview, integration, Loophole, or Chorus work from this
+generation.

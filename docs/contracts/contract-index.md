@@ -171,7 +171,7 @@ memory alone.
 
 ## Post-g08 audit-remediation contracts
 
-- `072` real plugin hosting, discovery, and sandbox execution
+- `072` real plugin hosting, discovery, sandbox execution, and bridge backends
 - `073` native backend device truth and CoreAudio implementation
 - `074` shared host/runtime execution and recovery unification
 - `075` runtime public interface decomposition and internal assembly boundary

@@ -15,8 +15,13 @@ Each backlog item should include effort estimate, promotion trigger, and success
 
 ## Current Items
 
-No current backlog items.
+- [Post-g10 rebuild-on-demand queue](./post-g10-rebuild-on-demand.md) — deferred
+  runtime integration, graph, device, analysis, and substrate work pulled only
+  when a product feature needs them (plugin hosting baseline is shipped; see
+  Contract `072`)
 
-## Next task
+## Next Task
 
-Create a backlog item from `backlog-item-template.md` for the next deferred candidate.
+Promote one backlog item only when the operator selects it in
+`docs/roadmaps/strategic-runway.md` or an active generation milestone requires
+it.

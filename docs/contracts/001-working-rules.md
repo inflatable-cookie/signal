@@ -2,16 +2,16 @@
 
 Status: active
 Owner: core-product
-Updated: 2026-04-11
+Updated: 2026-08-17
 Depends on: docs/architecture/system-architecture.md
 Authority owners: core-product
 Affects: docs, crates
 
 ## Problem
 
-Signal needed a lane-first strict Northstar surface for the active `g09`
-queue so longer-running runtime and host work could stay inside explicit
-guardrails instead of depending only on roadmap prose and ad hoc thread memory.
+Signal needed a lane-first strict Northstar surface so longer-running runtime
+and host work could stay inside explicit guardrails instead of depending only
+on roadmap prose and ad hoc thread memory.
 
 ## Contract
 
@@ -29,8 +29,10 @@ guardrails instead of depending only on roadmap prose and ad hoc thread memory.
 
 ### Lane-first strict posture
 
-- The first strict lane was attached to the reopened `g09` queue.
-- `g09.015` was the final strict-execution milestone in that lane.
+- The first strict lane was attached to the reopened `g09` queue and closed
+  with `g09.015`.
+- `g10` ran mostly baseline-routed; the stretch audit completed without an
+  active strict-execution milestone.
 - There is currently no active strict-execution milestone.
 - Closed generations and unrelated active work should not be backfilled just to
   make the stricter surface look symmetrical.
@@ -87,7 +89,7 @@ guardrails instead of depending only on roadmap prose and ad hoc thread memory.
 
 - a batch needs fresh design or planning judgment not already captured in the
   strict lane
-- the work no longer matches the active `g09` milestone or its governing
+- the work no longer matches the active generation milestone or its governing
   contracts
 - validation fails in a way that changes the plan
 - the current strict card is exhausted and no next ready card exists
@@ -111,5 +113,6 @@ If those closeout conditions are not satisfied, repair the current generation in
 
 ## Next Task
 
-Use this contract again when the next generation opens a new active strict
-lane.
+Signal is baseline-routed with no active strict lane. Use
+`docs/roadmaps/strategic-runway.md` for long-horizon sequencing and reopen
+this contract when the next generation installs a new strict lane.
