@@ -1,11 +1,12 @@
 # 002 - SharedSandbox Tier
 
-Status: deferred
+Status: active
 Owner: core-product
 Created: 2026-08-17
+Updated: 2026-08-17
 Depends on: g11.001
 Vision tags: `PLUGINS`, `SANDBOX`, `RECOVERY`
-Governing refs: `docs/contracts/014-plugin-isolation-policy-transport-rebind-and-shared-sandbox-continuity-contract.md`, `docs/contracts/072-real-plugin-hosting-discovery-and-sandbox-execution-contract.md`, `docs/roadmaps/g11/001-production-host-assembly-wiring.md`
+Governing refs: `docs/contracts/014-plugin-isolation-policy-transport-rebind-and-shared-sandbox-continuity-contract.md`, `docs/contracts/072-real-plugin-hosting-discovery-and-sandbox-execution-contract.md`, `docs/architecture/shared-sandbox-multiplexing.md`, `docs/architecture/production-host-assembly-integration.md`
 
 ## Problem
 
@@ -14,7 +15,7 @@ Signal models three isolation tiers in `PluginIsolationTier`:
 - `InProcess`
 - `DedicatedSandbox` — shipped; one plugin per broker child
 - `SharedSandbox` — modeled in runtime receipts and placement vocabulary, but
-  bridge/host code rejects it in v1
+  broker/host code still rejects extra instances in one child
 
 Products that want several compatible plugin instances under one sandbox
 boundary still pay one child process per plugin today. That is correct for crash
@@ -22,77 +23,65 @@ isolation, but expensive when runtime placement policy selects shared boundaries
 
 ## Research posture
 
-**No separate research lane is required.**
-
-SharedSandbox semantics are already frozen in Contract `014`:
-
-- placement rules and grouping keys
-- shared-boundary blast radius
-- rebind and terminal outcomes
-- runtime-owned receipts in `signal-runtime`
-
-What remains is **implementation and proof**, not a new strategic question. Treat
-this milestone like adapter breadth work: extend the existing broker + bridge
-stack under Contract `014`, do not open a speculative study program.
-
-Optional Batch 2.0 (docs-only, not ready until product pull):
-
-- map broker multiplexing on the existing sandbox protocol
-- name memory/CPU tradeoffs vs DedicatedSandbox
-- list the runtime receipts that must gain member-instance proof
-
-That design note belongs in this roadmap if needed; it is not a research
-generation.
+**No separate research lane is required.** Contract `014` owns semantics.
+Batch 2.0 froze the multiplexing map at
+`docs/architecture/shared-sandbox-multiplexing.md`. Remaining work is
+implementation and proof.
 
 ## Goals
 
 - [ ] implement SharedSandbox in `signal-plugin-sandbox` broker multiplexing
-- [ ] add a bridge backend tier that preserves Contract `014` grouping semantics
+- [ ] reuse `ShmPluginProcessor` per member lease (no new audio-thread backend)
 - [ ] prove multi-instance continuity and terminal blast radius through runtime
   receipts and focused tests
-- [ ] integrate SharedSandbox selection through the production host assembly
-  opened by `g11.001`
+- [ ] integrate SharedSandbox selection through the `g11.001` host assembly
 
 ## Non-Goals
 
-- [ ] changing Contract `014` isolation vocabulary
-- [ ] product browser or trust UX
-- [ ] replacing DedicatedSandbox as the default isolation tier
-- [ ] vendor certification matrices
+- [x] changing Contract `014` isolation vocabulary
+- [x] product browser or trust UX
+- [x] replacing DedicatedSandbox as the default isolation tier
+- [x] vendor certification matrices
+- [x] vendor/format grouping (v1 grouping is plugin identity only)
 
 ## Execution Plan
 
-### Batch 2.0 - Multiplexing Design Note (optional, docs-only)
+### Batch 2.0 - Multiplexing Design Note (docs-only)
 
-Status: not ready
+Status: complete
 
-Promotion trigger: Loophole or another consumer names SharedSandbox as a
-blocking dependency **and** `g11.001` is complete.
+Product pull: operator, 2026-08-17. Grouping: same plugin type identity.
 
-- [ ] document broker multiplexing design against Contract `014`
-- [ ] name proof surfaces and stop conditions
-- [ ] confirm no contract gap requires a new research brief
+- [x] document broker multiplexing against Contract `014`
+- [x] name proof surfaces and stop conditions
+- [x] confirm no contract gap requires a new research brief
+
+Design note: `docs/architecture/shared-sandbox-multiplexing.md`.
 
 ### Batch 2.1 - Broker Multiplexing Implementation
 
-Status: blocked on Batch 2.0 or explicit operator waiver
+Status: ready
 
 - [ ] extend sandbox broker to host multiple plugin instances in one child
-- [ ] preserve crash attribution and typed recovery receipts per Contract `014`
+- [ ] keep DedicatedSandbox single-slot commands unchanged
+- [ ] preserve crash attribution per Contract `014`
 
-### Batch 2.2 - Bridge Tier And Host Assembly Integration
+Card: `docs/roadmaps/g11/batch-cards/005-g11-002-broker-multiplexing.md`.
+
+### Batch 2.2 - Host Assembly Integration
 
 Status: blocked on Batch 2.1
 
-- [ ] add SharedSandbox backend beside `ShmPluginProcessor`
-- [ ] route placement outcomes from runtime through `g11.001` host assembly
+- [ ] route `PluginIsolationTier::SharedSandbox` through the `g11.001` factory
+- [ ] attach `ShmPluginProcessor` from each member lease
+- [ ] record runtime grouping key and member count
 
 ### Batch 2.3 - Continuity Proof And Closeout
 
 Status: blocked on Batch 2.2
 
 - [ ] prove shared-boundary degradation and terminal outcomes on runtime receipts
-- [ ] close milestone and update Contract `072` remaining-gaps table if needed
+- [ ] close milestone and update Contract `072` remaining-gaps table
 
 ## Acceptance Criteria
 
@@ -115,12 +104,11 @@ Status: blocked on Batch 2.2
 
 ## Evidence Requirements
 
-- [ ] one log per completed batch
+- [x] Batch 2.0 log
+- [ ] one log per remaining completed batch
 - [ ] continuity proof references Contract `014` rules explicitly
 - [ ] milestone closeout updates `docs/roadmaps/g11/README.md`
 
 ## Next Task
 
-Do not open this milestone until `g11.001` closes. When product pull exists,
-start with Batch 2.0 unless the operator explicitly waives the design note and
-names a bounded implementation scope.
+Execute `docs/roadmaps/g11/batch-cards/005-g11-002-broker-multiplexing.md`.

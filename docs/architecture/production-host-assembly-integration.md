@@ -58,7 +58,7 @@ assembly.
 | --- | --- | --- |
 | `InProcess` | `InProcess*Processor` | load from discovered type; direct FFI on audio thread |
 | `DedicatedSandbox` | `ShmPluginProcessor` | bind to broker child; shm round-trip with bounded wait |
-| `SharedSandbox` | none in v1 | typed rejection until `g11.002` |
+| `SharedSandbox` | none in `g11.001` | typed rejection until `g11.002` Batch 2.2; map at `shared-sandbox-multiplexing.md` |
 
 ### Host assembly work breakdown
 
@@ -76,6 +76,7 @@ assembly.
    - `InProcess` → matching `InProcess*Processor::load_and_activate`
    - `DedicatedSandbox` → `ShmPluginProcessor::attach` from the broker lease
    - `SharedSandbox` → `UnsupportedCapability` / `shared_sandbox_unimplemented`
+     until `g11.002` Batch 2.2
    - unknown type, missing lease, or load/open failure → `ResourceUnavailable`
    - unsupported layout (`layout_unsupported`) → `InvalidRequest`
 
@@ -91,7 +92,7 @@ assembly.
 
 ### Explicit non-goals
 
-- SharedSandbox multiplexing (`g11.002`)
+- SharedSandbox implementation (`g11.002`; map frozen)
 - product browser or workflow UX
 - graph successor, device depth, or stretch work
 - rebuilding adapter hosting
@@ -123,7 +124,7 @@ Deferred:
 
 - live audio-thread host pumping of plugin stages
 - Pulse workflow / host-owned plan compilation from graph projections
-- `SharedSandbox` backends (`g11.002`)
+- `SharedSandbox` backends (`g11.002`; map frozen, factory still rejects)
 - wiring `PluginBlockProcessor::set_parameter_normalized` on in-process CLAP
   (the concrete backend has an inherent setter; the trait seam used by offline
   envelopes is not overridden there)
@@ -137,10 +138,11 @@ Deferred:
 
 ## SharedSandbox follow-on
 
-Contract `014` already defines shared-boundary semantics. Implementation is
-tracked in `docs/roadmaps/g11/002-shared-sandbox-tier.md`. No separate research
-program is required — only product pull after `g11.001` closes.
+Contract `014` owns semantics. v1 multiplexing is frozen at
+`docs/architecture/shared-sandbox-multiplexing.md`. Product pull landed
+2026-08-17. Batch 2.1 implements broker multi-instance; Batch 2.2 routes the
+`g11.001` factory; Batch 2.3 proves blast radius.
 
 ## Next Task
 
-Stop for operator review of the `g11.001` PR. Do not start `g11.002`.
+Execute `docs/roadmaps/g11/batch-cards/005-g11-002-broker-multiplexing.md`.

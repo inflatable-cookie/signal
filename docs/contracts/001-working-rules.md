@@ -113,6 +113,6 @@ If those closeout conditions are not satisfied, repair the current generation in
 
 ## Next Task
 
-Signal is baseline-routed with no active strict lane. Use
-`docs/roadmaps/strategic-runway.md` for long-horizon sequencing and reopen
+Signal is baseline-routed with `g11.002` Batch 2.1 ready. Use
+`docs/roadmaps/g11/batch-cards/005-g11-002-broker-multiplexing.md`. Reopen
 this contract when the next generation installs a new strict lane.

@@ -100,20 +100,15 @@ and transport-session concurrency were removed in g10.020.
 
 ## Interfaces With Roadmaps
 
-- `g10` is the active generation and is complete through `g10.042`: the
-  production audio path, DSP, analysis, graph, runtime, and stretch audit
-  lanes all closed. No batch is currently ready.
+- `g11` is the active generation. `g10` stretch audit is complete through
+  `g10.042`.
 - CLAP, VST3, AU, and LV2 hosting is implemented through adapter crates,
-  `signal-plugin-sandbox`, and `signal-plugin-bridge` (in-process and
-  dedicated-sandbox tiers). Offline render-plane stages can drive real plugin
-  backends in tests and proofs.
-- Remaining plugin integration work is narrower: SharedSandbox tier,
-  production host-assembly wiring through `signal-host-local`, and any
-  product-pulled workflow depth listed in
+  `signal-plugin-sandbox`, and `signal-plugin-bridge`. `g11.001` wired those
+  backends through `signal-host-local`.
+- Remaining plugin integration work is SharedSandbox multiplexing (`g11.002`)
+  and any product-pulled workflow depth listed in
   `docs/roadmaps/backlog/post-g10-rebuild-on-demand.md`.
 
 ## Next Task
 
-No Signal stretch implementation batch is ready. Return to the `g10` front
-door for an explicit operator-selected Signal-only planning target. Keep
-Automatic, runtime, cache, artifact, UI, Loophole, and Chorus work blocked.
+Execute `docs/roadmaps/g11/batch-cards/005-g11-002-broker-multiplexing.md`.

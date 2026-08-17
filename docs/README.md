@@ -27,7 +27,7 @@ Pick the path that matches what you're doing:
   to see what is actually available.
 - **I'm working on Signal.** Read the [Architecture section](./architecture/README.md),
   find the contract that owns your seam in the [contract index](./contracts/contract-index.md),
-  and check the [active generation roadmap](./roadmaps/g10/README.md) before
+  and check the [active generation roadmap](./roadmaps/g11/README.md) before
   starting anything.
 - **I need the current status in one paragraph.** Each section README below
   opens with a short "in plain words" summary. The
@@ -74,6 +74,8 @@ jump straight to the layer that matches your question.
   what the runtime and graph crates actually expose today.
 - [Production Host-Assembly Integration](./architecture/production-host-assembly-integration.md) —
   the `g11.001` authority map from host assembly to bridge backends
+- [SharedSandbox Multiplexing](./architecture/shared-sandbox-multiplexing.md) —
+  the `g11.002` v1 map: one child per plugin identity, reuse `ShmPluginProcessor`
 - [Offline Time-Stretch Synthesis](./architecture/offline-time-stretch-synthesis.md) —
   how the shipped stretch renderer works.
 - [Creative Time-Stretch Study](./architecture/offline-creative-time-stretch-study.md) —
@@ -142,6 +144,6 @@ jump straight to the layer that matches your question.
 
 ## Next Task
 
-Stop for operator review of the `g11.001` PR. Do not start `g11.002`.
-`g11.002` SharedSandbox stays deferred until product pull. Contract `014`
-already owns the semantics.
+Execute `docs/roadmaps/g11/batch-cards/005-g11-002-broker-multiplexing.md`.
+`g11.002` SharedSandbox is active; Batch 2.0 froze multiplexing at
+`docs/architecture/shared-sandbox-multiplexing.md`.

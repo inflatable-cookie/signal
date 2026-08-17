@@ -37,13 +37,14 @@ and `crates/signal-plugin-sandbox/tests/plugin_hosting/`.
 
 ### Still deferred (product-pull only)
 
-- **SharedSandbox tier** — one broker process hosting many plugins; modeled in
-  `PluginIsolationTier` but rejected at instantiation in v1
-- **Production host-assembly wiring** — `signal-host-local` does not yet wire
-  `signal-plugin-bridge` backends into the Pulse-facing consumer assembly end
-  to end; proof lives in bridge/sandbox/render-plane tests today
 - **Product browser / workflow shells** — inventory UX and downstream-app
   workflow remain outside Signal unless explicitly promoted
+
+Pulled into `g11` (do not treat as backlog):
+
+- **Production host-assembly wiring** — closed in `g11.001`
+- **SharedSandbox tier** — active in `g11.002`; map at
+  `docs/architecture/shared-sandbox-multiplexing.md`
 
 Historical note (2026-06-11, superseded): the original post-demolition list
 named missing lifecycle, RT `process()` bridging, events, state, crash

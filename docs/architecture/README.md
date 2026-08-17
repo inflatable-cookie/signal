@@ -1,7 +1,7 @@
 # Architecture
 
 Status: active
-Updated: 2026-07-24
+Updated: 2026-08-17
 
 ## In plain words
 
@@ -14,10 +14,9 @@ read the [system architecture](./system-architecture.md) and the
 
 Current headline state: the realtime render path, DSP kernels, analysis, graph,
 and runtime crates are live under `crates/`; CLAP, VST3, AU, and LV2 hosting
-is implemented through `signal-plugin-bridge` (in-process and dedicated-sandbox
-tiers) with offline render-plane integration, while production host-assembly
-wiring into `signal-host-local` remains the main open integration seam. The
-stretch headline is covered in
+is implemented through `signal-plugin-bridge` with production host-assembly
+wiring in `signal-host-local` (`g11.001`). SharedSandbox multiplexing is the
+open `g11.002` seam. The stretch headline is covered in
 [roadmaps](../roadmaps/README.md) — the transparent renderer is frozen and
 corrected through `g10.042`, and exact-ratio creative stretch (`Dream`,
 `Cyclic`) is publicly admitted.
@@ -48,6 +47,7 @@ Keep milestone sequencing in `roadmaps/`.
 - `offline-time-stretch-synthesis.md`
 - `offline-creative-fixed-ratio-public-surface.md`
 - [Production Host-Assembly Integration](./production-host-assembly-integration.md)
+- [SharedSandbox Multiplexing](./shared-sandbox-multiplexing.md)
 - stretch decision and brief files: `offline-time-stretch-non-phase-vocoder-feasibility.md`,
   `offline-creative-time-stretch-study.md`, and the `offline-creative-*`
   briefs under this directory (admitted and rejected candidates alike —
@@ -56,7 +56,5 @@ Keep milestone sequencing in `roadmaps/`.
 
 ## Next Task
 
-Keep the `g10` stretch state closed: Transparent, Dream, and Cyclic are
-explicit, admitted characters; Automatic is closed; `RealtimePreview` is
-proven and unadopted. No batch is ready — return to
-`docs/roadmaps/g10/README.md` for an operator-selected Signal-only target.
+Execute `docs/roadmaps/g11/batch-cards/005-g11-002-broker-multiplexing.md`.
+Keep the `g10` stretch state closed.

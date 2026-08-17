@@ -135,5 +135,5 @@ Status: complete
 
 ## Next Task
 
-Stop for operator review of the `g11.001` PR. `g11.002` SharedSandbox stays
-deferred until product pull. Contract `014` already owns the semantics.
+`g11.001` closed. Continue at
+`docs/roadmaps/g11/batch-cards/005-g11-002-broker-multiplexing.md`.

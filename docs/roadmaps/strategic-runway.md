@@ -81,13 +81,12 @@ Loophole and other consumers without reopening fake scaffold work.
 
 Primary bets, in product-pull order:
 
-1. **Production host-assembly wiring** — wire `signal-plugin-bridge` backends
-   through `signal-host-local` into the Pulse-facing consumer path end to end
-2. **Graph successor** — production node-graph execution around the render
+1. **Production host-assembly wiring** — closed in `g11.001`
+2. **SharedSandbox tier** — one broker process hosting many plugins; Batch 2.1
+   ready (`docs/architecture/shared-sandbox-multiplexing.md`)
+3. **Graph successor** — production node-graph execution around the render
    plane's control/render split: topological ordering, PDC via delay insertion,
    retained stage state, preallocated buffers
-3. **SharedSandbox tier** — one broker process hosting many plugins, currently
-   modeled but unimplemented in v1
 4. **Device handling depth** — device-change notifications, input/duplex
    streams, explicit device-selection contract on top of `g10.003` enumeration
 5. **Consumer release depth** — source-consumer gates, publication promotion,
@@ -158,18 +157,19 @@ Accepted uncertainty:
 - whether `g10` should roll to `g11` immediately or stay open for one more
   bounded Signal-only closeout card
 - whether SharedSandbox or engine-server returns before product pull justifies it
+  (SharedSandbox pulled 2026-08-17; engine-server still backlog)
 
 ## Runway
 
 Meaningful milestone transitions, not a task queue:
 
-1. **Now:** execute `g11.001` Batch 1.2 (bridge backend factory).
-2. **Next generation open:** `g11` is open; finish `g11.001` then evaluate
-   product pull for `g11.002`.
-3. **First `g11` tranche:** execute the selected Horizon B bet with production
-   integration proof, not scaffold rediscovery.
+1. **Now:** execute `g11.002` Batch 2.1 (broker multiplexing).
+2. **After `g11.002`:** next product-pulled Horizon B item (graph successor or
+   device depth), not a speculative lane.
+3. **First `g11` tranche:** host-assembly (`g11.001`, complete) then SharedSandbox
+   (`g11.002`, in flight).
 4. **Second `g11` tranche:** pull the next product-pulled item from backlog only
-   after the first tranche closes with evidence.
+   after the current tranche closes with evidence.
 5. **Mid horizon:** promote analysis/substrate breadth (Horizon C) when a named
    contract or consumer need exists.
 6. **Long horizon:** migration/consolidation batches (Horizon D) once production
@@ -177,10 +177,8 @@ Meaningful milestone transitions, not a task queue:
 
 Recommended default if the operator wants a concrete starting point:
 
-- execute `g11.001` Batch 1.2 now that Batch 1.1 frozen the integration map at
-  `docs/architecture/production-host-assembly-integration.md`
-- defer `g11.002` SharedSandbox until Batch 1.4 closes and a consumer names the
-  dependency
+- execute `g11.002` Batch 2.1 (broker multiplexing) from
+  `docs/architecture/shared-sandbox-multiplexing.md`
 
 ## Promotion map
 
@@ -196,13 +194,11 @@ Recommended default if the operator wants a concrete starting point:
 
 ## Open operator decisions
 
-1. Should `g11.002` SharedSandbox wait for explicit Loophole pull or open after
-   `g11.001` closes regardless?
-2. Does formal `g10` generation closeout need a separate docs-only card before
-   `g11.001` Batch 1.4 closes?
+1. Does formal `g10` generation closeout need a separate docs-only card?
+
+`g11.002` product pull landed 2026-08-17 (operator). v1 grouping is plugin
+type identity. Batch 2.0 closed.
 
 ## Next Task
 
-Stop for operator review of the `g11.001` PR. Do not start `g11.002`.
-SharedSandbox remains in `g11.002` under Contract `014` — roadmap only until
-product pull, not a research lane.
+Execute `docs/roadmaps/g11/batch-cards/005-g11-002-broker-multiplexing.md`.

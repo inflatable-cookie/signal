@@ -4,7 +4,7 @@ Status: active
 Owner: core-product
 Updated: 2026-08-17
 Related contracts: `docs/contracts/007-plugin-backend-and-host-neutral-delegation-contract.md`, `docs/contracts/008-backend-neutral-plugin-capability-and-adapter-breadth-contract.md`, `docs/contracts/014-plugin-isolation-policy-transport-rebind-and-shared-sandbox-continuity-contract.md`, `docs/contracts/020-vst3-adapter-baseline-and-runtime-owned-lifecycle-contract.md`, `docs/contracts/021-au-adapter-baseline-and-runtime-owned-lifecycle-contract.md`, `docs/contracts/038-lv2-adapter-baseline-and-linux-native-plugin-lifecycle-contract.md`
-Related architecture: `docs/architecture/system-architecture.md`, `docs/architecture/graph-runtime-feature-reference.md`, `docs/architecture/system-inventory.md`
+Related architecture: `docs/architecture/system-architecture.md`, `docs/architecture/graph-runtime-feature-reference.md`, `docs/architecture/system-inventory.md`, `docs/architecture/shared-sandbox-multiplexing.md`
 
 ## Purpose
 
@@ -94,8 +94,8 @@ matrix below as historical evidence only — it described pre-`g09` posture.
     isolation proofs for CLAP, VST3, AU, and LV2
 - `signal-plugin-bridge`
   - **InProcess** and **DedicatedSandbox** tiers behind
-    `RenderPluginProcessor`; **SharedSandbox** tier is modeled but unimplemented
-    in v1
+    `RenderPluginProcessor`; **SharedSandbox** multiplex map is frozen in
+    `g11.002` Batch 2.0, broker implementation in Batch 2.1
 
 ### Current matrix
 
@@ -110,8 +110,7 @@ matrix below as historical evidence only — it described pre-`g09` posture.
 
 | Gap | Meaning |
 | --- | --- |
-| SharedSandbox tier | one broker, many plugins — deferred |
-| Production host-assembly wiring | `signal-host-local` does not yet wire bridge backends into the Pulse-facing consumer path end to end |
+| SharedSandbox tier | one broker, many plugins — `g11.002` Batch 2.1 ready |
 | Product browser/workflow shells | downstream-app UX remains outside Signal unless promoted |
 
 Fixture catalogs and compile-time test fixtures remain valid proof tools. They
@@ -119,7 +118,7 @@ must not be described as the production hosting implementation.
 
 ## Deferred scope
 
-- SharedSandbox multi-plugin broker tier
+- SharedSandbox multi-plugin broker tier (in implementation: `g11.002`)
 - product-local browser shells and workflow UX
 - vendor certification matrices
 - unsupported backend-private extension depth that has not yet been promoted
@@ -159,6 +158,7 @@ but the canonical hosting story is the adapter + bridge + sandbox stack above.
 
 ## Next Task
 
-Use this contract when extending hosting depth — SharedSandbox tier, production
-host-assembly wiring, or promoted product workflow — not when deciding whether
-Signal can host CLAP/VST3/AU/LV2 at all. That baseline is already shipped.
+Use this contract when extending hosting depth — SharedSandbox tier
+(`g11.002`) or promoted product workflow — not when deciding whether Signal
+can host CLAP/VST3/AU/LV2 at all. That baseline is already shipped. Host
+assembly wiring closed in `g11.001`.
