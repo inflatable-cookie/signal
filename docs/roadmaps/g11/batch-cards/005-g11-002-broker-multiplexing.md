@@ -1,6 +1,6 @@
 # 005 - g11.002 Broker Multiplexing
 
-Status: ready
+Status: complete
 Owner: core-product
 Updated: 2026-08-17
 Master spec refs: none (baseline-routed; no active strict spec)
@@ -40,28 +40,22 @@ current methods as the default-instance path.
 
 ## Scope
 
-- `signal-plugin-sandbox` broker + `signal-runtime` broker client session
-- focused `plugin_hosting` tests for two instances of the same type
-- DedicatedSandbox tests must stay green without rewrite
-
-Out of scope: host factory, `ShmPluginProcessor` changes, vendor/format
-grouping, members after `start-processing`, new `PluginBlockProcessor`.
+Closed. Broker child hosts N instances. DedicatedSandbox default-slot commands
+unchanged. No host factory work.
 
 ## Acceptance Criteria
 
-- [ ] two instances of the same `plugin_type_id` load, activate, and process
+- [x] two instances of the same `plugin_type_id` load, activate, and process
   through one child with two distinct shm leases
-- [ ] default-slot DedicatedSandbox path still rejects a second `load-plugin`
-- [ ] child crash remains a boundary-level receipt (member fan-out is Batch 2.3)
-- [ ] no new audio-thread backend
+- [x] default-slot DedicatedSandbox path still rejects a second `load-plugin`
+- [x] child crash remains a boundary-level receipt (member fan-out is Batch 2.3)
+- [x] no new audio-thread backend
 
 ## Validation
 
-- `cargo test -p signal-plugin-sandbox --test plugin_hosting`
+- `cargo test -p signal-plugin-sandbox --bin signal-plugin-sandbox`
+- `cargo test -p signal-plugin-sandbox --test plugin_hosting -- --test-threads=1`
 - `cargo test -p signal-runtime --lib sandbox_broker`
-
-If those selectors do not exist, use the crate's existing broker test
-binaries and record the exact command in the batch log.
 
 ## Evidence Required
 
@@ -69,10 +63,7 @@ binaries and record the exact command in the batch log.
 
 ## Stop Conditions
 
-- DedicatedSandbox tests fail
-- multiplexing needs a new shm protocol
-- adding members after `start-processing` becomes necessary for the proof
-- grouping other than plugin identity is required
+None fired.
 
 ## Next Task
 

@@ -122,6 +122,7 @@ pub fn ensure_broker_sandbox_session(
         attached,
         prepared_summary,
         teardown_summary,
+        processing_started: false,
     })
 }
 

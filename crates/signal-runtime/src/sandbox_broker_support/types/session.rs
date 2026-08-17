@@ -69,6 +69,8 @@ pub struct SandboxBrokerSession {
     pub prepared_summary: Option<String>,
     /// Summary from the broker teardown phase, if completed.
     pub teardown_summary: Option<String>,
+    /// True after a successful boundary-level `start-processing`.
+    pub processing_started: bool,
 }
 
 /// Summary of blocks processed through a broker execution sequence.

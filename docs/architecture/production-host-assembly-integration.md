@@ -19,10 +19,11 @@ host-assembly wiring**.
 Consumer (Pulse / Loophole)
   -> LocalRuntimeHost (Contract 009 host edge)
        -> SignalRuntime placement, lifecycle, supervisor receipts
-       -> bridge backend factory (this milestone adds)
-            -> signal-plugin-bridge (InProcess | DedicatedSandbox)
+       -> bridge backend factory
+            -> signal-plugin-bridge (InProcess | DedicatedSandbox | SharedSandbox)
                  -> adapter hosting (CLAP | VST3 | AU | LV2)
                       -> optional signal-plugin-sandbox broker child
+                         (DedicatedSandbox: one plugin; SharedSandbox: N instances)
   -> RenderPluginProcessor on render-plane stages
 ```
 
@@ -58,7 +59,7 @@ assembly.
 | --- | --- | --- |
 | `InProcess` | `InProcess*Processor` | load from discovered type; direct FFI on audio thread |
 | `DedicatedSandbox` | `ShmPluginProcessor` | bind to broker child; shm round-trip with bounded wait |
-| `SharedSandbox` | none in `g11.001` | typed rejection until `g11.002` Batch 2.2; map at `shared-sandbox-multiplexing.md` |
+| `SharedSandbox` | `ShmPluginProcessor` per member lease | find/spawn broker by `plugin:{plugin_type_id}`; attach member shm (`g11.002`) |
 
 ### Host assembly work breakdown
 
@@ -75,8 +76,9 @@ assembly.
 
    - `InProcess` → matching `InProcess*Processor::load_and_activate`
    - `DedicatedSandbox` → `ShmPluginProcessor::attach` from the broker lease
-   - `SharedSandbox` → `UnsupportedCapability` / `shared_sandbox_unimplemented`
-     until `g11.002` Batch 2.2
+   - `SharedSandbox` → reuse grouping-key session; `load-plugin-instance` /
+     `activate-instance`; `ShmPluginProcessor::attach` from the member lease
+     (`g11.002`)
    - unknown type, missing lease, or load/open failure → `ResourceUnavailable`
    - unsupported layout (`layout_unsupported`) → `InvalidRequest`
 
@@ -92,7 +94,8 @@ assembly.
 
 ### Explicit non-goals
 
-- SharedSandbox implementation (`g11.002`; map frozen)
+- SharedSandbox implementation (`g11.002`; closed; map at
+  `shared-sandbox-multiplexing.md` remains the v1 shape)
 - product browser or workflow UX
 - graph successor, device depth, or stretch work
 - rebuilding adapter hosting
@@ -104,7 +107,7 @@ assembly.
 - scans real plugin roots when asked (`start_plugin_scan`), including LV2
 - records discovered types and sandbox lifecycle receipts
 - constructs bridge backends through `prepare_plugin_processor`
-  (`InProcess` and `DedicatedSandbox`; `SharedSandbox` is a typed rejection)
+  (`InProcess`, `DedicatedSandbox`, and `SharedSandbox`)
 - drives at least one offline render-plane plugin stage from that handle
   (`render_plan_to_pcm` over a Sum stage)
 
@@ -124,7 +127,7 @@ Deferred:
 
 - live audio-thread host pumping of plugin stages
 - Pulse workflow / host-owned plan compilation from graph projections
-- `SharedSandbox` backends (`g11.002`; map frozen, factory still rejects)
+- vendor/format SharedSandbox grouping (v1 is plugin type identity)
 - wiring `PluginBlockProcessor::set_parameter_normalized` on in-process CLAP
   (the concrete backend has an inherent setter; the trait seam used by offline
   envelopes is not overridden there)
@@ -138,11 +141,11 @@ Deferred:
 
 ## SharedSandbox follow-on
 
-Contract `014` owns semantics. v1 multiplexing is frozen at
-`docs/architecture/shared-sandbox-multiplexing.md`. Product pull landed
-2026-08-17. Batch 2.1 implements broker multi-instance; Batch 2.2 routes the
-`g11.001` factory; Batch 2.3 proves blast radius.
+Landed in `g11.002`. Contract `014` owns semantics. v1 multiplexing map:
+`docs/architecture/shared-sandbox-multiplexing.md`. Grouping key is
+`plugin:{plugin_type_id}`. DedicatedSandbox stays the default.
 
 ## Next Task
 
-Execute `docs/roadmaps/g11/batch-cards/005-g11-002-broker-multiplexing.md`.
+Stop for operator review of the `g11.002` PR. Do not start a follow-on
+generation.

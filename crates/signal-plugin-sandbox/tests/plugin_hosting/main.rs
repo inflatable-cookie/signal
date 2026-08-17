@@ -244,6 +244,7 @@ mod editor;
 mod instruments;
 mod kill_budget;
 mod lv2;
+mod multiplex;
 mod params;
 mod shm_processing;
 mod vst3;

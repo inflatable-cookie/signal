@@ -1,5 +1,6 @@
 //! Sandbox broker process: command serve loop and plugin lifecycle.
 
+use std::collections::HashMap;
 use std::io::{self, BufRead, Write};
 
 use crate::child_gui::ChildGuiHandle;
@@ -14,7 +15,8 @@ pub struct SandboxBrokerProcess {
     pub(crate) instance_id: String,
     pub(crate) processing_epoch: u64,
     pub(crate) attached: Option<AttachedRegion>,
-    pub(crate) plugin: Option<LoadedPlugin>,
+    pub(crate) plugins: HashMap<String, LoadedPlugin>,
+    pub(crate) audio_thread: Option<AudioThread>,
     pub(crate) last_state: SandboxBrokerState,
     /// Marshals editor lifecycle onto the child's main thread (g13.027).
     /// `None` outside the real child process (unit tests, non-GUI serves):
@@ -30,7 +32,8 @@ impl Default for SandboxBrokerProcess {
             instance_id: "instance:sandbox:shm".into(),
             processing_epoch: 1,
             attached: None,
-            plugin: None,
+            plugins: HashMap::new(),
+            audio_thread: None,
             last_state: SandboxBrokerState::Starting,
             gui: None,
         }
@@ -90,12 +93,35 @@ impl SandboxBrokerProcess {
                     let receipt = self.load_plugin(&library_path, &plugin_id);
                     writeln!(output, "{}", receipt.render_line())?;
                 }
+                Ok(SandboxBrokerCommand::LoadPluginInstance {
+                    instance_id,
+                    library_path,
+                    plugin_id,
+                }) => {
+                    let receipt =
+                        self.load_plugin_instance(&instance_id, &library_path, &plugin_id);
+                    writeln!(output, "{}", receipt.render_line())?;
+                }
                 Ok(SandboxBrokerCommand::ActivatePlugin {
                     sample_rate_hz,
                     min_frames,
                     max_frames,
                 }) => {
                     let receipt = self.activate_plugin(sample_rate_hz, min_frames, max_frames);
+                    writeln!(output, "{}", receipt.render_line())?;
+                }
+                Ok(SandboxBrokerCommand::ActivatePluginInstance {
+                    instance_id,
+                    sample_rate_hz,
+                    min_frames,
+                    max_frames,
+                }) => {
+                    let receipt = self.activate_plugin_instance(
+                        &instance_id,
+                        sample_rate_hz,
+                        min_frames,
+                        max_frames,
+                    );
                     writeln!(output, "{}", receipt.render_line())?;
                 }
                 Ok(SandboxBrokerCommand::SetParameters { changes }) => {
@@ -122,8 +148,16 @@ impl SandboxBrokerProcess {
                     let receipt = self.deactivate_plugin();
                     writeln!(output, "{}", receipt.render_line())?;
                 }
+                Ok(SandboxBrokerCommand::DeactivatePluginInstance { instance_id }) => {
+                    let receipt = self.deactivate_plugin_instance(&instance_id);
+                    writeln!(output, "{}", receipt.render_line())?;
+                }
                 Ok(SandboxBrokerCommand::UnloadPlugin) => {
                     let receipt = self.unload_plugin();
+                    writeln!(output, "{}", receipt.render_line())?;
+                }
+                Ok(SandboxBrokerCommand::UnloadPluginInstance { instance_id }) => {
+                    let receipt = self.unload_plugin_instance(&instance_id);
                     writeln!(output, "{}", receipt.render_line())?;
                 }
                 Ok(SandboxBrokerCommand::Teardown) => {
@@ -165,9 +199,30 @@ impl SandboxBrokerProcess {
         }
     }
 
+    pub(crate) fn plugin_receipt(
+        &self,
+        instance_id: &str,
+        state: SandboxBrokerState,
+        detail: &str,
+    ) -> SandboxBrokerReceipt {
+        let mut receipt = self.receipt(state, detail);
+        receipt.instance_id = Some(instance_id.to_string());
+        receipt
+    }
+
     pub(crate) fn crashed_receipt(&mut self, detail: &str) -> SandboxBrokerReceipt {
         self.last_state = SandboxBrokerState::Crashed;
         self.receipt(SandboxBrokerState::Crashed, detail)
+    }
+
+    pub(crate) fn crashed_receipt_for(
+        &mut self,
+        instance_id: &str,
+        detail: &str,
+    ) -> SandboxBrokerReceipt {
+        let mut receipt = self.crashed_receipt(detail);
+        receipt.instance_id = Some(instance_id.to_string());
+        receipt
     }
 
     // ── Plugin lifecycle (g11.012 batch 12.1) ──────────────────────────────
@@ -179,9 +234,7 @@ impl SandboxBrokerProcess {
     /// `plugin_id` is the format-native load key (CLAP plugin id / VST3
     /// component class CID hex).
     fn shutdown_receipt(&mut self) -> SandboxBrokerReceipt {
-        if self.plugin.is_some() {
-            let _ = self.unload_plugin();
-        }
+        self.unload_all_plugins();
         if self.attached.is_some() {
             let _ = self.teardown();
         }

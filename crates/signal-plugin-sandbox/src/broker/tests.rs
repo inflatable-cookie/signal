@@ -89,6 +89,37 @@ fn broker_rejects_malformed_plugin_commands() {
 }
 
 #[test]
+fn broker_rejects_malformed_instance_plugin_commands() {
+    let lines = serve_lines(
+        "load-plugin-instance only-id\nactivate-instance inst-a 48000\nunload-plugin-instance\ndeactivate-instance\nshutdown\n",
+    );
+    assert!(lines
+        .iter()
+        .any(|line| line.contains("load_plugin_missing_library_path")));
+    assert!(lines
+        .iter()
+        .any(|line| line.contains("activate_missing_min_frames")));
+    assert!(lines
+        .iter()
+        .any(|line| line.contains("unload_plugin_instance_missing_instance_id")));
+    assert!(lines
+        .iter()
+        .any(|line| line.contains("deactivate_instance_missing_instance_id")));
+}
+
+#[test]
+fn broker_rejects_instance_commands_without_a_loaded_plugin() {
+    let lines = serve_lines(
+        "activate-instance member-a 48000 1 256\ndeactivate-instance member-a\nunload-plugin-instance member-a\nshutdown\n",
+    );
+    let crashed = lines
+        .iter()
+        .filter(|line| line.contains("state=crashed") && line.contains("missing_loaded_plugin"))
+        .count();
+    assert_eq!(crashed, 3);
+}
+
+#[test]
 fn broker_rejects_load_of_missing_library_with_typed_detail() {
     let lines = serve_lines("load-plugin /nonexistent/fixture.clap com.signal.missing\nshutdown\n");
     assert!(lines

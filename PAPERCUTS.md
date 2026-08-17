@@ -7,6 +7,15 @@ they hit a solvable hurdle; they do not stop the current task to fix one.
 
 <!-- Keep entries short. Append newest entries at the top. Do not include secrets. -->
 
+### [ ] SharedSandbox sequential prepare must stop before load — 2026-08-17
+- Friction: broker rejects `load-plugin-instance` while `already_processing`.
+  Host factory stops the boundary, adds the member, then starts again.
+- Impact: sequential SharedSandbox prepares work; live add-while-processing
+  stays out of v1 (design non-goal).
+- Possible fix: keep stop/start as host orchestration, or later add a
+  broker-side pause that is still not audio-thread member add.
+- Surface: `signal-host-local` factory, `signal-plugin-sandbox` broker
+
 ### [ ] Signal had no `.agents.local.env` at first orchestrator dispatch — 2026-08-17
 - Friction: worker fallback worktrees cannot be created without
   `AGENTS_WORKTREE_CONTAINER_DIR`.

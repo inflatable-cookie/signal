@@ -1,6 +1,6 @@
 # 002 - SharedSandbox Tier
 
-Status: active
+Status: complete
 Owner: core-product
 Created: 2026-08-17
 Updated: 2026-08-17
@@ -14,27 +14,27 @@ Signal models three isolation tiers in `PluginIsolationTier`:
 
 - `InProcess`
 - `DedicatedSandbox` — shipped; one plugin per broker child
-- `SharedSandbox` — modeled in runtime receipts and placement vocabulary, but
-  broker/host code still rejects extra instances in one child
+- `SharedSandbox` — one broker child, many plugin instances that share a
+  grouping key
 
 Products that want several compatible plugin instances under one sandbox
-boundary still pay one child process per plugin today. That is correct for crash
-isolation, but expensive when runtime placement policy selects shared boundaries.
+boundary no longer pay one child process per plugin when runtime placement
+selects SharedSandbox.
 
 ## Research posture
 
 **No separate research lane is required.** Contract `014` owns semantics.
 Batch 2.0 froze the multiplexing map at
-`docs/architecture/shared-sandbox-multiplexing.md`. Remaining work is
-implementation and proof.
+`docs/architecture/shared-sandbox-multiplexing.md`. Implementation and proof
+landed in Batches 2.1–2.3.
 
 ## Goals
 
-- [ ] implement SharedSandbox in `signal-plugin-sandbox` broker multiplexing
-- [ ] reuse `ShmPluginProcessor` per member lease (no new audio-thread backend)
-- [ ] prove multi-instance continuity and terminal blast radius through runtime
+- [x] implement SharedSandbox in `signal-plugin-sandbox` broker multiplexing
+- [x] reuse `ShmPluginProcessor` per member lease (no new audio-thread backend)
+- [x] prove multi-instance continuity and terminal blast radius through runtime
   receipts and focused tests
-- [ ] integrate SharedSandbox selection through the `g11.001` host assembly
+- [x] integrate SharedSandbox selection through the `g11.001` host assembly
 
 ## Non-Goals
 
@@ -60,36 +60,40 @@ Design note: `docs/architecture/shared-sandbox-multiplexing.md`.
 
 ### Batch 2.1 - Broker Multiplexing Implementation
 
-Status: ready
+Status: complete
 
-- [ ] extend sandbox broker to host multiple plugin instances in one child
-- [ ] keep DedicatedSandbox single-slot commands unchanged
-- [ ] preserve crash attribution per Contract `014`
+- [x] extend sandbox broker to host multiple plugin instances in one child
+- [x] keep DedicatedSandbox single-slot commands unchanged
+- [x] preserve crash attribution per Contract `014`
 
 Card: `docs/roadmaps/g11/batch-cards/005-g11-002-broker-multiplexing.md`.
 
 ### Batch 2.2 - Host Assembly Integration
 
-Status: blocked on Batch 2.1
+Status: complete
 
-- [ ] route `PluginIsolationTier::SharedSandbox` through the `g11.001` factory
-- [ ] attach `ShmPluginProcessor` from each member lease
-- [ ] record runtime grouping key and member count
+- [x] route `PluginIsolationTier::SharedSandbox` through the `g11.001` factory
+- [x] attach `ShmPluginProcessor` from each member lease
+- [x] record runtime grouping key and member count
+
+Card: `docs/roadmaps/g11/batch-cards/006-g11-002-host-assembly-integration.md`.
 
 ### Batch 2.3 - Continuity Proof And Closeout
 
-Status: blocked on Batch 2.2
+Status: complete
 
-- [ ] prove shared-boundary degradation and terminal outcomes on runtime receipts
-- [ ] close milestone and update Contract `072` remaining-gaps table
+- [x] prove shared-boundary degradation and terminal outcomes on runtime receipts
+- [x] close milestone and update Contract `072` remaining-gaps table
+
+Card: `docs/roadmaps/g11/batch-cards/007-g11-002-continuity-proof-and-closeout.md`.
 
 ## Acceptance Criteria
 
-- [ ] runtime placement can select SharedSandbox without host-local heuristics
-- [ ] one shared boundary failure is explainable through runtime-owned receipts
+- [x] runtime placement can select SharedSandbox without host-local heuristics
+- [x] one shared boundary failure is explainable through runtime-owned receipts
   for all member instances
-- [ ] DedicatedSandbox behavior remains unchanged for existing paths
-- [ ] docs no longer describe SharedSandbox as "unimplemented" without pointing
+- [x] DedicatedSandbox behavior remains unchanged for existing paths
+- [x] docs no longer describe SharedSandbox as "unimplemented" without pointing
   at this milestone and Contract `014`
 
 ## Risks and Mitigations
@@ -105,10 +109,11 @@ Status: blocked on Batch 2.2
 ## Evidence Requirements
 
 - [x] Batch 2.0 log
-- [ ] one log per remaining completed batch
-- [ ] continuity proof references Contract `014` rules explicitly
-- [ ] milestone closeout updates `docs/roadmaps/g11/README.md`
+- [x] one log per remaining completed batch
+- [x] continuity proof references Contract `014` rules explicitly
+- [x] milestone closeout updates `docs/roadmaps/g11/README.md`
 
 ## Next Task
 
-Execute `docs/roadmaps/g11/batch-cards/005-g11-002-broker-multiplexing.md`.
+Stop for operator review of the `g11.002` PR. Do not start a follow-on
+generation from this milestone.

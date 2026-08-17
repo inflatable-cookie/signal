@@ -13,7 +13,8 @@ use public_host_edge_sandbox_broker_support::SandboxBrokerEnvGuard;
 use signal_host_local::LocalRuntimeHost;
 use signal_plugin::{PluginFormat, PluginIsolationTier};
 use signal_runtime::{
-    PluginScanRequest, RuntimeConfig, RuntimeErrorKind, RuntimeSupervisorApi, SignalRuntime,
+    PluginScanRequest, RuntimeConfig, RuntimeErrorKind, RuntimeObservationApi,
+    RuntimePluginIsolationOutcome, RuntimeSupervisorApi, SignalRuntime,
 };
 
 struct FixtureDir {
@@ -215,11 +216,111 @@ fn prepare_in_process_maps_layout_unsupported_to_invalid_request() {
 }
 
 #[test]
-fn prepare_plugin_processor_shared_sandbox_token() {
+fn prepare_plugin_processor_shared_sandbox_shares_one_child() {
+    if !signal_plugin_clap::fixture::rustc_available() {
+        eprintln!("skipping: rustc unavailable for the CLAP fixture");
+        return;
+    }
+    let _guard = SandboxBrokerEnvGuard::enable_for_workspace_cargo_run();
+    let directory = unique_fixture_dir("clap-shared-sandbox");
+    let plugin_type_id = "com.signal.host-factory-clap-shared";
+    signal_plugin_clap::fixture::compile_clap_fixture(
+        &directory.path,
+        plugin_type_id,
+        "Signal Host Factory CLAP Shared",
+        0,
+    )
+    .expect("clap fixture should compile");
     let mut host = booted_host();
-    let error = host
-        .prepare_plugin_processor("unused", PluginIsolationTier::SharedSandbox)
-        .expect_err("SharedSandbox is unimplemented");
-    assert_eq!(error.kind, RuntimeErrorKind::UnsupportedCapability);
-    assert!(error.message.contains("shared_sandbox_unimplemented"));
+    scan_root(&mut host, &directory.path, PluginFormat::Clap);
+    let first = host
+        .prepare_plugin_processor(plugin_type_id, PluginIsolationTier::SharedSandbox)
+        .expect("first SharedSandbox prepare should attach a member lease");
+    let second = host
+        .prepare_plugin_processor(plugin_type_id, PluginIsolationTier::SharedSandbox)
+        .expect("second SharedSandbox prepare should reuse the child");
+    assert_eq!(host.sandbox_broker_child_count(), 1);
+
+    let snapshot = host.runtime().get_plugin_lifecycle_snapshot();
+    let members: Vec<_> = snapshot
+        .sandboxes
+        .iter()
+        .filter(|sandbox| sandbox.plugin_type_id.as_deref() == Some(plugin_type_id))
+        .collect();
+    assert!(members.len() >= 2, "distinct member lifecycle rows");
+    for member in &members {
+        assert_eq!(
+            member.placement_outcome,
+            RuntimePluginIsolationOutcome::SharedSandbox
+        );
+        assert_eq!(member.sandbox_group_key, format!("plugin:{plugin_type_id}"));
+        assert!(member.shared_boundary_member_count >= 2);
+    }
+
+    let mut scratch_a = vec![0.0f32; 128];
+    let mut scratch_b = vec![0.0f32; 128];
+    let previous = first.set_offline_waiting(true);
+    assert!(
+        first.process(&mut scratch_a, 64, 2),
+        "first SharedSandbox lease should process"
+    );
+    first.set_offline_waiting(previous);
+    let previous = second.set_offline_waiting(true);
+    assert!(
+        second.process(&mut scratch_b, 64, 2),
+        "second SharedSandbox lease should process"
+    );
+    second.set_offline_waiting(previous);
+}
+
+#[test]
+fn prepare_plugin_processor_shared_sandbox_child_crash_fans_out() {
+    if !signal_plugin_clap::fixture::rustc_available() {
+        eprintln!("skipping: rustc unavailable for the CLAP fixture");
+        return;
+    }
+    let _guard = SandboxBrokerEnvGuard::enable_for_workspace_cargo_run();
+    let directory = unique_fixture_dir("clap-shared-crash");
+    let plugin_type_id = "com.signal.host-factory-clap-shared-crash";
+    signal_plugin_clap::fixture::compile_clap_fixture(
+        &directory.path,
+        plugin_type_id,
+        "Signal Host Factory CLAP Shared Crash",
+        0,
+    )
+    .expect("clap fixture should compile");
+    let mut host = booted_host();
+    scan_root(&mut host, &directory.path, PluginFormat::Clap);
+    let _first = host
+        .prepare_plugin_processor(plugin_type_id, PluginIsolationTier::SharedSandbox)
+        .expect("first SharedSandbox prepare");
+    let _second = host
+        .prepare_plugin_processor(plugin_type_id, PluginIsolationTier::SharedSandbox)
+        .expect("second SharedSandbox prepare");
+    host.crash_shared_sandbox_broker_child(plugin_type_id)
+        .expect("shared child crash should record");
+
+    let snapshot = host.runtime().get_plugin_lifecycle_snapshot();
+    let members: Vec<_> = snapshot
+        .sandboxes
+        .iter()
+        .filter(|sandbox| sandbox.plugin_type_id.as_deref() == Some(plugin_type_id))
+        .collect();
+    assert!(members.len() >= 2);
+    let classes: Vec<_> = members
+        .iter()
+        .map(|sandbox| format!("{:?}", sandbox.continuity_class))
+        .collect();
+    assert!(
+        classes.iter().all(|class| class == &classes[0]),
+        "shared-boundary crash must share one continuity class, got {classes:?}"
+    );
+    assert_eq!(classes[0], "Restartable");
+    for member in members {
+        assert!(member.shared_boundary_member_count >= 2);
+        assert_eq!(
+            member.state,
+            signal_runtime::RuntimePluginLifecycleState::Faulted
+        );
+    }
 }

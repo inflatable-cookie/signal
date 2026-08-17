@@ -23,8 +23,8 @@ Current state in one breath:
   surface consolidated, resumable offline render admitted, and RealtimePreview
   proven then deliberately left unadopted.
 - `g11.001` Batches 1.1–1.4 closed the host-assembly factory and offline
-  host-edge proof. `g11.002` Batch 2.0 froze SharedSandbox multiplexing;
-  Batch 2.1 is ready.
+  host-edge proof. `g11.002` Batches 2.0–2.3 closed SharedSandbox: one
+  broker child, many plugin instances, runtime-owned blast radius.
 
 The rest of this page is the batch-by-batch history behind that summary. It is
 the working evidence spine for automation — read it if you need detail, not
@@ -432,5 +432,5 @@ Before rollover:
 
 ## Next Task
 
-Execute `docs/roadmaps/g11/batch-cards/005-g11-002-broker-multiplexing.md`.
-`g11.002` is active; v1 grouping is plugin type identity.
+Stop for operator review of the `g11.002` PR. Do not start a follow-on
+generation. `g11.001` and `g11.002` are complete.

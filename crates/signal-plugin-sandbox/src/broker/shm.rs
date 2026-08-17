@@ -120,8 +120,8 @@ impl SandboxBrokerProcess {
     pub(crate) fn teardown(&mut self) -> SandboxBrokerReceipt {
         // Plugin teardown path folds into the transport teardown so a
         // parent-side `teardown` always leaves the child clean.
-        if self.plugin.is_some() {
-            let _ = self.unload_plugin();
+        if !self.plugins.is_empty() {
+            self.unload_all_plugins();
         }
         let Some(attached) = self.attached.take() else {
             self.last_state = SandboxBrokerState::TeardownComplete;

@@ -15,8 +15,8 @@ read the [system architecture](./system-architecture.md) and the
 Current headline state: the realtime render path, DSP kernels, analysis, graph,
 and runtime crates are live under `crates/`; CLAP, VST3, AU, and LV2 hosting
 is implemented through `signal-plugin-bridge` with production host-assembly
-wiring in `signal-host-local` (`g11.001`). SharedSandbox multiplexing is the
-open `g11.002` seam. The stretch headline is covered in
+wiring in `signal-host-local` (`g11.001`). SharedSandbox multiplexing landed
+in `g11.002`. The stretch headline is covered in
 [roadmaps](../roadmaps/README.md) — the transparent renderer is frozen and
 corrected through `g10.042`, and exact-ratio creative stretch (`Dream`,
 `Cyclic`) is publicly admitted.
@@ -56,5 +56,5 @@ Keep milestone sequencing in `roadmaps/`.
 
 ## Next Task
 
-Execute `docs/roadmaps/g11/batch-cards/005-g11-002-broker-multiplexing.md`.
-Keep the `g10` stretch state closed.
+Stop for operator review of the `g11.002` PR. Do not start a follow-on
+generation. Keep the `g10` stretch state closed.

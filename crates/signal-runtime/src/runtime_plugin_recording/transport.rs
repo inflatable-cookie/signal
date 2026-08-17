@@ -11,18 +11,23 @@ impl SignalRuntime {
     ) {
         let sandbox_id = sandbox_id.into();
         let detail = detail.into();
-        self.plugin_lifecycle.record_fault(
-            sandbox_id.as_str(),
-            kind,
-            detail.clone(),
-            processing_epoch,
-        );
-        self.emit(RuntimeEvent::PluginSandboxFault {
-            sandbox_id,
-            kind,
-            detail,
-            processing_epoch,
-        });
+        let member_ids = self
+            .plugin_lifecycle
+            .shared_boundary_member_ids(&self.plugin_placement_policy, sandbox_id.as_str());
+        for member_id in member_ids {
+            self.plugin_lifecycle.record_fault(
+                member_id.as_str(),
+                kind,
+                detail.clone(),
+                processing_epoch,
+            );
+            self.emit(RuntimeEvent::PluginSandboxFault {
+                sandbox_id: member_id,
+                kind,
+                detail: detail.clone(),
+                processing_epoch,
+            });
+        }
     }
 
     /// Records a plugin sandbox recovery cycle, invalidates its render state, and emits the event.

@@ -144,6 +144,5 @@ jump straight to the layer that matches your question.
 
 ## Next Task
 
-Execute `docs/roadmaps/g11/batch-cards/005-g11-002-broker-multiplexing.md`.
-`g11.002` SharedSandbox is active; Batch 2.0 froze multiplexing at
-`docs/architecture/shared-sandbox-multiplexing.md`.
+Stop for operator review of the `g11.002` PR. Do not start a follow-on
+generation. `g11.001` and `g11.002` are complete.

@@ -18,18 +18,21 @@ pub(crate) struct AttachedRegion {
     pub(crate) processed_blocks: u64,
 }
 
-/// The child audio thread: owns the process session and the shm view while
-/// processing runs.
+/// The child audio thread: owns process sessions and shm views while
+/// processing runs. One thread per broker child; it polls every activated
+/// member's request stamp.
 pub(crate) struct AudioThread {
     pub(crate) stop: Arc<AtomicBool>,
     pub(crate) join: JoinHandle<()>,
 }
 
 /// Shared-memory audio bridge for an activated plugin instance.
+///
+/// The child audio thread is process-level (one thread polls every member
+/// lease). DedicatedSandbox still has one member.
 pub(crate) struct ActivatedAudio {
     pub(crate) region: MappedSharedMemoryRegion,
     pub(crate) layout: PluginAudioBlockLayout,
-    pub(crate) thread: Option<AudioThread>,
 }
 
 /// Format-selected hosted instance (g11.031, AU per g11.032, LV2 per

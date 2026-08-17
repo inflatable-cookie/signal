@@ -43,7 +43,7 @@ and `crates/signal-plugin-sandbox/tests/plugin_hosting/`.
 Pulled into `g11` (do not treat as backlog):
 
 - **Production host-assembly wiring** — closed in `g11.001`
-- **SharedSandbox tier** — active in `g11.002`; map at
+- **SharedSandbox tier** — closed in `g11.002`; map at
   `docs/architecture/shared-sandbox-multiplexing.md`
 
 Historical note (2026-06-11, superseded): the original post-demolition list

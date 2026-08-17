@@ -1,6 +1,6 @@
 # SharedSandbox Multiplexing
 
-Status: active
+Status: current
 Owner: core-product
 Updated: 2026-08-17
 Roadmap: `docs/roadmaps/g11/002-shared-sandbox-tier.md`
@@ -82,8 +82,11 @@ Existing `load-plugin`, `activate`, `deactivate`, `unload-plugin`,
 instance. Duplicate `instance_id` on load stays `plugin_already_loaded`.
 
 `start-processing` / `stop-processing` stay **boundary-level**: one child
-audio thread for all activated members. v1 does not add members after
-`start-processing`. Sequence is load → activate (each member) → start once.
+audio thread for all activated members. The broker rejects
+`load-plugin-instance` while that thread is running (`already_processing`).
+v1 sequence is load → activate (each member) → start once. Sequential host
+factory prepares may stop the boundary, add a member, then start again.
+That is not live audio-thread member add.
 
 Receipts already carry `instance_id`. Member commands must echo the addressed
 id. Child crash / `crashed` receipts remain boundary-level and apply to every
@@ -107,11 +110,9 @@ Contract `014` Rule 5. When two members share a child, snapshots must show:
 - child crash / terminal outcome explainable for **all** members without a
   host-private process map
 
-`RuntimePluginPlacementPolicy` already exists. v1 SharedSandbox default group
-key in `runtime_plugin_placement_decision` must become `plugin:{plugin_type_id}`
-when the outcome is SharedSandbox and the rule omits `sandbox_group_key`.
-Today it falls back to `sandbox:{sandbox_id}`, which would make sharing
-impossible.
+`RuntimePluginPlacementPolicy` already exists. When a SharedSandbox rule
+omits `sandbox_group_key`, `runtime_plugin_placement_decision` defaults to
+`plugin:{plugin_type_id}`. IsolatedSandbox still uses `sandbox:{sandbox_id}`.
 
 ### Host assembly (`g11.001` factory)
 
@@ -120,10 +121,11 @@ impossible.
 1. require a discovered type
 2. find or spawn the broker session for `plugin:{plugin_type_id}`
 3. allocate a unique `instance_id`
-4. `load-plugin-instance` / `activate-instance`
-5. `start-processing` if the boundary is not yet running
-6. `ShmPluginProcessor::attach` from that member lease
-7. record runtime placement / member count; do not invent grouping in the host
+4. if the boundary is already processing, `stop-processing`
+5. `load-plugin-instance` / `activate-instance`
+6. `start-processing`
+7. `ShmPluginProcessor::attach` from that member lease
+8. record runtime placement / member count; do not invent grouping in the host
 
 Keep the frozen `prepare_plugin_processor` signature. `PluginIsolationTier`
 maps onto `RuntimePluginIsolationOutcome`; the host does not grow a parallel
@@ -146,12 +148,13 @@ policy table.
 | --- | --- |
 | 2.1 | two instances, same `plugin_type_id`, one child; two shm leases process; default-slot second `load-plugin` still `plugin_already_loaded`; DedicatedSandbox tests unchanged |
 | 2.2 | host factory returns a real SharedSandbox handle; runtime snapshot shows grouping key and member count |
-| 2.3 | child death / terminal is visible on both member receipts; docs stop saying unimplemented |
+| 2.3 | child death is visible on every member receipt; IsolatedSandbox does not fan out; docs stop saying unimplemented |
 
 ## Non-goals
 
 - vendor or format grouping
-- adding members after `start-processing`
+- live add-while-processing on the child audio thread (broker still rejects;
+  sequential host prepares may stop/start around the add)
 - a new audio-thread backend
 - replacing DedicatedSandbox as default
 - product browser / trust UX
@@ -159,5 +162,5 @@ policy table.
 
 ## Next Task
 
-Execute
-`docs/roadmaps/g11/batch-cards/005-g11-002-broker-multiplexing.md`.
+Stop for operator review of the `g11.002` PR. Do not start a follow-on
+generation from this note.

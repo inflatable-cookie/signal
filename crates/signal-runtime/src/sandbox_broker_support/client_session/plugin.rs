@@ -19,10 +19,39 @@ impl SandboxBrokerClientSession {
             ));
         }
         self.write_command(&format!("load-plugin {library_path} {plugin_id}"))?;
+        self.read_plugin_loaded_inventory("load-plugin")
+    }
+
+    /// Sends `load-plugin-instance` and returns the child's parameter inventory.
+    pub fn load_plugin_instance(
+        &mut self,
+        instance_id: &str,
+        library_path: &str,
+        plugin_id: &str,
+    ) -> std::io::Result<SandboxPluginInventory> {
+        if instance_id.chars().any(char::is_whitespace)
+            || library_path.chars().any(char::is_whitespace)
+            || plugin_id.chars().any(char::is_whitespace)
+        {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                "plugin instance ids, library paths, and ids with whitespace are unsupported by the v1 broker wire format",
+            ));
+        }
+        self.write_command(&format!(
+            "load-plugin-instance {instance_id} {library_path} {plugin_id}"
+        ))?;
+        self.read_plugin_loaded_inventory("load-plugin-instance")
+    }
+
+    fn read_plugin_loaded_inventory(
+        &mut self,
+        command: &str,
+    ) -> std::io::Result<SandboxPluginInventory> {
         let receipt = self.read_receipt()?;
         if receipt.state != SandboxBrokerReceiptState::PluginLoaded {
             return Err(std::io::Error::other(format!(
-                "unexpected broker load-plugin state: {} ({})",
+                "unexpected broker {command} state: {} ({})",
                 receipt.state, receipt.detail
             )));
         }
@@ -47,6 +76,34 @@ impl SandboxBrokerClientSession {
         self.write_command(&format!(
             "activate {sample_rate_hz} {min_frames} {max_frames}"
         ))?;
+        self.read_activate_outcome(max_frames)
+    }
+
+    /// Sends `activate-instance` and returns either the audio block lease or
+    /// the typed layout rejection.
+    pub fn activate_plugin_instance(
+        &mut self,
+        instance_id: &str,
+        sample_rate_hz: u32,
+        min_frames: u32,
+        max_frames: u32,
+    ) -> std::io::Result<SandboxPluginActivateOutcome> {
+        if instance_id.chars().any(char::is_whitespace) {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                "plugin instance ids with whitespace are unsupported by the v1 broker wire format",
+            ));
+        }
+        self.write_command(&format!(
+            "activate-instance {instance_id} {sample_rate_hz} {min_frames} {max_frames}"
+        ))?;
+        self.read_activate_outcome(max_frames)
+    }
+
+    fn read_activate_outcome(
+        &mut self,
+        max_frames: u32,
+    ) -> std::io::Result<SandboxPluginActivateOutcome> {
         let receipt = self.read_receipt()?;
         match receipt.state {
             SandboxBrokerReceiptState::PluginActivated => {
@@ -139,8 +196,36 @@ impl SandboxBrokerClientSession {
         self.simple_plugin_command("deactivate", SandboxBrokerReceiptState::PluginDeactivated)
     }
 
+    /// Sends `deactivate-instance` for one multiplexed member.
+    pub fn deactivate_plugin_instance(&mut self, instance_id: &str) -> std::io::Result<String> {
+        if instance_id.chars().any(char::is_whitespace) {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                "plugin instance ids with whitespace are unsupported by the v1 broker wire format",
+            ));
+        }
+        self.simple_plugin_command(
+            &format!("deactivate-instance {instance_id}"),
+            SandboxBrokerReceiptState::PluginDeactivated,
+        )
+    }
+
     /// Sends `unload-plugin`: full plugin teardown in the child.
     pub fn unload_plugin(&mut self) -> std::io::Result<String> {
         self.simple_plugin_command("unload-plugin", SandboxBrokerReceiptState::PluginUnloaded)
+    }
+
+    /// Sends `unload-plugin-instance` for one multiplexed member.
+    pub fn unload_plugin_instance(&mut self, instance_id: &str) -> std::io::Result<String> {
+        if instance_id.chars().any(char::is_whitespace) {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                "plugin instance ids with whitespace are unsupported by the v1 broker wire format",
+            ));
+        }
+        self.simple_plugin_command(
+            &format!("unload-plugin-instance {instance_id}"),
+            SandboxBrokerReceiptState::PluginUnloaded,
+        )
     }
 }

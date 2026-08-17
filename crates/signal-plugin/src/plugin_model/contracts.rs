@@ -37,10 +37,10 @@ pub enum PluginIsolationTier {
     /// call on the audio thread. No crash isolation — a plugin crash takes
     /// the host down. Lowest overhead.
     InProcess,
-    /// One shared sandbox process hosts many plugin instances. Crash
-    /// isolation from the host, shared blast radius between plugins.
-    /// Modeled now, unimplemented in v1: instantiation returns a typed
-    /// rejection.
+    /// One shared sandbox process hosts many plugin instances that share a
+    /// grouping key. Crash isolation from the host; shared blast radius
+    /// between members. v1 grouping is plugin type identity.
+    /// DedicatedSandbox stays the default.
     SharedSandbox,
     /// One sandbox process per plugin instance (v1 default): full crash
     /// isolation, one shm round-trip of overhead per block.
