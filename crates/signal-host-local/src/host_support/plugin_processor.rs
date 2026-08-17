@@ -249,9 +249,12 @@ impl LocalRuntimeHost {
         self.sandbox_broker_sessions.len()
     }
 
-    /// Kill the SharedSandbox broker child for `plugin_type_id` and record a
-    /// boundary crash. Runtime receipts fan the fault out to every member of
-    /// the grouping key.
+    /// Proof helper: kill the SharedSandbox broker child for `plugin_type_id`
+    /// and record a boundary crash so runtime receipts can fan out.
+    ///
+    /// Not a product recovery API. Hosts must not use this to implement
+    /// rebind or restart policy.
+    #[doc(hidden)]
     pub fn crash_shared_sandbox_broker_child(
         &mut self,
         plugin_type_id: &str,

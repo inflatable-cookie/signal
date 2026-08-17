@@ -17,9 +17,10 @@
 //!   wait, no round-trip — and honestly NO crash isolation; that is the
 //!   documented tradeoff of the tier.
 //!
-//! The **SharedSandbox** tier (one broker process, many plugins) is modeled
-//! in the tier enum but unimplemented in v1; hosts reject it at
-//! instantiation with a typed error.
+//! The **SharedSandbox** tier (one broker process, many plugin instances)
+//! reuses [`ShmPluginProcessor`] for each member shm lease. The host
+//! assembly multiplexes instances; this crate does not add a second
+//! audio-thread backend.
 
 #![warn(missing_docs)]
 
