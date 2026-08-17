@@ -127,10 +127,9 @@ roots are explicit configuration defaulting empty.
 
 ## Current Audit Hotspots
 
-- production host assembly (`signal-host-local`) does not yet wire
-  `signal-plugin-bridge` backends into the Pulse-facing consumer path end to
-  end; bridge/sandbox/render-plane tests carry the proof today
-- SharedSandbox tier (one broker, many plugins) remains unimplemented in v1
+- SharedSandbox tier (one broker, many plugins) remains unimplemented in v1;
+  `LocalRuntimeHost::prepare_plugin_processor` rejects it with
+  `shared_sandbox_unimplemented` until `g11.002`
 - `signal-runtime`'s public surface is now pruned to its consumers
   (signal-host-local and pulse); anticipative rendering, when scheduled,
   re-derives against the render plane
@@ -145,5 +144,6 @@ roots are explicit configuration defaulting empty.
 
 ## Next Task
 
-Keep inventory aligned with `docs/roadmaps/g11/README.md`. Refresh when
-`g11.001` changes the host-assembly integration surface.
+Keep inventory aligned with `docs/roadmaps/g11/README.md`. `g11.001` closed the
+host-assembly factory and offline proof path. Refresh when `g11.002` lands
+SharedSandbox.

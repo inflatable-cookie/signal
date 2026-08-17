@@ -32,3 +32,12 @@ they hit a solvable hurdle; they do not stop the current task to fix one.
 - Possible fix: keep generation front doors and roadmap README aligned whenever
   a milestone suite closes.
 - Surface: docs/roadmaps front doors
+
+## Closed
+
+### [x] Host-edge parity tests hardcode platform-coverage length — 2026-08-17
+- Friction: adding LV2 to `LocalRuntimeHost` platform coverage broke
+  `parity_coverage.len() == 3` in a public host-edge test.
+- Impact: owning a fourth format looks like a product regression.
+- Fix: assert owned formats by record instead of a magic length.
+- Surface: `crates/signal-host-local/tests/public_host_edge_cross_adapter_parity.rs`

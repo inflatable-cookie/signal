@@ -8,9 +8,9 @@ Updated: 2026-08-17
 - `g10` is the closing generation. Its stretch audit is complete. Integration
   work opens in `g11`.
 - `g11` is the active generation. Its front door is
-  `docs/roadmaps/g11/README.md`. `g11.001` owns production host-assembly wiring
-  (Batch 1.2 ready). `g11.002` owns SharedSandbox tier under Contract `014`
-  (deferred).
+  `docs/roadmaps/g11/README.md`. `g11.001` production host-assembly wiring is
+  complete. `g11.002` owns SharedSandbox tier under Contract `014`
+  (deferred until product pull).
 
 Historical `g10` stretch-lane narrative:
 
@@ -204,7 +204,7 @@ Historical `g10` stretch-lane narrative:
 | `g07` | 2026-03-13 | Seed the post-`g06` feature-expansion queue around routing or multichannel depth, Linux-native breadth, control-surface substrate, and fuller time-stretch capability | Closed on 2026-03-19 after multichannel or spatial execution, LV2 and Linux backends, external MIDI/control surfaces, sample-domain stretch, integrated acceptance, and generation-closeout promotion work landed |
 | `g08` | 2026-03-19 | Continue beyond bounded feature-expansion closure with live Linux backend ownership, richer plugin or device protocol depth, immersive routing, and workflow-adjacent runtime services | Closed on 2026-03-22 after live Linux ownership, LV2 or plugin protocol depth, immersive render breadth, device-protocol substrate, preview workflows, grouped acceptance lanes, integrated acceptance, and final generation-closeout work landed |
 | `g10` | 2026-06-11 | Turn the 2026-06-11 deep audit into a remediation program: fix the real audio path, demolish simulated/narration mass (~70-80k LoC), consolidate hygiene, defer rebuilds to demand | Stretch audit complete; generation closeout in progress; integration work moves to `g11` |
-| `g11` | 2026-08-17 | Post-stretch integration generation: production host-assembly wiring and deferred SharedSandbox tier | Active generation; `g11.001` Batch 1.1 complete; Batch 1.2 ready |
+| `g11` | 2026-08-17 | Post-stretch integration generation: production host-assembly wiring and deferred SharedSandbox tier | Active generation; `g11.001` complete; `g11.002` deferred |
 | `g09` | 2026-04-08 | Turn the audit findings into a contract-backed realization, hardening, and interactive-proof program | Closed on 2026-04-11 after plugin and backend realization, production-readiness gating, and operator-visible demo proof landed |
 
 ## Rollover policy
@@ -230,6 +230,5 @@ planning and operator target selection; do not treat it as a ready card.
 ## Next Task
 
 Use `docs/roadmaps/g11/README.md` as the current active-generation front door.
-Execute
-`docs/roadmaps/g11/batch-cards/001-g11-001-bridge-backend-factory.md`
-using `docs/architecture/production-host-assembly-integration.md` as authority.
+Stop for operator review of the `g11.001` PR. Do not start `g11.002` until
+product pull exists. Authority: Contract `014`.

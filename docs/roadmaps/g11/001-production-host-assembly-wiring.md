@@ -1,6 +1,6 @@
 # 001 - Production Host-Assembly Wiring
 
-Status: active
+Status: complete
 Owner: core-product
 Created: 2026-08-17
 Depends on: g10 closeout (stretch audit complete)
@@ -26,14 +26,14 @@ Loophole and other consumers need one honest assembly path from scan → placeme
 
 ## Goals
 
-- [ ] freeze the host-assembly integration contract: authority chain, placement
+- [x] freeze the host-assembly integration contract: authority chain, placement
   tiers supported in v1 (`InProcess`, `DedicatedSandbox`), and explicit non-goals
-- [ ] add a host-owned bridge backend factory on `LocalRuntimeHost` that can
+- [x] add a host-owned bridge backend factory on `LocalRuntimeHost` that can
   load, activate, and hand out `RenderPluginProcessor` handles for CLAP, VST3,
   AU, and LV2
-- [ ] wire render-plane plugin stages through the host assembly for at least one
+- [x] wire render-plane plugin stages through the host assembly for at least one
   offline proof path and one public host-edge proof path
-- [ ] refresh host crate docs, architecture inventory, and front doors so they
+- [x] refresh host crate docs, architecture inventory, and front doors so they
   describe integration seams accurately
 
 ## Non-Goals
@@ -75,41 +75,41 @@ Batch 1.1 closed 2026-08-17. Integration map:
 
 ### Batch 1.2 - Bridge Backend Factory On LocalRuntimeHost
 
-Status: ready
+Status: complete
 
-- [ ] add host-owned backend construction for in-process CLAP/VST3/AU/LV2
-- [ ] add host-owned `ShmPluginProcessor` construction bound to existing broker
+- [x] add host-owned backend construction for in-process CLAP/VST3/AU/LV2
+- [x] add host-owned `ShmPluginProcessor` construction bound to existing broker
   sessions where `DedicatedSandbox` is selected
-- [ ] surface typed failures for unsupported tiers, layouts, and missing discovery
+- [x] surface typed failures for unsupported tiers, layouts, and missing discovery
   records
-- [ ] keep runtime-owned placement and lifecycle receipts authoritative
+- [x] keep runtime-owned placement and lifecycle receipts authoritative
 
 ### Batch 1.3 - Render-Plane Consumer Wiring
 
-Status: blocked on Batch 1.2
+Status: complete
 
-- [ ] drive at least one offline render-plane plugin stage from the host assembly
-- [ ] prove parameter/event/state handoff boundaries on that path
-- [ ] document which render-plane entry points are in v1 scope vs deferred
+- [x] drive at least one offline render-plane plugin stage from the host assembly
+- [x] prove parameter/event/state handoff boundaries on that path
+- [x] document which render-plane entry points are in v1 scope vs deferred
 
 ### Batch 1.4 - Public Host-Edge Proof And Front-Door Closeout
 
-Status: blocked on Batch 1.3
+Status: complete
 
-- [ ] extend or add `signal-host-local` public host-edge tests that exercise
+- [x] extend or add `signal-host-local` public host-edge tests that exercise
   real bridge backends, not broker metadata-only sessions
-- [ ] run `effigy validate` and record the commands actually executed
-- [ ] refresh `LocalRuntimeHost` crate docs and architecture front doors
-- [ ] close the milestone and name the product-pull gate for `g11.002`
+- [x] run `effigy validate` and record the commands actually executed
+- [x] refresh `LocalRuntimeHost` crate docs and architecture front doors
+- [x] close the milestone and name the product-pull gate for `g11.002`
 
 ## Acceptance Criteria
 
-- [ ] a consumer can follow one documented path from host assembly to real plugin
+- [x] a consumer can follow one documented path from host assembly to real plugin
   audio through bridge backends
-- [ ] v1 explicitly supports `InProcess` and `DedicatedSandbox` only
-- [ ] `SharedSandbox` remains a typed rejection until `g11.002`
-- [ ] no doc surface claims plugin hosting is missing or discovery-only
-- [ ] public host-edge proof exists beyond broker attach/exercise metadata
+- [x] v1 explicitly supports `InProcess` and `DedicatedSandbox` only
+- [x] `SharedSandbox` remains a typed rejection until `g11.002`
+- [x] no doc surface claims plugin hosting is missing or discovery-only
+- [x] public host-edge proof exists beyond broker attach/exercise metadata
 
 ## Risks and Mitigations
 
@@ -127,13 +127,13 @@ Status: blocked on Batch 1.3
 
 ## Evidence Requirements
 
-- [ ] one log per completed batch under `docs/logs/2026-08/` or later month
-- [ ] Batch 1.1 records the integration map path and bounded Batch 1.2 scope
-- [ ] later batches record validation actually run (`effigy validate`, targeted
+- [x] one log per completed batch under `docs/logs/2026-08/` or later month
+- [x] Batch 1.1 records the integration map path and bounded Batch 1.2 scope
+- [x] later batches record validation actually run (`effigy validate`, targeted
   crate tests)
-- [ ] milestone closeout updates `docs/roadmaps/g11/README.md`
+- [x] milestone closeout updates `docs/roadmaps/g11/README.md`
 
 ## Next Task
 
-Execute
-`docs/roadmaps/g11/batch-cards/001-g11-001-bridge-backend-factory.md`.
+Stop for operator review of the `g11.001` PR. `g11.002` SharedSandbox stays
+deferred until product pull. Contract `014` already owns the semantics.

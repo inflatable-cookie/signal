@@ -203,6 +203,6 @@ Recommended default if the operator wants a concrete starting point:
 
 ## Next Task
 
-Execute `docs/roadmaps/g11/batch-cards/001-g11-001-bridge-backend-factory.md`.
+Stop for operator review of the `g11.001` PR. Do not start `g11.002`.
 SharedSandbox remains in `g11.002` under Contract `014` — roadmap only until
 product pull, not a research lane.

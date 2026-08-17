@@ -24,6 +24,8 @@ mod observation;
 mod observation_clock_transition;
 #[path = "host_support/observation_host_io.rs"]
 mod observation_host_io;
+#[path = "host_support/plugin_processor.rs"]
+mod plugin_processor;
 #[path = "host_support/sandbox_sessions.rs"]
 mod sandbox_sessions;
 #[path = "host_support/summary_types.rs"]
@@ -45,8 +47,9 @@ pub(crate) use host_types::{
     LOCAL_DEMO_PLUGIN_NODE_ID,
 };
 pub(crate) use metadata::{
-    runtime_au_discovered_type_record, runtime_plugin_discovered_type_record,
-    runtime_plugin_format_platform_coverage, runtime_vst3_discovered_type_record,
+    runtime_au_discovered_type_record, runtime_lv2_discovered_type_record,
+    runtime_plugin_discovered_type_record, runtime_plugin_format_platform_coverage,
+    runtime_vst3_discovered_type_record,
 };
 pub(crate) use sandbox_sessions::{
     ensure_discovered_sandbox_session, teardown_broker_sandbox_session, SandboxBrokerSession,

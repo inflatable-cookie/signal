@@ -76,7 +76,8 @@ assembly.
    - `InProcess` → matching `InProcess*Processor::load_and_activate`
    - `DedicatedSandbox` → `ShmPluginProcessor::attach` from the broker lease
    - `SharedSandbox` → `UnsupportedCapability` / `shared_sandbox_unimplemented`
-   - unknown type or missing lease → `ResourceUnavailable`
+   - unknown type, missing lease, or load/open failure → `ResourceUnavailable`
+   - unsupported layout (`layout_unsupported`) → `InvalidRequest`
 
 2. **Render-plane wiring**
    - hand `RenderPluginProcessor` handles to render-plane stages from the host
@@ -99,13 +100,33 @@ assembly.
 
 `LocalRuntimeHost` today:
 
-- scans real plugin roots when asked (`start_plugin_scan`)
+- scans real plugin roots when asked (`start_plugin_scan`), including LV2
 - records discovered types and sandbox lifecycle receipts
-- can exercise broker attach/run/teardown for proof paths
-- does **not** yet construct bridge processors as the canonical consumer path into
-  render-plane execution
+- constructs bridge backends through `prepare_plugin_processor`
+  (`InProcess` and `DedicatedSandbox`; `SharedSandbox` is a typed rejection)
+- drives at least one offline render-plane plugin stage from that handle
+  (`render_plan_to_pcm` over a Sum stage)
 
-That is an **integration** gap, not missing hosting capability.
+Runtime receipts stay the placement/lifecycle authority. Host code is
+orchestration and backend construction only.
+
+### v1 render-plane entry points
+
+In scope:
+
+- `LocalRuntimeHost::prepare_plugin_processor` → `RenderPluginProcessor`
+- `RenderStageSpec` Sum stage `processor` handle
+- `render_plan_to_pcm` offline bounce (installs offline waiting on the handle)
+- existing handle audio (`process` / `process_with_events`)
+
+Deferred:
+
+- live audio-thread host pumping of plugin stages
+- Pulse workflow / host-owned plan compilation from graph projections
+- `SharedSandbox` backends (`g11.002`)
+- wiring `PluginBlockProcessor::set_parameter_normalized` on in-process CLAP
+  (the concrete backend has an inherent setter; the trait seam used by offline
+  envelopes is not overridden there)
 
 ## Proof surfaces required before g11.001 closes
 
@@ -122,5 +143,4 @@ program is required — only product pull after `g11.001` closes.
 
 ## Next Task
 
-Execute
-`docs/roadmaps/g11/batch-cards/001-g11-001-bridge-backend-factory.md`.
+Stop for operator review of the `g11.001` PR. Do not start `g11.002`.
