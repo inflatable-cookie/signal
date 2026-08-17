@@ -127,7 +127,18 @@ pub(crate) enum SandboxBrokerCommand {
         library_path: String,
         plugin_id: String,
     },
+    LoadPluginInstance {
+        instance_id: String,
+        library_path: String,
+        plugin_id: String,
+    },
     ActivatePlugin {
+        sample_rate_hz: f64,
+        min_frames: u32,
+        max_frames: u32,
+    },
+    ActivatePluginInstance {
+        instance_id: String,
         sample_rate_hz: f64,
         min_frames: u32,
         max_frames: u32,
@@ -135,7 +146,13 @@ pub(crate) enum SandboxBrokerCommand {
     StartProcessing,
     StopProcessing,
     DeactivatePlugin,
+    DeactivatePluginInstance {
+        instance_id: String,
+    },
     UnloadPlugin,
+    UnloadPluginInstance {
+        instance_id: String,
+    },
     /// One or more `(parameter_id, normalized 0..1)` writes (g12.023):
     /// `set-param <id> <normalized>` or the batched
     /// `set-params <id:normalized[;id:normalized...]>`.
@@ -177,6 +194,22 @@ impl SandboxBrokerCommand {
                     plugin_id: plugin_id.to_string(),
                 })
             }
+            "load-plugin-instance" => {
+                let instance_id = tokens
+                    .next()
+                    .ok_or_else(|| "load_plugin_instance_missing_instance_id".to_string())?;
+                let library_path = tokens
+                    .next()
+                    .ok_or_else(|| "load_plugin_missing_library_path".to_string())?;
+                let plugin_id = tokens
+                    .next()
+                    .ok_or_else(|| "load_plugin_missing_plugin_id".to_string())?;
+                Ok(Self::LoadPluginInstance {
+                    instance_id: instance_id.to_string(),
+                    library_path: library_path.to_string(),
+                    plugin_id: plugin_id.to_string(),
+                })
+            }
             "activate" => {
                 let sample_rate_hz = tokens
                     .next()
@@ -191,6 +224,29 @@ impl SandboxBrokerCommand {
                     .and_then(|token| token.parse::<u32>().ok())
                     .ok_or_else(|| "activate_missing_max_frames".to_string())?;
                 Ok(Self::ActivatePlugin {
+                    sample_rate_hz,
+                    min_frames,
+                    max_frames,
+                })
+            }
+            "activate-instance" => {
+                let instance_id = tokens
+                    .next()
+                    .ok_or_else(|| "activate_instance_missing_instance_id".to_string())?;
+                let sample_rate_hz = tokens
+                    .next()
+                    .and_then(|token| token.parse::<f64>().ok())
+                    .ok_or_else(|| "activate_missing_sample_rate".to_string())?;
+                let min_frames = tokens
+                    .next()
+                    .and_then(|token| token.parse::<u32>().ok())
+                    .ok_or_else(|| "activate_missing_min_frames".to_string())?;
+                let max_frames = tokens
+                    .next()
+                    .and_then(|token| token.parse::<u32>().ok())
+                    .ok_or_else(|| "activate_missing_max_frames".to_string())?;
+                Ok(Self::ActivatePluginInstance {
+                    instance_id: instance_id.to_string(),
                     sample_rate_hz,
                     min_frames,
                     max_frames,
@@ -253,7 +309,23 @@ impl SandboxBrokerCommand {
             "start-processing" => Ok(Self::StartProcessing),
             "stop-processing" => Ok(Self::StopProcessing),
             "deactivate" => Ok(Self::DeactivatePlugin),
+            "deactivate-instance" => {
+                let instance_id = tokens
+                    .next()
+                    .ok_or_else(|| "deactivate_instance_missing_instance_id".to_string())?;
+                Ok(Self::DeactivatePluginInstance {
+                    instance_id: instance_id.to_string(),
+                })
+            }
             "unload-plugin" => Ok(Self::UnloadPlugin),
+            "unload-plugin-instance" => {
+                let instance_id = tokens
+                    .next()
+                    .ok_or_else(|| "unload_plugin_instance_missing_instance_id".to_string())?;
+                Ok(Self::UnloadPluginInstance {
+                    instance_id: instance_id.to_string(),
+                })
+            }
             other => Err(format!("unknown_command:{other}")),
         }
     }

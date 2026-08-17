@@ -11,8 +11,10 @@
 //! second argument = format-native load
 //! key), `activate` activates the instance and leases a shared-memory audio
 //! block region, and `start-processing` spawns the child's audio thread,
-//! which spin/yield-waits on the region's request stamp and runs the
-//! plugin's `process()` for every block the parent posts.
+//! which spin/yield-waits on each member region's request stamp and runs the
+//! plugin's `process()` for every block the parent posts. SharedSandbox
+//! hosts N instances in one child (`load-plugin-instance`); omitted
+//! `instance_id` still means `sandbox_id` (DedicatedSandbox single-slot).
 //!
 //! Wire format: one receipt per line,
 //! `signal-plugin-sandbox state=<token> sandbox_id=... instance_id=... epoch=... lease_id=... region_id=... [key=value ...] detail=...`
