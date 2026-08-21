@@ -1,24 +1,38 @@
 use std::path::{Path, PathBuf};
 
-use crate::ClapDiscoveredPluginType;
+use crate::{ClapDiscoveredPluginType, ClapHostPlatform};
 
 use super::entry;
 
-pub(crate) fn clap_bundle_binary(bundle_root: &Path) -> Option<PathBuf> {
-    let macos_root = bundle_root.join("Contents").join("MacOS");
-    if let Ok(entries) = std::fs::read_dir(&macos_root) {
-        for entry in entries.flatten() {
-            let path = entry.path();
-            if path.is_file() {
-                return Some(path);
-            }
+pub(crate) fn clap_bundle_binary_for_platform(
+    bundle_root: &Path,
+    platform: ClapHostPlatform,
+) -> Option<PathBuf> {
+    match platform {
+        ClapHostPlatform::MacOs => {
+            let macos_root = bundle_root.join("Contents").join("MacOS");
+            std::fs::read_dir(macos_root)
+                .ok()?
+                .flatten()
+                .map(|entry| entry.path())
+                .find(|path| path.is_file())
+        }
+        ClapHostPlatform::Linux => {
+            let stem = bundle_root.file_stem()?.to_str()?;
+            ["x86_64-linux", "aarch64-linux"]
+                .into_iter()
+                .flat_map(|architecture| {
+                    let directory = bundle_root.join("Contents").join(architecture);
+                    [directory.join(stem), directory.join(format!("{stem}.so"))]
+                })
+                .find(|path| path.is_file())
         }
     }
-    None
 }
 
 pub(super) fn scan_clap_root(
     root: &str,
+    platform: ClapHostPlatform,
     probe_capabilities: bool,
 ) -> Vec<ClapDiscoveredPluginType> {
     let root = expand_home(root);
@@ -27,34 +41,38 @@ pub(super) fn scan_clap_root(
     };
 
     if metadata.is_file() {
-        return entry::discover_from_clap_library(&root, probe_capabilities).unwrap_or_default();
+        return entry::discover_from_clap_library(&root, platform, probe_capabilities)
+            .unwrap_or_default();
     }
     if path_extension_matches(&root, "clap") {
-        return clap_bundle_binary(&root)
-            .and_then(|library| entry::discover_from_clap_library(&library, probe_capabilities))
+        return clap_bundle_binary_for_platform(&root, platform)
+            .and_then(|library| {
+                entry::discover_from_clap_library(&library, platform, probe_capabilities)
+            })
             .unwrap_or_default();
     }
 
-    collect_clap_candidates(&root)
+    collect_clap_candidates(&root, platform)
         .into_iter()
         .flat_map(|candidate| {
-            entry::discover_from_clap_library(&candidate, probe_capabilities).unwrap_or_default()
+            entry::discover_from_clap_library(&candidate, platform, probe_capabilities)
+                .unwrap_or_default()
         })
         .collect()
 }
 
-fn collect_clap_candidates(root: &Path) -> Vec<PathBuf> {
+fn collect_clap_candidates(root: &Path, platform: ClapHostPlatform) -> Vec<PathBuf> {
     let mut candidates = Vec::new();
     if let Ok(entries) = std::fs::read_dir(root) {
         for entry in entries.flatten() {
             let path = entry.path();
             if path.is_dir() {
                 if path_extension_matches(&path, "clap") {
-                    if let Some(bundle_binary) = clap_bundle_binary(&path) {
+                    if let Some(bundle_binary) = clap_bundle_binary_for_platform(&path, platform) {
                         candidates.push(bundle_binary);
                     }
                 } else {
-                    candidates.extend(collect_clap_candidates(&path));
+                    candidates.extend(collect_clap_candidates(&path, platform));
                 }
             } else if path_extension_matches(&path, "clap") {
                 candidates.push(path);

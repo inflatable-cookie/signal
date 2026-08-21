@@ -8,7 +8,7 @@ use clap_sys::{
 };
 use libloading::Library;
 
-use crate::discovery::clap_bundle_binary;
+use crate::{current_clap_platform, discovery::clap_bundle_binary_for_platform, ClapHostPlatform};
 
 /// Error surface for hosting operations; carries a stable snake_case token
 /// suitable for broker receipt details.
@@ -46,7 +46,14 @@ pub struct LoadedClapEntry {
 impl LoadedClapEntry {
     /// dlopen `library_path`, resolve `clap_entry`, and run its `init`.
     pub fn load(library_path: &Path) -> Result<Self, ClapHostingError> {
-        let load_path = clap_library_binary_path(library_path)?;
+        Self::load_for_platform(library_path, current_clap_platform())
+    }
+
+    pub(crate) fn load_for_platform(
+        library_path: &Path,
+        platform: ClapHostPlatform,
+    ) -> Result<Self, ClapHostingError> {
+        let load_path = clap_library_binary_path_for_platform(library_path, platform)?;
         let library = unsafe { Library::new(&load_path) }
             .map_err(|_| ClapHostingError::new("library_open_failed"))?;
         let entry = unsafe {
@@ -85,14 +92,17 @@ impl LoadedClapEntry {
     }
 }
 
-fn clap_library_binary_path(library_path: &Path) -> Result<std::path::PathBuf, ClapHostingError> {
+fn clap_library_binary_path_for_platform(
+    library_path: &Path,
+    platform: ClapHostPlatform,
+) -> Result<std::path::PathBuf, ClapHostingError> {
     if library_path.is_dir()
         && library_path
             .extension()
             .and_then(|extension| extension.to_str())
             .is_some_and(|extension| extension.eq_ignore_ascii_case("clap"))
     {
-        return clap_bundle_binary(library_path)
+        return clap_bundle_binary_for_platform(library_path, platform)
             .ok_or_else(|| ClapHostingError::new("bundle_binary_missing"));
     }
     Ok(library_path.to_path_buf())
@@ -119,7 +129,7 @@ impl Drop for LoadedClapEntry {
 
 #[cfg(test)]
 mod plugin_path_tests {
-    use super::{clap_library_binary_path, clap_plugin_path};
+    use super::{clap_library_binary_path_for_platform, clap_plugin_path};
     use std::path::Path;
 
     #[test]
@@ -153,7 +163,8 @@ mod plugin_path_tests {
         std::fs::write(&binary, b"fixture").expect("bundle binary");
 
         assert_eq!(
-            clap_library_binary_path(&bundle).expect("resolve bundle binary"),
+            clap_library_binary_path_for_platform(&bundle, crate::ClapHostPlatform::MacOs)
+                .expect("resolve bundle binary"),
             binary,
         );
 

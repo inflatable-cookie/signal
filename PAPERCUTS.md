@@ -7,6 +7,15 @@ they hit a solvable hurdle; they do not stop the current task to fix one.
 
 <!-- Keep entries short. Append newest entries at the top. Do not include secrets. -->
 
+### [ ] Cross-repo worker handoff paths need resolution — 2026-08-21
+- Friction: Soundcheck exposed the ready card, but the implementation handoff
+  lived in the sibling Signal repo; a relative lookup first reported it absent.
+- Impact: worker startup spent a pass locating the owning repository and its
+  dedicated worktree.
+- Possible fix: resolve `handoff_path` across linked repositories before
+  launching a worker.
+- Surface: Soundcheck/Signal handoff dispatch
+
 ### [ ] SharedSandbox sequential prepare must stop before load — 2026-08-17
 - Friction: broker rejects `load-plugin-instance` while `already_processing`.
   Host factory stops the boundary, adds the member, then starts again.

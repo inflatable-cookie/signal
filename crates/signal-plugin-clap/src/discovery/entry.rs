@@ -5,18 +5,20 @@ use clap_sys::{
     factory::plugin_factory::{clap_plugin_factory, CLAP_PLUGIN_FACTORY_ID},
 };
 
+use crate::ClapHostPlatform;
 use crate::{hosting::LoadedClapEntry, ClapDiscoveredPluginType};
 
 use super::build;
 
 pub(super) fn discover_from_clap_library(
     library_path: &Path,
+    platform: ClapHostPlatform,
     probe_capabilities: bool,
 ) -> Option<Vec<ClapDiscoveredPluginType>> {
     // Entry loading is shared with hosting (`hosting::LoadedClapEntry`):
     // discovery and the sandbox child dlopen and initialize CLAP entries
     // through the same path. The entry deinitializes on drop.
-    let entry = LoadedClapEntry::load(library_path).ok()?;
+    let entry = LoadedClapEntry::load_for_platform(library_path, platform).ok()?;
     Some(unsafe { discover_from_entry(entry.entry(), library_path, probe_capabilities) })
 }
 
