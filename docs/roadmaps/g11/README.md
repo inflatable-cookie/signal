@@ -51,4 +51,5 @@ generation.
 
 Stop for operator review of the `g11.002` PR. Do not start a follow-on
 generation. The next `g11` item is a product-pulled backlog pull, not an
-implied `g12`.
+implied `g12`. Soundcheck contract 030 / Signal contract 086 name Linux CLAP
+discovery as that pull; implementation waits on Soundcheck card 135.

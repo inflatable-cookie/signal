@@ -199,7 +199,10 @@ Recommended default if the operator wants a concrete starting point:
 `g11.002` product pull landed 2026-08-17 (operator). v1 grouping is plugin
 type identity. Batches 2.0–2.3 closed.
 
+Soundcheck pulled Linux CLAP filesystem discovery on 2026-08-21 (contract
+`086`). Execution waits on Soundcheck card 135; do not open `g12`.
+
 ## Next Task
 
 Stop for operator review of the `g11.002` PR. Do not start a follow-on
-generation.
+generation. Linux CLAP discovery (`086`) waits on Soundcheck card 135.

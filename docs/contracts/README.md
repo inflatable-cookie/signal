@@ -120,6 +120,7 @@ Use this section for:
 - `083-vst3-discovery-diagnostic-outcome-contract.md`
 - `084-stretch-candidate-isolation-and-promotion-contract.md`
 - `085-creative-time-stretch-product-and-routing-contract.md`
+- `086-linux-clap-discovery-contract.md`
 
 ## Rule
 
@@ -129,9 +130,6 @@ Add a new contract only when the boundary needs stronger guarantees than
 ## Next Task
 
 Use `docs/contracts/contract-index.md` and `001-working-rules.md` as the
-contract front doors. Contract `084` and roadmap `g10.030` keep the transparent
-successor program closed. Contract `085` admits fixed-ratio Cyclic and public
-continuous `4x..16x` Dream without a same-character router. `g10.033` is
-complete. `g10.034` opens continuous Cyclic feasibility with only its docs-only
-evidence-brief batch ready after selecting `2N..=8N` through unchanged
-equations. No strict spec lane is open.
+contract front doors. Contract `086` is a Soundcheck-pulled Linux CLAP
+discovery boundary; do not start that implementation until Soundcheck card
+135 closes and a worker is dispatched. Do not open a follow-on generation.

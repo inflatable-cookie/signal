@@ -2,7 +2,7 @@
 
 Status: active
 Owner: core-product
-Updated: 2026-07-24
+Updated: 2026-08-21
 
 ## Purpose
 
@@ -102,6 +102,7 @@ memory alone.
 - `055` LV2 worker, URID, patch, and extension negotiation
 - `056` complex plugin pin matrix and dynamic bus negotiation
 - `083` VST3 bundle discovery diagnostics and helper outcome classification
+- `086` Linux CLAP filesystem discovery: roots, flat `.clap`, Linux bundle layout
 
 ## Hardware, backend, and endpoint portability
 
