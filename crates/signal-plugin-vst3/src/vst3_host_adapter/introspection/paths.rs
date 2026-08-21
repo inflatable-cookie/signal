@@ -8,11 +8,12 @@ use std::{
 #[cfg(not(target_os = "macos"))]
 use libloading::Library;
 
-use crate::vst3_host_adapter::Vst3HostPlatform;
 use super::derive::{
     parse_feature_list, plist_string, plist_string_array, plist_to_io_error, plist_u16,
 };
 use super::types::*;
+#[cfg(not(target_os = "macos"))]
+use crate::vst3_host_adapter::Vst3HostPlatform;
 
 pub(crate) fn candidate_info_plist_paths(bundle_root: &Path) -> Vec<PathBuf> {
     vec![bundle_root.join("Contents").join("Info.plist")]

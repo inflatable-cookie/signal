@@ -10,7 +10,10 @@ use libloading::Library;
 #[cfg(not(target_os = "macos"))]
 use crate::vst3_host_adapter::introspection::resolve_module_binary_path;
 
-use crate::vst3_host_adapter::hosting::{current_vst3_platform, Vst3HostingError};
+#[cfg(not(target_os = "macos"))]
+use crate::vst3_host_adapter::hosting::current_vst3_platform;
+use crate::vst3_host_adapter::hosting::Vst3HostingError;
+#[cfg(not(target_os = "macos"))]
 use crate::vst3_host_adapter::Vst3HostPlatform;
 
 use super::com::*;
