@@ -6,8 +6,10 @@ use signal_plugin::PluginParameterDescriptor;
 use super::super::ffi;
 use super::super::process::AuProcessSession;
 use super::super::types::{parse_load_key, AuHostingError};
+#[cfg(target_os = "macos")]
 use super::format::{main_element_layout, stereo_stream_format, verify_stereo_format};
 use super::layout::{AuHostedPortLayout, HostedInstanceState};
+#[cfg(target_os = "macos")]
 use super::params::parameter_inventory;
 use crate::au_host_adapter::gui::{AuCocoaViewInfo, AuGuiSession};
 

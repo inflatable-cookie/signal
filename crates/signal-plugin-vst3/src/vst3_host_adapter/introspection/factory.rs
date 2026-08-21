@@ -10,6 +10,8 @@ use crate::vst3_host_adapter::hosting::{
     clear_factory_host_context, set_factory_host_context, should_set_factory_host_context,
 };
 
+#[cfg(not(target_os = "macos"))]
+use super::derive::libloading_to_io;
 use super::derive::{bytes_to_upper_hex, c_char_array_to_string, role_from_category};
 #[cfg(target_os = "macos")]
 use super::macos_bundle;
