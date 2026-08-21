@@ -8,6 +8,7 @@ use std::{
 #[cfg(not(target_os = "macos"))]
 use libloading::Library;
 
+use crate::vst3_host_adapter::Vst3HostPlatform;
 use super::derive::{
     parse_feature_list, plist_string, plist_string_array, plist_to_io_error, plist_u16,
 };

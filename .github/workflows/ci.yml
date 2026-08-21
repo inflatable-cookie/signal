@@ -9,8 +9,10 @@ name: CI
 #   pull_request       - before merging
 #
 # The release flow is therefore: commit to main, dispatch this workflow, wait
-# for green, then tag. macOS is not negotiable for the runner: the AU and VST3
-# host adapters and the CoreAudio hardware layer only build there.
+# for green, then tag. macOS remains required for the full workspace (AU
+# hosting, CoreAudio). A separate Linux job verifies the plugin host adapters
+# (VST3, CLAP, LV2) plus hardware-cpal and render-plane that downstream Linux
+# hosts depend on.
 on:
   workflow_dispatch:
   pull_request:
@@ -77,3 +79,38 @@ jobs:
       # effigy, which is not installed on the runner. Their cargo-backed parts
       # (fmt, doc coverage, compile) are covered above; the northstar docs
       # checks remain local-only.
+
+  check-linux:
+    name: Build plugin crates (Linux)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show toolchain
+        run: rustc --version && cargo --version
+
+      - name: Install ALSA development libraries
+        run: sudo apt-get update && sudo apt-get install -y libasound2-dev
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}
+
+      # Check the plugin host adapter crates and their dependencies that Linux
+      # hosts (e.g. Soundcheck) require. AU compiles as a cfg-gated stub;
+      # VST3/CLAP/LV2 host fully on Linux.
+      - name: Check plugin host crates
+        run: |
+          cargo check -p signal-plugin-vst3
+          cargo check -p signal-plugin-clap
+          cargo check -p signal-plugin-lv2
+          cargo check -p signal-plugin-au
+          cargo check -p signal-plugin-bridge
+          cargo check -p signal-hardware
+          cargo check -p signal-hardware-cpal
+          cargo check -p signal-render-plane
