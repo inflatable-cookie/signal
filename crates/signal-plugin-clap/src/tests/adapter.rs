@@ -1,4 +1,5 @@
 use super::*;
+use crate::ClapHostPlatform;
 
 #[test]
 fn clap_adapter_reports_supported_format_and_extensions() {
@@ -8,6 +9,37 @@ fn clap_adapter_reports_supported_format_and_extensions() {
         .minimum_extension_set()
         .contains(&ClapHostExtension::Params));
     assert_eq!(adapter.minimum_extension_set()[0].as_str(), "audio-ports");
+}
+
+#[test]
+fn clap_adapter_default_scan_roots_cover_macos_and_linux() {
+    let adapter = ClapPluginHostAdapter::default();
+    let macos = adapter
+        .default_scan_roots(ClapHostPlatform::MacOs)
+        .into_iter()
+        .map(|root| root.root)
+        .collect::<Vec<_>>();
+    assert_eq!(
+        &macos[..2],
+        [
+            "~/Library/Audio/Plug-Ins/CLAP".to_string(),
+            "/Library/Audio/Plug-Ins/CLAP".to_string(),
+        ]
+    );
+
+    let linux = adapter
+        .default_scan_roots(ClapHostPlatform::Linux)
+        .into_iter()
+        .map(|root| root.root)
+        .collect::<Vec<_>>();
+    assert_eq!(
+        &linux[..3],
+        [
+            "~/.clap".to_string(),
+            "/usr/lib/clap".to_string(),
+            "/usr/local/lib/clap".to_string(),
+        ]
+    );
 }
 
 #[test]
@@ -75,7 +107,8 @@ fn clap_adapter_discovers_direct_macos_bundle_root() {
         .expect("bundle dirs");
     std::fs::rename(compiled, &bundle_binary).expect("fixture moved into bundle");
 
-    let discovered = adapter.discover_plugins_for_roots(&[bundle.display().to_string()]);
+    let discovered = adapter
+        .discover_plugins_for_platform(ClapHostPlatform::MacOs, &[bundle.display().to_string()]);
 
     assert_eq!(discovered.len(), 1);
     let discovered = &discovered[0];
@@ -84,6 +117,74 @@ fn clap_adapter_discovers_direct_macos_bundle_root() {
         "com.signal.bundle-root-fixture"
     );
     assert_eq!(discovered.library_path, bundle_binary.display().to_string());
+}
+
+#[test]
+fn clap_adapter_discovers_host_architecture_linux_bundle() {
+    if !crate::fixture::rustc_available() {
+        return;
+    }
+    let adapter = ClapPluginHostAdapter::default();
+    let scan_root = temp_real_clap_scan_root(
+        "com.signal.linux-bundle-fixture",
+        "Signal Linux Bundle Fixture",
+        0,
+    );
+    let compiled = scan_root.path().join("signal-linux-bundle-fixture.clap");
+    let bundle = scan_root.path().join("Signal Linux Bundle Fixture.clap");
+    let architecture = if cfg!(target_arch = "aarch64") {
+        "aarch64-linux"
+    } else {
+        "x86_64-linux"
+    };
+    let bundle_binary = bundle
+        .join("Contents")
+        .join(architecture)
+        .join("Signal Linux Bundle Fixture.so");
+    std::fs::create_dir_all(bundle_binary.parent().expect("bundle binary parent"))
+        .expect("bundle dirs");
+    std::fs::rename(compiled, &bundle_binary).expect("fixture moved into Linux bundle");
+
+    let discovered = adapter
+        .discover_plugins_for_platform(ClapHostPlatform::Linux, &[bundle.display().to_string()]);
+
+    assert_eq!(discovered.len(), 1);
+    assert_eq!(
+        discovered[0].plugin_type_id.0,
+        "com.signal.linux-bundle-fixture"
+    );
+    assert_eq!(
+        discovered[0].library_path,
+        bundle_binary.display().to_string()
+    );
+}
+
+#[test]
+fn clap_adapter_does_not_discover_macos_only_bundle_on_linux() {
+    let adapter = ClapPluginHostAdapter::default();
+    let scan_root = temp_real_clap_scan_root(
+        "com.signal.macos-only-bundle-fixture",
+        "Signal macOS Only Bundle Fixture",
+        0,
+    );
+    let compiled = scan_root
+        .path()
+        .join("signal-macos-only-bundle-fixture.clap");
+    let bundle = scan_root
+        .path()
+        .join("Signal macOS Only Bundle Fixture.clap");
+    let bundle_binary = bundle
+        .join("Contents")
+        .join("MacOS")
+        .join("Signal macOS Only Bundle Fixture");
+    std::fs::create_dir_all(bundle_binary.parent().expect("bundle binary parent"))
+        .expect("bundle dirs");
+    std::fs::rename(compiled, &bundle_binary).expect("fixture moved into macOS bundle");
+
+    let discovered = adapter
+        .discover_plugins_for_platform(ClapHostPlatform::Linux, &[bundle.display().to_string()]);
+
+    assert!(discovered.is_empty());
 }
 
 #[test]
