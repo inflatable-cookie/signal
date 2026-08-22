@@ -12,7 +12,7 @@ use super::derive::{
     parse_feature_list, plist_string, plist_string_array, plist_to_io_error, plist_u16,
 };
 use super::types::*;
-#[cfg(not(target_os = "macos"))]
+#[cfg(any(test, not(target_os = "macos")))]
 use crate::vst3_host_adapter::Vst3HostPlatform;
 
 pub(crate) fn candidate_info_plist_paths(bundle_root: &Path) -> Vec<PathBuf> {
@@ -29,7 +29,7 @@ pub(crate) fn candidate_moduleinfo_paths(bundle_root: &Path) -> Vec<PathBuf> {
     ]
 }
 
-#[cfg(not(target_os = "macos"))]
+#[cfg(any(test, not(target_os = "macos")))]
 pub(crate) fn resolve_module_binary_path(
     bundle_root: &Path,
     platform: Vst3HostPlatform,
@@ -175,4 +175,73 @@ pub(crate) fn is_native_instruments_bundle(identifier: &str) -> bool {
     identifier
         .to_ascii_lowercase()
         .starts_with("com.native-instruments.")
+}
+
+#[cfg(test)]
+mod windows_layout_tests {
+    use super::Vst3HostPlatform;
+    use super::*;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    fn temp_bundle(label: &str) -> PathBuf {
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("clock should be after epoch")
+            .as_nanos();
+        std::env::temp_dir().join(format!(
+            "signal-vst3-windows-layout-{label}-{}-{unique}",
+            std::process::id()
+        ))
+    }
+
+    fn write_windows_binary(bundle_root: &Path, architecture: &str, file_name: &str) -> PathBuf {
+        let binary = bundle_root
+            .join("Contents")
+            .join(architecture)
+            .join(file_name);
+        fs::create_dir_all(binary.parent().expect("windows binary parent"))
+            .expect("windows binary dirs");
+        fs::write(&binary, b"fixture").expect("windows binary");
+        binary
+    }
+
+    #[test]
+    fn windows_platform_resolves_x86_64_win_binary() {
+        let root = temp_bundle("x86_64");
+        let bundle = root.join("Example.vst3");
+        let binary = write_windows_binary(&bundle, "x86_64-win", "Example.vst3");
+
+        let resolved = resolve_module_binary_path(&bundle, Vst3HostPlatform::Windows)
+            .expect("x86_64-win binary should resolve");
+        assert_eq!(resolved, binary);
+
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn windows_platform_resolves_arm64_win_binary() {
+        let root = temp_bundle("arm64");
+        let bundle = root.join("Example.vst3");
+        let binary = write_windows_binary(&bundle, "arm64-win", "Example.vst3");
+
+        let resolved = resolve_module_binary_path(&bundle, Vst3HostPlatform::Windows)
+            .expect("arm64-win binary should resolve");
+        assert_eq!(resolved, binary);
+
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn windows_platform_prefers_x86_64_win_over_arm64_win() {
+        let root = temp_bundle("prefer-x86");
+        let bundle = root.join("Example.vst3");
+        let x86 = write_windows_binary(&bundle, "x86_64-win", "Example.vst3");
+        let _arm = write_windows_binary(&bundle, "arm64-win", "Example.vst3");
+
+        let resolved = resolve_module_binary_path(&bundle, Vst3HostPlatform::Windows)
+            .expect("windows binary should resolve");
+        assert_eq!(resolved, x86);
+
+        let _ = fs::remove_dir_all(root);
+    }
 }
