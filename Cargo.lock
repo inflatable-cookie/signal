@@ -859,7 +859,7 @@ dependencies = [
 
 [[package]]
 name = "signal-analysis"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "signal-dsp-resample",
  "signal-primitives",
@@ -867,7 +867,7 @@ dependencies = [
 
 [[package]]
 name = "signal-analysis-character"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "signal-analysis",
  "signal-dsp-spectral",
@@ -876,7 +876,7 @@ dependencies = [
 
 [[package]]
 name = "signal-analysis-embed"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "signal-analysis",
  "signal-analysis-character",
@@ -885,7 +885,7 @@ dependencies = [
 
 [[package]]
 name = "signal-analysis-loudness"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "signal-analysis",
  "signal-primitives",
@@ -893,7 +893,7 @@ dependencies = [
 
 [[package]]
 name = "signal-analysis-rhythm"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "hound",
  "rayon",
@@ -904,7 +904,7 @@ dependencies = [
 
 [[package]]
 name = "signal-analysis-tonal"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "signal-analysis",
  "signal-dsp-spectral",
@@ -913,21 +913,21 @@ dependencies = [
 
 [[package]]
 name = "signal-dsp"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "signal-primitives",
 ]
 
 [[package]]
 name = "signal-dsp-resample"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "signal-primitives",
 ]
 
 [[package]]
 name = "signal-dsp-spectral"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "rustfft",
  "signal-primitives",
@@ -935,7 +935,7 @@ dependencies = [
 
 [[package]]
 name = "signal-dsp-stretch"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "rustfft",
  "signal-dsp-resample",
@@ -944,7 +944,7 @@ dependencies = [
 
 [[package]]
 name = "signal-dsp-stretch-evidence"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "csv",
  "hound",
@@ -955,14 +955,14 @@ dependencies = [
 
 [[package]]
 name = "signal-graph"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "signal-primitives",
 ]
 
 [[package]]
 name = "signal-hardware"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "hound",
  "signal-primitives",
@@ -970,14 +970,14 @@ dependencies = [
 
 [[package]]
 name = "signal-hardware-coremidi"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "signal-hardware",
 ]
 
 [[package]]
 name = "signal-hardware-cpal"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "cpal",
  "signal-hardware",
@@ -985,7 +985,7 @@ dependencies = [
 
 [[package]]
 name = "signal-host-local"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "hound",
  "serde",
@@ -1007,21 +1007,21 @@ dependencies = [
 
 [[package]]
 name = "signal-ipc"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "memmap2",
 ]
 
 [[package]]
 name = "signal-plugin"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "signal-ipc",
 ]
 
 [[package]]
 name = "signal-plugin-au"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "plist",
  "signal-plugin",
@@ -1029,7 +1029,7 @@ dependencies = [
 
 [[package]]
 name = "signal-plugin-bridge"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "signal-hardware",
  "signal-ipc",
@@ -1043,7 +1043,7 @@ dependencies = [
 
 [[package]]
 name = "signal-plugin-clap"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "clap-sys",
  "libloading",
@@ -1053,14 +1053,14 @@ dependencies = [
 
 [[package]]
 name = "signal-plugin-inventory"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "serde",
 ]
 
 [[package]]
 name = "signal-plugin-lv2"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "libloading",
  "signal-plugin",
@@ -1068,7 +1068,7 @@ dependencies = [
 
 [[package]]
 name = "signal-plugin-sandbox"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "serde",
  "serde_json",
@@ -1085,7 +1085,7 @@ dependencies = [
 
 [[package]]
 name = "signal-plugin-vst3"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "json5",
  "libloading",
@@ -1097,11 +1097,11 @@ dependencies = [
 
 [[package]]
 name = "signal-primitives"
-version = "0.1.2"
+version = "0.1.3"
 
 [[package]]
 name = "signal-render-plane"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "hound",
  "signal-dsp",
@@ -1114,7 +1114,7 @@ dependencies = [
 
 [[package]]
 name = "signal-runtime"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "hound",
  "serde",
