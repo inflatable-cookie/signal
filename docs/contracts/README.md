@@ -121,6 +121,7 @@ Use this section for:
 - `084-stretch-candidate-isolation-and-promotion-contract.md`
 - `085-creative-time-stretch-product-and-routing-contract.md`
 - `086-linux-clap-discovery-contract.md`
+- `087-windows-clap-discovery-contract.md`
 
 ## Rule
 
@@ -130,6 +131,7 @@ Add a new contract only when the boundary needs stronger guarantees than
 ## Next Task
 
 Use `docs/contracts/contract-index.md` and `001-working-rules.md` as the
-contract front doors. Contract `086` is a Soundcheck-pulled Linux CLAP
+contract front doors. Contracts `086` and `087` are Soundcheck-pulled
+Linux and Windows CLAP
 discovery boundary; do not start that implementation until Soundcheck card
 135 closes and a worker is dispatched. Do not open a follow-on generation.

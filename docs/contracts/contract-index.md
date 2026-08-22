@@ -103,6 +103,7 @@ memory alone.
 - `056` complex plugin pin matrix and dynamic bus negotiation
 - `083` VST3 bundle discovery diagnostics and helper outcome classification
 - `086` Linux CLAP filesystem discovery: roots, flat `.clap`, Linux bundle layout
+- `087` Windows CLAP filesystem discovery: roots, `;`-separated `CLAP_PATH`, flat `.clap` DLL units
 
 ## Hardware, backend, and endpoint portability
 
