@@ -18,12 +18,16 @@ pub enum ClapHostPlatform {
     MacOs,
     /// Linux (`Contents/x86_64-linux` or `Contents/aarch64-linux`).
     Linux,
+    /// Windows (flat `.clap` DLL; no directory-bundle convention).
+    Windows,
 }
 
 /// The build-target CLAP platform.
 pub const fn current_clap_platform() -> ClapHostPlatform {
     if cfg!(target_os = "macos") {
         ClapHostPlatform::MacOs
+    } else if cfg!(target_os = "windows") {
+        ClapHostPlatform::Windows
     } else {
         ClapHostPlatform::Linux
     }
@@ -252,12 +256,24 @@ fn default_clap_scan_roots(
                 kind: ClapScanRootKind::SystemBundleRoot,
             },
         ],
+        ClapHostPlatform::Windows => vec![
+            ClapScanRoot {
+                root: r"%COMMONPROGRAMFILES%\CLAP".into(),
+                platform,
+                kind: ClapScanRootKind::SystemBundleRoot,
+            },
+            ClapScanRoot {
+                root: r"%LOCALAPPDATA%\Programs\Common\CLAP".into(),
+                platform,
+                kind: ClapScanRootKind::UserBundleRoot,
+            },
+        ],
     };
 
     roots.extend(
         clap_path
             .into_iter()
-            .flat_map(|paths| paths.split(':'))
+            .flat_map(|paths| paths.split(clap_path_separator(platform)))
             .filter(|path| !path.is_empty())
             .map(|root| ClapScanRoot {
                 root: root.to_string(),
@@ -266,6 +282,13 @@ fn default_clap_scan_roots(
             }),
     );
     roots
+}
+
+fn clap_path_separator(platform: ClapHostPlatform) -> char {
+    match platform {
+        ClapHostPlatform::Windows => ';',
+        ClapHostPlatform::MacOs | ClapHostPlatform::Linux => ':',
+    }
 }
 
 #[cfg(test)]
@@ -292,6 +315,44 @@ mod tests {
         assert!(roots[3..]
             .iter()
             .all(|root| root.kind == ClapScanRootKind::EnvironmentPath));
+    }
+
+    #[test]
+    fn clap_path_separator_follows_platform_not_compile_target() {
+        let windows = default_clap_scan_roots(
+            ClapHostPlatform::Windows,
+            Some(r"C:\one;C:\two;;C:\Program Files\CLAP"),
+        );
+        assert_eq!(
+            windows
+                .iter()
+                .map(|root| root.root.as_str())
+                .collect::<Vec<_>>(),
+            vec![
+                r"%COMMONPROGRAMFILES%\CLAP",
+                r"%LOCALAPPDATA%\Programs\Common\CLAP",
+                r"C:\one",
+                r"C:\two",
+                r"C:\Program Files\CLAP",
+            ]
+        );
+        assert!(windows[2..]
+            .iter()
+            .all(|root| root.kind == ClapScanRootKind::EnvironmentPath));
+
+        let macos = default_clap_scan_roots(ClapHostPlatform::MacOs, Some("/one:/two::"));
+        assert_eq!(
+            macos
+                .iter()
+                .map(|root| root.root.as_str())
+                .collect::<Vec<_>>(),
+            vec![
+                "~/Library/Audio/Plug-Ins/CLAP",
+                "/Library/Audio/Plug-Ins/CLAP",
+                "/one",
+                "/two",
+            ]
+        );
     }
 }
 
