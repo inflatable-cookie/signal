@@ -27,6 +27,9 @@ pub(crate) fn clap_bundle_binary_for_platform(
                 })
                 .find(|path| path.is_file())
         }
+        // Windows CLAP units are flat `.clap` DLLs. A directory whose name
+        // ends in `.clap` is not a recognized Windows unit.
+        ClapHostPlatform::Windows => None,
     }
 }
 
@@ -35,7 +38,7 @@ pub(super) fn scan_clap_root(
     platform: ClapHostPlatform,
     probe_capabilities: bool,
 ) -> Vec<ClapDiscoveredPluginType> {
-    let root = expand_home(root);
+    let root = expand_scan_root(root);
     let Ok(metadata) = std::fs::metadata(&root) else {
         return Vec::new();
     };
@@ -88,11 +91,78 @@ fn path_extension_matches(path: &Path, extension: &str) -> bool {
         .is_some_and(|value| value.eq_ignore_ascii_case(extension))
 }
 
-fn expand_home(root: &str) -> PathBuf {
+fn expand_scan_root(root: &str) -> PathBuf {
     if let Some(stripped) = root.strip_prefix("~/") {
         if let Some(home) = std::env::var_os("HOME") {
             return PathBuf::from(home).join(stripped);
         }
     }
+    if root.contains('%') {
+        let mut expanded = root.to_string();
+        for (key, value) in std::env::vars() {
+            let pattern = format!("%{key}%");
+            if expanded.contains(&pattern) {
+                expanded = expanded.replace(&pattern, &value);
+            }
+        }
+        return PathBuf::from(expanded);
+    }
     PathBuf::from(root)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn expand_scan_root_replaces_percent_env_vars_like_unix_home() {
+        let Ok(home) = std::env::var("HOME") else {
+            return;
+        };
+        assert_eq!(
+            expand_scan_root("%HOME%/CLAP"),
+            PathBuf::from(home).join("CLAP")
+        );
+    }
+
+    #[test]
+    fn windows_platform_does_not_resolve_directory_bundles() {
+        let root = std::env::temp_dir().join(format!(
+            "signal-clap-windows-bundle-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_nanos(),
+        ));
+        let bundle = root.join("Example.clap");
+        let macos_binary = bundle.join("Contents").join("MacOS").join("Example");
+        let linux_binary = bundle
+            .join("Contents")
+            .join("x86_64-linux")
+            .join("Example.so");
+        let windows_binary = bundle
+            .join("Contents")
+            .join("x86_64-win")
+            .join("Example.clap");
+        std::fs::create_dir_all(macos_binary.parent().expect("macos parent")).expect("macos dirs");
+        std::fs::create_dir_all(linux_binary.parent().expect("linux parent")).expect("linux dirs");
+        std::fs::create_dir_all(windows_binary.parent().expect("windows parent"))
+            .expect("windows dirs");
+        std::fs::write(&macos_binary, b"fixture").expect("macos binary");
+        std::fs::write(&linux_binary, b"fixture").expect("linux binary");
+        std::fs::write(&windows_binary, b"fixture").expect("windows binary");
+
+        assert!(clap_bundle_binary_for_platform(&bundle, ClapHostPlatform::Windows).is_none());
+        assert_eq!(
+            clap_bundle_binary_for_platform(&bundle, ClapHostPlatform::MacOs),
+            Some(macos_binary)
+        );
+        assert_eq!(
+            clap_bundle_binary_for_platform(&bundle, ClapHostPlatform::Linux),
+            Some(linux_binary)
+        );
+
+        let _ = std::fs::remove_dir_all(root);
+    }
 }

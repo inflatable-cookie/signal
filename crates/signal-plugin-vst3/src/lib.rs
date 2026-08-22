@@ -218,6 +218,64 @@ mod tests {
     }
 
     #[test]
+    fn vst3_adapter_discovers_windows_scan_roots_and_plugin_types() {
+        let adapter = Vst3HostAdapter::default();
+        let windows_roots = adapter
+            .default_scan_roots(Vst3HostPlatform::Windows)
+            .into_iter()
+            .map(|root| root.root)
+            .collect::<Vec<_>>();
+        assert_eq!(
+            windows_roots,
+            [
+                "%LOCALAPPDATA%/Programs/Common/VST3".to_string(),
+                "%COMMONPROGRAMFILES%/VST3".to_string(),
+            ]
+        );
+
+        let root = temp_plugin_root("windows-discovery");
+        let x86_bundle = root.join("Signal Utility.vst3");
+        fs::create_dir_all(x86_bundle.join("Contents").join("x86_64-win"))
+            .expect("x86_64-win module dir should be created");
+        fs::write(
+            x86_bundle
+                .join("Contents")
+                .join("x86_64-win")
+                .join("Signal Utility.vst3"),
+            b"fixture",
+        )
+        .expect("x86_64-win module should be written");
+        write_vst3_metadata(&x86_bundle, "plugin:vst3:utility");
+
+        let arm_bundle = root.join("Signal Bus FX.vst3");
+        fs::create_dir_all(arm_bundle.join("Contents").join("arm64-win"))
+            .expect("arm64-win module dir should be created");
+        fs::write(
+            arm_bundle
+                .join("Contents")
+                .join("arm64-win")
+                .join("Signal Bus FX.vst3"),
+            b"fixture",
+        )
+        .expect("arm64-win module should be written");
+        write_vst3_metadata(&arm_bundle, "plugin:vst3:bus-fx");
+
+        let discovered = adapter
+            .discover_plugins_for_roots(Vst3HostPlatform::Windows, &[root.display().to_string()]);
+        assert_eq!(discovered.len(), 2);
+        assert!(discovered
+            .iter()
+            .any(|plugin| plugin.plugin_type_id.0 == "plugin:vst3:utility"));
+        assert!(discovered
+            .iter()
+            .any(|plugin| plugin.plugin_type_id.0 == "plugin:vst3:bus-fx"));
+        assert!(discovered
+            .iter()
+            .all(|plugin| plugin.module_root.starts_with(&root.display().to_string())));
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
     fn vst3_adapter_skips_bundles_without_metadata_or_binary() {
         let adapter = Vst3HostAdapter::default();
         let root = temp_plugin_root("metadata-required");

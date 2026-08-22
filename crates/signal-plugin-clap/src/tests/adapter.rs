@@ -43,6 +43,23 @@ fn clap_adapter_default_scan_roots_cover_macos_and_linux() {
 }
 
 #[test]
+fn clap_adapter_default_scan_roots_cover_windows() {
+    let adapter = ClapPluginHostAdapter::default();
+    let windows = adapter
+        .default_scan_roots(ClapHostPlatform::Windows)
+        .into_iter()
+        .map(|root| root.root)
+        .collect::<Vec<_>>();
+    assert_eq!(
+        &windows[..2],
+        [
+            r"%COMMONPROGRAMFILES%\CLAP".to_string(),
+            r"%LOCALAPPDATA%\Programs\Common\CLAP".to_string(),
+        ]
+    );
+}
+
+#[test]
 fn clap_adapter_descriptor_only_scan_never_instantiates_plugins() {
     let adapter = ClapPluginHostAdapter::default();
     let scan_root = temp_real_clap_scan_root(
@@ -185,6 +202,117 @@ fn clap_adapter_does_not_discover_macos_only_bundle_on_linux() {
         .discover_plugins_for_platform(ClapHostPlatform::Linux, &[bundle.display().to_string()]);
 
     assert!(discovered.is_empty());
+}
+
+#[test]
+fn clap_adapter_discovers_flat_clap_file_on_windows() {
+    if !crate::fixture::rustc_available() {
+        return;
+    }
+    let adapter = ClapPluginHostAdapter::default();
+    let scan_root = temp_real_clap_scan_root(
+        "com.signal.windows-flat-fixture",
+        "Signal Windows Flat Fixture",
+        0,
+    );
+    let library = scan_root.path().join("signal-windows-flat-fixture.clap");
+
+    let discovered =
+        adapter.discover_plugins_for_platform(ClapHostPlatform::Windows, &[scan_root.root()]);
+
+    assert_eq!(discovered.len(), 1);
+    assert_eq!(
+        discovered[0].plugin_type_id.0,
+        "com.signal.windows-flat-fixture"
+    );
+    assert_eq!(discovered[0].library_path, library.display().to_string());
+}
+
+#[test]
+fn clap_adapter_does_not_discover_macos_only_bundle_on_windows() {
+    let adapter = ClapPluginHostAdapter::default();
+    let scan_root = temp_real_clap_scan_root(
+        "com.signal.macos-bundle-on-windows-fixture",
+        "Signal macOS Bundle On Windows Fixture",
+        0,
+    );
+    let compiled = scan_root
+        .path()
+        .join("signal-macos-bundle-on-windows-fixture.clap");
+    let bundle = scan_root
+        .path()
+        .join("Signal macOS Bundle On Windows Fixture.clap");
+    let bundle_binary = bundle
+        .join("Contents")
+        .join("MacOS")
+        .join("Signal macOS Bundle On Windows Fixture");
+    std::fs::create_dir_all(bundle_binary.parent().expect("bundle binary parent"))
+        .expect("bundle dirs");
+    std::fs::rename(compiled, &bundle_binary).expect("fixture moved into macOS bundle");
+
+    let discovered = adapter
+        .discover_plugins_for_platform(ClapHostPlatform::Windows, &[bundle.display().to_string()]);
+
+    assert!(discovered.is_empty());
+}
+
+#[test]
+fn clap_adapter_does_not_discover_linux_only_bundle_on_windows() {
+    let adapter = ClapPluginHostAdapter::default();
+    let scan_root = temp_real_clap_scan_root(
+        "com.signal.linux-bundle-on-windows-fixture",
+        "Signal Linux Bundle On Windows Fixture",
+        0,
+    );
+    let compiled = scan_root
+        .path()
+        .join("signal-linux-bundle-on-windows-fixture.clap");
+    let bundle = scan_root
+        .path()
+        .join("Signal Linux Bundle On Windows Fixture.clap");
+    let bundle_binary = bundle
+        .join("Contents")
+        .join("x86_64-linux")
+        .join("Signal Linux Bundle On Windows Fixture.so");
+    std::fs::create_dir_all(bundle_binary.parent().expect("bundle binary parent"))
+        .expect("bundle dirs");
+    std::fs::rename(compiled, &bundle_binary).expect("fixture moved into Linux bundle");
+
+    let discovered = adapter
+        .discover_plugins_for_platform(ClapHostPlatform::Windows, &[bundle.display().to_string()]);
+
+    assert!(discovered.is_empty());
+}
+
+#[test]
+fn clap_adapter_does_not_discover_windows_directory_as_clap_bundle() {
+    let adapter = ClapPluginHostAdapter::default();
+    let scan_root = temp_real_clap_scan_root(
+        "com.signal.windows-directory-bundle-fixture",
+        "Signal Windows Directory Bundle Fixture",
+        0,
+    );
+    let compiled = scan_root
+        .path()
+        .join("signal-windows-directory-bundle-fixture.clap");
+    let bundle = scan_root
+        .path()
+        .join("Signal Windows Directory Bundle Fixture.clap");
+    let bundle_binary = bundle
+        .join("Contents")
+        .join("x86_64-win")
+        .join("Signal Windows Directory Bundle Fixture.clap");
+    std::fs::create_dir_all(bundle_binary.parent().expect("bundle binary parent"))
+        .expect("bundle dirs");
+    std::fs::rename(compiled, &bundle_binary).expect("fixture moved into Windows directory");
+
+    let discovered = adapter
+        .discover_plugins_for_platform(ClapHostPlatform::Windows, &[bundle.display().to_string()]);
+    assert!(discovered.is_empty());
+
+    let scanned_root =
+        adapter.discover_plugins_for_platform(ClapHostPlatform::Windows, &[scan_root.root()]);
+    assert!(scanned_root.is_empty());
 }
 
 #[test]
