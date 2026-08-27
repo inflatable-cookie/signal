@@ -144,5 +144,7 @@ jump straight to the layer that matches your question.
 
 ## Next Task
 
-Stop for operator review of the `g11.002` PR. Do not start a follow-on
-generation. `g11.001` and `g11.002` are complete.
+Stop for operator selection of the next Signal-only backlog pull. Do not start
+a follow-on generation. `g11.001` and `g11.002` are complete. Linux CLAP
+filesystem discovery (`086`) shipped 2026-08-21 (Soundcheck card 136 / Signal
+PR #6). Do not open `g12`.

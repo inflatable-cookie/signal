@@ -28,5 +28,5 @@ Use this folder for ready execution cards under the active `g11` generation.
 ## Next Task
 
 Stop for operator selection of the next Signal-only backlog pull. Do not start
-a follow-on generation. No current ready card. Linux CLAP discovery (`086`)
-waits on Soundcheck card 135; do not open `g12`.
+a follow-on generation. No current ready card. Linux CLAP filesystem discovery
+(`086`) shipped 2026-08-21. Do not open `g12`.

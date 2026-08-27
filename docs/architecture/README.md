@@ -56,5 +56,7 @@ Keep milestone sequencing in `roadmaps/`.
 
 ## Next Task
 
-Stop for operator review of the `g11.002` PR. Do not start a follow-on
-generation. Keep the `g10` stretch state closed.
+Stop for operator selection of the next Signal-only backlog pull. Do not start
+a follow-on generation. `g11.001` and `g11.002` are complete. Keep the `g10`
+stretch state closed. Linux CLAP filesystem discovery (`086`) shipped
+2026-08-21. Do not open `g12`.

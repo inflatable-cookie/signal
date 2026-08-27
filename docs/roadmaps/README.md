@@ -434,4 +434,5 @@ Before rollover:
 
 Stop for operator selection of the next Signal-only backlog pull. Do not start
 a follow-on generation. `g11.001` and `g11.002` are complete. Linux CLAP
-discovery (`086`) waits on Soundcheck card 135; do not open `g12`.
+filesystem discovery (`086`) shipped 2026-08-21 (Soundcheck card 136 / Signal
+PR #6). Do not open `g12`.

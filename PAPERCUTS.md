@@ -37,8 +37,8 @@ they hit a solvable hurdle; they do not stop the current task to fix one.
 
 ### [x] Stale plugin-hosting docs misled planning — 2026-08-17
 - Friction: post-demolition backlog and architecture front doors still said
-  plugin hosting was missing after `g09`/`g11`/`g12` shipped real CLAP/VST3/AU/LV2
-  hosting.
+  plugin hosting was missing after `g09` shipped real CLAP/VST3/AU/LV2 hosting
+  and `g11` closed host-assembly / SharedSandbox integration.
 - Impact: refresh/atlas work reopened a finished lane and wasted operator time.
 - Fix: verified Contract `072`, backlog, architecture, and strategic runway on
   this SHA already state CLAP/VST3/AU/LV2 hosting is shipped; runway now names
@@ -46,13 +46,15 @@ they hit a solvable hurdle; they do not stop the current task to fix one.
 - Surface: docs/architecture, docs/roadmaps/backlog, docs/contracts/072
 
 ### [x] Northstar refresh found stale Next Task pointers — 2026-08-17
-- Friction: roadmap front doors still pointed at finished work (`g10` stretch
-  audit, then later `g11.002` PR review) after those lanes closed.
+- Friction: live docs/architecture/contracts/roadmap front doors still pointed
+  at finished work (`g10` stretch audit, then `g11.002` PR review, then a
+  Soundcheck card 135 wait after that card and Linux CLAP `086` had shipped).
 - Impact: a bare `continue` or agent re-entry could reopen finished lanes.
-- Fix: aligned `docs/roadmaps/README.md`, `g11` front doors, generation index,
-  and strategic runway Next Task to operator backlog selection + Soundcheck
-  card 135 wait; left closed milestone/card closeouts historical.
-- Surface: docs/roadmaps front doors
+- Fix: aligned live Next Task surfaces to operator backlog selection; recorded
+  Linux CLAP (`086`) as shipped 2026-08-21 via Soundcheck card 136 / Signal
+  PR #6; left closed milestone/card/log closeouts historical.
+- Surface: docs README, architecture front doors, contracts README, roadmaps
+  front doors
 
 ### [x] VST3 module binary resolution is cfg-gated off macOS — 2026-08-22
 - Friction: `resolve_module_binary_path` only compiled on non-macOS, so

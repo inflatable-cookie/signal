@@ -13,7 +13,7 @@ from honest foundations.
 
 **Do not treat this section as a rebuild queue.** Real plugin hosting for
 CLAP, VST3, AU, and LV2 is implemented and tested. The June 2026 wording
-below was pre-`g09`/`g11`/`g12` and is kept only as historical context.
+below was pre-`g09`/`g11` and is kept only as historical context.
 
 ### Shipped today
 

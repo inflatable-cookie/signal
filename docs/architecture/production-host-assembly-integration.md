@@ -147,5 +147,6 @@ Landed in `g11.002`. Contract `014` owns semantics. v1 multiplexing map:
 
 ## Next Task
 
-Stop for operator review of the `g11.002` PR. Do not start a follow-on
-generation.
+Stop for operator selection of the next Signal-only backlog pull. Do not start
+a follow-on generation. Use `docs/roadmaps/g11/README.md` as the live front
+door.

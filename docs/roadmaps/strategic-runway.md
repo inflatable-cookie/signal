@@ -155,8 +155,7 @@ consumer contract.
 Accepted uncertainty:
 
 - which product-pulled Horizon B item opens next (graph successor, device
-  depth, Linux CLAP discovery after Soundcheck card 135, or consumer-release
-  depth)
+  depth, Windows CLAP discovery (`087`), or consumer-release depth)
 - whether formal `g10` generation closeout needs a separate docs-only card
 - whether engine-server returns before product pull justifies it (still backlog)
 
@@ -167,8 +166,8 @@ Meaningful milestone transitions, not a task queue:
 1. **Now:** `g11.001` and `g11.002` are complete. Stop for operator selection of
    the next Signal-only backlog pull.
 2. **After selection:** next product-pulled Horizon B item (graph successor,
-   device depth, or Linux CLAP discovery once Soundcheck card 135 lands), not
-   a speculative lane.
+   device depth, Windows CLAP discovery, or consumer-release depth), not a
+   speculative lane.
 3. **First `g11` tranche:** host-assembly (`g11.001`, complete) then SharedSandbox
    (`g11.002`, complete).
 4. **Second `g11` tranche:** pull the next product-pulled item from backlog only
@@ -181,7 +180,7 @@ Meaningful milestone transitions, not a task queue:
 Recommended default if the operator wants a concrete starting point:
 
 - stop for operator selection; do not open a follow-on generation from this
-  runway. Linux CLAP discovery (`086`) waits on Soundcheck card 135.
+  runway. Linux CLAP filesystem discovery (`086`) already shipped.
 
 ## Promotion map
 
@@ -202,11 +201,12 @@ Recommended default if the operator wants a concrete starting point:
 `g11.002` product pull landed 2026-08-17 (operator). v1 grouping is plugin
 type identity. Batches 2.0–2.3 closed.
 
-Soundcheck pulled Linux CLAP filesystem discovery on 2026-08-21 (contract
-`086`). Execution waits on Soundcheck card 135; do not open `g12`.
+Soundcheck card 135 merged and Soundcheck card 136 / Signal PR #6 shipped
+Linux CLAP filesystem discovery (`086`) on 2026-08-21. Do not open `g12`.
 
 ## Next Task
 
 Stop for operator selection of the next Signal-only backlog pull. Do not start
 a follow-on generation. `g11.001` and `g11.002` are complete. Linux CLAP
-discovery (`086`) waits on Soundcheck card 135; do not open `g12`.
+filesystem discovery (`086`) shipped 2026-08-21 (Soundcheck card 136 / Signal
+PR #6). Do not open `g12`.
