@@ -7,15 +7,6 @@ they hit a solvable hurdle; they do not stop the current task to fix one.
 
 <!-- Keep entries short. Append newest entries at the top. Do not include secrets. -->
 
-### [ ] VST3 module binary resolution is cfg-gated off macOS — 2026-08-22
-- Friction: `resolve_module_binary_path` only compiled on non-macOS, so
-  Windows `Contents/{x86_64,arm64}-win` tests could not run here.
-- Impact: platform-parameterized Windows layout tests needed
-  `cfg(any(test, not(target_os = "macos")))`.
-- Possible fix: keep path resolution compiled on every host; leave
-  dlopen/hosting cfg-gated.
-- Surface: `signal-plugin-vst3` introspection/paths.rs
-
 ### [ ] Cross-repo worker handoff paths need resolution — 2026-08-21
 - Friction: Soundcheck exposed the ready card, but the implementation handoff
   lived in the sibling Signal repo; a relative lookup first reported it absent.
@@ -61,6 +52,14 @@ they hit a solvable hurdle; they do not stop the current task to fix one.
 - Surface: docs/roadmaps front doors
 
 ## Closed
+
+### [x] VST3 module binary resolution is cfg-gated off macOS — 2026-08-22
+- Friction: `resolve_module_binary_path` only compiled on non-macOS, so
+  Windows `Contents/{x86_64,arm64}-win` tests could not run here.
+- Impact: platform-parameterized Windows layout tests needed
+  `cfg(any(test, not(target_os = "macos")))`.
+- Fix: compile path resolution on every host; keep dlopen/hosting cfg-gated.
+- Surface: `signal-plugin-vst3` introspection/paths.rs
 
 ### [x] Host-edge parity tests hardcode platform-coverage length — 2026-08-17
 - Friction: adding LV2 to `LocalRuntimeHost` platform coverage broke
