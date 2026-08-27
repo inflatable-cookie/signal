@@ -5,7 +5,7 @@ handoff_mode: worker-pr-loop
 worker_mode: implementation
 dispatch_authority: orchestrator
 handoff: single-file-path-only
-status: ready-to-launch
+status: ready-for-review
 owner: Tom / papercuts orchestrator
 created: 2026-08-27
 updated: 2026-08-27
@@ -40,11 +40,10 @@ pointers reopen finished cards.
 - **Planning checkout:** clean before this handoff file was created.
 - **Worker mode:** implementation worker dispatched by the orchestrator.
 - **Worker branch:** `worker/papercuts-wave3-docs-currentness`
-- **Worker worktree:** launcher worktree first. `.agents.local.env` has
-  `AGENTS_WORKTREE_CONTAINER_DIR=/Users/tom/Dev/worktrees`.
+- **Worker worktree:** `/Users/tom/Dev/worktrees/signal-papercuts-wave3-docs-currentness`
 - **Ready work items, in order:**
-  1. Stale plugin-hosting docs misled planning
-  2. Northstar refresh found stale Next Task pointers
+  1. Stale plugin-hosting docs misled planning — closed (already aligned; verified)
+  2. Northstar refresh found stale Next Task pointers — closed (front doors aligned)
 - **Out of scope:** SharedSandbox live add-while-processing (v1
   non-goal); cross-repo handoff path resolution; creating
   `.agents.local.env` (already seeded here).

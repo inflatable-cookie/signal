@@ -1,7 +1,7 @@
 # Roadmaps
 
 Status: active (`g11`); `g10` stretch audit complete
-Updated: 2026-08-17
+Updated: 2026-08-27
 
 ## In plain words
 
@@ -61,7 +61,7 @@ Use this section for:
 > current state; the [g10 milestone map](./g10/README.md#milestone-map) is the
 > per-roadmap status; this narrative is for detail and history.
 
-`g10` is active. Its per-generation front door is
+`g10` is historical. Its per-generation front door is
 `docs/roadmaps/g10/README.md`. Phase one (002-009) completed the audit
 remediation work: production-path declick + hardening, simulated/narration
 mass demolition, workspace consolidation, and CI cleanup. Phase two (010-020)
@@ -432,5 +432,6 @@ Before rollover:
 
 ## Next Task
 
-Stop for operator review of the `g11.002` PR. Do not start a follow-on
-generation. `g11.001` and `g11.002` are complete.
+Stop for operator selection of the next Signal-only backlog pull. Do not start
+a follow-on generation. `g11.001` and `g11.002` are complete. Linux CLAP
+discovery (`086`) waits on Soundcheck card 135; do not open `g12`.

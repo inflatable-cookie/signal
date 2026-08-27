@@ -229,5 +229,6 @@ planning and operator target selection; do not treat it as a ready card.
 ## Next Task
 
 Use `docs/roadmaps/g11/README.md` as the current active-generation front door.
-`g11.001` and `g11.002` are complete. Stop for operator review of the
-`g11.002` PR. Do not start a follow-on generation.
+`g11.001` and `g11.002` are complete. Stop for operator selection of the next
+Signal-only backlog pull. Do not start a follow-on generation. Linux CLAP
+discovery (`086`) waits on Soundcheck card 135; do not open `g12`.

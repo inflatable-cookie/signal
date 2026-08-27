@@ -1,7 +1,7 @@
 # g11 Milestones
 
 Status: `g11.001` complete; `g11.002` complete
-Updated: 2026-08-17
+Updated: 2026-08-27
 
 ## At a glance
 
@@ -49,7 +49,8 @@ generation.
 
 ## Next Task
 
-Stop for operator review of the `g11.002` PR. Do not start a follow-on
-generation. The next `g11` item is a product-pulled backlog pull, not an
-implied `g12`. Soundcheck contract 030 / Signal contract 086 name Linux CLAP
-discovery as that pull; implementation waits on Soundcheck card 135.
+Stop for operator selection of the next Signal-only backlog pull. Do not start
+a follow-on generation. `g11.001` and `g11.002` are complete. The next `g11`
+item is a product-pulled backlog pull, not an implied `g12`. Soundcheck
+contract 030 / Signal contract 086 name Linux CLAP discovery as that pull;
+implementation waits on Soundcheck card 135.
