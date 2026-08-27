@@ -155,7 +155,7 @@ consumer contract.
 Accepted uncertainty:
 
 - which product-pulled Horizon B item opens next (graph successor, device
-  depth, Windows CLAP discovery (`087`), or consumer-release depth)
+  depth, or consumer-release depth)
 - whether formal `g10` generation closeout needs a separate docs-only card
 - whether engine-server returns before product pull justifies it (still backlog)
 
@@ -166,8 +166,7 @@ Meaningful milestone transitions, not a task queue:
 1. **Now:** `g11.001` and `g11.002` are complete. Stop for operator selection of
    the next Signal-only backlog pull.
 2. **After selection:** next product-pulled Horizon B item (graph successor,
-   device depth, Windows CLAP discovery, or consumer-release depth), not a
-   speculative lane.
+   device depth, or consumer-release depth), not a speculative lane.
 3. **First `g11` tranche:** host-assembly (`g11.001`, complete) then SharedSandbox
    (`g11.002`, complete).
 4. **Second `g11` tranche:** pull the next product-pulled item from backlog only
@@ -180,7 +179,7 @@ Meaningful milestone transitions, not a task queue:
 Recommended default if the operator wants a concrete starting point:
 
 - stop for operator selection; do not open a follow-on generation from this
-  runway. Linux CLAP filesystem discovery (`086`) already shipped.
+  runway. Linux CLAP (`086`) and Windows CLAP (`087`) discovery already shipped.
 
 ## Promotion map
 
@@ -202,11 +201,11 @@ Recommended default if the operator wants a concrete starting point:
 type identity. Batches 2.0–2.3 closed.
 
 Soundcheck card 135 merged and Soundcheck card 136 / Signal PR #6 shipped
-Linux CLAP filesystem discovery (`086`) on 2026-08-21. Do not open `g12`.
+Linux CLAP filesystem discovery (`086`) on 2026-08-21. Signal PR #7 shipped
+Windows CLAP discovery (`087`) on 2026-08-22. Do not open `g12`.
 
 ## Next Task
 
 Stop for operator selection of the next Signal-only backlog pull. Do not start
 a follow-on generation. `g11.001` and `g11.002` are complete. Linux CLAP
-filesystem discovery (`086`) shipped 2026-08-21 (Soundcheck card 136 / Signal
-PR #6). Do not open `g12`.
+(`086`) and Windows CLAP (`087`) discovery are shipped. Do not open `g12`.

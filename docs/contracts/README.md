@@ -133,5 +133,4 @@ Add a new contract only when the boundary needs stronger guarantees than
 Use `docs/contracts/contract-index.md` and `001-working-rules.md` as the
 contract front doors. Contract `086` Linux CLAP discovery shipped 2026-08-21
 (Soundcheck card 136 / Signal PR #6). Contract `087` Windows CLAP discovery
-remains Soundcheck-pulled backlog until a worker is dispatched. Do not open a
-follow-on generation.
+shipped 2026-08-22 (Signal PR #7). Do not open a follow-on generation.

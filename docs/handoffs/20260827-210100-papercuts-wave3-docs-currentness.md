@@ -17,9 +17,10 @@ tags: [coordination, handoff, worker, pr, papercuts]
 ## What This Thread Was Doing
 
 Wave 1 compiled VST3 path resolution on every host. Remaining Signal
-papercuts are docs currentness: plugin hosting is still advertised as
-missing after g09/g11/g12 shipped it, and Northstar refresh found stale
-Next Task pointers. The operator approved papercuts wave 3.
+papercuts are docs currentness: plugin hosting was still advertised as
+missing after `g09` shipped hosting and `g11` closed integration, and
+Northstar refresh found stale Next Task pointers. The operator approved
+papercuts wave 3.
 
 You are the Signal implementation worker for this docs lane. Leave
 SharedSandbox add-while-processing and T3 `.agents.local.env` seeding
@@ -64,7 +65,9 @@ pointers reopen finished cards.
 
 ## Important Context
 
-- The papercut was filed after demolition docs lagged g09/g11/g12.
+- The papercut was filed after demolition docs lagged `g09`/`g11` hosting
+  and integration closeout. Soundcheck cards 135/136 and Signal PRs #6/#7
+  already shipped Linux/Windows CLAP discovery (`086`/`087`).
 - **Report to:** the operator.
 
 ## Suggested Next Move

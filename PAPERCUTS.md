@@ -47,14 +47,15 @@ they hit a solvable hurdle; they do not stop the current task to fix one.
 
 ### [x] Northstar refresh found stale Next Task pointers — 2026-08-17
 - Friction: live docs/architecture/contracts/roadmap front doors still pointed
-  at finished work (`g10` stretch audit, then `g11.002` PR review, then a
-  Soundcheck card 135 wait after that card and Linux CLAP `086` had shipped).
+  at finished work (`g10` stretch audit, `g11.002` / SharedSandbox PR review,
+  then Soundcheck card 135 / Linux-Windows CLAP waits after `086`/`087`
+  shipped).
 - Impact: a bare `continue` or agent re-entry could reopen finished lanes.
-- Fix: aligned live Next Task surfaces to operator backlog selection; recorded
-  Linux CLAP (`086`) as shipped 2026-08-21 via Soundcheck card 136 / Signal
-  PR #6; left closed milestone/card/log closeouts historical.
-- Surface: docs README, architecture front doors, contracts README, roadmaps
-  front doors
+- Fix: aligned live Next Task surfaces — including Contract `001` — to
+  operator backlog selection; recorded Linux CLAP (`086`) and Windows CLAP
+  (`087`) as shipped; left closed milestone/card/log closeouts historical.
+- Surface: docs README, architecture front doors, contracts README + `001`,
+  roadmaps front doors
 
 ### [x] VST3 module binary resolution is cfg-gated off macOS — 2026-08-22
 - Friction: `resolve_module_binary_path` only compiled on non-macOS, so
