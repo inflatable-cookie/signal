@@ -2,7 +2,7 @@
 
 Status: active planning surface
 Owner: core-product
-Updated: 2026-08-17
+Updated: 2026-08-27
 Vision refs: `docs/vision/001-signal-vision.md`
 Depends on: `docs/roadmaps/generation-index.md`, `docs/roadmaps/backlog/post-g10-rebuild-on-demand.md`, `docs/contracts/072-real-plugin-hosting-discovery-and-sandbox-execution-contract.md`
 
@@ -31,18 +31,20 @@ Current constraints that outlast the next batch:
 
 ## Current shape
 
-Evidence as of 2026-08-17:
+Evidence as of 2026-08-27:
 
-- `g10` is the active generation. Realtime render, DSP, analysis, graph, and
-  runtime crates are live and regression-tested.
+- `g11` is the active generation. `g11.001` and `g11.002` are complete.
+  Realtime render, DSP, analysis, graph, and runtime crates are live and
+  regression-tested.
 - The stretch audit (`g10.036`–`g10.042`) is complete. Transparent, Dream, and
   Cyclic are explicit admitted characters. Automatic is closed.
   `RealtimePreview` is proven and deliberately unadopted.
 - Signal is baseline-routed with no active strict lane and no ready batch.
 - CLAP, VST3, AU, and LV2 hosting is implemented through adapter crates,
-  `signal-plugin-sandbox`, and `signal-plugin-bridge`. The remaining plugin
-  seam is integration depth — SharedSandbox tier and production host-assembly
-  wiring through `signal-host-local` — not "build hosting from scratch."
+  `signal-plugin-sandbox`, and `signal-plugin-bridge`. Production host-assembly
+  wiring (`g11.001`) and SharedSandbox multiplexing (`g11.002`) are closed.
+  Remaining plugin work is product-pulled backlog depth, not "build hosting
+  from scratch."
 - Deferred rebuild candidates live in backlog, not in the active queue.
 
 Material contradictions resolved in this refresh:
@@ -82,8 +84,8 @@ Loophole and other consumers without reopening fake scaffold work.
 Primary bets, in product-pull order:
 
 1. **Production host-assembly wiring** — closed in `g11.001`
-2. **SharedSandbox tier** — one broker process hosting many plugins; Batch 2.2
-   ready (`docs/architecture/shared-sandbox-multiplexing.md`)
+2. **SharedSandbox tier** — closed in `g11.002`
+   (`docs/architecture/shared-sandbox-multiplexing.md`)
 3. **Graph successor** — production node-graph execution around the render
    plane's control/render split: topological ordering, PDC via delay insertion,
    retained stage state, preallocated buffers
@@ -152,24 +154,23 @@ consumer contract.
 
 Accepted uncertainty:
 
-- whether the first post-`g10` lane should be host-assembly wiring, graph
-  successor, or consumer-release depth
-- whether `g10` should roll to `g11` immediately or stay open for one more
-  bounded Signal-only closeout card
-- whether SharedSandbox or engine-server returns before product pull justifies it
-  (SharedSandbox pulled 2026-08-17; engine-server still backlog)
+- which product-pulled Horizon B item opens next (graph successor, device
+  depth, or consumer-release depth)
+- whether formal `g10` generation closeout needs a separate docs-only card
+- whether engine-server returns before product pull justifies it (still backlog)
 
 ## Runway
 
 Meaningful milestone transitions, not a task queue:
 
-1. **Now:** `g11.002` is complete. Stop for operator review of the PR.
-2. **After `g11.002`:** next product-pulled Horizon B item (graph successor or
-   device depth), not a speculative lane.
+1. **Now:** `g11.001` and `g11.002` are complete. Stop for operator selection of
+   the next Signal-only backlog pull.
+2. **After selection:** next product-pulled Horizon B item (graph successor,
+   device depth, or consumer-release depth), not a speculative lane.
 3. **First `g11` tranche:** host-assembly (`g11.001`, complete) then SharedSandbox
    (`g11.002`, complete).
 4. **Second `g11` tranche:** pull the next product-pulled item from backlog only
-   after the current tranche closes with evidence.
+   after the operator names it.
 5. **Mid horizon:** promote analysis/substrate breadth (Horizon C) when a named
    contract or consumer need exists.
 6. **Long horizon:** migration/consolidation batches (Horizon D) once production
@@ -177,8 +178,8 @@ Meaningful milestone transitions, not a task queue:
 
 Recommended default if the operator wants a concrete starting point:
 
-- stop for operator review of the `g11.002` PR; do not open a follow-on
-  generation from this runway
+- stop for operator selection; do not open a follow-on generation from this
+  runway. Linux CLAP (`086`) and Windows CLAP (`087`) discovery already shipped.
 
 ## Promotion map
 
@@ -199,10 +200,12 @@ Recommended default if the operator wants a concrete starting point:
 `g11.002` product pull landed 2026-08-17 (operator). v1 grouping is plugin
 type identity. Batches 2.0–2.3 closed.
 
-Soundcheck pulled Linux CLAP filesystem discovery on 2026-08-21 (contract
-`086`). Execution waits on Soundcheck card 135; do not open `g12`.
+Soundcheck card 135 merged and Soundcheck card 136 / Signal PR #6 shipped
+Linux CLAP filesystem discovery (`086`) on 2026-08-21. Signal PR #7 shipped
+Windows CLAP discovery (`087`) on 2026-08-22. Do not open `g12`.
 
 ## Next Task
 
-Stop for operator review of the `g11.002` PR. Do not start a follow-on
-generation. Linux CLAP discovery (`086`) waits on Soundcheck card 135.
+Stop for operator selection of the next Signal-only backlog pull. Do not start
+a follow-on generation. `g11.001` and `g11.002` are complete. Linux CLAP
+(`086`) and Windows CLAP (`087`) discovery are shipped. Do not open `g12`.

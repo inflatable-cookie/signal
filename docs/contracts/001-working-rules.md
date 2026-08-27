@@ -113,7 +113,7 @@ If those closeout conditions are not satisfied, repair the current generation in
 
 ## Next Task
 
-Signal is baseline-routed with `g11.002` complete. No current ready card.
-Stop for operator review of the SharedSandbox PR. Do not start a follow-on
-generation. Reopen this contract when the next generation installs a new
-strict lane.
+Signal is baseline-routed with `g11.001` and `g11.002` complete. No current
+ready card. Stop for operator selection of the next Signal-only backlog pull.
+Do not start a follow-on generation. Reopen this contract when the next
+generation installs a new strict lane.

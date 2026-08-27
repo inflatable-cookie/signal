@@ -5,7 +5,7 @@ handoff_mode: worker-pr-loop
 worker_mode: implementation
 dispatch_authority: orchestrator
 handoff: single-file-path-only
-status: ready-to-launch
+status: ready-for-review
 owner: Tom / papercuts orchestrator
 created: 2026-08-27
 updated: 2026-08-27
@@ -17,9 +17,10 @@ tags: [coordination, handoff, worker, pr, papercuts]
 ## What This Thread Was Doing
 
 Wave 1 compiled VST3 path resolution on every host. Remaining Signal
-papercuts are docs currentness: plugin hosting is still advertised as
-missing after g09/g11/g12 shipped it, and Northstar refresh found stale
-Next Task pointers. The operator approved papercuts wave 3.
+papercuts are docs currentness: plugin hosting was still advertised as
+missing after `g09` shipped hosting and `g11` closed integration, and
+Northstar refresh found stale Next Task pointers. The operator approved
+papercuts wave 3.
 
 You are the Signal implementation worker for this docs lane. Leave
 SharedSandbox add-while-processing and T3 `.agents.local.env` seeding
@@ -40,11 +41,10 @@ pointers reopen finished cards.
 - **Planning checkout:** clean before this handoff file was created.
 - **Worker mode:** implementation worker dispatched by the orchestrator.
 - **Worker branch:** `worker/papercuts-wave3-docs-currentness`
-- **Worker worktree:** launcher worktree first. `.agents.local.env` has
-  `AGENTS_WORKTREE_CONTAINER_DIR=/Users/tom/Dev/worktrees`.
+- **Worker worktree:** `/Users/tom/Dev/worktrees/signal-papercuts-wave3-docs-currentness`
 - **Ready work items, in order:**
-  1. Stale plugin-hosting docs misled planning
-  2. Northstar refresh found stale Next Task pointers
+  1. Stale plugin-hosting docs misled planning — closed (already aligned; verified)
+  2. Northstar refresh found stale Next Task pointers — closed (front doors aligned)
 - **Out of scope:** SharedSandbox live add-while-processing (v1
   non-goal); cross-repo handoff path resolution; creating
   `.agents.local.env` (already seeded here).
@@ -54,7 +54,7 @@ pointers reopen finished cards.
 - **Required validation:** hosting docs/backlog/contract 072 no longer
   say hosting is missing; Next Task pointers match the live roadmap
   front door. Cheap docs / `qa:northstar` if present.
-- **PR URL:** pending
+- **PR URL:** https://github.com/inflatable-cookie/signal/pull/9
 - **Merge authorisation:** absent; do not merge
 
 ## Boundaries
@@ -65,7 +65,9 @@ pointers reopen finished cards.
 
 ## Important Context
 
-- The papercut was filed after demolition docs lagged g09/g11/g12.
+- The papercut was filed after demolition docs lagged `g09`/`g11` hosting
+  and integration closeout. Soundcheck cards 135/136 and Signal PRs #6/#7
+  already shipped Linux/Windows CLAP discovery (`086`/`087`).
 - **Report to:** the operator.
 
 ## Suggested Next Move

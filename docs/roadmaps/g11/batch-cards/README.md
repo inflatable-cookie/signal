@@ -27,5 +27,6 @@ Use this folder for ready execution cards under the active `g11` generation.
 
 ## Next Task
 
-Stop for operator review of the `g11.002` PR. Do not start a follow-on
-generation. No current ready card.
+Stop for operator selection of the next Signal-only backlog pull. Do not start
+a follow-on generation. No current ready card. Linux CLAP filesystem discovery
+(`086`) shipped 2026-08-21. Do not open `g12`.

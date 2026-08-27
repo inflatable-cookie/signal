@@ -33,25 +33,29 @@ they hit a solvable hurdle; they do not stop the current task to fix one.
   (`/Users/tom/Dev/worktrees`, matching sibling repos).
 - Surface: `.agents.local.env`, orchestrator worker fallback
 
+## Closed
 
-### [ ] Stale plugin-hosting docs misled planning — 2026-08-17
+### [x] Stale plugin-hosting docs misled planning — 2026-08-17
 - Friction: post-demolition backlog and architecture front doors still said
-  plugin hosting was missing after `g09`/`g11`/`g12` shipped real CLAP/VST3/AU/LV2
-  hosting.
+  plugin hosting was missing after `g09` shipped real CLAP/VST3/AU/LV2 hosting
+  and `g11` closed host-assembly / SharedSandbox integration.
 - Impact: refresh/atlas work reopened a finished lane and wasted operator time.
-- Possible fix: keep Contract `072`, backlog, architecture, and strategic runway
-  aligned whenever hosting depth lands.
+- Fix: verified Contract `072`, backlog, architecture, and strategic runway on
+  this SHA already state CLAP/VST3/AU/LV2 hosting is shipped; runway now names
+  closed `g11.001`/`g11.002` integration rather than remaining hosting gaps.
 - Surface: docs/architecture, docs/roadmaps/backlog, docs/contracts/072
 
-### [ ] Northstar refresh found stale Next Task pointers — 2026-08-17
-- Friction: `docs/roadmaps/README.md` and `docs/roadmaps/g10/README.md` still
-  pointed at pre-closeout stretch-audit work after `g10.036`–`g10.042` closed.
+### [x] Northstar refresh found stale Next Task pointers — 2026-08-17
+- Friction: live docs/architecture/contracts/roadmap front doors still pointed
+  at finished work (`g10` stretch audit, `g11.002` / SharedSandbox PR review,
+  then Soundcheck card 135 / Linux-Windows CLAP waits after `086`/`087`
+  shipped).
 - Impact: a bare `continue` or agent re-entry could reopen finished lanes.
-- Possible fix: keep generation front doors and roadmap README aligned whenever
-  a milestone suite closes.
-- Surface: docs/roadmaps front doors
-
-## Closed
+- Fix: aligned live Next Task surfaces — including Contract `001` — to
+  operator backlog selection; recorded Linux CLAP (`086`) and Windows CLAP
+  (`087`) as shipped; left closed milestone/card/log closeouts historical.
+- Surface: docs README, architecture front doors, contracts README + `001`,
+  roadmaps front doors
 
 ### [x] VST3 module binary resolution is cfg-gated off macOS — 2026-08-22
 - Friction: `resolve_module_binary_path` only compiled on non-macOS, so
