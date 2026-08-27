@@ -12,7 +12,6 @@ use super::derive::{
     parse_feature_list, plist_string, plist_string_array, plist_to_io_error, plist_u16,
 };
 use super::types::*;
-#[cfg(any(test, not(target_os = "macos")))]
 use crate::vst3_host_adapter::Vst3HostPlatform;
 
 pub(crate) fn candidate_info_plist_paths(bundle_root: &Path) -> Vec<PathBuf> {
@@ -29,7 +28,7 @@ pub(crate) fn candidate_moduleinfo_paths(bundle_root: &Path) -> Vec<PathBuf> {
     ]
 }
 
-#[cfg(any(test, not(target_os = "macos")))]
+#[cfg_attr(all(target_os = "macos", not(test)), allow(dead_code))]
 pub(crate) fn resolve_module_binary_path(
     bundle_root: &Path,
     platform: Vst3HostPlatform,
