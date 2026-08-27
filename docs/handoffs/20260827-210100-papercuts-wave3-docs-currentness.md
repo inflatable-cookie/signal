@@ -53,7 +53,7 @@ pointers reopen finished cards.
 - **Required validation:** hosting docs/backlog/contract 072 no longer
   say hosting is missing; Next Task pointers match the live roadmap
   front door. Cheap docs / `qa:northstar` if present.
-- **PR URL:** pending
+- **PR URL:** https://github.com/inflatable-cookie/signal/pull/9
 - **Merge authorisation:** absent; do not merge
 
 ## Boundaries
