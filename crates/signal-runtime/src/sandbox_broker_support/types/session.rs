@@ -25,7 +25,7 @@ pub(crate) const STDERR_TAIL_LINES: usize = 16;
 /// Handle to a running sandbox broker child process.
 ///
 /// Receipt lines are read on a dedicated thread and forwarded over a channel
-/// so every read observes [`Self::read_timeout`]; a second thread drains the
+/// so every read observes `Self::read_timeout`; a second thread drains the
 /// child's stderr to EOF (keeping a bounded tail for diagnostics) so a chatty
 /// broker can never deadlock on a full stderr pipe. A timed-out or torn
 /// session is marked failed and its child process is killed; subsequent

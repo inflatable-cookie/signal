@@ -12,7 +12,7 @@ use super::support::*;
 /// Raw, movable process handle for one activated LV2 instance: the plugin
 /// handle, its `run` entry point, and raw pointers into the planar buffers
 /// the audio ports were connected to at activate. The sandbox moves this
-/// onto its audio thread; the owning [`Lv2HostedInstance`] must outlive it
+/// onto its audio thread; the owning `Lv2HostedInstance` must outlive it
 /// and must not run lifecycle transitions while the session is live.
 /// Ports stay connected from activation, so a block is exactly: copy in,
 /// `run(n)`, copy out — alloc-free.

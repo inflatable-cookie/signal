@@ -168,7 +168,7 @@ impl RenderPlaneController {
     /// push `events` (absolute stream-clock frames) at the stage's live-event
     /// ring. Resolves `stage_id` against the topology of the most recent
     /// successful install and validates that the stage compiled with
-    /// [`RenderStageSpec::accepts_live_events`]. Batches larger than
+    /// `RenderStageSpec::accepts_live_events`. Batches larger than
     /// [`LIVE_EVENT_PUSH_CAPACITY`] chunk across multiple commands; events
     /// are sorted by frame control-side when needed so ring order stays
     /// chronological. Never blocks: a full command FIFO returns an error

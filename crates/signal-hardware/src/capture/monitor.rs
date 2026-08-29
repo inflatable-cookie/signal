@@ -31,7 +31,7 @@ impl CaptureActivationGate {
 
 /// Monitor sink: consumes interleaved STEREO f32 frames on the audio thread
 /// (the capture callback converts the stream's negotiated channel count to
-/// stereo before calling it — see [`monitor_frames_to_stereo`]). The sink
+/// stereo before calling it — see `monitor_frames_to_stereo`). The sink
 /// MUST be alloc-free, lock-free, and non-blocking; feed a lock-free ring
 /// (e.g. the render plane's live-input feeder), never a mutex.
 pub type MonitorSink = Box<dyn FnMut(&[f32]) + Send + 'static>;

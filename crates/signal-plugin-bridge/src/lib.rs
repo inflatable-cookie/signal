@@ -1,7 +1,7 @@
 //! Host-side plugin processing backends (g11.012).
 //!
 //! The render plane sees one placement-agnostic handle
-//! ([`RenderPluginProcessor`] over [`PluginBlockProcessor`]); this crate
+//! (`RenderPluginProcessor` over `PluginBlockProcessor`); this crate
 //! provides the concrete backends behind it, one per isolation tier
 //! ([`signal_plugin::PluginIsolationTier`]):
 //!

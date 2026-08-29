@@ -6,7 +6,7 @@ use super::types::MidiInputEvent;
 /// MIDI twin of [`signal_primitives::SpscRing`], holding whole
 /// [`MidiInputEvent`]s instead of samples.
 ///
-/// The caller owns the ring (typically in an [`Arc`]) and is the single
+/// The caller owns the ring (typically in an `Arc`) and is the single
 /// consumer; the backend's receive thread is the single producer. Both sides
 /// are alloc-free and never block: a full ring drops the event on push and
 /// counts it in [`MidiEventRing::overrun_events`].

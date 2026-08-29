@@ -14,7 +14,7 @@ use super::common::{
 };
 
 /// In-process Audio Unit processing backend (g11.032): the exact mirror of
-/// [`InProcessVst3Processor`] over the AU pull-model hosting FFI.
+/// `InProcessVst3Processor` over the AU pull-model hosting FFI.
 ///
 /// Owns the hosted instance (component instance, activation) for its whole
 /// lifetime. The process session sits behind a `Mutex` taken with

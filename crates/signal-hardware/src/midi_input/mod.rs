@@ -1,11 +1,11 @@
 //! MIDI input contract: the boundary where the operating system hands live
 //! MIDI events to Signal.
 //!
-//! Mirror of the audio input contract in [`crate::input_stream`]: backends
+//! Mirror of the audio input contract in `crate::input_stream`: backends
 //! that can read hardware MIDI ports implement [`MidiInputBackend`], the
 //! subscription handle is RAII (dropping it closes the port connection), and
 //! device loss surfaces by polling [`MidiSubscription::state`] — the exact
-//! shape of [`crate::input_stream::InputStreamState::Faulted`] on the audio
+//! shape of `crate::input_stream::InputStreamState::Faulted` on the audio
 //! side.
 //!
 //! # Real-time contract

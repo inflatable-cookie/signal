@@ -1,0 +1,48 @@
+{
+  "deviations_file": "docs/contracts/rust-quality-deviations.json",
+  "exclusions": {
+    "generated": [],
+    "vendored": []
+  },
+  "language": "rust",
+  "msrv": {
+    "cargo_manifests": [
+      "Cargo.toml",
+      "crates/signal-analysis-character/Cargo.toml",
+      "crates/signal-analysis-embed/Cargo.toml",
+      "crates/signal-analysis-loudness/Cargo.toml",
+      "crates/signal-analysis-rhythm/Cargo.toml",
+      "crates/signal-analysis-tonal/Cargo.toml",
+      "crates/signal-analysis/Cargo.toml",
+      "crates/signal-dsp-resample/Cargo.toml",
+      "crates/signal-dsp-spectral/Cargo.toml",
+      "crates/signal-dsp-stretch-evidence/Cargo.toml",
+      "crates/signal-dsp-stretch/Cargo.toml",
+      "crates/signal-dsp/Cargo.toml",
+      "crates/signal-graph/Cargo.toml",
+      "crates/signal-hardware-coremidi/Cargo.toml",
+      "crates/signal-hardware-cpal/Cargo.toml",
+      "crates/signal-hardware/Cargo.toml",
+      "crates/signal-host-local/Cargo.toml",
+      "crates/signal-ipc/Cargo.toml",
+      "crates/signal-plugin-au/Cargo.toml",
+      "crates/signal-plugin-bridge/Cargo.toml",
+      "crates/signal-plugin-clap/Cargo.toml",
+      "crates/signal-plugin-inventory/Cargo.toml",
+      "crates/signal-plugin-lv2/Cargo.toml",
+      "crates/signal-plugin-sandbox/Cargo.toml",
+      "crates/signal-plugin-vst3/Cargo.toml",
+      "crates/signal-plugin/Cargo.toml",
+      "crates/signal-primitives/Cargo.toml",
+      "crates/signal-render-plane/Cargo.toml",
+      "crates/signal-runtime/Cargo.toml"
+    ],
+    "source": "repository_policy",
+    "toolchain_policy_paths": [
+      "rust-toolchain.toml"
+    ],
+    "when_unresolved": "stop"
+  },
+  "profile": "strict",
+  "schema_version": "1.0.0"
+}

@@ -20,7 +20,7 @@ use super::events::{
 
 /// Raw, movable process handle for one activated instance: the plugin
 /// pointer plus preallocated planar audio-bus buffers. The sandbox moves this
-/// onto its audio thread; the owning [`ClapHostedInstance`] must outlive it
+/// onto its audio thread; the owning `ClapHostedInstance` must outlive it
 /// and must not run lifecycle transitions while the session is live.
 pub struct ClapProcessSession {
     pub(in crate::hosting::process) plugin: *const clap_plugin,

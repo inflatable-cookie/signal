@@ -92,7 +92,7 @@ pub(crate) struct SharedState {
     /// Maximum observed callback duration, in microseconds.
     pub(crate) max_callback_duration_micros: AtomicU64,
     /// Inferred missed deadlines: callbacks whose interval since the
-    /// previous callback exceeded [`XRUN_INTERVAL_FACTOR`] × the block
+    /// previous callback exceeded `XRUN_INTERVAL_FACTOR` × the block
     /// duration at the plan rate.
     pub(crate) xrun_count: AtomicU64,
     /// Live render posture as last applied by the executor (g13.018).

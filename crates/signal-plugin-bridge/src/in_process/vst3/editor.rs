@@ -8,7 +8,7 @@ use super::super::common::PluginGuiEvent;
 /// In-process VST3 editor host for components that expose a native editor but
 /// no processable audio layout.
 ///
-/// This deliberately does not implement [`PluginBlockProcessor`]. It owns the
+/// This deliberately does not implement `PluginBlockProcessor`. It owns the
 /// component/controller lifecycle needed for editor inspection, state capture,
 /// and state restoration without implying that the component can process
 /// audio.

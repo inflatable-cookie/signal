@@ -249,7 +249,7 @@ impl OfflineHighQualityStretcher {
     /// concatenated them, which restarts the phase vocoder at every segment join.
     /// Measured on a sustained `110 Hz` tone across a `1.6 -> 0.8` boundary, that
     /// left a first-difference step of `0.204` against a median step of `0.0051`.
-    /// [`smooth_dynamic_segment_boundaries_interleaved`] attenuated it to `0.0174`
+    /// `smooth_dynamic_segment_boundaries_interleaved` attenuated it to `0.0174`
     /// but did not remove it — still above the render's own `p99.9` of `0.0138`.
     ///
     /// The resumable renderer carries phase, detector, and overlap-add state across

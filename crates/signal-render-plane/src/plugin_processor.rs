@@ -106,9 +106,9 @@ pub trait PluginBlockProcessor: Send + Sync {
 }
 
 /// Arc handle to a plugin processing backend, carried by
-/// [`RenderStageSpec::processor`] on Sum stages.
+/// `RenderStageSpec::processor` on Sum stages.
 ///
-/// Pointer-equal (like [`RenderStreamHandle`] / [`RenderLiveInputHandle`]):
+/// Pointer-equal (like `RenderStreamHandle` / `RenderLiveInputHandle`):
 /// hosts create one per live plugin instance and reuse it across plan
 /// recompiles so specs stay idempotent — swapping the handle is a structural
 /// plan change; keeping it is not.

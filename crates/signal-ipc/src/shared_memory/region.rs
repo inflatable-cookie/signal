@@ -6,10 +6,10 @@ use crate::SharedMemoryTransportPayload;
 
 /// A live memory-mapped shared-memory region.
 ///
-/// Created by [`SharedMemoryBroker::create_region`] or attached via
-/// [`SharedMemoryBroker::attach_region`]. The mapping stays live for the
+/// Created by `SharedMemoryBroker::create_region` or attached via
+/// `SharedMemoryBroker::attach_region`. The mapping stays live for the
 /// lifetime of this value; drop it to release the mapping (the backing file is
-/// not removed on drop — call [`SharedMemoryBroker::destroy_region`] for that).
+/// not removed on drop — call `SharedMemoryBroker::destroy_region` for that).
 pub struct MappedSharedMemoryRegion {
     pub(super) metadata: SharedMemoryTransportPayload,
     pub(super) file: File,

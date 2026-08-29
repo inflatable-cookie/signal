@@ -8,7 +8,7 @@ use signal_plugin_lv2::{Lv2HostedInstance, Lv2ProcessSession};
 use signal_render_plane::{PluginBlockProcessor, RenderBlockPluginEvent};
 
 /// In-process LV2 processing backend (g11.033): the exact mirror of
-/// [`InProcessClapProcessor`] over the LV2 dlopen hosting FFI.
+/// `InProcessClapProcessor` over the LV2 dlopen hosting FFI.
 ///
 /// Owns the hosted instance (library, descriptor, instantiated handle,
 /// connected buffers) for its whole lifetime. The process session sits

@@ -70,7 +70,7 @@ impl RenderNote {
 /// Shared immutable note list for one clip, sorted by `start_frame`
 /// (compile validates and rejects unsorted buffers).
 ///
-/// Equality is pointer-based (like [`RenderSampleBuffer`]): hosts cache one
+/// Equality is pointer-based (like `RenderSampleBuffer`): hosts cache one
 /// buffer per clip content so recompiled specs stay idempotent.
 #[derive(Clone, Debug)]
 pub struct RenderNoteBuffer {

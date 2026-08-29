@@ -367,7 +367,7 @@ impl Default for KeyDetectorConfig {
     }
 }
 
-/// Whole-track tonal summary returned by [`KeyDetector`].
+/// Whole-track tonal summary returned by `KeyDetector`.
 ///
 /// Practical integration order:
 /// 1. Read `key` for the best whole-track tonic and mode hypothesis.

@@ -2,7 +2,7 @@
 
 use crate::input_stream::InputStreamHandle;
 
-/// Placeholder handle installed by [`CaptureSession::stop`] after the real
+/// Placeholder handle installed by `CaptureSession::stop` after the real
 /// stream is dropped (the box must hold something while the report is
 /// assembled).
 pub(crate) struct StoppedStream {
