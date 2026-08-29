@@ -77,7 +77,7 @@ pub(crate) enum InEventSlot {
 /// vecs are preallocated; the audio thread never allocates.
 ///
 /// This is the MIDI 1.0 downconversion boundary for CLAP CC delivery:
-/// [`PluginEvent::ControlChange`] values (normalized f32) become 3-byte
+/// `PluginEvent::ControlChange` values (normalized f32) become 3-byte
 /// `clap_event_midi` messages here (`round(value * 127)`); note events use
 /// CLAP's native `clap_event_note` and keep full float velocity.
 pub(crate) struct ParamEventList {

@@ -1,12 +1,12 @@
 //! Offline (faster-than-realtime) bounce driver.
 //!
-//! WYSIWYG export: drives the SAME [`RenderPlaneExecutor`] over the SAME
-//! compiled [`RenderPlanSpec`] that realtime playback uses — no parallel
+//! WYSIWYG export: drives the SAME `RenderPlaneExecutor` over the SAME
+//! compiled `RenderPlanSpec` that realtime playback uses — no parallel
 //! render path, no resampling shortcut. The only intentional divergence is
 //! the transport edge envelope: realtime ramps in over ~5 ms at play so the
 //! speaker never steps, but a bounce must start at full level, so the driver
 //! snaps the envelope open before the first block (see
-//! [`RenderPlaneExecutor::set_edge_gain_immediate`]). Everything else —
+//! `RenderPlaneExecutor::set_edge_gain_immediate`). Everything else —
 //! stage scheduling, matrices, gain smoothing, automation envelopes, declick
 //! fades, the master limiter, the hardware-boundary write — is the realtime
 //! code, byte for byte.
@@ -39,7 +39,7 @@ pub struct OfflineRenderOptions {
     /// Number of frames to render.
     pub frame_count: u64,
     /// Block quantum the executor is driven at; clamped to
-    /// `1..=`[`MAX_BLOCK_FRAMES`]. Smaller blocks tighten automation/gain
+    /// `1..=` `MAX_BLOCK_FRAMES`. Smaller blocks tighten automation/gain
     /// ramp granularity exactly as they would in realtime.
     pub block_frames: usize,
     /// Stage ids whose post-fader output is captured as stems alongside the

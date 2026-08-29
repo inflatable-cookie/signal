@@ -58,7 +58,7 @@ impl ChildGuiHandle {
 }
 
 /// Create the control↔main channel pair: the [`ChildGuiHandle`] goes to
-/// the broker (control thread), the receiver to [`run_gui_service`] on the
+/// the broker (control thread), the receiver to `run_gui_service` on the
 /// main thread.
 pub fn channel() -> (ChildGuiHandle, Receiver<GuiRequest>) {
     let (requests, service) = mpsc::channel();

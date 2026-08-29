@@ -14,7 +14,7 @@ use super::buffers::Vst3AudioBusBuffers;
 /// Raw, movable process handle for one activated VST3 instance: the
 /// `IAudioProcessor` pointer plus planar stereo buffers preallocated at the
 /// activated max block size. The sandbox moves this onto its audio thread;
-/// the owning [`Vst3HostedInstance`] must outlive it and must not run
+/// the owning `Vst3HostedInstance` must outlive it and must not run
 /// lifecycle transitions while the session is live. The per-block
 /// `ProcessData`/`AudioBusBuffers` structs are stack-built from the
 /// preallocated buffers, so processing never allocates.

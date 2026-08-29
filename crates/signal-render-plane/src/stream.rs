@@ -174,7 +174,7 @@ pub(crate) struct StreamInner {
 }
 
 /// Executor-side handle to a disk-streamed media source. Arc-shared and
-/// pointer-equal (like [`RenderSampleBuffer`]): create one per streaming
+/// pointer-equal (like `RenderSampleBuffer`): create one per streaming
 /// asset and reuse it across plan recompiles so specs stay idempotent.
 /// Clips reference the handle plus their own window/anchor, exactly as
 /// in-memory sample clips reference a shared buffer.
@@ -257,7 +257,7 @@ impl StreamFeeder {
 
 /// Create a connected feeder/handle pair for one streaming asset:
 /// interleaved stereo media at `source_sample_rate_hz`, `total_frames`
-/// frames long. The handle goes into [`RenderSource::Stream`] specs; the
+/// frames long. The handle goes into `RenderSource::Stream` specs; the
 /// feeder stays control-side and must be pumped (post chunks toward
 /// [`StreamFeeder::wanted_frame`], collect retired) for audio to flow.
 pub fn render_stream(

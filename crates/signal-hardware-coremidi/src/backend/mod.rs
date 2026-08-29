@@ -7,7 +7,7 @@
 //! current at creation), so device loss is detected without any extra
 //! machinery. The read callback is the real-time path: packet-list walk plus
 //! the pure parser in [`crate::parse`], pushing into the caller-owned
-//! [`MidiEventRing`] — no allocation, no locks, drop-and-count on overrun.
+//! `MidiEventRing` — no allocation, no locks, drop-and-count on overrun.
 
 #[allow(clippy::module_inception)]
 mod backend;

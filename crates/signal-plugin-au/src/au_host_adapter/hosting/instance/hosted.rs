@@ -50,7 +50,7 @@ impl AuHostedInstance {
     /// `_bundle_root` keeps the (path, key) call shape of the CLAP/VST3
     /// hosting FFIs but is never opened: the component is resolved from the
     /// load key alone, whether discovery retained its bundle path or used the
-    /// [`AU_REGISTRY_COMPONENT_PATH`] fallback. Off macOS this fails with the
+    /// `AU_REGISTRY_COMPONENT_PATH` fallback. Off macOS this fails with the
     /// stable `unsupported_platform` token.
     pub fn load(_bundle_root: &Path, load_key: &str) -> Result<Self, AuHostingError> {
         let (component_type, component_subtype, manufacturer) =

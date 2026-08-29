@@ -124,13 +124,13 @@ pub(crate) struct CompiledNode {
     /// the stage carries none. Shared with the spec's Arc — no copy.
     pub(crate) events: Arc<[RenderPluginEvent]>,
     /// Preallocated per-block event slice handed to the processor
-    /// ([`PLUGIN_EVENTS_PER_BLOCK_CAPACITY`]); the audio thread only ever
+    /// (`PLUGIN_EVENTS_PER_BLOCK_CAPACITY`); the audio thread only ever
     /// clears and pushes within capacity.
     pub(crate) event_scratch: Vec<RenderBlockPluginEvent>,
     /// Whether this stage accepts host-pushed live events (g13.018).
     pub(crate) accepts_live_events: bool,
     /// Live-event ring: preallocated at compile
-    /// ([`LIVE_EVENT_RING_CAPACITY`]) for accepting stages, empty otherwise.
+    /// (`LIVE_EVENT_RING_CAPACITY`) for accepting stages, empty otherwise.
     /// `PushLiveEvents` appends within capacity (overflow drops and counts);
     /// every rendered block drains and clears it. The audio thread only ever
     /// pushes within capacity and clears — never allocates.

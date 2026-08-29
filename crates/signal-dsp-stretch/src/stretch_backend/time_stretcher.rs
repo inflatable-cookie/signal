@@ -30,7 +30,7 @@ pub trait TimeStretcher {
     /// `round(input.len() as f64 * ratio)` frames (identity ratio returns the
     /// input verbatim).
     ///
-    /// Renders larger than [`MAX_OFFLINE_STRETCH_OUTPUT_SAMPLES`] are refused
+    /// Renders larger than `MAX_OFFLINE_STRETCH_OUTPUT_SAMPLES` are refused
     /// rather than attempted.
     fn stretch_mono(&mut self, input: &[Sample]) -> Result<Vec<Sample>, StretchRenderError>;
 }

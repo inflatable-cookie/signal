@@ -70,7 +70,7 @@ unsafe extern "C" fn render_input_trampoline(
 /// swizzled. The render timestamp's `mSampleTime` advances monotonically by
 /// the processed frame count (time-based units misbehave on static
 /// timestamps). The sandbox moves this onto its audio thread; the owning
-/// [`AuHostedInstance`] must outlive it and must not run lifecycle
+/// `AuHostedInstance` must outlive it and must not run lifecycle
 /// transitions while the session is live. Zero allocation in the render
 /// path.
 pub struct AuProcessSession {

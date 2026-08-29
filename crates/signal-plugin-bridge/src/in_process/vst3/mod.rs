@@ -13,7 +13,7 @@ use signal_plugin::{PluginEvent, PluginParameterDescriptor};
 use signal_plugin_vst3::{Vst3HostedInstance, Vst3ProcessSession};
 
 /// In-process VST3 processing backend (g11.031): the exact mirror of
-/// [`InProcessClapProcessor`] over the VST3 COM hosting FFI.
+/// `InProcessClapProcessor` over the VST3 COM hosting FFI.
 ///
 /// Owns the hosted instance (module, component/processor/controller,
 /// activation) for its whole lifetime. The process session sits behind a

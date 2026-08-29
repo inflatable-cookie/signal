@@ -19,7 +19,7 @@ use super::layout::{HostedInstanceState, Vst3AudioBusLayout, Vst3HostedPortLayou
 /// `IEditController`.
 ///
 /// Threading: create/activate/deactivate/destroy run on the owning (main)
-/// thread; audio processing runs through [`Vst3ProcessSession`], which the
+/// thread; audio processing runs through `Vst3ProcessSession`, which the
 /// sandbox moves onto its audio thread. While a process session is live the
 /// owner must not run lifecycle transitions until the session stops.
 pub struct Vst3HostedInstance {

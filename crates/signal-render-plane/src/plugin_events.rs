@@ -141,7 +141,7 @@ pub struct RenderPluginEvent {
 /// Shared immutable event stream for one processor stage, sorted by `frame`
 /// (compile validates and rejects unsorted buffers).
 ///
-/// Equality is pointer-based (like [`RenderNoteBuffer`]): hosts cache one
+/// Equality is pointer-based (like `RenderNoteBuffer`): hosts cache one
 /// buffer per content hash so recompiled specs stay idempotent.
 #[derive(Clone, Debug)]
 pub struct RenderPluginEventBuffer {
@@ -157,7 +157,7 @@ impl PartialEq for RenderPluginEventBuffer {
 
 /// One plugin event scheduled within the CURRENT block: the absolute frame
 /// resolved to an offset from the block (or loop-segment) start. This is
-/// the slice element handed to [`PluginBlockProcessor::process_with_events`].
+/// the slice element handed to `PluginBlockProcessor::process_with_events`.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct RenderBlockPluginEvent {
     /// Frame offset within the current block at which the event fires.
@@ -173,17 +173,17 @@ pub struct RenderBlockPluginEvent {
 /// the cap in one block are dropped, earliest-first wins.
 pub const PLUGIN_EVENTS_PER_BLOCK_CAPACITY: usize = 1024;
 
-/// Inline event capacity of one [`RenderCommand`]-borne live-event push.
+/// Inline event capacity of one `RenderCommand`-borne live-event push.
 /// The command must stay `Send` + fixed-size (no allocation once the
 /// controller has copied the caller's slice), so batches larger than this
 /// chunk across multiple commands control-side.
 pub const LIVE_EVENT_PUSH_CAPACITY: usize = 32;
 
 /// Per-stage live-event ring capacity (g13.018). The ring is preallocated
-/// at install for stages with [`RenderStageSpec::accepts_live_events`] and
+/// at install for stages with `RenderStageSpec::accepts_live_events` and
 /// drains fully every rendered block; events pushed past the capacity
 /// between blocks are dropped and counted
-/// ([`RenderPlaneController::live_event_drop_count`]).
+/// (`RenderPlaneController::live_event_drop_count`).
 pub const LIVE_EVENT_RING_CAPACITY: usize = 256;
 
 /// Reconcile plugin note, controller, and expression state across a non-

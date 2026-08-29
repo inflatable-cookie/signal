@@ -19,7 +19,7 @@ use signal_primitives::SpscRing;
 /// Default live-input ring capacity in frames (~170 ms at 48 kHz). This is
 /// the MAXIMUM backlog, not the operating latency: steady-state fill is
 /// about one callback quantum, and the executor trims any deeper backlog to
-/// [`LIVE_INPUT_MAX_BACKLOG_FRAMES`] so monitoring latency stays bounded.
+/// `LIVE_INPUT_MAX_BACKLOG_FRAMES` so monitoring latency stays bounded.
 pub const LIVE_INPUT_DEFAULT_CAPACITY_FRAMES: usize = 8_192;
 
 /// Deepest ring backlog the executor tolerates before discarding old input
@@ -39,7 +39,7 @@ pub(crate) struct LiveInputInner {
 }
 
 /// Executor-side handle to a live input feed. Arc-shared and pointer-equal
-/// (like [`RenderStreamHandle`]): create one per monitored input and reuse
+/// (like `RenderStreamHandle`): create one per monitored input and reuse
 /// it across plan recompiles so specs stay idempotent. The ring lives inside
 /// the shared handle, so plan swaps inherently keep the audio flowing —
 /// there is no per-plan state to migrate.
@@ -102,7 +102,7 @@ impl LiveInputFeeder {
 }
 
 /// Create a connected feeder/handle pair for one live input. The handle goes
-/// into [`RenderSource::LiveInput`] specs; the feeder goes to the input
+/// into `RenderSource::LiveInput` specs; the feeder goes to the input
 /// callback. `capacity_frames` bounds the ring (use
 /// [`LIVE_INPUT_DEFAULT_CAPACITY_FRAMES`]); keep it shallow — fill level is
 /// monitoring latency.

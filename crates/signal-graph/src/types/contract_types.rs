@@ -10,7 +10,7 @@ use super::{
 /// Contract issues are non-fatal: the graph still executes, but the relevant
 /// nodes may produce silence or be skipped. The full list is surfaced in
 /// [`GraphContractSummary::issues`] and the count in
-/// [`GraphBlockReport::contract_issue_count`].
+/// `GraphBlockReport::contract_issue_count`.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum GraphContractIssue {
     /// A node declared an empty string as its input bus ID.

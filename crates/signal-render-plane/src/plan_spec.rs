@@ -65,11 +65,11 @@ pub enum RenderSource {
     /// interpolation when the source rate differs from the stream rate.
     Samples(RenderSampleBuffer),
     /// Clip streams media from disk through a chunk mailbox (see
-    /// [`render_stream`]); same anchoring and interpolation as `Samples`,
+    /// `render_stream`); same anchoring and interpolation as `Samples`,
     /// but source data arrives in feeder-posted chunks and missing frames
     /// render silence (counted on the handle). `loop_source` is ignored.
     Stream(RenderStreamHandle),
-    /// Clip monitors a live input (see [`render_live_input`]): each block
+    /// Clip monitors a live input (see `render_live_input`): each block
     /// drains whatever the input callback pushed into the handle's ring,
     /// ignoring the timeline position entirely — live input renders "now".
     /// Window a live clip `[0, u64::MAX)` so it is always audible while the
@@ -82,7 +82,7 @@ pub enum RenderSource {
     /// plan swaps are inherently sample-exact — there is no voice state to
     /// inherit. Notes are clip-relative and must be sorted by `start_frame`
     /// (compile rejects unsorted buffers). At most
-    /// [`NOTE_POLYPHONY_LIMIT`] notes render simultaneously per block
+    /// `NOTE_POLYPHONY_LIMIT` notes render simultaneously per block
     /// (earliest-started win). `loop_source` is ignored.
     Notes(RenderNoteBuffer),
     /// Rate-warped playback of a media source (g12.027 repitch/varispeed):
@@ -183,7 +183,7 @@ pub struct RenderEdgeSpec {
 /// OFFLINE ONLY in v1: the offline driver samples each envelope at every
 /// block boundary (linear interpolation between points, end values held
 /// outside the point range) and applies the value through the processor's
-/// [`PluginBlockProcessor::set_parameter_normalized`] seam before the block
+/// `PluginBlockProcessor::set_parameter_normalized` seam before the block
 /// renders — the offline mirror of the host's live block-boundary parameter
 /// forwarding. Block-boundary resolution is the honest fidelity bound: a
 /// sweep steps once per offline block (default 1024 frames), exactly like
@@ -261,7 +261,7 @@ pub struct RenderStageSpec {
     /// behavior bit-identical.
     pub events: Option<RenderPluginEventBuffer>,
     /// When true, the executor allocates a per-stage live-event ring at
-    /// install and accepts [`RenderPlaneController::push_live_events`] for
+    /// install and accepts `RenderPlaneController::push_live_events` for
     /// this stage (g13.018): host-pushed events (hardware MIDI live-thru)
     /// deliver to `processor` every block regardless of transport. Same
     /// placement rule as compiled events: valid only on a Sum stage with a

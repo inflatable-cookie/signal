@@ -1,4 +1,4 @@
-//! Binaural voice bank: a [`PluginBlockProcessor`] hosting N one-shot voice
+//! Binaural voice bank: a `PluginBlockProcessor` hosting N one-shot voice
 //! slots, each rendered through its own crossfading HRTF convolver — the
 //! "option B" per-voice model from
 //! `docs/research/binaural-render-plane-integration-v1.md`.

@@ -24,7 +24,7 @@ use super::types::{StretchQuality, REALTIME_PREVIEW_ANALYSIS_HOP, REALTIME_PREVI
 /// Lower-latency pitch-preserving preview stretcher.
 ///
 /// This is a control-side prototype, not a render-callback object. It uses a
-/// shorter STFT window than [`OfflineHighQualityStretcher`] so edits can be
+/// shorter STFT window than `OfflineHighQualityStretcher` so edits can be
 /// previewed with lower algorithmic latency, while keeping the same clean-room
 /// transient-reset and linked-stereo foundation.
 pub struct RealtimePreviewStretcher {

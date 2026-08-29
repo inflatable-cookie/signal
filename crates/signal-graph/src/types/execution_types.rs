@@ -3,7 +3,7 @@ use super::{GraphExecutionLane, GraphNodeExecutionClass, GraphNodePlanningGroup}
 /// A single node as resolved by the planner, including its scheduling group.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct GraphPlannedNode {
-    /// Node identifier, matching [`GraphNodeSpec::node_id`].
+    /// Node identifier, matching `GraphNodeSpec::node_id`.
     pub node_id: String,
     /// Execution class used to derive the planning group.
     pub execution_class: GraphNodeExecutionClass,

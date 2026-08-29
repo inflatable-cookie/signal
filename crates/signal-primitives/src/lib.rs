@@ -82,7 +82,7 @@ impl SampleRate {
 
     /// Convert a duration in seconds to a frame count at this sample rate.
     ///
-    /// Negative durations are clamped to zero. Returns [`FrameCount(0)`] if the
+    /// Negative durations are clamped to zero. Returns `FrameCount(0)` if the
     /// sample rate is zero.
     pub fn seconds_to_frames(self, seconds: Seconds) -> FrameCount {
         if self.0 == 0 {
@@ -94,7 +94,7 @@ impl SampleRate {
 
     /// Convert a frame count to a duration in seconds at this sample rate.
     ///
-    /// Returns [`Seconds(0.0)`] if the sample rate is zero.
+    /// Returns `Seconds(0.0)` if the sample rate is zero.
     pub fn frames_to_seconds(self, frames: FrameCount) -> Seconds {
         if self.0 == 0 {
             return Seconds(0.0);

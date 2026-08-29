@@ -33,9 +33,9 @@ pub(crate) const MIN_DYNAMIC_RATIO_SEGMENT_EXTRA_HOPS: usize = 32;
 
 /// Largest whole-buffer render, in output samples across all channels.
 ///
-/// One gibibyte of [`Sample`]: roughly 93 minutes mono or 46 minutes stereo at
+/// One gibibyte of `Sample`: roughly 93 minutes mono or 46 minutes stereo at
 /// 48 kHz in a single call. Longer material is the offline chunk plan's
-/// responsibility (see [`plan_offline_stretch_chunks`]). Frozen by Contract
+/// responsibility (see `plan_offline_stretch_chunks`). Frozen by Contract
 /// `046`, 2026-07-27 addendum.
 pub const MAX_OFFLINE_STRETCH_OUTPUT_SAMPLES: usize = 268_435_456;
 
