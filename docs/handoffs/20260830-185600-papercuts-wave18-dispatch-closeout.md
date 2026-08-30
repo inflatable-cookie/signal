@@ -5,7 +5,7 @@ handoff_mode: worker-pr-loop
 worker_mode: implementation
 dispatch_authority: orchestrator
 handoff: single-file-path-only
-status: ready-to-launch
+status: awaiting-review
 owner: Tom / papercuts orchestrator
 created: 2026-08-30
 updated: 2026-08-30
@@ -19,12 +19,12 @@ tags: [coordination, handoff, worker, pr, papercuts]
 Two leftover copies of dispatch protocol that already shipped.
 
 Northstar PR 8 made the operator-facing dispatch path the owning repo's
-**absolute** handoff. This repo still lists a Soundcheck-relative lookup
+**absolute** handoff. This repo still listed a Soundcheck-relative lookup
 that first reported the Signal handoff absent.
 
 `.agents.local.env` is gitignored and already seeded on this machine
 with `AGENTS_WORKTREE_CONTAINER_DIR=/Users/tom/Dev/worktrees`. The open
-entry still reads as if first dispatch would stop.
+entry still read as if first dispatch would stop.
 
 You are the Signal implementation worker. Prove both and close the
 copies. Leave SharedSandbox alone.
@@ -43,21 +43,20 @@ worktrees cannot be created here.
   to that SHA before this handoff was created.
 - **Planning checkout:** clean before this handoff file was created.
 - **Worker mode:** implementation worker dispatched by the orchestrator.
-- **Worker branch:** `worker/papercuts-wave18-dispatch-closeout`
-- **Worker worktree:** launcher first.
-  `AGENTS_WORKTREE_CONTAINER_DIR=/Users/tom/Dev/worktrees`.
+- **Worker branch:** `t3code/papercuts-wave18-closeout`
+- **Worker worktree:** `/Users/tom/.t3/worktrees/signal/t3code-7d049835`
 - **Required sibling worktree links:** `none`
 - **Ready work items, in order:**
-  1. Cross-repo worker handoff paths need resolution — close if
-     Northstar `1840c9f6d4f7127240622a09e462b06adc094971` (PR 8) binds
-     dispatch to the owning repo's absolute handoff path. Cite that
-     SHA. Put one line on `AGENTS.md` that operator-facing dispatch is
-     that absolute path, not a Soundcheck-relative lookup. Do not add
-     a cross-repo path resolver. Do not copy Soundcheck files here.
+  1. Cross-repo worker handoff paths need resolution — closed. Proved
+     against Northstar `1840c9f6d4f7127240622a09e462b06adc094971` (PR 8).
+     `AGENTS.md` now states operator-facing dispatch is the owning repo's
+     absolute handoff path, not a Soundcheck-relative lookup. No
+     cross-repo path resolver; no Soundcheck file copies.
   2. Signal had no `.agents.local.env` at first orchestrator dispatch —
-     close if `.agents.local.env` exists, is gitignored, and names
-     `AGENTS_WORKTREE_CONTAINER_DIR=/Users/tom/Dev/worktrees`. Do not
-     commit the file. Record that evidence in `PAPERCUTS.md`.
+     closed. Local file exists, is gitignored
+     (`.gitignore:72:.agents.local.env`), sets
+     `AGENTS_WORKTREE_CONTAINER_DIR=/Users/tom/Dev/worktrees`, and is not
+     staged or committed. Evidence recorded in `PAPERCUTS.md`.
 - **Out of scope:** SharedSandbox live add-while-processing; editing
   Northstar or Soundcheck; GitHub workflows.
 - **Canonical refs:** `PAPERCUTS.md`; `AGENTS.md`; `.gitignore`
@@ -65,8 +64,11 @@ worktrees cannot be created here.
   (`1840c9f6d4f7127240622a09e462b06adc094971`).
 - **Required validation:** `AGENTS.md` names absolute-path dispatch.
   `git check-ignore -v .agents.local.env` shows the ignore. The env
-  file is present locally and is not staged.
-- **PR URL:** pending
+  file is present locally and is not staged. Reviewer also verified
+  `git diff --check`, `effigy qa:docs`, `effigy qa:northstar`, and
+  installed Northstar `check:agent-instructions` (advisory-only) at
+  `c05f45b9614fef0d79d0997c96d0b5662f259f82`.
+- **PR URL:** https://github.com/inflatable-cookie/signal/pull/13
 - **Merge authorisation:** absent; do not merge
 
 ## Boundaries
@@ -80,44 +82,23 @@ worktrees cannot be created here.
 
 ## Suggested Next Move
 
-Read this file from the top. Run the worktree-safety preflight. After
-the committed `HEAD` handoff checks out, skip sibling links (`none`),
-then close the two copies.
+Orchestrator review of
+https://github.com/inflatable-cookie/signal/pull/13. Do not relaunch
+dispatch prove or re-close the papercuts; evidence and PR URL are
+already recorded above. Merge only with operator authorisation.
 
 ## Completion Protocol
 
-### Before you start
+### Review only
 
-1. Read this handoff path. Its `worker_mode: implementation` and
-   `dispatch_authority: orchestrator` metadata activate worker mode. Then
-   run `git rev-parse --show-toplevel`, `git branch --show-current`,
-   `git status --porcelain`, and `git worktree list --porcelain`.
-2. If the current root is a registered worktree, status is empty, and the
-   branch is not `main`, accept it. Record the actual path/branch.
-3. If the launcher supplied a dirty or `main` worktree, stop and report
-   it. Fallback container is
-   `AGENTS_WORKTREE_CONTAINER_DIR=/Users/tom/Dev/worktrees`. Never use
-   `/tmp`.
-4. From the selected worktree, record the repository-relative path
-   `docs/handoffs/20260830-185600-papercuts-wave18-dispatch-closeout.md`.
-   Confirm `HEAD == origin/main`, ancestor
-   `26ca13b080b4cee8e60a274b3f8075eb89fd1b13`, and that relative path in
-   `HEAD`. Load
-   `git show HEAD:docs/handoffs/20260830-185600-papercuts-wave18-dispatch-closeout.md`.
-   If the absolute dispatch file differs, stop. The `HEAD` copy is
-   canonical.
-5. Required sibling list is `none`. Skip link setup.
-6. Read `AGENTS.md` and `PAPERCUTS.md`.
-
-### When the assigned runway is complete
-
-1. Update `PAPERCUTS.md`. Push a PR. Do not merge.
+Runway complete. Do not re-run worker preflight or re-execute the ready
+work items.
 
 ### Review and merge path
 
 Awaiting orchestrator review. Merge is operator-authorised only.
 
-- **Closeout refs:** `PAPERCUTS.md`; this handoff; the PR.
+- **Closeout refs:** `PAPERCUTS.md`; `AGENTS.md`; this handoff; the PR.
 
 ### Handoff closeout
 
