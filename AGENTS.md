@@ -60,6 +60,16 @@ to raw Cargo only when the needed operation is not in `effigy.toml`; do not add
 package scripts that merely re-export Effigy or a current-directory repo
 override.
 
+Signal has no target-local `check:agent-instructions` task. AGENTS review
+uses the installed Northstar consumer-safe audit:
+
+```sh
+effigy --repo <installed-northstar> northstar/check:agent-instructions <this-repo>
+```
+
+`qa:docs:agent-defaults` stays a separate check; it forbids a current-directory
+repo override on the instruction surface.
+
 ## Canonical surfaces
 
 - `docs/README.md` — project and docs front door;
