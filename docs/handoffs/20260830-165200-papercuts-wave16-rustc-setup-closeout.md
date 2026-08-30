@@ -59,7 +59,7 @@ already shipped.
 - **Required validation:** apply exited 0 against
   `77dcda9fa20e9d63977eb3488b0738ea0391f0bb`. Papercut closed with that
   SHA.
-- **PR URL:** pending
+- **PR URL:** https://github.com/inflatable-cookie/signal/pull/12
 - **Merge authorisation:** absent; do not merge
 
 ## Boundaries
