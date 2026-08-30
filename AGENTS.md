@@ -37,7 +37,10 @@ or downstream product workflow.
   `Next Task`; without a ready card, re-enter planning instead of guessing.
 - Normal-mode agents use the current checkout. Worker mode exists only after
   an explicit orchestrator-dispatched handoff under `docs/handoffs/`; never
-  infer it from a branch, path, or harness.
+  infer it from a branch, path, or harness. Operator-facing dispatch is that
+  handoff's absolute path in the owning repo (Northstar
+  `1840c9f6d4f7127240622a09e462b06adc094971`), not a Soundcheck-relative
+  lookup.
 - Work in meaningful batches. Refresh, docs review, and AGENTS review do not
   authorize production-code changes; Rust audit work must record scope and
   findings before repair.

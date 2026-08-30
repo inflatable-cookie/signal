@@ -7,15 +7,6 @@ they hit a solvable hurdle; they do not stop the current task to fix one.
 
 <!-- Keep entries short. Append newest entries at the top. Do not include secrets. -->
 
-### [ ] Cross-repo worker handoff paths need resolution — 2026-08-21
-- Friction: Soundcheck exposed the ready card, but the implementation handoff
-  lived in the sibling Signal repo; a relative lookup first reported it absent.
-- Impact: worker startup spent a pass locating the owning repository and its
-  dedicated worktree.
-- Possible fix: resolve `handoff_path` across linked repositories before
-  launching a worker.
-- Surface: Soundcheck/Signal handoff dispatch
-
 ### [ ] SharedSandbox sequential prepare must stop before load — 2026-08-17
 - Friction: broker rejects `load-plugin-instance` while `already_processing`.
   Host factory stops the boundary, adds the member, then starts again.
@@ -25,15 +16,28 @@ they hit a solvable hurdle; they do not stop the current task to fix one.
   broker-side pause that is still not audio-thread member add.
 - Surface: `signal-host-local` factory, `signal-plugin-sandbox` broker
 
-### [ ] Signal had no `.agents.local.env` at first orchestrator dispatch — 2026-08-17
+## Closed
+
+### [x] Cross-repo worker handoff paths need resolution — 2026-08-30
+- Friction: Soundcheck exposed the ready card, but the implementation handoff
+  lived in the sibling Signal repo; a relative lookup first reported it absent.
+- Impact: worker startup spent a pass locating the owning repository and its
+  dedicated worktree.
+- Fix: proved against Northstar
+  `1840c9f6d4f7127240622a09e462b06adc094971` (PR 8); operator-facing dispatch
+  is the owning repo's absolute handoff path. `AGENTS.md` states that; no
+  cross-repo path resolver and no Soundcheck file copies.
+- Surface: Soundcheck/Signal handoff dispatch; `AGENTS.md`
+
+### [x] Signal had no `.agents.local.env` at first orchestrator dispatch — 2026-08-30
 - Friction: worker fallback worktrees cannot be created without
   `AGENTS_WORKTREE_CONTAINER_DIR`.
 - Impact: dispatch would stop at the local-path contract.
-- Possible fix: keep `.agents.local.env` gitignored and seeded on this machine
-  (`/Users/tom/Dev/worktrees`, matching sibling repos).
+- Fix: `.agents.local.env` exists locally, is gitignored
+  (`.gitignore:72:.agents.local.env`), and sets
+  `AGENTS_WORKTREE_CONTAINER_DIR=/Users/tom/Dev/worktrees`. File is not
+  staged or committed.
 - Surface: `.agents.local.env`, orchestrator worker fallback
-
-## Closed
 
 ### [x] Rust quality setup scope is repository-relative — 2026-08-30
 - Friction: the managed setup rejected an absolute scope directory even when the target root was absolute.
