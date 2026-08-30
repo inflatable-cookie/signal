@@ -5,7 +5,7 @@ handoff_mode: worker-pr-loop
 worker_mode: implementation
 dispatch_authority: orchestrator
 handoff: single-file-path-only
-status: ready-for-review
+status: awaiting-review
 owner: Tom / papercuts orchestrator
 created: 2026-08-30
 updated: 2026-08-30
@@ -75,9 +75,10 @@ already shipped.
 
 ## Suggested Next Move
 
-Read this file from the top. Run the worktree-safety preflight. After
-the committed `HEAD` handoff checks out, create the Northstar sibling
-link, then prove setup.
+Orchestrator review of
+https://github.com/inflatable-cookie/signal/pull/12. Do not relaunch
+setup prove or recreate the sibling link; evidence and PR URL are
+already recorded above. Merge only with operator authorisation.
 
 ## Completion Protocol
 
