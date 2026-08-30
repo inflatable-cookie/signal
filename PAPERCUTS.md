@@ -7,12 +7,6 @@ they hit a solvable hurdle; they do not stop the current task to fix one.
 
 <!-- Keep entries short. Append newest entries at the top. Do not include secrets. -->
 
-### [ ] Rust quality setup scope is repository-relative — 2026-08-29
-- Friction: the managed setup rejects an absolute scope directory even when the target root is absolute.
-- Impact: the first setup invocation fails before profile discovery.
-- Possible fix: surface the required relative-scope form in the setup command help or wrapper.
-- Surface: Northstar `rust-quality:setup` argument validation
-
 ### [ ] Cross-repo worker handoff paths need resolution — 2026-08-21
 - Friction: Soundcheck exposed the ready card, but the implementation handoff
   lived in the sibling Signal repo; a relative lookup first reported it absent.
@@ -40,6 +34,12 @@ they hit a solvable hurdle; they do not stop the current task to fix one.
 - Surface: `.agents.local.env`, orchestrator worker fallback
 
 ## Closed
+
+### [x] Rust quality setup scope is repository-relative — 2026-08-30
+- Friction: the managed setup rejected an absolute scope directory even when the target root was absolute.
+- Impact: the first setup invocation failed before profile discovery.
+- Fix: proved against sibling Northstar `77dcda9fa20e9d63977eb3488b0738ea0391f0bb` (PR 9); `northstar/rust-quality:setup apply <abs-target> <abs-target>` exits 0 and stores scope as `.`. Aligned the existing AGENTS activation block to the installed template wrapping so apply could stay idempotent.
+- Surface: Northstar `rust-quality:setup`; `AGENTS.md` activation markers
 
 ### [x] Consumer AGENTS audit is not exposed through the local catalog — 2026-08-30
 - Friction: the target-local `effigy check:agent-instructions` selector is absent, so the installed Northstar catalog is required for the read-only audit.
