@@ -5,7 +5,7 @@ handoff_mode: worker-pr-loop
 worker_mode: implementation
 dispatch_authority: orchestrator
 handoff: single-file-path-only
-status: ready-to-launch
+status: awaiting-review
 owner: Tom / papercuts orchestrator
 created: 2026-08-30
 updated: 2026-08-30
@@ -38,32 +38,28 @@ already shipped.
   to that SHA before this handoff was created.
 - **Planning checkout:** clean before this handoff file was created.
 - **Worker mode:** implementation worker dispatched by the orchestrator.
-- **Worker branch:** `worker/papercuts-wave16-rustc-setup-closeout`
-- **Worker worktree:** launcher first.
-  `AGENTS_WORKTREE_CONTAINER_DIR=/Users/tom/Dev/worktrees`.
+- **Worker branch:** `t3code/close-rustc-setup-papercuts`
+- **Worker worktree:** `/Users/tom/.t3/worktrees/signal/t3code-dcd30d67`
 - **Required sibling worktree links:**
   - `northstar` from `/Users/tom/Dev/projects/northstar` as `../northstar`
-  Create when absent; reuse only a symlink that already resolves to that
-  source; stop on any other existing path; never overwrite.
+  Create when absent; reuse only a correct symlink; stop on conflict;
+  never overwrite. Created for this run.
 - **Ready work items, in order:**
-  1. Rust quality setup scope is repository-relative — close if sibling
-     Northstar `77dcda9fa20e9d63977eb3488b0738ea0391f0bb` (PR 9) accepts
-     `northstar/rust-quality:setup apply <this-worktree-abs>
-     <this-worktree-abs>` (absolute target and absolute scope that is
-     the target root). Cite that SHA. If the installed skill is older,
-     run from inside the sibling Northstar checkout (do not
-     `cargo`/`effigy` it from a Signal cwd that would apply the wrong
-     catalog). Do not re-implement setup here. Apply is idempotent; do
-     not rewrite `AGENTS.md` unless the apply actually changes it.
+  1. Rust quality setup scope is repository-relative — closed. Sibling
+     Northstar `77dcda9fa20e9d63977eb3488b0738ea0391f0bb` accepted
+     `northstar/rust-quality:setup apply <abs> <abs>` (exit 0, scope
+     stored as `.`). Existing AGENTS activation wrapping aligned to the
+     installed template so apply stayed idempotent.
 - **Out of scope:** SharedSandbox live add-while-processing; cross-repo
   handoff path resolution; creating or rewriting `.agents.local.env`;
   editing Northstar.
 - **Canonical refs:** `PAPERCUTS.md`; Northstar PR 9
   (`77dcda9fa20e9d63977eb3488b0738ea0391f0bb`);
   `skills/northstar/scripts/rust-quality-setup.rhai`.
-- **Required validation:** the apply command above exits 0 against that
-  SHA. Close the papercut with the SHA you actually ran.
-- **PR URL:** pending
+- **Required validation:** apply exited 0 against
+  `77dcda9fa20e9d63977eb3488b0738ea0391f0bb`. Papercut closed with that
+  SHA.
+- **PR URL:** https://github.com/inflatable-cookie/signal/pull/12
 - **Merge authorisation:** absent; do not merge
 
 ## Boundaries
@@ -79,9 +75,10 @@ already shipped.
 
 ## Suggested Next Move
 
-Read this file from the top. Run the worktree-safety preflight. After
-the committed `HEAD` handoff checks out, create the Northstar sibling
-link, then prove setup.
+Orchestrator review of
+https://github.com/inflatable-cookie/signal/pull/12. Do not relaunch
+setup prove or recreate the sibling link; evidence and PR URL are
+already recorded above. Merge only with operator authorisation.
 
 ## Completion Protocol
 
