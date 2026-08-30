@@ -26,13 +26,14 @@ that first reported the Signal handoff absent.
 with `AGENTS_WORKTREE_CONTAINER_DIR=/Users/tom/Dev/worktrees`. The open
 entry still read as if first dispatch would stop.
 
-You are the Signal implementation worker. Prove both and close the
-copies. Leave SharedSandbox alone.
+The Signal implementation worker proved both and closed the copies.
+SharedSandbox stayed out of scope.
 
 ## Why It Matters
 
-The next worker still hunts a relative handoff and still thinks fallback
-worktrees cannot be created here.
+Without those closeouts, the next worker would still hunt a relative
+handoff and still think fallback worktrees cannot be created here. Both
+copies are now closed in this PR.
 
 ## Current State
 
@@ -46,7 +47,7 @@ worktrees cannot be created here.
 - **Worker branch:** `t3code/papercuts-wave18-closeout`
 - **Worker worktree:** `/Users/tom/.t3/worktrees/signal/t3code-7d049835`
 - **Required sibling worktree links:** `none`
-- **Ready work items, in order:**
+- **Completed work items:**
   1. Cross-repo worker handoff paths need resolution — closed. Proved
      against Northstar `1840c9f6d4f7127240622a09e462b06adc094971` (PR 8).
      `AGENTS.md` now states operator-facing dispatch is the owning repo's
@@ -73,8 +74,9 @@ worktrees cannot be created here.
 
 ## Boundaries
 
-- Close the two dispatch copies. Do not change SharedSandbox. Do not
-  merge.
+- Runway complete. Review only; do not re-prove or re-close the dispatch
+  copies. SharedSandbox remains untouched. Do not merge without operator
+  authorisation.
 
 ## Important Context
 
@@ -91,8 +93,8 @@ already recorded above. Merge only with operator authorisation.
 
 ### Review only
 
-Runway complete. Do not re-run worker preflight or re-execute the ready
-work items.
+Runway complete. Do not re-run worker preflight or re-execute the
+completed work items.
 
 ### Review and merge path
 
@@ -102,4 +104,4 @@ Awaiting orchestrator review. Merge is operator-authorised only.
 
 ### Handoff closeout
 
-Leave SharedSandbox open.
+SharedSandbox remains open and out of scope for this PR.
